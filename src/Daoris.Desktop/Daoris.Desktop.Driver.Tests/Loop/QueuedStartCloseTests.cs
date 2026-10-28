@@ -22,8 +22,6 @@ public sealed class QueuedStartCloseTests : IDisposable
 {
     private const string Nowhere = "daoris-parallel1f-nowhere";
 
-    private static readonly TimeSpan Bound = TimeSpan.FromSeconds(10);
-
     private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-queued-close-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly StandInLedger _ledger = new();
@@ -118,7 +116,7 @@ public sealed class QueuedStartCloseTests : IDisposable
             await Assert.ThrowsAnyAsync<OperationCanceledException>(() => new DriverContinuations(driver.Context, driver).GoOnAsync(
                 held, (_, _) => new ProcessStartInfo(Nowhere), AdapterSet.Built().Resolve("stub"), "s1", Path.Combine(_home, "s1.log"),
                 refusesInput: null, drivesBrowser: false, exitCode: 0, used: null, resume: null, said: null, keep: [], left: [],
-                closed.Token).WaitAsync(Bound));
+                closed.Token).WaitAsync(Poll.Patience));
         }
 
         Assert.Empty(_seen);
@@ -143,7 +141,7 @@ public sealed class QueuedStartCloseTests : IDisposable
         {
             return await new DriverContinuations(driver.Context, driver).ContinueAsync(
                     start, record, new HarnessSelection(null), [], starting: null, onOpened: closing.Cancel, closing.Token, "acp-stub")
-                .WaitAsync(Bound);
+                .WaitAsync(Poll.Patience);
         }
     }
 

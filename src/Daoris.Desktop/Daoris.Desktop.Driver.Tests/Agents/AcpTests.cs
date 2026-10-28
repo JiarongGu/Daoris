@@ -383,7 +383,7 @@ public sealed class AcpTests
         Assert.False(run.IsCompleted);
 
         Assert.True(registry.Answer("d1", "900", "yes").Answered);
-        await run.WaitAsync(TimeSpan.FromSeconds(10));
+        await run.WaitAsync(Poll.Patience);
 
         var answer = Assert.Single(answers);
         Assert.Equal(("selected", "yes"), (answer.GetProperty("outcome").GetString(), answer.GetProperty("optionId").GetString()));
@@ -416,7 +416,7 @@ public sealed class AcpTests
         Assert.Empty(held.Choices);
         Assert.Equal("standing", registry.Answer("d1", "900", "always").Why);
         Assert.True(registry.Answer("d1", "900", option: null).Answered);
-        await run.WaitAsync(TimeSpan.FromSeconds(10));
+        await run.WaitAsync(Poll.Patience);
 
         Assert.Equal("cancelled", Assert.Single(answers).GetProperty("outcome").GetString());
         Assert.Equal("refused", events.Last(e => e is { Kind: SessionEventKind.Tool, Id: "c9" }).Status);
@@ -443,7 +443,7 @@ public sealed class AcpTests
         var run = session.RunAsync("X:/daoris/engine", "start the server", CancellationToken.None);
         await HeldAsync(registry, "d1");
         await session.CancelTurnAsync();
-        var outcome = await run.WaitAsync(TimeSpan.FromSeconds(10));
+        var outcome = await run.WaitAsync(Poll.Patience);
 
         Assert.Equal("cancelled", outcome.StopReason);
         Assert.Equal("cancelled", Assert.Single(answers).GetProperty("outcome").GetString());
@@ -479,7 +479,7 @@ public sealed class AcpTests
         await HeldAsync(registry, "d1");
         agent.Close();
 
-        await Assert.ThrowsAsync<DriverException>(() => run.WaitAsync(TimeSpan.FromSeconds(10)));
+        await Assert.ThrowsAsync<DriverException>(() => run.WaitAsync(Poll.Patience));
         Assert.Empty(answers);
         Assert.Empty(registry.Held("d1"));
         Assert.Equal(
@@ -504,7 +504,7 @@ public sealed class AcpTests
             Permissions = registry.For("d1", bound: TimeSpan.FromMilliseconds(100)),
         };
 
-        await session.RunAsync("X:/daoris/engine", "start the server", CancellationToken.None).WaitAsync(TimeSpan.FromSeconds(10));
+        await session.RunAsync("X:/daoris/engine", "start the server", CancellationToken.None).WaitAsync(Poll.Patience);
 
         Assert.Equal("cancelled", Assert.Single(answers).GetProperty("outcome").GetString());
         Assert.StartsWith("permission refused: `npm start` — nobody answered within its", Coded(events, NoteCodes.AskingBound.Code));

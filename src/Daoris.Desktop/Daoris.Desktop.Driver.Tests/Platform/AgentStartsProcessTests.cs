@@ -121,7 +121,7 @@ public sealed class AgentStartsProcessTests : IDisposable
         {
             // The doors read the launcher as the session's process: its stdout is the child's.
             Assert.Equal(PieceLauncher.Program, Path.GetFileName(process.StartInfo.FileName));
-            Assert.Equal("child handed down", await process.StandardOutput.ReadLineAsync().WaitAsync(TimeSpan.FromSeconds(30)));
+            Assert.Equal("child handed down", await process.StandardOutput.ReadLineAsync().WaitAsync(Poll.Patience));
 
             // The launcher, the harness and the child its first instruction started: every one in the agents' job, none outside it.
             Assert.Equal(3, ProcessJob.ActiveOf(jobs.Name));
@@ -131,7 +131,7 @@ public sealed class AgentStartsProcessTests : IDisposable
 
             await process.StandardInput.WriteLineAsync("a line for the child");
             await process.StandardInput.FlushAsync();
-            await process.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(30));
+            await process.WaitForExitAsync().WaitAsync(Poll.Patience);
             Assert.Equal(0, process.ExitCode);
         }
 
@@ -156,12 +156,12 @@ public sealed class AgentStartsProcessTests : IDisposable
 
         using (process)
         {
-            Assert.Equal("child handed down", await process.StandardOutput.ReadLineAsync().WaitAsync(TimeSpan.FromSeconds(30)));
+            Assert.Equal("child handed down", await process.StandardOutput.ReadLineAsync().WaitAsync(Poll.Patience));
             Assert.Equal(3, ProcessJob.ActiveOf(jobs.Name));
 
             // The launcher alone, as a plugin's end kills it: its own job ends what it started.
             process.Kill();
-            await process.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(30));
+            await process.WaitForExitAsync().WaitAsync(Poll.Patience);
         }
 
         await Until(() => ProcessJob.ActiveOf(jobs.Name) == 0, "the harness and its child ended with the launcher");
@@ -185,7 +185,7 @@ public sealed class AgentStartsProcessTests : IDisposable
         using (process)
         {
             Assert.Equal(Cmd, process.StartInfo.FileName);
-            Assert.Equal("child handed down", await process.StandardOutput.ReadLineAsync().WaitAsync(TimeSpan.FromSeconds(30)));
+            Assert.Equal("child handed down", await process.StandardOutput.ReadLineAsync().WaitAsync(Poll.Patience));
             Assert.Equal(1, jobs.Uncontained);
             Assert.True(EventWaitHandle.TryOpenExisting(jobs.OpenName, out var open), "the open event is held while it lives");
             open!.Dispose();
@@ -193,7 +193,7 @@ public sealed class AgentStartsProcessTests : IDisposable
 
             await process.StandardInput.WriteLineAsync("a line for the child");
             await process.StandardInput.FlushAsync();
-            await process.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(30));
+            await process.WaitForExitAsync().WaitAsync(Poll.Patience);
         }
 
         await Until(() => jobs.Uncontained == 0, "the open event let go as the harness ended");

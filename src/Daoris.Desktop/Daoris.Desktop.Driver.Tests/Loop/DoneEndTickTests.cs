@@ -46,7 +46,7 @@ public sealed class DoneEndTickTests : IDisposable
         var clock = Stopwatch.StartNew();
 
         // Its timeout is three minutes: the run ends long before it.
-        await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(90));
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
         clock.Stop();
 
         var record = service.Session("s1");

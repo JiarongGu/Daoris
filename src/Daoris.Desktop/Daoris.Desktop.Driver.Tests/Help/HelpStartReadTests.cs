@@ -25,9 +25,6 @@ public sealed class HelpStartReadTests : IDisposable
 
     private static readonly HelpMachine Machine = new() { Adapter = "acp-stub", Helper = "acp-stub", Cap = 1 };
 
-    /// <summary>How long a test waits for a start that should be over well within it; the start waits a fifth of a second.</summary>
-    private static readonly TimeSpan Within = TimeSpan.FromSeconds(20);
-
     /// <summary>A reading of the machine that never answers, as the owner's did.</summary>
     private static Task<HelpMachine?> Never(CancellationToken ct) => new TaskCompletionSource<HelpMachine?>().Task;
 
@@ -79,7 +76,7 @@ public sealed class HelpStartReadTests : IDisposable
                    return null;
                }))
         {
-            await runner.RunHelpAsync(placed, config, _ => late.Task).WaitAsync(Within);
+            await runner.RunHelpAsync(placed, config, _ => late.Task).WaitAsync(Poll.Patience);
         }
 
         // At once, though the bound is minutes: the agent's start was made, in the room.
@@ -92,7 +89,7 @@ public sealed class HelpStartReadTests : IDisposable
         // The reading answers later: the room is written from it, for the next conversation.
         late.SetResult(Machine with { Repositories = [new("written-late", "default") { Checkout = true }] });
         var agents = Path.Combine(HelpRoom.PathOf(_home), "AGENTS.md");
-        await Poll.Until(() => File.ReadAllText(agents).Contains("`written-late`", StringComparison.Ordinal), within: Within);
+        await Poll.Until(() => File.ReadAllText(agents).Contains("`written-late`", StringComparison.Ordinal), within: Poll.Patience);
     }
 
     /// <summary>
@@ -120,7 +117,7 @@ public sealed class HelpStartReadTests : IDisposable
             Guess = (root, _) => root == site.Root ? new TaskCompletionSource<string?>().Task : Task.FromResult<string?>("main"),
         });
         facts.Start();
-        await facts.FirstAsync(HelpFacts.Lines, "engine", CancellationToken.None).WaitAsync(Within);
+        await facts.FirstAsync(HelpFacts.Lines, "engine", CancellationToken.None).WaitAsync(Poll.Patience);
         var gits = 0;
         var took = Stopwatch.StartNew();
 
@@ -131,7 +128,7 @@ public sealed class HelpStartReadTests : IDisposable
             {
                 await runner.RunHelpAsync(
                         placed, config, async ct => HelpFactsTests.Describe((await HelpFacts.ReadAsync(facts, config, ct))!, config))
-                    .WaitAsync(Within);
+                    .WaitAsync(Poll.Patience);
             }
             finally
             {
@@ -174,12 +171,12 @@ public sealed class HelpStartReadTests : IDisposable
             Guess = (root, _) => root == site.Root ? new TaskCompletionSource<string?>().Task : Task.FromResult<string?>("main"),
         });
         facts.Start();
-        await facts.FirstAsync(HelpFacts.Lines, "engine", CancellationToken.None).WaitAsync(Within);
+        await facts.FirstAsync(HelpFacts.Lines, "engine", CancellationToken.None).WaitAsync(Poll.Patience);
         // The sessions, the history and the work are judged beside the lines, not before them: the room is written at once from the
         // facts as last judged (PARALLEL1a), so wait for each it reads, or a busy machine writes it before they land.
         await Poll.Until(
             () => HelpFacts.Read(facts.Current, config) is { NotReadYet: { Sessions: false, History: false, Work: false } },
-            within: Within);
+            within: Poll.Patience);
         var gits = 0;
         ProcessStartInfo? spawned = null;
 
@@ -195,7 +192,7 @@ public sealed class HelpStartReadTests : IDisposable
                 await runner.RunHelpAsync(
                         placed with { Workspace = "alpha" }, config,
                         async ct => HelpFactsTests.Describe((await HelpFacts.ReadAsync(facts, config, ct))!, config))
-                    .WaitAsync(Within);
+                    .WaitAsync(Poll.Patience);
             }
             finally
             {
@@ -252,7 +249,7 @@ public sealed class HelpStartReadTests : IDisposable
             {
                 ended.Add((session, state));
                 return Task.CompletedTask;
-            }).WaitAsync(Within);
+            }).WaitAsync(Poll.Patience);
 
         Assert.Null(start.SessionId);
         Assert.Contains("was not read within", start.Message);

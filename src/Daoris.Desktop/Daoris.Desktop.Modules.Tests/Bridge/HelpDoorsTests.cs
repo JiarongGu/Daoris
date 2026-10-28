@@ -68,7 +68,7 @@ public sealed class HelpDoorsTests : Bridge
         await Module().HelpDoors(null).StartAgentActionAsync(
             "claude-code", "update", null, (code, problem) => ended.TrySetResult((code, problem)), CancellationToken.None);
 
-        Assert.Equal((0, (string?)null), await ended.Task.WaitAsync(TimeSpan.FromSeconds(15)));
+        Assert.Equal((0, (string?)null), await ended.Task.WaitAsync(Poll.Patience));
         Assert.Contains(Raised, message => message.Type == "HARNESS_ENDED"
             && JsonSerializer.SerializeToElement(message.Payload).GetProperty("Action").GetString() == "update");
         Assert.Contains(Raised, message => message.Type == "SESSION_OUTPUT"

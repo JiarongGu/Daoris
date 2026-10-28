@@ -100,11 +100,10 @@ public sealed class SessionsSayCommandTests : IDisposable
     /// <summary>
     /// The verb's clock in a test of a loop that took the words (FLAKE5): it stands still until the test's condition has held,
     /// then runs as the machine's, so the verb's wait counts from the take however late a loaded machine made it. It runs by
-    /// itself after a minute, so a condition that never holds fails its test rather than holding it.
+    /// itself after <see cref="Poll.Patience"/>, so a condition that never holds fails its test rather than holding it.
     /// </summary>
     private sealed class HeldClock : TimeProvider
     {
-        private static readonly TimeSpan Bound = TimeSpan.FromMinutes(1);
         private readonly long _made = Stopwatch.GetTimestamp();
         private long _from;
 
@@ -115,7 +114,7 @@ public sealed class SessionsSayCommandTests : IDisposable
 
         public override long GetTimestamp()
         {
-            if (Volatile.Read(ref _from) == 0 && Stopwatch.GetElapsedTime(_made) > Bound) Run();
+            if (Volatile.Read(ref _from) == 0 && Stopwatch.GetElapsedTime(_made) > Poll.Patience) Run();
             var from = Volatile.Read(ref _from);
             return from == 0 ? 0 : Stopwatch.GetTimestamp() - from;
         }

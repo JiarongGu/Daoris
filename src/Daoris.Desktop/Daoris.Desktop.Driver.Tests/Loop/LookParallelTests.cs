@@ -14,8 +14,6 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </remarks>
 public sealed class LookParallelTests : IDisposable
 {
-    private static readonly TimeSpan Bound = TimeSpan.FromSeconds(20);
-
     private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-parallel-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly StandInLedger _ledger = new();
@@ -56,11 +54,11 @@ public sealed class LookParallelTests : IDisposable
         var watching = Task.Run(() => watch.RunAsync((_, _) => Task.CompletedTask, onError: null, _closing.Token));
         try
         {
-            await Poll.Until(() => Volatile.Read(ref passes) >= 1, () => "the whole look's sync never began", Bound);
+            await Poll.Until(() => Volatile.Read(ref passes) >= 1, () => "the whole look's sync never began", Poll.Patience);
 
             _ledger.Publish("q1", "engine");
             watch.Nudge(ChangeTopics.Ledger, "quests");
-            await Poll.Until(() => runs.Started.Count == 1, () => "q1 waited for the remote", Bound);
+            await Poll.Until(() => runs.Started.Count == 1, () => "q1 waited for the remote", Poll.Patience);
 
             Assert.Equal(["q1"], runs.Started);
         }
@@ -87,11 +85,11 @@ public sealed class LookParallelTests : IDisposable
         var watching = Task.Run(() => watch.RunAsync(Into(reports), onError: null, _closing.Token));
         try
         {
-            await Poll.Until(() => gate.Asked("q1") == 1, () => "q1's start never began", Bound);
+            await Poll.Until(() => gate.Asked("q1") == 1, () => "q1's start never began", Poll.Patience);
 
             _ledger.Publish("q2", "tools");
             watch.Nudge(ChangeTopics.Ledger, "quests");
-            await Poll.Until(() => runs.Started.Contains("q2"), () => "q2 waited for q1's start", Bound);
+            await Poll.Until(() => runs.Started.Contains("q2"), () => "q2 waited for q1's start", Poll.Patience);
 
             Assert.DoesNotContain("q1", runs.Started);
         }
@@ -118,12 +116,12 @@ public sealed class LookParallelTests : IDisposable
         var watching = Task.Run(() => watch.RunAsync(Into(reports), onError: null, _closing.Token));
         try
         {
-            await Poll.Until(() => gate.Asked("q1") == 1, () => "q1's start never began", Bound);
+            await Poll.Until(() => gate.Asked("q1") == 1, () => "q1's start never began", Poll.Patience);
             for (var wake = 0; wake < 5; wake++)
             {
                 var seen = Count(reports);
                 watch.Nudge(ChangeTopics.Ledger, "quests");
-                await Poll.Until(() => Count(reports) > seen, () => $"wake {wake} never looked: q1's start held the look", Bound);
+                await Poll.Until(() => Count(reports) > seen, () => $"wake {wake} never looked: q1's start held the look", Poll.Patience);
             }
 
             var sitting = Snapshot(reports)[^1].Considerations.Single(c => c.Quest.Id == "q1");
@@ -131,10 +129,10 @@ public sealed class LookParallelTests : IDisposable
             Assert.Contains("starting", sitting.Reason);
 
             gate.Release("q1");
-            await Poll.Until(() => runs.Started.Contains("q1"), () => "q1 never opened", Bound);
+            await Poll.Until(() => runs.Started.Contains("q1"), () => "q1 never opened", Poll.Patience);
             var after = Count(reports);
             watch.Nudge(ChangeTopics.Ledger, "quests");
-            await Poll.Until(() => Count(reports) > after, () => "no look after q1 opened", Bound);
+            await Poll.Until(() => Count(reports) > after, () => "no look after q1 opened", Poll.Patience);
 
             Assert.Equal(1, gate.Asked("q1"));
             Assert.Single(_ledger.SessionsFor("q1"));
@@ -160,13 +158,13 @@ public sealed class LookParallelTests : IDisposable
         var watching = Task.Run(() => watch.RunAsync(Into(reports), onError: null, _closing.Token));
         try
         {
-            await Poll.Until(() => gate.Asked("q1") == 1 && gate.Asked("q2") == 1, () => "the two starts never began", Bound);
+            await Poll.Until(() => gate.Asked("q1") == 1 && gate.Asked("q2") == 1, () => "the two starts never began", Poll.Patience);
 
             _ledger.Publish("q3", "docs");
             watch.Nudge(ChangeTopics.Ledger, "quests");
             await Poll.Until(
                 () => Snapshot(reports).Any(report => report.Considerations.Any(c => c.Quest.Id == "q3")),
-                () => "no look considered q3: the starts held the look", Bound);
+                () => "no look considered q3: the starts held the look", Poll.Patience);
 
             var third = Snapshot(reports).Last(report => report.Considerations.Any(c => c.Quest.Id == "q3"))
                 .Considerations.Single(c => c.Quest.Id == "q3");
@@ -204,7 +202,7 @@ public sealed class LookParallelTests : IDisposable
         var watching = Task.Run(() => watch.RunAsync((_, _) => Task.CompletedTask, onError: null, _closing.Token));
         try
         {
-            await Poll.Until(() => runs.Started.Contains("q2"), () => $"q2 waited for q1's plugin; asked: {string.Join(", ", considered)}", Bound);
+            await Poll.Until(() => runs.Started.Contains("q2"), () => $"q2 waited for q1's plugin; asked: {string.Join(", ", considered)}", Poll.Patience);
 
             Assert.DoesNotContain("q1", runs.Started);
             Assert.Contains("q1", considered);
@@ -241,13 +239,13 @@ public sealed class LookParallelTests : IDisposable
         var watching = Task.Run(() => watch.RunAsync((_, _) => Task.CompletedTask, onError: null, _closing.Token));
         try
         {
-            await Poll.Until(() => runs.Started.Contains("q1"), () => "q1 never started", Bound);
+            await Poll.Until(() => runs.Started.Contains("q1"), () => "q1 never started", Poll.Patience);
             runs.End("q1");
-            await heard.Task.WaitAsync(Bound);
+            await heard.Task.WaitAsync(Poll.Patience);
 
             _ledger.Publish("q2", "tools");
             watch.Nudge(ChangeTopics.Ledger, "quests");
-            await Poll.Until(() => runs.Started.Contains("q2"), () => "q2 waited for the plugin to hear of q1's end", Bound);
+            await Poll.Until(() => runs.Started.Contains("q2"), () => "q2 waited for the plugin to hear of q1's end", Poll.Patience);
         }
         finally
         {
@@ -278,7 +276,7 @@ public sealed class LookParallelTests : IDisposable
             Stops = runs.Stops,
         };
         runs.Keeping = driver.Running;
-        await driver.TickAsync(_closing.Token).WaitAsync(Bound);
+        await driver.TickAsync(_closing.Token).WaitAsync(Poll.Patience);
         Assert.Equal(2, runs.Started.Count);
 
         // Each claim is answered only once the other has been asked too: one after another, the first asked waits out the client's
@@ -297,11 +295,11 @@ public sealed class LookParallelTests : IDisposable
             await Task.WhenAll(asked.Values.Select(each => each.Task)).WaitAsync(token);
         };
 
-        var look = await driver.TickAsync(_closing.Token).WaitAsync(Bound);
+        var look = await driver.TickAsync(_closing.Token).WaitAsync(Poll.Patience);
 
         Assert.Contains(look.Events, line => line.StartsWith("stop  session s1 (#q1)", StringComparison.Ordinal));
         Assert.Contains(look.Events, line => line.StartsWith("stop  session s2 (#q2)", StringComparison.Ordinal));
-        await driver.Running.SettledAsync().WaitAsync(Bound);
+        await driver.Running.SettledAsync().WaitAsync(Poll.Patience);
     }
 
     /// <summary>🔴 A snapshot's reads are asked at once: one door slow to answer holds its own read, not the reads after it.</summary>
@@ -318,7 +316,7 @@ public sealed class LookParallelTests : IDisposable
         };
         using var service = _ledger.Client(TimeSpan.FromSeconds(5));
 
-        var snapshot = await service.SnapshotAsync(_closing.Token).WaitAsync(Bound);
+        var snapshot = await service.SnapshotAsync(_closing.Token).WaitAsync(Poll.Patience);
 
         Assert.Equal("q1", Assert.Single(snapshot.Quests).Id);
         Assert.Equal(3, snapshot.Repositories.Count);
@@ -343,7 +341,7 @@ public sealed class LookParallelTests : IDisposable
         var watching = Task.Run(() => watch.RunAsync(Into(reports), onError: null, _closing.Token));
         try
         {
-            await Poll.Until(() => Count(reports) >= 1 && watch.Nodes is not null, () => "the first look never reported", Bound);
+            await Poll.Until(() => Count(reports) >= 1 && watch.Nodes is not null, () => "the first look never reported", Poll.Patience);
             // A pass of the test's own holds the runtime, its read not answering, as a slow read or a plugin holds a pass: the loop's
             // next pass waits on it.
             var config = DriverConfig.Parse(File.ReadAllText(DaorisHome.Entry(_home, HomeEntry.DriverConfig)));
@@ -356,25 +354,25 @@ public sealed class LookParallelTests : IDisposable
                     return new NodeUnitsRead([], new Dictionary<string, string>());
                 },
             }, _closing.Token);
-            await entered.Task.WaitAsync(Bound);
+            await entered.Task.WaitAsync(Poll.Patience);
             var before = Count(reports);
 
             _ledger.Publish("q1", "engine");
             watch.Nudge(ChangeTopics.Ledger, "quests");
-            await Poll.Until(() => Count(reports) > before && runs.Started.Contains("q1"), () => "q1's look waited on the node pass", Bound);
+            await Poll.Until(() => Count(reports) > before && runs.Started.Contains("q1"), () => "q1's look waited on the node pass", Poll.Patience);
             _ledger.Publish("q2", "tools");
             watch.Nudge(ChangeTopics.Ledger, "quests");
-            await Poll.Until(() => runs.Started.Contains("q2"), () => "q2's look waited on the node pass", Bound);
+            await Poll.Until(() => runs.Started.Contains("q2"), () => "q2's look waited on the node pass", Poll.Patience);
             Assert.False(holding.IsCompleted);
 
             // Let go, the loop's pass that waited ends, and the next look's line names it as a stage beside the look.
             release.TrySetResult();
-            await holding.WaitAsync(Bound);
+            await holding.WaitAsync(Poll.Patience);
             await Poll.Until(() =>
             {
                 watch.Nudge(ChangeTopics.Ledger, "quests");
                 return Looked().Any(stages => stages.Contains("~nodes=", StringComparison.Ordinal));
-            }, () => $"no look named the pass beside it: {string.Join(" | ", Looked())}", Bound);
+            }, () => $"no look named the pass beside it: {string.Join(" | ", Looked())}", Poll.Patience);
         }
         finally
         {
@@ -508,7 +506,7 @@ public sealed class LookParallelTests : IDisposable
 
     private static async Task Settled(Task running)
     {
-        try { await running.WaitAsync(Bound); }
+        try { await running.WaitAsync(Poll.Patience); }
         catch (OperationCanceledException) { }
         catch (TimeoutException) { }
     }

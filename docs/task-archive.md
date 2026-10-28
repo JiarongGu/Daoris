@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## TESTPATIENCE2 — every remaining short signal wait in the desktop tests uses the shared patience (2026-10-28)
+
+> **TESTPATIENCE2** (quest `#a4a72fc062e3`, ask `#59f773`): every remaining short fixed wait in the desktop test projects that waits on a signal (a look's end, a run's end, a state reached) uses the suite's shared patience, and a census keeps new ones out, so the merge queue's fast gates stop failing on the machine's load. Four candidates in a day failed only on a short wait under load (STRUCTBOUND1, ACPWAIT1, its follow-up, the CapCount and SignedOutWait looks).
+
+Completed 2026-10-28: `Poll.Patience` (two minutes) replaces 68 inline `WaitAsync(TimeSpan.From…)` in 22 files (two of them the modules' tests) and the 253 uses of 24 classes' private `Bound` or `Within`, which are removed; seven files' two-minute literals (16 sites) read it too. `HeldClock`'s own bound in `SessionsSayCommandTests` is the patience (`held-clocks.md` says so). Kept and listed with their reasons: the product's inputs a test hands code, `GraphPressTests`' window in which nothing happens and its pass asks' own timeout argument, `RefWatchProcessTests`' elapsed claim. `ShortWaitsCensusTests` (driver tests; its row is in `docs/development.md`'s census table) refuses a new one, red on a planted `TimeSpan` bound and green after. No assertion, case, order or category changed. Detail: FIX-LOG 2026-10-28 (TESTPATIENCE2). On Sonnet 5.5.
+
 ## QUEUELOCK1 — the merge queue's runner reads the main checkout without taking git's optional index lock (2026-10-28)
 
 > **QUEUELOCK1:** the merge queue's runner reads the main checkout without taking git's optional index lock. Evidence: on 2026-10-27 a stale 0-byte `.git/index.lock` in the main checkout (22:59 local, no git process alive) held a green candidate's promotion for about 1 h 45 min ("held on checkout: the fast-forward was refused ... index.lock: File exists") until the parent removed it; TOOLTESTHANG1's worker then found the runner's clean-checkout look runs `git status --porcelain --untracked-files=no` with optional locks on, and `tools/optional-locks.mjs` checks only the driver's sources. Every read-only git command the merge tool and its helpers run on a checkout passes `--no-optional-locks`, writes unchanged; the census extends to the tools that run git; the queue says plainly, when a promotion is held on an `index.lock`, the lock's age and whether a git process is running, without removing it.

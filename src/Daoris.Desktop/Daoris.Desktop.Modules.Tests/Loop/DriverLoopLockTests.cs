@@ -70,7 +70,7 @@ public sealed class DriverLoopLockTests : Bridge
 
         // The headless loop stops, and lets its home go.
         File.Delete(LeaseFile);
-        using var held = await holding.WaitAsync(TimeSpan.FromSeconds(10));
+        using var held = await holding.WaitAsync(Poll.Patience);
 
         Assert.NotNull(held);
         Assert.Equal(LeaseKind.Desktop, HomeLease.HeldBy(Home)!.Kind);
@@ -99,7 +99,7 @@ public sealed class DriverLoopLockTests : Bridge
         Assert.Contains("has not let it go", said);
 
         File.Delete(LeaseFile);
-        using var held = await holding.WaitAsync(TimeSpan.FromSeconds(10));
+        using var held = await holding.WaitAsync(Poll.Patience);
 
         Assert.NotNull(held);
         Assert.Equal(LeaseKind.Desktop, HomeLease.HeldBy(Home)!.Kind);

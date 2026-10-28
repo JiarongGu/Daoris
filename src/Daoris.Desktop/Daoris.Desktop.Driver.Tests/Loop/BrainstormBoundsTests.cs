@@ -177,7 +177,7 @@ public sealed class BrainstormBoundsTests : IDisposable
         async Task<BrainstormTurnRun> Meet(BrainstormTurn turn, CancellationToken ct)
         {
             if (Interlocked.Increment(ref arrived) == 2) both.TrySetResult();
-            await both.Task.WaitAsync(TimeSpan.FromSeconds(10), ct);
+            await both.Task.WaitAsync(Poll.Patience, ct);
             return script.Answer(turn);
         }
 

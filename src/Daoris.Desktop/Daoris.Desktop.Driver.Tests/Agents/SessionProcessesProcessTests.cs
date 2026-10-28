@@ -85,7 +85,7 @@ public sealed class SessionProcessesProcessTests : IDisposable
         Assert.True(new SessionProcesses(Markers).AliveOnThisMachine(Session));
 
         Assert.True(processes.Stop(Session));
-        await first.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(30));
+        await first.WaitForExitAsync().WaitAsync(Poll.Patience);
         Assert.True(first.HasExited);
         Assert.True(processes.WasStopRequested(Session));
     }
@@ -138,7 +138,7 @@ public sealed class SessionProcessesProcessTests : IDisposable
         Assert.Equal(second.Id.ToString(), MarkedProcess());
         Assert.True(new SessionProcesses(Markers).AliveOnThisMachine(Session));
         Assert.True(processes.Stop(Session));
-        await second.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(30));
+        await second.WaitForExitAsync().WaitAsync(Poll.Patience);
     }
 
     /// <summary>Ending one's tracking twice takes nothing of the other's.</summary>
@@ -168,7 +168,7 @@ public sealed class SessionProcessesProcessTests : IDisposable
         var run = Holding();
         var firstTracked = processes.Track(Session, run);
         run.Kill(entireProcessTree: true);
-        await run.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(30));
+        await run.WaitForExitAsync().WaitAsync(Poll.Patience);
         var continuation = Holding();
         using var continued = processes.Track(Session, continuation);
 
@@ -194,7 +194,7 @@ public sealed class SessionProcessesProcessTests : IDisposable
 
         Assert.Null(processes.RefusesInput(Session));
         Assert.True(processes.Stop(Session));
-        await second.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(30));
+        await second.WaitForExitAsync().WaitAsync(Poll.Patience);
         Assert.True(processes.WasStopRequested(Session));
         Assert.False(first.HasExited);
 

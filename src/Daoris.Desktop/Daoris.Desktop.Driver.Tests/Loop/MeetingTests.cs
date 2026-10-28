@@ -136,7 +136,7 @@ public sealed class MeetingTests : IDisposable
     {
         var events = new List<string>();
         await driver.MeetingsAsync(new Snapshot([], [], active), 0, events, CancellationToken.None);
-        await driver.Running.SettledAsync().WaitAsync(TimeSpan.FromSeconds(30));
+        await driver.Running.SettledAsync().WaitAsync(Poll.Patience);
         return [.. events, .. driver.Running.Drain().Select(run => run.Line)];
     }
 
@@ -201,12 +201,12 @@ public sealed class MeetingTests : IDisposable
         };
         var events = new List<string>();
 
-        await driver.MeetingsAsync(new Snapshot([], [], []), 0, events, CancellationToken.None).WaitAsync(TimeSpan.FromSeconds(20));
-        await driver.MeetingsAsync(new Snapshot([], [], []), 0, events, CancellationToken.None).WaitAsync(TimeSpan.FromSeconds(20));
+        await driver.MeetingsAsync(new Snapshot([], [], []), 0, events, CancellationToken.None).WaitAsync(Poll.Patience);
+        await driver.MeetingsAsync(new Snapshot([], [], []), 0, events, CancellationToken.None).WaitAsync(Poll.Patience);
         Assert.Null(Files.ReadState("m1"));
 
         reading.TrySetResult((null, "0123456789abcdef"));
-        await driver.Running.SettledAsync().WaitAsync(TimeSpan.FromSeconds(30));
+        await driver.Running.SettledAsync().WaitAsync(Poll.Patience);
 
         Assert.Equal(BrainstormStates.Frozen, Files.ReadState("m1")?.State);
         Assert.Single(driver.Running.Drain(), run => run.Line.Contains("meeting `m1` frozen", StringComparison.Ordinal));
@@ -543,7 +543,7 @@ public sealed class MeetingTests : IDisposable
             return script.Answer(turn);
         };
         var round = LookAsync(driver);
-        await running.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        await running.Task.WaitAsync(Poll.Patience);
 
         var doors = new ChannelDoors(new ChannelItemView(ChannelItemView.Message, At)
         {
@@ -581,7 +581,7 @@ public sealed class MeetingTests : IDisposable
 
         var events = new List<string>();
         await driver.BrainstormsAsync(new Snapshot([], [], []), 0, events, CancellationToken.None);
-        await driver.Running.SettledAsync().WaitAsync(TimeSpan.FromSeconds(30));
+        await driver.Running.SettledAsync().WaitAsync(Poll.Patience);
 
         Assert.Equal([brainstorm], brainstorms.Requests().Select(request => request.Id));
         Assert.DoesNotContain(events, line => line.Contains(id, StringComparison.Ordinal) || line.Contains(MeetingFiles.Under, StringComparison.Ordinal));

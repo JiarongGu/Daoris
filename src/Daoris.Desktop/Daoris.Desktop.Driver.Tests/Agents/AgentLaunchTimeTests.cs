@@ -56,8 +56,8 @@ public sealed class AgentLaunchTimeTests(ITestOutputHelper output) : IDisposable
 
             using (process)
             {
-                Assert.Equal("ready", await process.StandardOutput.ReadLineAsync().WaitAsync(TimeSpan.FromSeconds(30)));
-                await process.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(30));
+                Assert.Equal("ready", await process.StandardOutput.ReadLineAsync().WaitAsync(Poll.Patience));
+                await process.WaitForExitAsync().WaitAsync(Poll.Patience);
                 Assert.Equal(0, process.ExitCode);
             }
 

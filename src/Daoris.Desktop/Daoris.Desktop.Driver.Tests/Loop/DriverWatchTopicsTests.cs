@@ -14,8 +14,6 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </remarks>
 public sealed class DriverWatchTopicsTests : IDisposable
 {
-    private static readonly TimeSpan Bound = TimeSpan.FromSeconds(10);
-
     private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-topics-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly StandInLedger _ledger = new();
@@ -50,7 +48,7 @@ public sealed class DriverWatchTopicsTests : IDisposable
         var watching = watch.RunAsync(Into(reports), onError: null, _closing.Token);
         try
         {
-            await Poll.Until(() => Count(reports) >= 1, () => "no look", Bound);
+            await Poll.Until(() => Count(reports) >= 1, () => "no look", Poll.Patience);
             var synced = await SyncedAsync(watch);
 
             for (var wake = 0; wake < 1000; wake++)
@@ -62,15 +60,15 @@ public sealed class DriverWatchTopicsTests : IDisposable
             // The last wake carries a quest an agent published: the look after it plans it, so every wake before it was looked at.
             _ledger.Publish("q1", "engine");
             watch.Nudge(ChangeTopics.Ledger, "quests");
-            await Poll.Until(() => runs.Started.Count == 1, () => "q1 never started", Bound);
+            await Poll.Until(() => runs.Started.Count == 1, () => "q1 never started", Poll.Patience);
 
             // TESTCLOCK1: the run starts inside the look and the look is reported after it, so the second report is waited for.
-            await Poll.Until(() => Count(reports) >= 2, () => $"{Count(reports)} look(s)", Bound);
+            await Poll.Until(() => Count(reports) >= 2, () => $"{Count(reports)} look(s)", Poll.Patience);
             Assert.Equal(synced, Passes());
 
             // A plain nudge carries no topic, and means everything, the remote sync with it, as it always did.
             watch.Nudge();
-            await Poll.Until(() => Passes() == synced + 1, () => $"{Passes() - synced} pass(es) after a plain nudge", Bound);
+            await Poll.Until(() => Passes() == synced + 1, () => $"{Passes() - synced} pass(es) after a plain nudge", Poll.Patience);
         }
         finally
         {
@@ -94,13 +92,13 @@ public sealed class DriverWatchTopicsTests : IDisposable
             var watching = watch.RunAsync(Into(reports), onError: null, _closing.Token);
             try
             {
-                await Poll.Until(() => Count(reports) >= 1, () => "no look", Bound);
+                await Poll.Until(() => Count(reports) >= 1, () => "no look", Poll.Patience);
                 var synced = await SyncedAsync(watch);
 
                 _ledger.Publish("q1", "engine", from: "agent");
                 watch.Nudge(ChangeTopics.Ledger, "quests");
-                await Poll.Until(() => runs.Started.Count == 1, () => "q1 never started", Bound);
-                await Poll.Until(() => Count(reports) >= 2, () => "the wake's look never reported", Bound);
+                await Poll.Until(() => runs.Started.Count == 1, () => "q1 never started", Poll.Patience);
+                await Poll.Until(() => Count(reports) >= 2, () => "the wake's look never reported", Poll.Patience);
 
                 Assert.Equal(["q1"], runs.Started);
                 Assert.Equal(synced, Passes());
@@ -134,11 +132,11 @@ public sealed class DriverWatchTopicsTests : IDisposable
         var watching = watch.RunAsync(Into(reports), onError: null, _closing.Token);
         try
         {
-            await Poll.Until(() => Count(reports) >= 1 && _ledger.ChangesHeld == 1, () => "no look, or no wait held", Bound);
+            await Poll.Until(() => Count(reports) >= 1 && _ledger.ChangesHeld == 1, () => "no look, or no wait held", Poll.Patience);
             var synced = await SyncedAsync(watch);
 
             _ledger.Publish("q1", "engine", from: "agent");
-            await Poll.Until(() => runs.Started.Count == 1, () => "q1 never started", Bound);
+            await Poll.Until(() => runs.Started.Count == 1, () => "q1 never started", Poll.Patience);
 
             Assert.Equal(["q1"], runs.Started);
             Assert.Equal(synced, Passes());
@@ -171,17 +169,17 @@ public sealed class DriverWatchTopicsTests : IDisposable
         var watching = watch.RunAsync(Into(reports), onError: null, _closing.Token);
         try
         {
-            await Poll.Until(() => Count(reports) >= 1 && _ledger.ChangesHeld == 1, () => "no look, or no wait held", Bound);
+            await Poll.Until(() => Count(reports) >= 1 && _ledger.ChangesHeld == 1, () => "no look, or no wait held", Poll.Patience);
             var synced = await SyncedAsync(watch);
 
             _ledger.Posted("a1", "m1", "Listen on 8080.", to: "engine");
-            await Poll.Until(() => _ledger.AckOf("a1", "ask:a1/engine", "m1") == ChannelAcks.Sent, () => "the message never reached s1", Bound);
+            await Poll.Until(() => _ledger.AckOf("a1", "ask:a1/engine", "m1") == ChannelAcks.Sent, () => "the message never reached s1", Poll.Patience);
 
             // The look that delivered it reports after it, so its line is waited for.
             await Poll.Until(
                 () => Snapshot(reports).SelectMany(report => report.Events)
                     .Any(line => line.Contains("`m1`", StringComparison.Ordinal) && line.Contains("kept on session s1's record", StringComparison.Ordinal)),
-                () => "the delivery was never reported", Bound);
+                () => "the delivery was never reported", Poll.Patience);
             Assert.Equal(synced, Passes());
         }
         finally
@@ -205,7 +203,7 @@ public sealed class DriverWatchTopicsTests : IDisposable
         var watching = watch.RunAsync(Into(reports), onError: null, _closing.Token);
         try
         {
-            await Poll.Until(() => Count(reports) >= 1, () => "no look", Bound);
+            await Poll.Until(() => Count(reports) >= 1, () => "no look", Poll.Patience);
             var synced = Passes();
 
             // TESTWAIT6: wakes go on until the loop's own signals say enough, two deadlines passed and more looks than a bare
@@ -219,7 +217,7 @@ public sealed class DriverWatchTopicsTests : IDisposable
                 var seen = Count(reports);
                 watch.Nudge(ChangeTopics.Ledger, "quests");
                 wakes++;
-                await Poll.Until(() => Count(reports) > seen, () => $"wake {wakes} never looked", Bound);
+                await Poll.Until(() => Count(reports) > seen, () => $"wake {wakes} never looked", Poll.Patience);
                 await Task.Delay(100);
                 Assert.True(started.Elapsed < TimeSpan.FromSeconds(40), $"{Passes() - synced} deadline(s), {Count(reports) - first} look(s) for {wakes} wakes");
             }
@@ -252,17 +250,17 @@ public sealed class DriverWatchTopicsTests : IDisposable
         var watching = watch.RunAsync(Into(reports), onError: null, _closing.Token);
         try
         {
-            await Poll.Until(() => runs.Started.Count == 1, () => "q1 never started", Bound);
-            await Poll.Until(() => Count(reports) >= 1, () => "no look", Bound);
+            await Poll.Until(() => runs.Started.Count == 1, () => "q1 never started", Poll.Patience);
+            await Poll.Until(() => Count(reports) >= 1, () => "no look", Poll.Patience);
             var synced = await SyncedAsync(watch);
 
             runs.End("q1");
             await Poll.Until(
                 () => Snapshot(reports).Any(report => report.Concluded.Any(ended => ended.Quest == "q1")),
-                () => "the ending was never reported", Bound);
+                () => "the ending was never reported", Poll.Patience);
 
             // PARALLEL1b: the sync after the ending runs beside the look that reported it, so its pass is waited for.
-            await Poll.Until(() => Passes() > synced, () => "no sync after the ending", Bound);
+            await Poll.Until(() => Passes() > synced, () => "no sync after the ending", Poll.Patience);
             Assert.Equal(synced + 1, await SyncedAsync(watch));
         }
         finally
@@ -284,7 +282,7 @@ public sealed class DriverWatchTopicsTests : IDisposable
     /// <summary>The passes counted once no sync works beside the looks (PARALLEL1b): a whole look's pass runs on after it reports.</summary>
     private async Task<int> SyncedAsync(DriverWatch watch)
     {
-        await Poll.Until(() => !watch.Running.Syncing, () => "the sync beside the looks never ended", Bound);
+        await Poll.Until(() => !watch.Running.Syncing, () => "the sync beside the looks never ended", Poll.Patience);
         return Passes();
     }
 
@@ -306,7 +304,7 @@ public sealed class DriverWatchTopicsTests : IDisposable
 
     private static async Task Settled(Task running)
     {
-        try { await running.WaitAsync(Bound); }
+        try { await running.WaitAsync(Poll.Patience); }
         catch (OperationCanceledException) { }
     }
 
@@ -336,12 +334,12 @@ public sealed class DriverWatchTopicsTests : IDisposable
         var watching = watch.RunAsync(Into(reports), onError: null, _closing.Token);
         try
         {
-            await Poll.Until(() => Count(reports) >= 1 && source.On(common) is not null, () => "no look, or the repository never watched", Bound);
+            await Poll.Until(() => Count(reports) >= 1 && source.On(common) is not null, () => "no look, or the repository never watched", Poll.Patience);
             var (looks, synced, judged) = (Count(reports), Passes(), watch.Refs!.Changes.Judgements);
 
             var handle = source.On(common)!;
             for (var each = 0; each < 1000; each++) handle.Raise(each % 2 == 0 ? "refs/heads/daoris/s-0001" : "worktrees/s-0001/HEAD", ChangeKind.Renamed);
-            await Poll.Until(() => watch.Refs.Changes.Judgements > judged, () => "the ref hints were never judged", Bound);
+            await Poll.Until(() => watch.Refs.Changes.Judgements > judged, () => "the ref hints were never judged", Poll.Patience);
             await Task.Delay(ChangeWatch.Cap + ChangeWatch.Quiet);
 
             Assert.InRange(watch.Refs.Changes.Judgements - judged, 1, 2);
@@ -389,12 +387,12 @@ public sealed class DriverWatchTopicsTests : IDisposable
         var watching = watch.RunAsync(Into(reports), onError: null, _closing.Token);
         try
         {
-            await Poll.Until(() => Count(reports) >= 1 && source.On(common) is not null, () => "no look, or the repository never watched", Bound);
+            await Poll.Until(() => Count(reports) >= 1 && source.On(common) is not null, () => "no look, or the repository never watched", Poll.Patience);
             source.On(common)!.Raise("refs/heads/daoris/s-0001", ChangeKind.Renamed);
-            await Poll.Until(() => Told().Contains((ChangeTopics.Refs, "engine", false)), () => string.Join(", ", Told()), Bound);
+            await Poll.Until(() => Told().Contains((ChangeTopics.Refs, "engine", false)), () => string.Join(", ", Told()), Poll.Patience);
 
             RefMoves.Mine(_home, "engine");
-            await Poll.Until(() => Told().Contains((ChangeTopics.Refs, "engine", true)), () => string.Join(", ", Told()), Bound);
+            await Poll.Until(() => Told().Contains((ChangeTopics.Refs, "engine", true)), () => string.Join(", ", Told()), Poll.Patience);
         }
         finally
         {

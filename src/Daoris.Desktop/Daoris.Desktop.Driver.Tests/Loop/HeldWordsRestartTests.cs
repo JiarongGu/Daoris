@@ -11,8 +11,6 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 public sealed class HeldWordsRestartTests : IDisposable
 {
-    private static readonly TimeSpan Bound = TimeSpan.FromSeconds(10);
-
     private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-held-restart-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly CancellationTokenSource _closing = new(Poll.Patience);
@@ -64,7 +62,7 @@ public sealed class HeldWordsRestartTests : IDisposable
         Assert.Equal("s1", Assert.Single(swept).Id);
 
         var (driver, began) = Driver(service);
-        await driver.TickAsync(_closing.Token).WaitAsync(Bound);
+        await driver.TickAsync(_closing.Token).WaitAsync(Poll.Patience);
 
         Assert.Equal([["Also log the port.", "No, 9090."]], began);
         Assert.Empty(ledger.Session("s1")["said"]!.AsArray());
@@ -108,7 +106,7 @@ public sealed class HeldWordsRestartTests : IDisposable
         Assert.Equal(["w3"], ledger.Session("s1")["said"]!.AsArray().Select(word => word!["id"]!.GetValue<string>()));
 
         var (driver, began) = Driver(service);
-        await driver.TickAsync(_closing.Token).WaitAsync(Bound);
+        await driver.TickAsync(_closing.Token).WaitAsync(Poll.Patience);
 
         Assert.Equal([["And the readme."]], began);
         Assert.Empty(await UncertainWords.SettleAsync(service, events, _closing.Token));

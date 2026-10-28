@@ -126,6 +126,7 @@ change can reach before handing it back:
 | adds a driver test that roots scratch under `_fixtures` | `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --filter FullyQualifiedName~GitSeedTests.No_test_deletes` (remove scratch with `GitSeed.Remove` or `GitSeed.Discard`, never `Directory.Delete`, and find the root with `GitSeed.RepoRoot()`) |
 | asks git for a `status` or a `diff` in the driver or in a tool (the merge tool and its helpers) | `node tools/optional-locks.mjs` (pass `--no-optional-locks` before the command, so a read takes no `index.lock` in a session's tree or the main checkout) |
 | names an agent's command, a login, or a driver config's `commands` in a test | `node tools/live-logins.mjs` (a script or a stub at a path, never the agent's binary from PATH) |
+| gives a driver or modules test a fixed wait or a private bound shorter than two minutes (`WaitAsync(TimeSpan.From…)`, `TimeSpan Bound = TimeSpan.From…`) | `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --filter FullyQualifiedName~ShortWaitsCensusTests` (a wait on a signal reads `Poll.Patience`; a bound that is the claim, a window of nothing, a staging delay or an input the product honours is listed in the census with its reason) |
 
 A focused vitest run for a React warning (an `act` warning, a console error) passes `--reporter=default`: vitest 5 picks a
 quiet reporter for an agent's run, which prints no console output of a passing test, so the warning is there and unseen
