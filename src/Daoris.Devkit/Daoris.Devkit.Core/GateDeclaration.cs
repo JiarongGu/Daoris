@@ -97,6 +97,18 @@ public sealed class GateDeclaration
     public DoctrineOptions Doctrine { get; init; } = new();
 
     /// <summary>
+    /// The machine-local files the repository's gates read beside <see cref="SensitiveOptions.PatternsFile"/>: ignored files under
+    /// <c>local/</c> that only the owner's checkout holds, repository-relative.
+    /// </summary>
+    /// <remarks>
+    /// Read by the desktop, not by any gate here (TREELOCAL1, D216): a session's tree, which git checks out without them, is opened
+    /// with each copied from the checkout read-only, the pattern list among them whether named here or not, so the tree's gates run
+    /// the checks the checkout's do. A path outside <c>local/</c>, or one climbing out of it, is not copied, and the tree's opening
+    /// says so; one the checkout lacks is said too.
+    /// </remarks>
+    public IReadOnlyList<string> LocalInputs { get; init; } = [];
+
+    /// <summary>
     /// Universal gates the repository has deliberately turned off, by name.
     /// </summary>
     /// <remarks>
@@ -127,6 +139,7 @@ public sealed class GateDeclaration
             Version = ReadVersion(root),
             Docs = ReadDocs(root),
             Doctrine = ReadDoctrine(root),
+            LocalInputs = Strings(root, "localInputs"),
             Disabled = new HashSet<string>(Strings(root, "disabled"), StringComparer.OrdinalIgnoreCase),
         };
     }
