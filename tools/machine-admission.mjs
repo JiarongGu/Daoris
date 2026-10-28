@@ -16,20 +16,20 @@
  * nothing is released by a timeout while the holder lives and beats. A run is admitted when the live holds, plus the live waits
  * ahead of it, are fewer than the capacity: first come, first served, a queue gate and a session's run alike.
  *
- * The file is changed under `admission.json.lock`, created with no overwrite (`{ pid, since }`), stale when its process is gone or it
- * is older than `LOCK_STALE_MS`; a write takes milliseconds. A lock never held up is the whole of the wait's cost: the waiting is
- * done outside it, by looking again every `POLL_MS`.
+ * The file is changed under `admission.json.lock`, the keeping write's lock (`keeplock.ts`, the driver's `KeepLock.cs`: put in place
+ * with no overwrite, `{ pid, since }`, stale when its process is gone or it is a minute old); a change takes milliseconds, and the
+ * waiting is done outside it, by looking again every `POLL_MS`.
  *
  * Nothing here is a decision about what a gate checks: a gate admitted later runs the same, and a wait is never a timeout or a
  * failure. With no Daoris home (no `DAORIS_HOME`) nothing is shared and nothing waits.
  */
 import { randomBytes } from 'node:crypto';
 import {
-  closeSync, existsSync, mkdirSync, openSync, readFileSync, rmSync, statSync, writeSync,
+  existsSync, readFileSync,
 } from 'node:fs';
 import { availableParallelism } from 'node:os';
-import { dirname } from 'node:path';
 import { homeEntry } from '../src/Daoris.Cli/src/platform/home.ts';
+import { withKeepLock } from '../src/Daoris.Cli/src/platform/keeplock.ts';
 import { writeAtomic } from './fsx.mjs';
 
 /** How long an entry that has not beat still counts, and how often a live one beats (the twin's `StaleAfter` and `BeatEvery`). */
@@ -38,9 +38,6 @@ export const BEAT_MS = 20_000;
 /** How often a waiting run looks again, and how often it says that it still waits (the twin's `Poll` and `SayEvery`). */
 export const POLL_MS = 2_000;
 export const SAY_MS = 60_000;
-/** The lock's age past which it was left by a run that died, and how long a change waits for it before taking it. */
-export const LOCK_STALE_MS = 30_000;
-export const LOCK_WAIT_MS = 10_000;
 /** The variable naming the hold a process runs inside: a run started by an admitted run is inside its hold, never a second one. */
 export const INSIDE = 'DAORIS_ADMISSION_HOLD';
 /** The variable that sets the capacity on a machine; else `capacityOf`. */
@@ -132,41 +129,6 @@ export function waitingSentence({ holds, ahead }, { capacity, now = Date.now() }
   return `the machine runs ${holds.length} of ${capacity} heavy runs: ${holds.map(who).join('; ') || 'none'}${ahead ? `; ${ahead} ${ahead === 1 ? 'run asked' : 'runs asked'} before this one` : ''}`;
 }
 
-/** `fn` run holding the file's lock (created with no overwrite), taken over when stale or after `LOCK_WAIT_MS` (a lost record beats a run that never ends). */
-export function holding(file, fn, { alive = processAlive, now = Date.now } = {}) {
-  const lock = `${file}.lock`;
-  mkdirSync(dirname(lock), { recursive: true });
-  const started = now();
-  for (;;) {
-    try {
-      const fd = openSync(lock, 'wx');
-      try {
-        writeSync(fd, JSON.stringify({ pid: process.pid, since: new Date(now()).toISOString() }));
-      } finally {
-        closeSync(fd);
-      }
-      break;
-    } catch (error) {
-      if (error?.code !== 'EEXIST') throw error;
-      let age;
-      let holder = null;
-      try {
-        age = now() - statSync(lock).mtimeMs;
-        holder = JSON.parse(readFileSync(lock, 'utf8'))?.pid ?? null;
-      } catch {
-        if (age === undefined) continue;
-      }
-      if (age > LOCK_STALE_MS || now() - started > LOCK_WAIT_MS || (Number.isInteger(holder) && !alive(holder))) rmSync(lock, { force: true });
-      else Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 15);
-    }
-  }
-  try {
-    return fn();
-  } finally {
-    rmSync(lock, { force: true });
-  }
-}
-
 /**
  * The admission of one process. `take` waits its turn and answers the hold, or null where it has nothing to take (no home, a gate
  * that is not heavy) or `halted` ended the wait; the hold's `release` lets it go and is safe to call twice.
@@ -186,12 +148,12 @@ export function createAdmission({
   const size = () => capacity ?? capacityOf(undefined, env);
   const stamp = () => new Date(now()).toISOString();
   const seam = () => ({ alive, now: now() });
-  const change = (fn) => holding(file, () => {
+  const change = (fn) => withKeepLock(file, () => {
     const state = pruned(readState(file), seam());
     const next = fn(state) ?? state;
     writeAtomic(file, `${JSON.stringify({ schema: 1, holds: next.holds, waits: next.waits }, null, 2)}\n`);
     return next;
-  }, { alive, now });
+  });
 
   async function take({ what, session, repository, tree, halted = () => false } = {}) {
     if (!file) return null;

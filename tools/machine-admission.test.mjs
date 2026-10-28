@@ -5,7 +5,7 @@ import { dirname, join } from 'node:path';
 import { after, describe, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import {
-  BEAT_MS, INSIDE, STALE_MS, admissionFile, capacityOf, createAdmission, holding, judge, live, lookAt, pruned, readState, waitingSentence,
+  BEAT_MS, INSIDE, STALE_MS, admissionFile, capacityOf, createAdmission, judge, live, lookAt, pruned, readState, waitingSentence,
 } from './machine-admission.mjs';
 
 const REPO = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -209,16 +209,6 @@ describe('the edges', () => {
     const file = join(newHome(), 'a.json');
     writeFileSync(file, JSON.stringify({ holds: [{ id: 'a' }, null, 7, { id: 'b', kind: 'queue', pid: 1, what: 'x', since: 'never', beat: 'never' }], waits: 'no' }));
     assert.deepEqual(readState(file), { holds: [], waits: [] });
-  });
-
-  test('a lock left by a process that is gone is taken over', () => {
-    const home = newHome();
-    const file = admissionFile(home);
-    mkdirSync(dirname(file), { recursive: true });
-    writeFileSync(`${file}.lock`, JSON.stringify({ pid: 0, since: new Date().toISOString() }));
-    let ran = false;
-    holding(file, () => { ran = true; }, { alive: (pid) => pid !== 0 });
-    assert.equal(ran, true);
   });
 
   test('the sentence names each hold and the runs before', () => {
