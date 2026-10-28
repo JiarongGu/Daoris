@@ -435,9 +435,9 @@ import { censusOf, classesReached, halfOf, reachSettings, repository, withSettin
 import { endOrphans, endStranded } from './processes.mjs';
 import { gateSignature, readTrx, signatureKey, signatureOf } from './test-failures.mjs';
 import {
-  MERGE_QUEUE, MERGE_QUEUE_LOG, RUNNER_ACK_MS, SCOPE_TREE, appendScopeRun, candidateOutcome, dropQueued, enqueue, formCandidate, gitBudget,
+  BY_LINE, MERGE_QUEUE, MERGE_QUEUE_LOG, RUNNER_ACK_MS, SCOPE_TREE, appendScopeRun, candidateOutcome, dropQueued, enqueue, formCandidate, gitBudget,
   changeCandidate, drainedLine, drainedRecord, judgeFailure, memoryStep, messageOf, nextMembers, notePreview, noteRecheck, overdueWaits, promotion, queueLines, readAdmission, readQueue, sameCandidate,
-  recheckDue, recordsOnly, reformCount, resumeCandidate, scopedSet, scopedTier, writeAdmission, writeQueue,
+  recheckDue, recordsOnly, reformCount, requestsOf, resumeCandidate, scopedSet, scopedTier, settleContained, writeAdmission, writeQueue,
 } from './merge-queue.mjs';
 
 export const MAIN = 'main';
@@ -1430,6 +1430,41 @@ export function backlogOf(text) {
   return typeof path === 'string' ? path.replace(/\\/g, '/') : 'TASKS.md';
 }
 
+/**
+ * The files a repository's declaration says settle by rows (INTEGRATE1c; design §4.1's `merge`): `daoris.gates.json`'s
+ * `integration.merge`, each entry `{ "paths": file, "by": "rows" }`. A file whose conflict is settled as the backlog's is, by the
+ * merge base, line by line: a row a side added is kept, one a side removed is dropped, rows both add at one place are both kept,
+ * and a base row both changed stays a conflict. No command runs, so no acceptance is read; an entry naming a `line` or a `run`
+ * writer is row d's (the acceptance's) and is passed over, as is any other `by`: no rule keeps one side's copy (C6, F10).
+ *
+ * Nothing: where the text is null, not JSON or not an object, has no `integration.merge` list, or an entry has no text `paths`.
+ * Each path trimmed, a backslash a slash, once. A twin: a landing's replay reads the line's declaration by the driver's
+ * `BacklogMerge.RowTablesOf`, and both hold `backlog-merges.json` among the driver's test fixtures, row for row.
+ */
+export function rowTablesOf(text) {
+  if (text === null) return [];
+  let declaration;
+  try {
+    declaration = JSON.parse(text);
+  } catch {
+    return [];
+  }
+  const merge = declaration !== null && typeof declaration === 'object' && !Array.isArray(declaration) ? declaration.integration?.merge : undefined;
+  if (!Array.isArray(merge)) return [];
+  const paths = merge.flatMap((entry) => {
+    if (entry === null || typeof entry !== 'object' || Array.isArray(entry) || entry.by !== 'rows' || typeof entry.paths !== 'string') return [];
+    const path = entry.paths.trim().replace(/\\/g, '/');
+    return path.length ? [path] : [];
+  });
+  return [...new Set(paths)];
+}
+
+/** The row tables the side the work lands on declares (`HEAD`, never the member's copy), by `rowTablesOf`; none where there is no declaration. */
+function declaredRows(root) {
+  const shown = git(root, ['show', 'HEAD:daoris.gates.json'], { allowFail: true });
+  return shown.status === 0 ? rowTablesOf(shown.out) : [];
+}
+
 /** The changes from `base` to `side`, as hunks of the base's lines `[start, end)` and what replaced them; by the longest common run of lines. */
 export function lineHunks(base, side) {
   let head = 0;
@@ -1528,31 +1563,35 @@ function stageText(root, stage, path) {
 }
 
 /**
- * The backlog's conflict in the merge in place resolved by its base and staged, with one line saying so; or, where both sides
- * changed one line, left as git wrote it, with one line naming where. Whether it was resolved.
+ * The backlog's conflict, and each declared row table's (`rowTablesOf`, INTEGRATE1c), in the merge in place resolved by its base and
+ * staged, with one line saying so; or, where both sides changed one line, left as git wrote it, with one line naming where.
+ * Whether any was resolved.
  */
 function resolveBacklog(root) {
-  const path = backlogPath(root);
-  if (path === null) {
-    console.log('daoris.json: it does not read as an object, so no backlog is resolved by the merge base; left for you');
-    return false;
+  const backlog = backlogPath(root);
+  if (backlog === null) console.log('daoris.json: it does not read as an object, so no backlog is resolved by the merge base; left for you');
+  // INTEGRATE1c: the repository's declared row tables settle as the backlog does, by the merge base.
+  const paths = [...new Set([...(backlog === null ? [] : [backlog]), ...declaredRows(root)])];
+  const unmerged = paths.length ? unmergedPaths(root) : [];
+  let resolved = false;
+  for (const path of paths.filter((each) => unmerged.includes(each))) {
+    const [base, ours, theirs] = [1, 2, 3].map((stage) => stageText(root, stage, path));
+    if (base === null || ours === null || theirs === null) {
+      console.log(`${path}: not resolved by the merge base, since a side added or deleted it; left for you`);
+      continue;
+    }
+    const merged = mergeByBase(base, ours, theirs);
+    if (merged.text === null) {
+      const where = merged.both.map((entry) => entry.line).join(', ');
+      console.log(`${path}: both sides changed the same ${merged.both.length === 1 ? 'line' : 'lines'} (the merge base's line ${where}); left for you`);
+      continue;
+    }
+    writeAtomic(join(root, path), merged.text);
+    git(root, ['add', '--', path]);
+    console.log(`${path}: resolved by the merge base${path === backlog ? '' : ' (a declared row table)'}, ${count(merged.kept, 'line')} a side added kept and ${count(merged.dropped, 'line')} a side removed dropped`);
+    resolved = true;
   }
-  if (!unmergedPaths(root).includes(path)) return false;
-  const [base, ours, theirs] = [1, 2, 3].map((stage) => stageText(root, stage, path));
-  if (base === null || ours === null || theirs === null) {
-    console.log(`${path}: not resolved by the merge base, since a side added or deleted it; left for you`);
-    return false;
-  }
-  const merged = mergeByBase(base, ours, theirs);
-  if (merged.text === null) {
-    const where = merged.both.map((entry) => entry.line).join(', ');
-    console.log(`${path}: both sides changed the same ${merged.both.length === 1 ? 'line' : 'lines'} (the merge base's line ${where}); left for you`);
-    return false;
-  }
-  writeAtomic(join(root, path), merged.text);
-  git(root, ['add', '--', path]);
-  console.log(`${path}: resolved by the merge base, ${count(merged.kept, 'line')} a side added kept and ${count(merged.dropped, 'line')} a side removed dropped`);
-  return true;
+  return resolved;
 }
 
 // ---------------------------------------------------------------------------------------------------
@@ -6347,8 +6386,23 @@ function prepareScopeTree(home, commit) {
   return locate(path);
 }
 
-/** One member merged in the scope tree on `onto`, as today's merge makes it, and committed with its frozen message (§4.1). */
-function mergeMember(tree, member, onto) {
+/**
+ * Where the candidate holds a member's work already, or null (INTEGRATE1c, C4): `BY_LINE` where the base holds its tip, else the
+ * branch of the first earlier member whose merge commit does. Judged by ancestry, as the merge itself would find nothing to make.
+ */
+export function containedBy(tree, member, base, formed) {
+  const holds = (commit) => git(tree, ['merge-base', '--is-ancestor', member.tip, commit], { allowFail: true }).status === 0;
+  if (holds(base)) return BY_LINE;
+  return formed.find((earlier) => holds(earlier.commit))?.branch ?? null;
+}
+
+/**
+ * One member merged in the scope tree on `onto`, as today's merge makes it, and committed with its frozen message (§4.1). A member
+ * the candidate holds already is not merged: it is `{ contained }` (`containedBy`), never a conflict (INTEGRATE1c).
+ */
+function mergeMember(tree, member, onto, { base, formed = [] } = { base: onto }) {
+  const held = containedBy(tree, member, base, formed);
+  if (held) return { contained: held };
   git(tree, ['checkout', '--quiet', '--force', '--detach', onto]);
   const merged = git(tree, ['merge', '--no-ff', '--no-commit', member.tip], { allowFail: true });
   if (merged.status !== 0) {
@@ -6672,8 +6726,15 @@ async function queueStep(home) {
   const candidate = queue.candidate;
   const action = resumeCandidate(candidate, { mainTip, isAncestor: isAncestorIn(home) });
   if (action === 'promoted') {
-    withQueue(home, (q) => ({ queue: { ...q, candidate: null, landed: [...(q.landed ?? []), ...candidate.members.map((each) => ({ branch: each.branch, tip: each.tip, request: each.request, commit: each.commit, at }))].slice(-200) } }));
-    console.log(`${at} promoted ${candidate.tip.slice(0, 7)}: ${candidate.members.map((each) => each.branch).join(', ')}`);
+    // C4: the member that held a contained one has promoted, so the contained one is settled with it.
+    const settled = settleContained(candidate, at);
+    withQueue(home, (q) => ({
+      queue: {
+        ...q, candidate: null, landed: [...(q.landed ?? []), ...candidate.members.map((each) => ({ branch: each.branch, tip: each.tip, request: each.request, commit: each.commit, at }))].slice(-200),
+        ...(settled.length ? { contained: [...(q.contained ?? []), ...settled].slice(-200) } : {}),
+      },
+    }));
+    console.log(`${at} promoted ${candidate.tip.slice(0, 7)}: ${candidate.members.map((each) => each.branch).join(', ')}${settled.length ? `; contained in them, settled with them: ${settled.map((each) => each.branch).join(', ')}` : ''}`);
     return 'next';
   }
   if (action === 'reform') {
@@ -6681,7 +6742,7 @@ async function queueStep(home) {
     const lanes = readLanes(home)?.lanes ?? [];
     const counted = reformCount(candidate, { recordsOnlyMove: recordsOnly(paths, (path) => ruleFor(path, REACH, lanes)) });
     console.log(`${at} main moved to ${mainTip.slice(0, 7)} by a direct commit${counted.recordsOnly ? ', records only' : ''}: the candidate is formed again${counted.heldByDirect ? `, re-formed ${counted.reforms} times running: held by direct commits` : ''}`);
-    await formNext(home, candidate.members.map(({ commit, handedBack, ...request }) => request), mainTip, { reforms: counted.reforms, recordsOnly: counted.recordsOnly });
+    await formNext(home, requestsOf(candidate, candidate.members.map(({ commit, handedBack, ...request }) => request)), mainTip, { reforms: counted.reforms, recordsOnly: counted.recordsOnly });
     return 'next';
   }
   if (action === 'promote') {
@@ -6732,9 +6793,21 @@ async function queueStep(home) {
 async function formNext(home, members, base, { reforms = 0, recordsOnly: onlyRecords = false }) {
   const tree = prepareScopeTree(home, base);
   const at = nowIso();
-  const { candidate, setAside } = await formCandidate({ base, members, merge: async (member, onto) => mergeMember(tree, member, onto), at, reforms, recordsOnly: onlyRecords });
+  const { candidate, setAside, contained } = await formCandidate({
+    base, members, merge: async (member, onto, formed) => mergeMember(tree, member, onto, { base, formed }), at, reforms, recordsOnly: onlyRecords,
+  });
   for (const back of setAside) console.log(`${at} set aside: ${back.branch}, a conflict in ${back.handedBack.paths.join(', ')}; resolve it on the branch (merge ${MAIN} into it) and queue it again`);
-  withQueue(home, (q) => ({ queue: { ...q, candidate, handedBack: [...(q.handedBack ?? []), ...setAside].slice(-100) } }));
+  // C4: a member the line holds is settled at once; one an earlier member holds waits on that member's promotion, on the candidate.
+  const settled = contained.filter((each) => each.containedBy === BY_LINE)
+    .map((each) => ({ branch: each.branch, tip: each.tip, request: each.request, by: BY_LINE, at }));
+  for (const each of contained) {
+    console.log(each.containedBy === BY_LINE
+      ? `${at} contained: ${each.branch} is in ${MAIN} already; nothing to merge`
+      : `${at} contained: ${each.branch} is in ${each.containedBy} already; settled when ${each.containedBy} promotes, and judged again if it does not`);
+  }
+  withQueue(home, (q) => ({
+    queue: { ...q, candidate, handedBack: [...(q.handedBack ?? []), ...setAside].slice(-100), ...(settled.length ? { contained: [...(q.contained ?? []), ...settled].slice(-200) } : {}) },
+  }));
 }
 
 /** What the queue does with a run's outcome: promote next, hold, stop, hand back, split, or judge the kept members again. */
@@ -6767,7 +6840,7 @@ async function judged(home, candidate, outcome) {
   }
   const back = (outcome.handedBack ?? []).map((each) => ({ ...each, handedBack: { ...each.handedBack, at } }));
   if (outcome.action === 'split') {
-    if (change((q) => ({ queue: { ...q, candidate: null, handedBack: [...(q.handedBack ?? []), ...back].slice(-100), queued: [...outcome.retain.map(({ commit, ...request }) => ({ ...request, oneAtATime: true })), ...q.queued] } })).obsolete) return obsolete();
+    if (change((q) => ({ queue: { ...q, candidate: null, handedBack: [...(q.handedBack ?? []), ...back].slice(-100), queued: [...requestsOf(candidate, outcome.retain.map(({ commit, ...request }) => request)).map((request) => ({ ...request, oneAtATime: true })), ...q.queued] } })).obsolete) return obsolete();
     for (const each of back) console.log(`${at} handed back: ${each.branch} (${each.handedBack.how}: ${each.handedBack.failure})`);
     console.log(`${at} unresolved: ${outcome.retain.map((each) => each.branch).join(', ')} run one at a time`);
     return 'next';
@@ -6775,7 +6848,9 @@ async function judged(home, candidate, outcome) {
   if (change((q) => ({ queue: { ...q, candidate: null, handedBack: [...(q.handedBack ?? []), ...back].slice(-100) } })).obsolete) return obsolete();
   for (const each of back) console.log(`${at} handed back: ${each.branch} (${each.handedBack.how}: ${each.handedBack.failure})`);
   // The retained candidate is judged again: the members kept, formed anew on the base, run on their own tree.
-  if (outcome.retain?.length) await formNext(home, outcome.retain.map(({ commit, ...request }) => request), candidate.base, {});
+  // C4: so are the members it held as contained, now that their container may be gone: each is merged again, or found contained again.
+  const again = requestsOf(candidate, (outcome.retain ?? []).map(({ commit, ...request }) => request));
+  if (again.length) await formNext(home, again, candidate.base, {});
   return 'next';
 }
 
@@ -6907,6 +6982,14 @@ async function waitOutcome(home, branch, tip, request) {
     const landed = (queue.landed ?? []).find((each) => each.branch === branch && each.tip === tip && each.request === request);
     if (landed) {
       console.log(`merge-branch: ${branch} is in ${MAIN} (${landed.commit.slice(0, 7)}), promoted with its candidate. The background run gates the tip.`);
+      return 0;
+    }
+    // C4: contained is an outcome of its own, said as one: the line holds it, or the member that held it has promoted.
+    const contained = (queue.contained ?? []).find((each) => each.branch === branch && each.tip === tip && each.request === request);
+    if (contained) {
+      console.log(contained.by === BY_LINE
+        ? `merge-branch: ${branch} is contained: ${MAIN} holds it already, so there was nothing to merge.`
+        : `merge-branch: ${branch} is contained in ${contained.by}, which promoted (${contained.commit.slice(0, 7)}): it is in ${MAIN} with it.`);
       return 0;
     }
     const back = (queue.handedBack ?? []).find((each) => each.branch === branch && each.tip === tip && each.request === request);
