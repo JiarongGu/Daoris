@@ -1459,9 +1459,14 @@ export function rowTablesOf(text) {
   return [...new Set(paths)];
 }
 
-/** The row tables the side the work lands on declares (`HEAD`, never the member's copy), by `rowTablesOf`; none where there is no declaration. */
-function declaredRows(root) {
-  const shown = git(root, ['show', 'HEAD:daoris.gates.json'], { allowFail: true });
+/**
+ * The row tables the line declares at `line` (the side the work lands on, never the member's copy), by `rowTablesOf`; none where
+ * there is no declaration. A merge in the main checkout reads its `HEAD`; a queue candidate's member reads the base the candidate
+ * started on, never the candidate's tip, where an earlier member's own `integration.merge` stood (INTEGRATE1c; the driver reads
+ * `onto` the same way).
+ */
+function declaredRows(root, line = 'HEAD') {
+  const shown = git(root, ['show', `${line}:daoris.gates.json`], { allowFail: true });
   return shown.status === 0 ? rowTablesOf(shown.out) : [];
 }
 
@@ -1565,13 +1570,13 @@ function stageText(root, stage, path) {
 /**
  * The backlog's conflict, and each declared row table's (`rowTablesOf`, INTEGRATE1c), in the merge in place resolved by its base and
  * staged, with one line saying so; or, where both sides changed one line, left as git wrote it, with one line naming where.
- * Whether any was resolved.
+ * Whether any was resolved. The row tables are the ones `line` declares (`declaredRows`).
  */
-function resolveBacklog(root) {
+function resolveBacklog(root, { line = 'HEAD' } = {}) {
   const backlog = backlogPath(root);
   if (backlog === null) console.log('daoris.json: it does not read as an object, so no backlog is resolved by the merge base; left for you');
   // INTEGRATE1c: the repository's declared row tables settle as the backlog does, by the merge base.
-  const paths = [...new Set([...(backlog === null ? [] : [backlog]), ...declaredRows(root)])];
+  const paths = [...new Set([...(backlog === null ? [] : [backlog]), ...declaredRows(root, line)])];
   const unmerged = paths.length ? unmergedPaths(root) : [];
   let resolved = false;
   for (const path of paths.filter((each) => unmerged.includes(each))) {
@@ -6465,7 +6470,8 @@ function mergeMember(tree, member, onto, { base, formed = [] } = { base: onto })
   git(tree, ['checkout', '--quiet', '--force', '--detach', onto]);
   const merged = git(tree, ['merge', '--no-ff', '--no-commit', member.tip], { allowFail: true });
   if (merged.status !== 0) {
-    const resolved = mergeInProgress(tree) && resolveBacklog(tree);
+    // INTEGRATE1c: the row tables the line declares where the candidate started, never what an earlier member declared.
+    const resolved = mergeInProgress(tree) && resolveBacklog(tree, { line: base });
     const { blocking, generated } = mergeInProgress(tree) ? conflicts(tree) : { blocking: [], generated: [] };
     if (blocking.length || (!generated.length && !resolved)) {
       git(tree, ['merge', '--abort'], { allowFail: true });

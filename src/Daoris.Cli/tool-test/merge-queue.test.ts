@@ -1442,6 +1442,38 @@ describe('the queue, end to end in a scratch repository', { concurrency: true },
     }
   });
 
+  // The review's fourth finding on INTEGRATE1c: the row tables were read from the candidate's tip, which an earlier member had changed.
+  test("a row table a member's own declaration adds settles nothing for a later member of its candidate: the declaration read is the line's the candidate started on", async () => {
+    const repo = queueScratch('rows-line');
+    const hold = join(repo.root, 'local', 'go');
+    try {
+      const table = (...rows: string[]) => ['# Table', '', '| When | Run |', '|---|---|', '| one | `a` |', ...rows, ''].join('\n');
+      const gates = JSON.parse(readFileSync(join(repo.root, 'daoris.gates.json'), 'utf8')) as { gates: unknown[] };
+      mkdirSync(join(repo.root, 'docs'), { recursive: true });
+      writeFileSync(join(repo.root, 'docs', 'table.md'), table());
+      repo.git('add', '-A');
+      repo.git('commit', '--quiet', '-m', `a table${TRAILER}`);
+      const declares = `${JSON.stringify({ ...gates, integration: { merge: [{ paths: 'docs/table.md', by: 'rows' }] } }, null, 2)}\n`;
+      repo.branch('declares', { 'daoris.gates.json': declares, 'docs/table.md': table('| two | `b` |') });
+      repo.branch('row', { 'docs/table.md': table('| three | `c` |') });
+      for (const name of ['declares', 'row']) assert.equal((await repo.run([name, '--preview'])).status, 0);
+      const first = repo.run(['declares', '--message', 'local/declares.msg'], { MERGE_BRANCH_QUEUE_HOLD: hold });
+      await repo.until(() => (repo.queue()?.queued.length ?? 0) === 1);
+      const second = repo.run(['row', '--message', 'local/row.msg'], { MERGE_BRANCH_QUEUE_HOLD: hold });
+      await repo.until(() => (repo.queue()?.queued.length ?? 0) === 2);
+      writeFileSync(hold, '');
+      const [declared, rowed] = await Promise.all([first, second]);
+      assert.equal(declared.status, 0, `${declared.out}\n${repo.log()}`);
+      assert.equal(rowed.status, 1, `${rowed.out}\n${repo.log()}`);
+      assert.match(rowed.out, /row is handed back \(conflict: a conflict in docs\/table\.md\)/);
+      assert.doesNotMatch(repo.log(), /resolved by the merge base \(a declared row table\)/);
+      assert.equal(readFileSync(join(repo.root, 'docs', 'table.md'), 'utf8'), table('| two | `b` |'));
+    } finally {
+      writeFileSync(hold, '');
+      await repo.cleanup();
+    }
+  });
+
   // The review's first finding on INTEGRATE1c: the line's marker was the word `line`, which a branch may be named.
   test('a container whose branch is named `line` holds its member provisionally, as any member does: handed back, the member is judged again on its own', async () => {
     const repo = queueScratch('contained-named-line');
