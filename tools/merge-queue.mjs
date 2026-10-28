@@ -57,7 +57,7 @@
  * ## Containment (INTEGRATE1c, design §5.2 step 3, C4)
  *
  * A member whose work the candidate holds already is **contained**, never set aside as a merge that could not be made. One the
- * line holds is settled at once (`queue.contained`, `by: 'line'`). One an earlier member of the same candidate holds is
+ * line holds is settled at once (`queue.contained`, `containedIn: { line: true }`). One an earlier member of the same candidate holds is
  * **provisional**: it stands on the candidate's `contained`, outside `members` (the judge's prefixes are merge commits), and is
  * settled only when that member promotes (`settleContained`). A candidate that ends any other way (a member handed back, a split,
  * a re-form, a drop) gives it back as its own request (`requestsOf`), merged again with the rest and so judged again: the line
@@ -254,14 +254,21 @@ export function nextMembers(queued, { max = CANDIDATE_MAX, oneAtATime = false } 
   return { members: queued.slice(0, take), rest: queued.slice(take) };
 }
 
-/** The `containedBy` of a member the line already holds: it needs no earlier member to promote. */
-export const BY_LINE = 'line';
+/**
+ * What holds a contained member (INTEGRATE1c, C4), its `containedIn`: the line (`IN_THE_LINE`, `{ line: true }`), needing no earlier
+ * member to promote, or an earlier member (`{ branch, request }`). The two are fields apart, so no branch's name reads as the line:
+ * the marker was once the word `line`, and a container whose branch was named `line` settled what it held as the line's.
+ */
+export const IN_THE_LINE = Object.freeze({ line: true });
+
+/** Whether a member's `containedIn` is the line's. */
+export const inTheLine = (containedIn) => containedIn?.line === true;
 
 /**
  * A candidate formed on `base` from `members`, each merged on the last by `merge(member, onto, formed)` (`formed` the members merged
  * so far), which answers `{ commit }` for its merge commit, `{ conflict: [paths] }` for a merge the resolvers could not make (aborted
- * by it), or `{ contained: by }` for a member whose work the candidate holds already (INTEGRATE1c, design §5.2 step 3, C4): `by` is
- * `BY_LINE` where the base holds it, else the branch of the earlier member that does.
+ * by it), or `{ contained: in }` for a member whose work the candidate holds already (INTEGRATE1c, design §5.2 step 3, C4): `in` is
+ * `IN_THE_LINE` where the base holds it, else `{ branch, request }`, the earlier member that does.
  *
  * - A conflicted member is set aside and handed back with its conflict named, and the rest go on (§4.1 point 1).
  * - A member the line holds is **contained** and settled at once: there is nothing to merge and nothing to gate.
@@ -269,7 +276,7 @@ export const BY_LINE = 'line';
  *   (the judge's prefixes are the merge commits), settled only when that member promotes with the candidate. A candidate that ends
  *   any other way gives it back as its own request (`requestsOf`), judged again.
  *
- * Answers the candidate, the set-aside and every member found contained (`containedBy` says by what).
+ * Answers the candidate, the set-aside and every member found contained (`containedIn` says in what).
  */
 export async function formCandidate({ base, members, merge, at, reforms = 0, recordsOnly = false, split = false }) {
   let onto = base;
@@ -283,13 +290,13 @@ export async function formCandidate({ base, members, merge, at, reforms = 0, rec
       continue;
     }
     if (merged.contained) {
-      contained.push({ ...member, containedBy: merged.contained, containedAt: at });
+      contained.push({ ...member, containedIn: inTheLine(merged.contained) ? { line: true } : { branch: merged.contained.branch, request: merged.contained.request }, containedAt: at });
       continue;
     }
     formed.push({ ...member, commit: merged.commit });
     onto = merged.commit;
   }
-  const provisional = contained.filter((each) => each.containedBy !== BY_LINE);
+  const provisional = contained.filter((each) => !inTheLine(each.containedIn));
   const candidate = formed.length
     ? { base, tip: onto, members: formed, state: 'running', formed: at, reforms, recordsOnly, split, runs: [], ...(provisional.length ? { contained: provisional } : {}) }
     : null;
@@ -297,7 +304,7 @@ export async function formCandidate({ base, members, merge, at, reforms = 0, rec
 }
 
 /** A contained member as its own request again: the frozen request it was queued with, without what the candidate added. */
-const requestOf = ({ containedBy, containedAt, ...request }) => request;
+const requestOf = ({ containedIn, containedAt, ...request }) => request;
 
 /** Requests in the order they arrived (the queue's order, §4.1 point 1); a tie keeps the order given. */
 export const inArrival = (requests) => requests
@@ -312,13 +319,14 @@ export const inArrival = (requests) => requests
 export const requestsOf = (candidate, requests = []) => inArrival([...requests, ...(candidate?.contained ?? []).map(requestOf)]);
 
 /**
- * The records a promotion settles for a candidate's provisional contained members, each by the member that held it and that
- * member's merge commit; a member whose container is not among the candidate's is not settled (it is given back by `requestsOf`).
+ * The records a promotion settles for a candidate's provisional contained members, each `containedIn` the member that held it (its
+ * branch, its request and its merge commit); a member whose container is not among the candidate's is not settled (it is given back
+ * by `requestsOf`). The line's are settled where the candidate forms: `{ branch, tip, request, containedIn: { line: true }, at }`.
  */
 export function settleContained(candidate, at) {
   return (candidate?.contained ?? []).flatMap((each) => {
-    const holder = candidate.members.find((member) => member.branch === each.containedBy);
-    return holder ? [{ branch: each.branch, tip: each.tip, request: each.request, by: holder.branch, commit: holder.commit, at }] : [];
+    const holder = candidate.members.find((member) => member.branch === each.containedIn?.branch && member.request === each.containedIn?.request);
+    return holder ? [{ branch: each.branch, tip: each.tip, request: each.request, containedIn: { branch: holder.branch, request: holder.request, commit: holder.commit }, at }] : [];
   });
 }
 
@@ -715,7 +723,7 @@ export function queueLines(queue, { branchTip = () => null, now = Date.now() } =
     const held = candidate.state === 'held' ? ` (held on ${candidate.held?.on}: ${candidate.held?.why})` : '';
     out.push(`candidate on ${String(candidate.base).slice(0, 7)}: ${candidate.state}${held}${candidate.reforms ? `, re-formed ${candidate.reforms} time${candidate.reforms === 1 ? '' : 's'}` : ''}${candidate.reforms >= HELD_REFORMS ? ', held by direct commits' : ''}`);
     candidate.members.forEach((member, i) => out.push(`  ${i + 1}. ${member.branch} at ${String(member.tip).slice(0, 7)}${member.commit ? ` → ${String(member.commit).slice(0, 7)}` : ''}`));
-    for (const each of candidate.contained ?? []) out.push(`  contained: ${each.branch} at ${String(each.tip).slice(0, 7)}, in ${each.containedBy} (settled when ${each.containedBy} promotes)`);
+    for (const each of candidate.contained ?? []) out.push(`  contained: ${each.branch} at ${String(each.tip).slice(0, 7)}, in ${each.containedIn?.branch} (settled when ${each.containedIn?.branch} promotes)`);
   }
   if (queue.forming?.members?.length) out.push(`forming on ${String(queue.forming.base).slice(0, 7)}: ${queue.forming.members.map((each) => each.branch).join(', ')}`);
   if (queue.queued.length) {
@@ -726,7 +734,7 @@ export function queueLines(queue, { branchTip = () => null, now = Date.now() } =
     }
   }
   for (const each of (queue.contained ?? []).slice(-4)) {
-    out.push(`contained: ${each.branch} (${each.by === BY_LINE ? 'the line held it already' : `in ${each.by}, promoted`})`);
+    out.push(`contained: ${each.branch} (${inTheLine(each.containedIn) ? 'the line held it already' : `in ${each.containedIn?.branch}, promoted`})`);
   }
   for (const back of (queue.handedBack ?? []).slice(-8)) {
     const detail = back.handedBack?.how === 'conflict' ? `a conflict in ${back.handedBack.paths?.join(', ')}`

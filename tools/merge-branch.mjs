@@ -435,7 +435,7 @@ import { censusOf, classesReached, halfOf, reachSettings, repository, withSettin
 import { endOrphans, endStranded } from './processes.mjs';
 import { gateSignature, readTrx, signatureKey, signatureOf } from './test-failures.mjs';
 import {
-  BY_LINE, MERGE_QUEUE, MERGE_QUEUE_LOG, RUNNER_ACK_MS, SCOPE_TREE, appendScopeRun, candidateOutcome, dropQueued, enqueue, formCandidate, gitBudget,
+  IN_THE_LINE, MERGE_QUEUE, MERGE_QUEUE_LOG, RUNNER_ACK_MS, SCOPE_TREE, appendScopeRun, candidateOutcome, dropQueued, enqueue, formCandidate, gitBudget, inTheLine,
   changeCandidate, drainedLine, drainedRecord, judgeFailure, memoryStep, messageOf, nextMembers, notePreview, noteRecheck, overdueWaits, promotion, queueLines, readAdmission, readQueue, sameCandidate,
   recheckDue, recordsOnly, reformCount, requestStanding, requestsOf, resumeCandidate, scopedSet, scopedTier, settleContained, writeAdmission, writeQueue,
 } from './merge-queue.mjs';
@@ -6444,13 +6444,15 @@ function prepareScopeTree(home, commit) {
 }
 
 /**
- * Where the candidate holds a member's work already, or null (INTEGRATE1c, C4): `BY_LINE` where the base holds its tip, else the
- * branch of the first earlier member whose merge commit does. Judged by ancestry, as the merge itself would find nothing to make.
+ * Where the candidate holds a member's work already, or null (INTEGRATE1c, C4): `IN_THE_LINE` where the base holds its tip, else
+ * `{ branch, request }` of the first earlier member whose merge commit does. Judged by ancestry, as the merge itself would find
+ * nothing to make.
  */
 export function containedBy(tree, member, base, formed) {
   const holds = (commit) => git(tree, ['merge-base', '--is-ancestor', member.tip, commit], { allowFail: true }).status === 0;
-  if (holds(base)) return BY_LINE;
-  return formed.find((earlier) => holds(earlier.commit))?.branch ?? null;
+  if (holds(base)) return IN_THE_LINE;
+  const earlier = formed.find((each) => holds(each.commit));
+  return earlier ? { branch: earlier.branch, request: earlier.request } : null;
 }
 
 /**
@@ -6873,8 +6875,8 @@ async function formNext(home, forming) {
     base, members, merge: async (member, onto, formed) => mergeMember(tree, member, onto, { base, formed }), at, reforms, recordsOnly: onlyRecords,
   });
   // C4: a member the line holds is settled at once; one an earlier member holds waits on that member's promotion, on the candidate.
-  const settled = contained.filter((each) => each.containedBy === BY_LINE)
-    .map((each) => ({ branch: each.branch, tip: each.tip, request: each.request, by: BY_LINE, at }));
+  const settled = contained.filter((each) => inTheLine(each.containedIn))
+    .map((each) => ({ branch: each.branch, tip: each.tip, request: each.request, containedIn: { line: true }, at }));
   const written = withQueue(home, (q) => (sameForming(q.forming, forming)
     ? { queue: { ...q, candidate, forming: null, handedBack: [...(q.handedBack ?? []), ...setAside].slice(-100), ...(settled.length ? { contained: [...(q.contained ?? []), ...settled].slice(-200) } : {}) } }
     : { changed: true }));
@@ -6884,9 +6886,9 @@ async function formNext(home, forming) {
   }
   for (const back of setAside) console.log(`${at} set aside: ${back.branch}, a conflict in ${back.handedBack.paths.join(', ')}; resolve it on the branch (merge ${MAIN} into it) and queue it again`);
   for (const each of contained) {
-    console.log(each.containedBy === BY_LINE
+    console.log(inTheLine(each.containedIn)
       ? `${at} contained: ${each.branch} is in ${MAIN} already; nothing to merge`
-      : `${at} contained: ${each.branch} is in ${each.containedBy} already; settled when ${each.containedBy} promotes, and judged again if it does not`);
+      : `${at} contained: ${each.branch} is in ${each.containedIn.branch} already; settled when ${each.containedIn.branch} promotes, and judged again if it does not`);
   }
 }
 
@@ -7071,12 +7073,12 @@ export function waitSaid(standing, { branch, request = '', holder = null }) {
   }
   // C4: contained is an outcome of its own, said as one: the line holds it, or the member that held it has promoted.
   if (standing.contained) {
-    const contained = standing.contained;
+    const held = standing.contained.containedIn;
     return {
       code: 0,
-      lines: [contained.by === BY_LINE || !contained.commit
+      lines: [inTheLine(held) || !held?.commit
         ? `merge-branch: ${branch} is contained: ${MAIN} holds it already, so there was nothing to merge.`
-        : `merge-branch: ${branch} is contained in ${contained.by}, which promoted (${contained.commit.slice(0, 7)}): it is in ${MAIN} with it.`],
+        : `merge-branch: ${branch} is contained in ${held.branch}, which promoted (${held.commit.slice(0, 7)}): it is in ${MAIN} with it.`],
     };
   }
   if (standing.back?.handedBack?.how === 'dropped') {

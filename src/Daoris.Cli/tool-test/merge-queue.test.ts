@@ -16,7 +16,8 @@ import { makeFixture, PATIENCE } from '../test/_fixture.ts';
 interface Signature { test?: string; exception?: string; location?: { method: string; text: string; ordinal: number }; message?: string; gate?: string; step?: string; errors?: string[] }
 type Outcome = { result: 'pass' } | { result: 'fail'; signature: Signature } | { result: 'cannot'; signature: Signature };
 interface Failure { unit?: string; test?: string | undefined; gate: string; signature: Signature; names: 'test' | 'gate' }
-interface Member { branch: string; tip: string; request?: string; message?: string; commit?: string; at?: string; containedBy?: string; handedBack?: { how: string; at?: string; failure?: string; with?: string[]; interacting?: string[]; paths?: string[]; why?: string } }
+interface ContainedIn { line?: boolean; branch?: string; request?: string | undefined; commit?: string }
+interface Member { branch: string; tip: string; request?: string; message?: string; commit?: string; at?: string; containedIn?: ContainedIn; handedBack?: { how: string; at?: string; failure?: string; with?: string[]; interacting?: string[]; paths?: string[]; why?: string } }
 interface Judged { outcome: string; member?: number; with?: number[]; interacting?: number[]; why?: string; said?: string; runs: unknown[] }
 interface Candidate { base: string; tip: string; members: Member[]; contained?: Member[]; state: string; reforms: number; recordsOnly: boolean; held?: { on: string; why: string }; run?: { pid: number } }
 interface Queue {
@@ -53,11 +54,11 @@ const q = await import(
   sameCandidate: (current: Candidate | null, expected: Candidate) => boolean;
   changeCandidate: (queue: Queue, expected: Candidate, change: (queue: Queue) => { queue: Queue }) => { queue?: Queue; obsolete?: boolean };
   nextMembers: (queued: Member[], options?: { max?: number; oneAtATime?: boolean }) => { members: Member[]; rest: Member[] };
-  formCandidate: (input: { base: string; members: Member[]; merge: (member: Member, onto: string, formed: Member[]) => Promise<{ commit?: string; conflict?: string[]; contained?: string }>; at: string }) => Promise<{ candidate: Candidate | null; setAside: Member[]; contained: Member[] }>;
-  BY_LINE: string;
+  formCandidate: (input: { base: string; members: Member[]; merge: (member: Member, onto: string, formed: Member[]) => Promise<{ commit?: string; conflict?: string[]; contained?: ContainedIn }>; at: string }) => Promise<{ candidate: Candidate | null; setAside: Member[]; contained: Member[] }>;
+  IN_THE_LINE: ContainedIn;
   inArrival: (requests: Member[]) => Member[];
   requestsOf: (candidate: Candidate | null, requests?: Member[]) => Member[];
-  settleContained: (candidate: Candidate | null, at: string) => { branch: string; tip: string; request?: string; by: string; commit?: string; at: string }[];
+  settleContained: (candidate: Candidate | null, at: string) => { branch: string; tip: string; request?: string; containedIn: ContainedIn; at: string }[];
   recordsOnly: (paths: string[], ruleOf: (path: string) => Rule | null) => boolean;
   resumeCandidate: (candidate: Candidate | null, facts: { mainTip: string; isAncestor: (a: string, b: string) => boolean; runAlive?: (pid?: number) => boolean }) => string;
   promotion: (candidate: Candidate, facts: { mainTip: string; clean: boolean }) => { action: string; why?: string };
@@ -254,7 +255,10 @@ describe('the queue: a frozen request, read before it is queued', () => {
     const it = { branch: 'b1', tip: 't1', request: 'r1aaaaaaaaa', at: AT };
     assert.equal(tool.waitSaid({ pending: 'queued' }, { branch: 'b1' }), null, 'a request in flight is waited for');
     assert.equal(tool.waitSaid({ landed: { ...it, commit: 'c1c1c1c1c1' } }, { branch: 'b1' })!.code, 0);
-    assert.equal(tool.waitSaid({ contained: { ...it } }, { branch: 'b1' })!.code, 0);
+    assert.match(tool.waitSaid({ contained: { ...it, containedIn: { line: true } } }, { branch: 'b1' })!.lines[0]!, /b1 is contained: main holds it already/);
+    const inLine = tool.waitSaid({ contained: { ...it, containedIn: { branch: 'line', request: 'r0', commit: 'c0c0c0c0c0' } } }, { branch: 'b1' })!;
+    assert.equal(inLine.code, 0);
+    assert.match(inLine.lines[0]!, /b1 is contained in line, which promoted \(c0c0c0c\)/, 'a container named `line` is named as the branch it is');
     const dropped = tool.waitSaid({ back: { ...it, handedBack: { how: 'dropped', at: AT } } }, { branch: 'b1' })!;
     assert.equal(dropped.code, 1);
     assert.match(dropped.lines.join('\n'), /b1's request was taken off the queue \(--drop-batch, 2026-10-24T10:00:00\.000Z\): nothing of it was merged by this request\. Preview it and queue it again to merge it\./);
@@ -338,48 +342,63 @@ describe('the candidate', () => {
 // INTEGRATE1c (design §5.2 step 3, C4): a contained member is recorded as contained, never set aside; one an earlier member holds is
 // provisional, settled only when that member promotes, and judged again where the candidate ends otherwise.
 describe('a contained member (INTEGRATE1c)', () => {
-  const holds = (by: string, ...contained: string[]) => async (member: Member, onto: string) => (contained.includes(member.branch) ? { contained: by } : { commit: `${onto}+${member.branch}` });
+  /** A merge that finds the `contained` members held by the line, and makes every other one's merge commit. */
+  const inLine = (...contained: string[]) => async (member: Member, onto: string) => (contained.includes(member.branch) ? { contained: q.IN_THE_LINE } : { commit: `${onto}+${member.branch}` });
+  /** A merge that finds the `contained` members held by the earlier member `by`, and makes every other one's merge commit. */
+  const inMember = (by: string, ...contained: string[]) => async (member: Member, onto: string, formed: Member[]) => (contained.includes(member.branch)
+    ? { contained: { branch: by, request: formed.find((each) => each.branch === by)?.request } }
+    : { commit: `${onto}+${member.branch}` });
 
   test('one the line holds is contained and settled at once: it is no conflict, and no member of the candidate', async () => {
-    const formed = await q.formCandidate({ base: 'm0', members: members(2), at: AT, merge: holds(q.BY_LINE, 'b1') });
+    const formed = await q.formCandidate({ base: 'm0', members: members(2), at: AT, merge: inLine('b1') });
     assert.deepEqual(formed.setAside, []);
-    assert.deepEqual(formed.contained.map((each) => [each.branch, each.containedBy]), [['b1', q.BY_LINE]]);
+    assert.deepEqual(formed.contained.map((each) => [each.branch, each.containedIn]), [['b1', { line: true }]]);
     assert.deepEqual(formed.candidate!.members.map((each) => each.branch), ['b2']);
     assert.equal(formed.candidate!.contained, undefined, 'the line already holds it, so the candidate waits on nothing');
-    const alone = await q.formCandidate({ base: 'm0', members: members(1), at: AT, merge: holds(q.BY_LINE, 'b1') });
+    const alone = await q.formCandidate({ base: 'm0', members: members(1), at: AT, merge: inLine('b1') });
     assert.equal(alone.candidate, null, 'a candidate of members the line holds is no candidate');
     assert.equal(alone.contained.length, 1);
   });
 
   test("one an earlier member holds is provisional: on the candidate, outside its members, settled only at that member's promotion", async () => {
-    const formed = await q.formCandidate({ base: 'm0', members: members(3), at: AT, merge: holds('b1', 'b2') });
+    const formed = await q.formCandidate({ base: 'm0', members: members(3), at: AT, merge: inMember('b1', 'b2') });
     assert.deepEqual(formed.candidate!.members.map((each) => each.branch), ['b1', 'b3'], "the judge's prefixes stay the merge commits");
-    assert.deepEqual(formed.candidate!.contained!.map((each) => [each.branch, each.containedBy]), [['b2', 'b1']]);
+    assert.deepEqual(formed.candidate!.contained!.map((each) => [each.branch, each.containedIn?.branch]), [['b2', 'b1']]);
     assert.deepEqual(formed.setAside, []);
-    assert.deepEqual(q.settleContained(formed.candidate, AT).map((each) => [each.branch, each.by, each.commit]), [['b2', 'b1', 'm0+b1']]);
+    assert.deepEqual(q.settleContained(formed.candidate, AT).map((each) => [each.branch, each.containedIn]), [['b2', { branch: 'b1', request: undefined, commit: 'm0+b1' }]]);
     assert.deepEqual(q.settleContained({ ...formed.candidate!, members: formed.candidate!.members.slice(1) }, AT), [], 'a holder no longer a member settles nothing');
+  });
+
+  // The review's first finding on INTEGRATE1c: the line's marker was the word `line`, which a branch may be named.
+  test('an earlier member whose branch is named `line` is a member, never the line: what it holds is provisional on it', async () => {
+    const queued = [{ branch: 'line', tip: 't1'.padEnd(40, '0'), request: 'r1' }, { branch: 'b2', tip: 't2'.padEnd(40, '0'), request: 'r2' }];
+    const formed = await q.formCandidate({ base: 'm0', members: queued, at: AT, merge: inMember('line', 'b2') });
+    assert.deepEqual(formed.candidate!.contained!.map((each) => [each.branch, each.containedIn]), [['b2', { branch: 'line', request: 'r1' }]]);
+    assert.deepEqual(q.settleContained({ ...formed.candidate!, members: [] }, AT), [], 'its container gone, nothing is settled');
+    assert.deepEqual(q.settleContained(formed.candidate, AT).map((each) => each.containedIn), [{ branch: 'line', request: 'r1', commit: 'm0+line' }]);
+    assert.match(q.queueLines({ ...q.emptyQueue(), candidate: formed.candidate }).join('\n'), /contained: b2 at t200000, in line \(settled when line promotes\)/);
   });
 
   test('a candidate that does not promote gives it back as its own request, in arrival order, to be judged again', async () => {
     const queued = members(3).map((each, i) => ({ ...each, request: `r${i + 1}`, at: `2026-10-24T10:00:0${i}.000Z`, message: 'x' }));
-    const formed = await q.formCandidate({ base: 'm0', members: queued, at: AT, merge: holds('b1', 'b2') });
+    const formed = await q.formCandidate({ base: 'm0', members: queued, at: AT, merge: inMember('b1', 'b2') });
     const retained = formed.candidate!.members.map(({ commit, ...request }) => request) as Member[];
     const again = q.requestsOf(formed.candidate, retained);
     assert.deepEqual(again.map((each) => each.branch), ['b1', 'b2', 'b3']);
-    assert.ok(again.every((each) => each.containedBy === undefined && each.commit === undefined), 'the frozen request, nothing the candidate added');
+    assert.ok(again.every((each) => each.containedIn === undefined && each.commit === undefined), 'the frozen request, nothing the candidate added');
     assert.deepEqual(again.map((each) => each.request), ['r1', 'r2', 'r3']);
     assert.deepEqual(q.requestsOf(null, retained).map((each) => each.branch), ['b1', 'b3']);
   });
 
   test('a branch contained on a candidate is queued already: it is not queued a second time', async () => {
-    const formed = await q.formCandidate({ base: 'm0', members: members(2), at: AT, merge: holds('b1', 'b2') });
+    const formed = await q.formCandidate({ base: 'm0', members: members(2), at: AT, merge: inMember('b1', 'b2') });
     const tip = 't2'.padEnd(40, '0');
     const queue = q.notePreview({ ...q.emptyQueue(), candidate: formed.candidate }, { branch: 'b2', tip, base: 'm0', at: AT });
     assert.match(q.enqueue(queue, { branch: 'b2', tip, message: 'x', at: AT }).refused ?? '', /b2 is queued already/);
   });
 
   test("a drop that ends a candidate hands its contained member back with the rest; one dropped by name alone leaves the candidate standing", async () => {
-    const formed = await q.formCandidate({ base: 'm0', members: members(3), at: AT, merge: holds('b1', 'b2') });
+    const formed = await q.formCandidate({ base: 'm0', members: members(3), at: AT, merge: inMember('b1', 'b2') });
     const queue = { ...q.emptyQueue(), candidate: formed.candidate };
     const all = q.dropQueued(queue, ['b1'], AT);
     assert.deepEqual(all.queue.handedBack.map((each) => [each.branch, each.handedBack!.how]), [['b1', 'dropped'], ['b3', 'dropped'], ['b2', 'dropped']]);
@@ -1273,16 +1292,16 @@ describe('the queue, end to end in a scratch repository', { concurrency: true },
 
   // INTEGRATE1c (C4): 2026-10-28's set-aside, a branch whose merge commit could not be made because its work was already in an earlier
   // member of the batch. `inner` is a branch at the first of `outer`'s two commits, so queued after it, a candidate holds it already.
-  const nested = (repo: ReturnType<typeof queueScratch>, files: Record<string, string> = { 'a.txt': 'a\n', 'b.txt': 'b\n' }) => {
+  const nested = (repo: ReturnType<typeof queueScratch>, files: Record<string, string> = { 'a.txt': 'a\n', 'b.txt': 'b\n' }, outer = 'outer') => {
     const [head, ...rest] = Object.entries(files);
     const [first, text] = head!;
-    repo.branch('outer', { [first]: text });
-    repo.git('branch', 'inner', 'outer');
-    repo.git('checkout', '--quiet', 'outer');
+    repo.branch(outer, { [first]: text });
+    repo.git('branch', 'inner', outer);
+    repo.git('checkout', '--quiet', outer);
     for (const [path, body] of rest) {
       writeFileSync(join(repo.root, path), body);
       repo.git('add', '-A');
-      repo.git('commit', '--quiet', '-m', `more work on outer${TRAILER}`);
+      repo.git('commit', '--quiet', '-m', `more work on ${outer}${TRAILER}`);
     }
     repo.git('checkout', '--quiet', 'main');
     writeFileSync(join(repo.root, 'local', 'inner.msg'), `Merge inner: its words${TRAILER}\n`);
@@ -1308,7 +1327,7 @@ describe('the queue, end to end in a scratch repository', { concurrency: true },
       assert.match(repo.log(), /contained in them, settled with them: inner/);
       assert.equal(repo.git('rev-list', '--count', '--merges', 'main'), '1', "one merge commit, the container's; nothing was merged for the contained one");
       const queue = repo.queue()!;
-      assert.deepEqual((queue as unknown as { contained: { branch: string; by: string }[] }).contained.map((each) => [each.branch, each.by]), [['inner', 'outer']]);
+      assert.deepEqual(queue.contained!.map((each) => [each.branch, each.containedIn?.branch]), [['inner', 'outer']]);
       assert.equal(queue.handedBack.length, 0);
     } finally {
       writeFileSync(hold, '');
@@ -1330,7 +1349,7 @@ describe('the queue, end to end in a scratch repository', { concurrency: true },
       assert.equal(done.status, 0, `${done.out}\n${repo.log()}`);
       assert.match(done.out, /inner is contained: main holds it already/);
       assert.doesNotMatch(repo.log(), /set aside|could not be made/);
-      assert.deepEqual((repo.queue() as unknown as { contained: { branch: string; by: string }[] }).contained.map((each) => [each.branch, each.by]), [['inner', 'line']]);
+      assert.deepEqual(repo.queue()!.contained!.map((each) => [each.branch, each.containedIn]), [['inner', { line: true }]]);
       assert.match((await repo.run(['--queue'])).out, /contained: inner \(the line held it already\)/);
     } finally {
       await repo.cleanup();
@@ -1359,6 +1378,31 @@ describe('the queue, end to end in a scratch repository', { concurrency: true },
       const queue = repo.queue() as unknown as { contained?: unknown[]; landed: { branch: string }[] };
       assert.equal(queue.contained, undefined, 'nothing was settled as contained: the container never promoted');
       assert.deepEqual(queue.landed.map((each) => each.branch), ['inner']);
+    } finally {
+      writeFileSync(hold, '');
+      await repo.cleanup();
+    }
+  });
+
+  // The review's first finding on INTEGRATE1c: the line's marker was the word `line`, which a branch may be named.
+  test('a container whose branch is named `line` holds its member provisionally, as any member does: handed back, the member is judged again on its own', async () => {
+    const repo = queueScratch('contained-named-line');
+    const hold = join(repo.root, 'local', 'go');
+    try {
+      nested(repo, { 'a.txt': 'a\n', 'break-check': 'x\n' }, 'line');
+      for (const name of ['line', 'inner']) assert.equal((await repo.run([name, '--preview'])).status, 0);
+      const container = repo.run(['line', '--message', 'local/line.msg'], { MERGE_BRANCH_QUEUE_HOLD: hold });
+      await repo.until(() => (repo.queue()?.queued.length ?? 0) === 1);
+      const inner = repo.run(['inner', '--message', 'local/inner.msg'], { MERGE_BRANCH_QUEUE_HOLD: hold });
+      await repo.until(() => (repo.queue()?.queued.length ?? 0) === 2);
+      writeFileSync(hold, '');
+      const [containerOut, innerOut] = await Promise.all([container, inner]);
+      assert.equal(containerOut.status, 1, `${containerOut.out}\n${repo.log()}`);
+      assert.match(repo.log(), /contained: inner is in line already; settled when line promotes/);
+      assert.equal(innerOut.status, 0, `${innerOut.out}\n${repo.log()}`);
+      assert.doesNotMatch(innerOut.out, /main holds it already/, 'never settled as the line\'s');
+      assert.match(innerOut.out, /inner is in main/);
+      assert.equal(existsSync(join(repo.root, 'a.txt')), true, 'its work is in main, merged on its own');
     } finally {
       writeFileSync(hold, '');
       await repo.cleanup();
