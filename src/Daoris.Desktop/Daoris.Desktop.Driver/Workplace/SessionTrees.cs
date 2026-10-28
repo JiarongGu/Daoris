@@ -17,8 +17,9 @@ public sealed record TreeOpened(string Path, string Branch, string BasedOn, stri
     public Noted? Opening { get; init; }
 
     /// <summary>
-    /// What its session's agent is told of the dependencies copied into it from its checkout (TREEDEPS1): what was copied, and to
-    /// skip the <c>npm ci</c> that would delete it. Null where nothing was.
+    /// What its session's agent is told of what was copied into it from its checkout: the dependencies (TREEDEPS1), and to skip the
+    /// <c>npm ci</c> that would delete them; then the machine-local files its gates read (TREELOCAL1, D216), and to leave them as they
+    /// are. Null where nothing was. Its name is the dependencies', which its readers carry as one told-once field.
     /// </summary>
     public string? Dependencies { get; init; }
 }
@@ -360,6 +361,7 @@ public sealed class SessionTrees(string home, IWorkplacePluginWire? plugins = nu
 
         string? unrecorded = null;
         var dependencies = DependencyCopy.None;
+        var inputs = LocalCopy.None;
         try
         {
             // 🔴 Long paths (2026-09-27): a tree's prefix is longer than the root's, so a repository whose
@@ -400,6 +402,9 @@ public sealed class SessionTrees(string home, IWorkplacePluginWire? plugins = nu
             // TREEDEPS1: the dependencies the checkout installed at this tree's lockfile, copied in while the tree is still locked as
             // opening, so a cut-off open's undo takes a half copy with the tree. Copied, never linked (D51's note).
             dependencies = await TreeDependencies.CopyAsync(root, path, ct).ConfigureAwait(false);
+            // TREELOCAL1 (D216): the machine-local files its gates read, as the checkout's gates file declares them, copied read-only under
+            // the same lock, so its gates run in the tree the checks they run in the checkout.
+            inputs = await TreeLocalInputs.CopyAsync(root, path, ct).ConfigureAwait(false);
 
             var (unlocked, _, unlockErr) = await WorkingTree.GitAsync(root, ["worktree", "unlock", path], ct).ConfigureAwait(false);
             if (unlocked != 0)
@@ -423,23 +428,29 @@ public sealed class SessionTrees(string home, IWorkplacePluginWire? plugins = nu
         RefMoves.Mine(_context.Home, repository, workspace, root);
 
         // What it grew from as a fact (LANG1a): the branch it started at, never the sentence spelling it for a person.
-        var opening = OpeningOf(path, branch, basedOn, grewFrom ?? line.Branch ?? "HEAD", unrecorded, dependencies);
-        return new(path, branch, basedOn, opening.Note, grewFrom) { Opening = opening, Dependencies = dependencies.Told };
+        var opening = OpeningOf(path, branch, basedOn, grewFrom ?? line.Branch ?? "HEAD", unrecorded, dependencies, inputs);
+        var told = string.Join(" ", new[] { dependencies.Told, inputs.Told }.OfType<string>());
+        return new(path, branch, basedOn, opening.Note, grewFrom) { Opening = opening, Dependencies = told.Length == 0 ? null : told };
     }
 
     /// <summary>
     /// The opening's sentence, price included, with its codes (LANG1a, the language design §4 rows 25–26): its branch and the
     /// branch it started at as facts, never its path, which only the English names and the cleaner cuts where it travels. Where
-    /// its checkout's dependencies were copied in (TREEDEPS1), its own code says them; each project that copied none says why.
+    /// its checkout's dependencies were copied in (TREEDEPS1), its own code says them; each project that copied none says why. The
+    /// machine-local files its gates read (TREELOCAL1), copied in read-only, are a line after those, and each declared one not copied
+    /// says why.
     /// </summary>
     /// <param name="basedOn">What it grew from, spelled for a person.</param>
     /// <param name="startedAt">The branch it started at, or <c>HEAD</c>: the fact the page says.</param>
     /// <param name="unrecorded">Why where its branch started was not recorded (WSR6), in the program's words; null where it was.</param>
     /// <param name="dependencies">What was copied of the checkout's dependencies, and why not the rest; none by default.</param>
+    /// <param name="inputs">What was copied of the machine-local inputs the checkout's gates file declares, and why not the rest; none by default.</param>
     internal static Noted OpeningOf(
-        string path, string branch, string basedOn, string startedAt, string? unrecorded, DependencyCopy? dependencies = null)
+        string path, string branch, string basedOn, string startedAt, string? unrecorded, DependencyCopy? dependencies = null,
+        LocalCopy? inputs = null)
     {
         dependencies ??= DependencyCopy.None;
+        inputs ??= LocalCopy.None;
         // 🔴 A stored shape is never changed in place: `started.tree` still says no installed dependencies, as every opening
         // recorded before TREEDEPS1 did, and a tree its checkout's were copied into says it under a code of its own.
         var opening = dependencies.Copied.Count > 0
@@ -458,6 +469,8 @@ public sealed class SessionTrees(string home, IWorkplacePluginWire? plugins = nu
                 + "holds nothing.",
                 ("branch", branch), ("basedOn", startedAt));
         foreach (var each in dependencies.Declined) opening = opening.Then(" ", each.Line());
+        if (inputs.Line() is { } copied) opening = opening.Then(" ", copied);
+        foreach (var each in inputs.Declined) opening = opening.Then(" ", each.Line());
         if (unrecorded is null) return opening;
 
         var line = Noted.Of(

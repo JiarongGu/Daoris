@@ -274,6 +274,9 @@ note). The words beside a clean-up row, which the terminal and the bridge say, a
 Git for Windows' removal follows a junction out of a tree, so each path that has git delete a tree's folder (the removal, a
 landing's tidy, the press, an undone opening) first takes every link in it off as a link with `TreeLinks`, and keeps a tree it
 cannot (TREELINK1, D51's note); the look's own tidy moves folders aside and never needs it.
+A tree opens with its checkout's npm dependencies where its lockfile matches (`TreeDependencies`, TREEDEPS1) and the files under
+`local/` its repository's gates read, as the checkout's `daoris.gates.json` declares them, copied read-only (`TreeLocalInputs`,
+TREELOCAL1, D216); both are made under a name of their own inside the opening's lock, and the opening says each one it did not copy.
 The empty-leftover scan skips directory links at its root and every nested level, leaving both links and their targets
 untouched while removing ordinary empty leftovers (TREELEFTLINK1, D51).
 The machine's `cap` counts what the driver starts (CAPCOUNT1, D130's note): a driven quest's session, an intake, a helper and a

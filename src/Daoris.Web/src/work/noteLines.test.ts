@@ -1139,6 +1139,35 @@ describe('noteLines', () => {
       .toMatch(/no installed dependencies, no build outputs\.$/);
   });
 
+  /**
+   * TREELOCAL1 (D216): the machine-local files a repository's gates read, copied into its tree read-only, each as code, and a
+   * declared one not copied says why; a failed copy's own words follow as the program's.
+   */
+  it('words the machine-local inputs copied into a tree, and why a declared one was not, in either language', () => {
+    const parts = [
+      coded('started.local-copied', 'The machine-local files …', { inputs: ['local/sensitive-patterns.txt', 'local/hosts.txt'] }),
+      coded('started.local-missing', '`local/allowed.txt` was not copied …', { input: 'local/allowed.txt' }),
+      coded('started.local-refused', '`secrets/token.txt` was not copied …', { input: 'secrets/token.txt' }),
+      coded('started.local-failed', '`local/big.bin` was not copied …', { input: 'local/big.bin' }),
+    ];
+
+    const [copied, missing, refused, failed] = noteLines(t, { parts }, 'en');
+    expect(copied.text).toMatch(
+      /^The machine-local files the repository's gates read were copied in from your checkout, read-only: `local\/sensitive-patterns\.txt`.+`local\/hosts\.txt`\.$/,
+    );
+    expect(missing.text).toBe("`local/allowed.txt` was not copied: the repository's gates read it, and your checkout does not hold it.");
+    expect(refused.text).toBe(
+      '`secrets/token.txt` was not copied: Daoris copies into a tree only a file under `local/` that git ignores there, and this is not one.',
+    );
+    expect(failed.text).toBe('`local/big.bin` was not copied from your checkout, since the copy failed:');
+    const [copiedZh, missingZh, refusedZh, failedZh] = noteLines(zh, { parts }, 'zh');
+    expect(copiedZh.text).toMatch(/^仓库的检查读取的本机文件已从你的检出以只读方式复制进来：`local\/sensitive-patterns\.txt`.+`local\/hosts\.txt`。$/);
+    expect(missingZh.text).toBe('`local/allowed.txt` 没有复制：仓库的检查会读取它，而你的检出里没有它。');
+    expect(refusedZh.text).toBe('`secrets/token.txt` 没有复制：Daoris 只把 `local/` 下、git 在工作树中忽略的文件复制进工作树，而它不是这样的文件。');
+    expect(failedZh.text).toBe('`local/big.bin` 没有从你的检出复制，因为复制失败了：');
+    for (const line of [copied, missing, refused, failed, copiedZh, missingZh, refusedZh, failedZh]) expect(line.kind).toBe('said');
+  });
+
   /** A program's words pass through as written, as `DRIVER_REFUSED` passes the driver's sentence. */
   it('passes a program’s words through as written', () => {
     expect(noteLines(zh, { parts: [words('System.IO.IOException: The process cannot access the file.', 'program')] }, 'zh'))
