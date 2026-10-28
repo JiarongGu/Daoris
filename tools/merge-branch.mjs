@@ -6785,14 +6785,18 @@ async function queueStep(home) {
   const candidate = queue.candidate;
   const action = resumeCandidate(candidate, { mainTip, isAncestor: isAncestorIn(home) });
   if (action === 'promoted') {
-    // C4: the member that held a contained one has promoted, so the contained one is settled with it.
-    const settled = settleContained(candidate, at);
-    withQueue(home, (q) => ({
-      queue: {
-        ...q, candidate: null, landed: [...(q.landed ?? []), ...candidate.members.map((each) => ({ branch: each.branch, tip: each.tip, request: each.request, commit: each.commit, at }))].slice(-200),
-        ...(settled.length ? { contained: [...(q.contained ?? []), ...settled].slice(-200) } : {}),
-      },
-    }));
+    // C4: the member that held a contained one has promoted, so the contained one is settled with it: the record's contained, read
+    // under the lock, so one dropped since is not settled.
+    const { settled } = withQueue(home, (q) => {
+      const kept = settleContained(sameCandidate(q.candidate, candidate) ? q.candidate : null, at);
+      return {
+        queue: {
+          ...q, candidate: null, landed: [...(q.landed ?? []), ...candidate.members.map((each) => ({ branch: each.branch, tip: each.tip, request: each.request, commit: each.commit, at }))].slice(-200),
+          ...(kept.length ? { contained: [...(q.contained ?? []), ...kept].slice(-200) } : {}),
+        },
+        settled: kept,
+      };
+    });
     console.log(`${at} promoted ${candidate.tip.slice(0, 7)}: ${candidate.members.map((each) => each.branch).join(', ')}${settled.length ? `; contained in them, settled with them: ${settled.map((each) => each.branch).join(', ')}` : ''}`);
     return 'next';
   }
@@ -6801,9 +6805,10 @@ async function queueStep(home) {
     const lanes = readLanes(home)?.lanes ?? [];
     const counted = reformCount(candidate, { recordsOnlyMove: recordsOnly(paths, (path) => ruleFor(path, REACH, lanes)) });
     console.log(`${at} main moved to ${mainTip.slice(0, 7)} by a direct commit${counted.recordsOnly ? ', records only' : ''}: the candidate is formed again${counted.heldByDirect ? `, re-formed ${counted.reforms} times running: held by direct commits` : ''}`);
-    // QUEUEWAITEND1: its requests stand as `forming` while they form again, in the write that ends the old candidate.
+    // QUEUEWAITEND1: its requests stand as `forming` while they form again, in the write that ends the old candidate; its contained
+    // members are the record's, so one dropped since is not formed again.
     const formed = withQueue(home, (q) => changeCandidate(q, candidate, () => {
-      const forming = { base: mainTip, members: requestsOf(candidate, candidate.members.map(({ commit, handedBack, ...request }) => request)), reforms: counted.reforms, recordsOnly: counted.recordsOnly };
+      const forming = { base: mainTip, members: requestsOf(q.candidate, candidate.members.map(({ commit, handedBack, ...request }) => request)), reforms: counted.reforms, recordsOnly: counted.recordsOnly };
       return { queue: { ...q, candidate: null, forming }, forming };
     }));
     if (!formed.obsolete) await formNext(home, formed.forming);
@@ -6921,8 +6926,11 @@ async function judged(home, candidate, outcome) {
     return 'next';
   }
   const back = (outcome.handedBack ?? []).map((each) => ({ ...each, handedBack: { ...each.handedBack, at } }));
+  // C4: the contained members given back are the record's, read under the lock with the write (`q.candidate`), never this run's
+  // copy: a member dropped by name while the run went on is off the record's candidate only, and the copy would bring it back.
+  const retained = (outcome.retain ?? []).map(({ commit, ...request }) => request);
   if (outcome.action === 'split') {
-    if (change((q) => ({ queue: { ...q, candidate: null, handedBack: [...(q.handedBack ?? []), ...back].slice(-100), queued: [...requestsOf(candidate, outcome.retain.map(({ commit, ...request }) => request)).map((request) => ({ ...request, oneAtATime: true })), ...q.queued] } })).obsolete) return obsolete();
+    if (change((q) => ({ queue: { ...q, candidate: null, handedBack: [...(q.handedBack ?? []), ...back].slice(-100), queued: [...requestsOf(q.candidate, retained).map((request) => ({ ...request, oneAtATime: true })), ...q.queued] } })).obsolete) return obsolete();
     for (const each of back) console.log(`${at} handed back: ${each.branch} (${each.handedBack.how}: ${each.handedBack.failure})`);
     console.log(`${at} unresolved: ${outcome.retain.map((each) => each.branch).join(', ')} run one at a time`);
     return 'next';
@@ -6930,11 +6938,14 @@ async function judged(home, candidate, outcome) {
   // The retained candidate is judged again: the members kept, formed anew on the base, run on their own tree.
   // C4: so are the members it held as contained, now that their container may be gone: each is merged again, or found contained again.
   // QUEUEWAITEND1: they stand as `forming` in the write that ends this candidate.
-  const again = requestsOf(candidate, (outcome.retain ?? []).map(({ commit, ...request }) => request));
-  const forming = again.length ? { base: candidate.base, members: again, reforms: 0, recordsOnly: false } : null;
-  if (change((q) => ({ queue: { ...q, candidate: null, forming, handedBack: [...(q.handedBack ?? []), ...back].slice(-100) } })).obsolete) return obsolete();
+  const ended = change((q) => {
+    const again = requestsOf(q.candidate, retained);
+    const forming = again.length ? { base: candidate.base, members: again, reforms: 0, recordsOnly: false } : null;
+    return { queue: { ...q, candidate: null, forming, handedBack: [...(q.handedBack ?? []), ...back].slice(-100) }, forming };
+  });
+  if (ended.obsolete) return obsolete();
   for (const each of back) console.log(`${at} handed back: ${each.branch} (${each.handedBack.how}: ${each.handedBack.failure})`);
-  if (forming) await formNext(home, forming);
+  if (ended.forming) await formNext(home, ended.forming);
   return 'next';
 }
 

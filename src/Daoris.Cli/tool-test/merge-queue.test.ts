@@ -1384,6 +1384,48 @@ describe('the queue, end to end in a scratch repository', { concurrency: true },
     }
   });
 
+  // The review's second finding on INTEGRATE1c: the run's own copy of the candidate still held a contained member dropped meanwhile.
+  test('a contained member dropped by name while its container runs, and queued again, is not brought back by the container\'s hand-back: only the new request lands', async () => {
+    const repo = queueScratch('contained-dropped');
+    const dir = join(repo.root, 'local', 'drain');
+    const hold = join(repo.root, 'local', 'go');
+    mkdirSync(dir, { recursive: true });
+    try {
+      // The check holds where `break-check` stands, until `release`: the container's run is under way while the drop comes.
+      writeFileSync(join(repo.root, 'qgate.mjs'), treeGate(dir, "existsSync('break-check')"));
+      repo.git('commit', '--quiet', '-am', `a gate that holds a breaking tree${TRAILER}`);
+      nested(repo, { 'a.txt': 'a\n', 'break-check': 'x\n' });
+      for (const name of ['outer', 'inner']) assert.equal((await repo.run([name, '--preview'])).status, 0);
+      const outer = repo.run(['outer', '--message', 'local/outer.msg'], { MERGE_BRANCH_QUEUE_HOLD: hold });
+      await repo.until(() => (repo.queue()?.queued.length ?? 0) === 1);
+      const first = repo.run(['inner', '--message', 'local/inner.msg'], { MERGE_BRANCH_QUEUE_HOLD: hold });
+      await repo.until(() => (repo.queue()?.queued.length ?? 0) === 2);
+      writeFileSync(hold, '');
+      await repo.until(() => existsSync(join(dir, 'check.pid')));
+      assert.deepEqual(repo.queue()!.candidate!.contained!.map((each) => each.branch), ['inner'], repo.log());
+      assert.equal((await repo.run(['--drop-batch', 'inner'])).status, 0);
+      const dropped = await first;
+      assert.equal(dropped.status, 1, dropped.out);
+      const old = repo.queue()!.handedBack.find((each) => each.branch === 'inner')!.request;
+      assert.equal((await repo.run(['inner', '--preview'])).status, 0);
+      const again = repo.run(['inner', '--message', 'local/inner.msg'], { MERGE_BRANCH_QUEUE_HOLD: hold });
+      await repo.until(() => repo.queue()?.queued.some((each) => each.branch === 'inner') === true);
+      const fresh = repo.queue()!.queued.find((each) => each.branch === 'inner')!.request;
+      writeFileSync(join(dir, 'release'), '');
+      const [outerOut, againOut] = await Promise.all([outer, again]);
+      assert.equal(outerOut.status, 1, `${outerOut.out}\n${repo.log()}`);
+      assert.equal(againOut.status, 0, `${againOut.out}\n${repo.log()}`);
+      assert.match(againOut.out, /inner is in main/, 'the new request merges on its own');
+      const landed = repo.queue()!.landed!.filter((each) => each.branch === 'inner');
+      assert.deepEqual(landed.map((each) => each.request), [fresh], `the dropped request ${old} never lands:\n${repo.log()}`);
+      assert.equal((repo.queue()!.contained ?? []).length, 0);
+    } finally {
+      writeFileSync(join(dir, 'release'), '');
+      writeFileSync(hold, '');
+      await repo.cleanup();
+    }
+  });
+
   // The review's first finding on INTEGRATE1c: the line's marker was the word `line`, which a branch may be named.
   test('a container whose branch is named `line` holds its member provisionally, as any member does: handed back, the member is judged again on its own', async () => {
     const repo = queueScratch('contained-named-line');
