@@ -5,6 +5,14 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-28 - The ACP door's tests waited ten seconds for signals the suite gives two minutes (ACPWAIT1)
+
+- **Symptom:** the merge queue's candidate `f192609` (the Workplace-names-Workflows cut alone, which touches no agent door) failed its fast Driver gate on one case, `AcpTests.Under_asking_a_request_is_held_off_the_loop_until_the_person_answers_with_an_offered_option(marks: "?!")`, with `TimeoutException` at the run's `WaitAsync(TimeSpan.FromSeconds(10))` after the person's answer, beside six driven sessions and the gate's own load.
+- **Root cause:** `AcpTests` kept its own waits: five `WaitAsync` of ten seconds on a run's end, a poll of 500 tries of 10 ms, a ten-second deadline on a heard line and a two-second poll. Each waits on a signal that fails to come only when the code is wrong, which TESTPATIENCE1 gives `Poll.Patience` (two minutes), because a starved run reaches any shorter bound on time alone.
+- **Fix:** the five waits are `WaitAsync(Poll.Patience)`, both polls are `Poll.Until`, and the heard-line deadline is `Poll.Patience`; no assertion, case or order changes, and an unbounded wait on a held turn stays as it was.
+- **Verify:** `AcpTests` (filtered, `Category!=Process`) passes whole on the branch; the queue's next candidate carries it with the Workflows cut.
+- **Commit:** the branch `parent/acpwait1`.
+
 ## 2026-10-28 - The structure gate's wall-clock bound failed a candidate on the machine's load (STRUCTBOUND1)
 
 - **Symptom:** the merge queue's candidate `63de292` (six branches, none touching the gate) failed its fast Driver gate on one test, `StructureTests.The_census_reads_what_today_s_identifier_scan_missed_and_none_of_what_it_over_counted`: "the compile and the walk took 73s". The FOUNDATION1 mod-xi session's focused runs failed the same way twice (73 s and 89 s) and passed with the class alone. A failure outside the Process category is never re-run, so an unresolved one sends every member of a batch through the queue one at a time.
