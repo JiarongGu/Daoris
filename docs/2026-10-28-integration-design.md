@@ -1,8 +1,16 @@
-# A repository's integration is a fabric workflow Daoris runs (INTEGRATE1, 2026-10-28: round 4, proposed; round 3 accepted)
+# A repository's integration is a fabric workflow Daoris runs (INTEGRATE1, 2026-10-28: round 5, accepted after named changes, pending the steward's check)
 
-**Standing (round 4, proposed under D191, 2026-10-28; D215 re-opened):** the owner's direction of 2026-10-28 (§0.1 point 3) re-opens
-round 3's fixed cycle: how work moves is a flow each workspace configures from step kinds, and integration is a step in it. Round 4 is
-written by Claude Opus 5.5 from round 3's tip `4b9621c37`, whose `src/` is `7ebeba1ba`'s, on the branch `parent/integrate1-flow`. §17 says
+**Standing (round 5, 2026-10-28, under D191):** both makers read round 4 at `75c79c6c1` and accepted after named changes: Claude Fable
+(F40 to F54, F40 blocking) and Codex (C28 to C33; C28, C29, C30 and C32 blocking). Each finding was checked against the code at the lines
+it cites (§14, round 4's table). Round 5 makes every named change in the text, marked *(R5)*, and records the steward's settlement of
+§17.13's questions (§18). The steward checks the changes and writes the acceptance; until then the standing is *accepted after named
+changes, pending the steward's check*. Rows a, c, d, j, b and f build now; row e once the steward has checked F40's change (§18.3 point 8).
+Nothing is built.
+
+**Round 4's standing, as it was written (proposed under D191, 2026-10-28; D215 re-opened):** the owner's direction of 2026-10-28 (§0.1
+point 3) re-opens round 3's fixed cycle: how work moves is a flow each workspace configures from step kinds, and integration is a step in
+it. Round 4 is written by Claude Opus 5.5 from round 3's tip `4b9621c37`, whose `src/` is `7ebeba1ba`'s, on the branch
+`parent/integrate1-flow`. §17 says
 what it decides: a unit's whole flow is its chosen workflow's; `integrate` and `request` are graph node kinds; the work's own requests are
 drawn and may hold it; two built-in presets; the install's policy split between the unit's step and the line's rule. Each section it changes
 is edited in place and listed in §17.12 with what it replaced. The line's run keeps its mechanics as round 3 accepted them (§5.2 to §5.7,
@@ -112,6 +120,12 @@ QUEUEDRAIN1, HEAVYQUEUE1, TIDYOUTPUT1, RUNENDS1 and DOGFOOD1; and both reads of 
 `Workflows/Domain/WorkflowNamed.cs`, `WorkflowPresets.cs`, `WorkflowSelection.cs` and `WorkflowRun.cs`; `Trees/Nodes/NodeContract.cs`,
 `NodeGraphs.cs`, `NodeRuntime.cs`, `NodeWires.cs` and `BuiltInNodes.cs`; `Settings/LandingKey.cs`; `Service/Domain/QuestViews.cs`;
 `Sessions/Domain/AskWork.cs`.
+
+**Round 5 read** *(R5)*, at `75c79c6c1`, whose `src/` is still `7ebeba1ba`'s: both reads of round 4, and the code each finding cites,
+`Workplace/TreeLands.cs`, `AutoLander.cs` and `LandedBranches.cs`; `Knowledge/Domain/WorkplaceFacts.cs`; `Workflows/Domain/WorkflowGate.cs`
+and `WorkflowCurrent.cs`; `Trees/Nodes/NodeLifecycle.cs`, `RunNodeWords.cs`, `GraphRuns.cs`, `WireEvaluation.cs` and `WorkflowGraphs.cs`;
+the service's `Quests/Quests.cs` and `QuestExchange.cs`. §1.1's lines in `tools/merge-branch.mjs` and `tools/merge-queue.mjs` are
+`7ebeba1ba`'s: QUEUEDRAIN1 has moved them on main since (F49).
 
 ## 1. Today's paths
 
@@ -226,6 +240,15 @@ QUEUEDRAIN1, HEAVYQUEUE1, TIDYOUTPUT1, RUNENDS1 and DOGFOOD1; and both reads of 
   (`Sessions/Domain/AskWork.cs:12`; `QuestView.PublishedBy`, `Service/Domain/QuestViews.cs:198-202`), the one its taker waits on is `Awaits`
   (`:182-194`), and the work step says it (`Workflows/Domain/WorkflowRun.cs:701-702`).
 - **The presets are steps** *(R4)*: four, each a steps version (`WorkflowPresets.cs:26-35`), with the opinion and look variants (`:44-56`).
+- **A landing record says who accepted it, never whether integration stood** *(R5, F40, C30)*. A landing keeps `AcceptedBy` (`person` or
+  `auto`, `Knowledge/Domain/WorkplaceFacts.cs:296-303`) and `LandedRule(Plugin, AutoAccept, Source)` (`:309-318`), written at
+  `Workplace/TreeLands.cs:664-665`, an advance its own `AcceptedBy` (`:644`; `LandedAdvance`, `WorkplaceFacts.cs:238-241`); the automatic
+  landing passes `AcceptedBy.Auto` (`Workplace/AutoLander.cs:375`).
+- **A graph's options are opaque** *(R5, C28)*. A node's `options` are read as any value (`NodeGraphs.cs:643`) and judged by nothing in its
+  declaration's checks (`NodeContract.cs:479-492`, which refuses a version below 1 and none above it, `:486`); `claimed` is reached on its
+  quest's Done (`BuiltInNodes.cs:218-229`).
+- **A quest's id is its words** *(R5, C32)*: `MakeId(from, to, title, parent, lanes)` (the service's `Quests/Quests.cs:1238-1245`), and a
+  publish whose id is held returns the held quest unchanged (`:1281-1287`), body and publisher included.
 
 ### 1.4 In flight
 
@@ -486,8 +509,12 @@ they stood, and the frozen tip, and which takes a unit's request only from **tha
 So no request can pass a session's stopped `handed`, a required opinion or a review.
 
 **Its caller is the unit's `integrate` step** *(R4, §17.4)*. The node's start calls this door, keyed by the unit and its landed tip, so a
-restart finds the request it made. Under `owner` and `done` a landing made under the step is its request; under `steward` the steward's act
-starts it; a recorded landing made before waits for the doors below. The door's rules are unchanged; only its caller is new.
+restart finds the request it made. ~~Under `owner` and `done` a landing made under the step is its request~~ *(R5, F40, C30)*: what a landing
+requests is read from its record's **acceptance provenance**, which the landing writes (§17.4): whether `integrate` stood at the acceptance,
+under which `request`, and whether the acceptance was the person's or automatic. A person's Accept made under `integrate` is the request; an
+automatic landing is one only under `request: done` with the line's gates declared and accepted; an automatic landing never satisfies
+`request: owner`; under `steward` the steward's act starts it. A landing whose record says neither, made before, waits for the doors below.
+The door's rules are unchanged; only its caller is new.
 
 **An existing recorded landing** *(F32, C27)*. Branches landed under the old rule, by an older build in the rollback window, before the rule
 carried `integrate`, or left behind by a request the flip hands back (§6.3) are already landed: their landing is not pressed again, since
@@ -990,20 +1017,31 @@ step) before the driver transport, n (the `integrate` node) before g, q (the pre
 - **INTEGRATE1o — the work's own requests drawn, and held where the flow says** *(R4, §17.3)* (Workflows, web).
   - Contents: each quest a session of the run published (`WorkJoin.Published`) drawn inside the work node on the run's view and by `daoris-driver
     workflow run`: its repository, its state, whether its session waits on it (`Awaits`), its outcome (the close's note); a helper's ask beside
-    it as a request to an agent. `claimed`'s option `requests`, `wait` or `go-on`, absent being `go-on`, read on a graph version alone; under
-    `wait` the work is not reached while one is open, and a decline holds it for the person, whose *Go on without it…* with words, a Person
-    route kept on the run's record, passes that request over: a wait kind in every place `person-waits.md` names, its route in every place
-    `bridge-presses.md` names.
-  - Proof: a run whose session published to another repository draws it, en and zh and on the terminal; under `wait` the work waits until that
-    quest closes, and a decline holds it until the person's press; a run with the option absent, and every Current run, reads as before.
-  - Beside FOUNDATION1 while no mod-xviii branch is open: it touches the run's derivation in `Workflows/` and the web alone.
+    it as a request to an agent. ~~`claimed`'s option `requests`, `wait` or `go-on`~~ *(R5, C28)*: the kind `work.requests` (observed, its subject
+    the run, its authority the quests' records, skippable by the person), active while a quest the run's sessions published here is open,
+    waiting on the person once one is declined, reached when each is done; the person's *Pass over…* with words is the run's existing skip, a
+    wait kind in every place `person-waits.md` names. This build's reader refuses a `requests` option on `claimed` by name. The person-part
+    comparison's graph part, by node id (§17.6 point 9), with its first row: `work.requests` removed lowers.
+  - Proof: a run whose session published to another repository draws it, en and zh and on the terminal; under `work.requests` the work waits
+    until that quest closes, and a decline holds it until the person's pass; a graph without the node, and every Current run, reads as before.
+    **The older reader's proof** (Codex's): the reader and observer of the build before, run against a graph of existing kinds plus the hold,
+    hold the run rather than drop the hold, which only the new kind can make true, since an option is run with it dropped; a `claimed` carrying
+    `requests` refused here; `work.requests` removed reported as lowering.
+  - Beside FOUNDATION1 while no mod-xviii branch is open: it touches the node kinds and the run's derivation (`Trees/Nodes/`, `Workflows/`),
+    which mod-xviii moves, and the web.
 - **INTEGRATE1r — Current and the choice know the step** *(R4, §17.7)* (Workflows, web; after d).
   - Contents: Current's derivation (`WorkflowCurrent`) and its twin table gain the `integrate` step where the effective rule carries `integrate`,
-    its source and its limit said (*not integrated yet* until row g); the Workflow tab and `daoris driver workflow show` draw it; the choice's
-    `use` refuses, and the gate holds as *cannot start*, a version its repository's declarations cannot carry, naming the Setup row (D157 §2.3):
-    an `integrate` with no pattern declared, after a landing whose plugin (the version's or the rule's) is one, or under `done` or `steward` with
-    no accepted gates; a `pushed` or `pull-request` after a landing no plugin pushes (§17.7's table).
-  - Proof: the twin table's rows; the tab in en and zh; each refusal and hold.
+    its source and its limit said (*not integrated yet* until row g); ~~the Workflow tab and `daoris driver workflow show` draw it~~ *(R5, F43)*:
+    drawn from the landing's graph after the landing, a cell of its node kind and never a row of the steps' kinds table, by the Workflow tab and
+    `daoris driver workflow show`; `new --from current:<repository>` leaves it out of the steps and says the rule's graph integrates the steps
+    run's branch. The choice's `use` refuses, and the gate holds as *cannot start*, a version its repository's declarations cannot carry,
+    naming the Setup row (D157 §2.3): an `integrate` with no pattern declared, or after a landing whose plugin (the version's or the rule's) is
+    one; *(R5, C31, F48)* `done` or `steward` where the rule's `integrate.gates` is not `declared`, or no accepted declaration names a gate,
+    each its own sentence; `done` where the effective landing accepts by press (the version's `handed` `accept`, else the rule's switch); a
+    `pushed` or `pull-request` after a landing no plugin pushes (§17.7's table). Each door that sets a choice says, per repository it
+    reaches, *integrates with no gates* where the rule's `integrate.gates` is absent or `none` (F42).
+  - Proof: the twin table's rows; the tab in en and zh; each refusal and hold, **the accepted blob with gates off** among them (Codex's C31:
+    `done` refused, `owner` integrating with no gates and said so); the door's sentence for a repository with no `integrate`.
   - Beside FOUNDATION1 while no mod-xviii branch is open.
 - **INTEGRATE1e — the integration run over git, unwired** (Workplace).
   - Contents: the store family; the one door with its recorded-landing path (bound to the recorded unit and exact tip, the recorded gate proof
@@ -1018,6 +1056,12 @@ step) before the driver transport, n (the `integrate` node) before g, q (the pre
     about 28 class-minutes (D207 point 7), each measured *(F29)*.
   - Starts once the open branches cutting Workplace's edges have landed: mod-x and mod-xi are built (`docs/decisions/D212.md:1309-1313`), and it
     adds new files in Workplace's folder alone *(F23)*.
+  - *Round 5* (§17.4, *(R5, F40, C30)*): the landing's **acceptance provenance**, written by `TreeLands`' landing and advance beside
+    `AcceptedBy` and `LandedRule` (`TreeLands.cs:644`, `:664-665`): that `integrate` stood, its `request`, and whether it was the rule's or the
+    version's; the door admits by it as §4.6 says. Proof cases: a standing landing accepted before the rule carried `integrate` is not
+    requested (Fable's); `handed.accept` automatic, `request: owner`, `gates: none` makes the branch and waits for the owner, never moving
+    the line by itself (Codex's); a person's Accept under `owner` is admitted; an automatic landing under `done` with declared and accepted
+    gates is admitted; an older build's rewrite of the landings file without the field leaves a landing the door does not admit.
 - **INTEGRATE1f — the gates and the judge in the driver** (Review). The verdict port's implementation; the runner contract's caller and the direct
   run; the admission's places and the whole admission; §5.5's environment; the candidate's job; the failure reader's twin; the judge pure in
   `Review/Domain`, twinned with the tool's table, the known-red expiry branch among its cases *(C14)*. Proof: the twins' tables; a job closed ending a
@@ -1032,6 +1076,11 @@ step) before the driver transport, n (the `integrate` node) before g, q (the pre
   - Proof: a node through each state over a stand-in record; a restart finding its request by its key; a new landing tip invalidating it and
     requesting again; a version naming it read as unreadable by the older reader's table; an older build's Current graph for the same rule
     holding no node and writing no record; a schema-1 run's landed branch integrating through Current's graph.
+  - *Round 5* (§17.4, §17.6): the start reads the landing's acceptance provenance (*(R5, F40, C30)*), with row e's cases through the node:
+    the rule gaining `integrate` over standing landings requests none of them; the automatic landing under `owner` with `gates: none` waits for
+    the card. The second revision's request waits for the first's outcome, both shown (F41). The stop refused once the record says promoted
+    (F50). The landed branch's kinds refused before every `handed` when saved (F47). The arming narrowed to the integrating repositories' branch
+    units, its cost measured (F51). The lowering row by kind in the graph part of the comparison (C29).
   - After e and mod-xviii.
 - **INTEGRATE1g — the transport wired** (Workflows, Loop).
   - Contents: the line's run off the pass, shared with FABRIC-PIPELINE1d's executor; ~~a branch rule carrying `integrate` requesting through its
@@ -1052,6 +1101,10 @@ step) before the driver transport, n (the `integrate` node) before g, q (the pre
     version; the Workflow tab's offer; words in en and zh.
   - Proof: each preset saved reads as a graph version and binds a run; *with no press* refused where the line declares no accepted gates; the pull
     request's preset over a stand-in plugin reaching its end; the line preset integrating a done quest end to end on a scratch repository.
+  - *Round 5* (§17.7): each preset holds `work.requests` (C28), so it is offered only by a build that has row o; its line says who closes the
+    quest, the agent's done, the flow's end being the work's (F46); the graph form of `WithGates` wires each gate into the landing and never
+    the opinion into the look, its proof a variant read by `protected-wire` and FABRIC-CUTOVER1b's rule (F54); the door's *integrates with no
+    gates* per repository (F42, row r).
 - **INTEGRATE1k — this repository moves.**
   - Order: the fence row first, landed alone (the runner reading `by` before each promotion and recording its code identity, an enqueue refusing
     behind a runner of another identity); the old runner drained and ended; a fenced runner shown refusing; then the shadow day; then the owner's
@@ -1077,13 +1130,25 @@ step) before the driver transport, n (the `integrate` node) before g, q (the pre
   an overlapping start held and said; two running units told once each; an agent's declaration unable to release another's hold.
 - **INTEGRATE1p — the `request` node** *(R4, §17.5)* (Workflows, service; after n).
   - Contents: the kind, its options (`to`, `title`, `body`, `start`, `until`, `declined`), its reach and authority (the commitment's, as
-    `wait.unit`'s row has it), its subject (the quest it published, at its revision); the quest's requester, the run and the node, as a field
-    through every place `quest-operations.md` names; its start publishing once, found first by that field; its wait read from this machine's
-    projection of the quest; its outcome drawn; its words in en and zh. Built on row n's waited start and the exchange as it stands, as
-    FABRIC-DELEGATE1's first form and with FABRIC-WAITUNIT1's adapter (§17.13 question 5).
+    `wait.unit`'s row has it), its subject (the quest it published, at its revision); ~~the quest's requester, the run and the node, as a field
+    through every place `quest-operations.md` names; its start publishing once, found first by that field~~ *(R5, C32)* the request's key,
+    `<run>/<node>/<n>`, written on the run's record before anything is sent, carried as the quest's field through every place
+    `quest-operations.md` names and widening the service's id (`Quests.cs:1238-1245`) and its forgotten-id check (`QuestExchange.cs:657`), so
+    one transaction dedups; its wait read from this machine's projection of the quest; its outcome drawn; its words in en and zh. *(R5, C33)*
+    After a decline under `declined: wait`, the person's *Ask again…* (*failed → ready*, the next `n`) and *Go on without it…* with words (a
+    new *failed → skipped* move for this kind alone, in the one table), two acts on the run's node door (`WORKFLOW_NODE`, `daoris-driver
+    workflow`), each a Person route in every place `bridge-presses.md` names, and the wait in every place `person-waits.md` names. *(R5, F52)*
+    `to` a registered or adopted repository (D70), never the run's own; the key a quest field that travels (D68, D144), so an older build
+    refuses a push carrying it, as WORKFLOW1e2's `chosen` operation is refused. Its lowering rows by node id (§17.6 point 9). Built on row n's
+    waited start and the exchange as it stands, as FABRIC-DELEGATE1's first form and with FABRIC-WAITUNIT1's adapter, for bounded requests the
+    driver originates (§18.3 point 5).
   - Proof: published once across a restart; reached on the quest's done, or its taking under `until: taken`; a decline holding for the person;
     a quest another machine took read through the projection; nothing of the receiving repository's files read; `start: automatic` said as a
-    standing say-so where it is set.
+    standing say-so where it is set. *(R5)* Codex's C32 cases: identical request words in two runs make distinct quests; restarting either run
+    reuses its own quest; a lost publish answer makes no duplicate. Codex's C29 case: two request nodes in one graph, only the second moved to
+    `start: automatic`, reported as lowering naming the second, applied only by the person's press. Codex's C33 cases: *Ask again…* publishing
+    under the next `n` and *Go on without it…* passing the `after` wire, each through the door and the pass. Fable's F45: the row's note names
+    D157's rejection of *several repositories as a step* reversed in part.
 - **INTEGRATE1m — another repository on integration.** A quest published to the library repository asking for its own `integration` declaration
   (its gates, commit check, scratch and line writers), never written from here; the install's rule for it set by the owner.
 
@@ -1092,7 +1157,8 @@ k, i, l, m. **Changed in round 3:** d (the declared scratch in the landing's tid
 branch's removal), i (no steward request of an unlanded unit), j (D192 point 9's command), k (the fence row first, the live runner drained,
 the leftovers' doors) (§16); the order is unchanged. **Changed in round 4** *(R4, §17.9)*: g (requests through the node), h (the run's view),
 i (the act starts the node), k (Current at the sitting); c and d noted, unchanged; n, o, p, q and r new. The order is a, c, d, j, b, o, r, e, f,
-n, g, h, q, k, i, l, p, m.
+n, g, h, q, k, i, l, p, m. **Changed in round 5** *(R5, §18)*: e (the acceptance provenance and its cases), n, o (the kind `work.requests`), p
+(the request's key and its decline's doors), q and r; the order is unchanged.
 
 Follow-ups named in §7.1, outside these rows: UPDATESTEP1, USAGEVIEW1, HANDBACK1, BRIEFKIND1, CHANNELJOIN1, SUBAGENTS1; and later designs: ~~an
 `integrate` node kind (§5.1)~~ (round 4's row n), a landing agent (§5.4), gates before a plugin's push, and round 4's later kinds, a `push`
@@ -1134,7 +1200,9 @@ Round 1, read at `6f1ee69cb`: Codex, *another round* (C1 to C26, 10 blocking); C
 read at `cd12f0399`, confined to its changed sections: Codex, *accept after named changes* (C4 to C12 resolved, C13 in part, C27 new and
 blocking); Claude Fable, *accept after named changes* (F5 to F10 resolved, F31 and F32 new and blocking, F33 to F39 non-blocking). Each finding
 was checked at the lines named. The steward's column gives the steward's verdict of 2026-10-28; *taken* is the steward's verdict on the
-disposition as written.
+disposition as written. *(R5)* Round 4, read at `75c79c6c1`: Claude Fable, as a foundation, *accept after named changes* (F40 to F54, F40
+blocking); Codex, *accept after named changes* (C28 to C33; C28, C29, C30 and C32 blocking). Round 4's table follows round 2's; its steward's
+column waits for the steward's check of round 5.
 
 **Round 1's findings**
 
@@ -1212,6 +1280,32 @@ disposition as written.
 | Fable | F37 | no | design §4.7 | taken: the door named, the sweep or the card | §4.7 | taken |
 | Fable | F38 | no | `Trees/Nodes/BuiltInNodes.cs:153-160` | taken: `line` reached from the unit's end, D102's content-held proof | §5.1 | taken |
 | Fable | F39 | no | `D192.md:66-67` | taken: the runner's command aligned with D192 point 9, its flags its own | §4.1, row j | taken |
+
+**Round 4's findings** *(R5)*: each checked at `4b9621c37`'s code (= `75c79c6c1`'s and `7ebeba1ba`'s `src/`), and every one held.
+
+| Reader | Id | Blocking | Verified at | Disposition | Where | Steward |
+|---|---|---|---|---|---|---|
+| Fable | F40 | **yes** | `TreeLands.cs:644`, `:664-665`; `WorkplaceFacts.cs:296-318` (`AcceptedBy`, `LandedRule` name no integration); `NodeGraphs.cs:798-802` (Current read live); `BuiltInNodes.cs:142-151` | taken, with C30: the landing record carries its acceptance's provenance; a landing whose record says neither waits for the card or the sweep | §1.3, §4.6, §17.4; rows e, n | pending |
+| Fable | F41 | no | `NodeLifecycle.cs:410-447` (start refused while unreconciled, `:413`; kept through invalidation, `:447`) | taken: the second revision's request waits for the first's outcome, both shown | §17.4; row n | pending |
+| Fable | F42 | no | §4.1's *Absent* column (`gates: none`); D145 point 1 | taken: the door says *integrates with no gates* per repository, and refuses *with no press* there | §17.7; rows r, q | pending |
+| Fable | F43 | no | `WorkflowCurrent.cs:12-23`; `WorkflowGate.cs:299-345`; `WorkflowGraphs.cs:160-176` | taken, the second way: Current draws `integrate` from its graph, outside the steps table; `current:` copies leave it out, said | §17.2 point 4; row r | pending |
+| Fable | F44 | no | `WorkflowNamed.cs:466-473`; `NodeGraphs.cs:643` | taken, with C28: the hold a kind of its own | §17.3, §17.6 point 8; row o | pending |
+| Fable | F45 | no | `D157.md:92` | taken: D157's rejection named as reversed in part | §17.5, §17.8, §17.11; row p | pending |
+| Fable | F46 | no | D190's CUTOVER1g note; `TASKS.md`'s FABRIC-CUTOVER1h (open) | taken: under both presets the quest is closed by its agent's done; `quest.close` a later version's, once 1h lands | §17.7; row q | pending |
+| Fable | F47 | no | `GraphRuns.cs:226-233`; `NodeGraphs.cs:241-288` (orders the gates only) | taken: the landed branch's kinds refused before every `handed` when saved | §17.2 point 2, §17.4; row n | pending |
+| Fable | F48 | no | `WorkflowNamed.cs:494-503`; §4.1's `request` row | taken: `done` needs the effective landing's automatic accept and the line's declared, accepted gates, each its own refusal | §17.4; row r | pending |
+| Fable | F49 | no | `git merge-base --is-ancestor 4b9621c37 main` fails; `TASKS.md` held no INTEGRATE1b row; QUEUEDRAIN1 on main | taken: the INTEGRATE1b row added; the tool's lines said to be `7ebeba1ba`'s; the stack landed as one (§18.4) | §0.2; `TASKS.md`; §18.4 | pending |
+| Fable | F50 | no | §E2 (*invalidation never reverses an external effect*) | taken: the stop refused once the record says promoted | §17.4; row n | pending |
+| Fable | F51 | no | `NodeRuntime.cs:310-322` (`:316`) | taken: the arming narrowed to the integrating repositories' branch units, measured | §17.4; row n | pending |
+| Fable | F52 | no | D157's WORKFLOW1e2 note (an older build refuses a push carrying a new quest field) | taken: the key's travel and its refusal by an older build said; `to` never the run's own; its address kinds (D70) | §17.5; row p | pending |
+| Fable | F53 | no | `TASKS.md`'s FABRIC-HUMAN1 and FABRIC-CUTOVER1h (open) | taken: the column says *row* where it means a row | §17.2's table | pending |
+| Fable | F54 | no | `NodeGraphs.cs:241-244`, `:276-288` | taken: the graph form of `WithGates` never wires the opinion into the look | §17.7; row q | pending |
+| Codex | C28 | **yes** | `NodeContract.cs:479-492` (`:486`); `NodeGraphs.cs:643`; `BuiltInNodes.cs:218-229`; `WorkflowNamed.cs:492` | taken: `requests: wait` replaced by the kind `work.requests`, refused by an older reader; a `requests` option on `claimed` refused here | §1.3, §17.3, §17.6 point 8, §17.7; row o | pending |
+| Codex | C29 | **yes** | `WorkflowGate.cs:248-292`, `:332-345`; `D157.md:43` | taken: the person-part comparison gains a graph part, by node id, for `request`, `integrate` and `work.requests` | §17.6 point 9; rows o, n, p | pending |
+| Codex | C30 | **yes** | `WorkflowGate.cs:156`; `AutoLander.cs:375` | taken, with F40: an automatic landing never satisfies `request: owner`; the effective landing policy judged | §4.6, §17.4; rows e, n | pending |
+| Codex | C31 | no | §4.1's `request` row | taken: `gates: declared` and an accepted declaration naming a gate, two facts; the accepted-blob-gates-off case | §17.4, §17.7; row r | pending |
+| Codex | C32 | **yes** | the service's `Quests.cs:1238-1245`, `:1281-1287`; `QuestExchange.cs:657`; `WireEvaluation.cs:520-536` | taken: the request's key `<run>/<node>/<n>` is its quest's identity, one transaction dedups | §1.3, §17.5, §17.6 point 4; row p | pending |
+| Codex | C33 | no | `NodeLifecycle.cs:252-271` (`:264`); `RunNodeWords.cs:57-79`, `:124-130` | taken: *Ask again…* and *Go on without it…* on the run's node door, each a Person route | §17.5; row p | pending |
 
 ## 15. Round 2: both reads of round 1 answered
 
@@ -1331,27 +1425,36 @@ the strict policy, the composed environment, the promotion fence, the acceptance
    `WorkflowNamed.cs:296-309`), so any other node may sit before the landing or after it; a steps version keeps the runtime's fixed order
    (`WorkflowNamed.cs:623-688`). D157 point 2's *before the landing the order is the runtime's* becomes, for a graph, *the gates' order is the
    graph rules'; every other step's place is the flow's*. D190 began it (its point 6: a go-ahead before the landing holds it); round 4 states it.
+   The landed branch's kinds, `pushed`, `pull-request`, `line` and `integrate`, observe the landing record and are refused before every
+   `handed` when a version is saved (row n's graph rule, *(R5, F47)*; `RunSubjects.Of`, `GraphRuns.cs:226-233`).
 3. **The kinds a flow is composed from**:
 
-| The person sees | Node kind | Reach | Its subject (D190 point 2) | Reached on | Where it runs | Built |
+| The person sees | Node kind | Reach | Its subject (D190 point 2) | Reached on | Where it runs | Built, or its row *(R5, F53)* |
 |---|---|---|---|---|---|---|
-| start | the start node | — | — | the route chosen at the bind (D192 point 2) | before the graph | FABRIC-PIPELINE1a |
-| work | `claimed` | observed | the run's chain's quests here | its last step's done; under `requests: wait`, every request its sessions published here closed (§17.3) | both engines (`work`) | built; `requests` row o |
+| start | the start node | — | — | the route chosen at the bind (D192 point 2) | before the graph | built (FABRIC-PIPELINE1a) |
+| work | `claimed` | observed | the run's chain's quests here | its last step's done | both engines (`work`) | built |
+| the work's requests answered *(R5, C28)* | `work.requests` | observed | the run: the quests its sessions published here | each of them done, or the person's pass with words (§17.3) | graphs only | row o |
 | a request to another repository | `request` | waited | the quest it published | that quest's done (§17.5) | graphs only | row p |
 | the second opinion, your look | `opinion`, `look` | observed | the run's branch at its tip | D190 point 5 | both | built |
-| a go-ahead, a person's task | `go-ahead`, `human` | pressed | the ask; the run | the person's yes | both; `human` graphs only | partial; FABRIC-HUMAN1 |
+| a go-ahead, a person's task | `go-ahead`, `human` | pressed | the ask; the run | the person's yes | both; `human` graphs only | `go-ahead` partial; `human` row FABRIC-HUMAN1 |
 | the landing | `handed` | observed | the run's branch | the branch made at its recorded tip | both (`landing`) | built |
 | merge into the line | `integrate` | waited | the landed branch at `handed`'s recorded tip | its member promoted and settled (§17.4) | graphs, and Current's branch graph | row n |
 | a pull-request branch | `pushed`, `pull-request` | observed | the landed branch | the plugin's push and the remote-tracking ref; its completed answer (D148 point 4) | both (`pull-request`) | built |
 | on the line | `line` | observed | the landed branch | the unit's end, D102's content-held proof (`BuiltInNodes.cs:153-160`) | graphs, Current | built |
-| checks, stages, a group | `check`, a plugin's node, `all` | performed, observed | as D192 and D190 | as D192 | graphs only | FABRIC-PIPELINE1d, PERFORM1l |
-| completed | the graph's `end`; `quest.close` where it holds one | — | — | the end reached (§E5) | graphs | `quest.close` FABRIC-CUTOVER1h |
+| checks, stages, a group | `check`, a plugin's node, `all` | performed, observed | as D192 and D190 | as D192 | graphs only | rows FABRIC-PIPELINE1d, PERFORM1l |
+| completed | the graph's `end`; `quest.close` where it holds one | — | — | the end reached (§E5) | graphs | the end built; `quest.close` row FABRIC-CUTOVER1h |
 | later: a push, a release | `push`, a production `stage` | pressed | the line; the stage | the person's press | graphs only | later designs (§17.10) |
 
 4. **The new kinds are graph nodes only**, as `check` is (D190's rejection of *a steps engine for `check` and `stage`*; D192 point 6). A steps
-   version naming `integrate` or `request` does not read (`WorkflowNamed.cs:397`, *is no kind of step*), so schema 1 and every run bound to it
+   version naming `integrate`, `request` or *(R5)* `work.requests` does not read (`WorkflowNamed.cs:397`, *is no kind of step*), so schema 1
+   and every run bound to it
    stay D157's to their end (D190 point 1). A steps run's work still integrates where its repository's rule carries `integrate`: its landed branch
    follows Current's landing graph after its landing (`docs/decisions/D190.md:131-133`), which round 4 draws with the node (§17.4).
+   **Current draws `integrate` from its graph, outside the steps table** *(R5, F43)*: `WorkflowCurrent` builds steps of `WorkflowKinds`
+   (`WorkflowCurrent.cs:12-23`), and the kinds table gains no `integrate` row, so the sentence above stays true. Its drawing adds, after the landing,
+   the landing graph's own tail (`NodeGraphHomes.Landing`) as a cell of its node kind, said as the rule's; `new --from current:<repository>`
+   copies Current's steps without it and says that the steps run's branch is integrated by the rule's graph after its landing, so nothing is
+   lost. The lowering table reads such a node by the graph's own comparison (§17.6 point 9), never as a step.
 
 ### 17.3 Inside the work: what the flow declares, what is observed
 
@@ -1369,10 +1472,14 @@ of its own.
   request to an agent.
 
 **Declared by the flow:**
-- **whether the work's own requests hold it**: `claimed`'s option `requests`, `wait` (the work is not reached while a quest its sessions published
-  here is open; a decline holds it for the person, whose *Go on without it…* with words passes that request over, a wait the person answers,
-  `person-waits.md`) or `go-on` (shown, holding nothing: today's). Absent is `go-on`, so nothing set is today (D157 point 15). It holds the work
-  and never composes it;
+- **whether the work's own requests hold it** *(R5, C28; round 4 made it `claimed`'s option `requests: wait|go-on`)*: a node of its own kind,
+  `work.requests`, observed, placed after `claimed` and before the landing. It is reached once every quest the run's sessions published here
+  is done; while one is open it is active; a decline holds it active and waiting on the person, whose *Pass over…* with words (the run's
+  existing skip, `RunNodeWords.Word`, `Trees/Nodes/RunNodeWords.cs:57-79`) lets the flow go on, a wait the person answers
+  (`person-waits.md`). A flow without the node holds nothing on them, today's, so nothing set is today (D157 point 15). It holds the work and
+  never composes it. It is a kind and not an option because a graph's options are opaque to the reader (§1.3): an older build would read
+  `claimed { "requests": "wait" }` as readable and land with the hold dropped, where a version naming `work.requests` does not read there and
+  holds its run whole (§17.6 point 8);
 - **a request the flow makes itself**: a `request` node at its place (§17.5);
 - the gates, the go-aheads and the person's tasks, as today.
 
@@ -1388,25 +1495,49 @@ outside its record, so a new attempt waits until the last is known (`NodeAuthori
 - **Its subject** is the landed branch at the tip `handed` recorded, as every node after `handed` binds the landing's tip from its record (D190's
   third round, point 2).
 - **Its start calls the one request door** (`IntegrationRequests.Admit`, §4.6), keyed by the unit and that tip, so a restart finds the request
-  it made and never makes two. The door's rules stand whole; the node's `request` option chooses among them:
-  - `owner` and `done`: a landing made under this step, by the person's Accept or by the done under the landing's automatic accept, is its
-    request, so the node starts once `handed` is reached;
-  - a recorded landing made before (by an older build, under the old rule, before the step was chosen) waits for the owner's card, or, under
-    `done`, the come-up sweep, which is now the runtime's pass (§4.6's recorded-landing door, unchanged);
-  - `steward`: the node waits for the steward's `request` act, which is its start, or the owner's card (§8).
+  it made and never makes two. The door's rules stand whole; the node's `request` option chooses among them.
+- **The landing record carries its acceptance's provenance** *(R5, F40, C30)*. Current's branch graph is read live, so once a rule gains
+  `integrate` every standing landing of the repository has `handed` reached and `integrate` ready (`NodeGraphs.cs:798-802`;
+  `BuiltInNodes.cs:142-151`), and today's record cannot say whether its Accept was made for integration (§1.3). So the landing writes, beside
+  its `AcceptedBy` and `LandedRule`, an `integrate` record of its own: that `integrate` stood at the acceptance, its `request` there, and
+  whether it was the rule's or the bound version's step; an advance (LAND2c) writes its own, as it writes its own `AcceptedBy`. The node's
+  start reads it, by the effective landing policy the gate judged (the version's `handed` `accept`, `WorkflowGate.cs:156`, never the raw rule's
+  `autoAccept`):
+  - **the person's Accept** (`AcceptedBy: person`) made where `integrate` stood under `owner` or `done`: the Accept is the request, and the
+    node starts once `handed` is reached;
+  - **an automatic landing** (`AcceptedBy: auto`, `AutoLander.cs:375`) made where `integrate` stood under `done`, the line's gates declared
+    and accepted (§4.1): the done is the request;
+  - **an automatic landing under `owner`** is never the request: the branch is made and the node waits for the owner's card, a request the
+    person authorises, so the composition `accept: automatic`, `request: owner`, `gates: none` never moves the line by itself;
+  - **`steward`**: no landing is the request; the node waits for the steward's `request` act, which is its start, or the owner's card (§8);
+  - **a record that says neither** (a landing made before the field, by an older build, or under a rule or version without `integrate`) is
+    no request: it waits for the owner's card, or under `done` the come-up sweep, which is now the runtime's pass (§4.6's recorded-landing
+    door, unchanged). A build that rewrites the landings file without the field leaves a record that says neither, so it can only under-admit.
 - **Its states** are read from the integration record, never copied (§5.6): ready (its request not made, saying who may make it; where that is
   the owner's card, a wait *What needs you* lists, `person-waits.md`, row h); active
   (queued; in a candidate, at the run's step; held for the owner or the steward; the line's integration stopped); reached (its member promoted
   and settled, or contained and settled with the member that holds it, §5.2 steps 3 and 9); failed (handed back, with its words and to whom);
-  unknown (the record not read); stopped (the person's stop, which drops its request as `--drop` does).
+  unknown (the record not read); stopped (the person's stop, which drops its request as `--drop` does). **The stop is bounded** *(R5,
+  F50)*: before promotion it drops the member, and the candidate is formed again without it (§5.2 step 8); once the record says the member
+  promoted, the stop is refused, since nothing reverses the line (§E2: invalidation never reverses an external effect), and the node reads
+  its record's reach.
 - **Its authority**: reach and failure by the integration record, a new `NodeSource`, never a person's word and never a plugin's. It is not
   skippable, since a skip satisfies `after` (§E2) and would read as integrated where nothing was; the person's stop is its door, and work the
   person then merges by hand reaches its removal at *held* (§C3).
 - **Each revision is requested again by the same rule** (C11), by the lifecycle the node already has: a new done or a new Accept advances the
   landing (LAND2c), `handed` binds the new tip, and `integrate`, bound to the old one, is invalidated and judged again (§E2's *any bound state →
   invalidated*), its next start the new revision's request. Under `owner` the new revision waits for the person's Accept, as a landing does today.
+  **The new request waits for the old one's outcome** *(R5, F41)*: a dispatched attempt stays unreconciled through its invalidation, and no new
+  attempt starts while one is (`NodeLifecycle.cs:410-447`, the start refused at `:413`, the invalidation keeping it at `:447`). So the first
+  revision's request runs to its verdict as §4.6 keeps it, the second is made once the first is promoted, handed back or dropped, and the
+  commits between settle at step 9 (§5.7). The run's view shows both meanwhile: the first request's state, and the second revision waiting
+  on it. Under `owner` the person's second Accept, recorded with its provenance, is the second request.
 - **Its options** are the unit's half of the install's policy, `request` (`owner`, `done`, `steward`) and `conflicts` (`session`, `hold`); the
-  line's half stays the rule's (§4.1, §17.7). `done` and `steward` need the line's accepted gates, judged where the version is chosen (row r).
+  line's half stays the rule's (§4.1, §17.7). `done` and `steward` need the line's accepted gates, judged where the version is chosen (row r):
+  *(R5, C31, F48)* both the rule's `integrate.gates: declared` and an accepted declaration naming at least one gate, two facts, since a blob
+  may be accepted while the line's policy says `none` (§4.1's `request` row); and `done` also needs the effective landing to accept
+  automatically, judged on the version's `handed` (its `accept`, or the rule's switch where it leaves it out, as `GateSteps` reads it,
+  `WorkflowNamed.cs:494-503`; D157 point 4), never on the raw rule's `autoAccept` alone.
 
 **The line's run stays one per line** (D215 point 5), because a candidate batches several units, orders them and bisects across them, and the
 promotion fence spans every integrator of the line. Its steps, gates, environment, confirm run, judge, fence, acceptance and who-acts table are
@@ -1415,7 +1546,9 @@ stands: a unit has one `integrate` node, whose detail names the run's step.
 
 **The graph rules** gain: at most one `integrate`; after a `handed`; that `handed` a branch with no plugin, as the version or its repository's
 rule says (D215 §4.1); no `pushed` or `pull-request` beside it; never in a verification pipeline (`VerificationProblem`,
-`WorkflowNamed.cs:317-328`, whose list gains it, its subject being a chain's landing). A `line` after it observes the promotion (§5.1).
+`WorkflowNamed.cs:317-328`, whose list gains it, its subject being a chain's landing). A `line` after it observes the promotion (§5.1). And
+*(R5, F47)*: every landed branch's kind, `pushed`, `pull-request`, `line` and `integrate`, is refused when a version is saved where some
+way to it passes no `handed`, since it observes the landing record and would wait for ever before one.
 
 **Current draws it.** Current's branch graph is the landing's own nodes, `handed` then `line`, `pushed` and `pull-request` between them where a
 branch rule names a plugin (`NodeGraphHomes.Landing`, `NodeGraphs.cs:756-763`). Where the effective rule carries `integrate`, it is `handed`,
@@ -1427,7 +1560,9 @@ into it, and may not declare one, as it may not declare `pushed` (`landing-kind`
 observed built-ins, leaving a waited node ready (`Begins`, `:1757`; `:851`). Row n arms the choices on a Current branch graph holding
 `integrate`, and begins a waited node, Current's or a version's, through its kind's adapter: a start by key, a reconcile that reads the other record
 before any new attempt, a wake on that record's events (`integration.*`, §5.2), never a timer. That is the waited reach's start, which `request`
-(row p) and `wait.unit` (FABRIC-WAITUNIT1) take next.
+(row p) and `wait.unit` (FABRIC-WAITUNIT1) take next. **The arming is bounded** *(R5, F51)*: choices naming no plugin's node read, tell, write
+and start nothing (`NodeRuntime.cs:316`), so a rule carrying `integrate` arms the pass for the branch units of the repositories whose
+effective rule carries it alone, the inventory read narrowed to them; its cost is measured by row n.
 
 ### 17.5 `request`: another repository asked, as a step
 
@@ -1437,26 +1572,46 @@ refuses a wire into another repository's node and names a local `wait.unit` as t
 - **Its options**: `to` (a repository, with lanes as a quest's address takes them); `title` and `body` (the person's words, kept as written,
   D142); `start` (`you`, the default, the person's *Send*; or `automatic`, the person's standing say-so, said as it is set, as a stage's start
   is, D157 §3.6); `until` (`done`, the default, or `taken`); `declined` (`wait`, the default, for the person; or `stop`).
-- **Its start** publishes the quest through the exchange as Daoris's own publish, carrying its requester (the run and the node) as a field of
-  its own, by which it is found first among the quests published, so a restart never publishes twice (D192 point 8's rule for a fix ask). The
-  quest says what is needed and why, never a change; its taking and its work are the receiving repository's.
+- **Its start** publishes the quest through the exchange as Daoris's own publish, under the identity below *(R5)*. The quest says what is
+  needed and why, never a change; its taking and its work are the receiving repository's.
+- **Its publication's identity is the request's stable key** *(R5, C32)*. A requester field alone would not do it: the service names a quest
+  by its words (`MakeId(from, to, title, parent, lanes)`) and answers a held id with the held quest unchanged (§1.3), so two runs asking in the
+  same words would meet one quest, the second given the first's, Done and all. So the key is `<run>/<node>/<n>`: the run, the node's id and
+  the publication's number, which the node's attempt writes on the run's record before anything is sent, so the quest's id is known before
+  its publication (the runtime withholds a node whose subject is not named, `WireEvaluation.cs:520-536`). The service's id widens by the key
+  as a chain step's widens by its parent (`<-{parent}`, `Quests.cs:1238-1245`), with no fallback to a shorter id, and the forgotten-id check
+  (`QuestExchange.cs:657`) reads it too. So one transaction dedups: distinct runs or nodes make distinct quests whatever their words; a
+  restart, or a publish whose answer was lost, sends the same key and gets its own quest back, never a second. An intentional new
+  publication of the same node (§17.5's *Ask again…*) takes the next `n`. The key travels with the quest as a field of its own (row p).
 - **Its reach** is the quest's done, or its taking under `until: taken`, as the exchange's operations carry it here (D68); **its failure** the
   quest's decline; a quest not read is unknown, never passed (D148 point 5). Its outcome shown is the close's note and its coded parts.
+- **After a decline** *(R5, C33)*, under `declined: wait` the node is failed, by its authority, and waits on the person, a wait kind of
+  `person-waits.md`. The skip and the stop the run's door offers today reach no failed node (`NodeLifecycle.cs:252-268`; `RunNodeWords.Acts`,
+  `RunNodeWords.cs:124-130`), so row p adds two acts to that door (`WORKFLOW_NODE`, `daoris-driver workflow`), each a Person route:
+  *Ask again…*, the table's existing *failed → ready, a new attempt the person asks for* (`NodeLifecycle.cs:264`), which publishes anew
+  under the next `n`; and *Go on without it…*, with words, a new move *failed → skipped* for a `request` node alone, held to the one table's
+  tests, which lets an `after` wire pass as a skip does. Under `declined: stop`, a `failed` wire to a `stop` sink, as `failed: stop` decodes.
+- **Its address** *(R5, F52)*: `to` names a repository the registry holds, registered or adopted, said as the exchange says it (D70), never
+  the run's own (a quest to itself is the chain's, D65); lanes as a quest's address takes them.
 - **No chain step.** It is no quest of the run's chain (D65), and the receiving repository's work follows its own flow, one run per repository
   (D157 §3.8, which stands in that). What changes in §3.8 is that a flow may wait on another repository's work through the quest it published,
-  which part E's §E6 already made the fabric's way.
+  which part E's §E6 already made the fabric's way. So D157's rejection of *several repositories as a step of one repository's workflow*
+  (`docs/decisions/D157.md:92`) is reversed in part *(R5, F45)*: the dependency is owned, by the quest the service holds and the receiver
+  pulls (D32 stands: nothing is written across), and row p's note names it.
 - **A request to another agent** is a session's helper ask, observed (§17.3), or the flow's `opinion`. Round 4 declares no other agent step.
 
 ### 17.6 What D190's two engines and versions need for a node that waits on another record
 
-1. **No third engine.** The line's run is no workflow run (D215 point 5). The node runtime governs `integrate` and `request`, and a schema-1 run
-   holds neither (§17.2 point 4). One governs a run, by its binding (D190 point 1).
+1. **No third engine.** The line's run is no workflow run (D215 point 5). The node runtime governs `integrate`, `request` and
+   `work.requests` *(R5)*, and a schema-1 run holds none of them (§17.2 point 4). One governs a run, by its binding (D190 point 1).
 2. **A subject per kind**: D190 point 2's table gains `integrate`, the landed branch at `handed`'s recorded tip, and `request`, the quest it
-   published, at its revision (§E6: a newer revision is never followed silently).
+   published, at its revision (§E6: a newer revision is never followed silently); and `work.requests`, the run itself, reading the quests its
+   sessions published here *(R5)*. A `request`'s quest is named before it is published, by its key (§17.5), so its subject is never absent.
 3. **An authority per kind**: §E2's table gains `integrate`, reached and failed by the integration record, and `request`, by the commitment
    (its done; its decline), as `wait.unit`'s row has it (`NodeContract.cs:443`).
-4. **The waited start** (§17.4, *Arming*): an attempt keyed so a restart finds it (the request by unit and tip; the quest by its requester), a
-   reconcile before any new attempt (§E2's *unknown is reconciled before any new attempt*), a wake on the other record's events.
+4. **The waited start** (§17.4, *Arming*): an attempt keyed so a restart finds it (the request by unit and tip; the quest by the request's
+   key, `<run>/<node>/<n>`, which is its identity in the service, §17.5 *(R5, C32)*), a reconcile before any new attempt (§E2's *unknown is
+   reconciled before any new attempt*), a wake on the other record's events.
 5. **One writer per record** (D190 point 3): the runtime writes the node's state on the run's record, or a Current branch unit's; the line's
    run writes the integration record; the exchange writes the quest. The node touches the other record only through its door: the request's
    admission, the publish, and the stop's drop.
@@ -1469,29 +1624,49 @@ refuses a wire into another repository's node and names a local `wait.unit` as t
    writes no record of the unit, its keeper observing `line` by git as today. Where it does arm it, the older build governs the unit by its own
    graph and may write the unit's record without `integrate`'s state; on the newer build's return the node is judged again, and its start finds
    the open request by its key, so nothing is requested twice.
+8. **A hold on an existing kind is a kind of its own** *(R5, C28, F44)*. The protection of point 6 reaches new kinds only: a graph's options
+   are opaque to its reader (§1.3), so a hold written as an option of a kind an older build knows would be read there and run with the hold
+   dropped, and a node's `version` above 1 is refused by no build. So the hold on the work's requests is the kind `work.requests` (§17.3),
+   which an older build refuses, and this build refuses a `requests` option on `claimed` by name, so no file expresses the hold in a form an
+   older build would run. Bound versions and Current, which hold no such node, read as they did.
+9. **The person's part, compared node by node** *(R5, C29)*. `Involvement.StepsOf(NodeGraph)` keeps only the nodes a step's kind stands for
+   (`WorkflowGate.cs:332-345`), and `Lowers` matches go-aheads by their act and stages by their stage (`:248-292`), so a graph-only node
+   would lower nothing. The comparison gains a part of its own for the graph-only kinds, each matched by its node's id, which a version keeps
+   (§2.5): a `request` whose `start` moves from `you` to `automatic`, or a `request` added with `start: automatic`, lowers (*it sends
+   `<title>` to `<repository>` with no press of yours*); an `integrate` whose `request` moves from `owner` to `done` or `steward` lowers; a
+   `work.requests` removed lowers (*it no longer holds the work on its requests, nor asks you about one declined*). A request removed, or
+   added with `start: you`, lowers nothing. Each row ships with the row that lets its change be set (o, n, p).
 
 ### 17.7 Presets, Current, and where the install's policy lives
 
 **Two presets, built in, each a graph**, beside the four steps presets (`WorkflowPresets.cs:26-35`): offered by `daoris driver workflow new
 --from <preset>` and the Workflow tab, saved as a graph version, each with the opinion and look variants (`WithGates`, `:44-56`, extended to
-wire each gate into the landing as `protected-wire` asks).
-- ***Integrated into the line***: `claimed` (`requests: wait`); `handed` (`form: branch`, `accept: you`, its pattern and plugin left to the rule);
-  `integrate` (`request: owner`, `conflicts: session`); `line`; its end `line`. Its variant *with no press*: `accept: automatic` and `request:
-  done`, refused where it is chosen for a repository whose line declares no accepted gates (D215 §4.1).
-- ***A pull request***: `claimed` (`requests: wait`); `handed` (`form: branch`, `accept: you`, the rule's plugin); `pushed`; `pull-request`;
-  its end `pull-request`, the platform's completion (D148 point 4).
+wire each gate into the landing as `protected-wire` asks, and never the opinion into the look, FABRIC-CUTOVER1b's rule, `NodeGraphs.cs:241-244`
+*(R5, F54)*).
+- ***Integrated into the line***: `claimed`; `work.requests` *(R5, C28; round 4 had `claimed`'s `requests: wait`)*; `handed` (`form: branch`,
+  `accept: you`, its pattern and plugin left to the rule); `integrate` (`request: owner`, `conflicts: session`); `line`; its end `line`. Its
+  variant *with no press*: `accept: automatic` and `request: done`, refused where it is chosen for a repository whose line does not both
+  declare its gates and have them accepted (D215 §4.1; *(R5, C31)*).
+- ***A pull request***: `claimed`; `work.requests` *(R5)*; `handed` (`form: branch`, `accept: you`, the rule's plugin); `pushed`;
+  `pull-request`; its end `pull-request`, the platform's completion (D148 point 4).
+- **Who closes the quest** *(R5, F46)*: neither preset holds `quest.close`, so under both the quest is closed by its agent's done, as today
+  (D46, D144), and the flow's end at `line` or `pull-request` is the work's end, not the quest's. Under a named graph version the take names
+  no closure graph (D190's CUTOVER1g note), and a run's own `quest.close` is FABRIC-CUTOVER1h, open; once it lands, a later version of each
+  preset may end at `quest.close` after `line` or `pull-request`, the person's save, never a change to a saved version.
 
 ```json
 { "id": "integrated", "name": "Integrated into the line", "versions": [ { "version": 1, "schema": 2, "graph": {
   "schemaVersion": 2, "entries": ["work"], "end": "line",
-  "nodes": [ { "id": "work", "kind": "claimed", "version": 1, "reach": "observed", "options": { "requests": "wait" } },
+  "nodes": [ { "id": "work", "kind": "claimed", "version": 1, "reach": "observed" },
+             { "id": "requests", "kind": "work.requests", "version": 1, "reach": "observed" },
              { "id": "landing", "kind": "handed", "version": 1, "reach": "observed", "options": { "form": "branch", "accept": "you" } },
              { "id": "integrate", "kind": "integrate", "version": 1, "reach": "waited",
                "options": { "request": "owner", "conflicts": "session" } },
              { "id": "line", "kind": "line", "version": 1, "reach": "observed" } ],
-  "wires": [ { "id": "a", "kind": "after", "from": "work", "to": "landing" },
-             { "id": "b", "kind": "after", "from": "landing", "to": "integrate" },
-             { "id": "c", "kind": "after", "from": "integrate", "to": "line" } ] } } ] }
+  "wires": [ { "id": "a", "kind": "after", "from": "work", "to": "requests" },
+             { "id": "b", "kind": "after", "from": "requests", "to": "landing" },
+             { "id": "c", "kind": "after", "from": "landing", "to": "integrate" },
+             { "id": "d", "kind": "after", "from": "integrate", "to": "line" } ] } } ] }
 ```
 
 **Current, derived, never migrated** (D157 point 7). Today's rules draw as they do: a merge rule (D87) as the named legacy exception (§4.2's last
@@ -1510,7 +1685,9 @@ its declarations* (§4.1's *Two halves of the key*):
 
 | The workspace chooses | The repository | Its landing rule: its own whole, else its workspace's | What runs |
 |---|---|---|---|
-| *Integrated into the line* | chooses nothing | a branch rule, with or without `integrate` | the preset's graph; its step's `request` and `conflicts`; the rule's line declaration, or its *Absent* column |
+| *Integrated into the line* | chooses nothing | a branch rule carrying `integrate` with `gates: declared` and an accepted declaration naming a gate | the preset's graph; its step's `request` and `conflicts`; the rule's line declaration; the line moves only to a gated commit |
+| *Integrated into the line* | chooses nothing | a branch rule with no `integrate`, or one whose `gates` is `none` | the preset's graph, its line integrated **with no gates**, on the person's Accept, as today's merge rule lands on a press; said at the door per repository *(R5, F42)*; the *with no press* variant refused |
+| *Integrated into the line*, *with no press* | chooses nothing | a branch rule whose declaration is accepted but whose `gates` is `none` | *cannot start*: an accepted blob is not gates turned on, and `done` needs both *(R5, C31)* |
 | *Integrated into the line* | chooses `current` | its rule | Current: integrated only where the rule carries `integrate` |
 | *Integrated into the line* | chooses *A pull request* | a branch rule naming a plugin | the pull request's graph; the rule's `integrate`, if any, refused beside its plugin as §4.1 says |
 | *Integrated into the line* | chooses nothing | a branch rule naming a plugin | *cannot start*, naming the rule's plugin: that repository's platform integrates its work (§4.1), so it chooses *A pull request* or its rule drops the plugin |
@@ -1523,6 +1700,12 @@ A repository's choice replaces its workspace's whole (D157 point 10) and its rul
 neither is merged with its workspace's. A workspace's flow never integrates past a repository's platform, nor pushes where no plugin is declared:
 each mismatch is held where it would start and said with the Setup row that settles it (row r). A person's own version may still say
 `plugin: none` on its `handed`, a choice among what is declared (D157 §2.3), and then integrates.
+
+**The choice's door says the reach** *(R5, F42)*. One `workflow use --workspace` can make every branch-rule repository of a workspace
+integrate into its line, where round 3 asked the owner to write `integrate` on each rule. The authority is today's merge rule's (D145 point 1:
+a merge on the person's press), so nothing widens past the owner, but the reach is wide; so each door that sets a choice (`use`, the Workflow
+tab, Ask Daoris's card, D157 §4.7's *what each door says as it is set*) says, for each repository the version reaches, *integrates with no
+gates* where its rule's `integrate.gates` is absent or `none`, and refuses the *with no press* variant there.
 
 ### 17.8 What D215 reverses, and what stands
 
@@ -1538,6 +1721,10 @@ each mismatch is held where it would start and said with the Setup row that sett
 - **§4.7's *no run's record and no graph version gains anything***: a version gains the kind only when a person saves one, and a Current branch
   unit the node only under a rule carrying `integrate`, which nothing sets before row d.
 - **Point 2, in part**: under a named workflow, `request` and `conflicts` are its step's (§17.7).
+
+Beside D215's, round 4 reverses **D157's rejection of *several repositories as a step of one repository's workflow*** in part *(R5, F45)*:
+a `request` node waits on another repository's work through the quest it published, a dependency the quest's commitment owns (§17.5),
+D32 standing. Row p's note says it.
 
 **Stands**, each of §10's other rejections, read again against round 4:
 - *a pipeline marked `integration`*: the line's run is still built in, one per line, its steps fixed by safety; a flow requests it and never
@@ -1564,6 +1751,8 @@ D215's points 1, 3, 4 and 6 to 12 stand as written; point 4's door and point 10'
 - **j** (the runner contract): unchanged.
 
 **b, e and f** are unchanged; e's door gains only the key a start finds its request by, which its *no double* rule already names (§4.6).
+*(R5, F40, C30)* Row e also gains the landing's acceptance provenance, which its door admits by; it waits for the steward's check of that
+change (§18.3 point 8).
 
 **Changed:** g (its requests made by the node, after n), h (the run's view draws the node), i (its act starts the node, after n), k (Current at
 the owner's sitting).
@@ -1602,10 +1791,10 @@ Neither is a row here; each is a later design, as D215's follow-ups are.
 
 | Decision | What it would amend | The row whose note writes it |
 |---|---|---|
-| D157 | point 1 (the work's own requests drawn and held, a declared `request`; the chain stays the intake's); point 2 (in a graph, every step's place is the flow's, the gates' order the graph rules'); point 7 (Current gains `integrate` from the rule, still no migration); point 8 and §3.2 (`integrate` and `request` as graph nodes only); point 12 (the run's view draws the work's requests and the node); §2.7 (two graph presets); §3.8 (another repository's work waited on through a quest); point 10's lowering table (`request` moved from `owner`) | o, r, n, q, p |
-| D190 | point 2's subject table and point 3's arming (two kinds, the waited start); point 4 (a named version's graph holds at most one `integrate`, after a branch `handed` with no plugin) | n, p |
-| D173 (the fabric events design) | §E2's authority table, §E4's built-ins and §E6 (`request` as the delegated node's first form, on the waited start); §C2 (Current's branch graph with `integrate`, a `cycle` wiring from it) | n, p |
-| D215 | point 2 (the unit's half under a named workflow), point 5 and §5.1 (the unit's graph holds `integrate`), §10 (C10 reversed) | its round-4 note now (status *proposed*); the settlement's note; n |
+| D157 | point 1 (the work's own requests drawn and held by `work.requests`, a declared `request`; the chain stays the intake's); point 2 (in a graph, every step's place is the flow's, the gates' order the graph rules', the landed branch's kinds after a `handed`); point 7 (Current draws `integrate` from the rule's graph, outside the steps table, still no migration); point 8 and §3.2 (`integrate`, `request` and `work.requests` as graph nodes only); point 12 (the run's view draws the work's requests and the node); §2.7 (two graph presets); §3.8 and its rejection of *several repositories as a step*, in part (another repository's work waited on through a quest); point 10's lowering table (compared node by node for the graph-only kinds, §17.6 point 9) | o, r, n, q, p |
+| D190 | point 2's subject table and point 3's arming (three kinds, the waited start, the arming bounded to the integrating repositories); point 4 (a named version's graph holds at most one `integrate`, after a branch `handed` with no plugin) | o, n, p |
+| D173 (the fabric events design) | §E2's authority table and §E4's built-ins (`integrate`, `request`, `work.requests`), and §E6 (`request` as the delegated node's first form, on the waited start, for bounded requests Daoris originates, apart from §E6's full commitments, §18.3 point 5); §C2 (Current's branch graph with `integrate`, a `cycle` wiring from it) | o, n, p |
+| D215 | point 2 (the unit's half under a named workflow), point 4 (the landing's acceptance provenance, *(R5, F40)*), point 5 and §5.1 (the unit's graph holds `integrate`), §10 (C10 reversed) | its round-4 and round-5 notes now; the steward's acceptance note; e, n |
 | D209 point 3 | as round 3 named it: the steward's acts, now starting the node | i |
 
 D87, D145, D192, D207, D115 and D180 keep round 3's amendments as written (D215's *This would amend*); round 4 adds none to them.
@@ -1635,6 +1824,8 @@ Each section round 4 edits, marked *(R4)* there, with what it replaces:
 
 ### 17.13 Open questions for the steward
 
+*Settled by the steward in round 5 (§18.3); kept here as round 4 asked them.*
+
 1. **`commit`**: the line's (proposed, one shape of history per line) or each unit's.
 2. **The pull-request preset's end**: the platform's completion, `pull-request` (proposed), or the pull request opened, `pushed`.
 3. **`requests: wait`** in both presets (proposed), and never Current's default (proposed: nothing set is today).
@@ -1654,3 +1845,81 @@ cost once every repository whose rule carries `integrate` arms the runtime for i
 open at its done, which `requests: wait` would hold (row o); a waited start's wake latency on the integration record's events (row n). The two
 presets' words were written here and read by no person; their Chinese is row q's. The direction's picture of the two workspaces is the brief's,
 and the install's workspaces and their rules were not read.
+
+## 18. Round 5: the reads answered, and the steward's settlement
+
+**Standing: accepted after named changes, pending the steward's check** (D191). Written by Claude Opus 5.5 on `parent/integrate1-flow` after
+`75c79c6c1`. Both makers read round 4 there: Claude Fable, as a foundation, *accept after named changes* (F40 to F54, F40 blocking); Codex,
+*accept after named changes* (C28, C29, C30 and C32 blocking; C31 and C33 for the rows' contracts). Every finding was checked against the code
+at the lines it cites and held (§14, round 4's table, which says where each went). Round 5 makes every named change in the text, marked
+*(R5)*, and drops none. The steward checks them against the findings and writes the acceptance.
+
+### 18.1 What the reads found
+
+Both reads find the direction delivered for a named graph version, with no third engine, no migration and no authority widened past the
+owner; both name the fixed order that survives (a steps run integrated by its rule's graph, Current's fixed landing tail, the gates' order, the
+line run's eleven steps) as compatibility or safety, said. Both find the line's run, its batching, ordering and fence, untouched, and the
+policy split coherent. What blocked: the landing could not say what its acceptance requested (F40, C30); a hold written as an option would run
+dropped on an older build (C28); the person-part comparison could not see a `request` (C29); a quest's id by its words would join two runs'
+requests (C32).
+
+### 18.2 The named changes
+
+- **The acceptance's provenance** (F40, C30; §4.6, §17.4; rows e, n). The landing and each advance write that `integrate` stood, its
+  `request` and its source, beside `AcceptedBy` and `LandedRule`. The person's Accept under `owner` or `done` is the request; an automatic
+  landing is one only under `done` with gates declared and accepted; an automatic landing never satisfies `owner`, which waits for the
+  person's card; `steward` waits for the act; a record that says neither waits for the card or the sweep. The effective landing policy is
+  judged, never the raw rule's `autoAccept`. Row e cannot be built before this is checked: its door and the landing record are where the
+  provenance lives.
+- **A kind for the hold** (C28, F44; §17.3, §17.6 point 8, §17.7; row o): `work.requests`, which an older reader refuses, in place of
+  `claimed`'s option; a `requests` option on `claimed` refused here; bound versions and Current unchanged.
+- **The person's part node by node** (C29; §17.6 point 9; rows o, n, p): a graph part of the comparison, by node id, for `request`
+  (`start` to `automatic`, or added automatic), `integrate` (`request` from `owner`) and `work.requests` (removed, with the decline's answer it
+  removes).
+- **A request's identity** (C32; §17.5, §17.6 point 4; row p): the key `<run>/<node>/<n>`, written before sending, widening the quest's id,
+  one transaction's dedup; an intentional new publication the next `n`.
+- **In the text, not deferred**: F41 (§17.4), F42 (§17.7, row r), F43 (§17.2 point 4, row r), F46 (§17.7, row q), F48 (§17.4, row r).
+- **In the rows' contracts**: C31 (row r and §17.7's table), C33 (row p, §17.5).
+- **As notes where they fit**: F45 (§17.5, §17.8, row p), F47 (§17.2, §17.4, row n), F49 (§0.2, §18.4), F50 and F51 (§17.4, row n), F52
+  (§17.5, row p), F53 (§17.2's table), F54 (§17.7, row q).
+
+### 18.3 The steward's settlement of §17.13
+
+Decided by the steward on 2026-10-28, under D191, on both reads' answers to round 4's eight questions, which agree:
+
+1. **`commit` is the line's**: one candidate carries several members, so one declared history shape per line.
+2. **The pull-request preset ends at `pull-request`**, the platform's completion (`pushed` proves neither the opening nor the merge), and says
+   who closes the quest: its agent's done, as today, the flow's end being the work's (F46, §17.7).
+3. **Both presets hold the work on its requests, never Current's default**: as `work.requests` (C28's protection, §17.6 point 8), so a
+   preset is offered only by a build that has row o, and a version holding it does not read on an older build, which holds its run whole
+   rather than land with the hold dropped; nothing set is today (D157 point 15).
+4. **A `request` publishes a quest**, with C32's identity: the key `<run>/<node>/<n>`, its receipt the quest's operations as they reach this
+   machine (D68), a newer revision never followed silently (§E6).
+5. **FABRIC-WAITUNIT1 and FABRIC-DELEGATE1 are re-pointed onto row n's waited start** for bounded requests the driver originates: a quest
+   Daoris publishes for a run's node and the wait on it read from this machine's projection. The native-child security prerequisites stay
+   (FABRIC-ACP1, C2a, C2b, COLLAB1) for anything a session's child or another harness originates, and this is distinct from §E6's full
+   commitment support (a commitment naming another unit's node or end at an agreed revision, its outputs and artifacts by reference), which
+   stays behind COLLAB1. The two rows in `TASKS.md` say so.
+6. **This repository flips on Current**, its rule carrying `integrate`, as round 3 accepted: the flip changes one thing at a time, and the
+   preset is the owner's later press (row k).
+7. **`integrate`'s skip is refused**; the stop is its door, bounded at promotion (F50); integration by hand needs git's proof, `line` by
+   D102's content-held proof, never a person's words.
+8. **Rows a, c, d, j, b and f build now**, within their stated bounds and with the corrections this round makes to their contracts; **row e
+   waits** until F40's change, written here in §4.6, §17.4 and row e, is checked by the steward.
+
+### 18.4 Records
+
+- **D215** carries round 5's note, its status *accepted after named changes, pending the steward's check*. The steward's check writes the
+  acceptance; each other decision is amended by its row's note (§17.11), never before.
+- **The backlog** (F49): `TASKS.md` gains the INTEGRATE1b row §11 names, and its FABRIC-WAITUNIT1 and FABRIC-DELEGATE1 rows are re-pointed as
+  §18.3 point 5 says; the INTEGRATE1 row says round 5's standing and which rows build now.
+- **The stack** (F49): rounds 1 to 5 of this design, D215's notes and the INTEGRATE1 rows are on `parent/integrate1-design` and
+  `parent/integrate1-flow`, neither on main yet (`4b9621c37` is no ancestor of main); they land as one stack once the steward accepts.
+
+### 18.5 What round 5's checks do not cover
+
+Documents only; nothing is built or run but reads, the index's generator and the document checks, which prove links, routes and shapes, not
+claims. Each finding was checked by reading the code it cites at `4b9621c37`, whose `src/` is `75c79c6c1`'s; none of the behaviour the
+changes describe was tried. The older reader's refusal of `work.requests` rests on `NodeDeclarations.Problem`'s unknown kind
+(`NodeContract.cs:483`), read, not run; row o runs it. The service's id widening and its forgotten-id check (C32) are read from the service's
+code, not exercised. Neither reader read round 5; the steward's check is its first.
