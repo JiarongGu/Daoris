@@ -75,7 +75,7 @@ public sealed record AttentionEvent(
             var count => $"{count} failed sessions",
         },
         // Ask Daoris's room is no repository the person knows by name (NOTIFY1a): its answer is said by the room's.
-        AttentionKind.Answered when Repository == HelpRoom.Repository => "Ask Daoris answered you",
+        AttentionKind.Answered when Repository == AskDaorisRoom.HelpRepository => "Ask Daoris answered you",
         AttentionKind.Answered => $"{Repository} — a conversation answered you",
         _ => $"{Repository} — a session {State}",
     };

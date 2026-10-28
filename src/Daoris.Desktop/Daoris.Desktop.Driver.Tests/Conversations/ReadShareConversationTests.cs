@@ -112,7 +112,7 @@ public sealed class ReadShareConversationTests : IDisposable
         Assert.True(told);
     }
 
-    /// <summary>READSHARE1: <see cref="HarnessConversations.Read"/> (GoOnFiles.ReadConversation) reads a conversation id while its move into place still holds it.</summary>
+    /// <summary>READSHARE1: <see cref="HarnessConversations.Read"/> (HarnessConversationFiles.Read) reads a conversation id while its move into place still holds it.</summary>
     [Fact]
     public void A_harness_conversation_is_read_while_its_move_into_place_still_holds_it()
     {

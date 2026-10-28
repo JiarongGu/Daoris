@@ -24,7 +24,7 @@ namespace Daoris.Driver;
 /// build wrote meanwhile being imported first, its id winning. A deleted record takes its binding with its files
 /// (<see cref="SessionHomeFiles"/>).</para>
 ///
-/// <para>What is kept is this store's; the file and its format are <see cref="GoOnFiles"/>' (STRUCT3h, D166's note).</para>
+/// <para>What is kept is this store's; the file and its format are <see cref="HarnessConversationFiles"/>' (STRUCT3h, D166's note).</para>
 /// </remarks>
 public sealed class HarnessConversations(string home, Func<StoreSettled>? settled = null) : IWorkplaceHarnessBindings
 {
@@ -57,7 +57,7 @@ public sealed class HarnessConversations(string home, Func<StoreSettled>? settle
     public IReadOnlyList<string> ForgetBindings(IReadOnlyCollection<string> sessions) => _bindings.Forget(sessions);
 
     private static (string Adapter, string Conversation)? ReadFile(string path) =>
-        GoOnFiles.ReadConversation(path) is { } kept ? (kept.Adapter, kept.Conversation) : null;
+        HarnessConversationFiles.Read(path) is { } kept ? (kept.Adapter, kept.Conversation) : null;
 
     /// <summary>
     /// Keep what the wire named this session's conversation, replacing what was kept. An id that is not a session's, or a
@@ -70,7 +70,7 @@ public sealed class HarnessConversations(string home, Func<StoreSettled>? settle
         try
         {
             if (_bindings.InUse()) _bindings.Keep(session, adapter, conversation);
-            else GoOnFiles.WriteConversation(PathOf(session), adapter, conversation);
+            else HarnessConversationFiles.Write(PathOf(session), adapter, conversation);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or DesktopStoreException or SqliteException)
         {
@@ -142,7 +142,7 @@ public sealed class HarnessConversations(string home, Func<StoreSettled>? settle
         if (!SessionEventText.IsLocalId(session)) return null;
         try
         {
-            if (!_bindings.InUse()) return GoOnFiles.ReadConversation(PathOf(session));
+            if (!_bindings.InUse()) return HarnessConversationFiles.Read(PathOf(session));
             if (File.Exists(PathOf(session)))
             {
                 try
@@ -155,14 +155,14 @@ public sealed class HarnessConversations(string home, Func<StoreSettled>? settle
                 }
 
                 // Still there, the store would not take it (or the start is not settled): the file is the later evidence, as it stands.
-                if (GoOnFiles.ReadConversation(PathOf(session)) is { } later) return later;
+                if (HarnessConversationFiles.Read(PathOf(session)) is { } later) return later;
             }
 
             return _bindings.Read(session) is var (adapter, conversation) ? new HarnessConversation(adapter, conversation) : null;
         }
         catch (Exception error) when (error is SqliteException or IOException or UnauthorizedAccessException)
         {
-            return GoOnFiles.ReadConversation(PathOf(session));
+            return HarnessConversationFiles.Read(PathOf(session));
         }
     }
 
@@ -196,6 +196,6 @@ public sealed class HarnessConversations(string home, Func<StoreSettled>? settle
             return (true, false);
         }
 
-        return (true, GoOnFiles.ReadConversation(PathOf(session)) is not null);
+        return (true, HarnessConversationFiles.Read(PathOf(session)) is not null);
     }
 }

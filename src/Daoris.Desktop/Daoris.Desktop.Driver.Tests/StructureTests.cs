@@ -660,6 +660,29 @@ public sealed class StructureTests(Xunit.Abstractions.ITestOutputHelper output)
     }
 
     [Fact]
+    public void Participants_uses_lower_vocabulary_facets_ports_and_homes_and_no_Context_Course_Help_or_Plugins_types()
+    {
+        var (map, _, _, analysis, _) = Tree.Value;
+        string[] owners = ["Context", "Course", "Help", "Plugins"];
+        string[] folders = ["Context/", "Course/", "Help/", "Plugins/"];
+        var edges = analysis.Edges.Where(edge => edge.File.StartsWith("Participants/", StringComparison.Ordinal)
+            && edge.DeclaredIn.Any(path => map.Files.TryGetValue(path, out var owner)
+                ? owners.Contains(owner) : folders.Any(folder => path.StartsWith(folder, StringComparison.Ordinal)))).ToList();
+        Assert.True(edges.Count == 0, $"Participants names Context, Course, Help or Plugins in {edges.Count} semantic tuples:\n"
+            + string.Join('\n', edges.Select(edge => $"{edge.File}: {edge.Type}")));
+    }
+
+    [Fact]
+    public void Events_names_no_Help_room_type_for_the_attention_headline()
+    {
+        var (map, _, _, analysis, _) = Tree.Value;
+        var edges = analysis.Edges.Where(edge => edge.File == "Events/Domain/AttentionEvent.cs"
+            && edge.DeclaredIn.Any(path => map.Files.TryGetValue(path, out var owner) ? owner == "Help" : path.StartsWith("Help/", StringComparison.Ordinal))).ToList();
+        Assert.True(edges.Count == 0, $"AttentionEvent names Help in {edges.Count} semantic tuples:\n"
+            + string.Join('\n', edges.Select(edge => $"{edge.File}: {edge.Type}")));
+    }
+
+    [Fact]
     public void The_driver_s_own_tree_keeps_its_structure_with_today_s_exceptions_listed()
     {
         var (map, sources, tests, analysis, _) = Tree.Value;

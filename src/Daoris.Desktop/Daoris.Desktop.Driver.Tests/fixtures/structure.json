@@ -223,6 +223,7 @@
     "Conversations/GoOn/GoOnMarks.cs": "Course",
     "Conversations/GoOn/GoOnNew.cs": "Course",
     "Participants/GoOn/HarnessConversations.cs": "Participants",
+    "Participants/GoOn/HarnessConversationFiles.cs": "Participants",
     "Conversations/GoOn/ReopenMarks.cs": "Course",
     "Conversations/GoOn/SessionSay.cs": "Course",
     "Conversations/GoOn/UncertainWords.cs": "Course",
@@ -249,6 +250,7 @@
     "Events/Chain.cs": "Events",
     "Events/ChangeWatch.cs": "Events",
     "Events/Domain/AttentionEvent.cs": "Events",
+    "Events/Domain/AskDaorisRoom.cs": "Events",
     "Events/Domain/CoolingEntry.cs": "Events",
     "Events/Domain/HandOverAskWhy.cs": "Events",
     "Events/Domain/HandOverWhy.cs": "Events",
@@ -677,6 +679,7 @@
     "Participants/Domain/ChildBindings.cs": "Participants",
     "Workplace/Domain/DeleteOutcome.cs": "Workplace",
     "Participants/Domain/DrivenAccess.cs": "Participants",
+    "Participants/Domain/HarnessConversation.cs": "Participants",
     "Sessions/Domain/GoAheads.cs": "Work orders",
     "Workplace/Domain/HistoryAnswers.cs": "Workplace",
     "Workplace/Domain/HistoryPlan.cs": "Workplace",
@@ -998,43 +1001,6 @@
     "Workflows/WorkflowVerb.cs": "Workflows"
   },
   "edges": [
-    {
-      "family": "HelpRoom.Repository's daoris:help, which moves down to the participant's work rule (O4-6)",
-      "after": "Participants",
-      "files": {
-        "Events/Domain/AttentionEvent.cs": ["HelpRoom"]
-      }
-    },
-    {
-      "family": "Participants names Context",
-      "after": "Participants",
-      "files": {
-        "Participants/Chat/ChatRunBinds.cs": ["SessionEvents"],
-        "Participants/Helpers/HelperPersonWord.cs": ["SessionEvents","SessionOutput"],
-        "Participants/Helpers/SessionsHelperCommand.cs": ["SessionEvents"]
-      }
-    },
-    {
-      "family": "Participants names Course",
-      "after": "Participants",
-      "files": {
-        "Participants/GoOn/HarnessConversations.cs": ["GoOnFiles","HarnessConversation"]
-      }
-    },
-    {
-      "family": "Participants names Help",
-      "after": "Participants",
-      "files": {
-        "Participants/Domain/DrivenAccess.cs": ["HelpModes"]
-      }
-    },
-    {
-      "family": "Participants names Plugins",
-      "after": "Participants",
-      "files": {
-        "Participants/Chat/ChatRunBinds.cs": ["PluginCatalog"]
-      }
-    },
     {
       "family": "Participants names Review",
       "after": "Participants",
@@ -1522,6 +1488,8 @@
     "LineageHookProcessTests.cs": "Participants",
     "ParticipantWorkTests.cs": "Participants",
     "RunningSessionsTests.cs": "Participants",
+    "ParticipantsBoundaryTests.cs": "Participants",
+    "ParticipantsPortsTests.cs": "Participants",
     "ParticipantPortsTests.cs": "Agents",
     "AgentPluginPortsTests.cs": "Agents",
     "AgentWorkplacePortsTests.cs": "Agents",

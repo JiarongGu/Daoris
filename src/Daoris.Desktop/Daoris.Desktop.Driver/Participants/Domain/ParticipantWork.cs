@@ -64,9 +64,10 @@ public static class ParticipantWork
     /// <summary>Every work, the closed set.</summary>
     public static IReadOnlyList<string> Codes { get; } = [Build, Design, Chat, AskDaoris, Intake, Help, Partner, Review, Brainstorm];
 
-    // A twin of HelpRoom.Repository, which this module may not name (it sits above it) and the service's SessionLedger.HelpRepository:
-    // each side's test holds the spelling, and the participant-work table's rows read it.
-    internal const string HelpRepository = "daoris:help";
+    // Events' spelling of Ask Daoris's room (AskDaorisRoom, the lowest subdomain that reads it), a twin of HelpRoom.Repository, which this
+    // module may not name (it sits above it), and of the service's SessionLedger.HelpRepository: each side's test holds the spelling,
+    // and the participant-work table's rows read it.
+    internal const string HelpRepository = AskDaorisRoom.HelpRepository;
 
     /// <summary>The work <paramref name="marks"/> tell; null where there is none here, another machine's record.</summary>
     public static string? Of(WorkMarks marks)
