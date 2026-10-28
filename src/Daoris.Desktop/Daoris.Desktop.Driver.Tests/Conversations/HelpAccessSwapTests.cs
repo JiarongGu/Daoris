@@ -22,12 +22,14 @@ public sealed class HelpAccessSwapTests : IDisposable
     }
 
     /// <summary>A running conversation whose finishing is counted; its turns are the real queue, told to the runner as a start tells it.</summary>
-    private sealed class Chat : ChatRunner.ITurnedChat
+    private sealed class Chat : ITurnedChat
     {
         private int _finished;
         public TaskCompletionSource Turn { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
         public ChatTurns Turns { get; set; } = null!;
+
+        IChatTurns ITurnedChat.Turns => Turns;
 
         public int Finished => Volatile.Read(ref _finished);
 
