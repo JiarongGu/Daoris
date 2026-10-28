@@ -60,9 +60,9 @@ public static class HelperRules
     /// </summary>
     public static ResolvedHelpers Resolve(DriverConfig config, string repository, string? workspace) =>
         config.Helpers.TryGetValue(repository.Trim(), out var own)
-            ? new ResolvedHelpers(own, OpinionSource.Repository)
+            ? new ResolvedHelpers(own, CommitRules.RepositorySource)
             : config.WorkspaceHelpers.TryGetValue(RemoteTarget.Workspace(workspace), out var shared)
-                ? new ResolvedHelpers(shared, OpinionSource.Workspace)
+                ? new ResolvedHelpers(shared, CommitRules.WorkspaceSource)
                 : new ResolvedHelpers(HelperRule.Default, DefaultSource);
 
     /// <summary>A rule as the list and the room say it: its mode, then the agents in the order they are tried.</summary>

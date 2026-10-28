@@ -294,7 +294,7 @@
       "note": "a workflow step's, a gate's or a landing's own opinion or ask, not a record's mark"
     },
     "Loop/OpinionGateLook.cs": {
-      "lines": 5,
+      "lines": 4,
       "reads": "other",
       "note": "a workflow step's, a gate's or a landing's own opinion or ask, not a record's mark"
     },

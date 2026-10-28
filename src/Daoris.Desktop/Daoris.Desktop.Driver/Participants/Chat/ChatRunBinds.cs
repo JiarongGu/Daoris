@@ -24,12 +24,12 @@ internal sealed class ChatRunBinds(string home, ServiceClient service, ISessionE
     /// Bind the run of a conversation whose tree it just grew, <c>chat-&lt;session&gt;</c>: the record is the line's first in that tree.
     /// The process its told landing is planned with comes back: its binding's, else the rules live.
     /// </summary>
-    public WorkflowProcess Opened(string session, string repository, string? workspace, DriverConfig config)
+    public IWorkplaceProcess Opened(string session, string repository, string? workspace, DriverConfig config)
     {
-        var run = ChatRuns.Prefix + session;
+        var run = WorkplaceRunFiles.ChatPrefix + session;
         _runs[session] = run;
         var bound = Bind(session, run, repository, workspace, config);
-        return WorkflowProcesses.Bound(home, config, repository, workspace, run, bound.Binding);
+        return bound.Process(home, config, repository, workspace, run);
     }
 
     /// <summary>
@@ -41,18 +41,18 @@ internal sealed class ChatRunBinds(string home, ServiceClient service, ISessionE
     {
         try
         {
-            if (_runs.TryGetValue(session, out var known) && WorkflowRunBindings.Bound(home, known)) return;
+            if (_runs.TryGetValue(session, out var known) && ParticipantsWorkflows.Current.RunBound(home, known)) return;
             var trees = new SessionTrees(home);
             if (!trees.Holds(tree)) return;
             var sessions = Trace.ParseSessions(await service.SessionRecordsJsonAsync(CancellationToken.None).ConfigureAwait(false));
             if (sessions.FirstOrDefault(each => string.Equals(each.Id, session, StringComparison.OrdinalIgnoreCase)) is not { } record
-                || ChatRuns.ChatOf(record, sessions, trees.Holds) is not { } run)
+                || ParticipantsWorkflows.Current.ChatOf(record, sessions, trees.Holds) is not { } run)
             {
                 return;
             }
 
             _runs[session] = run;
-            if (WorkflowRunBindings.Bound(home, run)) return;
+            if (ParticipantsWorkflows.Current.RunBound(home, run)) return;
             var registry = await service.RegistryAsync(CancellationToken.None).ConfigureAwait(false);
             var workspace = registry.FirstOrDefault(each => string.Equals(each.Repository, record.Repository, StringComparison.OrdinalIgnoreCase))?.Workspace;
             Bind(session, run, record.Repository, workspace, config);
@@ -68,10 +68,10 @@ internal sealed class ChatRunBinds(string home, ServiceClient service, ISessionE
     /// Whether a chat run's conversation is handed <c>opinion_answer</c> at its spawn (CHATFLOW1e, the chat-flow design §6): its run's process
     /// names a second opinion, whose findings may come back to it. A live conversation's rules are fixed at its spawn.
     /// </summary>
-    public static bool AnswersFindings(WorkflowProcess process) => process.Opinion is { Rule.IsNone: false };
+    public static bool AnswersFindings(IWorkplaceProcess process) => process.Opinion is { Rule.IsNone: false };
 
     /// <summary>
-    /// <see cref="AnswersFindings(WorkflowProcess)"/> for a record its spawn starts or resumes in <paramref name="tree"/> (a hand-over's next
+    /// <see cref="AnswersFindings(IWorkplaceProcess)"/> for a record its spawn starts or resumes in <paramref name="tree"/> (a hand-over's next
     /// record, an ended conversation going on): its chat run read from the service's records, as a turn's end reads it. False where it is no
     /// chat run's, or nothing could be read; it is then handed what a conversation always was.
     /// </summary>
@@ -83,14 +83,14 @@ internal sealed class ChatRunBinds(string home, ServiceClient service, ISessionE
             if (!trees.Holds(tree)) return false;
             var sessions = Trace.ParseSessions(await service.SessionRecordsJsonAsync(CancellationToken.None).ConfigureAwait(false));
             if (sessions.FirstOrDefault(each => string.Equals(each.Id, session, StringComparison.OrdinalIgnoreCase)) is not { } record
-                || ChatRuns.ChatOf(record, sessions, trees.Holds) is not { } run)
+                || ParticipantsWorkflows.Current.ChatOf(record, sessions, trees.Holds) is not { } run)
             {
                 return false;
             }
 
             var registry = await service.RegistryAsync(CancellationToken.None).ConfigureAwait(false);
             var workspace = registry.FirstOrDefault(each => string.Equals(each.Repository, record.Repository, StringComparison.OrdinalIgnoreCase))?.Workspace;
-            return AnswersFindings(WorkflowProcesses.Read(home, config, record.Repository, workspace, run));
+            return AnswersFindings(ParticipantsWorkflows.Current.ReadProcess(home, config, record.Repository, workspace, run));
         }
         catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException or IOException
                                           or UnauthorizedAccessException or OperationCanceledException or InvalidOperationException)
@@ -100,13 +100,13 @@ internal sealed class ChatRunBinds(string home, ServiceClient service, ISessionE
     }
 
     /// <summary>Bind <paramref name="run"/> and say what the conversation is told of it, once.</summary>
-    private ChatRunBound Bind(string session, string run, string repository, string? workspace, DriverConfig config)
+    private IParticipantsChatBound Bind(string session, string run, string repository, string? workspace, DriverConfig config)
     {
-        var plugins = WorkflowCurrent.PluginsOf(WorkplacePlugins.Current.Load(home));
-        var bound = ChatRuns.Bind(config, home, run, repository, workspace, plugins, DateTimeOffset.UtcNow);
+        var plugins = WorkplacePlugins.Current.Load(home);
+        var bound = ParticipantsWorkflows.Current.Bind(config, home, run, repository, workspace, plugins, DateTimeOffset.UtcNow);
         var line = bound.Failed is { } why
-            ? _failedSaid.TryAdd(run, true) ? ChatRuns.FailedLine(why) : null
-            : bound.Wrote && bound.Binding is { } binding ? ChatRuns.Line(binding) : null;
+            ? _failedSaid.TryAdd(run, true) ? bound.FailedLine(why) : null
+            : bound.Told();
         if (line is not null)
         {
             events.Keep(session, new SessionEvent { Kind = SessionEventKind.Note, Text = line.Note, Parts = line.Parts }, say: null);

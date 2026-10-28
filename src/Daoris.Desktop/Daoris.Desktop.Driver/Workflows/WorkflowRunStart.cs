@@ -48,7 +48,7 @@ public enum WorkflowBindCame
 /// <param name="Run">The run its work is; null where its id names none.</param>
 /// <param name="Binding">The run's binding as kept now; null where it is not bound, or its binding does not read.</param>
 /// <param name="Why">Why its run is not bound, which the start's hold says; null where it is.</param>
-public sealed record WorkflowBind(QuestView Quest, WorkflowBindCame Came, string? Run, WorkflowRunBinding? Binding, string? Why)
+public sealed record WorkflowBind(QuestView Quest, WorkflowBindCame Came, string? Run, WorkflowRunBinding? Binding, string? Why) : IRunBound
 {
     /// <summary>Whether the start holds on it: its run is not bound, so no take may go on under a graph it is not bound to.</summary>
     public bool Holds => Came is WorkflowBindCame.Unread or WorkflowBindCame.Failed;

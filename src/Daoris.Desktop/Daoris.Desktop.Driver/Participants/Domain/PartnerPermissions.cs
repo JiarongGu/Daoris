@@ -21,7 +21,7 @@ public static class PartnerPermissions
     ];
 
     /// <summary>Every other tool the connector offers, each denied by name: a partner asks nobody and acts on nothing outside its copy.</summary>
-    internal static IEnumerable<string> Acting => BrainstormPermissions.ConnectorTools.Where(tool => !Offered.Contains(tool));
+    internal static IEnumerable<string> Acting => ParticipantsWorkOrders.Current.ConnectorTools.Where(tool => !Offered.Contains(tool));
 
     /// <summary>A push in every form a rule must name apart, denied whatever the person's defaults say: its clone has no remote to need one.</summary>
     private static readonly string[] Pushing = ["Bash(git push:*)", "Bash(git -* push)", "Bash(git -* push *)"];

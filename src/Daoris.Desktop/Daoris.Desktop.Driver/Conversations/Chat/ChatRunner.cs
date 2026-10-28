@@ -2757,7 +2757,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks
     /// <param name="process">The chat run's bound process (CHATFLOW1c), which plans its landing as its press's gate does; null reads the rule.</param>
     private async Task<ProcessBriefing> ProcessToldAsync(
         string tree, string sessionId, DriverConfig config, RepoView known, string? dependencies, ISessionAdapter adapter, CancellationToken ct,
-        WorkflowProcess? process = null)
+        IWorkplaceProcess? process = null)
     {
         LandingPlan? plan;
         try

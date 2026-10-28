@@ -62,13 +62,24 @@ lease, the driven access, the child lineage with its bindings, wiring and hook s
 `Daoris.Driver.lineage-hook.mjs`), the look's facts, the running sessions and the participant-work rule
 (`Domain/ParticipantWork.cs`). The files kept their sub-folders below the old `Conversations/` or `Sessions/` (`Domain/`, `Helpers/`,
 `Partners/`, `GoOn/`, `Chat/`); tests are mirrored under `Driver.Tests/Participants/`. Namespaces remain `Daoris.Driver`, and the
-files moved byte-identically; D212 records their remaining upward cuts.
-Participants names no Context, Course, Help or Plugins type. Ask Daoris's room spelling is Events' (`Events/Domain/AskDaorisRoom.cs`),
+files moved byte-identically; D212 records their upward cuts.
+Participants names nothing above it: no Context, Course, Help, Plugins, Review, Work orders or Workflows type. Ask Daoris's room spelling is Events' (`Events/Domain/AskDaorisRoom.cs`),
 which the attention headline reads and the participant-work rule aliases, so no higher type is named for it. The harness conversation's
 record and its file are Participants' (`Domain/HarnessConversation.cs`, `GoOn/HarnessConversationFiles.cs`), and Course's `GoOnFiles`
 keeps the marks, the new-session choices and the reopens told. `HelperPersonWord.Decline` takes Events' `ISessionEvents` and Agents'
 `ISessionOutput`; the terminal's no and the chat run's bind open the record and the plugin catalogue through the operations Context
 (`WorkplaceEventRecords`) and Plugins (`WorkplacePlugins`) install for Workplace. The required-posture mark is `AgentPostures.Required`.
+The reviewer's choice (`Domain/ReviewerChoice.cs`, with `AgentFamily`, `ReviewerPassed` and `ReviewerUnavailable`) and the posture words
+(`Domain/OpinionPosture.cs`) are Participants', the lowest reader, and Review reads them down; the helper's rule says where it was set with
+the commit rules' words. The loop's reserved start (`StartReservation`), its run (`StartRun`) and the slots a session holds (`ActiveSessions`)
+are Participants' too, the tree comparison is Workplace's `TreeNames.Same`, and a planned start and a bound run are held through
+`IPlannedStart` and `IRunBound`, which the planner's `Consideration` and the workflows' `WorkflowBind` implement. The looks' opinion facts are held
+through `IOpinionFact` and `IOpinionAct`, which `Workflows/OpinionFacts.cs` implements. The helper's and the partner's verbs read the terminal
+through `IParticipantsAsk` and `IParticipantsWorld`, which the sessions verb's `SessionsAsk` and `SessionsWorld` implement, and take the factory
+that builds the ask; a helper's wait reads the ask's words as Agents' `IAgentAskWords`. Two required ports, installed when the driver loads and
+resolved only where reached, carry the rest: `IParticipantsWorkOrders` (the connector's tool list a partner is denied by; Work orders installs it
+from `Sessions/Work/ParticipantsWorkOrdersWiring.cs`) and `IParticipantsWorkflows` (a chat run's bound test, its chat run, its bind and its
+process, over Workplace's `IWorkplaceProcess`; Workflows installs it from `Workflows/ParticipantsWorkflowsWiring.cs`).
 
 Plugins supplies adapters, account declarations and skill composition through `IAgentPlugins`; Agents keeps adapter-set
 joining, provenance reading, skill handing and cleanup. `Plugins/AgentPluginWiring.cs` installs the required catalogue

@@ -12,7 +12,7 @@ namespace Daoris.Driver;
 /// <c>take-back</c>, <c>reword</c>, <c>go-on-new</c> or <c>start-from</c>; COAGENT1b's <c>partner</c>, <c>partner-list</c> and
 /// <c>partner-stop</c>.
 /// </param>
-public sealed record SessionsAsk(string Verb) : ISupervisorAsk
+public sealed record SessionsAsk(string Verb) : ISupervisorAsk, IParticipantsAsk
 {
     /// <summary>The code a finish under the standing confirmation answers where a process for the session runs here (TERMTRUST1a).</summary>
     public const string RunningHere = "running-here";
@@ -85,7 +85,7 @@ public sealed record SessionsAsk(string Verb) : ISupervisorAsk
 /// </summary>
 /// <param name="Door">The configured agent's wire, which the planner's verdicts are read by (D70).</param>
 /// <param name="Log">Where the archive's and the delete's lines go, as the terminal's door; null writes none.</param>
-public sealed record SessionsWorld(ServiceClient Service, string Home, DriverConfig Config, SessionWire Door, MachineLog? Log) : ISupervisorWorld
+public sealed record SessionsWorld(ServiceClient Service, string Home, DriverConfig Config, SessionWire Door, MachineLog? Log) : ISupervisorWorld, IParticipantsWorld
 {
     /// <summary>The markers every driver on the home leaves for a live process: whether something here runs a session.</summary>
     public SessionProcesses Processes { get; init; } = new(DaorisHome.Entry(Home, HomeEntry.SessionPids));
@@ -260,6 +260,10 @@ public static class SessionsCommand
     /// <summary>The fields of one of an entry's parts, in order.</summary>
     public static IReadOnlyList<string> JsonPartFields { get; } = ["session", "quest", "shown", "group", "began", "after", "askedBy"];
 
+    /// <summary>The ask a helper's or a partner's verb read of the words, which those verbs hand on as the facet they read.</summary>
+    private static SessionsAsk MadeAsk(string verb, IReadOnlyList<string> ids, string? text, string? agent, IReadOnlyList<string> paths) =>
+        new(verb) { Ids = ids, Text = text, Agent = agent, Paths = paths };
+
     /// <summary>What the words ask, or null with what is wrong with them.</summary>
     public static SessionsAsk? Read(IReadOnlyList<string> args, out string? problem)
     {
@@ -343,11 +347,11 @@ public static class SessionsCommand
                     + "or `--approve` or `--decline` for its agent's own ask to hand it over.";
                 return null;
             case ["helper", ..]:
-                return SessionsHelperCommand.Read(args, out problem);
+                return SessionsHelperCommand.Read(args, out problem, MadeAsk);
             case ["supervise", ..]:
                 return SessionsSuperviseCommand.Read(args, out problem, (verb, ids, draft) => new SessionsAsk(verb) { Ids = ids, Supervised = draft });
             case ["partner", ..]:
-                return SessionsPartnerCommand.Read(args, out problem);
+                return SessionsPartnerCommand.Read(args, out problem, MadeAsk);
         }
 
         var ask = new SessionsAsk("list");
