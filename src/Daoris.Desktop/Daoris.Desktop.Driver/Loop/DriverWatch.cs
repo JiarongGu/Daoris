@@ -465,7 +465,7 @@ public sealed class DriverWatch(
             home,
             async (name, token) => (await RefWatch.RepositoriesAsync(home, service.RegistryAsync, token).ConfigureAwait(false))
                 .FirstOrDefault(each => string.Equals(each.Repository, name, StringComparison.OrdinalIgnoreCase)),
-            token => BranchTidying.InUseAsync(home, service, asked => BranchTidying.ReviewingAsync(Reviews, service, asked), token))
+            token => BranchTidying.InUseAsync(home, service, asked => ReviewServed.ReviewingAsync(Reviews, service, asked), token))
         {
             Saying = tidy,
             Log = Log,
@@ -917,7 +917,7 @@ public sealed class DriverWatch(
 
     /// <summary>
     /// One pass's reads of D157's gates for the evaluation runtime (FABRIC-RUN1c, link 8's <see cref="NodeRuntimeLook.Gates"/>): a unit's work
-    /// read as a landing door reads it (<see cref="SessionTrees.GateAsync"/>), at its newest session's tree here: a branch unit's newest executor,
+    /// read as a landing door reads it (<see cref="SessionTreeGates.GateAsync"/>), at its newest session's tree here: a branch unit's newest executor,
     /// a quest unit's newest session serving it. The sessions are read once a pass, at the first unit asked. A unit with no such tree here (a
     /// teammate's work, a tree tidied), or a read that failed, reads nothing, and its nodes wait. FABRIC-CUTOVER1d (the cutover design §2.2): at the
     /// commit given, a run's branch at the tip its pass read, as a landing door judges at a commit it pins; else at that tree's <c>HEAD</c>.
@@ -1024,7 +1024,7 @@ public sealed class DriverWatch(
                 await FirstScreenAsync(ct).ConfigureAwait(false);
                 // A review step in progress keeps the tree it shows from (REVIEWENV1d), as a session in use keeps its own.
                 return await Stages.TimeAsync(
-                        "tidy", () => tidy.LookAsync(service, Log, ct, token => BranchTidying.ReviewingAsync(Reviews, service, token)), beside: true)
+                        "tidy", () => tidy.LookAsync(service, Log, ct, token => ReviewServed.ReviewingAsync(Reviews, service, token)), beside: true)
                     .ConfigureAwait(false);
             }
             catch (OperationCanceledException) when (ct.IsCancellationRequested)

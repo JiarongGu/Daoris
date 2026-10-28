@@ -22,13 +22,13 @@ internal static class HistoryHome
         var home = files.Home;
         var kept = quests.Where(Plain).Sum(quest => HistoryBytes.Of(DaorisHome.Entry(home, HomeEntry.QuestFiles, quest)))
                    + asks.Where(Plain).Sum(ask => HistoryBytes.Of(DaorisHome.Entry(home, HomeEntry.AskFiles, ask)))
-                   + BoundRuns(home, quests).Sum(run => HistoryBytes.Of(WorkflowRunBindings.PathOf(home, run)));
+                   + BoundRuns(home, quests).Sum(run => HistoryBytes.Of(WorkplaceRunFiles.PathOf(home, run)));
         return new HistoryBytes(0, 0, 0, kept, 0);
     }
 
     /// <summary>The runs among these quests that are bound here: a run's id is its chain's first quest, and its binding goes with that quest (WORKFLOW1e3).</summary>
     internal static IReadOnlyList<string> BoundRuns(string home, IEnumerable<string> quests) =>
-        [.. quests.Where(quest => WorkflowRunBindings.Bound(home, quest)).Distinct(StringComparer.Ordinal)];
+        [.. quests.Where(quest => WorkplaceRunFiles.Bound(home, quest)).Distinct(StringComparer.Ordinal)];
 
     /// <summary>An id that names one folder under its parent and nothing else.</summary>
     private static bool Plain(string id) => SafeNames.IsFolderId(id);
@@ -157,21 +157,21 @@ internal static class HistoryHome
 
         // A run's binding no quest here holds any more (WORKFLOW1e3): a hand purge or an earlier clear left it. A chat run's is held by the
         // record its key names, not by a quest (CHATFLOW1c, the chat-flow design §4.3), and kept while that record stands.
-        foreach (var file in Files(WorkflowRunBindings.FolderOf(world.Home)))
+        foreach (var file in Files(WorkplaceRunFiles.RunsFolder(world.Home)))
         {
             var run = Path.GetFileNameWithoutExtension(file);
-            if (string.Equals(Path.GetExtension(file), ".json", StringComparison.Ordinal) && WorkflowRunBindings.IsRunId(run)
-                && (ChatRuns.RecordOf(run) is { } record ? Gone(record) : !quests.Contains(run)))
+            if (string.Equals(Path.GetExtension(file), ".json", StringComparison.Ordinal) && WorkplaceRunFiles.IsRunId(run)
+                && (WorkplaceRunFiles.RecordOf(run) is { } record ? Gone(record) : !quests.Contains(run)))
             {
                 Add(file, folder: false);
             }
         }
 
         // A chat run's opinion gate and look (CHATFLOW1c) whose record is gone; a chain's gate file is its quest's, which this leaves.
-        foreach (var file in Files(ChatRuns.GatesFolder(world.Home)).Concat(Files(ChatRuns.LooksFolder(world.Home))))
+        foreach (var file in Files(WorkplaceRunFiles.GatesFolder(world.Home)).Concat(Files(WorkplaceRunFiles.LooksFolder(world.Home))))
         {
             if (string.Equals(Path.GetExtension(file), ".json", StringComparison.Ordinal)
-                && ChatRuns.RecordOf(Path.GetFileNameWithoutExtension(file)) is { } record && Gone(record))
+                && WorkplaceRunFiles.RecordOf(Path.GetFileNameWithoutExtension(file)) is { } record && Gone(record))
             {
                 Add(file, folder: false);
             }

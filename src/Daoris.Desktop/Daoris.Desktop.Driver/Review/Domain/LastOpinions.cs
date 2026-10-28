@@ -2,7 +2,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// One owed landing opinion's gate as the last look judged it (XAGENT1g3): the work, since when its opinion has been owed, whether
-/// it lands by itself, and the gate as <see cref="SessionTrees.GateAsync"/> reads it for the route that answers *What needs you*.
+/// it lands by itself, and the gate as <see cref="SessionTreeGates.GateAsync"/> reads it for the route that answers *What needs you*.
 /// </summary>
 public sealed record OpinionJudged(
     string Session, string Quest, string Repository, string Workspace, DateTimeOffset Since, bool Auto, OpinionGateState Gate);

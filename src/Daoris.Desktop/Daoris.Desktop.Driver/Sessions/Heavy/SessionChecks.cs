@@ -107,7 +107,7 @@ public static class SessionChecks
     }
 
     /// <summary>What a session's kept checks are named by under the home's <c>spawn/</c>, after its id.</summary>
-    public const string Suffix = ".checks.json";
+    public const string Suffix = SessionHomeFiles.ChecksSuffix;
 
     /// <summary>
     /// Keep the checks <paramref name="session"/>'s run takes, where <c>run-heavy</c> reads them by the session its tree's lock names

@@ -1,69 +1,5 @@
 namespace Daoris.Driver;
 
-/// <summary>
-/// What the landing at done reads of the service (LAND2b): a seam, so its tests stand in for the ledger. Its quests and asks are
-/// what the review's gate reads too (REVIEWENV1c), and the opinions the second opinion's part reads (XAGENT1f), so a look lands
-/// nothing the gate holds.
-/// </summary>
-public interface IAutoLandingWorld : IOpinionWorld
-{
-    /// <summary>One quest as it stands, closed ones included; null where the service holds none.</summary>
-    Task<QuestView?> QuestAsync(string id, CancellationToken ct);
-
-    /// <summary>Every session record, closed ones included: which is the newest on a tree, and whether a live one holds it.</summary>
-    Task<IReadOnlyList<SessionRecord>> RecordsAsync(CancellationToken ct);
-
-    /// <summary>The trees sessions still running or waiting name, which the rule's tidy keeps (LAND3).</summary>
-    Task<IReadOnlySet<string>> InUseAsync(CancellationToken ct);
-
-    /// <summary>
-    /// A world that reads the service afresh (FABRIC-END7's review): each chosen entry is judged again from it just before its own
-    /// landing. A world that keeps nothing between reads answers itself.
-    /// </summary>
-    IAutoLandingWorld Again() => this;
-
-    /// <summary>
-    /// The say door (MSG1a) for Daoris's words (LANDREBASE1): kept on an ended or parked record of this machine's under their fact's key,
-    /// for its own conversation to go on with at the next look. Null where the world has no door, and nothing is said.
-    /// </summary>
-    Task<SayAnswer?> SayAsync(string session, string text, string key, CancellationToken ct) => Task.FromResult<SayAnswer?>(null);
-}
-
-/// <summary>The world over this machine's service: the quests read once per instance, since a look builds one.</summary>
-public sealed class ServiceAutoLandingWorld(ServiceClient service) : IAutoLandingWorld
-{
-    private IReadOnlyList<QuestView>? _every;
-    private IReadOnlyDictionary<string, QuestView>? _quests;
-
-    public async Task<QuestView?> QuestAsync(string id, CancellationToken ct)
-    {
-        _quests ??= (await QuestsAsync(ct).ConfigureAwait(false))
-            .GroupBy(quest => quest.Id, StringComparer.OrdinalIgnoreCase)
-            .ToDictionary(group => group.Key, group => group.First(), StringComparer.OrdinalIgnoreCase);
-        return _quests.GetValueOrDefault(id.TrimStart('#'));
-    }
-
-    public async Task<IReadOnlyList<QuestView>> QuestsAsync(CancellationToken ct) =>
-        _every ??= await service.EveryQuestAsync(ct).ConfigureAwait(false);
-
-    public Task<AskView?> AskAsync(string id, CancellationToken ct) => service.FindAskAsync(id, ct);
-
-    public Task<OpinionView?> OpinionAsync(string id, CancellationToken ct) => service.Opinions.ReadAsync(id, ct);
-
-    public Task<IReadOnlyList<SessionRecord>> RecordsAsync(CancellationToken ct) => service.SessionRecordsAsync(ct);
-
-    public async Task<IReadOnlySet<string>> InUseAsync(CancellationToken ct) =>
-        (await service.ActiveSessionsAsync(ct).ConfigureAwait(false))
-        .Select(session => session.Tree).OfType<string>().Where(tree => tree.Length > 0)
-        .ToHashSet(StringComparer.OrdinalIgnoreCase);
-
-    /// <summary>A new world over the same service, so nothing this one read is kept.</summary>
-    public IAutoLandingWorld Again() => new ServiceAutoLandingWorld(service);
-
-    public async Task<SayAnswer?> SayAsync(string session, string text, string key, CancellationToken ct) =>
-        await service.SayAsync(session, text, null, ct, from: SaidFrom.Daoris, key: key).ConfigureAwait(false);
-}
-
 /// <summary>A due session the look chose to try, with what it read of it there: its quest, and its tree's tip and status.</summary>
 public sealed record AutoChoice(AutoLanding Entry, QuestView Quest, string? Tip, string Status)
 {
@@ -71,7 +7,7 @@ public sealed record AutoChoice(AutoLanding Entry, QuestView Quest, string? Tip,
     /// The landing gate as the look read it (XAGENT1f, REVIEWENV1c): the second opinion and the review, each letting it go, which
     /// its landing record keeps.
     /// </summary>
-    public LandingGate? Gate { get; init; }
+    public IWorkplaceGate? Gate { get; init; }
 
     /// <summary>
     /// The branch its landing made and recorded and whose push was held back (FABRIC-CLOSE1h2), which this try hands on through the
@@ -115,7 +51,7 @@ public sealed record AutoChosen(IReadOnlyList<AutoChoice> Chosen, IReadOnlyList<
 /// </remarks>
 /// <param name="log">Where a try's <c>landing.auto</c> line goes (D94): the service client's watchers, which write the machine log.</param>
 public sealed class AutoLander(
-    string home, IAutoLandingWorld world, SessionTrees trees, IWorkplaceEventHistory events, Action<LandingLine>? log = null,
+    string home, IWorkplaceLandingWorld world, SessionTrees trees, IWorkplaceEventHistory events, Action<LandingLine>? log = null,
     Func<DateTimeOffset>? clock = null)
 {
     /// <summary>The due list this lander works.</summary>
@@ -163,7 +99,7 @@ public sealed class AutoLander(
     }
 
     /// <summary>The service's session records, read once for a look's entries, and only once one needs them.</summary>
-    private sealed class LookRecords(IAutoLandingWorld world)
+    private sealed class LookRecords(IWorkplaceLandingWorld world)
     {
         private IReadOnlyList<SessionRecord>? _read;
 
@@ -176,15 +112,15 @@ public sealed class AutoLander(
     /// one is said, and the choice where it is worth a try. The look judges with it, and the landing again just before each landing.
     /// </summary>
     private async Task<(string? Said, AutoChoice? Choice)> JudgeAsync(
-        AutoLanding entry, DriverConfig config, IAutoLandingWorld world, LookRecords looked, CancellationToken ct)
+        AutoLanding entry, DriverConfig config, IWorkplaceLandingWorld world, LookRecords looked, CancellationToken ct)
     {
         // The switch is read as it stands now: switched off, the person's press is the way again. Under a named workflow it is
         // its run's bound version's landing step (WORKFLOW1f), read once here and handed to the gate below; a workflow that
         // cannot be read here holds the entry at the gate, never closes it as off.
-        var process = await WorkflowProcesses.ReadAsync(home, config, world, entry.Quest, entry.Repository, entry.Workspace, ct)
+        var process = await WorkplaceWorkflows.Current.ReadProcessAsync(home, config, world.QuestsAsync, entry.Quest, entry.Repository, entry.Workspace, ct)
             .ConfigureAwait(false);
         // FABRIC-END7b: the run whose binding the gate reads, which the gate's files' watch lists by name.
-        LandingJudged.Read(home, entry, process.Binding?.Run);
+        LandingJudged.Read(home, entry, process.BoundRun);
         var rule = process.Landing.Rule;
         if (process is { Problem: null, Unread: null } && rule is not { Form: LandingForm.Branch, AutoAccept: true })
         {
@@ -253,7 +189,7 @@ public sealed class AutoLander(
 
         // FABRIC-CUTOVER1d: a run's graph holding it for what its next pass may judge asks for that pass; the hold below is kept with no tip
         // and no status, as the run's own part's is, so the next look reads the gate again and lands it once the record lets it.
-        if (gate.GraphHolds && gate.Graph is { AsksPass: true }) PassAsked?.Invoke();
+        if (gate.GraphAsksPass) PassAsked?.Invoke();
 
         // The run's own part first (WORKFLOW1f, the workflow design §3.7, §4.4): a workflow that cannot be read here, or a kind's
         // paths, holds it, said once; and the named workflow's landing step, last before the landing: one that cannot start sits. Kept
@@ -282,7 +218,7 @@ public sealed class AutoLander(
         if (uncommitted > 0) return (Tried(entry, AutoLandingCode.Uncommitted, tip, status, uncommitted: uncommitted), null);
 
         // The tip judged is pinned into the landing (FABRIC-END7's review): a commit made after this judgement is refused, never landed unseen.
-        return (null, new AutoChoice(entry, quest, tip, status) { Gate = gate with { Tip = tip }, Uncommitted = status == Unreadable ? null : uncommitted });
+        return (null, new AutoChoice(entry, quest, tip, status) { Gate = gate.WithTip(tip), Uncommitted = status == Unreadable ? null : uncommitted });
     }
 
     /// <summary>
@@ -333,7 +269,7 @@ public sealed class AutoLander(
     /// The choice judged again from what stands now (FABRIC-END7's review): the entry as the due list holds it, the rule as the home's
     /// configuration says it, and the service read afresh. Null where it is no longer the due list's to land, or no longer worth a try.
     /// </summary>
-    private async Task<(string? Said, AutoChoice? Choice, IAutoLandingWorld World)> AgainAsync(AutoChoice choice, CancellationToken ct)
+    private async Task<(string? Said, AutoChoice? Choice, IWorkplaceLandingWorld World)> AgainAsync(AutoChoice choice, CancellationToken ct)
     {
         var fresh = world.Again();
         if (Due.Of(choice.Entry.Session) is not { Closed: null } entry) return (null, null, fresh);
@@ -343,7 +279,7 @@ public sealed class AutoLander(
     }
 
     /// <param name="fresh">The world the choice was judged again from, which names the landing and the trees in use.</param>
-    private async Task<string> LandOneAsync(AutoChoice choice, IAutoLandingWorld fresh, CancellationToken ct)
+    private async Task<string> LandOneAsync(AutoChoice choice, IWorkplaceLandingWorld fresh, CancellationToken ct)
     {
         // FABRIC-CLOSE1h2: a branch made whose push was held back is handed on, never landed again.
         if (choice.Hands is { } made) return await HandOnAsync(choice, made, ct).ConfigureAwait(false);
@@ -393,7 +329,7 @@ public sealed class AutoLander(
     /// the next look, where the context to resolve the conflict is; the landing is tried again once its tree changes, and a tip that
     /// conflicts again is told again, once. True where the door kept them.
     /// </summary>
-    private static async Task<bool> ToldRebaseAsync(IAutoLandingWorld world, AutoLanding entry, string? tip, LandingConflict conflict, CancellationToken ct) =>
+    private static async Task<bool> ToldRebaseAsync(IWorkplaceLandingWorld world, AutoLanding entry, string? tip, LandingConflict conflict, CancellationToken ct) =>
         await RebaseTelling.TellAsync(world.SayAsync, entry.Session, tip, conflict, ct).ConfigureAwait(false) is { Kept: true };
 
     /// <summary>
@@ -535,7 +471,7 @@ public sealed class AutoLander(
     /// </remarks>
     /// <param name="process">The run's process the look read for the entry's quest (WORKFLOW1f), handed to the gate where it is read for it.</param>
     private async Task<(string? Said, AutoChoice? Choice)?> PushHeldAsync(
-        AutoLanding entry, AutoTry held, IAutoLandingWorld world, LookRecords looked, WorkflowProcess process, CancellationToken ct)
+        AutoLanding entry, AutoTry held, IWorkplaceLandingWorld world, LookRecords looked, IWorkplaceProcess process, CancellationToken ct)
     {
         var quest = await world.QuestAsync(entry.Quest, ct).ConfigureAwait(false);
         if (!Stands(quest)) return (null, null);
@@ -594,21 +530,7 @@ public sealed class AutoLander(
     /// </param>
     private void Owe(AutoLanding entry, string session, string quest, string tree, DateTimeOffset? since = null)
     {
-        try
-        {
-            var dues = new OpinionDues(home);
-            var owed = dues.All()
-                .Where(due => string.Equals(due.Session, session, StringComparison.OrdinalIgnoreCase) && due.Occasion == OpinionRules.Landing)
-                .ToList();
-            if (owed.Any(due => due.Closed is null)) return;
-            if (since is { } done && owed.Any(due => due.Why == OpinionDueClosed.Landed && due.Closed >= done)) return;
-
-            dues.Due(new OpinionDue(session, quest, entry.Repository, entry.Workspace, tree, OpinionRules.Landing, Now()));
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-        {
-            // Owed at the next look instead.
-        }
+        WorkplaceReview.Current.OweLanding(home, session, quest, entry.Repository, entry.Workspace, tree, Now, since);
     }
 
     /// <summary>
@@ -702,7 +624,7 @@ public sealed class AutoLander(
     /// <summary>
     /// The landing gate read for one of the look's landings, and what of it holds the work (FABRIC-CLOSE1h12, out of the look's
     /// judgement): the gate as every landing door reads it (XAGENT1f), its first part that holds as a landing's refusal in §7's order
-    /// (<see cref="LandingGate.Refusal"/>: the run's own part, the second opinion, the review, the landing step), and the machine log's
+    /// (<see cref="IWorkplaceGate.Refusal"/>: the run's own part, the second opinion, the review, the landing step), and the machine log's
     /// line for that part. The look, the push and a push held back's recovery judge by it alike, so a gate that starts holding after the
     /// look chose a landing holds its push too.
     /// </summary>
@@ -711,13 +633,13 @@ public sealed class AutoLander(
     /// <param name="tree">That session's tree, whose tip the opinion and the review judge.</param>
     /// <param name="process">The run's process where the caller read it already (WORKFLOW1f); otherwise the gate reads it, once.</param>
     /// <param name="tip">The commit to judge the work at, where a push is judged (FABRIC-CLOSE1h16); null reads the tree's head.</param>
-    private async Task<(LandingGate Gate, TreeLanding? Held, LandingLine? Line)> GateAsync(
-        AutoLanding entry, string session, string? quest, string tree, IAutoLandingWorld world, CancellationToken ct,
-        WorkflowProcess? process = null, string? tip = null)
+    private async Task<(IWorkplaceGate Gate, TreeLanding? Held, LandingLine? Line)> GateAsync(
+        AutoLanding entry, string session, string? quest, string tree, IWorkplaceLandingWorld world, CancellationToken ct,
+        IWorkplaceProcess? process = null, string? tip = null)
     {
-        var gate = await trees.GateAsync(tree, quest, world, session, ct, process, tip).ConfigureAwait(false);
+        var gate = await trees.GateOfAsync(tree, quest, world, session, ct, process, tip).ConfigureAwait(false);
         return gate.Refusal is { } held
-            ? (gate, held, LandingGateWords.Held(session, (entry.Workspace, entry.Repository), gate, held, ReviewDoors.Look))
+            ? (gate, held, gate.Held(session, (entry.Workspace, entry.Repository), held, LandingDoors.Look))
             : (gate, null, null);
     }
 
@@ -767,7 +689,7 @@ public sealed class AutoLander(
     /// <returns>The verdict acted on (<see cref="AutoConcluded"/>), or null.</returns>
     public static string? Concluded(
         string home, DriverConfig config, ISessionEvents events, string session, QuestView quest, string? status, string state,
-        string tree, string? workspace, DateTimeOffset? at = null, WorkflowProcess? process = null)
+        string tree, string? workspace, DateTimeOffset? at = null, IWorkplaceProcess? process = null)
     {
         try
         {
@@ -795,18 +717,27 @@ public sealed class AutoLander(
     }
 
     /// <summary>
+    /// The repository and workspace a concluded record's run is read for (WORKFLOW1f): its tree's owner where this home opened the tree,
+    /// else the quest's repository in the workspace the record names.
+    /// </summary>
+    internal static (string Where, string Repository) RunOwner(string home, string tree, string? workspace, QuestView quest)
+    {
+        var trees = new SessionTrees(home);
+        return trees.Holds(tree) ? trees.Owner(tree) : (RemoteTarget.Workspace(workspace), quest.To);
+    }
+
+    /// <summary>
     /// The process a concluded record's run follows (WORKFLOW1f): its repository and workspace read as <see cref="Concluded"/> reads
     /// them, and its run's binding from the chain the service holds. Read once at the conclusion, for the landing and the second
     /// opinion owed alike. Never throws: a run that could not be read is read live, as before.
     /// </summary>
-    public static async Task<WorkflowProcess?> ProcessAsync(
+    public static async Task<IWorkplaceProcess?> ProcessAsync(
         string home, DriverConfig config, IReviewWorld world, QuestView quest, string tree, string? workspace, CancellationToken ct = default)
     {
         try
         {
-            var trees = new SessionTrees(home);
-            var (where, repository) = trees.Holds(tree) ? trees.Owner(tree) : (RemoteTarget.Workspace(workspace), quest.To);
-            return await WorkflowProcesses.ReadAsync(home, config, world, quest.Id, repository, where, ct).ConfigureAwait(false);
+            var (where, repository) = RunOwner(home, tree, workspace, quest);
+            return await WorkplaceWorkflows.Current.ReadProcessAsync(home, config, world.QuestsAsync, quest.Id, repository, where, ct).ConfigureAwait(false);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or ArgumentException or DriverException)
         {
