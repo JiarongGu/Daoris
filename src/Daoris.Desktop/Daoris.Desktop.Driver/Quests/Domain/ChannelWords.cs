@@ -144,7 +144,7 @@ public static class ChannelText
     /// How <see cref="Claim"/> opens: the page's <c>CHANNEL_CLAIM_OPENING</c>, and what a brief tells a claim by on a record from before
     /// the event's own mark (SESSCTX1b, <see cref="SessionEvent.Channel"/>).
     /// </summary>
-    internal const string ClaimOpening = "Another session says, on the ask's channel";
+    internal const string ClaimOpening = ContextBrief.ChannelClaimOpening;
 
     /// <summary>
     /// What a running part is handed at its next step for another session's message (design §2.3): Daoris's words around the

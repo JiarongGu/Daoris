@@ -686,6 +686,19 @@ public sealed class StructureTests(Xunit.Abstractions.ITestOutputHelper output)
     }
 
     [Fact]
+    public void Context_uses_lower_vocabulary_homes_and_ports_and_no_Course_Review_or_Work_orders_types()
+    {
+        var (map, _, _, analysis, _) = Tree.Value;
+        string[] owners = ["Course", "Review", "Work orders"];
+        string[] folders = ["Course/", "Review/", "Sessions/Heavy/", "WorkOrders/", "Quests/"];
+        var edges = analysis.Edges.Where(edge => edge.File.StartsWith("Context/", StringComparison.Ordinal)
+            && edge.DeclaredIn.Any(path => map.Files.TryGetValue(path, out var owner)
+                ? owners.Contains(owner) : folders.Any(folder => path.StartsWith(folder, StringComparison.Ordinal)))).ToList();
+        Assert.True(edges.Count == 0, $"Context names Course, Review or Work orders in {edges.Count} semantic tuples:\n"
+            + string.Join('\n', edges.Select(edge => $"{edge.File}: {edge.Type}")));
+    }
+
+    [Fact]
     public void Events_names_no_Help_room_type_for_the_attention_headline()
     {
         var (map, _, _, analysis, _) = Tree.Value;

@@ -30,6 +30,10 @@
     "Workplace/IWorkplaceEventHistory.cs": "Workplace",
     "Workplace/WorkplaceEventRecords.cs": "Workplace",
     "Context/WorkplaceEventRecordsWiring.cs": "Context",
+    "Context/Domain/OutgoingNote.cs": "Context",
+    "Context/SessionAttachments.cs": "Context",
+    "Context/ContextReview.cs": "Context",
+    "Context/ContextWorkOrders.cs": "Context",
     "Workplace/Domain/RebaseKeys.cs": "Workplace",
     "Workplace/WorkplaceHandedQuests.cs": "Workplace",
     "Conversations/HandOver/WorkplaceHandedQuestsWiring.cs": "Course",
@@ -75,6 +79,7 @@
     "Review/SessionTreeGates.cs": "Review",
     "Review/TreeGateOpinions.cs": "Review",
     "Review/WorkplaceReviewWiring.cs": "Review",
+    "Review/ContextReviewWiring.cs": "Review",
     "Agents/AccountCooling.cs": "Agents",
     "Agents/AccountFileNodes.cs": "Agents",
     "Agents/AccountNames.cs": "Agents",
@@ -680,6 +685,7 @@
     "Participants/LineageWiring.cs": "Participants",
     "Workplace/AgentWorkplaceWiring.cs": "Workplace",
     "Quests/AgentWorkWordsWiring.cs": "Work orders",
+    "Quests/ContextWorkOrdersWiring.cs": "Work orders",
     "Workplace/Domain/AbandonEntry.cs": "Workplace",
     "Workplace/Domain/AbandonPlan.cs": "Workplace",
     "Participants/Domain/AccessRules.cs": "Participants",
@@ -1010,30 +1016,6 @@
     "Workflows/WorkflowVerb.cs": "Workflows"
   },
   "edges": [
-    {
-      "family": "Context names Course",
-      "after": "Context",
-      "files": {
-        "Context/Domain/ContextBrief.cs": ["DaorisWords","HandOverNote"],
-        "Context/Events/ContextBriefs.cs": ["ChatFiles","ConversationTrees"]
-      }
-    },
-    {
-      "family": "Context names Review",
-      "after": "Context",
-      "files": {
-        "Context/InstructionAccounting.cs": ["ReviewSource"],
-        "Context/Events/ContextBriefs.cs": ["HeavyGates","HeavyMapping"]
-      }
-    },
-    {
-      "family": "Context names Work orders",
-      "after": "Context",
-      "files": {
-        "Context/InstructionAccounting.cs": ["AskWords","AskWordsText","ChannelText","GoAheadsText"],
-        "Context/Domain/ContextBrief.cs": ["ChannelText"]
-      }
-    },
     {
       "family": "ChatStart and ConversationWalk, split out of the runner's file into Course (O4-1, X4-1.19)",
       "after": "Course",
@@ -1468,6 +1450,8 @@
     "ParticipantsPortsTests.cs": "Participants",
     "ParticipantsWorkBoundaryTests.cs": "Participants",
     "ParticipantsAbovePortsTests.cs": "Participants",
+    "ContextBoundaryTests.cs": "Context",
+    "ContextPortsTests.cs": "Context",
     "ContextBriefTests.cs": "Context",
     "InstructionAccountTests.cs": "Context",
     "SessionEventsTests.cs": "Context",
