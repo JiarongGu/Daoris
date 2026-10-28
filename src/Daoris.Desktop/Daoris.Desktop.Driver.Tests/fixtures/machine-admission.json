@@ -1,0 +1,79 @@
+{
+  "_about": "The machine's heavy-run admission (HEAVYQUEUE1), one table both twins read: the merge tool's tools/machine-admission.mjs (tools/machine-admission.test.mjs) and the driver's MachineAdmission.cs (MachineAdmissionTests). An entry is { id, since (seconds after `now`, negative: before), beatAgo (seconds, default 5), dead (its process is gone) }; `judge` answers whether the entry `id` is admitted over the entries that still count, and how many waits are ahead of it.",
+  "now": "2026-10-28T10:00:00.000Z",
+  "capacity": [
+    { "name": "22 processors: three", "cpus": 22, "slots": null, "expect": 3 },
+    { "name": "a small machine: two at least", "cpus": 4, "slots": null, "expect": 2 },
+    { "name": "a large one: six at most", "cpus": 96, "slots": null, "expect": 6 },
+    { "name": "the setting wins", "cpus": 22, "slots": "5", "expect": 5 },
+    { "name": "one is a setting", "cpus": 22, "slots": "1", "expect": 1 },
+    { "name": "zero is no setting", "cpus": 22, "slots": "0", "expect": 3 },
+    { "name": "a word is no setting", "cpus": 22, "slots": "many", "expect": 3 },
+    { "name": "a fraction is no setting", "cpus": 22, "slots": "2.5", "expect": 3 },
+    { "name": "past 64 is no setting", "cpus": 22, "slots": "65", "expect": 3 },
+    { "name": "blank is no setting", "cpus": 22, "slots": " ", "expect": 3 }
+  ],
+  "live": [
+    { "name": "its process runs and it beat lately", "beatAgo": 5, "dead": false, "expect": true },
+    { "name": "just inside two minutes", "beatAgo": 119, "dead": false, "expect": true },
+    { "name": "two minutes is stale, a reused id notwithstanding", "beatAgo": 120, "dead": false, "expect": false },
+    { "name": "its process is gone, however lately it beat", "beatAgo": 1, "dead": true, "expect": false }
+  ],
+  "judge": [
+    {
+      "name": "an empty machine admits the first",
+      "capacity": 2, "holds": [], "waits": [{ "id": "a", "since": -1 }],
+      "id": "a", "expect": { "admitted": true, "ahead": 0, "holds": 0 }
+    },
+    {
+      "name": "one hold of two leaves a place",
+      "capacity": 2, "holds": [{ "id": "h1", "since": -300 }], "waits": [{ "id": "a", "since": -1 }],
+      "id": "a", "expect": { "admitted": true, "ahead": 0, "holds": 1 }
+    },
+    {
+      "name": "holds at the capacity make it wait",
+      "capacity": 2, "holds": [{ "id": "h1", "since": -300 }, { "id": "h2", "since": -200 }], "waits": [{ "id": "a", "since": -1 }],
+      "id": "a", "expect": { "admitted": false, "ahead": 0, "holds": 2 }
+    },
+    {
+      "name": "a hold whose process is gone releases its place",
+      "capacity": 2, "holds": [{ "id": "h1", "since": -300 }, { "id": "h2", "since": -200, "dead": true }], "waits": [{ "id": "a", "since": -1 }],
+      "id": "a", "expect": { "admitted": true, "ahead": 0, "holds": 1 }
+    },
+    {
+      "name": "a hold that stopped beating releases its place",
+      "capacity": 1, "holds": [{ "id": "h1", "since": -900, "beatAgo": 300 }], "waits": [{ "id": "a", "since": -1 }],
+      "id": "a", "expect": { "admitted": true, "ahead": 0, "holds": 0 }
+    },
+    {
+      "name": "first come, first served: the run asked before goes first",
+      "capacity": 1, "holds": [{ "id": "h1", "since": -300 }], "waits": [{ "id": "b", "since": -2 }, { "id": "a", "since": -1 }],
+      "id": "a", "expect": { "admitted": false, "ahead": 1, "holds": 1 }
+    },
+    {
+      "name": "the run asked first is admitted once a place is free, the other still waits",
+      "capacity": 2, "holds": [{ "id": "h1", "since": -300 }], "waits": [{ "id": "b", "since": -2 }, { "id": "a", "since": -1 }],
+      "id": "b", "expect": { "admitted": true, "ahead": 0, "holds": 1 }
+    },
+    {
+      "name": "a place for one is not a place for two",
+      "capacity": 2, "holds": [{ "id": "h1", "since": -300 }], "waits": [{ "id": "b", "since": -2 }, { "id": "a", "since": -1 }],
+      "id": "a", "expect": { "admitted": false, "ahead": 1, "holds": 1 }
+    },
+    {
+      "name": "a wait whose process is gone is not ahead",
+      "capacity": 1, "holds": [], "waits": [{ "id": "b", "since": -2, "dead": true }, { "id": "a", "since": -1 }],
+      "id": "a", "expect": { "admitted": true, "ahead": 0, "holds": 0 }
+    },
+    {
+      "name": "two asked in the same moment go in the order of their ids",
+      "capacity": 1, "holds": [], "waits": [{ "id": "b", "since": -1 }, { "id": "a", "since": -1 }],
+      "id": "b", "expect": { "admitted": false, "ahead": 1, "holds": 0 }
+    },
+    {
+      "name": "a run not yet among the waits is last in line",
+      "capacity": 2, "holds": [{ "id": "h1", "since": -300 }], "waits": [{ "id": "b", "since": -2 }],
+      "id": "z", "expect": { "admitted": false, "ahead": 1, "holds": 1 }
+    }
+  ]
+}

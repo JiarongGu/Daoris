@@ -23,6 +23,9 @@ internal static class GeneratedWriters
     /// <summary>The declaration's key in <c>daoris.gates.json</c>.</summary>
     internal const string Key = "generated";
 
+    /// <summary>The declaration's name at a repository's top.</summary>
+    internal const string DeclarationFile = "daoris.gates.json";
+
     /// <summary>One declared writer: the folder it writes, relative to the repository's top with no trailing slash, and its command line.</summary>
     internal sealed record Writer(string Folder, string Run)
     {
@@ -44,12 +47,12 @@ internal static class GeneratedWriters
     internal static async Task<IReadOnlyList<Writer>> AcceptedAsync(
         DriverConfig config, string root, string repository, string workspace, string onto, CancellationToken ct)
     {
-        if (WorkflowSelection.ResolveLanded(config, repository, workspace).Gates is not { } accepted) return [];
-        var (found, sha, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", $"{onto}:{LandedGates.File}"], ct)
+        if (WorkplaceWorkflows.Current.AcceptedGates(config, repository, workspace) is not { } accepted) return [];
+        var (found, sha, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", $"{onto}:{DeclarationFile}"], ct)
             .ConfigureAwait(false);
         var blob = sha.Trim();
         if (found != 0 || blob != accepted) return [];
-        return await LandedGates.TextAsync(root, blob, ct).ConfigureAwait(false) is { } text ? Parse(text) : [];
+        return await WorkplaceWorkflows.Current.DeclarationTextAsync(root, blob, ct).ConfigureAwait(false) is { } text ? Parse(text) : [];
     }
 
     /// <summary>The <c>generated</c> entries of a declaration's text; an entry without both a folder and a command is passed over.</summary>
@@ -114,6 +117,13 @@ internal static class GeneratedWriters
         return new(names.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries), runs, null);
     }
 
+    /// <summary>The system's <c>cmd.exe</c>: <c>ComSpec</c> where it names one that is there, else the system folder's. <see cref="HeavyStep.SystemShell"/> answers it.</summary>
+    internal static string SystemShell()
+    {
+        var named = Environment.GetEnvironmentVariable("ComSpec");
+        return named is { Length: > 0 } && Path.IsPathRooted(named) && File.Exists(named) ? named : Path.Combine(Environment.SystemDirectory, "cmd.exe");
+    }
+
     /// <summary>
     /// <paramref name="run"/> through the system's shell, as a gate's command line runs (<see cref="HeavyStep.CommandLine"/>): <c>cmd.exe</c>
     /// on Windows, <c>/bin/sh</c> elsewhere, in <paramref name="directory"/>, both streams read and its input closed.
@@ -124,7 +134,7 @@ internal static class GeneratedWriters
         if (OperatingSystem.IsWindows())
         {
             // `/s` takes what is between the first and the last quote as it is, so the command's own quotes reach the shell untouched.
-            info = new ProcessStartInfo(HeavyStep.SystemShell()) { Arguments = $"/d /s /c \"{run}\"", CreateNoWindow = true };
+            info = new ProcessStartInfo(SystemShell()) { Arguments = $"/d /s /c \"{run}\"", CreateNoWindow = true };
         }
         else
         {

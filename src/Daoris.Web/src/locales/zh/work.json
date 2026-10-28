@@ -398,5 +398,7 @@
   "work.heavy.waiting": "等待重型检查 · 排在 {{session}} 之后 · {{time}}",
   "work.heavy.failed": "重型检查在 {{gate}} 失败",
   "work.heavy.exit": "{{gate}} 失败，退出码 {{exit}}。",
-  "work.heavy.waitingTip": "这个仓库的重型检查一次只运行一个：这个会话在另一次运行之后排队，等的不是你。"
+  "work.heavy.waitingTip": "这个仓库的重型检查一次只运行一个：这个会话在另一次运行之后排队，等的不是你。",
+  "work.heavy.admission": "等待本机放行重型运行 · 已运行 {{holds}} / {{capacity}} · {{time}}",
+  "work.heavy.admissionTip": "本机同时只运行有限个重型运行，合并队列的检查也在其中，免得互相拖慢：这个会话在等名额，等的不是你。"
 }

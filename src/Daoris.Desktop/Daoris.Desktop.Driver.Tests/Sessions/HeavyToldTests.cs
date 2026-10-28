@@ -51,6 +51,29 @@ public sealed class HeavyToldTests : IDisposable
         Assert.Equal(Said, HeavyTold.Words(["build", "e2e"]));
     }
 
+    /// <summary>
+    /// HEAVYQUEUE1: wherever the verb is reached, a session is told to run a long test command of its own through <c>run-heavy -- &lt;command&gt;</c>,
+    /// whether or not its repository marks a heavy gate, and nothing is promised where no launcher is beside the home.
+    /// </summary>
+    [Fact]
+    public void A_long_test_command_is_told_to_go_through_the_verb_wherever_it_is_reached()
+    {
+        Assert.Null(HeavyTold.Hand(_fixture.Checkout, Home, "engine", checks: null, takesRules: true).Words);
+        Launcher("daoris-driver.cmd");
+
+        var none = HeavyTold.Hand(_fixture.Checkout, Home, "engine", checks: null, takesRules: true);
+
+        Assert.Equal(HeavyTold.Focused, none.Words);
+        Assert.Contains("`daoris-driver run-heavy -- <command>`", none.Words);
+        Assert.Contains("the merge queue's gates among them", none.Words);
+        Assert.Null(HeavyTold.For(_fixture.Checkout, Home));
+        Assert.Empty(none.Deny);
+        Assert.Null(none.HardDeny);
+
+        Marked();
+        Assert.Equal($"{Said} {HeavyTold.Focused}", HeavyTold.Hand(_fixture.Checkout, Home, "engine", checks: null, takesRules: true).Words);
+    }
+
     [Fact]
     public void A_repository_that_declares_no_gates_or_marks_none_heavy_is_told_nothing()
     {

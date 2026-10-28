@@ -60,7 +60,7 @@ public sealed class SessionWatchProcessTests : IDisposable
         driver.Watch.Clock = Fast();
         driver.Watch.EndAfter = TimeSpan.FromHours(1);
 
-        await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(90));
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
 
         Assert.Equal("completed", service.Session("s1")["state"]!.GetValue<string>());
         Assert.DoesNotContain("\"watch.quiet\"", Events(), StringComparison.Ordinal);
@@ -76,7 +76,7 @@ public sealed class SessionWatchProcessTests : IDisposable
         driver.Watch.Clock = Fast();
         driver.Watch.EndAfter = TimeSpan.FromHours(1);
 
-        await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(90));
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
 
         Assert.Contains("\"watch.quiet\"", Events(), StringComparison.Ordinal);
         Assert.Equal("failed", service.Session("s1")["state"]!.GetValue<string>());
@@ -106,7 +106,7 @@ public sealed class SessionWatchProcessTests : IDisposable
             }
         });
 
-        await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(90));
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
         await watching.CancelAsync();
         await looking;
 

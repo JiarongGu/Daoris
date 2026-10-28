@@ -13,8 +13,6 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </remarks>
 public sealed class UpdateDrainTests : IDisposable
 {
-    private static readonly TimeSpan Bound = TimeSpan.FromSeconds(10);
-
     private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-drain-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly StandInLedger _ledger = new();
@@ -52,7 +50,7 @@ public sealed class UpdateDrainTests : IDisposable
             onError: null, _closing.Token);
         try
         {
-            await Poll.Until(() => Count(reports) >= 2, () => $"{Count(reports)} look(s)", Bound);
+            await Poll.Until(() => Count(reports) >= 2, () => $"{Count(reports)} look(s)", Poll.Patience);
 
             Assert.Empty(runs.Started);
             var sitting = Last(reports)!.Considerations.Single(c => c.Quest.Id == "q1");
@@ -63,7 +61,7 @@ public sealed class UpdateDrainTests : IDisposable
             // *Not now*: the next look starts it.
             draining = false;
             watch.Nudge();
-            await Poll.Until(() => runs.Started.Count == 1, () => $"started: {string.Join(", ", runs.Started)}", Bound);
+            await Poll.Until(() => runs.Started.Count == 1, () => $"started: {string.Join(", ", runs.Started)}", Poll.Patience);
             Assert.Equal(["q1"], runs.Started);
         }
         finally
@@ -90,13 +88,13 @@ public sealed class UpdateDrainTests : IDisposable
             onError: null, _closing.Token);
         try
         {
-            await Poll.Until(() => runs.Started.Count == 1, () => "q1 never started", Bound);
+            await Poll.Until(() => runs.Started.Count == 1, () => "q1 never started", Poll.Patience);
             draining = true;
             _ledger.Publish("q2", "tools");
             watch.Nudge();
             await Poll.Until(
                 () => Last(reports)?.Considerations.Any(c => c.Quest.Id == "q2" && InstallUpdate.IsHeldForUpdate(c)) == true,
-                () => "q2 was never held for the update", Bound);
+                () => "q2 was never held for the update", Poll.Patience);
 
             Assert.Equal(1, watch.Running.Running);
             Assert.Equal("working", _ledger.Session("s1")["state"]!.GetValue<string>());
@@ -104,7 +102,7 @@ public sealed class UpdateDrainTests : IDisposable
             runs.End("q1");
             await Poll.Until(
                 () => Snapshot(reports).Any(report => report.Concluded.Any(ended => ended.Quest == "q1")),
-                () => "the ending was never reported", Bound);
+                () => "the ending was never reported", Poll.Patience);
             Assert.Equal(["q1"], runs.Started);
             Assert.Equal(0, watch.Running.Running);
         }
@@ -131,7 +129,7 @@ public sealed class UpdateDrainTests : IDisposable
             onError: null, _closing.Token);
         try
         {
-            await Poll.Until(() => Count(reports) >= 1, () => "no look", Bound);
+            await Poll.Until(() => Count(reports) >= 1, () => "no look", Poll.Patience);
 
             var sitting = Last(reports)!.Considerations.Single(c => c.Quest.Id == "q1");
             Assert.Equal(StartVerdict.Held, sitting.Verdict);
@@ -162,7 +160,7 @@ public sealed class UpdateDrainTests : IDisposable
 
     private static async Task Settled(Task running)
     {
-        try { await running.WaitAsync(Bound); }
+        try { await running.WaitAsync(Poll.Patience); }
         catch (OperationCanceledException) { }
     }
 

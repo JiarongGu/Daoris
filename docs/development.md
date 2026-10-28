@@ -126,6 +126,9 @@ change can reach before handing it back:
 | adds a driver test that roots scratch under `_fixtures` | `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --filter FullyQualifiedName~GitSeedTests.No_test_deletes` (remove scratch with `GitSeed.Remove` or `GitSeed.Discard`, never `Directory.Delete`, and find the root with `GitSeed.RepoRoot()`) |
 | asks git for a `status` or a `diff` in the driver or in a tool (the merge tool and its helpers) | `node tools/optional-locks.mjs` (pass `--no-optional-locks` before the command, so a read takes no `index.lock` in a session's tree or the main checkout) |
 | names an agent's command, a login, or a driver config's `commands` in a test | `node tools/live-logins.mjs` (a script or a stub at a path, never the agent's binary from PATH) |
+| adds a wait, a bound or a timeout to a TypeScript test (`src/Daoris.Cli/test`, `tool-test`, `tools/*.test.mjs`) | `node tools/test-patience.mjs` (a wait on a signal reads `PATIENCE` from `src/Daoris.Cli/test/_fixture.ts`; a short one that is a claim, a staging delay or a product input marks its line `// patience: claim\|staging\|input — why`; TESTPATIENCE3) |
+| gives a driver or modules test a fixed wait or a private bound shorter than two minutes (`WaitAsync(TimeSpan.From…)`, `TimeSpan Bound = TimeSpan.From…`) | `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --filter FullyQualifiedName~ShortWaitsCensusTests` (a wait on a signal reads `Poll.Patience`; a bound that is the claim, a window of nothing, a staging delay or an input the product honours is listed in the census with its reason) |
+| adds a `tools/*.test.mjs` or a test under `src/Daoris.Cli/tool-test/` | `node tools/tool-test-census.mjs` (name the `.mjs` file in the root `verify` script's `node --test` list, or, for a slow test of the merge tool, in `src/Daoris.Cli`'s `tooltests` script as `../../tools/<file>`, as `as-merged.test.mjs` is; a `tool-test/` file is run by the `tool-tests` gate's glob; each file is in exactly one gate) |
 
 A focused vitest run for a React warning (an `act` warning, a console error) passes `--reporter=default`: vitest 5 picks a
 quiet reporter for an agent's run, which prints no console output of a passing test, so the warning is there and unseen
@@ -297,6 +300,24 @@ released only on a read of their job that finds it empty. The scoped runner writ
 yet read it, and gates run in no job object yet (CISCOPE1e2). The scoped runner runs at normal priority with build servers of
 its own. The CI's watch still gates every promoted tip, and the stage's rules are CISCOPE1d's.
 
+**The machine's heavy-run admission** (HEAVYQUEUE1) is a second record, in the Daoris home, not the repository: `locks/admission/admission.json`
+(`DAORIS_HOME`, the home's `locks` entry), which the queue's heavy gates (`memoryNeed` above 0), its failure probes and a driven session's
+heavy runs all take a place in before they start a heavy process, so a session's focused `dotnet test` beside a candidate no longer
+doubles the candidate's gate times into timeouts and unresolved flakes. It holds the runs that hold a place and the runs that ask,
+first come first served up to a capacity (one for each seven processors, two to six; `DAORIS_ADMISSION_SLOTS` sets it, 3 on 22
+processors). A run waiting says in a sentence what it waits for (the holds, whose and for how long, and the runs asked before it)
+and looks again every two seconds; **it never times out and a gate's clock starts only once it has its place**, so a wait is no
+failure of the gate. An entry counts while its process runs and it has beaten within two minutes (its writer rewrites `beat` every
+twenty seconds), so a holder that dies, however it dies, releases at once, and nothing is released by a timeout while it lives.
+It changes no verdict, order or cancellation: a drop ends a gate waiting as it ends one running, holding nothing. It governs only
+what the queue and driven sessions start, never the owner's own sessions or another process. The merge tool's side is
+`tools/machine-admission.mjs` (off with `MERGE_BRANCH_ADMISSION=off`, and under `MERGE_BRANCH_MEMORY=off`, the tool's own tests, unless
+`MERGE_BRANCH_ADMISSION=on`; with no `DAORIS_HOME` it shares nothing and nothing waits), the driver's is `MachineAdmission.cs`;
+`fixtures/machine-admission.json` is the table both carry. A session reaches it through `daoris-driver run-heavy` (D180's
+HEAVYQUEUE1 note): its marked gates take a place after the repository's slot, and `run-heavy -- <command>` runs a command of its own,
+a filtered `dotnet test` or a test file's run, as a heavy run with no slot; a driven session is told to use it (`HeavyTold.Focused`).
+The queue's admission is the machine's: it does not read `local/admission.json`, whose reservations remain CISCOPE1e2's.
+
 `--ci [<commit>]` is the local CI (CI1, D180's CI1 note). It gates main's tip, or the named commit, with every gate but the
 two rehearsals it owes a stage (below), in the same
 `local/gate-tree`, holding its lock, and never touches the main checkout's tree. It runs only the gates that commit's
@@ -393,7 +414,8 @@ removes the `dist/` the family's runs of the bin would load.
 
 A release then waits only for the last delta and the rehearsals. Once the commit to release is green, run `--ci --stage
 <commit>`. When that run's status says `green` and the gate tree holds the commit, stage it: `npm run publish:desktop --
---to <install> --service --stage --from-gated <commit>`. The stage holds the gate tree's lock through its build, so no CI
+--to <install> --service --stage --from-gated <commit>`. A run writes its ended status (`green`, `failed`, `stopped`) only
+after it lets the gate tree go (CIWATCHHOLD1), so a status that says `green` is never read beside a hold the run keeps. The stage holds the gate tree's lock through its build, so no CI
 run moves the tree meanwhile. It still refuses a commit the tree does not hold, a tree a run holds, and a commit whose
 verdicts do not pass (`--passed`, GATE6), the rehearsals' among them. Its refusal names `--ci --stage <commit>`, which gates
 that commit there again, running only what it lacks. `--full --beside` remains the run of every gate, for a release that

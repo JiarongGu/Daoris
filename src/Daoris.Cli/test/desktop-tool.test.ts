@@ -232,7 +232,7 @@ test('run waits for the debug port and says when it answered', async () => {
   const clock = fakeClock();
   let asked = 0;
   const outcome = await awaitDebugPort({
-    answers: async () => (asked += 1) >= 3, gone: () => null, limitMs: 30_000, stepMs: 500, ...clock,
+    answers: async () => (asked += 1) >= 3, gone: () => null, limitMs: 30_000, stepMs: 500, ...clock, // patience: input — the wait's own bound, on a clock the test advances
   });
   assert.equal(outcome.open, true);
   assert.equal(asked, 3);
@@ -241,7 +241,7 @@ test('run waits for the debug port and says when it answered', async () => {
 test('a port that never opens is reported once the bound is reached, with the window still running', async () => {
   const clock = fakeClock();
   const outcome = await awaitDebugPort({
-    answers: async () => false, gone: () => null, limitMs: 30_000, stepMs: 500, ...clock,
+    answers: async () => false, gone: () => null, limitMs: 30_000, stepMs: 500, ...clock, // patience: input — the bound reached is the claim
   });
   assert.equal(outcome.open, false);
   assert.equal(outcome.gone, null);
@@ -254,7 +254,7 @@ test('an application that ended before its port opened is reported at once, not 
   const outcome = await awaitDebugPort({
     answers: async () => false,
     gone: () => ((polls += 1) >= 2 ? { code: 0, signal: null } : null),
-    limitMs: 30_000, stepMs: 500, ...clock,
+    limitMs: 30_000, stepMs: 500, ...clock, // patience: input — the wait's own bound, on a clock the test advances
   });
   assert.equal(outcome.open, false);
   assert.deepEqual(outcome.gone, { code: 0, signal: null });

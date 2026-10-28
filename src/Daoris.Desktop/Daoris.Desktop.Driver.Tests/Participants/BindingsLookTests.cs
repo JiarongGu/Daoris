@@ -59,8 +59,8 @@ public sealed class BindingsLookTests : IDisposable
         Assert.Equal(new HarnessConversation("claude-code-acp", "c-1"), conversations.Read("s1"));
 
         // An older build run on the home meanwhile finds no file, and writes its own when the wire names its conversation.
-        Assert.Null(GoOnFiles.ReadConversation(FileOf("s1")));
-        GoOnFiles.WriteConversation(FileOf("s1"), "claude-code-acp", "c-1-older");
+        Assert.Null(HarnessConversationFiles.Read(FileOf("s1")));
+        HarnessConversationFiles.Write(FileOf("s1"), "claude-code-acp", "c-1-older");
         File.WriteAllText(FileOf("s2"), "{ not a conversation");
 
         await driver.TickAsync(_closing.Token).WaitAsync(Bound);

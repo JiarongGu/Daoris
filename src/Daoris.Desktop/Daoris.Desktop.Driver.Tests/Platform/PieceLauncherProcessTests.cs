@@ -63,7 +63,7 @@ public sealed class PieceLauncherProcessTests : IDisposable
 
         // Says it is there, then waits on its standard input for a line.
         using var launcher = Start(PieceJobs.NameOf(piece), Cmd, "/d", "/c", "echo ready& set /p line=");
-        var said = await launcher.StandardOutput.ReadLineAsync().WaitAsync(TimeSpan.FromSeconds(30));
+        var said = await launcher.StandardOutput.ReadLineAsync().WaitAsync(Poll.Patience);
 
         Assert.Equal("ready", said);
         // The launcher and its harness, both in the job the driver made: nothing of the harness's ran outside it.
@@ -72,9 +72,9 @@ public sealed class PieceLauncherProcessTests : IDisposable
 
         await launcher.StandardInput.WriteLineAsync("a line for the partner");
         await launcher.StandardInput.FlushAsync();
-        await launcher.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(30));
+        await launcher.WaitForExitAsync().WaitAsync(Poll.Patience);
         Assert.Equal(0, launcher.ExitCode);
-        await job.WaitEmptyAsync().WaitAsync(TimeSpan.FromSeconds(30));
+        await job.WaitEmptyAsync().WaitAsync(Poll.Patience);
         Assert.Equal(0, job.Active);
     }
 
@@ -114,12 +114,12 @@ public sealed class PieceLauncherProcessTests : IDisposable
         Assert.Null(PieceStarts.Through(info, PieceStarts.LauncherPath(home), [PieceJobs.NameOf(piece)]));
 
         using var process = Process.Start(info)!;
-        Assert.Equal("handed down", await process.StandardOutput.ReadLineAsync().WaitAsync(TimeSpan.FromSeconds(30)));
+        Assert.Equal("handed down", await process.StandardOutput.ReadLineAsync().WaitAsync(Poll.Patience));
         Assert.Equal(2, job!.Active);
 
         await process.StandardInput.WriteLineAsync("done");
         await process.StandardInput.FlushAsync();
-        await process.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(30));
+        await process.WaitForExitAsync().WaitAsync(Poll.Patience);
         Assert.Equal(0, process.ExitCode);
     }
 
@@ -131,8 +131,8 @@ public sealed class PieceLauncherProcessTests : IDisposable
 
         using var launcher = Start(PieceJobs.NameOf(piece), Cmd, "/d", "/c", "type nul > started");
         launcher.StandardInput.Close();
-        var error = await launcher.StandardError.ReadToEndAsync().WaitAsync(TimeSpan.FromSeconds(30));
-        await launcher.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(30));
+        var error = await launcher.StandardError.ReadToEndAsync().WaitAsync(Poll.Patience);
+        await launcher.WaitForExitAsync().WaitAsync(Poll.Patience);
 
         Assert.Equal(PieceLauncher.Refused, launcher.ExitCode);
         Assert.Contains("could not join the piece's job", error);
@@ -147,10 +147,10 @@ public sealed class PieceLauncherProcessTests : IDisposable
         using var job = PieceJobs.Create(piece)!;
 
         using var launcher = Start(PieceJobs.NameOf(piece), Cmd, "/d", "/c", "echo ready& set /p line=");
-        Assert.Equal("ready", await launcher.StandardOutput.ReadLineAsync().WaitAsync(TimeSpan.FromSeconds(30)));
+        Assert.Equal("ready", await launcher.StandardOutput.ReadLineAsync().WaitAsync(Poll.Patience));
 
         job.Terminate();
-        await job.WaitEmptyAsync().WaitAsync(TimeSpan.FromSeconds(30));
+        await job.WaitEmptyAsync().WaitAsync(Poll.Patience);
 
         Assert.True(launcher.WaitForExit(30_000));
         Assert.Equal(PartnerJob.Empty, PieceJobs.Observe(PieceJobs.NameOf(piece), job));

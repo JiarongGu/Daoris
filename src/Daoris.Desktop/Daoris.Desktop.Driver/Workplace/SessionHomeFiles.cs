@@ -116,6 +116,9 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
 
     internal const string QuestionSuffix = ".question.json";
 
+    /// <summary>What a session's kept checks are named by under the home's <c>spawn/</c>, after its id; <see cref="SessionChecks.Suffix"/> spells it.</summary>
+    internal const string ChecksSuffix = ".checks.json";
+
     internal const string SupervisorDecisionsSuffix = ".decisions";
     internal const string SupervisorPointerSuffix = ".supervisor.json";
 
@@ -155,7 +158,7 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
         new(Spawn, Place.Spawn, ".mcp.json", false, Beside),
         new(Spawn, Place.Spawn, ".settings.json", false, Beside),
         // FABRIC-PIPELINE1b: the checks its run took, which `run-heavy` reads by the session its tree's lock names.
-        new(Spawn, Place.Spawn, SessionChecks.Suffix, false, Beside),
+        new(Spawn, Place.Spawn, ChecksSuffix, false, Beside),
         new(Help, Place.Sessions, HelpConversationsSuffix, false, Beside),
         // HELPWIRED1: what each of its starts handed, Ask Daoris's too, so it goes under the same name.
         new(Help, Place.Sessions, HelpWiredSuffix, false, Beside),
@@ -204,9 +207,9 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
     private IReadOnlyList<string> PathsOf(SessionFile file, string id) => file.Place switch
     {
         Place.Spawn => [Path.Combine(SpawnFolder, id + file.Suffix)],
-        Place.Runs => [Path.Combine(WorkflowRunBindings.FolderOf(home), ChatRuns.Prefix + id + file.Suffix)],
-        Place.Gates => [Path.Combine(ChatRuns.GatesFolder(home), ChatRuns.Prefix + id + file.Suffix)],
-        Place.Looks => [Path.Combine(ChatRuns.LooksFolder(home), ChatRuns.Prefix + id + file.Suffix)],
+        Place.Runs => [Path.Combine(WorkplaceRunFiles.RunsFolder(home), WorkplaceRunFiles.ChatPrefix + id + file.Suffix)],
+        Place.Gates => [Path.Combine(WorkplaceRunFiles.GatesFolder(home), WorkplaceRunFiles.ChatPrefix + id + file.Suffix)],
+        Place.Looks => [Path.Combine(WorkplaceRunFiles.LooksFolder(home), WorkplaceRunFiles.ChatPrefix + id + file.Suffix)],
         Place.Files => [.. new[] { DaorisHome.Places(home, HomeEntry.SessionFiles, id)[0], Path.Combine(Sessions, id) }
             .DistinctBy(path => Path.GetFullPath(path), StringComparer.OrdinalIgnoreCase)],
         // And beside its records, where a tracker handed the sessions' folder for its markers kept it.

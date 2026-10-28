@@ -19,8 +19,6 @@ namespace Daoris.Desktop.Driver.Tests;
 [Trait(Category.Name, Category.Process)]
 public sealed class SignedOutLooksTests : IDisposable
 {
-    private static readonly TimeSpan Bound = TimeSpan.FromSeconds(30);
-
     private static readonly TimeZoneInfo Zone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Kathmandu");
 
     private const int Looks = 5;
@@ -99,7 +97,7 @@ public sealed class SignedOutLooksTests : IDisposable
         TickReport? last = null;
         for (var look = 0; look < Looks; look++)
         {
-            last = await new Daoris.Driver.Driver(service, Config, AdapterSet.Built(), _home, harnesses: roster).TickAsync().WaitAsync(Bound);
+            last = await new Daoris.Driver.Driver(service, Config, AdapterSet.Built(), _home, harnesses: roster).TickAsync().WaitAsync(Poll.Patience);
         }
 
         var sitting = Assert.Single(last!.Considerations);
@@ -135,7 +133,7 @@ public sealed class SignedOutLooksTests : IDisposable
         TickReport? last = null;
         for (var look = 0; look < 3; look++)
         {
-            last = await new Daoris.Driver.Driver(service, Config, AdapterSet.Built(), _home, harnesses: roster).TickAsync().WaitAsync(Bound);
+            last = await new Daoris.Driver.Driver(service, Config, AdapterSet.Built(), _home, harnesses: roster).TickAsync().WaitAsync(Poll.Patience);
         }
 
         var sitting = Assert.Single(last!.Considerations);
@@ -165,15 +163,15 @@ public sealed class SignedOutLooksTests : IDisposable
         using var service = _ledger.Client();
         var roster = new HarnessRoster(AdapterSet.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => _now, Zone = Zone };
         _ledger.Publish("q1", "engine");
-        await new Daoris.Driver.Driver(service, Config, AdapterSet.Built(), _home, harnesses: roster).TickAsync().WaitAsync(Bound);
+        await new Daoris.Driver.Driver(service, Config, AdapterSet.Built(), _home, harnesses: roster).TickAsync().WaitAsync(Poll.Patience);
         var before = Asked.Count;
 
         // The terminal's `daoris agent login stub --profile account-2` marks its sign-in when it ends, a minute on by the
         // roster's clock.
         ProbeLock.MarkSignedIn(HarnessSettings.ProfileHome(_home, "stub", "account-2"), _now);
         File.SetLastWriteTimeUtc(ProbeLock.SignedInPathOf(_home, "stub", "account-2"), _now.AddMinutes(1).UtcDateTime);
-        await new Daoris.Driver.Driver(service, Config, AdapterSet.Built(), _home, harnesses: roster).TickAsync().WaitAsync(Bound);
-        await new Daoris.Driver.Driver(service, Config, AdapterSet.Built(), _home, harnesses: roster).TickAsync().WaitAsync(Bound);
+        await new Daoris.Driver.Driver(service, Config, AdapterSet.Built(), _home, harnesses: roster).TickAsync().WaitAsync(Poll.Patience);
+        await new Daoris.Driver.Driver(service, Config, AdapterSet.Built(), _home, harnesses: roster).TickAsync().WaitAsync(Poll.Patience);
 
         Assert.Equal(["status account-2"], Asked.Skip(before));
     }

@@ -3,10 +3,11 @@
  *
  *   node --test tools/as-merged.test.mjs
  *
- * Outside `npm run verify`, whose tests are the CLI package's: this branch's lane is the tools, and the CLI suite is
- * another lane's (`knowledge-bench.test.mjs` is outside it for the same reason). The cases build scratch repositories
- * in a gitignored folder of this one; one runs the merge tool in its own, and the last builds and runs the devkit's
- * docs gate, so it needs `dotnet`.
+ * Run by the `tool-tests` gate, beside the merge tool's other tests (`src/Daoris.Cli`'s `tooltests` script names it;
+ * TOOLTESTCENSUS1: it sat outside every gate and rotted unseen). It is there rather than in `npm run verify` because it
+ * takes minutes and gates the merge tool, which only reaches `tool-tests`. The cases build scratch repositories in a
+ * gitignored folder of this one; one runs the merge tool in its own, and the last builds and runs the devkit's docs
+ * gate, so it needs `dotnet`.
  */
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
@@ -219,7 +220,8 @@ test('the merge tool, gating a merge it has not committed, fails the check run t
   for (const [key, value] of [['user.name', 'Fixture'], ['user.email', 'fixture@example.invalid'], ['core.autocrlf', 'false']]) {
     git(repo, ['config', key, value]);
   }
-  const trailer = '\n\nCo-Authored-By: Fixture <fixture@example.invalid>';
+  // The merge tool's commit check wants an allowed maker's name in the trailer, as `merge-branch.test.ts`'s fixtures carry.
+  const trailer = '\n\nCo-Authored-By: Claude Fixture (Anthropic) <fixture@example.invalid>';
   write('.gitignore', 'local/\n');
   write('README.md', '# Fixture\n\nWhat src does.\n');
   write('src/a.txt', 'one\n');
@@ -241,7 +243,8 @@ test('the merge tool, gating a merge it has not committed, fails the check run t
   git(repo, ['commit', '-q', '-m', `two${trailer}`], day(5));
   git(repo, ['checkout', '-q', 'main']);
 
-  const merged = run(repo, 'node', [join(here, 'merge-branch.mjs'), 'work', '--keep-going', '--no-prune']);
+  // GATESLIM1: a merge blocks on the universal gates alone, so `--gated` runs the fixture's other gate beside them.
+  const merged = run(repo, 'node', [join(here, 'merge-branch.mjs'), 'work', '--keep-going', '--no-prune', '--gated']);
   const said = `${merged.stdout}${merged.stderr}`;
   assert.equal(merged.status, 1, said);
   assert.match(said, /PASS\s+bare\b/);

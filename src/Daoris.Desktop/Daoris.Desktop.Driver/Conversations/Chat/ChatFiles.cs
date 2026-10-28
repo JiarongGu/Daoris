@@ -32,10 +32,7 @@ public static class ChatFiles
     private const int HashInName = 12;
 
     /// <summary>The folder a session's attached files are kept in, and the one its agent may read.</summary>
-    public static string Folder(string home, string sessionId) =>
-        SessionEventText.IsLocalId(sessionId)
-            ? DaorisHome.Entry(home, HomeEntry.SessionFiles, sessionId)
-            : throw new DriverException($"`{sessionId}` is not a session id, so it names no folder.");
+    public static string Folder(string home, string sessionId) => SessionAttachments.Folder(home, sessionId);
 
     /// <summary>
     /// Keep a message's files, or refuse all of them in a sentence and keep none. Idempotent per

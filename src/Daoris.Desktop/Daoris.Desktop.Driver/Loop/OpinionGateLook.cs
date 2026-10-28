@@ -98,8 +98,8 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
         foreach (var due in open)
         {
             var subject = Subject(due);
-            if (facts.TakeAct(subject) is { } act && Begin(act, ct)) passes++;
-            if (facts.Opinion(subject) is { } fact)
+            if (facts.TakeAct(subject) is OpinionAct act && Begin(act, ct)) passes++;
+            if (facts.Opinion(subject) is OpinionFact fact)
             {
                 foreach (var (quest, why) in fact.Sits) sits[quest] = why;
                 if (fact.Judged is { } kept) judged.Add(kept);

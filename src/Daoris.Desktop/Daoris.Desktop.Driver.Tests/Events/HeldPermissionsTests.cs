@@ -39,7 +39,7 @@ public sealed class HeldPermissionsTests
         var answer = registry.Answer("s1", "900", "yes");
 
         Assert.True(answer.Answered);
-        var end = await held.WaitAsync(TimeSpan.FromSeconds(5));
+        var end = await held.WaitAsync(Poll.Patience);
         Assert.Equal((PermissionWhy.Answered, "yes"), (end.Why, end.Chosen?.Id));
         Assert.Empty(registry.Held("s1"));
         Assert.Equal(["s1", "s1"], moved);
@@ -82,8 +82,8 @@ public sealed class HeldPermissionsTests
         Assert.True(registry.Answer("s1", "900", option: null).Answered);
         Assert.True(registry.Answer("s1", "901", option: null).Answered);
 
-        Assert.Equal("no", (await rejecting.WaitAsync(TimeSpan.FromSeconds(5))).Chosen?.Id);
-        var cancelled = await allowing.WaitAsync(TimeSpan.FromSeconds(5));
+        Assert.Equal("no", (await rejecting.WaitAsync(Poll.Patience)).Chosen?.Id);
+        var cancelled = await allowing.WaitAsync(Poll.Patience);
         Assert.Equal((PermissionWhy.Answered, (PermissionChoice?)null), (cancelled.Why, cancelled.Chosen));
     }
 
@@ -103,7 +103,7 @@ public sealed class HeldPermissionsTests
 
         mine.ReleaseAll(PermissionWhy.Cancelled);
 
-        var end = await held.WaitAsync(TimeSpan.FromSeconds(5));
+        var end = await held.WaitAsync(Poll.Patience);
         Assert.Equal((PermissionWhy.Cancelled, (PermissionChoice?)null), (end.Why, end.Chosen));
         Assert.Empty(registry.Held("s1"));
         Assert.False(other.IsCompleted);
@@ -121,7 +121,7 @@ public sealed class HeldPermissionsTests
         var registry = new HeldPermissions();
         var held = registry.For("s1", bound: TimeSpan.FromMilliseconds(50)).Hold("900", "c9", "npm start", Offered)!;
 
-        var end = await held.WaitAsync(TimeSpan.FromSeconds(5));
+        var end = await held.WaitAsync(Poll.Patience);
 
         Assert.Equal((PermissionWhy.Bound, (PermissionChoice?)null), (end.Why, end.Chosen));
         Assert.Empty(registry.Held("s1"));

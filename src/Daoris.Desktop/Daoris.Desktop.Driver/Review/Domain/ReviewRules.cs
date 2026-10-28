@@ -8,8 +8,8 @@ namespace Daoris.Driver;
 /// <summary>Where a repository's review rule was set, for the screen, the room and the terminal.</summary>
 public static class ReviewSource
 {
-    public const string Repository = "repository";
-    public const string Workspace = "workspace";
+    public const string Repository = CommitRules.RepositorySource;
+    public const string Workspace = CommitRules.WorkspaceSource;
 }
 
 

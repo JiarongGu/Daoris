@@ -10,8 +10,6 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 public sealed class AutoLandingLookTests : IDisposable
 {
-    private static readonly TimeSpan Bound = TimeSpan.FromSeconds(10);
-
     private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-auto-look-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly StandInLedger _ledger = new();
@@ -45,7 +43,7 @@ public sealed class AutoLandingLookTests : IDisposable
         using var service = _ledger.Client();
         var driver = new Daoris.Driver.Driver(service, config, AdapterSet.Built(), _home,
             harnesses: new HarnessRoster(AdapterSet.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)));
-        var look = await driver.TickAsync().WaitAsync(Bound);
+        var look = await driver.TickAsync().WaitAsync(Poll.Patience);
 
         Assert.Contains(look.Events, line => line.StartsWith("landing  session s8 (#q8 → engine): its repository's rule no longer accepts automatically", StringComparison.Ordinal));
         Assert.Contains(look.Events, line => line.StartsWith("landing  session s9 (#q9 → tools): its tree was discarded before it landed", StringComparison.Ordinal));
@@ -56,7 +54,7 @@ public sealed class AutoLandingLookTests : IDisposable
         Assert.True(driver.Running.Idle);
 
         // Closed is closed: the next look says nothing more of them.
-        var next = await driver.TickAsync().WaitAsync(Bound);
+        var next = await driver.TickAsync().WaitAsync(Poll.Patience);
         Assert.DoesNotContain(next.Events, line => line.StartsWith("landing  ", StringComparison.Ordinal));
     }
 
@@ -88,7 +86,7 @@ public sealed class AutoLandingLookTests : IDisposable
         using var service = _ledger.Client();
         var driver = new Daoris.Driver.Driver(service, config, AdapterSet.Built(), _home,
             harnesses: new HarnessRoster(AdapterSet.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)));
-        var look = await driver.TickAsync().WaitAsync(Bound);
+        var look = await driver.TickAsync().WaitAsync(Poll.Patience);
 
         Assert.Equal(code, due.Of("s8")!.Last!.Code);
         Assert.Equal(code == AutoLandingCode.Off,
@@ -113,7 +111,7 @@ public sealed class AutoLandingLookTests : IDisposable
         {
             Woke = [new(ChangeTopics.Ledger, "quests")],
         };
-        var look = await beside.TickAsync().WaitAsync(Bound);
+        var look = await beside.TickAsync().WaitAsync(Poll.Patience);
 
         Assert.DoesNotContain(look.Events, line => line.StartsWith("landing  ", StringComparison.Ordinal));
         Assert.Null(Assert.Single(due.Open()).Last);
@@ -124,7 +122,7 @@ public sealed class AutoLandingLookTests : IDisposable
         using var lease = HomeLease.TryAcquire(_home, LeaseKind.Headless, out _);
         var holder = new Daoris.Driver.Driver(service, config, AdapterSet.Built(), _home,
             harnesses: new HarnessRoster(AdapterSet.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)));
-        var held = await holder.TickAsync().WaitAsync(Bound);
+        var held = await holder.TickAsync().WaitAsync(Poll.Patience);
         Assert.Contains(held.Events, line => line.StartsWith("landing  session s8 (#q8 → engine): its repository's rule no longer accepts automatically", StringComparison.Ordinal));
         Assert.Empty(due.Open());
     }
@@ -150,7 +148,7 @@ public sealed class AutoLandingLookTests : IDisposable
         var landing = new TaskCompletionSource<IReadOnlyList<string>>();
         Assert.True(driver.Running.Beside(_ => landing.Task, CancellationToken.None));
 
-        var look = await driver.TickAsync().WaitAsync(Bound);
+        var look = await driver.TickAsync().WaitAsync(Poll.Patience);
         landing.SetResult([]);
 
         Assert.DoesNotContain(look.Events, line => line.StartsWith("landing  ", StringComparison.Ordinal));

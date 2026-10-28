@@ -361,6 +361,39 @@ public sealed class HeavyRunProcessTests : IDisposable
         Assert.Contains("`engine`'s heavy-run slot is this run's, after waiting", secondSaid.Text);
     }
 
+    /// <summary>
+    /// HEAVYQUEUE1: a session's focused command takes a place in the machine's admission behind the merge queue's gate, runs once it has
+    /// it, hands what it starts the hold it is inside, fails as a gate does, and lets its place go as it ends.
+    /// </summary>
+    [Fact]
+    public async Task A_command_waits_for_the_queue_s_place_then_runs_inside_its_hold_and_lets_it_go()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+
+        File.WriteAllText(_fixture.At("hold-id.mjs"), """
+            import { writeFileSync } from 'node:fs';
+            writeFileSync(process.argv[2], process.env.DAORIS_ADMISSION_HOLD ?? '');
+            process.exit(Number(process.argv[3]));
+            """);
+        var quick = new AdmissionWaiting(TimeSpan.FromMilliseconds(20), TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(5), () => DateTimeOffset.UtcNow, _ => true);
+        var queue = await MachineAdmission.TakeAsync(_fixture.Home, new AdmissionRequest("driver gate"), new SaidWriter(), CancellationToken.None, quick, 1, _ => null);
+        var world = new HeavyRunWorld(_fixture.Home, _fixture.Tree, name => name == MachineAdmission.CapacityVariable ? "1" : null) { Admission = quick };
+        var said = new SaidWriter();
+        var id = _fixture.At("hold-id.txt");
+
+        var run = HeavyRun.RunAsync(new HeavyRunAsk(null) { Command = ["node", _fixture.At("hold-id.mjs"), id, "3"] }, world, said, CancellationToken.None);
+        await Poll.Until(() => said.Text.Contains("waiting for the machine's heavy-run admission"), () => said.Text);
+        Assert.False(File.Exists(id), "the command must not start while the queue holds the only place");
+
+        queue.Dispose();
+        var exit = await run.WaitAsync(Poll.Patience);
+
+        Assert.Equal(1, exit);
+        Assert.Contains("failed (exit 3)", said.Text);
+        Assert.False(string.IsNullOrWhiteSpace(File.ReadAllText(id)), "what the command starts is handed the hold it is inside");
+        Assert.Empty(MachineAdmission.Look(_fixture.Home, _ => true, capacity: 1).Holds);
+    }
+
     private HeavyRunWorld World(string directory) =>
         new(_fixture.Home, directory, _ => null) { Waiting = new HeavyWaiting(TimeSpan.FromMilliseconds(20), TimeSpan.FromSeconds(30), () => DateTimeOffset.UtcNow) };
 

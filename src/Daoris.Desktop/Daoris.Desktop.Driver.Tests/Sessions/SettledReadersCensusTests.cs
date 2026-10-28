@@ -41,7 +41,7 @@ public sealed partial class SettledReadersCensusTests
         ["AgentCourseWiring.cs"] = "the episode's go-on: no word to keep, so the try's go-on is the plain block",
         ["WordsLeft.cs"] = "a word kept again on the record: kept, with no view to show",
         ["ReopenTelling.cs"] = "Daoris's reopen and go-on words: kept, the mark written",
-        ["AutoLander.cs"] = "the landing's word to a session: kept",
+        ["AutoLandingWorld.cs"] = "the landing's word to a session, said through the lander's world: kept",
         ["TreesConsole.cs"] = "the terminal's tree word to a session: kept",
         ["SaidDoor.cs"] = "the door hands the answer to the dispatcher, which reads it first",
         ["LongCalls.cs"] = "Daoris's word to a session whose call ran long, through its inbox: held or settled, it reads only that the inbox was not closed",

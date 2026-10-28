@@ -39,10 +39,10 @@ public sealed class BindingsTests : IDisposable
     private string FileOf(string session) => new HarnessConversations(_home).PathOf(session);
 
     /// <summary>What an older build did with a session's conversation: read the file alone, null for none or one that does not read.</summary>
-    private HarnessConversation? OlderRead(string session) => GoOnFiles.ReadConversation(FileOf(session));
+    private HarnessConversation? OlderRead(string session) => HarnessConversationFiles.Read(FileOf(session));
 
     /// <summary>What an older build did when the wire named a conversation: the file, written whole, replacing what was there.</summary>
-    private void OlderKeep(string session, string adapter, string conversation) => GoOnFiles.WriteConversation(FileOf(session), adapter, conversation);
+    private void OlderKeep(string session, string adapter, string conversation) => HarnessConversationFiles.Write(FileOf(session), adapter, conversation);
 
     private static string Sha(string path) => Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(path))).ToLowerInvariant();
 
@@ -408,8 +408,8 @@ public sealed class BindingsTests : IDisposable
         // The older build's write lands between the import's read of the file and its set-aside.
         var racing = new BindingStore(_home, () => StoreSettled.Yes, path =>
         {
-            var read = GoOnFiles.ReadConversation(path);
-            GoOnFiles.WriteConversation(path, "claude-code-acp", "c-1-older");
+            var read = HarnessConversationFiles.Read(path);
+            HarnessConversationFiles.Write(path, "claude-code-acp", "c-1-older");
             return read is { } kept ? (kept.Adapter, kept.Conversation) : null;
         });
 

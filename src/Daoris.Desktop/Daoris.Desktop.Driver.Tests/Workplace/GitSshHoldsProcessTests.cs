@@ -111,7 +111,7 @@ public sealed class GitSshHoldsProcessTests : IDisposable
             if (said.Contains("Server listening", StringComparison.Ordinal)) listening.TrySetResult();
         };
         _server.BeginErrorReadLine();
-        await listening.Task.WaitAsync(TimeSpan.FromSeconds(20));
+        await listening.Task.WaitAsync(Poll.Patience);
         return (port, $"[127.0.0.1]:{port} {string.Join(' ', File.ReadAllText(host + ".pub").Split(' ')[..2])}");
     }
 

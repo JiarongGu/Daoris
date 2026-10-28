@@ -11,8 +11,6 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <remarks>Over the real client and planner with the service's doors and each start's run standing in, in-process (DEV3).</remarks>
 public sealed class WorkflowBindingLookTests : IDisposable
 {
-    private static readonly TimeSpan Bound = TimeSpan.FromSeconds(10);
-
     private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-workflow-look-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly StandInLedger _ledger = new();
@@ -46,13 +44,13 @@ public sealed class WorkflowBindingLookTests : IDisposable
         var watching = watch.RunAsync((report, _) => { lock (reports) reports.Add(report); return Task.CompletedTask; }, onError: null, _closing.Token);
         try
         {
-            await Poll.Until(() => WorkflowRunBindings.Bound(_home, "q1"), () => $"started: {string.Join(", ", runs.Started)}", Bound);
+            await Poll.Until(() => WorkflowRunBindings.Bound(_home, "q1"), () => $"started: {string.Join(", ", runs.Started)}", Poll.Patience);
 
             var binding = WorkflowRunBindings.Read(_home, "q1")!;
             Assert.Equal(("merge-after", 1, WorkflowLevels.Repository, "engine"), (binding.Workflow, binding.Version, binding.Level, binding.Repository));
             await Poll.Until(
                 () => Events(reports).Contains("workflow  #q1 → engine: its run follows `merge-after` v1, `engine`'s default."),
-                () => string.Join(" | ", Events(reports)), Bound);
+                () => string.Join(" | ", Events(reports)), Poll.Patience);
         }
         finally
         {
@@ -71,7 +69,7 @@ public sealed class WorkflowBindingLookTests : IDisposable
         var watching = watch.RunAsync((_, _) => Task.CompletedTask, onError: null, _closing.Token);
         try
         {
-            await Poll.Until(() => WorkflowRunBindings.Bound(_home, "q1"), () => $"started: {string.Join(", ", runs.Started)}", Bound);
+            await Poll.Until(() => WorkflowRunBindings.Bound(_home, "q1"), () => $"started: {string.Join(", ", runs.Started)}", Poll.Patience);
             var first = File.ReadAllText(WorkflowRunBindings.PathOf(_home, "q1"));
             var binding = WorkflowRunBindings.Read(_home, "q1")!;
             Assert.Equal((WorkflowSelection.Current, WorkflowLevels.Task, "f00d01"), (binding.Workflow, binding.Level, binding.Ask));
@@ -82,9 +80,9 @@ public sealed class WorkflowBindingLookTests : IDisposable
             _ledger.WorkflowChosen("f00d01", kind: null, workflow: "merge-after");
             _ledger.Publish("q2", "engine", from: "ask #f00d01", parent: "q1");
             watch.Nudge();
-            await Poll.Until(() => runs.Started.Contains("q2"), () => $"started: {string.Join(", ", runs.Started)}", Bound);
+            await Poll.Until(() => runs.Started.Contains("q2"), () => $"started: {string.Join(", ", runs.Started)}", Poll.Patience);
             watch.Nudge();
-            await Poll.Until(() => watch.Running.Running == 1, () => "q2 never ran", Bound);
+            await Poll.Until(() => watch.Running.Running == 1, () => "q2 never ran", Poll.Patience);
 
             Assert.Equal(first, File.ReadAllText(WorkflowRunBindings.PathOf(_home, "q1")));
             Assert.False(WorkflowRunBindings.Bound(_home, "q2"));
@@ -106,7 +104,7 @@ public sealed class WorkflowBindingLookTests : IDisposable
         var watching = watch.RunAsync((report, _) => { lock (reports) reports.Add(report); return Task.CompletedTask; }, onError: null, _closing.Token);
         try
         {
-            await Poll.Until(() => Count(reports) >= 2, () => "no look", Bound);
+            await Poll.Until(() => Count(reports) >= 2, () => "no look", Poll.Patience);
 
             Assert.Empty(runs.Started);
             Assert.False(WorkflowRunBindings.Bound(_home, "q1"));
@@ -130,7 +128,7 @@ public sealed class WorkflowBindingLookTests : IDisposable
 
     private static async Task Settled(Task running)
     {
-        try { await running.WaitAsync(Bound); }
+        try { await running.WaitAsync(Poll.Patience); }
         catch (OperationCanceledException) { }
     }
 

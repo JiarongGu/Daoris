@@ -661,8 +661,8 @@ public sealed class BranchTidyingTests : IDisposable
         var desk = new ReviewDesk(new ServingTabs(
             new ReviewServe("q1", ReviewDesk.TabTitle("q1"), folder, "http://localhost:5173", "/", "http://localhost:5173/")));
 
-        Assert.Equal([HomeTree], await BranchTidying.ReviewingAsync(null, ledger.Client(), CancellationToken.None));
-        Assert.Equal([folder, HomeTree], await BranchTidying.ReviewingAsync(desk, ledger.Client(), CancellationToken.None));
+        Assert.Equal([HomeTree], await ReviewServed.ReviewingAsync(null, ledger.Client(), CancellationToken.None));
+        Assert.Equal([folder, HomeTree], await ReviewServed.ReviewingAsync(desk, ledger.Client(), CancellationToken.None));
     }
 
     /// <summary>
@@ -735,7 +735,7 @@ public sealed class BranchTidyingTests : IDisposable
         using var ledger = new StandInLedger();
         ledger.Publish("q1", "engine");
 
-        Assert.Empty(await BranchTidying.ReviewingAsync(null, ledger.Client(), CancellationToken.None));
+        Assert.Empty(await ReviewServed.ReviewingAsync(null, ledger.Client(), CancellationToken.None));
     }
 
     /// <summary>A browser's half that serves what it was handed, and opens nothing.</summary>
