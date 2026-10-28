@@ -42,7 +42,7 @@ public static class HelperWaits
     /// Whether <paramref name="session"/> asked a go-ahead on its work's ask that still waits on the person (KNOWUSE1a, GOAHEAD2): a real
     /// question, which the person's answer wakes. Unread words, or a quest on no ask, read as none.
     /// </summary>
-    public static bool AskedGoAhead(string session, AskWords? words) =>
+    public static bool AskedGoAhead(string session, IAgentAskWords? words) =>
         words?.GoAheads?.Any(goAhead => goAhead.Answer is null
                                         && goAhead.Asked.Any(request => string.Equals(request.Session, session, StringComparison.Ordinal))) == true;
 

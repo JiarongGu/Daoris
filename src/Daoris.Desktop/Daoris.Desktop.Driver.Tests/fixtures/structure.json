@@ -58,6 +58,7 @@
     "Workplace/IntakeRoomPaths.cs": "Workplace",
     "Sessions/Work/WorkplaceWorkOrdersWiring.cs": "Work orders",
     "Sessions/Work/RolesWorkOrdersWiring.cs": "Work orders",
+    "Sessions/Work/ParticipantsWorkOrdersWiring.cs": "Work orders",
     "Sessions/Work/AbandonWorkPlan.cs": "Work orders",
     "Trees/SessionEntryReader.cs": "Work orders",
     "Workplace/WorkplaceRunFiles.cs": "Workplace",
@@ -65,6 +66,7 @@
     "Workplace/WorkplaceWorkflows.cs": "Workplace",
     "Workflows/TreeGateWorkflows.cs": "Workflows",
     "Workflows/WorkplaceWorkflowsWiring.cs": "Workflows",
+    "Workflows/ParticipantsWorkflowsWiring.cs": "Workflows",
     "Workplace/WorkplaceReview.cs": "Workplace",
     "Review/AutoLandingWorld.cs": "Review",
     "Review/ChatLandCommand.cs": "Review",
@@ -240,6 +242,14 @@
     "Participants/Helpers/HelperPersonWord.cs": "Participants",
     "Participants/Helpers/SessionsHelperCommand.cs": "Participants",
     "Participants/Partners/PartnerChoice.cs": "Participants",
+    "Participants/Domain/ReviewerChoice.cs": "Participants",
+    "Participants/Domain/OpinionPosture.cs": "Participants",
+    "Participants/ParticipantsWorkOrders.cs": "Participants",
+    "Participants/Chat/ParticipantsWorkflows.cs": "Participants",
+    "Participants/ParticipantsTerminal.cs": "Participants",
+    "Participants/StartReservation.cs": "Participants",
+    "Participants/ActiveSessions.cs": "Participants",
+    "Participants/StartRun.cs": "Participants",
     "Participants/Partners/PartnerDoors.cs": "Participants",
     "Participants/Partners/PartnerFiles.cs": "Participants",
     "Participants/Partners/PartnerPersonAsk.cs": "Participants",
@@ -591,7 +601,7 @@
     "Review/Domain/ReviewRules.cs": "Review",
     "Review/Domain/ReviewSetUps.cs": "Review",
     "Review/Domain/ReviewShowing.cs": "Review",
-    "Review/Domain/ReviewerChoice.cs": "Review",
+    "Workflows/OpinionFacts.cs": "Workflows",
     "Review/OpinionAnswers.cs": "Review",
     "Review/OpinionCommand.cs": "Review",
     "Review/OpinionDeliveries.cs": "Review",
@@ -687,7 +697,6 @@
     "Sessions/Domain/PauseOutcome.cs": "Work orders",
     "Sessions/Domain/PausedBy.cs": "Work orders",
     "Sessions/Domain/SessionOutput.cs": "Context",
-    "Sessions/Domain/StartRun.cs": "Work orders",
     "Sessions/Domain/StopAnswer.cs": "Work orders",
     "Sessions/Events/ContextBriefs.cs": "Context",
     "Sessions/Events/SessionEventLog.cs": "Context",
@@ -1002,39 +1011,6 @@
   },
   "edges": [
     {
-      "family": "Participants names Review",
-      "after": "Participants",
-      "files": {
-        "Participants/Domain/HelperPass.cs": ["OpinionPosture","ReviewerChoice","ReviewerPassed"],
-        "Participants/Domain/HelperRules.cs": ["OpinionSource"],
-        "Participants/Helpers/HelperChoice.cs": ["AgentFamily","ReviewerChoice","ReviewerPassed","ReviewerUnavailable"],
-        "Participants/Partners/PartnerChoice.cs": ["ReviewerChoice","ReviewerPassed"],
-        "Participants/LookFacts.cs": ["OpinionDue","OpinionJudged"]
-      }
-    },
-    {
-      "family": "Participants names Work orders",
-      "after": "Participants",
-      "files": {
-        "Participants/Domain/HelperWaits.cs": ["AskWords"],
-        "Participants/Domain/PartnerPermissions.cs": ["BrainstormPermissions"],
-        "Participants/Helpers/SessionsHelperCommand.cs": ["SessionsAsk","SessionsWorld"],
-        "Participants/Partners/PartnerReservations.cs": ["ActiveSessions"],
-        "Participants/Partners/SessionsPartnerCommand.cs": ["SessionsAsk","SessionsWorld"],
-        "Participants/LookFacts.cs": ["OpinionSit"],
-        "Participants/RunningSessions.cs": ["Consideration","Planner","StartReservation","StartRun"]
-      }
-    },
-    {
-      "family": "Participants names Workflows",
-      "after": "Participants",
-      "files": {
-        "Participants/Chat/ChatRunBinds.cs": ["ChatRunBound","ChatRuns","WorkflowCurrent","WorkflowProcess","WorkflowProcesses","WorkflowRunBindings"],
-        "Participants/LookFacts.cs": ["WorkflowProcess"],
-        "Participants/RunningSessions.cs": ["WorkflowBind"]
-      }
-    },
-    {
       "family": "Context names Course",
       "after": "Context",
       "files": {
@@ -1216,7 +1192,7 @@
     "Review/Domain/OpinionGate.cs": ["async"],
     "Review/Domain/ReviewGate.cs": ["async"],
     "Review/Domain/ReviewSetUps.cs": ["ServiceClient","async"],
-    "Review/Domain/ReviewerChoice.cs": ["HarnessRoster","async"],
+    "Participants/Domain/ReviewerChoice.cs": ["HarnessRoster","async"],
     "Roles/Domain/ActorRun.cs": ["MachineLog","async"],
     "Participants/Domain/DrivenAccess.cs": ["ServiceClient","SessionProcesses","async"],
     "Workflows/Domain/GraphGate.cs": ["async"]
@@ -1490,6 +1466,8 @@
     "RunningSessionsTests.cs": "Participants",
     "ParticipantsBoundaryTests.cs": "Participants",
     "ParticipantsPortsTests.cs": "Participants",
+    "ParticipantsWorkBoundaryTests.cs": "Participants",
+    "ParticipantsAbovePortsTests.cs": "Participants",
     "ParticipantPortsTests.cs": "Agents",
     "AgentPluginPortsTests.cs": "Agents",
     "AgentWorkplacePortsTests.cs": "Agents",

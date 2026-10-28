@@ -137,7 +137,7 @@ public sealed class RunningSessions
         {
             if (_reserved.Any(held => (start.Quest is not null && string.Equals(held.Quest, start.Quest, StringComparison.OrdinalIgnoreCase))
                                       || (start.Ask is not null && string.Equals(held.Ask, start.Ask, StringComparison.OrdinalIgnoreCase))
-                                      || Planner.SameTree(held.Tree, start.Tree)))
+                                      || TreeNames.Same(held.Tree, start.Tree)))
             {
                 return false;
             }
@@ -499,23 +499,23 @@ public sealed class RunningSessions
     }
 
     // The runs the starts bound since a look last took them (FABRIC-CUTOVER1g), which that look's bind says.
-    private readonly List<WorkflowBind> _bound = [];
+    private readonly List<IRunBound> _bound = [];
 
     /// <summary>
     /// A run a start bound before its take (FABRIC-CUTOVER1g, the cutover design §8), kept for the next look's bind to say: a start runs
     /// beside the look that began it (PARALLEL1b), and binds whatever it comes to after, a hold or a refusal included.
     /// </summary>
-    internal void Bound(WorkflowBind bound)
+    internal void Bound(IRunBound bound)
     {
         lock (_gate) _bound.Add(bound);
     }
 
     /// <summary>The runs the starts bound since the last look took them, each handed on once.</summary>
-    internal IReadOnlyList<WorkflowBind> TakeBound()
+    internal IReadOnlyList<IRunBound> TakeBound()
     {
         lock (_gate)
         {
-            List<WorkflowBind> taken = [.. _bound];
+            List<IRunBound> taken = [.. _bound];
             _bound.Clear();
             return taken;
         }
@@ -659,7 +659,13 @@ public sealed class RunningSessions
 
 /// <summary>What one start of a look is (DEV3): a quest's or an ask's intake, where it runs, on which adapter, and the plan's start.</summary>
 /// <param name="Start">The quest's planned start, which its run is bound by once it opens (WORKFLOW1e); null for an intake.</param>
-internal sealed record StartBegun(string? Quest, string? Ask, string Where, string? Workspace, string Adapter, Consideration? Start = null);
+internal sealed record StartBegun(string? Quest, string? Ask, string Where, string? Workspace, string Adapter, IPlannedStart? Start = null);
+
+/// <summary>A quest's planned start, which its run is bound by once it opens (WORKFLOW1e); the planner's <c>Consideration</c> implements it.</summary>
+internal interface IPlannedStart;
+
+/// <summary>A run a start bound (FABRIC-CUTOVER1g), kept for the next look's bind to say; the workflows' <c>WorkflowBind</c> implements it.</summary>
+internal interface IRunBound;
 
 /// <summary>
 /// What one start came to (DEV3, PARALLEL1b): null <paramref name="Came"/> for a record opened and running on, else its hold, refusal
