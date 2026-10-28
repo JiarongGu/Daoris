@@ -150,8 +150,10 @@ export function enqueue(queue, { branch, tip, message, at, requeue = false }) {
     || queue.candidate?.members.some((each) => each.branch === branch && !each.handedBack) || queue.candidate?.contained?.some((each) => each.branch === branch)) {
     return { refused: `${branch} is queued already: --drop-batch ${branch} takes it off, then queue it again` };
   }
-  const entry = { branch, tip, request: randomUUID(), message: Buffer.from(message, 'utf8').toString('base64'), at, ...(requeue ? { requeue } : {}) };
-  return { queue: { ...queue, queued: [...queue.queued, entry] }, entry };
+  // INTEGRATE1c: each request's place in arrival, by a sequence the queue keeps (`sequence`, the last given); `at` has whole seconds.
+  const seq = (queue.sequence ?? 0) + 1;
+  const entry = { branch, tip, request: randomUUID(), seq, message: Buffer.from(message, 'utf8').toString('base64'), at, ...(requeue ? { requeue } : {}) };
+  return { queue: { ...queue, sequence: seq, queued: [...queue.queued, entry] }, entry };
 }
 
 /** A queued request's message, as its bytes were at enqueue. */
@@ -306,10 +308,14 @@ export async function formCandidate({ base, members, merge, at, reforms = 0, rec
 /** A contained member as its own request again: the frozen request it was queued with, without what the candidate added. */
 const requestOf = ({ containedIn, containedAt, ...request }) => request;
 
-/** Requests in the order they arrived (the queue's order, §4.1 point 1); a tie keeps the order given. */
+/**
+ * Requests in the order they arrived (the queue's order, §4.1 point 1): by the sequence `enqueue` gave each (`seq`), since `at` has
+ * whole seconds and three requests queued in one second once came back re-ordered. A request kept from before the sequence has none
+ * and arrived before any that has one; such requests keep their clock's order, and a tie keeps the order given.
+ */
 export const inArrival = (requests) => requests
   .map((request, i) => ({ request, i }))
-  .sort((a, b) => (timeOf(a.request.at) || 0) - (timeOf(b.request.at) || 0) || a.i - b.i)
+  .sort((a, b) => (a.request.seq ?? 0) - (b.request.seq ?? 0) || (timeOf(a.request.at) || 0) - (timeOf(b.request.at) || 0) || a.i - b.i)
   .map(({ request }) => request);
 
 /**

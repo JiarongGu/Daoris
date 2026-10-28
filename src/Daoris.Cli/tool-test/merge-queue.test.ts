@@ -17,7 +17,7 @@ interface Signature { test?: string; exception?: string; location?: { method: st
 type Outcome = { result: 'pass' } | { result: 'fail'; signature: Signature } | { result: 'cannot'; signature: Signature };
 interface Failure { unit?: string; test?: string | undefined; gate: string; signature: Signature; names: 'test' | 'gate' }
 interface ContainedIn { line?: boolean; branch?: string; request?: string | undefined; commit?: string }
-interface Member { branch: string; tip: string; request?: string; message?: string; commit?: string; at?: string; containedIn?: ContainedIn; handedBack?: { how: string; at?: string; failure?: string; with?: string[]; interacting?: string[]; paths?: string[]; why?: string } }
+interface Member { branch: string; tip: string; request?: string; seq?: number; message?: string; commit?: string; at?: string; containedIn?: ContainedIn; handedBack?: { how: string; at?: string; failure?: string; with?: string[]; interacting?: string[]; paths?: string[]; why?: string } }
 interface Judged { outcome: string; member?: number; with?: number[]; interacting?: number[]; why?: string; said?: string; runs: unknown[] }
 interface Candidate { base: string; tip: string; members: Member[]; contained?: Member[]; state: string; reforms: number; recordsOnly: boolean; held?: { on: string; why: string }; run?: { pid: number } }
 interface Queue {
@@ -388,6 +388,22 @@ describe('a contained member (INTEGRATE1c)', () => {
     assert.ok(again.every((each) => each.containedIn === undefined && each.commit === undefined), 'the frozen request, nothing the candidate added');
     assert.deepEqual(again.map((each) => each.request), ['r1', 'r2', 'r3']);
     assert.deepEqual(q.requestsOf(null, retained).map((each) => each.branch), ['b1', 'b3']);
+  });
+
+  // The review's third finding on INTEGRATE1c: arrival was read off a clock of whole seconds.
+  test('requests queued within one second are given back in the order they were queued: a sequence the queue assigns orders them, never the clock', async () => {
+    let queue = q.emptyQueue();
+    for (const [i, name] of ['b1', 'b2', 'b3'].entries()) {
+      const tip = `t${i + 1}`.padEnd(40, '0');
+      queue = q.notePreview(queue, { branch: name, tip, base: 'm0', at: AT });
+      queue = q.enqueue(queue, { branch: name, tip, message: 'x', at: '2026-10-24T10:00:00Z' }).queue!;
+    }
+    const formed = await q.formCandidate({ base: 'm0', members: queue.queued, at: AT, merge: inMember('b1', 'b2') });
+    const kept = formed.candidate!.members.map(({ commit, ...request }) => request) as Member[];
+    assert.deepEqual(q.requestsOf(formed.candidate, kept).map((each) => each.branch), ['b1', 'b2', 'b3'], 'a split or a kept candidate leaves the queue in its order');
+    // A request queued before the sequence (a record kept on a machine) is earlier than any that has one, and keeps its clock's order.
+    const old = [{ branch: 'o2', tip: 'x', at: '2026-10-24T10:00:02Z' }, { branch: 'o1', tip: 'x', at: '2026-10-24T10:00:01Z' }];
+    assert.deepEqual(q.inArrival([{ ...queue.queued[1]! }, ...old, { ...queue.queued[0]! }]).map((each) => each.branch), ['o1', 'o2', 'b1', 'b2']);
   });
 
   test('a branch contained on a candidate is queued already: it is not queued a second time', async () => {
