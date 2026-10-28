@@ -35,6 +35,9 @@ public static class TreeGuard
     /// <summary>The tools it judges — exact alternatives, the harness's own matcher shape.</summary>
     public const string Matcher = TreeGuardHook.Matcher;
 
+    /// <summary>The edit tools alone: the matcher a session handed its guard before TREESHELL1 still carries.</summary>
+    public const string EditMatcher = TreeGuardHook.EditMatcher;
+
     /// <summary>The script as shipped, from the assembly, with LF line endings.</summary>
     public static string Source { get; } = ReadSource();
 

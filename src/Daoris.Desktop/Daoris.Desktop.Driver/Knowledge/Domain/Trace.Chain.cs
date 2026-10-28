@@ -672,7 +672,7 @@ public sealed record TraceRules
         && before.EnumerateArray().Any(entry => entry.ValueKind == System.Text.Json.JsonValueKind.Object
             && entry.TryGetProperty("matcher", out var matcher) && matcher.ValueKind == System.Text.Json.JsonValueKind.String
             // The edit tools alone is a guard handed before TREESHELL1, by a session still running from then.
-            && matcher.GetString() is { } named && (named == KnowledgeWorkplace.Current.TreeGuardMatcher || named == TreeGuardHook.EditMatcher));
+            && matcher.GetString() is { } named && (named == KnowledgeWorkplace.Current.TreeGuardMatcher || named == KnowledgeWorkplace.Current.TreeGuardEditMatcher));
 }
 
 /// <summary>Where a session's work landed (WSR5): each branch a landing made of it, or why none is named.</summary>

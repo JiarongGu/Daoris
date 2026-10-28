@@ -8,6 +8,7 @@ internal sealed class KnowledgeWorkplaceReads : IKnowledgeWorkplace
     internal static void Install() => KnowledgeWorkplace.Current = new KnowledgeWorkplaceReads();
 
     public string TreeGuardMatcher => TreeGuard.Matcher;
+    public string TreeGuardEditMatcher => TreeGuard.EditMatcher;
     public IReadOnlyList<string> AcceptanceNotes =>
         [LandingRules.PersonAccepted, LandingRules.AutoAccepted, LandingRules.HandNote(new TreeHand(true, "")).Text!];
     public string LandingsFileName => LandedBranches.FileName;
