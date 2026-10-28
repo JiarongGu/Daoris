@@ -332,6 +332,12 @@ public static class NoteCodes
     public static readonly NoteCode StartedUncopiedLink = new("started.uncopied-link", ["modules"]);
     public static readonly NoteCode StartedUncopiedUnignored = new("started.uncopied-unignored", ["modules"]);
     public static readonly NoteCode StartedUncopiedFailed = new("started.uncopied-failed", ["modules"]);
+    // The machine-local files a repository's gates read, copied into its tree read-only (TREELOCAL1, D216), after the opening; and why
+    // one was not, each its own line.
+    public static readonly NoteCode StartedLocalCopied = new("started.local-copied", ["inputs"]);
+    public static readonly NoteCode StartedLocalMissing = new("started.local-missing", ["input"]);
+    public static readonly NoteCode StartedLocalRefused = new("started.local-refused", ["input"]);
+    public static readonly NoteCode StartedLocalFailed = new("started.local-failed", ["input"]);
     // A session's tree asked for before it goes on (TREEGONE1): made again on its branch, gone with its branch, or not made.
     public static readonly NoteCode TreeRemade = new("tree.remade", ["branch"]);
     public static readonly NoteCode TreeGone = new("tree.gone", ["branch"]);
