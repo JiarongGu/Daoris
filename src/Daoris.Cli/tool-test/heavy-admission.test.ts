@@ -1,7 +1,7 @@
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { join } from 'node:path';
-import { makeFixture } from '../test/_fixture.ts';
+import { makeFixture, PATIENCE } from '../test/_fixture.ts';
 
 /**
  * HEAVYQUEUE1: the queue's heavy gates and a driven session's heavy runs share one admission in the Daoris home, so a session's
@@ -41,7 +41,7 @@ function signal(): { promise: Promise<void>; resolve: () => void } {
 }
 
 /** What a fake gate waits for, failing the test rather than hanging it when that never comes. */
-async function within(promise: Promise<unknown>, what: string, ms = 5000): Promise<void> {
+async function within(promise: Promise<unknown>, what: string, ms = PATIENCE): Promise<void> {
   let timer: ReturnType<typeof setTimeout> | undefined;
   const late = new Promise<never>((_, fail) => { timer = setTimeout(() => fail(new Error(`never happened: ${what}`)), ms); });
   try {

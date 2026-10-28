@@ -18,8 +18,6 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </remarks>
 public sealed class SignedOutWaitTests : IDisposable
 {
-    private static readonly TimeSpan Bound = TimeSpan.FromSeconds(10);
-
     private static readonly TimeZoneInfo Zone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Kathmandu");
 
     private static readonly DateTimeOffset Now = new(2026, 10, 4, 8, 58, 0, TimeSpan.FromMinutes(345));
@@ -100,7 +98,7 @@ public sealed class SignedOutWaitTests : IDisposable
         using var service = _ledger.Client();
         _ledger.Ask("a1");
 
-        var look = await Driver(service, SignedOut()).TickAsync().WaitAsync(Bound);
+        var look = await Driver(service, SignedOut()).TickAsync().WaitAsync(Poll.Patience);
 
         Assert.Empty(look.Considerations);
         Assert.False(look.Progressed);
@@ -123,7 +121,7 @@ public sealed class SignedOutWaitTests : IDisposable
         _ledger.Publish("q1", "engine");
         _ledger.Ask("a1");
 
-        var look = await Driver(service, SignedOut()).TickAsync().WaitAsync(Bound);
+        var look = await Driver(service, SignedOut()).TickAsync().WaitAsync(Poll.Patience);
 
         var sitting = Assert.Single(look.Considerations);
         Assert.Equal(StartVerdict.Blocked, sitting.Verdict);
@@ -148,7 +146,7 @@ public sealed class SignedOutWaitTests : IDisposable
         var roster = SignedOut();
         _ledger.Ask("a1");
 
-        for (var look = 0; look < 3; look++) await Driver(service, roster).TickAsync().WaitAsync(Bound);
+        for (var look = 0; look < 3; look++) await Driver(service, roster).TickAsync().WaitAsync(Poll.Patience);
 
         var line = Assert.Single(lines, l => l.Event == "starts.waiting");
         var data = line.Data.ToDictionary(field => field.Key, field => field.Value);
@@ -173,7 +171,7 @@ public sealed class SignedOutWaitTests : IDisposable
         _ledger.Ask("a1");
 
         var looks = new List<TickReport>();
-        for (var look = 0; look < 3; look++) looks.Add(await Driver(service, roster).TickAsync().WaitAsync(Bound));
+        for (var look = 0; look < 3; look++) looks.Add(await Driver(service, roster).TickAsync().WaitAsync(Poll.Patience));
 
         Assert.Empty(_ledger.Sessions);
         var wait = Assert.Single(looks[^1].Waits);

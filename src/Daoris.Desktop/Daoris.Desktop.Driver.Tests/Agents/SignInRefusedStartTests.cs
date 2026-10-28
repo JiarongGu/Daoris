@@ -26,8 +26,6 @@ public sealed class SignInRefusedStartTests : IDisposable
     /// <summary>The install's refusal (2026-10-04), as the protocol door says it.</summary>
     private const string Refusal = "the ACP agent refused the call: Authentication required";
 
-    private static readonly TimeSpan Bound = TimeSpan.FromSeconds(10);
-
     private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-signin-start-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly StandInLedger _ledger = new();
@@ -612,7 +610,7 @@ public sealed class SignInRefusedStartTests : IDisposable
         var roster = Built();
         await RefusedAsync(service, roster);
 
-        var look = await Driver(service, roster).TickAsync().WaitAsync(Bound);
+        var look = await Driver(service, roster).TickAsync().WaitAsync(Poll.Patience);
 
         var sitting = Assert.Single(look.Considerations);
         Assert.NotEqual(StartVerdict.Exhausted, sitting.Verdict);
@@ -626,7 +624,7 @@ public sealed class SignInRefusedStartTests : IDisposable
         var roster = Built();
         await RefusedAsync(service, roster, accountLine: false);
 
-        var look = await Driver(service, roster).TickAsync().WaitAsync(Bound);
+        var look = await Driver(service, roster).TickAsync().WaitAsync(Poll.Patience);
 
         Assert.Equal(StartVerdict.Exhausted, Assert.Single(look.Considerations).Verdict);
         Assert.Equal(1, ServiceClient.ReadStrikes(JsonSerializer.Serialize(_ledger.Sessions))["q1"]);

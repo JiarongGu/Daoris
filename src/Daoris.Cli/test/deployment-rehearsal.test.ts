@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 import vm from 'node:vm';
 import { readText } from '../src/platform/fsx.ts';
 import { driverFile } from './_csharp.ts';
-import { makeFixture, unroled } from './_fixture.ts';
+import { makeFixture, PATIENCE, unroled } from './_fixture.ts';
 import {
   CLOSED_NOTE, SWEPT_NOTE, bridgeCall, cliProblems, concludedByTheClose, doorAnswered, doorProblems, firstUnder, gitBashBeside, hookLines, insideWorkspace,
   invokeInPage, isInstallsConnector, isMarkedProcess, launchers, loggedData, markedProcess, offerProblems, offeredConnector, stageLiveBuild,
@@ -437,7 +437,7 @@ test('the expression sent over the debug port closes over nothing of this module
   const context = vm.createContext({ window: page.window, setTimeout, clearTimeout });
 
   const answer = await vm.runInContext(
-    bridgeCall('DAORIS.DRIVER', 'START_CHAT', { repository: 'newcomer', adapter: 'acp-stub' }, 5000), context);
+    bridgeCall('DAORIS.DRIVER', 'START_CHAT', { repository: 'newcomer', adapter: 'acp-stub' }, PATIENCE), context);
 
   // Across realms, so compared as JSON: the object came from the page's realm, not this one.
   assert.deepEqual(JSON.parse(JSON.stringify(answer)), { ok: true, data: { sessionId: 'b0a7' } });

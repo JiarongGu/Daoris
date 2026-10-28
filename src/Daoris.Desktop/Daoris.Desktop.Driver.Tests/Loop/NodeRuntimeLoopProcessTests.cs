@@ -13,8 +13,6 @@ public sealed class NodeRuntimeLoopProcessTests : IDisposable
 {
     private const string Plugin = "acme.deploy";
 
-    private static readonly TimeSpan Bound = TimeSpan.FromSeconds(45);
-
     /// <summary>The stand-in: it says it started, makes its effect once per key, acknowledges, then reports the step reached.</summary>
     private const string Script = """
         import { createInterface } from 'node:readline';
@@ -113,13 +111,13 @@ public sealed class NodeRuntimeLoopProcessTests : IDisposable
             await Poll.Until(() =>
             {
                 lock (reports) return until(reports);
-            }, () => "the loop never got there", Bound);
+            }, () => "the loop never got there", Poll.Patience);
             lock (reports) return reports.Count;
         }
         finally
         {
             await _closing.CancelAsync();
-            try { await watching.WaitAsync(Bound); }
+            try { await watching.WaitAsync(Poll.Patience); }
             catch (OperationCanceledException) { }
         }
     }

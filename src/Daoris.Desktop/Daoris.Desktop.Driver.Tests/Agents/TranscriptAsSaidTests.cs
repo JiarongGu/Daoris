@@ -14,8 +14,6 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </remarks>
 public sealed class TranscriptAsSaidTests : IDisposable
 {
-    private static readonly TimeSpan Within = TimeSpan.FromSeconds(10);
-
     private readonly string _root = Path.Combine(Path.GetTempPath(), "daoris-transcript-" + Guid.NewGuid().ToString("N")[..8]);
 
     public TranscriptAsSaidTests() => Directory.CreateDirectory(_root);
@@ -41,7 +39,7 @@ public sealed class TranscriptAsSaidTests : IDisposable
         Poll.Until(
             () => lines.All(StubFile.Text(transcript).Contains),
             () => $"the transcript held {StubFile.Text(transcript).Length} character(s) while its session worked",
-            Within);
+            Poll.Patience);
 
     /// <summary>The pipe door: its preamble and both of its harness's streams are on the disk while the harness waits.</summary>
     [Fact]

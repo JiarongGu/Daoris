@@ -14,8 +14,6 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </remarks>
 public sealed class AccountRotationHoldTests : IDisposable
 {
-    private static readonly TimeSpan Bound = TimeSpan.FromSeconds(10);
-
     private static readonly TimeZoneInfo Zone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Kathmandu");
 
     private static readonly DateTimeOffset Seen = new(2026, 10, 1, 14, 0, 0, TimeSpan.FromMinutes(345));
@@ -85,7 +83,7 @@ public sealed class AccountRotationHoldTests : IDisposable
         Cool("account-1", Until.AddHours(5));
         Cool("account-2", Until);
 
-        var look = await Driver(service, roster).TickAsync().WaitAsync(Bound);
+        var look = await Driver(service, roster).TickAsync().WaitAsync(Poll.Patience);
 
         var sitting = Assert.Single(look.Considerations);
         Assert.Equal(StartVerdict.Blocked, sitting.Verdict);
@@ -114,7 +112,7 @@ public sealed class AccountRotationHoldTests : IDisposable
         Cool("account-1", Until);
         Cool("account-2", Until.AddHours(1));
 
-        for (var look = 0; look < 3; look++) await Driver(service, roster).TickAsync().WaitAsync(Bound);
+        for (var look = 0; look < 3; look++) await Driver(service, roster).TickAsync().WaitAsync(Poll.Patience);
 
         var line = Assert.Single(lines, l => l.Event == "starts.waiting");
         Assert.Equal("account-1", line.Data.Single(field => field.Key == "account").Value);

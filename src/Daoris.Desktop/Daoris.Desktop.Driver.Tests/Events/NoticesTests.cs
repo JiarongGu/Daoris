@@ -255,7 +255,7 @@ public sealed class NoticesTests : IDisposable
         File.WriteAllText(PathOf, record.ToJsonString());
         File.Delete(lockPath);
 
-        Assert.Null(await mine.WaitAsync(TimeSpan.FromMinutes(1)));
+        Assert.Null(await mine.WaitAsync(Poll.Patience));
         Assert.Equal(["ended-mine", "ended-other", "ended-s1"], Notices.Read(_home, Now)!.Select(notice => notice.Id));
     }
 

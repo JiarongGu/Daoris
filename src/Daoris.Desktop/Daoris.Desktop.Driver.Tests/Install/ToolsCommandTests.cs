@@ -161,14 +161,14 @@ public sealed class ToolsCommandTests : IDisposable
         var run = ToolsCommand.RunAsync(["use", "gh", "managed"], World(waiting: waiting.SetResult, now: () => started.AddSeconds(31 * looks++)),
             CancellationToken.None);
 
-        await waiting.Task.WaitAsync(TimeSpan.FromMinutes(2));
+        await waiting.Task.WaitAsync(Poll.Patience);
         Assert.False(run.IsCompleted);
         Assert.Empty(ToolInstall.Downloaded(Home, "gh"));
         Assert.Equal([$"2.62.0.part-{Environment.ProcessId}"], Stagings());
         Assert.DoesNotContain("managed", File.ReadAllText(ToolsFile), StringComparison.Ordinal);
 
         held.Dispose();
-        Assert.Equal(0, await run.WaitAsync(TimeSpan.FromMinutes(2)));
+        Assert.Equal(0, await run.WaitAsync(Poll.Patience));
         Assert.Equal(["2.62.0"], ToolInstall.Downloaded(Home, "gh"));
         Assert.Empty(Stagings());
         Assert.Equal("2.62.0", Tools.Read(Home).Entries["gh"].Version);
@@ -184,11 +184,11 @@ public sealed class ToolsCommandTests : IDisposable
         var host = new Host(hold: true);
         var run = ToolsCommand.RunAsync(["download", "gh", "2.62.0"], World(host), CancellationToken.None);
 
-        await host.Asked.Task.WaitAsync(TimeSpan.FromMinutes(2));
+        await host.Asked.Task.WaitAsync(Poll.Patience);
         Assert.Null(HomeLease.HeldBy(Home));
         host.Answer.SetResult();
 
-        Assert.Equal(0, await run.WaitAsync(TimeSpan.FromMinutes(2)));
+        Assert.Equal(0, await run.WaitAsync(Poll.Patience));
         Assert.Contains("GitHub CLI 2.62.0 is downloaded and verified — nothing switches.", _out.ToString(), StringComparison.Ordinal);
     }
 
@@ -217,10 +217,10 @@ public sealed class ToolsCommandTests : IDisposable
         using var stop = new CancellationTokenSource();
         var run = ToolsCommand.RunAsync(["use", "gh", "managed"], World(waiting: waiting.SetResult), stop.Token);
 
-        await waiting.Task.WaitAsync(TimeSpan.FromMinutes(2));
+        await waiting.Task.WaitAsync(Poll.Patience);
         await stop.CancelAsync();
 
-        Assert.Equal(2, await run.WaitAsync(TimeSpan.FromMinutes(2)));
+        Assert.Equal(2, await run.WaitAsync(Poll.Patience));
         Assert.Empty(Stagings());
         Assert.Empty(ToolInstall.Downloaded(Home, "gh"));
         Assert.Null(Tools.Read(Home).Entries["gh"].Version);
@@ -235,11 +235,11 @@ public sealed class ToolsCommandTests : IDisposable
         using var stop = new CancellationTokenSource();
         var run = ToolsCommand.RunAsync(["download", "gh", "2.62.0"], World(host), stop.Token);
 
-        await host.Asked.Task.WaitAsync(TimeSpan.FromMinutes(2));
+        await host.Asked.Task.WaitAsync(Poll.Patience);
         Assert.Equal([$"2.62.0.part-{Environment.ProcessId}"], Stagings());
         await stop.CancelAsync();
 
-        Assert.Equal(2, await run.WaitAsync(TimeSpan.FromMinutes(2)));
+        Assert.Equal(2, await run.WaitAsync(Poll.Patience));
         Assert.Empty(Stagings());
         Assert.Empty(ToolInstall.Downloaded(Home, "gh"));
     }

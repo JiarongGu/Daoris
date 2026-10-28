@@ -12,8 +12,6 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <remarks>No process and no git, but where a test counts git's starts: the judges are stand-ins.</remarks>
 public sealed class HelpFactsTests : IDisposable
 {
-    private static readonly TimeSpan Within = TimeSpan.FromSeconds(10);
-
     private static readonly DateTimeOffset At = DateTimeOffset.Parse("2026-10-19T10:00:00Z", System.Globalization.CultureInfo.InvariantCulture);
 
     private static readonly RepoView Engine = new("engine", Adopted: true, Root: "checkouts/engine");
@@ -215,12 +213,12 @@ public sealed class HelpFactsTests : IDisposable
             },
         });
         facts.Start();
-        await facts.FirstAsync(HelpFacts.Lines, "engine", CancellationToken.None).WaitAsync(Within);
-        await facts.FirstAsync(HelpFacts.Lines, "site", CancellationToken.None).WaitAsync(Within);
+        await facts.FirstAsync(HelpFacts.Lines, "engine", CancellationToken.None).WaitAsync(Poll.Patience);
+        await facts.FirstAsync(HelpFacts.Lines, "site", CancellationToken.None).WaitAsync(Poll.Patience);
 
         Volatile.Write(ref siteLine, "trunk");
         HelpFacts.Wake(facts, ChangeTopics.Refs, "site");
-        await Poll.Until(() => HelpFacts.Read(facts.Current, DriverConfig.Empty)!.Lines.Single(line => line.Repository == "site").Branch == "trunk", within: Within);
+        await Poll.Until(() => HelpFacts.Read(facts.Current, DriverConfig.Empty)!.Lines.Single(line => line.Repository == "site").Branch == "trunk", within: Poll.Patience);
 
         lock (guessed) Assert.Equal((1, 2), (guessed[Engine.Root!], guessed[Site.Root!]));
         var room = HelpRoom.Render(Describe(HelpFacts.Read(facts.Current, DriverConfig.Empty)!, DriverConfig.Empty));
@@ -249,14 +247,14 @@ public sealed class HelpFactsTests : IDisposable
         facts.Start();
         foreach (var part in (string[])["engine", "site", HelpFacts.NoCheckout])
         {
-            await facts.FirstAsync(HelpFacts.Work, part, CancellationToken.None).WaitAsync(Within);
+            await facts.FirstAsync(HelpFacts.Work, part, CancellationToken.None).WaitAsync(Poll.Patience);
         }
 
         // Past the rest a burst of one repository's refs is held to.
         clock.Pass(HelpFacts.WorkRules.Rest + TimeSpan.FromSeconds(1));
         HelpFacts.Wake(facts, ChangeTopics.Refs, "site");
-        await Poll.Until(() => Judged(judged, "site") == 2, within: Within);
-        await facts.Settled().WaitAsync(Within);
+        await Poll.Until(() => Judged(judged, "site") == 2, within: Poll.Patience);
+        await facts.Settled().WaitAsync(Poll.Patience);
 
         Assert.Equal((1, 2, 1), (Judged(judged, "engine"), Judged(judged, "site"), Judged(judged, HelpFacts.NoCheckout)));
     }
@@ -293,19 +291,19 @@ public sealed class HelpFactsTests : IDisposable
         facts.Start();
         foreach (var part in (string[])["engine", "site", HelpFacts.NoCheckout])
         {
-            await facts.FirstAsync(HelpFacts.Work, part, CancellationToken.None).WaitAsync(Within);
+            await facts.FirstAsync(HelpFacts.Work, part, CancellationToken.None).WaitAsync(Poll.Patience);
         }
 
-        await facts.FirstAsync(HelpFacts.Sessions, HelpFacts.Whole, CancellationToken.None).WaitAsync(Within);
-        await facts.Settled().WaitAsync(Within);
+        await facts.FirstAsync(HelpFacts.Sessions, HelpFacts.Whole, CancellationToken.None).WaitAsync(Poll.Patience);
+        await facts.Settled().WaitAsync(Poll.Patience);
         var before = (Judged(judged, "engine"), Judged(judged, "site"), Judged(judged, HelpFacts.NoCheckout));
 
         // Past the rest a part's judgement is held to; then the look lands naming an engine session's tree, a teammate's, and nothing of site.
         clock.Pass(HelpFacts.WorkRules.Rest + TimeSpan.FromSeconds(1));
         look = new SessionLook([Ended("e1", "engine", engineTree), Ended("peer/t3", "engine", Path.Combine("trees", "default", "engine", "s-3"))], [], []);
         HelpFacts.Wake(facts, ChangeTopics.Ledger, "words");
-        await Poll.Until(() => Judged(judged, "engine") == before.Item1 + 1, within: Within);
-        await facts.Settled().WaitAsync(Within);
+        await Poll.Until(() => Judged(judged, "engine") == before.Item1 + 1, within: Poll.Patience);
+        await facts.Settled().WaitAsync(Poll.Patience);
 
         Assert.Equal((before.Item2, before.Item3), (Judged(judged, "site"), Judged(judged, HelpFacts.NoCheckout)));
         lock (judged) Assert.Equal([new RecordedTree("e1", engineTree)], recorded["engine"]);
@@ -395,14 +393,14 @@ public sealed class HelpFactsTests : IDisposable
         facts.Start();
         foreach (var part in (string[])["engine", "site", HelpFacts.NoCheckout])
         {
-            await facts.FirstAsync(HelpFacts.Trees, part, CancellationToken.None).WaitAsync(Within);
+            await facts.FirstAsync(HelpFacts.Trees, part, CancellationToken.None).WaitAsync(Poll.Patience);
         }
 
         // Past the rest a burst of one repository's refs is held to.
         clock.Pass(HelpFacts.TreesRules.Rest + TimeSpan.FromSeconds(1));
         HelpFacts.Wake(facts, ChangeTopics.Refs, "site");
-        await Poll.Until(() => Judged(judged, "site") == 2, within: Within);
-        await facts.Settled().WaitAsync(Within);
+        await Poll.Until(() => Judged(judged, "site") == 2, within: Poll.Patience);
+        await facts.Settled().WaitAsync(Poll.Patience);
 
         Assert.Equal((1, 2, 1), (Judged(judged, "engine"), Judged(judged, "site"), Judged(judged, HelpFacts.NoCheckout)));
         Assert.Equal(1, Volatile.Read(ref looked));
@@ -442,14 +440,14 @@ public sealed class HelpFactsTests : IDisposable
         facts.Start();
         foreach (var part in (string[])["engine", "site", HelpFacts.NoCheckout])
         {
-            await facts.FirstAsync(HelpFacts.Trees, part, CancellationToken.None).WaitAsync(Within);
-            await facts.FirstAsync(HelpFacts.Work, part, CancellationToken.None).WaitAsync(Within);
+            await facts.FirstAsync(HelpFacts.Trees, part, CancellationToken.None).WaitAsync(Poll.Patience);
+            await facts.FirstAsync(HelpFacts.Work, part, CancellationToken.None).WaitAsync(Poll.Patience);
         }
 
         HelpFacts.Wake(facts, ChangeTopics.Refs, "engine");
         HelpFacts.Wake(facts, ChangeTopics.Refs, "site", mine: true);
-        await Poll.Until(() => Judged(trees, "site") == 2 && Judged(work, "site") == 2, within: Within);
-        await facts.Settled().WaitAsync(Within);
+        await Poll.Until(() => Judged(trees, "site") == 2 && Judged(work, "site") == 2, within: Poll.Patience);
+        await facts.Settled().WaitAsync(Poll.Patience);
         await Task.Delay(200);
 
         Assert.Same(landed, facts.Current.Value<HelpTrees>(HelpFacts.Trees, "site"));
@@ -486,10 +484,10 @@ public sealed class HelpFactsTests : IDisposable
         facts.Start();
         foreach (var part in (string[])["engine", "site"])
         {
-            await facts.FirstAsync(HelpFacts.Sweep, part, CancellationToken.None).WaitAsync(Within);
+            await facts.FirstAsync(HelpFacts.Sweep, part, CancellationToken.None).WaitAsync(Poll.Patience);
         }
 
-        await facts.Settled().WaitAsync(Within);
+        await facts.Settled().WaitAsync(Poll.Patience);
         Assert.Equal(["engine", "site"], facts.Current.Subjects(HelpFacts.Sweep).Order(StringComparer.Ordinal));
         lock (judged)
         {
@@ -500,8 +498,8 @@ public sealed class HelpFactsTests : IDisposable
 
         HelpFacts.Wake(facts, ChangeTopics.Refs, "engine");
         HelpFacts.Wake(facts, ChangeTopics.Refs, "site", mine: true);
-        await Poll.Until(() => Judged(judged, "site") == 2, within: Within);
-        await facts.Settled().WaitAsync(Within);
+        await Poll.Until(() => Judged(judged, "site") == 2, within: Poll.Patience);
+        await facts.Settled().WaitAsync(Poll.Patience);
         await Task.Delay(200);
 
         Assert.Equal((1, 2), (Judged(judged, "engine"), Judged(judged, "site")));
@@ -530,14 +528,14 @@ public sealed class HelpFactsTests : IDisposable
         facts.Start();
         foreach (var part in (string[])["engine", "site"])
         {
-            await facts.FirstAsync(HelpFacts.Sweep, part, CancellationToken.None).WaitAsync(Within);
+            await facts.FirstAsync(HelpFacts.Sweep, part, CancellationToken.None).WaitAsync(Poll.Patience);
         }
 
         clock.Pass(HelpFacts.SweepRules.Rest + TimeSpan.FromSeconds(1));
         Volatile.Write(ref whole, Whole(Engine with { Workspace = "aurora" }, Docs));
-        await facts.JudgedAsync(HelpFacts.Machine, HelpFacts.Whole, CancellationToken.None).WaitAsync(Within);
-        await Poll.Until(() => Judged(judged, "engine") == 2, within: Within);
-        await facts.Settled().WaitAsync(Within);
+        await facts.JudgedAsync(HelpFacts.Machine, HelpFacts.Whole, CancellationToken.None).WaitAsync(Poll.Patience);
+        await Poll.Until(() => Judged(judged, "engine") == 2, within: Poll.Patience);
+        await facts.Settled().WaitAsync(Poll.Patience);
 
         Assert.Null(facts.Current.Of(HelpFacts.Sweep, "site"));
         Assert.Equal((2, 1), (Judged(judged, "engine"), Judged(judged, "site")));
@@ -615,11 +613,11 @@ public sealed class HelpFactsTests : IDisposable
         facts.Start();
         foreach (var part in (string[])["engine", "site", HelpFacts.NoCheckout])
         {
-            await facts.FirstAsync(HelpFacts.Trees, part, CancellationToken.None).WaitAsync(Within);
+            await facts.FirstAsync(HelpFacts.Trees, part, CancellationToken.None).WaitAsync(Poll.Patience);
         }
 
         Volatile.Write(ref whole, Whole(Engine));
-        await facts.JudgedAsync(HelpFacts.Machine, HelpFacts.Whole, CancellationToken.None).WaitAsync(Within);
+        await facts.JudgedAsync(HelpFacts.Machine, HelpFacts.Whole, CancellationToken.None).WaitAsync(Poll.Patience);
 
         Assert.Null(facts.Current.Of(HelpFacts.Trees, "site"));
         Assert.False(HelpFacts.Read(facts.Current, DriverConfig.Empty)!.NotReadYet.Sessions);
@@ -656,14 +654,14 @@ public sealed class HelpFactsTests : IDisposable
         facts.Start();
         foreach (var part in (string[])["engine", "site", HelpFacts.NoCheckout])
         {
-            await facts.FirstAsync(HelpFacts.Trees, part, CancellationToken.None).WaitAsync(Within);
+            await facts.FirstAsync(HelpFacts.Trees, part, CancellationToken.None).WaitAsync(Poll.Patience);
         }
 
         // The clock stands still, so a judgement the rest held would wait half a minute.
         Volatile.Write(ref look, running with { Records = [running.Records[0] with { State = "completed" }, running.Records[1]] });
-        await facts.JudgedAsync(HelpFacts.Sessions, HelpFacts.Whole, CancellationToken.None).WaitAsync(Within);
-        await Poll.Until(() => Judged(judged, "engine") == 2, within: Within);
-        await facts.Settled().WaitAsync(Within);
+        await facts.JudgedAsync(HelpFacts.Sessions, HelpFacts.Whole, CancellationToken.None).WaitAsync(Poll.Patience);
+        await Poll.Until(() => Judged(judged, "engine") == 2, within: Poll.Patience);
+        await facts.Settled().WaitAsync(Poll.Patience);
 
         Assert.Equal((2, 1, 1), (Judged(judged, "engine"), Judged(judged, "site"), Judged(judged, HelpFacts.NoCheckout)));
         lock (judged)
@@ -715,15 +713,15 @@ public sealed class HelpFactsTests : IDisposable
 
         foreach (var part in (string[])["engine", "site", HelpFacts.NoCheckout])
         {
-            await facts.FirstAsync(HelpFacts.Trees, part, CancellationToken.None).WaitAsync(Within);
+            await facts.FirstAsync(HelpFacts.Trees, part, CancellationToken.None).WaitAsync(Poll.Patience);
         }
 
-        await facts.Settled().WaitAsync(Within);
+        await facts.Settled().WaitAsync(Poll.Patience);
         lock (starts) starts.Clear();
 
-        await facts.JudgedAsync(HelpFacts.Trees, "engine", CancellationToken.None).WaitAsync(Within);
-        await facts.JudgedAsync(HelpFacts.Sessions, HelpFacts.Whole, CancellationToken.None).WaitAsync(Within);
-        await facts.Settled().WaitAsync(Within);
+        await facts.JudgedAsync(HelpFacts.Trees, "engine", CancellationToken.None).WaitAsync(Poll.Patience);
+        await facts.JudgedAsync(HelpFacts.Sessions, HelpFacts.Whole, CancellationToken.None).WaitAsync(Poll.Patience);
+        await facts.Settled().WaitAsync(Poll.Patience);
 
         lock (starts)
         {
@@ -802,7 +800,7 @@ public sealed class HelpFactsTests : IDisposable
         Assert.Equal([engineTree], walked);
         Assert.Equal(1, read.Trees[SessionGroups.Normal(engineTree)].Commits);
         // The clock stands still, so the look judged again is the door's wake, never its rest's end.
-        await Poll.Until(() => HelpFacts.TreesJudged(facts.Current, [engineTree]).NotJudged.Count == 0, within: Within);
+        await Poll.Until(() => HelpFacts.TreesJudged(facts.Current, [engineTree]).NotJudged.Count == 0, within: Poll.Patience);
         Assert.Equal(2, Volatile.Read(ref looks));
 
         walked.Clear();
@@ -841,7 +839,7 @@ public sealed class HelpFactsTests : IDisposable
 
         Assert.All(doors, door => Assert.False(door.IsCompleted));
         answer.SetResult();
-        var reads = await Task.WhenAll(doors).WaitAsync(Within);
+        var reads = await Task.WhenAll(doors).WaitAsync(Poll.Patience);
         Assert.Empty(walked);
         Assert.All(reads, read => Assert.Equal(2, read.Trees[SessionGroups.Normal(engineTree)].Commits));
     }
@@ -865,9 +863,9 @@ public sealed class HelpFactsTests : IDisposable
         var walked = new List<string>();
 
         var first = await HelpFacts.WithTreesAsync(facts, look, _ => true, Walk(walked, new TreeWork(2, 0)), first: TimeSpan.FromMilliseconds(200))
-            .WaitAsync(Within);
+            .WaitAsync(Poll.Patience);
         var next = await HelpFacts.WithTreesAsync(facts, look, _ => true, Walk(walked, new TreeWork(2, 0)), first: TimeSpan.FromMinutes(10))
-            .WaitAsync(Within);
+            .WaitAsync(Poll.Patience);
 
         Assert.Equal([engineTree, engineTree], walked);
         Assert.Equal(2, first.Trees[SessionGroups.Normal(engineTree)].Commits);
@@ -928,10 +926,10 @@ public sealed class HelpFactsTests : IDisposable
             Machine = _ => Task.FromResult<HelpMachineWhole?>(Volatile.Read(ref whole)),
         });
         facts.Start();
-        await facts.FirstAsync(HelpFacts.Lines, "site", CancellationToken.None).WaitAsync(Within);
+        await facts.FirstAsync(HelpFacts.Lines, "site", CancellationToken.None).WaitAsync(Poll.Patience);
 
         Volatile.Write(ref whole, Whole(Engine));
-        await facts.JudgedAsync(HelpFacts.Machine, HelpFacts.Whole, CancellationToken.None).WaitAsync(Within);
+        await facts.JudgedAsync(HelpFacts.Machine, HelpFacts.Whole, CancellationToken.None).WaitAsync(Poll.Patience);
 
         Assert.Null(facts.Current.Of(HelpFacts.Lines, "site"));
     }
@@ -950,11 +948,11 @@ public sealed class HelpFactsTests : IDisposable
         facts.Start();
         foreach (var part in (string[])["engine", "site", HelpFacts.NoCheckout])
         {
-            await facts.FirstAsync(HelpFacts.Work, part, CancellationToken.None).WaitAsync(Within);
+            await facts.FirstAsync(HelpFacts.Work, part, CancellationToken.None).WaitAsync(Poll.Patience);
         }
 
         Volatile.Write(ref whole, Whole(Engine));
-        await facts.JudgedAsync(HelpFacts.Machine, HelpFacts.Whole, CancellationToken.None).WaitAsync(Within);
+        await facts.JudgedAsync(HelpFacts.Machine, HelpFacts.Whole, CancellationToken.None).WaitAsync(Poll.Patience);
 
         Assert.Null(facts.Current.Of(HelpFacts.Work, "site"));
         Assert.False(HelpFacts.Read(facts.Current, DriverConfig.Empty)!.NotReadYet.Work);
@@ -991,14 +989,14 @@ public sealed class HelpFactsTests : IDisposable
         facts.Start();
         foreach (var part in (string[])["engine", "site", HelpFacts.NoCheckout])
         {
-            await facts.FirstAsync(HelpFacts.Work, part, CancellationToken.None).WaitAsync(Within);
+            await facts.FirstAsync(HelpFacts.Work, part, CancellationToken.None).WaitAsync(Poll.Patience);
         }
 
         clock.Pass(HelpFacts.WorkRules.Rest + TimeSpan.FromSeconds(1));
         Volatile.Write(ref whole, whole with { Snapshot = whole.Snapshot.Within(whole.Snapshot.Quests, whole.Snapshot.Repositories, []) });
-        await facts.JudgedAsync(HelpFacts.Machine, HelpFacts.Whole, CancellationToken.None).WaitAsync(Within);
-        await Poll.Until(() => Judged(judged, "engine") == 2, within: Within);
-        await facts.Settled().WaitAsync(Within);
+        await facts.JudgedAsync(HelpFacts.Machine, HelpFacts.Whole, CancellationToken.None).WaitAsync(Poll.Patience);
+        await Poll.Until(() => Judged(judged, "engine") == 2, within: Poll.Patience);
+        await facts.Settled().WaitAsync(Poll.Patience);
 
         Assert.Equal((2, 1, 1), (Judged(judged, "engine"), Judged(judged, "site"), Judged(judged, HelpFacts.NoCheckout)));
         lock (judged)
@@ -1020,8 +1018,8 @@ public sealed class HelpFactsTests : IDisposable
         using var facts = new MachineFacts();
         HelpFacts.Keep(facts, Judges(Whole(Engine, Docs)) with { Work = async (part, ct) => await HelpFacts.ReadWorkAsync(_home, part, ct) });
         facts.Start();
-        await facts.FirstAsync(HelpFacts.Work, "engine", CancellationToken.None).WaitAsync(Within);
-        await facts.FirstAsync(HelpFacts.Work, HelpFacts.NoCheckout, CancellationToken.None).WaitAsync(Within);
+        await facts.FirstAsync(HelpFacts.Work, "engine", CancellationToken.None).WaitAsync(Poll.Patience);
+        await facts.FirstAsync(HelpFacts.Work, HelpFacts.NoCheckout, CancellationToken.None).WaitAsync(Poll.Patience);
 
         var read = HelpFacts.Read(facts.Current, DriverConfig.Empty)!;
 
@@ -1092,13 +1090,13 @@ public sealed class HelpFactsTests : IDisposable
 
         foreach (var part in (string[])["engine", "site", HelpFacts.NoCheckout])
         {
-            await facts.FirstAsync(HelpFacts.Work, part, CancellationToken.None).WaitAsync(Within);
+            await facts.FirstAsync(HelpFacts.Work, part, CancellationToken.None).WaitAsync(Poll.Patience);
         }
 
-        await facts.Settled().WaitAsync(Within);
+        await facts.Settled().WaitAsync(Poll.Patience);
         lock (starts) starts.Clear();
 
-        await facts.JudgedAsync(HelpFacts.Work, "engine", CancellationToken.None).WaitAsync(Within);
+        await facts.JudgedAsync(HelpFacts.Work, "engine", CancellationToken.None).WaitAsync(Poll.Patience);
 
         lock (starts)
         {
@@ -1131,10 +1129,10 @@ public sealed class HelpFactsTests : IDisposable
         });
 
         catchUp.Landed();
-        await Poll.Until(() => RoomHasCheckoutLine(agents), within: Within);
+        await Poll.Until(() => RoomHasCheckoutLine(agents), within: Poll.Patience);
 
         // Written from the facts that leave nothing to catch up on, a landing writes nothing more.
-        await Poll.Until(() => !catchUp.Writing, within: Within);
+        await Poll.Until(() => !catchUp.Writing, within: Poll.Patience);
         var before = Volatile.Read(ref described);
         catchUp.Landed();
         await Task.Delay(100);
@@ -1174,7 +1172,7 @@ public sealed class HelpFactsTests : IDisposable
 
     /// <summary>Until the trees are read whole: the look and every part the service's answers name judged.</summary>
     private static Task TreesReadAsync(MachineFacts facts) =>
-        Poll.Until(() => HelpFacts.Read(facts.Current, DriverConfig.Empty)?.Sessions is not null, within: Within);
+        Poll.Until(() => HelpFacts.Read(facts.Current, DriverConfig.Empty)?.Sessions is not null, within: Poll.Patience);
 
     /// <summary>Git's walk of a tree, standing in: the work given for each tree, none for any other.</summary>
     private static Func<string, CancellationToken, Task<TreeWork?>> StandIn(IReadOnlyDictionary<string, TreeWork> work) =>

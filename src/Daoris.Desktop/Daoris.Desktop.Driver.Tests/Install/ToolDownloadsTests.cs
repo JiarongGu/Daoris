@@ -92,7 +92,7 @@ public sealed class ToolDownloadsTests : IDisposable
         var host = new Host(hold: true);
         var run = ToolInstall.StageAsync(Home, "gh", Offered("2.62.0"), "win-x64", _ => { }, stop.Token, host, process: 1001, running: _ => true);
 
-        await host.Asked.Task.WaitAsync(TimeSpan.FromMinutes(2));
+        await host.Asked.Task.WaitAsync(Poll.Patience);
         Assert.Equal(["2.62.0.part-1001"], Under());
         await stop.CancelAsync();
 

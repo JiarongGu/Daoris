@@ -9,8 +9,6 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 public sealed class RunningSessionsTests
 {
-    private static readonly TimeSpan Bound = TimeSpan.FromSeconds(10);
-
     /// <summary>A hold or a refusal is the look's own to say, and nothing of it is kept for a later look.</summary>
     [Fact]
     public async Task A_start_that_comes_to_nothing_before_it_opens_is_answered_to_its_look_and_not_kept()
@@ -52,7 +50,7 @@ public sealed class RunningSessionsTests
             opened();
             await end.Task;
             return new StartRun("completed  session s1 (#q1 → engine): done.", true);
-        }).WaitAsync(Bound);
+        }).WaitAsync(Poll.Patience);
 
         Assert.Null(came);
         Assert.Equal(1, running.Running);
@@ -60,7 +58,7 @@ public sealed class RunningSessionsTests
         Assert.Empty(running.Drain());
 
         end.SetResult();
-        await running.EndedAsync().WaitAsync(Bound);
+        await running.EndedAsync().WaitAsync(Poll.Patience);
 
         Assert.Equal("completed  session s1 (#q1 → engine): done.", Assert.Single(running.Drain()).Line);
         Assert.Empty(running.Drain());
@@ -78,8 +76,8 @@ public sealed class RunningSessionsTests
             opened();
             await Task.Yield();
             throw new InvalidOperationException("the conclusion could not be written");
-        }).WaitAsync(Bound);
-        await running.EndedAsync().WaitAsync(Bound);
+        }).WaitAsync(Poll.Patience);
+        await running.EndedAsync().WaitAsync(Poll.Patience);
 
         Assert.Null(came);
         var said = Assert.Single(running.Drain());
@@ -101,16 +99,16 @@ public sealed class RunningSessionsTests
                 opened();
                 await end.Task;
                 return new StartRun("completed", true);
-            }).WaitAsync(Bound);
+            }).WaitAsync(Poll.Patience);
         }
 
         var settled = running.SettledAsync();
         first.SetResult();
-        await running.EndedAsync().WaitAsync(Bound);
+        await running.EndedAsync().WaitAsync(Poll.Patience);
         Assert.False(settled.IsCompleted);
 
         second.SetResult();
-        await settled.WaitAsync(Bound);
+        await settled.WaitAsync(Poll.Patience);
         Assert.Equal(0, running.Running);
         Assert.Equal(2, running.Drain().Count);
     }
@@ -126,17 +124,17 @@ public sealed class RunningSessionsTests
             opened();
             await end.Task;
             return new StartRun("completed", true);
-        }).WaitAsync(Bound);
+        }).WaitAsync(Poll.Patience);
 
         var waiting = running.NextAsync(TimeSpan.FromMinutes(5), CancellationToken.None);
         Assert.False(waiting.IsCompleted);
         end.SetResult();
-        await waiting.WaitAsync(Bound);
+        await waiting.WaitAsync(Poll.Patience);
 
         using var closing = new CancellationTokenSource();
         var closed = running.NextAsync(TimeSpan.FromMinutes(5), closing.Token, endings: false);
         await closing.CancelAsync();
-        await closed.WaitAsync(Bound);
+        await closed.WaitAsync(Poll.Patience);
     }
 
     /// <summary>
@@ -163,8 +161,8 @@ public sealed class RunningSessionsTests
         Assert.False(settled.IsCompleted);
 
         release.SetResult();
-        await waiting.WaitAsync(Bound);
-        await settled.WaitAsync(Bound);
+        await waiting.WaitAsync(Poll.Patience);
+        await settled.WaitAsync(Poll.Patience);
 
         Assert.False(running.Landing);
         var said = Assert.Single(running.Drain());
@@ -179,13 +177,13 @@ public sealed class RunningSessionsTests
     {
         var running = new RunningSessions();
         running.Beside(_ => throw new InvalidOperationException("the record would not write"), CancellationToken.None);
-        await running.SettledAsync().WaitAsync(Bound);
+        await running.SettledAsync().WaitAsync(Poll.Patience);
         Assert.Contains("the record would not write", Assert.Single(running.Drain()).Line);
 
         using var closing = new CancellationTokenSource();
         await closing.CancelAsync();
         running.Beside(token => Task.FromCanceled<IReadOnlyList<string>>(token), closing.Token);
-        await running.SettledAsync().WaitAsync(Bound);
+        await running.SettledAsync().WaitAsync(Poll.Patience);
         Assert.Empty(running.Drain());
         Assert.True(running.Idle);
     }
@@ -205,7 +203,7 @@ public sealed class RunningSessionsTests
         Assert.False(told.Task.IsCompleted);
         release.SetResult([]);
 
-        Assert.False(await told.Task.WaitAsync(Bound), "told while the pass still counted as running");
+        Assert.False(await told.Task.WaitAsync(Poll.Patience), "told while the pass still counted as running");
         Assert.Empty(running.Drain());
     }
 
@@ -225,7 +223,7 @@ public sealed class RunningSessionsTests
         using var held = new ManualResetEventSlim();
         var starts = new ProcessStarts(1, info =>
         {
-            if (info.FileName == "holder") held.Wait(Bound);
+            if (info.FileName == "holder") held.Wait(Poll.Patience);
             return null;
         });
         var holder = starts.StartAsync(new ProcessStartInfo("holder") { UseShellExecute = false }, CancellationToken.None);
@@ -252,14 +250,14 @@ public sealed class RunningSessionsTests
                     "pass" => running.PassBeside(work, CancellationToken.None),
                     _ => running.Beside(work, CancellationToken.None),
                 });
-                await waiting.Task.WaitAsync(Bound);
+                await waiting.Task.WaitAsync(Poll.Patience);
                 Interlocked.Add(ref now, 2000);
                 held.Set();
-                await waited.Task.WaitAsync(Bound);
+                await waited.Task.WaitAsync(Poll.Patience);
             });
         }
 
-        await holder.WaitAsync(Bound);
+        await holder.WaitAsync(Poll.Patience);
         Assert.Equal("landing=2000", stages.Take());
     }
 }

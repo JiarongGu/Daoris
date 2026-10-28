@@ -128,7 +128,7 @@ public sealed class PullRequestMomentsGitTests : LandedFixture
         // A second landing, its push held on the platform: the repository is held for the moments meanwhile.
         _pushHeld = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var second = Task.Run(() => LandAsync(trees, root, "b.txt", "more work\n", new LandingSubject("s2", "q2", "Second")));
-        await _pushing.Task.WaitAsync(TimeSpan.FromMinutes(2));
+        await _pushing.Task.WaitAsync(Poll.Patience);
         Assert.True(RepositoryHolds.Held(Home, "engine"));
 
         // The window's focus, due for the first pull request: skipped while the landing holds the repository.
@@ -138,7 +138,7 @@ public sealed class PullRequestMomentsGitTests : LandedFixture
 
         // The landing ends: the owed moment and the push's ask the first pull request once between them.
         _pushHeld.SetResult();
-        Assert.True((await second.WaitAsync(TimeSpan.FromMinutes(2))).Plugin is { Pushed: true });
+        Assert.True((await second.WaitAsync(Poll.Patience)).Plugin is { Pushed: true });
         Assert.False(RepositoryHolds.Held(Home, "engine"));
         await Step(moments);
         Assert.Equal(before + 1, _askedOf.Count(branch => branch == first));

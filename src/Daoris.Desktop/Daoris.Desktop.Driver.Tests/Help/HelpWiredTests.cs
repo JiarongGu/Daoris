@@ -24,8 +24,6 @@ public sealed class HelpWiredTests : IDisposable
         try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 
-    private static readonly TimeSpan Within = TimeSpan.FromSeconds(20);
-
     private const string Secret = "sk-hostile";
 
     /// <summary>
@@ -101,7 +99,7 @@ public sealed class HelpWiredTests : IDisposable
                    return null;
                }))
         {
-            await runner.RunHelpAsync(placed, config, _ => Task.FromResult<HelpMachine?>(machine)).WaitAsync(Within);
+            await runner.RunHelpAsync(placed, config, _ => Task.FromResult<HelpMachine?>(machine)).WaitAsync(Poll.Patience);
         }
 
         Assert.NotNull(spawned);
@@ -309,7 +307,7 @@ public sealed class HelpWiredTests : IDisposable
         {
             await runner.RunAsync(
                 "ask-daoris", "help0004", "and now?", adapters.Resolve("claude-code"), new HarnessSelection(Refusal: null, Profile: "work", Version: "2.1.300"),
-                config, runner.HelpPlace(HelpRoom.PathOf(_home), []), null, CancellationToken.None, goOn).WaitAsync(Within);
+                config, runner.HelpPlace(HelpRoom.PathOf(_home), []), null, CancellationToken.None, goOn).WaitAsync(Poll.Patience);
         }
         Assert.Equal([("help0004", 2)], seen);
 
@@ -355,7 +353,7 @@ public sealed class HelpWiredTests : IDisposable
         {
             await runner.RunAsync(
                 "ask-daoris", "help0008", "and now?", adapters.Resolve("claude-code"), new HarnessSelection(Refusal: null, Profile: "work", Version: "2.1.299"),
-                config, runner.HelpPlace(HelpRoom.PathOf(_home), []), null, CancellationToken.None, goOn).WaitAsync(Within);
+                config, runner.HelpPlace(HelpRoom.PathOf(_home), []), null, CancellationToken.None, goOn).WaitAsync(Poll.Patience);
         }
 
         var receipts = new HelpWired(_home).Read("help0008");

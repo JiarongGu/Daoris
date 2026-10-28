@@ -576,7 +576,7 @@ public sealed class ToolsTests : IDisposable
                 break;
         }
 
-        Assert.True(await other!.WaitAsync(TimeSpan.FromMinutes(2)), $"{name}: the other writer added its location");
+        Assert.True(await other!.WaitAsync(Poll.Patience), $"{name}: the other writer added its location");
         var locations = Parsed()["locations"]!.AsArray().Select(each => each!.GetValue<string>()).ToList();
         Assert.Contains("https://other.example/r.json", locations);
         if (writer == "add") Assert.Contains("https://mine.example/r.json", locations);

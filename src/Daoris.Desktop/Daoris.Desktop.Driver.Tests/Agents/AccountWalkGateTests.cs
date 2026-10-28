@@ -18,8 +18,8 @@ public sealed class AccountWalkGateTests : IDisposable
 {
     private static readonly DateTimeOffset Seen = new(2026, 10, 19, 12, 0, 0, TimeSpan.Zero);
 
-    /// <summary>How long a start may take beside a question that never answers: one held behind it never ends at all.</summary>
-    private static readonly TimeSpan Bound = TimeSpan.FromSeconds(10);
+    /// <summary>The lock patience the roster is handed where a test does not set it: the product's input, not a wait of the test's (TESTPATIENCE2).</summary>
+    private static readonly TimeSpan LockWait = TimeSpan.FromSeconds(10);
 
     /// <summary>A start's patience for its account's lock here, where the roster's own is thirty seconds.</summary>
     private static readonly TimeSpan Short = TimeSpan.FromMilliseconds(300);
@@ -84,7 +84,7 @@ public sealed class AccountWalkGateTests : IDisposable
             Clock = () => _now,
             Asking = status is null ? null : (_, account, _) => status(account),
             AskingUsage = (_, account, _) => windows is null ? Task.FromResult<IReadOnlyList<WindowReading>?>(null) : windows(account),
-            LockPatience = patience ?? Bound,
+            LockPatience = patience ?? LockWait,
         };
 
     private void Accounts(params string[] names)
@@ -118,11 +118,11 @@ public sealed class AccountWalkGateTests : IDisposable
         });
 
         var first = roster.SelectAsync("fake", Config, null, chosen: "account-1");
-        await _begun.Task.WaitAsync(Bound);
+        await _begun.Task.WaitAsync(Poll.Patience);
 
         // A pick of the other account, and the list's walk, which passes the account being asked as its last reading says.
-        var picked = await roster.SelectAsync("fake", Config, null, chosen: "account-2").WaitAsync(Bound);
-        var walked = await roster.SelectAsync("fake", Config, null, null).WaitAsync(Bound);
+        var picked = await roster.SelectAsync("fake", Config, null, chosen: "account-2").WaitAsync(Poll.Patience);
+        var walked = await roster.SelectAsync("fake", Config, null, null).WaitAsync(Poll.Patience);
 
         Assert.Equal(("account-2", true), (picked.Profile, picked.Allowed));
         Assert.Equal(("account-2", true), (walked.Profile, walked.Allowed));
@@ -130,7 +130,7 @@ public sealed class AccountWalkGateTests : IDisposable
 
         // Its answer comes: the first start runs on the account it asked about, and is counted once.
         _never.SetResult();
-        var asked = await first.WaitAsync(Bound);
+        var asked = await first.WaitAsync(Poll.Patience);
         Assert.Equal(("account-1", true), (asked.Profile, asked.Allowed));
         Assert.True(roster.Busy("fake", "account-1"));
     }
@@ -149,18 +149,18 @@ public sealed class AccountWalkGateTests : IDisposable
 
         // The list's walk reads each account's windows first (CODEXUSE1), and the first account's read never answers.
         var first = roster.SelectAsync("fake", Config, null, null);
-        await _begun.Task.WaitAsync(Bound);
+        await _begun.Task.WaitAsync(Poll.Patience);
 
-        var picked = await roster.SelectAsync("fake", Config, null, chosen: "account-2").WaitAsync(Bound);
+        var picked = await roster.SelectAsync("fake", Config, null, chosen: "account-2").WaitAsync(Poll.Patience);
         // Another walk over the list asks neither again; the account whose read holds its lock is passed for this walk.
-        var walked = await roster.SelectAsync("fake", Config, null, null).WaitAsync(Bound);
+        var walked = await roster.SelectAsync("fake", Config, null, null).WaitAsync(Poll.Patience);
 
         Assert.Equal(("account-2", true), (picked.Profile, picked.Allowed));
         Assert.Equal(("account-2", true), (walked.Profile, walked.Allowed));
         Assert.False(first.IsCompleted);
 
         _never.SetResult();
-        var read = await first.WaitAsync(Bound);
+        var read = await first.WaitAsync(Poll.Patience);
         Assert.True(read.Allowed, read.Refusal);
     }
 
@@ -177,7 +177,7 @@ public sealed class AccountWalkGateTests : IDisposable
 
         await using (await ProbeLock.TakeAsync(ProbeLock.PathOf(_home, "fake", "account-1")))
         {
-            var selection = await roster.SelectAsync("fake", Config, null, null).WaitAsync(Bound);
+            var selection = await roster.SelectAsync("fake", Config, null, null).WaitAsync(Poll.Patience);
 
             Assert.Equal(("account-2", true), (selection.Profile, selection.Allowed));
             // LOCKPASSED1: the start's line says the account was passed for its lock, never that the goal ranked another ahead of it.
@@ -199,7 +199,7 @@ public sealed class AccountWalkGateTests : IDisposable
         HarnessSelection selection;
         await using (await ProbeLock.TakeAsync(ProbeLock.PathOf(_home, "fake", "account-1")))
         {
-            selection = await roster.SelectAsync("fake", Config, null, chosen: "account-1").WaitAsync(Bound);
+            selection = await roster.SelectAsync("fake", Config, null, chosen: "account-1").WaitAsync(Poll.Patience);
         }
 
         Assert.False(selection.Allowed);
@@ -214,7 +214,7 @@ public sealed class AccountWalkGateTests : IDisposable
         Assert.False(roster.Busy("fake", "account-1"));
 
         // Let go, the next start runs on it.
-        var next = await roster.SelectAsync("fake", Config, null, chosen: "account-1").WaitAsync(Bound);
+        var next = await roster.SelectAsync("fake", Config, null, chosen: "account-1").WaitAsync(Poll.Patience);
         Assert.Equal(("account-1", true), (next.Profile, next.Allowed));
     }
 
@@ -235,7 +235,7 @@ public sealed class AccountWalkGateTests : IDisposable
         var watch = Stopwatch.StartNew();
         await using (await ProbeLock.TakeAsync(ProbeLock.PathOf(_home, "fake", "account-1")))
         {
-            selection = await roster.SelectAsync("fake", Config, null, null).WaitAsync(Bound);
+            selection = await roster.SelectAsync("fake", Config, null, null).WaitAsync(Poll.Patience);
         }
 
         Assert.Equal(("account-2", true), (selection.Profile, selection.Allowed));
@@ -250,7 +250,7 @@ public sealed class AccountWalkGateTests : IDisposable
     public async Task A_question_in_flight_on_the_chosen_account_is_waited_out_within_its_patience_and_the_start_counts()
     {
         Accounts("account-1");
-        var roster = Roster(patience: Bound);
+        var roster = Roster(patience: LockWait);
         var held = await ProbeLock.TakeAsync(ProbeLock.PathOf(_home, "fake", "account-1"));
         var watch = Stopwatch.StartNew();
         var letGo = Task.Run(async () =>
@@ -259,7 +259,7 @@ public sealed class AccountWalkGateTests : IDisposable
             await held!.DisposeAsync();
         });
 
-        var selection = await roster.SelectAsync("fake", Config, null, chosen: "account-1").WaitAsync(Bound);
+        var selection = await roster.SelectAsync("fake", Config, null, chosen: "account-1").WaitAsync(Poll.Patience);
         await letGo;
 
         Assert.Equal(("account-1", true), (selection.Profile, selection.Allowed));
@@ -285,7 +285,7 @@ public sealed class AccountWalkGateTests : IDisposable
             return await roster.SelectAsync("fake", Config, null, null);
         })).ToList();
         go.SetResult();
-        var starts = await Task.WhenAll(made).WaitAsync(Bound);
+        var starts = await Task.WhenAll(made).WaitAsync(Poll.Patience);
 
         Assert.All(starts, start => Assert.True(start.Allowed, start.Refusal));
         Assert.Equal(

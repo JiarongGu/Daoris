@@ -4,9 +4,8 @@
  *
  *   node --test tools/knowledge-bench.test.mjs
  *
- * Outside `npm run verify`, whose tests are the CLI package's: this branch's lanes are the tools and the docs,
- * and the CLI suite is another lane's (TEST3 moved `setup-kit`'s tests there for the same reason, in its own
- * branch). Its scratch is a gitignored folder of the repository, and nothing here starts a model.
+ * Run by `npm run verify`'s `node --test` list (TOOLTESTCENSUS1). Its scratch is a gitignored folder of the repository,
+ * and nothing here starts a model.
  */
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';

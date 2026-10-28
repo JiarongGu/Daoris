@@ -12,8 +12,6 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <remarks>In-process: the service is the stand-in ledger, the roster's doors a stand-in, each start's run a stand-in.</remarks>
 public sealed class HandOverAskLookTests : IDisposable
 {
-    private static readonly TimeSpan Bound = TimeSpan.FromSeconds(10);
-
     private static readonly DateTimeOffset T0 = new(2026, 10, 20, 9, 0, 0, TimeSpan.Zero);
 
     private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-handask-look-" + Guid.NewGuid().ToString("N")[..8]);
@@ -92,8 +90,8 @@ public sealed class HandOverAskLookTests : IDisposable
         _ledger.Working("c0nv0001", "engine", Tree("tree-c"));
         Asks("c0nv0001");
 
-        var look = await Driver().TickAsync().WaitAsync(Bound);
-        await Driver().TickAsync().WaitAsync(Bound);
+        var look = await Driver().TickAsync().WaitAsync(Poll.Patience);
+        await Driver().TickAsync().WaitAsync(Poll.Patience);
 
         Assert.Equal((HandOverAskStates.Waiting, "codex-acp"), (State("c0nv0001")!.State, State("c0nv0001")!.Agent));
         Assert.Equal(["handover.asked"], Notes("c0nv0001"));
@@ -108,7 +106,7 @@ public sealed class HandOverAskLookTests : IDisposable
         _ledger.Working("c0nv0001", "engine", Tree("tree-c"));
         Asks("c0nv0001");
 
-        await Driver(HandOverRules.Off).TickAsync().WaitAsync(Bound);
+        await Driver(HandOverRules.Off).TickAsync().WaitAsync(Poll.Patience);
 
         Assert.Equal((HandOverAskStates.Refused, HandOverAskWhy.Off), (State("c0nv0001")!.State, State("c0nv0001")!.Code));
         Assert.Equal(["handover.refused"], Notes("c0nv0001"));
@@ -125,7 +123,7 @@ public sealed class HandOverAskLookTests : IDisposable
         _ledger.Working("c0nv0001", "engine", Tree("tree-c"));
         Asks("c0nv0001");
 
-        await Driver(HandOverRules.On).TickAsync().WaitAsync(Bound);
+        await Driver(HandOverRules.On).TickAsync().WaitAsync(Poll.Patience);
 
         var box = new HandOverBox(_home).Read("c0nv0001")!;
         Assert.Equal(("codex-acp", HandOverWhy.Agent, HandOverBy.Agent), (box.Agent, box.Why, box.AskedBy));
@@ -134,7 +132,7 @@ public sealed class HandOverAskLookTests : IDisposable
 
         _ledger.Working("c0nv0002", "engine", Tree("tree-d"));
         Asks("c0nv0002", id: "b1b2c3d4");
-        await Driver(HandOverRules.On, wired: true).TickAsync().WaitAsync(Bound);
+        await Driver(HandOverRules.On, wired: true).TickAsync().WaitAsync(Poll.Patience);
 
         Assert.Equal([("c0nv0002", "codex-acp")], _handed);
         Assert.Null(new HandOverBox(_home).Read("c0nv0002"));
@@ -148,7 +146,7 @@ public sealed class HandOverAskLookTests : IDisposable
         _ledger.Driven("s1", "q1", Tree("tree-s1"), adapter: "stub");
         Asks("s1");
 
-        await Driver(HandOverRules.On).TickAsync().WaitAsync(Bound);
+        await Driver(HandOverRules.On).TickAsync().WaitAsync(Poll.Patience);
 
         Assert.Equal((HandOverAskStates.Approved, "codex-acp"), (State("s1")!.State, State("s1")!.Agent));
         Assert.Equal("working", _ledger.Session("s1")["state"]!.GetValue<string>());
@@ -167,7 +165,7 @@ public sealed class HandOverAskLookTests : IDisposable
         _ledger.Park("s1", "q1", Tree("tree-s1"));
         Asks("s1");
 
-        var look = await Driver(HandOverRules.On).TickAsync().WaitAsync(Bound);
+        var look = await Driver(HandOverRules.On).TickAsync().WaitAsync(Poll.Patience);
 
         Assert.Equal("stopped", _ledger.Session("s1")["state"]!.GetValue<string>());
         var handed = new HandedQuests(_home).Read("q1")!;
@@ -183,10 +181,10 @@ public sealed class HandOverAskLookTests : IDisposable
     {
         _ledger.Working("c0nv0001", "engine", Tree("tree-c"));
         Asks("c0nv0001");
-        await Driver().TickAsync().WaitAsync(Bound);
+        await Driver().TickAsync().WaitAsync(Poll.Patience);
 
         var yes = HandOverAskWord.Approve(new HandOverAskFiles(_home), "c0nv0001", "a1b2c3d4");
-        await Driver().TickAsync().WaitAsync(Bound);
+        await Driver().TickAsync().WaitAsync(Poll.Patience);
 
         Assert.True(yes.Stands);
         Assert.Equal("codex-acp", new HandOverBox(_home).Read("c0nv0001")!.Agent);
@@ -201,7 +199,7 @@ public sealed class HandOverAskLookTests : IDisposable
         _ledger.Continues("c0nv0001", "c0nv0000", HandOverWhy.Agent, HandOverBy.Agent);
         Asks("c0nv0001");
 
-        await Driver(HandOverRules.On).TickAsync().WaitAsync(Bound);
+        await Driver(HandOverRules.On).TickAsync().WaitAsync(Poll.Patience);
 
         Assert.Equal((HandOverAskStates.Refused, HandOverAskWhy.JustHanded), (State("c0nv0001")!.State, State("c0nv0001")!.Code));
         Assert.Null(new HandOverBox(_home).Read("c0nv0001"));
@@ -213,7 +211,7 @@ public sealed class HandOverAskLookTests : IDisposable
         File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.Sessions, "c0nv0001" + HandOverAskFiles.AskSuffix),
             $$"""{ "id": "e1e2e3e4", "session": "c0nv0001", "note": "Again.", "askedBy": "agent", "at": "{{Moments.Write(T0.AddMinutes(2))}}" }""");
 
-        await Driver(HandOverRules.On).TickAsync().WaitAsync(Bound);
+        await Driver(HandOverRules.On).TickAsync().WaitAsync(Poll.Patience);
 
         Assert.Equal(("e1e2e3e4", HandOverAskStates.Taken), (State("c0nv0001")!.Id, State("c0nv0001")!.State));
     }
@@ -229,7 +227,7 @@ public sealed class HandOverAskLookTests : IDisposable
         _ledger.Move("q1", "Done");
         Asks("s1");
 
-        await Driver().TickAsync().WaitAsync(Bound);
+        await Driver().TickAsync().WaitAsync(Poll.Patience);
 
         Assert.Equal((HandOverAskStates.Refused, HandOverAskWhy.QuestClosed), (State("s1")!.State, State("s1")!.Code));
         Assert.Equal(["handover.refused"], Notes("s1"));
@@ -245,12 +243,12 @@ public sealed class HandOverAskLookTests : IDisposable
     {
         _ledger.Park("s1", "q1", Tree("tree-s1"));
         Asks("s1");
-        await Driver().TickAsync().WaitAsync(Bound);
+        await Driver().TickAsync().WaitAsync(Poll.Patience);
         Assert.Equal(HandOverAskStates.Waiting, State("s1")!.State);
 
         Assert.True(HandOverAskWord.Approve(new HandOverAskFiles(_home), "s1", "a1b2c3d4").Stands);
         _ledger.Move("q1", "Done");
-        var look = await Driver().TickAsync().WaitAsync(Bound);
+        var look = await Driver().TickAsync().WaitAsync(Poll.Patience);
 
         Assert.Equal((HandOverAskStates.Refused, HandOverAskWhy.QuestClosed), (State("s1")!.State, State("s1")!.Code));
         Assert.Equal(["handover.asked", "handover.not-taken-ends"], Notes("s1"));
@@ -267,7 +265,7 @@ public sealed class HandOverAskLookTests : IDisposable
     {
         Asks("g0n3s3ss");
 
-        await Driver(HandOverRules.On).TickAsync().WaitAsync(Bound);
+        await Driver(HandOverRules.On).TickAsync().WaitAsync(Poll.Patience);
 
         Assert.Null(new HandOverAskFiles(_home).Ask("g0n3s3ss"));
         Assert.Null(State("g0n3s3ss"));

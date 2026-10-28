@@ -43,7 +43,7 @@ public sealed class QuietEndProcessTests : IDisposable
         driver.Watch.EndAfter = TimeSpan.FromSeconds(4);
         var clock = Stopwatch.StartNew();
 
-        await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(90));
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
         clock.Stop();
 
         var record = service.Session("s1");
