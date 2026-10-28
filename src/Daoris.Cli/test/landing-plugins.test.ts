@@ -5,7 +5,7 @@ import { chmodSync, existsSync, mkdirSync, readFileSync, realpathSync, writeFile
 import { delimiter, dirname, join } from 'node:path';
 import { createInterface } from 'node:readline';
 import { fileURLToPath } from 'node:url';
-import { makeFixture, type Fixture } from './_fixture.ts';
+import { makeFixture, PATIENCE, type Fixture } from './_fixture.ts';
 
 /**
  * WSR4 (D100): the two example plugins that land work — one for GitHub, one for Azure DevOps — driven
@@ -121,7 +121,7 @@ async function speak(
     waiting.get(frame.id)?.();
   });
   const call = (id: number, method: string, frameParams: unknown) => new Promise<{ result: Record<string, unknown>; error?: { message: string } }>((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error(`no answer to ${method} — stderr: ${stderr}`)), 30_000);
+    const timer = setTimeout(() => reject(new Error(`no answer to ${method} — stderr: ${stderr}`)), PATIENCE);
     waiting.set(id, () => { clearTimeout(timer); resolve(answers.get(id)!); });
     child.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', id, method, params: frameParams })}\n`);
   });

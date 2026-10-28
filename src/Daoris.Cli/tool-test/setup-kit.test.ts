@@ -7,7 +7,7 @@ import { dirname, join } from 'node:path';
 import { createInterface } from 'node:readline';
 import { fileURLToPath } from 'node:url';
 import { listenFetchable } from '../../../tools/listen-port.mjs';
-import { makeFixture, unroled } from '../test/_fixture.ts';
+import { makeFixture, PATIENCE, unroled } from '../test/_fixture.ts';
 
 /**
  * The family rehearsal's set-up phase, held where it can be without a host or a driver (LAYOUT7a): the reading
@@ -432,12 +432,14 @@ type Update = { sessionUpdate: string; title?: string; status?: string };
 type Frame = { id?: number; method?: string; params?: { update: Update }; result?: { stopReason?: string } };
 
 /**
- * How long a row waits for each thing the stub owes it, its answers and then its exit (STUB3, FLAKE1): a few seconds past
- * the slowest a row expects, so a stub that will never answer fails its row in seconds. `speak()`'s slowest is the resumed
- * turn, about 3 s; `driveTurn()`'s is a set-up turn, which runs the doctrine tool six times and takes about 7 s alone.
+ * How long a row waits for each thing the stub owes it, its answers and then its exit (STUB3, FLAKE1): the shared patience,
+ * since the bound elapses only when the stub never answers. It was 10 s and 30 s, a few seconds past the slowest a row expects
+ * (`speak()`'s the resumed turn, about 3 s; `driveTurn()`'s a set-up turn, which runs the doctrine tool six times and takes
+ * about 7 s alone), and a stub still answering 3 (session/prompt) ten seconds after its first answer failed the merge queue's
+ * gate beside a machine at full load (TESTPATIENCE3). The rows that test the bound itself pass a bound of their own.
  */
-const STUB_WAIT_MS = 10_000;
-const TURN_WAIT_MS = 30_000;
+const STUB_WAIT_MS = PATIENCE;
+const TURN_WAIT_MS = PATIENCE;
 
 /**
  * How long `speak()` waits for a stub's first answer, which is when its process is up (STUB3b): the start is the machine's
@@ -797,7 +799,7 @@ const LOADED = { wide: 12, rounds: 3 };
 /**
  * FLAKE4: the fetch held in a loaded loop. ANSWER1b's first turn is one fetch to the door, so many of them at once, round
  * after round, are the load itself: every turn takes its quest and ends its turn, and the door hears every take. A turn
- * that fails says why (the row above). Its start has STUB3's 60 s, since starting a dozen processes at once is the
+ * that fails says why (the row above). Its start has the shared patience, since starting a dozen processes at once is the
  * machine's load, not a stub's silence.
  */
 test('the stub\'s fetch to its quest door holds with a dozen turns at once, round after round (FLAKE4)', { timeout: 300_000 }, async () => {
@@ -810,7 +812,7 @@ test('the stub\'s fetch to its quest door holds with a dozen turns at once, roun
         const tree = join(fx.root, quest, 'atlas');
         mkdirSync(tree, { recursive: true });
         return speak({
-          cwd: tree, frames: ASKING_FRAMES(tree), start: 60_000,
+          cwd: tree, frames: ASKING_FRAMES(tree), start: PATIENCE,
           env: { ...unroled(), DAORIS_SERVICE_URL: door.url, DAORIS_QUEST_ID: quest, DAORIS_QUEST_TITLE: 'Ask the person first: which port?' },
         }).then((turn) => ({ quest, turn }));
       }));
@@ -829,7 +831,10 @@ test('the stub\'s fetch to its quest door holds with a dozen turns at once, roun
   }
 });
 
-/** How long the stub's resumed turn is held to last: about three seconds, never at once and never a hang (STUB2). */
+/**
+ * How long the stub's resumed turn is held to last: about three seconds, never at once and never a hang (STUB2). The elapsed
+ * time is the claim, not a patience.
+ */
 const HEARD_TURN_MS = { least: 2900, most: 6000 };
 
 /**
@@ -900,7 +905,7 @@ const RESUME_FRAMES: Said[] = [
  * the stub exited without answering, and passed alone. A stub that exits early now fails its row as it exits, naming each
  * answer that never came, with the stub's stderr beside it.
  */
-test('a stub that exits without answering fails its row in seconds, naming the answers that never came (STUB3)', { timeout: 90_000 }, async () => {
+test('a stub that exits without answering fails its row in seconds, naming the answers that never came (STUB3)', { timeout: PATIENCE }, async () => {
   const fx = makeFixture('setup-kit-stub-early');
   const tree = join(fx.root, 'atlas');
   mkdirSync(tree, { recursive: true });
@@ -908,7 +913,7 @@ test('a stub that exits without answering fails its row in seconds, naming the a
     // Its start is the machine's load, not what this row tests: beside five workers the CI on b0a786d took past the
     // 10 s start bound to start it (FLAKE1). The exit's own message, never a bound's, shows it failed as the stub exited.
     await assert.rejects(
-      speak({ cwd: tree, env: unroled(), frames: RESUME_FRAMES, agent: cutShort('exits'), start: 60_000 }),
+      speak({ cwd: tree, env: unroled(), frames: RESUME_FRAMES, agent: cutShort('exits'), start: PATIENCE }),
       /^Error: the stub exited with code 3 and never answered 2 \(session\/new\), 3 \(session\/prompt\)/,
     );
   } finally {
@@ -917,12 +922,13 @@ test('a stub that exits without answering fails its row in seconds, naming the a
 });
 
 /** STUB3: a stub that stays without answering fails its row at the bound, naming what never came, and is stopped. */
-test('a stub that stays without answering fails its row at the bound, and is stopped (STUB3)', { timeout: 30_000 }, async () => {
+test('a stub that stays without answering fails its row at the bound, and is stopped (STUB3)', { timeout: PATIENCE }, async () => {
   const fx = makeFixture('setup-kit-stub-stays');
   const tree = join(fx.root, 'atlas');
   mkdirSync(tree, { recursive: true });
   try {
     await assert.rejects(
+      // patience: claim — the bound the row fails at is what it tests
       speak({ cwd: tree, env: unroled(), frames: RESUME_FRAMES, agent: cutShort('stays'), wait: 1_000 }),
       /^Error: the stub never answered 2 \(session\/new\), 3 \(session\/prompt\) within 1000 ms of its first answer/,
     );
@@ -938,12 +944,13 @@ test('a stub that stays without answering fails its row at the bound, and is sto
  * counted from the spawn, so a process's start under load counted as the stub's silence. It counts from the stub's first
  * answer now, and the start has a bound of its own.
  */
-test('a stub slow to start is not counted against the bound, which runs from its first answer (STUB3b)', { timeout: 30_000 }, async () => {
+test('a stub slow to start is not counted against the bound, which runs from its first answer (STUB3b)', { timeout: PATIENCE }, async () => {
   const fx = makeFixture('setup-kit-stub-slow');
   const tree = join(fx.root, 'atlas');
   mkdirSync(tree, { recursive: true });
   try {
     await assert.rejects(
+      // patience: claim — a start slower than the bound is not counted against it; the bound is what it tests
       speak({ cwd: tree, env: unroled(), frames: RESUME_FRAMES, agent: cutShort('stays', { startsAfter: 1_500 }), wait: 1_000 }),
       /^Error: the stub never answered 2 \(session\/new\), 3 \(session\/prompt\) within 1000 ms of its first answer/,
     );
@@ -953,12 +960,13 @@ test('a stub slow to start is not counted against the bound, which runs from its
 });
 
 /** STUB3b: a stub that never answers at all fails its row at the start's own bound, naming every request, and is stopped. */
-test('a stub that answers nothing fails its row at the bound on its start, naming every request (STUB3b)', { timeout: 30_000 }, async () => {
+test('a stub that answers nothing fails its row at the bound on its start, naming every request (STUB3b)', { timeout: PATIENCE }, async () => {
   const fx = makeFixture('setup-kit-stub-silent');
   const tree = join(fx.root, 'atlas');
   mkdirSync(tree, { recursive: true });
   try {
     await assert.rejects(
+      // patience: claim — the start's own bound is what the row tests
       speak({ cwd: tree, env: unroled(), frames: RESUME_FRAMES, agent: cutShort('stays', { startsAfter: 60_000 }), start: 1_000 }),
       /^Error: the stub never answered 1 \(initialize\), 2 \(session\/new\), 3 \(session\/prompt\) within 1000 ms of its start/,
     );
@@ -996,12 +1004,13 @@ lines.on('close', () => process.exit(0));
  * all four commands, because `driveTurn()` counted the prompt's 30 s from the request: a turn that kept working past it was
  * counted as silent. The bound runs from the stub's last output now, as STUB3b's runs from its first answer.
  */
-test('a turn still at work past the bound is not counted as silent, which runs from its last output (FLAKE2)', { timeout: 30_000 }, async () => {
+test('a turn still at work past the bound is not counted as silent, which runs from its last output (FLAKE2)', { timeout: PATIENCE }, async () => {
   const fx = makeFixture('setup-kit-stub-at-work');
   const tree = join(fx.root, 'atlas');
   mkdirSync(tree, { recursive: true });
   try {
     const { answer, updates, code } = await driveTurn({
+      // patience: claim — a turn at work past this bound is not silent; the bound is what the row tests
       cwd: tree, env: unroled(), agent: atWork({ times: 6, every: 400, answers: true }), wait: 1_000,
     });
 
@@ -1014,12 +1023,13 @@ test('a turn still at work past the bound is not counted as silent, which runs f
 });
 
 /** FLAKE2: a turn that falls silent still fails at the bound, counted from its last output, and is stopped. */
-test('a turn that falls silent fails at the bound from its last output, and is stopped (FLAKE2)', { timeout: 30_000 }, async () => {
+test('a turn that falls silent fails at the bound from its last output, and is stopped (FLAKE2)', { timeout: PATIENCE }, async () => {
   const fx = makeFixture('setup-kit-stub-falls-silent');
   const tree = join(fx.root, 'atlas');
   mkdirSync(tree, { recursive: true });
   try {
     await assert.rejects(
+      // patience: claim — the bound the row fails at is what it tests
       driveTurn({ cwd: tree, env: unroled(), agent: atWork({ times: 2, every: 200, answers: false }), wait: 1_000 }),
       /^Error: the stub never answered 3 \(session\/prompt\) within 1000 ms of its last output/,
     );

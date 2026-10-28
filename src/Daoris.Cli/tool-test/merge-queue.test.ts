@@ -4,7 +4,7 @@ import { spawn, spawnSync, type ChildProcess } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { makeFixture } from '../test/_fixture.ts';
+import { makeFixture, PATIENCE } from '../test/_fixture.ts';
 
 /**
  * CISCOPE1e (D207, design §4 and §5.1, §8 row 5): the merge queue and its candidates, the frozen request, the judgement of a red
@@ -684,9 +684,10 @@ const pause = (ms: number) => new Promise((done) => { setTimeout(done, ms); });
  * How long one scratch run of the merge tool, or one wait on its queue, may take before the test calls it hung
  * (TOOLTESTHANG1): a guard against the hang, never a pace, so it elapses only on failure. A scratch queue gates real git
  * under whatever else the machine runs, and a healthy run took longer than the two-minute shared patience under load
- * (2026-10-28, the bound ended a run still promoting), so the guard is ten minutes; the hang it catches lasted ninety.
+ * (2026-10-28, the bound ended a run still promoting), so the guard is ten minutes; the hang it catches lasted ninety. It is
+ * five times the shared patience (TESTPATIENCE3), so the one knob moves it, and stays longer because a healthy run is.
  */
-const HANG_MS = 600_000;
+const HANG_MS = 5 * PATIENCE;
 
 /** Waits for the condition, at most `ms`: a bound that elapses only on failure. */
 async function until(holds: () => boolean, ms = HANG_MS) {
@@ -773,12 +774,13 @@ function queueScratch(name: string) {
       // An invocation a failed assertion left waiting is ended first, so nothing started here can hold the run (TOOLTESTHANG1).
       for (const child of started) tool.endTree(child.pid!);
       // The runner ends once idle; its scope tree goes with the fixture.
+      // A grace for an idle runner to end by itself, kept at five seconds: a runner holding a candidate never does, and is ended below.
       for (let i = 0; i < 50 && queue()?.runner; i += 1) await pause(100);
       // One that is not idle (a candidate held on the checkout, a stop) never ends by itself: it is ended, with its gates.
       const runner = queue()?.runner as { pid: number } | null | undefined;
       if (runner && alive(runner.pid)) {
         tool.endTree(runner.pid);
-        await until(() => !alive(runner.pid), 10_000);
+        await until(() => !alive(runner.pid), PATIENCE);
       }
       fx.cleanup();
     },
@@ -1024,6 +1026,7 @@ describe('the queue, end to end in a scratch repository', { concurrency: true },
       repo.branch('b1', { 'a.txt': 'a\n' });
       assert.equal((await repo.run(['b1', '--preview'])).status, 0);
       writeFileSync(join(repo.root, 'qgate.mjs'), `${QUEUE_GATE}// an edit the parent has not committed\n`);
+      // patience: claim — the invocation is ended at this bound, which is what the row tests
       const ended = await repo.run(['b1', '--message', 'local/b1.msg'], {}, 5_000);
       assert.notEqual(ended.status, 0, ended.out);
       assert.match(ended.out, /no verdict within 5000 ms/);

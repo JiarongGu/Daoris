@@ -6,7 +6,7 @@ import os from 'node:os';
 import { chmodSync, closeSync, existsSync, lstatSync, mkdirSync, openSync, readdirSync, readFileSync, realpathSync, rmSync, symlinkSync, utimesSync, writeFileSync, writeSync } from 'node:fs';
 import { delimiter, dirname, join, posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { makeFixture } from '../test/_fixture.ts';
+import { makeFixture, PATIENCE } from '../test/_fixture.ts';
 
 /**
  * MOD9 (`docs/2026-09-30-parallel-development-design.md` §3 rule 6): the parent's one merge tool. It
@@ -2921,7 +2921,7 @@ function signal(): { promise: Promise<void>; resolve: () => void } {
 }
 
 /** What a fake gate waits for, failing the test rather than hanging it when that never comes: two gates run in turn never overlap. */
-async function within(promise: Promise<unknown>, what: string, ms = 5000): Promise<void> {
+async function within(promise: Promise<unknown>, what: string, ms = PATIENCE): Promise<void> {
   let timer: ReturnType<typeof setTimeout> | undefined;
   const late = new Promise<never>((_, fail) => { timer = setTimeout(() => fail(new Error(`never happened: ${what}`)), ms); });
   try {
@@ -4921,7 +4921,7 @@ const TREE = [
 ].join('\n');
 
 /** The two pids a TREE gate wrote under `at`, once both have (bounded: a start under load). */
-async function treePids(at: string, ms = 20_000): Promise<number[]> {
+async function treePids(at: string, ms = PATIENCE): Promise<number[]> {
   const files = ['child.pid', 'grandchild.pid'].map((name) => join(at, name));
   const read = (file: string) => (existsSync(file) ? Number(readFileSync(file, 'utf8')) : 0);
   for (let waited = 0; waited < ms && !files.every((file) => read(file) > 0); waited += 100) await sleep(100);
@@ -4931,7 +4931,7 @@ async function treePids(at: string, ms = 20_000): Promise<number[]> {
 }
 
 /** Waits for every pid to have ended, a little patience for an exit the system is still recording: those still running. */
-async function stillRunning(pids: number[], ms = 10_000): Promise<number[]> {
+async function stillRunning(pids: number[], ms = PATIENCE): Promise<number[]> {
   for (let waited = 0; waited < ms && pids.some(alive); waited += 100) await sleep(100);
   return pids.filter(alive);
 }
@@ -4941,12 +4941,12 @@ async function stillRunning(pids: number[], ms = 10_000): Promise<number[]> {
  * wait on a denied access as it does on a busy one.
  */
 async function cleanupAfterKill(fx: { cleanup(): void }): Promise<void> {
-  for (let tries = 1; ; tries += 1) {
+  for (const end = Date.now() + PATIENCE; ;) {
     try {
       fx.cleanup();
       return;
     } catch (error) {
-      if (tries >= 40 || !['EPERM', 'EBUSY', 'EACCES'].includes((error as NodeJS.ErrnoException).code ?? '')) throw error;
+      if (Date.now() > end || !['EPERM', 'EBUSY', 'EACCES'].includes((error as NodeJS.ErrnoException).code ?? '')) throw error;
       await sleep(250);
     }
   }
@@ -4967,7 +4967,7 @@ test('a run that ends its trees ends a running step\'s whole tree, its shell, ch
     pids.push(...await treePids(fx.root));
     trees.end('main moved from aaaaaaa to bbbbbbb');
     let code = 0;
-    await within(ran.then((answer) => { code = answer; }), 'the ended step answering', 15_000);
+    await within(ran.then((answer) => { code = answer; }), 'the ended step answering');
     assert.equal(code, tool.STEP_ENDED, 'a code of its own, never a failure\'s');
     assert.notEqual(tool.STEP_ENDED, 0);
     assert.deepEqual(await stillRunning(pids), [], 'every process the step started has ended');
@@ -5341,7 +5341,7 @@ const DESK_FILES: Record<string, string> = {
 };
 
 /** CI1: what a test waits for, read again until it holds, failing rather than hanging when it never does. */
-async function waitFor(holds: () => boolean, what: string, ms = 120_000): Promise<void> {
+async function waitFor(holds: () => boolean, what: string, ms = PATIENCE): Promise<void> {
   for (const end = Date.now() + ms; !holds();) {
     if (Date.now() > end) throw new Error(`never happened: ${what}`);
     await new Promise((done) => setTimeout(done, 100));
@@ -6513,8 +6513,9 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     // Named, though it is main's tip: the merge that lands meanwhile would supersede a run of main's tip (CIPRIO1c).
     const beside = repo.run(['--full', '--beside', gated], { GATE_HOLD: hold, PATH });
     try {
-      // Bounded: the gate tree's gate has started, and holds until the test lets it go.
-      for (let i = 0; i < 3000 && !(existsSync(ranThere) && readFileSync(ranThere, 'utf8').includes('first')); i += 1) {
+      // Bounded by the shared patience: the gate tree's gate has started, and holds until the test lets it go. It was 3000 tries
+      // of 100 ms, which a loaded machine's start outlasted (2026-10-28, candidate 71d60dd).
+      for (const end = Date.now() + PATIENCE; Date.now() < end && !(existsSync(ranThere) && readFileSync(ranThere, 'utf8').includes('first'));) {
         await new Promise((done) => setTimeout(done, 100));
       }
       assert.ok(existsSync(ranThere), 'the full set runs in the gate tree');
@@ -6586,14 +6587,14 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     const beside = repo.run(['--full', '--beside', '--one-at-a-time'], { TREE_PIDS: at });
     try {
       // Bounded: the tool, its gate tree and the gate start first, under the rest of the suite's load.
-      pids.push(...await treePids(at, 120_000));
+      pids.push(...await treePids(at));
       writeFileSync(join(repo.root, 'next.txt'), 'next\n');
       git(repo.root, 'add', '-A');
       git(repo.root, 'commit', '--quiet', '-m', `next${TRAILER}`);
       const to = git(repo.root, 'rev-parse', 'HEAD');
-      // The gate waits ten minutes otherwise; the poll sees the move within seconds, and two minutes is load's margin.
+      // The gate waits ten minutes otherwise; the poll sees the move within seconds, and the shared patience is load's margin.
       let done = { status: null as number | null, out: '' };
-      await within(beside.then((answer) => { done = answer; }), 'the run ending once main moved on', 120_000);
+      await within(beside.then((answer) => { done = answer; }), 'the run ending once main moved on');
       assert.equal(done.status, 1, done.out);
       assert.deepEqual(await stillRunning(pids), [], `the gate's child and grandchild still run:\n${done.out}`);
       assert.match(done.out, new RegExp(`superseded: main moved from ${sha} to ${to.slice(0, 7)}, so this run ended the gates it was running and started no more; it is not a pass`));
@@ -7085,6 +7086,7 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
       const second = git(repo.root, 'rev-parse', 'HEAD');
       await waitFor(() => green(second), 'the watch gating the tip main moved to');
       // A few of its polls more: a tip it gated is never gated again.
+      // patience: staging — a window in which nothing should happen, not a wait for a signal
       await new Promise((done) => setTimeout(done, 1500));
       assert.deepEqual(ran(), ['universal', 'universal'], 'once each tip');
       result = await repo.run(['--ci']);
