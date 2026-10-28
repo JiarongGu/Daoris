@@ -85,7 +85,7 @@ public static class WorkCommand
         switch (ask.Verb)
         {
             case "pause":
-                var paused = await WorkPausing.PauseAsync(world, ask.Scope, ask.Id, PluginEvents.Terminal, ct).ConfigureAwait(false);
+                var paused = await WorkPausing.PauseAsync(world, ask.Scope, ask.Id, WorkplaceDoors.Terminal, ct).ConfigureAwait(false);
                 Write(output, WorkPausing.Lines(paused));
                 return paused.Verdict switch
                 {
@@ -97,7 +97,7 @@ public static class WorkCommand
                 return await AbandonAsync(ask, world, output, ct).ConfigureAwait(false);
         }
 
-        var resumed = await WorkPausing.ResumeAsync(world, ask.Scope, ask.Id, PluginEvents.Terminal, ct).ConfigureAwait(false);
+        var resumed = await WorkPausing.ResumeAsync(world, ask.Scope, ask.Id, WorkplaceDoors.Terminal, ct).ConfigureAwait(false);
         Write(output, WorkPausing.Lines(resumed));
         return resumed.Verdict == ResumeVerdict.Unknown ? 1 : 0;
     }
@@ -125,7 +125,7 @@ public static class WorkCommand
             return 1;
         }
 
-        var outcome = await WorkAbandoning.AbandonAsync(world, ask.Scope, ask.Id, ask.Reason, pieces: null, PluginEvents.Terminal, ct)
+        var outcome = await WorkAbandoning.AbandonAsync(world, ask.Scope, ask.Id, ask.Reason, pieces: null, WorkplaceDoors.Terminal, ct)
             .ConfigureAwait(false);
         Write(output, WorkAbandoning.Lines(outcome));
         return outcome.Verdict switch

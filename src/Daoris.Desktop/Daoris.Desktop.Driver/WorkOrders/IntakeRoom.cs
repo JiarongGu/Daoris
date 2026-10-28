@@ -70,10 +70,10 @@ public static class IntakeRoom
 
         // What each repository that declared nothing says about itself (D77), read from its own files
         // at every open — a README changes as a declaration does — and never written into.
-        var described = new Dictionary<string, RepositoryDescription>(StringComparer.OrdinalIgnoreCase);
+        var described = new Dictionary<string, IIntakeDescription>(StringComparer.OrdinalIgnoreCase);
         foreach (var repository in declarations.Where(d => !(d.Adopted && d.Registered) && d.Root is { Length: > 0 }))
         {
-            if (SelfDescriptionFiles.Read(repository.Root!) is { } description) described[repository.Repository] = description;
+            if (WorkOrdersSetup.Current.Describe(repository.Root!) is { } description) described[repository.Repository] = description;
         }
 
         Write(Path.Combine(room, "AGENTS.md"), Render(workspace, declarations, described, kinds));
@@ -95,10 +95,10 @@ public static class IntakeRoom
     /// </summary>
     public static string Render(
         string workspace, IReadOnlyList<DeclarationView> declarations,
-        IReadOnlyDictionary<string, RepositoryDescription>? described = null,
+        IReadOnlyDictionary<string, IIntakeDescription>? described = null,
         IReadOnlyList<IntakeRepositoryKinds>? kinds = null)
     {
-        described ??= new Dictionary<string, RepositoryDescription>();
+        described ??= new Dictionary<string, IIntakeDescription>();
         var text = new StringBuilder();
         text.Append($"# Intake — workspace `{workspace}`\n\n");
         text.Append("This room is Daoris's, not any repository's. A session here answers ONE ask made at the\n");
@@ -218,7 +218,7 @@ public static class IntakeRoom
     }
 
     /// <summary>One line of what a repository says about itself: what it is built with, then its own words.</summary>
-    private static string Describe(RepositoryDescription description)
+    private static string Describe(IIntakeDescription description)
     {
         var parts = new List<string>();
         if (description.Stack.Count > 0) parts.Add(string.Join(", ", description.Stack));

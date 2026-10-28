@@ -625,7 +625,7 @@ public static class SessionGroups
             held[record.Id] = Cooling(coolingOf, prior) is { } cooling
                 ? CoolingHold(
                     reason,
-                    prior.Repository is { } repository && string.Equals(repository, HelpRoom.Repository, StringComparison.OrdinalIgnoreCase)
+                    prior.Repository is { } repository && string.Equals(repository, KnowledgeRoomIdentity.Repository, StringComparison.OrdinalIgnoreCase)
                         ? cooling
                         : Soonest(coolingOf, home, prior.Adapter ?? adapter, cooling) ?? cooling,
                     home)
@@ -723,7 +723,7 @@ public static class SessionGroups
     public static Func<string?, string?, CoolingEntry?> CoolingOn(string home)
     {
         var built = AdapterSet.Built();
-        var adapters = built.WithPlugins(PluginCatalog.Load(home, built.Names));
+        var adapters = built.WithPlugins(AgentPluginReads.Current.Load(home, built.Names));
         var roster = new HarnessRoster(adapters, DaorisHome.Entry(home, HomeEntry.Harnesses));
         return (adapter, profile) => roster.CoolingOf(adapter ?? "", profile);
     }

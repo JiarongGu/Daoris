@@ -74,15 +74,15 @@ public static class QuestWorkflowCommand
             return null;
         }
 
-        if (kind is not null && !WorkflowSelection.IsKindId(kind))
+        if (kind is not null && !WorkflowKey.IsKindId(kind))
         {
-            problem = WorkflowSelection.KindIdProblem(kind);
+            problem = WorkflowKey.KindIdProblem(kind);
             return null;
         }
 
-        if (workflow is not null && !WorkflowSelection.IsWorkflow(workflow))
+        if (workflow is not null && !WorkflowKey.IsId(workflow))
         {
-            problem = WorkflowSelection.WorkflowProblem(workflow);
+            problem = WorkflowKey.WorkflowProblem(workflow);
             return null;
         }
 

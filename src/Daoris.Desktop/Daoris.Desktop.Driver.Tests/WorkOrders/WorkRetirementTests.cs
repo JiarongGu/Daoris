@@ -107,13 +107,13 @@ public sealed class WorkRetirementTests : IDisposable
     {
         var quest = new WorkUnit("quest:q1", WorkUnitKind.Quest, new WorkOwner("engine", "default", WorkRecord.Quests, WorkRecord.ServiceWriter),
             new WorkSubject("#q1", null), new MilestoneEnd(WorkEndState.Ended, null, null, null, Then, "done"), []);
-        var owed = WorkObligations.Of([Attempting("quest:q1", AttemptStates.Unknown)], [], Then);
+        var owed = WorkflowObligations.Of([Attempting("quest:q1", AttemptStates.Unknown)], [], Then);
 
         var joined = Assert.Single(WorkObligations.Attach([quest], owed));
 
         Assert.Equal(WorkUnitState.Retired, quest.State);
         Assert.Equal(WorkUnitState.Open, joined.State);
-        Assert.Same(quest, Assert.Single(WorkObligations.Attach([quest], WorkObligations.Of([], [], Then))));
+        Assert.Same(quest, Assert.Single(WorkObligations.Attach([quest], WorkflowObligations.Of([], [], Then))));
     }
 
     /// <summary>

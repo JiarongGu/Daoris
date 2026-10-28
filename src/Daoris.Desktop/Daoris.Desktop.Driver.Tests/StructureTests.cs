@@ -711,6 +711,18 @@ public sealed class StructureTests(Xunit.Abstractions.ITestOutputHelper output)
     }
 
     [Fact]
+    public void Work_orders_uses_lower_vocabulary_homes_facets_and_ports_and_no_type_above_it()
+    {
+        var (map, _, _, analysis, _) = Tree.Value;
+        var order = map.Subdomains.Select(subdomain => subdomain.Name).ToList();
+        var workOrders = order.IndexOf("Work orders");
+        var edges = analysis.Edges.Where(edge => edge.File.StartsWith("WorkOrders/", StringComparison.Ordinal)
+            && edge.DeclaredIn.Any(path => map.Files.TryGetValue(path, out var owner) && order.IndexOf(owner) > workOrders)).ToList();
+        Assert.True(edges.Count == 0, $"Work orders names a type above it in {edges.Count} semantic tuples:\n"
+            + string.Join('\n', edges.Select(edge => $"{edge.File}: {edge.Type}")));
+    }
+
+    [Fact]
     public void Events_names_no_Help_room_type_for_the_attention_headline()
     {
         var (map, _, _, analysis, _) = Tree.Value;

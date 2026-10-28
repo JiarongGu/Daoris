@@ -116,7 +116,7 @@ public static class AskReviewCommand
             ? $"No review environment is declared in workspace `{circle}`, so nothing of its work can be shown in `{choice}`: "
               + $"`daoris driver review <repository>|--workspace {circle} {choice} --kind local|deployed --procedure <path>` declares one. "
               + "Nothing was kept."
-            : $"No review environment `{choice}` is declared in workspace `{circle}`: its rules declare {ReviewRules.Either(declared)}. "
+            : $"No review environment `{choice}` is declared in workspace `{circle}`: its rules declare {ReviewDoorWords.Either(declared)}. "
               + "Nothing was kept.";
     }
 
@@ -139,7 +139,7 @@ public static class AskReviewCommand
     /// <summary>Why a choice is not one, or null: <c>on</c>, <c>off</c>, or a name a rule could declare.</summary>
     private static string? Unfit(string choice, string choices) =>
         choice is On or Off ? null
-        : ReviewRules.NameProblem(choice) is { } unnamed
+        : ReviewKey.NameProblem(choice) is { } unnamed
             ? $"`{(choice.Length == 0 ? "--review" : choice)}` is not a review choice: {choices}, and {unnamed}"
             : null;
 }

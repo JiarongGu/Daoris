@@ -592,6 +592,10 @@
     "WorkOrders/EvidenceReader.cs": "Work orders",
     "WorkOrders/IntakeKinds.cs": "Work orders",
     "WorkOrders/IntakeRoom.cs": "Work orders",
+    "WorkOrders/WorkOrdersSetup.cs": "Work orders",
+    "WorkOrders/WorkOrdersWorkflows.cs": "Work orders",
+    "WorkOrders/Domain/SetUpSits.cs": "Work orders",
+    "WorkOrders/Domain/ReviewDoorWords.cs": "Work orders",
     "WorkOrders/QuestCheckCommand.cs": "Work orders",
     "WorkOrders/QuestDoneCommand.cs": "Work orders",
     "WorkOrders/QuestParkReader.cs": "Work orders",
@@ -812,6 +816,7 @@
     "Setup/Domain/WorkspaceSetupPlan.cs": "Setup",
     "Setup/Domain/WorkspaceSetupRules.cs": "Setup",
     "Setup/SelfDescriptionFiles.cs": "Setup",
+    "Setup/WorkOrdersSetupWiring.cs": "Setup",
     "Setup/SetupCommand.cs": "Setup",
     "Setup/SetupPorts.cs": "Setup",
     "Setup/SetupPress.cs": "Setup",
@@ -1031,54 +1036,11 @@
     "Workflows/WorkflowRunRecords.cs": "Workflows",
     "Workflows/WorkflowRunStart.cs": "Workflows",
     "Workflows/WorkflowStore.cs": "Workflows",
+    "Workflows/WorkflowObligations.cs": "Workflows",
+    "Workflows/WorkOrdersWorkflowsWiring.cs": "Workflows",
     "Workflows/WorkflowVerb.cs": "Workflows"
   },
   "edges": [
-    {
-      "family": "Work orders names Help",
-      "after": "Work orders",
-      "files": {
-        "WorkOrders/SessionsCommand.cs": ["HelpRoom"],
-        "WorkOrders/SessionGroups.cs": ["HelpRoom"]
-      }
-    },
-    {
-      "family": "Work orders names Plugins",
-      "after": "Work orders",
-      "files": {
-        "WorkOrders/SessionsCommand.cs": ["PluginCatalog","PluginEvents"],
-        "WorkOrders/Work/WorkCommand.cs": ["PluginEvents"],
-        "WorkOrders/Inventory/WorkObligations.cs": ["CleanupDispositions","PluginResourceRoles"],
-        "WorkOrders/SessionGroups.cs": ["PluginCatalog"]
-      }
-    },
-    {
-      "family": "Work orders names Review",
-      "after": "Work orders",
-      "files": {
-        "WorkOrders/AskReviewCommand.cs": ["ReviewRules"],
-        "WorkOrders/Domain/Planner.cs": ["ReviewSetUps"],
-        "WorkOrders/Domain/TickReport.cs": ["OpinionJudged"],
-        "WorkOrders/QuestReviewCommand.cs": ["ReviewDoors","ReviewLines","ReviewRules"]
-      }
-    },
-    {
-      "family": "Work orders names Setup",
-      "after": "Work orders",
-      "files": {
-        "WorkOrders/IntakeRoom.cs": ["RepositoryDescription","SelfDescriptionFiles"]
-      }
-    },
-    {
-      "family": "Work orders names Workflows",
-      "after": "Work orders",
-      "files": {
-        "WorkOrders/AskWorkflowCommand.cs": ["WorkflowSelection","WorkflowStore"],
-        "WorkOrders/IntakeKinds.cs": ["Involvement","WorkflowProcesses"],
-        "WorkOrders/QuestWorkflowCommand.cs": ["WorkflowSelection"],
-        "WorkOrders/Inventory/WorkObligations.cs": ["AttemptStates","CleanupStates","NodeAttempt","NodeRecord","NodeRecordFiles","ResourceCleaner","ResourceReceipt","ResourceRecord","ResourceRecordFiles"]
-      }
-    },
     {
       "family": "Review names Workflows",
       "after": "Review",
@@ -1744,6 +1706,8 @@
     "MeetingCommandTests.cs": "Work orders",
     "MeetingPacketTests.cs": "Work orders",
     "ChannelReachTests.cs": "Work orders",
-    "ReopenTellingTests.cs": "Work orders"
+    "ReopenTellingTests.cs": "Work orders",
+    "WorkOrdersBoundaryTests.cs": "Work orders",
+    "WorkOrdersPortsTests.cs": "Work orders"
   }
 }

@@ -53,7 +53,33 @@ public sealed record TickReport(
 
     /// <summary>
     /// Each owed landing opinion's gate as this look judged it (XAGENT1g3), oldest first and one per session, for the attention band's
-    /// route to read instead of running a gate per poll. <c>steps</c> opinions are not among them.
+    /// route to read instead of running a gate per poll. <c>steps</c> opinions are not among them. Each is the review's
+    /// <see cref="OpinionJudged"/>, which implements <see cref="IJudgedOpinion"/>; the loop's host reads them as such.
     /// </summary>
-    public IReadOnlyList<OpinionJudged> JudgedOpinions { get; init; } = [];
+    public IReadOnlyList<IJudgedOpinion> JudgedOpinions { get; init; } = [];
+}
+
+/// <summary>
+/// One owed landing opinion's gate as a look judged it, as far as the look's report says it (XAGENT1g3): the work, and since when its
+/// opinion has been owed. The review's <see cref="OpinionJudged"/> implements it directly and adds the gate itself.
+/// </summary>
+public interface IJudgedOpinion
+{
+    /// <summary>The session whose work the opinion is owed on.</summary>
+    string Session { get; }
+
+    /// <summary>The quest the work is for.</summary>
+    string Quest { get; }
+
+    /// <summary>The repository the work is in.</summary>
+    string Repository { get; }
+
+    /// <summary>The workspace the repository is in.</summary>
+    string Workspace { get; }
+
+    /// <summary>Since when the opinion has been owed.</summary>
+    DateTimeOffset Since { get; }
+
+    /// <summary>Whether the work lands by itself once the opinion lets it go.</summary>
+    bool Auto { get; }
 }

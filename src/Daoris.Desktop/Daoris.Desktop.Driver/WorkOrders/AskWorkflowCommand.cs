@@ -81,22 +81,13 @@ public static class AskWorkflowCommand
             if (shared?.KindOf(kind) is null)
             {
                 var spelled = ShellWord.Of(named, "<workspace>");
-                return $"{WorkflowSelection.UndeclaredInWorkspace(named, kind)} `daoris driver workflow kind {spelled} {kind} "
+                return $"{WorkflowKey.UndeclaredInWorkspace(named, kind)} `daoris driver workflow kind {spelled} {kind} "
                        + "--label \"…\"` declares one. Nothing was kept.";
             }
         }
 
-        if (workflow is null or WorkflowSelection.Current) return null;
-        if (WorkflowStore.Load(world.Home, workflow) is not { } found)
-        {
-            return $"No workflow `{workflow}` is saved here: `daoris driver workflow list` names them. Nothing was kept.";
-        }
-
-        if (found.Read.Problem is { } unread) return $"`{workflow}` cannot be read: {unread} Nothing was kept.";
-        var newest = found.Read.Versions[^1];
-        return newest.Steps is null && newest.Graph is null
-            ? $"`{workflow}` v{newest.Version} cannot be read here: {newest.Problem} Nothing was kept."
-            : null;
+        if (workflow is null or WorkflowKey.Current) return null;
+        return WorkOrdersWorkflows.Current.Unusable(world.Home, workflow);
     }
 
     /// <summary>Set the choice on the ask, as its page's will, and print the service's sentence.</summary>
@@ -117,7 +108,7 @@ public static class AskWorkflowCommand
 
     /// <summary>Why a kind or a workflow is not one by its shape, or null.</summary>
     private static string? Unfit(string? kind, string? workflow) =>
-        kind is not null && !WorkflowSelection.IsKindId(kind) ? WorkflowSelection.KindIdProblem(kind)
-        : workflow is not null && !WorkflowSelection.IsWorkflow(workflow) ? WorkflowSelection.WorkflowProblem(workflow)
+        kind is not null && !WorkflowKey.IsKindId(kind) ? WorkflowKey.KindIdProblem(kind)
+        : workflow is not null && !WorkflowKey.IsId(workflow) ? WorkflowKey.WorkflowProblem(workflow)
         : null;
 }

@@ -19,12 +19,10 @@ public static class IntakeKinds
         var read = new List<IntakeRepositoryKinds>();
         foreach (var repository in repositories)
         {
-            var (otherwise, without) = WorkflowProcesses.Otherwise(home, config, repository, workspace);
+            var (otherwise, mapped) = WorkOrdersWorkflows.Current.KindsOf(home, config, repository, workspace, [.. shared.Kinds.Select(kind => kind.Key)]);
             var lines = new List<IntakeKindLine>();
-            foreach (var kind in shared.Kinds)
+            foreach (var (kind, (name, lowers)) in shared.Kinds.Zip(mapped))
             {
-                var (name, steps) = WorkflowProcesses.Otherwise(home, config, repository, workspace, kind.Key);
-                IReadOnlyList<string>? lowers = steps is null || without is null ? null : Involvement.Lowers(steps, without);
                 lines.Add(new IntakeKindLine(kind.Key, kind.Value.Label, kind.Value.Paths, name, lowers));
             }
 

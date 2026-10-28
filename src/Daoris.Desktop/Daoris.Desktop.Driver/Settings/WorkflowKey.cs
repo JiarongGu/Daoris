@@ -89,6 +89,17 @@ public static class WorkflowKey
 
     public static string KindWorkflowProblem(string kind) => $"kind `{kind}`'s `workflow` names a workflow: its id, or `current`.";
 
+    /// <summary>The workflow drawn from the rules as they stand (design §2.7), which no saved workflow's id may take.</summary>
+    public const string Current = "current";
+
+    /// <summary>Why a choice's workflow is none: not a workflow's id, nor <see cref="Current"/>.</summary>
+    public static string WorkflowProblem(string workflow) =>
+        $"`{workflow}` is not a workflow's id: lower-case letters, digits and dashes, at most 40, such as `docs-to-pr`; or `current`.";
+
+    /// <summary>Why a kind cannot be chosen in a workspace that does not declare it.</summary>
+    public static string UndeclaredInWorkspace(string workspace, string kind) =>
+        $"workspace `{workspace}` declares no kind `{kind}`: a kind is declared first, with its label.";
+
     public const string LandedProblem =
         "its `landed` is an object: its `workflow`, a verification pipeline's id or `current`, and its `gates` where they were accepted.";
 

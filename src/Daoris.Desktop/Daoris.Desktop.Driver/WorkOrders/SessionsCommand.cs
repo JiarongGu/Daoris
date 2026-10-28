@@ -826,7 +826,7 @@ public static class SessionsCommand
     /// <summary>What a session is for: its quest's name (SESSUX1j), a conversation's opening line, Ask Daoris, an ask's intake.</summary>
     private static string Title(SessionRecord record, IReadOnlyDictionary<string, QuestView> quests, IReadOnlyDictionary<string, string> openings) =>
         record.Quest is { } quest ? quests.TryGetValue(quest, out var view) ? view.Name : $"#{quest}"
-        : record.Repository == HelpRoom.Repository ? "Ask Daoris"
+        : record.Repository == KnowledgeRoomIdentity.Repository ? "Ask Daoris"
         : record.Ask is { } ask ? $"Intake for ask #{ask}"
         : openings.TryGetValue(record.Id, out var opening) ? opening
         : $"a conversation in {record.Repository}";
@@ -1714,7 +1714,7 @@ public static class SessionsCommand
     public static Func<string, HandOverAgent?> DrivesBy(string home)
     {
         var built = AdapterSet.Built();
-        return QuestHandOver.Roster(built.WithPlugins(PluginCatalog.Load(home, built.Names)), home);
+        return QuestHandOver.Roster(built.WithPlugins(AgentPluginReads.Current.Load(home, built.Names)), home);
     }
 
     /// <summary>
@@ -1747,7 +1747,7 @@ public static class SessionsCommand
             ids, SessionGroups.Read(look, ids), [.. look.Records.Select(record => record.Id)], DateTimeOffset.UtcNow);
         var said = SessionArchive.ArchiveSaid(answer.Outcomes);
         said.Print(output, output);
-        SessionArchive.Said(world.Log, answer.Outcomes.Count(outcome => outcome.Verdict == ArchiveVerdict.Archived), PluginEvents.Terminal);
+        SessionArchive.Said(world.Log, answer.Outcomes.Count(outcome => outcome.Verdict == ArchiveVerdict.Archived), WorkplaceDoors.Terminal);
         return said.Code;
     }
 
@@ -1780,7 +1780,7 @@ public static class SessionsCommand
 
         var answer = new SessionArchive(world.Home).Archive(ended, rows, [.. look.Records.Select(record => record.Id)], DateTimeOffset.UtcNow);
         var archived = answer.Outcomes.Count(outcome => outcome.Verdict == ArchiveVerdict.Archived);
-        SessionArchive.Said(world.Log, archived, PluginEvents.Terminal);
+        SessionArchive.Said(world.Log, archived, WorkplaceDoors.Terminal);
         output.WriteLine(archived == ended.Count
             ? $"sessions: archived {Sessions(archived)} that ended; `--group archived` lists them, and `unarchive` brings one back."
             : $"sessions: archived {archived} of {ended.Count}; the rest changed since the list.");
@@ -1807,7 +1807,7 @@ public static class SessionsCommand
     private static async Task<int> DeleteAsync(SessionsWorld world, string id, TextWriter output, CancellationToken ct)
     {
         var outcome = await new SessionDeletion(world.Home, world.Remover)
-            .DeleteAsync(world.Service, id, PluginEvents.Terminal, world.Log, ct: ct).ConfigureAwait(false);
+            .DeleteAsync(world.Service, id, WorkplaceDoors.Terminal, world.Log, ct: ct).ConfigureAwait(false);
         output.WriteLine($"sessions: {outcome.Message}");
         return outcome.Verdict != DeleteVerdict.Deleted ? 1 : outcome.Stayed.Count > 0 ? 2 : 0;
     }

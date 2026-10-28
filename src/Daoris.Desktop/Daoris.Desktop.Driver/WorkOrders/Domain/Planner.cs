@@ -35,7 +35,7 @@ public sealed record CannotShowFact(string Code, string Environment, string? Add
     public const string NoWindow = "no-window";
 }
 
-/// <summary>A sit: the fact and the sentence, both from the same branch of <see cref="ReviewSetUps.Sits"/>.</summary>
+/// <summary>A sit: the fact and the sentence, both from the same branch of <see cref="SetUpSits.Sits"/>.</summary>
 public sealed record CannotShowSit(CannotShowFact Fact, string Reason);
 
 /// <summary>
@@ -1237,7 +1237,7 @@ public static class Planner
 
             // A set-up step it cannot honestly start (REVIEWENV1c, design §2.1): no rule here names its environment, or a local one
             // has nowhere to show it. It sits saying why, and no session starts with nothing to show the work in.
-            if (ReviewSetUps.Sits(config, quest, repo.Workspace, window) is { } sits)
+            if (SetUpSits.Sits(config, quest, repo.Workspace, window) is { } sits)
             {
                 return new(quest, StartVerdict.CannotShow, sits.Reason) { CannotShow = sits.Fact };
             }

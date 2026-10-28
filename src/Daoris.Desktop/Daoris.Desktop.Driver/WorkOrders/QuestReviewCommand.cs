@@ -96,7 +96,7 @@ public static class QuestReviewCommand
         if (said is null)
         {
             // REVIEWENV1j: `on` or an environment's name is *Set it up*, judged as a rule judges a name.
-            if (verdict != "on" && ReviewRules.NameProblem(verdict) is { } unnamed)
+            if (verdict != "on" && ReviewKey.NameProblem(verdict) is { } unnamed)
             {
                 problem = $"`{verdict}` is not a verdict or a review choice: `reviewed`, `not-yet` or `skip`; or `off`, `on` or an "
                     + $"environment's name, and {unnamed}";
@@ -162,7 +162,7 @@ public static class QuestReviewCommand
             .ConfigureAwait(false);
         output.WriteLine($"daoris-driver: {message}");
         if (!ok) return 1;
-        world.Log?.Invoke(ReviewLines.Verdict(quest.Id, ask.Said, ReviewDoors.Terminal));
+        world.Log?.Invoke(ReviewDoorWords.Verdict(quest.Id, ask.Said, LandingDoors.Terminal));
 
         // Not yet goes back to the step's session as its next turn (design §3.4, D137): the person's own set-up has no session.
         if (ask.Said == ReviewVerdicts.NotYet)
@@ -188,7 +188,7 @@ public static class QuestReviewCommand
     /// </summary>
     private static async Task<int> SetUpAsync(QuestView quest, string chosen, QuestReviewWorld world, TextWriter output, CancellationToken ct)
     {
-        if (ReviewRules.Resolve(world.Config, quest.To, quest.Workspace) is not { Rule.IsNone: false } declared)
+        if (KnowledgeReviews.Current.Review(world.Config, quest.To, quest.Workspace) is not { Rule.IsNone: false } declared)
         {
             output.WriteLine($"daoris-driver: `{quest.To}` declares no review environment, so nothing of its work can be shown for review: "
                 + $"`daoris driver review {quest.To} <environment> --kind local|deployed --procedure <path>` declares one. Nothing was published.");
@@ -199,7 +199,7 @@ public static class QuestReviewCommand
         var environment = chosen == "on" ? names[0] : chosen;
         if (!names.Contains(environment))
         {
-            output.WriteLine($"daoris-driver: `{quest.To}` declares no review environment `{environment}`: it declares {ReviewRules.Either(names)}. "
+            output.WriteLine($"daoris-driver: `{quest.To}` declares no review environment `{environment}`: it declares {ReviewDoorWords.Either(names)}. "
                 + "Nothing was published.");
             return 1;
         }
