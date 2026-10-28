@@ -19,11 +19,14 @@ interface Failure { unit?: string; test?: string | undefined; gate: string; sign
 interface Member { branch: string; tip: string; request?: string; message?: string; commit?: string; handedBack?: { how: string; failure?: string; with?: string[]; interacting?: string[]; paths?: string[]; why?: string } }
 interface Judged { outcome: string; member?: number; with?: number[]; interacting?: number[]; why?: string; said?: string; runs: unknown[] }
 interface Candidate { base: string; tip: string; members: Member[]; state: string; reforms: number; recordsOnly: boolean; held?: { on: string; why: string }; run?: { pid: number } }
-interface Queue { schema: number; queued: Member[]; previews: Record<string, { tip: string }>; candidate: Candidate | null; stop: unknown; handedBack: Member[]; landed?: Member[] }
+interface Queue { schema: number; queued: Member[]; previews: Record<string, { tip: string }>; candidate: Candidate | null; stop: unknown; handedBack: Member[]; landed?: Member[]; drained?: Drained }
 interface Reservation { runner: string; gate: string; needGb: number; job: string }
 interface Admission { schema: number; reservations: Reservation[]; scopedTier: { state: string; since: string } | null; waiting: unknown[] }
 interface Job { state: string; workingGb?: number; committedGb?: number; why?: string }
 interface Rule { lane?: string; paths?: string[]; gates: string[] | '*' }
+interface Drained { tip: string; at: string; ended: string[]; left: string[]; probe: string | null }
+interface Trees { ended: string | null; hold: (pid: number) => void; release: (pid: number) => boolean; end: (why: string) => void }
+interface Watch { trees: Trees; check: () => boolean; start: () => Watch; stop: () => void }
 
 const q = await import(
   // @ts-expect-error — untyped workspace tooling; the same seam merge-branch.test.ts documents
@@ -39,7 +42,9 @@ const q = await import(
   notePreview: (queue: Queue, preview: { branch: string; tip: string; base: string; at: string }) => Queue;
   enqueue: (queue: Queue, request: { branch: string; tip: string; message: string | null; at: string; requeue?: boolean }) => { queue?: Queue; entry?: Member; refused?: string };
   messageOf: (entry: Member) => string;
-  dropQueued: (queue: Queue, branches: string[], at?: string) => { queue: Queue; dropped: string[] };
+  dropQueued: (queue: Queue, branches: string[], at?: string) => { queue: Queue; dropped: string[]; ended: Candidate | null };
+  drainedRecord: (candidate: Candidate, what: { ended?: string[]; left?: string[]; probe?: string | null }, at?: string) => Drained;
+  drainedLine: (drained: Drained) => string;
   sameCandidate: (current: Candidate | null, expected: Candidate) => boolean;
   changeCandidate: (queue: Queue, expected: Candidate, change: (queue: Queue) => { queue: Queue }) => { queue?: Queue; obsolete?: boolean };
   nextMembers: (queued: Member[], options?: { max?: number; oneAtATime?: boolean }) => { members: Member[]; rest: Member[] };
@@ -75,6 +80,9 @@ const tool = await import(
   ruleFor: (path: string, rules: Rule[], lanes: unknown[]) => Rule | null;
   readLanes: (root: string) => { lanes: unknown[] } | null;
   endTree: (pid: number) => void;
+  stepTrees: (options?: { end?: (pid: number) => void }) => Trees;
+  watchCandidate: (candidate: Candidate, current: () => Candidate | null, trees: Trees, options?: { ms?: number }) => Watch;
+  prefixRunner: (tree: string, candidate: { base: string; members: Member[] }, plan: { name: string; run: string }[], dir: string, watch?: Watch | null) => (failure: Failure, k: number) => Promise<Outcome>;
 };
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
@@ -184,6 +192,44 @@ describe('the queue: a frozen request, read before it is queued', () => {
     const result = q.changeCandidate({ ...q.emptyQueue(), candidate: current }, expected,
       (queue) => ({ queue: { ...queue, candidate: { ...current, state: 'green' } } }));
     assert.equal(result.queue!.candidate!.state, 'green');
+  });
+
+  test('QUEUEDRAIN1: a drop answers the candidate it ended, and a queued branch ends none; what a drain ended is said whole', () => {
+    const queue = { ...q.emptyQueue(), queued: members(1), candidate: { base: 'm', tip: 'c', members: members(2).map((each) => ({ ...each, branch: `c${each.branch}` })), state: 'running', reforms: 0, recordsOnly: false } };
+    assert.equal(q.dropQueued(queue, ['b1']).ended, null, 'a queued branch has no run to end');
+    assert.equal(q.dropQueued(queue, ['cb2']).ended, queue.candidate);
+    const drained = q.drainedRecord(queue.candidate, { ended: ['check', 'driver'], left: ['modules'], probe: 'driver.prefix-2' }, AT);
+    assert.deepEqual(drained, { tip: 'c', at: AT, ended: ['check', 'driver'], left: ['modules'], probe: 'driver.prefix-2' });
+    assert.equal(q.drainedLine(drained), 'ended gates check, driver, the probe driver.prefix-2, each with everything it started; never started: modules');
+    assert.equal(q.drainedLine(q.drainedRecord(queue.candidate, {}, AT)), 'ended no gate running, each with everything it started');
+  });
+
+  test('QUEUEDRAIN1: the watch ends the run\'s step trees once the candidate is no longer the queue\'s, and a read that fails is not a drop', () => {
+    const candidate: Candidate = { base: 'm', tip: 'c', members: [{ branch: 'b1', tip: 'b', commit: 'c', request: 'first' }], state: 'running', reforms: 0, recordsOnly: false };
+    const ended: number[] = [];
+    const trees = tool.stepTrees({ end: (pid) => { ended.push(pid); } });
+    trees.hold(101);
+    trees.hold(102);
+    let current: Candidate | null = { ...candidate, state: 'bisecting' };
+    let unreadable = false;
+    const watch = tool.watchCandidate(candidate, () => {
+      if (unreadable) throw new Error('the queue is locked');
+      return current;
+    }, trees);
+    assert.equal(watch.check(), false, 'a state change is not a drop');
+    unreadable = true;
+    assert.equal(watch.check(), false, 'a record that cannot be read ends nothing');
+    assert.deepEqual(ended, []);
+    unreadable = false;
+    current = null;
+    assert.equal(watch.check(), true);
+    assert.deepEqual(ended, [101, 102], 'every step held, and only those');
+    assert.equal(trees.ended, 'the candidate was dropped or replaced');
+    current = candidate;
+    assert.equal(watch.check(), true, 'once ended it stays ended');
+    assert.deepEqual(ended, [101, 102], 'ended once');
+    const replaced = tool.watchCandidate(candidate, () => ({ ...candidate, members: [{ ...candidate.members[0]!, request: 'second' }] }), tool.stepTrees({ end: () => {} }));
+    assert.equal(replaced.check(), true, 'the same tip queued again is another request');
   });
 
   test('the record survives a write and a read', () => {
@@ -674,16 +720,26 @@ function queueScratch(name: string) {
   // index and takes `index.lock` to write it back, so a test's git write on this repository met the lock now and then. The
   // runner is told to take no optional lock: it reads the checkout as before and never holds the index, so the test's writes
   // need no retry and no sleep. A write the queue itself makes (the fast-forward, the scope tree's merges) is not optional.
-  const env = { ...GIT_ENV, GIT_OPTIONAL_LOCKS: '0', MERGE_BRANCH_MEMORY: 'off', MERGE_BRANCH_CI_NIGHT_HOUR: 'off', MERGE_BRANCH_QUEUE_POLL_MS: '200', MERGE_BRANCH_QUEUE_TICK_MS: '300' };
+  const env = { ...GIT_ENV, GIT_OPTIONAL_LOCKS: '0', MERGE_BRANCH_MEMORY: 'off', MERGE_BRANCH_CI_NIGHT_HOUR: 'off', MERGE_BRANCH_QUEUE_POLL_MS: '200', MERGE_BRANCH_QUEUE_TICK_MS: '300', MERGE_BRANCH_DROP_POLL_MS: '200' };
   // Every invocation the test started and has not seen end: a failed assertion leaves them for `cleanup` to end.
   const started = new Set<ChildProcess>();
   const queueFile = join(root, 'local', 'merge-queue.json');
   const queue = () => (existsSync(queueFile)
     ? JSON.parse(readFileSync(queueFile, 'utf8')) as Queue & { runner: unknown }
     : null);
+  const admissionFile = join(root, 'local', 'admission.json');
   return {
     root,
     queue,
+    /** The admission record as it stands, `{}` where none is written, undefined for a read that met a write. */
+    admission(): { scopedTier?: { state: string } | null } | undefined {
+      if (!existsSync(admissionFile)) return {};
+      try {
+        return JSON.parse(readFileSync(admissionFile, 'utf8'));
+      } catch {
+        return undefined;
+      }
+    },
     branch(branchName: string, files: Record<string, string>) {
       sh(root, 'checkout', '--quiet', '-b', branchName, 'main');
       for (const [path, text] of Object.entries(files)) writeFileSync(join(root, path), text);
@@ -727,6 +783,38 @@ function queueScratch(name: string) {
       fx.cleanup();
     },
   };
+}
+
+/** The processes a held gate writes its pid for: the gate itself, what it started, and what that started. */
+const TREE = ['check', 'child', 'grandchild'];
+const pidsIn = (dir: string) => TREE.filter((role) => existsSync(join(dir, `${role}.pid`))).map((role) => Number(readFileSync(join(dir, `${role}.pid`), 'utf8')));
+
+/**
+ * A gate that, when `holdWhen` holds, writes its pid, starts a child that starts a grandchild (each writing its own), and waits
+ * for `release` in `QUEUE_DRAIN_DIR`: a process tree three deep, the shape a build and its test hosts make. `count` is how many
+ * times `check` has run there. With `record`, the arguments it was given are kept in `args`.
+ */
+function treeGate(holdWhen: string, record = ''): string {
+  return [
+    "import { appendFileSync, existsSync, readFileSync, writeFileSync } from 'node:fs';",
+    "import { spawn } from 'node:child_process';",
+    'const dir = process.env.QUEUE_DRAIN_DIR;',
+    'const role = process.argv[2];',
+    "const wait = async () => { while (!existsSync(`${dir}/release`)) await new Promise((done) => setTimeout(done, 25)); };",
+    'let count = 0;',
+    "if (dir && role === 'check') { appendFileSync(`${dir}/runs`, 'x'); count = readFileSync(`${dir}/runs`, 'utf8').length; }",
+    record ? `if (dir && role === 'check') writeFileSync(\`\${dir}/${record}\`, process.argv.slice(3).join(' '));` : '',
+    `const holding = role === 'child' || role === 'grandchild' || (role === 'check' && dir && (${holdWhen}));`,
+    'if (holding) {',
+    "  writeFileSync(`${dir}/${role}.pid`, String(process.pid));",
+    "  if (role === 'check') spawn(process.execPath, [process.argv[1], 'child'], { stdio: 'ignore' });",
+    "  if (role === 'child') spawn(process.execPath, [process.argv[1], 'grandchild'], { stdio: 'ignore' });",
+    '  await wait();',
+    '}',
+    'console.log(`${role} ran`);',
+    "if (role === 'check' && existsSync('break-check')) { console.log('error: check is broken'); process.exit(1); }",
+    '',
+  ].join('\n');
 }
 
 describe('the queue, end to end in a scratch repository', { concurrency: true }, () => {
@@ -941,6 +1029,152 @@ describe('the queue, end to end in a scratch repository', { concurrency: true },
       assert.match(ended.out, /no verdict within 5000 ms/);
       assert.deepEqual(repo.running(), []);
     } finally {
+      await repo.cleanup();
+    }
+  });
+
+  test('QUEUEDRAIN1: a candidate dropped while its gate runs ends the gate, its child and grandchild; the scoped tier is released after; what is not its own survives; the next candidate forms at once', async () => {
+    const repo = queueScratch('drain-gate');
+    const dir = join(repo.root, 'local', 'drain');
+    mkdirSync(dir, { recursive: true });
+    const bystander = spawn(process.execPath, ['-e', 'setInterval(() => {}, 1000)'], { stdio: 'ignore' });
+    try {
+      repo.branch('b1', { 'hold-check': 'x\n', 'qgate.mjs': treeGate("existsSync('hold-check')") });
+      repo.branch('b2', { 'b.txt': 'b\n' });
+      for (const name of ['b1', 'b2']) assert.equal((await repo.run([name, '--preview'])).status, 0);
+      const env = { QUEUE_DRAIN_DIR: dir };
+      const first = repo.run(['b1', '--message', 'local/b1.msg'], env);
+      await repo.until(() => TREE.every((role) => existsSync(join(dir, `${role}.pid`))));
+      const pids = pidsIn(dir);
+      assert.equal(pids.length, 3, repo.log());
+      assert.ok(pids.every(alive), 'the gate and what it started run');
+      await repo.until(() => repo.admission()?.scopedTier?.state === 'running');
+      assert.equal(repo.admission()?.scopedTier?.state, 'running');
+      const second = repo.run(['b2', '--message', 'local/b2.msg'], env);
+      await repo.until(() => (repo.queue()?.queued.length ?? 0) === 1);
+      // The tier must never read released while a process of the dropped run still lives: read the tier first, then the processes.
+      const unsafe: string[] = [];
+      const sampled = (async () => {
+        while (pids.some(alive)) {
+          const record = repo.admission();
+          const released = record !== undefined && !record.scopedTier;
+          if (released && pids.some(alive)) unsafe.push('the scoped tier was released while a process of the dropped run lived');
+          await pause(10);
+        }
+      })();
+      const dropped = await repo.run(['--drop-batch', 'b1']);
+      assert.equal(dropped.status, 0, dropped.out);
+      assert.match(dropped.out, /taken off the queue: b1/);
+      assert.match(dropped.out, /the runner \(pid \d+\) ended gates .*check.*each with everything it started/);
+      await sampled;
+      assert.deepEqual(unsafe, []);
+      assert.deepEqual(pids.filter(alive), [], 'the gate, its child and its grandchild are gone, though nothing released them');
+      assert.equal(alive(bystander.pid!), true, 'a process the run did not start is left alone');
+      assert.equal((await first).status, 1);
+      const promoted = await second;
+      assert.equal(promoted.status, 0, `${promoted.out}\n${repo.log()}`);
+      assert.match(promoted.out, /b2 is in main/);
+      assert.equal(existsSync(join(repo.root, 'b.txt')), true);
+      assert.equal(existsSync(join(repo.root, 'hold-check')), false, 'the dropped branch never lands');
+      assert.match(repo.log(), /was dropped or replaced: ended gates .*check/);
+      const runs = q.readScopeRuns(repo.root) as { state: string; members: { branch: string }[]; drained?: Drained }[];
+      const ended = runs.find((each) => each.members.some((member) => member.branch === 'b1'));
+      assert.equal(ended?.state, 'ended');
+      assert.ok(ended?.drained?.ended.includes('check'));
+      assert.equal(runs.at(-1)?.state, 'green');
+    } finally {
+      writeFileSync(join(dir, 'release'), '');
+      bystander.kill();
+      await repo.cleanup();
+    }
+  });
+
+  test('QUEUEDRAIN1: a candidate dropped during a failure probe ends the probe with its tree, starts no more, and the runner is free', async () => {
+    const repo = queueScratch('drain-probe');
+    const dir = join(repo.root, 'local', 'drain');
+    const hold = join(repo.root, 'local', 'go');
+    mkdirSync(dir, { recursive: true });
+    try {
+      // The first run of `check` (the candidate's) fails; every run after it is a probe, and a probe holds.
+      writeFileSync(join(repo.root, 'qgate.mjs'), treeGate('count >= 2'));
+      sh(repo.root, 'commit', '--quiet', '-am', `a gate that holds its probes${TRAILER}`);
+      repo.branch('good', { 'good.txt': 'fine\n' });
+      repo.branch('bad', { 'break-check': 'x\n' });
+      for (const name of ['good', 'bad']) assert.equal((await repo.run([name, '--preview'])).status, 0);
+      const env = { QUEUE_DRAIN_DIR: dir, MERGE_BRANCH_QUEUE_HOLD: hold };
+      const good = repo.run(['good', '--message', 'local/good.msg'], env);
+      await repo.until(() => (repo.queue()?.queued.length ?? 0) === 1);
+      const bad = repo.run(['bad', '--message', 'local/bad.msg'], env);
+      await repo.until(() => (repo.queue()?.queued.length ?? 0) === 2);
+      writeFileSync(hold, '');
+      await repo.until(() => TREE.every((role) => existsSync(join(dir, `${role}.pid`))));
+      const pids = pidsIn(dir);
+      assert.equal(pids.length, 3, repo.log());
+      assert.equal(readFileSync(join(dir, 'runs'), 'utf8').length, 2, 'the candidate ran once, and its first probe is the one held');
+      assert.ok(pids.every(alive));
+      const dropped = await repo.run(['--drop-batch', 'good']);
+      assert.equal(dropped.status, 0, dropped.out);
+      assert.match(dropped.out, /the probe check\.prefix-1/);
+      assert.deepEqual(pids.filter(alive), [], 'the probe, its child and its grandchild are gone');
+      assert.equal((await good).status, 1);
+      assert.equal((await bad).status, 1);
+      // A runner that went on probing would hold at the next probe for ever; it is idle, and no probe started after the drop.
+      await repo.until(() => !repo.queue()?.runner);
+      assert.equal(repo.queue()?.runner, null, repo.log());
+      assert.equal(readFileSync(join(dir, 'runs'), 'utf8').length, 2);
+      assert.match(repo.log(), /was dropped or replaced: ended no gate running, the probe check\.prefix-1/);
+      const runs = q.readScopeRuns(repo.root) as { state: string; judged?: unknown }[];
+      assert.equal(runs.at(-1)?.state, 'ended');
+      assert.equal(runs.at(-1)?.judged, undefined, 'a judgement cut short is not recorded');
+      assert.equal(existsSync(join(repo.root, 'good.txt')), false);
+    } finally {
+      writeFileSync(join(dir, 'release'), '');
+      writeFileSync(hold, '');
+      await repo.cleanup();
+    }
+  });
+
+  test('QUEUEDRAIN1: a class probe, which runs the gate narrowed to the failing class, is ended with its tree when the candidate is dropped, and none starts after', async () => {
+    const repo = queueScratch('drain-class');
+    const dir = join(repo.root, 'local', 'drain');
+    const shims = join(repo.root, 'local', 'shims');
+    mkdirSync(dir, { recursive: true });
+    mkdirSync(shims, { recursive: true });
+    const path = process.env.PATH ?? process.env.Path ?? '';
+    try {
+      // A `dotnet` that records what it was asked and holds, with a child and a grandchild, as a test host does.
+      writeFileSync(join(shims, 'dotnet.mjs'), treeGate('true', 'args'));
+      if (process.platform === 'win32') writeFileSync(join(shims, 'dotnet.cmd'), `@node "%~dp0dotnet.mjs" check %*\r\n`);
+      else {
+        writeFileSync(join(shims, 'dotnet'), '#!/bin/sh\nexec node "$(dirname "$0")/dotnet.mjs" check "$@"\n', { mode: 0o755 });
+      }
+      process.env.PATH = `${shims}${process.platform === 'win32' ? ';' : ':'}${path}`;
+      process.env.QUEUE_DRAIN_DIR = dir;
+      repo.branch('b1', { 'a.txt': 'a\n' });
+      const base = sh(repo.root, 'rev-parse', 'main');
+      const commit = sh(repo.root, 'rev-parse', 'b1');
+      const candidate: Candidate = { base, tip: commit, members: [{ branch: 'b1', tip: commit, commit, request: 'first' }], state: 'running', reforms: 0, recordsOnly: false };
+      let current: Candidate | null = candidate;
+      const watch = tool.watchCandidate(candidate, () => current, tool.stepTrees(), { ms: 50 }).start();
+      const plan = [{ name: 'driver', run: 'dotnet test Fixture.csproj --filter "Category!=Process"' }];
+      const failure: Failure = { unit: 'SessionTests', test: 'Driver.Tests.SessionTests.Resumes', gate: 'driver', signature: sig('x'), names: 'test' };
+      const probe = tool.prefixRunner(repo.root, candidate, plan, dir, watch);
+      const running = probe(failure, 1).then(() => 'answered', (error: Error) => error.message);
+      await repo.until(() => TREE.every((role) => existsSync(join(dir, `${role}.pid`))));
+      const pids = pidsIn(dir);
+      assert.equal(pids.length, 3);
+      assert.match(readFileSync(join(dir, 'args'), 'utf8'), /\(Category!=Process\)&\(FullyQualifiedName~SessionTests\)/, 'the probe is the gate narrowed to the failing class');
+      current = null;
+      assert.match(await running, /was dropped/);
+      assert.deepEqual(pids.filter(alive), [], 'the class probe, its child and its grandchild are gone');
+      const runsBefore = readFileSync(join(dir, 'args'), 'utf8');
+      await assert.rejects(probe(failure, 0), /was dropped/);
+      assert.equal(readFileSync(join(dir, 'args'), 'utf8'), runsBefore, 'no probe started after the drop');
+      watch.stop();
+    } finally {
+      process.env.PATH = path;
+      delete process.env.QUEUE_DRAIN_DIR;
+      writeFileSync(join(dir, 'release'), '');
       await repo.cleanup();
     }
   });

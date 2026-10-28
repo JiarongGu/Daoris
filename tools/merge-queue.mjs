@@ -147,7 +147,10 @@ export function enqueue(queue, { branch, tip, message, at, requeue = false }) {
 /** A queued request's message, as its bytes were at enqueue. */
 export const messageOf = (entry) => Buffer.from(entry.message ?? '', 'base64').toString('utf8');
 
-/** Queued branches taken off the queue; a candidate's branches end it and are handed back (`--drop-batch`). */
+/**
+ * Queued branches taken off the queue; a candidate's branches end it and are handed back (`--drop-batch`). Answers the queue, the
+ * branches dropped and, when a candidate ended, `ended`: that candidate, whose runner (QUEUEDRAIN1) is the one to end its run.
+ */
 export function dropQueued(queue, branches, at = new Date().toISOString()) {
   const drop = (branch) => branches.length === 0 || branches.includes(branch);
   const ends = Boolean(queue.candidate?.members.some((each) => drop(each.branch)));
@@ -156,7 +159,22 @@ export function dropQueued(queue, branches, at = new Date().toISOString()) {
   return {
     queue: { ...queue, queued: queue.queued.filter((each) => !drop(each.branch)), candidate: ends ? null : queue.candidate, handedBack: [...(queue.handedBack ?? []), ...back] },
     dropped,
+    ended: ends ? queue.candidate : null,
   };
+}
+
+/**
+ * QUEUEDRAIN1: what the runner records once it has ended a dropped candidate's run, for the drop's answer to read: the candidate's
+ * tip, the gates it ended running and the ones it never started, and the probe it ended (a failure probe's name), else null.
+ */
+export const drainedRecord = (candidate, { ended = [], left = [], probe = null }, at = new Date().toISOString()) => ({ tip: candidate.tip, at, ended, left, probe });
+
+/** The sentence that says what a drain ended, for the queue log and the drop's answer. */
+export function drainedLine(drained) {
+  const gates = drained.ended.length ? `gates ${drained.ended.join(', ')}` : 'no gate running';
+  const probe = drained.probe ? `, the probe ${drained.probe}` : '';
+  const left = drained.left.length ? `; never started: ${drained.left.join(', ')}` : '';
+  return `ended ${gates}${probe}, each with everything it started${left}`;
 }
 
 /** Whether an awaited result still belongs to this frozen candidate, including each enqueue occurrence (QUEUEDROP1). */

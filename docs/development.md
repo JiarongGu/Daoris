@@ -280,6 +280,18 @@ twice holds the candidate until memory is free; it never runs on the base and ne
 stop, the candidate and its members, what is queued (and whether a branch has moved past its frozen tip), and what was handed
 back. `--drop-batch <branch>` takes a queued branch off, or ends the candidate that holds it.
 
+**A drop ends the run it dropped** (QUEUEDRAIN1). The runner holds every step of a candidate's run, its gates and its failure
+probes (prefix and class), in one set of step trees, the cancellation a superseded CI run uses, and every two seconds, and before each
+probe, it reads the candidate under the queue's lock. Once it is no longer that frozen candidate (dropped, or replaced by a
+requeue that forms another), the runner ends each step running with its whole tree (`taskkill /T` on Windows, `ps` elsewhere),
+starts no gate and no probe more, files nothing the cut judgement had found, and forms the next queued work at once. The scoped
+tier in `local/admission.json` is released only after the run's last step has ended. It ends only what that run started, by the pid of
+each step: another runner, a CI run, a driven session's build, the install and a build server are not in its trees. `--drop-batch`
+waits, for thirty seconds at most, for the runner's record of what it ended, and says it (the gates, the probe, the gates never started);
+`local/merge-queue.log` has the same line, and `local/scope-runs.jsonl` an `ended` run carrying it. A drop that comes while the scope tree
+installs its dependencies lets the install finish, and no gate starts after it. What a step's own process left running after its
+parent ended is in no tree (CIPRIO1c's limit).
+
 `local/admission.json` is the admission record both runners will share (§5.1): the scoped tier's state, and reservations
 released only on a read of their job that finds it empty. The scoped runner writes its tier there. The background run does not
 yet read it, and gates run in no job object yet (CISCOPE1e2). The scoped runner runs at normal priority with build servers of
