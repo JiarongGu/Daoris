@@ -17,6 +17,7 @@ public sealed class ServiceHttp : IServiceDoors
     {
         BaseUrl = baseUrl.TrimEnd('/');
         _http = http ?? DriverHttp.Client(key);
+        RetryAfter = http is null ? TimeSpan.FromSeconds(1) : null;
         if (http is not null && !string.IsNullOrWhiteSpace(key))
         {
             _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", key);
@@ -44,7 +45,9 @@ public sealed class ServiceHttp : IServiceDoors
     /// </remarks>
     /// <param name="baseDirectory">Where this program runs from, which says whether an install carries it.</param>
     /// <param name="answers">What an address's status door answers as a Daoris host, or null (HOMEID1: its home is checked).</param>
-    public static ServiceHttp FromEnvironment(Func<string, string?> environment, string baseDirectory, Func<string, ServiceStatus?> answers)
+    /// <param name="retryAfter">The wait before a status door that did not answer is asked again (SERVICESTALL1); null is <see cref="RunningService.RetryAfter"/>.</param>
+    public static ServiceHttp FromEnvironment(
+        Func<string, string?> environment, string baseDirectory, Func<string, ServiceStatus?> answers, TimeSpan? retryAfter = null)
     {
         var url = environment(ServiceClient.UrlVariable);
         if (string.IsNullOrWhiteSpace(url))
@@ -55,7 +58,9 @@ public sealed class ServiceHttp : IServiceDoors
                 throw new DriverException(NoService);
             }
 
-            url = RunningService.Find(home, install, answers, out var why) ?? throw new DriverException($"{NoService} {why}");
+            // An address the home left that nothing answered at is not a missing variable: its sentence says what was seen, alone.
+            url = RunningService.Find(home, install, answers, out var why, out var unanswered, retryAfter ?? RunningService.RetryAfter)
+                ?? throw new DriverException(unanswered ? why : $"{NoService} {why}");
         }
 
         return new ServiceHttp(url, environment(ServiceClient.KeyVariable));
@@ -65,20 +70,79 @@ public sealed class ServiceHttp : IServiceDoors
 
     // Through DriverHttp, so a refused read carries the service's own sentence — a bare
     // EnsureSuccessStatusCode threw it away, and the driver's log said less than the service said.
-    public Task<string> GetAsync(string path, CancellationToken ct) => DriverHttp.GetAsync(_http, $"{BaseUrl}{path}", ct);
+    /// <summary>
+    /// The wait before a read that met the client's own bound is asked once more, and the switch for saying a stall as one
+    /// (SERVICESTALL1, SERVICESTALL1b): set where this client's bound is its own, which is the default for the client the driver
+    /// makes; null where the caller handed in its client, whose timeout is then the caller's deadline and ends a request as the
+    /// cancellation it is, as the loop's look names it (DEV3b).
+    /// </summary>
+    public TimeSpan? RetryAfter { get; init; }
 
-    public Task<string> PostAsync(string path, string json, CancellationToken ct) => DriverHttp.PostAsync(_http, $"{BaseUrl}{path}", json, ct);
+    public Task<string> GetAsync(string path, CancellationToken ct) =>
+        Attempt(read: true, path, () => DriverHttp.GetAsync(_http, $"{BaseUrl}{path}", ct), ct);
 
-    public async Task<ServiceReply> SendAsync(ServiceVerb verb, string path, string? json, CancellationToken ct)
-    {
-        using var request = new HttpRequestMessage(Method(verb), $"{BaseUrl}{path}");
-        if (json is not null) request.Content = new StringContent(json, Encoding.UTF8, "application/json");
-        using var response = await _http.SendAsync(request, ct).ConfigureAwait(false);
-        return new ServiceReply((int)response.StatusCode, await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false))
+    public Task<string> PostAsync(string path, string json, CancellationToken ct) =>
+        Attempt(read: false, path, () => DriverHttp.PostAsync(_http, $"{BaseUrl}{path}", json, ct), ct);
+
+    public Task<ServiceReply> SendAsync(ServiceVerb verb, string path, string? json, CancellationToken ct) =>
+        Attempt(read: verb == ServiceVerb.Get, path, async () =>
         {
-            Tier = response.Headers.TryGetValues("x-daoris-tier", out var tier) ? tier.FirstOrDefault() : null,
-            Run = response.Headers.TryGetValues("x-daoris-run", out var run) ? run.FirstOrDefault() : null,
-        };
+            using var request = new HttpRequestMessage(Method(verb), $"{BaseUrl}{path}");
+            if (json is not null) request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+            using var response = await _http.SendAsync(request, ct).ConfigureAwait(false);
+            return new ServiceReply((int)response.StatusCode, await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false))
+            {
+                Tier = response.Headers.TryGetValues("x-daoris-tier", out var tier) ? tier.FirstOrDefault() : null,
+                Run = response.Headers.TryGetValues("x-daoris-run", out var run) ? run.FirstOrDefault() : null,
+            };
+        }, ct);
+
+    /// <summary>
+    /// One request, said as what it saw where the client's own bound ran out (SERVICESTALL1, SERVICESTALL1b): a read is asked once more
+    /// after <see cref="RetryAfter"/>, since asking again changes nothing; a press that changes state is never asked again blindly, since
+    /// the service may have done it before it stopped answering. Nothing else is retried or reworded: a refusal is an answer, a service
+    /// that could not be reached is said as itself, and a cancellation the caller asked for, by its token or by the timeout of the
+    /// client it handed in (<see cref="RetryAfter"/> null), ends the call at once as that cancellation.
+    /// </summary>
+    private async Task<T> Attempt<T>(bool read, string path, Func<Task<T>> send, CancellationToken ct)
+    {
+        if (RetryAfter is not { } wait) return await send().ConfigureAwait(false);
+        try
+        {
+            return await send().ConfigureAwait(false);
+        }
+        catch (Exception first) when (Stalled(first, ct))
+        {
+            if (!read) throw Said(path, first, wait, again: false);
+            await Task.Delay(wait, ct).ConfigureAwait(false);
+            try
+            {
+                return await send().ConfigureAwait(false);
+            }
+            catch (Exception second) when (Stalled(second, ct))
+            {
+                throw Said(path, second, wait, again: true);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Whether the client's own bound ran out while the caller's token stood: <see cref="HttpClient"/> cancels with a
+    /// <see cref="TimeoutException"/> inside, and only that is a stall.
+    /// </summary>
+    private static bool Stalled(Exception error, CancellationToken ct) =>
+        !ct.IsCancellationRequested && error is TimeoutException or TaskCanceledException { InnerException: TimeoutException };
+
+    /// <summary>What the driver saw: the address, the bound that ran out, whether it asked again, and where it did not what to look at. The type stays the one a caller already catches.</summary>
+    private HttpRequestException Said(string path, Exception error, TimeSpan wait, bool again)
+    {
+        var then = again
+            ? $", and not again after a second try {RunningService.Seconds(wait)} later"
+            : ". This asked for a change, so it was not asked again: the service may have done it before it stopped answering, so look at what it "
+              + "changes (the session, quest or ask it names) before you press it again";
+        return new HttpRequestException(
+            $"the service at {BaseUrl} did not answer within {RunningService.Seconds(_http.Timeout)} to {path}{then}. The address was found, so "
+            + $"{ServiceClient.UrlVariable} is not what is missing: the service may be busy, so run this again in a moment.", error);
     }
 
     public void Dispose() => _http.Dispose();

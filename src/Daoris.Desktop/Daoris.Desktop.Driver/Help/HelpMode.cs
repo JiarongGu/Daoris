@@ -27,7 +27,7 @@ public static class HelpModes
     /// A record's mode as read (HELPMODE1a2, D183 point 3): full where it says full, in any case; restricted for none, a record from
     /// before the modes, and for one this build does not know, as the driver's file reads it.
     /// </summary>
-    public static string Recorded(string? kept) => Named(kept) == Full ? Full : Restricted;
+    public static string Recorded(string? kept) => HelpModeNames.Recorded(kept);
 
     /// <summary>How a conversation runs in <paramref name="mode"/>, in a sentence: restricted, or with full access.</summary>
     private static string Runs(string mode) => Recorded(mode) == Full ? "with full access" : "restricted";

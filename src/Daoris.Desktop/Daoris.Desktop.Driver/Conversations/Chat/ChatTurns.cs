@@ -59,7 +59,7 @@ internal sealed class ChatTurns(
     Func<ChatMessage, Task?>? steer = null,
     Func<ChatMessage, Task?>? steerNow = null,
     Func<bool>? nextStep = null,
-    Func<Task>? settled = null)
+    Func<Task>? settled = null) : IChatTurns
 {
     private readonly object _gate = new();
     private readonly List<ChatMessage> _waiting = [];
@@ -127,13 +127,13 @@ internal sealed class ChatTurns(
     /// Told how many words a turn left waiting on their record because the record did not name them marked attempted (FOUNDATION1 row p, the
     /// design §3.4 rule 5): nothing was written for them, and the conversation says so. Null says nothing.
     /// </summary>
-    internal Action<int>? Unsent { get; set; }
+    public Action<int>? Unsent { get; set; }
 
     /// <summary>
     /// The record's door for words kept there before this queue took them (COWORK1c): a helper's answer, kept by the driver, taken off by
     /// its id once its turn is on the wire, in the same order as the person's words. The first door named stays.
     /// </summary>
-    internal void Keeps(ISaidDoor door)
+    public void Keeps(ISaidDoor door)
     {
         lock (_gate) _door ??= door;
     }
@@ -146,7 +146,7 @@ internal sealed class ChatTurns(
     /// and the answer then goes no further, kept on its record. Named by whoever says a helper's answer, as <see cref="Keeps"/> names the
     /// door; the first named stays.
     /// </summary>
-    internal void Bounds(Func<ChatMessage, Task<bool>> alone)
+    public void Bounds(Func<ChatMessage, Task<bool>> alone)
     {
         lock (_gate) _alone ??= alone;
     }
@@ -290,7 +290,7 @@ internal sealed class ChatTurns(
             : null;
 
     /// <summary>The driver's English for <see cref="Lost"/>: what its console says and a page that does not know the code shows.</summary>
-    public const string LostLine = "— it may have read what you added; its answer was not kept.";
+    public const string LostLine = SessionNotes.LostLine;
 
     /// <summary>
     /// The line a driven session's record keeps of a held word the person took back or reworded (QUEUEEDIT1a): its code, which
@@ -497,7 +497,7 @@ internal sealed class ChatTurns(
         }
     }
 
-    internal Func<bool>? Closing { get; set; }
+    public Func<bool>? Closing { get; set; }
 
     /// <summary>Take words again after <see cref="Hold"/>: the take did not end the conversation, or it has ended and nothing listens.</summary>
     public void Release()

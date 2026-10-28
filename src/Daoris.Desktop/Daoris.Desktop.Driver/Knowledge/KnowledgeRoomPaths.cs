@@ -59,4 +59,26 @@ internal static class KnowledgeRoomPaths
 
         return $"{Folder}-{name}";
     }
+
+    /// <summary>
+    /// The workspace whose room a kept conversation goes on in (ASKSCOPE1b): its record's, save one whose record says it ran in
+    /// <c>default</c>'s room (<paramref name="tree"/>, <see cref="PathOf(string)"/>), started there before each workspace had its own,
+    /// which goes on there, its harness keeping it by that folder; null is <c>default</c>'s.
+    /// </summary>
+    internal static string? GoesOnIn(string home, string? workspace, string? tree) =>
+        tree is { Length: > 0 } && Same(tree, PathOf(home)) ? null : ScopeOf(workspace);
+
+    private static bool Same(string one, string other)
+    {
+        try
+        {
+            return string.Equals(
+                Path.TrimEndingDirectorySeparator(Path.GetFullPath(one)), Path.TrimEndingDirectorySeparator(Path.GetFullPath(other)),
+                StringComparison.OrdinalIgnoreCase);
+        }
+        catch (Exception error) when (error is ArgumentException or NotSupportedException or PathTooLongException)
+        {
+            return false;
+        }
+    }
 }
