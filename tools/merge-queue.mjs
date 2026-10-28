@@ -18,10 +18,14 @@
  *   against main's tip, its diff and gates printed, nothing committed), after the records commit on the branch; then queued with
  *   its message file (`--message <file>`). The request is frozen at enqueue: the branch's tip and the message's bytes. A tip that
  *   differs from the branch's last preview, and a branch with no message, are refused (`enqueue`). Each enqueue has its own
- *   request id, retained through re-forms and outcomes, so a new wait never reads an older result for the same tip.
+ *   request id, retained through re-forms and outcomes, so a new wait never reads an older result for the same tip, and its place in
+ *   the queue's sequence (`seq`), which orders requests given back (`inArrival`).
  * - **The candidate.** The runner merges every queued branch, in arrival order, at most `CANDIDATE_MAX`, one merge commit each
  *   on main's tip; a branch whose merge the resolvers cannot make is set aside and handed back (`formCandidate`). One member at a
- *   time where `--one-at-a-time` asked it, or where an unresolved failure split a candidate.
+ *   time where `--one-at-a-time` asked it, or where an unresolved failure split a candidate. The requests it takes stand as
+ *   `forming` until the candidate is written (QUEUEWAITEND1).
+ * - **Its outcomes.** Each request ends landed, contained or handed back (a drop's too, queued or forming), and its waiter reads
+ *   which (`requestStanding`); a request in no record at all is told so, never waited for.
  * - **Its states.** `forming`, `running`, `bisecting`, `green`, `promoting`, `promoted`, `held` (on memory, on a checkout that is
  *   not clean), and the queue's `stopped`. A member handed back is `pinned`, `pinned with` or `unresolved`.
  * - **Promotion.** Only onto a clean main checkout whose tip is still the candidate's base; otherwise held, or re-formed on the

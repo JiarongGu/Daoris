@@ -197,7 +197,10 @@ is still required before any stage (GATESLIM1, D115).
 The tests of the tools only the parent runs (the merge tool, the install's publisher and the family rehearsal's set-up
 kit: `src/Daoris.Cli/tool-test/`) are the `tool-tests` gate, `npm run tooltests`, about four minutes of real git. `npm
 test` and `npm run verify` do not run them. A merge runs the gate only when its paths reach it (`tools/merge-branch.mjs`
-and what it imports, the publisher, the kit, the folder); `--full` and the release workflow run it (GATESLIM1).
+and what it imports, the publisher, the kit, the folder); `--full` and the release workflow run it (GATESLIM1). A merge-queue
+case runs on a scratch repository named for its test process, its children with an environment the case builds (no inherited git
+variable that locates a repository, git's ceiling at the fixture), and no case changes the test process's environment: run a
+probe of the runner in a process of its own, and write a stand-in gate's paths into the gate (QUEUETESTLEAK1, D115's note).
 
 `--full --beside` runs the same full set on a commit (main's tip unless named) in `local/gate-tree`, a
 detached worktree of its own with its dependencies installed from the lockfiles, so merges continue in
@@ -256,17 +259,25 @@ place (learned 2026-10-23 and 24, LIMITGOON1, LIMITRESUME1d and REVIEWLANDED1):
    is refused, so a records commit made after the preview needs another preview.
 
 The invocation starts the queue's runner where none runs (`node tools/merge-branch.mjs --queue-run`, detached, its log
-`local/merge-queue.log`, its acknowledgement waited for thirty seconds), then waits and ends with *in main* (0) or *handed
-back* with why (1). Each enqueue has its own request id, retained through re-forms and outcomes; requeueing the same tip waits
-for that occurrence while the earlier hand-back stays in history. Ending the wait leaves the request queued. The runner forms a **candidate** in `local/scope-tree`, a
-worktree of its own with warm builds: every queued branch, up to eight in arrival order, each merged on the last with
-`--no-ff` and its own message. A branch the resolvers cannot merge is set aside and handed back. The resolvers take the backlog
-and each row table `daoris.gates.json`'s `integration.merge` declares `by: rows` (read from the side the work lands on, never the branch's
-copy) by the merge base: a row a side added is kept, one removed is dropped, rows both add at one place are both kept, a row both changed
+`local/merge-queue.log`, its acknowledgement waited for thirty seconds), then waits and ends with *in main* or *contained* (0), or
+*handed back* with why (1). Each enqueue has its own request id, retained through re-forms and outcomes, and its place in a sequence
+the queue keeps; requeueing the same tip waits for that occurrence while the earlier hand-back stays in history. Ending the wait leaves
+the request queued. A request `--drop-batch` takes off, queued or forming, is handed back as dropped, and its wait ends (1) saying so
+and whether main holds its tip anyway; a wait whose request is in no record at all ends (1) instead of polling (QUEUEWAITEND1). Only
+the queue's own checkout, the repository's first worktree, previews, queues, drops, rechecks or runs the runner: a verb started in a
+linked worktree is refused, and so is a runner of another checkout's tool (QUEUETESTLEAK1). The runner forms a **candidate** in
+`local/scope-tree`, a worktree of its own with warm builds: every queued branch, up to eight in arrival order, each merged on the last
+with `--no-ff` and its own message; the requests it takes stand as `forming` until the candidate is written. A branch the resolvers
+cannot merge is set aside and handed back. The resolvers take the backlog
+and each row table `daoris.gates.json`'s `integration.merge` declares `by: rows` (read from the line: the main checkout's `HEAD` for a
+merge there, the candidate's base for a queue member; never the branch's or an earlier member's copy) by the merge base: a row a side added
+is kept, one removed is dropped, rows both add at one place are both kept, a row both changed
 is a conflict (INTEGRATE1c; a `run` writer waits for its own acceptance). A branch whose work the candidate holds already is **contained**,
 never set aside: one the line holds is settled at once; one an earlier member holds stays on the candidate, settled only when that member
 promotes, and merged or found contained again, as its own request, when the candidate ends otherwise (a hand-back, a split, a re-form, a
-drop). `--queue` shows it. On the candidate it runs the
+drop), in the queue's order. One dropped by name alone leaves the candidate and its run standing. `--queue` shows it. The runner's gates
+and probes get the environment it had at its start, without the tool tests' variables or the tool's `MERGE_BRANCH_*` switches. On the
+candidate it runs the
 **scoped set**: the blocking checks always; each gate the candidate's paths reach, a .NET fast half whole; the `Process` halves
 by class; the git half within an eight-minute budget, the rest deferred; a gate holding an open known red, whatever is
 reached. Browser specs and rehearsals are deferred to the background run. A gate whose pass stands on the candidate's tree is
