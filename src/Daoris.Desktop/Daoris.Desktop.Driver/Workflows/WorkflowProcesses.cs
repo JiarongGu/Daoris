@@ -7,7 +7,7 @@ namespace Daoris.Driver;
 /// §2.6, §4.5–§4.6): the run's bound version where it names one, the rules live where it does not.
 /// </summary>
 /// <remarks>
-/// <para><b>One read per decision.</b> The landing gate reads it once (<see cref="SessionTrees.GateAsync"/>) and hands it to every
+/// <para><b>One read per decision.</b> The landing gate reads it once (<see cref="SessionTreeGates.GateAsync"/>) and hands it to every
 /// part, the landing among them; the look's automatic landing and the second opinions owed read it once per entry, and hand it on.
 /// Never a second copy per door.</para>
 ///

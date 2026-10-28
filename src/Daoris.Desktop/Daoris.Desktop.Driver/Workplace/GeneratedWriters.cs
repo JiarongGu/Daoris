@@ -117,6 +117,13 @@ internal static class GeneratedWriters
         return new(names.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries), runs, null);
     }
 
+    /// <summary>The system's <c>cmd.exe</c>: <c>ComSpec</c> where it names one that is there, else the system folder's. <see cref="HeavyStep.SystemShell"/> answers it.</summary>
+    internal static string SystemShell()
+    {
+        var named = Environment.GetEnvironmentVariable("ComSpec");
+        return named is { Length: > 0 } && Path.IsPathRooted(named) && File.Exists(named) ? named : Path.Combine(Environment.SystemDirectory, "cmd.exe");
+    }
+
     /// <summary>
     /// <paramref name="run"/> through the system's shell, as a gate's command line runs (<see cref="HeavyStep.CommandLine"/>): <c>cmd.exe</c>
     /// on Windows, <c>/bin/sh</c> elsewhere, in <paramref name="directory"/>, both streams read and its input closed.
@@ -127,7 +134,7 @@ internal static class GeneratedWriters
         if (OperatingSystem.IsWindows())
         {
             // `/s` takes what is between the first and the last quote as it is, so the command's own quotes reach the shell untouched.
-            info = new ProcessStartInfo(HeavyStep.SystemShell()) { Arguments = $"/d /s /c \"{run}\"", CreateNoWindow = true };
+            info = new ProcessStartInfo(SystemShell()) { Arguments = $"/d /s /c \"{run}\"", CreateNoWindow = true };
         }
         else
         {

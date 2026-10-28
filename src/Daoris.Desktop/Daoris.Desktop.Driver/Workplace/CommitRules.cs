@@ -50,6 +50,12 @@ public static class CommitRules
 
     public const string DefaultSource = "default";
 
+    /// <summary>Where a rule set for the repository itself says it came from; <see cref="OpinionSource.Repository"/> spells it alike.</summary>
+    internal const string RepositorySource = "repository";
+
+    /// <summary>Where a rule set for the repository's workspace says it came from; <see cref="OpinionSource.Workspace"/> spells it alike.</summary>
+    internal const string WorkspaceSource = "workspace";
+
     internal const string Scope = "a commit rule is set for a repository or a workspace — name exactly one.";
     private const string OneAtATime = "one change at a time: set its mode or its convention, or clear.";
 
@@ -71,9 +77,9 @@ public static class CommitRules
     /// </summary>
     public static ResolvedCommits Resolve(DriverConfig config, string repository, string? workspace) =>
         config.Commits.TryGetValue(repository.Trim(), out var own)
-            ? new ResolvedCommits(own, OpinionSource.Repository)
+            ? new ResolvedCommits(own, RepositorySource)
             : config.WorkspaceCommits.TryGetValue(RemoteTarget.Workspace(workspace), out var shared)
-                ? new ResolvedCommits(shared, OpinionSource.Workspace)
+                ? new ResolvedCommits(shared, WorkspaceSource)
                 : new ResolvedCommits(CommitRule.Default, DefaultSource);
 
     /// <summary>A rule as the list says it: its mode, then its convention where it has one.</summary>

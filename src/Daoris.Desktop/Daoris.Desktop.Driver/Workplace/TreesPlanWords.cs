@@ -115,7 +115,7 @@ public static class TreesPlanWords
     /// </summary>
     /// <param name="pluginLines">A plugin's own lines said while the plan was made, first, as the alone path says them as they come.</param>
     public static async Task<TreesSaid> LandPlanAsync(
-        SessionTrees landing, string home, string session, string tree, LandingPlan plan, LandingGate gate, LandedReview? before,
+        SessionTrees landing, string home, string session, string tree, LandingPlan plan, IWorkplaceGate gate, LandedReview? before,
         IReadOnlyList<string> pluginLines, CancellationToken ct = default)
     {
         var said = new List<string>(pluginLines) { Planned(session, plan) };
@@ -124,7 +124,7 @@ public static class TreesPlanWords
         // SQUASHTIDY1f: work the line holds by content, which the press refuses, said before it in the press's own sentence.
         if (await landing.DiscardOfferAsync(tree, ct).ConfigureAwait(false) is { } carried) said.Add($"trees: {carried.NotLanded}");
         // What the gate says before the press (the second-agent design §8.6, the review design §3.5): what holds it, or what let it go.
-        said.AddRange(LandingGateWords.Plan(gate));
+        said.AddRange(gate.PlanLines());
         // Landed before, its branch gone since, its tree still here: said, as the review's note says it.
         if (before is not null) said.Add($"trees: {LandedReviewWords.Describe(session, before)}");
         // Due to land at its quest's done (LAND2b): what its tries came to, which the review's note shows.

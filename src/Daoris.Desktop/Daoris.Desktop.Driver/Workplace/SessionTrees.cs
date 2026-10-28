@@ -471,18 +471,6 @@ public sealed class SessionTrees(string home, IWorkplacePluginWire? plugins = nu
     public bool Holds(string path) => _context.Holds(path);
 
     /// <summary>
-    /// The review's gate for this tree (REVIEWENV1c, D154 point 7; <see cref="ReviewGate.ReadAsync"/>): the chain its quest is a step
-    /// of, the review rule standing for the tree's repository here, and git's ancestry from the tree's <c>HEAD</c>. Every door that
-    /// lands asks it and hands it to <see cref="LandAsync"/>; a conversation, with no quest, has nothing to wait for.
-    /// </summary>
-    public Task<ReviewGateState> ReviewAsync(string path, string? quest, IReviewWorld world, CancellationToken ct = default)
-    {
-        var full = Path.GetFullPath(path);
-        var (workspace, repository) = _context.OwnerOf(full);
-        return ReviewGate.ReadAsync(world, _context.Config(), full, repository, workspace, quest, ct);
-    }
-
-    /// <summary>
     /// How many commits a session tree's HEAD holds beyond its repository's line (LAND2b): zero is a done that made no commits,
     /// which lands nothing; null is git unable to say, or no line it can name, and the landing then decides.
     /// </summary>
@@ -632,7 +620,7 @@ public sealed class SessionTrees(string home, IWorkplacePluginWire? plugins = nu
     /// <inheritdoc cref="TreeLands.LandAsync"/>
     public Task<TreeLanding> LandAsync(
         string path, LandingSubject subject, CancellationToken ct = default, Func<CancellationToken, Task<IReadOnlySet<string>>>? inUse = null,
-        string acceptedBy = AcceptedBy.Person, LandingGate? gate = null, bool joins = false,
+        string acceptedBy = AcceptedBy.Person, IWorkplaceGate? gate = null, bool joins = false,
         Func<bool, CancellationToken, Task<TreeLanding?>>? judged = null, Func<LandedBranch?, bool, CancellationToken, Task<string?>>? beforePush = null,
         int? uncommitted = null) =>
         Lands.LandAsync(path, subject, ct, inUse, acceptedBy, gate, joins, judged: judged, beforePush: beforePush, uncommitted: uncommitted);
@@ -645,7 +633,7 @@ public sealed class SessionTrees(string home, IWorkplacePluginWire? plugins = nu
     /// <summary>
     /// What one session's landing is named for, at every door that lands one session (ACCEPTALL1b, ACCEPTALL1f; D167's 2026-10-15
     /// amendment point 2): the review's <c>LANDING</c> and <c>LAND_SESSION_TREE</c>, the terminal's <c>trees land</c> and the look's
-    /// landing at done. A part of an entry with others (<see cref="EntryAccepts.EntryLead"/>) is its entry's Accept for that part alone:
+    /// landing at done. A part of an entry with others (<see cref="EntryLandings.LeadOf"/>) is its entry's Accept for that part alone:
     /// named for the entry's first part (its chain's first quest), its own session recorded, on the entry's branch
     /// (<see cref="JoinEntryAsync"/>), which <see cref="LandingSubject.Joins"/> then lands on. Otherwise the session's own subject, the
     /// chain's first quest (WSR5), as before. A merge rule makes no branch to join; a TREEFOLLOW1 tree still lands as its own branch, and
@@ -660,7 +648,7 @@ public sealed class SessionTrees(string home, IWorkplacePluginWire? plugins = nu
         string path, string session, string? quest, IReadOnlyList<SessionRecord> records, Func<string, Task<QuestView?>> find,
         Func<string, string?> opening, IWorkplaceProcess? process, CancellationToken ct = default)
     {
-        var lead = EntryAccepts.EntryLead(records, session);
+        var lead = EntryLandings.LeadOf(records, session);
         var named = lead?.Id ?? session;
         var subject = await LandingRules.SubjectAsync(named, lead is null ? quest : lead.Quest, find, opening(named)).ConfigureAwait(false);
         // FABRIC-UNITLINK1, FABRIC-CLOSE1h13: whatever it is named for, the quest this session served and the submission its landing is
@@ -859,9 +847,12 @@ public sealed class SessionTrees(string home, IWorkplacePluginWire? plugins = nu
     public Task<LandedReview> LandedReviewAsync(string? root, LandedBranch entry, bool changes = true, CancellationToken ct = default) =>
         Reviews.LandedReviewAsync(root, entry, changes, ct);
 
-    /// <inheritdoc cref="TreeGates.GateAsync"/>
-    public Task<LandingGate> GateAsync(
-        string path, string? quest, IOpinionWorld world, string? session = null, CancellationToken ct = default, IWorkplaceProcess? process = null,
+    /// <summary>
+    /// The whole landing gate for this tree as the workplace reads it (<see cref="TreeGates.GateAsync"/>). The review's
+    /// <c>SessionTreeGates.GateAsync</c> answers the same gate as the record every other door reads.
+    /// </summary>
+    public Task<IWorkplaceGate> GateOfAsync(
+        string path, string? quest, IReviewWorld world, string? session = null, CancellationToken ct = default, IWorkplaceProcess? process = null,
         string? tip = null, string? run = null) =>
         Gates.GateAsync(path, quest, world, session, ct, process, tip, run);
 
@@ -870,12 +861,6 @@ public sealed class SessionTrees(string home, IWorkplacePluginWire? plugins = nu
         DriverConfig config, string repository, string? workspace, string? quest, IReviewWorld world, CancellationToken ct = default,
         string? run = null) =>
         Gates.ProcessAsync(config, repository, workspace, quest, world, ct, run);
-
-    /// <inheritdoc cref="TreeGates.OpinionAsync"/>
-    public Task<OpinionGateState> OpinionAsync(
-        string tree, string repository, string workspace, string? quest, string? session, IOpinionWorld world, ReviewGateState? review,
-        string occasion, CancellationToken ct = default, IWorkplaceProcess? process = null, string? at = null, string? run = null) =>
-        Gates.OpinionAsync(tree, repository, workspace, quest, session, world, review, occasion, ct, process, at, run);
 
     /// <inheritdoc cref="TreeGates.ForkPointAsync"/>
     public Task<string?> ForkPointAsync(string tree, CancellationToken ct = default) => Gates.ForkPointAsync(tree, ct);

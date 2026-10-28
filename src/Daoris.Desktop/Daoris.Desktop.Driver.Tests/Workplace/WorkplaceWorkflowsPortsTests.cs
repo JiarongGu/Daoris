@@ -327,10 +327,10 @@ public sealed class WorkplaceWorkflowsPortsTests : IDisposable
 
         public IWorkplaceProcess? Process { get; private set; }
 
-        public IOpinionWorld? World { get; private set; }
+        public IReviewWorld? World { get; private set; }
 
-        public Task<LandingGate> GateAsync(
-            TreeGates gates, string path, string? quest, IOpinionWorld world, string? session, CancellationToken ct, IWorkplaceProcess? process,
+        public Task<IWorkplaceGate> GateAsync(
+            TreeGates gates, string path, string? quest, IReviewWorld world, string? session, CancellationToken ct, IWorkplaceProcess? process,
             string? tip, string? run)
         {
             Calls.Add($"gate:{path}:{quest}:{session}:{tip}:{run}");

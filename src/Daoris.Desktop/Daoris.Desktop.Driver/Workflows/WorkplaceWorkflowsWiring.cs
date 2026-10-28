@@ -27,10 +27,12 @@ internal sealed class WorkplaceWorkflowsOperations : IWorkplaceWorkflows, IWorkp
 
     public (IReadOnlyList<string> Line, bool Live) ChatPressOf(string session, string recordsJson) => ChatRuns.PressOf(session, recordsJson);
 
-    public Task<LandingGate> GateAsync(
-        TreeGates gates, string path, string? quest, IOpinionWorld world, string? session, CancellationToken ct, IWorkplaceProcess? process,
+    // The world is the review's IOpinionWorld, which every world the doors and the look hand the gate is (the review's IAutoLandingWorld
+    // among them): the second opinion reads its opinions through it.
+    public async Task<IWorkplaceGate> GateAsync(
+        TreeGates gates, string path, string? quest, IReviewWorld world, string? session, CancellationToken ct, IWorkplaceProcess? process,
         string? tip, string? run) =>
-        TreeGateWorkflows.GateAsync(gates, path, quest, world, session, ct, (WorkflowProcess?)process, tip, run);
+        await TreeGateWorkflows.GateAsync(gates, path, quest, (IOpinionWorld)world, session, ct, (WorkflowProcess?)process, tip, run).ConfigureAwait(false);
 
     public async Task<IWorkplaceProcess> ProcessAsync(
         TreeGates gates, DriverConfig config, string repository, string? workspace, string? quest, IReviewWorld world, CancellationToken ct, string? run) =>

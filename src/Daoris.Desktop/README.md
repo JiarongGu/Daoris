@@ -128,9 +128,24 @@ the landing it lands by, why its run or landing cannot start, the version that d
 asked of Workflows through two required holders it installs from `Workflows/WorkplaceWorkflowsWiring.cs`: `IWorkplaceWorkflows`
 (the landed route's accepted declaration, a quest's process read from the chain the service answers, a chat run's bind and its press)
 and `IWorkplaceGateWorkflows`, which assembles the landing gate (the run's process, its workflow part and its graph's, then the
-review and the second opinion over that one process, in `Workflows/TreeGateWorkflows.cs`) while `TreeGates` keeps the second opinion
-and the git reads it uses. `trees.WorkflowAsync` is Workflows' extension of `SessionTrees`, and `WorkflowProcesses.ConcludedAsync`
+review and the second opinion over that one process, in `Workflows/TreeGateWorkflows.cs`) while `TreeGates` keeps the git reads it
+uses (the second opinion's part is Review's `TreeGateOpinions`). `trees.WorkflowAsync` is Workflows' extension of `SessionTrees`, and `WorkflowProcesses.ConcludedAsync`
 reads a concluded run's process for the second opinion owed beside the landing.
+
+Workplace names no Review type. The trees read the landing gate a door hands them as `IWorkplaceGate` (the tip it was judged at and
+`WithTip`, the first part that holds as a landing's refusal, the process it was read with, what the review and the second opinion keep on
+the landing's record, whether the graph's part asks a pass, and its plan lines and machine-log line), which Review's `LandingGate`
+implements. `SessionTrees.GateOfAsync` reads it over `IReviewWorld`, the service's quests and asks, which is Workplace's, through the
+Workflows port; Review's `SessionTreeGates` answers the same gate as the `LandingGate` record every other door reads (`trees.GateAsync`,
+with `ReviewAsync` and `OpinionAsync`), the second opinion's part being `Review/TreeGateOpinions.cs`. The look reads its world as
+`IWorkplaceLandingWorld`; Review's `IAutoLandingWorld` adds the opinions (`IOpinionWorld`), and `ServiceAutoLandingWorld` is Review's. A
+second opinion a held landing is owed goes through `IWorkplaceReview`, which `Review/WorkplaceReviewWiring.cs` installs. The press on a chat
+run's work (`ChatPresses`, `ChatLandCommand`) and an entry's Accept (`EntryAccepts`) are Review's, since they read the gate and press the
+opinion; the entry's lead is Workplace's `EntryLandings.LeadOf`. The words the trees and the review spell alike are Workplace's, and
+`ReviewDoors`, `SessionChecks`, `OpinionTree`, `OpinionSource` and `HeavyStep` alias or answer through them: the landing doors
+(`LandingDoors`), the checks' file suffix (`SessionHomeFiles.ChecksSuffix`), the opinion copy's prefix (`PassLeftovers.OpinionCopyPrefix`), a
+commit rule's two sources and the system shell (`GeneratedWriters.SystemShell`). The folders a review step shows from
+(`ReviewServed.ReviewingAsync`) are Review's, and the branch tidy takes them as a delegate.
 
 Work orders supplies ask, go-ahead and channel instruction sections through the required `AgentWorkWords` port,
 installed by `Quests/AgentWorkWordsWiring.cs`. Agents owns the shared channel input and spawn variable names;

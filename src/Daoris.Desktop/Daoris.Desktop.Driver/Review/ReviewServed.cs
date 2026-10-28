@@ -15,6 +15,32 @@ namespace Daoris.Driver;
 public static partial class ReviewServed
 {
     /// <summary>
+    /// The folders a review step in progress shows from (REVIEWENV1d): the tree of the session that said each set-up waiting
+    /// for the person's verdict, read from the service's records as the review's gate reads them, whether or not this loop has
+    /// a desk, since <i>Show it again</i> serves from that tree; and, where the shell has a desk, each build it serves to a tab
+    /// now. The branch tidy keeps each tree it lies in as a session's in use is (<c>BranchTidying.LookAsync</c>'s <c>reviewing</c>).
+    /// </summary>
+    public static async Task<IReadOnlyCollection<string>> ReviewingAsync(ReviewDesk? desk, ServiceClient service, CancellationToken ct)
+    {
+        var paths = desk?.Tabs.Serving.Select(serve => serve.Folder).ToList() ?? [];
+        var waiting = (await service.EveryQuestAsync(ct).ConfigureAwait(false))
+            .Where(quest => quest.SetUpIn is not null && quest.Status != "Declined")
+            .Select(quest => (Quest: quest, Newest: Newest(quest)))
+            .Where(each => each.Newest is { Session.Length: > 0 }
+                           && Answered(each.Quest, Reference(each.Newest)) is null)
+            .Select(each => each.Newest!.Session!)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        if (waiting.Count > 0)
+        {
+            paths.AddRange((await service.SessionRecordsAsync(ct).ConfigureAwait(false))
+                .Where(record => waiting.Contains(record.Id) && record.Tree is { Length: > 0 })
+                .Select(record => record.Tree!));
+        }
+
+        return paths;
+    }
+
+    /// <summary>
     /// The full path of <paramref name="folder"/> in <paramref name="tree"/>, or null with why not (design §2.3 step 3): a path
     /// from the tree's root with forward slashes, no <c>.</c> or <c>..</c>, and every folder on the way a folder of its own, never
     /// a link, as the service judges <c>review_serve</c>'s folder and a <c>${proof}</c> name is read (D146 §11).

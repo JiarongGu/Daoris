@@ -29,6 +29,9 @@ internal sealed class PassLeftovers(TreeContext context, TreeSetAside setAside)
     /// <summary>What the words naming a pass's holder start with; the process's id and a closing bracket follow.</summary>
     private const string Holding = "Daoris is using this for one pass (process ";
 
+    /// <summary>What an opinion's copy's folder name starts with, beside a session tree's <c>s-</c>; <see cref="OpinionTree.Prefix"/> spells it alike.</summary>
+    internal const string OpinionCopyPrefix = "o-";
+
     /// <summary>The file in an opinion's copy's own <c>.git</c> that names the process whose pass the copy is.</summary>
     internal const string CopyHolder = "daoris-holder";
 
@@ -51,7 +54,7 @@ internal sealed class PassLeftovers(TreeContext context, TreeSetAside setAside)
     internal IReadOnlyList<string> ClearCopies(string trees, DateTimeOffset now, Func<int, bool> running)
     {
         var moved = new List<string>();
-        if (Folders(trees, OpinionTree.Prefix) is not { Count: > 0 } folders) return moved;
+        if (Folders(trees, OpinionCopyPrefix) is not { Count: > 0 } folders) return moved;
         foreach (var folder in folders)
         {
             try

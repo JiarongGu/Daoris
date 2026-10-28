@@ -8,8 +8,8 @@ namespace Daoris.Driver;
 /// <summary>Where a repository's second-opinion rule was set, for the screen, the room and the terminal.</summary>
 public static class OpinionSource
 {
-    public const string Repository = "repository";
-    public const string Workspace = "workspace";
+    public const string Repository = CommitRules.RepositorySource;
+    public const string Workspace = CommitRules.WorkspaceSource;
 }
 
 

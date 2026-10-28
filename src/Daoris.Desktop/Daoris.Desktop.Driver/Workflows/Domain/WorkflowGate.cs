@@ -473,7 +473,7 @@ public sealed record WorkflowGateState(string State, WorkflowProcess Process)
 /// <remarks>
 /// <para><b>One gate, in its order</b> (D155 §7, design §2.2, §4.4): the content the line already holds, then the run's own part,
 /// then the second opinion, then the person's look, then the landing step's own declarations. Every landing door reads it through
-/// <see cref="SessionTrees.GateAsync"/>, and <see cref="SessionTrees.LandAsync"/> refuses the first part that holds.</para>
+/// <see cref="SessionTreeGates.GateAsync"/>, and <see cref="SessionTrees.LandAsync"/> refuses the first part that holds.</para>
 ///
 /// <para><b>A kind's paths</b> (§4.4) are checked only where the kind chose the workflow (its level is the repository's or the
 /// workspace's for the kind), the kind declares paths, and its workflow asks less of the person than the one the work would follow

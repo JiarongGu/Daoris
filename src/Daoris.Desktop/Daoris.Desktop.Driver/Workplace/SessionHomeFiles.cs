@@ -116,6 +116,9 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
 
     internal const string QuestionSuffix = ".question.json";
 
+    /// <summary>What a session's kept checks are named by under the home's <c>spawn/</c>, after its id; <see cref="SessionChecks.Suffix"/> spells it.</summary>
+    internal const string ChecksSuffix = ".checks.json";
+
     internal const string SupervisorDecisionsSuffix = ".decisions";
     internal const string SupervisorPointerSuffix = ".supervisor.json";
 
@@ -155,7 +158,7 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
         new(Spawn, Place.Spawn, ".mcp.json", false, Beside),
         new(Spawn, Place.Spawn, ".settings.json", false, Beside),
         // FABRIC-PIPELINE1b: the checks its run took, which `run-heavy` reads by the session its tree's lock names.
-        new(Spawn, Place.Spawn, SessionChecks.Suffix, false, Beside),
+        new(Spawn, Place.Spawn, ChecksSuffix, false, Beside),
         new(Help, Place.Sessions, HelpConversationsSuffix, false, Beside),
         // HELPWIRED1: what each of its starts handed, Ask Daoris's too, so it goes under the same name.
         new(Help, Place.Sessions, HelpWiredSuffix, false, Beside),
