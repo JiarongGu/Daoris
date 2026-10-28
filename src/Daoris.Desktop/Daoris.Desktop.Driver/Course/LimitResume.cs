@@ -25,13 +25,21 @@ internal static class LimitResume
     /// <i>Try again</i> released that end, so its start takes this step 1 too, the go-on kept under <see cref="DaorisKeys.TransientRelease"/>.
     /// Null for every other start.
     /// </summary>
-    public static PriorSession? Line(Consideration start, bool handedFrom) =>
+    public static PriorSession? Line(QuestView quest, PriorSession? resumes, bool handedFrom) =>
         !handedFrom
-        && start.Quest is { Status: "Open" or "Taken", Awaits: null or "" }
-        && start.Resumes is { Parked: false } limited
-        && (limited is { Limit: true, State: "failed" } || UpdateBuild(limited) is not null || Planner.EndedTransient(limited))
+        && quest is { Status: "Open" or "Taken", Awaits: null or "" }
+        && resumes is { Parked: false } limited
+        && (limited is { Limit: true, State: "failed" } || UpdateBuild(limited) is not null || EndedTransient(limited))
             ? limited
             : null;
+
+    /// <summary>
+    /// Whether <paramref name="last"/> ended past its transient bound (AGENTERRORS1a, <see cref="NoteCodes.EndedTransient"/>): <c>failed</c>,
+    /// by its note's code, never its English and never a mark, so no write beside the conclusion can fail the hold open.
+    /// </summary>
+    internal static bool EndedTransient(PriorSession last) =>
+        string.Equals(last.State, "failed", StringComparison.OrdinalIgnoreCase)
+        && last.NoteParts?.Any(part => part.Code == NoteCodes.EndedTransient.Code) == true;
 
     /// <summary>
     /// Daoris's word at a released transient record's step 1 (AGENTERRORS1a2): the episode's go-on (<c>retry.go-on</c>) with the provider's

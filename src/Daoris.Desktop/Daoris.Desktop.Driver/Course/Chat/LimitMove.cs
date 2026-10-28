@@ -16,7 +16,7 @@ namespace Daoris.Driver;
 /// <para><b>Where no other account has room</b> it stays where it is and its words with it: the next refused turn tries again. A teammate's
 /// record, an intake and a conversation that went on already never move; a conversation the person ended has no refused turn.</para>
 /// </remarks>
-internal sealed class LimitMove(ChatContext context, ChatRunner runner, ChatHandOver handOver, ChatHelp help)
+internal sealed class LimitMove(ChatContext context, IChatRunning runner, ChatHandOver handOver, IChatHelping help)
 {
     /// <summary>
     /// The <see cref="StartedFrom.Why"/> of an ended move that left its conversation waiting for the account the person picked (PICKLOST1):
@@ -33,7 +33,7 @@ internal sealed class LimitMove(ChatContext context, ChatRunner runner, ChatHand
     /// staying to be refused turn by turn (<see cref="LimitWaits.Wait"/>). Told the session, its turns, the adapter it runs on and, where the
     /// person picked its account, that account, whose reset its wait is (FOUNDATION1a-ii).
     /// </summary>
-    internal Func<string, ChatRunner.ITurnedChat, string, string?, bool>? Stays { get; set; }
+    internal Func<string, ITurnedChat, string, string?, bool>? Stays { get; set; }
 
     /// <summary>A turn's end, told as the turns move: judged on a task of its own, as <see cref="CurveMove.Due"/> is.</summary>
     public void Due(string sessionId, DriverConfig config, Func<string, string, Task>? onEnded)
@@ -555,7 +555,7 @@ internal sealed class LimitMove(ChatContext context, ChatRunner runner, ChatHand
             // Its history names no earlier conversation; its brief still says which it continues.
         }
 
-        var (room, reads) = await help.HelpRoomNowAsync(id, HelpRoom.GoesOnIn(context.Home, prior.Workspace, prior.Tree), ct).ConfigureAwait(false);
+        var (room, reads) = await help.HelpRoomNowAsync(id, KnowledgeRoomPaths.GoesOnIn(context.Home, prior.Workspace, prior.Tree), ct).ConfigureAwait(false);
         return await runner.RunAsync(
                 prior.Actor ?? "ask-daoris", id, placed.Message, resolved, selection, config, runner.HelpPlace(room, reads, prior.Workspace), onEnded, ct,
                 chosen: placed.Chosen)

@@ -84,7 +84,7 @@ public static class WordsNever
     /// (ASKHIST1), and what only a repository's session has, a new session or a conversation started in its repository, is
     /// refused it as <see cref="Help"/>.
     /// </summary>
-    public static bool IsHelp(SessionRecord record) => record.Repository == HelpRoom.Repository;
+    public static bool IsHelp(SessionRecord record) => record.Repository == KnowledgeRoomIdentity.Repository;
 
     /// <summary>The session a quest last ran in here, read from the records as the planner reads them (D79); null for none.</summary>
     public static string? LastHere(string recordsJson, string? quest) =>

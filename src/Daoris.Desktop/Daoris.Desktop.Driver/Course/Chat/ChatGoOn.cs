@@ -85,9 +85,9 @@ internal sealed class ChatGoOn
     private static readonly HashSet<string> Ended = new(StringComparer.OrdinalIgnoreCase) { "completed", "declined", "failed", "stopped" };
 
     private readonly ChatContext _context;
-    private readonly ChatRunner _runner;
+    private readonly IChatRunning _runner;
     private readonly ChatHandOver _handOver;
-    private readonly ChatHelp _help;
+    private readonly IChatHelping _help;
     private readonly ChatHelperWords _words;
 
     private readonly BriefedMove _move;
@@ -102,7 +102,7 @@ internal sealed class ChatGoOn
     internal Action<string>? Waits { get; set; }
 
     public ChatGoOn(
-        ChatContext context, ChatRunner runner, ChatHandOver handOver, ChatHelp help, ChatHelperWords words, BriefedMove move, LimitMove limit)
+        ChatContext context, IChatRunning runner, ChatHandOver handOver, IChatHelping help, ChatHelperWords words, BriefedMove move, LimitMove limit)
     {
         _context = context;
         _runner = runner;
@@ -502,7 +502,7 @@ internal sealed class ChatGoOn
     internal async Task<ResumeChoice?> JudgeWaitAsync(PriorSession record, DriverConfig config, CancellationToken ct)
     {
         if (record.NotOffered || record.Adapter is not { Length: > 0 } ranOn
-            || string.Equals(record.Repository, HelpRoom.Repository, StringComparison.OrdinalIgnoreCase))
+            || string.Equals(record.Repository, KnowledgeRoomIdentity.Repository, StringComparison.OrdinalIgnoreCase))
         {
             return null;
         }
@@ -593,7 +593,7 @@ internal sealed class ChatGoOn
                 : CannotGoOn(record, reason, ranOn);
         }
 
-        if (string.Equals(record.Repository, HelpRoom.Repository, StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(record.Repository, KnowledgeRoomIdentity.Repository, StringComparison.OrdinalIgnoreCase))
         {
             return await HelpGoingOnAsync(record, adapter, kept, config, onEnded, woke, ct).ConfigureAwait(false);
         }
@@ -777,7 +777,7 @@ internal sealed class ChatGoOn
         };
 
         // ASKSCOPE1b: the room it ran in, its workspace's, or the machine's where it started there before each workspace had its own.
-        var (room, reads) = await _help.HelpRoomNowAsync(sessionId, HelpRoom.GoesOnIn(_context.Home, record.Workspace, record.Tree), ct)
+        var (room, reads) = await _help.HelpRoomNowAsync(sessionId, KnowledgeRoomPaths.GoesOnIn(_context.Home, record.Workspace, record.Tree), ct)
             .ConfigureAwait(false);
         return await _runner.RunAsync(
             record.Actor ?? "ask-daoris", sessionId, $"Ask Daoris `{sessionId}` goes on with your words in its own conversation.", adapter, selection, config,

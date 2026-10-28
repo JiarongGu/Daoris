@@ -10,7 +10,7 @@ namespace Daoris.Driver;
 /// The runner whose conversations these are: its start begins the new conversation, as every door's does, and its turns say
 /// whether one is talking.
 /// </param>
-internal sealed class ChatHandOver(ChatContext context, ChatRunner runner)
+internal sealed class ChatHandOver(ChatContext context, IChatRunning runner)
 {
     /// <summary>How long the old conversation's end is waited for before the new one starts: a stop, not a wind-up.</summary>
     private static readonly TimeSpan HandOverEnd = TimeSpan.FromSeconds(15);
@@ -26,7 +26,7 @@ internal sealed class ChatHandOver(ChatContext context, ChatRunner runner)
 
     private readonly ChatContext _context = context;
 
-    private readonly ChatRunner _runner = runner;
+    private readonly IChatRunning _runner = runner;
 
     /// <summary>
     /// A take of a conversation's box is over, however it came out, its box gone (HANDWORDS1): the person's words held while it was
@@ -131,7 +131,7 @@ internal sealed class ChatHandOver(ChatContext context, ChatRunner runner)
             return new HandedOver(null, true, null, $"`{sessionId}` is already being taken.");
         }
 
-        ChatTurns? held = null;
+        IChatTurns? held = null;
         try
         {
             ClosingNote? closing = null;
@@ -175,7 +175,7 @@ internal sealed class ChatHandOver(ChatContext context, ChatRunner runner)
     /// then its last message of that turn as its note, read from the events the turn added. The record keeps the ask as Daoris's and the
     /// reply as the agent's; the brief is composed from the events before the ask, so the note is told once, in its own section.
     /// </summary>
-    private async Task<ClosingNote> AskClosingAsync(string sessionId, ChatTurns turns, string agent)
+    private async Task<ClosingNote> AskClosingAsync(string sessionId, IChatTurns turns, string agent)
     {
         var before = _context.Events.After(sessionId, 0).Events.Count;
         // Daoris's word, by a key that names no fact of Daoris's, so nothing judges it again: it is the take's own, said once.
@@ -228,7 +228,7 @@ internal sealed class ChatHandOver(ChatContext context, ChatRunner runner)
     {
         if (!_context.Watching.TryGetValue(sessionId, out var watch)) return;
 
-        _context.Processes.Stop(sessionId, ChatRunner.EndedNote(stopped: false, notKept: false));
+        _context.Processes.Stop(sessionId, ChatEnded.EndedNote(stopped: false, notKept: false));
         await Task.WhenAny(watch, Task.Delay(HandOverEnd)).ConfigureAwait(false);
     }
 
@@ -257,7 +257,7 @@ internal sealed class ChatHandOver(ChatContext context, ChatRunner runner)
         {
             if (_context.Processes.Send(sessionId, framed))
             {
-                foreach (var recorded in ChatRunner.Recorded(message)) _context.Record(sessionId, recorded);
+                foreach (var recorded in ChatRecorded.Recorded(message)) _context.Record(sessionId, recorded);
                 return true;
             }
 

@@ -86,7 +86,7 @@ public static class UncertainWords
         {
             events?.Keep(record.Session, new SessionEvent
             {
-                Kind = SessionEventKind.Note, Text = ChatTurns.LostLine, Words = unseen, Code = SessionEventCodes.Lost,
+                Kind = SessionEventKind.Note, Text = SessionNotes.LostLine, Words = unseen, Code = SessionEventCodes.Lost,
             }, say: null);
         }
 

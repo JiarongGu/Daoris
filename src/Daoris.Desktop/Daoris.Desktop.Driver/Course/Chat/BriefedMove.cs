@@ -37,7 +37,7 @@ public static class GoOnBrief
 /// its record back first (<see cref="ChatGoOn.WentBackAsync"/>). No closing note is asked: a lost conversation cannot be asked, and a
 /// refused one has no turn left (D189's amendment).</para>
 /// </remarks>
-internal sealed class BriefedMove(ChatContext context, ChatRunner runner, ChatHandOver handOver, ChatHelp help)
+internal sealed class BriefedMove(ChatContext context, IChatRunning runner, ChatHandOver handOver, IChatHelping help)
 {
     /// <summary>
     /// Go on in a new part handed the brief, one at a time per session: the person's press, a closed quest's session the driver hands
@@ -183,7 +183,7 @@ internal sealed class BriefedMove(ChatContext context, ChatRunner runner, ChatHa
         var words = record.Waiting.Where(word => word.Persons).ToList();
         if (words.Count == 0) return Refused(StartFrom.NoWords, $"only another agent's answer waits on {sessionId}, which is never a new part's words.");
 
-        var isHelp = string.Equals(record.Repository, HelpRoom.Repository, StringComparison.OrdinalIgnoreCase);
+        var isHelp = string.Equals(record.Repository, KnowledgeRoomIdentity.Repository, StringComparison.OrdinalIgnoreCase);
         var actor = isHelp ? "ask-daoris" : "chat";
         if (!isHelp && (record.Tree is not { Length: > 0 } || !ConversationTrees.Stands(record.Tree)))
         {

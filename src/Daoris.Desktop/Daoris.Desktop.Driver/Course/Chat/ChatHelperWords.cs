@@ -75,7 +75,7 @@ internal sealed class ChatHelperWords(ChatContext context)
         if (!context.Talking.TryGetValue(sessionId, out var adapter)) return false;
 
         if (!context.Processes.Send(sessionId, adapter.FrameMessage(message.Prompt))) return false;
-        foreach (var recorded in ChatRunner.Recorded(message)) context.Record(sessionId, recorded);
+        foreach (var recorded in ChatRecorded.Recorded(message)) context.Record(sessionId, recorded);
         await TakeOffAsync(sessionId, word.Id!).ConfigureAwait(false);
         return true;
     }

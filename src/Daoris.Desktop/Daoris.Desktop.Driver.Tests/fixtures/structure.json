@@ -176,8 +176,20 @@
     "Course/Chat/ChatHelperWords.cs": "Course",
     "Course/Chat/ChatPending.cs": "Course",
     "Course/Chat/ChatRetry.cs": "Course",
+    "Course/Chat/HelpPlaced.cs": "Course",
+    "Course/Chat/Handing.cs": "Course",
+    "Course/Chat/ITurnedChat.cs": "Course",
+    "Course/Chat/ChatPlace.cs": "Course",
+    "Course/Chat/ChatRecorded.cs": "Course",
+    "Course/Chat/ChatEnded.cs": "Course",
+    "Course/Chat/IChatTurns.cs": "Course",
+    "Course/Chat/ChatHelping.cs": "Course",
+    "Course/Chat/ChatRunning.cs": "Course",
+    "Course/Chat/PressHold.cs": "Course",
+    "Course/Chat/ChatStart.cs": "Course",
+    "Course/Chat/ConversationWalk.cs": "Course",
     "Participants/Chat/ChatRunBinds.cs": "Participants",
-    "Conversations/Chat/ChatRunner.StartFrom.cs": "Loop",
+    "Course/Chat/ChatRunner.StartFrom.cs": "Course",
     "Conversations/Chat/ChatRunner.cs": "Loop",
     "Conversations/Chat/ChatTurns.cs": "Loop",
     "Course/Chat/CurveMove.cs": "Course",
@@ -188,6 +200,9 @@
     "Course/Chat/StartWith.cs": "Course",
     "Course/ConversationTrees.cs": "Course",
     "Course/Domain/AnswersAlone.cs": "Course",
+    "Course/Domain/ChannelAcks.cs": "Course",
+    "Course/Domain/ChannelClaims.cs": "Course",
+    "Course/Domain/QuestTakes.cs": "Course",
     "Course/Domain/ChatMessage.cs": "Course",
     "Course/Domain/ChatQueue.cs": "Course",
     "Context/Domain/ContextBrief.cs": "Context",
@@ -224,6 +239,7 @@
     "Course/Domain/WordsHeld.cs": "Course",
     "Course/DrivenInbox.cs": "Course",
     "Course/AgentCourseWiring.cs": "Course",
+    "Course/CourseHelp.cs": "Course",
     "Course/GoOn/AnswersAloneHold.cs": "Course",
     "Course/GoOn/ContinuationJudge.cs": "Course",
     "Course/GoOn/GoOnFiles.cs": "Course",
@@ -298,7 +314,8 @@
     "Events/SessionLog.cs": "Events",
     "Events/SessionWatch.cs": "Events",
     "Help/HelpCommand.cs": "Help",
-    "Help/HelpConversations.cs": "Help",
+    "Help/CourseHelpWiring.cs": "Help",
+    "Context/HelpConversations.cs": "Context",
     "Help/HelpHomeTopic.cs": "Help",
     "Help/HelpHousekeeping.cs": "Help",
     "Help/HelpMode.cs": "Help",
@@ -703,7 +720,7 @@
     "Sessions/Domain/PauseOutcome.cs": "Work orders",
     "Sessions/Domain/PausedBy.cs": "Work orders",
     "Context/Domain/SessionOutput.cs": "Context",
-    "Sessions/Domain/StopAnswer.cs": "Work orders",
+    "Course/Domain/StopAnswer.cs": "Course",
     "Context/Events/ContextBriefs.cs": "Context",
     "Context/Events/SessionEventLog.cs": "Context",
     "Context/Events/SessionEventReads.cs": "Context",
@@ -1017,75 +1034,6 @@
     "Workflows/WorkflowVerb.cs": "Workflows"
   },
   "edges": [
-    {
-      "family": "ChatStart and ConversationWalk, split out of the runner's file into Course (O4-1, X4-1.19)",
-      "after": "Course",
-      "files": {
-        "Course/Chat/BriefedMove.cs": ["ChatStart"],
-        "Course/Chat/ChatGoOn.cs": ["ChatStart"],
-        "Course/Chat/ChatHandOver.cs": ["ChatStart"],
-        "Course/Chat/ChatPending.cs": ["ChatStart","ConversationWalk"],
-        "Course/Chat/LimitMove.cs": ["ChatStart"],
-        "Course/Chat/LimitWaits.cs": ["ChatStart"],
-        "Course/Chat/StartWith.cs": ["ChatStart"],
-        "Course/HandOver/HandOver.cs": ["ChatStart"]
-      }
-    },
-    {
-      "family": "Course names Help",
-      "after": "Course",
-      "files": {
-        "Course/Chat/BriefedMove.cs": ["HelpConversations","HelpRoom"],
-        "Course/Chat/ChatGoOn.cs": ["HelpRoom"],
-        "Course/Chat/CurveMove.cs": ["HelpRoom"],
-        "Course/Chat/LimitMove.cs": ["HelpConversations","HelpRoom"],
-        "Course/GoOn/SessionSay.cs": ["HelpRoom"],
-        "Course/Requests/SessionRequestWatch.cs": ["HelpHousekeeping","HelpSettings"]
-      }
-    },
-    {
-      "family": "Course names Review",
-      "after": "Course",
-      "files": {
-        "Course/Domain/HandOverRules.cs": ["OpinionSource"]
-      }
-    },
-    {
-      "family": "Course names Work orders",
-      "after": "Course",
-      "files": {
-        "Course/DrivenInbox.cs": ["ChannelAcks","ChannelText"],
-        "Course/HandOver/HandOverAskWord.cs": ["SessionsAsk","SessionsWorld"],
-        "Course/HandOver/HandOverQuest.cs": ["Planner"],
-        "Course/LimitResume.cs": ["Consideration","Planner"],
-        "Course/Requests/SessionMoves.cs": ["StopAnswer"]
-      }
-    },
-    {
-      "family": "the chat runner's port, which Course declares and ChatRunner implements (X3-4.2, O4-1)",
-      "after": "Course",
-      "files": {
-        "Agents/Acp.cs": ["ChatTurns"],
-        "Course/Chat/BriefedMove.cs": ["ChatHelp","ChatRunner","StartFrom"],
-        "Course/Chat/ChatContext.cs": ["ChatRunner"],
-        "Course/Chat/ChatGoOn.cs": ["ChatHelp","ChatRunner"],
-        "Course/Chat/ChatHandOver.cs": ["ChatRunner","ChatTurns"],
-        "Course/Chat/ChatHelperWords.cs": ["ChatRunner"],
-        "Course/Chat/LimitMove.cs": ["ChatHelp","ChatRunner"],
-        "Course/Chat/LimitWaits.cs": ["ChatRunner"],
-        "Course/GoOn/UncertainWords.cs": ["ChatTurns"],
-        "Sessions/SessionsCommand.cs": ["ChatTurns"]
-      }
-    },
-    {
-      "family": "the types ChatContext holds, which move to Course (O4-1)",
-      "after": "Course",
-      "files": {
-        "Course/Chat/ChatContext.cs": ["ChatRunner.Handing","ChatRunner.ITurnedChat"],
-        "Course/Chat/LimitMove.cs": ["ChatRunner.ITurnedChat"],
-        "Course/Chat/LimitWaits.cs": ["ChatRunner.ITurnedChat"]
-      }
-    },
     {
       "family": "Work orders names Help",
       "after": "Work orders",
@@ -1483,6 +1431,9 @@
     "SessionsHandOverWordTests.cs": "Course",
     "StartWithTests.cs": "Course",
     "WordsLeftTests.cs": "Course",
+    "StartFromTests.cs": "Course",
+    "CourseBoundaryTests.cs": "Course",
+    "CoursePortsTests.cs": "Course",
     "PressesToldTests.cs": "Course",
     "SessionRequestsTests.cs": "Course",
     "SessionRequestBesideTests.cs": "Course",

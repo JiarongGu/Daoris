@@ -76,16 +76,16 @@ public static class HandOverAskWord
     /// current one, by this judge. The driver's look reads the file at its next look; the loop is not nudged from here. Exit 0 where
     /// the word stands, 1 where the judge refuses it, 2 where it could not be written.
     /// </summary>
-    public static Task<int> RunAsync(SessionsWorld world, SessionsAsk ask, TextWriter output)
+    public static Task<int> RunAsync(string home, IReadOnlyList<string> ids, string verb, TextWriter output)
     {
-        var session = ask.Ids[0];
-        var files = new HandOverAskFiles(world.Home);
+        var session = ids[0];
+        var files = new HandOverAskFiles(home);
         try
         {
             var askId = files.Ask(session)?.Id ?? "";
-            var answer = ask.Verb == "hand-over-approve"
+            var answer = verb == "hand-over-approve"
                 ? Approve(files, session, askId)
-                : Decline(files, new SessionEvents(DaorisHome.Entry(world.Home, HomeEntry.Sessions)), null, session, askId);
+                : Decline(files, new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions)), null, session, askId);
             output.WriteLine($"sessions: {answer.Message}{(answer.Stands ? "" : " Nothing was changed.")}");
             return Task.FromResult(answer.Stands ? 0 : 1);
         }

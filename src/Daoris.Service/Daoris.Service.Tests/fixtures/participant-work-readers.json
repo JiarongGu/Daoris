@@ -47,7 +47,7 @@
       "row": "1j",
       "note": "tells Ask Daoris's place for its start (three lines); the others read a go-on's ask or Ask Daoris's access mode, not a record's mark; the start plan's (§2.4)"
     },
-    "Conversations/Chat/ChatRunner.StartFrom.cs": {
+    "Course/Chat/ChatRunner.StartFrom.cs": {
       "lines": 1,
       "reads": "tells",
       "row": "1h",
@@ -160,7 +160,7 @@
       "row": "1q",
       "note": "tells Ask Daoris's own conversation by its repository for its gates and its room's reads; the start layer's (§2.3), Help's judges kept as they read until then (mod-xx)"
     },
-    "Help/HelpConversations.cs": {
+    "Context/HelpConversations.cs": {
       "lines": 1,
       "reads": "tells",
       "row": "1q",

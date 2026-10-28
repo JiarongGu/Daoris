@@ -55,9 +55,9 @@ public static class HandOverRules
     /// </summary>
     public static ResolvedHandOver Resolve(DriverConfig config, string repository, string? workspace) =>
         config.HandOver.TryGetValue(repository.Trim(), out var own)
-            ? new ResolvedHandOver(own, OpinionSource.Repository)
+            ? new ResolvedHandOver(own, CommitRules.RepositorySource)
             : config.WorkspaceHandOver.TryGetValue(RemoteTarget.Workspace(workspace), out var shared)
-                ? new ResolvedHandOver(shared, OpinionSource.Workspace)
+                ? new ResolvedHandOver(shared, CommitRules.WorkspaceSource)
                 : new ResolvedHandOver(HandOverRule.Default, DefaultSource);
 
     /// <summary>

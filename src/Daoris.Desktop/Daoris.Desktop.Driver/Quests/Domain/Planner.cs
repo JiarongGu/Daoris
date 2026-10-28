@@ -1414,13 +1414,8 @@ public static class Planner
         // The person's reopen of the work it grew from stopped it (FABRIC-CLOSE1c2): carried on once they go on, held until then.
         || StoppedByReopen(last);
 
-    /// <summary>
-    /// Whether <paramref name="last"/> ended past its transient bound (AGENTERRORS1a, <see cref="NoteCodes.EndedTransient"/>): <c>failed</c>,
-    /// by its note's code, never its English and never a mark, so no write beside the conclusion can fail the hold open.
-    /// </summary>
-    internal static bool EndedTransient(PriorSession last) =>
-        string.Equals(last.State, "failed", StringComparison.OrdinalIgnoreCase)
-        && last.NoteParts?.Any(part => part.Code == NoteCodes.EndedTransient.Code) == true;
+    /// <summary>Whether <paramref name="last"/> ended past its transient bound (<see cref="LimitResume.EndedTransient"/>, AGENTERRORS1a).</summary>
+    internal static bool EndedTransient(PriorSession last) => LimitResume.EndedTransient(last);
 
     /// <summary>
     /// Whether <paramref name="last"/> ended because the person reopened the work its quest grew from (FABRIC-CLOSE1c2,
@@ -1479,33 +1474,16 @@ public static class Planner
             : null;
 
     /// <summary>
-    /// Whether a taken quest's take is not this machine's, as <c>TakenElsewhere</c> reads it (CARRY2b) and the hand-over's judge
-    /// asks it before a quest's session goes on with another agent (MIXAGENT1a-ii): another's by the claim, or made here after
-    /// <paramref name="last"/> ended by a chat or work outside Daoris that no record marks.
+    /// Whether a taken quest's take is not this machine's (<see cref="QuestTakes.TakenAway"/>), as <c>TakenElsewhere</c> reads it (CARRY2b) and the
+    /// hand-over's judge asks it before a quest's session goes on with another agent (MIXAGENT1a-ii).
     /// </summary>
-    internal static bool TakenAway(QuestView quest, PriorSession last, QuestTake take) =>
-        !take.Here
-        || (!take.Took && TakenAt(quest, take) is { } taken && last.Updated is { } ended && taken > ended && !BroughtForward(last, take));
+    internal static bool TakenAway(QuestView quest, PriorSession last, QuestTake take) => QuestTakes.TakenAway(quest, last, take);
 
-    /// <summary>
-    /// When a taken quest's take was made (CARRY3): the claim's own time, where its host said one. A host before it says none, and the
-    /// quest's <c>updated</c> stands in for it, as before, though a submission, an evidence read, a reopen and a go-on move that too.
-    /// </summary>
-    internal static DateTimeOffset? TakenAt(QuestView quest, QuestTake take) => take.At ?? quest.Updated;
+    /// <summary>When a taken quest's take was made (<see cref="QuestTakes.TakenAt"/>, CARRY3).</summary>
+    internal static DateTimeOffset? TakenAt(QuestView quest, QuestTake take) => QuestTakes.TakenAt(quest, take);
 
-    /// <summary>
-    /// Whether <paramref name="lost"/>, a record of this machine's that stood down, is carried on by the person's bring-forward of its lost
-    /// take (SYNCMERGE1b, D178 point 3), as the ledger opens it (SYNCMERGE1b0 point 1): <paramref name="take"/> stands this machine's by a
-    /// press made after the record was created. Its creation, not its end, so a stand-down written after the press still goes on. Once:
-    /// the session carried on is opened after the press, so its own stand-down is no carry-on.
-    /// </summary>
-    /// <remarks>A record with no creation said is none: nothing could tell the press after it.</remarks>
-    internal static bool BroughtForward(PriorSession lost, QuestTake take) =>
-        string.Equals(lost.State, "stood-down", StringComparison.OrdinalIgnoreCase)
-        && !lost.Teammate
-        && take is { Here: true, Forward: { Stands: true } forward }
-        && lost.Created is { } created
-        && forward.At > created;
+    /// <summary>Whether a record that stood down is carried on by the person's bring-forward of its lost take (<see cref="QuestTakes.BroughtForward"/>, SYNCMERGE1b).</summary>
+    internal static bool BroughtForward(PriorSession lost, QuestTake take) => QuestTakes.BroughtForward(lost, take);
 
     /// <summary>
     /// Whether a bring-forward's carry-on (SYNCMERGE1b, <see cref="Consideration.BroughtForward"/>) is first brought up to date with its

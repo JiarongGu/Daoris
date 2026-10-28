@@ -20,13 +20,15 @@ public sealed class HelpFinishingTests : IDisposable
     }
 
     /// <summary>A running conversation whose finishing is counted, and never ends its input.</summary>
-    private sealed class Chat : ChatRunner.ITurnedChat
+    private sealed class Chat : ITurnedChat
     {
         public ChatTurns Turns { get; } = new(ready: () => Task.FromResult(true), take: (_, sent) =>
         {
             sent();
             return Task.CompletedTask;
         }, interrupt: () => Task.CompletedTask, changed: _ => { });
+
+        IChatTurns ITurnedChat.Turns => Turns;
 
         public int Finished { get; private set; }
 

@@ -52,7 +52,7 @@ public sealed record HelpConversation(string Session, string State)
     /// The access mode it ran under, its record's (HELPMODE1a2, D183 point 3): <see cref="HelpModes.Restricted"/> or
     /// <see cref="HelpModes.Full"/>, the mode its last start got, never the mode chosen now; a record from before the modes ran restricted.
     /// </summary>
-    public string Mode { get; init; } = HelpModes.Restricted;
+    public string Mode { get; init; } = HelpModeNames.Restricted;
 
     /// <summary>
     /// The workspace it started in, its record's (ASKSCOPE1d, D158's ASKSCOPE1 note, points 1 and 6): kept from its start and never
@@ -231,7 +231,7 @@ public sealed class HelpConversations(string home)
         var circle = string.IsNullOrWhiteSpace(workspace) ? null : RemoteTarget.Workspace(workspace);
 
         var help = records
-            .Where(record => record.Repository == HelpRoom.Repository && !record.Teammate && SessionEventText.IsId(record.Id))
+            .Where(record => record.Repository == KnowledgeRoomIdentity.Repository && !record.Teammate && SessionEventText.IsId(record.Id))
             .Where(record => circle is null || string.Equals(record.Workspace, circle, StringComparison.OrdinalIgnoreCase))
             .ToList();
         var openings = events.Openings(help.Select(record => record.Id));
@@ -315,7 +315,7 @@ public sealed class HelpConversations(string home)
                 Last = each.Last,
                 Pinned = each.Kept.Pinned,
                 Live = each.Record.Live,
-                Mode = HelpModes.Recorded(each.Record.HelpMode),
+                Mode = HelpModeNames.Recorded(each.Record.HelpMode),
                 Workspace = each.Record.Workspace,
                 Resumable = conversation is not null && resumes(conversation.Adapter),
                 From = each.Kept.From,

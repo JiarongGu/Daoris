@@ -71,7 +71,7 @@ internal sealed class CurveMove(ChatContext context, ChatHandOver handOver)
         // The one exception is a limit with no account of its agent left (LIMITGOON2, D205 §3.5(e), LimitMove), never the curve.
         var prior = await _context.Service.RecordAsync(sessionId, ct).ConfigureAwait(false);
         if (prior is not { Kind: "chat", Teammate: false, Ask: null, Profile: { Length: > 0 } account, Adapter: { Length: > 0 } adapter }
-            || string.Equals(prior.Repository, HelpRoom.Repository, StringComparison.Ordinal))
+            || string.Equals(prior.Repository, KnowledgeRoomIdentity.Repository, StringComparison.Ordinal))
         {
             return null;
         }

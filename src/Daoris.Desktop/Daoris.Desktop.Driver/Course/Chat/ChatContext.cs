@@ -54,7 +54,7 @@ internal sealed class ChatContext(
     /// wire (CONV4a). Every question a page asks of a turn is the same on both, so one map answers it (REV3 CLEAN1: it was two,
     /// and each question asked both in turn).
     /// </summary>
-    public ConcurrentDictionary<string, ChatRunner.ITurnedChat> Turned { get; } = new(StringComparer.OrdinalIgnoreCase);
+    public ConcurrentDictionary<string, ITurnedChat> Turned { get; } = new(StringComparer.OrdinalIgnoreCase);
     public ConcurrentDictionary<string, ActorRun> ActorRuns { get; } = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
@@ -92,7 +92,7 @@ internal sealed class ChatContext(
     public ConcurrentDictionary<string, byte> Finishing { get; } = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>What a conversation started from an earlier one is handed with the person's first words: that one's transcript as a file.</summary>
-    public ConcurrentDictionary<string, ChatRunner.Handing> Handing { get; } = new(StringComparer.OrdinalIgnoreCase);
+    public ConcurrentDictionary<string, Handing> Handing { get; } = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
     /// The line a new conversation's agent is told of the browser it was handed, held for its first message (BRWHINT1a), or

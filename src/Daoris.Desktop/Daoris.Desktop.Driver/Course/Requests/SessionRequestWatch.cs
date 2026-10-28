@@ -150,8 +150,8 @@ public sealed class SessionRequestWatch : IAsyncDisposable
         var words = new LoopWords(processes, service);
         Say = words.HoldAsync;
         TakeBack = words.TakeBackAsync;
-        Housekeep = new HelpHousekeeping(home, service).AnswerAsync;
-        Set = new HelpSettings(home, service).AnswerAsync;
+        Housekeep = CourseHelp.Current.Housekeeping(home, service);
+        Set = CourseHelp.Current.Settings(home, service);
         Checkout = new HelpCheckouts(home, service).AnswerAsync;
         // FABRIC-EVENT2c: made before the watch starts, so its watcher opens at once and the first request after an install is
         // heard, not found at the listing. Both loops (the desktop's and the headless host's) build their watch here.

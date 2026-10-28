@@ -678,7 +678,7 @@ public sealed class DrivenInbox(Action<ChatQueue> changed) : IAgentInbox
             var held = _held[at];
             var passed = held with
             {
-                Rides = false, Level = MessageLevel.Urgent, Text = held.Channel is { IsMessage: true } message ? ChannelText.Claim(message, passedOn: true) : held.Text,
+                Rides = false, Level = MessageLevel.Urgent, Text = held.Channel is { IsMessage: true } message ? ChannelClaims.Claim(message, passedOn: true) : held.Text,
             };
             _held.RemoveAt(at);
             HoldHere(passed);

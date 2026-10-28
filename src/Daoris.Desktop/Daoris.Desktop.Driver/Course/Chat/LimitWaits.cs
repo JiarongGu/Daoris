@@ -41,7 +41,7 @@ internal sealed class LimitWaits(ChatContext context, LimitMove move, ChatGoOn g
     /// with them, and its conversation says when the first account is ready again. False where its turns would not wait.
     /// </summary>
     /// <param name="picked">The account the person picked for it (FOUNDATION1a-ii): its own reset is what it waits for, not the agent's first.</param>
-    public bool Wait(string session, ChatRunner.ITurnedChat chat, string adapter, string? picked = null)
+    public bool Wait(string session, ITurnedChat chat, string adapter, string? picked = null)
     {
         if (!chat.Turns.WaitForLimit()) return false;
         var first = picked is null
@@ -242,7 +242,7 @@ internal sealed class LimitWaits(ChatContext context, LimitMove move, ChatGoOn g
     /// with the refused turns' words before them and Daoris's last, one turn on the same process. Nothing is sent where it no longer waits.
     /// </summary>
     private async Task<ChatStart> WakeLiveAsync(
-        string session, string adapter, ChatRunner.ITurnedChat chat, LimitHeld? held, DateTimeOffset until, CancellationToken ct)
+        string session, string adapter, ITurnedChat chat, LimitHeld? held, DateTimeOffset until, CancellationToken ct)
     {
         SaidWordView? word = null;
         try
@@ -330,7 +330,7 @@ internal sealed class LimitWaits(ChatContext context, LimitMove move, ChatGoOn g
 
     /// <summary>The person ended it (D206 §3.7, <i>Stop</i>): the wake leaves it, and their next word goes on as any does.</summary>
     private static bool PersonStopped(PriorSession record) =>
-        record.PersonStopped && record.Note?.StartsWith(ChatRunner.EndedByPersonNote, StringComparison.Ordinal) == true;
+        record.PersonStopped && record.Note?.StartsWith(ChatEnded.EndedByPersonNote, StringComparison.Ordinal) == true;
 
     /// <summary>
     /// What the wait was computed from, by file times alone (§3.4, Codex 5): the cooling store, the harness settings, the agents' account
