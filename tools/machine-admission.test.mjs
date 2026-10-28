@@ -5,7 +5,7 @@ import { dirname, join } from 'node:path';
 import { after, describe, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import {
-  BEAT_MS, INSIDE, STALE_MS, admissionFile, capacityOf, createAdmission, judge, live, lookAt, pruned, readState, waitingSentence,
+  BEAT_MS, INSIDE, STALE_MS, admissionFile, admissionLines, capacityOf, createAdmission, judge, live, lookAt, pruned, readState, waitingSentence,
 } from './machine-admission.mjs';
 
 const REPO = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -217,6 +217,17 @@ describe('the edges', () => {
       waitingSentence({ holds, ahead: 2 }, { capacity: 2, now: NOW }),
       "the machine runs 2 of 2 heavy runs: session s-9's a dotnet test run (2m 5s); the merge queue's driver gate (30s); 2 runs asked before this one",
     );
+  });
+
+  test('the queue status says the places held, whose and for how long, and how many ask', () => {
+    const holds = [{ kind: 'queue', what: 'driver gate', since: at(-600) }, { kind: 'session', session: 's-3', what: 'dotnet test', since: at(-30) }];
+    const waits = [{ kind: 'session', what: 'vitest', since: at(-5) }];
+    assert.deepEqual(admissionLines({ capacity: 3, holds, waits }, NOW), [
+      'machine heavy-run admission (the Daoris home): 2 of 3 places held, 1 asking',
+      `  holds: the merge queue's driver gate, since ${at(-600)} (10 min)`,
+      `  holds: session s-3's dotnet test, since ${at(-30)} (1 min)`,
+      `  asks: a driven run's vitest, since ${at(-5)}`,
+    ]);
   });
 
   test('the beat is slower than a poll and far inside the stale bound', () => {

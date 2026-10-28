@@ -21,6 +21,7 @@ const tool = await import(
   '../../../tools/merge-branch.mjs') as {
   runGates: (root: string, gates: Gate[], dir: string, options: Record<string, unknown>) => Promise<GateResult[]>;
   machineAdmission: (env: Record<string, string>) => HeavyAdmission | null;
+  takesAPlace: (gate: { name: string; run: string; memoryGb?: number }) => boolean;
 };
 const machine = await import(
   // @ts-expect-error — untyped workspace tooling; the same seam merge-branch.test.ts documents
@@ -140,6 +141,18 @@ describe('HEAVYQUEUE1: a heavy gate waits for the machine admission', () => {
     assert.deepEqual(gate.events, []);
     assert.deepEqual(machine.readState(machine.admissionFile(home)).waits, []);
     session?.release();
+  });
+
+  test('the suites, the Process halves, the rehearsals and the tool tests take a place; a light gate and a gate declaring no memory take none', () => {
+    const gate = (run: string, memoryGb?: number) => ({ name: 'g', run, ...(memoryGb === undefined ? {} : { memoryGb }) });
+    assert.equal(tool.takesAPlace(gate('dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --filter Category!=Process')), true);
+    assert.equal(tool.takesAPlace(gate('dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --settings src/Daoris.Desktop/process.runsettings')), true);
+    assert.equal(tool.takesAPlace(gate('npm run verify')), true);
+    assert.equal(tool.takesAPlace(gate('npm run tooltests')), true, 'the tool tests load the CPU as a suite does');
+    assert.equal(tool.takesAPlace(gate('node tools/orient-index.mjs --check')), false);
+    assert.equal(tool.takesAPlace(gate('npm run typecheck:web')), false);
+    assert.equal(tool.takesAPlace(gate('dotnet test src/Daoris.Service', 0)), false, 'a declared need of none is none');
+    assert.equal(tool.takesAPlace(gate('npm run tooltests', 0)), false);
   });
 
   test('the admission is off for the tool own tests, on for a home, and needs no home to be asked', () => {

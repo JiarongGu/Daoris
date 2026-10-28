@@ -297,6 +297,24 @@ released only on a read of their job that finds it empty. The scoped runner writ
 yet read it, and gates run in no job object yet (CISCOPE1e2). The scoped runner runs at normal priority with build servers of
 its own. The CI's watch still gates every promoted tip, and the stage's rules are CISCOPE1d's.
 
+**The machine's heavy-run admission** (HEAVYQUEUE1) is a second record, in the Daoris home, not the repository: `locks/admission/admission.json`
+(`DAORIS_HOME`, the home's `locks` entry), which the queue's heavy gates (`memoryNeed` above 0), its failure probes and a driven session's
+heavy runs all take a place in before they start a heavy process, so a session's focused `dotnet test` beside a candidate no longer
+doubles the candidate's gate times into timeouts and unresolved flakes. It holds the runs that hold a place and the runs that ask,
+first come first served up to a capacity (one for each seven processors, two to six; `DAORIS_ADMISSION_SLOTS` sets it, 3 on 22
+processors). A run waiting says in a sentence what it waits for (the holds, whose and for how long, and the runs asked before it)
+and looks again every two seconds; **it never times out and a gate's clock starts only once it has its place**, so a wait is no
+failure of the gate. An entry counts while its process runs and it has beaten within two minutes (its writer rewrites `beat` every
+twenty seconds), so a holder that dies, however it dies, releases at once, and nothing is released by a timeout while it lives.
+It changes no verdict, order or cancellation: a drop ends a gate waiting as it ends one running, holding nothing. It governs only
+what the queue and driven sessions start, never the owner's own sessions or another process. The merge tool's side is
+`tools/machine-admission.mjs` (off with `MERGE_BRANCH_ADMISSION=off`, and under `MERGE_BRANCH_MEMORY=off`, the tool's own tests, unless
+`MERGE_BRANCH_ADMISSION=on`; with no `DAORIS_HOME` it shares nothing and nothing waits), the driver's is `MachineAdmission.cs`;
+`fixtures/machine-admission.json` is the table both carry. A session reaches it through `daoris-driver run-heavy` (D180's
+HEAVYQUEUE1 note): its marked gates take a place after the repository's slot, and `run-heavy -- <command>` runs a command of its own,
+a filtered `dotnet test` or a test file's run, as a heavy run with no slot; a driven session is told to use it (`HeavyTold.Focused`).
+The queue's admission is the machine's: it does not read `local/admission.json`, whose reservations remain CISCOPE1e2's.
+
 `--ci [<commit>]` is the local CI (CI1, D180's CI1 note). It gates main's tip, or the named commit, with every gate but the
 two rehearsals it owes a stage (below), in the same
 `local/gate-tree`, holding its lock, and never touches the main checkout's tree. It runs only the gates that commit's

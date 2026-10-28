@@ -261,7 +261,8 @@ public static class MachineAdmission
         AtomicFile.WriteText(file, Serialize(holds, waits));
     }
 
-    internal static string Serialize(IReadOnlyList<AdmissionEntry> holds, IReadOnlyList<AdmissionEntry> waits)
+    /// <summary>The file as it is written whole: the form the merge tool writes and reads (<c>admission.json</c>).</summary>
+    public static string Serialize(IReadOnlyList<AdmissionEntry> holds, IReadOnlyList<AdmissionEntry> waits)
     {
         using var buffer = new MemoryStream();
         using (var writer = new Utf8JsonWriter(buffer, new JsonWriterOptions { Indented = true }))

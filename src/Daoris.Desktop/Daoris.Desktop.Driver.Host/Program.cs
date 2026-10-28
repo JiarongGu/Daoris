@@ -274,7 +274,7 @@ using Daoris.Driver;
 //                 --look runs nothing: who holds the slot, at which gate and for how long, and who waits (HEAVYSLOT1).
 //                 Every run, gates or command, also takes a place in the machine's heavy-run admission (HEAVYQUEUE1),
 //                 the one the merge queue's heavy gates take theirs in, and says what it waits for. -- <command> runs a
-//                 command of your own (a filtered dotnet test, a test file's run) as such a run: its exit is the run's.
+//                 command of your own (a filtered dotnet test, a test file's run) as such a run: 0 it passed · 1 it failed or was stopped.
 //   heavy [<repository> [<name>=<command> [--cwd <folder>]… | --clear]]
 //                 this machine's heavy gates for a repository whose own daoris.gates.json marks none (HEAVYRUN1b2a, D180's
 //                 HEAVYRUN1b2a note), in the order they run: what run-heavy runs there and its sessions are told of. Kept in

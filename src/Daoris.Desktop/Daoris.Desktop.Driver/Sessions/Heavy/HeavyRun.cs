@@ -358,7 +358,7 @@ public static class HeavyRun
     /// <c>run-heavy -- &lt;command…&gt;</c> (HEAVYQUEUE1): a command the caller chose, a focused <c>dotnet test</c> or a test file's run, as a heavy
     /// run of the machine: it waits for a place in the machine's admission (the queue's gates take places in the same one), saying what it
     /// waits for, runs in the folder it was started in with everything it starts held in a job that is ended before the place is let
-    /// go, and answers with the command's own exit. No repository's slot is taken and no gate is read: it is not a gate, and two
+    /// go, and answers as a gate does: 0 passed, 1 failed (its exit said) or stopped. No repository's slot is taken and no gate is read: it is not a gate, and two
     /// sessions' focused runs may run side by side as far as the machine admits.
     /// </summary>
     private static async Task<int> RunCommandAsync(IReadOnlyList<string> command, HeavyRunWorld world, TextWriter output, CancellationToken ct)

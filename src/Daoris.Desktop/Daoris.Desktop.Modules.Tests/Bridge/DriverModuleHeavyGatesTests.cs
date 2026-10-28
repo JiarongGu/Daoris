@@ -192,12 +192,26 @@ public sealed class DriverModuleHeavyGatesTests : DriverModuleBridge
         File.WriteAllText(Path.Combine(waits, "a.json"), Waiter(otherStarted, "2026-10-20T09:05:00Z", null));
         File.WriteAllText(Path.Combine(waits, "b.json"), Waiter(otherStarted + 1, "2026-10-20T09:00:00Z", "s-gone"));
 
+        // HEAVYQUEUE1: the machine's admission beside the slot: the merge queue's gate holds a place, a session's run asks for one.
+        var now = DateTimeOffset.UtcNow;
+        var admission = MachineAdmission.PathOf(Home);
+        Directory.CreateDirectory(Path.GetDirectoryName(admission)!);
+        File.WriteAllText(admission, MachineAdmission.Serialize(
+            [new AdmissionEntry("1-aa", "queue", self.Id, "driver gate", now.AddMinutes(-4), now, null, null, null)],
+            [new AdmissionEntry("2-bb", "session", self.Id, "dotnet test --filter Foo", now.AddMinutes(-1), now, "s-12", "engine", checkout)]));
+
         var body = $$"""[{"repository":"engine","workspace":"w","adopted":true,"root":{{JsonSerializer.Serialize(checkout)}}}]""";
         var loop = Loop();
         var module = new DriverModule(Bus, loop);
         await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(new RegistryStandIn(body))));
 
         var answer = await AnswerAsync(module, "HEAVY_SLOT", new { repository = "engine" });
+        var machine = answer.GetProperty("admission");
+        Assert.True(machine.GetProperty("capacity").GetInt32() >= 2);
+        var queue = Assert.Single(machine.GetProperty("holds").EnumerateArray());
+        Assert.Equal(("queue", "driver gate"), (queue.GetProperty("kind").GetString(), queue.GetProperty("what").GetString()));
+        var asking = Assert.Single(machine.GetProperty("waits").EnumerateArray());
+        Assert.Equal(("session", "s-12", "dotnet test --filter Foo"), (asking.GetProperty("kind").GetString(), asking.GetProperty("session").GetString(), asking.GetProperty("what").GetString()));
         var holder = answer.GetProperty("holder");
         Assert.Equal("s-12", holder.GetProperty("session").GetString());
         Assert.Equal(["build", "web"], holder.GetProperty("gates").EnumerateArray().Select(gate => gate.GetString()));

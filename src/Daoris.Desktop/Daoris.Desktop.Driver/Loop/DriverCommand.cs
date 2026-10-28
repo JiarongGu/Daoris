@@ -280,7 +280,7 @@ public static class DriverCommand
               --look runs nothing: who holds the slot, at which gate and for how long, and who waits.
               Every run also takes a place in the machine's heavy-run admission, the one the merge queue's heavy gates take
               theirs in, saying what it waits for. -- <command> runs a command of your own (a filtered dotnet test, a test
-              file's run) as such a run, with no repository slot: its exit is the run's.
+              file's run) as such a run, with no repository slot: 0 it passed · 1 it failed or was stopped.
           heavy [<repository> [<name>=<command> [--cwd <folder>]… | --clear]]
               this machine's heavy gates for a repository whose own daoris.gates.json marks none, in the order they run:
               what run-heavy runs there, and what its sessions are told to run once, at their end. Kept here, never in

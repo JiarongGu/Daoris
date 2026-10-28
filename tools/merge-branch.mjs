@@ -430,8 +430,8 @@ import {
 import { fenced, gluedLabels, records } from './doc-duplicates.mjs';
 import { isMain, renameHeld, spawnGit, stagedTree, writeAtomic } from './fsx.mjs';
 import { indexLockNote, mentionsIndexLock, readIndexLock } from './index-lock.mjs';
+import { admissionLines, createAdmission, lookAt } from './machine-admission.mjs';
 import { censusOf, classesReached, halfOf, reachSettings, repository, withSettings } from './process-reach.mjs';
-import { createAdmission } from './machine-admission.mjs';
 import { endOrphans, endStranded } from './processes.mjs';
 import { gateSignature, readTrx, signatureKey, signatureOf } from './test-failures.mjs';
 import {
@@ -1075,6 +1075,17 @@ export const REACH = Object.freeze([
     ],
     gates: ['tool-tests'],
     why: "the merge tool's, the publisher's and the set-up kit's tests, which `tool-tests` runs and verify does not (GATESLIM1): the merge tool and what it imports (the Process census, PROCREACH1, among them), the census of every test unit with its failure reader and recall (CISCOPE1c), the merge queue and the admission record (CISCOPE1e), the tests, and the fixture they share",
+  },
+  // HEAVYQUEUE1: the machine's heavy-run admission, which the merge tool's gates take places in; its own tests run in verify.
+  {
+    paths: ['tools/machine-admission.mjs', 'tools/machine-admission.test.mjs'],
+    gates: ['cli', 'tool-tests'],
+    why: "the machine's heavy-run admission the merge tool's gates take places in (HEAVYQUEUE1): its table-driven tests run in verify, and the merge tool's tests hold its use",
+  },
+  {
+    paths: ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/machine-admission.json'],
+    gates: ['driver', 'cli'],
+    why: "the driver's MachineAdmissionTests and the merge tool's admission tests (run in verify) read the admission's table (HEAVYQUEUE1)",
   },
   {
     paths: ['tools/rehearsal-kit.mjs'],
@@ -3930,13 +3941,20 @@ async function againOfMemory(root, gates, dir, results, { run, print, wait, hear
 }
 
 /**
+ * HEAVYQUEUE1: whether a gate takes a place in the machine's admission: every gate that needs memory (`memoryNeed`: the suites, the
+ * Process halves, the rehearsals) and the tool tests, which load the CPU as a suite does though they build nothing (15 minutes beside
+ * two to four driven sessions on 2026-10-28). A light gate takes none, and a declared `"memoryGb": 0` is a gate that needs none.
+ */
+export const takesAPlace = (gate) => memoryNeed(gate) > 0 || (typeof gate.memoryGb !== 'number' && /^npm run tooltests\b/.test(gate.run.trim()));
+
+/**
  * HEAVYQUEUE1: `fn` run holding the place a heavy gate takes in the machine's admission (`admission.take`), waited for with no bound
  * and let go as `fn` ends however it ends. A gate that is not heavy takes none, and a wait the run no longer needs (`halted`) runs
  * nothing: `fn` is not called, and the answer is null. The wait comes before the gate's own memory wait and before its clock starts,
  * so it is never a timeout of the gate.
  */
 export async function admitted(admission, gate, halted, fn) {
-  if (!admission || !(memoryNeed(gate) > 0)) return fn();
+  if (!admission || !takesAPlace(gate)) return fn();
   const hold = await admission.take({ what: `${gate.name} gate`, halted });
   if (!hold) return halted() ? null : fn();
   try {
@@ -6925,6 +6943,14 @@ async function queueVerb(root, options) {
   const admission = readAdmission(home);
   console.log(`admission (local/admission.json): ${count(admission.reservations.length, 'reservation')}${admission.scopedTier ? `, a scoped tier ${admission.scopedTier.state}` : ''}`);
   for (const line of overdueWaits(admission)) console.log(`  overdue: ${line}`);
+  // HEAVYQUEUE1: the machine's admission, which the queue's heavy gates take places in beside the sessions' runs.
+  if (process.env.DAORIS_HOME) {
+    try {
+      for (const line of admissionLines(lookAt(process.env.DAORIS_HOME))) console.log(line);
+    } catch (error) {
+      console.log(`machine heavy-run admission: it could not be read (${error?.message ?? error})`);
+    }
+  }
   return 0;
 }
 

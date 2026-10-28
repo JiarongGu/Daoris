@@ -56,6 +56,24 @@ public static class HeavyTold
     /// <param name="takesRules">Whether the session's agent takes Daoris's rules (<see cref="ISessionAdapter.TakesSettings"/>).</param>
     public static HeavyHanded Hand(string root, string? home, string? repository, string? checks, bool takesRules)
     {
+        var handed = HandChecks(root, home, repository, checks, takesRules);
+        // HEAVYQUEUE1: wherever the verb is reached, a long test command is told to go through it, beside whatever else the checks say.
+        return home is not null && Reaches(home) ? handed with { Words = handed.Words is null ? Focused : $"{handed.Words} {Focused}" } : handed;
+    }
+
+    /// <summary>
+    /// What a session is told about running a long test command of its own (HEAVYQUEUE1): through <c>run-heavy -- &lt;command&gt;</c>, which takes
+    /// a place in the machine's heavy-run admission, the merge queue's gates among those holding one, and says what it waits for, rather
+    /// than running beside them and slowing them all. Project-agnostic: it names no repository's gate and no decision.
+    /// </summary>
+    public static string Focused { get; } =
+        $"Run a test command you expect to take a minute or more, a filtered test class or a test file, through `{Verb} run-heavy -- <command>` "
+        + $"(for example `{Verb} run-heavy -- dotnet test --filter <class>`), from this tree: when the machine already runs as many heavy runs "
+        + "as it admits, the merge queue's gates among them, it waits for a place and says what for, rather than running beside them and slowing "
+        + "them all. A quick command needs no wait.";
+
+    private static HeavyHanded HandChecks(string root, string? home, string? repository, string? checks, bool takesRules)
+    {
         if (checks is null) return new HeavyHanded(For(root, home, repository), [], null);
         var (light, heavy) = Gates(root, home, repository);
         if (heavy.Count == 0) return HeavyHanded.None;

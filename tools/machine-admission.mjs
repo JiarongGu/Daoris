@@ -234,6 +234,15 @@ export function createAdmission({
   return { take, file, capacity: size };
 }
 
+/** What `--queue` says of the machine's admission (HEAVYQUEUE1): its places held, whose and for how long, and how many ask. */
+export function admissionLines(look, now = Date.now()) {
+  const who = (entry) => `${entry.kind === 'queue' ? 'the merge queue' : entry.session ? `session ${entry.session}` : 'a driven run'}'s ${entry.what}`;
+  const lines = [`machine heavy-run admission (the Daoris home): ${look.holds.length} of ${look.capacity} places held, ${look.waits.length} asking`];
+  for (const entry of look.holds) lines.push(`  holds: ${who(entry)}, since ${entry.since} (${Math.round((now - timeOf(entry.since)) / 60_000)} min)`);
+  for (const entry of look.waits) lines.push(`  asks: ${who(entry)}, since ${entry.since}`);
+  return lines;
+}
+
 /** The machine's admission as it stands, read only: the live holds and waits, and whether the file is there. */
 export function lookAt(daorisHome, seam = {}) {
   const file = admissionFile(daorisHome);
