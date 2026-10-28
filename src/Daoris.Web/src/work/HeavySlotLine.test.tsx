@@ -67,6 +67,57 @@ describe('the slot as the driver answers it', () => {
   });
 });
 
+describe('the machine admission (HEAVYQUEUE1)', () => {
+  const ADMITTING: HeavySlot = {
+    ...RUNNING,
+    admission: {
+      capacity: 3,
+      holds: [{ kind: 'queue', what: 'driver gate', since: ago(4) }, { kind: 'session', session: 's-fts', what: 'heavy gates build', since: ago(9) }],
+      waits: [{ kind: 'session', session: 's-chan', what: 'dotnet test --filter Foo', since: ago(2) }],
+    },
+  };
+
+  it('reads the admission field by field, and an older shell none or a shape it does not know as nothing', () => {
+    const read = readHeavySlot({
+      repository: 'engine',
+      waiters: [],
+      admission: {
+        capacity: 3,
+        holds: [{ kind: 'queue', what: 'driver gate', since: ago(4) }, { what: 'no time' }],
+        waits: [{ kind: 'session', session: 's-chan', what: 'dotnet test', since: ago(2) }],
+      },
+    });
+    expect(read?.admission).toEqual({
+      capacity: 3,
+      holds: [{ kind: 'queue', session: null, what: 'driver gate', since: ago(4) }],
+      waits: [{ kind: 'session', session: 's-chan', what: 'dotnet test', since: ago(2) }],
+    });
+    expect(readHeavySlot({ repository: 'engine', waiters: [], admission: { capacity: 0, holds: [], waits: [] } })?.admission).toBeUndefined();
+    expect(readHeavySlot({ repository: 'engine', waiters: [] })).toEqual({ repository: 'engine', holder: null, waiters: [], refusal: null });
+  });
+
+  it('gives a session asking for a place the wait for the machine, whatever else it holds', () => {
+    expect(heavyPartOf(ADMITTING, 's-chan')).toEqual({ kind: 'admission', holds: 2, capacity: 3, since: ago(2) });
+    // The holder of the repository's slot that has not yet been admitted has not started its gates.
+    const holderAsking = { ...ADMITTING, admission: { ...ADMITTING.admission!, waits: [{ kind: 'session' as const, session: 's-fts', what: 'heavy gates', since: ago(1) }] } };
+    expect(heavyPartOf(holderAsking, 's-fts')).toEqual({ kind: 'admission', holds: 2, capacity: 3, since: ago(1) });
+    // One that holds a place, or none, has its part in the slot as before.
+    expect(heavyPartOf(ADMITTING, 's-fts')).toEqual({ kind: 'running', n: 2, total: 3, gate: 'test:web', since: ago(6) });
+    expect(heavyPartOf(ADMITTING, 's-other')).toBeNull();
+  });
+
+  it('says the wait in English and 中文, and never as a wait on the person', async () => {
+    const part = heavyPartOf(ADMITTING, 's-chan')!;
+    expect(heavyLine(i18n.t.bind(i18n), part, titleOf)).toBe('waiting for the machine to admit its heavy run · 2 of 3 running · 2m');
+    render(<HeavySlotLine part={part} titleOf={titleOf} />);
+    expect(screen.getByText('waiting for the machine to admit its heavy run · 2 of 3 running · 2m')).toBeTruthy();
+    cleanup();
+
+    await i18n.changeLanguage('zh');
+    expect(heavyLine(i18n.t.bind(i18n), part, titleOf)).toBe('等待本机放行重型运行 · 已运行 2 / 3 · 2 分钟');
+  });
+});
+
 describe('the line', () => {
   it('says the gate running, whom it waits behind, and the gate that failed, in English and 中文', async () => {
     const t = i18n.t.bind(i18n);

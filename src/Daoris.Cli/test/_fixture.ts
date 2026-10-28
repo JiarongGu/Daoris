@@ -8,6 +8,16 @@ import { homeEntry, type HomeEntryName } from '../src/platform/home.ts';
 
 const FIXTURE_ROOT = join(dirname(dirname(fileURLToPath(import.meta.url))), '_fixtures');
 
+/**
+ * How long a TypeScript test waits, in ms, for a signal that fails to come only when the code is wrong: a stub's or a plugin's
+ * answer, a file or a process a child is to produce or end, a poll's condition (TESTPATIENCE3). It elapses only on failure, so
+ * it costs a passing test nothing, and it is two minutes as the desktop tests' `Poll.Patience` is (TESTPATIENCE1), because a
+ * few seconds is what a machine at full load takes to start one process. The CLI's tests, the tool-tests and the tools' own
+ * tests read it; `tools/test-patience.mjs` refuses a new fixed wait shorter than it unless its line says why it stays. Never
+ * for an elapsed-time bound that states the claim, a staging delay, or a product input a test hands to code.
+ */
+export const PATIENCE = 120_000;
+
 /** A scratch repository under `_fixtures/` — never OS temp. */
 export interface Fixture {
   root: string;

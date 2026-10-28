@@ -143,7 +143,8 @@ public sealed class SessionChecksHandTests : IDisposable
         Launcher();
         var handed = HeavyTold.Hand(_fixture.Checkout, Home, "engine", SessionChecks.HeavyAtEnd, takesRules: true);
 
-        Assert.Equal(AtEnd, handed.Words);
+        // HEAVYQUEUE1: beside the checks' own words, a long test command is told to go through the verb.
+        Assert.Equal($"{AtEnd} {HeavyTold.Focused}", handed.Words);
         Assert.Empty(handed.Deny);
         Assert.Null(handed.HardDeny);
     }
@@ -157,8 +158,8 @@ public sealed class SessionChecksHandTests : IDisposable
 
         var handed = HeavyTold.Hand(_fixture.Checkout, Home, "engine", checks: null, takesRules: true);
 
-        Assert.Equal(HeavyTold.For(_fixture.Checkout, Home, "engine"), handed.Words);
-        Assert.Equal(HeavyTold.Words(["build", "e2e"]), handed.Words);
+        Assert.Equal($"{HeavyTold.For(_fixture.Checkout, Home, "engine")} {HeavyTold.Focused}", handed.Words);
+        Assert.Equal($"{HeavyTold.Words(["build", "e2e"])} {HeavyTold.Focused}", handed.Words);
         Assert.Empty(handed.Deny);
         Assert.Null(handed.HardDeny);
     }

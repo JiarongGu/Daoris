@@ -7,7 +7,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { keepLockPath, keepLockStale, takeKeepLock } from '../../src/platform/keeplock.ts';
 import { homeEntry } from '../../src/platform/home.ts';
 import { driverTestFile } from '../_csharp.ts';
-import { makeFixture } from '../_fixture.ts';
+import { makeFixture, PATIENCE } from '../_fixture.ts';
 
 /**
  * CONFIGLOCK1 (D173's CONFIG1 note): a keeping write holds `<file>.lock` from its re-read to its rename, so a change another writer makes
@@ -87,7 +87,7 @@ function started(script: string, env: Record<string, string>) {
   child.stderr.setEncoding('utf8').on('data', (chunk: string) => { err += chunk; });
   return {
     async said(word: string): Promise<void> {
-      for (const until = Date.now() + 30_000; !out.includes(word); await new Promise((done) => setTimeout(done, 10))) {
+      for (const until = Date.now() + PATIENCE; !out.includes(word); await new Promise((done) => setTimeout(done, 10))) {
         if (child.exitCode !== null || Date.now() > until) throw new Error(`the other writer ended or stalled without saying ${word}: ${err}`);
       }
     },

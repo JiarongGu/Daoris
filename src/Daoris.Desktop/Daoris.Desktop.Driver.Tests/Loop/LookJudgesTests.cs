@@ -16,8 +16,6 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </remarks>
 public sealed class LookJudgesTests : IDisposable
 {
-    private static readonly TimeSpan Bound = TimeSpan.FromSeconds(20);
-
     private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-judges-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly StandInLedger _ledger = new();
@@ -50,11 +48,11 @@ public sealed class LookJudgesTests : IDisposable
         var watching = Task.Run(() => watch.RunAsync((_, _) => Task.CompletedTask, onError: null, _closing.Token));
         try
         {
-            await judging.Asked.Task.WaitAsync(Bound);
+            await judging.Asked.Task.WaitAsync(Poll.Patience);
 
             _ledger.Publish("q3", "tools");
             watch.Nudge(ChangeTopics.Ledger, "quests");
-            await Poll.Until(() => runs.Started.Contains("q3"), () => "q3 waited for q1's opinion to be judged", Bound);
+            await Poll.Until(() => runs.Started.Contains("q3"), () => "q3 waited for q1's opinion to be judged", Poll.Patience);
 
             Assert.DoesNotContain("q2", runs.Started);
         }
@@ -81,12 +79,12 @@ public sealed class LookJudgesTests : IDisposable
         var watching = Task.Run(() => watch.RunAsync(Into(reports), onError: null, _closing.Token));
         try
         {
-            await judging.Asked.Task.WaitAsync(Bound);
+            await judging.Asked.Task.WaitAsync(Poll.Patience);
             for (var wake = 0; wake < 3; wake++)
             {
                 var seen = Count(reports);
                 watch.Nudge(ChangeTopics.Ledger, "quests");
-                await Poll.Until(() => Count(reports) > seen, () => $"wake {wake} never looked: q1's opinion held the look", Bound);
+                await Poll.Until(() => Count(reports) > seen, () => $"wake {wake} never looked: q1's opinion held the look", Poll.Patience);
             }
 
             var held = Snapshot(reports)[^1].Considerations.Single(c => c.Quest.Id == "q2");
@@ -95,7 +93,7 @@ public sealed class LookJudgesTests : IDisposable
             Assert.DoesNotContain("q2", runs.Started);
 
             judging.Release();
-            await Poll.Until(() => runs.Started.Contains("q2"), () => "q2 never started once q1's opinion was judged", Bound);
+            await Poll.Until(() => runs.Started.Contains("q2"), () => "q2 never started once q1's opinion was judged", Poll.Patience);
             Assert.Empty(new OpinionDues(_home).Open());
         }
         finally
@@ -133,7 +131,7 @@ public sealed class LookJudgesTests : IDisposable
         var watching = Task.Run(() => watch.RunAsync(Into(reports), onError: null, _closing.Token));
         try
         {
-            await Poll.Until(() => Volatile.Read(ref asked) >= 2, () => "the failed judgment was never asked again", Bound);
+            await Poll.Until(() => Volatile.Read(ref asked) >= 2, () => "the failed judgment was never asked again", Poll.Patience);
             await Task.Delay(TimeSpan.FromSeconds(2));
 
             Assert.InRange(Volatile.Read(ref asked), 2, 3);
@@ -168,11 +166,11 @@ public sealed class LookJudgesTests : IDisposable
         var watching = Task.Run(() => watch.RunAsync((_, _) => Task.CompletedTask, onError: null, _closing.Token));
         try
         {
-            await handing.Asked.Task.WaitAsync(Bound);
+            await handing.Asked.Task.WaitAsync(Poll.Patience);
 
             _ledger.Publish("q3", "tools");
             watch.Nudge(ChangeTopics.Ledger, "quests");
-            await Poll.Until(() => runs.Started.Contains("q3"), () => "q3 waited for the helper's answer to be handed", Bound);
+            await Poll.Until(() => runs.Started.Contains("q3"), () => "q3 waited for the helper's answer to be handed", Poll.Patience);
         }
         finally
         {
@@ -200,19 +198,19 @@ public sealed class LookJudgesTests : IDisposable
         var watching = Task.Run(() => watch.RunAsync(Into(reports), onError: null, _closing.Token));
         try
         {
-            await selecting.Asked.Task.WaitAsync(Bound);
+            await selecting.Asked.Task.WaitAsync(Poll.Patience);
 
             _ledger.Publish("q3", "tools");
             watch.Nudge(ChangeTopics.Ledger, "quests");
-            await Poll.Until(() => runs.Started.Contains("q3"), () => "q3 waited for the landing's selection", Bound);
+            await Poll.Until(() => runs.Started.Contains("q3"), () => "q3 waited for the landing's selection", Poll.Patience);
 
             selecting.Release();
-            await Poll.Until(() => new AutoLandings(_home).Open().Count == 0, () => "the landing never closed s8", Bound);
+            await Poll.Until(() => new AutoLandings(_home).Open().Count == 0, () => "the landing never closed s8", Poll.Patience);
             for (var wake = 0; wake < 2; wake++)
             {
                 var seen = Count(reports);
                 watch.Nudge(ChangeTopics.Ledger, "quests");
-                await Poll.Until(() => Count(reports) > seen, () => $"wake {wake} never looked", Bound);
+                await Poll.Until(() => Count(reports) > seen, () => $"wake {wake} never looked", Poll.Patience);
             }
 
             Assert.Single(Snapshot(reports).SelectMany(report => report.Events),
@@ -306,7 +304,7 @@ public sealed class LookJudgesTests : IDisposable
 
     private static async Task Settled(Task running)
     {
-        try { await running.WaitAsync(Bound); }
+        try { await running.WaitAsync(Poll.Patience); }
         catch (OperationCanceledException) { }
         catch (TimeoutException) { }
     }

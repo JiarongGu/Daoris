@@ -204,7 +204,20 @@ public sealed class DriverRoutes(DriverContext context)
             repository,
             holder,
             waiters = look.Waiters.Select(waiter => new { session = waiter.Session, since = waiter.Since }).ToArray(),
+            admission = AdmissionOf(home),
         };
+    }
+
+    /// <summary>
+    /// The machine's heavy-run admission beside the repository's slot (HEAVYQUEUE1): <c>{ capacity, holds, waits }</c>, each run
+    /// <c>{ kind, session?, what, since }</c>, the longest asking first, read from its file and never from a run's output. A session waiting
+    /// for a place in it is told so on its page; the merge queue's heavy gates are in it too, as <c>queue</c>.
+    /// </summary>
+    private static object AdmissionOf(string home)
+    {
+        var look = MachineAdmission.Look(home);
+        object Run(AdmissionEntry entry) => new { kind = entry.Kind, session = entry.Session, what = entry.What, since = entry.Since };
+        return new { capacity = look.Capacity, holds = look.Holds.Select(Run).ToArray(), waits = look.Waits.Select(Run).ToArray() };
     }
 
     /// <summary>

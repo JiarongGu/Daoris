@@ -18,6 +18,7 @@ import { after, test } from 'node:test';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { fileURLToPath } from 'node:url';
 import { createServer as createTcpServer } from 'node:net';
+import { PATIENCE } from '../src/Daoris.Cli/test/_fixture.ts';
 import { portIsFree } from './cdp.mjs';
 import { listenFetchable } from './listen-port.mjs';
 import {
@@ -201,7 +202,7 @@ test('a wait answers what its ask found once it is ready, asking until then', as
   const waited = await waitFor(() => {
     asks += 1;
     return asks === 3 ? 'stub: lingering' : null;
-  }, { within: 5_000, every: 5 });
+  }, { within: PATIENCE, every: 5 });
 
   assert.equal(waited.ended, 'ready');
   assert.equal(waited.value, 'stub: lingering');
@@ -226,7 +227,7 @@ test('an ask that throws, as a host does while it restarts, is not ready, and th
     asks += 1;
     if (asks < 3) throw new Error('connect ECONNREFUSED');
     return true;
-  }, { within: 5_000, every: 5 });
+  }, { within: PATIENCE, every: 5 });
 
   assert.equal(waited.ended, 'ready');
   assert.equal(asks, 3);
@@ -234,9 +235,10 @@ test('an ask that throws, as a host does while it restarts, is not ready, and th
 
 test('a wait ends when what it waits beside settles first: a run that has ended will never say it', async () => {
   const run = sleep(30).then(() => ({ code: 0 }));
-  const waited = await waitFor(() => false, { within: 10_000, every: 5, settled: run });
+  const waited = await waitFor(() => false, { within: PATIENCE, every: 5, settled: run });
 
   assert.equal(waited.ended, 'settled');
+  // patience: claim — the wait ended with the run, not at its bound
   assert.ok(waited.ms < 5_000, `it waited ${waited.ms} ms past the run's end`);
 });
 
@@ -254,7 +256,7 @@ test('a host is restarted only once the session using it is between requests, an
       done.push('start');
       return 'host b';
     },
-    within: 5_000,
+    within: PATIENCE,
     every: 5,
     gap: 5,
   });
@@ -329,7 +331,7 @@ function stubTurn(stub, { cwd, env, opening, words }) {
     let buffered = '';
     let said = '';
     let answer = null;
-    const timer = setTimeout(() => { child.kill(); reject(new Error(`the stub answered no prompt within 30s:\n${said}`)); }, 30_000);
+    const timer = setTimeout(() => { child.kill(); reject(new Error(`the stub answered no prompt within ${PATIENCE / 1000}s:\n${said}`)); }, PATIENCE);
     child.stdout.on('data', (chunk) => {
       buffered += chunk;
       let cut;
@@ -565,7 +567,7 @@ test('a port its own stopped host lets go of within the wait is not refused', as
   const holder = await holdPort(port);
   setTimeout(() => holder.close(), 150);
 
-  assert.equal(await portRefusal(port, { within: 5_000, every: 20, holder: () => 'unasked' }), null);
+  assert.equal(await portRefusal(port, { within: PATIENCE, every: 20, holder: () => 'unasked' }), null);
 });
 
 test('the holder of a port is named by its process, as Windows tells it', { skip: process.platform !== 'win32' }, async (t) => {
@@ -752,6 +754,7 @@ test('a command its timeout ends is ended with what it started, never only the s
     // Five seconds first; a loaded machine can take longer than that to start node at all (the full set on 9717f8d), so a
     // command that never said its id is run once more with longer, and only then is nothing asked.
     let ran;
+    // patience: input — the timeout is the command's own, which is ended at it and so costs its whole length; the second only retries a slow start
     for (const timeout of [5_000, 30_000]) {
       ran = capture(`node "${waiter}" "${said}"`, at, { timeout });
       if (existsSync(said)) break;
@@ -762,12 +765,12 @@ test('a command its timeout ends is ended with what it started, never only the s
     assert.ok(pid > 0, 'the command never said its id within its timeout, so nothing here was asked');
 
     // Ended by the time the runner answers; a little patience for an exit the system is still recording.
-    for (let waited = 0; waited < 10_000 && alive(pid); waited += 250) await sleep(250);
+    for (let waited = 0; waited < PATIENCE && alive(pid); waited += 250) await sleep(250);
     assert.equal(alive(pid), false, `pid ${pid}, which the timed-out command started, still runs`);
   } finally {
     // A survivor holds the folder as its own until it has gone, and the scratch's removal would fail on it.
     if (pid > 0 && alive(pid)) process.kill(pid);
-    for (let waited = 0; waited < 10_000 && pid > 0 && alive(pid); waited += 250) await sleep(250);
+    for (let waited = 0; waited < PATIENCE && pid > 0 && alive(pid); waited += 250) await sleep(250);
   }
 });
 
@@ -804,7 +807,7 @@ function acpExchange(script, { cwd, env = {}, frames, allow = true }) {
     let buffered = '';
     let said = '';
     let at = 0;
-    const timer = setTimeout(() => { child.kill(); reject(new Error(`the agent did not finish within 30s:\n${said}`)); }, 30_000);
+    const timer = setTimeout(() => { child.kill(); reject(new Error(`the agent did not finish within ${PATIENCE / 1000}s:\n${said}`)); }, PATIENCE);
     const next = () => {
       if (at < frames.length) child.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', id: at + 1, ...frames[at++] })}\n`);
       else child.stdin.end();

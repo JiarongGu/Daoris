@@ -6,12 +6,19 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// What <c>daoris-driver run-heavy</c> was asked: one gate by name, or every heavy one (null); or, with <see cref="Look"/>, who holds
-/// the slot and who waits, running nothing (HEAVYSLOT1).
+/// the slot and who waits, running nothing (HEAVYSLOT1); or, with <see cref="Command"/>, a command of the caller's own as a heavy run
+/// (HEAVYQUEUE1).
 /// </summary>
 public sealed record HeavyRunAsk(string? Gate)
 {
     /// <summary><c>--look</c>: say the slot as it stands (<see cref="HeavyRun.Look"/>), and run nothing.</summary>
     public bool Look { get; init; }
+
+    /// <summary>
+    /// <c>-- &lt;command…&gt;</c> (HEAVYQUEUE1): the words after it, a command the caller chose (a filtered <c>dotnet test</c>, a <c>vitest</c>
+    /// run) run as a heavy run: after the machine's admission, in the folder it was run in, no repository's slot taken and no gate read.
+    /// </summary>
+    public IReadOnlyList<string>? Command { get; init; }
 }
 
 /// <summary>Where a heavy run runs: the home its slot is under, the folder it was run in, and its environment, read through a seam.</summary>
@@ -22,6 +29,9 @@ public sealed record HeavyRunWorld(string Home, string Directory, Func<string, s
 {
     /// <summary>How the run waits for the slot.</summary>
     public HeavyWaiting Waiting { get; init; } = HeavyWaiting.Default;
+
+    /// <summary>How the run waits for the machine's admission (HEAVYQUEUE1).</summary>
+    public AdmissionWaiting Admission { get; init; } = AdmissionWaiting.Default;
 
     /// <summary>This process's: its folder and its environment.</summary>
     public static HeavyRunWorld OfThisProcess(string home) => new(home, Environment.CurrentDirectory, Environment.GetEnvironmentVariable);
@@ -64,7 +74,7 @@ public sealed record HeavyMarker(string Slot, IReadOnlyList<string> Gates);
 public static class HeavyRun
 {
     /// <summary>The verb's usage, said with a word it does not take.</summary>
-    public const string Usage = "usage: daoris-driver run-heavy [--gate <name> | --look]";
+    public const string Usage = "usage: daoris-driver run-heavy [--gate <name> | --look | -- <command>]";
 
     /// <summary>What a run hands its gates' environment: <see cref="Marker"/>, the slot it holds and the gates running.</summary>
     public const string Variable = "DAORIS_HEAVY_RUN";
@@ -78,8 +88,15 @@ public static class HeavyRun
         problem = null;
         string? gate = null;
         var look = false;
+        List<string>? command = null;
         for (var at = 0; at < args.Count; at++)
         {
+            if (args[at] == "--")
+            {
+                command = [.. args.Skip(at + 1)];
+                break;
+            }
+
             if (args[at] == "--look")
             {
                 look = true;
@@ -88,7 +105,7 @@ public static class HeavyRun
 
             if (args[at] != "--gate")
             {
-                problem = $"`{args[at]}` is not a word `run-heavy` takes: it takes `--gate <name>`, `--look`, or nothing for every heavy gate.";
+                problem = $"`{args[at]}` is not a word `run-heavy` takes: it takes `--gate <name>`, `--look`, `-- <command>`, or nothing for every heavy gate.";
                 return null;
             }
 
@@ -113,7 +130,22 @@ public static class HeavyRun
             return null;
         }
 
-        return new HeavyRunAsk(gate) { Look = look };
+        if (command is not null)
+        {
+            if (command.Count == 0 || command[0].Trim().Length == 0)
+            {
+                problem = "`--` takes the command to run after it: `run-heavy -- dotnet test --filter Foo`.";
+                return null;
+            }
+
+            if (look || gate is not null)
+            {
+                problem = "`-- <command>` runs a command of its own, so it takes neither `--gate` nor `--look`.";
+                return null;
+            }
+        }
+
+        return new HeavyRunAsk(gate) { Look = look, Command = command };
     }
 
     /// <summary>Run the checkout's heavy gates, or the one asked, saying on <paramref name="output"/> what it waits for and runs.</summary>
@@ -172,6 +204,7 @@ public static class HeavyRun
 
     private static async Task<int> RunCheckoutAsync(HeavyRunAsk ask, HeavyRunWorld world, TextWriter output, CancellationToken ct)
     {
+        if (ask.Command is { } command) return await RunCommandAsync(command, world, output, ct).ConfigureAwait(false);
         if (HeavySlot.CheckoutOf(world.Directory) is not { } checkout)
         {
             throw new DriverException($"{world.Directory} is in no git checkout: `run-heavy` runs a checkout's own gates, from inside it.");
@@ -275,9 +308,91 @@ public static class HeavyRun
                 }
             }
 
-            return await RunGatesAsync(checkout, choice.Gates, key, [], job, output, ct, Keep).ConfigureAwait(false);
+            // HEAVYQUEUE1: the repository's slot says one run of its gates at a time; the machine's admission says how many heavy runs the
+            // machine holds at all, the merge queue's gates among them. It comes after the slot, so a run waiting for its repository's turn
+            // holds no place; a wait for it is said here and on the page, and the job is ended if the wait is.
+            AdmissionHold? hold;
+            try
+            {
+                var names = string.Join(", ", choice.Gates.Select(gate => $"`{gate.Name}`"));
+                hold = await AdmitAsync(
+                    world, new AdmissionRequest($"heavy gates {names}") { Session = session, Repository = repository, Tree = checkout }, output, ct).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            {
+                job?.Dispose();
+                output.WriteLine("run-heavy: stopped while waiting for the machine's admission; nothing ran.");
+                return 1;
+            }
+
+            using (hold)
+            {
+                return await RunGatesAsync(checkout, choice.Gates, key, [], job, output, ct, Keep, Inside(hold)).ConfigureAwait(false);
+            }
         }
     }
+
+    /// <summary>What a run started inside a hold is handed, so it takes no second place: <see cref="MachineAdmission.InsideVariable"/>, where the hold is this run's.</summary>
+    private static IReadOnlyDictionary<string, string>? Inside(AdmissionHold? hold) =>
+        hold is null || hold.IsInside ? null : new Dictionary<string, string> { [MachineAdmission.InsideVariable] = hold.Id };
+
+    /// <summary>
+    /// A place in the machine's admission, waited for with no bound. A record that cannot be kept (the home is read-only, a lock held
+    /// too long) costs the run its place and nothing else: it is said and the run goes on, as a heavy gate waiting for memory that
+    /// cannot be read does.
+    /// </summary>
+    private static async Task<AdmissionHold?> AdmitAsync(HeavyRunWorld world, AdmissionRequest request, TextWriter output, CancellationToken ct)
+    {
+        try
+        {
+            return await MachineAdmission.TakeAsync(world.Home, request, output, ct, world.Admission, variable: world.Variable).ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            output.WriteLine($"run-heavy: the machine's admission could not be kept ({error.Message}); this run goes on without a place in it.");
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// <c>run-heavy -- &lt;command…&gt;</c> (HEAVYQUEUE1): a command the caller chose, a focused <c>dotnet test</c> or a test file's run, as a heavy
+    /// run of the machine: it waits for a place in the machine's admission (the queue's gates take places in the same one), saying what it
+    /// waits for, runs in the folder it was started in with everything it starts held in a job that is ended before the place is let
+    /// go, and answers as a gate does: 0 passed, 1 failed (its exit said) or stopped. No repository's slot is taken and no gate is read: it is not a gate, and two
+    /// sessions' focused runs may run side by side as far as the machine admits.
+    /// </summary>
+    private static async Task<int> RunCommandAsync(IReadOnlyList<string> command, HeavyRunWorld world, TextWriter output, CancellationToken ct)
+    {
+        var folder = Path.GetFullPath(world.Directory);
+        var checkout = HeavySlot.CheckoutOf(folder);
+        var repository = world.Variable(RepositoryVariable)?.Trim() is { Length: > 0 } handed ? handed : checkout is null ? null : HeavySlot.RepositoryOf(checkout);
+        var session = world.Variable(IntakeRoom.SessionVariable) is { Length: > 0 } ofSession ? ofSession : null;
+        var line = CommandText(command);
+        AdmissionHold? hold;
+        try
+        {
+            hold = await AdmitAsync(
+                world, new AdmissionRequest(line) { Session = session, Repository = repository, Tree = checkout ?? folder }, output, ct).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            output.WriteLine("run-heavy: stopped while waiting for the machine's admission; nothing ran.");
+            return 1;
+        }
+
+        using (hold)
+        {
+            var job = Job(OperatingSystem.IsWindows() ? $"Local\\daoris-heavy-{Guid.NewGuid():N}" : null);
+            return await RunGatesAsync(
+                checkout ?? folder, [new HeavyGate("command", line, null, true)], "", [], job, output, ct, null, Inside(hold), folder).ConfigureAwait(false);
+        }
+    }
+
+    /// <summary>The words as one command line for the shell: a word with a space or a shell character in quotes, a quote in it escaped as the runtimes read one.</summary>
+    internal static string CommandText(IReadOnlyList<string> words) => string.Join(' ', words.Select(word =>
+        word.Length > 0 && word.IndexOfAny([' ', '\t', '&', '|', '<', '>', '^', '(', ')', '"']) < 0
+            ? word
+            : $"\"{word.Replace("\"", "\\\"")}\""));
 
     /// <summary>
     /// <c>run-heavy --look</c> (HEAVYSLOT1, the UI/UX design §3.5's terminal twin of a repository's *Heavy run* row): who holds the
@@ -331,7 +446,7 @@ public static class HeavyRun
     /// </summary>
     private static async Task<int> RunGatesAsync(
         string checkout, IReadOnlyList<HeavyGate> gates, string key, IReadOnlyList<string> running, ProcessJob? job, TextWriter output,
-        CancellationToken ct, Action<Func<HeavyHolder, HeavyHolder>>? keep = null)
+        CancellationToken ct, Action<Func<HeavyHolder, HeavyHolder>>? keep = null, IReadOnlyDictionary<string, string>? extra = null, string? root = null)
     {
         var ran = Stopwatch.StartNew();
         HeavyGate? current = null;
@@ -342,7 +457,7 @@ public static class HeavyRun
             for (var at = 0; at < gates.Count && !failed; at++)
             {
                 current = gates[at];
-                var folder = current.WorkingDirectory is { } cwd ? Path.GetFullPath(Path.Combine(checkout, cwd)) : checkout;
+                var folder = current.WorkingDirectory is { } cwd ? Path.GetFullPath(Path.Combine(checkout, cwd)) : root ?? checkout;
                 if (!Directory.Exists(folder)) throw new DriverException($"`{current.Name}`'s cwd, {current.WorkingDirectory}, is no folder of {checkout}.");
 
                 // Its test runner held to two workers where the repository declares it Jest or Vitest, said either way (HEAVYRUN1a2).
@@ -356,6 +471,7 @@ public static class HeavyRun
                     // A build node this run starts serves it alone and ends with its build, never a neighbour's (HEAVYRUN1a).
                     ["MSBUILDDISABLENODEREUSE"] = "1",
                 };
+                foreach (var (name, value) in extra ?? new Dictionary<string, string>()) added[name] = value;
 
                 var gateAt = at;
                 var gateName = current.Name;

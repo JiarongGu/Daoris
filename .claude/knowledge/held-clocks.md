@@ -34,7 +34,7 @@ product being flaky. A wider window only moves the load at which it fails, and m
   the moment the wait means to count from: the loop entered its say (`clock.Run()` first thing in the test's `Say`), or the
   stand-in door has heard the verb's second ask (`Room.Heard`), never "some milliseconds after the start". The verb's wait
   then counts from the take, however late the load made it.
-- **Bound the hold.** The clock runs by itself after a minute (`HeldClock.Bound`), so a condition that never holds fails
+- **Bound the hold.** The clock runs by itself after `Poll.Patience`, the suite's two minutes (`HeldClock`), so a condition that never holds fails
   its test on the code's own wait rather than hanging the run.
 - **Keep the loop late in every run.** The test's loop looks only after the wait would have run out on the machine's clock
   (`Late(world)`, the wait twice, as the loop's `every:`), and a late pass delays inside its `Say`. Every run then has the

@@ -4266,6 +4266,9 @@ public sealed class Driver(
     /// </summary>
     private HeavyWait? HeavyWaitOf(string session, string? tree)
     {
+        // HEAVYQUEUE1: a run asking for a place in the machine's admission waits for the machine, as one waiting for the slot waits for a
+        // run: it names no session to help, and is brought to the person at three times the bound all the same.
+        if (MachineAdmission.Look(home).Waits.Any(wait => string.Equals(wait.Session, session, StringComparison.OrdinalIgnoreCase))) return new HeavyWait(null);
         if (tree is null || HeavySlot.KeyOf(tree) is not { } key) return null;
         var look = HeavySlot.Look(home, key);
         return look.Waiters.Any(waiter => string.Equals(waiter.Session, session, StringComparison.OrdinalIgnoreCase))

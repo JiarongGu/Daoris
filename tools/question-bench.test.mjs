@@ -4,7 +4,7 @@
  *
  *   node --test tools/question-bench.test.mjs
  *
- * Outside `npm run verify`, whose tests are the CLI package's, as `knowledge-bench.test.mjs` is. Every case runs on
+ * Run by `npm run verify`'s `node --test` list, as `knowledge-bench.test.mjs` is (TOOLTESTCENSUS1). Every case runs on
  * the constructed fixture in `question-bench-fixtures/`, and the model tier only against its stub harness: nothing
  * here starts a model or reads an account. Its scratch is a gitignored folder of the repository.
  */
@@ -14,6 +14,7 @@ import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node
 import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { PATIENCE } from '../src/Daoris.Cli/test/_fixture.ts';
 import {
   FLOOR_LIMIT, askDoc, checkPrompt, floorHits, indexPassages, judgeSource, loadKnowledge, locateQuote, parseReply,
   prepare, readCases, renderReport, runBench, runCheck, scoreCase, summarize,
@@ -316,7 +317,7 @@ test('the report names the tier that classed each item, the wrong answers, and a
 
 test('the check runs the deployment\'s command line in the knowledge folder, the prompt on its standard input', async () => {
   const harness = stubHarness('cwd', [{ when: 'the question', reply: 'SOURCE: ask:1 "{cwd}"' }]);
-  const r = await runCheck(harness, 'the question', { cwd: knowledgeDir, timeoutMs: 20_000 });
+  const r = await runCheck(harness, 'the question', { cwd: knowledgeDir, timeoutMs: PATIENCE });
   assert.equal(r.code, 0, r.stderr);
   assert.equal(r.timedOut, false);
   assert.ok(r.stdout.includes(knowledgeDir), r.stdout);
@@ -324,14 +325,15 @@ test('the check runs the deployment\'s command line in the knowledge folder, the
   const saved = { marker: process.env.CLAUDECODE, entry: process.env.CLAUDE_CODE_ENTRYPOINT, kept: process.env.QUESTION_BENCH_PROBE };
   Object.assign(process.env, { CLAUDECODE: '1', CLAUDE_CODE_ENTRYPOINT: 'cli', QUESTION_BENCH_PROBE: 'kept' });
   const env = await runCheck(stubHarness('env', [{ when: 'q', reply: '{env:CLAUDECODE} {env:CLAUDE_CODE_ENTRYPOINT} {env:QUESTION_BENCH_PROBE}' }]),
-    'q', { cwd: knowledgeDir, timeoutMs: 20_000 });
+    'q', { cwd: knowledgeDir, timeoutMs: PATIENCE });
   for (const [name, value] of [['CLAUDECODE', saved.marker], ['CLAUDE_CODE_ENTRYPOINT', saved.entry], ['QUESTION_BENCH_PROBE', saved.kept]]) {
     if (value === undefined) delete process.env[name]; else process.env[name] = value;
   }
   assert.equal(env.stdout, '(unset) (unset) kept', 'the environment passes through, but for what marks a running session');
 
-  const failing = await runCheck(stubHarness('fail', [{ when: 'q', reply: 'no', code: 3 }]), 'q', { cwd: knowledgeDir, timeoutMs: 20_000 });
+  const failing = await runCheck(stubHarness('fail', [{ when: 'q', reply: 'no', code: 3 }]), 'q', { cwd: knowledgeDir, timeoutMs: PATIENCE });
   assert.equal(failing.code, 3);
+  // patience: claim — the check is ended at this bound, long before the stub's 25 s sleep, which is what the row tests
   const slow = await runCheck(stubHarness('slow', [{ when: 'q', reply: 'late', sleep: 25_000 }]), 'q', { cwd: knowledgeDir, timeoutMs: 1000 });
   assert.equal(slow.timedOut, true);
   assert.ok(slow.wallMs < 20_000);
@@ -342,7 +344,7 @@ test('a bench run keeps each check, scores the fixture, and a second run asks ag
   rmSync(outDir, { recursive: true, force: true });
   const replies = FIXTURE_REPLIES.map((r) => (r.when.startsWith('Which listing') ? { ...r, code: 1 } : r));
   const harness = stubHarness('run', replies);
-  const first = await runBench({ casesFile, harness, outDir, timeoutMs: 20_000, log: () => {} });
+  const first = await runBench({ casesFile, harness, outDir, timeoutMs: PATIENCE, log: () => {} });
   assert.equal(first.code, 0);
   assert.equal(first.summary.model.checked, 6);
   assert.equal(first.summary.model.noVerdict, 1);
@@ -355,7 +357,7 @@ test('a bench run keeps each check, scores the fixture, and a second run asks ag
 
   writeFileSync(join(scratch, 'run.replies.json'), JSON.stringify(FIXTURE_REPLIES));
   const asked = [];
-  const second = await runBench({ casesFile, harness, outDir, timeoutMs: 20_000, log: (line) => asked.push(line) });
+  const second = await runBench({ casesFile, harness, outDir, timeoutMs: PATIENCE, log: (line) => asked.push(line) });
   assert.equal(asked.filter((l) => /^checked /.test(l)).length, 1, 'only the failed check is asked again');
   assert.deepEqual(second.summary.model, {
     checked: 6, kb: { right: 2, total: 3, named: 3 }, oLeft: 1, oTotal: 1, wrong: 2, noVerdict: 0,
@@ -368,7 +370,7 @@ test('a bench run stops after failed checks in a row, keeping what it measured; 
   const outDir = join(scratch, 'stop');
   rmSync(outDir, { recursive: true, force: true });
   const harness = stubHarness('stop', [{ when: 'question', reply: '', code: 2 }]);
-  const stopped = await runBench({ casesFile, harness, outDir, cwd: scratch, timeoutMs: 20_000, stopAfter: 2, log: () => {} });
+  const stopped = await runBench({ casesFile, harness, outDir, cwd: scratch, timeoutMs: PATIENCE, stopAfter: 2, log: () => {} });
   assert.equal(stopped.code, 3);
   assert.equal(stopped.summary.model.checked, 2);
   assert.equal(JSON.parse(readFileSync(join(outDir, 'model', 'k-words.json'), 'utf8')).cwd, scratch, 'a folder named for the check is where it runs');

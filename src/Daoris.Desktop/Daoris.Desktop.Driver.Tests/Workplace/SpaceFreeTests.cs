@@ -110,7 +110,7 @@ public sealed class SpaceFreeTests : IAsyncLifetime
     private static async Task<SpaceRun> Ran(SpaceStart start)
     {
         var run = Assert.IsType<SpaceRun>(start.Run);
-        await run.Finished.WaitAsync(TimeSpan.FromMinutes(2));
+        await run.Finished.WaitAsync(Poll.Patience);
         return run;
     }
 

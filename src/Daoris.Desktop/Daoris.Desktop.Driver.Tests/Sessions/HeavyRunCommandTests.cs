@@ -35,9 +35,13 @@ public sealed class HeavyRunCommandTests : IDisposable
     [Theory]
     [InlineData("--gate", "`--gate` takes a gate's name.")]
     [InlineData("--gate --gate", "`--gate` takes a gate's name.")]
-    [InlineData("web", "`web` is not a word `run-heavy` takes: it takes `--gate <name>`, `--look`, or nothing for every heavy gate.")]
+    [InlineData("web", "`web` is not a word `run-heavy` takes: it takes `--gate <name>`, `--look`, `-- <command>`, or nothing for every heavy gate.")]
     [InlineData("--gate web --gate e2e", "`run-heavy` runs one named gate, or every heavy one.")]
     [InlineData("--look --gate web", "`--look` says who holds the slot and runs nothing, so it takes no gate.")]
+    // HEAVYQUEUE1: a command of the caller's own, after `--`.
+    [InlineData("--", "`--` takes the command to run after it: `run-heavy -- dotnet test --filter Foo`.")]
+    [InlineData("--gate web -- dotnet test", "`-- <command>` runs a command of its own, so it takes neither `--gate` nor `--look`.")]
+    [InlineData("--look -- dotnet test", "`-- <command>` runs a command of its own, so it takes neither `--gate` nor `--look`.")]
     public void Words_it_does_not_take_are_said(string words, string said)
     {
         Assert.Null(HeavyRun.Read(Words(words), out var problem));
@@ -351,12 +355,12 @@ public sealed class HeavyRunCommandTests : IDisposable
     [Fact]
     public void The_host_routes_the_verb_and_its_usage_names_it()
     {
-        Assert.Equal("usage: daoris-driver run-heavy [--gate <name> | --look]", HeavyRun.Usage);
+        Assert.Equal("usage: daoris-driver run-heavy [--gate <name> | --look | -- <command>]", HeavyRun.Usage);
 
         var program = File.ReadAllText(Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Host", "Program.cs"));
         Assert.Contains("if (args is [\"run-heavy\", .. var heavyArgs])", program);
         Assert.Contains("Daoris.Driver.Host.HeavyConsole.RunAsync(heavyArgs)", program);
-        Assert.Contains("//   run-heavy [--gate <name> | --look]", program);
+        Assert.Contains("//   run-heavy [--gate <name> | --look | -- <command>]", program);
         Assert.Contains("if (ask.Look) return HeavyRun.Look(", File.ReadAllText(
             Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Host", "HeavyConsole.cs")));
     }
@@ -397,7 +401,102 @@ public sealed class HeavyRunCommandTests : IDisposable
     }
 
     private HeavyRunWorld World(string directory, params (string Name, string Value)[] variables) =>
-        new(_fixture.Home, directory, name => variables.FirstOrDefault(variable => variable.Name == name).Value);
+        new(_fixture.Home, directory, name => variables.FirstOrDefault(variable => variable.Name == name).Value)
+        {
+            Admission = new AdmissionWaiting(
+                TimeSpan.FromMilliseconds(10), TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(5), () => DateTimeOffset.UtcNow, _ => true),
+        };
+
+    /// <summary>HEAVYQUEUE1: the words after `--` are a command of the caller's own, kept whole.</summary>
+    [Fact]
+    public void The_words_after_two_dashes_are_the_command()
+    {
+        var ask = HeavyRun.Read(Words("-- dotnet test --filter Foo --no-build"), out var problem);
+
+        Assert.Null(problem);
+        Assert.Equal(["dotnet", "test", "--filter", "Foo", "--no-build"], ask?.Command);
+        Assert.Null(ask?.Gate);
+        Assert.False(ask?.Look);
+    }
+
+    /// <summary>A word with a space or a shell character is quoted for the shell, a quote in it escaped as the runtimes read one.</summary>
+    [Fact]
+    public void The_command_is_quoted_for_the_shell()
+    {
+        Assert.Equal("dotnet test --filter Foo", HeavyRun.CommandText(["dotnet", "test", "--filter", "Foo"]));
+        Assert.Equal("dotnet test --filter \"A|B\"", HeavyRun.CommandText(["dotnet", "test", "--filter", "A|B"]));
+        Assert.Equal("node -e \"say hi\"", HeavyRun.CommandText(["node", "-e", "say hi"]));
+    }
+
+    [Fact]
+    public void A_quote_in_a_word_is_escaped_and_an_empty_word_kept()
+    {
+        Assert.Equal("run \"a\\\"b\" \"\"", HeavyRun.CommandText(["run", "a\"b", ""]));
+    }
+
+    /// <summary>
+    /// HEAVYQUEUE1: a session's focused run beside the merge queue's gate. The queue holds the only place; the run says what it waits for,
+    /// starts no process while it waits, and a stop ends it with nothing held and nothing left waiting.
+    /// </summary>
+    [Fact]
+    public async Task A_command_waits_for_the_queue_s_place_and_says_what_for()
+    {
+        var file = MachineAdmission.PathOf(_fixture.Home);
+        Directory.CreateDirectory(Path.GetDirectoryName(file)!);
+        var now = DateTimeOffset.UtcNow;
+        File.WriteAllText(file, MachineAdmission.Serialize(
+            [new AdmissionEntry("9-1", "queue", Environment.ProcessId, "driver gate", now.AddMinutes(-3), now, null, null, null)], []));
+        var said = new SaidWriter();
+        using var stop = new CancellationTokenSource();
+        var world = World(_fixture.Tree, (IntakeRoom.SessionVariable, "s-7"), (MachineAdmission.CapacityVariable, "1"));
+        {
+            var run = HeavyRun.RunAsync(new HeavyRunAsk(null) { Command = ["dotnet", "test", "--filter", "Foo"] }, world, said, stop.Token);
+
+            await Poll.Until(() => said.Text.Contains("waiting for the machine's heavy-run admission"), () => said.Text);
+            Assert.False(run.IsCompleted);
+            Assert.Contains("before dotnet test --filter Foo: the machine runs 1 of 1 heavy runs: the merge queue's driver gate (3m", said.Text);
+            Assert.Contains("it never times out", said.Text);
+            var waiting = Assert.Single(MachineAdmission.Look(_fixture.Home, _ => true, capacity: 1).Waits);
+            Assert.Equal(("s-7", "dotnet test --filter Foo", "engine"), (waiting.Session, waiting.What, waiting.Repository));
+
+            await stop.CancelAsync();
+            var exit = await run.WaitAsync(Poll.Patience);
+
+            Assert.Equal(1, exit);
+            Assert.Contains("run-heavy: stopped while waiting for the machine's admission; nothing ran.", said.Text);
+            Assert.Empty(MachineAdmission.Look(_fixture.Home, _ => true, capacity: 1).Waits);
+        }
+    }
+
+    /// <summary>
+    /// HEAVYQUEUE1: a repository's marked gates take the repository's slot first and then a place in the machine's admission; a run
+    /// stopped while it waits for the place lets the slot go and ran nothing.
+    /// </summary>
+    [Fact]
+    public async Task Marked_gates_wait_for_a_place_after_the_slot_and_let_the_slot_go_if_stopped()
+    {
+        _fixture.Gates(_fixture.Tree, ("build", "dotnet build", true));
+        var file = MachineAdmission.PathOf(_fixture.Home);
+        Directory.CreateDirectory(Path.GetDirectoryName(file)!);
+        var now = DateTimeOffset.UtcNow;
+        File.WriteAllText(file, MachineAdmission.Serialize(
+            [new AdmissionEntry("9-2", "queue", Environment.ProcessId, "modules gate", now.AddMinutes(-1), now, null, null, null)], []));
+        var said = new SaidWriter();
+        using var stop = new CancellationTokenSource();
+        {
+            var run = HeavyRun.RunAsync(new HeavyRunAsk(null), World(_fixture.Tree, (MachineAdmission.CapacityVariable, "1")), said, stop.Token);
+
+            await Poll.Until(() => said.Text.Contains("waiting for the machine's heavy-run admission before heavy gates `build`"), () => said.Text);
+            Assert.Contains("the merge queue's modules gate", said.Text);
+            await stop.CancelAsync();
+            var exit = await run.WaitAsync(Poll.Patience);
+
+            Assert.Equal(1, exit);
+            Assert.Contains("stopped while waiting for the machine's admission; nothing ran.", said.Text);
+            using var free = HeavySlot.TryTake(_fixture.Home, HeavySlot.KeyOf(_fixture.Checkout)!);
+            Assert.NotNull(free);
+        }
+    }
 
     private static string[] Words(string words) => words.Length == 0 ? [] : words.Split(' ');
 }

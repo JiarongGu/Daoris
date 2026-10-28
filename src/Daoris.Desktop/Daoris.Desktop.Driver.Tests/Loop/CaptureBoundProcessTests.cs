@@ -46,7 +46,7 @@ public sealed class CaptureBoundProcessTests : IDisposable
         driver.CaptureBound = TimeSpan.FromSeconds(3);
         var clock = Stopwatch.StartNew();
 
-        await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(90));
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
         clock.Stop();
 
         var record = service.Session("s1");

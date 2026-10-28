@@ -9,8 +9,6 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 public sealed class LedgerChangesTests : IDisposable
 {
-    private static readonly TimeSpan Bound = TimeSpan.FromSeconds(10);
-
     private readonly StandInLedger _ledger = new();
     private readonly CancellationTokenSource _closing = new(TimeSpan.FromSeconds(30));
     private readonly List<(string Topic, string Subject)> _woken = [];
@@ -40,21 +38,21 @@ public sealed class LedgerChangesTests : IDisposable
         using var service = _ledger.Client();
         var listening = Listen(service);
 
-        await Poll.Until(() => _ledger.ChangesHeld == 1, () => "no wait held", Bound);
+        await Poll.Until(() => _ledger.ChangesHeld == 1, () => "no wait held", Poll.Patience);
         Assert.Equal([(ChangeTopics.Ledger, Every)], Woken());
 
         _ledger.Publish("q1", "engine", from: "agent");
-        await Poll.Until(() => Woken().Count == 2, () => "the publish woke nothing", Bound);
+        await Poll.Until(() => Woken().Count == 2, () => "the publish woke nothing", Poll.Patience);
         Assert.Equal((ChangeTopics.Ledger, "quests"), Woken()[1]);
 
         // Asked again from where it answered: held, and one wait at a time (the bootstrap, the wait the publish answered, this one).
-        await Poll.Until(() => _ledger.ChangesHeld == 1, () => "no wait held after the answer", Bound);
+        await Poll.Until(() => _ledger.ChangesHeld == 1, () => "no wait held after the answer", Poll.Patience);
         await Task.Delay(300);
         Assert.Equal(2, Woken().Count);
         Assert.Equal(3, _ledger.ChangesAsked);
 
         await _closing.CancelAsync();
-        await listening.WaitAsync(Bound);
+        await listening.WaitAsync(Poll.Patience);
     }
 
     /// <summary>
@@ -70,11 +68,11 @@ public sealed class LedgerChangesTests : IDisposable
         using var service = _ledger.Client();
         var listening = Listen(service);
 
-        await Poll.Until(() => Woken().Count == 1, () => "the bootstrap woke nothing", Bound);
+        await Poll.Until(() => Woken().Count == 1, () => "the bootstrap woke nothing", Poll.Patience);
         Assert.Equal((ChangeTopics.Ledger, Every), Woken()[0]);
 
         await _closing.CancelAsync();
-        await listening.WaitAsync(Bound);
+        await listening.WaitAsync(Poll.Patience);
     }
 
     /// <summary>
@@ -87,22 +85,22 @@ public sealed class LedgerChangesTests : IDisposable
         _ledger.Changes = StandInLedger.ChangeDoor.Answers;
         using var service = _ledger.Client();
         var listening = Listen(service);
-        await Poll.Until(() => _ledger.ChangesHeld == 1 && Woken().Count == 1, () => "no wait held after the bootstrap", Bound);
+        await Poll.Until(() => _ledger.ChangesHeld == 1 && Woken().Count == 1, () => "no wait held after the bootstrap", Poll.Patience);
 
         _ledger.Wrote("asks");
-        await Poll.Until(() => Woken().Count == 2, () => "the ask woke nothing", Bound);
-        await Poll.Until(() => _ledger.ChangesHeld == 1, () => "no wait held after the ask", Bound);
+        await Poll.Until(() => Woken().Count == 2, () => "the ask woke nothing", Poll.Patience);
+        await Poll.Until(() => _ledger.ChangesHeld == 1, () => "no wait held after the ask", Poll.Patience);
         _ledger.Wrote("channel");
-        await Poll.Until(() => Woken().Count == 3, () => "the post woke nothing", Bound);
-        await Poll.Until(() => _ledger.ChangesHeld == 1, () => "no wait held after the post", Bound);
+        await Poll.Until(() => Woken().Count == 3, () => "the post woke nothing", Poll.Patience);
+        await Poll.Until(() => _ledger.ChangesHeld == 1, () => "no wait held after the post", Poll.Patience);
         _ledger.Wrote("asks", "channel");
-        await Poll.Until(() => Woken().Count == 4, () => "the ask and its post woke nothing", Bound);
+        await Poll.Until(() => Woken().Count == 4, () => "the ask and its post woke nothing", Poll.Patience);
 
         Assert.Equal(
             [(ChangeTopics.Ledger, "asks"), (ChangeTopics.Ledger, "channel"), (ChangeTopics.Ledger, "asks,channel")],
             Woken()[1..]);
         await _closing.CancelAsync();
-        await listening.WaitAsync(Bound);
+        await listening.WaitAsync(Poll.Patience);
     }
 
     /// <summary>Every family the service's change stream answers, as a bootstrap names them.</summary>
@@ -115,13 +113,13 @@ public sealed class LedgerChangesTests : IDisposable
         using var service = _ledger.Client();
         var listening = Listen(service);
 
-        await Poll.Until(() => _ledger.ChangesAsked == 1, () => "never asked", Bound);
+        await Poll.Until(() => _ledger.ChangesAsked == 1, () => "never asked", Poll.Patience);
         await Task.Delay(1500);
 
         Assert.Equal(1, _ledger.ChangesAsked);
         Assert.Empty(Woken());
         await _closing.CancelAsync();
-        await listening.WaitAsync(Bound);
+        await listening.WaitAsync(Poll.Patience);
     }
 
     /// <summary>A door that refuses is backed off, a second and then longer: never a hot loop.</summary>
@@ -137,6 +135,6 @@ public sealed class LedgerChangesTests : IDisposable
         Assert.InRange(_ledger.ChangesAsked, 1, 3);
         Assert.Empty(Woken());
         await _closing.CancelAsync();
-        await listening.WaitAsync(Bound);
+        await listening.WaitAsync(Poll.Patience);
     }
 }

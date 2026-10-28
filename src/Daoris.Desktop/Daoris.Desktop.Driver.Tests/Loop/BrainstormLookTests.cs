@@ -117,7 +117,7 @@ public sealed class BrainstormLookTests : IDisposable
     {
         var events = new List<string>();
         await driver.BrainstormsAsync(new Snapshot([], [], []), 0, events, CancellationToken.None);
-        await driver.Running.SettledAsync().WaitAsync(TimeSpan.FromSeconds(30));
+        await driver.Running.SettledAsync().WaitAsync(Poll.Patience);
         return events;
     }
 
@@ -146,13 +146,13 @@ public sealed class BrainstormLookTests : IDisposable
         };
         var events = new List<string>();
 
-        await driver.BrainstormsAsync(new Snapshot([], [], []), 0, events, CancellationToken.None).WaitAsync(TimeSpan.FromSeconds(20));
-        await driver.BrainstormsAsync(new Snapshot([], [], []), 0, events, CancellationToken.None).WaitAsync(TimeSpan.FromSeconds(20));
+        await driver.BrainstormsAsync(new Snapshot([], [], []), 0, events, CancellationToken.None).WaitAsync(Poll.Patience);
+        await driver.BrainstormsAsync(new Snapshot([], [], []), 0, events, CancellationToken.None).WaitAsync(Poll.Patience);
         Assert.Null(Files.ReadState(id));
         Assert.DoesNotContain(events, line => line.Contains("frozen", StringComparison.Ordinal));
 
         reading.TrySetResult((null, null));
-        await driver.Running.SettledAsync().WaitAsync(TimeSpan.FromSeconds(30));
+        await driver.Running.SettledAsync().WaitAsync(Poll.Patience);
 
         Assert.Equal(BrainstormStates.Frozen, Files.ReadState(id)?.State);
         Assert.Single(driver.Running.Drain(), run => run.Line.Contains($"brainstorm `{id}` frozen", StringComparison.Ordinal));
@@ -183,8 +183,8 @@ public sealed class BrainstormLookTests : IDisposable
 
         for (var look = 0; look < 3; look++)
         {
-            await driver.BrainstormsAsync(new Snapshot([], [], []), 0, [], CancellationToken.None).WaitAsync(TimeSpan.FromSeconds(20));
-            await driver.Running.SettledAsync().WaitAsync(TimeSpan.FromSeconds(30));
+            await driver.BrainstormsAsync(new Snapshot([], [], []), 0, [], CancellationToken.None).WaitAsync(Poll.Patience);
+            await driver.Running.SettledAsync().WaitAsync(Poll.Patience);
         }
 
         Assert.Equal(3, read);

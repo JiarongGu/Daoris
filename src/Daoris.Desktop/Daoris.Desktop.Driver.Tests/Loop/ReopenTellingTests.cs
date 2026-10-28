@@ -14,8 +14,6 @@ public sealed class ReopenTellingTests : IDisposable
 {
     private const string Note = "The bridge is wrong.\nUse the v3 one.";
 
-    private static readonly TimeSpan Bound = TimeSpan.FromSeconds(10);
-
     private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-reopen-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly CancellationTokenSource _closing = new(Poll.Patience);
@@ -700,21 +698,21 @@ public sealed class ReopenTellingTests : IDisposable
         ledger.Rebound("q2", "desk", 43, moved: true);
         var (driver, began) = Driver(ledger);
 
-        var told = await driver.TickAsync(_closing.Token).WaitAsync(Bound);
+        var told = await driver.TickAsync(_closing.Token).WaitAsync(Poll.Patience);
         var said = Assert.Single(ledger.Session("s2")["said"]!.AsArray());
         Assert.Equal(ReopenTelling.GoneOnWords("q2", "q1", Grew), said!["text"]!.GetValue<string>());
         // COWORK1b: kept as Daoris's, under the go-on's key, which is what the start reads to bring the branch up to date.
         Assert.Equal(("daoris", "gone-on/q2/desk/43"), (said["from"]?.GetValue<string>(), said["key"]?.GetValue<string>()));
         Assert.Contains(told.Events, line => line.StartsWith("reopen  session s2 ", StringComparison.Ordinal));
 
-        var next = await driver.TickAsync(_closing.Token).WaitAsync(Bound);
+        var next = await driver.TickAsync(_closing.Token).WaitAsync(Poll.Patience);
         var goes = Assert.Single(next.Considerations);
         Assert.Equal((StartVerdict.Start, true, "s2"), (goes.Verdict, goes.GoesOn, goes.Resumes?.Session));
-        await Poll.Until(() => began.Count == 1, within: Bound);
+        await Poll.Until(() => began.Count == 1, within: Poll.Patience);
         Assert.Equal(ReopenTelling.GoneOnWords("q2", "q1", Grew), Assert.Single(began[0]));
 
         var (again, _) = Driver(ledger);
-        var restarted = await again.TickAsync(_closing.Token).WaitAsync(Bound);
+        var restarted = await again.TickAsync(_closing.Token).WaitAsync(Poll.Patience);
         Assert.DoesNotContain(restarted.Events, line => line.StartsWith("reopen  ", StringComparison.Ordinal));
         Assert.Empty(ledger.Session("s2")["said"]!.AsArray());
     }
@@ -734,21 +732,21 @@ public sealed class ReopenTellingTests : IDisposable
         ledger.SourceReopened("q1", 44, 41, Note, "s1");
         var (driver, began) = Driver(ledger);
 
-        var told = await driver.TickAsync(_closing.Token).WaitAsync(Bound);
+        var told = await driver.TickAsync(_closing.Token).WaitAsync(Poll.Patience);
         var said = Assert.Single(ledger.Session("s1")["said"]!.AsArray());
         Assert.StartsWith("Daoris: the person reopened submission `desk` 41 of quest `#q1`", said!["text"]!.GetValue<string>());
         Assert.Equal(("daoris", "reopen/q1/desk/44"), (said["from"]?.GetValue<string>(), said["key"]?.GetValue<string>()));
         Assert.Contains(told.Events, line => line.StartsWith("reopen  ", StringComparison.Ordinal));
 
-        var next = await driver.TickAsync(_closing.Token).WaitAsync(Bound);
+        var next = await driver.TickAsync(_closing.Token).WaitAsync(Poll.Patience);
         var goes = Assert.Single(next.Considerations);
         Assert.Equal((StartVerdict.Start, true, "s1"), (goes.Verdict, goes.GoesOn, goes.Resumes?.Session));
-        await Poll.Until(() => began.Count == 1, within: Bound);
+        await Poll.Until(() => began.Count == 1, within: Poll.Patience);
         Assert.StartsWith("Daoris: the person reopened", Assert.Single(began[0]), StringComparison.Ordinal);
         Assert.DoesNotContain(next.Events, line => line.StartsWith("reopen  ", StringComparison.Ordinal));
 
         var (again, _) = Driver(ledger);
-        var restarted = await again.TickAsync(_closing.Token).WaitAsync(Bound);
+        var restarted = await again.TickAsync(_closing.Token).WaitAsync(Poll.Patience);
         Assert.DoesNotContain(restarted.Events, line => line.StartsWith("reopen  ", StringComparison.Ordinal));
         Assert.Empty(ledger.Session("s1")["said"]!.AsArray());
     }
@@ -771,12 +769,12 @@ public sealed class ReopenTellingTests : IDisposable
         ledger.Driven("s2", "q1", DaorisHome.Entry(_home, HomeEntry.Trees, "s-2"), state: "completed");
         var (driver, began) = Driver(ledger);
 
-        var told = await driver.TickAsync(_closing.Token).WaitAsync(Bound);
+        var told = await driver.TickAsync(_closing.Token).WaitAsync(Poll.Patience);
         var line = Assert.Single(told.Events, line => line.StartsWith("reopen  ", StringComparison.Ordinal));
         Assert.Equal(stopped ? 0 : 1, ledger.Session("s1")["said"]!.AsArray().Count);
         Assert.Equal(stopped, line.Contains("which the person stopped", StringComparison.Ordinal));
 
-        var next = await driver.TickAsync(_closing.Token).WaitAsync(Bound);
+        var next = await driver.TickAsync(_closing.Token).WaitAsync(Poll.Patience);
         Assert.DoesNotContain(next.Events, each => each.StartsWith("reopen  ", StringComparison.Ordinal));
         if (stopped)
         {
@@ -787,7 +785,7 @@ public sealed class ReopenTellingTests : IDisposable
 
         var goes = Assert.Single(next.Considerations);
         Assert.Equal((StartVerdict.Start, true, "s1"), (goes.Verdict, goes.GoesOn, goes.Resumes?.Session));
-        await Poll.Until(() => began.Count == 1, within: Bound);
+        await Poll.Until(() => began.Count == 1, within: Poll.Patience);
         Assert.StartsWith("Daoris: the person reopened", Assert.Single(began[0]), StringComparison.Ordinal);
         Assert.Empty(ledger.Session("s1")["said"]!.AsArray());
     }
@@ -807,11 +805,11 @@ public sealed class ReopenTellingTests : IDisposable
         ledger.Driven("s2", "q1", DaorisHome.Entry(_home, HomeEntry.Trees, "s-2"), state: "completed");
         var (driver, began) = Driver(ledger);
 
-        await driver.TickAsync(_closing.Token).WaitAsync(Bound);
+        await driver.TickAsync(_closing.Token).WaitAsync(Poll.Patience);
         var word = Assert.Single(ledger.Session("s1")["said"]!.AsArray())!["id"]!.GetValue<string>();
         new GoOnMarks(_home).Mark("s1", [word], ContinueWhy.Tree, DateTimeOffset.UtcNow);
 
-        var next = await driver.TickAsync(_closing.Token).WaitAsync(Bound);
+        var next = await driver.TickAsync(_closing.Token).WaitAsync(Poll.Patience);
         Assert.DoesNotContain(next.Considerations, each => each.Resumes is not null);
         Assert.Empty(began);
         Assert.Single(ledger.Session("s1")["said"]!.AsArray());

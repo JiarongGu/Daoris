@@ -113,6 +113,11 @@ export const REDIRECTED = [
  * The instance (RPC1b, the terminal RPC design §7.4) names the running Daoris's pipe that a verb sends its
  * press to. Inherited, a `daoris-driver` run from the scratch shell's terminal would press the real
  * instance's routes; unset, a workspace build reads no address file and acts alone on the scratch home.
+ *
+ * The machine's heavy-run admission (HEAVYQUEUE1) is read from two more. Its capacity override, inherited,
+ * would size the scratch home's admission by the real machine's setting; the held place a driver hands a
+ * heavy run's children, inherited, would let the scratch desktop's runs count themselves inside a place
+ * the real machine's admission holds, and wait for nothing.
  */
 export const CLEARED = [
   'DAORIS_REMOTE_URL',
@@ -121,6 +126,8 @@ export const CLEARED = [
   'DAORIS_SERVICE_KEY',
   'DAORIS_RULES_HOME',
   'DAORIS_INSTANCE',
+  'DAORIS_ADMISSION_SLOTS',
+  'DAORIS_ADMISSION_HOLD',
 ];
 
 /**

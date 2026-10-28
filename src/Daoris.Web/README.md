@@ -285,6 +285,13 @@ service's own `GET /api/quests/{id}/moves` (`useQuestMoves` in `data/queries.ts`
 draws the way a quest went as the window does; *How this came to be* stays the shell's, since its trace reads this machine's
 records. A host from before the door answers it not found, and the flowchart draws the statuses alone and says so.
 
+A session's part in its repository's heavy-run slot, and in the machine's heavy-run admission, is read from `HEAVY_SLOT`
+(`work/heavySlot.ts`, HEAVYSLOT1, HEAVYQUEUE1): the holder at its gate, a waiter behind the holder, and a session asking for a
+place in the admission, which the merge queue's heavy gates hold places in beside the sessions' runs. That last part wins over the
+others (its gates have not started), is neutral like the others (a wait on the machine, never on the person, so never a row of *What
+needs you*), and `HeavySlotLine` says it as *waiting for the machine to admit its heavy run* with how many of its places are
+taken, in both languages; an answer without the `admission` field reads as before.
+
 A session's states are drawn at the head of the side bar's *Timeline* view (FLOWCHART1b, D186): `work/head/sessionLife.ts` holds
 the page's copy of the ledger's `SessionLedger.Allowed` and its nine states, which its test reads from the service's source,
 and draws the four live states, the working ⇄ awaiting-person return on a lane of its own, one node of outcomes and going on
