@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## TESTPATIENCE3 — the TypeScript CLI and tool tests wait on their signals by one shared `PATIENCE`, with a census (2026-10-28, FIX-LOG)
+
+> **TESTPATIENCE3:** the TypeScript CLI tests (`src/Daoris.Cli/test`) and tool tests (`src/Daoris.Cli/tool-test`, `tools/*.test.mjs`) wait on their signals with one shared patience, as TESTPATIENCE2 made the desktop tests do, with a census that keeps new short waits out. Evidence: 2026-10-28, candidates `8ec210d` and `71d60dd` failed on the plugin landing test's 68 s "no answer to hook/work/land", `setup-kit.test.ts`'s ANSWER1b stub window of 10000 ms and `merge-branch.test.ts`'s 3000-try gate-tree poll, beside a loaded machine. (Quest `#9fab63fff94a`; an earlier entry of this id is the driver's tick tests.)
+
+Completed 2026-10-28: `PATIENCE` (two minutes) is exported by `src/Daoris.Cli/test/_fixture.ts` and read at 39 waits in 8 files; the bounds that are the claim, the staging delays and the product inputs stay, each marked. `tools/test-patience.mjs` (with its test, run by `verify`) refuses a new fixed wait of a second or more under it unless marked. Detail: FIX-LOG's TESTPATIENCE3 entry; the check is in `docs/development.md`'s census table.
+
 ## QUEUEDRAIN1 — a dropped merge-queue candidate's gates and probes end when it is dropped (2026-10-28)
 
 > **QUEUEDRAIN1 — end owned gate trees when their candidate is dropped** (foundation integration, 2026-10-27). The supported drop removed the request while its gates kept running; QUEUEDROP1 prevents their late outcomes from reviving it, but does not stop those processes. Use the existing step-tree cancellation path through execution and failure probes, release admission only after owned processes end, and prove child/grandchild cleanup without ending unrelated runs. Sighting 2026-10-28: after `--drop-batch` ended candidate `5dcd990`, the runner went on judging its five fast-Driver failures by class probes for about forty minutes before it formed the requeued batch.
