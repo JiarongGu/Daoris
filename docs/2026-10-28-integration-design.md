@@ -1,11 +1,10 @@
-# A repository's integration is a fabric workflow Daoris runs (INTEGRATE1, 2026-10-28: round 5, accepted after named changes, pending the steward's check)
+# A repository's integration is a fabric workflow Daoris runs (INTEGRATE1, 2026-10-28: round 5, accepted)
 
-**Standing (round 5, 2026-10-28, under D191):** both makers read round 4 at `75c79c6c1` and accepted after named changes: Claude Fable
-(F40 to F54, F40 blocking) and Codex (C28 to C33; C28, C29, C30 and C32 blocking). Each finding was checked against the code at the lines
-it cites (§14, round 4's table). Round 5 makes every named change in the text, marked *(R5)*, and records the steward's settlement of
-§17.13's questions (§18). The steward checks the changes and writes the acceptance; until then the standing is *accepted after named
-changes, pending the steward's check*. Rows a, c, d, j, b and f build now; row e once the steward has checked F40's change (§18.3 point 8).
-Nothing is built.
+**Standing (round 5, 2026-10-28, under D191): accepted.** Both makers read round 4 at `75c79c6c1` and accepted after named changes: Claude
+Fable (F40 to F54, F40 blocking) and Codex (C28 to C33; C28, C29, C30 and C32 blocking). Each finding was checked against the code at the
+lines it cites (§14, round 4's table). Round 5 makes every named change in the text, marked *(R5)*, and records the steward's settlement of
+§17.13's questions (§18). The steward checked each blocking change against its finding at `2a5574d5c` and accepted (§14's Steward column;
+D215's acceptance note). Rows a, c, d, j, b, f and e build now (F40's change checked, §18.3 point 8). Nothing is built.
 
 **Round 4's standing, as it was written (proposed under D191, 2026-10-28; D215 re-opened):** the owner's direction of 2026-10-28 (§0.1
 point 3) re-opens round 3's fixed cycle: how work moves is a flow each workspace configures from step kinds, and integration is a step in
@@ -1202,7 +1201,7 @@ blocking); Claude Fable, *accept after named changes* (F5 to F10 resolved, F31 a
 was checked at the lines named. The steward's column gives the steward's verdict of 2026-10-28; *taken* is the steward's verdict on the
 disposition as written. *(R5)* Round 4, read at `75c79c6c1`: Claude Fable, as a foundation, *accept after named changes* (F40 to F54, F40
 blocking); Codex, *accept after named changes* (C28 to C33; C28, C29, C30 and C32 blocking). Round 4's table follows round 2's; its steward's
-column waits for the steward's check of round 5.
+column records the steward's check of round 5, at `2a5574d5c`.
 
 **Round 1's findings**
 
@@ -1285,27 +1284,27 @@ column waits for the steward's check of round 5.
 
 | Reader | Id | Blocking | Verified at | Disposition | Where | Steward |
 |---|---|---|---|---|---|---|
-| Fable | F40 | **yes** | `TreeLands.cs:644`, `:664-665`; `WorkplaceFacts.cs:296-318` (`AcceptedBy`, `LandedRule` name no integration); `NodeGraphs.cs:798-802` (Current read live); `BuiltInNodes.cs:142-151` | taken, with C30: the landing record carries its acceptance's provenance; a landing whose record says neither waits for the card or the sweep | §1.3, §4.6, §17.4; rows e, n | pending |
-| Fable | F41 | no | `NodeLifecycle.cs:410-447` (start refused while unreconciled, `:413`; kept through invalidation, `:447`) | taken: the second revision's request waits for the first's outcome, both shown | §17.4; row n | pending |
-| Fable | F42 | no | §4.1's *Absent* column (`gates: none`); D145 point 1 | taken: the door says *integrates with no gates* per repository, and refuses *with no press* there | §17.7; rows r, q | pending |
-| Fable | F43 | no | `WorkflowCurrent.cs:12-23`; `WorkflowGate.cs:299-345`; `WorkflowGraphs.cs:160-176` | taken, the second way: Current draws `integrate` from its graph, outside the steps table; `current:` copies leave it out, said | §17.2 point 4; row r | pending |
-| Fable | F44 | no | `WorkflowNamed.cs:466-473`; `NodeGraphs.cs:643` | taken, with C28: the hold a kind of its own | §17.3, §17.6 point 8; row o | pending |
-| Fable | F45 | no | `D157.md:92` | taken: D157's rejection named as reversed in part | §17.5, §17.8, §17.11; row p | pending |
-| Fable | F46 | no | D190's CUTOVER1g note; `TASKS.md`'s FABRIC-CUTOVER1h (open) | taken: under both presets the quest is closed by its agent's done; `quest.close` a later version's, once 1h lands | §17.7; row q | pending |
-| Fable | F47 | no | `GraphRuns.cs:226-233`; `NodeGraphs.cs:241-288` (orders the gates only) | taken: the landed branch's kinds refused before every `handed` when saved | §17.2 point 2, §17.4; row n | pending |
-| Fable | F48 | no | `WorkflowNamed.cs:494-503`; §4.1's `request` row | taken: `done` needs the effective landing's automatic accept and the line's declared, accepted gates, each its own refusal | §17.4; row r | pending |
-| Fable | F49 | no | `git merge-base --is-ancestor 4b9621c37 main` fails; `TASKS.md` held no INTEGRATE1b row; QUEUEDRAIN1 on main | taken: the INTEGRATE1b row added; the tool's lines said to be `7ebeba1ba`'s; the stack landed as one (§18.4) | §0.2; `TASKS.md`; §18.4 | pending |
-| Fable | F50 | no | §E2 (*invalidation never reverses an external effect*) | taken: the stop refused once the record says promoted | §17.4; row n | pending |
-| Fable | F51 | no | `NodeRuntime.cs:310-322` (`:316`) | taken: the arming narrowed to the integrating repositories' branch units, measured | §17.4; row n | pending |
-| Fable | F52 | no | D157's WORKFLOW1e2 note (an older build refuses a push carrying a new quest field) | taken: the key's travel and its refusal by an older build said; `to` never the run's own; its address kinds (D70) | §17.5; row p | pending |
-| Fable | F53 | no | `TASKS.md`'s FABRIC-HUMAN1 and FABRIC-CUTOVER1h (open) | taken: the column says *row* where it means a row | §17.2's table | pending |
-| Fable | F54 | no | `NodeGraphs.cs:241-244`, `:276-288` | taken: the graph form of `WithGates` never wires the opinion into the look | §17.7; row q | pending |
-| Codex | C28 | **yes** | `NodeContract.cs:479-492` (`:486`); `NodeGraphs.cs:643`; `BuiltInNodes.cs:218-229`; `WorkflowNamed.cs:492` | taken: `requests: wait` replaced by the kind `work.requests`, refused by an older reader; a `requests` option on `claimed` refused here | §1.3, §17.3, §17.6 point 8, §17.7; row o | pending |
-| Codex | C29 | **yes** | `WorkflowGate.cs:248-292`, `:332-345`; `D157.md:43` | taken: the person-part comparison gains a graph part, by node id, for `request`, `integrate` and `work.requests` | §17.6 point 9; rows o, n, p | pending |
-| Codex | C30 | **yes** | `WorkflowGate.cs:156`; `AutoLander.cs:375` | taken, with F40: an automatic landing never satisfies `request: owner`; the effective landing policy judged | §4.6, §17.4; rows e, n | pending |
-| Codex | C31 | no | §4.1's `request` row | taken: `gates: declared` and an accepted declaration naming a gate, two facts; the accepted-blob-gates-off case | §17.4, §17.7; row r | pending |
-| Codex | C32 | **yes** | the service's `Quests.cs:1238-1245`, `:1281-1287`; `QuestExchange.cs:657`; `WireEvaluation.cs:520-536` | taken: the request's key `<run>/<node>/<n>` is its quest's identity, one transaction dedups | §1.3, §17.5, §17.6 point 4; row p | pending |
-| Codex | C33 | no | `NodeLifecycle.cs:252-271` (`:264`); `RunNodeWords.cs:57-79`, `:124-130` | taken: *Ask again…* and *Go on without it…* on the run's node door, each a Person route | §17.5; row p | pending |
+| Fable | F40 | **yes** | `TreeLands.cs:644`, `:664-665`; `WorkplaceFacts.cs:296-318` (`AcceptedBy`, `LandedRule` name no integration); `NodeGraphs.cs:798-802` (Current read live); `BuiltInNodes.cs:142-151` | taken, with C30: the landing record carries its acceptance's provenance; a landing whose record says neither waits for the card or the sweep | §1.3, §4.6, §17.4; rows e, n | checked |
+| Fable | F41 | no | `NodeLifecycle.cs:410-447` (start refused while unreconciled, `:413`; kept through invalidation, `:447`) | taken: the second revision's request waits for the first's outcome, both shown | §17.4; row n | checked |
+| Fable | F42 | no | §4.1's *Absent* column (`gates: none`); D145 point 1 | taken: the door says *integrates with no gates* per repository, and refuses *with no press* there | §17.7; rows r, q | checked |
+| Fable | F43 | no | `WorkflowCurrent.cs:12-23`; `WorkflowGate.cs:299-345`; `WorkflowGraphs.cs:160-176` | taken, the second way: Current draws `integrate` from its graph, outside the steps table; `current:` copies leave it out, said | §17.2 point 4; row r | checked |
+| Fable | F44 | no | `WorkflowNamed.cs:466-473`; `NodeGraphs.cs:643` | taken, with C28: the hold a kind of its own | §17.3, §17.6 point 8; row o | checked |
+| Fable | F45 | no | `D157.md:92` | taken: D157's rejection named as reversed in part | §17.5, §17.8, §17.11; row p | checked |
+| Fable | F46 | no | D190's CUTOVER1g note; `TASKS.md`'s FABRIC-CUTOVER1h (open) | taken: under both presets the quest is closed by its agent's done; `quest.close` a later version's, once 1h lands | §17.7; row q | checked |
+| Fable | F47 | no | `GraphRuns.cs:226-233`; `NodeGraphs.cs:241-288` (orders the gates only) | taken: the landed branch's kinds refused before every `handed` when saved | §17.2 point 2, §17.4; row n | checked |
+| Fable | F48 | no | `WorkflowNamed.cs:494-503`; §4.1's `request` row | taken: `done` needs the effective landing's automatic accept and the line's declared, accepted gates, each its own refusal | §17.4; row r | checked |
+| Fable | F49 | no | `git merge-base --is-ancestor 4b9621c37 main` fails; `TASKS.md` held no INTEGRATE1b row; QUEUEDRAIN1 on main | taken: the INTEGRATE1b row added; the tool's lines said to be `7ebeba1ba`'s; the stack landed as one (§18.4) | §0.2; `TASKS.md`; §18.4 | checked |
+| Fable | F50 | no | §E2 (*invalidation never reverses an external effect*) | taken: the stop refused once the record says promoted | §17.4; row n | checked |
+| Fable | F51 | no | `NodeRuntime.cs:310-322` (`:316`) | taken: the arming narrowed to the integrating repositories' branch units, measured | §17.4; row n | checked |
+| Fable | F52 | no | D157's WORKFLOW1e2 note (an older build refuses a push carrying a new quest field) | taken: the key's travel and its refusal by an older build said; `to` never the run's own; its address kinds (D70) | §17.5; row p | checked |
+| Fable | F53 | no | `TASKS.md`'s FABRIC-HUMAN1 and FABRIC-CUTOVER1h (open) | taken: the column says *row* where it means a row | §17.2's table | checked |
+| Fable | F54 | no | `NodeGraphs.cs:241-244`, `:276-288` | taken: the graph form of `WithGates` never wires the opinion into the look | §17.7; row q | checked |
+| Codex | C28 | **yes** | `NodeContract.cs:479-492` (`:486`); `NodeGraphs.cs:643`; `BuiltInNodes.cs:218-229`; `WorkflowNamed.cs:492` | taken: `requests: wait` replaced by the kind `work.requests`, refused by an older reader; a `requests` option on `claimed` refused here | §1.3, §17.3, §17.6 point 8, §17.7; row o | checked |
+| Codex | C29 | **yes** | `WorkflowGate.cs:248-292`, `:332-345`; `D157.md:43` | taken: the person-part comparison gains a graph part, by node id, for `request`, `integrate` and `work.requests` | §17.6 point 9; rows o, n, p | checked |
+| Codex | C30 | **yes** | `WorkflowGate.cs:156`; `AutoLander.cs:375` | taken, with F40: an automatic landing never satisfies `request: owner`; the effective landing policy judged | §4.6, §17.4; rows e, n | checked |
+| Codex | C31 | no | §4.1's `request` row | taken: `gates: declared` and an accepted declaration naming a gate, two facts; the accepted-blob-gates-off case | §17.4, §17.7; row r | checked |
+| Codex | C32 | **yes** | the service's `Quests.cs:1238-1245`, `:1281-1287`; `QuestExchange.cs:657`; `WireEvaluation.cs:520-536` | taken: the request's key `<run>/<node>/<n>` is its quest's identity, one transaction dedups | §1.3, §17.5, §17.6 point 4; row p | checked |
+| Codex | C33 | no | `NodeLifecycle.cs:252-271` (`:264`); `RunNodeWords.cs:57-79`, `:124-130` | taken: *Ask again…* and *Go on without it…* on the run's node door, each a Person route | §17.5; row p | checked |
 
 ## 15. Round 2: both reads of round 1 answered
 
@@ -1751,8 +1750,8 @@ D215's points 1, 3, 4 and 6 to 12 stand as written; point 4's door and point 10'
 - **j** (the runner contract): unchanged.
 
 **b, e and f** are unchanged; e's door gains only the key a start finds its request by, which its *no double* rule already names (§4.6).
-*(R5, F40, C30)* Row e also gains the landing's acceptance provenance, which its door admits by; it waits for the steward's check of that
-change (§18.3 point 8).
+*(R5, F40, C30)* Row e also gains the landing's acceptance provenance, which its door admits by; the steward checked that change, so it
+builds now (§18.3 point 8).
 
 **Changed:** g (its requests made by the node, after n), h (the run's view draws the node), i (its act starts the node, after n), k (Current at
 the owner's sitting).
@@ -1848,7 +1847,7 @@ and the install's workspaces and their rules were not read.
 
 ## 18. Round 5: the reads answered, and the steward's settlement
 
-**Standing: accepted after named changes, pending the steward's check** (D191). Written by Claude Opus 5.5 on `parent/integrate1-flow` after
+**Standing: accepted** (D191; the steward checked the named changes at `2a5574d5c`). Written by Claude Opus 5.5 on `parent/integrate1-flow` after
 `75c79c6c1`. Both makers read round 4 there: Claude Fable, as a foundation, *accept after named changes* (F40 to F54, F40 blocking); Codex,
 *accept after named changes* (C28, C29, C30 and C32 blocking; C31 and C33 for the rows' contracts). Every finding was checked against the code
 at the lines it cites and held (§14, round 4's table, which says where each went). Round 5 makes every named change in the text, marked
@@ -1909,8 +1908,7 @@ Decided by the steward on 2026-10-28, under D191, on both reads' answers to roun
 
 ### 18.4 Records
 
-- **D215** carries round 5's note, its status *accepted after named changes, pending the steward's check*. The steward's check writes the
-  acceptance; each other decision is amended by its row's note (§17.11), never before.
+- **D215** carries round 5's note and the steward's acceptance after the check; each other decision is amended by its row's note (§17.11), never before.
 - **The backlog** (F49): `TASKS.md` gains the INTEGRATE1b row §11 names, and its FABRIC-WAITUNIT1 and FABRIC-DELEGATE1 rows are re-pointed as
   §18.3 point 5 says; the INTEGRATE1 row says round 5's standing and which rows build now.
 - **The stack** (F49): rounds 1 to 5 of this design, D215's notes and the INTEGRATE1 rows are on `parent/integrate1-design` and
