@@ -28,6 +28,13 @@ public sealed class HelpStartReadTests : IDisposable
     /// <summary>A reading of the machine that never answers, as the owner's did.</summary>
     private static Task<HelpMachine?> Never(CancellationToken ct) => new TaskCompletionSource<HelpMachine?>().Task;
 
+    /// <summary>Whether the room names the late repository yet; a read the writer's open file refuses is a look that saw nothing.</summary>
+    private static bool ReadsWrittenLate(string agents)
+    {
+        try { return File.ReadAllText(agents).Contains("`written-late`", StringComparison.Ordinal); }
+        catch (IOException) { return false; }
+    }
+
     private (ChatRunner Runner, SessionEvents Events, ServiceClient Client, DriverConfig Config, HelpPlaced Placed) Placed(
         StandInService service, string id)
     {
@@ -89,7 +96,8 @@ public sealed class HelpStartReadTests : IDisposable
         // The reading answers later: the room is written from it, for the next conversation.
         late.SetResult(Machine with { Repositories = [new("written-late", "default") { Checkout = true }] });
         var agents = Path.Combine(HelpRoom.PathOf(_home), "AGENTS.md");
-        await Poll.Until(() => File.ReadAllText(agents).Contains("`written-late`", StringComparison.Ordinal), within: Poll.Patience);
+        // The room's writer may hold the file at the moment of a look: a read it refuses is "not yet", never the test's end.
+        await Poll.Until(() => ReadsWrittenLate(agents), within: Poll.Patience);
     }
 
     /// <summary>
