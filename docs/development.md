@@ -394,7 +394,8 @@ removes the `dist/` the family's runs of the bin would load.
 
 A release then waits only for the last delta and the rehearsals. Once the commit to release is green, run `--ci --stage
 <commit>`. When that run's status says `green` and the gate tree holds the commit, stage it: `npm run publish:desktop --
---to <install> --service --stage --from-gated <commit>`. The stage holds the gate tree's lock through its build, so no CI
+--to <install> --service --stage --from-gated <commit>`. A run writes its ended status (`green`, `failed`, `stopped`) only
+after it lets the gate tree go (CIWATCHHOLD1), so a status that says `green` is never read beside a hold the run keeps. The stage holds the gate tree's lock through its build, so no CI
 run moves the tree meanwhile. It still refuses a commit the tree does not hold, a tree a run holds, and a commit whose
 verdicts do not pass (`--passed`, GATE6), the rehearsals' among them. Its refusal names `--ci --stage <commit>`, which gates
 that commit there again, running only what it lacks. `--full --beside` remains the run of every gate, for a release that
