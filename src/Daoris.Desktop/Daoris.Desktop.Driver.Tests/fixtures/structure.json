@@ -16,7 +16,7 @@
     { "name": "Course", "folder": "Course", "domain": true, "moved": true },
     { "name": "Work orders", "folder": "WorkOrders", "domain": true, "moved": true },
     { "name": "Review", "folder": "Review", "domain": true },
-    { "name": "Plugins", "folder": "Plugins", "domain": true },
+    { "name": "Plugins", "folder": "Plugins", "domain": true, "moved": true },
     { "name": "Workflows", "folder": "Workflows", "domain": true },
     { "name": "Setup", "folder": "Setup", "domain": true },
     { "name": "Help", "folder": "Help", "domain": false },
