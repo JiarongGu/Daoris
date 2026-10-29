@@ -391,6 +391,75 @@ public sealed class BriefedMoveTests : IDisposable
         Assert.Null(Events.After("c2", 0).Events.Single(e => e.Kind == SessionEventKind.User && e.Origin == "person").Id);
     }
 
+    /// <summary>
+    /// 🔴 The same on the native door (Claude Code's <c>stream-json</c>): the moved words go in one message from the new part, and each is shown
+    /// there by its own event under its id before the agent's answer, never one joined event.
+    /// </summary>
+    [Fact]
+    public async Task On_the_native_door_each_moved_word_is_shown_under_its_id_before_the_answer()
+    {
+        // A Daoris account for Claude Code's doors, where every start runs (OWNSPACE1a).
+        Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "claude-code", "daoris"));
+        var log = Path.Combine(_home, "native.log");
+        var config = DriverConfig.Empty with
+        {
+            Commands = new Dictionary<string, IReadOnlyList<string>> { ["claude-code"] = ["node", NativeHarness(), log] },
+        };
+        config.Save(DaorisHome.Entry(_home, HomeEntry.DriverConfig));
+        var (runner, ledger, client, _) = Runner(opens: 2);
+        using var r = runner;
+        using var c = client;
+        ledger.Chat("c1", "completed", "claude-code", _root).Say("w1", "Also log the port.").Say("w2", "And add a test.");
+
+        var answer = await runner.GoOnBriefedAsync("c1", config);
+
+        Assert.True(answer.Sent, answer.Message);
+        await Poll.Until(() => Events.After("c2", 0).Events.Any(e => e.Kind == SessionEventKind.Message), () => $"{Seen(ledger, "c2")}; native [{string.Join(" | ", StubFile.Lines(log))}]");
+        var said = Assert.Single(StubFile.Lines(log), line => line.StartsWith("message=", StringComparison.Ordinal));
+        Assert.True(Count(said, "Also log the port.") == 1 && Count(said, "And add a test.") == 1, said);
+        var shown = Events.After("c2", 0).Events.ToList();
+        var first = shown.FindIndex(e => e.Kind == SessionEventKind.User && e.Id == "w1");
+        var second = shown.FindIndex(e => e.Kind == SessionEventKind.User && e.Id == "w2");
+        Assert.True(first >= 0 && second > first && second < shown.FindIndex(e => e.Kind == SessionEventKind.Message), Seen(ledger, "c2"));
+        Assert.DoesNotContain(shown, e => e.Kind == SessionEventKind.User && e.Origin == "person" && e.Id is null);
+        Assert.Contains(("c2", "w1,w2", (string?)null), ledger.TakenBy);
+        Assert.Empty(ledger.Said("c1"));
+    }
+
+    /// <summary>
+    /// A stand-in for Claude Code's native door in a conversation: it answers its version and its login question; run on <c>stream-json</c>
+    /// input, it writes down each message and names its conversation on an <c>init</c> line as it takes its first.
+    /// </summary>
+    private string NativeHarness()
+    {
+        var script = Path.Combine(_home, "claude.mjs");
+        File.WriteAllText(script, """
+            import { appendFileSync } from 'node:fs';
+            import { createInterface } from 'node:readline';
+            const [log, ...argv] = process.argv.slice(2);
+            if (argv.includes('--version')) { console.log('2.1.0 (Claude Code)'); process.exit(0); }
+            if (argv[0] === 'auth' && argv[1] === 'status') { console.log('{"loggedIn": true}'); process.exit(0); }
+            if (!argv.includes('-p')) process.exit(0);
+            const out = (frame) => process.stdout.write(JSON.stringify(frame) + '\n');
+            let named = false;
+            const lines = createInterface({ input: process.stdin });
+            lines.on('line', (line) => {
+              const frame = JSON.parse(line);
+              if (frame.type !== 'user') return;
+              const text = frame.message.content.filter((block) => block.type === 'text').map((block) => block.text).join('');
+              appendFileSync(log, `message=${text.replace(/\n/g, '\\n')}\n`);
+              if (!named) {
+                out({ type: 'system', subtype: 'init', session_id: 'native-1', cwd: process.cwd(), tools: [], model: 'stub' });
+                named = true;
+              }
+              out({ type: 'assistant', message: { role: 'assistant', model: 'stub', content: [{ type: 'text', text: 'heard it' }] } });
+              out({ type: 'result', subtype: 'success', is_error: false, result: 'ok' });
+            });
+            lines.on('close', () => { process.exitCode = 0; process.stdin.destroy(); });
+            """);
+        return script;
+    }
+
     /// <summary>A stand-in ACP agent on the stub's accounts: it names its conversation and writes each prompt down with its account.</summary>
     private string Agent()
     {
