@@ -856,6 +856,9 @@ try
         return help ? 0 : 2;
     }
 
+    // FOUNDATION1f-i: this process is the headless loop, and its run of the desktop store says so; a move it claims names that run.
+    StoreProcess.Kind = StoreProcess.Host;
+
     var once = loop.Mode == LoopMode.Once;
     var untilIdle = loop.Mode == LoopMode.UntilIdle;
 
