@@ -397,7 +397,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-30-agent-lyntai-design.md` | 220 | 1477 |
 | `docs/2026-10-30-agent-lyntai-proposal-codex.md` | 76 | 717 |
 | `docs/2026-10-30-agent-lyntai-proposal-opus.md` | 71 | 675 |
-| `docs/2026-10-30-agent-lyntai-reads.md` | 64 | 569 |
+| `docs/2026-10-30-agent-lyntai-reads.md` | 87 | 737 |
 | `docs/2026-10-30-agent-lyntai-survey.md` | 44 | 374 |
 | `docs/DAORIS_UNIFIED_COLLABORATION_ARCHITECTURE_AND_PLAN_2026-10-16.md` | 164 | 5380 |
 | `docs/README.md` | 63 | 289 |
