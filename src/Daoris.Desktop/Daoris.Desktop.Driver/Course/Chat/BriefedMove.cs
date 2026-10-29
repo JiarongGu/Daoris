@@ -113,19 +113,24 @@ internal sealed class BriefedMove(ChatContext context, IChatRunning runner, Chat
             return Refused(HandOver.TreeGone, $"the tree {sessionId} ran in is gone, so there is nothing to go on in.");
         }
 
+        // Its agent is the one whose conversation it is; a record naming none goes on with its role's choice, Chat's order, never the
+        // machine's `adapter` key (FOUNDATION1j part iii, the foundation design §2.4's first row). Chat off, or its entry unread, is said below.
         ISessionAdapter? agent = null;
+        var named = record.Adapter;
         try
         {
-            agent = context.Harnesses.Adapters.Resolve(record.Adapter ?? config.Adapter);
+            named = record.Adapter is { Length: > 0 } opened ? opened : StartPlan.ContinuedOn(record, config, "chat");
+            agent = context.Harnesses.Adapters.Resolve(named);
         }
-        catch (DriverException)
+        catch (DriverException unchosen)
         {
             // Said below: only the person can choose the agent it goes on with.
+            if (named is not { Length: > 0 }) return Refused(GoOnBrief.AgentGone, $"{unchosen.Message} Hand {sessionId} over to another agent.");
         }
 
         if (agent is not { Interactive: true })
         {
-            return Refused(GoOnBrief.AgentGone,$"`{record.Adapter}` is no longer an agent on this machine that holds conversations: hand {sessionId} over to another.");
+            return Refused(GoOnBrief.AgentGone, $"`{named}` is no longer an agent on this machine that holds conversations: hand {sessionId} over to another.");
         }
 
         // The brief of its line, composed before the new part opens, while the old part is the last of it.

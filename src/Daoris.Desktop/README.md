@@ -660,6 +660,10 @@ moved words, their files copied into its folder, each shown there by its own `Us
 the old record. The driven carry-on and the replacement of a start its agent refused at the open use the keyed door too (part 5): the carry-on
 takes its new session's moved words into the ask before its instruction is composed (`DriverContinuations.HandedOnAsync`), and the
 replacement hands each to its turns as its own record's word under its id (`ChatTurns.TakeMoved`), so a producer's retry goes once.
+Which agent a chat starts or goes on with is its role's, Chat's order, never the machine's `adapter` key (FOUNDATION1j part iii, the
+foundation design §2.4): a conversation's go-on and a briefed move go on on the agent that opened the record, and only a record naming
+none takes `StartPlan.ContinuedOn`'s answer for Chat, a Chat that is off or unread holding the words with its sentence; a new chat, the
+page's start-from and a terminal's `chat` and `sessions start-from` take `ActorChoices.NewChat`, Chat's order (a named agent the pick).
 A conversation's go-on calls it before a spawn (no id kept, no resume on the
 door) and once its run let go where the wire refused the resume as lost (`ChatRunner.AgainAsync`); a closed quest's session reaches it
 through the loop's seam (`LoopContext.GoesOnLost`, the shell's `ChatRunner.GoOnLostAsync`; none in the headless host), as a

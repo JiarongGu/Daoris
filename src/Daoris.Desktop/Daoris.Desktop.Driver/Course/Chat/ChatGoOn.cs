@@ -569,8 +569,19 @@ internal sealed class ChatGoOn
             return new(fresh.SessionId, fresh.Message);
         }
 
-        // Its conversation is the adapter's that opened it, so it goes on on that one or not at all.
-        var ranOn = record.Adapter ?? config.Adapter;
+        // Its conversation is the adapter's that opened it, so it goes on on that one or not at all. A record naming none (one from before
+        // the adapter was kept) goes on with its role's choice, Chat's order, never the machine's `adapter` key (FOUNDATION1j part iii,
+        // the foundation design §2.4's first row); Chat off, or its entry unread, holds the words with the sentence.
+        string ranOn;
+        try
+        {
+            ranOn = record.Adapter is { Length: > 0 } opened ? opened : StartPlan.ContinuedOn(record, config, "chat");
+        }
+        catch (DriverException unchosen)
+        {
+            return Held(sessionId, HeldWords.Program(unchosen.Message));
+        }
+
         ISessionAdapter? adapter = null;
         try
         {
