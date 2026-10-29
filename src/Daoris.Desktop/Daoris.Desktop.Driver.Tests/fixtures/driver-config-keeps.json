@@ -104,6 +104,9 @@
     "      \"mode\": \"on\"",
     "    }",
     "  },",
+    "  \"integrationGates\": {",
+    "    \"engine\": \"0123456789abcdef0123456789abcdef01234567\"",
+    "  },",
     "  \"access\": {",
     "    \"engine\": {",
     "      \"permissions\": \"asking\",",
@@ -316,6 +319,27 @@
       "edit": { "op": "session-checks", "repository": "engine", "checks": null },
       "changes": [
         { "from": ["  \"sessionChecks\": {", "    \"engine\": \"heavy-at-end\"", "  },", "  \"readAcross\": {"], "to": ["  \"readAcross\": {"] }
+      ]
+    },
+    {
+      "name": "a repository's integration accepted beside another's (INTEGRATE1d): its blob after the one before it, in its own key beside the landed route's",
+      "edit": { "op": "integration-gates", "repository": "shop-api", "blob": "none" },
+      "changes": [
+        { "from": ["    \"engine\": \"0123456789abcdef0123456789abcdef01234567\""], "to": ["    \"engine\": \"0123456789abcdef0123456789abcdef01234567\",", "    \"shop-api\": \"none\""] }
+      ]
+    },
+    {
+      "name": "an integration accepted again at a later blob (INTEGRATE1d): the one value changes",
+      "edit": { "op": "integration-gates", "repository": "ENGINE", "blob": "89abcdef0123456789abcdef0123456789abcdef" },
+      "changes": [
+        { "from": ["    \"engine\": \"0123456789abcdef0123456789abcdef01234567\""], "to": ["    \"engine\": \"89abcdef0123456789abcdef0123456789abcdef\""] }
+      ]
+    },
+    {
+      "name": "the last integration acceptance cleared (INTEGRATE1d): the key goes, since the writer writes no empty map",
+      "edit": { "op": "integration-gates", "repository": "engine", "blob": null },
+      "changes": [
+        { "from": ["  \"integrationGates\": {", "    \"engine\": \"0123456789abcdef0123456789abcdef01234567\"", "  },", "  \"access\": {"], "to": ["  \"access\": {"] }
       ]
     },
     {
@@ -760,6 +784,8 @@
     { "name": "a quest forgiven twice in any case reads its first mark", "map": "forgiven", "file": { "forgiven": { "Q7": 2, "q7": 5 } }, "read": { "Q7": 2 } },
     { "name": "a mark that is no count shadows none", "map": "forgiven", "file": { "forgiven": { "q7": 0, "Q7": 3 } }, "read": { "Q7": 3 } },
     { "name": "a language written twice in any case reads its first, as it did", "map": "languages", "file": { "languages": { "Engine": "zh", "engine": "en" } }, "read": { "Engine": "zh" } },
-    { "name": "a release written twice in any case reads its first, as it did", "map": "released", "file": { "released": { "Q9": "s-41", "q9": "s-42" } }, "read": { "Q9": "s-41" } }
+    { "name": "a release written twice in any case reads its first, as it did", "map": "released", "file": { "released": { "Q9": "s-41", "q9": "s-42" } }, "read": { "Q9": "s-41" } },
+    { "name": "an integration's acceptance written twice in any case reads its first (INTEGRATE1d)", "map": "integrationGates", "file": { "integrationGates": { "Engine": "none", "engine": "0123456789abcdef0123456789abcdef01234567" } }, "read": { "Engine": "none" } },
+    { "name": "an acceptance that is no blob id shadows none, and a short or upper-case id is none (INTEGRATE1d)", "map": "integrationGates", "file": { "integrationGates": { "engine": "0123ABCD", "ENGINE": "0123456789ABCDEF0123456789ABCDEF01234567", "Engine": "0123456789abcdef0123456789abcdef01234567" } }, "read": { "Engine": "0123456789abcdef0123456789abcdef01234567" } }
   ]
 }

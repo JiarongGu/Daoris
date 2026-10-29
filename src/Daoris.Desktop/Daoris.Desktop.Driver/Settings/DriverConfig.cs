@@ -429,6 +429,31 @@ public sealed record DriverConfig(
         new Dictionary<string, WorkflowChoice>(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
+    /// The integration declaration each repository's owner accepted on this machine (INTEGRATE1d; D215 point 2, the integration design
+    /// §4.1), by repository: git's blob id of the <c>daoris.gates.json</c> accepted, or <c>none</c> where the line held none. Its own
+    /// acceptance beside the landed route's, never bound to a chosen workflow, so a repository needs no verification pipeline to
+    /// integrate; absent is nothing accepted, and nothing the declaration names runs. Read and written by <see cref="IntegrationGatesKey"/>.
+    /// </summary>
+    public IReadOnlyDictionary<string, string> IntegrationGates { get; init; } =
+        new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Set the integration declaration accepted for a repository, by its blob, or clear it with null (INTEGRATE1d); the repository's
+    /// existing spelling kept. The person's <i>Accept the gates</i> is the door that calls it.
+    /// </summary>
+    /// <exception cref="DriverException">No repository, or a value that is no blob id and not <c>none</c>.</exception>
+    public DriverConfig WithIntegrationGates(string repository, string? blob)
+    {
+        var named = repository.Trim();
+        if (named.Length == 0) throw new DriverException("an integration's acceptance names its repository.");
+        if (blob is not null && !IntegrationGatesKey.IsAcceptance(blob)) throw new DriverException(IntegrationGatesKey.Problem);
+        var next = new Dictionary<string, string>(IntegrationGates, StringComparer.OrdinalIgnoreCase);
+        if (blob is null) next.Remove(named);
+        else next[named] = blob;
+        return this with { IntegrationGates = next };
+    }
+
+    /// <summary>
     /// Each repository's session access setup (AUTONOMY1a, D184 points 1-3), by repository: full access, or the pauses it names. Each
     /// pause resolves on its own, the repository's over its workspace's over this machine's (<see cref="AccessRules.Resolve"/>);
     /// absent everywhere is today's behaviour. Edited only through <see cref="AccessRules.Apply"/>.
@@ -1022,6 +1047,8 @@ public sealed record DriverConfig(
             // Written only when set (WORKFLOW1e), as the CLI writes them: absent is Current, today's behaviour.
             WorkflowKey.WriteMap(writer, "workflows", Workflows, workspace: false);
             WorkflowKey.WriteMap(writer, "workspaceWorkflows", WorkspaceWorkflows, workspace: true);
+            // Written only when set (INTEGRATE1d), beside the landed route's acceptance: absent is nothing accepted for integration.
+            IntegrationGatesKey.WriteMap(writer, IntegrationGates);
             // Written only when set (AUTONOMY1a), as the CLI writes them: absent is today's behaviour, and nothing loosens by itself.
             AccessKey.WriteMap(writer, "access", Access);
             AccessKey.WriteMap(writer, "workspaceAccess", WorkspaceAccess);
@@ -1475,6 +1502,8 @@ public sealed record DriverConfig(
             // An entry with a problem, or naming nothing, is not read (WORKFLOW1e).
             Workflows = WorkflowKey.Map(root, "workflows", workspace: false),
             WorkspaceWorkflows = WorkflowKey.Map(root, "workspaceWorkflows", workspace: true),
+            // Read as a stored shape (INTEGRATE1d): a value that is no blob id and not `none` is not read, and shadows none.
+            IntegrationGates = IntegrationGatesKey.Map(root),
             // Read as a stored shape (AUTONOMY1a): a pause this build does not know passed over, a value it does not know read as today's.
             Access = AccessKey.Map(root, "access"),
             WorkspaceAccess = AccessKey.Map(root, "workspaceAccess"),

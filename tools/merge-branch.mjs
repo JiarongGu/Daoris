@@ -1177,6 +1177,12 @@ export const REACH = Object.freeze([
     gates: ['driver', 'tool-tests'],
     why: "the driver's BacklogMergeTests and the merge tool's tests read the backlog merges' table (LANDBACKLOG1)",
   },
+  // INTEGRATE1d: the integration declarations' table sits among the driver's tests, and the merge tool's twin reads it too.
+  {
+    paths: ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/integration-declarations.json'],
+    gates: ['driver', 'tool-tests'],
+    why: "the driver's IntegrationDeclarationTests and the merge tool's tests read the integration declarations' table (INTEGRATE1d)",
+  },
   // PUSH1f2e (D194, the alone-path design §4): the agent family's shared tables moved to the driver's fixtures with their last CLI
   // readers gone; the page reads three of them, and the modules one. The vendor's files and the reads table are the driver's alone.
   { paths: ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/shell-words.json'], gates: ['driver', 'web-unit'], why: "the driver's ShellWord twin and the page's shellWord read the shell-word table (ACCTQUOTE1b), and the CLI's suite holds it against the shells" },
@@ -1432,32 +1438,164 @@ export function backlogOf(text) {
 }
 
 /**
- * The files a repository's declaration says settle by rows (INTEGRATE1c; design §4.1's `merge`): `daoris.gates.json`'s
- * `integration.merge`, each entry `{ "paths": file, "by": "rows" }`. A file whose conflict is settled as the backlog's is, by the
- * merge base, line by line: a row a side added is kept, one a side removed is dropped, rows both add at one place are both kept,
- * and a base row both changed stays a conflict. No command runs, so no acceptance is read; an entry naming a `line` or a `run`
- * writer is row d's (the acceptance's) and is passed over, as is any other `by`: no rule keeps one side's copy (C6, F10).
- *
- * Nothing: where the text is null, not JSON or not an object, has no `integration.merge` list, or an entry has no text `paths`.
- * Each path trimmed, a backslash a slash, once. A twin: a landing's replay reads the line's declaration by the driver's
- * `BacklogMerge.RowTablesOf`, and both hold `backlog-merges.json` among the driver's test fixtures, row for row.
+ * The sentences a repository's `integration` is refused in (INTEGRATE1d), the driver's `IntegrationDeclaration` sentence for
+ * sentence: a deliberate copy, held to `integration-declarations.json` among the driver's test fixtures by both twins' tests.
  */
-export function rowTablesOf(text) {
-  if (text === null) return [];
+const INTEGRATION_SAYS = {
+  notJson: '`daoris.gates.json` does not read as JSON, so it declares no integration.',
+  notObject: '`daoris.gates.json` holds no object, so it declares no integration.',
+  integration: '`integration` is an object: `by`, `gates`, `commits`, `scratch`, `merge`, `message` and `env`.',
+  by: '`integration.by` is `daoris` or `tool`.',
+  gates: "`integration.gates` is `reached`, or a list of one or more declared gates' names.",
+  gateUndeclared: (name) => `\`integration.gates\` names \`${name}\`, which \`gates\` does not declare.`,
+  gateTwice: (name) => `\`integration.gates\` names \`${name}\` twice.`,
+  commits: "`integration.commits` is `runner`, or a declared gate's name.",
+  commitsUndeclared: (name) => `\`integration.commits\` names \`${name}\`, which \`gates\` does not declare.`,
+  scratch: '`integration.scratch` is a list of globs, each text.',
+  scratchGlob: (glob) => `\`integration.scratch\` holds \`${glob}\`: a glob is a path from the repository's root, never absolute, never leaving it by \`..\`, never opening with a wildcard.`,
+  merge: '`integration.merge` is a list of rules.',
+  mergeRule: (at) => `\`integration.merge\`'s rule ${at} is neither \`{ paths, by: rows }\` nor \`{ paths, line, run }\`: no rule keeps one side's copy.`,
+  message: "`integration.message` is the merge commit's subject, as text.",
+  messageSays: (said) => `\`integration.message\` says \`${said}\`, and a subject says only \`{name}\`, \`{title}\`, \`{quest}\`, \`{repository}\` and \`{branch}\`.`,
+  env: "`integration.env` is an object, its `pass` a list of variables' names.",
+  passName: (name) => `\`integration.env.pass\` names \`${name}\`, which is no variable's name.`,
+  passDaoris: (name) => `\`integration.env.pass\` names \`${name}\`: a \`DAORIS_\` variable is the install's, and never passes to a gate.`,
+};
+
+/** What a merge message may say (design §4.1's `message`). */
+const MESSAGE_NAMES = ['name', 'title', 'quest', 'repository', 'branch'];
+
+const isRecord = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
+/** A key the object holds, written as something other than null: a key written null is absent. */
+const present = (record, key) => Object.hasOwn(record, key) && record[key] !== null;
+const isText = (value) => typeof value === 'string' && value.trim().length > 0;
+/** A path as both twins keep one: trimmed, each backslash a slash. */
+const keptPath = (text) => text.trim().replace(/\\/g, '/');
+
+/** Whether a scratch glob stays under the repository's root as the driver's `TreeScratch` takes one: not absolute, no `..`, no wildcard first. */
+function scratchGlobHolds(glob) {
+  if (glob.startsWith('/') || glob.includes(':')) return false;
+  const segments = glob.replace(/^\/+|\/+$/g, '').split('/');
+  return segments[0].length > 0 && !segments.includes('..') && !/[*?]/.test(segments[0]);
+}
+
+/**
+ * A repository's integration facts, read whole (INTEGRATE1d; D215 point 2, design §4.1): `daoris.gates.json`'s `integration`, its
+ * `by`, `gates`, `commits`, `scratch`, `merge`, `message` and `env.pass`, each key's shape checked in that order. `{ integration,
+ * problem }`: the facts, an absent `by`, `gates`, `commits` or `message` null and an absent list empty; or the one sentence naming
+ * the first key whose shape it breaks, and no facts, never a partial read. Nothing, and no problem, where the text is null or
+ * declares no `integration`; a key written null is absent, and one neither twin knows is passed over. Nothing acts on it here
+ * beyond row c's row tables (`rowTablesOf`): the writers, the scratch and the gates wait for the acceptance (C6).
+ *
+ * A twin: the driver's `IntegrationDeclaration.Read` (Workplace), and both hold `integration-declarations.json` among the driver's
+ * test fixtures, row for row. A change here is a change there, in the same commit.
+ */
+export function integrationOf(text) {
+  const refused = (problem) => ({ integration: null, problem });
+  if (text === null) return { integration: null, problem: null };
   let declaration;
   try {
     declaration = JSON.parse(text);
   } catch {
-    return [];
+    return refused(INTEGRATION_SAYS.notJson);
   }
-  const merge = declaration !== null && typeof declaration === 'object' && !Array.isArray(declaration) ? declaration.integration?.merge : undefined;
-  if (!Array.isArray(merge)) return [];
-  const paths = merge.flatMap((entry) => {
-    if (entry === null || typeof entry !== 'object' || Array.isArray(entry) || entry.by !== 'rows' || typeof entry.paths !== 'string') return [];
-    const path = entry.paths.trim().replace(/\\/g, '/');
-    return path.length ? [path] : [];
-  });
-  return [...new Set(paths)];
+  if (!isRecord(declaration)) return refused(INTEGRATION_SAYS.notObject);
+  if (!present(declaration, 'integration')) return { integration: null, problem: null };
+  const integration = declaration.integration;
+  if (!isRecord(integration)) return refused(INTEGRATION_SAYS.integration);
+  const declared = Array.isArray(declaration.gates)
+    ? declaration.gates.filter((gate) => isRecord(gate) && typeof gate.name === 'string').map((gate) => gate.name)
+    : [];
+
+  let by = null;
+  if (present(integration, 'by')) {
+    if (integration.by !== 'daoris' && integration.by !== 'tool') return refused(INTEGRATION_SAYS.by);
+    by = integration.by;
+  }
+
+  let gates = null;
+  if (present(integration, 'gates')) {
+    const value = integration.gates;
+    if (value === 'reached') gates = 'reached';
+    else if (Array.isArray(value) && value.length > 0 && value.every(isText)) {
+      gates = [];
+      for (const name of value) {
+        if (!declared.includes(name)) return refused(INTEGRATION_SAYS.gateUndeclared(name));
+        if (gates.includes(name)) return refused(INTEGRATION_SAYS.gateTwice(name));
+        gates.push(name);
+      }
+    } else return refused(INTEGRATION_SAYS.gates);
+  }
+
+  let commits = null;
+  if (present(integration, 'commits')) {
+    if (!isText(integration.commits)) return refused(INTEGRATION_SAYS.commits);
+    if (integration.commits !== 'runner' && !declared.includes(integration.commits)) return refused(INTEGRATION_SAYS.commitsUndeclared(integration.commits));
+    commits = integration.commits;
+  }
+
+  const scratch = [];
+  if (present(integration, 'scratch')) {
+    if (!Array.isArray(integration.scratch) || !integration.scratch.every(isText)) return refused(INTEGRATION_SAYS.scratch);
+    for (const written of integration.scratch) {
+      const glob = keptPath(written);
+      if (!scratchGlobHolds(glob)) return refused(INTEGRATION_SAYS.scratchGlob(glob));
+      scratch.push(glob);
+    }
+  }
+
+  const merge = [];
+  if (present(integration, 'merge')) {
+    if (!Array.isArray(integration.merge)) return refused(INTEGRATION_SAYS.merge);
+    for (const [at, rule] of integration.merge.entries()) {
+      const paths = isRecord(rule) && isText(rule.paths) ? keptPath(rule.paths) : null;
+      if (paths !== null && present(rule, 'by') && rule.by === 'rows' && !present(rule, 'line') && !present(rule, 'run')) merge.push({ paths, by: 'rows' });
+      else if (paths !== null && !present(rule, 'by') && isText(rule.line) && isText(rule.run)) merge.push({ paths, line: rule.line, run: rule.run });
+      else return refused(INTEGRATION_SAYS.mergeRule(at + 1));
+    }
+  }
+
+  let message = null;
+  if (present(integration, 'message')) {
+    if (!isText(integration.message)) return refused(INTEGRATION_SAYS.message);
+    for (const [said, name] of integration.message.matchAll(/\{([^{}]*)\}/g)) {
+      if (!MESSAGE_NAMES.includes(name)) return refused(INTEGRATION_SAYS.messageSays(said));
+    }
+    message = integration.message;
+  }
+
+  const pass = [];
+  if (present(integration, 'env')) {
+    const env = integration.env;
+    if (!isRecord(env)) return refused(INTEGRATION_SAYS.env);
+    if (present(env, 'pass')) {
+      if (!Array.isArray(env.pass) || !env.pass.every((name) => typeof name === 'string')) return refused(INTEGRATION_SAYS.env);
+      for (const name of env.pass) {
+        if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(name)) return refused(INTEGRATION_SAYS.passName(name));
+        if (/^daoris_/i.test(name)) return refused(INTEGRATION_SAYS.passDaoris(name));
+        pass.push(name);
+      }
+    }
+  }
+
+  return { integration: { by, gates, commits, scratch, merge, message, pass }, problem: null };
+}
+
+/**
+ * The files a repository's declaration says settle by rows (INTEGRATE1c; design §4.1's `merge`): `daoris.gates.json`'s
+ * `integration.merge`, each rule `{ "paths": file, "by": "rows" }`, read through the whole declaration (`integrationOf`,
+ * INTEGRATE1d). A file whose conflict is settled as the backlog's is, by the merge base, line by line: a row a side added is kept,
+ * one a side removed is dropped, rows both add at one place are both kept, and a base row both changed stays a conflict. No
+ * command runs, so no acceptance is read: a `line` rule's `run` writer waits for the acceptance and is passed over (C6, F10).
+ *
+ * Nothing where the text is null or declares no integration, or where the declaration has a problem (`integrationOf` names it):
+ * never a partial read. Each path trimmed, a backslash a slash, once, in the order first declared. A twin: a landing's replay reads
+ * the line's declaration by the driver's `BacklogMerge.RowTablesOf`, and both hold `backlog-merges.json` among the driver's test
+ * fixtures, row for row.
+ */
+export function rowTablesOf(text) {
+  const { integration } = integrationOf(text);
+  return integration === null ? [] : [...new Set(integration.merge.filter((rule) => rule.by === 'rows').map((rule) => rule.paths))];
 }
 
 /**
