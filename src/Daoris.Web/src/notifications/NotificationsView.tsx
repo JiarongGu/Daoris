@@ -7,6 +7,7 @@ import {
 } from '../person/Confirmations';
 import { NothingNeedsYou } from '../work/attention/AttentionList';
 import type { AskMessages, Notice } from '../bridge/notices';
+import type { UpdateMode, UpdateState } from '../update/UpdateBanner';
 import { DoneAndFailed } from './DoneAndFailed';
 import { type MessageNames, Messages, messagesCount } from './Messages';
 
@@ -55,8 +56,11 @@ function foldedHere(): Set<NotificationsGroup> {
  */
 export function NotificationsView({
   presses, needs, working, attention, onAnswer, notify, onShown, names, at = null, onVisible, notices = [], onRead, onOpenNotice, onDismiss,
-  messages = [], answered = [], messageNames, onOpenAsk, onMarkAsk, onOpenAnswer, standing, onOpenPlan,
+  messages = [], answered = [], messageNames, onOpenAsk, onMarkAsk, onOpenAnswer, standing, onOpenPlan, update, onSayUpdate,
 }: {
+  /** The install's update and the person's word on it (DRAINHOLD1): a Confirm held by a drain says what it waits on, and offers *Install later*. */
+  update?: UpdateState;
+  onSayUpdate?: (mode: UpdateMode) => void;
   /** The standing confirmation's line while it is on (TERMTRUST1a, `StandingLine`), at the head of the presses' group. */
   standing?: ReactNode;
   presses: Confirmation[];
@@ -146,7 +150,7 @@ export function NotificationsView({
         {standing}
         {presses.length > 0 && (
           <Group id="presses" title={t('person.label')} count={presses.length} folded={folded.has('presses')} onFold={fold} warn>
-            <Confirmations waiting={presses} onAnswer={onAnswer} notify={notify} onShown={onShown} names={names} onOpenPlan={onOpenPlan} />
+            <Confirmations waiting={presses} onAnswer={onAnswer} notify={notify} onShown={onShown} names={names} onOpenPlan={onOpenPlan} update={update} onSayUpdate={onSayUpdate} />
           </Group>
         )}
         {needs !== 0 && (

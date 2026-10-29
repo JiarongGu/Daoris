@@ -11,7 +11,10 @@
  *                                                           the repositories it drives, typically
  *   node tools/desktop-publish.mjs --to <install> --service --stage
  *                                                           …beside a running install, in update/staged/,
- *                                                           which the desktop installs when idle (D139)
+ *                                                           which the desktop installs when idle (D139): it drains
+ *                                                           (starts nothing new, holds the presses that would start
+ *                                                           work) until every driven session ends;
+ *                                                           `daoris-driver update --cancel` stages it *not now*
  *   … --git-doors                                           …with Daoris's two git doors in app/bin/ (GITAUTH1b,
  *                                                           D198), left out until their owed measurements pass
  *   … --force-ungated                                       …a tree the full set of gates has not passed
@@ -823,6 +826,8 @@ Stage a new build beside it while it runs: \`npm run publish:desktop -- --to <th
 application then starts nothing new, lets the running sessions end or park, closes, and \`${LAUNCHER}\` checks the
 staged build, swaps \`${SHELL_HOME[0]}/\` and starts it again, putting the build before it back if the new one does not
 come up (D139). The banner in the window and \`daoris-driver update --when-idle|--now|--cancel\` say when.
+While it drains the application starts nothing new and holds the presses that would start work;
+\`daoris-driver update --cancel\` stages the build *not now* (installed at the next start, or \`update --when-idle\` later).
 Re-publishing over this folder with the application closed still works, with \`--service\` while it carries the hosts
 (a re-publish without it is refused rather than leave the last build's); nothing here is edited by hand.
 `;
@@ -1033,6 +1038,20 @@ export function stageReport(home, commit) {
     commits: (a, b) => (gitIn(home, ['log', '--format=%h %s', `${a}..${b}`]).stdout ?? '').split(/\r?\n/).filter(Boolean),
   });
   return stageRangeLines(range);
+}
+
+/**
+ * DRAINHOLD1: what a stage says of the drain it starts (D139), printed after it. Staged while the install is idle, the install
+ * drains: it starts nothing new and holds the presses that would start work until every driven session ends; the terminal's
+ * `update --cancel` stages the build *not now* instead.
+ */
+export function stagedAdvice() {
+  return [
+    '  The desktop drains for it: it starts nothing new and holds the presses that would start work until every driven',
+    '  session and turn has ended, then installs it and starts again (D139). `daoris-driver update` says where it stands;',
+    '  `daoris-driver update --cancel` stages it *not now* (installed at the next start, or `update --when-idle` later),',
+    '  and --now installs without waiting.',
+  ];
 }
 
 /** CISCOPE1d: a successful stage appended to the main checkout's history: the commit, its tree, where it went, when, forced or not. */
@@ -1450,8 +1469,7 @@ async function main() {
     }
     console.log(`\ndesktop-publish: staged build ${identity.id} (${identity.version}${identity.commit ? `, ${identity.commit}` : ''}) `
       + `beside ${to}, in ${STAGED.join('/')}/`);
-    console.log('  The desktop installs it once no driven session runs and no turn is in flight, and starts again (D139);');
-    console.log('  `daoris-driver update` says where it stands, and --now or --cancel says otherwise.');
+    for (const line of stagedAdvice()) console.log(line);
     return;
   }
 

@@ -1,6 +1,7 @@
 import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import { chinese } from '../design/storyLanguage';
 import { InTheme } from '../plugins/storyIcons';
+import type { UpdateState } from '../update/UpdateBanner';
 import { AdoptionNotice as Notice, Confirmations, type Confirmation, type ConfirmationAnswer, type PressNames } from './Confirmations';
 
 // What waits for the person's Confirm (PERSONDOOR1f, RPC1c, NOTIFY2b; D156 §4.2, the notification design §3), as *Notifications*
@@ -105,6 +106,27 @@ const LAND: Confirmation = {
 
 export const PlanDoor: Story = { args: { waiting: [LAND], onOpenPlan: () => {} } };
 export const PlanDoorChinese: Story = { args: { waiting: [LAND], onOpenPlan: () => {} }, decorators: [chinese] };
+
+/**
+ * A Confirm held by an update's drain (DRAINHOLD1): the card says what the drain waits on and since when, and offers *Install later*
+ * beside Refuse and Confirm. The story presses Confirm, as a person would, so the held answer is drawn.
+ */
+const DRAIN: UpdateState = {
+  state: 'draining', staged: { id: 'b1', version: '0.1.9' }, mode: 'when-idle', driven: 2, turns: 1, problem: null, outcome: null, last: null,
+  since: new Date(Date.now() - 20 * 60_000).toISOString(),
+};
+const held: Story['play'] = async ({ canvasElement }) => {
+  const confirm = [...canvasElement.querySelectorAll<HTMLButtonElement>('button')].find((each) => /^(Confirm|确认)$/.test(each.textContent ?? ''));
+  confirm?.click();
+  await new Promise((resolve) => setTimeout(resolve, 50));
+};
+const HELD_ARGS = {
+  waiting: [STOP], update: DRAIN, onSayUpdate: () => {},
+  onAnswer: async (): Promise<ConfirmationAnswer> => ({ answered: false, why: 'draining', message: 'Daoris is about to restart; this still waits.' }),
+};
+export const HeldByDrain: Story = { args: HELD_ARGS, play: held };
+export const HeldByDrainChineseDark: Story = { args: HELD_ARGS, play: held, decorators: [chinese, dark] };
+export const HeldByRestart: Story = { args: { ...HELD_ARGS, update: { ...DRAIN, state: 'applying' } }, play: held };
 
 /** The adoption notice, which stays one line under the strip (§3.1). */
 export const AdoptionNotice: Story = { render: () => <Notice onDismiss={() => {}} /> };
