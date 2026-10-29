@@ -167,4 +167,89 @@ public sealed class MovedWordsTests : IDisposable
         Assert.All(ledger.Record("c2")["said"]!.AsArray(), word => Assert.Null(word!["attempt"]));
         Assert.Empty(ledger.TakenBy);
     }
+
+    /// <summary>
+    /// An ended conversation its limit held, on c1, with the refused turn's words in its record, and the new part c2 its limit's move opened,
+    /// the open having moved <paramref name="moved"/> there; the move's box names them on c2.
+    /// </summary>
+    private void MovedBox(ChatLedger ledger, params (string Id, string Text)[] moved)
+    {
+        ledger.Chat("c1", "stopped", "talk", _root, profile: "account-1");
+        var events = Events;
+        events.Append("c1", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = "Earlier answered exchange." });
+        events.Append("c1", new SessionEvent { Kind = SessionEventKind.Turn, StopReason = "end_turn" });
+        events.Append("c1", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = "Make the port configurable." });
+        events.Append("c1", new SessionEvent
+        {
+            Kind = SessionEventKind.Note, Text = "its account is cooling", Parts = [new NotePart { Code = NoteCodes.AccountCoolingWindow.Code }],
+        });
+        events.Append("c1", new SessionEvent { Kind = SessionEventKind.Turn, StopReason = "error" });
+        var words = ledger.Chat("c2", "stopped", "talk", _root, profile: "account-2", from: new ContinuedFrom("c1", HandOverWhy.Limit, HandOverBy.Daoris));
+        foreach (var (id, text) in moved) words.Say(id, text);
+        new LimitBoxes(_home).Write("c1", new LimitMoveBox(HandOverWhy.Limit, 2, events.After("c1", 0).Events.Count, [.. moved.Select(word => word.Id)], "c2", Moved: true));
+    }
+
+    private static IEnumerable<System.Text.Json.Nodes.JsonNode?> Said(ChatLedger ledger, string session) => ledger.Record(session)["said"]!.AsArray();
+
+    /// <summary>
+    /// 🔴 FOUNDATION1d-ii part 4's interim recovery of the move's box (the foundation design §3.4 rules 3 and 5, O6-F13, O7-F4): a shell cut off
+    /// after the new part showed each moved word under its id and before it wrote the prompt. Its words wait there marked attempted, so the
+    /// display is no evidence that they went, and nothing says they did not reach the agent: at the come-up, and at the one after, the box is
+    /// neither delivered, which would take the words as taken, nor said again as a joined copy under the move's key; each attempted word is
+    /// taken back off the new part, never sent again, with one <c>lost</c> line naming them there whatever its record shows, and the box goes.
+    /// </summary>
+    [Fact]
+    public async Task A_moved_boxs_delivery_cut_off_after_its_words_were_shown_is_neither_delivered_nor_said_again()
+    {
+        var (context, runner, handOver, ledger, client) = World(opens: 2);
+        using var c = client;
+        MovedBox(ledger, ("w1", "Make it fast."), ("w2", "And add a test."));
+        ledger.Edit("c2", record =>
+        {
+            foreach (var word in record["said"]!.AsArray()) word!["attempt"] = "2026-10-03T09:59:30Z";
+        });
+        foreach (var (id, text) in new[] { ("w1", "Make it fast."), ("w2", "And add a test.") })
+        {
+            Events.Append("c2", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Id = id, Text = text });
+        }
+
+        var limit = new LimitMove(context, runner, handOver, new NoHelp());
+        await limit.TakeUpBoxesAsync(CancellationToken.None);
+        await limit.TakeUpBoxesAsync(CancellationToken.None);
+
+        Assert.Empty(ledger.TakenBy);
+        Assert.Equal([("c2", "w1"), ("c2", "w2")], ledger.TakenBack);
+        Assert.Empty(Said(ledger, "c2"));
+        Assert.DoesNotContain(Said(ledger, "c1"), word => word!["key"]?.GetValue<string>() == "limit-move/c1");
+        var lost = Assert.Single(Events.After("c2", 0).Events, e => e.Code == SessionEventCodes.Lost);
+        Assert.Equal(["w1", "w2"], lost.Words!);
+        Assert.Null(new LimitBoxes(_home).Read("c1"));
+    }
+
+    /// <summary>
+    /// 🔴 A shell cut off after the move's open and before its hand: the moved words wait on the new part never attempted, so nothing of the
+    /// move reached the agent. The come-up makes the delivery once from the box, the brief, the refused turn's words and the moved words read on
+    /// the new part, as Daoris's word at its head under the move's key, the moved words leaving the new part into it, so its go-on hands each
+    /// once; the box goes, and the next come-up says nothing again.
+    /// </summary>
+    [Fact]
+    public async Task A_moved_boxs_delivery_never_attempted_is_made_once_from_the_new_part_at_the_come_up()
+    {
+        var (context, runner, handOver, ledger, client) = World(opens: 2);
+        using var c = client;
+        MovedBox(ledger, ("w1", "Make it fast."));
+        var limit = new LimitMove(context, runner, handOver, new NoHelp());
+
+        await limit.TakeUpBoxesAsync(CancellationToken.None);
+        await limit.TakeUpBoxesAsync(CancellationToken.None);
+
+        var copy = Assert.Single(Said(ledger, "c2"));
+        Assert.Equal(("limit-move/c1", DaorisWords.From), (copy!["key"]!.GetValue<string>(), copy["from"]!.GetValue<string>()));
+        var text = copy["text"]!.GetValue<string>();
+        Assert.Contains("You continue session `c1`", text);
+        Assert.True(text.IndexOf("Make the port configurable.", StringComparison.Ordinal) < text.IndexOf("Make it fast.", StringComparison.Ordinal), text);
+        Assert.Equal([("c2", "w1", (string?)null)], ledger.TakenBy);
+        Assert.Empty(ledger.TakenBack);
+        Assert.Null(new LimitBoxes(_home).Read("c1"));
+    }
 }

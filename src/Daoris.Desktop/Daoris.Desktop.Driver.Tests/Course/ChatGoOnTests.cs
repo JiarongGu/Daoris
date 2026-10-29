@@ -698,6 +698,12 @@ internal sealed class ChatLedger : HttpMessageHandler
     public List<(string Key, JsonObject? Moves)> Opened { get; } = [];
 
     /// <summary>
+    /// The records whose take answers <c>taken</c> and leaves their words, as the service's take answers a request naming words that do not wait
+    /// (FOUNDATION1d-ii part 4): what tells a reader that judges the take's answer from one that judges what the record holds after.
+    /// </summary>
+    public HashSet<string> Keeps { get; } = new(StringComparer.Ordinal);
+
+    /// <summary>
     /// Where set, called as a record moves to working, still inside the ledger's lock: what a take-back landing between the look
     /// and the move does to the record's words (SAIDBACK1d).
     /// </summary>
@@ -1209,8 +1215,12 @@ internal sealed class ChatLedger : HttpMessageHandler
                     var asked = JsonNode.Parse(body!)!;
                     var ids = asked["said"]!.AsArray().Select(word => word!.GetValue<string>()).ToList();
                     var session = Find(id);
-                    session["said"] = new JsonArray([.. session["said"]!.AsArray()
-                        .Where(word => !ids.Contains(word!["id"]!.GetValue<string>())).Select(word => word!.DeepClone())]);
+                    if (!Keeps.Contains(id))
+                    {
+                        session["said"] = new JsonArray([.. session["said"]!.AsArray()
+                            .Where(word => !ids.Contains(word!["id"]!.GetValue<string>())).Select(word => word!.DeepClone())]);
+                    }
+
                     Taken.Add((id, string.Join(',', ids)));
                     TakenBy.Add((id, string.Join(',', ids), asked["by"]?.GetValue<string>()));
                     return (HttpStatusCode.OK, """{"message":"taken"}""");
