@@ -306,6 +306,9 @@ public static class TreesMarks
     /// <summary><c>trees remove &lt;session|branch&gt;</c>: a session's branch, its tree with it (LAND3).</summary>
     public const string DiscardBranch = "DISCARD_SESSION_BRANCH";
 
+    /// <summary><c>trees remove &lt;landing branch&gt; --why "…"</c>: a landing's branch the line will never hold, withdrawn (LANDRETIRE1).</summary>
+    public const string WithdrawLanding = "WITHDRAW_LANDING_BRANCH";
+
     /// <summary><c>trees clean --yes</c>: the clean-up's press.</summary>
     public const string Sweep = "SWEEP";
 
@@ -358,6 +361,9 @@ public static class TreesRoutes
     /// <summary><c>trees remove &lt;session|branch&gt;</c>: a failed or superseded attempt's branch discarded (LAND3).</summary>
     public static InstanceRoute DiscardBranch { get; } = new(DriverModule, TreesMarks.DiscardBranch, RouteClass.Person);
 
+    /// <summary><c>trees remove &lt;landing branch&gt; --why "…"</c>: a landing's branch the line will never hold, withdrawn (LANDRETIRE1).</summary>
+    public static InstanceRoute Withdraw { get; } = new(DriverModule, TreesMarks.WithdrawLanding, RouteClass.Person);
+
     /// <summary><c>trees clean --yes</c>: the clean-up's press.</summary>
     public static InstanceRoute Sweep { get; } = new(DriverModule, TreesMarks.Sweep, RouteClass.Person);
 
@@ -376,6 +382,7 @@ public static class TreesRoutes
         ("trees land --ask <id>", LandAsk),
         ("trees remove <path>", DiscardTree),
         ("trees remove <session|branch>", DiscardBranch),
+        ("trees remove <landing branch> --why", Withdraw),
         ("trees clean --yes", Sweep),
         ("trees sync --yes", Sync),
         ("trees hand <session|branch>", HandOff),

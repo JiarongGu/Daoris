@@ -50,6 +50,9 @@ public sealed partial class PressesTold(string home)
     /// <summary><c>trees remove &lt;session|branch&gt;</c>: a session's branch, its tree with it (LAND3).</summary>
     public const string DiscardBranch = TreesMarks.DiscardBranch;
 
+    /// <summary><c>trees remove &lt;landing branch&gt; --why "…"</c>: a landing's branch the line will never hold, withdrawn (LANDRETIRE1).</summary>
+    public const string WithdrawLanding = TreesMarks.WithdrawLanding;
+
     /// <summary><c>trees clean --yes</c>: the clean-up's press.</summary>
     public const string Sweep = TreesMarks.Sweep;
 
@@ -69,7 +72,7 @@ public sealed partial class PressesTold(string home)
     public const string RecoveryDrop = "RECOVERY_DROP";
 
     /// <summary>Every route a terminal tells: the modules hold each to a route that declares what it changes.</summary>
-    public static readonly IReadOnlyList<string> Routes = [Land, DiscardTree, DiscardBranch, Sweep, TreesSync, HandOff, LandEntry, LandAsk, RecoveryDrop, LandWithoutLook];
+    public static readonly IReadOnlyList<string> Routes = [Land, DiscardTree, DiscardBranch, WithdrawLanding, Sweep, TreesSync, HandOff, LandEntry, LandAsk, RecoveryDrop, LandWithoutLook];
 
     /// <summary>A note's ending, beside the requests' <c>.json</c>, so neither reads the other.</summary>
     public const string Suffix = ".told";

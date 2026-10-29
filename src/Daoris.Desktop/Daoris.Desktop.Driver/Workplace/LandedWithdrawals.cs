@@ -47,7 +47,8 @@ internal sealed class LandedWithdrawals(TreeContext context, ContentHolds conten
         string root, string repository, string branch, string why, bool plan, CancellationToken ct)
     {
         why = why.Trim();
-        if (why.Length == 0)
+        // A plan changes nothing, so it needs no reason yet: it says the record would keep the one it is given.
+        if (why.Length == 0 && !plan)
         {
             return new(false, $"`{branch}` is not withdrawn: say why the line will never hold its work (the reason is kept with its record).");
         }
@@ -73,7 +74,8 @@ internal sealed class LandedWithdrawals(TreeContext context, ContentHolds conten
         {
             return new(false,
                 $"would withdraw `{branch}` from `{repository}` ({LandedWords.Clause(judged.Item)}): its commits would be kept on a recovery ref "
-                + $"(`{ContentHolds.DiscardedPrefix}{branch}`, or the next number where that name is taken), and its record would say: {why}")
+                + $"(`{ContentHolds.DiscardedPrefix}{branch}`, or the next number where that name is taken), and its record would say "
+                + (why.Length == 0 ? "the reason you give with --why" : why))
             { Planned = true };
         }
 
