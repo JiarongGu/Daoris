@@ -38,8 +38,23 @@ internal static class HandOverFiles
     {
         try
         {
-            if (!File.Exists(path)) return null;
-            using var document = JsonDocument.Parse(AtomicFile.ReadText(path));
+            return File.Exists(path) ? ParseBox(AtomicFile.ReadText(path)) : null;
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// A box's text read as its ask, or null where it does not read as one: the one reading of the format, which the move record's import
+    /// (FOUNDATION1f-i part 2) reads the bytes it took once by.
+    /// </summary>
+    public static HandOverRequest? ParseBox(string text)
+    {
+        try
+        {
+            using var document = JsonDocument.Parse(text);
             var root = document.RootElement;
             if (root.ValueKind != JsonValueKind.Object
                 || Text(root, "agent") is not { Length: > 0 } agent
@@ -52,7 +67,7 @@ internal static class HandOverFiles
 
             return new HandOverRequest(agent, Text(root, "account") is { Length: > 0 } account ? account : null, why, by, at);
         }
-        catch (Exception error) when (error is JsonException or IOException or UnauthorizedAccessException)
+        catch (JsonException)
         {
             return null;
         }

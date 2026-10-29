@@ -274,6 +274,9 @@ public static class NoteCodes
     public static readonly NoteCode WatchQuietCall = new("watch.quiet-call", ["minutes", "call"]);
     public static readonly NoteCode WatchQuietWork = new("watch.quiet-work", ["minutes", "works"]);
     public static readonly NoteCode WatchLeft = new("watch.left", []);
+    // FOUNDATION1f-i part 2 (the foundation design §19.1 point 4): a move to a new part that a live Daoris keeps and has not moved for
+    // `minutes`, said once on its line; it is never taken over while that Daoris runs, and quitting it is the person's door.
+    public static readonly NoteCode MoveQuiet = new("move.quiet", ["minutes"]);
     public static readonly NoteCode EndedStopped = new("ended.stopped", []);
     // STEWARDROLE1b (D209 §5.1): the steward's own stop, a behavioural sibling of the person's, never the person's with a suffix.
     public static readonly NoteCode EndedStoppedSteward = new("ended.stopped-steward", []);
