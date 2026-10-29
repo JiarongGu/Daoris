@@ -616,9 +616,36 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// <param name="from">The conversation this one continues, handed over (MIXAGENT1a-iii), for its record; null for none.</param>
     public async Task<(string? SessionId, string Message)> OpenChatAsync(
         string repository, string adapter, string? harnessVersion = null, string? profile = null,
-        string? tree = null, string? baseCommit = null, CancellationToken ct = default, ContinuedFrom? from = null)
+        string? tree = null, string? baseCommit = null, CancellationToken ct = default, ContinuedFrom? from = null) =>
+        await OpenRecordAsync(
+                "/api/sessions/chat", ChatOpenBody(repository, adapter, harnessVersion, profile, tree, baseCommit, from), SessionOpened.Chat,
+                adapter, repository, ct)
+            .ConfigureAwait(false);
+
+    /// <summary>
+    /// <see cref="OpenChatAsync"/> through the keyed door (FOUNDATION1d-ii part 4, <see cref="SessionOpenDoors.OpenAsync"/>), asked to move
+    /// <paramref name="moves"/>' words onto the record it opens in the open's own step: sent only to a host whose <c>opens</c> mark is 2, under
+    /// a key of its own, so a host below it opens as before and moves nothing. What opened is told to <see cref="Opened"/>'s watchers as
+    /// <see cref="OpenChatAsync"/>'s is. A lost answer is held, naming the records that continue the one left, and opens nothing here.
+    /// </summary>
+    /// <param name="workspace">The circle the repository is wired into on this machine, for the watchers: the keyed answer names no record.</param>
+    public async Task<DestinationOpen> OpenChatMovingAsync(
+        string repository, string adapter, string? harnessVersion, string? profile, string? tree, string? baseCommit, ContinuedFrom? from,
+        MoveWords moves, string? workspace, CancellationToken ct = default)
     {
-        var body = WriteJson(writer =>
+        var opened = await Opens
+            .OpenAsync(
+                "/api/sessions/chat", ChatOpenBody(repository, adapter, harnessVersion, profile, tree, baseCommit, from),
+                "chat-move/" + Guid.NewGuid().ToString("N"), moves.From, ct: ct, moves: moves)
+            .ConfigureAwait(false);
+        if (opened.SessionId is { } id) Raise(Opened, new SessionOpened(id, SessionOpened.Chat, adapter, repository) { Workspace = workspace });
+        return opened;
+    }
+
+    /// <summary>A chat's open (D49 §3), as both of its doors send it: every optional field omitted where unknown.</summary>
+    private static string ChatOpenBody(
+        string repository, string adapter, string? harnessVersion, string? profile, string? tree, string? baseCommit, ContinuedFrom? from) =>
+        WriteJson(writer =>
         {
             writer.WriteStartObject();
             writer.WriteString("repository", repository);
@@ -631,9 +658,6 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
             WriteFrom(writer, from);
             writer.WriteEndObject();
         });
-
-        return await OpenRecordAsync("/api/sessions/chat", body, SessionOpened.Chat, adapter, repository, ct).ConfigureAwait(false);
-    }
 
     /// <summary>
     /// Make an ask at a workspace (D65 §1a) — the sentence, its links, and files read from this

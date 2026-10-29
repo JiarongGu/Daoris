@@ -637,7 +637,11 @@ A conversation, a closed quest's session and Ask Daoris's conversation move by t
 lost (SESSCTX1c's part B, D189 point 3; `ContinueReason.Lost`: `gone`, `unkept`, `unable`, `offered`). `Course/Chat/BriefedMove`
 opens the new part in the old one's tree on its agent and account, `from` why `resume`, and hands it the brief and then the person's
 words in one prompt (`ChatMessage.TakenOver` with its text), which leave the old record naming it; the old part says `moved.on` and
-where the words went, the new one opens with `moved.from`. A conversation's go-on calls it before a spawn (no id kept, no resume on the
+where the words went, the new one opens with `moved.from`. Against a host whose `opens` mark is 2, the briefed move, its not-offered
+path, start-from and the limit's moves open the new part through the keyed door, which moves the old part's waiting words, a word kept
+since the read among them, in the open's own step (FOUNDATION1d-ii part 4, `Course/Chat/MovedWords`): the delivery is then the new part's
+moved words, their files copied into its folder, each shown there by its own `User` event under its id, and they leave the new part, not
+the old record. A conversation's go-on calls it before a spawn (no id kept, no resume on the
 door) and once its run let go where the wire refused the resume as lost (`ChatRunner.AgainAsync`); a closed quest's session reaches it
 through the loop's seam (`LoopContext.GoesOnLost`, the shell's `ChatRunner.GoOnLostAsync`; none in the headless host), as a
 conversation in its tree, since a closed quest opens no driven record; Ask Daoris's goes on in a new conversation of its room, its link
