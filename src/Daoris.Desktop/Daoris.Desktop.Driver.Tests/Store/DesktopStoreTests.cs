@@ -127,6 +127,102 @@ public sealed class DesktopStoreTests : IDisposable
         Assert.DoesNotContain("PackageReference Include=\"Daoris", driver);
     }
 
+    // ——— Step 4, the course's move record (FOUNDATION1f-i; §3.3, §13.3's family *The course*, §19.1).
+
+    /// <summary>The columns of <c>moves</c> a writer always sets: every other is one a later phase, a later row or an effect sets.</summary>
+    private static readonly string[] MoveRequired = ["record_left", "executor", "how", "from_why", "from_by", "phase", "claim_run", "claim_generation", "decided_at"];
+
+    private static IReadOnlyList<(string Name, bool Required)> Columns(DesktopStore store, string table) =>
+        store.Query($"PRAGMA table_info({table})", reader => (reader.GetString(1), reader.GetInt64(3) == 1));
+
+    [Fact]
+    public void Step_4_makes_the_moves_and_their_words_with_the_one_standing_index_and_raises_no_stamp()
+    {
+        var step = Assert.Single(DesktopStore.Steps, each => each.Version == 4);
+        Assert.Equal(1, step.Writer);
+        Assert.Equal(1, DesktopStore.WriterStamp);
+
+        var store = Open();
+
+        Assert.Equal((Own, 1), store.Stamp);
+        Assert.True(HasTable(store, "moves"));
+        Assert.True(HasTable(store, "move_words"));
+        var index = Assert.Single(store.Query("SELECT sql FROM sqlite_master WHERE type = 'index' AND name = 'moves_standing'", reader => reader.GetString(0)));
+        Assert.Contains("CREATE UNIQUE INDEX moves_standing ON moves (record_left)", index);
+        Assert.Contains("WHERE phase NOT IN ('delivered', 'fell-back', 'closed')", index);
+    }
+
+    [Fact]
+    public void A_move_s_columns_a_writer_always_sets_are_required_and_every_later_one_is_nullable()
+    {
+        var store = Open();
+
+        var moves = Columns(store, "moves");
+        Assert.Equal(
+            ["id", "record_left", "executor", "how", "from_why", "from_by", "phase", "claim_run", "claim_generation", "account", "recipe_why", "recipe_bound",
+             "opens", "destination", "effect", "effect_begun", "effect_outcome", "effect_ended", "fell_back_code", "held_why", "closed_why",
+             "decided_at", "quiescing_at", "old_ended_at", "opening_at", "opened_at", "copied_at", "verified_at", "delivering_at", "delivered_at",
+             "fell_back_at", "held_at", "closed_at"],
+            moves.Select(column => column.Name));
+        Assert.Equal(MoveRequired, moves.Where(column => column.Required).Select(column => column.Name));
+        Assert.Equal(
+            [("move", true), ("transfer", true), ("word", true), ("producer", false), ("position", true), ("disposition", false), ("disposed_at", false)],
+            Columns(store, "move_words"));
+    }
+
+    [Fact]
+    public void A_move_s_claim_names_a_run_the_store_holds_and_a_word_names_its_move()
+    {
+        var store = Open(new DesktopStoreOptions { Settled = () => StoreSettled.Yes });
+        void Move(string run) => store.Write("moves", write => write.Execute(
+            """
+            INSERT INTO moves (record_left, executor, how, from_why, from_by, phase, claim_run, claim_generation, decided_at)
+            VALUES ('s1', 'conversation', 'brief', 'limit', 'daoris', 'decided', $run, 1, '2026-10-29T00:00:00.0000000+00:00')
+            """,
+            ("$run", run)));
+
+        // 787 is SQLite's foreign-key refusal: the claim names no run that ever wrote the store.
+        Assert.Equal(787, Assert.Throws<SqliteException>(() => Move("no-such-run")).SqliteExtendedErrorCode);
+        Assert.Equal(0, Count(store, "moves"));
+
+        // The writer's own run is recorded inside the same write, before its work, so a claim it writes always names it.
+        Move(store.Run);
+        Assert.Equal(1, Count(store, "moves"));
+        Assert.Equal(787, Assert.Throws<SqliteException>(() => store.Write("moves", write => write.Execute(
+            "INSERT INTO move_words (move, transfer, word, position) VALUES (999, 't1', 'w1', 0)"))).SqliteExtendedErrorCode);
+    }
+
+    [Fact]
+    public void A_store_of_the_three_steps_before_is_migrated_to_4_at_the_first_start_whatever_the_confirmation_says()
+    {
+        using (var older = Open(new DesktopStoreOptions { Steps = [.. DesktopStore.Steps.Take(3)], Settled = () => StoreSettled.Yes }))
+        {
+            Assert.Equal((3, 1), older.Stamp);
+        }
+
+        var store = Open(new DesktopStoreOptions { Settled = () => StoreSettled.Not("the swap journal is at `started`") });
+
+        Assert.Null(store.Held);
+        Assert.Equal((Own, 1), store.Stamp);
+        Assert.True(HasTable(store, "moves"));
+    }
+
+    [Fact]
+    public void A_build_of_the_three_steps_before_opens_the_migrated_store_still_writes_it_and_never_meets_a_move()
+    {
+        Open().Write("probe", _ => { });
+
+        var older = Open(new DesktopStoreOptions { Steps = [.. DesktopStore.Steps.Take(3)], Settled = () => StoreSettled.Yes });
+
+        Assert.False(older.Newer);
+        Assert.Equal((Own, 1), older.Stamp);
+        older.Write(BindingStore.Family, write => write.Execute(
+            "INSERT INTO bindings (session, adapter, conversation, kept) VALUES ('s1', 'claude-code-acp', 'c-1', '2026-10-29T00:00:00.0000000Z')"));
+        older.Write(BindingStore.Family, write => write.Execute(
+            "INSERT INTO binding_picks (session, account, at) VALUES ('s1', 'work', '2026-10-29T00:00:00.0000000Z')"));
+        Assert.Equal((1L, 1L), (Count(older, "bindings"), Count(older, "binding_picks")));
+    }
+
     // ——— Revisions and the wake file (§13.4).
 
     [Fact]

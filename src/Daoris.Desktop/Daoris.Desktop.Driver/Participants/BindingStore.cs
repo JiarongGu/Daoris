@@ -29,8 +29,8 @@ public sealed record BindingImport(int Imported, int Unread, string? Held)
 /// <para><b>A file an older build writes after the import</b>, during a downgrade, is the later evidence: it is imported at the return,
 /// at the next look or at the read that meets it, its conversation id winning for its own session, and set aside again.</para>
 /// <para><b>Opened for one use and closed.</b> Callers build these over any home, often for one read, so the store is opened for each use and
-/// never held, a read never creating or writing it. Every open of the process names one run (<see cref="Run"/>), so <c>store_runs</c> holds
-/// the process once.</para>
+/// never held, a read never creating or writing it. Every open of the process names one run (<see cref="StoreProcess.Run"/>), so
+/// <c>store_runs</c> holds the process once.</para>
 /// <para><b>Only the rows' side.</b> The file's format is <see cref="HarnessConversations"/>', which hands this its reader of one file, so the
 /// store names nothing of the course's records and the conversation is a pair of strings here.</para>
 /// </remarks>
@@ -44,12 +44,6 @@ public sealed class BindingStore(string home, Func<StoreSettled>? settled, Func<
 
     /// <summary>What an imported file's name gains when it is set aside.</summary>
     public const string SetAsideSuffix = SessionHomeFiles.HarnessSetAsideSuffix;
-
-    /// <summary>This process's run, drawn once: what every open of the store here is recorded under.</summary>
-    public static string Run { get; } = Guid.NewGuid().ToString("N");
-
-    /// <summary>What this process is, for its run: a verb until a composition root says it is a shell or a host.</summary>
-    public static string Kind { get; set; } = "verb";
 
     private static readonly ConcurrentDictionary<string, byte> Said = new(StringComparer.Ordinal);
 
@@ -299,7 +293,8 @@ public sealed class BindingStore(string home, Func<StoreSettled>? settled, Func<
         }
     }
 
-    private DesktopStore Open() => DesktopStore.Open(Location, new DesktopStoreOptions { Kind = Kind, Run = Run, Settled = Settled });
+    /// <summary>The store opened under the process's one run and kind (<see cref="StoreProcess"/>), which every family's writes share.</summary>
+    private DesktopStore Open() => DesktopStore.Open(Location, StoreProcess.Options(Settled));
 
     /// <summary>A held pass, its reason said once for the process and home, since the look asks again until it is settled.</summary>
     private BindingImport Held(string why)

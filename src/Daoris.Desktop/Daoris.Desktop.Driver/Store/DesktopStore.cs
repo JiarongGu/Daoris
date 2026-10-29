@@ -127,7 +127,69 @@ public sealed class DesktopStore : IDisposable
               at      TEXT NOT NULL
             );
             """)),
+
+        // Row f-i: the course's move record (§3.3, §13.3's family *The course*). New tables an older store-aware build never opens, so the
+        // stamp stays where it is and the step runs at the first start. One standing move per record left by the partial unique index, a
+        // line moving again once its move has ended and the ended row kept as evidence; the claim names the run that holds it, a row of
+        // `store_runs`, and its generation. A column every decision writes is required; each later phase's moment and what it carries, the
+        // effect mark, the selection and the recipe are nullable. No phase or reason is held by a CHECK, so a newer build's word is kept as written.
+        new(4, WriterStamp, write => write.Execute(
+            $"""
+            CREATE TABLE moves (
+              id               INTEGER PRIMARY KEY AUTOINCREMENT,
+              record_left      TEXT NOT NULL,
+              executor         TEXT NOT NULL,
+              how              TEXT NOT NULL,
+              from_why         TEXT NOT NULL,
+              from_by          TEXT NOT NULL,
+              phase            TEXT NOT NULL,
+              claim_run        TEXT NOT NULL REFERENCES store_runs (run),
+              claim_generation INTEGER NOT NULL,
+              account          TEXT,
+              recipe_why       TEXT,
+              recipe_bound     INTEGER,
+              opens            TEXT,
+              destination      TEXT,
+              effect           TEXT,
+              effect_begun     TEXT,
+              effect_outcome   TEXT,
+              effect_ended     TEXT,
+              fell_back_code   TEXT,
+              held_why         TEXT,
+              closed_why       TEXT,
+              decided_at       TEXT NOT NULL,
+              quiescing_at     TEXT,
+              old_ended_at     TEXT,
+              opening_at       TEXT,
+              opened_at        TEXT,
+              copied_at        TEXT,
+              verified_at      TEXT,
+              delivering_at    TEXT,
+              delivered_at     TEXT,
+              fell_back_at     TEXT,
+              held_at          TEXT,
+              closed_at        TEXT
+            );
+            CREATE UNIQUE INDEX moves_standing ON moves (record_left) WHERE {StandingMoves};
+            CREATE INDEX moves_left ON moves (record_left, id);
+            CREATE TABLE move_words (
+              move        INTEGER NOT NULL REFERENCES moves (id),
+              transfer    TEXT NOT NULL,
+              word        TEXT NOT NULL,
+              producer    TEXT,
+              position    INTEGER NOT NULL,
+              disposition TEXT,
+              disposed_at TEXT,
+              PRIMARY KEY (move, transfer)
+            );
+            """)),
     ];
+
+    /// <summary>
+    /// The rows of <c>moves</c> that stand for their record left (FOUNDATION1f-i, §3.3): every phase but the three a move ends at, a phase this
+    /// build does not know among them. The partial index <c>moves_standing</c> is over these, and a read of the standing move names the same.
+    /// </summary>
+    public const string StandingMoves = "phase NOT IN ('delivered', 'fell-back', 'closed')";
 
     private readonly object _turn = new();
 
@@ -223,6 +285,8 @@ public sealed class DesktopStore : IDisposable
             Pragma(connection, $"PRAGMA busy_timeout = {BusySeconds * 1000}");
             Pragma(connection, "PRAGMA journal_mode = WAL");
             Pragma(connection, "PRAGMA synchronous = FULL");
+            // FOUNDATION1f-i: a move's claim names a row of `store_runs` and a word in transfer its move, and the store holds them to it.
+            Pragma(connection, "PRAGMA foreign_keys = ON");
             store = new DesktopStore(location, connection, options);
             store.Migrate();
             return store;

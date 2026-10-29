@@ -52,6 +52,9 @@ internal static class Program
             return;
         }
 
+        // FOUNDATION1f-i: this process is the shell, and its run of the desktop store says so, before anything of it opens the store.
+        Daoris.Driver.StoreProcess.Kind = Daoris.Driver.StoreProcess.Shell;
+
         // The home before anything else (D63): an install's `data/` folder is the Daoris home for this
         // process and every host and session it spawns. Before the builder, because every module
         // captures its path at construction — and a workspace build is left alone, so the dev loop's
