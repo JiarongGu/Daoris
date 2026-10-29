@@ -277,8 +277,8 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Cli/test/dogfood.test.ts` | 48 | 840 |
 | `src/Daoris.Cli/test/usage-report.test.ts` | 87 | 1455 |
 | `src/Daoris.Cli/tool-test/desktop-publish.test.ts` | 82 | 1391 |
-| `src/Daoris.Cli/tool-test/merge-branch.test.ts` | 524 | 7688 |
-| `src/Daoris.Cli/tool-test/merge-queue.test.ts` | 157 | 2353 |
+| `src/Daoris.Cli/tool-test/merge-branch.test.ts` | 525 | 7695 |
+| `src/Daoris.Cli/tool-test/merge-queue.test.ts` | 160 | 2389 |
 | `src/Daoris.Cli/tool-test/setup-kit.test.ts` | 56 | 1039 |
 
 ### Tools (`tools`)
@@ -290,7 +290,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `tools/desktop.mjs` | 54 | 1097 |
 | `tools/family-rehearsal.mjs` | 370 | 6409 |
 | `tools/knowledge-bench.mjs` | 46 | 900 |
-| `tools/merge-branch.mjs` | 479 | 8134 |
+| `tools/merge-branch.mjs` | 482 | 8159 |
 | `tools/merge-queue.mjs` | 47 | 775 |
 | `tools/orient-index.mjs` | 66 | 1425 |
 | `tools/process-reach.mjs` | 43 | 906 |
@@ -395,5 +395,5 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-28-integration-design.md` | 204 | 1923 |
 | `docs/DAORIS_UNIFIED_COLLABORATION_ARCHITECTURE_AND_PLAN_2026-10-16.md` | 164 | 5380 |
 | `docs/README.md` | 60 | 283 |
-| `docs/development.md` | 50 | 562 |
+| `docs/development.md` | 50 | 565 |
 | `src/Daoris.Desktop/README.md` | 230 | 1146 |
