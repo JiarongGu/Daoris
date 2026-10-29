@@ -2,6 +2,7 @@ import { createContext, type RefObject, useContext, useEffect, useRef, useState 
 import { useTranslation } from 'react-i18next';
 import { Button, drawerOpen, Icon, type Notify, watchDrawers } from '../design/ui';
 import { ago, clockOf, sentence, span } from '../locales/format';
+import type { UpdateMode, UpdateState } from '../update/UpdateBanner';
 import { useNow } from '../work/useNow';
 
 /**
@@ -170,7 +171,7 @@ export function AdoptionNotice({ onDismiss }: { onDismiss?: () => void }) {
  * itself is said under its card (the UI/UX design's R3), and by a toast only where the card has gone with its press by the time the
  * answer returns (NOTIFY2a, the notification design §3.4).
  */
-export function Confirmations({ waiting, onAnswer, notify, onShown, names, onOpenPlan }: {
+export function Confirmations({ waiting, onAnswer, notify, onShown, names, onOpenPlan, update, onSayUpdate }: {
   waiting: Confirmation[];
   onAnswer: (waiting: Confirmation, confirm: boolean) => Promise<ConfirmationAnswer>;
   /** The window's toasts: where a refusal is said once its card has gone with its press (NOTIFY2a). Absent, it is said nowhere. */
@@ -186,6 +187,12 @@ export function Confirmations({ waiting, onAnswer, notify, onShown, names, onOpe
    * confirmed against the world it would act on. Absent, no card offers it.
    */
   onOpenPlan?: (door: PlanDoor) => void;
+  /**
+   * The install's update (DRAINHOLD1): a Confirm held by its drain says what the drain waits on and since when, and offers
+   * *Install later* in place, which says the update's *not now* through `onSayUpdate`. Absent, the card says only its sentence.
+   */
+  update?: UpdateState;
+  onSayUpdate?: (mode: UpdateMode) => void;
 }) {
   if (waiting.length === 0) return null;
   // No landmark of its own: *Notifications*' group is the region these cards are drawn in.
@@ -194,7 +201,7 @@ export function Confirmations({ waiting, onAnswer, notify, onShown, names, onOpe
       {waiting.map((each) => (
         <Card
           key={`${each.source}:${each.id}`} waiting={each} onAnswer={onAnswer} notify={notify} onShown={onShown} names={names}
-          onOpenPlan={onOpenPlan}
+          onOpenPlan={onOpenPlan} update={update} onSayUpdate={onSayUpdate}
         />
       ))}
     </div>
@@ -282,17 +289,21 @@ export function useShownOnce(enabled: boolean, region: RefObject<HTMLElement | n
 /** A box of a card's region, at most eight lines high and scrolled inside (§3.4), so a press of many values or long words is bounded. */
 const BOX = 'max-h-[8lh] overflow-y-auto';
 
-function Card({ waiting, onAnswer, notify, onShown, names, onOpenPlan }: {
+function Card({ waiting, onAnswer, notify, onShown, names, onOpenPlan, update, onSayUpdate }: {
   waiting: Confirmation;
   onAnswer: (waiting: Confirmation, confirm: boolean) => Promise<ConfirmationAnswer>;
   notify?: Notify;
   onShown?: (waiting: Confirmation) => void;
   names?: PressNames;
   onOpenPlan?: (door: PlanDoor) => void;
+  update?: UpdateState;
+  onSayUpdate?: (mode: UpdateMode) => void;
 }) {
   const { t } = useTranslation();
   const [busy, setBusy] = useState(false);
   const [said, setSaid] = useState<string | null>(null);
+  // DRAINHOLD1: that the last Confirm was held by an update's drain, so the card says what the drain waits on while it lasts.
+  const [held, setHeld] = useState(false);
   const [details, setDetails] = useState(false);
   const region = useRef<HTMLDivElement>(null);
   const buttons = useRef<HTMLDivElement>(null);
@@ -325,9 +336,13 @@ function Card({ waiting, onAnswer, notify, onShown, names, onOpenPlan }: {
   const press = async (confirm: boolean) => {
     setBusy(true);
     setSaid(null);
+    setHeld(false);
     try {
       const answer = await onAnswer(waiting, confirm);
-      if (!answer.answered) say(refusalOf(t, waiting, answer));
+      if (!answer.answered) {
+        if (drawn.current && answer.why === 'draining') setHeld(true);
+        say(refusalOf(t, waiting, answer));
+      }
     } catch (error) {
       say(sentence(error));
     } finally {
@@ -349,6 +364,8 @@ function Card({ waiting, onAnswer, notify, onShown, names, onOpenPlan }: {
   const checking = waiting.source === 'pipe' && waiting.checking === true;
   const restored = waiting.source === 'pipe' && waiting.restored === true;
   const plan = onOpenPlan ? planDoor(waiting) : null;
+  const draining = held && update?.state === 'draining';
+  const restarting = held && update?.state === 'applying';
 
   return (
     <div
@@ -430,6 +447,8 @@ function Card({ waiting, onAnswer, notify, onShown, names, onOpenPlan }: {
             <>
               <Button disabled={busy} onClick={() => void press(false)}>{t('person.refuse')}</Button>
               <Button variant="primary" disabled={busy} onClick={() => void press(true)}>{t('person.confirm')}</Button>
+              {/* DRAINHOLD1: the update's *not now*, in place; the held Confirm can be pressed again once the drain ends. */}
+              {draining && onSayUpdate && <Button variant="ghost" onClick={() => onSayUpdate('not-now')}>{t('person.installLater')}</Button>}
             </>
           )}
           {/* CONFIRMWAIT1c (§8.1): the plan this press rests on, as it stands now, on its own page. A door, never a press. */}
@@ -445,7 +464,25 @@ function Card({ waiting, onAnswer, notify, onShown, names, onOpenPlan }: {
           </button>
         </div>
       </div>
-      {said && <p role="alert" className="m-0 text-small text-warn">{said}</p>}
+      {said && !restarting && !(held && update && !draining) && <p role="alert" className="m-0 text-small text-warn">{said}</p>}
+      {restarting && <p role="status" className="m-0 text-small text-warn">{t('person.restarting')}</p>}
+      {draining && update && (
+        <div className="grid gap-0.5 text-small">
+          <p className="m-0 text-warn">
+            {(() => {
+              const time = update.since ? clockOf(update.since) : '';
+              const sessions = t('person.drainSessions', { count: update.driven });
+              const turns = t('person.drainTurns', { count: update.turns });
+              if (update.driven + update.turns === 0) return t('person.drainNothing', { time });
+              const what = update.driven > 0 && update.turns > 0
+                ? t('person.drainBoth', { sessions, turns })
+                : update.driven > 0 ? sessions : turns;
+              return t('person.drainWaits', { what, time });
+            })()}
+          </p>
+          <p className="m-0 text-ink-soft">{t('person.drainDoor')}</p>
+        </div>
+      )}
       {/* *Details*, below the region (§3.4): the route's name and every value by its pointer, raw, as the card showed them. */}
       {details && (
         <div className="grid gap-1 border-t border-line pt-1.5 text-small">

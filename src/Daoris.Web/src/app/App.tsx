@@ -1362,6 +1362,8 @@ export function App() {
                   onAnswer={(waiting, confirm) => answerConfirmation.mutateAsync({ waiting, confirm })}
                   notify={notify}
                   onShown={pressShown}
+                  update={attached ? update.data : undefined}
+                  onSayUpdate={(mode) => sayUpdate.mutate(mode, { onError: failure(notify) })}
                   names={pressNames}
                   // A press's door to its plan (CONFIRMWAIT1c, §8.1): the plan's own page, scoped as the press is; a land's at its review.
                   onOpenPlan={(door) => {
