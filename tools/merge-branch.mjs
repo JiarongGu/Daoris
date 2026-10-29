@@ -6011,6 +6011,7 @@ async function gateVerify(root, options) {
   if (!existsSync(inputs.declaration)) throw new Refusal(`DAORIS_VERIFY_DECLARATION names no file: ${inputs.declaration}`);
   const text = readFileSync(inputs.declaration, 'utf8');
   const plan = verifyPlan(text);
+  acceptedPass = integrationOf(text).integration?.pass ?? [];
   const named = inputs.gates ? verifyNamed(plan, inputs.gates) : null;
   const home = verdictsHome(root);
   const where = inputs.tree ?? home;
@@ -7131,13 +7132,24 @@ export const GATE_REMOVED = Object.freeze([
  * `GATE_REMOVED`, with the build servers of its own (`BESIDE_ENVIRONMENT`). It was the queue's alone (QUEUETESTLEAK1); on 2026-10-28
  * the steward's shell held the install's home, and every gate of every runner it started inherited it.
  */
-export function gateEnvironment(start = START_ENVIRONMENT) {
+export function gateEnvironment(start = START_ENVIRONMENT, { pass = [] } = {}) {
   const kept = Object.entries(start).filter(([name, value]) => value !== undefined && !GATE_REMOVED.some((pattern) => pattern.test(name)));
-  return { ...Object.fromEntries(kept), ...BESIDE_ENVIRONMENT };
+  // INTEGRATE1d part 4 (design §5.5): the names an accepted declaration's `env.pass` lists come back from the start environment, in
+  // any case, a name the removed list took among them, never a Daoris name (the declaration's own read refuses one; this holds it too).
+  const wanted = new Set(pass.filter((name) => !/^daoris_/i.test(name)).map((name) => name.toUpperCase()));
+  const passed = Object.entries(start).filter(([name, value]) => value !== undefined && wanted.has(name.toUpperCase()));
+  return { ...Object.fromEntries(kept), ...Object.fromEntries(passed), ...BESIDE_ENVIRONMENT };
 }
 
-/** INTEGRATE1a: the step the tool's gates and probes run by, each with `gateEnvironment`. */
-const gateStep = (command, cwd, fd, options = {}) => runStep(command, cwd, fd, { ...options, env: gateEnvironment() });
+/**
+ * INTEGRATE1d part 4: the names the owner accepted for a gate to receive beyond the composed base. Only the declared runner sets them,
+ * from the declaration it is handed, which the caller makes of the accepted blob (§5.9): a merge in place reads no acceptance, since the
+ * tool has no way to read the install's without its home, and passes nothing (D215's note).
+ */
+let acceptedPass = [];
+
+/** INTEGRATE1a: the step the tool's gates and probes run by, each with `gateEnvironment` and the accepted `env.pass` names. */
+const gateStep = (command, cwd, fd, options = {}) => runStep(command, cwd, fd, { ...options, env: gateEnvironment(START_ENVIRONMENT, { pass: acceptedPass }) });
 
 /**
  * INTEGRATE1a: the Daoris home as the tool read it at its start, before anything was composed or changed: the admission's file is found
