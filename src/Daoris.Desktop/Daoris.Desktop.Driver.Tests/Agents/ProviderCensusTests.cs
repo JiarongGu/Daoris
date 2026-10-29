@@ -60,16 +60,6 @@ public sealed class ProviderCensusTests
         ("stub", ["StubAdapter", "AcpStubAdapter"]),
     ];
 
-    /// <summary>The ids an agent or a door goes by, as a literal used for behaviour, by owner.</summary>
-    private static readonly (string Owner, string[] Ids)[] ProviderIds =
-    [
-        ("claude-code", ["claude-code", "claude-code-acp", "claude"]),
-        ("codex", ["codex", "codex-acp"]),
-        ("dsh", ["dsh"]),
-        ("stub", ["stub", "acp-stub"]),
-        ("alt-stub", ["alt-stub"]),
-    ];
-
     private static List<Token> Tokens()
     {
         var tokens = new List<Token>
@@ -87,17 +77,18 @@ public sealed class ProviderCensusTests
             new("id", "id in a sentence", new Regex(@"(?<![\w@/.\-])(?:claude-code-acp|claude-code|codex-acp|acp-stub|alt-stub)(?![\w""\-])"), Scan.Text, ""),
             new("id", "AccessKey.ClaudeCode", new Regex(@"\b(?:AccessKey|AccessRules)\.ClaudeCode\b"), Scan.Code, "claude-code"),
         };
-        foreach (var (owner, ids) in ProviderIds)
-        {
-            tokens.AddRange(ids.Select(id => new Token("id", $"\"{id}\"", Quoted(id), Scan.Text, owner)));
-        }
-
         foreach (var (owner, types) in ProviderTypes)
         {
             tokens.AddRange(types.Select(type => new Token("type", type, Word(type), Scan.Code, owner)));
         }
 
         using var vocabulary = JsonDocument.Parse(File.ReadAllText(Path.Combine(FixtureFolder(), "provider-vocabulary.json")));
+        // The ids an agent or a door goes by are the vocabulary seed's too, so the four censuses read one table.
+        foreach (var row in vocabulary.RootElement.GetProperty("ids").EnumerateArray())
+        {
+            tokens.Add(new Token("id", $"\"{row[0].GetString()}\"", Quoted(row[0].GetString()!), Scan.Text, row[1].GetString()!));
+        }
+
         foreach (var row in vocabulary.RootElement.GetProperty("words").EnumerateArray())
         {
             var word = row[0].GetString()!;

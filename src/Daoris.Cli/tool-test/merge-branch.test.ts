@@ -1530,6 +1530,10 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
     ['the usage curve table', ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/usage-curves.json'], [...BASE, 'driver', 'modules', 'web-unit']],
     // PARKVIEW1: a park's question as each reader takes it, the driver's QuestionFilesTests and the page's parkQuestion.test.ts.
     ['the park question table', ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/park-question.json'], [...BASE, 'driver', 'web-unit']],
+    // AGENTPROVIDER1a: the provider census's exceptions and the vocabulary the four censuses share: the driver's ProviderCensusTests,
+    // the service's, the page's providerCensus.test.ts and the tools' provider-census.test.ts.
+    ['the provider census', ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/provider-census.json'], [...BASE, 'driver', 'service', 'web-unit', 'tool-tests']],
+    ['the provider vocabulary', ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/provider-vocabulary.json'], [...BASE, 'driver', 'service', 'web-unit', 'tool-tests']],
     ['release tooling', ['tools/release-rehearsal.mjs'], [...BASE, 'rehearse']],
     ['the CLI', ['src/Daoris.Cli/src/platform/args.ts'], [...BASE, 'driver', 'rehearse', 'rehearse-family', 'web', 'deployment']],
     // PUSH1f2a: the driver's DriverProgramWordsProcessTests runs the CLI's entry, dispatcher, driver row and seam under node.
