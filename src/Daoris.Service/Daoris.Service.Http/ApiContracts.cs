@@ -498,8 +498,8 @@ public sealed record SaidResponse(SessionResponse Session, string Message, SaidW
 // all, so a reader that reads a word finds none. Sent only to a request that asked with `settled`.
 public sealed record SettledResponse(string Message, string Settled);
 // The host's protocol (row p, the design §19.12): `run`, an id the host draws at its start, and the marks it keeps, each a version
-// (`settled` 1: a key the line has settled answered `Settled` to a request that asks; `opens` 1: row d-i's keyed open; `head` 1: row d-ii's
-// `continued` with its `head`).
+// (`settled` 1: a key the line has settled answered `Settled` to a request that asks; `opens` 1: row d-i's keyed open, 2 once it moves the words
+// its `moves` names, d-ii part 3's; `head` 1: row d-ii's `continued` with its `head`).
 public sealed record ProtocolResponse(string Run, IReadOnlyDictionary<string, int> Marks);
 // A say refused: the sentence as `error`, beside its word (`refusal`: `no-words`, `not-found`, `not-ours`, `intake`,
 // `stood-down`, `running`, XAGENT1c's `opinion`, a reviewer's record, and COWORK1b's `from`, an author this service does not
@@ -624,13 +624,19 @@ public sealed record AnswerSessionRequest(string? Answer);
 // MIXAGENT1a-iii: `from`, `fromWhy` and `fromBy` name the session the new one continues, as the driver knows it: a conversation
 // handed over, a quest's session carried on after a hand-over or onto another account after a limit. Absent for any other open.
 // AUTONOMY1a: `access`, the access setup the driver resolved for this start, each pause with its value; absent from a driver before it.
+// FOUNDATION1 d-ii part 3 (D212, the design §3.4 rule 3): `moves`, beside `opens` alone, the words the keyed open moves onto the record it opens in
+// its own step: `from`, the record they move from (the open's own `from`, or a start's source where it names none); `words`, the ids the course
+// named; `read`, the ids it saw waiting there when it read, so the person's words kept since move too. A host before it skips the member and
+// moves nothing, which its `opens` mark below 2 tells.
+public sealed record OpenMovesRequest(string? From, List<string>? Words, List<string>? Read);
 public sealed record OpenSessionRequest(
     string Quest, string Adapter, string? HarnessVersion, string? Profile, string? Tree,
     string? BaseCommit = null, string? From = null, string? FromWhy = null, string? FromBy = null,
-    Dictionary<string, string>? Access = null, string? Actor = null, string? Opens = null);
+    Dictionary<string, string>? Access = null, string? Actor = null, string? Opens = null, OpenMovesRequest? Moves = null);
 public sealed record OpenChatRequest(
     string Repository, string? Adapter, string? HarnessVersion, string? Profile, string? Tree,
-    string? BaseCommit = null, string? From = null, string? FromWhy = null, string? FromBy = null, string? Actor = null, string? Opens = null);
+    string? BaseCommit = null, string? From = null, string? FromWhy = null, string? FromBy = null, string? Actor = null, string? Opens = null,
+    OpenMovesRequest? Moves = null);
 // An intake (D65 §1b): the ask it answers and the room it runs in — the driver's, which is the half
 // that is about to run a process there. The circle comes from the ask, never from the caller.
 public sealed record OpenIntakeRequest(
@@ -687,6 +693,8 @@ public sealed record AdvanceSessionRequest(
 // SUPERVISOR1a-i (D208): a park the driver took up put back, less the supervisor's words it admitted and never handed.
 public sealed record RestoreParkRequest(IReadOnlyList<string>? TakeBack, string? Note, JsonElement? NoteParts = null);
 public sealed record SessionActionResponse(SessionResponse Session, string Message);
+// A keyed open's answer (row d-i): the key's echo and `transfer`, from d-ii part 3 each moved word in order, its id on the record left (`word`)
+// and on the record opened (`id`, which a moved word keeps), its producer `key` (no member for a word with none) and its `transfer` id.
 public sealed record SessionOpenResponse(SessionResponse? Session, string Message, string Opens,
     IReadOnlyList<OpenTransfer> Transfer, string? Head = null, string? Error = null, string? Code = null);
 // `FirstLine` and `LastLine` (ORIENT2e): the lines of its file an entry is, as `/api/entries` answers them, taken

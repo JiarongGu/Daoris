@@ -473,10 +473,10 @@ app.MapGet("/api/status", (ComposedService s, string? prove) => new StatusRespon
 
 // FOUNDATION1 row p (D212, the foundation design §19.12): how a newer client tells what this host does. `run` is an id this host draws at its
 // start, so a host replaced under one client is told from its predecessor; `marks` are the protocol versions it keeps, each a version: `settled` 1
-// is the settlement (a key the line settled answered `Settled` to a say or hand that asks with `settled: true`), `opens` 1 row d-i's keyed open
-// (2 once the open moves the old part's words), and `head` 1 row d-ii's say door, which refuses a record its line left `continued` naming the
-// head. A host before this answers none, and a client keeps no mark for it.
-app.MapGet("/api/protocol", () => new ProtocolResponse(hostRun, new Dictionary<string, int> { ["settled"] = 1, ["opens"] = 1, ["head"] = 1 }));
+// is the settlement (a key the line settled answered `Settled` to a say or hand that asks with `settled: true`), `opens` 2 row d-ii part 3's
+// keyed open, which moves the words its `moves` names in its own step (an `opens` 1 host, row d-i's, moves none), and `head` 1 row d-ii's say door,
+// which refuses a record its line left `continued` naming the head. A host before this answers none, and a client keeps no mark for it.
+app.MapGet("/api/protocol", () => new ProtocolResponse(hostRun, new Dictionary<string, int> { ["settled"] = 1, ["opens"] = 2, ["head"] = 1 }));
 
 // Every cross-repository answer below takes `workspace` — the unit of sharing (D48 §4). Absent spans
 // every circle this deployment holds, which for a shared host is one by construction and for a local
@@ -1955,7 +1955,7 @@ app.MapPost("/api/sessions", async (
     {
         outcome = await s.Ledger.OpenAsync(
             body.Quest, body.Adapter, DateTimeOffset.UtcNow, body.HarnessVersion, body.Profile, body.Tree,
-            body.BaseCommit, ct, body.From, body.FromWhy, body.FromBy, body.Access, actor: body.Actor, opens: body.Opens);
+            body.BaseCommit, ct, body.From, body.FromWhy, body.FromBy, body.Access, actor: body.Actor, opens: body.Opens, moves: MovesOf(body.Moves));
     }
     catch (ArgumentException refused)
     {
@@ -1996,7 +1996,7 @@ app.MapPost("/api/sessions/chat", async (
             string.IsNullOrWhiteSpace(body.Adapter) ? "claude-code" : body.Adapter,
             DateTimeOffset.UtcNow, body.HarnessVersion, body.Profile, body.Tree, body.BaseCommit, ct,
             // The conversation a hand-over goes on from (MIXAGENT1a-iii), as the driver says it.
-            body.From, body.FromWhy, body.FromBy, actor: body.Actor, opens: body.Opens);
+            body.From, body.FromWhy, body.FromBy, actor: body.Actor, opens: body.Opens, moves: MovesOf(body.Moves));
     }
     catch (ArgumentException refused)
     {
@@ -2014,6 +2014,9 @@ app.MapPost("/api/sessions/chat", async (
         _ => Results.BadRequest(new ErrorResponse(outcome.Message)),
     };
 });
+
+// The request's `moves` as the ledger judges them (row d-ii part 3): a member missing is passed on missing, so the ledger refuses it with its sentence.
+static OpenMoves? MovesOf(OpenMovesRequest? moves) => moves is null ? null : new(moves.From!, moves.Words!, moves.Read!);
 
 IResult MalformedOpen(string? key, string message) => key is null
     ? Results.BadRequest(new ErrorResponse(message))

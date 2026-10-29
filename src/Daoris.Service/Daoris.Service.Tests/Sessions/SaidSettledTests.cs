@@ -652,6 +652,237 @@ public sealed class SaidSettledTests : IAsyncLifetime
         Assert.Single((await _sessions.FindAsync(c.Id))!.Said);
     }
 
+    // ---- row d-ii part 3: the open moves the words, in its own step (the design §3.4 rule 3) ----
+
+    /// <summary>The person's keyed say, as the newer client sends it.</summary>
+    private Task<SessionSayOutcome> PersonSayAsync(string id, string key, bool settled = true, bool running = false, SessionLedger? by = null) =>
+        (by ?? _ledger).SayAsync(id, "the person's words", null, Now, key: key, running: running, settled: settled);
+
+    /// <summary>A keyed open of a conversation from <paramref name="from"/> that moves the words the course named and read there.</summary>
+    private Task<SessionOpenOutcome> MoveAsync(
+        string from, string key, IReadOnlyList<string> words, IReadOnlyList<string> read, SessionLedger? by = null, string? tree = null) =>
+        (by ?? _ledger).OpenChatAsync("Owner", "stub", Now, tree: tree, from: from, opens: key, moves: new OpenMoves(from, words, read));
+
+    private async Task<List<string>> WaitingAsync(string id) => [.. (await _sessions.FindAsync(id))!.Said.Select(word => word.Id)];
+
+    /// <summary>
+    /// 🔴 Say before open, across two connections: the person's say holds the write lock with its word kept and not yet committed, so the open,
+    /// whose course read A before the say, waits; once the say commits, the open moves the word as the person's word kept since the read. The
+    /// word's retry named to A is answered settled, naming B where it waits; named to B, it is answered as kept with that word, once.
+    /// </summary>
+    [Fact]
+    public async Task A_persons_word_whose_say_commits_before_the_open_is_moved_by_it_onto_the_record_it_opens()
+    {
+        var a = await EndedAsync();
+        var (otherConnection, _, otherLedger) = await OpenAsync();
+        await using var owned = otherConnection;
+        var (held, release) = await HoldAsync(_connection, "AFTER UPDATE OF said ON main.sessions");
+        var say = Task.Run(() => PersonSayAsync(a.Id, "press/race"));
+        await held.Task.WaitAsync(TimeSpan.FromSeconds(20));
+
+        var open = Task.Run(() => MoveAsync(a.Id, "race/say-first-moves", [], [], otherLedger));
+        await Task.Delay(400);
+        Assert.False(open.IsCompleted, "the open waits for the say's step");
+        release.SetResult();
+        var kept = await say;
+        var opened = await open;
+
+        Assert.Equal(SessionSayRefusal.None, kept.Refusal);
+        Assert.Equal(SessionOpenRefusal.None, opened.Refusal);
+        var b = opened.Session!.Id;
+        var moved = Assert.Single(opened.Transfer);
+        Assert.Equal((kept.Word!.Id, "press/race"), (moved.Word, moved.Key));
+        Assert.Empty(await WaitingAsync(a.Id));
+        Assert.Equal([kept.Word.Id], await WaitingAsync(b));
+
+        Assert.Equal(b, (await PersonSayAsync(a.Id, "press/race")).SettledOn);
+        var atHead = await PersonSayAsync(b, "press/race", running: true);
+        Assert.True(atHead.Again);
+        Assert.Equal(kept.Word.Id, atHead.Word!.Id);
+        Assert.Equal([kept.Word.Id], await WaitingAsync(b));
+    }
+
+    /// <summary>
+    /// 🔴 Open before say, across two connections: the open has written B and moved A's waiting word, and not yet committed, so the say to A
+    /// waits; once the open commits, the say is refused <c>Continued</c> naming B, with nothing kept on A. Its caller passes it on, and B keeps
+    /// it once, behind the moved word.
+    /// </summary>
+    [Fact]
+    public async Task An_open_that_moves_and_commits_before_the_say_leaves_the_say_refused_continued_with_nothing_kept_on_the_old_record()
+    {
+        var a = await EndedAsync();
+        var named = (await PersonSayAsync(a.Id, "press/named")).Word!;
+        var (otherConnection, _, otherLedger) = await OpenAsync();
+        await using var owned = otherConnection;
+        var (held, release) = await HoldAsync(otherConnection, "AFTER INSERT ON main.sessions");
+        var open = Task.Run(() => MoveAsync(a.Id, "race/open-first-moves", [named.Id], [named.Id], otherLedger));
+        await held.Task.WaitAsync(TimeSpan.FromSeconds(20));
+
+        var say = Task.Run(() => PersonSayAsync(a.Id, "press/late"));
+        await Task.Delay(400);
+        Assert.False(say.IsCompleted, "the say waits for the open's step");
+        release.SetResult();
+        var opened = await open;
+        var answered = await say;
+
+        var b = opened.Session!.Id;
+        Assert.Equal((SessionSayRefusal.Continued, b), (answered.Refusal, answered.Head));
+        Assert.Empty(await WaitingAsync(a.Id));
+        Assert.Equal([named.Id], await WaitingAsync(b));
+
+        var passed = await PersonSayAsync(b, "press/late", running: true);
+        Assert.Equal(SessionSayRefusal.None, passed.Refusal);
+        Assert.Equal([named.Id, passed.Word!.Id], await WaitingAsync(b));
+        Assert.True((await PersonSayAsync(b, "press/late", running: true)).Again);
+        Assert.Equal(2, (await WaitingAsync(b)).Count);
+    }
+
+    /// <summary>
+    /// 🔴 Row p's moved case, through two successors: K on A, moved to B by one keyed open and to C by another, is one word. Its retry named to A
+    /// or B is answered settled, naming C where it waits; named to C, as kept with that word. Once C takes it, a retry named to any part is
+    /// answered settled, nothing kept on any.
+    /// </summary>
+    [Fact]
+    public async Task A_word_moved_through_two_successors_is_one_word_whose_retry_named_to_any_part_is_answered_as_kept()
+    {
+        var a = await EndedAsync();
+        var k = (await PersonSayAsync(a.Id, "press/through")).Word!;
+        var b = (await MoveAsync(a.Id, "through/b", [k.Id], [k.Id])).Session!.Id;
+        await _sessions.SetStateAsync(b, SessionState.Completed, null, null, null, Now);
+        var c = (await MoveAsync(b, "through/c", [k.Id], [k.Id])).Session!.Id;
+        await _sessions.SetStateAsync(c, SessionState.Completed, null, null, null, Now);
+
+        Assert.Equal(c, (await PersonSayAsync(a.Id, "press/through")).SettledOn);
+        Assert.Equal(c, (await PersonSayAsync(b, "press/through")).SettledOn);
+        var atHead = await PersonSayAsync(c, "press/through");
+        Assert.Equal((true, k.Id), (atHead.Again, atHead.Word!.Id));
+        Assert.Equal([k.Id], await WaitingAsync(c));
+
+        await _sessions.TakeSaidAsync(c, [k.Id]);
+        foreach (var part in new[] { a.Id, b, c })
+        {
+            var retry = await PersonSayAsync(part, "press/through");
+            Assert.NotNull(retry.SettledOn);
+            Assert.Null(retry.Word);
+            Assert.Empty(await WaitingAsync(part));
+        }
+
+        Assert.Equal(
+            new[] { (a.Id, k.Id, "press/through"), (b, k.Id, "press/through"), (c, k.Id, "press/through") }.Order().ToList(),
+            (await RowsAsync()).Select(row => (row.Session, row.Word, row.Key)).Order().ToList());
+    }
+
+    /// <summary>
+    /// 🔴 Row p's moved case: a keyless word moved keeps its id, its transfer id the open's key and that id, and settles by it on each record it
+    /// left, so a retry under <c>id:&lt;word&gt;</c> named to either part is answered settled with nothing kept.
+    /// </summary>
+    [Fact]
+    public async Task A_keyless_word_is_moved_under_its_transfer_id_and_settled_by_its_id_on_each_record_it_left()
+    {
+        var a = await EndedAsync();
+        var keyless = (await _ledger.SayAsync(a.Id, "no key", null, Now)).Word!;
+
+        var opened = await MoveAsync(a.Id, "keyless/b", [keyless.Id], [keyless.Id]);
+
+        var b = opened.Session!.Id;
+        var moved = Assert.Single(opened.Transfer);
+        Assert.Equal((keyless.Id, keyless.Id, (string?)null, $"keyless/b/{keyless.Id}"), (moved.Word, moved.Id, moved.Key, moved.Transfer));
+        Assert.Equal([(a.Id, keyless.Id, $"id:{keyless.Id}")], (await RowsAsync()).Select(row => (row.Session, row.Word, row.Key)));
+
+        await _sessions.TakeSaidAsync(b, [keyless.Id]);
+        Assert.Contains((await SayAsync(a.Id, $"id:{keyless.Id}")).SettledOn, new[] { a.Id, b });
+        Assert.Contains((await SayAsync(b, $"id:{keyless.Id}")).SettledOn, new[] { a.Id, b });
+        Assert.Empty(await WaitingAsync(a.Id));
+        Assert.Empty(await WaitingAsync(b));
+    }
+
+    /// <summary>
+    /// 🔴 Row p's moved case, *C5-1.2*: a word moved from a record with no stored <c>entry</c> to a successor holding one, taken there; its retry
+    /// named to the old record is answered as kept, the line being the records' own ids and not their entries.
+    /// </summary>
+    [Fact]
+    public async Task A_word_moved_from_a_record_with_no_stored_entry_to_one_holding_one_and_taken_there_answers_its_retry_to_the_old_record_as_kept()
+    {
+        var a = await EndedAsync(ownEntry: false);
+        Assert.Null((await _sessions.FindAsync(a.Id))!.Entry);
+        var k = (await PersonSayAsync(a.Id, "press/entry")).Word!;
+        var b = (await MoveAsync(a.Id, "entry/b", [k.Id], [k.Id])).Session!.Id;
+        Assert.NotNull((await _sessions.FindAsync(b))!.Entry);
+        await _sessions.TakeSaidAsync(b, [k.Id]);
+
+        var retry = await PersonSayAsync(a.Id, "press/entry");
+
+        Assert.NotNull(retry.SettledOn);
+        Assert.Null(retry.Word);
+        Assert.Empty(await WaitingAsync(a.Id));
+        Assert.Empty(await WaitingAsync(b));
+    }
+
+    /// <summary>
+    /// 🔴 Codex's case with the keyed open: a producer's say kept with its answer lost, the word taken on its record, the record moved by a keyed
+    /// open, which finds the named word gone and moves nothing, and the pump's forward to the new head answered as kept, one word. And where the
+    /// word still waited at the open, the open moves it, and the forward to the new head is answered as kept with that word.
+    /// </summary>
+    [Fact]
+    public async Task Codexs_case_with_the_keyed_open_answers_the_pumps_forward_to_the_new_head_as_kept_one_word()
+    {
+        var a = await EndedAsync();
+        var first = (await SayAsync(a.Id, "producer/codex")).Word!;
+        await _sessions.TakeSaidAsync(a.Id, [first.Id]);
+        var opened = await MoveAsync(a.Id, "codex/b", [first.Id], [first.Id]);
+        Assert.Empty(opened.Transfer);
+
+        var forwarded = await SayAsync(opened.Session!.Id, "producer/codex");
+
+        Assert.Equal(a.Id, forwarded.SettledOn);
+        Assert.Empty(await WaitingAsync(a.Id));
+        Assert.Empty(await WaitingAsync(opened.Session.Id));
+
+        var other = await EndedAsync();
+        var waiting = (await SayAsync(other.Id, "producer/codex-waiting")).Word!;
+        var moved = await MoveAsync(other.Id, "codex/b2", [waiting.Id], [waiting.Id], tree: "/trees/owner-2");
+        Assert.Equal([waiting.Id], moved.Transfer.Select(each => each.Word));
+        await _sessions.SetStateAsync(moved.Session!.Id, SessionState.Completed, null, null, null, Now);
+
+        var again = await SayAsync(moved.Session.Id, "producer/codex-waiting");
+
+        Assert.Equal((true, waiting.Id), (again.Again, again.Word!.Id));
+        Assert.Equal([waiting.Id], await WaitingAsync(moved.Session.Id));
+        Assert.Empty(await WaitingAsync(other.Id));
+    }
+
+    /// <summary>
+    /// 🔴 *O8-F1*, an older build's successor through this build's own doors: an unkeyed open, and an older desktop's keyed open naming no moves,
+    /// move nothing, so K waits on A. K's retry named to A is refused <c>Continued</c> naming B, never settled; forwarded to B it is kept there,
+    /// never settled, and once.
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task An_older_builds_open_moves_nothing_and_K_left_on_A_is_kept_once_at_the_head_never_settled(bool keyed)
+    {
+        var a = await EndedAsync();
+        var first = (await PersonSayAsync(a.Id, "press/older")).Word!;
+        var opened = await _ledger.OpenChatAsync("Owner", "stub", Now, from: a.Id, opens: keyed ? "older/keyed" : null);
+        var b = opened.Session!.Id;
+        Assert.Empty(opened.Transfer);
+        Assert.Equal([first.Id], await WaitingAsync(a.Id));
+        await _sessions.SetStateAsync(b, SessionState.Completed, null, null, null, Now);
+
+        var retry = await PersonSayAsync(a.Id, "press/older");
+        Assert.Equal((SessionSayRefusal.Continued, b), (retry.Refusal, retry.Head));
+        Assert.Null(retry.SettledOn);
+
+        var forwarded = await PersonSayAsync(b, "press/older");
+        Assert.Equal(SessionSayRefusal.None, forwarded.Refusal);
+        Assert.Null(forwarded.SettledOn);
+        Assert.NotEqual(first.Id, forwarded.Word!.Id);
+        Assert.True((await PersonSayAsync(b, "press/older")).Again);
+        Assert.Equal([forwarded.Word.Id], await WaitingAsync(b));
+        Assert.Equal([first.Id], await WaitingAsync(a.Id));
+        Assert.Empty(await RowsAsync());
+    }
+
     /// <summary>
     /// 🔴 Row d-ii, the walk's bound on the settlement: a retry whose walk back along <c>from</c> would pass <see cref="Lines.Bound"/> records is
     /// refused <c>Unplaced</c> with its sentence, nothing kept, rather than read over a line cut short, which could keep a taken word twice;

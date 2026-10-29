@@ -692,15 +692,19 @@ public sealed class SessionLedger(
     /// the registry row is the machine's own wiring (D48 §2), and it is the only honest source.</para>
     /// </remarks>
     /// <param name="from">The conversation this one continues, handed over (MIXAGENT1a-iii), with <paramref name="fromWhy"/> and <paramref name="fromBy"/>; recorded as told.</param>
+    /// <param name="moves">The words a keyed open moves onto the record it opens (row d-ii part 3), in its own step; none moves without it.</param>
+    /// <exception cref="ArgumentException"><paramref name="moves"/> without <paramref name="opens"/>, or moves that do not read; nothing is opened.</exception>
     public async Task<SessionOpenOutcome> OpenChatAsync(
         string repository, string adapter, DateTimeOffset now,
         string? harnessVersion = null, string? profile = null, string? tree = null,
         string? baseCommit = null, CancellationToken ct = default,
-        string? from = null, string? fromWhy = null, string? fromBy = null, string? actor = null, string? opens = null)
+        string? from = null, string? fromWhy = null, string? fromBy = null, string? actor = null, string? opens = null,
+        OpenMoves? moves = null)
     {
         if (opens is not null)
-            return await KeyedOpenAsync(opens, from, inside => OpenChatAsync(repository, adapter, now,
+            return await KeyedOpenAsync(opens, from, moves, inside => OpenChatAsync(repository, adapter, now,
                 harnessVersion, profile, tree, baseCommit, inside, from, fromWhy, fromBy, actor), ct).ConfigureAwait(false);
+        if (moves is not null) throw Unkeyed();
 
         if (string.IsNullOrWhiteSpace(repository)) throw new ArgumentException("repository is required");
 
@@ -754,11 +758,25 @@ public sealed class SessionLedger(
         }, ct).ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// A keyed open (row d-i), and from row d-ii part 3 its move of the old part's words (the design §3.4 rule 3), as one exclusive step: the
+    /// key's receipt answered first, whatever the request says now; then the record the words leave, the record left or, where the open names no
+    /// <c>from</c>, its moves' own source (a start from another's words), which must stand, be its line's head and not be active; then the open,
+    /// the move and the receipt with every word moved. A receipt that cannot be written throws, and the step rolls the open and the move back.
+    /// </summary>
+    /// <remarks>
+    /// <b>What moves</b> is .NET's selection, never invented here: each word still waiting there that the course named, whoever said it, and
+    /// each of the person's words kept since the course read (no id it read or named), but one a dispatcher attempted, which may have reached
+    /// its agent and is never sent again by itself. Daoris's own words, a helper's answer and another agent's claim kept since are not
+    /// carried (rule 6): the course composes Daoris's again under their keys. Each keeps its id and its producer key, and its transfer id is
+    /// the open's key and that id, so a word with no key has one too.
+    /// </remarks>
     private Task<SessionOpenOutcome> KeyedOpenAsync(
-        string key, string? left, Func<CancellationToken, Task<SessionOpenOutcome>> open, CancellationToken ct) =>
+        string key, string? from, OpenMoves? moves, Func<CancellationToken, Task<SessionOpenOutcome>> open, CancellationToken ct) =>
         sessions.ExclusiveAsync(async inside =>
         {
-            // Replay precedes even the record-left and request checks: the committed result owns the key.
+            // Replay precedes even the record-left and request checks: the committed result owns the key, its transfer the receipt's, never
+            // read again from any record's words.
             if (await sessions.Opens.FindAsync(key, inside).ConfigureAwait(false) is { } kept)
             {
                 var record = kept.Gone ? null : await sessions.FindAsync(kept.Opened, inside).ConfigureAwait(false);
@@ -768,6 +786,8 @@ public sealed class SessionLedger(
                         { Opens = key, Transfer = kept.Transfer };
             }
 
+            moves?.Judge(from);
+            var left = from ?? moves?.From;
             var before = left is null ? null : await sessions.FindAsync(left, inside).ConfigureAwait(false);
             if (before is null)
                 return new SessionOpenOutcome(SessionOpenRefusal.Gone, $"The record left `{left}` is gone.", null) { Opens = key };
@@ -778,10 +798,33 @@ public sealed class SessionLedger(
                     { Opens = key, Head = head?.Id };
 
             var result = await open(inside).ConfigureAwait(false);
-            if (result.Session is { } opened && result.Refusal == SessionOpenRefusal.None)
-                await sessions.Opens.KeepAsync(key, before.Id, opened.Id, inside).ConfigureAwait(false);
-            return result with { Opens = key };
+            if (result.Session is not { } opened || result.Refusal != SessionOpenRefusal.None) return result with { Opens = key };
+
+            IReadOnlyList<OpenTransfer> transfer = [];
+            var message = result.Message;
+            if (moves is not null)
+            {
+                var named = moves.Words.ToHashSet(StringComparer.Ordinal);
+                var read = moves.Read.ToHashSet(StringComparer.Ordinal);
+                var moved = await sessions.MoveSaidAsync(before.Id, opened.Id,
+                    word => named.Contains(word.Id) || (word.Persons && word.Attempt is null && !read.Contains(word.Id)), inside).ConfigureAwait(false);
+                transfer = [.. moved.Select((word, order) => new OpenTransfer(word.Id, word.Key, $"{key}/{word.Id}", order, word.Id))];
+                if (moved.Count > 0) opened = await sessions.FindAsync(opened.Id, inside).ConfigureAwait(false) ?? opened;
+                message += moved.Count switch
+                {
+                    0 => $" No words waited on session `{before.Id}` to move.",
+                    1 => $" One word moved from session `{before.Id}`.",
+                    _ => $" {moved.Count} words moved from session `{before.Id}`.",
+                };
+            }
+
+            await sessions.Opens.KeepAsync(key, before.Id, opened.Id, transfer, inside).ConfigureAwait(false);
+            return result with { Opens = key, Transfer = transfer, Session = opened, Message = message };
         }, ct);
+
+    /// <summary>The refusal of moves asked of an open with no key: nothing would answer them again, so a lost answer could move twice.</summary>
+    private static ArgumentException Unkeyed() => new(
+        "Words move only under an open's key (`opens`), whose receipt answers a retry with what moved, so nothing was opened.");
 
     /// <summary>
     /// The record with the entry's key it answers (SESSONE1a, D167 point 3): the one stored, else the rule's over the facts held now.
@@ -1664,17 +1707,22 @@ public sealed class SessionLedger(
     /// The access setup the start resolved (AUTONOMY1a, D184 point 1), each pause with its value; recorded as told, since the driver is
     /// the half that resolves it, and judged only as a short map of words (<see cref="SessionAccess.Judged"/>).
     /// </param>
-    /// <exception cref="ArgumentException"><paramref name="access"/> is not a short map of words; nothing is opened.</exception>
+    /// <param name="moves">The words a keyed open moves onto the record it opens (row d-ii part 3), in its own step; none moves without it.</param>
+    /// <exception cref="ArgumentException">
+    /// <paramref name="access"/> is not a short map of words, or <paramref name="moves"/> come without <paramref name="opens"/> or do not read;
+    /// nothing is opened.
+    /// </exception>
     public async Task<SessionOpenOutcome> OpenAsync(
         string questId, string adapter, DateTimeOffset now,
         string? harnessVersion = null, string? profile = null, string? tree = null,
         string? baseCommit = null, CancellationToken ct = default,
         string? from = null, string? fromWhy = null, string? fromBy = null,
-        IReadOnlyDictionary<string, string>? access = null, string? actor = null, string? opens = null)
+        IReadOnlyDictionary<string, string>? access = null, string? actor = null, string? opens = null, OpenMoves? moves = null)
     {
         if (opens is not null)
-            return await KeyedOpenAsync(opens, from, inside => OpenAsync(questId, adapter, now,
+            return await KeyedOpenAsync(opens, from, moves, inside => OpenAsync(questId, adapter, now,
                 harnessVersion, profile, tree, baseCommit, inside, from, fromWhy, fromBy, access, actor), ct).ConfigureAwait(false);
+        if (moves is not null) throw Unkeyed();
 
         if (string.IsNullOrWhiteSpace(questId) || string.IsNullOrWhiteSpace(adapter))
             throw new ArgumentException("quest and adapter are required");
