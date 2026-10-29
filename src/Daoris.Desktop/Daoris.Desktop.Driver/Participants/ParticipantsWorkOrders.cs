@@ -2,7 +2,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// What the participants read of the work orders: the tools the connector offers, which a partner is denied but for those it is offered.
-/// Work orders keeps the list and implements this, installed when the driver loads (<c>Sessions/Work/ParticipantsWorkOrdersWiring.cs</c>);
+/// Work orders keeps the list and implements this, installed when the driver loads (<c>WorkOrders/Work/ParticipantsWorkOrdersWiring.cs</c>);
 /// the operation answers exactly what its caller read before it was a port.
 /// </summary>
 internal interface IParticipantsWorkOrders

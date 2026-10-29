@@ -255,7 +255,7 @@
       "reads": "other",
       "note": "a word's author, a pass's ask, a harness's rule or a repository type of the same name; no record's mark tells a work"
     },
-    "Loop/ChannelReach.cs": {
+    "WorkOrders/ChannelReach.cs": {
       "lines": 3,
       "reads": "other",
       "note": "an ask's own fields, a channel entry's, a file's lookup by ask, or a join key; no record's mark tells a work"
@@ -298,17 +298,17 @@
       "reads": "other",
       "note": "a workflow step's, a gate's or a landing's own opinion or ask, not a record's mark"
     },
-    "Quests/AskReviewCommand.cs": {
+    "WorkOrders/AskReviewCommand.cs": {
       "lines": 1,
       "reads": "other",
       "note": "an ask's own fields, a channel entry's, a file's lookup by ask, or a join key; no record's mark tells a work"
     },
-    "Quests/AskWorkflowCommand.cs": {
+    "WorkOrders/AskWorkflowCommand.cs": {
       "lines": 1,
       "reads": "other",
       "note": "an ask's own fields, a channel entry's, a file's lookup by ask, or a join key; no record's mark tells a work"
     },
-    "Quests/ChannelCommand.cs": {
+    "WorkOrders/ChannelCommand.cs": {
       "lines": 1,
       "reads": "other",
       "note": "an ask's own fields, a channel entry's, a file's lookup by ask, or a join key; no record's mark tells a work"
@@ -368,17 +368,17 @@
       "reads": "other",
       "note": "an ask's own fields, a channel entry's, a file's lookup by ask, or a join key; no record's mark tells a work"
     },
-    "Sessions/SessionsCommand.cs": {
+    "WorkOrders/SessionsCommand.cs": {
       "lines": 4,
       "reads": "tells",
       "note": "tells a conversation, an intake or Ask Daoris's record by its marks to name it or to list it; no row of this design moves it"
     },
-    "Sessions/Work/WorkAbandoning.cs": {
+    "WorkOrders/Work/WorkAbandoning.cs": {
       "lines": 1,
       "reads": "other",
       "note": "an ask's own fields, a channel entry's, a file's lookup by ask, or a join key; no record's mark tells a work"
     },
-    "Trees/Inventory/KnowledgeWorkOrderReads.cs": {
+    "WorkOrders/Inventory/KnowledgeWorkOrderReads.cs": {
       "lines": 1,
       "reads": "tells",
       "row": "1q",
@@ -414,12 +414,12 @@
       "reads": "other",
       "note": "a workflow step's, a gate's or a landing's own opinion or ask, not a record's mark"
     },
-    "Trees/SessionEntryReader.cs": {
+    "WorkOrders/SessionEntryReader.cs": {
       "lines": 2,
       "reads": "tells",
       "note": "tells an intake from its ask and the absence of a quest; no row of this design moves it (the reader moved here, to Work orders, from Workplace/SessionEntries.cs in FOUNDATION1 mod-x's Work orders cut)"
     },
-    "Trees/SessionGroups.cs": {
+    "WorkOrders/SessionGroups.cs": {
       "lines": 1,
       "reads": "tells",
       "note": "tells Ask Daoris's record by its repository; no row of this design moves it (the record's parse and its view moved to Service, FOUNDATION1 mod-iv)"

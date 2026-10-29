@@ -18,9 +18,7 @@ public static class ReviewSetUps
     /// §2.2: handed from the rule as it stands at the start); null for a quest that is no set-up step, and where no rule names it.
     /// </summary>
     public static ReviewEnvironment? Environment(DriverConfig config, QuestView quest, string? workspace) =>
-        quest.SetUpIn is { } named && ReviewRules.Resolve(config, quest.To, workspace) is { Rule.IsNone: false } rule
-            ? rule.Rule.Environments.FirstOrDefault(environment => environment.Name == named)
-            : null;
+        SetUpSits.Environment(config, quest, workspace);
 
     /// <summary>
     /// Why the planner sits a set-up step it cannot honestly start (design §2.1), or null where it may start: no rule here names its
@@ -29,30 +27,8 @@ public static class ReviewSetUps
     /// (<see cref="ProcedureMissing"/>).
     /// </summary>
     /// <param name="window">Whether this loop carries Daoris's browser: the desktop's does, a headless one does not.</param>
-    public static CannotShowSit? Sits(DriverConfig config, QuestView quest, string? workspace, bool window)
-    {
-        if (quest.SetUpIn is not { } named) return null;
-        if (Environment(config, quest, workspace) is not { } environment)
-        {
-            return new(new CannotShowFact(CannotShowFact.Unnamed, named),
-                $"set-up step `#{quest.Id}` shows its chain's work in `{named}`, and no review rule here names `{named}` for "
-                + $"`{quest.To}`: `daoris driver review {quest.To} {named} --kind local|deployed --procedure <path>` declares it.");
-        }
-
-        if (environment.Kind != "local") return null;
-        if (environment.Address is null)
-        {
-            return new(new CannotShowFact(CannotShowFact.NoAddress, named),
-                $"set-up step `#{quest.Id}` shows its chain's work in `{named}`, which declares no address to show it at: "
-                + $"`daoris driver review {quest.To} {named} --address <url>` declares where the app normally runs.");
-        }
-
-        return window
-            ? null
-            : new(new CannotShowFact(CannotShowFact.NoWindow, named, environment.Address),
-                $"set-up step `#{quest.Id}` shows its chain's work in Daoris's browser at `{environment.Address}`, and this loop has no "
-                + "window to show it in: the desktop's loop starts it.");
-    }
+    public static CannotShowSit? Sits(DriverConfig config, QuestView quest, string? workspace, bool window) =>
+        SetUpSits.Sits(config, quest, workspace, window);
 
     /// <summary>
     /// Why a set-up step's start is held at its spawn (design §1.1, §2.1), or null where it may start: its tree holds no file at
@@ -137,8 +113,7 @@ public static class ReviewLines
         new("review.shown", [("quest", quest), ("session", session), ("kind", kind), ("served", served), ("run", run), ("seconds", seconds)]);
 
     /// <summary>The person's verdict, and the door it was given at.</summary>
-    public static LandingLine Verdict(string quest, string said, string door) =>
-        new("review.verdict", [("quest", quest), ("said", said), ("door", door)]);
+    public static LandingLine Verdict(string quest, string said, string door) => ReviewDoorWords.Verdict(quest, said, door);
 
     /// <summary>A landing the gate held: whose, where, the gate's state, the level that decided, and the door it was tried at.</summary>
     public static LandingLine Held(string session, string? repository, string? workspace, ReviewGateState gate, string door) =>

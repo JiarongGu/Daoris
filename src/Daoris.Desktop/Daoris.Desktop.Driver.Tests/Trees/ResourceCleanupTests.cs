@@ -258,11 +258,11 @@ public sealed class ResourceCleanupTests : IDisposable
         }
 
         Assert.Equal([1, 5, 15, 60, 1440, 1440], waits.Select(wait => wait.TotalMinutes));
-        var entry = Assert.Single(WorkObligations.Of([], [Resources.Read(Unit)!], _now)[Unit]);
+        var entry = Assert.Single(WorkflowObligations.Of([], [Resources.Read(Unit)!], _now)[Unit]);
         Assert.Equal(InventoryDisposition.Pending, entry.Disposition);
 
         _now = started + ResourceCleaner.BlockedAfter;
-        var blocked = Assert.Single(WorkObligations.Of([], [Resources.Read(Unit)!], _now)[Unit]);
+        var blocked = Assert.Single(WorkflowObligations.Of([], [Resources.Read(Unit)!], _now)[Unit]);
         Assert.Equal((InventoryDisposition.Blocked, InventoryCode.CleanupBlocked), (blocked.Disposition, blocked.Code));
         Assert.Contains("the environment is locked", blocked.Detail, StringComparison.Ordinal);
         Assert.Equal(CleanedWhat.Again, Assert.Single(await Cleaner().CleanAsync(_ => true, WorkSends.Unbounded, CancellationToken.None)).What);
@@ -298,7 +298,7 @@ public sealed class ResourceCleanupTests : IDisposable
 
         Assert.Equal(["p-1", "p-2"], _port.Cleaned.Select(call => call.Resource));
         Assert.Equal([CleanupDispositions.Removed, CleanupDispositions.Retained], cleaned.Select(each => each.Code));
-        var entries = WorkObligations.Of([], [Resources.Read(Unit)!], _now)[Unit].ToDictionary(entry => entry.Resource);
+        var entries = WorkflowObligations.Of([], [Resources.Read(Unit)!], _now)[Unit].ToDictionary(entry => entry.Resource);
         Assert.Equal(InventoryDisposition.Removed, entries[$"{Preview}:p-1"].Disposition);
         Assert.Equal(InventoryDisposition.Retained, entries[$"{Preview}:p-2"].Disposition);
         Assert.Contains("a reused environment", entries[$"{Preview}:p-2"].Detail, StringComparison.Ordinal);

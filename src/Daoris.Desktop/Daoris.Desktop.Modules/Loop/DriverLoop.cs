@@ -966,7 +966,8 @@ public sealed class DriverLoop(
                 lastWaited = waited;
                 // …or what waits on the person at a second opinion (XAGENT1g3): the route reads the look's judgments, so a changed one
                 // has to reach the page, which asks the route again at the tick.
-                var judged = JudgedSignature(report.JudgedOpinions);
+                var opinions = report.JudgedOpinions.Cast<OpinionJudged>().ToList();
+                var judged = JudgedSignature(opinions);
                 changed |= judged != lastJudged;
                 lastJudged = judged;
                 // …or what the look said (IDLECPU1): a line said again at every look, a standing hold or a remote that does not
@@ -987,7 +988,7 @@ public sealed class DriverLoop(
                 // with the cool-offs it held starts on, which a record whose words one holds names (MSG1f2).
                 Look.Record(report.Considerations, report.Waits);
                 // And the second-opinion gates it judged, whole (XAGENT1g3), for *What needs you* to read without running a gate.
-                Judged.Record(report.JudgedOpinions);
+                Judged.Record(opinions);
                 // And the considerations as the page reads them, each with its park and its wait, kept for *What needs you*'s judge
                 // whether or not this tick is forwarded (PUSH1d4), and the same ones the tick below hands the page.
                 var sitting = report.Considerations

@@ -440,9 +440,9 @@ public sealed class StructureTests(Xunit.Abstractions.ITestOutputHelper output)
             map.Subdomains.Select(subdomain => subdomain.Name));
         Assert.Equal(21, map.Subdomains.Select(subdomain => subdomain.Folder).Distinct().Count());
         Assert.Equal("WorkOrders", map.Subdomains.Single(subdomain => subdomain.Name == "Work orders").Folder);
-        // The ownership moves, bottom up (FOUNDATION1 mod-i through mod-xiv: Platform through Course); no namespace row: every namespace stays
+        // The ownership moves, bottom up (FOUNDATION1 mod-i through mod-xv: Platform through Work orders); no namespace row: every namespace stays
         // Daoris.Driver (D166 point 4).
-        Assert.Equal(["Platform", "Store", "Settings", "Service", "Install", "Instance", "Events", "Knowledge", "Agents", "Workplace", "Roles", "Participants", "Context", "Course"], map.Subdomains.Where(subdomain => subdomain.Moved).Select(subdomain => subdomain.Name));
+        Assert.Equal(["Platform", "Store", "Settings", "Service", "Install", "Instance", "Events", "Knowledge", "Agents", "Workplace", "Roles", "Participants", "Context", "Course", "Work orders"], map.Subdomains.Where(subdomain => subdomain.Moved).Select(subdomain => subdomain.Name));
         Assert.All(map.Subdomains, subdomain => Assert.Null(subdomain.Namespace));
         // Loop's folder is the composition root's, and holds no Domain.
         Assert.False(map.Subdomains[^1].Domain);
@@ -711,6 +711,18 @@ public sealed class StructureTests(Xunit.Abstractions.ITestOutputHelper output)
     }
 
     [Fact]
+    public void Work_orders_uses_lower_vocabulary_homes_facets_and_ports_and_no_type_above_it()
+    {
+        var (map, _, _, analysis, _) = Tree.Value;
+        var order = map.Subdomains.Select(subdomain => subdomain.Name).ToList();
+        var workOrders = order.IndexOf("Work orders");
+        var edges = analysis.Edges.Where(edge => edge.File.StartsWith("WorkOrders/", StringComparison.Ordinal)
+            && edge.DeclaredIn.Any(path => map.Files.TryGetValue(path, out var owner) && order.IndexOf(owner) > workOrders)).ToList();
+        Assert.True(edges.Count == 0, $"Work orders names a type above it in {edges.Count} semantic tuples:\n"
+            + string.Join('\n', edges.Select(edge => $"{edge.File}: {edge.Type}")));
+    }
+
+    [Fact]
     public void Events_names_no_Help_room_type_for_the_attention_headline()
     {
         var (map, _, _, analysis, _) = Tree.Value;
@@ -748,7 +760,7 @@ public sealed class StructureTests(Xunit.Abstractions.ITestOutputHelper output)
         var edges = analysis.Edges.Select(edge => (edge.File, edge.Type)).ToHashSet();
 
         // A qualified reference (the design §14.5, X4-1.4), and a static import's target, which an identifier after a dot or in a `using` skipped.
-        Assert.Contains(("Sessions/SessionsCommand.cs", "HolderKey"), edges);
+        Assert.Contains(("WorkOrders/SessionsCommand.cs", "HolderKey"), edges);
         Assert.Contains(("Agents/AccountCooling.cs", "AccountFileNodes"), edges);
         Assert.Contains(("Install/Tools.cs", "Json"), edges);
 
