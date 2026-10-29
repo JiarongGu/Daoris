@@ -43,13 +43,15 @@
  * interacting; a prefix that cannot run, a second run that disagrees, or a whole candidate that does not fail again, leaves it
  * unresolved. `candidateOutcome` turns the judgements into what the queue does next.
  *
- * ## The confirm run (INTEGRATE1b, design §4.5; built, not yet called)
+ * ## The confirm run (INTEGRATE1b, design §4.5, §5.3 step 3)
  *
- * Before any base or prefix run, the failing gate is run once more as composed holding the whole machine admission
- * (`confirmStep` over `takeWhole`), and each failure read by it (`confirmReadings`): failing again it is `confirmed` and judged
- * as above; passing, `unconfirmed`, a sighting (`local/integration-sightings.jsonl`, `sightingOf`) that splits the candidate by
- * default; anything the admission or the answer does not show, `inconclusive`, read as `split` whatever the policy says. The
- * policy is `local/integration-policy.json`'s `unconfirmed` (`readIntegrationPolicy`): `split`, or the owner's `hold` or `land`.
+ * Before any base or prefix run, the queue's runner runs the failing gate once more as composed, on the candidate's tip, holding
+ * the whole machine admission (`confirmStep` over `takeWhole`), once per failing gate, and reads each failure by it
+ * (`confirmReadings`): failing again it is `confirmed` and judged as above; passing, `unconfirmed`, a sighting
+ * (`local/integration-sightings.jsonl`, `sightingOf`) that splits the candidate by default; anything the admission or the answer
+ * does not show, `inconclusive`, read as `split` whatever the policy says. The policy is `local/integration-policy.json`'s
+ * `unconfirmed` (`readIntegrationPolicy`): `split`, or the owner's `hold` (held for a decide, which waits: `resumeCandidate`) or
+ * `land` (promoted on that tip alone, its pass written as no verdict). The scope run's record keeps each confirm run.
  *
  * ## The scoped set (§4.2)
  *
@@ -594,7 +596,7 @@ export function noteRecheck(stop, { at, passed, by }) {
 }
 
 // ---------------------------------------------------------------------------------------------------
-// The confirm run (INTEGRATE1b, design §4.5, §5.3 step 3): its pure pieces, which no queue path calls yet (part 2 wires them)
+// The confirm run (INTEGRATE1b, design §4.5, §5.3 step 3): its pure pieces, which the queue's runner calls (`runCandidateWatched`)
 
 /** The integration policy, the tool's own switch file in the main checkout's ignored `local/` (§11 row b, F19). */
 export const INTEGRATION_POLICY = 'local/integration-policy.json';
