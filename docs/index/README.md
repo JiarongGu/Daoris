@@ -288,7 +288,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `tools/deployment-rehearsal.mjs` | 105 | 1815 |
 | `tools/desktop-publish.mjs` | 86 | 1493 |
 | `tools/desktop.mjs` | 54 | 1097 |
-| `tools/family-rehearsal.mjs` | 359 | 6239 |
+| `tools/family-rehearsal.mjs` | 370 | 6409 |
 | `tools/knowledge-bench.mjs` | 46 | 900 |
 | `tools/merge-branch.mjs` | 479 | 8134 |
 | `tools/merge-queue.mjs` | 47 | 775 |
@@ -302,7 +302,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 
 | File | KB | Lines |
 |---|---|---|
-| `.claude/knowledge/twins.md` | 128 | 195 |
+| `.claude/knowledge/twins.md` | 128 | 196 |
 | `docs/2026-09-19-platform-ux.md` | 72 | 747 |
 | `docs/2026-09-21-dsh-evaluation.md` | 43 | 483 |
 | `docs/2026-09-21-working-surface-components.md` | 54 | 354 |
@@ -396,4 +396,4 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/DAORIS_UNIFIED_COLLABORATION_ARCHITECTURE_AND_PLAN_2026-10-16.md` | 164 | 5380 |
 | `docs/README.md` | 60 | 283 |
 | `docs/development.md` | 50 | 562 |
-| `src/Daoris.Desktop/README.md` | 229 | 1142 |
+| `src/Daoris.Desktop/README.md` | 230 | 1146 |

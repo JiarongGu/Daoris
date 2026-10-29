@@ -9,8 +9,11 @@ namespace Daoris.Desktop.Driver.Tests;
 /// registry's <c>StandIn</c> providers alone, in <see cref="ProviderConformanceProcessTests"/>.
 /// </summary>
 /// <remarks>
-/// The program a case runs is a scenario it writes into its scratch, in the stand-in's vocabulary, which is Claude Code's and Codex's by
-/// reference: until part 3 lays a stand-in's program out in its folder, nothing here is that program, and nothing names a stand-in by its id.
+/// The program a case runs is the stand-in's own, laid out in its provider's folder (<c>Agents/Providers/&lt;Folder&gt;/Program/</c>) and
+/// carried beside the driver by the project's one glob, so it is run from this test's build output: the entry and each door's arguments
+/// are its <c>provider.json</c>'s, and a case names the scenario of the contract it plays (<c>--scenario</c>) and where the program keeps
+/// the protocol methods it was sent (<c>--seen</c>). What a check reads is what the contract fixes, said back in the stand-in's own lines,
+/// so nothing here names a stand-in by its id, and a later stand-in's program is run by the same cases (D213's row b part 3 note).
 /// </remarks>
 internal static partial class ConformanceCases
 {
@@ -60,59 +63,14 @@ internal static partial class ConformanceCases
 
     private static bool ResumesOnTheWire(AgentDoor door) => Protocol(door) && door.Abilities.Resumes is { IsKnown: true, Value: true };
 
-    // ---- The scenarios, in the stand-in's vocabulary ----
+    // ---- The stand-in's own program, by the scenario contract ----
 
     /// <summary>
-    /// A protocol agent: it keeps each method it was sent in a file, answers the spec's calls, and plays the scenario its second argument
-    /// names on a resume or a prompt.
+    /// The case's door's program, as its <c>provider.json</c> lays it out and the build carries it: Node, the entry, the door's arguments,
+    /// then the case's own (a scenario, and where the protocol methods it was sent are kept).
     /// </summary>
-    private const string ProtocolAgent = """
-        import { appendFileSync } from 'node:fs';
-        import { createInterface } from 'node:readline';
-        const [seen, scenario] = process.argv.slice(2);
-        let prompts = 0;
-        const send = (frame) => process.stdout.write(JSON.stringify(frame) + '\n');
-        createInterface({ input: process.stdin }).on('line', (line) => {
-          const frame = JSON.parse(line);
-          if (!frame.method) return;
-          appendFileSync(seen, frame.method + '\n');
-          const answer = (result) => frame.id === undefined ? 0 : send({ jsonrpc: '2.0', id: frame.id, result });
-          const refuse = (error) => send({ jsonrpc: '2.0', id: frame.id, error });
-          if (frame.method === 'initialize') answer({ protocolVersion: 1, agentCapabilities: { loadSession: true, sessionCapabilities: { resume: {}, close: {} } } });
-          else if (frame.method === 'session/new') answer({ sessionId: 's-1' });
-          else if (frame.method === 'session/resume' && scenario === 'missing') refuse({ code: -32002, message: 'Resource not found' });
-          else if (frame.method === 'session/resume' && scenario === 'elsewhere') refuse({ code: -32603, message: 'Internal error: another client holds the thread', data: { reason: 'thread_active_writer' } });
-          else if (frame.method === 'session/prompt') {
-            prompts += 1;
-            if (scenario === 'transient' && prompts === 1) return refuse({ code: -32603, message: 'Internal error: API Error: 529 Overloaded.', data: { errorKind: 'overloaded' } });
-            if (scenario === 'access') return refuse({ code: -32603, message: 'Internal error: API Error: 401 API key is invalid.' });
-            if (scenario === 'fatal') return refuse({ code: -32000, message: 'the turn failed' });
-            send({ jsonrpc: '2.0', method: 'session/update', params: { sessionId: frame.params.sessionId, update: { sessionUpdate: 'agent_message_chunk', content: { type: 'text', text: 'carrying on' } } } });
-            answer({ stopReason: 'end_turn' });
-          } else answer({});
-        }).on('close', () => process.exit(0));
-        """;
-
-    /// <summary>A native agent of plain lines: a start says what it was handed, a conversation repeats what it hears, and it answers the sign-in.</summary>
-    private const string TextAgent = """
-        import { createInterface } from 'node:readline';
-        const args = process.argv.slice(2);
-        if (args.includes('--version')) { console.log('stand-in 0.0.1'); process.exit(0); }
-        if (args.includes('--login-state')) { console.log('logged-in as alice@example.org'); console.log('org: Acme'); console.log('plan: max'); process.exit(0); }
-        if (args.includes('--login')) { console.log('signed in'); process.exit(0); }
-        if (args[0] === 'start') { console.log('started on ' + (process.env.DAORIS_REPOSITORY ?? 'nothing') + ' with a target of ' + ((process.env.DAORIS_TARGET ?? '').length > 0 ? 'words' : 'none')); process.exit(0); }
-        if (args[0] === 'resume') { console.log('resumed with ' + args.slice(1).join(' ')); process.exit(0); }
-        const lines = createInterface({ input: process.stdin });
-        lines.on('line', (line) => console.log('heard: ' + line));
-        lines.on('close', () => process.exit(0));
-        """;
-
-    private static string Script(ConformanceRun run, string name, string text)
-    {
-        var path = Path.Combine(run.Scratch, name);
-        File.WriteAllText(path, text);
-        return path;
-    }
+    private static IReadOnlyList<string> Program(ConformanceRun run, params string[] more) =>
+        ProviderFiles.Of(run.Provider.Id.Value).Command(run.TheDoor.Id.Value, more);
 
     /// <summary>What a protocol run gave: its outcome or its failure, the methods the agent was sent, and the lines the session said.</summary>
     private sealed record ProtocolRan(AcpOutcome? Outcome, Exception? Failed, IReadOnlyList<string> Methods, IReadOnlyList<string> Lines);
@@ -121,9 +79,8 @@ internal static partial class ConformanceCases
     private static async Task<ProtocolRan> OverTheWire(
         ConformanceRun run, string scenario, string? resume = null, TransientRetry? retry = null, Func<Task>? meanwhile = null)
     {
-        var agent = Script(run, "protocol-agent.mjs", ProtocolAgent);
         var seen = Path.Combine(run.Scratch, $"seen-{scenario}.txt");
-        using var process = Process.Start(run.Adapter.Prepare(run.Target(), ["node", agent, seen, scenario]))!;
+        using var process = Process.Start(run.Adapter.Prepare(run.Target(), Program(run, "--scenario", scenario, "--seen", seen)))!;
         var lines = new List<string>();
         var session = new AcpSession(process.StandardOutput, process.StandardInput, line =>
         {
@@ -169,9 +126,9 @@ internal static partial class ConformanceCases
             return;
         }
 
-        // The plain capture: what the program says reaches its transcript, and its end is its exit.
-        var agent = Script(run, "text-agent.mjs", TextAgent);
-        using var process = Process.Start(run.Adapter.Prepare(run.Target(), ["node", agent, "start"]))!;
+        // The plain capture: what the program says reaches its transcript, and its end is its exit. The service it is handed answers
+        // nothing, so its quest's take is said and never thrown.
+        using var process = Process.Start(run.Adapter.Prepare(run.Target(), Program(run)))!;
         var transcript = Path.Combine(run.Scratch, "transcript.txt");
         await HarnessCapture.CaptureAsync(process, transcript, "s-1", null, CancellationToken.None).WaitAsync(Bound);
         await process.WaitForExitAsync().WaitAsync(Bound);
@@ -187,13 +144,12 @@ internal static partial class ConformanceCases
             var ran = await OverTheWire(run,"open");
             Assert.Null(ran.Failed);
             Assert.Equal("end_turn", ran.Outcome!.StopReason);
-            Assert.Contains(ran.Lines, line => line.Contains("carrying on", StringComparison.Ordinal));
+            Assert.Contains(ran.Lines, line => line.Contains("heard: Go on.", StringComparison.Ordinal));
             return;
         }
 
         // A conversation's turn: the person's words framed as the door frames them, the program's answer read.
-        var agent = Script(run, "text-agent.mjs", TextAgent);
-        using var process = Process.Start(run.Adapter.PrepareChat(run.Chat(), ["node", agent, "chat"]))!;
+        using var process = Process.Start(run.Adapter.PrepareChat(run.Chat(), Program(run)))!;
         await process.StandardInput.WriteLineAsync(run.Adapter.FrameMessage("hello"));
         process.StandardInput.Close();
         var said = await process.StandardOutput.ReadToEndAsync().WaitAsync(Bound);
@@ -215,8 +171,7 @@ internal static partial class ConformanceCases
             return;
         }
 
-        var agent = Script(run, "text-agent.mjs", TextAgent);
-        var resumed = adapter.PrepareResume(run.Target(), ["node", agent, "resume"], "c-1", "go on");
+        var resumed = adapter.PrepareResume(run.Target(), Program(run), "c-1", "go on");
         if (door.Abilities.Resumes is not { IsKnown: true, Value: true })
         {
             // The unsupported resume's fallback, answered as today: nothing to resume with, so the continuation hands the brief.
@@ -296,12 +251,11 @@ internal static partial class ConformanceCases
 
     private static async Task LiveSignIn(ConformanceRun run)
     {
-        var agent = Script(run, "text-agent.mjs", TextAgent);
         var home = run.Home();
-        IReadOnlyList<string> command = ["node", agent];
+        var file = ProviderFiles.Of(run.Provider.Id.Value);
         var config = DriverConfig.Empty with
         {
-            Commands = run.Provider.Doors.ToDictionary(door => door.Id.Value, _ => command, StringComparer.OrdinalIgnoreCase),
+            Commands = run.Provider.Doors.ToDictionary(door => door.Id.Value, door => file.Command(door.Id.Value), StringComparer.OrdinalIgnoreCase),
         };
         var roster = new HarnessRoster(run.Subject.Adapters, DaorisHome.Entry(home, HomeEntry.Harnesses));
         var door = run.TheDoor.Id.Value;
@@ -320,7 +274,6 @@ internal static partial class ConformanceCases
 
     private static async Task LiveListing(ConformanceRun run)
     {
-        var agent = Script(run, "text-agent.mjs", TextAgent);
         var door = run.TheDoor.Id.Value;
         // The stand-in's own doors, so the roster asks no other agent's program on this machine.
         var standIn = new AdapterSet(run.Provider.Doors.ToDictionary(
@@ -330,7 +283,7 @@ internal static partial class ConformanceCases
         var none = await roster.RosterAsync(DriverConfig.Empty).WaitAsync(Bound);
         var configured = await roster.RosterAsync(DriverConfig.Empty with
         {
-            Commands = new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase) { [door] = ["node", agent] },
+            Commands = new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase) { [door] = Program(run) },
         }).WaitAsync(Bound);
 
         Assert.DoesNotContain(none, report => report.Adapter == door);

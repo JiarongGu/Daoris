@@ -38,6 +38,10 @@ in `Agents/Providers/Stub/`, which `LegacyDoor` presents to today's readers as a
 operands read the registry. `Driver.Tests/Agents/ProviderConformanceTests.cs` is the conformance suite (design §10), every case run per provider
 and door, each one a provider cannot pass yet held in its own `pending.json` (a stand-in's beside its `provider.json`, a real provider's under
 `Driver.Tests/fixtures/providers/<id>/`) with the row that makes it pass.
+A stand-in's program is one Node module in its folder's `Program/`, both doors chosen by the arguments its `provider.json` states, and the
+project's one glob (`Agents/Providers/*/Program/**`) carries it beside the driver, so the suite's live cases run it from their build output
+and the family rehearsal finds every stand-in from the `provider.json` files (`tools/stand-ins.mjs`) and drives the scenario contract over
+each of its doors.
 Events owns resume reason codes and the `IContinueReason` reading contract; Agents owns `ContinueReason` and `ContinueWhy`'s
 policy and sentences. Its public constants forward to Events, and a refused door exposes the same reason through the lower port.
 The required protocol-posture marker belongs to Agents (`AgentPostures.Required`); Help forwards the same `!` value.
