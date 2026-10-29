@@ -29,9 +29,83 @@ public sealed class SaidSettledHostTests(LocalHost host) : IClassFixture<LocalHo
         Assert.Matches("^[0-9a-f]{32}$", run!);
         Assert.Equal(run, second.Json.GetProperty("run").GetString());
         Assert.Equal(1, first.Json.GetProperty("marks").GetProperty("settled").GetInt32());
-        // Row d-i adds replay alone; head and word transfer are d-ii's.
-        Assert.Equal(["settled", "opens"], first.Json.GetProperty("marks").EnumerateObject().Select(mark => mark.Name).ToArray());
+        // Row d-i adds replay alone; d-ii's say door adds `head` 1 (the `Continued` refusal), and `opens` stays 1 until the open moves words.
+        Assert.Equal(["settled", "opens", "head"], first.Json.GetProperty("marks").EnumerateObject().Select(mark => mark.Name).ToArray());
         Assert.Equal(1, first.Json.GetProperty("marks").GetProperty("opens").GetInt32());
+        Assert.Equal(1, first.Json.GetProperty("marks").GetProperty("head").GetInt32());
+    }
+
+    /// <summary>
+    /// 🔴 Row d-ii over the wire: a say to a record its line has left is refused <c>continued</c>, beside <c>head</c>, the head's id, at the
+    /// status the say door gives its other refusals of a record as it stands (409), nothing kept; the head keeps the same say.
+    /// </summary>
+    [Fact]
+    public async Task A_say_to_a_record_its_line_left_is_refused_continued_with_the_head_at_the_doors_conflict_status()
+    {
+        var left = await EndedAsync("Heads");
+        var head = await host.Composed.Sessions.CreateAsync(
+            null, "Heads", "stub", DateTimeOffset.UtcNow, kind: SessionKind.Chat, from: left.Id, fromWhy: "limit", fromBy: "daoris");
+
+        var refused = await host.PostAsync($"/api/sessions/{left.Id}/say", new { text = "A late word.", key = "wire/head", from = "daoris", settled = true });
+
+        Assert.Equal(409, refused.Status);
+        Assert.Equal("continued", refused.Json.GetProperty("refusal").GetString());
+        Assert.Equal(head.Id, refused.Json.GetProperty("head").GetString());
+        Assert.Contains(head.Id, refused.Json.GetProperty("error").GetString());
+        Assert.Empty((await host.Composed.Sessions.FindAsync(left.Id))!.Said);
+
+        // A refusal of another kind names no head.
+        var missing = await host.PostAsync("/api/sessions/nosuch01/say", new { text = "A late word." });
+        Assert.Equal(404, missing.Status);
+        Assert.False(missing.Json.TryGetProperty("head", out _));
+
+        await host.Composed.Sessions.SetStateAsync(head.Id, SessionState.Completed, null, null, null, DateTimeOffset.UtcNow);
+        var kept = await host.PostAsync($"/api/sessions/{head.Id}/say", new { text = "A late word.", key = "wire/head", from = "daoris", settled = true });
+        Assert.Equal(200, kept.Status);
+        Assert.Single((await host.Composed.Sessions.FindAsync(head.Id))!.Said);
+    }
+
+    /// <summary>
+    /// 🔴 Row d-ii, the say door's word table cell for cell: every refusal the ledger knows has its own word on the wire, the table below, so
+    /// none falls to the switch's default, which would send a new refusal as <c>running</c>. A refusal added to the ledger fails this until
+    /// its word is written here and in <c>Program.SayRefusal</c>.
+    /// </summary>
+    [Fact]
+    public void Every_say_refusal_has_its_own_word_on_the_wire_cell_for_cell()
+    {
+        var table = new Dictionary<SessionSayRefusal, string>
+        {
+            [SessionSayRefusal.None] = "none",
+            [SessionSayRefusal.Empty] = "no-words",
+            [SessionSayRefusal.NotFound] = "not-found",
+            [SessionSayRefusal.NotOurs] = "not-ours",
+            [SessionSayRefusal.Intake] = "intake",
+            [SessionSayRefusal.StoodDown] = "stood-down",
+            [SessionSayRefusal.Running] = "running",
+            [SessionSayRefusal.Opinion] = "opinion",
+            [SessionSayRefusal.Helper] = "helper",
+            [SessionSayRefusal.Taken] = "taken",
+            [SessionSayRefusal.From] = "from",
+            [SessionSayRefusal.Level] = "level",
+            [SessionSayRefusal.SupervisorText] = "supervisor-text",
+            [SessionSayRefusal.KeyMismatch] = "key-mismatch",
+            [SessionSayRefusal.DecisionTaken] = "decision-taken",
+            [SessionSayRefusal.NotParked] = "not-parked",
+            [SessionSayRefusal.NoQuest] = "no-quest",
+            [SessionSayRefusal.QuestionChanged] = "question-changed",
+            [SessionSayRefusal.NotOfferedChoice] = "not-offered-choice",
+            [SessionSayRefusal.OwnerQuestion] = "owner-question",
+            [SessionSayRefusal.GoAheadOpen] = "go-ahead-open",
+            [SessionSayRefusal.GoAheadUnread] = "go-ahead-unread",
+            [SessionSayRefusal.OwnerAnswered] = "owner-answered",
+            [SessionSayRefusal.NoHome] = "no-home",
+            [SessionSayRefusal.Continued] = "continued",
+            [SessionSayRefusal.Unplaced] = "unplaced",
+        };
+
+        Assert.Equal(Enum.GetValues<SessionSayRefusal>().Order(), table.Keys.Order());
+        foreach (var (refusal, word) in table) Assert.Equal((refusal, word), (refusal, Program.SayRefusal(refusal)));
+        Assert.Equal(table.Count, table.Values.Distinct(StringComparer.Ordinal).Count());
     }
 
     /// <summary>

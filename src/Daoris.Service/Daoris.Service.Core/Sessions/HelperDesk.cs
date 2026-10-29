@@ -145,36 +145,46 @@ public sealed class HelperDesk(SessionStore sessions, bool local = true)
             }
 
             // HELPERWAIT1 (D189 point 6): the newest live record of the asker's line, as a partner's piece is handed (PartnerDesk): a hand-over,
-            // a move or a carry-on takes the asker's helpers with it, and a left conversation is never reopened.
-            var asker = await sessions.FindAsync(served, inside).ConfigureAwait(false);
-            var pastBound = false;
-            for (var hops = 0; asker is { Origin: null } && hops <= LineBound; hops++)
+            // a move or a carry-on takes the asker's helpers with it, and a left conversation is never reopened. FOUNDATION1 row d-ii (D212, the
+            // design §3.4 rule 2): the line's head the say door reads, across kinds and to a driven part's quest's last run here.
+            var named = await sessions.FindAsync(served, inside).ConfigureAwait(false);
+            var line = named is { Origin: null } ? await Lines.WalkAsync(sessions, named, inside).ConfigureAwait(false) : null;
+            var asker = line is null ? named : line.Head ?? line.Records[^1];
+            // 🔴 HELPERWAIT1b (Codex's round-3 #4 on COWORKUX1): a line that goes on past the bound is refused, its newest part unread, never
+            // handed to the record where the bound stopped, which the line has left; the helper's conversation keeps the answer. The hand follows
+            // sixteen links, as the driver's look does, inside the walk's own bound; a line that loops has no newest part at all.
+            var pastBound = line is not null && (line.End == LineEnd.Bound || line.Records.Count - 1 > LineBound);
+            var loops = line is { End: LineEnd.Cycle };
+
+            // Row p (D212, the design §3.4 rule 5): asked before any refusal but the record's absence, over the asker's line back along `from`
+            // and forward over the head walk's records, so a retry after the take is answered as kept whatever the asker is doing now. A word
+            // still waiting on the record the hand reaches is the desk's own below; one waiting on a record the line has left keeps once on
+            // the newest. A line that cannot be read whole is refused below, so a settlement is never read over a line cut short.
+            if (settled && named is { Origin: null } && line is not null && KeyOf(helper.Id) is var key
+                && !asker!.Said.Any(word => string.Equals(word.Key, key, StringComparison.Ordinal))
+                && await SaidKeys.SettledOnLineAsync(sessions, named, line, key, now, inside).ConfigureAwait(false) is (var held, var whole))
             {
-                if (await sessions.ContinuedByAsync(asker.Id, inside).ConfigureAwait(false) is not { } next) break;
-                // 🔴 HELPERWAIT1b (Codex's round-3 #4 on COWORKUX1): a line that goes on past the bound is refused, its newest part unread,
-                // never handed to the record where the bound stopped, which the line has left; the helper's conversation keeps the answer.
-                if (hops == LineBound)
+                if (!whole)
                 {
-                    pastBound = true;
-                    break;
+                    return Refused(HelperRefusal.CannotTake,
+                        $"Session `{served}`'s line runs past {Lines.Bound} parts, so whether its answer was taken already is not read and no part takes it");
                 }
 
-                asker = next;
+                if (held is not null)
+                {
+                    return new HelperOutcome(
+                        HelperRefusal.None,
+                        $"Helper `{helper.Id}`'s answer is already settled: its word left session `{held.Record}` and nothing more was kept.")
+                    {
+                        SettledOn = held.Record,
+                    };
+                }
             }
 
-            // Row p (D212, the design §3.4 rule 5): asked before any refusal but the record's absence, over the record the hand reaches and
-            // its predecessors back along `from`, so a retry after the take is answered as kept whatever the asker is doing now. A word
-            // still waiting on that record is the desk's own below; one waiting on a record the line has left keeps once on the newest.
-            if (settled && asker is { Origin: null } && KeyOf(helper.Id) is var key
-                && !asker.Said.Any(word => string.Equals(word.Key, key, StringComparison.Ordinal))
-                && await SaidKeys.SettledOnLineAsync(sessions, asker, key, now, inside).ConfigureAwait(false) is { } held)
+            if (loops)
             {
-                return new HelperOutcome(
-                    HelperRefusal.None,
-                    $"Helper `{helper.Id}`'s answer is already settled: its word left session `{held.Record}` and nothing more was kept.")
-                {
-                    SettledOn = held.Record,
-                };
+                return Refused(HelperRefusal.CannotTake,
+                    $"Session `{served}`'s line loops back on a part it already passed, so it has no newest part and no part takes the answer");
             }
 
             if (pastBound)
