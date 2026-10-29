@@ -11,7 +11,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// one process being one run of <c>store_runs</c>. Two shells on one home deciding a move of one line make one row and one claim, and the
 /// second says once that another Daoris runs on its home; an executor paused after its effect's mark commits and before the effect keeps its
 /// move against another process's take, is said <c>move.quiet</c> once past ten minutes and never taken over, and once really killed its
-/// move is taken up at the next look and held, its effect never made.
+/// move is taken up at the next look and held, its effect never made. Part 3 adds a <c>--share</c> loop beside the instance, each keeping
+/// the driven moves of the lines it runs, a dead instance's move the next lease holder's and never the share loop's; and a deliverer really
+/// killed after its <c>sent</c> committed and before its take, whose move the next look takes up and closes <c>delivered</c>.
 /// </summary>
 /// <remarks>
 /// The other processes are a small console program this class builds once into <c>_fixtures/</c>, referencing the driver library these
@@ -63,7 +65,7 @@ public sealed class MoveClaimProcessTests(MoveClaimProcessTests.Child child) : I
         using Daoris.Driver;
 
         var (verb, home, record) = (args[0], args[1], args[2]);
-        StoreProcess.Kind = StoreProcess.Shell;
+        StoreProcess.Kind = verb == "drive" ? StoreProcess.Host : StoreProcess.Shell;
         var store = new MoveStore(home, () => StoreSettled.Yes);
         var unit = new MoveTakeUp(home, store, MoveTakeUpScope.Conversations);
         Console.Out.WriteLine($"run {store.Run} {Environment.ProcessId}");
@@ -92,6 +94,29 @@ public sealed class MoveClaimProcessTests(MoveClaimProcessTests.Child child) : I
                 File.WriteAllText(Path.Combine(home, "effect-made"), "made");
                 store.EffectEnded(claim, "made");
                 Console.Out.WriteLine("effect");
+                return 0;
+            case "drive":
+                // A driven loop: the instance's lease holder, or a `--share` loop running this line alone (part 3, the row's live case).
+                var drive = new MoveTakeUp(home, store, args[3] == "share" ? MoveTakeUpScope.Shared(line => line == record) : MoveTakeUpScope.LeaseHolder);
+                var driven = store.Decide(decision with { Executor = MoveExecutors.Driven }).Claim!;
+                Console.Out.WriteLine($"claimed {driven.Move}");
+                for (var asked = Console.In.ReadLine(); asked == "look"; asked = Console.In.ReadLine())
+                {
+                    var look = await drive.LookAsync(_ => true);
+                    Console.Out.WriteLine("took " + string.Join(",", look.Taken.Select(each => each.Move!.Id)));
+                }
+
+                return 0;
+            case "deliver":
+                // A deliverer whose write returned: `sent` committed, then paused before its take until it is killed (part 3).
+                var moving = store.Decide(decision).Claim!;
+                store.Opening(moving, "opens-" + record);
+                store.Opened(moving, record + "-next", [new MoveRecordWord("w1", null, "opens-" + record + "/w1", 0)]);
+                store.Advance(moving, MoveRecordPhase.Delivering);
+                store.MarkEffect(moving, MoveEffects.Prompt);
+                store.Sent(moving, ["opens-" + record + "/w1"]);
+                Console.Out.WriteLine($"sent {moving.Move}");
+                Console.In.ReadLine();
                 return 0;
             default:
                 return 2;
@@ -145,14 +170,14 @@ public sealed class MoveClaimProcessTests(MoveClaimProcessTests.Child child) : I
         return program;
     }
 
-    private Process Start(string verb, string record)
+    private Process Start(string verb, string record, params string[] more)
     {
         var info = new ProcessStartInfo(child.Program)
         {
             RedirectStandardInput = true, RedirectStandardOutput = true, RedirectStandardError = true, UseShellExecute = false, CreateNoWindow = true,
             StandardOutputEncoding = Encoding.UTF8,
         };
-        foreach (var word in new[] { verb, _home, record }) info.ArgumentList.Add(word);
+        foreach (var word in new[] { verb, _home, record }.Concat(more)) info.ArgumentList.Add(word);
         var process = Process.Start(info)!;
         _started.Add(process);
         return process;
@@ -275,5 +300,74 @@ public sealed class MoveClaimProcessTests(MoveClaimProcessTests.Child child) : I
         Assert.Null(held.Effect!.Outcome);
         Assert.False(File.Exists(Path.Combine(_home, "effect-made")));
         Assert.Empty((await unit.LookAsync(_ => true)).Held);
+    }
+
+    /// <summary>A driven loop's look asked, and the moves it took, by id.</summary>
+    private static async Task<string> Look(Process loop)
+    {
+        await loop.StandardInput.WriteLineAsync("look");
+        await loop.StandardInput.FlushAsync();
+        return await Next(loop);
+    }
+
+    [Fact]
+    public async Task A_share_loop_beside_the_instance_each_keep_the_driven_moves_of_the_lines_they_run_and_a_dead_instance_s_move_is_the_lease_holder_s()
+    {
+        Directory.CreateDirectory(_home);
+        var instance = Start("drive", "q1", "holder");
+        var instanceRun = (await Next(instance)).Split(' ');
+        var q1 = long.Parse((await Next(instance)).Split(' ')[1], System.Globalization.CultureInfo.InvariantCulture);
+        var share = Start("drive", "q2", "share");
+        var shareRun = (await Next(share)).Split(' ');
+        var q2 = long.Parse((await Next(share)).Split(' ')[1], System.Globalization.CultureInfo.InvariantCulture);
+
+        // Both live: each one's look takes nothing of the other's.
+        Assert.Equal("took ", await Look(instance));
+        Assert.Equal("took ", await Look(share));
+        var probe = new MoveStore(_home, () => StoreSettled.Yes, run: "probe");
+        Assert.Equal((instanceRun[1], shareRun[1]), (probe.Read(q1)!.ClaimRun, probe.Read(q2)!.ClaimRun));
+
+        // The instance dies: the share loop, which runs q2 alone, takes nothing; the next lease holder's look takes q1 up.
+        instance.Kill(entireProcessTree: true);
+        await instance.WaitForExitAsync().WaitAsync(Poll.Patience);
+        Assert.Equal("took ", await Look(share));
+        Assert.Equal(instanceRun[1], probe.Read(q1)!.ClaimRun);
+        var holder = new MoveStore(_home, () => StoreSettled.Yes, run: "holder-" + Guid.NewGuid().ToString("N")[..8], kind: StoreProcess.Host);
+        var taken = await new MoveTakeUp(_home, holder, MoveTakeUpScope.LeaseHolder).LookAsync(_ => true);
+
+        Assert.Equal([q1], taken.Taken.Select(each => each.Move!.Id));
+        Assert.Equal((holder.Run, 2L), (probe.Read(q1)!.ClaimRun, probe.Read(q1)!.ClaimGeneration));
+        Assert.Equal((shareRun[1], 1L), (probe.Read(q2)!.ClaimRun, probe.Read(q2)!.ClaimGeneration));
+
+        share.StandardInput.Close();
+        await share.WaitForExitAsync().WaitAsync(Poll.Patience);
+    }
+
+    [Fact]
+    public async Task A_deliverer_killed_after_sent_and_before_its_take_is_taken_up_and_closed_delivered_its_word_taken_off_once()
+    {
+        Directory.CreateDirectory(_home);
+        var deliverer = Start("deliver", "s1");
+        await Next(deliverer);
+        var move = long.Parse((await Next(deliverer)).Split(' ')[1], System.Globalization.CultureInfo.InvariantCulture);
+        var said = new MoveSaidStandIn().Wait("s1-next", "w1");
+        said.Attempt("s1-next", "w1");
+        var store = new MoveStore(_home, () => StoreSettled.Yes, run: "taker-" + Guid.NewGuid().ToString("N")[..8], kind: StoreProcess.Shell);
+        var unit = new MoveTakeUp(_home, store, MoveTakeUpScope.Conversations, said: said);
+
+        // While it lives, paused before its take, its move is its own: nothing read, nothing taken.
+        var live = await unit.LookAsync(_ => true);
+        Assert.Empty(live.Delivered);
+        Assert.Empty(said.Calls);
+
+        deliverer.Kill(entireProcessTree: true);
+        await deliverer.WaitForExitAsync().WaitAsync(Poll.Patience);
+        var after = await unit.LookAsync(_ => true);
+
+        Assert.Equal([move], after.Delivered.Select(each => each.Id));
+        Assert.Equal(["take s1-next w1"], said.Calls);
+        Assert.Equal(MoveWordDispositions.Sent, store.WordsOf(move).Single().Disposition);
+        Assert.Empty((await unit.LookAsync(_ => true)).Delivered);
+        Assert.Single(said.Calls);
     }
 }

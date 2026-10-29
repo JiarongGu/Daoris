@@ -15,9 +15,13 @@ public sealed class MoveStoreCensusTests
 
     /// <summary>
     /// The move store's own files, which declare its types: since part 2 the take-up of dead runs' moves and the box importers too, which
-    /// nothing calls either.
+    /// nothing calls either; since part 3 the moved words' delivery, a hold's one rule and the door to a destination's <c>said</c>.
     /// </summary>
-    private static readonly string[] Own = ["Course/MoveStore.cs", "Course/MoveRecords.cs", "Course/MoveTakeUp.cs", "Course/MoveBoxImports.cs"];
+    private static readonly string[] Own =
+    [
+        "Course/MoveStore.cs", "Course/MoveRecords.cs", "Course/MoveTakeUp.cs", "Course/MoveBoxImports.cs", "Course/MoveDelivery.cs",
+        "Course/MoveResolve.cs", "Course/MoveSaid.cs",
+    ];
 
     /// <summary>The importers, which only rows f-v and f-vi may call: importing a box sets it aside from today's readers, which still own it.</summary>
     private static readonly string[] Importers = ["LimitBoxImport", "HandOverBoxImport", "MoveBoxImport"];
@@ -51,6 +55,7 @@ public sealed class MoveStoreCensusTests
         Assert.Equal([$"{Wiring} names MoveStore"], readers);
         Assert.Contains("MoveTakeUp", names);
         Assert.All(Importers, importer => Assert.Contains(importer, names));
+        Assert.All(["MoveDelivery", "MoveResolve", "IMoveSaid", "MoveSaidDoor", "MoveWordDispositions"], part3 => Assert.Contains(part3, names));
     }
 
     /// <summary>
