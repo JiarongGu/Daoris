@@ -498,14 +498,17 @@ public sealed record SaidResponse(SessionResponse Session, string Message, SaidW
 // all, so a reader that reads a word finds none. Sent only to a request that asked with `settled`.
 public sealed record SettledResponse(string Message, string Settled);
 // The host's protocol (row p, the design §19.12): `run`, an id the host draws at its start, and the marks it keeps, each a version
-// (`settled` 1: a key the line has settled answered `Settled` to a request that asks).
+// (`settled` 1: a key the line has settled answered `Settled` to a request that asks; `opens` 1: row d-i's keyed open; `head` 1: row d-ii's
+// `continued` with its `head`).
 public sealed record ProtocolResponse(string Run, IReadOnlyDictionary<string, int> Marks);
 // A say refused: the sentence as `error`, beside its word (`refusal`: `no-words`, `not-found`, `not-ours`, `intake`,
 // `stood-down`, `running`, XAGENT1c's `opinion`, a reviewer's record, and COWORK1b's `from`, an author this service does not
 // know), which a reader acts on instead of the sentence, and
-// the quest, ask, machine or second opinion it names.
+// the quest, ask, machine or second opinion it names. FOUNDATION1 row d-ii (D212): `continued`, the record's line went on past it, beside
+// `head`, the line's head where the words go; `unplaced`, a line that loops or runs past the walk's bound, nothing kept. A reader before the
+// row reads either as a refusal it does not know and says the sentence.
 public sealed record SessionSayRefusalResponse(
-    string Error, string Refusal, string? Quest = null, string? Ask = null, string? Origin = null, string? Opinion = null);
+    string Error, string Refusal, string? Quest = null, string? Ask = null, string? Origin = null, string? Opinion = null, string? Head = null);
 // XAGENT1c (D155 point 11; the second agent design §6.2): a pass the driver asks, every part nullable so one left out is
 // refused by the desk naming which. `minutes` is the rule's bound, said, never defaulted here: the service holds no rule.
 public sealed record OpinionAskRequest(

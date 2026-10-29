@@ -92,8 +92,8 @@ public sealed class PartnerDesk(SessionStore sessions, PartnerBox? box = null, b
 
     /// <summary>
     /// Hand a piece's answer (the co-agent design §2.3 step 9, §7.6): a word marked as the partner's (<see cref="SaidWord.Helper"/> names
-    /// its record, so every reader of a solicited word reads it as it reads a helper's) under the piece's stable key, kept on the newest
-    /// record continuing the lead by <c>from</c>, or the lead itself. Ordinary, never urgent, and reopening an ended record once. The
+    /// its record, so every reader of a solicited word reads it as it reads a helper's) under the piece's stable key, kept on the head of the
+    /// lead's line the say door reads (<see cref="Lines.WalkAsync"/>), or the lead itself. Ordinary, never urgent, and reopening an ended record once. The
     /// key makes it idempotent: a word already waiting under it is answered as this hand. A running record takes it at its turn's end,
     /// never into a step in flight, so the driver hands it then; a record that stood down takes nothing.
     /// </summary>
@@ -111,28 +111,48 @@ public sealed class PartnerDesk(SessionStore sessions, PartnerBox? box = null, b
                 return Refused(HelperRefusal.NotFound, $"There is no partner session `{partnerId.Trim()}` on this machine");
             }
 
-            // The newest live record of the lead's line: a hand-over, a move or a carry-on takes the lead's pieces with it.
-            var to = await sessions.FindAsync(lead, inside).ConfigureAwait(false);
-            for (var hops = 0; to is { Origin: null } && hops < 16; hops++)
+            // The newest live record of the lead's line: a hand-over, a move or a carry-on takes the lead's pieces with it. FOUNDATION1 row
+            // d-ii (D212, the design §3.4 rule 2): the line's head the say door reads, across kinds and to a driven lead's quest's last run here,
+            // within the walk's one bound; a line that loops or goes on past it is refused below, never handed where the walk stopped.
+            var named = await sessions.FindAsync(lead, inside).ConfigureAwait(false);
+            var line = named is { Origin: null } ? await Lines.WalkAsync(sessions, named, inside).ConfigureAwait(false) : null;
+            var to = line is null ? named : line.Head ?? line.Records[^1];
+
+            // Row p (the design §3.4 rule 5): asked before any refusal but the record's absence, over the lead's line back along `from` and
+            // forward over the head walk's records, so a retry after the take is answered as kept whatever the lead is doing now. A word still
+            // waiting on the record the hand reaches is answered as it is below.
+            var pieceKey = KeyOf(piece);
+            if (settled && named is { Origin: null } && line is not null
+                && !to!.Said.Any(word => string.Equals(word.Key, pieceKey, StringComparison.Ordinal))
+                && await SaidKeys.SettledOnLineAsync(sessions, named, line, pieceKey, now, inside).ConfigureAwait(false) is (var held, var whole))
             {
-                if (await sessions.ContinuedByAsync(to.Id, inside).ConfigureAwait(false) is not { } next) break;
-                to = next;
+                if (!whole)
+                {
+                    return Refused(HelperRefusal.CannotTake,
+                        $"Session `{lead}`'s line runs past {Lines.Bound} parts, so whether piece `{piece}`'s answer was taken already is not read and no part takes it");
+                }
+
+                if (held is not null)
+                {
+                    return new HelperOutcome(
+                        HelperRefusal.None,
+                        $"Piece `{piece}`'s answer is already settled: its word left session `{held.Record}` and nothing more was kept.")
+                    {
+                        SettledOn = held.Record,
+                    };
+                }
             }
 
-            // Row p (D212, the design §3.4 rule 5): asked before any refusal but the record's absence, over the record the hand reaches and its
-            // predecessors back along `from`, so a retry after the take is answered as kept whatever the lead is doing now. A word still
-            // waiting on that record is answered as it is below.
-            var pieceKey = KeyOf(piece);
-            if (settled && to is { Origin: null }
-                && !to.Said.Any(word => string.Equals(word.Key, pieceKey, StringComparison.Ordinal))
-                && await SaidKeys.SettledOnLineAsync(sessions, to, pieceKey, now, inside).ConfigureAwait(false) is { } held)
+            if (line is { End: LineEnd.Cycle })
             {
-                return new HelperOutcome(
-                    HelperRefusal.None,
-                    $"Piece `{piece}`'s answer is already settled: its word left session `{held.Record}` and nothing more was kept.")
-                {
-                    SettledOn = held.Record,
-                };
+                return Refused(HelperRefusal.CannotTake,
+                    $"Session `{lead}`'s line loops back on a part it already passed, so it has no newest part to hand piece `{piece}`'s answer to");
+            }
+
+            if (line is { End: LineEnd.Bound })
+            {
+                return Refused(HelperRefusal.CannotTake,
+                    $"Session `{lead}`'s line goes on past {Lines.Bound} parts, so its newest part is not read and no part it left takes piece `{piece}`'s answer");
             }
 
             string? cannot = to switch

@@ -2084,4 +2084,171 @@ public sealed class SessionLedgerTests : IAsyncLifetime
 
     private Task<SessionAdvanceOutcome> Advance(string id, string state) =>
         _ledger.AdvanceAsync(id, state, null, null, null, Now);
+
+    // ---- FOUNDATION1 row d-ii: words follow the line's head (D212; the foundation design §3.4 rule 2, §19.13) ----
+
+    /// <summary>A part of a line as an open writes one: its kind, its quest and the record it continues, ended unless a state is named.</summary>
+    private async Task<Session> PartAsync(string? quest = null, string? from = null, SessionKind? kind = null, SessionState state = SessionState.Completed)
+    {
+        var made = await _sessions.CreateAsync(
+            quest, "Owner", "stub", Now, kind: kind ?? (quest is null ? SessionKind.Chat : SessionKind.Driven),
+            from: from, fromWhy: from is null ? null : "limit", fromBy: from is null ? null : "daoris");
+        return (await _sessions.SetStateAsync(made.Id, state, null, null, null, Now))!;
+    }
+
+    private Task<SessionSayOutcome> SayToAsync(string id, string? key = null, bool running = false, bool settled = true) =>
+        _ledger.SayAsync(
+            id, "A late word.", null, Now.AddMinutes(30), key: key, from: key is null ? null : SaidFrom.Daoris, running: running, settled: settled);
+
+    private async Task<IReadOnlyList<SaidWord>> WaitingOn(string id) => (await _sessions.FindAsync(id))!.Said;
+
+    /// <summary>
+    /// 🔴 Row d-ii: a word said to a conversation that went on in another is refused <c>Continued</c>, naming the line's head, and nothing is
+    /// kept on the record the line left; the head keeps it.
+    /// </summary>
+    [Fact]
+    public async Task A_word_to_a_conversation_that_went_on_is_refused_continued_naming_its_successor_which_keeps_it()
+    {
+        var first = await PartAsync();
+        var next = await PartAsync(from: first.Id);
+
+        var refused = await SayToAsync(first.Id);
+
+        Assert.Equal(SessionSayRefusal.Continued, refused.Refusal);
+        Assert.Equal(next.Id, refused.Head);
+        Assert.Contains($"`{next.Id}`", refused.Message, StringComparison.Ordinal);
+        Assert.Null(refused.Word);
+        Assert.Null(refused.Session);
+        Assert.Empty(await WaitingOn(first.Id));
+
+        var kept = await SayToAsync(next.Id);
+        Assert.Equal(SessionSayRefusal.None, kept.Refusal);
+        Assert.Null(kept.Head);
+        Assert.Single(await WaitingOn(next.Id));
+    }
+
+    /// <summary>
+    /// 🔴 Row d-ii, the head across kinds (§19.13, *C5-1.13*): a closed quest's driven part that went on as a conversation names the
+    /// conversation; a driven part with no successor whose quest ran again here names that run; one whose quest ran nowhere else here is its
+    /// own head and keeps the word.
+    /// </summary>
+    [Fact]
+    public async Task The_head_is_followed_across_kinds_and_to_a_driven_parts_quests_last_run_here()
+    {
+        var driven = await PartAsync(quest: "q-closed");
+        var conversation = await PartAsync(from: driven.Id, kind: SessionKind.Chat);
+        var toConversation = await SayToAsync(driven.Id);
+        Assert.Equal((SessionSayRefusal.Continued, conversation.Id), (toConversation.Refusal, toConversation.Head));
+
+        var once = await PartAsync(quest: "q-again");
+        var again = await PartAsync(quest: "q-again");
+        var toRun = await SayToAsync(once.Id);
+        Assert.Equal((SessionSayRefusal.Continued, again.Id), (toRun.Refusal, toRun.Head));
+        Assert.Empty(await WaitingOn(once.Id));
+
+        var alone = await PartAsync(quest: "q-alone");
+        var kept = await SayToAsync(alone.Id);
+        Assert.Equal(SessionSayRefusal.None, kept.Refusal);
+        Assert.Single(await WaitingOn(alone.Id));
+    }
+
+    /// <summary>🔴 Row d-ii: a chain of three parts names its last from either earlier one, and the last keeps the word.</summary>
+    [Fact]
+    public async Task A_chain_of_three_names_its_last_part_from_either_earlier_one()
+    {
+        var a = await PartAsync();
+        var b = await PartAsync(from: a.Id);
+        var c = await PartAsync(from: b.Id);
+
+        Assert.Equal((SessionSayRefusal.Continued, c.Id), ((await SayToAsync(a.Id)).Refusal, (await SayToAsync(a.Id)).Head));
+        Assert.Equal((SessionSayRefusal.Continued, c.Id), ((await SayToAsync(b.Id)).Refusal, (await SayToAsync(b.Id)).Head));
+        Assert.Equal(SessionSayRefusal.None, (await SayToAsync(c.Id)).Refusal);
+        Assert.Empty(await WaitingOn(a.Id));
+        Assert.Empty(await WaitingOn(b.Id));
+    }
+
+    /// <summary>
+    /// 🔴 Row d-ii: a cycle planted by hand ends the walk, so the line has no head: the say is refused <c>Unplaced</c> with its sentence and
+    /// nothing is kept on any part of it.
+    /// </summary>
+    [Fact]
+    public async Task A_cycle_planted_by_hand_ends_the_walk_and_the_say_is_refused_unplaced_with_nothing_kept()
+    {
+        var a = await PartAsync();
+        var b = await PartAsync(from: a.Id);
+        await using (var plant = _connection.CreateCommand())
+        {
+            plant.CommandText = "UPDATE sessions SET from_session = $b WHERE id = $a";
+            plant.Parameters.AddWithValue("$a", a.Id);
+            plant.Parameters.AddWithValue("$b", b.Id);
+            await plant.ExecuteNonQueryAsync();
+        }
+
+        var refused = await SayToAsync(a.Id);
+
+        Assert.Equal(SessionSayRefusal.Unplaced, refused.Refusal);
+        Assert.Null(refused.Head);
+        Assert.Contains("loops", refused.Message, StringComparison.Ordinal);
+        Assert.Empty(await WaitingOn(a.Id));
+        Assert.Empty(await WaitingOn(b.Id));
+    }
+
+    /// <summary>
+    /// 🔴 Row d-ii, the walk's bound (<see cref="Lines.Bound"/>): a line of exactly that many links names its last part, and one a link longer
+    /// is refused <c>Unplaced</c> with a sentence naming the bound, nothing kept on any part, never kept where the walk stopped.
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task A_line_past_the_walks_bound_is_refused_with_its_sentence_and_one_at_it_reaches_its_head(bool past)
+    {
+        var parts = new List<Session> { await PartAsync() };
+        for (var link = 0; link < Lines.Bound + (past ? 1 : 0); link++) parts.Add(await PartAsync(from: parts[^1].Id));
+
+        var said = await SayToAsync(parts[0].Id);
+
+        if (!past)
+        {
+            Assert.Equal((SessionSayRefusal.Continued, parts[^1].Id), (said.Refusal, said.Head));
+            return;
+        }
+
+        Assert.Equal(SessionSayRefusal.Unplaced, said.Refusal);
+        Assert.Contains(Lines.Bound.ToString(System.Globalization.CultureInfo.InvariantCulture), said.Message, StringComparison.Ordinal);
+        foreach (var part in parts) Assert.Empty(await WaitingOn(part.Id));
+    }
+
+    /// <summary>
+    /// 🔴 Row d-ii, the refusal's place in the step: <c>Continued</c> comes after the settlement and before <c>Never</c>, <c>running</c> and a
+    /// key's waiting word. A running part its line left, asked for its run, a stood-down part and a part a key's word waits on are each refused
+    /// <c>Continued</c>, an older client's say as well as a newer one's; at the head a key's waiting word answers as kept, once.
+    /// </summary>
+    [Fact]
+    public async Task Continued_is_judged_before_never_running_and_a_key_already_waiting()
+    {
+        var running = await PartAsync(state: SessionState.Working);
+        var afterRunning = await PartAsync(from: running.Id);
+        var toRun = await SayToAsync(running.Id, running: true);
+        Assert.Equal((SessionSayRefusal.Continued, afterRunning.Id), (toRun.Refusal, toRun.Head));
+
+        var stood = await PartAsync(state: SessionState.StoodDown);
+        var afterStood = await PartAsync(from: stood.Id);
+        Assert.Equal((SessionSayRefusal.Continued, afterStood.Id), ((await SayToAsync(stood.Id)).Refusal, (await SayToAsync(stood.Id)).Head));
+
+        var waiting = await PartAsync();
+        var first = await SayToAsync(waiting.Id, key: "producer/waits");
+        Assert.Equal(SessionSayRefusal.None, first.Refusal);
+        var head = await PartAsync(from: waiting.Id);
+        var retry = await SayToAsync(waiting.Id, key: "producer/waits");
+        Assert.Equal((SessionSayRefusal.Continued, head.Id), (retry.Refusal, retry.Head));
+        Assert.False(retry.Again);
+        Assert.Equal(SessionSayRefusal.Continued, (await SayToAsync(waiting.Id, key: "producer/waits", settled: false)).Refusal);
+        Assert.Equal([first.Word!.Id], (await WaitingOn(waiting.Id)).Select(word => word.Id));
+
+        var atHead = await SayToAsync(head.Id, key: "producer/head");
+        var atHeadAgain = await SayToAsync(head.Id, key: "producer/head");
+        Assert.True(atHeadAgain.Again);
+        Assert.Equal(atHead.Word!.Id, atHeadAgain.Word!.Id);
+        Assert.Single(await WaitingOn(head.Id));
+    }
 }

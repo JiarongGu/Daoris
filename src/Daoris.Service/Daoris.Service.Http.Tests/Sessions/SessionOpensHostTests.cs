@@ -53,6 +53,32 @@ public sealed class SessionOpensHostTests(LocalHost host) : IClassFixture<LocalH
         Assert.Empty((await host.Composed.Sessions.FindAsync(id!))!.Said);
     }
 
+    /// <summary>
+    /// 🔴 Row d-ii on d-i's keyed open: once a keyed open has left a record, a say to it is refused <c>continued</c> naming the record the open
+    /// made, and the say at the opened record is kept there.
+    /// </summary>
+    [Fact]
+    public async Task A_say_to_the_record_a_keyed_open_left_is_refused_continued_naming_the_opened_record()
+    {
+        var now = DateTimeOffset.UtcNow;
+        var left = await host.Composed.Sessions.CreateAsync(null, "Keeper", "stub", now, kind: SessionKind.Chat);
+        await host.Composed.Sessions.SetStateAsync(left.Id, SessionState.Completed, null, null, null, now);
+        // A tree of its own, so another case's open conversation in Keeper's main tree holds nothing this open needs.
+        var opened = await host.PostAsync("/api/sessions/chat", new
+        {
+            repository = "Keeper", adapter = "stub", from = left.Id, opens = $"head/{Guid.NewGuid():N}", tree = $"trees/default/Keeper/s-{Guid.NewGuid():N}"[..36],
+        });
+        Assert.Equal(200, opened.Status);
+        var head = opened.Json.GetProperty("session").GetProperty("id").GetString()!;
+
+        var refused = await host.PostAsync($"/api/sessions/{left.Id}/say", new { text = "A late word." });
+
+        Assert.Equal(409, refused.Status);
+        Assert.Equal("continued", refused.Json.GetProperty("refusal").GetString());
+        Assert.Equal(head, refused.Json.GetProperty("head").GetString());
+        Assert.Empty((await host.Composed.Sessions.FindAsync(left.Id))!.Said);
+    }
+
     [Fact]
     public async Task The_protocol_and_every_marked_step_answer_the_same_host_run()
     {
