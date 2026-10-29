@@ -5,6 +5,10 @@ with the version and date at release.
 
 ## Unreleased
 
+- A landed session's tree whose only extra files are build and check output is now tidied with its landing instead of kept (TIDYOUTPUT1,
+  D218). A repository declares its own output in `daoris.gates.json` under `integration.scratch`, and a project's `bin`, `obj` and
+  `node_modules` count as output wherever they are; any other ignored file a session wrote there, a `local/` note among them, still keeps
+  the tree and is named.
 - A driven session's heavy test run and the merge queue's heavy gates now share one admission on the machine, so a session's focused test run beside a queued candidate no longer doubles the candidate's gate times into timeouts and unresolved flakes (HEAVYQUEUE1). `daoris-driver run-heavy -- <command>` runs a long test command as such a run, and a driven session is told to use it; a run that has to wait says what it waits for (who holds the machine's heavy-run places, and for how long), never times out, and a session waiting shows *waiting for the machine to admit its heavy run* on its page.
 - A terminal that finds the service busy now says so, instead of saying a variable is missing. The status door and a read are asked a second time after a second; the refusal names the address it tried, the bound, that it asked twice, and that `DAORIS_SERVICE_URL` is not the cause where the address came from the home's own record. A press that changes something is never asked again blindly, and says what to look at before you press it again (SERVICESTALL1).
 - Deleting the quest an ask published to a receiver you named no longer makes the driver publish the ask again to the repositories of its routing proposal. The ask stands with no quest and says so, for you to publish or close, and the delete's answer says what the ask now is (QUESTDELETE1).

@@ -264,6 +264,9 @@ One session's tree is brought up to date by `TreeUpdates` in `Workplace/TreeUpda
 fetched once as the person, then WSR6's replay of that tree alone, a detached one rebased in place and proved. Its answer, the
 refusals' order and their words are pure in `Workplace/Domain/TreeUpdate.cs`.
 `Workplace/` keeps its operations at the top and its pure model and rules under `Domain/` (FOUNDATION1 mod-x, D212).
+What a removal reads of a tree's ignored paths is `ContentHolds.HoldsAsync` over `TreeScratch`: the thirteen build folders, a repository's
+declared output (`integration.scratch` of the checkout's `daoris.gates.json`) and `bin`, `obj` and `node_modules` go with the tree; any other
+ignored file written after it opened keeps it, named (TREEKEEP1, TIDYOUTPUT1, D218).
 `SessionTrees` is one type, a front over classes on a shared `TreeContext` (D166's PART10i–l notes): it opens and lists trees and
 keeps its callers' one-line calls, while the landing is `TreeLands`, the removal `TreeRemovals`, a landing's tidy `TreeTidies`, the
 clean-up `TreeSweeps` and `LandedCleanups`, and the look's own tidy `AutoTidies` over `TreeSetAside`, which takes every kind of
