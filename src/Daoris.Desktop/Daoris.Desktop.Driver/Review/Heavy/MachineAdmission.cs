@@ -42,6 +42,9 @@ public sealed record AdmissionRequest(string What)
 
     /// <summary>The tree it runs in.</summary>
     public string? Tree { get; init; }
+
+    /// <summary>The entry's kind: <c>session</c> for a driven session's run, <c>queue</c> for the integration's own gates (the merge tool's kind, which <see cref="MachineAdmission.Sentence"/> names as the merge queue's).</summary>
+    public string Kind { get; init; } = "session";
 }
 
 /// <summary>
@@ -141,7 +144,7 @@ public static class MachineAdmission
         }
 
         var id = $"{Environment.ProcessId}-{Convert.ToHexStringLower(RandomNumberGenerator.GetBytes(4))}";
-        var mine = new AdmissionEntry(id, "session", Environment.ProcessId, request.What, waiting.Clock(), waiting.Clock(), request.Session, request.Repository, request.Tree);
+        var mine = new AdmissionEntry(id, request.Kind, Environment.ProcessId, request.What, waiting.Clock(), waiting.Clock(), request.Session, request.Repository, request.Tree);
         Change(file, waiting, (holds, waits) => (holds, [.. waits, mine]));
         var hold = new AdmissionHold(file, id, waiting);
         hold.Begin();
@@ -190,6 +193,28 @@ public static class MachineAdmission
         }
     }
 
+    /// <summary>
+    /// The whole admission, for a confirm run (INTEGRATE1f part f2; the integration design §4.5, C7, F34): every place the machine admits,
+    /// taken as that many ordinary entries of today's schema in one locked write, so they stand together in first-come order, wait behind
+    /// the live holds and no other ask falls between them. It answers once every one holds (<see cref="WholeTake.Held"/>); the holds it
+    /// sees while it waits are the runs it waits for, never a doubt. From then to <see cref="WholeTake.End"/> it reads the record again at
+    /// its start, at each beat and at its end: a live hold not its own, a place no longer held, a hold that does not read, or a read or a
+    /// write that fails is a doubt, and the evidence is then not conclusive (the confirm run is inconclusive, read as split).
+    /// </summary>
+    /// <remarks>
+    /// <b>A twin</b> of <c>takeWhole</c> in <c>tools/machine-admission.mjs</c>, the entries of the kind <c>queue</c>, ids
+    /// <c>&lt;pid&gt;-&lt;hex&gt;-&lt;nn&gt;</c> and one <c>since</c>. The caller lets go every place this process holds or asks before it (the
+    /// failing gate's own), which would otherwise be waited on by itself: the take refuses at once, writing nothing, where this process
+    /// holds or asks a live place, or where a hold does not read. Another process's holds, a session's <c>run-heavy</c> among them, are
+    /// waited for. A run the confirm run starts is handed the first id as <see cref="InsideVariable"/>, so it asks no place of its own.
+    /// </remarks>
+    /// <param name="halted">Whether the candidate was dropped: asked at each look while it waits, the wait then ends with every place let go.</param>
+    /// <param name="ct">Wakes the wait early; it ends nothing by itself, <paramref name="halted"/> does.</param>
+    internal static Task<WholeTake> TakeWholeAsync(
+        string home, AdmissionRequest request, TextWriter said, Func<bool> halted, CancellationToken ct, AdmissionWaiting? waiting = null, int? capacity = null,
+        Func<string, string?>? variable = null) =>
+        WholeAdmission.TakeAsync(home, request, said, halted, ct, waiting ?? AdmissionWaiting.Default, variable ?? Environment.GetEnvironmentVariable, capacity);
+
     /// <summary>What a run waits for, as a sentence (<c>waitingSentence</c>): each hold, who and what and for how long, and the runs before it.</summary>
     public static string Sentence(IReadOnlyList<AdmissionEntry> holds, int ahead, int capacity, DateTimeOffset now)
     {
@@ -225,7 +250,7 @@ public static class MachineAdmission
             ? [.. list.EnumerateArray().Select(Entry).OfType<AdmissionEntry>()]
             : [];
 
-    private static AdmissionEntry? Entry(JsonElement raw)
+    internal static AdmissionEntry? Entry(JsonElement raw)
     {
         if (raw.ValueKind != JsonValueKind.Object) return null;
         string? Text(string name) => raw.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String && !string.IsNullOrWhiteSpace(value.GetString()) ? value.GetString() : null;

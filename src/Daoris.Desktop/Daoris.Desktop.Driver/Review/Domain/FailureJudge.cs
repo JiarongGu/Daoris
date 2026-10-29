@@ -128,7 +128,11 @@ internal sealed record JudgeContext(int Members, Func<JudgedFailure, int, Prefix
 internal sealed record Placement(bool Pinned, int Member, IReadOnlyList<int> Interacting, bool Monotonic, string? Why);
 
 /// <summary>What taking the whole admission answered: held, with the function that ends it and answers its evidence, or not held, because of a drop or for a reason.</summary>
-internal sealed record WholeTake(bool Held, Func<WholeEvidence?>? End = null, bool Dropped = false, string? Why = null, WholeEvidence? Evidence = null);
+internal sealed record WholeTake(bool Held, Func<WholeEvidence?>? End = null, bool Dropped = false, string? Why = null, WholeEvidence? Evidence = null)
+{
+    /// <summary>The ids of the places the take holds (the first is what a run inside the hold is handed as the admission's hold marker); none where it holds none.</summary>
+    public IReadOnlyList<string> Ids { get; init; } = [];
+}
 
 /// <summary>The failing gate's run once more as composed: <c>pass</c>, <c>fail</c> (with the failures it had, a null for one that has no signature), or another word with its own <see cref="Why"/>.</summary>
 internal sealed record GateRerun(string? Result, string? Why = null)
