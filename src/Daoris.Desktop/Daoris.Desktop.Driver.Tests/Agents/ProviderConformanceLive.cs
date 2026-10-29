@@ -14,8 +14,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </remarks>
 internal static partial class ConformanceCases
 {
-    /// <summary>How long a live case's process is waited on: a generous bound, since the Process half runs several classes at once.</summary>
-    private static readonly TimeSpan Bound = TimeSpan.FromSeconds(90);
+    /// <summary>How long a live case's process is waited on: <see cref="Poll.Patience"/>, a bound that elapses only on failure.</summary>
+    private static readonly TimeSpan Bound = Poll.Patience;
 
     private static IEnumerable<ConformanceCase> LiveCases =>
     [

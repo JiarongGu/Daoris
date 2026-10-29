@@ -151,19 +151,7 @@ internal static class ConformanceScratch
         return folder;
     }
 
-    public static void Remove(string folder)
-    {
-        try
-        {
-            if (Directory.Exists(folder)) Directory.Delete(folder, recursive: true);
-        }
-        catch (IOException)
-        {
-        }
-        catch (UnauthorizedAccessException)
-        {
-        }
-    }
+    public static void Remove(string folder) => GitSeed.Discard(folder);
 }
 
 /// <summary>The suite's rows and their run.</summary>
