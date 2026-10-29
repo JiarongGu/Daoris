@@ -101,6 +101,24 @@ internal sealed class ChatContext(
     public ConcurrentDictionary<string, string> Browsers { get; } = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
+    /// What a new part's first message shows of the words a keyed open moved to it (FOUNDATION1d-ii part 4, the foundation design §3.4 rule 3,
+    /// O6-F2): one <c>User</c> event per moved word under its id, held from the move's hand until the door that writes that message records
+    /// it, before the write, in place of the one joined event a message's words are recorded as. Held with the message's words, so only the
+    /// message they are the display of takes them.
+    /// </summary>
+    public ConcurrentDictionary<string, (string Text, IReadOnlyList<SessionEvent> Events)> Shown { get; } = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// The moved words' events held for <paramref name="message"/> on <paramref name="sessionId"/>, taken once; null where none are held for
+    /// its words, so it is recorded as before.
+    /// </summary>
+    public IReadOnlyList<SessionEvent>? TakeShown(string sessionId, ChatMessage message) =>
+        Shown.TryGetValue(sessionId, out var held) && string.Equals(held.Text, message.Text, StringComparison.Ordinal)
+        && Shown.TryRemove(new KeyValuePair<string, (string Text, IReadOnlyList<SessionEvent> Events)>(sessionId, held))
+            ? held.Events
+            : null;
+
+    /// <summary>
     /// What each curve move's decision said, by session, from its ask to its take: the take's two lines say it (SWITCH1c-i's
     /// pair). A box taken without it (a shell come up since) says the hand-over's lines, its reason <c>curve</c>.
     /// </summary>

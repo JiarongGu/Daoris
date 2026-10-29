@@ -120,6 +120,44 @@ public sealed class CourseCensusTests
         Assert.Equal(["ChatGoOn.cs", "ChatHelperWords.cs", "Driver.cs", "SupervisorDoor.cs"], holds);
     }
 
+    /// <summary>The closed values of a site's <c>moving</c>, which says how the open of a site that hands words moves them (FOUNDATION1d-ii part 4).</summary>
+    private static readonly string[] Moving = ["moves", "part 5", "unkeyed", "no move"];
+
+    /// <summary>
+    /// FOUNDATION1d-ii part 4 (the foundation design §3.4 rule 3): every site that opens a part and hands it words names how its open moves
+    /// them, and none that does not: <c>moves</c>, its open asked to move the old part's words (<c>MovedWords.Asked</c>) and its delivery read
+    /// from the destination's moved words (<c>MovedWords.Moving</c>); <c>part 5</c>, the driven carry-on and the refused open, which
+    /// row d-ii's fifth part adopts; <c>unkeyed</c>, the hand-over and the curve, which carry no person's words and stay unkeyed until rows
+    /// f-v and h; <c>no move</c>, a site that hands words to its own record or to a fresh one, with no record left. The ended limit move's box
+    /// members that read the destination's moved words are named until row f-vi retires the box (O6-F13).
+    /// </summary>
+    [Fact]
+    public void Every_site_that_hands_words_names_how_its_open_moves_them()
+    {
+        var table = Table();
+        foreach (var site in table.GetProperty("sites").EnumerateArray())
+        {
+            var file = site.GetProperty("file").GetString()!;
+            var hands = site.GetProperty("hands").GetBoolean();
+            var named = site.TryGetProperty("moving", out var moving) ? moving.GetString() : null;
+            Assert.True(hands == (named is not null), $"{file} ({site.GetProperty("shape").GetString()}): hands {hands}, moving {named ?? "none"}");
+            if (named is null) continue;
+
+            Assert.Contains(named, Moving);
+            if (named != "moves") continue;
+            var text = WithoutComments(File.ReadAllText(Path.Combine(Root, file)));
+            Assert.True(Regex.IsMatch(text, @"\bMovedWords\.Asked\("), $"{file} is named as moving its words but asks no open to move them");
+            Assert.True(Regex.IsMatch(text, @"\bMovedWords\.(Moving|OnAsync)\("), $"{file} is named as moving its words but reads no destination's moved words");
+        }
+
+        var box = table.GetProperty("box");
+        var source = WithoutComments(File.ReadAllText(Path.Combine(Root, box.GetProperty("file").GetString()!)));
+        var members = box.GetProperty("members").EnumerateArray().Select(member => member.GetString()!).ToList();
+        Assert.Equal(["MoveEndedAsync", "DeliveredAsync", "TakeUpBoxesAsync"], members);
+        foreach (var member in members) Assert.Matches(@"\bTask(<[^>]+>)?\??\s+" + member + @"\(", source);
+        Assert.Matches(@"\bbox\.Moved\b", source);
+    }
+
     /// <summary>
     /// Path M, SWITCHCTX1's carry, has no code: the census reserves it, and fails the day a source writes a carried move, so the path is
     /// placed at its site then.

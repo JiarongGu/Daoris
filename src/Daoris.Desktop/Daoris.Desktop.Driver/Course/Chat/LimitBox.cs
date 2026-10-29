@@ -11,9 +11,17 @@ namespace Daoris.Driver;
 /// <param name="Why">The move's reason: <c>limit</c> for another account ready first, or the refusal's code that proved its own conversation lost.</param>
 /// <param name="Before">How many of the record's events stand before the first refused turn's words: the brief is composed from those alone.</param>
 /// <param name="Through">How many of the record's events there were when it was written: the refused turns' words are read within them.</param>
-/// <param name="Said">The ids of the words said while it waited, still on the old record until they are delivered.</param>
+/// <param name="Said">
+/// The ids of the words said while it waited, still on the old record until they are delivered; where <paramref name="Moved"/>, the ids of the
+/// words the new part's open moved there, which wait on the new part until they are delivered.
+/// </param>
 /// <param name="To">The new part once it opened; null before.</param>
-public sealed record LimitMoveBox(string Why, int Before, int Through, IReadOnlyList<string> Said, string? To = null);
+/// <param name="Moved">
+/// That the new part's open moved the words (FOUNDATION1d-ii part 4), so <paramref name="Said"/> names them on <paramref name="To"/>: the delivery
+/// and the come-up read and take them there, never on the old record. Written only where true, so a box from before, and an older build's
+/// reading of this one, keeps its old meaning.
+/// </param>
+public sealed record LimitMoveBox(string Why, int Before, int Through, IReadOnlyList<string> Said, string? To = null, bool Moved = false);
 
 /// <summary>
 /// The ended-record moves this home keeps (LIMITRESUME1c), read without trusting their shape and written whole, as BOM-less UTF-8
@@ -41,6 +49,7 @@ public sealed class LimitBoxes(string home)
             foreach (var id in box.Said) writer.WriteStringValue(id);
             writer.WriteEndArray();
             if (box.To is { } to) writer.WriteString("to", to);
+            if (box.Moved) writer.WriteBoolean("moved", true);
             writer.WriteEndObject();
         });
     }
@@ -52,8 +61,23 @@ public sealed class LimitBoxes(string home)
         var path = PathOf(session);
         try
         {
-            if (!File.Exists(path)) return null;
-            using var document = JsonDocument.Parse(AtomicFile.ReadText(path));
+            return File.Exists(path) ? Parse(AtomicFile.ReadText(path)) : null;
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// A box's text read as its move, or null where it does not read as one: the one reading of the format, which the move record's import
+    /// (FOUNDATION1f-i part 2) reads the bytes it took once by.
+    /// </summary>
+    public static LimitMoveBox? Parse(string text)
+    {
+        try
+        {
+            using var document = JsonDocument.Parse(text);
             var root = document.RootElement;
             if (root.ValueKind != JsonValueKind.Object || Text(root, "why") is not { Length: > 0 } why
                 || Int(root, "before") is not { } before || Int(root, "through") is not { } through)
@@ -61,9 +85,11 @@ public sealed class LimitBoxes(string home)
                 return null;
             }
 
-            return new LimitMoveBox(why, before, through, Strings(root, "said"), Text(root, "to") is { Length: > 0 } to ? to : null);
+            return new LimitMoveBox(
+                why, before, through, Strings(root, "said"), Text(root, "to") is { Length: > 0 } to ? to : null,
+                root.TryGetProperty("moved", out var moved) && moved.ValueKind == JsonValueKind.True);
         }
-        catch (Exception error) when (error is JsonException or IOException or UnauthorizedAccessException)
+        catch (JsonException)
         {
             return null;
         }

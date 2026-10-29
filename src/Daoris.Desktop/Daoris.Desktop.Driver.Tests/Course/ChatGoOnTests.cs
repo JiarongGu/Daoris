@@ -685,6 +685,25 @@ internal sealed class ChatLedger : HttpMessageHandler
     public string? Busy { get; set; }
 
     /// <summary>
+    /// The host's <c>opens</c> mark (FOUNDATION1d-ii part 4): 0 answers no protocol door, as a host before row d-i; 1 a d-i host, whose keyed
+    /// open keeps its receipt and moves nothing; 2 a host whose keyed open also moves the words its <c>moves</c> names and the person's kept
+    /// since its read, as the service's one step does (row d-ii part 3).
+    /// </summary>
+    public int Opens { get; set; }
+
+    // Each keyed open's receipt: the record it opened and the transfer it answered, answered again to a retry of its key.
+    private readonly Dictionary<string, (string Opened, JsonArray Transfer)> _receipts = new(StringComparer.Ordinal);
+
+    /// <summary>Each keyed open's key and the moves it was asked, in order: none for an unkeyed open.</summary>
+    public List<(string Key, JsonObject? Moves)> Opened { get; } = [];
+
+    /// <summary>
+    /// The records whose take answers <c>taken</c> and leaves their words, as the service's take answers a request naming words that do not wait
+    /// (FOUNDATION1d-ii part 4): what tells a reader that judges the take's answer from one that judges what the record holds after.
+    /// </summary>
+    public HashSet<string> Keeps { get; } = new(StringComparer.Ordinal);
+
+    /// <summary>
     /// Where set, called as a record moves to working, still inside the ledger's lock: what a take-back landing between the look
     /// and the move does to the record's words (SAIDBACK1d).
     /// </summary>
@@ -902,6 +921,87 @@ internal sealed class ChatLedger : HttpMessageHandler
 
     private static readonly HashSet<string> Live = ["queued", "starting", "working", "awaiting-person"];
 
+    /// <summary>A chat's record opened as the open door asks it, under the ledger's lock.</summary>
+    private JsonObject NewChat(JsonObject asked)
+    {
+        var session = new JsonObject
+        {
+            ["id"] = $"c{_sessions.Count + 1}", ["repository"] = asked["repository"]!.GetValue<string>(), ["state"] = "queued",
+            ["kind"] = "chat", ["adapter"] = asked["adapter"]!.GetValue<string>(),
+            ["harnessVersion"] = asked["harnessVersion"]?.GetValue<string>(), ["profile"] = asked["profile"]?.GetValue<string>(),
+            ["tree"] = asked["tree"]?.GetValue<string>(), ["created"] = "2026-10-03T08:00:00Z", ["said"] = new JsonArray(),
+        };
+        // The conversation it continues, why and who asked (MIXAGENT1a-iii), as the service answers them on loopback.
+        StandInLedger.Continues(session, asked);
+        _sessions.Add(session);
+        return session;
+    }
+
+    /// <summary>
+    /// A keyed open (rows d-i and d-ii part 3), under the ledger's lock: its key's receipt answered first; the record the words leave, the open's
+    /// <c>from</c> or its moves' own, refused while it runs; then the open, and at a mark of 2 the move: each word the moves name that still
+    /// waits, and each of the person's words kept there since the read and never attempted, off that record and onto the new one in their
+    /// order, each keeping its id and key, its attempt left behind; the receipt keeps the transfer.
+    /// </summary>
+    private (HttpStatusCode, string) KeyedOpen(string key, JsonObject asked)
+    {
+        Opened.Add((key, asked["moves"]?.DeepClone().AsObject()));
+        if (_receipts.TryGetValue(key, out var kept))
+        {
+            return (HttpStatusCode.OK, new JsonObject
+            {
+                ["session"] = Find(kept.Opened).DeepClone(), ["message"] = "opened before", ["opens"] = key, ["transfer"] = kept.Transfer.DeepClone(),
+            }.ToJsonString());
+        }
+
+        var moves = Opens >= 2 ? asked["moves"]?.AsObject() : null;
+        var left = asked["from"]?.GetValue<string>() ?? moves?["from"]?.GetValue<string>();
+        if (left is not null && Live.Contains(Find(left)["state"]!.GetValue<string>()))
+        {
+            return (HttpStatusCode.Conflict, new JsonObject
+            {
+                ["session"] = null, ["message"] = $"Session `{left}` cannot be left.", ["opens"] = key, ["transfer"] = new JsonArray(),
+                ["error"] = $"Session `{left}` cannot be left.", ["code"] = "superseded",
+            }.ToJsonString());
+        }
+
+        var session = NewChat(asked);
+        var transfer = new JsonArray();
+        if (moves is not null && left is not null)
+        {
+            var named = moves["words"]!.AsArray().Select(word => word!.GetValue<string>()).ToHashSet(StringComparer.Ordinal);
+            var read = moves["read"]!.AsArray().Select(word => word!.GetValue<string>()).ToHashSet(StringComparer.Ordinal);
+            var source = Find(left);
+            var moved = new List<JsonObject>();
+            var stays = new JsonArray();
+            foreach (var word in source["said"]!.AsArray().Select(each => each!.DeepClone().AsObject()))
+            {
+                var id = word["id"]!.GetValue<string>();
+                var persons = word["helper"] is null && word["from"] is null && word["by"] is null;
+                if (named.Contains(id) || (persons && word["attempt"] is null && !read.Contains(id))) moved.Add(word);
+                else stays.Add(word);
+            }
+
+            source["said"] = stays;
+            foreach (var word in moved)
+            {
+                word.Remove("attempt");
+                var id = word["id"]!.GetValue<string>();
+                var element = new JsonObject { ["word"] = id, ["id"] = id, ["transfer"] = $"{key}/{id}", ["order"] = transfer.Count };
+                if (word["key"]?.GetValue<string>() is { Length: > 0 } producer) element["key"] = producer;
+                transfer.Add(element);
+            }
+
+            session["said"] = new JsonArray([.. moved]);
+        }
+
+        _receipts[key] = (session["id"]!.GetValue<string>(), transfer);
+        return (HttpStatusCode.OK, new JsonObject
+        {
+            ["session"] = session.DeepClone(), ["message"] = "opened", ["opens"] = key, ["transfer"] = transfer.DeepClone(),
+        }.ToJsonString());
+    }
+
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
     {
         var body = request.Content is null ? null : await request.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
@@ -979,19 +1079,16 @@ internal sealed class ChatLedger : HttpMessageHandler
                     return (HttpStatusCode.OK, new JsonObject { ["session"] = session.DeepClone(), ["message"] = "kept" }.ToJsonString());
                 }
 
+                // FOUNDATION1d-ii part 4: the marks a host answers, none before row d-i.
+                case ("GET", "/api/protocol") when Opens > 0:
+                    return (HttpStatusCode.OK, new JsonObject { ["run"] = "chat-ledger", ["marks"] = new JsonObject { ["opens"] = Opens } }.ToJsonString());
+
+                case ("POST", "/api/sessions/chat") when Opens > 0 && JsonNode.Parse(body!)!["opens"]?.GetValue<string>() is { Length: > 0 } key:
+                    return KeyedOpen(key, JsonNode.Parse(body!)!.AsObject());
+
                 case ("POST", "/api/sessions/chat"):
                 {
-                    var asked = JsonNode.Parse(body!)!;
-                    var session = new JsonObject
-                    {
-                        ["id"] = $"c{_sessions.Count + 1}", ["repository"] = asked["repository"]!.GetValue<string>(), ["state"] = "queued",
-                        ["kind"] = "chat", ["adapter"] = asked["adapter"]!.GetValue<string>(),
-                        ["harnessVersion"] = asked["harnessVersion"]?.GetValue<string>(), ["profile"] = asked["profile"]?.GetValue<string>(),
-                        ["tree"] = asked["tree"]?.GetValue<string>(), ["created"] = "2026-10-03T08:00:00Z", ["said"] = new JsonArray(),
-                    };
-                    // The conversation it continues, why and who asked (MIXAGENT1a-iii), as the service answers them on loopback.
-                    StandInLedger.Continues(session, asked.AsObject());
-                    _sessions.Add(session);
+                    var session = NewChat(JsonNode.Parse(body!)!.AsObject());
                     return (HttpStatusCode.OK, new JsonObject { ["session"] = session.DeepClone(), ["message"] = "opened" }.ToJsonString());
                 }
 
@@ -1118,8 +1215,12 @@ internal sealed class ChatLedger : HttpMessageHandler
                     var asked = JsonNode.Parse(body!)!;
                     var ids = asked["said"]!.AsArray().Select(word => word!.GetValue<string>()).ToList();
                     var session = Find(id);
-                    session["said"] = new JsonArray([.. session["said"]!.AsArray()
-                        .Where(word => !ids.Contains(word!["id"]!.GetValue<string>())).Select(word => word!.DeepClone())]);
+                    if (!Keeps.Contains(id))
+                    {
+                        session["said"] = new JsonArray([.. session["said"]!.AsArray()
+                            .Where(word => !ids.Contains(word!["id"]!.GetValue<string>())).Select(word => word!.DeepClone())]);
+                    }
+
                     Taken.Add((id, string.Join(',', ids)));
                     TakenBy.Add((id, string.Join(',', ids), asked["by"]?.GetValue<string>()));
                     return (HttpStatusCode.OK, """{"message":"taken"}""");
