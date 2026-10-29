@@ -165,6 +165,19 @@ public sealed class DriverModuleTreesWordsTests : DriverModuleBridge
         Assert.Equal(answer.GetProperty("done").GetBoolean() ? 0 : 1, Said(answer).Code);
     }
 
+    /// <summary><c>trees remove &lt;landing branch&gt; --why</c> (LANDRETIRE1): the route's answer says what the verb says, a refusal as words, exit 1.</summary>
+    [Fact]
+    public async Task A_withdrawn_landing_branch_is_said_in_the_words_of_the_remove_verb()
+    {
+        var answer = await AnswerAsync(await ComeUpAsync(), "WITHDRAW_LANDING_BRANCH", new { repository = "engine", branch = "quest/row-1", why = "by hand" });
+
+        var message = answer.GetProperty("message").GetString()!;
+        var withdrawal = new LandedWithdrawal(answer.GetProperty("done").GetBoolean(), message);
+        Assert.Equal(TreesWords.Withdraw(withdrawal).Out, Said(answer).Out);
+        Assert.Equal([$"trees: {message}"], Said(answer).Out);
+        Assert.Equal(1, Said(answer).Code);
+    }
+
     /// <summary><c>trees remove &lt;named&gt;</c> (RPC1b4): a session or a branch by one name, with the repository only where it must say.</summary>
     [Fact]
     public async Task A_branch_discard_naming_a_branch_or_a_session_says_what_the_verb_says()

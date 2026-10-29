@@ -366,6 +366,40 @@ public sealed class LinesRoutes(DriverContext context)
         return new { Repository = repository, Branch = branch, Done = removal.Removed, removal.Message, Said = TreesWords.Remove(removal).ToWire() };
     }
 
+    // Withdrawing a landing's branch the line will never hold (LANDRETIRE1, D102's note of it), beside the clean-up whose `Differs` rows it
+    // answers: `trees clean` keeps such a branch for ever, so this is the person's saying so. `daoris-driver trees remove <landing branch>
+    // --why "…"` is the terminal's door (D50), and both end in the driver's one withdrawal (`LandedBranchWithdrawal`). The page's own press
+    // and the steward's act are LANDRETIRE1's part 2 and a later one: nothing on the page calls this route yet.
+    /// <summary>
+    /// Withdraw a branch a landing made, by its name and its repository: its commits kept on a recovery ref, the branch deleted at the commit
+    /// judged, and its record saying why.
+    /// </summary>
+    /// <remarks>
+    /// A refusal is an ANSWER, as a discard's is: `{ done, planned, message, said }` with the driver's sentence, `keptRef` where it went. The
+    /// line holding its work, a pull request that may carry it, a tree having it checked out, a branch of the person's and a name no landing
+    /// recorded are refused; `plan: true` says what it would do and changes nothing. Only the process holding the home's lease acts, which the
+    /// running desktop does (<see cref="LandedBranchWithdrawal"/>).
+    /// </remarks>
+    [DriverRoute("WITHDRAW_LANDING_BRANCH")]
+    [Publishes("WITHDRAW_LANDING_BRANCH", Moves)]
+    private async Task<object?> WithdrawLandingBranchAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var repository = PayloadHelper.GetRequiredValue<string>(request.Payload, "repository");
+        var branch = PayloadHelper.GetRequiredValue<string>(request.Payload, "branch");
+        var why = Optional(request, "why") ?? "";
+        var plan = Flag(request, "plan");
+        var service = _loop.Service ?? throw NotReady();
+
+        var withdrawal = await new LandedBranchWithdrawal(new SessionTrees(_loop.Home), _loop.Home)
+            .WithdrawAsync(service, repository, branch, why, plan, cancellationToken);
+        if (!plan) _loop.Nudge();
+        return new
+        {
+            Repository = repository, Branch = branch, Done = withdrawal.Done, Planned = withdrawal.Planned, withdrawal.Message, withdrawal.KeptRef,
+            Said = TreesWords.Withdraw(withdrawal).ToWire(),
+        };
+    }
+
     // The person's delete of the recovery refs nothing holds (RECOVERYDROP1, D102's CLEANUP1 note): CLEANUP1 keeps such a ref at any
     // age until they say so, and this is their saying, the page's half of `daoris-driver work recovery drop`. Both doors end in
     // RecoveryDropping.PressAsync, which re-reads the holders at the moment of the delete.

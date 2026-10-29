@@ -20,6 +20,8 @@ export const DECLARED: Readonly<Record<string, { scopes: readonly string[]; sess
   HANDOFF: { scopes: ['handOff', 'sweep'], session: 'id' },
   SWEEP: { scopes: ['sessions', 'landing', 'diff', 'handOff', 'sweep', 'treesSync'] },
   DISCARD_SESSION_BRANCH: { scopes: ['sessions', 'landing', 'diff', 'handOff', 'sweep', 'treesSync'] },
+  // LANDRETIRE1: a landing's branch the line will never hold, withdrawn; it moves what the clean-up lists and the work state reads.
+  WITHDRAW_LANDING_BRANCH: { scopes: ['sessions', 'landing', 'diff', 'handOff', 'sweep', 'treesSync'] },
   // RECOVERYDROP1: the person's delete of the recovery refs nothing holds; the work state asks again with the landings and the sweep.
   RECOVERY_DROP: { scopes: ['sessions', 'landing', 'diff', 'handOff', 'sweep', 'treesSync'] },
   TREES_SYNC: { scopes: ['sessions', 'landing', 'diff', 'handOff', 'sweep', 'treesSync'] },

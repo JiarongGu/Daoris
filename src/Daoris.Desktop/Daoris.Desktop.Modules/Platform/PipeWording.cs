@@ -168,6 +168,7 @@ public static class PipeWording
         Row("HANDOFF", W("repository", PipeRole.Repository));
         Row("DISCARD_SESSION_BRANCH", W("repository", PipeRole.Repository));
         Row("RECOVERY_DROP", W("repository", PipeRole.Repository));
+        Row("WITHDRAW_LANDING_BRANCH", W("repository", PipeRole.Repository), W("why", PipeRole.Words));
         Row("TREES_SYNC", W("repository", PipeRole.Repository));
         Row("SETUP_PRESS", W("repository", PipeRole.Repository));
         Row("WORKFLOW_LANDED", W("repository", PipeRole.Repository));
