@@ -19,10 +19,11 @@ const ATOMS = new Set<string>(['./design/ui.tsx']);
 
 /**
  * What else may import one, and which. The application's root mounts the one tooltip provider every `Tip`
- * needs (`main.tsx`); it renders no pixel of its own.
+ * needs (`PageRoot.tsx`, which `main.tsx` renders inside the error screen since PAGELOOP1); it renders no pixel
+ * of its own.
  */
 const ROOTS: Record<string, readonly string[]> = {
-  './main.tsx': ['@radix-ui/react-tooltip'],
+  './app/PageRoot.tsx': ['@radix-ui/react-tooltip'],
 };
 
 /** Tests, stories and the test harness mount the same provider the root does, and ship nothing. */
@@ -54,9 +55,12 @@ describe('the atoms own the primitives', () => {
       .toHaveLength(1);
     expect(reachers([['./map/Lines.tsx', "const menu = await import('@radix-ui/react-dropdown-menu');\n"]])).toHaveLength(1);
     // The root may mount the tooltip provider, and nothing else.
-    expect(reachers([['./main.tsx', "import * as Tooltip from '@radix-ui/react-tooltip';\n"]])).toEqual([]);
-    expect(reachers([['./main.tsx', "import * as Dialog from '@radix-ui/react-dialog';\n"]]))
-      .toEqual(['./main.tsx imports @radix-ui/react-dialog']);
+    expect(reachers([['./app/PageRoot.tsx', "import * as Tooltip from '@radix-ui/react-tooltip';\n"]])).toEqual([]);
+    expect(reachers([['./app/PageRoot.tsx', "import * as Dialog from '@radix-ui/react-dialog';\n"]]))
+      .toEqual(['./app/PageRoot.tsx imports @radix-ui/react-dialog']);
+    // The entry point is no root any more: it mounts the page root, and imports no primitive.
+    expect(reachers([['./main.tsx', "import * as Tooltip from '@radix-ui/react-tooltip';\n"]]))
+      .toEqual(['./main.tsx imports @radix-ui/react-tooltip']);
     // The atoms may import any.
     expect(reachers([['./design/ui.tsx', "import * as Menu from '@radix-ui/react-dropdown-menu';\n"]])).toEqual([]);
     // And the atoms' own import is no primitive.
@@ -71,7 +75,7 @@ describe('the atoms own the primitives', () => {
   it('is looking at files at all — a vacuous check is a check that has stopped working', () => {
     expect(shipped.length).toBeGreaterThan(50);
     expect(shipped.some(([path]) => path === './design/ui.tsx')).toBe(true);
-    expect(shipped.some(([path]) => path === './main.tsx')).toBe(true);
+    expect(shipped.some(([path]) => path === './app/PageRoot.tsx')).toBe(true);
   });
 
   it('holds: no screen imports a primitive, only the atoms do', () => {
