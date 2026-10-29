@@ -58,6 +58,87 @@ public sealed record LandingRule(
     /// rest of it; a door with no field for it keeps it (<see cref="DriverConfig.WithLanding"/>). <see cref="NodeGraphHomes"/> reads it.
     /// </summary>
     public string? Cycle { get; init; }
+
+    /// <summary>
+    /// How this install integrates the repository's line (INTEGRATE1d; D215 point 2, the integration design §4.1): only on a branch
+    /// rule with no plugin and no <see cref="Squash"/>, inherited whole with the rule (D164), so a build that knows no
+    /// <c>integrate</c> reads the rule as the branch rule it is and merges nothing. Null is none: the branch is the result, as
+    /// always. A door with no field for it keeps it (<see cref="DriverConfig.WithLanding"/>); only
+    /// <see cref="DriverConfig.WithLandingIntegrate"/> sets or clears it. Nothing acts on it yet.
+    /// </summary>
+    public LandingIntegrate? Integrate { get; init; }
+}
+
+/// <summary>
+/// The install's half of integration, a branch rule's <c>integrate</c> (INTEGRATE1d; the integration design §4.1's <i>install's
+/// half</i>, §17.7): each key as written, null where absent, so its reader reads the design's <i>Absent</i> column
+/// (<see cref="Resolved"/>). <c>request</c> and <c>conflicts</c> are the unit's process, read under Current from here and under a
+/// named workflow from its <c>integrate</c> step; the rest say how the line is integrated, and stay the rule's always.
+/// </summary>
+/// <param name="Request">Who requests: <see cref="Owner"/>, <see cref="Done"/> (through the rule's own <c>autoAccept</c>), or <see cref="Steward"/>.</param>
+/// <param name="Commit">How each member lands: <see cref="Merge"/>, <see cref="Rebase"/> or <see cref="Squash"/>.</param>
+/// <param name="Batch">Members per candidate, 1 to <see cref="MaxBatch"/>.</param>
+/// <param name="Order"><see cref="Arrival"/>, or <see cref="Apart"/>.</param>
+/// <param name="Gates"><see cref="Declared"/> (the accepted declaration's <c>integration.gates</c>), or <see cref="NoGates"/>.</param>
+/// <param name="Unreached">What an unconfirmed failure no member reaches does: <see cref="Split"/>, <see cref="Hold"/> or <see cref="Land"/>.</param>
+/// <param name="Reached">What an unconfirmed failure a member reaches does, the same three.</param>
+/// <param name="Conflicts">Where a conflict of meaning goes: the member's <see cref="Session"/>, or held (<see cref="Hold"/>).</param>
+/// <param name="Overlap">A start whose declared paths meet an open quest's: <see cref="Warn"/>, or <see cref="Wait"/>.</param>
+/// <param name="Line">The line by name; null for the repository's canonical line.</param>
+public sealed record LandingIntegrate(
+    string? Request = null, string? Commit = null, int? Batch = null, string? Order = null, string? Gates = null,
+    string? Unreached = null, string? Reached = null, string? Conflicts = null, string? Overlap = null, string? Line = null)
+{
+    public const string Owner = "owner";
+    public const string Done = "done";
+    public const string Steward = "steward";
+    public const string Merge = "merge";
+    public const string Rebase = "rebase";
+    public const string Squash = "squash";
+    public const string Arrival = "arrival";
+    public const string Apart = "apart";
+    public const string Declared = "declared";
+    public const string NoGates = "none";
+    public const string Split = "split";
+    public const string Hold = "hold";
+    public const string Land = "land";
+    public const string Session = "session";
+    public const string Warn = "warn";
+    public const string Wait = "wait";
+
+    /// <summary>The most members one candidate holds.</summary>
+    public const int MaxBatch = 8;
+
+    public static IReadOnlyList<string> Requests { get; } = [Owner, Done, Steward];
+    public static IReadOnlyList<string> Commits { get; } = [Merge, Rebase, Squash];
+    public static IReadOnlyList<string> Orders { get; } = [Arrival, Apart];
+    public static IReadOnlyList<string> GateChoices { get; } = [Declared, NoGates];
+    public static IReadOnlyList<string> Unconfirmeds { get; } = [Split, Hold, Land];
+    public static IReadOnlyList<string> ConflictChoices { get; } = [Session, Hold];
+    public static IReadOnlyList<string> Overlaps { get; } = [Warn, Wait];
+
+    /// <summary>
+    /// Every absent key read as the design's <i>Absent</i> column: requested by the owner, each member merged, eight members where
+    /// gates run and one where none, in arrival order, no gates, an unconfirmed failure split either way, a conflict to the member's
+    /// session, an overlap warned of; the line stays null, the repository's canonical one.
+    /// </summary>
+    public LandingIntegrate Resolved()
+    {
+        var gates = Gates ?? NoGates;
+        return new(Request ?? Owner, Commit ?? Merge, Batch ?? (gates == Declared ? MaxBatch : 1), Order ?? Arrival, gates,
+            Unreached ?? Split, Reached ?? Split, Conflicts ?? Session, Overlap ?? Warn, Line);
+    }
+
+    /// <summary>
+    /// What an unconfirmed failure does for a unit a member reaches or not (the design §4.5): <see cref="Split"/> where absent, and
+    /// where <see cref="Land"/> is set on a line no whole-set verification runs on, since <c>land</c> is only ever the owner's choice
+    /// backed by one.
+    /// </summary>
+    public string Unconfirmed(bool reached, bool wholeSet)
+    {
+        var said = (reached ? Reached : Unreached) ?? Split;
+        return said == Land && !wholeSet ? Split : said;
+    }
 }
 
 /// <summary>
@@ -105,9 +186,19 @@ public static class LandingKey
 
     /// <summary>
     /// What is wrong with a rule's shape, in a sentence, or null when it can land work. Whether its plugin
-    /// is on this machine is <see cref="PluginProblem"/>'s question: a file stays readable wherever it is.
+    /// is on this machine is <see cref="PluginProblem"/>'s question: a file stays readable wherever it is. A rule carrying
+    /// <c>integrate</c> is judged as though no whole-set verification ran on its line (<see cref="Problem(LandingRule, bool)"/>).
     /// </summary>
-    public static string? Problem(LandingRule rule) => rule.Form switch
+    public static string? Problem(LandingRule rule) => Problem(rule, wholeSet: false);
+
+    /// <summary>
+    /// What is wrong with a rule's shape, its <c>integrate</c> with it (INTEGRATE1d, the integration design §11 row d), in a sentence,
+    /// or null when it can land work; <paramref name="wholeSet"/> says whether a whole-set verification runs on the line it integrates,
+    /// without which an unconfirmed failure is never landed.
+    /// </summary>
+    public static string? Problem(LandingRule rule, bool wholeSet) => FormProblem(rule) ?? IntegrateProblem(rule, wholeSet);
+
+    private static string? FormProblem(LandingRule rule) => rule.Form switch
     {
         // A merge makes no branch, and the plugin starts from the branch Daoris made (D100).
         LandingForm.Merge when rule.Plugin is not null =>
@@ -252,6 +343,185 @@ public static class LandingKey
         }
     }
 
+    // INTEGRATE1d: the sentences a rule's `integrate` is refused in (the integration design §4.1, §11 row d).
+
+    internal const string IntegrateShape =
+        "`integrate` is an object: `request`, `commit`, `batch`, `order`, `gates`, `unconfirmed`, `conflicts`, `overlap` and `line`.";
+
+    internal const string UnconfirmedShape = "`integrate.unconfirmed` is an object: `unreached` and `reached`, each `split`, `hold` or `land`.";
+
+    internal const string BatchShape = "`integrate.batch` is how many members a candidate holds, 1 to 8.";
+
+    internal const string IntegrateBesidePlugin =
+        "`integrate` is refused beside a plugin — a pull request is its platform's integration. Take the plugin off the rule to integrate "
+        + "here, or `integrate` off to open pull requests.";
+
+    internal const string IntegrateOnMerge =
+        "`integrate` rides a branch rule, never a merge rule — a build that knows no `integrate` merges a merge rule on the press, ungated. "
+        + "`branch <pattern>` is the form that carries it.";
+
+    internal const string IntegrateBesideSquash =
+        "the rule's own `squash` is refused beside `integrate` — `integrate`'s `commit: squash` makes one commit per member.";
+
+    internal const string DoneWithoutAutoAccept =
+        "`request: done` is the quest's done through the rule's `autoAccept`, which is off — turn it on (`--auto-accept`), or request as `owner`.";
+
+    internal const string DoneWithoutGates =
+        "`request: done` needs `gates: declared` — work merged into the line with neither a press nor a check is refused.";
+
+    internal const string StewardWithoutGates = "`request: steward` needs `gates: declared` — a role's act never lands ungated work on the line.";
+
+    internal const string LandWithoutWholeSet =
+        "`unconfirmed: land` is refused where no whole-set verification runs on the line — here, a landed route naming a verification "
+        + "pipeline whose gates you accepted. A failure that does not recur splits.";
+
+    private static string Listed(IReadOnlyList<string> choices) =>
+        string.Join(", ", choices.Take(choices.Count - 1).Select(choice => $"`{choice}`")) + $" or `{choices[^1]}`";
+
+    private static string ChoiceShape(string key, IReadOnlyList<string> choices) => $"`integrate.{key}` is {Listed(choices)}.";
+
+    private static string ChoiceProblem(string key, IReadOnlyList<string> choices, string value) =>
+        $"`integrate.{key}` is {Listed(choices)}, and `{value}` is none.";
+
+    /// <summary>
+    /// What is wrong with a rule's <c>integrate</c>, in a sentence, or null where it has none or it can integrate (the integration design
+    /// §4.1, §11 row d): refused on a merge rule, beside a plugin and beside the rule's own <c>squash</c>; each key one of its values;
+    /// <c>request: done</c> without the rule's <c>autoAccept</c> or without <c>gates: declared</c>; <c>request: steward</c> without
+    /// <c>gates: declared</c>; and <c>land</c> for an unconfirmed failure where no whole-set verification runs on the line. Whether the
+    /// accepted declaration names a gate is the acceptance's question, asked where the request is made.
+    /// </summary>
+    private static string? IntegrateProblem(LandingRule rule, bool wholeSet)
+    {
+        if (rule.Integrate is not { } integrate) return null;
+        // An older build merges a merge rule on the press, ungated, whatever it carries (D215 point 3).
+        if (rule.Form == LandingForm.Merge) return IntegrateOnMerge;
+        // A pull request is the platform's integration (F17).
+        if (rule.Plugin is not null) return IntegrateBesidePlugin;
+        if (rule.Squash) return IntegrateBesideSquash;
+        var unknown = Unknown("request", LandingIntegrate.Requests, integrate.Request)
+            ?? Unknown("commit", LandingIntegrate.Commits, integrate.Commit)
+            ?? (integrate.Batch is < 1 or > LandingIntegrate.MaxBatch ? BatchShape : null)
+            ?? Unknown("order", LandingIntegrate.Orders, integrate.Order)
+            ?? Unknown("gates", LandingIntegrate.GateChoices, integrate.Gates)
+            ?? Unknown("unconfirmed.unreached", LandingIntegrate.Unconfirmeds, integrate.Unreached)
+            ?? Unknown("unconfirmed.reached", LandingIntegrate.Unconfirmeds, integrate.Reached)
+            ?? Unknown("conflicts", LandingIntegrate.ConflictChoices, integrate.Conflicts)
+            ?? Unknown("overlap", LandingIntegrate.Overlaps, integrate.Overlap)
+            ?? (integrate.Line is { } line && !BranchName.IsValid(line)
+                ? $"`integrate.line` is the line by name, and `{line}` is not a branch name git would take."
+                : null);
+        if (unknown is not null) return unknown;
+
+        var gated = integrate.Gates == LandingIntegrate.Declared;
+        // A merge with neither a press nor a check is what D145 point 1 guards; a role's act landing ungated work is a landing (D209).
+        if (integrate.Request == LandingIntegrate.Done && !rule.AutoAccept) return DoneWithoutAutoAccept;
+        if (integrate.Request == LandingIntegrate.Done && !gated) return DoneWithoutGates;
+        if (integrate.Request == LandingIntegrate.Steward && !gated) return StewardWithoutGates;
+        // The confirm run is evidence, not proof: `land` is the owner's choice only where a whole-set verification backs it (C6, F14).
+        return !wholeSet && (integrate.Unreached == LandingIntegrate.Land || integrate.Reached == LandingIntegrate.Land) ? LandWithoutWholeSet : null;
+
+        static string? Unknown(string key, IReadOnlyList<string> choices, string? value) =>
+            value is null || choices.Contains(value, StringComparer.Ordinal) ? null : ChoiceProblem(key, choices, value);
+    }
+
+    /// <summary>
+    /// A rule's <c>integrate</c> as the file holds it, each key as written, or null with <paramref name="problem"/> where it does not
+    /// read: no object, a key's value not text (<c>batch</c> not a whole number, <c>unconfirmed</c> not an object). A key written null
+    /// is absent, and one this build does not know is passed over, as every key a rule does not know is. Its values are judged by
+    /// <see cref="Problem(LandingRule, bool)"/>.
+    /// </summary>
+    internal static LandingIntegrate? IntegrateOf(JsonElement value, out string? problem)
+    {
+        problem = null;
+        if (value.ValueKind != JsonValueKind.Object)
+        {
+            problem = IntegrateShape;
+            return null;
+        }
+
+        static string? Choice(JsonElement holder, string key, string named, IReadOnlyList<string> choices, ref string? said)
+        {
+            if (said is not null || !holder.TryGetProperty(key, out var field) || field.ValueKind == JsonValueKind.Null) return null;
+            if (field.ValueKind == JsonValueKind.String) return field.GetString();
+            said = ChoiceShape(named, choices);
+            return null;
+        }
+
+        string? said = null;
+        var request = Choice(value, "request", "request", LandingIntegrate.Requests, ref said);
+        var commit = Choice(value, "commit", "commit", LandingIntegrate.Commits, ref said);
+        int? batch = null;
+        if (said is null && value.TryGetProperty("batch", out var members) && members.ValueKind != JsonValueKind.Null)
+        {
+            if (members.ValueKind == JsonValueKind.Number && members.TryGetInt32(out var count)) batch = count;
+            else said = BatchShape;
+        }
+
+        var order = Choice(value, "order", "order", LandingIntegrate.Orders, ref said);
+        var gates = Choice(value, "gates", "gates", LandingIntegrate.GateChoices, ref said);
+        string? unreached = null, reached = null;
+        if (said is null && value.TryGetProperty("unconfirmed", out var unconfirmed) && unconfirmed.ValueKind != JsonValueKind.Null)
+        {
+            if (unconfirmed.ValueKind != JsonValueKind.Object) said = UnconfirmedShape;
+            else
+            {
+                unreached = Choice(unconfirmed, "unreached", "unconfirmed.unreached", LandingIntegrate.Unconfirmeds, ref said);
+                reached = Choice(unconfirmed, "reached", "unconfirmed.reached", LandingIntegrate.Unconfirmeds, ref said);
+            }
+        }
+
+        var conflicts = Choice(value, "conflicts", "conflicts", LandingIntegrate.ConflictChoices, ref said);
+        var overlap = Choice(value, "overlap", "overlap", LandingIntegrate.Overlaps, ref said);
+        string? line = null;
+        if (said is null && value.TryGetProperty("line", out var lineValue) && lineValue.ValueKind != JsonValueKind.Null)
+        {
+            if (lineValue.ValueKind == JsonValueKind.String) line = lineValue.GetString();
+            else said = "`integrate.line` is the line by name.";
+        }
+
+        if (said is not null)
+        {
+            problem = said;
+            return null;
+        }
+
+        return new LandingIntegrate(request, commit, batch, order, gates, unreached, reached, conflicts, overlap, line);
+    }
+
+    /// <summary>
+    /// Why a rule's <c>integrate</c>, as the file holds it, is passed over (INTEGRATE1d): it does not read, or the rule refuses it; null
+    /// where the rule carries none, or it reads. The rule itself stands either way, as a build that knows no <c>integrate</c> reads it;
+    /// Setup's row says this sentence.
+    /// </summary>
+    internal static string? IntegrateRefused(JsonElement value)
+    {
+        Read(value, out _, out var refused);
+        return refused;
+    }
+
+    private static void WriteIntegrate(Utf8JsonWriter writer, LandingIntegrate integrate)
+    {
+        writer.WriteStartObject("integrate");
+        // Each written only when set, in the design's order: absent reads the Absent column (LandingIntegrate.Resolved).
+        if (integrate.Request is not null) writer.WriteString("request", integrate.Request);
+        if (integrate.Commit is not null) writer.WriteString("commit", integrate.Commit);
+        if (integrate.Batch is { } batch) writer.WriteNumber("batch", batch);
+        if (integrate.Order is not null) writer.WriteString("order", integrate.Order);
+        if (integrate.Gates is not null) writer.WriteString("gates", integrate.Gates);
+        if (integrate.Unreached is not null || integrate.Reached is not null)
+        {
+            writer.WriteStartObject("unconfirmed");
+            if (integrate.Unreached is not null) writer.WriteString("unreached", integrate.Unreached);
+            if (integrate.Reached is not null) writer.WriteString("reached", integrate.Reached);
+            writer.WriteEndObject();
+        }
+
+        if (integrate.Conflicts is not null) writer.WriteString("conflicts", integrate.Conflicts);
+        if (integrate.Overlap is not null) writer.WriteString("overlap", integrate.Overlap);
+        if (integrate.Line is not null) writer.WriteString("line", integrate.Line);
+        writer.WriteEndObject();
+    }
+
     /// <summary>
     /// A pattern filled with one session's names. A name that is empty — a title that was only a web address leaves no slug —
     /// takes with it the separator (<c>-</c>, <c>_</c>, <c>.</c>, <c>/</c>) it would leave doubled, leading or trailing, keeping a
@@ -320,6 +590,8 @@ public static class LandingKey
             if (rule.AutoAccept) writer.WriteBoolean("autoAccept", true);
             // Written only when on (PROCESS1b-ii): absent is the branch at the session's own commits. The CLI writes it here too.
             if (rule.Squash) writer.WriteBoolean("squash", true);
+            // Written only when set (INTEGRATE1d), after the rule's switches and before its cycle: absent is no integration, the branch the result.
+            if (rule.Integrate is { } integrate) WriteIntegrate(writer, integrate);
             // Written only when set (FABRIC-GRAPH1), last, as written: absent is the default cycle, today's. The CLI writes it here too.
             if (rule.Cycle is not null) CycleText.Write(writer, "cycle", rule.Cycle);
             writer.WriteEndObject();
@@ -356,9 +628,13 @@ public static class LandingKey
     /// — and is null for a rule written null, which is none. Both readers skip such a rule, and <see cref="NodeGraphHomes.Strays"/> says it;
     /// <c>daoris-driver driver list</c> says it too.
     /// </summary>
-    internal static LandingRule? RuleOf(JsonElement value, out string? unread)
+    internal static LandingRule? RuleOf(JsonElement value, out string? unread) => Read(value, out unread, out _);
+
+    /// <summary><see cref="RuleOf"/>, and why the rule's <c>integrate</c> was passed over where it was (<see cref="IntegrateRefused"/>).</summary>
+    private static LandingRule? Read(JsonElement value, out string? unread, out string? integrateRefused)
     {
         unread = null;
+        integrateRefused = null;
         if (value.ValueKind == JsonValueKind.Null) return null;
         if (value.ValueKind != JsonValueKind.Object)
         {
@@ -382,7 +658,18 @@ public static class LandingKey
         // FABRIC-GRAPH1: the cycle is kept as written whether or not it is a graph that holds, said where it is read, so a mistyped end
         // never changes how the work lands; only null is none (the review's finding 2: `[]` was dropped).
         if (value.TryGetProperty("cycle", out var cycle) && cycle.ValueKind != JsonValueKind.Null) rule = rule with { Cycle = CycleText.Compact(cycle) };
-        if (Problem(rule) is not { } problem) return rule;
+        // INTEGRATE1d: an `integrate` that does not read, or that the rule refuses, is passed over and the rest of the rule stands, as a
+        // build that knows no `integrate` reads it: dropping the rule would land the work by its workspace's rule or a merge unasked.
+        // `land` is kept as written, whatever runs on the line now: it is judged at the door that sets it and where integration reads
+        // it (LandingIntegrate.Unconfirmed), never lost for a route set later.
+        if (value.TryGetProperty("integrate", out var integrate) && integrate.ValueKind != JsonValueKind.Null)
+        {
+            var read = IntegrateOf(integrate, out integrateRefused);
+            if (read is not null && IntegrateProblem(rule with { Integrate = read }, wholeSet: true) is { } refused) integrateRefused = refused;
+            else if (read is not null) rule = rule with { Integrate = read };
+        }
+
+        if (Problem(rule, wholeSet: true) is not { } problem) return rule;
         unread = rule.Form.Length == 0 ? "it names no `form`, `merge` or `branch`." : problem;
         return null;
     }

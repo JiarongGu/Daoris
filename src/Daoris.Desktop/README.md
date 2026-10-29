@@ -117,7 +117,11 @@ The driver's `Workplace/` owns trees, git, landing, keeping and session history,
 and tests mirrored under `Driver.Tests/Workplace/`. Namespaces remain `Daoris.Driver`; D212 records its remaining upward cuts.
 Workplace retains landing plans, their replay graph, process wording and git preparation. A landing's replay settles by the
 merge base the backlog and each row table the line's `daoris.gates.json` declares `by: rows` (`BacklogMerge`), and sets apart
-what a union merge joined (`UnionJoins`); each twins the merge tool's rule over one fixture table (INTEGRATE1c). Agents reads the start's
+what a union merge joined (`UnionJoins`); each twins the merge tool's rule over one fixture table (INTEGRATE1c). The row tables are
+read through `IntegrationDeclaration`, which reads the whole `integration` key in one parse, twinning the merge tool's `integrationOf`:
+a declaration that breaks any key's shape is one named problem and settles nothing. `IntegrationAcceptance` says where the
+`integrationGates` blob this machine accepted stands against a tip. Settings' `LandingKey` keeps a branch rule's `integrate` with
+its refusals; no step acts on the declaration or the rule's `integrate` beyond the row tables (INTEGRATE1d). Agents reads the start's
 landing and commit facts through lower contracts; `Workplace/AgentWorkplaceWiring.cs` installs its required operations.
 Tools are handed before Workplace removes inherited tokens, resolves the author and hands long paths. The installed
 tree-guard carrier and matcher belong to Agents; the actual resource, installer and guard remain Workplace's.

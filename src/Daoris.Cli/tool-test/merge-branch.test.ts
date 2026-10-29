@@ -27,6 +27,7 @@ import { makeFixture, PATIENCE } from '../test/_fixture.ts';
 // reaches: * — the lane table's tests hold it to every tracked file and lane, so any file added or moved can fail them
 // reaches: src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/backlog-merges.json — LANDBACKLOG1's twin reads the table row for row
 // reaches: src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/union-joins.json — INTEGRATE1c's twin sets the same joins apart, row for row
+// reaches: src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/integration-declarations.json — INTEGRATE1d's twin reads the table row for row
 
 interface Gate { name: string; run: string; kind: string; cwd?: string; clock?: boolean; memoryGb?: number }
 interface Lane { id: string; title: string; summary: string; steward: boolean; paths: string[]; gates?: string[] }
@@ -220,6 +221,7 @@ const tool = await import(
   backlogPath: (root: string) => string;
   backlogOf: (text: string | null) => string | null;
   rowTablesOf: (text: string | null) => string[];
+  integrationOf: (text: string | null) => { integration: Record<string, unknown> | null; problem: string | null };
   mergeByBase: (base: string, ours: string, theirs: string) => { text: string | null; kept: number; dropped: number; both: { line: number }[] };
   REACH: readonly Rule[];
   PATH_CHECKS: readonly { gate: string; paths: string[]; why: string }[];
@@ -1366,6 +1368,8 @@ const KEPT_NAMES = 'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/kept
 const BACKLOG_MERGES = 'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/backlog-merges.json';
 /** The joins union leaves and the merge sets apart (INTEGRATE1c): among the driver's tests, and the merge tool's twin reads it too. */
 const UNION_JOINS = 'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/union-joins.json';
+/** The integration declarations' table (INTEGRATE1d): among the driver's tests, and the merge tool's twin reads it too. */
+const INTEGRATION_DECLARATIONS = 'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/integration-declarations.json';
 /**
  * The driver's sources whose declarations the page's twin vitests parse (MOD9e): SESSDEL1c's scan found them. Each by its
  * name, at whatever depth of the driver's folder it is tracked (STRUCT1, D166).
@@ -1450,6 +1454,8 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
     ["the kept names' table", [KEPT_NAMES], [...BASE, 'driver', 'web-unit']],
     // LANDBACKLOG1: the backlog merges' table sits among the driver's tests, and the merge tool's twin reads it too.
     ["the backlog merges' table", [BACKLOG_MERGES], [...BASE, 'tool-tests', 'driver']],
+    // INTEGRATE1d: the integration declarations' table sits among the driver's tests, and the merge tool's twin reads it too.
+    ["the integration declarations' table", [INTEGRATION_DECLARATIONS], [...BASE, 'tool-tests', 'driver']],
     // MIXAGENT1c: the person's order's table sits among the driver's tests, and the page's twin reads it too.
     ["the hand-over order's table", ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/hand-over-order.json'], [...BASE, 'driver', 'web-unit']],
     // REVIEWENV1c4: the review rules' table sits among the driver's tests, and the service's tool test reads its gate rows.
@@ -1777,6 +1783,23 @@ test("the declared backlog and its merge by base read as the table the driver's 
       { text: row.text?.join('\n') ?? null, kept: row.kept, dropped: row.dropped, both: row.both },
       row.name);
   }
+});
+
+// INTEGRATE1d: a repository's `integration` is read whole, in one place per twin; the driver's IntegrationDeclaration holds the
+// same table, row for row, and row c's row tables are read through it.
+test("the integration declaration reads whole as the table the driver's reader holds too (INTEGRATE1d)", () => {
+  type Row = { name: string; declaration: string | null; problem: string | null; read: Record<string, unknown> | null };
+  const table = JSON.parse(readFileSync(join(repoRoot, INTEGRATION_DECLARATIONS), 'utf8')) as { rows: Row[] };
+  assert.ok(table.rows.length >= 40, 'the table holds its rows');
+  for (const row of table.rows) {
+    const said = tool.integrationOf(row.declaration);
+    assert.deepEqual({ problem: said.problem, read: said.integration }, { problem: row.problem, read: row.read }, row.name);
+  }
+  // The row tables are the rules by rows, once each, in the order first declared; a line rule and a declaration with a problem none.
+  assert.deepEqual(tool.rowTablesOf(JSON.stringify({ integration: { merge: [
+    { paths: 'b.md', by: 'rows' }, { paths: 'docs/STATUS.md', line: '^Status: ', run: 'node s.mjs' }, { paths: 'a.md', by: 'rows' }, { paths: 'b.md', by: 'rows' },
+  ] } })), ['b.md', 'a.md']);
+  assert.deepEqual(tool.rowTablesOf(JSON.stringify({ integration: { by: 'agent', merge: [{ paths: 'b.md', by: 'rows' }] } })), []);
 });
 
 // INTEGRATE1c: the joins union leaves are set apart in a landing's replay too, by the driver's twin, which holds the same table.
