@@ -489,7 +489,8 @@ app.MapGet("/api/repositories", async (ComposedService s, string? workspace, Can
             r.Fed is null
                 ? null
                 : new ProvenanceResponse(
-                    r.Fed.Commit, r.Fed.ShortCommit, r.Fed.CommittedAt, r.Fed.Branch, r.Fed.Origin))));
+                    r.Fed.Commit, r.Fed.ShortCommit, r.Fed.CommittedAt, r.Fed.Branch, r.Fed.Origin),
+            r.IndexedAt, r.IndexedCommit)));
 
 app.MapGet("/api/search", async (
     ComposedService s, HttpContext http, string q, string? kinds, string? repositories, bool? localOnly, int? limit,
@@ -2275,7 +2276,8 @@ app.MapPost("/api/refresh", async (ComposedService s, CancellationToken ct) =>
         report.Entries, report.Repositories, report.Withheld, report.SemanticError, report.Absent,
         report.Embedded is { } embedded
             ? new EmbeddedResponse(embedded.Entries, embedded.Pieces, embedded.Split, embedded.Window)
-            : null));
+            : null,
+        report.Read.Select(r => new ReadingResponse(r.Repository, r.ReadAt, r.Commit)).ToList()));
 });
 
 // ——— The feed and sync doors (D47 §§4–6, D68). Which doors exist depends on the deployment's role: a

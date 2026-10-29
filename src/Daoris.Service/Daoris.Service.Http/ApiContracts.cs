@@ -39,7 +39,9 @@ public static class HostVersion
 public sealed record ProvenanceResponse(
     string Commit, string ShortCommit, DateTimeOffset CommittedAt, string Branch, string? Origin);
 public sealed record RepositoryResponse(
-    string Name, int Total, int Local, int Canonical, string Workspace, ProvenanceResponse? Fed);
+    string Name, int Total, int Local, int Canonical, string Workspace, ProvenanceResponse? Fed,
+    // KNOWCURRENT1: when this host read the repository's checkout and the commit it was at; null where it read none.
+    DateTimeOffset? IndexedAt = null, string? IndexedCommit = null);
 // The lines (ORIENT2e): the entry's first and last line in its file, and the line its excerpt starts on, beside
 // the fields every client already reads. Null where the entry names none (a row read with its columns, a feed
 // that named none), never a guess.
@@ -342,7 +344,9 @@ public sealed record DeletedResponse(string Id, string Message);
 // many were longer than the window and split. Absent when it did not run, and `semanticError` says why.
 public sealed record RefreshResponse(
     int Entries, int Repositories, int Withheld, string? SemanticError, IReadOnlyList<string> Absent,
-    EmbeddedResponse? Embedded = null);
+    EmbeddedResponse? Embedded = null, IReadOnlyList<ReadingResponse>? Read = null);
+// KNOWCURRENT1: when a repository's checkout was read and the commit it was at (null for a folder with no commit).
+public sealed record ReadingResponse(string Repository, DateTimeOffset ReadAt, string? Commit);
 public sealed record EmbeddedResponse(int Entries, int Pieces, int Split, int Window);
 // `Uses` is what the repository says it depends on (D91); absent is nothing declared.
 public sealed record DomainRequest(

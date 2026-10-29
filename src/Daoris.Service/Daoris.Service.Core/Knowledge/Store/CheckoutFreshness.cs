@@ -377,7 +377,7 @@ public sealed class CheckoutFreshness : IDisposable
     /// The checkout's git folder and the common one its branches live in: the same for a plain clone; for a worktree,
     /// <c>.git</c> is a file naming its own folder, whose <c>commondir</c> names the shared one.
     /// </summary>
-    private static (string Own, string Common)? GitFolders(string root)
+    internal static (string Own, string Common)? GitFolders(string root)
     {
         try
         {

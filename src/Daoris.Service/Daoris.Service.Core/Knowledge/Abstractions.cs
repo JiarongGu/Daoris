@@ -117,12 +117,37 @@ public interface IDisclosurePolicy
 /// What the semantic half made of the entries (SEM3, D123), or null when it did not run: none is
 /// configured, or it failed and <paramref name="SemanticError"/> says why.
 /// </param>
+/// <param name="Read">
+/// When and from which commit each registered repository was read (KNOWCURRENT1), so a reader can tell how current the
+/// index is. Empty where the source reads no registered checkout (a fed host).
+/// </param>
 public sealed record IndexReport(
     string Source, int Repositories, int Entries, int Withheld, string? SemanticError = null,
-    IReadOnlyList<string>? Absent = null, EmbeddingReport? Embedded = null)
+    IReadOnlyList<string>? Absent = null, EmbeddingReport? Embedded = null,
+    IReadOnlyList<RepositoryReading>? Read = null)
 {
     /// <summary>The absences, never null — a caller reporting "none" should not have to branch.</summary>
     public IReadOnlyList<string> Absent { get; init; } = Absent ?? [];
+
+    /// <summary>The readings, never null.</summary>
+    public IReadOnlyList<RepositoryReading> Read { get; init; } = Read ?? [];
+}
+
+/// <summary>
+/// When the index read a repository and the commit its checkout was at (KNOWCURRENT1). The commit is null for a
+/// checkout that is no git repository or has no commit yet.
+/// </summary>
+public sealed record RepositoryReading(string Repository, DateTimeOffset ReadAt, string? Commit)
+{
+    /// <summary>The form a person reads.</summary>
+    public string? ShortCommit => Commit is null ? null : Clipped.ShortCommit(Commit, 8);
+}
+
+/// <summary>A source that can read some of its roots alone, so a root that moved is read again and the others are not (KNOWCURRENT1).</summary>
+public interface IRootReadingSource : IKnowledgeSource
+{
+    /// <summary>Read only these checkouts.</summary>
+    Task<IReadOnlyList<KnowledgeEntry>> ReadRootsAsync(IReadOnlyList<string> roots, CancellationToken ct = default);
 }
 
 /// <summary>

@@ -15,7 +15,12 @@ public sealed class OneCheckoutTests : IDisposable
     public void Dispose()
     {
         SqlitePools.Release(Path.Combine(_root, "knowledge.db"));
-        if (Directory.Exists(_root)) Directory.Delete(_root, recursive: true);
+        // Git writes its objects read-only, which a recursive delete on Windows refuses.
+        if (Directory.Exists(_root))
+        {
+            foreach (var file in Directory.EnumerateFiles(_root, "*", SearchOption.AllDirectories)) File.SetAttributes(file, FileAttributes.Normal);
+            Directory.Delete(_root, recursive: true);
+        }
     }
 
     private string Write(string relative, string content)
@@ -154,7 +159,86 @@ public sealed class OneCheckoutTests : IDisposable
         Assert.Contains(await service.SearchAsync(new KnowledgeQuery("zeppelins")), hit => hit.Entry.Title == "Zeppelins");
     }
 
-    /// <summary>A deployment over a folder of repositories re-reads nothing on its own, as before.</summary>
+    /// <summary>The served repository declares its decisions folder and holds one decision, as an adopter's records do.</summary>
+    private void DeclareDecisions()
+    {
+        Write("family/served/daoris.json", """{ "source": "s", "documents": { "decisions": "docs/decisions" } }""");
+        Write("family/served/docs/decisions/D900.md", "# D900: The probe lock\n\nOne probe at a time.\n");
+    }
+
+    private static void Git(string folder, params string[] arguments)
+    {
+        var start = new System.Diagnostics.ProcessStartInfo("git") { WorkingDirectory = folder, RedirectStandardOutput = true, RedirectStandardError = true };
+        foreach (var argument in new[] { "-c", "user.name=t", "-c", "user.email=t@example.test", "-c", "commit.gpgsign=false" }.Concat(arguments)) start.ArgumentList.Add(argument);
+        using var process = System.Diagnostics.Process.Start(start)!;
+        process.StandardOutput.ReadToEnd();
+        process.StandardError.ReadToEnd();
+        process.WaitForExit();
+        Assert.Equal(0, process.ExitCode);
+    }
+
+    private static string Head(string folder) =>
+        File.ReadAllText(Path.Combine(folder, ".git", "refs", "heads", "main")).Trim();
+
+    /// <summary>
+    /// KNOWCURRENT1: the installed shape, a host over the registered roots with no checkout named. What is merged into a
+    /// registered root becomes searchable within the minute, with no edit of the store, and the index says when and from
+    /// which commit each repository was read.
+    /// </summary>
+    [Fact]
+    public async Task A_host_over_registered_roots_reads_a_root_again_once_its_commit_moved_and_says_when_and_from_which()
+    {
+        var (family, checkout) = Family();
+        DeclareDecisions();
+        Git(checkout, "init", "-q", "-b", "main");
+        Git(checkout, "add", "-A");
+        Git(checkout, "commit", "-q", "-m", "first");
+        var first = Head(checkout);
+        var time = new SteppedTime(DateTimeOffset.Parse("2026-10-29T10:00:00Z"));
+        await using var composed = await ServiceFactory.CreateAsync(
+            new ServiceOptions(family, Path.Combine(_root, "knowledge.db")), time: time);
+        Assert.Empty(await composed.Service.SearchAsync(new KnowledgeQuery("zeppelins")));
+        var served = (await composed.Service.SummarizeAsync()).Single(r => r.Repository == "served");
+        Assert.Equal(first, served.IndexedCommit);
+        Assert.Equal(DateTimeOffset.Parse("2026-10-29T10:00:00Z"), served.IndexedAt);
+
+        Write("family/served/docs/decisions/D901.md", "# D901: Zeppelins\n\nWritten after the index was built.\n");
+        Git(checkout, "add", "-A");
+        Git(checkout, "commit", "-q", "-m", "second");
+        time.Advance(TimeSpan.FromSeconds(59));
+        Assert.Empty(await composed.Service.SearchAsync(new KnowledgeQuery("zeppelins")));
+
+        time.Advance(TimeSpan.FromSeconds(1));
+        Assert.Contains(await composed.Service.SearchAsync(new KnowledgeQuery("zeppelins")), hit => hit.Entry.Title.Contains("Zeppelins"));
+        served = (await composed.Service.SummarizeAsync()).Single(r => r.Repository == "served");
+        Assert.Equal(Head(checkout), served.IndexedCommit);
+        Assert.NotEqual(first, served.IndexedCommit);
+        Assert.Equal(DateTimeOffset.Parse("2026-10-29T10:01:00Z"), served.IndexedAt);
+    }
+
+    /// <summary>A root whose signature did not move is not read again, and its reading keeps the time it was taken.</summary>
+    [Fact]
+    public async Task A_root_that_did_not_move_is_not_read_again()
+    {
+        var (family, checkout) = Family();
+        DeclareDecisions();
+        Git(checkout, "init", "-q", "-b", "main");
+        Git(checkout, "add", "-A");
+        Git(checkout, "commit", "-q", "-m", "first");
+        var time = new SteppedTime(DateTimeOffset.Parse("2026-10-29T10:00:00Z"));
+        await using var composed = await ServiceFactory.CreateAsync(
+            new ServiceOptions(family, Path.Combine(_root, "knowledge.db")), time: time);
+        await composed.Service.SearchAsync(new KnowledgeQuery("probe"));
+        Assert.Equal(["served", "sibling"], (await composed.Service.SummarizeAsync()).Select(r => r.Repository).Order());
+
+        time.Advance(TimeSpan.FromMinutes(7));
+        await composed.Service.SearchAsync(new KnowledgeQuery("probe"));
+
+        var served = (await composed.Service.SummarizeAsync()).Single(r => r.Repository == "served");
+        Assert.Equal(DateTimeOffset.Parse("2026-10-29T10:00:00Z"), served.IndexedAt);
+    }
+
+    /// <summary>A deployment whose source is not the registered roots (a fed one) re-reads nothing on its own, as before.</summary>
     [Fact]
     public async Task A_process_with_no_window_reads_once_and_keeps_what_it_read()
     {

@@ -5,6 +5,13 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-29 - A fresh chat on the install could not find a decision merged after the index was first read (KNOWCURRENT1)
+
+- **Symptom:** a fresh chat on the installed build searched knowledge and listed its quest, but could not find D212 while D210 and D211 were there; the local entries door held no path for the versioned D212 to D214 records.
+- **Root cause:** `KnowledgeService.EnsureIndexedAsync` re-reads only when `rereadAfter` is set, and `ServiceFactory` sets it only when `DAORIS_KNOWLEDGE_REPOSITORY` names one checkout (ORIENT1c). The installed HTTP host and every session's connector name none, so they took the other branch: a non-empty index counted as fresh for ever, and the first reading of a registered root stood until a restart or a manual refresh. The driver's refresh on a registration change does not fire for a landing that only adds records. Read from the code; the install's own store was not opened, so that this was the cause there is not proved.
+- **Fix:** such a host reads each registered root at its first use and then judges each root at use, at most once a minute (`KnowledgeService.KeepRootsCurrentAsync`), by a `RootSignature`: the commit `HEAD` names, and the newest write and count of the record files the scan walks. A root whose signature moved is read alone (`IRootReadingSource`); one no longer registered takes a whole read. The index also keeps when and from which commit each repository was read and says so (`IndexReport.Read`, `RepositorySummary`, `/api/repositories`, `/api/refresh`, the knowledge tools). Reasons and rejected shapes: D24's KNOWCURRENT1 note.
+- **Verification:** `OneCheckoutTests.A_host_over_registered_roots_reads_a_root_again_once_its_commit_moved_and_says_when_and_from_which` over `ServiceFactory.CreateAsync(new ServiceOptions(family, db))`, a decision committed into the registered root and a handed clock: not found at 59 seconds, found at 60, the commit and time moved; seen failing with the fix switched off. `A_root_that_did_not_move_is_not_read_again` and `KnowledgeLinesTests.The_summary_and_the_refresh_say_when_each_repository_was_read` hold the rest.
+
 ## 2026-10-29 - The tree guard let a shell write outside the session's tree through, and nothing asked (TREESHELL1)
 
 - **Symptom:** on 2026-10-28 a driven session of another repository was refused its Edit of the main checkout's ignored `local/` notes by the tree guard, and four seconds later put the same text at that path with `cat >> <outside path> <<'EOF'`, which ran without asking. The session reported the detour itself.

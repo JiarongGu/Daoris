@@ -243,7 +243,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Service/Daoris.Service.Core/Asks/Asks.cs` | 86 | 1555 |
 | `src/Daoris.Service/Daoris.Service.Core/Asks/Channel.cs` | 70 | 1219 |
 | `src/Daoris.Service/Daoris.Service.Core/Asks/History.cs` | 42 | 842 |
-| `src/Daoris.Service/Daoris.Service.Core/Knowledge/KnowledgeService.cs` | 57 | 1129 |
+| `src/Daoris.Service/Daoris.Service.Core/Knowledge/KnowledgeService.cs` | 62 | 1241 |
 | `src/Daoris.Service/Daoris.Service.Core/Quests/QuestExchange.cs` | 165 | 2886 |
 | `src/Daoris.Service/Daoris.Service.Core/Quests/QuestLog.cs` | 54 | 848 |
 | `src/Daoris.Service/Daoris.Service.Core/Quests/Quests.cs` | 271 | 4605 |
@@ -251,9 +251,9 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Service/Daoris.Service.Core/Sessions/Sessions.cs` | 114 | 1890 |
 | `src/Daoris.Service/Daoris.Service.Http.Tests/ConfirmationTests.cs` | 57 | 1016 |
 | `src/Daoris.Service/Daoris.Service.Http.Tests/LocalHostTests.cs` | 166 | 2715 |
-| `src/Daoris.Service/Daoris.Service.Http/ApiContracts.cs` | 80 | 930 |
+| `src/Daoris.Service/Daoris.Service.Http/ApiContracts.cs` | 81 | 934 |
 | `src/Daoris.Service/Daoris.Service.Http/PersonDoors.cs` | 41 | 645 |
-| `src/Daoris.Service/Daoris.Service.Http/Program.cs` | 181 | 3026 |
+| `src/Daoris.Service/Daoris.Service.Http/Program.cs` | 181 | 3028 |
 | `src/Daoris.Service/Daoris.Service.Tests/Asks/HistoryDeskTests.cs` | 46 | 864 |
 | `src/Daoris.Service/Daoris.Service.Tests/Knowledge/IndexEntriesTests.cs` | 50 | 983 |
 | `src/Daoris.Service/Daoris.Service.Tests/Mcp/McpToolsTests.cs` | 52 | 902 |
@@ -263,7 +263,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Service/Daoris.Service.Tests/Remote/QuestSyncTests.cs` | 109 | 2150 |
 | `src/Daoris.Service/Daoris.Service.Tests/Sessions/SessionLedgerTests.cs` | 110 | 2087 |
 | `src/Daoris.Service/Daoris.Service.Tests/Sessions/SessionStoreTests.cs` | 47 | 918 |
-| `src/Daoris.Service/README.md` | 120 | 839 |
+| `src/Daoris.Service/README.md` | 121 | 850 |
 
 ### CLI (`cli`)
 
