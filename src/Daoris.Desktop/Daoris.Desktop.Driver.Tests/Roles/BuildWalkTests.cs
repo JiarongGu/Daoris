@@ -66,10 +66,13 @@ public sealed class BuildWalkTests : IDisposable
             ["fine"] = new Adapter("fine", present),
             ["piped"] = new Adapter("piped", present, SessionWire.Pipe),
         });
-        var roster = new HarnessRoster(adapters, Settings) { Clock = () => Now, Zone = Zone };
+        var roster = _roster = new HarnessRoster(adapters, Settings) { Clock = () => Now, Zone = Zone };
         var config = ActorChoices.With(DriverConfig.Empty with { Adapter = "cool", Drivable = ["engine"] }, "build", build);
         return new Daoris.Driver.Driver(new ServiceClient("http://127.0.0.1:9", null), config, adapters, _home, harnesses: roster) { Log = _log };
     }
+
+    /// <summary>The account walk of the last <see cref="Driver"/> made, whose counts a test reads.</summary>
+    private HarnessRoster? _roster;
 
     private static string Said(JsonElement line) => $"{line.GetProperty("choice").GetString()}:{line.GetProperty("agent").GetString()}:{line.GetProperty("code").GetString()}";
 
@@ -270,6 +273,30 @@ public sealed class BuildWalkTests : IDisposable
         await driver.WalkBuildPassesAsync(Start, registry, CancellationToken.None);
 
         Assert.Equal(written, Logged("actor.passed").Count);
+    }
+
+    /// <summary>
+    /// FOUNDATION1j part i: a quest's start walks Build's order through its start plan, so its answer is the plan's settled selection, its
+    /// one reservation the taken choice's count; the re-ask at its open walks as a probe and takes none.
+    /// </summary>
+    [Fact]
+    public async Task A_quest_s_start_answers_Build_s_settled_selection_with_one_reservation_and_its_re_ask_takes_none()
+    {
+        Cooling("cool");
+        var driver = Driver(new("gone"), new("cool", "opus"), new("fine", "sonnet"), new("fine", "opus"));
+        var registry = new[] { new RepoView("engine", true, null) };
+        var counted = _roster!.Mark();
+
+        var settled = await driver.WalkBuildPassesAsync(Start, registry, CancellationToken.None);
+
+        Assert.Equal(("build", "3"), (settled.Role, settled.Chosen!.From));
+        Assert.Equal(counted + 1, settled.Reservation);
+        Assert.Equal("fine", settled.Adapter!.Name);
+
+        var moved = await driver.ReaskAsync(Start, registry, settled.Chosen, settled.Selection, CancellationToken.None);
+
+        Assert.Equal("4", moved!.Value.Choice);
+        Assert.Equal(counted + 1, _roster.Mark());
     }
 
     [Fact]

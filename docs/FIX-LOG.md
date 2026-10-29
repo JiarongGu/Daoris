@@ -5,6 +5,17 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-30 - A batch's new reads went where no rule sent their changes, and a hook case read its answer late (FOUNDATION1d-ii, FOUNDATION1e, FLAKE1)
+
+- **Symptom:** candidate `316884f` (batches 1029l to o) failed three gates. The CLI's `read-shares` refused `File.ReadAllBytes` in `Course/Chat/ChatFiles.cs`, a source that writes through `AtomicFile`. `tool-tests`' reach checks found two reads no rule reaches: `LineCourseTests` reading the modules' test sources, and the page's `say.test.ts` reading `Service/Domain/ServiceAnswers.cs`. And the driver's `HookSetLogTests.The_wire_marks_each_failure_with_its_kind(kind: "unreadable")` read `late`. Four of `tool-tests`' declared-runner scratch cases also failed, each after about twenty minutes, on a `git worktree add` that exited with an empty stderr: the machine's load, the shape TREEOPENERR1 diagnoses, and no change of this batch's.
+- **Root cause:** FOUNDATION1d-ii part 1's `ChatFiles.Carry` read a kept file plainly. FOUNDATION1e part 2's suite count looked for each ported suite in the modules' tests as well as the driver's, although every suite it counts is the driver's. The twin's new alias source had no line in the merge tool's list of sources the page's vitests parse. The hook case gave answers that come at once five seconds, which a loaded machine outlasted.
+- **Fix:**
+  - `Carry` reads through `AtomicFile.ReadBytes`.
+  - The suite count reads the driver's tests alone.
+  - `ServiceAnswers.cs` joins the page's twin sources in the merge tool's reach table.
+  - The hook case's untimed kinds wait on `Poll.Patience`, and only the late kind keeps its 100 ms.
+- **Verify:** `read-shares` clean; the two reach checks pass; `HookSetLogTests` with its neighbours and `ShortWaitsCensusTests`, 29 passed; `LineCourseTests` green.
+
 ## 2026-10-30 - Three of a batch's new cases broke rules their own branches never ran (FOUNDATION1e, AGENTPROVIDER1b, FOUNDATION1d-ii)
 
 - **Symptom:** candidate `a2f1b7d` (batches 1029l to n) failed three gates. The CLI's `partials` check refused `LineCourse` and `ConformanceCases`, each declared partial in two hand-written files. The page's `say.test.ts` could not read `SayAnswer`, the class `WordsNever.Continued` now forwards to. And the driver's fast half failed `HelpStartReadTests.A_start_with_a_repository_whose_judge_never_answers_starts_at_once_and_its_room_says_it_not_read_yet` ("the start took 00:00:14.16", against five seconds).

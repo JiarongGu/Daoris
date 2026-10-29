@@ -1289,6 +1289,8 @@ export const REACH = Object.freeze([
       // MIXAGENT1b-i: the say twin holds the hand-over's refusal table to its codes; FOUNDATION1 mod-vii moved the codes it aliases
       // into Events, so the twin reads their literals there.
       'HandOver.cs', 'HandOverAskWhy.cs',
+      // FOUNDATION1d-ii part 1: `WordsNever.Continued` forwards the say door's answer's own word, which this record declares.
+      'ServiceAnswers.cs',
       // SESSCTX1c part B: the say twin holds *Go on with Daoris's brief*'s refusal table to its codes.
       'BriefedMove.cs',
       // FLOWCHART1b: the parts flow's twin holds its words to `PartBegan`.
