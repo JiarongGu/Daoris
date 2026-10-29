@@ -1755,8 +1755,15 @@ export function WorkFrame({
     result.press && ['busy', 'elsewhere', 'moved', 'asked'].includes(result.press) ? t(`work.review.chatPress.${result.press}`) : result.message;
   // A landing's answer told back to the press that made it, *Accept…*'s and *Accept without the look…*'s alike.
   const landed = (answered: Answered) => ({
-    onSuccess: (result: { done: boolean; message: string; withheld?: string | null; press?: string | null }) => {
+    onSuccess: (result: { done: boolean; message: string; withheld?: string | null; press?: string | null; carried?: { told: boolean } | null }) => {
       if (!result.done) {
+        // LANDBACK1 part 1: the press carried the session on and kept the person's yes: it took effect, so it is said, never refused.
+        if (result.carried?.told) {
+          notify(result.message);
+          answered.done();
+          return;
+        }
+
         answered.refused(pressRefusal(result));
         return;
       }

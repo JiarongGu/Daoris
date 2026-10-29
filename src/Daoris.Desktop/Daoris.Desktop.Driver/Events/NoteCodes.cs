@@ -616,6 +616,14 @@ public static class NoteCodes
     // Replaying its work onto the line conflicts, and its session was told to rebase in its own tree (LANDREBASE1): a code of its own,
     // so the page says the session has it; a refusal it could not tell keeps `landing.refused`.
     public static readonly NoteCode LandingRebase = new("landing.rebase", []);
+    // The person's Accept on a session whose tree holds uncommitted work or whose replay conflicts (LANDBACK1 part 1): the session was
+    // carried on in Daoris's words, and the yes stays on it until its tree is clean; its own codes, since the work is accepted, not refused.
+    public static readonly NoteCode LandingCarriedDirty = new("landing.carried-dirty", ["paths"]);
+    public static readonly NoteCode LandingCarriedConflict = new("landing.carried-conflict", []);
+    // Carried on twice for one Accept and still not clean: it waits in Review's ready group, the yes taken back.
+    public static readonly NoteCode LandingCarryBound = new("landing.carry-bound", []);
+    // The work an Accept carried on landed once its tree was clean: the person's press, not the rule's switch, accepted it.
+    public static readonly NoteCode LandingAcceptedCarried = new("landing.accepted-carried", ["branch"]);
     // Held by the review's gate (REVIEWENV1c2): a code of its own, so a look's wait is never said as a refused landing; a note
     // written before it keeps `landing.refused`.
     public static readonly NoteCode LandingUnreviewed = new("landing.unreviewed", []);

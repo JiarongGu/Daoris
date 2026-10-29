@@ -268,6 +268,8 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
         {
             Each(HeldWordsFile.PathOf(home), sessions, () => HeldWordsFile.Forget(home, sessions), Held);
             Each(new AutoLandings(home).FilePath, sessions, () => new AutoLandings(home).Forget(sessions), Landing);
+            // LANDBACK1 part 1: the person's Accept kept on a session goes with its record: a deleted session's tree is never landed.
+            Each(new CarriedAccepts(home).FilePath, sessions, () => new CarriedAccepts(home).Forget(sessions), Landing);
 
             // FOUNDATION1 z-iii: the binding in the desktop store goes with its record, under the name its file went by. A store that
             // will not take the delete (busy, or written by a newer Daoris) leaves the binding, named as a file the disk would not let go.

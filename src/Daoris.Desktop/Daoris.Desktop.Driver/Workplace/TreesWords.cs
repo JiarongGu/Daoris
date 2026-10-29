@@ -36,6 +36,15 @@ public static class TreesWords
         new([.. pluginLines, $"trees: {landed.Message}"], [],
             landed.Landed && landed.Withheld is null && landed.Plugin is not { Failed: true } and not { Pushed: false } ? 0 : 1);
 
+    /// <summary>
+    /// <c>trees land</c> on a session its Accept carried on (LANDBACK1 part 1): the plugin's lines, then the sentence that says it was carried
+    /// on and lands when its tree is clean, exit 0, since the person's act took effect. Where the door kept nothing the refusal stands, with
+    /// the carry-on's sentence beneath it (why, and the words to say), exit 1.
+    /// </summary>
+    public static TreesSaid Carried(TreeLanding landed, CarryAnswer carry, IReadOnlyList<string> pluginLines) =>
+        carry.Told ? new([.. pluginLines, $"trees: {carry.Sentence}"], [], 0)
+        : new([.. pluginLines, $"trees: {landed.Message}", $"trees: {carry.Sentence}"], [], 1);
+
     /// <summary><c>trees hand</c>: the plugin's lines, then the hand-off's sentence; 1 where the branch was not pushed.</summary>
     public static TreesSaid Hand(TreeHand handed, IReadOnlyList<string> pluginLines) =>
         new([.. pluginLines, $"trees: {handed.Message}"], [], handed.Handed ? 0 : 1);

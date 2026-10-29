@@ -5,6 +5,13 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-30 - The carried-on sentence said 清理 for clear, which the glossary keeps for landed trees (LANDBACK1)
+
+- **Symptom:** after batch q merged LANDBACK1 part 1, `names.test.ts` ("say in sentences only what the audit found to be another thing's word") failed: the audit's stray list held `work.head.carriedOn:zh` and `work.review.carriedOn:zh` beside the eight it names. Four driver cases (`TreesConsoleUsesTheWords` for `RebaseTelling.TellTreeAsync(`, `NoteCodesTests`, `SettledReadersCensusTests`, `ContinuedReadersCensusTests`) were reported failing in q's tree; they did not fail at `aae43020a` or at `parent/batch-1030q`'s tip (70 passed over the four classes), because the merge kept the branch's own edits to `TreesWordsTests` (now naming `LandCarry.CarryAsync(` and `LandCarry.WhyOf(`), `ContinuedReadersCensusTests` and `SettledReadersCensusTests` (`TreesRoutes.cs` named in both), and no other member of q touched those lists. A run against a build older than the merge would read exactly those four, so they are kept as a stale-build sighting, not a defect.
+- **Root cause:** the Chinese sentence for the Accept that carries a session on said `去清理它的工作树` for "clear its tree". The glossary's `clear` entry takes 清除 and lists 清理 as avoided, since 清理 is landed trees and branches; the sentence meant neither. The branch passed its own run because the audit's stray list was written before the sentence existed and the page tests that run alone do not read it.
+- **Fix:** web catalogue only: both sentences say `去把它的工作树处理干净` (carry it on to get its tree clean), the word the sentence already uses for a tree that lands (`干净`). The audit's list is unchanged: nothing was added to what it excuses.
+- **Verify:** `vitest run src/work/noteLines.test.ts src/locales` 198 passed (was 197 of 198), `i18n:check` agrees on 7179 keys, `names:check --strict` reports budgets only.
+
 ## 2026-10-30 - The other-maker carry-on case moved its line by the machine's adapter key, which a carry-on no longer reads (FOUNDATION1j, MAKERTRAIL2)
 
 - **Symptom:** batch p's candidate failed `MakerTrailTickTests.A_carry_on_to_another_maker_is_told_the_first_makers_trailer_for_the_work_it_left` on every run since FOUNDATION1j part ii: `Sequence contains no matching element`, no `session/prompt` logged on the protocol stand-in.

@@ -5,7 +5,7 @@ namespace Daoris.Driver;
 /// <summary>
 /// A held move's one rule (FOUNDATION1f-i part 3, D212; the foundation design §3.3, §13.5's <c>held</c> row, §19.3): it closes <c>resolved</c>
 /// once nothing it names still waits on its destination's <c>said</c>, and until then it stands and its destination takes no move of its own.
-/// Called by nothing yet: rows f-ii to f-vi, h and i adopt it.
+/// Rows f-ii to f-vi, h and i adopt it, the conversations' holder first (FOUNDATION1f-ii part a, <see cref="ConversationMoves"/>).
 /// </summary>
 /// <remarks>
 /// <para><b>What a hold names</b> is written with it: the move's words disposed <i>left</i>, uncertain or held for the person

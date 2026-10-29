@@ -398,6 +398,12 @@ export const useLanding = (id: string | null, branch?: string | null) => {
        * 2026-10-15 amendment point 3), as its conversation keeps it; absent where none did, or nothing accepted it since.
        */
       leftOutOf?: string | null;
+      /**
+       * The person's Accept is kept on the session (LANDBACK1 part 1): it was carried on to commit its tree or resolve its conflict, and
+       * lands when its tree is clean. `awaiting` while the carry-on's turn runs; `carries` of the Accept's two. Absent where none is
+       * kept, and from an older host.
+       */
+      carried?: { carries: number; awaiting: boolean } | null;
     }>('LANDING', { id, ...(named ? { branch: named } : {}) }),
     enabled: isAvailable && id !== null,
   });
@@ -525,6 +531,12 @@ export const useLandSessionTree = () =>
         /** CHATFLOW1d: what refused a chat run's press (`busy`, `elsewhere`, `moved`, `asked`), worded by the page; absent otherwise. */
         press?: string | null;
         conflict?: LandingConflict | null;
+        /**
+         * LANDBACK1 part 1: the press carried the session on (`why`: `uncommitted` or `conflict`); `told` where Daoris's words reached it
+         * and its yes is kept, which lands the work once its tree is clean. Absent where the press was not carried on, and from an
+         * older host. A press whose words did not reach it is the refusal as before.
+         */
+        carried?: { why: 'uncommitted' | 'conflict'; told: boolean } | null;
       }>(
         'LAND_SESSION_TREE', { id, ...(answers ? { answers } : {}), ...(named ? { branch: named } : {}) }, { timeoutMs: pluginBound });
     },

@@ -892,6 +892,10 @@ public sealed class DriverLoop(
         string? lastRegistered = null;
         var failures = new TickErrors();
 
+        // FOUNDATION1f-ii part a (the foundation design §3.3, §19.1): the conversations' take-up, run beside each look before the limits' wake,
+        // the shell's one periodic place for its conversations: a dead shell's move is taken up, a live one quiet ten minutes said once.
+        var moves = new ConversationMoves(homeDirectory, service, Events, Output);
+
         _watch = new DriverWatch(service, ConfigPath, homeDirectory, Processes, sync, Output, Harnesses, Usage, _hooks, Events, browser)
         {
             // Asked at every look, so an update staged or put off between looks holds or frees the next one (UPDATE1).
@@ -926,7 +930,11 @@ public sealed class DriverLoop(
             GoesOnLost = (session, why, token) => chat.GoOnLostAsync(
                 session, why, DriverConfig.Load(ConfigPath), onEnded: (ended, state) => Ended(eventBus, ended, state), token),
             // LIMITRESUME1c (D206 §3.4): the conversations that wait for an account, woken by this shell's chat runner beside each look.
-            Limits = (looked, token) => chat.WakeLimitsAsync(looked, onEnded: (ended, state) => Ended(eventBus, ended, state), token),
+            Limits = async (looked, token) =>
+            {
+                await moves.LookAsync(token).ConfigureAwait(false);
+                await chat.WakeLimitsAsync(looked, onEnded: (ended, state) => Ended(eventBus, ended, state), token).ConfigureAwait(false);
+            },
         };
         // FABRIC-END6c: a focus heard before the watch existed is told to it now, once; the watch keeps it until its moments exist.
         _focus.Ready(_watch.Focused);

@@ -27,8 +27,8 @@ public interface IMoveSaid
 
 /// <summary>
 /// The service's doors to a destination's <c>said</c> (FOUNDATION1f-i part 3): the record's waiting words and their attempt marks as this
-/// machine's records answer them, the taken door, and the take-back door with the <c>lost</c> note kept in the record's events. Called by
-/// nothing yet: rows f-ii to f-vi hand it the move's readings.
+/// machine's records answer them, the taken door, and the take-back door with the <c>lost</c> note kept in the record's events. Rows f-ii to
+/// f-vi hand it the move's readings, the conversations' holder first (FOUNDATION1f-ii part a, <see cref="ConversationMoves"/>).
 /// </summary>
 /// <param name="service">The service whose ledger holds the records.</param>
 /// <param name="events">Where a record's <c>lost</c> note is kept; none keeps none.</param>

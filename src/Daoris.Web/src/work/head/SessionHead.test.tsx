@@ -678,7 +678,7 @@ describe('the attended session\'s head', () => {
       const ask = screen.getByRole('group', { name: 'accept daoris/s-4e6837ed' });
       expect(ask).toHaveTextContent('Accepting merges this work into master, in the repository\'s own checkout.');
       expect(ask).not.toHaveTextContent('did not finish');
-      expect(ask).toHaveTextContent('Its tree has 3 uncommitted paths, and a landing refuses the work it would leave behind: commit them in its tree first.');
+      expect(ask).toHaveTextContent('Its tree has 3 uncommitted paths, which a landing would leave behind: Accept carries its session on to commit them, or to restore them and say so, and lands the work once its tree is clean.');
       fireEvent.click(within(ask).getByRole('button', { name: 'Accept' }));
       act(() => (onLand.mock.calls[0]![0] as Answered).refused('the checkout is not clean, so nothing was merged.'));
       expect(within(ask).getByRole('alert')).toHaveTextContent('the checkout is not clean, so nothing was merged.');
@@ -712,6 +712,27 @@ describe('the attended session\'s head', () => {
       rerender(<SessionHead session={session({ state: 'failed' })} lands={LANDS} />);
       expect(screen.getByText('1 commit no branch of yours holds')).toBeInTheDocument();
       expect(screen.queryByRole('button', { name: 'Accept…' })).toBeNull();
+    });
+
+    // LANDBACK1 part 1: where the person's Accept is kept on the session it carried on, the head says so and never shows finished work.
+    it('shows a session its Accept carried on as carried on, and says it in Chinese too', async () => {
+      render(
+        <SessionHead
+          session={session({ state: 'completed' })}
+          lands={{ ...LANDS, uncommitted: 2 }}
+          landing={{ ...PLAN, carried: { carries: 1, awaiting: true } }}
+          onLand={vi.fn()}
+        />,
+      );
+
+      expect(screen.getByText('Accepted: its session was carried on to clear its tree, and its work lands once the tree is clean. This is not finished work yet.'))
+        .toBeInTheDocument();
+      try {
+        await act(async () => { await i18n.changeLanguage('zh'); });
+        expect(screen.getByText('已采纳：它的会话已被继续，去清理它的工作树，工作树干净后即会落地它的工作。它还不是已完成的工作。')).toBeInTheDocument();
+      } finally {
+        await act(async () => { await i18n.changeLanguage('en'); });
+      }
     });
 
     it('never carries an ask to accept one session’s work to another’s', () => {

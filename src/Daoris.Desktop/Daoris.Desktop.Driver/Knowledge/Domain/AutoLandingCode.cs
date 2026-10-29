@@ -89,10 +89,23 @@ public static class AutoLandingCode
     /// </summary>
     public const string Carried = "carried";
 
+    /// <summary>
+    /// The person's Accept was pressed on a session whose tree holds uncommitted work or whose replay conflicts, and the session was
+    /// carried on to clear it (LANDBACK1 part 1; <see cref="CarriedAccepts"/>): the yes stays on it, and its entry stays open and is
+    /// judged again once the carry-on's turn ends, whatever its tree's tip and status then are.
+    /// </summary>
+    public const string CarriedOn = "carried-on";
+
+    /// <summary>
+    /// Carried on twice for one Accept (<see cref="LandCarry.Bound"/>), and its tree is still not clean or its work still conflicts: the
+    /// yes is taken back, and the session waits in Review's ready group with the reason. Never read as landed.
+    /// </summary>
+    public const string CarryBound = "carry-bound";
+
     /// <summary>Whether a try with this code closes its entry; the rest wait for a change, a release or the person's press.</summary>
     public static bool Closes(string code) =>
-        code is not (Held or Uncommitted or Exists or Completed or Refused or Unreviewed or Opinion or PushHeld);
+        code is not (Held or Uncommitted or Exists or Completed or Refused or Unreviewed or Opinion or PushHeld or CarriedOn);
 
     /// <summary>Whether a try with this code is tried again only once its tree's tip or status moves (design §2).</summary>
-    public static bool OnChange(string code) => code is Uncommitted or Exists or Completed or Refused;
+    public static bool OnChange(string code) => code is Uncommitted or Exists or Completed or Refused or CarriedOn;
 }

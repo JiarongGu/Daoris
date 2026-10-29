@@ -22,8 +22,9 @@ public sealed class HomeIntegrationRecords(string home) : IIntegrationRecords
 }
 
 /// <summary>
-/// Where admitted requests are kept (INTEGRATE1e): one open request per repository and branch, so no landing is requested twice. Part
-/// e2's store family implements it on disk; until then <see cref="InMemoryIntegrationRequests"/> does.
+/// Where admitted requests are kept (INTEGRATE1e): one open request per repository and branch, so no landing is requested twice.
+/// <see cref="IntegrationStore"/> keeps them in the desktop store (part e2), judged by the store's own index in the write, so two doors at
+/// once, in one process or two, keep one.
 /// </summary>
 public interface IIntegrationRequestStore
 {
@@ -35,42 +36,4 @@ public interface IIntegrationRequestStore
     /// return the one open.
     /// </summary>
     IntegrationRequest? Add(IntegrationRequest request);
-}
-
-/// <summary>The request store in memory (INTEGRATE1e part e1): what the door is judged over until part e2 keeps requests on disk.</summary>
-public sealed class InMemoryIntegrationRequests : IIntegrationRequestStore
-{
-    private readonly object _gate = new();
-    private readonly List<IntegrationRequest> _open = [];
-
-    /// <summary>Every open request, in the order admitted.</summary>
-    public IReadOnlyList<IntegrationRequest> Open()
-    {
-        lock (_gate) return [.. _open];
-    }
-
-    public IntegrationRequest? OpenFor(string repository, string branch)
-    {
-        lock (_gate) return _open.FirstOrDefault(each => SessionBranches.SameBranch(each.Repository, each.Branch, repository, branch));
-    }
-
-    public IntegrationRequest? Add(IntegrationRequest request)
-    {
-        lock (_gate)
-        {
-            if (_open.FirstOrDefault(each => SessionBranches.SameBranch(each.Repository, each.Branch, request.Repository, request.Branch)) is { } open)
-            {
-                return open;
-            }
-
-            _open.Add(request);
-            return null;
-        }
-    }
-
-    /// <summary>The request of that id is no longer open (promoted, handed back or dropped, in the parts that do those); whether it was.</summary>
-    public bool Close(string id)
-    {
-        lock (_gate) return _open.RemoveAll(each => string.Equals(each.Id, id, StringComparison.Ordinal)) > 0;
-    }
 }

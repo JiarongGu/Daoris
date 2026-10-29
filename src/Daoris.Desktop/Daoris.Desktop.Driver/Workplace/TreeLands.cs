@@ -232,7 +232,8 @@ internal sealed class TreeLands(
         {
             return new(false,
                 $"the session's tree has uncommitted work — {count} path(s) — which a merge would "
-                + "leave behind. Commit it in the tree first, or decide it is not wanted.");
+                + "leave behind. Commit it in the tree first, or decide it is not wanted.")
+            { Refusal = AutoLandingCode.Uncommitted };
         }
 
         var (workspace, repository) = context.OwnerOf(full);
@@ -627,7 +628,7 @@ internal sealed class TreeLands(
             }
 
             var merged = await MergeAsync(path, ct, replayed, uncommitted, here, pinned: gate?.Tip).ConfigureAwait(false);
-            landed = new(merged.Merged, merged.Message) { LeftOut = merged.Merged ? replayed?.LeftOut : null };
+            landed = new(merged.Merged, merged.Message) { LeftOut = merged.Merged ? replayed?.LeftOut : null, Refusal = merged.Refusal };
             landed = Fetched(landed, notFetched);
         }
         else

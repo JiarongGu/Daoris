@@ -15,6 +15,10 @@ namespace Daoris.Driver;
 /// <para><b>Queued words are moved, not copied</b>: under this pending start's lock the refused record's list is handed out
 /// (<see cref="ChatTurns.MoveOut"/>) before the replacement opens, and a word said meanwhile joins it (<see cref="Join"/>), so it reaches
 /// the replacement exactly once. Re-keyed (<see cref="Moved"/>), the issued id answers for the current one.</para>
+///
+/// <para><b>Those kept on the refused record move with the replacement's open</b> (FOUNDATION1d-ii part 5, the foundation design §3.4 rule
+/// 3): its keyed open names them (<see cref="KeptIds"/>) and moves them in its own step, and each goes to the replacement as that record's
+/// own word under its id there; a producer's retry joined under one's key is that word, and goes nowhere again.</para>
 /// </remarks>
 internal sealed class ChatPending
 {
@@ -110,6 +114,18 @@ internal sealed class ChatPending
         lock (_gate) _moving = [.. _moving ?? [], .. words];
     }
 
+    /// <summary>
+    /// The moving words the refused record keeps, by their ids there, in the order said (FOUNDATION1d-ii part 5): what the replacement's keyed
+    /// open names, so they move onto it in the open's own step. A word held in this process alone is none of them; it goes as before.
+    /// </summary>
+    public IReadOnlyList<string> KeptIds
+    {
+        get
+        {
+            lock (_gate) return [.. (_moving ?? []).Where(word => word.Kept && word.Id is not null).Select(word => word.Id!)];
+        }
+    }
+
     /// <summary>Whether its words are moving to a replacement now: a word said meanwhile joins them (<see cref="Join"/>).</summary>
     public bool IsMoving
     {
@@ -136,8 +152,10 @@ internal sealed class ChatPending
     /// </summary>
     /// <returns>The words <paramref name="say"/> did not take.</returns>
     /// <remarks>
-    /// A replacement already refused in its turn takes its words onward into this same pending start (<see cref="Join"/>): they stay moving,
-    /// for its own replacement, as they do wherever another replacement is owed (<see cref="Next"/>).
+    /// <para>A replacement already refused in its turn takes its words onward into this same pending start (<see cref="Join"/>): they stay moving,
+    /// for its own replacement, as they do wherever another replacement is owed (<see cref="Next"/>).</para>
+    /// <para>A producer's retry that joined them under the key of a word the refused record keeps among them is that word said again
+    /// (FOUNDATION1d-ii part 5, the design §3.4 rule 5): it is handed nowhere, and the kept word goes once.</para>
     /// </remarks>
     public IReadOnlyList<ChatMessage> Moved(string to, Func<ChatMessage, bool> say)
     {
@@ -152,7 +170,9 @@ internal sealed class ChatPending
 
             var words = _moving ?? [];
             _moving = [];
-            var left = words.Where(word => !say(word)).ToList();
+            var keys = words.Where(word => word.Kept && word.Key is not null).Select(word => word.Key!).ToHashSet(StringComparer.Ordinal);
+            bool Retry(ChatMessage word) => !word.Kept && word.Key is { } key && keys.Contains(key);
+            var left = words.Where(word => !Retry(word) && !say(word)).ToList();
             if (_moving.Count == 0 && Next is null) _moving = null;
             return left;
         }
