@@ -1122,6 +1122,19 @@ export const REACH = Object.freeze([
   },
   { paths: ['tools/stage-package.mjs'], gates: ['rehearse', 'deployment'], why: "every pack runs it: the release rehearsal's, and the install's doctrine tool" },
   { paths: ['tools/family-rehearsal.mjs', 'tools/usage-report.mjs'], gates: ['rehearse-family'], why: 'the family rehearsal, what it imports, and what it runs' },
+  // AGENTPROVIDER1b part 3 (placed by INTEGRATE1d part 4): the stand-ins' reader, which its own tool test and the family rehearsal import.
+  { paths: ['tools/stand-ins.mjs'], gates: ['tool-tests', 'rehearse-family'], why: "the stand-ins' reader: its tool test (stand-ins.test.ts) and the family rehearsal, which finds the providers' stand-ins by it (AGENTPROVIDER1b)" },
+  // The same row's files in each provider's folder: the driver's (its lane's readers, ProviderFilesTests among them), and the tool
+  // test and the family rehearsal read them through `stand-ins.mjs`. A narrow rule, since the first rule decides.
+  {
+    paths: [
+      'src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Providers/*/provider.json',
+      'src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Providers/*/pending.json',
+      'src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Providers/*/Program/**',
+    ],
+    gates: [...DRIVER_READERS, 'tool-tests'],
+    why: "a provider's declaration, its pending cases and its stand-in's program: the driver's own (ProviderFilesTests and the conformance suite), and the tools' stand-ins.test.ts and the family rehearsal read them by `stand-ins.mjs` (AGENTPROVIDER1b)",
+  },
   { paths: ['tools/setup-kit.mjs'], gates: ['tool-tests', 'rehearse-family'], why: "the family rehearsal's set-up kit, and its tool-tests, which run it for real in a scratch repository (GATESLIM1)" },
   {
     paths: ['tools/desktop-publish.mjs', 'tools/ci-background.mjs', 'tools/test-failures.mjs'],
