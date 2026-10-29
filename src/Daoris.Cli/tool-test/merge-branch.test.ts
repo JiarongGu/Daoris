@@ -70,6 +70,11 @@ interface Schedule {
 }
 /** GATEBUILD1: the fast half that passed in this run, and the tree it ran on. */
 interface Built { gate: string; tree: string | null }
+/** INTEGRATE1j: what a gate ran with, as its composition records it beside its log. */
+interface CompositionSettings {
+  gate: string; run: string; cwd: string | null; runsettings: { path: string; text: string | null } | null; narrowed: string[];
+  environment: { removed: string[]; added: Record<string, string> };
+}
 /**
  * What a lane runner hands a gate: when the light lane has ended, for a Process gate's re-run alone; and to a Process
  * half whose fast half passed in this run, that pass (GATEBUILD1).
@@ -225,8 +230,40 @@ const tool = await import(
   rowTablesOf: (text: string | null) => string[];
   integrationOf: (text: string | null) => { integration: Record<string, unknown> | null; problem: string | null };
   verifyInputs: (env: Record<string, string | undefined>, options?: { besideCommit?: string | null }) => {
-    commit: string; result: string; mode: string | null; base: string | null; declaration: string; tree: string | null;
+    commit: string; result: string; mode: string | null; base: string | null; declaration: string; tree: string | null; gates: string[] | null; failure: string | null;
   };
+  /** INTEGRATE1j part 2: the gates DAORIS_VERIFY_GATES names, by their declared names, in the plan's order. */
+  verifyNamed: <G extends { name: string; declared: string }>(plan: G[], names: string[]) => G[];
+  compositionEnvironment: () => { removed: string[]; added: Record<string, string> };
+  compositionDigest: (units: string[] | null, settings: Record<string, unknown>) => string;
+  verifyComposition: (facts: {
+    gate: { name: string; declared?: string; run: string; cwd?: string }; runsettings?: { path: string; text: string | null } | null; units?: string[] | null; narrowed?: string[];
+  }) => { units: string[] | null; settings: CompositionSettings; digest: string };
+  compositionDifference: (built: CompositionSettings, kept: CompositionSettings) => string[];
+  verifyRunGates: (
+    plan: { name: string; declared: string }[],
+    results: { gate: { name: string }; verdict: string; code?: number; log?: string }[],
+    options: {
+      keep?: (path: string) => string | undefined; seconds?: (name: string) => number | undefined;
+      compositions: Map<string, { units: string[] | null; digest: string; file: string }>; failures: Map<string, unknown[]>;
+    },
+  ) => Record<string, unknown>[];
+  verifyPlanAnswer: (facts: {
+    plan: { name: string; declared: string }[];
+    set?: { run: { name: string; why: string }[]; kept: { name: string; why: string }[]; deferred: { name: string; why: string }[] };
+    kept?: { name: string; verdict: { commit?: string | null; tree?: string | null }; standing: { standing: string } }[];
+    gates?: { name: string; units: string[] | null; narrowed: string[]; deferredClasses?: string[]; reach?: { whole: string | null } }[];
+    composed?: { name: string; why: string; last: { verdict: { commit?: string | null; tree?: string | null } } | null }[];
+    named?: string[] | null;
+  }) => { run: { name: string; why: string }[]; kept: { name: string; why: string; commit: string | null; tree: string | null; standing: string | null }[]; deferred: { name: string; why: string }[] };
+  verifyFailure: <G extends { name: string; declared: string }>(text: string, plan: G[]) => {
+    gate: G; failure: { names: string; gate: string; unit: string; test: string; signature: Record<string, unknown> };
+    composition: { units: string[] | null; settings: string; digest: string };
+  };
+  verifyUnfinished: (mode: string | null, facts: {
+    commit: string; base?: string | null; declaration: string; why: string; plan?: { name: string; declared: string }[];
+    results?: { gate: { name: string }; verdict: string; code?: number; log?: string }[]; kept?: unknown[]; deferred?: unknown[];
+  }) => Record<string, unknown>;
   verifyPlan: (text: string) => { name: string; run: string; declared: string }[];
   verifyGates: (
     plan: { name: string; declared: string }[],
@@ -1843,8 +1880,16 @@ test('the declared runner validates its inputs: each missing, malformed or contr
   const absolute = (name: string) => join(process.cwd(), name);
   const ok = { DAORIS_VERIFY_COMMIT: tip, DAORIS_VERIFY_RESULT: absolute('answer.json'), DAORIS_VERIFY_DECLARATION: absolute('declaration.json') };
   const without = (name: string) => Object.fromEntries(Object.entries(ok).filter(([each]) => each !== name));
-  assert.deepEqual(tool.verifyInputs(ok), { commit: tip, result: ok.DAORIS_VERIFY_RESULT, mode: null, base: null, declaration: ok.DAORIS_VERIFY_DECLARATION, tree: null });
+  assert.deepEqual(tool.verifyInputs(ok), { commit: tip, result: ok.DAORIS_VERIFY_RESULT, mode: null, base: null, declaration: ok.DAORIS_VERIFY_DECLARATION, tree: null, gates: null, failure: null });
   assert.equal(tool.verifyInputs({ ...ok, DAORIS_VERIFY_MODE: 'commits', DAORIS_VERIFY_BASE: base }).mode, 'commits');
+  // INTEGRATE1j part 2: every mode is built; each names its base, `run` and `plan` take the gates named, `probe` the failure's file.
+  for (const mode of ['run', 'plan', 'probe']) {
+    const more = mode === 'probe' ? { DAORIS_VERIFY_FAILURE: absolute('failure.json') } : {};
+    assert.equal(tool.verifyInputs({ ...ok, DAORIS_VERIFY_MODE: mode, DAORIS_VERIFY_BASE: base, ...more }).mode, mode);
+  }
+  assert.deepEqual(tool.verifyInputs({ ...ok, DAORIS_VERIFY_MODE: 'run', DAORIS_VERIFY_BASE: base, DAORIS_VERIFY_GATES: ' check , The web gate' }).gates, ['check', 'The web gate']);
+  assert.deepEqual(tool.verifyInputs({ ...ok, DAORIS_VERIFY_MODE: 'plan', DAORIS_VERIFY_BASE: base, DAORIS_VERIFY_GATES: 'check' }).gates, ['check']);
+  assert.equal(tool.verifyInputs({ ...ok, DAORIS_VERIFY_MODE: 'probe', DAORIS_VERIFY_BASE: base, DAORIS_VERIFY_FAILURE: absolute('failure.json') }).failure, absolute('failure.json'));
   assert.equal(tool.verifyInputs({ ...ok, DAORIS_VERIFY_TREE: absolute('tree') }).tree, absolute('tree'));
   // A longer object id (sha-256) is a full id too, and the names are found whatever their case on a platform that folds it.
   assert.equal(tool.verifyInputs({ ...ok, DAORIS_VERIFY_COMMIT: 'c'.repeat(64) }).commit, 'c'.repeat(64));
@@ -1862,15 +1907,22 @@ test('the declared runner validates its inputs: each missing, malformed or contr
     ['a relative declaration', { ...ok, DAORIS_VERIFY_DECLARATION: 'declaration.json' }, /DAORIS_VERIFY_DECLARATION is not an absolute path/],
     ['an unknown mode', { ...ok, DAORIS_VERIFY_MODE: 'bisect' }, /DAORIS_VERIFY_MODE 'bisect' is none of run, plan, probe or commits/],
     ['an empty mode', { ...ok, DAORIS_VERIFY_MODE: '' }, /DAORIS_VERIFY_MODE is set and empty/],
-    ['mode run', { ...ok, DAORIS_VERIFY_MODE: 'run' }, /mode 'run' is not built yet \(INTEGRATE1j part 2\)/],
-    ['mode plan', { ...ok, DAORIS_VERIFY_MODE: 'plan', DAORIS_VERIFY_BASE: base }, /mode 'plan' is not built yet/],
-    ['mode probe', { ...ok, DAORIS_VERIFY_MODE: 'probe', DAORIS_VERIFY_BASE: base }, /mode 'probe' is not built yet/],
+    ['run without a base', { ...ok, DAORIS_VERIFY_MODE: 'run' }, /DAORIS_VERIFY_BASE is not set: the run mode reaches its gates by base\.\.commit/],
+    ['plan without a base', { ...ok, DAORIS_VERIFY_MODE: 'plan' }, /DAORIS_VERIFY_BASE is not set: the plan mode reaches its gates by base\.\.commit/],
+    ['probe without a base', { ...ok, DAORIS_VERIFY_MODE: 'probe', DAORIS_VERIFY_FAILURE: absolute('failure.json') }, /DAORIS_VERIFY_BASE is not set: the probe mode's answer names the candidate's base/],
+    ['probe without a failure', { ...ok, DAORIS_VERIFY_MODE: 'probe', DAORIS_VERIFY_BASE: base }, /DAORIS_VERIFY_FAILURE is not set: the probe mode repeats the failure that file names/],
+    ['probe on a relative failure', { ...ok, DAORIS_VERIFY_MODE: 'probe', DAORIS_VERIFY_BASE: base, DAORIS_VERIFY_FAILURE: 'failure.json' }, /DAORIS_VERIFY_FAILURE is not an absolute path/],
     ['commits without a base', { ...ok, DAORIS_VERIFY_MODE: 'commits' }, /DAORIS_VERIFY_BASE is not set: the commits mode checks base\.\.commit/],
     ['commits on a short base', { ...ok, DAORIS_VERIFY_MODE: 'commits', DAORIS_VERIFY_BASE: 'bbbb' }, /DAORIS_VERIFY_BASE is not a full object id/],
     ['a base with no mode', { ...ok, DAORIS_VERIFY_BASE: base }, /DAORIS_VERIFY_BASE belongs to a mode: none is asked/],
-    ['gates with no mode', { ...ok, DAORIS_VERIFY_GATES: 'check' }, /DAORIS_VERIFY_GATES belongs to the run mode/],
-    ['gates in commits', { ...ok, DAORIS_VERIFY_MODE: 'commits', DAORIS_VERIFY_BASE: base, DAORIS_VERIFY_GATES: 'check' }, /DAORIS_VERIFY_GATES belongs to the run mode/],
+    ['gates with no mode', { ...ok, DAORIS_VERIFY_GATES: 'check' }, /DAORIS_VERIFY_GATES belongs to the run and plan modes/],
+    ['gates in commits', { ...ok, DAORIS_VERIFY_MODE: 'commits', DAORIS_VERIFY_BASE: base, DAORIS_VERIFY_GATES: 'check' }, /DAORIS_VERIFY_GATES belongs to the run and plan modes/],
+    ['gates in a probe', { ...ok, DAORIS_VERIFY_MODE: 'probe', DAORIS_VERIFY_BASE: base, DAORIS_VERIFY_FAILURE: absolute('failure.json'), DAORIS_VERIFY_GATES: 'check' }, /DAORIS_VERIFY_GATES belongs to the run and plan modes/],
+    ['gates set and empty', { ...ok, DAORIS_VERIFY_MODE: 'run', DAORIS_VERIFY_BASE: base, DAORIS_VERIFY_GATES: '' }, /DAORIS_VERIFY_GATES is set and empty/],
+    ['gates with an empty name', { ...ok, DAORIS_VERIFY_MODE: 'run', DAORIS_VERIFY_BASE: base, DAORIS_VERIFY_GATES: 'check,,web' }, /DAORIS_VERIFY_GATES holds an empty name/],
+    ['gates naming one twice', { ...ok, DAORIS_VERIFY_MODE: 'plan', DAORIS_VERIFY_BASE: base, DAORIS_VERIFY_GATES: 'check, check' }, /DAORIS_VERIFY_GATES names 'check' twice/],
     ['a failure with no mode', { ...ok, DAORIS_VERIFY_FAILURE: absolute('failure.json') }, /DAORIS_VERIFY_FAILURE belongs to the probe mode/],
+    ['a failure in a run', { ...ok, DAORIS_VERIFY_MODE: 'run', DAORIS_VERIFY_BASE: base, DAORIS_VERIFY_FAILURE: absolute('failure.json') }, /DAORIS_VERIFY_FAILURE belongs to the probe mode/],
     ['a relative tree', { ...ok, DAORIS_VERIFY_TREE: 'tree' }, /DAORIS_VERIFY_TREE is not an absolute path/],
     ['a name the runner does not know', { ...ok, DAORIS_VERIFY_SPEED: 'fast' }, /DAORIS_VERIFY_SPEED is no input of the runner/],
   ];
@@ -1932,6 +1984,174 @@ test('the declared runner answers its commits mode with the commit check\'s prob
   assert.equal((answer.problems as string[]).length, 1);
   assert.match((answer.problems as string[])[0]!, /^2222222 bare: no Co-Authored-By line/);
   assert.deepEqual(tool.verifyCommitsAnswer({ commit, base, declaration: 'c'.repeat(40), commits: [{ sha: '1111111', ...own }] }).problems, []);
+});
+
+// INTEGRATE1j part 2 (design §4.5, §5.9): what a gate ran with, kept beside its log, so a probe repeats one of its failures as composed.
+test('a gate\'s composition records its units and settings with its environment\'s rule, and digests both the same whatever their order (INTEGRATE1j)', () => {
+  const gate = { name: 'driver-process', declared: 'driver-process', run: 'dotnet test src/X.Tests --settings src/X/process.runsettings' };
+  const runsettings = { path: 'src/X/process.runsettings', text: '<RunSettings><TestCaseFilter>Category=Process</TestCaseFilter></RunSettings>\n' };
+  const made = tool.verifyComposition({ gate, runsettings, units: ['X.B', 'X.A'], narrowed: ['X.D', 'X.C'] });
+  assert.deepEqual(made.units, ['X.A', 'X.B']);
+  assert.deepEqual(made.settings, { gate: 'driver-process', run: gate.run, cwd: null, runsettings, narrowed: ['X.C', 'X.D'], environment: tool.compositionEnvironment() });
+  assert.match(made.digest, /^sha256:[0-9a-f]{64}$/);
+  assert.equal(made.digest, tool.compositionDigest(made.units, made.settings));
+  // The digest is of the content, not of the order its keys were written in.
+  assert.equal(tool.compositionDigest(['X.A', 'X.B'], Object.fromEntries(Object.entries(made.settings).reverse())), made.digest);
+  // Each part moves it.
+  const of = (change: object) => tool.verifyComposition({ gate, runsettings, units: ['X.A', 'X.B'], narrowed: ['X.C', 'X.D'], ...change }).digest;
+  const digests = [
+    made.digest, of({ units: ['X.A'] }), of({ units: null }), of({ narrowed: [] }), of({ runsettings: { ...runsettings, text: '<RunSettings/>' } }),
+    of({ gate: { ...gate, run: `${gate.run} --no-restore` } }), of({ gate: { ...gate, cwd: 'src' } }), of({ gate: { ...gate, declared: 'Another' } }),
+  ];
+  assert.equal(new Set(digests).size, digests.length, 'every part of the composition is in its digest');
+  // The environment is its rule (§5.5): the names a gate never inherits and the build servers' three, never a value the machine holds.
+  const environment = tool.compositionEnvironment();
+  assert.deepEqual(Object.keys(environment).sort(), ['added', 'removed']);
+  assert.deepEqual(environment.added, tool.BESIDE_ENVIRONMENT);
+  assert.ok(environment.removed.some((pattern) => pattern.includes('DAORIS_')) && environment.removed.some((pattern) => pattern.includes('GIT_')), environment.removed.join(' '));
+  // A command naming no run settings has none, and a gate run whole has no units.
+  const whole = tool.verifyComposition({ gate: { name: 'tools', declared: 'The tools', run: 'node --test' } });
+  assert.deepEqual([whole.units, whole.settings.runsettings, whole.settings.gate, whole.settings.narrowed], [null, null, 'The tools', []]);
+  // What differs between the composition a probe would build and the one kept, in words.
+  assert.deepEqual(tool.compositionDifference(made.settings, made.settings), []);
+  assert.deepEqual(tool.compositionDifference({ ...made.settings, runsettings: { ...runsettings, text: '<RunSettings/>' } }, made.settings), ['the run settings src/X/process.runsettings']);
+  assert.deepEqual(tool.compositionDifference({ ...made.settings, run: 'node x', environment: { removed: [], added: {} } }, made.settings), ["the declaration's command", "the gate environment's rule"]);
+});
+
+test('a run answers each gate it ran with its composition, kept beside its log, and the failures it read from it (INTEGRATE1j)', () => {
+  const plan = [{ name: 'check', declared: 'The check' }, { name: 'suite', declared: 'suite' }, { name: 'late', declared: 'late' }];
+  const results = [
+    { gate: { name: 'check' }, verdict: 'PASS', code: 0, log: '/tree/check.log' },
+    { gate: { name: 'suite' }, verdict: 'FAIL', code: 1, log: '/tree/suite.log' },
+  ];
+  const digest = (n: string) => `sha256:${n.repeat(64)}`;
+  const failure = { unit: 'S.SessionTests', test: 'S.SessionTests.Resumes', signature: { test: 'S.SessionTests.Resumes', exception: 'X', message: 'y' } };
+  const gates = tool.verifyRunGates(plan, results, {
+    keep: (path) => (path.startsWith('/tree/') ? path.replace('/tree/', '/kept/') : undefined),
+    seconds: (name) => (name === 'check' ? 3 : undefined),
+    compositions: new Map([
+      ['check', { units: null, digest: digest('a'), file: '/tree/check.composition.json' }],
+      ['suite', { units: ['S.SessionTests'], digest: digest('b'), file: '/tree/suite.composition.json' }],
+      ['late', { units: null, digest: digest('c'), file: '/gone/late.composition.json' }],
+    ]),
+    failures: new Map([['suite', [failure]]]),
+  });
+  assert.deepEqual(gates, [
+    { name: 'The check', verdict: 'pass', wallSeconds: 3, log: '/kept/check.log', composition: { units: null, settings: '/kept/check.composition.json', digest: digest('a') }, failures: [] },
+    { name: 'suite', verdict: 'fail', exit: 1, log: '/kept/suite.log', composition: { units: ['S.SessionTests'], settings: '/kept/suite.composition.json', digest: digest('b') }, failures: [failure] },
+    // A settings file that was not kept is not named: the digest still says what the gate was to run with.
+    { name: 'late', verdict: 'not-run', composition: { units: null, digest: digest('c') }, failures: [] },
+  ]);
+});
+
+test('the declared runner\'s plan names each declared gate once, under its declared name: run, kept on the pass that stands, or deferred (INTEGRATE1j)', () => {
+  const gate = (name: string, run: string, declared = name) => ({ name, declared, run, kind: 'suite' });
+  const plan = [
+    gate('universal', 'npm run universal'), gate('web-types', 'npm run typecheck:web'), gate('driver', 'dotnet test src/D.Tests --filter "Category!=Process"', 'The driver'),
+    gate('driver-process', 'dotnet test src/D.Tests --settings src/D/process.runsettings'), gate('driver-git', 'dotnet test src/D.Tests --settings src/D/git.process.runsettings'),
+    gate('family', 'npm run rehearse:family'), gate('service', 'dotnet test src/S.Tests'), gate('web', 'npm run test:web'),
+  ];
+  const set = {
+    run: [
+      { name: 'universal', why: 'the cheap tier runs in every candidate' }, { name: 'driver', why: 'a reached .NET fast half runs whole' },
+      { name: 'driver-process', why: 'a reached Process half, by class' }, { name: 'driver-git', why: 'the git half, within its budget' },
+    ],
+    kept: [{ name: 'web-types', why: 'its pass stands on this tree' }],
+    deferred: [{ name: 'family', why: 'a browser spec or a rehearsal: deferred to the background run, which the install waits for' }],
+  };
+  const pass = (name: string, commit: string, tree: string, standing = 'exact') => ({
+    name, verdict: { gate: name, verdict: 'PASS', tree, at: '2026-10-29T10:00:00Z', commit }, standing: { standing, paths: [], records: [] },
+  });
+  const kept = [pass('web-types', 'c1', 't1'), pass('service', 'c2', 't2', 'unreached')];
+  const shaped = [
+    { name: 'universal', units: null, narrowed: [] }, { name: 'driver', units: null, narrowed: [] },
+    { name: 'driver-process', units: ['D.A', 'D.B'], narrowed: ['D.C'], reach: { whole: null } },
+    { name: 'driver-git', units: ['G.A'], narrowed: ['G.B', 'G.C'], deferredClasses: ['G.C'], reach: { whole: null } },
+  ];
+  const answer = tool.verifyPlanAnswer({ plan, set, kept, gates: shaped });
+  assert.deepEqual(answer.run, [
+    { name: 'universal', why: 'the cheap tier runs in every candidate' },
+    { name: 'The driver', why: 'a reached .NET fast half runs whole' },
+    { name: 'driver-process', why: 'a reached Process half, by class: 2 classes by reach, 1 class kept on passes that stand' },
+    { name: 'driver-git', why: 'the git half, within its budget: 1 class within its budget, 1 class deferred to the background run' },
+  ]);
+  assert.deepEqual(answer.kept, [
+    { name: 'web-types', why: 'its pass stands on this tree', commit: 'c1', tree: 't1', standing: 'exact' },
+    { name: 'service', why: 'no path the candidate changes reaches it, and its pass stands on this tree', commit: 'c2', tree: 't2', standing: 'unreached' },
+  ]);
+  assert.deepEqual(answer.deferred, [
+    { name: 'family', why: 'a browser spec or a rehearsal: deferred to the background run, which the install waits for' },
+    { name: 'web', why: 'no path the candidate changes reaches it: the background run answers for it' },
+  ]);
+  // A Process half every class of which is kept passes without running: kept, on its last pass.
+  const composed = tool.verifyPlanAnswer({
+    plan, set, kept, gates: shaped.filter((each) => each.name !== 'driver-process'),
+    composed: [{ name: 'driver-process', why: 'its last verdict went stale by reach alone', last: { verdict: { commit: 'c3', tree: 't3' } } }],
+  });
+  assert.equal(composed.run.some((each) => each.name === 'driver-process'), false);
+  assert.deepEqual(composed.kept.find((each) => each.name === 'driver-process'), {
+    name: 'driver-process', why: "every class's pass stands, so it passes without running: its last verdict went stale by reach alone", commit: 'c3', tree: 't3', standing: 'composed',
+  });
+  // DAORIS_VERIFY_GATES: the plan is the gates named, each run whole, in the plan's order; a name not declared is refused.
+  const whole = 'named in DAORIS_VERIFY_GATES: it runs whole';
+  assert.deepEqual(tool.verifyPlanAnswer({ plan, named: ['service', 'The driver'] }), { run: [{ name: 'The driver', why: whole }, { name: 'service', why: whole }], kept: [], deferred: [] });
+  assert.deepEqual(tool.verifyNamed(plan, ['service', 'The driver']).map((each) => each.name), ['driver', 'service']);
+  assert.match(refusal(() => tool.verifyNamed(plan, ['driver'])).message, /DAORIS_VERIFY_GATES names 'driver', which the declaration handed does not declare: it declares 'universal', .*'The driver'/);
+});
+
+test('a probe reads the failure it repeats from its file: one failure of a run answer with its gate and that gate\'s composition, each missing part refused (INTEGRATE1j)', () => {
+  const plan = [{ name: 'driver', declared: 'The driver', run: 'dotnet test src/D.Tests' }];
+  const digest = `sha256:${'a'.repeat(64)}`;
+  const settings = join(process.cwd(), 'driver.composition.json');
+  const good = {
+    gate: 'The driver', unit: 'D.SessionTests', test: 'D.SessionTests.Resumes', signature: { test: 'D.SessionTests.Resumes', exception: 'X', message: 'y' },
+    composition: { units: null, settings, digest },
+  };
+  const read = tool.verifyFailure(JSON.stringify(good), plan);
+  assert.equal(read.gate.name, 'driver');
+  assert.deepEqual(read.failure, { names: 'test', gate: 'The driver', unit: 'D.SessionTests', test: 'D.SessionTests.Resumes', signature: good.signature });
+  assert.deepEqual(read.composition, good.composition);
+  // A gate that named no failing test is signed by its step, and probed by its own command.
+  assert.equal(tool.verifyFailure(JSON.stringify({ ...good, signature: { gate: 'The driver', step: 'run', message: 'x' } }), plan).failure.names, 'gate');
+  const with_ = (change: object) => JSON.stringify({ ...good, ...change });
+  const cases: [string, string, RegExp][] = [
+    ['not JSON', '{ nope', /DAORIS_VERIFY_FAILURE is not valid JSON/],
+    ['not an object', '[]', /DAORIS_VERIFY_FAILURE is not an object/],
+    ['no gate', with_({ gate: undefined }), /DAORIS_VERIFY_FAILURE has no gate/],
+    ['no unit', with_({ unit: '' }), /DAORIS_VERIFY_FAILURE has no unit/],
+    ['no test', with_({ test: 3 }), /DAORIS_VERIFY_FAILURE has no test/],
+    ['no signature', with_({ signature: 'x' }), /DAORIS_VERIFY_FAILURE has no signature/],
+    ['no composition', with_({ composition: undefined }), /DAORIS_VERIFY_FAILURE has no composition/],
+    ['a short digest', with_({ composition: { ...good.composition, digest: 'sha256:abc' } }), /has no composition digest/],
+    ['units that are not names', with_({ composition: { ...good.composition, units: [1] } }), /has no composition units/],
+    ['a relative settings file', with_({ composition: { ...good.composition, settings: 'x.json' } }), /has no composition settings/],
+    ['an undeclared gate', with_({ gate: 'driver' }), /names the gate 'driver', which the declaration handed does not declare: it declares 'The driver'/],
+  ];
+  for (const [what, text, message] of cases) {
+    const error = refusal(() => tool.verifyFailure(text, plan));
+    assert.equal(error.exitCode, 2, what);
+    assert.match(error.message, message, what);
+  }
+});
+
+test('a run that did not finish still answers, saying so in every mode, so its reader judges it unknown and never reads nothing (INTEGRATE1j)', () => {
+  const commit = 'a'.repeat(40);
+  const base = 'b'.repeat(40);
+  const declaration = 'c'.repeat(40);
+  const plan = [{ name: 'check', declared: 'The check' }, { name: 'suite', declared: 'suite' }];
+  const results = [{ gate: { name: 'check' }, verdict: 'PASS', code: 0, log: '/tree/check.log' }];
+  const why = "npm ci failed in the gate tree's . (exit 1), so the full set did not start";
+  const unfinished = `the run did not finish: ${why}`;
+  assert.deepEqual(tool.verifyUnfinished(null, { commit, base: null, declaration, why, plan, results }), {
+    schema: 1, commit, gates: [{ name: 'The check', verdict: 'pass' }, { name: 'suite', verdict: 'not-run' }], unfinished,
+  });
+  const kept = [{ name: 'web', why: 'its pass stands on this tree', commit, tree: 't', standing: 'exact' }];
+  assert.deepEqual(tool.verifyUnfinished('run', { commit, base, declaration, why, plan, results, kept, deferred: [] }), {
+    schema: 2, mode: 'run', commit, base, declaration,
+    gates: [{ name: 'The check', verdict: 'pass', failures: [] }, { name: 'suite', verdict: 'not-run', failures: [] }], kept, deferred: [], unfinished,
+  });
+  assert.deepEqual(tool.verifyUnfinished('plan', { commit, base, declaration, why }), { schema: 2, mode: 'plan', commit, base, declaration, unfinished });
+  assert.deepEqual(tool.verifyUnfinished('probe', { commit, base, declaration, why }), { schema: 2, mode: 'probe', commit, base, declaration, result: 'cannot', signature: null, unfinished });
 });
 
 // INTEGRATE1c: the joins union leaves are set apart in a landing's replay too, by the driver's twin, which holds the same table.

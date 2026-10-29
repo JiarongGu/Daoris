@@ -1921,7 +1921,7 @@ describe('the queue, end to end in a scratch repository', { concurrency: true },
       };
       await refused('nothing set', {}, /DAORIS_VERIFY_RESULT is not set/);
       await refused('no commit', { DAORIS_VERIFY_RESULT: run.answer }, /DAORIS_VERIFY_COMMIT is not set/);
-      await refused('mode run', run.env(commit, { DAORIS_VERIFY_MODE: 'run' }), /mode 'run' is not built yet \(INTEGRATE1j part 2\)/);
+      await refused('a run with no base', run.env(commit, { DAORIS_VERIFY_MODE: 'run' }), /DAORIS_VERIFY_BASE is not set: the run mode reaches its gates by base\.\.commit/);
       await refused('a commit the repository lacks', run.env('f'.repeat(40)), /is no commit of this repository/);
       await refused('a declaration that is no file', run.env(commit, { DAORIS_VERIFY_DECLARATION: join(repo.root, 'local', 'verify', 'none.json') }), /DAORIS_VERIFY_DECLARATION names no file/);
       const named = await repo.run(['--full', '--beside', commit, '--daoris-verify'], run.env(commit));

@@ -421,7 +421,7 @@ import {
   closeSync, cpSync, existsSync, lstatSync, mkdirSync, openSync, readFileSync, readdirSync, realpathSync, rmSync, statSync, writeFileSync, writeSync,
 } from 'node:fs';
 import { constants as osConstants, cpus as osCpus, freemem as osFreemem, setPriority as osSetPriority, totalmem as osTotalmem } from 'node:os';
-import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path';
+import { basename, dirname, isAbsolute, join, posix, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   CI_SWEEP, NIGHT_HOUR, appendReceipt, clearKept, clearPasses, fileSighting, fingerprintOf, kindPlan, knownRedLines, knownRedStanding, nextRun, nightSatisfied, noteNight,
@@ -5569,15 +5569,21 @@ async function gateBeside(root, options) {
 /** The runner's inputs (§5.9), each set on its job alone: D192's two, and the ones integration's calls add. */
 const VERIFY_INPUTS = ['COMMIT', 'RESULT', 'MODE', 'BASE', 'DECLARATION', 'GATES', 'FAILURE', 'TREE'];
 const VERIFY_MODES = ['run', 'plan', 'probe', 'commits'];
-/** The modes built so far: `commits`, and the schema-1 answer where none is asked. `run`, `plan` and `probe` are part 2's. */
-const VERIFY_BUILT = ['commits'];
+/** Why each mode needs the candidate's base: every schema-2 answer names it, and `run` and `plan` reach their gates from it. */
+const VERIFY_BASE_NEED = Object.freeze({
+  run: 'the run mode reaches its gates by base..commit, and its answer names the base',
+  plan: 'the plan mode reaches its gates by base..commit, and its answer names the base',
+  probe: "the probe mode's answer names the candidate's base",
+  commits: 'the commits mode checks base..commit',
+});
 const FULL_OBJECT_ID = /^(?:[0-9a-f]{40}|[0-9a-f]{64})$/;
 
 /**
  * The runner's inputs read from `env` (the environment the tool started with), each refused in a sentence where it is missing, not
  * what it must be, or at odds with another: the tip (a full object id, never one a person's shell left behind: the flag alone reads it),
  * the file to answer in, the declaration handed (the only source of the gates, F6), the mode (none asked is D192's schema 1), the
- * base the commit check ranges from, and the tree a caller made. A refusal here has no file to be written to.
+ * base every mode answers for, the tree a caller made, the gates a `run` or a `plan` is narrowed to (comma-separated, by the names
+ * the declaration writes), and the file naming the failure a `probe` repeats. A refusal here has no file to be written to.
  */
 export function verifyInputs(env, options = {}) {
   const given = new Map();
@@ -5612,16 +5618,32 @@ export function verifyInputs(env, options = {}) {
     mode = given.get('MODE');
     if (mode === '') throw new Refusal('DAORIS_VERIFY_MODE is set and empty: name a mode, or leave it unset for D192\'s answer');
     if (!VERIFY_MODES.includes(mode)) throw new Refusal(`DAORIS_VERIFY_MODE '${mode}' is none of ${VERIFY_MODES.slice(0, -1).join(', ')} or ${VERIFY_MODES.at(-1)}`);
-    if (!VERIFY_BUILT.includes(mode)) {
-      throw new Refusal(`DAORIS_VERIFY_MODE: mode '${mode}' is not built yet (INTEGRATE1j part 2): this runner answers the commits mode, and D192's schema 1 where none is asked`);
-    }
   }
   const base = objectId('BASE');
-  if (mode === 'commits' && base === null) throw new Refusal('DAORIS_VERIFY_BASE is not set: the commits mode checks base..commit');
+  if (mode !== null && base === null) throw new Refusal(`DAORIS_VERIFY_BASE is not set: ${VERIFY_BASE_NEED[mode]}`);
   if (mode === null && base !== null) throw new Refusal('DAORIS_VERIFY_BASE belongs to a mode: none is asked, and D192\'s answer takes no base');
-  if (value('GATES') !== null) throw new Refusal('DAORIS_VERIFY_GATES belongs to the run mode, which is not asked here');
-  if (value('FAILURE') !== null) throw new Refusal('DAORIS_VERIFY_FAILURE belongs to the probe mode, which is not asked here');
-  return { commit, result, mode, base, declaration, tree: absolute('TREE') };
+  let gates = null;
+  if (given.has('GATES')) {
+    if (mode !== 'run' && mode !== 'plan') throw new Refusal('DAORIS_VERIFY_GATES belongs to the run and plan modes, which are not asked here');
+    if (given.get('GATES').trim() === '') throw new Refusal("DAORIS_VERIFY_GATES is set and empty: name the gates, or leave it unset for the runner's own plan");
+    gates = given.get('GATES').split(',').map((name) => name.trim());
+    if (gates.includes('')) throw new Refusal('DAORIS_VERIFY_GATES holds an empty name: the gates are named as the declaration writes them, separated by commas');
+    const twice = gates.find((name, at) => gates.indexOf(name) !== at);
+    if (twice) throw new Refusal(`DAORIS_VERIFY_GATES names '${twice}' twice`);
+  }
+  if (mode !== 'probe' && value('FAILURE') !== null) throw new Refusal('DAORIS_VERIFY_FAILURE belongs to the probe mode, which is not asked here');
+  const failure = absolute('FAILURE');
+  if (mode === 'probe' && failure === null) throw new Refusal('DAORIS_VERIFY_FAILURE is not set: the probe mode repeats the failure that file names');
+  return { commit, result, mode, base, declaration, tree: absolute('TREE'), gates, failure };
+}
+
+/** INTEGRATE1j: the plan's gates `DAORIS_VERIFY_GATES` names, in the plan's order; a name the declaration handed does not write is refused. */
+export function verifyNamed(plan, names) {
+  const unknown = names.find((name) => !plan.some((gate) => gate.declared === name));
+  if (unknown !== undefined) {
+    throw new Refusal(`DAORIS_VERIFY_GATES names '${unknown}', which the declaration handed does not declare: it declares ${plan.map((gate) => `'${gate.declared}'`).join(', ')}`);
+  }
+  return plan.filter((gate) => names.includes(gate.declared));
 }
 
 /**
@@ -5670,6 +5692,181 @@ export function verifyCommitsAnswer({ commit, base, declaration, commits }) {
   return { schema: 2, mode: 'commits', commit, base, declaration, problems: commitAttributionProblems(commits) };
 }
 
+/**
+ * INTEGRATE1j (design §5.5): the environment a gate is composed with, as its composition records it: the rule (the names it never
+ * inherits, `GATE_REMOVED`, and the build servers of its own, `BESIDE_ENVIRONMENT`), never a value the machine holds, so two runs on
+ * one machine compose alike and a change of the rule changes every digest.
+ */
+export function compositionEnvironment() {
+  return { removed: GATE_REMOVED.map((pattern) => `/${pattern.source}/${pattern.flags}`), added: { ...BESIDE_ENVIRONMENT } };
+}
+
+/** A value as JSON with every object's keys in order, so one composition digests alike however its keys were written. */
+function canonicalJson(value) {
+  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(',')}]`;
+  if (value && typeof value === 'object') {
+    return `{${Object.keys(value).filter((key) => value[key] !== undefined).sort().map((key) => `${JSON.stringify(key)}:${canonicalJson(value[key])}`).join(',')}}`;
+  }
+  return JSON.stringify(value ?? null);
+}
+
+/** INTEGRATE1j: the digest of a composition, its units and its settings together, which a probe compares with the one it would build. */
+export function compositionDigest(units, settings) {
+  return `sha256:${createHash('sha256').update(canonicalJson({ units, settings })).digest('hex')}`;
+}
+
+/**
+ * INTEGRATE1j (design §4.5, §5.9): what a gate ran with, so one of its failures can be repeated as composed. `units`: the classes it
+ * ran where it ran by class (a Process half by reach, the git half within its budget), sorted; null where it ran whole, every unit its
+ * command selects. `settings`: the gate as the declaration writes it (its name, command and folder), the run settings its command
+ * names as the commit holds them (`runsettings`, null where it names none), the classes its run settings left out (`narrowed`), and
+ * the environment's rule. `digest`: of both. A probe builds its own the same way at its commit and runs only where the two agree.
+ */
+export function verifyComposition({ gate, runsettings = null, units = null, narrowed = [] }) {
+  const settings = {
+    gate: gate.declared ?? gate.name, run: gate.run, cwd: gate.cwd ?? null, runsettings, narrowed: [...narrowed].sort(), environment: compositionEnvironment(),
+  };
+  const sorted = units === null ? null : [...units].sort();
+  return { units: sorted, settings, digest: compositionDigest(sorted, settings) };
+}
+
+/** INTEGRATE1j: the parts of a composition's settings, each as a refusal names it when the probe's and the run's differ. */
+const COMPOSITION_PARTS = Object.freeze([
+  ['gate', 'the gate it names'], ['run', "the declaration's command"], ['cwd', 'the folder it runs in'], ['runsettings', 'the run settings'],
+  ['narrowed', 'the classes its run settings left out'], ['environment', "the gate environment's rule"],
+]);
+
+/** INTEGRATE1j: what differs between the settings a probe would build and the ones a run kept, in words; empty where nothing does. */
+export function compositionDifference(built, kept) {
+  return COMPOSITION_PARTS.filter(([part]) => canonicalJson(built?.[part]) !== canonicalJson(kept?.[part]))
+    .map(([part, words]) => (part === 'runsettings' ? `the run settings ${built?.runsettings?.path ?? kept?.runsettings?.path ?? ''}`.trim() : words));
+}
+
+/**
+ * INTEGRATE1j: the run settings a gate's command names (`dotnet test <project> --settings <file>`), as `commit` holds them:
+ * `{ path, text }`, the path from the repository's root, the text null where the commit holds no such file; null where the command
+ * names none. Read from the commit and not a tree, so a probe judges its composition before it takes any tree.
+ */
+function runSettingsAt(where, commit, gate) {
+  const half = halfOf(gate.run);
+  if (!half) return null;
+  const path = posix.normalize(posix.join(gate.cwd ? gate.cwd.replace(/\\/g, '/') : '.', half.settings));
+  const shown = git(where, ['show', `${commit}:${path}`], { allowFail: true });
+  return { path, text: shown.status === 0 ? shown.out : null };
+}
+
+/**
+ * The `run` mode's gates (design §5.9): each gate it ran as schema 1 answers it (`verifyGates`), with its `composition` (`units`; the
+ * path where its settings file stays once the run has ended, omitted where it was not kept; `digest`) and its `failures`, each
+ * `{ unit, test, signature }`. `compositions` maps a gate's log name to its composition and the file it was written to.
+ */
+export function verifyRunGates(plan, results, { keep = (path) => path, seconds = () => undefined, compositions, failures }) {
+  return verifyGates(plan, results, { keep, seconds }).map((answered, at) => {
+    const composition = compositions.get(plan[at].name);
+    const settings = composition?.file ? keep(composition.file) : undefined;
+    return {
+      ...answered,
+      ...(composition ? { composition: { units: composition.units, ...(settings ? { settings } : {}), digest: composition.digest } } : {}),
+      failures: failures.get(plan[at].name) ?? [],
+    };
+  });
+}
+
+/** A Process half's or the git half's classes as a plan's line says them, after its scoped set's reason. */
+function classDetail(gate) {
+  if (!gate) return '';
+  if (gate.deferredClasses?.length) return `: ${classCount(gate.units.length)} within its budget, ${classCount(gate.deferredClasses.length)} deferred to the background run`;
+  if (gate.units) return `: ${classCount(gate.units.length)} by reach, ${classCount(gate.narrowed.length)} kept on passes that stand`;
+  if (gate.reach?.whole) return `: whole, ${gate.reach.whole}`;
+  return '';
+}
+
+/**
+ * INTEGRATE1j (design §4.3, §5.9): the `plan` mode's three lists, each declared gate in one of them once, under the name the declaration
+ * writes, in the plan's order. `run`, `{ name, why }`: the scoped set's run (`set`), with the classes a half runs (`gates`, as
+ * `scopedGates` shapes them). `kept`, `{ name, why, commit, tree, standing }`: a gate whose pass stands on the tree (`kept`, `ciPlan`'s),
+ * with the commit and tree that pass was given on and how it stands; a half every class of which is kept (`composed`) on its last pass.
+ * `deferred`, `{ name, why }`: the scoped set's, and a gate no path of the candidate reaches whose pass does not stand, which the
+ * background run answers for. With `named` (DAORIS_VERIFY_GATES), the plan is those gates, each run whole.
+ */
+export function verifyPlanAnswer({ plan, set = { run: [], kept: [], deferred: [] }, kept = [], gates = [], composed = [], named = null }) {
+  if (named) {
+    return { run: plan.filter((gate) => named.includes(gate.declared)).map((gate) => ({ name: gate.declared, why: 'named in DAORIS_VERIFY_GATES: it runs whole' })), kept: [], deferred: [] };
+  }
+  const answer = { run: [], kept: [], deferred: [] };
+  const standing = (name, why) => {
+    const entry = kept.find((each) => each.name === name);
+    return { why, commit: entry?.verdict?.commit ?? null, tree: entry?.verdict?.tree ?? null, standing: entry?.standing?.standing ?? null };
+  };
+  const of = (list, name) => list.find((each) => each.name === name);
+  for (const gate of plan) {
+    const name = gate.declared;
+    const half = of(composed, gate.name);
+    if (half) {
+      answer.kept.push({
+        name, why: `every class's pass stands, so it passes without running: ${half.why}`, commit: half.last?.verdict?.commit ?? null, tree: half.last?.verdict?.tree ?? null, standing: 'composed',
+      });
+    } else if (of(set.run, gate.name)) answer.run.push({ name, why: `${of(set.run, gate.name).why}${classDetail(of(gates, gate.name))}` });
+    else if (of(set.kept, gate.name)) answer.kept.push({ name, ...standing(gate.name, of(set.kept, gate.name).why) });
+    else if (of(set.deferred, gate.name)) answer.deferred.push({ name, why: of(set.deferred, gate.name).why });
+    else if (of(kept, gate.name)) answer.kept.push({ name, ...standing(gate.name, 'no path the candidate changes reaches it, and its pass stands on this tree') });
+    else answer.deferred.push({ name, why: 'no path the candidate changes reaches it: the background run answers for it' });
+  }
+  return answer;
+}
+
+/**
+ * INTEGRATE1j (design §5.9): the failure a `probe` repeats, read from the file `DAORIS_VERIFY_FAILURE` names: one failure of a `run`
+ * answer with the gate it failed in and that gate's composition as the answer gave them, `{ gate, unit, test, signature, composition:
+ * { units, settings, digest } }`. Answers the plan's gate, the failure as the queue's probe takes it (`names`: `gate` where its
+ * signature is a gate's step, `test` otherwise), and the composition; each part missing or misshapen is refused in a sentence.
+ */
+export function verifyFailure(text, plan) {
+  let parsed;
+  try {
+    parsed = JSON.parse(text);
+  } catch (error) {
+    throw new Refusal(`DAORIS_VERIFY_FAILURE is not valid JSON: ${error.message}`);
+  }
+  const shape = 'it names one failure of a run answer, { gate, unit, test, signature, composition }, with its gate\'s composition as the answer gave it';
+  const missing = (what) => new Refusal(`DAORIS_VERIFY_FAILURE ${what}: ${shape}`);
+  const isObject = (value) => Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+  if (!isObject(parsed)) throw missing('is not an object');
+  for (const field of ['gate', 'unit', 'test']) if (typeof parsed[field] !== 'string' || !parsed[field]) throw missing(`has no ${field}`);
+  if (!isObject(parsed.signature)) throw missing('has no signature');
+  const { composition } = parsed;
+  if (!isObject(composition)) throw missing('has no composition');
+  if (typeof composition.digest !== 'string' || !/^sha256:[0-9a-f]{64}$/.test(composition.digest)) throw missing('has no composition digest (sha256: and 64 hex digits)');
+  if (!(composition.units === null || (Array.isArray(composition.units) && composition.units.every((unit) => typeof unit === 'string')))) {
+    throw missing('has no composition units (null, or the names of the classes its gate ran)');
+  }
+  if (typeof composition.settings !== 'string' || !isAbsolute(composition.settings)) throw missing('has no composition settings (the absolute path of the file kept beside its log)');
+  const gate = plan.find((each) => each.declared === parsed.gate);
+  if (!gate) {
+    throw new Refusal(`DAORIS_VERIFY_FAILURE names the gate '${parsed.gate}', which the declaration handed does not declare: it declares ${plan.map((each) => `'${each.declared}'`).join(', ')}`);
+  }
+  return {
+    gate,
+    failure: { names: parsed.signature.gate !== undefined ? 'gate' : 'test', gate: gate.declared, unit: parsed.unit, test: parsed.test, signature: parsed.signature },
+    composition: { units: composition.units, settings: composition.settings, digest: composition.digest },
+  };
+}
+
+/**
+ * INTEGRATE1j: the answer of a run that started and did not finish (a thrown error: `npm ci` failing, a lane table that does not read),
+ * in its mode's shape with `unfinished` saying why, so its reader judges it unknown rather than reading nothing: schema 1 and `run` name
+ * each gate as far as it went (`not-run` where it never started, no log, no failure read); `plan` holds no list; `probe` answers `cannot`.
+ */
+export function verifyUnfinished(mode, { commit, base = null, declaration, why, plan = [], results = [], kept = [], deferred = [] }) {
+  const unfinished = `the run did not finish: ${why}`;
+  const gates = () => verifyGates(plan, results, { keep: () => undefined });
+  if (mode === null) return { schema: 1, commit, gates: gates(), unfinished };
+  const envelope = { schema: 2, mode, commit, base, declaration };
+  if (mode === 'run') return { ...envelope, gates: gates().map((gate) => ({ ...gate, failures: [] })), kept, deferred, unfinished };
+  if (mode === 'probe') return { ...envelope, result: 'cannot', signature: null, unfinished };
+  return { ...envelope, unfinished };
+}
+
 /** The runner's one answer: written whole and atomically (D192), its folder made where the caller has not. */
 function writeVerifyResult(file, answer) {
   mkdirSync(dirname(file), { recursive: true });
@@ -5702,6 +5899,7 @@ async function gateVerify(root, options) {
     if (id && git(where, ['cat-file', '-e', `${id}^{commit}`], { allowFail: true }).status !== 0) throw new Refusal(`${name} ${id} is no commit of this repository`);
   }
   const blob = git(where, ['hash-object', '--', inputs.declaration]).out.trim();
+  if (mode === 'run' || mode === 'plan' || mode === 'probe') throw new Refusal(`DAORIS_VERIFY_MODE: mode '${mode}' is read, and its answer is the next commit's`);
 
   if (mode === 'commits') {
     const rule = integrationOf(text).integration?.commits ?? null;
