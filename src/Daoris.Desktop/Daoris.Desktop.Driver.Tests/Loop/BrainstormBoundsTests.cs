@@ -258,7 +258,11 @@ public sealed class BrainstormBoundsTests : IDisposable
     [Fact]
     public async Task A_synthesis_past_its_minutes_leaves_the_proposals_unranked_saying_why()
     {
-        var (driver, script) = Start(rule: Rule(synthesis: 2));
+        // FLAKE1: the synthesis must start and then hang past its minutes, so its window is wide enough to start in. At two minutes of
+        // 100 ms a loaded machine let the window pass before the synthesis first asked for its slot, which the deadline answers first,
+        // and the pass read `cap-full` instead of `timed-out` (candidate def1fa9, green alone three times). The request's own bound stays
+        // past the generators' and the synthesis's together, so the synthesis's end is its own.
+        var (driver, script) = Start(rule: Rule(synthesis: 20, request: 60));
         var id = await SentAsync(driver, "stub", "acp-stub");
         script.Answers["g1"] = Give("Make the window inclusive");
         script.Behaviours["s1"] = Hang;
