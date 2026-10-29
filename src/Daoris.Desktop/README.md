@@ -35,7 +35,9 @@ and tests mirrored under `Driver.Tests/Agents/`. Namespaces remain `Daoris.Drive
 `Agents/Registry/` holds `ProviderRegistry.Of(AdapterSet)`, which answers each door's account owner and facts once. Row b adds the ports
 (`ISpawn`, the dialects, `IUsageQuestion`, `AgentRun`), `Providers.Built()`, the one registration list, and the stand-ins written on the contract
 in `Agents/Providers/Stub/`, which `LegacyDoor` presents to today's readers as adapters; the stand-in flag, the roster's listing and the verbs'
-operands read the registry.
+operands read the registry. `Driver.Tests/Agents/ProviderConformanceTests.cs` is the conformance suite (design §10), every case run per provider
+and door, each one a provider cannot pass yet held in its own `pending.json` (a stand-in's beside its `provider.json`, a real provider's under
+`Driver.Tests/fixtures/providers/<id>/`) with the row that makes it pass.
 Events owns resume reason codes and the `IContinueReason` reading contract; Agents owns `ContinueReason` and `ContinueWhy`'s
 policy and sentences. Its public constants forward to Events, and a refused door exposes the same reason through the lower port.
 The required protocol-posture marker belongs to Agents (`AgentPostures.Required`); Help forwards the same `!` value.
