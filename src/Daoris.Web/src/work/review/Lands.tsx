@@ -39,6 +39,8 @@ export type LandingPlan = {
   leftOut?: LeftOutCommit[] | null;
   lands?: LandsCommit[] | null;
   conflict?: LandingConflict | null;
+  /** The person's Accept is kept on the session, carried on to clear its tree, which lands the work once it is clean (LANDBACK1 part 1). */
+  carried?: { carries: number; awaiting: boolean } | null;
 };
 
 /**
@@ -176,6 +178,10 @@ export function Lands({ session, lands, landing, planning, onReview, onLand, onS
         {toEvent?.work && <InConversation onPress={toEvent.work} />}
       </p>
       {onLand && !asking && conflict && onSayRebase && <RebaseAsk key={session.id} conflict={conflict} onSay={onSayRebase} />}
+      {/* LANDBACK1 part 1: the Accept is kept on it, carried on to clear its tree: carried on, never shown as finished work. */}
+      {landing?.carried && (
+        <p className="m-0 border-l-[3px] border-st-open pl-2 text-small text-ink-soft">{t('work.head.carriedOn')}</p>
+      )}
       {workflow && <WorkflowHold gate={workflow} />}
       {second && (
         <OpinionGate

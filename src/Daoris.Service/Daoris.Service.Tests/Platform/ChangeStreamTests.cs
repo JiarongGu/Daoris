@@ -572,6 +572,30 @@ public sealed class ChangeStreamTests : IAsyncLifetime
     }
 
     /// <summary>
+    /// FOUNDATION1 row k: the stamp is the schema's to write (the journal's epoch), and the observer only reads it: an existing stamp, which
+    /// old files carry, is read as it stands, and a file with none is not written by the observer, whose open then waits for the schema.
+    /// </summary>
+    [Fact]
+    public async Task The_observer_reads_the_identity_the_schema_wrote_and_writes_none()
+    {
+        await _stream.DisposeAsync();
+        var gate = ConnectionGate.For(_writer);
+        await Execute("UPDATE store_identity SET id = 'stamped-before' WHERE one = 1;");
+        Task<string> Read() => gate.RunAsync(() => Task.FromResult(ChangeStream.Identity(gate)), CancellationToken.None);
+        Assert.Equal("stamped-before", await Read());
+
+        await Execute("DROP TABLE store_identity;");
+        await Assert.ThrowsAsync<InvalidOperationException>(Read);
+        await using var tables = _writer.CreateCommand();
+        tables.CommandText = "SELECT count(*) FROM sqlite_master WHERE name = 'store_identity'";
+        Assert.Equal(0L, Convert.ToInt64(await tables.ExecuteScalarAsync()));
+
+        await SessionStore.OpenAsync(_writer);
+        Assert.Matches("^[0-9a-f]{32}$", await Read());
+        _stream = await Open();
+    }
+
+    /// <summary>
     /// Review of FABRIC-EVENT3b: an observer that could not open at the start still issues cursors; once it opens, the epoch is new,
     /// so what moved meanwhile is answered every family and never taken as the baseline.
     /// </summary>

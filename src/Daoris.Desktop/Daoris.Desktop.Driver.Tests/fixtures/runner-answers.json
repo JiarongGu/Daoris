@@ -1,0 +1,167 @@
+{
+  "about": "INTEGRATE1f part f1 (the integration design §5.9; D192's runner contract, extended; D215's notes on INTEGRATE1j): a repository's runner answer read as D192 judges it, and more: unknown, never a pass, wherever the file is missing, does not read, names another schema, commit, base or declaration blob, names a gate the accepted declaration does not declare, or lacks a planned gate or holds one ended or not-run. The driver's RunnerAnswers reads every row of 'reads', 'standings' and 'promotions' (RunnerAnswerTests; the sentences are the driver's). The merge tool writes the answers (src/Daoris.Cli/tool-test/integration-runner-answers.test.ts builds each 'written' piece with its own writers and holds it to the answer here), so a field name changed on one side fails the other. A path is neutral, X:/; an object id is made up.",
+  "ids": { "tip": "a1b2c3d4e5f60718293a4b5c6d7e8f9012345678", "base": "0f1e2d3c4b5a69788796a5b4c3d2e1f001122334", "declaration": "9a8b7c6d5e4f30211203f4e5d6c7b8a998877665" },
+  "asks": {
+    "check": { "commit": "a1b2c3d4e5f60718293a4b5c6d7e8f9012345678", "declared": ["universal", "driver", "web"] },
+    "run": { "commit": "a1b2c3d4e5f60718293a4b5c6d7e8f9012345678", "base": "0f1e2d3c4b5a69788796a5b4c3d2e1f001122334", "declaration": "9a8b7c6d5e4f30211203f4e5d6c7b8a998877665", "mode": "run", "declared": ["universal", "driver", "web"] },
+    "plan": { "commit": "a1b2c3d4e5f60718293a4b5c6d7e8f9012345678", "base": "0f1e2d3c4b5a69788796a5b4c3d2e1f001122334", "declaration": "9a8b7c6d5e4f30211203f4e5d6c7b8a998877665", "mode": "plan", "declared": ["universal", "driver", "web"] },
+    "planNamed": { "commit": "a1b2c3d4e5f60718293a4b5c6d7e8f9012345678", "base": "0f1e2d3c4b5a69788796a5b4c3d2e1f001122334", "declaration": "9a8b7c6d5e4f30211203f4e5d6c7b8a998877665", "mode": "plan", "declared": ["universal", "driver", "web"], "gates": ["driver", "web"] },
+    "probe": { "commit": "a1b2c3d4e5f60718293a4b5c6d7e8f9012345678", "base": "0f1e2d3c4b5a69788796a5b4c3d2e1f001122334", "declaration": "9a8b7c6d5e4f30211203f4e5d6c7b8a998877665", "mode": "probe", "declared": ["universal", "driver", "web"] },
+    "commits": { "commit": "a1b2c3d4e5f60718293a4b5c6d7e8f9012345678", "base": "0f1e2d3c4b5a69788796a5b4c3d2e1f001122334", "declaration": "9a8b7c6d5e4f30211203f4e5d6c7b8a998877665", "mode": "commits", "declared": ["universal", "driver", "web"] }
+  },
+  "answers": {
+    "schema1": {
+      "schema": 1, "commit": "a1b2c3d4e5f60718293a4b5c6d7e8f9012345678",
+      "gates": [
+        { "name": "universal", "verdict": "pass", "wallSeconds": 12.5, "log": "X:/logs/universal.log" },
+        { "name": "driver", "verdict": "flake", "wallSeconds": 300 }
+      ]
+    },
+    "run": {
+      "schema": 2, "mode": "run", "commit": "a1b2c3d4e5f60718293a4b5c6d7e8f9012345678", "base": "0f1e2d3c4b5a69788796a5b4c3d2e1f001122334", "declaration": "9a8b7c6d5e4f30211203f4e5d6c7b8a998877665",
+      "gates": [
+        { "name": "driver", "verdict": "pass", "wallSeconds": 41, "log": "X:/logs/driver.log", "composition": { "units": ["N.A", "N.B"], "settings": "X:/logs/driver.composition.json", "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" }, "failures": [] },
+        { "name": "web", "verdict": "flake", "composition": { "units": null, "settings": "X:/logs/web.composition.json", "digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb" }, "failures": [] }
+      ],
+      "kept": [{ "name": "universal", "why": "no path the candidate changes reaches it, and its pass stands on this tree", "commit": "c0ffee00c0ffee00c0ffee00c0ffee00c0ffee00", "tree": "7ee0007ee0007ee0007ee0007ee0007ee0007ee0", "standing": "exact" }],
+      "deferred": []
+    },
+    "plan": {
+      "schema": 2, "mode": "plan", "commit": "a1b2c3d4e5f60718293a4b5c6d7e8f9012345678", "base": "0f1e2d3c4b5a69788796a5b4c3d2e1f001122334", "declaration": "9a8b7c6d5e4f30211203f4e5d6c7b8a998877665",
+      "run": [{ "name": "driver", "why": "a path it reaches changed" }, { "name": "web", "why": "a path it reaches changed" }],
+      "kept": [{ "name": "universal", "why": "no path the candidate changes reaches it, and its pass stands on this tree", "commit": "c0ffee00c0ffee00c0ffee00c0ffee00c0ffee00", "tree": "7ee0007ee0007ee0007ee0007ee0007ee0007ee0", "standing": "exact" }],
+      "deferred": []
+    },
+    "planNamed": {
+      "schema": 2, "mode": "plan", "commit": "a1b2c3d4e5f60718293a4b5c6d7e8f9012345678", "base": "0f1e2d3c4b5a69788796a5b4c3d2e1f001122334", "declaration": "9a8b7c6d5e4f30211203f4e5d6c7b8a998877665",
+      "run": [{ "name": "driver", "why": "named in DAORIS_VERIFY_GATES: it runs whole" }, { "name": "web", "why": "named in DAORIS_VERIFY_GATES: it runs whole" }],
+      "kept": [], "deferred": []
+    },
+    "probe": {
+      "schema": 2, "mode": "probe", "commit": "a1b2c3d4e5f60718293a4b5c6d7e8f9012345678", "base": "0f1e2d3c4b5a69788796a5b4c3d2e1f001122334", "declaration": "9a8b7c6d5e4f30211203f4e5d6c7b8a998877665",
+      "result": "fail", "signature": { "test": "N.T.M", "exception": "System.Exception", "location": { "method": "N.T.M", "text": "Throw();", "ordinal": 0 } }, "log": "X:/logs/driver.probe.log"
+    },
+    "commits": {
+      "schema": 2, "mode": "commits", "commit": "a1b2c3d4e5f60718293a4b5c6d7e8f9012345678", "base": "0f1e2d3c4b5a69788796a5b4c3d2e1f001122334", "declaration": "9a8b7c6d5e4f30211203f4e5d6c7b8a998877665",
+      "problems": []
+    }
+  },
+  "written": {
+    "about": "Pieces the merge tool writes, built here with the tool's own writers and held to the answers above: the schema-1 gates (verifyGates), the run's gates (verifyRunGates), the named plan (verifyPlanAnswer), the commits answer (verifyCommitsAnswer) and a run that did not finish (verifyUnfinished).",
+    "plan": [{ "name": "universal", "declared": "universal" }, { "name": "driver", "declared": "driver" }],
+    "schema1Results": [{ "gate": { "name": "universal" }, "verdict": "PASS", "log": "X:/logs/universal.log" }, { "gate": { "name": "driver" }, "verdict": "FLAKE" }],
+    "schema1Seconds": { "universal": 12.5, "driver": 300 },
+    "runPlan": [{ "name": "driver", "declared": "driver" }, { "name": "web", "declared": "web" }],
+    "runResults": [{ "gate": { "name": "driver" }, "verdict": "PASS", "log": "X:/logs/driver.log" }, { "gate": { "name": "web" }, "verdict": "FLAKE" }],
+    "runSeconds": { "driver": 41 },
+    "runCompositions": {
+      "driver": { "units": ["N.A", "N.B"], "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "file": "X:/logs/driver.composition.json" },
+      "web": { "units": null, "digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "file": "X:/logs/web.composition.json" }
+    },
+    "unfinished": {
+      "why": "npm ci failed",
+      "answer": {
+        "schema": 2, "mode": "run", "commit": "a1b2c3d4e5f60718293a4b5c6d7e8f9012345678", "base": "0f1e2d3c4b5a69788796a5b4c3d2e1f001122334", "declaration": "9a8b7c6d5e4f30211203f4e5d6c7b8a998877665",
+        "gates": [{ "name": "driver", "verdict": "not-run", "failures": [] }, { "name": "web", "verdict": "not-run", "failures": [] }], "kept": [], "deferred": [], "unfinished": "the run did not finish: npm ci failed"
+      }
+    }
+  },
+  "reads": [
+    { "name": "D192's schema 1, every gate pass or flake", "ask": "check", "answer": "schema1", "expect": { "kind": "gates", "gates": ["universal:pass", "driver:flake"], "failures": [] } },
+    { "name": "busy as D192 has it", "ask": "check", "raw": "{\"schema\":1,\"commit\":\"a1b2c3d4e5f60718293a4b5c6d7e8f9012345678\",\"busy\":true}", "expect": { "kind": "busy" } },
+    { "name": "no file is unknown", "ask": "check", "missing": true, "expect": { "kind": "unknown", "why": "the runner wrote no answer" } },
+    { "name": "a file that does not read is unknown", "ask": "check", "raw": "{not json", "expect": { "kind": "unknown", "why": "the runner's answer does not read as JSON" } },
+    { "name": "a file that is not an object is unknown", "ask": "check", "raw": "[1]", "expect": { "kind": "unknown", "why": "the runner's answer is not a JSON object" } },
+    { "name": "schema 2 answering a call that asked no mode is another schema", "ask": "check", "answer": "run", "expect": { "kind": "unknown", "why": "the runner's answer names schema 2, not 1" } },
+    { "name": "schema 1 answering a mode is another schema", "ask": "run", "answer": "schema1", "expect": { "kind": "unknown", "why": "the runner's answer names schema 1, not 2" } },
+    { "name": "a schema this build does not know is said by its number", "ask": "check", "answer": "schema1", "with": { "schema": 3 }, "expect": { "kind": "unknown", "why": "the runner's answer names schema 3, not 1" } },
+    { "name": "an answer that names no schema", "ask": "check", "answer": "schema1", "with": { "schema": null }, "expect": { "kind": "unknown", "why": "the runner's answer names no schema" } },
+    { "name": "another commit is unknown, said by its short id", "ask": "check", "answer": "schema1", "with": { "commit": "ffffffffffffffffffffffffffffffffffffffff" }, "expect": { "kind": "unknown", "why": "the runner's answer is for commit fffffff, not a1b2c3d" } },
+    { "name": "no commit is unknown", "ask": "check", "answer": "schema1", "with": { "commit": null }, "expect": { "kind": "unknown", "why": "the runner's answer names no commit" } },
+    { "name": "another mode is unknown", "ask": "run", "answer": "plan", "expect": { "kind": "unknown", "why": "the runner's answer is for the mode 'plan', not 'run'" } },
+    { "name": "another base is unknown", "ask": "run", "answer": "run", "with": { "base": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" }, "expect": { "kind": "unknown", "why": "the runner's answer is for the base eeeeeee, not 0f1e2d3" } },
+    { "name": "another declaration blob than the accepted one is unknown", "ask": "run", "answer": "run", "with": { "declaration": "dddddddddddddddddddddddddddddddddddddddd" }, "expect": { "kind": "unknown", "why": "the runner's answer is for the declaration ddddddd, not the accepted 9a8b7c6" } },
+    { "name": "a declaration blob not named is unknown", "ask": "run", "answer": "run", "with": { "declaration": null }, "expect": { "kind": "unknown", "why": "the runner's answer names no declaration" } },
+    { "name": "a gate the accepted declaration does not declare is unknown", "ask": "check", "answer": "schema1", "with": { "gates": [{ "name": "secret", "verdict": "pass" }] }, "expect": { "kind": "unknown", "why": "the runner's answer names the gate 'secret', which the accepted declaration does not declare" } },
+    { "name": "a gate named twice is unknown", "ask": "check", "answer": "schema1", "with": { "gates": [{ "name": "driver", "verdict": "pass" }, { "name": "driver", "verdict": "pass" }] }, "expect": { "kind": "unknown", "why": "the runner's answer is misshapen: the gate 'driver' is named twice" } },
+    { "name": "a verdict D192 does not have is unknown", "ask": "check", "answer": "schema1", "with": { "gates": [{ "name": "driver", "verdict": "passed" }] }, "expect": { "kind": "unknown", "why": "the runner's answer is misshapen: the gate 'driver' has a verdict that is none of pass, flake, fail, ended or not-run" } },
+    { "name": "gates that are not a list are unknown", "ask": "check", "answer": "schema1", "with": { "gates": "driver" }, "expect": { "kind": "unknown", "why": "the runner's answer is misshapen: gates is not a list of gates" } },
+    { "name": "a gate with no name is unknown", "ask": "check", "answer": "schema1", "with": { "gates": [{ "verdict": "pass" }] }, "expect": { "kind": "unknown", "why": "the runner's answer is misshapen: a gate has no name" } },
+    { "name": "no gates at all reads as no gates, which is never a pass (see standings)", "ask": "check", "answer": "schema1", "with": { "gates": [] }, "expect": { "kind": "gates", "gates": [], "failures": [] } },
+    { "name": "a run that did not finish is unknown in its own words", "ask": "run", "answer": "run", "with": { "unfinished": "the run did not finish: npm ci failed" }, "expect": { "kind": "unknown", "why": "the run did not finish: npm ci failed" } },
+    { "name": "busy in a mode", "ask": "run", "answer": "run", "with": { "busy": true }, "expect": { "kind": "busy" } },
+    { "name": "a run answer: its gates, the failures it holds, the plan's kept and deferred", "ask": "run", "answer": "run", "expect": { "kind": "run", "gates": ["driver:pass", "web:flake"], "failures": [], "kept": ["universal:exact"], "deferred": [] } },
+    {
+      "name": "a run answer with a failing gate and its failure, signed",
+      "ask": "run", "answer": "run",
+      "with": { "gates": [
+        { "name": "driver", "verdict": "fail", "exit": 1, "composition": { "units": ["N.A"], "settings": "X:/logs/driver.composition.json", "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" }, "failures": [{ "unit": "N.T", "test": "N.T.M", "signature": { "test": "N.T.M", "exception": "System.Exception", "location": { "method": "N.T.M", "text": "Throw();", "ordinal": 0 } } }] },
+        { "name": "web", "verdict": "pass" }
+      ] },
+      "expect": { "kind": "run", "gates": ["driver:fail", "web:pass"], "failures": ["driver/N.T.M"], "kept": ["universal:exact"], "deferred": [] }
+    },
+    {
+      "name": "a gate that names no test fails with its gate's signature",
+      "ask": "run", "answer": "run",
+      "with": { "gates": [{ "name": "universal", "verdict": "fail", "exit": 2, "failures": [{ "unit": "universal", "test": "universal", "signature": { "gate": "universal", "step": "check", "message": "docs/README.md: error: a broken link" } }] }] },
+      "expect": { "kind": "run", "gates": ["universal:fail"], "failures": ["universal/universal"], "kept": ["universal:exact"], "deferred": [] }
+    },
+    { "name": "a failure whose signature does not read is unknown", "ask": "run", "answer": "run", "with": { "gates": [{ "name": "driver", "verdict": "fail", "failures": [{ "unit": "N.T", "test": "N.T.M", "signature": { "test": "N.T.M" } }] }] }, "expect": { "kind": "unknown", "why": "the runner's answer is misshapen: a failure of the gate 'driver' holds no signature that reads" } },
+    { "name": "a composition whose digest is none is unknown", "ask": "run", "answer": "run", "with": { "gates": [{ "name": "driver", "verdict": "pass", "composition": { "units": null, "settings": "X:/logs/d.json", "digest": "sha256:abc" }, "failures": [] }] }, "expect": { "kind": "unknown", "why": "the runner's answer is misshapen: the composition of the gate 'driver' holds no digest (sha256: and 64 hex digits)" } },
+    { "name": "a run answer's kept naming an undeclared gate is unknown", "ask": "run", "answer": "run", "with": { "kept": [{ "name": "secret", "why": "x", "commit": null, "tree": "7ee0007ee0007ee0007ee0007ee0007ee0007ee0", "standing": "exact" }] }, "expect": { "kind": "unknown", "why": "the runner's answer names the gate 'secret', which the accepted declaration does not declare" } },
+    { "name": "a plan: what it runs, keeps on which standing, and defers", "ask": "plan", "answer": "plan", "expect": { "kind": "plan", "run": ["driver", "web"], "kept": ["universal:exact"], "deferred": [] } },
+    { "name": "a plan that lists a gate twice is unknown", "ask": "plan", "answer": "plan", "with": { "deferred": [{ "name": "web", "why": "x" }] }, "expect": { "kind": "unknown", "why": "the runner's answer is misshapen: the plan lists the gate 'web' twice" } },
+    { "name": "a plan that lists a declared gate nowhere is unknown", "ask": "plan", "answer": "plan", "with": { "run": [{ "name": "driver", "why": "x" }] }, "expect": { "kind": "unknown", "why": "the runner's answer is misshapen: the plan lists no place for the gate 'web'" } },
+    { "name": "a plan that names an undeclared gate is unknown", "ask": "plan", "answer": "plan", "with": { "deferred": [{ "name": "secret", "why": "x" }] }, "expect": { "kind": "unknown", "why": "the runner's answer names the gate 'secret', which the accepted declaration does not declare" } },
+    { "name": "a plan whose lists are not lists is unknown", "ask": "plan", "answer": "plan", "with": { "kept": "universal" }, "expect": { "kind": "unknown", "why": "the runner's answer is misshapen: the plan's run, kept and deferred are lists of gates" } },
+    { "name": "gates named: the plan runs exactly those, whole, and keeps and defers none", "ask": "planNamed", "answer": "planNamed", "expect": { "kind": "plan", "run": ["driver", "web"], "kept": [], "deferred": [] } },
+    { "name": "gates named: a plan that runs others is unknown", "ask": "planNamed", "answer": "plan", "expect": { "kind": "unknown", "why": "the runner's answer is misshapen: the plan does not run exactly the gates named (driver, web)" } },
+    { "name": "a probe that fails again with its signature", "ask": "probe", "answer": "probe", "expect": { "kind": "probe", "result": "fail", "signature": "N.T.M" } },
+    { "name": "a probe that passes", "ask": "probe", "answer": "probe", "with": { "result": "pass", "signature": null }, "expect": { "kind": "probe", "result": "pass", "signature": null } },
+    { "name": "a probe that cannot, with no signature", "ask": "probe", "answer": "probe", "with": { "result": "cannot", "signature": null }, "expect": { "kind": "probe", "result": "cannot", "signature": null } },
+    { "name": "a probe that fails with no signature is unknown", "ask": "probe", "answer": "probe", "with": { "signature": null }, "expect": { "kind": "unknown", "why": "the runner's answer is misshapen: a probe that failed holds no signature that reads" } },
+    { "name": "a probe whose result is none of pass, fail or cannot is unknown", "ask": "probe", "answer": "probe", "with": { "result": "maybe" }, "expect": { "kind": "unknown", "why": "the runner's answer is misshapen: the probe's result is none of pass, fail or cannot" } },
+    { "name": "the commit check with no problems", "ask": "commits", "answer": "commits", "expect": { "kind": "commits", "problems": [] } },
+    { "name": "the commit check with its problems", "ask": "commits", "answer": "commits", "with": { "problems": ["a1b2c3d has no Co-Authored-By line"] }, "expect": { "kind": "commits", "problems": ["a1b2c3d has no Co-Authored-By line"] } },
+    { "name": "a commit check whose problems are not texts is unknown", "ask": "commits", "answer": "commits", "with": { "problems": [1] }, "expect": { "kind": "unknown", "why": "the runner's answer is misshapen: problems is not a list of texts" } }
+  ],
+  "standings": [
+    { "name": "every gate the check names, pass or flake: reached, the flake said", "gates": [{ "name": "universal", "verdict": "pass" }, { "name": "driver", "verdict": "flake" }], "required": ["universal", "driver"], "expect": { "kind": "reached", "flaked": ["driver"] } },
+    { "name": "a failed gate fails the run, naming its exit", "gates": [{ "name": "universal", "verdict": "pass" }, { "name": "driver", "verdict": "fail", "exit": 1 }], "required": ["universal", "driver"], "expect": { "kind": "failed", "why": "the gate 'driver' failed with exit 1" } },
+    { "name": "a failed gate with no exit", "gates": [{ "name": "driver", "verdict": "fail" }], "required": ["driver"], "expect": { "kind": "failed", "why": "the gate 'driver' failed" } },
+    { "name": "a failure outranks a gate that is missing", "gates": [{ "name": "driver", "verdict": "fail", "exit": 3 }], "required": ["universal", "driver"], "expect": { "kind": "failed", "why": "the gate 'driver' failed with exit 3" } },
+    { "name": "a gate that is missing is unknown", "gates": [{ "name": "universal", "verdict": "pass" }], "required": ["universal", "driver"], "expect": { "kind": "unknown", "why": "the run does not show every gate it was asked for: driver is missing" } },
+    { "name": "a gate that ended before its verdict is unknown", "gates": [{ "name": "universal", "verdict": "pass" }, { "name": "driver", "verdict": "ended" }], "required": ["universal", "driver"], "expect": { "kind": "unknown", "why": "the run does not show every gate it was asked for: driver ended before its verdict" } },
+    { "name": "a gate that did not run is unknown", "gates": [{ "name": "universal", "verdict": "pass" }, { "name": "driver", "verdict": "not-run" }], "required": ["universal", "driver"], "expect": { "kind": "unknown", "why": "the run does not show every gate it was asked for: driver did not run" } },
+    { "name": "each gate that is lacking is named", "gates": [{ "name": "universal", "verdict": "ended" }, { "name": "web", "verdict": "not-run" }], "required": ["universal", "driver", "web"], "expect": { "kind": "unknown", "why": "the run does not show every gate it was asked for: universal ended before its verdict, driver is missing, web did not run" } },
+    { "name": "no gates at all is never a pass", "gates": [], "required": ["universal"], "expect": { "kind": "unknown", "why": "the run does not show every gate it was asked for: universal is missing" } },
+    { "name": "a check that names no gate shows nothing", "gates": [{ "name": "universal", "verdict": "pass" }], "required": [], "expect": { "kind": "unknown", "why": "the check names no gate: nothing is shown" } },
+    { "name": "a gate beyond those named is not asked for, and passing it adds nothing", "gates": [{ "name": "universal", "verdict": "pass" }, { "name": "web", "verdict": "pass" }], "required": ["universal"], "expect": { "kind": "reached", "flaked": [] } }
+  ],
+  "promotions": [
+    { "name": "a run for the exact tip and base, every planned gate pass or flake, beside the plan's kept", "plan": { "answer": "plan" }, "run": { "answer": "run" }, "expect": { "kind": "reached", "flaked": ["web"], "kept": ["universal:exact"], "failures": [] } },
+    { "name": "a run lacking a planned gate is unknown", "plan": { "answer": "plan" }, "run": { "answer": "run", "with": { "gates": [{ "name": "driver", "verdict": "pass" }] } }, "expect": { "kind": "unknown", "why": "the run does not show every gate it was asked for: web is missing" } },
+    { "name": "a run holding a planned gate ended is unknown", "plan": { "answer": "plan" }, "run": { "answer": "run", "with": { "gates": [{ "name": "driver", "verdict": "pass" }, { "name": "web", "verdict": "ended" }] } }, "expect": { "kind": "unknown", "why": "the run does not show every gate it was asked for: web ended before its verdict" } },
+    { "name": "a run holding a planned gate not run is unknown", "plan": { "answer": "plan" }, "run": { "answer": "run", "with": { "gates": [{ "name": "driver", "verdict": "pass" }, { "name": "web", "verdict": "not-run" }] } }, "expect": { "kind": "unknown", "why": "the run does not show every gate it was asked for: web did not run" } },
+    {
+      "name": "a failing gate fails the run, its failures handed to the judge",
+      "plan": { "answer": "plan" },
+      "run": { "answer": "run", "with": { "gates": [
+        { "name": "driver", "verdict": "fail", "exit": 1, "failures": [{ "unit": "N.T", "test": "N.T.M", "signature": { "test": "N.T.M", "exception": "System.Exception", "location": { "method": "N.T.M", "text": "Throw();", "ordinal": 0 } } }] },
+        { "name": "web", "verdict": "pass" }
+      ] } },
+      "expect": { "kind": "failed", "why": "the gate 'driver' failed with exit 1", "flaked": [], "kept": ["universal:exact"], "failures": ["driver/N.T.M"] }
+    },
+    { "name": "a gate beyond the plan that fails fails the run", "plan": { "answer": "plan" }, "run": { "answer": "run", "with": { "gates": [{ "name": "driver", "verdict": "pass" }, { "name": "web", "verdict": "pass" }, { "name": "universal", "verdict": "fail", "exit": 2 }] } }, "expect": { "kind": "failed", "why": "the gate 'universal' failed with exit 2", "flaked": [], "kept": ["universal:exact"], "failures": [] } },
+    { "name": "a kept gate that stands on no tree is unknown", "plan": { "answer": "plan", "with": { "kept": [{ "name": "universal", "why": "x", "commit": "c0ffee00c0ffee00c0ffee00c0ffee00c0ffee00", "tree": null, "standing": "exact" }] } }, "run": { "answer": "run" }, "expect": { "kind": "unknown", "why": "the plan keeps the gate 'universal' on no tree" } },
+    { "name": "a kept gate whose standing the runner does not state is unknown", "plan": { "answer": "plan", "with": { "kept": [{ "name": "universal", "why": "x", "commit": null, "tree": "7ee0007ee0007ee0007ee0007ee0007ee0007ee0", "standing": "maybe" }] } }, "run": { "answer": "run" }, "expect": { "kind": "unknown", "why": "the plan keeps the gate 'universal' on a standing the runner does not state ('maybe')" } },
+    { "name": "a kept pass recorded without its commit still stands on its tree", "plan": { "answer": "plan", "with": { "kept": [{ "name": "universal", "why": "x", "commit": null, "tree": "7ee0007ee0007ee0007ee0007ee0007ee0007ee0", "standing": "records" }] } }, "run": { "answer": "run" }, "expect": { "kind": "reached", "flaked": ["web"], "kept": ["universal:records"], "failures": [] } },
+    { "name": "a plan that runs and keeps nothing shows nothing", "plan": { "answer": "plan", "with": { "run": [], "kept": [], "deferred": [{ "name": "universal", "why": "x" }, { "name": "driver", "why": "x" }, { "name": "web", "why": "x" }] } }, "run": { "answer": "run", "with": { "gates": [] } }, "expect": { "kind": "unknown", "why": "the plan runs no gate and keeps none: nothing is shown" } },
+    { "name": "a plan that runs nothing and keeps every gate is reached on the kept alone", "plan": { "answer": "plan", "with": { "run": [], "kept": [{ "name": "universal", "why": "x", "commit": null, "tree": "7ee0007ee0007ee0007ee0007ee0007ee0007ee0", "standing": "exact" }, { "name": "driver", "why": "x", "commit": null, "tree": "7ee0007ee0007ee0007ee0007ee0007ee0007ee0", "standing": "composed" }, { "name": "web", "why": "x", "commit": null, "tree": "7ee0007ee0007ee0007ee0007ee0007ee0007ee0", "standing": "unreached" }] } }, "run": { "answer": "run", "with": { "gates": [] } }, "expect": { "kind": "reached", "flaked": [], "kept": ["universal:exact", "driver:composed", "web:unreached"], "failures": [] } },
+    { "name": "a busy run waits", "plan": { "answer": "plan" }, "run": { "answer": "run", "with": { "busy": true } }, "expect": { "kind": "busy" } },
+    { "name": "a busy plan waits", "plan": { "answer": "plan", "with": { "busy": true } }, "run": { "answer": "run" }, "expect": { "kind": "busy" } },
+    { "name": "a run for another base is unknown, in the read's own words", "plan": { "answer": "plan" }, "run": { "answer": "run", "with": { "base": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" } }, "expect": { "kind": "unknown", "why": "the runner's answer is for the base eeeeeee, not 0f1e2d3" } },
+    { "name": "a plan for another commit is unknown", "plan": { "answer": "plan", "with": { "commit": "ffffffffffffffffffffffffffffffffffffffff" } }, "run": { "answer": "run" }, "expect": { "kind": "unknown", "why": "the runner's answer is for commit fffffff, not a1b2c3d" } },
+    { "name": "promotion consumes a run answer only", "plan": { "answer": "plan" }, "run": { "answer": "plan" }, "askRun": "plan", "expect": { "kind": "unknown", "why": "promotion consumes a run answer for the exact tip and base, and the answer is a plan's" } }
+  ]
+}

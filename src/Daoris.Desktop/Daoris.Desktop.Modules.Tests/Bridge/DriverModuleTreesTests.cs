@@ -289,6 +289,29 @@ public sealed class DriverModuleTreesTests : DriverModuleBridge
     }
 
     /// <summary>
+    /// LANDBACK1 part 1: a press that carried its session on answers why and whether Daoris's words reached it, exit 0 for the verb where
+    /// they did, and nothing where it was not carried on; the plan says the kept yes, and nothing where none is kept.
+    /// </summary>
+    [Fact]
+    public void A_press_that_carried_its_session_on_says_so_and_the_plan_says_the_yes_is_kept()
+    {
+        var landed = new TreeLanding(false, "Accepted: its session was carried on.") { Refusal = AutoLandingCode.Uncommitted };
+        var carry = new CarryAnswer(true, LandCarry.Uncommitted, landed.Message);
+        var said = TreesWords.Carried(landed, carry, []);
+
+        var carried = JsonSerializer.SerializeToElement(TreesRoutes.Pressed("s1a2b3c4", landed, LandingGate.Open("engine"), said, [], carried: carry), Camel);
+        var plain = JsonSerializer.SerializeToElement(TreesRoutes.Pressed("s1a2b3c4", landed, LandingGate.Open("engine"), TreesWords.Land(landed, []), []), Camel);
+
+        Assert.False(carried.GetProperty("done").GetBoolean());
+        Assert.Equal("uncommitted", carried.GetProperty("carried").GetProperty("why").GetString());
+        Assert.True(carried.GetProperty("carried").GetProperty("told").GetBoolean());
+        Assert.Equal(0, said.Code);
+        Assert.Equal(JsonValueKind.Null, plain.GetProperty("carried").ValueKind);
+        Assert.Equal(1, TreesWords.Land(landed, []).Code);
+        Assert.Equal(1, TreesWords.Carried(landed, carry with { Told = false }, []).Code);
+    }
+
+    /// <summary>
     /// The installed window's case: the tree is gone and the landed branch stands. The review is the branch's changes,
     /// says where and when the work landed and the pull request a plugin opened, and reads as landed.
     /// </summary>

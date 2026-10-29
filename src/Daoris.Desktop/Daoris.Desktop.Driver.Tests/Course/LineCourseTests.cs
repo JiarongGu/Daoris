@@ -578,7 +578,7 @@ public sealed class LineCourseTests
     /// <summary>
     /// Every row names the case it was ported from, and that case is there: a suite's test method (a theory's case after a colon), a row of
     /// the account rule's own table, or, for a reading no suite pins today, the source line the path answers at (named in D212's note).
-    /// The standing move's rows are the design's, since no path writes a move record yet.
+    /// The standing move's rows are the design's, since no course reads a move record yet.
     /// </summary>
     [Fact]
     public void Every_row_is_ported_from_a_case_that_is_there()

@@ -5,7 +5,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <summary>
 /// INTEGRATE1e part e1 over real git (D215's note; the integration design §4.6, §17.4): the landing and its advance write their
 /// acceptance's provenance, and the one door's recorded-landing path admits a landing from its record alone, bound to the tip the record
-/// holds, its gate proof read as the record keeps it, never twice and never one the line holds. Called from no production path yet.
+/// holds, its gate proof read as the record keeps it, never twice and never one the line holds. Called from no production path yet. The
+/// requests are kept in the home's desktop store (part e2, <see cref="IntegrationStore"/>).
 /// </summary>
 [Trait(Category.Name, Category.Process)]
 [Trait(Category.Parallel, Category.Git)]
@@ -22,8 +23,11 @@ public sealed class IntegrationRequestsGitTests : LandedFixture
             .Save(DaorisHome.Entry(Home, HomeEntry.DriverConfig));
 
     /// <summary>The door over this home's own records and settings, read as the driver reads them.</summary>
-    private IntegrationRequests Door(InMemoryIntegrationRequests store) =>
+    private IntegrationRequests Door(IntegrationStore store) =>
         new(new HomeIntegrationRecords(Home), store, () => DriverConfig.Load(DaorisHome.Entry(Home, HomeEntry.DriverConfig)));
+
+    /// <summary>This home's own request store, in its desktop store (INTEGRATE1e part e2).</summary>
+    private IntegrationStore Requests() => new(Home, () => StoreSettled.Yes);
 
     private static IntegrationAsk Card(string root, string branch, string route = IntegrationRoutes.Recorded) =>
         new("engine", "aurora", root, branch, route, IntegrationRequester.Card);
@@ -52,7 +56,7 @@ public sealed class IntegrationRequestsGitTests : LandedFixture
         var trees = new SessionTrees(Home);
         var (branch, tip, tree) = await LandedAsync(trees, root, "q1", tidy: true);
         Assert.False(Directory.Exists(tree), "LAND3's tidy took the session's tree");
-        var store = new InMemoryIntegrationRequests();
+        var store = Requests();
 
         var admitted = await Door(store).AdmitAsync(Card(root, branch));
 
@@ -74,7 +78,7 @@ public sealed class IntegrationRequestsGitTests : LandedFixture
         Save(new LandingRule(LandingForm.Branch, Pattern), new LandingIntegrate(Request: LandingIntegrate.Owner));
         var (branch, tip, _) = await LandedAsync(new SessionTrees(Home), root, "q1");
         await CommitOnAsync(root, branch, "later.txt", "a later commit\n", "a later commit");
-        var store = new InMemoryIntegrationRequests();
+        var store = Requests();
 
         var moved = await Door(store).AdmitAsync(Card(root, branch));
 
@@ -104,7 +108,7 @@ public sealed class IntegrationRequestsGitTests : LandedFixture
         await CommitAsync(opened.Path, "work.txt", "the work\n", "the work");
         await GitAsync(root, "branch", "notes/records", "main");
         await CommitOnAsync(root, "notes/records", "notes.md", "the records\n", "the records");
-        var store = new InMemoryIntegrationRequests();
+        var store = Requests();
 
         var session = await Door(store).AdmitAsync(Card(root, opened.Branch, IntegrationRoutes.Records));
         var records = await Door(store).AdmitAsync(Card(root, "notes/records", IntegrationRoutes.Records));
@@ -130,7 +134,7 @@ public sealed class IntegrationRequestsGitTests : LandedFixture
         var trees = new SessionTrees(Home);
         var first = await LandedAsync(trees, root, "q1");
         var second = await LandedAsync(trees, root, "q2");
-        var store = new InMemoryIntegrationRequests();
+        var store = Requests();
 
         var swept = await Door(store).SweepAsync("engine", "aurora", root);
         var again = await Door(store).SweepAsync("engine", "aurora", root);
