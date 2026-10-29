@@ -1,4 +1,4 @@
-import type { CurrentWorkflow, WorkflowStart, WorkflowStep } from './current';
+import type { CurrentWorkflow, WorkflowIntegration, WorkflowStart, WorkflowStep } from './current';
 
 // What `WORKFLOW_CURRENT` answers, for the stories and the tests: each step a cell of the driver's shared table
 // (`Daoris.Desktop.Driver.Tests/fixtures/workflow-current.json`, WORKFLOW1a), its rows renamed to this suite's
@@ -148,7 +148,30 @@ export const GATES_CHANGED: WorkflowStart = {
   },
 };
 
-/** No landed route anywhere: the work that lands is not verified, today's. */
+const INTEGRATION_TIP = { line: 'main', commit: 'aa11bb22cc33dd44ee55ff6677889900aabbccdd' };
+const INTEGRATION_TEXT = '{\n  "integration": { "scratch": ["dist/", "coverage/"] }\n}';
+
+/** The integration declaration accepted as the tip holds it (INTEGRATE1d). */
+export const INTEGRATION_ACCEPTED: WorkflowIntegration = {
+  gates: ACCEPTED_BLOB, state: 'accepted', tip: { ...INTEGRATION_TIP, gates: ACCEPTED_BLOB },
+};
+
+/** The tip's declaration changed since the person accepted it: its writers and tidy use nothing until they accept it again. */
+export const INTEGRATION_CHANGED: WorkflowIntegration = {
+  gates: ACCEPTED_BLOB, state: 'changed', tip: { ...INTEGRATION_TIP, gates: CHANGED_BLOB }, declaration: INTEGRATION_TEXT,
+};
+
+/** A declaration never accepted. */
+export const INTEGRATION_UNACCEPTED: WorkflowIntegration = {
+  gates: null, state: 'unaccepted', tip: { ...INTEGRATION_TIP, gates: CHANGED_BLOB }, declaration: INTEGRATION_TEXT,
+};
+
+/** A tip the driver could not read. */
+export const INTEGRATION_UNREAD: WorkflowIntegration = {
+  gates: null, state: 'unread', tip: null, problem: "engine's line could not be read here.",
+};
+
+/** No landed route anywhere:the work that lands is not verified, today's. */
 export const NO_VERIFICATION: WorkflowStart = {
   ...START, landed: { workflow: 'current', level: 'current', gates: null, state: 'none' }, verifications: [],
 };

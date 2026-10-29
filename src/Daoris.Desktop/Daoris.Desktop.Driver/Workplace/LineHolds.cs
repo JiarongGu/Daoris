@@ -122,8 +122,10 @@ internal static class LineHolds
     /// lines where it would, else null. A git too old to try, or one that cannot say, says nothing: the press still finds it.
     /// </summary>
     /// <remarks>Objects only: it writes no ref, no tree on disk and no index, so the plan stays a look.</remarks>
-    internal static async Task<string?> TrialAsync(string root, string onto, IReadOnlyList<LandingCommit> kept, CancellationToken ct) =>
-        kept.Count == 0 ? null : (await TrialTreeAsync(root, onto, kept, ct).ConfigureAwait(false)).Conflicts;
+    /// <param name="lines">The line rules the owner accepted for integration at <paramref name="onto"/> (INTEGRATE1d), whose files the press settles by their pattern; none settles none.</param>
+    internal static async Task<string?> TrialAsync(
+        string root, string onto, IReadOnlyList<LandingCommit> kept, CancellationToken ct, IReadOnlyList<IntegrationMergeRule>? lines = null) =>
+        kept.Count == 0 ? null : (await TrialTreeAsync(root, onto, kept, ct, lines).ConfigureAwait(false)).Conflicts;
 
     /// <summary>
     /// <see cref="TrialAsync"/>'s trial, with the tree it ends at where it replays cleanly: what an entry's Accept compares to read a
@@ -131,11 +133,14 @@ internal static class LineHolds
     /// or a tree. Both null where git cannot say.
     /// </summary>
     internal static async Task<(string? Tree, string? Conflicts)> TrialTreeAsync(
-        string root, string onto, IReadOnlyList<LandingCommit> kept, CancellationToken ct)
+        string root, string onto, IReadOnlyList<LandingCommit> kept, CancellationToken ct, IReadOnlyList<IntegrationMergeRule>? lineRules = null)
     {
         var current = onto;
         // LANDBACKLOG1: the backlog the line declares at the trial's start, read once, at the first step that needs it.
+        // INTEGRATE1d: with the accepted line rules, whose files the press settles by their pattern; a trial never runs their writers.
         Task<BacklogMerge.Declared>? declared = null;
+        async Task<BacklogMerge.Declared> DeclaredAsync() =>
+            (await BacklogMerge.DeclaredTablesAsync(root, onto, ct).ConfigureAwait(false)) with { Lines = lineRules ?? [] };
         foreach (var commit in kept)
         {
             var (code, output, _) = await WorkingTree.GitAsync(
@@ -157,7 +162,7 @@ internal static class LineHolds
                 // LANDBACKLOG1: nor is one in the declared backlog, alone or beside generated files, that its merge base settles, as the
                 // press settles it: the trial goes on from the tree git wrote with the backlog merged in.
                 // INTEGRATE1c: and so is one in a row table the line declares, the same way.
-                var settles = await (declared ??= BacklogMerge.DeclaredTablesAsync(root, onto, ct)).ConfigureAwait(false);
+                var settles = await (declared ??= DeclaredAsync()).ConfigureAwait(false);
                 var mine = named.Where(settles.Settles).ToList();
                 var others = named.Where(each => !settles.Settles(each)).ToList();
                 if (mine.Count > 0
@@ -166,7 +171,7 @@ internal static class LineHolds
                     var written = lines[0];
                     foreach (var path in mine)
                     {
-                        if (await BacklogMerge.TrialAsync(root, path, $"{commit.Sha}^", current, commit.Sha, written, ct).ConfigureAwait(false) is not { } next)
+                        if (await BacklogMerge.TrialAsync(root, path, $"{commit.Sha}^", current, commit.Sha, written, ct, settles).ConfigureAwait(false) is not { } next)
                         {
                             written = null;
                             break;

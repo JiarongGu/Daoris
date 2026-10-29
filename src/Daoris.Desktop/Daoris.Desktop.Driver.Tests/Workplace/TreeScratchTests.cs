@@ -163,14 +163,20 @@ public sealed class TreeScratchTests : IDisposable
     public void A_glob_that_reaches_every_folder_or_leaves_the_repository_is_passed_over(string glob) =>
         Assert.Empty(TreeScratch.ParseDeclared($$"""{ "integration": { "scratch": ["{{glob.Replace("\\", "\\\\")}}"] } }"""));
 
-    [Fact]
-    public void The_declaration_is_read_from_the_checkouts_gates_file()
-    {
-        Assert.Empty(TreeScratch.Declared(Checkout));
-        Write(Checkout, "daoris.gates.json", DateTime.UtcNow, """{ "integration": { "scratch": ["out-data/**"] } }""");
+    /// <summary>
+    /// INTEGRATE1d: the scratch is read through the declaration's one reader, so a declaration that breaks another key's shape declares
+    /// no scratch either: nothing acts on half of one. Which text is read, the accepted blob at the line's tip and never the checkout's
+    /// working file, is <c>ContentProofLossTests</c>' real-git rows.
+    /// </summary>
+    [Theory]
+    [InlineData("""{ "integration": { "by": "someone", "scratch": ["out-data/**"] } }""")]
+    [InlineData("""{ "integration": { "scratch": ["out-data/**", "**"] } }""")]
+    public void A_declaration_that_breaks_a_keys_shape_declares_no_scratch(string text) =>
+        Assert.Empty(TreeScratch.ParseDeclared(text));
 
-        Assert.True(TreeScratch.IsDeclared(TreeScratch.Declared(Checkout), "out-data/x.db"));
-    }
+    [Fact]
+    public void A_declaration_that_reads_declares_its_scratch() =>
+        Assert.True(TreeScratch.IsDeclared(TreeScratch.ParseDeclared("""{ "integration": { "scratch": ["out-data/**"] } }"""), "out-data/x.db"));
 
     [Fact]
     public void A_build_folder_and_a_declared_file_in_a_shared_folder_are_not_the_trees_own()

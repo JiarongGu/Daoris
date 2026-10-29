@@ -449,7 +449,9 @@ internal static class TreesConsole
                 if (landed is { Landed: false, Conflict: { } conflict })
                 {
                     var told = await RebaseTelling.TellTreeAsync(
-                        async (named, text, key, token) => await service.SayAsync(named, text, null, token, from: DaorisWords.From, key: key).ConfigureAwait(false),
+                        // FOUNDATION1d-ii: said at the head of the session's line where it went on, under its key.
+                        async (named, text, key, token) => (await WordsHead.FollowAsync(
+                            named, at => service.SayAsync(at, text, null, token, from: DaorisWords.From, key: key)).ConfigureAwait(false)).Said,
                         session, tree, conflict).ConfigureAwait(false);
                     Console.WriteLine($"trees: {told}");
                 }

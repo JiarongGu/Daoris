@@ -1231,6 +1231,9 @@ public static class SessionsCommand
 
         var last = WordsNever.LastHere(json, record.Quest);
         var next = WordsNever.ContinuedIn(json, id);
+        // FOUNDATION1d-ii (the design §3.4 rule 2, §19.12): a host with the `head` mark judges the line's head inside its say door's step, across
+        // kinds, so the driver's own walk, which follows conversations alone, stands aside for it; a host without the mark keeps it, as today.
+        if (next is not null && await world.Service.Opens.HeadAsync(ct).ConfigureAwait(false) >= 1) next = null;
         if (WordsNever.Judge(record, last, next) is { } never)
         {
             output.WriteLine($"sessions: {Refusal(never, id, record, last, null, next)}");
@@ -1365,6 +1368,13 @@ public static class SessionsCommand
             case { Sent: true, Now: true, Reaches: not "resume" }:
                 output.WriteLine("sessions: sent now: it takes this as its next turn.");
                 return 0;
+            // FOUNDATION1d-ii: the loop said them at the head of the record's line, which it names: followed there.
+            case { Sent: true, Reaches: "resume", Head: { } head } when head != record.Id:
+                output.WriteLine($"sessions: {record.Id} went on in {head}, its line's head, which your words went to.");
+                var json = await world.Service.SessionRecordsJsonAsync(ct).ConfigureAwait(false);
+                var headRecord = SessionRecords.Parse(json).FirstOrDefault(each => string.Equals(each.Id, head, StringComparison.Ordinal))
+                    ?? record with { Id = head };
+                return await GoesOnAsync(world, headRecord, held.Word, waited, output, ct).ConfigureAwait(false);
             case { Sent: true, Reaches: "resume" }:
                 return await GoesOnAsync(world, record, held.Word, waited, output, ct).ConfigureAwait(false);
             case { Sent: true, Reaches: "next-step" }:
@@ -1502,17 +1512,23 @@ public static class SessionsCommand
             return loop ? 2 : 1;
         }
 
-        var said = await world.Service.SayAsync(record.Id, text, files, ct).ConfigureAwait(false);
+        // FOUNDATION1d-ii (the design §3.4 rules 1 and 2): kept at the head of the record's line where it went on, the same say, its files carried
+        // to the head's folder first, and the head named.
+        var (said, at) = await WordsHead.FollowAsync(
+                record.Id, named => world.Service.SayAsync(named, text, files, ct),
+                files.Count > 0 ? (from, to) => ChatFiles.Carry(world.Home, from, to, files) : null)
+            .ConfigureAwait(false);
         if (said.Kept)
         {
             if (!loop && said.Word is { } kept)
             {
-                new SessionEvents(DaorisHome.Entry(world.Home, HomeEntry.Sessions)).Keep(record.Id, LoopWords.Shown(kept, RequestDoor.Terminal), null);
+                new SessionEvents(DaorisHome.Entry(world.Home, HomeEntry.Sessions)).Keep(at, LoopWords.Shown(kept, RequestDoor.Terminal), null);
             }
 
-            output.WriteLine(loop
-                ? "sessions: held: the same session goes on with this at the driver's next look."
-                : "sessions: held: the same session goes on with this when a driver next runs on this machine.");
+            var when = loop ? "at the driver's next look" : "when a driver next runs on this machine";
+            output.WriteLine(at != record.Id
+                ? $"sessions: held: {record.Id} went on in {at}, which goes on with this {when}."
+                : $"sessions: held: the same session goes on with this {when}.");
             return 0;
         }
 

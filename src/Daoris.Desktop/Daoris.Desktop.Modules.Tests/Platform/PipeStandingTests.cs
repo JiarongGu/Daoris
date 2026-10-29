@@ -179,6 +179,38 @@ public sealed class PipeStandingTests : Bridge
         Assert.Equal(0, driver.Ran);
     }
 
+    /// <summary>
+    /// INTEGRATE1d (D215 point 10: the owner accepts each declaration's blob): an agent's press accepting a repository's integration
+    /// declaration, from its own job and with the standing confirmation granted, is never covered. It waits for the person's Confirm,
+    /// runs nothing meanwhile, and the person's no refuses it, so an agent never accepts the commands and the scratch it would run under.
+    /// </summary>
+    [Fact]
+    public async Task An_agents_press_accepting_an_integration_declaration_runs_nothing_without_the_persons_Confirm()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        using var log = new MachineLog(Home, "desktop");
+        var driver = new HeldModule(DriverModule.Name);
+        driver.Let.SetResult();
+        var (dispatcher, services) = Compose(log, driver);
+        using var composed = services;
+        var (pipe, caller) = Pipe(dispatcher, log);
+        using var served = pipe;
+        caller.Answer = StandingPlace.InAgentJob;
+        await using var client = await PipeClient.ConnectAsync(pipe.Name!);
+        await client.HelloAsync(HomeId);
+
+        var id = await client.SendAsync(DriverModule.Name, "INTEGRATION_GATES", new { repository = "engine", gates = "3b18e512dba79e4c8300dd08aeb37f8e728b8dad" });
+        await Until(() => pipe.Confirmations.Now().Waiting.Count == 1, () => "the press was not asked");
+
+        Assert.Equal("INTEGRATION_GATES", Assert.Single(pipe.Confirmations.Now().Waiting).Route);
+        Assert.Equal(PipeClass.Person, PipeCensus.Daoris.Of(DriverModule.Name, "INTEGRATION_GATES"));
+        Assert.Equal(0, driver.Ran);
+        Assert.Equal(0, pipe.StandingConfirmation.Now().Used);
+        await pipe.Confirmations.AnswerAsync(pipe.Confirmations.Now().Waiting[0].Id, confirm: false);
+        Assert.False((await client.AnswerAsync(id)).GetProperty("success").GetBoolean());
+        Assert.Equal(0, driver.Ran);
+    }
+
     /// <summary>§4.1, §8 case 9: a terminal cannot grant it, nor ask for a card that would; refused before it is dispatched.</summary>
     [Fact]
     public async Task A_terminal_is_refused_the_grant_before_it_is_dispatched()

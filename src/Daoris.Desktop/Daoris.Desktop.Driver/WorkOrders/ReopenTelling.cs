@@ -52,8 +52,9 @@ public sealed class ServiceReopenDoors(ServiceClient service, SessionProcesses p
 
     public Task<PriorSession?> RecordAsync(string session, CancellationToken ct) => service.RecordAsync(session, ct);
 
-    public Task<SayAnswer> SayAsync(string session, string text, string key, CancellationToken ct) =>
-        service.SayAsync(session, text, null, ct, from: DaorisWords.From, key: key);
+    // FOUNDATION1d-ii: said at the head of the session's line where it went on, under the fact's key.
+    public async Task<SayAnswer> SayAsync(string session, string text, string key, CancellationToken ct) =>
+        (await WordsHead.FollowAsync(session, at => service.SayAsync(at, text, null, ct, from: DaorisWords.From, key: key)).ConfigureAwait(false)).Said;
 
     public Task<QuestView?> QuestAsync(string quest, CancellationToken ct) => service.FindQuestAsync(quest, ct);
 
@@ -292,6 +293,22 @@ public sealed class ReopenTelling(ReopenMarks marks)
         };
         var kept = await inbox.KeepOrHoldAsync(doors.SaidOf(session), word, ct).ConfigureAwait(false);
         if (kept.Outcome == InboxKeep.Closed) return;
+        if (kept is { Outcome: InboxKeep.Continued, Head: { } head })
+        {
+            // FOUNDATION1d-ii (the design §3.4 rule 2): the session's record went on in its line's head, so its inbox held nothing; the words
+            // are said there under the fact's key, and the mark stays the named session's, as the reopen names it.
+            var said = await doors.SayAsync(head, word.Text, DaorisKeys.Reopen(quest, reopen), ct).ConfigureAwait(false);
+            if (said.Kept)
+            {
+                _settled[key] = true;
+                marks.Mark(session, quest, reopen, DateTimeOffset.UtcNow);
+                lines.Progress($"reopen  session {session} went on in {head}, which was told the person reopened its submission on quest #{quest}, as Daoris's words");
+                return;
+            }
+
+            if (said.Refusal != "running" && Settles(key)) lines.Progress($"reopen  session {session} was not told of quest #{quest}'s reopen: {said.Message}");
+            return;
+        }
 
         _settled[key] = true;
         var when = kept.Reach switch

@@ -353,7 +353,9 @@ internal sealed class TreeSweeps(
             }
 
             // Everything no commit holds, whatever git's settings hide (SQUASHTIDY1c): what a removal would destroy.
-            var holds = await ContentHolds.HoldsAsync(tree, root, ct).ConfigureAwait(false);
+            // INTEGRATE1d (D218's note): the output the repository declares counts only as the owner accepted it for integration.
+            var declared = await context.ScratchAsync(root, repository, workspace, ct, line).ConfigureAwait(false);
+            var holds = await ContentHolds.HoldsAsync(tree, root, declared, ct).ConfigureAwait(false);
             if (holds is null) return (Item(SweepKind.Dirty, detail: "git could not say what its tree holds") with { Unread = true }, null);
             seen?.Add(holds);
             shared = holds.Shared.Count;

@@ -37,6 +37,12 @@ public sealed record WordsHeld(bool Sent, string? Reaches, string? Why)
     /// <summary>The sentence where nothing took them: the service's, or why the loop could not.</summary>
     public string? Message { get; init; }
 
+    /// <summary>
+    /// The line's head the words were said to and taken by, where the record the terminal named went on in it (FOUNDATION1d-ii, the foundation
+    /// design §3.4 rule 2): the verb names it and follows the words there. Null where the record named took them, and in an older answer.
+    /// </summary>
+    public string? Head { get; init; }
+
     public static WordsHeld Refused(string why, string? message = null) => new(false, null, why) { Message = message };
 
     public static WordsHeld Failed(string message) => new(false, null, null) { Message = message };

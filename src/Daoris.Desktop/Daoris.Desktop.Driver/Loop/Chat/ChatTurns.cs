@@ -214,6 +214,11 @@ internal sealed class ChatTurns(
             // a retry of a word held, with nothing held, queued, steered, attempted or taken, and no word to read an id from.
             if (said is { Settled: not null }) return new TurnKept(TurnReach.TurnEnd, null) { Settled = true };
 
+            // FOUNDATION1d-ii (the design §3.4 rule 2): the record is no longer its line's head, which the answer names. Never the fallback
+            // below, the word as it was said, held here alone as for a host before COWORK1c: nothing is queued, steered, attempted or written
+            // on this door, and the caller says the word at the head.
+            if (said is { Head: { } head }) return new TurnKept(TurnReach.TurnEnd, null) { Head = head };
+
             var id = said is { Kept: true, Word.Id: { } kept } ? kept : null;
             var word = id is null ? message : message with { Id = id, Kept = true };
             if (id is not null)
@@ -349,6 +354,10 @@ internal sealed class ChatTurns(
             {
                 said = null;
             }
+
+            // FOUNDATION1d-ii: the record went on in its line's head meanwhile, so nothing is reworded or queued here; the word kept stays as it
+            // was, on the record the open moves its words from.
+            if (said is { Head: not null }) return QueueEdit.Taken;
 
             var kept = said is { Kept: true, Word.Id: { } newId } ? newId : null;
             lock (_gate)

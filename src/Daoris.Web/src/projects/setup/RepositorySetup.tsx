@@ -5,7 +5,8 @@ import type { RepositoryAcross } from '../../settings/repository/Across';
 import type { RuleListName } from '../../settings/repository/AgentRules';
 import { COMMIT_DEFAULT, type CommitEdit, CommitField, commitRowSays, commitSummary, type RepositoryCommits } from '../../settings/repository/Commits';
 import { type HeavyGate, HeavyGates, type HeavyMarks, heavySummary } from '../../settings/repository/HeavyGates';
-import { LandedRoute, type LandedSetup, landedSummary } from '../../settings/repository/LandedRoute';
+import { IntegrationDeclaration } from '../../settings/repository/IntegrationDeclaration';
+import { LandedRoute,type LandedSetup, landedSummary } from '../../settings/repository/LandedRoute';
 import { SessionChecksRow, sessionChecksSummary, type SessionChecksValue } from '../../settings/repository/SessionChecks';
 import { HELPER_DEFAULT, type HelperEdit, HelperField, helperRowSays, helperSummary, type RepositoryHelpers } from '../../settings/repository/Helpers';
 import {
@@ -478,6 +479,9 @@ export function RepositorySetup({ repository, driving, work, access, heavy, land
           )}
           {landed && (
             <LandedRoute repository={repository} workspace={landed.workspace} start={landed.start} busy={busy} onChoose={landed.onChoose} />
+          )}
+          {landed?.start.integration && landed.onAcceptIntegration && (
+            <IntegrationDeclaration repository={repository} integration={landed.start.integration} busy={busy} onAccept={landed.onAcceptIntegration} />
           )}
         </>
       ),

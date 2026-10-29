@@ -197,6 +197,54 @@ public sealed class LandRebaseLandingTests : LandedFixture
         Assert.Equal(line, (await GitAsync(root, "rev-parse", $"{Branch}~1")).Trim());
     }
 
+    /// <summary>
+    /// INTEGRATE1d (D215 point 2, the integration design §4.1): the integration's own acceptance accepts the writers as the landed
+    /// route's does, so a repository with no verification pipeline has its generated files written again where the person accepted its
+    /// declaration for integration.
+    /// </summary>
+    [Fact]
+    public async Task A_generated_file_is_written_again_by_the_writer_the_integration_acceptance_accepted()
+    {
+        var root = await RepositoryAsync("engine");
+        AcceptIntegration(await GeneratedDeclaredAsync(root, Writer));
+        var trees = new SessionTrees(Home);
+        var tree = await trees.OpenAsync(root, "engine", "aurora");
+        await File.WriteAllTextAsync(Path.Combine(tree.Path, "work.txt"), "the work\n");
+        await CommitAsync(tree.Path, "index/map.md", "shared.txt\nwork.txt\n", "the work");
+        await File.WriteAllTextAsync(Path.Combine(root, "zline.txt"), "the line\n");
+        await CommitAsync(root, "index/map.md", "shared.txt\nzline.txt\n", "the line's own");
+
+        var landed = await trees.LandAsync(tree.Path, Subject);
+
+        Assert.True(landed.Landed, landed.Message);
+        Assert.Contains($"then were written again from the replayed tree by `{Writer}`.", landed.Message);
+        Assert.Equal("shared.txt\nwork.txt\nzline.txt\n", await GitAsync(root, "show", $"{Branch}:index/map.md"));
+    }
+
+    /// <summary>
+    /// INTEGRATE1d: an integration acceptance of a declaration the line has since changed accepts nothing (the design §4.3): the line's
+    /// copy of the generated file stays, as with no acceptance, until the person accepts the line's new declaration.
+    /// </summary>
+    [Fact]
+    public async Task A_writer_whose_declaration_changed_since_its_integration_acceptance_is_not_run()
+    {
+        var root = await RepositoryAsync("engine");
+        AcceptIntegration(await GeneratedDeclaredAsync(root, Writer));
+        await CommitAsync(root, LandedGates.File, Declaration(Writer).Replace("\"gates\": []", "\"gates\": [], \"note\": 1", StringComparison.Ordinal), "the declaration changed");
+        var trees = new SessionTrees(Home);
+        var tree = await trees.OpenAsync(root, "engine", "aurora");
+        await File.WriteAllTextAsync(Path.Combine(tree.Path, "work.txt"), "the work\n");
+        await CommitAsync(tree.Path, "index/map.md", "shared.txt\nwork.txt\n", "the work");
+        await File.WriteAllTextAsync(Path.Combine(root, "zline.txt"), "the line\n");
+        await CommitAsync(root, "index/map.md", "shared.txt\nzline.txt\n", "the line's own");
+
+        var landed = await trees.LandAsync(tree.Path, Subject);
+
+        Assert.True(landed.Landed, landed.Message);
+        Assert.Contains("took the line's copy (index/map.md), to be written again where the work is merged.", landed.Message);
+        Assert.Equal("shared.txt\nzline.txt\n", await GitAsync(root, "show", $"{Branch}:index/map.md"));
+    }
+
     /// <summary>The same conflict beside one in code stays the session's: refused, the code's file named, nothing made.</summary>
     [Fact]
     public async Task A_conflict_in_code_beside_a_generated_file_is_still_refused()
@@ -330,6 +378,13 @@ public sealed class LandRebaseLandingTests : LandedFixture
                 ["engine"] = new WorkflowChoice(null, []) { Landed = new WorkflowLanded("verify-landed", gates) },
             },
         }).Save(path);
+    }
+
+    /// <summary>The person's acceptance of <paramref name="gates"/> for the repository's integration (INTEGRATE1d), as the window's door writes it.</summary>
+    private void AcceptIntegration(string gates)
+    {
+        var path = DaorisHome.Entry(Home, HomeEntry.DriverConfig);
+        DriverConfig.Load(path).WithIntegrationGates("engine", gates).Save(path);
     }
 
     private static async Task<string> HeadAsync(string place) => (await GitAsync(place, "rev-parse", "HEAD")).Trim();

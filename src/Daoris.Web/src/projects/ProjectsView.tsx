@@ -27,7 +27,7 @@ import { sessionChecksToast, type SessionChecksValue } from '../settings/reposit
 import {
   useAcross, useDriver, useHarnesses, useLines, usePlugins, useRuleAction, useRules, useSetAccess, useSetCommits, useHeavyMarks, useHeavySlot, useSetDrivable, useSetHeavyGates, useSetHelpers,
   useSetHandOver, useSetHold, useSetLanding, useSetLanguage, useSetLine, useSetOpinion, useSetReadAcross, useSetReview, useSetSessionChecks, useSetStanding, useSetTrees,
-  useSetupPlan, useSetupPress, useSetWriteAcross, useSweepPlan, useWorkflowCurrent, useSetLanded, standingOf, useSetAppointment,
+  useSetupPlan, useSetupPress, useSetWriteAcross, useSweepPlan, useWorkflowCurrent, useSetLanded, useAcceptIntegration, standingOf, useSetAppointment,
 } from '../bridge/shell';
 import type { SetUpForAgentsProps } from './setup/SetUpForAgents';
 import { doorOf } from '../agents/tools';
@@ -220,6 +220,7 @@ export function useProjectsView({
   // FABRIC-PIPELINE1a: Setup's route row reads the same answer's start node, so it is asked while Setup shows too.
   const current = useWorkflowCurrent(chosenRepository === null ? null : { repository: chosenRepository }, { enabled: workflowShown || setupShown });
   const setLanded = useSetLanded();
+  const acceptIntegration = useAcceptIntegration();
   // Session branches holding work no branch of the person's holds (WSR3, D88) — named on the repository,
   // so work is not lost in a pile nobody reads. A workspace's Branches lists them one by one (UX6g).
   const sweep = useSweepPlan();
@@ -606,6 +607,16 @@ export function useProjectsView({
         },
         onError: (error) => answered.refused(sentence(error)),
       }),
+      // INTEGRATE1d: the person's Accept of the declaration they read, by its blob, or a withdrawal; a refusal comes back as an answer.
+      onAcceptIntegration: (request, answered) => acceptIntegration.mutate({ repository, ...request }, {
+        onSuccess: (answer) => {
+          if (answer.done) {
+            notify('clear' in request ? t('projects.integration.withdrawn', { repository }) : t('projects.integration.accepted', { repository }));
+            answered.done();
+          } else answered.refused(answer.message ?? t('projects.integration.refused', { repository }));
+        },
+        onError: (error) => answered.refused(sentence(error)),
+      }),
     } : null;
 
     return {
@@ -620,7 +631,7 @@ export function useProjectsView({
       onOpenPlugin,
       busy: setLine.isPending || setLanding.isPending || setReview.isPending || setOpinion.isPending || setLanguage.isPending
         || setCommits.isPending || setHelpers.isPending || setHandOver.isPending || setAccess.isPending || setHeavy.isPending || setStanding.isPending
-        || setRead.isPending || setWrite.isPending || ruleAction.isPending || setLanded.isPending,
+        || setRead.isPending || setWrite.isPending || ruleAction.isPending || setLanded.isPending || acceptIntegration.isPending,
     };
   };
 

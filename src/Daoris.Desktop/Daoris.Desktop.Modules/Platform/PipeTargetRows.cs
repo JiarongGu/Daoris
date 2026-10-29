@@ -39,6 +39,7 @@ internal static class PipeTargetRows
         ["SET_AGENT_SETTINGS"] = "merges into a profile's settings",
         ["SET_ACTOR"] = "edits an actor's row in place",
         ["WORKFLOW_LANDED"] = "reads the gates at the line's tip and accepts them by their blob",
+        ["INTEGRATION_GATES"] = "reads the declaration at the line's tip and accepts it by its blob",
         ["TOOLS_USE"] = "checks a file's version or downloads a managed one",
         ["TOOLS_LOCATION"] = "edits the list of locations in place",
         ["ACCOUNT_USE"] = "signs in or out of an account",
@@ -233,6 +234,11 @@ internal static class PipeTargetRows
         Row("WORKFLOW_LANDED", new RepositoryGround("repository", "workspace"), Setting("WORKFLOW_CURRENT", ["repository", "workspace", "workflow"],
             p => Text(p, "repository") is { } repository ? new { repository } : new { workspace = Text(p, "workspace") },
             (a, _) => Fp(Pick(At(a, "start", "landed"), "workflow", "level"))));
+        // INTEGRATE1d: the blob accepted and the one at the line's tip, so a declaration the line changed between the ask and the Confirm
+        // is never accepted unseen.
+        Row("INTEGRATION_GATES", new RepositoryGround("repository"), Setting("WORKFLOW_CURRENT", ["repository", "gates", "clear"],
+            p => new { repository = Text(p, "repository") },
+            (a, _) => Fp(Pick(At(a, "start", "integration"), "gates", "state"), Pick(At(a, "start", "integration", "tip"), "gates"))));
 
         // The machine's standing choices.
         Row("SET_NOTIFY", State(["notify"], (a, _) => Raw(At(a, "notify")) ?? "", p => Raw(Field(p, "notify"))));

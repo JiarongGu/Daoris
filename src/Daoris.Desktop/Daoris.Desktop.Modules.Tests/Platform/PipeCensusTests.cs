@@ -516,6 +516,8 @@ public sealed class PipeCensusTests
             "SET_HOLD", "SET_DRIVABLE", "SET_STRIKES", "SET_TREES", "SET_STANDING", "SET_COMMITS", "SET_ACCESS", "SET_READ_ACROSS",
             "SET_WRITE_ACROSS", "SET_HEAVY_GATES", "SET_SESSION_CHECKS", "SET_SESSION_OPTION", "SET_AGENT_SETTINGS", "SET_HELP_MODE",
             "SET_HELP_GRANT", "SET_NOTIFY", "SET_LANGUAGE", "RULE_ACTION", "RULE_PROPOSAL", "TOOLS_LOCATION", "TOOLS_DELETE", "TOOLS_GIT",
+            // INTEGRATE1d: an acceptance of a repository's integration declaration, a standing choice that starts nothing.
+            "INTEGRATION_GATES",
         ];
 
         Assert.All(releases, route => Assert.Equal((route, PipeDrain.Waits), (route, PipeCensus.Daoris.DrainOf(DriverModule.Name, route))));

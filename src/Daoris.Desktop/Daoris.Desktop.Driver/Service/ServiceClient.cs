@@ -405,7 +405,17 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
             return new SayAnswer(false, $"the service at {_base} has no door for words to a session that is not running ({status}) — is it older than this driver?");
         }
 
-        if (!ok) return new SayAnswer(false, Text(answered, "error") ?? payload) { Refusal = Text(answered, "refusal") };
+        if (!ok)
+        {
+            // FOUNDATION1d-ii (the design §3.4 rule 2): `continued` names the line's head beside its word, at the status of every other refusal.
+            var refusal = Text(answered, "refusal");
+            return new SayAnswer(false, Text(answered, "error") ?? payload)
+            {
+                Refusal = refusal,
+                Head = refusal == SayAnswer.Continued && answered.ValueKind == JsonValueKind.Object && Text(answered, "head") is { Length: > 0 } head ? head : null,
+            };
+        }
+
         // Settled before a word (row p): a success naming the record the key's word left carries no `said`, so it is read first and no
         // reader below it finds a word to act on.
         if (answered.ValueKind == JsonValueKind.Object && Text(answered, "settled") is { Length: > 0 } settled)

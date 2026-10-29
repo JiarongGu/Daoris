@@ -662,6 +662,7 @@ public sealed partial class SessionRequests(string home)
                 Word = Text("word"),
                 Message = Text("message"),
                 Now = root.TryGetProperty("now", out var now) && now.ValueKind == JsonValueKind.True,
+                Head = Text("head"),
             };
         }
         catch (JsonException)
@@ -751,6 +752,8 @@ public sealed partial class SessionRequests(string home)
         if (held.Word is not null) writer.WriteString("word", held.Word);
         if (held.Message is not null) writer.WriteString("message", held.Message);
         if (held.Now) writer.WriteBoolean("now", true);
+        // FOUNDATION1d-ii: additive, so a verb from before reads the rest as it did.
+        if (held.Head is not null) writer.WriteString("head", held.Head);
         writer.WriteEndObject();
     });
 }

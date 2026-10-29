@@ -45,8 +45,28 @@ internal static class BacklogMerge
     /// </summary>
     internal sealed record Declared(string? Backlog, IReadOnlyList<string> Tables)
     {
-        /// <summary>Whether a conflict in <paramref name="path"/> is settled by the merge base.</summary>
-        public bool Settles(string path) => path == Backlog || Tables.Contains(path, StringComparer.Ordinal);
+        /// <summary>
+        /// The line rules the owner accepted for integration, as declared at the commit replayed onto (INTEGRATE1d,
+        /// <see cref="LineRules"/>): a file of one settles by its pattern and its writer; none where none is accepted.
+        /// </summary>
+        public IReadOnlyList<IntegrationMergeRule> Lines { get; init; } = [];
+
+        /// <summary>Whether a conflict in <paramref name="path"/> is settled by the merge base, or by an accepted line rule.</summary>
+        public bool Settles(string path) => path == Backlog || Tables.Contains(path, StringComparer.Ordinal) || LineOf(path) is not null;
+
+        /// <summary>The accepted line rule for <paramref name="path"/>, its first where declared twice; null for none.</summary>
+        public IntegrationMergeRule? LineOf(string path) => Lines.FirstOrDefault(rule => rule.Paths == path);
+
+        /// <summary>
+        /// The merge <paramref name="path"/> settles by: its accepted line rule's, where one reads (<see cref="LineRules.ByLine"/>), else
+        /// the merge base's. A line rule's pattern that does not read settles nothing.
+        /// </summary>
+        public Merged Merge(string path, string @base, string ours, string theirs)
+        {
+            if (LineOf(path) is not { } rule) return ByBase(@base, ours, theirs);
+            var text = LineRules.Pattern(rule.Line!) is { } line ? LineRules.ByLine(@base, ours, theirs, line) : null;
+            return new Merged(text, 0, 0, []);
+        }
     }
 
     /// <summary>
@@ -191,15 +211,16 @@ internal static class BacklogMerge
 
         if (at < b.Length) output.AddRange(b[at..]);
         return new Merged(string.Join('\n', output), kept, dropped, []);
-
-        static bool Same(Hunk x, Hunk y) => x.Start == y.Start && x.End == y.End && x.Lines.SequenceEqual(y.Lines, StringComparer.Ordinal);
     }
+
+    /// <summary>Whether both sides made one change: the same base lines replaced by the same lines, which is no conflict.</summary>
+    internal static bool Same(Hunk x, Hunk y) => x.Start == y.Start && x.End == y.End && x.Lines.SequenceEqual(y.Lines, StringComparer.Ordinal);
 
     /// <summary>
     /// Whether two sides' hunks touch the same base line, or one adds inside a run the other replaced; adds at one place never do (the
-    /// merge tool's <c>hunksCollide</c>).
+    /// merge tool's <c>hunksCollide</c>). A declared line rule reads it too (<see cref="LineRules.ByLine"/>).
     /// </summary>
-    private static bool Collide(Hunk x, Hunk y)
+    internal static bool Collide(Hunk x, Hunk y)
     {
         if (x.Start == x.End && y.Start == y.End) return false;
         if (x.Start == x.End) return y.Start < x.Start && x.Start < y.End;
@@ -244,8 +265,9 @@ internal static class BacklogMerge
     /// <paramref name="written"/>, with <paramref name="path"/> the merge by base of the step's base, the trial's tree so far and the
     /// replayed commit. Null where a side has no such file, git could not say, or both sides changed one base line.
     /// </summary>
+    /// <param name="declared">What settles <paramref name="path"/>: its merge base, or its accepted line rule (INTEGRATE1d), whose writer a trial never runs.</param>
     internal static async Task<string?> TrialAsync(
-        string root, string path, string @base, string ours, string theirs, string written, CancellationToken ct)
+        string root, string path, string @base, string ours, string theirs, string written, CancellationToken ct, Declared? declared = null)
     {
         var texts = new List<string>(3);
         foreach (var side in new[] { @base, ours, theirs })
@@ -255,7 +277,8 @@ internal static class BacklogMerge
             texts.Add(text);
         }
 
-        if (ByBase(texts[0], texts[1], texts[2]).Text is not { } merged) return null;
+        var by = declared is null ? ByBase(texts[0], texts[1], texts[2]) : declared.Merge(path, texts[0], texts[1], texts[2]);
+        if (by.Text is not { } merged) return null;
         var (hashed, blob, _) = await WorkingTree.GitAsync(root, ["hash-object", "-w", "--stdin"], merged, ct).ConfigureAwait(false);
         return hashed == 0 ? await WithBlobAsync(root, written, path.Split('/'), 0, blob.Trim(), ct).ConfigureAwait(false) : null;
     }
@@ -285,13 +308,15 @@ internal static class BacklogMerge
     /// <summary>
     /// The settling by the merge base over one landing's replay (LANDBACKLOG1 and INTEGRATE1c in <see cref="BranchReplays"/>): the backlog
     /// and the row tables the line declares at <paramref name="source"/>, read once, at the first stop that needs them, and what each stop
-    /// settled, summed.
+    /// settled, summed. INTEGRATE1d: beside them, the line rules the owner accepted for integration at <paramref name="source"/>
+    /// (<paramref name="lines"/>), each file of one settled by its pattern, for its writer to write again once the replay is made.
     /// </summary>
-    internal sealed class Stops(string source)
+    internal sealed class Stops(string source, IReadOnlyList<IntegrationMergeRule>? lines = null)
     {
         private Task<Declared>? _declared;
-        private string? _backlog;
+        private Declared? _read;
         private readonly List<Settled> _tables = [];
+        private readonly List<LineRules.Settled> _lined = [];
 
         /// <summary>What the replay settled of the backlog; null where no stop settled it.</summary>
         internal Settled? Settled { get; private set; }
@@ -299,12 +324,14 @@ internal static class BacklogMerge
         /// <summary>What the replay settled of each declared row table, in the order first met; none where no stop settled one.</summary>
         internal IReadOnlyList<Settled> Tables => _tables;
 
-        /// <summary>What the line declares to settle by the merge base, read in <paramref name="tree"/> once per replay.</summary>
+        /// <summary>The files the replay settled by an accepted line rule, each once, in the order first met, with the writer that writes them again.</summary>
+        internal IReadOnlyList<LineRules.Settled> Lined => _lined;
+
+        /// <summary>What the line declares to settle by the merge base, read in <paramref name="tree"/> once per replay, with the accepted line rules.</summary>
         internal async Task<Declared> DeclaredAsync(string tree, CancellationToken ct)
         {
             var declared = await (_declared ??= BacklogMerge.DeclaredTablesAsync(tree, source, ct)).ConfigureAwait(false);
-            _backlog = declared.Backlog;
-            return declared;
+            return _read ??= declared with { Lines = lines ?? [] };
         }
 
         /// <summary>
@@ -337,7 +364,8 @@ internal static class BacklogMerge
                 texts.Add(text);
             }
 
-            var merged = ByBase(texts[0], texts[1], texts[2]);
+            var declared = await DeclaredAsync(tree, ct).ConfigureAwait(false);
+            var merged = declared.Merge(path, texts[0], texts[1], texts[2]);
             if (merged.Text is null) return false;
             var (hashed, made, _) = await WorkingTree.GitAsync(tree, ["hash-object", "-w", "--stdin"], merged.Text, ct).ConfigureAwait(false);
             if (hashed != 0) return false;
@@ -346,7 +374,12 @@ internal static class BacklogMerge
             if (staged != 0) return false;
             var (written, _, _) = await WorkingTree.GitAsync(tree, ["checkout", "--", path], ct).ConfigureAwait(false);
             if (written != 0) return false;
-            if (path == _backlog)
+            if (declared.LineOf(path) is { } rule)
+            {
+                // INTEGRATE1d: the line's side of the declared lines stands only until its writer writes them again.
+                if (!_lined.Any(each => each.Path == path)) _lined.Add(new LineRules.Settled(path, rule.Run!));
+            }
+            else if (path == declared.Backlog)
             {
                 Settled = new Settled(path, (Settled?.Kept ?? 0) + merged.Kept, (Settled?.Dropped ?? 0) + merged.Dropped);
             }

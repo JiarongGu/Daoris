@@ -32,7 +32,8 @@ public static class WordsNever
     /// A conversation handed over or moved (HANDWORDS1; D163 point 1, D165 point 3): it went on in another, which holds its tree now
     /// and takes its words, so they are said to that one (<see cref="ContinuedIn"/>), as a quest's go to its later session.
     /// </summary>
-    public const string Continued = "continued";
+    /// <remarks>The say door's own refusal word since FOUNDATION1d-ii, naming the line's head (<see cref="SayAnswer.Continued"/>).</remarks>
+    public const string Continued = SayAnswer.Continued;
 
     /// <summary>The code of what never goes on, in D137 §2.2's order, or null where the record can go on with words.</summary>
     /// <param name="last">The session its quest last ran in here (D79's reading, <see cref="LastHere"/>), or null.</param>
@@ -156,7 +157,15 @@ public sealed class LoopWords(SessionProcesses processes, Func<ServiceClient?> s
     /// <summary>The loop's nudge, so its look takes kept words up now rather than at its next interval; null waits for that.</summary>
     public Action<string>? Nudge { get; init; }
 
-    public async Task<WordsHeld> HoldAsync(SessionRequest request, CancellationToken ct)
+    /// <summary>
+    /// The home the request's files are kept under (FOUNDATION1d-ii): a request said again at its line's head carries them to the head's folder,
+    /// so its go-on finds them there. Null carries none, and the names still go.
+    /// </summary>
+    public string? Home { get; init; }
+
+    public Task<WordsHeld> HoldAsync(SessionRequest request, CancellationToken ct) => HoldAsync(request, new HeadWalk(request.Session), ct);
+
+    private async Task<WordsHeld> HoldAsync(SessionRequest request, HeadWalk walk, CancellationToken ct)
     {
         var id = request.Session;
         var text = request.Text ?? "";
@@ -176,6 +185,9 @@ public sealed class LoopWords(SessionProcesses processes, Func<ServiceClient?> s
                 .ConfigureAwait(false);
             switch (kept)
             {
+                // FOUNDATION1d-ii (the design §3.4 rule 2): the record is no longer its line's head, so its inbox held nothing: said at the head.
+                case { Outcome: InboxKeep.Continued, Head: { } head }:
+                    return await OnAsync(request, head, walk, ct).ConfigureAwait(false);
                 // FOUNDATION1 row p (the design §3.4 rule 5): a retry the record answered settled is a word held or gone already: not kept on the ask again.
                 case { Outcome: InboxKeep.Held, Settled: true }:
                     return new WordsHeld(true, null, null);
@@ -200,6 +212,8 @@ public sealed class LoopWords(SessionProcesses processes, Func<ServiceClient?> s
 
         // FOUNDATION1b: under the request's key as the inbox's is, so a request read again keeps one word on the record.
         var said = await client.SayAsync(id, text, request.Files, ct, key: SessionRequests.WordKey(request)).ConfigureAwait(false);
+        // FOUNDATION1d-ii (the design §3.4 rule 2): a record that is not its line's head keeps nothing; the request is said at the head.
+        if (said.Head is { } on) return await OnAsync(request, on, walk, ct).ConfigureAwait(false);
         // FOUNDATION1 row p (the design §3.4 rule 5): a retry the record answered settled is a word kept and gone already: nothing is shown,
         // nudged or kept on the ask again.
         if (said.Settled is not null) return new WordsHeld(true, "resume", null);
@@ -216,6 +230,20 @@ public sealed class LoopWords(SessionProcesses processes, Func<ServiceClient?> s
             { } refusal => WordsHeld.Refused(WordsNever.Code(refusal), said.Message),
             null => WordsHeld.Failed(said.Message),
         };
+    }
+
+    /// <summary>
+    /// The request said again at its line's head (FOUNDATION1d-ii, the design §3.4 rules 1 and 2), as it was said first: its key, its level and its
+    /// files, which go to the head's folder first, through the head's inbox where this loop runs it, else at its record. The answer names the
+    /// head it was kept at. A walk that comes back to a record it asked, or passes its bound, ends refused with the driver's sentence.
+    /// </summary>
+    private async Task<WordsHeld> OnAsync(SessionRequest request, string head, HeadWalk walk, CancellationToken ct)
+    {
+        var from = walk.At;
+        if (!walk.On(head)) return WordsHeld.Refused(WordsNever.Continued, walk.Ended(head));
+        if (Home is { } home && request.Files.Count > 0) ChatFiles.Carry(home, from, head, request.Files);
+        var held = await HoldAsync(request with { Session = head }, walk, ct).ConfigureAwait(false);
+        return held is { Sent: true, Head: null } ? held with { Head = head } : held;
     }
 
     /// <summary>

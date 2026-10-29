@@ -180,7 +180,8 @@ public sealed class LongCalls
             Daoris = new DaorisWord(key),
         };
         var kept = await _inbox.KeepOrHoldAsync(_door, word, ct).ConfigureAwait(false);
-        return kept.Outcome != InboxKeep.Closed;
+        // FOUNDATION1d-ii: a record that went on in its line's head is told nothing of this run's call, as a closed inbox is.
+        return kept.Outcome is not (InboxKeep.Closed or InboxKeep.Continued);
     }
 
     /// <summary>
