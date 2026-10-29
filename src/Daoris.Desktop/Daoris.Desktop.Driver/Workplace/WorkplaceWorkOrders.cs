@@ -3,7 +3,7 @@ namespace Daoris.Driver;
 /// <summary>
 /// What the workplace asks of the work: the abandons' record a history clear tidies, what a unit still owes beyond its branch records,
 /// the inventory read over the records the workplace gathers, and a done's evidence read where a session's tree ends. Work orders
-/// keeps each and implements this, installed when the driver loads (<c>Sessions/Work/WorkplaceWorkOrdersWiring.cs</c>); each
+/// keeps each and implements this, installed when the driver loads (<c>WorkOrders/Work/WorkplaceWorkOrdersWiring.cs</c>); each
 /// operation does exactly what its caller did before it was a port.
 /// </summary>
 internal interface IWorkplaceWorkOrders

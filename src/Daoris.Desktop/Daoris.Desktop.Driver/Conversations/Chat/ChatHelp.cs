@@ -20,7 +20,7 @@ namespace Daoris.Driver;
 /// <para>It holds the runner for the new conversation it opens and for whether a turn is taking, as <see cref="ChatHandOver"/>
 /// does: they are the runner's own start and the runner's own turns.</para>
 /// </remarks>
-internal sealed class ChatHelp(ChatContext context, ChatRunner runner)
+internal sealed class ChatHelp(ChatContext context, ChatRunner runner) : IChatHelping
 {
     /// <summary>How long a conversation set aside is waited for to end, so the ledger sees the room free.</summary>
     private static readonly TimeSpan SetAsideBound = TimeSpan.FromSeconds(10);
@@ -88,7 +88,7 @@ internal sealed class ChatHelp(ChatContext context, ChatRunner runner)
         try
         {
             var files = ChatFiles.Keep(context.Home, id, [new ChatUpload(HelpTranscript.FileName(earlier), Encoding.UTF8.GetBytes(transcript))]);
-            context.Handing[id] = new ChatRunner.Handing(files, HelpTranscript.Preface(earlier));
+            context.Handing[id] = new Handing(files, HelpTranscript.Preface(earlier));
             kept.StartedFrom(id, earlier, HelpConversations.Transcript);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException)

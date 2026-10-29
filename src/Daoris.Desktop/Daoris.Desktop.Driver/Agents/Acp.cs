@@ -1230,7 +1230,7 @@ public sealed class AcpSession(
         _retry!.Unacknowledged(words);
         List<string> ids = [.. words.Select(word => word.Id).OfType<string>()];
         if (ids.Count == 0) return;
-        Emit(new SessionEvent { Kind = SessionEventKind.Note, Text = ChatTurns.LostLine, Words = ids, Code = SessionEventCodes.Lost });
+        Emit(new SessionEvent { Kind = SessionEventKind.Note, Text = SessionNotes.LostLine, Words = ids, Code = SessionEventCodes.Lost });
     }
 
     /// <summary>
@@ -1619,7 +1619,7 @@ public sealed class AcpSession(
         {
             _retry!.Unacknowledged(uncertain);
             List<string> ids = [.. uncertain.Select(word => word.Id).OfType<string>()];
-            if (ids.Count > 0) Emit(new SessionEvent { Kind = SessionEventKind.Note, Text = ChatTurns.LostLine, Words = ids, Code = SessionEventCodes.Lost });
+            if (ids.Count > 0) Emit(new SessionEvent { Kind = SessionEventKind.Note, Text = SessionNotes.LostLine, Words = ids, Code = SessionEventCodes.Lost });
         }
 
         return Unreached.Count;
