@@ -4,8 +4,8 @@ namespace Daoris.Driver;
 /// The words a keyed open moved onto the part it opened, as that part's delivery reads them (FOUNDATION1d-ii part 4; the foundation design
 /// §3.4 rule 3, O6-F13): read from the destination by their ids in the transfer's order, never from the record they left, which holds them no
 /// more. Each word's files are copied from that record's folder into the destination's before it is handed (O6-F8); each is marked attempted
-/// on the destination before it is handed, so a shell cut off under the hand never sends it again by itself (rule 5), and one the mark does not
-/// name stays there for the destination's own go-on; each is shown by its own <c>User</c> event under its id, with its author and files, as a
+/// on the destination as the hand is made (<see cref="AttemptedAsync"/>), so a shell cut off under the hand never sends it again by itself
+/// (rule 5), and one the mark does not name stays there for the destination's own go-on; each is shown by its own <c>User</c> event under its id, with its author and files, as a
 /// go-on's words are (<see cref="ResumeAsk.Opening"/>, O6-F2), the display's and never delivery's evidence; and once delivered they leave the
 /// destination by those ids, judged by what it holds after the take, never the take's answer.
 /// </summary>
@@ -19,12 +19,15 @@ internal sealed class MovedWords
 {
     private readonly IReadOnlyList<(MovedWord Moved, SaidWordView Word)> _words;
 
-    private MovedWords(string from, string to, IReadOnlyList<(MovedWord Moved, SaidWordView Word)> words, IReadOnlyList<KeptFile> files)
+    private readonly string _home;
+
+    private MovedWords(string from, string to, IReadOnlyList<(MovedWord Moved, SaidWordView Word)> words, string home)
     {
         From = from;
         To = to;
         _words = words;
-        Files = files;
+        _home = home;
+        Files = [.. words.SelectMany(each => ChatFiles.Kept(home, to, each.Word.Files))];
     }
 
     /// <summary>
@@ -82,9 +85,9 @@ internal sealed class MovedWords
     };
 
     /// <summary>
-    /// The words the open moved to <paramref name="to"/> as it holds them now, their files copied from <paramref name="from"/>'s folder and each
-    /// marked attempted there, those the mark named; null where the destination's record could not be read, so nothing is handed and the words
-    /// wait there. A moved word no longer waiting (taken back since) is not handed.
+    /// The words the open moved to <paramref name="to"/> as it holds them now, their files copied from <paramref name="from"/>'s folder; null where
+    /// the destination's record could not be read, so nothing is handed and the words wait there. A moved word no longer waiting (taken back
+    /// since) is not handed.
     /// </summary>
     public static async Task<MovedWords?> OnAsync(
         ServiceClient service, string home, string from, string to, IReadOnlyList<MovedWord> moved, CancellationToken ct)
@@ -107,10 +110,19 @@ internal sealed class MovedWords
 
         // Copied before the hand, so the files are the destination's whoever reads them next.
         foreach (var (_, word) in words) ChatFiles.Moved(home, from, to, word.Files);
+        return new MovedWords(from, to, words, home);
+    }
 
-        var marked = await SaidDoor.AttemptedAsync(service, to, [.. words.Select(each => each.Word)]).ConfigureAwait(false);
-        words = [.. words.Where(each => marked.Contains(each.Moved.Id, StringComparer.Ordinal))];
-        return new MovedWords(from, to, words, [.. words.SelectMany(each => ChatFiles.Kept(home, to, each.Word.Files))]);
+    /// <summary>
+    /// The words marked attempted on the destination, before they are handed (row p, the design §3.4 rule 5): those the mark named, so a shell
+    /// cut off under the hand never sends them again by itself and the come-up settles them uncertain; one it did not name is not handed and
+    /// waits there for the destination's own go-on. Asked only where the hand is made: a part nothing here holds is handed nothing.
+    /// </summary>
+    public async Task<MovedWords> AttemptedAsync(ServiceClient service)
+    {
+        if (_words.Count == 0) return this;
+        var marked = await SaidDoor.AttemptedAsync(service, To, Words).ConfigureAwait(false);
+        return new MovedWords(From, To, [.. _words.Where(each => marked.Contains(each.Moved.Id, StringComparer.Ordinal))], _home);
     }
 
     /// <summary>

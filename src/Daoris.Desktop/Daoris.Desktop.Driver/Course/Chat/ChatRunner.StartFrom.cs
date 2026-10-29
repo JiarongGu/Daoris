@@ -170,7 +170,8 @@ public static class StartFrom
         }
 
         var waits = $"conversation `{to}` opened, but your words did not reach it, so they wait on conversation `{to}`.";
-        if (await MovedWords.OnAsync(service, home, id, to, started.Moved, ct).ConfigureAwait(false) is not { Words.Count: > 0 } moved)
+        if (await MovedWords.OnAsync(service, home, id, to, started.Moved, ct).ConfigureAwait(false) is not { Words.Count: > 0 } read
+            || await read.AttemptedAsync(service).ConfigureAwait(false) is not { Words.Count: > 0 } moved)
         {
             return new StartedFrom(to, false, null, waits);
         }
