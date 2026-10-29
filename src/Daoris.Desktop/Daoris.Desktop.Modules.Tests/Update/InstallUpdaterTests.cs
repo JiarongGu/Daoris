@@ -28,6 +28,9 @@ public sealed class InstallUpdaterTests : Bridge
     private bool _launches = true;
     private string? _closingBuild;
 
+    // The updater's clock, which a test moves (DRAINHOLD1); the machine log's stays at Now.
+    private DateTimeOffset _now = Now;
+
     public InstallUpdaterTests()
     {
         _install = Path.Combine(Home, "install");
@@ -48,7 +51,7 @@ public sealed class InstallUpdaterTests : Bridge
             return Task.FromResult(_launches);
         },
         close: () => { Assert.NotNull(_closingBuild); _closed++; },
-        bus: Bus, clock: () => Now, pid: 4242)
+        bus: Bus, clock: () => _now, pid: 4242)
         { ClosingForUpdate = build => _closingBuild = build };
 
     [Fact]
@@ -109,6 +112,61 @@ public sealed class InstallUpdaterTests : Bridge
         var applied = Logged("update.applying").Single();
         Assert.Equal("idle", applied["by"]!.GetValue<string>());
         Assert.Equal("b1", applied["build"]!.GetValue<string>());
+    }
+
+    /// <summary>
+    /// DRAINHOLD1: the drain says since when it waits, from its first look on, so the page can say how long it has held; and it is told
+    /// apart from the close it ends in (<see cref="InstallUpdater.Applying"/>), which the pipe holds every press for, where the drain lets
+    /// through what starts nothing it waits on. The loop's starts are held through both.
+    /// </summary>
+    [Fact]
+    public async Task A_drain_says_since_when_it_waits_and_is_told_apart_from_the_close_it_ends_in()
+    {
+        Stage("b1");
+        _work = new UpdateWork(Driven: 1, Turns: 0);
+        using var updater = Updater();
+
+        var draining = await updater.LookAsync();
+        Assert.Equal(UpdateStates.Draining, draining.State);
+        Assert.Equal(Now, draining.Since);
+        Assert.True(updater.Draining);
+        Assert.False(updater.Applying);
+
+        _now = Now.AddHours(3);
+        var later = await updater.LookAsync();
+        Assert.Equal(Now, later.Since);
+        Assert.False(updater.Applying);
+
+        _work = new UpdateWork(0, 0);
+        var applying = await updater.LookAsync();
+
+        Assert.Equal(UpdateStates.Applying, applying.State);
+        Assert.Equal(Now, applying.Since);
+        Assert.True(updater.Draining);
+        Assert.True(updater.Applying);
+        Assert.Equal(3 * 3600, Logged("update.applying").Single()["waitedSeconds"]!.GetValue<long>());
+    }
+
+    /// <summary>DRAINHOLD1: *Not now* ends the drain, and with it its since; *Update now* closes with no drain to have waited.</summary>
+    [Fact]
+    public async Task Not_now_ends_the_drain_s_since_and_update_now_applies_with_none()
+    {
+        Stage("b1");
+        _work = new UpdateWork(Driven: 1, Turns: 0);
+        using var updater = Updater();
+        Assert.Equal(Now, (await updater.LookAsync()).Since);
+
+        var waiting = await updater.SayAsync(UpdateMode.NotNow, "screen");
+
+        Assert.Equal(UpdateStates.Waiting, waiting.State);
+        Assert.Null(waiting.Since);
+        Assert.False(updater.Draining);
+        Assert.False(updater.Applying);
+
+        var now = await updater.SayAsync(UpdateMode.Now, "screen");
+        Assert.Equal(UpdateStates.Applying, now.State);
+        Assert.Null(now.Since);
+        Assert.True(updater.Applying);
     }
 
     [Fact]
