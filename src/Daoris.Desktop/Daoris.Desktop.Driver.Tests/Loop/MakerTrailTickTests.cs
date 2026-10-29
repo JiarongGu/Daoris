@@ -17,6 +17,15 @@ public sealed class MakerTrailTickTests : IDisposable
 
     private const string Trailer = "Co-Authored-By: stub (maker unknown, model unreported) <its maker's attribution address>";
 
+    private static readonly TimeZoneInfo Zone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Kathmandu");
+
+    private static readonly DateTimeOffset Seen = new(2026, 10, 1, 14, 0, 0, TimeSpan.FromMinutes(345));
+
+    /// <summary>The protocol door's sentence for a weekly limit, which names the reset the account cools until.</summary>
+    private static readonly string Refusal =
+        "the ACP agent refused the call: Internal error: You've hit your individual spend limit · run /usage-credits to ask "
+        + $"your admin for a higher limit · your weekly limit resets Oct 3, 4pm ({Zone.Id})";
+
     private readonly string _home = Path.Combine(GitSeed.RepoRoot(), "_fixtures", "maker-trail", Guid.NewGuid().ToString("N")[..8]);
 
     private readonly string _repository;
@@ -43,16 +52,38 @@ public sealed class MakerTrailTickTests : IDisposable
 
     private JsonObject[] Runs() => [.. File.ReadAllLines(Log).Select(line => JsonNode.Parse(line)!.AsObject())];
 
-    /// <summary>🔴 The incident's shape: one harness ran out with its work uncommitted; the line carried on to another in its tree.</summary>
+    /// <summary>
+    /// 🔴 The incident's shape: one harness ran out with its work uncommitted; the line carried on to another in its tree. A plain failure's
+    /// carry-on goes on where its record ran (FOUNDATION1j part ii, D212's note), so the move to another maker is the one a limit makes: the
+    /// first harness's account is cut off and cools, and the walk of Build's order, which lists the protocol stand-in alone, takes it.
+    /// </summary>
     [Fact]
     public async Task A_carry_on_to_another_maker_is_told_the_first_makers_trailer_for_the_work_it_left()
     {
+        foreach (var account in new[] { "account-1", "account-2" })
+        {
+            Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "stub", account));
+        }
+
+        new HarnessSettings().WithDefault("stub", "account-1").WithRotation("stub", ["account-1", "account-2"])
+            .Save(DaorisHome.Entry(_home, HomeEntry.Harnesses));
         await using var service = AskAndWaitTickTests.StandIn.Start(_repository);
         service.KeepsAdapter = true;
+        var adapters = AdapterSet.Built();
+        var roster = new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => Seen, Zone = Zone };
+        using var client = new ServiceClient(service.Url, null);
 
-        await Driver(service, "stub").RunOnceAsync().WaitAsync(Poll.Patience);
-        Assert.Equal("failed", service.Session("s1")["state"]!.GetValue<string>());
-        await Driver(service, "acp-stub").RunOnceAsync().WaitAsync(Poll.Patience);
+        // The first look: the pipe stub takes the quest, leaves its fix uncommitted in its tree and fails.
+        await Driver(client, adapters, roster, "stub").RunOnceAsync().WaitAsync(Poll.Patience);
+        var cut = service.Session("s1");
+        Assert.Equal(("failed", "account-1"), (cut["state"]!.GetValue<string>(), cut["profile"]!.GetValue<string>()));
+
+        // The limit, as the driver records one: its account cools until the reset the agent named, and the record says so.
+        Assert.NotNull(roster.Limited("stub", "account-1", Refusal, "s1"));
+        await client.AdvanceAsync("s1", "failed", note: cut["note"]!.GetValue<string>(), limit: true);
+
+        // The next look: Build's order lists only the protocol stand-in, so the carry-on walks to it, whatever the machine's `adapter` key.
+        await Driver(client, adapters, roster, "stub", build: [new ActorChoice("acp-stub")]).RunOnceAsync().WaitAsync(Poll.Patience);
 
         var prompt = Runs().Last(line => line["method"]?.GetValue<string>() == "session/prompt")["prompt"]!.GetValue<string>();
         Assert.Contains("You are carrying on quest `#q1`", prompt);
@@ -83,6 +114,14 @@ public sealed class MakerTrailTickTests : IDisposable
 
     private Daoris.Driver.Driver Driver(AskAndWaitTickTests.StandIn service, string adapter)
     {
+        var adapters = AdapterSet.Built();
+        return Driver(new ServiceClient(service.Url, null), adapters, new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)), adapter);
+    }
+
+    /// <param name="build">Build's order, where the case names one; none leaves the machine's <c>adapter</c> key the only agent.</param>
+    private Daoris.Driver.Driver Driver(
+        ServiceClient client, AdapterSet adapters, HarnessRoster roster, string adapter, IReadOnlyList<ActorChoice>? build = null)
+    {
         var config = DriverConfig.Empty with
         {
             Drivable = ["engine"],
@@ -96,10 +135,8 @@ public sealed class MakerTrailTickTests : IDisposable
                 ["acp-stub"] = ["node", AcpAgent(), Log],
             },
         };
-        var adapters = AdapterSet.Built();
-        return new Daoris.Driver.Driver(
-            new ServiceClient(service.Url, null), config, adapters, _home, processes: new SessionProcesses(),
-            harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
+        if (build is not null) config = ActorChoices.With(config, "build", build);
+        return new Daoris.Driver.Driver(client, config, adapters, _home, processes: new SessionProcesses(), harnesses: roster);
     }
 
     /// <summary>
