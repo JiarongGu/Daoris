@@ -49,7 +49,8 @@ internal class OneTurnReask<TChoice, TPassed>
     public static void Say(ISessionEvents events, string sessionId, string actor, TChoice choice, MachineLog? log = null)
     {
         if (choice.Effective is not { } ran) return;
-        var passed = choice.Tried.Where(each => each.Entry is not null).Select(each => new BuildPass(each.Entry!, each.Held, each.Refusal)).ToList();
+        // The passes in the plan's one vocabulary (FOUNDATION1j part ii), never the owner's own codes.
+        var passed = choice.Passes;
         RotatedOpening.SayActor(events, sessionId, actor, ran, passed);
         // The machine log's line (§4.6): the choice and each passed one with its code, as every actor's start writes them.
         log?.Write("info", "actor.chose", [("actor", actor), ("session", sessionId), ("choice", ran.From), ("agent", ran.Agent), ("model", ran.Model),
