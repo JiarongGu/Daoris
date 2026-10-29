@@ -95,6 +95,17 @@ is left as it is and refused, KSCHEMA1 below), `/api/search`
 answers `firstLine`, `lastLine` and `excerptLine` beside every field it had, `/api/entry` and `/api/entries` the first
 two, and `/api/feed/entries` takes them, digesting them only where an entry names them.
 
+**The index stays current with the roots it reads, and says how current it is** (KNOWCURRENT1, D24's note). A host
+over the registered roots (the installed HTTP host and a session's connector, which name no one checkout) used to treat
+a non-empty index as fresh for ever. It now reads every root at its first use, then judges each root at use, at most once
+a minute, by its `RootSignature`: the commit `HEAD` names, and the newest write and the count of the record files the
+scan reads (`Core/Knowledge/Store/RootSignature.cs`). A root whose signature moved is read alone
+(`IRootReadingSource.ReadRootsAsync`); a root that is no longer registered takes a whole read, which retires what it held.
+The one-checkout server keeps its watch and its minute (ORIENT1c, FABRIC-EVENT6). Per repository the service keeps when
+it read the checkout and the commit it read: `/api/repositories` answers `indexedAt` and `indexedCommit` beside each row
+(left out where nothing was read, as a fed repository's is), `POST /api/refresh` answers `read` (`repository`, `readAt`,
+`commit`), and the `knowledge_repositories` table and `knowledge_refresh` text print them.
+
 Since **D124** (WSSETUP8), until a repository adopts, the scanner reads its root `README.md`, in any case,
 as the repository's own word. Each section split at level-two headings is one local knowledge entry carrying
 the file's path, and the part before the first heading is titled *README*. It claims no role, and is never
