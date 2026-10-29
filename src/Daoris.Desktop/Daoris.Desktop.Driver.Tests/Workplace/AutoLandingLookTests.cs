@@ -59,6 +59,36 @@ public sealed class AutoLandingLookTests : IDisposable
     }
 
     /// <summary>
+    /// DRAINHOLD1 (the driver follow-up): an update's drain holds an automatic landing, which changes a tree and a repository's line.
+    /// The look reads and closes nothing of the due list, says the drain's hold once, and spends none of its wakes; after *Not now*
+    /// the next look works the list.
+    /// </summary>
+    [Fact]
+    public async Task A_draining_look_lands_nothing_and_says_the_drains_hold_once_and_after_not_now_it_works_the_list()
+    {
+        using var lease = HomeLease.TryAcquire(_home, LeaseKind.Headless, out _);
+        var due = new AutoLandings(_home);
+        due.Due(new AutoLanding("s9", "q9", "tools", "aurora", DaorisHome.Entry(_home, HomeEntry.Trees, "aurora", "tools", "s-9"), At));
+        var config = DriverConfig.Empty.WithLanding("tools", new LandingRule(LandingForm.Branch, "feature/{quest}", AutoAccept: true));
+
+        using var service = _ledger.Client();
+        var draining = new Daoris.Driver.Driver(service, InstallUpdate.Drained(config), AdapterSet.Built(), _home,
+            harnesses: new HarnessRoster(AdapterSet.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)));
+        var first = await draining.TickAsync().WaitAsync(Poll.Patience);
+        var second = await draining.TickAsync().WaitAsync(Poll.Patience);
+
+        Assert.Single(first.Events, line => line == InstallUpdate.HeldLine("landing", "the sessions due to land"));
+        Assert.DoesNotContain(second.Events, line => line.StartsWith("landing  ", StringComparison.Ordinal));
+        Assert.Single(due.Open());
+        Assert.Null(due.Of("s9")!.Last);
+
+        var driver = new Daoris.Driver.Driver(service, config, AdapterSet.Built(), _home,
+            harnesses: new HarnessRoster(AdapterSet.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)));
+        var later = await driver.TickAsync().WaitAsync(Poll.Patience);
+        Assert.Contains(later.Events, line => line.StartsWith("landing  session s9 (#q9 → tools): its tree was discarded before it landed", StringComparison.Ordinal));
+    }
+
+    /// <summary>
     /// AUTONOMY1c2 (D184 points 2 and 3): the look judges each entry by the effective rule. Under the repository's setup saying
     /// <c>rule</c>, or full access, a branch rule whose own switch is off does not close it as off: its tree is gone here, so it closes
     /// as that. Under <c>person</c> it closes as off, and a merge rule under <c>rule</c> does too, since a merge lands nothing by itself

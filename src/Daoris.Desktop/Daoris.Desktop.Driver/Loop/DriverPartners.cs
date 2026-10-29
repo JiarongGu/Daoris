@@ -101,6 +101,16 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
                     }
                 }
 
+                // DRAINHOLD1: every act that starts a session, makes or removes a copy, or keeps into a repository waits out an update's drain
+                // (the delivery too, which can go a conversation on in a turn); what is on file stays as it is, and the claim is let go below.
+                if (_context.Config.Draining
+                    && step.Act is PartnerAct.Judge or PartnerAct.Prepare or PartnerAct.RemoveCopyThenPrepare or PartnerAct.Keep
+                        or PartnerAct.Answer or PartnerAct.Hand)
+                {
+                    _context.DrainHolds(events, "partner", ask.Id, $"piece `{ask.Id}`");
+                    continue;
+                }
+
                 switch (step.Act)
                 {
                     case PartnerAct.Judge:

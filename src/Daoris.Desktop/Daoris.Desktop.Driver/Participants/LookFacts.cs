@@ -38,7 +38,9 @@ internal sealed class LookFacts
         {
             var before = _opinions.GetValueOrDefault(due);
             _opinions[due] = fact;
-            return before is null || fact.Act is not null || !before.SatQuests.ToHashSet(StringComparer.OrdinalIgnoreCase).SetEquals(fact.SatQuests);
+            // A pass found owed that an earlier judgment found and no look has taken (a draining look leaves it kept, DRAINHOLD1) moves
+            // nothing: its wake was given, and found again at every look it would spin the loop for as long as the update drains.
+            return before is null || (fact.Act is not null && before.Act is null) || !before.SatQuests.ToHashSet(StringComparer.OrdinalIgnoreCase).SetEquals(fact.SatQuests);
         }
     }
 
@@ -51,6 +53,12 @@ internal sealed class LookFacts
             _opinions[due] = fact.WithoutAct();
             return act;
         }
+    }
+
+    /// <summary>The pass <paramref name="due"/>'s last judgment found owed, left kept (DRAINHOLD1): a draining look reads it and begins nothing.</summary>
+    internal IOpinionAct? PeekAct(string due)
+    {
+        lock (_gate) return _opinions.GetValueOrDefault(due)?.Act;
     }
 
     /// <summary>Only the opinions still owed are kept: one closed since its last judgment is let go.</summary>

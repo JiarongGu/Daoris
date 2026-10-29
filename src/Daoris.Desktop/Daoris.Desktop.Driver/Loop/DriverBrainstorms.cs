@@ -109,6 +109,14 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
                         events.Add(_context.Said.Wait("brainstorm", await FreezeAsync(request, snapshot, files, ct).ConfigureAwait(false)));
                         break;
                     case BrainstormStates.Frozen when files.Sent(request.Id) == state.Packet:
+                        // DRAINHOLD1: a sent brainstorm's turns are sessions the drain waits on; it stays frozen and sent, and runs at the first
+                        // look that does not drain.
+                        if (_context.Config.Draining)
+                        {
+                            _context.DrainHolds(events, "brainstorm", request.Id, $"`{request.Id}`");
+                            break;
+                        }
+
                         if (_context.Config.Cap - snapshot.SlotsHeld - taken - begun - held <= 0) break;
                         if (!_context.Runs.TryOpinion(Claim(request.Id))) break;
                         begun++;

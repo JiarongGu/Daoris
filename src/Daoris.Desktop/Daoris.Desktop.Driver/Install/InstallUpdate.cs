@@ -33,6 +33,13 @@ public static class InstallUpdate
         "an update is waiting for this machine's sessions to end: nothing new starts until it is installed and Daoris "
         + "starts again — Not now, or `daoris-driver update --cancel`, lets work start meanwhile.";
 
+    /// <summary>
+    /// The look's line for a start the drain held that is not a quest's (DRAINHOLD1): <paramref name="family"/> and what was held, then the
+    /// drain's own sentence (<see cref="HoldReason"/>, which names <c>update --cancel</c>), so a held helper, piece, pass or landing reads
+    /// as the update's wait and not as a refusal. A quest's hold is a consideration (<c>HeldFor</c>), never this line.
+    /// </summary>
+    public static string HeldLine(string family, string held) => $"{family}  {held} is held: {HoldReason}";
+
     public static string PathOf(string home) => DaorisHome.Entry(home, HomeEntry.Update);
 
     /// <summary>
@@ -49,6 +56,7 @@ public static class InstallUpdate
     /// </summary>
     public static DriverConfig Drained(DriverConfig config) => config with
     {
+        Draining = true,
         Holds = [.. config.Holds, .. config.Drivable.Where(repository => !config.Holds.Contains(repository, StringComparer.OrdinalIgnoreCase))],
         IntakeAdapter = null,
         Actors = new Dictionary<string, IReadOnlyList<ActorChoice>>(config.Actors, StringComparer.Ordinal) { ["intake"] = [] },
