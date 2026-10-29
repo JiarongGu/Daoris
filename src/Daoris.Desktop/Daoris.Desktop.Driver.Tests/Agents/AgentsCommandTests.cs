@@ -615,6 +615,29 @@ public sealed class AgentsCommandTests : IDisposable
     }
 
     /// <summary>
+    /// AGENTPROVIDER1 row b: no stand-in is an operand of a verb, configured or not (the operands are the agents naming a real program,
+    /// read from the registry), so <c>daoris agent login stub</c> is refused as an unknown agent whether or not the home's
+    /// <c>commands</c> name a command for it, and the message names the same agents either way.
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Login_of_a_stand_in_is_refused_as_an_unknown_agent_with_or_without_a_command_configured(bool configured)
+    {
+        if (configured)
+        {
+            (DriverConfig.Empty with { Commands = new Dictionary<string, IReadOnlyList<string>> { ["stub"] = ["node", "agent.mjs"] } })
+                .Save(DaorisHome.Entry(Home, HomeEntry.DriverConfig));
+        }
+
+        var exit = await AgentsCommand.RunAsync(["login", "stub"], World(), CancellationToken.None);
+
+        Assert.NotEqual(0, exit);
+        Assert.Contains("unknown agent 'stub' — one of: claude-code", _error.ToString());
+        Assert.DoesNotContain("acp-stub,", _error.ToString().Split("one of:")[1]);
+    }
+
+    /// <summary>
     /// 🔴 LIVELOGIN1: <c>daoris agent login claude-code --new</c> under this scratch home, nothing named or pinned, would run PATH's
     /// <c>claude auth login</c> and open the person's browser on their real account. It is refused before the account's folder is made,
     /// naming the stub adapters, and nothing starts: PATH is a folder holding only a stub named like the real one, which would leave its

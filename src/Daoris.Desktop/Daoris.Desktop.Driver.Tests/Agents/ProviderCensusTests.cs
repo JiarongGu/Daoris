@@ -261,6 +261,7 @@ public sealed class ProviderCensusTests
         { "Daoris.Desktop.Modules/Platform/Planted.cs", "env[\"CODEX_HOME\"] = home;", "CODEX_HOME" },
         { "Daoris.Desktop.Driver/Agents/Registry/Providers.cs", "static string Id() => \"codex-acp\";", "\"codex-acp\"" },
         { "Daoris.Desktop.Driver/Agents/Registry/Providers.cs", "static bool Is(Provider p) => p is ClaudeCodeAdapter;", "ClaudeCodeAdapter" },
+        { "Daoris.Desktop.Driver/Agents/Registry/Providers.cs", "static int Of(string id) { switch (id) { case \"stub\": return 1; default: return 0; } }", "\"stub\"" },
         { "Daoris.Desktop.Driver.Host/Planted.cs", "if (adapter == \"codex-acp\") return;", "\"codex-acp\"" },
         { "Daoris.Desktop.Driver/Agents/Providers/AltStub/Planted.cs", "var streams = new ClaudeStreams(a, b);", "ClaudeStreams" },
         { "Daoris.Desktop.Driver/Agents/Providers/Codex/Planted.cs", "env[\"CLAUDE_CONFIG_DIR\"] = home;", "CLAUDE_CONFIG_DIR" },

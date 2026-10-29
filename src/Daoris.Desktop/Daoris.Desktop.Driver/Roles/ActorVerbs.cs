@@ -72,7 +72,7 @@ internal static class ActorPress
 
     /// <summary>Whether this machine's Daoris manages a toolchain for an agent's name: the CLI's <c>TOOLCHAINS</c>, the gate stubs aside.</summary>
     public static bool Managed(string name) =>
-        AdapterSet.Built().Reserved.Contains(name, StringComparer.Ordinal) && name is not ("stub" or "acp-stub");
+        AdapterSet.Built().Reserved.Contains(name, StringComparer.Ordinal) && !Providers.IsStandIn(name);
 }
 
 /// <summary>

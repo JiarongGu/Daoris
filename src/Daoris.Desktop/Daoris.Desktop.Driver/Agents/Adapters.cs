@@ -2540,15 +2540,12 @@ public sealed class AdapterSet(
             + "An adapter is added deliberately, never guessed.");
     }
 
-    public static AdapterSet Built() => new(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
+    public static AdapterSet Built() => new(new Dictionary<string, ISessionAdapter>(
+        // The stand-ins gate-verify the mechanism with no model in it (D46 §8), the pipe door's and the protocol door's (D53/ACP1);
+        // `claude-code` is the supported harness on top of that proven loop. They are written on the contract and arrive through
+        // the shim, once, from the registration list (AGENTPROVIDER1 row b), so a provider added there touches no adapter file.
+        LegacyDoor.Over(Providers.Built()), StringComparer.OrdinalIgnoreCase)
     {
-        // The stub gate-verifies the mechanism with no model in it (D46 §8); `claude-code` is the
-        // supported harness on top of that proven loop. `codex` arrives explicitly, later — and until
-        // it does, asking for it errors naming these three, which is the honest answer.
-        ["stub"] = new StubAdapter(),
-        // The same trick one door over (D53/ACP1): it proves the PROTOCOL with no model in it, and a
-        // real harness rides that proven door in ACP2 rather than being the thing that proves it.
-        ["acp-stub"] = new AcpStubAdapter(),
         ["claude-code"] = new ClaudeCodeAdapter(),
         // The supported harness over the protocol door (ACP2/D53). It arrives BESIDE the pipe door
         // rather than replacing it: D23's "on proof" means a real driven run over ACP, and until

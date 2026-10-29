@@ -561,13 +561,13 @@ public sealed class ProviderRegistryTests : IDisposable
     private static AgentDoor FakeDoor(string id) => new(
         new DoorId(id), Transport.Native, new DoorIdentity(null, null, null), Known<ProgramFacts>.Absent,
         new DoorHome(null, false, null, false), LentPart.None, Known<PortRef>.Absent, new PosturesPart(null, null, null),
-        Known<PortRef>.Absent, Known<PortRef>.Absent,
+        Known<ISpawn>.Absent, Known<IDialect>.Absent,
         new AbilitiesPart(Known<bool>.Absent, Known<bool>.Absent, Known<bool>.Absent), new DoorTablesPart(null, null), null);
 
     private static Provider FakeProvider(string id, bool unavailable = false, params string[] doors) => new(
         new ProviderId(id), new ProviderIdentity(null, null, null, false, []), [.. doors.Select(FakeDoor)], Known<ProgramFacts>.Absent,
         Known<AccountsPart>.Absent, Known<TablesPart>.Absent, Known<UsagePart>.Absent, Known<LentPart>.Absent, Known<PortRef>.Absent,
-        Known<PortRef>.Absent, Known<PortRef>.Absent, Known<PortRef>.Absent, Known<PortRef>.Absent, Reach.Everywhere,
+        Known<IChildVocabulary>.Absent, Known<PortRef>.Absent, Known<PortRef>.Absent, Known<IConversationHome>.Absent, Reach.Everywhere,
         Known<VocabularyPart>.Absent, unavailable);
 
     [Fact]
