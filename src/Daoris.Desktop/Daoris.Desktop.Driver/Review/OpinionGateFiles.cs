@@ -109,7 +109,7 @@ internal static class OpinionGateFiles
     private static OpinionDue? DueOf(JsonElement element)
     {
         if (element.ValueKind != JsonValueKind.Object) return null;
-        var run = Json.Text(element, "run") is { } named && ChatRuns.IsChatRun(named) ? named : null;
+        var run = Json.Text(element, "run") is { } named && WorkplaceRunFiles.IsChatRun(named) ? named : null;
         return Json.Text(element, "session") is { } session && (run is not null ? "" : Json.Text(element, "quest")) is { } quest
                && Json.Text(element, "repository") is { } repository && Json.Text(element, "tree") is { } tree
                && Json.Text(element, "occasion") is { } occasion && Kept.Moment(element, "at") is { } at

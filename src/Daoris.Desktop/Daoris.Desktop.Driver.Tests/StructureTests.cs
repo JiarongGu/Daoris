@@ -723,6 +723,18 @@ public sealed class StructureTests(Xunit.Abstractions.ITestOutputHelper output)
     }
 
     [Fact]
+    public void Review_uses_lower_vocabulary_homes_facets_and_ports_and_no_type_above_it()
+    {
+        var (map, _, _, analysis, _) = Tree.Value;
+        var order = map.Subdomains.Select(subdomain => subdomain.Name).ToList();
+        var review = order.IndexOf("Review");
+        var edges = analysis.Edges.Where(edge => edge.File.StartsWith("Review/", StringComparison.Ordinal)
+            && edge.DeclaredIn.Any(path => map.Files.TryGetValue(path, out var owner) && order.IndexOf(owner) > review)).ToList();
+        Assert.True(edges.Count == 0, $"Review names a type above it in {edges.Count} semantic tuples:\n"
+            + string.Join('\n', edges.Select(edge => $"{edge.File}: {edge.Type}")));
+    }
+
+    [Fact]
     public void Plugins_uses_lower_vocabulary_homes_facets_and_ports_and_no_type_above_it()
     {
         var (map, _, _, analysis, _) = Tree.Value;

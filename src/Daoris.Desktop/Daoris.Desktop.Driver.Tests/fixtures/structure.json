@@ -623,6 +623,8 @@
     "Review/Domain/OpinionView.cs": "Review",
     "Review/Domain/OpinionWriters.cs": "Review",
     "Review/Domain/ReviewGate.cs": "Review",
+    "Review/Domain/RunParts.cs": "Review",
+    "Review/Domain/WorkflowLook.cs": "Review",
     "Review/Domain/ReviewLooks.cs": "Review",
     "Review/Domain/ReviewRules.cs": "Review",
     "Review/Domain/ReviewSetUps.cs": "Review",
@@ -1045,21 +1047,6 @@
     "Workflows/WorkflowVerb.cs": "Workflows"
   },
   "edges": [
-    {
-      "family": "Review names Workflows",
-      "after": "Review",
-      "files": {
-        "Review/OpinionLook.cs": ["WorkflowProcess"],
-        "Review/ChatLooks.cs": ["ChatRuns"],
-        "Review/Domain/OpinionDue.cs": ["ChatRuns"],
-        "Review/Domain/OpinionGate.cs": ["ChatRuns","GraphGateState","WorkflowGate","WorkflowGateState","WorkflowGateStates","WorkflowKinds","WorkflowLines","WorkflowProcess"],
-        "Review/Domain/ReviewGate.cs": ["ChatRuns","WorkflowLook","WorkflowProcess"],
-        "Review/OpinionGateFiles.cs": ["ChatRuns"],
-        "Review/OpinionPresses.cs": ["ChatRuns","WorkflowProcesses","WorkflowRunBindings"],
-        "Review/Heavy/LongCalls.cs": ["WorkflowProcess"],
-        "Review/Heavy/SessionChecks.cs": ["WorkflowKinds","WorkflowProcess"]
-      }
-    },
     {
       "family": "Workflows names Help",
       "after": "Workflows",
@@ -1714,6 +1701,8 @@
     "SessionChecksCommandTests.cs": "Review",
     "SessionChecksHandTests.cs": "Review",
     "SessionChecksStartTests.cs": "Review",
-    "SessionChecksTests.cs": "Review"
+    "SessionChecksTests.cs": "Review",
+    "ReviewBoundaryTests.cs": "Review",
+    "ReviewPortsTests.cs": "Review"
   }
 }

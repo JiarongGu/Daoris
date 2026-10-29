@@ -31,7 +31,7 @@ public sealed class ChatLooks(string home)
 
     /// <summary>Where a chat run's look file is kept; null for a key that is no chat run's.</summary>
     public string? PathOf(string run) =>
-        ChatRuns.IsChatRun(run) && SafeNames.IsPlainId(run) ? Path.Combine(ChatRuns.LooksFolder(home), run + ".json") : null;
+        WorkplaceRunFiles.IsChatRun(run) && SafeNames.IsPlainId(run) ? Path.Combine(WorkplaceRunFiles.LooksFolder(home), run + ".json") : null;
 
     /// <summary>Every skip kept for the run, oldest first; none where the file is missing or does not read.</summary>
     public IReadOnlyList<ChatLookSkip> Skips(string run)

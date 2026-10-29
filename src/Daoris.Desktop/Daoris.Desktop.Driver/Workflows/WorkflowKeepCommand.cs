@@ -50,7 +50,7 @@ public static class WorkflowKeepCommand
     {
         var trees = new SessionTrees(home);
         var gate = await trees.GateAsync(tree, quest, world, session, ct).ConfigureAwait(false);
-        if (gate.Workflow is not { State: WorkflowGateStates.KindPaths } held || held.Process.Run is not { } run)
+        if (gate.WorkflowPart() is not { State: WorkflowGateStates.KindPaths } held || held.Process.Run is not { } run)
         {
             return (false, $"nothing a kind of task holds waits for you on session {session}'s work, so nothing was kept: "
                 + $"{gate.Workflow?.Says ?? "It follows Current: the rules as they stand, read at each gate."}");

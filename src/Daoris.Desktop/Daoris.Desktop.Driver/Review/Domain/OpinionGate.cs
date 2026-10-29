@@ -121,7 +121,7 @@ public sealed record OpinionGateFacts(string Repository, ResolvedOpinion? Rule)
     /// <summary>D154's gate for the same work, whose <i>Reviewed</i> after the opinion stood answers its disputes (§7).</summary>
     public ReviewGateState? Review { get; init; }
 
-    /// <summary>Why the run's named workflow's opinion step cannot start (WORKFLOW1f, <see cref="WorkflowProcess.OpinionCannot"/>); else null.</summary>
+    /// <summary>Why the run's named workflow's opinion step cannot start (WORKFLOW1f, <see cref="IWorkplaceProcess.OpinionCannot"/>); else null.</summary>
     public string? Cannot { get; init; }
 }
 
@@ -263,7 +263,7 @@ public static class OpinionGate
 
         // A conversation's work lands nothing by the driver's gate (§12.2) unless it is a chat run's (CHATFLOW1d), and a level that names
         // no occasion here asks nothing.
-        if ((facts.Quest is null && !ChatRuns.IsChatRun(facts.Run)) || !Reads(facts.Rule, facts.Cannot, facts.Occasion)) return Of(OpinionGateStates.None);
+        if ((facts.Quest is null && !WorkplaceRunFiles.IsChatRun(facts.Run)) || !Reads(facts.Rule, facts.Cannot, facts.Occasion)) return Of(OpinionGateStates.None);
 
         // The person's own answer, while what would land is the commit they answered at or one before it (§8.5).
         foreach (var word in facts.Person.OrderByDescending(word => word.At))
@@ -598,17 +598,17 @@ public sealed record LandingGate(OpinionGateState Opinion, ReviewGateState Revie
     /// The run's own part (WORKFLOW1f): the process every part was read with, and what of the run's own holds the work. Null for a
     /// gate no door read one for, which is today's.
     /// </summary>
-    public WorkflowGateState? Workflow { get; init; }
+    public IWorkflowGatePart? Workflow { get; init; }
 
     /// <summary>The process the gate was read with, which the landing lands by; null where none was read.</summary>
-    public WorkflowProcess? Process => Workflow?.Process;
+    public IWorkplaceProcess? Process => Workflow?.Process;
 
     /// <summary>
     /// The graph's part, for a run bound to a graph version (FABRIC-CUTOVER1d; D190 point 4, the cutover design §4): the run's record read, never
     /// evaluated, after the look's part and before the landing step's own. Where it lets the work go, <see cref="Tip"/> is the commit its
     /// <c>handed</c> is bound to, so every path lands that commit. Null for every other run.
     /// </summary>
-    public GraphGateState? Graph { get; init; }
+    public IGraphGatePart? Graph { get; init; }
 
     /// <summary>
     /// The tree's tip the gate was judged at, where the door pins it (FABRIC-END7's review: the look's automatic landing): the landing
@@ -630,7 +630,7 @@ public sealed record LandingGate(OpinionGateState Opinion, ReviewGateState Revie
         : !Opinion.LetsGo ? new(false, Opinion.Says) { Refusal = AutoLandingCode.Opinion }
         : !Review.LetsGo ? new(false, Review.Says) { Refusal = AutoLandingCode.Unreviewed }
         : Graph is { LetsGo: false } graph ? new(false, graph.Says) { Refusal = AutoLandingCode.Refused }
-        : Process?.LandingCannot is not null ? new(false, WorkflowGate.LandingSays(Process)) { Refusal = AutoLandingCode.Refused }
+        : Workflow?.Process is { LandingCannot: not null } landing ? new(false, landing.LandingSays) { Refusal = AutoLandingCode.Refused }
         : null;
 
     /// <summary>Whether what holds the work is the run's own part or its landing step's (WORKFLOW1f), where it holds.</summary>
@@ -682,12 +682,12 @@ public static class LandingGateWords
     {
         var lines = new List<string>();
         // The run's own part first (WORKFLOW1f): which workflow decides, where a named one does, and what of its own holds it.
-        if (gate.Workflow is { State: not WorkflowGateStates.None } workflow) lines.Add($"trees: {workflow.Says}");
+        if (gate.Workflow is { Speaks: true } workflow) lines.Add($"trees: {workflow.Says}");
         if (gate.Opinion.State != OpinionGateStates.None) lines.Add($"trees: {gate.Opinion.Says}");
         if (gate.Review.State != ReviewStates.None) lines.Add($"trees: {gate.Review.Says}");
         // FABRIC-CUTOVER1d: the graph's part, after the look's, as the gate refuses it.
         if (gate.Graph is { } graph) lines.Add($"trees: {graph.Says}");
-        if (gate.Process is { LandingCannot: not null } process) lines.Add($"trees: {WorkflowGate.LandingSays(process)}");
+        if (gate.Process is { LandingCannot: not null } process) lines.Add($"trees: {process.LandingSays}");
         return lines;
     }
 
@@ -697,9 +697,9 @@ public static class LandingGateWords
         landed.Refusal switch
         {
             AutoLandingCode.Refused when gate.GraphHolds && gate.Graph is { } graph =>
-                WorkflowLines.GraphHeld(session, owner.Repository, owner.Workspace, gate.Process, graph, door),
+                graph.Held(session, owner.Repository, owner.Workspace, gate.Process, door),
             AutoLandingCode.Refused when gate.WorkflowHolds && gate.Workflow is { } workflow =>
-                WorkflowLines.Held(session, owner.Repository, owner.Workspace, workflow, door, workflow.LetsGo ? WorkflowKinds.Landing : null),
+                workflow.Held(session, owner.Repository, owner.Workspace, door),
             AutoLandingCode.Opinion => OpinionLines.Held(session, owner.Repository, owner.Workspace, gate.Opinion, door),
             AutoLandingCode.Unreviewed => ReviewLines.Held(session, owner.Repository, owner.Workspace, gate.Review, door),
             _ => null,

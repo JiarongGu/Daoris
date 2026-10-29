@@ -51,7 +51,7 @@ public sealed record GraphGateFacts(string Run, NodeGraph Graph, string Digest, 
 /// <summary>The graph part as judged: its state, and what its sentence names.</summary>
 /// <param name="State">One of <see cref="GraphGateStates"/>.</param>
 /// <param name="Run">The run it was judged for.</param>
-public sealed record GraphGateState(string State, string Run)
+public sealed record GraphGateState(string State, string Run) : IGraphGatePart
 {
     /// <summary>The graph's <c>handed</c>.</summary>
     public string Handed { get; init; } = "";
@@ -88,6 +88,10 @@ public sealed record GraphGateState(string State, string Run)
 
     /// <summary>What it says: the terminal's line and every door's refusal.</summary>
     public string Says => GraphGate.Says(this);
+
+    /// <summary>The machine log's line for a landing this part held (see <see cref="WorkflowLines.GraphHeld"/>).</summary>
+    LandingLine IGraphGatePart.Held(string session, string? repository, string? workspace, IWorkplaceProcess? process, string door) =>
+        WorkflowLines.GraphHeld(session, repository, workspace, (WorkflowProcess?)process, this, door);
 }
 
 /// <summary>
@@ -243,7 +247,7 @@ public static class GraphPasses
         Func<TimeSpan, CancellationToken, Task<bool>>? pass, CancellationToken ct)
     {
         var gate = await answer(ct).ConfigureAwait(false);
-        if (pass is null || !gate.GraphHolds || gate.Graph is not { AsksPass: true } graph) return gate;
+        if (pass is null || !gate.GraphHolds || gate.GraphPart() is not { AsksPass: true } graph) return gate;
         if (!graph.PressWaits)
         {
             await pass(TimeSpan.Zero, ct).ConfigureAwait(false);

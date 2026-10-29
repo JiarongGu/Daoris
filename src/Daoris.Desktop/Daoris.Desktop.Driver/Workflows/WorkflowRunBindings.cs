@@ -48,8 +48,7 @@ public static class WorkflowRunBindings
     /// The run a chain's work in <paramref name="repository"/> is (design §1, §3.8): named by the chain's first quest there, which
     /// every later quest of the chain in that repository shares; null where the chain has none there.
     /// </summary>
-    public static string? RunOf(IReadOnlyList<QuestView> chain, string repository) =>
-        chain.FirstOrDefault(quest => string.Equals(quest.To, repository, StringComparison.OrdinalIgnoreCase))?.Id;
+    public static string? RunOf(IReadOnlyList<QuestView> chain, string repository) => ReviewGate.RunOf(chain, repository);
 
     /// <summary>
     /// The task's choice an ask carries (design §4.1 row 1, §4.3): its latest, the latest standing; null where it made none, or the

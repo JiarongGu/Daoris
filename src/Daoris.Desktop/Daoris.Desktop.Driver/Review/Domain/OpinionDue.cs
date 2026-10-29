@@ -35,7 +35,7 @@ public sealed record OpinionDue(
     public int? Turns { get; init; }
 
     /// <summary>Whether it is owed on a chat run rather than a quest's chain.</summary>
-    public bool OnRun => ChatRuns.IsChatRun(Run);
+    public bool OnRun => WorkplaceRunFiles.IsChatRun(Run);
 }
 
 /// <summary>Why the look closed an opinion owed (<see cref="OpinionDue"/>), each a code the file keeps.</summary>

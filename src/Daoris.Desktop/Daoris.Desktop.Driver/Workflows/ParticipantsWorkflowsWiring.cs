@@ -16,7 +16,7 @@ internal sealed class ParticipantsWorkflowsOperations : IParticipantsWorkflows
         DriverConfig config, string home, string run, string repository, string? workspace, IWorkplacePluginCatalog plugins, DateTimeOffset at) =>
         new ChatBound(ChatRuns.Bind(config, home, run, repository, workspace, WorkflowCurrent.PluginsOf(plugins), at));
 
-    public IWorkplaceProcess ReadProcess(string home, DriverConfig config, string repository, string? workspace, string run) =>
+    public IWorkplaceProcess ReadProcess(string home, DriverConfig config, string repository, string? workspace, string? run) =>
         WorkflowProcesses.Read(home, config, repository, workspace, run);
 
     private sealed class ChatBound(ChatRunBound bound) : IParticipantsChatBound

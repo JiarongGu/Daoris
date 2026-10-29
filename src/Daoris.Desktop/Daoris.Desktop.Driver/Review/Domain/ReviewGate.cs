@@ -198,6 +198,13 @@ public sealed record ReviewGateState(string State, ReviewDecision Decision)
 public static class ReviewGate
 {
     /// <summary>
+    /// The run a chain's work in <paramref name="repository"/> is (design §1, §3.8): named by the chain's first quest there, which
+    /// every later quest of the chain in that repository shares; null where the chain has none there.
+    /// </summary>
+    public static string? RunOf(IReadOnlyList<QuestView> chain, string repository) =>
+        chain.FirstOrDefault(quest => string.Equals(quest.To, repository, StringComparison.OrdinalIgnoreCase))?.Id;
+
+    /// <summary>
     /// The quests of the <c>follows</c> chain <paramref name="id"/> is a step of (D149 point 1): up to its first quest, then every
     /// step published after, in the order the quests are listed. A quest the list does not hold has no chain here.
     /// </summary>
@@ -443,13 +450,13 @@ public static class ReviewGate
     /// <param name="session">The working session a chat run's words name for the terminal's door.</param>
     public static async Task<ReviewGateState> ReadAsync(
         IReviewWorld world, DriverConfig config, string tree, string repository, string workspace, string? quest, CancellationToken ct = default,
-        WorkflowProcess? process = null, string? at = null, string? run = null, string? home = null, string? session = null)
+        IReviewedProcess? process = null, string? at = null, string? run = null, string? home = null, string? session = null)
     {
         var rule = process is null ? ReviewRules.Resolve(config, repository, workspace) : process.Review;
         var look = process?.Look;
         if (quest is null)
         {
-            return ChatRuns.IsChatRun(run) && home is not null
+            return WorkplaceRunFiles.IsChatRun(run) && home is not null
                 ? await ChatAsync(new ChatLooks(home), run!, session, tree, repository, rule, look, process?.Name, at, ct).ConfigureAwait(false)
                 : new(ReviewStates.None, new ReviewDecision(ReviewLevels.Nothing, null) { Repository = repository });
         }

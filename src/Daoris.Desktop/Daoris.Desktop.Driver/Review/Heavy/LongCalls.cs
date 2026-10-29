@@ -38,7 +38,7 @@ public sealed class LongCalls
     /// The <c>callMinutes</c> a run's bound graph version sets on its <c>claimed</c> node (FABRIC-PIPELINE1b3), as written: a whole number of
     /// minutes from one; null where it sets none or none that reads, under Current, and under a steps version, whose bound is the default.
     /// </summary>
-    public static int? MinutesOf(WorkflowProcess? process)
+    public static int? MinutesOf(ICheckedProcess? process)
     {
         if (process is not { Named: true, Claimed: { } claimed } || !claimed.TryGetValue(Option, out var text)) return null;
         try
