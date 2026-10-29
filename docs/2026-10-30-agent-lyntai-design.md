@@ -1168,8 +1168,8 @@ containers and their lifetime (O1-F8 with C1-10); the cases' closing rows (O1-F1
 taken too**: the Opus maker's D213 point 10 for each move (O1-F4), the runner's clocks against the layer's two-minute window and
 `LYNTAI_TIMEOUT_SECONDS` (O1-F5), and LQ13 now (O1-F6); Codex's usage parity needing scope, nullable values and precision (C1-2), LQ2's
 closing condition against `VersionNotValidated` (C1-3), the trusted ingress keeping raw failures on today's reader (C1-4), a Daoris-owned
-usage port (C1-5), and LQ12's generation-safe identity and lease ownership (C1-6). Every finding is taken, four with a change; none is
-declined, and none is disputed.
+usage port (C1-5), and LQ12's generation-safe identity and lease ownership (C1-6). Every finding is taken, three with a change (O1-F1,
+stricter; O1-F6; C1-8); none is declined, and none is disputed.
 
 ### 16.1 The Opus maker's read (16 findings, 6 blocking)
 
