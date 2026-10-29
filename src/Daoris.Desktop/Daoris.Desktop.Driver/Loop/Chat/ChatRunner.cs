@@ -1878,6 +1878,8 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
         // FOUNDATION1d-ii part 5: the display a moved part's first message was held with (part 4's ChatContext.Shown) is never written here now;
         // the replacement that writes the message takes it, and nothing holds it for this record again.
         (string Text, IReadOnlyList<SessionEvent> Events)? shown = _context.Shown.TryRemove(sessionId, out var held) ? held : null;
+        // So with the moved words' own displays held for it, which go with each word to the replacement's open.
+        _context.ShownMoved.TryRemove(sessionId, out _);
         // D205 §4.1 (round 4, R3-B1): its process has stopped and its record left Running, so its one count is given back first.
         _harnesses.Release(selection.Number, sessionId);
         if (_context.Closing)
