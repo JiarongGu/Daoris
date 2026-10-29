@@ -166,8 +166,13 @@ Child starts strip the holder-key variable named by Platform's `ChildMarks`. `Se
 decision-directory and pointer suffixes in its cleanup inventory; Roles' public suffix constants alias those names.
 Roles retains the proof, decision memory and persistence operations.
 
-Workplace names no Course type. The rebase words' key is Workplace's pure `RebaseKeys`, which `DaorisKeys` delegates to,
-and `PressHold` is declared beside the `IChatPressing` port that answers it. The terminal's land press tells its note
+Workplace names no Course type. The rebase words' key is Workplace's pure `RebaseKeys`, and the carry-on's (`carry/<session>/<basis>/<n>`) its
+pure `CarryKeys`, which `DaorisKeys` delegates to, and `PressHold` is declared beside the `IChatPressing` port that answers it. An Accept on a
+session whose tree holds uncommitted work, or whose replay conflicts, does not refuse (LANDBACK1 part 1, D87's note): `LandCarry` tells the
+session in Daoris's own words through the say door, never the person's and no card, and keeps the person's yes on it (`CarriedAccepts`,
+`sessions/carried-accepts.json`); the auto lander's look lands it by the rule's form once the carry-on's turn ends with the tree clean, carries
+it on once more where it is still not clean, and at the next such end says so (`landing.carry-bound`) and takes the yes back. `trees land
+--entry` and `--ask` do not carry on. The terminal's land press tells its note
 through `IWorkplacePressTelling`, and history clearing reads and clears handed quests through `IWorkplaceHandedQuests`;
 Course installs both from `Course/Requests/WorkplacePressTellingWiring.cs` and
 `Course/HandOver/WorkplaceHandedQuestsWiring.cs`. `SessionHomeFiles` owns the go-on, reopen, new-session,
