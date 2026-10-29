@@ -1,6 +1,24 @@
-# Daoris's providers on Lyntai's agent-provider layer (AGENTLYNTAI1, 2026-10-30: round 4, proposed)
+# Daoris's providers on Lyntai's agent-provider layer (AGENTLYNTAI1, 2026-10-30: round 5, proposed)
 
-**Round 4's standing (proposed under D191, as an amendment to D213).** Both makers read round 3 apart (the Opus maker with 11 findings,
+**Round 5's standing (proposed under D191, as an amendment to D213).** Both makers read round 4 apart at Daoris `42304cfea`: the Opus
+maker **accepting after named changes** (8 findings, 3 blocking, all three for 1e and its request set), Codex asking one more round kept
+narrow (6 findings, 5 blocking). Round 5 answers every finding one row each (§19), each checked against the code at Daoris `42304cfea`
+and Lyntai `master` `bbbe285b` first: all fourteen taken, none declined, two of them choosing one of the ways the finding offered
+(O4-F7, C4-3); where the two reads meet, the stricter is taken once (O4-F1 with C4-4, O4-F2 with C4-2, O4-F5 with C4-1's conversation
+reader, O4-F4 with Codex's reading of `Hit`). The changes are carried into the body, each marked with the finding it answers (*(O4-Fn)*
+the Opus maker's, *(C4-n)* Codex's). What moved, in short: **a refused model is told by its whole outcome and mapped by door and
+phase**, a protocol open's refusal taking today's D205 path and never `ModelRefused`, a per-model limit or a model at capacity never a
+refusal (§5.3); **the retry table names the run**, a conversation's open never repeated and a pass handed no retry ending as it came
+(§5.3); **each account reader reads its own evidence**, LQ11 widened to keep a field's reason and the words' reading apart, the
+conversation's sign-out reader routed and the native conversation's absent readers kept absent (§5.2, §8); **the native conversation is
+named by the agent's own initialization**, LQ17 widened, never by `SessionStarted` alone (§4.1, §5.4); **1b-i builds on R-a alone**, its
+host policy proven as such, and **1b-iii** translates each later release before the move that reads it (§7.2, §9.2, §12); the protocol
+door's context figures join LQ17 on R-e (§5.4); `Hit` is compared exactly (§5.3, §6.3); m-i gains a fifth member, the restart, and names
+the conversation's session accessor (§4.1, §9.2); LQ3 asks the observation, not Daoris's *heard*, and LQ16 an unresolved zone's parts
+(§5.3, §8); and the native door's cooling is cited as D125's decided state, any fix D125's own row, independent of 1d (§5.2). **Round 5
+asks both makers for acceptance** (§14 names exactly what each re-reads); the ⚖ rows build only after both find nothing blocking.
+
+**Round 4's standing, kept as it was written (proposed under D191, as an amendment to D213).** Both makers read round 3 apart (the Opus maker with 11 findings,
 6 blocking; Codex with 5, all blocking), each asking another round kept narrow. Round 4 answers every finding one row each (§18), each
 checked against the code at Daoris `4153cbdd8` and Lyntai `master` `bbbe285b` first: all sixteen taken, four of them with a change, and
 none declined; where the two reads meet, the stricter is taken once (§18). The changes are carried into the body, each marked with the
@@ -82,7 +100,11 @@ under the driver's `Agents/`, `Loop/`, `Platform/` or `Events/` moved, and under
 Lyntai's `master` `bbbe285b`, which merged AG20's replay `0cbd84c1`, its layer sources `2fb2dc7e`'s *(O3-F11)*. From round 4 a
 Lyntai line marked *(AG20)* and an unmarked one are both `bbbe285b`'s; of the unmarked lines rounds 1 to 3 read at `9a41435c`, three
 moved and are re-cited where the body uses them (`LyntaiBuilder.cs:593`, `Acp/AcpAgentDoor.cs:27-28`, `CliUsageSource.cs:77-81`), and
-§16 and §17 keep theirs as written (§18.3).
+§16 and §17 keep theirs as written (§18.3). **Round 5 is read at** Daoris `42304cfea`, where both reads of round 4 read, and at Lyntai's
+`master` `bbbe285b`; it is written in the batch line at `01b6a6240`, where FOUNDATION1d-ii's part 5 moved three files this design cites
+(`Loop/Driver.cs` 24 lines on past its line 2783, `Loop/DriverContinuations.cs` 66 past `:1135`, `Loop/Chat/ChatRunner.cs` 3 between
+`:693` and `:1852` and 61 past `:1915`), so every line round 5 cites in them is `42304cfea`'s, and a row dispatched later re-cites them
+(§19.3).
 
 ## 0. What this rests on
 
@@ -1527,13 +1549,35 @@ signed-out account, and a field's reason from a word's (LQ11); whether a Claude 
 three account readers, and the conversation's and a brainstorm's limit readers (§5.2); that today's native driven conclusion is handed
 no failure, so it cools no limit and reads no sign-in there (§5.2, §18.3); the native door's absent episode and its resume's retry
 (§5.3); the per-spawn delivery stamp (§5.3); the layer's resolution of a reset before D125's policy (§5.3); the three further native
-readings (§5.4).
+readings (§5.4). **Unmeasured from round 5** *(O4's and C4's unmeasured)*: whether Claude Code's native stream sends a `rejected` frame
+when an account hits its limit, and whether a usage read reaches the walk before the next start (§5.2); whether the vendors' fields and
+words can both be kept for an access failure (LQ11); whether a Claude CLI emitter announces a session by a frame other than `init`, the
+reason Lyntai keys on the id (§5.4, LQ17); whether dsh's frames carry `usage_update`'s figures (§5.4). **Found by round 5's reads, read
+from the source and not run:** a refused model at a protocol open always meeting *no words and no tool*, and the layer's model-scoped
+limit and capacity (§5.3); the retry's owner by run (§5.3); the conclusion's and the conversation's sign-out readers reading words alone
+(§5.2); `SessionStarted` raised by any `system` frame with a new id (§5.4); the protocol door's context figures (§5.4); `Hit` a payload
+(§5.3); the restart and the session accessor (§4.1); an unresolved zone dropping a reset whole (§5.3); and that the native door's
+cooling nothing is D125's recorded state, not a find (§5.2).
+
+**What round 5 asks of the makers: acceptance.** Round 5 changes nothing either read did not name, and each maker re-reads only the lines
+that answer it and the overlaps answered once:
+- **The Opus maker**, which accepted after named changes, checks that O4-F1 to O4-F3 are taken as named before 1e is dispatched, and
+  the five not blocking in their places: §5.3's round-5 paragraph on a refused model (O4-F1, with C4-4); §5.3's retry table, its two
+  round-5 rows and the paragraph after it (O4-F2, with C4-2); §5.4's protocol-door table and LQ17 in §8 with R-e in §7.2 (O4-F3);
+  §5.3's *what was hit* and §6.3's point 3 (O4-F4); §5.2's round-5 paragraph (O4-F5); §5.2's *which readers* paragraph (O4-F6); §4.1's
+  `AgentRun` row and §9.2's m-i (O4-F7); §5.3's delivery paragraph, the limit bullet and LQ3 and LQ16 in §8 (O4-F8); and §19.
+- **Codex**, which asked one more round kept narrow, checks its five blocking findings and the sixth: §5.2's round-5 paragraph, §5.3's
+  access bullet and LQ11 (C4-1); §5.3's retry table and LQ3 (C4-2); §4.1's `AgentRun` row, §5.4's `SessionStarted` row and its round-5
+  native row, LQ17 and §12's 1d row (C4-3); §5.3's round-5 paragraph on a refused model and §12's 1b-i and 1d rows (C4-4); §7.2's
+  round-5 sentence, §9.1 item 2, §9.2's 1b-i and 1b-iii and §12's 1b-i and 1b-iii rows (C4-5); §5.4's tokens row (C4-6); and §19.
+Each verdict is *accept*, *accept after named changes* or *another round*; a blocking finding names its line as before. With both
+accepting, the steward records the design accepted in D213's note, and the ⚖ rows build in §9.1's order.
 
 **What this design's checks do not cover.** It is proposed and a document: the documentation gates prove its routing and shape, not its
 claims, which it read at the commits its standing names for every line §0.2 and §0.3 cite and otherwise takes from the survey and the
 proposals.
 
-**What round 4's reads should test first**, where round 4 is least sure. The Opus maker's list (§4.1's `AgentRun` row, §5.3 with
+**What round 4's reads should test first**, kept as written, where round 4 is least sure. The Opus maker's list (§4.1's `AgentRun` row, §5.3 with
 §5.2's entry, §5.4's tables, §8's LQ11, LQ16, one new request and LQ3's delivery half, §9.1, §9.2's m-i) is short of where Codex's
 findings and round 4's own reach: §6.3's relation (C3-1), §5.3's reset (C3-4) and retry table (C3-5), LQ3's open repeat, and the native
 door's readers found beyond the reads. So: §4.1's `AgentRun` row, §5.2's round-4 paragraph, §5.3's round-4 bullets and its delivery
@@ -1618,7 +1662,8 @@ need both makers' reads whatever the round.
 | 1 | 2026-10-30, Claude Opus 5.5, from Daoris `23cc27254` and Lyntai `9a41435c` with `2fb2dc7e`: the synthesis of Codex's and the independent Opus reader's sealed proposals, every question of the brief answered (§1), each difference chosen with its reason and counterexample (§1.1), the survey's gaps checked (§0.2), rows 1a to 1f and twelve requests | both at `460b6d47c` (`docs/2026-10-30-agent-lyntai-reads.md`): the Opus maker, another round (16 findings, 6 blocking); Codex, another round (10 findings, 6 blocking) | §16, every finding of both |
 | 2 | 2026-10-30, Claude Opus 5.5, from Daoris `f638a07c1` and the same Lyntai commits: both reads answered one row each (§16), every finding taken, the blocking ones as contracts with the row that proves each; parity a two-path oracle in one commit, m-i first, a door bound per run kind, no difference inside a move, the trusted ingress, the usage port, the runner's clocks, stderr and stop, the two containers, LQ13 to LQ15 with LQ2, LQ4 and LQ12 restated, rows 1s-i, 1s-ii and 1f-ii; D213's round-2 note | both at `d53705dda` with Lyntai `9a41435c` and `2fb2dc7e`, each apart: the Opus maker, another round kept narrow (10 findings, 4 blocking); Codex, another round (6 findings, 5 blocking, one for stage B and one for 1c) | §17, every finding of both |
 | 3 | 2026-10-30, Claude Opus 5.5, from Daoris `9405b458f` and the same Lyntai commits: both reads answered one row each (§17), fifteen taken, two with a change, one declined with its evidence; the oracle's declared projection and correspondences, m-i's four members with words kept off until m-ii, the ingress keeping today's phase with a typed access disposition and a whole `LimitSeen`, delivery mapped onto D210's dispositions, LQ16 new with LQ11, LQ12, LQ13, LQ14 and LQ15 widened, AG12 on R-d, a resume's own container, the pending field `run`; D213's round-3 note | both at `34c7168d8` with Lyntai `master` `bbbe285b`, each apart: the Opus maker, another round kept narrow (11 findings, 6 blocking); Codex, another round kept narrow (5 findings, all blocking) | §18, every finding of both |
-| 4 | 2026-10-30, Claude Opus 5.5, from Daoris `4153cbdd8` and Lyntai `master` `bbbe285b`: both reads answered one row each (§18), sixteen taken, four with a change, none declined; the conclusion's four account readers with trusted entries on every executor, the native door's as today; the restriction by subject first; the retry table by phase and door with per-prompt delivery; D125 over a reset as stated; the conversation's words and brainstorms beside `AgentRun`, m-ii before 1e; the provenance relation of permitted pairs; LQ3, LQ11, LQ12 and LQ16 widened, LQ17 new; D213's round-4 note | both makers next | — |
+| 4 | 2026-10-30, Claude Opus 5.5, from Daoris `4153cbdd8` and Lyntai `master` `bbbe285b`: both reads answered one row each (§18), sixteen taken, four with a change, none declined; the conclusion's four account readers with trusted entries on every executor, the native door's as today; the restriction by subject first; the retry table by phase and door with per-prompt delivery; D125 over a reset as stated; the conversation's words and brainstorms beside `AgentRun`, m-ii before 1e; the provenance relation of permitted pairs; LQ3, LQ11, LQ12 and LQ16 widened, LQ17 new; D213's round-4 note | both at `42304cfea` with Lyntai `master` `bbbe285b`, each apart: the Opus maker, accept after named changes (8 findings, 3 blocking, all for 1e and its request set); Codex, another round kept narrow (6 findings, 5 blocking) | §19, every finding of both |
+| 5 | 2026-10-30, Claude Opus 5.5, from Daoris `42304cfea` (written at `01b6a6240`) and Lyntai `master` `bbbe285b`: both reads answered one row each (§19), all fourteen taken, none declined; a refused model by its whole outcome and by door and phase; the retry table by run; access evidence kept apart per reader, the conversation's sign-out reader routed; the native conversation named by the agent's initialization; 1b-iii for the translations R-a lacks; the protocol door's context figures; `Hit` exact; m-i's restart and session accessor; LQ3, LQ11, LQ16 and LQ17 widened; D213's round-5 note | both makers, for acceptance (§14) | — |
 
 ## 16. Round 2: both reads of round 1 answered
 
@@ -1833,3 +1878,72 @@ nothing on the native door, cooling is written only through `HarnessRoster.Limit
 reaches the walk by the stream's rejected frame through the windows alone; the move keeps that, and whether today's path should cool it
 is a question for round 4's reads (§14) and a correction of its own if so. And Lyntai's sentence grammar reads no month and day without a
 year, which Daoris's does (C3-4's row). Nothing was run: the code was read, and this round's checks are a document's (§14).
+
+*Round 5's note* *(O4-F6)*: the native driven conclusion handed no failure is not a find of round 4's but D125's recorded state
+(`docs/decisions/D125.md:163-166`, `:296-297`), and the walk's reading of a rejected frame is `AccountReadings.cs:209` and `:308`, a
+standing Daoris records as declared and never seen (`:302`, `:319`), not `:310-314` (§19.3).
+
+## 19. Round 5: both reads of round 4 answered
+
+Both makers read round 4 at Daoris `42304cfea` and Lyntai `master` `bbbe285b`, each read-only and apart
+(`docs/2026-10-30-agent-lyntai-reads.md`, *The Opus maker, round 4* and *Codex, round 4*): the Opus maker, **accept after named
+changes**, 8 findings, 3 blocking (O4-F1 to O4-F3, all for 1e and its request set), asking O4-F4 before 1b-i fixes its projection, O4-F5
+before 1e and 1f-i, O4-F7 in m-i and O4-F8 before LQ3 and LQ16 are sent; Codex, another round kept narrow, 6 findings, 5 blocking
+(C4-1 to C4-5, the third for 1d and the fifth for 1b-i). Round 5 is written by Claude Opus 5.5 from Daoris `42304cfea` and Lyntai `master`
+`bbbe285b`, every finding checked against the code first (§19.3). Each finding has one row in §16's shape. **What both reads agree on is
+taken once, the stricter of each:** a refused model told by its whole outcome and mapped by door and phase (O4-F1 with C4-4); the retry
+table by run (O4-F2 with C4-2, Codex's conversation row added to the Opus maker's no-retry row); the conversation's sign-out reader
+(O4-F5 with C4-1's); `Hit` compared exactly (O4-F4, which Codex's reading that `Hit` belongs in the comparison, scenario by scenario,
+also meets). All fourteen are taken, none declined; two choose one of the ways their finding offered: O4-F7 the fifth member over a
+second `AgentRun`, C4-3 the request over a correction of today's boundary.
+
+### 19.1 The Opus maker's read (8 findings, 3 blocking)
+
+| Finding | Read | Round 5 |
+|---|---|---|
+| §0 round 3's findings against §18 | — | **Kept as read**: O3-F1 to O3-F11 closed, O3-F1's and O3-F8's changes accepted; the corners left open answered below (O3-F1's and O3-F2's as O4-F1 and O4-F5, O3-F4's as O4-F8, O3-F5's as O4-F7, O3-F6's as O4-F3, O3-F7(b) as O4-F4); O3-F8's D125 note owed is §5.3's round-5 sentence, written by 1b-iii |
+| §1 one citation wrong | note | **Taken as named** (§5.2, §18.3's round-5 note): the rejected standing is `AccountReadings.cs:308`, read near at `:209`, recorded as declared and never seen (`:302`, `:319`); LQ16's evidence keeps `:310-314` for what it holds, the credits word and a recorded `allowed` frame |
+| §2 item 1 the native door's readers | — | **Kept** (§5.2): what a person sees today recorded there, a `failed` end with a strike and the same account picked again until strikes park the quest; which signal arrives first unmeasured (§14) |
+| §2 item 4 an absolute moment counts as dated | note | **Taken as named** (§5.3's limit bullet, §9.2's 1b-iii): a new reading of D125, written as a note on D125 by the 1b-iii part that builds it |
+| O4-F1 subject `Model` mapped to the pipe exception on every door | blocking for 1e | **Taken with C4-4, the two together** (§5.3, §9.3's 1e, §12): AG12's refusal is the whole outcome (kind `Fatal`, subject `Model`, recovery `OwnerAction`, the door's model-refusal entry in `By`); on the native bound kind after a prompt it sets `ModelRefused` under today's guard; at a protocol open it takes today's D205 path through LQ8 (the re-ask with the offers write, else `choice-not-offered` with its count released, a resume put back, a conversation's words moved to the pending start), never `ModelRefused`; 1e's proof a model refused at the open for a start, a resume and a conversation on both paths. Checked: `Lyntai/TASKS.md:314-315`, `:321-324`; `Driver.cs:2938-2939`, `:2977`, `:3886-3906`; `DriverContinuations.cs:646-651`; `ChatRunner.cs:3018-3035` |
+| O4-F2 the retry table has no run kind | blocking for 1e | **Taken as named, with C4-2** (§5.3's table, §12): the driven quest rows named as such; a row for a protocol run handed no retry (no episode, no repeat of the open, no per-prompt disposition, its failure ending as today); C4-2's conversation row beside it; 1e's proof such a pass failing transiently at its open and at a prompt on both paths. Checked: `Acp.cs:1482-1492`, `:1536-1540`, `:2651`; `Driver.cs:2875`, `:3909-3913`; `DriverContinuations.cs:460`, the only `transientWanted` sites |
+| O4-F3 the layer drops the protocol door's context figures | blocking for 1e's request set | **Taken as named** (§5.4's protocol-door table, §7.2's R-e, §8's LQ17): LQ17's context half asked for the protocol door, carried by R-e, and by R-e1 where dsh's recorded frames carry it; 1e's proof the figures recorded at the conclusion as today. Checked: `Lyntai/Basic/Acp/AcpAgentReader.cs:20`; `Acp/AcpAgentDoor.cs:35`; `Agents/Acp.cs:3549`, `:3618`; `Driver.cs:2878-2882` |
+| O4-F4 `Hit` is a payload, not a path name | not blocking; before 1b-i fixes its projection | **Taken as named** (§5.3, §6.3, §8's LQ16, §12): out of the projection and compared exactly; filled from Daoris's own window names where today's sentence names that window, else from LQ16 widened to state what was hit, or a correction first. Checked: `AccountCooling.cs:408`, `:429`; `AccountLimits.cs:118`; `AccountReadings.cs:305` |
+| O4-F5 two account readers outside the rule | not blocking; before 1e and 1f-i | **Taken as named, with C4-1's conversation reader** (§5.2's round-5 paragraph, §9.3's 1e and 1f-i, §12): the conversation's sign-out routed to the sign-out entry by the words' evidence; a native conversation and a native brainstorm pass call no sign-out or limit entry, as today. Checked: `ChatRunner.cs:1613`, `:1624`, `:2668-2672`; `DriverBrainstorms.cs:786`; `D125.md:530-531` |
+| O4-F6 the native door cooling nothing is decided state | not blocking | **Taken as named** (§5.2, §18.3's round-5 note): D125's note cited; any fix D125's own row (a recorded native limit sentence, then the ending's failure handed to the sign-out and limit readers), independent of 1d, whose proof holds whichever path is today's at its dispatch; the rejected frame's arrival marked unmeasured. No row is filed here. Checked: `D125.md:163-166`, `:296-297`; `Tests/Loop/PipeModelRefusalTests.cs:111-112`, authored |
+| O4-F7 two uses m-i does not name | not blocking; m-i | **Taken, its first way** (§4.1, §9.2, §12): a fifth member, the restart, the same start once more with its transcript appended and its opening not said again, replaced at m-ii; the conversation's session reached through an accessor `TransportRun`'s alone, deleted at m-ii, `LayerRun` refusing a conversation before m-ii; and `LayerRun`'s end reads the exit from `LauncherRunner`, which `SessionEnded` does not carry (its §2 item 3). Checked: `DriverContinuations.cs:1155`, `:1326-1335`; `ChatRunner.cs:3085` |
+| O4-F8 the request wording | not blocking; before LQ3 and LQ16 are sent | **Taken as named** (§5.3, §8): LQ3 asks the observation (the prompt's write completed, which of its turn's events came after it), Daoris classifying *heard* in `Agents/Layer/`, and says it changes `Taken`'s documented meaning; LQ16 asks an unresolved zone's reset back with its stated parts and the zone as written. Checked: `Lyntai/Core/Inference/StatedRecovery.cs:40-47`; `AccountLimits.cs:129-131`; `Lyntai/Core/Agents/AgentFailure.cs:113-120` |
+
+The read's *still unmeasured* is §14's: the rejected frame at a limit, the usage read's timing, the frame against the sentence, the
+vendors' access fields, the eager order, stdin passage and the tools per mode, the isolated runtime's writers.
+
+### 19.2 Codex's read (6 findings, 5 blocking)
+
+| Finding | Read | Round 5 |
+|---|---|---|
+| §0 its round-3 findings against §18 | — | **Kept as read**: C3-1, C3-3 and C3-4 closed, C3-4's change accepted; C3-2 open as C4-1, C3-5 as C4-2 and C4-3, each answered below |
+| C4-1 the winning access reason and basis cannot preserve every account reader | blocking | **Taken as named** (§5.2's round-5 paragraph, §5.3's access bullet, §8's LQ11, §12): the access evidence kept apart, the field's reason and the words' sign-in or refusal reading each, never one winner; `OpeningAccount` takes today's precedence over both, the conclusion's and the conversation's sign-out readers the words' reading alone, as today; the conversation's reader routed at a failed open and a failed prompt; the proofs a code-only failure and a code with matching words at a refused open, an ordinary conclusion and a conversation's open and prompt, the tool's own sign-in among them. Checked: `AgentErrors.cs:168-176`; `DriverContinuations.cs:617-630`; `Driver.cs:3491-3495`; `RefusedAccounts.cs:17-33`; `ChatRunner.cs:2668-2678`, `:3046-3048`, `:3547-3548` |
+| C4-2 the retry table needs executor applicability | blocking | **Taken as named, with O4-F2** (§5.3's table, §8's LQ3, §12): rows by run, the driven quest run handed `TransientRetry`, the conversation (its open never repeated, its prompts by `ChatRetry` once open) and a run handed none; LQ3 exposes the opening operation and the host decides whether to repeat it, the library never repeating it itself; paired cases for a transient conversation open and a run without a retry owner. Checked: `Acp.cs:1482-1492`, `:1536-1540`, `:2253-2261`; `Driver.cs:3909-3913`; `ChatRunner.cs:1634-1642`, `:2962-2973`, `:2994-2996`, `:3036-3063` |
+| C4-3 `SessionStarted` is broader than today's native *named* evidence | blocking for 1d | **Taken, its first way** (§4.1, §5.4, §7.2's R-d, §8's LQ17, §12's 1d): the opening evidence asked as LQ17 widened (the start as the agent's own initialization announced it, told from a later frame carrying an id, the first id kept), and 1d waits for it; a correction of today's `init` boundary would be reviewed on its own against D189 before 1d, which this design does not propose; 1d's cases a status-only failed resume retried as today, an init, repeated and different ids. Checked: `StructuredOutput.cs:163-164`, `:179-183`; `Tests/Loop/NativeResumeTests.cs:80-92`; `Lyntai/Basic/ClaudeCli/StreamJsonAgentReader.cs:66-79`; `Driver.cs:3975-3980` |
+| C4-4 model scope alone does not mean a refused model | blocking | **Taken with O4-F1** (its row): the refusal identified by its whole outcome, kind, subject, recovery and the door's entry, under today's no-work guard; a model-scoped limit a limit and a model at capacity a transient, each as today; negative cases for both beside `model_not_found` in 1b-i (host policy) and 1d. Checked: `Lyntai/Core/Inference/ProviderVerdictClassifier.cs:116-131`, `:135-140`, `:237-240`; `StructuredOutput.cs:223-232`, `:365-367`; `Driver.cs:3476-3486` |
+| C4-5 1b-i's new ingress proof requires releases absent from its prerequisite | blocking for 1b-i | **Taken as named** (§7.2, §9.1, §9.2, §12): 1b-i on R-a alone, its host policy on Daoris's own types and its tests named host-policy tests; **1b-iii**, one part per release, translates what each later release adds (LQ11, LQ16, AG12, LQ3, LQ17), proven through the layer, each before the first move that reads it. Checked: `Lyntai/Core/Agents/AgentFailure.cs:81-97`, `:127-134`; the design's §7.2 labels |
+| C4-6 `UsageFinal`'s model is not necessarily the startup model | not blocking | **Taken as named** (§5.4's tokens row, §8's LQ17): one remembered model, set from a `system` frame and updated by each assistant message, never a split by model; LQ17's need stands. Checked: `StreamJsonAgentReader.cs:69-70`, `:124-126`, `:263-264` |
+
+The read's §2 agrees with the rows above, and its confirmations are kept: the native conclusion handed no failure and preserved at 1d,
+LQ3's two halves and LQ17 as library needs, the absolute field moment given dated grace, the relation admitting no wrong source, the
+conversation's words beside `AgentRun` keeping m-i's cut. Its closing list of what stays unmeasured is §14's.
+
+### 19.3 The code, checked
+
+Every line both reads cite was read at Daoris `42304cfea`, where both read: the files FOUNDATION1d-ii's part 5 moved since
+(`Loop/Driver.cs`, `Loop/DriverContinuations.cs`, `Loop/Chat/ChatRunner.cs`) at `01b6a6240` with the offsets the *Read at* gives, and
+nothing else under the driver's `Agents/`, `Loop/`, `Platform/` or `Events/` changed between them; and at Lyntai `master` `bbbe285b`, its
+working tree clean. **The claims hold as the reads state them.** AG11's refusal ends before the prompt and AG12 names it, so the round-4
+map would have read every protocol open's refusal as a pipe refusal; the layer scopes a per-model limit and a model at capacity to the
+model; only the driven quest runs are handed `TransientRetry`, the conversation's session its prompt retry only once open, and every other
+protocol pass none; `AgentErrors.Read` takes the code before the words while the two sign-out readers read the words alone; today's mapper
+names the conversation from `init` alone where the layer raises `SessionStarted` for any `system` frame with a new id, re-raising it for
+each different id; `UsageFinal`'s model is the last one seen; the ACP reader makes no event of `usage_update`; `Hit` is the sentence's
+marker in the account lines; `StatedRecovery` drops a reset whose zone it cannot resolve; `AgainAsync` starts the same `ProcessStartInfo`
+once more; and the native door's cooling nothing is D125's recorded state. **One citation was wrong**, the walk's rejected standing
+(§18.3's round-5 note). Nothing was run: the code was read, and this round's checks are a document's (§14).
