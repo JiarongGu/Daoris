@@ -22,6 +22,14 @@ Completed 2026-10-28 (quest `#3d2f1806497d`): one machine-wide admission in the 
 
 Completed 2026-10-28: `PATIENCE` (two minutes) is exported by `src/Daoris.Cli/test/_fixture.ts` and read at 39 waits in 8 files; the bounds that are the claim, the staging delays and the product inputs stay, each marked. `tools/test-patience.mjs` (with its test, run by `verify`) refuses a new fixed wait of a second or more under it unless marked. Detail: FIX-LOG's TESTPATIENCE3 entry; the check is in `docs/development.md`'s census table.
 
+## INTEGRATE1c — mechanical resolution completed, the command-free part (2026-10-28, D215)
+
+> - [ ] **INTEGRATE1c — mechanical resolution completed** (merge tool and its driver twins). A member another member or the line already holds is recorded as contained, not set aside; declared row tables and line rules settle by rule. Contract and proof: §11 row c.
+
+(Quest `#215707073ceb`, asked by `#b233a0`.)
+
+**Outcome** 2026-10-28: built, apart from the line rules' `run` writers, which wait for row d's acceptance (C6) and stay on `INTEGRATE1d`. A member the line or an earlier member holds is recorded contained (provisional on the earlier one, settled at its promotion, given back to be judged again otherwise); the line's declared `by: rows` tables merge by the base in the tool and the driver's replay and plan; the replay sets apart what union joined. Detail and proof: D215's and D87's notes of the day.
+
 ## SERVICESTALL1 — a busy service is said as busy, not as missing (2026-10-28)
 
 > **SERVICESTALL1 — a busy service is said as busy, not as missing** (CLI, service; sighting 2026-10-28). A terminal's ask exited 2 with "no DAORIS_SERVICE_URL … nothing answered as its service" about a minute after a landing, while the service was up and slow. Say what the CLI saw (the address, the bound, that it tried again, and that the variable is not the cause when the address came from the home's record); retry an idempotent read once after a short wait; never retry a press that changes state blindly; find what stalls the service or say what was ruled out.
@@ -21503,3 +21511,17 @@ machine-log design §3 say the contract.
 > - [ ] **HOSTCLEAN1 — host-supervisor fixture cleanup waits for its resources** (nightly CI, 2026-10-27; under FLAKE1). `HostSupervisorTests.A_host_that_ignores_its_input_ending_is_killed_after_the_bound` passed its body but disposal threw a busy-directory `IOException`; the class passed alone. Preserve the host lifecycle assertions and prove bounded cleanup and owned-process disposal deterministically before a fresh whole modules Process pass; `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Loop/HostSupervisorTests.cs:155`.
 
 **Outcome** 2026-10-29: the disposal now removes its scratch through `ScratchFolders.Remove`, which the bridge's disposal shares: read-only marks cleared, asked again within a bound, and a folder still held after the last try left rather than failing the test. Its tests prove the bound deterministically with a file held and let go mid-wait, and held past it. The host lifecycle assertions and the disposal's kill of a still-running stand-in are unchanged; the whole Modules Process half is the queue's to run. It had failed twice in one queue run (candidate `23b185c`) and sent a batch back. Detail in the FIX-LOG entry of 2026-10-29.
+
+## DOCSDATE1 — the guide names the checks a driven session is handed back for (2026-10-29)
+
+> - [ ] **DOCSDATE1 — the guide names the checks a driven session is handed back for** (docs, devkit; 2026-10-28). Three branches in two days were handed back for the universal gate's documents check (a component changed later than its README) and one for `SettledReadersCensusTests` (a moved file that says a keyed word to a session), neither named in docs/development.md's "Choose the checks" table. Add both rows with their focused commands.
+
+**Outcome** 2026-10-29: `docs/development.md`'s census table under *Choose the checks* gains both rows: the universal gate's `docs` line (`verify --universal-only`), which dates each side by its last commit, so the README's update is committed on the branch; and `SettledReadersCensusTests`, whose `First` and `AsKept` tables name each reader by file. Records only.
+
+## TIDYOUTPUT1 — a landed tree whose extra files are only build and check output is tidied (2026-10-29, D218)
+
+> - [ ] **TIDYOUTPUT1 — a landed tree whose extra files are only build and check output is tidied** (installed, 2026-10-27; D51). Two Lyntai landings under `merge, tidy` kept their trees for 119 ignored files written after they opened, all `bin/`, `obj/` and the repository's own verify output, and named them as work removal would destroy; `trees remove --force` then removed them. Judge which ignored paths are disposable output (a repository's declared scratch, a build's own folders) without ever discarding authored ignored files such as `local/` notes, and prove both; a tree's read-only copies of the checkout's `local/` inputs are the checkout's, never authored work (D216). Sighting, 2026-10-29: two more Lyntai trees kept after landing in the same shape, one (`s-de0fee10`) for `devtools/_test-results` and 138 files written after it opened (end-to-end data databases and `_samples`).
+
+(Quest `#fbd7aa3b22ae`, asked by `#90875e`.)
+
+**Outcome** 2026-10-29: a repository declares its scratch output as globs under `integration.scratch` in the checkout's gates file (the key D215 reserves, read from the checkout, never the tree), and a landed tree whose extras are only declared output and `bin`, `obj` or `node_modules` is tidied; TREEKEEP1's walk now passes over build folders inside a folder the checkout shares, which is what kept the Lyntai trees for `bin/` and `obj/`. An undeclared ignored file written after opening, a `local/` note among them, still keeps the tree and is named by its files; a read-only TREELOCAL1 copy with the checkout's bytes keeps nothing. A repository benefits once its gates file declares its scratch. Detail in D218 and the FIX-LOG entry of 2026-10-29.

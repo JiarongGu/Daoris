@@ -18,10 +18,14 @@
  *   against main's tip, its diff and gates printed, nothing committed), after the records commit on the branch; then queued with
  *   its message file (`--message <file>`). The request is frozen at enqueue: the branch's tip and the message's bytes. A tip that
  *   differs from the branch's last preview, and a branch with no message, are refused (`enqueue`). Each enqueue has its own
- *   request id, retained through re-forms and outcomes, so a new wait never reads an older result for the same tip.
+ *   request id, retained through re-forms and outcomes, so a new wait never reads an older result for the same tip, and its place in
+ *   the queue's sequence (`seq`), which orders requests given back (`inArrival`).
  * - **The candidate.** The runner merges every queued branch, in arrival order, at most `CANDIDATE_MAX`, one merge commit each
  *   on main's tip; a branch whose merge the resolvers cannot make is set aside and handed back (`formCandidate`). One member at a
- *   time where `--one-at-a-time` asked it, or where an unresolved failure split a candidate.
+ *   time where `--one-at-a-time` asked it, or where an unresolved failure split a candidate. The requests it takes stand as
+ *   `forming` until the candidate is written (QUEUEWAITEND1).
+ * - **Its outcomes.** Each request ends landed, contained or handed back (a drop's too, queued or forming), and its waiter reads
+ *   which (`requestStanding`); a request in no record at all is told so, never waited for.
  * - **Its states.** `forming`, `running`, `bisecting`, `green`, `promoting`, `promoted`, `held` (on memory, on a checkout that is
  *   not clean), and the queue's `stopped`. A member handed back is `pinned`, `pinned with` or `unresolved`.
  * - **Promotion.** Only onto a clean main checkout whose tip is still the candidate's base; otherwise held, or re-formed on the
@@ -53,6 +57,15 @@
  * `FOREGROUND_HEADROOM_GB` free. A reservation is released only on a read of its job that finds it empty, or on a name no job
  * answers; a read that fails keeps the whole charge. A background gate kept from its slot `BACKGROUND_SLOT_WAIT_MS` takes it
  * between scoped tiers.
+ *
+ * ## Containment (INTEGRATE1c, design §5.2 step 3, C4)
+ *
+ * A member whose work the candidate holds already is **contained**, never set aside as a merge that could not be made. One the
+ * line holds is settled at once (`queue.contained`, `containedIn: { line: true }`). One an earlier member of the same candidate holds is
+ * **provisional**: it stands on the candidate's `contained`, outside `members` (the judge's prefixes are merge commits), and is
+ * settled only when that member promotes (`settleContained`). A candidate that ends any other way (a member handed back, a split,
+ * a re-form, a drop) gives it back as its own request (`requestsOf`), merged again with the rest and so judged again: the line
+ * never held it if its container fails.
  *
  * Exit codes: 0 · 2 a tool error. `node tools/merge-queue.mjs` prints the queue and the admission record.
  */
@@ -137,11 +150,14 @@ export function enqueue(queue, { branch, tip, message, at, requeue = false }) {
   if (previewed.tip !== tip) {
     return { refused: `${branch}'s tip is ${tip.slice(0, 7)}, and its last preview showed ${previewed.tip.slice(0, 7)}: preview it again (a records commit comes before the preview), then queue it` };
   }
-  if (queue.queued.some((each) => each.branch === branch) || queue.candidate?.members.some((each) => each.branch === branch && !each.handedBack)) {
+  if (queue.queued.some((each) => each.branch === branch) || queue.forming?.members?.some((each) => each.branch === branch)
+    || queue.candidate?.members.some((each) => each.branch === branch && !each.handedBack) || queue.candidate?.contained?.some((each) => each.branch === branch)) {
     return { refused: `${branch} is queued already: --drop-batch ${branch} takes it off, then queue it again` };
   }
-  const entry = { branch, tip, request: randomUUID(), message: Buffer.from(message, 'utf8').toString('base64'), at, ...(requeue ? { requeue } : {}) };
-  return { queue: { ...queue, queued: [...queue.queued, entry] }, entry };
+  // INTEGRATE1c: each request's place in arrival, by a sequence the queue keeps (`sequence`, the last given); `at` has whole seconds.
+  const seq = (queue.sequence ?? 0) + 1;
+  const entry = { branch, tip, request: randomUUID(), seq, message: Buffer.from(message, 'utf8').toString('base64'), at, ...(requeue ? { requeue } : {}) };
+  return { queue: { ...queue, sequence: seq, queued: [...queue.queued, entry] }, entry };
 }
 
 /** A queued request's message, as its bytes were at enqueue. */
@@ -150,17 +166,59 @@ export const messageOf = (entry) => Buffer.from(entry.message ?? '', 'base64').t
 /**
  * Queued branches taken off the queue; a candidate's branches end it and are handed back (`--drop-batch`). Answers the queue, the
  * branches dropped and, when a candidate ended, `ended`: that candidate, whose runner (QUEUEDRAIN1) is the one to end its run.
+ *
+ * QUEUEWAITEND1: every request a drop takes off is handed back as `dropped`, a queued one and one forming as a candidate's, so
+ * its waiter reads an outcome; one taken off the queue with no record had a waiter that never ended. A drop of some of the requests
+ * forming leaves the rest forming (the runner forms them again, never writing the candidate it was making).
  */
 export function dropQueued(queue, branches, at = new Date().toISOString()) {
   const drop = (branch) => branches.length === 0 || branches.includes(branch);
+  const dropped = (each) => ({ ...each, handedBack: { how: 'dropped', at } });
   const ends = Boolean(queue.candidate?.members.some((each) => drop(each.branch)));
-  const back = ends ? queue.candidate.members.map((each) => ({ ...each, handedBack: { how: 'dropped', at } })) : [];
-  const dropped = [...queue.queued.filter((each) => drop(each.branch)).map((each) => each.branch), ...back.map((each) => each.branch)];
+  // C4: a contained member is part of its candidate's request set, so a candidate a drop ends hands it back with the rest, and
+  // one dropped by name alone leaves the candidate standing without it.
+  const held = queue.candidate?.contained ?? [];
+  const forming = queue.forming?.members ?? [];
+  const back = [
+    ...queue.queued.filter((each) => drop(each.branch)),
+    ...forming.filter((each) => drop(each.branch)),
+    ...(ends ? [...queue.candidate.members, ...held] : held.filter((each) => drop(each.branch))),
+  ].map(dropped);
+  const standing = queue.candidate && !ends && held.some((each) => drop(each.branch))
+    ? { ...queue.candidate, contained: held.filter((each) => !drop(each.branch)) }
+    : queue.candidate;
+  const left = forming.filter((each) => !drop(each.branch));
   return {
-    queue: { ...queue, queued: queue.queued.filter((each) => !drop(each.branch)), candidate: ends ? null : queue.candidate, handedBack: [...(queue.handedBack ?? []), ...back] },
-    dropped,
+    queue: {
+      ...queue,
+      queued: queue.queued.filter((each) => !drop(each.branch)),
+      ...(queue.forming ? { forming: left.length ? { ...queue.forming, members: left } : null } : {}),
+      candidate: ends ? null : standing,
+      handedBack: [...(queue.handedBack ?? []), ...back],
+    },
+    dropped: back.map((each) => each.branch),
     ended: ends ? queue.candidate : null,
   };
+}
+
+/**
+ * QUEUEWAITEND1: where a request stands in the queue's record, for the invocation waiting on it: an outcome (`landed`, `contained`,
+ * `back`), in flight (`pending`: `queued`, `forming`, `candidate`, or `contained` on the candidate), or in no record at all (`gone`).
+ * A request is its branch, its frozen tip and its own id, so another occurrence of the same tip is never this one (QUEUEWAIT1).
+ */
+export function requestStanding(queue, { branch, tip, request }) {
+  const same = (each) => each.branch === branch && each.tip === tip && each.request === request;
+  const landed = (queue.landed ?? []).find(same);
+  if (landed) return { landed };
+  const contained = (queue.contained ?? []).find(same);
+  if (contained) return { contained };
+  const back = (queue.handedBack ?? []).find(same);
+  if (back) return { back };
+  if (queue.queued.some(same)) return { pending: 'queued' };
+  if ((queue.forming?.members ?? []).some(same)) return { pending: 'forming' };
+  if ((queue.candidate?.members ?? []).some((each) => same(each) && !each.handedBack)) return { pending: 'candidate' };
+  if ((queue.candidate?.contained ?? []).some(same)) return { pending: 'contained' };
+  return { gone: true };
 }
 
 /**
@@ -203,27 +261,83 @@ export function nextMembers(queued, { max = CANDIDATE_MAX, oneAtATime = false } 
 }
 
 /**
- * A candidate formed on `base` from `members`, each merged on the last by `merge(member, onto)`, which answers `{ commit }` for
- * its merge commit or `{ conflict: [paths] }` for a merge the resolvers could not make (aborted by it). A conflicted member is set
- * aside and handed back with its conflict named, and the rest go on (§4.1 point 1). Answers the candidate and the set-aside.
+ * What holds a contained member (INTEGRATE1c, C4), its `containedIn`: the line (`IN_THE_LINE`, `{ line: true }`), needing no earlier
+ * member to promote, or an earlier member (`{ branch, request }`). The two are fields apart, so no branch's name reads as the line:
+ * the marker was once the word `line`, and a container whose branch was named `line` settled what it held as the line's.
+ */
+export const IN_THE_LINE = Object.freeze({ line: true });
+
+/** Whether a member's `containedIn` is the line's. */
+export const inTheLine = (containedIn) => containedIn?.line === true;
+
+/**
+ * A candidate formed on `base` from `members`, each merged on the last by `merge(member, onto, formed)` (`formed` the members merged
+ * so far), which answers `{ commit }` for its merge commit, `{ conflict: [paths] }` for a merge the resolvers could not make (aborted
+ * by it), or `{ contained: in }` for a member whose work the candidate holds already (INTEGRATE1c, design §5.2 step 3, C4): `in` is
+ * `IN_THE_LINE` where the base holds it, else `{ branch, request }`, the earlier member that does.
+ *
+ * - A conflicted member is set aside and handed back with its conflict named, and the rest go on (§4.1 point 1).
+ * - A member the line holds is **contained** and settled at once: there is nothing to merge and nothing to gate.
+ * - A member an earlier member holds is contained **provisionally**: it stays on the candidate (`contained`), outside `members`
+ *   (the judge's prefixes are the merge commits), settled only when that member promotes with the candidate. A candidate that ends
+ *   any other way gives it back as its own request (`requestsOf`), judged again.
+ *
+ * Answers the candidate, the set-aside and every member found contained (`containedIn` says in what).
  */
 export async function formCandidate({ base, members, merge, at, reforms = 0, recordsOnly = false, split = false }) {
   let onto = base;
   const formed = [];
   const setAside = [];
+  const contained = [];
   for (const member of members) {
-    const merged = await merge(member, onto);
+    const merged = await merge(member, onto, formed);
     if (merged.conflict) {
       setAside.push({ ...member, handedBack: { how: 'conflict', paths: merged.conflict, at } });
+      continue;
+    }
+    if (merged.contained) {
+      contained.push({ ...member, containedIn: inTheLine(merged.contained) ? { line: true } : { branch: merged.contained.branch, request: merged.contained.request }, containedAt: at });
       continue;
     }
     formed.push({ ...member, commit: merged.commit });
     onto = merged.commit;
   }
+  const provisional = contained.filter((each) => !inTheLine(each.containedIn));
   const candidate = formed.length
-    ? { base, tip: onto, members: formed, state: 'running', formed: at, reforms, recordsOnly, split, runs: [] }
+    ? { base, tip: onto, members: formed, state: 'running', formed: at, reforms, recordsOnly, split, runs: [], ...(provisional.length ? { contained: provisional } : {}) }
     : null;
-  return { candidate, setAside };
+  return { candidate, setAside, contained };
+}
+
+/** A contained member as its own request again: the frozen request it was queued with, without what the candidate added. */
+const requestOf = ({ containedIn, containedAt, ...request }) => request;
+
+/**
+ * Requests in the order they arrived (the queue's order, §4.1 point 1): by the sequence `enqueue` gave each (`seq`), since `at` has
+ * whole seconds and three requests queued in one second once came back re-ordered. A request kept from before the sequence has none
+ * and arrived before any that has one; such requests keep their clock's order, and a tie keeps the order given.
+ */
+export const inArrival = (requests) => requests
+  .map((request, i) => ({ request, i }))
+  .sort((a, b) => (a.request.seq ?? 0) - (b.request.seq ?? 0) || (timeOf(a.request.at) || 0) - (timeOf(b.request.at) || 0) || a.i - b.i)
+  .map(({ request }) => request);
+
+/**
+ * What a candidate that did not promote gives back to be judged again (C4): its provisional contained members, each as its own
+ * request, merged with `requests` (the candidate's own members, where they are formed again or queued) in arrival order.
+ */
+export const requestsOf = (candidate, requests = []) => inArrival([...requests, ...(candidate?.contained ?? []).map(requestOf)]);
+
+/**
+ * The records a promotion settles for a candidate's provisional contained members, each `containedIn` the member that held it (its
+ * branch, its request and its merge commit); a member whose container is not among the candidate's is not settled (it is given back
+ * by `requestsOf`). The line's are settled where the candidate forms: `{ branch, tip, request, containedIn: { line: true }, at }`.
+ */
+export function settleContained(candidate, at) {
+  return (candidate?.contained ?? []).flatMap((each) => {
+    const holder = candidate.members.find((member) => member.branch === each.containedIn?.branch && member.request === each.containedIn?.request);
+    return holder ? [{ branch: each.branch, tip: each.tip, request: each.request, containedIn: { branch: holder.branch, request: holder.request, commit: holder.commit }, at }] : [];
+  });
 }
 
 /**
@@ -619,13 +733,18 @@ export function queueLines(queue, { branchTip = () => null, now = Date.now() } =
     const held = candidate.state === 'held' ? ` (held on ${candidate.held?.on}: ${candidate.held?.why})` : '';
     out.push(`candidate on ${String(candidate.base).slice(0, 7)}: ${candidate.state}${held}${candidate.reforms ? `, re-formed ${candidate.reforms} time${candidate.reforms === 1 ? '' : 's'}` : ''}${candidate.reforms >= HELD_REFORMS ? ', held by direct commits' : ''}`);
     candidate.members.forEach((member, i) => out.push(`  ${i + 1}. ${member.branch} at ${String(member.tip).slice(0, 7)}${member.commit ? ` → ${String(member.commit).slice(0, 7)}` : ''}`));
+    for (const each of candidate.contained ?? []) out.push(`  contained: ${each.branch} at ${String(each.tip).slice(0, 7)}, in ${each.containedIn?.branch} (settled when ${each.containedIn?.branch} promotes)`);
   }
+  if (queue.forming?.members?.length) out.push(`forming on ${String(queue.forming.base).slice(0, 7)}: ${queue.forming.members.map((each) => each.branch).join(', ')}`);
   if (queue.queued.length) {
     out.push(`queued: ${queue.queued.length}`);
     for (const entry of queue.queued) {
       const now = branchTip(entry.branch);
       out.push(`  ${entry.branch} at ${String(entry.tip).slice(0, 7)}${now && now !== entry.tip ? ` (the branch is now at ${now.slice(0, 7)}: the frozen tip is what merges)` : ''}${entry.requeue ? ' (a requeue of an unresolved member)' : ''}`);
     }
+  }
+  for (const each of (queue.contained ?? []).slice(-4)) {
+    out.push(`contained: ${each.branch} (${inTheLine(each.containedIn) ? 'the line held it already' : `in ${each.containedIn?.branch}, promoted`})`);
   }
   for (const back of (queue.handedBack ?? []).slice(-8)) {
     const detail = back.handedBack?.how === 'conflict' ? `a conflict in ${back.handedBack.paths?.join(', ')}`

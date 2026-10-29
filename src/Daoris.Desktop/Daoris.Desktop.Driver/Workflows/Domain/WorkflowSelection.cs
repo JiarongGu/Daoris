@@ -92,7 +92,7 @@ public sealed record WorkflowDrop(string Kind, string Workspace) : WorkflowChoic
 public static class WorkflowSelection
 {
     /// <summary>The workflow drawn from the rules as they stand (design §2.7), which no saved workflow's id may take.</summary>
-    public const string Current = "current";
+    public const string Current = WorkflowKey.Current;
 
     /// <summary>The most kinds one choice holds (design §4.2).</summary>
     public const int MaxKinds = WorkflowKey.MaxKinds;
@@ -131,8 +131,7 @@ public static class WorkflowSelection
 
     public static string KindWorkflowProblem(string kind) => WorkflowKey.KindWorkflowProblem(kind);
 
-    public static string WorkflowProblem(string workflow) =>
-        $"`{workflow}` is not a workflow's id: lower-case letters, digits and dashes, at most 40, such as `docs-to-pr`; or `current`.";
+    public static string WorkflowProblem(string workflow) => WorkflowKey.WorkflowProblem(workflow);
 
     public const string LandedProblem = WorkflowKey.LandedProblem;
 
@@ -155,8 +154,7 @@ public static class WorkflowSelection
     /// </summary>
     public static bool IsGates(string? value) => WorkflowKey.IsGates(value);
 
-    public static string UndeclaredInWorkspace(string workspace, string kind) =>
-        $"workspace `{workspace}` declares no kind `{kind}`: a kind is declared first, with its label.";
+    public static string UndeclaredInWorkspace(string workspace, string kind) => WorkflowKey.UndeclaredInWorkspace(workspace, kind);
 
     public static string UndeclaredForRepository(string repository, string workspace, string kind) =>
         $"`{repository}`'s workspace, `{workspace}`, declares no kind `{kind}`: a kind is declared first, with its label.";

@@ -7,7 +7,7 @@ namespace Daoris.Driver;
 /// <param name="Summary">Its title and first paragraph that says anything, cut to a line or two; null when none does.</param>
 /// <param name="Stack">What it is built with, read from the files at its top — the words a ticket's change usually decides on.</param>
 /// <param name="Source">The file the summary came from, so a reader knows it is the repository's word, not Daoris's.</param>
-public sealed record RepositoryDescription(string? Summary, IReadOnlyList<string> Stack, string? Source);
+public sealed record RepositoryDescription(string? Summary, IReadOnlyList<string> Stack, string? Source) : IIntakeDescription;
 
 /// <summary>
 /// What a repository that DECLARED nothing says about itself (D77) — read from its own committed

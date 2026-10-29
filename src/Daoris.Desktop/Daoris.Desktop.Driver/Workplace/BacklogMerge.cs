@@ -36,8 +36,18 @@ internal static class BacklogMerge
     /// </summary>
     internal sealed record Merged(string? Text, int Kept, int Dropped, IReadOnlyList<int> Both);
 
-    /// <summary>What one replay settled of the backlog, summed over its stops: what the landing says.</summary>
+    /// <summary>What one replay settled of the backlog, or of one declared row table, summed over its stops: what the landing says.</summary>
     internal sealed record Settled(string Path, int Kept, int Dropped);
+
+    /// <summary>
+    /// The files a replay settles by the merge base (INTEGRATE1c): the declared backlog, null where the manifest does not read, and the
+    /// declared row tables (<see cref="RowTablesOf"/>), each other than the backlog once.
+    /// </summary>
+    internal sealed record Declared(string? Backlog, IReadOnlyList<string> Tables)
+    {
+        /// <summary>Whether a conflict in <paramref name="path"/> is settled by the merge base.</summary>
+        public bool Settles(string path) => path == Backlog || Tables.Contains(path, StringComparer.Ordinal);
+    }
 
     /// <summary>
     /// The backlog <paramref name="manifest"/>'s text declares: <see cref="Default"/> with no manifest; null where it is not JSON or not an
@@ -74,6 +84,54 @@ internal static class BacklogMerge
                 _ => null,
             };
             return path?.Replace('\\', '/') ?? Default;
+        }
+    }
+
+    /// <summary>
+    /// The files a declaration's text says settle by rows (INTEGRATE1c; the integration design's §4.1 <c>merge</c>): <c>daoris.gates.json</c>'s
+    /// <c>integration.merge</c>, each entry <c>{ "paths": file, "by": "rows" }</c>, settled by the merge base line by line as the backlog
+    /// is (<see cref="ByBase"/>). No command runs, so no acceptance is read: an entry that is a <c>line</c> rule with a <c>run</c> writer,
+    /// or has any other <c>by</c>, declares none, since the writers wait for the accepted declaration and no rule keeps one side's copy.
+    /// Nothing where the text is null, not a JSON object, or has no <c>integration.merge</c> list; each path trimmed, a backslash a
+    /// slash, once, in the order first declared. The merge tool's <c>rowTablesOf</c>, row for row of <c>backlog-merges.json</c>.
+    /// </summary>
+    internal static IReadOnlyList<string> RowTablesOf(string? declaration)
+    {
+        if (declaration is null) return [];
+        JsonDocument document;
+        try
+        {
+            document = JsonDocument.Parse(declaration);
+        }
+        catch (JsonException)
+        {
+            return [];
+        }
+
+        using (document)
+        {
+            if (document.RootElement.ValueKind != JsonValueKind.Object
+                || !document.RootElement.TryGetProperty("integration", out var integration) || integration.ValueKind != JsonValueKind.Object
+                || !integration.TryGetProperty("merge", out var merge) || merge.ValueKind != JsonValueKind.Array)
+            {
+                return [];
+            }
+
+            var tables = new List<string>();
+            foreach (var entry in merge.EnumerateArray())
+            {
+                if (entry.ValueKind != JsonValueKind.Object
+                    || !entry.TryGetProperty("by", out var by) || by.ValueKind != JsonValueKind.String || by.GetString() != "rows"
+                    || !entry.TryGetProperty("paths", out var paths) || paths.ValueKind != JsonValueKind.String)
+                {
+                    continue;
+                }
+
+                var path = paths.GetString()!.Trim().Replace('\\', '/');
+                if (path.Length > 0 && !tables.Contains(path, StringComparer.Ordinal)) tables.Add(path);
+            }
+
+            return tables;
         }
     }
 
@@ -203,6 +261,21 @@ internal static class BacklogMerge
     }
 
     /// <summary>
+    /// What the line declares to settle by the merge base at <paramref name="source"/>, read in <paramref name="place"/> (INTEGRATE1c):
+    /// the backlog (<see cref="DeclaredAsync"/>) and the row tables the line's <c>daoris.gates.json</c> names, never the session's copy.
+    /// A declaration git cannot read declares no tables, as a manifest it cannot read declares no backlog.
+    /// </summary>
+    internal static async Task<Declared> DeclaredTablesAsync(string place, string source, CancellationToken ct)
+    {
+        var backlog = await DeclaredAsync(place, source, ct).ConfigureAwait(false);
+        var (found, sha, _) = await WorkingTree.GitAsync(place, ["rev-parse", "--verify", "--quiet", $"{source}:{GeneratedWriters.DeclarationFile}"], ct)
+            .ConfigureAwait(false);
+        if (found != 0) return new Declared(backlog, []);
+        var (read, text, _) = await WorkingTree.GitAsync(place, ["cat-file", "blob", sha.Trim()], ct).ConfigureAwait(false);
+        return new Declared(backlog, [.. (read == 0 ? RowTablesOf(text) : []).Where(table => table != backlog)]);
+    }
+
+    /// <summary>
     /// A trial's step settled (LANDBACKLOG1 in <see cref="LineHolds.TrialTreeAsync"/>), objects only: the tree git wrote for the step,
     /// <paramref name="written"/>, with <paramref name="path"/> the merge by base of the step's base, the trial's tree so far and the
     /// replayed commit. Null where a side has no such file, git could not say, or both sides changed one base line.
@@ -246,18 +319,29 @@ internal static class BacklogMerge
     }
 
     /// <summary>
-    /// The backlog's settling over one landing's replay (LANDBACKLOG1 in <see cref="BranchReplays"/>): the path the line declares at
-    /// <paramref name="source"/>, read once, at the first stop that needs it, and what each stop settled, summed.
+    /// The settling by the merge base over one landing's replay (LANDBACKLOG1 and INTEGRATE1c in <see cref="BranchReplays"/>): the backlog
+    /// and the row tables the line declares at <paramref name="source"/>, read once, at the first stop that needs them, and what each stop
+    /// settled, summed.
     /// </summary>
     internal sealed class Stops(string source)
     {
-        private Task<string?>? _declared;
+        private Task<Declared>? _declared;
+        private string? _backlog;
+        private readonly List<Settled> _tables = [];
 
-        /// <summary>What the replay settled; null where no stop settled the backlog.</summary>
+        /// <summary>What the replay settled of the backlog; null where no stop settled it.</summary>
         internal Settled? Settled { get; private set; }
 
-        /// <summary>The backlog the line declares, read in <paramref name="tree"/> once per replay.</summary>
-        internal Task<string?> DeclaredAsync(string tree, CancellationToken ct) => _declared ??= BacklogMerge.DeclaredAsync(tree, source, ct);
+        /// <summary>What the replay settled of each declared row table, in the order first met; none where no stop settled one.</summary>
+        internal IReadOnlyList<Settled> Tables => _tables;
+
+        /// <summary>What the line declares to settle by the merge base, read in <paramref name="tree"/> once per replay.</summary>
+        internal async Task<Declared> DeclaredAsync(string tree, CancellationToken ct)
+        {
+            var declared = await (_declared ??= BacklogMerge.DeclaredTablesAsync(tree, source, ct)).ConfigureAwait(false);
+            _backlog = declared.Backlog;
+            return declared;
+        }
 
         /// <summary>
         /// The backlog's conflict at a replay's stop in <paramref name="tree"/> merged by its base and staged, the working tree written from
@@ -298,7 +382,19 @@ internal static class BacklogMerge
             if (staged != 0) return false;
             var (written, _, _) = await WorkingTree.GitAsync(tree, ["checkout", "--", path], ct).ConfigureAwait(false);
             if (written != 0) return false;
-            Settled = new Settled(path, (Settled?.Kept ?? 0) + merged.Kept, (Settled?.Dropped ?? 0) + merged.Dropped);
+            if (path == _backlog)
+            {
+                Settled = new Settled(path, (Settled?.Kept ?? 0) + merged.Kept, (Settled?.Dropped ?? 0) + merged.Dropped);
+            }
+            else
+            {
+                var at = _tables.FindIndex(each => each.Path == path);
+                var before = at < 0 ? null : _tables[at];
+                var now = new Settled(path, (before?.Kept ?? 0) + merged.Kept, (before?.Dropped ?? 0) + merged.Dropped);
+                if (at < 0) _tables.Add(now);
+                else _tables[at] = now;
+            }
+
             return true;
         }
     }

@@ -195,7 +195,7 @@
       "case": "sentence",
       "keys": [
         "agents.read.again", "agents.read.now", "harness.curve.setOwn", "harness.curve.add", "harness.curve.save", "harness.curve.clear",
-        "notifications.toast.open", "person.details",
+        "notifications.toast.open", "person.details", "stopped.reload",
         "work.limit.goOnNow", "work.limit.stopWaiting",
         "agents.add.open", "agents.add.new", "agents.add.done", "agents.act.read", "agents.act.signInTo",
         "agents.rename.save", "agents.pooled.gotIt",
@@ -384,7 +384,7 @@
         "projects.git.history.none.headline", "projects.git.branch.gone.headline",
         "projects.none.headline", "quests.compose.nobody.headline",
         "quests.empty.headlineAll", "quests.empty.headlineFor", "quests.gone.headline", "quests.none.headline",
-        "search.emptyHeadline", "search.gone.headline", "search.none.headline", "search.nothingHeadline",
+        "search.emptyHeadline", "search.gone.headline", "search.none.headline", "search.nothingHeadline", "stopped.headline",
         "work.archived.none", "work.attended.none.headline", "work.detached.gone.headline",
         "work.monitor.empty.headline", "work.rail.empty.headline", "work.review.empty.headline", "work.review.even.headline",
         "work.review.failed.headline.*", "work.review.none.headline", "work.start.prompt"

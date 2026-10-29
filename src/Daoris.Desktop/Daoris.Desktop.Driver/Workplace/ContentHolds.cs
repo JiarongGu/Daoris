@@ -514,6 +514,11 @@ internal sealed class ContentHolds(TreeContext context)
     /// tree, named. Null is git unable to say, which keeps the tree too. 🔴 <b>Except a session's own scratch in such a folder</b>
     /// (TREEKEEP1): under a build folder (<see cref="TreeScratch.BuildFolders"/>) the path goes as ever; under any other, each file the tree
     /// wrote after it opened that the checkout does not hold as written (absent, or different bytes) is the tree's own, as an ignored path only it holds is.
+    /// 🔴 <b>Output goes either way</b> (TIDYOUTPUT1): a path the checkout's <c>daoris.gates.json</c> declares in <c>integration.scratch</c>
+    /// (<see cref="TreeScratch.Declared"/>), and a build's <c>bin</c>, <c>obj</c> and <c>node_modules</c>
+    /// (<see cref="TreeScratch.UnderMadeFolder"/>), go with the tree though the checkout holds none; and inside a folder looked into, a file
+    /// under any build folder or declared is passed over. An ignored folder the checkout lacks is read file by file, so what keeps the tree
+    /// is named as the file it is. Anything else stays the tree's own.
     /// </remarks>
     internal static async Task<TreeHolds?> HoldsAsync(string tree, string root, CancellationToken ct)
     {
@@ -527,6 +532,8 @@ internal sealed class ContentHolds(TreeContext context)
         var tooLarge = new List<string>();
         // When the tree opened: its folder was made by the worktree add and nothing since recreates it (TREEKEEP1).
         var opened = Directory.GetCreationTimeUtc(tree);
+        // What the repository declares as its output, read once and from the checkout's gates file (TIDYOUTPUT1).
+        var declared = TreeScratch.Declared(root);
         var entries = porcelain.Split('\0');
         for (var at = 0; at < entries.Length; at++)
         {
@@ -536,14 +543,35 @@ internal sealed class ContentHolds(TreeContext context)
             if (entry.StartsWith("!! ", StringComparison.Ordinal))
             {
                 var there = Path.Combine(root, path.TrimEnd('/'));
-                if (!File.Exists(there) && !Directory.Exists(there))
+                if (TreeScratch.IsDeclared(declared, path))
                 {
-                    ignored.Add(path);
+                    // TIDYOUTPUT1: the repository says this is its own output, which its checks write again, whatever the checkout holds.
+                    shared.Add(path);
+                }
+                else if (!File.Exists(there) && !Directory.Exists(there))
+                {
+                    if (TreeScratch.UnderMadeFolder(path))
+                    {
+                        // TIDYOUTPUT1: a build's own folder, though the checkout never built there.
+                        shared.Add(path);
+                    }
+                    else if (path.EndsWith('/'))
+                    {
+                        // No file of it is the checkout's: what is neither declared output nor a build's is the tree's own, named by file.
+                        var own = TreeScratch.OwnFilesIn(tree, path, declared, out var wide);
+                        if (wide) tooLarge.Add(path);
+                        else if (own.Count > 0) ignored.AddRange(own);
+                        else shared.Add(path);
+                    }
+                    else
+                    {
+                        ignored.Add(path);
+                    }
                 }
                 else if (path.EndsWith('/') && !TreeScratch.UnderBuildFolder(path))
                 {
                     // Not a build's folder: what the session wrote in it is its own (TREEKEEP1), unless the checkout holds it as written.
-                    var mine = TreeScratch.WrittenSince(tree, root, path, opened, out var large);
+                    var mine = TreeScratch.WrittenSince(tree, root, path, opened, out var large, declared);
                     if (large) tooLarge.Add(path);
                     else if (mine.Count > 0) written.AddRange(mine);
                     else shared.Add(path);

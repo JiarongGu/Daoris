@@ -49,6 +49,20 @@ function useFirstScreenAnswered(firstScreen: (key: QueryKey) => boolean): boolea
 }
 
 /**
+ * Lift the window's splash, over the kit's `CLOSE_SPLASH`. Fire-and-forget, as every window command is (`useWindowChrome`): a call
+ * that fails is a window that was never ours (a secondary window's, which the kit answers `NO_ROUTE`; a browser's, which has none),
+ * and the window's own bound lifts its splash anyway. The page's error screen calls it too (PAGELOOP1): a page that stopped before
+ * its first screen had its data is shown at once, rather than behind the splash until the bound.
+ */
+export function liftSplash(): void {
+  try {
+    void new WindowCommands().closeSplash().catch(() => {});
+  } catch {
+    // `new WindowCommands()` itself throws with no bridge at all.
+  }
+}
+
+/**
  * Tell the window, once, that the first screen has its data: its own queries ({@link isFirstScreen}) have answered, with
  * their data or with their failure (which the screen then says), and stayed answered for {@link SPLASH_QUIET_MS}. Or, the
  * fallback, every query the page started has settled and nothing more started for as long. The main window's page only:
@@ -64,13 +78,7 @@ export function useSplashLift(firstScreen: (key: QueryKey) => boolean = isFirstS
     if (said.current || !ready) return;
     const quiet = window.setTimeout(() => {
       said.current = true;
-      // Fire-and-forget, as every window command is (`useWindowChrome`): a call that fails is a window that was never
-      // ours, and the window's own bound lifts its splash anyway.
-      try {
-        void new WindowCommands().closeSplash().catch(() => {});
-      } catch {
-        // `new WindowCommands()` itself throws with no bridge at all.
-      }
+      liftSplash();
     }, SPLASH_QUIET_MS);
     return () => window.clearTimeout(quiet);
   }, [ready]);

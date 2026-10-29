@@ -118,7 +118,7 @@ reader skips a line it cannot parse and a field it does not know.
 | `message.sent` | desktop, from the page | session, kind, length, files | how the conversations are used |
 | `proposal.settled` | desktop, from the page | applied | whether Ask Daoris's proposals help |
 | `help.setting` | desktop, driver | session, setting, value, repository, workspace, done, code | each change Ask Daoris's chosen-settings tools asked for (HELPMODE1c3, D183's note): the setting, the value as its door spells it, a language's repository or workspace, whether it was changed, and the refusal's code (`not-granted`, `not-handed`, `outside`, `refused`, `failed`, …), never the answer's words. The grant's outcome record, since no Apply records it |
-| `page.error` | desktop, from the page | where, message | a render or request failure the page caught |
+| `page.error` | desktop, from the page | where, message; a render's also view, stack (PAGELOOP1, D217) | a render or request failure the page caught: `where` `window`, `promise`, or `render` for one the page's error screen caught, with the view the page showed (a name, a secondary window's `window:monitor` or `window:session`) and its component stack's first five frames by name alone, joined ` < ` |
 | `request.failed` | host | method, route, status, ms | a request that failed, or took over two seconds |
 | `origin.refused` (warn) | host | method, route, by, site | a write a web page sent that this host does not allow, refused 403 before its route ran (ORIGIN1): by the route's pattern, `by` the header that refused it (`origin` or `site`), and `site` the browser's own word for it where it said one; never the page's address, another header or the body |
 | `host.refused` (warn) | host | method, route | a request to a local host under a name that is not a loopback name, refused 403 before anything ran (ORIGIN2): a website's name pointed at this machine. By the route's pattern; never the name, the caller's address or the body |
@@ -186,13 +186,15 @@ through by mistake.
   read from a landed branch once the tree is gone (D113) writes the same line, its path relative to the
   repository, and never the branch's name, which carries a title's words.
 - **The page's fields** each have a kind: a name (`view`, `command`, `region`, `session`, `kind`,
-  `where`: an identifier, never a sentence), a text (`message`), a count (`length`, `files`) or a flag
+  `where`: an identifier, never a sentence), a text (`message`, a render's `stack`), a count (`length`, `files`) or a flag
   (`applied`). A value of another kind is dropped, and a string is cut at 120 characters with an
   ellipsis. `message.sent`'s `kind` is `chat`, `steer` (a word to a driven session) or `help`, and a help
   message that opens a conversation has no `session` yet. `proposal.settled` is the person's Apply or Not
   now once it landed and settled the proposal. A sync card's look (HELP10) settles nothing: its answer says the
   card `stands` for the press that does, and it writes no line (LEFT3); a look that found nothing to do settled
-  the card, and is written as any Apply is. `page.error` is `error`-level, `where` `window` or `promise`.
+  the card, and is written as any Apply is. `page.error` is `error`-level, `where` `window` or `promise`, or `render`
+  (PAGELOOP1, D217) for a render the page's error screen caught, which adds `view` (a name; none where the page failed before a view
+  was shown) and `stack` (a text: the component stack's first five frames by name, never a frame's location).
 
 **As built (UNBLOCK5): `permission.refused`**, measured against the code and its tests:
 

@@ -12,7 +12,7 @@ vi.mock('@shenora/react', () => ({
   useShenoraEvent: () => {},
 }));
 
-import { installPageErrors, logEvent, LOG_TEXT } from './shell';
+import { installPageErrors, logEvent, LOG_TEXT, pageShows, reportPageStopped, STACK_FRAMES, stackTop } from './shell';
 
 /** Whatever the report's promise does, let it settle before looking. */
 const settled = () => new Promise((resolve) => setTimeout(resolve, 0));
@@ -72,6 +72,64 @@ describe('the page\'s report into the machine log', () => {
     });
     expect(bridge.invoke).toHaveBeenNthCalledWith(2, 'DAORIS.LOG', 'EVENT', {
       payload: { event: 'page.error', data: { where: 'promise', message: 'the request failed' } },
+    });
+  });
+});
+
+/**
+ * PAGELOOP1 (D217): a render the error screen caught names where it broke, which the window's `error` line could not, since React
+ * hands the component stack to a boundary alone. The top frames' component names, never a frame's address; and the view.
+ */
+describe("a render's failure, as the log keeps it", () => {
+  afterEach(() => {
+    bridge.isAvailable = false;
+    bridge.invoke.mockReset();
+  });
+
+  /** A component stack as React writes it in a development build, each frame with the module it came from. */
+  const DEVELOPMENT = [
+    '',
+    '    at Thrower (http://localhost:5178/src/work/frame/tabFit.ts?t=1730000000000:55:3)',
+    '    at div',
+    '    at new TabRow (http://localhost:5178/src/work/frame/TabRow.tsx:12:7)',
+    '    at WorkFrame (http://localhost:5178/src/work/WorkFrame.tsx:1730:9)',
+    '    at Suspense',
+    '    at App (http://localhost:5178/src/app/App.tsx:178:3)',
+    '    at PageBoundary (http://localhost:5178/src/app/PageBoundary.tsx:61:1)',
+  ].join('\n');
+
+  it('keeps the first frames by their names alone, innermost first, never where each was loaded from', () => {
+    expect(STACK_FRAMES).toBe(5);
+    expect(stackTop(DEVELOPMENT)).toBe('Thrower < div < TabRow < WorkFrame < Suspense');
+  });
+
+  it("keeps a production build's minified names as they are, and cuts a long top short", () => {
+    expect(stackTop('\n    at Ue (https://daoris.local/assets/index-Bx2k.js:40:1234)\n    at $t (https://daoris.local/assets/index-Bx2k.js:40:99)'))
+      .toBe('Ue < $t');
+    const long = Array.from({ length: 5 }, (_, i) => `    at ${String.fromCharCode(65 + i).repeat(40)} (x.js:1:1)`).join('\n');
+    expect(stackTop(long)).toBe(`${['A', 'B', 'C', 'D', 'E'].map((letter) => letter.repeat(40)).join(' < ').slice(0, LOG_TEXT)}…`);
+  });
+
+  it('names nothing where the stack names no frame', () => {
+    expect(stackTop(undefined)).toBeNull();
+    expect(stackTop(null)).toBeNull();
+    expect(stackTop('\n\n')).toBeNull();
+  });
+
+  it('reports the message, the view the page shows and the top of the stack, as `render`', () => {
+    bridge.isAvailable = true;
+    bridge.invoke.mockResolvedValue(null);
+    pageShows('sessions');
+
+    reportPageStopped(new Error('Maximum update depth exceeded.'), DEVELOPMENT, 'window:monitor');
+
+    expect(bridge.invoke).toHaveBeenCalledWith('DAORIS.LOG', 'EVENT', {
+      payload: {
+        event: 'page.error',
+        data: {
+          where: 'render', message: 'Maximum update depth exceeded.', view: 'sessions', stack: 'Thrower < div < TabRow < WorkFrame < Suspense',
+        },
+      },
     });
   });
 });

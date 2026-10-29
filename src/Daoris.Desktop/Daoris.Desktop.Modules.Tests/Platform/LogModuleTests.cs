@@ -53,6 +53,13 @@ public sealed class LogModuleTests : Bridge
             "page.error", new { where = "window", message = "Cannot read properties of undefined (reading 'id')" }, "error",
             """{"where":"window","message":"Cannot read properties of undefined (reading 'id')"}"""
         },
+        {
+            // PAGELOOP1 (D217): a render the page's error screen caught, with the view the page showed and its component stack's top.
+            "page.error",
+            new { where = "render", message = "Minified React error #185; visit https://react.dev/errors/185 for the full message.", view = "sessions", stack = "Ue < $t < div < Xt < Suspense" },
+            "error",
+            """{"where":"render","message":"Minified React error #185; visit https://react.dev/errors/185 for the full message.","view":"sessions","stack":"Ue < $t < div < Xt < Suspense"}"""
+        },
     };
 
     [Theory]
@@ -171,6 +178,38 @@ public sealed class LogModuleTests : Bridge
         var kept = line.RootElement.GetProperty("data").GetProperty("message").GetString()!;
         Assert.Equal(LogModule.MaxText + 1, kept.Length);
         Assert.Equal(message[..LogModule.MaxText] + "…", kept);
+    }
+
+    /// <summary>
+    /// 🔴 PAGELOOP1 (D217): a render failure's view is a name, so a view with an address's query or a sentence in it is dropped, and
+    /// its stack is a text cut short like the message: the log keeps where the page broke, never what was on it.
+    /// </summary>
+    [Fact]
+    public async Task A_render_failure_keeps_its_view_only_as_a_name_and_its_stack_cut_short()
+    {
+        using var log = Log();
+        var module = new LogModule(log);
+        var stack = string.Join(" < ", Enumerable.Repeat("SessionRail", 20));
+
+        await Report(module, new { @event = "page.error", data = new { where = "render", message = "boom", view = "sessions?session=c174e909", stack } });
+        await Report(module, new { @event = "page.error", data = new { where = "render", message = "boom", view = "rename the secret module", stack = 3 } });
+        await Report(module, new { @event = "page.error", data = new { where = "render", message = "boom", view = "window:monitor" } });
+
+        var lines = Lines();
+        Assert.Equal(3, lines.Length);
+        using (var first = JsonDocument.Parse(lines[0]))
+        {
+            var data = first.RootElement.GetProperty("data");
+            Assert.False(data.TryGetProperty("view", out _));
+            Assert.Equal(stack[..LogModule.MaxText] + "…", data.GetProperty("stack").GetString());
+        }
+        Assert.EndsWith("""
+            "data":{"where":"render","message":"boom"}}
+            """, lines[1]);
+        Assert.EndsWith("""
+            "data":{"where":"render","message":"boom","view":"window:monitor"}}
+            """, lines[2]);
+        Assert.DoesNotContain(lines, line => line.Contains("c174e909", StringComparison.Ordinal) || line.Contains("secret", StringComparison.Ordinal));
     }
 
     /// <summary>A payload that is no event is no line and no failure: the page's report never breaks the page.</summary>
