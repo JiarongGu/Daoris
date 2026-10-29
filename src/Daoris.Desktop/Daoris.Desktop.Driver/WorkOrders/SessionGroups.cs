@@ -594,8 +594,9 @@ public static class SessionGroups
     ///
     /// <para><b>A driven record</b> resumed on its own account waits for that account's reset (MSG1g), which the loop's look
     /// holds the start on and a fresh plan cannot see. Where no loop has looked (<paramref name="fresh"/>), the cool-off is read
-    /// as the resume would read it: the planner goes on with the record in its own conversation on this machine's adapter, the
-    /// person chose no new session, and its account cools. The line is the one the loop's look would hold it with.</para>
+    /// as the resume would read it: the planner goes on with the record in its own conversation on the agent its start goes on with
+    /// (a hand-over's, else the record's own asked choice's), the person chose no new session, and its account cools. The line is the
+    /// one the loop's look would hold it with.</para>
     /// </remarks>
     /// <param name="config">The machine's choices, whose roles a record's words go on with.</param>
     /// <param name="fresh">Whether the verdicts are a fresh plan's, which saw no cool-off; a loop's look holds its own.</param>
