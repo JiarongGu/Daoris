@@ -5,6 +5,13 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-29 - A plugin trial left out its shutdown step when the plugin exited before the trial looked (PLUGINSHUTDOWN1)
+
+- **Symptom:** under load `DriverModulePluginsTests.The_kit_makes_a_plugin_where_the_person_names_and_tries_it_or_an_installed_one` found no `shutdown` between `quest/consider` and `stdout` in the trial's trace, then passed alone.
+- **Root cause:** `PluginTrials` told the plugin to shut down (the kit's template exits on it), then judged `alive && !process.HasExited` before waiting. A plugin that left the instant it was told made `HasExited` true, the branch fell to the kill-only arm, and no step was written. The guard repeated what `alive` already says: a process that died during a step makes `alive` false.
+- **Fix:** the block is `PluginTrials.EndAsync`, in the shape of `PluginCycles.EndAsync`: a plugin alive after its last step always waits (`PluginTrialProcess.ExitedAsync` answers true at once for an exited process) and gets "left when told (exit N)", or a kill and the did-not-leave sentence; one that died during a step is not told and gets no step.
+- **Verification:** `PluginTrialShutdownTests` holds the order the race needs: the told step is released only after the process has exited. Seen failing on the extracted old logic (no step), passing after; the death-during-a-step case holds its pinned absence. `PluginKitTests` passes in both halves (108 and 106 cases).
+
 ## 2026-10-29 - A fresh chat on the install could not find a decision merged after the index was first read (KNOWCURRENT1)
 
 - **Symptom:** a fresh chat on the installed build searched knowledge and listed its quest, but could not find D212 while D210 and D211 were there; the local entries door held no path for the versioned D212 to D214 records.
