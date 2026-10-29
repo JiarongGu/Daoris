@@ -15,6 +15,9 @@ public sealed class SessionOpenDoors
     private string? _run;
     private bool _known;
     private int _opens;
+    // FOUNDATION1d-ii (§19.12): the say door's `continued`, naming the line's head; kept beside `opens` by the same run.
+    private int _head;
+    private readonly object _marks = new();
     private readonly HashSet<string> _lost = new(StringComparer.Ordinal);
     private readonly SemaphoreSlim _step = new(1, 1);
 
@@ -22,22 +25,62 @@ public sealed class SessionOpenDoors
 
     internal void Observe(ServiceReply answer)
     {
-        if (answer.Run != _run || answer.Run is null) _known = false;
+        lock (_marks)
+        {
+            if (answer.Run != _run || answer.Run is null) _known = false;
+        }
     }
 
     private async Task ReadProtocolAsync(CancellationToken ct)
     {
         var reply = await _service.SendAsync(ServiceVerb.Get, "/api/protocol", null, ct).ConfigureAwait(false);
-        _run = null;
-        _opens = 0;
+        string? run = null;
+        int opens = 0, head = 0;
         if (reply.Ok)
         {
             using var json = JsonDocument.Parse(reply.Payload);
-            _run = Text(json.RootElement, "run");
-            if (_run is not null && json.RootElement.TryGetProperty("marks", out var marks)
-                && marks.TryGetProperty("opens", out var mark) && mark.TryGetInt32(out var version)) _opens = version;
+            run = json.RootElement.ValueKind == JsonValueKind.Object ? Text(json.RootElement, "run") : null;
+            if (run is not null && json.RootElement.TryGetProperty("marks", out var marks) && marks.ValueKind == JsonValueKind.Object)
+            {
+                opens = Mark(marks, "opens");
+                head = Mark(marks, "head");
+            }
         }
-        _known = true;
+
+        lock (_marks)
+        {
+            (_run, _opens, _head, _known) = (run, opens, head, true);
+        }
+    }
+
+    /// <summary>A mark's version as the protocol answers it; 0 for none, or one that is not a whole number.</summary>
+    private static int Mark(JsonElement marks, string name) =>
+        marks.TryGetProperty(name, out var mark) && mark.ValueKind == JsonValueKind.Number && mark.TryGetInt32(out var version) ? version : 0;
+
+    /// <summary>
+    /// The host's <c>head</c> mark (FOUNDATION1d-ii, the design §19.12): 1 where its say door refuses a word said to a record that is not its line's
+    /// head as <c>continued</c>, naming the head, so the driver's own walk (<c>WordsNever.ContinuedIn</c>) stands aside for the service's
+    /// judgement; 0 for a host without it, whose say keeps the driver's walk as today. Kept by the host's run, read again before this read once an
+    /// answer named another run or none. A host that does not answer the protocol, or answers it unreadably, has none; never throws for it.
+    /// </summary>
+    public async Task<int> HeadAsync(CancellationToken ct = default)
+    {
+        bool known;
+        lock (_marks) known = _known;
+        if (!known)
+        {
+            try
+            {
+                await ReadProtocolAsync(ct).ConfigureAwait(false);
+            }
+            catch (Exception error) when (error is HttpRequestException or IOException or JsonException or DriverException
+                                              || (error is OperationCanceledException && !ct.IsCancellationRequested))
+            {
+                return 0;
+            }
+        }
+
+        lock (_marks) return _head;
     }
 
     /// <summary>

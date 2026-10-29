@@ -22,14 +22,18 @@ public static class WordsLeft
     /// a changed setup, which go on under it (ACCESSSWAP1b, <see cref="Observation.WordsUnderNewSetup"/>).
     /// </param>
     /// <returns>How many the record kept.</returns>
+    /// <param name="home">
+    /// The home the words' files are kept under, which a word said at its line's head is carried to (FOUNDATION1d-ii); null carries none.
+    /// </param>
     public static async Task<int> KeepAsync(
-        ServiceClient service, SessionEvents events, string session, IReadOnlyList<ChatMessage> left, CancellationToken ct, Noted? why = null)
+        ServiceClient service, SessionEvents events, string session, IReadOnlyList<ChatMessage> left, CancellationToken ct, Noted? why = null,
+        string? home = null)
     {
         if (left.Count == 0) return 0;
 
         // The door they were said at, as the record showed them; none where it showed none.
         var door = events.DoorOf(session, [.. left.Select(word => word.Id).OfType<string>()]);
-        var kept = new List<(ChatMessage Word, SaidWordView? View)>();
+        var kept = new List<(ChatMessage Word, SaidWordView? View, string At)>();
         var lost = 0;
         foreach (var word in left)
         {
@@ -37,11 +41,15 @@ public static class WordsLeft
             {
                 // COWORK1b: Daoris's own word is kept as Daoris's, under its fact's key, never as the person's. COWORK1c: a word kept on
                 // the record for the run, and still there, is answered as itself under its press's key, never kept a second time.
-                var said = await service.SayAsync(
-                        session, word.Text, word.Files.Count > 0 ? [.. word.Files.Select(file => file.Name)] : null, ct,
-                        from: word.Daoris is null ? null : DaorisWords.From, key: word.Key ?? word.Daoris?.Key)
+                // FOUNDATION1d-ii: kept at the head of the record's line where it went on, whole, its files carried to the head's folder.
+                IReadOnlyList<string> names = [.. word.Files.Select(file => file.Name)];
+                var (said, at) = await WordsHead.FollowAsync(
+                        session, record => service.SayAsync(
+                            record, word.Text, names.Count > 0 ? names : null, ct,
+                            from: word.Daoris is null ? null : DaorisWords.From, key: word.Key ?? word.Daoris?.Key),
+                        home is null ? null : (from, to) => ChatFiles.Carry(home, from, to, names))
                     .ConfigureAwait(false);
-                if (said.Kept) kept.Add((word, said.Word));
+                if (said.Kept) kept.Add((word, said.Word, at));
                 else lost++;
             }
             catch (Exception error) when (error is HttpRequestException or DriverException
@@ -59,9 +67,10 @@ public static class WordsLeft
             {
                 Kind = SessionEventKind.Note, Text = line.Note, Parts = line.Parts, Words = named.Count > 0 ? named : null,
             }, say: null);
-            foreach (var (_, view) in kept)
+            // Each shown in the conversation of the record that kept it: the head of its line, where the say was passed on.
+            foreach (var (_, view, at) in kept)
             {
-                if (view is not null) events.Keep(session, LoopWords.Shown(view, door ?? "") with { Door = door }, say: null);
+                if (view is not null) events.Keep(at, LoopWords.Shown(view, door ?? "") with { Door = door }, say: null);
             }
         }
 

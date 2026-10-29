@@ -933,7 +933,7 @@ try
     // record of it, and the look nudged.
     await using var requests = new SessionRequestWatch(home, processes, () => service)
     {
-        Say = new LoopWords(processes, () => service) { Events = events, Nudge = session => watching?.Said(session) }.HoldAsync,
+        Say = new LoopWords(processes, () => service) { Events = events, Nudge = session => watching?.Said(session), Home = home }.HoldAsync,
         // SAIDBACK1c: a terminal's `sessions take-back` settles the word in this host's own record of the conversation.
         TakeBack = new LoopWords(processes, () => service) { Events = events, Nudge = session => watching?.Said(session) }.TakeBackAsync,
         // FABRIC-EVENT2: each look the folder woke, with its ms and why.

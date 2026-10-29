@@ -425,6 +425,193 @@ public sealed class SessionsSayCommandTests : IDisposable
     public void The_say_doors_word_for_a_teammates_record_is_the_teammate_code() =>
         Assert.Equal((WordsNever.Teammate, WordsNever.Intake), (WordsNever.Code("not-ours"), WordsNever.Code("intake")));
 
+    private const string HeadSentence = "Session `d0ne0000` went on in `n3xt0000`, its line's head: say it to that one.";
+
+    /// <summary>
+    /// FOUNDATION1d-ii part 1 (the foundation design §19.12's row for the head, an older desktop beside a newer host): a refusal word the reader
+    /// does not act on is read as the refusal it is, its word and the service's sentence said as they come, whatever else the answer carries. So
+    /// an older desktop meeting the say door's <c>continued</c> with its <c>head</c> says the service's sentence, which names the head, both at
+    /// the terminal where no loop runs and at the headless door. A build before this row read the <c>continued</c> answer with its <c>head</c>
+    /// this way (the row's note on D212 names the run); this build reads it so where the answer names no head, and reads any word it does not
+    /// know so.
+    /// </summary>
+    [Theory]
+    [InlineData("continued", null)]
+    [InlineData("elsewhere", "n3xt0000")]
+    public async Task A_refusal_word_the_reader_does_not_act_on_says_the_services_sentence_as_it_comes(string word, string? head)
+    {
+        var room = new Room([Record("d0ne0000", "completed")], [Quest("q1", "Done")]) { Refusing = id => (word, HeadSentence, head) };
+        using var service = room.Client();
+
+        var (exit, said) = await SayAsync(room, ["d0ne0000", "also the changelog"], World(service, loop: false));
+        var held = await new LoopWords(new SessionProcesses(Pids), () => service).HoldAsync(
+            new SessionRequest("d0ne0000", SessionMove.Say, DateTimeOffset.UtcNow) { Text = "also the changelog", Key = SessionRequests.NewKey() },
+            CancellationToken.None);
+
+        Assert.Equal((1, $"sessions: {HeadSentence}\n"), (exit, said));
+        Assert.Equal((false, word, HeadSentence), (held.Sent, held.Why, held.Message));
+        Assert.Empty(room.Said("d0ne0000"));
+    }
+
+    /// <summary>
+    /// A closed quest's session whose line went on in a conversation, the head a host with the <c>head</c> mark names and the driver's own walk,
+    /// which follows conversations alone, does not: the terminal where no loop drives the home says the words again there, once, with their file
+    /// carried to the head's folder, shows them in the head's conversation as the terminal's, and names the head.
+    /// </summary>
+    [Fact]
+    public async Task A_terminals_word_to_a_record_that_went_on_lands_once_on_the_head_with_its_files()
+    {
+        var room = new Room(
+            [Record("d0ne0000", "completed"), Record("n3xt0000", "completed", quest: null, kind: "chat", minutes: 10, from: "d0ne0000")],
+            [Quest("q1", "Done")]) { HeadMark = true };
+        room.Heads["d0ne0000"] = "n3xt0000";
+        using var service = room.Client();
+        var notes = Path.Combine(_home, "notes.md");
+        await File.WriteAllTextAsync(notes, "the notes");
+
+        var (exit, said) = await SayAsync(room, ["d0ne0000", "also the changelog", "--file", notes], World(service, loop: false));
+
+        Assert.Equal(0, exit);
+        Assert.Equal("sessions: held: d0ne0000 went on in n3xt0000, which goes on with this when a driver next runs on this machine.\n", said);
+        Assert.Empty(room.Said("d0ne0000"));
+        Assert.Equal(["w1"], room.Said("n3xt0000"));
+        Assert.Equal(["notes.md"], room.Files("n3xt0000"));
+        Assert.Equal("the notes", await File.ReadAllTextAsync(ChatFiles.Find(_home, "n3xt0000", "notes.md")!.Path));
+        var shown = Assert.Single(new SessionEvents(Sessions).Page("n3xt0000").Events);
+        Assert.Equal(("w1", RequestDoor.Terminal), (shown.Id, shown.Door));
+        Assert.Empty(new SessionEvents(Sessions).Page("d0ne0000").Events);
+    }
+
+    /// <summary>
+    /// The headless door: a terminal's request to a record that went on is said again at the head under the request's key, its file carried to the
+    /// head's folder, shown in the head's conversation and the head's look nudged; the answer names the head. A chain of two follows to the last head.
+    /// </summary>
+    [Fact]
+    public async Task The_headless_door_says_a_request_again_at_its_head_under_its_key_with_its_files()
+    {
+        var room = new Room(
+            [
+                Record("d0ne0000", "completed"), Record("m1dd1e00", "completed", quest: null, kind: "chat", minutes: 5, from: "d0ne0000"),
+                Record("n3xt0000", "completed", quest: null, kind: "chat", minutes: 10, from: "m1dd1e00"),
+            ],
+            [Quest("q1", "Done")]);
+        room.Heads["d0ne0000"] = "m1dd1e00";
+        room.Heads["m1dd1e00"] = "n3xt0000";
+        using var service = room.Client();
+        ChatFiles.Keep(_home, "d0ne0000", [new ChatUpload("notes.md", "the notes"u8.ToArray())]);
+        var events = new SessionEvents(Sessions);
+        var nudged = new List<string>();
+        var words = new LoopWords(new SessionProcesses(Pids), () => service) { Events = events, Nudge = nudged.Add, Home = _home };
+        var request = new SessionRequest("d0ne0000", SessionMove.Say, DateTimeOffset.UtcNow)
+        {
+            Text = "also the changelog", Key = SessionRequests.NewKey(), Files = ["notes.md"],
+        };
+
+        var held = await words.HoldAsync(request, CancellationToken.None);
+
+        Assert.Equal((true, "resume", "w1", "n3xt0000"), (held.Sent, held.Reaches, held.Word, held.Head));
+        Assert.Equal(Enumerable.Repeat(SessionRequests.WordKey(request), 3), room.Keys);
+        Assert.Empty(room.Said("d0ne0000"));
+        Assert.Empty(room.Said("m1dd1e00"));
+        Assert.Equal(["w1"], room.Said("n3xt0000"));
+        Assert.Equal(["notes.md"], room.Files("n3xt0000"));
+        Assert.NotNull(ChatFiles.Find(_home, "n3xt0000", "notes.md"));
+        Assert.Equal("w1", Assert.Single(events.Page("n3xt0000").Events).Id);
+        Assert.Empty(events.Page("d0ne0000").Events);
+        Assert.Equal(["n3xt0000"], nudged);
+    }
+
+    /// <summary>
+    /// The headless door through a driven session's inbox this loop runs, whose record went on (a stale inbox): the inbox holds and sends nothing,
+    /// and the request is kept once at the head under its key.
+    /// </summary>
+    [Fact]
+    public async Task A_request_through_a_stale_inbox_is_held_nowhere_here_and_kept_once_at_the_head()
+    {
+        var room = new Room(
+            [Record("w0rk1ng0", "working"), Record("n3xt0000", "completed", quest: null, kind: "chat", minutes: 10, from: "w0rk1ng0")],
+            [Quest("q1", "Taken")]);
+        room.Heads["w0rk1ng0"] = "n3xt0000";
+        using var service = room.Client();
+        var processes = new SessionProcesses(Pids);
+        var inbox = processes.OpenInbox("w0rk1ng0");
+        var delivered = new List<string>();
+        inbox.Attach(interrupt: null, deliver: message => { delivered.Add(message.Text); return Task.FromResult("end_turn"); });
+        inbox.Flow();
+        var words = new LoopWords(processes, () => service);
+        var request = new SessionRequest("w0rk1ng0", SessionMove.Say, DateTimeOffset.UtcNow) { Text = "use the cache", Key = SessionRequests.NewKey() };
+
+        var held = await words.HoldAsync(request, CancellationToken.None);
+
+        Assert.Equal((true, "n3xt0000"), (held.Sent, held.Head));
+        Assert.Empty(inbox.State.Queued);
+        Assert.False(inbox.Holds);
+        Assert.Empty(delivered);
+        Assert.Equal(["w1"], room.Said("n3xt0000"));
+        Assert.Equal(Enumerable.Repeat(SessionRequests.WordKey(request), 2), room.Keys);
+    }
+
+    /// <summary>
+    /// A planted cycle at the headless door, each record's head the other: the walk ends at the record it would ask again, refused with the
+    /// driver's sentence, and nothing is kept.
+    /// </summary>
+    [Fact]
+    public async Task A_planted_cycle_ends_the_headless_doors_walk()
+    {
+        var room = new Room(
+            [Record("d0ne0000", "completed"), Record("n3xt0000", "completed", quest: null, kind: "chat", minutes: 10, from: "d0ne0000")],
+            [Quest("q1", "Done")]);
+        room.Heads["d0ne0000"] = "n3xt0000";
+        room.Heads["n3xt0000"] = "d0ne0000";
+        using var service = room.Client();
+        var words = new LoopWords(new SessionProcesses(Pids), () => service);
+
+        var held = await words.HoldAsync(
+            new SessionRequest("d0ne0000", SessionMove.Say, DateTimeOffset.UtcNow) { Text = "also the changelog", Key = SessionRequests.NewKey() },
+            CancellationToken.None);
+
+        Assert.Equal((false, WordsNever.Continued), (held.Sent, held.Why));
+        Assert.Contains("came back to `d0ne0000`", held.Message);
+        Assert.Equal(2, room.Says);
+        Assert.Empty(room.Said("d0ne0000"));
+        Assert.Empty(room.Said("n3xt0000"));
+    }
+
+    /// <summary>
+    /// The driver's own walk stands aside only for a host with the <c>head</c> mark: a terminal's word to a conversation that went on in another is
+    /// refused naming it, before anything is asked, where the host has none (today's path); with the mark, the loop says it, the host names the head
+    /// and the words are kept once there, the verb naming it.
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task The_drivers_own_walk_stands_aside_only_for_a_host_with_the_head_mark(bool marked)
+    {
+        var room = new Room(
+            [Record("c1000000", "completed", quest: null, kind: "chat"), Record("c2000000", "completed", quest: null, kind: "chat", minutes: 10, from: "c1000000")],
+            []) { HeadMark = marked };
+        room.Heads["c1000000"] = "c2000000";
+        using var service = room.Client();
+        var events = new SessionEvents(Sessions);
+        await using var loop = Loop(new SessionProcesses(Pids), service, events);
+
+        var (exit, said) = await SayAsync(room, ["c1000000", "also the changelog"], World(service, wait: TimeSpan.FromMilliseconds(300)));
+
+        if (!marked)
+        {
+            Assert.Equal(1, exit);
+            Assert.Contains("c1000000 went on in conversation c2000000; say it to that one: daoris-driver sessions say c2000000", said);
+            Assert.Equal(0, room.Says);
+            return;
+        }
+
+        Assert.Equal(0, exit);
+        Assert.StartsWith("sessions: c1000000 went on in c2000000, its line's head, which your words went to.\n", said);
+        Assert.Empty(room.Said("c1000000"));
+        Assert.Equal(["w1"], room.Said("c2000000"));
+        Assert.Single(events.Page("c2000000").Events);
+    }
+
     private static Room Running() => new([Record("w0rk1ng0", "working")], [Quest("q1", "Taken")]);
 
     /// <summary>A running session on a door that takes words during its turn (D136): held at its door, read at its next step.</summary>
@@ -1126,6 +1313,21 @@ public sealed class SessionsSayCommandTests : IDisposable
         /// <summary>How many times the take-back door was posted to (SAIDBACK1a).</summary>
         public int TakeBacks { get; private set; }
 
+        /// <summary>
+        /// FOUNDATION1d-ii part 1: a refusal the say door answers a say to a record with, its word, its sentence and the head it names where it
+        /// names one, before any other judgement, as a host answers a word it judges first; null for a record it judges as ever.
+        /// </summary>
+        public Func<string, (string Word, string Sentence, string? Head)?>? Refusing { get; init; }
+
+        /// <summary>
+        /// FOUNDATION1d-ii part 1: the head of each record's line where it is not the record itself, as a host with the <c>head</c> mark judges
+        /// it inside its say door's step: a say to such a record is refused <c>continued</c>, naming the head, before any other refusal.
+        /// </summary>
+        public Dictionary<string, string> Heads { get; } = new(StringComparer.Ordinal);
+
+        /// <summary>Whether the room answers <c>GET /api/protocol</c> with the <c>head</c> mark, as a host from row d-ii does; none answers it as a host before.</summary>
+        public bool HeadMark { get; init; }
+
         /// <summary>The words already given ids, so a word kept next is <c>w{Next + 1}</c>.</summary>
         public int Next
         {
@@ -1206,6 +1408,23 @@ public sealed class SessionsSayCommandTests : IDisposable
                     var id = Uri.UnescapeDataString(path["/api/sessions/".Length..^"/say".Length]);
                     var record = _records.FirstOrDefault(each => (string?)each["id"] == id);
                     if (record is null) return Refuse(HttpStatusCode.NotFound, "not-found", $"No session `{id}` of this machine's.");
+                    if (Refusing?.Invoke(id) is { } refused)
+                    {
+                        var answer = new JsonObject { ["error"] = refused.Sentence, ["refusal"] = refused.Word };
+                        if (refused.Head is { } named) answer["head"] = named;
+                        _keys.Add(body!["key"]?.GetValue<string>());
+                        return Answer(HttpStatusCode.Conflict, answer);
+                    }
+
+                    if (Heads.TryGetValue(id, out var head))
+                    {
+                        _keys.Add(body!["key"]?.GetValue<string>());
+                        return Answer(HttpStatusCode.Conflict, new JsonObject
+                        {
+                            ["error"] = $"Session `{id}` went on in `{head}`, its line's head: say it to that one.", ["refusal"] = "continued", ["head"] = head,
+                        });
+                    }
+
                     if (id.Contains('/')) return Refuse(HttpStatusCode.Conflict, "not-ours", $"Session `{id}` is a teammate's.");
                     if (record["ask"] is not null) return Refuse(HttpStatusCode.Conflict, "intake", "An intake is answered through its ask.");
                     if ((string)record["state"]! == "stood-down") return Refuse(HttpStatusCode.Conflict, "stood-down", "It stood down.");
@@ -1279,6 +1498,14 @@ public sealed class SessionsSayCommandTests : IDisposable
                     {
                         ["done"] = true, ["session"] = record.DeepClone(), ["said"] = reworded,
                         ["message"] = $"Reworded word `{named}` on session `{id}`: the new words wait last, as `{reworded["id"]}`.",
+                    });
+                }
+
+                if (request.Method == HttpMethod.Get && path == "/api/protocol" && HeadMark)
+                {
+                    return Answer(HttpStatusCode.OK, new JsonObject
+                    {
+                        ["run"] = "room", ["marks"] = new JsonObject { ["settled"] = 1, ["opens"] = 1, ["head"] = 1 },
                     });
                 }
 

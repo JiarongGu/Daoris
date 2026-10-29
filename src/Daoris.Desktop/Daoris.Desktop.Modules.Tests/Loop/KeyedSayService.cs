@@ -32,6 +32,27 @@ internal sealed class KeyedSayService : HttpMessageHandler
         return this;
     }
 
+    private readonly Dictionary<string, string> _heads = [];
+
+    /// <summary>
+    /// The head of <paramref name="record"/>'s line where it is no longer the record itself (FOUNDATION1d-ii, the design §3.4 rule 2): a say to it is
+    /// refused <c>continued</c>, naming <paramref name="head"/>, after the settled answer and before any other refusal, <c>running</c> among them, as a
+    /// host with the <c>head</c> mark answers, and nothing is kept. A <paramref name="head"/> of null makes the record its line's head again.
+    /// </summary>
+    public KeyedSayService Continue(string record, string? head)
+    {
+        lock (_gate)
+        {
+            if (head is null) _heads.Remove(record);
+            else _heads[record] = head;
+        }
+
+        return this;
+    }
+
+    /// <summary>Whether <c>GET /api/protocol</c> answers the <c>head</c> mark, as a host from row d-ii does; false answers none, as a host before.</summary>
+    public bool HeadMark { get; init; }
+
     /// <summary>Every say to a record, in order, and whether it was refused as <c>running</c>.</summary>
     public IReadOnlyList<(string Body, bool Refused)> Said(string session)
     {
@@ -52,6 +73,7 @@ internal sealed class KeyedSayService : HttpMessageHandler
         var (status, answer) = (request.Method.Method, parts) switch
         {
             ("GET", ["api", "sessions"]) => (HttpStatusCode.OK, Records),
+            ("GET", ["api", "protocol"]) when HeadMark => (HttpStatusCode.OK, """{"run":"keyed","marks":{"settled":1,"opens":1,"head":1}}"""),
             ("POST", ["api", "sessions", var id, "state"]) => (HttpStatusCode.OK,
                 $$"""{"session":{"id":"{{Uri.UnescapeDataString(id)}}","state":"{{JsonDocument.Parse(body).RootElement.GetProperty("state").GetString()}}"},"message":"Moved."}"""),
             ("POST", ["api", "sessions", var id, "say"]) => Say(Uri.UnescapeDataString(id), body),
@@ -90,6 +112,13 @@ internal sealed class KeyedSayService : HttpMessageHandler
             {
                 _said.Add((session, body, false));
                 return (HttpStatusCode.OK, $$"""{"message":"Already settled.","settled":"{{left}}"}""");
+            }
+
+            if (_heads.TryGetValue(session, out var head))
+            {
+                _said.Add((session, body, false));
+                return (HttpStatusCode.Conflict,
+                    $$"""{"error":"Session `{{session}}` went on in `{{head}}`, its line's head: say it to that one.","refusal":"continued","head":"{{head}}"}""");
             }
 
             var refused = Winding(session) && !running;
