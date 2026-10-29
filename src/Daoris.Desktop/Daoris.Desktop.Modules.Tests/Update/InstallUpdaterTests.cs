@@ -34,10 +34,7 @@ public sealed class InstallUpdaterTests : Bridge
     public InstallUpdaterTests()
     {
         _install = Path.Combine(Home, "install");
-        Write("INSTALLED.md", "# Daoris — installed desktop\n");
-        Write("Daoris.exe", "old launcher");
-        Write("app/Daoris.Desktop.exe", "old application");
-        Write("app/Daoris.Desktop.App.dll", "old library");
+        StagedInstalls.Prepare(_install);
     }
 
     private string DataHome => Path.Combine(_install, "data");
@@ -485,35 +482,7 @@ public sealed class InstallUpdaterTests : Bridge
     }
 
     /// <summary>A build staged as the publish stages one, consistent with its manifest.</summary>
-    private void Stage(string id)
-    {
-        var staged = Path.Combine(_install, "update", "staged");
-        if (Directory.Exists(staged)) Directory.Delete(staged, recursive: true);
-        Write("update/staged/INSTALLED.md", "# Daoris — installed desktop\nnew\n");
-        Write("update/staged/Daoris.exe", "new launcher");
-        Write("update/staged/app/Daoris.Desktop.exe", "new application");
-        Write("update/staged/app/Daoris.Desktop.App.dll", "new library");
-        var files = new JsonArray();
-        foreach (var full in Directory.EnumerateFiles(staged, "*", SearchOption.AllDirectories).Order(StringComparer.Ordinal))
-        {
-            files.Add(new JsonObject
-            {
-                ["path"] = Path.GetRelativePath(staged, full).Replace(Path.DirectorySeparatorChar, '/'),
-                ["size"] = new FileInfo(full).Length,
-                ["sha256"] = StagedBuild.Sha256Of(full),
-            });
-        }
+    private void Stage(string id) => StagedInstalls.Stage(_install, id);
 
-        File.WriteAllText(Path.Combine(staged, "build.json"), new JsonObject
-        {
-            ["schema"] = 1, ["id"] = id, ["version"] = "0.0.1", ["commit"] = "abc1234", ["at"] = "2026-10-03T12:00:00Z", ["files"] = files,
-        }.ToJsonString());
-    }
-
-    private void Write(string relative, string text)
-    {
-        var path = Path.Combine(_install, relative.Replace('/', Path.DirectorySeparatorChar));
-        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        File.WriteAllText(path, text);
-    }
+    private void Write(string relative, string text) => StagedInstalls.Write(_install, relative, text);
 }

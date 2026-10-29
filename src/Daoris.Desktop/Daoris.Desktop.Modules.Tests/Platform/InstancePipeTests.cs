@@ -340,18 +340,27 @@ public sealed class InstancePipeTests : Bridge
         var id = await before.SendAsync("TEST.PRESS", "MOVE", new { id = "s1a2b3c4" });
         await before.AnswerAsync(id);
 
-        // An update's drain is a stop's beginning (§6.3).
-        var updating = false;
-        pipe.Draining = () => updating;
-        updating = true;
+        // DRAINHOLD1: an update's drain takes a hello and a press that starts nothing it waits on; the close it ends in is a stop's
+        // beginning (§6.3), every new hello refused as the update's.
+        var (draining, applying) = (false, false);
+        pipe.Draining = () => draining || applying;
+        pipe.Applying = () => applying;
+        draining = true;
         await using (var during = await PipeClient.ConnectAsync(name))
         {
-            var refused = await during.HelloAsync(HomeId);
+            Assert.True((await during.HelloAsync(HomeId)).GetProperty("success").GetBoolean());
+            Assert.True((await during.AnswerAsync(await during.SendAsync("TEST.PRESS", "MOVE", new { id = "s9e8f7a6" }))).GetProperty("success").GetBoolean());
+        }
+
+        applying = true;
+        await using (var closing = await PipeClient.ConnectAsync(name))
+        {
+            var refused = await closing.HelloAsync(HomeId);
             Assert.Equal(InstancePipe.Stopping, Code(refused));
             Assert.Equal("update", refused.GetProperty("error").GetProperty("parameters").GetProperty("why").GetString());
         }
 
-        updating = false;
+        (draining, applying) = (false, false);
         pipe.BeginStopping();
         await using (var after = await PipeClient.ConnectAsync(name))
         {
@@ -363,7 +372,7 @@ public sealed class InstancePipeTests : Bridge
         // A connection already open is refused a new press, and still told how its press ended.
         Assert.Equal(InstancePipe.Stopping, Code(await before.AnswerAsync(await before.SendAsync("TEST.PRESS", "MOVE", new { id = "s5e6f7a8" }))));
         Assert.Equal("answered", (await before.ResultAsync(id)).GetProperty("state").GetString());
-        Assert.Equal(1, press.Ran);
+        Assert.Equal(2, press.Ran);
         Assert.True(pipe.Drain(Poll.Patience));
     }
 

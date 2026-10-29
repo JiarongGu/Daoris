@@ -232,8 +232,12 @@ public sealed class PipeConfirmations : IDisposable
     /// </summary>
     public Action<PipeConfirmation, PipeConfirmationEnd>? Noticed { get; set; }
 
-    /// <summary>Whether Daoris is closing or an update drains it (CONFIRMWAIT1a-ii, §7.2): a Confirm then takes nothing, and the press waits.</summary>
-    public Func<bool>? Holding { get; set; }
+    /// <summary>
+    /// Whether a Confirm of a press of this module's route takes nothing now, and the press waits (CONFIRMWAIT1a-ii, §7.2): every press while
+    /// Daoris closes or an update applies, and while an update drains, the presses that would add to what it waits on (DRAINHOLD1). Asked
+    /// before the grounds are read and again after, inside this one's lock.
+    /// </summary>
+    public Func<string, string, bool>? Holding { get; set; }
 
     /// <summary>
     /// Asked to write a press's ending to its record before anyone is told it or it runs (CONFIRMWAIT1, the confirm-wait design §15.2 item
@@ -401,8 +405,9 @@ public sealed class PipeConfirmations : IDisposable
         {
             held = _waiting.Find(each => each.Shown.Id == id);
             if (held is null || held.Shown.Checking || held.Settling) return new PipeAnswer(PipeAnswered.Gone);
-            // CONFIRMWAIT1a-ii (§7.2): Daoris closing or an update draining takes no Confirm, and the press waits on, kept across the restart.
-            if (confirm && Holding?.Invoke() == true) return new PipeAnswer(PipeAnswered.Draining);
+            // CONFIRMWAIT1a-ii (§7.2): Daoris closing or an update draining takes no Confirm, and the press waits on, kept across the restart;
+            // DRAINHOLD1: a drain holds only the presses its census names.
+            if (confirm && Holding?.Invoke(held.Shown.Module, held.Shown.Route) == true) return new PipeAnswer(PipeAnswered.Draining);
             if (!confirm || held.Judge is null)
             {
                 held.Settling = true;
@@ -440,7 +445,7 @@ public sealed class PipeConfirmations : IDisposable
             // A close may have lost it meanwhile (a press carrying a key): its terminal was told so, and this answer takes nothing.
             if (!_waiting.Contains(held)) return new PipeAnswer(PipeAnswered.Gone);
             // A drain begun while it was judged: nothing is taken, and it waits on, its buttons back (§7.2).
-            draining = Holding?.Invoke() == true;
+            draining = Holding?.Invoke(held.Shown.Module, held.Shown.Route) == true;
             if (judged.Judged == PipeJudged.Unread || draining)
             {
                 held.Shown = held.Shown with { Checking = false };
