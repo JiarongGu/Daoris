@@ -6,7 +6,35 @@ namespace Daoris.Driver;
 /// <summary>The destination's open result. A held answer admits no delivery or adoption.</summary>
 public sealed record DestinationOpen(string? SessionId, string Message, string? Opens = null,
     IReadOnlyList<JsonElement>? Transfer = null, bool Held = false, bool Gone = false,
-    IReadOnlyList<string>? Candidates = null);
+    IReadOnlyList<string>? Candidates = null)
+{
+    /// <summary>
+    /// That the host was asked to move the words and echoed the key (FOUNDATION1d-ii part 3; its <c>opens</c> mark 2): its open moved what
+    /// <see cref="Moved"/> names. False where it was not asked, a host whose mark is below 2 or that keeps none, so the old record's words are
+    /// still the caller's to move as today.
+    /// </summary>
+    public bool Moves { get; init; }
+
+    /// <summary>
+    /// Every word the open moved, in order, as its transfer answers them: delivered from the destination by <see cref="MovedWord.Id"/>, never
+    /// by the old record's ids. Read as moved whatever <see cref="Moves"/> says: a host whose mark is below 2 replaying a newer host's receipt
+    /// answers what that host moved.
+    /// </summary>
+    public IReadOnlyList<MovedWord> Moved { get; init; } = [];
+}
+
+/// <summary>
+/// What a keyed open is asked to move (FOUNDATION1d-ii part 3, the design §3.4 rule 3): <paramref name="From"/>, the record the words move from,
+/// the open's own <c>from</c> or a start's source where it names none; <paramref name="Words"/>, the ids the course named; <paramref name="Read"/>,
+/// the ids it saw waiting there when it read, so the person's words kept since move too.
+/// </summary>
+public sealed record MoveWords(string From, IReadOnlyList<string> Words, IReadOnlyList<string> Read);
+
+/// <summary>
+/// One word a keyed open moved: its id on the record it left (<paramref name="Word"/>) and on the destination (<paramref name="Id"/>, which a
+/// moved word keeps), its producer key or none, its transfer id and its place.
+/// </summary>
+public sealed record MovedWord(string Word, string Id, string? Key, string Transfer, int Order);
 
 /// <summary>Keyed opens and protocol negotiation, over one client's host runs (D212 §19.5, §19.12).</summary>
 public sealed class SessionOpenDoors
@@ -88,7 +116,13 @@ public sealed class SessionOpenDoors
     /// A caller recovering a lost answer passes retry; each retry re-reads protocol before it sends anything.
     /// No production move uses this door until its adoption row.
     /// </summary>
-    public async Task<DestinationOpen> OpenAsync(string path, string body, string key, string left, bool retry = false, CancellationToken ct = default)
+    /// <param name="moves">
+    /// The words the open is asked to move (FOUNDATION1d-ii part 3), sent as the request's <c>moves</c> only to a host whose <c>opens</c> mark
+    /// is 2 or more and only beside the key; any <c>moves</c> the body carries is never sent. Against an older host the answer's
+    /// <see cref="DestinationOpen.Moves"/> is false, and the caller moves the words itself as today.
+    /// </param>
+    public async Task<DestinationOpen> OpenAsync(
+        string path, string body, string key, string left, bool retry = false, CancellationToken ct = default, MoveWords? moves = null)
     {
         if (path is not ("/api/sessions" or "/api/sessions/chat")) throw new ArgumentException("Not a destination open door.", nameof(path));
         await _step.WaitAsync(ct).ConfigureAwait(false);
@@ -99,13 +133,15 @@ public sealed class SessionOpenDoors
             if (retry || !_known) await ReadProtocolAsync(ct).ConfigureAwait(false);
             if (retry && _opens == 0) return await HoldAsync(left, ct).ConfigureAwait(false);
             var keyed = _opens >= 1;
+            var moving = keyed && _opens >= 2 && moves is not null;
             var request = ServiceClient.WriteJson(writer =>
             {
                 using var json = JsonDocument.Parse(body);
                 writer.WriteStartObject();
                 foreach (var field in json.RootElement.EnumerateObject())
-                    if (field.Name != "opens") field.WriteTo(writer);
+                    if (field.Name is not ("opens" or "moves")) field.WriteTo(writer);
                 if (keyed) writer.WriteString("opens", key);
+                if (moving) WriteMoves(writer, moves!);
                 writer.WriteEndObject();
             });
             ServiceReply reply;
@@ -132,8 +168,9 @@ public sealed class SessionOpenDoors
                         throw new JsonException("The keyed open's answer has no transfer list.");
                     transfer = words.EnumerateArray().Select(word => word.Clone()).ToArray();
                 }
+                var moved = transfer.Select(MovedOf).ToArray();
                 _lost.Remove(key);
-                return new(id, message, echo, transfer);
+                return new(id, message, echo, transfer) { Moves = moving && echo == key, Moved = moved };
             }
             catch (Exception error) when (error is HttpRequestException or IOException or OperationCanceledException or JsonException)
             {
@@ -143,6 +180,33 @@ public sealed class SessionOpenDoors
             }
         }
         finally { _step.Release(); }
+    }
+
+    private static void WriteMoves(Utf8JsonWriter writer, MoveWords moves)
+    {
+        writer.WriteStartObject("moves");
+        writer.WriteString("from", moves.From);
+        writer.WriteStartArray("words");
+        foreach (var word in moves.Words) writer.WriteStringValue(word);
+        writer.WriteEndArray();
+        writer.WriteStartArray("read");
+        foreach (var word in moves.Read) writer.WriteStringValue(word);
+        writer.WriteEndArray();
+        writer.WriteEndObject();
+    }
+
+    /// <summary>
+    /// One element of a transfer as the host answers it. An element naming no <c>id</c>, as a host whose mark is below 2 replays a newer
+    /// host's receipt, reads as its word's own id, which a moved word keeps; one naming no word, no transfer id or no whole order does not read.
+    /// </summary>
+    private static MovedWord MovedOf(JsonElement element)
+    {
+        if (element.ValueKind != JsonValueKind.Object || Text(element, "word") is not { Length: > 0 } word
+            || Text(element, "transfer") is not { Length: > 0 } transfer
+            || !element.TryGetProperty("order", out var order) || order.ValueKind != JsonValueKind.Number || !order.TryGetInt32(out var place))
+            throw new JsonException("A word of the keyed open's transfer does not read.");
+        return new(word, Text(element, "id") is { Length: > 0 } id ? id : word, Text(element, "key") is { Length: > 0 } producer ? producer : null,
+            transfer, place);
     }
 
     private async Task<DestinationOpen> HoldAsync(string left, CancellationToken ct)
