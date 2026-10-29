@@ -52,7 +52,10 @@ checks before hand-back; never a whole project, a fast half, the web's whole sui
 runs those after the merge (the owner, 2026-10-19). A control moved or renamed: search the other views' tests for its
 name and run those files (HEAD2d's *Pause…*, pressed in QuestsView.work.test.tsx). A machine path in a fixture is neutral,
 `X:/daoris/…`: the universal gate's sensitive scan refuses a home-shaped one (`C:/home/…`, `/home/…`, `C:/Users/…`), and
-two merges on 2026-10-19 stopped on it. An archive entry is appended at the file's end, after one
+two merges on 2026-10-19 stopped on it. A desktop test that uses `_fixtures` removes its scratch through `GitSeed.Discard`
+or `GitSeed.Remove`, never `Directory.Delete` (`GitSeedTests`), and waits on `Poll.Patience`, never a shorter fixed bound
+without a listed reason (`ShortWaitsCensusTests`): run both classes with your filter, since three branches on 2026-10-29
+reached the merge failing one of them. A change to a tool's `.ts` test runs `npm run typecheck -w daoris`. An archive entry is appended at the file's end, after one
 blank line, in its neighbours' shape (`## ROW — title (date, Dn)`, the quoted row, `**Outcome** date: …`). A record (a
 decision's note, a row, an archive entry, a README, a comment, a commit message) states what was decided and why in its own
 words, and never quotes the owner: the owner's words in this brief are context for you, not text for a record.
