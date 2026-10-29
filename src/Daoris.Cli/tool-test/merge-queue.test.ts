@@ -1770,18 +1770,19 @@ describe('the queue, end to end in a scratch repository', { concurrency: true },
       assert.deepEqual(Object.keys(answer).sort(), ['commit', 'gates', 'schema']);
       assert.equal(answer.schema, 1);
       assert.equal(answer.commit, commit, 'the full commit, not seven characters');
-      const byName = Object.fromEntries((answer.gates as { name: string }[]).map((gate) => [gate.name, gate]));
+      type Answered = { name: string; verdict: string; exit?: number; wallSeconds?: number; log: string };
+      const byName: Record<string, Answered> = Object.fromEntries((answer.gates as Answered[]).map((gate) => [gate.name, gate]));
       assert.deepEqual(Object.keys(byName).sort(), ['The universal gate', 'check']);
-      assert.equal(byName['The universal gate'].verdict, 'pass');
-      assert.equal(byName['check'].verdict, 'fail');
-      assert.equal(byName['check'].exit, 1);
-      for (const gate of Object.values<any>(byName)) {
+      assert.equal(byName['The universal gate']!.verdict, 'pass');
+      assert.equal(byName['check']!.verdict, 'fail');
+      assert.equal(byName['check']!.exit, 1);
+      for (const gate of Object.values(byName)) {
         assert.equal(typeof gate.wallSeconds, 'number', gate.name);
         // The log stays in the main checkout once the tree moves, not in the gate tree the next run clears.
         assert.ok(gate.log.startsWith(join(repo.root, 'local', 'scratch', `beside-${commit.slice(0, 7)}`)), gate.log);
         assert.ok(existsSync(gate.log), gate.log);
       }
-      assert.match(readFileSync(byName['The universal gate'].log, 'utf8'), /universal ran/);
+      assert.match(readFileSync(byName['The universal gate']!.log, 'utf8'), /universal ran/);
       assert.equal(existsSync(join(repo.root, 'local', 'gate-tree.json')), false, 'a stage of this tree is not allowed by a runner\'s answer');
       // The gate tree's lock is let go: a second run is not busy.
       assert.equal(existsSync(join(repo.root, 'local', 'gate-tree.lock')), false);

@@ -37,6 +37,8 @@ interface Options {
   full: boolean; gated: boolean; rerun: string[]; passed: boolean; stale: boolean; oneAtATime: boolean;
   /** GATEWT1: the full set in a worktree of its own, at this commit (main's tip when null). */
   beside: boolean; besideCommit: string | null;
+  /** INTEGRATE1j: the declared runner (`--full --beside --daoris-verify`). */
+  daorisVerify: boolean;
   /** CI1: the CI runner on this commit (main's tip when null), its watch, and the stop asked of the watch. */
   ci: boolean; ciCommit: string | null; watch: boolean; stop: boolean;
   /** CISCOPE1e: the queue's verbs: a preview, a request queued with its message file, the queue said or rechecked, the runner. */
