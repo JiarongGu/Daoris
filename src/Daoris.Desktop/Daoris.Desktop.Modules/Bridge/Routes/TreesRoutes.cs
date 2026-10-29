@@ -594,7 +594,7 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
             // Accept refuses until the tree's uncommitted paths are committed (D164 point 4): the page says so before the press.
             var uncommitted = UncommittedCount(await trees.UncommittedAsync(tree, cancellationToken));
             // ACCEPTALL1c (D167's amendment point 3): only a part of an entry with others can have been left out.
-            return Planned(id, plan, uncommitted, gate, lead is null ? null : LeftOutOfEntry(id));
+            return Planned(id, plan, uncommitted, gate, lead is null ? null : LeftOutOfEntry(id), new CarriedAccepts(_loop.Home).Of(id));
         }
 
         // The press answers what it showed beside Accept (the second-agent design §8.2–§8.3): a dispute or commits nobody read,
@@ -622,13 +622,25 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
             SessionLog.WriteLanding(log, held);
         }
 
+        // LANDBACK1 part 1 (D87's note): uncommitted work or a conflict is the session's to clear and the press is the person's yes already,
+        // so the session is carried on in Daoris's own words through the say door (never the person's, never a card) and the yes kept
+        // on it; the press answers that it was carried on and lands when its tree is clean. Words the door keeps nothing of leave the refusal.
+        var carry = LandCarry.WhyOf(landed) is null ? null : await LandCarry.CarryAsync(
+            async (named, text, key, token) => (await WordsHead.FollowAsync(
+                named, at => service.SayAsync(at, text, null, token, from: DaorisWords.From, key: key)).ConfigureAwait(false)).Said,
+            _loop.Home, id, tree, landed, records.FirstOrDefault(each => string.Equals(each.Id, id, StringComparison.OrdinalIgnoreCase)),
+            DateTimeOffset.UtcNow, cancellationToken);
+
         _loop.Nudge();
         // RPC1b5: the lines this landing moved are registered at once where the verb asks (`follow`), as the page's next look would
         // (WSSETUP5); the lines it says ride in `followed` and after the sentence in `said`.
         var followed = Flag(request, "follow")
             ? await TreesWords.FollowMovedAsync(service, _loop.Home, () => DriverConfig.Load(_loop.ConfigPath), _loop.Log, cancellationToken)
             : null;
-        return Pressed(id, landed, gate, TreesWords.Land(landed, pluginLines).Followed(followed), followed?.Out ?? []);
+        return carry is null
+            ? Pressed(id, landed, gate, TreesWords.Land(landed, pluginLines).Followed(followed), followed?.Out ?? [])
+            : Pressed(id, carry.Told ? landed with { Message = carry.Sentence } : landed, gate,
+                TreesWords.Carried(landed, carry, pluginLines).Followed(followed), followed?.Out ?? [], carried: carry);
     }
 
     /// <summary>
@@ -686,7 +698,9 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
     /// <c>withheld</c> says why it was held, the branch standing and no plugin told, for the page to offer the hand-off. Null wherever
     /// the push went on or was never asked about; a page before it reads the answer as before.
     /// </remarks>
-    public static object Pressed(string id, TreeLanding landed, LandingGate gate, TreesSaid said, IReadOnlyList<string> followed, string? press = null) => new
+    public static object Pressed(
+        string id, TreeLanding landed, LandingGate gate, TreesSaid said, IReadOnlyList<string> followed, string? press = null,
+        CarryAnswer? carried = null) => new
     {
         Session = id, Done = landed.Landed, landed.Message, landed.Branch,
         Plugin = landed.Plugin is { } plugin
@@ -704,6 +718,9 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
         Followed = followed,
         // CHATFLOW1d: what refused a chat run's press, which the page words in the reader's language; null for every other.
         Press = press,
+        // LANDBACK1 part 1: the press carried the session on to clear its tree or its conflict (`why`: uncommitted or conflict), and its
+        // yes is kept (`told`) until its tree is clean; null for a press that was not carried on. A page before it reads the answer as before.
+        Carried = carried is null ? null : new { carried.Why, carried.Told },
     };
 
     /// <summary>
@@ -722,7 +739,7 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
     {
         Session = session, Done = false, Message = Sentence(said), Branch = (string?)null, Plugin = (object?)null, Withheld = (string?)null,
         Review = (object?)null, Opinion = (object?)null, Workflow = (object?)null, LeftOut = (object?)null, Conflict = (object?)null,
-        Said = said.ToWire(), Followed = Array.Empty<string>(),
+        Said = said.ToWire(), Followed = Array.Empty<string>(), Carried = (object?)null,
     };
 
     /// <summary>The sentence a refusal's words carry without the verb's <c>trees: </c> lead, as the page shows it.</summary>
@@ -740,7 +757,8 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
     /// The branch its line of work landed on where the person left this part out of it (ACCEPTALL1c), so its review says so and leads with
     /// Discard; null where none did.
     /// </param>
-    public static object Planned(string session, LandingPlan plan, int uncommitted, LandingGate gate, string? leftOutOf) => new
+    public static object Planned(
+        string session, LandingPlan plan, int uncommitted, LandingGate gate, string? leftOutOf, CarriedAccept? carried = null) => new
     {
         // Own (TREEFOLLOW1): the target is the branch the session's agent made, which lands as it stands. Stands (ACCEPTALL1g): the
         // target already stands, an entry's or a chain's branch, so the press moves it on rather than making it.
@@ -752,6 +770,9 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
         LeftOut = LeftOut(plan.LeftOut), Lands = plan.Lands?.Select(commit => new { Commit = Short(commit.Sha), commit.Subject }).ToArray(),
         Conflict = Conflict(plan.Conflict),
         LeftOutOf = leftOutOf,
+        // LANDBACK1 part 1: the person's Accept is kept on the session, which was carried on to clear its tree and lands when it is clean
+        // (`carries` of the Accept's two, `awaiting` while the carry-on's turn runs); null where none is kept. Review shows it as carried on.
+        Carried = carried is null ? null : new { carried.Carries, carried.Awaiting },
     };
 
     /// <summary>The part a session's own Accept is named for (ACCEPTALL1b): the library's, <see cref="EntryAccepts.EntryLead"/>.</summary>

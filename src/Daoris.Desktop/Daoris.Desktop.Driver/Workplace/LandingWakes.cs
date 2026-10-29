@@ -65,6 +65,9 @@ public static class LandingWaits
         // FABRIC-CLOSE1h6: due again after a try that closed it, so that try was the earlier due's; this one waits as a first does.
         _ when entry.Reopened => First,
         { Code: AutoLandingCode.Refused, Tip: null, Status: null } => Workflow,
+        // LANDBACK1 part 1: carried on, it waits for its carry-on's turn to end, which may change nothing the tree's tip shows (a tree
+        // restored, or left as it was), so any wake that concerns the session looks at it, as a first does.
+        { Code: AutoLandingCode.CarriedOn } => First,
         { Code: var code, Tip: not null } when AutoLandingCode.OnChange(code) => Tree,
         { Code: AutoLandingCode.Held or AutoLandingCode.Unreviewed } => Quests,
         // FABRIC-CLOSE1h7: a push held back after its branch was made waits on its quest standing again, not on its tree, whose tip it

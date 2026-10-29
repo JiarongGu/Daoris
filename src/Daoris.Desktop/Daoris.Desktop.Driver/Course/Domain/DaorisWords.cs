@@ -147,6 +147,18 @@ public static class DaorisKeys
     /// </summary>
     public static string? RebaseTipOf(string? key) => RebaseKeys.TipOf(key);
 
+    public const string CarryKind = CarryKeys.Kind;
+
+    /// <summary>
+    /// The words an Accept says to a session it carries on, to commit its tree or resolve its conflict (LANDBACK1 part 1): the session,
+    /// what it is carried on for and which of the Accept's two carry-ons this is. Not a resume (<see cref="IsResume"/>): the words state
+    /// a fact about the tree, so a new part an account's cooling opens carries them (<see cref="DaorisWords.NewPartCarries"/>). No quest's
+    /// fact: <see cref="Read"/> names none.
+    /// </summary>
+    public static string Carry(string session, string basis, int carryOn) => CarryKeys.Of(session, basis, carryOn);
+
+    public static bool IsCarry(string? key) => key?.StartsWith(CarryKind + "/", StringComparison.Ordinal) == true;
+
     public const string LimitResetKind = "limit-reset";
     public const string TransientRetryKind = "transient-retry";
 

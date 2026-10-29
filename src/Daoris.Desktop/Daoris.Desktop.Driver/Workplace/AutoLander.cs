@@ -117,12 +117,19 @@ public sealed class AutoLander(
         // The switch is read as it stands now: switched off, the person's press is the way again. Under a named workflow it is
         // its run's bound version's landing step (WORKFLOW1f), read once here and handed to the gate below; a workflow that
         // cannot be read here holds the entry at the gate, never closes it as off.
+        // LANDBACK1 part 1: the person's Accept kept on the session. While its carry-on's turn runs nothing is judged, so the landing never
+        // runs beside it; it is judged once the turn ends (the session's conclusion clears the wait), under the tree's hold.
+        var accepts = new CarriedAccepts(home);
+        var carried = accepts.Of(entry.Session);
+        if (carried is { Awaiting: true }) return (null, null);
         var process = await WorkplaceWorkflows.Current.ReadProcessAsync(home, config, world.QuestsAsync, entry.Quest, entry.Repository, entry.Workspace, ct)
             .ConfigureAwait(false);
         // FABRIC-END7b: the run whose binding the gate reads, which the gate's files' watch lists by name.
         LandingJudged.Read(home, entry, process.BoundRun);
         var rule = process.Landing.Rule;
-        if (process is { Problem: null, Unread: null } && rule is not { Form: LandingForm.Branch, AutoAccept: true })
+        // The person's yes stands for the rule's switch (LANDBACK1 part 1); the rule still says how it lands.
+        var offRule = process is { Problem: null, Unread: null } && rule is not { Form: LandingForm.Branch, AutoAccept: true };
+        if (offRule && carried is null)
         {
             return (Closed(entry, AutoLandingCode.Off), null);
         }
@@ -157,6 +164,15 @@ public sealed class AutoLander(
             return (Closed(entry, AutoLandingCode.Superseded), null);
         }
 
+        // LANDBACK1 part 1: a stop, a decline or a stand-down takes the yes back: a carry-on is never sent to a session the person ended,
+        // and what it ended on is the rule's again.
+        if (carried is not null && LandCarry.Skips(newest))
+        {
+            accepts.Take(entry.Session);
+            carried = null;
+            if (offRule) return (Closed(entry, AutoLandingCode.Off), null);
+        }
+
         // FABRIC-CLOSE1h (the fabric design §E5): in a closure graph Daoris writes no Done before the graph's end, so the landing waits on
         // the quest's current submission where it waits on a done, with every hold, opinion and look below still applying. A reopen takes
         // the submission back, and closes the entry as a done turned down does; the agent's next `ready` makes its session due again.
@@ -171,7 +187,9 @@ public sealed class AutoLander(
         }
 
         var (tip, status, uncommitted) = await ReadTreeAsync(entry.Tree, ct).ConfigureAwait(false);
-        if (!AutoLandingRules.ShouldTry(entry, tip, status)) return (null, null);
+        // A kept yes is judged at every look its carry-on's turn is not running for: the turn that ended may have changed nothing the tip
+        // and the status show (LANDBACK1 part 1), and the bound counts ends, not changes.
+        if (carried is null && !AutoLandingRules.ShouldTry(entry, tip, status)) return (null, null);
 
         // FABRIC-CLOSE1h19 (D173's CLOSELAND1 note): a session concluded again with nothing new is already on the branch its landing made,
         // so it closes `already` here, before the gate: an opinion its rule never read would hold an entry with nothing to land, owed by
@@ -215,7 +233,13 @@ public sealed class AutoLander(
         }
 
         // Uncommitted work would not travel with the branch (design §5): it stays to review, with the count of its paths.
-        if (uncommitted > 0) return (Tried(entry, AutoLandingCode.Uncommitted, tip, status, uncommitted: uncommitted), null);
+        if (uncommitted > 0)
+        {
+            // LANDBACK1 part 1: under the person's kept yes the session is carried on to clear it, never left to wait for a press.
+            return (carried is null
+                ? Tried(entry, AutoLandingCode.Uncommitted, tip, status, uncommitted: uncommitted)
+                : await CarryOnAsync(entry, carried, LandCarry.Uncommitted, landed: null, tip, status, uncommitted, world, ct).ConfigureAwait(false), null);
+        }
 
         // The tip judged is pinned into the landing (FABRIC-END7's review): a commit made after this judgement is refused, never landed unseen.
         return (null, new AutoChoice(entry, quest, tip, status) { Gate = gate.WithTip(tip), Uncommitted = status == Unreadable ? null : uncommitted });
@@ -308,7 +332,9 @@ public sealed class AutoLander(
         // line's tips, the head and the named branch's tip, which the landing reads again for itself.
         var plan = await trees.PlanRuleAsync(entry.Tree, subject, ct, choice.Gate?.Process).ConfigureAwait(false);
         string? judgedAgain = null;
-        var landed = await trees.LandAsync(entry.Tree, subject, ct, fresh.InUseAsync, AcceptedBy.Auto, choice.Gate, subject.Joins,
+        // LANDBACK1 part 1: the person's Accept kept on it lands it as their press does, by the rule's form whatever its switch says.
+        var carried = new CarriedAccepts(home).Of(entry.Session);
+        var landed = await trees.LandAsync(entry.Tree, subject, ct, fresh.InUseAsync, carried is null ? AcceptedBy.Auto : AcceptedBy.Person, choice.Gate, subject.Joins,
             judged: async (waited, token) =>
             {
                 judgedAgain = await UnderHoldAsync(choice, waited, token).ConfigureAwait(false);
@@ -317,9 +343,47 @@ public sealed class AutoLander(
             beforePush: (record, waited, token) => BeforePushAsync(choice, record, waited, token), uncommitted: choice.Uncommitted).ConfigureAwait(false);
         // Judged again under the tree's hold and refused there: what that judgement kept is the try, so nothing more is kept for it.
         if (judgedAgain is not null) return judgedAgain;
+        // A landing the session can clear (a conflict, work left uncommitted since the look) carries it on again under the kept yes,
+        // counted against the Accept's bound; where nobody's yes is kept it is told as it was (LANDREBASE1).
+        if (carried is not null && LandCarry.WhyOf(landed) is { } why)
+        {
+            var (tip, status, paths) = await ReadTreeAsync(entry.Tree, ct).ConfigureAwait(false);
+            return await CarryOnAsync(entry, carried, why, landed, tip, status, paths, fresh, ct).ConfigureAwait(false);
+        }
+
         var code = AutoLandingRules.CodeOf(landed);
         var told = landed is { Landed: false, Conflict: { } conflict } && await ToldRebaseAsync(fresh, entry, choice.Tip, conflict, ct).ConfigureAwait(false);
-        return Tried(entry, code, choice.Tip, choice.Status, landed, plan.Plugin, plan.Target, unlanded, rebaseTold: told);
+        return Tried(entry, code, choice.Tip, choice.Status, landed, plan.Plugin, plan.Target, unlanded, rebaseTold: told,
+            carry: carried is null ? null : LandCarry.Accepted);
+    }
+
+    /// <summary>
+    /// The person's Accept kept on the session, carrying it on again (LANDBACK1 part 1, D87's note): its tree is still dirty, or its landing
+    /// conflicts, at the end of the turn the last carry-on ran. The Accept carries a session on <see cref="LandCarry.Bound"/> times, the
+    /// press's own and one more; at the next end a note says it is still not clean, the yes is taken back, and the session waits for the
+    /// person's review with the reason, never read as landed. Words the door does not keep end it the same way, said as a refusal is.
+    /// </summary>
+    private async Task<string> CarryOnAsync(
+        AutoLanding entry, CarriedAccept carried, string why, TreeLanding? landed, string? tip, string status, int paths,
+        IWorkplaceLandingWorld world, CancellationToken ct)
+    {
+        if (carried.Carries >= LandCarry.Bound)
+        {
+            return Tried(entry, AutoLandingCode.CarryBound, tip, status, landed, uncommitted: paths, carry: why);
+        }
+
+        var words = LandCarry.WordsOf(why, landed?.Conflict, paths);
+        var key = CarryKeys.Of(entry.Session, LandCarry.BasisOf(why, tip, status), carried.Carries + 1);
+        if (await LandCarry.TellAsync(world.SayAsync, entry.Session, words, key, ct).ConfigureAwait(false) is not { Kept: true })
+        {
+            // Untold, nobody can clear it: the refusal is kept as it always was, the yes is taken back, and the person's review has the words.
+            return why == LandCarry.Conflicted
+                ? Tried(entry, AutoLandingCode.Refused, tip, status, landed)
+                : Tried(entry, AutoLandingCode.Uncommitted, tip, status, uncommitted: paths);
+        }
+
+        new CarriedAccepts(home).CarriedOn(entry.Session);
+        return Tried(entry, AutoLandingCode.CarriedOn, tip, status, landed, uncommitted: paths, carry: why);
     }
 
     /// <summary>
@@ -567,10 +631,19 @@ public sealed class AutoLander(
     /// </summary>
     /// <param name="named">The branch the pattern names, which a refusal's note names where the landing made none.</param>
     /// <param name="rebaseTold">Its replay conflicted and its session was told to rebase (LANDREBASE1), which its note says.</param>
+    /// <param name="carry">What a kept yes was carried on for, or that it accepted the landing (<see cref="AutoLandingNotes.Of"/>).</param>
     private string Tried(
         AutoLanding entry, string code, string? tip, string? status, TreeLanding? landed = null, string? plugin = null,
-        string? named = null, int? commits = null, int? uncommitted = null, bool rebaseTold = false)
+        string? named = null, int? commits = null, int? uncommitted = null, bool rebaseTold = false, string? carry = null)
     {
+        // LANDBACK1 part 1: the person's yes lands once. A try that only waits (a hold, a review, a second opinion, its carry-on's turn,
+        // a workflow's hold kept with no tip) keeps it; any other end of the try, a landing or a refusal, takes it back.
+        if (code is not (AutoLandingCode.Held or AutoLandingCode.Unreviewed or AutoLandingCode.Opinion or AutoLandingCode.CarriedOn)
+            && !(code == AutoLandingCode.Refused && tip is null && status is null))
+        {
+            new CarriedAccepts(home).Take(entry.Session);
+        }
+
         var made = landed is { Landed: true } ? landed.Branch : null;
         Due.Tried(entry.Session, new AutoTry(Now(), code)
         {
@@ -584,7 +657,7 @@ public sealed class AutoLander(
         var line = Words(code, landed);
         if (AutoLandingNotes.Says(code))
         {
-            var note = AutoLandingNotes.Of(code, landed, plugin, uncommitted, named, rebaseTold);
+            var note = AutoLandingNotes.Of(code, landed, plugin, uncommitted, named, rebaseTold, carry);
             events.Keep(entry.Session, note, say: null);
             line = note.Text!;
         }
@@ -658,7 +731,7 @@ public sealed class AutoLander(
     private const string Unreadable = "unreadable";
 
     /// <summary>The tree's HEAD and status, as a try is kept with them, and how many paths are uncommitted.</summary>
-    private static async Task<(string? Tip, string Status, int Uncommitted)> ReadTreeAsync(string tree, CancellationToken ct)
+    internal static async Task<(string? Tip, string Status, int Uncommitted)> ReadTreeAsync(string tree, CancellationToken ct)
     {
         var (headCode, head, _) = await WorkingTree.GitAsync(tree, ["rev-parse", "--verify", "--quiet", "HEAD^{commit}"], ct).ConfigureAwait(false);
         var (statusCode, porcelain, _) = await WorkingTree.GitAsync(tree, ["--no-optional-locks", "status", "--porcelain"], ct).ConfigureAwait(false);
@@ -698,7 +771,13 @@ public sealed class AutoLander(
             var (where, repository) = ownTree ? trees.Owner(tree) : (RemoteTarget.Workspace(workspace), quest.To);
             // The rule it lands by, its access setup's landing composed in (AUTONOMY1c2), as the look and the landing read it.
             var landing = process is { Named: true } named ? named.Landing : LandingRules.Effective(config, repository, where);
-            var verdict = AutoLandingRules.Concluded(landing, status, ownTree, state);
+            // LANDBACK1 part 1: where the person's Accept is kept on the session, its end is due whatever the rule's switch says, and ends
+            // the carry-on's turn; an end that is not a done (a stop, a decline) takes the yes back.
+            var accepts = new CarriedAccepts(home);
+            var carried = accepts.Of(session) is not null;
+            var verdict = carried ? AutoLandingRules.ConcludedCarried(status, ownTree, state) : AutoLandingRules.Concluded(landing, status, ownTree, state);
+            if (carried && verdict == AutoConcluded.Due) accepts.TurnEnded(session);
+            else if (carried && verdict is not null) accepts.Take(session);
             if (verdict == AutoConcluded.Due)
             {
                 new AutoLandings(home).Due(new AutoLanding(session, quest.Id, repository, where, tree, at ?? DateTimeOffset.UtcNow));

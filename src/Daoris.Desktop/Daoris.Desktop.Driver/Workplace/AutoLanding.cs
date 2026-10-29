@@ -59,6 +59,18 @@ public static class AutoLandingRules
             : Concluded(landing.Rule, status, ownTree, state);
 
     /// <summary>
+    /// How a driven record that just concluded stands where the person's Accept is kept on it (LANDBACK1 part 1, <see cref="CarriedAccepts"/>):
+    /// <see cref="Concluded(LandingRule, string?, bool, string)"/> with the rule's switch read as on, since the person's yes stands for it. A
+    /// merge rule lands by the same yes, which the person's press is.
+    /// </summary>
+    public static string? ConcludedCarried(string? status, bool ownTree, string state)
+    {
+        if (SessionStates.IsParked(state)) return null;
+        if (status == "Done") return ownTree ? AutoConcluded.Due : AutoConcluded.NoTree;
+        return Ends.Contains(state) ? AutoConcluded.NotDone : null;
+    }
+
+    /// <summary>
     /// Whether a due entry is worth a try now (design §2): its first, and a hold's at every look; a refusal only once its
     /// tree's tip or status moved since it, so a look never repeats one that nothing changed. One due again after a try that closed it
     /// is judged afresh, as a first is (<see cref="AutoLanding.Reopened"/>).
@@ -283,7 +295,7 @@ public static class AutoLandingNotes
     public static bool Says(string code) => code is AutoLandingCode.Landed or AutoLandingCode.Advanced or AutoLandingCode.PluginUnready
         or AutoLandingCode.PluginFailed or AutoLandingCode.Nothing or AutoLandingCode.Held or AutoLandingCode.Uncommitted
         or AutoLandingCode.Exists or AutoLandingCode.Completed or AutoLandingCode.Refused or AutoLandingCode.Unreviewed
-        or AutoLandingCode.Opinion or AutoLandingCode.PushHeld;
+        or AutoLandingCode.Opinion or AutoLandingCode.PushHeld or AutoLandingCode.CarriedOn or AutoLandingCode.CarryBound;
 
     /// <summary>
     /// How the automatic landing's judgement just before the push begins its sentence where its landing's gate held it (FABRIC-CLOSE1h12),
@@ -305,12 +317,31 @@ public static class AutoLandingNotes
     /// A refusal whose replay onto the line conflicted, and whose session Daoris told to rebase in its own tree (LANDREBASE1): its own
     /// lead-in, <c>landing.rebase</c>. A refusal it could not tell keeps <c>landing.refused</c>.
     /// </param>
+    /// <param name="carry">
+    /// The person's Accept the try lands or carries on (LANDBACK1 part 1, <see cref="CarriedAccepts"/>): <see cref="LandCarry.Uncommitted"/> or
+    /// <see cref="LandCarry.Conflicted"/> for a try that carried its session on, and anything else for a landing that the kept yes
+    /// accepted, which says the person's press accepted it and not the rule's switch.
+    /// </param>
     public static SessionEvent Of(
-        string code, TreeLanding? landed, string? plugin = null, int? uncommitted = null, string? branch = null, bool rebaseTold = false)
+        string code, TreeLanding? landed, string? plugin = null, int? uncommitted = null, string? branch = null, bool rebaseTold = false,
+        string? carry = null)
     {
         var named = landed?.Branch ?? branch ?? "";
         var lead = code switch
         {
+            AutoLandingCode.CarriedOn when carry == LandCarry.Conflicted => Noted.Of(NoteCodes.LandingCarriedConflict,
+                "accepted: replaying its work onto the line conflicts, so its session was carried on to rebase in its own tree, as follows. "
+                + "It lands when its tree is clean."),
+            AutoLandingCode.CarriedOn => Noted.Of(NoteCodes.LandingCarriedDirty,
+                $"accepted: its tree has {uncommitted ?? 0} uncommitted path(s), so its session was carried on to commit them by its repository's "
+                + "conventions, or restore the ones it does not want and say which. It lands when its tree is clean.",
+                ("paths", uncommitted ?? 0)),
+            AutoLandingCode.CarryBound => Noted.Of(NoteCodes.LandingCarryBound,
+                $"accepted, but its session was carried on {LandCarry.Bound} times and its tree is still not clean or its work still conflicts, "
+                + "so nothing was landed. It waits for your review: Accept again once it has committed, or decide the rest is not wanted."),
+            // The person's yes, kept on it while its session cleaned the tree, landed it: said as theirs (LANDBACK1 part 1).
+            AutoLandingCode.Landed or AutoLandingCode.Advanced when carry is not null => Noted.Of(NoteCodes.LandingAcceptedCarried,
+                $"accepted by your press once its tree was clean: its work is on `{named}`.", ("branch", named)),
             // An advance is an acceptance too (LAND2c): the work is on the chain's branch, and the sentence beneath says it moved.
             AutoLandingCode.Landed or AutoLandingCode.Advanced => Noted.Of(NoteCodes.LandingAccepted,
                 $"{LandingRules.AutoAccepted} its work is on `{named}`.", ("branch", named)),
