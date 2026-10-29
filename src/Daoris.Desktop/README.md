@@ -53,7 +53,10 @@ supervisor's proof, decisions, quarantine and command, the steward's command and
 mirrored under `Driver.Tests/Roles/`. Namespaces remain `Daoris.Driver`.
 `StartPlan.cs` is the one start plan (FOUNDATION1j, D212 point 4): a work's seeded role's order walked choice by choice into a
 settled selection carrying the one reservation the roster took at the selection, the pass codes (`StartPasses`) and, in
-`OneTurnReask.cs`, the one re-ask comparison (`ReaskMove.Same`), which a quest's start and an intake read.
+`OneTurnReask.cs`, the one re-ask comparison (`ReaskMove.Same`), which a quest's start and an intake read. Its one loop
+(`StartPlan.LoopAsync`) also walks a second opinion's, a helper's and a partner's reviewer under the reviewer's own rule, its order by
+maker and its held agents, a brainstorm voice is a plan of its own entry for its request's workspace, and a continuation goes on with
+its record's asked choice (`StartPlan.ContinuedOn`), never the machine's `adapter` key (FOUNDATION1j part ii).
 
 Roles names no Context, Review or Work orders type. The actor's run and the one-turn re-ask take Events' `ISessionEvents`.
 The re-ask is `OneTurnReask<TChoice>` over `IActorChoice<TChoice>` and `IActorTried` (`Roles/ActorChoice.cs`), which Review's
