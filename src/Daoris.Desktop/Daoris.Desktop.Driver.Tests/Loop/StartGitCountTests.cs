@@ -109,7 +109,9 @@ public sealed class StartGitCountTests : IDisposable
     // its dependencies, one start that saves the session a whole `npm ci`.
     // 14 since TREELOCK1 (D51's note): the session locks its tree in its own name once its record is open, reading the tree's lock
     // (`git worktree list --porcelain`) and taking it (`git worktree lock --reason daoris session …`), so no merge tool prunes it.
-    private const int Ceiling = 14;
+    // 15 since GITWORKTREECONFIG1 (D51's note): an opening asks the tree it made for its working root once (`git rev-parse
+    // --show-toplevel`), so a tree git binds to another checkout is let go of before a session starts in it.
+    private const int Ceiling = 15;
 
     private void Git(params string[] arguments)
     {

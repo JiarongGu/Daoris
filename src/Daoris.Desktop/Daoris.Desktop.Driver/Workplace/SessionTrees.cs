@@ -362,6 +362,7 @@ public sealed class SessionTrees(string home, IWorkplacePluginWire? plugins = nu
         string? unrecorded = null;
         var dependencies = DependencyCopy.None;
         var inputs = LocalCopy.None;
+        var refusedBound = false;
         try
         {
             // 🔴 Long paths (2026-09-27): a tree's prefix is longer than the root's, so a repository whose
@@ -377,6 +378,15 @@ public sealed class SessionTrees(string home, IWorkplacePluginWire? plugins = nu
             {
                 throw new DriverException(
                     $"could not open a session tree for `{repository}` — git said: {Failure(stderr)}");
+            }
+
+            // GITWORKTREECONFIG1 (D51's note): a tree git binds to another checkout (a shared `core.worktree` under worktree-specific
+            // configuration) is let go of, unused, before a record, a copy or a session is told of it: its agent's own git would act
+            // on that checkout. One start of the tree's own, asked once; the undo below takes the folder and the branch.
+            if (await TreeBinding.RefusalAsync(path, ct).ConfigureAwait(false) is { } bound)
+            {
+                refusedBound = true;
+                throw new DriverException($"could not open a session tree for `{repository}` — {bound}.");
             }
 
             // Where the branch started (WSR6), the moment it exists: bringing it up to date after the line moves cuts
@@ -420,7 +430,7 @@ public sealed class SessionTrees(string home, IWorkplacePluginWire? plugins = nu
             // leaving a half-checked-out tree, locked, and its branch (OPENCUT1, `s-0031408d`). Whatever cut it off, the branch
             // and the tree are this call's own, made a moment ago under a name nothing else uses and handed to nobody, so they
             // go, and the repository is left as it was found. A kill leaves them for the look (TreeStrays).
-            await TreeOpenings.UndoAsync(root, path, branch, ours).ConfigureAwait(false);
+            await TreeOpenings.UndoAsync(root, path, branch, ours, unused: refusedBound).ConfigureAwait(false);
             throw;
         }
 
