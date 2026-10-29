@@ -72,6 +72,12 @@ public sealed record LandedBranch(
     public string? KeptOn { get; init; }
 
     /// <summary>
+    /// Where <see cref="GoneAs"/> is <see cref="LandedGone.Withdrawn"/> (LANDRETIRE1): why the person or the steward said the line will never
+    /// hold this landing's work, in their words, kept with the trace. Null everywhere else, and in a record from before it was kept.
+    /// </summary>
+    public string? GoneWhy { get; init; }
+
+    /// <summary>
     /// Who accepted it (LAND2b, D145 point 6), one of <see cref="Daoris.Driver.AcceptedBy"/>: the person's press, or the rule's switch at
     /// the quest's done. Null for a landing recorded before it was kept, which a reader says is not kept (D143 point 3).
     /// </summary>

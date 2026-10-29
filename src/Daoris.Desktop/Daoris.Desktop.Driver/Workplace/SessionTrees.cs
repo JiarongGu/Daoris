@@ -125,6 +125,7 @@ public sealed class SessionTrees(string home, IWorkplacePluginWire? plugins = nu
     private TreeStrays? _strays;
     private PassLeftovers? _leftovers;
     private LandedCleanups? _cleanups;
+    private LandedWithdrawals? _withdrawals;
     private BranchJudging? _judging;
     private TreeSync? _sync;
     private TreeUpdates? _updates;
@@ -190,6 +191,9 @@ public sealed class SessionTrees(string home, IWorkplacePluginWire? plugins = nu
 
     /// <summary>The clean-up's list and press, and each landed branch judged (D88, WSR5).</summary>
     private LandedCleanups Cleanups => _cleanups ??= new(_context, Asks, Content, Replays, Sweeps, Ends);
+
+    /// <summary>A landing's branch the line will never hold, withdrawn on the person's word (LANDRETIRE1).</summary>
+    private LandedWithdrawals Withdrawals => _withdrawals ??= new(_context, Content, Cleanups);
 
     /// <summary>Each branch judged for the replay (WSR6).</summary>
     private BranchJudging Judging => _judging ??= new(_context, Cleanups);
@@ -827,6 +831,11 @@ public sealed class SessionTrees(string home, IWorkplacePluginWire? plugins = nu
         IEnumerable<(string Repository, string? Workspace, string? Root)> repositories, IReadOnlySet<string> inUse,
         IReadOnlySet<string>? only = null, CancellationToken ct = default) =>
         Cleanups.CleanAsync(repositories, inUse, only, ct);
+
+    /// <inheritdoc cref="LandedWithdrawals.WithdrawAsync"/>
+    public Task<LandedWithdrawal> WithdrawLandedAsync(
+        string root, string repository, string branch, string why, bool plan = false, CancellationToken ct = default) =>
+        Withdrawals.WithdrawAsync(root, repository, branch, why, plan, ct);
 
     /// <inheritdoc cref="TreeSync.SyncPlanAsync"/>
     public Task<SyncPlan> SyncPlanAsync(
