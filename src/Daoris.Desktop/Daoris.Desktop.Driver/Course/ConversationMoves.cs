@@ -73,14 +73,25 @@ public sealed class ConversationMoves
 
     /// <summary>
     /// A conversation's move decided (§13.4 step 1): the record's standing move read first as the course reads it (§3.1's <c>Never</c>), a hold
-    /// under this run's claim closed <c>resolved</c> by the one rule where nothing it names waits; then the decision, claimed by this run. Where
-    /// a move still stands for the record, the one it left or the one whose open made it, nothing is written and that move is answered.
+    /// under this run's claim closed <c>resolved</c> by the one rule where nothing it names waits, and this run's move past its write, its
+    /// prompt's outcome recorded as the write returned, read by its delivery's one reading, which closes it <c>delivered</c> once every word it
+    /// moved has <c>sent</c>; then the decision, claimed by this run. Where a move still stands for the record, the one it left or the one whose
+    /// open made it, nothing is written and that move is answered.
     /// </summary>
     internal async Task<ConversationMoveBegun> BeginAsync(MoveDecision decision, CancellationToken ct)
     {
         try
         {
-            if (await Resolve.StandingAsync(decision.Left, ct).ConfigureAwait(false) is { } standing) return new(null, standing, null);
+            var standing = await Resolve.StandingAsync(decision.Left, ct).ConfigureAwait(false);
+
+            // A new part its limit refuses at its first turn is judged as that turn ends, which can be before its move's own reading.
+            if (standing is { Phase: MoveRecordPhase.Delivering, Effect.Outcome: not null } past && string.Equals(past.ClaimRun, Store.Run, StringComparison.Ordinal))
+            {
+                await ReadAsync(new MoveClaim(past.Id, past.ClaimRun, past.ClaimGeneration), ct).ConfigureAwait(false);
+                standing = await Resolve.StandingAsync(decision.Left, ct).ConfigureAwait(false);
+            }
+
+            if (standing is not null) return new(null, standing, null);
             var decided = Store.Decide(decision);
             return decided.Claim is { } claim ? new(new ConversationMove(this, claim), null, null) : new(null, decided.Move, null);
         }

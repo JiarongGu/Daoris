@@ -349,6 +349,35 @@ public sealed class LimitMoveStoreTests : IDisposable
         await Poll.Until(() => MoveFrom("c1")?.PhaseWord == "delivered", () => $"the move at {MoveFrom("c1")?.PhaseWord}");
     }
 
+    /// <summary>
+    /// 🔴 This run's move that made the record, past its write (its word's <c>sent</c> written, its take and reading not yet made), is read as
+    /// the course reads the record's standing move: its sent word taken off the record and never handed again, the move closed
+    /// <c>delivered</c>; the record then moves, so a new part refused at once by its limit is not held by the move that made it.
+    /// </summary>
+    [Fact]
+    public async Task This_runs_move_past_its_write_is_read_first_and_the_record_it_made_then_moves()
+    {
+        var world = Live(opens: 2);
+        using var c = world.Client;
+        world.Ledger.For("c1").Say("w0", "Also log the port.");
+        var shell = Store("run-shell");
+        var into = shell.Decide(Decision("c0", fromEnded: true));
+        shell.Opening(into.Claim!, "chat-move/earlier");
+        shell.Opened(into.Claim!, "c1", [new MoveRecordWord("w0", null, "chat-move/earlier/w0", 0)]);
+        shell.Advance(into.Claim!, MoveRecordPhase.Delivering);
+        shell.MarkEffect(into.Claim!, MoveEffects.Prompt);
+        shell.Sent(into.Claim!, ["chat-move/earlier/w0"]);
+
+        var moved = await world.Limit.MoveAsync("c1", Config(), null);
+
+        Assert.Equal("c2", moved!.SessionId);
+        Assert.Equal("delivered", Store("run-probe").Read(into.Move.Id)!.PhaseWord);
+        Assert.Contains(world.Ledger.TakenBy, taken => taken.Session == "c1" && taken.Ids == "w0");
+        Assert.Empty(world.Ledger.Said("c2"));
+        Assert.DoesNotContain(world.Runner.Opened!.Prompts, prompt => prompt.Contains("Also log the port.", StringComparison.Ordinal));
+        await Poll.Until(() => MoveFrom("c1")?.PhaseWord == "delivered", () => $"the move at {MoveFrom("c1")?.PhaseWord}");
+    }
+
     // ——— The conversations' take-up (§3.3, §13.4, §19.1).
 
     /// <summary>A record of this machine's for each id, so a move's records stand.</summary>
