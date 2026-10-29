@@ -614,7 +614,7 @@ public abstract partial record LineCourse
             ? new CourseWhere(CourseAccountSource.Pick, facts.Head.Role, facts.Head.Choice, facts.Head.Profile, Kept: true)
             : OwnOrWalk(facts);
 
-    // The role's later choice on another agent (LIMITGOON2), never for an agent's pick (LimitMove.cs:574).
+    // The role's later choice on another agent (LIMITGOON2), never for an agent's pick (LimitMove.cs:576).
     private static CourseWhere? Later(CourseFacts facts) =>
         facts.Head.Choice != "pick" && facts.Account?.Later is { } later
             ? new CourseWhere(CourseAccountSource.Settled, facts.Head.Role, later.Choice, later.Account, later.Agent)
