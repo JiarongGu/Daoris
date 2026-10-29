@@ -503,6 +503,25 @@ public sealed class BackgroundNotesTests
         NoteAssert.Holds(over);
     }
 
+    /// <summary>RUNENDS1: the quest closed, and the session ends rather than wait for what its agent scheduled for itself.</summary>
+    [Fact]
+    public void A_quest_that_closed_ends_the_session_without_waiting_for_its_agents_own_next_turn()
+    {
+        var left = BackgroundNotes.TurnLeft();
+        Assert.Equal(
+            "— its quest no longer waits, and a turn that started on its own was silent: the session ends without that turn's end.",
+            left.Note);
+        Assert.Equal("background.turn-left", Assert.Single(left.Parts).Code);
+        NoteAssert.Holds(left);
+
+        var closed = BackgroundNotes.QuestClosed();
+        Assert.Equal(
+            "— its quest no longer waits while the session waited for its agent's next turn: the session ends, and no go-on is sent.",
+            closed.Note);
+        Assert.Equal("background.quest-closed", Assert.Single(closed.Parts).Code);
+        NoteAssert.Holds(closed);
+    }
+
     [Fact]
     public void Unread_leaves_the_programs_words_as_theirs()
     {

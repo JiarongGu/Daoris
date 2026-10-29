@@ -213,6 +213,43 @@ internal sealed class AcpWake
         }
     }
 
+    /// <summary>
+    /// <see cref="IdleAsync"/> for a session whose quest no longer waits (RUNENDS1): true once no turn runs, as there; false once
+    /// <paramref name="quiet"/> has passed with a turn its harness started running, or a prompt open, and not one update read. A
+    /// turn that speaks is never cut. The turn an agent's own scheduled wakeup starts says its end by no origin the adapter calls
+    /// autonomous, so its end may never be said, and the wait for it would hold the session until the timeout.
+    /// </summary>
+    public async Task<bool> IdleOrQuietAsync(Func<bool> prompted, TimeSpan quiet, CancellationToken ct)
+    {
+        while (true)
+        {
+            Task changed;
+            bool running;
+            lock (_gate)
+            {
+                changed = _changed.Task;
+                running = _began > 0;
+            }
+
+            if (!running && !prompted()) return true;
+
+            using var bounded = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            var silence = Task.Delay(quiet, bounded.Token);
+            var first = await Task.WhenAny(changed, silence).ConfigureAwait(false);
+            await bounded.CancelAsync().ConfigureAwait(false);
+            ct.ThrowIfCancellationRequested();
+
+            if (first == silence)
+            {
+                // Nothing was read through the quiet: a read update replaced the signal, and the wait begins again.
+                lock (_gate)
+                {
+                    if (_changed.Task == changed) return false;
+                }
+            }
+        }
+    }
+
     /// <summary>Whether a <c>usage_update</c> carries an autonomous result's origin: an object whose kind is one of those.</summary>
     private static bool Woken(JsonElement update) =>
         update.TryGetProperty("_meta", out var meta) && meta.ValueKind == JsonValueKind.Object

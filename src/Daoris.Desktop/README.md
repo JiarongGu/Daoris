@@ -236,7 +236,10 @@ for that work and then for the turn its harness wakes by itself, whose autonomou
 goes only where none woke (`Agents/AcpWake.cs`, D83's BGWAIT2 note). A turn that ends after its work ended unseen, after
 its agent's last step, waits for that wake too (D83's BGWAIT3 note). While it waits its quest is read again every fourth
 tick, and once the quest no longer waits on that work and no turn runs, the session ends and the work ends with it; an agent
-that does not exit within ten seconds with that work still running has its tree ended (D83's DONEEND1 note). A timeout is said
+that does not exit within ten seconds with that work still running has its tree ended (D83's DONEEND1 note). The quest is read
+again while it waits for the harness's wake too, and a closed quest ends the session with no go-on; a turn the harness started
+that says nothing for five minutes with the quest closed is left, as an agent's own scheduled wakeup starts one that never says
+its end (`AcpSession.QuestDoneQuiet`, D83's RUNENDS1 note). A timeout is said
 to the door before the kill, and a run that brought its quest to done before it concludes completed (`Observation.AfterTimeout`).
 
 A driven session's prompt that its provider fails for a moment is tried again inside its run, on the same session (D210's AGENTERRORS1a
