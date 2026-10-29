@@ -37,23 +37,31 @@ internal static class TreeGit
     /// git printed it, <c>rev-parse --abbrev-ref HEAD</c>'s answer (<c>HEAD</c> where it is detached; empty where it was not
     /// asked), and whether one start gave both, which says the branch's ask succeeded too.
     /// </summary>
-    internal sealed record CommonDirAndBranch(int Code, string CommonDir, string Err, string Branch, bool Once);
+    internal sealed record CommonDirAndBranch(int Code, string CommonDir, string Err, string Branch, bool Once)
+    {
+        /// <summary>
+        /// The working root git reports for the tree, read in the one start (GITWORKTREECONFIG1), which <see cref="TreeBinding"/>
+        /// compares with the tree's folder before a door writes through it; empty where the two asks ran instead, and the check asks it.
+        /// </summary>
+        public string TopLevel { get; init; } = "";
+    }
 
     /// <summary>
     /// A tree's repository and branch in one git start (PROC1d-iii): a landing, a removal and an update asked
     /// <c>--git-common-dir</c> and then <c>--abbrev-ref HEAD</c>, a start each. Where the one start fails (a branch with no
     /// commit yet, a folder git does not know), the two are asked as before, one at a time, so each answer and each failure
-    /// is the one they gave: the branch is asked only where the common dir was read.
+    /// is the one they gave: the branch is asked only where the common dir was read. GITWORKTREECONFIG1: the one start asks the
+    /// tree's working root too, which the doors that write through the tree compare with its folder, and which costs them no start.
     /// </summary>
     internal static async Task<CommonDirAndBranch> CommonDirAndBranchAsync(string tree, CancellationToken ct)
     {
         var (code, output, _) = await WorkingTree.GitAsync(
-            tree, ["rev-parse", "--path-format=absolute", "--git-common-dir", "--abbrev-ref", "HEAD"], ct).ConfigureAwait(false);
+            tree, ["rev-parse", "--path-format=absolute", "--git-common-dir", "--show-toplevel", "--abbrev-ref", "HEAD"], ct).ConfigureAwait(false);
         var lines = output.Split('\n').Select(line => line.TrimEnd('\r')).Where(line => line.Length > 0).ToArray();
-        if (code == 0 && lines.Length == 2)
+        if (code == 0 && lines.Length == 3)
         {
             GitFacts.SameRepository(tree, lines[0]);
-            return new CommonDirAndBranch(0, lines[0], "", lines[1], Once: true);
+            return new CommonDirAndBranch(0, lines[0], "", lines[2], Once: true) { TopLevel = lines[1] };
         }
 
         var (rootCode, commonDir, rootErr) = await WorkingTree.GitAsync(

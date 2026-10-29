@@ -172,7 +172,7 @@ public sealed class TreeSyncStartsTests : TreeSyncFixture
     /// <summary>
     /// A tree's repository and its branch are one git start (PROC1d-iii): a landing, a removal and an update each asked git for
     /// the common dir and then for the branch. Their answers are what the two asks answered, on a branch, detached and in the
-    /// repository's own checkout.
+    /// repository's own checkout; and the working root the start reads with them (GITWORKTREECONFIG1) is <c>--show-toplevel</c>'s.
     /// </summary>
     [Fact]
     public async Task A_tree_s_repository_and_branch_are_one_start_and_answer_as_the_two_asks_did()
@@ -185,6 +185,7 @@ public sealed class TreeSyncStartsTests : TreeSyncFixture
         foreach (var at in new[] { tree.Path, detached.Path, root })
         {
             var (_, commonDir, _) = await WorkingTree.GitAsync(at, ["rev-parse", "--path-format=absolute", "--git-common-dir"], CancellationToken.None);
+            var (_, top, _) = await WorkingTree.GitAsync(at, ["rev-parse", "--show-toplevel"], CancellationToken.None);
             var (_, branch, _) = await WorkingTree.GitAsync(at, ["rev-parse", "--abbrev-ref", "HEAD"], CancellationToken.None);
             var starts = new List<string>();
             WorkingTree.Started.Value = arguments => { lock (starts) starts.Add(string.Join(' ', arguments)); };
@@ -198,7 +199,8 @@ public sealed class TreeSyncStartsTests : TreeSyncFixture
                 WorkingTree.Started.Value = null;
             }
 
-            Assert.Equal((0, commonDir.Trim(), branch.Trim(), true), (here.Code, here.CommonDir.Trim(), here.Branch.Trim(), here.Once));
+            Assert.Equal((0, commonDir.Trim(), top.Trim(), branch.Trim(), true), (here.Code, here.CommonDir.Trim(), here.TopLevel, here.Branch.Trim(), here.Once));
+            Assert.True(TreeGit.SamePath(here.TopLevel, at), $"{here.TopLevel} is not {at}");
             Assert.Single(starts);
         }
 

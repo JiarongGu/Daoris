@@ -119,8 +119,9 @@ public sealed class StartTreeCloseTests : IDisposable
                 _closing.Cancel();
                 ct.ThrowIfCancellationRequested();
                 return Said(Tip);
-            case ["rev-parse", "--path-format=absolute", "--git-common-dir", "--abbrev-ref", "HEAD"]:
-                return Said($"{Path.Combine(_root, ".git")}\n{_branch}");
+            case ["rev-parse", "--path-format=absolute", "--git-common-dir", "--show-toplevel", "--abbrev-ref", "HEAD"]:
+                // The tree's repository, its own working root (GITWORKTREECONFIG1) and its branch, in one start.
+                return Said($"{Path.Combine(_root, ".git")}\n{_tree}\n{_branch}");
             case ["for-each-ref", "--contains", ..]:
                 return Said($"{Tip}\trefs/heads/main\t");
             case ["worktree", "remove", var gone]:
