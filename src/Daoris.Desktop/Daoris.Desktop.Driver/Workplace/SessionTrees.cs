@@ -33,7 +33,11 @@ public sealed record TreeRemoval(bool Removed, string Message);
 /// ANSWER — the checkout is busy, there is nothing to merge, the branches conflict — and each names
 /// what the person would do about it.
 /// </summary>
-public sealed record TreeMerge(bool Merged, string Message);
+public sealed record TreeMerge(bool Merged, string Message)
+{
+    /// <summary>A refusal's code where the merge door has one (LANDBACK1 part 1): <c>uncommitted</c>, which the Accept carries its session on for.</summary>
+    public string? Refusal { get; init; }
+}
 
 /// <param name="Path">Where it is.</param>
 /// <param name="Workspace">Whose circle, read from the layout Daoris itself chose.</param>

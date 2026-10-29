@@ -411,7 +411,13 @@ export function DiffPane({
           <Inline text={t('work.review.landingProblem', { problem: refusedNow })} />
         </p>
       )}
-      {/* Said before the press, which stays open: its own refusal still answers (D164 point 4, REVIEWDIRTY1). */}
+      {/* LANDBACK1 part 1: the Accept is kept on a session carried on to clear its tree, which lands the work once it is clean. */}
+      {landing.data?.carried && (
+        <p className="m-0 border-l-[3px] border-st-open pl-2 text-small text-ink-soft">
+          {t('work.review.carriedOn')}
+        </p>
+      )}
+      {/* Said before the press, which stays open: Accept carries its session on to commit them (D164 point 4, REVIEWDIRTY1, LANDBACK1). */}
       {!said && canAccept && (landing.data?.uncommitted ?? 0) > 0 && (
         <p className="m-0 border-l-[3px] border-warn pl-2 text-small text-ink-soft">
           {t('work.review.landingUncommitted', { count: landing.data!.uncommitted })}
@@ -460,7 +466,8 @@ export function DiffPane({
             onClick={() => {
               const at = landing.dataUpdatedAt;
               act(land.mutateAsync(session).then((result) => {
-                if (!result.done && result.conflict) setPressed({ session, conflict: result.conflict, at });
+                // LANDBACK1 part 1: carried on, the session has Daoris's words and the yes is kept: no card is asked of the person.
+                if (!result.done && result.conflict && !result.carried?.told) setPressed({ session, conflict: result.conflict, at });
                 return result;
               }));
             }}

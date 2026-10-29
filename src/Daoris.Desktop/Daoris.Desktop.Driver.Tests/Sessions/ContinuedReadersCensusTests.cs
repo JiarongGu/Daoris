@@ -62,7 +62,11 @@ public sealed partial class ContinuedReadersCensusTests
         ],
         ["TreesConsole.cs"] =
         [
-            (How.Follows, "the terminal's rebase word to a session: said at its head under its key"),
+            (How.Follows, "the terminal's carry-on word to a session its Accept carried on (LANDBACK1 part 1): said at its head under its key"),
+        ],
+        ["TreesRoutes.cs"] =
+        [
+            (How.Follows, "the window's Accept carrying a session on (LANDBACK1 part 1): Daoris's word said at its head under its key, never the person's"),
         ],
         ["ChatRunner.cs"] =
         [
