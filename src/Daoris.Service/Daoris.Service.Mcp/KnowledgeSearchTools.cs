@@ -204,11 +204,15 @@ public sealed class KnowledgeSearchTools(KnowledgeService service, WorkspaceScop
         }
 
         var text = new StringBuilder($"What is searchable{Scoped(scope)}:\n\n");
-        text.Append("| Repository | Workspace | Entries | Local | Canonical |\n|---|---|---:|---:|---:|\n");
+        text.Append("| Repository | Workspace | Entries | Local | Canonical | Read |\n|---|---|---:|---:|---:|---|\n");
         foreach (var row in summary)
         {
+            // When this host read the checkout and the commit it was at (KNOWCURRENT1); blank for a fed repository.
+            var read = row.IndexedAt is { } at
+                ? $"{at.UtcDateTime:yyyy-MM-dd HH:mm}Z{(row.IndexedCommit is { Length: > 0 } commit ? $" `{Clipped.ShortCommit(commit, 8)}`" : "")}"
+                : "";
             text.AppendLine(
-                $"| {row.Repository} | {row.Workspace} | {row.Total} | {row.Local} | {row.Canonical} |");
+                $"| {row.Repository} | {row.Workspace} | {row.Total} | {row.Local} | {row.Canonical} | {read} |");
         }
 
         return text.ToString();
@@ -388,6 +392,11 @@ public sealed class KnowledgeSearchTools(KnowledgeService service, WorkspaceScop
                   var split => $"{split} longer than that were split, each part a vector of its own.",
               })
             : "";
-        return $"Indexed {report.Entries} entries from {report.Repositories} repositories{withheld}.{absent}\n{recall}{embedded}";
+        // How current it is (KNOWCURRENT1): each checkout's commit as read, and when.
+        var read = report.Read.Count > 0
+            ? "\nRead: " + string.Join("; ", report.Read.Select(r =>
+                $"{r.Repository} {(r.ShortCommit is { } commit ? $"at `{commit}`" : "(no commit)")}, {r.ReadAt.UtcDateTime:yyyy-MM-dd HH:mm}Z"))
+            : "";
+        return $"Indexed {report.Entries} entries from {report.Repositories} repositories{withheld}.{absent}\n{recall}{embedded}{read}";
     }
 }
