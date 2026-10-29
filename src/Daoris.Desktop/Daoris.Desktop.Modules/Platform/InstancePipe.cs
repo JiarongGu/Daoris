@@ -222,6 +222,9 @@ public sealed class InstancePipe : IDisposable
     private readonly Dictionary<string, Reserved> _reserved = new(StringComparer.Ordinal);
     // CONFIRMWAIT1 (§15.2 item 8): each ending's answer by its confirmation's id, as its record was rewritten with it, for its line.
     private readonly Dictionary<string, string> _endings = new(StringComparer.Ordinal);
+    // DRAINHOLD1: each Confirm whose record says `begun`, by its confirmation's id, until its run begins: it runs whatever begins after,
+    // and a close leaves it under way rather than keeping it as a press that waits.
+    private readonly HashSet<string> _begun = new(StringComparer.Ordinal);
     private readonly Lock _recording = new();
     private int _restored;
     private readonly HashSet<Connection> _connections = [];
@@ -490,9 +493,15 @@ public sealed class InstancePipe : IDisposable
     /// <summary>
     /// A press's ending written to its record before anyone is told it or it runs (CONFIRMWAIT1, the confirm-wait design §15.2 item 8):
     /// <c>begun</c> for a Confirm that runs, <c>ended</c> with the answer its terminal will hear for any other, that answer kept for its
-    /// line. False where the record could not be written, and the press waits on.
+    /// line. Unrecorded where the record could not be written, and the press waits on.
     /// </summary>
-    private bool Persisted(PipeConfirmation card, PipeEnding ending)
+    /// <remarks>
+    /// DRAINHOLD1: a Confirm's hold is judged here for the last time, before <c>begun</c> is written: one the drain's hold or the close
+    /// reached since the window's own check is held, nothing written, and waits on in its record for the restart. One written <c>begun</c>
+    /// runs whatever begins after, as the person was told, and a close begun meanwhile is its to wait for (<see cref="ConfirmThenRunAsync"/>,
+    /// <see cref="KeepAtClose"/>): never told confirmed and then ended unrun.
+    /// </remarks>
+    private PipePersisted Persisted(PipeConfirmation card, PipeEnding ending)
     {
         string? id;
         bool byWithdraw;
@@ -502,12 +511,26 @@ public sealed class InstancePipe : IDisposable
             byWithdraw = id is not null && _withdrawn.Contains(id);
         }
 
-        if (id is null) return true;
-        if (ending.End == PipeConfirmationEnd.Confirmed && !Holds(card.Module, card.Route)) return Rewrite(card.Id, PipeWaitingRecord.Begun);
+        if (id is null) return PipePersisted.Written;
+        if (ending.End == PipeConfirmationEnd.Confirmed)
+        {
+            if (Holds(card.Module, card.Route)) return PipePersisted.Held;
+            lock (_recording) _begun.Add(card.Id);
+            if (Rewrite(card.Id, PipeWaitingRecord.Begun)) return PipePersisted.Written;
+            lock (_recording) _begun.Remove(card.Id);
+            return PipePersisted.Unrecorded;
+        }
+
         var text = IpcJson.Serialize(Ending(new IpcRequest { Id = id, Module = card.Module, Type = card.Route }, ending, byWithdraw));
-        if (!Rewrite(card.Id, PipeWaitingRecord.Ended, text)) return false;
+        if (!Rewrite(card.Id, PipeWaitingRecord.Ended, text)) return PipePersisted.Unrecorded;
         lock (_recording) _endings[card.Id] = text;
-        return true;
+        return PipePersisted.Written;
+    }
+
+    /// <summary>Whether a press's record says <c>begun</c> and its run has not begun yet (DRAINHOLD1).</summary>
+    private bool Begun(string confirmation)
+    {
+        lock (_recording) return _begun.Contains(confirmation);
     }
 
     /// <summary>The answer a press's terminal hears for an ending that runs nothing.</summary>
@@ -540,6 +563,7 @@ public sealed class InstancePipe : IDisposable
         {
             _kept.Remove(confirmation);
             _records.Remove(confirmation);
+            _begun.Remove(confirmation);
         }
     }
 
@@ -664,6 +688,14 @@ public sealed class InstancePipe : IDisposable
     /// </summary>
     private void KeepAtClose(string id, string confirmation, TaskCompletionSource<string>? line)
     {
+        // DRAINHOLD1: a press confirmed and written `begun` is under way, not waiting: it stays in what the close's drain waits for, and its
+        // line hears its run. One taken since the close's look at what waits has left the waiting already.
+        if (Begun(confirmation)) return;
+        lock (_gate)
+        {
+            if (_waitingFor.GetValueOrDefault(id) != confirmation) return;
+        }
+
         if (KeyedRecord(confirmation))
         {
             Confirmations.Lose(confirmation);
@@ -1356,9 +1388,9 @@ public sealed class InstancePipe : IDisposable
             byWithdraw = _withdrawn.Remove(id);
         }
 
-        // Its record already says it began (§15.2 item 8), written before the Confirm was taken. DRAINHOLD1: a press the drain lets through
-        // runs; once begun, the close is its to wait for.
-        if (ending.End == PipeConfirmationEnd.Confirmed && !Holds(request.Module, request.Type))
+        // Its record already says it began (§15.2 item 8), written before the Confirm was taken. DRAINHOLD1: its hold was judged there for
+        // the last time, so it runs whatever began since, the update's applying or a close, which is then its to wait for.
+        if (ending.End == PipeConfirmationEnd.Confirmed && Begun(confirmation))
         {
             await RunAsync(request, id, binding, answered, begun: () => Forget(confirmation)).ConfigureAwait(false);
             return;

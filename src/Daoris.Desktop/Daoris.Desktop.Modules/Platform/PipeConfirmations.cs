@@ -115,6 +115,25 @@ public enum PipeAnswered
     Unrecorded,
 }
 
+/// <summary>
+/// How a press's ending was put to its record before it is taken (CONFIRMWAIT1, the confirm-wait design §15.2 item 8; DRAINHOLD1): what
+/// <see cref="PipeConfirmations.Persisting"/> answers.
+/// </summary>
+public enum PipePersisted
+{
+    /// <summary>Written: the press is taken and told, and, confirmed, runs, whatever begins after.</summary>
+    Written,
+
+    /// <summary>The record could not be written: nothing is taken, and it waits on, <see cref="PipeAnswered.Unrecorded"/>.</summary>
+    Unrecorded,
+
+    /// <summary>
+    /// A Confirm that the drain's hold or the close reached by the time its record would say <c>begun</c>: nothing is written or taken, and
+    /// it waits on in its record, <see cref="PipeAnswered.Draining"/>.
+    /// </summary>
+    Held,
+}
+
 /// <summary>The person's answer as taken, with the ground that moved where it was <see cref="PipeAnswered.Changed"/>.</summary>
 public sealed record PipeAnswer(PipeAnswered Outcome, PipeGroundChange? Change = null);
 
@@ -241,10 +260,12 @@ public sealed class PipeConfirmations : IDisposable
 
     /// <summary>
     /// Asked to write a press's ending to its record before anyone is told it or it runs (CONFIRMWAIT1, the confirm-wait design §15.2 item
-    /// 8): <c>begun</c> for a Confirm whose grounds hold, <c>ended</c> with its answer for any other. False where it could not be written,
-    /// and the press waits on, nothing taken; none writes nothing and takes every ending.
+    /// 8): <c>begun</c> for a Confirm whose grounds hold, <c>ended</c> with its answer for any other. <see cref="PipePersisted.Unrecorded"/>
+    /// where it could not be written, and the press waits on, nothing taken; <see cref="PipePersisted.Held"/> where a Confirm is held by
+    /// then (DRAINHOLD1), which is where the hold is judged last, so a press told it is confirmed always runs. None writes nothing and takes
+    /// every ending.
     /// </summary>
-    public Func<PipeConfirmation, PipeEnding, bool>? Persisting { get; set; }
+    public Func<PipeConfirmation, PipeEnding, PipePersisted>? Persisting { get; set; }
 
     /// <summary>Told a press's card the first time a window shows it (CONFIRMWAIT1a-ii): the pipe keeps <see cref="PipeConfirmation.ShownAt"/> in its record.</summary>
     public Action<PipeConfirmation>? ShownFirst { get; set; }
@@ -481,24 +502,26 @@ public sealed class PipeConfirmations : IDisposable
 
     /// <summary>
     /// A press marked settling, ended as <paramref name="ending"/> once its record says so (§15.2 item 8): taken, told and answered; or,
-    /// where the record could not be written, nothing taken, its buttons back, <see cref="PipeAnswered.Unrecorded"/>.
+    /// where the record could not be written, nothing taken, its buttons back, <see cref="PipeAnswered.Unrecorded"/>; or, a Confirm held
+    /// by then (DRAINHOLD1), nothing taken, its buttons back, <see cref="PipeAnswered.Draining"/>.
     /// </summary>
     private PipeAnswer Finish(Held held, PipeEnding ending, PipeAnswer taken)
     {
         PipeConfirmationsNow told;
-        if (!Persisted(held, ending))
+        if (Persisted(held, ending) is not PipePersisted.Written and var kept)
         {
+            var draining = kept == PipePersisted.Held;
             lock (_gate)
             {
                 held.Settling = false;
                 held.Shown = held.Shown with { Checking = false };
-                Write("unrecorded", held.Shown);
+                Write(draining ? "draining" : "unrecorded", held.Shown);
                 _seq++;
                 told = Telling();
             }
 
             Tell(told);
-            return new PipeAnswer(PipeAnswered.Unrecorded);
+            return new PipeAnswer(draining ? PipeAnswered.Draining : PipeAnswered.Unrecorded);
         }
 
         lock (_gate)
@@ -513,16 +536,16 @@ public sealed class PipeConfirmations : IDisposable
         return taken;
     }
 
-    /// <summary>The ending written to the press's record before it is told or run; true where nothing is asked to write it.</summary>
-    private bool Persisted(Held held, PipeEnding ending)
+    /// <summary>The ending written to the press's record before it is told or run; written where nothing is asked to write it.</summary>
+    private PipePersisted Persisted(Held held, PipeEnding ending)
     {
         try
         {
-            return Persisting?.Invoke(held.Shown, ending) ?? true;
+            return Persisting?.Invoke(held.Shown, ending) ?? PipePersisted.Written;
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
-            return false;
+            return PipePersisted.Unrecorded;
         }
     }
 
@@ -544,7 +567,7 @@ public sealed class PipeConfirmations : IDisposable
 
         // CONFIRMWAIT1 (§15.2 item 8): its record says it was taken back before anyone is told; where it cannot, it waits on.
         var ending = new PipeEnding(PipeConfirmationEnd.Withdrawn);
-        if (!Persisted(held, ending))
+        if (Persisted(held, ending) != PipePersisted.Written)
         {
             lock (_gate) held.Settling = false;
             return PipeWithdrawal.Unrecorded;

@@ -1095,6 +1095,110 @@ public sealed class PipeConfirmTests : Bridge
         Assert.Equal("update", hello.GetProperty("error").GetProperty("parameters").GetProperty("why").GetString());
     }
 
+    /// <summary>A take-back asked during a drain, its card waiting, and the drain's two words the test moves.</summary>
+    private async Task<(InstancePipe Pipe, PipeClient Client, HeldModule Driver, ServiceProvider Services, MachineLog Log, string Id, PipeConfirmation Card, Action<bool> Applying)>
+        TakeBackDuringADrainAsync()
+    {
+        var grounds = new StubGrounds();
+        grounds.Reads["SESSION_QUEUE"] = _ => new { queued = new[] { new { id = "w1" } } };
+        var (pipe, client, driver, services, log) = await ServeAsync(grounds);
+        var applying = false;
+        pipe.Draining = () => true;
+        pipe.Applying = () => applying;
+        var id = await client.SendAsync(DriverModule.Name, "SESSION_QUEUE_EDIT", new { session = "s1a2b3c4", id = "w1" });
+        await UntilAsync(() => pipe.Confirmations.Now().Waiting.Count == 1);
+        return (pipe, client, driver, services, log, id, pipe.Confirmations.Now().Waiting[0], now => applying = now);
+    }
+
+    /// <summary>
+    /// DRAINHOLD1, a review's finding: the update begins to apply between a let-through Confirm's record saying <c>begun</c> and its run.
+    /// The person was told it is confirmed, so it runs, and the close is its to wait for; it is never answered and then dropped. The gate
+    /// is the record's own write, wrapped.
+    /// </summary>
+    [Fact]
+    public async Task A_take_back_confirmed_as_the_update_begins_to_apply_runs_once_it_is_begun()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var (pipe, client, driver, services, log, id, card, applying) = await TakeBackDuringADrainAsync();
+        using var _ = services;
+        using var __ = log;
+        using var ___ = pipe;
+        await using var ____ = client;
+        var persisted = pipe.Confirmations.Persisting!;
+        pipe.Confirmations.Persisting = (shown, ending) =>
+        {
+            var written = persisted(shown, ending);
+            applying(true);
+            return written;
+        };
+
+        Assert.Equal(PipeAnswered.Answered, (await pipe.Confirmations.AnswerAsync(card.Id, confirm: true)).Outcome);
+
+        var heard = await client.AnswerAsync(id);
+        Assert.True(heard.GetProperty("success").GetBoolean(), heard.GetRawText());
+        Assert.Equal(1, driver.Ran);
+        Assert.Empty(Records());
+    }
+
+    /// <summary>
+    /// DRAINHOLD1, a review's finding: a Confirm the window's check let through, which the drain's hold or the close reaches by the time its
+    /// record is written, is not taken: it answers <c>draining</c>, its buttons back, and it still waits in its record for the restart.
+    /// </summary>
+    [Fact]
+    public async Task A_Confirm_held_by_the_time_its_record_is_written_is_not_taken_and_still_waits()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var (pipe, client, driver, services, log, id, card, applying) = await TakeBackDuringADrainAsync();
+        using var _ = services;
+        using var __ = log;
+        using var ___ = pipe;
+        await using var ____ = client;
+        var persisted = pipe.Confirmations.Persisting!;
+        pipe.Confirmations.Persisting = (shown, ending) =>
+        {
+            applying(true);
+            return persisted(shown, ending);
+        };
+
+        Assert.Equal(PipeAnswered.Draining, (await pipe.Confirmations.AnswerAsync(card.Id, confirm: true)).Outcome);
+
+        var still = Assert.Single(pipe.Confirmations.Now().Waiting);
+        Assert.Equal(card.Id, still.Id);
+        Assert.False(still.Checking);
+        Assert.Equal("waiting", ReadRecord(Assert.Single(Records())).GetProperty("state").GetString());
+        Assert.Equal("waiting", (await client.ResultAsync(id)).GetProperty("state").GetString());
+        Assert.Equal(0, driver.Ran);
+    }
+
+    /// <summary>
+    /// DRAINHOLD1, a review's finding, the close's side: a close begun between a Confirm's record saying <c>begun</c> and its run does not
+    /// answer its line <c>waiting</c> nor take it out of what is under way: it runs, the close's drain waits for it, and its terminal hears it.
+    /// </summary>
+    [Fact]
+    public async Task A_close_begun_between_a_Confirm_s_record_and_its_run_waits_for_the_run()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var (pipe, client, driver, services, log, id, card, _) = await TakeBackDuringADrainAsync();
+        using var _s = services;
+        using var __ = log;
+        using var ___ = pipe;
+        await using var ____ = client;
+        var persisted = pipe.Confirmations.Persisting!;
+        pipe.Confirmations.Persisting = (shown, ending) =>
+        {
+            var written = persisted(shown, ending);
+            if (ending.End == PipeConfirmationEnd.Confirmed) pipe.BeginStopping();
+            return written;
+        };
+
+        Assert.Equal(PipeAnswered.Answered, (await pipe.Confirmations.AnswerAsync(card.Id, confirm: true)).Outcome);
+
+        var heard = client.AnswerAsync(id);
+        Assert.True(pipe.Drain(Poll.Patience));
+        Assert.True((await heard).GetProperty("success").GetBoolean(), (await heard).GetRawText());
+        Assert.Equal(1, driver.Ran);
+    }
+
     /// <summary>
     /// DRAINHOLD1 (the confirm-wait design §7.2): a press the drain let through and still under way when the update applies is the close's
     /// to wait for, as any begun press is. It is not cut: the close's drain waits for its answer, and its terminal hears it.
