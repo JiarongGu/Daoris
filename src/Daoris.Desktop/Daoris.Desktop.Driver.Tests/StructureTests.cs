@@ -758,6 +758,54 @@ public sealed class StructureTests(Xunit.Abstractions.ITestOutputHelper output)
             + string.Join('\n', edges.Select(edge => $"{edge.File}: {edge.Type}")));
     }
 
+    /// <summary>
+    /// Part A's end state (FOUNDATION1 mod-xxi; the foundation design §14.6, X4-1.26): every subdomain has moved, the census holds no exception,
+    /// no file names a type of a subdomain above its own, no file outside <c>Loop/</c> names a type declared in it, and the ten executors
+    /// built from <c>LoopContext</c> are still in it.
+    /// </summary>
+    [Fact]
+    public void Part_A_ends_with_every_subdomain_moved_no_upward_tuple_no_edge_into_Loop_and_the_ten_executors_in_Loop()
+    {
+        var (map, sources, _, analysis, _) = Tree.Value;
+        var order = map.Subdomains.Select(subdomain => subdomain.Name).ToList();
+        string? OwnerOf(string path) => map.Files.TryGetValue(path, out var owner)
+            ? owner
+            : map.Subdomains.FirstOrDefault(subdomain => path.StartsWith(subdomain.Folder + "/", StringComparison.Ordinal))?.Name;
+
+        Assert.Empty(map.Subdomains.Where(subdomain => !subdomain.Moved).Select(subdomain => subdomain.Name));
+        Assert.Empty(map.Families);
+
+        var upward = analysis.Edges.Where(edge => edge.DeclaredIn.Any(path => order.IndexOf(OwnerOf(path) ?? "") > order.IndexOf(OwnerOf(edge.File) ?? ""))).ToList();
+        Assert.True(upward.Count == 0, $"the driver names a type above its subdomain in {upward.Count} semantic tuples:\n"
+            + string.Join('\n', upward.Select(edge => $"{edge.File}: {edge.Type}")));
+
+        var into = analysis.Edges.Where(edge => !edge.File.StartsWith("Loop/", StringComparison.Ordinal)
+            && edge.DeclaredIn.Any(path => path.StartsWith("Loop/", StringComparison.Ordinal))).ToList();
+        Assert.True(into.Count == 0, $"{into.Count} semantic tuples outside Loop name a type declared in it:\n"
+            + string.Join('\n', into.Select(edge => $"{edge.File}: {edge.Type}")));
+
+        Assert.Empty(map.Files.Where(entry => entry.Value == "Loop" && !entry.Key.StartsWith("Loop/", StringComparison.Ordinal)).Select(entry => entry.Key));
+        Assert.Empty(sources.Where(source => !source.Path.StartsWith("Loop/", StringComparison.Ordinal) && OwnerOf(source.Path) == "Loop").Select(source => source.Path));
+
+        // The look's executors, DESIGN §14.1 (O4-1): each is built from LoopContext, and none sits outside Loop's folder.
+        string[] executors =
+        [
+            "DriverContinuations", "DriverHandOvers", "DriverHelpers", "DriverPartners", "DriverIntakes",
+            "DriverBrainstorms", "DriverMeetings", "DriverOpinions", "OpinionDeliverer", "OpinionGateLook",
+        ];
+        Assert.Equal(10, executors.Length);
+        foreach (var executor in executors)
+        {
+            var file = sources.SingleOrDefault(source => source.Path == $"Loop/{executor}.cs");
+            Assert.True(file.Path is not null, $"{executor} is not in Loop/");
+            Assert.True(analysis.Edges.Any(edge => edge.File == file.Path && edge.Type == "LoopContext"), $"{executor} is not built from LoopContext");
+        }
+
+        var named = analysis.Edges.Where(edge => edge.Type == "LoopContext").Select(edge => edge.File).Distinct()
+            .Where(file => !file.StartsWith("Loop/", StringComparison.Ordinal)).ToList();
+        Assert.True(named.Count == 0, "LoopContext is named outside Loop by " + string.Join(", ", named));
+    }
+
     [Fact]
     public void Events_names_no_Help_room_type_for_the_attention_headline()
     {
