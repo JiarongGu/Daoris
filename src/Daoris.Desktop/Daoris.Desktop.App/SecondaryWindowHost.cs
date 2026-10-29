@@ -63,6 +63,12 @@ public sealed class SecondaryWindowHost(
         lock (_forms) return [.. _forms.Where(entry => SecondaryWindow.IsMain(entry.Key)).OrderBy(entry => entry.Key, StringComparer.Ordinal).Select(entry => (Form)entry.Value)];
     }
 
+    /// <summary>Every window open now, main or not, for the tray's reload (PAGELOOP1 c): any thread.</summary>
+    public IReadOnlyList<IReloadableWindow> Reloadable()
+    {
+        lock (_forms) return [.. _forms.OrderBy(entry => entry.Key, StringComparer.Ordinal).Select(entry => (IReloadableWindow)entry.Value)];
+    }
+
     /// <summary>The open window opened under <paramref name="name"/> (a picker's owner, MAINWINDOWS2c), or null: any thread.</summary>
     public Form? FormNamed(string name)
     {

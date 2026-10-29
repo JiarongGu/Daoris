@@ -22,9 +22,43 @@ namespace Daoris.Desktop;
 /// the buffer holds no cursor, so a reader is a position and not a registration). Its page's window
 /// commands act on this window, not the main one.</para>
 /// </remarks>
-public sealed class SecondaryForm : OptimizedForm
+public sealed class SecondaryForm : OptimizedForm, IReloadableWindow
 {
-    private readonly ChromiumView _view;
+    private ChromiumView _view;
+    private readonly ChromiumEngine _engine;
+    private readonly ILogger<ChromiumView> _viewLog;
+
+    /// <summary>Set once the browser failed to come up and a sentence stands in its place: nothing is left to reload (PAGELOOP1 c).</summary>
+    private bool _failed;
+
+    string IReloadableWindow.Name => WindowName;
+
+    /// <summary>
+    /// The tray's reload (PAGELOOP1 c, D217): the page this window shows is opened again, on this window's thread. The kit's browser
+    /// exposes no reload, so the view is made again on the same path (see <c>MainForm</c>'s).
+    /// </summary>
+    bool IReloadableWindow.ReloadPage()
+    {
+        if (_failed || IsDisposed || !IsHandleCreated) return false;
+        try
+        {
+            BeginInvoke(() =>
+            {
+                if (IsDisposed || _failed) return;
+                var old = _view;
+                var fresh = _view = new ChromiumView(_engine, _viewLog) { Dock = DockStyle.Fill, Path = old.Path };
+                Controls.Remove(old);
+                old.Dispose();
+                Controls.Add(fresh);
+            });
+            return true;
+        }
+        catch (InvalidOperationException)
+        {
+            // The handle went between the look and the post.
+            return false;
+        }
+    }
     private readonly Microsoft.Win32.UserPreferenceChangedEventHandler _themeChanged;
     private readonly Func<bool> _startsDark;
     private readonly bool _main;
@@ -100,6 +134,8 @@ public sealed class SecondaryForm : OptimizedForm
         // The same bytes the main window shows, with one query parameter saying which window this is —
         // a route into one bundle, never a second frontend (D38's one UI). Its browser opens as the
         // view's handle is created, on this window's own thread.
+        _engine = engine;
+        _viewLog = log;
         _view = new ChromiumView(engine, log) { Dock = DockStyle.Fill, Path = page };
         Controls.Add(_view);
 
@@ -270,6 +306,7 @@ public sealed class SecondaryForm : OptimizedForm
             // Never a silent dark window. This one is a utility, so the failure is a sentence in it
             // rather than a dialog: closing it is the whole recovery, and the main window is
             // unaffected either way.
+            _failed = true;
             Controls.Add(new Label
             {
                 Dock = DockStyle.Fill,

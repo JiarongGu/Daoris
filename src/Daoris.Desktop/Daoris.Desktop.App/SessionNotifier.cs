@@ -75,7 +75,7 @@ public sealed class SessionNotifier : IDisposable
     /// </param>
     public SessionNotifier(
         Form window, IEventBus events, Action? takingBack = null, Func<string?, string?, string>? picking = null, BringForward? forwarding = null,
-        NoticeWords? words = null)
+        NoticeWords? words = null, PageReloads? reloading = null)
     {
         _window = window;
         _takingBack = takingBack;
@@ -95,6 +95,19 @@ public sealed class SessionNotifier : IDisposable
         // put away (MAINWINDOWS2). A balloon's click opens the main window holding what it is about (NOTIFY2c).
         _icon.DoubleClick += (_, _) => Show(null);
         _icon.BalloonTipClicked += (_, _) => Open(_about, _aboutQuest);
+
+        // PAGELOOP1 (c, D217): the one surface outside the page that a blank window leaves. The browser's own reload of every open
+        // window's page; the host, the driver, the service and every session keep running. Worded as the balloons are, in the words
+        // a main window's page last handed (English before one has), asked each time the menu opens so a change of language shows.
+        if (reloading is not null)
+        {
+            var menu = new ContextMenuStrip();
+            var reload = new ToolStripMenuItem(SessionBalloon.ReloadPageWord(_words?.Now));
+            reload.Click += (_, _) => reloading.Reload();
+            menu.Items.Add(reload);
+            menu.Opening += (_, _) => reload.Text = SessionBalloon.ReloadPageWord(_words?.Now);
+            _icon.ContextMenuStrip = menu;
+        }
 
         _subscription = events.Subscribe("DAORIS", "SESSION_ATTENTION", message =>
         {
@@ -261,6 +274,7 @@ public sealed class SessionNotifier : IDisposable
         _fold.Dispose();
         // Hide before releasing, or the shell keeps a ghost icon until somebody hovers over it.
         _icon.Visible = false;
+        _icon.ContextMenuStrip?.Dispose();
         _icon.Dispose();
     }
 }
