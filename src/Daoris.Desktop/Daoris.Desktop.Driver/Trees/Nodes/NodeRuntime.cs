@@ -1,31 +1,5 @@
 namespace Daoris.Driver;
 
-/// <summary>
-/// What the evaluation runtime asks of the plugins' work processes (FABRIC-RUN1): the performer's fenced calls, and the supervision's two
-/// halves, the awaited set told (<see cref="HookSet.Watch"/>) and the completions heard (<see cref="HookSet.TakeSteps"/>). A port, so the
-/// runtime is proved without a process.
-/// </summary>
-public interface IWorkRuntimePort : IWorkPerformPort
-{
-    void Watch(IReadOnlyDictionary<string, IReadOnlyList<WatchedUnit>> awaited);
-
-    IReadOnlyList<WorkStepHeard> TakeSteps();
-
-    /// <summary>
-    /// The last <c>work/watch</c> frame whose send to <paramref name="plugin"/>'s process of <paramref name="generation"/> completed
-    /// (FABRIC-PERFORM1i, §C4's third rule), or null where none did: what that process was actually told, never the set desired since.
-    /// </summary>
-    WorkWatchFrame? SentTo(string plugin, int generation) => null;
-
-    /// <summary>
-    /// The plugins owed a receipt's cleanup (FABRIC-PERFORM1d, <see cref="HookSet.Owe"/>), whole: their process is kept up though no unit
-    /// awaits their steps, since only it answers <c>work/cleanup</c>.
-    /// </summary>
-    void Owe(IReadOnlySet<string> plugins)
-    {
-    }
-}
-
 /// <summary>The units a pass reads (<see cref="WorkUnits"/>), and each repository's checkout here, which the awaited set names.</summary>
 public sealed record NodeUnitsRead(IReadOnlyList<WorkUnit> Units, IReadOnlyDictionary<string, string> Roots)
 {

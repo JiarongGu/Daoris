@@ -1038,6 +1038,10 @@
     "Workflows/WorkflowStore.cs": "Workflows",
     "Workflows/WorkflowObligations.cs": "Workflows",
     "Workflows/WorkOrdersWorkflowsWiring.cs": "Workflows",
+    "Workflows/PluginStepRulesWiring.cs": "Workflows",
+    "Plugins/Domain/NodeDeclaration.cs": "Plugins",
+    "Plugins/PluginStepRules.cs": "Plugins",
+    "Plugins/WorkRuntimePorts.cs": "Plugins",
     "Workflows/WorkflowVerb.cs": "Workflows"
   },
   "edges": [
@@ -1054,18 +1058,6 @@
         "Review/OpinionPresses.cs": ["ChatRuns","WorkflowProcesses","WorkflowRunBindings"],
         "Sessions/Heavy/LongCalls.cs": ["WorkflowProcess"],
         "Sessions/Heavy/SessionChecks.cs": ["WorkflowKinds","WorkflowProcess"]
-      }
-    },
-    {
-      "family": "Plugins names Workflows",
-      "after": "Plugins",
-      "files": {
-        "Plugins/Domain/PluginManifest.cs": ["NodeDeclaration"],
-        "Plugins/Domain/PluginPageRead.cs": ["NodeDeclaration"],
-        "Plugins/Domain/PluginSteps.cs": ["NodeDeclaration","NodeDeclarations","NodePerform","NodeReach","NodeRetry"],
-        "Plugins/Hooks.cs": ["IWorkRuntimePort"],
-        "Plugins/PluginCycles.cs": ["NodeDeclaration","NodeReach"],
-        "Plugins/PluginTrials.cs": ["NodeReach"]
       }
     },
     {
