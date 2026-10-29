@@ -5,8 +5,9 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// The course's move record in the desktop store (FOUNDATION1f-i part 1, D212; the foundation design §3.3, §13.3's family <i>The course</i>,
-/// §13.4, §19.1): every move's one durable row in <c>moves</c>, its words in transfer in <c>move_words</c>. Read by nothing yet: rows f-ii to
-/// f-vi, h and i adopt it, and until then the one production path that reaches it is the delete of a record, which takes its moves.
+/// §13.4, §19.1): every move's one durable row in <c>moves</c>, its words in transfer in <c>move_words</c>. Rows f-ii to f-vi, h and i adopt
+/// it: the delete of a record takes its moves, and since FOUNDATION1f-ii part a the live limit move keeps its record here through
+/// <see cref="ConversationMoves"/>.
 /// </summary>
 /// <remarks>
 /// <para><b>One standing move per record left.</b> The partial unique index <c>moves_standing</c> holds the rows not <c>delivered</c>,

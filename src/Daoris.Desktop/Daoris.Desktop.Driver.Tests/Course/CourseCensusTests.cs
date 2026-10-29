@@ -159,6 +159,35 @@ public sealed class CourseCensusTests
     }
 
     /// <summary>
+    /// FOUNDATION1f-ii part a (the foundation design §3.3): every move that keeps its move record is named in <c>records</c> with its member
+    /// and the row that adopted it, and none that does not: a source that decides a move through the conversations' holder
+    /// (<c>Moves.BeginAsync(</c>) is named, and each named member decides through it. The live limit move is the first; rows f-iii to f-vi
+    /// add theirs.
+    /// </summary>
+    [Fact]
+    public void Every_move_that_keeps_its_record_is_named_with_its_member()
+    {
+        var named = Table().GetProperty("records").EnumerateArray().ToList();
+        var deciding = ProductionFiles()
+            .Where(path => Regex.IsMatch(WithoutComments(File.ReadAllText(path)), @"\bMoves\.BeginAsync\("))
+            .Select(Relative).Order(StringComparer.Ordinal).ToList();
+        Assert.Equal(deciding, named.Select(record => record.GetProperty("file").GetString()!).Distinct().Order(StringComparer.Ordinal));
+        foreach (var record in named)
+        {
+            var source = WithoutComments(File.ReadAllText(Path.Combine(Root, record.GetProperty("file").GetString()!)));
+            var member = record.GetProperty("member").GetString()!;
+            var at = Regex.Match(source, @"\bTask(<[^>]+>)?\??\s+" + member + @"\(");
+            Assert.True(at.Success, $"{member} is not in {record.GetProperty("file").GetString()}");
+            var next = Regex.Match(source[(at.Index + at.Length)..], @"\n    (public|internal|private|protected)\s");
+            var body = source.Substring(at.Index, next.Success ? next.Index + at.Length : source.Length - at.Index);
+            Assert.Matches(@"\bMoves\.BeginAsync\(", body);
+            Assert.Matches(@"^f-(ii|iii|iv|v|vi)$", record.GetProperty("row").GetString()!);
+        }
+
+        Assert.Contains(named, record => record.GetProperty("member").GetString() == "MoveAsync" && record.GetProperty("row").GetString() == "f-ii");
+    }
+
+    /// <summary>
     /// Path M, SWITCHCTX1's carry, has no code: the census reserves it, and fails the day a source writes a carried move, so the path is
     /// placed at its site then.
     /// </summary>

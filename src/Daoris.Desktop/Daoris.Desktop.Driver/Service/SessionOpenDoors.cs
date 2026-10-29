@@ -28,7 +28,17 @@ public sealed record DestinationOpen(string? SessionId, string Message, string? 
 /// the open's own <c>from</c> or a start's source where it names none; <paramref name="Words"/>, the ids the course named; <paramref name="Read"/>,
 /// the ids it saw waiting there when it read, so the person's words kept since move too.
 /// </summary>
-public sealed record MoveWords(string From, IReadOnlyList<string> Words, IReadOnlyList<string> Read);
+public sealed record MoveWords(string From, IReadOnlyList<string> Words, IReadOnlyList<string> Read)
+{
+    /// <summary>
+    /// The key a chat's keyed open is sent under (FOUNDATION1f-ii part a): the move record's <c>opens</c>, written before the open, so a retried
+    /// open whose answer was lost reuses it; null for a key of the open's own (<see cref="ChatKey"/>).
+    /// </summary>
+    public string? Opens { get; init; }
+
+    /// <summary>A new key for a chat's keyed open.</summary>
+    public static string ChatKey() => "chat-move/" + Guid.NewGuid().ToString("N");
+}
 
 /// <summary>
 /// One word a keyed open moved: its id on the record it left (<paramref name="Word"/>) and on the destination (<paramref name="Id"/>, which a

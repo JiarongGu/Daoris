@@ -5,6 +5,7 @@ with the version and date at release.
 
 ## Unreleased
 
+- A conversation that goes on to a new part when its account reaches its limit now keeps a record of the move in the desktop's store. A Daoris that quits during such a move has it taken up when Daoris comes back, never sending a word twice, and a move that stays stuck for ten minutes is said once on the conversation (FOUNDATION1f-ii).
 - An agent you pin for one workspace, with no install or pin for the whole machine, now starts on that pin in that workspace, where before every start of it was refused as not installed (WSPINONLY1).
 - A quest whose session ran on a later choice of Build's order, and stopped short, now goes on with that same choice: the same agent, model and effort, where before the session that carried it on started on the machine's first agent with the earlier session's model. Your words to such a session go on in its own conversation, the new session says the choice it runs as, and where that agent's accounts are cooling it waits for their reset. A brainstorm about a repository now runs each agent at the version that repository's workspace pins (FOUNDATION1j part ii, D212).
 
