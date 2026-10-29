@@ -194,7 +194,7 @@ public static class IntegrationAfterLanding
     private static async Task<IReadOnlyList<DiffHunk>?> HunksAsync(string root, string from, string to, string file, CancellationToken ct)
     {
         var (code, output, _) = await WorkingTree.GitAsync(
-            root, ["-c", "core.quotePath=false", "diff", "-U0", "--no-color", "--no-ext-diff", "--no-renames", "--no-textconv", from, to, "--", file], ct)
+            root, ["--no-optional-locks", "-c", "core.quotePath=false", "diff", "-U0", "--no-color", "--no-ext-diff", "--no-renames", "--no-textconv", from, to, "--", file], ct)
             .ConfigureAwait(false);
         if (code != 0) return null;
         var lines = output.Split('\n');
