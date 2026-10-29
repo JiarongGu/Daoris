@@ -321,6 +321,151 @@ public sealed class ContentProofLossTests : LandedFixture
         Assert.True(File.Exists(Path.Combine(tree.Path, "local.db")));
     }
 
+    // ---- (4b) TIDYOUTPUT1: a tree whose only extras are build and check output is tidied ----
+
+    private const string DeclaresOutput = """{ "integration": { "scratch": ["devtools/_test-results/**", "devtools/_e2e-*-data/**"] } }""";
+
+    private static async Task WriteLateAsync(string path, string content = "output\n")
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        await File.WriteAllTextAsync(path, content);
+        File.SetLastWriteTimeUtc(path, DateTime.UtcNow.AddMinutes(1));
+    }
+
+    /// <summary>
+    /// TIDYOUTPUT1: a tree holding only what its repository declares as output (a folder the checkout does not have, a folder it
+    /// has) and a build's <c>bin</c> and <c>obj</c> (a project the checkout never built) is tidied with the landing, unforced.
+    /// </summary>
+    [Fact]
+    public async Task A_tree_holding_only_declared_output_and_a_builds_folders_is_tidied()
+    {
+        var root = await RepositoryAsync("engine");
+        await CommitAsync(root, ".gitignore", "devtools/_*\nbin/\nobj/\n", "ignore output");
+        await CommitAsync(root, "daoris.gates.json", DeclaresOutput, "declare the output");
+        Directory.CreateDirectory(Path.Combine(root, "devtools", "_e2e-p1-data"));
+        await File.WriteAllTextAsync(Path.Combine(root, "devtools", "_e2e-p1-data", "old.db"), "the checkout's run\n");
+        var trees = new SessionTrees(Home);
+        var tree = await trees.OpenAsync(root, "engine", "aurora");
+        await CommitAsync(tree.Path, "work.txt", "the work\n", "the work");
+        await SquashAsync(root, tree.Branch);
+        await WriteLateAsync(Path.Combine(tree.Path, "devtools", "_test-results", "run.xml"));
+        await WriteLateAsync(Path.Combine(tree.Path, "devtools", "_e2e-p1-data", "lyntai.db"));
+        await WriteLateAsync(Path.Combine(tree.Path, "samples", "bin", "Debug", "Samples.dll"));
+        await WriteLateAsync(Path.Combine(tree.Path, "samples", "obj", "project.assets.json"));
+
+        var removal = await trees.RemoveAsync(tree.Path);
+
+        Assert.True(removal.Removed, removal.Message);
+        Assert.False(Directory.Exists(tree.Path));
+    }
+
+    /// <summary>
+    /// TIDYOUTPUT1: <c>bin</c> and <c>obj</c> inside an ignored folder that is no build's go with the tree as they do at its top: the
+    /// folder is read file by file, and a build's folder in it is not the session's own.
+    /// </summary>
+    [Fact]
+    public async Task A_builds_folders_inside_an_ignored_folder_the_checkout_holds_go_with_the_tree()
+    {
+        var root = await RepositoryAsync("engine");
+        await CommitAsync(root, ".gitignore", "devtools/_samples/\n", "ignore the samples");
+        Directory.CreateDirectory(Path.Combine(root, "devtools", "_samples"));
+        await File.WriteAllTextAsync(Path.Combine(root, "devtools", "_samples", "Samples.csproj"), "the checkout's project\n");
+        var trees = new SessionTrees(Home);
+        var tree = await trees.OpenAsync(root, "engine", "aurora");
+        await CommitAsync(tree.Path, "work.txt", "the work\n", "the work");
+        await SquashAsync(root, tree.Branch);
+        await WriteLateAsync(Path.Combine(tree.Path, "devtools", "_samples", "bin", "Debug", "Samples.dll"));
+        await WriteLateAsync(Path.Combine(tree.Path, "devtools", "_samples", "obj", "Samples.csproj.nuget.g.props"));
+
+        var removal = await trees.RemoveAsync(tree.Path);
+
+        Assert.True(removal.Removed, removal.Message);
+        Assert.False(Directory.Exists(tree.Path));
+    }
+
+    /// <summary>
+    /// TIDYOUTPUT1: beside declared output and a build's folders, an ignored file the repository declared nothing about, written
+    /// after the tree opened, keeps the tree, and the words name that file, not the output.
+    /// </summary>
+    [Fact]
+    public async Task An_undeclared_ignored_file_written_beside_declared_output_keeps_the_tree_named()
+    {
+        var root = await RepositoryAsync("engine");
+        await CommitAsync(root, ".gitignore", "devtools/_*\nbin/\nobj/\n", "ignore output");
+        await CommitAsync(root, "daoris.gates.json", DeclaresOutput, "declare the output");
+        Directory.CreateDirectory(Path.Combine(root, "devtools", "_extra"));
+        await File.WriteAllTextAsync(Path.Combine(root, "devtools", "_extra", "checkout.txt"), "the checkout's own\n");
+        var trees = new SessionTrees(Home);
+        var tree = await trees.OpenAsync(root, "engine", "aurora");
+        await CommitAsync(tree.Path, "work.txt", "the work\n", "the work");
+        await SquashAsync(root, tree.Branch);
+        await WriteLateAsync(Path.Combine(tree.Path, "devtools", "_test-results", "run.xml"));
+        await WriteLateAsync(Path.Combine(tree.Path, "samples", "bin", "Samples.dll"));
+        var export = Path.Combine(tree.Path, "devtools", "_extra", "export.csv");
+        await WriteLateAsync(export, "rows the session exported\n");
+
+        var removal = await trees.RemoveAsync(tree.Path);
+
+        Assert.False(removal.Removed, removal.Message);
+        Assert.Contains("devtools/_extra/export.csv", removal.Message);
+        Assert.Contains("1 file(s) written in the tree after it opened", removal.Message);
+        Assert.DoesNotContain("run.xml", removal.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain("Samples.dll", removal.Message, StringComparison.Ordinal);
+        Assert.True(File.Exists(export));
+    }
+
+    /// <summary>
+    /// TIDYOUTPUT1: a note a session wrote under <c>local/</c> is never removed, though the tree's other extras are output, and
+    /// though the repository declares output of its own.
+    /// </summary>
+    [Fact]
+    public async Task A_note_a_session_wrote_in_local_keeps_the_tree_whatever_the_output_beside_it()
+    {
+        var root = await RepositoryAsync("engine");
+        await CommitAsync(root, ".gitignore", "local/\ndevtools/_*\nbin/\nobj/\n", "ignore local and output");
+        await CommitAsync(root, "daoris.gates.json", DeclaresOutput, "declare the output");
+        Directory.CreateDirectory(Path.Combine(root, "local"));
+        await File.WriteAllTextAsync(Path.Combine(root, "local", "owner.md"), "the owner's note\n");
+        var trees = new SessionTrees(Home);
+        var tree = await trees.OpenAsync(root, "engine", "aurora");
+        await CommitAsync(tree.Path, "work.txt", "the work\n", "the work");
+        await SquashAsync(root, tree.Branch);
+        await WriteLateAsync(Path.Combine(tree.Path, "devtools", "_test-results", "run.xml"));
+        var note = Path.Combine(tree.Path, "local", "session-note.md");
+        await WriteLateAsync(note, "what the session learned\n");
+
+        var removal = await trees.RemoveAsync(tree.Path);
+
+        Assert.False(removal.Removed, removal.Message);
+        Assert.Contains("local/session-note.md", removal.Message);
+        Assert.True(File.Exists(note));
+    }
+
+    /// <summary>
+    /// TREELOCAL1 meets TIDYOUTPUT1: a read-only copy of a machine-local input, with the checkout's bytes and written after the tree
+    /// opened, is no work, so it does not keep the tree.
+    /// </summary>
+    [Fact]
+    public async Task A_read_only_copy_of_a_local_input_with_the_checkouts_bytes_does_not_keep_the_tree()
+    {
+        var root = await RepositoryAsync("engine");
+        await CommitAsync(root, ".gitignore", "local/\n", "ignore local");
+        Directory.CreateDirectory(Path.Combine(root, "local"));
+        await File.WriteAllTextAsync(Path.Combine(root, "local", "sensitive-patterns.txt"), "pattern\n");
+        var trees = new SessionTrees(Home);
+        var tree = await trees.OpenAsync(root, "engine", "aurora");
+        await CommitAsync(tree.Path, "work.txt", "the work\n", "the work");
+        await SquashAsync(root, tree.Branch);
+        var copy = Path.Combine(tree.Path, "local", "sensitive-patterns.txt");
+        await WriteLateAsync(copy, "pattern\n");
+        File.SetAttributes(copy, FileAttributes.ReadOnly);
+
+        var removal = await trees.RemoveAsync(tree.Path);
+
+        Assert.True(removal.Removed, removal.Message);
+        Assert.False(Directory.Exists(tree.Path));
+    }
+
     // ---- (5) what the final tree does not show: empty commits, history ----
 
     /// <summary>

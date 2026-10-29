@@ -105,6 +105,140 @@ public sealed class TreeScratchTests : IDisposable
         Assert.True(tooLarge);
     }
 
+    // ---- TIDYOUTPUT1: a repository's declared output, and a build's own folders ----
+
+    [Theory]
+    [InlineData("bin/", true)]
+    [InlineData("src/App/obj/Debug/", true)]
+    [InlineData("tools/node_modules/", true)]
+    [InlineData("devtools/_samples/bin/Debug/Samples.dll", true)]
+    [InlineData("dist/", false)]
+    [InlineData("out/", false)]
+    [InlineData("build/", false)]
+    [InlineData("local/", false)]
+    [InlineData("binary/", false)]
+    [InlineData("devtools/_exports/objects.csv", false)]
+    public void A_builds_own_folders_are_only_the_three_a_tool_names_itself(string path, bool made) =>
+        Assert.Equal(made, TreeScratch.UnderMadeFolder(path));
+
+    [Theory]
+    [InlineData("devtools/_test-results/", true)]
+    [InlineData("devtools/_test-results/run.xml", true)]
+    [InlineData("devtools/_e2e-p1-data/lyntai.db", true)]
+    [InlineData("devtools/_e2e-p2-data/", true)]
+    [InlineData("devtools/_samples/Samples.csproj", true)]
+    [InlineData("devtools/_e2e-data/", false)]
+    [InlineData("devtools/", false)]
+    [InlineData("devtools/_test-results-old/run.xml", false)]
+    [InlineData("local/note.md", false)]
+    [InlineData("DEVTOOLS/_TEST-RESULTS/run.xml", true)]
+    public void A_declared_glob_covers_a_path_or_a_folder_above_it(string path, bool covered)
+    {
+        var declared = TreeScratch.ParseDeclared(
+            """{ "integration": { "scratch": ["devtools/_test-results/**", "devtools/_e2e-*-data/**", "devtools/_samples/Samples.csproj"] } }""");
+
+        Assert.Equal(covered, TreeScratch.IsDeclared(declared, path));
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("not json")]
+    [InlineData("[]")]
+    [InlineData("""{ "integration": [] }""")]
+    [InlineData("""{ "integration": { "scratch": "local/**" } }""")]
+    [InlineData("""{ "integration": { "scratch": [1, null, "", "  "] } }""")]
+    [InlineData("""{ "scratch": ["devtools/**"] }""")]
+    public void A_declaration_that_is_absent_or_malformed_declares_nothing(string text) =>
+        Assert.Empty(TreeScratch.ParseDeclared(text));
+
+    [Theory]
+    [InlineData("**")]
+    [InlineData("**/*.db")]
+    [InlineData("*")]
+    [InlineData("../elsewhere/**")]
+    [InlineData("devtools/../../elsewhere/**")]
+    [InlineData("/devtools/**")]
+    [InlineData("C:/devtools/**")]
+    [InlineData("C:\\devtools")]
+    public void A_glob_that_reaches_every_folder_or_leaves_the_repository_is_passed_over(string glob) =>
+        Assert.Empty(TreeScratch.ParseDeclared($$"""{ "integration": { "scratch": ["{{glob.Replace("\\", "\\\\")}}"] } }"""));
+
+    [Fact]
+    public void The_declaration_is_read_from_the_checkouts_gates_file()
+    {
+        Assert.Empty(TreeScratch.Declared(Checkout));
+        Write(Checkout, "daoris.gates.json", DateTime.UtcNow, """{ "integration": { "scratch": ["out-data/**"] } }""");
+
+        Assert.True(TreeScratch.IsDeclared(TreeScratch.Declared(Checkout), "out-data/x.db"));
+    }
+
+    [Fact]
+    public void A_build_folder_and_a_declared_file_in_a_shared_folder_are_not_the_trees_own()
+    {
+        var opened = new DateTime(2026, 10, 1, 0, 0, 0, DateTimeKind.Utc);
+        Write(Tree, "devtools/_samples/bin/Debug/Samples.dll", opened.AddHours(1));
+        Write(Tree, "devtools/_samples/obj/project.assets.json", opened.AddHours(1));
+        Write(Tree, "devtools/_samples/Samples.csproj", opened.AddHours(1));
+        Write(Tree, "devtools/_samples/export.csv", opened.AddHours(1));
+        var declared = TreeScratch.ParseDeclared("""{ "integration": { "scratch": ["devtools/_samples/Samples.csproj"] } }""");
+
+        var found = TreeScratch.WrittenSince(Tree, Checkout, "devtools/_samples/", opened, out _, declared);
+
+        Assert.Equal(["devtools/_samples/export.csv"], found);
+    }
+
+    [Fact]
+    public void A_folder_the_checkout_lacks_holds_as_its_own_what_is_neither_declared_nor_a_builds()
+    {
+        var opened = new DateTime(2026, 10, 1, 0, 0, 0, DateTimeKind.Utc);
+        Write(Tree, "devtools/_run/bin/Debug/App.dll", opened.AddHours(1));
+        Write(Tree, "devtools/_run/results.xml", opened.AddHours(1));
+        Write(Tree, "devtools/_run/notes.md", opened.AddHours(-1));
+        var declared = TreeScratch.ParseDeclared("""{ "integration": { "scratch": ["devtools/_run/results.xml"] } }""");
+
+        var found = TreeScratch.OwnFilesIn(Tree, "devtools/_run/", declared, out var tooLarge);
+
+        Assert.False(tooLarge);
+        Assert.Equal(["devtools/_run/notes.md"], found);
+    }
+
+    [Fact]
+    public void A_folder_the_checkout_lacks_holds_nothing_of_its_own_where_all_of_it_is_output()
+    {
+        var opened = new DateTime(2026, 10, 1, 0, 0, 0, DateTimeKind.Utc);
+        Write(Tree, "src/App/obj/a.json", opened.AddHours(1));
+        Write(Tree, "src/App/bin/a.dll", opened.AddHours(1));
+
+        Assert.Empty(TreeScratch.OwnFilesIn(Tree, "src/App/", [], out var tooLarge));
+        Assert.False(tooLarge);
+    }
+
+    [Fact]
+    public void A_wide_folder_the_checkout_lacks_is_too_large_to_look_through()
+    {
+        var folder = Path.Combine(Tree, "wide");
+        Directory.CreateDirectory(folder);
+        for (var n = 0; n <= TreeScratch.ScratchWalkLimit; n++) File.WriteAllBytes(Path.Combine(folder, $"f{n}"), []);
+
+        TreeScratch.OwnFilesIn(Tree, "wide/", [], out var tooLarge);
+
+        Assert.True(tooLarge);
+    }
+
+    [Fact]
+    public void A_read_only_copy_with_the_checkouts_bytes_is_not_the_trees_own()
+    {
+        var opened = new DateTime(2026, 10, 1, 0, 0, 0, DateTimeKind.Utc);
+        Write(Checkout, "local/sensitive-patterns.txt", opened.AddDays(-9), "pattern\n");
+        Write(Tree, "local/sensitive-patterns.txt", opened.AddHours(1), "pattern\n");
+        File.SetAttributes(Path.Combine(Tree, "local", "sensitive-patterns.txt"), FileAttributes.ReadOnly);
+        Write(Tree, "local/note.md", opened.AddHours(1), "a session's note\n");
+
+        var found = TreeScratch.WrittenSince(Tree, Checkout, "local/", opened, out _);
+
+        Assert.Equal(["local/note.md"], found);
+    }
+
     [Fact]
     public void The_refusal_names_up_to_three_written_files_and_says_where_they_are_not()
     {
