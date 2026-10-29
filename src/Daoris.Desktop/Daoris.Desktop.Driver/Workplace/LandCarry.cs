@@ -18,7 +18,7 @@ public sealed record CarryAnswer(bool Told, string Why, string Sentence);
 public static class LandCarry
 {
     /// <summary>How many times one Accept carries a session on: the press's words, and one more where its turn ends still dirty or conflicted.</summary>
-    public const int Bound = 2;
+    public const int Bound = TurnCarry.Bound;
 
     public const string Uncommitted = "uncommitted";
 
@@ -42,9 +42,16 @@ public static class LandCarry
 
     /// <summary>The words that ask a session to clean its tree: commit by its repository's conventions, or restore what is not wanted and say which.</summary>
     public static string DirtyWords(int paths) =>
-        $"Your work is accepted, and it lands once your tree is clean. Your tree has {paths} uncommitted path(s). Commit them on the tree's "
-        + "branch by this repository's conventions, or restore the ones you do not want and say which. Do not create, switch or push "
-        + "branches: Daoris lands your branch once the tree is clean.";
+        $"Your work is accepted, and it lands once your tree is clean. Your tree has {paths} uncommitted path(s). {CommitWords}: Daoris "
+        + "lands your branch once the tree is clean.";
+
+    /// <summary>
+    /// What a carry-on asks of a dirty tree, shared by an Accept's words and a done quest's (<see cref="TurnCarries.WordsOf"/>, part 2):
+    /// commit by the repository's conventions or restore what is not wanted, and make no branch of its own.
+    /// </summary>
+    public const string CommitWords =
+        "Commit them on the tree's branch by this repository's conventions, or restore the ones you do not want and say which. "
+        + "Do not create, switch or push branches";
 
     /// <summary>The words for a carry-on: a conflict's are the rebase words (LANDREBASE1), a dirty tree's <see cref="DirtyWords"/>.</summary>
     public static string WordsOf(string why, LandingConflict? conflict, int paths) =>

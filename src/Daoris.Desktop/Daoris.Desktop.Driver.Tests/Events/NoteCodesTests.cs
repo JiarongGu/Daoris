@@ -541,6 +541,23 @@ public sealed class BackgroundNotesTests
         NoteAssert.Holds(closed);
     }
 
+    /// <summary>LANDBACK1 part 2: a done quest's tree left uncommitted is carried on, and the bound says when it stops.</summary>
+    [Fact]
+    public void A_done_quest_with_uncommitted_work_is_carried_on_and_the_bound_is_said()
+    {
+        var carried = BackgroundNotes.CarriedOn(3);
+        Assert.StartsWith("— its quest is done, but its tree holds uncommitted work (paths: 3)", carried.Note, StringComparison.Ordinal);
+        var part = Assert.Single(carried.Parts);
+        Assert.Equal("background.carried-on", part.Code);
+        Assert.Equal(3, part.Value("paths"));
+        NoteAssert.Holds(carried);
+
+        var bound = BackgroundNotes.CarryBound();
+        Assert.StartsWith("— its session was carried on twice", bound.Note, StringComparison.Ordinal);
+        Assert.Equal("background.carry-bound", Assert.Single(bound.Parts).Code);
+        NoteAssert.Holds(bound);
+    }
+
     [Fact]
     public void Unread_leaves_the_programs_words_as_theirs()
     {

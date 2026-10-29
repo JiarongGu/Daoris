@@ -185,7 +185,14 @@ session whose tree holds uncommitted work, or whose replay conflicts, does not r
 session in Daoris's own words through the say door, never the person's and no card, and keeps the person's yes on it (`CarriedAccepts`,
 `sessions/carried-accepts.json`); the auto lander's look lands it by the rule's form once the carry-on's turn ends with the tree clean, carries
 it on once more where it is still not clean, and at the next such end says so (`landing.carry-bound`) and takes the yes back. `trees land
---entry` and `--ask` do not carry on. The terminal's land press tells its note
+--entry` and `--ask` do not carry on. A driven turn on the protocol door that ends with its quest done (or submitted) and its tree
+uncommitted is not the session's end either (LANDBACK1 part 2): `AcpSession.CarriesOn`, built by `Driver.CarriesOn` for a start and a resumed
+run, reads the quest and the tree (`TurnCarries`, `AutoLander.ReadTreeAsync`), the run waits for the session's own background work as a park
+would, and then sends Daoris's own prompt (`TurnCarries.WordsOf`, no key, no say door, no card, and no `CarriedAccepts` entry) to commit by the
+repository's conventions or restore what is not wanted. Two carry-ons a run (`TurnCarry.Bound`, one number with `LandCarry.Bound`), then
+`background.carry-bound` and the session concludes as before, completed with its tree dirty. A stopped session, a parked quest, an
+ask-and-wait, a stand-down and a failed exit are never carried on, and a resumed run on a quest closed as planned is not looked at (part 3's).
+The terminal's land press tells its note
 through `IWorkplacePressTelling`, and history clearing reads and clears handed quests through `IWorkplaceHandedQuests`;
 Course installs both from `Course/Requests/WorkplacePressTellingWiring.cs` and
 `Course/HandOver/WorkplaceHandedQuestsWiring.cs`. `SessionHomeFiles` owns the go-on, reopen, new-session,
