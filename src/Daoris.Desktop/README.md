@@ -69,6 +69,8 @@ Plugins names nothing above it: no Workflows type. The node vocabulary a manifes
 
 The driver's `Setup/` owns the set-up of a repository and of a workspace (FOUNDATION1 mod-xix, D212): the set-up press, its plan, order and brief and the description's forms (`Domain/`, pure), the use cases `SetupPress`, `WorkspaceSetup` and their three commands, the two worlds and the ports they are written against (`SetupPorts`), the plan's file, the description's files (`SelfDescriptionFiles`) and the wiring Setup installs for Work orders (`WorkOrdersSetupWiring`). Every one of its nineteen files already sat there; the move marks the subdomain moved and mirrors its tests under `Driver.Tests/Setup/` (none outside it has a Setup file for its subject). Namespaces remain `Daoris.Driver`.
 
+The driver's `Help/` owns Ask Daoris (FOUNDATION1 mod-xx, D212): its room (`HelpRoom`, `HelpRoomScope`, `HelpRoomDescriptions`), its access mode and the swap of it under a running conversation (`HelpMode`, `HelpSwap`), the judges of its housekeeping and chosen settings (`HelpHousekeeping`, `HelpSettings`) and of its proposals (`HelpProposals`, `HelpProposalKinds`, `HelpProposalScope` and the kinds' files in `Proposals/`), what a start handed its agent (`HelpWired`), what an Apply published (`HelpPublished`), the `help` verb (`HelpCommand`), the home topic (`HelpHomeTopic`) and the wiring Help installs for Course and Knowledge (`CourseHelpWiring`, `KnowledgeHelpReads`). It keeps its judges and every grant exactly as they read; the move changes none. All its thirty-three files already sat there; the move marks the subdomain moved and mirrors its tests under `Driver.Tests/Help/`, to which `HelpChatTests`, `HelpCommandTests` and `HelpGoOnTests` came from the tests' top. The room's section tests and goldens, the checkouts', circle's and facts' tests, and the port tests Knowledge's cut gave are Knowledge's (`Driver.Tests/Knowledge/`, the structure map's test list), as `HelpGrantsTests` is Plugins' and `HelpModeNamesTests` Settings'. Namespaces remain `Daoris.Driver`.
+
 Context names no Course, Review or Work orders type. The brief says the outgoing agent's note by `Context/Domain/OutgoingNote.cs`
 (`HandOverNote.Said`, `Absent` and `Limit` answer through it), tells a channel's claim by `ContextBrief.ChannelClaimOpening` (which
 `ChannelText.ClaimOpening` is), knows Daoris's words by `SaidFrom.Daoris`, finds a part's attachments through
@@ -1030,7 +1032,7 @@ prunes afterwards — newest 25, at most 150 MB — because a full-resolution PN
 capture folder nobody measures grows until somebody does.
 
 **Regenerating Ask Daoris's room goldens (GOLDEN1, 2026-10-12).** `HelpRoomGoldenTests` compares the room's render
-with `Daoris.Desktop.Driver.Tests/Help/golden/help-room/`. After a deliberate change to the room, run
+with `Daoris.Desktop.Driver.Tests/Knowledge/golden/help-room/`. After a deliberate change to the room, run
 `DAORIS_GOLDEN_WRITE=1 dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --filter "FullyQualifiedName~HelpRoomGoldenTests"`
 (PowerShell: set `$env:DAORIS_GOLDEN_WRITE = '1'` first) and read `git diff` on that folder: the switch writes
 `empty.md`, `full.md`, `sparse.md` and `settings.json` from the render and passes. Unset, as in every gate, the

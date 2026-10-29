@@ -19,7 +19,7 @@
     { "name": "Plugins", "folder": "Plugins", "domain": true, "moved": true },
     { "name": "Workflows", "folder": "Workflows", "domain": true },
     { "name": "Setup", "folder": "Setup", "domain": true, "moved": true },
-    { "name": "Help", "folder": "Help", "domain": false },
+    { "name": "Help", "folder": "Help", "domain": false, "moved": true },
     { "name": "Loop", "folder": "Loop", "domain": false }
   ],
   "seams": ["ServiceClient","SessionProcesses","HarnessRoster","DaorisHome","MachineLog","WorkingTree","DesktopStore"],
@@ -1087,7 +1087,7 @@
     { "file": "Platform/SystemWiring.cs", "member": "SystemWiring.SameAddress", "after": "Loop" },
     { "file": "Platform/WiringVariables.cs", "member": "WiringVariables.Searched", "after": "Loop" }
   ],
-  "testFolders": ["Conversations","Help","Loop","Plugins","Quests","Service","Sessions","Trees","Workflows"],
+  "testFolders": ["Conversations","Loop","Plugins","Quests","Service","Sessions","Trees","Workflows"],
   "tests": {
     "WorkplaceCourseBoundaryTests.cs": "Workplace",
     "WorkplaceCoursePortsTests.cs": "Workplace",
