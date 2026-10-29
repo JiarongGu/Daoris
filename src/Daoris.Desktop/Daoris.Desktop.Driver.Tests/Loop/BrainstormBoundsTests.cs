@@ -239,9 +239,10 @@ public sealed class BrainstormBoundsTests : IDisposable
     [Fact]
     public async Task The_request_s_deadline_stops_a_generator_with_the_synthesis_s_and_the_challenge_s_minutes_reserved()
     {
-        // The generators' second (32 less the 20 and 2 reserved) ends before the pass's own five; the synthesis's reserve is two
-        // seconds, not the 200 ms that a loaded merge's driver gate outran (2026-10-19).
-        var (driver, script) = Start(rule: Rule(pass: 50, synthesis: 20, challenge: 2, request: 32));
+        // The generators' 2.8 seconds (230 less the 200 and 2 reserved) end before the pass's own five; the synthesis's reserve is
+        // twenty seconds, not the two a loaded queue's driver gate outran (candidate 7da959c, 2026-10-29) nor the 200 ms before that
+        // (2026-10-19), and the synthesis answers at once, so the case still ends in about three seconds.
+        var (driver, script) = Start(rule: Rule(pass: 50, synthesis: 200, challenge: 2, request: 230));
         var id = await SentAsync(driver, "stub", "acp-stub");
         script.Answers["g1"] = Give("Make the window inclusive");
         script.Behaviours["g2"] = Hang;
