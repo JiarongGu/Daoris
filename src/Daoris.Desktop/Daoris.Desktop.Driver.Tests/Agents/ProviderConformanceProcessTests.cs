@@ -10,9 +10,10 @@ namespace Daoris.Desktop.Driver.Tests;
 /// live case of §10 is held pending in the stand-in's own <c>pending.json</c> with its row.
 /// </summary>
 /// <remarks>
-/// Until part 3 lays each stand-in's program out in its folder, the program a case runs is a scenario the case writes into its scratch,
-/// answering as the rehearsals' stand-in programs answer; nothing here names a stand-in by its id. No model, no account, no variable of the
-/// process's environment set. Each class's scratch is under <c>_fixtures/</c>.
+/// The program a case runs is the stand-in's own (part 3): its folder's <c>Program/</c> entry, which the driver project's glob carries into
+/// this test's build output, each door chosen by the arguments its <c>provider.json</c> states and each case by the scenario contract's
+/// name; nothing here names a stand-in by its id. No model, no account, no variable of the process's environment set. Each class's
+/// scratch is under <c>_fixtures/</c>.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
 public sealed class ProviderConformanceProcessTests(ITestOutputHelper output) : IDisposable
