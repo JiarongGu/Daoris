@@ -253,25 +253,7 @@ public static class PluginTrials
                     .ConfigureAwait(false);
             }
 
-            // Told to go, and given what the driver gives; a process already gone is not told.
-            await peer.DisposeAsync().ConfigureAwait(false);
-            if (alive && !process.HasExited)
-            {
-                if (await process.ExitedAsync(HookProcess.Grace).ConfigureAwait(false))
-                {
-                    steps.Add(new("shutdown", true, $"left when told (exit {process.ExitCode})."));
-                }
-                else
-                {
-                    process.Kill();
-                    steps.Add(new("shutdown", false,
-                        $"did not leave within {HookProcess.Grace.TotalSeconds:0}s of `shutdown`, so it was ended here, as the driver ends a plugin that stays."));
-                }
-            }
-            else if (!process.HasExited)
-            {
-                process.Kill();
-            }
+            await EndAsync(alive, process, () => peer.DisposeAsync().AsTask(), HookProcess.Grace, steps).ConfigureAwait(false);
 
             var heard = Snapshot(noise);
             if (shook || heard.Count > 0)
@@ -289,6 +271,34 @@ public static class PluginTrials
         }
 
         return Trial();
+    }
+
+    /// <summary>
+    /// Told to go, and given what the driver gives; a process that died during a step (<paramref name="alive"/> false) is not told.
+    /// A plugin alive after its last step always gets its <c>shutdown</c> step (PLUGINSHUTDOWN1): the process may leave the instant
+    /// it is told, so whether it has exited by the time this looks says nothing about whether it was told.
+    /// </summary>
+    internal static async Task EndAsync(bool alive, PluginTrialProcess process, Func<Task> tell, TimeSpan grace, List<TrialStep> steps)
+    {
+        await tell().ConfigureAwait(false);
+        if (alive)
+        {
+            // ExitedAsync answers true at once for a process already gone.
+            if (await process.ExitedAsync(grace).ConfigureAwait(false))
+            {
+                steps.Add(new("shutdown", true, $"left when told (exit {process.ExitCode})."));
+            }
+            else
+            {
+                process.Kill();
+                steps.Add(new("shutdown", false,
+                    $"did not leave within {grace.TotalSeconds:0}s of `shutdown`, so it was ended here, as the driver ends a plugin that stays."));
+            }
+        }
+        else if (!process.HasExited)
+        {
+            process.Kill();
+        }
     }
 
     /// <summary>
