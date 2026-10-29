@@ -3192,13 +3192,18 @@ public sealed class AcpSession(
         var request = id.ValueKind == JsonValueKind.String ? id.GetString() ?? "" : id.GetRawText();
         // The registry keeps the agent's own title and kind, plain, for the page to word; the notes say it as a reader knows it.
         var plain = call is { } p && Json.Text(p, "title")?.Trim() is { Length: > 0 } written ? TextBounds.Clip(written, 160) : null;
-        if (holds.Hold(request, callId, plain, offered, call is { } k ? Json.Text(k, "kind") : null) is not { } held) return false;
+        // RUNENDS1: a turn waiting on the person is never silent, and its quiet counts from the answer (AnsweredAsync). The wake knows of
+        // the hold before the hold can be seen, or answered, anywhere: a quiet judged between the two read a held turn as silent.
+        _wake.Held();
+        if (holds.Hold(request, callId, plain, offered, call is { } k ? Json.Text(k, "kind") : null) is not { } held)
+        {
+            _wake.Released();
+            return false;
+        }
 
         var raw = call is { } shown ? Compact(shown) : "a tool call";
         Said($"  permission held for the person's answer: {raw}",
             Noted.Of(NoteCodes.AskingHeld, "permission held for the person's answer:").Then(" ", Noted.Said(title, NoteBy.Agent)), callId);
-        // RUNENDS1: a turn waiting on the person is never silent; its quiet counts from the answer (AnsweredAsync).
-        _wake.Held();
         var answering = AnsweredAsync(id, raw, callId, title, held, holds.Bound);
         lock (_answering)
         {
@@ -3243,16 +3248,20 @@ public sealed class AcpSession(
     /// </summary>
     private async Task AnsweredAsync(JsonElement id, string raw, string? callId, string title, Task<PermissionEnd> held, TimeSpan bound)
     {
-        PermissionEnd end;
         try
         {
-            end = await held.ConfigureAwait(false);
+            await AnswerAsync(id, raw, callId, title, await held.ConfigureAwait(false), bound).ConfigureAwait(false);
         }
         finally
         {
+            // RUNENDS1: the hold is over once its answer is said and sent, and the turn's quiet counts from then, after the record says it.
             _wake.Released();
         }
+    }
 
+    /// <summary><see cref="AnsweredAsync"/>'s answer, said and sent once the hold has ended as <paramref name="end"/>.</summary>
+    private async Task AnswerAsync(JsonElement id, string raw, string? callId, string title, PermissionEnd end, TimeSpan bound)
+    {
         JsonObject outcome;
         try
         {
