@@ -196,7 +196,11 @@ public sealed class DriverConfigKeepsTests
     {
         string? Text(string field) => rule.TryGetProperty(field, out var value) ? value.GetString() : null;
         bool On(string field) => rule.TryGetProperty(field, out var value) && value.ValueKind == JsonValueKind.True;
-        return new LandingRule(Text("form")!, Text("pattern"), Tidy: On("tidy"), Plugin: Text("plugin"), AutoAccept: On("autoAccept"), Key: Text("key"), Squash: On("squash"));
+        return new LandingRule(Text("form")!, Text("pattern"), Tidy: On("tidy"), Plugin: Text("plugin"), AutoAccept: On("autoAccept"), Key: Text("key"), Squash: On("squash"))
+        {
+            // INTEGRATE1d: a rule's `integrate`, read as the file's is.
+            Integrate = rule.TryGetProperty("integrate", out var integrate) ? LandingKey.IntegrateOf(integrate, out _) : null,
+        };
     }
 
     private static readonly JsonDocument Table =
