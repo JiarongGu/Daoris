@@ -636,7 +636,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
         var opened = await Opens
             .OpenAsync(
                 "/api/sessions/chat", ChatOpenBody(repository, adapter, harnessVersion, profile, tree, baseCommit, from),
-                "chat-move/" + Guid.NewGuid().ToString("N"), moves.From, ct: ct, moves: moves)
+                moves.Opens ?? MoveWords.ChatKey(), moves.From, ct: ct, moves: moves)
             .ConfigureAwait(false);
         if (opened.SessionId is { } id) Raise(Opened, new SessionOpened(id, SessionOpened.Chat, adapter, repository) { Workspace = workspace });
         return opened;
