@@ -23,10 +23,13 @@ const tool = await import(
   machineAdmission: (env: Record<string, string>) => HeavyAdmission | null;
   takesAPlace: (gate: { name: string; run: string; memoryGb?: number }) => boolean;
 };
+interface WholeAdmission {
+  takeWhole: (request?: { what?: string; halted?: () => boolean }) => Promise<{ held: boolean; why?: string; ids?: string[]; end?: () => { conclusive: boolean; doubts: { at: string; why: string }[] } }>;
+}
 const machine = await import(
   // @ts-expect-error — untyped workspace tooling; the same seam merge-branch.test.ts documents
   '../../../tools/machine-admission.mjs') as {
-  createAdmission: (options: Record<string, unknown>) => HeavyAdmission;
+  createAdmission: (options: Record<string, unknown>) => HeavyAdmission & WholeAdmission;
   admissionFile: (home: string) => string;
   readState: (file: string) => { holds: { what: string; kind: string; session?: string }[]; waits: { what: string }[] };
 };
@@ -153,6 +156,31 @@ describe('HEAVYQUEUE1: a heavy gate waits for the machine admission', () => {
     assert.equal(tool.takesAPlace(gate('npm run typecheck:web')), false);
     assert.equal(tool.takesAPlace(gate('dotnet test src/Daoris.Service', 0)), false, 'a declared need of none is none');
     assert.equal(tool.takesAPlace(gate('npm run tooltests', 0)), false);
+  });
+
+  test('INTEGRATE1b: while a confirm run holds the whole admission a heavy gate and a session run both wait, and run once it lets go', async () => {
+    const home = newHome();
+    // A capacity of two: the whole admission is two ordinary entries, which today's take counts as it counts any.
+    const whole = machine.createAdmission({ daorisHome: home, kind: 'queue', capacity: 2, env: {}, say: () => {}, pollMs: 5, beatMs: 1_000_000 });
+    const confirm = await whole.takeWhole({ what: 'confirm run of driver' });
+    assert.ok(confirm.held, confirm.why);
+    const gate = gateRun(['driver']);
+    const run = tool.runGates('root', [planned('driver', 'dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --filter Category!=Process')], 'logs', {
+      run: gate.run, print: () => {}, admission: machine.createAdmission({ daorisHome: home, kind: 'queue', capacity: 2, env: {}, say: () => {}, pollMs: 5, beatMs: 1_000_000 }),
+    });
+    let sessionHeld = false;
+    const session = machine.createAdmission({ daorisHome: home, kind: 'session', capacity: 2, env: {}, say: () => {}, pollMs: 5, beatMs: 1_000_000 })
+      .take({ what: 'dotnet test --filter Foo', session: 's-1' }).then((hold) => { sessionHeld = true; return hold; });
+    await pause(150);
+    assert.deepEqual(gate.events, [], 'the gate waits while the confirm run holds every place');
+    assert.equal(sessionHeld, false, 'so does a driven session');
+    assert.deepEqual(machine.readState(machine.admissionFile(home)).holds.map((each) => each.what), ['confirm run of driver (place 1 of 2)', 'confirm run of driver (place 2 of 2)']);
+    const evidence = confirm.end!();
+    assert.equal(evidence.conclusive, true, JSON.stringify(evidence.doubts));
+    await run;
+    assert.deepEqual(gate.events, ['start driver', 'end driver']);
+    (await session)?.release();
+    assert.deepEqual(machine.readState(machine.admissionFile(home)), { holds: [], waits: [] });
   });
 
   test('the admission is off for the tool own tests, on for a home, and needs no home to be asked', () => {

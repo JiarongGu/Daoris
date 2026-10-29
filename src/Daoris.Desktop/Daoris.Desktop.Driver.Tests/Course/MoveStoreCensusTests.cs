@@ -13,8 +13,18 @@ public sealed class MoveStoreCensusTests
 {
     private static string Driver => Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver");
 
-    /// <summary>The move store's own files, which declare its types.</summary>
-    private static readonly string[] Own = ["Course/MoveStore.cs", "Course/MoveRecords.cs"];
+    /// <summary>
+    /// The move store's own files, which declare its types: since part 2 the take-up of dead runs' moves and the box importers too, which
+    /// nothing calls either; since part 3 the moved words' delivery, a hold's one rule and the door to a destination's <c>said</c>.
+    /// </summary>
+    private static readonly string[] Own =
+    [
+        "Course/MoveStore.cs", "Course/MoveRecords.cs", "Course/MoveTakeUp.cs", "Course/MoveBoxImports.cs", "Course/MoveDelivery.cs",
+        "Course/MoveResolve.cs", "Course/MoveSaid.cs",
+    ];
+
+    /// <summary>The importers, which only rows f-v and f-vi may call: importing a box sets it aside from today's readers, which still own it.</summary>
+    private static readonly string[] Importers = ["LimitBoxImport", "HandOverBoxImport", "MoveBoxImport"];
 
     /// <summary>The one production reader allowed: the workplace's delete port, opened over a home.</summary>
     private const string Wiring = "Course/WorkplaceMoveRecordsWiring.cs";
@@ -27,7 +37,7 @@ public sealed class MoveStoreCensusTests
         var names = Own
             .SelectMany(file => Regex.Matches(
                     CourseCensusTests.WithoutComments(File.ReadAllText(Path.Combine(Driver, file))),
-                    @"^public\s+(?:abstract\s+|sealed\s+|static\s+|readonly\s+)*(?:record(?:\s+struct)?|enum|class|struct)\s+(\w+)",
+                    @"^public\s+(?:abstract\s+|sealed\s+|static\s+|readonly\s+)*(?:record(?:\s+struct)?|enum|class|struct|interface)\s+(\w+)",
                     RegexOptions.Multiline)
                 .Select(match => match.Groups[1].Value))
             .ToList();
@@ -43,6 +53,31 @@ public sealed class MoveStoreCensusTests
         }
 
         Assert.Equal([$"{Wiring} names MoveStore"], readers);
+        Assert.Contains("MoveTakeUp", names);
+        Assert.All(Importers, importer => Assert.Contains(importer, names));
+        Assert.All(["MoveDelivery", "MoveResolve", "IMoveSaid", "MoveSaidDoor", "MoveWordDispositions"], part3 => Assert.Contains(part3, names));
+    }
+
+    /// <summary>
+    /// FOUNDATION1f-i part 2: no production source names an importer, the take-up's own file included, which takes whatever importers its
+    /// caller hands it and is handed none yet; the box files' readers name no move type, so today's owners of the boxes read them as before.
+    /// </summary>
+    [Fact]
+    public void No_production_source_calls_a_box_importer_and_the_boxes_readers_name_no_move_type()
+    {
+        var callers = new List<string>();
+        foreach (var path in CourseCensusTests.ProductionFiles())
+        {
+            if (Relative(path) == "Course/MoveBoxImports.cs") continue;
+            var text = CourseCensusTests.WithoutComments(File.ReadAllText(path));
+            callers.AddRange(Importers.Where(name => Regex.IsMatch(text, $@"\b{name}\b")).Select(name => $"{Relative(path)} names {name}"));
+        }
+
+        Assert.Empty(callers);
+        foreach (var reader in new[] { "Course/Chat/LimitBox.cs", "Course/HandOver/HandOverFiles.cs", "Course/HandOver/HandOver.cs", "Course/Chat/LimitMove.cs" })
+        {
+            Assert.DoesNotMatch(@"\bMove(Store|Record|TakeUp|BoxImport|FromBox|Imported)\b", CourseCensusTests.WithoutComments(File.ReadAllText(Path.Combine(Driver, reader))));
+        }
     }
 
     [Fact]

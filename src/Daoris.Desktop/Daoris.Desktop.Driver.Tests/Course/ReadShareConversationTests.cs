@@ -227,8 +227,8 @@ public sealed class ReadShareConversationTests : IDisposable
 
         var started = await HeldAsync(upload.Path, () => StartFrom.RunAsync(
             ledger.Client(), _home, new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)), output: null, "c1",
-            (_, _) => Task.FromResult(new ChatStart("c9", "Conversation `c9` opened in `engine`.")),
-            (_, _, files, _) =>
+            (_, _, _) => Task.FromResult(new ChatStart("c9", "Conversation `c9` opened in `engine`.")),
+            (_, _, files, _, _) =>
             {
                 handed.AddRange(files);
                 return true;

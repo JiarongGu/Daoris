@@ -43,6 +43,16 @@
  * interacting; a prefix that cannot run, a second run that disagrees, or a whole candidate that does not fail again, leaves it
  * unresolved. `candidateOutcome` turns the judgements into what the queue does next.
  *
+ * ## The confirm run (INTEGRATE1b, design §4.5, §5.3 step 3)
+ *
+ * Before any base or prefix run, the queue's runner runs the failing gate once more as composed, on the candidate's tip, holding
+ * the whole machine admission (`confirmStep` over `takeWhole`), once per failing gate, and reads each failure by it
+ * (`confirmReadings`): failing again it is `confirmed` and judged as above; passing, `unconfirmed`, a sighting
+ * (`local/integration-sightings.jsonl`, `sightingOf`) that splits the candidate by default; anything the admission or the answer
+ * does not show, `inconclusive`, read as `split` whatever the policy says. The policy is `local/integration-policy.json`'s
+ * `unconfirmed` (`readIntegrationPolicy`): `split`, or the owner's `hold` (held for a decide, which waits: `resumeCandidate`) or
+ * `land` (promoted on that tip alone, its pass written as no verdict). The scope run's record keeps each confirm run.
+ *
  * ## The scoped set (§4.2)
  *
  * `scopedSet`: the cheap tier always; a reached .NET fast half whole; the TypeScript suites; the Process halves by class (their
@@ -359,13 +369,15 @@ export function recordsOnly(paths, ruleOf) {
 /**
  * What the runner does with a candidate before anything is judged, after a start or a crash (§4.1, *Durable state*): `promoted`
  * when it was `promoting` or `green` and main holds its tip (`isAncestor(tip, mainTip)`); `reform` when main left its base;
- * `promote` when it is green on its base; `run` when its run's process is gone; else `wait`.
+ * `promote` when it is green on its base; `run` when its run's process is gone; else `wait`. A candidate held for a decide
+ * (INTEGRATE1b, design §4.5's `hold`) waits: no decide door exists yet (§8), so a drop or a commit on main is what moves it.
  */
 export function resumeCandidate(candidate, { mainTip, isAncestor, runAlive = () => false }) {
   if (!candidate) return 'none';
   if (['promoting', 'green', 'promoted'].includes(candidate.state) && (candidate.tip === mainTip || isAncestor(candidate.tip, mainTip))) return 'promoted';
   if (candidate.base !== mainTip) return 'reform';
   if (candidate.state === 'green' || candidate.state === 'promoting') return 'promote';
+  if (candidate.state === 'held' && candidate.held?.on === 'decide') return 'wait';
   if (candidate.state === 'held') return candidate.held?.on === 'checkout' ? 'promote' : 'run';
   if (['running', 'bisecting', 'forming'].includes(candidate.state)) return runAlive(candidate.run?.pid) ? 'wait' : 'run';
   return 'wait';
@@ -419,10 +431,17 @@ export function placeOnPrefixes(seq, signature) {
  * prefix that does not build, discover or host. `alone(failure, k)` runs it on the base with member `k` alone. `known` is the
  * open known red its signature matches (`{ finding, expired, lastSeen }`), or null; `baseCommit` the candidate's base.
  *
+ * `confirm` (INTEGRATE1b, design §5.3 step 3) is the failure's reading by its gate's confirm run (`confirmReadings`), or a function
+ * answering it, asked only where the judgement reaches that step: after a known red inherited with no run, and after an expired
+ * known red's base run, which stops the line where it fails there. `confirmed` judges on as today, the base run it already made
+ * reused; `unconfirmed`, `inconclusive` (any reading it does not know) and `dropped` answer at once, with no base and no prefix
+ * run. With no `confirm` the judgement is today's.
+ *
  * Answers `{ outcome, ... }`: `inherited` (filed as known red, pinned to none), `stop` (`why`: `base` or `expired`), `pinned`
- * (`member`, `with` the members it needs, `interacting`), or `unresolved` (`why`), with `runs`, every run it made.
+ * (`member`, `with` the members it needs, `interacting`), `unresolved` (`why`), or, read from `confirm` (which they carry),
+ * `unconfirmed`, `inconclusive` and `dropped`, with `runs`, every run it made.
  */
-export async function judgeFailure(failure, { members, run, alone = null, known = null, baseCommit = null }) {
+export async function judgeFailure(failure, { members, run, alone = null, known = null, baseCommit = null, confirm = null }) {
   const runs = [];
   const at = async (k) => {
     const outcome = await run(failure, k);
@@ -432,14 +451,28 @@ export async function judgeFailure(failure, { members, run, alone = null, known 
   if (failure.names === 'test' && known && !known.expired && known.lastSeen === baseCommit) {
     return { outcome: 'inherited', why: `known red, last seen failing on the base ${String(baseCommit).slice(0, 7)}: its base run is skipped`, runs };
   }
-  const base = await at(0);
+  const expired = () => ({ outcome: 'stop', why: 'expired', said: `${failure.test} is known red past 72 hours: no candidate inherits it, and the queue stops until a direct commit fixes it or skips it under its row`, runs });
+  let base = null;
+  if (confirm) {
+    if (failure.names === 'test' && known?.expired) {
+      base = await at(0);
+      if (same(base, failure.signature)) return expired();
+    }
+    const reading = typeof confirm === 'function' ? await confirm() : confirm;
+    if (reading?.result === 'dropped') return { outcome: 'dropped', why: 'the candidate was dropped during its confirm run', confirm: reading, runs };
+    if (reading?.result === 'unconfirmed') {
+      return { outcome: 'unconfirmed', why: 'it did not fail again when its gate ran once more as composed, holding the whole admission: a sighting, never a pass', confirm: reading, runs };
+    }
+    if (reading?.result !== 'confirmed') {
+      return { outcome: 'inconclusive', why: `its confirm run is inconclusive (${reading?.why ?? 'it gave no reading'}): read as split, never land`, confirm: reading, runs };
+    }
+  }
+  base ??= await at(0);
   if (same(base, failure.signature)) {
     if (failure.names === 'gate') {
       return { outcome: 'stop', why: 'base', said: `${failure.gate} fails on the base with the same signature: main is broken, the queue stops until a direct commit or --queue --recheck`, runs };
     }
-    if (known?.expired) {
-      return { outcome: 'stop', why: 'expired', said: `${failure.test} is known red past 72 hours: no candidate inherits it, and the queue stops until a direct commit fixes it or skips it under its row`, runs };
-    }
+    if (known?.expired) return expired();
     return { outcome: 'inherited', why: 'it fails on the base with the same signature: filed as known red, pinned to none', runs };
   }
   const seq = [base];
@@ -491,11 +524,27 @@ export function memoryStep(attempts, { afterHold = false, needGb = null } = {}) 
  * back (pinned, pinned with, or, for a candidate of one, unresolved), the inherited failures to file, and either the members kept
  * to be judged again (`retain`) or, where an unresolved failure left a candidate of several, its members one at a time (`split`).
  * A pass on an unresolved failure's re-run never makes the candidate green.
+ *
+ * The confirm run's readings (INTEGRATE1b, design §4.5), by `policy.unconfirmed` (`readIntegrationPolicy`; anything else is `split`):
+ * - `dropped`, before anything: the candidate's job ended, and nothing is handed back, filed or kept (`dropped`).
+ * - `inconclusive` reads as an unresolved failure whatever the policy says, never `land`, and is listed apart (`inconclusive`).
+ * - `unconfirmed` is a sighting (`sightings`, each `{ failure, confirm }`), never a flake and never a pass, so no candidate it
+ *   touches is `green`. Under `split` it is an unresolved failure: several members run one at a time, one of one is handed back
+ *   unresolved. Where nothing splits the candidate and a member was handed back, the rest are formed again and judged on their own
+ *   tree. Otherwise, under `hold`, the candidate waits for a decide (`hold`, `on: 'decide'`); under `land`, the confirm run's pass
+ *   is the gate's verdict on that tip alone (`land`, `passedOnConfirm` naming the gates), and the candidate goes on to promotion.
  */
-export function candidateOutcome(judgements, members) {
+export function candidateOutcome(judgements, members, policy = {}) {
+  const unconfirmedPolicy = UNCONFIRMED_POLICIES.includes(policy?.unconfirmed) ? policy.unconfirmed : 'split';
+  if (judgements.some(({ judged }) => judged.outcome === 'dropped')) {
+    return { action: 'dropped', inherited: [], flakes: [], sightings: [], inconclusive: [], handedBack: [], retain: [] };
+  }
   const stop = judgements.find(({ judged }) => judged.outcome === 'stop');
   if (stop) return { action: 'stop', failure: stop.failure, why: stop.judged.why, said: stop.judged.said };
   const inherited = judgements.filter(({ judged }) => judged.outcome === 'inherited').map(({ failure }) => failure);
+  const sightings = judgements.filter(({ judged }) => judged.outcome === 'unconfirmed').map(({ failure, judged }) => ({ failure, confirm: judged.confirm ?? null }));
+  const inconclusive = judgements.filter(({ judged }) => judged.outcome === 'inconclusive');
+  const confirmRead = { sightings, inconclusive: inconclusive.map(({ failure }) => failure) };
   const back = new Map();
   for (const { failure, judged } of judgements) {
     if (judged.outcome !== 'pinned') continue;
@@ -512,17 +561,26 @@ export function candidateOutcome(judgements, members) {
     });
   }
   const unresolved = judgements.filter(({ judged }) => judged.outcome === 'unresolved');
-  if (unresolved.length && members.length === 1 && !back.size) {
+  const flakes = unresolved.map(({ failure }) => failure);
+  // Read as unresolved: the prefixes' own, an inconclusive confirm run under any policy, and a sighting under `split`.
+  const splitting = [...unresolved, ...inconclusive, ...(unconfirmedPolicy === 'split' ? judgements.filter(({ judged }) => judged.outcome === 'unconfirmed') : [])];
+  if (splitting.length && members.length === 1 && !back.size) {
     const [only] = members;
     return {
-      action: 'hand back', inherited, flakes: unresolved.map(({ failure }) => failure),
-      handedBack: [{ ...only, handedBack: { how: 'unresolved', failure: unresolved.map(({ failure }) => failure.test ?? failure.gate).join(', '), why: unresolved.map(({ judged }) => judged.why).join('; ') } }],
+      action: 'hand back', inherited, flakes, ...confirmRead,
+      handedBack: [{ ...only, handedBack: { how: 'unresolved', failure: splitting.map(({ failure }) => failure.test ?? failure.gate).join(', '), why: splitting.map(({ judged }) => judged.why).join('; ') } }],
       retain: [],
     };
   }
   const kept = members.filter((member) => !back.has(member.branch));
-  if (unresolved.length) return { action: 'split', inherited, flakes: unresolved.map(({ failure }) => failure), handedBack: [...back.values()], retain: kept };
-  return { action: back.size ? 'hand back' : 'green', inherited, flakes: [], handedBack: [...back.values()], retain: back.size ? kept : members };
+  if (splitting.length) return { action: 'split', inherited, flakes, ...confirmRead, handedBack: [...back.values()], retain: kept };
+  if (sightings.length && !back.size) {
+    if (unconfirmedPolicy === 'hold') {
+      return { action: 'hold', on: 'decide', why: `an unconfirmed failure holds the candidate for a decide: ${sightings.map(({ failure }) => failure.test ?? failure.gate).join(', ')}`, inherited, flakes, ...confirmRead, handedBack: [], retain: members };
+    }
+    return { action: 'land', passedOnConfirm: [...new Set(sightings.map(({ failure }) => failure.gate))], inherited, flakes, ...confirmRead, handedBack: [], retain: members };
+  }
+  return { action: back.size ? 'hand back' : 'green', inherited, flakes: [], ...confirmRead, handedBack: [...back.values()], retain: back.size ? kept : members };
 }
 
 /** Whether a stopped queue is due its own recheck (§4.1 point 4): an hour after the stop or the last recheck. */
@@ -535,6 +593,151 @@ export function recheckDue(stop, now = Date.now(), every = RECHECK_MS) {
 /** A stop lifted, or kept, by a recheck of its gate's selection on the base. */
 export function noteRecheck(stop, { at, passed, by }) {
   return passed ? null : { ...stop, rechecks: [...(stop.rechecks ?? []), { at, passed, by }] };
+}
+
+// ---------------------------------------------------------------------------------------------------
+// The confirm run (INTEGRATE1b, design §4.5, §5.3 step 3): its pure pieces, which the queue's runner calls (`runCandidateWatched`)
+
+/** The integration policy, the tool's own switch file in the main checkout's ignored `local/` (§11 row b, F19). */
+export const INTEGRATION_POLICY = 'local/integration-policy.json';
+/** The sightings, one JSON line each, apart from the known red and the flakes (§4.5 *Sightings feed the fixes*). */
+export const INTEGRATION_SIGHTINGS = 'local/integration-sightings.jsonl';
+/** What a candidate does with an unconfirmed failure; the first, `split`, is the default and every unknown setting's reading. */
+export const UNCONFIRMED_POLICIES = Object.freeze(['split', 'hold', 'land']);
+
+/**
+ * The confirm run: the failing gate's run repeated once on the candidate's tip as composed, holding the whole machine admission,
+ * one per failing gate per candidate, answering for every failure that gate had (C8), before any base or prefix run.
+ *
+ * **Its caller's contract.** The failing gate's own place in the admission is let go before the step, and no other gate of this
+ * process holds or asks one: `take` takes every place, and would otherwise wait on itself (the admission refuses it, inconclusive,
+ * where one stands). A run the confirm run starts asks no place of its own. A drop of the candidate ends it: `halted()` is asked
+ * before the take, by the take while it waits, and after the run, and the run's own drop may throw.
+ *
+ * - `take({ what, halted })`: the admission's `takeWhole`, answering `{ held: true, end() }` or `{ held: false, dropped, why,
+ *   evidence }`; `end()` lets every place go and answers the evidence (`{ conclusive, doubts, ... }`).
+ * - `run()`: the gate run once more as composed, answering `{ result: 'pass' }` or `{ result: 'fail', failures }` (the judge's
+ *   failures, each with its signature; a gate that fails outside any test names one that names no test), with the `composition`
+ *   the runner kept, where it keeps one.
+ *
+ * Answers `{ result, why, evidence, composition, failures?, error? }`, read in this order: `dropped` (the drop, with what the run
+ * threw for it; nothing is judged or filed); `inconclusive`, judged before the run's own answer (an admission not taken or not
+ * shown), or for an answer that is neither a pass nor failures with their signatures; `unconfirmed` (it passed); `confirmed` (it
+ * failed again, `failures` what it failed with). A throw that is no drop is the tool's error, rethrown once every place is let go.
+ */
+export async function confirmStep({ take, run, halted = () => false, what = 'a confirm run' }) {
+  const dropped = (evidence = null, error = undefined) => ({ result: 'dropped', why: 'the candidate was dropped during its confirm run', evidence, composition: null, ...(error === undefined ? {} : { error }) });
+  if (halted()) return dropped();
+  const whole = await take({ what, halted });
+  if (!whole?.held) {
+    if (whole?.dropped) return dropped(whole.evidence ?? null);
+    return { result: 'inconclusive', why: whole?.why ?? 'the whole admission was not taken', evidence: whole?.evidence ?? null, composition: null };
+  }
+  let outcome;
+  let thrown;
+  let threw = false;
+  try {
+    outcome = await run();
+  } catch (error) {
+    threw = true;
+    thrown = error;
+  }
+  const evidence = whole.end();
+  if (halted()) return dropped(evidence, threw ? thrown : undefined);
+  if (threw) throw thrown;
+  const composition = outcome?.composition ? { units: outcome.composition.units ?? null, digest: outcome.composition.digest ?? null } : null;
+  if (!evidence?.conclusive) return { result: 'inconclusive', why: evidence?.doubts?.[0]?.why ?? 'the whole admission was not shown', evidence, composition };
+  if (outcome?.result === 'pass') return { result: 'unconfirmed', why: 'it passed, holding the whole admission', evidence, composition };
+  const failures = outcome?.result === 'fail' && Array.isArray(outcome.failures) ? outcome.failures : [];
+  if (failures.length && failures.every((failure) => failure?.signature)) {
+    return { result: 'confirmed', why: 'it failed again, holding the whole admission', evidence, composition, failures };
+  }
+  // INTEGRATE1b part 2: a run that answers neither (a death of memory, the machine's) says why in its own words.
+  return { result: 'inconclusive', why: typeof outcome?.why === 'string' && outcome.why ? outcome.why : "the confirm run's answer is neither a pass nor failures with their signatures", evidence, composition };
+}
+
+/**
+ * Each failure of a gate read by its confirm run (`confirmStep`'s answer), as `judgeFailure`'s `confirm`: `{ failure, confirm }`
+ * pairs. `dropped` and `unconfirmed` read so for every failure the gate had, and anything else that is not `confirmed` reads
+ * `inconclusive`. Under `confirmed`, a failure whose signature failed again is `confirmed`, and one that did not is `inconclusive`:
+ * the gate failed another way, so whether it recurs is not shown. A failure of the confirm run's own, whose signature is none of
+ * the gate's, is added as `confirmed`: it failed with nothing heavy beside it, so it is the candidate's (§4.5).
+ */
+export function confirmReadings(confirm, failures) {
+  const reading = (result, why) => ({ result, why, evidence: confirm?.evidence ?? null, composition: confirm?.composition ?? null });
+  if (confirm?.result !== 'confirmed') {
+    const result = ['dropped', 'unconfirmed'].includes(confirm?.result) ? confirm.result : 'inconclusive';
+    return failures.map((failure) => ({ failure, confirm: reading(result, confirm?.why ?? 'no confirm run answered') }));
+  }
+  const again = new Set(confirm.failures.map((each) => signatureKey(each.signature)));
+  const had = new Set(failures.map((each) => signatureKey(each.signature)));
+  return [
+    ...failures.map((failure) => ({
+      failure,
+      confirm: again.has(signatureKey(failure.signature))
+        ? reading('confirmed', 'it failed again with its signature, holding the whole admission')
+        : reading('inconclusive', 'its gate failed another way on the confirm run, so whether this failure recurs is not shown'),
+    })),
+    ...confirm.failures.filter((each) => !had.has(signatureKey(each.signature)))
+      .map((failure) => ({ failure, confirm: reading('confirmed', "a failure of the confirm run's own, holding the whole admission: the candidate's") })),
+  ];
+}
+
+/**
+ * The integration policy (§11 row b): `{ unconfirmed, said }`, read from `local/integration-policy.json` in the main checkout
+ * `root` alone, `{ "unconfirmed": "split" | "hold" | "land" }`. A file that is missing, does not read, or names no setting this
+ * knows reads `split`, and `said` says which. No repository file, gate environment or `MERGE_BRANCH_*` variable is read, so a
+ * steward's run cannot set `land`: it is the owner's, written into that ignored file by hand (F19).
+ */
+export function readIntegrationPolicy(root) {
+  const split = (said) => ({ unconfirmed: 'split', said: `${INTEGRATION_POLICY} ${said}: an unconfirmed failure splits its candidate` });
+  let text;
+  try {
+    text = readFileSync(join(root, INTEGRATION_POLICY), 'utf8');
+  } catch (error) {
+    return split(error?.code === 'ENOENT' ? 'is not there' : `does not read (${error?.message ?? error})`);
+  }
+  let parsed;
+  try {
+    parsed = JSON.parse(text.replace(/^﻿/, ''));
+  } catch (error) {
+    return split(`does not read as JSON (${error?.message ?? error})`);
+  }
+  const value = parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed.unconfirmed : undefined;
+  if (!UNCONFIRMED_POLICIES.includes(value)) return split(`names no setting it knows (${JSON.stringify(value ?? null)}; one of ${UNCONFIRMED_POLICIES.join(', ')})`);
+  return { unconfirmed: value, said: `${INTEGRATION_POLICY} sets unconfirmed to ${value}` };
+}
+
+/**
+ * One sighting (§4.5): the failure that did not fail again, on its unit, with the candidate's tip (`commit`), its base and members,
+ * the policy it went by, the confirm run's admission evidence (its places, its wait, its readings) and composition. One JSON line of
+ * `INTEGRATION_SIGHTINGS`; never a known red and never a flake, so no candidate inherits it and no flake list holds it.
+ */
+export function sightingOf({ failure, candidate, confirm, policy, at }) {
+  return {
+    schema: 1, at, gate: failure.gate, unit: failure.unit ?? null, test: failure.test ?? null, names: failure.names, signature: failure.signature, key: signatureKey(failure.signature),
+    commit: candidate.tip, base: candidate.base, members: candidate.members.map((member) => member.branch), policy, admission: confirm?.evidence ?? null, composition: confirm?.composition ?? null,
+  };
+}
+
+/** A sighting appended to `local/integration-sightings.jsonl`. */
+export function appendSighting(root, sighting) {
+  const file = join(root, INTEGRATION_SIGHTINGS);
+  mkdirSync(dirname(file), { recursive: true });
+  appendFileSync(file, `${JSON.stringify(sighting)}\n`);
+}
+
+/** The sightings, oldest first; a line that does not read is passed over. */
+export function readSightings(root) {
+  const file = join(root, INTEGRATION_SIGHTINGS);
+  if (!existsSync(file)) return [];
+  return readFileSync(file, 'utf8').split(/\r?\n/).filter(Boolean).flatMap((line) => {
+    try {
+      return [JSON.parse(line)];
+    } catch {
+      return [];
+    }
+  });
 }
 
 // ---------------------------------------------------------------------------------------------------
@@ -731,7 +934,9 @@ export function queueLines(queue, { branchTip = () => null, now = Date.now() } =
   const candidate = queue.candidate;
   if (candidate) {
     const held = candidate.state === 'held' ? ` (held on ${candidate.held?.on}: ${candidate.held?.why})` : '';
-    out.push(`candidate on ${String(candidate.base).slice(0, 7)}: ${candidate.state}${held}${candidate.reforms ? `, re-formed ${candidate.reforms} time${candidate.reforms === 1 ? '' : 's'}` : ''}${candidate.reforms >= HELD_REFORMS ? ', held by direct commits' : ''}`);
+    // INTEGRATE1b: under the owner's `land`, a candidate whose gate passed only on its confirm run goes to promotion, and says so.
+    const landing = candidate.landing?.onConfirm?.length ? `, landing on its confirm run alone (${candidate.landing.onConfirm.join(', ')})` : '';
+    out.push(`candidate on ${String(candidate.base).slice(0, 7)}: ${candidate.state}${landing}${held}${candidate.reforms ? `, re-formed ${candidate.reforms} time${candidate.reforms === 1 ? '' : 's'}` : ''}${candidate.reforms >= HELD_REFORMS ? ', held by direct commits' : ''}`);
     candidate.members.forEach((member, i) => out.push(`  ${i + 1}. ${member.branch} at ${String(member.tip).slice(0, 7)}${member.commit ? ` → ${String(member.commit).slice(0, 7)}` : ''}`));
     for (const each of candidate.contained ?? []) out.push(`  contained: ${each.branch} at ${String(each.tip).slice(0, 7)}, in ${each.containedIn?.branch} (settled when ${each.containedIn?.branch} promotes)`);
   }

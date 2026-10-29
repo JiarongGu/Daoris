@@ -15,7 +15,11 @@ internal static class ChatRecorded
     /// person is as their notes, then the person's message. A conversation handed over from another agent opens with Daoris's
     /// briefing instead (MIXAGENT1a-i): its one note says where it came from, since no person spoke.
     /// </summary>
-    internal static IEnumerable<SessionEvent> Recorded(ChatMessage message)
+    /// <param name="shown">
+    /// What the message shows of the words a keyed open moved to its part (FOUNDATION1d-ii part 4, O6-F2): one event per moved word under its
+    /// id, recorded in place of the one joined event its words are otherwise; null for every other message.
+    /// </param>
+    internal static IEnumerable<SessionEvent> Recorded(ChatMessage message, IReadOnlyList<SessionEvent>? shown = null)
     {
         if (message.TakenOver is { } taken)
         {
@@ -31,8 +35,17 @@ internal static class ChatRecorded
             }
 
             // SESSCTX1c part B (the session-context design §2): a part that goes on from a lost conversation is handed the person's
-            // words that waited there after the brief, in the same prompt; they are the person's, as they said them.
-            if (message.Text.Length > 0) yield return Asked(message);
+            // words that waited there after the brief, in the same prompt; they are the person's, as they said them. FOUNDATION1d-ii part 4:
+            // the words a keyed open moved are each shown under its id, so each word shown waiting pairs with where it was asked.
+            if (shown is not null)
+            {
+                foreach (var each in shown) yield return each;
+            }
+            else if (message.Text.Length > 0)
+            {
+                yield return Asked(message);
+            }
+
             yield break;
         }
 
@@ -67,7 +80,14 @@ internal static class ChatRecorded
         if (ToldBrowser(message) is { } toldBrowser) yield return toldBrowser;
         if (ToldProcess(message) is { } toldProcess) yield return toldProcess;
         if (Told(message) is { } told) yield return told;
-        yield return Asked(message);
+        if (shown is null)
+        {
+            yield return Asked(message);
+            yield break;
+        }
+
+        // FOUNDATION1d-ii part 4: a first message of moved words (start-from's, a fresh start's) shows each under its id.
+        foreach (var each in shown) yield return each;
     }
 
     private static SessionEvent Asked(ChatMessage message) => new()

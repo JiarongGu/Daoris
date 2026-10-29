@@ -99,6 +99,47 @@ export function readState(file) {
   }
 }
 
+/**
+ * The file read strictly, for the whole admission's readings (INTEGRATE1b, design §4.5 *Inconclusive*): both lists of entries that
+ * read, and `unread`, how many holds do not read as an entry. A missing file is empty only where `missing` allows it; one that is
+ * missing otherwise, does not read as JSON, is not an object or keeps a list that is not a list throws, since its holds are unknown.
+ */
+export function readStrict(file, { missing = false, read = (path) => readFileSync(path, 'utf8') } = {}) {
+  let text;
+  try {
+    text = read(file);
+  } catch (error) {
+    if (missing && error?.code === 'ENOENT') return { holds: [], waits: [], unread: 0 };
+    throw error;
+  }
+  const parsed = JSON.parse(text);
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('the record is not an object');
+  for (const name of ['holds', 'waits']) if (parsed[name] !== undefined && !Array.isArray(parsed[name])) throw new Error(`its ${name} is not a list`);
+  const holds = (parsed.holds ?? []).map(entryOf);
+  return { holds: holds.filter(Boolean), waits: (parsed.waits ?? []).map(entryOf).filter(Boolean), unread: holds.filter((each) => !each).length };
+}
+
+/** Who holds or asks, as `--queue` and the waiting sentence name them. */
+const whoOf = (entry) => `${entry.kind === 'queue' ? 'the merge queue' : entry.session ? `session ${entry.session}` : 'a driven run'}'s ${entry.what}`;
+
+/**
+ * What doubts a whole admission at one reading (INTEGRATE1b, design §4.5 *Inconclusive*, F34), over the record pruned and read
+ * strictly: each of its own places (`ids`) not held, any live hold not its own (a writer of a larger capacity, a run that took a
+ * place while the record could not be read), and any hold that does not read as an entry. None is a reading that shows the
+ * machine held for it alone. The asks behind it are no doubt: they wait for it.
+ */
+export function wholeDoubts(state, ids) {
+  const mine = new Set(ids);
+  const held = new Set(state.holds.filter((entry) => mine.has(entry.id)).map((entry) => entry.id));
+  const lost = ids.filter((id) => !held.has(id));
+  const others = state.holds.filter((entry) => !mine.has(entry.id));
+  const doubts = [];
+  if (lost.length) doubts.push(`${lost.length} of its ${ids.length} places ${lost.length === 1 ? 'is' : 'are'} no longer held (${lost.join(', ')})`);
+  if (others.length) doubts.push(`another live hold stands beside it: ${others.map(whoOf).join('; ')}`);
+  if (state.unread) doubts.push(`the record keeps ${state.unread} ${state.unread === 1 ? 'hold that does' : 'holds that do'} not read as an entry`);
+  return doubts;
+}
+
 /** Whether an entry still counts: its process runs and it beat within `STALE_MS` (the twin's `Live`). */
 export const live = (entry, { alive = processAlive, now = Date.now() } = {}) => alive(entry.pid) && now - timeOf(entry.beat) < STALE_MS;
 
@@ -133,11 +174,15 @@ export function waitingSentence({ holds, ahead }, { capacity, now = Date.now() }
  * The admission of one process. `take` waits its turn and answers the hold, or null where it has nothing to take (no home, a gate
  * that is not heavy) or `halted` ended the wait; the hold's `release` lets it go and is safe to call twice.
  *
- * `daorisHome` null admits everything at once. The seams (`alive`, `now`, `sleep`, `say`) are a test's.
+ * `takeWhole` takes every place at once, for a confirm run (INTEGRATE1b): see its own contract below.
+ *
+ * `daorisHome` null admits everything at once. The seams (`alive`, `now`, `sleep`, `say`, and `readText` and `writeText`, which the
+ * whole admission alone reads and writes through) are a test's.
  */
 export function createAdmission({
   daorisHome = process.env.DAORIS_HOME ?? null, kind = 'queue', capacity = null, alive = processAlive, now = Date.now,
   sleep = (ms) => new Promise((done) => { setTimeout(done, ms); }), say = console.log, pollMs = POLL_MS, sayMs = SAY_MS, beatMs = BEAT_MS, env = process.env,
+  readText = (path) => readFileSync(path, 'utf8'), writeText = writeAtomic,
 } = {}) {
   let file = null;
   try {
@@ -231,7 +276,189 @@ export function createAdmission({
     }
   }
 
-  return { take, file, capacity: size };
+  /**
+   * A change read strictly (`readStrict`): the record pruned, with `unread`, handed to `fn`, which answers the lists to write or
+   * null to write nothing. Throws where the lock, the read or the write fails, which the whole admission reads as a doubt.
+   */
+  const changeStrict = (fn, { missing = false } = {}) => withKeepLock(file, () => {
+    const raw = readStrict(file, { missing, read: readText });
+    const state = { ...pruned(raw, seam()), unread: raw.unread };
+    const next = fn(state);
+    if (next) writeText(file, `${JSON.stringify({ schema: 1, holds: next.holds, waits: next.waits }, null, 2)}\n`);
+    return next ?? state;
+  });
+
+  /**
+   * The whole admission, for a confirm run (INTEGRATE1b, design §4.5, C7, F34): every place the machine admits, taken as that many
+   * ordinary entries of today's schema, so a writer of any build reads, counts and keeps each one.
+   *
+   * - **The take of N.** N is `capacityOf`'s count, the one the driver's twin reads. The N entries share one `since`, each its own
+   *   id under this process (`<pid>-<hex>-<nn>`, so they sort together), and go into `waits` in **one** locked write, where they
+   *   stand together in first-come order and no other ask can fall between them. Each is admitted by today's first-come rule
+   *   (`judge`); the hold answers once every one holds. While it waits, the holds it sees are the runs it waits for, never a doubt.
+   * - **Its caller's contract.** The failing gate's own place, and every other place this process holds or asks, is let go before
+   *   the take: the take would otherwise wait on itself, so it refuses at once, writing nothing, where its own process holds or
+   *   asks a live place. A run the confirm run starts asks no place of its own (or runs inside one of its ids, `INSIDE`).
+   * - **Its beat.** One write beats every entry, every `beatMs`, and `beat()` beats it at once.
+   * - **Its readings.** At its start (a strict read once every entry holds), at each beat (in the beat's own change) and at its end
+   *   (in the change that lets every entry go, one write), each reading's `wholeDoubts`, and any lock, read or write that fails
+   *   there or while it waits, is a doubt. A doubt while it waits ends the wait with every place let go.
+   *
+   * Answers `{ held: true, ids, capacity, beat(), end() }`, where `end()` lets every place go and answers the evidence (twice, the
+   * same); or `{ held: false, dropped, why, evidence }`: `dropped` where `halted()` ended the wait, else inconclusive at the take (no
+   * home, its own process or an outer hold holding a place, a hold that does not read, a record it could not write) or while it
+   * waited. The evidence: `{ pid, what, capacity, ids, asked, started, ended, waitedMs, beats, doubts: [{ at, when, why }],
+   * conclusive }`, `at` one of `take`, `wait`, `start`, `beat` and `end`; conclusive only with no doubt from its take to its end.
+   */
+  async function takeWhole({ what, session, repository, tree, halted = () => false } = {}) {
+    const n = size();
+    const asked = now();
+    const name = String(what ?? 'a confirm run');
+    const evidence = { pid: process.pid, what: name, capacity: n, ids: [], asked: new Date(asked).toISOString(), started: null, ended: null, waitedMs: null, beats: 0, doubts: [] };
+    const doubt = (at, why) => evidence.doubts.push({ at, when: stamp(), why });
+    const seal = () => ({ ...evidence, ids: [...evidence.ids], doubts: [...evidence.doubts], conclusive: !evidence.doubts.length && !!evidence.started && !!evidence.ended });
+    const refuse = (at, why) => {
+      doubt(at, why);
+      return { held: false, dropped: false, why, evidence: seal() };
+    };
+    const failed = (error) => error?.message ?? String(error);
+    if (!file) return refuse('take', 'there is no Daoris home whose locks can be placed, so the machine admission cannot be shown');
+    const inside = env[INSIDE];
+    if (inside && readState(file).holds.some((entry) => entry.id === inside && live(entry, seam()))) {
+      return refuse('take', `it runs inside the hold ${inside}, which holds a place it cannot take`);
+    }
+    const tag = `${process.pid}-${randomBytes(4).toString('hex')}`;
+    const ids = Array.from({ length: n }, (_, i) => `${tag}-${String(i + 1).padStart(2, '0')}`);
+    evidence.ids = ids;
+    const mine = new Set(ids);
+    const since = stamp();
+    const entries = ids.map((id, i) => {
+      const entry = { id, kind, pid: process.pid, what: `${name} (place ${i + 1} of ${n})`, since, beat: since };
+      for (const [field, value] of [['session', session], ['repository', repository], ['tree', tree]]) if (value) entry[field] = value;
+      return entry;
+    });
+    let refused = null;
+    try {
+      changeStrict((state) => {
+        const own = [...state.holds, ...state.waits].filter((entry) => entry.pid === process.pid);
+        if (state.unread) refused = `the record keeps ${state.unread} ${state.unread === 1 ? 'hold that does' : 'holds that do'} not read as an entry, so who holds the machine is unknown`;
+        else if (own.length) refused = `its own process holds or asks a place already (${own.map((entry) => entry.what).join('; ')}): the failing gate's own place is let go before the whole admission is taken, which would otherwise wait on itself`;
+        return refused ? null : { holds: state.holds, waits: [...state.waits, ...entries] };
+      }, { missing: true });
+    } catch (error) {
+      return refuse('take', `the machine's record could not be written (${failed(error)})`);
+    }
+    if (refused) return refuse('take', refused);
+
+    let started = false;
+    const drop = (state) => ({ holds: state.holds.filter((entry) => !mine.has(entry.id)), waits: state.waits.filter((entry) => !mine.has(entry.id)) });
+    const letGo = () => {
+      try {
+        changeStrict(drop);
+      } catch {
+        try {
+          change(drop);
+        } catch {
+          // Left: they stop counting when this process ends, or two minutes on.
+        }
+      }
+    };
+    const beat = () => {
+      try {
+        changeStrict((state) => {
+          if (started) for (const why of wholeDoubts(state, ids)) doubt('beat', why);
+          const touch = (entry) => (mine.has(entry.id) ? { ...entry, beat: stamp() } : entry);
+          return { holds: state.holds.map(touch), waits: state.waits.map(touch) };
+        });
+        if (started) evidence.beats += 1;
+      } catch (error) {
+        doubt(started ? 'beat' : 'wait', `the machine's record could not be read or written at a beat (${failed(error)})`);
+      }
+    };
+    const timer = setInterval(beat, beatMs);
+    timer.unref?.();
+    const stop = () => {
+      clearInterval(timer);
+      letGo();
+    };
+    let saidAt = null;
+    let saidOf = '';
+    for (;;) {
+      if (evidence.doubts.length) {
+        stop();
+        return { held: false, dropped: false, why: evidence.doubts[0].why, evidence: seal() };
+      }
+      let gone = [];
+      let next;
+      try {
+        next = changeStrict((state) => {
+          gone = ids.filter((id) => ![...state.holds, ...state.waits].some((entry) => entry.id === id));
+          if (gone.length) return null;
+          let { holds, waits } = state;
+          for (const id of ids) {
+            if (holds.some((entry) => entry.id === id)) continue;
+            if (!judge({ holds, waits }, id, n).admitted) break;
+            holds = [...holds, { ...waits.find((entry) => entry.id === id), beat: stamp() }];
+            waits = waits.filter((entry) => entry.id !== id);
+          }
+          return { holds, waits };
+        });
+      } catch (error) {
+        doubt('wait', `the machine's record could not be read or written while it waited (${failed(error)})`);
+        continue;
+      }
+      if (gone.length) {
+        doubt('wait', `${gone.length} of its ${n} places left the record while it waited (${gone.join(', ')})`);
+        continue;
+      }
+      if (ids.every((id) => next.holds.some((entry) => entry.id === id))) break;
+      if (halted()) {
+        stop();
+        return { held: false, dropped: true, why: `the wait for the whole admission before ${name} was ended`, evidence: seal() };
+      }
+      const first = ids.find((id) => !next.holds.some((entry) => entry.id === id));
+      const judged = judge(next, first, n);
+      const key = `${judged.holds.map((entry) => entry.id).join(',')}/${judged.ahead}`;
+      if (saidAt === null || now() - saidAt >= sayMs || key !== saidOf) {
+        say(`  waiting for the machine's whole heavy-run admission before ${name}, all ${n} places: ${waitingSentence(judged, { capacity: n, now: now() })}; it never times out, and looks again every ${Math.round(pollMs / 1000)}s`);
+        saidAt = now();
+        saidOf = key;
+      }
+      await sleep(pollMs);
+    }
+
+    started = true;
+    evidence.started = stamp();
+    evidence.waitedMs = now() - asked;
+    if (saidAt !== null) say(`  admission: ${name} holds every place after waiting ${Math.round(evidence.waitedMs / 1000)}s`);
+    try {
+      const raw = readStrict(file, { read: readText });
+      for (const why of wholeDoubts({ ...pruned(raw, seam()), unread: raw.unread }, ids)) doubt('start', why);
+    } catch (error) {
+      doubt('start', `the machine's record could not be read or written at its start (${failed(error)})`);
+    }
+
+    let ended = null;
+    const end = () => {
+      if (ended) return ended;
+      clearInterval(timer);
+      try {
+        changeStrict((state) => {
+          for (const why of wholeDoubts(state, ids)) doubt('end', why);
+          return drop(state);
+        });
+      } catch (error) {
+        doubt('end', `the machine's record could not be read or written at its end (${failed(error)})`);
+        letGo();
+      }
+      evidence.ended = stamp();
+      ended = seal();
+      return ended;
+    };
+    return { held: true, ids, capacity: n, beat, end };
+  }
+
+  return { take, takeWhole, file, capacity: size };
 }
 
 /** What `--queue` says of the machine's admission (HEAVYQUEUE1): its places held, whose and for how long, and how many ask. */

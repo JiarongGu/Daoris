@@ -507,6 +507,43 @@ public sealed class BrainstormLookTests : IDisposable
     }
 
     /// <summary>
+    /// 🔴 FOUNDATION1j part ii (the foundation design §2.4's table): every pass of a brainstorm on a repository is asked for that repository's
+    /// workspace, which its account walk reads for the version the workspace pins; a request on no repository asks the machine's.
+    /// </summary>
+    [Fact]
+    public async Task Each_pass_is_asked_for_its_request_s_workspace()
+    {
+        var id = Files.WriteRequest("How should the daily report stop dropping its last day?", "engine", ["stub", "acp-stub"], At);
+        var turns = new Turns();
+        var driver = new Daoris.Driver.Driver(
+            new ServiceClient("http://127.0.0.1:9", null, new HttpClient(new Service())), DriverConfig.Empty with { Adapter = "stub", Cap = 3 },
+            AdapterSet.Built(), _home)
+        {
+            BrainstormTurns = turns.RunAsync,
+            BrainstormCheckouts = (_, _) => Task.FromResult<(string? Root, string? Revision)>((null, null)),
+        };
+        var snapshot = new Snapshot([], [new RepoView("engine", Adopted: true, Root: Path.Combine(_home, "engine"), Workspace: "work")], []);
+        async Task LookAsync()
+        {
+            await driver.BrainstormsAsync(snapshot, 0, [], CancellationToken.None);
+            await driver.Running.SettledAsync().WaitAsync(Poll.Patience);
+        }
+
+        await LookAsync();
+        Files.WriteSent(id, Files.ReadState(id)!.Packet!, At);
+        turns.Answers["g1"] = Give(("Make the window inclusive of its last day", "yes", "low"));
+        turns.Answers["g2"] = Give(("Include the last day in the window", "yes", "low"));
+        turns.Answers["s1"] = Synthesize(("An inclusive window", 1, ["P1", "P2"]));
+        await LookAsync();
+
+        Assert.Equal(["g1", "g2", "s1"], turns.Seen.Select(seen => seen.Turn.Turn).Order());
+        Assert.All(turns.Seen, seen => Assert.Equal("work", seen.Turn.Workspace));
+
+        var (_, unplaced) = await SentAsync(Voices(new ActorChoice("stub", "opus")), []);
+        Assert.All(unplaced.Seen, seen => Assert.Null(seen.Turn.Workspace));
+    }
+
+    /// <summary>
     /// 🔴 MODELROLE1e (D205 §4.4): the agents a request names decide who runs, each taking the actor's entry for it, else account default
     /// (<c>rule-default</c>); the actor never adds a voice the request did not name.
     /// </summary>

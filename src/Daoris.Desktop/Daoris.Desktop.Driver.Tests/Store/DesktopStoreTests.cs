@@ -162,7 +162,9 @@ public sealed class DesktopStoreTests : IDisposable
             ["id", "record_left", "executor", "how", "from_why", "from_by", "phase", "claim_run", "claim_generation", "account", "recipe_why", "recipe_bound",
              "opens", "destination", "effect", "effect_begun", "effect_outcome", "effect_ended", "fell_back_code", "held_why", "closed_why",
              "decided_at", "quiescing_at", "old_ended_at", "opening_at", "opened_at", "copied_at", "verified_at", "delivering_at", "delivered_at",
-             "fell_back_at", "held_at", "closed_at"],
+             "fell_back_at", "held_at", "closed_at",
+             // Step 5's, each nullable: a step-4 build writes moves as it did and leaves them empty.
+             "agent", "refused_bound", "quiet_at"],
             moves.Select(column => column.Name));
         Assert.Equal(MoveRequired, moves.Where(column => column.Required).Select(column => column.Name));
         Assert.Equal(
@@ -221,6 +223,72 @@ public sealed class DesktopStoreTests : IDisposable
         older.Write(BindingStore.Family, write => write.Execute(
             "INSERT INTO binding_picks (session, account, at) VALUES ('s1', 'work', '2026-10-29T00:00:00.0000000Z')"));
         Assert.Equal((1L, 1L), (Count(older, "bindings"), Count(older, "binding_picks")));
+    }
+
+    // ——— Step 5, what a box's move carries and a quiet move's telling (FOUNDATION1f-i part 2; §3.3, §13.5, §19.1).
+
+    [Fact]
+    public void Step_5_adds_the_agent_the_refused_turns_bound_and_the_quiet_s_moment_to_moves_nullable_and_raises_no_stamp()
+    {
+        var step = Assert.Single(DesktopStore.Steps, each => each.Version == 5);
+        Assert.Equal(1, step.Writer);
+        using (var older = Open(new DesktopStoreOptions { Steps = [.. DesktopStore.Steps.Take(4)], Settled = () => StoreSettled.Yes }))
+        {
+            Assert.Equal((4, 1), older.Stamp);
+        }
+
+        var store = Open(new DesktopStoreOptions { Settled = () => StoreSettled.Not("the swap journal is at `started`") });
+
+        Assert.Null(store.Held);
+        Assert.Equal((Own, 1), store.Stamp);
+        var added = Columns(store, "moves").Where(column => column.Name is "agent" or "refused_bound" or "quiet_at").ToList();
+        Assert.Equal([("agent", false), ("refused_bound", false), ("quiet_at", false)], added);
+    }
+
+    [Fact]
+    public void A_build_of_the_four_steps_before_still_writes_a_move_into_the_migrated_store_leaving_step_5_s_columns_empty()
+    {
+        Open().Write("probe", _ => { });
+
+        var older = Open(new DesktopStoreOptions { Steps = [.. DesktopStore.Steps.Take(4)], Settled = () => StoreSettled.Yes });
+
+        Assert.False(older.Newer);
+        older.Write("moves", write => write.Execute(
+            """
+            INSERT INTO moves (record_left, executor, how, from_why, from_by, phase, claim_run, claim_generation, decided_at)
+            VALUES ('s1', 'conversation', 'brief', 'limit', 'daoris', 'decided', $run, 1, '2026-10-30T00:00:00.0000000+00:00')
+            """,
+            ("$run", older.Run)));
+        Assert.Equal(
+            [(true, true, true)],
+            older.Query("SELECT agent IS NULL, refused_bound IS NULL, quiet_at IS NULL FROM moves", reader => (reader.GetBoolean(0), reader.GetBoolean(1), reader.GetBoolean(2))));
+    }
+
+    // ——— A run entered with no family's write (FOUNDATION1f-i part 2, §19.1 point 3).
+
+    [Fact]
+    public void Entering_records_the_process_s_run_once_moving_no_revision_and_touching_no_wake()
+    {
+        var store = Open(new DesktopStoreOptions { Kind = "shell", Settled = () => StoreSettled.Yes });
+
+        store.Enter();
+        store.Enter();
+
+        var run = Assert.Single(store.Runs());
+        Assert.Equal((store.Run, "shell", Environment.ProcessId), (run.Run, run.Kind, run.Pid));
+        Assert.Empty(store.Revisions());
+        Assert.False(File.Exists(store.Wake));
+    }
+
+    [Fact]
+    public void Entering_a_store_a_newer_build_stamped_writes_nothing()
+    {
+        Open(Newer()).Write("probe", _ => { });
+
+        var older = Open(Older("shell"));
+
+        Assert.Throws<DesktopStoreNewerException>(older.Enter);
+        Assert.DoesNotContain(older.Runs(), each => each.Run == older.Run);
     }
 
     // ——— Revisions and the wake file (§13.4).

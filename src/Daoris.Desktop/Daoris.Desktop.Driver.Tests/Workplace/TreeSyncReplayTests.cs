@@ -156,7 +156,18 @@ public sealed class TreeSyncReplayTests : TreeSyncFixture
             holder.Dispose();
         }
 
-        await trees.CleanAsync([], Nobody);
+        // The holder's exit frees what the holder held. What else holds the folder past it (a scanner's read, a child) is not the
+        // holder's to release, and one press tries once: a press that leaves the folder says why, and the next goes on the
+        // clean-up's word, not on a time (TREECLEANFREE1: the folder was found after one press, which had said nothing of it).
+        var done = await trees.CleanAsync([], Nobody);
+        for (var waited = 0; Directory.Exists(tree.Path); waited += 50)
+        {
+            Assert.Contains(done.Folders!, said => said.Contains(tree.Path) && said.Contains("stays"));
+            Assert.True(waited <= Poll.Patience.TotalMilliseconds, $"the folder was still held after {waited} ms: {string.Join(' ', done.Folders!)}");
+            await Task.Delay(50);
+            done = await trees.CleanAsync([], Nobody);
+        }
+
         Assert.False(Directory.Exists(tree.Path));
     }
 }

@@ -5,8 +5,10 @@ import { dirname, join } from 'node:path';
 import { after, describe, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import {
-  BEAT_MS, INSIDE, STALE_MS, admissionFile, admissionLines, capacityOf, createAdmission, judge, live, lookAt, pruned, readState, waitingSentence,
+  BEAT_MS, INSIDE, STALE_MS, admissionFile, admissionLines, capacityOf, createAdmission, judge, live, lookAt, pruned, readState, readStrict, waitingSentence,
+  wholeDoubts,
 } from './machine-admission.mjs';
+import { writeAtomic } from './fsx.mjs';
 
 const REPO = join(dirname(fileURLToPath(import.meta.url)), '..');
 const TABLE = JSON.parse(readFileSync(join(REPO, 'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/machine-admission.json'), 'utf8'));
@@ -43,6 +45,25 @@ describe('the table both twins read (machine-admission.json)', () => {
       const state = pruned({ holds: row.holds.map(entry), waits: row.waits.map(entry) }, seam);
       const got = judge(state, row.id, row.capacity);
       assert.deepEqual({ admitted: got.admitted, ahead: got.ahead, holds: got.holds.length }, row.expect);
+    });
+  }
+});
+
+/**
+ * The whole take's rows (INTEGRATE1b, design §4.5, C7): N entries with one `since` and ids that sort together. The driver's
+ * MachineAdmissionTests reads the same rows: full while held, a session's ask behind every one of them, a foreign hold a doubt.
+ */
+describe('the whole take, in the table both twins read', () => {
+  for (const row of TABLE.whole) {
+    test(`whole: ${row.name}`, () => {
+      const state = pruned({ holds: row.holds.map(entry), waits: row.waits.map(entry) }, seam);
+      const got = judge(state, row.id, row.capacity);
+      const doubts = wholeDoubts({ ...state, unread: 0 }, row.ids);
+      assert.deepEqual({ admitted: got.admitted, ahead: got.ahead, holds: got.holds.length }, { admitted: row.expect.admitted, ahead: row.expect.ahead, holds: row.expect.holds });
+      assert.equal(got.holds.length >= row.capacity, row.expect.full);
+      assert.deepEqual(state.holds.filter((each) => !row.ids.includes(each.id)).map((each) => each.id), row.expect.others);
+      assert.equal(doubts.length, (row.expect.lost ? 1 : 0) + (row.expect.others.length ? 1 : 0));
+      if (row.expect.lost) assert.match(doubts[0], new RegExp(`^${row.expect.lost} of its ${row.ids.length} places`));
     });
   }
 });
@@ -232,5 +253,258 @@ describe('the edges', () => {
 
   test('the beat is slower than a poll and far inside the stale bound', () => {
     assert.ok(BEAT_MS * 3 < STALE_MS);
+  });
+});
+
+/**
+ * INTEGRATE1b (design §4.5, C7, F34): the confirm run takes the whole admission as the capacity's worth of ordinary entries in one
+ * write, beats each, lets them go in one write, and reads the record at its start, at each beat and at its end; anything there that
+ * does not show the machine held for it alone makes it inconclusive.
+ */
+describe('the whole admission, for a confirm run', () => {
+  /** Today's schema: an entry carries these and the optional `session`, `repository` and `tree`, nothing else. */
+  const SCHEMA = ['beat', 'id', 'kind', 'pid', 'since', 'what'];
+  /** A foreign process the seam calls alive. */
+  const OTHER = 4242;
+  const alive = (pid) => pid === process.pid || pid === OTHER;
+  const foreign = (id, what = 'a dotnet test run') => ({ id, kind: 'session', pid: OTHER, what, since: new Date().toISOString(), beat: new Date().toISOString() });
+  const write = (home, state) => {
+    const file = admissionFile(home);
+    mkdirSync(dirname(file), { recursive: true });
+    writeFileSync(file, JSON.stringify({ schema: 1, holds: [], waits: [], ...state }));
+  };
+  /** An admission whose writes are kept, as the text each wrote, and can be made to fail. */
+  function whole(home, extra = {}) {
+    const writes = [];
+    const failing = { write: false, read: false };
+    const made = admission(home, {
+      alive, capacity: 3,
+      writeText: (file, text) => {
+        if (failing.write) throw new Error('the disk refused the write');
+        writes.push(JSON.parse(text));
+        writeAtomic(file, text);
+      },
+      readText: (file) => {
+        if (failing.read) throw new Error('the disk refused the read');
+        return readFileSync(file, 'utf8');
+      },
+      ...extra,
+    });
+    return { ...made, writes, failing };
+  }
+  const idsIn = (state, ids) => [...state.holds, ...state.waits].filter((each) => ids.includes(each.id)).length;
+
+  test('the take of N: the capacity\'s worth of entries of today\'s schema in one write, each held, then let go in one write', async () => {
+    const home = newHome();
+    const made = whole(home);
+    const hold = await made.takeWhole({ what: 'confirm run of driver' });
+    assert.equal(hold.held, true, hold.why);
+    assert.equal(hold.ids.length, 3);
+    assert.equal(new Set(hold.ids).size, 3, 'each its own id');
+    const state = readState(admissionFile(home));
+    assert.deepEqual(state.holds.map((each) => each.id), hold.ids);
+    for (const entry of state.holds) {
+      assert.deepEqual(Object.keys(entry).sort(), SCHEMA, 'no field is added to an entry');
+      assert.equal(entry.kind, 'queue');
+      assert.equal(entry.pid, process.pid, 'under the same process');
+    }
+    assert.equal(new Set(state.holds.map((each) => each.since)).size, 1, 'they asked together');
+    assert.deepEqual(state.holds.map((each) => each.what), ['confirm run of driver (place 1 of 3)', 'confirm run of driver (place 2 of 3)', 'confirm run of driver (place 3 of 3)']);
+    const first = made.writes.findIndex((written) => idsIn(written, hold.ids) > 0);
+    assert.equal(idsIn(made.writes[first], hold.ids), 3, 'the first write that holds any of them holds all of them');
+    assert.deepEqual(made.writes[first].waits.map((each) => each.id), hold.ids, 'they stand together in first-come order');
+    const evidence = hold.end();
+    assert.equal(made.writes.at(-1).holds.length + made.writes.at(-1).waits.length, 0);
+    assert.equal(idsIn(made.writes.at(-2), hold.ids), 3, 'one write lets all of them go');
+    assert.deepEqual(readState(admissionFile(home)), { holds: [], waits: [] });
+    assert.equal(evidence.conclusive, true, JSON.stringify(evidence.doubts));
+    assert.deepEqual(evidence.doubts, []);
+    assert.deepEqual(evidence.ids, hold.ids);
+    assert.equal(evidence.capacity, 3);
+    assert.ok(evidence.asked && evidence.started && evidence.ended);
+    assert.equal(typeof evidence.waitedMs, 'number');
+    assert.equal(hold.end(), evidence, 'an end twice is the one end');
+  });
+
+  test('each entry is beaten in one write', async () => {
+    const home = newHome();
+    let clock = Date.now();
+    const made = whole(home, { now: () => clock });
+    const hold = await made.takeWhole({ what: 'confirm run of driver' });
+    clock += 30_000;
+    const writes = made.writes.length;
+    hold.beat();
+    assert.equal(made.writes.length, writes + 1);
+    const beaten = new Date(clock).toISOString();
+    assert.deepEqual(readState(admissionFile(home)).holds.map((each) => each.beat), [beaten, beaten, beaten]);
+    const evidence = hold.end();
+    assert.equal(evidence.beats, 1);
+    assert.equal(evidence.conclusive, true, JSON.stringify(evidence.doubts));
+  });
+
+  test('the capacity is capacityOf\'s, the count the driver reads', async () => {
+    const home = newHome();
+    const made = whole(home, { capacity: null, env: { DAORIS_ADMISSION_SLOTS: '4' } });
+    const hold = await made.takeWhole({ what: 'confirm run' });
+    assert.equal(hold.ids.length, 4);
+    assert.equal(hold.end().capacity, 4);
+  });
+
+  test('it waits for the runs it waits for, never doubting them, and no later ask falls between its entries', async () => {
+    const home = newHome();
+    write(home, { holds: [foreign('a-session-run')] });
+    const made = whole(home, { capacity: 2 });
+    let started = false;
+    const taking = made.takeWhole({ what: 'confirm run of driver' }).then((hold) => { started = true; return hold; });
+    await new Promise((done) => { setTimeout(done, 80); });
+    assert.equal(started, false, 'it starts once every entry holds');
+    const waiting = readState(admissionFile(home));
+    assert.equal(waiting.holds.length, 2, 'its first place is held, beside the run it waits for');
+    assert.equal(waiting.waits.length, 1);
+    assert.match(made.said.join('\n'), /confirm run of driver/);
+    // A session asks after it, and the run it waited for ends.
+    write(home, { holds: waiting.holds.filter((each) => each.pid !== OTHER), waits: [...waiting.waits, foreign('a-later-ask')] });
+    const hold = await taking;
+    assert.equal(hold.held, true, hold.why);
+    const state = readState(admissionFile(home));
+    assert.deepEqual(state.holds.map((each) => each.id), hold.ids);
+    assert.deepEqual(state.waits.map((each) => each.id), ['a-later-ask'], 'the later ask waits behind every one of its places');
+    const evidence = hold.end();
+    assert.equal(evidence.conclusive, true, JSON.stringify(evidence.doubts));
+    assert.ok(evidence.waitedMs >= 0);
+    assert.deepEqual(readState(admissionFile(home)).waits.map((each) => each.id), ['a-later-ask'], 'its end lets go its own alone');
+  });
+
+  test('inconclusive: another live hold not its own at its start', async () => {
+    const home = newHome();
+    let inject = false;
+    const made = whole(home, {
+      writeText: (file, text) => {
+        writeAtomic(file, text);
+        const state = JSON.parse(text);
+        if (state.holds.length === 3 && !state.waits.length) inject = true;
+      },
+      // A writer with a larger capacity takes a place as the confirm run's last entry is admitted.
+      readText: (file) => {
+        const state = JSON.parse(readFileSync(file, 'utf8'));
+        return JSON.stringify(inject ? { ...state, holds: [...state.holds, foreign('a-larger-capacity')] } : state);
+      },
+    });
+    const hold = await made.takeWhole({ what: 'confirm run' });
+    const evidence = hold.end();
+    assert.equal(evidence.conclusive, false);
+    assert.equal(evidence.doubts[0].at, 'start');
+    assert.match(evidence.doubts[0].why, /another live hold stands beside it: a driven run's a dotnet test run/);
+  });
+
+  test('inconclusive: another live hold not its own at a beat, and at its end', async () => {
+    for (const at of ['beat', 'end']) {
+      const home = newHome();
+      const made = whole(home);
+      const hold = await made.takeWhole({ what: 'confirm run' });
+      const state = readState(admissionFile(home));
+      write(home, { holds: [...state.holds, foreign('a-run-that-took-a-place')], waits: state.waits });
+      if (at === 'beat') hold.beat();
+      const evidence = hold.end();
+      assert.equal(evidence.conclusive, false, at);
+      assert.equal(evidence.doubts[0].at, at);
+      assert.match(evidence.doubts[0].why, /another live hold stands beside it/);
+      assert.deepEqual(readState(admissionFile(home)).holds.map((each) => each.id), ['a-run-that-took-a-place'], 'its own are let go, the other is not');
+    }
+  });
+
+  test('inconclusive: a read that fails, at a beat and at its end, and a record that does not read', async () => {
+    const home = newHome();
+    const made = whole(home);
+    const hold = await made.takeWhole({ what: 'confirm run' });
+    made.failing.read = true;
+    hold.beat();
+    made.failing.read = false;
+    writeFileSync(admissionFile(home), '{ not json');
+    const evidence = hold.end();
+    assert.equal(evidence.conclusive, false);
+    assert.deepEqual(evidence.doubts.map((each) => each.at), ['beat', 'end']);
+    assert.match(evidence.doubts[0].why, /could not be read or written .*the disk refused the read/);
+    assert.match(evidence.doubts[1].why, /could not be read or written/);
+  });
+
+  test('inconclusive: a write that fails at a beat and at its end, its places still let go', async () => {
+    const home = newHome();
+    const made = whole(home);
+    const hold = await made.takeWhole({ what: 'confirm run' });
+    made.failing.write = true;
+    hold.beat();
+    const evidence = hold.end();
+    assert.equal(evidence.conclusive, false);
+    assert.deepEqual(evidence.doubts.map((each) => each.at), ['beat', 'end']);
+    assert.match(evidence.doubts[0].why, /the disk refused the write/);
+    assert.deepEqual(readState(admissionFile(home)), { holds: [], waits: [] }, 'a release that could not be written strictly is made as any writer makes it');
+  });
+
+  test('inconclusive at the take, nothing held: a record that cannot be written, one that keeps a hold it cannot read, no home', async () => {
+    const unwritten = whole(newHome());
+    unwritten.failing.write = true;
+    const refused = await unwritten.takeWhole({ what: 'confirm run' });
+    assert.equal(refused.held, false);
+    assert.match(refused.why, /could not be written.*the disk refused the write/);
+    assert.equal(refused.evidence.conclusive, false);
+    assert.equal(refused.evidence.doubts[0].at, 'take');
+
+    const home = newHome();
+    write(home, { holds: [{ id: 'a newer writer', kind: 'robot', pid: OTHER }] });
+    const unread = await whole(home).takeWhole({ what: 'confirm run' });
+    assert.equal(unread.held, false);
+    assert.match(unread.why, /1 hold that does not read as an entry/);
+    assert.equal(JSON.parse(readFileSync(admissionFile(home), 'utf8')).holds.length, 1, 'nothing written over it');
+
+    const none = await createAdmission({ daorisHome: null, say: () => {}, env: {} }).takeWhole({ what: 'confirm run' });
+    assert.equal(none.held, false);
+    assert.match(none.why, /no Daoris home/);
+    assert.equal(none.evidence.conclusive, false);
+  });
+
+  test('its own process holding a place already: refused at once and nothing written, since the take would wait on itself', async () => {
+    const home = newHome();
+    const own = await admission(home, { capacity: 3 }).take({ what: 'driver gate' });
+    const made = whole(home);
+    const hold = await made.takeWhole({ what: 'confirm run' });
+    assert.equal(hold.held, false);
+    assert.match(hold.why, /its own process holds or asks a place already \(driver gate\)/);
+    assert.deepEqual(readState(admissionFile(home)).holds.map((each) => each.what), ['driver gate']);
+    own.release();
+  });
+
+  test('a drop while it waits lets every place go', async () => {
+    const home = newHome();
+    write(home, { holds: [foreign('a-session-run')] });
+    let stop = false;
+    const taking = whole(home).takeWhole({ what: 'confirm run', halted: () => stop });
+    await new Promise((done) => { setTimeout(done, 50); });
+    stop = true;
+    const hold = await taking;
+    assert.equal(hold.held, false);
+    assert.equal(hold.dropped, true);
+    assert.deepEqual(readState(admissionFile(home)).holds.map((each) => each.id), ['a-session-run']);
+    assert.deepEqual(readState(admissionFile(home)).waits, []);
+  });
+
+  test('the doubts of one reading, over the record pruned', () => {
+    const ids = ['m-01', 'm-02'];
+    const mine = ids.map((id) => ({ ...foreign(id), kind: 'queue', pid: process.pid }));
+    assert.deepEqual(wholeDoubts({ holds: mine, waits: [foreign('asks')], unread: 0 }, ids), [], 'an ask behind it is no doubt');
+    assert.match(wholeDoubts({ holds: mine.slice(0, 1), waits: [], unread: 0 }, ids)[0], /1 of its 2 places is no longer held \(m-02\)/);
+    assert.match(wholeDoubts({ holds: [...mine, foreign('x', 'vitest')], waits: [], unread: 0 }, ids)[0], /another live hold stands beside it: a driven run's vitest/);
+    assert.match(wholeDoubts({ holds: mine, waits: [], unread: 2 }, ids)[0], /2 holds that do not read as an entry/);
+  });
+
+  test('a strict read: a missing record only where allowed, and one that does not read throws', () => {
+    const home = newHome();
+    const file = admissionFile(home);
+    assert.deepEqual(readStrict(file, { missing: true }), { holds: [], waits: [], unread: 0 });
+    assert.throws(() => readStrict(file), /ENOENT/);
+    write(home, { holds: [{ id: 'x' }], waits: [] });
+    assert.deepEqual(readStrict(file), { holds: [], waits: [], unread: 1 });
+    writeFileSync(file, '{ "holds": "no" }');
+    assert.throws(() => readStrict(file), /holds is not a list/);
   });
 });

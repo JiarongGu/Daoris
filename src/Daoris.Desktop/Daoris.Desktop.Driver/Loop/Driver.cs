@@ -700,12 +700,13 @@ public sealed class Driver(
     }
 
     /// <summary>
-    /// A new start's walk over Build's effective order (MODELROLE1c, D205 §4.1): choice by choice, each choice's accounts by the existing
-    /// walk before the next. An entry that cannot run here at all is passed by its code before any account is asked: <c>unavailable</c>
-    /// (no such agent), <c>no-posture</c> (its harness has no mode for the repository's permission prompts, judged by the start's own
-    /// <see cref="DrivenAccess"/>) and <c>no-connector</c> (the pipe door, for a repository that has not adopted Daoris). The first entry
-    /// whose walk allows a start is taken; with none, the start holds on the wait's sentence, the soonest cool-off beside it. An order of
-    /// one entry is today's walk exactly, its own hold or refusal unchanged.
+    /// A new start's walk over Build's effective order (MODELROLE1c, D205 §4.1), through the quest's start plan (FOUNDATION1j,
+    /// <see cref="StartPlan"/>): choice by choice, each choice's accounts by the existing walk before the next. An entry that cannot run
+    /// here at all is passed by its code before any account is asked: <c>unavailable</c> (no such agent), <c>no-posture</c> (its harness
+    /// has no mode for the repository's permission prompts, judged by the start's own <see cref="DrivenAccess"/>) and <c>no-connector</c>
+    /// (the pipe door, for a repository that has not adopted Daoris). The first entry whose walk allows a start is taken; with none, the
+    /// start holds on the wait's sentence, the soonest cool-off beside it. An order of one entry is today's walk exactly, its own hold or
+    /// refusal unchanged.
     /// </summary>
     internal async Task<(HarnessSelection Selection, ActorEffective? Chosen)> WalkBuildAsync(
         Consideration start, IReadOnlyList<RepoView> registry, CancellationToken ct) =>
@@ -717,105 +718,57 @@ public sealed class Driver(
     /// <paramref name="counts"/> false, so the re-ask takes no count of its own and ranks without the start's own (<paramref name="except"/>).
     /// Each entry's accounts are judged by their offer readings for the entry's model (§4.1's model parameter).
     /// </summary>
-    internal async Task<BuildWalk> WalkBuildPassesAsync(
+    internal Task<SettledSelection> WalkBuildPassesAsync(
         Consideration start, IReadOnlyList<RepoView> registry, CancellationToken ct, bool counts = true,
-        (ActorEffective Entry, string? Account)? refused = null, long except = 0)
-    {
-        var quest = start.Quest;
-        var order = ActorChoices.Effective("build", config);
-        IReadOnlyCollection<string>? PassedFor(ActorEffective entry) =>
-            refused is { Entry: var at, Account: { } account } && at == entry ? [account] : null;
-        if (order.Count == 1)
-        {
-            var (only, _) = await Context.Harnesses
-                .SelectHandedAsync(order[0].Agent, config, start.Workspace, null, StartKind.Driven, ct, order[0].Model, PassedFor(order[0]), except, counts)
-                .ConfigureAwait(false);
-            return new BuildWalk(only, order[0], []);
-        }
-
-        var adopted = registry.FirstOrDefault(repo => string.Equals(repo.Repository, quest.To, StringComparison.OrdinalIgnoreCase))?.Adopted ?? true;
-        var access = AccessRules.Resolve(config, quest.To, start.Workspace);
-        var passes = new List<BuildPass>();
-        HarnessSelection? held = null;
-        CoolingEntry? soonest = null;
-        using var walk = Passed.Walk($"quest:{quest.Id}", counts);
-        foreach (var entry in order)
-        {
-            string? code = null;
-            string? why = null;
-            if (!Context.Adapters.Names.Contains(entry.Agent, StringComparer.OrdinalIgnoreCase))
-            {
-                (code, why) = ("unavailable", $"`{entry.Agent}` is not an agent on this machine");
-            }
-            else
-            {
-                var adapter = Context.Adapters.Resolve(entry.Agent);
-                if (DrivenAccess.For(access, quest.To, adapter).Refusal is { } unposed) (code, why) = ("no-posture", unposed);
-                else if (!adopted && adapter.Wire != SessionWire.Acp)
-                {
-                    (code, why) = ("no-connector", $"`{entry.Agent}` cannot take a quest here: `{quest.To}` has not adopted Daoris");
-                }
-            }
-
-            if (code is null)
-            {
-                var (selection, _) = await Context.Harnesses
-                    .SelectHandedAsync(entry.Agent, config, start.Workspace, null, StartKind.Driven, ct, entry.Model, PassedFor(entry), except, counts)
-                    .ConfigureAwait(false);
-                if (selection.Allowed)
-                {
-                    if (counts)
-                    {
-                        Log?.Write("info", "actor.chose", [("actor", "build"), ("quest", quest.Id), ("choice", entry.From), ("agent", entry.Agent),
-                            ("model", entry.Model), ("passed", passes.Select(pass => pass.Word).ToList())]);
-                    }
-
-                    return new BuildWalk(selection, entry, passes);
-                }
-
-                held ??= selection;
-                if (selection.Cooling is { } cooling && (soonest is null || cooling.Until < soonest.Until)) soonest = cooling;
-                // An entry whose every ready account does not offer its model is passed `not-offered` (D205 §3.3), never cooled.
-                (code, why) = (selection.NotOffered is not null ? AgentOffers.NotOffered
-                    : selection.Cooling is not null ? "cooling" : selection.SignedOut is not null ? "signed-out" : "held", selection.Refusal);
-            }
-
-            var thisPass = new BuildPass(entry, code, why);
-            passes.Add(thisPass);
-            if (walk.Fresh(thisPass)) Log?.Write("info", "actor.passed", [("actor", "build"), ("quest", quest.Id), ("choice", entry.From), ("agent", entry.Agent), ("code", code)]);
-        }
-
-        // The wait's sentence (D205 §4.5): judged again at every look, the first choice that can run, in order, taken.
-        var wait = $"Build waits: none of its choices can run now. {string.Join("; ", passes.Select(pass => pass.Said))}.";
-        return new BuildWalk((held ?? new HarnessSelection(wait)) with { Refusal = wait, Cooling = soonest }, null, passes);
-    }
+        (ActorEffective Entry, string? Account)? refused = null, long except = 0) =>
+        BuildPlan(start, registry).ResolveAsync(ct, counts, refused, except);
 
     /// <summary>
     /// The start's re-ask where its agent refused the entry's model at the open (D205 §3.3, MODELROLE1c2): the walk asked again as if the
     /// refusal had been known before the spawn, taking no count of its own. Its answer is a later entry to set on the same session where it
     /// names the same agent on the same account; anything else is null, and the opened record ends <c>choice-not-offered</c>, the next look
-    /// starting what the walk then answers.
+    /// starting what the walk then answers. A walk that throws answers null, as it always has.
     /// </summary>
     internal async Task<(ActorAsked Asked, string Choice)?> ReaskAsync(
         Consideration start, IReadOnlyList<RepoView> registry, ActorEffective refused, HarnessSelection selection, CancellationToken ct)
     {
-        BuildWalk again;
         try
         {
-            again = await WalkBuildPassesAsync(start, registry, ct, counts: false, refused: (refused, selection.Profile), except: selection.Number)
-                .ConfigureAwait(false);
+            return await BuildPlan(start, registry).ReaskAsync(refused, selection, ct).ConfigureAwait(false);
         }
         catch (DriverException)
         {
             return null;
         }
+    }
 
-        var same = again.Chosen is { } later && later != refused
-                   && string.Equals(later.Agent, refused.Agent, StringComparison.OrdinalIgnoreCase)
-                   && string.Equals(again.Selection.Profile, selection.Profile, StringComparison.OrdinalIgnoreCase);
-        Log?.Write("info", "actor.reasked", [("actor", "build"), ("quest", start.Quest.Id), ("refused", refused.From),
-            ("answer", again.Chosen?.From), ("same", same)]);
-        return same ? (again.Chosen!.Asked, again.Chosen.From) : null;
+    /// <summary>
+    /// A quest's start plan (FOUNDATION1j): Build's order for its work, its passes remembered and said under the quest, its gate the quest's
+    /// own: an agent whose harness has no mode for the repository's permission prompts, and a pipe door where the repository has not adopted
+    /// Daoris, each passed before any account is asked.
+    /// </summary>
+    private StartPlan BuildPlan(Consideration start, IReadOnlyList<RepoView> registry)
+    {
+        var quest = start.Quest;
+        var adopted = registry.FirstOrDefault(repo => string.Equals(repo.Repository, quest.To, StringComparison.OrdinalIgnoreCase))?.Adopted ?? true;
+        var access = AccessRules.Resolve(config, quest.To, start.Workspace);
+        (string Code, string Why)? Gate(ActorEffective entry, ISessionAdapter adapter)
+        {
+            if (DrivenAccess.For(access, quest.To, adapter).Refusal is { } unposed) return (StartPasses.NoPosture, unposed);
+            return !adopted && adapter.Wire != SessionWire.Acp
+                ? (StartPasses.NoConnector, $"`{entry.Agent}` cannot take a quest here: `{quest.To}` has not adopted Daoris")
+                : null;
+        }
+
+        return new StartPlan(ParticipantWork.Build, config, Context.Harnesses, Context.Adapters, Passed)
+        {
+            Workspace = start.Workspace,
+            Kind = StartKind.Driven,
+            Subject = $"quest:{quest.Id}",
+            Named = ("quest", quest.Id),
+            Log = Log,
+            Gate = Gate,
+        };
     }
 
     /// <summary>
@@ -1401,8 +1354,9 @@ public sealed class Driver(
                 var workspaces = held.Select(each => each.Started.Workspace).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
                 // The person's name for the account, read as the look says the wait (ACCT2b): the page says it, the log the id.
                 var names = AccountNames.Of(Context.Harnesses.Home, cooling.Agent);
+                // The agent the start asked, as its plan answered it, where its hold says one (FOUNDATION1j part ii); else the one it began on.
                 return new AccountWait(
-                    held[0].Started.Adapter, cooling.Agent, cooling.Account, workspaces.Count == 1 ? workspaces[0] : null,
+                    held[0].Came!.Agent ?? held[0].Started.Adapter, cooling.Agent, cooling.Account, workspaces.Count == 1 ? workspaces[0] : null,
                     cooling.Until, cooling.Stated, held[0].Came!.Held ?? CoolingWords.Hold(cooling, Context.Harnesses.Zone, names))
                 {
                     Quests = [.. held.Select(each => each.Started.Quest).OfType<string>()],
@@ -1432,7 +1386,7 @@ public sealed class Driver(
                 var held = agent.ToList();
                 var workspaces = held.Select(each => each.Started.Workspace).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
                 return new AccountWait(
-                    held[0].Started.Adapter, held[0].Came!.SignedOut!.Agent, null, workspaces.Count == 1 ? workspaces[0] : null,
+                    held[0].Came!.Agent ?? held[0].Started.Adapter, held[0].Came!.SignedOut!.Agent, null, workspaces.Count == 1 ? workspaces[0] : null,
                     Until: null, Stated: false, held[0].Came!.Held ?? "")
                 {
                     Quests = [.. held.Select(each => each.Started.Quest).OfType<string>()],
@@ -1977,12 +1931,27 @@ public sealed class Driver(
         var quest = start.Quest;
         var root = start.Root!;
         var isolated = config.OpensOwnTree(quest.To);
-        StartRun Hold(string why) => new($"held  #{quest.Id} → {quest.To}: {why}", false, null, why);
 
         // The agent this start runs on (MIXAGENT1a-ii, D163 point 1): the one a hand-over named for the quest, held until the quest
-        // leaves this machine, else the machine's. A local, and a parameter wherever it is passed on: starts run side by side.
+        // leaves this machine; else a continuation's record's own (FOUNDATION1j part ii; the foundation design §2.4 and §7 row 5, D205
+        // point 1): the agent its asked choice was asked of, never the machine's `adapter` key, so a part that ran on Build's second choice
+        // goes on there; a first start's is the walk's, below. A local, and a parameter wherever it is passed on: starts run side by side.
         var handedQuest = new HandedQuests(home).Read(quest.Id);
         var agent = handedQuest?.Agent ?? config.Adapter;
+        // Each hold names the agent the start asked, which the look's report of a wait names (the design §2.4's second row).
+        StartRun Hold(string why) => new($"held  #{quest.Id} → {quest.To}: {why}", false, null, why) { Agent = agent };
+        if (handedQuest is null && start.Resumes is { } goesOnFrom)
+        {
+            try
+            {
+                agent = StartPlan.ContinuedOn(goesOnFrom, config);
+            }
+            catch (DriverException error)
+            {
+                return Hold(error.Message);
+            }
+        }
+
         // Whether this start carries on from the very session the quest was handed over from: the one whose instruction and note say so.
         var handedFrom = handedQuest is not null && start.Resumes is { } earlier
                          && string.Equals(earlier.Session, handedQuest.From, StringComparison.Ordinal);
@@ -2735,9 +2704,10 @@ public sealed class Driver(
             {
                 // The mode its repository's permission prompts name on its harness (AUTONOMY1b), on either door.
                 Access = permissions,
-                // MODELROLE1c (D205 §3.2): what the entry the walk took names, carried on every run; a continuation keeps its record's.
+                // MODELROLE1c (D205 §3.2): what the entry the walk took names, carried on every run; a continuation keeps its record's,
+                // and its choice with it (FOUNDATION1j part ii, §3.5(a)), so a part carried on from Build's second choice says it is that one.
                 Asked = chosen?.Asked ?? (start.Resumes is { } carried ? carried.Asked : ActorAsked.Before(adapter.Name)),
-                Choice = chosen?.From,
+                Choice = chosen?.From ?? start.Resumes?.Choice,
                 Browser = InAppBrowserServers.Told(browserDrivers),
                 ReadsAcross = across.Reads,
                 WritesAcross = across.Writes,
