@@ -514,13 +514,17 @@ internal sealed class ContentHolds(TreeContext context)
     /// tree, named. Null is git unable to say, which keeps the tree too. 🔴 <b>Except a session's own scratch in such a folder</b>
     /// (TREEKEEP1): under a build folder (<see cref="TreeScratch.BuildFolders"/>) the path goes as ever; under any other, each file the tree
     /// wrote after it opened that the checkout does not hold as written (absent, or different bytes) is the tree's own, as an ignored path only it holds is.
-    /// 🔴 <b>Output goes either way</b> (TIDYOUTPUT1): a path the checkout's <c>daoris.gates.json</c> declares in <c>integration.scratch</c>
-    /// (<see cref="TreeScratch.Declared"/>), and a build's <c>bin</c>, <c>obj</c> and <c>node_modules</c>
+    /// 🔴 <b>Output goes either way</b> (TIDYOUTPUT1): a path the repository declares in <c>integration.scratch</c>
+    /// (<paramref name="declared"/>), and a build's <c>bin</c>, <c>obj</c> and <c>node_modules</c>
     /// (<see cref="TreeScratch.UnderMadeFolder"/>), go with the tree though the checkout holds none; and inside a folder looked into, a file
     /// under any build folder or declared is passed over. An ignored folder the checkout lacks is read file by file, so what keeps the tree
     /// is named as the file it is. Anything else stays the tree's own.
     /// </remarks>
-    internal static async Task<TreeHolds?> HoldsAsync(string tree, string root, CancellationToken ct)
+    /// <param name="declared">
+    /// The repository's declared output, read from the declaration the owner accepted for integration at the line's tip alone
+    /// (<see cref="TreeScratch.AcceptedAsync"/>, INTEGRATE1d, D218's note); none where nothing is accepted, which keeps what it names.
+    /// </param>
+    internal static async Task<TreeHolds?> HoldsAsync(string tree, string root, IReadOnlyList<System.Text.RegularExpressions.Regex> declared, CancellationToken ct)
     {
         var (code, porcelain, _) = await WorkingTree.GitAsync(
             tree, ["--no-optional-locks", "status", "--porcelain", "-z", "--untracked-files=all", "--ignored=matching", "--ignore-submodules=none"], ct).ConfigureAwait(false);
@@ -532,8 +536,6 @@ internal sealed class ContentHolds(TreeContext context)
         var tooLarge = new List<string>();
         // When the tree opened: its folder was made by the worktree add and nothing since recreates it (TREEKEEP1).
         var opened = Directory.GetCreationTimeUtc(tree);
-        // What the repository declares as its output, read once and from the checkout's gates file (TIDYOUTPUT1).
-        var declared = TreeScratch.Declared(root);
         var entries = porcelain.Split('\0');
         for (var at = 0; at < entries.Length; at++)
         {

@@ -90,6 +90,15 @@ public sealed partial class HelpCoverageTests
         + "the person's press.";
 
     /// <summary>
+    /// The integration declaration on a repository's Setup (INTEGRATE1d, the integration design §17.7): <i>Accept</i> and <i>Withdraw</i>
+    /// for the <c>integration</c> object of its <c>daoris.gates.json</c>, by the blob the person read.
+    /// </summary>
+    private const string IntegrationDeclaration =
+        "accepting a repository's integration declaration by its blob is what lets its generated-file writers, line rules and scratch "
+        + "run, the person's door alone (D156), and an agent never lowers the person's part (D157 point 10): no proposal names "
+        + "`INTEGRATION_GATES`.";
+
+    /// <summary>
     /// *Sessions' checks* on a repository's Setup (FABRIC-PIPELINE1b, D192 point 4): which checks its sessions run, the twin of
     /// <c>daoris-driver checks</c>.
     /// </summary>
@@ -958,6 +967,8 @@ public sealed partial class HelpCoverageTests
         ("projects", "useSetHeavyGates", null, new Exempt(HeavyGates)),
         // FABRIC-PIPELINE1a: the landed route, on a repository's Setup and its Workflow tab.
         ("projects", "useSetLanded", null, new Exempt(LandedRoute)),
+        // INTEGRATE1d: the integration declaration's Accept and Withdraw, beside the landed route on a repository's Setup.
+        ("projects", "useAcceptIntegration", null, new Exempt(IntegrationDeclaration)),
         // FABRIC-PIPELINE1b: *Sessions' checks*, beside the heavy gates on a repository's Setup.
         ("projects", "useSetSessionChecks", null, new Exempt(ChecksOfSessions)),
         ("projects", "useSetStanding", null, new Door("setting", "standing")),

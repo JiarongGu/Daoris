@@ -351,6 +351,8 @@ public sealed class PipeCensus
             "SET_HELP_GRANT",
             // FABRIC-PIPELINE1a: the landed route and the gates it runs unasked, accepted by their blob (D156).
             "WORKFLOW_LANDED",
+            // INTEGRATE1d: a repository's integration declaration, what integration runs and a tidy removes, accepted by its blob (D215 point 10).
+            "INTEGRATION_GATES",
             // HEAVYRUN1b2b: the commands this machine runs for a repository's heavy gates, which the person writes.
             "SET_HEAVY_GATES", "SET_HOLD", "SET_LANDING", "SET_LANGUAGE", "SET_LINE", "SET_NOTIFY", "SET_OPINION", "SET_READ_ACROSS",
             "SET_REVIEW", "SET_SESSION_OPTION",
@@ -465,6 +467,9 @@ public sealed class PipeCensus
             "SET_ACCESS", "SET_AGENT_SETTINGS", "SET_COMMITS", "SET_DRIVABLE", "SET_HELP_MODE", "SET_HELP_GRANT", "SET_HEAVY_GATES", "SET_HOLD",
             "SET_LANGUAGE", "SET_NOTIFY", "SET_READ_ACROSS", "SET_SESSION_OPTION", "SET_SESSION_CHECKS", "SET_STANDING", "SET_STRIKES", "SET_TREES",
             "SET_WRITE_ACROSS", "RULE_ACTION", "RULE_PROPOSAL",
+            // INTEGRATE1d: an integration declaration's acceptance, which starts nothing: what it accepts runs only in a landing or a tidy,
+            // each a press or a look of its own the drain already holds.
+            "INTEGRATION_GATES",
             // A plugin made in a folder, which installs nothing, and a tool's files and location.
             "PLUGIN_NEW", "TOOLS_DELETE", "TOOLS_LOCATION", "TOOLS_GIT");
         return table;

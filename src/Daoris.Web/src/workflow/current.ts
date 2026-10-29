@@ -87,10 +87,27 @@ export interface WorkflowLanded {
   declaration?: string | null;
 }
 
+/**
+ * A repository's integration declaration and the person's acceptance of it (INTEGRATE1d; the integration design §17.7): the
+ * `daoris.gates.json` `integration` object at the line's tip, accepted by its blob on its own, apart from the landed route's gates.
+ * `state` is `accepted`, `changed`, `unaccepted` or `unread`; one a newer driver names is said as recorded.
+ */
+export interface WorkflowIntegration {
+  /** The accepted blob, `none` where the line held none, or null where none was accepted. */
+  gates: string | null;
+  state: string;
+  tip?: { line: string; commit: string; gates: string } | null;
+  problem?: string | null;
+  /** The declaration at the tip, only where it waits to be accepted (`changed` or `unaccepted`). */
+  declaration?: string | null;
+}
+
 /** The start node a Workflow tab draws first (FABRIC-PIPELINE1a): its routes, the landed route, and the verification workflows saved here. */
 export interface WorkflowStart {
   routes: WorkflowRoute[];
   landed: WorkflowLanded;
+  /** A repository's integration declaration; null on a workspace's, and left out by a driver before INTEGRATE1d. */
+  integration?: WorkflowIntegration | null;
   verifications: { id: string; name: string }[];
 }
 

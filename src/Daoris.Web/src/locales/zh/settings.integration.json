@@ -1,0 +1,12 @@
+{
+  "settings.integration.label": "集成声明",
+  "settings.integration.why": "仓库 `daoris.gates.json` 里的 `integration` 对象：集成所写的生成文件、它运行的规则，以及清理时清除的临时文件。只有经你采纳、按它的 blob 记下，才会被使用，与落地路线的检查分开；仓库自己的文件不会自行授权。",
+  "settings.integration.accepted": "已采纳。它的生成文件、主线规则和临时文件按你采纳的样子使用：{{branch}} 最新提交 {{commit}} 上的 blob {{blob}}。",
+  "settings.integration.acceptedNone": "按“没有”采纳：{{branch}} 最新提交 {{commit}} 没有声明集成，在有声明落地并且你采纳它之前，什么都不会使用。",
+  "settings.integration.changed": "这份声明在你采纳之后变了：在你再次采纳之前，它的内容都不会被使用。",
+  "settings.integration.unaccepted": "这份声明还没有被采纳：在你采纳之前，它的内容都不会被使用。",
+  "settings.integration.unread": "这里读不到集成声明现在的状态。",
+  "settings.integration.declaration": "{{branch}} 最新提交 {{commit}} 上的 daoris.gates.json",
+  "settings.integration.accept": "采纳集成声明",
+  "settings.integration.withdraw": "撤回"
+}

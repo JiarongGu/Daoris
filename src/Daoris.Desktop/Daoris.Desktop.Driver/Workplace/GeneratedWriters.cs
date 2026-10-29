@@ -12,9 +12,11 @@ namespace Daoris.Driver;
 /// </summary>
 /// <remarks>
 /// <para><b>Only under the person's acceptance.</b> A writer is a command read from the repository, which runs unasked only as the
-/// person accepted it (the pipeline design §4.2): the landed route's accepted blob of <c>daoris.gates.json</c> must be the declaration at
-/// the commit the replay builds on, and the command is read from that blob, never from the session's copy, so a session cannot declare
-/// a command and have its own landing run it. Without that, the replay leaves the line's copy, as before.</para>
+/// person accepted it (the pipeline design §4.2): an accepted blob of <c>daoris.gates.json</c> must be the declaration at the commit the
+/// replay builds on, and the command is read from that blob, never from the session's copy, so a session cannot declare a command and
+/// have its own landing run it. Either acceptance accepts them (INTEGRATE1d; D215 point 2, the integration design §4.1): the landed
+/// route's, or the integration's own (<see cref="IntegrationAcceptance"/>), so a repository with no verification pipeline has its
+/// generated files written again too. Without either, the replay leaves the line's copy, as before.</para>
 /// <para>Which files are generated stays <c>linguist-generated</c> (LANDREBASE1): <c>paths</c> names only which folder a command
 /// writes.</para>
 /// </remarks>
@@ -29,8 +31,8 @@ internal static class GeneratedWriters
     /// <summary>One declared writer: the folder it writes, relative to the repository's top with no trailing slash, and its command line.</summary>
     internal sealed record Writer(string Folder, string Run)
     {
-        /// <summary>Whether <paramref name="path"/> lies in the folder it writes.</summary>
-        public bool Holds(string path) => path.StartsWith(Folder + "/", StringComparison.Ordinal);
+        /// <summary>Whether <paramref name="path"/> lies in the folder it writes, or is the file a line rule's writer writes (INTEGRATE1d).</summary>
+        public bool Holds(string path) => path == Folder || path.StartsWith(Folder + "/", StringComparison.Ordinal);
     }
 
     /// <summary>What writing them again made: the files its commit changed and the commands run, or why it was not written.</summary>
@@ -41,17 +43,19 @@ internal static class GeneratedWriters
     }
 
     /// <summary>
-    /// The writers <paramref name="repository"/>'s landed route accepted, as declared at <paramref name="onto"/>: none where the route
-    /// accepted no declaration, or the one at <paramref name="onto"/> is another (an edit asks again), or it declares none.
+    /// The writers <paramref name="repository"/>'s landed route or its integration accepted, as declared at <paramref name="onto"/>: none
+    /// where neither accepted the declaration there (the one at <paramref name="onto"/> is another: an edit asks again), or it declares none.
     /// </summary>
     internal static async Task<IReadOnlyList<Writer>> AcceptedAsync(
         DriverConfig config, string root, string repository, string workspace, string onto, CancellationToken ct)
     {
-        if (WorkplaceWorkflows.Current.AcceptedGates(config, repository, workspace) is not { } accepted) return [];
+        var landed = WorkplaceWorkflows.Current.AcceptedGates(config, repository, workspace);
+        var integration = IntegrationAcceptance.Of(config, repository);
+        if (landed is null && integration is null) return [];
         var (found, sha, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", $"{onto}:{DeclarationFile}"], ct)
             .ConfigureAwait(false);
         var blob = sha.Trim();
-        if (found != 0 || blob != accepted) return [];
+        if (found != 0 || (blob != landed && blob != integration)) return [];
         return await WorkplaceWorkflows.Current.DeclarationTextAsync(root, blob, ct).ConfigureAwait(false) is { } text ? Parse(text) : [];
     }
 

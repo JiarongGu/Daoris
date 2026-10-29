@@ -74,7 +74,9 @@ internal sealed class TreeLands(
             return plan with { LeftOut = sync.Held.LeftOut, Lands = sync.Held.Kept, Conflict = TreeLandSyncs.OwnOnRemote(sync).Conflict };
         }
 
-        var conflicts = await LineHolds.TrialAsync(sync.Root, sync.Onto, sync.Held.Kept, ct).ConfigureAwait(false);
+        // INTEGRATE1d: a file of a line rule the owner accepted for integration is no conflict the press would refuse, as it settles it.
+        var lines = await LineRules.AcceptedAsync(context.Config(), sync.Root, repository, sync.Onto, ct).ConfigureAwait(false);
+        var conflicts = await LineHolds.TrialAsync(sync.Root, sync.Onto, sync.Held.Kept, ct, lines).ConfigureAwait(false);
         return plan with
         {
             LeftOut = sync.Held.LeftOut,

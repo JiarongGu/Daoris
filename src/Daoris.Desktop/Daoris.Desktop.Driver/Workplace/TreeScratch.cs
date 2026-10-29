@@ -1,5 +1,4 @@
 using System.Text;
-using System.Text.Json;
 using System.Text.RegularExpressions;
 
 namespace Daoris.Driver;
@@ -30,9 +29,6 @@ internal static class TreeScratch
     /// </summary>
     private static readonly HashSet<string> MadeFolders = new(StringComparer.OrdinalIgnoreCase) { "node_modules", "bin", "obj" };
 
-    /// <summary>The repository's gates file, at its top.</summary>
-    private const string GatesFile = "daoris.gates.json";
-
     /// <summary>The most files looked at under one shared ignored folder; past it the folder counts as the tree's own (TREEKEEP1).</summary>
     internal const int ScratchWalkLimit = 5000;
 
@@ -41,54 +37,31 @@ internal static class TreeScratch
         path.Split(['/', '\\'], StringSplitOptions.RemoveEmptyEntries).Any(MadeFolders.Contains);
 
     /// <summary>
-    /// The globs a repository declares as its own output (TIDYOUTPUT1): <c>integration.scratch</c> of the registered checkout's
-    /// <c>daoris.gates.json</c>, the key D215 reserves for what the landing's tidy may take with a tree. Read from the checkout, never
-    /// the tree, which holds the session's own copy; none where the file is absent or unreadable.
+    /// The globs a repository declares as its own output (TIDYOUTPUT1): <c>integration.scratch</c>, the key D215 reserves for what the
+    /// landing's tidy may take with a tree. A list of files the tidy deletes is accepted as a command is (INTEGRATE1d, D218's note), so
+    /// it is read from the blob the owner accepted for <paramref name="repository"/>'s integration alone, and only where that blob is the
+    /// declaration at <paramref name="line"/>'s tip: never the checkout's working file, nor the tree, which holds the session's own copy.
+    /// None where nothing is accepted, the line's declaration changed since (it waits for the owner), or the line is not known.
     /// </summary>
-    internal static IReadOnlyList<Regex> Declared(string checkoutRoot)
+    internal static async Task<IReadOnlyList<Regex>> AcceptedAsync(
+        DriverConfig config, string root, string repository, string? line, CancellationToken ct)
     {
-        try
-        {
-            var file = Path.Combine(checkoutRoot, GatesFile);
-            return File.Exists(file) ? ParseDeclared(File.ReadAllText(file)) : [];
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-        {
-            return [];
-        }
+        if (line is null || !BranchName.IsValid(line)) return [];
+        var text = await IntegrationAcceptance.AcceptedTextAsync(config, root, repository, $"refs/heads/{line}", ct).ConfigureAwait(false);
+        return text is null ? [] : ParseDeclared(text);
     }
 
     /// <summary>
-    /// The declared globs of a gates file's text, each as a pattern over a repository-relative path (<c>/</c> separated, case-insensitive):
-    /// <c>*</c> within one segment, <c>**</c> across any, and a trailing <c>/**</c> the folder as well as what is under it. A glob is passed
-    /// over where it is absolute, leaves the repository (<c>..</c>) or opens with a wildcard, since that would cover folders the
-    /// repository never named: an authored ignored file (a <c>local/</c> note) is never output by a pattern's reach alone.
+    /// The declared globs of a gates file's text, read through the declaration's one reader (<see cref="IntegrationDeclaration.Read"/>),
+    /// each as a pattern over a repository-relative path (<c>/</c> separated, case-insensitive): <c>*</c> within one segment, <c>**</c>
+    /// across any, and a trailing <c>/**</c> the folder as well as what is under it. A declaration that breaks any key's shape declares
+    /// none (INTEGRATE1d: nothing acts on half of one), and that reader refuses a glob that is absolute, leaves the repository (<c>..</c>)
+    /// or opens with a wildcard, since that would cover folders the repository never named: an authored ignored file (a <c>local/</c>
+    /// note) is never output by a pattern's reach alone.
     /// </summary>
-    internal static IReadOnlyList<Regex> ParseDeclared(string text)
-    {
-        var globs = new List<Regex>();
-        try
-        {
-            using var document = JsonDocument.Parse(text);
-            if (document.RootElement.ValueKind != JsonValueKind.Object
-                || !document.RootElement.TryGetProperty("integration", out var integration) || integration.ValueKind != JsonValueKind.Object
-                || !integration.TryGetProperty("scratch", out var list) || list.ValueKind != JsonValueKind.Array)
-            {
-                return globs;
-            }
-
-            foreach (var entry in list.EnumerateArray())
-            {
-                if (entry.ValueKind == JsonValueKind.String && Glob(entry.GetString()!) is { } glob) globs.Add(glob);
-            }
-        }
-        catch (JsonException)
-        {
-            // A declaration that does not read declares nothing, which keeps a tree rather than discarding one.
-        }
-
-        return globs;
-    }
+    internal static IReadOnlyList<Regex> ParseDeclared(string text) =>
+        // A declaration that does not read declares nothing, which keeps a tree rather than discarding one.
+        [.. (IntegrationDeclaration.Read(text).Facts?.Scratch ?? []).Select(Glob).OfType<Regex>()];
 
     private static Regex? Glob(string text)
     {

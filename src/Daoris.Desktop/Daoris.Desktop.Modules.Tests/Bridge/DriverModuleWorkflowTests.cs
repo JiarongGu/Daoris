@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Daoris.Desktop.Driver.Tests;
 using Daoris.Driver;
 
 namespace Daoris.Desktop.Modules.Tests;
@@ -204,22 +205,132 @@ public sealed class DriverModuleWorkflowTests : DriverModuleBridge
         PluginState.Enable(Home, id);
     }
 
-    /// <summary>The module over a loop come up on a stand-in service holding the registry below.</summary>
-    private async Task<(DriverModule Module, DriverLoop Loop)> UpAsync()
+    /// <summary>The module over a loop come up on a stand-in service holding the registry below, <c>engine</c>'s checkout at <paramref name="root"/> where named.</summary>
+    private async Task<(DriverModule Module, DriverLoop Loop)> UpAsync(string? root = null)
     {
         var loop = Loop();
         var module = new DriverModule(Bus, loop);
-        await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(new StandInService())));
+        await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(new StandInService(root))));
         return (module, loop);
     }
 
-    /// <summary>A stand-in service holding three repositories, two in one workspace and one in none.</summary>
-    private sealed class StandInService : HttpMessageHandler
+    // ---- INTEGRATE1d: the integration's own acceptance, the person's door (D215 points 2 and 10, the integration design §4.1, §4.3) ----
+
+    private const string Declares = """{ "integration": { "scratch": ["out/**"] } }""";
+
+    /// <summary>
+    /// The person's press accepts the declaration at the line's tip by its blob, in <c>integrationGates</c> apart from the landed route's,
+    /// and the start node says where it stands: unaccepted, with the text to read, before; accepted after; changed, with the new text, once
+    /// the line edits it. A blob named that is no longer the tip's is refused <c>moved</c> and nothing is written, since the person accepts
+    /// what they read; and the acceptance can be withdrawn.
+    /// </summary>
+    [Fact]
+    [Trait(Category.Name, Category.Process)]
+    public async Task The_integration_acceptance_takes_the_tips_blob_and_reads_changed_once_the_line_edits_its_declaration()
+    {
+        var root = await CheckoutAsync();
+        var (module, _) = await UpAsync(root);
+        var blob = (await GitAsync(root, "rev-parse", "main:daoris.gates.json")).Trim();
+
+        var before = await IntegrationAsync(module);
+        Assert.Equal((IntegrationAcceptance.Unaccepted, blob), (before.GetProperty("state").GetString(), before.GetProperty("tip").GetProperty("gates").GetString()));
+        Assert.Equal("main", before.GetProperty("tip").GetProperty("line").GetString());
+        Assert.Equal(Declares, before.GetProperty("declaration").GetString());
+        Assert.Equal(JsonValueKind.Null, before.GetProperty("gates").ValueKind);
+
+        var accepted = await AnswerAsync(module, "INTEGRATION_GATES", new { repository = "engine", gates = blob });
+        Assert.True(accepted.GetProperty("done").GetBoolean(), accepted.GetRawText());
+        var now = accepted.GetProperty("start").GetProperty("integration");
+        Assert.Equal((IntegrationAcceptance.Accepted, blob), (now.GetProperty("state").GetString(), now.GetProperty("gates").GetString()));
+        Assert.Equal(JsonValueKind.Null, now.GetProperty("declaration").ValueKind);
+        Assert.Equal(blob, DriverConfig.Load(DriverConfigPath).IntegrationGates["engine"]);
+        Assert.False(DriverConfig.Load(DriverConfigPath).Workflows.ContainsKey("engine"), "the landed route's acceptance is apart");
+
+        await CommitAsync(root, """{ "integration": { "scratch": ["out/**", "logs/**"] } }""");
+        var changed = await IntegrationAsync(module);
+        Assert.Equal((IntegrationAcceptance.Changed, blob), (changed.GetProperty("state").GetString(), changed.GetProperty("gates").GetString()));
+        Assert.Contains("logs/**", changed.GetProperty("declaration").GetString());
+
+        var stale = await AnswerAsync(module, "INTEGRATION_GATES", new { repository = "engine", gates = blob });
+        Assert.Equal((false, "moved"), (stale.GetProperty("done").GetBoolean(), stale.GetProperty("refused").GetString()));
+        Assert.Contains("read it again", stale.GetProperty("message").GetString());
+        Assert.Equal(blob, DriverConfig.Load(DriverConfigPath).IntegrationGates["engine"]);
+
+        var withdrawn = await AnswerAsync(module, "INTEGRATION_GATES", new { repository = "engine", clear = true });
+        Assert.True(withdrawn.GetProperty("done").GetBoolean());
+        Assert.Equal(IntegrationAcceptance.Unaccepted, withdrawn.GetProperty("start").GetProperty("integration").GetProperty("state").GetString());
+        Assert.Empty(DriverConfig.Load(DriverConfigPath).IntegrationGates);
+    }
+
+    /// <summary>
+    /// A repository with no checkout here has its tip unread, so nothing is accepted and the answer says why; a workspace's start node
+    /// holds no integration, which is accepted repository by repository; and the press names a repository.
+    /// </summary>
+    [Fact]
+    public async Task An_integration_acceptance_with_no_tip_to_read_is_refused_unread_and_a_workspace_holds_none()
+    {
+        var (module, _) = await UpAsync();
+
+        var unread = await IntegrationAsync(module);
+        Assert.Equal(IntegrationAcceptance.Unread, unread.GetProperty("state").GetString());
+        Assert.Equal("`engine` has no checkout on this machine to read.", unread.GetProperty("problem").GetString());
+
+        var refused = await AnswerAsync(module, "INTEGRATION_GATES", new { repository = "engine" });
+        Assert.Equal((false, "unread"), (refused.GetProperty("done").GetBoolean(), refused.GetProperty("refused").GetString()));
+        Assert.Empty(DriverConfig.Load(DriverConfigPath).IntegrationGates);
+
+        var workspace = (await AnswerAsync(module, "WORKFLOW_CURRENT", new { workspace = "aurora" })).GetProperty("start");
+        Assert.False(workspace.TryGetProperty("integration", out var none) && none.ValueKind != JsonValueKind.Null);
+        Assert.Contains("an integration's declaration is accepted for a `repository`", await RefusalAsync(module, "INTEGRATION_GATES", new { workspace = "aurora" }));
+        Assert.Contains("name `gates` or `clear`", await RefusalAsync(module, "INTEGRATION_GATES", new { repository = "engine", gates = Blob, clear = true }));
+    }
+
+    private async Task<JsonElement> IntegrationAsync(DriverModule module) =>
+        (await AnswerAsync(module, "WORKFLOW_CURRENT", new { repository = "engine" })).GetProperty("start").GetProperty("integration");
+
+    /// <summary><c>engine</c>'s checkout under the home, on <c>main</c>, its declaration committed.</summary>
+    private async Task<string> CheckoutAsync()
+    {
+        var root = Path.Combine(Home, "checkouts", "engine");
+        Directory.CreateDirectory(root);
+        await GitAsync(root, "init", "--quiet", "-b", "main");
+        await CommitAsync(root, Declares);
+        return root;
+    }
+
+    private static async Task CommitAsync(string root, string declaration)
+    {
+        await File.WriteAllTextAsync(Path.Combine(root, "daoris.gates.json"), declaration);
+        await GitAsync(root, "add", "daoris.gates.json");
+        await GitAsync(root, "-c", "user.name=Fixture", "-c", "user.email=fixture@example.test", "commit", "--quiet", "-m", "the declaration");
+    }
+
+    private static async Task<string> GitAsync(string root, params string[] arguments)
+    {
+        var info = new System.Diagnostics.ProcessStartInfo("git")
+        { WorkingDirectory = root, RedirectStandardOutput = true, RedirectStandardError = true, CreateNoWindow = true };
+        foreach (var argument in arguments) info.ArgumentList.Add(argument);
+        using var process = System.Diagnostics.Process.Start(TestGit.Past(info))!;
+        var output = process.StandardOutput.ReadToEndAsync();
+        var error = process.StandardError.ReadToEndAsync();
+        await Task.WhenAll(output, error);
+        await process.WaitForExitAsync();
+        Assert.True(process.ExitCode == 0, await error);
+        return await output;
+    }
+
+    /// <summary>A stand-in service holding three repositories, two in one workspace and one in none; <c>engine</c>'s checkout at <paramref name="root"/> where named.</summary>
+    private sealed class StandInService(string? root = null) : HttpMessageHandler
     {
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
         {
             var body = request.RequestUri!.AbsolutePath == "/api/registry"
-                ? """[{"repository":"game","workspace":"aurora"},{"repository":"engine","workspace":"aurora"},{"repository":"tools"}]"""
+                ? JsonSerializer.Serialize(new object[]
+                {
+                    new { repository = "game", workspace = "aurora" },
+                    root is null ? (object)new { repository = "engine", workspace = "aurora" } : new { repository = "engine", workspace = "aurora", root },
+                    new { repository = "tools" },
+                })
                 : "[]";
             return Task.FromResult(new HttpResponseMessage(System.Net.HttpStatusCode.OK)
             {

@@ -47,6 +47,25 @@ export const useSetLanded = () => {
 };
 
 /**
+ * What `INTEGRATION_GATES` answers: the start node as it now stands, whether the acceptance was kept, and the refusal's code (`moved`
+ * where the tip no longer holds the blob the person read, `unread`) with the driver's sentence.
+ */
+export type IntegrationAnswer = { start: WorkflowStart | null; done: boolean; refused: string | null; message: string | null };
+
+/**
+ * The person's acceptance of a repository's integration declaration (INTEGRATE1d; the integration design §17.7): the blob of the
+ * `daoris.gates.json` `integration` they read, or `clear` to withdraw it. A blob that is no longer the tip's is refused `moved`, as an
+ * answer, never thrown. Every workflow answer is asked again after it, since each start node reads the acceptance.
+ */
+export const useAcceptIntegration = () => {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (variables: { repository: string; gates?: string; clear?: true }) => call<IntegrationAnswer>('INTEGRATION_GATES', variables),
+    onSuccess: () => client.invalidateQueries({ queryKey: keys.workflow('repository', '').slice(0, 3) }),
+  });
+};
+
+/**
  * Where a session's, a quest's or an ask's work stands in its workflow (WORKFLOW1c; D157 point 11, the workflow design §5.1, §7):
  * the runs the driver reads from this machine's records, one per chain and repository. Desktop-only, as Current is: the landing
  * record and the sessions' records are this machine's (D47 §4), so a browser asks nothing and draws no run. `enabled: false`
