@@ -23,6 +23,22 @@ public enum PipeClass
 }
 
 /// <summary>
+/// What an update's drain does with a person's or a role's press (DRAINHOLD1, D156's DRAINHOLD1 note): the drain waits on running work
+/// for hours, so only a press that would add to that work, or would be cut by the restart, waits for it.
+/// </summary>
+public enum PipeDrain
+{
+    /// <summary>
+    /// It starts work the drain waits on, at once or at the next look; starts a process of its own that runs on past its answer; or changes
+    /// a repository through git. Sent during the drain it is refused <see cref="InstancePipe.Stopping"/>, and confirmed it still waits.
+    /// </summary>
+    Waits,
+
+    /// <summary>It stops, takes back, answers or records, and starts nothing the drain waits on: it goes on while the update drains.</summary>
+    Passes,
+}
+
+/// <summary>
 /// A route that is a look in one form and a press in another, classed by one field of its payload: <see cref="Class"/> where the
 /// field holds one of <see cref="Values"/>, <see cref="Otherwise"/> where it holds another or is absent.
 /// </summary>
@@ -90,16 +106,25 @@ public sealed record PipeRoute(string Module, string? Route, PipeClass Class, Pi
 /// <see cref="PipeRule"/>, and the look alone runs.</para>
 ///
 /// <para>Modules are matched as the kit's dispatcher matches them, ignoring case; a route as its module's table does.</para>
+///
+/// <para><b>What an update's drain does with each press</b> (DRAINHOLD1, <see cref="PipeDrain"/>): every person's and role's route of
+/// a route-by-route module says whether it waits for the restart or goes on, and <c>PipeCensusTests</c> fails on one that does not. A
+/// read never waits; a press the drain classes not waits, as an unclassed press is the person's.</para>
 /// </remarks>
 public sealed class PipeCensus
 {
     private readonly FrozenDictionary<string, PipeClass> _whole;
     private readonly FrozenDictionary<string, FrozenDictionary<string, PipeRule>> _byRoute;
+    private readonly FrozenDictionary<string, FrozenDictionary<string, PipeDrain>> _drains;
 
-    private PipeCensus(IDictionary<string, PipeClass> whole, IDictionary<string, IDictionary<string, PipeRule>> byRoute, PipeTargets targets)
+    private PipeCensus(
+        IDictionary<string, PipeClass> whole, IDictionary<string, IDictionary<string, PipeRule>> byRoute,
+        IDictionary<string, IDictionary<string, PipeDrain>> drains, PipeTargets targets)
     {
         _whole = whole.ToFrozenDictionary(StringComparer.OrdinalIgnoreCase);
         _byRoute = byRoute.ToFrozenDictionary(
+            each => each.Key, each => each.Value.ToFrozenDictionary(StringComparer.Ordinal), StringComparer.OrdinalIgnoreCase);
+        _drains = drains.ToFrozenDictionary(
             each => each.Key, each => each.Value.ToFrozenDictionary(StringComparer.Ordinal), StringComparer.OrdinalIgnoreCase);
         Targets = targets;
     }
@@ -130,6 +155,13 @@ public sealed class PipeCensus
             ["DAORIS.REGISTRY"] = Classed(("PICK_FOLDER", PipeClass.Window), ("WRITE_DECLARATION", PipeClass.Person)),
             // The machine's wiring: a read is open, a wiring and an unwiring are the person's (D48 §5, D156 §3's re-wiring).
             ["DAORIS.REMOTES"] = Classed(("STATE", PipeClass.Open), ("SET", PipeClass.Person), ("REMOVE", PipeClass.Person)),
+        },
+        new Dictionary<string, IDictionary<string, PipeDrain>>
+        {
+            [DriverModule.Name] = DriverDrains(),
+            // A declaration is one file written uncommitted, no git; a wiring is the machine's file: neither starts anything.
+            ["DAORIS.REGISTRY"] = new Dictionary<string, PipeDrain> { ["WRITE_DECLARATION"] = PipeDrain.Passes },
+            ["DAORIS.REMOTES"] = new Dictionary<string, PipeDrain> { ["SET"] = PipeDrain.Passes, ["REMOVE"] = PipeDrain.Passes },
         },
         PipeTargets.Daoris);
 
@@ -184,8 +216,47 @@ public sealed class PipeCensus
     }
 
     /// <summary>
+    /// What an update's drain does with <paramref name="module"/>'s <paramref name="route"/> (DRAINHOLD1): the census's word for a person's or
+    /// a role's route, its module matched ignoring case; null where it names none.
+    /// </summary>
+    public PipeDrain? DrainOf(string? module, string? route) =>
+        module is not null && route is not null && _drains.TryGetValue(module, out var routes) && routes.TryGetValue(route, out var drain)
+            ? drain
+            : null;
+
+    /// <summary>
+    /// Whether a press of <paramref name="module"/>'s <paramref name="route"/>, classed <paramref name="class"/>, waits while an update
+    /// drains (DRAINHOLD1): a read never; any other unless the census lets it through, so a press the drain classes not waits.
+    /// </summary>
+    public bool WaitsForDrain(string? module, string? route, PipeClass? @class) =>
+        @class != PipeClass.Open && DrainOf(module, route) != PipeDrain.Passes;
+
+    /// <summary>The person's and role's routes, <c>MODULE.ROUTE</c>, that the drain does not class: what its test fails on.</summary>
+    public IReadOnlyList<string> DrainUnclassed() =>
+    [
+        .. Pressed().Where(each => DrainOf(each.Module, each.Route) is null).Select(each => $"{each.Module}.{each.Route}").Order(StringComparer.Ordinal),
+    ];
+
+    /// <summary>What the drain classes that is no person's or role's route, <c>MODULE.ROUTE</c>: a name left behind.</summary>
+    public IReadOnlyList<string> DrainStale()
+    {
+        var pressed = Pressed().Select(each => $"{each.Module}.{each.Route}").ToHashSet(StringComparer.OrdinalIgnoreCase);
+        return
+        [
+            .. _drains.SelectMany(module => module.Value.Keys.Select(route => $"{module.Key}.{route}"))
+                .Where(each => !pressed.Contains(each)).Order(StringComparer.Ordinal),
+        ];
+    }
+
+    /// <summary>Every route a route-by-route module classes the person's or a role's in any form, as its drain is classed.</summary>
+    private IEnumerable<(string Module, string Route)> Pressed() =>
+        _byRoute.SelectMany(module => module.Value
+            .Where(route => route.Value.Class is PipeClass.Person or PipeClass.Role || route.Value.Otherwise is PipeClass.Person or PipeClass.Role)
+            .Select(route => (module.Key, route.Key)));
+
+    /// <summary>
     /// This census with <paramref name="module"/>'s <paramref name="route"/> classed <paramref name="class"/> beside the rest: a test's. Its
-    /// targets are this census's, so a person's route added here has no grounds row.
+    /// targets are this census's, so a person's route added here has no grounds row; nor has it a drain's word, so it waits.
     /// </summary>
     public PipeCensus With(string module, string route, PipeClass @class)
     {
@@ -194,7 +265,10 @@ public sealed class PipeCensus
             StringComparer.OrdinalIgnoreCase);
         if (!byRoute.TryGetValue(module, out var routes)) byRoute[module] = routes = new Dictionary<string, PipeRule>(StringComparer.Ordinal);
         routes[route] = Whole(@class);
-        return new PipeCensus(new Dictionary<string, PipeClass>(_whole, StringComparer.OrdinalIgnoreCase), byRoute, Targets);
+        var drains = _drains.ToDictionary(
+            each => each.Key, each => (IDictionary<string, PipeDrain>)new Dictionary<string, PipeDrain>(each.Value, StringComparer.Ordinal),
+            StringComparer.OrdinalIgnoreCase);
+        return new PipeCensus(new Dictionary<string, PipeClass>(_whole, StringComparer.OrdinalIgnoreCase), byRoute, drains, Targets);
     }
 
     /// <summary>A route of one class whatever its payload: a rule naming no value.</summary>
@@ -327,6 +401,78 @@ public sealed class PipeCensus
         {
             // A route classed twice is refused here, at first use, as a route marked twice is.
             foreach (var route in routes) table.Add(route, Whole(@class));
+        }
+    }
+
+    /// <summary>
+    /// What an update's drain does with each of the driver's person's and role's routes (DRAINHOLD1, D156's DRAINHOLD1 note):
+    /// <c>PipeCensusTests</c> holds this table to the census's, both ways.
+    /// </summary>
+    /// <remarks>
+    /// The drain waits for the driven sessions this loop runs and the conversations with a turn in flight (D139 §2), and its look holds
+    /// every quest of a drivable repository from starting, resuming or carrying on, and every answered park from going on
+    /// (<c>InstallUpdate.Drained</c>). So a press whose work is a quest's start or a park's resume starts nothing until the restart, and
+    /// goes on; one that would add to what the drain waits on, or that the close's few seconds would cut, waits.
+    /// </remarks>
+    private static Dictionary<string, PipeDrain> DriverDrains()
+    {
+        var table = new Dictionary<string, PipeDrain>(StringComparer.Ordinal);
+        Add(PipeDrain.Waits,
+            // Work the drain counts, begun at once by the chat runner: a conversation started, carried on in a new part, handed to another
+            // agent, given words (between turns they open its next one, ended they go on with it), sent a channel's message it may reopen
+            // on, or going on with an answer alone; an applied proposal, which acts through these doors; and a proposal's dismissal, which
+            // Ask Daoris is told as a turn.
+            "START_CHAT", "START_HELP", "HELP_START_FROM", "SESSION_GO_ON_NEW", "SESSION_START_FROM", "SESSION_GO_ON_BRIEF", "SESSION_HAND_OVER",
+            "SESSION_HAND_OVER_APPROVE", "SESSION_INPUT", "CHANNEL_FORWARD", "SESSION_ANSWER_ALONE", "HELP_APPLY", "HELP_DISMISS",
+            // Work begun at the next look that the drain's holds of quests do not reach: a helper, a partner, a second opinion.
+            "SESSION_HELPER_ASK", "SESSION_HELPER_APPROVE", "SESSION_PARTNER_ASK", "ASK_OPINION",
+            // What lets the look start such work, or land, since every setting asks the look at once (`DriverContext.Change`). Helpers,
+            // whose admission no repository's hold reaches: their rule, the cap's slot, the actor they run on, an account ready again (a
+            // cooling helper starts again on it). A hand-over's rule, an opinion's, a landing's rule, review and line, and the opinion's
+            // answer over the gate. A workflow node's word and a run's accepted gates; a pause's release, which reaches more than its
+            // quests. The keeping rule, whose pass removes set-aside trees. A start held for a folder's trust, and a plugin, which may
+            // hold a start.
+            "SET_HELPERS", "SET_CAP", "SET_ACTOR", "SET_COOLOFF", "ACCOUNT_USE", "HARNESSES_REFRESH", "SET_HAND_OVER", "SET_OPINION",
+            "SET_LANDING", "SET_REVIEW", "SET_LINE", "OPINION_ANYWAY", "OPINION_MYSELF", "WORK_HELD", "WORKFLOW_NODE", "WORK_RESUME",
+            "WORKFLOW_LANDED", "SET_KEEP", "TRUST_FOLDER", "PLUGIN_ACTION", "PLUGIN_ADD", "PLUGIN_INSTALL", "PLUGIN_UPDATE",
+            // A process of its own that runs on past its answer, which the drain counts not and the close would cut: a plugin's try, a
+            // harness's installer, updater or sign-in, and a tool's download (a managed use downloads first).
+            "PLUGIN_TRY", "HARNESS_ACTION", "TOOLS_DOWNLOAD", "TOOLS_USE",
+            // A repository changed through git: a landing, a hand-off, a discard, a drop of recovery refs, a sweep, a sync, an abandon
+            // and a delete, each of which removes a tree or a branch, and Free up space's run, which takes finished trees too.
+            "LAND_SESSION_TREE", "LAND_WITHOUT_LOOK", "LAND_ENTRY", "LAND_ASK", "HANDOFF", "DISCARD_SESSION_TREE", "DISCARD_SESSION_BRANCH",
+            "RECOVERY_DROP", "SWEEP", "TREES_SYNC", "WORK_ABANDON", "SESSION_DELETE", "SYSTEM_SPACE_FREE",
+            // A role's act is a row of its role's table, which no act fills yet: the strictest until each is classed.
+            "ROLE_ACT");
+        Add(PipeDrain.Passes,
+            // A stop, which only shortens what the drain waits on.
+            "STOP_SESSION", "STOP_OPINION", "STOP_TASK", "CANCEL_TURN", "END_CHAT", "RESOLVE_SESSION", "WORK_PAUSE", "SESSION_QUIET_CARRY_ON",
+            "SESSION_QUIET_LEAVE", "SESSION_STOP_WAITING", "TOOLS_STOP",
+            // A take-back or a reword of a word that waits.
+            "SESSION_QUEUE_EDIT",
+            // An answer to a session under way, which hears it at once and was already counted.
+            "SESSION_PERMISSION_ANSWER",
+            // A word kept whose going on is a quest's start or a park's resume, which the drain's look holds until the restart: a go-ahead, a
+            // quest retried, a set-up's ask, a helper or hand-over declined, the supervisor's.
+            "SESSION_GO_AHEAD", "RETRY_QUEST", "SETUP_PRESS", "SESSION_HELPER_DECLINE", "SESSION_HAND_OVER_DECLINE", "SUPERVISOR_OVERRULE",
+            "SUPERVISOR_ANSWER", "SUPERVISOR_DEFER",
+            // A record, a mark or a list cleared: no tree, no branch and no process (a history's clear never takes a tree).
+            "HISTORY_CLEAR", "SYSTEM_DOWNLOADS_CLEAR", "SESSION_ARCHIVE", "HELP_RENAME", "HELP_PIN", "CHANNEL_POST", "CHANNEL_MARK",
+            "NOTICES_READ", "NOTICE_DISMISS",
+            // A standing choice that changes only how later sessions run, what they reach or say, or what the person is told; a hold or a
+            // drivable repository the drain's look holds whatever it says; a session's own option; Ask Daoris's access, which ends its
+            // conversation at its turn's end and starts none.
+            "SET_ACCESS", "SET_AGENT_SETTINGS", "SET_COMMITS", "SET_DRIVABLE", "SET_HELP_MODE", "SET_HELP_GRANT", "SET_HEAVY_GATES", "SET_HOLD",
+            "SET_LANGUAGE", "SET_NOTIFY", "SET_READ_ACROSS", "SET_SESSION_OPTION", "SET_SESSION_CHECKS", "SET_STANDING", "SET_STRIKES", "SET_TREES",
+            "SET_WRITE_ACROSS", "RULE_ACTION", "RULE_PROPOSAL",
+            // A plugin made in a folder, which installs nothing, and a tool's files and location.
+            "PLUGIN_NEW", "TOOLS_DELETE", "TOOLS_LOCATION", "TOOLS_GIT");
+        return table;
+
+        void Add(PipeDrain drain, params string[] routes)
+        {
+            // A route classed twice is refused here, at first use, as the census's own table refuses one.
+            foreach (var route in routes) table.Add(route, drain);
         }
     }
 }
