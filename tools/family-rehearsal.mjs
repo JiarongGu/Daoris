@@ -6202,10 +6202,13 @@ const reopenedOf = (config, session) =>
   readEvents(driver({ serviceUrl: BASE, config, mode: 'logs --event session.reopened --json' }).out, 'session.reopened')
     .filter((data) => data.session === session);
 
-/** A door's place: its home, the config each scenario runs it by (the home's, or a home of the case's own), and what its cases left. */
+/**
+ * A door's place: its folder, which is the driver's home for every config written in it, the config each scenario runs it by (in the
+ * folder, or in one of the case's own), and what its cases left.
+ */
 const standInDoor = (standIn, door) => {
-  const home = join(scratch, 'stand-ins', door.id);
-  const config = (scenario = 'open', at = home) => {
+  const folder = join(scratch, 'stand-ins', door.id);
+  const config = (scenario = 'open', at = folder) => {
     mkdirSync(at, { recursive: true });
     const file = join(at, scenario === 'open' ? 'driver.json' : `driver-${scenario}.json`);
     const more = [...(scenario === 'open' ? [] : ['--scenario', scenario]), ...(door.kind === 'protocol' ? ['--seen', join(at, 'seen.txt')] : [])];
@@ -6215,7 +6218,7 @@ const standInDoor = (standIn, door) => {
     }, null, 2)}\n`);
     return file;
   };
-  return { standIn, door, home, config, ended: null };
+  return { standIn, door, folder, config, ended: null };
 };
 
 const standInDrives = {
@@ -6236,7 +6239,7 @@ const standInDrives = {
   // A turn: a conversation from a terminal, each line the person says said back, on one record that ends completed.
   'live.turn': async (place) => {
     const lines = [`the first words for ${place.door.id}`, `the second words for ${place.door.id}`];
-    const input = join(place.home, 'turn-input.txt');
+    const input = join(place.folder, 'turn-input.txt');
     writeFileSync(input, `${lines.join('\n')}\n`);
     const before = new Set((await standInRecords()).map((s) => s.id));
     const chat = run(
@@ -6293,7 +6296,7 @@ const standInDrives = {
   // quest goes on to done in the door's home once the program answers again, so no later phase meets it open.
   'live.access-and-fatal': async (place) => {
     const quest = await standInAsk(`Answer the scenario contract's refused account on ${place.door.id}`);
-    const ran = driver({ serviceUrl: BASE, config: place.config('access', join(place.home, 'refused')), mode: '--once' });
+    const ran = driver({ serviceUrl: BASE, config: place.config('access', join(place.folder, 'refused')), mode: '--once' });
     const records = (await standInRecords()).filter((s) => s.quest === quest);
     const left = await standInQuestOf(quest);
     check(
