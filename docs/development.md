@@ -293,7 +293,16 @@ to the candidate. That happens only when the main checkout is clean (no tracked 
 candidate is held, said, and tried each tick. If main moved meanwhile by a direct commit, the candidate is formed again on it
 from the same frozen requests. A move by records only (the records lane, `docs/**`, `docs/index/**`) defers `service`.
 
-On red, each failure is judged by its signature (`tools/test-failures.mjs`). A failing test that fails the same way on the
+On red, each failure is judged by its signature (`tools/test-failures.mjs`). A failing test still known red on the base is
+inherited with no run. Every other failure first meets its gate's **confirm run** (INTEGRATE1b, D215's note): the gate runs once
+more on the candidate's tip as it was composed, holding every place of the machine's admission (below), once per failing gate.
+Failing again with its signature, it is judged as follows. Passing, it is a sighting (`local/integration-sightings.jsonl`, never
+a flake), and the candidate goes by `local/integration-policy.json`'s `unconfirmed`: `split` by default, the owner's `hold` (held
+for a decide, which has no door, so a drop or a commit on main moves it) or `land` (promoted on that tip alone, its pass standing
+for no other). A confirm run whose
+admission is not shown (the admission off, no `DAORIS_HOME`, a record it cannot write, another live hold beside it) is
+inconclusive and read as `split`. Neither runs anything on the base. `local/scope-runs.jsonl` keeps each confirm run's
+composition, admission evidence and wait. A failing test that fails the same way on the
 candidate's base is inherited and filed as known red. If its known red has expired, the queue stops instead. A failing gate that
 names no test (a check, a build, discovery, a host) and fails on the base **stops the queue**. Every merge then waits until a
 direct commit moves main, `--queue --recheck`, or the runner's own recheck an hour on lifts it. Otherwise the failure's
@@ -336,8 +345,9 @@ twenty seconds), so a holder that dies, however it dies, releases at once, and n
 It changes no verdict, order or cancellation: a drop ends a gate waiting as it ends one running, holding nothing. It governs only
 what the queue and driven sessions start, never the owner's own sessions or another process. The merge tool's side is
 `tools/machine-admission.mjs` (off with `MERGE_BRANCH_ADMISSION=off`, and under `MERGE_BRANCH_MEMORY=off`, the tool's own tests, unless
-`MERGE_BRANCH_ADMISSION=on`; with no `DAORIS_HOME` it shares nothing and nothing waits), the driver's is `MachineAdmission.cs`;
-`fixtures/machine-admission.json` is the table both carry. A session reaches it through `daoris-driver run-heavy` (D180's
+`MERGE_BRANCH_ADMISSION=on`; with no `DAORIS_HOME` it shares nothing and nothing waits, and so a red candidate's confirm run is
+inconclusive), the driver's is `MachineAdmission.cs`, and `fixtures/machine-admission.json` is the table both carry. A confirm
+run takes every place at once, as that many ordinary entries in one write, and waits for every heavy run admitted before it. A session reaches it through `daoris-driver run-heavy` (D180's
 HEAVYQUEUE1 note): its marked gates take a place after the repository's slot, and `run-heavy -- <command>` runs a command of its own,
 a filtered `dotnet test` or a test file's run, as a heavy run with no slot; a driven session is told to use it (`HeavyTold.Focused`).
 The queue's admission is the machine's: it does not read `local/admission.json`, whose reservations remain CISCOPE1e2's.

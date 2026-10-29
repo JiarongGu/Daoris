@@ -1,7 +1,7 @@
 # FOUNDATION1e part 2 (the foundation design §3.1, §10 row 1e): LineCourse.Decide's pinned table, as line-account-cases.txt is the
 # account rule's. A row: its id, the case it is ported from, then the course's answer as LineCourseTests shapes it. A source is a suite's
 # test (a theory's case after a colon), a row of line-account-cases.txt, the source line a path answers at where no suite pins the case
-# (code:), or the design's for a move record, which no path writes yet (design:). LineCourseTests builds each row's facts and trigger.
+# (code:), or the design's for a move record, which no course reads yet (design:). LineCourseTests builds each row's facts and trigger.
 
 ## LA the account rule's answers (line-account-cases.txt), read once, as the conversation's go-on and the driven go-on read them
 LA-01 line-account-cases:row-001 => Resume words=w1
@@ -281,7 +281,7 @@ AA-16 AnswersAloneTests.Only_answers_alone_are_held:none => Hold why=Stays doors
 AA-17 AnswersAloneTests.Supervisor_only_go_ons_count_and_the_third_in_a_row_is_held => Hold why=AnswersAlone doors=LetAnswerGoOn,NotNow,Say repair=None code=answers-alone
 AA-18 AnswersAloneTests.The_supervisors_route_is_at_the_bound_by_both_predicates => Hold why=AnswersAlone doors=- repair=None code=supervisor-bound
 
-## S a move record standing for the line, as the design has it; no path writes one yet
+## S a move record standing for the line, as the design has it; the live limit move writes one since FOUNDATION1f-ii part a, and no course reads it yet
 S-01 design:§3.1-O-2 => Never why=StandingMove
 S-02 design:§3.1-round-5-§19.3 => Hold why=MoveHeld doors=- repair=None code=-
 S-03 design:§3.3 => Resume words=w1
@@ -453,6 +453,13 @@ out StartFromTests.A_conversation_that_does_not_start_leaves_the_words_where_the
 out StartFromTests.Words_the_new_conversation_did_not_take_stay_where_they_were E
 out StartFromTests.The_files_said_with_the_words_go_with_them_and_the_words_alone_where_they_cannot E
 out StartFromTests.The_runners_door_starts_through_its_own_start E
+out StartFromTests.The_open_moves_the_words_and_a_late_one_and_the_first_message_is_the_new_conversations_moved_words E
+out StartFromTests.A_moved_words_files_copied_twice_are_one_file_with_its_bytes_and_name E
+out StartFromTests.Moved_words_the_new_conversation_did_not_take_wait_on_it_and_the_sentence_says_so E
+out StartFromTests.Against_an_older_host_the_words_go_from_the_record_they_were_said_to_as_before E
+out BriefedMoveTests.The_moved_words_and_a_late_one_go_from_the_new_part_each_shown_under_its_id E
+out BriefedMoveTests.Against_a_mark_1_host_the_briefed_move_takes_the_old_records_words_as_before E
+out BriefedMoveTests.On_the_native_door_each_moved_word_is_shown_under_its_id_before_the_answer E
 out StartWithTests.Files_over_a_messages_limit_go_as_the_words_alone E
 out StartWithTests.Words_not_taken_are_answered_with_the_conversation_that_opened E
 out StartWithTests.A_start_that_does_not_open_says_nothing E
@@ -480,7 +487,7 @@ suite ChatGoOnTests 23
 suite ChatGoesOnProcessTests 17
 suite ChatGoesOnInSyncProcessTests 1
 suite LimitWaitsProcessTests 24
-suite BriefedMoveTests 7
+suite BriefedMoveTests 10
 suite LimitGoesOnProcessTests 3
 suite LimitGoesElsewhereProcessTests 3
 suite ContinuationTests 50
@@ -498,7 +505,7 @@ suite HandOverAtTurnEndTests 6
 suite HandOverAskTickTests 1
 suite HandOverQuestTickTests 1
 suite GoOnNewTests 8
-suite StartFromTests 10
+suite StartFromTests 14
 suite StartWithTests 11
 suite AnswersAloneHoldTests 9
 suite AnswersAloneTests 16

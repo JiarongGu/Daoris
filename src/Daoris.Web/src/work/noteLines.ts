@@ -82,6 +82,8 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'watch.quiet-call': { values: ['minutes', 'call'] },
   'watch.quiet-work': { values: ['minutes', 'works'] },
   'watch.left': { values: [] },
+  // FOUNDATION1f-i part 2 (§19.1 point 4): a move a live Daoris keeps and has not moved for `minutes`, said once on its line.
+  'move.quiet': { values: ['minutes'] },
   'ended.stopped': { values: [] },
   // STEWARDROLE1b (D209 §5.1): the steward's sibling of the person's stop, its own record.
   'ended.stopped-steward': { values: [] },

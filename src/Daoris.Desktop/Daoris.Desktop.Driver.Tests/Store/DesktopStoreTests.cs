@@ -162,7 +162,9 @@ public sealed class DesktopStoreTests : IDisposable
             ["id", "record_left", "executor", "how", "from_why", "from_by", "phase", "claim_run", "claim_generation", "account", "recipe_why", "recipe_bound",
              "opens", "destination", "effect", "effect_begun", "effect_outcome", "effect_ended", "fell_back_code", "held_why", "closed_why",
              "decided_at", "quiescing_at", "old_ended_at", "opening_at", "opened_at", "copied_at", "verified_at", "delivering_at", "delivered_at",
-             "fell_back_at", "held_at", "closed_at"],
+             "fell_back_at", "held_at", "closed_at",
+             // Step 5's, each nullable: a step-4 build writes moves as it did and leaves them empty.
+             "agent", "refused_bound", "quiet_at"],
             moves.Select(column => column.Name));
         Assert.Equal(MoveRequired, moves.Where(column => column.Required).Select(column => column.Name));
         Assert.Equal(
@@ -221,6 +223,197 @@ public sealed class DesktopStoreTests : IDisposable
         older.Write(BindingStore.Family, write => write.Execute(
             "INSERT INTO binding_picks (session, account, at) VALUES ('s1', 'work', '2026-10-29T00:00:00.0000000Z')"));
         Assert.Equal((1L, 1L), (Count(older, "bindings"), Count(older, "binding_picks")));
+    }
+
+    // ——— Step 5, what a box's move carries and a quiet move's telling (FOUNDATION1f-i part 2; §3.3, §13.5, §19.1).
+
+    [Fact]
+    public void Step_5_adds_the_agent_the_refused_turns_bound_and_the_quiet_s_moment_to_moves_nullable_and_raises_no_stamp()
+    {
+        var step = Assert.Single(DesktopStore.Steps, each => each.Version == 5);
+        Assert.Equal(1, step.Writer);
+        using (var older = Open(new DesktopStoreOptions { Steps = [.. DesktopStore.Steps.Take(4)], Settled = () => StoreSettled.Yes }))
+        {
+            Assert.Equal((4, 1), older.Stamp);
+        }
+
+        var store = Open(new DesktopStoreOptions { Settled = () => StoreSettled.Not("the swap journal is at `started`") });
+
+        Assert.Null(store.Held);
+        Assert.Equal((Own, 1), store.Stamp);
+        var added = Columns(store, "moves").Where(column => column.Name is "agent" or "refused_bound" or "quiet_at").ToList();
+        Assert.Equal([("agent", false), ("refused_bound", false), ("quiet_at", false)], added);
+    }
+
+    [Fact]
+    public void A_build_of_the_four_steps_before_still_writes_a_move_into_the_migrated_store_leaving_step_5_s_columns_empty()
+    {
+        Open().Write("probe", _ => { });
+
+        var older = Open(new DesktopStoreOptions { Steps = [.. DesktopStore.Steps.Take(4)], Settled = () => StoreSettled.Yes });
+
+        Assert.False(older.Newer);
+        older.Write("moves", write => write.Execute(
+            """
+            INSERT INTO moves (record_left, executor, how, from_why, from_by, phase, claim_run, claim_generation, decided_at)
+            VALUES ('s1', 'conversation', 'brief', 'limit', 'daoris', 'decided', $run, 1, '2026-10-30T00:00:00.0000000+00:00')
+            """,
+            ("$run", older.Run)));
+        Assert.Equal(
+            [(true, true, true)],
+            older.Query("SELECT agent IS NULL, refused_bound IS NULL, quiet_at IS NULL FROM moves", reader => (reader.GetBoolean(0), reader.GetBoolean(1), reader.GetBoolean(2))));
+    }
+
+    // ——— Step 6, the integration's family (INTEGRATE1e part e2; the integration design §5.6, D212 §13).
+
+    private static readonly string[] IntegrationTables = ["integration_requests", "integration_candidates", "integration_members", "integration_steps"];
+
+    private static IReadOnlyList<string> Indexes(DesktopStore store, string table) =>
+        store.Query(
+            "SELECT sql FROM sqlite_master WHERE type = 'index' AND tbl_name = $table AND sql IS NOT NULL ORDER BY name",
+            reader => reader.GetString(0), ("$table", table));
+
+    [Fact]
+    public void Step_6_makes_the_integration_s_four_tables_with_their_one_open_and_one_standing_indexes_and_raises_no_stamp()
+    {
+        var step = Assert.Single(DesktopStore.Steps, each => each.Version == 6);
+        Assert.Equal(1, step.Writer);
+
+        var store = Open();
+
+        Assert.Equal((Own, 1), store.Stamp);
+        foreach (var table in IntegrationTables) Assert.True(HasTable(store, table), table);
+        Assert.Contains(
+            "CREATE UNIQUE INDEX integration_requests_open ON integration_requests (repository COLLATE NOCASE, branch) WHERE closed_at IS NULL",
+            Indexes(store, "integration_requests"));
+        Assert.Contains(
+            "CREATE UNIQUE INDEX integration_candidates_standing ON integration_candidates (repository COLLATE NOCASE, line) WHERE ended_at IS NULL",
+            Indexes(store, "integration_candidates"));
+        Assert.Contains("CREATE UNIQUE INDEX integration_candidates_job ON integration_candidates (job)", Indexes(store, "integration_candidates"));
+        Assert.Contains("CREATE UNIQUE INDEX integration_members_standing ON integration_members (request) WHERE ended_at IS NULL", Indexes(store, "integration_members"));
+        Assert.Contains("CREATE UNIQUE INDEX integration_steps_open ON integration_steps (candidate) WHERE ended_at IS NULL", Indexes(store, "integration_steps"));
+    }
+
+    [Fact]
+    public void The_integration_s_columns_every_writer_sets_are_required_and_a_route_s_or_a_later_step_s_own_are_nullable()
+    {
+        var store = Open();
+
+        Assert.Equal(
+            [
+                ("id", true), ("repository", true), ("workspace", true), ("branch", true), ("tip", true), ("route", true), ("line", true),
+                ("requester", true), ("door", true), ("act", false), ("generation", false),
+                ("policy_request", true), ("policy_commit", true), ("policy_batch", true), ("policy_order", true), ("policy_gates", true),
+                ("policy_unreached", true), ("policy_reached", true), ("policy_conflicts", true), ("policy_overlap", true), ("policy_line", false),
+                ("rule_source", false), ("unit", false), ("session", false), ("quest", false), ("landed_at", false), ("proof", false),
+                ("at", true), ("closed_at", false), ("closed_why", false),
+            ],
+            Columns(store, "integration_requests"));
+        Assert.Equal(
+            [
+                ("id", true), ("repository", true), ("workspace", true), ("line", true), ("base", true), ("job", true), ("claim_run", true),
+                ("claim_generation", true), ("formed_at", true), ("tip", false), ("promoted_at", false), ("ended_at", false), ("ended_why", false),
+            ],
+            Columns(store, "integration_candidates"));
+        Assert.Equal(
+            [
+                ("candidate", true), ("request", true), ("position", true), ("state", true), ("joined_at", true), ("replayed", false),
+                ("contained_by", false), ("said", false), ("ended_at", false),
+            ],
+            Columns(store, "integration_members"));
+        Assert.Equal(
+            [
+                ("id", false), ("candidate", true), ("step", true), ("attempt", true), ("claim_run", true), ("claim_generation", true), ("began_at", true),
+                ("request", false), ("line_commit", false), ("ended_at", false), ("outcome", false), ("said", false),
+            ],
+            Columns(store, "integration_steps"));
+    }
+
+    [Fact]
+    public void A_candidate_s_claim_names_a_run_the_store_holds_and_its_members_and_steps_name_what_the_store_holds()
+    {
+        var store = Open(new DesktopStoreOptions { Settled = () => StoreSettled.Yes });
+        const string At = "2026-10-30T00:00:00.0000000+00:00";
+        void Candidate(string run) => store.Write("integration", write => write.Execute(
+            """
+            INSERT INTO integration_candidates (id, repository, workspace, line, base, job, claim_run, claim_generation, formed_at)
+            VALUES ('candidate-1', 'engine', 'aurora', 'main', 'abc', 'job-1', $run, 1, $at)
+            """,
+            ("$run", run), ("$at", At)));
+
+        // 787 is SQLite's foreign-key refusal: the claim names no run that ever wrote the store.
+        Assert.Equal(787, Assert.Throws<SqliteException>(() => Candidate("no-such-run")).SqliteExtendedErrorCode);
+        Assert.Equal(0, Count(store, "integration_candidates"));
+        Candidate(store.Run);
+
+        Assert.Equal(787, Assert.Throws<SqliteException>(() => store.Write("integration", write => write.Execute(
+            "INSERT INTO integration_members (candidate, request, position, state, joined_at) VALUES ('candidate-1', 'no-such-request', 0, 'formed', $at)",
+            ("$at", At)))).SqliteExtendedErrorCode);
+        Assert.Equal(787, Assert.Throws<SqliteException>(() => store.Write("integration", write => write.Execute(
+            "INSERT INTO integration_steps (candidate, step, attempt, claim_run, claim_generation, began_at) VALUES ('no-such-candidate', 'form', 1, $run, 1, $at)",
+            ("$run", store.Run), ("$at", At)))).SqliteExtendedErrorCode);
+        Assert.Equal((0L, 0L), (Count(store, "integration_members"), Count(store, "integration_steps")));
+    }
+
+    [Fact]
+    public void A_store_of_the_five_steps_before_is_migrated_to_6_at_the_first_start_whatever_the_confirmation_says()
+    {
+        using (var older = Open(new DesktopStoreOptions { Steps = [.. DesktopStore.Steps.Take(5)], Settled = () => StoreSettled.Yes }))
+        {
+            Assert.Equal((5, 1), older.Stamp);
+        }
+
+        var store = Open(new DesktopStoreOptions { Settled = () => StoreSettled.Not("the swap journal is at `started`") });
+
+        Assert.Null(store.Held);
+        Assert.Equal((Own, 1), store.Stamp);
+        foreach (var table in IntegrationTables) Assert.True(HasTable(store, table), table);
+    }
+
+    [Fact]
+    public void A_build_of_the_five_steps_before_opens_the_migrated_store_still_writes_a_move_and_never_meets_the_integration()
+    {
+        Open().Write("probe", _ => { });
+
+        var older = Open(new DesktopStoreOptions { Steps = [.. DesktopStore.Steps.Take(5)], Settled = () => StoreSettled.Yes });
+
+        Assert.False(older.Newer);
+        Assert.Equal((Own, 1), older.Stamp);
+        older.Write("moves", write => write.Execute(
+            """
+            INSERT INTO moves (record_left, executor, how, from_why, from_by, phase, claim_run, claim_generation, decided_at)
+            VALUES ('s1', 'conversation', 'brief', 'limit', 'daoris', 'decided', $run, 1, '2026-10-30T00:00:00.0000000+00:00')
+            """,
+            ("$run", older.Run)));
+        Assert.Equal(1, Count(older, "moves"));
+        foreach (var table in IntegrationTables) Assert.Equal(0, Count(older, table));
+    }
+
+    // ——— A run entered with no family's write (FOUNDATION1f-i part 2, §19.1 point 3).
+
+    [Fact]
+    public void Entering_records_the_process_s_run_once_moving_no_revision_and_touching_no_wake()
+    {
+        var store = Open(new DesktopStoreOptions { Kind = "shell", Settled = () => StoreSettled.Yes });
+
+        store.Enter();
+        store.Enter();
+
+        var run = Assert.Single(store.Runs());
+        Assert.Equal((store.Run, "shell", Environment.ProcessId), (run.Run, run.Kind, run.Pid));
+        Assert.Empty(store.Revisions());
+        Assert.False(File.Exists(store.Wake));
+    }
+
+    [Fact]
+    public void Entering_a_store_a_newer_build_stamped_writes_nothing()
+    {
+        Open(Newer()).Write("probe", _ => { });
+
+        var older = Open(Older("shell"));
+
+        Assert.Throws<DesktopStoreNewerException>(older.Enter);
+        Assert.DoesNotContain(older.Runs(), each => each.Run == older.Run);
     }
 
     // ——— Revisions and the wake file (§13.4).

@@ -10,7 +10,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// left by the partial unique index <c>moves_standing</c>, so of two executors deciding a move of one line the second finds the first's row;
 /// the claim by the process run that makes it, taken only from a run dead by the lease's own test and then once, its generation raised;
 /// every phase and effect written under the claim's check inside its own transaction; an ended move kept as evidence while the record's next
-/// move claims a new row; and the record's moves deleted with it.
+/// move claims a new row; and the record's moves deleted with it. Part 3 adds the moved words' <c>sent</c>, <c>delivered</c> only once every
+/// word has it, a hold's words by their disposition, the destination's standing move and the person's press.
 /// </summary>
 /// <remarks>
 /// Every case has its own scratch home under <c>_fixtures/</c> and sets no variable of the process's environment. One process is one run to
@@ -560,5 +561,139 @@ public sealed class MoveStoreTests : IDisposable
         // The record the older build deleted kept its moves, which knew none; the newer build's delete of the id takes them.
         Assert.Equal([SessionHomeFiles.HandOver], new SessionHomeFiles(_home).Remove(["s1"], events: null).Went["s1"]);
         Assert.Empty(shell.Of("s1"));
+    }
+
+    // ——— Part 3: the moved words' `sent`, a hold's words, the destination's standing move and the person's press (§3.3, §13.4 step 4, §19.4).
+
+    /// <summary>A move of <paramref name="left"/> opened onto <paramref name="destination"/> with two words, at <c>delivering</c>.</summary>
+    private static MoveClaim Delivering(MoveStore store, string left = "s1", string destination = "s2")
+    {
+        var claim = store.Decide(Decision(left) with { FromEnded = true }).Claim!;
+        store.Opening(claim, $"opens-{left}");
+        store.Opened(claim, destination, [new("w1", "k1", "t1", 0), new("w2", null, "t2", 1)]);
+        store.Advance(claim, MoveRecordPhase.Delivering);
+        return claim;
+    }
+
+    private static Dictionary<string, string> Named(string transfer, string disposition) => new(StringComparer.Ordinal) { [transfer] = disposition };
+
+    [Fact]
+    public void Sent_is_written_at_delivering_under_the_claim_for_words_the_move_moved_with_its_moment_once_and_never_over_another_disposition()
+    {
+        var shell = Store("run-a");
+        var claim = shell.Decide(Decision("s1") with { FromEnded = true }).Claim!;
+        shell.Opening(claim, "opens-1");
+        shell.Opened(claim, "s2", [new("w1", "k1", "t1", 0), new("w2", null, "t2", 1)]);
+
+        // Before `delivering` nothing has gone across.
+        Assert.Throws<MoveRefusedException>(() => shell.Sent(claim, ["t1"]));
+        shell.Advance(claim, MoveRecordPhase.Delivering);
+        var revision = Revision();
+
+        // A transfer the move did not make, a claim that is not the writer's, or one whose generation moved writes nothing.
+        Assert.Throws<MoveRefusedException>(() => shell.Sent(claim, ["t1", "t9"]));
+        Assert.Throws<MoveClaimLostException>(() => Store("run-b").Sent(claim, ["t1"]));
+        Assert.Throws<MoveClaimLostException>(() => shell.Sent(claim with { Generation = 2 }, ["t1"]));
+        Assert.Equal(revision, Revision());
+        Assert.All(shell.WordsOf(claim.Move), word => Assert.Null(word.Disposition));
+
+        shell.Sent(claim, ["t1"]);
+        var first = shell.WordsOf(claim.Move)[0];
+        shell.Sent(claim, ["t1", "t2"]);
+
+        var words = shell.WordsOf(claim.Move);
+        Assert.Equal([MoveWordDispositions.Sent, MoveWordDispositions.Sent], words.Select(word => word.Disposition));
+        Assert.NotNull(first.DisposedAt);
+        Assert.Equal(first.DisposedAt, words[0].DisposedAt);
+
+        // A word another write disposed otherwise is never written `sent` over.
+        var other = Delivering(shell, "s3", "s4");
+        Plant("UPDATE move_words SET disposition = 'left' WHERE move = $move AND transfer = 't2'", ("$move", other.Move));
+        Assert.Throws<MoveRefusedException>(() => shell.Sent(other, ["t1", "t2"]));
+        Assert.All(shell.WordsOf(other.Move), word => Assert.NotEqual(MoveWordDispositions.Sent, word.Disposition));
+    }
+
+    [Fact]
+    public void Delivered_is_written_only_once_every_word_the_move_moved_has_sent()
+    {
+        var shell = Store("run-a");
+        var claim = Delivering(shell);
+        shell.Sent(claim, ["t1"]);
+
+        Assert.Throws<MoveRefusedException>(() => shell.Advance(claim, MoveRecordPhase.Delivered));
+        Assert.Equal(MoveRecordPhase.Delivering, shell.Read(claim.Move)!.Phase);
+
+        shell.Sent(claim, ["t2"]);
+        Assert.Equal(MoveRecordPhase.Delivered, shell.Advance(claim, MoveRecordPhase.Delivered).Phase);
+    }
+
+    [Fact]
+    public void A_hold_names_its_words_by_their_disposition_in_its_own_transaction_never_a_word_sent_and_held_again_keeps_the_first()
+    {
+        var shell = Store("run-a");
+        var claim = Delivering(shell);
+        shell.Sent(claim, ["t1"]);
+
+        // A word sent is never named, a transfer the move did not make is refused, and a disposition no hold names is no hold's: none holds.
+        Assert.Throws<MoveRefusedException>(() => shell.Hold(claim, MoveHoldWhy.Undelivered, Named("t1", MoveWordDispositions.Left)));
+        Assert.Throws<MoveRefusedException>(() => shell.Hold(claim, MoveHoldWhy.Undelivered, Named("t9", MoveWordDispositions.Left)));
+        Assert.Throws<ArgumentException>(() => shell.Hold(claim, MoveHoldWhy.Undelivered, Named("t2", MoveWordDispositions.Sent)));
+        Assert.Equal(MoveRecordPhase.Delivering, shell.Read(claim.Move)!.Phase);
+
+        var held = shell.Hold(claim, MoveHoldWhy.Undelivered, Named("t2", MoveWordDispositions.Uncertain));
+
+        Assert.Equal(((MoveRecordPhase?)MoveRecordPhase.Held, (string?)MoveHoldWhy.Undelivered), (held.Phase, held.HeldWhy));
+        Assert.Equal([MoveWordDispositions.Sent, MoveWordDispositions.Uncertain], shell.WordsOf(claim.Move).Select(word => word.Disposition));
+        shell.Hold(claim, MoveHoldWhy.Undelivered, Named("t2", MoveWordDispositions.Left));
+        Assert.Equal(MoveWordDispositions.Uncertain, shell.WordsOf(claim.Move)[1].Disposition);
+    }
+
+    [Fact]
+    public void The_destination_s_standing_move_is_found_by_its_destination_and_the_destination_takes_no_move_of_its_own_until_it_ends()
+    {
+        var shell = Store("run-a");
+        var claim = Delivering(shell);
+        Assert.Equal(claim.Move, shell.StandingTo("s2")!.Id);
+        Assert.Null(shell.StandingTo("s1"));
+        var revision = Revision();
+
+        // The course's `Never` for the destination, under the write lock as the index's for the record left: answered, nothing written.
+        var refused = Store("run-b").Decide(Decision("s2"));
+
+        Assert.False(refused.Claimed);
+        Assert.Equal(claim.Move, refused.Move.Id);
+        Assert.Equal(revision, Revision());
+        shell.Hold(claim, MoveHoldWhy.Undelivered);
+        Assert.False(Store("run-b").Decide(Decision("s2")).Claimed);
+
+        shell.Close(claim, MoveCloseWhy.Resolved);
+
+        Assert.Null(shell.StandingTo("s2"));
+        Assert.True(Store("run-b").Decide(Decision("s2")).Claimed);
+    }
+
+    [Fact]
+    public void The_person_s_press_closes_a_hold_resolved_without_its_claim_and_closes_nothing_else()
+    {
+        var host = Store("run-host");
+        var claim = Delivering(host);
+        var shell = Store("run-shell");
+        var revision = Revision();
+
+        // Not held: the press closes nothing and writes nothing; no such move, nothing.
+        Assert.Equal(MoveRecordPhase.Delivering, shell.PressResolved(claim.Move)!.Phase);
+        Assert.Null(shell.PressResolved(claim.Move + 99));
+        Assert.Equal(revision, Revision());
+
+        host.Hold(claim, MoveHoldWhy.Undelivered);
+        var resolved = shell.PressResolved(claim.Move)!;
+
+        // Closed by another run than its claim's, the claim left as it was; the claim's own close after is the press's, a phase written again.
+        Assert.Equal(
+            ((MoveRecordPhase?)MoveRecordPhase.Closed, (string?)MoveCloseWhy.Resolved, (string?)MoveHoldWhy.Undelivered, "run-host", 1L),
+            (resolved.Phase, resolved.ClosedWhy, resolved.HeldWhy, resolved.ClaimRun, resolved.ClaimGeneration));
+        Assert.Equal(resolved.Moments[MoveRecordPhase.Closed], host.Close(claim, MoveCloseWhy.Resolved).Moments[MoveRecordPhase.Closed]);
+        Assert.Equal(MoveRecordPhase.Closed, shell.PressResolved(claim.Move)!.Phase);
+        Assert.True(Store("run-b").Decide(Decision("s1")).Claimed);
     }
 }

@@ -303,6 +303,25 @@ public sealed class NoteCodesTests
         NoteAssert.Holds(declined);
         Assert.Equal(["ended.declined", "ended.exit"], declined.Parts.Select(part => part.Code));
     }
+
+    /// <summary>
+    /// FOUNDATION1f-i part 2 (the foundation design §19.1 point 4): a move a live Daoris keeps past ten minutes is said on its line by a code
+    /// of its own beside the watcher's quiet run, carrying how long it stood, worded in both catalogues; its English is the page's.
+    /// </summary>
+    [Fact]
+    public void A_quiet_move_is_said_by_its_own_code_carrying_its_minutes_its_english_the_page_s()
+    {
+        Assert.Equal("move.quiet", NoteCodes.MoveQuiet.Code);
+        Assert.Equal(["minutes"], NoteCodes.MoveQuiet.Values);
+
+        var said = MoveTakeUp.QuietNote(12);
+
+        Assert.Equal(["move.quiet"], NoteAssert.Codes(said.Parts));
+        Assert.Equal(12, said.Parts![0].Values.Single(value => value.Key == "minutes").Value);
+        NoteAssert.Holds(said);
+        Assert.Equal(Entry(Catalogue("en"), "note.move.quiet", "en").Replace("{{minutes}}", "12", StringComparison.Ordinal), said.Note);
+        Assert.Contains("{{minutes}}", Entry(Catalogue("zh"), "note.move.quiet", "zh"));
+    }
 }
 
 /// <summary>CONVNOTE2d1: words that did not reach an agent, or were not taken, by code; the English as it was written.</summary>

@@ -55,7 +55,10 @@ name and run those files (HEAD2d's *Pause…*, pressed in QuestsView.work.test.t
 two merges on 2026-10-19 stopped on it. A desktop test that uses `_fixtures` removes its scratch through `GitSeed.Discard`
 or `GitSeed.Remove`, never `Directory.Delete` (`GitSeedTests`), and waits on `Poll.Patience`, never a shorter fixed bound
 without a listed reason (`ShortWaitsCensusTests`): run both classes with your filter, since three branches on 2026-10-29
-reached the merge failing one of them. A change to a tool's `.ts` test runs `npm run typecheck -w daoris`. An archive entry is appended at the file's end, after one
+reached the merge failing one of them. A change to a tool's `.ts` test runs `npm run typecheck -w daoris`. A case added to a suite
+FOUNDATION1e's course table ports (`Driver.Tests/Course/course-cases.txt`'s `suite` lines) gains a row or an `out` line and the
+suite's count, or `LineCourseTests` fails; `node tools/partials.mjs` and `node tools/read-shares.mjs` stay clean (partial is for
+generated code; a source that writes through `AtomicFile` reads through it), as three batches on 2026-10-30 found at the queue. An archive entry is appended at the file's end, after one
 blank line, in its neighbours' shape (`## ROW — title (date, Dn)`, the quoted row, `**Outcome** date: …`). A record (a
 decision's note, a row, an archive entry, a README, a comment, a commit message) states what was decided and why in its own
 words, and never quotes the owner: the owner's words in this brief are context for you, not text for a record.
@@ -75,7 +78,15 @@ current entry.
 | Parent: plan, review, merge | steward |
 | `branch-scout` | orient |
 | `branch-worker`, one lane, the pack names the change exactly | build-exact |
-| `branch-worker`, design, UI, more than one lane, a decision to write, deletion or concurrency | build-judgement |
+| `branch-worker`, a row whose design is accepted: UI, more than one lane, deletion or concurrency the design decided | build-settled |
+| `branch-worker`, writing a design or a decision, answering a design's reads, a row whose design is the work | build-judgement |
+
+The worker's definition names the model most rows take (build-settled, Sonnet); a build-judgement dispatch passes
+`model: opus` and the role's effort. A dispatch that passes no `model` runs the definition's: on 2026-10-30 every builder of
+a batch ran on Opus because the definition still named it, though the reference had moved settled builds to Sonnet five
+days before. The worker's definition also fixes `isolation: worktree`, which a dispatch cannot turn off, so each worker
+gets a fresh tree; a finished worker's tree cannot be handed to the next one, and it goes with the prune once its branch
+is in main.
 | A read of a design, a decision or a risky merge by another maker | decide-support or review |
 
 Measure each batch (step 8) against the reference's targets, note the numbers under D160, and move the reference when

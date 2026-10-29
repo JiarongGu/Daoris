@@ -30,8 +30,9 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
     /// <summary>
     /// The record a start goes on in with the person's words, where its resume asks for that record's own account (MSG1g, D137
     /// §2.2): words the planner took up, on the adapter the record ran on. Null for every other start, and for a record that ran
-    /// on another adapter, whose conversation cannot go on here whichever account runs (D131 §2's <c>adapter</c>), so its words
-    /// are carried on by the walk's pick as before.
+    /// on another adapter than <paramref name="agent"/>, whose conversation cannot go on here whichever account runs (D131 §2's
+    /// <c>adapter</c>), so its words are carried on by the walk's pick as before. Since FOUNDATION1j part ii the start's agent is the
+    /// record's own unless a hand-over named another, so a record that ran on Build's second choice goes on in its own conversation.
     /// </summary>
     /// <remarks>
     /// 🔴 SAYHELD1: never judged by the quest's <c>awaits</c>. The planner plans words going on only where no question holds them, and
@@ -183,8 +184,8 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
         var output = _context.Output;
         var quest = start.Quest;
         ISessionAdapter? adapter = null;
-        // The agent this start runs on: the machine's, or the one a hand-over named for the quest (MIXAGENT1a-ii), passed in since
-        // starts run side by side and a field would be every start's.
+        // The agent this start runs on: its record's asked choice's (FOUNDATION1j part ii, D205 point 1), or the one a hand-over named for
+        // the quest (MIXAGENT1a-ii), passed in since starts run side by side and a field would be every start's.
         try { adapter = _context.Adapters.Resolve(agent); } catch (DriverException) { }
 
         // The person wrote to a record that had ended, so it stays in view whatever comes of it (D137 §2.3): its archive mark

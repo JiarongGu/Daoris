@@ -158,7 +158,7 @@ internal sealed class ChatHandOver(ChatContext context, IChatRunning runner)
                 (prior, request, from, token) => _runner.StartAsync(
                     prior.Repository!, request.Agent, config, onEnded, request.Account, ct: token, tree: prior.Tree, from: from,
                     picked: request.AskedBy == HandOverBy.Person && !string.IsNullOrWhiteSpace(request.Account)),
-                SayHandedOver, ct, moved, closing).ConfigureAwait(false);
+                (id, message) => SayHandedOver(id, message), ct, moved, closing).ConfigureAwait(false);
         }
         finally
         {
@@ -238,7 +238,11 @@ internal sealed class ChatHandOver(ChatContext context, IChatRunning runner)
     /// person's words; a part that goes on from a lost conversation carries those that waited there after the brief (SESSCTX1c part B,
     /// <see cref="BriefedMove"/>).
     /// </summary>
-    internal async Task<bool> SayHandedOver(string sessionId, ChatMessage message)
+    /// <param name="shown">
+    /// The words a keyed open moved to the part (FOUNDATION1d-ii part 4, <see cref="MovedWords.Shown"/>): each recorded by its own event under its
+    /// id, before the write, in place of the message's one joined event; null for every other message.
+    /// </param>
+    internal async Task<bool> SayHandedOver(string sessionId, ChatMessage message, IReadOnlyList<SessionEvent>? shown = null)
     {
         if (!_context.Turned.ContainsKey(sessionId) && !_context.Talking.ContainsKey(sessionId)) return false;
 
@@ -248,21 +252,47 @@ internal sealed class ChatHandOver(ChatContext context, IChatRunning runner)
         {
             message = message with { Briefing = message.Briefing is { Length: > 0 } told ? $"{told}\n\n{browser}" : browser };
         }
-        if (_context.Turned.TryGetValue(sessionId, out var chat)) return chat.Turns.Take(message) is not null;
+        if (_context.Turned.TryGetValue(sessionId, out var chat))
+        {
+            // Held for the turn that writes the message, which records them before its write (ChatContext.Shown).
+            if (shown is not null) _context.Shown[sessionId] = (message.Text, shown);
+            if (chat.Turns.Take(message) is not null) return true;
+            if (shown is not null) _context.Shown.TryRemove(sessionId, out _);
+            return false;
+        }
 
         // A text door has no turns to record it as they are sent: the note is kept here, with what is sent, so no path says nothing.
         // Its process is tracked a moment after the start returns, and a send before that reaches nothing: tried again, bounded.
+        // FOUNDATION1d-ii part 4: moved words are recorded before the write, as the turned doors record them, the agent having gone said after.
+        if (shown is not null)
+        {
+            foreach (var recorded in ChatRecorded.Recorded(message, shown)) _context.Record(sessionId, recorded);
+        }
+
         var framed = _context.Talking.TryGetValue(sessionId, out var adapter) ? adapter.FrameMessage(message.Prompt) : message.Prompt;
         for (var attempt = 0; attempt < 50; attempt++)
         {
             if (_context.Processes.Send(sessionId, framed))
             {
-                foreach (var recorded in ChatRecorded.Recorded(message)) _context.Record(sessionId, recorded);
+                if (shown is null)
+                {
+                    foreach (var recorded in ChatRecorded.Recorded(message)) _context.Record(sessionId, recorded);
+                    return true;
+                }
+
+                // On the wire: a limit's move takes the moved words off the new part now, as a turned door tells it once it wrote them.
+                message.Delivered?.Invoke();
                 return true;
             }
 
-            if (!_context.Talking.ContainsKey(sessionId)) return false;
+            if (!_context.Talking.ContainsKey(sessionId)) break;
             await Task.Delay(100).ConfigureAwait(false);
+        }
+
+        if (shown is not null)
+        {
+            var gone = WordsNotes.NotSent();
+            _context.Record(sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = gone.Note, Parts = gone.Parts });
         }
 
         return false;

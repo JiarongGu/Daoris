@@ -183,6 +183,107 @@ public sealed class DesktopStore : IDisposable
               PRIMARY KEY (move, transfer)
             );
             """)),
+
+        // Row f-i part 2: what a box an older build wrote carries that step 4's columns do not, and a quiet move's telling (§3.3, §13.5,
+        // §19.1). Each nullable, added to the table a step-4 build already writes, which names its own columns and leaves these empty, so the
+        // stamp stays where it is and the step runs at the first start: the agent a hand-over opens its new part on, a limit's refused
+        // turns' bound, and the phase moment a quiet move was last said quiet for, so two processes looking say it once between them.
+        new(5, WriterStamp, write => write.Execute(
+            """
+            ALTER TABLE moves ADD COLUMN agent TEXT;
+            ALTER TABLE moves ADD COLUMN refused_bound INTEGER;
+            ALTER TABLE moves ADD COLUMN quiet_at TEXT;
+            """)),
+
+        // INTEGRATE1e part e2: the integration's family (the integration design §5.6, D212 §13), Workplace's. New tables an older
+        // store-aware build never opens, so the stamp stays where it is and the step runs at the first start. One open request per
+        // repository and branch, one standing candidate per line, one standing membership per request and one open step per candidate, each
+        // by a partial unique index the write meets; one job per candidate by its own. A column every row of its table carries is
+        // required; a route's own (a records branch has no unit, session, quest or proof), a requester's (only the steward's act names an
+        // act) and a later step's (the candidate's tip, a step's end) are nullable. No CHECK holds a word, so a newer build's word is kept.
+        new(6, WriterStamp, write => write.Execute(
+            """
+            CREATE TABLE integration_requests (
+              id               TEXT NOT NULL PRIMARY KEY,
+              repository       TEXT NOT NULL,
+              workspace        TEXT NOT NULL,
+              branch           TEXT NOT NULL,
+              tip              TEXT NOT NULL,
+              route            TEXT NOT NULL,
+              line             TEXT NOT NULL,
+              requester        TEXT NOT NULL,
+              door             TEXT NOT NULL,
+              act              TEXT,
+              generation       INTEGER,
+              policy_request   TEXT NOT NULL,
+              policy_commit    TEXT NOT NULL,
+              policy_batch     INTEGER NOT NULL,
+              policy_order     TEXT NOT NULL,
+              policy_gates     TEXT NOT NULL,
+              policy_unreached TEXT NOT NULL,
+              policy_reached   TEXT NOT NULL,
+              policy_conflicts TEXT NOT NULL,
+              policy_overlap   TEXT NOT NULL,
+              policy_line      TEXT,
+              rule_source      TEXT,
+              unit             TEXT,
+              session          TEXT,
+              quest            TEXT,
+              landed_at        TEXT,
+              proof            TEXT,
+              at               TEXT NOT NULL,
+              closed_at        TEXT,
+              closed_why       TEXT
+            );
+            CREATE UNIQUE INDEX integration_requests_open ON integration_requests (repository COLLATE NOCASE, branch) WHERE closed_at IS NULL;
+            CREATE INDEX integration_requests_queue ON integration_requests (repository COLLATE NOCASE, line, at);
+            CREATE TABLE integration_candidates (
+              id               TEXT NOT NULL PRIMARY KEY,
+              repository       TEXT NOT NULL,
+              workspace        TEXT NOT NULL,
+              line             TEXT NOT NULL,
+              base             TEXT NOT NULL,
+              job              TEXT NOT NULL,
+              claim_run        TEXT NOT NULL REFERENCES store_runs (run),
+              claim_generation INTEGER NOT NULL,
+              formed_at        TEXT NOT NULL,
+              tip              TEXT,
+              promoted_at      TEXT,
+              ended_at         TEXT,
+              ended_why        TEXT
+            );
+            CREATE UNIQUE INDEX integration_candidates_standing ON integration_candidates (repository COLLATE NOCASE, line) WHERE ended_at IS NULL;
+            CREATE UNIQUE INDEX integration_candidates_job ON integration_candidates (job);
+            CREATE TABLE integration_members (
+              candidate    TEXT NOT NULL REFERENCES integration_candidates (id),
+              request      TEXT NOT NULL REFERENCES integration_requests (id),
+              position     INTEGER NOT NULL,
+              state        TEXT NOT NULL,
+              joined_at    TEXT NOT NULL,
+              replayed     TEXT,
+              contained_by TEXT REFERENCES integration_requests (id),
+              said         TEXT,
+              ended_at     TEXT,
+              PRIMARY KEY (candidate, request)
+            );
+            CREATE UNIQUE INDEX integration_members_standing ON integration_members (request) WHERE ended_at IS NULL;
+            CREATE TABLE integration_steps (
+              id               INTEGER PRIMARY KEY AUTOINCREMENT,
+              candidate        TEXT NOT NULL REFERENCES integration_candidates (id),
+              step             TEXT NOT NULL,
+              attempt          INTEGER NOT NULL,
+              claim_run        TEXT NOT NULL REFERENCES store_runs (run),
+              claim_generation INTEGER NOT NULL,
+              began_at         TEXT NOT NULL,
+              request          TEXT REFERENCES integration_requests (id),
+              line_commit      TEXT,
+              ended_at         TEXT,
+              outcome          TEXT,
+              said             TEXT
+            );
+            CREATE UNIQUE INDEX integration_steps_open ON integration_steps (candidate) WHERE ended_at IS NULL;
+            CREATE INDEX integration_steps_of ON integration_steps (candidate, id);
+            """)),
     ];
 
     /// <summary>
@@ -369,6 +470,35 @@ public sealed class DesktopStore : IDisposable
 
         Touch();
         return result;
+    }
+
+    /// <summary>
+    /// This process's run recorded in <c>store_runs</c>, and nothing else: no family's revision moves and no wake is touched (FOUNDATION1f-i
+    /// part 2, §19.1 point 3). A shell's come-up enters before it reads the runs, so another shell coming up on the home finds it there.
+    /// </summary>
+    /// <exception cref="DesktopStoreNewerException">The file's stamp is past this build's: nothing is written.</exception>
+    /// <exception cref="DesktopStoreBusyException">The write lock stayed held past the wait; nothing was written.</exception>
+    public void Enter()
+    {
+        lock (_turn)
+        {
+            ThrowIfDisposed();
+            if (_registered) return;
+            using var transaction = Begin();
+            try
+            {
+                var stamp = ReadStamp(transaction);
+                if (stamp.Writer > Own) throw new DesktopStoreNewerException(stamp.Writer, Own);
+                if (stamp.Version == 0) throw new DesktopStoreException($"the desktop's store has no schema yet: {Held ?? "its first migration did not run"}.");
+                Register(new DesktopWrite(_connection, transaction));
+                transaction.Commit();
+                _registered = true;
+            }
+            catch (SqliteException error) when (Busy(error))
+            {
+                throw new DesktopStoreBusyException(error);
+            }
+        }
     }
 
     /// <summary><see cref="Write{T}"/> for work that answers nothing.</summary>

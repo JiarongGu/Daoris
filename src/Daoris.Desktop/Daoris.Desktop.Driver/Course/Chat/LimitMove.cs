@@ -29,6 +29,12 @@ internal sealed class LimitMove(ChatContext context, IChatRunning runner, ChatHa
     public event Action<string, StartedFrom>? Moved;
 
     /// <summary>
+    /// The conversations' move record (FOUNDATION1f-ii part a): the live move's record is written there, and the shell's come-up takes a dead
+    /// shell's moves up through it. A test hands one over a store of its own run.
+    /// </summary>
+    internal ConversationMoves Moves { get; set; } = new(context.Home, context.Service, context.Events, context.Output);
+
+    /// <summary>
     /// Where no other account has room (LIMITRESUME1c, D206 §3.5): the conversation waits for its limit, its words with it, rather than
     /// staying to be refused turn by turn (<see cref="LimitWaits.Wait"/>). Told the session, its turns, the adapter it runs on and, where the
     /// person picked its account, that account, whose reset its wait is (FOUNDATION1a-ii).
@@ -56,12 +62,20 @@ internal sealed class LimitMove(ChatContext context, IChatRunning runner, ChatHa
     /// Move the conversation where its last turn was refused by its account's limit (<see cref="LimitHeld"/>); null where nothing was
     /// judged to move: its last turn ended otherwise, it is no conversation of this machine's that runs here, or a move is under way.
     /// </summary>
+    /// <remarks>
+    /// FOUNDATION1f-ii part a (the foundation design §3.3, §13.4): the move keeps one record in the store (<see cref="Moves"/>), decided
+    /// before its turns are held, so a record a move still stands for, the one it left or the one whose open made it, takes no move now; its
+    /// phases are written before what each fences, the old part's end, the keyed open under the key it is sent with, and the prompt's mark
+    /// before the hand; each handed word's <c>sent</c> as the turn's write returns, then the take, then the reading that closes it
+    /// <c>delivered</c>. A write the store refuses stops the move before the effect it fences, with today's words for that stop.
+    /// </remarks>
     public async Task<StartedFrom?> MoveAsync(
         string sessionId, DriverConfig config, Func<string, string, Task>? onEnded, CancellationToken ct = default)
     {
         if (context.Closing || context.GoingOn.ContainsKey(sessionId) || new HandOverBox(context.Home).Read(sessionId) is not null) return null;
         if (!context.Turned.TryGetValue(sessionId, out var chat)) return null;
-        if (LimitHeld.Of(context.Events.After(sessionId, 0).Events) is not { } held) return null;
+        var seen = context.Events.After(sessionId, 0).Events;
+        if (LimitHeld.Of(seen) is not { } held) return null;
 
         var json = await context.Service.SessionRecordsJsonAsync(ct).ConfigureAwait(false);
         var listed = SessionRecords.Parse(json).FirstOrDefault(each => string.Equals(each.Id, sessionId, StringComparison.Ordinal));
@@ -136,18 +150,44 @@ internal sealed class LimitMove(ChatContext context, IChatRunning runner, ChatHa
         }
 
         var holding = false;
+        // FOUNDATION1f-ii part a: the move's record, ended by its phase where the move goes no further before its hand.
+        ConversationMove? record = null;
+        var toWire = false;
         // LIMITRESUME1c: the words said while it waited for its limit, kept on its record, which the move carries after the refused turns'.
         IReadOnlyList<ChatMessage> waited = [];
         try
         {
-            // Never mid-turn: a word said meanwhile started its turn first, and that turn's end judges again.
+            // FOUNDATION1f-ii part a (§3.3, §13.4 step 1): decided before its turns are held, so a record a move still stands for, the one it
+            // left or the one whose open made it, takes no move now and keeps its words where they are; a store that will not take the
+            // decision moves nothing, said.
+            var begun = await Moves.BeginAsync(Decision(sessionId, held, seen.Count, isHelp || elsewhere is not null ? null : selection.Profile), ct)
+                .ConfigureAwait(false);
+            if (begun.Refused is { } unwritten)
+            {
+                context.Note(sessionId, LimitNotes.NotMoved(unwritten));
+                return new StartedFrom(null, false, null, unwritten);
+            }
+
+            if (begun.Move is not { } move) return null;
+            record = move;
+
+            // Never mid-turn: a word said meanwhile started its turn first, and that turn's end judges again; the old part went on before
+            // anything began, so the move closes superseded.
             if (chat.Turns.Limited)
             {
-                if (chat.Turns.HoldLimited() is not { } heldWords) return null;
+                if (chat.Turns.HoldLimited() is not { } heldWords)
+                {
+                    move.Superseded();
+                    record = null;
+                    return null;
+                }
+
                 waited = heldWords;
             }
             else if (!chat.Turns.Hold())
             {
+                move.Superseded();
+                record = null;
                 return null;
             }
 
@@ -164,7 +204,21 @@ internal sealed class LimitMove(ChatContext context, IChatRunning runner, ChatHa
             chat.Turns.Release();
             holding = false;
 
+            // FOUNDATION1f-ii part a (§13.4 steps 1 and 3): the old part's end, then the open asked under the key it is sent with, each before
+            // what it fences; a write the store refuses opens nothing, and the words stay on the old record.
+            var key = MoveWords.ChatKey();
+            if ((move.OldEnded() ?? move.Opening(key)) is { } unasked)
+            {
+                context.Note(sessionId, LimitNotes.NotMoved(unasked));
+                return new StartedFrom(null, false, null, unasked);
+            }
+
             var from = new ContinuedFrom(sessionId, HandOverWhy.Limit, HandOverBy.Daoris);
+            // The waiting words leave the old record by their ids once the new part's turn is on the wire, named as taken by it.
+            List<string> waitedIds = [.. waited.Where(word => word.Kept && word.Id is not null).Select(word => word.Id!)];
+            // FOUNDATION1d-ii part 4: the open moves the words the turns held and every word of the person's kept since, one said to the old
+            // part after its end among them, in its own step, so none falls between the end and the open.
+            var moves = MovedWords.Asked(sessionId, waitedIds, waitedIds) with { Opens = key };
             var started = isHelp
                 ? await HelpStartAsync(prior, agent, config, onEnded, ct, elsewhere?.Order).ConfigureAwait(false)
                 // On the account the walk judged, so its opening and `account.rotated` name the cooling one passed and what it carries;
@@ -172,10 +226,11 @@ internal sealed class LimitMove(ChatContext context, IChatRunning runner, ChatHa
                 : elsewhere is { Order: { } order }
                     ? await runner.StartAsync(
                             prior.Repository!, agent.Name, config, onEnded, profile: null, ct: ct, tree: tree, from: from, order: order,
-                            leftBy: LeftBy(prior, agent))
+                            leftBy: LeftBy(prior, agent), moves: moves)
                         .ConfigureAwait(false)
                     : await runner.StartAsync(
-                            prior.Repository!, agent.Name, config, onEnded, profile: null, ct: ct, tree: tree, from: from, settled: selection)
+                            prior.Repository!, agent.Name, config, onEnded, profile: null, ct: ct, tree: tree, from: from, settled: selection,
+                            moves: moves)
                         .ConfigureAwait(false);
             if (started.SessionId is not { } to)
             {
@@ -185,22 +240,78 @@ internal sealed class LimitMove(ChatContext context, IChatRunning runner, ChatHa
 
             made = true;
 
+            // FOUNDATION1f-ii part a (§13.4 steps 2 and 3): the open's answer, every word it moved by its id on the new part, read whatever
+            // `Moves` says; then `delivering` and the prompt's mark, before any word is marked attempted or handed. A write the store refuses
+            // makes no hand, and the moved words wait on the new part, never attempted.
+            var fenced = move.Opened(to, started.Moved) ?? move.Delivering();
+
             // The agent and account the new part opened on: the walk's, which is another agent where its own had no account left.
             var opened = await context.Service.RecordAsync(to, ct).ConfigureAwait(false);
             var account = opened?.Profile;
             var onto = opened?.Adapter is { Length: > 0 } went ? went : agent.Name;
             var opening = HandOverNotes.MovedFrom(sessionId, ranOn, prior.Profile, HandOverWhy.Limit, high, brief.Text.Length);
             var words = held.Words;
-            var files = words.SelectMany(word => ChatFiles.Kept(context.Home, sessionId, word.Files ?? [])).Concat(waited.SelectMany(word => word.Files)).ToList();
-            var text = string.Join("\n\n", [.. words.Select(word => word.Text), .. waited.Select(word => word.Text)]);
-            // The waiting words leave the old record by their ids once the new part's turn is on the wire, named as taken by it.
-            List<string> waitedIds = [.. waited.Where(word => word.Kept && word.Id is not null).Select(word => word.Id!)];
-            var message = new ChatMessage(text, files)
+            var refusedFiles = words.SelectMany(word => ChatFiles.Kept(context.Home, sessionId, word.Files ?? [])).ToList();
+            ChatMessage message;
+            IReadOnlyList<SessionEvent>? shown = null;
+            if (MovedWords.Moving(started))
             {
-                Brief = brief, TakenOver = opening,
-                Delivered = waitedIds.Count == 0 ? null : () => _ = TakenOffAsync(sessionId, waitedIds, to),
-            };
-            var taken = await handOver.SayHandedOver(to, message).ConfigureAwait(false);
+                // The open moved the waiting words: the delivery is the new part's, those this process held alone after them, and they leave
+                // the new part once its turn is on the wire.
+                var moved = fenced is null ? await HandedAsync(sessionId, to, started, ct).ConfigureAwait(false) : null;
+                List<ChatMessage> unkept = [.. waited.Where(word => !word.Kept || word.Id is null)];
+                List<SaidWordView> handed = [.. moved?.Words ?? []];
+                // FOUNDATION1f-ii part a (§19.4): the handed words' `sent` as the write returns, by their transfers on the new part; then
+                // their take; then the one reading, which closes the move delivered only once every word it moved has `sent`.
+                List<string> transfers = moved is null
+                    ? []
+                    : [.. started.Moved.Where(word => moved.Ids.Contains(word.Id, StringComparer.Ordinal)).Select(word => word.Transfer)];
+                message = new ChatMessage(
+                    string.Join("\n\n", [.. words.Select(word => word.Text), .. handed.Select(word => word.Text), .. unkept.Select(word => word.Text)]),
+                    [.. refusedFiles, .. moved?.Files ?? [], .. unkept.SelectMany(word => word.Files)])
+                {
+                    Brief = brief, TakenOver = opening,
+                    Delivered = () =>
+                    {
+                        move.Wire(transfers);
+                        _ = Task.Run(async () =>
+                        {
+                            if (moved is { Words.Count: > 0 } taking) await taking.TakeAsync(context.Service).ConfigureAwait(false);
+                            await move.ReadAsync().ConfigureAwait(false);
+                        });
+                    },
+                };
+                shown = Shown(words, handed, unkept);
+            }
+            else
+            {
+                var files = refusedFiles.Concat(waited.SelectMany(word => word.Files)).ToList();
+                var text = string.Join("\n\n", [.. words.Select(word => word.Text), .. waited.Select(word => word.Text)]);
+                message = new ChatMessage(text, files)
+                {
+                    Brief = brief, TakenOver = opening,
+                    // An older host moved nothing (FOUNDATION1f-ii part a): a move of no word, its prompt's outcome written as the write returns.
+                    Delivered = () =>
+                    {
+                        move.Wire([]);
+                        _ = Task.Run(async () =>
+                        {
+                            if (waitedIds.Count > 0) await TakenOffAsync(sessionId, waitedIds, to).ConfigureAwait(false);
+                            await move.ReadAsync().ConfigureAwait(false);
+                        });
+                    },
+                };
+            }
+
+            // A text door writes as it is handed, and tells no move's message of no moved word that it wrote: its return is the write's.
+            var turned = context.Turned.ContainsKey(to);
+            var taken = fenced is null && await handOver.SayHandedOver(to, message, shown).ConfigureAwait(false);
+            toWire = taken;
+            if (taken && !turned && !move.Wired)
+            {
+                move.Wire([]);
+                _ = move.ReadAsync();
+            }
 
             // Said once where the person wrote, naming the agent it moved to, and in the machine log, accounts by profile name (D125 point 7).
             context.Note(sessionId, HandOverNotes.MovedOn(to, onto, account, HandOverWhy.Limit, high, brief.Text.Length));
@@ -220,10 +331,22 @@ internal sealed class LimitMove(ChatContext context, IChatRunning runner, ChatHa
         {
             if (!made) context.Harnesses.Release(counted);
             if (holding) chat.Turns.Release();
+            // FOUNDATION1f-ii part a: a move that went no further than its hand is ended by its phase, its prompt known unwritten.
+            if (record is not null && !toWire) await record.EndAsync().ConfigureAwait(false);
             context.GoingOn.TryRemove(sessionId, out _);
             going.TrySetResult();
         }
     }
+
+    /// <summary>
+    /// The live move as the course decided it (FOUNDATION1f-ii part a, §3.3): a conversation's, by the brief, for the limit, asked by Daoris;
+    /// its brief's recipe bound before the refused turns, whose words are read within the events the decision saw.
+    /// </summary>
+    private static MoveDecision Decision(string sessionId, LimitHeld held, int seen, string? account) =>
+        new(sessionId, MoveExecutors.Conversation, MoveHows.Brief, HandOverWhy.Limit, HandOverBy.Daoris)
+        {
+            Account = account, RecipeWhy = HandOverWhy.Limit, RecipeBound = held.Before, RefusedBound = seen,
+        };
 
     /// <summary>
     /// 🔴 The same move for a conversation its limit holds that has already ended (LIMITRESUME1c, D206 §3.5, B3, F5): <see cref="MoveAsync"/>'s
@@ -340,15 +463,18 @@ internal sealed class LimitMove(ChatContext context, IChatRunning runner, ChatHa
             boxes.Write(sessionId, box);
 
             var from = new ContinuedFrom(sessionId, moveWhy, HandOverBy.Daoris);
+            // FOUNDATION1d-ii part 4: the open moves the words the box names and every word of the person's kept since this read, in its own step.
+            var moves = MovedWords.Asked(sessionId, said, prior.Waiting.Select(word => word.Id));
             var started = isHelp
                 ? await HelpStartAsync(prior, agent, config, onEnded, ct, elsewhere?.Order).ConfigureAwait(false)
                 : elsewhere is { Order: { } order }
                     ? await runner.StartAsync(
                             prior.Repository!, agent.Name, config, onEnded, profile: null, ct: ct, tree: tree, from: from, order: order,
-                            leftBy: LeftBy(prior, agent))
+                            leftBy: LeftBy(prior, agent), moves: moves)
                         .ConfigureAwait(false)
                     : await runner.StartAsync(
-                            prior.Repository!, agent.Name, config, onEnded, profile: null, ct: ct, tree: tree, from: from, settled: selection)
+                            prior.Repository!, agent.Name, config, onEnded, profile: null, ct: ct, tree: tree, from: from, settled: selection,
+                            moves: moves)
                         .ConfigureAwait(false);
             if (started.SessionId is not { } to)
             {
@@ -359,12 +485,34 @@ internal sealed class LimitMove(ChatContext context, IChatRunning runner, ChatHa
 
             opened = true;
 
-            // LIMITWORD1: read the record again at the go-on, where the new part's record takes the words said after it; a word kept
-            // here since the box was written goes on with the rest, in the box before the message is composed from it.
-            var now = await context.ReadAgainAsync(sessionId, ct).ConfigureAwait(false) ?? prior;
-            box = Carried(box with { To = to }, now);
-            boxes.Write(sessionId, box);
-            var message = await ComposeAsync(sessionId, box, now, ct).ConfigureAwait(false);
+            ChatMessage message;
+            IReadOnlyList<SessionEvent>? shown = null;
+            if (MovedWords.Moving(started))
+            {
+                // The open moved the words, any kept since the box among them: the box names them on the new part, where they wait until they
+                // are delivered, before anything reads them there, and the record left holds none to read again. The delivery is the new
+                // part's moved words; the box is narrowed to those marked attempted for the hand, the rest waiting there for its own go-on.
+                box = box with { To = to, Said = [.. started.Moved.OrderBy(word => word.Order).Select(word => word.Id)], Moved = true };
+                boxes.Write(sessionId, box);
+                var moved = await HandedAsync(sessionId, to, started, ct).ConfigureAwait(false);
+                if (!(moved?.Ids ?? []).SequenceEqual(box.Said, StringComparer.Ordinal))
+                {
+                    box = box with { Said = moved?.Ids ?? [] };
+                    boxes.Write(sessionId, box);
+                }
+
+                message = await ComposeAsync(sessionId, box, prior, moved?.Words ?? [], to, ct).ConfigureAwait(false);
+                shown = Shown(Refused(sessionId, box), moved?.Words ?? [], []);
+            }
+            else
+            {
+                // LIMITWORD1: read the record again at the go-on, where the new part's record takes the words said after it; a word kept
+                // here since the box was written goes on with the rest, in the box before the message is composed from it.
+                var now = await context.ReadAgainAsync(sessionId, ct).ConfigureAwait(false) ?? prior;
+                box = Carried(box with { To = to }, now);
+                boxes.Write(sessionId, box);
+                message = await ComposeAsync(sessionId, box, now, Waited(box, now), sessionId, ct).ConfigureAwait(false);
+            }
             // The agent and account the new part opened on: the walk's, which is another agent where its own had no account left.
             var landed = await context.Service.RecordAsync(to, ct).ConfigureAwait(false);
             var account = landed?.Profile;
@@ -373,7 +521,8 @@ internal sealed class LimitMove(ChatContext context, IChatRunning runner, ChatHa
             context.Note(sessionId, HandOverNotes.MovedOn(to, onto, account, moveWhy, null, message.Brief?.Text.Length ?? 0));
             context.Service.AccountSaid(
                 Continuations.Moved(to, sessionId, ranOn, onto, prior.Profile, account, moveWhy, briefed: true));
-            if (!await handOver.SayHandedOver(to, message with { Delivered = () => _ = DeliveredAsync(sessionId, box) }).ConfigureAwait(false))
+            var delivering = box;
+            if (!await handOver.SayHandedOver(to, message with { Delivered = () => _ = DeliveredAsync(sessionId, delivering) }, shown).ConfigureAwait(false))
             {
                 context.Note(to, HandOverNotes.Unsaid());
                 return new StartedFrom(to, false, null, $"conversation `{to}` opened on the next account, but what Daoris kept of `{sessionId}` did not reach it.");
@@ -415,28 +564,90 @@ internal sealed class LimitMove(ChatContext context, IChatRunning runner, ChatHa
 
     /// <summary>
     /// The ended-record move's message, composed from its box (Codex 8): Daoris's brief of the line before the refused turns, then those
-    /// turns' words read within the box's bound, then the words said while it waited, by their ids on the old record, each with its files.
+    /// turns' words read within the box's bound, then the words said while it waited, each with its files: <paramref name="waited"/>, as the
+    /// record <paramref name="waitedOn"/> holds them, the old record's by the box's ids, or, where the open moved them (FOUNDATION1d-ii part 4,
+    /// O6-F13), the new part's, their files read from its folder.
     /// </summary>
-    private async Task<ChatMessage> ComposeAsync(string sessionId, LimitMoveBox box, PriorSession prior, CancellationToken ct)
+    /// <param name="prior">The old record, whose agent, account and kind the brief and its opening name.</param>
+    private async Task<ChatMessage> ComposeAsync(
+        string sessionId, LimitMoveBox box, PriorSession prior, IReadOnlyList<SaidWordView> waited, string waitedOn, CancellationToken ct)
     {
         var events = context.Events.After(sessionId, 0).Events;
         var held = LimitHeld.Of([.. events.Take(box.Through)]);
         var refused = held?.Words ?? [];
         var moveWhy = ComposedWhy(held is not null, box.Why == ContinueWhy.Account);
-        var waited = prior.Waiting.Where(word => word.Id is { } id && box.Said.Contains(id, StringComparer.Ordinal)).ToList();
         var brief = await ContextBriefs.ComposeAsync(
                 context.Service, context.Events, context.Home, sessionId, moveWhy, conversation: prior.Kind == "chat", ct: ct, before: box.Before)
             .ConfigureAwait(false);
         var high = RotatedOpening.ContextOf(null, context.Events, sessionId);
         var opening = HandOverNotes.MovedFrom(sessionId, prior.Adapter ?? "", prior.Profile, moveWhy, high, brief.Text.Length);
         var files = refused.SelectMany(word => ChatFiles.Kept(context.Home, sessionId, word.Files ?? []))
-            .Concat(waited.SelectMany(word => ChatFiles.Kept(context.Home, sessionId, word.Files)))
+            .Concat(waited.SelectMany(word => ChatFiles.Kept(context.Home, waitedOn, word.Files)))
             .ToList();
         // Daoris's own words that waited (LIMITSWITCH3) are said as Daoris's after the person's, never as theirs.
         List<string> parts = [.. refused.Select(word => word.Text), .. waited.Where(word => !word.Daoris).Select(word => word.Text)];
         if (waited.Where(word => word.Daoris).ToList() is { Count: > 0 } daoris) parts.Add(TargetPrompt.DaorisWaited(daoris));
         return new ChatMessage(string.Join("\n\n", parts), files) { Brief = brief, TakenOver = opening };
     }
+
+    /// <summary>The words the box names as the old record holds them, in its order: an older host's move, which moved nothing.</summary>
+    private static IReadOnlyList<SaidWordView> Waited(LimitMoveBox box, PriorSession prior) =>
+        [.. prior.Waiting.Where(word => word.Id is { } id && box.Said.Contains(id, StringComparer.Ordinal))];
+
+    /// <summary>The refused turns' words, as the old record's conversation shows them within the box's bound.</summary>
+    private IReadOnlyList<SessionEvent> Refused(string sessionId, LimitMoveBox box) =>
+        LimitHeld.Of([.. context.Events.After(sessionId, 0).Events.Take(box.Through)])?.Words ?? [];
+
+    /// <summary>
+    /// What a limit's move shows on the new part where its open moved the words (FOUNDATION1d-ii part 4, O6-F2): the refused turns' words as the
+    /// person's, as one, since they wait on no record and carry no id; then each moved word by its own event under its id; then any word this
+    /// process alone held, as one.
+    /// </summary>
+    private static IReadOnlyList<SessionEvent> Shown(
+        IReadOnlyList<SessionEvent> refused, IReadOnlyList<SaidWordView> moved, IReadOnlyList<ChatMessage> unkept)
+    {
+        List<SessionEvent> shown = [];
+        if (refused.Count > 0)
+        {
+            List<string> names = [.. refused.SelectMany(word => word.Files ?? [])];
+            shown.Add(new SessionEvent
+            {
+                Kind = SessionEventKind.User, Origin = "person", Text = string.Join("\n\n", refused.Select(word => word.Text)),
+                Files = names.Count > 0 ? names : null,
+            });
+        }
+
+        shown.AddRange(moved.Select(MovedWords.Of));
+        if (unkept.Count > 0)
+        {
+            List<string> names = [.. unkept.SelectMany(word => word.Files.Select(file => file.Name))];
+            shown.Add(new SessionEvent
+            {
+                Kind = SessionEventKind.User, Origin = "person", Text = string.Join("\n\n", unkept.Select(word => word.Text)),
+                Files = names.Count > 0 ? names : null,
+            });
+        }
+
+        return shown;
+    }
+
+    /// <summary>
+    /// The words the open moved to the new part, as it is handed them (FOUNDATION1d-ii part 4): read there, their files copied, and marked
+    /// attempted where this runner holds the part, so a hand that cannot be made marks nothing; null where the new part's record did not read.
+    /// </summary>
+    private async Task<MovedWords?> HandedAsync(string from, string to, ChatStart started, CancellationToken ct)
+    {
+        var moved = await MovedWords.OnAsync(context.Service, context.Home, from, to, started.Moved, ct).ConfigureAwait(false);
+        return moved is not null && context.Holds(to) ? await moved.AttemptedAsync(context.Service).ConfigureAwait(false) : moved;
+    }
+
+    /// <summary>
+    /// Whether <paramref name="session"/> holds none of <paramref name="ids"/>, read again: what a box is ended on, never a take's answer, which
+    /// is success where no word it names waits. False where the record did not read.
+    /// </summary>
+    private async Task<bool> HoldsNoneAsync(string session, IReadOnlyList<string> ids) =>
+        await context.ReadAgainAsync(session, CancellationToken.None).ConfigureAwait(false) is { } after
+        && !after.Waiting.Any(word => word.Id is { } id && ids.Contains(id, StringComparer.Ordinal));
 
     /// <summary>
     /// The box with the person's words the old record holds now that it does not name yet (LIMITWORD1), after its own in the record's
@@ -455,9 +666,23 @@ internal sealed class LimitMove(ChatContext context, IChatRunning runner, ChatHa
     /// The move's words are delivered (Codex 8): the words that waited leave the old record by their ids, named as taken by the new part,
     /// and the box goes. Never faults: what the record does not take waits there, and the box with it, for the next come-up.
     /// </summary>
+    /// <remarks>
+    /// FOUNDATION1d-ii part 4 (O6-F13): where the open moved them, the words wait on the new part, so they leave it, as its own turn's, and the
+    /// box goes only once it holds none of them, read again; the old record, which holds none, is never asked, since its take would answer
+    /// success and end the box with the words still waiting.
+    /// </remarks>
     private async Task DeliveredAsync(string sessionId, LimitMoveBox box)
     {
-        if (await TakenOffAsync(sessionId, box.Said, box.To).ConfigureAwait(false)) new LimitBoxes(context.Home).Clear(sessionId);
+        var boxes = new LimitBoxes(context.Home);
+        if (!box.Moved)
+        {
+            if (await TakenOffAsync(sessionId, box.Said, box.To).ConfigureAwait(false)) boxes.Clear(sessionId);
+            return;
+        }
+
+        if (box.To is not { } to) return;
+        await TakenOffAsync(to, box.Said, by: null).ConfigureAwait(false);
+        if (await HoldsNoneAsync(to, box.Said).ConfigureAwait(false)) boxes.Clear(sessionId);
     }
 
     /// <summary>
@@ -490,6 +715,12 @@ internal sealed class LimitMove(ChatContext context, IChatRunning runner, ChatHa
                     continue;
                 }
 
+                if (box.Moved)
+                {
+                    await TakeUpMovedAsync(session, to, box, ct).ConfigureAwait(false);
+                    continue;
+                }
+
                 if (context.Events.After(to, 0).Events.Any(e => e.Kind == SessionEventKind.User))
                 {
                     await DeliveredAsync(session, box).ConfigureAwait(false);
@@ -500,12 +731,8 @@ internal sealed class LimitMove(ChatContext context, IChatRunning runner, ChatHa
                 // LIMITWORD1: a shell that ended before the go-on's words were boxed leaves them on the old record; they go on too.
                 box = Carried(box, prior);
                 boxes.Write(session, box);
-                var message = await ComposeAsync(session, box, prior, ct).ConfigureAwait(false);
-                // FOUNDATION1d-ii: said at the head of the destination's line where it went on, under the move's key; its files go by path.
-                await WordsHead.FollowAsync(
-                        to, at => context.Service.SayAsync(
-                            at, message.Prompt + ChatFiles.PathLines(message.Files), ct: ct, from: DaorisWords.From, key: $"limit-move/{session}"))
-                    .ConfigureAwait(false);
+                var message = await ComposeAsync(session, box, prior, Waited(box, prior), session, ct).ConfigureAwait(false);
+                await SayAgainAsync(session, to, message, ct).ConfigureAwait(false);
             }
             catch (Exception error) when (error is HttpRequestException or DriverException or IOException or System.Text.Json.JsonException
                                               || (error is OperationCanceledException && !ct.IsCancellationRequested))
@@ -513,6 +740,88 @@ internal sealed class LimitMove(ChatContext context, IChatRunning runner, ChatHa
                 // The box stays for the next come-up; nothing was taken off the old record.
             }
         }
+    }
+
+    /// <summary>
+    /// The move's composed message said to its destination again (Codex 8): at the head of the destination's line where it went on
+    /// (FOUNDATION1d-ii), under the move's key, so a come-up that says it again keeps one word; its files go by path. Daoris's.
+    /// </summary>
+    private Task<(SayAnswer Said, string At)> SayAgainAsync(string session, string to, ChatMessage message, CancellationToken ct) =>
+        WordsHead.FollowAsync(
+            to, at => context.Service.SayAsync(
+                at, message.Prompt + ChatFiles.PathLines(message.Files), ct: ct, from: DaorisWords.From, key: $"limit-move/{session}"));
+
+    /// <summary>
+    /// A box whose open moved the words (FOUNDATION1d-ii part 4's interim recovery, until row f-vi's durable <c>sent</c>; the foundation design §3.4
+    /// rules 3 and 5, O6-F13, O7-F4), taken up on what the destination holds, never on what its conversation shows, since each moved word's
+    /// event is recorded before the write and is the display's alone:
+    /// <list type="bullet">
+    /// <item>none of the box's words waits there: they left with the turn that took them, or were settled since, and the box goes;</item>
+    /// <item>any waits marked attempted: the hand began and may have reached the agent, so nothing is delivered or said again; each such
+    /// word is taken back off the destination, never sent again, with one <c>lost</c> line naming them there whatever its conversation
+    /// shows, and the box goes once none of them waits;</item>
+    /// <item>they wait never attempted: the hand never began, so the move is made again from the box as Daoris's word at the destination's
+    /// head under the move's key, the brief, the refused turns' words and the moved words read there; the moved words leave the destination
+    /// into it, so its go-on hands each once, and where they cannot, the word is taken back instead; the box goes once it is kept;</item>
+    /// <item>a box that moved no words is read as before: the destination's turn ends it, else its message is said again.</item>
+    /// </list>
+    /// </summary>
+    private async Task TakeUpMovedAsync(string session, string to, LimitMoveBox box, CancellationToken ct)
+    {
+        var boxes = new LimitBoxes(context.Home);
+        if (await context.ReadAgainAsync(to, ct).ConfigureAwait(false) is not { } destination) return;
+        List<SaidWordView> waiting = [.. destination.Waiting.Where(word => word.Id is { } id && box.Said.Contains(id, StringComparer.Ordinal))];
+        if (box.Said.Count > 0 && waiting.Count == 0)
+        {
+            boxes.Clear(session);
+            return;
+        }
+
+        List<string> attempted = [.. waiting.Where(word => word.Attempt is not null).Select(word => word.Id!)];
+        if (attempted.Count > 0)
+        {
+            var gone = new List<string>();
+            foreach (var word in attempted)
+            {
+                if (await context.Service.TakeBackAsync(to, word, text: null, ct).ConfigureAwait(false) is { Done: true } or { Why: "taken" }) gone.Add(word);
+            }
+
+            if (gone.Count > 0)
+            {
+                context.Events.Keep(to, new SessionEvent
+                {
+                    Kind = SessionEventKind.Note, Text = SessionNotes.LostLine, Words = gone, Code = SessionEventCodes.Lost,
+                }, say: null);
+            }
+
+            if (gone.Count == attempted.Count) boxes.Clear(session);
+            return;
+        }
+
+        if (box.Said.Count == 0 && context.Events.After(to, 0).Events.Any(e => e.Kind == SessionEventKind.User))
+        {
+            boxes.Clear(session);
+            return;
+        }
+
+        if (await context.ReadAgainAsync(session, ct).ConfigureAwait(false) is not { } prior) return;
+        var message = await ComposeAsync(session, box, prior, waiting, to, ct).ConfigureAwait(false);
+        var (said, at) = await SayAgainAsync(session, to, message, ct).ConfigureAwait(false);
+        if (!said.Kept) return;
+
+        List<string> ids = [.. waiting.Select(word => word.Id!)];
+        if (ids.Count > 0)
+        {
+            await TakenOffAsync(to, ids, by: null).ConfigureAwait(false);
+            if (!await HoldsNoneAsync(to, ids).ConfigureAwait(false))
+            {
+                // Both would wait to go: the word goes, and the moved words go on alone with the destination's go-on.
+                if (said.Word?.Id is { } copy) await context.Service.TakeBackAsync(at, copy, text: null, ct).ConfigureAwait(false);
+                return;
+            }
+        }
+
+        boxes.Clear(session);
     }
 
     /// <summary>Words off a record by their ids, named as taken by <paramref name="by"/>: whether the service took them.</summary>
