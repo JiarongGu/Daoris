@@ -205,7 +205,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Workplace/AutoLander.cs` | 51 | 747 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Workplace/BranchTidying.cs` | 54 | 979 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Workplace/ContentHolds.cs` | 42 | 647 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Workplace/LandedBranches.cs` | 42 | 728 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Workplace/LandedBranches.cs` | 42 | 731 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Workplace/LandedCleanups.cs` | 46 | 753 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Workplace/Landing.cs` | 50 | 862 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Workplace/SessionTrees.cs` | 60 | 954 |
@@ -401,4 +401,4 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/DAORIS_UNIFIED_COLLABORATION_ARCHITECTURE_AND_PLAN_2026-10-16.md` | 164 | 5380 |
 | `docs/README.md` | 63 | 289 |
 | `docs/development.md` | 52 | 575 |
-| `src/Daoris.Desktop/README.md` | 233 | 1160 |
+| `src/Daoris.Desktop/README.md` | 234 | 1160 |
