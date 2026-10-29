@@ -5,6 +5,13 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-29 - Accept all called a part with work of its own redone by a later part and offered to leave it out (ACCEPTCONFLICT1)
+
+- **Symptom:** on the install, *Accept all* on a chat line said its records part was redone by the quest's part and offered to leave it out. Each part had added its own work and they met only in one re-attested line of `CLAUDE.md`; leaving the records part out would have lost them.
+- **Root cause:** `EntryLandings.Verdict` read every conflict of an earlier part replayed after a later one as *superseded* (D167 point 3), whatever else the part changed. A conflict says the parts touch the same lines; it does not say the earlier part has nothing else to keep.
+- **Fix:** a conflict is superseded only where every file the earlier part changes is among the conflicting files; otherwise it is a clash (`PartClash`, on the plan beside `Superseded`), said as conflicting with the later part and naming the conflicting files, with no leave-out choice, on the page, the parts strip and the terminal's plan. A part that adds nothing after the later one is still superseded. Narrowing D167 point 3, noted there.
+- **Verification:** the pure table (`EntryLandingsTests`, a clash, a tail of another path, all files in the conflict, adds nothing), the real-git class (`EntryLandingTests`: two parts adding their own files and editing one line of a shared file read as a clash, beside the existing same-file and adds-nothing cases), the wire, the plan words and the page in both languages. The installed *Accept all* on a real two-part line is not yet seen.
+
 ## 2026-10-29 - A plugin trial left out its shutdown step when the plugin exited before the trial looked (PLUGINSHUTDOWN1)
 
 - **Symptom:** under load `DriverModulePluginsTests.The_kit_makes_a_plugin_where_the_person_names_and_tries_it_or_an_installed_one` found no `shutdown` between `quest/consider` and `stdout` in the trial's trace, then passed alone.
