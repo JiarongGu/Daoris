@@ -1,0 +1,8 @@
+{
+  "id": "stub",
+  "standIn": true,
+  "doors": [
+    { "id": "stub", "kind": "native" },
+    { "id": "acp-stub", "kind": "protocol" }
+  ]
+}
