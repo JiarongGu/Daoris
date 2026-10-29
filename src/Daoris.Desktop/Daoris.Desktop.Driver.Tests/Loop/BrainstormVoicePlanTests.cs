@@ -80,23 +80,52 @@ public sealed class BrainstormVoicePlanTests : IDisposable
     [Fact]
     public async Task A_voice_runs_its_workspace_s_pinned_version_on_a_plan_of_its_own_entry_alone()
     {
-        var machine = Installed("1.0.0");
         var work = Installed("2.0.0");
         new HarnessSettings()
             .WithDefault("voice", "account-1").WithDefault("other", "account-1")
-            .WithVersion("voice", "1.0.0").WithWorkspaceVersion("work", "voice", "2.0.0").Save(Settings);
+            .WithWorkspaceVersion("work", "voice", "2.0.0").Save(Settings);
 
         var plan = DriverBrainstorms.Voice(Turn("work"), Config, _roster);
         var placed = await DriverBrainstorms.VoiceAsync(Turn("work"), Config, _roster, CancellationToken.None);
-        var unplaced = await DriverBrainstorms.VoiceAsync(Turn(null), Config, _roster, CancellationToken.None);
 
         Assert.Equal(("brainstorm", "work"), (plan.Role, plan.Workspace));
         Assert.Equal([Entry], plan.Order);
-        // The binary each runs is its pin's managed install: a file look reads no version, so the install is the proof of it.
+        // The binary it runs is its pin's managed install: a file look reads no version, so the install is the proof of it. No
+        // machine-wide install or pin exists, so the workspace's pin alone makes it present (WSPINONLY1).
         Assert.True(placed.Allowed, placed.Refusal);
         Assert.Equal((work, "account-1"), (placed.Binary, placed.Profile));
+    }
+
+    /// <summary>A pin counts for its own workspace's starts alone (WSPINONLY1): another workspace, and a start asking none, find nothing installed.</summary>
+    [Fact]
+    public async Task A_workspace_s_pin_makes_the_agent_present_for_that_workspace_alone()
+    {
+        Installed("2.0.0");
+        new HarnessSettings().WithDefault("voice", "account-1").WithWorkspaceVersion("work", "voice", "2.0.0").Save(Settings);
+
+        var elsewhere = await DriverBrainstorms.VoiceAsync(Turn("elsewhere"), Config, _roster, CancellationToken.None);
+        var none = await DriverBrainstorms.VoiceAsync(Turn(null), Config, _roster, CancellationToken.None);
+
+        Assert.False(elsewhere.Allowed);
+        Assert.Contains("not installed", elsewhere.Refusal);
+        Assert.False(none.Allowed);
+        Assert.Contains("not installed", none.Refusal);
+    }
+
+    /// <summary>A machine-wide install and pin count in every workspace and for a start asking none (WSPINONLY1).</summary>
+    [Fact]
+    public async Task A_machine_wide_install_counts_everywhere()
+    {
+        var machine = Installed("1.0.0");
+        new HarnessSettings().WithDefault("voice", "account-1").WithVersion("voice", "1.0.0").Save(Settings);
+
+        var unplaced = await DriverBrainstorms.VoiceAsync(Turn(null), Config, _roster, CancellationToken.None);
+        var placed = await DriverBrainstorms.VoiceAsync(Turn("work"), Config, _roster, CancellationToken.None);
+
         Assert.True(unplaced.Allowed, unplaced.Refusal);
         Assert.Equal(machine, unplaced.Binary);
+        Assert.True(placed.Allowed, placed.Refusal);
+        Assert.Equal(machine, placed.Binary);
     }
 
     /// <summary>
