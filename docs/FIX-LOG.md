@@ -5,6 +5,13 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-30 - An owner-set case read an act refused at the door as a failure of the gate (FLAKE1)
+
+- **Symptom:** candidate `818420d`'s modules run failed `OwnerSetTests.The_owner_s_act_and_the_steward_s_never_interleave_either_way_round`, 1 of 2,738. The act came back an IPC error, `owner-set`, where the case expected an answer that it was refused as owner-set.
+- **Root cause:** the case's second half lets the owner's press hold the gate, sends the steward's act, waits 100 ms, sets the owner's mark and lets the gate go, expecting the act to have been waiting at the gate. A loaded machine can deliver the act to the door only after the mark is set, and the door then refuses it as owner-set before any gate, which is the same refusal said one step earlier. The product is right both ways: the act is refused and nothing it would do is done.
+- **Fix:** test only. The case reads the act's whole answer and accepts either refusal (an answer refused `owner-set` from inside the gate, or the door's `owner-set` error), and still holds that the probe ran once, so the act never interleaved.
+- **Verify:** `OwnerSetTests`, 27 passed.
+
 ## 2026-10-30 - A freshness case took its reading before its own setup was heard (FLAKE1)
 
 - **Symptom:** candidate `ed0f8d4`'s service run failed `CheckoutFreshnessTests.A_write_in_a_folder_git_ignores_inside_a_watched_one_is_not_heard` ("a write under .claude/worktrees/, which git ignores, marked the reading stale"), 1 of 2,934, under five builders' load.

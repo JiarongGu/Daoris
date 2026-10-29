@@ -302,13 +302,24 @@ public sealed class OwnerSetTests : IDisposable
 
         // The owner's press first, on another quest: it holds the gate; the act waits, and finds the mark set.
         var held = await served.Judge.Gates.EnterAsync([new RoleScope(OwnerKinds.Quest, "q2")], alone: false, CancellationToken.None);
-        var waiting = served.ActAsync(QuestProbe.Named, """{"quest":"q2"}""");
+        var waiting = served.AnswerAsync(QuestProbe.Named, """{"quest":"q2"}""");
         await Task.Delay(100);
         Assert.False(waiting.IsCompleted);
         served.Judge.MarkOwner(new OwnerResolved([new RoleScope(OwnerKinds.Quest, "q2")], [], false), standing: false);
         await held.DisposeAsync();
         var refused = await waiting;
-        Assert.Equal((false, RoleWhy.OwnerSet), (refused.GetProperty("done").GetBoolean(), refused.GetProperty("why").GetString()));
+        // An act that reached the gate finds the mark set there and answers so; on a loaded machine it may reach the door only after
+        // the mark, which refuses it as owner-set before any gate (FLAKE1, 2026-10-30). Either way it is refused and never interleaves.
+        if (refused.GetProperty("success").GetBoolean())
+        {
+            var data = refused.GetProperty("data");
+            Assert.Equal((false, RoleWhy.OwnerSet), (data.GetProperty("done").GetBoolean(), data.GetProperty("why").GetString()));
+        }
+        else
+        {
+            Assert.Equal(RoleWhy.OwnerSet, refused.GetProperty("error").GetProperty("code").GetString());
+        }
+
         Assert.Equal(1, probe.Ran);
     }
 
@@ -469,13 +480,19 @@ public sealed class OwnerSetTests : IDisposable
 
         public async Task<JsonElement> ActAsync(string act, string form)
         {
+            var answer = await AnswerAsync(act, form);
+            Assert.True(answer.GetProperty("success").GetBoolean(), answer.GetRawText());
+            return answer.GetProperty("data");
+        }
+
+        /// <summary>The act's whole answer, a refusal at the door included, which <see cref="ActAsync"/> reads as a failure.</summary>
+        public async Task<JsonElement> AnswerAsync(string act, string form)
+        {
             await using var client = await PipeClient.ConnectAsync(pipe.Name!);
             var hello = await client.HelloAsync(HomeIdentity.Read(home)!);
             var nonce = hello.GetProperty("data").GetProperty("nonce").GetString();
             var payload = RoleKit.Act(key, nonce, RoleKit.GenerationOf(judge, Roles.Steward), act: act, form: form);
-            var answer = await client.AnswerAsync(await client.SendAsync(DriverModule.Name, RoleRoutes.Act, payload));
-            Assert.True(answer.GetProperty("success").GetBoolean(), answer.GetRawText());
-            return answer.GetProperty("data");
+            return await client.AnswerAsync(await client.SendAsync(DriverModule.Name, RoleRoutes.Act, payload));
         }
 
         public async ValueTask DisposeAsync()
