@@ -67,16 +67,19 @@ public static class LandCarry
         var (tip, status, paths) = await AutoLander.ReadTreeAsync(tree, ct).ConfigureAwait(false);
         if (tip is null) return new CarryAnswer(false, why, NotTold(session, "its tree's commit could not be read", WordsOf(why, landed.Conflict, paths)));
         var words = WordsOf(why, landed.Conflict, paths);
-        var said = await TellAsync(say, session, words, CarryKeys.Of(session, BasisOf(why, tip, status), carryOn: 1), ct).ConfigureAwait(false);
-        if (said is not { Kept: true })
-        {
-            return new CarryAnswer(false, why, NotTold(session, said is null ? "nothing here reaches its conversation" : said.Message, words));
-        }
-
-        // Kept after the words, and counted as the press's own carry-on: a new press starts the count again.
+        // The yes is kept before the words go, and counted as the press's own carry-on (a new press starts the count again): a session that
+        // goes on at once may end its turn before this door returns, and its conclusion must find the yes it is due by. Words the door
+        // keeps nothing of take it back.
         var accepts = new CarriedAccepts(home);
         accepts.Keep(session, tree, now);
         accepts.CarriedOn(session);
+        var said = await TellAsync(say, session, words, CarryKeys.Of(session, BasisOf(why, tip, status), carryOn: 1), ct).ConfigureAwait(false);
+        if (said is not { Kept: true })
+        {
+            accepts.Take(session);
+            return new CarryAnswer(false, why, NotTold(session, said is null ? "nothing here reaches its conversation" : said.Message, words));
+        }
+
         return new CarryAnswer(true, why, Told(session, why));
     }
 

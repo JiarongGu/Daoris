@@ -374,6 +374,8 @@ public sealed class AutoLander(
 
         var words = LandCarry.WordsOf(why, landed?.Conflict, paths);
         var key = CarryKeys.Of(entry.Session, LandCarry.BasisOf(why, tip, status), carried.Carries + 1);
+        // Counted and waiting before the words go: a session that goes on at once may end its turn before this look is done.
+        new CarriedAccepts(home).CarriedOn(entry.Session);
         if (await LandCarry.TellAsync(world.SayAsync, entry.Session, words, key, ct).ConfigureAwait(false) is not { Kept: true })
         {
             // Untold, nobody can clear it: the refusal is kept as it always was, the yes is taken back, and the person's review has the words.
@@ -382,7 +384,6 @@ public sealed class AutoLander(
                 : Tried(entry, AutoLandingCode.Uncommitted, tip, status, uncommitted: paths);
         }
 
-        new CarriedAccepts(home).CarriedOn(entry.Session);
         return Tried(entry, AutoLandingCode.CarriedOn, tip, status, landed, uncommitted: paths, carry: why);
     }
 
