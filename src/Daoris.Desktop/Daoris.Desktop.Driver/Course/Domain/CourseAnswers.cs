@@ -2,7 +2,7 @@ namespace Daoris.Driver;
 
 // FOUNDATION1e part 1 (the foundation design §3.1's answer table): what the course answers, read by nothing. The six answers carry
 // their preconditions; a move's `why` and `by` are the closed enums at the end, today's nine reasons and three authors one to one.
-// Part 2 adds LineCourse.Decide and its table beside this file; no method here decides.
+// Part 2's LineCourse.Decide is in LineCourse.Decide.cs beside this file, with the members it needed added here; no method here decides.
 
 /// <summary>When a move opens its new part: at once, or when the running turn ends (the move's first axis, §3.1).</summary>
 public enum CourseWhen
@@ -35,10 +35,19 @@ public enum CourseAccountSource
 
     /// <summary>The walk's one settled selection: an automatic new part never takes the own account where it could resume there.</summary>
     Settled,
+
+    /// <summary>
+    /// The one account named, never moved past: refused while it cools (<c>a pick is the one account, never moved</c>). A hand-over's named
+    /// account and the curve's open so; only the person's own press keeps it as the line's pick (<see cref="CourseWhere.Kept"/>).
+    /// </summary>
+    Pick,
 }
 
 /// <summary>Where a new part runs: a role and choice, and the account by <see cref="CourseAccountSource"/>.</summary>
-public sealed record CourseWhere(CourseAccountSource Source, string? Role = null, string? Choice = null, string? Account = null);
+/// <param name="Agent">The agent the new part opens on: a hand-over's, a later choice's on another agent; null for the line's own.</param>
+/// <param name="Kept">The account is kept on the new part's binding as the person's pick, which its later go-ons wait for (FOUNDATION1a-ii).</param>
+public sealed record CourseWhere(
+    CourseAccountSource Source, string? Role = null, string? Choice = null, string? Account = null, string? Agent = null, bool Kept = false);
 
 /// <summary>Daoris's own word by its key, which goes beside the words kept: the limit's end and the transient retry.</summary>
 public enum CourseDaorisWord
@@ -51,10 +60,14 @@ public enum CourseDaorisWord
 
     /// <summary>The transient retry's instruction, keyed by the episode (<c>TransientRetry</c>).</summary>
     TransientRetry,
+
+    /// <summary>The restart's word after an update closed the record, keyed by the build (<c>Restart</c>, LIMITRESUME1i).</summary>
+    Restart,
 }
 
 /// <summary>The words that go: the ids waiting, in order, and Daoris's word by its key.</summary>
-public sealed record CourseWords(IReadOnlyList<string> Ids, CourseDaorisWord Daoris = CourseDaorisWord.None);
+/// <param name="Key">The key Daoris's word is kept under (<see cref="DaorisKeys"/>), so a later try keeps the one already kept; null for none.</param>
+public sealed record CourseWords(IReadOnlyList<string> Ids, CourseDaorisWord Daoris = CourseDaorisWord.None, string? Key = null);
 
 /// <summary>Why a line waits for a moment (<see cref="LineCourse.Wait"/>).</summary>
 public enum CourseWaitWhy
@@ -92,6 +105,15 @@ public enum CourseHoldWhy
 
     /// <summary>A move held for the person stands on the line until it closes <c>resolved</c> (§3.3).</summary>
     MoveHeld,
+
+    /// <summary>
+    /// Nothing moves the line: no words wait, the curve names no account, or a press holds the line. It stays where it is, and its next
+    /// word or press asks again (today's <i>nothing judged</i>, which writes nothing).
+    /// </summary>
+    Stays,
+
+    /// <summary>The person's press does not apply to this line: refused by its code, nothing kept (<see cref="LineCourse.Hold.Code"/>).</summary>
+    Refused,
 }
 
 /// <summary>A door out of a hold: what the person can press.</summary>
@@ -114,6 +136,15 @@ public enum CourseDoor
 
     /// <summary>*Not now*.</summary>
     NotNow,
+
+    /// <summary>*Go on with Daoris's brief*: a new part of the line, briefed, for a conversation that cannot go on in itself (D189).</summary>
+    GoOnBrief,
+
+    /// <summary>A hand-over to another agent, for a driven record whose agent this machine no longer has.</summary>
+    HandOver,
+
+    /// <summary>The person's yes to an agent's ask to hand its session over, which the hand-over rule asks them (<c>ask</c>).</summary>
+    LetAskGo,
 }
 
 /// <summary>Why a record takes no decision at all (<see cref="LineCourse.Never"/>).</summary>
@@ -147,7 +178,7 @@ public sealed record CoursePreconditions(
 /// How a line goes on: <see cref="Resume"/>, <see cref="Move"/>, <see cref="Start"/>, <see cref="Wait"/>, <see cref="Hold"/> or
 /// <see cref="Never"/> (the foundation design §3.1). Every answer but <see cref="Never"/> carries its <see cref="CoursePreconditions"/>.
 /// </summary>
-public abstract record LineCourse
+public abstract partial record LineCourse
 {
     private LineCourse()
     {
@@ -164,11 +195,21 @@ public abstract record LineCourse
     /// <summary>A new line with no <c>from</c>, the person's words as its first, keyed by the press's own intent key; no move record.</summary>
     public sealed record Start(string Key, CourseWords Words, CoursePreconditions Needs) : LineCourse;
 
-    /// <summary>Until a moment, its reason and the accounts it waits on.</summary>
-    public sealed record Wait(DateTimeOffset Until, CourseWaitWhy Why, IReadOnlyList<string> Accounts, CoursePreconditions Needs) : LineCourse;
+    /// <summary>Until a moment, its reason and the accounts it waits on, with the doors out of the wait the person may take meanwhile.</summary>
+    public sealed record Wait(
+        DateTimeOffset Until, CourseWaitWhy Why, IReadOnlyList<string> Accounts, CoursePreconditions Needs, IReadOnlyList<CourseDoor>? Doors = null)
+        : LineCourse
+    {
+        /// <summary>The doors out of the wait, never null.</summary>
+        public IReadOnlyList<CourseDoor> Out => Doors ?? [];
+    }
 
-    /// <summary>For the person, its reason code and the doors out, a repair named where one is the way out.</summary>
-    public sealed record Hold(CourseHoldWhy Why, IReadOnlyList<CourseDoor> Doors, LineRepair Repair, CoursePreconditions Needs) : LineCourse;
+    /// <summary>
+    /// For the person, its reason code and the doors out, a repair named where one is the way out, and the code its path says it by today
+    /// (a press's refusal, the resume judge's reason, a mark's): null where the reason says all.
+    /// </summary>
+    public sealed record Hold(
+        CourseHoldWhy Why, IReadOnlyList<CourseDoor> Doors, LineRepair Repair, CoursePreconditions Needs, string? Code = null) : LineCourse;
 
     /// <summary>A record that takes no decision: it is refused at the say door and passed by the come-up's sweep.</summary>
     public sealed record Never(CourseNeverWhy Why) : LineCourse;

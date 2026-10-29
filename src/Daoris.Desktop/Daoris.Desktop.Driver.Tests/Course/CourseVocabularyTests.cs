@@ -11,8 +11,14 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 public sealed class CourseVocabularyTests
 {
-    /// <summary>The files part 1 adds, under <c>Course/Domain/</c>; part 2 adds <c>LineCourse.Decide</c> beside them.</summary>
+    /// <summary>The vocabulary's files, under <c>Course/Domain/</c>: part 1's three.</summary>
     private static readonly string[] Files = ["CourseFacts.cs", "CourseTriggers.cs", "CourseAnswers.cs"];
+
+    /// <summary>The decision's own file, part 2's, beside them: <c>LineCourse.Decide</c> and nothing else that decides.</summary>
+    private const string Decision = "LineCourse.Decide.cs";
+
+    /// <summary>Every file the course is written in, read by nothing outside them.</summary>
+    private static readonly string[] Course = [.. Files, Decision];
 
     private static string Driver => Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver");
 
@@ -31,17 +37,21 @@ public sealed class CourseVocabularyTests
         Assert.Equal(["CutOff", "StopReleased", "Retried", "Limited", "BroughtForward"], Enum.GetNames<CourseCarryOn>());
         Assert.Equal(["TurnRunning", "BetweenTurns", "ProcessExited", "Reserved", "WindingUp"], Enum.GetNames<CourseBoundary>());
         Assert.Equal(["Person", "Daoris", "Helper", "Findings", "Supervisor"], Enum.GetNames<CourseAuthor>());
-        Assert.Equal(["None", "Pick", "NewSession", "Briefed", "HandOver", "StartFrom", "Stop", "Pause"], Enum.GetNames<CoursePressKind>());
+        // Part 2 widened four of them where LineCourse.Decide needs a member to say today's answer: Try again, a pick named, an update's
+        // restart word, a line that stays and a press refused, and three doors (FOUNDATION1e part 2).
+        Assert.Equal(["None", "Pick", "NewSession", "Briefed", "HandOver", "StartFrom", "Stop", "Pause", "TryAgain"], Enum.GetNames<CoursePressKind>());
         Assert.Equal(["Decided", "Delivering", "Held", "Delivered", "FellBack", "Closed"], Enum.GetNames<CourseMovePhase>());
         Assert.Equal(["Now", "TurnEnd"], Enum.GetNames<CourseWhen>());
         Assert.Equal(["Brief", "Carry"], Enum.GetNames<CourseHow>());
-        Assert.Equal(["Own", "Named", "Settled"], Enum.GetNames<CourseAccountSource>());
-        Assert.Equal(["None", "LimitReset", "TransientRetry"], Enum.GetNames<CourseDaorisWord>());
+        Assert.Equal(["Own", "Named", "Settled", "Pick"], Enum.GetNames<CourseAccountSource>());
+        Assert.Equal(["None", "LimitReset", "TransientRetry", "Restart"], Enum.GetNames<CourseDaorisWord>());
         Assert.Equal(["AccountCooling", "LimitReset", "TransientRetry"], Enum.GetNames<CourseWaitWhy>());
         Assert.Equal(
-            ["AnswersAlone", "Account", "TransientBound", "CannotGoOn", "ConsentRefused", "SwitchOff", "MoveHeld"],
+            ["AnswersAlone", "Account", "TransientBound", "CannotGoOn", "ConsentRefused", "SwitchOff", "MoveHeld", "Stays", "Refused"],
             Enum.GetNames<CourseHoldWhy>());
-        Assert.Equal(["GoOnNew", "StartFrom", "TryAgain", "Say", "LetAnswerGoOn", "NotNow"], Enum.GetNames<CourseDoor>());
+        Assert.Equal(
+            ["GoOnNew", "StartFrom", "TryAgain", "Say", "LetAnswerGoOn", "NotNow", "GoOnBrief", "HandOver", "LetAskGo"],
+            Enum.GetNames<CourseDoor>());
         Assert.Equal(["Teammate", "Intake", "StoodDown", "Superseded", "StandingMove"], Enum.GetNames<CourseNeverWhy>());
         Assert.Equal(
             ["Press", "Near", "Limit", "Agent", "Curve", "Resume", "CarryOn", "Retry", "NotOffered"], Enum.GetNames<CourseFromWhy>());
@@ -128,11 +138,15 @@ public sealed class CourseVocabularyTests
         Assert.All(typeof(LineCourse).GetNestedTypes(), type => Assert.True(type.IsSubclassOf(typeof(LineCourse)), type.Name));
     }
 
-    /// <summary>Part 1 declares no method that decides: <c>LineCourse.Decide</c> is part 2's, beside the table that proves it.</summary>
+    /// <summary>
+    /// The vocabulary declares no method that decides: <c>LineCourse.Decide</c> is part 2's, in its own file beside them, the one decision
+    /// the table (<c>LineCourseTests</c>) proves.
+    /// </summary>
     [Fact]
-    public void Nothing_here_decides_yet()
+    public void Only_the_decision_s_own_file_decides()
     {
         foreach (var file in Files) Assert.DoesNotMatch(@"\bDecide\s*\(", Code(file));
+        Assert.Single(Regex.Matches(Code(Decision), @"public static LineCourse Decide\(CourseFacts facts, CourseTrigger trigger\)"));
     }
 
     /// <summary>
@@ -142,17 +156,18 @@ public sealed class CourseVocabularyTests
     [Fact]
     public void No_production_source_names_a_type_the_vocabulary_added()
     {
-        var names = Files
+        var names = Course
             .SelectMany(file => Regex.Matches(
                     Code(file),
-                    @"^public\s+(?:abstract\s+|sealed\s+|static\s+|readonly\s+)*(?:record(?:\s+struct)?|enum|class|struct)\s+(\w+)",
+                    @"^public\s+(?:abstract\s+|sealed\s+|static\s+|readonly\s+|partial\s+)*(?:record(?:\s+struct)?|enum|class|struct)\s+(\w+)",
                     RegexOptions.Multiline)
                 .Select(match => match.Groups[1].Value))
+            .Distinct(StringComparer.Ordinal)
             .ToList();
         Assert.True(names.Count >= 20, $"found {names.Count} types: the pattern has drifted");
         Assert.Contains("LineCourse", names);
 
-        var mine = Files.Select(file => Path.Combine("Course", "Domain", file)).ToHashSet(StringComparer.Ordinal);
+        var mine = Course.Select(file => Path.Combine("Course", "Domain", file)).ToHashSet(StringComparer.Ordinal);
         var readers = new List<string>();
         foreach (var path in CourseCensusTests.ProductionFiles())
         {
