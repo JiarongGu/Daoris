@@ -1906,7 +1906,7 @@ describe('the queue, end to end in a scratch repository', { concurrency: true },
     }
   });
 
-  test('INTEGRATE1j: the runner refuses a missing, malformed or unbuilt input in a sentence with exit 2 and no answer, and the variable left in a shell retargets no run without the flag', async () => {
+  test('INTEGRATE1j: the runner refuses a missing, malformed or contradicting input in a sentence with exit 2 and no answer, and the variable left in a shell retargets no run without the flag', async () => {
     const repo = queueScratch('verify-refusals');
     try {
       const first = repo.git('rev-parse', 'HEAD');
@@ -1921,7 +1921,7 @@ describe('the queue, end to end in a scratch repository', { concurrency: true },
       };
       await refused('nothing set', {}, /DAORIS_VERIFY_RESULT is not set/);
       await refused('no commit', { DAORIS_VERIFY_RESULT: run.answer }, /DAORIS_VERIFY_COMMIT is not set/);
-      await refused('mode run', run.env(commit, { DAORIS_VERIFY_MODE: 'run' }), /mode 'run' is not built yet \(INTEGRATE1j part 2\)/);
+      await refused('a run with no base', run.env(commit, { DAORIS_VERIFY_MODE: 'run' }), /DAORIS_VERIFY_BASE is not set: the run mode reaches its gates by base\.\.commit/);
       await refused('a commit the repository lacks', run.env('f'.repeat(40)), /is no commit of this repository/);
       await refused('a declaration that is no file', run.env(commit, { DAORIS_VERIFY_DECLARATION: join(repo.root, 'local', 'verify', 'none.json') }), /DAORIS_VERIFY_DECLARATION names no file/);
       const named = await repo.run(['--full', '--beside', commit, '--daoris-verify'], run.env(commit));
@@ -1932,6 +1932,224 @@ describe('the queue, end to end in a scratch repository', { concurrency: true },
       assert.equal(own.status, 0, own.out);
       assert.match(own.out, new RegExp(`the full set on ${commit.slice(0, 7)}`));
       assert.equal(run.read(), null, 'nothing is written without the flag');
+    } finally {
+      await repo.cleanup();
+    }
+  });
+
+  // INTEGRATE1j part 2 (design §4.3, §4.5, §5.9): the schema-2 run, plan and probe modes.
+  type Answered = Record<string, any>;
+  const modes = (repo: Scratch, run: ReturnType<typeof verifier>, base: string) => (mode: string, commit: string, more: Record<string, string> = {}) => (
+    repo.run(VERIFY, run.env(commit, { DAORIS_VERIFY_MODE: mode, DAORIS_VERIFY_BASE: base, ...more })));
+
+  test('INTEGRATE1j: the run mode answers by gate, each with its composition kept beside its log and the failures read from it, beside what its plan kept and deferred', async () => {
+    const repo = queueScratch('verify-run');
+    try {
+      const base = repo.git('rev-parse', 'HEAD');
+      const commit = commitOnMain(repo, { 'break-check': '' }, 'a gate that fails');
+      const run = verifier(repo);
+      run.declare({ gates: [
+        { name: 'universal', run: 'node qgate.mjs universal' }, { name: 'The check', run: 'node qgate.mjs check' }, { name: 'rehearse', run: 'npm run rehearse:fixture' },
+      ] });
+      const done = await modes(repo, run, base)('run', commit, {});
+      assert.equal(done.status, 1, done.out);
+      const answer = run.read()!;
+      assert.deepEqual(Object.keys(answer).sort(), ['base', 'commit', 'declaration', 'deferred', 'gates', 'kept', 'mode', 'schema']);
+      assert.deepEqual([answer.schema, answer.mode, answer.commit, answer.base], [2, 'run', commit, base]);
+      assert.equal(answer.declaration, repo.git('hash-object', join(repo.root, 'local', 'verify', 'declaration.json')));
+      // The scoped set (§4.3): the cheap tier and what the change reaches run; a rehearsal is deferred to the background run.
+      assert.deepEqual(answer.gates.map((gate: Answered) => [gate.name, gate.verdict]), [['universal', 'pass'], ['The check', 'fail']]);
+      assert.deepEqual(answer.kept, []);
+      assert.deepEqual(answer.deferred.map((each: Answered) => each.name), ['rehearse']);
+      for (const gate of answer.gates as Answered[]) {
+        // Run whole, so no units; its settings kept beside its log, which the digest is of with them.
+        assert.equal(gate.composition.units, null, gate.name);
+        assert.match(gate.composition.digest, /^sha256:[0-9a-f]{64}$/);
+        assert.equal(dirname(gate.composition.settings), dirname(gate.log), 'beside its log, where it stays once the tree moves');
+        const kept = JSON.parse(readFileSync(gate.composition.settings, 'utf8')) as Answered;
+        assert.equal(kept.digest, gate.composition.digest);
+        assert.deepEqual([kept.settings.gate, kept.settings.runsettings, kept.settings.narrowed], [gate.name, null, []]);
+        assert.deepEqual(kept.settings.environment.added, tool.BESIDE_ENVIRONMENT);
+      }
+      // A gate that names no failing test fails by its step, signed under the name the declaration writes.
+      const check = (answer.gates as Answered[]).find((gate) => gate.name === 'The check')!;
+      assert.deepEqual(check.failures, [{ unit: 'The check', test: 'The check', signature: { gate: 'The check', step: 'run', message: 'error: check is broken' } }]);
+      assert.deepEqual((answer.gates as Answered[]).find((gate) => gate.name === 'universal')!.failures, []);
+    } finally {
+      await repo.cleanup();
+    }
+  });
+
+  test('INTEGRATE1j: the plan mode says what a run would run, keep and defer, running nothing and the same each time for a tree; a run then keeps what passed, on the commit and tree it passed on; DAORIS_VERIFY_GATES narrows both', async () => {
+    const repo = queueScratch('verify-plan');
+    try {
+      const record = join(repo.root, 'local', 'recorded.json');
+      const base = repo.git('rev-parse', 'HEAD');
+      const commit = commitOnMain(repo, { 'vgate.mjs': recorderGate(record) }, 'a recorder');
+      const run = verifier(repo);
+      run.declare({ gates: [{ name: 'universal', run: 'node qgate.mjs universal' }, { name: 'The recorder', run: 'node vgate.mjs' }, { name: 'rehearse', run: 'npm run rehearse:fixture' }] });
+      const asked = modes(repo, run, base);
+      const planned = await asked('plan', commit);
+      assert.equal(planned.status, 0, planned.out);
+      const first = run.read()!;
+      assert.deepEqual(Object.keys(first).sort(), ['base', 'commit', 'declaration', 'deferred', 'kept', 'mode', 'run', 'schema']);
+      assert.deepEqual([first.schema, first.mode, first.commit, first.base], [2, 'plan', commit, base]);
+      assert.deepEqual(first.run.map((each: Answered) => each.name), ['universal', 'The recorder']);
+      assert.equal(first.run[0].why, 'the cheap tier runs in every candidate');
+      assert.deepEqual(first.kept, []);
+      assert.deepEqual(first.deferred, [{ name: 'rehearse', why: 'a browser spec or a rehearsal: deferred to the background run, which the install waits for' }]);
+      assert.equal(existsSync(record), false, 'a plan runs nothing');
+      // The same answer for the same tree.
+      assert.equal((await asked('plan', commit)).status, 0);
+      assert.deepEqual(run.read(), first);
+      // A run runs the plan's run; their passes stand on its tree, so the next plan keeps them, on that commit and tree.
+      const ran = await asked('run', commit);
+      assert.equal(ran.status, 0, ran.out);
+      assert.equal(existsSync(record), true);
+      assert.deepEqual(run.read()!.gates.map((gate: Answered) => [gate.name, gate.verdict]), [['universal', 'pass'], ['The recorder', 'pass']]);
+      assert.equal((await asked('plan', commit)).status, 0);
+      const tree = repo.git('rev-parse', `${commit}^{tree}`);
+      const again = run.read()!;
+      assert.deepEqual(again.run, []);
+      assert.deepEqual(again.kept, [
+        { name: 'universal', why: 'its pass stands on this tree', commit, tree, standing: 'exact' },
+        { name: 'The recorder', why: 'its pass stands on this tree', commit, tree, standing: 'exact' },
+      ]);
+      // DAORIS_VERIFY_GATES: the gates named, each run whole, nothing kept or deferred; a name the declaration does not write is refused.
+      rmSync(record);
+      assert.equal((await asked('plan', commit, { DAORIS_VERIFY_GATES: 'The recorder' })).status, 0);
+      assert.deepEqual([run.read()!.run, run.read()!.kept, run.read()!.deferred], [[{ name: 'The recorder', why: 'named in DAORIS_VERIFY_GATES: it runs whole' }], [], []]);
+      const named = await asked('run', commit, { DAORIS_VERIFY_GATES: 'The recorder' });
+      assert.equal(named.status, 0, named.out);
+      assert.deepEqual(run.read()!.gates.map((gate: Answered) => gate.name), ['The recorder']);
+      assert.equal(existsSync(record), true, 'a gate named runs, whatever pass of it stands');
+      const unknown = await asked('run', commit, { DAORIS_VERIFY_GATES: 'recorder' });
+      assert.equal(unknown.status, 2, unknown.out);
+      assert.match(unknown.out, /DAORIS_VERIFY_GATES names 'recorder', which the declaration handed does not declare/);
+      assert.equal(run.read(), null);
+    } finally {
+      await repo.cleanup();
+    }
+  });
+
+  /**
+   * A stand-in `dotnet test` with a pollution within a class: `PollutedTests.B_Reads` fails only after `A_Pollutes` ran before it in the
+   * same run, so it fails in its gate and in its class run alone, and passes run by itself. It runs the tests its `--filter` selects,
+   * writes their results to the trx its logger names, and records each call's arguments in `calls`.
+   */
+  const pollutedDotnet = (calls: string) => [
+    "import { appendFileSync, mkdirSync, writeFileSync } from 'node:fs';",
+    "import { dirname } from 'node:path';",
+    'const args = process.argv.slice(2);',
+    `appendFileSync(${JSON.stringify(calls)}, JSON.stringify(args) + '\\n');`,
+    'const value = (flag) => { const at = args.indexOf(flag); return at >= 0 ? args[at + 1] : null; };',
+    "const filter = value('--filter') ?? '';",
+    "const trx = /LogFileName=(.+)$/.exec(value('--logger') ?? '')?.[1] ?? null;",
+    "const tests = ['Fixture.PollutedTests.A_Pollutes', 'Fixture.PollutedTests.B_Reads', 'Fixture.OtherTests.C_Passes'];",
+    "const holds = (test) => filter.replace(/[()]/g, '').split('&').map((term) => term.trim()).filter(Boolean).every((term) => {",
+    '  const not = /^FullyQualifiedName!~(.+)$/.exec(term);',
+    '  if (not) return !test.includes(not[1]);',
+    '  const has = /^FullyQualifiedName~(.+)$/.exec(term);',
+    '  return has ? test.includes(has[1]) : true;',
+    '});',
+    'const ran = tests.filter(holds);',
+    'const failed = ran.includes(tests[0]) && ran.includes(tests[1]) ? [tests[1]] : [];',
+    'const id = (test) => `t${tests.indexOf(test)}`;',
+    'const own = (test) => test.split(\'.\').slice(0, -1).join(\'.\');',
+    'if (trx) {',
+    '  mkdirSync(dirname(trx), { recursive: true });',
+    '  const results = ran.map((test) => (failed.includes(test)',
+    '    ? `<UnitTestResult testId="${id(test)}" testName="${test}" outcome="Failed"><Output><ErrorInfo><Message>Assert.Equal() Failure: the state A_Pollutes left</Message><StackTrace>   at ${test}()</StackTrace></ErrorInfo></Output></UnitTestResult>`',
+    '    : `<UnitTestResult testId="${id(test)}" testName="${test}" outcome="Passed" />`));',
+    '  const definitions = ran.map((test) => `<UnitTest id="${id(test)}" name="${test}"><TestMethod className="${own(test)}" name="${test.split(\'.\').at(-1)}" /></UnitTest>`);',
+    '  writeFileSync(trx, `<?xml version="1.0" encoding="utf-8"?><TestRun id="r"><Results>${results.join(\'\')}</Results><TestDefinitions>${definitions.join(\'\')}</TestDefinitions></TestRun>`);',
+    '}',
+    'for (const test of ran) console.log(`  ${failed.includes(test) ? \'Failed\' : \'Passed\'} ${test}`);',
+    'process.exit(failed.length ? 1 : 0);',
+    '',
+  ].join('\n');
+
+  test('INTEGRATE1j: a probe repeats a failure as composed, so a test its own class pollutes fails again with its signature where alone it passes; a composition that would differ, or is not the one kept, is refused', async () => {
+    const repo = queueScratch('verify-probe');
+    const shims = join(repo.root, 'local', 'shims');
+    mkdirSync(shims, { recursive: true });
+    try {
+      const calls = join(repo.root, 'local', 'dotnet-calls.jsonl');
+      writeFileSync(join(shims, 'dotnet.mjs'), pollutedDotnet(calls));
+      if (process.platform === 'win32') writeFileSync(join(shims, 'dotnet.cmd'), '@node "%~dp0dotnet.mjs" %*\r\n');
+      else writeFileSync(join(shims, 'dotnet'), '#!/bin/sh\nexec node "$(dirname "$0")/dotnet.mjs" "$@"\n', { mode: 0o755 });
+      // The stand-in is first on the runner's own PATH as it starts (QUEUETESTLEAK1): the test process's environment is never changed.
+      const PATH = `${shims}${delimiter}${pathOf(repo.env)}`;
+      const base = repo.git('rev-parse', 'HEAD');
+      const settings = '<RunSettings><RunConfiguration><MaxCpuCount>1</MaxCpuCount></RunConfiguration></RunSettings>\n';
+      const commit = commitOnMain(repo, { 'fixture.runsettings': settings, 'Fixture.csproj': '<Project />\n' }, 'a test project');
+      const run = verifier(repo);
+      run.declare({ gates: [{ name: 'The fixture', run: 'dotnet test Fixture.csproj --settings fixture.runsettings --filter "Category!=Process"' }] });
+      const asked = modes(repo, run, base);
+      const ran = await asked('run', commit, { PATH });
+      assert.equal(ran.status, 1, ran.out);
+      const [gate] = run.read()!.gates as Answered[];
+      assert.equal(gate!.verdict, 'fail');
+      assert.deepEqual(gate!.failures.map((each: Answered) => [each.unit, each.test]), [['Fixture.PollutedTests', 'Fixture.PollutedTests.B_Reads']]);
+      const kept = JSON.parse(readFileSync(gate!.composition.settings, 'utf8')) as Answered;
+      assert.deepEqual(kept.settings.runsettings, { path: 'fixture.runsettings', text: settings }, 'the run settings as the commit holds them');
+      // Alone, the failing test passes: it fails only after the test before it in its class.
+      const alone = spawnSync(process.execPath, [join(shims, 'dotnet.mjs'), 'test', 'Fixture.csproj', '--filter', 'FullyQualifiedName~Fixture.PollutedTests.B_Reads'], { encoding: 'utf8' });
+      assert.equal(alone.status, 0, alone.stdout);
+      // The probe runs its class as the gate composed it, and it fails again with its signature.
+      const failure = join(repo.root, 'local', 'verify', 'failure.json');
+      const named = (composition: object) => writeFileSync(failure, JSON.stringify({ gate: gate!.name, ...gate!.failures[0], composition }));
+      named(gate!.composition);
+      const probe = (at: string) => asked('probe', at, { DAORIS_VERIFY_FAILURE: failure, PATH });
+      const again = await probe(commit);
+      assert.equal(again.status, 1, again.out);
+      const answer = run.read()!;
+      assert.deepEqual(Object.keys(answer).sort(), ['base', 'commit', 'declaration', 'log', 'mode', 'result', 'schema', 'signature']);
+      assert.deepEqual([answer.schema, answer.mode, answer.commit, answer.base, answer.result], [2, 'probe', commit, base, 'fail']);
+      assert.deepEqual(answer.signature, gate!.failures[0].signature);
+      assert.ok(existsSync(answer.log), answer.log);
+      const last = readFileSync(calls, 'utf8').trim().split('\n').at(-1)!;
+      assert.match(last, /\(Category!=Process\)&\(FullyQualifiedName~Fixture\.PollutedTests\)/, 'the probe ran the failing class, not the test alone');
+      assert.match(last, /fixture\.runsettings/, 'with the gate\'s own run settings');
+      // At a commit whose run settings differ, the composition would differ: refused, nothing written, nothing run.
+      const later = commitOnMain(repo, { 'fixture.runsettings': settings.replace('>1<', '>4<') }, 'the tests run four at once');
+      const before = readFileSync(calls, 'utf8');
+      const differs = await probe(later);
+      assert.equal(differs.status, 2, differs.out);
+      assert.match(differs.out, new RegExp(`the composition at ${later.slice(0, 7)} differs from the run's \\(the run settings fixture\\.runsettings\\)`));
+      assert.equal(run.read(), null);
+      assert.equal(readFileSync(calls, 'utf8'), before, 'nothing ran');
+      // A digest that is not the kept composition's is refused too.
+      named({ ...gate!.composition, digest: `sha256:${'0'.repeat(64)}` });
+      const forged = await probe(commit);
+      assert.equal(forged.status, 2, forged.out);
+      assert.match(forged.out, /the composition handed is not the one kept/);
+      assert.equal(run.read(), null);
+    } finally {
+      await repo.cleanup();
+    }
+  });
+
+  test('INTEGRATE1j: a run that started and did not finish (npm ci failing in its tree) answers so, each gate not run, and exits 2; D192\'s schema 1 does the same', async () => {
+    const repo = queueScratch('verify-unfinished');
+    try {
+      const base = repo.git('rev-parse', 'HEAD');
+      const commit = commitOnMain(repo, { 'package.json': '{ "name": "fixture", "version": "1.0.0" }\n', 'package-lock.json': '{ not json\n' }, 'a lockfile npm cannot read');
+      const run = verifier(repo);
+      run.declare({ gates: [{ name: 'universal', run: 'node qgate.mjs universal' }, { name: 'check', run: 'node qgate.mjs check' }] });
+      const stopped = await modes(repo, run, base)('run', commit);
+      assert.equal(stopped.status, 2, stopped.out);
+      const answer = run.read()!;
+      assert.deepEqual([answer.schema, answer.mode, answer.commit, answer.base], [2, 'run', commit, base]);
+      assert.match(answer.unfinished, /^the run did not finish: npm ci failed in the gate tree's \./);
+      assert.deepEqual(answer.gates.map((gate: Answered) => [gate.name, gate.verdict]), [['universal', 'not-run'], ['check', 'not-run']]);
+      assert.equal(existsSync(join(repo.root, 'local', 'gate-tree.lock')), false, 'the lock is let go');
+      const plain = await repo.run(VERIFY, run.env(commit));
+      assert.equal(plain.status, 2, plain.out);
+      const said = run.read()!;
+      assert.equal(said.schema, 1);
+      assert.match(said.unfinished, /^the run did not finish: npm ci failed/);
+      assert.deepEqual(said.gates.map((gate: Answered) => [gate.name, gate.verdict]), [['universal', 'not-run'], ['check', 'not-run']]);
     } finally {
       await repo.cleanup();
     }
