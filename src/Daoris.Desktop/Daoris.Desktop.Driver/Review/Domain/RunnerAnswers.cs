@@ -36,7 +36,7 @@ internal sealed record RunnerAsk(string Commit, IReadOnlyList<string> Declared)
     /// <summary>The accepted declaration's blob id, which every schema-2 answer names.</summary>
     public string? Declaration { get; init; }
 
-    /// <summary>The gates a <c>run</c> or <c>plan</c> was narrowed to by <c>DAORIS_VERIFY_GATES</c>; null where the runner chose its own plan.</summary>
+    /// <summary>The gates a <c>run</c> or <c>plan</c> was narrowed to by the call's own list of gates (§5.9); null where the runner chose its own plan.</summary>
     public IReadOnlyList<string>? Gates { get; init; }
 }
 

@@ -16,7 +16,7 @@ namespace Daoris.Driver;
 /// shared, so both hold one table, the driver tests' <c>fixtures/gate-environment.json</c>, row for row (<c>GateEnvironmentTests</c>,
 /// <c>integration-gates.test.ts</c>). The tool also removes its tool tests' two stand-in variables, which no gate of the driver's meets, and
 /// gives no gate the hold marker until its own hold plumbing is built; a name folded by case is held once here, as a process environment on
-/// Windows holds it. The runner's inputs (<c>DAORIS_VERIFY_*</c>) are set on the runner's job alone by its caller, never on a gate.
+/// Windows holds it. The runner's own inputs (§5.9) are set on the runner's job alone by its caller, never on a gate, and the census names them there.
 /// </remarks>
 internal static class GateEnvironment
 {

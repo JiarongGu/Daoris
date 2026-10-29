@@ -19,9 +19,9 @@ import { fileURLToPath } from 'node:url';
 // reaches: src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/failure-judging.json — INTEGRATE1f's driver twin reads the table row for row
 
 interface Signature { test?: string; gate?: string }
-interface Failure { unit?: string; test?: string; gate: string; signature: Signature | null; names: 'test' | 'gate' }
+interface Failure { unit?: string; test?: string | undefined; gate: string; signature: Signature | null; names: 'test' | 'gate' }
 type Outcome = { result: 'pass' } | { result: 'fail' | 'cannot'; signature: Signature };
-interface Confirm { result?: string; why?: string; evidence?: unknown; failures?: Failure[]; composition?: { units: string[] | null; digest: string | null } }
+interface Confirm { result?: string; why?: string; evidence?: unknown; failures?: Failure[] | undefined; composition?: { units: string[] | null; digest: string | null } }
 interface Judged { outcome: string; member?: number; with?: number[]; interacting?: number[]; why?: string; said?: string; runs: Record<string, unknown>[]; confirm?: Confirm }
 interface Member { branch: string; tip: string; handedBack?: { how: string; failure: string; with?: string[]; interacting?: string[]; why?: string } }
 interface Outcomes {
