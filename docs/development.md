@@ -302,7 +302,9 @@ selection runs on every prefix of the candidate. A .NET class selection intersec
 any members it needs, earlier transitions named as interacting. The prefixes either side of it run once more, and a
 disagreement makes the failure unresolved. So does a prefix that cannot run the selection, or a whole candidate that does not
 fail again. An unresolved candidate of several runs its members one at a time. One of one is handed back as unresolved, filed
-as a flake, and the queue goes on. The members kept are formed again and judged on their own green. A gate that died of memory
+as a flake, and the queue goes on. The members kept are formed again and judged on their own green. INTEGRATE1b's confirm run,
+the failing gate run once more holding the whole machine admission before the base and the prefixes, is built and not yet called
+(D215's note): its pass is a sighting that splits the candidate by default (`local/integration-policy.json`), never a green. A gate that died of memory
 twice holds the candidate until memory is free; it never runs on the base and never stops the queue. `--queue` prints the
 stop, the candidate and its members, what is queued (and whether a branch has moved past its frozen tip), and what was handed
 back. `--drop-batch <branch>` takes a queued branch off, or ends the candidate that holds it.
