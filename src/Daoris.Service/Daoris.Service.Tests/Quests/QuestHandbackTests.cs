@@ -14,9 +14,9 @@ public sealed class QuestHandbackTests : McpToolsFixture
     private QuestExchange Exchange() => new(_service, _quests, files: _files);
 
     /// <summary>A quest the Asker asked of the Owner, taken.</summary>
-    private async Task<Quest> TakenAsync(QuestExchange exchange)
+    private async Task<Quest> TakenAsync(QuestExchange exchange, string title = "Draw the minimap")
     {
-        var quest = await _quests.PublishAsync("Asker", "Owner", "Draw the minimap", "The map needs one.", Now);
+        var quest = await _quests.PublishAsync("Asker", "Owner", title, "The map needs one.", Now);
         Assert.Equal(QuestRespondRefusal.None, (await exchange.RespondAsync(quest.Id, "take", null, Now, session: "s0a1b2c3")).Refusal);
         return quest;
     }
@@ -65,6 +65,27 @@ public sealed class QuestHandbackTests : McpToolsFixture
 
         Assert.Equal(QuestRespondRefusal.None, closed.Refusal);
         Assert.Equal("Fixed X in abc123; tests Y pass", (await _quests.FindAsync(quest.Id))!.Note);
+    }
+
+    /// <summary>
+    /// 🔴 A session's done and decline keep the session on their operation, written in the same write as the close, as a ready's
+    /// submission keeps it: which session wrote the handback. A close through a door that names no session keeps none.
+    /// </summary>
+    [Theory]
+    [InlineData("done")]
+    [InlineData("decline")]
+    public async Task A_sessions_close_names_its_session_on_its_operation(string action)
+    {
+        var exchange = Exchange();
+        var named = await TakenAsync(exchange);
+        var unnamed = await TakenAsync(exchange, "Draw the legend");
+
+        Assert.Equal(QuestRespondRefusal.None,
+            (await exchange.RespondAsync(named.Id, action, "Drew it in 4f3e2d1.", Now, session: "s0a1b2c3", handback: true)).Refusal);
+        Assert.Equal(QuestRespondRefusal.None, (await exchange.RespondAsync(unnamed.Id, action, "Drew it in 4f3e2d1.", Now)).Refusal);
+
+        Assert.Equal("s0a1b2c3", (await _quests.HistoryAsync(named.Id))[^1].Session);
+        Assert.Null((await _quests.HistoryAsync(unnamed.Id))[^1].Session);
     }
 
     /// <summary>

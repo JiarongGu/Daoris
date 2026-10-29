@@ -2087,6 +2087,45 @@ public sealed class QuestSyncTests : IAsyncLifetime
     }
 
     /// <summary>
+    /// HANDBACK1 (D219): a done and a decline name the session that wrote their handback, and the name crosses to the remote and to
+    /// every machine of the circle with the operation. A remote built before it keeps each without the name, as it keeps a submission
+    /// from before FABRIC-CLOSE1c4: the quest closes everywhere, its handback's writer not recorded.
+    /// </summary>
+    [Fact]
+    public async Task A_closes_session_crosses_and_an_older_remote_keeps_the_close_without_it()
+    {
+        var done = await Publish(_a, "Named on its done");
+        var declined = await Publish(_a, "Named on its decline");
+        await SyncAsync(_a);
+        await _a.MoveAsync(done.Id, QuestStatus.Taken, null, Now.AddHours(1));
+        await _a.MoveAsync(done.Id, QuestStatus.Done, "Drew the minimap in 4f3e2d1.", Now.AddHours(2), session: "s0a1b2c3");
+        await _a.MoveAsync(declined.Id, QuestStatus.Declined, "The map belongs to Owner.", Now.AddHours(2), session: "s0a1b2c3");
+        await SyncAsync(_a);
+        await SyncAsync(_b);
+
+        foreach (var store in new[] { _remote, _b })
+        {
+            Assert.Equal("s0a1b2c3", (await store.HistoryAsync(done.Id)).Single(o => o.Kind == QuestOperationKind.Done).Session);
+            Assert.Equal("s0a1b2c3", (await store.HistoryAsync(declined.Id)).Single(o => o.Kind == QuestOperationKind.Declined).Session);
+        }
+
+        var older = new OlderRemote(_remote, "session");
+        var unnamed = await Publish(_a, "Closed through an older remote");
+        await SyncThroughAsync(_a, older);
+        await _a.MoveAsync(unnamed.Id, QuestStatus.Taken, null, Now.AddHours(3));
+        await _a.MoveAsync(unnamed.Id, QuestStatus.Done, "Drew it again.", Now.AddHours(4), session: "s0a1b2c3");
+        await SyncThroughAsync(_a, older);
+        await SyncThroughAsync(_b, older);
+
+        foreach (var store in new[] { _remote, _b })
+        {
+            var close = (await store.HistoryAsync(unnamed.Id)).Single(o => o.Kind == QuestOperationKind.Done);
+            Assert.Null(close.Session);
+            Assert.Equal(QuestStatus.Done, (await store.FindAsync(unnamed.Id))!.Status);
+        }
+    }
+
+    /// <summary>
     /// The flag crosses the wire on a decline, written only when set; a decline that says nothing of it reads plain;
     /// and one that says something other than true or false is half-made and does not cross, since read as plain it
     /// would decline over a take.

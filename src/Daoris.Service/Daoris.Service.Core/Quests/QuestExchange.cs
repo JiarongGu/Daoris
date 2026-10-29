@@ -1399,7 +1399,9 @@ public sealed class QuestExchange(
         // it reads at that moment, never by a look taken here before it.
         var move = await quests.MoveAsync(
                 id.TrimStart('#'), status.Value, reason, now, ct, answered, whileOpen, byAgent: status == QuestStatus.Done,
-                taker: status == QuestStatus.Taken ? new QuestTaker(session, SyncsThroughRemote) : null)
+                taker: status == QuestStatus.Taken ? new QuestTaker(session, SyncsThroughRemote) : null,
+                // A close names the session that wrote its handback, in the same write (HANDBACK1, D219).
+                session: status == QuestStatus.Taken ? null : session)
             .ConfigureAwait(false);
 
         if (move.Quest is null)
