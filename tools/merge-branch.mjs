@@ -401,6 +401,7 @@
  *   node tools/merge-branch.mjs --plan <branch> [--batch <branch>…] [--full]
  *   node tools/merge-branch.mjs --full [--keep-going] [--one-at-a-time]
  *   node tools/merge-branch.mjs --full --beside [<commit>] [--keep-going] [--one-at-a-time]
+ *   node tools/merge-branch.mjs --full --beside --daoris-verify [--keep-going] [--one-at-a-time]   (D192's declared runner, inputs in DAORIS_VERIFY_*)
  *   node tools/merge-branch.mjs --ci [--stage | --night] [<commit>] [--one-at-a-time]
  *   node tools/merge-branch.mjs --ci --watch [--one-at-a-time]
  *   node tools/merge-branch.mjs --ci --stop
@@ -420,7 +421,7 @@ import {
   closeSync, cpSync, existsSync, lstatSync, mkdirSync, openSync, readFileSync, readdirSync, realpathSync, rmSync, statSync, writeFileSync, writeSync,
 } from 'node:fs';
 import { constants as osConstants, cpus as osCpus, freemem as osFreemem, setPriority as osSetPriority, totalmem as osTotalmem } from 'node:os';
-import { basename, dirname, join, relative, resolve } from 'node:path';
+import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   CI_SWEEP, NIGHT_HOUR, appendReceipt, clearKept, clearPasses, fileSighting, fingerprintOf, kindPlan, knownRedLines, knownRedStanding, nextRun, nightSatisfied, noteNight,
@@ -690,6 +691,7 @@ export const USAGE = [
   '       node tools/merge-branch.mjs --plan <branch> [--batch <branch>…] [--full]',
   '       node tools/merge-branch.mjs --full [--keep-going] [--one-at-a-time]',
   '       node tools/merge-branch.mjs --full --beside [<commit>] [--keep-going] [--one-at-a-time]',
+  '       node tools/merge-branch.mjs --full --beside --daoris-verify [--keep-going] [--one-at-a-time]',
   '       node tools/merge-branch.mjs --ci [--stage | --night] [<commit>] [--one-at-a-time]',
   '       node tools/merge-branch.mjs --ci --watch [--one-at-a-time]',
   '       node tools/merge-branch.mjs --ci --stop',
@@ -720,7 +722,7 @@ export function parseArgs(argv) {
     branches: [], keepGoing: false, commitCheck: true, resume: false, dropBatch: false, plan: false, prune: false, autoPrune: true,
     full: false, gated: false, rerun: [], passed: false, stale: false, oneAtATime: false, beside: false, besideCommit: null,
     ci: false, ciCommit: null, watch: false, stop: false, ciStage: false, ciNight: false,
-    preview: false, messageFile: null, queue: false, recheck: false, queueRun: false,
+    preview: false, messageFile: null, queue: false, recheck: false, queueRun: false, daorisVerify: false,
   };
   let batch = false;
   let rerun = false;
@@ -767,6 +769,7 @@ export function parseArgs(argv) {
     } else if (arg === '--queue') options.queue = true;
     else if (arg === '--recheck') options.recheck = true;
     else if (arg === '--queue-run') options.queueRun = true;
+    else if (arg === '--daoris-verify') options.daorisVerify = true;
     else if (arg === '--beside') {
       if (options.beside) throw usageError('--beside is given once, with the commit it gates after it');
       options.beside = true;
@@ -844,11 +847,18 @@ export function parseArgs(argv) {
     if (options.branches.length) throw usageError("--ci takes no branch: it gates a commit, main's tip unless named, in the gate tree");
     return options;
   }
+  // INTEGRATE1j (D192 point 9): the flag alone makes `--full --beside` the declared runner; anywhere else it is a mistake.
+  if (options.daorisVerify && !(options.full && options.beside)) {
+    throw usageError("--daoris-verify is the declared runner's: --full --beside --daoris-verify, its inputs in DAORIS_VERIFY_*");
+  }
   if (options.beside) {
     if (!options.full) throw usageError('--beside runs the full set: --full --beside [<commit>]');
     if (options.branches.length) throw usageError("--beside takes no branch: it gates a commit, main's tip unless named, in a worktree of its own");
-    if (flags.some((flag) => !['--full', '--beside', '--keep-going', '--one-at-a-time'].includes(flag))) {
-      throw usageError('--full --beside takes only a commit, --keep-going and --one-at-a-time');
+    if (flags.some((flag) => !['--full', '--beside', '--daoris-verify', '--keep-going', '--one-at-a-time'].includes(flag))) {
+      throw usageError('--full --beside takes only a commit, --keep-going and --one-at-a-time (and --daoris-verify, which takes its commit from DAORIS_VERIFY_COMMIT)');
+    }
+    if (options.daorisVerify && options.besideCommit) {
+      throw usageError('--daoris-verify takes its commit from DAORIS_VERIFY_COMMIT: name none beside --beside');
     }
   }
   // `--plan` is a verb of its own, or the prune's plan; `--full` is one when it names no branch and modifies nothing else.
@@ -922,7 +932,7 @@ export function workflowScripts(text) {
  * The ordered gates: every declared gate, and every workflow script the declaration does not run. By
  * kind, fast first; within a kind, workflow-only gates first, then the declared order.
  */
-export function gatePlan(declared, workflow = '') {
+export function gatePlan(declared, workflow = '', { keepDeclared = false } = {}) {
   const runs = new Set(declared.map((gate) => gate.run.trim()));
   const extras = workflowScripts(workflow)
     .filter((script) => !runs.has(`npm run ${script}`))
@@ -937,6 +947,8 @@ export function gatePlan(declared, workflow = '') {
       taken.add(name);
       return {
         name,
+        // INTEGRATE1j: the runner reports a gate under the name the declaration writes, where `name` is the slug its log is kept by.
+        ...(keepDeclared ? { declared: gate.name } : {}),
         run: gate.run.trim(),
         kind,
         ...(gate.cwd ? { cwd: gate.cwd } : {}),
@@ -950,21 +962,26 @@ export function gatePlan(declared, workflow = '') {
 export function readDeclared(root) {
   const file = join(root, 'daoris.gates.json');
   if (!existsSync(file)) throw new Refusal(`no daoris.gates.json at ${root}: there is no declared gate to run`);
+  return declaredIn(readFileSync(file, 'utf8'), 'daoris.gates.json');
+}
+
+/** The gates of a declaration's text, as `readDeclared` reads a file's; `label` says whose text it is in a refusal (INTEGRATE1j reads one it was handed). */
+export function declaredIn(text, label) {
   let parsed;
   try {
-    parsed = JSON.parse(readFileSync(file, 'utf8'));
+    parsed = JSON.parse(text);
   } catch (error) {
-    throw new Refusal(`daoris.gates.json is not valid JSON: ${error.message}`);
+    throw new Refusal(`${label} is not valid JSON: ${error.message}`);
   }
   const gates = Array.isArray(parsed?.gates) ? parsed.gates : [];
-  if (gates.length === 0) throw new Refusal('daoris.gates.json declares no gate');
+  if (gates.length === 0) throw new Refusal(`${label} declares no gate`);
   for (const gate of gates) {
     if (typeof gate?.name !== 'string' || typeof gate?.run !== 'string') {
-      throw new Refusal("daoris.gates.json: every gate needs both 'name' and 'run'");
+      throw new Refusal(`${label}: every gate needs both 'name' and 'run'`);
     }
     // MEMGATE1: a need of memory the tool cannot read is refused, never read as none.
     if ('memoryGb' in gate && !(typeof gate.memoryGb === 'number' && Number.isFinite(gate.memoryGb) && gate.memoryGb >= 0)) {
-      throw new Refusal(`daoris.gates.json: gate '${gate.name}': 'memoryGb' is the free memory it needs before it starts, in GB, a number 0 or more`);
+      throw new Refusal(`${label}: gate '${gate.name}': 'memoryGb' is the free memory it needs before it starts, in GB, a number 0 or more`);
     }
   }
   // FAMILYFAIL1d: `"clock": true` marks a gate whose tests are bounded by the wall clock, which a run beside raises.
@@ -4651,7 +4668,8 @@ async function gateCheckout(root, options, watch = null, trees = null) {
     throw new Refusal(`${SCRATCH}/ is not ignored here, so the gate logs would change the tree being gated`);
   }
   requireVerdictsIgnored(root);
-  const plan = readPlan(root);
+  // INTEGRATE1j (F6): the declared runner hands the plan it read from the declaration it was given; the tree's own file is never read for it.
+  const plan = options.givenPlan ?? readPlan(root);
   const dir = join(root, SCRATCH, `full-${head.slice(0, 7)}`);
   clearLogs(dir);
   const dirty = treeState(root).changed.length > 0;
@@ -4660,10 +4678,14 @@ async function gateCheckout(root, options, watch = null, trees = null) {
   const unwatch = watch ? watch.poll(TIP_POLL_MS) : () => {};
   let results;
   try {
-    results = await runRecorded(root, plan, dir, { keepGoing: options.keepGoing, oneAtATime: options.oneAtATime, halt, trees, kind: options.runKind ?? 'checkout' });
+    results = await runRecorded(root, plan, dir, {
+      keepGoing: options.keepGoing, oneAtATime: options.oneAtATime, halt, trees, kind: options.runKind ?? 'checkout',
+      onStart: options.onGateStart, onResult: options.onGateResult,
+    });
   } finally {
     unwatch();
   }
+  options.onResults?.(results);
   const failed = results.filter((result) => result.verdict === 'FAIL');
   const flakes = results.filter((result) => result.verdict === 'FLAKE');
   console.log('');
@@ -5538,6 +5560,224 @@ async function gateBeside(root, options) {
   } finally {
     unhook();
     releaseGateLock(home);
+  }
+}
+
+// ---------------------------------------------------------------------------------------------------
+// INTEGRATE1j (design §5.9; D192 points 6 and 9): this tool as the repository's declared `verification` runner
+
+/** The runner's inputs (§5.9), each set on its job alone: D192's two, and the ones integration's calls add. */
+const VERIFY_INPUTS = ['COMMIT', 'RESULT', 'MODE', 'BASE', 'DECLARATION', 'GATES', 'FAILURE', 'TREE'];
+const VERIFY_MODES = ['run', 'plan', 'probe', 'commits'];
+/** The modes built so far: `commits`, and the schema-1 answer where none is asked. `run`, `plan` and `probe` are part 2's. */
+const VERIFY_BUILT = ['commits'];
+const FULL_OBJECT_ID = /^(?:[0-9a-f]{40}|[0-9a-f]{64})$/;
+
+/**
+ * The runner's inputs read from `env` (the environment the tool started with), each refused in a sentence where it is missing, not
+ * what it must be, or at odds with another: the tip (a full object id, never one a person's shell left behind: the flag alone reads it),
+ * the file to answer in, the declaration handed (the only source of the gates, F6), the mode (none asked is D192's schema 1), the
+ * base the commit check ranges from, and the tree a caller made. A refusal here has no file to be written to.
+ */
+export function verifyInputs(env, options = {}) {
+  const given = new Map();
+  for (const [name, value] of Object.entries(env)) {
+    const upper = name.toUpperCase();
+    if (!upper.startsWith('DAORIS_VERIFY_')) continue;
+    const short = upper.slice('DAORIS_VERIFY_'.length);
+    if (!VERIFY_INPUTS.includes(short)) throw new Refusal(`${upper} is no input of the runner: it reads ${VERIFY_INPUTS.map((each) => `DAORIS_VERIFY_${each}`).join(', ')}`);
+    if (value !== undefined) given.set(short, value);
+  }
+  const value = (short) => given.get(short) || null;
+  const absolute = (short) => {
+    const path = value(short);
+    if (path !== null && !isAbsolute(path)) throw new Refusal(`DAORIS_VERIFY_${short} is not an absolute path: ${path}`);
+    return path;
+  };
+  const objectId = (short) => {
+    const id = value(short);
+    if (id !== null && !FULL_OBJECT_ID.test(id)) throw new Refusal(`DAORIS_VERIFY_${short} is not a full object id (40 or 64 lower-case hex digits): ${id}`);
+    return id;
+  };
+  if (options.besideCommit) throw new Refusal('--daoris-verify takes its commit from DAORIS_VERIFY_COMMIT: name none beside --beside');
+  const result = absolute('RESULT');
+  if (result === null) throw new Refusal('DAORIS_VERIFY_RESULT is not set: the file to answer in, which the runner writes once, atomically, before it exits');
+  const commit = objectId('COMMIT');
+  if (commit === null) throw new Refusal('DAORIS_VERIFY_COMMIT is not set: --daoris-verify gates the commit it names, so it gates none without one');
+  const declaration = absolute('DECLARATION');
+  if (declaration === null) throw new Refusal('DAORIS_VERIFY_DECLARATION is not set: the gates are read from the declaration handed, never from the tree');
+
+  let mode = null;
+  if (given.has('MODE')) {
+    mode = given.get('MODE');
+    if (mode === '') throw new Refusal('DAORIS_VERIFY_MODE is set and empty: name a mode, or leave it unset for D192\'s answer');
+    if (!VERIFY_MODES.includes(mode)) throw new Refusal(`DAORIS_VERIFY_MODE '${mode}' is none of ${VERIFY_MODES.slice(0, -1).join(', ')} or ${VERIFY_MODES.at(-1)}`);
+    if (!VERIFY_BUILT.includes(mode)) {
+      throw new Refusal(`DAORIS_VERIFY_MODE: mode '${mode}' is not built yet (INTEGRATE1j part 2): this runner answers the commits mode, and D192's schema 1 where none is asked`);
+    }
+  }
+  const base = objectId('BASE');
+  if (mode === 'commits' && base === null) throw new Refusal('DAORIS_VERIFY_BASE is not set: the commits mode checks base..commit');
+  if (mode === null && base !== null) throw new Refusal('DAORIS_VERIFY_BASE belongs to a mode: none is asked, and D192\'s answer takes no base');
+  if (value('GATES') !== null) throw new Refusal('DAORIS_VERIFY_GATES belongs to the run mode, which is not asked here');
+  if (value('FAILURE') !== null) throw new Refusal('DAORIS_VERIFY_FAILURE belongs to the probe mode, which is not asked here');
+  return { commit, result, mode, base, declaration, tree: absolute('TREE') };
+}
+
+/**
+ * The declaration's gates as the runner runs them (F6): read from the text it was handed, in the plan's order, each with `declared`,
+ * the name the declaration writes (the answer's name; `name` is the slug a log is kept by). No release-workflow step is added. A
+ * declaration that repeats a name, or whose `integration` breaks a shape, is refused: the answer could not name its gates apart.
+ */
+export function verifyPlan(text) {
+  const label = 'the declaration handed';
+  const declared = declaredIn(text, label);
+  const seen = new Set();
+  for (const gate of declared) {
+    if (seen.has(gate.name)) throw new Refusal(`${label} names '${gate.name}' twice: the answer reports each gate under the name written, so two of one name cannot be told apart`);
+    seen.add(gate.name);
+  }
+  const { problem } = integrationOf(text);
+  if (problem) throw new Refusal(`${label}: ${problem}`);
+  return gatePlan(declared, '', { keepDeclared: true });
+}
+
+/** The tool's verdicts as D192's schema 1 names them. */
+const VERIFY_VERDICTS = Object.freeze({ PASS: 'pass', FLAKE: 'flake', FAIL: 'fail', ENDED: 'ended' });
+
+/**
+ * The schema-1 `gates` of a run: every gate of the plan, under the declared name, `not-run` where no result is given. `keep` maps a
+ * log to the path where it stays once the run has ended (nothing, and no `log`, where it was not kept); `seconds` is a gate's wall.
+ */
+export function verifyGates(plan, results, { keep = (log) => log, seconds = () => undefined } = {}) {
+  return plan.map((gate) => {
+    const result = results.find((each) => each.gate.name === gate.name);
+    if (!result) return { name: gate.declared, verdict: 'not-run' };
+    const log = result.log ? keep(result.log) : undefined;
+    const wall = seconds(gate.name);
+    return {
+      name: gate.declared,
+      verdict: VERIFY_VERDICTS[result.verdict] ?? 'ended',
+      ...(result.verdict === 'FAIL' && typeof result.code === 'number' ? { exit: result.code } : {}),
+      ...(wall === undefined ? {} : { wallSeconds: wall }),
+      ...(log ? { log } : {}),
+    };
+  });
+}
+
+/** The `commits` mode's answer (schema 2): the commit check's attribution problems for the range, `declaration` the blob id it was handed. */
+export function verifyCommitsAnswer({ commit, base, declaration, commits }) {
+  return { schema: 2, mode: 'commits', commit, base, declaration, problems: commitAttributionProblems(commits) };
+}
+
+/** The runner's one answer: written whole and atomically (D192), its folder made where the caller has not. */
+function writeVerifyResult(file, answer) {
+  mkdirSync(dirname(file), { recursive: true });
+  writeAtomic(file, `${JSON.stringify(answer)}\n`);
+}
+
+/**
+ * `--full --beside --daoris-verify`: this tool as D192's declared runner. Its inputs are the environment's `DAORIS_VERIFY_*`, read
+ * once from the start environment and then removed from this process, so nothing it starts holds one. It runs the handed declaration's
+ * gates at the named commit, in the gate tree it makes as `--full --beside` does, or in the tree a caller handed (the caller's: no
+ * lock taken, no private file copied in; only the dependencies the gates need, installed where the tree lacks them), and answers
+ * in `DAORIS_VERIFY_RESULT`: schema 1 by gate under the declared names, or `busy` (exit 75) written before it refuses, or in the
+ * `commits` mode the commit check's problems on base..commit. It writes no gate record and no receipt: a stage is allowed by
+ * `--full --beside` alone.
+ */
+async function gateVerify(root, options) {
+  const inputs = verifyInputs(START_ENVIRONMENT, options);
+  for (const name of Object.keys(process.env)) if (/^DAORIS_VERIFY_/i.test(name)) delete process.env[name];
+  const { commit, result, mode } = inputs;
+  const sha = commit.slice(0, 7);
+  // A file left by an earlier run must never be read for this one.
+  rmSync(result, { force: true });
+  if (!existsSync(inputs.declaration)) throw new Refusal(`DAORIS_VERIFY_DECLARATION names no file: ${inputs.declaration}`);
+  const text = readFileSync(inputs.declaration, 'utf8');
+  const plan = verifyPlan(text);
+  const home = verdictsHome(root);
+  const where = inputs.tree ?? home;
+  if (inputs.tree && !existsSync(inputs.tree)) throw new Refusal(`DAORIS_VERIFY_TREE names no folder: ${inputs.tree}`);
+  for (const [name, id] of [['DAORIS_VERIFY_COMMIT', commit], ['DAORIS_VERIFY_BASE', inputs.base]]) {
+    if (id && git(where, ['cat-file', '-e', `${id}^{commit}`], { allowFail: true }).status !== 0) throw new Refusal(`${name} ${id} is no commit of this repository`);
+  }
+  const blob = git(where, ['hash-object', '--', inputs.declaration]).out.trim();
+
+  if (mode === 'commits') {
+    const rule = integrationOf(text).integration?.commits ?? null;
+    if (rule !== null && rule !== 'runner') {
+      throw new Refusal(`the declaration handed checks commits by its gate '${rule}', not by the runner: the commits mode answers only where \`commits\` is \`runner\``);
+    }
+    const commits = parseCommits(git(where, ['log', COMMIT_FORMAT, `${inputs.base}..${commit}`]).out);
+    const answer = verifyCommitsAnswer({ commit, base: inputs.base, declaration: blob, commits });
+    writeVerifyResult(result, answer);
+    console.log(`the commit check on ${inputs.base.slice(0, 7)}..${sha}: ${count(commits.length, 'commit')}, ${answer.problems.length} problem${answer.problems.length === 1 ? '' : 's'}`);
+    for (const problem of answer.problems) console.log(`  ${problem}`);
+    return answer.problems.length ? 1 : 0;
+  }
+
+  let tree;
+  let lock = false;
+  if (inputs.tree) {
+    tree = locate(inputs.tree);
+    if (!samePath(tree, inputs.tree)) throw new Refusal(`DAORIS_VERIFY_TREE is not the root of a work tree: ${inputs.tree}`);
+    const at = git(tree, ['rev-parse', 'HEAD']).out.trim();
+    if (at !== commit) throw new Refusal(`DAORIS_VERIFY_TREE stands at ${at.slice(0, 7)}, not at DAORIS_VERIFY_COMMIT ${sha}: the tree is the caller's, and the runner moves none`);
+  } else {
+    if (!isIgnored(home, GATE_TREE)) {
+      throw new Refusal(`${GATE_TREE} is not ignored in the main checkout, so the gate tree would be part of the tree its merges gate`);
+    }
+    requireVerdictsIgnored(home);
+    try {
+      const taken = takeGateLock(home, { commit, holder: 'full' });
+      lock = true;
+      if (taken.stale) console.log(`the gate tree's lock was left by pid ${taken.stale.pid} (on ${taken.stale.commit.slice(0, 7)} since ${when(taken.stale.at)}), which no longer runs: taken over`);
+    } catch (error) {
+      // D192: a runner whose own run holds its lock answers `busy` before it refuses, and the caller waits it out.
+      if (error?.busy) {
+        writeVerifyResult(result, { schema: 1, commit, busy: true });
+        error.exitCode = 75;
+      }
+      throw error;
+    }
+  }
+  const trees = stepTrees();
+  const unhook = stopOnInterrupt(trees);
+  try {
+    startBesideRun();
+    if (!inputs.tree) {
+      tree = locate(prepareGateTree(home, commit));
+      for (const line of copyPrivateFiles(home, tree, privateGateFiles(home))) console.log(`  ${line}`);
+      for (const line of rescueGateLogs(tree, home)) console.log(`  ${line}`);
+    }
+    installDependencies(tree);
+    console.log(UNDER_LOAD);
+    const started = new Map();
+    const seconds = new Map();
+    let results = [];
+    // The commit is the caller's: no newer tip of main supersedes it (no `watch`).
+    const code = await gateCheckout(tree, {
+      ...options, runKind: 'full', givenPlan: plan,
+      onResults: (found) => { results = found; },
+      onGateStart: (gate) => { started.set(gate.name, Date.now()); },
+      onGateResult: (found) => { seconds.set(found.gate.name, Math.round((Date.now() - (started.get(found.gate.name) ?? Date.now())) / 1000)); },
+    }, null, trees);
+    // The logs the answer names must outlive the tree's next move.
+    const run = join(tree, SCRATCH, `full-${sha}`);
+    const kept = join(verdictsHome(tree), SCRATCH, `beside-${sha}`);
+    let keptNow = false;
+    try {
+      keptNow = keepGateLogs(tree, verdictsHome(tree), commit);
+      if (keptNow) console.log(`  The run's logs are kept: ${SCRATCH}/beside-${sha}`);
+    } catch (error) {
+      console.log(`  The run's logs could not be kept (${error.message}); the answer names none`);
+    }
+    const gates = verifyGates(plan, results, { keep: (log) => (keptNow ? join(kept, relative(run, log)) : undefined), seconds: (name) => seconds.get(name) });
+    writeVerifyResult(result, { schema: 1, commit, gates });
+    return code;
+  } finally {
+    unhook();
+    if (lock) releaseGateLock(home);
   }
 }
 
@@ -7464,7 +7704,7 @@ export async function main(argv) {
   if (options.resume) return resume(root, options);
   // CI1: one run of the CI, its watch, or the stop asked of the watch.
   if (options.ci) return options.stop ? ciStopVerb(root) : options.watch ? ciWatchVerb(root, options) : gateCi(root, options);
-  if (options.beside) return gateBeside(root, options);
+  if (options.beside) return options.daorisVerify ? gateVerify(root, options) : gateBeside(root, options);
   if (options.full && options.branches.length === 0) return gateCheckout(root, options);
   return start(root, options);
 }
