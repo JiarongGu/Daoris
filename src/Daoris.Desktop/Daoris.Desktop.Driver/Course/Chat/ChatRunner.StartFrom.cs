@@ -23,6 +23,12 @@ namespace Daoris.Driver;
 /// words where they were. Once its first message holds them they leave the old record by their ids, naming the conversation
 /// (MSG1a's taken door), so a word said meanwhile stays; that record's marks go; and its conversation says where they went, by
 /// the reason <see cref="ContinueWhy.Started"/>, which the page words as its went line.</para>
+///
+/// <para><b>Moved by the open</b> (FOUNDATION1d-ii part 4, the foundation design §3.4 rule 3): against a host whose <c>opens</c> mark is 2,
+/// the new conversation's open moves the words in its own step, the record they were said to named as the moves' source since the new
+/// record has no <c>from</c> link, and a word of the person's kept there since the read moves with them. The first message is then the new
+/// conversation's moved words (<see cref="MovedWords"/>), each shown under its id, its files copied into the new conversation's folder; they
+/// leave the new conversation once it holds them, and where nothing took them they wait on it. Against an older host, as above.</para>
 /// </remarks>
 public static class StartFrom
 {
@@ -41,14 +47,19 @@ public static class StartFrom
         + "none of that session's context.";
 
     /// <summary>Judge, start, hand the words over, and take them off the record they were said to.</summary>
-    /// <param name="start">Opens a conversation in a repository: the chat runner's own start.</param>
+    /// <param name="start">
+    /// Opens a conversation in a repository: the chat runner's own start, asked to move the words named from the record they were said to
+    /// (FOUNDATION1d-ii part 4), which a host below the <c>opens</c> mark 2 does not.
+    /// </param>
     /// <param name="say">
-    /// Hands a conversation its first message, with files and a preface: false where nothing took it. Throws
-    /// <see cref="DriverException"/> where the files are more than a message carries.
+    /// Hands a conversation its first message, with files and a preface, and what its conversation shows of the words: each moved word's own
+    /// event, or null for the words as one. False where nothing took it. Throws <see cref="DriverException"/> where the files are more than a
+    /// message carries.
     /// </param>
     public static async Task<StartedFrom> RunAsync(
         ServiceClient service, string home, SessionEvents events, SessionOutput? output, string id,
-        Func<string, CancellationToken, Task<ChatStart>> start, Func<string, string, IReadOnlyList<ChatUpload>, string, bool> say,
+        Func<string, MoveWords, CancellationToken, Task<ChatStart>> start,
+        Func<string, string, IReadOnlyList<ChatUpload>, string, IReadOnlyList<SessionEvent>?, bool> say,
         CancellationToken ct = default)
     {
         var json = await service.SessionRecordsJsonAsync(ct).ConfigureAwait(false);
@@ -104,8 +115,12 @@ public static class StartFrom
             return Refused(NoWords, $"only another agent's answer waits on {id}, which goes on in its own conversation and is never a new one's words.");
         }
 
-        var started = await start(record.Repository, ct).ConfigureAwait(false);
+        // FOUNDATION1d-ii part 4: the start's open moves the person's words, and any of theirs kept here since this read, in its own step.
+        var started = await start(
+                record.Repository, MovedWords.Asked(id, words.Select(word => word.Id), prior.Waiting.Select(word => word.Id)), ct)
+            .ConfigureAwait(false);
         if (started.SessionId is not { } to) return new StartedFrom(null, false, null, started.Message);
+        if (MovedWords.Moving(started)) return await MovedAsync(service, home, events, output, id, to, started, say, ct).ConfigureAwait(false);
 
         var text = string.Join("\n\n", words.Select(word => word.Text));
         var preface = Preface(id);
@@ -113,12 +128,12 @@ public static class StartFrom
         bool took;
         try
         {
-            took = say(to, text, files, preface);
+            took = say(to, text, files, preface, null);
         }
         catch (DriverException) when (files.Count > 0)
         {
             // More files than one message carries: the words go alone rather than not at all.
-            took = say(to, text, [], preface);
+            took = say(to, text, [], preface, null);
         }
 
         if (!took)
@@ -135,6 +150,55 @@ public static class StartFrom
 
         // Where they went, where the person wrote them: the words' ids, the conversation and the reason's code (MSG1d).
         var went = Continuations.Went(ids, to, ContinueWhy.Of(ContinueWhy.Started));
+        output?.Append(id, went.Text!);
+        events.Keep(id, went, say: null);
+        return new StartedFrom(to, true, null, $"conversation `{to}` starts with your words to session `{id}`, which keeps them no longer.");
+    }
+
+    /// <summary>
+    /// The words the start's open moved (FOUNDATION1d-ii part 4): the first message is the new conversation's moved words, their files read
+    /// from its folder and each shown under its id; they leave the new conversation once it holds them, and the record they were said to says
+    /// where they went. Where nothing took them they wait on the new conversation, whose own go-on carries them.
+    /// </summary>
+    private static async Task<StartedFrom> MovedAsync(
+        ServiceClient service, string home, SessionEvents events, SessionOutput? output, string id, string to, ChatStart started,
+        Func<string, string, IReadOnlyList<ChatUpload>, string, IReadOnlyList<SessionEvent>?, bool> say, CancellationToken ct)
+    {
+        if (started.Moved.Count == 0)
+        {
+            return new StartedFrom(to, false, null, $"conversation `{to}` opened, but none of your words waited on session `{id}` to start it with any more.");
+        }
+
+        var waits = $"conversation `{to}` opened, but your words did not reach it, so they wait on conversation `{to}`.";
+        if (await MovedWords.OnAsync(service, home, id, to, started.Moved, ct).ConfigureAwait(false) is not { Words.Count: > 0 } moved)
+        {
+            return new StartedFrom(to, false, null, waits);
+        }
+
+        var preface = Preface(id);
+        var files = Uploads(moved.Files);
+        bool took;
+        try
+        {
+            took = say(to, moved.Text, files, preface, moved.Shown);
+        }
+        catch (DriverException) when (files.Count > 0)
+        {
+            took = say(to, moved.Text, [], preface, moved.Shown);
+        }
+
+        if (!took) return new StartedFrom(to, false, null, waits);
+
+        if (!await moved.TakeAsync(service, ct).ConfigureAwait(false))
+        {
+            // Still waiting where they were handed: said there, as a take refused off the old record was.
+            var line = WordsNotes.StartNotTaken(to, "they still wait on it.");
+            output?.Append(to, line.Note);
+            events.Keep(to, new SessionEvent { Kind = SessionEventKind.Note, Text = line.Note, Parts = line.Parts }, say: null);
+        }
+
+        new GoOnMarks(home).Clear(id);
+        var went = Continuations.Went(moved.Left, to, ContinueWhy.Of(ContinueWhy.Started));
         output?.Append(id, went.Text!);
         events.Keep(id, went, say: null);
         return new StartedFrom(to, true, null, $"conversation `{to}` starts with your words to session `{id}`, which keeps them no longer.");
@@ -169,10 +233,14 @@ public static class StartFrom
     }
 
     /// <summary>The files said with the words, read back from where their session kept them by name; one that will not read is left out.</summary>
-    private static IReadOnlyList<ChatUpload> Files(string home, string id, IReadOnlyList<SaidWordView> words)
+    private static IReadOnlyList<ChatUpload> Files(string home, string id, IReadOnlyList<SaidWordView> words) =>
+        Uploads(ChatFiles.Kept(home, id, [.. words.SelectMany(word => word.Files)]));
+
+    /// <summary>Kept files read back as a message carries them; one that will not read is left out.</summary>
+    private static IReadOnlyList<ChatUpload> Uploads(IReadOnlyList<KeptFile> files)
     {
         var uploads = new List<ChatUpload>();
-        foreach (var kept in ChatFiles.Kept(home, id, [.. words.SelectMany(word => word.Files)]))
+        foreach (var kept in files)
         {
             try
             {

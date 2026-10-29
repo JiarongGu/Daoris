@@ -16,7 +16,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 public sealed class StartFromTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-start-from-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "start-from", Guid.NewGuid().ToString("N")[..8]);
 
     private readonly string _root;
 
@@ -26,10 +26,7 @@ public sealed class StartFromTests : IDisposable
         Directory.CreateDirectory(_root);
     }
 
-    public void Dispose()
-    {
-        try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
-    }
+    public void Dispose() => GitSeed.Discard(_home);
 
     private SessionEvents Events => new(DaorisHome.Entry(_home, HomeEntry.Sessions));
 
@@ -38,7 +35,13 @@ public sealed class StartFromTests : IDisposable
     {
         public List<string> Started { get; } = [];
 
+        /// <summary>What each start was asked to move (FOUNDATION1d-ii part 4).</summary>
+        public List<MoveWords> Moves { get; } = [];
+
         public List<(string Session, string Text, IReadOnlyList<ChatUpload> Files, string Preface)> Said { get; } = [];
+
+        /// <summary>What each first message was to show of the words it carries: each moved word's own event, or null for one joined.</summary>
+        public List<IReadOnlyList<SessionEvent>?> Shown { get; } = [];
     }
 
     private Task<StartedFrom> RunAsync(
@@ -47,16 +50,169 @@ public sealed class StartFromTests : IDisposable
         var client = ledger.Client();
         return StartFrom.RunAsync(
             client, _home, Events, output: null, id,
-            (repository, _) =>
+            (repository, moves, _) =>
             {
                 asked.Started.Add(repository);
+                asked.Moves.Add(moves);
                 return Task.FromResult(start ?? new ChatStart("c9", "Conversation `c9` opened in `engine`."));
             },
-            (session, text, files, preface) =>
+            (session, text, files, preface, shown) =>
             {
                 asked.Said.Add((session, text, files, preface));
+                asked.Shown.Add(shown);
                 return say?.Invoke(files) ?? true;
             });
+    }
+
+    /// <summary>
+    /// The stand-in start through the client's keyed door (FOUNDATION1d-ii part 4), as the chat runner's own start opens: the moves sent
+    /// where the ledger's mark is 2, and what moved answered back.
+    /// </summary>
+    private Task<StartedFrom> OpenedAsync(
+        ChatLedger ledger, ServiceClient client, string id, Asked asked, Func<string, IReadOnlyList<ChatUpload>, bool>? say = null) =>
+        StartFrom.RunAsync(
+            client, _home, Events, output: null, id,
+            async (repository, moves, token) =>
+            {
+                asked.Started.Add(repository);
+                asked.Moves.Add(moves);
+                var opened = await client.Opens.OpenAsync(
+                    "/api/sessions/chat", $$"""{"repository":"{{repository}}","adapter":"talk"}""", $"start/{asked.Started.Count}", moves.From,
+                    ct: token, moves: moves);
+                return new ChatStart(opened.SessionId, opened.Message) { Moves = opened.Moves, Moved = opened.Moved };
+            },
+            (session, text, files, preface, shown) =>
+            {
+                asked.Said.Add((session, text, files, preface));
+                asked.Shown.Add(shown);
+                return say?.Invoke(session, files) ?? true;
+            });
+
+    /// <summary>
+    /// 🔴 FOUNDATION1d-ii part 4 (the foundation design §3.4 rule 3): start-from's open moves the words, under its key, from the record they
+    /// were said to, which its new record names no <c>from</c> link to, so it names that record as the moves' source. A word kept there between
+    /// the read and the open moves with them. The first message is composed from the new conversation's moved words, never the old record's:
+    /// each moved word's files are copied into the new conversation's folder first and read from there, each word is marked attempted there
+    /// before it is handed and shown by its own event under its id, and once handed they leave the new conversation by their ids. The old
+    /// record says where they went.
+    /// </summary>
+    [Fact]
+    public async Task The_open_moves_the_words_and_a_late_one_and_the_first_message_is_the_new_conversations_moved_words()
+    {
+        var ledger = new ChatLedger { Opens = 2 }.Register("engine", _root);
+        ledger.Chat("c1", "completed", "talk", _root).Say("w1", "See the trace.", "trace.txt");
+        ChatFiles.Keep(_home, "c1", [new ChatUpload("trace.txt", Encoding.UTF8.GetBytes("exit 3"))]);
+        ledger.BeforeRequest = (request, _) =>
+        {
+            if (request.Method == HttpMethod.Post && request.RequestUri!.AbsolutePath == "/api/sessions/chat") ledger.For("c1").Say("w2", "And the readme.");
+            return Task.CompletedTask;
+        };
+        using var client = ledger.Client();
+        var asked = new Asked();
+        var attempted = new List<string>();
+
+        var started = await OpenedAsync(ledger, client, "c1", asked, (session, _) =>
+        {
+            attempted.AddRange(ledger.Record(session)["said"]!.AsArray().Where(word => word!["attempt"] is not null).Select(word => word!["id"]!.GetValue<string>()));
+            return true;
+        });
+
+        Assert.True(started.Sent, started.Message);
+        Assert.Equal("c2", started.SessionId);
+        var moves = Assert.Single(asked.Moves);
+        Assert.Equal(("c1", "w1", "w1"), (moves.From, string.Join(',', moves.Words), string.Join(',', moves.Read)));
+        Assert.Equal(("start/1", "c1"), (ledger.Opened[0].Key, ledger.Opened[0].Moves!["from"]!.GetValue<string>()));
+
+        var (session, text, files, _) = Assert.Single(asked.Said);
+        Assert.Equal(("c2", "See the trace.\n\nAnd the readme."), (session, text));
+        var handed = Assert.Single(files);
+        Assert.Equal(("trace.txt", "exit 3"), (handed.Name, Encoding.UTF8.GetString(handed.Content)));
+        Assert.Equal(["w1", "w2"], attempted);
+
+        var shown = Assert.Single(asked.Shown)!;
+        Assert.Equal([("w1", "See the trace."), ("w2", "And the readme.")], shown.Select(e => (e.Id!, e.Text!)));
+        Assert.All(shown, e => Assert.Equal((SessionEventKind.User, "person"), (e.Kind, e.Origin)));
+        Assert.Equal(["trace.txt"], shown[0].Files!);
+        Assert.Null(shown[1].Files);
+
+        Assert.Equal([("c2", "w1,w2", (string?)null)], ledger.TakenBy);
+        Assert.Empty(ledger.Said("c1"));
+        Assert.Empty(ledger.Said("c2"));
+        var went = Assert.Single(Events.After("c1", 0).Events, e => e.Kind == SessionEventKind.Note);
+        Assert.Equal(["w1", "w2"], went.Words!);
+        Assert.Equal(("c2", ContinueWhy.Started), (went.To, went.Why));
+
+        // The file is the new conversation's own now: read from its folder alone, its bytes and name as said.
+        GitSeed.Discard(ChatFiles.Folder(_home, "c1"));
+        var kept = Assert.Single(ChatFiles.Kept(_home, "c2", ["trace.txt"]));
+        Assert.Equal(("trace.txt", "exit 3"), (kept.Name, Encoding.UTF8.GetString(AtomicFile.ReadBytes(kept.Path))));
+    }
+
+    /// <summary>
+    /// 🔴 A moved word's files are copied by their kept names, and copied again changes nothing: a name the destination keeps already is
+    /// passed over, so a take-back or a go-on at the destination finds the one file as it was said.
+    /// </summary>
+    [Fact]
+    public void A_moved_words_files_copied_twice_are_one_file_with_its_bytes_and_name()
+    {
+        ChatFiles.Keep(_home, "c1", [new ChatUpload("trace.txt", Encoding.UTF8.GetBytes("exit 3"))]);
+
+        ChatFiles.Moved(_home, "c1", "c2", ["trace.txt", "gone.txt"]);
+        ChatFiles.Moved(_home, "c1", "c2", ["trace.txt"]);
+
+        var leaf = Path.GetFileName(ChatFiles.Find(_home, "c1", "trace.txt")!.Path);
+        Assert.Equal([leaf], Directory.EnumerateFiles(ChatFiles.Folder(_home, "c2")).Select(Path.GetFileName));
+        GitSeed.Discard(ChatFiles.Folder(_home, "c1"));
+        var kept = ChatFiles.Find(_home, "c2", "trace.txt")!;
+        Assert.Equal(("trace.txt", "exit 3"), (kept.Name, Encoding.UTF8.GetString(AtomicFile.ReadBytes(kept.Path))));
+    }
+
+    /// <summary>
+    /// 🔴 The moved words handed nowhere (nothing took the first message): they wait on the new conversation the open moved them to, which
+    /// the sentence says, and nothing is taken off anything.
+    /// </summary>
+    [Fact]
+    public async Task Moved_words_the_new_conversation_did_not_take_wait_on_it_and_the_sentence_says_so()
+    {
+        var ledger = new ChatLedger { Opens = 2 }.Register("engine", _root);
+        ledger.Chat("c1", "completed", "talk", _root).Say("w1", "Also log the port.");
+        using var client = ledger.Client();
+        var asked = new Asked();
+
+        var started = await OpenedAsync(ledger, client, "c1", asked, (_, _) => false);
+
+        Assert.Equal(("c2", false), (started.SessionId, started.Sent));
+        Assert.Contains("wait on conversation `c2`", started.Message);
+        Assert.DoesNotContain("stay on session `c1`", started.Message);
+        Assert.Empty(ledger.TakenBy);
+        Assert.Empty(ledger.Said("c1"));
+        Assert.Equal(["w1"], ledger.Said("c2"));
+    }
+
+    /// <summary>
+    /// 🔴 Against a host whose keyed open moves nothing (its mark 1) or that keeps no marks, start-from reads, hands and takes the old record's
+    /// words as it did: the moves are never sent to a mark-1 host, the first message is one joined word, and the words leave the record they
+    /// were said to, naming the new conversation.
+    /// </summary>
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    public async Task Against_an_older_host_the_words_go_from_the_record_they_were_said_to_as_before(int opens)
+    {
+        var ledger = new ChatLedger { Opens = opens }.Register("engine", _root);
+        ledger.Chat("c1", "completed", "talk", _root).Say("w1", "Also log the port.");
+        using var client = ledger.Client();
+        var asked = new Asked();
+
+        var started = await OpenedAsync(ledger, client, "c1", asked);
+
+        Assert.True(started.Sent, started.Message);
+        Assert.Equal(("c2", "Also log the port."), (asked.Said.Single().Session, asked.Said.Single().Text));
+        Assert.Null(Assert.Single(asked.Shown));
+        List<(string Key, JsonObject? Moves)> keyed = opens == 1 ? [("start/1", null)] : [];
+        Assert.Equal(keyed, ledger.Opened);
+        Assert.Equal([("c1", "w1", (string?)"c2")], ledger.TakenBy);
+        Assert.Empty(ledger.Said("c1"));
     }
 
     /// <summary>
