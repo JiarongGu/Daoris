@@ -5,6 +5,13 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-30 - A freshness case took its reading before its own setup was heard (FLAKE1)
+
+- **Symptom:** candidate `ed0f8d4`'s service run failed `CheckoutFreshnessTests.A_write_in_a_folder_git_ignores_inside_a_watched_one_is_not_heard` ("a write under .claude/worktrees/, which git ignores, marked the reading stale"), 1 of 2,934, under five builders' load.
+- **Root cause:** the case writes the checkout's files and runs `git init`, waits a fixed half-second, then takes the reading. A loaded machine delivers the setup's own writes after that window, so the reading is stale before any ignored write is made, and the assertion blames the ignore. Nothing shows the ignore rule wrong.
+- **Fix:** test only. The case takes the reading again until half a second passes with nothing heard, within `Poll.Patience`, before its ignored writes. The rule and the rest of the case are unchanged.
+- **Verify:** `CheckoutFreshnessTests`, 12 passed.
+
 ## 2026-10-30 - A batch's new reads went where no rule sent their changes, and a hook case read its answer late (FOUNDATION1d-ii, FOUNDATION1e, FLAKE1)
 
 - **Symptom:** candidate `316884f` (batches 1029l to o) failed three gates. The CLI's `read-shares` refused `File.ReadAllBytes` in `Course/Chat/ChatFiles.cs`, a source that writes through `AtomicFile`. `tool-tests`' reach checks found two reads no rule reaches: `LineCourseTests` reading the modules' test sources, and the page's `say.test.ts` reading `Service/Domain/ServiceAnswers.cs`. And the driver's `HookSetLogTests.The_wire_marks_each_failure_with_its_kind(kind: "unreadable")` read `late`. Four of `tool-tests`' declared-runner scratch cases also failed, each after about twenty minutes, on a `git worktree add` that exited with an empty stderr: the machine's load, the shape TREEOPENERR1 diagnoses, and no change of this batch's.
