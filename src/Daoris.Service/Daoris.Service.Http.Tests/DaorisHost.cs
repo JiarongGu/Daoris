@@ -26,6 +26,9 @@ public sealed record Answer(int Status, string Body, string? ContentType)
 
     /// <summary>The error sentence of a refusal — every refusal's one field.</summary>
     public string Error => Json.GetProperty("error").GetString()!;
+
+    /// <summary>The answer's headers, read case-blind: the host's run among them (<c>x-daoris-run</c>, FOUNDATION1 row d-i).</summary>
+    public IReadOnlyDictionary<string, string> Headers { get; init; } = new Dictionary<string, string>();
 }
 
 /// <summary>
@@ -209,7 +212,10 @@ public class DaorisHost : IDisposable
         });
 
         using var reader = new StreamReader(context.Response.Body);
-        return new Answer(context.Response.StatusCode, await reader.ReadToEndAsync(), context.Response.ContentType);
+        return new Answer(context.Response.StatusCode, await reader.ReadToEndAsync(), context.Response.ContentType)
+        {
+            Headers = context.Response.Headers.ToDictionary(header => header.Key, header => header.Value.ToString(), StringComparer.OrdinalIgnoreCase),
+        };
     }
 
     public Task<Answer> GetAsync(string pathAndQuery, IPAddress? from = null, string? key = null, string? person = null) =>

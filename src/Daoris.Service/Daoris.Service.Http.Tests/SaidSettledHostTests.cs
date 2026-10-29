@@ -65,6 +65,102 @@ public sealed class SaidSettledHostTests(LocalHost host) : IClassFixture<LocalHo
         Assert.Single((await host.Composed.Sessions.FindAsync(head.Id))!.Said);
     }
 
+    /// <summary>A record left by an ended conversation part and the part it went on in, as an open writes them; returns (left, head).</summary>
+    private async Task<(Session Left, Session Head)> WentOnAsync(string repository)
+    {
+        var left = await EndedAsync(repository);
+        var head = await host.Composed.Sessions.CreateAsync(
+            null, repository, "stub", DateTimeOffset.UtcNow, kind: SessionKind.Chat, from: left.Id, fromWhy: "limit", fromBy: "daoris");
+        return (left, head);
+    }
+
+    /// <summary>
+    /// 🔴 Row d-ii, what the driver's readers act on (the steward's first): a <c>continued</c> refusal is the say route's refusal status, 409,
+    /// with <c>error</c>, <c>refusal</c> and a <c>head</c> that is never empty, the id of a record this host holds.
+    /// </summary>
+    [Fact]
+    public async Task A_continued_refusal_is_409_with_its_error_its_refusal_and_a_head_that_is_a_record_here()
+    {
+        var (left, head) = await WentOnAsync("Heads1");
+
+        var refused = await host.PostAsync($"/api/sessions/{left.Id}/say", new { text = "A late word." });
+
+        Assert.Equal(409, refused.Status);
+        Assert.Equal("continued", refused.Json.GetProperty("refusal").GetString());
+        Assert.False(string.IsNullOrWhiteSpace(refused.Error));
+        var named = refused.Json.GetProperty("head").GetString();
+        Assert.False(string.IsNullOrWhiteSpace(named));
+        Assert.Equal(head.Id, named);
+        Assert.NotNull(await host.Composed.Sessions.FindAsync(named!));
+    }
+
+    /// <summary>
+    /// 🔴 Row d-ii (the steward's second): the sentence names the head, since an older desktop's terminal, headless door and pump each print
+    /// the service's sentence as it comes: it names the record the say named and the head, and is the ledger's own sentence word for word.
+    /// </summary>
+    [Fact]
+    public async Task A_continued_refusals_sentence_names_the_head_as_an_older_desktop_prints_it()
+    {
+        var (left, head) = await WentOnAsync("Heads2");
+
+        var refused = await host.PostAsync($"/api/sessions/{left.Id}/say", new { text = "A late word." });
+
+        Assert.Contains($"`{head.Id}`", refused.Error, StringComparison.Ordinal);
+        Assert.Contains($"`{left.Id}`", refused.Error, StringComparison.Ordinal);
+        Assert.Equal((await host.Composed.Ledger.SayAsync(left.Id, "A late word.", null, DateTimeOffset.UtcNow)).Message, refused.Error);
+    }
+
+    /// <summary>
+    /// 🔴 Row d-ii (the steward's third): every say answer names the host's run in <c>x-daoris-run</c>, the run <c>GET /api/protocol</c>
+    /// answers, a <c>continued</c> refusal, a kept word and a settled retry alike, so a client keeping the <c>head</c> mark by run reads the
+    /// protocol again only when a run changes.
+    /// </summary>
+    [Fact]
+    public async Task Every_say_answer_names_the_hosts_run_a_continued_refusal_a_kept_word_and_a_settled_retry_alike()
+    {
+        var run = (await host.GetAsync("/api/protocol")).Json.GetProperty("run").GetString();
+        var (left, head) = await WentOnAsync("Heads3");
+        await host.Composed.Sessions.SetStateAsync(head.Id, SessionState.Completed, null, null, null, DateTimeOffset.UtcNow);
+
+        var refused = await host.PostAsync($"/api/sessions/{left.Id}/say", new { text = "A late word.", key = "wire/run", from = "daoris", settled = true });
+        var kept = await host.PostAsync($"/api/sessions/{head.Id}/say", new { text = "A late word.", key = "wire/run", from = "daoris", settled = true });
+        await host.Composed.Sessions.TakeSaidAsync(head.Id, [kept.Json.GetProperty("said").GetProperty("id").GetString()!]);
+        var settled = await host.PostAsync($"/api/sessions/{left.Id}/say", new { text = "A late word.", key = "wire/run", from = "daoris", settled = true });
+
+        Assert.Equal((409, "continued"), (refused.Status, refused.Json.GetProperty("refusal").GetString()));
+        Assert.Equal(200, kept.Status);
+        Assert.Equal(head.Id, settled.Json.GetProperty("settled").GetString());
+        Assert.All(new[] { refused, kept, settled }, answer => Assert.Equal(run, answer.Headers["x-daoris-run"]));
+    }
+
+    /// <summary>
+    /// 🔴 Row d-ii: a line planted as a cycle by an older writer's own statement reaches the say door as <c>unplaced</c>, 409, with its sentence
+    /// and no <c>head</c>, never <c>continued</c> with an empty or cyclic head; nothing is kept.
+    /// </summary>
+    [Fact]
+    public async Task A_line_that_loops_is_refused_unplaced_with_its_sentence_and_no_head()
+    {
+        var (left, head) = await WentOnAsync("Heads4");
+        await using (var connection = new Microsoft.Data.Sqlite.SqliteConnection($"Data Source={host.Database};Pooling=False"))
+        {
+            await connection.OpenAsync();
+            await using var plant = connection.CreateCommand();
+            plant.CommandText = "UPDATE sessions SET from_session = $head WHERE id = $left";
+            plant.Parameters.AddWithValue("$head", head.Id);
+            plant.Parameters.AddWithValue("$left", left.Id);
+            Assert.Equal(1, await plant.ExecuteNonQueryAsync());
+        }
+
+        var refused = await host.PostAsync($"/api/sessions/{left.Id}/say", new { text = "A late word." });
+
+        Assert.Equal(409, refused.Status);
+        Assert.Equal("unplaced", refused.Json.GetProperty("refusal").GetString());
+        Assert.False(refused.Json.TryGetProperty("head", out _));
+        Assert.Contains("loops", refused.Error, StringComparison.Ordinal);
+        Assert.Empty((await host.Composed.Sessions.FindAsync(left.Id))!.Said);
+        Assert.Empty((await host.Composed.Sessions.FindAsync(head.Id))!.Said);
+    }
+
     /// <summary>
     /// 🔴 Row d-ii, the say door's word table cell for cell: every refusal the ledger knows has its own word on the wire, the table below, so
     /// none falls to the switch's default, which would send a new refusal as <c>running</c>. A refusal added to the ledger fails this until
