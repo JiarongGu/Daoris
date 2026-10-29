@@ -234,6 +234,8 @@ internal sealed class TreeTidies(
             // Everything no commit holds, whatever git's settings hide (SQUASHTIDY1c): what removing the tree would destroy.
             if (Directory.Exists(tree))
             {
+                // GITWORKTREECONFIG1: first, that git reads the tree as itself; bound to another checkout, its status is that checkout's.
+                if (await TreeBinding.RefusalAsync(tree, ct).ConfigureAwait(false) is { } bound) return Kept(bound);
                 var holds = await ContentHolds.HoldsAsync(tree, root, ct).ConfigureAwait(false);
                 if (holds is null) return Kept("git could not say what its tree holds");
                 if (holds.Uncommitted.Count > 0) return Kept($"its tree has {holds.Uncommitted.Count} path(s) uncommitted");

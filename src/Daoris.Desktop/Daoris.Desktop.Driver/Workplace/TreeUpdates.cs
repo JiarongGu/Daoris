@@ -50,9 +50,13 @@ internal sealed class TreeUpdates(
         var full = Path.GetFullPath(tree);
         var (workspace, repository) = context.OwnerOf(full);
         var facts = new TreeFacts(repository);
-        if (!context.Holds(full) || repository.Length == 0 || !await WorkingTree.IsTopLevelAsync(full, ct).ConfigureAwait(false))
+        if (!context.Holds(full) || repository.Length == 0) return Refused(facts with { NotOurs = true });
+        if (!await WorkingTree.IsTopLevelAsync(full, ct).ConfigureAwait(false))
         {
-            return Refused(facts with { NotOurs = true });
+            // GITWORKTREECONFIG1: a tree git binds to another checkout is one it reports another root for; said as that, asked only here.
+            return await TreeBinding.RefusalAsync(full, ct).ConfigureAwait(false) is { } elsewhere
+                ? new(false, $"Nothing was brought up to date: {elsewhere}.")
+                : Refused(facts with { NotOurs = true });
         }
 
         facts = facts with { Running = await running(ct).ConfigureAwait(false) };
@@ -83,6 +87,12 @@ internal sealed class TreeUpdates(
         }
 
         if (here.Code != 0) return new(false, TreeUpdateWords.Left(facts, RebaseKind.Unknown, null, Failure(here.Err)));
+        // GITWORKTREECONFIG1: the root read with the tree's repository, git's own now, before anything is held or written in the tree.
+        if (await TreeBinding.RefusalAsync(full, ct, here.TopLevel).ConfigureAwait(false) is { } bound)
+        {
+            return new(false, $"Nothing was brought up to date: {bound}.");
+        }
+
         var root = Path.GetDirectoryName(Path.TrimEndingDirectorySeparator(here.CommonDir.Trim()))!;
         var line = (await context.LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
         facts = facts with { Line = line, Branch = branch, NoLine = line is null };
@@ -245,6 +255,8 @@ internal sealed class TreeUpdates(
 
         var here = await CommonDirAndBranchAsync(full, ct).ConfigureAwait(false);
         if (here.Code != 0) return Left($"git could not read the tree: {Failure(here.Err)}");
+        // GITWORKTREECONFIG1: no switch or rebase runs in a tree git binds to another checkout.
+        if (await TreeBinding.RefusalAsync(full, ct, here.TopLevel).ConfigureAwait(false) is { } bound) return Left(bound);
         var root = Path.GetDirectoryName(Path.TrimEndingDirectorySeparator(here.CommonDir.Trim()))!;
 
         // A commit this repository does not hold is no reason to leave the tree: the line is still synced, and that said.

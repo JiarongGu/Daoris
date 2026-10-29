@@ -31,6 +31,17 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
             return new(false, $"there is no tree at {path}.");
         }
 
+        // The main root, from git itself: the common dir is the main repository's .git, wherever the
+        // registered root is — nothing here guesses a layout it does not own.
+        // With its branch, in one start (PROC1d-iii), and the working root git reports for the tree (GITWORKTREECONFIG1): read
+        // before anything is written, the session lock a forced removal lets go of below included, since a tree git binds to
+        // another checkout stays, said, forced or not.
+        var here = await CommonDirAndBranchAsync(full, ct).ConfigureAwait(false);
+        if (here.Code == 0 && await TreeBinding.RefusalAsync(full, ct, here.TopLevel).ConfigureAwait(false) is { } bound)
+        {
+            return new(false, $"the tree at {path} stays: {bound}.");
+        }
+
         // TREELOCK2: keep the repository's starts out from the ledger read through the removal. A stale lock can name an ended
         // session while a later one holds the same tree, so the live-tree check precedes the lock owner's record.
         var owner = context.OwnerOf(full);
@@ -45,10 +56,6 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
                 await SessionLocks.LetGoEndedAsync(record).ConfigureAwait(false);
         }
 
-        // The main root, from git itself: the common dir is the main repository's .git, wherever the
-        // registered root is — nothing here guesses a layout it does not own.
-        // With its branch, in one start (PROC1d-iii).
-        var here = await CommonDirAndBranchAsync(full, ct).ConfigureAwait(false);
         if (here.Code != 0)
         {
             return new(false, $"{path} is not a working tree git recognises: {FirstLine(here.Err)}");

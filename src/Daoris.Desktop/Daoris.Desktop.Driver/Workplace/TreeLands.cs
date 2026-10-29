@@ -211,6 +211,12 @@ internal sealed class TreeLands(
             return new(false, $"{path} is not a working tree git recognises: {FirstLine(here.Err)}");
         }
 
+        // GITWORKTREECONFIG1: the tree's own working root, from the read above, before its status is read or anything merged.
+        if (await TreeBinding.RefusalAsync(full, ct, here.TopLevel).ConfigureAwait(false) is { } bound)
+        {
+            return new(false, $"Nothing was merged: {bound}.");
+        }
+
         var root = Path.GetDirectoryName(here.CommonDir.Trim())!;
         var branch = here.Branch.Trim();
         if (branch is "" or "HEAD")
@@ -522,6 +528,13 @@ internal sealed class TreeLands(
         // is here, as each reader asks; what an act rests on (the branch's commits, the head the tree moves from) is read again before it.
         var here = context.Holds(full) && Directory.Exists(full) && await CommonDirAndBranchAsync(full, ct).ConfigureAwait(false) is { Code: 0 } read
             ? read : null;
+        // GITWORKTREECONFIG1: from that read, before anything is judged or written, that git reads the tree as itself. Bound to another
+        // checkout, its status and its files are that checkout's, and a replay or a follow in it would rewrite them: nothing lands.
+        if (here is not null && await TreeBinding.RefusalAsync(full, ct, here.TopLevel).ConfigureAwait(false) is { } bound)
+        {
+            return new(false, $"Nothing was landed: {bound}.") { Refusal = AutoLandingCode.Refused };
+        }
+
         // SQUASHTIDY1f: the head's own judgement, asked first, since a second opinion or a review of work already on the line
         // lands nothing either.
         var work = await workReads.WorkAsync(full, ct, uncommitted, here).ConfigureAwait(false);

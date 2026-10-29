@@ -191,9 +191,12 @@ internal sealed class TreeLandSyncs(TreeContext context, BranchReplays replays)
     {
         if (!Directory.Exists(full)) return "its tree is gone";
         if (inUse is not null && inUse.Any(tree => SamePath(tree, full))) return "a session still running or waiting holds it";
-        var (_, onOut, _) = await WorkingTree.GitAsync(full, ["rev-parse", "--abbrev-ref", "HEAD"], ct).ConfigureAwait(false);
+        // GITWORKTREECONFIG1: git's own working root for the tree, in the start that reads its branch, before its status or a switch.
+        var (onCode, onOut, _) = await WorkingTree.GitAsync(full, ["rev-parse", "--show-toplevel", "--abbrev-ref", "HEAD"], ct).ConfigureAwait(false);
+        var on = onOut.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (await TreeBinding.RefusalAsync(full, ct, onCode == 0 && on.Length == 2 ? on[0] : null).ConfigureAwait(false) is { } bound) return bound;
         var (_, dirty, _) = await WorkingTree.GitAsync(full, ["--no-optional-locks", "status", "--porcelain"], ct).ConfigureAwait(false);
-        if (onOut.Trim() != sync.Branch || await CommitOfAsync(full, "HEAD", ct).ConfigureAwait(false) != sync.Tip) return "it moved since it was judged";
+        if ((on.Length == 2 ? on[1] : "") != sync.Branch || await CommitOfAsync(full, "HEAD", ct).ConfigureAwait(false) != sync.Tip) return "it moved since it was judged";
         if (!string.IsNullOrWhiteSpace(dirty)) return "it has uncommitted work";
         if (await OnRemoteAsync(sync.Root, sync.Branch, ct).ConfigureAwait(false)) return $"`{sync.Branch}` is on its remote, which Daoris does not rewrite";
 

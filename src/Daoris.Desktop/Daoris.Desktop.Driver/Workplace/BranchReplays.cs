@@ -61,10 +61,18 @@ internal sealed class BranchReplays(TreeContext context, PassLeftovers leftovers
         var tree = judged.Tree;
         if (tree is not null)
         {
-            // 🔴 The session's own tree, read again immediately before: still on this branch, at the commit judged, clean.
-            var (_, onOut, _) = await WorkingTree.GitAsync(tree, ["rev-parse", "--abbrev-ref", "HEAD"], ct).ConfigureAwait(false);
+            // 🔴 The session's own tree, read again immediately before: git's own working root for it (GITWORKTREECONFIG1), asked in the
+            // same start as its branch, then still on this branch, at the commit judged, clean. A tree git binds to another checkout is
+            // left before its status is read: a switch or a rebase in it would rewrite that checkout's files.
+            var (onCode, onOut, _) = await WorkingTree.GitAsync(tree, ["rev-parse", "--show-toplevel", "--abbrev-ref", "HEAD"], ct).ConfigureAwait(false);
+            var on = onOut.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            if (await TreeBinding.RefusalAsync(tree, ct, onCode == 0 && on.Length == 2 ? on[0] : null).ConfigureAwait(false) is { } bound)
+            {
+                return new(item, false, $"`{item.Branch}` was left: {bound}.");
+            }
+
             var (_, dirty, _) = await WorkingTree.GitAsync(tree, ["--no-optional-locks", "status", "--porcelain"], ct).ConfigureAwait(false);
-            if (onOut.Trim() != item.Branch || await CommitOfAsync(tree, "HEAD", ct).ConfigureAwait(false) != tip || !string.IsNullOrWhiteSpace(dirty))
+            if ((on.Length == 2 ? on[1] : "") != item.Branch || await CommitOfAsync(tree, "HEAD", ct).ConfigureAwait(false) != tip || !string.IsNullOrWhiteSpace(dirty))
             {
                 return new(item, false, $"`{item.Branch}` {TreeSync.LeftSince}");
             }
@@ -295,7 +303,18 @@ internal sealed class BranchReplays(TreeContext context, PassLeftovers leftovers
         var (added, _, addErr) = await WorkingTree.GitAsync(
             root, ["worktree", "add", "--quiet", "--detach", "--lock", "--reason", PassLeftovers.HeldBy(Environment.ProcessId), aside, at], ct)
             .ConfigureAwait(false);
-        return added == 0 ? (aside, "") : (null, $"Daoris could not make a tree to replay it in: {Failure(addErr)}");
+        if (added != 0) return (null, $"Daoris could not make a tree to replay it in: {Failure(addErr)}");
+
+        // GITWORKTREECONFIG1: where the repository's configuration binds its linked trees to another checkout, a rebase in this one would
+        // rewrite that checkout's files, so nothing is replayed. This tree is Daoris's own, made a moment ago and holding nothing, so it goes
+        // as every replay's own tree goes: git's removal names it by its record, never through it.
+        if (await TreeBinding.RefusalAsync(aside, ct).ConfigureAwait(false) is { } bound)
+        {
+            await CloseAsideAsync(root, aside).ConfigureAwait(false);
+            return (null, $"Daoris let go of the tree it made to replay it in, unused: {bound}.");
+        }
+
+        return (aside, "");
     }
 
     /// <summary>
