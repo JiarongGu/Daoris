@@ -374,7 +374,7 @@ test('the arguments name one branch, or several after --batch, and the flags', (
     branches: ['mod9'], keepGoing: false, commitCheck: true, resume: false, dropBatch: false, plan: false, prune: false, autoPrune: true,
     full: false, gated: false, rerun: [], passed: false, stale: false, oneAtATime: false, beside: false, besideCommit: null,
     ci: false, ciCommit: null, watch: false, stop: false, ciStage: false, ciNight: false,
-    preview: false, messageFile: null, queue: false, recheck: false, queueRun: false,
+    preview: false, messageFile: null, queue: false, recheck: false, queueRun: false, daorisVerify: false,
   });
   // CISCOPE1e: the queue's verbs, each alone with what it takes.
   assert.equal(tool.parseArgs(['a', '--preview']).preview, true);
