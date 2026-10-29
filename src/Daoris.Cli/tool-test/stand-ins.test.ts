@@ -33,8 +33,10 @@ function provider(fx: ReturnType<typeof makeFixture>, folder: string, file: obje
   fx.write(`Providers/${folder}/Program/agent.mjs`, '// a scratch program\n');
 }
 
-function twoProviders(name: string): string {
+/** A scratch providers' folder of two stand-ins, a provider that runs a model and a folder that is no provider's, removed after the test. */
+function twoProviders(name: string, t: { after: (done: () => void) => void }): string {
   const fx = makeFixture(name);
+  t.after(() => fx.cleanup());
   provider(fx, 'First', {
     id: 'first-stand-in', standIn: true, program: { entry: 'agent.mjs' },
     doors: [
@@ -54,8 +56,8 @@ function twoProviders(name: string): string {
   return join(fx.root, 'Providers');
 }
 
-test('the files are read by one layout: every provider in its folders\' order, a stand-in with its pending lines, a folder with no file none', () => {
-  const folder = twoProviders('stand-ins-read');
+test('the files are read by one layout: every provider in its folders\' order, a stand-in with its pending lines, a folder with no file none', (t) => {
+  const folder = twoProviders('stand-ins-read', t);
   const read = readProviders(folder);
 
   assert.deepEqual(read.problems, []);
@@ -75,8 +77,8 @@ test('the files are read by one layout: every provider in its folders\' order, a
   ]);
 });
 
-test('the phase plans the scenario contract over every stand-in\'s doors: held by its own file, read elsewhere, or driven', () => {
-  const { standIns } = readStandIns(twoProviders('stand-ins-plan'));
+test('the phase plans the scenario contract over every stand-in\'s doors: held by its own file, read elsewhere, or driven', (t) => {
+  const { standIns } = readStandIns(twoProviders('stand-ins-plan', t));
   const rows = scenarioPlan(standIns);
   const state = (row: Row) => (row.held ? `held ${row.held.row}` : row.elsewhere ? 'elsewhere' : 'driven');
   const of = (provider: string) => rows.filter((row) => row.provider === provider).map((row) => `${row.case} ${row.door} ${state(row)}`);
@@ -101,8 +103,9 @@ test('the phase plans the scenario contract over every stand-in\'s doors: held b
 
 // The layout's breaks, row for row the driver's `ProviderFilesTests.The_reader_refuses_a_file_out_of_the_layout` (its twin, the
 // driver's tests' `ProviderFiles.cs`): a change to one table is a change to the other.
-test('a file out of the layout is refused, naming the field, and its provider is never planned', () => {
+test('a file out of the layout is refused, naming the field, and its provider is never planned', (t) => {
   const fx = makeFixture('stand-ins-refused');
+  t.after(() => fx.cleanup());
   const program = { entry: 'agent.mjs' };
   provider(fx, 'Extra', { id: 'a', standIn: true, program, doors: [{ id: 'a', kind: 'native', arguments: ['n'] }], extra: 1 });
   provider(fx, 'NoId', { standIn: false, doors: [{ id: 'b', kind: 'native' }] });
@@ -166,7 +169,10 @@ async function questDoor(): Promise<{ url: string; moves: Move[]; close: () => P
   return { url: await listenFetchable(server), moves, close: () => new Promise<void>((resolve) => server.close(() => resolve())) };
 }
 
-/** A door's program run from the driver's source with the environment a start or a conversation hands it, bounded by the shared patience. */
+/**
+ * A door's program run from the driver's source with the environment a start or a conversation hands it, bounded by the shared patience,
+ * in a scratch folder removed once the process has ended.
+ */
 function runDoor(standIn: StandIn, door: Door, env: Record<string, string>, more: string[] = []) {
   const [, ...rest] = doorCommand(standIn, door, join(root, 'src', 'Daoris.Desktop', 'Daoris.Desktop.Driver'), more);
   const fx = makeFixture(`stand-ins-run-${door.id}`);
@@ -180,7 +186,11 @@ function runDoor(standIn: StandIn, door: Door, env: Record<string, string>, more
       child.kill();
       reject(new Error(`${door.id} did not end within ${PATIENCE} ms\n${out}\n${err}`));
     }, PATIENCE);
-    child.on('close', (code) => { clearTimeout(timer); resolve(code); });
+    child.on('close', (code) => {
+      clearTimeout(timer);
+      fx.cleanup();
+      resolve(code);
+    });
   });
   return { child, closed, out: () => out, err: () => err };
 }
