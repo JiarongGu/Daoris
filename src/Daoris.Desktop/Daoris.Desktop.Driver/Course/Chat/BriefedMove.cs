@@ -33,6 +33,12 @@ public static class GoOnBrief
 /// beside them stays on the old record (XAGENT1e, MIXAGENT2a-iii). They leave the old record by their ids, naming the new part, once
 /// it took them; until then they stay where they were.</para>
 ///
+/// <para><b>Moved by the open</b> (FOUNDATION1d-ii part 4, the foundation design §3.4 rule 3): against a host whose <c>opens</c> mark is 2 the
+/// new part's open moves the person's words, and any of theirs kept since the read, in its own step, so no word falls between the read and the
+/// open. The delivery is then the new part's moved words (<see cref="MovedWords"/>): their files copied into its folder, each marked attempted
+/// there as it is handed and shown under its id; they leave the new part once it took them, and where its first hand fails they wait on it,
+/// whose own go-on carries them. Ask Daoris's room opens through its own door, unkeyed, and moves as before.</para>
+///
 /// <para><b>The old part ended before the new starts</b> (D51): an ended record holds no tree, and a resume refused on the wire has put
 /// its record back first (<see cref="ChatGoOn.WentBackAsync"/>). No closing note is asked: a lost conversation cannot be asked, and a
 /// refused one has no turn left (D189's amendment).</para>
@@ -131,20 +137,23 @@ internal sealed class BriefedMove(ChatContext context, IChatRunning runner, Chat
         // the person's press and a part whose own conversation is proven lost alike, rather than the cooling account as a pick, which
         // refused exactly when the person needed it. An account the person picked stays the one account (§3.5(d)): it waits while it cools.
         var pinned = context.Conversations.PickedOn(sessionId, record.Profile);
+        // FOUNDATION1d-ii part 4: the new part's open moves the person's words, and any of theirs kept since this read, in its own step.
         var started = help
             ? await HelpStartAsync(record, agent.Name, config, onEnded, ct).ConfigureAwait(false)
             : await runner.StartAsync(
                     record.Repository!, agent.Name, config, onEnded, record.Profile, ct: ct, tree: tree,
-                    from: new ContinuedFrom(sessionId, HandOverWhy.Resume, by), ownFirst: !pinned)
+                    from: new ContinuedFrom(sessionId, HandOverWhy.Resume, by), ownFirst: !pinned, moves: Moves(record, words))
                 .ConfigureAwait(false);
         if (started.SessionId is not { } to) return new StartedFrom(null, false, null, started.Message);
 
         var high = RotatedOpening.ContextOf(null, context.Events, sessionId);
         var ranOn = record.Adapter ?? agent.Name;
         var opening = HandOverNotes.MovedFrom(sessionId, ranOn, record.Profile, HandOverWhy.Resume, high, brief.Text.Length);
-        var files = words.SelectMany(word => ChatFiles.Kept(context.Home, sessionId, word.Files)).ToList();
-        var message = new ChatMessage(string.Join("\n\n", words.Select(word => word.Text)), files) { Brief = brief, TakenOver = opening };
-        var taken = await handOver.SayHandedOver(to, message).ConfigureAwait(false);
+        var moving = MovedWords.Moving(started);
+        var moved = moving ? await HandedAsync(sessionId, to, started, ct).ConfigureAwait(false) : null;
+        var files = moved?.Files ?? [.. words.SelectMany(word => ChatFiles.Kept(context.Home, sessionId, word.Files))];
+        var message = new ChatMessage(moved?.Text ?? string.Join("\n\n", words.Select(word => word.Text)), files) { Brief = brief, TakenOver = opening };
+        var taken = (!moving || moved is { Words.Count: > 0 }) && await handOver.SayHandedOver(to, message, moved?.Shown).ConfigureAwait(false);
 
         // The move, said on the part it left, where the person wrote it, and in the machine log, by profile name (D125 point 7).
         var on = HandOverNotes.MovedOn(to, agent.Name, record.Profile, HandOverWhy.Resume, high, brief.Text.Length);
@@ -153,13 +162,15 @@ internal sealed class BriefedMove(ChatContext context, IChatRunning runner, Chat
 
         if (!taken)
         {
-            // A part nobody briefed is no success: said on it, and the words stay where they were.
+            // A part nobody briefed is no success: said on it, and the words stay where they were, the new part where the open moved them.
             context.Note(to, HandOverNotes.Unsaid());
-            return new StartedFrom(to, false, null, $"conversation `{to}` opened, but what Daoris kept of `{sessionId}` and your words did not reach it, so they stay on `{sessionId}`.");
+            return new StartedFrom(to, false, null, moving
+                ? $"conversation `{to}` opened, but what Daoris kept of `{sessionId}` and your words did not reach it, so your words wait on `{to}`."
+                : $"conversation `{to}` opened, but what Daoris kept of `{sessionId}` and your words did not reach it, so they stay on `{sessionId}`.");
         }
 
-        var ids = words.Select(word => word.Id).OfType<string>().ToList();
-        if (await TakeAsync(sessionId, ids, to, ct).ConfigureAwait(false)) context.Marks.Clear(sessionId);
+        var ids = moved?.Left ?? [.. words.Select(word => word.Id).OfType<string>()];
+        if (await TakenAsync(sessionId, to, moved, ids, ct).ConfigureAwait(false)) context.Marks.Clear(sessionId);
 
         // Where they went, where the person wrote them: their ids, the part and the reason's code (MSG1d), which the page words.
         var went = Continuations.Went(ids, to, lost ?? ContinueWhy.Of(ContinueWhy.Started));
@@ -233,12 +244,15 @@ internal sealed class BriefedMove(ChatContext context, IChatRunning runner, Chat
             ? await HelpStartAsync(record, order[0].Agent, config, onEnded, ct, order, HelpConversations.NotOffered).ConfigureAwait(false)
             : await runner.StartAsync(
                     record.Repository!, order[0].Agent, config, onEnded, pinned, ct: ct, tree: record.Tree,
-                    from: new ContinuedFrom(sessionId, HandOverWhy.NotOffered, HandOverBy.Daoris), order: order)
+                    from: new ContinuedFrom(sessionId, HandOverWhy.NotOffered, HandOverBy.Daoris), order: order, moves: Moves(record, words))
                 .ConfigureAwait(false);
         if (started.SessionId is not { } to) return new StartedFrom(null, false, null, started.Message);
 
-        var files = words.SelectMany(word => ChatFiles.Kept(context.Home, sessionId, word.Files)).ToList();
-        var text = string.Join("\n\n", words.Select(word => word.Text));
+        // FOUNDATION1d-ii part 4: where the open moved the words, the fresh start's first message is the new part's moved words.
+        var moving = MovedWords.Moving(started);
+        var moved = moving ? await HandedAsync(sessionId, to, started, ct).ConfigureAwait(false) : null;
+        var files = moved?.Files ?? [.. words.SelectMany(word => ChatFiles.Kept(context.Home, sessionId, word.Files))];
+        var text = moved?.Text ?? string.Join("\n\n", words.Select(word => word.Text));
         var message = brief is null
             ? new ChatMessage(text, files)
             : new ChatMessage(text, files)
@@ -246,14 +260,16 @@ internal sealed class BriefedMove(ChatContext context, IChatRunning runner, Chat
                 Brief = brief,
                 TakenOver = HandOverNotes.MovedFrom(sessionId, record.Adapter ?? order[0].Agent, record.Profile, HandOverWhy.NotOffered, null, brief.Text.Length),
             };
-        if (!await handOver.SayHandedOver(to, message).ConfigureAwait(false))
+        if ((moving && moved is not { Words.Count: > 0 }) || !await handOver.SayHandedOver(to, message, moved?.Shown).ConfigureAwait(false))
         {
             context.Note(to, HandOverNotes.Unsaid());
-            return new StartedFrom(to, false, null, $"conversation `{to}` opened, but your words did not reach it, so they stay on `{sessionId}`.");
+            return new StartedFrom(to, false, null, moving
+                ? $"conversation `{to}` opened, but your words did not reach it, so they wait on `{to}`."
+                : $"conversation `{to}` opened, but your words did not reach it, so they stay on `{sessionId}`.");
         }
 
-        var ids = words.Select(word => word.Id).OfType<string>().ToList();
-        if (await TakeAsync(sessionId, ids, to, ct).ConfigureAwait(false)) context.Marks.Clear(sessionId);
+        var ids = moved?.Left ?? [.. words.Select(word => word.Id).OfType<string>()];
+        if (await TakenAsync(sessionId, to, moved, ids, ct).ConfigureAwait(false)) context.Marks.Clear(sessionId);
         var went = Continuations.Went(ids, to, ContinueWhy.Of(ContinueWhy.Started));
         context.Output?.Append(sessionId, went.Text!);
         context.Events.Keep(sessionId, went, say: null);
@@ -311,6 +327,32 @@ internal sealed class BriefedMove(ChatContext context, IChatRunning runner, Chat
 
         if (failed is null) return true;
         context.Note(to, WordsNotes.StartNotTaken(sessionId, failed));
+        return false;
+    }
+
+    /// <summary>What the new part's open is asked to move (FOUNDATION1d-ii part 4): the person's words named, and every word this read saw waiting.</summary>
+    private static MoveWords Moves(PriorSession record, IReadOnlyList<SaidWordView> words) =>
+        MovedWords.Asked(record.Session, words.Select(word => word.Id), record.Waiting.Select(word => word.Id));
+
+    /// <summary>
+    /// The words the open moved to the new part, as it is handed them (FOUNDATION1d-ii part 4): read there, their files copied, and marked
+    /// attempted where this runner holds the part, so a hand that cannot be made marks nothing; null where the new part's record did not read.
+    /// </summary>
+    private async Task<MovedWords?> HandedAsync(string from, string to, ChatStart started, CancellationToken ct)
+    {
+        var moved = await MovedWords.OnAsync(context.Service, context.Home, from, to, started.Moved, ct).ConfigureAwait(false);
+        return moved is not null && context.Holds(to) ? await moved.AttemptedAsync(context.Service).ConfigureAwait(false) : moved;
+    }
+
+    /// <summary>
+    /// The handed words taken off: the new part's by their ids there where the open moved them, judged by what it holds after, a failure said
+    /// on it; else the old record's by theirs, naming the new part, as before. True where none of them waits any more.
+    /// </summary>
+    private async Task<bool> TakenAsync(string sessionId, string to, MovedWords? moved, IReadOnlyList<string> ids, CancellationToken ct)
+    {
+        if (moved is null) return await TakeAsync(sessionId, ids, to, ct).ConfigureAwait(false);
+        if (await moved.TakeAsync(context.Service, ct).ConfigureAwait(false)) return true;
+        context.Note(to, WordsNotes.StartNotTaken(to, "they still wait on it."));
         return false;
     }
 

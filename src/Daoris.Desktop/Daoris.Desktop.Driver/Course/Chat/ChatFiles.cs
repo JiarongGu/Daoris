@@ -127,6 +127,35 @@ public static class ChatFiles
     }
 
     /// <summary>
+    /// A moved word's files, kept for <paramref name="from"/> under <paramref name="names"/>, copied into <paramref name="to"/>'s folder by
+    /// their kept names (FOUNDATION1d-ii part 4, the foundation design §3.4 rule 3, O6-F8): files are kept per record and a keyed open moves
+    /// none, so the delivery copies them before it hands the words, and every later reader at the destination (a go-on, a take-back's offer, a
+    /// later move) finds them where the word waits. Idempotent: a name the destination keeps already is passed over, so a copy asked again
+    /// changes nothing. One kept nowhere, or that cannot be read now, is left out; never faults, so the words still go.
+    /// </summary>
+    /// <remarks>
+    /// Not <see cref="Carry"/>: that keeps a word said again at a line's head, which holds files of its own, so a name it keeps already is no
+    /// reason to pass a file over; a moved word's destination opened with the move and holds only what moved to it.
+    /// </remarks>
+    public static void Moved(string home, string from, string to, IReadOnlyList<string> names)
+    {
+        foreach (var name in names)
+        {
+            try
+            {
+                if (Find(home, to, name) is not null || Find(home, from, name) is not { } kept) continue;
+                var folder = Folder(home, to);
+                Directory.CreateDirectory(folder);
+                AtomicFile.WriteBytes(Path.Combine(folder, Path.GetFileName(kept.Path)), AtomicFile.ReadBytes(kept.Path));
+            }
+            catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+            {
+                // Held open or gone since it was kept: the words go without it.
+            }
+        }
+    }
+
+    /// <summary>
     /// A name made safe to keep: any directory in it dropped, a character no file system takes made an
     /// underscore, a trailing dot or space gone (Windows drops them when it opens a file), and a name
     /// that is nothing becoming <c>attachment</c> — <c>QuestFiles.SafeName</c>'s rules.

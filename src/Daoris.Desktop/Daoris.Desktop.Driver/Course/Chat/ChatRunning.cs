@@ -12,7 +12,7 @@ internal interface IChatRunning
         string repository, string adapter, DriverConfig config,
         Func<string, string, Task>? onEnded = null, string? profile = null, bool? ownTree = null,
         CancellationToken ct = default, string? tree = null, ContinuedFrom? from = null, IReadOnlyList<ActorEffective>? order = null,
-        EarlierMaker? leftBy = null, HarnessSelection? settled = null, bool picked = false, bool ownFirst = false);
+        EarlierMaker? leftBy = null, HarnessSelection? settled = null, bool picked = false, bool ownFirst = false, MoveWords? moves = null);
 
     /// <summary>Place Ask Daoris's conversation in its workspace's room: its record open, its agent and account chosen, nothing spawned.</summary>
     Task<HelpPlaced> PlaceHelpAsync(
