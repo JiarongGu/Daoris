@@ -296,7 +296,8 @@ A tree made again on its branch after it was gone (`TreeReturns`, TREEGONE1) tak
 on its record and tells its agent (`TreeStanding.Told`); one cut off while copying takes back its copies and folder, never the branch
 (TREELOCAL2).
 The empty-leftover scan skips directory links at its root and every nested level, leaving both links and their targets
-untouched while removing ordinary empty leftovers (TREELEFTLINK1, D51).
+untouched while removing ordinary empty leftovers (TREELEFTLINK1, D51). A folder it cannot look into because a handle shares
+nothing is said to stay, each press, as a held one is; none is passed over in silence (TREECLEANFREE1).
 The machine's `cap` counts what the driver starts (CAPCOUNT1, D130's note): a driven quest's session, an intake, a helper and a
 reviewer, and the passes of a brainstorm and a meeting, never a conversation the person holds, which spends nothing resting between
 turns. `ActiveSessions.HoldsSlot` tells them by the record's kind, its place and the mark each of the driver's own carries
