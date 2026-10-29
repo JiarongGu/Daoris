@@ -73,7 +73,9 @@ internal static class TreeOpenings
     /// links cannot all go is left, with its branch, for the look, which moves its folder aside whole (<see cref="TreeStrays"/>).
     /// </remarks>
     /// <param name="ours">Whether the open made the folder: one that was there before the add is never deleted.</param>
-    internal static async Task UndoAsync(string root, string path, string branch, bool ours)
+    /// <param name="keepBranch">Whether the branch stands: a tree made again (TREELOCAL2) is cut off with the session's commits on its
+    /// branch, which only an open that made the branch itself takes back.</param>
+    internal static async Task UndoAsync(string root, string path, string branch, bool ours, bool keepBranch = false)
     {
         var done = CancellationToken.None;
         if ((ours || await TreeLeftovers.RegisteredAsync(root, path, done).ConfigureAwait(false) is not false) && TreeLinks.Unlinked(path) is not null)
@@ -105,6 +107,6 @@ internal static class TreeOpenings
             await WorkingTree.GitAsync(root, ["worktree", "remove", "--force", "--force", path], done).ConfigureAwait(false);
         }
 
-        await WorkingTree.GitAsync(root, ["branch", "-D", branch], done).ConfigureAwait(false);
+        if (!keepBranch) await WorkingTree.GitAsync(root, ["branch", "-D", branch], done).ConfigureAwait(false);
     }
 }

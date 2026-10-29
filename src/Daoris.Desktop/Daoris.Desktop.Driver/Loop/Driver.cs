@@ -2761,7 +2761,14 @@ public sealed class Driver(
                         ? null
                         : await GitRemotes.AddressOf(workTree, "origin", ct: ct).ConfigureAwait(false)),
                 // What its tree's open copied of the checkout's dependencies, so it skips the `npm ci` that would delete them (TREEDEPS1).
-                Dependencies = opened?.Dependencies,
+                // And what a tree made again copied the same way (TREELOCAL2), where the session goes on in one.
+                Dependencies = opened?.Dependencies ?? (priorStands?.Told, entryStands?.Told) switch
+                {
+                    ({ } remadePrior, { } remadeEntry) => $"{remadePrior} {remadeEntry}",
+                    ({ } remadePrior, _) => remadePrior,
+                    (_, { } remadeEntry) => remadeEntry,
+                    _ => null,
+                },
                 // Its repository's heavy gates, once at its end through `run-heavy`, where its PATH finds the verb (HEAVYRUN1b1). Looked up
                 // under the quest's repository, the name DAORIS_REPOSITORY hands `run-heavy`, not the checkout's folder (HEAVYRUN1b2a2).
                 // Under its run's checks, the words composed from them (FABRIC-PIPELINE1b): `light`'s light gates, and its heavy gates as

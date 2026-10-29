@@ -296,6 +296,9 @@ cannot (TREELINK1, D51's note); the look's own tidy moves folders aside and neve
 A tree opens with its checkout's npm dependencies where its lockfile matches (`TreeDependencies`, TREEDEPS1) and the files under
 `local/` its repository's gates read, as the checkout's `daoris.gates.json` declares them, copied read-only (`TreeLocalInputs`,
 TREELOCAL1, D216); both are made under a name of their own inside the opening's lock, and the opening says each one it did not copy.
+A tree made again on its branch after it was gone (`TreeReturns`, TREEGONE1) takes the same two copies under the same lock, says them
+on its record and tells its agent (`TreeStanding.Told`); one cut off while copying takes back its copies and folder, never the branch
+(TREELOCAL2).
 The empty-leftover scan skips directory links at its root and every nested level, leaving both links and their targets
 untouched while removing ordinary empty leftovers (TREELEFTLINK1, D51).
 The machine's `cap` counts what the driver starts (CAPCOUNT1, D130's note): a driven quest's session, an intake, a helper and a
