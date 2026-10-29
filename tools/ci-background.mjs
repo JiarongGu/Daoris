@@ -354,17 +354,57 @@ export function fileSighting(record, sighting) {
  * seen failing on (`descends(from, to)`). A late run on an older commit, a bisection's run on a passing ancestor, or a run that
  * does not clear, clears nothing. Answers the record and the findings cleared.
  */
-export function clearPasses(record, { commit, at, kind, passed, descends }) {
+export function clearPasses(record, { commit, at, kind, passed, descends, provenance = null }) {
   if (!CLEARING_KINDS.includes(kind)) return { record, cleared: [] };
   const cleared = [];
   const findings = record.findings.map((each) => {
     if (!open(each) || !passed(each)) return each;
     if (!descends(each.lastSeen.commit, commit)) return each;
-    const done = { ...each, state: 'cleared', cleared: { commit, at, kind } };
+    const kept = provenance?.(each) ?? null;
+    const done = { ...each, state: 'cleared', cleared: { commit, at, kind, ...(kept ? { kept } : {}) } };
     cleared.push(done);
     return done;
   });
   return { record: { ...record, findings }, cleared };
+}
+
+const passedVerdict = (verdict) => verdict === 'PASS' || verdict === 'FLAKE';
+
+/**
+ * CIFINDINGSKEEP1: known reds cleared by the passes a CI run kept rather than ran, under the rules of `clearPasses`. A kept
+ * verdict (`kept`: `{ name, verdict, standing }` as `ciPlan` answers, `verdict` the stored record with its `tree`, `commit`, `at`
+ * and `kind`) qualifies only when its standing is `exact` and its tree is the run's `tree`, it passed, and the run completed
+ * (`stopped` false) and is no sweep alone. It clears a finding of its own gate: a gate finding (`test === gate`) by the verdict
+ * itself, a test finding only where `passesOf(entry)` reads a trx of that kept run listing the test Passed (a Set, or null when
+ * none can be read; a class verdict alone never names a test). The clearing commit is the run's `commit`, never the kept
+ * verdict's, and the kept verdict's own `{ commit, tree, at, kind }` is recorded as `cleared.kept`. Answers the record, the
+ * findings cleared, and `unread`: the open test findings only an unreadable trx kept from clearing.
+ */
+export function clearKept(record, { commit, tree, at, kind, stopped = false, kept, descends, passesOf }) {
+  if (stopped || kind === 'sweep') return { record, cleared: [], unread: [] };
+  const qualifying = (kept ?? []).filter((entry) => entry.verdict && entry.standing?.standing === 'exact'
+    && Boolean(tree) && entry.verdict.tree === tree && passedVerdict(entry.verdict.verdict));
+  const unread = [];
+  const reads = new Map();
+  const passes = (entry) => {
+    if (!reads.has(entry)) reads.set(entry, passesOf(entry) ?? null);
+    return reads.get(entry);
+  };
+  const keptFor = (finding) => qualifying.find((entry) => entry.name === finding.gate && (finding.test === finding.gate || passes(entry)?.has(finding.test)));
+  const done = clearPasses(record, {
+    commit, at, kind, descends,
+    passed: (finding) => {
+      if (keptFor(finding)) return true;
+      const entry = qualifying.find((each) => each.name === finding.gate);
+      if (entry && finding.test !== finding.gate && !passes(entry) && CLEARING_KINDS.includes(kind) && descends(finding.lastSeen.commit, commit)) unread.push(finding);
+      return false;
+    },
+    provenance: (finding) => {
+      const { commit: from, tree: on, at: when, kind: how } = keptFor(finding).verdict;
+      return { commit: from ?? null, tree: on, at: when ?? null, kind: how ?? null };
+    },
+  });
+  return { ...done, unread };
 }
 
 /** An open finding's standing at `now`: `inherited` within `KNOWN_RED_MS` of its test's first sighting, else `expired`; `warn` within twelve hours of it. */

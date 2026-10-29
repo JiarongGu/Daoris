@@ -15,7 +15,7 @@ interface Fingerprint { test: string; exception: string; at: string | null; mess
 interface Finding {
   gate: string | null; unit: string | null; test: string; fingerprint: Fingerprint; signature: Signature; state: string;
   firstSeen: { commit: string; at: string }; lastSeen: { commit: string; at: string; message: string }; since: string;
-  cleared: { commit: string; at: string; kind: string } | null;
+  cleared: { commit: string; at: string; kind: string; kept?: { commit: string; tree: string; at: string; kind: string } } | null;
 }
 interface Findings { schema: number; findings: Finding[] }
 interface Sweep { schema: number; halves: Record<string, { last: string; commit: string; kind: string }>; night: { last: string; commit: string; ended: string } | null }
@@ -51,6 +51,11 @@ const bg = await import(
   fingerprintKey: (fingerprint: Fingerprint) => string;
   fileSighting: (record: Findings, sighting: Sighting) => { record: Findings; how: string; finding: Finding };
   clearPasses: (record: Findings, input: { commit: string; at: string; kind: string; passed: (finding: Finding) => boolean; descends: (from: string, to: string) => boolean }) => { record: Findings; cleared: Finding[] };
+  clearKept: (record: Findings, input: {
+    commit: string; tree: string; at: string; kind: string; stopped?: boolean;
+    kept: { name: string; verdict: { verdict: string; tree?: string | null; commit?: string; at?: string; kind?: string } | null; standing: { standing: string } }[];
+    descends: (from: string, to: string) => boolean; passesOf: (entry: object) => Set<string> | null;
+  }) => { record: Findings; cleared: Finding[]; unread: Finding[] };
   knownRedStanding: (finding: Finding, now: number) => { expired: boolean; warn: boolean };
   knownRed: (record: Findings, failure: { test: string; signature: Signature }, now: number) => Finding | null;
   knownRedLines: (record: Findings, now: number) => string[];
@@ -309,6 +314,61 @@ test('clearing by lineage: an older run finishing late and a bisection on a pass
   const later = bg.fileSighting(cleared.record, sightings(trxOf([{ name: 'N.Tests.WidgetTests.Opens', outcome: 'Failed', message: 'Assert.True() Failure', line: 7 }]), 'c4', at(NOON + 51 * HOUR))[0]!);
   assert.equal(later.how, 'new');
   assert.equal(later.finding.since, at(NOON + 51 * HOUR));
+});
+
+// CIFINDINGSKEEP1: a finding is cleared by a gate's kept pass under the rules of one the run executed.
+test('clearing from kept proof: an exact passing kept verdict of the same gate clears a finding from the run\'s commit, with its provenance; every other case clears nothing', () => {
+  const line = ['c1', 'c2', 'c3', 'c4'];
+  const descends = (from: string, to: string): boolean => line.indexOf(to) >= line.indexOf(from);
+  type Kept = { name: string; verdict: { verdict: string; tree?: string | null; commit?: string; at?: string; kind?: string } | null; standing: { standing: string } };
+  const keptPass = (over: Partial<Kept> = {}, verdict: Partial<NonNullable<Kept['verdict']>> = {}): Kept => ({
+    name: 'driver', verdict: { verdict: 'PASS', tree: 'T4', commit: 'k9', at: at(NOON + 2 * HOUR), kind: 'scoped', ...verdict }, standing: { standing: 'exact' }, ...over,
+  });
+  const gateRed = (gate: string): Findings => {
+    const signature = failures.gateSignature(gate, 'run', `Error: ${gate} failed at step 4`);
+    return bg.fileSighting({ schema: 1, findings: [] }, { gate, unit: gate, test: gate, fingerprint: { test: gate, exception: '', at: null, message: 'x' }, signature, commit: 'c2', at: at(NOON), kind: 'ordinary' }).record;
+  };
+  const testRed = (): Findings => file({ schema: 1, findings: [] }, sightings(trxOf([{ name: 'N.Tests.WidgetTests.Opens', outcome: 'Failed', message: 'Assert.True() Failure', line: 7 }]), 'c2', at(NOON))).record;
+  const run = { commit: 'c4', tree: 'T4', at: at(NOON + 3 * HOUR), kind: 'ci', descends, passesOf: (): Set<string> | null => null };
+  const clearsNone = (record: Findings, kept: Kept[], over: object = {}): void => {
+    const done = bg.clearKept(record, { ...run, kept, ...over });
+    assert.equal(done.cleared.length, 0);
+    assert.equal(done.record.findings[0]!.state, 'red');
+  };
+
+  // The gate finding: cleared on the run's commit, the kept verdict's own commit never the clearing one.
+  const done = bg.clearKept(gateRed('driver'), { ...run, kept: [keptPass()] });
+  assert.equal(done.cleared.length, 1);
+  assert.deepEqual(done.record.findings[0]!.cleared, { commit: 'c4', at: at(NOON + 3 * HOUR), kind: 'ci', kept: { commit: 'k9', tree: 'T4', at: at(NOON + 2 * HOUR), kind: 'scoped' } });
+  assert.equal(done.record.findings[0]!.state, 'cleared');
+  // A FLAKE is a pass too.
+  assert.equal(bg.clearKept(gateRed('driver'), { ...run, kept: [keptPass({}, { verdict: 'FLAKE' })] }).cleared.length, 1);
+
+  // What clears nothing.
+  for (const standing of ['stale', 'unreached', 'records']) clearsNone(gateRed('driver'), [keptPass({ standing: { standing } })]);
+  clearsNone(gateRed('driver'), [keptPass({}, { verdict: 'FAIL' })]);
+  clearsNone(gateRed('driver'), [keptPass({}, { tree: null })]);
+  clearsNone(gateRed('driver'), [keptPass({}, { tree: 'T3' })], {});
+  clearsNone(gateRed('driver'), [keptPass({ name: 'web-unit' })]);
+  clearsNone(gateRed('driver'), [keptPass({ verdict: null })]);
+  clearsNone(gateRed('driver'), [keptPass()], { commit: 'c1' });
+  clearsNone(gateRed('driver'), [keptPass()], { kind: 'scoped' });
+  clearsNone(gateRed('driver'), [keptPass()], { kind: 'bisect' });
+  clearsNone(gateRed('driver'), [keptPass()], { stopped: true });
+  clearsNone(gateRed('driver'), [keptPass()], { kind: 'sweep' });
+
+  // A test finding: cleared only where a readable trx of the kept run lists the test Passed; a class verdict alone names no test.
+  const passes = bg.passingTests(trxOf([{ name: 'N.Tests.WidgetTests.Opens', outcome: 'Passed' }]));
+  const tested = bg.clearKept(testRed(), { ...run, kept: [keptPass({ name: 'driver-process' })], passesOf: () => passes });
+  assert.equal(tested.cleared.length, 1);
+  assert.equal(tested.cleared[0]!.cleared?.kept?.commit, 'k9');
+  const unread = bg.clearKept(testRed(), { ...run, kept: [keptPass({ name: 'driver-process' })], passesOf: () => null });
+  assert.equal(unread.cleared.length, 0);
+  assert.deepEqual(unread.unread.map((each) => each.test), ['N.Tests.WidgetTests.Opens']);
+  const other = bg.passingTests(trxOf([{ name: 'N.Tests.WidgetTests.Other', outcome: 'Passed' }]));
+  assert.equal(bg.clearKept(testRed(), { ...run, kept: [keptPass({ name: 'driver-process' })], passesOf: () => other }).cleared.length, 0);
+  // The gate's own pass does not clear a test finding of it by itself, and a trx is not asked of another gate's kept verdict.
+  assert.equal(bg.clearKept(testRed(), { ...run, kept: [keptPass({ name: 'web-unit' })], passesOf: () => passes }).cleared.length, 0);
 });
 
 // ---------------------------------------------------------------------------------------------------

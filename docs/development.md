@@ -417,7 +417,11 @@ Each failure a run finds is filed as **known red** in `local/ci-findings.json`. 
 from its trx, with the fingerprint (the test with its case, the exception type, the assertion's file and line, and the
 message line) and the signature `tools/test-failures.mjs` gives. Any other gate's failure is filed by its step. A failure
 whose signature an open finding holds only moves that finding's last sighting. A pass of the test, or of the gate, clears
-it, but only on a commit on main's first-parent line from where it was last seen failing. A sighting within a day of a
+it, but only on a commit on main's first-parent line from where it was last seen failing. A pass the run kept instead of
+running clears it under the same rules: the kept verdict stands exactly on the run's tree, passed, and is of the same gate; a
+test's finding needs a readable trx of that kept run listing the test passed, and is left open, and said, where none can be
+read. The clearing commit is the run's own, and the ledger records the kept verdict's commit, tree, time and kind beside it. A
+sighting within a day of a
 clearing restores the finding with its first sighting. A test known red for 72 hours from its first sighting is past
 inheriting: the run and the watch say so, and warn twelve hours before. A death of memory is never filed.
 

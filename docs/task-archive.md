@@ -21568,3 +21568,9 @@ machine-log design §3 say the contract.
 (Quest `#79676fb11f48`.)
 
 **Outcome** 2026-10-29: a closed quest's session ends by one judgement under the session's write lock, taken after its own waits stop; every wait on that path observes the cut and the agent's stream end, the session's own cut puts nothing on the wire, and a go-on is written only where what it was decided on still holds. The quiet counts the turn's own acts on the session's clock, never background progress or meters, and a held permission or an open call is never quiet. Every word the run was asked to send is answered, said unreached, or handed back. Two outside reviews before landing found twelve problems, each fixed with a test seen failing first. Detail in D83's RUNENDS1 note and the FIX-LOG entry of 2026-10-29.
+
+## CIFINDINGSKEEP1 — reconcile findings with retained passing evidence (2026-10-29, D207)
+
+> - [ ] **CIFINDINGSKEEP1 — reconcile findings with retained passing evidence** (stage validation, 2026-10-27). Stage CI on `83ac0a968` retained exact-tree scoped Driver and web-unit passes and passed admission for all 21 gates, but left their two older `93f49d4` gate findings open because `noteBackground` processes executed results only. Reconcile qualifying kept proof under the existing first-parent and passing-test rules, with a regression covering stale or unread evidence; preserve verdict provenance and never clear the ledger by hand (`tools/merge-branch.mjs`, `noteBackground`).
+
+**Outcome** 2026-10-29: the CI run clears a finding from a kept pass that is exact on its tree, passing, of the same gate (a test finding needs a readable trx of the kept run) and on the run's own clearing commit, recording `cleared.kept`; a case that does not qualify clears nothing and an unreadable trx is said. Detail in D207's CIFINDINGSKEEP1 note, `clearKept` in `tools/ci-background.mjs`, and the findings paragraph of `docs/development.md`.
