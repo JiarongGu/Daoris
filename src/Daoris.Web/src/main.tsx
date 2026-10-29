@@ -1,10 +1,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import * as Tooltip from '@radix-ui/react-tooltip';
-import { App } from './app/App';
-import { SecondaryWindowRoot } from './app/SecondaryWindowRoot';
-import { WorkspaceScopeProvider } from './data/scope';
+import { QueryClient } from '@tanstack/react-query';
+import { PageRoot } from './app/PageRoot';
 import { secondaryWindow } from './work/window';
 import { applyTheme } from './design/theme';
 import { applyZoom } from './design/zoom';
@@ -20,7 +17,7 @@ applyTheme();
 applyZoom();
 
 // The page's own failures into the machine log (LOG1b), from before anything can fail. A browser has
-// no bridge and reports nothing.
+// no bridge and reports nothing. A render that throws is the error screen's to report (PAGELOOP1).
 installPageErrors();
 
 const client = new QueryClient({
@@ -33,23 +30,12 @@ const client = new QueryClient({
   },
 });
 
-// Which window this page is (SURF8). A secondary window is a ROUTE into the same bundle — the same
-// bytes, the same components, a different root — which is what makes a monitor on a second screen
-// cost the components it already has instead of a second frontend to keep in step.
+// Which window this page is (SURF8): the application's main window, or a secondary one. `PageRoot` holds both roots under
+// the page's error screen.
 const window_ = secondaryWindow(globalThis.location?.search ?? '');
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <QueryClientProvider client={client}>
-      <Tooltip.Provider delayDuration={300}>
-        {/* The workspace scope wraps the whole shell (WSP5): one scope per query, everywhere —
-            including a secondary window, which follows the window that opened it (MAINWINDOWS3). A
-            monitor scoped to a different circle than the window that opened it would be the worst
-            kind of wrong. Each main window holds its own. */}
-        <WorkspaceScopeProvider>
-          {window_ ? <SecondaryWindowRoot window={window_} /> : <App />}
-        </WorkspaceScopeProvider>
-      </Tooltip.Provider>
-    </QueryClientProvider>
+    <PageRoot client={client} window={window_} />
   </StrictMode>,
 );
