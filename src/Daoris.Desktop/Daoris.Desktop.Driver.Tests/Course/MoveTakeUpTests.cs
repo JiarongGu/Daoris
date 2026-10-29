@@ -25,6 +25,9 @@ public sealed class MoveTakeUpTests : IDisposable
 
     private readonly List<(string Session, Noted Note)> _notes = [];
 
+    /// <summary>The destinations' <c>said</c> part 3's readings read (FOUNDATION1f-i part 3).</summary>
+    private readonly MoveSaidStandIn _said = new();
+
     private StoreSettled _settled = StoreSettled.Yes;
 
     public MoveTakeUpTests() => Directory.CreateDirectory(_home);
@@ -40,7 +43,7 @@ public sealed class MoveTakeUpTests : IDisposable
         new(_home, () => _settled, each => !_dead.Contains(each.Run), run, kind, _clock);
 
     private MoveTakeUp TakeUp(MoveStore store, MoveTakeUpScope? scope = null, params IMoveBoxImport[] imports) =>
-        new(_home, store, scope ?? MoveTakeUpScope.Conversations, imports, (session, note) => _notes.Add((session, note)), _clock);
+        new(_home, store, scope ?? MoveTakeUpScope.Conversations, imports, (session, note) => _notes.Add((session, note)), _clock, _said);
 
     private static MoveDecision Decision(string left, string executor = MoveExecutors.Conversation) =>
         new(left, executor, MoveHows.Brief, HandOverWhy.Limit, HandOverBy.Daoris) { FromEnded = true };
@@ -408,5 +411,83 @@ public sealed class MoveTakeUpTests : IDisposable
 
         Assert.Empty(said);
         Assert.Equal(0, LogLines("home.another-shell"));
+    }
+
+    // ——— Part 3: a taken move at `delivering` read by `sent`, and every hold read by §3.3's one rule at each come-up and look.
+
+    /// <summary>A move of <paramref name="left"/> opened onto <c>{left}-next</c> with the words named waiting there, at <c>delivering</c>, its prompt marked and every word attempted.</summary>
+    private MoveClaim DeliveringMove(MoveStore store, string left, params string[] words)
+    {
+        var claim = store.Decide(Decision(left)).Claim!;
+        store.Opening(claim, $"opens-{left}");
+        store.Opened(claim, $"{left}-next", [.. words.Select((word, at) => new MoveRecordWord(word, null, $"opens-{left}/{word}", at))]);
+        foreach (var word in words) _said.Wait($"{left}-next", word);
+        store.Advance(claim, MoveRecordPhase.Delivering);
+        store.MarkEffect(claim, MoveEffects.Prompt);
+        _said.Attempt($"{left}-next", words);
+        return claim;
+    }
+
+    /// <summary>A move of <paramref name="left"/> opened onto <c>{left}-next</c> with the words named waiting there, held for the person naming each (§19.3).</summary>
+    private MoveClaim HeldMove(MoveStore store, string left, params string[] words)
+    {
+        var claim = store.Decide(Decision(left)).Claim!;
+        store.Opening(claim, $"opens-{left}");
+        store.Opened(claim, $"{left}-next", [.. words.Select((word, at) => new MoveRecordWord(word, null, $"opens-{left}/{word}", at))]);
+        foreach (var word in words) _said.Wait($"{left}-next", word);
+        store.Hold(claim, MoveHoldWhy.Superseded, words.ToDictionary(word => $"opens-{left}/{word}", _ => MoveWordDispositions.Held, StringComparer.Ordinal));
+        return claim;
+    }
+
+    [Fact]
+    public async Task A_dead_run_s_move_at_delivering_is_read_by_sent_after_its_take_closed_delivered_where_every_word_has_it_and_held_where_one_does_not()
+    {
+        var dead = Store("run-dead");
+        var written = DeliveringMove(dead, "s1", "w1");
+        dead.Sent(written, ["opens-s1/w1"]);
+        var cut = DeliveringMove(dead, "s2", "v1");
+        _said.Gone("s2-next", "v1");
+        _dead.Add("run-dead");
+
+        var look = await TakeUp(Store("run-shell")).ComeUpAsync(Standing);
+
+        Assert.Equal([written.Move], look.Delivered.Select(move => move.Id));
+        Assert.Equal(MoveRecordPhase.Delivered, Store("run-probe").Read(written.Move)!.Phase);
+        Assert.Empty(_said.Of("s1-next"));
+        var held = Assert.Single(look.Held);
+        Assert.Equal((cut.Move, (string?)MoveHoldWhy.Undelivered), (held.Id, held.HeldWhy));
+        Assert.Equal(MoveWordDispositions.Left, Store("run-probe").WordsOf(cut.Move).Single().Disposition);
+
+        // Its left word waits nowhere and its begun effect on no `said`: closed resolved in the same look.
+        Assert.Equal([cut.Move], look.Resolved.Select(move => move.Id));
+        Assert.Empty(look.Taken);
+    }
+
+    [Fact]
+    public async Task Every_hold_of_the_unit_s_scope_is_read_by_the_one_rule_at_each_come_up_and_look_its_own_and_a_dead_run_s_and_never_a_live_run_s()
+    {
+        var shell = Store("run-shell");
+        var own = HeldMove(shell, "s1", "w1");
+        var dead = HeldMove(Store("run-dead"), "s2", "v1");
+        var live = HeldMove(Store("run-live"), "s3", "u1");
+        _dead.Add("run-dead");
+
+        // While no one ran, the person took v1 back at the dead run's destination: its hold closes at the come-up, once taken.
+        _said.Gone("s2-next", "v1");
+        var comeUp = await TakeUp(shell).ComeUpAsync(Standing);
+
+        Assert.Equal([dead.Move], comeUp.Resolved.Select(move => move.Id));
+        Assert.Equal(("run-shell", MoveCloseWhy.Resolved), (shell.Read(dead.Move)!.ClaimRun, shell.Read(dead.Move)!.ClosedWhy!));
+        Assert.Equal(MoveRecordPhase.Held, shell.Read(own.Move)!.Phase);
+
+        // Then the person takes w1 and u1 back: this shell's own hold closes at its next look; the live run's is its own executor's to read.
+        _said.Gone("s1-next", "w1");
+        _said.Gone("s3-next", "u1");
+        var look = await TakeUp(shell).LookAsync(Standing);
+
+        Assert.Equal([own.Move], look.Resolved.Select(move => move.Id));
+        Assert.Equal((MoveRecordPhase.Held, "run-live"), (shell.Read(live.Move)!.Phase!.Value, shell.Read(live.Move)!.ClaimRun));
+        Assert.True(shell.Decide(Decision("s1")).Claimed);
+        Assert.False(shell.Decide(Decision("s3")).Claimed);
     }
 }
