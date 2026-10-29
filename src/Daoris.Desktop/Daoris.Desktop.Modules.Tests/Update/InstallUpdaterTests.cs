@@ -31,6 +31,9 @@ public sealed class InstallUpdaterTests : Bridge
     // The updater's clock, which a test moves (DRAINHOLD1); the machine log's stays at Now.
     private DateTimeOffset _now = Now;
 
+    // Each read of the work, where a test answers them in turn (DRAINHOLD1); none answers _work.
+    private Func<UpdateWork>? _reads;
+
     public InstallUpdaterTests()
     {
         _install = Path.Combine(Home, "install");
@@ -41,7 +44,7 @@ public sealed class InstallUpdaterTests : Bridge
 
     private InstallUpdater Updater(string? install = "") => new(
         install == "" ? _install : install, DataHome, new MachineLog(DataHome, "desktop", () => Now),
-        work: () => _work,
+        work: () => _reads?.Invoke() ?? _work,
         relaunch: _ =>
         {
             _relaunched++;
@@ -142,6 +145,37 @@ public sealed class InstallUpdaterTests : Bridge
         Assert.True(updater.Draining);
         Assert.True(updater.Applying);
         Assert.Equal(3 * 3600, Logged("update.applying").Single()["waitedSeconds"]!.GetValue<long>());
+    }
+
+    /// <summary>
+    /// DRAINHOLD1, a review's finding: once the look reads no work, the presses are held and the build checked, and only then is the work
+    /// read again. Work begun since the first read (a turn a press let through opened, a helper the look started, a conversation the window
+    /// began) is seen: the update drains on, nothing closes, and the presses are let through again.
+    /// </summary>
+    [Fact]
+    public async Task Work_begun_after_the_look_read_none_is_read_again_under_the_hold_and_keeps_it_draining()
+    {
+        Stage("b1");
+        using var updater = Updater();
+        var answers = new Queue<UpdateWork>([new UpdateWork(0, 0), new UpdateWork(0, 1)]);
+        var held = new List<bool>();
+        _reads = () =>
+        {
+            held.Add(updater.Applying);
+            return answers.Count > 0 ? answers.Dequeue() : new UpdateWork(0, 1);
+        };
+
+        var state = await updater.LookAsync();
+
+        Assert.Equal(UpdateStates.Draining, state.State);
+        Assert.Equal(1, state.Turns);
+        Assert.Equal(Now, state.Since);
+        Assert.Equal([false, true], held);
+        Assert.False(updater.Applying);
+        Assert.True(updater.Draining);
+        Assert.Equal(0, _relaunched);
+        Assert.Equal(0, _closed);
+        Assert.Empty(Logged("update.applying"));
     }
 
     /// <summary>DRAINHOLD1: *Not now* ends the drain, and with it its since; *Update now* closes with no drain to have waited.</summary>

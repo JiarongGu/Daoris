@@ -121,9 +121,10 @@ public sealed class InstallUpdater(
     }
 
     /// <summary>
-    /// Whether the drain is over and the application closes for the update (DRAINHOLD1): from the moment a look takes the launcher, before
-    /// it says <see cref="UpdateStates.Applying"/>, until a swap that did not take is put away. The pipe holds every press from here, as at a
-    /// close; while it only drains, it lets through what starts nothing the drain waits on.
+    /// Whether the drain is over and the application closes for the update (DRAINHOLD1): from the moment a look finds the work allows it,
+    /// before it says <see cref="UpdateStates.Applying"/>, until a swap that did not take is put away. The pipe holds every press from here,
+    /// as at a close; while it only drains, it lets through what starts nothing the drain waits on. The build is checked and the work read
+    /// again under this hold, and work begun since the first read withdraws it, the drain going on.
     /// </summary>
     public bool Applying
     {
@@ -381,19 +382,51 @@ public sealed class InstallUpdater(
 
     private async Task<UpdateState> ApplyAsync(string id, UpdateBuild? staged, string mode, UpdateWork now, string by)
     {
-        // Checked by the application before it closes for it (D139 §4); the launcher checks again before it moves a file.
-        if (StagedBuild.Check(install!) is { } problem)
+        lock (_gate)
         {
-            return Refuse(id, staged, mode, new UpdateProblem(problem.Code, problem.Sentence));
+            // Another look met the moment first, and its relaunch is under way: one launcher, however many looks.
+            if (_applying) return _state;
+            // DRAINHOLD1: the presses are held from here (Applying), before the build is checked and the work read again.
+            _applying = true;
+        }
+
+        UpdateProblem? refused = null;
+        try
+        {
+            // Checked by the application before it closes for it (D139 §4); the launcher checks again before it moves a file.
+            if (StagedBuild.Check(install!) is { } problem) refused = new UpdateProblem(problem.Code, problem.Sentence);
+            // DRAINHOLD1, a review's finding: what began after the look read no work (a turn a press let through opened, a helper the look
+            // started, a conversation the window began) is read again now that no press passes, and the drain goes on for it. *Update now*
+            // closes whatever runs, so it reads nothing.
+            else if (by == "idle" && work() is var again && !InstallUpdate.Idle(again.Driven, again.Turns))
+            {
+                DateTimeOffset? since;
+                lock (_gate)
+                {
+                    _applying = false;
+                    since = _drainSince;
+                }
+
+                return Publish(new UpdateState(UpdateStates.Draining, staged, mode, again.Driven, again.Turns, null, Outcome(), Last(), since));
+            }
+        }
+        catch
+        {
+            // A check or a read that failed closes nothing, and the presses go on.
+            lock (_gate) _applying = false;
+            throw;
+        }
+
+        if (refused is not null)
+        {
+            lock (_gate) _applying = false;
+            return Refuse(id, staged, mode, refused);
         }
 
         double waited;
         DateTimeOffset? drained;
         lock (_gate)
         {
-            // Another look met the moment first, and its relaunch is under way: one launcher, however many looks.
-            if (_applying) return _state;
-            _applying = true;
             drained = _drainSince;
             waited = drained is { } since ? Math.Max(0, (Now - since).TotalSeconds) : 0;
         }
