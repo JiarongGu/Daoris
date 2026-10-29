@@ -38,7 +38,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/agents/AgentsView.test.tsx` | 117 | 2251 |
 | `src/Daoris.Web/src/agents/agents.test.ts` | 42 | 730 |
 | `src/Daoris.Web/src/app/App.test.tsx` | 45 | 866 |
-| `src/Daoris.Web/src/app/App.tsx` | 90 | 1564 |
+| `src/Daoris.Web/src/app/App.tsx` | 90 | 1566 |
 | `src/Daoris.Web/src/app/pushedState.test.tsx` | 63 | 1325 |
 | `src/Daoris.Web/src/bridge/sessions/sessions.ts` | 50 | 968 |
 | `src/Daoris.Web/src/data/api.ts` | 55 | 910 |
@@ -272,7 +272,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Cli/test/desktop-tool.test.ts` | 47 | 895 |
 | `src/Daoris.Cli/test/dogfood.test.ts` | 48 | 840 |
 | `src/Daoris.Cli/test/usage-report.test.ts` | 87 | 1455 |
-| `src/Daoris.Cli/tool-test/desktop-publish.test.ts` | 81 | 1378 |
+| `src/Daoris.Cli/tool-test/desktop-publish.test.ts` | 82 | 1391 |
 | `src/Daoris.Cli/tool-test/merge-branch.test.ts` | 485 | 7217 |
 | `src/Daoris.Cli/tool-test/merge-queue.test.ts` | 127 | 1911 |
 | `src/Daoris.Cli/tool-test/setup-kit.test.ts` | 56 | 1039 |
@@ -282,7 +282,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | File | KB | Lines |
 |---|---|---|
 | `tools/deployment-rehearsal.mjs` | 105 | 1815 |
-| `tools/desktop-publish.mjs` | 85 | 1475 |
+| `tools/desktop-publish.mjs` | 86 | 1493 |
 | `tools/desktop.mjs` | 54 | 1097 |
 | `tools/family-rehearsal.mjs` | 359 | 6239 |
 | `tools/knowledge-bench.mjs` | 46 | 900 |
