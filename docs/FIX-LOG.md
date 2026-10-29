@@ -5,6 +5,13 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-30 - An agent only a workspace pins was refused as not installed (WSPINONLY1)
+
+- **Symptom:** a start of an agent pinned for a workspace, with no machine-wide install or pin, was refused as not installed, though the pin's managed install was on disk. FOUNDATION1j part ii's voice test had to install a machine-wide version to pass.
+- **Root cause:** the selection resolved the workspace's pin and found its managed binary, then judged presence from the roster's binary look, which probes with the machine's settings alone (no workspace) and so read the machine's install and pin, never the workspace's.
+- **Fix:** the selection counts the agent present when the pin it resolved for this start has its managed install, and runs that pin's version where the machine look names none. Another workspace's start resolves no such pin and still asks the machine; a machine-wide install is unchanged.
+- **Verify:** `BrainstormVoicePlanTests` (the workspace-pinned case failed first, without the machine-wide install it had added; two cases added for the other workspace and the machine-wide install), with `StartPlanTests`, `HarnessTests`, `ProviderCensusTests`, `StructureTests`, `GitSeedTests`, `ShortWaitsCensusTests` and `ReviewerChoiceTests`: 164 passed.
+
 ## 2026-10-30 - An owner-set case read an act refused at the door as a failure of the gate (FLAKE1)
 
 - **Symptom:** candidate `818420d`'s modules run failed `OwnerSetTests.The_owner_s_act_and_the_steward_s_never_interleave_either_way_round`, 1 of 2,738. The act came back an IPC error, `owner-set`, where the case expected an answer that it was refused as owner-set.

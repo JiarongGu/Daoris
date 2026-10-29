@@ -159,7 +159,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Adapters.cs` | 149 | 2564 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/AgentAccountsCommand.cs` | 48 | 907 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/AgentsCommand.cs` | 53 | 982 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/HarnessRoster.cs` | 139 | 2401 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/HarnessRoster.cs` | 140 | 2409 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/HarnessSelection.cs` | 41 | 751 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/HarnessSettings.cs` | 72 | 1329 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/UsageHistory.cs` | 47 | 929 |
