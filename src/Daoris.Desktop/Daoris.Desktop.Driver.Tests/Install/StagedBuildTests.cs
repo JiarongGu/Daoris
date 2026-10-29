@@ -360,7 +360,9 @@ public sealed class StagedBuildTests : IDisposable
         held.Dispose();
 
         Assert.Equal(SwapPhase.Installed, outcome.Phase);
-        var hold = Assert.Single(StagedBuild.ReadJournal(_install)!.Holds!);
+        // The hold on `app` is the case's own; another step's brief, unnamed hold (the staged folder moving in, refused for a moment
+        // by a scanner or a builder on a loaded machine) is not what it is about, so it is picked out by the move it held.
+        var hold = Assert.Single(StagedBuild.ReadJournal(_install)!.Holds!, entry => entry.From == "app");
         Assert.True(hold.Released);
         Assert.Equal("app/Daoris.Desktop.App.dll", hold.Held);
         Assert.Contains($"(pid {Environment.ProcessId})", hold.By);
