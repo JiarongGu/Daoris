@@ -16,7 +16,14 @@ namespace Daoris.Driver;
 /// <param name="Passed">The accounts of its agent this voice already passed for its model: the one bounded restart leaves them out.</param>
 public sealed record BrainstormTurn(
     string Id, string Turn, string Agent, string Room, string Instruction, string Answer, int Minutes,
-    ActorEffective? Entry = null, IReadOnlyCollection<string>? Passed = null);
+    ActorEffective? Entry = null, IReadOnlyCollection<string>? Passed = null)
+{
+    /// <summary>
+    /// The workspace of the repository its brainstorm asks about (FOUNDATION1j part ii, the foundation design §2.4's table), for the version it
+    /// pins; null for a brainstorm on no repository, and for a meeting's turn, which asks the machine's.
+    /// </summary>
+    public string? Workspace { get; init; }
+}
 
 /// <summary>How a turn went: whether it ran, the account it ran as (this machine only), why it did not run, and the look's line.</summary>
 /// <param name="Code">Why it did not run, or how it failed: a fixed code; null for a turn that ran and ended.</param>

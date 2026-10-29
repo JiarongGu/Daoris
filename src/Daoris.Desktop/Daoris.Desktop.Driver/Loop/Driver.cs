@@ -1354,8 +1354,9 @@ public sealed class Driver(
                 var workspaces = held.Select(each => each.Started.Workspace).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
                 // The person's name for the account, read as the look says the wait (ACCT2b): the page says it, the log the id.
                 var names = AccountNames.Of(Context.Harnesses.Home, cooling.Agent);
+                // The agent the start asked, as its plan answered it, where its hold says one (FOUNDATION1j part ii); else the one it began on.
                 return new AccountWait(
-                    held[0].Started.Adapter, cooling.Agent, cooling.Account, workspaces.Count == 1 ? workspaces[0] : null,
+                    held[0].Came!.Agent ?? held[0].Started.Adapter, cooling.Agent, cooling.Account, workspaces.Count == 1 ? workspaces[0] : null,
                     cooling.Until, cooling.Stated, held[0].Came!.Held ?? CoolingWords.Hold(cooling, Context.Harnesses.Zone, names))
                 {
                     Quests = [.. held.Select(each => each.Started.Quest).OfType<string>()],
@@ -1385,7 +1386,7 @@ public sealed class Driver(
                 var held = agent.ToList();
                 var workspaces = held.Select(each => each.Started.Workspace).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
                 return new AccountWait(
-                    held[0].Started.Adapter, held[0].Came!.SignedOut!.Agent, null, workspaces.Count == 1 ? workspaces[0] : null,
+                    held[0].Came!.Agent ?? held[0].Started.Adapter, held[0].Came!.SignedOut!.Agent, null, workspaces.Count == 1 ? workspaces[0] : null,
                     Until: null, Stated: false, held[0].Came!.Held ?? "")
                 {
                     Quests = [.. held.Select(each => each.Started.Quest).OfType<string>()],
@@ -1930,12 +1931,27 @@ public sealed class Driver(
         var quest = start.Quest;
         var root = start.Root!;
         var isolated = config.OpensOwnTree(quest.To);
-        StartRun Hold(string why) => new($"held  #{quest.Id} → {quest.To}: {why}", false, null, why);
 
         // The agent this start runs on (MIXAGENT1a-ii, D163 point 1): the one a hand-over named for the quest, held until the quest
-        // leaves this machine, else the machine's. A local, and a parameter wherever it is passed on: starts run side by side.
+        // leaves this machine; else a continuation's record's own (FOUNDATION1j part ii; the foundation design §2.4 and §7 row 5, D205
+        // point 1): the agent its asked choice was asked of, never the machine's `adapter` key, so a part that ran on Build's second choice
+        // goes on there; a first start's is the walk's, below. A local, and a parameter wherever it is passed on: starts run side by side.
         var handedQuest = new HandedQuests(home).Read(quest.Id);
         var agent = handedQuest?.Agent ?? config.Adapter;
+        // Each hold names the agent the start asked, which the look's report of a wait names (the design §2.4's second row).
+        StartRun Hold(string why) => new($"held  #{quest.Id} → {quest.To}: {why}", false, null, why) { Agent = agent };
+        if (handedQuest is null && start.Resumes is { } goesOnFrom)
+        {
+            try
+            {
+                agent = StartPlan.ContinuedOn(goesOnFrom, config);
+            }
+            catch (DriverException error)
+            {
+                return Hold(error.Message);
+            }
+        }
+
         // Whether this start carries on from the very session the quest was handed over from: the one whose instruction and note say so.
         var handedFrom = handedQuest is not null && start.Resumes is { } earlier
                          && string.Equals(earlier.Session, handedQuest.From, StringComparison.Ordinal);
@@ -2688,9 +2704,10 @@ public sealed class Driver(
             {
                 // The mode its repository's permission prompts name on its harness (AUTONOMY1b), on either door.
                 Access = permissions,
-                // MODELROLE1c (D205 §3.2): what the entry the walk took names, carried on every run; a continuation keeps its record's.
+                // MODELROLE1c (D205 §3.2): what the entry the walk took names, carried on every run; a continuation keeps its record's,
+                // and its choice with it (FOUNDATION1j part ii, §3.5(a)), so a part carried on from Build's second choice says it is that one.
                 Asked = chosen?.Asked ?? (start.Resumes is { } carried ? carried.Asked : ActorAsked.Before(adapter.Name)),
-                Choice = chosen?.From,
+                Choice = chosen?.From ?? start.Resumes?.Choice,
                 Browser = InAppBrowserServers.Told(browserDrivers),
                 ReadsAcross = across.Reads,
                 WritesAcross = across.Writes,
