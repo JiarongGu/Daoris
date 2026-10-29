@@ -162,7 +162,7 @@ public sealed class HomeLease : IDisposable
                 continue;
             }
 
-            if (Parse(seen) is { } named && Alive(named.Holder.Pid, named.Started))
+            if (Parse(seen) is { } named && ProcessLiveness.Alive(named.Holder.Pid, named.Started))
             {
                 holder = named.Holder;
                 return null;
@@ -301,7 +301,7 @@ public sealed class HomeLease : IDisposable
 
     /// <summary>The live holder a file names, or null.</summary>
     private static LeaseHolder? Live(string path) =>
-        Read(path, out _) is { } seen && Parse(seen) is { } named && Alive(named.Holder.Pid, named.Started) ? named.Holder : null;
+        Read(path, out _) is { } seen && Parse(seen) is { } named && ProcessLiveness.Alive(named.Holder.Pid, named.Started) ? named.Holder : null;
 
     /// <summary>This process, as its lease names it, with the home's id, minted where it has none (§3.1).</summary>
     private static string Describe(LeaseKind kind, string? what, string home)
@@ -420,31 +420,6 @@ public sealed class HomeLease : IDisposable
         catch (Exception error) when (error is JsonException or ArgumentOutOfRangeException)
         {
             return null;
-        }
-    }
-
-    /// <summary>Whether the process a lease names still runs as the process it named.</summary>
-    private static bool Alive(int pid, long started)
-    {
-        try
-        {
-            using var process = Process.GetProcessById(pid);
-            return Math.Abs(process.StartTime.ToUniversalTime().Ticks - started) < TimeSpan.TicksPerSecond;
-        }
-        catch (ArgumentException)
-        {
-            // No process has that id now.
-            return false;
-        }
-        catch (InvalidOperationException)
-        {
-            // Exited as we looked.
-            return false;
-        }
-        catch (System.ComponentModel.Win32Exception)
-        {
-            // Its start time is not ours to read: cannot tell, so it holds.
-            return true;
         }
     }
 }
