@@ -18,7 +18,10 @@ type Outcome = { result: 'pass' } | { result: 'fail'; signature: Signature } | {
 interface Failure { unit?: string; test?: string | undefined; gate: string; signature: Signature; names: 'test' | 'gate' }
 interface ContainedIn { line?: boolean; branch?: string; request?: string | undefined; commit?: string }
 interface Member { branch: string; tip: string; request?: string; seq?: number; message?: string; commit?: string; at?: string; containedIn?: ContainedIn; handedBack?: { how: string; at?: string; failure?: string; with?: string[]; interacting?: string[]; paths?: string[]; why?: string } }
-interface Judged { outcome: string; member?: number; with?: number[]; interacting?: number[]; why?: string; said?: string; runs: unknown[] }
+interface Judged { outcome: string; member?: number; with?: number[]; interacting?: number[]; why?: string; said?: string; runs: unknown[]; confirm?: Confirm }
+interface Evidence { conclusive: boolean; doubts: { at: string; why: string }[]; waitedMs?: number | null; ids?: string[] }
+interface Confirm { result: string; why?: string; evidence?: Evidence | null; composition?: { units: string[] | null; digest: string | null } | null; failures?: Failure[]; error?: unknown }
+type Whole = { held: true; ids: string[]; end: () => Evidence } | { held: false; dropped: boolean; why: string; evidence: Evidence };
 interface Candidate { base: string; tip: string; members: Member[]; contained?: Member[]; state: string; reforms: number; recordsOnly: boolean; held?: { on: string; why: string }; run?: { pid: number } }
 interface Queue {
   schema: number; queued: Member[]; previews: Record<string, { tip: string }>; candidate: Candidate | null; stop: unknown; handedBack: Member[]; landed?: Member[]; drained?: Drained;
@@ -64,9 +67,20 @@ const q = await import(
   promotion: (candidate: Candidate, facts: { mainTip: string; clean: boolean }) => { action: string; why?: string };
   reformCount: (candidate: Candidate, facts: { recordsOnlyMove: boolean }) => { reforms: number; recordsOnly: boolean; heldByDirect: boolean };
   placeOnPrefixes: (seq: Outcome[], signature: Signature) => { outcome: string; member?: number; interacting?: number[]; why?: string };
-  judgeFailure: (failure: Failure, context: { members: number; run: (failure: Failure, k: number) => Promise<Outcome>; alone?: (failure: Failure, k: number) => Promise<Outcome>; known?: { expired: boolean; lastSeen: string } | null; baseCommit?: string }) => Promise<Judged>;
+  judgeFailure: (failure: Failure, context: { members: number; run: (failure: Failure, k: number) => Promise<Outcome>; alone?: (failure: Failure, k: number) => Promise<Outcome>; known?: { expired: boolean; lastSeen: string } | null; baseCommit?: string; confirm?: Confirm | (() => Confirm | Promise<Confirm>) }) => Promise<Judged>;
   memoryStep: (attempts: { died: boolean; peakGb?: number }[], options?: { afterHold?: boolean; needGb?: number }) => { next: string; note?: string };
-  candidateOutcome: (judgements: { failure: Failure; judged: Judged }[], members: Member[]) => { action: string; handedBack?: Member[]; retain?: Member[]; inherited?: Failure[]; flakes?: Failure[]; why?: string };
+  candidateOutcome: (judgements: { failure: Failure; judged: Judged }[], members: Member[], policy?: { unconfirmed?: string | undefined }) => {
+    action: string; handedBack?: Member[]; retain?: Member[]; inherited?: Failure[]; flakes?: Failure[]; why?: string; on?: string;
+    sightings?: { failure: Failure; confirm: Confirm }[]; inconclusive?: Failure[]; passedOnConfirm?: string[];
+  };
+  confirmStep: (input: { take: (request: { what: string; halted: () => boolean }) => Promise<Whole>; run: () => Promise<unknown>; halted?: () => boolean; what?: string }) => Promise<Confirm>;
+  confirmReadings: (confirm: Confirm, failures: Failure[]) => { failure: Failure; confirm: Confirm }[];
+  INTEGRATION_POLICY: string;
+  INTEGRATION_SIGHTINGS: string;
+  readIntegrationPolicy: (root: string) => { unconfirmed: string; said: string };
+  sightingOf: (input: { failure: Failure; candidate: { base: string; tip: string; members: Member[] }; confirm: Confirm; policy: string; at: string }) => Record<string, unknown>;
+  appendSighting: (root: string, sighting: object) => void;
+  readSightings: (root: string) => Record<string, unknown>[];
   recheckDue: (stop: { at: string; rechecks?: { at: string }[] } | null, now: number) => boolean;
   noteRecheck: (stop: { at: string }, recheck: { at: string; passed: boolean; by: string }) => unknown;
   gitBudget: (input: { classes: { name: string; ms?: number; subject?: boolean; failures?: number; knownRed?: boolean }[]; overheadMs?: number; budgetMs?: number; lanes?: number }) => { run: string[]; deferred: string[]; predictedMs: number; overrun: boolean };
@@ -82,7 +96,7 @@ const q = await import(
 };
 const failures = await import(
   // @ts-expect-error — untyped workspace tooling
-  '../../../tools/test-failures.mjs') as { gateSignature: (gate: string, step: string, output: string) => Signature };
+  '../../../tools/test-failures.mjs') as { gateSignature: (gate: string, step: string, output: string) => Signature; signatureKey: (signature: Signature) => string };
 const machine = await import(
   // @ts-expect-error — untyped workspace tooling
   '../../../tools/machine-admission.mjs') as { admissionFile: (home: string) => string };
@@ -561,6 +575,304 @@ describe('a red candidate, judged by its signature over the base and every prefi
     const judged = await q.judgeFailure(testFailure(s), { members: 3, run: prefixes([PASS, { result: 'cannot', signature: build }, fail(s), fail(s)]).run });
     assert.equal(judged.outcome, 'unresolved');
     assert.match(judged.why ?? '', /cannot run the selection/);
+  });
+});
+
+/**
+ * INTEGRATE1b part 1 (design §4.5, §5.3 step 3, §11 row b): the confirm run's pure pieces, which no queue path calls yet. The failing
+ * gate is run once more as composed holding the whole admission; a failure that does not recur is a sighting and splits by default.
+ */
+describe('INTEGRATE1b: the confirm run, before any base or prefix run', () => {
+  const s = sig('Assert.Equal(expected, actual);');
+  const other = sig('Assert.Empty(errors);', 'Driver.Tests.TreeTests.Lands');
+  const SHOWN: Evidence = { conclusive: true, doubts: [], waitedMs: 1200, ids: ['p-01', 'p-02', 'p-03'] };
+  const BESIDE: Evidence = { conclusive: false, doubts: [{ at: 'beat', why: "another live hold stands beside it: session s-1's dotnet test" }], waitedMs: 0, ids: ['p-01'] };
+  /** A whole admission that answers the evidence given, counting its takes and its ends. */
+  function wholeOf(evidence: Evidence, refused: { dropped?: boolean; why?: string } | null = null) {
+    const calls = { take: 0, end: 0 };
+    return {
+      calls,
+      take: async (): Promise<Whole> => {
+        calls.take += 1;
+        if (refused) return { held: false, dropped: refused.dropped ?? false, why: refused.why ?? 'no home', evidence };
+        return { held: true, ids: evidence.ids ?? [], end: () => { calls.end += 1; return evidence; } };
+      },
+    };
+  }
+  const composition = { units: ['SessionTests'], settings: { gate: 'driver' }, digest: 'sha256:abc' };
+
+  test('a confirm run that passes holding the whole admission is unconfirmed, and its places are let go', async () => {
+    const whole = wholeOf(SHOWN);
+    const confirm = await q.confirmStep({ take: whole.take, run: async () => ({ result: 'pass', composition }) });
+    assert.equal(confirm.result, 'unconfirmed');
+    assert.deepEqual(confirm.evidence, SHOWN);
+    assert.deepEqual(confirm.composition, { units: ['SessionTests'], digest: 'sha256:abc' });
+    assert.deepEqual(whole.calls, { take: 1, end: 1 });
+  });
+
+  test('one that fails again is confirmed, with the failures it failed with', async () => {
+    const whole = wholeOf(SHOWN);
+    const confirm = await q.confirmStep({ take: whole.take, run: async () => ({ result: 'fail', failures: [testFailure(s)] }) });
+    assert.equal(confirm.result, 'confirmed');
+    assert.deepEqual(confirm.failures, [testFailure(s)]);
+    assert.equal(whole.calls.end, 1);
+  });
+
+  test('inconclusive is judged first: beside another live hold, a failure again and a pass both read inconclusive', async () => {
+    for (const answer of [{ result: 'fail', failures: [testFailure(s)] }, { result: 'pass' }]) {
+      const confirm = await q.confirmStep({ take: wholeOf(BESIDE).take, run: async () => answer });
+      assert.equal(confirm.result, 'inconclusive', answer.result);
+      assert.match(confirm.why ?? '', /another live hold stands beside it/);
+    }
+  });
+
+  test('an admission it could not take is inconclusive, and the gate is not run again', async () => {
+    let ran = false;
+    const confirm = await q.confirmStep({ take: wholeOf({ ...SHOWN, conclusive: false }, { why: "the machine's record could not be written (EPERM)" }).take, run: async () => { ran = true; return { result: 'pass' }; } });
+    assert.equal(confirm.result, 'inconclusive');
+    assert.match(confirm.why ?? '', /could not be written/);
+    assert.equal(ran, false);
+  });
+
+  test('an answer that does not read as a pass or as failures is inconclusive', async () => {
+    for (const answer of [{ result: 'fail', failures: [] }, { result: 'fail' }, { result: 'busy' }, null, { result: 'fail', failures: [{ gate: 'driver' }] }]) {
+      const confirm = await q.confirmStep({ take: wholeOf(SHOWN).take, run: async () => answer });
+      assert.equal(confirm.result, 'inconclusive', JSON.stringify(answer));
+    }
+  });
+
+  test('a drop ends it: before the take, while it waits, and during the run, every place let go', async () => {
+    const before = wholeOf(SHOWN);
+    assert.equal((await q.confirmStep({ take: before.take, run: async () => ({ result: 'pass' }), halted: () => true })).result, 'dropped');
+    assert.equal(before.calls.take, 0, 'nothing is taken once dropped');
+
+    assert.equal((await q.confirmStep({ take: wholeOf(SHOWN, { dropped: true }).take, run: async () => ({ result: 'pass' }) })).result, 'dropped');
+
+    const during = wholeOf(SHOWN);
+    let stop = false;
+    const ended = new Error('the drop ended the probe running');
+    const confirm = await q.confirmStep({ take: during.take, run: async () => { stop = true; throw ended; }, halted: () => stop });
+    assert.equal(confirm.result, 'dropped');
+    assert.equal(confirm.error, ended, 'the drop the run threw is handed on');
+    assert.equal(during.calls.end, 1);
+  });
+
+  test('a throw that is no drop is the tool\'s error, its places let go first', async () => {
+    const whole = wholeOf(SHOWN);
+    await assert.rejects(q.confirmStep({ take: whole.take, run: async () => { throw new Error('the gate tree is gone'); } }), /the gate tree is gone/);
+    assert.equal(whole.calls.end, 1);
+  });
+
+  test('each failure of the gate read by its confirm run, and a failure of its own added as confirmed', () => {
+    const gate = [testFailure(s), testFailure(other)];
+    const read = (confirm: Confirm) => q.confirmReadings(confirm, gate).map(({ failure, confirm: reading }) => [failure.test, reading.result]);
+    assert.deepEqual(read({ result: 'unconfirmed', evidence: SHOWN }), [[s.test, 'unconfirmed'], [other.test, 'unconfirmed']]);
+    assert.deepEqual(read({ result: 'inconclusive', evidence: BESIDE }), [[s.test, 'inconclusive'], [other.test, 'inconclusive']]);
+    assert.deepEqual(read({ result: 'dropped' }), [[s.test, 'dropped'], [other.test, 'dropped']]);
+    const own = sig('Assert.NotNull(tree);', 'Driver.Tests.TreeTests.Opens');
+    const readings = q.confirmReadings({ result: 'confirmed', evidence: SHOWN, failures: [testFailure(s), testFailure(own)] }, gate);
+    assert.deepEqual(readings.map(({ failure, confirm }) => [failure.test, confirm.result]), [[s.test, 'confirmed'], [other.test, 'inconclusive'], [own.test, 'confirmed']]);
+    assert.match(readings[1]!.confirm.why ?? '', /failed another way/);
+    assert.deepEqual(readings[0]!.confirm.evidence, SHOWN, 'each reading carries the admission evidence');
+  });
+
+  test('confirmed: judged as today, the base and then every prefix', async () => {
+    const runner = prefixes([PASS, PASS, fail(s), fail(s)]);
+    const judged = await q.judgeFailure(testFailure(s), { members: 3, run: runner.run, confirm: { result: 'confirmed', evidence: SHOWN } });
+    assert.equal(judged.outcome, 'pinned');
+    assert.equal(judged.member, 2);
+    assert.equal(runner.asked[0], 0, 'the base first');
+  });
+
+  test('unconfirmed: a sighting, with no base and no prefix run, a gate that names no test included', async () => {
+    const runner = prefixes([fail(s)]);
+    const judged = await q.judgeFailure(testFailure(s), { members: 3, run: runner.run, confirm: { result: 'unconfirmed', evidence: SHOWN } });
+    assert.equal(judged.outcome, 'unconfirmed');
+    assert.match(judged.why ?? '', /sighting/);
+    assert.deepEqual(judged.confirm?.evidence, SHOWN);
+    assert.deepEqual(runner.asked, []);
+    const check = failures.gateSignature('universal', 'check', 'docs/README.md: error: a broken link');
+    const gate = await q.judgeFailure({ gate: 'universal', signature: check, names: 'gate' }, { members: 2, run: prefixes([fail(check)]).run, confirm: { result: 'unconfirmed', evidence: SHOWN } });
+    assert.equal(gate.outcome, 'unconfirmed', 'a failure that does not recur needs no base run, so it never stops the line');
+  });
+
+  test('inconclusive and dropped: no run, inconclusive saying why', async () => {
+    const runner = prefixes([PASS, fail(s)]);
+    const inconclusive = await q.judgeFailure(testFailure(s), { members: 1, run: runner.run, confirm: { result: 'inconclusive', why: 'another live hold stands beside it', evidence: BESIDE } });
+    assert.equal(inconclusive.outcome, 'inconclusive');
+    assert.match(inconclusive.why ?? '', /another live hold stands beside it.*never land/);
+    assert.equal((await q.judgeFailure(testFailure(s), { members: 1, run: runner.run, confirm: { result: 'dropped' } })).outcome, 'dropped');
+    assert.equal((await q.judgeFailure(testFailure(s), { members: 1, run: runner.run, confirm: { result: 'what' } })).outcome, 'inconclusive', 'a reading it does not know is inconclusive');
+    assert.deepEqual(runner.asked, []);
+  });
+
+  test('a known red last seen on the base is inherited before any confirm run', async () => {
+    let asked = 0;
+    const judged = await q.judgeFailure(testFailure(s), { members: 2, run: prefixes([fail(s)]).run, known: { expired: false, lastSeen: 'b0' }, baseCommit: 'b0', confirm: () => { asked += 1; return { result: 'unconfirmed' }; } });
+    assert.equal(judged.outcome, 'inherited');
+    assert.equal(asked, 0);
+  });
+
+  test('an expired known red runs on the base before the confirm run: failing there it stops with none; passing there the confirm reads, the base run once', async () => {
+    let asked = 0;
+    const confirm = (result: string) => () => { asked += 1; return { result, evidence: SHOWN }; };
+    const stopped = await q.judgeFailure(testFailure(s), { members: 2, run: prefixes([fail(s)]).run, known: { expired: true, lastSeen: 'b0' }, baseCommit: 'b0', confirm: confirm('confirmed') });
+    assert.equal(stopped.outcome, 'stop');
+    assert.equal(stopped.why, 'expired');
+    assert.equal(asked, 0);
+    const runner = prefixes([PASS, fail(s), fail(s)]);
+    const pinned = await q.judgeFailure(testFailure(s), { members: 2, run: runner.run, known: { expired: true, lastSeen: 'b0' }, baseCommit: 'b0', confirm: confirm('confirmed') });
+    assert.equal(pinned.outcome, 'pinned');
+    assert.equal(asked, 1);
+    assert.equal(runner.asked.filter((k) => k === 0).length, 2, 'the base once, then once more beside the transition, as today');
+    const sighted = prefixes([PASS]);
+    assert.equal((await q.judgeFailure(testFailure(s), { members: 2, run: sighted.run, known: { expired: true, lastSeen: 'b0' }, baseCommit: 'b0', confirm: confirm('unconfirmed') })).outcome, 'unconfirmed');
+    assert.deepEqual(sighted.asked, [0]);
+  });
+
+  const judgedAs = (outcome: string, failure = testFailure(s), extra: Partial<Judged> = {}) => ({ failure, judged: { outcome, why: `${outcome} why`, runs: [], confirm: { result: outcome, evidence: SHOWN }, ...extra } as Judged });
+
+  test('unconfirmed under split, the default: a candidate of several splits, never green, its sighting kept apart from the flakes', () => {
+    for (const policy of [undefined, { unconfirmed: 'split' }]) {
+      const outcome = q.candidateOutcome([judgedAs('unconfirmed')], members(3), policy);
+      assert.equal(outcome.action, 'split');
+      assert.deepEqual(outcome.retain!.map((each) => each.branch), ['b1', 'b2', 'b3']);
+      assert.equal(outcome.sightings!.length, 1);
+      assert.deepEqual(outcome.sightings![0]!.confirm.evidence, SHOWN);
+      assert.deepEqual(outcome.flakes, [], 'the flakes list is not the sighting store');
+    }
+  });
+
+  test('unconfirmed under split: one of one handed back as unresolved with the sighting', () => {
+    const outcome = q.candidateOutcome([judgedAs('unconfirmed')], members(1));
+    assert.equal(outcome.action, 'hand back');
+    assert.equal(outcome.handedBack![0]!.handedBack!.how, 'unresolved');
+    assert.match(outcome.handedBack![0]!.handedBack!.why ?? '', /unconfirmed why/);
+    assert.equal(outcome.sightings!.length, 1);
+    assert.deepEqual(outcome.flakes, []);
+    assert.deepEqual(outcome.retain, []);
+  });
+
+  test('unconfirmed under hold: the candidate waits for a decide, never green', () => {
+    const outcome = q.candidateOutcome([judgedAs('unconfirmed')], members(2), { unconfirmed: 'hold' });
+    assert.equal(outcome.action, 'hold');
+    assert.equal(outcome.on, 'decide');
+    assert.deepEqual(outcome.retain!.map((each) => each.branch), ['b1', 'b2']);
+    assert.deepEqual(outcome.handedBack, []);
+    assert.equal(outcome.sightings!.length, 1);
+  });
+
+  test('unconfirmed under land: the confirm run\'s pass is that tip\'s verdict alone, landed and never green', () => {
+    for (const n of [1, 3]) {
+      const outcome = q.candidateOutcome([judgedAs('unconfirmed')], members(n), { unconfirmed: 'land' });
+      assert.equal(outcome.action, 'land');
+      assert.deepEqual(outcome.passedOnConfirm, ['driver'], 'the gates whose only pass is the confirm run');
+      assert.deepEqual(outcome.retain!.map((each) => each.branch), members(n).map((each) => each.branch));
+      assert.equal(outcome.sightings!.length, 1);
+    }
+  });
+
+  test('inconclusive reads as split under every policy, never land; one of one is handed back unresolved', () => {
+    for (const unconfirmed of ['split', 'hold', 'land']) {
+      const several = q.candidateOutcome([judgedAs('inconclusive'), judgedAs('unconfirmed', testFailure(other))], members(3), { unconfirmed });
+      assert.equal(several.action, 'split', unconfirmed);
+      assert.equal(several.inconclusive!.length, 1);
+      assert.deepEqual(several.flakes, []);
+      const one = q.candidateOutcome([judgedAs('inconclusive')], members(1), { unconfirmed });
+      assert.equal(one.action, 'hand back', unconfirmed);
+      assert.equal(one.handedBack![0]!.handedBack!.how, 'unresolved');
+      assert.match(one.handedBack![0]!.handedBack!.why ?? '', /inconclusive why/);
+    }
+  });
+
+  test('a member pinned beside an unconfirmed failure under hold or land: the pinned handed back, the rest formed again', () => {
+    const pinned = { failure: testFailure(other), judged: { outcome: 'pinned', member: 2, with: [], interacting: [], runs: [] } as Judged };
+    for (const unconfirmed of ['hold', 'land']) {
+      const outcome = q.candidateOutcome([pinned, judgedAs('unconfirmed')], members(3), { unconfirmed });
+      assert.equal(outcome.action, 'hand back', unconfirmed);
+      assert.deepEqual(outcome.handedBack!.map((each) => each.branch), ['b2']);
+      assert.deepEqual(outcome.retain!.map((each) => each.branch), ['b1', 'b3']);
+      assert.equal(outcome.sightings!.length, 1);
+    }
+    const split = q.candidateOutcome([pinned, judgedAs('unconfirmed')], members(3));
+    assert.equal(split.action, 'split', 'under split it is today\'s rule');
+    assert.deepEqual(split.handedBack!.map((each) => each.branch), ['b2']);
+  });
+
+  test('an inherited failure beside an unconfirmed one under land: landed, the inherited filed', () => {
+    const outcome = q.candidateOutcome([{ failure: testFailure(other), judged: { outcome: 'inherited', runs: [] } }, judgedAs('unconfirmed')], members(2), { unconfirmed: 'land' });
+    assert.equal(outcome.action, 'land');
+    assert.equal(outcome.inherited!.length, 1);
+  });
+
+  test('a policy it does not know reads as split, and no unconfirmed gate is ever green', () => {
+    assert.equal(q.candidateOutcome([judgedAs('unconfirmed')], members(2), { unconfirmed: 'promote' }).action, 'split');
+    for (const unconfirmed of ['split', 'hold', 'land', 'promote', undefined]) {
+      for (const n of [1, 2]) assert.notEqual(q.candidateOutcome([judgedAs('unconfirmed')], members(n), { unconfirmed }).action, 'green', `${unconfirmed} of ${n}`);
+    }
+  });
+
+  test('a drop: nothing handed back, filed or kept, before any stop', () => {
+    const stop = { failure: testFailure(other), judged: { outcome: 'stop', why: 'base', said: 'main is broken', runs: [] } as Judged };
+    const outcome = q.candidateOutcome([stop, judgedAs('dropped')], members(2), { unconfirmed: 'land' });
+    assert.equal(outcome.action, 'dropped');
+    assert.deepEqual([outcome.handedBack, outcome.retain, outcome.inherited, outcome.flakes, outcome.sightings], [[], [], [], [], []]);
+  });
+
+  test('the policy is the tool\'s own switch file in the main checkout\'s local/, split where it is missing, does not read or names no setting', () => {
+    const root = makeFixture('integration-policy').root;
+    const file = join(root, q.INTEGRATION_POLICY);
+    assert.equal(q.INTEGRATION_POLICY, 'local/integration-policy.json');
+    const read = () => q.readIntegrationPolicy(root);
+    assert.equal(read().unconfirmed, 'split');
+    assert.match(read().said, /is not there/);
+    mkdirSync(dirname(file), { recursive: true });
+    writeFileSync(file, '{ "unconfirmed": ');
+    assert.equal(read().unconfirmed, 'split');
+    assert.match(read().said, /does not read/);
+    for (const value of ['split', 'hold', 'land']) {
+      writeFileSync(file, JSON.stringify({ unconfirmed: value }));
+      assert.equal(read().unconfirmed, value);
+    }
+    writeFileSync(file, `﻿${JSON.stringify({ unconfirmed: 'hold' })}`);
+    assert.equal(read().unconfirmed, 'hold', 'a byte-order mark an editor wrote is read past');
+    for (const written of [{ unconfirmed: 'Land' }, { unconfirmed: 'promote' }, { unconfirmed: true }, {}, ['land'], 'land']) {
+      writeFileSync(file, JSON.stringify(written));
+      assert.equal(read().unconfirmed, 'split', JSON.stringify(written));
+      assert.match(read().said, /names no setting it knows/);
+    }
+  });
+
+  test('no repository file, gate environment or MERGE_BRANCH_ variable sets the policy, so a steward\'s run cannot set land', () => {
+    const root = makeFixture('integration-policy-elsewhere').root;
+    writeFileSync(join(root, 'integration-policy.json'), JSON.stringify({ unconfirmed: 'land' }));
+    writeFileSync(join(root, 'daoris.gates.json'), JSON.stringify({ gates: [], integration: { unconfirmed: 'land' } }));
+    const names = ['MERGE_BRANCH_UNCONFIRMED', 'MERGE_BRANCH_POLICY', 'DAORIS_INTEGRATION_UNCONFIRMED', 'DAORIS_UNCONFIRMED', 'UNCONFIRMED'];
+    const kept = Object.fromEntries(names.map((name) => [name, process.env[name]]));
+    try {
+      for (const name of names) process.env[name] = 'land';
+      assert.equal(q.readIntegrationPolicy(root).unconfirmed, 'split');
+    } finally {
+      for (const name of names) {
+        if (kept[name] === undefined) delete process.env[name];
+        else process.env[name] = kept[name];
+      }
+    }
+  });
+
+  test('the sighting: on its unit, with the candidate\'s tip and the confirm run\'s admission evidence, in a record of its own', () => {
+    const root = makeFixture('integration-sightings').root;
+    const candidate = { base: 'b'.repeat(40), tip: 'c'.repeat(40), members: members(2) };
+    const sighting = q.sightingOf({ failure: testFailure(s), candidate, confirm: { result: 'unconfirmed', evidence: SHOWN, composition: { units: ['SessionTests'], digest: 'sha256:abc' } }, policy: 'split', at: AT });
+    assert.deepEqual(sighting, {
+      schema: 1, at: AT, gate: 'driver', unit: 'SessionTests', test: s.test, names: 'test', signature: s, key: failures.signatureKey(s),
+      commit: candidate.tip, base: candidate.base, members: ['b1', 'b2'], policy: 'split', admission: SHOWN, composition: { units: ['SessionTests'], digest: 'sha256:abc' },
+    });
+    assert.equal(q.INTEGRATION_SIGHTINGS, 'local/integration-sightings.jsonl');
+    q.appendSighting(root, sighting);
+    q.appendSighting(root, { ...sighting, at: '2026-10-24T11:00:00.000Z' });
+    assert.deepEqual(q.readSightings(root).map((each) => each['at']), [AT, '2026-10-24T11:00:00.000Z']);
+    assert.equal(existsSync(join(root, 'local', 'ci-findings.json')), false, 'nothing is filed as a known red or a flake');
   });
 });
 
