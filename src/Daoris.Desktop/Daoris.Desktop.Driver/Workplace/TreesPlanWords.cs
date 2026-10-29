@@ -162,6 +162,12 @@ public static class TreesPlanWords
             if (part.Plan?.LeftOut is { Count: > 0 } left) yield return $"  {part.Session}  leaves out {left.Count} commit(s) the line holds.";
             if (part.Plan?.Conflict is { } conflict) yield return $"  {part.Session}  would conflict: {conflict.Says}";
             if (held.TryGetValue(part.Session, out var why)) yield return $"  {part.Session}  is held: {why}";
+            if (part.Clash is { } clash)
+            {
+                yield return $"  {part.Session}  conflicts with `{clash.By}`'s work in {clash.Says}, and has work of its own beside it, "
+                    + "so it is not offered for leaving out.";
+            }
+
             if (part.Superseded is { } by)
             {
                 yield return $"  {part.Session}  was redone by `{by.By}`: {(by.Conflicts ? "it conflicts after that part's work" : "it adds nothing after it")} "

@@ -106,6 +106,32 @@ public sealed class EntryLandingTests : LandedFixture
         Assert.Equal(secondTip, (await GitAsync(second.Path, "rev-parse", "HEAD")).Trim());
     }
 
+    /// <summary>
+    /// ACCEPTCONFLICT1, the install's case: two parts add files of their own and edit one line of a shared file. They meet only in that
+    /// line, so the earlier part has work the line would keep: said as a clash naming the file, never superseded.
+    /// </summary>
+    [Fact]
+    public async Task Parts_that_add_their_own_files_and_meet_in_one_line_are_a_clash_and_not_superseded()
+    {
+        var root = await RepositoryAsync("engine");
+        await CommitAsync(root, "brief.txt", "line\n", "the brief");
+        var trees = new SessionTrees(Home);
+        var first = await trees.OpenAsync(root, "engine", "aurora");
+        var second = await trees.OpenAsync(root, "engine", "aurora");
+        await CommitAsync(first.Path, "records.txt", "records\n", "the records");
+        await CommitAsync(first.Path, "brief.txt", "line, as the records say\n", "the brief, for the records");
+        await CommitAsync(second.Path, "quest.txt", "quest\n", "the quest");
+        await CommitAsync(second.Path, "brief.txt", "line, as the quest says\n", "the brief, for the quest");
+        EntryLandingPart[] parts = [new("s1a2b3c4", first.Path), new("s5e6f7a8", second.Path)];
+
+        var plan = await trees.PlanEntryAsync(parts, Subject);
+
+        Assert.Null(plan.Parts[0].Superseded);
+        var clash = plan.Parts[0].Clash!;
+        Assert.Equal(("s5e6f7a8", "brief.txt"), (clash.By, clash.Says));
+        Assert.Null(plan.Parts[1].Clash);
+    }
+
     /// <summary>A part whose work a later part already holds adds nothing after it: named superseded, with its files.</summary>
     [Fact]
     public async Task A_part_that_adds_nothing_after_a_later_part_is_named_with_its_files()
