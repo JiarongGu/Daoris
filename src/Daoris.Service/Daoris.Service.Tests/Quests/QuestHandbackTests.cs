@@ -89,6 +89,59 @@ public sealed class QuestHandbackTests : McpToolsFixture
     }
 
     /// <summary>
+    /// 🔴 The review of 2026-10-29: the read answers the quest's latest close, never an older one. A session's ready, then the person's
+    /// decline through a door that names no session: the decline is the answer, said as the quest's own note, and the ready is not.
+    /// </summary>
+    [Fact]
+    public async Task A_later_close_through_another_door_is_answered_over_a_sessions_earlier_ready()
+    {
+        var exchange = Exchange();
+        var quest = await TakenAsync(exchange);
+        Assert.Equal(QuestRespondRefusal.None, (await exchange.BindAsync(quest.Id, "sha256:0f1e2d3c4b5a6978", Now)).Refusal);
+        Assert.Equal(QuestRespondRefusal.None,
+            (await exchange.RespondAsync(quest.Id, "ready", "Implemented the minimap in 4f3e2d1.", Now, session: "s0a1b2c3", handback: true)).Refusal);
+        Assert.Equal(QuestRespondRefusal.None, (await exchange.RespondAsync(quest.Id, "decline", "The person stopped this work: the map moved.", Now)).Refusal);
+
+        var read = await new HandbackReader(_quests).ReadAsync(quest.Id);
+
+        Assert.Null(read.Handback);
+        Assert.Contains("No session's handback is recorded on it", read.Said);
+        Assert.Contains("The person stopped this work: the map moved.", read.Said);
+        Assert.DoesNotContain("Implemented the minimap", read.Said);
+    }
+
+    /// <summary>
+    /// 🔴 The graph's variant: a session's ready, the person's reopen, a ready no session named, and the graph's close on that last
+    /// ready. The close is the graph's copy of the last ready's note and is skipped; the last ready, naming no session, is the answer.
+    /// </summary>
+    [Fact]
+    public async Task A_graph_close_on_a_ready_no_session_named_answers_that_ready_not_an_earlier_sessions()
+    {
+        var at = Now;
+        const string id = "4a2db0c40002";
+        var asked = new Quest(id, "Asker", "Owner", "Draw the legend", "The map needs one.", QuestStatus.Open, null, at, at);
+        QuestOperation Op(QuestOperationKind kind, long sequence, string? note = null) => new(id, kind, "m7", sequence, at.AddMinutes(sequence), note, Number: sequence);
+        await _quests.IntegrateAsync(Workspaces.Default,
+        [
+            Op(QuestOperationKind.Published, 1) with { Published = asked },
+            Op(QuestOperationKind.Taken, 2),
+            Op(QuestOperationKind.Bound, 3, "sha256:0f1e2d3c4b5a6978"),
+            Op(QuestOperationKind.Submitted, 4, "Ready A: drew the legend in 4f3e2d1.") with { Session = "s0a1b2c3" },
+            Op(QuestOperationKind.Reopened, 5, "The legend is wrong.") with { Submission = new QuestOperationRef("m7", 4) },
+            Op(QuestOperationKind.Submitted, 6, "Ready B: drew it again in 1a2b3c4."),
+            Op(QuestOperationKind.Done, 7, "Ready B: drew it again in 1a2b3c4.") with { Close = new QuestClose("close-1", "token-1") },
+        ], 7);
+        Assert.Equal(QuestStatus.Done, (await _quests.FindAsync(id))!.Status);
+
+        var read = await new HandbackReader(_quests).ReadAsync(id);
+
+        Assert.Null(read.Handback);
+        Assert.Contains("No session's handback is recorded on it", read.Said);
+        Assert.Contains("Ready B: drew it again in 1a2b3c4.", read.Said);
+        Assert.DoesNotContain("Ready A", read.Said);
+    }
+
+    /// <summary>
     /// Another door's words are kept as given: the person's abandon and a page's decline come through the respond door with no
     /// handback to judge, so a reason that names where to look still declines.
     /// </summary>

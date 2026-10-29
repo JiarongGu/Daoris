@@ -156,6 +156,33 @@ public sealed class McpHandbackToolTests : McpToolsFixture
         Assert.Contains("No quest or session `nothing00` here", await steward.ReadAsync("nothing00"));
     }
 
+    /// <summary>
+    /// 🔴 The review of 2026-10-29: a conversation of this workspace that took another workspace's quest is read by its id from this
+    /// workspace as its quest is read by its own id: refused, naming the quest's workspace, its title and handback never answered.
+    /// </summary>
+    [Fact]
+    public async Task A_session_of_this_workspace_that_took_another_workspaces_quest_is_refused_it()
+    {
+        var now = DateTimeOffset.UtcNow;
+        var foreign = await _quests.PublishAsync("Asker", "Owner", "Draw the far map", "Asked in another workspace.", now, workspace: "elsewhere");
+        var exchange = new QuestExchange(_service, _quests, files: _files);
+        await exchange.RespondAsync(foreign.Id, "take", null, now, session: "s0a1b2c3");
+        await exchange.RespondAsync(foreign.Id, "done", "Drew the far map in 4f3e2d1.", now, session: "s0a1b2c3", handback: true);
+        await LedgerAsync();
+        var chat = await _sessions.CreateAsync(null, "Owner", "claude-code", now, kind: SessionKind.Chat);
+        Assert.True(await _sessions.MarkTookAsync(chat.Id, foreign.Id));
+        var steward = await StewardAsync();
+
+        var bySession = await steward.ReadAsync(chat.Id);
+        var byQuest = await steward.ReadAsync(foreign.Id);
+
+        Assert.Contains("workspace `elsewhere`'s", bySession);
+        Assert.Contains($"workspace `{chat.Workspace}`'s alone", bySession);
+        Assert.DoesNotContain("Draw the far map", bySession);
+        Assert.DoesNotContain("Drew the far map", bySession);
+        Assert.Contains("workspace `elsewhere`'s", byQuest);
+    }
+
     /// <summary>The read answers the session's own workspace alone, as `quest_list` does: another workspace's quest is refused, naming both.</summary>
     [Fact]
     public async Task Another_workspaces_quest_is_refused()

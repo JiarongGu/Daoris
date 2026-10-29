@@ -30,6 +30,14 @@ public sealed class HandbackNoteTests
     [InlineData("**Handback is in my last message**", "Handback is in my last message")]
     [InlineData("详情见我上一条消息", "详情见我上一条消息")]
     [InlineData("完成。交接在我最后一条消息里。", "交接在我最后一条消息里")]
+    // The review of 2026-10-29: emphasis inside a part, a list of commits after a pointer, a Chinese pointer at a commit, and `read`
+    // at a message or with the details asked for.
+    [InlineData("**Details** are in my last message.", "Details are in my last message")]
+    [InlineData("See commits 4f3e2d1, 1a2b3c4.", "See commits 4f3e2d1")]
+    [InlineData("See commits 4f3e2d1 and 1a2b3c4", "See commits 4f3e2d1")]
+    [InlineData("详情见提交 4f3e2d1。", "详情见提交 4f3e2d1")]
+    [InlineData("Read my last message.", "Read my last message")]
+    [InlineData("Read docs/handback.md for the details.", "Read docs/handback.md for the details")]
     public void A_note_that_only_points_elsewhere_is_refused_naming_its_pointer(string note, string pointer)
     {
         Assert.Equal(pointer, HandbackNotes.PointsElsewhere(note));
@@ -51,6 +59,10 @@ public sealed class HandbackNoteTests
     [InlineData("Details are in my last message: the cache is now keyed by tree, and its tests pass.")]
     [InlineData("Read path fixed in src/report.ts.")]
     [InlineData("已修复缓存，测试通过。")]
+    // A report of what was read is a handback of a reading quest, never a pointer; and a pointer beside words of its own stays one.
+    [InlineData("Read README.md.")]
+    [InlineData("Read README.md; read docs/setup.md.")]
+    [InlineData("See above: fixed the cache key; tests pass.")]
     [InlineData("")]
     [InlineData("   ")]
     [InlineData(null)]

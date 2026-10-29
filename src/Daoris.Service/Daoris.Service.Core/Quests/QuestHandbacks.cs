@@ -33,23 +33,31 @@ public sealed record QuestHandback(
 public static class QuestHandbacks
 {
     /// <summary>
-    /// The handback <paramref name="history"/> holds: the latest done, ready or decline the replay applied that names the session that
-    /// wrote it. A done the graph's close wrote names none, since its note is the submission's it closed on, so a graph-closed quest's
-    /// handback stays that submission. Null where no session's close is recorded: a quest still open or taken with none, and one closed
-    /// before HANDBACK1 or through a door that names no session.
+    /// The handback <paramref name="history"/> holds: its <see cref="LastClose"/>, where that names the session that wrote it. Null
+    /// where it names none (a close from before HANDBACK1, or through a door that names no session: the person's decline, their own
+    /// done) or there is none yet; the quest's own note then answers, said as the quest's.
     /// </summary>
-    public static QuestHandback? Of(IEnumerable<QuestOperation> history)
+    public static QuestHandback? Of(IEnumerable<QuestOperation> history) => From(LastClose(history));
+
+    /// <summary>The handback <paramref name="close"/> is, where it names the session that wrote it; null otherwise.</summary>
+    public static QuestHandback? From(QuestOperation? close) =>
+        close is { Session: { Length: > 0 } session }
+            ? new(close.Quest, close.Kind, close.Note, close.Answers ?? [], close.At, close.Machine, session)
+            : null;
+
+    /// <summary>
+    /// The quest's latest close in <paramref name="history"/>: the latest done, ready or decline the replay applied, whoever made it, so
+    /// no later close through another door is answered by an older note (HANDBACK1's review). A done the graph's close wrote is passed
+    /// over: its note is a copy of the submission it closed on, which stays the answer. Null where the quest has none yet.
+    /// </summary>
+    public static QuestOperation? LastClose(IEnumerable<QuestOperation> history)
     {
-        QuestHandback? found = null;
+        QuestOperation? found = null;
         Quest? quest = null;
         foreach (var operation in history)
         {
             if (!QuestLog.Applies(quest, operation)) continue;
-            if (QuestStore.KeepsSession(operation.Kind) && operation is { Session: { Length: > 0 } session, Close: null })
-            {
-                found = new(operation.Quest, operation.Kind, operation.Note, operation.Answers ?? [], operation.At, operation.Machine, session);
-            }
-
+            if (QuestStore.KeepsSession(operation.Kind) && operation.Close is null) found = operation;
             quest = QuestLog.Step(quest, operation);
         }
 
@@ -91,8 +99,9 @@ public sealed class HandbackReader(QuestStore quests, SessionLedger? ledger = nu
         if (named.Length > 0 && await quests.FindAsync(named, ct).ConfigureAwait(false) is { } quest)
         {
             if (Elsewhere(quest.Workspace, workspace) is { } refused) return new(named, null, null, null, $"Refused: quest `#{quest.Id}`{refused}") { Outside = true };
-            var handback = QuestHandbacks.Of(await quests.HistoryAsync(quest.Id, ct).ConfigureAwait(false));
-            return new(named, quest, null, handback, Words(quest, handback));
+            var close = QuestHandbacks.LastClose(await quests.HistoryAsync(quest.Id, ct).ConfigureAwait(false));
+            var handback = QuestHandbacks.From(close);
+            return new(named, quest, null, handback, Words(quest, close, handback));
         }
 
         if (named.Length > 0 && ledger is not null && await ledger.FindAsync(named, ct).ConfigureAwait(false) is { } session)
@@ -113,11 +122,19 @@ public sealed class HandbackReader(QuestStore quests, SessionLedger? ledger = nu
                 return new(named, null, session, null, $"Session `{session.Id}` served quest `#{served}`, which is not here, so its handback cannot be read.");
             }
 
-            var handback = QuestHandbacks.Of(await quests.HistoryAsync(work.Id, ct).ConfigureAwait(false));
+            // HANDBACK1's review: a session's quest is judged by its own workspace as a quest read by its id is, since a conversation may
+            // take a quest of another workspace, and its record's workspace says nothing of that quest's.
+            if (Elsewhere(work.Workspace, workspace) is { } across)
+            {
+                return new(named, null, session, null, $"Refused: session `{session.Id}` served quest `#{work.Id}`, which{across}") { Outside = true };
+            }
+
+            var close = QuestHandbacks.LastClose(await quests.HistoryAsync(work.Id, ct).ConfigureAwait(false));
+            var handback = QuestHandbacks.From(close);
             var whose = handback is { } said && !string.Equals(said.Session, session.Id, StringComparison.Ordinal)
                 ? $" Its handback is session `{said.Session}`'s, not this one's."
                 : "";
-            return new(named, work, session, handback, $"Session `{session.Id}` served quest `#{work.Id}`.{whose}\n\n{Words(work, handback)}");
+            return new(named, work, session, handback, $"Session `{session.Id}` served quest `#{work.Id}`.{whose}\n\n{Words(work, close, handback)}");
         }
 
         return new(named, null, null, null, $"No quest or session `{named}` here: a quest's id comes from `quest_list`, a session's from its record.");
@@ -129,8 +146,11 @@ public sealed class HandbackReader(QuestStore quests, SessionLedger? ledger = nu
             ? null
             : $" is workspace `{kept}`'s, and this read answers workspace `{asked}`'s alone.";
 
-    /// <summary>A quest's handback in words: the quest, then the handback whole with whom it is by, or what the quest keeps instead.</summary>
-    private static string Words(Quest quest, QuestHandback? handback)
+    /// <summary>
+    /// A quest's handback in words: the quest, then its latest close, <paramref name="close"/>: the handback whole with whom it is by where
+    /// it names its session, else its note said as the quest's own.
+    /// </summary>
+    private static string Words(Quest quest, QuestOperation? close, QuestHandback? handback)
     {
         var text = new StringBuilder($"Quest `#{quest.Id}` **{quest.Title}** — {quest.Status}, asked of `{quest.To}` by `{quest.From}`.\n\n");
         if (handback is { } said)
@@ -143,7 +163,7 @@ public sealed class HandbackReader(QuestStore quests, SessionLedger? ledger = nu
             return text.ToString();
         }
 
-        if (quest.Submission is null && quest.Status is QuestStatus.Open or QuestStatus.Taken)
+        if (close is null && quest.Status is QuestStatus.Open or QuestStatus.Taken)
         {
             return text.Append($"No handback yet: it is {quest.Status}, and its handback is the note its session gives as it closes it done, says it ready, "
                                + "or declines it.").ToString();
@@ -151,10 +171,10 @@ public sealed class HandbackReader(QuestStore quests, SessionLedger? ledger = nu
 
         text.Append("No session's handback is recorded on it: it closed before Daoris kept which session wrote a handback, or through a door "
                     + "that names none. ")
-            .Append(quest.Submission is null ? "Its closing note" : "Its submission's note")
+            .Append(close?.Kind == QuestOperationKind.Submitted ? "Its submission's note" : "Its closing note")
             .Append(", as the quest keeps it:\n\n")
-            .Append(Note(quest.Submission is { } submitted ? submitted.Note : quest.Note));
-        Answered(text, quest.Answers);
+            .Append(Note(close is null ? quest.Note : close.Note));
+        Answered(text, close is null ? quest.Answers : close.Answers ?? []);
         return text.ToString();
     }
 
@@ -241,16 +261,24 @@ public static class HandbackNotes
     /// <summary>Where a pointer says it is.</summary>
     private const string Where = $@"(?:(?:in|at|on|under|inside|within|from)\s+{Target}|above|below|earlier|before)";
 
-    /// <summary>The Chinese forms' reference: my last message, the commit, above.</summary>
+    /// <summary>The Chinese forms' reference: my last message, the commit (by its id too), above.</summary>
     private const string CjkRef =
-        "(?:我的?)?(?:(?:上一?条|最后一?条|上一?个|之前的?|前面的?|上面的?)的?(?:消息|回复|留言|说明|内容|回答)|上文|上述|上面|上|提交(?:信息|记录)?|commit)(?:里|中|里面)?";
+        "(?:我的?)?(?:(?:上一?条|最后一?条|上一?个|之前的?|前面的?|上面的?)的?(?:消息|回复|留言|说明|内容|回答)|上文|上述|上面|上"
+        + @"|(?:提交(?:信息|记录)?|commit)(?:\s*#?[0-9a-f]{7,40})?)(?:里|中|里面)?";
+
+    /// <summary>What a pointer asks its reader to find there: the details, the handback, everything.</summary>
+    private const string ForWhat =
+        @"\s+for\s+(?:the\s+|all\s+the\s+|more\s+|full\s+)?(?:details?|hand-?back|summary|everything|specifics|rest|more|context|what changed)";
 
     /// <summary>The shapes of a part that is a pointer and nothing else, each matched against the whole part, lowercased.</summary>
     private static readonly Regex[] Pointers =
     [
-        // See the commit · refer to my last message · read docs/handback.md for the details.
-        new($@"^(?:please\s+)?(?:see|refer to|cf\.?|read)\s+{Target}"
-            + @"(?:\s+for\s+(?:the\s+|all\s+the\s+|more\s+|full\s+)?(?:details?|hand-?back|summary|everything|specifics|rest|more|context|what changed))?$", Options),
+        // See the commit · refer to my last message · see docs/handback.md for the details.
+        new($@"^(?:please\s+)?(?:see|refer to|cf\.?)\s+{Target}(?:{ForWhat})?$", Options),
+        // Read my last message · read the chat; and read a file only for the details (HANDBACK1's review): `Read README.md` is what a
+        // reading quest's session did, a report and never a pointer.
+        new($@"^(?:please\s+)?read\s+(?:{Message}|{Place}|above|below)(?:{ForWhat})?$", Options),
+        new($@"^(?:please\s+)?read\s+{Target}{ForWhat}$", Options),
         // Details are in my last message · handback above · summary in docs/handback.md.
         new($@"^{Label}(?:\s+(?:is|are|was|were|can be found|lives?|sits?|went|is given|are given|is written|are written|is included|are included))?"
             + $@"\s+{Where}$", Options),
@@ -278,6 +306,9 @@ public static class HandbackNotes
         new(@"^(?:ok|okay|thanks|thank you|cheers)$", Options),
         new(@"^(?:the\s+|my\s+)?(?:hand-?back|summary|details|result|results|outcome|note|notes|report|status|update)$", Options),
         new("^(?:完成|已完成|完成了|好|好的|谢谢|交接|详情|总结|结果|说明|已关闭)$", Options),
+        // A commit's id alone, as a list of commits after a pointer reads once split (`See commits 4f3e2d1, 1a2b3c4`): it names, and says
+        // nothing of the work, so it neither points by itself nor counts as words of the note's own.
+        new(@"^#?[0-9a-f]{7,40}$", Options),
     ];
 
     /// <summary>
@@ -316,8 +347,16 @@ public static class HandbackNotes
         + "whoever reads the quest later reads, which none of your messages is kept with. Say the handback in the note: what changed, "
         + "where (the commits), what you proved, and what you did not. Nothing moved.";
 
-    /// <summary>A part as a refusal quotes it: trimmed of white space and of the marks a part is wrapped in.</summary>
-    private static string Shown(string part) => part.Trim().Trim('*', '_', '`', '"', '\'', '“', '”', '‘', '’', '(', ')', '[', ']', '<', '>', '#', '-', '•', ' ', '\t').Trim();
+    /// <summary>
+    /// Markdown's emphasis and code marks anywhere in a part (<c>**Details** are in…</c>, HANDBACK1's review): every <c>*</c> and backtick,
+    /// and an underscore at a word's edge, never one inside a name such as <c>my_file.md</c>. A short pattern with no nesting, so the
+    /// backtracking engine its look-arounds need costs a part's length.
+    /// </summary>
+    private static readonly Regex Emphasis = new(@"\*+|`+|(?<!\w)_+|_+(?!\w)", RegexOptions.CultureInvariant);
+
+    /// <summary>A part as a refusal quotes it: its emphasis taken out, trimmed of white space and of the marks a part is wrapped in.</summary>
+    private static string Shown(string part) =>
+        Emphasis.Replace(part, "").Trim().Trim('"', '\'', '“', '”', '‘', '’', '(', ')', '[', ']', '<', '>', '#', '-', '•', ' ', '\t').Trim();
 
     /// <summary>A part as the shapes read it: lowercased, its apostrophes plain, every run of white space one space.</summary>
     private static string Read(string shown) =>
