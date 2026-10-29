@@ -10,6 +10,9 @@ import { QueryClient } from '@tanstack/react-query';
 // None of these cases met the install's loop: they hold the window through such an end on Sessions and on Overview, its state
 // pulled and pushed, with jsdom's empty boxes and with a box for every element, so a loop a later change brings to these paths
 // fails here, and the error screen names the component the next time the install meets one (D217).
+// The install's log puts the failure about ten seconds after the quest closed done and four seconds into the agent's last message,
+// which streams in as some hundreds of one-line `message` events of one id: the end below streams such a message, with the quest
+// done and the session still working, before the turn ends. It met no loop either.
 
 const { invoke, notifyReady, shenora, handlers } = vi.hoisted(() => {
   const notifyReady = vi.fn(() => Promise.resolve());
@@ -256,6 +259,15 @@ describe("the window through a driven session's end (PAGELOOP1)", () => {
     if (pushes) {
       await push('quests', 'default');
       await push('work', 'engine');
+    }
+    // The agent's last message streams in chunk by chunk, each a `message` event of one id, with the quest done and the session
+    // still working (the install's log: the page failed while they came).
+    let seq = 10;
+    for (const text of ['`', 'It is', ' done', ', the cap', ' is in', ' and the', ' gates', ' passed.']) {
+      seq += 1;
+      const chunk = [event(seq, { kind: 'message', id: 'm3', text }), event(seq + 100, { kind: 'usage', used: 1000 + seq, size: 1000000 })];
+      world.events = [...world.events, ...chunk];
+      await tell('SESSION_EVENTS', { session: SESSION, events: chunk });
     }
     await tell('DRIVER_TICK', { considered: [], untrusted: [], waits: [] });
     world.state = 'completed';
