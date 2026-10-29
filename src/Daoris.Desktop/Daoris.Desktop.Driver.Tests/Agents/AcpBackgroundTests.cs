@@ -1576,10 +1576,11 @@ public sealed class AcpBackgroundTests
 
     /// <summary>A session on <paramref name="clock"/>, its look, its wake's quiet and its <see cref="AcpSession.QuestDoneQuiet"/> its own.</summary>
     private static AcpSession Clocked(
-        Agent agent, Record record, MovedClock clock, string? posture = null, PermissionHolds? permissions = null, TimeSpan? look = null) =>
+        Agent agent, Record record, MovedClock clock, string? posture = null, PermissionHolds? permissions = null, TimeSpan? look = null,
+        Func<CancellationToken, Task<TurnCarry>>? carries = null) =>
         new(agent.Incoming, agent.Outgoing, _ => { }, posture: posture, onEvent: record.Event)
         {
-            Clock = clock, Permissions = permissions, BackgroundLook = look ?? Minute,
+            Clock = clock, Permissions = permissions, BackgroundLook = look ?? Minute, CarriesOn = carries,
         };
 
     /// <summary>
@@ -2601,5 +2602,196 @@ public sealed class AcpBackgroundTests
         await PassAsync(clock, again);
         await run.WaitAsync(Poll.Patience);
         Assert.Equal(TurnLeft, record.Lines[^1]);
+    }
+
+    // ——— LANDBACK1 part 2 (D87's note): a turn that ends with its quest done and its tree uncommitted is not the session's end. The tree
+    // and the quest are the driver's to read (TurnCarries); here each case hands the session what that look says, on the same moved clock.
+
+    private const string CarriedWords = "Your quest is done, but your tree has 2 uncommitted path(s).";
+
+    private static readonly string CarriedNote = BackgroundNotes.CarriedOn(2).Note;
+
+    private static readonly string BoundNote = BackgroundNotes.CarryBound().Note;
+
+    /// <summary>The tree a done quest's session left: dirty until the agent commits, which the case's agent does on a carry-on prompt.</summary>
+    private sealed class DoneTree(int paths = 2, bool eligible = true, Func<bool>? holds = null)
+    {
+        private int _paths = paths;
+
+        public int Looks;
+
+        public void Commit() => Volatile.Write(ref _paths, 0);
+
+        public Task<TurnCarry> Look(CancellationToken _)
+        {
+            Interlocked.Increment(ref Looks);
+            var now = Volatile.Read(ref _paths);
+            return Task.FromResult(new TurnCarry(eligible, now, now > 0 ? $"Your quest is done, but your tree has {now} uncommitted path(s)." : "", holds));
+        }
+    }
+
+    /// <summary>An agent whose first prompt ends at once, or after <paramref name="first"/>, and whose later ones commit where it does.</summary>
+    private static Agent Commits(DoneTree tree, bool commits, Action<Agent>? first = null) => new((frame, self) =>
+    {
+        switch (frame.TryGetProperty("method", out var method) ? method.GetString() : null)
+        {
+            case "initialize":
+                return Ok(frame, Queues);
+            case "session/new":
+                return Ok(frame, """{"sessionId":"s-1"}""");
+            case "session/prompt" when self.Prompts.Count == 1:
+                first?.Invoke(self);
+                return Ok(frame, """{"stopReason":"end_turn"}""");
+            case "session/prompt":
+                if (commits) tree.Commit();
+                return Ok(frame, """{"stopReason":"end_turn"}""");
+            case null:
+                return null;
+            default:
+                return frame.TryGetProperty("id", out _) ? Ok(frame, "{}") : null;
+        }
+    });
+
+    /// <summary>
+    /// 🔴 TURNWAIT1's case: the session closed its quest done with its fix uncommitted and ended its turn, and the run ended with it, the fix
+    /// left in its tree. The run carries it on in Daoris's own words, once, and ends once the tree is clean.
+    /// </summary>
+    [Fact]
+    public async Task A_done_quests_uncommitted_tree_carries_the_session_on_and_the_run_ends_once_it_is_clean()
+    {
+        var tree = new DoneTree();
+        var agent = Commits(tree, commits: true);
+        var record = new Record();
+
+        var run = Clocked(agent, record, new MovedClock(), carries: tree.Look).RunAsync(
+            "X:/daoris/game", "close quest #12", CancellationToken.None, waitsOnBackground: _ => Task.FromResult(false));
+        await run.WaitAsync(Poll.Patience);
+
+        Assert.Equal(["close quest #12", CarriedWords], agent.Prompts);
+        Assert.Equal(["initialize", "session/new", "session/prompt", "session/prompt", "session/close"], agent.Methods);
+        Assert.Equal(["turn:end_turn", $"note:{CarriedNote}", "turn:end_turn"], record.Lines);
+    }
+
+    /// <summary>A session that never commits is carried on twice (<see cref="LandCarry.Bound"/>), the bound said, and then ends as today.</summary>
+    [Fact]
+    public async Task A_session_that_never_commits_is_carried_on_twice_then_the_bound_is_said_and_it_ends()
+    {
+        var tree = new DoneTree();
+        var agent = Commits(tree, commits: false);
+        var record = new Record();
+
+        var run = Clocked(agent, record, new MovedClock(), carries: tree.Look).RunAsync(
+            "X:/daoris/game", "close quest #12", CancellationToken.None, waitsOnBackground: _ => Task.FromResult(false));
+        await run.WaitAsync(Poll.Patience);
+
+        Assert.Equal(["close quest #12", CarriedWords, CarriedWords], agent.Prompts);
+        Assert.Equal(
+            ["turn:end_turn", $"note:{CarriedNote}", "turn:end_turn", $"note:{CarriedNote}", "turn:end_turn", $"note:{BoundNote}"],
+            record.Lines);
+        Assert.Equal("session/close", agent.Methods[^1]);
+    }
+
+    /// <summary>A tree already clean, and a quest that is not one a carry-on is owed for (parked, asking, stood down, stopped): no prompt.</summary>
+    [Theory]
+    [InlineData(0, true)]
+    [InlineData(2, false)]
+    public async Task A_clean_tree_and_a_quest_not_owed_a_carry_on_end_at_once_with_no_prompt(int paths, bool eligible)
+    {
+        var tree = new DoneTree(paths, eligible);
+        var agent = Commits(tree, commits: true);
+        var record = new Record();
+
+        var run = Clocked(agent, record, new MovedClock(), carries: tree.Look).RunAsync(
+            "X:/daoris/game", "close quest #12", CancellationToken.None, waitsOnBackground: _ => Task.FromResult(false));
+        await run.WaitAsync(Poll.Patience);
+
+        Assert.Equal(["close quest #12"], agent.Prompts);
+        Assert.Equal(["turn:end_turn"], record.Lines);
+    }
+
+    /// <summary>
+    /// The person stopped the session between the look and the write: the words are decided at the write, under the lock, and nothing is
+    /// written (<see cref="AcpTurnedAway"/>); the run ends as a run with no carry-on does.
+    /// </summary>
+    [Fact]
+    public async Task A_session_stopped_after_the_look_is_not_carried_on()
+    {
+        var tree = new DoneTree(holds: () => false);
+        var agent = Commits(tree, commits: true);
+        var record = new Record();
+
+        var run = Clocked(agent, record, new MovedClock(), carries: tree.Look).RunAsync(
+            "X:/daoris/game", "close quest #12", CancellationToken.None, waitsOnBackground: _ => Task.FromResult(false));
+        await run.WaitAsync(Poll.Patience);
+
+        Assert.Equal(["close quest #12"], agent.Prompts);
+        Assert.Equal(["turn:end_turn"], record.Lines);
+    }
+
+    /// <summary>
+    /// The turn ended on the session's own check, its quest closed done and its tree dirty: the run waits for the check, however long the
+    /// look is moved on and the quest reads closed (it never cuts the wait while a carry-on is owed), and carries the session on once the
+    /// turn its harness woke for the check has ended.
+    /// </summary>
+    [Fact]
+    public async Task A_done_quest_with_work_running_waits_for_it_and_is_carried_on_when_its_woken_turn_ends()
+    {
+        var tree = new DoneTree();
+        var goOn = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var agent = Commits(tree, commits: true, self => BackgroundsTheGates(self));
+        var record = new Record();
+        var clock = new MovedClock();
+        var t0 = clock.GetUtcNow();
+
+        var run = Clocked(agent, record, clock, carries: tree.Look).RunAsync(
+            "X:/daoris/game", "close quest #12", CancellationToken.None, waitsOnBackground: _ => Task.FromResult(false));
+        await Poll.Until(
+            () => record.Lines.Any(line => line.StartsWith("note:", StringComparison.Ordinal) && line.Contains("Run the gates")),
+            () => string.Join(" | ", record.Lines), Poll.Patience);
+
+        // Two looks of a minute and the bound a closed quest's silent turn is left after: the quest reads closed, and the wait goes on.
+        for (var look = 1; look <= 6; look++) await PassAsync(clock, t0 + look * Minute);
+        Assert.True(await WaitsUntilAsync(clock, run, t0 + 7 * Minute), "a done quest owed a carry-on ended on its running work");
+        Assert.Equal(["close quest #12"], agent.Prompts);
+
+        GatesEnd(agent);
+        agent.Push(Said("The gates passed; the fix is still uncommitted."));
+        WokenEnds(agent);
+        await run.WaitAsync(Poll.Patience);
+
+        Assert.Equal(["close quest #12", CarriedWords], agent.Prompts);
+        Assert.Contains($"note:{CarriedNote}", record.Lines);
+        Assert.DoesNotContain(record.Lines, line => line.StartsWith("note:— its quest no longer waits", StringComparison.Ordinal));
+        Assert.False(goOn.Task.IsCompleted);
+    }
+
+    /// <summary>The agent's stream ending while the carry-on is awaited is the door's failure, never a clean end.</summary>
+    [Fact]
+    public async Task A_stream_that_ends_during_a_carry_on_fails_the_run_as_the_doors()
+    {
+        var tree = new DoneTree();
+        var agent = new Agent((frame, self) =>
+        {
+            switch (frame.TryGetProperty("method", out var method) ? method.GetString() : null)
+            {
+                case "initialize":
+                    return Ok(frame, Queues);
+                case "session/new":
+                    return Ok(frame, """{"sessionId":"s-1"}""");
+                case "session/prompt" when self.Prompts.Count == 1:
+                    return Ok(frame, """{"stopReason":"end_turn"}""");
+                default:
+                    return null;
+            }
+        });
+        var record = new Record();
+
+        var run = Clocked(agent, record, new MovedClock(), carries: tree.Look).RunAsync(
+            "X:/daoris/game", "close quest #12", CancellationToken.None, waitsOnBackground: _ => Task.FromResult(false));
+        await Poll.Until(() => agent.Prompts.Count == 2, () => string.Join(" | ", agent.Prompts));
+        agent.Close();
+
+        await Assert.ThrowsAsync<DriverException>(() => run.WaitAsync(Poll.Patience));
+        Assert.DoesNotContain(BoundNote, record.Lines);
     }
 }

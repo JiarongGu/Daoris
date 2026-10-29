@@ -345,6 +345,18 @@ public sealed class AcpSession(
     public Func<bool>? SetupChanged { get; init; }
 
     /// <summary>
+    /// Asked at a turn's end (LANDBACK1 part 2, D87's note): what the quest and its tree say, so a turn that ended with the quest done and
+    /// the tree uncommitted is carried on rather than the session's end (<see cref="CarryOnAsync"/>). Dirty, with carry-ons left, the run
+    /// also waits for the session's own background work as a park would have it wait (<see cref="Waits"/>), never cutting that wait on
+    /// the closed quest. Null never carries on, and the end is as before.
+    /// </summary>
+    public Func<CancellationToken, Task<TurnCarry>>? CarriesOn { get; init; }
+
+    // LANDBACK1 part 2: the carry-ons written in this run, bounded by LandCarry.Bound, and whether the bound was said.
+    private int _carried;
+    private bool _boundSaid;
+
+    /// <summary>
     /// The words held for the turn's end that the run handed back unprompted because its setup changed (ACCESSSWAP1b), in the order
     /// said: the driver keeps them on the record for the run that goes on under the new setup. So too those held when the run left a
     /// silent turn of a closed quest (RUNENDS1), and, after them, every word the run was asked to send and never wrote, turned away at its
@@ -911,6 +923,9 @@ public sealed class AcpSession(
                     ct)
                 .ConfigureAwait(false);
 
+            // LANDBACK1 part 2: what the loop asks of the quest is its own wait on background work, or a carry-on owed for a done quest's tree.
+            var turnWaits = Waits(waitsOnBackground);
+
             // The person's words, one prompt each, in the order said — the session keeps its context. A word sent during
             // the turn is waited for until it is answered; one held is prompted now, and a turn stopped to send it ends
             // `cancelled` before it goes.
@@ -919,7 +934,7 @@ public sealed class AcpSession(
                 // A turn that ended while the session's own background work runs, where its quest would park it on the
                 // person, waits for that work and goes on with a turn that says it ended (BGWAIT1). Words held for the
                 // turn's end go first; words that go at once still go while it waits.
-                if (!Holds(inbox) && await AfterBackgroundAsync(waitsOnBackground, ct).ConfigureAwait(false) is { } wentOn)
+                if (!Holds(inbox) && await AfterBackgroundAsync(turnWaits, ct).ConfigureAwait(false) is { } wentOn)
                 {
                     stopReason = wentOn;
                     continue;
@@ -931,6 +946,13 @@ public sealed class AcpSession(
                     var waiting = inbox?.Close() ?? [];
                     lock (_promptsGate) _handedBack = waiting;
                     break;
+                }
+
+                // LANDBACK1 part 2: the turn ended with its quest done and its tree uncommitted, and nothing of its own runs: not its end.
+                if (!Holds(inbox) && await CarryOnAsync(ct).ConfigureAwait(false) is { } carriedOn)
+                {
+                    stopReason = carriedOn;
+                    continue;
                 }
 
                 if (inbox?.NextOrClose() is not { } next) break;
@@ -1022,6 +1044,95 @@ public sealed class AcpSession(
             LeftRunning = _background.Running;
             await EndStreamsAsync().ConfigureAwait(false);
             Release();
+        }
+    }
+
+    /// <summary>
+    /// What the run asks of its quest where a turn ends (BGWAIT1's judgement, and LANDBACK1 part 2's): yes where the quest would park, or
+    /// where it stands closed with its tree uncommitted and carry-ons left, so the run waits for the session's own work first and then
+    /// carries it on, never cutting the wait on the quest's close. Where no carry-on is owed the answer is BGWAIT1's own.
+    /// </summary>
+    private Func<CancellationToken, Task<bool>>? Waits(Func<CancellationToken, Task<bool>>? waitsOnBackground)
+    {
+        if (CarriesOn is not { } carries) return waitsOnBackground;
+        return async token =>
+        {
+            if (waitsOnBackground is not null && await waitsOnBackground(token).ConfigureAwait(false)) return true;
+            // Unread is not a yes: a look that cannot be taken owes nothing, and the end is as it always was.
+            return Volatile.Read(ref _carried) < LandCarry.Bound && (await LookAsync(carries, token).ConfigureAwait(false))?.Dirty == true;
+        };
+    }
+
+    /// <summary>The look at the quest and its tree, or null where it could not be taken (never a failure of the run).</summary>
+    private static async Task<TurnCarry?> LookAsync(Func<CancellationToken, Task<TurnCarry>> carries, CancellationToken ct)
+    {
+        try
+        {
+            return await carries(ct).ConfigureAwait(false);
+        }
+        catch (Exception) when (!ct.IsCancellationRequested)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// A turn that ended with its quest done, or submitted, and its tree holding uncommitted work is not the session's end (LANDBACK1 part
+    /// 2, TURNWAIT1): the session is carried on in Daoris's own words to commit by its repository's conventions or restore what it does not
+    /// want, and the tree is read again at that turn's end. The words are a prompt of the run's, never a card, a say or a Confirm, and
+    /// Daoris commits nothing. Null where nothing is owed: the quest is not closed, the session was stopped, the tree is clean or
+    /// unread, or <see cref="LandCarry.Bound"/> carry-ons were written and the bound is said once, so the run ends as it always did.
+    /// </summary>
+    /// <remarks>
+    /// Decided where it is written, as the go-on is (<see cref="WokenOrGoOnAsync"/>): under the write lock, the person's stop is read again
+    /// and no turn of the harness's runs. A turn that took the moment is waited for, never written into (its answer would never come), and
+    /// the tree is read again after it. Reached only once the session's own work has ended and the turn woken for it, which
+    /// <see cref="AfterBackgroundAsync"/> waits for first.
+    /// </remarks>
+    /// <exception cref="DriverException">The agent's stream ended while the session waited to carry on.</exception>
+    private async Task<string?> CarryOnAsync(CancellationToken ct)
+    {
+        if (CarriesOn is not { } carries) return null;
+        while (true)
+        {
+            ct.ThrowIfCancellationRequested();
+            if (await LookAsync(carries, ct).ConfigureAwait(false) is not { Dirty: true } look) return null;
+            if (_carried >= LandCarry.Bound)
+            {
+                if (!_boundSaid)
+                {
+                    _boundSaid = true;
+                    Note(BackgroundNotes.CarryBound());
+                }
+
+                return null;
+            }
+
+            try
+            {
+                return await PromptingAsync(
+                        () => SendPromptAsync(
+                            look.Words, files: null, ct,
+                            sent: () =>
+                            {
+                                Interlocked.Increment(ref _carried);
+                                Note(BackgroundNotes.CarriedOn(look.Paths));
+                            },
+                            words: null, when: () => look.Holds?.Invoke() != false && _wake.NoTurnRuns(Prompted)),
+                        ct)
+                    .ConfigureAwait(false);
+            }
+            catch (AcpTurnedAway)
+            {
+                ct.ThrowIfCancellationRequested();
+                // The person stopped it, or the door shut: nothing more is owed. Otherwise a turn of the harness's began, and it is waited for.
+                if (DoorShut || look.Holds?.Invoke() == false) return null;
+                if (!await _wake.IdleOrQuietAsync(Prompted, Clock.GetUtcNow(), QuestDoneQuiet, Ended, ct).ConfigureAwait(false))
+                {
+                    throw StreamEnded(
+                        "the ACP agent's stream ended while the session waited to carry its done quest's work on — the agent exited, or it was ended.");
+                }
+            }
         }
     }
 

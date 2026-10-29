@@ -623,6 +623,18 @@ describe('noteLines', () => {
         .toBe('它的委托不再等待，会话原本在等它的智能体的下一轮：会话结束，也不再发送继续的提示。');
     });
 
+    /** LANDBACK1 part 2: a done quest's session carried on for the uncommitted work in its tree, and the bound that ends it. */
+    it('words a session carried on for the uncommitted work its done quest left, and the bound', () => {
+      const carried = coded('background.carried-on', '— its quest is done, but its tree holds uncommitted work (paths: 3): …', { paths: 3 });
+      const bound = coded('background.carry-bound', '— its session was carried on twice …');
+      expect(noteLines(t, { parts: [carried] }, 'en')[0].text).toContain('uncommitted work (paths: 3)');
+      expect(noteLines(zh, { parts: [carried] }, 'zh')[0].text).toContain('3 个路径');
+      expect(noteLines(zh, { parts: [carried] }, 'zh')[0].text).not.toContain('清理');
+      expect(noteLines(t, { parts: [bound] }, 'en')[0].text).toContain('carried on twice');
+      expect(noteLines(zh, { parts: [bound] }, 'zh')[0].text).toContain('两次');
+      expect(noteLines(zh, { parts: [coded('background.carried-on', '…', {})] }, 'zh')[0].kind).toBe('recorded');
+    });
+
     it('words that a wait could not be read and leaves the program’s words as written', () => {
       const parts = [coded('background.unread', '— its turn ended …:'), words('the agent said no', 'program')];
       expect(noteLines(zh, { parts }, 'zh')).toEqual([

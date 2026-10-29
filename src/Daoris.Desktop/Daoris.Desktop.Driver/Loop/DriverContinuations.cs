@@ -444,6 +444,7 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
                 // BGWAIT1b: a resumed run waits on its own background work as a start does, by the same judgement; where its
                 // quest was closed as the look planned it, never (D83, D105 §3, D137 §2.3).
                 waitsOnBackground: Driver.WaitsOnBackground(service, quest, sessionId, resumed: true),
+                carriesOn: Driver.CarriesOn(service, quest, workTree, resumed: true, () => _context.Processes.StopMade(sessionId) is not null),
                 stopMade: stop => stoppedFirst = stop,
                 movedFirst: true,
                 spawned: () =>

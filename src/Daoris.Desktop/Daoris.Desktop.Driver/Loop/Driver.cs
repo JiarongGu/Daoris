@@ -2883,6 +2883,8 @@ public sealed class Driver(
                 // BGWAIT1: a turn that ends on the session's own background work, holding its quest as a park would, is not
                 // a question. Read from the quest as the conclusion reads it, by the conclusion's own rule.
                 waitsOnBackground: WaitsOnBackground(service, quest, sessionId, resumed: start.Resumes is not null),
+                // LANDBACK1 part 2: a turn that ends with the quest done and the tree uncommitted is carried on, not concluded.
+                carriesOn: CarriesOn(service, quest, workTree, resumed: start.Resumes is not null, () => Context.Processes.StopMade(sessionId) is not null),
                 // MODELROLE1c2 (D205 §3.3): its agent's refusal of the entry's model at the open is re-asked; a new start's walk may answer a
                 // later entry on the same agent and account, set on this session. A continuation keeps its asked choice, so its record ends.
                 // PRESSMODEL1: a handed quest's start asks its named agent's own choice (Build's entry for it, else its default), so a
@@ -3707,6 +3709,26 @@ public sealed class Driver(
     }
 
     /// <summary>
+    /// The look a turn's end takes of a quest that may have closed with uncommitted work in its tree (LANDBACK1 part 2, TURNWAIT1): the
+    /// quest read again, and, where it is done or submitted and the person has not stopped the session, its tree (<see cref="TurnCarries"/>).
+    /// Null for a resumed run whose quest was closed as the look planned it, as <see cref="WaitsOnBackground"/> is: a closed quest's
+    /// carry-on there is part 3's. A parked quest (a question for the person), an ask-and-wait (D79), a stand-down and a failed exit are
+    /// none of them done or submitted, so none is carried on.
+    /// </summary>
+    /// <param name="stopped">Whether the person (or the driver) stopped the session, read at each look and again where the words are written.</param>
+    internal static Func<CancellationToken, Task<TurnCarry>>? CarriesOn(
+        ServiceClient service, QuestView planned, string tree, bool resumed, Func<bool> stopped)
+    {
+        if (resumed && planned.Status is not ("Open" or "Taken")) return null;
+        return async token =>
+        {
+            if (stopped()) return TurnCarry.None;
+            var now = await service.FindQuestAsync(planned.Id, token).ConfigureAwait(false);
+            return await TurnCarries.LookAsync(now is { Status: "Done" } || QuestResults.Submitted(now), stopped, tree, token).ConfigureAwait(false);
+        };
+    }
+
+    /// <summary>
     /// Start a prepared session and hold it to its conclusion — the part a quest's session and an
     /// intake share. REV3's F1 was one defect in two copies of this, fixed twice; CLEAN1 made it one.
     /// </summary>
@@ -3744,6 +3766,10 @@ public sealed class Driver(
     /// On the protocol door, asked when a turn ends while the session's own background work runs (BGWAIT1): whether its
     /// quest stands as a park would leave it, so the session waits for that work instead. Null never waits (D105 §3).
     /// </param>
+    /// <param name="carriesOn">
+    /// On the protocol door, asked at a turn's end whether its quest stands closed with uncommitted work in its tree (LANDBACK1 part 2,
+    /// <see cref="CarriesOn"/>): yes carries the session on to commit it, bounded, before the run ends. Null never does.
+    /// </param>
     /// <param name="minutes">
     /// How long it may run before it is stopped, where that is not the machine's session timeout: a reviewer's pass (XAGENT1d).
     /// </param>
@@ -3780,7 +3806,8 @@ public sealed class Driver(
         ResumeAsk? resume = null, Noted? workingNote = null, Func<string, string, ProcessStartInfo?>? goOn = null,
         Action? working = null, Func<CancellationToken, Task<bool>>? waitsOnBackground = null, int? minutes = null,
         string? noConnector = null, Action<SessionStop?>? stopMade = null, bool movedFirst = false, Action? spawned = null,
-        string? piece = null, OpenOffers? offers = null, Func<CancellationToken, Task<bool>>? transientWanted = null)
+        string? piece = null, OpenOffers? offers = null, Func<CancellationToken, Task<bool>>? transientWanted = null,
+        Func<CancellationToken, Task<TurnCarry>>? carriesOn = null)
     {
         // Through the start gate (PROCSTART2): a press that starts a session reaches here before its first wait, and the
         // runtime's start lock is no thread's to wait on but the pool's. Seen through once begun, as the start always was.
@@ -3947,7 +3974,7 @@ public sealed class Driver(
                 // asked and not carried, so the record never says a choice was taken that was not.
                 asked: asked, carried: target.Brainstorm is not null ? null
                     : notCarried => _ = service.TryKeepActorAsync(sessionId, Log, choice, notCarried, ct: CancellationToken.None),
-                modelRefused: refusedAt, offerRead: offered, retry: retry)
+                modelRefused: refusedAt, offerRead: offered, retry: retry, carriesOn: carriesOn)
             : null;
         // What the native door's harness says in its own words, apart from its agent's, for its ending (AGT3c).
         var own = new HarnessWords();
@@ -4375,6 +4402,7 @@ public sealed class Driver(
     /// </param>
     /// <param name="account">What the prompt was composed of (CONTEXT1), kept beside it on its event; null for a resume.</param>
     /// <param name="waitsOnBackground">Whether a turn that ended on its own background work waits for it (BGWAIT1); null never.</param>
+    /// <param name="carriesOn">What a turn's end reads of a done quest's tree, so its session is carried on to commit (LANDBACK1 part 2); null never.</param>
     /// <param name="noConnector">What is said where there is no connector, when it is neither a quest's nor an intake's sentence.</param>
     /// <param name="ending">Where the run's wait says the timeout before its kill (BGWAIT2), handed the door once it is made.</param>
     /// <param name="unoffered">
@@ -4394,7 +4422,8 @@ public sealed class Driver(
         Func<CancellationToken, Task<bool>>? waitsOnBackground = null, string? noConnector = null, AcpEnding? ending = null,
         Func<string, string, string>? unoffered = null, Func<bool>? setupChanged = null, IReadOnlyList<SaidWordView>? handed = null,
         ActorAsked? asked = null, Action<ActorAsked>? carried = null, Func<ModelRefusal, Task<ActorAsked?>>? modelRefused = null,
-        Action<IReadOnlyList<AcpConfigOption>>? offerRead = null, TransientRetry? retry = null)
+        Action<IReadOnlyList<AcpConfigOption>>? offerRead = null, TransientRetry? retry = null,
+        Func<CancellationToken, Task<TurnCarry>>? carriesOn = null)
     {
         await using var file = TranscriptFile.Open(transcript, append: resume is not null);
 
@@ -4473,6 +4502,7 @@ public sealed class Driver(
                 Unoffered = unoffered,
                 Permissions = HeldPermissions.Of(Context.Events).For(sessionId), // AUTONOMY1b3a: held only under asking's mark
                 SetupChanged = setupChanged,
+                CarriesOn = carriesOn, // LANDBACK1 part 2: a done quest's uncommitted tree carries the session on before it ends
                 BackgroundLook = BackgroundLook, // DONEEND1: its quest read again while it waits on its own background work
                 Carry = asked, // MODELROLE1c (D205 §3.2): its actor's model and effort, set before the first prompt
                 Carried = carried,

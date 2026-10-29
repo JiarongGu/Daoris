@@ -250,6 +250,16 @@ internal sealed class AcpWake
     }
 
     /// <summary>
+    /// Whether no turn its harness started runs and no prompt is open (LANDBACK1 part 2): where a carry-on may be written, as a fresh turn
+    /// the adapter answers. Read under the write lock, as <see cref="StillQuiet"/> is; unlike it, an update read since does not move it,
+    /// since a carry-on is decided on the tree and the quest, not on the agent's silence.
+    /// </summary>
+    public bool NoTurnRuns(Func<bool> prompted)
+    {
+        lock (_gate) return _began == 0 && !prompted();
+    }
+
+    /// <summary>
     /// The signal the waits hold, replaced in the step that changed what they read (RUNENDS1 after review, finding 4): a wait that reads
     /// it under the gate is never handed a change it was not signalled for. Under the gate; the old one is completed outside it.
     /// </summary>
