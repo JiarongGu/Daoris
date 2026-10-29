@@ -1095,6 +1095,44 @@ public sealed class PipeConfirmTests : Bridge
         Assert.Equal("update", hello.GetProperty("error").GetProperty("parameters").GetProperty("why").GetString());
     }
 
+    /// <summary>
+    /// DRAINHOLD1 (the confirm-wait design §7.2): a press the drain let through and still under way when the update applies is the close's
+    /// to wait for, as any begun press is. It is not cut: the close's drain waits for its answer, and its terminal hears it.
+    /// </summary>
+    [Fact]
+    public async Task A_press_the_drain_let_through_and_under_way_as_it_applies_is_waited_for_by_the_close()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var grounds = new StubGrounds();
+        grounds.Reads["SESSION_QUEUE"] = _ => new { queued = new[] { new { id = "w1" } } };
+        using var log = new MachineLog(Home, "desktop");
+        var driver = new HeldModule(DriverModule.Name);
+        var (dispatcher, services) = Compose(log, driver);
+        using var _ = services;
+        using var pipe = Pipe(dispatcher, log, grounds: grounds);
+        await using var client = await PipeClient.ConnectAsync(pipe.Serve()!);
+        await client.HelloAsync(HomeId);
+        var (draining, applying) = (true, false);
+        pipe.Draining = () => draining || applying;
+        pipe.Applying = () => applying;
+
+        var id = await client.SendAsync(DriverModule.Name, "SESSION_QUEUE_EDIT", new { session = "s1a2b3c4", id = "w1" });
+        await UntilAsync(() => pipe.Confirmations.Now().Waiting.Count == 1);
+        Assert.Equal(PipeAnswered.Answered, (await pipe.Confirmations.AnswerAsync(pipe.Confirmations.Now().Waiting[0].Id, confirm: true)).Outcome);
+        await driver.Started.Task.WaitAsync(Poll.Patience);
+
+        applying = true;
+        pipe.BeginStopping();
+        Assert.False(pipe.Drain(TimeSpan.FromMilliseconds(200)));
+        // The terminal reads its line meanwhile, as the close's drain waits for each answer to be written to the terminal waiting on it.
+        var heard = client.AnswerAsync(id);
+        driver.Let.SetResult();
+
+        Assert.True(pipe.Drain(Poll.Patience));
+        Assert.True((await heard).GetProperty("success").GetBoolean());
+        Assert.Equal(1, driver.Ran);
+    }
+
     /// <summary>The design's withdraw rows (§10): a waiting press taken back, the race with a Confirm either way, and another key's.</summary>
     [Fact]
     public async Task Withdraw_takes_back_only_a_press_that_still_waits_and_never_a_confirmed_one()
