@@ -18,7 +18,7 @@ public sealed record CarryAnswer(bool Told, string Why, string Sentence);
 public static class LandCarry
 {
     /// <summary>How many times one Accept carries a session on: the press's words, and one more where its turn ends still dirty or conflicted.</summary>
-    public const int Bound = 2;
+    public const int Bound = TurnCarry.Bound;
 
     public const string Uncommitted = "uncommitted";
 

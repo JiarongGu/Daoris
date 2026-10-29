@@ -1005,7 +1005,7 @@ public static class BackgroundNotes
             + "repository's conventions, or to restore what it does not want and say which.",
             ("paths", paths));
 
-    /// <summary>The session was carried on as often as one run is (<see cref="LandCarry.Bound"/>) and its tree is still not clean: it ends as it always did.</summary>
+    /// <summary>The session was carried on as often as one run is (<see cref="TurnCarry.Bound"/>) and its tree is still not clean: it ends as it always did.</summary>
     public static Noted CarryBound() =>
         Noted.Of(
             NoteCodes.BackgroundCarryBound,

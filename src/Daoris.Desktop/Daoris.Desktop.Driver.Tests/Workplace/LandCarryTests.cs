@@ -66,6 +66,33 @@ public sealed class LandCarryTests : LandedFixture
         Assert.Single(_said);
     }
 
+    /// <summary>
+    /// LANDBACK1 part 2: a done quest's carry-on in the run is no Accept. It keeps no <see cref="CarriedAccepts"/> entry, which is the
+    /// person's yes and would make the later landing read accepted by them, and says nothing through the say door; its words are its
+    /// own, and part 1's still open with the Accept's.
+    /// </summary>
+    [Fact]
+    public async Task A_done_quests_carry_on_in_the_run_keeps_no_accept_and_says_nothing_through_the_door()
+    {
+        var root = await RepositoryAsync("engine");
+        var trees = new SessionTrees(Home);
+        var tree = await trees.OpenAsync(root, "engine", "aurora");
+        await CommitAsync(tree.Path, "work.txt", "the work\n", "the work");
+        await File.WriteAllTextAsync(Path.Combine(tree.Path, "left.txt"), "not committed\n");
+
+        var look = await TurnCarries.LookAsync(closed: true, () => false, tree.Path, CancellationToken.None);
+
+        Assert.True(look.Dirty);
+        Assert.Equal(1, look.Paths);
+        Assert.Empty(new CarriedAccepts(Home).All());
+        Assert.False(File.Exists(new CarriedAccepts(Home).FilePath));
+        Assert.Empty(_said);
+        Assert.DoesNotContain("accepted", look.Words, StringComparison.OrdinalIgnoreCase);
+        Assert.StartsWith("Your work is accepted", LandCarry.DirtyWords(1), StringComparison.Ordinal);
+        Assert.Contains(LandCarry.CommitWords, LandCarry.DirtyWords(1), StringComparison.Ordinal);
+        Assert.Contains(LandCarry.CommitWords, look.Words, StringComparison.Ordinal);
+    }
+
     [Fact]
     public async Task A_dirty_tree_under_a_merge_rule_is_carried_on_as_a_branch_rule_is()
     {

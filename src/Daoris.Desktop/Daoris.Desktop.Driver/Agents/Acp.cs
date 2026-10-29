@@ -352,7 +352,7 @@ public sealed class AcpSession(
     /// </summary>
     public Func<CancellationToken, Task<TurnCarry>>? CarriesOn { get; init; }
 
-    // LANDBACK1 part 2: the carry-ons written in this run, bounded by LandCarry.Bound, and whether the bound was said.
+    // LANDBACK1 part 2: the carry-ons written in this run, bounded by TurnCarry.Bound, and whether the bound was said.
     private int _carried;
     private bool _boundSaid;
 
@@ -1059,7 +1059,7 @@ public sealed class AcpSession(
         {
             if (waitsOnBackground is not null && await waitsOnBackground(token).ConfigureAwait(false)) return true;
             // Unread is not a yes: a look that cannot be taken owes nothing, and the end is as it always was.
-            return Volatile.Read(ref _carried) < LandCarry.Bound && (await LookAsync(carries, token).ConfigureAwait(false))?.Dirty == true;
+            return Volatile.Read(ref _carried) < TurnCarry.Bound && (await LookAsync(carries, token).ConfigureAwait(false))?.Dirty == true;
         };
     }
 
@@ -1081,7 +1081,7 @@ public sealed class AcpSession(
     /// 2, TURNWAIT1): the session is carried on in Daoris's own words to commit by its repository's conventions or restore what it does not
     /// want, and the tree is read again at that turn's end. The words are a prompt of the run's, never a card, a say or a Confirm, and
     /// Daoris commits nothing. Null where nothing is owed: the quest is not closed, the session was stopped, the tree is clean or
-    /// unread, or <see cref="LandCarry.Bound"/> carry-ons were written and the bound is said once, so the run ends as it always did.
+    /// unread, or <see cref="TurnCarry.Bound"/> carry-ons were written and the bound is said once, so the run ends as it always did.
     /// </summary>
     /// <remarks>
     /// Decided where it is written, as the go-on is (<see cref="WokenOrGoOnAsync"/>): under the write lock, the person's stop is read again
@@ -1097,7 +1097,7 @@ public sealed class AcpSession(
         {
             ct.ThrowIfCancellationRequested();
             if (await LookAsync(carries, ct).ConfigureAwait(false) is not { Dirty: true } look) return null;
-            if (_carried >= LandCarry.Bound)
+            if (_carried >= TurnCarry.Bound)
             {
                 if (!_boundSaid)
                 {
