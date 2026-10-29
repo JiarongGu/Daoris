@@ -1,6 +1,25 @@
 namespace Daoris.Driver;
 
 /// <summary>
+/// The one re-ask comparison (D205 §3.3, §3.5(b), §3.5(f); FOUNDATION1j): a refusal at the open passes the refused entry on its account and
+/// the owner's walk is asked again, and the session already open goes on only where that walk names another entry of the refused one's agent
+/// on the very account it refused on. Every re-ask reads it here: a quest's start and an intake's through their start plan
+/// (<see cref="StartPlan.ReaskAsync"/>) and a one-turn owner's through <see cref="OneTurnReask{TChoice, TPassed}"/>.
+/// </summary>
+public static class ReaskMove
+{
+    /// <summary>Whether the walk's answer <paramref name="later"/> on <paramref name="on"/> is set on the session that refused.</summary>
+    /// <param name="refused">The entry the open's agent refused.</param>
+    /// <param name="account">The account it refused on; null for the agent's own sign-in.</param>
+    /// <param name="later">The entry the walk asked again took; null where it took none.</param>
+    /// <param name="on">The account that walk took it on.</param>
+    public static bool Same(ActorEffective refused, string? account, ActorEffective? later, string? on) =>
+        later is not null && later != refused
+        && string.Equals(later.Agent, refused.Agent, StringComparison.OrdinalIgnoreCase)
+        && string.Equals(on, account, StringComparison.OrdinalIgnoreCase);
+}
+
+/// <summary>
 /// A one-turn owner's refusal at the open, handled inside its own call (D205 §3.5(f), MODELROLE1e): a second opinion's reviewer, a helper
 /// and a partner each walk their entries before the spawn, and their agent may still refuse the entry's model at the open, before any
 /// prompt. None of them has a next look to plan it again, so the refused (entry, account) is passed and the owner's own walk is asked
@@ -53,9 +72,8 @@ internal class OneTurnReask<TChoice, TPassed>
         if (!Pass(Current)) return null;
         var again = await _walk([.. _passed]).ConfigureAwait(false);
         var running = Current;
-        if (again is { Chosen: true, Effective: { } later } && running.Effective is { } was && later != was
-            && string.Equals(later.Agent, was.Agent, StringComparison.OrdinalIgnoreCase)
-            && string.Equals(again.Selection?.Profile, running.Selection?.Profile, StringComparison.OrdinalIgnoreCase))
+        if (again is { Chosen: true, Effective: { } later } && running.Effective is { } was
+            && ReaskMove.Same(was, running.Selection?.Profile, later, again.Selection?.Profile))
         {
             // The same session goes on with the walk's later entry; its account's selection stays the one it opened on.
             Current = again.WithSelection(running.Selection);
