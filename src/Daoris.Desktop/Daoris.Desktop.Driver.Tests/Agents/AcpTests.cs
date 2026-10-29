@@ -2142,6 +2142,46 @@ public sealed class AcpTests
         Assert.Empty(servers.EnumerateArray());
     }
 
+    /// <summary>
+    /// CODEXTOOLS1: a session handed servers asks the adapter to wait for them to start before it answers the open, so the
+    /// first turn's catalog holds the connector; the key is the adapter's own, read beside the rules' <c>_meta</c> when both go.
+    /// </summary>
+    [Fact]
+    public async Task A_session_offered_servers_asks_the_adapter_to_wait_for_their_start()
+    {
+        var agent = Simple();
+
+        await new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, meta: new { claudeCode = new { options = new { settings = "s.json" } } })
+            .RunAsync("D:/fam/Game", "take quest #abc123", CancellationToken.None, [Knowledge]);
+
+        var meta = agent.Frame(1).GetProperty("params").GetProperty("_meta");
+        Assert.Equal((int)AcpSession.McpStartupAwait.TotalMilliseconds, meta.GetProperty("mcpStartupAwaitTimeoutMs").GetInt32());
+        Assert.Equal("s.json", meta.GetProperty("claudeCode").GetProperty("options").GetProperty("settings").GetString());
+    }
+
+    [Fact]
+    public async Task A_session_offered_servers_and_no_rules_sends_the_wait_alone()
+    {
+        var agent = Simple();
+
+        await new AcpSession(agent.Incoming, agent.Outgoing, _ => { })
+            .RunAsync("D:/fam/Game", "take quest #abc123", CancellationToken.None, [Knowledge]);
+
+        var meta = agent.Frame(1).GetProperty("params").GetProperty("_meta");
+        Assert.Equal(15000, meta.GetProperty("mcpStartupAwaitTimeoutMs").GetInt32());
+    }
+
+    [Fact]
+    public async Task A_session_offered_no_server_asks_for_no_wait()
+    {
+        var agent = Simple();
+
+        await new AcpSession(agent.Incoming, agent.Outgoing, _ => { })
+            .RunAsync("D:/fam/Game", "do the work", CancellationToken.None);
+
+        Assert.False(agent.Frame(1).GetProperty("params").TryGetProperty("_meta", out _));
+    }
+
     // ── CONSOLE2: what a session runs beside itself (docs/2026-09-28-console2-streams-evidence.md) ──
 
     /// <summary>An agent that answers the calls, and says <paramref name="during"/> inside its one turn.</summary>

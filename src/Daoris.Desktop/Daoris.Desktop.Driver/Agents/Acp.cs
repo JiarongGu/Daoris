@@ -2015,12 +2015,13 @@ public sealed class AcpSession(
         // The rules composed for this session ride here when the adapter takes them (PERM1) —
         // and a session given none sends exactly what it sent before they existed.
         // AGENTERRORS1a2 (§5.6): a transient refusal of the raw operation is tried again on the schedule, never the handshake.
+        var openMeta = OpenMeta(meta, offered);
         var created = await OpeningAsync(
             () => RequestAsync(
                 "session/new",
-                meta is null
+                openMeta is null
                     ? new { cwd, mcpServers = offered }
-                    : (object)new { cwd, mcpServers = offered, _meta = meta },
+                    : (object)new { cwd, mcpServers = offered, _meta = openMeta },
                 ct),
             ct).ConfigureAwait(false);
         // Read without trusting the shape (REV3): an id of the wrong kind threw past every catch that
@@ -2103,6 +2104,28 @@ public sealed class AcpSession(
         && initialized.TryGetProperty("_meta", out var meta) && meta.ValueKind == JsonValueKind.Object
         && meta.TryGetProperty("steering", out var steering) && steering.ValueKind == JsonValueKind.Object
         && steering.TryGetProperty("supported", out var supported) && supported.ValueKind == JsonValueKind.True;
+
+    /// <summary>
+    /// How long an adapter is asked to wait, before it answers the open, for the servers it was handed to start (CODEXTOOLS1).
+    /// Codex's adapter answers <c>session/new</c> as soon as its own session exists, and the first catalog could omit a connector
+    /// still starting, which only the next turn then had. Read from codex-acp 2.1.1 (<c>request._meta.mcpStartupAwaitTimeoutMs</c>):
+    /// it waits for the servers raced against this bound and ANSWERS when the time runs out, never failing. The connector host
+    /// answers <c>initialize</c> in a few seconds cold; fifteen leaves room for a slow first start and stays far under the open's
+    /// own ceiling, so a connector that never starts costs a session this long and no more. An agent without the key ignores it.
+    /// </summary>
+    internal static readonly TimeSpan McpStartupAwait = TimeSpan.FromSeconds(15);
+
+    /// <summary>
+    /// The <c>_meta</c> an open or a resume carries: the adapter's rules (PERM1) as composed, and, where servers are
+    /// handed, the wait for their start (CODEXTOOLS1). Null when neither, and then no <c>_meta</c> goes at all.
+    /// </summary>
+    private static JsonNode? OpenMeta(object? rules, object[] offered)
+    {
+        if (offered.Length == 0) return rules is null ? null : JsonSerializer.SerializeToNode(rules);
+        var merged = rules is null ? new JsonObject() : JsonSerializer.SerializeToNode(rules) as JsonObject ?? new JsonObject();
+        merged["mcpStartupAwaitTimeoutMs"] = (long)McpStartupAwait.TotalMilliseconds;
+        return merged;
+    }
 
     /// <summary>The servers a session is handed (ACP4), in the wire's own shape: on a new session and on a resumed one alike.</summary>
     private static object[] Offer(IReadOnlyList<AcpMcpServer>? servers)
@@ -3869,9 +3892,10 @@ public sealed class AcpSession(
             ?? throw new AcpResumeRefused(ContinueWhy.Of(ContinueWhy.Offered), words: null);
 
         var offered = Offer(servers);
-        object parameters = meta is null
+        var openMeta = OpenMeta(meta, offered);
+        object parameters = openMeta is null
             ? new { sessionId = conversation, cwd, mcpServers = offered }
-            : new { sessionId = conversation, cwd, mcpServers = offered, _meta = meta };
+            : new { sessionId = conversation, cwd, mcpServers = offered, _meta = openMeta };
 
         JsonElement resumed;
         _replaying = method == "session/load" ? conversation : null;

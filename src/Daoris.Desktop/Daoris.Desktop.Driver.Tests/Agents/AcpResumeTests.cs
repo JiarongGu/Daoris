@@ -137,6 +137,21 @@ public sealed class AcpResumeTests
         Assert.Contains(lines, line => line.Contains("carrying on with port 8080"));
     }
 
+    /// <summary>CODEXTOOLS1: a resumed session handed servers asks the adapter to wait for their start, and one handed none asks for nothing.</summary>
+    [Fact]
+    public async Task A_resumed_session_asks_the_adapter_to_wait_for_the_servers_it_is_handed()
+    {
+        var agent = Answering(Both);
+        await new AcpSession(agent.Incoming, agent.Outgoing, _ => { })
+            .RunAsync("D:/trees/s-1", "Port 8080.", CancellationToken.None, Servers, resume: "0b5e7c1a");
+        Assert.Equal(15000, agent.Params("session/resume").GetProperty("_meta").GetProperty("mcpStartupAwaitTimeoutMs").GetInt32());
+
+        var bare = Answering(Both);
+        await new AcpSession(bare.Incoming, bare.Outgoing, _ => { })
+            .RunAsync("D:/trees/s-1", "Port 8080.", CancellationToken.None, resume: "0b5e7c1a");
+        Assert.False(bare.Params("session/resume").TryGetProperty("_meta", out _));
+    }
+
     /// <summary>
     /// <c>session/load</c> where the agent advertises only that: its replay of the history, sent before it answers, is not
     /// kept a second time — the record already holds it — and what the agent says after is.

@@ -270,7 +270,10 @@ door's `TransientRetry` waits 1, 2, 4, 8 and 16 minutes on the driver's `RetryCl
 no strike, and the planner holds its quest for the person's word. Since AGENTERRORS1a2 the same holds for a mid-turn word's prompt
 refused after the word was taken (shape 2) and for the open, whose raw `session/new` or `session/resume` is repeated; each wait and
 try keeps a quiet `transient` record event (`next`, `try`) the head reads; and *Try again* releases the hold for that end alone,
-`driver.json`'s `transientReleased` (quest → `{session, ended}`), apart from the stop's `released`.
+`driver.json`'s `transientReleased` (quest → `{session, ended}`), apart from the stop's `released`. Since CODEXTOOLS1 an open or a resume
+that hands the session servers also carries `_meta.mcpStartupAwaitTimeoutMs` (`AcpSession.McpStartupAwait`, 15 s), beside the
+adapter's rules in the same `_meta`, so codex-acp waits for the connector to start before it answers and the first turn's tool catalog
+holds it; a session handed no server sends none, and an adapter that does not read the key ignores it.
 
 A conversation's turn (Ask Daoris and a repository's chat, on the protocol door) is tried again the same way since AGENTERRORS1b, inside
 the turn, on the conversation's own process: `ProtocolChat` hands its session the same `TransientRetry` once it is open (`ChatRetry`, the
