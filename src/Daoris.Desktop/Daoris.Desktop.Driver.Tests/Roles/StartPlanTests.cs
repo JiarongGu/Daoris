@@ -280,6 +280,90 @@ public sealed class StartPlanTests : IDisposable
     }
 
     /// <summary>
+    /// FOUNDATION1j part ii: a plan whose rule names who may run walks its work's role over that fence, each agent taking the role's entries for
+    /// it, else <c>rule-default</c>; a caller holding its entries already (a helper's own order, a recheck's continuation) walks exactly those.
+    /// </summary>
+    [Fact]
+    public void A_plan_walks_its_rule_s_fence_or_the_entries_its_caller_holds()
+    {
+        var config = ActorChoices.With(
+            DriverConfig.Empty with { Adapter = "cool" }, "opinion", [new ActorChoice("fine", "opus"), new ActorChoice("cool", "sonnet")]);
+
+        var fenced = new StartPlan(ParticipantWork.Review, config, _roster, _adapters, _memory, fence: ["cool", "gone"]) { Subject = "opinion" };
+        IReadOnlyList<ActorEffective> held = [new ActorEffective("fine", "haiku", null, "rule-default")];
+        var handed = new StartPlan(ParticipantWork.Help, config, _roster, _adapters, _memory, order: held) { Subject = "helper" };
+
+        Assert.Equal(("review", "opinion"), (fenced.Work, fenced.Role));
+        Assert.Equal([new ActorEffective("cool", "sonnet", null, "2"), new ActorEffective("gone", null, null, "rule-default")], fenced.Order);
+        Assert.Equal(("helper", held), (handed.Role, handed.Order));
+    }
+
+    /// <summary>
+    /// FOUNDATION1j part ii: the plan's one loop walks the order its caller gives, under the caller's own rule of which entries an earlier pass
+    /// holds: an entry held is neither asked nor passed, the first that runs is taken, and each pass is said once, in order.
+    /// </summary>
+    [Fact]
+    public async Task The_plan_s_one_loop_walks_its_caller_s_order_under_its_caller_s_rule()
+    {
+        ActorEffective[] order = [new("cool", "opus", null, "1"), new("cool", "sonnet", null, "2"), new("fine", null, null, "3")];
+        var asked = new List<string>();
+        var said = new List<string>();
+
+        var walked = await StartPlan.LoopAsync(
+            order, entry => entry,
+            entry =>
+            {
+                asked.Add(entry.From);
+                return Task.FromResult(entry.Agent == "fine"
+                    ? EntryTry.Runs(new HarnessSelection(null, "account-1"))
+                    : EntryTry.Passed(StartPasses.Cooling, "its accounts cool", new HarnessSelection("held") { Cooling = new CoolingEntry("cool", "account-1", Now.AddHours(2), true, "weekly", Now, "s0") }));
+            },
+            holds: (entry, passes) => passes.Any(pass => pass.Entry.Agent == entry.Agent),
+            said: pass => said.Add(pass.Word));
+
+        Assert.Equal(["1", "3"], asked);
+        Assert.Equal((order[2], "account-1"), (walked.Taken, walked.Selection!.Profile));
+        Assert.Equal(["1:cool:cooling"], walked.Passes.Select(pass => pass.Word));
+        Assert.Equal(["1:cool:cooling"], said);
+        Assert.Equal(Now.AddHours(2), walked.Soonest!.Until);
+    }
+
+    /// <summary>
+    /// FOUNDATION1j part ii: an agent nothing of which is installed, or none at the version its pin names, cannot run here at all, so every walk
+    /// passes it <c>unavailable</c> (D205 point 4), read from the account walk's facts as the reviewer's walk reads them.
+    /// </summary>
+    [Fact]
+    public void An_agent_not_installed_or_not_at_its_pin_is_passed_unavailable()
+    {
+        Assert.Equal(StartPasses.Unavailable, StartPasses.Of(new HarnessSelection("not installed") { Absent = AgentAbsence.NotInstalled }));
+        Assert.Equal(StartPasses.Unavailable, StartPasses.Of(new HarnessSelection("its pin is not installed") { Absent = AgentAbsence.PinNotInstalled }));
+    }
+
+    /// <summary>
+    /// 🔴 FOUNDATION1j part ii (the foundation design §2.4, §7 row 5; D205 point 1 and its PRESSMODEL1 note): a continuation goes on with the
+    /// agent its record's choice was asked of, else the agent it opened on, else its role's first entry; never the machine's <c>adapter</c> key,
+    /// which a role read <i>as before</i> answers itself.
+    /// </summary>
+    [Fact]
+    public void A_continuation_goes_on_with_its_record_s_asked_choice_never_the_machine_s_adapter()
+    {
+        var config = ActorChoices.With(DriverConfig.Empty with { Adapter = "cool" }, "build", [new ActorChoice("cool", "opus"), new ActorChoice("fine", "sonnet")]);
+        var second = new PriorSession("s1", null, "failed")
+        {
+            Actor = "build", Choice = "2", Asked = new ActorEffective("fine", "sonnet", null, "2").Asked, Adapter = "fine",
+        };
+
+        Assert.Equal("fine", StartPlan.ContinuedOn(second, config));
+        Assert.Equal("fine", StartPlan.ContinuedOn(second with { Adapter = "cool" }, config));
+        Assert.Equal("fine", StartPlan.ContinuedOn(second with { Asked = null }, config with { Adapter = "piped" }));
+        // A record from before the actors, naming no agent: its role's first entry, Build's own (`cool`), or Chat's for a conversation.
+        var before = new PriorSession("s0", null, "failed");
+        Assert.Equal("cool", StartPlan.ContinuedOn(before, config with { Adapter = "piped" }));
+        Assert.Equal("fine", StartPlan.ContinuedOn(before, ActorChoices.With(config, "chat", [new ActorChoice("fine")]), work: "chat"));
+        Assert.Equal("piped", StartPlan.ContinuedOn(before with { Actor = "garden" }, DriverConfig.Empty with { Adapter = "piped" }));
+    }
+
+    /// <summary>
     /// An intake's plan waits in Intake's own words (D205 §4.5), each choice named and the soonest cool-off beside it, and its machine log's
     /// lines name the ask, keyed as the intake's walk always wrote them.
     /// </summary>
