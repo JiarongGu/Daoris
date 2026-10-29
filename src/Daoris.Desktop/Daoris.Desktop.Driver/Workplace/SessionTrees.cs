@@ -280,19 +280,19 @@ public sealed class SessionTrees(string home, IWorkplacePluginWire? plugins = nu
         // mis-registered path, a folder inside some other checkout) would silently grow worktrees and
         // branches on whatever repository CONTAINS it. The first run of this class's own test suite
         // did exactly that, to this repository — which is why this check exists and refuses loudly.
-        var (topCode, toplevel, topErr) = await WorkingTree.GitAsync(
-            root, ["rev-parse", "--show-toplevel"], ct).ConfigureAwait(false);
-        if (topCode != 0)
+        // TREEOPENERR1: asked so that a git that fails and says nothing is reported by what it did (code, time, folder, arguments).
+        var top = await AskAsync(root, ["rev-parse", "--show-toplevel"], ct).ConfigureAwait(false);
+        if (top.Code != 0)
         {
             throw new DriverException(
-                $"`{repository}`'s registered root is not a git repository ({FirstLine(topErr)}) — "
+                $"`{repository}`'s registered root is not a git repository ({top.FirstWords()}) — "
                 + "a session's tree is one git links to its checkout, and there is nothing here to link it to.");
         }
 
-        if (!SamePath(toplevel.Trim(), root))
+        if (!SamePath(top.Stdout.Trim(), root))
         {
             throw new DriverException(
-                $"`{repository}`'s registered root {root} is INSIDE the repository at {toplevel.Trim()} "
+                $"`{repository}`'s registered root {root} is INSIDE the repository at {top.Stdout.Trim()} "
                 + "rather than being one — refusing to grow a tree on a repository the registration "
                 + "does not name. Re-run `daoris connect` from the actual root.");
         }
@@ -370,13 +370,13 @@ public sealed class SessionTrees(string home, IWorkplacePluginWire? plugins = nu
             // `core.longpaths` on every call since, removal and status included (2026-09-28).
             // OPENCUT1: locked while it opens, the lock's reason naming this process, so a later look tells an open a kill cut
             // off from a person's lock (TreeStrays); let go of below, once where its branch started is recorded.
-            var (code, _, stderr) = await WorkingTree.GitAsync(
+            var added = await AskAsync(
                 root, ["worktree", "add", "--lock", "--reason", TreeOpenings.LockReason(Environment.ProcessId), "-b", branch, path, start], ct)
                 .ConfigureAwait(false);
-            if (code != 0)
+            if (added.Code != 0)
             {
                 throw new DriverException(
-                    $"could not open a session tree for `{repository}` — git said: {Failure(stderr)}");
+                    $"could not open a session tree for `{repository}` — git said: {added.Failure()}");
             }
 
             // Where the branch started (WSR6), the moment it exists: bringing it up to date after the line moves cuts
@@ -406,11 +406,11 @@ public sealed class SessionTrees(string home, IWorkplacePluginWire? plugins = nu
             // the same lock, so its gates run in the tree the checks they run in the checkout.
             inputs = await TreeLocalInputs.CopyAsync(root, path, ct).ConfigureAwait(false);
 
-            var (unlocked, _, unlockErr) = await WorkingTree.GitAsync(root, ["worktree", "unlock", path], ct).ConfigureAwait(false);
-            if (unlocked != 0)
+            var unlocked = await AskAsync(root, ["worktree", "unlock", path], ct).ConfigureAwait(false);
+            if (unlocked.Code != 0)
             {
                 throw new DriverException(
-                    $"could not open a session tree for `{repository}` — git would not let go of the lock it opened it under: {Failure(unlockErr)}");
+                    $"could not open a session tree for `{repository}` — git would not let go of the lock it opened it under: {unlocked.Failure()}");
             }
         }
         catch

@@ -64,6 +64,57 @@ internal static class TreeGit
         return new CommonDirAndBranch(0, commonDir, rootErr, branch, Once: false);
     }
 
+    /// <summary>
+    /// One git start of the open and undo boundary, as it answered (TREEOPENERR1): its answer and what ran. A git that exits non-zero
+    /// with nothing on its error stream has no reason to quote, so the sentence says what was seen of the run instead.
+    /// </summary>
+    /// <param name="Elapsed">From the call to the answer, the gate's wait for a place included.</param>
+    /// <param name="Root">The folder git ran in.</param>
+    /// <param name="Arguments">What git was asked, as the caller spelled it: no <c>-c</c> the runner adds.</param>
+    internal sealed record GitSaid(int Code, string Stdout, string Stderr, TimeSpan Elapsed, string Root, IReadOnlyList<string> Arguments)
+    {
+        /// <summary>
+        /// What was seen where git failed and said nothing: its code (with the status a code git never returns spells), how long it
+        /// ran, the arguments and the folder it ran in, and whether that folder, read now, is gone, or stands with or without a
+        /// <c>.git</c>. Null where git succeeded or gave words of its own.
+        /// </summary>
+        internal string? Unsaid
+        {
+            get
+            {
+                if (Code == 0 || Stderr.Trim().Length > 0) return null;
+                var spelled = Code is < 0 or > 255 ? $"{Code} (0x{(uint)Code:X8})" : Code.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                var folder = !Directory.Exists(Root)
+                    ? "the folder is gone"
+                    : Directory.Exists(Path.Combine(Root, ".git")) || File.Exists(Path.Combine(Root, ".git"))
+                        ? "the folder stands, with a .git in it"
+                        : "the folder stands, with no .git in it";
+                var system = Code is < 0 or > 255
+                    ? " That is a Windows status code, which git does not return itself: the system ended the process."
+                    : "";
+                return $"git said nothing on its error stream: `git {string.Join(' ', Arguments)}` exited with code {spelled} after "
+                       + $"{Elapsed.TotalMilliseconds:0} ms, run in {Root} ({folder}).{system}";
+            }
+        }
+
+        /// <summary>git's reason (<see cref="TreeGit.Failure"/>), or what was seen where it gave none.</summary>
+        internal string Failure() => Unsaid ?? TreeGit.Failure(Stderr);
+
+        /// <summary>The first line git said, or what was seen where it said nothing.</summary>
+        internal string FirstWords() => Unsaid ?? FirstLine(Stderr);
+    }
+
+    /// <summary>
+    /// <see cref="WorkingTree.GitAsync(string, IReadOnlyList{string}, CancellationToken)"/> with what it ran kept beside its answer
+    /// (TREEOPENERR1): git's code, how long the call took, the folder and the arguments.
+    /// </summary>
+    internal static async Task<GitSaid> AskAsync(string root, IReadOnlyList<string> arguments, CancellationToken ct)
+    {
+        var began = System.Diagnostics.Stopwatch.GetTimestamp();
+        var (code, stdout, stderr) = await WorkingTree.GitAsync(root, arguments, ct).ConfigureAwait(false);
+        return new GitSaid(code, stdout, stderr, System.Diagnostics.Stopwatch.GetElapsedTime(began), root, arguments);
+    }
+
     internal static string FirstLine(string text)
     {
         var trimmed = text.Trim();
