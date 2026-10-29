@@ -2,7 +2,7 @@
 name: branch-worker
 description: Builds one feature of this repository end to end, across the lanes it needs, on its own branch and worktree, from the orientation pack a branch-scout returned, and hands it back working for the parent to merge (D187). Use for every dispatched feature (the dispatch-subagent skill).
 tools: Bash, PowerShell, Read, Edit, Write, Glob, Grep, Skill, Monitor, TaskStop
-model: opus
+model: sonnet
 isolation: worktree
 hooks:
   PreToolUse:
