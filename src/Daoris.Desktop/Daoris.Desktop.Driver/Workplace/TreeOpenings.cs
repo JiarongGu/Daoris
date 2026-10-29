@@ -75,9 +75,12 @@ internal static class TreeOpenings
     /// <param name="ours">Whether the open made the folder: one that was there before the add is never deleted.</param>
     /// <param name="keepBranch">Whether the branch stands: a tree made again (TREELOCAL2) is cut off with the session's commits on its
     /// branch, which only an open that made the branch itself takes back.</param>
+    /// <remarks>GITWORKTREECONFIG1: a tree git binds to another checkout is left too, with its branch and its opening's lock, and the look
+    /// says why each time it meets it (<see cref="TreeStrays"/>).</remarks>
     internal static async Task UndoAsync(string root, string path, string branch, bool ours, bool keepBranch = false)
     {
         var done = CancellationToken.None;
+        if (await TreeBinding.RefusalAsync(path, done).ConfigureAwait(false) is not null) return;
         if ((ours || await TreeLeftovers.RegisteredAsync(root, path, done).ConfigureAwait(false) is not false) && TreeLinks.Unlinked(path) is not null)
         {
             return;

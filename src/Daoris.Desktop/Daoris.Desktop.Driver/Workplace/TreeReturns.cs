@@ -56,7 +56,14 @@ internal sealed class TreeReturns(TreeContext context, TreeFollows follows, Tree
 
         var listed = entries.FirstOrDefault(entry => SamePath(entry.Path, full));
         var folder = Directory.Exists(full);
-        if (listed is not null && folder && Path.Exists(Path.Combine(full, ".git"))) return new(TreeStand.Stands, listed.Branch, null);
+        if (listed is not null && folder && Path.Exists(Path.Combine(full, ".git")))
+        {
+            // GITWORKTREECONFIG1: a tree git binds to another checkout is no place for a session to go on, since what its agent writes
+            // through it git writes in that checkout: the start is held, said, until the configuration is put right.
+            return await TreeBinding.RefusalAsync(full, ct).ConfigureAwait(false) is { } elsewhere
+                ? Unmade(listed.Branch, $"{elsewhere}.")
+                : new(TreeStand.Stands, listed.Branch, null);
+        }
 
         // Only a tree this home opened is made again: its place and its branch are the layout's, and nothing else is Daoris's to make.
         if (follows.BranchOfTree(full) is not { } layout)
@@ -128,6 +135,13 @@ internal sealed class TreeReturns(TreeContext context, TreeFollows follows, Tree
         }
 
         RefMoves.Mine(context.Home, layout.Repository, layout.Workspace, root);
+        // GITWORKTREECONFIG1: made again where the repository's configuration binds its linked trees to another checkout, the tree stands
+        // on its branch, and nothing goes on in it until that is put right; the next start asks again.
+        if (await TreeBinding.RefusalAsync(full, ct).ConfigureAwait(false) is { } bound)
+        {
+            return Unmade(branch, $"its tree at {full} was made again on `{branch}`, and {bound}.");
+        }
+
         var remade = Noted.Of(
             NoteCodes.TreeRemade,
             $"its tree at {full} was gone, so Daoris made it again there on its branch `{branch}`, where its commits are. Anything it had "

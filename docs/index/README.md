@@ -207,7 +207,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Workplace/Landing.cs` | 50 | 862 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Workplace/SessionTrees.cs` | 59 | 944 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Workplace/SpaceFree.cs` | 50 | 1007 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Workplace/TreeLands.cs` | 87 | 1310 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Workplace/TreeLands.cs` | 88 | 1323 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Workplace/TreeSetAside.cs` | 62 | 1100 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Workplace/WorkingTree.cs` | 72 | 1368 |
 
@@ -393,4 +393,4 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/DAORIS_UNIFIED_COLLABORATION_ARCHITECTURE_AND_PLAN_2026-10-16.md` | 164 | 5380 |
 | `docs/README.md` | 60 | 283 |
 | `docs/development.md` | 50 | 562 |
-| `src/Daoris.Desktop/README.md` | 225 | 1127 |
+| `src/Daoris.Desktop/README.md` | 226 | 1131 |
