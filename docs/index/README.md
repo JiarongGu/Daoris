@@ -274,7 +274,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Cli/test/usage-report.test.ts` | 87 | 1455 |
 | `src/Daoris.Cli/tool-test/desktop-publish.test.ts` | 81 | 1378 |
 | `src/Daoris.Cli/tool-test/merge-branch.test.ts` | 485 | 7217 |
-| `src/Daoris.Cli/tool-test/merge-queue.test.ts` | 120 | 1825 |
+| `src/Daoris.Cli/tool-test/merge-queue.test.ts` | 127 | 1911 |
 | `src/Daoris.Cli/tool-test/setup-kit.test.ts` | 56 | 1039 |
 
 ### Tools (`tools`)
@@ -286,7 +286,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `tools/desktop.mjs` | 54 | 1097 |
 | `tools/family-rehearsal.mjs` | 359 | 6239 |
 | `tools/knowledge-bench.mjs` | 46 | 900 |
-| `tools/merge-branch.mjs` | 425 | 7266 |
+| `tools/merge-branch.mjs` | 426 | 7290 |
 | `tools/merge-queue.mjs` | 47 | 775 |
 | `tools/orient-index.mjs` | 66 | 1425 |
 | `tools/process-reach.mjs` | 43 | 906 |
@@ -391,5 +391,5 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-28-integration-design.md` | 204 | 1923 |
 | `docs/DAORIS_UNIFIED_COLLABORATION_ARCHITECTURE_AND_PLAN_2026-10-16.md` | 164 | 5380 |
 | `docs/README.md` | 60 | 283 |
-| `docs/development.md` | 49 | 555 |
+| `docs/development.md` | 49 | 556 |
 | `src/Daoris.Desktop/README.md` | 216 | 1072 |
