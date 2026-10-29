@@ -367,6 +367,19 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
         });
 
     /// <summary>
+    /// Who a first pass's walk may ask (§3.2): the person's named reviewer, the rule's, or at the person's same-agent press the agent the work
+    /// ran on. A record that names no agent it ran on goes on as a continuation does (the foundation design §2.4's fourth row, FOUNDATION1j
+    /// part ii): the agent its choice was asked of, else its role's first entry, never the machine's <c>adapter</c> key.
+    /// </summary>
+    /// <exception cref="DriverException">The record's role's stored entry does not read, or the role is off.</exception>
+    internal static IReadOnlyList<string> Reviewers(OpinionRequest? request, PriorSession? record, OpinionRule rule, DriverConfig config) => request switch
+    {
+        { SameAgent: true } => [record?.Adapter ?? StartPlan.ContinuedOn(record, config)],
+        { Reviewer: { } one } => [one],
+        _ => rule.Reviewers,
+    };
+
+    /// <summary>
     /// Ask one first pass on an owed opinion's work (§2.1, §3, §4): the reviewer chosen from the rule's, or the person's named one,
     /// or the working agent fresh at their press; the candidate from where the work leaves the line (or, for a step, where its
     /// session began) to its tree's tip; the chain's quests here and the ask's words. Kept at the gate the moment the host opens it,
@@ -408,12 +421,7 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
         // The families that wrote the work (§3.1): every agent the line ran on, each part of each of the chain's quests here, so a
         // line carried on across makers at a limit counts both (LIMITRESUME1j, the limit-resume design §3.6).
         var wrote = OpinionWriters.Agents(records, due.Session, part.Select(quest => quest.Id));
-        IReadOnlyList<string> reviewers = request switch
-        {
-            { SameAgent: true } => [record?.Adapter ?? Config.Adapter],
-            { Reviewer: { } one } => [one],
-            _ => rule.Reviewers,
-        };
+        var reviewers = Reviewers(request, record, rule, Config);
         // D205 §4.4 and §3.5(f): the rule decides who, the opinion actor each agent's model; a refusal at the open is asked again here.
         Task<ReviewerChoice> Walk(IReadOnlyList<ReviewerPassed>? passed) =>
             ReviewerChoice.ChooseAsync(_context.Harnesses, rule with { Reviewers = reviewers }, wrote, Config, due.Workspace, ct, passed: passed);

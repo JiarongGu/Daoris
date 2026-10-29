@@ -552,7 +552,7 @@ public static class SessionGroups
         // is built only where a record asks it, since most looks hold no words waiting.
         var roster = new Lazy<Func<string?, string?, CoolingEntry?>>(() => CoolingOn(home));
         look = times.Time("waiting", () => Waiting(
-            look, records, home, config.Adapter, fresh: lastLook is null,
+            look, records, home, config, fresh: lastLook is null,
             coolingOf ?? ((adapter, profile) => roster.Value(adapter, profile)), TimeZoneInfo.Local));
         if (asked) times.Trees = TreesToJudge(look, trees.Holds, only).Count;
         return await times.TimeAsync("trees", () => JudgeAsync(look, trees.Holds, trees.WorkAsync, only, ct)).ConfigureAwait(false);
@@ -597,13 +597,27 @@ public static class SessionGroups
     /// as the resume would read it: the planner goes on with the record in its own conversation on this machine's adapter, the
     /// person chose no new session, and its account cools. The line is the one the loop's look would hold it with.</para>
     /// </remarks>
-    /// <param name="adapter">The machine's adapter, which a resume runs on (<see cref="DriverConfig.Adapter"/>).</param>
+    /// <param name="config">The machine's choices, whose roles a record's words go on with.</param>
     /// <param name="fresh">Whether the verdicts are a fresh plan's, which saw no cool-off; a loop's look holds its own.</param>
     /// <param name="coolingOf">The cool-off a start on an adapter would read for an account, or null where it is ready.</param>
     public static SessionLook Waiting(
-        SessionLook look, string recordsJson, string home, string adapter, bool fresh, Func<string?, string?, CoolingEntry?> coolingOf,
+        SessionLook look, string recordsJson, string home, DriverConfig config, bool fresh, Func<string?, string?, CoolingEntry?> coolingOf,
         TimeZoneInfo zone)
     {
+        // FOUNDATION1j part ii (the foundation design §2.4, §7 row 5; D205 point 1): a record's words go on with its own agent, the one its
+        // choice was asked of, as the loop's start asks it, never the machine's `adapter` key; a role that does not read holds nothing here.
+        string? GoesOnWith(PriorSession record, string work)
+        {
+            try
+            {
+                return StartPlan.ContinuedOn(record, config, work);
+            }
+            catch (DriverException)
+            {
+                return null;
+            }
+        }
+
         var chats = new HashSet<string>(StringComparer.Ordinal);
         var held = new Dictionary<string, WordsHold>(StringComparer.Ordinal);
         var marks = new GoOnMarks(home);
@@ -627,7 +641,7 @@ public static class SessionGroups
                     reason,
                     prior.Repository is { } repository && string.Equals(repository, KnowledgeRoomIdentity.Repository, StringComparison.OrdinalIgnoreCase)
                         ? cooling
-                        : Soonest(coolingOf, home, prior.Adapter ?? adapter, cooling) ?? cooling,
+                        : (prior.Adapter ?? GoesOnWith(prior, ParticipantWork.Chat)) is { } agent ? Soonest(coolingOf, home, agent, cooling) ?? cooling : cooling,
                     home)
                 : new WordsHold(WordsHold.Waits, reason);
         }
@@ -639,9 +653,10 @@ public static class SessionGroups
             foreach (var verdict in look.Considered)
             {
                 // The resume's own account, as the loop's start asks for it (MSG1g): words going on in the record they were said
-                // to, in its own conversation, on the adapter this machine starts on.
+                // to, in its own conversation, on the agent the start goes on with: a hand-over's, else its record's own (FOUNDATION1j part ii).
                 // SAYHELD1: never by the quest's `awaits`, as the start's own ask does not (DriverContinuations.ResumesOwn).
                 if (verdict is not { Verdict: StartVerdict.Start, GoesOn: true, Resumes: { WordsWaiting: true } words }
+                    || (new HandedQuests(home).Read(verdict.Quest.Id)?.Agent ?? GoesOnWith(words, ParticipantWork.Build)) is not { } adapter
                     || (words.Adapter ?? conversations.Read(words.Session)?.Adapter) is { Length: > 0 } ranOn
                        && !string.Equals(ranOn, adapter, StringComparison.OrdinalIgnoreCase)
                     || choices.Covers(words)
