@@ -49,6 +49,25 @@ describe('the table both twins read (machine-admission.json)', () => {
   }
 });
 
+/**
+ * The whole take's rows (INTEGRATE1b, design §4.5, C7): N entries with one `since` and ids that sort together. The driver's
+ * MachineAdmissionTests reads the same rows: full while held, a session's ask behind every one of them, a foreign hold a doubt.
+ */
+describe('the whole take, in the table both twins read', () => {
+  for (const row of TABLE.whole) {
+    test(`whole: ${row.name}`, () => {
+      const state = pruned({ holds: row.holds.map(entry), waits: row.waits.map(entry) }, seam);
+      const got = judge(state, row.id, row.capacity);
+      const doubts = wholeDoubts({ ...state, unread: 0 }, row.ids);
+      assert.deepEqual({ admitted: got.admitted, ahead: got.ahead, holds: got.holds.length }, { admitted: row.expect.admitted, ahead: row.expect.ahead, holds: row.expect.holds });
+      assert.equal(got.holds.length >= row.capacity, row.expect.full);
+      assert.deepEqual(state.holds.filter((each) => !row.ids.includes(each.id)).map((each) => each.id), row.expect.others);
+      assert.equal(doubts.length, (row.expect.lost ? 1 : 0) + (row.expect.others.length ? 1 : 0));
+      if (row.expect.lost) assert.match(doubts[0], new RegExp(`^${row.expect.lost} of its ${row.ids.length} places`));
+    });
+  }
+});
+
 /** An admission over a home with a clock held still and a sleep that yields to the event loop only. */
 function admission(home, extra = {}) {
   const said = [];

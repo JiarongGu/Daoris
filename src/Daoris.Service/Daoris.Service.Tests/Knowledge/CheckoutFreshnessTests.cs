@@ -179,8 +179,7 @@ public sealed class CheckoutFreshnessTests : IDisposable
         GitCheckouts.Init(checkout);
         using var freshness = new CheckoutFreshness(checkout, documents: "docs", index: null);
         Assert.True(freshness.Watching);
-        await Task.Delay(500);
-        freshness.Take();
+        await Settled(freshness);
 
         Write("served/.claude/worktrees/side/AGENTS.md", "# A worktree's brief, changed on its branch\n");
         Write("served/.claude/worktrees/side/src/bin/Daoris.dll", "built");
@@ -314,6 +313,22 @@ public sealed class CheckoutFreshnessTests : IDisposable
         freshness.Take();
         Write("served/.claude/skills/probe/SKILL.md", "# A skill made later, changed\n");
         await Heard(freshness);
+    }
+
+    /// <summary>
+    /// The setup's own writes heard and taken (FLAKE1, 2026-10-30): a loaded machine delivers them after any fixed window, so the reading
+    /// is taken again until half a second passes with nothing heard, within <see cref="Poll.Patience"/>.
+    /// </summary>
+    private static async Task Settled(CheckoutFreshness freshness)
+    {
+        for (var tries = 0; tries < Poll.Patience.TotalMilliseconds / 500; tries++)
+        {
+            freshness.Take();
+            await Task.Delay(500);
+            if (!freshness.IsStale) return;
+        }
+
+        Assert.Fail($"the setup's own writes were still heard after {Poll.Patience}");
     }
 
     private static async Task Heard(CheckoutFreshness freshness)

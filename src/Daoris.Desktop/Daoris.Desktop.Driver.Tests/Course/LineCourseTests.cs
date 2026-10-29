@@ -757,15 +757,16 @@ public sealed class LineCourseTests
 
     private static readonly Dictionary<string, IReadOnlyList<string>> Known = new(StringComparer.Ordinal);
 
-    /// <summary>The test methods of a suite of the driver's or the modules' tests: each method a <c>[Fact]</c> or <c>[Theory]</c> stands on.</summary>
+    /// <summary>
+    /// The test methods of a suite of the driver's tests: each method a <c>[Fact]</c> or <c>[Theory]</c> stands on. Every suite the table
+    /// counts is the driver's, so the read stays in this project, whose changes reach the driver's gate (MOD9's reach rule).
+    /// </summary>
     private static IReadOnlyList<string> Methods(string suite)
     {
         lock (Known)
         {
             if (Known.TryGetValue(suite, out var known)) return known;
-            var desktop = Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Desktop");
-            var file = new[] { "Daoris.Desktop.Driver.Tests", "Daoris.Desktop.Modules.Tests" }
-                .SelectMany(project => Directory.EnumerateFiles(Path.Combine(desktop, project), suite + ".cs", SearchOption.AllDirectories))
+            var file = Directory.EnumerateFiles(Tests, suite + ".cs", SearchOption.AllDirectories)
                 .FirstOrDefault(path => !path.Contains(Path.DirectorySeparatorChar + "obj" + Path.DirectorySeparatorChar));
             IReadOnlyList<string> methods = file is null
                 ? []

@@ -436,9 +436,10 @@ import { censusOf, classesReached, halfOf, reachSettings, repository, withSettin
 import { endOrphans, endStranded } from './processes.mjs';
 import { gateSignature, readTrx, signatureKey, signatureOf } from './test-failures.mjs';
 import {
-  IN_THE_LINE, MERGE_QUEUE, MERGE_QUEUE_LOG, RUNNER_ACK_MS, SCOPE_TREE, appendScopeRun, candidateOutcome, dropQueued, enqueue, formCandidate, gitBudget, inTheLine,
-  changeCandidate, drainedLine, drainedRecord, judgeFailure, memoryStep, messageOf, nextMembers, notePreview, noteRecheck, overdueWaits, promotion, queueLines, readAdmission, readQueue, sameCandidate,
-  recheckDue, recordsOnly, reformCount, requestStanding, requestsOf, resumeCandidate, scopedSet, scopedTier, settleContained, writeAdmission, writeQueue,
+  IN_THE_LINE, MERGE_QUEUE, MERGE_QUEUE_LOG, RUNNER_ACK_MS, SCOPE_TREE, appendScopeRun, appendSighting, candidateOutcome, confirmReadings, confirmStep, dropQueued, enqueue,
+  formCandidate, gitBudget, inTheLine, changeCandidate, drainedLine, drainedRecord, judgeFailure, memoryStep, messageOf, nextMembers, notePreview, noteRecheck, overdueWaits,
+  promotion, queueLines, readAdmission, readIntegrationPolicy, readQueue, sameCandidate, recheckDue, recordsOnly, reformCount, requestStanding, requestsOf, resumeCandidate,
+  scopedSet, scopedTier, settleContained, sightingOf, writeAdmission, writeQueue,
 } from './merge-queue.mjs';
 
 export const MAIN = 'main';
@@ -1288,6 +1289,8 @@ export const REACH = Object.freeze([
       // MIXAGENT1b-i: the say twin holds the hand-over's refusal table to its codes; FOUNDATION1 mod-vii moved the codes it aliases
       // into Events, so the twin reads their literals there.
       'HandOver.cs', 'HandOverAskWhy.cs',
+      // FOUNDATION1d-ii part 1: `WordsNever.Continued` forwards the say door's answer's own word, which this record declares.
+      'ServiceAnswers.cs',
       // SESSCTX1c part B: the say twin holds *Go on with Daoris's brief*'s refusal table to its codes.
       'BriefedMove.cs',
       // FLOWCHART1b: the parts flow's twin holds its words to `PartBegan`.
@@ -7533,6 +7536,72 @@ function drained(home, candidate, run, { ended = [], left = [], probe = null } =
   return { action: 'drained' };
 }
 
+/** INTEGRATE1b: why a confirm run is inconclusive where the tool's admission is off: it is never run without waiting. */
+const NO_ADMISSION = "the machine's admission is off (MERGE_BRANCH_ADMISSION=off, or MERGE_BRANCH_MEMORY=off without it on), so it cannot be shown that the machine held for the confirm run alone";
+
+/**
+ * INTEGRATE1b (design §4.5, §5.3 step 3): one failing gate's confirm run in the queue's runner, made once, and only when a failure of
+ * that gate reaches step 3 (`reading`), so a gate whose failures are all inherited known reds runs none. The gate runs again as the
+ * scoped run composed it (its units, its run settings as narrowed, a trx of its own) on the candidate's tip, by `runGate` alone: it
+ * takes no place, since the whole admission it runs inside (`take`) holds every place, and it records no verdict, so its pass stands
+ * for no other tree. A gate is handed no Daoris name (`GATE_REMOVED`), neither the home nor `DAORIS_ADMISSION_HOLD`, so no heavy run
+ * it starts can ask a place of its own. Every place this process held is let go by the time it is asked: the scoped run's gates and
+ * each probe let theirs go as they end. Its composition is the declared runner's (`verifyComposition`). `own()` answers the confirm
+ * run's own failures, each the candidate's (`confirmReadings`), once it has run; `drop()` the drop its run threw; `note` hears what
+ * the scope run's record keeps of it.
+ */
+function confirmOf({ tree, dir, plan, candidate, watch, gate, found, take, note }) {
+  const what = `the confirm run of ${gate.name} on ${candidate.tip.slice(0, 7)}`;
+  let readings = null;
+  let step = null;
+  let asked = null;
+  const composition = () => {
+    const declared = plan.find((each) => each.name === gate.name) ?? gate;
+    const built = verifyComposition({ gate: declared, runsettings: runSettingsAt(tree, candidate.tip, declared), units: gate.units ?? null, narrowed: gate.narrowed ?? [] });
+    return { units: built.units, digest: built.digest };
+  };
+  const run = (composed, timing) => async () => {
+    if (watch.check()) throw new Drained();
+    git(tree, ['checkout', '--quiet', '--force', '--detach', candidate.tip]);
+    const name = `${gate.name}.confirm`;
+    const trx = gate.scopedTrx ? join(dir, `${name}.trx`) : null;
+    if (trx) rmSync(trx, { force: true });
+    const again = trx ? { ...gate, name, run: gate.run.replace(gate.scopedTrx, () => trx), scopedTrx: trx } : { ...gate, name };
+    console.log(`  ${what}, as composed: ${again.run}`);
+    const ran = await runGate(tree, again, dir, { trees: watch.trees, step: gateStep });
+    timing.ms = ran.ms ?? null;
+    if (ran.verdict === 'ENDED') throw new Drained(name);
+    if (ran.code === 0) return { result: 'pass', composition: composed };
+    // MEMGATE1: a death of memory is the machine's, so on the confirm run it shows nothing either way.
+    if (ran.cause === 'memory') return { result: 'memory', why: `it died of memory (${ran.died?.said ?? ran.note}), which is the machine's: whether it recurs is not shown`, composition: composed };
+    return { result: 'fail', failures: failuresOf(tree, { ...ran, gate }, ran.trx ?? trx), composition: composed };
+  };
+  const read = () => {
+    asked ??= (async () => {
+      console.log(`  ${what}: once more as composed, holding the whole machine admission, before any base or prefix run`);
+      const composed = composition();
+      const timing = { ms: null };
+      step = await confirmStep({ take, run: run(composed, timing), halted: () => watch.check(), what });
+      note({ gate: gate.name, result: step.result, why: step.why, composition: step.composition ?? composed, admission: step.evidence ?? null, waitedMs: step.evidence?.waitedMs ?? null, ms: timing.ms });
+      if (step.result !== 'dropped') console.log(`  ${what}: ${step.result}, ${step.why}${step.evidence?.waitedMs ? `; it waited ${Math.round(step.evidence.waitedMs / 1000)}s for every place` : ''}`);
+      readings = confirmReadings(step, found);
+      return readings;
+    })();
+    return asked;
+  };
+  return {
+    reading: (failure) => async () => (await read()).find((pair) => pair.failure === failure)?.confirm,
+    own: () => (readings ?? []).filter((pair) => !found.includes(pair.failure)),
+    drop: () => (step?.error instanceof Drained ? step.error : null),
+  };
+}
+
+/** INTEGRATE1b: what the confirm runs read of a judgement, for the split or hand-back line: its sightings and its inconclusive failures. */
+const confirmSaid = (outcome) => [
+  outcome.sightings?.length ? `unconfirmed, a sighting each: ${outcome.sightings.map(({ failure }) => failure.test ?? failure.gate).join(', ')}` : '',
+  outcome.inconclusive?.length ? `its confirm run inconclusive, read as split: ${outcome.inconclusive.map((failure) => failure.test ?? failure.gate).join(', ')}` : '',
+].filter(Boolean).map((part) => `; ${part}`).join('');
+
 async function runCandidateWatched(home, candidate, watch) {
   const tree = prepareScopeTree(home, candidate.tip);
   installDependencies(tree);
@@ -7587,6 +7656,14 @@ async function runCandidateWatched(home, candidate, watch) {
     return { action: 'green', run };
   }
   const judgements = [];
+  // INTEGRATE1b (design §4.5, §11 row b): the owner's policy for a failure that does not recur, read from the main checkout's own
+  // switch file, `split` where it is unset; and the whole admission each confirm run takes, inconclusive where it is off.
+  const policy = readIntegrationPolicy(home);
+  console.log(`  ${policy.said}`);
+  const admission = startAdmission();
+  const take = admission ? admission.takeWhole : async () => ({ held: false, dropped: false, why: NO_ADMISSION, evidence: null });
+  const confirms = [];
+  const withConfirms = (record) => (confirms.length ? { ...record, confirms } : record);
   const runOn = prefixRunner(tree, candidate, plan, dir, watch);
   const alone = async (failure, k) => {
     if (watch.check()) throw new Drained();
@@ -7598,22 +7675,36 @@ async function runCandidateWatched(home, candidate, watch) {
   };
   try {
     for (const result of failed) {
-      const gate = gates.find((each) => each.name === result.gate.name);
-      for (const failure of failuresOf(tree, result, result.trx ?? gate?.scopedTrx)) {
-        const judged = await judgeFailure(failure, { members: candidate.members.length, run: runOn, alone, known: failure.names === 'test' ? knownFor(home, failure) : null, baseCommit: candidate.base });
+      const gate = gates.find((each) => each.name === result.gate.name) ?? result.gate;
+      const found = failuresOf(tree, result, result.trx ?? gate.scopedTrx);
+      // INTEGRATE1b: one confirm run for every failure this gate had, asked by the first that reaches it (§5.3 step 3).
+      const confirm = confirmOf({ tree, dir, plan, candidate, watch, gate, found, take, note: (entry) => confirms.push(entry) });
+      const judge = async (failure, reading) => {
+        const judged = await judgeFailure(failure, { members: candidate.members.length, run: runOn, alone, known: failure.names === 'test' ? knownFor(home, failure) : null, baseCommit: candidate.base, confirm: reading });
+        // A drop during the confirm run, or while it waited for the machine, ends the judgement as a drop during a probe does.
+        if (judged.outcome === 'dropped') throw confirm.drop() ?? new Drained();
         judgements.push({ failure, judged });
         console.log(`  ${failure.test}: ${judged.outcome}${judged.member ? ` at member ${judged.member} (${candidate.members[judged.member - 1].branch})` : ''}${judged.why ? `, ${judged.why}` : ''}`);
-      }
+      };
+      for (const failure of found) await judge(failure, confirm.reading(failure));
+      // §4.5: a failure of the confirm run's own failed with nothing heavy beside it, so it is the candidate's, judged on as confirmed.
+      for (const { failure, confirm: reading } of confirm.own()) await judge(failure, reading);
     }
   } catch (error) {
     // QUEUEDRAIN1: a drop ended the probe running (or none was started): what was judged so far is not filed, and the runner goes on.
-    if (error instanceof Drained) return drained(home, candidate, run, { probe: error.probe, ...gone() });
+    if (error instanceof Drained) return drained(home, candidate, withConfirms(run), { probe: error.probe, ...gone() });
     throw error;
   }
-  if (watch.check()) return drained(home, candidate, run, { ...gone() });
-  const outcome = candidateOutcome(judgements, candidate.members);
+  if (watch.check()) return drained(home, candidate, withConfirms(run), { ...gone() });
+  const outcome = candidateOutcome(judgements, candidate.members, policy);
+  if (outcome.action === 'dropped') return drained(home, candidate, withConfirms(run), { ...gone() });
   fileJudged(home, candidate, outcome);
-  appendScopeRun(home, { ...run, state: 'red', judged: judgements.map(({ failure, judged }) => ({ test: failure.test, gate: failure.gate, outcome: judged.outcome, member: judged.member ?? null, why: judged.why ?? null, runs: judged.runs.length })), outcome: outcome.action });
+  // INTEGRATE1b: each failure that did not recur is a sighting, in a record of its own and never among the known red's flakes.
+  for (const { failure, confirm } of outcome.sightings ?? []) appendSighting(home, sightingOf({ failure, candidate, confirm, policy: policy.unconfirmed, at: nowIso() }));
+  appendScopeRun(home, withConfirms({
+    ...run, state: 'red', judged: judgements.map(({ failure, judged }) => ({ test: failure.test, gate: failure.gate, outcome: judged.outcome, member: judged.member ?? null, why: judged.why ?? null, runs: judged.runs.length })),
+    outcome: outcome.action, policy: { unconfirmed: policy.unconfirmed, said: policy.said }, ...(outcome.passedOnConfirm ? { passedOnConfirm: outcome.passedOnConfirm } : {}),
+  }));
   return { ...outcome, run };
 }
 
@@ -7696,7 +7787,8 @@ async function queueStep(home) {
         settled: kept,
       };
     });
-    console.log(`${at} promoted ${candidate.tip.slice(0, 7)}: ${candidate.members.map((each) => each.branch).join(', ')}${settled.length ? `; contained in them, settled with them: ${settled.map((each) => each.branch).join(', ')}` : ''}`);
+    const onConfirm = candidate.landing?.onConfirm?.length ? `; landed on its confirm run alone for ${candidate.landing.onConfirm.join(', ')} (the owner's land)` : '';
+    console.log(`${at} promoted ${candidate.tip.slice(0, 7)}: ${candidate.members.map((each) => each.branch).join(', ')}${settled.length ? `; contained in them, settled with them: ${settled.map((each) => each.branch).join(', ')}` : ''}${onConfirm}`);
     return 'next';
   }
   if (action === 'reform') {
@@ -7806,9 +7898,24 @@ async function judged(home, candidate, outcome) {
   };
   if (outcome.action === 'obsolete') return obsolete();
   // QUEUEDRAIN1: the run's steps were ended and said so (`drained`); there is nothing to record, and the next queued work forms at once.
-  if (outcome.action === 'drained') return 'next';
+  if (outcome.action === 'drained' || outcome.action === 'dropped') return 'next';
   if (outcome.action === 'green') {
     if (change((q) => ({ queue: { ...q, candidate: { ...q.candidate, state: 'green' } } })).obsolete) return obsolete();
+    return 'next';
+  }
+  // INTEGRATE1b, the owner's `land` (design §4.5): the confirm run's pass is the gate's verdict on this tip alone, so the candidate goes
+  // on to promotion. That pass was written as no verdict, so the gate is owed again by every later tree and the CI's watch.
+  if (outcome.action === 'land') {
+    if (change((q) => ({ queue: { ...q, candidate: { ...q.candidate, state: 'green', landing: { onConfirm: outcome.passedOnConfirm } } } })).obsolete) return obsolete();
+    const gates = outcome.passedOnConfirm.join(', ');
+    console.log(`${at} ${candidate.tip.slice(0, 7)} lands on its confirm run alone (the owner's land): ${gates} passed only when run once more holding the whole machine admission, a verdict on this tip and no other's; no pass of ${gates} is kept for another tip or plan`);
+    return 'next';
+  }
+  // INTEGRATE1b, the owner's `hold`: the candidate waits with its members for a decide (§8), which no door gives yet, so it says so.
+  if (outcome.action === 'hold' && outcome.on === 'decide') {
+    const why = `${outcome.why}; no decide door exists yet (the integration design's §8): --drop-batch takes it off, and a commit on ${MAIN} forms it again`;
+    if (change((q) => ({ queue: { ...q, candidate: { ...q.candidate, state: 'held', held: { on: 'decide', why } } } })).obsolete) return obsolete();
+    console.log(`${at} held for a decide: ${why}`);
     return 'next';
   }
   if (outcome.action === 'hold') {
@@ -7831,7 +7938,7 @@ async function judged(home, candidate, outcome) {
   if (outcome.action === 'split') {
     if (change((q) => ({ queue: { ...q, candidate: null, handedBack: [...(q.handedBack ?? []), ...back].slice(-100), queued: [...requestsOf(q.candidate, retained).map((request) => ({ ...request, oneAtATime: true })), ...q.queued] } })).obsolete) return obsolete();
     for (const each of back) console.log(`${at} handed back: ${each.branch} (${each.handedBack.how}: ${each.handedBack.failure})`);
-    console.log(`${at} unresolved: ${outcome.retain.map((each) => each.branch).join(', ')} run one at a time`);
+    console.log(`${at} unresolved: ${outcome.retain.map((each) => each.branch).join(', ')} run one at a time${confirmSaid(outcome)}`);
     return 'next';
   }
   // The retained candidate is judged again: the members kept, formed anew on the base, run on their own tree.
@@ -7843,7 +7950,7 @@ async function judged(home, candidate, outcome) {
     return { queue: { ...q, candidate: null, forming, handedBack: [...(q.handedBack ?? []), ...back].slice(-100) }, forming };
   });
   if (ended.obsolete) return obsolete();
-  for (const each of back) console.log(`${at} handed back: ${each.branch} (${each.handedBack.how}: ${each.handedBack.failure})`);
+  for (const each of back) console.log(`${at} handed back: ${each.branch} (${each.handedBack.how}: ${each.handedBack.failure}${confirmSaid(outcome)})`);
   if (ended.forming) await formNext(home, ended.forming);
   return 'next';
 }

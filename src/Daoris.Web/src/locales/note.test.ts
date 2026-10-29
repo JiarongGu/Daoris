@@ -127,6 +127,14 @@ describe('the page’s map of a note’s codes, held to both writers', () => {
     expect(NOTE_VALUES.owner).toBe('text');
   });
 
+  /** FOUNDATION1f-i part 2 (§19.1 point 4): a move a live Daoris keeps past ten minutes is said by a line of its own, its minutes said in both languages. */
+  it('words a quiet move’s line by its own code, saying its minutes in both languages', () => {
+    expect(driver.find((code) => code.code === 'move.quiet')).toEqual({ code: 'move.quiet', values: ['minutes'], key: 'note.move.quiet', writer: 'driver' });
+    expect(NOTE_CODES['move.quiet']).toEqual({ values: ['minutes'] });
+    expect(placeholders(en['note.move.quiet'] ?? '')).toEqual(['minutes']);
+    expect(placeholders(zh['note.move.quiet'] ?? '')).toEqual(['minutes']);
+  });
+
   /** A `why` the driver writes is a reason the page words, by the same key, needing the values the driver writes beside it. */
   it('words every reason a `why` may name', () => {
     const continued = reasons('Continue');
