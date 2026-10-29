@@ -1,5 +1,5 @@
 {
-  "_about": "The machine's heavy-run admission (HEAVYQUEUE1), one table both twins read: the merge tool's tools/machine-admission.mjs (tools/machine-admission.test.mjs) and the driver's MachineAdmission.cs (MachineAdmissionTests). An entry is { id, since (seconds after `now`, negative: before), beatAgo (seconds, default 5), dead (its process is gone) }; `judge` answers whether the entry `id` is admitted over the entries that still count, and how many waits are ahead of it.",
+  "_about": "The machine's heavy-run admission (HEAVYQUEUE1), one table both twins read: the merge tool's tools/machine-admission.mjs (tools/machine-admission.test.mjs) and the driver's MachineAdmission.cs (MachineAdmissionTests). An entry is { id, since (seconds after `now`, negative: before), beatAgo (seconds, default 5), dead (its process is gone) }; `judge` answers whether the entry `id` is admitted over the entries that still count, and how many waits are ahead of it. `whole` (INTEGRATE1b) is the merge tool's whole take, N ordinary entries `ids` with one `since`: `judge` as above for the session `id`, and `lost` (its places no longer held), `others` (live holds not its own: the tool's doubt) and `full` (the machine is at its capacity).",
   "now": "2026-10-28T10:00:00.000Z",
   "capacity": [
     { "name": "22 processors: three", "cpus": 22, "slots": null, "expect": 3 },
@@ -74,6 +74,32 @@
       "name": "a run not yet among the waits is last in line",
       "capacity": 2, "holds": [{ "id": "h1", "since": -300 }], "waits": [{ "id": "b", "since": -2 }],
       "id": "z", "expect": { "admitted": false, "ahead": 1, "holds": 1 }
+    }
+  ],
+  "whole": [
+    {
+      "name": "the whole take held: N entries with one since fill the machine, and a session's ask waits",
+      "capacity": 3, "ids": ["9-ab-01", "9-ab-02", "9-ab-03"],
+      "holds": [{ "id": "9-ab-01", "since": -30 }, { "id": "9-ab-02", "since": -30 }, { "id": "9-ab-03", "since": -30 }], "waits": [{ "id": "s-1", "since": -1 }],
+      "id": "s-1", "expect": { "admitted": false, "ahead": 0, "holds": 3, "full": true, "lost": 0, "others": [] }
+    },
+    {
+      "name": "the whole take asking: a session's ask waits behind every one of its places",
+      "capacity": 3, "ids": ["9-ab-01", "9-ab-02", "9-ab-03"],
+      "holds": [], "waits": [{ "id": "s-1", "since": -1 }, { "id": "9-ab-03", "since": -30 }, { "id": "9-ab-01", "since": -30 }, { "id": "9-ab-02", "since": -30 }],
+      "id": "s-1", "expect": { "admitted": false, "ahead": 3, "holds": 0, "full": false, "lost": 3, "others": [] }
+    },
+    {
+      "name": "the whole take let go: the session's ask is admitted",
+      "capacity": 3, "ids": ["9-ab-01", "9-ab-02", "9-ab-03"],
+      "holds": [], "waits": [{ "id": "s-1", "since": -1 }],
+      "id": "s-1", "expect": { "admitted": true, "ahead": 0, "holds": 0, "full": false, "lost": 3, "others": [] }
+    },
+    {
+      "name": "a session that takes a place while they are held is a doubt",
+      "capacity": 3, "ids": ["9-ab-01", "9-ab-02", "9-ab-03"],
+      "holds": [{ "id": "9-ab-01", "since": -30 }, { "id": "9-ab-02", "since": -30 }, { "id": "9-ab-03", "since": -30 }, { "id": "s-2", "since": -2 }], "waits": [],
+      "id": "s-2", "expect": { "admitted": false, "ahead": 0, "holds": 4, "full": true, "lost": 0, "others": ["s-2"] }
     }
   ]
 }

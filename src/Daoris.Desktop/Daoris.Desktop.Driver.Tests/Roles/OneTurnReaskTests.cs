@@ -113,6 +113,22 @@ public sealed class OneTurnReaskTests
         Assert.Equal([new ReviewerPassed(Opus, null)], reask.Passed);
     }
 
+    /// <summary>
+    /// FOUNDATION1j: the one re-ask comparison every re-ask reads (the quest's, the intake's and this one's): the walk asked again moves the
+    /// open session only to another entry of the refused one's agent, on the account it refused on, whatever their case.
+    /// </summary>
+    [Fact]
+    public void A_re_ask_moves_the_open_session_only_to_another_entry_of_the_same_agent_on_the_same_account()
+    {
+        Assert.True(ReaskMove.Same(Opus, "account-1", Sonnet, "ACCOUNT-1"));
+        Assert.True(ReaskMove.Same(Opus, null, Sonnet with { Agent = "CODEX-ACP" }, null));
+        Assert.False(ReaskMove.Same(Opus, "account-1", null, "account-1"));
+        Assert.False(ReaskMove.Same(Opus, "account-1", Opus, "account-1"));
+        Assert.False(ReaskMove.Same(Opus, "account-1", Sonnet, "account-2"));
+        Assert.False(ReaskMove.Same(Opus, "account-1", Sonnet, null));
+        Assert.False(ReaskMove.Same(Opus, "account-1", new ActorEffective("claude-acp", "sonnet", null, "3"), "account-1"));
+    }
+
     /// <summary>The opening note's actor line is said only where a later entry ran (§4.6), its passes the walk's own.</summary>
     [Fact]
     public void The_actor_line_names_a_later_entry_and_what_it_passed()

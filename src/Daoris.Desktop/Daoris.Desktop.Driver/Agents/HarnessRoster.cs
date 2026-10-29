@@ -1252,9 +1252,11 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
         // PATH. An explicit `commands` entry is the person naming exactly what to run and has the
         // last word — a pin quietly replacing it would be a standing choice overruling a specific one.
         string? managed = null;
+        string? pinnedVersion = null;
         if (config.Commands.GetValueOrDefault(resolved.Name) is not { Count: > 0 }
             && settings.ResolveVersion(resolved.Name, workspace, chosen: null) is { } pinned)
         {
+            pinnedVersion = pinned;
             managed = HarnessSettings.ManagedBinary(Home, resolved.Name, pinned, toolchain.Binary);
             if (managed is null)
             {
@@ -1274,7 +1276,11 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
         }
 
         var report = await ReportAsync(resolved.Name, config, refresh: false, ct).ConfigureAwait(false);
-        if (report is { Present: false })
+        // 🔴 A pin this start resolved counts for this start alone (WSPINONLY1): the roster's binary look reads the machine's
+        // install and pin, never a workspace's, so an agent only a workspace pins was refused as absent. The managed install
+        // the pin names is its presence, found above; another workspace's start resolves no such pin and still asks the machine.
+        var pinPresent = managed is not null;
+        if (!pinPresent && report is { Present: false })
         {
             // Asked again before refusing: the cached answer may predate the install the last refusal
             // asked for. Its binary alone, since an install is no question of an account (ROSTER1).
@@ -1282,7 +1288,9 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
             report = await ReportAsync(resolved.Name, config, refresh: false, ct).ConfigureAwait(false);
         }
 
-        if (report is { Present: false })
+        // The pin's version is the version this start runs, where the machine's look found none to name.
+        var version = pinPresent && report is { Present: false } ? pinnedVersion : report?.Version;
+        if (!pinPresent && report is { Present: false })
         {
             var installs = toolchain.Install is { Count: > 0 };
             var own = string.Join(' ', toolchain.Command(config.Commands.GetValueOrDefault(resolved.Name)));
@@ -1315,7 +1323,7 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
 
         if (order is [null])
         {
-            return new HarnessSelection(null, null, null, report?.Version, managed, claude);
+            return new HarnessSelection(null, null, null, version, managed, claude);
         }
 
         // The account's state is its owner's answer when this build carries the owner — a door
@@ -1334,7 +1342,7 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
         string? Offers(string account) =>
             offer.Passed?.Contains(account, StringComparer.OrdinalIgnoreCase) == true
                 ? AgentOffers.NotOffered
-                : AgentOffers.Judge(readings, resolved.Name, report?.Version, account, offer.Model, Clock());
+                : AgentOffers.Judge(readings, resolved.Name, version, account, offer.Model, Clock());
         WalkPass pass;
         while (true)
         {
@@ -1401,7 +1409,7 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
                 ? new Dictionary<string, string> { [variable] = held }
                 : null;
 
-        var selection = new HarnessSelection(null, runs, home, report?.Version, managed, claude, key) { Number = pass.Number };
+        var selection = new HarnessSelection(null, runs, home, version, managed, claude, key) { Number = pass.Number };
         if (picked is not null || scope.List.Count == 0 || scope.Begins is not { } begins) return selection;
 
         // Said by whoever opens the record (TOOL4f, §3.6; TOOL6b, §16.4): its first line and `account.rotated`, with what each

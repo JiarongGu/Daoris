@@ -55,7 +55,10 @@ name and run those files (HEAD2d's *Pause…*, pressed in QuestsView.work.test.t
 two merges on 2026-10-19 stopped on it. A desktop test that uses `_fixtures` removes its scratch through `GitSeed.Discard`
 or `GitSeed.Remove`, never `Directory.Delete` (`GitSeedTests`), and waits on `Poll.Patience`, never a shorter fixed bound
 without a listed reason (`ShortWaitsCensusTests`): run both classes with your filter, since three branches on 2026-10-29
-reached the merge failing one of them. A change to a tool's `.ts` test runs `npm run typecheck -w daoris`. An archive entry is appended at the file's end, after one
+reached the merge failing one of them. A change to a tool's `.ts` test runs `npm run typecheck -w daoris`. A case added to a suite
+FOUNDATION1e's course table ports (`Driver.Tests/Course/course-cases.txt`'s `suite` lines) gains a row or an `out` line and the
+suite's count, or `LineCourseTests` fails; `node tools/partials.mjs` and `node tools/read-shares.mjs` stay clean (partial is for
+generated code; a source that writes through `AtomicFile` reads through it), as three batches on 2026-10-30 found at the queue. An archive entry is appended at the file's end, after one
 blank line, in its neighbours' shape (`## ROW — title (date, Dn)`, the quoted row, `**Outcome** date: …`). A record (a
 decision's note, a row, an archive entry, a README, a comment, a commit message) states what was decided and why in its own
 words, and never quotes the owner: the owner's words in this brief are context for you, not text for a record.

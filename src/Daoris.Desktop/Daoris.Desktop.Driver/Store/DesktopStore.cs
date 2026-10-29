@@ -183,6 +183,17 @@ public sealed class DesktopStore : IDisposable
               PRIMARY KEY (move, transfer)
             );
             """)),
+
+        // Row f-i part 2: what a box an older build wrote carries that step 4's columns do not, and a quiet move's telling (§3.3, §13.5,
+        // §19.1). Each nullable, added to the table a step-4 build already writes, which names its own columns and leaves these empty, so the
+        // stamp stays where it is and the step runs at the first start: the agent a hand-over opens its new part on, a limit's refused
+        // turns' bound, and the phase moment a quiet move was last said quiet for, so two processes looking say it once between them.
+        new(5, WriterStamp, write => write.Execute(
+            """
+            ALTER TABLE moves ADD COLUMN agent TEXT;
+            ALTER TABLE moves ADD COLUMN refused_bound INTEGER;
+            ALTER TABLE moves ADD COLUMN quiet_at TEXT;
+            """)),
     ];
 
     /// <summary>
@@ -369,6 +380,35 @@ public sealed class DesktopStore : IDisposable
 
         Touch();
         return result;
+    }
+
+    /// <summary>
+    /// This process's run recorded in <c>store_runs</c>, and nothing else: no family's revision moves and no wake is touched (FOUNDATION1f-i
+    /// part 2, §19.1 point 3). A shell's come-up enters before it reads the runs, so another shell coming up on the home finds it there.
+    /// </summary>
+    /// <exception cref="DesktopStoreNewerException">The file's stamp is past this build's: nothing is written.</exception>
+    /// <exception cref="DesktopStoreBusyException">The write lock stayed held past the wait; nothing was written.</exception>
+    public void Enter()
+    {
+        lock (_turn)
+        {
+            ThrowIfDisposed();
+            if (_registered) return;
+            using var transaction = Begin();
+            try
+            {
+                var stamp = ReadStamp(transaction);
+                if (stamp.Writer > Own) throw new DesktopStoreNewerException(stamp.Writer, Own);
+                if (stamp.Version == 0) throw new DesktopStoreException($"the desktop's store has no schema yet: {Held ?? "its first migration did not run"}.");
+                Register(new DesktopWrite(_connection, transaction));
+                transaction.Commit();
+                _registered = true;
+            }
+            catch (SqliteException error) when (Busy(error))
+            {
+                throw new DesktopStoreBusyException(error);
+            }
+        }
     }
 
     /// <summary><see cref="Write{T}"/> for work that answers nothing.</summary>

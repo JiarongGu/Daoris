@@ -36,6 +36,12 @@ public interface IActorChoice<TChoice> where TChoice : IActorChoice<TChoice>
     /// <summary>Each entry tried and passed, in the order tried.</summary>
     IReadOnlyList<IActorTried> Tried { get; }
 
+    /// <summary>
+    /// Each entry the start plan's loop passed before the one that runs, in order, in the plan's one vocabulary (<see cref="StartPasses"/>;
+    /// FOUNDATION1j part ii): what the opening note's actor line and the machine log say.
+    /// </summary>
+    IReadOnlyList<BuildPass> Passes { get; }
+
     /// <summary>The same choice on <paramref name="selection"/>: the session that goes on with a later entry keeps the account it opened on.</summary>
     TChoice WithSelection(HarnessSelection? selection);
 }

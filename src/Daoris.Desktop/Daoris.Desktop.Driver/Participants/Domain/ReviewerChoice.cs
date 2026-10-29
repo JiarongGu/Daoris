@@ -96,6 +96,21 @@ public static class ReviewerHeld
 
     /// <summary>Refused for anything else, its provider's refusal among them (AGT3b).</summary>
     public const string Refused = "refused";
+
+    /// <summary>
+    /// The code of the start plan's one vocabulary a reviewer's hold is passed by (FOUNDATION1j part ii, <see cref="StartPasses"/>), which
+    /// the opening note's actor line and the machine log say: an agent not installed, or not at its pin, cannot run here at all and is
+    /// <c>unavailable</c> (D205 point 4); a refusal of anything else is <c>held</c>, its own sentence saying what. The reviewer's own code stays
+    /// on its try, for its sentence and its <see cref="ReviewerUnavailable"/> code.
+    /// </summary>
+    public static string Pass(string held) => held switch
+    {
+        NotInstalled or PinNotInstalled => StartPasses.Unavailable,
+        NotOffered => StartPasses.NotOffered,
+        Cooling => StartPasses.Cooling,
+        SignedOut => StartPasses.SignedOut,
+        _ => StartPasses.Held,
+    };
 }
 
 /// <summary>One reviewer the walk tried and passed, with what held it.</summary>
@@ -166,6 +181,25 @@ public sealed record ReviewerChoice(string? Reviewer, string? Label, string? Cod
 
     IReadOnlyList<IActorTried> IActorChoice<ReviewerChoice>.Tried => Tried;
 
+    /// <summary>
+    /// The role whose start plan walked it (FOUNDATION1j part ii): <c>opinion</c>, <c>helper</c> or <c>partner</c>; null for a choice built
+    /// by hand or refused before any walk.
+    /// </summary>
+    public string? Role { get; init; }
+
+    /// <summary>
+    /// Each entry the plan's loop passed before the one taken, in order, in the plan's one vocabulary (<see cref="ReviewerHeld.Pass"/>): the
+    /// opening note's actor line and the machine log say these, and <see cref="Tried"/> keeps the reviewer's own codes for its sentence.
+    /// </summary>
+    public IReadOnlyList<BuildPass> Passes { get; init; } = [];
+
+    /// <summary>
+    /// The plan's settled selection the start opens on (the foundation design §2.4): the role, the entry taken, its selection and what was
+    /// passed before it. Its reservation is the start's one count, taken by the account walk at the selection; null where none was chosen.
+    /// </summary>
+    public SettledSelection? Settled =>
+        Role is { } role && Selection is { } selection && Effective is { } entry ? new SettledSelection(role, selection, entry, Passes) : null;
+
     ReviewerChoice IActorChoice<ReviewerChoice>.WithSelection(HarnessSelection? selection) => this with { Selection = selection };
 
     /// <summary>
@@ -185,10 +219,10 @@ public sealed record ReviewerChoice(string? Reviewer, string? Label, string? Cod
     }
 
     /// <summary>
-    /// The walk's passes, each in the rule's order (§3.2, §3.3): another maker's agent, with each name this machine has no agent
+    /// The walk's order by maker, each pass in the rule's order (§3.2, §3.3): another maker's agent, with each name this machine has no agent
     /// of, which is said and asks nothing; then an agent whose maker is not declared; then the work's own family.
     /// </summary>
-    private static readonly Func<Entry, bool>[] Passes =
+    private static readonly Func<Entry, bool>[] ByMaker =
     [
         entry => entry.MayBeAnother,
         entry => entry.Known && entry.Label == ReviewerLabels.MakerNotDeclared,
@@ -218,33 +252,51 @@ public sealed record ReviewerChoice(string? Reviewer, string? Label, string? Cod
         CancellationToken ct = default, string actor = "opinion", IReadOnlyList<ReviewerPassed>? passed = null,
         IReadOnlyList<ActorEffective>? order = null)
     {
+        StartPlan plan;
         try
         {
-            order ??= rule.Reviewers.Count == 0 ? [] : ActorChoices.Effective(actor, config, fence: rule.Reviewers);
+            // FOUNDATION1j part ii (the foundation design §2.4): the start plan of the actor's work, its order the rule's reviewers each
+            // expanded into the actor's entries for it, or the entries the caller holds; its account walk the plan's, for the workspace.
+            plan = new StartPlan(
+                WorkOf(actor), config, roster, roster.Adapters, new PassMemory(), fence: rule.Reviewers.Count == 0 ? null : rule.Reviewers,
+                order: order ?? (rule.Reviewers.Count == 0 ? Array.Empty<ActorEffective>() : null))
+            {
+                Workspace = workspace, Subject = actor,
+            };
         }
         catch (ActorUnreadableException error)
         {
             return new ReviewerChoice(null, null, ReviewerUnavailable.Refused, $"No second opinion: {error.Message}");
         }
 
-        return await WalkAsync(roster.Adapters, order, working, entry => TryAsync(roster, entry, config, workspace, passed, ct)).ConfigureAwait(false);
+        return await WalkAsync(roster.Adapters, plan.Order, working, entry => TryAsync(plan, entry, passed, ct), plan.Role).ConfigureAwait(false);
     }
+
+    /// <summary>The participant's work an actor's reviewer starts for: a helper's, a partner's, else a second opinion's.</summary>
+    private static string WorkOf(string actor) => actor switch
+    {
+        "helper" => ParticipantWork.Help,
+        "partner" => ParticipantWork.Partner,
+        _ => ParticipantWork.Review,
+    };
 
     /// <summary>
     /// The walk over the reviewer of work the <paramref name="working"/> agents wrote, from the <paramref name="order"/>'s entries, in
     /// its passes' order (§3.2, §3.3): each entry asked of <paramref name="tryEntry"/>, the account walk, until one may run.
     /// </summary>
     /// <remarks>
-    /// The walk is this type's rule; the account walk it asks is the world's, handed in, and <see cref="ChooseAsync"/> hands it
-    /// over the machine's agents.
+    /// The walk is the start plan's one loop (FOUNDATION1j part ii, <see cref="StartPlan.LoopAsync{TEntry}"/>) under this type's own rule
+    /// over it: its order by maker and its held agents. The account walk it asks is the world's, handed in, and <see cref="ChooseAsync"/>
+    /// hands it as the plan's one ask over the machine's agents.
     /// </remarks>
     /// <param name="adapters">The machine's agents, the build's and its plugins'.</param>
     /// <param name="order">The effective entries of the rule's reviewers, each agent's alternatives together and in order (<see cref="ActorChoices.Effective"/>).</param>
     /// <param name="working">The adapters of the sessions whose work is read: their families are the work's.</param>
     /// <param name="tryEntry">One reviewer asked of the account walk: its selection where it may run, else what held it.</param>
+    /// <param name="role">The role whose plan walks it, which its settled selection names.</param>
     internal static async Task<ReviewerChoice> WalkAsync(
         AdapterSet adapters, IReadOnlyList<ActorEffective> order, IReadOnlyCollection<string> working,
-        Func<Entry, Task<(HarnessSelection? Selection, ReviewerTried? Held)>> tryEntry)
+        Func<Entry, Task<(HarnessSelection? Selection, ReviewerTried? Held)>> tryEntry, string role = "opinion")
     {
         var families = new List<AgentFamily>();
         foreach (var name in working.Where(name => !string.IsNullOrWhiteSpace(name)))
@@ -263,17 +315,22 @@ public sealed record ReviewerChoice(string? Reviewer, string? Label, string? Cod
         // An agent held as a whole (not installed, cooling, signed out, its pin) holds each of its entries alike: a cool-off is its account's
         // (§4.1), so its later entries are not asked. A model refused is an entry's alone, and the next entry of the agent is.
         var heldAgents = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var pass in Passes)
-        {
-            foreach (var entry in entries.Where(pass))
-            {
-                if (heldAgents.Contains(entry.Family.Agent)) continue;
-                var (selection, held) = await tryEntry(entry).ConfigureAwait(false);
-                if (selection is not null) return Chose(entry, selection, entries, tried, families);
-                tried.Add(held! with { Entry = entry.Effective });
-                if (held!.Held != ReviewerHeld.NotOffered) heldAgents.Add(entry.Family.Agent);
-            }
-        }
+        // FOUNDATION1j part ii: the plan's one loop, under this walk's own rule over it: the entries by maker, each pass of the rule's in turn,
+        // and an agent held as a whole skipped. Each entry it passes is said in the plan's vocabulary; its own code stays on its try.
+        var walked = await StartPlan.LoopAsync(
+                ByMaker.SelectMany(pass => entries.Where(pass)), entry => entry.Effective,
+                async entry =>
+                {
+                    var (selection, held) = await tryEntry(entry).ConfigureAwait(false);
+                    if (selection is not null) return EntryTry.Runs(selection);
+                    var hold = held!;
+                    tried.Add(hold with { Entry = entry.Effective });
+                    if (hold.Held != ReviewerHeld.NotOffered) heldAgents.Add(entry.Family.Agent);
+                    return EntryTry.Passed(ReviewerHeld.Pass(hold.Held), hold.Refusal);
+                },
+                holds: (entry, _) => heldAgents.Contains(entry.Family.Agent))
+            .ConfigureAwait(false);
+        if (walked.Taken is { } taken) return Chose(taken, walked.Selection!, entries, tried, families) with { Role = role, Passes = walked.Passes };
 
         var code = Why(entries, tried);
         return new ReviewerChoice(null, null, code, $"No second opinion: {Lead(code)}.{Passed(tried)}")
@@ -281,6 +338,8 @@ public sealed record ReviewerChoice(string? Reviewer, string? Label, string? Cod
             Working = families,
             Tried = tried,
             Cooling = FirstReset(tried),
+            Role = role,
+            Passes = walked.Passes,
         };
     }
 
@@ -359,9 +418,9 @@ public sealed record ReviewerChoice(string? Reviewer, string? Label, string? Cod
     private static CoolingEntry? FirstReset(IEnumerable<ReviewerTried> tried) =>
         tried.Select(each => each.Cooling).OfType<CoolingEntry>().MinBy(cooling => cooling.Until);
 
-    /// <summary>One reviewer asked of the account walk: its selection where it may run, else what held it.</summary>
+    /// <summary>One reviewer asked of the start plan's account walk: its selection where it may run, else what held it.</summary>
     private static async Task<(HarnessSelection? Selection, ReviewerTried? Held)> TryAsync(
-        HarnessRoster roster, Entry entry, DriverConfig config, string? workspace, IReadOnlyList<ReviewerPassed>? passed, CancellationToken ct)
+        StartPlan plan, Entry entry, IReadOnlyList<ReviewerPassed>? passed, CancellationToken ct)
     {
         var (name, label) = (entry.Family.Agent, entry.Label);
         // Named, never guessed (D23): a name this machine has no agent of is said, and nothing is asked.
@@ -385,10 +444,9 @@ public sealed record ReviewerChoice(string? Reviewer, string? Label, string? Cod
         {
             // D205 §4.1: each account is judged by its reading for the entry's model, and an account this owner's call already passed for
             // the entry at an open's refusal is left out.
+            // FOUNDATION1j part ii: the plan's one ask, a driven start's for the repository's workspace, counted where it chooses an account.
             var left = passed?.Where(each => each.Entry == entry.Effective && each.Account is { Length: > 0 }).Select(each => each.Account!).ToList();
-            selection = await roster.SelectAsync(
-                name, config, workspace, chosen: null, StartKind.Driven, ct, entry.Effective.Model, left is { Count: > 0 } ? left : null)
-                .ConfigureAwait(false);
+            selection = await plan.AccountsAsync(name, entry.Effective.Model, left is { Count: > 0 } ? left : null, ct).ConfigureAwait(false);
         }
         catch (Exception error) when (error is DriverException or IOException or UnauthorizedAccessException)
         {
