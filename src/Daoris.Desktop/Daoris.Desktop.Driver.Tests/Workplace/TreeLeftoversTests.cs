@@ -64,6 +64,42 @@ public sealed class TreeLeftoversTests : IDisposable
         Assert.Contains("s-0000dead", said);
     }
 
+    /// <summary>
+    /// TREECLEANFREE1: what outlives a holder's exit (a scanner's read of the folder) is a handle the clean-up meets as
+    /// well as the holder's. One that refuses every open fails the clean-up's look at the folder, and a clean-up that
+    /// passed over what it could not look at left the folder and said nothing: every press says what became of it.
+    /// </summary>
+    [Theory]
+    [InlineData(FolderHold.Exclusive)]
+    [InlineData(FolderHold.NoDelete)]
+    public async Task A_folder_a_handle_outlives_its_holder_in_is_said_held_each_press_and_goes_the_press_after_it_is_let_go(uint share)
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var trees = new SessionTrees(_home);
+        var left = Path.Combine(trees.TreesRoot, "aurora", "engine", "s-0000f00d");
+        Directory.CreateDirectory(left);
+
+        using (FolderHold.Take(left, share))
+        {
+            for (var press = 0; press < 2; press++)
+            {
+                var done = await trees.CleanAsync([], new HashSet<string>());
+
+                Assert.True(Directory.Exists(left), "a held folder cannot have gone");
+                var said = Assert.Single(done.Folders!);
+                Assert.Contains(left, said);
+                Assert.Contains("stays", said);
+                Assert.Contains("hold", said);
+                Assert.Contains("open", said);
+            }
+        }
+
+        var freed = await trees.CleanAsync([], new HashSet<string>());
+
+        Assert.False(Directory.Exists(left));
+        Assert.StartsWith("removed the empty folder a tree left at ", Assert.Single(freed.Folders!));
+    }
+
     [Fact]
     public async Task With_no_trees_home_the_clean_up_has_no_folder_to_say_anything_of()
     {

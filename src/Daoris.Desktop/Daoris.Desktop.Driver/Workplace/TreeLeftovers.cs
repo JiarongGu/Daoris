@@ -82,7 +82,15 @@ internal sealed class TreeLeftovers(TreeContext context)
             {
                 bool empty;
                 try { empty = !Directory.EnumerateFileSystemEntries(tree).Any(); }
-                catch (Exception error) when (error is IOException or UnauthorizedAccessException) { continue; }
+                catch (DirectoryNotFoundException) { continue; }
+                catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+                {
+                    // TREECLEANFREE1: a handle that shares nothing (a scanner's read, a holder's child) fails the look itself; passed over
+                    // in silence, the folder stayed and the press said nothing of it, where every held one is said.
+                    said.Add($"the folder a tree left at {tree} stays: it could not be looked into, and something on this machine "
+                        + $"may hold it open ({error.Message}). The clean-up looks again once nothing does.");
+                    continue;
+                }
                 if (!empty) continue;
                 said.Add(EmptyFolderGone(tree) is { } why
                     ? $"the empty folder a tree left at {tree} stays: {why}"
