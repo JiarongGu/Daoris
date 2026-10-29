@@ -5,6 +5,13 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-29 - Two fast driver cases read the machine's clock against bounds load outruns (FLAKE1)
+
+- **Symptom:** the merge queue's fast Driver run on candidate `8fe51f4` (five builders beside it) failed two cases of 15,869 that no member of the batch touches: `AccountWalkGateTests.A_status_question_that_cannot_have_its_lock_leaves_the_account_unknown_for_the_walk` ("the walk waited 00:00:14.38 for a lock it had already not had", against a bound of 3.5 s) and `WorkPeerTests.A_step_event_reaches_the_listener_and_nothing_else_from_the_plugin_does` ("did not answer `initialize` within 10s"). A fast-half failure is never run again, so each such bound costs a candidate.
+- **Root cause:** both cases compare the machine's clock with a fixed span. The walk's case tells one lock wait from two by `elapsed < patience × 1.75` with a two-second patience, so any overhead past 1.5 s reads as a second wait. The peer's cases hand no patience, so the handshake waits on `HookPeer.DefaultPatience`, ten seconds, for a stand-in answered at once, which a starved thread pool ran late; WORKPEERWAIT1 had moved the in-flight case alone off that default.
+- **Fix:** test only. The walk's case times one refused `ProbeLock.TakeAsync` on the held lock in the same moment, and bounds the walk by 1.75 of that measured wait, so load inflates both sides alike and one wait is still told from two. The peer's `Started` helper hands `Poll.Patience` where a case names no patience: no case in the class times a call against the ten-second default (the too-long and in-flight cases already hand an infinite patience). No product code changed, no retry, no sleep.
+- **Verify:** both classes and `ShortWaitsCensusTests`, 22 passed. Not proved: the two failures' own reproduction under that load.
+
 ## 2026-10-29 - A Codex session's first tool catalog could omit the connector still starting (CODEXTOOLS1)
 
 - **Symptom:** on the install, a Codex conversation's first turn had no `daoris-knowledge` tools while its next turn had fifty-one, intermittently; a pending optional server was seen at the first capture.
