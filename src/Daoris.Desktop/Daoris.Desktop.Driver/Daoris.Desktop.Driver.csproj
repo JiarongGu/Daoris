@@ -36,6 +36,14 @@
     <None Include="resources.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Never" />
   </ItemGroup>
 
+  <!-- Each provider's program (AGENTPROVIDER1 row b, part 3; D213): every file under a provider folder's `Program/`, carried by
+       this one glob beside every build that references the driver (the tests, the headless host a rehearsal builds), at the path
+       it has here. A stand-in's program runs no model and serves no person, so no publish carries it, and a provider added later
+       lists nothing here. -->
+  <ItemGroup>
+    <None Include="Agents\Providers\*\Program\**" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Never" />
+  </ItemGroup>
+
   <!-- The plugin kit's templates (PLUG8): what `plugins new` writes into a new plugin's folder. Named
        `.template` so no test runner or gate mistakes them for this repository's own scripts. -->
   <ItemGroup>
