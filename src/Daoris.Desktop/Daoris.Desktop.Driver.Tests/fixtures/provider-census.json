@@ -1,5 +1,5 @@
 {
-  "_why": "AGENTPROVIDER1 row a (the agent-provider design §9, D213): every site in the desktop's driver, host and modules that knows a provider by a string or a type, as a named exception with its count, the design's row that removes it and why it stays until then. `ProviderCensusTests` holds the table exactly: a site not here fails, a count that differs fails, a row nothing needs is taken back. The vocabulary words come from `provider-vocabulary.json`. The page's, the service's and the tools' twins (part 3) read the sections they need of this file. `providerFolders`: the folder under which each provider's own types and words live (`Agents/Providers/<Id>/`), `folders` its provider ids; a provider's folder names another provider's type, variable or wire key only where `declaredReferences` has [folder, token, why] for it. `registrationList`: `Providers.Built()`, which names registrations and nothing else. `otherSense`: [file, token, why], a spelling the census would count that is another sense (a workflow's wire, a held answer's JSON), each verified. `exceptions`: [file, token, count, row, class, why]. `row` is the design's row (§11) that moves the site, or `-` where none does; `class` is `behaviour` (a row moves it), `permanent` (a decision keeps it: D23's default, D209's holder, D72's grammar, the terminal's named pipe, the doctrine layouts), `words` (an id as an example in help or a refusal) or `measurement` (a dated probe, a fixture, evidence). A token is a kind of site: a door's test (`SessionWire.Acp`, `SessionWire.Pipe`, `SessionWire`, `.Wire`, `Wire(`, the spellings `\"pipe\"`, `\"acp\"`, `\"protocol\"`), an id (a quoted literal, `StartsWith(agent)`, `AccessKey.ClaudeCode`, `id in a sentence`), a provider's type, or a word of the vocabulary. Rows are in ordinal order of file, then token.",
+  "_why": "AGENTPROVIDER1 row a (the agent-provider design §9, D213): every site in the desktop's driver, host and modules that knows a provider by a string or a type, as a named exception with its count, the design's row that removes it and why it stays until then. `ProviderCensusTests` holds the table exactly: a site not here fails, a count that differs fails, a row nothing needs is taken back. The vocabulary words come from `provider-vocabulary.json`. The service's, the page's and the tools' twins (part 3) each read the section named for them (`service`, `page`, `tools`): `roots` the folders whose production sources it counts, `exceptions` the same rows, in the same order, with the same rules; they count the ids and the words of `provider-vocabulary.json` over the source with comments blanked (the service holds no driver type, so the literals and the keys are what can cross). `providerFolders`: the folder under which each provider's own types and words live (`Agents/Providers/<Id>/`), `folders` its provider ids; a provider's folder names another provider's type, variable or wire key only where `declaredReferences` has [folder, token, why] for it. `registrationList`: `Providers.Built()`, which names registrations and nothing else. `otherSense`: [file, token, why], a spelling the census would count that is another sense (a workflow's wire, a held answer's JSON), each verified. `exceptions`: [file, token, count, row, class, why]. `row` is the design's row (§11) that moves the site, or `-` where none does; `class` is `behaviour` (a row moves it), `permanent` (a decision keeps it: D23's default, D209's holder, D72's grammar, the terminal's named pipe, the doctrine layouts), `words` (an id as an example in help or a refusal) or `measurement` (a dated probe, a fixture, evidence). A token is a kind of site: a door's test (`SessionWire.Acp`, `SessionWire.Pipe`, `SessionWire`, `.Wire`, `Wire(`, the spellings `\"pipe\"`, `\"acp\"`, `\"protocol\"`), an id (a quoted literal, `StartsWith(agent)`, `AccessKey.ClaudeCode`, `id in a sentence`), a provider's type, or a word of the vocabulary. Rows are in ordinal order of file, then token.",
 
   "providerFolders": "Daoris.Desktop.Driver/Agents/Providers/",
   "registrationList": "Daoris.Desktop.Driver/Agents/Registry/Providers.cs",
@@ -221,5 +221,60 @@
     ["Daoris.Desktop.Modules/Platform/StandingConfirmation.cs", "id in a sentence", 3, "-", "permanent", "D209's holder: the confirmation names the pinned Claude Code"],
     ["Daoris.Desktop.Modules/Platform/StartStages.cs", "\"pipe\"", 1, "-", "permanent", "the terminal's named pipe: a start stage's name (design §9)"],
     ["Daoris.Desktop.Modules/Update/HomePlacing.cs", "\"pipe\"", 1, "-", "permanent", "the terminal's named pipe: a home entry the update places (design §9)"]
-  ]
+  ],
+
+  "service": {
+    "roots": ["src/Daoris.Service/Daoris.Service.Core", "src/Daoris.Service/Daoris.Service.Http", "src/Daoris.Service/Daoris.Service.Mcp", "src/Daoris.Service/Daoris.Service.Shared"],
+    "exceptions": []
+  },
+
+  "page": {
+    "roots": ["src/Daoris.Web/src"],
+    "exceptions": []
+  },
+
+  "tools": {
+    "roots": ["tools", "src/Daoris.Cli/src"],
+    "exceptions": [
+      ["src/Daoris.Cli/src/cli/init.ts", "id in a sentence", 1, "-", "permanent", "the doctrine layout's name in init's usage line: the CLI keeps its offline layouts (design §6, §9; the brief §6)"],
+      ["src/Daoris.Cli/src/layout/harness.ts", "\"claude-code\"", 3, "-", "permanent", "the doctrine layout named claude-code, its default (D23, D117): the CLI keeps its offline layouts (design §9)"],
+      ["src/Daoris.Cli/src/layout/harness.ts", "id in a sentence", 3, "-", "permanent", "the doctrine layout's name in the layout table's text (design §9)"],
+      ["tools/acp-trust-probe.mjs", "\"claude-code-acp\"", 1, "-", "measurement", "a dated probe of Claude Code's protocol door"],
+      ["tools/acp-trust-probe.mjs", ".claude.json", 1, "-", "measurement", "a dated probe reads the trust file Claude Code keeps"],
+      ["tools/acp-trust-probe.mjs", "CLAUDE_CONFIG_DIR", 1, "-", "measurement", "a dated probe points Claude Code at a scratch home"],
+      ["tools/acp-trust-probe.mjs", "id in a sentence", 1, "-", "words", "the probe's usage text names the door it probes"],
+      ["tools/acp2-proof.mjs", ".claude.json", 2, "-", "measurement", "a dated proof reads the trust file Claude Code keeps"],
+      ["tools/acp2-proof.mjs", "CLAUDE_CONFIG_DIR", 2, "-", "measurement", "a dated proof points Claude Code at a scratch home"],
+      ["tools/console2-probe.mjs", "\"dsh\"", 1, "-", "measurement", "a dated probe of the console drives dsh"],
+      ["tools/console3-probe.mjs", "\"claude\"", 2, "-", "measurement", "a dated probe of the console names the program it runs"],
+      ["tools/deployment-rehearsal.mjs", "\"acp-stub\"", 4, "b", "behaviour", "the deployment rehearsal's stand-in, read from the registry's stand-in providers from row b"],
+      ["tools/deployment-rehearsal.mjs", "\"stub\"", 2, "b", "behaviour", "the deployment rehearsal's stand-in, read from the registry's stand-in providers from row b"],
+      ["tools/deployment-rehearsal.mjs", "id in a sentence", 4, "-", "words", "the rehearsal's check names say which stand-in they drive"],
+      ["tools/desktop-publish.mjs", ".mcp.json", 1, "-", "words", "the publisher's help text names a repository's own connector file"],
+      ["tools/fabric-probe/launch.mjs", "\"claude\"", 6, "-", "measurement", "a dated probe of the fabric launches Claude Code's program"],
+      ["tools/fabric-probe/launch.mjs", "\"codex\"", 1, "-", "measurement", "a dated probe of the fabric launches Codex's program"],
+      ["tools/fabric-probe/receipt.mjs", "x-codex-turn-metadata", 3, "-", "measurement", "a dated probe reads Codex's turn header from a receipt"],
+      ["tools/family-rehearsal.mjs", "\"acp-stub\"", 30, "b", "behaviour", "the family rehearsal's protocol stand-in, read from the registry's stand-in providers from row b"],
+      ["tools/family-rehearsal.mjs", "\"claude-code\"", 6, "-", "measurement", "the rehearsal drives Claude Code as the evidence it keeps working"],
+      ["tools/family-rehearsal.mjs", "\"dsh\"", 2, "-", "measurement", "the rehearsal drives dsh as the evidence it keeps working"],
+      ["tools/family-rehearsal.mjs", "\"stub\"", 33, "b", "behaviour", "the family rehearsal's pipe stand-in, read from the registry's stand-in providers from row b"],
+      ["tools/family-rehearsal.mjs", ".mcp.json", 2, "-", "measurement", "the rehearsal's adopted-repository checks look for the connector file the driver may never write (D32)"],
+      ["tools/family-rehearsal.mjs", "id in a sentence", 46, "-", "words", "the rehearsal's check names say which agent they drive"],
+      ["tools/knowledge-bench.mjs", "\"claude\"", 1, "-", "measurement", "the bench runs the model's own program to answer its questions"],
+      ["tools/live-logins.mjs", "\"claude-code\"", 1, "d", "behaviour", "the door-to-owner twin: row d has the tool read the driver's answer"],
+      ["tools/live-logins.mjs", "\"claude-code-acp\"", 1, "d", "behaviour", "the door-to-owner twin: row d has the tool read the driver's answer"],
+      ["tools/live-logins.mjs", "\"codex\"", 1, "d", "behaviour", "the door-to-owner twin: row d has the tool read the driver's answer"],
+      ["tools/live-logins.mjs", "\"codex-acp\"", 1, "d", "behaviour", "the door-to-owner twin: row d has the tool read the driver's answer"],
+      ["tools/live-logins.mjs", "id in a sentence", 3, "-", "words", "the tool's refusal names the doors it checks"],
+      ["tools/merge-branch.mjs", ".mcp.json", 1, "-", "permanent", "a lane rule that places the connector file among the harness's settings: a path, no agent's behaviour"],
+      ["tools/proof-kit.mjs", "\"claude\"", 2, "-", "measurement", "the proof kit runs the agents' programs as evidence"],
+      ["tools/proof-kit.mjs", "\"claude-code\"", 1, "-", "measurement", "the proof kit names the agent a proof ran as"],
+      ["tools/proof-kit.mjs", "\"claude-code-acp\"", 1, "-", "measurement", "the proof kit names the door a proof ran on"],
+      ["tools/proof-kit.mjs", "id in a sentence", 5, "-", "words", "the proof kit's refusals name the door a proof ran on"],
+      ["tools/rehearsal-kit.mjs", "\"acp-stub\"", 1, "b", "behaviour", "the kit's stand-in, read from the registry's stand-in providers from row b"],
+      ["tools/rehearsal-kit.mjs", "id in a sentence", 2, "-", "words", "the kit's text names the stand-in"],
+      ["tools/service-publish.mjs", ".mcp.json", 1, "-", "words", "the publisher's printed instruction names a repository's own connector file"],
+      ["tools/testbed.mjs", ".mcp.json", 2, "-", "measurement", "the test bed writes the connector file into its scratch repository"]
+    ]
+  }
 }
