@@ -146,7 +146,8 @@ internal sealed class TreeWorkReads(TreeContext context, TreeSquashes squashes, 
             var proof = await ContentHolds.HeldByContentAsync(full, judged, line, notHolders, ct).ConfigureAwait(false);
             if (proof.Hold is not { } held) return (null, proof.Lacks);
 
-            var holds = await ContentHolds.HoldsAsync(full, root, ct).ConfigureAwait(false);
+            var holds = await ContentHolds.HoldsAsync(full, root, await context.ScratchAsync(root, repository, workspace, ct, line).ConfigureAwait(false), ct)
+                .ConfigureAwait(false);
             var stays = holds is null ? "Daoris cannot tell what it holds beyond its commits"
                 : holds.Uncommitted.Count > 0 ? $"it has {holds.Uncommitted.Count} uncommitted path(s), which a discard would destroy"
                 : holds.OwnSaid is { } own ? $"it holds {own}, which a discard would destroy"

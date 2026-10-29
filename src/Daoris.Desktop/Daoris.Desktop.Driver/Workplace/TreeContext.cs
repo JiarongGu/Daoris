@@ -99,6 +99,28 @@ internal sealed class TreeContext
     internal Task<Line> LineAsync(string root, string repository, string workspace, CancellationToken ct) =>
         CanonicalLine.ResolveAsync(root, repository, workspace, Config(), GuessAsync, ct);
 
+    /// <summary>
+    /// The output a repository declares, which an unforced removal of its tree takes with it (TIDYOUTPUT1): its <c>integration.scratch</c>,
+    /// read from the declaration the owner accepted for integration at its line's tip alone (INTEGRATE1d, D218's note,
+    /// <see cref="TreeScratch.AcceptedAsync"/>). None where the choices could not be read, the line is not known or nothing is accepted,
+    /// so the tree keeps what it names, as before TIDYOUTPUT1.
+    /// </summary>
+    /// <param name="line">The repository's line where the caller read it already; null reads it here.</param>
+    internal async Task<IReadOnlyList<System.Text.RegularExpressions.Regex>> ScratchAsync(
+        string root, string repository, string workspace, CancellationToken ct, string? line = null)
+    {
+        try
+        {
+            var config = Config();
+            line ??= (await LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
+            return await TreeScratch.AcceptedAsync(config, root, repository, line, ct).ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException)
+        {
+            return [];
+        }
+    }
+
     /// <summary>The test seam (UIFREEZE1): git's guess at a checkout's line, counted by a test. Production asks git.</summary>
     internal Func<string, CancellationToken, Task<string?>> CheckoutLine { get; set; } = s_gitGuess;
 

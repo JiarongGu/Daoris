@@ -85,7 +85,9 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
             // committed or abandoned IN the tree; unmerged commits are merged FROM it (SURF6's surface).
             // Asked so no setting hides one (SQUASHTIDY1c): an untracked file `status.showUntrackedFiles=no` hides,
             // and an ignored one only this tree holds, which `git worktree remove` deletes without asking.
-            var holds = await ContentHolds.HoldsAsync(full, root, ct).ConfigureAwait(false);
+            // INTEGRATE1d (D218's note): the output the repository declares counts only as the owner accepted it for integration.
+            var declared = await context.ScratchAsync(root, owner.Repository, owner.Workspace, ct).ConfigureAwait(false);
+            var holds = await ContentHolds.HoldsAsync(full, root, declared, ct).ConfigureAwait(false);
             if (holds is null)
             {
                 return new(false, $"Daoris cannot tell what the tree at {path} holds beyond its commits. "
