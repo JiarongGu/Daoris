@@ -53,7 +53,7 @@ public sealed class LogModule(
         /// <summary>An identifier: a view, a command, a region, a session id. Never a sentence.</summary>
         Name,
 
-        /// <summary>A short text, cut at <see cref="MaxText"/>: the one free string, a caught error's message.</summary>
+        /// <summary>A short text, cut at <see cref="MaxText"/>: a caught error's message, and a caught render's component stack.</summary>
         Text,
 
         /// <summary>A whole number, zero or more.</summary>
@@ -74,7 +74,10 @@ public sealed class LogModule(
             ["message.sent"] = ("info",
                 [("session", Kind.Name), ("kind", Kind.Name), ("length", Kind.Count), ("files", Kind.Count), ("reach", Kind.Name)]),
             ["proposal.settled"] = ("info", [("applied", Kind.Flag)]),
-            ["page.error"] = ("error", [("where", Kind.Name), ("message", Kind.Text)]),
+            // `view` and `stack` (PAGELOOP1, D217): a render the page's error screen caught, with the view it showed and its
+            // component stack's first frames by name; never a frame's location, which the page leaves out before it reports.
+            ["page.error"] = ("error",
+                [("where", Kind.Name), ("message", Kind.Text), ("view", Kind.Name), ("stack", Kind.Text)]),
         };
 
     /// <summary>An identifier: letters, digits and the joiners ids use (a mirrored session is `origin/id`), no spaces.</summary>

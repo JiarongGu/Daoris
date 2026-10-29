@@ -90,12 +90,47 @@ export const useOpenLogFolder = () => useMutation({
 /** An error's message as the page reports it and its error screen says it: an `Error`'s own, anything else as its text. */
 export const errorMessage = (error: unknown): string => (error instanceof Error ? error.message : String(error ?? ''));
 
+/** How many of a render failure's component frames the log keeps: the five the runtime's own exceptions keep (`error`'s `stack`). */
+export const STACK_FRAMES = 5;
+
+/** A frame's component: `at Name (…)` or `at new Name (…)` as V8 writes a component stack, `Name@…` as Firefox does. */
+const FRAME = /^\s*(?:at\s+(?:new\s+)?([^\s(]+)|([^\s@]+)@)/;
+
 /**
- * A render the page's error screen caught (PAGELOOP1), into the machine log as `page.error` with `where` `render`: the message,
- * cut short. Caught by the screen, so React never hands it to the window, and `installPageErrors` never hears it.
+ * The top of a component stack as the log keeps it (PAGELOOP1, D217): its first {@link STACK_FRAMES} frames by their names alone,
+ * innermost first, joined ` < `, cut short. Never a frame's location, which is where the page was loaded from: a development build's
+ * module path with its query, a production build's column in a bundle the names find anyway. A production build's names are
+ * minified, as written. Null where the stack names no frame.
  */
-export function reportPageStopped(error: unknown): void {
-  logEvent('page.error', { where: 'render', message: clipped(errorMessage(error)) });
+export function stackTop(componentStack: string | null | undefined): string | null {
+  const names = (componentStack ?? '').split('\n')
+    .map((frame) => FRAME.exec(frame))
+    .map((found) => found?.[1] ?? found?.[2] ?? null)
+    .filter((name): name is string => !!name)
+    .slice(0, STACK_FRAMES);
+  return names.length > 0 ? clipped(names.join(' < ')) : null;
+}
+
+/** The view this page shows (PAGELOOP1), for a render failure's line; null until a view says. */
+let shownView: string | null = null;
+
+/** Say which view this page shows now: a view's id, a name, never an address or what is on it. The main window's frame says it. */
+export function pageShows(view: string): void {
+  shownView = view;
+}
+
+/**
+ * A render the page's error screen caught (PAGELOOP1, D217), into the machine log as `page.error` with `where` `render`: the message
+ * cut short; the view the page shows, or `view`, the window's own where no view has said (a secondary window's, known before
+ * anything is drawn); and the top of the component stack ({@link stackTop}), which React hands a boundary alone. Caught by the
+ * screen, so React never hands it to the window, and `installPageErrors` never hears it.
+ */
+export function reportPageStopped(error: unknown, componentStack?: string | null, view?: string | null): void {
+  const at = shownView ?? view ?? null;
+  const stack = stackTop(componentStack);
+  logEvent('page.error', {
+    where: 'render', message: clipped(errorMessage(error)), ...(at ? { view: at } : {}), ...(stack ? { stack } : {}),
+  });
 }
 
 let pageErrorsHeard = false;

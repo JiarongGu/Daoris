@@ -56,18 +56,23 @@ export function PageStopped({ message, logged, onReload }: {
 }
 
 /**
- * Catches a render that threw below it, reports it once (`page.error`, `where` `render`), lifts a splash still up, and draws
- * {@link PageStopped} in its place until the page is reloaded. `reload` is the test's seam; the window's location by default.
+ * Catches a render that threw below it, reports it once (`page.error`, `where` `render`, with the view and the top of the component
+ * stack, D217), lifts a splash still up, and draws {@link PageStopped} in its place until the page is reloaded. `view` is the
+ * window's own where no view has said which it shows (a secondary window's); `reload` is the test's seam, the window's location by
+ * default.
  */
-export class PageBoundary extends Component<{ children: ReactNode; reload?: () => void }, { stopped: string | null }> {
+export class PageBoundary extends Component<
+  { children: ReactNode; view?: string; reload?: () => void },
+  { stopped: string | null }
+> {
   override state: { stopped: string | null } = { stopped: null };
 
   static getDerivedStateFromError(error: unknown): { stopped: string } {
     return { stopped: errorMessage(error) };
   }
 
-  override componentDidCatch(error: unknown, _info: ErrorInfo): void {
-    reportPageStopped(error);
+  override componentDidCatch(error: unknown, info: ErrorInfo): void {
+    reportPageStopped(error, info.componentStack, this.props.view);
     liftSplash();
   }
 

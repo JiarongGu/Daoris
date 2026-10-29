@@ -40,6 +40,11 @@ function respond(url: string): Response {
   return Response.json([]);
 }
 
+/** What the page reported as `page.error`, each report's data. */
+const pageErrors = () => invoke.mock.calls
+  .filter(([module, type, request]) => module === 'DAORIS.LOG' && type === 'EVENT' && request?.payload?.event === 'page.error')
+  .map(([, , request]) => request.payload.data as Record<string, unknown>);
+
 /** The page's root, read as a fresh page reads it. */
 const freshRoot = async () => {
   vi.resetModules();
@@ -77,6 +82,28 @@ describe("the page's root", () => {
 
     expect(await screen.findByRole('heading', { level: 1, name: "This window's page stopped on an error" })).toBeInTheDocument();
     expect(screen.getByText('the query client broke')).toBeInTheDocument();
+  });
+
+  /** PAGELOOP1 (D217): the view a failure's line names is the window's, a secondary window's from before anything is drawn. */
+  it("names a secondary window's view in its failure's line", async () => {
+    const PageRoot = await freshRoot();
+    const client = new QueryClient();
+    client.mount = () => { throw new Error('the query client broke'); };
+
+    render(<PageRoot client={client} window={{ kind: 'monitor' }} />);
+
+    await screen.findByRole('heading', { level: 1, name: "This window's page stopped on an error" });
+    expect(pageErrors()).toEqual([expect.objectContaining({ where: 'render', view: 'window:monitor', message: 'the query client broke' })]);
+  });
+
+  it("names the main window's view, as the window shows it", async () => {
+    const PageRoot = await freshRoot();
+    render(<PageRoot client={new QueryClient({ defaultOptions: { queries: { retry: false } } })} window={null} />);
+    await screen.findByRole('navigation', { name: 'Views' });
+
+    (await import('../bridge/log')).reportPageStopped(new Error('a later failure'));
+
+    expect(pageErrors()).toEqual([expect.objectContaining({ where: 'render', view: 'overview' })]);
   });
 
   it('hands the window its handshake and lifts its splash again on a second load', async () => {

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   useAsks, useQuests, useRefreshIndex, useRegistry, useRepositories, useSessions,
@@ -49,7 +49,7 @@ import {
 import { type SettingsAnchor, type SettingsSection, useSettingsLayout } from '../settings/SettingsView';
 import { ShellSignals } from './ShellSignals';
 import {
-  logEvent, useAttention, useAttached, useDismissUpdate, useDriver, useHarnesses, useLinkOpener, useOpenBrowser, useOpenWindow, useRemotes,
+  logEvent, pageShows, useAttention, useAttached, useDismissUpdate, useDriver, useHarnesses, useLinkOpener, useOpenBrowser, useOpenWindow, useRemotes,
   useNoticeWords, useSayUpdate, useShowReviewAgain, useSyncNow, useTaskbarCount, useUpdateState,
   useAnswerConfirmation, useConfirmationShown, usePersonKey, useServiceConfirmations, useTerminalConfirmations, useUnkeyedHost,
   useDismissNotice, useMarkChannel, useMarkNoticesRead, useMessages, useNotices,
@@ -395,6 +395,9 @@ export function App() {
   useEffect(() => {
     if (!settling) logEvent('view.opened', loggedMode ? { view, mode: loggedMode } : { view });
   }, [view, loggedMode, settling]);
+  // And which view a render failure's line names (PAGELOOP1, D217): said at the commit that shows it, settled or not, before a
+  // failure in the same commit's effects reaches the page's error screen.
+  useLayoutEffect(() => pageShows(view), [view]);
 
   // The Plugins view (PLUGUI1b, D119): held on every view, so what its pages hold — a trial's report, an update's
   // plan — stays while Daoris is open; it asks the driver for nothing until it is in front.

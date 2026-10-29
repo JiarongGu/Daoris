@@ -16,7 +16,9 @@ import type { SecondaryWindow } from '../work/window';
  */
 export function PageRoot({ client, window: which }: { client: QueryClient; window: SecondaryWindow | null }) {
   return (
-    <PageBoundary>
+    // A secondary window shows no view of the frame's, so its failure's line names the window (D217); the main window's frame
+    // says its view as it shows it.
+    <PageBoundary view={which ? `window:${which.kind}` : undefined}>
       <QueryClientProvider client={client}>
         <Tooltip.Provider delayDuration={300}>
           {/* The workspace scope wraps the whole shell (WSP5): one scope per query, everywhere —

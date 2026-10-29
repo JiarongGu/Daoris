@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { StrictMode } from 'react';
+import { StrictMode, useLayoutEffect, useState } from 'react';
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
@@ -27,6 +27,11 @@ import { PageBoundary } from './PageBoundary';
 /** A component whose render throws, as React's own update-depth guard does in the middle of a commit. */
 function Thrower(): never {
   throw new Error('Maximum update depth exceeded. This can happen when a component calls setState inside useEffect.');
+}
+
+/** A component between the thrower and the boundary, so the stack has a frame of its own to name. */
+function Holder() {
+  return <Thrower />;
 }
 
 /** What the page reported as `page.error`, each report's data. */
@@ -75,6 +80,37 @@ describe("the page's error screen", () => {
     expect(pageErrors()[0]).toMatchObject({ where: 'render', message: expect.stringMatching(/^Maximum update depth exceeded\./) });
     // A page that stopped before its first screen lifts the splash itself, rather than at the window's bound.
     expect(closeSplash).toHaveBeenCalledTimes(1);
+  });
+
+  /** PAGELOOP1 (D217): where it broke, which the window's `error` line never knew, and before any view said what it shows, none. */
+  it('names the components it broke in, innermost first, and no view before one was shown', async () => {
+    render(<PageBoundary><section><Holder /></section></PageBoundary>);
+
+    await Promise.resolve();
+    const [report] = pageErrors();
+    expect(report).toMatchObject({ where: 'render', stack: expect.stringMatching(/^Thrower < Holder < section < PageBoundary/) });
+    expect(report).not.toHaveProperty('view');
+  });
+
+  /** The install's own failure: a layout effect that sets its state at every commit, which React stops at its update depth (#185). */
+  it("catches React's update-depth error, and names the component that looped", async () => {
+    function Looping() {
+      const [n, setN] = useState(0);
+      useLayoutEffect(() => setN(n + 1));
+      return <p>{n}</p>;
+    }
+    render(<PageBoundary><Looping /></PageBoundary>);
+
+    expect(await screen.findByRole('heading', { level: 1, name: "This window's page stopped on an error" })).toBeInTheDocument();
+    expect(screen.getByText(/^Maximum update depth exceeded/)).toBeInTheDocument();
+    expect(pageErrors()).toEqual([expect.objectContaining({ where: 'render', stack: expect.stringMatching(/^Looping < PageBoundary/) })]);
+  });
+
+  it("names a secondary window's view, which its root knows before anything is drawn", async () => {
+    render(<PageBoundary view="window:monitor"><Thrower /></PageBoundary>);
+
+    await Promise.resolve();
+    expect(pageErrors()[0]).toMatchObject({ where: 'render', view: 'window:monitor', stack: expect.stringMatching(/^Thrower < PageBoundary/) });
   });
 
   it('reloads the page alone when asked', async () => {
