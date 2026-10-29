@@ -104,6 +104,22 @@ public static class ActorChoices
     }
 
     /// <summary>
+    /// The agent a new chat starts on, and the order it walks (the foundation design §2.4's third row, FOUNDATION1j part iii): the person's
+    /// <paramref name="named"/> agent alone, its model Chat's first entry for it (D205 §3.5(d)); else Chat's order, whose first agent the
+    /// start asks. The same answer for the page's press, a conversation started from words and a terminal's, never the machine's
+    /// <c>adapter</c> key: Chat left unset answers that key itself (<see cref="FirstAgent"/>), which is read only where the order is empty,
+    /// as no order of Chat's is (Chat cannot be off).
+    /// </summary>
+    /// <exception cref="ActorUnreadableException">Chat's stored entry does not read: the start holds, saying so.</exception>
+    /// <exception cref="DriverException">Chat is off: the start holds, saying so.</exception>
+    public static (string Agent, IReadOnlyList<ActorEffective> Order) NewChat(DriverConfig config, string? named = null)
+    {
+        var order = Effective("chat", config, pick: named);
+        return (order.FirstOrDefault()?.Agent ?? FirstAgent("chat", config)
+            ?? throw new DriverException("Chat is off on this machine, so it starts no conversation until it is given a choice."), order);
+    }
+
+    /// <summary>
     /// <paramref name="config"/> with <paramref name="actor"/>'s order set (or, null, back to <i>as before</i>), judged first, and written
     /// through (§6.4): Build's first agent is <c>adapter</c>, Intake's <c>intakeAdapter</c> and Ask Daoris's <c>helperAdapter</c> (absent
     /// while off). 🔴 Every write that changes <c>adapter</c> first makes Chat and Brainstorm explicit where they are <i>as before</i>, as
