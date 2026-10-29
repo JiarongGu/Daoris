@@ -88,6 +88,41 @@ public sealed class MachineAdmissionTests : IDisposable
         Assert.Equal(expect.GetProperty("holds").GetInt32(), holds.Count);
     }
 
+    public static TheoryData<string> WholeRows()
+    {
+        var data = new TheoryData<string>();
+        foreach (var row in Table.GetProperty("whole").EnumerateArray()) data.Add(Name(row));
+        return data;
+    }
+
+    /// <summary>
+    /// INTEGRATE1b (design §4.5, C7): the merge tool's whole take is N ordinary entries with one <c>since</c> and ids that sort together.
+    /// The driver reads such a record as the tool does: the machine is full while they are held, a session's ask waits behind every one of
+    /// them and is admitted once they are let go, and a live hold that is not among them is what the tool reads as a doubt.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(WholeRows))]
+    public void A_whole_take_reads_as_the_shared_table_says(string name)
+    {
+        var row = Table.GetProperty("whole").EnumerateArray().Single(each => Name(each) == name);
+        var (holds, waits) = MachineAdmission.Pruned(
+            ([.. row.GetProperty("holds").EnumerateArray().Select(Entry)], [.. row.GetProperty("waits").EnumerateArray().Select(Entry)]), Now, Alive);
+        var capacity = row.GetProperty("capacity").GetInt32();
+        var ids = row.GetProperty("ids").EnumerateArray().Select(id => id.GetString()!).ToList();
+
+        var (admitted, ahead) = MachineAdmission.Judge(holds, waits, row.GetProperty("id").GetString()!, capacity);
+
+        var expect = row.GetProperty("expect");
+        Assert.Equal(expect.GetProperty("admitted").GetBoolean(), admitted);
+        Assert.Equal(expect.GetProperty("ahead").GetInt32(), ahead);
+        Assert.Equal(expect.GetProperty("holds").GetInt32(), holds.Count);
+        Assert.Equal(expect.GetProperty("full").GetBoolean(), holds.Count >= capacity);
+        Assert.Equal(expect.GetProperty("lost").GetInt32(), ids.Count(id => holds.All(hold => hold.Id != id)));
+        Assert.Equal(
+            [.. expect.GetProperty("others").EnumerateArray().Select(id => id.GetString()!)],
+            holds.Where(hold => !ids.Contains(hold.Id)).Select(hold => hold.Id));
+    }
+
     private static AdmissionWaiting Quick(Func<int, bool>? alive = null) =>
         new(TimeSpan.FromMilliseconds(10), TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(5), () => DateTimeOffset.UtcNow, alive ?? (_ => true));
 
