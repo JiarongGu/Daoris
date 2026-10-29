@@ -825,6 +825,13 @@ them is an HTTP route. A session's *record* is on the host; its console, events 
   services resolved as it (the pickers, the tray, the update), so the person's close of it while a
   `main:<n>` is open hides it (`MainWindows`); the last of those closing closes it for good, and a later launch or the tray
   shows it again rather than opening another. A close from code is not the person's: the update's is `CloseForGood`.
+- **A blank window can be reloaded from outside the page** (PAGELOOP1 c, D217). The tray icon's menu has one item, *Reload the
+  page of every window* (the words are the page's own, `notifications.system.reloadPage`, handed with the balloons' over
+  `SET_NOTICE_WORDS`; English before a page has handed any). It opens the page again in every open window, main or secondary
+  (`PageReloads`, each window's `IReloadableWindow.ReloadPage` on its own thread): the kit's `ChromiumChildBrowser` exposes no
+  reload, so the window's `ChromiumView` is made again on the same path. A window on its splash or its trouble label is
+  skipped; the host, the driver, the service and every session are not in the view and keep running. Each reload is one
+  `page.reloaded` line in the machine log, naming the window. There is no key and no page command for it.
 - 🔴 **A diff confirms the tree it was given** (`rev-parse --show-toplevel`): git searches upward, and
   would otherwise answer for the repository above it.
 
