@@ -177,7 +177,41 @@ public sealed record MoveDecision(string Left, string Executor, string How, stri
 
     /// <summary>The brief's recipe: how many of the old part's events it is composed up to, or null for all.</summary>
     public int? RecipeBound { get; init; }
+
+    /// <summary>The agent the new part opens on where the move names one, a hand-over's (part 2, step 5); null for the line's own.</summary>
+    public string? Agent { get; init; }
+
+    /// <summary>A limit's refused turns' bound: how many of the old part's events its refused turns' words are read within (part 2, step 5).</summary>
+    public int? RefusedBound { get; init; }
 }
+
+/// <summary>Why a move was held for the person (§3.3): an effect its run marked and never recorded, which no taker makes again by itself.</summary>
+public static class MoveHoldWhy
+{
+    /// <summary>An effect begun, a spawn, a prompt or a copy, whose outcome no record holds: its run died between the mark and the outcome.</summary>
+    public const string Unrecorded = "unrecorded";
+}
+
+/// <summary>
+/// A move an older build's box kept, as its import writes it (FOUNDATION1f-i part 2; §3.3, §13.5): the decision, the phase the box shows it at
+/// (<c>decided</c>, <c>old-ended</c> or <c>opened</c>), and what that phase carries.
+/// </summary>
+/// <param name="Decision">The move as the box decided it.</param>
+/// <param name="Phase">The phase the box shows.</param>
+public sealed record MoveFromBox(MoveDecision Decision, MoveRecordPhase Phase)
+{
+    /// <summary>The moment the box says it was decided, ISO 8601; null for the import's own.</summary>
+    public string? DecidedAt { get; init; }
+
+    /// <summary>The record its open made, at <c>opened</c>.</summary>
+    public string? Destination { get; init; }
+
+    /// <summary>The words the box names, at <c>opened</c>, in their order.</summary>
+    public IReadOnlyList<MoveRecordWord> Words { get; init; } = [];
+}
+
+/// <summary>What a box's import came to: the move written, the record's standing move it waits behind, or why the import is held, nothing written.</summary>
+public sealed record MoveImported(MoveRecord? Move, MoveRecord? Standing, string? Held);
 
 /// <summary>A move's claim (§13.3, §13.4): the move, the process run that holds it and its generation, which every write checks inside its transaction.</summary>
 public sealed record MoveClaim(long Move, string Run, long Generation);
@@ -240,6 +274,15 @@ public sealed record MoveRecord(long Id, string Left, string Executor, string Ph
 
     /// <summary>Its last effect mark, or null where it marked none.</summary>
     public MoveEffect? Effect { get; init; }
+
+    /// <summary>The agent its new part opens on, where it names one.</summary>
+    public string? Agent { get; init; }
+
+    /// <summary>A limit's refused turns' bound.</summary>
+    public int? RefusedBound { get; init; }
+
+    /// <summary>The phase moment it was last said quiet for (<c>move.quiet</c>, §19.1 point 4), or null where it never was.</summary>
+    public string? QuietAt { get; init; }
 }
 
 /// <summary>What a decision came to: the move claimed by the deciding run, or the record's standing move, which the decider reads as the course's <c>Never</c>.</summary>

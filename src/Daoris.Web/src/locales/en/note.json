@@ -39,6 +39,7 @@
   "note.watch.quiet-call": "Nothing came from its agent for {{minutes}} minutes, while `{{call}}` ran. Daoris looked in.",
   "note.watch.quiet-work": "Nothing came from its agent for {{minutes}} minutes, while its background work {{works}} showed no progress. Daoris looked in.",
   "note.watch.left": "You left it running. Daoris looks in again once it is heard from.",
+  "note.move.quiet": "Its move to a new part has not gone on for {{minutes}} minutes. The Daoris making it still runs, so the move stays with it; once that Daoris quits, the move is taken up again.",
   "note.ended.stopped": "The person stopped it.",
   "note.ended.stopped-steward": "The steward stopped it.",
   "note.ended.handed-over": "Handed over to {{agent}}: its quest goes on with it, in the same tree.",
