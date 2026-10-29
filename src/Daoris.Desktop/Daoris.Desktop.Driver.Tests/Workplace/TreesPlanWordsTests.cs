@@ -132,6 +132,23 @@ public sealed class TreesPlanWordsTests
         Assert.Equal(["trees: `k` (game) has no part with work to land here."], lines);
     }
 
+    /// <summary>ACCEPTCONFLICT1: a clash is said as conflicting, naming the files, and never hints at leaving the part out.</summary>
+    [Fact]
+    public void A_clash_is_said_as_conflicting_and_a_superseded_part_keeps_its_leave_out_hint()
+    {
+        var entry = new SessionEntry("k", "ask:a1", "game", SessionGroup.Ended, "s1", []);
+        var plan = new EntryPlan(LandingForm.Branch, "feature/x", [
+            new EntryPartPlan("s1", null) { Clash = new PartClash("s2", "CLAUDE.md") },
+            new EntryPartPlan("s3", null) { Superseded = new PartSuperseded("s2", "a.cs", Conflicts: false) },
+        ]);
+
+        var lines = TreesPlanWords.EntryPlanned(entry, plan, new Dictionary<string, string>()).ToList();
+
+        Assert.Equal("  s1  conflicts with `s2`'s work in CLAUDE.md, and has work of its own beside it, so it is not offered for leaving out.", lines[1]);
+        Assert.DoesNotContain("--leave-out", lines[1]);
+        Assert.Contains("--leave-out s3", lines[2]);
+    }
+
     // The verb as the running Daoris's client: each read's answer carries `said`, and the text the stand-in's answer is printed as
     // equals the alone path's.
 

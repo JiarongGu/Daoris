@@ -180,6 +180,7 @@ export function partsFlow(
         ...(each.problem ? [t('work.parts.landing.problem', { says: each.problem })] : []),
         ...(each.conflict ? [t('work.parts.landing.conflict', { says: each.conflict.says })] : []),
         ...(each.sameTreeAs ? [t('work.parts.landing.sameTree', { other: numberOf(each.sameTreeAs) })] : []),
+        ...(each.clash ? [t('work.parts.landing.clash', { by: numberOf(each.clash.by), says: each.clash.says })] : []),
         ...(each.superseded ? [t('work.parts.landing.superseded', { by: numberOf(each.superseded.by) })] : []),
         ...(each.leftOut && each.leftOut.length > 0 ? [t('work.parts.landing.leavesOut', { count: each.leftOut.length })] : []),
       ];

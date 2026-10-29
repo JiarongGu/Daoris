@@ -45,7 +45,8 @@
   "work.parts.landing.problem": "现在会被拒绝：{{says}}",
   "work.parts.landing.conflict": "现在与主线冲突（{{says}}）",
   "work.parts.landing.sameTree": "随{{other}}一起落地，它们共用工作树",
-  "work.parts.landing.superseded": "似乎已被{{by}}取代，除非你选择不采纳它，否则仍会落地",
+  "work.parts.landing.clash": "与{{by}}的工作在 {{says}} 上冲突",
+  "work.parts.landing.superseded":"似乎已被{{by}}取代，除非你选择不采纳它，否则仍会落地",
   "work.parts.landing.leavesOut": "略去 {{count}} 个主线已有的提交",
   "work.parts.landing.leavesOut_other": "略去 {{count}} 个主线已有的提交"
 }

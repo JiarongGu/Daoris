@@ -49,6 +49,35 @@ describe("a line of work's one Accept", () => {
     expect(within(group).getByText('part 2 leaves out 1 commit the line already holds.')).toBeInTheDocument();
   });
 
+  // ACCEPTCONFLICT1: a part with work of its own beside its conflict is a clash, never redone, so nothing offers to leave it out.
+  const CLASH: EntryAcceptPlan = {
+    ...PLAN,
+    parts: [{ session: 's1', clash: { by: 's2', says: 'CLAUDE.md' } }, PLAN.parts[1]!],
+  };
+
+  it('says a clash as conflicting with the later part, naming the files, and offers no leave-out', async () => {
+    const { onLand } = ask({ plans: [CLASH] });
+
+    const group = screen.getByRole('group', { name: 'accept every part of this line of work' });
+    expect(within(group).getByText(/part 1 conflicts with part 2/)).toHaveTextContent(
+      'part 1 conflicts with part 2 (CLAUDE.md) and has work of its own beside the conflict, so it is not offered for leaving out: '
+      + 'the press would be refused at part 2 unless one is rebased onto the other.');
+    expect(within(group).queryByText(/superseded/)).toBeNull();
+    expect(within(group).queryByRole('checkbox', { name: 'Leave part 1 out' })).toBeNull();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Accept all' }));
+    expect(onLand).toHaveBeenCalledWith([], expect.anything());
+  });
+
+  it('says a clash in Chinese', async () => {
+    await i18n.changeLanguage('zh');
+    ask({ plans: [CLASH] });
+
+    expect(screen.getByText(/第 1 段与第 2 段冲突/)).toHaveTextContent(
+      '第 1 段与第 2 段冲突（CLAUDE.md），冲突之外还有它自己的工作，所以不提供不采纳它：除非其中一段变基到另一段上，按下会在第 2 段被拒绝。');
+    expect(screen.queryByRole('checkbox', { name: '不采纳第 1 段' })).toBeNull();
+  });
+
   it('lands a superseded part where the person chose nothing', async () => {
     const { onLand } = ask();
 
