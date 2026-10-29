@@ -236,6 +236,36 @@ public sealed class SessionTreesTests : IDisposable
     }
 
     /// <summary>
+    /// TREEOPENERR1: git's let-go of the opening's lock returns failure and says nothing (stood in; a real git has done it on a loaded
+    /// machine). The open says what git did where it once said "nothing", and still undoes itself: no tree, no branch.
+    /// </summary>
+    [Fact]
+    public async Task An_unlock_git_fails_without_a_word_is_refused_with_what_git_did_and_the_open_is_undone()
+    {
+        var root = await MakeRepositoryAsync("engine");
+        var trees = new SessionTrees(_home);
+        WorkingTree.Answered.Value = arguments => arguments is ["worktree", "unlock", ..] ? (1, "", "") : null;
+
+        DriverException error;
+        try
+        {
+            error = await Assert.ThrowsAsync<DriverException>(() => trees.OpenAsync(root, "engine", "aurora"));
+        }
+        finally
+        {
+            WorkingTree.Answered.Value = null;
+        }
+
+        Assert.DoesNotContain("nothing", error.Message.Replace("git said nothing on its error stream", ""));
+        Assert.Contains("git would not let go of the lock it opened it under: git said nothing on its error stream", error.Message);
+        Assert.Contains("`git worktree unlock ", error.Message);
+        Assert.Contains("exited with code 1 after ", error.Message);
+        Assert.Contains($"in {root}", error.Message);
+        Assert.Equal("", (await GitAsync(root, "branch", "--list", "daoris/*")).Trim());
+        Assert.DoesNotContain("daoris", await GitAsync(root, "worktree", "list"));
+    }
+
+    /// <summary>
     /// 🔴 Windows' 260-character path limit, found on the first real workspace (2026-09-27): a
     /// repository's deepest tracked file fitted under its own root and not under a session tree, whose
     /// prefix is longer. `worktree add` failed on every tick, and the quest sat.
