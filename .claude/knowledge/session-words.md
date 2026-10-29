@@ -19,6 +19,10 @@ itself loses it at a restart, and two producers that each hold their own word on
   word holds with that word, so a retry keeps one.
 - **A record that is ending keeps nothing.** A dispatcher that stopped taking words answers `Closed` and takes off what it kept as it
   closed; the caller holds the word as words said while a session winds up are held (`SessionWords`' held file, HANDWORDS1).
+- **A record that is not its line's head keeps nothing either** (FOUNDATION1d-ii): a host with the `head` mark refuses the word
+  `continued`, naming the head. The dispatcher holds, queues and attempts nothing (`InboxKeep.Continued`, `TurnKept.Head`), never its
+  fallback for a refusal, and its caller says the word at the head whole: `WordsHead.FollowAsync`, or the shell's and the headless door's
+  own judgement there. A new say caller is named in `ContinuedReadersCensusTests`, or that census fails.
 - **Channel messages are not `said`'s** (COWORK1d): their queue is the channel itself.
 
 ## The door
