@@ -188,6 +188,10 @@ public static class DriverCommand
               to that session naming the commit to merge.
           sessions partner <id> --list  ·  sessions partner <piece> --stop
               a session's pieces and where each stands; a working piece's stop, which keeps its work.
+          sessions handback <session|quest> [--json]
+              one quest's handback whole (D219), by the quest's id or the id of the session that served it, open or
+              closed: the note its session closed it with, how it answered each requirement, when and by which
+              session. --json prints the service's answer as it gave it.
           roles brief
               the brief of a role's holder (D209): what each role does, never does and how its verbs answer, by its
               revision; names no key. In a role's terminal only its roles' verbs and the reads they need run.

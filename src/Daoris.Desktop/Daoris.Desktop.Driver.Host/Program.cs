@@ -186,6 +186,10 @@ using Daoris.Driver;
 //                 answer, one offered label with one to five sourced reasons, its proof by the key in DAORIS_ROLE_KEY over the
 //                 hello's nonce sent only to the install's app/Daoris.Desktop.exe, never the key. No alone path: no-instance, exit 2.
 //                 `--leave` (SUPERVISOR1b) leaves the question to the owner by one of the design's §4.1 bounds, SUPERVISOR_DEFER.
+//   sessions handback <session|quest> [--json]
+//                 one quest's handback whole (HANDBACK1, D219), by the quest's id or the id of the session that served it, in any
+//                 state: the service's GET /api/handbacks/{id}, in the words the connector's handback_read answers. A read, so no
+//                 press and no instance. Exit 1 where the id names nothing here, 2 where the service has no such door.
 //   roles brief
 //                 the holder's brief (STEWARDROLE1a-i, D209 §2.2): what each role this build knows does, never does and how its
 //                 verbs answer, headed by its revision, from Daoris's own text; names no key and no appointment. In a role's
