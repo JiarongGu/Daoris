@@ -36,7 +36,7 @@ const tokens: Token[] = [
   ...vocabulary.ids.map(([id]) => ({ name: `"${id}"`, pattern: new RegExp(`["'\`]${escape(id)}["'\`]`, 'g') })),
   { name: 'StartsWith(agent)', pattern: /\.startsWith\(\s*["'`](?:claude|codex|dsh)/g },
   // An id as an example or a name in a sentence (help, a refusal): words, but still a site that names a provider.
-  { name: 'id in a sentence', pattern: /(?<![\w@/.-])(?:claude-code-acp|claude-code|codex-acp|acp-stub|alt-stub)(?![\w"-])/g },
+  { name: 'id in a sentence', pattern: /(?<![\w@/.-])(?:claude-code-acp|claude-code|codex-acp|acp-stub|alt-stub)(?![\w"'`-])/g },
   ...vocabulary.words.map(([word]) => {
     const plain = /^[A-Za-z0-9_]+$/.test(word) && !word.startsWith('_') && !word.endsWith('_');
     return { name: word, pattern: new RegExp(plain ? `(?<![A-Za-z0-9_])${escape(word)}(?![A-Za-z0-9_])` : escape(word), 'g') };
