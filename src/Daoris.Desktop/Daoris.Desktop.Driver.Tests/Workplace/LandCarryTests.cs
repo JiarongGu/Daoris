@@ -164,5 +164,12 @@ public sealed class LandCarryTests : LandedFixture
 
         accepts.Take("s1");
         Assert.Null(accepts.Of("s1"));
+
+        // A deleted session's record takes its yes with it (SessionHomeFiles): a tree that is gone is never landed.
+        accepts.Keep("s1", "X:/daoris/trees/a", Pressed);
+        accepts.Keep("s2", "X:/daoris/trees/b", Pressed);
+        Assert.Equal(["s1"], accepts.Forget(["s1", "s3"]));
+        Assert.Null(accepts.Of("s1"));
+        Assert.NotNull(accepts.Of("s2"));
     }
 }
