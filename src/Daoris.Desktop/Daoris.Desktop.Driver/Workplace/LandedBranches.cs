@@ -339,6 +339,7 @@ public sealed class LandedBranches(string home)
                 writer.WriteEndObject();
             }
 
+            if (entry.Integrate is { } integrate) WriteIntegrate(writer, integrate);
             if (entry.Review is { } review) WriteReview(writer, review);
             if (entry.Opinion is { } opinion) WriteOpinion(writer, opinion);
             if (entry.Workflow is { } workflow) WriteWorkflow(writer, workflow);
@@ -354,6 +355,7 @@ public sealed class LandedBranches(string home)
                     writer.WriteString("at", Moments.Write(advance.At));
                     writer.WriteString("session", advance.Session);
                     if (advance.AcceptedBy is not null) writer.WriteString("acceptedBy", advance.AcceptedBy);
+                    if (advance.Integrate is { } stood) WriteIntegrate(writer, stood);
                     if (advance.Review is { } advanced) WriteReview(writer, advanced);
                     if (advance.Opinion is { } read) WriteOpinion(writer, read);
                     if (advance.Workflow is { } went) WriteWorkflow(writer, went);
@@ -432,6 +434,28 @@ public sealed class LandedBranches(string home)
         && submission.TryGetProperty("sequence", out var sequence) && sequence.ValueKind == JsonValueKind.Number
         && sequence.TryGetInt64(out var number) && number > 0
             ? new QuestSubmissionRef(machine, number)
+            : null;
+
+    /// <summary>
+    /// The acceptance's provenance (INTEGRATE1e, design §17.4): written only where <c>integrate</c> stood, so a landing or an advance without
+    /// it, and every one from before, writes nothing and reads as it did.
+    /// </summary>
+    private static void WriteIntegrate(Utf8JsonWriter writer, LandedIntegrate integrate)
+    {
+        writer.WriteStartObject("integrate");
+        writer.WriteString("request", integrate.Request);
+        writer.WriteString("source", integrate.Source);
+        writer.WriteEndObject();
+    }
+
+    /// <summary>
+    /// The provenance a landing or an advance kept, or null: a record that says neither, which is one from before INTEGRATE1e, one an older
+    /// build rewrote, one made where no <c>integrate</c> stood, and one whose shape does not read whole. Its values are kept as written.
+    /// </summary>
+    private static LandedIntegrate? IntegrateOf(JsonElement element) =>
+        element.TryGetProperty("integrate", out var integrate) && integrate.ValueKind == JsonValueKind.Object
+        && Text(integrate, "request") is { Length: > 0 } request && Text(integrate, "source") is { Length: > 0 } source
+            ? new LandedIntegrate(request, source)
             : null;
 
     /// <summary>The review that let a landing go (REVIEWENV1c), each field only where it is known.</summary>
@@ -644,6 +668,7 @@ public sealed class LandedBranches(string home)
                     Text(rule, "source") ?? LandingSource.Default)
                 { Access = Text(rule, "access") }
                 : null,
+            Integrate = IntegrateOf(element),
             Review = ReviewOf(element),
             Opinion = OpinionOf(element),
             Workflow = WorkflowOf(element),
@@ -691,7 +716,7 @@ public sealed class LandedBranches(string home)
 
             advances.Add(new LandedAdvance(from, to, at, session)
             {
-                AcceptedBy = Text(each, "acceptedBy"), Review = ReviewOf(each), Opinion = OpinionOf(each), Workflow = WorkflowOf(each),
+                AcceptedBy = Text(each, "acceptedBy"), Integrate = IntegrateOf(each), Review = ReviewOf(each), Opinion = OpinionOf(each), Workflow = WorkflowOf(each),
                 Squashed = Text(each, "squashed"), Quest = Text(each, "quest"), Unit = Text(each, "unit"), Submission = SubmissionOf(each),
             });
         }
