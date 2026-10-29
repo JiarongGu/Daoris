@@ -21525,3 +21525,9 @@ machine-log design §3 say the contract.
 (Quest `#fbd7aa3b22ae`, asked by `#90875e`.)
 
 **Outcome** 2026-10-29: a repository declares its scratch output as globs under `integration.scratch` in the checkout's gates file (the key D215 reserves, read from the checkout, never the tree), and a landed tree whose extras are only declared output and `bin`, `obj` or `node_modules` is tidied; TREEKEEP1's walk now passes over build folders inside a folder the checkout shares, which is what kept the Lyntai trees for `bin/` and `obj/`. An undeclared ignored file written after opening, a `local/` note among them, still keeps the tree and is named by its files; a read-only TREELOCAL1 copy with the checkout's bytes keeps nothing. A repository benefits once its gates file declares its scratch. Detail in D218 and the FIX-LOG entry of 2026-10-29.
+
+## INTEGRATE1a — the queue's gates start clean (2026-10-29, D215)
+
+> - [ ] **INTEGRATE1a — the queue's gates start clean** (QUEUEENV1; after HEAVYQUEUE1). The steward's shell held the install's home variable and every queue runner it started and their gates inherited it on 2026-10-28. Contract and proof: the design §11 row a.
+
+**Outcome** 2026-10-29: every gate, probe, re-run, rehearsal and repository script the merge tool starts gets one composed environment (`gateEnvironment`: the tool's start environment without `GATE_REMOVED`, with the build servers of its own), and the admission is found from the home read once at the tool's start. Detail in D215's INTEGRATE1a note, which also records the hold marker as still owed.

@@ -1393,7 +1393,8 @@ export const isGenerated = (path, generated) => generated.some(({ folder }) => p
 /** Each generated folder written from the tree as it stands, and staged; one line each. A command that fails refuses the merge's gates. */
 function writeGenerated(root) {
   for (const { folder, run } of readGenerated(root)) {
-    const ran = spawnSync(run, { cwd: root, encoding: 'utf8', shell: true, windowsHide: true });
+    // INTEGRATE1a: a repository's own script gets a gate's environment, not the invoker's shell.
+    const ran = spawnSync(run, { cwd: root, encoding: 'utf8', shell: true, windowsHide: true, env: gateEnvironment() });
     if (ran.status !== 0) throw new Refusal(`${run} could not write ${folder}/ into the merge:\n${(ran.stderr || ran.stdout || '').trim()}`, 1);
     git(root, ['add', '-A', '--', folder]);
     console.log(`${folder}/: written from the merged tree (${ran.stdout.trim().replace(/^[\w-]+: /, '')})`);
@@ -1712,7 +1713,7 @@ export const KNOWLEDGE_SERVER = 'tools/knowledge-server.mjs';
  */
 function refreshKnowledgeServer(root) {
   if (!existsSync(join(root, KNOWLEDGE_SERVER))) return;
-  const run = spawnSync(process.execPath, [KNOWLEDGE_SERVER, 'build'], { cwd: root, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, windowsHide: true });
+  const run = spawnSync(process.execPath, [KNOWLEDGE_SERVER, 'build'], { cwd: root, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, windowsHide: true, env: gateEnvironment() });
   const last = (text) => (text ?? '').trim().split('\n').filter(Boolean).at(-1) ?? '';
   console.log(run.status === 0
     ? `knowledge server: ${last(run.stdout).replace(/^knowledge-server: /, '')}`
@@ -4288,11 +4289,12 @@ function chooseGates(root, state, plan) {
  * HEAVYQUEUE1: the machine's heavy-run admission this tool's heavy gates take a place in (`machine-admission.mjs`), or null where it
  * is off: `MERGE_BRANCH_ADMISSION=off`, or `MERGE_BRANCH_MEMORY=off` (the tool's own end-to-end tests, which must not wait on the
  * machine they run on) unless `MERGE_BRANCH_ADMISSION=on`. It has no home to share without `DAORIS_HOME`, and then nothing waits.
+ * INTEGRATE1a: the tool hands it the home it read at its start (`home`), the one its gates no longer inherit.
  */
-export function machineAdmission(env = process.env) {
+export function machineAdmission(env = process.env, { home = env.DAORIS_HOME } = {}) {
   const setting = env.MERGE_BRANCH_ADMISSION;
   if (setting === 'off' || (setting !== 'on' && env.MERGE_BRANCH_MEMORY === 'off')) return null;
-  return createAdmission({ daorisHome: env.DAORIS_HOME || null, kind: 'queue', env, say: console.log });
+  return createAdmission({ daorisHome: home || null, kind: 'queue', env, say: console.log });
 }
 
 const headCommit = (root) => git(root, ['rev-parse', 'HEAD'], { allowFail: true }).out.trim() || null;
@@ -4304,7 +4306,7 @@ const headCommit = (root) => git(root, ['rev-parse', 'HEAD'], { allowFail: true 
  */
 function runRecorded(root, gates, dir, {
   keepGoing = false, oneAtATime = false, branch = null, onResult = () => {}, onStart = () => {}, halt = undefined, trees = null, width = LIGHT_WIDTH, byMemory = false,
-  kind = null, gateVerdict = () => true, step = runStep,
+  kind = null, gateVerdict = () => true, step = gateStep,
 } = {}) {
   const commit = headCommit(root);
   return runGates(root, gates, dir, {
@@ -4316,7 +4318,7 @@ function runRecorded(root, gates, dir, {
     // MEMGATE1: the machine's memory, read before each heavy gate. `MERGE_BRANCH_MEMORY=off` reads none and waits for none: the
     // tool's own end-to-end tests set it, so none of them waits on what the machine holds.
     memory: process.env.MERGE_BRANCH_MEMORY === 'off' ? null : { read: readMemory },
-    admission: machineAdmission(),
+    admission: startAdmission(),
     run: async (where, gate, logs, beside) => {
       onStart(gate);
       const tree = contentTree(where);
@@ -5082,7 +5084,7 @@ export function stampDependencies(tree, folder) {
 function installDependencies(tree) {
   for (const folder of staleDependencies(tree)) {
     console.log(`the gate tree: installing ${folder} from its lockfile (npm ci)…`);
-    const ran = spawnSync('npm ci --no-audit --no-fund', { cwd: join(tree, folder), shell: true, stdio: ['ignore', 'inherit', 'inherit'], windowsHide: true });
+    const ran = spawnSync('npm ci --no-audit --no-fund', { cwd: join(tree, folder), shell: true, stdio: ['ignore', 'inherit', 'inherit'], windowsHide: true, env: gateEnvironment() });
     if (ran.error || ran.status !== 0) {
       throw new Refusal(`npm ci failed in the gate tree's ${folder} (${ran.error?.message ?? `exit ${ran.status}`}), so the full set did not start`);
     }
@@ -6318,18 +6320,40 @@ const START_ENVIRONMENT = Object.freeze({ ...process.env });
 export const HARNESS_VARIABLES = Object.freeze(['QUEUE_DRAIN_DIR', 'QUEUE_DROP_HOLD']);
 
 /**
- * QUEUETESTLEAK1: the environment of a gate or a probe the queue's runner starts: the runner's own at its start (`start`), never
- * `process.env` as something in this process changed it since, without the tool tests' variables (`HARNESS_VARIABLES`) or the
- * tool's own switches (`MERGE_BRANCH_*`, the runner's inputs and no gate's), with the build servers of its own the runner sets
- * (`BESIDE_ENVIRONMENT`). The rest of a gate's composition (the design §5.5, INTEGRATE1a) is not this.
+ * INTEGRATE1a (design §5.5): the names a gate never inherits, in one list a test, a census and the driver's twin read. Every Daoris name
+ * (the home, the roles, the keys, the admission's hold marker: the hold's own plumbing to a gate is still owed); git's repository-locating
+ * variables (inherited, they redirect a gate's git to another repository, `docs/development.md`); the tool's own switches
+ * (`MERGE_BRANCH_*`, the runner's inputs and no gate's); and the tool tests' stand-in gates' variables (`HARNESS_VARIABLES`, QUEUETESTLEAK1).
  */
-export function queueGateEnvironment(start = START_ENVIRONMENT) {
-  const kept = Object.entries(start).filter(([name, value]) => value !== undefined && !HARNESS_VARIABLES.includes(name.toUpperCase()) && !/^MERGE_BRANCH_/i.test(name));
+export const GATE_REMOVED = Object.freeze([
+  /^DAORIS_/i,
+  /^GIT_(DIR|WORK_TREE|INDEX_FILE|OBJECT_DIRECTORY|ALTERNATE_OBJECT_DIRECTORIES|COMMON_DIR|NAMESPACE|CEILING_DIRECTORIES|CONFIG.*)$/i,
+  /^MERGE_BRANCH_/i,
+  new RegExp(`^(${HARNESS_VARIABLES.join('|')})$`, 'i'),
+]);
+
+/**
+ * INTEGRATE1a: the environment of every gate, probe, re-run, rehearsal and repository script this tool starts (git's own commands keep
+ * theirs): the tool's own at its start (`start`), never `process.env` as something in this process changed it since, without
+ * `GATE_REMOVED`, with the build servers of its own (`BESIDE_ENVIRONMENT`). It was the queue's alone (QUEUETESTLEAK1); on 2026-10-28
+ * the steward's shell held the install's home, and every gate of every runner it started inherited it.
+ */
+export function gateEnvironment(start = START_ENVIRONMENT) {
+  const kept = Object.entries(start).filter(([name, value]) => value !== undefined && !GATE_REMOVED.some((pattern) => pattern.test(name)));
   return { ...Object.fromEntries(kept), ...BESIDE_ENVIRONMENT };
 }
 
-/** QUEUETESTLEAK1: the step the queue's gates and probes run by, each with `queueGateEnvironment`. */
-const queueGateStep = (command, cwd, fd, options = {}) => runStep(command, cwd, fd, { ...options, env: queueGateEnvironment() });
+/** INTEGRATE1a: the step the tool's gates and probes run by, each with `gateEnvironment`. */
+const gateStep = (command, cwd, fd, options = {}) => runStep(command, cwd, fd, { ...options, env: gateEnvironment() });
+
+/**
+ * INTEGRATE1a: the Daoris home as the tool read it at its start, before anything was composed or changed: the admission's file is found
+ * from it, and nothing reads `DAORIS_HOME` from the live environment after (F20).
+ */
+const START_HOME = Object.entries(START_ENVIRONMENT).find(([name, value]) => name.toUpperCase() === 'DAORIS_HOME' && value)?.[1] ?? null;
+
+/** INTEGRATE1a: the machine's admission, over the home read at the tool's start. */
+const startAdmission = () => machineAdmission(process.env, { home: START_HOME });
 
 /** The queue's record changed under its lock: `change(queue)` answers `{ queue }` to write, with anything else it says. */
 function withQueue(home, change) {
@@ -6566,7 +6590,7 @@ export function prefixRunner(tree, candidate, plan, dir, watch = null) {
     const trx = /^dotnet test\b/.test(gate.run.trim()) ? join(dir, `${slug(failure.gate)}.prefix-${n}.trx`) : null;
     const probe = { ...gate, name: `${gate.name}.prefix-${n}`, run: trx ? trxCommand(narrowed, trx) : narrowed };
     // HEAVYQUEUE1: a probe is a heavy run like its gate, and takes its place in the machine's admission before it starts.
-    const result = await admitted(machineAdmission(), gate, () => watch?.check() === true, () => runGate(tree, probe, dir, { trees: watch?.trees ?? null, step: queueGateStep }));
+    const result = await admitted(startAdmission(), gate, () => watch?.check() === true, () => runGate(tree, probe, dir, { trees: watch?.trees ?? null, step: gateStep }));
     if (!result) throw new Drained();
     if (result.verdict === 'ENDED') throw new Drained(probe.name);
     if (result.verdict === 'PASS' || result.verdict === 'FLAKE') return { result: 'pass' };
@@ -6660,7 +6684,7 @@ async function runCandidateWatched(home, candidate, watch) {
     // QUEUEDRAIN1: the run's step trees and its halt are the watch's, so a drop ends the gates running and starts no more; this
     // returns once every step has ended, and only then is the scoped tier released.
     results = await runRecorded(tree, gates, dir, {
-      keepGoing: true, byMemory: true, kind: 'scoped', gateVerdict: (gate) => !gate.deferredClasses?.length, trees: watch.trees, halt: () => watch.check(), step: queueGateStep,
+      keepGoing: true, byMemory: true, kind: 'scoped', gateVerdict: (gate) => !gate.deferredClasses?.length, trees: watch.trees, halt: () => watch.check(),
     });
   } finally {
     withAdmission(home, (record) => scopedTier(record, null, nowIso()));
@@ -7178,9 +7202,9 @@ async function queueVerb(root, options) {
   console.log(`admission (local/admission.json): ${count(admission.reservations.length, 'reservation')}${admission.scopedTier ? `, a scoped tier ${admission.scopedTier.state}` : ''}`);
   for (const line of overdueWaits(admission)) console.log(`  overdue: ${line}`);
   // HEAVYQUEUE1: the machine's admission, which the queue's heavy gates take places in beside the sessions' runs.
-  if (process.env.DAORIS_HOME) {
+  if (START_HOME) {
     try {
-      for (const line of admissionLines(lookAt(process.env.DAORIS_HOME))) console.log(line);
+      for (const line of admissionLines(lookAt(START_HOME))) console.log(line);
     } catch (error) {
       console.log(`machine heavy-run admission: it could not be read (${error?.message ?? error})`);
     }
