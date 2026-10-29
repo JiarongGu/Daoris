@@ -22,6 +22,10 @@ namespace Daoris.Driver;
 /// its run marked. A take is one guarded update that raises the generation, refused where the generation moved since the taker read it.</para>
 /// <para><b>Every external effect is fenced by a mark</b> written under the claim's check before it is made, and its outcome after: a mark
 /// with no outcome is the evidence a taker holds, never made again by itself, so no second mark goes over it.</para>
+/// <para><b>The moved words' <c>sent</c></b> (part 3): each word's delivery evidence, written at <c>delivering</c> in one transaction as its
+/// door's write returns and before its take, and <c>delivered</c> only once every word the move moved has it. A hold names its words by their
+/// disposition in its own transaction, and the person's press closes a hold <c>resolved</c> without its claim. A record that is the
+/// destination of a standing move takes no move of its own: a decision of it is answered that move, as the index answers the record left's.</para>
 /// <para>Opened for each use and closed, like the bindings' store, under the process's one run (<see cref="StoreProcess"/>); a read never
 /// creates the store. It never holds a word's text, a path or a credential, and writes no box beside the row: an older build recovers a move
 /// the store carries from the ledger alone (§13.5).</para>
@@ -103,7 +107,8 @@ public sealed class MoveStore(
 
     /// <summary>
     /// Write a move the course decided, claimed by this store's run at generation 1, in one transaction (§13.4 step 1); or, where the record
-    /// left already has a standing move, answer that move and write nothing, which the decider reads as the course's <c>Never</c>.
+    /// left already has a standing move, answer that move and write nothing, which the decider reads as the course's <c>Never</c>. A record
+    /// that is the destination of a standing move is answered that move alike (part 3; §3.3: its destination takes no move of its own).
     /// </summary>
     /// <exception cref="ArgumentException">The decision names no record, an executor or a <c>how</c> no move has, or no why or by.</exception>
     public MoveDecided Decide(MoveDecision decision)
@@ -118,6 +123,7 @@ public sealed class MoveStore(
             using var store = Open();
             return store.Write(Family, write =>
             {
+                if (StandingToIn(write, decision.Left) is { } to) throw new Unwritten(new MoveDecided(to, null));
                 var at = Now();
                 try
                 {
@@ -138,7 +144,7 @@ public sealed class MoveStore(
         }
         catch (Unwritten unwritten)
         {
-            return (MoveDecided)unwritten.Answer;
+            return (MoveDecided)unwritten.Answer!;
         }
     }
 
@@ -171,6 +177,7 @@ public sealed class MoveStore(
             MoveRecord? made = null;
             var outcome = store.Import(receipt, write =>
             {
+                if (StandingToIn(write, decision.Left) is { } to) throw new Unwritten(new MoveImported(null, to, null));
                 var at = Now();
                 try
                 {
@@ -198,7 +205,7 @@ public sealed class MoveStore(
         }
         catch (Unwritten unwritten)
         {
-            return (MoveImported)unwritten.Answer;
+            return (MoveImported)unwritten.Answer!;
         }
     }
 
@@ -242,7 +249,7 @@ public sealed class MoveStore(
         }
         catch (Unwritten unwritten)
         {
-            return (MoveTaken)unwritten.Answer;
+            return (MoveTaken)unwritten.Answer!;
         }
 
         static Unwritten Refused(MoveRecord? found, string why) => new(new MoveTaken(found, null, why));
@@ -253,10 +260,11 @@ public sealed class MoveStore(
     /// <summary>
     /// Move to a phase that carries nothing of its own (<c>quiescing</c>, <c>old-ended</c>, <c>copied</c>, <c>verified</c>, <c>delivering</c>,
     /// <c>delivered</c>), under the claim's check, forward only (<see cref="MovePhases.Follows"/>). A phase written again changes nothing.
+    /// <c>delivered</c> is written only once every word the move moved has <c>sent</c> (part 3; §13.4 step 4, §19.4).
     /// </summary>
     /// <exception cref="ArgumentException">The phase carries something, and has its own write.</exception>
     /// <exception cref="MoveClaimLostException">The claim no longer holds the move.</exception>
-    /// <exception cref="MoveRefusedException">The move does not go to that phase from its own.</exception>
+    /// <exception cref="MoveRefusedException">The move does not go to that phase from its own, or a word it moved has no <c>sent</c>.</exception>
     public MoveRecord Advance(MoveClaim claim, MoveRecordPhase phase)
     {
         if (phase is MoveRecordPhase.Decided or MoveRecordPhase.Opening or MoveRecordPhase.Opened or MoveRecordPhase.FellBack or MoveRecordPhase.Held
@@ -265,7 +273,13 @@ public sealed class MoveStore(
             throw new ArgumentException($"`{MovePhases.Word(phase)}` is written with what it carries, by its own write", nameof(phase));
         }
 
-        return Step(claim, phase, null, null);
+        return Step(claim, phase, null, phase != MoveRecordPhase.Delivered ? null : write =>
+        {
+            var unsent = write.Scalar<long>(
+                "SELECT COUNT(*) FROM move_words WHERE move = $move AND (disposition IS NULL OR disposition <> $sent)",
+                ("$move", claim.Move), ("$sent", MoveWordDispositions.Sent));
+            if (unsent > 0) throw new MoveRefusedException(claim.Move, $"{unsent} word(s) it moved have no `sent`, so it is not delivered");
+        });
     }
 
     /// <summary>The open asked under its key, which a lost answer is asked again by (§3.3, §13.4 step 3).</summary>
@@ -287,8 +301,119 @@ public sealed class MoveStore(
     /// <summary>The move ended on the old part, with its code.</summary>
     public MoveRecord FallBack(MoveClaim claim, string code) => Step(claim, MoveRecordPhase.FellBack, ("fell_back_code", Required(code, "its code")), null);
 
-    /// <summary>Held for the person, with its reason: it stands until it closes <c>resolved</c> by §3.3's one rule.</summary>
-    public MoveRecord Hold(MoveClaim claim, string why) => Step(claim, MoveRecordPhase.Held, ("held_why", Required(why, "its reason")), null);
+    /// <summary>
+    /// Held for the person, with its reason: it stands until it closes <c>resolved</c> by §3.3's one rule, once nothing it names waits on its
+    /// destination's <c>said</c>. The words it names are written with it in its one transaction (part 3), each a word of the move with no
+    /// disposition yet, so a word sent is never named; held again, the first hold and its words stand.
+    /// </summary>
+    /// <param name="named">The words it names, by transfer id, each with its disposition (<see cref="MoveWordDispositions.Named"/>); none names none.</param>
+    /// <exception cref="ArgumentException">A disposition no hold names.</exception>
+    /// <exception cref="MoveRefusedException">A transfer the move did not make, or a word already disposed: nothing is written.</exception>
+    public MoveRecord Hold(MoveClaim claim, string why, IReadOnlyDictionary<string, string>? named = null)
+    {
+        foreach (var disposition in (named ?? new Dictionary<string, string>()).Values) Known(disposition, MoveWordDispositions.Named, "hold's word");
+        return Step(claim, MoveRecordPhase.Held, ("held_why", Required(why, "its reason")), named is not { Count: > 0 } ? null : write =>
+        {
+            var at = Now();
+            foreach (var (transfer, disposition) in named) Dispose(write, claim, transfer, disposition, at);
+        });
+    }
+
+    // ——— The moved words' `sent` (part 3; §13.4 step 4, §19.4).
+
+    /// <summary>
+    /// As the door's write returns, and before its take: each written word's <c>sent</c> and its moment in one transaction under the claim's
+    /// check, at <c>delivering</c> alone, with the outcome of the effect last marked where it has none, since the write returning is that
+    /// effect's outcome. A word already <c>sent</c> is unchanged. Nothing is written where a transfer is not the move's or its word was
+    /// disposed otherwise.
+    /// </summary>
+    /// <exception cref="MoveClaimLostException">The claim no longer holds the move.</exception>
+    /// <exception cref="MoveRefusedException">The move is not at <c>delivering</c>, a transfer is not one it made, or its word was disposed otherwise.</exception>
+    public MoveRecord Sent(MoveClaim claim, IReadOnlyCollection<string> transfers)
+    {
+        using var store = Open();
+        return store.Write(Family, write =>
+        {
+            var move = Claimed(write, claim);
+            if (move.Phase != MoveRecordPhase.Delivering)
+            {
+                throw new MoveRefusedException(claim.Move, $"a move at `{move.PhaseWord}` writes no `sent`: its words go across at `delivering`");
+            }
+
+            var at = Now();
+            foreach (var transfer in transfers.Distinct(StringComparer.Ordinal)) Dispose(write, claim, transfer, MoveWordDispositions.Sent, at);
+            if (move.Effect is { Outcome: null }) Fenced(write, claim, "effect_outcome = $outcome, effect_ended = $at", ("$outcome", MoveWordDispositions.Sent), ("$at", at));
+            return ReadIn(write, claim.Move)!;
+        });
+    }
+
+    /// <summary>
+    /// One word's disposition written inside the claim's transaction, its claim named in the update's own condition: unchanged where it is
+    /// already that one, refused where the move made no such transfer or its word was disposed otherwise.
+    /// </summary>
+    private static void Dispose(DesktopWrite write, MoveClaim claim, string transfer, string disposition, string at)
+    {
+        var held = write.Query(
+            "SELECT disposition FROM move_words WHERE move = $move AND transfer = $transfer",
+            row => row.IsDBNull(0) ? "" : row.GetString(0), ("$move", claim.Move), ("$transfer", transfer));
+        if (held.Count == 0) throw new MoveRefusedException(claim.Move, $"it moved no word under transfer `{transfer}`");
+        if (held[0] == disposition) return;
+        if (held[0].Length > 0) throw new MoveRefusedException(claim.Move, $"its word under transfer `{transfer}` is already `{held[0]}`, never written over");
+        var changed = write.Execute(
+            """
+            UPDATE move_words SET disposition = $disposition, disposed_at = $at
+            WHERE move = $move AND transfer = $transfer AND disposition IS NULL
+              AND EXISTS (SELECT 1 FROM moves WHERE id = $move AND claim_run = $run AND claim_generation = $generation)
+            """,
+            ("$disposition", disposition), ("$at", at), ("$move", claim.Move), ("$transfer", transfer), ("$run", claim.Run),
+            ("$generation", claim.Generation));
+        if (changed != 1) throw new MoveClaimLostException(claim, "its word's row changed under the write");
+    }
+
+    // ——— The destination's standing move, and the person's press (part 3; §3.3).
+
+    /// <summary>
+    /// The standing move whose open made <paramref name="destination"/>, or null: none stands, or the home has no store. While it stands the
+    /// destination takes no move of its own (§3.1's <c>Never</c>), which <see cref="Decide"/> answers under the write lock as the index answers
+    /// the record left's.
+    /// </summary>
+    public MoveRecord? StandingTo(string destination) =>
+        Reading(
+            reader => reader.Query(
+                    $"SELECT {ColumnsAt(reader.Version)} FROM moves WHERE destination = $destination AND {DesktopStore.StandingMoves} ORDER BY id", Map,
+                    ("$destination", destination))
+                .FirstOrDefault(),
+            null);
+
+    /// <summary>
+    /// The person's press closing a hold <c>resolved</c> through one of its doors (§3.3), without its claim: one guarded update of the move
+    /// while it is held, the claim left as it was. A held move takes no effect, no mark and no phase but its close, so nothing a claim fences
+    /// interleaves with it, and the executor's own close after is a phase written again. A move not held is answered as it stands, nothing
+    /// written; one the store does not hold is null.
+    /// </summary>
+    public MoveRecord? PressResolved(long move)
+    {
+        if (Read(move) is not { } found) return null;
+        if (found.Phase != MoveRecordPhase.Held) return found;
+        try
+        {
+            using var store = Open();
+            return store.Write(Family, write =>
+            {
+                var closed = write.Execute(
+                    "UPDATE moves SET phase = $closed, closed_at = $at, closed_why = $why WHERE id = $id AND phase = $held",
+                    ("$closed", MovePhases.Word(MoveRecordPhase.Closed)), ("$at", Now()), ("$why", MoveCloseWhy.Resolved), ("$id", move),
+                    ("$held", MovePhases.Word(MoveRecordPhase.Held)));
+
+                // Closed meanwhile by its executor, or gone with its record: rolled back, and answered as it stands.
+                return closed == 1 ? ReadIn(write, move) : throw new Unwritten(ReadIn(write, move));
+            });
+        }
+        catch (Unwritten unwritten)
+        {
+            return (MoveRecord?)unwritten.Answer;
+        }
+    }
 
     /// <summary>Closed, with its reason (<see cref="MoveCloseWhy"/>), freeing its record for the next move and kept as evidence.</summary>
     public MoveRecord Close(MoveClaim claim, string why) => Step(claim, MoveRecordPhase.Closed, ("closed_why", Known(why, MoveCloseWhy.All, "close's reason")), null);
@@ -353,8 +478,11 @@ public sealed class MoveStore(
     public IReadOnlyList<MoveRecordWord> WordsOf(long move) =>
         Reading(
             reader => reader.Query(
-                "SELECT word, producer, transfer, position, disposition FROM move_words WHERE move = $move ORDER BY position, transfer",
-                row => new MoveRecordWord(row.GetString(0), row.IsDBNull(1) ? null : row.GetString(1), row.GetString(2), row.GetInt32(3), row.IsDBNull(4) ? null : row.GetString(4)),
+                "SELECT word, producer, transfer, position, disposition, disposed_at FROM move_words WHERE move = $move ORDER BY position, transfer",
+                row => new MoveRecordWord(row.GetString(0), row.IsDBNull(1) ? null : row.GetString(1), row.GetString(2), row.GetInt32(3), row.IsDBNull(4) ? null : row.GetString(4))
+                {
+                    DisposedAt = row.IsDBNull(5) ? null : row.GetString(5),
+                },
                 ("$move", move)),
             []);
 
@@ -447,7 +575,7 @@ public sealed class MoveStore(
         }
         catch (Unwritten unwritten)
         {
-            return (bool)unwritten.Answer;
+            return (bool)unwritten.Answer!;
         }
     }
 
@@ -490,7 +618,7 @@ public sealed class MoveStore(
         }
         catch (Unwritten unwritten)
         {
-            return (MoveRecord)unwritten.Answer;
+            return (MoveRecord)unwritten.Answer!;
         }
     }
 
@@ -521,6 +649,10 @@ public sealed class MoveStore(
 
     private static MoveRecord? StandingIn(DesktopWrite write, string left) =>
         write.Query($"SELECT {Columns} FROM moves WHERE record_left = $left AND {DesktopStore.StandingMoves}", Map, ("$left", left)).FirstOrDefault();
+
+    private static MoveRecord? StandingToIn(DesktopWrite write, string destination) =>
+        write.Query($"SELECT {Columns} FROM moves WHERE destination = $destination AND {DesktopStore.StandingMoves} ORDER BY id", Map, ("$destination", destination))
+            .FirstOrDefault();
 
     private static StoreRun? RunIn(DesktopWrite write, string run) =>
         write.Query(
@@ -589,8 +721,8 @@ public sealed class MoveStore(
             : throw new ArgumentException($"`{value}` is no move's {what}: one of {string.Join(", ", words)}");
 
     /// <summary>A write's answer that writes nothing: thrown out of the store's transaction, so it is rolled back, no revision moved and no wake touched.</summary>
-    private sealed class Unwritten(object answer) : Exception
+    private sealed class Unwritten(object? answer) : Exception
     {
-        public object Answer { get; } = answer;
+        public object? Answer { get; } = answer;
     }
 }

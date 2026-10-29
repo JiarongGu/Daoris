@@ -185,11 +185,57 @@ public sealed record MoveDecision(string Left, string Executor, string How, stri
     public int? RefusedBound { get; init; }
 }
 
-/// <summary>Why a move was held for the person (§3.3): an effect its run marked and never recorded, which no taker makes again by itself.</summary>
+/// <summary>
+/// Why a move was held for the person (§3.3): each hold stands until it closes <c>resolved</c> by §3.3's one rule, once nothing it names waits
+/// on its destination's <c>said</c> (<see cref="MoveWordDispositions.Named"/>).
+/// </summary>
 public static class MoveHoldWhy
 {
     /// <summary>An effect begun, a spawn, a prompt or a copy, whose outcome no record holds: its run died between the mark and the outcome.</summary>
     public const string Unrecorded = "unrecorded";
+
+    /// <summary>
+    /// Its delivery was cut before every word it moved had <c>sent</c> (part 3; §13.4 step 4, §19.4): a word gone from its destination without
+    /// <c>sent</c> is <i>left</i>, one still waiting there attempted and without it uncertain, and the hold names them and its begun effect.
+    /// </summary>
+    public const string Undelivered = "undelivered";
+
+    /// <summary>
+    /// The line's head moved past its destination before anything was delivered there (§13.4 step 5, §19.3), which only an older build does:
+    /// the destination's waiting words are named <see cref="MoveWordDispositions.Held"/>, the person's offered to be taken back and said at the head.
+    /// </summary>
+    public const string Superseded = "superseded";
+}
+
+/// <summary>
+/// A moved word's disposition in <c>move_words</c> (FOUNDATION1f-i part 3, D212; the foundation design §3.3, §13.4 step 4, §19.4): what the
+/// move knows of it, written once and never over another, and never its text. A word with none waits to be delivered.
+/// </summary>
+public static class MoveWordDispositions
+{
+    /// <summary>
+    /// Written to its agent: its door's write returned, and one transaction wrote this as it returned and before its take. The word is
+    /// <i>taken</i>, taken off its destination where it still waits and never written again.
+    /// </summary>
+    public const string Sent = "sent";
+
+    /// <summary>
+    /// Gone from its destination's <c>said</c> without <c>sent</c>: another door took it off (the person's take-back, an older come-up's uncertain
+    /// settlement, an older build's own delivery), or a <c>sent</c> whose transaction failed, the conservative side. Never sent again by the move.
+    /// </summary>
+    public const string Left = "left";
+
+    /// <summary>Waiting on its destination, attempted and without <c>sent</c>: it may have reached its agent, so it is settled and said as any attempted word is.</summary>
+    public const string Uncertain = "uncertain";
+
+    /// <summary>Waiting on its destination for the person, named by a hold the move delivers nothing past (<see cref="MoveHoldWhy.Superseded"/>).</summary>
+    public const string Held = "held";
+
+    /// <summary>The dispositions a hold names: it stands while a word of one of these waits on its destination's <c>said</c>.</summary>
+    public static readonly IReadOnlyList<string> Named = [Left, Uncertain, Held];
+
+    /// <summary>Every disposition this build writes; a word another build disposed otherwise is kept as written.</summary>
+    public static readonly IReadOnlyList<string> All = [Sent, Left, Uncertain, Held];
 }
 
 /// <summary>
@@ -210,7 +256,10 @@ public sealed record MoveFromBox(MoveDecision Decision, MoveRecordPhase Phase)
     public IReadOnlyList<MoveRecordWord> Words { get; init; } = [];
 }
 
-/// <summary>What a box's import came to: the move written, the record's standing move it waits behind, or why the import is held, nothing written.</summary>
+/// <summary>
+/// What a box's import came to: the move written, the record's standing move it waits behind (the one it left, or the one whose open made
+/// it), or why the import is held, nothing written.
+/// </summary>
 public sealed record MoveImported(MoveRecord? Move, MoveRecord? Standing, string? Held);
 
 /// <summary>A move's claim (§13.3, §13.4): the move, the process run that holds it and its generation, which every write checks inside its transaction.</summary>
@@ -224,8 +273,12 @@ public sealed record MoveEffect(string What, string Begun, string? Outcome, stri
 /// <param name="Producer">Its producer's key, or null for a keyless word.</param>
 /// <param name="Transfer">The transfer id the open moved it under.</param>
 /// <param name="Position">Its order among the move's words.</param>
-/// <param name="Disposition">Its disposition once one is known (<c>sent</c>, refused at a limit, uncertain or <i>left</i>, rows f-ii on); null until then.</param>
-public sealed record MoveRecordWord(string Word, string? Producer, string Transfer, int Position, string? Disposition = null);
+/// <param name="Disposition">Its disposition once one is known (<see cref="MoveWordDispositions"/>, part 3; refused at a limit, row f-v's); null until then.</param>
+public sealed record MoveRecordWord(string Word, string? Producer, string Transfer, int Position, string? Disposition = null)
+{
+    /// <summary>The moment its disposition was written, ISO 8601; null until then.</summary>
+    public string? DisposedAt { get; init; }
+}
 
 /// <summary>One row of <c>moves</c>, as the store holds it (§3.3, §13.3): never a word's text, a path or a credential.</summary>
 /// <param name="Id">The move's id, never handed out again.</param>
@@ -285,7 +338,10 @@ public sealed record MoveRecord(long Id, string Left, string Executor, string Ph
     public string? QuietAt { get; init; }
 }
 
-/// <summary>What a decision came to: the move claimed by the deciding run, or the record's standing move, which the decider reads as the course's <c>Never</c>.</summary>
+/// <summary>
+/// What a decision came to: the move claimed by the deciding run, or the record's standing move, which the decider reads as the course's
+/// <c>Never</c>: the one it left, or since part 3 the one whose open made it, a destination taking no move of its own while that stands.
+/// </summary>
 /// <param name="Move">The new move, or the one already standing.</param>
 /// <param name="Claim">The decider's claim on the new move; null where another move stands.</param>
 public sealed record MoveDecided(MoveRecord Move, MoveClaim? Claim)

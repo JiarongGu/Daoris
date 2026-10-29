@@ -35,7 +35,14 @@ public sealed record MoveTakeUpScope(string Executor, Func<string, bool>? Lines 
 /// <param name="Refused">The takes refused, another taker having claimed first.</param>
 public sealed record MoveLook(
     IReadOnlyList<MoveRecord> Imported, string? ImportsHeld, IReadOnlyList<string> Never, IReadOnlyList<MoveTaken> Taken, IReadOnlyList<MoveRecord> Held,
-    IReadOnlyList<MoveRecord> Gone, IReadOnlyList<MoveRecord> Quiet, IReadOnlyList<MoveTaken> Refused);
+    IReadOnlyList<MoveRecord> Gone, IReadOnlyList<MoveRecord> Quiet, IReadOnlyList<MoveTaken> Refused)
+{
+    /// <summary>The dead runs' moves taken at <c>delivering</c> and closed <c>delivered</c> by their words' <c>sent</c> (part 3).</summary>
+    public IReadOnlyList<MoveRecord> Delivered { get; init; } = [];
+
+    /// <summary>The holds of this unit's scope closed <c>resolved</c> this look by §3.3's one rule: its own, and a dead run's once taken (part 3).</summary>
+    public IReadOnlyList<MoveRecord> Resolved { get; init; } = [];
+}
 
 /// <summary>
 /// The take-up of dead runs' moves (FOUNDATION1f-i part 2, D212; the foundation design §3.3, §13.4, §13.5, §19.1): one unit an executor calls at
@@ -50,10 +57,14 @@ public sealed record MoveLook(
 /// <para><b>2. The take-up.</b> Every standing move of this unit's kind and lines whose claim's run is dead by the lease's own test is taken,
 /// once, by the guarded update that names the run and the generation it was read at, so of two takers the second is refused by the
 /// generation. A run that lives, however long it pauses, or that cannot be told dead keeps its moves; so does a move at a phase a newer build
-/// wrote. A taken move whose effect was marked and has no outcome is held for the person (<see cref="MoveHoldWhy.Unrecorded"/>), never made
-/// again by itself; one whose record left or destination no longer exists closes <c>gone</c>; any other is the caller's to go on from its
-/// phase. A live run's move past <c>old-ended</c> whose phase has stood ten minutes is said <c>move.quiet</c> once, on its line and in the
-/// log, whichever process looks, and never taken over.</para>
+/// wrote. A taken move whose record left or destination no longer exists closes <c>gone</c>; one from the open's answer to the delivery is
+/// read by its words' <c>sent</c> and its destination's <c>said</c> alone (part 3, <see cref="MoveDelivery"/>), closed <c>delivered</c> or held
+/// naming its <i>left</i> and uncertain words and its begun effect; any other whose effect was marked and has no outcome is held for the
+/// person (<see cref="MoveHoldWhy.Unrecorded"/>), never made again by itself; any other is the caller's to go on from its phase. Every hold of
+/// the unit's scope, its own and a dead run's once taken, is read by §3.3's one rule (part 3, <see cref="MoveResolve"/>) and closes
+/// <c>resolved</c> once nothing it names waits on its destination; a live run's is its own executor's to read. A live run's move past
+/// <c>old-ended</c> whose phase has stood ten minutes is said <c>move.quiet</c> once, on its line and in the log, whichever process looks, and
+/// never taken over.</para>
 /// <para><b>3. The caller's own sweep</b>, handed what the look found.</para>
 /// <para>A shell's come-up first records its run and says once, refusing nothing, that another shell runs on its home (§19.1 point 3).</para>
 /// </remarks>
@@ -63,9 +74,10 @@ public sealed record MoveLook(
 /// <param name="imports">The importers of the boxes an older build writes, run first; none until rows f-v and f-vi hand them.</param>
 /// <param name="note">Keeps a note on a record's line: how <c>move.quiet</c> is said there.</param>
 /// <param name="clock">What time it is, for a phase's quiet.</param>
+/// <param name="said">The destinations' <c>said</c> part 3's readings read; none reads none, so a hold naming a word stands and a delivery is not read.</param>
 public sealed class MoveTakeUp(
     string home, MoveStore store, MoveTakeUpScope scope, IReadOnlyList<IMoveBoxImport>? imports = null, Action<string, Noted>? note = null,
-    TimeProvider? clock = null)
+    TimeProvider? clock = null, IMoveSaid? said = null)
 {
     /// <summary>How long a move's phase past <c>old-ended</c> stands under a live run before it is said quiet (§19.1 point 4).</summary>
     public static readonly TimeSpan QuietAfter = TimeSpan.FromMinutes(10);
@@ -80,6 +92,12 @@ public sealed class MoveTakeUp(
     private static readonly ConcurrentDictionary<string, byte> ToldShells = new(StringComparer.Ordinal);
 
     private readonly TimeProvider _clock = clock ?? TimeProvider.System;
+
+    /// <summary>A hold's one rule (part 3): a hold naming a word stands where no <c>said</c> was handed, since none can be read.</summary>
+    private readonly MoveResolve _resolve = new(store, said ?? MoveSaidUntold.Instance);
+
+    /// <summary>The one reading of a taken move's delivery (part 3), where the destinations' <c>said</c> was handed.</summary>
+    private readonly MoveDelivery? _delivery = said is null ? null : new MoveDelivery(store, said);
 
     /// <summary>Called with each dead run's move just before its take, as read: a test's way to let another taker in between.</summary>
     internal Action<MoveRecord>? BeforeTake { get; set; }
@@ -128,6 +146,8 @@ public sealed class MoveTakeUp(
         var gone = new List<MoveRecord>();
         var quiet = new List<MoveRecord>();
         var refused = new List<MoveTaken>();
+        var delivered = new List<MoveRecord>();
+        var resolved = new List<MoveRecord>();
         var runs = store.Runs().ToDictionary(run => run.Run, StringComparer.Ordinal);
         foreach (var move in store.StandingOf(scope.Executor).Where(scope.Holds))
         {
@@ -137,9 +157,17 @@ public sealed class MoveTakeUp(
             try
             {
                 var run = runs.GetValueOrDefault(move.ClaimRun);
-                if (string.Equals(move.ClaimRun, store.Run, StringComparison.Ordinal) || run is null || store.Alive(run))
+                var own = string.Equals(move.ClaimRun, store.Run, StringComparison.Ordinal);
+                if (own || run is null || store.Alive(run))
                 {
-                    if (run is not null && Quiet(move, run) is { } said) quiet.Add(said);
+                    // Part 3: this run's own hold is read by §3.3's one rule at each come-up and look; a live run's is its own executor's.
+                    if (own && move.Phase == MoveRecordPhase.Held)
+                    {
+                        var read = await _resolve.ReadAsync(new MoveClaim(move.Id, move.ClaimRun, move.ClaimGeneration), ct).ConfigureAwait(false);
+                        if (!read.Stands) resolved.Add(read);
+                    }
+
+                    if (run is not null && Quiet(move, run) is { } quieted) quiet.Add(quieted);
                     continue;
                 }
 
@@ -155,9 +183,40 @@ public sealed class MoveTakeUp(
                 {
                     gone.Add(store.Close(claim, MoveCloseWhy.Gone));
                 }
-                else if (now.Effect is { Outcome: null } && now.Phase != MoveRecordPhase.Held)
+                else if (now.Phase == MoveRecordPhase.Held)
                 {
-                    held.Add(store.Hold(claim, MoveHoldWhy.Unrecorded));
+                    // A dead run's hold, once taken, is read by the one rule under the taker's claim.
+                    var read = await _resolve.ReadAsync(claim, ct).ConfigureAwait(false);
+                    if (read.Stands) taken.Add(take with { Move = read });
+                    else resolved.Add(read);
+                }
+                else if (_delivery is not null && MoveDelivery.Reads.Contains(now.Phase!.Value))
+                {
+                    // Part 3: from the open's answer to the delivery, the move is read by its words' `sent` and its destination's `said` alone.
+                    var read = await _delivery.ReadAsync(claim, ct).ConfigureAwait(false);
+                    switch (read.Outcome)
+                    {
+                        case MoveDeliveryOutcome.Delivered:
+                            delivered.Add(read.Move);
+                            break;
+                        case MoveDeliveryOutcome.Held:
+                            held.Add(read.Held ?? read.Move);
+                            if (!read.Move.Stands) resolved.Add(read.Move);
+                            break;
+                        default:
+                            // Its words to deliver, or a destination not read now: the caller's to go on with by the same reading.
+                            taken.Add(take with { Move = read.Move });
+                            break;
+                    }
+                }
+                else if (now.Effect is { Outcome: null })
+                {
+                    var hold = store.Hold(claim, MoveHoldWhy.Unrecorded);
+                    held.Add(hold);
+
+                    // Its begun effect alone keeps no hold: read by the one rule at once, it closes unless a word it names waits.
+                    var read = await _resolve.ReadAsync(claim, ct).ConfigureAwait(false);
+                    if (!read.Stands) resolved.Add(read);
                 }
                 else
                 {
@@ -170,7 +229,7 @@ public sealed class MoveTakeUp(
             }
         }
 
-        var look = new MoveLook(imported, importsHeld, [.. never], taken, held, gone, quiet, refused);
+        var look = new MoveLook(imported, importsHeld, [.. never], taken, held, gone, quiet, refused) { Delivered = delivered, Resolved = resolved };
 
         // 3. The caller's own sweep.
         if (sweep is not null) await sweep(look, ct).ConfigureAwait(false);

@@ -81,6 +81,13 @@ public sealed record LandedBranch(
     public LandedRule? Rule { get; init; }
 
     /// <summary>
+    /// The acceptance's provenance (INTEGRATE1e, the integration design §17.4): that <c>integrate</c> stood when its first landing was
+    /// accepted, its <c>request</c> there, and whether it was the rule's step or the bound version's. Null is a record that says neither:
+    /// none stood, or it was written before the field or by a build that rewrote the file without it, which can only under-admit.
+    /// </summary>
+    public LandedIntegrate? Integrate { get; init; }
+
+    /// <summary>
     /// The review that let its first landing go (REVIEWENV1c, D154 point 9; design §3.5): <c>reviewed</c> with the environment and
     /// the set-up's commit, or <c>skipped</c> with the person's words. Null where no review was asked, and for one recorded before.
     /// </summary>
@@ -240,6 +247,12 @@ public sealed record LandedAdvance(string From, string To, DateTimeOffset At, st
     /// <summary>One of <see cref="Daoris.Driver.AcceptedBy"/>, or null in a record that did not keep it.</summary>
     public string? AcceptedBy { get; init; }
 
+    /// <summary>
+    /// This advance's own acceptance provenance (INTEGRATE1e, design §17.4), as it keeps its own <see cref="AcceptedBy"/>; null where
+    /// no <c>integrate</c> stood, and in a record from before.
+    /// </summary>
+    public LandedIntegrate? Integrate { get; init; }
+
     /// <summary>The review that let this advance go (REVIEWENV1c, design §3.5); null where none was asked, and in a record from before.</summary>
     public LandingReview? Review { get; init; }
 
@@ -314,6 +327,33 @@ public sealed record LandedRule(string? Plugin, bool AutoAccept, string Source)
     /// record from before: the file keeps it as <c>access</c> beside <c>source</c>, only where it was set.
     /// </summary>
     public string? Access { get; init; }
+}
+
+
+/// <summary>
+/// An acceptance's provenance (INTEGRATE1e; the integration design §17.4, F40 and C30): that <c>integrate</c> stood where a landing or an
+/// advance was accepted, with the <c>request</c> it said there and whose step it was. Written beside <c>acceptedBy</c> and the rule, as
+/// <c>integrate</c> <c>{ request, source }</c>, only where one stood; an older reader passes the key over, and a build that rewrites the
+/// file without it leaves a record that says neither. The door that admits a request reads it with <c>acceptedBy</c>; nothing judges it
+/// here.
+/// </summary>
+/// <param name="Request">The <c>request</c> that stood (<c>owner</c>, <c>done</c> or <c>steward</c>), kept as written for its reader to judge.</param>
+/// <param name="Source">Whose step it was: <see cref="Rule"/>, Current's under a rule carrying <c>integrate</c>, or <see cref="Version"/>.</param>
+public sealed record LandedIntegrate(string Request, string Source)
+{
+    /// <summary>The effective landing rule's <c>integrate</c>, under Current.</summary>
+    public const string Rule = "rule";
+
+    /// <summary>The bound named version's own <c>integrate</c> step (row n).</summary>
+    public const string Version = "version";
+
+    /// <summary>
+    /// What a landing under <paramref name="integrate"/> keeps: its <c>request</c> through the design's <i>Absent</i> column, the rule
+    /// its source; none where the rule carries no <c>integrate</c>. Under a named version the rule's <c>request</c> is not the unit's
+    /// process (§4.1), its own <c>integrate</c> step is, which no version carries until row n: so none.
+    /// </summary>
+    public static LandedIntegrate? Of(LandingIntegrate? integrate, bool named) =>
+        named || integrate is null ? null : new(integrate.Resolved().Request ?? LandingIntegrate.Owner, Rule);
 }
 
 
