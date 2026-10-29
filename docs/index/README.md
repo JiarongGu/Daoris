@@ -390,5 +390,5 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-28-integration-design.md` | 204 | 1923 |
 | `docs/DAORIS_UNIFIED_COLLABORATION_ARCHITECTURE_AND_PLAN_2026-10-16.md` | 164 | 5380 |
 | `docs/README.md` | 60 | 283 |
-| `docs/development.md` | 46 | 536 |
+| `docs/development.md` | 47 | 538 |
 | `src/Daoris.Desktop/README.md` | 213 | 1066 |
