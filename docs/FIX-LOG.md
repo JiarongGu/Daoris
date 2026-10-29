@@ -5,6 +5,13 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-30 - The drain card's test fixed its moment to one day (DRAINHOLD1)
+
+- **Symptom:** the merge queue's web-unit run on candidate `209ea3e`, the first after midnight on 2026-10-30, failed both languages of `Confirmations.test.tsx`'s *says what a drain waits on and since when under a held Confirm*: it looked for "since 14:05" and the card said "since Oct 29, 14:05". The same case passed every run on 2026-10-29.
+- **Root cause:** the fixture stamped the drain's `since` as 14:05 on 2026-10-29, and the card says a moment of today by its time alone and any other day's with its date, as it should. The test was right only on the day it was written: a fixture clock, not a defect of the card (as NOTICESCLOCK1).
+- **Fix:** test only: the fixture stamps 14:05 of the day the test runs, so the sentence under test is the same-day one whatever the date. The card is unchanged.
+- **Verify:** `Confirmations.test.tsx`, 61 passed on 2026-10-30.
+
 ## 2026-10-29 - Three fast driver cases read the machine's clock against bounds load outruns (FLAKE1)
 
 - **Symptom:** the merge queue's fast Driver runs on candidates `8fe51f4` and `7da959c` (five builders beside them) each failed two cases of 15,869 that no member of the batch touches: `AccountWalkGateTests.A_status_question_that_cannot_have_its_lock_leaves_the_account_unknown_for_the_walk` in both ("the walk waited 00:00:14.38 for a lock it had already not had", against a bound of 3.5 s; then 19.1 s where one refused wait timed in the same moment took 2.3 s), `WorkPeerTests.A_step_event_reaches_the_listener_and_nothing_else_from_the_plugin_does` ("did not answer `initialize` within 10s") and `BrainstormBoundsTests.The_request_s_deadline_stops_a_generator_with_the_synthesis_s_and_the_challenge_s_minutes_reserved` (the synthesis `unavailable` in its two-second reserve). A fast-half failure is never run again, so each such bound costs a candidate.
