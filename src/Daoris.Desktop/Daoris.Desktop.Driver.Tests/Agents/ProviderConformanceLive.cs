@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Daoris.Driver;
+using static Daoris.Desktop.Driver.Tests.ConformanceCases;
 
 namespace Daoris.Desktop.Driver.Tests;
 
@@ -12,12 +13,12 @@ namespace Daoris.Desktop.Driver.Tests;
 /// The program a case runs is a scenario it writes into its scratch, in the stand-in's vocabulary, which is Claude Code's and Codex's by
 /// reference: until part 3 lays a stand-in's program out in its folder, nothing here is that program, and nothing names a stand-in by its id.
 /// </remarks>
-internal static partial class ConformanceCases
+internal static class ConformanceLiveCases
 {
     /// <summary>How long a live case's process is waited on: <see cref="Poll.Patience"/>, a bound that elapses only on failure.</summary>
     private static readonly TimeSpan Bound = Poll.Patience;
 
-    private static IEnumerable<ConformanceCase> LiveCases =>
+    internal static IEnumerable<ConformanceCase> LiveCases =>
     [
         Live("live.start", "a start: the door's program started by its spawn and read by its transport", LiveStart),
         Live("live.turn", "a turn: the program's words and its turn's end read", LiveTurn),

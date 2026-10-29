@@ -19,6 +19,8 @@ const ALIASED: Record<string, () => string> = {
   ContinueWhy: () => driverSource('ContinueReason.cs'),
   ContinueCodes: () => driverSource('ContinueCodes.cs'),
   HandOverAskWhy: () => driverSource('HandOverAskWhy.cs'),
+  // FOUNDATION1d-ii part 1: `WordsNever.Continued` forwards the say door's answer's own word, which a record declares.
+  SayAnswer: () => driverSource('ServiceAnswers.cs'),
 };
 
 /** Follow a forwarded constant to its literal owner; a missing target or cycle fails the twin instead of dropping a code. */
@@ -27,7 +29,7 @@ function literalOf(alias: string, name: string, seen: string[] = []): string {
   expect(seen, `constant alias cycle at \`${key}\``).not.toContain(key);
   const source = ALIASED[alias];
   expect(source, `\`${alias}\` is no class an alias here is read from: add the file that declares it`).toBeTruthy();
-  const block = new RegExp(`static class ${alias}\\b\\s*\\{([\\s\\S]*?)\\n\\}`).exec(source!())?.[1] ?? '';
+  const block = new RegExp(`(?:static class|record) ${alias}\\b[^{]*\\{([\\s\\S]*?)\\n\\}`).exec(source!())?.[1] ?? '';
   const target = new RegExp(`public const string ${name} = (?:"([^"]+)"|(\\w+)\\.(\\w+));`).exec(block);
   expect(target, `\`${key}\` is no constant in the file that declares ${alias}`).toBeTruthy();
   return target![1] ?? literalOf(target![2]!, target![3]!, [...seen, key]);
