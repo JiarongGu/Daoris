@@ -168,10 +168,11 @@ internal static class ProviderRegistration
         var lent = toolchain is null || keyedItself
             ? LentPart.None
             : new LentPart(PoolFacts.Of(toolchain), TablesPart.Of(toolchain, withErrors: false), new UsagePart(toolchain.Usage));
+        var transport = TransportOf.Wire(adapter.Wire);
 
         return new AgentDoor(
             new DoorId(name),
-            TransportOf.Wire(adapter.Wire),
+            transport,
             plugin is null ? new DoorIdentity(null, null, null) : new DoorIdentity(plugin, toolchain?.Product, toolchain?.Maker),
             toolchain is null || owning ? Known<ProgramFacts>.Absent : Known<ProgramFacts>.Declared(ProgramFacts.Of(toolchain), $"the toolchain of {name}"),
             DoorHome.Of(toolchain),
@@ -182,7 +183,11 @@ internal static class ProviderRegistration
             Known<IDialect>.Absent,
             new AbilitiesPart(
                 Known<bool>.Declared(adapter.Interactive, "ISessionAdapter.Interactive"),
-                Known<bool>.Declared(adapter.Resumes, "ISessionAdapter.Resumes"),
+                // A protocol door's resume is the transport's default, eligibility to negotiate at the open and never a resume known,
+                // as the stand-in written on the contract states it, so both readings of one door agree (AGENTPROVIDER1 row b, §2.6).
+                transport == Transport.Protocol
+                    ? Known<bool>.Declared(adapter.Resumes, "the protocol transport's default", Eligibility.Applies)
+                    : Known<bool>.Declared(adapter.Resumes, "ISessionAdapter.Resumes"),
                 Known<bool>.Declared(adapter.TakesSettings, "ISessionAdapter.TakesSettings")),
             new DoorTablesPart(keyedItself ? null : toolchain?.ErrorWords, toolchain?.TurnReport),
             declared);
