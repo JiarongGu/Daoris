@@ -141,10 +141,45 @@ public sealed class RunningServiceTests : IDisposable
     {
         using var running = Running(Data);
 
-        var error = Assert.Throws<DriverException>(() => ServiceHttp.FromEnvironment(Env(), App, Answering((ServiceStatus?)null)));
+        var error = Assert.Throws<DriverException>(() => ServiceHttp.FromEnvironment(Env(), App, Answering((ServiceStatus?)null), TimeSpan.Zero));
 
         Assert.Contains($"Daoris is running on {Data} (pid {Environment.ProcessId})", error.Message);
         Assert.Contains("nothing answered as its service at http://localhost:5181", error.Message);
+    }
+
+    /// <summary>
+    /// 🔴 SERVICESTALL1: a service busy past the status door's bound is asked a second time after a short wait, and is found where
+    /// the second try answers; one that answers neither is said as what was seen (the address, the bound, that it was asked twice),
+    /// never as a missing variable.
+    /// </summary>
+    [Fact]
+    public void A_status_door_that_answers_late_is_asked_again_and_found()
+    {
+        using var running = Running(Data);
+        var id = HomeIdentity.Ensure(Data);
+        var tries = 0;
+
+        using var service = ServiceHttp.FromEnvironment(Env(), App, url =>
+        {
+            _asked.Add(url);
+            return ++tries == 1 ? null : new ServiceStatus("lexical only", id);
+        }, TimeSpan.Zero);
+
+        Assert.Equal("http://localhost:5181", service.BaseUrl);
+        Assert.Equal(2, tries);
+    }
+
+    [Fact]
+    public void A_status_door_that_never_answers_is_said_as_unanswered_not_as_a_missing_variable()
+    {
+        using var running = Running(Data);
+
+        var error = Assert.Throws<DriverException>(() => ServiceHttp.FromEnvironment(Env(), App, Answering((ServiceStatus?)null), TimeSpan.Zero));
+
+        Assert.StartsWith($"Daoris is running on {Data} (pid {Environment.ProcessId}), and nothing answered as its service at http://localhost:5181 within 2 seconds, asked twice, 0 seconds apart.", error.Message);
+        Assert.Contains($"{ServiceClient.UrlVariable} is not the cause: the service may be busy", error.Message);
+        Assert.DoesNotContain("no DAORIS_SERVICE_URL", error.Message);
+        Assert.Equal(["http://localhost:5181", "http://localhost:5181"], _asked);
     }
 
     /// <summary>

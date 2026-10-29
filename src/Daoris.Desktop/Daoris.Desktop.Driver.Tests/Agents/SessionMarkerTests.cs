@@ -15,7 +15,7 @@ public sealed partial class SessionMarkerTests
     {
         ["Daoris.Desktop.Driver/Agents/Adapters.cs"] =
             (5, "a driven session, an intake, a reviewer, a helper or brainstorm pass, and a conversation, where the session has a record"),
-        ["Daoris.Desktop.Driver/Quests/IntakeRoom.cs"] = (1, "an intake's connector, the room its tools answer"),
+        ["Daoris.Desktop.Driver/WorkOrders/IntakeRoom.cs"] = (1, "an intake's connector, the room its tools answer"),
         ["Daoris.Desktop.Driver/Knowledge/KnowledgeConnector.cs"] = (1, "a session's knowledge connector"),
     };
 

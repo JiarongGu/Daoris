@@ -41,17 +41,30 @@ export async function endpoint(
   env: NodeJS.ProcessEnv = process.env, get: Get = fetch, install: string | null = THIS_INSTALL,
 ): Promise<{ url: string; key: string | null }> {
   const found = await located(env, get, install);
-  if ('why' in found) throw new DaorisError(found.why ? `${NO_SERVICE}\n  ${found.why}` : NO_SERVICE);
+  // An address the home's record gave that nothing answered at is not a missing variable: its sentence says what was seen, alone.
+  if ('why' in found) throw new DaorisError(found.unanswered ? found.why : found.why ? `${NO_SERVICE}\n  ${found.why}` : NO_SERVICE);
   return { url: found.url, key: env.DAORIS_SERVICE_KEY ?? null };
 }
 
 /** The service's address: the variable, else (installed) the running desktop's, else why there is none ('' where none was looked for). */
-async function located(env: NodeJS.ProcessEnv, get: Get, install: string | null): Promise<{ url: string } | { why: string }> {
+async function located(env: NodeJS.ProcessEnv, get: Get, install: string | null): Promise<{ url: string } | Unfound> {
   const named = env.DAORIS_SERVICE_URL?.trim().replace(/\/+$/, '');
   if (named) return { url: named };
   const home = install ? daorisHome(env, install) : null;
   return install && home ? runningService(home, install, get) : { why: '' };
 }
+
+/** Why there is no service to use; `unanswered` where the home's record gave an address and nothing answered there (SERVICESTALL1). */
+export type Unfound = { why: string; unanswered?: true };
+
+/** How long the status door is given to answer, each try. */
+export const STATUS_BOUND_MS = 2_000;
+
+/** How long a service request is given to answer, each try: its press says it, and a read is asked once more after `RETRY_AFTER_MS`. */
+export const REQUEST_BOUND_MS = 60_000;
+
+/** The wait before an idempotent read, or the status door, is asked a second time. */
+export const RETRY_AFTER_MS = 1_000;
 
 /** The address file the running desktop leaves in its home (the driver's `RunningAddress.FileName`). */
 export const RUNNING_FILE = 'running.json';
@@ -65,8 +78,8 @@ export const RUNNING_FILE = 'running.json';
  * not, in a sentence that says how to start Daoris. The driver's `RunningService` holds the same contract in C#.
  */
 export async function runningService(
-  home: string, install: string, get: Get = fetch, lives: (pid: number) => boolean = processLives,
-): Promise<{ url: string } | { why: string }> {
+  home: string, install: string, get: Get = fetch, lives: (pid: number) => boolean = processLives, pause: Pause = sleep,
+): Promise<{ url: string } | Unfound> {
   const start = join(install, 'Daoris.exe');
   const entry = runningEntry(home);
   if (!entry || !lives(entry.pid)) return { why: `Daoris is not running on ${home}: start it (${start}), and run this again once its window is up.` };
@@ -77,22 +90,33 @@ export async function runningService(
     };
   }
 
+  // A service busy past the bound (a landing, a loaded machine) answers a second try; a redirect or a page that is no Daoris is an answer.
   let answered: { home: string | null } | null = null;
-  try {
-    const response = await get(`${entry.url}/api/status`, { method: 'GET', redirect: 'manual', signal: AbortSignal.timeout(2_000) });
-    const status: unknown = await response.json().catch(() => null);
-    if (response.ok && typeof status === 'object' && status !== null && typeof (status as Record<string, unknown>).tier === 'string') {
-      const named = (status as Record<string, unknown>).home;
-      answered = { home: isHomeId(named) ? named : null };
+  let silent = true;
+  let tries = 0;
+  for (let attempt = 1; attempt <= 2 && silent; attempt++) {
+    if (attempt === 2) await pause(RETRY_AFTER_MS);
+    tries = attempt;
+    try {
+      const response = await get(`${entry.url}/api/status`, { method: 'GET', redirect: 'manual', signal: AbortSignal.timeout(STATUS_BOUND_MS) });
+      silent = response.status >= 500;
+      const status: unknown = await response.json().catch(() => null);
+      if (response.ok && typeof status === 'object' && status !== null && typeof (status as Record<string, unknown>).tier === 'string') {
+        const named = (status as Record<string, unknown>).home;
+        answered = { home: isHomeId(named) ? named : null };
+      }
+    } catch {
+      answered = null;
     }
-  } catch {
-    answered = null;
   }
 
   if (!answered) {
     return {
-      why: `Daoris is running on ${home} (pid ${entry.pid}), and nothing answered as its service at ${entry.url}: run this `
-        + `again once its window is up, or start it again (${start}).`,
+      unanswered: true,
+      why: `Daoris is running on ${home} (pid ${entry.pid}), and nothing answered as its service at ${entry.url} within `
+        + `${seconds(STATUS_BOUND_MS)}, ${tries === 2 ? `asked twice, ${seconds(RETRY_AFTER_MS)} apart` : "asked once"}. The address is the one Daoris left in ${home}, so `
+        + 'DAORIS_SERVICE_URL is not the cause: the service may be busy. Run this again in a moment, or start Daoris again '
+        + `(${start}).`,
     };
   }
 
@@ -120,6 +144,17 @@ function runningEntry(home: string): { url: string; pid: number } | null {
   } catch {
     return null;
   }
+}
+
+/** What `sleep` is to this module: handed in by a test, which waits for nothing. */
+export type Pause = (ms: number) => Promise<void>;
+
+const sleep: Pause = (ms) => new Promise((resolve) => { setTimeout(resolve, ms); });
+
+/** A bound as a person reads it: `2 seconds`, `0.15 seconds`. */
+function seconds(ms: number): string {
+  const s = ms / 1000;
+  return `${s} second${s === 1 ? '' : 's'}`;
 }
 
 /** Whether a process runs with this id: signal 0 tests and sends nothing; one not ours to signal still runs. */
@@ -158,28 +193,51 @@ export function isLocalService(url: string): boolean {
  * this machine's own service only: a service elsewhere is refused before anything is sent, as `import` refuses a folder.
  */
 export async function request(
-  method: 'GET' | 'POST' | 'DELETE', path: string, body?: unknown, { here }: { here?: string } = {},
+  method: 'GET' | 'POST' | 'DELETE', path: string, body?: unknown,
+  { here, get = fetch, pause = sleep, within = REQUEST_BOUND_MS }: { here?: string; get?: Get; pause?: Pause; within?: number } = {},
 ): Promise<{ status: number; json: Record<string, unknown> | null; url: string }> {
   const { url, key } = await endpoint();
   if (here !== undefined && !isLocalService(url)) {
     throw new DaorisError(`${url} is not this machine's service, and ${here}: nothing was sent.`, 1);
   }
 
-  const response = await fetch(`${url}${path}`, {
+  const send = () => get(`${url}${path}`, {
     method,
     headers: {
       ...(body === undefined ? {} : { 'content-type': 'application/json' }),
       ...(key ? { authorization: `Bearer ${key}` } : {}),
     },
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
-  }).catch((error: Error) => {
-    throw new DaorisError(
-      `could not reach the service at ${url} — ${error.message}\n`
-      + '  Nothing else daoris does needs it; this only affects discoverability.');
+    signal: AbortSignal.timeout(within),
   });
+
+  // SERVICESTALL1: a read is asked once more after a short wait, since asking again changes nothing; a press is never asked again
+  // blindly, since the service may have done it before it stopped answering.
+  let response: Response;
+  try {
+    response = await send();
+  } catch (first) {
+    if (method !== 'GET') throw unanswered(url, path, within, first as Error, false);
+    await pause(RETRY_AFTER_MS);
+    response = await send().catch((second: Error) => { throw unanswered(url, path, within, second, true); });
+  }
 
   const json = await response.json().catch(() => null) as Record<string, unknown> | null;
   return { status: response.status, json, url };
+}
+
+/** What the CLI saw when the service did not answer: the address, the bound, whether it asked again, and what to check where it did not. */
+function unanswered(url: string, path: string, within: number, error: Error, again: boolean): DaorisError {
+  const timedOut = error.name === 'TimeoutError' || error.name === 'AbortError';
+  const saw = timedOut ? `did not answer within ${seconds(within)}` : `could not be reached (${error.message})`;
+  const then = again
+    ? `, and not again after a second try ${seconds(RETRY_AFTER_MS)} later`
+    : '. This asked for a change, so it was not asked again: the service may have done it before it stopped answering, so look at '
+      + 'what it changes (the registry, in the window) before you press it again';
+  return new DaorisError(
+    `the service at ${url} ${saw} to ${path}${then}. The address was found, so `
+    + 'DAORIS_SERVICE_URL is not what is missing: the service may be busy, so run this again in a moment.\n'
+    + '  Nothing else daoris does needs it; this only affects discoverability.');
 }
 
 /** The service's own sentence, or a bare status when it did not compose one. */
