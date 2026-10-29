@@ -609,6 +609,20 @@ describe('noteLines', () => {
         .toBe('它的委托不再等这些后台工作：会话结束，仍在运行的工作随之结束：`Run the tests`。');
     });
 
+    /** RUNENDS1: the quest no longer waits, so the session ends rather than wait for a turn its agent's own wakeup starts. */
+    it('words a session that ends because its quest closed while its agent’s own next turn was awaited', () => {
+      const left = coded('background.turn-left', '— its quest no longer waits, and a turn that started on its own was silent: …');
+      const closed = coded('background.quest-closed', '— its quest no longer waits while the session waited for its agent’s next turn: …');
+      expect(noteLines(t, { parts: [left] }, 'en')[0].text)
+        .toBe('Its quest no longer waits, and a turn that started on its own was silent: the session ends without that turn\'s end.');
+      expect(noteLines(zh, { parts: [left] }, 'zh')[0].text)
+        .toBe('它的委托不再等待，而自行开始的一轮一直没有动静：会话结束，不再等那一轮的结束。');
+      expect(noteLines(t, { parts: [closed] }, 'en')[0].text)
+        .toBe('Its quest no longer waits while the session waited for its agent\'s next turn: the session ends, and no go-on is sent.');
+      expect(noteLines(zh, { parts: [closed] }, 'zh')[0].text)
+        .toBe('它的委托不再等待，会话原本在等它的智能体的下一轮：会话结束，也不再发送继续的提示。');
+    });
+
     it('words that a wait could not be read and leaves the program’s words as written', () => {
       const parts = [coded('background.unread', '— its turn ended …:'), words('the agent said no', 'program')];
       expect(noteLines(zh, { parts }, 'zh')).toEqual([

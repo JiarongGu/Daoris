@@ -201,6 +201,39 @@ public sealed class AcpTransientTests
         Assert.Equal((2, TimeSpan.FromMinutes(3), false), (retry.Episode!.Tries, retry.Episode.Waited, retry.Episode.Exhausted));
     }
 
+    /// <summary>
+    /// 🔴 RUNENDS1, second read (finding 6): the owner's check observes its caller's cut, and its cancellation is the caller's own: a check
+    /// that cancels on a token of its own, linked to the cut, never surfaces that token, so the end the cut serves swallows only its own
+    /// cancellation and lets every other through. A check cancelled on its own while nothing cut it is unread, and a yes, as before.
+    /// </summary>
+    [Fact]
+    public async Task The_owner_checks_cancellation_is_its_callers_own_and_its_own_is_an_unread_yes()
+    {
+        using var cut = new CancellationTokenSource();
+        var retry = new TransientRetry
+        {
+            Read = _ => throw new NotSupportedException(),
+            Wanted = async ct =>
+            {
+                using var mine = CancellationTokenSource.CreateLinkedTokenSource(ct);
+                await Task.Delay(Timeout.Infinite, mine.Token);
+                return true;
+            },
+        };
+
+        var checking = retry.WantedAsync(cut.Token);
+        await cut.CancelAsync();
+        var cancelled = await Assert.ThrowsAnyAsync<OperationCanceledException>(() => checking.WaitAsync(Poll.Patience));
+        Assert.Equal(cut.Token, cancelled.CancellationToken);
+
+        var own = new TransientRetry
+        {
+            Read = _ => throw new NotSupportedException(),
+            Wanted = _ => Task.FromCanceled<bool>(new CancellationToken(true)),
+        };
+        Assert.True(await own.WantedAsync(CancellationToken.None));
+    }
+
     /// <summary>A run handed no retry keeps today's end: the refusal ends it (§5.1, round 3, R2-O6).</summary>
     [Fact]
     public async Task A_run_handed_no_retry_keeps_today_s_end()

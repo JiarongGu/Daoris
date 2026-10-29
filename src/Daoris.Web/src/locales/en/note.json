@@ -323,6 +323,8 @@
   "note.background.state.ended": "ended",
   "note.background.goes-on": "The session goes on.",
   "note.background.wait-over": "Its quest no longer waits on its background work: the session ends, and the work still running ends with it: {{works}}.",
+  "note.background.turn-left": "Its quest no longer waits, and a turn that started on its own was silent: the session ends without that turn's end.",
+  "note.background.quest-closed": "Its quest no longer waits while the session waited for its agent's next turn: the session ends, and no go-on is sent.",
   "note.door.not-open": "The session could not open:",
   "note.door.turn-not-taken": "This turn could not be taken:",
   "note.door.failed": "The session failed:",

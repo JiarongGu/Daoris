@@ -732,6 +732,10 @@ public static class NoteCodes
     // DONEEND1 (D83's note): the quest, read again while the session waits, no longer waits on the work, so the session ends and the
     // work still running ends with it.
     public static readonly NoteCode BackgroundWaitOver = new("background.wait-over", ["works"]);
+    // RUNENDS1 (D83's note): the quest no longer waits, and the session ends rather than wait for what its agent scheduled for itself:
+    // a turn its harness started that said nothing, or the turn its harness was about to wake.
+    public static readonly NoteCode BackgroundTurnLeft = new("background.turn-left", []);
+    public static readonly NoteCode BackgroundQuestClosed = new("background.quest-closed", []);
 
     // ——— A conversation's door that failed (CONVNOTE2e, <see cref="DoorNotes"/>): the protocol session that could not open or failed,
     // and a turn that could not be taken, each a lead with a program's message after it (it may hold a path). A resume the agent
@@ -956,6 +960,24 @@ public static class BackgroundNotes
             "— its quest no longer waits on its background work: the session ends, and the work still running ends with it: "
             + $"{string.Join(", ", works.Select(name => $"`{name}`"))}.",
             ("works", works));
+
+    /// <summary>
+    /// The quest no longer waits and a turn its harness started, as an agent's own scheduled wakeup starts one, said nothing for the
+    /// bound (RUNENDS1): the session ends without that turn's end, which that turn may never say.
+    /// </summary>
+    public static Noted TurnLeft() =>
+        Noted.Of(
+            NoteCodes.BackgroundTurnLeft,
+            "— its quest no longer waits, and a turn that started on its own was silent: the session ends without that turn's end.");
+
+    /// <summary>
+    /// The quest no longer waits while the session waited for the turn its harness would wake for work that ended (RUNENDS1): the
+    /// session ends, and Daoris's go-on is not sent to a quest that has closed.
+    /// </summary>
+    public static Noted QuestClosed() =>
+        Noted.Of(
+            NoteCodes.BackgroundQuestClosed,
+            "— its quest no longer waits while the session waited for its agent's next turn: the session ends, and no go-on is sent.");
 
     /// <summary>Each work and the state it ended in, as the English and the prompt to the agent both say them.</summary>
     public static string EndedSaid(IEnumerable<(string Name, string State)> ended) =>
