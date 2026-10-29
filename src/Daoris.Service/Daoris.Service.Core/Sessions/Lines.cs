@@ -48,10 +48,11 @@ public static class Lines
         for (var hops = 0; ; hops++)
         {
             var next = await sessions.ContinuedByAsync(at.Id, ct).ConfigureAwait(false);
-            if (next is null && at.Kind == SessionKind.Driven && at.Quest is { } quest)
+            if (next is null && at.Kind == SessionKind.Driven && at.Quest is { } quest
+                && await sessions.LastOwnIdForQuestAsync(quest, ct).ConfigureAwait(false) is { } last && last != at.Id)
             {
-                var last = await sessions.LastOwnForQuestAsync(quest, ct).ConfigureAwait(false);
-                if (last is not null && last.Id != at.Id) next = last;
+                // Most often the part is its quest's last run here, and the probe reads its id alone; a later run is read whole.
+                next = await sessions.FindAsync(last, ct).ConfigureAwait(false);
             }
 
             if (next is null) return new LineWalk(at, records, LineEnd.Head);

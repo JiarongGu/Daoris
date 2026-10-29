@@ -375,6 +375,12 @@ public sealed class SessionLedger(
     private readonly SessionReviews reviews = new(quests, sessions);
 
     /// <summary>
+    /// Whether the say door walks the line's head (row d-ii): always, but for the landing measurement's copy of the door as it stood before
+    /// the row (<c>SaidSettledMeasureTests</c>), since the walk is code and not schema, so dropping a table cannot make that copy.
+    /// </summary>
+    internal bool WalksHead { get; init; } = true;
+
+    /// <summary>
     /// Open an INTAKE for an ask (D65 §1b) — a conversation Daoris opens in a room it owns, which
     /// decides from the circle's declarations, publishes the quests itself, and asks the person where
     /// the declarations do not settle it.
@@ -1018,7 +1024,9 @@ public sealed class SessionLedger(
 
             // Row d-ii (D212, the design §3.4 rule 2, §19.13): the line's head, read inside this step, so no part opens between this
             // judgement and the keep below. One probe a hop on `sessions_from`, and one on `sessions_quest` for a driven part with none.
-            var line = await Lines.WalkAsync(sessions, session, inside).ConfigureAwait(false);
+            var line = WalksHead
+                ? await Lines.WalkAsync(sessions, session, inside).ConfigureAwait(false)
+                : new LineWalk(session, [session], LineEnd.Head);
 
             // Row p (the design §3.4 rule 5): asked first, before any refusal but the record's absence, so a retry after the take is answered
             // as kept whatever the record is doing now (a re-say at the head, a record running again, a record the line has left). A word still

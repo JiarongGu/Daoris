@@ -1103,6 +1103,19 @@ public sealed class SessionStore
     }, ct);
 
     /// <summary>
+    /// The id alone of the newest of THIS machine's records for a quest, or null (FOUNDATION1 row d-ii): the head walk's second probe, on
+    /// <c>sessions_quest</c>, for a driven part with no successor, which is most often that newest record itself and so needs no more of the
+    /// row than its id inside the say door's step.
+    /// </summary>
+    public Task<string?> LastOwnIdForQuestAsync(string quest, CancellationToken ct = default) => _db.RunAsync<string?>(async () =>
+    {
+        await using var command = _db.Command();
+        command.CommandText = "SELECT id FROM sessions WHERE quest = $quest AND origin IS NULL ORDER BY created DESC, rowid DESC LIMIT 1";
+        command.Parameters.AddWithValue("$quest", quest);
+        return await command.ExecuteScalarAsync(ct).ConfigureAwait(false) as string;
+    }, ct);
+
+    /// <summary>
     /// Whether a session of THIS machine's took <paramref name="quest"/> through its own connector
     /// (STANDDOWN2): the take is held here, so a person's stop of its session leaves it this machine's to
     /// carry on once released (SESSUX1b2). A teammate's record never says so: its take is its machine's.
