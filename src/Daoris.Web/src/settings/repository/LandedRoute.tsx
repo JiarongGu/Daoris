@@ -6,6 +6,7 @@ import { shellWord } from '../../lib/shellWord';
 import { type Answered, Refused } from '../../work/InlineConfirm';
 import type { WorkflowLanded, WorkflowStart } from '../../workflow/current';
 import { whySaid } from '../../workflow/routeSaid';
+import type { IntegrationRequest } from './IntegrationDeclaration';
 
 /** What the landed route names, for its Setup and its press: a verification workflow's id, `current` for none, or the workspace's again. */
 export type LandedChoice = string | null;
@@ -14,6 +15,8 @@ export type LandedChoice = string | null;
 export type LandedSetup = {
   start: WorkflowStart;
   onChoose: (workflow: LandedChoice, answered: Answered) => void;
+  /** The person's Accept or Withdraw of the integration declaration the start node carries (INTEGRATE1d part 3). */
+  onAcceptIntegration?: (request: IntegrationRequest, answered: Answered) => void;
 };
 
 /** A repository's landed route in its Setup's folded line: the workflow that verifies the work that lands, or none. */
