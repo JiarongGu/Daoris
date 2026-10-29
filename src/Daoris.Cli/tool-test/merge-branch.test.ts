@@ -222,6 +222,16 @@ const tool = await import(
   backlogOf: (text: string | null) => string | null;
   rowTablesOf: (text: string | null) => string[];
   integrationOf: (text: string | null) => { integration: Record<string, unknown> | null; problem: string | null };
+  verifyInputs: (env: Record<string, string | undefined>, options?: { besideCommit?: string | null }) => {
+    commit: string; result: string; mode: string | null; base: string | null; declaration: string; tree: string | null;
+  };
+  verifyPlan: (text: string) => { name: string; run: string; declared: string }[];
+  verifyGates: (
+    plan: { name: string; declared: string }[],
+    results: { gate: { name: string }; verdict: string; code?: number; log?: string }[],
+    options?: { keep?: (log: string) => string; seconds?: (name: string) => number | undefined },
+  ) => { name: string; verdict: string; exit?: number; wallSeconds?: number; log?: string }[];
+  verifyCommitsAnswer: (facts: { commit: string; base: string; declaration: string; commits: { sha: string; merge: boolean; subject: string; trailer: string }[] }) => Record<string, unknown>;
   mergeByBase: (base: string, ours: string, theirs: string) => { text: string | null; kept: number; dropped: number; both: { line: number }[] };
   REACH: readonly Rule[];
   PATH_CHECKS: readonly { gate: string; paths: string[]; why: string }[];
@@ -364,7 +374,7 @@ test('the arguments name one branch, or several after --batch, and the flags', (
     branches: ['mod9'], keepGoing: false, commitCheck: true, resume: false, dropBatch: false, plan: false, prune: false, autoPrune: true,
     full: false, gated: false, rerun: [], passed: false, stale: false, oneAtATime: false, beside: false, besideCommit: null,
     ci: false, ciCommit: null, watch: false, stop: false, ciStage: false, ciNight: false,
-    preview: false, messageFile: null, queue: false, recheck: false, queueRun: false,
+    preview: false, messageFile: null, queue: false, recheck: false, queueRun: false, daorisVerify: false,
   });
   // CISCOPE1e: the queue's verbs, each alone with what it takes.
   assert.equal(tool.parseArgs(['a', '--preview']).preview, true);
@@ -469,6 +479,28 @@ test('--full --beside gates a commit in a worktree of its own, main\'s tip when 
     [['--full', '--beside', '--beside'], /--beside is given once/],
     [['--prune', '--beside'], /one of|--beside/],
     [['--passed', '--beside'], /one of|--beside/],
+  ];
+  for (const [argv, message] of cases) {
+    const error = refusal(() => tool.parseArgs(argv));
+    assert.equal(error.exitCode, 2, argv.join(' '));
+    assert.match(error.message, message, argv.join(' '));
+  }
+});
+
+// INTEGRATE1j part 1: the flag that makes the tool D192's declared runner, valid with `--full --beside` alone, taking its commit from the environment.
+test('--daoris-verify is the declared runner: only with --full --beside, naming no commit, taking only the run\'s flags', () => {
+  const asked = tool.parseArgs(['--full', '--beside', '--daoris-verify', '--one-at-a-time']);
+  assert.deepEqual([asked.full, asked.beside, asked.daorisVerify, asked.besideCommit, asked.oneAtATime], [true, true, true, null, true]);
+  assert.equal(tool.parseArgs(['--full', '--beside']).daorisVerify, false);
+  const cases: [string[], RegExp][] = [
+    [['--daoris-verify'], /--daoris-verify is the declared runner's: --full --beside --daoris-verify/],
+    [['--full', '--daoris-verify'], /--daoris-verify is the declared runner's/],
+    [['--beside', '--daoris-verify'], /--daoris-verify is the declared runner's|--beside runs the full set/],
+    [['--full', '--beside', 'abc1234', '--daoris-verify'], /takes its commit from DAORIS_VERIFY_COMMIT/],
+    [['--full', '--beside', '--daoris-verify', '--no-commit-check'], /--full --beside takes only/],
+    [['--passed', '--daoris-verify'], /--daoris-verify is the declared runner's/],
+    [['--ci', '--daoris-verify'], /--ci takes only/],
+    [['--queue', '--daoris-verify'], /--queue takes only/],
   ];
   for (const [argv, message] of cases) {
     const error = refusal(() => tool.parseArgs(argv));
@@ -1800,6 +1832,104 @@ test("the integration declaration reads whole as the table the driver's reader h
     { paths: 'b.md', by: 'rows' }, { paths: 'docs/STATUS.md', line: '^Status: ', run: 'node s.mjs' }, { paths: 'a.md', by: 'rows' }, { paths: 'b.md', by: 'rows' },
   ] } })), ['b.md', 'a.md']);
   assert.deepEqual(tool.rowTablesOf(JSON.stringify({ integration: { by: 'agent', merge: [{ paths: 'b.md', by: 'rows' }] } })), []);
+});
+
+// INTEGRATE1j part 1 (design §5.9): the runner's inputs, each missing, malformed or contradicting one a refusal in a sentence.
+test('the declared runner validates its inputs: each missing, malformed or contradicting one is refused in a sentence (INTEGRATE1j)', () => {
+  const tip = 'a'.repeat(40);
+  const base = 'b'.repeat(40);
+  const absolute = (name: string) => join(process.cwd(), name);
+  const ok = { DAORIS_VERIFY_COMMIT: tip, DAORIS_VERIFY_RESULT: absolute('answer.json'), DAORIS_VERIFY_DECLARATION: absolute('declaration.json') };
+  const without = (name: string) => Object.fromEntries(Object.entries(ok).filter(([each]) => each !== name));
+  assert.deepEqual(tool.verifyInputs(ok), { commit: tip, result: ok.DAORIS_VERIFY_RESULT, mode: null, base: null, declaration: ok.DAORIS_VERIFY_DECLARATION, tree: null });
+  assert.equal(tool.verifyInputs({ ...ok, DAORIS_VERIFY_MODE: 'commits', DAORIS_VERIFY_BASE: base }).mode, 'commits');
+  assert.equal(tool.verifyInputs({ ...ok, DAORIS_VERIFY_TREE: absolute('tree') }).tree, absolute('tree'));
+  // A longer object id (sha-256) is a full id too, and the names are found whatever their case on a platform that folds it.
+  assert.equal(tool.verifyInputs({ ...ok, DAORIS_VERIFY_COMMIT: 'c'.repeat(64) }).commit, 'c'.repeat(64));
+  assert.equal(tool.verifyInputs({ ...without('DAORIS_VERIFY_COMMIT'), Daoris_Verify_Commit: tip }).commit, tip);
+  const cases: [string, Record<string, string | undefined>, RegExp, { besideCommit?: string | null }?][] = [
+    ['no commit', without('DAORIS_VERIFY_COMMIT'), /DAORIS_VERIFY_COMMIT is not set: --daoris-verify gates the commit it names/],
+    ['an empty commit', { ...ok, DAORIS_VERIFY_COMMIT: '' }, /DAORIS_VERIFY_COMMIT is not set/],
+    ['a short commit', { ...ok, DAORIS_VERIFY_COMMIT: 'aaaaaaa' }, /DAORIS_VERIFY_COMMIT is not a full object id/],
+    ['a branch for a commit', { ...ok, DAORIS_VERIFY_COMMIT: 'main' }, /DAORIS_VERIFY_COMMIT is not a full object id/],
+    ['an upper-case commit', { ...ok, DAORIS_VERIFY_COMMIT: 'A'.repeat(40) }, /DAORIS_VERIFY_COMMIT is not a full object id/],
+    ['a commit named beside the flag', ok, /takes its commit from DAORIS_VERIFY_COMMIT/, { besideCommit: 'abc1234' }],
+    ['no result file', without('DAORIS_VERIFY_RESULT'), /DAORIS_VERIFY_RESULT is not set: the file to answer in/],
+    ['a relative result file', { ...ok, DAORIS_VERIFY_RESULT: 'answer.json' }, /DAORIS_VERIFY_RESULT is not an absolute path/],
+    ['no declaration', without('DAORIS_VERIFY_DECLARATION'), /DAORIS_VERIFY_DECLARATION is not set: the gates are read from the declaration handed, never from the tree/],
+    ['a relative declaration', { ...ok, DAORIS_VERIFY_DECLARATION: 'declaration.json' }, /DAORIS_VERIFY_DECLARATION is not an absolute path/],
+    ['an unknown mode', { ...ok, DAORIS_VERIFY_MODE: 'bisect' }, /DAORIS_VERIFY_MODE 'bisect' is none of run, plan, probe or commits/],
+    ['an empty mode', { ...ok, DAORIS_VERIFY_MODE: '' }, /DAORIS_VERIFY_MODE is set and empty/],
+    ['mode run', { ...ok, DAORIS_VERIFY_MODE: 'run' }, /mode 'run' is not built yet \(INTEGRATE1j part 2\)/],
+    ['mode plan', { ...ok, DAORIS_VERIFY_MODE: 'plan', DAORIS_VERIFY_BASE: base }, /mode 'plan' is not built yet/],
+    ['mode probe', { ...ok, DAORIS_VERIFY_MODE: 'probe', DAORIS_VERIFY_BASE: base }, /mode 'probe' is not built yet/],
+    ['commits without a base', { ...ok, DAORIS_VERIFY_MODE: 'commits' }, /DAORIS_VERIFY_BASE is not set: the commits mode checks base\.\.commit/],
+    ['commits on a short base', { ...ok, DAORIS_VERIFY_MODE: 'commits', DAORIS_VERIFY_BASE: 'bbbb' }, /DAORIS_VERIFY_BASE is not a full object id/],
+    ['a base with no mode', { ...ok, DAORIS_VERIFY_BASE: base }, /DAORIS_VERIFY_BASE belongs to a mode: none is asked/],
+    ['gates with no mode', { ...ok, DAORIS_VERIFY_GATES: 'check' }, /DAORIS_VERIFY_GATES belongs to the run mode/],
+    ['gates in commits', { ...ok, DAORIS_VERIFY_MODE: 'commits', DAORIS_VERIFY_BASE: base, DAORIS_VERIFY_GATES: 'check' }, /DAORIS_VERIFY_GATES belongs to the run mode/],
+    ['a failure with no mode', { ...ok, DAORIS_VERIFY_FAILURE: absolute('failure.json') }, /DAORIS_VERIFY_FAILURE belongs to the probe mode/],
+    ['a relative tree', { ...ok, DAORIS_VERIFY_TREE: 'tree' }, /DAORIS_VERIFY_TREE is not an absolute path/],
+    ['a name the runner does not know', { ...ok, DAORIS_VERIFY_SPEED: 'fast' }, /DAORIS_VERIFY_SPEED is no input of the runner/],
+  ];
+  for (const [what, env, message, options] of cases) {
+    const error = refusal(() => tool.verifyInputs(env, options));
+    assert.equal(error.exitCode, 2, what);
+    assert.match(error.message, message, what);
+  }
+});
+
+test('the declared runner reads its gates from the declaration it is handed, under the names it writes, with no workflow step added (INTEGRATE1j)', () => {
+  const declaration = JSON.stringify({
+    gates: [
+      { name: 'Web tests', run: 'node suite.mjs web' },
+      { name: 'check', run: 'node tools/x.mjs --check' },
+      { name: 'web/tests', run: 'node suite.mjs other' },
+    ],
+  });
+  const plan = tool.verifyPlan(declaration);
+  // Fast first, as the plan orders; the log names are the plan's own slugs, the answer's names the declaration's.
+  assert.deepEqual(plan.map((gate) => gate.declared), ['check', 'Web tests', 'web/tests']);
+  assert.deepEqual(plan.map((gate) => gate.name), ['check', 'Web-tests', 'web-tests']);
+  assert.deepEqual(refusal(() => tool.verifyPlan(JSON.stringify({ gates: [{ name: 'a', run: 'x' }, { name: 'a', run: 'y' }] }))).message.includes("names 'a' twice"), true);
+  assert.match(refusal(() => tool.verifyPlan('{ not json')).message, /declaration handed is not valid JSON/);
+  assert.match(refusal(() => tool.verifyPlan(JSON.stringify({ gates: [] }))).message, /declares no gate/);
+  assert.match(refusal(() => tool.verifyPlan(JSON.stringify({ gates: [{ name: 'a' }] }))).message, /needs both 'name' and 'run'/);
+  // The declaration's own `integration` is read by the one reader; a broken one is refused with its sentence.
+  assert.match(refusal(() => tool.verifyPlan(JSON.stringify({ gates: [{ name: 'a', run: 'x' }], integration: { by: 'nobody' } }))).message, /integration/);
+  assert.match(refusal(() => tool.verifyPlan(JSON.stringify({ gates: [{ name: 'a', run: 'x' }], integration: { commits: 'nope' } }))).message, /integration\.commits/);
+});
+
+test('the declared runner answers each gate under the declared name with the verdict the schema names, its log where it is kept (INTEGRATE1j)', () => {
+  const plan = ['check', 'suite', 'late', 'hung', 'flaky'].map((name) => ({ name: name.toLowerCase(), declared: `The ${name}` }));
+  const result = (name: string, verdict: string, code?: number) => ({ gate: { name }, verdict, ...(code === undefined ? {} : { code }), log: `/tree/${name}.log` });
+  const gates = tool.verifyGates(
+    plan,
+    [result('check', 'PASS', 0), result('suite', 'FAIL', 3), result('hung', 'ENDED'), result('flaky', 'FLAKE', 0)],
+    { keep: (log) => log.replace('/tree/', '/kept/'), seconds: (name) => (name === 'check' ? 12 : undefined) },
+  );
+  assert.deepEqual(gates, [
+    { name: 'The check', verdict: 'pass', wallSeconds: 12, log: '/kept/check.log' },
+    { name: 'The suite', verdict: 'fail', exit: 3, log: '/kept/suite.log' },
+    { name: 'The late', verdict: 'not-run' },
+    { name: 'The hung', verdict: 'ended', log: '/kept/hung.log' },
+    { name: 'The flaky', verdict: 'flake', log: '/kept/flaky.log' },
+  ]);
+});
+
+test('the declared runner answers its commits mode with the commit check\'s problems for base..tip, and none for a clean range (INTEGRATE1j)', () => {
+  const commit = 'a'.repeat(40);
+  const base = 'b'.repeat(40);
+  const own = { merge: false, subject: 'work', trailer: 'Claude <noreply@anthropic.com>' };
+  const answer = tool.verifyCommitsAnswer({
+    commit, base, declaration: 'c'.repeat(40),
+    commits: [{ sha: '1111111', ...own }, { sha: '2222222', merge: false, subject: 'bare', trailer: '' }, { sha: '3333333', merge: true, subject: 'Merge main', trailer: '' }],
+  });
+  assert.equal(answer.schema, 2);
+  assert.deepEqual([answer.mode, answer.commit, answer.base, answer.declaration], ['commits', commit, base, 'c'.repeat(40)]);
+  assert.equal((answer.problems as string[]).length, 1);
+  assert.match((answer.problems as string[])[0]!, /^2222222 bare: no Co-Authored-By line/);
+  assert.deepEqual(tool.verifyCommitsAnswer({ commit, base, declaration: 'c'.repeat(40), commits: [{ sha: '1111111', ...own }] }).problems, []);
 });
 
 // INTEGRATE1c: the joins union leaves are set apart in a landing's replay too, by the driver's twin, which holds the same table.

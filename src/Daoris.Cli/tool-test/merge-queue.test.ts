@@ -1727,6 +1727,215 @@ describe('the queue, end to end in a scratch repository', { concurrency: true },
     }
   });
 
+  // INTEGRATE1j part 1 (design §5.9, D192 points 6 and 9): this tool as the declared runner, `--full --beside --daoris-verify`, its inputs in
+  // DAORIS_VERIFY_* set on the job alone, the gates read from the declaration handed and never from the tree.
+  type Scratch = ReturnType<typeof queueScratch>;
+  const VERIFY = ['--full', '--beside', '--daoris-verify'];
+  const verifier = (repo: Scratch) => {
+    const dir = join(repo.root, 'local', 'verify');
+    mkdirSync(dir, { recursive: true });
+    const declaration = join(dir, 'declaration.json');
+    const answer = join(dir, 'answer.json');
+    return {
+      answer,
+      declare: (declared: object) => writeFileSync(declaration, JSON.stringify(declared)),
+      env: (commit: string, more: Record<string, string> = {}) => ({ DAORIS_VERIFY_COMMIT: commit, DAORIS_VERIFY_RESULT: answer, DAORIS_VERIFY_DECLARATION: declaration, ...more }),
+      read: () => (existsSync(answer) ? JSON.parse(readFileSync(answer, 'utf8')) as Record<string, any> : null),
+    };
+  };
+  /** A gate that records which Daoris variables reached it, where it runs, and whether the private patterns file was copied in. */
+  const recorderGate = (file: string) => [
+    "import { existsSync, writeFileSync } from 'node:fs';",
+    `writeFileSync(${JSON.stringify(file)}, JSON.stringify({ daoris: Object.keys(process.env).filter((name) => /^DAORIS_/i.test(name)), cwd: process.cwd(), copied: existsSync('local/sensitive-patterns.txt') }));`,
+    "console.log('recorder ran');",
+    '',
+  ].join('\n');
+  const commitOnMain = (repo: Scratch, files: Record<string, string>, what: string) => {
+    for (const [path, text] of Object.entries(files)) writeFileSync(join(repo.root, path), text);
+    repo.git('add', '-A');
+    repo.git('commit', '--quiet', '-m', `${what}${TRAILER}`);
+    return repo.git('rev-parse', 'HEAD');
+  };
+
+  test('INTEGRATE1j: the declared runner answers D192\'s schema 1 when no mode is asked: each declared gate under its own name, the full commit, its verdict and exit, its log kept where it stays', async () => {
+    const repo = queueScratch('verify-answer');
+    try {
+      const commit = commitOnMain(repo, { 'break-check': '' }, 'a gate that fails');
+      const run = verifier(repo);
+      run.declare({ gates: [{ name: 'The universal gate', run: 'node qgate.mjs universal' }, { name: 'check', run: 'node qgate.mjs check' }] });
+      writeFileSync(run.answer, '{"schema":1,"commit":"stale","gates":[]}');
+      const done = await repo.run([...VERIFY, '--keep-going'], run.env(commit));
+      assert.equal(done.status, 1, done.out);
+      const answer = run.read()!;
+      assert.deepEqual(Object.keys(answer).sort(), ['commit', 'gates', 'schema']);
+      assert.equal(answer.schema, 1);
+      assert.equal(answer.commit, commit, 'the full commit, not seven characters');
+      const byName = Object.fromEntries((answer.gates as { name: string }[]).map((gate) => [gate.name, gate]));
+      assert.deepEqual(Object.keys(byName).sort(), ['The universal gate', 'check']);
+      assert.equal(byName['The universal gate'].verdict, 'pass');
+      assert.equal(byName['check'].verdict, 'fail');
+      assert.equal(byName['check'].exit, 1);
+      for (const gate of Object.values<any>(byName)) {
+        assert.equal(typeof gate.wallSeconds, 'number', gate.name);
+        // The log stays in the main checkout once the tree moves, not in the gate tree the next run clears.
+        assert.ok(gate.log.startsWith(join(repo.root, 'local', 'scratch', `beside-${commit.slice(0, 7)}`)), gate.log);
+        assert.ok(existsSync(gate.log), gate.log);
+      }
+      assert.match(readFileSync(byName['The universal gate'].log, 'utf8'), /universal ran/);
+      assert.equal(existsSync(join(repo.root, 'local', 'gate-tree.json')), false, 'a stage of this tree is not allowed by a runner\'s answer');
+      // The gate tree's lock is let go: a second run is not busy.
+      assert.equal(existsSync(join(repo.root, 'local', 'gate-tree.lock')), false);
+    } finally {
+      await repo.cleanup();
+    }
+  });
+
+  test('INTEGRATE1j: a member\'s edit of a gate\'s command in the tree does not run; the gates are the handed declaration\'s, and no DAORIS_VERIFY_* reaches one', async () => {
+    const repo = queueScratch('verify-edit');
+    try {
+      const record = join(repo.root, 'local', 'recorded.json');
+      mkdirSync(join(repo.root, 'local'), { recursive: true });
+      writeFileSync(join(repo.root, 'local', 'sensitive-patterns.txt'), 'x\n');
+      const commit = commitOnMain(repo, {
+        'vgate.mjs': recorderGate(record),
+        'edit.mjs': "import { writeFileSync } from 'node:fs';\nwriteFileSync('edited.marker', 'ran');\n",
+        'daoris.gates.json': JSON.stringify({ gates: [{ name: 'recorder', run: 'node edit.mjs' }] }),
+      }, 'a member edits the gate\'s command');
+      const run = verifier(repo);
+      run.declare({ gates: [{ name: 'recorder', run: 'node vgate.mjs' }] });
+      const done = await repo.run(VERIFY, run.env(commit, { DAORIS_HOME: join(repo.root, 'local', 'install-home') }));
+      assert.equal(done.status, 0, done.out);
+      assert.equal(existsSync(join(repo.root, 'local', 'gate-tree', 'edited.marker')), false, 'the edited command in the tree did not run');
+      const seen = JSON.parse(readFileSync(record, 'utf8')) as { daoris: string[]; cwd: string; copied: boolean };
+      assert.deepEqual(seen.daoris, [], 'no Daoris variable reached the gate, DAORIS_VERIFY_* among them');
+      assert.equal(realPath(seen.cwd), realPath(join(repo.root, 'local', 'gate-tree')), 'the runner made its own tree');
+      assert.equal(seen.copied, true, 'the private files a gate reads are copied into a tree the runner made');
+      assert.deepEqual(run.read()!.gates.map((gate: { name: string; verdict: string }) => [gate.name, gate.verdict]), [['recorder', 'pass']]);
+    } finally {
+      await repo.cleanup();
+    }
+  });
+
+  test('INTEGRATE1j: a held gate-tree lock writes busy to the answer first and exits 75; without the flag the refusal is exit 2 as it was', async () => {
+    const repo = queueScratch('verify-busy');
+    try {
+      const commit = repo.git('rev-parse', 'HEAD');
+      const run = verifier(repo);
+      run.declare({ gates: [{ name: 'universal', run: 'node qgate.mjs universal' }] });
+      writeFileSync(join(repo.root, 'local', 'gate-tree.lock'), `${JSON.stringify({ pid: process.pid, commit, at: '2026-10-29T10:00:00Z', holder: 'full' })}\n`);
+      const busy = await repo.run(VERIFY, run.env(commit));
+      assert.equal(busy.status, 75, busy.out);
+      assert.match(busy.out, /a full set beside the merges is running already/);
+      assert.deepEqual(run.read(), { schema: 1, commit, busy: true });
+      // The variable a person's shell left behind retargets nothing: without the flag the run is the person's own and refuses as before.
+      rmSync(run.answer);
+      const own = await repo.run(['--full', '--beside'], run.env(commit));
+      assert.equal(own.status, 2, own.out);
+      assert.equal(run.read(), null, 'nothing is written without the flag');
+    } finally {
+      await repo.cleanup();
+    }
+  });
+
+  test('INTEGRATE1j: the commits mode is the commit check on base..tip, a schema-2 answer naming the declaration blob it read', async () => {
+    const repo = queueScratch('verify-commits');
+    try {
+      const base = repo.git('rev-parse', 'HEAD');
+      repo.git('checkout', '--quiet', '-b', 'work');
+      commitOnMain(repo, { 'a.txt': 'a\n' }, 'work with its maker');
+      repo.git('commit', '--quiet', '--allow-empty', '-m', 'work with none');
+      const tip = repo.git('rev-parse', 'HEAD');
+      const run = verifier(repo);
+      const declared = { gates: [{ name: 'universal', run: 'node qgate.mjs universal' }] };
+      run.declare(declared);
+      const more = { DAORIS_VERIFY_MODE: 'commits', DAORIS_VERIFY_BASE: base };
+      const red = await repo.run(VERIFY, run.env(tip, more));
+      assert.equal(red.status, 1, red.out);
+      const answer = run.read()!;
+      assert.equal(answer.schema, 2);
+      assert.deepEqual([answer.mode, answer.commit, answer.base], ['commits', tip, base]);
+      assert.equal(answer.declaration, repo.git('hash-object', join(repo.root, 'local', 'verify', 'declaration.json')));
+      assert.equal(answer.problems.length, 1, JSON.stringify(answer));
+      assert.match(answer.problems[0], /work with none: no Co-Authored-By line/);
+      // A range whose commits all carry their maker has no problem, and exit 0; no gate ran.
+      const clean = repo.git('rev-parse', 'HEAD~1');
+      const green = await repo.run(VERIFY, run.env(clean, more));
+      assert.equal(green.status, 0, green.out);
+      assert.deepEqual(run.read()!.problems, []);
+      assert.equal(existsSync(join(repo.root, 'local', 'gate-tree')), false, 'the commits mode makes no tree');
+      // A declaration that checks commits by a gate leaves the check to that gate: the runner's mode refuses.
+      run.declare({ ...declared, integration: { commits: 'universal' } });
+      const gate = await repo.run(VERIFY, run.env(tip, more));
+      assert.equal(gate.status, 2, gate.out);
+      assert.match(gate.out, /checks commits by its gate 'universal', not by the runner/);
+      assert.equal(run.read(), null);
+    } finally {
+      await repo.cleanup();
+    }
+  });
+
+  test('INTEGRATE1j: a tree the caller hands is the run\'s tree: the runner makes none, takes no lock and copies no private file; one at another commit is refused', async () => {
+    const repo = queueScratch('verify-tree');
+    try {
+      const record = join(repo.root, 'local', 'recorded.json');
+      writeFileSync(join(repo.root, 'local', 'sensitive-patterns.txt'), 'x\n');
+      const first = repo.git('rev-parse', 'HEAD');
+      const commit = commitOnMain(repo, { 'vgate.mjs': recorderGate(record) }, 'a recorder');
+      const handed = join(dirname(repo.root), 'handed');
+      repo.git('worktree', 'add', '--quiet', '--detach', handed, commit);
+      const run = verifier(repo);
+      run.declare({ gates: [{ name: 'recorder', run: 'node vgate.mjs' }] });
+      const done = await repo.run(VERIFY, run.env(commit, { DAORIS_VERIFY_TREE: handed }));
+      assert.equal(done.status, 0, done.out);
+      const seen = JSON.parse(readFileSync(record, 'utf8')) as { cwd: string; copied: boolean };
+      assert.equal(realPath(seen.cwd), realPath(handed), 'the gate ran in the caller\'s tree');
+      assert.equal(seen.copied, false, 'a private file is not copied into the caller\'s tree');
+      assert.equal(existsSync(join(repo.root, 'local', 'gate-tree')), false, 'the runner made no tree of its own');
+      assert.equal(existsSync(join(repo.root, 'local', 'gate-tree.lock')), false, 'and took no lock');
+      assert.equal(run.read()!.gates[0].log.startsWith(join(repo.root, 'local', 'scratch', `beside-${commit.slice(0, 7)}`)), true);
+      // A tree standing at another commit than the one named is the caller's mistake: refused, nothing moved, nothing run.
+      rmSync(run.answer);
+      repo.git('-C', handed, 'checkout', '--quiet', '--detach', first);
+      const wrong = await repo.run(VERIFY, run.env(commit, { DAORIS_VERIFY_TREE: handed }));
+      assert.equal(wrong.status, 2, wrong.out);
+      assert.match(wrong.out, /DAORIS_VERIFY_TREE stands at .* not at DAORIS_VERIFY_COMMIT/);
+      assert.equal(run.read(), null);
+    } finally {
+      await repo.cleanup();
+    }
+  });
+
+  test('INTEGRATE1j: the runner refuses a missing, malformed or unbuilt input in a sentence with exit 2 and no answer, and the variable left in a shell retargets no run without the flag', async () => {
+    const repo = queueScratch('verify-refusals');
+    try {
+      const first = repo.git('rev-parse', 'HEAD');
+      const commit = commitOnMain(repo, { 'later.txt': 'later\n' }, 'a later commit');
+      const run = verifier(repo);
+      run.declare({ gates: [{ name: 'universal', run: 'node qgate.mjs universal' }] });
+      const refused = async (what: string, env: Record<string, string>, message: RegExp) => {
+        const done = await repo.run(VERIFY, env);
+        assert.equal(done.status, 2, `${what}: ${done.out}`);
+        assert.match(done.out, message, what);
+        assert.equal(run.read(), null, `${what}: no answer is written for an input refused`);
+      };
+      await refused('nothing set', {}, /DAORIS_VERIFY_RESULT is not set/);
+      await refused('no commit', { DAORIS_VERIFY_RESULT: run.answer }, /DAORIS_VERIFY_COMMIT is not set/);
+      await refused('mode run', run.env(commit, { DAORIS_VERIFY_MODE: 'run' }), /mode 'run' is not built yet \(INTEGRATE1j part 2\)/);
+      await refused('a commit the repository lacks', run.env('f'.repeat(40)), /is no commit of this repository/);
+      await refused('a declaration that is no file', run.env(commit, { DAORIS_VERIFY_DECLARATION: join(repo.root, 'local', 'verify', 'none.json') }), /DAORIS_VERIFY_DECLARATION names no file/);
+      const named = await repo.run(['--full', '--beside', commit, '--daoris-verify'], run.env(commit));
+      assert.equal(named.status, 2, named.out);
+      assert.match(named.out, /takes its commit from DAORIS_VERIFY_COMMIT/);
+      // No flag: the variable names nothing, and `--full --beside` gates main's tip as it always did.
+      const own = await repo.run(['--full', '--beside'], run.env(first));
+      assert.equal(own.status, 0, own.out);
+      assert.match(own.out, new RegExp(`the full set on ${commit.slice(0, 7)}`));
+      assert.equal(run.read(), null, 'nothing is written without the flag');
+    } finally {
+      await repo.cleanup();
+    }
+  });
+
   test('QUEUETESTLEAK1: a probe the runner starts gets the environment its process had at its start: a PATH and a variable set in it later reach no probe', async () => {
     const repo = queueScratch('probe-env');
     const dir = join(repo.root, 'local', 'probe');
