@@ -36,10 +36,14 @@ public sealed record FeedProvenance(
     public string? Digest { get; init; }
 }
 
-/// <summary>How much one repository contributes to the index, and what it was fed from.</summary>
+/// <summary>
+/// How much one repository contributes to the index, and what it was fed from. <paramref name="IndexedAt"/> and
+/// <paramref name="IndexedCommit"/> say when this process read the repository's checkout and the commit it was at
+/// (KNOWCURRENT1); null where it read none, as a fed repository's or one not read yet.
+/// </summary>
 public sealed record RepositorySummary(
     string Repository, int Total, int Local, int Canonical, string Workspace = Workspaces.Default,
-    FeedProvenance? Fed = null);
+    FeedProvenance? Fed = null, DateTimeOffset? IndexedAt = null, string? IndexedCommit = null);
 
 /// <summary>Why a knowledge feed was not taken — or <see cref="None"/> when it was.</summary>
 public enum FeedRefusal
@@ -151,9 +155,22 @@ public sealed class KnowledgeService(
     TimeProvider? time = null,
     // The watch of that checkout (FABRIC-EVENT6): while it is in service, a reading is read again when it has been marked
     // stale or has reached the watch's deadline, and the minute above is the fallback of a checkout nothing watches.
-    CheckoutFreshness? freshness = null)
+    CheckoutFreshness? freshness = null,
+    // How a registered root is judged cheaply (KNOWCURRENT1): a host over the registered roots, which names no one checkout,
+    // asks this of each root at use, at most once a minute, and reads again only a root whose answer moved. Null judges
+    // nothing and reads once, as a fed host does.
+    Func<string, RootSignature>? rootSignature = null)
 {
     private readonly TimeProvider _time = time ?? TimeProvider.System;
+
+    /// <summary>How often a host over the registered roots judges them (KNOWCURRENT1): the minute a one-checkout server reads again by.</summary>
+    public static readonly TimeSpan RootsJudgedEvery = TimeSpan.FromMinutes(1);
+
+    /// <summary>What one registered root was when it was read: by whom it is named, when, from which commit, by which signature.</summary>
+    private sealed record RootReading(string Repository, DateTimeOffset ReadAt, string? Commit, RootSignature? Signature);
+
+    private readonly Dictionary<string, RootReading> _readings = new(OperatingSystem.IsLinux() ? StringComparer.Ordinal : StringComparer.OrdinalIgnoreCase);
+    private DateTimeOffset? _judgedAt;
 
     /// <summary>When the last refresh finished, on <see cref="_time"/>; what the reread window is measured from.</summary>
     private DateTimeOffset _refreshedAt;
@@ -271,6 +288,7 @@ public sealed class KnowledgeService(
             ? new Dictionary<string, FeedProvenance>(StringComparer.OrdinalIgnoreCase)
             : await registrations.AllProvenanceAsync(ct).ConfigureAwait(false);
 
+        var read = Readings().ToDictionary(r => r.Repository, StringComparer.Ordinal);
         return all
             .Where(e => workspace is null || Workspaces.Same(workspace, e.Workspace))
             .GroupBy(e => e.Repository, StringComparer.Ordinal)
@@ -280,7 +298,9 @@ public sealed class KnowledgeService(
                 g.Count(e => e.Provenance == Provenance.Local),
                 g.Count(e => e.Provenance == Provenance.Canonical),
                 g.Select(e => e.Workspace).First(),
-                fed.TryGetValue(g.Key, out var provenance) ? provenance : null))
+                fed.TryGetValue(g.Key, out var provenance) ? provenance : null,
+                read.TryGetValue(g.Key, out var reading) ? reading.ReadAt : null,
+                reading?.Commit))
             .OrderByDescending(r => r.Total)
             .ToList();
     }
@@ -913,11 +933,24 @@ public sealed class KnowledgeService(
     }
 
     /// <summary>One read of every repository into the index, under <see cref="_refreshLock"/>.</summary>
-    private async Task<IndexReport> RefreshReadingAsync(CancellationToken ct)
+    /// <param name="onlyRoots">Some roots to read alone, or null for all (KNOWCURRENT1).</param>
+    private async Task<IndexReport> RefreshReadingAsync(CancellationToken ct, IReadOnlyList<string>? onlyRoots = null)
     {
         // (The body keeps the block it had inside the lock, so the change to the lock's shape is the whole diff.)
         {
             await ReloadRegistryAsync(ct).ConfigureAwait(false);
+
+            // What each root is, taken BEFORE it is read, so a write during the read is judged moved at the next use.
+            var taken = new List<(string Repository, string Root, RootSignature? Signature, string? Commit)>();
+            if (readsRegisteredRoots)
+            {
+                foreach (var (repository, root) in LocalRoots())
+                {
+                    if (onlyRoots is not null && !onlyRoots.Contains(root, _readings.Comparer)) continue;
+                    var signature = rootSignature?.Invoke(root);
+                    taken.Add((repository, root, signature, signature is null ? RootSignature.Head(root) : signature.Commit));
+                }
+            }
 
             // The wiring, read once per refresh rather than once per entry: it is a small table and the
             // corpus is not. Read BEFORE the scan so every entry of one repository is stamped alike.
@@ -930,7 +963,7 @@ public sealed class KnowledgeService(
                     ? workspace
                     : Workspaces.Default,
                 readsRegisteredRoots && registry is not null ? wiring.ContainsKey : null,
-                ct).ConfigureAwait(false);
+                ct, onlyRoots).ConfigureAwait(false);
 
             report = report with { Absent = AbsentCheckouts() };
 
@@ -963,7 +996,17 @@ public sealed class KnowledgeService(
 
             _everRefreshed = true;
             _refreshedAt = _time.GetUtcNow();
-            return report with { SemanticError = semanticError, Embedded = embedded };
+            _judgedAt = _refreshedAt;
+            lock (_readings)
+            {
+                if (onlyRoots is null) _readings.Clear();
+                foreach (var (repository, root, signature, commit) in taken)
+                {
+                    _readings[root] = new RootReading(repository, _refreshedAt, commit, signature);
+                }
+            }
+
+            return report with { SemanticError = semanticError, Embedded = embedded, Read = Readings() };
         }
     }
 
@@ -1071,6 +1114,14 @@ public sealed class KnowledgeService(
             return;
         }
 
+        // A host over the registered roots judges each by its signature, so a record merged into one is found without
+        // anyone telling the index (KNOWCURRENT1): what the store held from an earlier process is read again at first use.
+        if (rootSignature is not null && readsRegisteredRoots && registry is not null)
+        {
+            await KeepRootsCurrentAsync(ct).ConfigureAwait(false);
+            return;
+        }
+
         if (_everRefreshed) return;
 
         var existing = await store.CountByRepositoryAsync(ct).ConfigureAwait(false);
@@ -1082,6 +1133,67 @@ public sealed class KnowledgeService(
 
         await RefreshAsync(ct).ConfigureAwait(false);
     }
+
+    /// <summary>
+    /// Reads the registered roots again as they move (KNOWCURRENT1). The first use reads them all, since what the store held is an
+    /// earlier process's reading. After that each root is judged by its <see cref="RootSignature"/> at most once a
+    /// <see cref="RootsJudgedEvery"/>, and only a root whose signature moved is read again; a root that is no longer registered
+    /// takes a whole read, which retires what it held.
+    /// </summary>
+    private async Task KeepRootsCurrentAsync(CancellationToken ct)
+    {
+        await _refreshLock.WaitAsync(ct).ConfigureAwait(false);
+        try
+        {
+            var now = _time.GetUtcNow();
+            if (!_everRefreshed)
+            {
+                await RefreshReadingAsync(ct).ConfigureAwait(false);
+                return;
+            }
+
+            if (_judgedAt is { } judged && now - judged < RootsJudgedEvery) return;
+            _judgedAt = now;
+
+            await ReloadRegistryAsync(ct).ConfigureAwait(false);
+            var registered = LocalRoots();
+            var present = registered.Select(r => r.Root).ToHashSet(_readings.Comparer);
+            if (_readings.Keys.Any(root => !present.Contains(root)))
+            {
+                await RefreshReadingAsync(ct).ConfigureAwait(false);
+                return;
+            }
+
+            var moved = registered
+                .Where(r => !_readings.TryGetValue(r.Root, out var held) || held.Signature != rootSignature!(r.Root))
+                .Select(r => r.Root)
+                .ToList();
+            if (moved.Count > 0) await RefreshReadingAsync(ct, moved).ConfigureAwait(false);
+        }
+        finally
+        {
+            _refreshLock.Release();
+        }
+    }
+
+    /// <summary>When and from which commit each registered repository was read, by repository name.</summary>
+    private List<RepositoryReading> Readings()
+    {
+        lock (_readings)
+        {
+            return _readings.Values
+                .Select(r => new RepositoryReading(r.Repository, r.ReadAt, r.Commit))
+                .OrderBy(r => r.Repository, StringComparer.Ordinal)
+                .ToList();
+        }
+    }
+
+    /// <summary>The registered roots this machine holds a checkout of, with the repository each is registered as.</summary>
+    private List<(string Repository, string Root)> LocalRoots() =>
+        (registry?.Read() ?? [])
+            .Where(r => !string.IsNullOrWhiteSpace(r.Root) && Directory.Exists(r.Root))
+            .Select(r => (r.Repository, Root: r.Root!))
+            .ToList();
 
     /// <summary>
     /// 🔴 SEM1: the rows persist and the vectors do not. A start over an index already on disk skipped

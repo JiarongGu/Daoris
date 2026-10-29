@@ -295,7 +295,9 @@ public static class ServiceFactory
         // Which host this is (D47 §3): what is this machine's alone, a second opinion first (XAGENT1c), is kept by a local
         // host and refused by a shared one. The MCP host is always local.
         ServiceMode mode = ServiceMode.Local,
-        CancellationToken ct = default)
+        CancellationToken ct = default,
+        // The clock the index's readings and the roots' judging are measured on; the system's unless a test moves one (KNOWCURRENT1).
+        TimeProvider? time = null)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(options.DatabasePath)!);
 
@@ -357,7 +359,12 @@ public static class ServiceFactory
             store, search, source, disclosure ?? DisclosurePolicy.LocalOnly, embedder, vectors,
             registry, registrations, readsRegisteredRoots: readsLocalCheckouts, embedWindow: options.EmbedWindow,
             rereadAfter: options.Repository is null ? null : ServiceOptions.CheckoutRereadAfter,
-            freshness: freshness);
+            time: time, freshness: freshness,
+            // A host over the registered roots (the installed one, and a session's connector) judges each root at use
+            // (KNOWCURRENT1); the one-checkout shape keeps its watch and its minute above.
+            rootSignature: options.Repository is null && readsLocalCheckouts
+                ? root => RootSignature.Of(root, options.Documents, options.Index)
+                : null);
 
         // The bootstrap (D48 §3): a store that has never been managed imports its configured root ONCE
         // and says so. Without it, a machine that has been running on DAORIS_KNOWLEDGE_ROOT would come

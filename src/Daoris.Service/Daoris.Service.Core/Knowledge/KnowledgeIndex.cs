@@ -27,9 +27,15 @@ public sealed class KnowledgeIndex(IKnowledgeStore store, IDisclosurePolicy? dis
     /// </param>
     public async Task<IndexReport> RefreshAsync(
         IKnowledgeSource source, Func<string, string>? workspaceOf = null,
-        Func<string, bool>? stillRegistered = null, CancellationToken ct = default)
+        Func<string, bool>? stillRegistered = null, CancellationToken ct = default,
+        IReadOnlyList<string>? onlyRoots = null)
     {
-        var read = await source.ReadAsync(ct).ConfigureAwait(false);
+        // Some roots alone (KNOWCURRENT1): a root that moved is replaced and the others stand. No ghost is retired from a
+        // part, since what it did not read says nothing about what is gone.
+        var partial = onlyRoots is not null && source is IRootReadingSource;
+        var read = partial
+            ? await ((IRootReadingSource)source).ReadRootsAsync(onlyRoots!, ct).ConfigureAwait(false)
+            : await source.ReadAsync(ct).ConfigureAwait(false);
         var permitted = read
             .Where(_disclosure.MayLeaveMachine)
             .Select(entry => entry with { Workspace = workspaceOf?.Invoke(entry.Repository) ?? entry.Workspace })
@@ -50,7 +56,7 @@ public sealed class KnowledgeIndex(IKnowledgeStore store, IDisclosurePolicy? dis
         // The guard is about a PATH, so it keeps a registered repository whose checkout could not be
         // read; it never keeps one the registry stopped naming.
         var seen = new HashSet<string>(byRepository.Select(g => g.Key), StringComparer.Ordinal);
-        if (byRepository.Count > 0 || stillRegistered is not null)
+        if (!partial && (byRepository.Count > 0 || stillRegistered is not null))
         {
             var held = (await store.AllAsync(ct).ConfigureAwait(false))
                 .Select(e => e.Repository)
