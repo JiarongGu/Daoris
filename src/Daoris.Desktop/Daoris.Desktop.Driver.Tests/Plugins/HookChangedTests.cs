@@ -13,7 +13,10 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <remarks>Fakes over in-memory streams only: no process starts here.</remarks>
 public sealed class HookChangedTests : IDisposable
 {
-    private static readonly TimeSpan Patience = TimeSpan.FromSeconds(10);
+    // FLAKE1 (TESTPATIENCE2's shape, which its sweep missed: the bound is handed to a peer, not a WaitAsync): the in-memory
+    // handshake is not the claim, so it waits with the suite's one patience. At ten seconds a loaded fast half (candidate
+    // f306b46) left the sample plugin unstarted, 6 of 6 alone five times.
+    private static readonly TimeSpan Patience = Poll.Patience;
 
     private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-changed-" + Guid.NewGuid().ToString("N")[..8]);
 
