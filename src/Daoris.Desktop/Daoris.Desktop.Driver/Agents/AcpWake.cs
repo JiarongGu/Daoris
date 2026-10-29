@@ -37,6 +37,12 @@ internal sealed class AcpWake
     private static readonly HashSet<string> Autonomous =
         new(["task-notification", "peer", "coordinator", "observer", "observer-activity"], StringComparer.Ordinal);
 
+    /// <summary>
+    /// The clock every wait here is read off (RUNENDS1, <c>.claude/knowledge/held-clocks.md</c>): the wake's quiet and the quiet a turn
+    /// whose quest no longer waits is left after. The machine's in production; the session hands its own (<see cref="AcpSession.Clock"/>).
+    /// </summary>
+    public TimeProvider Clock { get; set; } = TimeProvider.System;
+
     private readonly object _gate = new();
 
     // Positions in the session's own updates, counted from one as they are read; zero is none.
@@ -168,7 +174,7 @@ internal sealed class AcpWake
             var waits = running || prompted();
 
             using var bounded = CancellationTokenSource.CreateLinkedTokenSource(ct);
-            var silence = Task.Delay(waits ? Timeout.InfiniteTimeSpan : quiet, bounded.Token);
+            var silence = Task.Delay(waits ? Timeout.InfiniteTimeSpan : quiet, Clock, bounded.Token);
             var first = await Task.WhenAny(changed, ended, silence).ConfigureAwait(false);
             await bounded.CancelAsync().ConfigureAwait(false);
             ct.ThrowIfCancellationRequested();
@@ -234,7 +240,7 @@ internal sealed class AcpWake
             if (!running && !prompted()) return true;
 
             using var bounded = CancellationTokenSource.CreateLinkedTokenSource(ct);
-            var silence = Task.Delay(quiet, bounded.Token);
+            var silence = Task.Delay(quiet, Clock, bounded.Token);
             var first = await Task.WhenAny(changed, silence).ConfigureAwait(false);
             await bounded.CancelAsync().ConfigureAwait(false);
             ct.ThrowIfCancellationRequested();

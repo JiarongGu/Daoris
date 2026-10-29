@@ -353,6 +353,17 @@ public sealed class AcpSession(
     public TimeSpan QuestDoneQuiet { get; init; } = TimeSpan.FromMinutes(5);
 
     /// <summary>
+    /// The clock the session's own waits are read off (RUNENDS1, <c>.claude/knowledge/held-clocks.md</c>): its look at its quest every
+    /// <see cref="BackgroundLook"/>, the wake's quiet before Daoris's go-on, and <see cref="QuestDoneQuiet"/>. The machine's in
+    /// production; a test hands one it moves. A transient episode's waits are its retry's (<see cref="TransientRetry.Clock"/>).
+    /// </summary>
+    public TimeProvider Clock
+    {
+        get => _wake.Clock;
+        init => _wake.Clock = value;
+    }
+
+    /// <summary>
     /// The session's own background work still running, by name, when its run ended (DONEEND1): what ends with the session. The
     /// driver gives an agent that leaves such work a bound to exit before it ends the agent's tree. Empty until the run ends.
     /// </summary>
@@ -1640,7 +1651,7 @@ public sealed class AcpSession(
     {
         while (true)
         {
-            await Task.Delay(BackgroundLook, ct).ConfigureAwait(false);
+            await Task.Delay(BackgroundLook, Clock, ct).ConfigureAwait(false);
             try
             {
                 if (!await waits(ct).ConfigureAwait(false)) break;
