@@ -79,7 +79,8 @@ public sealed record SettledSelection(string Role, HarnessSelection Selection, A
 /// account, under the roster's gate, and only where the start counts; a choice whose walk held counted nothing. So a start that counts
 /// holds exactly one reservation, the taken choice's, carried on its settled selection; a probe (<c>counts: false</c>, a re-ask among
 /// them) holds none, says no pass and remembers none (<see cref="PassMemory"/>).</para>
-/// <para><b>Until row x</b> the role is the work's seeded role and its order today's actor choices; no role catalogue is read (C5-3.6).</para>
+/// <para><b>The role</b> is the work's seeded role and its order today's actor choices: no role catalogue is read, which row x adopts
+/// (C5-3.6).</para>
 /// </remarks>
 internal sealed class StartPlan
 {

@@ -48,9 +48,12 @@ The required protocol-posture marker belongs to Agents (`AgentPostures.Required`
 Agents also owns the shared `RunningTask` data and pure review-tab title; Review retains the watch and browser-serving operations.
 Roles composes actor opening notes through a higher extension over `RotatedOpening` and Events' existing `ISessionEvents` contract.
 The driver's `Roles/` also owns the actor's own files (FOUNDATION1 mod-xi, D212): the choices and their walk with its pass memory
-(`ActorChoices`, `BuildWalk`), the actor verbs, the run and its asked choices (`Domain/ActorRun.cs`), the one-turn re-ask, the
+(`ActorChoices`, `BuildWalk.cs`), the actor verbs, the run and its asked choices (`Domain/ActorRun.cs`), the one-turn re-ask, the
 supervisor's proof, decisions, quarantine and command, the steward's command and the role act form and brief. Tests are
 mirrored under `Driver.Tests/Roles/`. Namespaces remain `Daoris.Driver`.
+`StartPlan.cs` is the one start plan (FOUNDATION1j, D212 point 4): a work's seeded role's order walked choice by choice into a
+settled selection carrying the one reservation the roster took at the selection, the pass codes (`StartPasses`) and, in
+`OneTurnReask.cs`, the one re-ask comparison (`ReaskMove.Same`), which a quest's start and an intake read.
 
 Roles names no Context, Review or Work orders type. The actor's run and the one-turn re-ask take Events' `ISessionEvents`.
 The re-ask is `OneTurnReask<TChoice>` over `IActorChoice<TChoice>` and `IActorTried` (`Roles/ActorChoice.cs`), which Review's
