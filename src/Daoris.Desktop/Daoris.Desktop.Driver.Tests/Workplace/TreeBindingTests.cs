@@ -26,14 +26,7 @@ public sealed class TreeBindingTests : IDisposable
     public void Dispose()
     {
         WorkingTree.Runs.Value = null;
-        try
-        {
-            Directory.Delete(_scratch, recursive: true);
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-        {
-            // A cleanup that failed is not a failed test.
-        }
+        GitSeed.Discard(_scratch);
     }
 
     /// <summary>The working root git reports is the tree's own folder, spelled as git spells it: nothing binds it, one start asked.</summary>
