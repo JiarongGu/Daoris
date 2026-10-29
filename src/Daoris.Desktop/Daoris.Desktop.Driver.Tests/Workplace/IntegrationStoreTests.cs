@@ -283,6 +283,68 @@ public sealed class IntegrationStoreTests : IDisposable
         Assert.Equal(IntegrationCandidateEnds.FormedAgain, store.Candidate(formed.Candidate.Id)!.EndedWhy);
     }
 
+    /// <summary>
+    /// INTEGRATE1e part e3a: a member the line holds is contained and settled in one end (its membership ended, its request closed), and a
+    /// candidate whose last member left it ends <c>empty</c> in the same write; the four words a candidate ended with before are read as
+    /// they were beside the new one.
+    /// </summary>
+    [Fact]
+    public void A_member_the_line_holds_settles_at_once_and_a_candidate_left_with_nothing_ends_empty_in_the_same_write()
+    {
+        var store = WithRequests("run-a", 1);
+        var formed = store.Form(Forming("r1"));
+        var revision = Revision();
+
+        var ended = store.End(formed.Claim!, formed.Step!.Id, new IntegrationStepEnd(IntegrationStepOutcomes.Done)
+        {
+            Members = [new IntegrationMemberChange("r1", IntegrationMemberStates.Contained) { Said = "the line holds its work already.", Ends = true }],
+            Closes = [new IntegrationRequestClose("r1", IntegrationRequestCloses.Settled)],
+            Ends = IntegrationCandidateEnds.Empty,
+        });
+
+        Assert.Equal(IntegrationStepOutcomes.Done, ended.Outcome);
+        Assert.Equal(revision + 1, Revision());
+        var member = Assert.Single(store.Members(formed.Candidate.Id));
+        Assert.Equal((IntegrationMemberStates.Contained, null), (member.State, member.ContainedBy));
+        Assert.False(member.Stands);
+        Assert.Equal(IntegrationRequestCloses.Settled, store.Request("r1")!.ClosedWhy);
+        Assert.Equal(IntegrationCandidateEnds.Empty, store.Candidate(formed.Candidate.Id)!.EndedWhy);
+        Assert.Null(store.StandingFor("engine", "main"));
+        Assert.Empty(store.Queued("engine", "main"));
+        Assert.Equal(["settled", "formed-again", "dropped", "stopped"], IntegrationCandidateEnds.All.Take(4));
+        Assert.Equal("empty", IntegrationCandidateEnds.All[4]);
+    }
+
+    /// <summary>
+    /// INTEGRATE1e part e3a: a member contained by an earlier member stays in its candidate with its request open, and a candidate that ends
+    /// any way but settled frees it, to be queued again beside its container's request, in arrival order (§5.2 step 3's give-back).
+    /// </summary>
+    [Fact]
+    public void A_member_contained_by_an_earlier_member_is_given_back_to_the_queue_when_the_candidate_ends_unsettled()
+    {
+        var store = WithRequests("run-a", 2);
+        var formed = store.Form(Forming("r1", "r2"));
+        store.End(formed.Claim!, formed.Step!.Id, new IntegrationStepEnd(IntegrationStepOutcomes.Done)
+        {
+            Tip = Tip,
+            Members =
+            [
+                new IntegrationMemberChange("r1", IntegrationMemberStates.Replayed) { Replayed = Tip },
+                new IntegrationMemberChange("r2", IntegrationMemberStates.Contained) { ContainedBy = "r1", Said = "r1's replay holds its work." },
+            ],
+        });
+
+        var held = store.Members(formed.Candidate.Id).Single(each => each.Request == "r2");
+        Assert.Equal(("r1", true), (held.ContainedBy, held.Stands));
+        Assert.Empty(store.Queued("engine", "main"));
+        Assert.Null(store.Request("r2")!.ClosedAt);
+
+        var step = store.Begin(formed.Claim!, IntegrationStepNames.Settle);
+        store.End(formed.Claim!, step.Id, new IntegrationStepEnd(IntegrationStepOutcomes.Held) { Ends = IntegrationCandidateEnds.FormedAgain });
+
+        Assert.Equal(["r1", "r2"], store.Queued("engine", "main").Select(each => each.Id));
+    }
+
     [Fact]
     public void Each_candidate_has_one_job_of_its_own_named_by_it_and_no_two_candidates_share_one()
     {
