@@ -207,11 +207,12 @@ describe('the review of a tree holding uncommitted work', () => {
     expect(screen.queryByText('Nothing landed')).toBeNull();
   });
 
-  it('says before the press that Accept will refuse until the files are committed, and leaves Accept pressable', async () => {
+  it('says before the press that Accept carries the session on to commit the files, and leaves Accept pressable', async () => {
     drive({ uncommitted: UNCOMMITTED }, { ...PLAN, uncommitted: 5 });
     pane();
 
-    expect(await screen.findByText(/Accept will refuse until the 5 uncommitted files are committed/)).toBeInTheDocument();
+    // LANDBACK1 part 1: an Accept on a dirty tree carries the session on, where it used to refuse.
+    expect(await screen.findByText(/Accept carries its session on to commit the 5 uncommitted files/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Accept' })).toBeEnabled();
   });
 

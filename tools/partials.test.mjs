@@ -34,6 +34,11 @@ function tree(files) {
 
 const part = (name, kind = 'class') => `namespace N;\npublic partial ${kind} ${name} { }\n`;
 
+test('scratch under _fixtures is never read as source: a run beside the check makes and removes it', () => {
+  const dir = tree({ 'src/A/X.cs': part('Foo'), 'src/Cli/_fixtures/run/Y.cs': part('Foo'), 'src/Cli/_fixtures/run/Z.cs': part('Foo') });
+  assert.deepEqual(checkPartials(dir, {}).problems, []);
+});
+
 test('a type partial in two files is refused, naming the type and both files', () => {
   const dir = tree({ 'src/A/X.cs': part('Foo'), 'src/A/X.Part.cs': part('Foo') });
   const { problems } = checkPartials(dir, {});

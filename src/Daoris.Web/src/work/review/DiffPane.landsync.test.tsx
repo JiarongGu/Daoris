@@ -185,7 +185,7 @@ describe('an Accept that carries its session on', () => {
     await i18n.changeLanguage('zh');
     try {
       pane();
-      expect(await screen.findByText('已采纳：它的会话已被继续，去清理它的工作树，工作树干净后即会落地它的工作。它还不是已完成的工作。')).toBeInTheDocument();
+      expect(await screen.findByText('已采纳：它的会话已被继续，去把它的工作树处理干净，工作树干净后即会落地它的工作。它还不是已完成的工作。')).toBeInTheDocument();
     } finally {
       await i18n.changeLanguage('en');
     }

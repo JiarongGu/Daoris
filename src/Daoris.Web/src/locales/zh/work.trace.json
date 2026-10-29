@@ -167,6 +167,8 @@
   "work.trace.try.push-held": "已落地；告知插件之前，委托转为待你采纳或被收回，或被它的落地关卡拦住，因此还没有推送",
   "work.trace.try.already": "它的工作已通过别的方式到了你的某个分支",
   "work.trace.try.carried": "它的工作已按内容在主线或你的某个分支上，因此没有再次落地",
+  "work.trace.try.carried-on": "你的采纳已让它的会话继续，去把它的工作树处理干净；工作树干净后即会落地",
+  "work.trace.try.carry-bound": "已继续两次，它的工作树仍不干净，因此你的采纳已撤回；它在等你",
   "work.trace.try.superseded": "它工作树中更新的会话接替了它",
   "work.trace.try.gone": "它的工作树已丢弃",
   "work.trace.try.undone": "它的委托不再是完成状态",
