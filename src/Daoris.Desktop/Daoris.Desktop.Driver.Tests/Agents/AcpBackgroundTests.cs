@@ -60,6 +60,20 @@ public sealed class AcpBackgroundTests
             }
         }
 
+        /// <summary>Each prompt's request id, in the order sent (RUNENDS1: the case answers one of them later).</summary>
+        public IReadOnlyList<int> PromptIds
+        {
+            get
+            {
+                lock (Sent)
+                {
+                    return [.. Sent.Select(line => JsonDocument.Parse(line).RootElement)
+                        .Where(frame => frame.TryGetProperty("method", out var m) && m.GetString() == "session/prompt")
+                        .Select(frame => frame.GetProperty("id").GetInt32())];
+                }
+            }
+        }
+
         private sealed class Reader(Channel<string> channel) : TextReader
         {
             public override Task<string?> ReadLineAsync() => ReadLineAsync(CancellationToken.None).AsTask();
@@ -188,14 +202,22 @@ public sealed class AcpBackgroundTests
     private sealed class Record
     {
         private readonly List<string> _lines = [];
+        private readonly List<string?> _kinds = [];
 
         public IReadOnlyList<string> Lines
         {
             get { lock (_lines) return [.. _lines]; }
         }
 
+        /// <summary>How many events of <paramref name="kind"/> the record kept, a meter or a call among them (RUNENDS1).</summary>
+        public int Count(string kind)
+        {
+            lock (_lines) return _kinds.Count(each => each == kind);
+        }
+
         public void Event(SessionEvent e)
         {
+            lock (_lines) _kinds.Add(e.Kind);
             var line = e.Kind switch
             {
                 SessionEventKind.Turn => $"turn:{e.StopReason}",
@@ -1151,7 +1173,8 @@ public sealed class AcpBackgroundTests
 
         Assert.Equal("end_turn", outcome.StopReason);
         Assert.Equal(["initialize", "session/new", "session/prompt", "session/prompt", "session/close"], agent.Methods);
-        Assert.Equal(1, Volatile.Read(ref asked));
+        // Asked at the turn's end, and again as the go-on goes, which goes only to a quest that still waits (RUNENDS1).
+        Assert.Equal(2, Volatile.Read(ref asked));
     }
 
     /// <summary>
@@ -1535,21 +1558,158 @@ public sealed class AcpBackgroundTests
         Assert.Contains("`Build` (completed)", resumed);
     }
 
-    // ——— RUNENDS1 (D83's note): a run whose quest is done ends, whatever its agent scheduled for itself.
+    // ——— RUNENDS1 (D83's note): a run whose quest is done ends, whatever its agent scheduled for itself. Every case runs on a clock the
+    // test moves (MovedClock, .claude/knowledge/held-clocks.md), the look, the wake's quiet and QuestDoneQuiet at the session's own
+    // defaults, so no bound is the machine's and no case sleeps on one.
 
-    /// <summary>The wakeup an agent schedules for itself, as its harness's call for it shows on the wire (2026-10-28's Lyntai session).</summary>
+    private static readonly TimeSpan Minute = TimeSpan.FromMinutes(1);
+
+    /// <summary>The bound a silent turn of a closed quest is left after: <see cref="AcpSession.QuestDoneQuiet"/>'s default.</summary>
+    private static readonly TimeSpan DoneQuiet = TimeSpan.FromMinutes(5);
+
+    /// <summary>The wakeup an agent schedules for itself, as its harness's call for it shows on the wire (2026-10-28's session).</summary>
     private static void SchedulesAWakeup(Agent agent)
     {
         agent.Push(Update("""{"sessionUpdate":"tool_call","toolCallId":"toolu_wake","title":"ScheduleWakeup","kind":"other","status":"pending","rawInput":{"delaySeconds":1200,"reason":"re-check Docker","prompt":"<<autonomous-loop-dynamic>>"}}"""));
         agent.Push(Update("""{"sessionUpdate":"tool_call_update","toolCallId":"toolu_wake","status":"completed"}"""));
     }
 
-    /// <summary>A session that reads its quest every <see cref="Look"/> and lets a turn run silent <see cref="Soon"/> once the quest no longer waits.</summary>
-    private static AcpSession Quieting(Agent agent, Record record, TimeSpan wake) =>
-        new(agent.Incoming, agent.Outgoing, _ => { }, onEvent: record.Event, wakeQuiet: wake)
+    /// <summary>A session on <paramref name="clock"/>, its look, its wake's quiet and its <see cref="AcpSession.QuestDoneQuiet"/> its own.</summary>
+    private static AcpSession Clocked(
+        Agent agent, Record record, MovedClock clock, string? posture = null, PermissionHolds? permissions = null) =>
+        new(agent.Incoming, agent.Outgoing, _ => { }, posture: posture, onEvent: record.Event) { Clock = clock, Permissions = permissions };
+
+    /// <summary>
+    /// The agent of RUNENDS1's cases: its first prompt backgrounds the gates and schedules a wakeup, and ends; each later prompt goes to
+    /// <paramref name="later"/>, never answered where it answers null; the client's own answers and notices are read and answered by nothing.
+    /// </summary>
+    private static Agent Wakeup(Func<JsonElement, Agent, string?>? later = null, Action<Agent>? more = null) => new((frame, self) =>
+    {
+        switch (frame.TryGetProperty("method", out var method) ? method.GetString() : null)
         {
-            BackgroundLook = Look, QuestDoneQuiet = Soon,
-        };
+            case "initialize":
+                return Ok(frame, Queues);
+            case "session/new":
+                return Ok(frame, """{"sessionId":"s-1"}""");
+            case "session/prompt" when self.Prompts.Count == 1:
+                BackgroundsTheGates(self);
+                SchedulesAWakeup(self);
+                more?.Invoke(self);
+                return Ok(frame, """{"stopReason":"end_turn"}""");
+            case "session/prompt":
+                return later?.Invoke(frame, self);
+            case null:
+                return null;
+            default:
+                return frame.TryGetProperty("id", out _) ? Ok(frame, "{}") : null;
+        }
+    });
+
+    /// <summary>
+    /// The quest as RUNENDS1's cases read it: waiting while the session's clock is before <paramref name="from"/>; from then each read is
+    /// held until the test closes it (<see cref="Close"/>), and answered no. The answer runs the session's look on before Close returns, so
+    /// the bound counts from the test's own step, never from a thread's.
+    /// </summary>
+    private sealed class Quest(MovedClock clock, DateTimeOffset from)
+    {
+        // Created without asynchronous continuations: what awaits the read goes on inside Close.
+        private readonly TaskCompletionSource<bool> _closed = new();
+        private int _held;
+
+        /// <summary>Whether a look read it at or after <c>from</c>, and waits on that read.</summary>
+        public bool Read => Volatile.Read(ref _held) > 0;
+
+        public Task<bool> Waits(CancellationToken _)
+        {
+            if (clock.GetUtcNow() < from) return Task.FromResult(true);
+            Interlocked.Increment(ref _held);
+            return _closed.Task;
+        }
+
+        public void Close() => _closed.TrySetResult(false);
+    }
+
+    /// <summary>Moves <paramref name="clock"/> to <paramref name="at"/> once a wait of the session's is due then: the code's own bound, spent.</summary>
+    private static async Task PassAsync(MovedClock clock, DateTimeOffset at)
+    {
+        await Poll.Until(
+            () => clock.Pending.Contains(at),
+            () => $"nothing waits until {at:HH:mm:ss}; waiting: {string.Join(", ", clock.Pending.Select(due => due.ToString("HH:mm:ss")))}");
+        clock.Advance(at - clock.GetUtcNow());
+    }
+
+    /// <summary>Whether the session, rather than end, waits until <paramref name="at"/>: the signal a case reads, never a window of its own.</summary>
+    private static async Task<bool> WaitsUntilAsync(MovedClock clock, Task run, DateTimeOffset at)
+    {
+        await Poll.Until(
+            () => run.IsCompleted || clock.Pending.Contains(at),
+            () => $"neither ended nor waits until {at:HH:mm:ss}; waiting: {string.Join(", ", clock.Pending.Select(due => due.ToString("HH:mm:ss")))}");
+        return !run.IsCompleted;
+    }
+
+    /// <summary>The quest's close, read at the look due <paramref name="at"/> and held until the test closes it there.</summary>
+    private static async Task ClosesAtTheLookAsync(MovedClock clock, Quest quest, DateTimeOffset at)
+    {
+        await PassAsync(clock, at);
+        await Poll.Until(() => quest.Read, () => "no look read the quest");
+        quest.Close();
+    }
+
+    /// <summary>The provider's 529 as <c>claude-agent-acp</c> 0.84.0 answers a prompt with it (AGENTERRORS1a): a transient failure.</summary>
+    private static string Failed(JsonElement request) =>
+        JsonSerializer.Serialize(new
+        {
+            jsonrpc = "2.0",
+            id = request.GetProperty("id").GetInt32(),
+            error = new
+            {
+                code = -32603,
+                message = "Internal error: API Error: 529 Overloaded. This is a server-side issue, usually temporary — try again in a moment.",
+                data = new { errorKind = "overloaded" },
+            },
+        });
+
+    private static readonly AdapterSet Built = AdapterSet.Built();
+
+    /// <summary>A transient retry on <paramref name="clock"/>, its owner's check <paramref name="wanted"/> (AGENTERRORS1a).</summary>
+    private static TransientRetry Retry(MovedClock clock, Func<CancellationToken, Task<bool>>? wanted = null) => new()
+    {
+        Read = refused => AgentErrors.Read(
+            Built, Built.Resolve("claude-code-acp"), DoorFailure.OfPrompt(refused), clock.GetUtcNow(), TimeZoneInfo.Utc),
+        Clock = clock,
+        Wanted = wanted,
+    };
+
+    /// <summary>A permission request of the agent's for a call it never announced, as <c>claude-agent-acp</c> asks one.</summary>
+    private static string AsksPermission(int id) =>
+        $$$"""{"jsonrpc":"2.0","id":{{{id}}},"method":"session/request_permission","params":{"sessionId":"s-1","toolCall":{"toolCallId":"c9","title":"docker restart","kind":"execute"},"options":[{"optionId":"yes","name":"Allow","kind":"allow_once"},{"optionId":"no","name":"Reject","kind":"reject_once"}]}}""";
+
+    /// <summary>
+    /// A record that marks a kept word attempted only when the test answers (COWORK1c, <see cref="ISaidDoor"/>): the mark a delivery waits
+    /// on before the wire, held. Its answer runs the delivery on before it returns.
+    /// </summary>
+    private sealed class HeldMarks : ISaidDoor
+    {
+        public TaskCompletionSource<IReadOnlyList<string>> Marking { get; } = new();
+
+        public TaskCompletionSource Asked { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public List<string> TakenOff { get; } = [];
+
+        public Task<SayAnswer> KeepAsync(ChatMessage word, CancellationToken ct) => throw new NotSupportedException();
+
+        public Task<bool> TakeOffAsync(IReadOnlyList<string> ids, CancellationToken ct)
+        {
+            lock (TakenOff) TakenOff.AddRange(ids);
+            return Task.FromResult(true);
+        }
+
+        public Task<IReadOnlyList<string>> AttemptAsync(IReadOnlyList<string> ids, CancellationToken ct)
+        {
+            Asked.TrySetResult();
+            return Marking.Task;
+        }
+    }
 
     private const string WokenSilent = "The wakeup fired; the quest is done and the handback written.";
 
@@ -1576,12 +1736,12 @@ public sealed class AcpBackgroundTests
             SchedulesAWakeup(self);
         });
         var record = new Record();
-        var closed = 0;
-        var session = Quieting(agent, record, Never);
+        var clock = new MovedClock();
+        var t0 = clock.GetUtcNow();
+        var quest = new Quest(clock, t0 + Minute);
+        var session = Clocked(agent, record, clock);
 
-        var run = session.RunAsync(
-            "X:/daoris/game", "close quest #12", CancellationToken.None,
-            waitsOnBackground: _ => Task.FromResult(Volatile.Read(ref closed) == 0));
+        var run = session.RunAsync("X:/daoris/game", "close quest #12", CancellationToken.None, waitsOnBackground: quest.Waits);
         await Poll.Until(
             () => record.Lines.Any(line => line.StartsWith("note:", StringComparison.Ordinal)),
             () => string.Join(" | ", record.Lines), Poll.Patience);
@@ -1591,7 +1751,9 @@ public sealed class AcpBackgroundTests
         agent.Push(Said(WokenSilent));
         await Poll.Until(
             () => record.Lines.Contains($"message:{WokenSilent}"), () => string.Join(" | ", record.Lines), Poll.Patience);
-        Volatile.Write(ref closed, 1);
+        await ClosesAtTheLookAsync(clock, quest, t0 + Minute);
+        // The turn said its last word at t0: it is left once the bound has passed from the close's read.
+        await PassAsync(clock, t0 + Minute + DoneQuiet);
         await EndsWithoutGoOn(run, goOn.Task);
 
         Assert.Equal(["initialize", "session/new", "session/prompt", "session/close"], agent.Methods);
@@ -1612,11 +1774,12 @@ public sealed class AcpBackgroundTests
         var goOn = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
         var agent = Gates(goOn, SchedulesAWakeup);
         var record = new Record();
-        var closed = 0;
+        var clock = new MovedClock();
+        var t0 = clock.GetUtcNow();
+        var quest = new Quest(clock, t0 + Minute);
 
-        var run = Quieting(agent, record, Never).RunAsync(
-            "X:/daoris/game", "close quest #12", CancellationToken.None,
-            waitsOnBackground: _ => Task.FromResult(Volatile.Read(ref closed) == 0));
+        var run = Clocked(agent, record, clock).RunAsync(
+            "X:/daoris/game", "close quest #12", CancellationToken.None, waitsOnBackground: quest.Waits);
         await Poll.Until(
             () => record.Lines.Any(line => line.StartsWith("note:", StringComparison.Ordinal)),
             () => string.Join(" | ", record.Lines), Poll.Patience);
@@ -1625,7 +1788,8 @@ public sealed class AcpBackgroundTests
         agent.Push(Said(WokenSilent));
         await Poll.Until(
             () => record.Lines.Contains($"message:{WokenSilent}"), () => string.Join(" | ", record.Lines), Poll.Patience);
-        Volatile.Write(ref closed, 1);
+        await ClosesAtTheLookAsync(clock, quest, t0 + Minute);
+        await PassAsync(clock, t0 + Minute + DoneQuiet);
         await EndsWithoutGoOn(run, goOn.Task);
 
         Assert.Equal(["initialize", "session/new", "session/prompt", "session/close"], agent.Methods);
@@ -1644,20 +1808,61 @@ public sealed class AcpBackgroundTests
         var goOn = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
         var agent = EndsUnseen(goOn);
         var record = new Record();
+        var clock = new MovedClock();
+        var t0 = clock.GetUtcNow();
         var closed = 0;
 
-        // The bound before the go-on is long: the quest's close, read again every look, comes first.
-        var run = Quieting(agent, record, TimeSpan.FromSeconds(30)).RunAsync(
-            "D:/fam/Game", "close quest #12", CancellationToken.None,
+        var run = Clocked(agent, record, clock).RunAsync(
+            "X:/daoris/game", "close quest #12", CancellationToken.None,
             waitsOnBackground: _ => Task.FromResult(Volatile.Read(ref closed) == 0));
         await Poll.Until(
             () => record.Lines.Any(line => line.StartsWith("note:— its background work ended", StringComparison.Ordinal)),
             () => string.Join(" | ", record.Lines), Poll.Patience);
         Volatile.Write(ref closed, 1);
+        // Both bounds are a minute, the look's and the wake's quiet: they run out together, and the go-on reads the quest at its own
+        // moment, so the order the two take does not decide whether it goes.
+        await Poll.Until(() => clock.Pending.Count(at => at == t0 + Minute) >= 2, () => string.Join(", ", clock.Pending));
+        clock.Advance(Minute);
         await EndsWithoutGoOn(run, goOn.Task);
 
         Assert.Equal(["initialize", "session/new", "session/prompt", "session/close"], agent.Methods);
         Assert.Equal(QuestClosed, record.Lines[^1]);
+    }
+
+    /// <summary>
+    /// 🔴 RUNENDS1 after review (finding 3): both production bounds are a minute, so the wake's quiet ran out while the look a minute
+    /// later was still reading the quest, closed meanwhile, and the go-on went to the closed quest before the look could say so. The go-on
+    /// now goes only where a look taken at its own moment says the quest still waits.
+    /// </summary>
+    [Fact]
+    public async Task The_go_on_reads_the_quest_at_its_own_moment_so_a_quest_closed_while_a_look_is_still_reading_gets_none()
+    {
+        var goOn = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var agent = EndsUnseen(goOn);
+        var record = new Record();
+        var clock = new MovedClock();
+        var t0 = clock.GetUtcNow();
+        var reads = 0;
+        var reading = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        var run = Clocked(agent, record, clock).RunAsync(
+            "X:/daoris/game", "close quest #12", CancellationToken.None,
+            waitsOnBackground: _ => Interlocked.Increment(ref reads) switch
+            {
+                // The turn's end: the quest waits on the work that ended unseen.
+                1 => Task.FromResult(true),
+                // The next read is slow: it is still on its way when the wake's quiet runs out.
+                2 => reading.Task,
+                // The quest closed between the looks.
+                _ => Task.FromResult(false),
+            });
+        await Poll.Until(() => clock.Pending.Count(at => at == t0 + Minute) >= 2, () => string.Join(", ", clock.Pending));
+        clock.Advance(Minute);
+        await EndsWithoutGoOn(run, goOn.Task);
+
+        Assert.Equal(["initialize", "session/new", "session/prompt", "session/close"], agent.Methods);
+        Assert.Equal(QuestClosed, record.Lines[^1]);
+        reading.SetResult(true);
     }
 
     /// <summary>RUNENDS1: a session whose quest still waits is untouched: a silent turn its harness started is waited for as before.</summary>
@@ -1667,8 +1872,10 @@ public sealed class AcpBackgroundTests
         var goOn = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
         var agent = Gates(goOn, SchedulesAWakeup);
         var record = new Record();
+        var clock = new MovedClock();
+        var t0 = clock.GetUtcNow();
 
-        var run = Quieting(agent, record, Never).RunAsync(
+        var run = Clocked(agent, record, clock).RunAsync(
             "X:/daoris/game", "close quest #12", CancellationToken.None, waitsOnBackground: _ => Task.FromResult(true));
         await Poll.Until(
             () => record.Lines.Any(line => line.StartsWith("note:", StringComparison.Ordinal)),
@@ -1678,9 +1885,11 @@ public sealed class AcpBackgroundTests
         agent.Push(Said("The wakeup fired; checking Docker."));
         await Poll.Until(
             () => record.Lines.Contains("message:The wakeup fired; checking Docker."), () => string.Join(" | ", record.Lines), Poll.Patience);
-        await Task.Delay(Soon * 6);
 
-        Assert.False(run.IsCompleted);
+        // Ten looks, twice the bound a closed quest's silent turn is left after, each reading the quest still waiting: the session waits
+        // on, its next look armed.
+        for (var look = 1; look <= 10; look++) await PassAsync(clock, t0 + look * Minute);
+        Assert.True(await WaitsUntilAsync(clock, run, t0 + 11 * Minute), "a session whose quest waits ended on its silent turn");
         Assert.DoesNotContain("session/close", agent.Methods);
         Assert.DoesNotContain(record.Lines, line => line.StartsWith("note:— its quest no longer waits", StringComparison.Ordinal));
 
@@ -1689,36 +1898,438 @@ public sealed class AcpBackgroundTests
     }
 
     /// <summary>
-    /// RUNENDS1, a word the person sent: said into a turn its harness woke, it is on the wire and may never be answered. A session
-    /// whose quest closed ends at the quiet and says the word never reached its agent, as any session's end does; it is not lost
-    /// and not sent again.
+    /// RUNENDS1, a word the person sent: said into the turn the agent's own wakeup started, it is on the wire, and that turn never
+    /// answers it. A session whose quest closed leaves the turn at the bound and says the word never reached its agent, as any session's
+    /// end does: not lost, not sent again, and not handed back, since it went.
     /// </summary>
     [Fact]
-    public async Task A_word_sent_into_a_turn_that_never_answers_is_said_unreached_when_the_closed_quest_ends_the_run()
+    public async Task A_word_sent_into_the_turn_a_wakeup_started_is_said_unreached_when_the_closed_quest_leaves_that_turn()
     {
         var wordSent = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
-        var agent = Gates(wordSent, SchedulesAWakeup);
+        var agent = Wakeup(later: (frame, _) => Unanswered(frame, wordSent));
         var record = new Record();
-        var closed = 0;
+        var clock = new MovedClock();
+        var t0 = clock.GetUtcNow();
+        var quest = new Quest(clock, t0 + Minute);
         var inbox = new DrivenInbox(_ => { });
 
-        var session = Quieting(agent, record, Never);
+        var session = Clocked(agent, record, clock);
         var run = session.RunAsync(
-            "X:/daoris/game", "close quest #12", CancellationToken.None, inbox: inbox,
-            waitsOnBackground: _ => Task.FromResult(Volatile.Read(ref closed) == 0));
+            "X:/daoris/game", "close quest #12", CancellationToken.None, inbox: inbox, waitsOnBackground: quest.Waits);
         await Poll.Until(
             () => record.Lines.Any(line => line.StartsWith("note:", StringComparison.Ordinal)),
             () => string.Join(" | ", record.Lines), Poll.Patience);
 
+        // The gates end and the wakeup fires: its turn runs, and the person's word goes into it at once.
+        GatesEnd(agent);
+        agent.Push(Said(WokenSilent));
+        await Poll.Until(
+            () => record.Lines.Contains($"message:{WokenSilent}"), () => string.Join(" | ", record.Lines), Poll.Patience);
         Assert.True(inbox.Hold(new ChatMessage("skip the Docker check", [])));
         await wordSent.Task.WaitAsync(Poll.Patience);
-        Volatile.Write(ref closed, 1);
+
+        await ClosesAtTheLookAsync(clock, quest, t0 + Minute);
+        await PassAsync(clock, t0 + Minute + DoneQuiet);
         await run.WaitAsync(Poll.Patience);
 
-        Assert.Equal("skip the Docker check", agent.Prompts[1]);
-        Assert.Equal(2, agent.Prompts.Count);
+        Assert.Equal(["close quest #12", "skip the Docker check"], agent.Prompts);
         Assert.Equal(["skip the Docker check"], session.Unreached.Select(word => word.Text));
+        Assert.Empty(session.HandedBack);
         Assert.Equal("session/close", agent.Methods[^1]);
+        Assert.Contains(TurnLeft, record.Lines);
         Assert.Contains(record.Lines, line => line.StartsWith("note:", StringComparison.Ordinal) && line.Contains("never reached it"));
+    }
+
+    /// <summary>
+    /// 🔴 RUNENDS1 after review (finding 1): the go-on went, the person's urgent word followed it onto the wire, and the go-on then failed
+    /// transiently. Its episode settles the wire first, waiting on the word's answer, which the silent turn never gives. The quest then
+    /// closed and the turn was left at the bound, but that wait could not be cut, and the session held its seat for ever. Every wait of
+    /// Daoris's own ends with the cut: the session ends, the word said uncertain under its id, never sent again, and no try follows it.
+    /// </summary>
+    [Fact]
+    public async Task A_failed_go_on_settling_on_a_word_that_is_never_answered_does_not_hold_a_session_whose_quest_closed()
+    {
+        var agent = Wakeup();
+        var record = new Record();
+        var clock = new MovedClock();
+        var t0 = clock.GetUtcNow();
+        var quest = new Quest(clock, t0 + 2 * Minute);
+        var inbox = new DrivenInbox(_ => { });
+        var retry = Retry(clock);
+        var session = Clocked(agent, record, clock);
+
+        var run = session.RunAsync(
+            "X:/daoris/game", "close quest #12", CancellationToken.None, inbox: inbox, waitsOnBackground: quest.Waits, retry: retry);
+        await Poll.Until(
+            () => record.Lines.Any(line => line.StartsWith("note:", StringComparison.Ordinal)),
+            () => string.Join(" | ", record.Lines), Poll.Patience);
+
+        // The gates end and nothing wakes within the minute: the go-on goes, and the person's word follows it at once.
+        GatesEnd(agent);
+        await Poll.Until(() => clock.Pending.Count(at => at == t0 + Minute) >= 2, () => string.Join(", ", clock.Pending));
+        clock.Advance(Minute);
+        await Poll.Until(() => agent.Prompts.Count == 2, () => string.Join(" | ", agent.Prompts));
+        Assert.True(inbox.Hold(new ChatMessage("skip the Docker check", [])));
+        await Poll.Until(() => agent.Prompts.Count == 3, () => string.Join(" | ", agent.Prompts));
+
+        // The go-on fails on the provider's side: the episode settles the word's turn, which never answers.
+        agent.Push(Failed(Element($$"""{"id":{{agent.PromptIds[1]}}}""")));
+        await Poll.Until(() => retry.Opened, () => "no episode opened");
+
+        await ClosesAtTheLookAsync(clock, quest, t0 + 2 * Minute);
+        await PassAsync(clock, t0 + 2 * Minute + DoneQuiet);
+        await run.WaitAsync(Poll.Patience);
+
+        Assert.Equal(3, agent.Prompts.Count);
+        Assert.Equal("session/close", agent.Methods[^1]);
+        Assert.Contains(TurnLeft, record.Lines);
+        Assert.Equal(["skip the Docker check"], retry.Uncertain.Select(word => word.Text));
+        Assert.Empty(session.HandedBack);
+    }
+
+    /// <summary>
+    /// 🔴 RUNENDS1 after review (finding 2): the person's urgent word was on its way to the wire, its mark on the record still awaited,
+    /// when the session left its silent turn. Its delivery was then in no list the run's end reads, neither handed back nor said unreached,
+    /// and once the mark landed it was written to the closed session. The run's door shuts at that decision: the word went back to the
+    /// driver, and the mark that lands after writes nothing. A word held for the turn's end goes back with it.
+    /// </summary>
+    [Fact]
+    public async Task A_word_still_being_marked_when_a_silent_turn_is_left_is_handed_back_and_never_written()
+    {
+        var agent = Wakeup();
+        var record = new Record();
+        var clock = new MovedClock();
+        var t0 = clock.GetUtcNow();
+        var quest = new Quest(clock, t0 + Minute);
+        var inbox = new DrivenInbox(_ => { });
+        var marks = new HeldMarks();
+        var session = Clocked(agent, record, clock);
+
+        var run = session.RunAsync(
+            "X:/daoris/game", "close quest #12", CancellationToken.None, inbox: inbox, waitsOnBackground: quest.Waits);
+        await Poll.Until(
+            () => record.Lines.Any(line => line.StartsWith("note:", StringComparison.Ordinal)),
+            () => string.Join(" | ", record.Lines), Poll.Patience);
+
+        GatesEnd(agent);
+        agent.Push(Said(WokenSilent));
+        await Poll.Until(
+            () => record.Lines.Contains($"message:{WokenSilent}"), () => string.Join(" | ", record.Lines), Poll.Patience);
+        // An ordinary word waits for the turn's end; an urgent one kept on the record goes at once, and waits for its mark.
+        Assert.True(inbox.Hold(new ChatMessage("and write the handback", []) { Level = MessageLevel.Ordinary }));
+        Assert.True(inbox.HoldKept(new ChatMessage("skip the Docker check", []) { Id = "w-1" }, marks));
+        await marks.Asked.Task.WaitAsync(Poll.Patience);
+
+        await ClosesAtTheLookAsync(clock, quest, t0 + Minute);
+        await PassAsync(clock, t0 + Minute + DoneQuiet);
+        await run.WaitAsync(Poll.Patience);
+
+        Assert.Contains(TurnLeft, record.Lines);
+        Assert.Equal(["and write the handback", "skip the Docker check"], session.HandedBack.Select(word => word.Text));
+        Assert.Empty(session.Unreached);
+
+        // The record names the word marked after the session ended: nothing is written, and it stays on the record to go again.
+        marks.Marking.SetResult(["w-1"]);
+        Assert.Equal(["close quest #12"], agent.Prompts);
+        Assert.Empty(marks.TakenOff);
+    }
+
+    /// <summary>
+    /// 🔴 RUNENDS1 after review (finding 4): the session judged no turn running and no prompt open, then, while it unwound a wait of its
+    /// own (here a transient episode's owner's check, still reading), the harness woke the agent and its turn spoke. The session closed
+    /// on the judgement it took before. It now judges at the moment it ends, after every wait of its own is over: the turn that began is
+    /// the agent's, waited for to its end or its silence.
+    /// </summary>
+    [Fact]
+    public async Task A_turn_that_begins_while_the_session_unwinds_its_own_wait_is_never_cut_on_an_idle_read_before_it()
+    {
+        var agent = Wakeup(later: (frame, self) => self.Prompts.Count == 2 ? Failed(frame) : null);
+        var record = new Record();
+        var clock = new MovedClock();
+        var t0 = clock.GetUtcNow();
+        var quest = new Quest(clock, t0 + 2 * Minute);
+        var checking = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var wanted = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var retry = Retry(clock, wanted: _ =>
+        {
+            checking.TrySetResult();
+            return wanted.Task;
+        });
+
+        var run = Clocked(agent, record, clock).RunAsync(
+            "X:/daoris/game", "close quest #12", CancellationToken.None, waitsOnBackground: quest.Waits, retry: retry);
+        await Poll.Until(
+            () => record.Lines.Any(line => line.StartsWith("note:", StringComparison.Ordinal)),
+            () => string.Join(" | ", record.Lines), Poll.Patience);
+
+        // The gates end, nothing wakes within the minute, and the go-on fails on the provider's side: its episode waits a minute.
+        GatesEnd(agent);
+        await Poll.Until(() => clock.Pending.Count(at => at == t0 + Minute) >= 2, () => string.Join(", ", clock.Pending));
+        clock.Advance(Minute);
+        await Poll.Until(() => retry.Opened, () => "no episode opened");
+
+        // The minute passes: the look reads the quest, held, and the episode's owner's check begins its read.
+        await Poll.Until(() => clock.Pending.Count(at => at == t0 + 2 * Minute) >= 2, () => string.Join(", ", clock.Pending));
+        clock.Advance(Minute);
+        await checking.Task.WaitAsync(Poll.Patience);
+        await Poll.Until(() => quest.Read, () => "no look read the quest");
+
+        // The quest reads closed with nothing running: the session stops its own wait, whose check is still reading.
+        quest.Close();
+        // Meanwhile the harness wakes the agent, and its turn speaks; then the check answers that no try is wanted.
+        agent.Push(Said("The wakeup fired; re-checking Docker."));
+        await Poll.Until(
+            () => record.Lines.Contains("message:The wakeup fired; re-checking Docker."), () => string.Join(" | ", record.Lines), Poll.Patience);
+        wanted.SetResult(false);
+
+        Assert.True(await WaitsUntilAsync(clock, run, t0 + 2 * Minute + DoneQuiet), "the session ended under the turn that began");
+        Assert.DoesNotContain("session/close", agent.Methods);
+
+        WokenEnds(agent);
+        await run.WaitAsync(Poll.Patience);
+        Assert.Equal(["initialize", "session/new", "session/prompt", "session/prompt", "session/close"], agent.Methods);
+    }
+
+    /// <summary>
+    /// RUNENDS1 after review (finding 5): a failure of the session's own that comes while it leaves a silent turn is the run's failure,
+    /// recorded as any is: the wire that broke as the go-on's turn was cancelled is never read as the quest's close.
+    /// </summary>
+    [Fact]
+    public async Task A_wire_that_breaks_while_a_silent_go_on_is_left_fails_the_run_and_is_never_swallowed()
+    {
+        var agent = new Agent((frame, self) =>
+        {
+            switch (frame.TryGetProperty("method", out var method) ? method.GetString() : null)
+            {
+                case "initialize":
+                    return Ok(frame, Queues);
+                case "session/new":
+                    return Ok(frame, """{"sessionId":"s-1"}""");
+                case "session/prompt" when self.Prompts.Count == 1:
+                    BackgroundsTheGates(self);
+                    return Ok(frame, """{"stopReason":"end_turn"}""");
+                case "session/cancel":
+                    throw new IOException("the agent's input closed");
+                default:
+                    return null;
+            }
+        });
+        var record = new Record();
+        var clock = new MovedClock();
+        var t0 = clock.GetUtcNow();
+        var quest = new Quest(clock, t0 + 2 * Minute);
+
+        var run = Clocked(agent, record, clock).RunAsync(
+            "X:/daoris/game", "close quest #12", CancellationToken.None, waitsOnBackground: quest.Waits);
+        await Poll.Until(
+            () => record.Lines.Any(line => line.StartsWith("note:", StringComparison.Ordinal)),
+            () => string.Join(" | ", record.Lines), Poll.Patience);
+
+        // The gates end, nothing wakes, and the go-on goes; its turn says nothing at all.
+        GatesEnd(agent);
+        await Poll.Until(() => clock.Pending.Count(at => at == t0 + Minute) >= 2, () => string.Join(", ", clock.Pending));
+        clock.Advance(Minute);
+        await Poll.Until(() => agent.Prompts.Count == 2, () => string.Join(" | ", agent.Prompts));
+
+        await ClosesAtTheLookAsync(clock, quest, t0 + 2 * Minute);
+        await PassAsync(clock, t0 + 2 * Minute + DoneQuiet);
+
+        var broke = await Assert.ThrowsAsync<IOException>(() => run.WaitAsync(Poll.Patience));
+        Assert.Equal("the agent's input closed", broke.Message);
+        Assert.DoesNotContain(TurnLeft, record.Lines);
+    }
+
+    /// <summary>
+    /// RUNENDS1 after review (finding 6): a turn of a closed quest that keeps speaking is never cut, however long it runs: each word it
+    /// says counts the bound again, and one said a second before the bound holds the session past it. Silent at last, it is left.
+    /// </summary>
+    [Fact]
+    public async Task A_closed_quests_turn_that_keeps_speaking_is_never_cut_however_long_it_runs()
+    {
+        var agent = Wakeup();
+        var record = new Record();
+        var clock = new MovedClock();
+        var t0 = clock.GetUtcNow();
+        var quest = new Quest(clock, t0 + Minute);
+
+        var run = Clocked(agent, record, clock).RunAsync(
+            "X:/daoris/game", "close quest #12", CancellationToken.None, waitsOnBackground: quest.Waits);
+        await Poll.Until(
+            () => record.Lines.Any(line => line.StartsWith("note:", StringComparison.Ordinal)),
+            () => string.Join(" | ", record.Lines), Poll.Patience);
+        GatesEnd(agent);
+        agent.Push(Said(WokenSilent));
+        await Poll.Until(
+            () => record.Lines.Contains($"message:{WokenSilent}"), () => string.Join(" | ", record.Lines), Poll.Patience);
+        await ClosesAtTheLookAsync(clock, quest, t0 + Minute);
+
+        var due = t0 + Minute + DoneQuiet;
+        for (var said = 1; said <= 3; said++)
+        {
+            Assert.True(await WaitsUntilAsync(clock, run, due), $"the turn was left before its bound ({said})");
+            clock.Advance(due - TimeSpan.FromSeconds(1) - clock.GetUtcNow());
+            var words = $"Docker is still restarting ({said}).";
+            agent.Push(Said(words));
+            await Poll.Until(() => record.Lines.Contains($"message:{words}"), () => string.Join(" | ", record.Lines), Poll.Patience);
+            due = clock.GetUtcNow() + DoneQuiet;
+        }
+
+        // Three bounds past the close, the turn spoke within each: it is left only once it is silent for one.
+        Assert.True(await WaitsUntilAsync(clock, run, due), "the turn was left before its last bound");
+        await PassAsync(clock, due);
+        await run.WaitAsync(Poll.Patience);
+        Assert.Equal(TurnLeft, record.Lines[^1]);
+    }
+
+    /// <summary>
+    /// RUNENDS1 after review (finding 6): what counts as the turn speaking is its own words, thinking, calls and plan, and its requests;
+    /// its background work's progress and its meters are not. A turn silent but for those is left at the bound counted from its last word.
+    /// </summary>
+    [Fact]
+    public async Task Background_progress_and_meters_are_not_a_turn_speaking_so_its_silence_still_ends_at_the_bound()
+    {
+        var agent = Wakeup();
+        var record = new Record();
+        var clock = new MovedClock();
+        var t0 = clock.GetUtcNow();
+        var quest = new Quest(clock, t0 + Minute);
+
+        var run = Clocked(agent, record, clock).RunAsync(
+            "X:/daoris/game", "close quest #12", CancellationToken.None, waitsOnBackground: quest.Waits);
+        await Poll.Until(
+            () => record.Lines.Any(line => line.StartsWith("note:", StringComparison.Ordinal)),
+            () => string.Join(" | ", record.Lines), Poll.Patience);
+        GatesEnd(agent);
+        agent.Push(Said(WokenSilent));
+        await Poll.Until(
+            () => record.Lines.Contains($"message:{WokenSilent}"), () => string.Join(" | ", record.Lines), Poll.Patience);
+        await ClosesAtTheLookAsync(clock, quest, t0 + Minute);
+
+        var due = t0 + Minute + DoneQuiet;
+        Assert.True(await WaitsUntilAsync(clock, run, due), "the turn was left before its bound");
+        clock.Advance(due - TimeSpan.FromSeconds(1) - clock.GetUtcNow());
+        agent.Push(Update("""{"sessionUpdate":"async_task_progress","asyncTaskId":"bdd847eoq","toolCallId":"toolu_bg"}"""));
+        agent.Push(Update("""{"sessionUpdate":"usage_update","used":61234,"size":200000}"""));
+        await Poll.Until(() => record.Count(SessionEventKind.Usage) >= 1, () => "the meter was not read");
+        clock.Advance(TimeSpan.FromSeconds(1));
+
+        await Poll.Until(
+            () => run.IsCompleted || clock.Pending.Any(at => at > due),
+            () => $"waiting: {string.Join(", ", clock.Pending.Select(at => at.ToString("HH:mm:ss")))}");
+        Assert.True(run.IsCompleted, "a meter or a work's progress counted as the turn speaking");
+        await run;
+        Assert.Equal(TurnLeft, record.Lines[^1]);
+    }
+
+    /// <summary>
+    /// RUNENDS1 after review (finding 6): a call the turn has open is not silence: a long command says nothing until it ends. The bound
+    /// counts from the call's end, never across it.
+    /// </summary>
+    [Fact]
+    public async Task A_call_the_turn_has_open_is_not_silence_and_the_bound_counts_from_its_end()
+    {
+        var agent = Wakeup();
+        var record = new Record();
+        var clock = new MovedClock();
+        var t0 = clock.GetUtcNow();
+        var quest = new Quest(clock, t0 + Minute);
+
+        var run = Clocked(agent, record, clock).RunAsync(
+            "X:/daoris/game", "close quest #12", CancellationToken.None, waitsOnBackground: quest.Waits);
+        await Poll.Until(
+            () => record.Lines.Any(line => line.StartsWith("note:", StringComparison.Ordinal)),
+            () => string.Join(" | ", record.Lines), Poll.Patience);
+        GatesEnd(agent);
+        // The wakeup's turn starts a long command in the foreground: open until it ends.
+        var calls = record.Count(SessionEventKind.Tool);
+        agent.Push(Update("""{"sessionUpdate":"tool_call","toolCallId":"toolu_up","title":"docker compose up --wait","kind":"execute","status":"in_progress"}"""));
+        await Poll.Until(() => record.Count(SessionEventKind.Tool) > calls, () => "the call was not read");
+        await ClosesAtTheLookAsync(clock, quest, t0 + Minute);
+
+        // Twice the bound passes with the call open.
+        clock.Advance(2 * DoneQuiet);
+        var ended = clock.GetUtcNow();
+        agent.Push(Update("""{"sessionUpdate":"tool_call_update","toolCallId":"toolu_up","status":"completed"}"""));
+
+        Assert.True(await WaitsUntilAsync(clock, run, ended + DoneQuiet), "a turn with a call open was left");
+        await PassAsync(clock, ended + DoneQuiet);
+        await run.WaitAsync(Poll.Patience);
+        Assert.Equal(TurnLeft, record.Lines[^1]);
+    }
+
+    /// <summary>
+    /// RUNENDS1 after review (finding 6): a permission request held for the person is not silence: the turn waits on the person, and the
+    /// bound counts from the answer, never across the hold.
+    /// </summary>
+    [Fact]
+    public async Task A_permission_held_for_the_person_is_not_silence_and_the_bound_counts_from_its_answer()
+    {
+        var agent = Wakeup();
+        var record = new Record();
+        var clock = new MovedClock();
+        var t0 = clock.GetUtcNow();
+        var quest = new Quest(clock, t0 + Minute);
+        var registry = new HeldPermissions();
+
+        var run = Clocked(agent, record, clock, posture: "?default", permissions: registry.For("d1")).RunAsync(
+            "X:/daoris/game", "close quest #12", CancellationToken.None, waitsOnBackground: quest.Waits);
+        await Poll.Until(
+            () => record.Lines.Any(line => line.StartsWith("note:", StringComparison.Ordinal)),
+            () => string.Join(" | ", record.Lines), Poll.Patience);
+        GatesEnd(agent);
+        agent.Push(Said("Docker needs a restart; asking first."));
+        agent.Push(AsksPermission(900));
+        await Poll.Until(() => registry.Held("d1").Count == 1, () => "nothing was held for the person");
+        await ClosesAtTheLookAsync(clock, quest, t0 + Minute);
+
+        // Twice the bound passes with the request held.
+        clock.Advance(2 * DoneQuiet);
+        var answered = clock.GetUtcNow();
+        Assert.True(registry.Answer("d1", "900", "no").Answered);
+
+        Assert.True(await WaitsUntilAsync(clock, run, answered + DoneQuiet), "a turn waiting on the person was left");
+        await PassAsync(clock, answered + DoneQuiet);
+        await run.WaitAsync(Poll.Patience);
+        Assert.Equal(TurnLeft, record.Lines[^1]);
+    }
+
+    /// <summary>
+    /// RUNENDS1 after review (finding 6): a permission request the session refuses at once is still the turn doing something: asked a
+    /// second before the bound, it holds the session past it.
+    /// </summary>
+    [Fact]
+    public async Task A_permission_request_refused_at_once_is_the_turn_speaking_and_counts_the_bound_again()
+    {
+        var agent = Wakeup();
+        var record = new Record();
+        var clock = new MovedClock();
+        var t0 = clock.GetUtcNow();
+        var quest = new Quest(clock, t0 + Minute);
+
+        var run = Clocked(agent, record, clock).RunAsync(
+            "X:/daoris/game", "close quest #12", CancellationToken.None, waitsOnBackground: quest.Waits);
+        await Poll.Until(
+            () => record.Lines.Any(line => line.StartsWith("note:", StringComparison.Ordinal)),
+            () => string.Join(" | ", record.Lines), Poll.Patience);
+        GatesEnd(agent);
+        agent.Push(Said(WokenSilent));
+        await Poll.Until(
+            () => record.Lines.Contains($"message:{WokenSilent}"), () => string.Join(" | ", record.Lines), Poll.Patience);
+        await ClosesAtTheLookAsync(clock, quest, t0 + Minute);
+
+        var due = t0 + Minute + DoneQuiet;
+        Assert.True(await WaitsUntilAsync(clock, run, due), "the turn was left before its bound");
+        clock.Advance(due - TimeSpan.FromSeconds(1) - clock.GetUtcNow());
+        agent.Push(AsksPermission(901));
+        await Poll.Until(
+            () => record.Lines.Any(line => line.StartsWith("note:permission refused:", StringComparison.Ordinal)),
+            () => string.Join(" | ", record.Lines), Poll.Patience);
+        var again = clock.GetUtcNow() + DoneQuiet;
+        clock.Advance(TimeSpan.FromSeconds(1));
+
+        Assert.True(await WaitsUntilAsync(clock, run, again), "a turn that asked within the bound was left at it");
+        await PassAsync(clock, again);
+        await run.WaitAsync(Poll.Patience);
+        Assert.Equal(TurnLeft, record.Lines[^1]);
     }
 }
