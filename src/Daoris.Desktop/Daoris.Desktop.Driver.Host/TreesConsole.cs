@@ -443,17 +443,32 @@ internal static class TreesConsole
                 Told(home, PressesTold.Land, session);
                 // The plugin's lines were said as they came; the landing's sentence and the exit are the route's words too (RPC1b3).
                 var said = TreesWords.Land(landed, []);
-                said.Print(Console.Out, Console.Error);
-                // LANDREBASE2: a conflict is the session's (D87's LANDREBASE1 note point 3). The window offers its *Ask it to rebase*; a
-                // terminal has no second press, so the words go to the session itself, as the automatic landing says them.
-                if (landed is { Landed: false, Conflict: { } conflict })
-                {
-                    var told = await RebaseTelling.TellTreeAsync(
+                // LANDBACK1 part 1 (D87's note, after LANDREBASE2): uncommitted work or a conflict is the session's to clear, and the Accept is
+                // the person's yes already. The words go to the session itself, as Daoris's, never through `sessions say` (which would make
+                // them the person's, and wait for their Confirm); the yes is kept on it and its work lands once its tree is clean. The
+                // exit is 0: the person's act took effect. Words the door keeps nothing of leave the refusal as it was, with why.
+                if (LandCarry.WhyOf(landed) is not null
+                    && await LandCarry.CarryAsync(
                         // FOUNDATION1d-ii: said at the head of the session's line where it went on, under its key.
                         async (named, text, key, token) => (await WordsHead.FollowAsync(
                             named, at => service.SayAsync(at, text, null, token, from: DaorisWords.From, key: key)).ConfigureAwait(false)).Said,
-                        session, tree, conflict).ConfigureAwait(false);
-                    Console.WriteLine($"trees: {told}");
+                        home, session, tree, landed,
+                        (await service.SessionRecordsAsync().ConfigureAwait(false)).FirstOrDefault(each => string.Equals(each.Id, session, StringComparison.OrdinalIgnoreCase)),
+                        DateTimeOffset.UtcNow).ConfigureAwait(false) is { } carried)
+                {
+                    if (carried.Told)
+                    {
+                        Console.WriteLine($"trees: {carried.Sentence}");
+                        await FollowMovedLinesAsync(service, home, log).ConfigureAwait(false);
+                        return 0;
+                    }
+
+                    said.Print(Console.Out, Console.Error);
+                    Console.WriteLine($"trees: {carried.Sentence}");
+                }
+                else
+                {
+                    said.Print(Console.Out, Console.Error);
                 }
 
                 if (log is not null && LandingGateWords.Held(session, landing.Owner(tree), gate, landed, ReviewDoors.Terminal) is { } held)

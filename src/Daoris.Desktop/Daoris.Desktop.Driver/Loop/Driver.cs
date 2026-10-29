@@ -2558,19 +2558,38 @@ public sealed class Driver(
             pressed: start.BroughtForward is not null || (start.Resumes?.PersonStopped == true && !handedFrom),
             agent: limitWalks ? agent : null);
 
+        // 🔴 FOUNDATION1d-ii part 5 (the foundation design §3.4 rule 3): a carry-on that hands the new session the words of the record it goes on
+        // from, its fallback's or a resume's asker's, opens it through the keyed door, which moves them in the open's own step, the words named and
+        // any of the person's kept there since they were read, so no word said between this start's read and its open stays behind on a record the
+        // line has left. Against a host whose `opens` mark is below 2 the key goes with no words to move, or none goes, and they are taken as before.
+        var handing = fellBack is not null ? written : handsOn;
+        var moves = handing is null
+            ? null
+            : MovedWords.Asked(
+                handing.Session, handing.Waiting.Where(DriverContinuations.Hands(resumed: fellBack is null, switched)).Select(word => word.Id),
+                handing.Waiting.Select(word => word.Id));
+
         // The ledger judges the open — the same door any other client would use. A refusal here is
         // an answer (someone else got there first), not an error. Once asked, the ledger may hold the
         // tree even where a close cuts its answer off, so a close from here leaves it (QUEUEDTREE1).
         fresh.Asked();
-        var (sessionId, message) = await service
-            // The tree this spawn will hold (D51) — its own where the repository opted in, the
-            // registered root otherwise. Stated rather than left to the service to infer, because
-            // this side is the one that knows where it is about to run a process.
-            .OpenSessionAsync(
-                quest.Id, agent, selection.Version, selection.Profile, workTree, before, ct,
-                // Whether this is a set-up, for the machine log alone, so a set-up's cost can be read back (WSSETUP11).
-                setup: SetupQuests.IsSetup(quest.Title), from: continues, access: access.Values)
-            .ConfigureAwait(false);
+        // The tree this spawn will hold (D51) — its own where the repository opted in, the registered root otherwise. Stated rather than left to
+        // the service to infer, because this side is the one that knows where it is about to run a process. Whether this is a set-up, for the
+        // machine log alone, so a set-up's cost can be read back (WSSETUP11).
+        var keyed = moves is null
+            ? null
+            : await service
+                .OpenSessionMovingAsync(
+                    quest.Id, agent, selection.Version, selection.Profile, workTree, before, continues, moves, ct,
+                    setup: SetupQuests.IsSetup(quest.Title), access: access.Values)
+                .ConfigureAwait(false);
+        var (sessionId, message) = keyed is not null
+            ? (keyed.SessionId, keyed.Message)
+            : await service
+                .OpenSessionAsync(
+                    quest.Id, agent, selection.Version, selection.Profile, workTree, before, ct,
+                    setup: SetupQuests.IsSetup(quest.Title), from: continues, access: access.Values)
+                .ConfigureAwait(false);
         if (sessionId is null)
         {
             // A fresh tree for a session that never opened has no work in it, so the clean removal
@@ -2634,12 +2653,16 @@ public sealed class Driver(
         {
             // The words a session could not go on with went to this one (MSG1b, D137 §2.2): off that record by their ids, kept
             // on the ask by the service, so this start's instruction reads them among the person's words; and said in that
-            // session's conversation, where the person wrote them.
-            if (fellBack is not null) await GoOns.HandedOnAsync(written!, sessionId, fellBack, ct, switched: switched).ConfigureAwait(false);
+            // session's conversation, where the person wrote them. FOUNDATION1d-ii part 5: where the open moved them, off this one by theirs,
+            // which the ask keeps alike, each shown here under its id and its files copied here first; never by the ids the record was read with.
+            var movedBy = MovedWords.Moving(keyed) ? keyed : null;
+            IReadOnlyList<SaidWordView>? movedOn = null;
+            if (fellBack is not null) movedOn = await GoOns.HandedOnAsync(written!, sessionId, fellBack, ct, switched: switched, opened: movedBy).ConfigureAwait(false);
             // SAYHELD1 (A): and those said to the session that asked while its quest waited go to its resume, the same way.
             else if (handsOn is not null)
             {
-                await GoOns.HandedOnAsync(handsOn, sessionId, ContinueWhy.Of(ContinueWhy.Resumed), ct, resumed: true).ConfigureAwait(false);
+                movedOn = await GoOns.HandedOnAsync(handsOn, sessionId, ContinueWhy.Of(ContinueWhy.Resumed), ct, resumed: true, opened: movedBy)
+                    .ConfigureAwait(false);
             }
 
             var adapter = Context.Adapters.Resolve(agent);
@@ -2778,9 +2801,10 @@ public sealed class Driver(
                 PersonSaid = carryingOn ? start.Resumes!.Answer : null,
                 // SAYHELD1 (A): a resume's, the words said to the session that asked while it waited, each under its id.
                 // LIMITSWITCH3: and a carry-on a cooling account's switch made, Daoris's own words it carries (the person's come by the ask).
+                // FOUNDATION1d-ii part 5: the words the open moved here, where it moved them, as this record holds them.
                 Handed = handsOn is not null
-                    ? [.. handsOn.Waiting.Where(DriverContinuations.HandedToResume)]
-                    : switched ? [.. written!.Waiting.Where(word => word.Daoris && DaorisWords.NewPartCarries(word))] : [],
+                    ? [.. (movedOn ?? handsOn.Waiting).Where(DriverContinuations.HandedToResume)]
+                    : switched ? [.. (movedOn ?? written!.Waiting).Where(word => word.Daoris && DaorisWords.NewPartCarries(word))] : [],
                 // The person's stop, which they released with Try again (SESSUX1b): told so, never that it was cut off.
                 Released = carryingOn && start.Resumes!.PersonStopped && !handedFrom,
                 // The quest was handed over from that session (MIXAGENT1a-ii): told so, with the agent it ran on.

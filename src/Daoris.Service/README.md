@@ -354,6 +354,24 @@ answered the push as a retry, a fetch brought its own operation back under that 
 move was lost with no error. A store from before the marks seeds them from what it holds, so numbers
 may now have gaps, and nothing reads them as contiguous.
 
+**The event journal** (FOUNDATION1 row k part 1, D212, the foundation design §4.1): `event_journal` keeps
+the ledger's raw transitions of the session records this machine owns, in commit order, so a later reader
+can tell what moved and in what order without re-deriving it from the tables. Nothing reads it yet. Triggers
+on `sessions` mint it in the statement that writes the record, so every writer does, a connector built
+before the table included: one `opened` row at an insert; a `state` row when the state changes (carrying
+the limit flag on either side and the codes of the note's parts on the record as written, at most eight);
+a `limited` row when the flag moves alone; a `word-added` or `word-removed` row for each word that enters
+or leaves `said`, by its id, its author class, its level and whether it has a key, never its text or key,
+and past 64 words in one statement a `words-overflow` row with the count (negative for words taken). Each
+trigger guards on what changed, since a state move names `state`, `limited` and `said` every time; an attempt
+mark, a same-state or note-only write and a mirror pass (`origin` set, another machine's record) journal
+nothing. The triggers hold no `RAISE` and no constraint their inserts can violate, ids are cut at 64
+characters and codes at 32, so a row is under a KiB, and the inserting statement deletes the rows past the
+newest 50,000, so a writer that never trims still bounds the table. A `position` is never reused (the table
+is `AUTOINCREMENT`). The quest log, the asks and the channel (their columns exist) and the `journal` change
+family are part 2's. The store's identity (`store_identity`, the journal's epoch) is written by the sessions
+schema; the change stream's observer reads it and keeps an existing stamp.
+
 **Finished history is cleared from this machine, listed first and then pressed** (HIST1b, D153).
 `HistoryDesk` judges the records' half of a unit for both of a local host's history doors. A unit is a
 closed quest's work: the quest, each question its sessions published, applied again to what each adds,

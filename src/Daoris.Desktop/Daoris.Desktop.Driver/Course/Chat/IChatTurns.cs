@@ -76,6 +76,12 @@ internal interface IChatTurns
     /// <summary>A word taken: where it reaches, or null where nothing took it.</summary>
     TurnReach? Take(ChatMessage message);
 
+    /// <summary>
+    /// A word a keyed open moved onto the record, taken as the record's own word under its id there, through its door (FOUNDATION1d-ii part 5):
+    /// where it reaches, or null where nothing took it.
+    /// </summary>
+    TurnReach? TakeMoved(ISaidDoor door, ChatMessage message);
+
     /// <summary>A word steered into the turn in flight, or taken at once where none runs.</summary>
     Task<SentNow?> TakeNowAsync(ChatMessage message);
 

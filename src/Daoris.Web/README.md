@@ -241,6 +241,11 @@ A folder past twenty sources keeps its scopes in folders named for what they hol
   session), `terminals/` (the person's terminals), `history/` (clearing finished work) and `pausing/` (pausing and
   abandoning it).
 
+*Accept* carries a session whose tree holds uncommitted work on, never refusing it (LANDBACK1 part 1, D87's note): the press's answer's
+`carried` (`why`, `told`) closes its ask and says the sentence, asks the person for no card, and the plan's `carried` shows the session as
+carried on in the foot and the head (`work.review.carriedOn`, `work.head.carriedOn`, English and 中文) while the driver keeps the yes, never as
+finished work.
+
 Words an account's limit holds on an ended record, the person's or Daoris's own (a rebase request), are said as one wait wherever a row
 is read, from the driver's hold alone (`placedFact` in `rail/SessionRow.tsx`, shared by the rail row, the head's facts and *What needs
 you*'s review rows): *Waiting for a limit to reset: it resumes by itself at {{time}}, on {{account}}*, in English and 中文, naming the

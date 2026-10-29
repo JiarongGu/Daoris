@@ -21,6 +21,12 @@ public sealed record DestinationOpen(string? SessionId, string Message, string? 
     /// answers what that host moved.
     /// </summary>
     public IReadOnlyList<MovedWord> Moved { get; init; } = [];
+
+    /// <summary>
+    /// The opened record's adapter, repository and workspace as the host recorded them (FOUNDATION1d-ii part 5): what an open's watchers are
+    /// told, as the unkeyed door tells them, a driven record naming its quest's receiver. Null where the answer names none.
+    /// </summary>
+    public (string? Adapter, string? Repository, string? Workspace) Recorded { get; init; }
 }
 
 /// <summary>
@@ -28,7 +34,17 @@ public sealed record DestinationOpen(string? SessionId, string Message, string? 
 /// the open's own <c>from</c> or a start's source where it names none; <paramref name="Words"/>, the ids the course named; <paramref name="Read"/>,
 /// the ids it saw waiting there when it read, so the person's words kept since move too.
 /// </summary>
-public sealed record MoveWords(string From, IReadOnlyList<string> Words, IReadOnlyList<string> Read);
+public sealed record MoveWords(string From, IReadOnlyList<string> Words, IReadOnlyList<string> Read)
+{
+    /// <summary>
+    /// The key a chat's keyed open is sent under (FOUNDATION1f-ii part a): the move record's <c>opens</c>, written before the open, so a retried
+    /// open whose answer was lost reuses it; null for a key of the open's own (<see cref="ChatKey"/>).
+    /// </summary>
+    public string? Opens { get; init; }
+
+    /// <summary>A new key for a chat's keyed open.</summary>
+    public static string ChatKey() => "chat-move/" + Guid.NewGuid().ToString("N");
+}
 
 /// <summary>
 /// One word a keyed open moved: its id on the record it left (<paramref name="Word"/>) and on the destination (<paramref name="Id"/>, which a
@@ -113,8 +129,8 @@ public sealed class SessionOpenDoors
 
     /// <summary>
     /// Opens a driven or chat destination. The body's fields are the existing open request, without an opens member.
-    /// A caller recovering a lost answer passes retry; each retry re-reads protocol before it sends anything.
-    /// No production move uses this door until its adoption row.
+    /// A caller recovering a lost answer passes retry; each retry re-reads protocol before it sends anything. The moves that hand a part words
+    /// open through it (FOUNDATION1d-ii parts 4 and 5: <see cref="ServiceClient.OpenChatMovingAsync"/>, <see cref="ServiceClient.OpenSessionMovingAsync"/>).
     /// </summary>
     /// <param name="moves">
     /// The words the open is asked to move (FOUNDATION1d-ii part 3), sent as the request's <c>moves</c> only to a host whose <c>opens</c> mark
@@ -170,7 +186,11 @@ public sealed class SessionOpenDoors
                 }
                 var moved = transfer.Select(MovedOf).ToArray();
                 _lost.Remove(key);
-                return new(id, message, echo, transfer) { Moves = moving && echo == key, Moved = moved };
+                return new(id, message, echo, transfer)
+                {
+                    Moves = moving && echo == key, Moved = moved,
+                    Recorded = (Text(record, "adapter"), Text(record, "repository"), Text(record, "workspace")),
+                };
             }
             catch (Exception error) when (error is HttpRequestException or IOException or OperationCanceledException or JsonException)
             {

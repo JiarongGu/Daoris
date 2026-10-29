@@ -207,6 +207,12 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'landing.refused': { values: [] },
   // Its replay onto the line conflicts and its session was told to rebase in its own tree (LANDREBASE1), the refusal beneath it.
   'landing.rebase': { values: [] },
+  // The person's Accept carried a session on (LANDBACK1 part 1): its tree's uncommitted work, or the replay's conflict beneath it, and
+  // the yes that stays on it; carried on twice and still not clean it waits for review; and the landing that yes made once it was clean.
+  'landing.carried-dirty': { values: ['paths'] },
+  'landing.carried-conflict': { values: [] },
+  'landing.carry-bound': { values: [] },
+  'landing.accepted-carried': { values: ['branch'] },
   // Held by the review's gate (REVIEWENV1c), the gate's sentence beneath it; a note from before it says `landing.refused`.
   'landing.unreviewed': { values: [] },
   // Held by the second opinion's gate (XAGENT1g), the gate's sentence beneath it; a note from before it says `landing.refused`.

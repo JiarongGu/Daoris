@@ -477,21 +477,13 @@ public sealed class ChangeStream : IAsyncDisposable
     }
 
     /// <summary>
-    /// The file's identity: a stamp kept in it, written once by the first observer to find none. A different database at the
-    /// path has its own, or none.
+    /// The file's identity: the stamp kept in it, which the session store's schema writes once (FOUNDATION1 row k: it is the event
+    /// journal's epoch, so the schema owns it, not this observer), and which a file stamped by an earlier build's observer already
+    /// carries. A file with none is not stamped here: the observer's open waits and tries again once the schema has run. A different
+    /// database at the path has its own, or none.
     /// </summary>
-    private static string Identity(ConnectionGate observer)
-    {
-        if (StampOf(observer) is { } stamp) return stamp;
-
-        using var write = observer.Command();
-        write.CommandText = """
-            CREATE TABLE IF NOT EXISTS store_identity (one INTEGER PRIMARY KEY CHECK (one = 1), id TEXT NOT NULL);
-            INSERT OR IGNORE INTO store_identity (one, id) VALUES (1, lower(hex(randomblob(16))));
-            """;
-        write.ExecuteNonQuery();
-        return StampOf(observer) ?? throw new InvalidOperationException("the store's identity was written and does not read");
-    }
+    internal static string Identity(ConnectionGate observer) =>
+        StampOf(observer) ?? throw new InvalidOperationException("the store's identity is not written yet");
 
     private static string? StampOf(ConnectionGate connection)
     {

@@ -1435,6 +1435,40 @@ public sealed class ChatTurnsTests
     }
 
     /// <summary>
+    /// 🔴 FOUNDATION1d-ii part 5 (the foundation design §3.4 rule 3): a word a keyed open moved onto this conversation's record, the replacement
+    /// of a start its agent refused at the open, is taken as the record's own word under its id there: attempted on that record before its turn
+    /// reaches the door and taken off it once on the wire. A producer's retry under its key, which the record answers with that same word, is
+    /// acknowledged with no second turn.
+    /// </summary>
+    [Fact]
+    public async Task A_word_a_keyed_open_moved_here_goes_under_its_id_and_a_retry_of_it_takes_no_second_turn()
+    {
+        var door = new Door { TakesWordsMidTurn = false };
+        var record = new Daoris.Driver.Tests.StandInSaid();
+        // The word as the open left it on this record: its id there, and its producer's key.
+        var moved = (await record.KeepAsync(new ChatMessage("then the tests", []) { Key = "press/k1" }, default)).Word!;
+        var turns = door.Turns();
+        turns.Take(new ChatMessage("read the five files", []));
+        await Poll.Until(() => door.Took.Count == 1, () => "the first turn never reached the door");
+
+        Assert.Equal(TurnReach.TurnEnd, turns.TakeMoved(record, new ChatMessage("then the tests", []) { Id = moved.Id, Key = "press/k1" }));
+        var again = await turns.KeepAsync(record, new ChatMessage("then the tests", []) { Key = "press/k1" }, default);
+        Assert.Equal((moved.Id, TurnReach.TurnEnd), (again!.Word, again.Reach));
+
+        door.EndTurn(0);
+        await Poll.Until(() => door.Took.Count == 2, () => "the moved word never became its turn");
+        door.EndTurn(1);
+        await Poll.Until(() => !turns.Running, () => $"another turn after the moved word's: {string.Join(" | ", door.Took)}");
+        await turns.TakingOff;
+
+        Assert.Equal(["read the five files", "then the tests"], door.Took);
+        Assert.Equal([null, moved.Id], door.TookIds);
+        Assert.Equal([moved.Id!], record.Attempted);
+        Assert.Equal([moved.Id!], record.TakenOff);
+        Assert.Empty(record.Said);
+    }
+
+    /// <summary>
     /// COWORK1c (the design §6): kept words a stop withdraws leave the record with them, handed back to the person; kept words waiting
     /// when the harness went stay on the record, for the conversation to go on with as the shell comes up again, unless the person
     /// stopped it, which ends them with it. Turns that take no more words keep nothing.
