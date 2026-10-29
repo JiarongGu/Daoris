@@ -955,7 +955,8 @@ scope folders); the hooks, the kit, the package and the page are the groups to c
 embedded in the library (`Plugins/plugin-kit/*.template`, the Plugins module's folder), and `daoris-driver plugins try <folder|id>` starts
 a plugin as the driver would and checks every answer with the driver's own reader. On the page,
 `DAORIS.DRIVER`'s `PLUGINS` answer carries `kit.points`, `PLUGIN_NEW` {id, points, folder} writes the
-folder, and `PLUGIN_TRY` {id} or {folder} answers the trial's steps, summary and stderr lines.
+folder, and `PLUGIN_TRY` {id} or {folder} answers the trial's steps, summary and stderr lines. A plugin alive after its
+last step always has a `shutdown` step in the trace, however fast it leaves on being told (PLUGINSHUTDOWN1); one that died during a step has none.
 
 **A plugin package** (PLUGDIST1a, D120) is read by the driver library's `PluginPackage`, with no NuGet
 client and no network. `daoris-driver plugins install <file.nupkg>` judges the package before anything is
