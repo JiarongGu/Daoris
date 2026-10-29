@@ -77,10 +77,13 @@ internal static class TreeOpenings
     /// branch, which only an open that made the branch itself takes back.</param>
     /// <remarks>GITWORKTREECONFIG1: a tree git binds to another checkout is left too, with its branch and its opening's lock, and the look
     /// says why each time it meets it (<see cref="TreeStrays"/>).</remarks>
-    internal static async Task UndoAsync(string root, string path, string branch, bool ours, bool keepBranch = false)
+    /// <param name="unused">Whether the open made the tree a moment ago and nothing was recorded, copied or told of it: the opening's own
+    /// refusal of a tree git binds elsewhere lets go of it so, since git's own removal names a tree by its record and deletes that
+    /// folder alone (D51's note), where the look would leave it for the person to meet.</param>
+    internal static async Task UndoAsync(string root, string path, string branch, bool ours, bool keepBranch = false, bool unused = false)
     {
         var done = CancellationToken.None;
-        if (await TreeBinding.RefusalAsync(path, done).ConfigureAwait(false) is not null) return;
+        if (!unused && await TreeBinding.RefusalAsync(path, done).ConfigureAwait(false) is not null) return;
         if ((ours || await TreeLeftovers.RegisteredAsync(root, path, done).ConfigureAwait(false) is not false) && TreeLinks.Unlinked(path) is not null)
         {
             return;

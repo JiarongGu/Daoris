@@ -131,6 +131,46 @@ public sealed class TreeBindingGitTests(ITestOutputHelper output) : BranchTidyin
     }
 
     /// <summary>
+    /// An opening under the shared configuration (the last door of GITWORKTREECONFIG1): the tree it just made is let go of through the
+    /// opening's own undo, no folder and no branch remain, the checkout is as it was, and the refusal says what binds it.
+    /// </summary>
+    [Fact]
+    public async Task An_opening_under_a_shared_core_worktree_is_refused_and_leaves_nothing()
+    {
+        var root = await RepositoryAsync("engine");
+        await GitAsync(root, "config", "extensions.worktreeConfig", "true");
+        await GitAsync(root, "config", "core.worktree", root.Replace('\\', '/'));
+        var trees = new SessionTrees(_home);
+        var before = await CheckoutAsync(root, null);
+        var branches =await GitAsync(root, "branch", "--list");
+
+        var error = await Assert.ThrowsAsync<DriverException>(() => trees.OpenAsync(root, "engine", "default"));
+
+        Assert.Contains($"as the working root of the tree at ", error.Message, StringComparison.Ordinal);
+        Assert.Contains("`core.worktree", error.Message, StringComparison.Ordinal);
+        Assert.Contains("/.git/config", error.Message.Replace('\\', '/'), StringComparison.Ordinal);
+        Assert.Contains("own worktree configuration, or unset it, then ask again", error.Message, StringComparison.Ordinal);
+        Assert.Equal(before, await CheckoutAsync(root, null));
+        Assert.Equal(branches, await GitAsync(root, "branch", "--list"));
+        Assert.Single((await GitAsync(root, "worktree", "list", "--porcelain")).Split('\n'), line => line.StartsWith("worktree ", StringComparison.Ordinal));
+        var made = Path.Combine(trees.TreesRoot, "default", "engine");
+        Assert.False(Directory.Exists(made) && Directory.EnumerateDirectories(made).Any());
+    }
+
+    /// <summary>The same value in the checkout's own worktree configuration binds no linked tree: the opening goes as before.</summary>
+    [Fact]
+    public async Task An_opening_under_the_valid_configuration_opens()
+    {
+        var root = await RepositoryAsync("engine");
+        await GitAsync(root, "config", "extensions.worktreeConfig", "true");
+        await GitAsync(root, "config", "--worktree", "core.worktree", root.Replace('\\', '/'));
+
+        var tree = await new SessionTrees(_home).OpenAsync(root, "engine", "default");
+
+        Assert.True(File.Exists(Path.Combine(tree.Path, ".git")));
+    }
+
+    /// <summary>
     /// What a replay's own tree rests on (<see cref="BranchReplays"/>): git's own removal of a tree it binds elsewhere names the tree by its
     /// record and deletes that folder alone, so Daoris's tree made a moment ago for a replay is let go of so, unused. A session's tree
     /// still stays: what Daoris reads of it before a removal is the checkout's.
