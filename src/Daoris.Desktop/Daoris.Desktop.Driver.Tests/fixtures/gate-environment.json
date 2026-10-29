@@ -1,0 +1,120 @@
+{
+  "about": "INTEGRATE1f part f1 (the integration design §5.5, §5.9; D215's notes on INTEGRATE1a and INTEGRATE1j): the environment a gate is composed with, and the digest of a gate's composition, one table for both readers: tools/merge-branch.mjs (gateEnvironment, compositionDigest; src/Daoris.Cli/tool-test/integration-gates.test.ts) and the driver's GateEnvironment and GateComposition (GateEnvironmentTests). A path is neutral, X:/. The tool also removes the tool tests' two stand-in variables (QUEUE_DRAIN_DIR, QUEUE_DROP_HOLD), which a gate of the driver's never meets: no row names them.",
+  "beside": { "MSBUILDDISABLENODEREUSE": "1", "DOTNET_CLI_USE_MSBUILD_SERVER": "0", "UseSharedCompilation": "false" },
+  "removed": [
+    "/^DAORIS_/i",
+    "/^GIT_(DIR|WORK_TREE|INDEX_FILE|OBJECT_DIRECTORY|ALTERNATE_OBJECT_DIRECTORIES|COMMON_DIR|NAMESPACE|CEILING_DIRECTORIES|CONFIG.*)$/i",
+    "/^MERGE_BRANCH_/i"
+  ],
+  "environments": [
+    {
+      "name": "a plain environment keeps what it holds and gains the build servers of its own",
+      "start": { "Path": "X:/bin", "HOME": "X:/home", "GIT_OPTIONAL_LOCKS": "0" },
+      "pass": [],
+      "expect": { "Path": "X:/bin", "HOME": "X:/home", "GIT_OPTIONAL_LOCKS": "0", "MSBUILDDISABLENODEREUSE": "1", "DOTNET_CLI_USE_MSBUILD_SERVER": "0", "UseSharedCompilation": "false" }
+    },
+    {
+      "name": "no Daoris name reaches a gate in either spelling: the home, a role, a key, the capacity and the hold marker",
+      "start": { "Path": "X:/bin", "DAORIS_HOME": "X:/install", "daoris_role": "steward", "DAORIS_SUPERVISOR_KEY": "k", "DAORIS_ADMISSION_SLOTS": "9", "DAORIS_ADMISSION_HOLD": "h-1", "Daoris_Other": "x" },
+      "pass": [],
+      "expect": { "Path": "X:/bin", "MSBUILDDISABLENODEREUSE": "1", "DOTNET_CLI_USE_MSBUILD_SERVER": "0", "UseSharedCompilation": "false" }
+    },
+    {
+      "name": "git's repository-locating variables are removed in either spelling, and what a person set for git otherwise stays",
+      "start": {
+        "Path": "X:/bin", "GIT_DIR": "X:/g", "git_work_tree": "X:/w", "GIT_INDEX_FILE": "i", "GIT_OBJECT_DIRECTORY": "o", "GIT_ALTERNATE_OBJECT_DIRECTORIES": "a", "GIT_COMMON_DIR": "c",
+        "GIT_NAMESPACE": "n", "GIT_CEILING_DIRECTORIES": "X:/", "GIT_CONFIG_COUNT": "1", "GIT_CONFIG_KEY_0": "k", "GIT_CONFIG_GLOBAL": "X:/cfg", "GIT_AUTHOR_NAME": "A", "GIT_OPTIONAL_LOCKS": "0"
+      },
+      "pass": [],
+      "expect": { "Path": "X:/bin", "GIT_AUTHOR_NAME": "A", "GIT_OPTIONAL_LOCKS": "0", "MSBUILDDISABLENODEREUSE": "1", "DOTNET_CLI_USE_MSBUILD_SERVER": "0", "UseSharedCompilation": "false" }
+    },
+    {
+      "name": "the merge tool's switches are removed",
+      "start": { "Path": "X:/bin", "MERGE_BRANCH_QUEUE_TICK_MS": "300", "merge_branch_memory": "off", "MERGE_BRANCHES": "kept" },
+      "pass": [],
+      "expect": { "Path": "X:/bin", "MERGE_BRANCHES": "kept", "MSBUILDDISABLENODEREUSE": "1", "DOTNET_CLI_USE_MSBUILD_SERVER": "0", "UseSharedCompilation": "false" }
+    },
+    {
+      "name": "a name an accepted declaration passes comes back from the start environment, a removed one included",
+      "start": { "Path": "X:/bin", "GIT_CONFIG_GLOBAL": "X:/cfg", "git_config_key_0": "k", "MERGE_BRANCH_MEMORY": "off", "TOKEN_FOR_GATE": "t" },
+      "pass": ["GIT_CONFIG_GLOBAL"],
+      "expect": { "Path": "X:/bin", "TOKEN_FOR_GATE": "t", "GIT_CONFIG_GLOBAL": "X:/cfg", "MSBUILDDISABLENODEREUSE": "1", "DOTNET_CLI_USE_MSBUILD_SERVER": "0", "UseSharedCompilation": "false" }
+    },
+    {
+      "name": "a passed name is matched in any case and keeps the spelling of the start; one the start lacks adds nothing",
+      "start": { "Path": "X:/bin", "GIT_CONFIG_GLOBAL": "X:/cfg", "git_config_key_0": "k" },
+      "pass": ["GIT_CONFIG_KEY_0", "NOT_SET_HERE"],
+      "expect": { "Path": "X:/bin", "git_config_key_0": "k", "MSBUILDDISABLENODEREUSE": "1", "DOTNET_CLI_USE_MSBUILD_SERVER": "0", "UseSharedCompilation": "false" }
+    },
+    {
+      "name": "a Daoris name is never passed, however it is spelled or declared",
+      "start": { "Path": "X:/bin", "DAORIS_HOME": "X:/install", "daoris_role": "steward", "TOKEN_FOR_GATE": "t" },
+      "pass": ["DAORIS_HOME", "daoris_role", "Daoris_Admission_Hold"],
+      "expect": { "Path": "X:/bin", "TOKEN_FOR_GATE": "t", "MSBUILDDISABLENODEREUSE": "1", "DOTNET_CLI_USE_MSBUILD_SERVER": "0", "UseSharedCompilation": "false" }
+    },
+    {
+      "name": "a build-server name the start holds in the same spelling is replaced by the gate's own value",
+      "start": { "Path": "X:/bin", "MSBUILDDISABLENODEREUSE": "0", "UseSharedCompilation": "true" },
+      "pass": [],
+      "expect": { "Path": "X:/bin", "MSBUILDDISABLENODEREUSE": "1", "DOTNET_CLI_USE_MSBUILD_SERVER": "0", "UseSharedCompilation": "false" }
+    }
+  ],
+  "driverOnly": {
+    "about": "What the driver's gate is given that the tool's is not, yet: the admission's hold marker (the tool's gates get no Daoris name until its hold plumbing, D215's note on INTEGRATE1b part 2), and a build-server name folded by case, which a process environment on Windows holds once.",
+    "holds": [
+      {
+        "name": "the hold marker is the one Daoris name a gate gets on purpose, after everything else",
+        "start": { "Path": "X:/bin", "DAORIS_HOME": "X:/install", "DAORIS_ADMISSION_HOLD": "stale" },
+        "pass": [],
+        "hold": "h-7",
+        "expect": { "Path": "X:/bin", "MSBUILDDISABLENODEREUSE": "1", "DOTNET_CLI_USE_MSBUILD_SERVER": "0", "UseSharedCompilation": "false", "DAORIS_ADMISSION_HOLD": "h-7" }
+      },
+      {
+        "name": "no hold, no marker",
+        "start": { "Path": "X:/bin" },
+        "pass": [],
+        "hold": null,
+        "expect": { "Path": "X:/bin", "MSBUILDDISABLENODEREUSE": "1", "DOTNET_CLI_USE_MSBUILD_SERVER": "0", "UseSharedCompilation": "false" }
+      },
+      {
+        "name": "a build-server name in another case is replaced, never doubled",
+        "start": { "Path": "X:/bin", "msbuilddisablenodereuse": "0" },
+        "pass": [],
+        "hold": null,
+        "expect": { "Path": "X:/bin", "MSBUILDDISABLENODEREUSE": "1", "DOTNET_CLI_USE_MSBUILD_SERVER": "0", "UseSharedCompilation": "false" }
+      }
+    ]
+  },
+  "compositions": [
+    {
+      "name": "a gate that ran whole",
+      "units": null,
+      "settings": { "gate": "driver", "run": "dotnet test src/D.Tests --no-build --settings src/D/process.runsettings", "cwd": null, "runsettings": null, "narrowed": [], "environment": { "removed": ["/^DAORIS_/i", "/^GIT_(DIR|WORK_TREE|INDEX_FILE|OBJECT_DIRECTORY|ALTERNATE_OBJECT_DIRECTORIES|COMMON_DIR|NAMESPACE|CEILING_DIRECTORIES|CONFIG.*)$/i", "/^MERGE_BRANCH_/i"], "added": { "MSBUILDDISABLENODEREUSE": "1", "DOTNET_CLI_USE_MSBUILD_SERVER": "0", "UseSharedCompilation": "false" } } },
+      "digest": "sha256:bdf032197aeef300e19b032d9254e8ee778d4e75aa7bac34934ba1dffc0a2994"
+    },
+    {
+      "name": "the classes it ran, and the classes its run settings left out",
+      "units": ["N.A", "N.B"],
+      "settings": { "gate": "driver", "run": "dotnet test src/D.Tests --no-build --settings src/D/process.runsettings", "cwd": null, "runsettings": null, "narrowed": ["N.C"], "environment": { "removed": ["/^DAORIS_/i", "/^GIT_(DIR|WORK_TREE|INDEX_FILE|OBJECT_DIRECTORY|ALTERNATE_OBJECT_DIRECTORIES|COMMON_DIR|NAMESPACE|CEILING_DIRECTORIES|CONFIG.*)$/i", "/^MERGE_BRANCH_/i"], "added": { "MSBUILDDISABLENODEREUSE": "1", "DOTNET_CLI_USE_MSBUILD_SERVER": "0", "UseSharedCompilation": "false" } } },
+      "digest": "sha256:e9475fcdd5f81c85b64d406f62eff9702c2d40a4aee9b69b9950b6f3f3e1cf51"
+    },
+    {
+      "name": "run settings kept byte for byte, a folder and a name",
+      "units": ["N.A"],
+      "settings": { "gate": "cli tests", "run": "dotnet test src/D.Tests --no-build --settings src/D/process.runsettings", "cwd": "src/Daoris.Cli", "runsettings": { "path": "src/D/process.runsettings", "text": "<RunSettings>\r\n  <x a=\"1\"/>\r\n</RunSettings>\n" }, "narrowed": [], "environment": { "removed": ["/^DAORIS_/i", "/^GIT_(DIR|WORK_TREE|INDEX_FILE|OBJECT_DIRECTORY|ALTERNATE_OBJECT_DIRECTORIES|COMMON_DIR|NAMESPACE|CEILING_DIRECTORIES|CONFIG.*)$/i", "/^MERGE_BRANCH_/i"], "added": { "MSBUILDDISABLENODEREUSE": "1", "DOTNET_CLI_USE_MSBUILD_SERVER": "0", "UseSharedCompilation": "false" } } },
+      "digest": "sha256:2676e378c19ba6f7620132ba669cc16347e11605fcb5669e951e5c661cbdf297"
+    },
+    {
+      "name": "run settings the commit does not hold",
+      "units": null,
+      "settings": { "gate": "driver", "run": "dotnet test src/D.Tests --no-build --settings src/D/process.runsettings", "cwd": null, "runsettings": { "path": "src/D/gone.runsettings", "text": null }, "narrowed": [], "environment": { "removed": ["/^DAORIS_/i", "/^GIT_(DIR|WORK_TREE|INDEX_FILE|OBJECT_DIRECTORY|ALTERNATE_OBJECT_DIRECTORIES|COMMON_DIR|NAMESPACE|CEILING_DIRECTORIES|CONFIG.*)$/i", "/^MERGE_BRANCH_/i"], "added": { "MSBUILDDISABLENODEREUSE": "1", "DOTNET_CLI_USE_MSBUILD_SERVER": "0", "UseSharedCompilation": "false" } } },
+      "digest": "sha256:76577c5c0f270763585eb9d71073accfa3d411147b474e35d008f57ff1889ac1"
+    },
+    {
+      "name": "a name with quotes, a backslash, a control character and non-ASCII letters",
+      "units": [],
+      "settings": { "gate": "a \"b\" \\ c\u0001 \u00e9 \ud83d\ude00", "run": "dotnet test src/D.Tests --no-build --settings src/D/process.runsettings", "cwd": null, "runsettings": null, "narrowed": [], "environment": { "removed": ["/^DAORIS_/i", "/^GIT_(DIR|WORK_TREE|INDEX_FILE|OBJECT_DIRECTORY|ALTERNATE_OBJECT_DIRECTORIES|COMMON_DIR|NAMESPACE|CEILING_DIRECTORIES|CONFIG.*)$/i", "/^MERGE_BRANCH_/i"], "added": { "MSBUILDDISABLENODEREUSE": "1", "DOTNET_CLI_USE_MSBUILD_SERVER": "0", "UseSharedCompilation": "false" } } },
+      "digest": "sha256:86217896fd0808f97a6bd8230c6709c00d4dcb531ea25c9a27cf88f435721847"
+    }
+  ]
+}
