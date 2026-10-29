@@ -162,7 +162,8 @@ public sealed class MoveClaimProcessTests(MoveClaimProcessTests.Child child) : I
     private static async Task<string> Next(Process process)
     {
         var line = await process.StandardOutput.ReadLineAsync().WaitAsync(Poll.Patience);
-        Assert.True(line is not null, $"the child ended: {await process.StandardError.ReadToEndAsync()}");
+        // Its error stream is read only once it has ended: read before, it would wait for the end of a child that is still running.
+        if (line is null) Assert.Fail($"the child ended: {await process.StandardError.ReadToEndAsync().WaitAsync(Poll.Patience)}");
         return line!;
     }
 
