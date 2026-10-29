@@ -41,7 +41,7 @@
       "reads": "other",
       "note": "a word's author, a pass's ask, a harness's rule or a repository type of the same name; no record's mark tells a work"
     },
-    "Conversations/Chat/ChatRunner.cs": {
+    "Loop/Chat/ChatRunner.cs": {
       "lines": 7,
       "reads": "tells",
       "row": "1j",

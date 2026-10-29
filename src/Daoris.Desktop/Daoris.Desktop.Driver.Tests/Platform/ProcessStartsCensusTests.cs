@@ -67,7 +67,7 @@ public sealed class ProcessStartsCensusTests
     [Theory]
     [InlineData("Daoris.Desktop.Driver/Loop/Driver.cs", "AgentStarts.StartAsync(")]
     [InlineData("Daoris.Desktop.Driver/Loop/DriverContinuations.cs", "AgentStarts.StartAsync(")]
-    [InlineData("Daoris.Desktop.Driver/Conversations/Chat/ChatRunner.cs", "AgentStarts.StartAsync(")]
+    [InlineData("Daoris.Desktop.Driver/Loop/Chat/ChatRunner.cs", "AgentStarts.StartAsync(")]
     [InlineData("Daoris.Desktop.Driver/Plugins/HookProcess.cs", "AgentStarts.StartAsync(")]
     [InlineData("Daoris.Desktop.Driver/Platform/AgentStarts.cs", "ProcessStarts.Shared.StartAsync(info, whose, ct)")]
     [InlineData("Daoris.Desktop.Driver/Agents/HarnessActions.cs", "ProcessStarts.Shared.StartAsync(")]
@@ -104,7 +104,7 @@ public sealed class ProcessStartsCensusTests
         ["Daoris.Desktop.Driver/Workplace/GitIdentityActs.cs"] = StartClass.Person,
         // A conversation's agent, a session going on with the person's words, a press, a terminal, and the host the window
         // waits on.
-        ["Daoris.Desktop.Driver/Conversations/Chat/ChatRunner.cs"] = StartClass.Person,
+        ["Daoris.Desktop.Driver/Loop/Chat/ChatRunner.cs"] = StartClass.Person,
         ["Daoris.Desktop.Driver/Loop/DriverContinuations.cs"] = StartClass.Person,
         ["Daoris.Desktop.Driver/Agents/HarnessActions.cs"] = StartClass.Person,
         ["Daoris.Desktop.Driver/Plugins/PluginTrialProcess.cs"] = StartClass.Person,
@@ -156,7 +156,7 @@ public sealed class ProcessStartsCensusTests
         // A native run going on with the person's words (MSG1b), and its one retry (SESSCTX1c).
         ["Daoris.Desktop.Driver/Loop/DriverContinuations.cs"] = (2, "ContainedKind.Agent"),
         // A conversation, Ask Daoris's among them.
-        ["Daoris.Desktop.Driver/Conversations/Chat/ChatRunner.cs"] = (1, "ContainedKind.Agent"),
+        ["Daoris.Desktop.Driver/Loop/Chat/ChatRunner.cs"] = (1, "ContainedKind.Agent"),
         // A plugin's hook program, and the kit's trial of it.
         ["Daoris.Desktop.Driver/Plugins/HookProcess.cs"] = (1, "ContainedKind.Plugin"),
         ["Daoris.Desktop.Driver/Plugins/PluginTrialProcess.cs"] = (1, "ContainedKind.Plugin"),
