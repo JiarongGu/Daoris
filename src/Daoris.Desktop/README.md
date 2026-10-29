@@ -151,7 +151,10 @@ a declaration that breaks any key's shape is one named problem and settles nothi
 the commit acted on: GENREGEN1's writers run under it or the landed route's, and a line rule of `integration.merge` (`LineRules`)
 settles a replay's conflict on the lines its pattern matches, its writer recomputing them in a commit on top, a writer that fails
 refusing the replay. Settings' `LandingKey` keeps a branch rule's `integrate` with its refusals; no step acts on the rule's
-`integrate` yet (INTEGRATE1d). Agents reads the start's
+`integrate` yet (INTEGRATE1d). A landing and each advance keep the `integrate` that stood at their acceptance (`LandedIntegrate`), and
+`IntegrationRequests` is the one door a request to integrate comes through, called from no production path yet: a recorded landing on
+its record, its exact tip, its gate proof read as recorded and no double, a records branch with no gate, and the come-up sweep under
+`request: done`, over an in-memory store (INTEGRATE1e part e1). Agents reads the start's
 landing and commit facts through lower contracts; `Workplace/AgentWorkplaceWiring.cs` installs its required operations.
 Tools are handed before Workplace removes inherited tokens, resolves the author and hands long paths. The installed
 tree-guard carrier and matcher belong to Agents; the actual resource, installer and guard remain Workplace's.
