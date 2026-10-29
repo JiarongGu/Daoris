@@ -334,6 +334,21 @@ public sealed partial class McpToolDescriptionTests
     }
 
     /// <summary>
+    /// HANDBACK1: what a session reads of `quest_respond` says its note is its handback, the record whoever reads the quest later reads,
+    /// names what one holds, and says a note that only points elsewhere is refused.
+    /// </summary>
+    [Fact]
+    public void The_respond_tool_says_its_note_is_the_handback_and_a_pointer_is_refused()
+    {
+        var respond = string.Join(" ", Descriptions().Where(d => d.Tool == "quest_respond").Select(d => d.Text));
+
+        Assert.Contains("handback", respond);
+        Assert.Contains("what changed, where (the commits), what you proved, and what you did not", respond);
+        Assert.Contains("only points elsewhere", respond);
+        Assert.Contains("is refused", respond);
+    }
+
+    /// <summary>
     /// SESSONE2a (D167 point 7; the co-working design §2.2): the channel's two tools say what it is for and that work stays a quest, that
     /// another repository's message is that agent's claim, and that a read moves the mark; no tool starts a session through it.
     /// </summary>
