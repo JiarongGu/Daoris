@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Reflection;
 using System.Text.Json;
 using Daoris.Driver;
+using static Daoris.Desktop.Driver.Tests.ConformanceLiveCases;
 
 namespace Daoris.Desktop.Driver.Tests;
 
@@ -10,7 +11,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// cases and a stated absence's fallback, and a stand-in's live cases (<c>ProviderConformanceLive.cs</c>). A case today's code cannot answer is
 /// written all the same, its reader asked for and missing, and held pending in each provider's file with the row that writes the reader.
 /// </summary>
-internal static partial class ConformanceCases
+internal static class ConformanceCases
 {
     public static IReadOnlyList<ConformanceCase> All { get; } =
     [
@@ -101,7 +102,7 @@ internal static partial class ConformanceCases
     /// <summary>A case whose reader is not written yet: it fails, naming the reader, so its line holds it pending.</summary>
     private static void NotYet(string reader) => throw new NotAnsweredYet(reader);
 
-    private static bool Protocol(AgentDoor door) => door.Transport == Transport.Protocol;
+    internal static bool Protocol(AgentDoor door) => door.Transport == Transport.Protocol;
 
     private static bool Same(string? left, string? right) => string.Equals(left, right, StringComparison.OrdinalIgnoreCase);
 
