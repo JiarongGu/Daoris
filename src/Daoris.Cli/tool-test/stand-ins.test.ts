@@ -99,21 +99,35 @@ test('the phase plans the scenario contract over every stand-in\'s doors: held b
   assert.equal(rows.some((row) => row.provider === 'real-agent'), false, 'a provider that runs a model is no stand-in');
 });
 
+// The layout's breaks, row for row the driver's `ProviderFilesTests.The_reader_refuses_a_file_out_of_the_layout` (its twin, the
+// driver's tests' `ProviderFiles.cs`): a change to one table is a change to the other.
 test('a file out of the layout is refused, naming the field, and its provider is never planned', () => {
   const fx = makeFixture('stand-ins-refused');
-  provider(fx, 'NoProgram', { id: 'a', standIn: true, doors: [{ id: 'a', kind: 'native', arguments: ['n'] }] });
-  provider(fx, 'Pipe', { id: 'b', standIn: false, doors: [{ id: 'b', kind: 'pipe' }] });
-  provider(fx, 'Extra', { id: 'c', standIn: false, doors: [{ id: 'c', kind: 'native' }], colour: 'blue' });
-  provider(fx, 'Unchosen', { id: 'd', standIn: true, program: { entry: 'agent.mjs' }, doors: [{ id: 'd', kind: 'native' }] });
+  const program = { entry: 'agent.mjs' };
+  provider(fx, 'Extra', { id: 'a', standIn: true, program, doors: [{ id: 'a', kind: 'native', arguments: ['n'] }], extra: 1 });
+  provider(fx, 'NoId', { standIn: false, doors: [{ id: 'b', kind: 'native' }] });
+  provider(fx, 'Pipe', { id: 'c', standIn: false, doors: [{ id: 'c', kind: 'pipe' }] });
+  provider(fx, 'NoProgram', { id: 'd', standIn: true, doors: [{ id: 'd', kind: 'native', arguments: ['n'] }] });
+  provider(fx, 'Unchosen', { id: 'e', standIn: true, program, doors: [{ id: 'e', kind: 'native' }] });
+  provider(fx, 'Same', {
+    id: 'f', standIn: true, program,
+    doors: [{ id: 'f', kind: 'native', arguments: ['n'] }, { id: 'g', kind: 'protocol', arguments: ['n'] }],
+  });
+  provider(fx, 'Outside', { id: 'h', standIn: true, program: { entry: '../a.mjs' }, doors: [{ id: 'h', kind: 'native', arguments: ['n'] }] });
+  provider(fx, 'NoDoors', { id: 'i', standIn: false, doors: [] });
   provider(fx, 'Broken', '{ not json');
   const read = readProviders(join(fx.root, 'Providers'));
 
   assert.deepEqual(read.providers, []);
   for (const says of [
-    "NoProgram/provider.json: a stand-in states its 'program'",
+    "Extra/provider.json: 'extra' is no field of the layout",
+    "NoId/provider.json: 'id' is missing",
     "Pipe/provider.json, door 1: 'kind' is one of native, protocol",
-    "Extra/provider.json: 'colour' is no field of the layout",
+    "NoProgram/provider.json: a stand-in states its 'program'",
     "Unchosen/provider.json, door 1: a stand-in's door states the 'arguments' that choose it",
+    'Same/provider.json: two doors state the same arguments',
+    "Outside/provider.json: 'program.entry' is a path under the folder's Program/, never outside it",
+    "NoDoors/provider.json: 'doors' is an array",
     'Broken/provider.json: not JSON',
   ]) {
     assert.ok(read.problems.some((problem) => problem.startsWith(says)), `${says}\n${read.problems.join('\n')}`);

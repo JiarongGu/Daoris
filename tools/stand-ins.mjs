@@ -94,6 +94,13 @@ export function readProvider(file, folder) {
         doors.push({ id: door.id, kind: door.kind, arguments: words(door.arguments) ? [...door.arguments] : [] });
       }
     });
+    for (const twice of doors.map((door) => door.id.toLowerCase()).filter((each, at, all) => all.indexOf(each) !== at)) {
+      problems.push(`${where}: door '${twice}' is listed twice`);
+    }
+    const chosen = doors.map((door) => door.arguments.join('\u0000'));
+    if (standIn && new Set(chosen).size !== chosen.length) {
+      problems.push(`${where}: two doors state the same arguments, so the program cannot tell them apart`);
+    }
   }
 
   return problems.length > 0

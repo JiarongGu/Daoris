@@ -68,8 +68,12 @@ public sealed class ProviderFilesTests
         }
     }
 
-    /// <summary>The reader refuses each break of the layout, naming the field, so a file a tool reads is never half right.</summary>
+    /// <summary>
+    /// The reader refuses each break of the layout, naming the field, so a file a tool reads is never half right. Row for row the table of
+    /// its twin, <c>tools/stand-ins.mjs</c>'s tool test (<c>stand-ins.test.ts</c>): a change to one table is a change to the other.
+    /// </summary>
     [Theory]
+    [InlineData("{ not json", "not JSON")]
     [InlineData("""{ "id": "x", "standIn": true, "program": { "entry": "a.mjs" }, "doors": [ { "id": "x", "kind": "native", "arguments": ["n"] } ], "extra": 1 }""", "'extra' is no field")]
     [InlineData("""{ "standIn": false, "doors": [ { "id": "x", "kind": "native" } ] }""", "'id' is missing")]
     [InlineData("""{ "id": "x", "standIn": false, "doors": [ { "id": "x", "kind": "pipe" } ] }""", "'kind' is one of native, protocol")]
