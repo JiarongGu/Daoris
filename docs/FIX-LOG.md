@@ -5,6 +5,13 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-29 - A Codex session's first tool catalog could omit the connector still starting (CODEXTOOLS1)
+
+- **Symptom:** on the install, a Codex conversation's first turn had no `daoris-knowledge` tools while its next turn had fifty-one, intermittently; a pending optional server was seen at the first capture.
+- **Root cause:** codex-acp 2.1.1 answers `session/new` and `session/resume` without waiting for the MCP servers it was handed, unless the request's `_meta.mcpStartupAwaitTimeoutMs` is a finite number above zero; Daoris sent no such key, so the first catalog raced the connector's start.
+- **Fix:** `AcpSession.OpenAsync` and `ResumeAsync` merge `mcpStartupAwaitTimeoutMs` (`McpStartupAwait`, 15 s) into the request's `_meta` whenever servers are offered, beside the adapter's rules; with none offered no `_meta` is added. The adapter resolves when the time runs out, so a connector that never starts costs the bound and no more. claude-agent-acp 0.84.0 reads only its `claudeCode` and `gateway` keys of `_meta` and ignores the new one.
+- **Verification so far:** `AcpTests` and `AcpResumeTests` hold the key on the new and the resumed frame (seen failing to compile first, then passing), absent without servers, and merged with the rules. The installed proof, a fresh and a resumed Codex quest whose first turn uses the connector, is open on the row.
+
 ## 2026-10-29 - A plugin trial left out its shutdown step when the plugin exited before the trial looked (PLUGINSHUTDOWN1)
 
 - **Symptom:** under load `DriverModulePluginsTests.The_kit_makes_a_plugin_where_the_person_names_and_tries_it_or_an_installed_one` found no `shutdown` between `quest/consider` and `stdout` in the trial's trace, then passed alone.
