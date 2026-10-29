@@ -15,13 +15,20 @@ public sealed record SessionRole(string? Serves, string? Piece)
     /// <summary>A session that serves nobody: a working session, a conversation, or a connector that names no session.</summary>
     public static readonly SessionRole None = new(null, null);
 
+    /// <summary>A brainstorm pass's connector, known by the turn the driver names on it (BRAINSTORM1a2), which keeps no record.</summary>
+    public static readonly SessionRole Brainstorming = new(null, null) { Brainstorm = true };
+
+    /// <summary>Whether it is a brainstorm pass's connector, held to its result tools (D176 point 2).</summary>
+    public bool Brainstorm { get; init; }
+
     /// <summary>Whether it is a partner's record, which writes a piece for its lead.</summary>
     public bool Partner => Serves is not null && Piece is not null;
 }
 
 /// <summary>
 /// The connector's tools by role (COAGENT1b, D199 point 4; the co-agent design §7.4): what a partner may call, what it is refused, and
-/// what every record that serves another is refused. The partner's two lists together name every tool the host advertises, held by a
+/// what every record that serves another is refused; and a brainstorm pass, which may call its result tools alone (BRAINSTORM1a2, D176
+/// point 2). The partner's two lists together name every tool the host advertises, held by a
 /// census (<c>McpRoleFilterTests</c>), so a tool added later is classified when it is added.
 /// </summary>
 /// <remarks>
@@ -44,7 +51,7 @@ public static class ConnectorRoles
     [
         "accept_propose", "agent_propose", "agent_settings_propose", "ask_propose", "brainstorm_give", "brainstorm_synthesize",
         "browser_propose", "channel_post", "channel_read", "checkout_read", "clear_propose", "delete_propose", "go_ahead_ask",
-        "go_propose", "hand_propose", "handover_propose", "helper_answer", "helper_ask", "housekeeping_clean_up",
+        "go_propose", "hand_propose", "handback_read", "handover_propose", "helper_answer", "helper_ask", "housekeeping_clean_up",
         "housekeeping_discard_branch", "housekeeping_inspect", "knowledge_refresh", "opinion_answer", "opinion_give", "pause_propose",
         "permission_propose", "plugin_propose", "quest_list", "quest_publish", "quest_respond", "question_ask", "repository_propose",
         "review_ready", "review_serve", "session_propose", "setting_propose", "settings_cap", "settings_cooloff", "settings_language",
@@ -68,6 +75,15 @@ public static class ConnectorRoles
     public static string? Refusal(string? tool, SessionRole role)
     {
         var name = tool ?? "";
+        // BRAINSTORM1a2 (D176 point 2), held here as its harness rules hold it: a pass reads its room and calls its result tool alone,
+        // and the two result tools judge the turn themselves. Its connector names a session no record keeps, so the record's role below
+        // would read it as nobody's.
+        if (role.Brainstorm && name is not (BrainstormBox.GiveTool or BrainstormBox.SynthesizeTool))
+        {
+            return $"`{name}` is not a brainstorm pass's to call: a pass reads the room it was handed and gives its one answer through its "
+                   + "turn's result tool, and calls nothing else.";
+        }
+
         if (role.Partner && !Allowed.Contains(name))
         {
             return $"`{name}` is not a partner's to call: a session Daoris started to write a piece asks nobody and acts on nothing outside "
@@ -99,7 +115,8 @@ public static class ConnectorRoles
 /// </summary>
 /// <param name="ledger">The ledger the record is read from; none reads every session as serving nobody.</param>
 /// <param name="intake">Which session this connector speaks for, when the driver started it.</param>
-public sealed class SessionRoles(SessionLedger? ledger, IntakeScope? intake)
+/// <param name="brainstorm">The brainstorm turn the driver named on this connector, where it offers a pass one; none names none.</param>
+public sealed class SessionRoles(SessionLedger? ledger, IntakeScope? intake, BrainstormScope? brainstorm = null)
 {
     private SessionRole? _found;
 
@@ -107,6 +124,8 @@ public sealed class SessionRoles(SessionLedger? ledger, IntakeScope? intake)
     public async Task<SessionRole> ReadAsync(CancellationToken ct)
     {
         if (_found is { } found) return found;
+        // A brainstorm pass is known by its turn, never by a record: none is opened for it (BRAINSTORM1a2).
+        if (brainstorm is { Active: true }) return SessionRole.Brainstorming;
         if (ledger is null || intake?.Session is not { Length: > 0 } session) return SessionRole.None;
 
         var record = await ledger.FindAsync(session, ct).ConfigureAwait(false);

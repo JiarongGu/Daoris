@@ -189,7 +189,10 @@ name. The agent harness decides that by location, so Daoris does not carry a red
 because a region has a byte count exactly as a directory did, `check` still reports the
 always-loaded footprint against the budget the manifest declares. It reports and never fails on it
 (D54): drift is a fact, size is a judgement, and a build stopped by a judgement teaches people to
-raise the number rather than read it.
+raise the number rather than read it. When `AGENTS.md` as a whole passes the 32,768 bytes Codex reads,
+`check` says what to trim: the repository's own part against the doctrine region, by how much it is
+over, and the region's largest rules, so the remedy is a shorter own brief or a rule split to the
+on-demand tier, never a raised limit (CANONSIZE1, D28).
 
 **Canonical skills are parameter-free.** A skill states only the procedure that holds in every
 repository and sends the reader to the generated index for anything local — there is no substitution map

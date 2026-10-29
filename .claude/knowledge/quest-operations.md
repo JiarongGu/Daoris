@@ -36,8 +36,9 @@ until the census is green. The verb's own tests come after.
 sample is the kind's own sample with the field set. Check too the places that carry a note or a payload without being a
 row: `KeepAsync` and `RewriteAsync` (a lost move rewritten as a conflict), and any note rewrite on the way (QUESTCLOSE1b1's
 `noteParts` is the worked example, D126's note). An existing field a further kind carries is named by one predicate the payload, the
-log's reader and the wire all ask: `QuestStore.JudgedOpen` (a rebind's `whileOpen`, FABRIC-CLOSE1c15) and `QuestStore.Carries` (a take's
-`submission`, its step's source as found, FABRIC-CLOSE1c18), and the rebase's conflict drops it as the log does. Such a field goes
+log's reader and the wire all ask: `QuestStore.JudgedOpen` (a rebind's `whileOpen`, FABRIC-CLOSE1c15), `QuestStore.Carries` (a take's
+`submission`, its step's source as found, FABRIC-CLOSE1c18) and `QuestStore.KeepsSession` (a done's and a decline's `session`, the
+session that wrote the handback, HANDBACK1), and the rebase's conflict drops it as the log does. Such a field goes
 through rows 2, 3, 4 and 9 by that predicate: the replay's rule reads it on the further kind (`QuestLog.Applies`, a rebind's
 `whileOpen` applying only to an open quest), the payload (`AppendAsync` and `KeepAsync`) and the wire write and read it only where the
 predicate names the kind, and the parameter's own comment names the kinds that carry it. The further kind's census sample sets it,

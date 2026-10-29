@@ -117,7 +117,8 @@ public static class PermissionRules
                 "registry", "knowledge_search", "knowledge_get", "knowledge_repositories",
                 "knowledge_convergence", "quest_list", "quest_respond", "quest_publish", "permission_propose", "go_ahead_ask",
                 "review_serve", "review_ready", "opinion_give", "opinion_answer",
-                "helper_ask", "helper_answer", "partner_answer", "channel_post", "channel_read", "handover_propose", "line_read", "question_ask",
+                "helper_ask", "helper_answer", "partner_answer", "channel_post", "channel_read", "handover_propose", "line_read", "handback_read",
+                "question_ask",
             }.Select(tool => ConnectorPrefix + tool)],
             // Not `knowledge_refresh`: rebuilding the index is the machine's job, never a session's. And
             // `permission_propose` (PERM2, D74) only PROPOSES — a widening still waits for the person. `go_ahead_ask`
@@ -136,8 +137,10 @@ public static class PermissionRules
             // nothing of anyone, so work and requests stay quests. `handover_propose` (MIXAGENT1c, D163 point 3) writes one file
             // under the home: an ask to go on with another agent, its note the agent's claim, settled by the person's `handOver` rule.
             // `line_read` (SESSCTX1f, D189's note) changes nothing: it reads the event files of the session's own line on this machine,
-            // what its brief's bound left out, and the service refuses every other record. `question_ask` (PARKVIEW1) writes one file
-            // under the home: the question its park waits on, the agent's words, which the person answers; it decides nothing.
+            // what its brief's bound left out, and the service refuses every other record. `handback_read` (HANDBACK1, D219) changes
+            // nothing: it reads one quest's handback of the session's own workspace, as `quest_list` reads its quests. `question_ask`
+            // (PARKVIEW1) writes one file under the home: the question its park waits on, the agent's words, which the person answers; it
+            // decides nothing.
             "A session takes and closes its own quest, publishes what it finds for others and proposes a "
             + "change to these rules, through Daoris's connector — and anything it would have to ask for is "
             + "refused."),

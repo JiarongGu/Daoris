@@ -1043,6 +1043,61 @@ public sealed class SessionsCommandTests : IDisposable
         Assert.True(File.Exists(transcript));
     }
 
+    // ——— HANDBACK1 (D219): a quest's handback at a terminal.
+
+    /// <summary>`handback` takes one id, a session's or a quest's, and `--json`; both usages name it.</summary>
+    [Fact]
+    public void Handback_takes_one_session_or_quest_id_and_both_usages_name_it()
+    {
+        var ask = SessionsCommand.Read(["handback", "#q4"], out var problem);
+
+        Assert.Null(problem);
+        Assert.Equal(("handback", "q4", false), (ask!.Verb, ask.Ids[0], ask.Json));
+        Assert.True(SessionsCommand.Read(["handback", "d0ne0000", "--json"], out _)!.Json);
+        Assert.Null(SessionsCommand.Read(["handback"], out problem));
+        Assert.Equal("`handback` takes one session's or quest's id, and `--json` for the service's answer as it gave it.", problem);
+        Assert.Null(SessionsCommand.Read(["handback", "s1", "s2"], out _));
+        Assert.Contains("daoris-driver sessions handback <session|quest> [--json]", SessionsCommand.Usage);
+        Assert.Contains("\n  sessions handback <session|quest> [--json]\n", DriverCommand.Usage.ReplaceLineEndings("\n"));
+    }
+
+    /// <summary>
+    /// 🔴 The verb prints the service's read in its own words, the connector's: exit 0 where the id named a quest or a session, 1 where it
+    /// named nothing here; `--json` prints the answer as the service gave it.
+    /// </summary>
+    [Fact]
+    public async Task Handback_prints_the_services_read_and_says_nothing_found_by_its_exit()
+    {
+        var ledger = Family();
+        ledger.Handbacks["d0ne0000"] = new JsonObject
+        {
+            ["id"] = "d0ne0000", ["found"] = true, ["session"] = "d0ne0000",
+            ["said"] = "Session `d0ne0000` served quest `#q4`.\n\nQuest `#q4` **Draw the minimap** — Done.\n\nDrew the minimap in 4f3e2d1.",
+        };
+        ledger.Handbacks["nothing0"] = new JsonObject
+        {
+            ["id"] = "nothing0", ["found"] = false, ["said"] = "No quest or session `nothing0` here.",
+        };
+
+        var (read, said) = await RunAsync(ledger, ["handback", "d0ne0000"]);
+        var (none, nothing) = await RunAsync(ledger, ["handback", "nothing0"]);
+        var (json, raw) = await RunAsync(ledger, ["handback", "d0ne0000", "--json"]);
+
+        Assert.Equal((0, "Session `d0ne0000` served quest `#q4`.\n\nQuest `#q4` **Draw the minimap** — Done.\n\nDrew the minimap in 4f3e2d1.\n"), (read, said));
+        Assert.Equal((1, "No quest or session `nothing0` here.\n"), (none, nothing));
+        Assert.Equal(0, json);
+        Assert.True(JsonNode.Parse(raw)!["found"]!.GetValue<bool>());
+    }
+
+    /// <summary>A service from before the door answers it not found: said as an older service, exit 2.</summary>
+    [Fact]
+    public async Task Handback_from_a_service_without_the_door_says_so()
+    {
+        var (exit, said) = await RunAsync(Family(), ["handback", "d0ne0000"]);
+
+        Assert.Equal((2, "sessions: the service has no handback door; is it older than this driver?\n"), (exit, said));
+    }
+
     /// <summary>
     /// The service's doors the verb crosses, standing in: the records, the quests, the registry, the state door, and a
     /// session's delete and its judgement, by each record's <c>deletable</c>.
@@ -1054,6 +1109,9 @@ public sealed class SessionsCommandTests : IDisposable
         private readonly List<JsonObject> _quests = [.. quests];
 
         public string LastRefusal { get; private set; } = "";
+
+        /// <summary>The handback door's answers by id (HANDBACK1); none answers the door not found, as a service from before it does.</summary>
+        public Dictionary<string, JsonObject> Handbacks { get; } = [];
 
         public ServiceClient Client() => new("http://ledger.test", null, new HttpClient(this, disposeHandler: false));
 
@@ -1112,6 +1170,13 @@ public sealed class SessionsCommandTests : IDisposable
                 {
                     return Answer(HttpStatusCode.OK, new JsonArray([.. _quests
                         .Where(each => all || (string)each["status"]! is "Open" or "Taken").Select(each => each.DeepClone())]));
+                }
+
+                if (request.Method == HttpMethod.Get && path.StartsWith("/api/handbacks/", StringComparison.Ordinal))
+                {
+                    return Handbacks.TryGetValue(Uri.UnescapeDataString(path["/api/handbacks/".Length..]), out var handback)
+                        ? Answer(HttpStatusCode.OK, handback.DeepClone())
+                        : Answer(HttpStatusCode.NotFound, new JsonObject { ["error"] = "Not found." });
                 }
 
                 if (request.Method == HttpMethod.Get && path == "/api/registry")

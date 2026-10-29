@@ -429,6 +429,31 @@ public sealed record DriverConfig(
         new Dictionary<string, WorkflowChoice>(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
+    /// The integration declaration each repository's owner accepted on this machine (INTEGRATE1d; D215 point 2, the integration design
+    /// §4.1), by repository: git's blob id of the <c>daoris.gates.json</c> accepted, or <c>none</c> where the line held none. Its own
+    /// acceptance beside the landed route's, never bound to a chosen workflow, so a repository needs no verification pipeline to
+    /// integrate; absent is nothing accepted, and nothing the declaration names runs. Read and written by <see cref="IntegrationGatesKey"/>.
+    /// </summary>
+    public IReadOnlyDictionary<string, string> IntegrationGates { get; init; } =
+        new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Set the integration declaration accepted for a repository, by its blob, or clear it with null (INTEGRATE1d); the repository's
+    /// existing spelling kept. The person's <i>Accept the gates</i> is the door that calls it.
+    /// </summary>
+    /// <exception cref="DriverException">No repository, or a value that is no blob id and not <c>none</c>.</exception>
+    public DriverConfig WithIntegrationGates(string repository, string? blob)
+    {
+        var named = repository.Trim();
+        if (named.Length == 0) throw new DriverException("an integration's acceptance names its repository.");
+        if (blob is not null && !IntegrationGatesKey.IsAcceptance(blob)) throw new DriverException(IntegrationGatesKey.Problem);
+        var next = new Dictionary<string, string>(IntegrationGates, StringComparer.OrdinalIgnoreCase);
+        if (blob is null) next.Remove(named);
+        else next[named] = blob;
+        return this with { IntegrationGates = next };
+    }
+
+    /// <summary>
     /// Each repository's session access setup (AUTONOMY1a, D184 points 1-3), by repository: full access, or the pauses it names. Each
     /// pause resolves on its own, the repository's over its workspace's over this machine's (<see cref="AccessRules.Resolve"/>);
     /// absent everywhere is today's behaviour. Edited only through <see cref="AccessRules.Apply"/>.
@@ -584,11 +609,32 @@ public sealed record DriverConfig(
 
     /// <summary>Set a repository's landing rule, or clear it with null to take its workspace's or the merge.</summary>
     public DriverConfig WithLanding(string repository, LandingRule? rule) =>
-        this with { Landings = Set(Landings, repository, rule) };
+        this with { Landings = Set(Landings, repository, rule, Verifies(Workflows, repository)) };
 
     /// <summary>Set a workspace's landing rule, or clear it with null.</summary>
     public DriverConfig WithWorkspaceLanding(string workspace, LandingRule? rule) =>
-        this with { WorkspaceLandings = Set(WorkspaceLandings, workspace, rule) };
+        this with { WorkspaceLandings = Set(WorkspaceLandings, workspace, rule, Verifies(WorkspaceWorkflows, workspace)) };
+
+    /// <summary>
+    /// Set or clear the <c>integrate</c> of a repository's own landing rule (INTEGRATE1d), the rest of the rule as it is; judged as the
+    /// rule is (<see cref="LandingKey.Problem(LandingRule, bool)"/>), <c>land</c> only where the repository's own landed route verifies its line.
+    /// </summary>
+    /// <exception cref="DriverException">The repository has no rule of its own, or the rule would be refused with it.</exception>
+    public DriverConfig WithLandingIntegrate(string repository, LandingIntegrate? integrate) =>
+        this with { Landings = SetIntegrate(Landings, repository, integrate, Verifies(Workflows, repository)) };
+
+    /// <summary>Set or clear the <c>integrate</c> of a workspace's landing rule, as <see cref="WithLandingIntegrate"/> does a repository's.</summary>
+    public DriverConfig WithWorkspaceLandingIntegrate(string workspace, LandingIntegrate? integrate) =>
+        this with { WorkspaceLandings = SetIntegrate(WorkspaceLandings, workspace, integrate, Verifies(WorkspaceWorkflows, workspace)) };
+
+    /// <summary>
+    /// Whether a whole-set verification runs on the line a level's rule integrates, as this file can tell (INTEGRATE1d; the integration
+    /// design §4.5): the level's own landed route names a verification pipeline whose gates the person accepted (D192 point 7). A
+    /// route the level takes from its workspace, or a verification run outside Daoris, is not seen here, so <c>land</c> is refused there.
+    /// </summary>
+    private static bool Verifies(IReadOnlyDictionary<string, WorkflowChoice> routes, string key) =>
+        routes.TryGetValue(key.Trim(), out var choice) && choice.Landed is { Gates: not null } landed
+        && !string.Equals(landed.Workflow, WorkflowKey.Current, StringComparison.Ordinal);
 
     /// <summary>
     /// The cycles of the kinds of work that do not land (FABRIC-GRAPH1; §D7's <c>workCycles</c>): by repository, then by unit kind
@@ -699,7 +745,7 @@ public sealed record DriverConfig(
     }
 
     private static IReadOnlyDictionary<string, LandingRule> Set(
-        IReadOnlyDictionary<string, LandingRule> map, string key, LandingRule? rule)
+        IReadOnlyDictionary<string, LandingRule> map, string key, LandingRule? rule, bool wholeSet)
     {
         var next = new Dictionary<string, LandingRule>(map, StringComparer.OrdinalIgnoreCase);
         if (rule is null) next.Remove(key);
@@ -708,10 +754,30 @@ public sealed record DriverConfig(
             // FABRIC-GRAPH1: a door with no field for the cycle (Setup's landing row, Ask Daoris, the terminal) keeps the one the rule
             // has; only WithLandingCycle sets or clears it. A cycle the new form no longer reaches is said where it is read, never dropped.
             if (rule.Cycle is null && map.TryGetValue(key, out var held) && held.Cycle is not null) rule = rule with { Cycle = held.Cycle };
-            next[key] = LandingKey.Problem(rule) is { } problem ? throw new DriverException(problem) : LandingKey.Kept(rule);
+            // INTEGRATE1d: so too the rule's `integrate`, which only WithLandingIntegrate sets or clears. A form that cannot carry it (a
+            // merge, a plugin, a squash) refuses the edit, naming it, rather than dropping the person's integration unseen.
+            if (rule.Integrate is null && map.TryGetValue(key, out var integrating) && integrating.Integrate is not null)
+            {
+                rule = rule with { Integrate = integrating.Integrate };
+            }
+
+            next[key] = LandingKey.Problem(rule, wholeSet) is { } problem ? throw new DriverException(problem) : LandingKey.Kept(rule);
         }
 
         return next;
+    }
+
+    private static IReadOnlyDictionary<string, LandingRule> SetIntegrate(
+        IReadOnlyDictionary<string, LandingRule> map, string key, LandingIntegrate? integrate, bool wholeSet)
+    {
+        if (!map.TryGetValue(key.Trim(), out var held))
+        {
+            throw new DriverException($"`{key.Trim()}` has no landing rule of its own to integrate by: set its branch rule first.");
+        }
+
+        var rule = held with { Integrate = integrate };
+        if (LandingKey.Problem(rule, wholeSet) is { } problem) throw new DriverException(problem);
+        return new Dictionary<string, LandingRule>(map, StringComparer.OrdinalIgnoreCase) { [key.Trim()] = LandingKey.Kept(rule) };
     }
 
     private static IReadOnlyDictionary<string, string> Set(IReadOnlyDictionary<string, string> map, string key, string? branch)
@@ -1022,6 +1088,8 @@ public sealed record DriverConfig(
             // Written only when set (WORKFLOW1e), as the CLI writes them: absent is Current, today's behaviour.
             WorkflowKey.WriteMap(writer, "workflows", Workflows, workspace: false);
             WorkflowKey.WriteMap(writer, "workspaceWorkflows", WorkspaceWorkflows, workspace: true);
+            // Written only when set (INTEGRATE1d), beside the landed route's acceptance: absent is nothing accepted for integration.
+            IntegrationGatesKey.WriteMap(writer, IntegrationGates);
             // Written only when set (AUTONOMY1a), as the CLI writes them: absent is today's behaviour, and nothing loosens by itself.
             AccessKey.WriteMap(writer, "access", Access);
             AccessKey.WriteMap(writer, "workspaceAccess", WorkspaceAccess);
@@ -1475,6 +1543,8 @@ public sealed record DriverConfig(
             // An entry with a problem, or naming nothing, is not read (WORKFLOW1e).
             Workflows = WorkflowKey.Map(root, "workflows", workspace: false),
             WorkspaceWorkflows = WorkflowKey.Map(root, "workspaceWorkflows", workspace: true),
+            // Read as a stored shape (INTEGRATE1d): a value that is no blob id and not `none` is not read, and shadows none.
+            IntegrationGates = IntegrationGatesKey.Map(root),
             // Read as a stored shape (AUTONOMY1a): a pause this build does not know passed over, a value it does not know read as today's.
             Access = AccessKey.Map(root, "access"),
             WorkspaceAccess = AccessKey.Map(root, "workspaceAccess"),

@@ -51,6 +51,7 @@ public sealed class PermissionRulesTests : IDisposable
         "mcp__daoris-knowledge__channel_read",
         "mcp__daoris-knowledge__handover_propose",
         "mcp__daoris-knowledge__line_read",
+        "mcp__daoris-knowledge__handback_read",
         "mcp__daoris-knowledge__question_ask",
     ];
 
@@ -190,6 +191,8 @@ public sealed class PermissionRulesTests : IDisposable
     [InlineData("channel_read")]
     // SESSCTX1f: a session reads its own line's record, read-only, on this machine; the service refuses every other record.
     [InlineData("line_read")]
+    // HANDBACK1: a session reads one quest's handback of its own workspace, read-only, as it reads the quest list.
+    [InlineData("handback_read")]
     public void The_opinion_tools_reach_a_session_by_default(string tool)
     {
         var rules = PermissionRules.Compose(PermissionRules.Load(_home), "default", "engine");

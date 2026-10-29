@@ -89,51 +89,15 @@ internal static class BacklogMerge
 
     /// <summary>
     /// The files a declaration's text says settle by rows (INTEGRATE1c; the integration design's §4.1 <c>merge</c>): <c>daoris.gates.json</c>'s
-    /// <c>integration.merge</c>, each entry <c>{ "paths": file, "by": "rows" }</c>, settled by the merge base line by line as the backlog
-    /// is (<see cref="ByBase"/>). No command runs, so no acceptance is read: an entry that is a <c>line</c> rule with a <c>run</c> writer,
-    /// or has any other <c>by</c>, declares none, since the writers wait for the accepted declaration and no rule keeps one side's copy.
-    /// Nothing where the text is null, not a JSON object, or has no <c>integration.merge</c> list; each path trimmed, a backslash a
-    /// slash, once, in the order first declared. The merge tool's <c>rowTablesOf</c>, row for row of <c>backlog-merges.json</c>.
+    /// <c>integration.merge</c>, each rule <c>{ "paths": file, "by": "rows" }</c>, settled by the merge base line by line as the backlog
+    /// is (<see cref="ByBase"/>), read through the whole declaration (<see cref="IntegrationDeclaration.Read"/>, INTEGRATE1d). No command
+    /// runs, so no acceptance is read: a <c>line</c> rule's <c>run</c> writer waits for the accepted declaration and is passed over.
+    /// Nothing where the text is null or declares no integration, or where the declaration has a problem the reader names: never a
+    /// partial read. Each path trimmed, a backslash a slash, once, in the order first declared. The merge tool's <c>rowTablesOf</c>, row
+    /// for row of <c>backlog-merges.json</c>.
     /// </summary>
-    internal static IReadOnlyList<string> RowTablesOf(string? declaration)
-    {
-        if (declaration is null) return [];
-        JsonDocument document;
-        try
-        {
-            document = JsonDocument.Parse(declaration);
-        }
-        catch (JsonException)
-        {
-            return [];
-        }
-
-        using (document)
-        {
-            if (document.RootElement.ValueKind != JsonValueKind.Object
-                || !document.RootElement.TryGetProperty("integration", out var integration) || integration.ValueKind != JsonValueKind.Object
-                || !integration.TryGetProperty("merge", out var merge) || merge.ValueKind != JsonValueKind.Array)
-            {
-                return [];
-            }
-
-            var tables = new List<string>();
-            foreach (var entry in merge.EnumerateArray())
-            {
-                if (entry.ValueKind != JsonValueKind.Object
-                    || !entry.TryGetProperty("by", out var by) || by.ValueKind != JsonValueKind.String || by.GetString() != "rows"
-                    || !entry.TryGetProperty("paths", out var paths) || paths.ValueKind != JsonValueKind.String)
-                {
-                    continue;
-                }
-
-                var path = paths.GetString()!.Trim().Replace('\\', '/');
-                if (path.Length > 0 && !tables.Contains(path, StringComparer.Ordinal)) tables.Add(path);
-            }
-
-            return tables;
-        }
-    }
+    internal static IReadOnlyList<string> RowTablesOf(string? declaration) =>
+        IntegrationDeclaration.Read(declaration).Facts?.RowTables ?? [];
 
     /// <summary>
     /// The changes from <paramref name="base"/> to <paramref name="side"/>, as hunks of the base's lines and what replaced them, by the

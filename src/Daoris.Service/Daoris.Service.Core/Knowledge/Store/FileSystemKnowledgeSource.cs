@@ -15,7 +15,7 @@ namespace Daoris.Knowledge;
 /// (ORIENT1c), or the default, which reads neither.
 /// </param>
 public sealed class FileSystemKnowledgeSource(
-    Func<IReadOnlyList<string>> repositoryRoots, RepositoryScanner? scanner = null) : IKnowledgeSource
+    Func<IReadOnlyList<string>> repositoryRoots, RepositoryScanner? scanner = null) : IRootReadingSource
 {
     private readonly RepositoryScanner _scanner = scanner ?? new();
 
@@ -36,10 +36,12 @@ public sealed class FileSystemKnowledgeSource(
 
     public string Name { get; init; } = "filesystem";
 
-    public Task<IReadOnlyList<KnowledgeEntry>> ReadAsync(CancellationToken ct = default)
+    public Task<IReadOnlyList<KnowledgeEntry>> ReadAsync(CancellationToken ct = default) => ReadRootsAsync(repositoryRoots(), ct);
+
+    public Task<IReadOnlyList<KnowledgeEntry>> ReadRootsAsync(IReadOnlyList<string> roots, CancellationToken ct = default)
     {
         var entries = new List<KnowledgeEntry>();
-        foreach (var root in repositoryRoots())
+        foreach (var root in roots)
         {
             ct.ThrowIfCancellationRequested();
             entries.AddRange(_scanner.Scan(root));

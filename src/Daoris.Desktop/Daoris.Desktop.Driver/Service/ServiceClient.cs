@@ -1513,6 +1513,21 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     }
 
     /// <summary>
+    /// One quest's handback as the service wrote it (HANDBACK1, <c>GET /api/handbacks/{id}</c>), by the quest's id or the id of the session
+    /// that served it: what <c>sessions handback</c> prints. Null from a host from before the door, which answers the route not found; the
+    /// door answers every id, one naming nothing as not found in its own answer, so its own answer is never a 404.
+    /// </summary>
+    /// <exception cref="DriverException">The host answered the door with a failure.</exception>
+    public async Task<string?> HandbackJsonAsync(string id, CancellationToken ct = default)
+    {
+        var answer = await _doors.SendAsync(
+            ServiceVerb.Get, $"/api/handbacks/{Uri.EscapeDataString(id.TrimStart('#'))}", null, ct).ConfigureAwait(false);
+        if (answer.Status == (int)System.Net.HttpStatusCode.NotFound) return null;
+        if (!answer.Ok) throw new DriverException($"the service would not read `{id}`'s handback: {answer.Payload}");
+        return answer.Payload;
+    }
+
+    /// <summary>
     /// Every ask, closed and done ones included, each as it stands, as the service wrote them: what the asks' pushed slice reads
     /// (PUSH1d3), which <see cref="AskView"/> leaves out because no planner needs it.
     /// </summary>

@@ -489,7 +489,8 @@ app.MapGet("/api/repositories", async (ComposedService s, string? workspace, Can
             r.Fed is null
                 ? null
                 : new ProvenanceResponse(
-                    r.Fed.Commit, r.Fed.ShortCommit, r.Fed.CommittedAt, r.Fed.Branch, r.Fed.Origin))));
+                    r.Fed.Commit, r.Fed.ShortCommit, r.Fed.CommittedAt, r.Fed.Branch, r.Fed.Origin),
+            r.IndexedAt, r.IndexedCommit)));
 
 app.MapGet("/api/search", async (
     ComposedService s, HttpContext http, string q, string? kinds, string? repositories, bool? localOnly, int? limit,
@@ -1503,6 +1504,12 @@ if (mode == ServiceMode.Local)
             : Results.Ok(ToDeletion(outcome));
     });
 
+    // One quest's handback whole (HANDBACK1, D219), by the quest's id or the id of the session that served it, in any state: what
+    // `daoris-driver sessions handback` prints, in the read's words the connector's `handback_read` answers too. Every workspace, or
+    // the one named. Any id is answered, one naming nothing as not found, so a client tells this door from an older host's 404.
+    app.MapGet("/api/handbacks/{id}", async (ComposedService s, string id, string? workspace, CancellationToken ct) =>
+        Results.Ok(HandbackResponse.Of(await new HandbackReader(s.Quests, s.Ledger).ReadAsync(id, workspace, ct))));
+
     // What the person added to a running session (DRIFT1a, D133 §1), as its driver reports it: the words
     // reach the session through the driver, which never passes them here otherwise, so this is where they
     // are kept on the ask its work is for. Local like the asks; a session on no ask is answered `kept:
@@ -2269,7 +2276,8 @@ app.MapPost("/api/refresh", async (ComposedService s, CancellationToken ct) =>
         report.Entries, report.Repositories, report.Withheld, report.SemanticError, report.Absent,
         report.Embedded is { } embedded
             ? new EmbeddedResponse(embedded.Entries, embedded.Pieces, embedded.Split, embedded.Window)
-            : null));
+            : null,
+        report.Read.Select(r => new ReadingResponse(r.Repository, r.ReadAt, r.Commit)).ToList()));
 });
 
 // ——— The feed and sync doors (D47 §§4–6, D68). Which doors exist depends on the deployment's role: a
