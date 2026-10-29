@@ -6947,8 +6947,7 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
       assert.deepEqual(findings().map((each) => [each.gate, each.state, each.lastSeen.commit]), [['universal', 'red', second]]);
 
       // A kept pass on another tree, a stale one, clears nothing: the gate runs and passes, and that clears it as it did before.
-      const third = commit('docs/a.md', 'c\n');
-      const thirdTree = git(repo.root, 'rev-parse', `${third}^{tree}`);
+      commit('docs/a.md', 'c\n');
       const scopedTip = 'f'.repeat(40);
       keep({ gate: 'universal', verdict: 'PASS', tree: git(repo.root, 'rev-parse', `${second}^{tree}`), at: new Date().toISOString(), commit: scopedTip, branch: null, kind: 'scoped' });
       result = await repo.run(['--ci'], { CI_FAIL: 'universal' });
