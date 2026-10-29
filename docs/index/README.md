@@ -205,7 +205,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Workplace/AutoLander.cs` | 51 | 747 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Workplace/BranchTidying.cs` | 54 | 979 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Workplace/ContentHolds.cs` | 42 | 647 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Workplace/LandedBranches.cs` | 42 | 728 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Workplace/LandedBranches.cs` | 42 | 731 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Workplace/LandedCleanups.cs` | 46 | 753 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Workplace/Landing.cs` | 50 | 862 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Workplace/SessionTrees.cs` | 60 | 954 |

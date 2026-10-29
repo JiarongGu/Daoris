@@ -458,8 +458,11 @@ public sealed class LandedBranches(string home)
             ? new LandedIntegrate(request, source)
             : null;
 
-    /// <summary>The review that let a landing go (REVIEWENV1c), each field only where it is known.</summary>
-    private static void WriteReview(Utf8JsonWriter writer, LandingReview review)
+    /// <summary>
+    /// The review that let a landing go (REVIEWENV1c), each field only where it is known. Internal with its reader and the opinion's and
+    /// workflow's, since an integration request keeps its gate proof in the record's own shape (INTEGRATE1e part e2).
+    /// </summary>
+    internal static void WriteReview(Utf8JsonWriter writer, LandingReview review)
     {
         writer.WriteStartObject("review");
         writer.WriteString("said", review.Said);
@@ -472,7 +475,7 @@ public sealed class LandedBranches(string home)
     }
 
     /// <summary>The review a landing or an advance kept, or null: absent, which is every landing from before REVIEWENV1c, or not whole.</summary>
-    private static LandingReview? ReviewOf(JsonElement element) =>
+    internal static LandingReview? ReviewOf(JsonElement element) =>
         element.TryGetProperty("review", out var review) && review.ValueKind == JsonValueKind.Object && Text(review, "said") is { } said
             ? new LandingReview(said, Text(review, "environment"), Text(review, "quest"))
             {
@@ -483,7 +486,7 @@ public sealed class LandedBranches(string home)
             : null;
 
     /// <summary>The second opinion that let a landing go (XAGENT1f, design §8.6), each field only where it is known.</summary>
-    private static void WriteOpinion(Utf8JsonWriter writer, LandingOpinion opinion)
+    internal static void WriteOpinion(Utf8JsonWriter writer, LandingOpinion opinion)
     {
         writer.WriteStartObject("opinion");
         writer.WriteString("said", opinion.Said);
@@ -512,7 +515,7 @@ public sealed class LandedBranches(string home)
     }
 
     /// <summary>The second opinion a landing or an advance kept, or null: absent, which is every landing from before XAGENT1f.</summary>
-    private static LandingOpinion? OpinionOf(JsonElement element)
+    internal static LandingOpinion? OpinionOf(JsonElement element)
     {
         if (!element.TryGetProperty("opinion", out var opinion) || opinion.ValueKind != JsonValueKind.Object || Text(opinion, "said") is not { } said)
         {
@@ -553,7 +556,7 @@ public sealed class LandedBranches(string home)
     }
 
     /// <summary>The named workflow a landing went by (WORKFLOW1f, design §5.5), each field only where it is known.</summary>
-    private static void WriteWorkflow(Utf8JsonWriter writer, LandingWorkflow workflow)
+    internal static void WriteWorkflow(Utf8JsonWriter writer, LandingWorkflow workflow)
     {
         writer.WriteStartObject("workflow");
         writer.WriteString("workflow", workflow.Workflow);
@@ -564,7 +567,7 @@ public sealed class LandedBranches(string home)
     }
 
     /// <summary>The named workflow a landing or an advance kept, or null: absent, which is every landing under Current and from before WORKFLOW1f.</summary>
-    private static LandingWorkflow? WorkflowOf(JsonElement element) =>
+    internal static LandingWorkflow? WorkflowOf(JsonElement element) =>
         element.TryGetProperty("workflow", out var workflow) && workflow.ValueKind == JsonValueKind.Object
         && Text(workflow, "workflow") is { } id && Text(workflow, "level") is { } level
         && workflow.TryGetProperty("version", out var version) && version.ValueKind == JsonValueKind.Number && version.TryGetInt32(out var number)
