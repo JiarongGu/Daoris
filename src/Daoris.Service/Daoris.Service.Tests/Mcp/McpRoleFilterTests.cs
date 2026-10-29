@@ -109,6 +109,43 @@ public sealed class McpRoleFilterTests : McpToolsFixture
         Assert.All(ConnectorRoles.PartnerRefused, tool => Assert.Null(ConnectorRoles.Refusal(tool, SessionRole.None)));
     }
 
+    /// <summary>
+    /// 🔴 BRAINSTORM1a2 (D176 point 2) held on the server too (the review of HANDBACK1, 2026-10-29): a brainstorm pass's connector,
+    /// known by the turn the driver names on it, is refused every tool but the two result tools, `handback_read` and `quest_list` among
+    /// them, whatever rules its agent takes. The result tools judge the turn themselves.
+    /// </summary>
+    [Theory]
+    [InlineData("handback_read", false)]
+    [InlineData("quest_list", false)]
+    [InlineData("knowledge_search", false)]
+    [InlineData("line_read", false)]
+    [InlineData("a_tool_added_later", false)]
+    [InlineData("brainstorm_give", true)]
+    [InlineData("brainstorm_synthesize", true)]
+    public void A_brainstorm_pass_is_held_to_its_result_tools(string tool, bool allowed)
+    {
+        var refusal = ConnectorRoles.Refusal(tool, SessionRole.Brainstorming);
+
+        Assert.Equal(allowed, refusal is null);
+        if (!allowed) Assert.Contains("not a brainstorm pass's to call", refusal);
+    }
+
+    /// <summary>
+    /// A brainstorm pass's connector names a session Daoris keeps no record of: its role is read from the turn named on it, never the
+    /// ledger, so a session the ledger does not know is still held to the pass's role. A connector naming no turn is read as before.
+    /// </summary>
+    [Fact]
+    public async Task A_brainstorm_pass_is_read_from_its_turn_not_from_a_record()
+    {
+        var sessions = await SessionStore.OpenAsync(_connection);
+        var ledger = new SessionLedger(_quests, sessions, _service, await AskStore.OpenAsync(_connection));
+        var turn = new BrainstormScope("b1", "g1", Path.Combine(_root, "answer.json"), Path.Combine(_root, "room"));
+
+        Assert.Equal(SessionRole.Brainstorming, await new SessionRoles(ledger, new IntakeScope(null, "brainstorm-b1-g1"), turn).ReadAsync(default));
+        Assert.Equal(SessionRole.None, await new SessionRoles(ledger, new IntakeScope(null, "brainstorm-b1-g1"), new BrainstormScope(null, null, null, null))
+            .ReadAsync(default));
+    }
+
     /// <summary>The role is the record's: a partner's, a helper's (its piece dropped without a lead is none), and nobody's.</summary>
     [Fact]
     public async Task The_role_is_read_from_the_record_the_connector_names()
@@ -157,7 +194,7 @@ public sealed class McpRoleFilterTests : McpToolsFixture
         while (at is not null && !File.Exists(Path.Combine(at.FullName, "daoris.json"))) at = at.Parent;
         var program = File.ReadAllText(Path.Combine(at!.FullName, "src", "Daoris.Service", "Daoris.Service.Mcp", "Program.cs"));
 
-        Assert.Contains(".RefuseOutsideRole(new SessionRoles(composed.Ledger, intake).ReadAsync)", program);
+        Assert.Contains(".RefuseOutsideRole(new SessionRoles(composed.Ledger, intake, BrainstormScope.FromEnvironment()).ReadAsync)", program);
     }
 
     private static async Task<List<string>> CallAsync(Func<CancellationToken, Task<SessionRole>> role, params string[] tools)
