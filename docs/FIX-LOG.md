@@ -5,6 +5,13 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-29 - A helper, a partner's piece or a landing could start during an update's drain and be cut by the close (DRAINHOLD1)
+
+- **Symptom:** with an update staged to install when idle, a helper an agent asked for under the rule `on` could start while the drain waited for sessions to end, with no press at all. If it started after the update's last read of the work, the close cut it, and its asker waited on an answer that never came.
+- **Root cause:** `InstallUpdate.Drained` held only what the planner reads (repository holds, so quests, resumes and answered parks) and turned intake off. Helper admission (`HelperJudge.Judge`) reads the rule, the agents, the asker and the cap's slot, never a repository hold, and the other starts the look makes on its own (partner pieces, second-opinion passes, brainstorm and meeting rounds, automatic landings, conversation hand-overs, the tidy, the limits wake, the evaluation runtime's pass) never read the drain at all. Part 1 of DRAINHOLD1 only made the pipe's presses wait.
+- **Fix:** `Drained` also sets `DriverConfig.Draining`, and each such start reads it: held starts write no state and take no slot, are said once as the update's (`InstallUpdate.HeldLine`, with the hold reason), and go at the first look that does not drain. The watch's own work beside the looks asks the same drain (`DriverWatch.DrainsNow`, `DrainHeldEffect`). A found-owed opinion pass is left kept rather than taken, and `LookFacts.KeepOpinion` no longer reads an act it already held as a move, which would have woken the loop at every look for as long as the drain lasts.
+- **Verification:** a case per start with a drain staged and the work waiting: the look starts nothing and says why once, and a look that does not drain starts it (`HelperLookTests`, `PartnerLookTests`, `OpinionLookTests`, `BrainstormLookTests`, `MeetingTests`, `AutoLandingLookTests`, `HandOverAskLookTests`, `UpdateDrainTests`), each seen failing first. Not run: the evaluation runtime's pass held in the watch, and the `Process` classes over the code (`HelperProcessTests`, `PartnerProcessTests`, `BrainstormProcessTests`, `NodeRuntimeLoopProcessTests`, `BranchTidyingWatchTests`).
+
 ## 2026-10-29 - A fresh chat on the install could not find a decision merged after the index was first read (KNOWCURRENT1)
 
 - **Symptom:** a fresh chat on the installed build searched knowledge and listed its quest, but could not find D212 while D210 and D211 were there; the local entries door held no path for the versioned D212 to D214 records.

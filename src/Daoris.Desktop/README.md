@@ -469,6 +469,13 @@ and the I/O (the two worlds, the plan's file and the description's files) sit at
 `InstallSwap.cs` and `HeldFiles.cs` from there, each on the base library alone. Callers name the rules (`SetupPressRules.Rules`), the files
 (`SelfDescriptionFiles.Read`) and the bucket (`ClaudeReleaseDownloads.InstallAsync`).
 
+The drain holds every start the look makes on its own, through the one view the draining look plans with (DRAINHOLD1's driver follow-up, D156's note):
+`InstallUpdate.Drained` also sets `DriverConfig.Draining`, which a quest's start never reads (its repository holds are the quest's) and each of the others does: a helper's
+start and the hand of an answer, a partner piece's judging, preparing, keeping and hand, a second opinion's pass and delivery, a sent brainstorm's or meeting's round, an
+automatic landing, a conversation's hand-over to the chat runner, and, in `DriverWatch` where it asks `Draining` beside the looks, the tidy and its keeping passes, a tidy of
+a ref move (`DrainHeldEffect`), the wake of the conversations waiting for an account and the evaluation runtime's pass. A start so held writes no state, takes no slot and is
+said once as the update's (`InstallUpdate.HeldLine`, with the hold reason that names `update --cancel`); it stays on file, due, and goes at the first look that does not drain.
+
 The toolchain, the staged update with its drain and the swap's journal sit in `Install/` (FOUNDATION1 mod-v, D212): the managed tools (`Tools`, `ToolInstall`, `ToolsCommand`),
 the release channels and downloads, `InstallUpdate`, `StagedBuild`, `InstallSwap` and `HeldFiles`, with `Domain/` for the two pure release files. It names no type of a subdomain above it:
 the drain's hold over the planner's verdicts (`InstallUpdate.HeldFor`) is the work orders' extension member of it (`UpdateHolds`), the running sessions' shape is the
