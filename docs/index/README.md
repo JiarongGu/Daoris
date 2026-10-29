@@ -394,7 +394,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-26-tree-pool-reads.md` | 74 | 702 |
 | `docs/2026-10-26-tree-pool-survey.md` | 47 | 562 |
 | `docs/2026-10-28-integration-design.md` | 204 | 1923 |
-| `docs/2026-10-30-agent-lyntai-design.md` | 102 | 837 |
+| `docs/2026-10-30-agent-lyntai-design.md` | 177 | 1236 |
 | `docs/2026-10-30-agent-lyntai-proposal-codex.md` | 76 | 717 |
 | `docs/2026-10-30-agent-lyntai-proposal-opus.md` | 71 | 675 |
 | `docs/2026-10-30-agent-lyntai-survey.md` | 44 | 374 |
