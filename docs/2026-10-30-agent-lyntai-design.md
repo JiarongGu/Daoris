@@ -1,6 +1,20 @@
-# Daoris's providers on Lyntai's agent-provider layer (AGENTLYNTAI1, 2026-10-30: round 2, proposed)
+# Daoris's providers on Lyntai's agent-provider layer (AGENTLYNTAI1, 2026-10-30: round 3, proposed)
 
-**Round 2's standing (proposed under D191, as an amendment to D213).** Both makers read round 1 (`docs/2026-10-30-agent-lyntai-reads.md`)
+**Round 3's standing (proposed under D191, as an amendment to D213).** Both makers read round 2 apart (the Opus maker with 10 findings,
+4 blocking; Codex with 6, 5 blocking, the fourth for stage B and the fifth for 1c), each asking another round kept narrow. Round 3
+answers every finding one row each (§17), each checked against the code at Daoris `9405b458f` and Lyntai `9a41435c` with `2fb2dc7e`
+first: fifteen taken, two of them with a change, and one declined, Codex's AG20 citations, which hold at the named commit (§17.3).
+The changes are carried into the body, each marked with the finding it answers (*(O2-Fn)* the Opus maker's, *(C2-n)* Codex's). What
+moved, in short: the oracle compares a **declared projection** of what each path observed, its observations listed by the capture's
+consumers and the run's side effects, provenance compared by a correspondence recorded per door and never by equality (§6.3); m-i
+names what it adds to `AgentRun` and keeps words off it until m-ii (§4.1, §9.2); the ingress keeps today's phase and gives access a
+typed disposition, builds a whole `LimitSeen` under D125's bounds, and maps delivery onto today's dispositions, D210's go-on kept
+after a tool step (§5.3); the layer's restriction and stream owe their window and allowance frames (**LQ16**) and the refused model
+(AG12) before 1d (§5.4, §8); LQ12 gains an evidence operation, LQ13 the stream's end, LQ15 the exchange's order (§8); a resume
+builds its own container (§5.5); an access failure's reason is LQ11's, widened, and 1d waits for it. Round 3 is still proposed: both
+makers read it before any of it is accepted.
+
+**Round 2's standing, kept as it was written (proposed under D191, as an amendment to D213).** Both makers read round 1 (`docs/2026-10-30-agent-lyntai-reads.md`)
 and asked another round: the Opus maker with 16 findings, 6 blocking, Codex with 10, 6 blocking. Round 2 answers every finding of both, one
 row each (§16), each checked against the code in both repositories first, every one taken, the stricter taken where the two meet; the
 changes are carried into the body where they belong, each marked with the finding it answers (*(O1-Fn)* the Opus maker's, *(C1-n)*
@@ -32,8 +46,8 @@ session branch beyond `master`, carries unchanged. Both proposals read Daoris at
 follow the survey's aliases (a bare path is under the driver library; `Tests/`, `Desktop/`, `Service/`; `Lyntai/Core/` is its
 `src/Lyntai.Core/`, `Lyntai/Basic/` its `src/Lyntai.Providers.Basic/`); a Lyntai line marked *(AG20)* is `2fb2dc7e`'s, any other `master`'s.
 *X §n* is a section of Codex's proposal, *O Qn* the Opus reader's answer to question n; X's rows are M0 to M16 and its requests Q-F, Q-L, Q-O,
-Q-R, Q-K, Q-C, Q-M and Q-U; O's rows are L1 to L8 and its requests Y1 to Y8. This design's requests to Lyntai are **LQ1 to LQ15** (§8; LQ13 to
-LQ15 from round 2) and its new rows **AGENTLYNTAI1a to 1f** with the corrections **1s-i** and **1s-ii** (§9); D213's rows keep their
+Q-R, Q-K, Q-C, Q-M and Q-U; O's rows are L1 to L8 and its requests Y1 to Y8. This design's requests to Lyntai are **LQ1 to LQ16** (§8; LQ13 to
+LQ15 from round 2, LQ16 from round 3) and its new rows **AGENTLYNTAI1a to 1f** with the corrections **1s-i** and **1s-ii** (§9); D213's rows keep their
 letters (*row d* is AGENTPROVIDER1d), and its row m is cut in two, **m-i** and **m-ii** (§3.1). FOUNDATION1's rows share this design's short
 names (its 1d-i, 1e, 1f-i), so in prose they are always *FOUNDATION1's*, and a record, a commit or a pending line names this design's rows
 whole (`AGENTLYNTAI1d`). Read for it: the brief, the survey and
@@ -42,7 +56,11 @@ rows (`docs/2026-10-25-foundation-design.md:435-460`, `:1674-1739`) and D212's n
 in Lyntai its D18, D233, D234 and D235, the layer's §5, `TASKS.md`'s AG10 to AG19 and the layer's sources each line below cites.
 **Round 2 is read at** Daoris `f638a07c1` (the batch line with round 1's reads merged, FOUNDATION1j part ii among it) and at the same Lyntai
 commits: no file under the driver's `Agents/` or `Platform/` changed since `23cc27254`, so round 1's lines there stand; `Loop/Driver.cs` and
-`Loop/DriverContinuations.cs` moved, and the lines round 2 cites in them are `f638a07c1`'s (§16.3).
+`Loop/DriverContinuations.cs` moved, and the lines round 2 cites in them are `f638a07c1`'s (§16.3). **Round 3 is read at** Daoris
+`9405b458f` (the batch line with round 2 merged, the tree both reads of round 2 read at `d53705dda` unchanged under `Agents/`, `Loop/`
+and `Platform/`) and at the same Lyntai commits: since `f638a07c1` only `Agents/HarnessRoster.cs` moved among the files this design
+cites, 8 lines past its line 1252, so its lines from round 3 on are `9405b458f`'s (the usage read's guard `:2307-2313`, its spawn
+`:2322-2344`, its history `:2347-2366`), and §16 keeps round 2's as written (§17.3).
 
 ## 0. What this rests on
 
@@ -223,9 +241,9 @@ Four rules keep the adapter from being the copy D213's note rejects, each held b
 
 1. **No Daoris type mirrors a layer type.** Where a Daoris type already holds the fact for Daoris-run doors (`KnownBy`, `Transport`,
    `Eligibility`, `DoorFailure`), the adapter maps the layer's value into it at the boundary; nothing above `Agents/Layer/` sees the layer's.
-2. **A layer-run door declares nothing the layer states, per run kind** *(O1-F3)*: for each kind its binding covers, its ability names,
-   account key and failure tables are read from the bound descriptor and reader; its home variable is read from the descriptor for every
-   kind once one kind is bound, the Daoris-run kind included, so the door states it once; a kind still Daoris-run states its spawn, dialect
+2. **A layer-run door declares nothing the layer states, per run kind** *(O1-F3)*: for each kind its binding covers, its ability names
+   and failure tables are read from the bound descriptor and reader; its home variable and its account key are read from the descriptor
+   for every kind once one kind is bound, the Daoris-run kind included, so the door states each once *(O2-F9)*; a kind still Daoris-run states its spawn, dialect
    and tables as today, and they serve that kind alone. A registration declaring a fact beside a binding that covers it is refused by
    `ProviderFilesTests`, naming the fact and the kind.
 3. **One home per fact, counted per kind**: the census counts a fact a layer-run kind restates as a site with no allowance, and a fact the
@@ -258,7 +276,7 @@ survey's §7 behaviour counts at `e0c7b7e5b`.
 |---|---|---|---|---|
 | **c** the third stand-in | **Re-cut as row 1b.** Its folder (`provider.json`, `pending.json`, a `Program/` answering the scenario contract in its own vocabulary) is Daoris's meter; its protocol door registers on the generic ACP door; **round 2** *(O1-F6)*: its native door is no host `IAgentProvider`, whose turn loop would copy the layer's internal one (`Lyntai/Basic/CliAgentLoop.cs:23`, `:37-43`, `:88-156`); it runs Daoris-run on today's plain capture, as `stub`'s does, until LQ13 lets a host hand the CLI turn a reader, and moves at 1f-ii | AG8, built; AG15 un-pends its protocol door's own-vocabulary cases; LQ13 its native door's | 0 | agrees; it also proves the adapter |
 | **d** ⚖ the owner once | Daoris's, as accepted: which accounts a door runs as, the one-level `accountOf` and its `Lent` follow this host's catalogue | D234's `agent:` on each layer registration (§4.2) | 3, tools' 4 | agrees |
-| **e** the accounts' readers | **Re-cut.** The usage question is the agent's: the layer's, at row 1c. The words a door's own stream says (limit, window, refused, error) are the layer's at that door's move, Daoris's on a Daoris-run door until then. The floor, sign-in and login question, `ClaudeTrust`, the key variable read once, `ToolHomeLeftovers`, `WeekFixed` and D179's weights are a deployment's or Daoris's files: the host's, as accepted; **round 2**: the usage read's host half too (an account that is a key not read, the probe lock, no read while a session runs on the account: `HarnessRoster.cs:2299-2305`) *(O1-F11)*, and the usage history's naming and inferred resets *(C1-2)* | AG9, built; LQ2, LQ14, LQ15 | 53: the usage readers' deleted at 1c, the stream words' at each move, the rest into the folders (the split measured before dispatch) | departs: D222's coupling (§0.2 row 6) is LQ2; the allowance's shape is LQ14 |
+| **e** the accounts' readers | **Re-cut.** The usage question is the agent's: the layer's, at row 1c. The words a door's own stream says (limit, window, refused, error) are the layer's at that door's move, Daoris's on a Daoris-run door until then. The floor, sign-in and login question, `ClaudeTrust`, the key variable read once, `ToolHomeLeftovers`, `WeekFixed` and D179's weights are a deployment's or Daoris's files: the host's, as accepted; **round 2**: the usage read's host half too (an account that is a key not read, the probe lock, no read while a session runs on the account: `HarnessRoster.cs:2307-2313`) *(O1-F11)*, and the usage history's naming and inferred resets *(C1-2)* | AG9, built; LQ2, LQ14, LQ15 | 53: the usage readers' deleted at 1c, the stream words' at each move, the rest into the folders (the split measured before dispatch) | departs: D222's coupling (§0.2 row 6) is LQ2; the allowance's shape is LQ14 |
 | **f** the program | Daoris's: a release source, a version and a place are what Lyntai's D20 refuses | none; the pinned path handed as the registration's command | 52 | agrees |
 | **g** the doors as abilities | Daoris's: the callers' `Wire` tests read abilities; a layer-run door's through its binding | none | 113 | agrees |
 | **h** ⚖ the spawn | Split: the shell with Daoris's variables in today's order, `ISessionGit`, the tools' `PATH`, the carriers' order and the launcher are Daoris's, the launcher also the layer's runner (Lyntai's D226); `ISpawn`'s recipe serves Daoris-run doors alone | AG17; LQ9 | 15 | agrees on AG17; adds the runner and one registration per start |
@@ -293,7 +311,7 @@ survey's §7 behaviour counts at `e0c7b7e5b`.
 | Release sources and pins | Daoris (row f) | Lyntai's D20 |
 | Where holds are kept, by how many processes | Daoris: `cooling.json`, several processes on one home | the layer's pool is one process (`AgentAccountPool.cs:32-34` *(AG20)*); a Daoris home is not: the window's limit read and a terminal's `daoris agent` verbs write `cooling.json` under a lock taken across processes (`Agents/AccountCooling.cs:236-246`; `Tests/Agents/CoolingTwinTests.cs:8-10`), and a status question is locked across processes because the terminal's `agent list` asks the same accounts (`Agents/ProbeLock.cs:14-18`); AGENTINFRA1's isolated home shuts out legacy clients and competing loops, not the same build's terminal verbs (`docs/2026-10-27-provider-infrastructure-design.md:273-277`) *(O1-F14, C1-6)*; FOUNDATION1 §19.1's two shells (`docs/2026-10-25-foundation-design.md:2731`) support it less directly |
 | How long a turn may run, and how long a usage read waits | Daoris: no clock on a turn, today's patience on a read (§5.5) *(O1-F5)* | Daoris limits no session by time (`Settings/DriverChoicesCommand.cs:664`); the layer arms a two-minute inactivity window on every turn unless told (`Lyntai/Core/LyntaiOptions.cs:30`, `:140-149`), which a runner may decline (`Lyntai/Core/Processes/IProcessRunner.cs:15-22`) |
-| The usage read's guard: a key not read, the probe lock, no read on a busy account | Daoris (`HarnessRoster.cs:2299-2305`; `ProbeLock.cs:8-19`) *(O1-F11)* | two reads at once on one account spend one refresh token twice; one process's guard cannot see another's |
+| The usage read's guard: a key not read, the probe lock, no read on a busy account | Daoris (`HarnessRoster.cs:2307-2313`; `ProbeLock.cs:8-19`) *(O1-F11)* | two reads at once on one account spend one refresh token twice; one process's guard cannot see another's |
 
 ## 4. The mapping (Q3, Q4, Q5)
 
@@ -313,11 +331,11 @@ them (survey §13); and Daoris's executors hold a live run the layer has not got
 | `KnownBy`, `Known<T>` | stay; a layer claim read into a `Known<T>` (§4.3) |
 | `Eligibility` | stays: on a layer-run protocol door it is the door's `resume`, `Unknown` and `Negotiated` (`Acp/AcpAgentDoor.cs:26-27`), settled by the turn's own answer |
 | `AccountPool` | stays: a key's providers. Never Lyntai's `AgentAccountPool`, the walk and its holds (§10) |
-| `AgentRun` | stays, the executors' one face. **From m-i every executor holds it** *(O1-F1)*, `TransportRun` implementing it over today's transports for every door, nothing changing; at a move `LayerRun` implements it for the bound kinds: over one turn per call for a driven native start (1d), over the long-lived run of LQ3 for the protocol doors (1e) and conversations (1f-i), and over LQ13's turn for the native stand-ins (1f-ii). In the moving row both implementations serve the door's cases, `TransportRun` out of production (§6.3). An operation the layer's run cannot do is refused before a write, which a moved door never meets where today's works, by §2.2 |
+| `AgentRun` | stays, the executors' one face. **From m-i every executor holds it** *(O1-F1)*, `TransportRun` implementing it over today's transports for every door, nothing changing. **Its eight operations do not carry what an executor uses today** *(O2-F2)* (`Agents/Contract/AgentRun.cs:9-31`), so m-i adds four members and states what replaces each: the run's **end** as the conclusion reads it today, its exit, its usage at the high-water mark and the `HarnessEnding` (its transient retry, a refused or not-offered model, the harness's own words: `HarnessEnding.cs:49`; `Loop/Driver.cs:2954-2960`), kept; the **records**, handed at the open as today's capture is handed them (the transcript, the session's events, the lineage hook, the streams beside, the conversation named, the window readings: `Loop/Driver.cs:4290-4294`), replaced by the sink at row l; the **carriers**, the settings and servers handed to the start and to each go-on and the downloads kept (`Loop/DriverContinuations.cs:392`, `:1175-1176`), kept; and the **go-on**, a native run's next process with the held words as one prompt, in place of `GoOnWith`'s `ProcessStartInfo` factory (`:1155-1162`), replaced by m-ii's native retry and `DoorInput`. The process stays beneath: `TransportRun` registers it with `SessionProcesses` and the watch as today, and the contract names no `Process`. **Words stay off `AgentRun` until m-ii**: `SendAsync(string)` carries no id, while today's retry marks a word attempted before the wire and takes it off by its id once written (`TransientRetry.cs:42-47`; `Acp.cs:1870-1886`), which is `DoorInput`'s with Course's attempt port (D213 row m), so no executor calls `SendAsync` or `SteerAsync` before m-ii and today's word paths stay beneath `TransportRun` unchanged. At a move `LayerRun` implements it for the bound kinds: over one turn per call for a driven native start (1d), over the long-lived run of LQ3 for the protocol doors (1e) and conversations (1f-i), and over LQ13's turn for the native stand-ins (1f-ii). In the moving row both implementations serve the door's cases, `TransportRun` out of production (§6.3). An operation the layer's run cannot do is refused before a write, which a moved door never meets where today's works, by §2.2 |
 | `PortRef`, `Reach`, `ProviderIdentity`, `DoorIdentity`, `ProgramFacts`, `LentPart`, `VocabularyPart` | stay, the host's (survey §13's list of what stays the host's); `PortRef` placeholders go as their rows land |
 | `PoolFacts`, `AccountsPart` | stay; the key variable read from the provider's declared names once AG17 is released; the login question and sign-in the host's |
 | `TablesPart`, `DoorTablesPart` | stay for the Daoris-run kinds alone, standing behind no bound kind; a bound kind's failure is the layer's, entering through §5.3's ingress *(O1-F3, C1-4)* |
-| `UsagePart`, `IUsageQuestion` | **round 2** *(C1-5)*: `UsagePart` holds a Daoris port, `IUsageRead`, never a layer type, since the contract and the host records that read it sit outside `Agents/Layer/` (`Agents/Contract/ProviderParts.cs:90`; §6.1). `IUsageRead` states the harness, the freshness and the recorded answers as `IUsageQuestion` does, and asks: given an account (owner, profile, its home) it answers Daoris's `UsageAnswer`, the walk's windows and the usage history's `WindowSeen` rows, or unknown. Two implementations exist in 1c's commit: today's, over `ClaudeUsage` and `CodexUsage`; the layer's, in `Agents/Layer/`, over the layer's `IAgentUsageSource` and a translation into `UsageAnswer`. The host half (the key skip, the probe lock, the busy check) stays in the roster around either. `IUsageQuestion` and today's implementation retire in 1c's last commit, once §6.3's oracle has found the two equal; `Lent` lends `UsagePart` as before |
+| `UsagePart`, `IUsageQuestion` | **round 2** *(C1-5)*: `UsagePart` holds a Daoris port, `IUsageRead`, never a layer type, since the contract and the host records that read it sit outside `Agents/Layer/` (`Agents/Contract/ProviderParts.cs:90`; §6.1). `IUsageRead` states the harness, the freshness and the recorded answers as `IUsageQuestion` does, and asks: given an account (owner, profile, its home) it answers Daoris's `UsageAnswer`, the walk's windows and the usage history's `WindowSeen` rows, or unknown. Two implementations exist in 1c's commit: today's, over `ClaudeUsage` and `CodexUsage`; the layer's, in `Agents/Layer/`, over the layer's `IAgentUsageSource` and a translation into `UsageAnswer`. The host half (the key skip, the probe lock, the busy check) stays in the roster around either. **What the ask carries beside the account** *(O2-F8)*: today's read also uses the pinned command resolved against the configuration and the toolchain it composes (`HarnessRoster.cs:2322-2323`), the patience its `Kind` selects (`:2336`, `:2343`), and writes the history's `Source`, `Reader` and `Plan` (`:2354`). On the layer path the roster resolves the command and toolchain as today and hands both in the ask (the command becomes the spawn's registration's, the toolchain its `LauncherRunner`'s composition, §5.5); the patience is the port's per agent, today's constant, bounding the read in the runner; `Plan` is read from the layer's answer (LQ14); and `Source` and `Reader` name the layer's implementation, compared by §6.3's provenance correspondence, never equal by construction. `IUsageQuestion` and today's implementation retire in 1c's last commit, once §6.3's oracle has found the two equal; `Lent` lends `UsagePart` as before |
 | `DoorHome` | stays; its variable read from the descriptor's account mapping on a layer-run door; `OwnHome`, `TrustFile` and `MustExist` Daoris's |
 | `PosturesPart` | stays, in the agent's words; a layer-run door maps each onto the layer's intent and the door's options and, with LQ4, the agent's own mode; a posture with none mapped refuses the start (D213 point 6) |
 | `AbilitiesPart` | stays; `Interactive` and `TakesSettings` Daoris's; `Resumes` read as the layer's `resume` |
@@ -411,7 +429,15 @@ A layer-run door's limit reaches it so: the terminal's `AgentFailure` with its r
 read again by `AgentErrors.Read` *(C1-4)*, and the roster cools the account under Daoris's key and the profile, its end the restriction's
 `ResetAt` or `RetryNotBefore` where stated (`AgentFailure.cs:72-97` *(AG20)*), else D125's sixty minutes; a limit on `claude-code-acp` cools the `claude-code` account its
 native door runs as, as today. An owner action (a credit refusal) is handled as today's credit case until stage B, never written into
-`until` as a made-up date. A cooling entry an older build wrote reads as today: no field is added.
+`until` as a made-up date. A cooling entry an older build wrote reads as today: no field is added. **Round 3: the limit reaches cooling
+whole** *(O2-F3)*. Today cooling is a second reading: seven callers hand `AccountLimited` the failure's sentence
+(`Loop/Driver.cs:2957`, `:3341`; `Loop/DriverContinuations.cs:612`, `:761`; `DriverHelpers.cs:1071`, `DriverIntakes.cs:342`,
+`DriverOpinions.cs:265`, `DriverPartners.cs:701`), `HarnessRoster.Limited` reads it again through the door's `Limits` table and takes a
+limit read by its code only when `Stated: false`, replacing its end with D125's hour (`HarnessRoster.cs:279-280`). A layer limit with a
+stated reset would be dropped there, and nothing reads it once 1f-i deletes the tables. So the ingress builds the whole `LimitSeen` (§5.3),
+and `Limited` gains an entry taking a trusted `LimitSeen` and reading no sentence, the same writes after it (the entry, the weekly window
+kept by its `Window`, `:283-301`); each of the seven callers routes a bound kind's limit there and a Daoris-run kind's as today, so one
+reading reaches cooling on each path.
 
 AGENTINFRA1's restriction against the layer's (X §7's table, member for member): the cause is `RestrictionCause` directly; account, shared
 pool, model and endpoint are `RestrictionSubject` with an explicit host binding to the evidenced subject key, the layer's display scope never
@@ -434,6 +460,15 @@ build's terminal verbs write its holds beside the window (§3.2), so stage B's s
 the isolated runtime's actual writers are listed before stage B is dispatched (§14). Its proof gains, from LQ12's evidence, a hold removed
 and recreated then cleared by a stale revision, a lease expired then taken over and the first attempt's late report, a covering hold inserted
 while a seat is admitted, and an old credential epoch's observation against its replacement, each refused *(C1-6, O1-F13)*.
+**Positive evidence with no attempt** *(C2-4)*: the infrastructure design discharges a restriction by an authoritative newer report that
+positively contradicts it at its scope and revision, and resolves `OwnerAction(refill)` by a positive credit or budget check, neither an
+attempt (`docs/2026-10-27-provider-infrastructure-design.md:176-181`); Lyntai's `Lift` reads a room-showing reading but lifts stated
+recoveries alone, never an owner action or an unknown one (`AgentPoolReducer.cs:173-190` *(AG20)*). So LQ12 gains a sixth operation, an
+**evidence observation** over the host's snapshot naming the exact hold (its generation-safe identity and revision), the subject key
+with its binding and credential epoch, and the evidence's kind (a status report, a credit or budget check), which discharges only the
+recovery kinds that evidence answers, by a table LQ12 states and the host's policy may narrow; the person's one-attempt release stays
+the separate report by token. Stage B's proof gains a stale, a wrong-scope and an old epoch's observation, each discharging nothing of
+the hold it does not match.
 
 ### 5.3 Failures and words
 
@@ -444,14 +479,37 @@ delivery) is the layer's door's reading of its own fields (`Lyntai/docs/agent-pr
 *(AG20)*), and `DoorFailure` has no place for it, holding a raw code, kind word, status, words and phase for tables to read
 (`AgentErrors.cs:47`). So round 1's route (the layer's failure made a `DoorFailure` for `AgentErrors.Read`, which would find no table and
 read it fatal) is withdrawn for a **trusted ingress**: `Agents/Layer/` builds a Daoris `NormalizedFailure` from the layer's (its kind by one
-four-row map declared once there, the four kinds agreeing one to one, `AgentFailure.cs:8-22` *(AG20)*; `By` kept as `layer:` and the
-layer's entry; the limit's reading built from the restriction's recovery, a stated `ResetAt` or `RetryNotBefore` its end, `Unknown` D125's
-sixty minutes not stated, `OwnerAction` today's credit case; the delivery as *Delivery* below reads it), and `AgentErrors.OfNormalized`
-answers the `AgentError` with no table and no word read again, its `DoorFailure` kept for the log alone (the bound door's transport word,
-the layer's kind word, the terminal's own text, `Where` a phase of its own, `layer`). The ingress takes only a `NormalizedFailure`, built only
+four-row map declared once there, the four kinds agreeing one to one, `AgentFailure.cs:8-22` *(AG20)*; the limit's reading built from
+the restriction's recovery, a stated `ResetAt` or `RetryNotBefore` its end, `Unknown` D125's sixty minutes not stated, `OwnerAction`
+today's credit case; the delivery as *Delivery* below reads it), and `AgentErrors.OfNormalized` answers the `AgentError` with no table
+and no word read again. **Round 3: what crosses is the whole Daoris outcome, provenance apart** *(C2-2, O2-F3)*:
+- **The phase is today's.** `DoorFailure.Where` carries policy: a refused resume's open cools or marks its account only where
+  `Where` is `Open` (`Loop/DriverContinuations.cs:671-675`), and the protocol door stamps the phase it met the failure in
+  (`Agents/Acp.cs:1497-1512`). The layer's failure names no phase, but `LayerRun` knows the operation it was performing, so the ingress
+  stamps `Open` for an open, a resume or a load, `Prompt` for a turn, `Harness` for a fault terminal read from stderr, the values
+  `DoorWhere` holds today; round 2's phase `layer` is withdrawn.
+- **Access carries a typed disposition.** `OpeningAccount` tells a refused credential from a sign-in failure by `By`'s suffix
+  (`:617-630`), the one policy read of `By`. 1b-i adds the disposition to `AgentError` on today's path first (refused, signed out, by
+  a declared code), set by `AgentErrors.Read` from the entry that matched and read by `OpeningAccount` in place of the suffix, nothing
+  else changing; the ingress sets it from the layer's reason for the access failure, which the layer's `Access` kind does not carry, so
+  LQ11 is widened to ask it (§8) and a move whose door reads access waits for it.
+- **The limit is a whole `LimitSeen`.** The ingress applies D125's bounds to the layer's instant as `AccountLimits` applies them to a
+  sentence's (the margin added to a stated reset, the grace for a reset just past, the furthest reset believed: `AccountLimits.cs:82`,
+  `:88`, `:94`), through one function both readings call, and fills `Window` from the restriction's window, which the layer does not
+  state (`AgentFailure.cs:100-104`; its Claude reader folds `rateLimitType` into `Cause`, `StreamJsonFailure.cs:88-94`): `Window`
+  decides the weekly windows kept (`HarnessRoster.cs:291-295`) and LIMITRESUME1b's not-lifted check (`Course/LimitResume.cs:88`), so a
+  move whose door names windows waits for **LQ16** (§8). Cooling takes it through §5.2's entry.
+- **Provenance is kept apart.** `By` stays the log's and the tests' name of what decided it, `layer:` and the layer's entry on a bound
+  kind, and no consumer reads policy from it once the disposition lands; §6.3 compares it by its correspondence, never by equality.
+
+The `DoorFailure` is kept for the log (the bound door's transport word, the layer's kind word, the terminal's own text, the phase above).
+The ingress takes only a `NormalizedFailure`, built only
 in `Agents/Layer/`, so a raw failure cannot reach it and a normalized one never reaches the tables: **no Daoris table stands behind a bound
 kind** (§1.1 row 2). The proof (1b-i, and FOUNDATION1 1g's): each of the four kinds, a stated reset and retry-not-before, an unknown recovery
-and an owner action through the ingress, and the same scenarios through `AgentErrors.Read` on `stub`, each read as the same kind; and the
+and an owner action through the ingress, and the same scenarios through `AgentErrors.Read` on `stub`, each read as the same kind; a
+resume's open refused with a limit and with each access disposition, cooling, refusing or signing out its account on both paths as today,
+and a prompt's refusal touching no account *(C2-2)*; a stated reset just past, one past the furthest and a weekly window, each kept on
+both paths as `AccountLimits` keeps a sentence's *(O2-F3)*; and the
 harness-source negatives on both paths, a weekly limit's sentence on stderr read as no limit by the Daoris path's harness rule
 (`AgentErrors.cs:146-152`) and by the layer's fault terminal, which reads stderr for access alone (`Lyntai/Basic/CliAgentLoop.cs:45-54`). A
 door moves only when the layer reads every sentence Daoris has recorded for it, on its stream and on its stderr *(O1-F10)*; a recorded
@@ -459,10 +517,20 @@ sentence the layer lacks travels as a request with the sanitized trusted frame, 
 near-miss that must not classify (X §8), and the move waits for the release that carries it. No process-wide error matcher is installed.
 
 **Delivery.** Three facts stay apart (X §8): the failure's kind decides retry, cooling or conclusion; the delivery constrains repetition;
-Course's durable word receipt records what Daoris attempted and the agent acknowledged. Daoris's retry reads the layer's `AgentDelivery`:
-`Taken` resumes, `Uncertain` holds, and `NeverSent` may go again only where Daoris's runner shows no line of the prompt was written to the
-child's stdin; otherwise it reads as uncertain (§1.1 row 23). The layer's `RetryingAgentSession` is never registered (`LyntaiBuilder.cs:559`),
-so one budget, D210's, is Daoris's.
+Course's durable word receipt records what Daoris attempted and the agent acknowledged. Round 2's mapping (`Taken` resumes, `Uncertain`
+holds) is withdrawn *(C2-3, O2-F3)*: it would stop a run today's retry goes on with. Today a transient failure opens D210's bounded
+episode whether or not a tool ran (`Agents/Acp.cs:1476-1492`); each try sends the held words and **a new go-on**, never the original
+prompt again (`:1846-1852`, `:1888-1890`), which tells the agent to check whether a step whose result it did not see already took effect
+(`TransientRetry.cs:67-75`); and only the words on the wire whose prompt met the error before any update of its turn are uncertain, said
+lost and never sent again (`:110-125`). The layer stamps a failed turn `Uncertain` once a tool call or result was seen, `Taken` once any
+other event was, `NeverSent` when none was (`Lyntai/Basic/CliAgentLoop.cs:34-43`, `:129-145`). Two things are kept apart: **what becomes
+of the original words**, and **whether D210's go-on may follow in the same conversation**. The original words: `Taken` and `Uncertain`
+are both today's *taken*, acknowledged and never resent; `NeverSent` is today's *met before any update*, uncertain and never resent,
+unless Daoris's runner shows no line of the prompt was written to the child's stdin, when it is today's *not yet written* and goes with
+the next try (a partial or failed write reads as written, §1.1 row 23). The go-on: permitted after each of the three, as today, inside
+D210's one budget, so a tool step's failure goes on with the guarded go-on and replays nothing. Holding the whole run on `Uncertain`
+would be a correction of D210, reviewed on its own before any move, and this design does not propose it. The layer's
+`RetryingAgentSession` is never registered (`LyntaiBuilder.cs:559`), so one budget, D210's, is Daoris's.
 
 ### 5.4 Readings
 
@@ -483,6 +551,14 @@ scenario's turn through each path hands the writer equal records in equal order.
 | `PlanUpdated` | the session's plan, never replaced by a child's |
 | `UsageLive`, `UsageFinal` with its model, nullable `UsageReading` | usage with its unit, scope and time, an absent count unknown; the model reported, never filled from the request |
 | `SessionEnded` with its failure | the turn's end, the executor deciding whether the part ended; a failure through the ingress (§5.3); a stop Daoris asked before it, a stop (§5.5) |
+
+**Three more readings the native driven door takes today** *(O2-F4)*, each a line of the table's for 1d:
+
+| What Daoris reads today | The layer today | Before 1d |
+|---|---|---|
+| the session's own report of its account's windows while it runs (TOOL6c): each `rate_limit_info` frame, `allowed` ones too, handed to the walk (`Agents/StructuredOutput.cs:11-15`; `Agents/HarnessCapture.cs:185-196`) | keeps a rejected frame for the failure and never an `allowed` one (`Lyntai/Basic/ClaudeCli/StreamJsonAgentReader.cs:55-62`) | **LQ16**'s second half, the stream's allowance reports as observations |
+| the harness's own words: a line outside its protocol, shown in the transcript and kept as its words (`HarnessCapture.cs:159`; `StructuredOutput.cs:148-154`) | discards a line that is no JSON (`StreamJsonAgentReader.cs:37-40`) | `LauncherRunner` keeps each raw stdout line that is no JSON object, by the one test today's mapper makes, as the transcript's line and the harness's words; no frame is read there, so no second decoder exists |
+| a refused model on the pipe door, D205's exception: the part ends with its line, no strike (`Loop/Driver.cs:2954-2956`; `HarnessCapture.cs:161`) | reads `model_not_found` fatal with no restriction (AG12's contract, `Lyntai/TASKS.md:320`) | AG12, carried by R-d |
 
 What the layer lacks waits for its rows: a child seen, said and ended (AG10 with LQ7), a background task and the turn it wakes (AG18 with
 LQ7), a held request (AG19 with LQ3), a refused model (AG12), an unread frame kept bounded (LQ7), replay told from live (LQ7). Until each
@@ -507,6 +583,11 @@ unaware of Lyntai: the Lyntai-facing type sits in Agents, above Platform's. Roun
   declined for a turn because a turn's end is the agent's terminal or the person's stop, never a timer. Each spawn's runner is built with its
   own policy, a turn's or a read's (the containers below). Held by: a stand-in silent past the layer's two minutes ending by its own terminal,
   and `LYNTAI_TIMEOUT_SECONDS` with the other `LYNTAI_*` variables planted in the driver's environment changing no start and no read.
+  **No clock on a turn is safe only with the watch** *(O2-F5)*: today a driven run registers with the watch, its capture stamps every
+  stdout and stderr line it reads (`Loop/Driver.cs:4292`), and busy is read off the job's CPU (`Events/SessionWatch.cs:63-85`). So
+  `LauncherRunner` registers each layer turn's process as today and stamps the **raw** lines it reads, never the layer's events, since the
+  layer's reader drops lines (§5.4); and the spawn it composed is handed to `KeepHandedAsync`, which keeps the downloads a start hands,
+  as today's start and resume hand theirs (`Loop/Driver.cs:2802`; `Loop/DriverContinuations.cs:392`).
 - **Its stderr and its stop are Daoris's** *(O1-F10)*. The runner yields stdout lines and keeps stderr only as a tail on a nonzero exit
   (`IProcessRunner.cs:33-38`), where Daoris's capture writes the harness's stderr into the transcript beside its stdout (`Loop/Driver.cs:4290-4294`)
   and reads access from it (`Agents/AgentErrors.cs:146-152`). So `LauncherRunner` pumps the child's stderr into the transcript as today, and
@@ -528,11 +609,14 @@ and the clock above keeps those variables from reaching a turn. Two kinds of con
   given to its `LauncherRunner`, until LQ9 lets a turn carry its own environment. It holds that one registration, so concurrent starts share
   no keyed singleton (`ClaudeCliBuilderExtensions.cs:88-107` *(AG20)*); they share only the layer's process-wide state, its verdict
   classifier's matchers among it, which Daoris leaves empty (`Lyntai/Core/Inference/ProviderVerdictClassifier.cs:16`, `:32`). **Its owner
-  is the `LayerRun` that built it** (the usage port's read for a read), which keeps it for the record's run, its go-ons and resumes
-  included, since each goes on under the start's spawn (`Loop/DriverContinuations.cs:1190-1193`), and for a long-lived run's whole life once
-  LQ3 lands, and disposes it at the run's close. 1b-i measures a start's composition against its spawn table, the two describing the door
-  alike, its cost recorded; its cases: two starts overlapping with distinct identities and accounts, a cancellation of one leaving the
-  other running, and a container disposed when its run closes.
+  is the `LayerRun` that built it** (the usage port's read for a read), which keeps it for the run's go-ons, since MSG1b's go-ons run
+  under the start's spawn (`Loop/DriverContinuations.cs:1189-1193`), and for a long-lived run's whole life once LQ3 lands, and disposes it
+  at the run's close. **A resume is a start of its own** *(O2-F5)*: it takes the walk's pick, possibly another account (MSG1g,
+  `:160-163`, `:176-179`), prepares its own spawn (`:388-392`) and may run in a later driver process, so a resume builds and owns its own
+  spawn's container, and round 2's container living across resumes is withdrawn. 1b-i measures a start's composition against its spawn
+  table, the two describing the door alike, its cost recorded; its cases: two starts overlapping with distinct identities and accounts, a
+  cancellation of one leaving the other running, a container disposed when its run closes, and a resume on another account building its
+  own.
 
 **Today's order** (D213
 point 3; X §10's steps): the common shell, inherited role and target identity removed; the start's Daoris identity and composed target (a
@@ -647,9 +731,11 @@ Daoris pins reading through it as today's readers read the recorded answers; tha
 - **The live cases are written once over `AgentRun`** (from m-i), so every view and both paths run one body; until m-i a live case keeps
   today's body over the door's spawn.
 - **A row carries its run kind** *(O1-F3)*: the suite's rows are a view, a provider, a door, a run kind and a case (`Driven`,
-  `Conversation`, or `*` for a door not split, `ProviderConformance.cs:189-199` gaining the field), and a pending line may name a `kind`,
+  `Conversation`, or `*` for a door not split, `ProviderConformance.cs:189-199` gaining the field), and a pending line may name a `run`,
   absent meaning both, so a line holds a case on the kind it drives; the tools' reader, `tools/stand-ins.mjs`, reads it too, its twin
-  (`.claude/knowledge/twins.md`).
+  (`.claude/knowledge/twins.md`). **The field is `run`, not `kind`** *(O2-F9)*: `provider.json`'s door `kind` already means native or
+  protocol (`tools/stand-ins.mjs:32-39`). The line's closed field list (`:40`), and the suite's `Unmatched` and its twice-held rule
+  (`ProviderConformance.cs:312`, `:370`), read `run` with the rest, a line held twice being one naming the same case, door and run.
 - **After a move, what each old view holds for a bound door** *(O1-F2)*: its declaration cases (identity, parts, ids, records, accounts,
   `Lent`, interactive, postures, tables for a Daoris-run kind), as before; its spawn, recipe, frame and live cases on a bound kind apply on
   the fourth view alone, the case's applicability reading the binding, so no pending line is needed and the pending file keeps no view.
@@ -657,6 +743,8 @@ Daoris pins reading through it as today's readers read the recorded answers; tha
   names the Lyntai request or row that the row waits on. A line whose row this design re-cuts (i, j's seam, k, l's readers, e's usage
   readers, m) is re-pointed, in the re-cutting row, to the row that now makes it pass, by §6.4's table (§1.1 row 17); the suite's closed list
   of rows (`ProviderConformance.cs:240-245`) gains m-i, m-ii and this design's rows in 1b-i, and loses i and k once no line names them.
+  **m-i comes first** *(O2-F2)*, so m-i's own commit adds m-i and m-ii to the list and re-points `live.word-before-wire` from m to m-ii,
+  its why naming `DoorInput`; 1b-i adds this design's rows.
 - **Lyntai's theory holds** every ability stated once, an unknown id naming what exists, a malformed descriptor refused, another
   provider's account and an unhonourable option refused before a spawn, an account's home reaching the child's variable
   (`Lyntai/tests/Lyntai.Tests/Agents/AgentProviderConformanceTests.cs:116-375`), and AG16 would hold the stream's rules. Daoris's suite does not
@@ -666,7 +754,7 @@ Daoris pins reading through it as today's readers read the recorded answers; tha
 - **The stand-in that proves the shape** is Daoris's `alt-stub`, its scenario contract and vocabulary its own; Lyntai's `acp-stub.mjs` stays
   Lyntai's test of its own seam. Neither substitutes for the other (X §14).
 
-### 6.3 Parity at a move: two paths, one commit, one oracle (round 2)
+### 6.3 Parity at a move: two paths, one commit, one oracle (round 2; its relation, round 3)
 
 Both reads found round 1's parity rule without a mechanism *(O1-F2, C1-1)*; this section is its replacement, the stricter of each read
 taken: the Opus maker's two paths over `AgentRun` in one commit, Codex's oracle of observations, its matrix and its planted regression.
@@ -674,26 +762,56 @@ taken: the Opus maker's two paths over `AgentRun` in one commit, Codex's oracle 
 1. **Both paths in the moving row's commit.** Before its move a door runs on `TransportRun` (m-i). The moving row adds its binding and
    `LayerRun` for the kinds it binds, and keeps the old path constructible beside it in the same commit, built from the door's own retained
    spawn, dialect and tables and never from the registry, which hands production the layer path alone; so the old path cannot reach the
-   replacement and regress with it.
+   replacement and regress with it. **The seam it needs** *(O2-F7)*: a look's `Driver` is built over `AdapterSet.Built()` inside the watch
+   (`Loop/DriverWatch.cs:656-658`), where only the roster is handed in (`:77`), so m-i hands the watch its adapter set, which the oracle
+   builds a look over for either path; and each static read left on the path reads names alone, as `ChatRunner`'s plugin catalogue does
+   (`Loop/Chat/ChatRunner.cs:1133`, `:1286`, `:1315`, `:1440`), a read of more than names on the path refused by the oracle's own case.
 2. **Every case that drives the door runs on both.** The suite's live cases (over `AgentRun`), the door's Process suites' cases and the
    rehearsal programs that speak its vocabulary run as a theory over the two paths, for each run kind the move binds. A real provider's
    behaviour at its move is proven here, by its Process suites' and fake programs' cases, where the suite's live cases reach stand-ins alone.
-3. **The oracle compares what each observed**, not the verdicts alone: the records handed to the writer, in order, with their payloads
-   (§5.4); the records written (the session's record, the binding, cooling entries, offers, the usage history); the spawn (§5.5's table, flag
-   by flag); what was written on stdin and when; the failure's kind, its source (a table entry, or the layer's `By`), the limit's end and its
-   provenance, the delivery; the end (an exit, a stop, a conclusion). The matrix is case × door × run kind × applicability (COAGENT1 §3.3's
-   eight facts as the run states them). Equal is the only pass: there is no allowance list, since a move states no difference (§2.2).
+3. **The oracle compares what each observed**, not the verdicts alone. Round 2's list and its *equal is the only pass* are replaced
+   *(O2-F1, C2-1)*: some fields name the path by construction (round 2's own `layer:` source, a usage history's `Source` and `Reader`, a
+   generated id, a time read off a clock), so literal equality could not pass, and an allowance list would let a difference through. The
+   relation is declared once, in 1b-i, before any move:
+   - **The observations**, listed by what the native capture hands each line to and what a run does beside its lines, so none is chosen
+     case by case. What the capture hands each line to: the lineage hook (`Agents/HarnessCapture.cs:153`); the harness's own words the
+     ending reads (`:145`, `:154`, `:159-161`); the streams beside (`:148`, `:155`); the conversation named (`:164-176`); the transcript's
+     lines and the session's events in order (`:178-183`); the account's window readings (`:185-196`); the live console (`output`). What
+     a run does beside them: the spawn (§5.5's table, flag by flag) and what was written on stdin and when; the downloads handed
+     (`Loop/DriverContinuations.cs:392`); the watch's hearing stamps (`Loop/Driver.cs:4292`); the machine log's lines
+     (`Agents/TransientRetries.cs:28-30`, `:43-46`); the service's account lines (`Loop/Driver.cs:3366-3380`); the records written (the
+     session's record, the binding, `cooling.json`, the weekly windows file, `HarnessRoster.cs:291-295`, offers, the usage history); the
+     failure as `AgentError` reads it, kind, phase, access disposition, limit with its end, window and provenance, and delivery (§5.3); the
+     end (an exit, a stop, a conclusion).
+   - **Equal, exactly and in order**, for every observation and field but those in the projection below: semantic outcomes, payloads,
+     the order of writes and the order of lines.
+   - **The projection: the fields that name the path, fixed in 1b-i and never grown inside a move.** `AgentError.By` and the log's `by`;
+     the usage history's `Source` and `Reader` (`HarnessRoster.cs:2354`); generated ids; times. Each is compared by a **correspondence**,
+     not dropped: a `By` and a `Source` against the door's correspondence, recorded in the moving row's commit beside its retained tables,
+     each layer entry paired with the Daoris entry it replaces, one to one, an entry unpaired failing; each path's value also checked
+     against its own expected source; a generated id by the order of its first appearance, so one renaming maps every id of one path onto
+     the other's; a time on a clock both paths are handed, compared as the same instant or the same interval from the run's start, a
+     library clock no seam reaches named in the projection with the interval it is held to (the usage source reads its own,
+     `Lyntai/Basic/CliUsageSource.cs:90` *(AG20)*). A field a move would need to add to the projection is a correction or a request
+     before the move (§2.2), never a widening inside it.
+   - **No correspondence permits** a reading dropped, a recovery or a limit's end changed, a delivery or an access disposition changed, or a
+     write reordered: those fields are never in the projection.
+   The matrix is case × door × run kind × applicability (COAGENT1 §3.3's eight facts as the run states them).
 4. **A held case holds alike.** A pending line holds a case on both paths, and the oracle requires both to fail at the same step with the
    same missing reader (`NotAnsweredYet`'s), so a held line cannot hide a difference, and the door's pending file does not grow in its move.
 5. **A regression is planted.** The moving row's proof plants one confined to the layer path through a seam the tests alone reach (a
    reading dropped, a limit's end lost, a delivery read as taken where a tool step had begun) and shows the oracle failing on each; nothing
-   of the seam ships.
+   of the seam ships. From round 3, 1b-i's plants a line the layer's reader drops, a write reordered, and a correspondence pairing one layer
+   entry with two Daoris entries, each failing *(O2-F1, C2-1)*.
 6. **The old path goes in the row's last commit**: the door's retained spawn, dialect and tables for the bound kinds, under §2.3 rule 4, the
    oracle's theory for that door with them, and the census falling there with each site's destination.
 
 1b-i builds the oracle and proves it on the tests' own provider, its Daoris path over a scenario program and its layer path over the same,
 with the planted regression; 1b-ii compares `alt-stub`'s protocol door through the layer with `acp-stub`'s through `AcpSession` on the
-scenario contract's cases, whose words the contract fixes; 1c uses it over the usage port's two implementations (§4.1), the recorded answers
+scenario contract's cases, whose words the contract fixes. **Two doors, not one on two paths** *(C2-1)*: their provider and door ids,
+account key, home variable and program arguments differ by design, so 1b-ii's correspondence adds those identity fields, each checked
+against its own door's declaration, and everything else equal as above; it shows the scenario contract read alike through the layer,
+never a door's parity, which is each move's. 1c uses it over the usage port's two implementations (§4.1), the recorded answers
 and the usage history fixtures (`Tests/Agents/ClaudeUsageTests.cs:149-179`, `CodexUsageTests.cs:140-155`) *(C1-2)*; every move after uses it
 over its door.
 
@@ -711,7 +829,7 @@ bound kind its spawn and recipe cases read the runner's recorded spawn, its tabl
 | `admission.not-widened` | u | u |
 | `applicability.one-fact-differs`, `.other-opening`, `.other-copy` | r | r |
 | `run.unsupported-refused` | m | **m-i** (an operation the run's evidence does not admit refused before a write) |
-| `live.word-before-wire` | m | **m-ii** (`DoorInput`) |
+| `live.word-before-wire` | m | **m-ii** (`DoorInput`), re-pointed in m-i's commit *(O2-F2)* |
 | `ability.structured`, `.words-at-next-step`, `.steering`, `.one-task-stopped`, `.resume-fails-closed`, `.stop-keeps-conversation` (q on a plugin's door) | g | g, a bound kind's read through its binding |
 | `ability.hands-servers` (q on a plugin's door), `.servers-inherit-environment`, `.leaves-own-servers-out` | p | p |
 | `ability.requests-held`, `live.held-request` | l | l on a Daoris-run door; a protocol door's move then needs it on both paths, its layer path AG19 with LQ3 (R-e), dsh refusing every request on both |
@@ -719,7 +837,7 @@ bound kind its spawn and recipe cases read the runner's recorded spawn, its tabl
 | `live.reported-model`, `live.refused-model`, `live.reask-later-choice`, `live.reask-none` | n | n; a protocol door's layer path AG11, AG12, LQ8 and LQ3 |
 | `live.pin-controlled` | f | f |
 | `frames.unknown-unread`, `dialect.recorded-frames` on `dsh`, `codex-acp`, `acp-stub`, `claude-code-acp`, `conformance-door` | i | each door's move: `AGENTLYNTAI1e-i` dsh; `1e-ii` `codex-acp` and `acp-stub`; `1e-iii` `claude-code-acp`; `1e-iv` `conformance-door`, a plugin's; `frames.unknown-unread`'s why LQ7's bounded diagnostic |
-| `frames.unknown-unread`, `dialect.recorded-frames` on `claude-code` | k | **split by run kind**: `kind: Driven` `AGENTLYNTAI1d` (LQ7's CLI half), `kind: Conversation` `AGENTLYNTAI1f-i` |
+| `frames.unknown-unread`, `dialect.recorded-frames` on `claude-code` | k | **split by run kind**: `run: Driven` `AGENTLYNTAI1d` (LQ7's CLI half), `run: Conversation` `AGENTLYNTAI1f-i` *(O2-F9)* |
 | `dialect.cross-fed` on each protocol door | j | j (AG15) |
 | `alt-stub`'s own, from 1b-ii | — | its native door's own-vocabulary stream cases (`dialect.recorded-frames`, `frames.unknown-unread` on its native door) `AGENTLYNTAI1f-ii` (LQ13); its protocol door's own-vocabulary extension cases j (AG15); the rest as `stub`'s and `acp-stub`'s lines |
 
@@ -747,10 +865,11 @@ and again at the release in row 1a: the resolved graph before and after, duplica
 ### 7.2 Versioning
 
 Each row waits on a release label, never a guessed version (X §16): **R-a** (AG1 to AG9, with D234 if accepted: rows 1a, 1b), **R-c** (LQ2,
-LQ14, LQ15: 1c) *(C1-2, C1-3, O1-F11)*, **R-d** (AG10, AG18, LQ4, LQ5, LQ6, LQ7's CLI half: 1d), **R-e1** (LQ3's ACP half, with LQ7's ACP half
+LQ14, LQ15 with its exchange order: 1c) *(C1-2, C1-3, O1-F11, C2-5)*, **R-d** (AG10, AG12, AG18, LQ4, LQ5, LQ6, LQ7's CLI half, LQ11's
+access half, LQ16: 1d) *(O2-F3, O2-F4, C2-2)*, **R-e1** (LQ3's ACP half, with LQ7's ACP half
 only where dsh's children are read today: 1e-i) *(O1-F15)*, **R-e** (LQ3's ACP half with its waiting, AG11, AG12, AG19, LQ4's ACP half,
-LQ7's ACP half, LQ8: 1e-ii to 1e-iv), **R-f** (LQ3's CLI half: 1f-i; with LQ13: 1f-ii) *(O1-F6)*, **R-j** (AG15: j), **R-B** (LQ11, LQ12:
-stage B). Round 1's **R-OR** is withdrawn: OPENROUTER1's key reaches the layer's door through the spawn's registration, so its move needs no
+LQ7's ACP half, LQ8, LQ11's access half, LQ16 where the door's recorded limits name a window: 1e-ii to 1e-iv), **R-f** (LQ3's CLI half:
+1f-i; with LQ13: 1f-ii) *(O1-F6)*, **R-j** (AG15: j), **R-B** (LQ11, LQ12 with its evidence observation: stage B) *(C2-4)*. Round 1's **R-OR** is withdrawn: OPENROUTER1's key reaches the layer's door through the spawn's registration, so its move needs no
 AG17 (§9.4) *(O1-F12)*. Fewer releases may carry them; at dispatch each row records the published version satisfying its label, and until one exists
 the row is not dispatched. **Taking a release** follows D22's note of SHEN3: the changelog read at the release's tag for every version skipped,
 the compare read for the files Daoris composes (`Lyntai/Core/Agents/`, `Lyntai/Core/Processes/IProcessRunner.cs`,
@@ -772,7 +891,8 @@ note** *(C1-8)*: the pack's mechanics are a procedure, written into `docs/develo
 takes only an explanatory cross-reference to it then, so a later row reading D22 beside D235 finds which governs (§1.1 row 14). The
 procedure: a pack of a named public Lyntai commit (Lyntai's D235 recipe: `dotnet pack` into an untracked folder under a version of its own,
 the global cache's copy evicted) may serve as **evidence for a request** before a release, made from a fresh clone under this repository's
-ignored `local/`, never in a Lyntai checkout another session works in. **It is read only when a build is invoked with an explicit property
+ignored `_fixtures/`, repository scratch, never `local/`, which holds private context *(O2 §0, on C1-8)*, and never in a Lyntai checkout
+another session works in. **It is read only when a build is invoked with an explicit property
 naming it, never because a file is present** *(C1-8)*: round 1's untracked file the props imported when present would let an ordinary gate
 on that machine consume the pack, so it is withdrawn; the tracked props name the property and no folder or version, and the merge tool's
 gates and the CI beside refuse a build with it set. **No merged branch, no dispatched row and no gate builds on one**, and a build that falls
@@ -810,11 +930,12 @@ request (§5.3).
 | **LQ8** | A consumer offering models needs the open's offered models and options, what it accepted and what it refused, apart from reported usage. | D213 point 5's `Negotiated`; `Agents/AgentOffers.cs:41`, `:86`; AG11 (`Lyntai/TASKS.md:310-316` *(AG20)*) | AG11 widened, or new | 1e |
 | **LQ9** | An application that starts each turn with variables of its own needs a turn's environment, applied as a registration's is, a null removing one. | D213 point 6; §0.2 row 3 | new, or AG17 widened | none (one registration per start meanwhile) |
 | **LQ10** | An application that composes without a container needs each built-in door's provider, its claims and usage source included, constructible directly. | §0.2 row 2; the driver takes no container (survey §11) | new | none (a private container meanwhile) |
-| **LQ11** | An application that tells a person what to do about a hold needs the owner action's reason: refill, sign in, grant a permission, change a configuration. | `docs/2026-10-27-provider-infrastructure-design.md:126-130` | new | stage B |
-| **LQ12** (restated in round 2 *(O1-F13, C1-6)*) | An application whose own planner selects, and which runs several processes on one store, needs the restriction rules without the walk, each operation pure over a snapshot the host holds and stores, so its own lock or compare-and-set sees a concurrent writer: a failure observed as a hold, restated at a higher revision when its attempt fails; admission over a seat's covering scopes, a door's allowance among them, with the reservation committed against the complete applicable state; a probe lease with its token; a report by that token resolving the lease only while the token still owns it; and a clear by id and revision. A hold's identity must be generation-safe, never reused after its removal, and a hold keyed by the subject key the host hands. | §0.2 row 5; D212 §2.4's one walk; several processes on one home (§3.2's lines); the pool's last writer winning (`AgentAccountPool.cs:32-34` *(AG20)*); the reducer, pure but internal, with its whole event set (`AgentPoolReducer.cs:17-27`; `AgentAccountPool.cs:17-31`, `:105-140` *(AG20)*); a hold id from scope and cause restarting at revision 1 after removal, so a stale clear matches a recreated hold (`AgentPoolReducer.cs:155-170` *(AG20)*), and a success checking the revision and not the lease's owner, a lease moving no revision (`:124-151` *(AG20)*), each a counterexample read from the source and not run | new | stage B |
-| **LQ13** (new in round 2 *(O1-F6)*) | A host whose agent's lines the library does not read needs the CLI turn's rules (exactly one terminal, a fault made the terminal, the delivery stamped from what the turn showed) over a line reader it supplies, for a program it starts as the library starts its own. | the loop every CLI door shares, internal (`Lyntai/Basic/CliAgentLoop.cs:23`, `:37-43`, `:88-156`); `IAgentProvider` public (`Lyntai/Core/Agents/IAgentProvider.cs:51` *(AG20)*) but a host's provider would copy the loop; `alt-stub`'s native door and `stub`'s plain lines (`Agents/Adapters.cs:1680-1702`) | new | 1b-ii's native own-vocabulary cases; 1f-ii |
-| **LQ14** (new in round 2 *(C1-2)*) | A consumer that keeps an account's allowance history needs the server's observations as stated: each window's scope, a value that may be absent, its precision (a fractional percent kept), a window said in part, the server's own limit rows by kind and scope, and whether a reset was stated, a host's naming and inferred resets left to the host. | Daoris's history (`Agents/ClaudeUsage.cs:109-156`; `Agents/CodexUsage.cs:169-202`; `Agents/HarnessRoster.cs:2339-2358`) and its fixtures (`Tests/Agents/ClaudeUsageTests.cs:149-179`, `CodexUsageTests.cs:140-155`); the layer's window an integer percent with no scope (`Lyntai/Core/Agents/AgentUsageSource.cs:27`), its Claude reader two windows (`ClaudeCli/ClaudeUsageDialect.cs:70-94`), its Codex reader `rateLimits` alone, a fractional percent making the whole reading unknown (`CodexCli/CodexUsageDialect.cs:68-93`) | new, on AG9's built source | 1c |
-| **LQ15** (new in round 2 *(O1-F11)*) | A host that reads an account's allowance in that account's home needs to name where the vendor's server runs and what the server is told of its client, since a vendor keys project state by its working directory and a server may act on its client's name. | today's read in one folder under the account's home (`Agents/HarnessRoster.cs:2321-2325`), the layer's in a fresh one under the system's temporary folder per read (`CliUsageSource.cs:84` *(AG20)*); the client names `daoris-driver` against `lyntai` (`Agents/CodexUsage.cs:244`; `CodexCli/CodexUsageDialect.cs:35`) | new | 1c |
+| **LQ11** (widened in round 3 *(C2-2)*) | An application that tells a person what to do about a hold needs the owner action's reason: refill, sign in, grant a permission, change a configuration; and, for an access failure, the same reason as the door read it: whether the account must sign in again or its credential was refused. | `docs/2026-10-27-provider-infrastructure-design.md:126-130`; Daoris's refused open telling the two apart (`Loop/DriverContinuations.cs:617-630`), where the layer's `Access` kind carries no reason (`AgentFailure.cs:17-18`) | new | stage B; its access half 1d and 1e |
+| **LQ12** (restated in round 2 *(O1-F13, C1-6)*) | An application whose own planner selects, and which runs several processes on one store, needs the restriction rules without the walk, each operation pure over a snapshot the host holds and stores, so its own lock or compare-and-set sees a concurrent writer: a failure observed as a hold, restated at a higher revision when its attempt fails; admission over a seat's covering scopes, a door's allowance among them, with the reservation committed against the complete applicable state; a probe lease with its token; a report by that token resolving the lease only while the token still owns it; a clear by id and revision; and, since round 3 *(C2-4)*, an evidence observation with no attempt, a status report or a credit or budget check naming the hold's identity and revision and the subject key it was observed for, which discharges only the recovery kinds that kind of evidence answers (a newer report contradicting a stated recovery at its scope; a positive credit check an owner action's refill), a stale, wrong-scope or other-subject observation discharging nothing, and the one-attempt release kept apart. A hold's identity must be generation-safe, never reused after its removal, and a hold keyed by the subject key the host hands. | the infrastructure design's discharge by positive evidence (`docs/2026-10-27-provider-infrastructure-design.md:176-181`) against `Lift`, which lifts stated recoveries alone (`AgentPoolReducer.cs:173-190` *(AG20)*); §0.2 row 5; D212 §2.4's one walk; several processes on one home (§3.2's lines); the pool's last writer winning (`AgentAccountPool.cs:32-34` *(AG20)*); the reducer, pure but internal, with its whole event set (`AgentPoolReducer.cs:17-27`; `AgentAccountPool.cs:17-31`, `:105-140` *(AG20)*); a hold id from scope and cause restarting at revision 1 after removal, so a stale clear matches a recreated hold (`AgentPoolReducer.cs:155-170` *(AG20)*), and a success checking the revision and not the lease's owner, a lease moving no revision (`:124-151` *(AG20)*), each a counterexample read from the source and not run | new | stage B |
+| **LQ13** (new in round 2 *(O1-F6)*) | A host whose agent's lines the library does not read needs the CLI turn's rules (exactly one terminal, a fault made the terminal, the delivery stamped from what the turn showed) over a line reader it supplies, for a program it starts as the library starts its own; the reader told when the stream ends and with which exit code, so it can yield its terminal there *(O2-F6)*. | the loop every CLI door shares, internal (`Lyntai/Basic/CliAgentLoop.cs:23`, `:37-43`, `:88-156`); a stream ending with no terminal read fatal `no-terminal-event` whatever the exit (`:147-155`), where `stub`'s plain lines have no terminal and its success is its exit (`Agents/Adapters.cs:1680-1683`); `IAgentProvider` public (`Lyntai/Core/Agents/IAgentProvider.cs:51` *(AG20)*) but a host's provider would copy the loop; `alt-stub`'s native door and `stub`'s plain lines (`Agents/Adapters.cs:1680-1702`) | new | 1b-ii's native own-vocabulary cases; 1f-ii |
+| **LQ14** (new in round 2 *(C1-2)*) | A consumer that keeps an account's allowance history needs the server's observations as stated: each window's scope, a value that may be absent, its precision (a fractional percent kept), a window said in part, the server's own limit rows by kind and scope, whether a reset was stated, and the plan the server names *(O2-F8)*, a host's naming and inferred resets left to the host. | Daoris's history (`Agents/ClaudeUsage.cs:109-156`; `Agents/CodexUsage.cs:57`, `:169-202`; `Agents/HarnessRoster.cs:2347-2366`) and its fixtures (`Tests/Agents/ClaudeUsageTests.cs:149-179`, `CodexUsageTests.cs:140-155`); the layer's window an integer percent with no scope (`Lyntai/Core/Agents/AgentUsageSource.cs:27`), its Claude reader two windows (`ClaudeCli/ClaudeUsageDialect.cs:70-94`), its Codex reader `rateLimits` alone, a fractional percent making the whole reading unknown (`CodexCli/CodexUsageDialect.cs:68-93`) | new, on AG9's built source | 1c |
+| **LQ15** (new in round 2 *(O1-F11)*; restated in round 3 *(O2-F8, C2-5)*) | A host that reads an account's allowance in that account's home needs to name where the vendor's server runs and what the server is told of its client (its name and version), since a vendor keys project state by its working directory and a server may act on its client's name; and the exchange to follow the protocol's order, each request written once the answer it depends on has arrived and an error answer to it ending the read, the sequencing the library's, never the host's. | today's read in one folder under the account's home (`Agents/HarnessRoster.cs:2329-2333`), the layer's in a fresh one under the system's temporary folder per read (`CliUsageSource.cs:84` *(AG20)*); the client `daoris-driver` version `0` against `lyntai` version `1` (`Agents/CodexUsage.cs:244`; `CodexCli/CodexUsageDialect.cs:35`); today's reads waiting for `initialize`'s answer and giving up on its error (`Agents/ClaudeUsage.cs:197-203`; `Agents/CodexUsage.cs:241-250`) against the layer writing every request before reading any answer (`CliUsageSource.cs:133-134` *(AG20)*; `CodexUsageDialect.cs:33-38`); whether the installed servers tolerate the eager order unmeasured | new | 1c |
+| **LQ16** (new in round 3 *(O2-F3, O2-F4)*) | A host that keeps an account's allowance by window needs, from an agent's own stream, the window a limit names (the vendor's own name for it, where the door states one) and the allowance reports the stream makes while a turn runs, allowed as well as rejected, each as an observation of the account, a host's naming and its use of them left to the host. | the weekly windows kept and the not-lifted check, each read by the limit's window (`Agents/HarnessRoster.cs:291-295`; `Course/LimitResume.cs:88`); the layer's restriction with no window (`AgentFailure.cs:100-104`), its Claude reader folding the frame's type into `Cause` (`ClaudeCli/StreamJsonFailure.cs:88-94`); the walk fed by each `rate_limit_info` frame (`Agents/StructuredOutput.cs:11-15`; `Agents/HarnessCapture.cs:185-196`), which the layer keeps only when rejected (`ClaudeCli/StreamJsonAgentReader.cs:55-62`) | new | 1d; a protocol door whose recorded limits name a window |
 | filed | AG15, AG16 | the study's | filed | 1b's protocol own-vocabulary cases; j |
 | filed | AG17 | the study's | filed | s-vi's declared reads |
 | filed | AG13, AG14 | the study's | filed | AGENTINFRA1's stage D |
@@ -823,8 +944,8 @@ request (§5.3).
 move with their door); Q-K, a variable per door on one account (when Daoris takes a layer pool on a key one of whose doors reads another
 variable); a pool across processes (D219's re-open, when shared-home activation is designed); provenance on every reading (as the study has
 it). Round 1's *a CLI door a host can teach a third agent's lines, when a third native agent is chosen* is asked now as LQ13, since 1b-ii's
-own native door is that trigger *(O1-F6)*. Daoris reports LQ4, LQ5, LQ6, AG10 and AG18 as blocking 1d, LQ2, LQ14 and LQ15 as blocking 1c,
-and LQ13 as blocking 1f-ii, which moves them in Lyntai's build order (D235; survey §13).
+own native door is that trigger *(O1-F6)*. Daoris reports LQ4, LQ5, LQ6, LQ16, LQ11's access half, AG10, AG12 and AG18 as blocking 1d,
+LQ2, LQ14 and LQ15 as blocking 1c, and LQ13 as blocking 1f-ii, which moves them in Lyntai's build order (D235; survey §13).
 
 ## 9. The order and the rows (Q19, Q20)
 
@@ -859,7 +980,12 @@ changes *(O1-F1)*.
 - **Code.** `TransportRun`, Daoris's `AgentRun` over today's transports (`AcpSession` on a protocol door, the native capture on a native
   one), its operations admitted by the run's own evidence; the driven executor, the continuations, the conversation's runner and every other
   start hold it in place of preparing an `ISessionAdapter`'s `ProcessStartInfo` themselves (`Loop/DriverContinuations.cs:388-392`); the
-  live cases rewritten once over `AgentRun`.
+  live cases rewritten once over `AgentRun`. **Round 3** *(O2-F2, O2-F7)*: `AgentRun` gains the four members §4.1 names (the end, the
+  records until l, the carriers, the go-on), and no executor calls its words' operations before m-ii; every executor means the driven
+  start and the continuations, the conversation's runner, and the helpers', intakes', opinions' and partners' starts
+  (`Loop/DriverHelpers.cs:1071`, `Loop/DriverIntakes.cs:342`, `Loop/DriverOpinions.cs:265`, `Loop/DriverPartners.cs:701` among their
+  sites); the watch is handed its adapter set (§6.3 point 1); the pending files' `live.word-before-wire` re-pointed to m-ii and the closed
+  list gaining m-i and m-ii (§6.2).
 - **What a person sees.** Nothing. **Why a row of its own, and first:** no executor can start a layer-run door today, since a layer door
   has no `ProcessStartInfo`, and §6.3's oracle needs a Daoris path over `AgentRun` to compare with.
 - **Proof.** §12's m-i line. **Waits for** nothing of Lyntai's.
@@ -877,7 +1003,11 @@ changes. D213's row c, re-cut. One feature, two branches:
   its clocks, its stderr and its stop, `LayerRun` over one turn per call handing today's writer today's records, the failure ingress's
   builder, the translations of claims, accounts, failures and events: §5.3 to §5.5), `NormalizedFailure` and `AgentErrors.OfNormalized`, the
   registry's layer view, the suite's fourth view with its run kind, §6.3's oracle, and §6.4's re-pointing with the closed list of rows,
-  proven on a provider the tests define, never production *(O1-F1, O1-F3, O1-F5, O1-F8, O1-F9, O1-F10, C1-1, C1-4, C1-10)*.
+  proven on a provider the tests define, never production *(O1-F1, O1-F3, O1-F5, O1-F8, O1-F9, O1-F10, C1-1, C1-4, C1-10)*. **Round 3**:
+  first, on today's path, `AgentError`'s typed access disposition with `OpeningAccount` reading it, nothing else changing *(C2-2)*; then
+  the ingress keeping today's phase and building a whole `LimitSeen` under D125's bounds, `Limited`'s trusted entry with its seven callers
+  routed by kind, the delivery mapping of §5.3 *(O2-F3, C2-3)*, the runner's raw-line stamps, its harness's words and a resume's own
+  container *(O2-F4, O2-F5)*, and §6.3's declared projection with its correspondences *(O2-F1, C2-1)*.
 - **1b-ii, `alt-stub` by its folder.** `Agents/Providers/AltStub/` (`provider.json`, `pending.json`, a `Program/` entry answering the scenario
   contract in its own vocabulary, its native door Daoris-run on today's plain capture as `stub`'s is, its protocol door's registration) and
   one line in `Providers.Built()`; **the diff its proof**, a change outside the folder a gap named; no host turn loop is written *(O1-F6)*.
@@ -895,17 +1025,24 @@ account's home reaches the vendor's server.
   compares them over every recorded answer and the usage history fixtures, completely, never the two headline windows alone *(C1-2)*; then
   the question and its readers (`ClaudeUsage`'s and `CodexUsage`'s reading, the usage switch's call into them) and `IUsageQuestion` deleted
   in its last commit; **the host half kept** around the layer's read: an account that is a key not read, the account's probe lock, no read
-  while a session of Daoris's runs on it (`HarnessRoster.cs:2299-2305`; `ProbeLock.cs:8-19`) *(O1-F11)*; the reading mapped into today's
+  while a session of Daoris's runs on it (`HarnessRoster.cs:2307-2313`; `ProbeLock.cs:8-19`) *(O1-F11)*; the reading mapped into today's
   windows and history, Daoris's naming and inferred resets kept; the read spawned in its own spawn's container through `LauncherRunner`'s live
-  stdin; row e's pending lines for the usage readers re-pointed here.
-- **The read's own spawn and exchange table** *(O1-F11)*, against today's (`ClaudeUsage.cs:36-46`; `HarnessRoster.cs:2316-2336`): the program,
+  stdin; row e's pending lines for the usage readers re-pointed here; the ask carrying the resolved command and toolchain, the patience
+  the port's, `Plan` from the answer and `Source` and `Reader` by correspondence (§4.1) *(O2-F8)*.
+- **The read's own spawn and exchange table** *(O1-F11)*, against today's (`ClaudeUsage.cs:36-46`; `HarnessRoster.cs:2324-2344`): the program,
   its arguments, the environment, the working directory, the lines written and the patience. Each difference is LQ2's, LQ15's or a
   correction of its own, and 1c waits for it: the version probe before the server (`CliUsageSource.cs:77-82` *(AG20)*), LQ2's policy; a
   fresh folder under the system's temporary folder per read where today's runs in one folder under the account's home
-  (`CliUsageSource.cs:84` *(AG20)*; `HarnessRoster.cs:2321-2325`), LQ15; Claude's server started with `-p` where today's is not
+  (`CliUsageSource.cs:84` *(AG20)*; `HarnessRoster.cs:2329-2333`), LQ15; Claude's server started with `-p` where today's is not
   (`ClaudeCli/ClaudeUsageDialect.cs:30-31`; `ClaudeUsage.cs:38`), a correction before 1c (today's read adopting `-p`) where the installed
-  read measures the two alike, else a request carrying both measurements; the client name Codex's server is told
-  (`CodexCli/CodexUsageDialect.cs:35`; `CodexUsage.cs:244`), LQ15.
+  read measures the two alike, else a request carrying both measurements; the client name and version Codex's server is told, `lyntai`
+  `1` against `daoris-driver` `0` (`CodexCli/CodexUsageDialect.cs:35`; `CodexUsage.cs:244`), LQ15; and, fifth, **the exchange's order**
+  *(O2-F8, C2-5)*: both of today's reads wait for `initialize`'s answer before the next line and give up on its error
+  (`ClaudeUsage.cs:197-203`; `CodexUsage.cs:241-250`), where the layer queues every request before reading any answer
+  (`CliUsageSource.cs:133-134` *(AG20)*), so equal lines written are not an equal exchange: LQ15, restated, asks the order kept inside
+  the library, R-c closing on it, and the runner parses nothing of either protocol. Its case: a fake server that withholds
+  `initialize`'s answer and fails on any later line arriving first, and one that answers it with an error, each read on both paths as
+  today's reads them. Whether the installed servers tolerate the eager order is unmeasured and changes none of it.
 - **What a person sees.** The Accounts screen's windows on both agents as before; the screenshot is that screen with a signed-in account of
   each, in English and Chinese.
 - **Proof.** §12's 1c line. **Waits for** R-a and R-c (LQ2's restated answer, LQ14, LQ15); neither of AG20's answers.
@@ -918,16 +1055,23 @@ account's home reaches the vendor's server.
   after `-p` (`Agents/Adapters.cs:2192`, `:2228`; `Loop/DriverContinuations.cs:1170-1178`); the tests and fake programs that read it after
   `-p` read it on stdin (`Tests/Loop/NativeResumeTests.cs:29`; `Tests/Loop/SessionMessagesTickTests.cs:852-853`), each listed in the row;
   `-p` itself stays, Claude Code's print mode, so a program telling a usage read by its absence (`SessionMessagesTickTests.cs:851`) still
-  tells it. Needs no release.
+  tells it. **A prompt that is not ASCII** *(O2-F10)*: argv carries it as UTF-16, but the driven spawn sets no stdin encoding
+  (`Agents/Adapters.cs:1536-1541`), where the usage read sets BOM-less UTF-8 (`Agents/CodexUsage.cs:303-306`), and whether the launcher and
+  the shell pass it intact is unmeasured; so 1s-i sets the driven stdin to BOM-less UTF-8 as the usage read does, and its cases include a
+  prompt in Chinese and one with a character outside the Basic Multilingual Plane, read back byte for byte by the fake program through
+  the launcher, before its installed proof runs. Needs no release.
 - **AGENTLYNTAI1s-ii ⚖. A driven Claude Code start denies, or keeps, the three tools a headless turn cannot answer.** First a measurement
-  of what `AskUserQuestion`, `ExitPlanMode` and `EnterPlanMode` each do on today's `-p` run, on a named account (§11 item 3); then the
+  of what `AskUserQuestion`, `ExitPlanMode` and `EnterPlanMode` each do on today's `-p` run, on a named account (§11 item 3), under each
+  of the three driven modes (`default`, `acceptEdits`, `bypassPermissions`) and on a resume as well as a start *(O2-F10)*; then the
   decision at both makers' read of the row: if a driven start denies them, a correction on today's spawn (`--disallowed-tools` with the
   three), which the layer's door then matches; if not, LQ4's second half is sent and 1d waits for it *(O1-F4)*. ⚖ since it narrows what a
   driven start may do. Needs no release.
 - **AGENTLYNTAI1d ⚖. Claude Code's driven sessions run through the layer and read, resume, cool and end as before.** The `claude-code`
   door bound for its driven kind, its conversations Daoris-run (§4.1); its move **states no difference** (§2.2): the prompt on stdin landed
   as 1s-i, the flow tools settled by 1s-ii, the server file Daoris's own as `McpConfigPath` (§5.6), the mode carried by LQ4, the effort by
-  LQ5, the plugins by LQ6, its stderr sentences read by the layer's fault terminal (§5.3); the Process suites' and rehearsals'
+  LQ5, the plugins by LQ6, its stderr sentences read by the layer's fault terminal (§5.3); a limit's window and the stream's allowance
+  reports by LQ16, a refused model by AG12, an access failure's reason by LQ11's access half, the harness's own words kept by the runner
+  (§5.3, §5.4) *(O2-F3, O2-F4, C2-2)*; the Process suites' and rehearsals'
   Claude-vocabulary programs run on both paths by §6.3's oracle; from 1d `stub`'s mirrored Claude Code words are its own, in its folder,
   counted as the stand-in's, and the rehearsal phases that rehearse Claude Code's driven path are re-pointed to a Claude-vocabulary program
   through the layer's door, or said to rehearse the stand-in alone *(O1-F7)*; `ClaudeStreams` and `StructuredOutput` stay for the
@@ -1017,7 +1161,8 @@ reaches the window.
 3. **Installed proofs that spend.** What: m-i's as D213's row m has it (a session on each protocol door resuming its own conversation and
    ending as before), with one driven session and one conversation on Claude Code's native door; 1c's one usage read per agent on a named
    account (the vendor's server under the account's home, no model run), and Claude's read with and without `-p`; 1s-i's one driven session
-   and one resume with the prompt on stdin; 1s-ii's measurement, one driven session asked to reach each of the three tools; 1d's one driven
+   and one resume with the prompt on stdin; 1s-ii's measurement, a driven session asked to reach each of the three tools under each of the three driven modes, and one resume
+   *(O2-F10)*; 1d's one driven
    session and one resume; OPENROUTER1's move on the owner's key; 1e's one session and one resume per door; 1f-i's one conversation and one
    resume; j's and t's as D213's rows have them; LQ3's measurement of Codex's adapter where no recorded frame answers it. Yes: each runs under a recorded
    authorization or the owner's bounded yes, naming its account and bound, after its row is staged. Where: §12.
@@ -1038,14 +1183,14 @@ production door moves, the parent's installed proof, recorded apart from mocked 
 
 | Row | Unit and census | Process | Conformance | Rehearsals | A person sees | Install, and what it spends |
 |---|---|---|---|---|---|---|
-| m-i | every executor holding `AgentRun`, `TransportRun` beneath it; `run.unsupported-refused` un-pends; `StructureTests` at no family | `ContinuationTests`, `ChatGoOnTests`, `ChatGoesOnProcessTests`, `ChatTransientProcessTests`, `AcpResumeTests`, `LimitResumeTickTests`, `DrivenInboxTests`, `LimitWaitsProcessTests` whole, through `TransportRun` | every view unchanged, the live cases over `AgentRun` | family and deployment, whole | nothing | §11 item 3's m-i proof |
+| m-i | every executor holding `AgentRun`, `TransportRun` beneath it, its four added members and no words' operation called; `run.unsupported-refused` un-pends; `live.word-before-wire` re-pointed to m-ii and the closed list gaining m-i and m-ii; the watch handed its adapter set; `StructureTests` at no family | `ContinuationTests`, `ChatGoOnTests`, `ChatGoesOnProcessTests`, `ChatTransientProcessTests`, `HandOverTests`, `AcpResumeTests`, `LimitResumeTickTests`, `DrivenInboxTests`, `LimitWaitsProcessTests` whole, and the suites that start the helpers', intakes', opinions' and partners' runs (`HelperProcessTests`, `PartnerProcessTests`, `IntakeTests`, `OpinionLookTests` among them, listed whole at dispatch from the four executors' sites), through `TransportRun` *(O2-F2)* | every view unchanged, the live cases over `AgentRun` | family and deployment, whole | nothing | §11 item 3's m-i proof |
 | 1a | `StructureTests`' planted cases; the token at zero outside its places; a restore with the HTTP cache cleared; the isolated-folder restore from the closure, remote sources cleared; the resolved graph and publish layout recorded | none | three views unchanged byte for byte | the deployment rehearsal, the parent's | nothing | the published app starts with package feeds unreachable and a stand-in session runs; nothing spent |
-| 1b-i | claims read into parts; the account mapping and its exception, shown in the registry's container; a duplicate refused before the layer's registry; case-blind resolution; a spawn's composition against its spawn table, its cost recorded; two overlapping starts with distinct identities and accounts, a cancellation of one leaving the other, a container disposed at its run's close; the runner's members through the launcher, `CommandExists` from Install; no clock on a turn, a stand-in silent past two minutes ending by its own terminal, the `LYNTAI_*` variables planted changing nothing; stderr in the transcript, a stop read as a stop; the ingress's four kinds, stated and unknown recovery, an owner action, and the harness-source negatives on both paths; a layer turn's records equal to a Daoris turn's for one scenario; `NeverSent` with a written prompt read uncertain; the oracle failing on each planted regression; on the tests' provider | the tests' provider's program through the runner, contained (`containment.not-widened`), on both paths | the fourth view on it with run kinds; §6.4's re-pointing; the closed list of rows | none | nothing | none |
-| 1b-ii | the diff its folder and one line; no `alt-stub` site outside it | its live cases through the layer and the runner, contained; its native door on today's plain capture | `alt-stub`'s lines naming their rows, its native door's own-vocabulary stream cases held on 1f-ii; its protocol door through the layer equal by the oracle to `acp-stub`'s through `AcpSession` on the scenario contract | the family rehearsal's stand-in phase runs `alt-stub`'s pair with no edit | nothing | none |
-| 1c ⚖ | the usage port's two implementations equal by the oracle over every recorded answer and the usage history fixtures, completely; the host half (a key not read, the probe lock, a busy account not read) around the layer's read; the read's spawn and exchange table against today's with each difference closed; the floor and freshness unchanged; a version not yet validated read as LQ2's answer has it; the sessions never opened; `IUsageQuestion` gone; the census shorter by the usage readers | a stand-in usage server through the runner's live stdin, held until it answers, bounded by today's patience | the usage cases in every view, the two providers in the fourth | the family rehearsal whole | the Accounts screen's windows on both agents as before, in both languages | one read per agent on one named account, no model run |
-| 1s-i | the start's, the resume's and the go-on's prompt on stdin, closed after it, argv carrying none; each test and fake program reading it there | `ContinuationTests`, `NativeResumeTests`, `SessionMessagesTickTests` and the native Process suites whole | unchanged | family and deployment | nothing | one driven session and one resume |
+| 1b-i | claims read into parts; the account mapping and its exception, shown in the registry's container; a duplicate refused before the layer's registry; case-blind resolution; a spawn's composition against its spawn table, its cost recorded; two overlapping starts with distinct identities and accounts, a cancellation of one leaving the other, a container disposed at its run's close; the runner's members through the launcher, `CommandExists` from Install; no clock on a turn, a stand-in silent past two minutes ending by its own terminal, the `LYNTAI_*` variables planted changing nothing; stderr in the transcript, a stop read as a stop; the ingress's four kinds, stated and unknown recovery, an owner action, and the harness-source negatives on both paths; a layer turn's records equal to a Daoris turn's for one scenario; `NeverSent` with a written prompt read uncertain; the oracle failing on each planted regression; on the tests' provider. **Round 3:** the typed access disposition on today's path first, `OpeningAccount` reading it; a resume's open refused with a limit and with each access disposition, read `Open` and its account handled on both paths as today, a prompt's refusal touching none *(C2-2)*; a stated reset just past, one past the furthest and a weekly window through `Limited`'s trusted entry *(O2-F3)*; a tool call, then a transient failure, then D210's go-on in the same conversation, the original prompt never resent, on both paths *(C2-3)*; the declared projection, each correspondence one to one, the ids renamed by first appearance and the times on one clock *(O2-F1, C2-1)*; outside lines in the transcript and the harness's words, every raw line stamped for the watch, a resume on another account building its own container *(O2-F4, O2-F5)* | the tests' provider's program through the runner, contained (`containment.not-widened`), on both paths | the fourth view on it with run kinds; §6.4's re-pointing; the closed list of rows | none | nothing | none |
+| 1b-ii | the diff its folder and one line; no `alt-stub` site outside it | its live cases through the layer and the runner, contained; its native door on today's plain capture | `alt-stub`'s lines naming their rows, its native door's own-vocabulary stream cases held on 1f-ii; its protocol door through the layer equal by the oracle to `acp-stub`'s through `AcpSession` on the scenario contract, the two doors' identity fields by 1b-ii's correspondence *(C2-1)* | the family rehearsal's stand-in phase runs `alt-stub`'s pair with no edit | nothing | none |
+| 1c ⚖ | the usage port's two implementations equal by the oracle over every recorded answer and the usage history fixtures, completely; the host half (a key not read, the probe lock, a busy account not read) around the layer's read; the read's spawn and exchange table against today's with each difference closed, the exchange's order among them, a fake server withholding `initialize`'s answer and one answering it with an error read on both paths as today *(O2-F8, C2-5)*; the floor and freshness unchanged; a version not yet validated read as LQ2's answer has it; the sessions never opened; `IUsageQuestion` gone; the census shorter by the usage readers | a stand-in usage server through the runner's live stdin, held until it answers, bounded by today's patience | the usage cases in every view, the two providers in the fourth | the family rehearsal whole | the Accounts screen's windows on both agents as before, in both languages | one read per agent on one named account, no model run |
+| 1s-i | the start's, the resume's and the go-on's prompt on stdin, closed after it, argv carrying none; each test and fake program reading it there; a Chinese prompt and one outside the Basic Multilingual Plane read back byte for byte through the launcher *(O2-F10)* | `ContinuationTests`, `NativeResumeTests`, `SessionMessagesTickTests` and the native Process suites whole | unchanged | family and deployment | nothing | one driven session and one resume |
 | 1s-ii ⚖ | as the decision has it: the three tools denied on the driven spawn, or LQ4's second half sent | as 1s-i | unchanged | as 1s-i | nothing, or the measured tool refused where it was not | the measurement (§11 item 3) |
-| 1d ⚖ | the driven spawn table equal to today's flag by flag, no difference stated; postures mapped, a full or asking start with none mapped refused; the mode by LQ4, the effort by LQ5; a limit cooling a `claude-code` account, one on `claude-code-acp` still cooling the native door's; a record started before the move going on after it in the conversation it kept | `LimitWaitsProcessTests`, `ContinuationTests` and the native suites whole on both paths by the oracle | `claude-code`'s driven kind in the fourth view; the oracle's matrix for its driven kind | family and deployment | driven Claude Code sessions as before | one driven session and one resume on a named account |
+| 1d ⚖ | the driven spawn table equal to today's flag by flag, no difference stated; postures mapped, a full or asking start with none mapped refused; the mode by LQ4, the effort by LQ5; a limit cooling a `claude-code` account, one on `claude-code-acp` still cooling the native door's; a record started before the move going on after it in the conversation it kept; the stream's window reports reaching the walk, a weekly limit's window kept, the harness's own words, a refused model ending its part with no strike, each on both paths *(O2-F3, O2-F4)* | `LimitWaitsProcessTests`, `ContinuationTests` and the native suites whole on both paths by the oracle | `claude-code`'s driven kind in the fourth view; the oracle's matrix for its driven kind | family and deployment | driven Claude Code sessions as before | one driven session and one resume on a named account |
 | OPENROUTER1's move ⚖ | its binding alone; its recorded sentences read by the layer | its door's cases on both paths | its provider in the fourth view | as 1d | its sessions as before | one session and one resume on the owner's key |
 | 1e ⚖ per door | as 1d for the door; its open's handshake and offers kept; a held request waiting past the turn's inactivity clock (dsh's refused on both paths); dsh's `--profile acp` and posture in its spawn table | `AcpTests`, `AcpSteerTests`, `AcpResumeTests`, `AcpBackgroundTests`, `AcpTransientTests`, `ChatTurnsTests` and the tick tests that play its frames, on both paths | as 1d, `acp-stub` with 1e-ii | as 1d | that door's sessions as before, queueing and held requests among them | one session and one resume on the door |
 | 1f-i ⚖ | the conversation's spawn table equal; Claude Code's tables and native dialect gone | `ChatGoesOnProcessTests`, `ChatTransientProcessTests`, `ChatGoOnTests` on both paths | as 1d, its conversation kind | as 1d | Claude Code's conversations as before | one conversation and one resume |
@@ -1087,6 +1232,12 @@ D213's host rows keep the proofs their rows name, each with `StructureTests` at 
   mapping the layer's two headline windows and deleting the readers on them (§9.2) *(C1-2)*; `VersionNotValidated` as LQ2's answer (§5.7)
   *(C1-3)*; the layer's pool or reducer as stage B's store while one build's processes share a home (§5.2) *(O1-F14, C1-6)*; a pack read
   because an untracked file is present (§7.3) *(C1-8)*; dsh first by its fewer abilities alone (§1.1 row 4) *(C1-9)*.
+- **Round 3's, each with the finding that showed it:** literal equality as the oracle's only pass, and an allowance list in its place
+  (§6.3) *(O2-F1, C2-1)*; words on `AgentRun` before `DoorInput` carries their receipts (§4.1) *(O2-F2)*; a phase of `layer`, and policy
+  read from `By`'s spelling (§5.3) *(C2-2)*; cooling re-reading a layer limit's sentence, or its stated reset dropped (§5.2) *(O2-F3)*;
+  `Uncertain` holding a run D210 goes on with (§5.3) *(C2-3)*; a second frame decoder for the harness's own words (§5.4) *(O2-F4)*; a
+  container kept across resumes (§5.5) *(O2-F5)*; `kind` reused for a pending line's run kind (§6.2) *(O2-F9)*; the runner sequencing
+  Codex's protocol itself (§9.2) *(C2-5)*; a one-attempt release standing in for positive evidence (§5.2) *(C2-4)*.
 
 ## 14. What stays unmeasured, and what the reads should test first
 
@@ -1096,19 +1247,45 @@ how row e's 53 sites split (§3.1); whether dsh resumes, and whether Codex's ada
 installed plugin declares a door joined to `claude-code` with its own variable (§0.2 row 7); the agent versions Daoris pins against the
 layer's validated ones (§0.2 row 6); the start-time cost of `AddLyntai` whole in a container per spawn, and concurrent starts' behaviour
 (§5.5) *(O1-F8, C1-10)*; whether Daoris's asking posture has any counterpart on a headless CLI turn (LQ4); what the three always-denied tools
-do on today's `-p` run (1s-ii); whether Claude's usage server answers alike with and without `-p` (§9.2); whether dsh's children are read
+do on today's `-p` run under each driven mode and on a resume (1s-ii) *(O2-F10)*; whether a prompt that is not ASCII reaches the agent
+intact on stdin through the launcher and the shell (1s-i) *(O2-F10)*; whether the installed usage servers tolerate the layer's eager
+order (§9.2) *(C2-5)*; whether `Microsoft.Extensions.DependencyInjection` reaches the driver through `Lyntai.Core`'s closure, else 1a pins it
+so its closure proof covers it (§7.1) *(O2's unmeasured)*; whether Claude's usage server answers alike with and without `-p` (§9.2); whether dsh's children are read
 today, which decides LQ7's place in R-e1 (§7.2); which door's recorded protocol corpus is complete first (§1.1 row 4) *(C1-9)*; the
 isolated runtime's actual writers (§5.2) *(C1-6)*; the cost of §6.3's two paths against today's suites; which fake programs each Process
 suite and rehearsal phase runs for each door (§1.1 row 19); and live-run parity and latency, child and replay provenance, cross-process
 restriction state and a held request's real waiting, each a landing condition of its row, never a finished experiment. **Answered by
 round 2's reads:** dsh's read of `DSH_HOME` (§0.3); what a session is handed by Daoris's own server file through the layer, exactly today's
-(§5.6); what Daoris keeps of an agent's `Process` beside its lines, its stderr and its stop (§5.5).
+(§5.6); what Daoris keeps of an agent's `Process` beside its lines, its stderr and its stop (§5.5). **Found by round 3's reads, read
+from the source and not run:** the observations the capture hands each line to (§6.3); the four members `AgentRun` lacks (§4.1); cooling's
+second reading of a limit (§5.2); the three readings the native driven door takes that the layer drops (§5.4); the usage exchange's
+order (§9.2).
 
 **What this design's checks do not cover.** It is proposed and a document: the documentation gates prove its routing and shape, not its
 claims, which it read at the commits its standing names for every line §0.2 and §0.3 cite and otherwise takes from the survey and the
 proposals.
 
-**What round 2's reads should test first**, where round 2 is least sure:
+**What round 3's reads should test first**, where round 3 is least sure. The round re-reads more than the Opus maker's list of §5.3 to
+§5.5, §6.3, §8, §9.2's m-i and §12's m-i, 1b-i and 1d rows: Codex's findings reach §5.2's stage B, §8's LQ12 and LQ15, §7.2's labels and
+1c, and the Opus maker's own reach §4.1's `AgentRun` and `UsagePart` rows, §5.2's limit route, §6.2's pending field, §6.4 and §9.3. So:
+§4.1's two rows, §5.2 to §5.5, §6.2's run-kind and closed-list bullets, §6.3, §6.4's re-pointed rows, §7.2, §8's LQ11 to LQ16, §9.2's
+m-i, 1b-i and 1c, §9.3's 1s-i, 1s-ii and 1d, §12's rows for them, and §17.
+1. **The oracle's relation** (§6.3): whether the observation list is now complete for each door and run kind, whether the projection's
+   fields are the least set that names the path, and whether any correspondence could let a dropped reading, a changed recovery or a
+   reordered write through.
+2. **m-i's surface** (§4.1, §9.2): whether the four added members are all an executor uses that `AgentRun` lacked, whether keeping words
+   off it until m-ii keeps the cut from m-ii clean, and whether its proof now names every executor's suite.
+3. **The ingress and cooling** (§5.2, §5.3): whether `Limited`'s trusted entry with the seven callers routed by kind is one reading on each
+   path, whether D125's bounds applied by one function hold for a stated instant, and whether the phase stamped by `LayerRun` and the typed
+   access disposition carry every decision today's `Where` and `By` carry.
+4. **Delivery** (§5.3): whether the mapping onto today's dispositions keeps D210's go-on after a tool step and never resends the
+   original words, on a protocol door and on a native one.
+5. **What 1d waits for** (§5.4, §7.2, §8): AG12, LQ16 and LQ11's access half, each by Lyntai's generic test, and whether any reading the
+   native driven door takes is still missing from §5.4's tables.
+6. **LQ12's evidence observation and LQ15's exchange order** (§8): whether each is a library's need, and whether the evidence table it
+   states is the infrastructure design's.
+
+**What round 2's reads were asked to test first**, kept as written:
 1. **The oracle** (§6.3): whether its list of observations is complete for each kind of door and run kind, whether a regression exists that
    it would miss, and whether keeping the old path constructible beside the new in one commit is buildable for each move without the old
    path reaching the registry.
@@ -1150,7 +1327,8 @@ need both makers' reads whatever the round.
 | Round | Written | Read | Answered |
 |---|---|---|---|
 | 1 | 2026-10-30, Claude Opus 5.5, from Daoris `23cc27254` and Lyntai `9a41435c` with `2fb2dc7e`: the synthesis of Codex's and the independent Opus reader's sealed proposals, every question of the brief answered (§1), each difference chosen with its reason and counterexample (§1.1), the survey's gaps checked (§0.2), rows 1a to 1f and twelve requests | both at `460b6d47c` (`docs/2026-10-30-agent-lyntai-reads.md`): the Opus maker, another round (16 findings, 6 blocking); Codex, another round (10 findings, 6 blocking) | §16, every finding of both |
-| 2 | 2026-10-30, Claude Opus 5.5, from Daoris `f638a07c1` and the same Lyntai commits: both reads answered one row each (§16), every finding taken, the blocking ones as contracts with the row that proves each; parity a two-path oracle in one commit, m-i first, a door bound per run kind, no difference inside a move, the trusted ingress, the usage port, the runner's clocks, stderr and stop, the two containers, LQ13 to LQ15 with LQ2, LQ4 and LQ12 restated, rows 1s-i, 1s-ii and 1f-ii; D213's round-2 note | both makers next | — |
+| 2 | 2026-10-30, Claude Opus 5.5, from Daoris `f638a07c1` and the same Lyntai commits: both reads answered one row each (§16), every finding taken, the blocking ones as contracts with the row that proves each; parity a two-path oracle in one commit, m-i first, a door bound per run kind, no difference inside a move, the trusted ingress, the usage port, the runner's clocks, stderr and stop, the two containers, LQ13 to LQ15 with LQ2, LQ4 and LQ12 restated, rows 1s-i, 1s-ii and 1f-ii; D213's round-2 note | both at `d53705dda` with Lyntai `9a41435c` and `2fb2dc7e`, each apart: the Opus maker, another round kept narrow (10 findings, 4 blocking); Codex, another round (6 findings, 5 blocking, one for stage B and one for 1c) | §17, every finding of both |
+| 3 | 2026-10-30, Claude Opus 5.5, from Daoris `9405b458f` and the same Lyntai commits: both reads answered one row each (§17), fifteen taken, two with a change, one declined with its evidence; the oracle's declared projection and correspondences, m-i's four members with words kept off until m-ii, the ingress keeping today's phase with a typed access disposition and a whole `LimitSeen`, delivery mapped onto D210's dispositions, LQ16 new with LQ11, LQ12, LQ13, LQ14 and LQ15 widened, AG12 on R-d, a resume's own container, the pending field `run`; D213's round-3 note | both makers next | — |
 
 ## 16. Round 2: both reads of round 1 answered
 
@@ -1234,3 +1412,66 @@ and the other protocol doors wait for AG19 with LQ3 (§4.2, §5.6); FOUNDATION1'
 so records and pending lines name this design's rows whole (the *Read at*); and Claude Code's driven spawn and reader are read by every door
 that references them, OPENROUTER1's among them, so §2.3 rule 4 deletes them with the last such door (O1-F12's row). Nothing was run: the
 code was read, and this round's checks are a document's (§14).
+
+## 17. Round 3: both reads of round 2 answered
+
+Both makers read round 2 at Daoris `d53705dda` and Lyntai `9a41435c` with `2fb2dc7e`, each read-only and apart: the Opus maker, another
+round kept narrow, 10 findings, 4 blocking (F1 to F4, the fourth for 1d's request set), asking F5, F7 and F9 before 1b-i, F6 before LQ13 is
+sent, F8 before 1c and F10 before 1s-i and 1s-ii; Codex, another round, 6 findings, 5 blocking (its 1 to 5, the fourth for stage B and the
+fifth for 1c). Round 3 is written by Claude Opus 5.5 from Daoris `9405b458f` and the same Lyntai commits, every finding checked against the
+code first (§17.3). Each finding has one row in §16's shape. **What both reads agree on is taken once:** the oracle's relation (O2-F1 with
+C2-1); the ingress against cooling, phase, access and the retry (O2-F3 with C2-2 and C2-3); 1c's exchange order (O2-F8's fifth difference
+with C2-5). Fifteen findings are taken, two with a change (O2-F4, its standing-frames request folded into LQ16 with O2-F3's window; C2-2,
+its request LQ11 widened rather than a new one), and one is declined (C2-6), its lines holding at the cited commit.
+
+### 17.1 The Opus maker's read (10 findings, 4 blocking)
+
+| Finding | Read | Round 3 |
+|---|---|---|
+| §0 C1-8's pack folder: a pack is repository scratch | note | **Taken as named** (§7.3): a pack made as evidence goes under `_fixtures/`, never `local/`, which holds private context (this repository's brief, *Layout*) |
+| §1 three citations wrong | note | **Taken, with what the check found** (§17.3): `HarnessRoster.cs:2299-2305` and `:2321-2325` were round 2's lines at `f638a07c1`, where they hold; the file moved 8 lines before `9405b458f`, so the body re-cites them there (`:2307-2313`, `:2329-2333`) and §16 keeps round 2's as written. §5.5's `DriverContinuations.cs:1190-1193` is `GoOnAsync`'s, go-ons alone: taken with F5 |
+| F1 the oracle's observations incomplete; *equal only* cannot hold on fields naming the path | blocking | **Taken with C2-1, one change for both** (§6.3 point 3): the observations listed by what the capture hands each line to and what a run does beside its lines; a projection fixed in 1b-i of the fields that name the path (`By`, the log's `by`, the history's `Source` and `Reader`, ids, times), each compared by a correspondence recorded per door, one to one, never grown inside a move; recovery, a limit's end, delivery, access and order never in it. Checked: `HarnessCapture.cs:145-196`; `DriverContinuations.cs:392`; `Driver.cs:3366-3380`, `:4292`; `TransientRetries.cs:28-30`, `:43-46`; `HarnessRoster.cs:291-295`, `:2354`; `AgentErrors.cs:55-59`, `:162-164` |
+| F2 m-i cannot be written against `AgentRun` as declared; the cut from m-ii not clean | blocking | **Taken as named** (§4.1, §6.2, §9.2, §12): m-i adds the end, the records until l, the carriers and the go-on, each with what replaces it; of F2's two choices, **words stay off `AgentRun` until m-ii**, since moving `DoorInput` into m-i would pull Course's attempt port and the native retry forward, and the cut is then clean; the proof gains `HandOverTests` and the four executors' suites; m-i re-points `live.word-before-wire` to m-ii and adds m-i and m-ii to the closed list. Checked: `Agents/Contract/AgentRun.cs:9-31`; `DriverContinuations.cs:1155-1178`, `:392`; `TransientRetry.cs:42-47`; `HarnessEnding.cs:49`; `Driver.cs:2954-2960`; the provider design's row m (`docs/2026-10-26-agent-provider-design.md:1137`); `ProviderConformance.cs:240-245`; `Agents/Providers/Stub/pending.json:26` |
+| F3 the ingress reaches neither cooling nor the retry as they read today | blocking | **Taken as named, with C2-2 and C2-3** (§5.2, §5.3): a whole `LimitSeen` under D125's margin, grace and furthest bound through one function both readings call, `Window` from the restriction's, which waits for **LQ16**; `Limited` gains a trusted entry reading no sentence, the seven callers routed there for a bound kind; delivery mapped onto today's dispositions, `Taken` and `Uncertain` both today's *taken*, `NeverSent` today's *met before any update* unless nothing was written, D210's go-on after each. Checked: the seven `AccountLimited` callers; `HarnessRoster.cs:272-303`; `Course/LimitResume.cs:88`; `AccountLimits.cs:82`, `:88`, `:94`; `AgentFailure.cs:100-104`; `StreamJsonFailure.cs:88-94`; `TransientRetry.cs:110-125`; `CliAgentLoop.cs:34-43` |
+| F4 the native driven door relies on readings the layer drops | blocking for 1d's request set | **Taken with a change** (§5.4, §7.2, §8): the three in §5.4's table; R-d gains AG12; the standing frames' request is **LQ16**'s second half, with F3's window, one request for one need (the account's allowance by window as its own stream says it), rather than two; the harness's own words kept by `LauncherRunner` from its raw lines by today's one test, no frame read. Checked: `StructuredOutput.cs:11-15`, `:148-154`; `HarnessCapture.cs:159-161`, `:185-196`; `StreamJsonAgentReader.cs:37-40`, `:55-62`; `Driver.cs:2954-2956`; `Lyntai/TASKS.md:320` |
+| F5 containers and clock | not blocking; before 1b-i | **Taken as named** (§5.5): a resume builds and owns its own spawn's container; the watch registers each layer turn and the runner stamps raw lines; the spawn handed to `KeepHandedAsync`. Checked: `DriverContinuations.cs:160-163`, `:176-179`, `:388-392`, `:1189-1193`; `Events/SessionWatch.cs:63-85`; `Driver.cs:2802`, `:4292` |
+| F6 LQ13 as worded makes every clean `stub` run fatal | not blocking; before LQ13 is sent | **Taken as named** (§8): the host's reader told when the stream ends and with which exit code. Checked: `CliAgentLoop.cs:147-155`; `Agents/Adapters.cs:1680-1683` |
+| F7 the old path needs a seam | not blocking; before 1b-i | **Taken as named** (§6.3 point 1, §9.2): m-i hands the watch its adapter set; each static read on the path reads names alone, held by the oracle's own case. Checked: `DriverWatch.cs:77`, `:656-658`; `ChatRunner.cs:1133`, `:1286`, `:1315`, `:1440` |
+| F8 1c's table and port | not blocking; before 1c | **Taken as named, with C2-5** (§4.1, §8, §9.2): the exchange's order the fifth difference, kept inside the library by LQ15 restated; the client's version beside its name in LQ15; the ask carrying the resolved command and toolchain, the patience the port's, `Plan` from LQ14's answer, `Source` and `Reader` by correspondence. Checked: `ClaudeUsage.cs:197-203`; `CodexUsage.cs:57`, `:241-250`; `CliUsageSource.cs:133-134` *(AG20)*; `CodexUsageDialect.cs:33-38`; `HarnessRoster.cs:2322-2354` |
+| F9 run-kind naming | not blocking; before 1b-i | **Taken as named** (§2.3 rule 2, §6.2, §6.4): the pending field is `run`; the closed field list, `Unmatched` and the twice-held rule read it; the account key read from the descriptor for both kinds once bound. Checked: `tools/stand-ins.mjs:32-40`; `ProviderConformance.cs:312`, `:370` |
+| F10 1s-i's encoding and 1s-ii's modes | not blocking; before 1s-i and 1s-ii | **Taken as named** (§9.3, §11, §12, §14): 1s-i writes BOM-less UTF-8 and proves a Chinese prompt and one outside the Basic Multilingual Plane through the launcher; 1s-ii measures each tool under each driven mode and on a resume. Checked: `Agents/Adapters.cs:1536-1541`; `CodexUsage.cs:303-306` |
+
+The read's §2 agrees with the rows above, and its confirmations are kept: LQ13 to LQ15 pass Lyntai's rules 1, 5 and 7; LQ2's closing
+condition (the parameter at `CliUsageSource.cs:56`, whose off skips the version probe too, `:77-82` *(AG20)*); LQ12's five operations, now six (C2-4); 1s-i
+rightly not ⚖. Its *still unmeasured* is §14's: the stdin encoding, the tools per mode, and whether the container package reaches the driver
+through the closure, which 1a pins where it does not.
+
+### 17.2 Codex's read (6 findings, 5 blocking)
+
+| Finding | Read | Round 3 |
+|---|---|---|
+| §0 its round-1 findings against §16 | — | **Kept as read**: C1-2, C1-3, C1-5 to C1-10 closed; C1-1 open as C2-1 and C1-4 open as C2-2, each answered below |
+| C2-1 the oracle needs a defined equivalence relation | blocking | **Taken with O2-F1** (its row), Codex's half (§6.3): clocks held and ids renamed by first appearance where a seam reaches them, a library clock no seam reaches named in the projection with its interval; semantic outcomes and order compared exactly; each path's provenance checked against its own expected source as well as by its correspondence; nothing in the projection may hide a dropped reading, a changed recovery or a reordered write; the replacement-only sabotage kept and widened. 1b-ii pairs two doors, so its correspondence adds their identity fields, and it shows the scenario contract read alike, never a door's parity. Checked: `AgentErrors.cs:162-164` with `ByCode`'s `owner:kind:` naming; `StreamJsonFailure.cs:112-118`; `CliUsageSource.cs:90` *(AG20)* |
+| C2-2 the ingress loses the policy-bearing phase and leaves the result contract unfinished | blocking | **Taken with a change** (§5.3, §8, §9.2): the phase is stamped by `LayerRun` from the operation it performed, today's `Open`, `Prompt` or `Harness`, never `layer`; access gains a typed disposition on today's path first, `OpeningAccount` reading it in place of `By`'s suffix; delivery leaves `NormalizedFailure` as §5.3's mapping; provenance kept apart; refused-open cases in the proof. The change: the reason an access failure needs is asked by **widening LQ11**, whose owner-action reasons already name sign-in, rather than by a new request, and 1d and 1e wait on that half. Checked: `DriverContinuations.cs:607-631`, `:671-675`; `Acp.cs:1497-1512`; `AgentErrors.cs:41-63`, `:146-152`; the only other reader of `Where`, `AgentErrors.cs:146`; no other policy read of `By` |
+| C2-3 *Uncertain holds* against D210's same-conversation continuation | blocking | **Taken as named** (§5.3, §12): the original words' disposition kept apart from the go-on's permission; the go-on permitted after `Taken`, `Uncertain` and `NeverSent` as today; holding the run would be a correction of D210 of its own, not proposed; the case a tool call, a transient failure and the go-on on both paths. Checked: `CliAgentLoop.cs:34-43`, `:129-145`; `Acp.cs:1476-1492`, `:1846-1852`, `:1888-1890`; `TransientRetry.cs:67-75` |
+| C2-4 LQ12 omits independent positive evidence | blocking for stage B | **Taken as named** (§5.2, §7.2, §8): LQ12's sixth operation, an evidence observation bound to the hold's identity, revision, subject key and epoch, discharging only the recovery kinds its evidence answers, the one-attempt release apart; stage B's proof gains the stale, wrong-scope and old-epoch observations. Checked: `docs/2026-10-27-provider-infrastructure-design.md:176-181`; `AgentPoolReducer.cs:173-190` *(AG20)* |
+| C2-5 1c's exchange table misses Codex's initialization dependency | blocking for 1c | **Taken with O2-F8** (its row), Codex's half: LQ15 asks the response-dependent exchange inside the library, R-c closing on it; the fake server that withholds `initialize`'s answer and fails on a premature line, and one answering with an error; the runner parses neither protocol. Claude's read waits on its own `initialize` too (`ClaudeUsage.cs:197-203`), so the case covers both. Checked: `CodexUsage.cs:241-250`; `CliUsageSource.cs:129-142` *(AG20)*; `CodexUsageDialect.cs:33-38` |
+| C2-6 AG20 document citations point to the wrong lines | not blocking | **Declined, with the evidence.** At `2fb2dc7e` and at the branch's `0cbd84c1` alike, `docs/DECISIONS.md` has 6770 lines, D234's heading at `:6709` with its standing at `:6711-6713`, D235's at `:6747` with its standing at `:6749-6750` and its procedure at `:6752-6763`; `master` has 6704 lines and no D234. The read's numbers stand 59 lines earlier in each case and match neither commit, so §0.2 row 1, §0.3's correction of X and §7.3 stand as written |
+
+The read's §2 agrees with the rows above, and its confirmations are kept: m-i's split defensible against row m; the binding per run kind;
+1s-i and 1s-ii before 1d; LQ13 to LQ15 by the generic test; `IUsageRead`'s ownership; the two containers and the runner's clocks, a partial
+or failed stdin write read as written (§5.3). Its closing list of what stays unmeasured is §14's.
+
+### 17.3 The code, checked
+
+Every line both reads cite was read at Daoris `9405b458f`, whose `Agents/`, `Loop/` and `Platform/` equal `d53705dda`'s where both reads
+read, and at Lyntai `9a41435c` and `2fb2dc7e` (the AG20 lines through the commit, `0cbd84c1` carrying the same layer sources and the same
+`docs/DECISIONS.md`). **The claims hold as the reads state them**, but for C2-6's line numbers. Between round 2's `f638a07c1` and
+`9405b458f` one cited file moved, `Agents/HarnessRoster.cs`, 8 lines past its line 1252, which is why the Opus maker's §1 found round 2's
+`HarnessRoster` lines off: they were right where round 2 read them. A few cited lines sit a line or two from the reads' (the usage read's
+key skip `:2308` with its comment at `:2307`; the request queue `CliUsageSource.cs:134` inside `:129-142`); each is cited here where it
+stands. **Beyond the reads**, round 3 found and takes: Claude's usage read waits on `initialize` as Codex's does, so 1c's order case
+covers both (C2-5's row); the only policy read of `AgentError.By` is the refused open's two suffixes, and the only reads of `Where` are
+the harness rule and the refused open, so the typed disposition and the stamped phase reach every consumer (C2-2's row); a non-JSON line
+is today's `Outside` by one test (`StructuredOutput.cs:148-154`), which the runner reuses, so keeping the harness's words needs no frame
+reader (O2-F4's row). Nothing was run: the code was read, and this round's checks are a document's (§14).
