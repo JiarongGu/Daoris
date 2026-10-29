@@ -53,6 +53,12 @@ public sealed record Provider(
 /// naming its id reads of it, its postures and abilities. The parts whose ports a later row declares (offers, spawn, dialect) are
 /// <see cref="PortRef"/>s stated absent.
 /// </summary>
+/// <remarks>
+/// <see cref="Lent"/> is the door's own account words, which a harness naming this door's id reads; a door that gives its provider its
+/// id and is keyed by it (<c>claude-code</c>) has none of its own, since the provider holds what it declares. <see cref="AccountOf"/>
+/// is the harness's <c>accountOf</c> verbatim (C3-2.1), null where it declares none; the door's account key is it, else its
+/// provider's id.
+/// </remarks>
 public sealed record AgentDoor(
     DoorId Id,
     Transport Transport,
@@ -65,4 +71,5 @@ public sealed record AgentDoor(
     Known<PortRef> Spawn,
     Known<PortRef> Dialect,
     AbilitiesPart Abilities,
-    DoorTablesPart Tables);
+    DoorTablesPart Tables,
+    AccountKey? AccountOf);
