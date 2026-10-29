@@ -229,7 +229,7 @@ public static class PluginSteps
         };
 
         // The one model's own checks, whose code is the field the words name.
-        return NodeDeclarations.Problem(step) is { } problem ? Broken(problem) : (step, null, name);
+        return PluginStepRules.Current.Problem(step) is { } problem ? Broken(problem) : (step, null, name);
     }
 
     /// <summary>A port map: absent is none; otherwise each name of <see cref="NameShape"/> with its schema, the last of a name written twice.</summary>
