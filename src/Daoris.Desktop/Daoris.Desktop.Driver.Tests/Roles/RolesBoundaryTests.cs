@@ -16,6 +16,7 @@ public sealed class RolesBoundaryTests
     {
         public bool Chosen => Effective is not null;
         public IReadOnlyList<IActorTried> Tried => [];
+        public IReadOnlyList<BuildPass> Passes => [];
         public Standing WithSelection(HarnessSelection? selection) => this with { Selection = selection };
     }
 

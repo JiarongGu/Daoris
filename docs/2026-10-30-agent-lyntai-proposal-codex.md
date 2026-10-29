@@ -1,6 +1,6 @@
 # AGENTLYNTAI1: Codex's sealed proposal (2026-10-30)
 
-One of two sealed proposals written from `docs/2026-10-30-agent-lyntai-brief.md` and `docs/2026-10-30-agent-lyntai-survey.md` under D191, by Codex, read-only, at `b96f93f9c`, without the other. Kept verbatim, its headings set one level down; the other maker's is `docs/2026-10-30-agent-lyntai-proposal-opus.md`, and the synthesis is written apart.
+One of two sealed proposals written from `docs/2026-10-30-agent-lyntai-brief.md` and `docs/2026-10-30-agent-lyntai-survey.md` under D191, by Codex, read-only, at `b96f93f9c`, without the other. Kept verbatim, its headings set one level down and two slash-joined word lists (in the mapping's row 2 and its spawn list's step 5) written out with commas, since the sensitive scan reads them as a home path; the other maker's is `docs/2026-10-30-agent-lyntai-proposal-opus.md`, and the synthesis is written apart.
 
 ## The proposal
 
@@ -100,7 +100,7 @@ The source inventory is S §§1–3: `Agents/Contract/Provider.cs:28`, `Provider
 | # | Daoris type | Destination |
 |---|---|---|
 | 1 | `Provider` | Host catalogue aggregate over referenced `IAgentProvider`s; retains product identity, availability and host parts. |
-| 2 | `AgentDoor` | Host door handle over the actual library `AgentDoor`, plus host program/home/posture metadata. |
+| 2 | `AgentDoor` | Host door handle over the actual library `AgentDoor`, plus host program, home and posture metadata. |
 | 3 | `ProviderId` | Retain as the historical product/provider identifier used by Daoris records. Do not equate it universally with a library registration id. |
 | 4 | `DoorId` | Retain the globally unique historical runnable id; map to the library’s provider-local door id. |
 | 5 | `AccountKey` | Retain the stored host key; D234 supplies the matching library account identity where its invariant holds. |
@@ -347,7 +347,7 @@ Preserve the accepted composition order:
 2. Apply the start’s Daoris identity and composed target; chat clears an inherited target and sets none.
 3. Apply tools and their `PATH` before resolving the executable.
 4. Apply git wiring and token clearing through the existing lower-owned ports, preserving numbered `GIT_CONFIG_*` append order.
-5. Apply the selected account’s permitted key/home values and existing door overrides in their current order.
+5. Apply the selected account’s permitted key and home values and existing door overrides in their current order.
 6. Resolve the program/shim.
 7. Append the door’s settings, server and plugin carriers.
 8. Launch through Platform’s gate and containment.

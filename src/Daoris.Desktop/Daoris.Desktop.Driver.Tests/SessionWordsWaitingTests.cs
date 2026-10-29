@@ -58,7 +58,8 @@ public sealed class SessionWordsWaitingTests : IDisposable
     private SessionLook Waiting(
         string json, Consideration[]? considered = null, bool fresh = true, Func<string?, string?, CoolingEntry?>? coolingOf = null) =>
         SessionGroups.Waiting(
-            SessionLook.From(json, [], considered ?? [], _ => 0), json, _home, "claude-code", fresh, coolingOf ?? CoolingOf, TimeZoneInfo.Utc);
+            SessionLook.From(json, [], considered ?? [], _ => 0), json, _home, DriverConfig.Empty with { Adapter = "claude-code" }, fresh,
+            coolingOf ?? CoolingOf, TimeZoneInfo.Utc);
 
     [Fact]
     public void An_ended_chat_whose_words_wait_is_waiting_and_held_by_nothing()
@@ -304,5 +305,21 @@ public sealed class SessionWordsWaitingTests : IDisposable
 
         Assert.Empty(Waiting(json, considered, fresh: false).Held);
         Assert.Equal(["s1"], Waiting(json, considered).Held.Keys);
+    }
+
+    /// <summary>
+    /// 🔴 FOUNDATION1j part ii (the foundation design §2.4, §7 row 5; D205 point 1): a driven record's words resume on its own agent, the one
+    /// its choice was asked of, never the machine's <c>adapter</c>, so where no loop has looked and that agent's account cools, the words wait
+    /// for its reset as the loop's start would.
+    /// </summary>
+    [Fact]
+    public void A_driven_record_on_another_agent_than_the_machine_s_waits_for_its_own_agent_s_reset()
+    {
+        var json = Json(Record("s2", "completed", "q2", said: ["w2"], adapter: "codex"));
+        Consideration[] considered = [GoesOn(Quest("q2", "Taken"), json, "s2")];
+
+        var held = Assert.Single(Waiting(json, considered, coolingOf: (adapter, profile) => adapter == "codex" && profile == "work" ? Cooling : null).Held);
+
+        Assert.Equal(("s2", WordsHold.Cooling, (DateTimeOffset?)Reset), (held.Key, held.Value.Why, held.Value.Until));
     }
 }
