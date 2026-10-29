@@ -5,6 +5,11 @@ with the version and date at release.
 
 ## Unreleased
 
+- A session's handback is now a record anyone on the work can read whole (HANDBACK1, D219). The note a session closes its quest with is
+  kept naming that session, and `daoris-driver sessions handback <session|quest>` and the connector's `handback_read` answer one quest's
+  handback, open or closed, by the quest's id or the session's: its note, how it answered each requirement, when and by which session. A
+  closing note that only points elsewhere, such as at the session's last message or a commit with nothing said of it, is refused, and the
+  session is told to put the handback itself in the note.
 - A driven session's tree guard now also refuses a shell command that writes outside the session's tree: a redirect, `tee`, `cp`, `mv` or `rm` in Bash, and their PowerShell counterparts, each target placed after any `cd` the command makes, get the same sentence an edit outside the tree gets. A command it cannot read, such as a target made by a variable, is left to the agent's own permission check as before (TREESHELL1).
 - A session's tree now opens with the machine-local files its repository's gates read, copied read-only from your checkout, so a leak scan there runs with your private pattern list instead of its built-in patterns alone (TREELOCAL1, D216). The sensitive scan's `patternsFile` counts, as does any other file under `local/` that `daoris.gates.json` names in its new `localInputs`. Git ignores the copy, and it goes with the tree. The tree's opening names what was copied, and says why a declared file was not: your checkout lacks it, it is outside `local/` or git does not ignore it, or the copy failed.
 - A landed session's tree whose only extra files are build and check output is now tidied with its landing instead of kept (TIDYOUTPUT1,
