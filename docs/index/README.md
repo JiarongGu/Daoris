@@ -133,7 +133,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Service/RemoteSyncTests.cs` | 72 | 1451 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Setup/WorkspaceSetupTests.cs` | 40 | 827 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/StandInLedger.cs` | 64 | 1257 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/StructureTests.cs` | 53 | 897 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/StructureTests.cs` | 54 | 909 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Trees/NodeLifecycleTests.cs` | 60 | 933 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Trees/NodeRuntimeTests.cs` | 50 | 891 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Trees/QuestCloseTests.cs` | 96 | 1696 |
@@ -392,4 +392,4 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/DAORIS_UNIFIED_COLLABORATION_ARCHITECTURE_AND_PLAN_2026-10-16.md` | 164 | 5380 |
 | `docs/README.md` | 60 | 283 |
 | `docs/development.md` | 49 | 555 |
-| `src/Daoris.Desktop/README.md` | 214 | 1068 |
+| `src/Daoris.Desktop/README.md` | 216 | 1072 |
