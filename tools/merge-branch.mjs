@@ -3447,6 +3447,8 @@ function removeGateTree(home, entry) {
   if (lock?.running) return { ...entry, remove: false, ...gateTreeVerdict({ ...entry, lock }) };
   let left = '';
   if (entry.listed) {
+    const bound = treeBinding(entry.path);
+    if (bound) return { ...entry, remove: false, why: bound };
     const removed = git(home, ['worktree', 'remove', entry.path], { allowFail: true });
     if (removed.status !== 0) {
       const still = parseWorktrees(git(home, ['worktree', 'list', '--porcelain']).out).some((known) => samePath(known.path, entry.path));
@@ -3478,6 +3480,8 @@ function removeOne(root, entry) {
   const tree = entry.worktree;
   let left = '';
   if (tree) {
+    const bound = treeBinding(tree.path);
+    if (bound) return { ...entry, remove: false, why: bound };
     if (entry.unlock) {
       const unlocked = git(root, ['worktree', 'unlock', tree.path], { allowFail: true });
       if (unlocked.status !== 0) return { ...entry, remove: false, why: `git refused to unlock its worktree: ${gitSays(unlocked.err || unlocked.out)}` };
@@ -5248,6 +5252,7 @@ function prepareGateTree(home, commit) {
     console.log(`the gate tree: made at ${sha} (${GATE_TREE})`);
     return path;
   }
+  requireOwnTree(path);
   const changes = lines(git(path, ['--no-optional-locks', 'status', '--porcelain']).out);
   if (changes.length) {
     throw new Refusal(`the gate tree (${GATE_TREE}) holds changes, which the full set would gate as part of a tree no commit holds:\n`
@@ -6576,6 +6581,37 @@ export function queueHomeRefusal({ root, home, tool = null, sameRepository = fal
   return null;
 }
 
+/**
+ * GITWORKTREECONFIG1: why a tree is not one to reset, check out or remove through, or null. A `core.worktree` in the repository's
+ * shared git configuration (under `extensions.worktreeConfig`) binds every linked worktree to one folder, so `rev-parse
+ * --show-toplevel` in the scope tree, the gate tree or a pruned worktree answers the main checkout's root, and `reset --hard` or
+ * `checkout --force` there acts on the main checkout's files (2026-10-27 incident, `docs/2026-10-27-branch-recovery.md`). `reported`
+ * is that answer, null where git gave none (then git's own refusal stands). The tool writes no git configuration to mend it.
+ */
+export function treeBindingRefusal({ path, reported }) {
+  if (!reported || samePath(path, reported)) return null;
+  return `${path} reports ${reported} as its working root: a core.worktree in the repository's shared git configuration, set by something other than the merge tool, binds it there; `
+    + 'so nothing was reset, checked out or removed; move the value into the owning checkout\'s own worktree configuration (config.worktree) or unset it, then run again';
+}
+
+const treeAnswers = new Map();
+
+/** GITWORKTREECONFIG1: the refusal for `path` from git's own answer there, asked once per tree per run; null for a folder git cannot be asked in. */
+function treeBinding(path) {
+  const key = resolve(path);
+  if (!treeAnswers.has(key)) {
+    const asked = existsSync(key) ? git(key, ['rev-parse', '--show-toplevel'], { allowFail: true }) : { status: 1, out: '' };
+    treeAnswers.set(key, treeBindingRefusal({ path: key, reported: asked.status === 0 && asked.out.trim() ? asked.out.trim() : null }));
+  }
+  return treeAnswers.get(key);
+}
+
+/** GITWORKTREECONFIG1: the refusal, thrown, before the first write through `path`. */
+function requireOwnTree(path) {
+  const why = treeBinding(path);
+  if (why) throw new Refusal(why);
+}
+
 /** The checkout holding this tool, and whether it is one of `home`'s repository (QUEUETESTLEAK1); none where git finds none. */
 function toolCheckout(home) {
   const asked = git(dirname(fileURLToPath(import.meta.url)), ['rev-parse', '--show-toplevel', '--path-format=absolute', '--git-common-dir'], { allowFail: true });
@@ -6603,6 +6639,7 @@ function prepareScopeTree(home, commit) {
     git(home, ['worktree', 'add', '--detach', path, commit]);
     console.log(`the scope tree: made at ${commit.slice(0, 7)} (${SCOPE_TREE})`);
   } else {
+    requireOwnTree(path);
     git(path, ['merge', '--abort'], { allowFail: true });
     git(path, ['reset', '--quiet', '--hard']);
     git(path, ['checkout', '--quiet', '--force', '--detach', commit]);
@@ -6629,6 +6666,7 @@ export function containedBy(tree, member, base, formed) {
 function mergeMember(tree, member, onto, { base, formed = [] } = { base: onto }) {
   const held = containedBy(tree, member, base, formed);
   if (held) return { contained: held };
+  requireOwnTree(tree);
   git(tree, ['checkout', '--quiet', '--force', '--detach', onto]);
   const merged = git(tree, ['merge', '--no-ff', '--no-commit', member.tip], { allowFail: true });
   if (merged.status !== 0) {

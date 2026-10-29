@@ -98,6 +98,7 @@ const tool = await import(
   watchCandidate: (candidate: Candidate, current: () => Candidate | null, trees: Trees, options?: { ms?: number }) => Watch;
   prefixRunner: (tree: string, candidate: { base: string; members: Member[] }, plan: { name: string; run: string }[], dir: string, watch?: Watch | null) => (failure: Failure, k: number) => Promise<Outcome>;
   queueHomeRefusal: (facts: { root: string; home: string; tool?: string | null; sameRepository?: boolean; run?: boolean }) => string | null;
+  treeBindingRefusal: (facts: { path: string; reported: string | null }) => string | null;
   gateEnvironment: (start?: Record<string, string | undefined>) => Record<string, string>;
   GATE_REMOVED: readonly (string | RegExp)[];
   waitSaid: (standing: Standing, facts: { branch: string; request?: string; holder?: string | boolean | null }) => { code: number; lines: string[] } | null;
@@ -1109,6 +1110,19 @@ describe('QUEUETESTLEAK1: a case reaches only its own scratch repository and que
       /the tool of X:\/daoris\/local\/scope-tree, another checkout of the queue's repository: a tree's tool never runs X:\/daoris's queue/);
     assert.equal(tool.queueHomeRefusal({ root: home, home, tool: 'X:/daoris/local/scope-tree', sameRepository: true }), null, 'a verb that starts no runner here runs any checkout\'s tool');
     assert.equal(tool.queueHomeRefusal({ root: home, home, tool: 'X:/elsewhere', sameRepository: false, run: true }), null, "another repository's tool (the tool tests' scratch queues) runs it");
+  });
+
+  // GITWORKTREECONFIG1: a shared `core.worktree` can make a linked worktree report another checkout's root as its own.
+  test("a tree that reports another folder as its working root is refused before any write, the same folder spelled otherwise is not", () => {
+    const path = 'X:/daoris/local/scope-tree';
+    assert.equal(tool.treeBindingRefusal({ path, reported: path }), null);
+    assert.equal(tool.treeBindingRefusal({ path, reported: 'x:/daoris/local/scope-tree/' }), null, 'the same folder, spelled with another case and a slash');
+    assert.equal(tool.treeBindingRefusal({ path, reported: null }), null, 'git reported none: nothing to say here, git refuses on its own');
+    const why = tool.treeBindingRefusal({ path, reported: 'X:/daoris' })!;
+    assert.match(why, /X:\/daoris\/local\/scope-tree reports X:\/daoris as its working root/);
+    assert.match(why, /core\.worktree/);
+    assert.match(why, /nothing was reset, checked out or removed/);
+    assert.match(why, /worktree configuration/);
   });
 
   test("a gate the tool starts gets the environment the tool had at its start, without a Daoris name, git's locating variables, the tool tests' variables or the tool's switches, with the build servers of its own", () => {

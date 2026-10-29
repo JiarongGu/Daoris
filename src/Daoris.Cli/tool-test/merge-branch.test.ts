@@ -6455,6 +6455,41 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     repo.cleanup();
   });
 
+  // GITWORKTREECONFIG1: a shared `core.worktree` (under `extensions.worktreeConfig`) makes a linked worktree report the main checkout's root.
+  test('--prune never removes through a worktree git binds to the main checkout, and goes on where the value is in the main checkout\'s own worktree configuration', async () => {
+    const repo = scratch('prune-bound', [{ name: 'first', run: 'node gate.mjs first' }], { '.gitignore': 'local/\n', 'tracked.txt': 'base\n' });
+    const trees = join(dirname(repo.root), 'trees');
+    const bound = join(trees, 'bound');
+    git(repo.root, 'worktree', 'add', '--quiet', '-b', 'bound', bound, 'main');
+    git(repo.root, 'config', 'extensions.worktreeConfig', 'true');
+    git(repo.root, 'config', 'core.worktree', repo.root);
+    const toplevel = (): string => git(bound, 'rev-parse', '--show-toplevel').replace(/\\/g, '/').toLowerCase();
+    const answer = toplevel();
+    console.log(`git answers for the linked worktree: ${answer} (the main checkout is ${repo.root})`);
+    assert.equal(answer, repo.root.replace(/\\/g, '/').toLowerCase(), 'the fixture binds the linked worktree to the main checkout');
+    const before = () => [git(repo.root, 'rev-parse', 'HEAD'), git(repo.root, 'ls-files', '--stage'), readFileSync(join(repo.root, 'tracked.txt'), 'utf8')].join('\n--\n');
+    const was = before();
+
+    const refused = await repo.run(['--prune']);
+    assert.match(refused.out, /\n\s+kept\s+bound\s.*reports .* as its working root: a core\.worktree in the repository's shared git configuration/);
+    assert.match(refused.out, /nothing was reset, checked out or removed/);
+    assert.equal(before(), was, "the main checkout's HEAD, index and files are unchanged");
+    assert.ok(existsSync(join(bound, '.git')), 'the worktree stays');
+    assert.ok(git(repo.root, 'branch', '--format=%(refname:short)').split('\n').includes('bound'), 'its branch stays');
+    assert.equal(git(repo.root, 'config', '--get', 'core.worktree'), repo.root, 'the tool writes no git configuration');
+
+    // The value where it belongs: the main checkout's own worktree configuration.
+    git(repo.root, 'config', '--unset', 'core.worktree');
+    git(repo.root, 'config', '--worktree', 'core.worktree', repo.root);
+    assert.equal(toplevel().includes('/trees/bound'), true, 'now the linked worktree reports its own root');
+    const result = await repo.run(['--prune']);
+    assert.equal(result.status, 0, result.out);
+    assert.match(result.out, /\n\s+removed\s+bound\s/);
+    assert.equal(existsSync(bound), false);
+    assert.equal(before(), was);
+    repo.cleanup();
+  });
+
   // CLEANUP2: 24 worktrees stood with three agents running (2026-10-18): five kept for worker logs under local/, nine
   // for the harness's lock, which it holds for its session's life, and one half-removed folder two leaked processes held.
   test('--prune lifts the harness\'s lock from a merged worktree left with nothing, takes worker logs and half-removed folders, and names what holds the rest', async () => {
