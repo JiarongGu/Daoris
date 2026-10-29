@@ -47,6 +47,12 @@ public sealed record WordsAnswer(bool Sent, string? Reaches, string? Why)
     public string? Message { get; init; }
 
     /// <summary>
+    /// The line's head that took the words, where the record they were said to went on in it (FOUNDATION1d-ii, the foundation design §3.4 rule 2):
+    /// the shell said them there. Null where the record named took them. The shell's own: the page's answer names <see cref="To"/> alone.
+    /// </summary>
+    public string? At { get; init; }
+
+    /// <summary>
     /// What a running session's door can do with a word while a turn runs (COWORK1a): whether its agent steers, and whether it has
     /// the keeping stop. Null where nothing here runs it, its door is not known yet, or it carries only text.
     /// </summary>
@@ -383,9 +389,14 @@ public sealed class SessionWords : IDisposable
     /// The answer of a park's question the words begin with, as a press composes them (PARKVIEW1; Fable's read, Q4): the conversation
     /// shows them under it, and the resumed run is handed them as that answer chosen. Null for every other word.
     /// </param>
-    public async Task<WordsAnswer?> SayAsync(
+    public Task<WordsAnswer?> SayAsync(
         string id, string text, IReadOnlyList<ChatUpload> files, string? preface, string door, CancellationToken ct,
-        MessageLevel level = MessageLevel.Urgent, string? key = null, string? choice = null)
+        MessageLevel level = MessageLevel.Urgent, string? key = null, string? choice = null) =>
+        SayAsync(id, text, files, preface, door, ct, level, key, choice, new HeadWalk(id));
+
+    private async Task<WordsAnswer?> SayAsync(
+        string id, string text, IReadOnlyList<ChatUpload> files, string? preface, string door, CancellationToken ct,
+        MessageLevel level, string? key, string? choice, HeadWalk walk)
     {
         // MODELROLE1d2 (D205 §3.5(b)): a conversation whose agent refused its choice at the open is answered by its replacement, and while
         // that opens a word joins the words moving to it, so it reaches the replacement once.
@@ -400,11 +411,19 @@ public sealed class SessionWords : IDisposable
         // first, under the press's key, then held by its one dispatcher under the record's id.
         if (_loop.Processes.InboxOf(id) is { } inbox)
         {
+            var inboxKey = key ?? PressKey();
             var forRun = await inbox
                 .KeepOrHoldAsync(
                     _loop.Service is { } service ? new SaidDoor(service, id) : null,
-                    new ChatMessage(text, []) { Level = level, Key = key ?? PressKey() }, ct)
+                    new ChatMessage(text, []) { Level = level, Key = inboxKey }, ct)
                 .ConfigureAwait(false);
+            // FOUNDATION1d-ii (the design §3.4 rule 2): the record is no longer its line's head, so its inbox held nothing: said at the head,
+            // under the key this say was kept under.
+            if (forRun is { Outcome: InboxKeep.Continued, Head: { } head })
+            {
+                return await OnAsync(head, text, files, preface, door, ct, level, inboxKey, choice, walk).ConfigureAwait(false);
+            }
+
             // FOUNDATION1 row p (the design §3.4 rule 5): a retry the record answered settled is a word held or gone already: nothing is held,
             // told or kept on the ask again, and no word is shown.
             if (forRun is { Outcome: InboxKeep.Held, Settled: true }) return new(true, null, null);
@@ -433,8 +452,15 @@ public sealed class SessionWords : IDisposable
             // A conversation this machine runs (D49 §3): its turns take the words, into the running turn at its next step where
             // its agent takes them then (MSG1c), when the running one ends elsewhere (CONV4a), or now; its runner says which.
             // COWORK1c: kept on its record first, under the press's key, and its turns are their one dispatcher.
-            if (await chat.SayKeptAsync(id, text, files, preface, level, key ?? PressKey(), ct).ConfigureAwait(false) is { } chatSaid)
+            var chatKey = key ?? PressKey();
+            if (await chat.SayKeptAsync(id, text, files, preface, level, chatKey, ct).ConfigureAwait(false) is { } chatSaid)
             {
+                // FOUNDATION1d-ii: its record is no longer its line's head, so its turns queued nothing: said at the head, under the same key.
+                if (chatSaid.Head is { } head)
+                {
+                    return await OnAsync(head, text, files, preface, door, ct, level, chatKey, choice, walk).ConfigureAwait(false);
+                }
+
                 // Row p: settled, a retry of a word held or gone already: not running, so nothing is kept on the ask again.
                 if (chatSaid.Settled) return new(true, null, null);
                 return chatSaid.Now is { } sentNow
@@ -468,15 +494,40 @@ public sealed class SessionWords : IDisposable
         // here, and go to the conversation that continues it once the take is over (PumpAsync). Judged before the nevers, since the
         // successor's record opens before the take is done.
         var holding = TakeWaits(record);
-        if (!holding && Never(record, read) is { } never) return never;
+        if (!holding && Never(record, await JudgedAsync(read, ct).ConfigureAwait(false)) is { } never) return never;
 
         // Kept as a conversation keeps what is attached (CONV4c), so the names on the record name files that exist.
         var kept = files.Count > 0 ? ChatFiles.Keep(_loop.Home, id, files) : [];
         var word = new Word(text, [.. kept.Select(file => file.Name)], door, choice, key, level);
-        return holding
-            ? await HoldForTakeAsync(id, word, ct).ConfigureAwait(false)
-            : await KeepOrHoldAsync(id, word, ct).ConfigureAwait(false);
+        if (holding) return await HoldForTakeAsync(id, word, ct).ConfigureAwait(false);
+
+        var (answer, at) = await KeepOrHoldAsync(id, word, ct).ConfigureAwait(false);
+        // FOUNDATION1d-ii: the record is no longer its line's head: said at the head, once this record's held words let go.
+        return at is { } onward ? await OnAsync(onward, text, files, preface, door, ct, level, key, choice, walk).ConfigureAwait(false) : answer;
     }
+
+    /// <summary>
+    /// The words said again at their line's head (FOUNDATION1d-ii, the foundation design §3.4 rules 1 and 2), as they were said first: their key,
+    /// level, files and display choice, through the shell's whole judgement there, the head's inbox, its turns or its record. The answer names the
+    /// head that took them. A walk that comes back to a record it asked, or passes its bound, ends refused with the driver's sentence.
+    /// </summary>
+    private async Task<WordsAnswer?> OnAsync(
+        string head, string text, IReadOnlyList<ChatUpload> files, string? preface, string door, CancellationToken ct, MessageLevel level,
+        string? key, string? choice, HeadWalk walk)
+    {
+        if (!walk.On(head)) return WordsAnswer.Refused(WordsNever.Continued, walk.Ended(head));
+        var said = await SayAsync(head, text, files, preface, door, ct, level, key, choice, walk).ConfigureAwait(false);
+        return said is { Sent: true, At: null } ? said with { At = head } : said;
+    }
+
+    /// <summary>
+    /// The record as the say judges it (FOUNDATION1d-ii, the design §19.12): with the driver's own walk to the conversation it went on in, where the
+    /// host has no <c>head</c> mark, as today; without it where the host has the mark, whose say door judges the line's head inside its own step.
+    /// </summary>
+    private async Task<Read> JudgedAsync(Read read, CancellationToken ct) =>
+        read.Next is not null && _loop.Service is { } service && await service.Opens.HeadAsync(ct).ConfigureAwait(false) >= 1
+            ? read with { Next = null }
+            : read;
 
     /// <summary>
     /// Take back one of the person's words waiting on a parked or ended record, or reword it (SAIDBACK1b, D76), through the
@@ -650,10 +701,15 @@ public sealed class SessionWords : IDisposable
                 SessionRequests.WordKey(request))
             .ConfigureAwait(false);
         if (said is null) return WordsHeld.Failed(NotUp);
-        if (said.Running) KeepOnAsk(request.Session, text);
-        // A *Send now* is answered whole (STEER2c): what the door did, and why where it did not; any other say as it always was.
-        if (said.Sent && request.Asked == MessageLevel.Now) return new WordsHeld(true, said.Reaches, said.Why) { Word = said.Word, Now = said.Now };
-        if (said.Sent) return new WordsHeld(true, said.Reaches, null) { Word = said.Word };
+        if (said.Running) KeepOnAsk(said.At ?? request.Session, text);
+        // A *Send now* is answered whole (STEER2c): what the door did, and why where it did not; any other say as it always was. FOUNDATION1d-ii:
+        // the head that took them, where the record named went on in it, which the verb names.
+        if (said.Sent && request.Asked == MessageLevel.Now)
+        {
+            return new WordsHeld(true, said.Reaches, said.Why) { Word = said.Word, Now = said.Now, Head = said.At };
+        }
+
+        if (said.Sent) return new WordsHeld(true, said.Reaches, null) { Word = said.Word, Head = said.At };
         return said.Why is { } why ? WordsHeld.Refused(why, said.Message) : WordsHeld.Failed(said.Message ?? NotUp);
     }
 
@@ -687,9 +743,10 @@ public sealed class SessionWords : IDisposable
 
     /// <summary>
     /// The words to the say door, behind any already held for this record: kept, shown and the loop nudged; held while the
-    /// record still runs; or refused by the service's word.
+    /// record still runs; or refused by the service's word. FOUNDATION1d-ii: where the record is no longer its line's head, nothing is
+    /// kept, held or shown here, and the head is answered instead, for the caller to say them there once this record's turn let go.
     /// </summary>
-    private async Task<WordsAnswer> KeepOrHoldAsync(string id, Word word, CancellationToken ct)
+    private async Task<(WordsAnswer? Answer, string? Head)> KeepOrHoldAsync(string id, Word word, CancellationToken ct)
     {
         var service = _loop.Service ?? throw new DriverException(NotUp);
         var waiting = WaitingFor(id);
@@ -700,7 +757,7 @@ public sealed class SessionWords : IDisposable
             if (waiting.Words.Count > 0)
             {
                 Hold(waiting, word);
-                return new(true, "resume", null);
+                return (new(true, "resume", null), null);
             }
 
             // Taken before the say, so a move while it is on its way is not missed.
@@ -716,16 +773,19 @@ public sealed class SessionWords : IDisposable
                 throw new DriverException($"the service did not answer for session `{id}`, so your words were not kept: {error.Message}");
             }
 
+            // FOUNDATION1d-ii (the design §3.4 rule 2): the record is no longer its line's head, which the answer names.
+            if (said.Head is { } head) return (null, head);
+
             if (said.Settled is not null)
             {
                 // Row p: the record answered the retry settled, its word left a record of the line: nothing to show and no word.
-                return new(true, "resume", null);
+                return (new(true, "resume", null), null);
             }
 
             if (said.Kept)
             {
                 Show(id, said, word);
-                return new(true, "resume", null) { Word = said.Word?.Id };
+                return (new(true, "resume", null) { Word = said.Word?.Id }, null);
             }
 
             if (said.Refusal == "running")
@@ -733,11 +793,11 @@ public sealed class SessionWords : IDisposable
                 // It winds up, or runs where this machine's routes do not reach (D137 §2.1): held for its record to end.
                 Hold(waiting, word);
                 StartPump(id, waiting, moved);
-                return new(true, "resume", null);
+                return (new(true, "resume", null), null);
             }
 
             return said.Refusal is { } refusal
-                ? WordsAnswer.Refused(WordsNever.Code(refusal), said.Message)
+                ? (WordsAnswer.Refused(WordsNever.Code(refusal), said.Message), null)
                 : throw new DriverException(said.Message);
         }
         finally
@@ -803,6 +863,19 @@ public sealed class SessionWords : IDisposable
                             break;
                         }
 
+                        // FOUNDATION1d-ii (the design §3.4 rules 1 and 2): the record is no longer its line's head, which the answer names. The
+                        // word is said again there once, under its key, as the forward to a conversation it went on in is said; off the held
+                        // file once the head took it, and tried again where nothing could answer. A second `continued` there follows the next
+                        // head, and a walk that comes back to a record it asked ends, the word said lost.
+                        if (said.Head is { } head)
+                        {
+                            var walk = new HeadWalk(id);
+                            if (!walk.On(head)) Lost(id, WordsNever.Continued, walk.Ended(head));
+                            else if (!await PassAsync(id, head, word, ct, walk).ConfigureAwait(false)) break;
+                            Taken(waiting);
+                            continue;
+                        }
+
                         if (said.Refusal == "running") break;
                         // Off the file before it is shown: the record has it now, and a restart must not say it twice.
                         Taken(waiting);
@@ -840,7 +913,8 @@ public sealed class SessionWords : IDisposable
         try
         {
             if (await ReadAsync(id, ct).ConfigureAwait(false) is not { Record: { } record } read) return (false, null);
-            return TakeWaits(record) ? (true, null) : (false, read.Next);
+            // FOUNDATION1d-ii: where the host has the `head` mark, its say door names the head, and the driver's own walk stands aside.
+            return TakeWaits(record) ? (true, null) : (false, (await JudgedAsync(read, ct).ConfigureAwait(false)).Next);
         }
         catch (Exception error) when (Unanswered(error) && !ct.IsCancellationRequested)
         {
@@ -855,14 +929,15 @@ public sealed class SessionWords : IDisposable
     /// there, as any word said to it would be. True where it is off this record's queue: taken, or refused and said so here. False
     /// where nothing could answer now, so it is tried again.
     /// </summary>
-    private async Task<bool> PassAsync(string id, string next, Word word, CancellationToken ct)
+    /// <param name="walk">The records this word was said to on its way to its line's head (FOUNDATION1d-ii); null where it starts at <paramref name="next"/>.</param>
+    private async Task<bool> PassAsync(string id, string next, Word word, CancellationToken ct, HeadWalk? walk = null)
     {
         WordsAnswer? said;
         try
         {
             // FOUNDATION1b (X4-1.2): said there as the first say was, with its key, level and display choice; a word held before
             // the row has no key and says as it did, at the default level.
-            said = await SayAsync(next, word.Text, Uploads(id, word.Files), preface: null, word.Door, ct, word.Level, word.Key, word.Choice)
+            said = await SayAsync(next, word.Text, Uploads(id, word.Files), preface: null, word.Door, ct, word.Level, word.Key, word.Choice, walk ?? new HeadWalk(next))
                 .ConfigureAwait(false);
         }
         catch (DriverException)
@@ -872,7 +947,7 @@ public sealed class SessionWords : IDisposable
         }
 
         if (said is null) return false;
-        if (said.Running) KeepOnAsk(next, word.Text);
+        if (said.Running) KeepOnAsk(said.At ?? next, word.Text);
         if (!said.Sent) Lost(id, said.Why, said.Message);
         return true;
     }
