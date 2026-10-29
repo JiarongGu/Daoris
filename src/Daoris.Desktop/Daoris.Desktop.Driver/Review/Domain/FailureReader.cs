@@ -53,6 +53,41 @@ internal sealed record FailureSignature
     /// <summary>The signature as one string, its fields in a fixed order: the tool's <c>signatureKey</c>, character for character.</summary>
     public string Key => FailureReader.KeyOf(this);
 
+    /// <summary>
+    /// A signature read from the JSON the tool's reader writes (a runner's answer holds one for each failure): a test's with a location or a
+    /// message, or a gate's with its errors or a message. Null where the shape is none of them.
+    /// </summary>
+    public static FailureSignature? FromJson(JsonElement element)
+    {
+        if (element.ValueKind != JsonValueKind.Object) return null;
+        string? Text(JsonElement of, string name) => of.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
+        if (element.TryGetProperty("gate", out _))
+        {
+            var gate = Text(element, "gate");
+            var step = Text(element, "step");
+            if (gate is null || step is null) return null;
+            if (element.TryGetProperty("errors", out var errors))
+            {
+                if (errors.ValueKind != JsonValueKind.Array || errors.EnumerateArray().Any(each => each.ValueKind != JsonValueKind.String)) return null;
+                return new FailureSignature { Gate = gate, Step = step, Errors = [.. errors.EnumerateArray().Select(each => each.GetString()!)] };
+            }
+
+            return Text(element, "message") is { } said ? new FailureSignature { Gate = gate, Step = step, Message = said } : null;
+        }
+
+        var test = Text(element, "test");
+        var exception = Text(element, "exception");
+        if (test is null || exception is null) return null;
+        if (element.TryGetProperty("location", out var location) && location.ValueKind != JsonValueKind.Null)
+        {
+            if (location.ValueKind != JsonValueKind.Object || Text(location, "method") is not { } method || Text(location, "text") is not { } text) return null;
+            if (!location.TryGetProperty("ordinal", out var ordinal) || !ordinal.TryGetInt32(out var at)) return null;
+            return new FailureSignature { Test = test, Exception = exception, Location = new FailureLocation(method, text, at) };
+        }
+
+        return Text(element, "message") is { } message ? new FailureSignature { Test = test, Exception = exception, Message = message } : null;
+    }
+
     /// <summary>The signature as the tool's reader writes it, fields it does not hold left out.</summary>
     public JsonObject ToJson()
     {

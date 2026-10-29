@@ -1,0 +1,425 @@
+{
+  "about": "INTEGRATE1f part f1 (D207, the integration design §4.5, §5.3, §11 row f): how a red candidate's failures are judged, one table for both judges: tools/merge-queue.mjs (placeOnPrefixes, judgeFailure, candidateOutcome, confirmStep, confirmReadings, memoryStep, recheckDue, noteRecheck) and tools/ci-background.mjs (knownRedStanding) in src/Daoris.Cli/tool-test/integration-judge.test.ts, and the driver's FailureJudge (FailureJudgeTests). A prefix answer is 'pass', 'fail:<signature>' or 'cannot:<signature>'; a run is '<prefix>:<answer>' or 'alone<member>:<answer>'. A row that would pass a sighting is a row the judge fails. Every sentence is held word for word.",
+  "signatures": {
+    "s": { "test": "Driver.Tests.SessionTests.Resumes", "exception": "Xunit.Sdk.EqualException", "location": { "method": "Resumes", "text": "Assert.Equal(expected, actual);", "ordinal": 0 } },
+    "old": { "test": "Driver.Tests.SessionTests.Resumes", "exception": "Xunit.Sdk.EqualException", "location": { "method": "Resumes", "text": "Assert.Equal(old, actual);", "ordinal": 0 } },
+    "other": { "test": "Driver.Tests.TreeTests.Lands", "exception": "Xunit.Sdk.EqualException", "location": { "method": "Resumes", "text": "Assert.Empty(errors);", "ordinal": 0 } },
+    "build": { "gate": "driver", "step": "build", "errors": ["CS0103 src/X.cs"] },
+    "check": { "gate": "universal", "step": "check", "message": "docs/README.md: error: a broken link" }
+  },
+  "placements": [
+    { "name": "one transition places the failure on its member", "seq": ["pass", "fail:s"], "signature": "s", "expect": { "outcome": "pinned", "member": 1, "interacting": [], "monotonic": true, "why": null } },
+    { "name": "the last transition pins, the earlier ones interact", "seq": ["pass", "fail:s", "pass", "fail:s"], "signature": "s", "expect": { "outcome": "pinned", "member": 3, "interacting": [1], "monotonic": false, "why": null } },
+    { "name": "a base that fails with it places nothing", "seq": ["fail:s", "fail:s"], "signature": "s", "expect": { "outcome": "unresolved", "member": null, "interacting": [], "monotonic": null, "why": "no prefix places it" } },
+    { "name": "a whole candidate that does not fail with it is unresolved", "seq": ["pass", "fail:old"], "signature": "s", "expect": { "outcome": "unresolved", "member": null, "interacting": [], "monotonic": null, "why": "the whole candidate does not fail again with its signature" } },
+    { "name": "a base that cannot run the selection", "seq": ["cannot:build", "fail:s"], "signature": "s", "expect": { "outcome": "unresolved", "member": null, "interacting": [], "monotonic": null, "why": "prefix 0 cannot run the selection (the base): it fails another way" } },
+    { "name": "a prefix that cannot run, after the base and two members", "seq": ["pass", "pass", "pass", "cannot:build", "fail:s"], "signature": "s", "expect": { "outcome": "unresolved", "member": null, "interacting": [], "monotonic": null, "why": "prefix 3 cannot run the selection (the base and 3 members): it fails another way" } },
+    { "name": "a cannot with the failure's own signature is a failure to run nothing else: not blocked", "seq": ["pass", "cannot:s"], "signature": "s", "expect": { "outcome": "unresolved", "member": null, "interacting": [], "monotonic": null, "why": "the whole candidate does not fail again with its signature" } }
+  ],
+  "judgements": [
+    {
+      "name": "a red candidate of four is bisected to one member, every prefix run",
+      "failure": "s", "members": 4, "prefixes": ["pass", "pass", "pass", "fail:s", "fail:s"],
+      "expect": { "outcome": "pinned", "member": 3, "with": [], "interacting": [], "why": null, "said": null, "runs": ["0:pass", "4:fail:s", "1:pass", "2:pass", "3:fail:s", "2:pass", "3:fail:s"], "confirmAsked": 0 }
+    },
+    {
+      "name": "a pinned member that passes alone needs the members before it",
+      "failure": "s", "members": 3, "prefixes": ["pass", "pass", "fail:s", "fail:s"], "alone": "pass",
+      "expect": { "outcome": "pinned", "member": 2, "with": [1], "interacting": [], "why": null, "said": null, "runs": ["0:pass", "3:fail:s", "1:pass", "2:fail:s", "1:pass", "2:fail:s", "alone2:pass"], "confirmAsked": 0 }
+    },
+    {
+      "name": "a pinned member that fails alone needs none",
+      "failure": "s", "members": 3, "prefixes": ["pass", "pass", "fail:s", "fail:s"], "alone": "fail:s",
+      "expect": { "outcome": "pinned", "member": 2, "with": [], "interacting": [], "why": null, "said": null, "runs": ["0:pass", "3:fail:s", "1:pass", "2:fail:s", "1:pass", "2:fail:s", "alone2:fail:s"], "confirmAsked": 0 }
+    },
+    {
+      "name": "a failure that comes and goes: the last transition pinned, the earlier one interacting, no member run alone",
+      "failure": "s", "members": 3, "prefixes": ["pass", "fail:s", "pass", "fail:s"], "alone": "pass",
+      "expect": { "outcome": "pinned", "member": 3, "with": [], "interacting": [1], "why": null, "said": null, "runs": ["0:pass", "3:fail:s", "1:fail:s", "2:pass", "2:pass", "3:fail:s"], "confirmAsked": 0 }
+    },
+    {
+      "name": "a candidate of one: a failure on a passing base is pinned to it",
+      "failure": "s", "members": 1, "prefixes": ["pass", "fail:s"],
+      "expect": { "outcome": "pinned", "member": 1, "with": [], "interacting": [], "why": null, "said": null, "runs": ["0:pass", "1:fail:s", "0:pass", "1:fail:s"], "confirmAsked": 0 }
+    },
+    {
+      "name": "a base that fails another way: the transition into the signature is still the member's",
+      "failure": "s", "members": 3, "prefixes": ["fail:old", "fail:old", "fail:s", "fail:s"],
+      "expect": { "outcome": "pinned", "member": 2, "with": [], "interacting": [], "why": null, "said": null, "runs": ["0:fail:old", "3:fail:s", "1:fail:old", "2:fail:s", "1:fail:old", "2:fail:s"], "confirmAsked": 0 }
+    },
+    {
+      "name": "a known red last seen failing on the base is inherited with no run",
+      "failure": "s", "members": 2, "prefixes": [], "known": { "expired": false, "lastSeen": "b0" }, "baseCommit": "b0",
+      "expect": { "outcome": "inherited", "member": null, "with": [], "interacting": [], "why": "known red, last seen failing on the base b0: its base run is skipped", "said": null, "runs": [], "confirmAsked": 0 }
+    },
+    {
+      "name": "a known red last seen on another commit is run on the base, and fails there: filed as known red",
+      "failure": "s", "members": 2, "prefixes": ["fail:s"], "known": { "expired": false, "lastSeen": "b9" }, "baseCommit": "b0",
+      "expect": { "outcome": "inherited", "member": null, "with": [], "interacting": [], "why": "it fails on the base with the same signature: filed as known red, pinned to none", "said": null, "runs": ["0:fail:s"], "confirmAsked": 0 }
+    },
+    {
+      "name": "a known red past its 72 hours is run on the base, and failing there it stops the line",
+      "failure": "s", "members": 2, "prefixes": ["fail:s"], "known": { "expired": true, "lastSeen": "b0" }, "baseCommit": "b0",
+      "expect": { "outcome": "stop", "member": null, "with": [], "interacting": [], "why": "expired", "said": "Driver.Tests.SessionTests.Resumes is known red past 72 hours: no candidate inherits it, and the queue stops until a direct commit fixes it or skips it under its row", "runs": ["0:fail:s"], "confirmAsked": 0 }
+    },
+    {
+      "name": "a known red past its 72 hours that passes on the base is judged as any failure",
+      "failure": "s", "members": 2, "prefixes": ["pass", "fail:s", "fail:s"], "known": { "expired": true, "lastSeen": "b0" }, "baseCommit": "b0",
+      "expect": { "outcome": "pinned", "member": 1, "with": [], "interacting": [], "why": null, "said": null, "runs": ["0:pass", "2:fail:s", "1:fail:s", "0:pass", "1:fail:s"], "confirmAsked": 0 }
+    },
+    {
+      "name": "a gate that names no test and fails on the base stops the line",
+      "failure": "check", "members": 2, "prefixes": ["fail:check"],
+      "expect": { "outcome": "stop", "member": null, "with": [], "interacting": [], "why": "base", "said": "universal fails on the base with the same signature: main is broken, the queue stops until a direct commit or --queue --recheck", "runs": ["0:fail:check"], "confirmAsked": 0 }
+    },
+    {
+      "name": "a gate that names no test is never inherited as known red, whatever the record says",
+      "failure": "check", "members": 2, "prefixes": ["fail:check"], "known": { "expired": false, "lastSeen": "b0" }, "baseCommit": "b0",
+      "expect": { "outcome": "stop", "member": null, "with": [], "interacting": [], "why": "base", "said": "universal fails on the base with the same signature: main is broken, the queue stops until a direct commit or --queue --recheck", "runs": ["0:fail:check"], "confirmAsked": 0 }
+    },
+    {
+      "name": "a failure the whole candidate does not repeat is unresolved",
+      "failure": "s", "members": 3, "prefixes": ["pass", "pass", "pass", "pass"],
+      "expect": { "outcome": "unresolved", "member": null, "with": [], "interacting": [], "why": "the whole candidate does not fail again with its signature", "said": null, "runs": ["0:pass", "3:pass", "1:pass", "2:pass"], "confirmAsked": 0 }
+    },
+    {
+      "name": "a prefix that does not build in a failing test's sequence is unresolved",
+      "failure": "s", "members": 3, "prefixes": ["pass", "cannot:build", "fail:s", "fail:s"],
+      "expect": { "outcome": "unresolved", "member": null, "with": [], "interacting": [], "why": "prefix 1 cannot run the selection (the base and 1 member): it fails another way", "said": null, "runs": ["0:pass", "3:fail:s", "1:cannot:build", "2:fail:s"], "confirmAsked": 0 }
+    },
+    {
+      "name": "a flake mid-bisection: the prefixes either side of the transition disagree on a second run",
+      "failure": "s", "members": 3, "prefixes": ["pass", "pass", "fail:s", "fail:s"], "second": { "2": "pass" },
+      "expect": { "outcome": "unresolved", "member": null, "with": [], "interacting": [], "why": "the prefixes either side of member 2 disagree on a second run", "said": null, "runs": ["0:pass", "3:fail:s", "1:pass", "2:fail:s", "1:pass", "2:pass"], "confirmAsked": 0 }
+    },
+    {
+      "name": "a confirmed failure is judged on as today, its base run made once",
+      "failure": "s", "members": 3, "prefixes": ["pass", "pass", "fail:s", "fail:s"], "confirm": { "result": "confirmed" },
+      "expect": { "outcome": "pinned", "member": 2, "with": [], "interacting": [], "why": null, "said": null, "runs": ["0:pass", "3:fail:s", "1:pass", "2:fail:s", "1:pass", "2:fail:s"], "confirmAsked": 1 }
+    },
+    {
+      "name": "a failure that does not fail again on the confirm run is unconfirmed: no base run, no prefix run, a sighting and never a pass",
+      "failure": "s", "members": 3, "prefixes": [], "confirm": { "result": "unconfirmed" },
+      "expect": { "outcome": "unconfirmed", "member": null, "with": [], "interacting": [], "why": "it did not fail again when its gate ran once more as composed, holding the whole admission: a sighting, never a pass", "said": null, "runs": [], "confirmAsked": 1 }
+    },
+    {
+      "name": "an inconclusive confirm run says why and runs nothing: read as split, never land",
+      "failure": "s", "members": 3, "prefixes": [], "confirm": { "result": "inconclusive", "why": "another live hold stands beside it" },
+      "expect": { "outcome": "inconclusive", "member": null, "with": [], "interacting": [], "why": "its confirm run is inconclusive (another live hold stands beside it): read as split, never land", "said": null, "runs": [], "confirmAsked": 1 }
+    },
+    {
+      "name": "a dropped candidate's confirm run ends the judgement",
+      "failure": "s", "members": 3, "prefixes": [], "confirm": { "result": "dropped" },
+      "expect": { "outcome": "dropped", "member": null, "with": [], "interacting": [], "why": "the candidate was dropped during its confirm run", "said": null, "runs": [], "confirmAsked": 1 }
+    },
+    {
+      "name": "a reading it does not know is inconclusive",
+      "failure": "s", "members": 3, "prefixes": [], "confirm": { "result": "what" },
+      "expect": { "outcome": "inconclusive", "member": null, "with": [], "interacting": [], "why": "its confirm run is inconclusive (it gave no reading): read as split, never land", "said": null, "runs": [], "confirmAsked": 1 }
+    },
+    {
+      "name": "a reading with no result is inconclusive too",
+      "failure": "s", "members": 3, "prefixes": [], "confirm": {},
+      "expect": { "outcome": "inconclusive", "member": null, "with": [], "interacting": [], "why": "its confirm run is inconclusive (it gave no reading): read as split, never land", "said": null, "runs": [], "confirmAsked": 1 }
+    },
+    {
+      "name": "a gate that names no test and does not fail again is a sighting, and never stops the line",
+      "failure": "check", "members": 2, "prefixes": ["fail:check"], "confirm": { "result": "unconfirmed" },
+      "expect": { "outcome": "unconfirmed", "member": null, "with": [], "interacting": [], "why": "it did not fail again when its gate ran once more as composed, holding the whole admission: a sighting, never a pass", "said": null, "runs": [], "confirmAsked": 1 }
+    },
+    {
+      "name": "a known red inherited with no run asks no confirm run",
+      "failure": "s", "members": 2, "prefixes": [], "known": { "expired": false, "lastSeen": "b0" }, "baseCommit": "b0", "confirm": { "result": "unconfirmed" },
+      "expect": { "outcome": "inherited", "member": null, "with": [], "interacting": [], "why": "known red, last seen failing on the base b0: its base run is skipped", "said": null, "runs": [], "confirmAsked": 0 }
+    },
+    {
+      "name": "a known red past its 72 hours that fails on the base still stops the line, before any confirm run",
+      "failure": "s", "members": 2, "prefixes": ["fail:s"], "known": { "expired": true, "lastSeen": "b0" }, "baseCommit": "b0", "confirm": { "result": "unconfirmed" },
+      "expect": { "outcome": "stop", "member": null, "with": [], "interacting": [], "why": "expired", "said": "Driver.Tests.SessionTests.Resumes is known red past 72 hours: no candidate inherits it, and the queue stops until a direct commit fixes it or skips it under its row", "runs": ["0:fail:s"], "confirmAsked": 0 }
+    },
+    {
+      "name": "a known red past its 72 hours that passes on the base and does not fail again is a sighting, its base run kept",
+      "failure": "s", "members": 2, "prefixes": ["pass"], "known": { "expired": true, "lastSeen": "b0" }, "baseCommit": "b0", "confirm": { "result": "unconfirmed" },
+      "expect": { "outcome": "unconfirmed", "member": null, "with": [], "interacting": [], "why": "it did not fail again when its gate ran once more as composed, holding the whole admission: a sighting, never a pass", "said": null, "runs": ["0:pass"], "confirmAsked": 1 }
+    },
+    {
+      "name": "a known red past its 72 hours that passes on the base and fails again is judged on with that base run reused",
+      "failure": "s", "members": 2, "prefixes": ["pass", "fail:s", "fail:s"], "known": { "expired": true, "lastSeen": "b0" }, "baseCommit": "b0", "confirm": { "result": "confirmed" },
+      "expect": { "outcome": "pinned", "member": 1, "with": [], "interacting": [], "why": null, "said": null, "runs": ["0:pass", "2:fail:s", "1:fail:s", "0:pass", "1:fail:s"], "confirmAsked": 1 }
+    },
+    {
+      "name": "a known red last seen elsewhere is confirmed first, then run on the base and filed",
+      "failure": "s", "members": 2, "prefixes": ["fail:s"], "known": { "expired": false, "lastSeen": "b9" }, "baseCommit": "b0", "confirm": { "result": "confirmed" },
+      "expect": { "outcome": "inherited", "member": null, "with": [], "interacting": [], "why": "it fails on the base with the same signature: filed as known red, pinned to none", "said": null, "runs": ["0:fail:s"], "confirmAsked": 1 }
+    }
+  ],
+  "outcomes": [
+    {
+      "name": "unconfirmed under split, by default and by name: a candidate of several splits, never green, its sighting kept apart from the flakes",
+      "judgements": [{ "failure": "s", "judged": { "outcome": "unconfirmed", "why": "unconfirmed why" } }], "members": 3, "policies": [null, "split"],
+      "expect": { "action": "split", "retain": ["b1", "b2", "b3"], "handedBack": [], "inherited": [], "flakes": [], "sightings": ["Driver.Tests.SessionTests.Resumes"], "inconclusive": [] }
+    },
+    {
+      "name": "unconfirmed under split: one of one is handed back unresolved with the sighting",
+      "judgements": [{ "failure": "s", "judged": { "outcome": "unconfirmed", "why": "unconfirmed why" } }], "members": 1, "policies": [null],
+      "expect": { "action": "hand back", "retain": [], "handedBack": [{ "branch": "b1", "how": "unresolved", "failure": "Driver.Tests.SessionTests.Resumes", "with": [], "interacting": [], "why": "unconfirmed why" }], "inherited": [], "flakes": [], "sightings": ["Driver.Tests.SessionTests.Resumes"], "inconclusive": [] }
+    },
+    {
+      "name": "unconfirmed under hold: the candidate waits for a decide, never green",
+      "judgements": [{ "failure": "s", "judged": { "outcome": "unconfirmed", "why": "unconfirmed why" } }], "members": 2, "policies": ["hold"],
+      "expect": { "action": "hold", "on": "decide", "why": "an unconfirmed failure holds the candidate for a decide: Driver.Tests.SessionTests.Resumes", "retain": ["b1", "b2"], "handedBack": [], "inherited": [], "flakes": [], "sightings": ["Driver.Tests.SessionTests.Resumes"], "inconclusive": [] }
+    },
+    {
+      "name": "unconfirmed under land: the confirm run's pass is that tip's verdict alone, landed and never green, naming the gate it passed",
+      "judgements": [{ "failure": "s", "judged": { "outcome": "unconfirmed", "why": "unconfirmed why" } }], "members": 3, "policies": ["land"],
+      "expect": { "action": "land", "passedOnConfirm": ["driver"], "retain": ["b1", "b2", "b3"], "handedBack": [], "inherited": [], "flakes": [], "sightings": ["Driver.Tests.SessionTests.Resumes"], "inconclusive": [] }
+    },
+    {
+      "name": "unconfirmed under land, a candidate of one: landed",
+      "judgements": [{ "failure": "s", "judged": { "outcome": "unconfirmed", "why": "unconfirmed why" } }], "members": 1, "policies": ["land"],
+      "expect": { "action": "land", "passedOnConfirm": ["driver"], "retain": ["b1"], "handedBack": [], "inherited": [], "flakes": [], "sightings": ["Driver.Tests.SessionTests.Resumes"], "inconclusive": [] }
+    },
+    {
+      "name": "two sightings of one gate name it once",
+      "judgements": [{ "failure": "s", "judged": { "outcome": "unconfirmed", "why": "a" } }, { "failure": "other", "judged": { "outcome": "unconfirmed", "why": "b" } }], "members": 2, "policies": ["land"],
+      "expect": { "action": "land", "passedOnConfirm": ["driver"], "retain": ["b1", "b2"], "handedBack": [], "inherited": [], "flakes": [], "sightings": ["Driver.Tests.SessionTests.Resumes", "Driver.Tests.TreeTests.Lands"], "inconclusive": [] }
+    },
+    {
+      "name": "inconclusive beside a sighting reads as split under every policy, never land",
+      "judgements": [{ "failure": "s", "judged": { "outcome": "inconclusive", "why": "inconclusive why" } }, { "failure": "other", "judged": { "outcome": "unconfirmed", "why": "unconfirmed why" } }], "members": 3, "policies": ["split", "hold", "land", null],
+      "expect": { "action": "split", "retain": ["b1", "b2", "b3"], "handedBack": [], "inherited": [], "flakes": [], "sightings": ["Driver.Tests.TreeTests.Lands"], "inconclusive": ["Driver.Tests.SessionTests.Resumes"] }
+    },
+    {
+      "name": "inconclusive of one is handed back unresolved under every policy",
+      "judgements": [{ "failure": "s", "judged": { "outcome": "inconclusive", "why": "inconclusive why" } }], "members": 1, "policies": ["split", "hold", "land", null],
+      "expect": { "action": "hand back", "retain": [], "handedBack": [{ "branch": "b1", "how": "unresolved", "failure": "Driver.Tests.SessionTests.Resumes", "with": [], "interacting": [], "why": "inconclusive why" }], "inherited": [], "flakes": [], "sightings": [], "inconclusive": ["Driver.Tests.SessionTests.Resumes"] }
+    },
+    {
+      "name": "a member pinned beside an unconfirmed failure under hold or land: the pinned handed back, the rest formed again",
+      "judgements": [{ "failure": "other", "judged": { "outcome": "pinned", "member": 2, "with": [], "interacting": [] } }, { "failure": "s", "judged": { "outcome": "unconfirmed", "why": "unconfirmed why" } }], "members": 3, "policies": ["hold", "land"],
+      "expect": { "action": "hand back", "retain": ["b1", "b3"], "handedBack": [{ "branch": "b2", "how": "pinned", "failure": "Driver.Tests.TreeTests.Lands", "with": [], "interacting": [], "why": null }], "inherited": [], "flakes": [], "sightings": ["Driver.Tests.SessionTests.Resumes"], "inconclusive": [] }
+    },
+    {
+      "name": "the same beside an unconfirmed failure under split is today's rule: split, the pinned handed back",
+      "judgements": [{ "failure": "other", "judged": { "outcome": "pinned", "member": 2, "with": [], "interacting": [] } }, { "failure": "s", "judged": { "outcome": "unconfirmed", "why": "unconfirmed why" } }], "members": 3, "policies": ["split", null],
+      "expect": { "action": "split", "retain": ["b1", "b3"], "handedBack": [{ "branch": "b2", "how": "pinned", "failure": "Driver.Tests.TreeTests.Lands", "with": [], "interacting": [], "why": null }], "inherited": [], "flakes": [], "sightings": ["Driver.Tests.SessionTests.Resumes"], "inconclusive": [] }
+    },
+    {
+      "name": "an inherited failure beside an unconfirmed one under land: landed, the inherited filed",
+      "judgements": [{ "failure": "other", "judged": { "outcome": "inherited" } }, { "failure": "s", "judged": { "outcome": "unconfirmed", "why": "unconfirmed why" } }], "members": 2, "policies": ["land"],
+      "expect": { "action": "land", "passedOnConfirm": ["driver"], "retain": ["b1", "b2"], "handedBack": [], "inherited": ["Driver.Tests.TreeTests.Lands"], "flakes": [], "sightings": ["Driver.Tests.SessionTests.Resumes"], "inconclusive": [] }
+    },
+    {
+      "name": "a policy it does not know reads as split",
+      "judgements": [{ "failure": "s", "judged": { "outcome": "unconfirmed", "why": "unconfirmed why" } }], "members": 2, "policies": ["promote", ""],
+      "expect": { "action": "split", "retain": ["b1", "b2"], "handedBack": [], "inherited": [], "flakes": [], "sightings": ["Driver.Tests.SessionTests.Resumes"], "inconclusive": [] }
+    },
+    {
+      "name": "a drop ends the judgement before any stop: nothing handed back, filed or kept",
+      "judgements": [{ "failure": "check", "judged": { "outcome": "stop", "why": "base", "said": "main is broken" } }, { "failure": "s", "judged": { "outcome": "dropped", "why": "dropped why" } }], "members": 2, "policies": ["land"],
+      "expect": { "action": "dropped", "retain": [], "handedBack": [], "inherited": [], "flakes": [], "sightings": [], "inconclusive": [] }
+    },
+    {
+      "name": "a stop stops the queue, naming the failure and saying why",
+      "judgements": [{ "failure": "s", "judged": { "outcome": "pinned", "member": 1, "with": [], "interacting": [] } }, { "failure": "check", "judged": { "outcome": "stop", "why": "base", "said": "main is broken" } }], "members": 2, "policies": [null],
+      "expect": { "action": "stop", "failure": "universal", "why": "base", "said": "main is broken" }
+    },
+    {
+      "name": "a pinned member is handed back, the others kept",
+      "judgements": [{ "failure": "s", "judged": { "outcome": "pinned", "member": 1, "with": [], "interacting": [] } }], "members": 3, "policies": [null],
+      "expect": { "action": "hand back", "retain": ["b2", "b3"], "handedBack": [{ "branch": "b1", "how": "pinned", "failure": "Driver.Tests.SessionTests.Resumes", "with": [], "interacting": [], "why": null }], "inherited": [], "flakes": [], "sightings": [], "inconclusive": [] }
+    },
+    {
+      "name": "a member pinned with others names them, and the members it interacts with",
+      "judgements": [{ "failure": "s", "judged": { "outcome": "pinned", "member": 3, "with": [1], "interacting": [2] } }], "members": 3, "policies": [null],
+      "expect": { "action": "hand back", "retain": ["b1", "b2"], "handedBack": [{ "branch": "b3", "how": "pinned with", "failure": "Driver.Tests.SessionTests.Resumes", "with": ["b1"], "interacting": ["b2"], "why": null }], "inherited": [], "flakes": [], "sightings": [], "inconclusive": [] }
+    },
+    {
+      "name": "two failures pinned on one member hand it back once, for the first",
+      "judgements": [{ "failure": "s", "judged": { "outcome": "pinned", "member": 2, "with": [], "interacting": [] } }, { "failure": "other", "judged": { "outcome": "pinned", "member": 2, "with": [], "interacting": [] } }], "members": 3, "policies": [null],
+      "expect": { "action": "hand back", "retain": ["b1", "b3"], "handedBack": [{ "branch": "b2", "how": "pinned", "failure": "Driver.Tests.SessionTests.Resumes", "with": [], "interacting": [], "why": null }], "inherited": [], "flakes": [], "sightings": [], "inconclusive": [] }
+    },
+    {
+      "name": "a pinned member outside the candidate is passed over",
+      "judgements": [{ "failure": "s", "judged": { "outcome": "pinned", "member": 9, "with": [], "interacting": [] } }], "members": 2, "policies": [null],
+      "expect": { "action": "green", "retain": ["b1", "b2"], "handedBack": [], "inherited": [], "flakes": [], "sightings": [], "inconclusive": [] }
+    },
+    {
+      "name": "an inherited failure alone is filed and the candidate is green",
+      "judgements": [{ "failure": "s", "judged": { "outcome": "inherited" } }], "members": 2, "policies": [null, "land"],
+      "expect": { "action": "green", "retain": ["b1", "b2"], "handedBack": [], "inherited": ["Driver.Tests.SessionTests.Resumes"], "flakes": [], "sightings": [], "inconclusive": [] }
+    },
+    {
+      "name": "no failure at all is green",
+      "judgements": [], "members": 2, "policies": [null],
+      "expect": { "action": "green", "retain": ["b1", "b2"], "handedBack": [], "inherited": [], "flakes": [], "sightings": [], "inconclusive": [] }
+    },
+    {
+      "name": "an unresolved failure of several members: they run one at a time, the failure listed as a flake",
+      "judgements": [{ "failure": "s", "judged": { "outcome": "unresolved", "why": "u1" } }], "members": 3, "policies": [null, "land"],
+      "expect": { "action": "split", "retain": ["b1", "b2", "b3"], "handedBack": [], "inherited": [], "flakes": ["Driver.Tests.SessionTests.Resumes"], "sightings": [], "inconclusive": [] }
+    },
+    {
+      "name": "unresolved failures of one member: handed back as unresolved with both reasons, its flakes filed",
+      "judgements": [{ "failure": "s", "judged": { "outcome": "unresolved", "why": "u1" } }, { "failure": "other", "judged": { "outcome": "unresolved", "why": "u2" } }], "members": 1, "policies": [null],
+      "expect": { "action": "hand back", "retain": [], "handedBack": [{ "branch": "b1", "how": "unresolved", "failure": "Driver.Tests.SessionTests.Resumes, Driver.Tests.TreeTests.Lands", "with": [], "interacting": [], "why": "u1; u2" }], "inherited": [], "flakes": ["Driver.Tests.SessionTests.Resumes", "Driver.Tests.TreeTests.Lands"], "sightings": [], "inconclusive": [] }
+    },
+    {
+      "name": "a gate that names no test is listed by its gate",
+      "judgements": [{ "failure": "check", "judged": { "outcome": "unresolved", "why": "u1" } }], "members": 2, "policies": [null],
+      "expect": { "action": "split", "retain": ["b1", "b2"], "handedBack": [], "inherited": [], "flakes": ["universal"], "sightings": [], "inconclusive": [] }
+    }
+  ],
+  "readings": [
+    {
+      "name": "an unconfirmed confirm run reads so for every failure the gate had",
+      "confirm": { "result": "unconfirmed", "why": "it passed, holding the whole admission" }, "failures": ["s", "other"],
+      "expect": [
+        { "failure": "Driver.Tests.SessionTests.Resumes", "result": "unconfirmed", "why": "it passed, holding the whole admission" },
+        { "failure": "Driver.Tests.TreeTests.Lands", "result": "unconfirmed", "why": "it passed, holding the whole admission" }
+      ]
+    },
+    {
+      "name": "a dropped confirm run reads so",
+      "confirm": { "result": "dropped", "why": "the candidate was dropped during its confirm run" }, "failures": ["s"],
+      "expect": [{ "failure": "Driver.Tests.SessionTests.Resumes", "result": "dropped", "why": "the candidate was dropped during its confirm run" }]
+    },
+    {
+      "name": "anything that is not confirmed, dropped or unconfirmed reads inconclusive, saying why",
+      "confirm": { "result": "inconclusive", "why": "another live hold stands beside it" }, "failures": ["s"],
+      "expect": [{ "failure": "Driver.Tests.SessionTests.Resumes", "result": "inconclusive", "why": "another live hold stands beside it" }]
+    },
+    {
+      "name": "a result it does not know reads inconclusive with the answer's own why, or a sentence of its own",
+      "confirm": { "result": "memory" }, "failures": ["s"],
+      "expect": [{ "failure": "Driver.Tests.SessionTests.Resumes", "result": "inconclusive", "why": "no confirm run answered" }]
+    },
+    {
+      "name": "no confirm run at all reads inconclusive",
+      "confirm": null, "failures": ["s"],
+      "expect": [{ "failure": "Driver.Tests.SessionTests.Resumes", "result": "inconclusive", "why": "no confirm run answered" }]
+    },
+    {
+      "name": "a failure that failed again with its signature is confirmed, one that did not is inconclusive",
+      "confirm": { "result": "confirmed", "why": "it failed again", "failures": ["s"] }, "failures": ["s", "other"],
+      "expect": [
+        { "failure": "Driver.Tests.SessionTests.Resumes", "result": "confirmed", "why": "it failed again with its signature, holding the whole admission" },
+        { "failure": "Driver.Tests.TreeTests.Lands", "result": "inconclusive", "why": "its gate failed another way on the confirm run, so whether this failure recurs is not shown" }
+      ]
+    },
+    {
+      "name": "a failure of the confirm run's own is added as confirmed: it failed with nothing heavy beside it",
+      "confirm": { "result": "confirmed", "why": "it failed again", "failures": ["s", "other"] }, "failures": ["s"],
+      "expect": [
+        { "failure": "Driver.Tests.SessionTests.Resumes", "result": "confirmed", "why": "it failed again with its signature, holding the whole admission" },
+        { "failure": "Driver.Tests.TreeTests.Lands", "result": "confirmed", "why": "a failure of the confirm run's own, holding the whole admission: the candidate's" }
+      ]
+    }
+  ],
+  "steps": [
+    {
+      "name": "a run that passes holding the whole admission is unconfirmed, its composition passed on and its places let go",
+      "take": { "held": true, "conclusive": true }, "halted": "never", "run": { "result": "pass", "composition": { "units": ["N.A"], "digest": "sha256:aa" } },
+      "expect": { "result": "unconfirmed", "why": "it passed, holding the whole admission", "taken": true, "ran": true, "ended": true, "composition": { "units": ["N.A"], "digest": "sha256:aa" }, "failures": [], "thrown": null, "error": null }
+    },
+    {
+      "name": "a run that fails again with signatures is confirmed with the failures it had",
+      "take": { "held": true, "conclusive": true }, "halted": "never", "run": { "result": "fail", "failures": ["s", "other"] },
+      "expect": { "result": "confirmed", "why": "it failed again, holding the whole admission", "taken": true, "ran": true, "ended": true, "composition": null, "failures": ["Driver.Tests.SessionTests.Resumes", "Driver.Tests.TreeTests.Lands"], "thrown": null, "error": null }
+    },
+    {
+      "name": "a failure with no signature is neither a pass nor failures with their signatures",
+      "take": { "held": true, "conclusive": true }, "halted": "never", "run": { "result": "fail", "failures": ["s", null] },
+      "expect": { "result": "inconclusive", "why": "the confirm run's answer is neither a pass nor failures with their signatures", "taken": true, "ran": true, "ended": true, "composition": null, "failures": [], "thrown": null, "error": null }
+    },
+    {
+      "name": "a run that fails with no failures at all is inconclusive",
+      "take": { "held": true, "conclusive": true }, "halted": "never", "run": { "result": "fail", "failures": [] },
+      "expect": { "result": "inconclusive", "why": "the confirm run's answer is neither a pass nor failures with their signatures", "taken": true, "ran": true, "ended": true, "composition": null, "failures": [], "thrown": null, "error": null }
+    },
+    {
+      "name": "a run that answers neither says why in its own words",
+      "take": { "held": true, "conclusive": true }, "halted": "never", "run": { "result": "memory", "why": "it died of memory" },
+      "expect": { "result": "inconclusive", "why": "it died of memory", "taken": true, "ran": true, "ended": true, "composition": null, "failures": [], "thrown": null, "error": null }
+    },
+    {
+      "name": "an admission not shown makes the run inconclusive, judged before the run's own pass",
+      "take": { "held": true, "conclusive": false, "doubt": "another live hold stands beside it" }, "halted": "never", "run": { "result": "pass" },
+      "expect": { "result": "inconclusive", "why": "another live hold stands beside it", "taken": true, "ran": true, "ended": true, "composition": null, "failures": [], "thrown": null, "error": null }
+    },
+    {
+      "name": "an admission not shown and no doubt named",
+      "take": { "held": true, "conclusive": false }, "halted": "never", "run": { "result": "pass" },
+      "expect": { "result": "inconclusive", "why": "the whole admission was not shown", "taken": true, "ran": true, "ended": true, "composition": null, "failures": [], "thrown": null, "error": null }
+    },
+    {
+      "name": "an admission that could not be established runs nothing",
+      "take": { "held": false, "dropped": false, "why": "the machine's record could not be written (EPERM)" }, "halted": "never", "run": { "result": "pass" },
+      "expect": { "result": "inconclusive", "why": "the machine's record could not be written (EPERM)", "taken": true, "ran": false, "ended": false, "composition": null, "failures": [], "thrown": null, "error": null }
+    },
+    {
+      "name": "an admission refused with no reason",
+      "take": { "held": false, "dropped": false }, "halted": "never", "run": { "result": "pass" },
+      "expect": { "result": "inconclusive", "why": "the whole admission was not taken", "taken": true, "ran": false, "ended": false, "composition": null, "failures": [], "thrown": null, "error": null }
+    },
+    {
+      "name": "a drop while the admission waits ends it",
+      "take": { "held": false, "dropped": true, "why": "dropped" }, "halted": "never", "run": { "result": "pass" },
+      "expect": { "result": "dropped", "why": "the candidate was dropped during its confirm run", "taken": true, "ran": false, "ended": false, "composition": null, "failures": [], "thrown": null, "error": null }
+    },
+    {
+      "name": "a drop before the take asks nothing of the admission",
+      "take": { "held": true, "conclusive": true }, "halted": "before", "run": { "result": "pass" },
+      "expect": { "result": "dropped", "why": "the candidate was dropped during its confirm run", "taken": false, "ran": false, "ended": false, "composition": null, "failures": [], "thrown": null, "error": null }
+    },
+    {
+      "name": "a drop during the run: the places are let go and the run's answer is not read",
+      "take": { "held": true, "conclusive": true }, "halted": "afterRun", "run": { "result": "pass" },
+      "expect": { "result": "dropped", "why": "the candidate was dropped during its confirm run", "taken": true, "ran": true, "ended": true, "composition": null, "failures": [], "thrown": null, "error": null }
+    },
+    {
+      "name": "a drop that makes the run throw keeps what it threw",
+      "take": { "held": true, "conclusive": true }, "halted": "afterRun", "run": { "throws": "the run was ended" },
+      "expect": { "result": "dropped", "why": "the candidate was dropped during its confirm run", "taken": true, "ran": true, "ended": true, "composition": null, "failures": [], "thrown": null, "error": "the run was ended" }
+    },
+    {
+      "name": "a throw that is no drop is rethrown once every place is let go",
+      "take": { "held": true, "conclusive": true }, "halted": "never", "run": { "throws": "the gate tree is gone" },
+      "expect": { "result": null, "why": null, "taken": true, "ran": true, "ended": true, "composition": null, "failures": [], "thrown": "the gate tree is gone", "error": null }
+    }
+  ],
+  "memory": [
+    { "name": "no attempt yet: run", "attempts": [], "afterHold": false, "needGb": null, "expect": { "next": "run", "note": null } },
+    { "name": "a pass is the gate's pass", "attempts": [{ "died": false }], "afterHold": false, "needGb": null, "expect": { "next": "pass", "note": null } },
+    { "name": "a pass after a death is a flake of memory, counted as the gate's pass", "attempts": [{ "died": true }, { "died": false }], "afterHold": false, "needGb": null, "expect": { "next": "pass", "note": "FLAKE of memory: it passed once its memory was free" } },
+    { "name": "the first death runs again, whole and alone", "attempts": [{ "died": true }], "afterHold": false, "needGb": null, "expect": { "next": "again", "note": "a death of memory: run again once, whole and alone, once its memory is free (MEMGATE1)" } },
+    { "name": "a second death holds the candidate as memory", "attempts": [{ "died": true }, { "died": true }], "afterHold": false, "needGb": null, "expect": { "next": "hold", "note": "a second death of memory: the candidate is held as memory until the admission record reserves its need" } },
+    { "name": "a death after the hold, its own peak past its need: the gate's failure", "attempts": [{ "died": true, "peakGb": 9 }], "afterHold": true, "needGb": 6, "expect": { "next": "judge", "note": "its own job's peak commit (9 GB) passed its reserved need (6 GB): the gate's failure" } },
+    { "name": "a fractional peak is written as JavaScript writes it", "attempts": [{ "died": true, "peakGb": 9.5 }], "afterHold": true, "needGb": 9, "expect": { "next": "judge", "note": "its own job's peak commit (9.5 GB) passed its reserved need (9 GB): the gate's failure" } },
+    { "name": "a death after the hold within its need is held again, not judged", "attempts": [{ "died": true, "peakGb": 5.5 }], "afterHold": true, "needGb": 6, "expect": { "next": "hold", "note": "it died within its reserved need, under load from outside the runners: held again, not judged" } },
+    { "name": "a death after the hold with no need known is held again", "attempts": [{ "died": true, "peakGb": 99 }], "afterHold": true, "needGb": null, "expect": { "next": "hold", "note": "it died within its reserved need, under load from outside the runners: held again, not judged" } },
+    { "name": "a death after the hold with no peak read is held again", "attempts": [{ "died": true }], "afterHold": true, "needGb": 6, "expect": { "next": "hold", "note": "it died within its reserved need, under load from outside the runners: held again, not judged" } }
+  ],
+  "rechecks": {
+    "due": [
+      { "name": "a stop is not due ten minutes on", "stop": { "at": "2026-10-24T10:00:00.000Z" }, "now": "2026-10-24T10:10:00.000Z", "due": false },
+      { "name": "a stop is due an hour on", "stop": { "at": "2026-10-24T10:00:00.000Z" }, "now": "2026-10-24T11:00:00.000Z", "due": true },
+      { "name": "a recheck moves the next one an hour past it", "stop": { "at": "2026-10-24T10:00:00.000Z", "rechecks": [{ "at": "2026-10-24T10:30:00.000Z" }] }, "now": "2026-10-24T11:29:00.000Z", "due": false },
+      { "name": "an hour past the last recheck", "stop": { "at": "2026-10-24T10:00:00.000Z", "rechecks": [{ "at": "2026-10-24T10:30:00.000Z" }] }, "now": "2026-10-24T11:30:00.000Z", "due": true },
+      { "name": "a stop whose time does not read is never due", "stop": { "at": "soon" }, "now": "2026-10-24T11:30:00.000Z", "due": false },
+      { "name": "no stop, no recheck", "stop": null, "now": "2026-10-24T11:30:00.000Z", "due": false }
+    ],
+    "notes": [
+      { "name": "a host failure that does not recur lifts the stop", "stop": { "at": "2026-10-24T10:00:00.000Z" }, "recheck": { "at": "2026-10-24T11:00:00.000Z", "passed": true, "by": "--queue --recheck" }, "expect": null },
+      { "name": "a recheck that fails again keeps the stop and records itself", "stop": { "at": "2026-10-24T10:00:00.000Z" }, "recheck": { "at": "2026-10-24T11:00:00.000Z", "passed": false, "by": "the runner" }, "expect": { "at": "2026-10-24T10:00:00.000Z", "rechecks": [{ "at": "2026-10-24T11:00:00.000Z", "passed": false, "by": "the runner" }] } },
+      { "name": "rechecks are kept in order", "stop": { "at": "2026-10-24T10:00:00.000Z", "rechecks": [{ "at": "2026-10-24T11:00:00.000Z", "passed": false, "by": "the runner" }] }, "recheck": { "at": "2026-10-24T12:00:00.000Z", "passed": false, "by": "--queue --recheck" }, "expect": { "at": "2026-10-24T10:00:00.000Z", "rechecks": [{ "at": "2026-10-24T11:00:00.000Z", "passed": false, "by": "the runner" }, { "at": "2026-10-24T12:00:00.000Z", "passed": false, "by": "--queue --recheck" }] } }
+    ]
+  },
+  "standing": [
+    { "name": "a finding is inherited within 72 hours of its first sighting", "since": "2026-10-24T10:00:00.000Z", "now": "2026-10-24T11:00:00.000Z", "expired": false, "warn": false },
+    { "name": "twelve hours before its end the watch warns", "since": "2026-10-24T10:00:00.000Z", "now": "2026-10-26T22:00:01.000Z", "expired": false, "warn": true },
+    { "name": "at twelve hours before its end exactly the watch does not warn yet", "since": "2026-10-24T10:00:00.000Z", "now": "2026-10-26T22:00:00.000Z", "expired": false, "warn": false },
+    { "name": "at 72 hours exactly it is not yet expired", "since": "2026-10-24T10:00:00.000Z", "now": "2026-10-27T10:00:00.000Z", "expired": false, "warn": true },
+    { "name": "a second past 72 hours it is expired", "since": "2026-10-24T10:00:00.000Z", "now": "2026-10-27T10:00:01.000Z", "expired": true, "warn": false }
+  ]
+}
