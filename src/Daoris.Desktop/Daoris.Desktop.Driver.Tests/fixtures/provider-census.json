@@ -225,7 +225,14 @@
 
   "service": {
     "roots": ["src/Daoris.Service/Daoris.Service.Core", "src/Daoris.Service/Daoris.Service.Http", "src/Daoris.Service/Daoris.Service.Mcp", "src/Daoris.Service/Daoris.Service.Shared"],
-    "exceptions": []
+    "exceptions": [
+      ["src/Daoris.Service/Daoris.Service.Core/Registry/RepositoryLayout.cs", "\"claude-code\"", 1, "-", "permanent", "the doctrine layout's name for the layout every lock before D117 was written under: a twin of the CLI's layouts, no agent's id (design §6, §9)"],
+      ["src/Daoris.Service/Daoris.Service.Core/Sessions/CallLineage.cs", "\"claude-code\"", 1, "r", "behaviour", "the service's ordered call readers: the key set Claude Code's lineage is read under, first in the list (design §3.3, O1-F17); row r moves each reader into its provider's one file"],
+      ["src/Daoris.Service/Daoris.Service.Core/Sessions/CallLineage.cs", "\"codex\"", 1, "r", "behaviour", "the service's ordered call readers: the key set Codex's lineage is read under, second in the list (design §3.3, O1-F17); row r moves each reader into its provider's one file"],
+      ["src/Daoris.Service/Daoris.Service.Core/Sessions/CallLineage.cs", "x-codex-turn-metadata", 1, "r", "behaviour", "the service's ordered call readers: Codex's turn header, the key its reader takes the lineage from (design §3.3); row r moves it into Codex's file"],
+      ["src/Daoris.Service/Daoris.Service.Http/Program.cs", "\"claude-code\"", 3, "-", "permanent", "D23's supported default where an open names no adapter, kept for as long as an older driver may open such a record (design §6, O1-F18, O2-F4)"],
+      ["src/Daoris.Service/Daoris.Service.Mcp/HelpAgentTool.cs", "id in a sentence", 3, "-", "words", "the tool's description names the agents as `daoris agent` spells them"]
+    ]
   },
 
   "page": {
