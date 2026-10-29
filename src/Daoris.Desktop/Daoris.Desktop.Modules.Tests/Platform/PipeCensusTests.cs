@@ -467,8 +467,12 @@ public sealed class PipeCensusTests
     [InlineData("SESSION_PERMISSION_ANSWER", PipeDrain.Passes)]
     [InlineData("SESSION_GO_AHEAD", PipeDrain.Passes)]
     [InlineData("RETRY_QUEST", PipeDrain.Passes)]
-    [InlineData("SET_REVIEW", PipeDrain.Passes)]
+    [InlineData("SET_LANGUAGE", PipeDrain.Passes)]
     [InlineData("SUPERVISOR_ANSWER", PipeDrain.Passes)]
+    // A review's findings: Ask Daoris is told a dismissal as a turn, and a setting can release work the look starts outside the drain's
+    // holds of quests (a helper asked under `ask`, now `on`).
+    [InlineData("HELP_DISMISS", PipeDrain.Waits)]
+    [InlineData("SET_HELPERS", PipeDrain.Waits)]
     [InlineData("SESSION_ANSWER_ALONE", PipeDrain.Waits)]
     [InlineData("SESSION_INPUT", PipeDrain.Waits)]
     [InlineData("START_CHAT", PipeDrain.Waits)]
@@ -486,6 +490,36 @@ public sealed class PipeCensusTests
     {
         Assert.Equal(expected, PipeCensus.Daoris.DrainOf(DriverModule.Name, route));
         Assert.Equal(expected == PipeDrain.Waits, PipeCensus.Daoris.WaitsForDrain(DriverModule.Name, route, PipeCensus.Daoris.Of(DriverModule.Name, route)));
+    }
+
+    /// <summary>
+    /// DRAINHOLD1, a review's finding: every setting writes the driver's file and asks the look at once, and a draining look holds only
+    /// quests, answered parks and intakes (<c>InstallUpdate.Drained</c>). So a press that can let the look start anything else waits:
+    /// - helpers, which no repository's hold reaches: their rule, the cap's slot, the actor they run on, an account ready again;
+    /// - a hand-over, a second opinion, a landing (its rule, its review, its line, the opinion's answer over the gate);
+    /// - a workflow node's next step or a run's gates;
+    /// - the keeping pass's removals;
+    /// - a start held for a folder's trust, or by a plugin.
+    /// One that changes only how later sessions run, or what they say, goes on.
+    /// </summary>
+    [Fact]
+    public void A_press_that_can_release_work_the_drain_does_not_hold_waits_and_an_inert_setting_goes_on()
+    {
+        string[] releases =
+        [
+            "SET_HELPERS", "SET_CAP", "SET_ACTOR", "SET_COOLOFF", "ACCOUNT_USE", "HARNESSES_REFRESH", "SET_HAND_OVER", "SET_OPINION",
+            "SET_LANDING", "SET_REVIEW", "SET_LINE", "OPINION_ANYWAY", "OPINION_MYSELF", "WORK_HELD", "WORKFLOW_NODE", "WORK_RESUME",
+            "WORKFLOW_LANDED", "SET_KEEP", "TRUST_FOLDER", "PLUGIN_ACTION", "PLUGIN_ADD", "PLUGIN_INSTALL", "PLUGIN_UPDATE",
+        ];
+        string[] inert =
+        [
+            "SET_HOLD", "SET_DRIVABLE", "SET_STRIKES", "SET_TREES", "SET_STANDING", "SET_COMMITS", "SET_ACCESS", "SET_READ_ACROSS",
+            "SET_WRITE_ACROSS", "SET_HEAVY_GATES", "SET_SESSION_CHECKS", "SET_SESSION_OPTION", "SET_AGENT_SETTINGS", "SET_HELP_MODE",
+            "SET_HELP_GRANT", "SET_NOTIFY", "SET_LANGUAGE", "RULE_ACTION", "RULE_PROPOSAL", "TOOLS_LOCATION", "TOOLS_DELETE", "TOOLS_GIT",
+        ];
+
+        Assert.All(releases, route => Assert.Equal((route, PipeDrain.Waits), (route, PipeCensus.Daoris.DrainOf(DriverModule.Name, route))));
+        Assert.All(inert, route => Assert.Equal((route, PipeDrain.Passes), (route, PipeCensus.Daoris.DrainOf(DriverModule.Name, route))));
     }
 
     /// <summary>

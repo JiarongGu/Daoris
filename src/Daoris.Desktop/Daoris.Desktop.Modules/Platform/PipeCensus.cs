@@ -420,11 +420,21 @@ public sealed class PipeCensus
         Add(PipeDrain.Waits,
             // Work the drain counts, begun at once by the chat runner: a conversation started, carried on in a new part, handed to another
             // agent, given words (between turns they open its next one, ended they go on with it), sent a channel's message it may reopen
-            // on, or going on with an answer alone; and an applied proposal, which acts through these doors.
+            // on, or going on with an answer alone; an applied proposal, which acts through these doors; and a proposal's dismissal, which
+            // Ask Daoris is told as a turn.
             "START_CHAT", "START_HELP", "HELP_START_FROM", "SESSION_GO_ON_NEW", "SESSION_START_FROM", "SESSION_GO_ON_BRIEF", "SESSION_HAND_OVER",
-            "SESSION_HAND_OVER_APPROVE", "SESSION_INPUT", "CHANNEL_FORWARD", "SESSION_ANSWER_ALONE", "HELP_APPLY",
+            "SESSION_HAND_OVER_APPROVE", "SESSION_INPUT", "CHANNEL_FORWARD", "SESSION_ANSWER_ALONE", "HELP_APPLY", "HELP_DISMISS",
             // Work begun at the next look that the drain's holds of quests do not reach: a helper, a partner, a second opinion.
             "SESSION_HELPER_ASK", "SESSION_HELPER_APPROVE", "SESSION_PARTNER_ASK", "ASK_OPINION",
+            // What lets the look start such work, or land, since every setting asks the look at once (`DriverContext.Change`). Helpers,
+            // whose admission no repository's hold reaches: their rule, the cap's slot, the actor they run on, an account ready again (a
+            // cooling helper starts again on it). A hand-over's rule, an opinion's, a landing's rule, review and line, and the opinion's
+            // answer over the gate. A workflow node's word and a run's accepted gates; a pause's release, which reaches more than its
+            // quests. The keeping rule, whose pass removes set-aside trees. A start held for a folder's trust, and a plugin, which may
+            // hold a start.
+            "SET_HELPERS", "SET_CAP", "SET_ACTOR", "SET_COOLOFF", "ACCOUNT_USE", "HARNESSES_REFRESH", "SET_HAND_OVER", "SET_OPINION",
+            "SET_LANDING", "SET_REVIEW", "SET_LINE", "OPINION_ANYWAY", "OPINION_MYSELF", "WORK_HELD", "WORKFLOW_NODE", "WORK_RESUME",
+            "WORKFLOW_LANDED", "SET_KEEP", "TRUST_FOLDER", "PLUGIN_ACTION", "PLUGIN_ADD", "PLUGIN_INSTALL", "PLUGIN_UPDATE",
             // A process of its own that runs on past its answer, which the drain counts not and the close would cut: a plugin's try, a
             // harness's installer, updater or sign-in, and a tool's download (a managed use downloads first).
             "PLUGIN_TRY", "HARNESS_ACTION", "TOOLS_DOWNLOAD", "TOOLS_USE",
@@ -442,20 +452,21 @@ public sealed class PipeCensus
             "SESSION_QUEUE_EDIT",
             // An answer to a session under way, which hears it at once and was already counted.
             "SESSION_PERMISSION_ANSWER",
-            // A word kept whose going on is the look's, which the drain holds until the restart: a go-ahead, a quest retried or resumed, a
-            // plugin step's or a run's node's word, a set-up's ask, an opinion's answer, a helper or hand-over declined, the supervisor's.
-            "SESSION_GO_AHEAD", "RETRY_QUEST", "WORK_RESUME", "WORK_HELD", "WORKFLOW_NODE", "SETUP_PRESS", "OPINION_ANYWAY", "OPINION_MYSELF",
-            "SESSION_HELPER_DECLINE", "SESSION_HAND_OVER_DECLINE", "SUPERVISOR_OVERRULE", "SUPERVISOR_ANSWER", "SUPERVISOR_DEFER",
+            // A word kept whose going on is a quest's start or a park's resume, which the drain's look holds until the restart: a go-ahead, a
+            // quest retried, a set-up's ask, a helper or hand-over declined, the supervisor's.
+            "SESSION_GO_AHEAD", "RETRY_QUEST", "SETUP_PRESS", "SESSION_HELPER_DECLINE", "SESSION_HAND_OVER_DECLINE", "SUPERVISOR_OVERRULE",
+            "SUPERVISOR_ANSWER", "SUPERVISOR_DEFER",
             // A record, a mark or a list cleared: no tree, no branch and no process (a history's clear never takes a tree).
-            "HISTORY_CLEAR", "SYSTEM_DOWNLOADS_CLEAR", "SESSION_ARCHIVE", "HELP_DISMISS", "HELP_RENAME", "HELP_PIN", "CHANNEL_POST", "CHANNEL_MARK",
+            "HISTORY_CLEAR", "SYSTEM_DOWNLOADS_CLEAR", "SESSION_ARCHIVE", "HELP_RENAME", "HELP_PIN", "CHANNEL_POST", "CHANNEL_MARK",
             "NOTICES_READ", "NOTICE_DISMISS",
-            // A standing choice, written to its file.
-            "SET_ACCESS", "SET_ACTOR", "SET_AGENT_SETTINGS", "SET_CAP", "SET_COMMITS", "SET_COOLOFF", "SET_DRIVABLE", "SET_HAND_OVER", "SET_HELPERS",
-            "SET_HELP_MODE", "SET_HELP_GRANT", "WORKFLOW_LANDED", "SET_HEAVY_GATES", "SET_HOLD", "SET_LANDING", "SET_LANGUAGE", "SET_LINE", "SET_NOTIFY",
-            "SET_OPINION", "SET_READ_ACROSS", "SET_REVIEW", "SET_SESSION_OPTION", "SET_SESSION_CHECKS", "SET_STANDING", "SET_STRIKES", "SET_TREES",
-            "SET_WRITE_ACROSS", "TRUST_FOLDER", "SET_KEEP", "RULE_ACTION", "RULE_PROPOSAL", "ACCOUNT_USE", "HARNESSES_REFRESH",
-            // A plugin's or a tool's files: a plugin's hook is stopped by every close and started by every start, so a restart cuts none of it.
-            "PLUGIN_ACTION", "PLUGIN_ADD", "PLUGIN_INSTALL", "PLUGIN_NEW", "PLUGIN_UPDATE", "TOOLS_DELETE", "TOOLS_LOCATION", "TOOLS_GIT");
+            // A standing choice that changes only how later sessions run, what they reach or say, or what the person is told; a hold or a
+            // drivable repository the drain's look holds whatever it says; a session's own option; Ask Daoris's access, which ends its
+            // conversation at its turn's end and starts none.
+            "SET_ACCESS", "SET_AGENT_SETTINGS", "SET_COMMITS", "SET_DRIVABLE", "SET_HELP_MODE", "SET_HELP_GRANT", "SET_HEAVY_GATES", "SET_HOLD",
+            "SET_LANGUAGE", "SET_NOTIFY", "SET_READ_ACROSS", "SET_SESSION_OPTION", "SET_SESSION_CHECKS", "SET_STANDING", "SET_STRIKES", "SET_TREES",
+            "SET_WRITE_ACROSS", "RULE_ACTION", "RULE_PROPOSAL",
+            // A plugin made in a folder, which installs nothing, and a tool's files and location.
+            "PLUGIN_NEW", "TOOLS_DELETE", "TOOLS_LOCATION", "TOOLS_GIT");
         return table;
 
         void Add(PipeDrain drain, params string[] routes)
