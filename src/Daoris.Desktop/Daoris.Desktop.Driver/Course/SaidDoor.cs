@@ -26,7 +26,8 @@ public interface ISaidDoor
 /// <summary>
 /// The service's say and taken doors for one session of this machine's (COWORK1c): what a driven session's inbox and a conversation's
 /// turns keep their words through. Kept with <c>running</c>, so the record keeps them while it runs; a service from before refuses
-/// them as <c>running</c>, and the dispatcher then holds them in this process alone, as before.
+/// them as <c>running</c>, and the dispatcher then holds them in this process alone, as before. A record that is no longer its line's
+/// head is refused <c>continued</c>, naming the head (FOUNDATION1d-ii), which the dispatcher holds nowhere and answers to its caller.
 /// </summary>
 public sealed class SaidDoor(ServiceClient service, string session) : ISaidDoor
 {
@@ -134,6 +135,13 @@ public enum InboxKeep
     /// session winds up are held, or keeps it on a record that has ended.
     /// </summary>
     Closed,
+
+    /// <summary>
+    /// The record is no longer its line's head (FOUNDATION1d-ii, the foundation design §3.4 rule 2): the say door refused the word
+    /// <c>continued</c>, naming the head (<see cref="InboxKept.Head"/>). Nothing holds, sends, steers, attempts or takes it here, and it is never
+    /// held in this process instead, as a refusal from a host before COWORK1c is: the caller says it at the head.
+    /// </summary>
+    Continued,
 }
 
 /// <summary>What keeping a word for a running session's run did (COWORK1c), with the record's answer and, held, where it reaches.</summary>
@@ -146,6 +154,9 @@ public sealed record InboxKept(InboxKeep Outcome, SayAnswer? Said = null)
     /// and nothing was kept, held, sent, steered, attempted or taken now.
     /// </summary>
     public bool Settled => Said?.Settled is not null;
+
+    /// <summary>The line's head the record named where the outcome is <see cref="InboxKeep.Continued"/> (FOUNDATION1d-ii): where the word is said instead.</summary>
+    public string? Head => Said?.Head;
 
     /// <summary>Where a held word reaches the session; null until the door is known, and for any other outcome.</summary>
     public DrivenReach? Reach { get; init; }

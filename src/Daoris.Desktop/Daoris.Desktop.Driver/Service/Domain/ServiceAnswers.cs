@@ -24,6 +24,20 @@ public sealed record SayAnswer(bool Kept, string Message)
     /// finds a word to queue, steer, attempt, take or show. Only a keyed say asks for it; null from a host before the row and for any other answer.
     /// </summary>
     public string? Settled { get; init; }
+
+    /// <summary>
+    /// The say door's refusal of a word said to a record that is not its line's head (FOUNDATION1d-ii, the foundation design §3.4 rule 2):
+    /// <see cref="Refusal"/>'s word, beside which the answer names the head as <see cref="Head"/>. The same as <c>WordsNever.Continued</c>, the
+    /// driver's own code for a conversation that went on in another, so a reader that knows only that code reads it as its own.
+    /// </summary>
+    public const string Continued = "continued";
+
+    /// <summary>
+    /// The line's head the say door named where it refused the word <see cref="Continued"/> (FOUNDATION1d-ii, §3.4 rule 2): the record the word
+    /// is said to instead, whole, by a caller that passes it on. Null for any other answer, a <c>continued</c> that names none among them, and
+    /// from a host without the <c>head</c> mark, which never refuses so.
+    /// </summary>
+    public string? Head { get; init; }
 }
 
 /// <summary>

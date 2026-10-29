@@ -1918,7 +1918,11 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
         {
             try
             {
-                await _service.SayAsync(sessionId, word.Text, word.Files.Count > 0 ? [.. word.Files.Select(file => file.Name)] : null, key: word.Key)
+                // FOUNDATION1d-ii: kept at the head of the record's line where it went on, whole, its files carried to the head's folder.
+                IReadOnlyList<string> names = [.. word.Files.Select(file => file.Name)];
+                await WordsHead.FollowAsync(
+                        sessionId, at => _service.SayAsync(at, word.Text, names.Count > 0 ? names : null, key: word.Key),
+                        (from, to) => ChatFiles.Carry(_home, from, to, names))
                     .ConfigureAwait(false);
             }
             catch (Exception error) when (error is HttpRequestException or DriverException or OperationCanceledException or ObjectDisposedException)
@@ -2198,6 +2202,8 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
         {
             null => null,
             { Settled: true } => new ChatSaid(null, null) { Settled = true },
+            // FOUNDATION1d-ii: the record is no longer its line's head, which the turns answer: nothing was kept, and the caller says it there.
+            { Head: { } head } => new ChatSaid(null, null) { Head = head },
             { Now: { } now } => new ChatSaid(now.Reaches, kept.Word) { Now = now },
             _ => new ChatSaid(Spelled(kept.Reach), kept.Word),
         };

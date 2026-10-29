@@ -310,6 +310,10 @@ public sealed class DrivenInbox(Action<ChatQueue> changed) : IAgentInbox
                 said = new SayAnswer(false, error.Message);
             }
 
+            // FOUNDATION1d-ii: the record went on in its line's head meanwhile, so nothing is reworded or held here; the word kept stays as
+            // it was, on the record the open moves its words from.
+            if (said.Head is not null) return QueueEdit.Taken;
+
             lock (_gate)
             {
                 var at = HeldAt(id);
@@ -452,6 +456,9 @@ public sealed class DrivenInbox(Action<ChatQueue> changed) : IAgentInbox
                 // FOUNDATION1 row p (the design §3.4 rule 5): the record answered the retry settled, so its word is held or went already:
                 // answered as a retry of a word held, with nothing held, sent, steered, attempted or taken, and no word to read an id from.
                 if (said.Settled is not null) return new InboxKept(InboxKeep.Held, said);
+                // FOUNDATION1d-ii (the design §3.4 rule 2): the record is no longer its line's head, which the answer names. Nothing is held,
+                // sent, steered, attempted or taken here, and KeepOrHoldAsync never holds it here instead: its caller says it at the head.
+                if (said.Head is not null) return new InboxKept(InboxKeep.Continued, said);
                 if (!said.Kept || said.Word?.Id is not { } id) return new InboxKept(InboxKeep.Refused, said);
 
                 lock (_gate)
@@ -496,7 +503,8 @@ public sealed class DrivenInbox(Action<ChatQueue> changed) : IAgentInbox
     /// <see cref="KeepAsync"/> where the record can keep the word, and held in this process alone, as before, where it cannot: no
     /// service yet (<paramref name="door"/> null), one from before COWORK1c that refuses a running record, a record that refuses it
     /// for any reason, or one that did not answer. Words said to a session this process runs are never lost to a record that will not
-    /// keep them; a restart loses only those. Never <see cref="InboxKeep.Refused"/>.
+    /// keep them; a restart loses only those. Never <see cref="InboxKeep.Refused"/>. A record that is no longer its line's head
+    /// (FOUNDATION1d-ii) answers <see cref="InboxKeep.Continued"/>, never held here: the caller says the word at the head.
     /// </summary>
     public async Task<InboxKept> KeepOrHoldAsync(ISaidDoor? door, ChatMessage message, CancellationToken ct)
     {
