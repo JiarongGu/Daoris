@@ -10,7 +10,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// left by the partial unique index <c>moves_standing</c>, so of two executors deciding a move of one line the second finds the first's row;
 /// the claim by the process run that makes it, taken only from a run dead by the lease's own test and then once, its generation raised;
 /// every phase and effect written under the claim's check inside its own transaction; an ended move kept as evidence while the record's next
-/// move claims a new row; and the record's moves deleted with it.
+/// move claims a new row; and the record's moves deleted with it. Part 3 adds the moved words' <c>sent</c>, <c>delivered</c> only once every
+/// word has it, a hold's words by their disposition, the destination's standing move and the person's press.
 /// </summary>
 /// <remarks>
 /// Every case has its own scratch home under <c>_fixtures/</c> and sets no variable of the process's environment. One process is one run to

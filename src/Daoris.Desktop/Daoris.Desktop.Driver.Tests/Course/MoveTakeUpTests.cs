@@ -9,6 +9,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// standing move of the unit's kind whose claim's run is dead, taken once under the generation it was read at, held where its effect was
 /// marked and never recorded and closed <c>gone</c> where a record it names no longer exists; a live run's move quiet past ten minutes said
 /// <c>move.quiet</c> once, never taken over; and then the caller's own sweep. A shell's come-up says once that another Daoris runs on its home.
+/// Part 3 adds a taken move at <c>delivering</c> read by its words' <c>sent</c>, and every hold of the unit's scope read by §3.3's one rule.
 /// </summary>
 /// <remarks>
 /// Every case has its own scratch home under <c>_fixtures/</c>. One process is one run to the lease's test, so a run's death is the liveness

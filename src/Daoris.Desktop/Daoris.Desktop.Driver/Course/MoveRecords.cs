@@ -256,7 +256,10 @@ public sealed record MoveFromBox(MoveDecision Decision, MoveRecordPhase Phase)
     public IReadOnlyList<MoveRecordWord> Words { get; init; } = [];
 }
 
-/// <summary>What a box's import came to: the move written, the record's standing move it waits behind, or why the import is held, nothing written.</summary>
+/// <summary>
+/// What a box's import came to: the move written, the record's standing move it waits behind (the one it left, or the one whose open made
+/// it), or why the import is held, nothing written.
+/// </summary>
 public sealed record MoveImported(MoveRecord? Move, MoveRecord? Standing, string? Held);
 
 /// <summary>A move's claim (§13.3, §13.4): the move, the process run that holds it and its generation, which every write checks inside its transaction.</summary>
@@ -335,7 +338,10 @@ public sealed record MoveRecord(long Id, string Left, string Executor, string Ph
     public string? QuietAt { get; init; }
 }
 
-/// <summary>What a decision came to: the move claimed by the deciding run, or the record's standing move, which the decider reads as the course's <c>Never</c>.</summary>
+/// <summary>
+/// What a decision came to: the move claimed by the deciding run, or the record's standing move, which the decider reads as the course's
+/// <c>Never</c>: the one it left, or since part 3 the one whose open made it, a destination taking no move of its own while that stands.
+/// </summary>
 /// <param name="Move">The new move, or the one already standing.</param>
 /// <param name="Claim">The decider's claim on the new move; null where another move stands.</param>
 public sealed record MoveDecided(MoveRecord Move, MoveClaim? Claim)
