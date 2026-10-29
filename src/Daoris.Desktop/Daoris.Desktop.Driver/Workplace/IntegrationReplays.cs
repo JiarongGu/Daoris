@@ -318,7 +318,7 @@ internal sealed class IntegrationReplays(IntegrationStore store, string treesRoo
         var (merged, mergeOut, mergeErr) = await WorkingTree.GitAsync(tree, ["merge", "--no-ff", "--no-commit", request.Tip], ct).ConfigureAwait(false);
         if (merged != 0)
         {
-            var (_, unmerged, _) = await WorkingTree.GitAsync(tree, ["diff", "--name-only", "--diff-filter=U"], ct).ConfigureAwait(false);
+            var (_, unmerged, _) = await WorkingTree.GitAsync(tree, ["--no-optional-locks", "diff", "--name-only", "--diff-filter=U"], ct).ConfigureAwait(false);
             var paths = unmerged.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
             return await ConflictAsync(
                 tree, onto, member.Request,
