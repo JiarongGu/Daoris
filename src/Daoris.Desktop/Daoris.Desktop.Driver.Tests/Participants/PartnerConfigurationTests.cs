@@ -35,6 +35,9 @@ public sealed class PartnerConfigurationTests
         Assert.Contains(Connector + "helper_ask", shaped.Deny);
         Assert.Contains(Connector + "partner_answer", shaped.Allow);
         Assert.Contains(Connector + "line_read", shaped.Allow);
+        // HANDBACK1: a quest's handback is a quest's record, refused a partner as the quest list is, in both layers.
+        Assert.DoesNotContain(Connector + "handback_read", shaped.Allow);
+        Assert.Contains(Connector + "handback_read", shaped.Deny);
         Assert.Contains("Bash(npm test:*)", shaped.Allow);
         Assert.Contains("Bash(rm -rf:*)", shaped.Deny);
         Assert.Contains("Bash(git push:*)", shaped.Deny);

@@ -245,9 +245,9 @@ public static class QuestWire
         // a take that found none crosses exactly as it did, and an older build reads a take without it.
         if (QuestStore.Carries(operation.Kind) && operation.Submission is { } submission) QuestStore.WriteRef(writer, "submission", submission);
 
-        // The session that said a ready (FABRIC-CLOSE1c4), on a submission alone and only where one said it: every other submission
-        // crosses exactly as it did, and an older build reads the submission without it.
-        if (operation is { Kind: QuestOperationKind.Submitted, Session: { } session }) writer.WriteString("session", session);
+        // The session that said a ready (FABRIC-CLOSE1c4), or wrote a done's or a decline's handback (HANDBACK1), on those kinds alone and
+        // only where one said it: every other operation crosses exactly as it did, and an older build reads each without it.
+        if (QuestStore.KeepsSession(operation.Kind) && operation.Session is { } session) writer.WriteString("session", session);
 
         // An evidenced operation's verdict (EVID1a): names and codes only; its when and machine are the operation's.
         if (operation is { Kind: QuestOperationKind.Evidenced, Evidence: { } verdict })
@@ -623,9 +623,9 @@ public static class QuestWire
             return null;
         }
 
-        // Which session said a ready (FABRIC-CLOSE1c4) only names whom a reopen is told to, so one that is no name is none, never half
-        // a submission: the submission itself crossed whole.
-        var session = kind == QuestOperationKind.Submitted && Text(item, "session") is { Length: > 0 } speaker ? speaker : null;
+        // Which session said a ready (FABRIC-CLOSE1c4) only names whom a reopen is told to, and which wrote a done's or a decline's
+        // handback (HANDBACK1) only whom the handback is by, so one that is no name is none, never half an operation: it crossed whole.
+        var session = QuestStore.KeepsSession(kind) && Text(item, "session") is { Length: > 0 } speaker ? speaker : null;
 
         return new QuestOperation(
             quest, kind, machine, sequence, at, note, published, attempted, numbered ? number : null,

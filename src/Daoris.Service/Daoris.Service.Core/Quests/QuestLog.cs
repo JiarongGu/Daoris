@@ -165,7 +165,8 @@ public sealed record QuestOperationRef(string Machine, long Sequence);
 /// </param>
 /// <param name="Session">
 /// For a <see cref="QuestOperationKind.Submitted"/>: the session that said the <c>ready</c>, as its connector's intake named it
-/// (FABRIC-CLOSE1c4). Null on every other kind, and where no session said it.
+/// (FABRIC-CLOSE1c4); for a <see cref="QuestOperationKind.Done"/> or a <see cref="QuestOperationKind.Declined"/>: the session that
+/// wrote its handback through its connector (HANDBACK1, D219). Null on every other kind, and where no session said it.
 /// </param>
 /// <param name="LostToTheReopen">
 /// For a <see cref="QuestOperationKind.Conflict"/>: the take of a step that went with its source's take, lost to the person's reopen

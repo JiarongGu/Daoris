@@ -66,14 +66,16 @@ public sealed class QuestOperationKindsTests
         },
         // The step's source as the take found it (FABRIC-CLOSE1c18): the submission the quest as asked grew from.
         [QuestOperationKind.Taken] = s => Op(QuestOperationKind.Taken, s) with { Note = "The owner's session.", Submission = new QuestOperationRef("m9", 3) },
-        // The close's provenance is a done's (FABRIC-CLOSE1a), so the sample carries it, and the wire and the log are held to it.
+        // The close's provenance is a done's (FABRIC-CLOSE1a), so the sample carries it, and the wire and the log are held to it. So is
+        // the session that wrote it through its connector (HANDBACK1), a decline's too.
         [QuestOperationKind.Done] = s => Op(QuestOperationKind.Done, s) with
         {
             Note = "The person marked this done: Built.", NoteParts = DoneParts,
             Answers = [new QuestAnswer(1, Met: "It is in docs/report.md.")],
             Close = new QuestClose("close-7", "token-0f1e2d"),
+            Session = "s1a2b3c4",
         },
-        [QuestOperationKind.Declined] = s => Op(QuestOperationKind.Declined, s) with { Note = "Abandoned.", WhileOpen = true },
+        [QuestOperationKind.Declined] = s => Op(QuestOperationKind.Declined, s) with { Note = "Abandoned.", WhileOpen = true, Session = "s1a2b3c4" },
         // A move that lost keeps its note's parts in the log, as a rebase rewrites it (QUESTCLOSE1b1); and a step's take that went
         // with its source's take, lost to the person's reopen, says so (FABRIC-CLOSE1c22).
         [QuestOperationKind.Conflict] = s => Op(QuestOperationKind.Conflict, s, "m2") with

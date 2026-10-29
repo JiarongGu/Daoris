@@ -1383,8 +1383,8 @@ public sealed class QuestStore
         var closed = kind == QuestOperationKind.Done ? close : null;
         // The submission a reopen or a rebind names is theirs alone (FABRIC-CLOSE1c), beside the source a take found (FABRIC-CLOSE1c18).
         var named = Carries(kind) ? submission : null;
-        // The session that said a ready is the submission's alone (FABRIC-CLOSE1c4).
-        var by = kind == QuestOperationKind.Submitted ? session : null;
+        // The session that said a ready (FABRIC-CLOSE1c4), or that wrote a done's or a decline's handback (HANDBACK1), is theirs alone.
+        var by = KeepsSession(kind) ? session : null;
         // The take a dismissal brought forward is that dismissal's alone (SYNCMERGE1a).
         var brought = kind == QuestOperationKind.Dismissed ? forward : null;
         // The person's workflow choice is a choice's alone (WORKFLOW1e2).
@@ -1417,6 +1417,14 @@ public sealed class QuestStore
 
     /// <summary>The kinds that name a submission (FABRIC-CLOSE1c): a reopen, and a rebind.</summary>
     internal static bool Names(QuestOperationKind kind) => kind is QuestOperationKind.Reopened or QuestOperationKind.Rebound;
+
+    /// <summary>
+    /// The kinds that keep the session that said them through its connector: a ready (FABRIC-CLOSE1c4), and a done and a decline
+    /// (HANDBACK1, D219), each the act a handback is written at. On any other kind it is never written, kept or read; on these it is
+    /// written only where a session said it, so a close through any other door, and every one from before, reads as it did.
+    /// </summary>
+    internal static bool KeepsSession(QuestOperationKind kind) =>
+        kind is QuestOperationKind.Submitted or QuestOperationKind.Done or QuestOperationKind.Declined;
 
     /// <summary>
     /// The kinds a submission may ride on: the two that name one (<see cref="Names"/>), and a take, which carries its step's source as it
@@ -1461,7 +1469,7 @@ public sealed class QuestStore
                 operation.NoteParts,
                 operation.Kind == QuestOperationKind.Done ? operation.Close : null,
                 Carries(operation.Kind) ? operation.Submission : null,
-                operation.Kind == QuestOperationKind.Submitted ? operation.Session : null,
+                KeepsSession(operation.Kind) ? operation.Session : null,
                 operation.Kind == QuestOperationKind.Conflict && operation.LostToTheReopen,
                 operation.Kind == QuestOperationKind.Dismissed ? operation.Forward : null,
                 operation.Kind == QuestOperationKind.Chosen ? operation.Choice : null));
@@ -1690,10 +1698,14 @@ public sealed class QuestStore
     /// Who takes (FABRIC-CLOSE1o): a take binds the graph named for it only for the session it was named for, on the publication it
     /// was named on, before it expires, and where the quest's circle still syncs through no remote. Null names no session.
     /// </param>
+    /// <param name="session">
+    /// The session closing it through its connector (HANDBACK1, D219): kept on a done or a decline, as a submission keeps the session
+    /// that said its <c>ready</c>, so the handback names who wrote it. Null names none, as every other door's close does.
+    /// </param>
     public Task<QuestMove> MoveAsync(
         string id, QuestStatus status, string? note, DateTimeOffset now, CancellationToken ct = default,
         IReadOnlyList<QuestAnswer>? answers = null, bool whileOpen = false, string? noteParts = null, bool byAgent = false,
-        QuestTaker? taker = null)
+        QuestTaker? taker = null, string? session = null)
     {
         // FABRIC-CLOSE1w: `now` is the caller's, taken before this queued for the gate and the write, so the take measures that wait.
         var asked = _time.GetTimestamp();
@@ -1756,7 +1768,7 @@ public sealed class QuestStore
 
             var operation = await AppendAsync(
                 id, kind, now, note, null, transaction, inside,
-                answers: status == QuestStatus.Done ? answers : null, whileOpen: open, noteParts: noteParts, submission: found)
+                answers: status == QuestStatus.Done ? answers : null, whileOpen: open, noteParts: noteParts, submission: found, session: session)
                 .ConfigureAwait(false);
             var moved = QuestLog.Replay([.. history, operation])!;
 
@@ -4179,8 +4191,8 @@ public sealed class QuestStore
             // A reopen's or a rebind's submission (FABRIC-CLOSE1c), which this store wrote whole. A take's, absent from every take before
             // FABRIC-CLOSE1c18 and from one of a quest with no source: a take judged as before.
             Carries(kind) && payload.TryGetProperty("submission", out var submission) ? ReadRef(submission) : null,
-            // Absent from every submission before FABRIC-CLOSE1c4, and from one no session said.
-            kind == QuestOperationKind.Submitted && payload.TryGetProperty("session", out var speaker)
+            // Absent from every submission before FABRIC-CLOSE1c4, every done and decline before HANDBACK1, and from one no session said.
+            KeepsSession(kind) && payload.TryGetProperty("session", out var speaker)
             && speaker.ValueKind == System.Text.Json.JsonValueKind.String
                 ? speaker.GetString()
                 : null,
@@ -4338,7 +4350,8 @@ public sealed class QuestStore
         // Only on a reopen or a rebind (FABRIC-CLOSE1c), for the lanes' reason: every other operation reads as it did.
         if (submission is not null) WriteRef(writer, "submission", submission);
 
-        // Only on a submission a session said (FABRIC-CLOSE1c4), for the lanes' reason: every other operation reads as it did.
+        // Only on a submission, a done or a decline a session said (FABRIC-CLOSE1c4, HANDBACK1), for the lanes' reason: every other
+        // operation reads as it did.
         if (session is not null) writer.WriteString("session", session);
 
         // Only on a workflow choice (WORKFLOW1e2), for the evidence's reason: its when is the operation's own.

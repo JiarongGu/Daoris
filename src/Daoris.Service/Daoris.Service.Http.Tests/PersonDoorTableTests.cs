@@ -42,6 +42,8 @@ public sealed class PersonDoorTableTests
         ("GET", "/api/channel/elsewhere", Open),
         ("GET", "/api/sessions", Open),
         ("GET", "/api/sessions/{id}/deletable", Open),
+        // HANDBACK1: one quest's handback whole, by the quest's id or its session's; a local host's read.
+        ("GET", "/api/handbacks/{id}", Open),
         ("GET", "/api/history", Open),
         ("GET", "/api/registry", Open),
         ("GET", "/api/registry/retired", Open),
@@ -178,8 +180,9 @@ public sealed class PersonDoorTableTests
         // channel message, the driver's (COWORK1d), and a quest's own kind and workflow, the person's (WORKFLOW1e2), and the downloaded
         // versions a start of a record was handed, the driver's (KEEP1b), and what waits for confirmation held until it moves, a read
         // (NOTIFY2j), and a machine's retirement at a workspace's remote, the person's (FABRIC-CLOSE1i2), and a park the driver could
-        // not hand put back, the driver's (SUPERVISOR1a-i), and a finished tree's record and its age, the driver's (KEEPSIZE1b), and the host's protocol, a read (FOUNDATION1 row p).
-        Assert.Equal(30, Routes.Count(route => route.Class == Open));
+        // not hand put back, the driver's (SUPERVISOR1a-i), and a finished tree's record and its age, the driver's (KEEPSIZE1b), and the host's protocol, a read (FOUNDATION1 row p),
+        // and one quest's handback, a read (HANDBACK1).
+        Assert.Equal(31, Routes.Count(route => route.Class == Open));
         Assert.Equal(4, Routes.Count(route => route.Class == Agent));
         Assert.Equal(30, Routes.Count(route => route.Class == Driver));
         Assert.Equal(33, Routes.Count(route => route.Class == Person));

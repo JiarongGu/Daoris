@@ -10,7 +10,7 @@ namespace Daoris.Driver;
 /// <param name="Verb">
 /// <c>list</c>, <c>stop</c>, <c>finish</c>, <c>decline</c>, <c>archive</c>, <c>unarchive</c>, <c>delete</c>, <c>say</c>,
 /// <c>take-back</c>, <c>reword</c>, <c>go-on-new</c> or <c>start-from</c>; COAGENT1b's <c>partner</c>, <c>partner-list</c> and
-/// <c>partner-stop</c>.
+/// <c>partner-stop</c>; HANDBACK1's <c>handback</c>.
 /// </param>
 public sealed record SessionsAsk(string Verb) : ISupervisorAsk, IParticipantsAsk
 {
@@ -247,6 +247,7 @@ public static class SessionsCommand
                daoris-driver sessions partner <id> "<piece>" --agent <name> [--paths <path>…]
                daoris-driver sessions partner <id> --list  ·  sessions partner <piece> --stop
                daoris-driver sessions supervise [<id>]  ·  sessions supervise <id> --question <qid> --generation <g> --choice <label>|--leave <bound> (--reason "…" --source <where>)…
+               daoris-driver sessions handback <session|quest> [--json]
         """;
 
     /// <summary>The fields of a row in <c>--json</c>, in order: <c>SESSION_GROUPS</c>' row, field for field.</summary>
@@ -352,6 +353,14 @@ public static class SessionsCommand
                 return SessionsSuperviseCommand.Read(args, out problem, (verb, ids, draft) => new SessionsAsk(verb) { Ids = ids, Supervised = draft });
             case ["partner", ..]:
                 return SessionsPartnerCommand.Read(args, out problem, MadeAsk);
+            // HANDBACK1: one quest's handback, by the quest's id or its session's.
+            case ["handback", var id] when Id(id):
+                return new SessionsAsk("handback") { Ids = [id.Trim().TrimStart('#')] };
+            case ["handback", var id, "--json"] when Id(id):
+                return new SessionsAsk("handback") { Ids = [id.Trim().TrimStart('#')], Json = true };
+            case ["handback", ..]:
+                problem = "`handback` takes one session's or quest's id, and `--json` for the service's answer as it gave it.";
+                return null;
         }
 
         var ask = new SessionsAsk("list");
@@ -467,6 +476,8 @@ public static class SessionsCommand
                 Body(("id", ask.Ids[0]), ("piece", ask.Text), ("agent", ask.Agent), ("paths", ask.Paths.Count > 0 ? ask.Paths : null)),
                 () => SessionsPartnerCommand.RunAsync(world, ask, output, ct), output, ct).ConfigureAwait(false),
             "partner-list" => await SessionsPartnerCommand.ListAsync(world, ask.Ids[0], output).ConfigureAwait(false),
+            // HANDBACK1: a read, so no press and never through the running Daoris.
+            "handback" => await HandbackAsync(world, ask, output, ct).ConfigureAwait(false),
             // SUPERVISOR1a-ii: the supervisor's holder's verb, through the running Daoris alone.
             "supervise-list" or "supervise-print" or "supervise-answer" or "supervise-leave" => await SessionsSuperviseCommand.RunAsync(world, ask, output, ct).ConfigureAwait(false),
             // A piece's stop is its partner's record's stop, the same press: the driver reads it as the person's and keeps the work.
@@ -1132,6 +1143,39 @@ public static class SessionsCommand
         {
             output.WriteLine($"  its quest #{quest} is held here until you try again: daoris driver retry {quest} --session {record.Id}");
         }
+    }
+
+    /// <summary>
+    /// <c>sessions handback &lt;session|quest&gt;</c> (HANDBACK1, D219): one quest's handback whole, by the quest's id or the id of the session
+    /// that served it, in any state, as the service's handback door answers it, in the words the connector's <c>handback_read</c> says.
+    /// <c>--json</c> prints the answer as the service gave it. Exit 0 where the id named a quest or a session, 1 where it named nothing
+    /// here, 2 where the service could not answer or has no door.
+    /// </summary>
+    private static async Task<int> HandbackAsync(SessionsWorld world, SessionsAsk ask, TextWriter output, CancellationToken ct)
+    {
+        string? answer;
+        try
+        {
+            answer = await world.Service.HandbackJsonAsync(ask.Ids[0], ct).ConfigureAwait(false);
+        }
+        catch (DriverException refused)
+        {
+            output.WriteLine($"sessions: {refused.Message}");
+            return 2;
+        }
+
+        if (answer is null)
+        {
+            output.WriteLine("sessions: the service has no handback door; is it older than this driver?");
+            return 2;
+        }
+
+        using var read = JsonDocument.Parse(answer);
+        var found = read.RootElement.TryGetProperty("found", out var named) && named.ValueKind == JsonValueKind.True;
+        output.WriteLine(ask.Json
+            ? answer
+            : read.RootElement.TryGetProperty("said", out var said) && said.ValueKind == JsonValueKind.String ? said.GetString() : answer);
+        return found ? 0 : 1;
     }
 
     /// <summary>This machine's record of one session, or null with why it is not one this machine can act on.</summary>

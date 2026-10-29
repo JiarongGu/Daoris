@@ -755,6 +755,33 @@ public sealed record QuestMoveResponse(
     string? Evidence = null, string? SetUp = null, string? Verdict = null, string? Hold = null);
 // An operation by the machine and sequence that name it everywhere: what a dismissal names its conflict by.
 public sealed record QuestMoveRefResponse(string Machine, long Sequence);
+// HANDBACK1 (D219): one quest's handback as `GET /api/handbacks/{id}` answers it, by the quest's id or the id of the session that
+// served it, in any state. `Found`: whether the id named a quest or a session here, so a client tells this door's answer from an older
+// host's 404. `Session`: the session the id named, absent for a quest's id. `Quest`: the quest, with its own note as it keeps it.
+// `Handback`: where a session's close is recorded on it, whole, with the session that wrote it; absent where none is. `Said`: the read's
+// words, the same the connector's `handback_read` answers, which the terminal prints.
+public sealed record HandbackResponse(
+    string Id, bool Found, string? Session, HandbackQuestResponse? Quest, HandbackRecordResponse? Handback, string Said)
+{
+    public static HandbackResponse Of(HandbackReading read) => new(
+        read.Id, read.Found, read.Session?.Id,
+        read.Quest is { } quest
+            ? new HandbackQuestResponse(quest.Id, quest.Title, quest.Status.ToString(), quest.From, quest.To, quest.Workspace, quest.Note)
+            : null,
+        read.Handback is { } said
+            ? new HandbackRecordResponse(
+                said.Spelled, said.Note,
+                said.Answers.Count == 0 ? null : [.. said.Answers.Select(answer => new QuestAnswerWire(answer.Requirement, answer.Met, answer.Departed, answer.Quote))],
+                said.At, said.Machine, said.Session)
+            : null,
+        read.Said);
+}
+// The quest a handback hands back: its name, where it stands, between whom, and its note as the quest keeps it.
+public sealed record HandbackQuestResponse(string Id, string Title, string Status, string From, string To, string Workspace, string? Note);
+// A handback whole: its act (`done`, `ready` or `declined`), its note, how it answered each requirement (absent for none), when on
+// the machine that made it, and the session that wrote it.
+public sealed record HandbackRecordResponse(
+    string Act, string? Note, IReadOnlyList<QuestAnswerWire>? Answers, DateTimeOffset At, string Machine, string Session);
 public sealed record FeedResponse(int Accepted, string Message);
 // A repository's code map is answered in Core's shape (CodeMapWire, MAP3e), not a record here: the
 // host that brings a teammate's map down reads the same answer the door writes.
@@ -896,6 +923,7 @@ public sealed record ChangesResponse(string Since, IReadOnlyList<string> Moved);
 [JsonSerializable(typeof(MachineRetiredResponse))]
 [JsonSerializable(typeof(QuestClaimResponse))]
 [JsonSerializable(typeof(QuestMovesResponse))]
+[JsonSerializable(typeof(HandbackResponse))]
 [JsonSerializable(typeof(FeedResponse))]
 [JsonSerializable(typeof(FeedRefusalResponse))]
 [JsonSerializable(typeof(ErrorResponse))]

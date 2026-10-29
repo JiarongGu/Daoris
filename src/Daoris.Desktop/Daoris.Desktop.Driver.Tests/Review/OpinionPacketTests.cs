@@ -172,6 +172,8 @@ public sealed class OpinionPacketTests : IDisposable
         Assert.True(PermissionRules.AllowsConnector(handed, "opinion_give"));
         Assert.True(PermissionRules.AllowsConnector(handed, "knowledge_search"));
         Assert.True(PermissionRules.AllowsConnector(handed, "quest_list"));
+        // HANDBACK1: a quest's handback is read as its quests are.
+        Assert.True(PermissionRules.AllowsConnector(handed, "handback_read"));
         foreach (var tool in new[]
                  {
                      "quest_respond", "quest_publish", "go_ahead_ask", "permission_propose", "review_serve", "review_ready",
@@ -195,6 +197,7 @@ public sealed class OpinionPacketTests : IDisposable
 
         Assert.True(PermissionRules.AllowsConnector(handed, "helper_answer"));
         Assert.True(PermissionRules.AllowsConnector(handed, "knowledge_search"));
+        Assert.True(PermissionRules.AllowsConnector(handed, "handback_read"));
         foreach (var tool in new[]
                  {
                      "helper_ask", "opinion_give", "opinion_answer", "quest_respond", "quest_publish", "permission_propose", "channel_post",

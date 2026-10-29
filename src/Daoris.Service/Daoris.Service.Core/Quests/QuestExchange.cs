@@ -284,6 +284,12 @@ public enum QuestRespondRefusal
     /// chosen on the ask. The answer names it.
     /// </summary>
     AskChooses,
+
+    /// <summary>
+    /// A session's done, <c>ready</c> or decline through the connector whose note only points elsewhere (HANDBACK1, D219,
+    /// <see cref="HandbackNotes"/>): the note is the handback itself, and the answer quotes the pointer and says what one holds.
+    /// </summary>
+    PointsElsewhere,
 }
 
 /// <param name="Refusal"><see cref="QuestRespondRefusal.None"/> when the status moved.</param>
@@ -1303,7 +1309,11 @@ public sealed class QuestExchange(
         // A decline that applies only while the quest is open (PAUSE1c, D132 point 10): an abandon's.
         bool whileOpen = false,
         // The session answering, as its connector's intake names it (FABRIC-CLOSE1o): a take binds the graph named for that session only.
-        string? session = null)
+        // A done or a decline keeps it on its operation, as a ready's submission does (HANDBACK1, D219): which session wrote the handback.
+        string? session = null,
+        // The note is a session's handback (HANDBACK1, D219): the connector's `quest_respond`, so a close whose note only points
+        // elsewhere is refused. Every other door, the person's among them, keeps its words as given.
+        bool handback = false)
     {
         // Answers are a done's (DRIFT1d): carried by any other verb, a wait included, they would be dropped, and
         // dropped looks kept.
@@ -1329,6 +1339,13 @@ public sealed class QuestExchange(
         if (string.Equals(action, "wait", StringComparison.OrdinalIgnoreCase))
         {
             return await WaitAsync(id.TrimStart('#'), on?.TrimStart('#'), now, ct).ConfigureAwait(false);
+        }
+
+        // HANDBACK1 (D219): a session's closing note is its handback, the one record of its work whoever reads the quest later reads.
+        // One that only points at another message, a commit or a file is refused before anything is read or written.
+        if (handback && action.ToLowerInvariant() is "done" or "ready" or "decline" && HandbackNotes.PointsElsewhere(reason) is { } pointer)
+        {
+            return new(QuestRespondRefusal.PointsElsewhere, HandbackNotes.Refusal(pointer), Quest: null);
         }
 
         if (string.Equals(action, "ready", StringComparison.OrdinalIgnoreCase))
@@ -1382,7 +1399,9 @@ public sealed class QuestExchange(
         // it reads at that moment, never by a look taken here before it.
         var move = await quests.MoveAsync(
                 id.TrimStart('#'), status.Value, reason, now, ct, answered, whileOpen, byAgent: status == QuestStatus.Done,
-                taker: status == QuestStatus.Taken ? new QuestTaker(session, SyncsThroughRemote) : null)
+                taker: status == QuestStatus.Taken ? new QuestTaker(session, SyncsThroughRemote) : null,
+                // A close names the session that wrote its handback, in the same write (HANDBACK1, D219).
+                session: status == QuestStatus.Taken ? null : session)
             .ConfigureAwait(false);
 
         if (move.Quest is null)
