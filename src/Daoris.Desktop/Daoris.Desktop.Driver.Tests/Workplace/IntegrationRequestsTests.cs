@@ -1,17 +1,30 @@
+using Microsoft.Data.Sqlite;
 using Daoris.Driver;
 
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// INTEGRATE1e part e1 (D215's note; the integration design §4.6): the one door, <see cref="IntegrationRequests"/>, its recorded-landing
-/// path and its records-branch path, over a stand-in of the records and the in-memory request store, with git's answers scripted through
+/// path and its records-branch path, over a stand-in of the records and the desktop store's request family (part e2,
+/// <see cref="IntegrationStore"/>, on a scratch home of each case's own), with git's answers scripted through
 /// <see cref="WorkingTree.Answered"/> so no process starts. A recorded landing is admitted only on its record, its exact tip, its gate
 /// proof as the record keeps it and no double, each refused in its own sentence; a session's branch and a landing's are refused at the
 /// records-branch door; the come-up sweep requests each standing landing once, under <c>request: done</c> alone. The same over real git is
 /// <see cref="IntegrationRequestsGitTests"/>.
 /// </summary>
-public sealed class IntegrationRequestsTests
+public sealed class IntegrationRequestsTests : IDisposable
 {
+    private readonly string _homes = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "integration-requests", Guid.NewGuid().ToString("N")[..8]);
+
+    public void Dispose()
+    {
+        SqliteConnection.ClearAllPools();
+        GitSeed.Discard(_homes);
+    }
+
+    /// <summary>The request store of a home of its own, as each admission the case does not hand one gets: nothing open in it.</summary>
+    private IntegrationStore Fresh() => new(Path.Combine(_homes, Guid.NewGuid().ToString("N")[..8]), () => StoreSettled.Yes);
+
     private const string Line = "0000000000000000000000000000000000000000";
     private const string Tip = "1111111111111111111111111111111111111111";
     private const string Next = "2222222222222222222222222222222222222222";
@@ -72,12 +85,12 @@ public sealed class IntegrationRequestsTests
     }
 
     private async Task<IntegrationAdmission> AdmitAsync(
-        DriverConfig config, IIntegrationRecords records, IntegrationAsk ask, InMemoryIntegrationRequests? store = null)
+        DriverConfig config, IIntegrationRecords records, IntegrationAsk ask, IntegrationStore? store = null)
     {
         WorkingTree.Answered.Value = Git;
         try
         {
-            return await new IntegrationRequests(records, store ?? new InMemoryIntegrationRequests(), () => config).AdmitAsync(ask);
+            return await new IntegrationRequests(records, store ?? Fresh(), () => config).AdmitAsync(ask);
         }
         finally
         {
@@ -145,7 +158,7 @@ public sealed class IntegrationRequestsTests
     public async Task A_recorded_landing_is_requested_bound_to_its_record_and_its_gate_proof_read_as_recorded()
     {
         var entry = Landed();
-        var store = new InMemoryIntegrationRequests();
+        var store = Fresh();
 
         var admitted = await AdmitAsync(Owner, new Records([entry]), Card() with { Unit = "unit-a", Tip = Tip }, store);
 
@@ -159,7 +172,8 @@ public sealed class IntegrationRequestsTests
         Assert.Equal(new LandingIntegrate(Request: LandingIntegrate.Owner).Resolved(), request.Policy);
         Assert.Equal(LandingSource.Repository, request.RuleSource);
         Assert.Equal(new IntegrationProof(AcceptedBy.Person) { Review = entry.Review, Opinion = entry.Opinion }, request.Proof);
-        Assert.Equal(request, Assert.Single(store.Open()));
+        // Read back from the store's file, so the opinion's counts are maps of their own: equivalent, field by field, to what the door made.
+        Assert.Equivalent(request, Assert.Single(store.Open()), strict: true);
     }
 
     /// <summary>An advanced landing's tip is its newest advance's, and the proof read is that advance's own, with its own acceptance.</summary>
@@ -248,7 +262,7 @@ public sealed class IntegrationRequestsTests
     [Fact]
     public async Task A_landing_already_requested_or_already_on_the_line_is_never_requested_twice()
     {
-        var store = new InMemoryIntegrationRequests();
+        var store = Fresh();
         Assert.True((await AdmitAsync(Owner, new Records([Landed()]), Card(), store)).Admitted);
         _asked.Clear();
 
@@ -322,7 +336,7 @@ public sealed class IntegrationRequestsTests
             Landed(), Landed("feature/q2-more", Next, "s2"), Landed("feature/q0-gone", Other, "s0") with { GoneAt = At },
             Landed("feature/q3-elsewhere", Other, "s3") with { Repository = "portal" },
         ]);
-        var store = new InMemoryIntegrationRequests();
+        var store = Fresh();
 
         async Task<IReadOnlyList<IntegrationAdmission>> SweepAsync(DriverConfig config)
         {
@@ -350,11 +364,14 @@ public sealed class IntegrationRequestsTests
         Assert.Equal(2, store.Open().Count);
     }
 
-    /// <summary>The store keeps one open request per repository and branch, the repository named in any case, and lets a closed one go.</summary>
+    /// <summary>
+    /// The store keeps one open request per repository and branch, the repository named in any case, and lets a closed one go, keeping its
+    /// row with when and why it closed.
+    /// </summary>
     [Fact]
     public void The_store_keeps_one_open_request_per_branch_and_a_closed_one_makes_room()
     {
-        var store = new InMemoryIntegrationRequests();
+        var store = Fresh();
         var first = new IntegrationRequest("r1", "engine", "aurora", Branch, Tip, IntegrationRoutes.Recorded, "main", IntegrationRequester.Card,
             new LandingIntegrate().Resolved(), At);
 
@@ -363,9 +380,11 @@ public sealed class IntegrationRequestsTests
         Assert.Null(store.Add(first with { Id = "r3", Branch = "feature/q2-more" }));
         Assert.Equal(first, store.OpenFor("Engine", Branch));
 
-        Assert.True(store.Close("r1"));
-        Assert.False(store.Close("r1"));
+        Assert.True(store.Close("r1", IntegrationRequestCloses.Dropped));
+        Assert.False(store.Close("r1", IntegrationRequestCloses.Dropped));
         Assert.Null(store.OpenFor("engine", Branch));
+        Assert.Equal(IntegrationRequestCloses.Dropped, store.Request("r1")!.ClosedWhy);
         Assert.Null(store.Add(first with { Id = "r4", Tip = Next }));
+        Assert.Equal(["r3", "r4"], store.Open().Select(each => each.Id).Order(StringComparer.Ordinal));
     }
 }
