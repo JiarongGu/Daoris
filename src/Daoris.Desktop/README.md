@@ -31,6 +31,8 @@ explains captures and shutdown; [Installing it](#installing-it-2026-09-22) expla
 
 The driver's `Agents/` owns adapters, accounts, usage, retries and session processes, with pure account rules in `Agents/Domain/`
 and tests mirrored under `Driver.Tests/Agents/`. Namespaces remain `Daoris.Driver`; D212 records the remaining upward cuts.
+`Agents/Contract/` names the provider contract as records (AGENTPROVIDER1 row a, D213: `Provider`, `AgentDoor`, typed ids, `Known<T>`) and
+`Agents/Registry/` holds `ProviderRegistry.Of(AdapterSet)`, which answers each door's account owner and facts once; nothing reads them yet.
 Events owns resume reason codes and the `IContinueReason` reading contract; Agents owns `ContinueReason` and `ContinueWhy`'s
 policy and sentences. Its public constants forward to Events, and a refused door exposes the same reason through the lower port.
 The required protocol-posture marker belongs to Agents (`AgentPostures.Required`); Help forwards the same `!` value.
