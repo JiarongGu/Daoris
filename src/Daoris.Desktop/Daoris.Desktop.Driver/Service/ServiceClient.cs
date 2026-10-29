@@ -563,9 +563,45 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     public async Task<(string? SessionId, string Message)> OpenSessionAsync(
         string questId, string adapter, string? harnessVersion = null, string? profile = null,
         string? tree = null, string? baseCommit = null, CancellationToken ct = default, bool setup = false,
-        ContinuedFrom? from = null, IReadOnlyDictionary<string, string>? access = null)
+        ContinuedFrom? from = null, IReadOnlyDictionary<string, string>? access = null) =>
+        await OpenRecordAsync(
+                "/api/sessions", SessionOpenBody(questId, adapter, harnessVersion, profile, tree, baseCommit, from, access), SessionOpened.Driven,
+                adapter, repository: null, ct, setup)
+            .ConfigureAwait(false);
+
+    /// <summary>
+    /// <see cref="OpenSessionAsync"/> through the keyed door (FOUNDATION1d-ii part 5, <see cref="SessionOpenDoors.OpenAsync"/>), asked to move
+    /// <paramref name="moves"/>' words onto the driven record it opens, in the open's own step: sent only to a host whose <c>opens</c> mark is 2,
+    /// under a key of its own, so a host below it opens as before and moves nothing. What opened is told to <see cref="Opened"/>'s watchers
+    /// as the record names it, as <see cref="OpenSessionAsync"/>'s is. A lost answer is held, naming the records that continue the one left,
+    /// and opens nothing here.
+    /// </summary>
+    public async Task<DestinationOpen> OpenSessionMovingAsync(
+        string questId, string adapter, string? harnessVersion, string? profile, string? tree, string? baseCommit, ContinuedFrom? from,
+        MoveWords moves, CancellationToken ct = default, bool setup = false, IReadOnlyDictionary<string, string>? access = null)
     {
-        var body = WriteJson(writer =>
+        var opened = await Opens
+            .OpenAsync(
+                "/api/sessions", SessionOpenBody(questId, adapter, harnessVersion, profile, tree, baseCommit, from, access),
+                "drive-move/" + Guid.NewGuid().ToString("N"), moves.From, ct: ct, moves: moves)
+            .ConfigureAwait(false);
+        if (opened.SessionId is { } id)
+        {
+            Raise(Opened, new SessionOpened(id, SessionOpened.Driven, opened.Recorded.Adapter ?? adapter, opened.Recorded.Repository)
+            {
+                Workspace = opened.Recorded.Workspace,
+                Setup = setup,
+            });
+        }
+
+        return opened;
+    }
+
+    /// <summary>A driven record's open (D49 §3), as both of its doors send it: every optional field omitted where unknown.</summary>
+    private static string SessionOpenBody(
+        string questId, string adapter, string? harnessVersion, string? profile, string? tree, string? baseCommit, ContinuedFrom? from,
+        IReadOnlyDictionary<string, string>? access) =>
+        WriteJson(writer =>
         {
             writer.WriteStartObject();
             writer.WriteString("quest", questId);
@@ -592,9 +628,6 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
 
             writer.WriteEndObject();
         });
-
-        return await OpenRecordAsync("/api/sessions", body, SessionOpened.Driven, adapter, repository: null, ct, setup).ConfigureAwait(false);
-    }
 
     /// <summary>
     /// The session a new record continues, why and who asked (MIXAGENT1a-iii, D163 point 4): known on this side alone, which ran

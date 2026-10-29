@@ -627,8 +627,9 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
         var before = await WorkingTree.HeadAsync(workTree, ct).ConfigureAwait(false);
 
         // FOUNDATION1d-ii part 4: a move that hands the part words opens it through the keyed door, which moves them in the open's own step
-        // against a host whose mark is 2; a replacement for a refused start (part 5's) and every other start open as before.
-        var keyed = moves is not null && pending is null
+        // against a host whose mark is 2; part 5: so does the replacement of a start refused at the open, its moving words kept there named;
+        // every other start opens as before.
+        var keyed = moves is not null
             ? await _service
                 .OpenChatMovingAsync(repository, resolved.Name, selection.Version, selection.Profile, workTree, before, from, moves, known.Workspace, ct)
                 .ConfigureAwait(false)
@@ -683,13 +684,15 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
         }
         else if (chosen is not null && resolved.Wire == SessionWire.Acp)
         {
-            // The replacement runs where the refused record ran: its own tree kept, or the checkout.
+            // The replacement runs where the refused record ran: its own tree kept, or the checkout. FOUNDATION1d-ii part 5: its open moves the
+            // moving words the refused record keeps, which it names and read, and any of the person's kept there since, in its own step.
             var ranIn = tree ?? opened?.Path;
             _context.Pending.Add(new ChatPending(
                 sessionId, "chat", ChatPending.Recovering("chat", order!, config), chosen, profile, known.Workspace,
                 (owner, token) => StartAsync(
                     repository, adapter, config, onEnded, owner.Pinned, ownTree: ranIn is null ? false : null, token, ranIn,
-                    new ContinuedFrom(owner.Current, HandOverWhy.NotOffered, HandOverBy.Daoris), order: null, leftBy, owner)));
+                    new ContinuedFrom(owner.Current, HandOverWhy.NotOffered, HandOverBy.Daoris), order: null, leftBy, owner,
+                    moves: MovedWords.Asked(owner.Current, owner.KeptIds, owner.KeptIds))));
         }
 
         // A conversation in a tree it grew is told its process with its first message. A handed-over conversation also needs
@@ -1850,6 +1853,8 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
     /// files and its turns go: its count given back, then the walk's answer opened by its pending start, linked to the refused record,
     /// and the moved words said to it in the order said, each once, taken off the refused record by their ids as its turn takes them.
     /// Nothing left, the press is refused in the wait's sentence and the words wait on the refused record. Never while closing.
+    /// FOUNDATION1d-ii part 5: against a host whose <c>opens</c> mark is 2, the open moves the words the refused record keeps, and each goes
+    /// to the replacement as its own record's word, never taken off the refused record; a moved part's display goes with its message.
     /// </summary>
     private async Task ReplaceAsync(Task<bool> watch, ChatPending pending, string sessionId, HarnessSelection selection)
     {
@@ -1870,6 +1875,11 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
         }
 
         pending.Next = null;
+        // FOUNDATION1d-ii part 5: the display a moved part's first message was held with (part 4's ChatContext.Shown) is never written here now;
+        // the replacement that writes the message takes it, and nothing holds it for this record again.
+        (string Text, IReadOnlyList<SessionEvent> Events)? shown = _context.Shown.TryRemove(sessionId, out var held) ? held : null;
+        // So with the moved words' own displays held for it, which go with each word to the replacement's open.
+        _context.ShownMoved.TryRemove(sessionId, out _);
         // D205 §4.1 (round 4, R3-B1): its process has stopped and its record left Running, so its one count is given back first.
         _harnesses.Release(selection.Number, sessionId);
         if (_context.Closing)
@@ -1903,7 +1913,37 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
         }
 
         var turns = _context.Turned.TryGetValue(to, out var chat) ? chat.Turns : null;
-        var left = pending.Moved(to, word => turns?.Take(MovedTo(word, sessionId, to)) is not null);
+        // 🔴 FOUNDATION1d-ii part 5 (the foundation design §3.4 rule 3): where the replacement's keyed open moved the refused record's kept words,
+        // each is the replacement's own word from the open on, under its id there: its files copied first, handed to the turns as that record's
+        // (ChatTurns.TakeMoved), so it is marked attempted and taken off there and a producer's retry the record answers with it goes no second
+        // time, and shown by its own event under its id. Every other moving word goes as before (MovedTo).
+        var moved = MovedWords.Moving(started)
+            ? await MovedWords.OnAsync(_service, _home, sessionId, to, started.Moved, CancellationToken.None).ConfigureAwait(false)
+            : null;
+        var door = new SaidDoor(_service, to);
+        var owned = new Dictionary<string, SaidWordView>(StringComparer.Ordinal);
+        foreach (var word in moved?.Words ?? []) owned.TryAdd(word.Id!, word);
+        bool Say(ChatMessage word)
+        {
+            if (turns is null) return false;
+            if (word.Kept && word.Id is { } id && owned.Remove(id, out var own)) return TakeOwned(turns, door, Owned(word, own, to), own, to);
+            if (shown is { } display && !word.Kept && string.Equals(word.Text, display.Text, StringComparison.Ordinal))
+            {
+                // Recorded by the replacement's door before its write, each moved word under its id, never one joined word.
+                _context.Shown[to] = display;
+                shown = null;
+            }
+
+            return turns.Take(MovedTo(word, sessionId, to)) is not null;
+        }
+
+        var left = pending.Moved(to, Say);
+        // A word of the person's kept on the refused record since, which the open moved and no moving word held: the replacement's, after them.
+        foreach (var late in (moved?.Words ?? []).Where(word => owned.ContainsKey(word.Id!)))
+        {
+            if (turns is not null) TakeOwned(turns, door, Owned(new ChatMessage(late.Text, []) { Key = late.Key }, late, to), late, to);
+        }
+
         if (left.Count > 0)
         {
             using var log = new MachineLog(_home, "driver");
@@ -1911,6 +1951,27 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
         }
 
         Replaced?.Invoke(sessionId, to);
+    }
+
+    /// <summary>
+    /// A moving word as the replacement whose open moved it holds it (FOUNDATION1d-ii part 5): under its id on that record, kept there, its files
+    /// as the replacement's folder keeps them, with no mark or take-off of the refused record's, which its turns give it again through that record.
+    /// </summary>
+    private ChatMessage Owned(ChatMessage word, SaidWordView own, string to) => word with
+    {
+        Id = own.Id, Kept = true, Attempting = null, Went = null, Files = ChatFiles.Kept(_home, to, own.Files),
+    };
+
+    /// <summary>
+    /// A moved word handed to the replacement's turns as its own (<see cref="ChatTurns.TakeMoved"/>), its own <c>User</c> event under its id held
+    /// for the door that writes its turn, which records it before the write (O6-F2); false where the turns took nothing, and nothing is held then.
+    /// </summary>
+    private bool TakeOwned(IChatTurns turns, ISaidDoor door, ChatMessage word, SaidWordView own, string to)
+    {
+        _context.ShowMoved(to, own.Id!, MovedWords.Of(own));
+        if (turns.TakeMoved(door, word) is not null) return true;
+        if (_context.ShownMoved.TryGetValue(to, out var held)) held.TryRemove(own.Id!, out _);
+        return false;
     }
 
     /// <summary>

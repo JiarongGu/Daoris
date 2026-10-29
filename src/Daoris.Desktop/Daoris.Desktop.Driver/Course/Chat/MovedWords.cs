@@ -11,9 +11,12 @@ namespace Daoris.Driver;
 /// </summary>
 /// <remarks>
 /// <para><b>Only where the open moved them.</b> A host whose <c>opens</c> mark is below 2, or that keeps no marks, moves nothing: its site reads,
-/// delivers and takes the old record's words as before (<see cref="Moving"/> false).</para>
+/// delivers and takes the old record's words as before (<see cref="Moving(ChatStart)"/> false).</para>
 /// <para><b>The moved words are the destination's</b> from the open on: the record they left is no longer its line's head, so its go-on refuses
 /// them, and the destination's go-on carries any that wait there still, after its first turn.</para>
+/// <para><b>Part 5's sites</b> read them the same way: the driven carry-on takes them off its new part into the ask before its instruction is
+/// composed (the driver's <c>HandedOnAsync</c>), and the replacement of a start refused at the open hands each to its turns as
+/// that record's own word (<see cref="ChatTurns.TakeMoved"/>).</para>
 /// </remarks>
 internal sealed class MovedWords
 {
@@ -35,6 +38,11 @@ internal sealed class MovedWords
     /// a host below the mark replaying a newer host's receipt does. The delivery is then the destination's moved words.
     /// </summary>
     public static bool Moving(ChatStart started) => started.Moves || started.Moved.Count > 0;
+
+    /// <summary>
+    /// <see cref="Moving(ChatStart)"/> of a driven record's keyed open (FOUNDATION1d-ii part 5): false for none, an open through the unkeyed door.
+    /// </summary>
+    public static bool Moving(DestinationOpen? opened) => opened is not null && (opened.Moves || opened.Moved.Count > 0);
 
     /// <summary>
     /// What a keyed open is asked to move (FOUNDATION1d-ii part 3's <see cref="MoveWords"/>): from <paramref name="from"/>, the words the site

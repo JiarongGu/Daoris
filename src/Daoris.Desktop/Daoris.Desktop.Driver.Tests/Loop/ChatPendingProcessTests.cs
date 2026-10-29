@@ -11,12 +11,12 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <remarks>
 /// The conversation runs on the <c>acp-stub</c> adapter (a node stand-in on the protocol door) over the stub's two accounts; the stand-in
 /// lists three models and refuses at the set the ones its argument names for its account, as Claude's door was measured to (MODELROLE1a).
-/// The ledger is <see cref="ChatLedger"/>, in-process.
+/// The ledger is <see cref="ChatLedger"/>, in-process. Every case has its own scratch home under <c>_fixtures/</c>.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
 public sealed class ChatPendingProcessTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-chat-pending-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "chat-pending", Guid.NewGuid().ToString("N")[..8]);
 
     private readonly string _root;
 
@@ -26,10 +26,7 @@ public sealed class ChatPendingProcessTests : IDisposable
         Directory.CreateDirectory(_root);
     }
 
-    public void Dispose()
-    {
-        try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
-    }
+    public void Dispose() => GitSeed.Discard(_home);
 
     private string Heard => Path.Combine(_home, "heard.txt");
 
@@ -44,7 +41,12 @@ public sealed class ChatPendingProcessTests : IDisposable
     };
 
     /// <summary>The stub's accounts, in the machine's list, and the stand-in refusing <paramref name="refuses"/> (<c>account:model</c>, comma-joined).</summary>
-    private DriverConfig Config(string refuses, string actor, IReadOnlyList<ActorChoice> order, params string[] accounts)
+    private DriverConfig Config(string refuses, string actor, IReadOnlyList<ActorChoice> order, params string[] accounts) =>
+        GatedConfig(null, refuses, actor, order, accounts);
+
+    /// <summary><see cref="Config"/>, the stand-in refusing a model only once <paramref name="gate"/> exists, so a case can say a word to the start first.</summary>
+    /// <param name="gate">The file the stand-in waits for before it refuses; null refuses at once.</param>
+    private DriverConfig GatedConfig(string? gate, string refuses, string actor, IReadOnlyList<ActorChoice> order, params string[] accounts)
     {
         foreach (var account in accounts) Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "stub", account));
         new HarnessSettings().WithRotation("stub", accounts).Save(DaorisHome.Entry(_home, HomeEntry.Harnesses));
@@ -55,7 +57,7 @@ public sealed class ChatPendingProcessTests : IDisposable
                 HelperAdapter = "acp-stub",
                 Commands = new Dictionary<string, IReadOnlyList<string>>
                 {
-                    ["acp-stub"] = ["node", Agent(), Heard, refuses],
+                    ["acp-stub"] = ["node", Agent(), Heard, refuses, gate ?? ""],
                     ["stub"] = ["node", TextAgent()],
                 },
             },
@@ -64,9 +66,10 @@ public sealed class ChatPendingProcessTests : IDisposable
         return config;
     }
 
-    private (ChatRunner Runner, ChatLedger Ledger, ServiceClient Client, List<(string From, string To)> Replaced) Runner()
+    /// <param name="opens">The ledger's <c>opens</c> mark (FOUNDATION1d-ii): 0 a host before row d-i, 1 a d-i host, 2 one whose open moves the words.</param>
+    private (ChatRunner Runner, ChatLedger Ledger, ServiceClient Client, List<(string From, string To)> Replaced) Runner(int opens = 0)
     {
-        var ledger = new ChatLedger().Register("engine", _root);
+        var ledger = new ChatLedger { Opens = opens }.Register("engine", _root);
         var client = ledger.Client();
         var adapters = AdapterSet.Built();
         var runner = new ChatRunner(
@@ -348,19 +351,148 @@ public sealed class ChatPendingProcessTests : IDisposable
         Assert.Equal((refused, HandOverWhy.NotOffered, "account-2"), (next.From, next.FromWhy, next.Profile));
     }
 
+    private static int Count(string text, string part)
+    {
+        var count = 0;
+        for (var at = text.IndexOf(part, StringComparison.Ordinal); at >= 0; at = text.IndexOf(part, at + part.Length, StringComparison.Ordinal)) count++;
+        return count;
+    }
+
+    /// <summary>
+    /// 🔴 FOUNDATION1d-ii part 5 (the foundation design §3.4 rule 3): against a host whose open moves the words (its <c>opens</c> mark 2), a word the
+    /// person said to a start its agent then refused at the open, kept on that record, moves with the replacement's keyed open in its own step,
+    /// and goes there as the replacement's own word under its id: marked attempted on the replacement before its turn is written and taken off
+    /// it once on the wire, nothing taken off the refused record, and shown there by its own event under its id. A producer's retry under its key
+    /// while its turn goes is answered with that same word, and the agent hears it once.
+    /// </summary>
+    [Fact]
+    public async Task A_word_kept_on_a_start_refused_at_the_open_moves_with_its_replacements_open_and_goes_there_under_its_id()
+    {
+        var gate = Path.Combine(_home, "refuse.flag");
+        var config = GatedConfig(gate, "account-1:opus", "chat", [new ActorChoice("acp-stub", "opus")], "account-1", "account-2");
+        var (runner, ledger, client, replaced) = Runner(opens: 2);
+        using var r = runner;
+        using var c = client;
+        // The replacement's mark of the moved word, before its turn is written, held until the producer's retry is said, so the retry lands
+        // while that word still waits there.
+        var marking = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var marked = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        ledger.BeforeRequest = async (request, _) =>
+        {
+            if (request.Method == HttpMethod.Post && request.RequestUri!.AbsolutePath == "/api/sessions/c2/attempt")
+            {
+                marked.TrySetResult();
+                await marking.Task;
+            }
+        };
+
+        var started = await runner.StartWithAsync(
+            "engine", "acp-stub", config, "Make the port configurable.", [], null, order: ActorChoices.Effective("chat", config));
+        var issued = started.SessionId ?? throw new InvalidOperationException(started.Message);
+        var kept = await runner.SayKeptAsync(issued, "Then the tests.", null, null, MessageLevel.Urgent, "press/k1");
+        var word = kept?.Word ?? throw new InvalidOperationException("the record kept no word");
+        File.WriteAllText(gate, "");
+
+        await marked.Task.WaitAsync(Poll.Patience);
+        var retry = await runner.SayKeptAsync(issued, "Then the tests.", null, null, MessageLevel.Urgent, "press/k1");
+        marking.SetResult();
+
+        await Poll.Until(
+            () => Events.After("c2", 0).Events.Count(e => e.Kind == SessionEventKind.Message) == 2 && ledger.TakenBy.Any(taken => taken.Session == "c2"),
+            () => Seen(ledger, "c2"));
+        Assert.Equal(["Make the port configurable.", "Then the tests."], Prompts("account-2"));
+        Assert.Equal(word, retry?.Word);
+        lock (replaced) Assert.Equal([(issued, "c2")], replaced);
+
+        // Moved by the replacement's own open, never read and taken off the refused record by its id.
+        var (_, moves) = Assert.Single(ledger.Opened);
+        Assert.Equal((issued, word), (moves!["from"]!.GetValue<string>(), Assert.Single(moves["words"]!.AsArray())!.GetValue<string>()));
+        Assert.Empty(ledger.Said(issued));
+        Assert.DoesNotContain(ledger.TakenBy, taken => taken.Session == issued);
+        Assert.Contains(("c2", word, (string?)null), ledger.TakenBy);
+        Assert.Empty(ledger.Said("c2"));
+
+        var shown = Assert.Single(Events.After("c2", 0).Events, e => e.Kind == SessionEventKind.User && e.Text == "Then the tests.");
+        Assert.Equal((word, "person"), (shown.Id, shown.Origin));
+    }
+
+    /// <summary>
+    /// 🔴 Against a host whose open moves nothing, a d-i host (its mark 1, the key sent and no words asked to move) or one before it (no mark, no
+    /// key), the replacement reads, hands and takes the refused record's words as before: the kept word reaches the replacement once and leaves
+    /// the refused record, named as taken by the replacement.
+    /// </summary>
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    public async Task Against_a_host_whose_open_moves_nothing_a_kept_word_reaches_the_replacement_and_leaves_the_refused_record_as_before(int opens)
+    {
+        var gate = Path.Combine(_home, "refuse.flag");
+        var config = GatedConfig(gate, "account-1:opus", "chat", [new ActorChoice("acp-stub", "opus")], "account-1", "account-2");
+        var (runner, ledger, client, _) = Runner(opens);
+        using var r = runner;
+        using var c = client;
+
+        var started = await runner.StartWithAsync(
+            "engine", "acp-stub", config, "Make the port configurable.", [], null, order: ActorChoices.Effective("chat", config));
+        var issued = started.SessionId ?? throw new InvalidOperationException(started.Message);
+        var word = (await runner.SayKeptAsync(issued, "Then the tests.", null, null, MessageLevel.Urgent, "press/k1"))?.Word
+                   ?? throw new InvalidOperationException("the record kept no word");
+        File.WriteAllText(gate, "");
+
+        await Poll.Until(
+            () => Prompts("account-2").Length == 2 && ledger.TakenBy.Any(taken => taken.Session == issued), () => Seen(ledger, "c2"));
+        Assert.Equal(["Make the port configurable.", "Then the tests."], Prompts("account-2"));
+        Assert.Contains((issued, word, (string?)"c2"), ledger.TakenBy);
+        Assert.DoesNotContain(ledger.TakenBy, taken => taken.Session == "c2");
+        if (opens == 1) Assert.Null(Assert.Single(ledger.Opened).Moves);
+        else Assert.Empty(ledger.Opened);
+    }
+
+    /// <summary>
+    /// 🔴 FOUNDATION1d-ii part 5: the words a keyed open moved to a part are shown there each by its own event under its id as the part's first
+    /// message is written (part 4's display, O6-F2). Where that part's agent then refuses it at the open, its replacement writes the message and
+    /// shows them so, never as one joined word: a refused conversation's go-on opens a fresh start that moves its words, the account it opens on
+    /// refuses the model too, and the third account's part shows each word under its id.
+    /// </summary>
+    [Fact]
+    public async Task A_moved_parts_replacement_shows_each_moved_word_under_its_id()
+    {
+        var config = Config("account-1:opus,account-2:opus", "chat", [new ActorChoice("acp-stub", "opus")], "account-1", "account-2", "account-3");
+        var (runner, ledger, client, replaced) = Runner(opens: 2);
+        using var r = runner;
+        using var c = client;
+        var refused = await RefusedAsync(ledger, client, "1");
+        ledger.For(refused).Say("w2", "And add a test.");
+
+        await runner.TakeUpAsync();
+
+        await Poll.Until(() => Prompts("account-3").Length == 1, () => Seen(ledger, refused));
+        var handed = Assert.Single(Prompts("account-3"));
+        Assert.Equal((1, 1), (Count(handed, "Make the port configurable."), Count(handed, "And add a test.")));
+        Assert.Empty(Prompts("account-2"));
+        lock (replaced) Assert.Equal([("c2", "c3")], replaced);
+
+        await Poll.Until(() => Events.After("c3", 0).Events.Any(e => e.Kind == SessionEventKind.Message), () => Seen(ledger, "c3"));
+        var shown = Events.After("c3", 0).Events.ToList();
+        var first = shown.FindIndex(e => e.Kind == SessionEventKind.User && e.Id == "w1");
+        var second = shown.FindIndex(e => e.Kind == SessionEventKind.User && e.Id == "w2");
+        Assert.True(first >= 0 && second > first && second < shown.FindIndex(e => e.Kind == SessionEventKind.Message), Seen(ledger, "c3"));
+        Assert.DoesNotContain(shown, e => e.Kind == SessionEventKind.User && e.Origin == "person" && e.Id is null);
+    }
+
     /// <summary>
     /// A stand-in ACP agent on the stub's accounts: it writes each method and prompt down with its account, lists three models, and refuses
-    /// at the set each model its second argument names for its account.
+    /// at the set each model its second argument names for its account, once the file its third argument names exists where it names one.
     /// </summary>
     private string Agent()
     {
         var script = Path.Combine(_home, "acp-pending-agent.mjs");
         File.WriteAllText(script, """
-            import { appendFileSync } from 'node:fs';
+            import { appendFileSync, existsSync } from 'node:fs';
             import { basename } from 'node:path';
             import { createInterface } from 'node:readline';
             if (process.argv.includes('--version')) { console.log('acp-stub 1.0.0'); process.exit(0); }
-            const [heard, refuses = ''] = process.argv.slice(2);
+            const [heard, refuses = '', gate = ''] = process.argv.slice(2);
             const home = process.env.DAORIS_STUB_CONFIG_DIR ?? '';
             const account = home ? basename(home) : '(own)';
             const refused = new Set(refuses.split(',').filter((pair) => pair.startsWith(account + ':')).map((pair) => pair.split(':')[1]));
@@ -380,6 +512,7 @@ public sealed class ChatPendingProcessTests : IDisposable
               } else if (frame.method === 'session/set_config_option') {
                 const value = frame.params.value;
                 if (refused.has(value)) {
+                  for (let waited = 0; gate && !existsSync(gate) && waited < 30000; waited += 50) await new Promise((r) => setTimeout(r, 50));
                   note(`refused: model=${value}`);
                   send({ jsonrpc: '2.0', id: frame.id, error: { code: -32603, message: 'Internal error',
                     data: { details: `Invalid value for config option model: ${value}` } } });
