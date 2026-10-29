@@ -216,6 +216,51 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
         Assert.Empty(none.Json.GetProperty("moves").EnumerateArray());
     }
 
+    /// <summary>
+    /// 🔴 HANDBACK1 (D219): one quest's handback whole, by the quest's id or the id of the session that served it, in the read's own
+    /// words beside its fields: the act, the note, how each requirement was answered, when, where and by which session. Any id is
+    /// answered, one naming nothing as not found, so a client tells this door's answer from an older host's 404.
+    /// </summary>
+    [Fact]
+    public async Task The_handback_door_answers_a_quests_handback_by_its_id_or_its_sessions()
+    {
+        var at = DateTimeOffset.Parse("2026-10-29T09:00:00Z");
+        const string id = "4a2db0c40001";
+        var asked = new Quest(id, "Asker", "Keeper", "Draw the minimap", "The map needs one.", QuestStatus.Open, null, at, at, "handing");
+        const string note = "Drew the minimap in 4f3e2d1; its render test passes. Not proved: the zoom at 4K.";
+        await host.Composed.Quests.IntegrateAsync("handing",
+        [
+            new QuestOperation(id, QuestOperationKind.Published, "hb2", 1, at, Published: asked, Number: 1),
+            new QuestOperation(id, QuestOperationKind.Taken, "hb2", 2, at.AddMinutes(1), Number: 2),
+            new QuestOperation(id, QuestOperationKind.Done, "hb2", 3, at.AddMinutes(30), note, Number: 3,
+                Answers: [new QuestAnswer(1, Met: "It renders.")], Session: "s0a1b2c3"),
+        ], 3);
+        // In a repository of this test's own: the host is the class's, and a session in Keeper would hold the tree its other tests open.
+        var session = await host.Composed.Sessions.CreateAsync(id, "Handing", "claude-code", at, workspace: "handing");
+
+        var answer = await host.GetAsync($"/api/handbacks/{id}");
+
+        Assert.Equal(200, answer.Status);
+        Assert.True(answer.Json.GetProperty("found").GetBoolean());
+        Assert.Equal(("Done", note), (answer.Json.GetProperty("quest").GetProperty("status").GetString(), answer.Json.GetProperty("quest").GetProperty("note").GetString()));
+        var handback = answer.Json.GetProperty("handback");
+        Assert.Equal(("done", note, "s0a1b2c3", "hb2"), (handback.GetProperty("act").GetString(), handback.GetProperty("note").GetString(),
+            handback.GetProperty("session").GetString(), handback.GetProperty("machine").GetString()));
+        Assert.Equal(at.AddMinutes(30), handback.GetProperty("at").GetDateTimeOffset());
+        Assert.Equal("It renders.", handback.GetProperty("answers")[0].GetProperty("met").GetString());
+        Assert.Contains(note, answer.Json.GetProperty("said").GetString());
+
+        var bySession = await host.GetAsync($"/api/handbacks/{session.Id}");
+        Assert.Equal(session.Id, bySession.Json.GetProperty("session").GetString());
+        Assert.Equal(id, bySession.Json.GetProperty("quest").GetProperty("id").GetString());
+        Assert.Contains($"Session `{session.Id}` served quest `#{id}`.", bySession.Json.GetProperty("said").GetString());
+
+        var none = await host.GetAsync("/api/handbacks/4a2db0c49999");
+        Assert.Equal(200, none.Status);
+        Assert.False(none.Json.GetProperty("found").GetBoolean());
+        Assert.Contains("No quest or session", none.Json.GetProperty("said").GetString());
+    }
+
     [Fact]
     public async Task A_registrations_root_is_never_answered_to_a_caller_off_this_machine()
     {

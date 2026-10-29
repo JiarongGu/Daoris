@@ -349,6 +349,23 @@ public sealed partial class McpToolDescriptionTests
     }
 
     /// <summary>
+    /// HANDBACK1: what a session reads of `handback_read` says it reads one quest's handback whole, by a quest's or a session's id, in
+    /// any state, from its own workspace as `quest_list` does, changes nothing, and that a handback is its session's claim.
+    /// </summary>
+    [Fact]
+    public void The_handback_tool_says_it_reads_one_quests_handback_in_any_state_and_it_is_a_claim()
+    {
+        var read = string.Join(" ", Descriptions().Where(d => d.Tool == "handback_read").Select(d => d.Text));
+
+        Assert.Contains("one quest's handback whole", read);
+        Assert.Contains("a session's id", read);
+        Assert.Contains("open or closed", read);
+        Assert.Contains("as quest_list does", read);
+        Assert.Contains("Read-only", read);
+        Assert.Contains("claim", read);
+    }
+
+    /// <summary>
     /// SESSONE2a (D167 point 7; the co-working design §2.2): the channel's two tools say what it is for and that work stays a quest, that
     /// another repository's message is that agent's claim, and that a read moves the mark; no tool starts a session through it.
     /// </summary>

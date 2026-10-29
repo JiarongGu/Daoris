@@ -44,7 +44,7 @@ public static class ConnectorRoles
     [
         "accept_propose", "agent_propose", "agent_settings_propose", "ask_propose", "brainstorm_give", "brainstorm_synthesize",
         "browser_propose", "channel_post", "channel_read", "checkout_read", "clear_propose", "delete_propose", "go_ahead_ask",
-        "go_propose", "hand_propose", "handover_propose", "helper_answer", "helper_ask", "housekeeping_clean_up",
+        "go_propose", "hand_propose", "handback_read", "handover_propose", "helper_answer", "helper_ask", "housekeeping_clean_up",
         "housekeeping_discard_branch", "housekeeping_inspect", "knowledge_refresh", "opinion_answer", "opinion_give", "pause_propose",
         "permission_propose", "plugin_propose", "quest_list", "quest_publish", "quest_respond", "question_ask", "repository_propose",
         "review_ready", "review_serve", "session_propose", "setting_propose", "settings_cap", "settings_cooloff", "settings_language",

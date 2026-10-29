@@ -82,6 +82,8 @@ public sealed class McpRoleFilterTests : McpToolsFixture
     [InlineData("quest_publish", false)]
     [InlineData("quest_respond", false)]
     [InlineData("quest_list", false)]
+    // HANDBACK1: a quest's record, refused as the quest list is, since a partner reads its lead's line and no quest.
+    [InlineData("handback_read", false)]
     [InlineData("helper_ask", false)]
     [InlineData("go_ahead_ask", false)]
     [InlineData("channel_post", false)]
@@ -103,6 +105,7 @@ public sealed class McpRoleFilterTests : McpToolsFixture
         Assert.Contains("publishes, takes and closes no quest", ConnectorRoles.Refusal("quest_respond", Helper));
         Assert.Null(ConnectorRoles.Refusal("helper_answer", Helper));
         Assert.Null(ConnectorRoles.Refusal("quest_list", Helper));
+        Assert.Null(ConnectorRoles.Refusal("handback_read", Helper));
         Assert.All(ConnectorRoles.PartnerRefused, tool => Assert.Null(ConnectorRoles.Refusal(tool, SessionRole.None)));
     }
 

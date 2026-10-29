@@ -1,6 +1,186 @@
+using System.Globalization;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace Daoris.Knowledge;
+
+/// <summary>
+/// A quest's handback (HANDBACK1, D219): the note a session gave through its connector as it closed the quest done, said it ready or
+/// declined it, as the operation that made that act keeps it, with how it answered each of the person's requirements, when, on which
+/// machine, and the session that wrote it. Written once, at that act, in the same write as the move; read back from the quest's
+/// history, never from a session's event log. It travels with the quest, as every operation does.
+/// </summary>
+/// <param name="Quest">The quest it hands back.</param>
+/// <param name="Act">The act it was written at: a done, a ready's submission, or a decline.</param>
+/// <param name="Note">The note whole, as the session gave it.</param>
+/// <param name="Answers">How it answered each of the person's requirements; empty where the quest carries none, and on a decline.</param>
+/// <param name="At">When, on the clock of the machine that made it.</param>
+/// <param name="Machine">The machine that made it.</param>
+/// <param name="Session">The session that wrote it, as its connector's intake named it.</param>
+public sealed record QuestHandback(
+    string Quest, QuestOperationKind Act, string? Note, IReadOnlyList<QuestAnswer> Answers, DateTimeOffset At, string Machine, string Session)
+{
+    /// <summary>The act as the wire spells it: <c>done</c>, <c>ready</c> or <c>declined</c>.</summary>
+    public string Spelled => Act switch
+    {
+        QuestOperationKind.Submitted => "ready",
+        QuestOperationKind.Declined => "declined",
+        _ => "done",
+    };
+}
+
+/// <summary>A quest's handback read from its history (HANDBACK1, D219).</summary>
+public static class QuestHandbacks
+{
+    /// <summary>
+    /// The handback <paramref name="history"/> holds: the latest done, ready or decline the replay applied that names the session that
+    /// wrote it. A done the graph's close wrote names none, since its note is the submission's it closed on, so a graph-closed quest's
+    /// handback stays that submission. Null where no session's close is recorded: a quest still open or taken with none, and one closed
+    /// before HANDBACK1 or through a door that names no session.
+    /// </summary>
+    public static QuestHandback? Of(IEnumerable<QuestOperation> history)
+    {
+        QuestHandback? found = null;
+        Quest? quest = null;
+        foreach (var operation in history)
+        {
+            if (!QuestLog.Applies(quest, operation)) continue;
+            if (QuestStore.KeepsSession(operation.Kind) && operation is { Session: { Length: > 0 } session, Close: null })
+            {
+                found = new(operation.Quest, operation.Kind, operation.Note, operation.Answers ?? [], operation.At, operation.Machine, session);
+            }
+
+            quest = QuestLog.Step(quest, operation);
+        }
+
+        return found;
+    }
+}
+
+/// <summary>
+/// One quest's handback as the read answers it (HANDBACK1, D219): what the id named, and the words, phrased once for every door.
+/// </summary>
+/// <param name="Id">The id asked, as read.</param>
+/// <param name="Quest">The quest read, or null where the id names none, or names one outside the workspace asked.</param>
+/// <param name="Session">The session the id named, where it named one.</param>
+/// <param name="Handback">The quest's handback, where a session's close is recorded on it.</param>
+/// <param name="Said">The answer in words: what the connector answers, and the terminal prints.</param>
+public sealed record HandbackReading(string Id, Quest? Quest, Session? Session, QuestHandback? Handback, string Said)
+{
+    /// <summary>Whether the id named a quest or a session here, inside the workspace asked.</summary>
+    public bool Found => Quest is not null || Session is not null;
+
+    /// <summary>Whether the id named a quest or a session of another workspace than the one asked, which the read refuses.</summary>
+    public bool Outside { get; init; }
+}
+
+/// <summary>
+/// One quest's handback as anyone entitled to the work reads it (HANDBACK1, D219): its steward, another session of the workspace, a
+/// terminal. By the quest's id, or by the id of a session for the quest it served; in any state, open or closed; from one workspace,
+/// as <c>quest_list</c> scopes it, or from every one. The connector's <c>handback_read</c>, the local host's <c>GET /api/handbacks/{id}</c>
+/// and <c>daoris-driver sessions handback</c> answer through it.
+/// </summary>
+/// <param name="quests">Where the quest and its history are read.</param>
+/// <param name="ledger">Where a session's record is read; none reads every id as a quest's.</param>
+public sealed class HandbackReader(QuestStore quests, SessionLedger? ledger = null)
+{
+    /// <summary>What <paramref name="id"/> hands back, from <paramref name="workspace"/>, or from every workspace where it is null.</summary>
+    public async Task<HandbackReading> ReadAsync(string id, string? workspace = null, CancellationToken ct = default)
+    {
+        var named = id.Trim().TrimStart('#');
+        if (named.Length > 0 && await quests.FindAsync(named, ct).ConfigureAwait(false) is { } quest)
+        {
+            if (Elsewhere(quest.Workspace, workspace) is { } refused) return new(named, null, null, null, $"Refused: quest `#{quest.Id}`{refused}") { Outside = true };
+            var handback = QuestHandbacks.Of(await quests.HistoryAsync(quest.Id, ct).ConfigureAwait(false));
+            return new(named, quest, null, handback, Words(quest, handback));
+        }
+
+        if (named.Length > 0 && ledger is not null && await ledger.FindAsync(named, ct).ConfigureAwait(false) is { } session)
+        {
+            if (Elsewhere(session.Workspace, workspace) is { } refused)
+            {
+                return new(named, null, null, null, $"Refused: session `{session.Id}`{refused}") { Outside = true };
+            }
+
+            if ((session.Quest ?? session.TookQuest) is not { } served)
+            {
+                return new(named, null, session, null,
+                    $"Session `{session.Id}` served no quest, so it has no handback: a handback is the note a session closes its quest with.");
+            }
+
+            if (await quests.FindAsync(served, ct).ConfigureAwait(false) is not { } work)
+            {
+                return new(named, null, session, null, $"Session `{session.Id}` served quest `#{served}`, which is not here, so its handback cannot be read.");
+            }
+
+            var handback = QuestHandbacks.Of(await quests.HistoryAsync(work.Id, ct).ConfigureAwait(false));
+            var whose = handback is { } said && !string.Equals(said.Session, session.Id, StringComparison.Ordinal)
+                ? $" Its handback is session `{said.Session}`'s, not this one's."
+                : "";
+            return new(named, work, session, handback, $"Session `{session.Id}` served quest `#{work.Id}`.{whose}\n\n{Words(work, handback)}");
+        }
+
+        return new(named, null, null, null, $"No quest or session `{named}` here: a quest's id comes from `quest_list`, a session's from its record.");
+    }
+
+    /// <summary>The refusal's tail for a record of another workspace than the one asked; null where it is that workspace's, or none was.</summary>
+    private static string? Elsewhere(string kept, string? asked) =>
+        asked is null || Workspaces.Same(kept, asked)
+            ? null
+            : $" is workspace `{kept}`'s, and this read answers workspace `{asked}`'s alone.";
+
+    /// <summary>A quest's handback in words: the quest, then the handback whole with whom it is by, or what the quest keeps instead.</summary>
+    private static string Words(Quest quest, QuestHandback? handback)
+    {
+        var text = new StringBuilder($"Quest `#{quest.Id}` **{quest.Title}** — {quest.Status}, asked of `{quest.To}` by `{quest.From}`.\n\n");
+        if (handback is { } said)
+        {
+            text.Append($"Its handback, as session `{said.Session}` wrote it when it {Act(said.Act)} {Moment(said.At)}: that session's claim, "
+                        + "so check what it names before you rely on it.");
+            if (said.Act == QuestOperationKind.Submitted && quest.Status == QuestStatus.Taken) text.Append(" The quest stays taken until its graph closes it.");
+            text.Append("\n\n").Append(Note(said.Note));
+            Answered(text, said.Answers);
+            return text.ToString();
+        }
+
+        if (quest.Submission is null && quest.Status is QuestStatus.Open or QuestStatus.Taken)
+        {
+            return text.Append($"No handback yet: it is {quest.Status}, and its handback is the note its session gives as it closes it done, says it ready, "
+                               + "or declines it.").ToString();
+        }
+
+        text.Append("No session's handback is recorded on it: it closed before Daoris kept which session wrote a handback, or through a door "
+                    + "that names none. ")
+            .Append(quest.Submission is null ? "Its closing note" : "Its submission's note")
+            .Append(", as the quest keeps it:\n\n")
+            .Append(Note(quest.Submission is { } submitted ? submitted.Note : quest.Note));
+        Answered(text, quest.Answers);
+        return text.ToString();
+    }
+
+    private static string Act(QuestOperationKind act) => act switch
+    {
+        QuestOperationKind.Submitted => "said it ready",
+        QuestOperationKind.Declined => "declined it",
+        _ => "closed it done",
+    };
+
+    private static string Moment(DateTimeOffset at) => "on " + at.ToUniversalTime().ToString("yyyy-MM-dd HH:mm 'UTC'", CultureInfo.InvariantCulture);
+
+    private static string Note(string? note) => string.IsNullOrWhiteSpace(note) ? "It gave no note." : note;
+
+    /// <summary>How each requirement was answered, as <c>quest_list</c> says it.</summary>
+    private static void Answered(StringBuilder text, IReadOnlyList<QuestAnswer> answers)
+    {
+        if (answers.Count > 0) text.Append('\n');
+        foreach (var answer in answers)
+        {
+            text.Append('\n').Append(answer.IsDeparture
+                ? $"requirement {answer.Requirement} departed: {answer.Departed} Quoting \"{answer.Quote}\"."
+                : $"requirement {answer.Requirement} met: {answer.Met}");
+        }
+    }
+}
 
 /// <summary>
 /// What a session's closing note must be (HANDBACK1, D219): the handback itself, since the note is the one record of the work that

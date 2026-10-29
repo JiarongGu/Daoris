@@ -1503,6 +1503,12 @@ if (mode == ServiceMode.Local)
             : Results.Ok(ToDeletion(outcome));
     });
 
+    // One quest's handback whole (HANDBACK1, D219), by the quest's id or the id of the session that served it, in any state: what
+    // `daoris-driver sessions handback` prints, in the read's words the connector's `handback_read` answers too. Every workspace, or
+    // the one named. Any id is answered, one naming nothing as not found, so a client tells this door from an older host's 404.
+    app.MapGet("/api/handbacks/{id}", async (ComposedService s, string id, string? workspace, CancellationToken ct) =>
+        Results.Ok(HandbackResponse.Of(await new HandbackReader(s.Quests, s.Ledger).ReadAsync(id, workspace, ct))));
+
     // What the person added to a running session (DRIFT1a, D133 §1), as its driver reports it: the words
     // reach the session through the driver, which never passes them here otherwise, so this is where they
     // are kept on the ask its work is for. Local like the asks; a session on no ask is answered `kept:
