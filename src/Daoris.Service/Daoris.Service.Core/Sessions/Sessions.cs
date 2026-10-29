@@ -1677,6 +1677,103 @@ public sealed class SessionStore
     }, ct);
 
     /// <summary>
+    /// Move the words <paramref name="moves"/> picks off one record of this machine's onto another (FOUNDATION1 row d-ii part 3, the design §3.4
+    /// rule 3), as the ledger's keyed open judges them. Each keeps its element as stored, its id and every field, a later build's among them,
+    /// but its attempt, which was the record left's dispatcher's: on the record opened no dispatcher has written it yet, and a word kept there
+    /// with another record's attempt would be taken back as uncertain at the next come-up and never go. They go in the order they waited,
+    /// ahead of any word the record opened holds, and leave the record left in the same step, so the settlement's trigger writes a row there
+    /// for each. The words moved, as kept on the record opened; none where either record is not this machine's or none moves.
+    /// </summary>
+    /// <remarks>A read, then the writes it decides: the ledger calls it inside its keyed open's exclusive step, so no say or take lands between.</remarks>
+    internal Task<IReadOnlyList<SaidWord>> MoveSaidAsync(string from, string to, Func<SaidWord, bool> moves, CancellationToken ct = default) =>
+        _db.RunAsync<IReadOnlyList<SaidWord>>(async () =>
+        {
+            var left = await StoredWordsAsync(from, ct).ConfigureAwait(false);
+            var opened = await StoredWordsAsync(to, ct).ConfigureAwait(false);
+            if (left is null || opened is null) return [];
+
+            var moved = new List<(string Element, SaidWord Word)>();
+            var kept = new List<string>();
+            foreach (var (element, word) in left)
+            {
+                if (word is not null && moves(word)) moved.Add((Unattempted(element), word with { Attempt = null }));
+                else kept.Add(element);
+            }
+
+            if (moved.Count == 0) return [];
+
+            await WriteWordsAsync(from, kept, ct).ConfigureAwait(false);
+            await WriteWordsAsync(to, [.. moved.Select(each => each.Element), .. opened.Select(each => each.Element)], ct).ConfigureAwait(false);
+            return [.. moved.Select(each => each.Word)];
+        }, ct);
+
+    /// <summary>
+    /// A record's words as stored, each element's text beside the word it reads as, null for an element that is no word, which stays as it
+    /// is; on a record from before the list, its answer as the word every reader reads. Null where no record of this machine's has the id.
+    /// </summary>
+    private async Task<IReadOnlyList<(string Element, SaidWord? Word)>?> StoredWordsAsync(string id, CancellationToken ct)
+    {
+        await using var command = _db.Command();
+        command.CommandText = "SELECT said, answer, updated FROM sessions WHERE id = $id AND origin IS NULL";
+        command.Parameters.AddWithValue("$id", id);
+        await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
+        if (!await reader.ReadAsync(ct).ConfigureAwait(false)) return null;
+        if (!reader.IsDBNull(0)) return StoredElements(reader.GetString(0));
+        if (reader.IsDBNull(1)) return [];
+
+        var answer = new SaidWord(AnswerWordId, reader.GetString(1), Moments.ReadRequired(reader.GetString(2)), []);
+        return [(WordJson(answer), answer)];
+    }
+
+    /// <summary>A list's elements as stored, in order; none for a list that is not a JSON array, which nothing here rewrites.</summary>
+    private static IReadOnlyList<(string Element, SaidWord? Word)> StoredElements(string json)
+    {
+        try
+        {
+            using var document = JsonDocument.Parse(json);
+            return document.RootElement.ValueKind == JsonValueKind.Array
+                ? [.. document.RootElement.EnumerateArray().Select(element => (element.GetRawText(), WordOf(element)))]
+                : [];
+        }
+        catch (JsonException)
+        {
+            return [];
+        }
+    }
+
+    /// <summary>The element without its <c>attempt</c>, every other field as it was; the element itself where it has none.</summary>
+    private static string Unattempted(string element)
+    {
+        using var document = JsonDocument.Parse(element);
+        if (!document.RootElement.TryGetProperty("attempt", out _)) return element;
+        return JsonFields.Written(writer =>
+        {
+            writer.WriteStartObject();
+            foreach (var field in document.RootElement.EnumerateObject())
+            {
+                if (field.Name != "attempt") field.WriteTo(writer);
+            }
+
+            writer.WriteEndObject();
+        });
+    }
+
+    /// <summary>A record's list written whole from its elements as stored, none leaving it with no words. No revision: the words never travel.</summary>
+    private async Task WriteWordsAsync(string id, IReadOnlyList<string> elements, CancellationToken ct)
+    {
+        await using var command = _db.Command();
+        command.CommandText = "UPDATE sessions SET said = $said, answer = NULL WHERE id = $id AND origin IS NULL";
+        command.Parameters.AddWithValue("$id", id);
+        command.Parameters.AddWithValue("$said", elements.Count == 0 ? DBNull.Value : JsonFields.Written(writer =>
+        {
+            writer.WriteStartArray();
+            foreach (var element in elements) writer.WriteRawValue(element, skipInputValidation: true);
+            writer.WriteEndArray();
+        }));
+        await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
     /// The newest settlement of a producer's key over these records, within the horizon (row p, the design §19.2): the word that left
     /// one of them under <paramref name="key"/>, and when. Null where none did. A read, which the ledger and the desks make inside their
     /// own exclusive step, so no take lands between it and the keep it decides.
@@ -1755,35 +1852,7 @@ public sealed class SessionStore
             var words = new List<SaidWord>();
             foreach (var element in document.RootElement.EnumerateArray())
             {
-                if (element.ValueKind != JsonValueKind.Object
-                    || JsonFields.Text(element, "id") is not { Length: > 0 } wordId
-                    || JsonFields.Text(element, "text") is not { } text
-                    || Moments.Read(element, "at") is not { } at)
-                {
-                    continue;
-                }
-
-                var files = JsonFields.Items(element, "files")
-                    .Where(file => file.ValueKind == JsonValueKind.String)
-                    .Select(file => file.GetString()!)
-                    .ToList();
-                var reopens = element.TryGetProperty("reopens", out var flag) && flag.ValueKind == JsonValueKind.True;
-                // XAGENT1c: whose claims these are; absent, or not a name, is the person's, which every word before it was.
-                var by = JsonFields.Text(element, "by") is { Length: > 0 } opinion ? opinion : null;
-                // MIXAGENT2a-i: the helper whose answer this is, its own field; absent is not a helper's.
-                var helper = JsonFields.Text(element, "helper") is { Length: > 0 } helped ? helped : null;
-                var channel = JsonFields.Text(element, "channel") is { Length: > 0 } carried ? carried : null;
-                // COWORK1b: whose words where not the person's, and the producer's key; absent on every word before them.
-                var from = JsonFields.Text(element, "from") is { Length: > 0 } author ? author : null;
-                var key = JsonFields.Text(element, "key") is { Length: > 0 } produced ? produced : null;
-                // COWORK1c: its level, a later build's word read as none, and when a dispatcher first wrote it to a harness.
-                var level = JsonFields.Text(element, "level") is { Length: > 0 } asked && SaidLevel.Known(asked) ? asked : null;
-                var attempt = Moments.Read(element, "attempt");
-                // SUPERVISOR1a-i: what a supervisor's word claims, read as claims; absent on every other word.
-                var decision = JsonFields.Text(element, "decision") is { Length: > 0 } decided ? decided : null;
-                var question = JsonFields.Text(element, "question") is { Length: > 0 } questioned ? questioned : null;
-                var choice = JsonFields.Text(element, "choice") is { Length: > 0 } chose ? chose : null;
-                words.Add(new SaidWord(wordId, text, at, files, reopens, by, helper, channel, from, key, level, attempt, decision, question, choice));
+                if (WordOf(element) is { } word) words.Add(word);
             }
 
             return words;
@@ -1792,6 +1861,40 @@ public sealed class SessionStore
         {
             return [];
         }
+    }
+
+    /// <summary>One word of a list as stored; null for an element that is no word, which every reader passes over.</summary>
+    private static SaidWord? WordOf(JsonElement element)
+    {
+        if (element.ValueKind != JsonValueKind.Object
+            || JsonFields.Text(element, "id") is not { Length: > 0 } wordId
+            || JsonFields.Text(element, "text") is not { } text
+            || Moments.Read(element, "at") is not { } at)
+        {
+            return null;
+        }
+
+        var files = JsonFields.Items(element, "files")
+            .Where(file => file.ValueKind == JsonValueKind.String)
+            .Select(file => file.GetString()!)
+            .ToList();
+        var reopens = element.TryGetProperty("reopens", out var flag) && flag.ValueKind == JsonValueKind.True;
+        // XAGENT1c: whose claims these are; absent, or not a name, is the person's, which every word before it was.
+        var by = JsonFields.Text(element, "by") is { Length: > 0 } opinion ? opinion : null;
+        // MIXAGENT2a-i: the helper whose answer this is, its own field; absent is not a helper's.
+        var helper = JsonFields.Text(element, "helper") is { Length: > 0 } helped ? helped : null;
+        var channel = JsonFields.Text(element, "channel") is { Length: > 0 } carried ? carried : null;
+        // COWORK1b: whose words where not the person's, and the producer's key; absent on every word before them.
+        var from = JsonFields.Text(element, "from") is { Length: > 0 } author ? author : null;
+        var key = JsonFields.Text(element, "key") is { Length: > 0 } produced ? produced : null;
+        // COWORK1c: its level, a later build's word read as none, and when a dispatcher first wrote it to a harness.
+        var level = JsonFields.Text(element, "level") is { Length: > 0 } asked && SaidLevel.Known(asked) ? asked : null;
+        var attempt = Moments.Read(element, "attempt");
+        // SUPERVISOR1a-i: what a supervisor's word claims, read as claims; absent on every other word.
+        var decision = JsonFields.Text(element, "decision") is { Length: > 0 } decided ? decided : null;
+        var question = JsonFields.Text(element, "question") is { Length: > 0 } questioned ? questioned : null;
+        var choice = JsonFields.Text(element, "choice") is { Length: > 0 } chose ? chose : null;
+        return new SaidWord(wordId, text, at, files, reopens, by, helper, channel, from, key, level, attempt, decision, question, choice);
     }
 
     // Hand-rolled for the reason every store's lists are: nothing here may stop working under AOT.

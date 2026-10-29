@@ -29,9 +29,9 @@ public sealed class SaidSettledHostTests(LocalHost host) : IClassFixture<LocalHo
         Assert.Matches("^[0-9a-f]{32}$", run!);
         Assert.Equal(run, second.Json.GetProperty("run").GetString());
         Assert.Equal(1, first.Json.GetProperty("marks").GetProperty("settled").GetInt32());
-        // Row d-i adds replay alone; d-ii's say door adds `head` 1 (the `Continued` refusal), and `opens` stays 1 until the open moves words.
+        // Row d-i adds replay alone; d-ii's say door adds `head` 1 (the `Continued` refusal), and its open, which moves the words, `opens` 2.
         Assert.Equal(["settled", "opens", "head"], first.Json.GetProperty("marks").EnumerateObject().Select(mark => mark.Name).ToArray());
-        Assert.Equal(1, first.Json.GetProperty("marks").GetProperty("opens").GetInt32());
+        Assert.Equal(2, first.Json.GetProperty("marks").GetProperty("opens").GetInt32());
         Assert.Equal(1, first.Json.GetProperty("marks").GetProperty("head").GetInt32());
     }
 
