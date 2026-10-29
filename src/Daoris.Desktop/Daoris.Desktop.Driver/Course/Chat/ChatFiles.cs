@@ -117,7 +117,7 @@ public static class ChatFiles
         {
             try
             {
-                if (Find(home, from, name) is { } kept) Keep(home, to, [new ChatUpload(name, File.ReadAllBytes(kept.Path))]);
+                if (Find(home, from, name) is { } kept) Keep(home, to, [new ChatUpload(name, AtomicFile.ReadBytes(kept.Path))]);
             }
             catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException)
             {
