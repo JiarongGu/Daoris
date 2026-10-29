@@ -367,13 +367,15 @@ export function recordsOnly(paths, ruleOf) {
 /**
  * What the runner does with a candidate before anything is judged, after a start or a crash (§4.1, *Durable state*): `promoted`
  * when it was `promoting` or `green` and main holds its tip (`isAncestor(tip, mainTip)`); `reform` when main left its base;
- * `promote` when it is green on its base; `run` when its run's process is gone; else `wait`.
+ * `promote` when it is green on its base; `run` when its run's process is gone; else `wait`. A candidate held for a decide
+ * (INTEGRATE1b, design §4.5's `hold`) waits: no decide door exists yet (§8), so a drop or a commit on main is what moves it.
  */
 export function resumeCandidate(candidate, { mainTip, isAncestor, runAlive = () => false }) {
   if (!candidate) return 'none';
   if (['promoting', 'green', 'promoted'].includes(candidate.state) && (candidate.tip === mainTip || isAncestor(candidate.tip, mainTip))) return 'promoted';
   if (candidate.base !== mainTip) return 'reform';
   if (candidate.state === 'green' || candidate.state === 'promoting') return 'promote';
+  if (candidate.state === 'held' && candidate.held?.on === 'decide') return 'wait';
   if (candidate.state === 'held') return candidate.held?.on === 'checkout' ? 'promote' : 'run';
   if (['running', 'bisecting', 'forming'].includes(candidate.state)) return runAlive(candidate.run?.pid) ? 'wait' : 'run';
   return 'wait';
@@ -648,7 +650,8 @@ export async function confirmStep({ take, run, halted = () => false, what = 'a c
   if (failures.length && failures.every((failure) => failure?.signature)) {
     return { result: 'confirmed', why: 'it failed again, holding the whole admission', evidence, composition, failures };
   }
-  return { result: 'inconclusive', why: "the confirm run's answer is neither a pass nor failures with their signatures", evidence, composition };
+  // INTEGRATE1b part 2: a run that answers neither (a death of memory, the machine's) says why in its own words.
+  return { result: 'inconclusive', why: typeof outcome?.why === 'string' && outcome.why ? outcome.why : "the confirm run's answer is neither a pass nor failures with their signatures", evidence, composition };
 }
 
 /**
@@ -929,7 +932,9 @@ export function queueLines(queue, { branchTip = () => null, now = Date.now() } =
   const candidate = queue.candidate;
   if (candidate) {
     const held = candidate.state === 'held' ? ` (held on ${candidate.held?.on}: ${candidate.held?.why})` : '';
-    out.push(`candidate on ${String(candidate.base).slice(0, 7)}: ${candidate.state}${held}${candidate.reforms ? `, re-formed ${candidate.reforms} time${candidate.reforms === 1 ? '' : 's'}` : ''}${candidate.reforms >= HELD_REFORMS ? ', held by direct commits' : ''}`);
+    // INTEGRATE1b: under the owner's `land`, a candidate whose gate passed only on its confirm run goes to promotion, and says so.
+    const landing = candidate.landing?.onConfirm?.length ? `, landing on its confirm run alone (${candidate.landing.onConfirm.join(', ')})` : '';
+    out.push(`candidate on ${String(candidate.base).slice(0, 7)}: ${candidate.state}${landing}${held}${candidate.reforms ? `, re-formed ${candidate.reforms} time${candidate.reforms === 1 ? '' : 's'}` : ''}${candidate.reforms >= HELD_REFORMS ? ', held by direct commits' : ''}`);
     candidate.members.forEach((member, i) => out.push(`  ${i + 1}. ${member.branch} at ${String(member.tip).slice(0, 7)}${member.commit ? ` → ${String(member.commit).slice(0, 7)}` : ''}`));
     for (const each of candidate.contained ?? []) out.push(`  contained: ${each.branch} at ${String(each.tip).slice(0, 7)}, in ${each.containedIn?.branch} (settled when ${each.containedIn?.branch} promotes)`);
   }

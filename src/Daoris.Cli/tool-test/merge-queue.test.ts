@@ -874,6 +874,27 @@ describe('INTEGRATE1b: the confirm run, before any base or prefix run', () => {
     assert.deepEqual(q.readSightings(root).map((each) => each['at']), [AT, '2026-10-24T11:00:00.000Z']);
     assert.equal(existsSync(join(root, 'local', 'ci-findings.json')), false, 'nothing is filed as a known red or a flake');
   });
+
+  // INTEGRATE1b part 2: what the queue's runner does with the readings it now makes.
+  test('a confirm run that gives no reading says why in its own words: a death of memory is the machine\'s, and inconclusive', async () => {
+    const why = 'it died of memory (exit 0xC0000017), which is the machine\'s: whether it recurs is not shown';
+    const confirm = await q.confirmStep({ take: wholeOf(SHOWN).take, run: async () => ({ result: 'memory', why }) });
+    assert.equal(confirm.result, 'inconclusive');
+    assert.equal(confirm.why, why);
+  });
+
+  test('a candidate held for a decide waits, since no decide door exists yet; a commit on main forms it again', () => {
+    const held: Candidate = { base: 'm0', tip: 'c1', members: members(2), state: 'held', reforms: 0, recordsOnly: false, held: { on: 'decide', why: 'an unconfirmed failure holds the candidate for a decide: check' } };
+    assert.equal(q.resumeCandidate(held, { mainTip: 'm0', isAncestor: () => false, runAlive: () => false }), 'wait', 'never run again on its own');
+    assert.equal(q.resumeCandidate(held, { mainTip: 'm1', isAncestor: () => false }), 'reform');
+    assert.equal(q.resumeCandidate({ ...held, held: { on: 'memory', why: 'a second death' } }, { mainTip: 'm0', isAncestor: () => false }), 'run', 'one held on memory runs again, as before');
+    assert.match(q.queueLines({ ...q.emptyQueue(), candidate: held }).join('\n'), /held on decide: an unconfirmed failure holds the candidate for a decide: check/);
+  });
+
+  test('--queue says a candidate that lands on its confirm run alone, naming the gates whose only pass that was', () => {
+    const landing = { base: 'm0', tip: 'c1', members: members(2), state: 'green', reforms: 0, recordsOnly: false, landing: { onConfirm: ['check'] } } as Candidate;
+    assert.match(q.queueLines({ ...q.emptyQueue(), candidate: landing }).join('\n'), /candidate on m0: green, landing on its confirm run alone \(check\)/);
+  });
 });
 
 describe('a failing gate that names no test: on the base first', () => {
