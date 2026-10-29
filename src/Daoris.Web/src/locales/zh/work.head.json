@@ -38,7 +38,7 @@
   "work.head.landUnfinished": "这个会话没有完成，所以落地的只是它已提交的内容，它的审阅中列有这些提交。",
   "work.head.landUncommitted": "它的工作树中有 {{count}} 个未提交的路径，落地会把它们落下：采纳会让它的会话继续，去提交，或还原并说明，工作树干净后再落地它的工作。",
   "work.head.landUncommitted_other": "它的工作树中有 {{count}} 个未提交的路径，落地会把它们落下：采纳会让它的会话继续，去提交，或还原并说明，工作树干净后再落地它的工作。",
-  "work.head.carriedOn": "已采纳：它的会话已被继续，去清理它的工作树，工作树干净后即会落地它的工作。它还不是已完成的工作。",
+  "work.head.carriedOn": "已采纳：它的会话已被继续，去把它的工作树处理干净，工作树干净后即会落地它的工作。它还不是已完成的工作。",
   "work.head.moved": "变动于",
   "work.head.waiting": "这个会话在等你",
   "work.head.details": "详情",

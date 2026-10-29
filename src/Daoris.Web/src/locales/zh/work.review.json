@@ -55,7 +55,7 @@
   "work.review.rebaseNotSaid": "它的会话现在无法接收这些话。",
   "work.review.landingUncommitted": "采纳会让它的会话继续，去提交这 {{count}} 个未提交的文件，或还原并说明，工作树干净后再落地它的工作。",
   "work.review.landingUncommitted_other": "采纳会让它的会话继续，去提交这 {{count}} 个未提交的文件，或还原并说明，工作树干净后再落地它的工作。",
-  "work.review.carriedOn": "已采纳：它的会话已被继续，去清理它的工作树，工作树干净后即会落地它的工作。它还不是已完成的工作。",
+  "work.review.carriedOn": "已采纳：它的会话已被继续，去把它的工作树处理干净，工作树干净后即会落地它的工作。它还不是已完成的工作。",
   "work.review.uncommitted": "尚未提交 · {{count}} 个文件",
   "work.review.uncommitted_other": "尚未提交 · {{count}} 个文件",
   "work.review.uncommittedTruncated": "未提交的文件比这里列出的更多；工作树里的 `git status` 有完整列表。",
