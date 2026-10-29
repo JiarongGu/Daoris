@@ -33,6 +33,12 @@ interface Admission { schema: number; reservations: Reservation[]; scopedTier: {
 interface Job { state: string; workingGb?: number; committedGb?: number; why?: string }
 interface Rule { lane?: string; paths?: string[]; gates: string[] | '*' }
 interface Drained { tip: string; at: string; ended: string[]; left: string[]; probe: string | null }
+/** INTEGRATE1b part 2: a confirm run as the scope run's record keeps it. */
+interface ConfirmRecord { gate: string; result: string; why: string; composition: { units: string[] | null; digest: string | null } | null; admission: (Evidence & { capacity?: number }) | null; waitedMs: number | null; ms: number | null }
+interface ScopeRun {
+  state: string; tip: string; tree: string; members: { branch: string }[]; outcome?: string; judged?: { test: string; outcome: string; member: number | null; why: string | null }[];
+  confirms?: ConfirmRecord[]; policy?: { unconfirmed: string; said: string }; passedOnConfirm?: string[]; drained?: Drained;
+}
 interface Trees { ended: string | null; hold: (pid: number) => void; release: (pid: number) => boolean; end: (why: string) => void }
 interface Watch { trees: Trees; check: () => boolean; start: () => Watch; stop: () => void }
 
@@ -99,7 +105,10 @@ const failures = await import(
   '../../../tools/test-failures.mjs') as { gateSignature: (gate: string, step: string, output: string) => Signature; signatureKey: (signature: Signature) => string };
 const machine = await import(
   // @ts-expect-error — untyped workspace tooling
-  '../../../tools/machine-admission.mjs') as { admissionFile: (home: string) => string };
+  '../../../tools/machine-admission.mjs') as {
+  admissionFile: (home: string) => string;
+  createAdmission: (options: { daorisHome: string; capacity?: number; say?: (line: string) => void }) => { take: (request: { what: string }) => Promise<{ id: string; release: () => void } | null> };
+};
 
 const tool = await import(
   // @ts-expect-error — untyped workspace tooling
@@ -874,6 +883,27 @@ describe('INTEGRATE1b: the confirm run, before any base or prefix run', () => {
     assert.deepEqual(q.readSightings(root).map((each) => each['at']), [AT, '2026-10-24T11:00:00.000Z']);
     assert.equal(existsSync(join(root, 'local', 'ci-findings.json')), false, 'nothing is filed as a known red or a flake');
   });
+
+  // INTEGRATE1b part 2: what the queue's runner does with the readings it now makes.
+  test('a confirm run that gives no reading says why in its own words: a death of memory is the machine\'s, and inconclusive', async () => {
+    const why = 'it died of memory (exit 0xC0000017), which is the machine\'s: whether it recurs is not shown';
+    const confirm = await q.confirmStep({ take: wholeOf(SHOWN).take, run: async () => ({ result: 'memory', why }) });
+    assert.equal(confirm.result, 'inconclusive');
+    assert.equal(confirm.why, why);
+  });
+
+  test('a candidate held for a decide waits, since no decide door exists yet; a commit on main forms it again', () => {
+    const held: Candidate = { base: 'm0', tip: 'c1', members: members(2), state: 'held', reforms: 0, recordsOnly: false, held: { on: 'decide', why: 'an unconfirmed failure holds the candidate for a decide: check' } };
+    assert.equal(q.resumeCandidate(held, { mainTip: 'm0', isAncestor: () => false, runAlive: () => false }), 'wait', 'never run again on its own');
+    assert.equal(q.resumeCandidate(held, { mainTip: 'm1', isAncestor: () => false }), 'reform');
+    assert.equal(q.resumeCandidate({ ...held, held: { on: 'memory', why: 'a second death' } }, { mainTip: 'm0', isAncestor: () => false }), 'run', 'one held on memory runs again, as before');
+    assert.match(q.queueLines({ ...q.emptyQueue(), candidate: held }).join('\n'), /held on decide: an unconfirmed failure holds the candidate for a decide: check/);
+  });
+
+  test('--queue says a candidate that lands on its confirm run alone, naming the gates whose only pass that was', () => {
+    const landing = { base: 'm0', tip: 'c1', members: members(2), state: 'green', reforms: 0, recordsOnly: false, landing: { onConfirm: ['check'] } } as Candidate;
+    assert.match(q.queueLines({ ...q.emptyQueue(), candidate: landing }).join('\n'), /candidate on m0: green, landing on its confirm run alone \(check\)/);
+  });
 });
 
 describe('a failing gate that names no test: on the base first', () => {
@@ -1253,8 +1283,14 @@ function queueScratch(name: string) {
   // need no retry and no sleep. A write the queue itself makes (the fast-forward, the scope tree's merges) is not optional.
   // QUEUETESTLEAK1: every child of the case, the tool's invocations and every git, gets this environment and no other, with the
   // fixture's folder as git's ceiling.
+  // INTEGRATE1b part 2: the machine's admission is the case's own, in a Daoris home of its own two places wide, so a red candidate's
+  // confirm run takes the whole of it as the runner does on a machine, and no case waits on what the machine around it runs. Without
+  // it every confirm run would read inconclusive, since no admission could be shown.
+  const home = join(fx.root, 'home');
+  mkdirSync(home, { recursive: true });
   const env = caseEnvironment(fx.root, {
     GIT_OPTIONAL_LOCKS: '0', MERGE_BRANCH_MEMORY: 'off', MERGE_BRANCH_CI_NIGHT_HOUR: 'off', MERGE_BRANCH_QUEUE_POLL_MS: '200', MERGE_BRANCH_QUEUE_TICK_MS: '300', MERGE_BRANCH_DROP_POLL_MS: '200',
+    MERGE_BRANCH_ADMISSION: 'on', DAORIS_HOME: home, DAORIS_ADMISSION_SLOTS: '2',
   });
   const git = (...args: string[]) => sh(env, root, ...args);
   git('init', '--quiet', '--template=', '-b', 'main');
@@ -1296,6 +1332,8 @@ function queueScratch(name: string) {
   };
   return {
     root,
+    /** The case's Daoris home, whose machine admission the runner takes its places in (INTEGRATE1b). */
+    home,
     /** The environment the case's children get (QUEUETESTLEAK1). */
     env,
     /** Git in the scratch with the case's environment. */
@@ -1392,6 +1430,31 @@ function treeGate(dir: string, holdWhen: string, record = ''): string {
     '}',
     'console.log(`${role} ran`);',
     "if (role === 'check' && existsSync('break-check')) { console.log('error: check is broken'); process.exit(1); }",
+    '',
+  ].join('\n');
+}
+
+/**
+ * INTEGRATE1b: a `check` that counts its runs in `dir` (`runs`) and fails where `failWhen` holds, an expression over `count` and
+ * `load`, how many holds named `the load beside it` the machine's admission file `admission` keeps. Where `holdWhen` holds it first
+ * writes `<count>.started` and waits for `release` in `dir`. Every other gate passes.
+ */
+function confirmGate(dir: string, { failWhen, holdWhen = 'false', admission = '' }: { failWhen: string; holdWhen?: string; admission?: string }): string {
+  return [
+    "import { appendFileSync, existsSync, readFileSync, writeFileSync } from 'node:fs';",
+    `const dir = ${JSON.stringify(dir)};`,
+    `const admission = ${JSON.stringify(admission)};`,
+    'const role = process.argv[2];',
+    "if (role !== 'check') { console.log(`${role} ran`); process.exit(0); }",
+    "appendFileSync(`${dir}/runs`, 'x');",
+    "const count = readFileSync(`${dir}/runs`, 'utf8').length;",
+    "const load = admission && existsSync(admission) ? JSON.parse(readFileSync(admission, 'utf8')).holds.filter((hold) => hold.what === 'the load beside it').length : 0;",
+    `if (${holdWhen}) {`,
+    "  writeFileSync(`${dir}/${count}.started`, '');",
+    "  while (!existsSync(`${dir}/release`)) await new Promise((done) => setTimeout(done, 25));",
+    '}',
+    'console.log(`check ran (${count})`);',
+    `if (${failWhen}) { console.log('error: check is broken'); process.exit(1); }`,
     '',
   ].join('\n');
 }
@@ -1628,10 +1691,12 @@ describe('the queue, end to end in a scratch repository', { concurrency: true },
       assert.equal(goodOut.status, 0, `${goodOut.out}\n${repo.log()}`);
       assert.equal(existsSync(join(repo.root, 'good.txt')), true);
       assert.equal(existsSync(join(repo.root, 'break-check')), false, 'a red member never reaches main');
-      const runs = q.readScopeRuns(repo.root) as { state: string; members: { branch: string }[]; judged?: { outcome: string; member: number }[] }[];
+      const runs = q.readScopeRuns(repo.root) as ScopeRun[];
       const red = runs.find((each) => each.state === 'red');
       assert.deepEqual(red?.members.map((each) => each.branch), ['good', 'bad'], `one candidate takes both, never good alone first:\n${repo.log()}`);
       assert.deepEqual(red?.judged?.map((each) => [each.outcome, each.member]), [['pinned', 2]]);
+      // INTEGRATE1b part 2: it failed again when run once more holding the whole admission, so it was bisected as before.
+      assert.deepEqual(red?.confirms?.map((each) => [each.gate, each.result, each.admission?.conclusive]), [['check', 'confirmed', true]], repo.log());
       assert.equal(runs.at(-1)?.state, 'green', 'the retained candidate is judged again, and promoted on its own green');
     } finally {
       writeFileSync(hold, '');
@@ -2383,10 +2448,11 @@ describe('the queue, end to end in a scratch repository', { concurrency: true },
   /**
    * A stand-in `dotnet test` with a pollution within a class: `PollutedTests.B_Reads` fails only after `A_Pollutes` ran before it in the
    * same run, so it fails in its gate and in its class run alone, and passes run by itself. It runs the tests its `--filter` selects,
-   * writes their results to the trx its logger names, and records each call's arguments in `calls`.
+   * writes their results to the trx its logger names, and records each call's arguments in `calls`. With `marker`, the pollution is
+   * only in a tree that holds that file (a member's change), so the base and a prefix without it pass.
    */
-  const pollutedDotnet = (calls: string) => [
-    "import { appendFileSync, mkdirSync, writeFileSync } from 'node:fs';",
+  const pollutedDotnet = (calls: string, marker = '') => [
+    "import { appendFileSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';",
     "import { dirname } from 'node:path';",
     'const args = process.argv.slice(2);',
     `appendFileSync(${JSON.stringify(calls)}, JSON.stringify(args) + '\\n');`,
@@ -2401,7 +2467,8 @@ describe('the queue, end to end in a scratch repository', { concurrency: true },
     '  return has ? test.includes(has[1]) : true;',
     '});',
     'const ran = tests.filter(holds);',
-    'const failed = ran.includes(tests[0]) && ran.includes(tests[1]) ? [tests[1]] : [];',
+    `const polluting = ${JSON.stringify(marker)} ? existsSync(${JSON.stringify(marker)}) : true;`,
+    'const failed = polluting && ran.includes(tests[0]) && ran.includes(tests[1]) ? [tests[1]] : [];',
     'const id = (test) => `t${tests.indexOf(test)}`;',
     'const own = (test) => test.split(\'.\').slice(0, -1).join(\'.\');',
     'if (trx) {',
@@ -2619,8 +2686,9 @@ describe('the queue, end to end in a scratch repository', { concurrency: true },
     const hold = join(repo.root, 'local', 'go');
     mkdirSync(dir, { recursive: true });
     try {
-      // The first run of `check` (the candidate's) fails; every run after it is a probe, and a probe holds.
-      writeFileSync(join(repo.root, 'qgate.mjs'), treeGate(dir, 'count >= 2'));
+      // The first run of `check` (the candidate's) fails, and so does its second, the confirm run (INTEGRATE1b); every run after
+      // them is a probe, and a probe holds.
+      writeFileSync(join(repo.root, 'qgate.mjs'), treeGate(dir, 'count >= 3'));
       repo.git('commit', '--quiet', '-am', `a gate that holds its probes${TRAILER}`);
       repo.branch('good', { 'good.txt': 'fine\n' });
       repo.branch('bad', { 'break-check': 'x\n' });
@@ -2634,7 +2702,7 @@ describe('the queue, end to end in a scratch repository', { concurrency: true },
       await repo.until(() => TREE.every((role) => existsSync(join(dir, `${role}.pid`))));
       const pids = pidsIn(dir);
       assert.equal(pids.length, 3, repo.log());
-      assert.equal(readFileSync(join(dir, 'runs'), 'utf8').length, 2, 'the candidate ran once, and its first probe is the one held');
+      assert.equal(readFileSync(join(dir, 'runs'), 'utf8').length, 3, 'the candidate ran once, its confirm run once, and its first probe is the one held');
       assert.ok(pids.every(alive));
       const dropped = await repo.run(['--drop-batch', 'good']);
       assert.equal(dropped.status, 0, dropped.out);
@@ -2645,7 +2713,7 @@ describe('the queue, end to end in a scratch repository', { concurrency: true },
       // A runner that went on probing would hold at the next probe for ever; it is idle, and no probe started after the drop.
       await repo.until(() => !repo.queue()?.runner);
       assert.equal(repo.queue()?.runner, null, repo.log());
-      assert.equal(readFileSync(join(dir, 'runs'), 'utf8').length, 2);
+      assert.equal(readFileSync(join(dir, 'runs'), 'utf8').length, 3);
       assert.match(repo.log(), /was dropped or replaced: ended no gate running, the probe check\.prefix-1/);
       const runs = q.readScopeRuns(repo.root) as { state: string; judged?: unknown }[];
       assert.equal(runs.at(-1)?.state, 'ended');
@@ -2693,6 +2761,239 @@ describe('the queue, end to end in a scratch repository', { concurrency: true },
       assert.deepEqual(pids.filter(alive), [], 'the class probe, its child and its grandchild are gone');
       assert.match(probed.lines[1]?.error ?? '', /was dropped/, 'a probe asked after the drop is refused');
       assert.equal(readFileSync(join(dir, 'runs'), 'utf8').length, 1, 'no probe started after the drop');
+    } finally {
+      writeFileSync(join(dir, 'release'), '');
+      await repo.cleanup();
+    }
+  });
+
+  // ---------------------------------------------------------------------------------------------------
+  // INTEGRATE1b part 2 (design §4.5, §5.3 step 3, §11 row b): the confirm run in the queue's runner, before any base or prefix run.
+
+  /** Two branches queued into one candidate: the runner is held until both are queued, then forms them together. Answers both waits. */
+  const queueTogether = async (repo: ReturnType<typeof queueScratch>, names: [string, string]) => {
+    const hold = join(repo.root, 'local', 'go');
+    for (const name of names) assert.equal((await repo.run([name, '--preview'])).status, 0);
+    const first = repo.run([names[0], '--message', `local/${names[0]}.msg`], { MERGE_BRANCH_QUEUE_HOLD: hold });
+    await repo.until(() => (repo.queue()?.queued.length ?? 0) === 1);
+    const second = repo.run([names[1], '--message', `local/${names[1]}.msg`], { MERGE_BRANCH_QUEUE_HOLD: hold });
+    await repo.until(() => (repo.queue()?.queued.length ?? 0) === 2);
+    writeFileSync(hold, '');
+    return [first, second] as const;
+  };
+  const runsOf = (dir: string) => (existsSync(join(dir, 'runs')) ? readFileSync(join(dir, 'runs'), 'utf8').length : 0);
+  const verdictsOf = (repo: { root: string }) => (JSON.parse(readFileSync(join(repo.root, 'local', 'gate-verdicts.json'), 'utf8')) as { verdicts: { gate: string; verdict: string; tree: string }[] }).verdicts;
+
+  for (const policy of ['split', 'land', 'hold'] as const) {
+    const goes = { split: 'splits, and each member promotes alone', land: 'promotes as it stands, its pass standing for no other tip', hold: 'waits for a decide, which no door gives yet' }[policy];
+    test(`INTEGRATE1b: a gate that fails once beside a held load and passes quiet holding the whole admission is a sighting; under ${policy}${policy === 'split' ? ', the default with no policy written,' : ''} the candidate ${goes}`, async () => {
+      const repo = queueScratch(`confirm-${policy}`);
+      const dir = join(repo.root, 'local', 'confirm');
+      mkdirSync(dir, { recursive: true });
+      // The load: a place in the case's admission this process holds, as a driven session's heavy run holds one beside the queue.
+      const load = await machine.createAdmission({ daorisHome: repo.home, capacity: 2, say: () => {} }).take({ what: 'the load beside it' });
+      try {
+        assert.ok(load, 'the load holds a place');
+        if (policy !== 'split') writeFileSync(join(repo.root, 'local', 'integration-policy.json'), JSON.stringify({ unconfirmed: policy }));
+        writeFileSync(join(repo.root, 'qgate.mjs'), confirmGate(dir, { failWhen: 'load > 0', admission: machine.admissionFile(repo.home) }));
+        repo.git('commit', '--quiet', '-am', `a check that fails beside a heavy load${TRAILER}`);
+        const base = repo.git('rev-parse', 'main');
+        repo.branch('b1', { 'one.txt': '1\n' });
+        repo.branch('b2', { 'two.txt': '2\n' });
+        const waits = await queueTogether(repo, ['b1', 'b2']);
+        // The confirm run asks every place, so it waits for the load; nothing more of the gate runs while it does.
+        await repo.until(() => /waiting for the machine's whole heavy-run admission before the confirm run of check/.test(repo.log()));
+        assert.match(repo.log(), /waiting for the machine's whole heavy-run admission before the confirm run of check/, repo.log());
+        assert.equal(runsOf(dir), 1, 'no base or prefix run while the confirm run waits');
+        await pause(300);
+        load!.release();
+        let red: ScopeRun | undefined;
+        if (policy === 'hold') {
+          await repo.until(() => repo.queue()?.candidate?.held?.on === 'decide');
+          const said = await repo.run(['--queue']);
+          assert.match(said.out, /held on decide: an unconfirmed failure holds the candidate for a decide: check; no decide door exists yet/, `${said.out}\n${repo.log()}`);
+          assert.equal(repo.git('rev-parse', 'main'), base, 'nothing promoted while it is held');
+          red = (q.readScopeRuns(repo.root) as ScopeRun[]).find((each) => each.state === 'red');
+          assert.equal(red?.outcome, 'hold');
+          assert.equal((await repo.run(['--drop-batch', 'b1'])).status, 0);
+          for (const done of await Promise.all(waits)) assert.equal(done.status, 1, done.out);
+          assert.match((await waits[0]).out, /the queue is held on decide/);
+        } else {
+          for (const done of await Promise.all(waits)) assert.equal(done.status, 0, `${done.out}\n${repo.log()}`);
+          assert.equal(existsSync(join(repo.root, 'one.txt')) && existsSync(join(repo.root, 'two.txt')), true, 'both members are in main');
+        }
+        const runs = q.readScopeRuns(repo.root) as ScopeRun[];
+        red = runs.find((each) => each.state === 'red');
+        assert.deepEqual(red?.members.map((each) => each.branch), ['b1', 'b2'], repo.log());
+        assert.deepEqual(red?.judged?.map((each) => each.outcome), ['unconfirmed']);
+        assert.equal(red?.policy?.unconfirmed, policy);
+        // The scope run's record keeps the confirm run: its composition, its admission's evidence and its wait (§11 row b's measures).
+        const [confirm] = red!.confirms!;
+        assert.deepEqual([confirm!.gate, confirm!.result], ['check', 'unconfirmed']);
+        assert.equal(confirm!.admission?.conclusive, true, JSON.stringify(confirm));
+        assert.equal(confirm!.admission?.ids?.length, 2, 'every place of the two');
+        assert.ok((confirm!.waitedMs ?? 0) >= 300, `it waited for the load: ${confirm!.waitedMs}`);
+        assert.equal(confirm!.composition?.units, null, 'the gate ran whole, and ran again whole');
+        assert.match(confirm!.composition?.digest ?? '', /^sha256:[0-9a-f]{64}$/);
+        // The sighting, apart from the known red and the flakes.
+        const sightings = q.readSightings(repo.root);
+        assert.equal(sightings.length, 1, JSON.stringify(sightings));
+        assert.deepEqual([sightings[0]!['gate'], sightings[0]!['commit'], sightings[0]!['base'], sightings[0]!['policy'], sightings[0]!['members']], ['check', red!.tip, base, policy, ['b1', 'b2']]);
+        assert.equal((sightings[0]!['admission'] as Evidence).conclusive, true);
+        const findings = join(repo.root, 'local', 'ci-findings.json');
+        assert.deepEqual(existsSync(findings) ? (JSON.parse(readFileSync(findings, 'utf8')) as { flakes?: unknown[] }).flakes ?? [] : [], [], 'no flake is filed for it');
+        if (policy === 'split') {
+          assert.equal(red!.outcome, 'split');
+          assert.deepEqual(runs.slice(runs.indexOf(red!) + 1).map((each) => [each.state, each.members.map((member) => member.branch).join()]), [['green', 'b1'], ['green', 'b2']], repo.log());
+          assert.equal(runsOf(dir), 4, 'the candidate, its confirm run, then each member alone: no base or prefix run');
+        }
+        if (policy === 'land') {
+          assert.equal(red!.outcome, 'land');
+          assert.deepEqual(red!.passedOnConfirm, ['check']);
+          assert.equal(runs.indexOf(red!), runs.length - 1, 'no other run: the candidate promoted as it stood');
+          assert.equal(repo.git('rev-parse', 'main'), red!.tip, 'main is the candidate itself');
+          assert.equal(runsOf(dir), 2);
+          assert.match(repo.log(), /lands on its confirm run alone/);
+          assert.equal(verdictsOf(repo).some((each) => each.gate === 'check' && each.tree === red!.tree && ['PASS', 'FLAKE'].includes(each.verdict)), false, 'no pass of check stands on its tree');
+        }
+      } finally {
+        load?.release();
+        await repo.cleanup();
+      }
+    });
+  }
+
+  test('INTEGRATE1b: a pollution within a class fails again as composed: the confirm run repeats the gate as it ran, and the failure is bisected as before', async () => {
+    const repo = queueScratch('confirm-polluted');
+    const shims = join(repo.root, 'local', 'shims');
+    mkdirSync(shims, { recursive: true });
+    try {
+      const calls = join(repo.root, 'local', 'dotnet-calls.jsonl');
+      writeFileSync(join(shims, 'dotnet.mjs'), pollutedDotnet(calls, 'pollute'));
+      if (process.platform === 'win32') writeFileSync(join(shims, 'dotnet.cmd'), '@node "%~dp0dotnet.mjs" %*\r\n');
+      else writeFileSync(join(shims, 'dotnet'), '#!/bin/sh\nexec node "$(dirname "$0")/dotnet.mjs" "$@"\n', { mode: 0o755 });
+      // The stand-in is first on the runner's own PATH as it starts (QUEUETESTLEAK1): the test process's environment is never changed.
+      const PATH = `${shims}${delimiter}${pathOf(repo.env)}`;
+      writeFileSync(join(repo.root, 'Fixture.csproj'), '<Project />\n');
+      writeFileSync(join(repo.root, 'daoris.gates.json'), `${JSON.stringify({ gates: [{ name: 'universal', run: 'node qgate.mjs universal' }, { name: 'fixture', run: 'dotnet test Fixture.csproj --filter "Category!=Process"' }] }, null, 2)}\n`);
+      repo.git('add', '-A');
+      repo.git('commit', '--quiet', '-m', `a test project${TRAILER}`);
+      repo.branch('good', { 'good.txt': 'fine\n' });
+      repo.branch('bad', { pollute: 'x\n' });
+      const hold = join(repo.root, 'local', 'go');
+      for (const name of ['good', 'bad']) assert.equal((await repo.run([name, '--preview'])).status, 0);
+      const good = repo.run(['good', '--message', 'local/good.msg'], { MERGE_BRANCH_QUEUE_HOLD: hold, PATH });
+      await repo.until(() => (repo.queue()?.queued.length ?? 0) === 1);
+      const bad = repo.run(['bad', '--message', 'local/bad.msg'], { MERGE_BRANCH_QUEUE_HOLD: hold, PATH });
+      await repo.until(() => (repo.queue()?.queued.length ?? 0) === 2);
+      writeFileSync(hold, '');
+      const [goodOut, badOut] = await Promise.all([good, bad]);
+      assert.equal(badOut.status, 1, `${badOut.out}\n${repo.log()}`);
+      assert.match(badOut.out, /bad is handed back \(pinned: Fixture\.PollutedTests\.B_Reads\)/);
+      assert.equal(goodOut.status, 0, `${goodOut.out}\n${repo.log()}`);
+      const red = (q.readScopeRuns(repo.root) as ScopeRun[]).find((each) => each.state === 'red')!;
+      assert.deepEqual(red.confirms?.map((each) => [each.gate, each.result]), [['fixture', 'confirmed']], repo.log());
+      assert.deepEqual(red.judged?.map((each) => [each.outcome, each.member]), [['pinned', 2]]);
+      // The confirm run is the gate's run again, its whole selection and settings, never the failing class or test alone.
+      const [scoped, confirm, onBase] = readFileSync(calls, 'utf8').trim().split('\n');
+      assert.doesNotMatch(confirm!, /FullyQualifiedName~/, 'as composed: not narrowed to the failing class');
+      assert.equal(confirm, scoped!.replace('fixture.scoped.trx', 'fixture.confirm.trx'), 'the same command, into a trx of its own');
+      assert.match(onBase!, /\(Category!=Process\)&\(FullyQualifiedName~Fixture\.PollutedTests\)/, 'then the failing class on the base, as today');
+    } finally {
+      await repo.cleanup();
+    }
+  });
+
+  test('INTEGRATE1b: another live hold beside the confirm run makes it inconclusive, read as split even under land: one of one is handed back unresolved, saying so, with no base run', async () => {
+    const repo = queueScratch('confirm-beside');
+    const dir = join(repo.root, 'local', 'confirm');
+    mkdirSync(dir, { recursive: true });
+    let beside: { release: () => void } | null = null;
+    try {
+      writeFileSync(join(repo.root, 'local', 'integration-policy.json'), JSON.stringify({ unconfirmed: 'land' }));
+      // The candidate's run fails; its second run, the confirm run, waits for `release` and then passes.
+      writeFileSync(join(repo.root, 'qgate.mjs'), confirmGate(dir, { failWhen: 'count === 1', holdWhen: 'count === 2' }));
+      repo.git('commit', '--quiet', '-am', `a check that fails once${TRAILER}`);
+      repo.branch('b1', { 'one.txt': '1\n' });
+      assert.equal((await repo.run(['b1', '--preview'])).status, 0);
+      const waiting = repo.run(['b1', '--message', 'local/b1.msg']);
+      await repo.until(() => existsSync(join(dir, '2.started')));
+      assert.ok(existsSync(join(dir, '2.started')), repo.log());
+      // A writer that counts a larger capacity takes a place while the whole admission is held, as an older build's would.
+      beside = await machine.createAdmission({ daorisHome: repo.home, capacity: 3, say: () => {} }).take({ what: 'a run beside it' });
+      assert.ok(beside, 'it took a place beside the whole admission');
+      writeFileSync(join(dir, 'release'), '');
+      const done = await waiting;
+      assert.equal(done.status, 1, `${done.out}\n${repo.log()}`);
+      assert.match(done.out, /b1 is handed back \(unresolved: check; its confirm run is inconclusive \(another live hold stands beside it: the merge queue's a run beside it\): read as split, never land/);
+      const red = (q.readScopeRuns(repo.root) as ScopeRun[]).find((each) => each.state === 'red')!;
+      assert.deepEqual(red.judged?.map((each) => each.outcome), ['inconclusive']);
+      const [confirm] = red.confirms!;
+      assert.equal(confirm!.result, 'inconclusive');
+      assert.equal(confirm!.admission?.conclusive, false);
+      assert.match(confirm!.admission?.doubts[0]?.why ?? '', /another live hold stands beside it/);
+      assert.equal(runsOf(dir), 2, 'the candidate and its confirm run: no base or prefix run');
+      assert.deepEqual(q.readSightings(repo.root), [], 'an inconclusive confirm run is no sighting');
+    } finally {
+      beside?.release();
+      writeFileSync(join(dir, 'release'), '');
+      await repo.cleanup();
+    }
+  });
+
+  test('INTEGRATE1b: an admission the confirm run cannot write is inconclusive: the gate is not run again, nothing runs on the base, and one of one is handed back unresolved', async () => {
+    const repo = queueScratch('confirm-unwritable');
+    const dir = join(repo.root, 'local', 'confirm');
+    mkdirSync(dir, { recursive: true });
+    try {
+      // The machine's record is a folder, so no write of it lands.
+      mkdirSync(machine.admissionFile(repo.home), { recursive: true });
+      writeFileSync(join(repo.root, 'qgate.mjs'), confirmGate(dir, { failWhen: 'true' }));
+      repo.git('commit', '--quiet', '-am', `a check that always fails${TRAILER}`);
+      repo.branch('b1', { 'one.txt': '1\n' });
+      assert.equal((await repo.run(['b1', '--preview'])).status, 0);
+      const done = await repo.run(['b1', '--message', 'local/b1.msg']);
+      assert.equal(done.status, 1, `${done.out}\n${repo.log()}`);
+      assert.match(done.out, /b1 is handed back \(unresolved: check; its confirm run is inconclusive \(the machine's record could not be written/);
+      const red = (q.readScopeRuns(repo.root) as ScopeRun[]).find((each) => each.state === 'red')!;
+      const [confirm] = red.confirms!;
+      assert.deepEqual([confirm!.result, confirm!.admission?.conclusive, confirm!.admission?.doubts[0]?.at], ['inconclusive', false, 'take']);
+      assert.equal(runsOf(dir), 1, 'neither a confirm run nor a base run: an admission not shown is never run without waiting');
+    } finally {
+      await repo.cleanup();
+    }
+  });
+
+  test('INTEGRATE1b: a drop ends a confirm run with its tree, starts no base or prefix run, and lets every place of the whole admission go', async () => {
+    const repo = queueScratch('confirm-drop');
+    const dir = join(repo.root, 'local', 'drain');
+    mkdirSync(dir, { recursive: true });
+    try {
+      // The candidate's run of `check` fails; its second, the confirm run, holds with a child and a grandchild.
+      writeFileSync(join(repo.root, 'qgate.mjs'), treeGate(dir, 'count === 2'));
+      repo.git('commit', '--quiet', '-am', `a gate that holds its confirm run${TRAILER}`);
+      repo.branch('bad', { 'break-check': 'x\n' });
+      assert.equal((await repo.run(['bad', '--preview'])).status, 0);
+      const waiting = repo.run(['bad', '--message', 'local/bad.msg']);
+      await repo.until(() => TREE.every((role) => existsSync(join(dir, `${role}.pid`))));
+      const pids = pidsIn(dir);
+      assert.equal(pids.length, 3, repo.log());
+      assert.equal(runsOf(dir), 2, 'the candidate ran once, and its confirm run is the one held');
+      const holds = () => (JSON.parse(readFileSync(machine.admissionFile(repo.home), 'utf8')) as { holds: { what: string }[] }).holds;
+      assert.equal(holds().length, 2, 'the confirm run holds every place');
+      const dropped = await repo.run(['--drop-batch', 'bad']);
+      assert.equal(dropped.status, 0, dropped.out);
+      assert.match(dropped.out, /the probe check\.confirm/);
+      assert.deepEqual(pids.filter(alive), [], 'the confirm run, its child and its grandchild are gone');
+      assert.equal((await waiting).status, 1);
+      await repo.until(() => !repo.queue()?.runner);
+      assert.equal(repo.queue()?.runner, null, repo.log());
+      assert.equal(runsOf(dir), 2, 'no base or prefix run after the drop');
+      assert.match(repo.log(), /was dropped or replaced: ended no gate running, the probe check\.confirm/);
+      const last = (q.readScopeRuns(repo.root) as ScopeRun[]).at(-1)!;
+      assert.deepEqual([last.state, last.drained?.probe, last.judged], ['ended', 'check.confirm', undefined]);
+      assert.deepEqual(holds(), [], 'every place of the whole admission let go');
+      assert.deepEqual(q.readSightings(repo.root), []);
     } finally {
       writeFileSync(join(dir, 'release'), '');
       await repo.cleanup();
