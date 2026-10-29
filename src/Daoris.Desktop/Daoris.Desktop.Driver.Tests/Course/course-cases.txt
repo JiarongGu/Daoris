@@ -290,11 +290,11 @@ S-03 design:§3.3 => Resume words=w1
 # difference-N <adopting rows> <its rows> <what differs>
 difference-1 h,i B-30,B-29,E-16,A-26 which words go to a new part
 difference-2 h,i E-02,F-03 Daoris's limit word's key
-difference-3 h,i E-02,F-07 the maker's usage read before an own-account resume
+difference-3 h E-02,F-07 the maker's usage read before an own-account resume
 difference-4 h,i D-06,K-03 a move to another agent at a limit
 difference-5 h,i H-01,I-01 when a running hand-over happens
-difference-6 h,i E-14,LA-13 cannot-go-on's fall-back
-difference-7 h,i B-28,B-27,LA-19 the asked model not offered
+difference-6 h E-14,LA-13 cannot-go-on's fall-back
+difference-7 h B-28,B-27,LA-19 the asked model not offered
 difference-8 h,i H-09,H-11,I-01 a named account: the pick
 difference-9 h,i AA-18,AA-17 the answers-alone hold's timing
 difference-10 h,i D-08,K-08 the same-account refusal for an automatic part

@@ -403,7 +403,7 @@ public abstract partial record LineCourse
     }
 
     // AGENTERRORS1a (D210 point 3; Planner.TransientHeld): the retries are the run's; past their bound the line waits for the person's word
-    // or *Try again*, which releases that end into the limit resume's step 1 (LimitResume.cs:40-42).
+    // or *Try again*, which releases that end into the limit resume's step 1 (LimitResume.Line, LimitResume.cs:28-34).
     private static LineCourse PastBound(CourseFacts facts)
     {
         if (facts.Press?.Kind == CoursePressKind.TryAgain) return DrivenLimit(facts);
@@ -491,7 +491,7 @@ public abstract partial record LineCourse
             facts, CourseWhen.Now, HandedWhere(facts, press), press.Why ?? CourseFromWhy.Press, press.By ?? CourseFromBy.Person,
             Ids(facts.Head.Words.Where(word => word.Persons)));
 
-    // A handed quest's named account first, then the walk within the named agent (SelectHandedAsync, HarnessRoster.cs:923-934).
+    // A handed quest's named account first, then the walk within the named agent (SelectHandedAsync, HarnessRoster.cs:929-940).
     private static CourseWhere HandedWhere(CourseFacts facts, CoursePress press)
     {
         var head = facts.Head;
