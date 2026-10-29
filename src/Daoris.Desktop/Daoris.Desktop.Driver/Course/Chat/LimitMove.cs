@@ -501,8 +501,10 @@ internal sealed class LimitMove(ChatContext context, IChatRunning runner, ChatHa
                 box = Carried(box, prior);
                 boxes.Write(session, box);
                 var message = await ComposeAsync(session, box, prior, ct).ConfigureAwait(false);
-                await context.Service.SayAsync(
-                        to, message.Prompt + ChatFiles.PathLines(message.Files), ct: ct, from: DaorisWords.From, key: $"limit-move/{session}")
+                // FOUNDATION1d-ii: said at the head of the destination's line where it went on, under the move's key; its files go by path.
+                await WordsHead.FollowAsync(
+                        to, at => context.Service.SayAsync(
+                            at, message.Prompt + ChatFiles.PathLines(message.Files), ct: ct, from: DaorisWords.From, key: $"limit-move/{session}"))
                     .ConfigureAwait(false);
             }
             catch (Exception error) when (error is HttpRequestException or DriverException or IOException or System.Text.Json.JsonException

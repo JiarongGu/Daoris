@@ -4061,7 +4061,7 @@ public sealed class Driver(
         {
             await WordsLeft.KeepAsync(
                     service, Context.Events, sessionId, left, CancellationToken.None,
-                    why: swapped is not null && turnFailed is null ? Observation.WordsUnderNewSetup : null)
+                    why: swapped is not null && turnFailed is null ? Observation.WordsUnderNewSetup : null, home: home)
                 .ConfigureAwait(false);
         }
 
