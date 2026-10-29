@@ -206,7 +206,13 @@ public static class IntegrationCandidateEnds
     /// <summary>The line's integration stopped (§5.2's last paragraph).</summary>
     public const string Stopped = "stopped";
 
-    public static IReadOnlyList<string> All { get; } = [Settled, FormedAgain, Dropped, Stopped];
+    /// <summary>
+    /// Every member left the candidate before any was left to promote (INTEGRATE1e part e3a): held by the line, or handed back. A code added
+    /// beside the four, so a candidate ended before it is read as it was.
+    /// </summary>
+    public const string Empty = "empty";
+
+    public static IReadOnlyList<string> All { get; } = [Settled, FormedAgain, Dropped, Stopped, Empty];
 }
 
 /// <summary>Why a request is no longer open.</summary>
