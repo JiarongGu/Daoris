@@ -475,7 +475,9 @@ public sealed class HookSetLogTests : IDisposable
                 case "exited": toHost.Writer.TryComplete(); break;
             }
         });
-        var peer = new HookPeer(new ChannelReader(toHost), plugin, "acme.gate", patience: TimeSpan.FromMilliseconds(kind == "late" ? 100 : 5000));
+        // Only the late case is timed; the others are answered at once, so their patience is a bound that elapses only on failure
+        // (FLAKE1, 2026-10-30: five seconds read an unreadable answer as late under five builders' load).
+        var peer = new HookPeer(new ChannelReader(toHost), plugin, "acme.gate", patience: kind == "late" ? TimeSpan.FromMilliseconds(100) : Poll.Patience);
         // The late case asks with no handshake: a handshake bounded by the same short patience failed under the
         // suite's own load before the call it was there to test.
         if (kind != "late") await peer.InitializeAsync(_home, _home, ["quest/consider"], CancellationToken.None);
