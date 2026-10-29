@@ -1122,6 +1122,19 @@ export const REACH = Object.freeze([
   },
   { paths: ['tools/stage-package.mjs'], gates: ['rehearse', 'deployment'], why: "every pack runs it: the release rehearsal's, and the install's doctrine tool" },
   { paths: ['tools/family-rehearsal.mjs', 'tools/usage-report.mjs'], gates: ['rehearse-family'], why: 'the family rehearsal, what it imports, and what it runs' },
+  // AGENTPROVIDER1b part 3 (placed by INTEGRATE1d part 4): the stand-ins' reader, which its own tool test and the family rehearsal import.
+  { paths: ['tools/stand-ins.mjs'], gates: ['tool-tests', 'rehearse-family'], why: "the stand-ins' reader: its tool test (stand-ins.test.ts) and the family rehearsal, which finds the providers' stand-ins by it (AGENTPROVIDER1b)" },
+  // The same row's files in each provider's folder: the driver's (its lane's readers, ProviderFilesTests among them), and the tool
+  // test and the family rehearsal read them through `stand-ins.mjs`. A narrow rule, since the first rule decides.
+  {
+    paths: [
+      'src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Providers/*/provider.json',
+      'src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Providers/*/pending.json',
+      'src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Providers/*/Program/**',
+    ],
+    gates: [...DRIVER_READERS, 'tool-tests'],
+    why: "a provider's declaration, its pending cases and its stand-in's program: the driver's own (ProviderFilesTests and the conformance suite), and the tools' stand-ins.test.ts and the family rehearsal read them by `stand-ins.mjs` (AGENTPROVIDER1b)",
+  },
   { paths: ['tools/setup-kit.mjs'], gates: ['tool-tests', 'rehearse-family'], why: "the family rehearsal's set-up kit, and its tool-tests, which run it for real in a scratch repository (GATESLIM1)" },
   {
     paths: ['tools/desktop-publish.mjs', 'tools/ci-background.mjs', 'tools/test-failures.mjs'],
@@ -1275,6 +1288,8 @@ export const REACH = Object.freeze([
       // MIXAGENT1b-i: the say twin holds the hand-over's refusal table to its codes; FOUNDATION1 mod-vii moved the codes it aliases
       // into Events, so the twin reads their literals there.
       'HandOver.cs', 'HandOverAskWhy.cs',
+      // FOUNDATION1d-ii part 1: `WordsNever.Continued` forwards the say door's answer's own word, which this record declares.
+      'ServiceAnswers.cs',
       // SESSCTX1c part B: the say twin holds *Go on with Daoris's brief*'s refusal table to its codes.
       'BriefedMove.cs',
       // FLOWCHART1b: the parts flow's twin holds its words to `PartBegan`.
@@ -5998,6 +6013,7 @@ async function gateVerify(root, options) {
   if (!existsSync(inputs.declaration)) throw new Refusal(`DAORIS_VERIFY_DECLARATION names no file: ${inputs.declaration}`);
   const text = readFileSync(inputs.declaration, 'utf8');
   const plan = verifyPlan(text);
+  acceptedPass = integrationOf(text).integration?.pass ?? [];
   const named = inputs.gates ? verifyNamed(plan, inputs.gates) : null;
   const home = verdictsHome(root);
   const where = inputs.tree ?? home;
@@ -7118,13 +7134,24 @@ export const GATE_REMOVED = Object.freeze([
  * `GATE_REMOVED`, with the build servers of its own (`BESIDE_ENVIRONMENT`). It was the queue's alone (QUEUETESTLEAK1); on 2026-10-28
  * the steward's shell held the install's home, and every gate of every runner it started inherited it.
  */
-export function gateEnvironment(start = START_ENVIRONMENT) {
+export function gateEnvironment(start = START_ENVIRONMENT, { pass = [] } = {}) {
   const kept = Object.entries(start).filter(([name, value]) => value !== undefined && !GATE_REMOVED.some((pattern) => pattern.test(name)));
-  return { ...Object.fromEntries(kept), ...BESIDE_ENVIRONMENT };
+  // INTEGRATE1d part 4 (design §5.5): the names an accepted declaration's `env.pass` lists come back from the start environment, in
+  // any case, a name the removed list took among them, never a Daoris name (the declaration's own read refuses one; this holds it too).
+  const wanted = new Set(pass.filter((name) => !/^daoris_/i.test(name)).map((name) => name.toUpperCase()));
+  const passed = Object.entries(start).filter(([name, value]) => value !== undefined && wanted.has(name.toUpperCase()));
+  return { ...Object.fromEntries(kept), ...Object.fromEntries(passed), ...BESIDE_ENVIRONMENT };
 }
 
-/** INTEGRATE1a: the step the tool's gates and probes run by, each with `gateEnvironment`. */
-const gateStep = (command, cwd, fd, options = {}) => runStep(command, cwd, fd, { ...options, env: gateEnvironment() });
+/**
+ * INTEGRATE1d part 4: the names the owner accepted for a gate to receive beyond the composed base. Only the declared runner sets them,
+ * from the declaration it is handed, which the caller makes of the accepted blob (§5.9): a merge in place reads no acceptance, since the
+ * tool has no way to read the install's without its home, and passes nothing (D215's note).
+ */
+let acceptedPass = [];
+
+/** INTEGRATE1a: the step the tool's gates and probes run by, each with `gateEnvironment` and the accepted `env.pass` names. */
+const gateStep = (command, cwd, fd, options = {}) => runStep(command, cwd, fd, { ...options, env: gateEnvironment(START_ENVIRONMENT, { pass: acceptedPass }) });
 
 /**
  * INTEGRATE1a: the Daoris home as the tool read it at its start, before anything was composed or changed: the admission's file is found
