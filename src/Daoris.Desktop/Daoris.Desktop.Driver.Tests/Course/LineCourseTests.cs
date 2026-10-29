@@ -664,15 +664,26 @@ public sealed class LineCourseTests
     {
         var table = Read();
         var rows = table.Rows.ToDictionary(row => row.Id, StringComparer.Ordinal);
+        var cases = Cases();
         Assert.Equal(10, table.Differences.Count);
+        var failures = new List<string>();
         foreach (var difference in table.Differences)
         {
             Assert.True(difference.Rows.Count >= 2, $"{difference.Name}: a difference is two rows at least");
-            Assert.All(difference.Rows, id => Assert.True(rows.ContainsKey(id), $"{difference.Name}: no row {id}"));
-            Assert.True(difference.Rows.Select(id => rows[id].Outcome).Distinct(StringComparer.Ordinal).Count() > 1, $"{difference.Name}: its rows answer alike");
+            Assert.All(difference.Rows, id => Assert.True(rows.ContainsKey(id) && cases.ContainsKey(id), $"{difference.Name}: no row {id}"));
             Assert.NotEmpty(difference.Adopts);
             Assert.All(difference.Adopts, adopts => Assert.Contains(adopts, new[] { "h", "i" }));
+
+            // The decision itself tells the rows apart and gives each its path's answer: both are kept, neither is chosen.
+            var decided = difference.Rows.Select(id => Shape(LineCourse.Decide(cases[id].Facts, cases[id].Trigger))).ToList();
+            if (decided.Distinct(StringComparer.Ordinal).Count() < 2) failures.Add($"{difference.Name} ({difference.Title}): its rows answer alike, {decided[0]}");
+            foreach (var (id, answered) in difference.Rows.Zip(decided))
+            {
+                if (answered != rows[id].Outcome) failures.Add($"{difference.Name}: {id} answers {answered}, where its path answers {rows[id].Outcome}");
+            }
         }
+
+        Assert.True(failures.Count == 0, string.Join("\n", failures));
     }
 
     /// <summary>
