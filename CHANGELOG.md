@@ -5,6 +5,7 @@ with the version and date at release.
 
 ## Unreleased
 
+- A branch Daoris's landing made whose work the line will never hold, which *Clean up* keeps for ever because its files still differ, can now be withdrawn on your reason: `daoris-driver trees remove <branch> --why "…"` (`--plan` says what it would do), or the window's own press. Its commits stay on a recovery ref, its record says why, and a branch that is checked out, held by the line or still carried by a pull request is refused (LANDRETIRE1, part 1; the list's naming of such branches and the Branches action follow).
 - An agent you pin for one workspace, with no install or pin for the whole machine, now starts on that pin in that workspace, where before every start of it was refused as not installed (WSPINONLY1).
 - A quest whose session ran on a later choice of Build's order, and stopped short, now goes on with that same choice: the same agent, model and effort, where before the session that carried it on started on the machine's first agent with the earlier session's model. Your words to such a session go on in its own conversation, the new session says the choice it runs as, and where that agent's accounts are cooling it waits for their reset. A brainstorm about a repository now runs each agent at the version that repository's workspace pins (FOUNDATION1j part ii, D212).
 
