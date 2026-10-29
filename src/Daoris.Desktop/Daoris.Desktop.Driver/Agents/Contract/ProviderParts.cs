@@ -87,9 +87,9 @@ public sealed record TablesPart(LimitWords? Limits, WindowWords? Windows, SignIn
 }
 
 /// <summary>How an account's windows are asked between turns (<see cref="UsageQuestion"/>); null asks nothing.</summary>
-public sealed record UsagePart(UsageQuestion? Question)
+public sealed record UsagePart(IUsageQuestion? Question)
 {
-    public static UsagePart None { get; } = new((UsageQuestion?)null);
+    public static UsagePart None { get; } = new((IUsageQuestion?)null);
 }
 
 /// <summary>

@@ -165,7 +165,7 @@ public sealed class ProviderRegistry
     public WindowWords? WindowsOf(DoorId door) => Own(door).Tables.Windows ?? LentTo(door).Tables.Windows;
 
     /// <summary>How this door's accounts' windows are asked (<c>HarnessRoster.UsageOf</c>).</summary>
-    public UsageQuestion? UsageOf(DoorId door) => Own(door).Usage.Question ?? LentTo(door).Usage.Question;
+    public IUsageQuestion? UsageOf(DoorId door) => Own(door).Usage.Question ?? LentTo(door).Usage.Question;
 
     /// <summary>
     /// The agent that answers for this door's accounts, by name, program and account facts (<c>HarnessRoster.AccountAgentOf</c>): the

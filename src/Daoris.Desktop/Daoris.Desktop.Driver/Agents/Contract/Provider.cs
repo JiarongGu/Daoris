@@ -35,10 +35,10 @@ public sealed record Provider(
     Known<UsagePart> Usage,
     Known<LentPart> Lent,
     Known<PortRef> Models,
-    Known<PortRef> Children,
+    Known<IChildVocabulary> Children,
     Known<PortRef> Rules,
     Known<PortRef> Skills,
-    Known<PortRef> Conversations,
+    Known<IConversationHome> Conversations,
     Reach Reach,
     Known<VocabularyPart> Vocabulary,
     bool Unavailable = false)
@@ -68,8 +68,8 @@ public sealed record AgentDoor(
     LentPart Lent,
     Known<PortRef> Offers,
     PosturesPart Postures,
-    Known<PortRef> Spawn,
-    Known<PortRef> Dialect,
+    Known<ISpawn> Spawn,
+    Known<IDialect> Dialect,
     AbilitiesPart Abilities,
     DoorTablesPart Tables,
     AccountKey? AccountOf);
