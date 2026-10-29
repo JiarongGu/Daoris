@@ -16,7 +16,7 @@ import {
   DRIVER_EXE, DRIVER_HOME, DRIVER_LAUNCHERS, DRIVER_PROJECT, driverLaunchers, driverPublishCommand, layDriverLaunchers,
   APP_PROJECT, LAUNCHER_PROJECT, appPublishCommand, artifactsOf, launcherPublishCommand, publishStages,
   installedNote, isInstall, layCli, layOffers, layResources, promoteStage, recordedShellFiles, refusal, retiredPaths, servicePlan, stageRefusal,
-  stagedManifest, ungatedRefusal, unstage, writeManifest, GATE_TREE_LOCK, GATE_TREE_RECORD, childArgs, gatedSource, recordStaged, recordStage, stageReport,
+  stagedManifest, ungatedRefusal, unstage, writeManifest, GATE_TREE_LOCK, GATE_TREE_RECORD, childArgs, gatedSource, recordStaged, recordStage, stageReport, stagedAdvice,
   // @ts-expect-error — untyped workspace tooling; see above
 } from '../../../tools/desktop-publish.mjs';
 // The service hosts' one build recipe (CONNECTOR1), which the desktop's `--service` publishes by.
@@ -531,6 +531,19 @@ test('a folder this script installed to before is fine, whatever else it now hol
  * and a pin made from it starts the launcher; a pin made on the launcher in Explorer carries no id, so
  * the running window shows as a second button beside it.
  */
+// DRAINHOLD1: a staged build drains the install, which holds the presses that would start work, so the stage says so and how to
+// stage it *not now*, in the install's note and in what the stage prints.
+test('the stage says the install drains, what it holds, and that update --cancel stages it not now (DRAINHOLD1)', () => {
+  for (const words of [installedNote(), stagedAdvice().join('\n')]) {
+    assert.match(words, /drain/i);
+    assert.match(words, /starts nothing new/);
+    assert.match(words, /holds the presses that would start work/);
+    assert.match(words, /daoris-driver update --cancel/);
+    assert.match(words, /not now/i);
+    assert.match(words, /update --when-idle/);
+  }
+});
+
 test('the install note is the marker, and says how to pin Daoris from its running window (D108)', () => {
   const note: string = installedNote();
   assert.ok(note.startsWith(`${MARKER_HEADER}\n`), 'the note opens with the header isInstall reads');

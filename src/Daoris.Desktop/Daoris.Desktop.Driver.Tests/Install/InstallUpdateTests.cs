@@ -107,6 +107,18 @@ public sealed class InstallUpdateTests : IDisposable
         Assert.Equal(config.Drivable, drained.Drivable);
     }
 
+    /// <summary>DRAINHOLD1 (the driver follow-up): the drained config says it drains, so each start the look makes on its own reads one view.</summary>
+    [Fact]
+    public void The_drained_config_says_it_drains_and_the_one_it_came_from_does_not()
+    {
+        var config = DriverConfig.Empty with { Drivable = ["engine"] };
+
+        Assert.False(config.Draining);
+        Assert.True(InstallUpdate.Drained(config).Draining);
+        Assert.StartsWith("helper  ask `a1`", InstallUpdate.HeldLine("helper", "ask `a1`"));
+        Assert.Contains(InstallUpdate.HoldReason, InstallUpdate.HeldLine("helper", "ask `a1`"));
+    }
+
     [Fact]
     public void Only_a_hold_the_drain_made_is_said_as_the_update_s()
     {

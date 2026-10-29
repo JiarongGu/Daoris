@@ -220,7 +220,7 @@ public sealed class PipeConfirmationsTests : Bridge
         using var log = new MachineLog(Home, "desktop");
         using var confirmations = new PipeConfirmations(Bus, log, new HeldClock());
         var draining = true;
-        confirmations.Holding = () => draining;
+        confirmations.Holding = (_, _) => draining;
         var asked = confirmations.Ask(DriverModule.Name, Land, Values, Asker, judge: _ => Task.FromResult(PipeJudgement.Holding))!.Value;
 
         Assert.Equal(new PipeAnswer(PipeAnswered.Draining), await confirmations.AnswerAsync(asked.Shown.Id, confirm: true));
@@ -239,7 +239,7 @@ public sealed class PipeConfirmationsTests : Bridge
         using var log = new MachineLog(Home, "desktop");
         using var confirmations = new PipeConfirmations(Bus, log, new HeldClock());
         var draining = false;
-        confirmations.Holding = () => draining;
+        confirmations.Holding = (_, _) => draining;
         var judging = new TaskCompletionSource<PipeJudgement>(TaskCreationOptions.RunContinuationsAsynchronously);
         var asked = confirmations.Ask(DriverModule.Name, Land, Values, Asker, judge: _ => judging.Task)!.Value;
         var answer = confirmations.AnswerAsync(asked.Shown.Id, confirm: true);
@@ -251,6 +251,39 @@ public sealed class PipeConfirmationsTests : Bridge
         Assert.Equal(new PipeAnswer(PipeAnswered.Draining), await answer);
         Assert.False(Assert.Single(confirmations.Now().Waiting).Checking);
         Assert.False(asked.Ended.IsCompleted);
+    }
+
+    /// <summary>
+    /// DRAINHOLD1: whether a Confirm is held is asked of its own module and route, before its grounds are read and again after, so a drain
+    /// that holds a start lets a take-back's Confirm through, whether it began before the Confirm or while it was judged.
+    /// </summary>
+    [Fact]
+    public async Task A_Confirm_is_held_by_its_own_route_before_and_after_its_grounds_are_read()
+    {
+        using var log = new MachineLog(Home, "desktop");
+        using var confirmations = new PipeConfirmations(Bus, log, new HeldClock());
+        var asked = new List<string>();
+        var draining = true;
+        confirmations.Holding = (module, route) =>
+        {
+            lock (asked) asked.Add($"{module}.{route}");
+            return draining && route == "START_CHAT";
+        };
+        var start = confirmations.Ask(DriverModule.Name, "START_CHAT", Values, Asker, judge: _ => Task.FromResult(PipeJudgement.Holding))!.Value;
+        var judging = new TaskCompletionSource<PipeJudgement>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var takeBack = confirmations.Ask(DriverModule.Name, "SESSION_QUEUE_EDIT", Values, Asker, judge: _ => judging.Task)!.Value;
+
+        Assert.Equal(new PipeAnswer(PipeAnswered.Draining), await confirmations.AnswerAsync(start.Shown.Id, confirm: true));
+        var answer = confirmations.AnswerAsync(takeBack.Shown.Id, confirm: true);
+        judging.SetResult(PipeJudgement.Holding);
+
+        Assert.Equal(new PipeAnswer(PipeAnswered.Answered), await answer);
+        Assert.Equal(PipeConfirmationEnd.Confirmed, (await takeBack.Ended).End);
+        Assert.False(start.Ended.IsCompleted);
+        lock (asked)
+        {
+            Assert.Equal([$"{DriverModule.Name}.START_CHAT", $"{DriverModule.Name}.SESSION_QUEUE_EDIT", $"{DriverModule.Name}.SESSION_QUEUE_EDIT"], asked);
+        }
     }
 
     [Fact]

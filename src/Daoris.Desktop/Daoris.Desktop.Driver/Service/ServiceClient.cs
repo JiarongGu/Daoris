@@ -405,7 +405,17 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
             return new SayAnswer(false, $"the service at {_base} has no door for words to a session that is not running ({status}) — is it older than this driver?");
         }
 
-        if (!ok) return new SayAnswer(false, Text(answered, "error") ?? payload) { Refusal = Text(answered, "refusal") };
+        if (!ok)
+        {
+            // FOUNDATION1d-ii (the design §3.4 rule 2): `continued` names the line's head beside its word, at the status of every other refusal.
+            var refusal = Text(answered, "refusal");
+            return new SayAnswer(false, Text(answered, "error") ?? payload)
+            {
+                Refusal = refusal,
+                Head = refusal == SayAnswer.Continued && answered.ValueKind == JsonValueKind.Object && Text(answered, "head") is { Length: > 0 } head ? head : null,
+            };
+        }
+
         // Settled before a word (row p): a success naming the record the key's word left carries no `said`, so it is read first and no
         // reader below it finds a word to act on.
         if (answered.ValueKind == JsonValueKind.Object && Text(answered, "settled") is { Length: > 0 } settled)
@@ -1509,6 +1519,21 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
             ServiceVerb.Get, $"/api/quests/{Uri.EscapeDataString(id.TrimStart('#'))}/moves", null, ct).ConfigureAwait(false);
         if (answer.Status == (int)System.Net.HttpStatusCode.NotFound) return null;
         if (!answer.Ok) throw new DriverException($"the service would not read quest `#{id}`'s moves: {answer.Payload}");
+        return answer.Payload;
+    }
+
+    /// <summary>
+    /// One quest's handback as the service wrote it (HANDBACK1, <c>GET /api/handbacks/{id}</c>), by the quest's id or the id of the session
+    /// that served it: what <c>sessions handback</c> prints. Null from a host from before the door, which answers the route not found; the
+    /// door answers every id, one naming nothing as not found in its own answer, so its own answer is never a 404.
+    /// </summary>
+    /// <exception cref="DriverException">The host answered the door with a failure.</exception>
+    public async Task<string?> HandbackJsonAsync(string id, CancellationToken ct = default)
+    {
+        var answer = await _doors.SendAsync(
+            ServiceVerb.Get, $"/api/handbacks/{Uri.EscapeDataString(id.TrimStart('#'))}", null, ct).ConfigureAwait(false);
+        if (answer.Status == (int)System.Net.HttpStatusCode.NotFound) return null;
+        if (!answer.Ok) throw new DriverException($"the service would not read `{id}`'s handback: {answer.Payload}");
         return answer.Payload;
     }
 

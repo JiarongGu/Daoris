@@ -1,0 +1,504 @@
+# FOUNDATION1e part 2 (the foundation design §3.1, §10 row 1e): LineCourse.Decide's pinned table, as line-account-cases.txt is the
+# account rule's. A row: its id, the case it is ported from, then the course's answer as LineCourseTests shapes it. A source is a suite's
+# test (a theory's case after a colon), a row of line-account-cases.txt, the source line a path answers at where no suite pins the case
+# (code:), or the design's for a move record, which no path writes yet (design:). LineCourseTests builds each row's facts and trigger.
+
+## LA the account rule's answers (line-account-cases.txt), read once, as the conversation's go-on and the driven go-on read them
+LA-01 line-account-cases:row-001 => Resume words=w1
+LA-02 line-account-cases:row-001 => Resume words=w1
+LA-03 line-account-cases:row-002 => Move when=Now where=Settled:account-2(build/1) how=Brief why=Retry by=Daoris words=w1
+LA-04 line-account-cases:row-005 => Move when=Now where=Settled:account-2(chat/-) how=Brief why=Retry by=Daoris words=w1
+LA-05 line-account-cases:row-003 => Wait until=+2h why=AccountCooling accounts=account-1 doors=StartFrom
+LA-06 line-account-cases:row-003 => Wait until=+2h why=AccountCooling accounts=account-1 doors=GoOnNew
+LA-07 line-account-cases:row-004 => Wait until=+1h why=AccountCooling accounts=account-1,account-2 doors=StartFrom
+LA-08 line-account-cases:row-006 => Wait until=+2h why=AccountCooling accounts=account-1 doors=StartFrom
+LA-09 line-account-cases:row-007 => Move when=Now where=Settled:account-2(build/1) how=Brief why=Retry by=Daoris words=w1
+LA-10 line-account-cases:row-008 => Wait until=+2h why=AccountCooling accounts=account-1 doors=GoOnNew
+LA-11 line-account-cases:row-011 => Hold why=CannotGoOn doors=StartFrom repair=None code=account
+LA-12 line-account-cases:row-012 => Move when=Now where=Settled:account-2(build/1) how=Brief why=Limit by=Daoris words=w1
+LA-13 line-account-cases:row-022 => Move when=Now where=Settled:account-2(build/1) how=Brief why=Retry by=Daoris words=w1
+LA-14 line-account-cases:row-024 => Hold why=Account doors=- repair=SignIn code=-
+LA-15 line-account-cases:row-027 => Hold why=CannotGoOn doors=StartFrom repair=SignIn code=account
+LA-16 line-account-cases:row-039 => Hold why=CannotGoOn doors=StartFrom repair=ClearRefusal code=account
+LA-17 line-account-cases:row-046 => Move when=Now where=Settled:account-2(build/1) how=Brief why=Retry by=Daoris words=w1
+LA-18 line-account-cases:row-047 => Hold why=CannotGoOn doors=StartFrom repair=AddAccount code=account
+LA-19 line-account-cases:row-064 => Move when=Now where=Settled:account-2(build/1) how=Brief why=Retry by=Daoris words=w1
+LA-20 line-account-cases:row-069 => Hold why=CannotGoOn doors=StartFrom repair=OfferModel code=account
+LA-21 line-account-cases:row-076 => Resume words=w1
+LA-22 line-account-cases:row-035 => Wait until=+40h why=AccountCooling accounts=account-2 doors=-
+
+## B the conversation's go-on and Ask Daoris's
+B-01 ChatGoOnTests.A_chat_whose_conversation_was_not_kept_goes_on_in_a_new_part_and_waits_where_that_cannot_start => Move when=Now where=Own:account-1(chat/-) how=Brief why=Resume by=Daoris words=w1
+B-02 ChatGoOnTests.A_chat_whose_tree_is_gone_cannot_go_on => Hold why=CannotGoOn doors=StartFrom repair=None code=tree
+B-03 ChatGoOnTests.A_chat_whose_account_is_cooling_waits_for_its_reset_and_says_the_door_out => Wait until=+2h why=AccountCooling accounts=account-1 doors=StartFrom
+B-04 ChatGoOnTests.A_chat_whose_account_is_gone_cannot_go_on_at_once_and_says_why => Hold why=CannotGoOn doors=StartFrom repair=AddAccount code=account
+B-05 ChatGoOnTests.A_lost_conversation_with_only_another_agents_answer_waiting_opens_no_new_part => Hold why=CannotGoOn doors=- repair=None code=unkept
+B-06 ChatGoOnTests.What_is_no_ended_chat_with_words_waiting_starts_nothing_here:chat,working,True => Resume words=w1
+B-07 ChatGoOnTests.What_is_no_ended_chat_with_words_waiting_starts_nothing_here:chat,completed,False => Hold why=Stays doors=- repair=None code=-
+B-08 ChatGoOnTests.An_ended_chat_with_only_a_helpers_answer_goes_on_and_the_ledger_is_told_so => Resume words=h1
+B-09 ChatGoOnTests.A_third_answer_alone_to_an_ended_chat_waits_for_the_person_until_they_let_it_go_on:held => Hold why=AnswersAlone doors=LetAnswerGoOn,NotNow,Say repair=None code=answers-alone
+B-10 ChatGoOnTests.A_third_answer_alone_to_an_ended_chat_waits_for_the_person_until_they_let_it_go_on:let-go => Resume words=h1
+B-11 ChatGoOnTests.Words_kept_while_no_runner_heard_them_are_taken_up_as_one_comes_up => Resume words=w1
+B-12 ChatGoOnTests.A_conversation_that_went_on_in_another_never_goes_on_itself => Never why=Superseded
+B-13 ChatGoesOnProcessTests.An_ended_chat_written_to_goes_on_in_its_own_conversation_under_the_same_record => Resume words=w1
+B-14 ChatGoesOnProcessTests.Words_kept_on_an_ended_chat_while_no_runner_heard_them_go_on_when_one_comes_up => Resume words=w1
+B-15 ChatGoesOnProcessTests.A_conversation_the_agent_no_longer_has_goes_on_in_a_new_part_handed_the_brief_and_the_words => Move when=Now where=Own:account-1(chat/-) how=Brief why=Resume by=Daoris words=w1
+B-16 ChatGoesOnProcessTests.A_conversation_whose_resume_is_refused_waits_until_the_person_goes_on_with_the_brief:waits => Hold why=CannotGoOn doors=GoOnBrief,StartFrom repair=None code=refused
+B-17 ChatGoesOnProcessTests.A_conversation_whose_resume_is_refused_waits_until_the_person_goes_on_with_the_brief:pressed => Move when=Now where=Own:account-1(chat/-) how=Brief why=Resume by=Person words=w1
+B-18 ChatGoesOnProcessTests.A_native_chat_keeps_its_conversation_and_goes_on_with_resume => Resume words=w1
+B-19 ChatGoesOnProcessTests.A_chat_whose_agent_takes_words_at_its_next_step_takes_one_said_during_a_turn_at_once => Resume words=w1
+B-20 ChatGoesOnProcessTests.An_open_conversation_between_turns_is_said_a_helpers_answer_as_its_next_turn => Resume words=h1
+B-21 ChatGoesOnProcessTests.A_talking_conversation_takes_a_helpers_answer_at_its_turns_end => Resume words=h1
+B-22 ChatGoesOnProcessTests.An_ended_conversation_goes_on_with_a_helpers_answer_and_names_it_as_the_helpers => Resume words=h1
+B-23 ChatGoesOnProcessTests.A_restart_whose_conversation_is_lost_goes_by_the_brief_without_the_restart_word:True => Move when=Now where=Own:account-1(chat/-) how=Brief why=Resume by=Daoris words=w1
+B-24 ChatGoesOnProcessTests.A_restart_whose_conversation_is_lost_goes_by_the_brief_without_the_restart_word:False => Move when=Now where=Own:account-1(chat/-) how=Brief why=Resume by=Daoris words=w1
+B-25 ContinuationTests.Only_a_proven_loss_moves_a_conversation_by_itself:gone => Move when=Now where=Own:account-1(chat/-) how=Brief why=Resume by=Daoris words=w1
+B-26 ContinuationTests.Only_a_proven_loss_moves_a_conversation_by_itself:exited => Hold why=CannotGoOn doors=GoOnBrief,StartFrom repair=None code=exited
+B-27 code:Course/Chat/ChatGoOn.cs:561 => Move when=Now where=Settled(chat/-) how=Brief why=NotOffered by=Daoris words=w1
+B-28 code:Course/Chat/ChatGoOn.cs:490 => Resume words=w1
+B-29 code:Course/Chat/BriefedMove.cs:99 => Move when=Now where=Own:account-1(chat/-) how=Brief why=Resume by=Daoris words=w1
+B-30 code:Course/Chat/LimitMove.cs:337 => Move when=Now where=Settled:account-2(chat/-) how=Brief why=Retry by=Daoris words=w1,r1
+
+## E a conversation's limit wait and wake
+E-01 LimitWaitsProcessTests.A_chat_and_Ask_Daoris_with_every_account_cooling_wait_and_go_on_once_in_the_same_process_at_the_reset:waits => Wait until=+2h why=LimitReset accounts=account-1 doors=-
+E-02 LimitWaitsProcessTests.A_chat_and_Ask_Daoris_with_every_account_cooling_wait_and_go_on_once_in_the_same_process_at_the_reset:wakes => Resume words=w1+LimitReset:limit-reset/c1/2026-10-03T17-00-00Z
+E-03 LimitWaitsProcessTests.A_chat_and_Ask_Daoris_with_every_account_cooling_wait_and_go_on_once_in_the_same_process_at_the_reset:help-wakes => Resume words=w1+LimitReset:limit-reset/a1/2026-10-03T17-00-00Z
+E-04 LimitWaitsProcessTests.An_ended_conversation_another_account_frees_first_for_moves_with_the_brief_and_both_kinds_of_words_once => Move when=Now where=Settled:account-2(chat/-) how=Brief why=Limit by=Daoris words=w1
+E-05 LimitWaitsProcessTests.An_ended_chats_waiting_words_with_every_account_cooling_go_on_on_its_own_account_when_it_resets_first => Resume words=w1
+E-06 LimitWaitsProcessTests.An_ended_conversation_whose_account_cools_with_another_ready_goes_on_there_in_one_move => Move when=Now where=Settled:account-2(chat/-) how=Brief why=Retry by=Daoris words=w1
+E-07 LimitWaitsProcessTests.The_wake_goes_on_now_for_an_ended_conversation_whose_account_cools_with_another_ready => Move when=Now where=Settled:account-2(chat/-) how=Brief why=Retry by=Daoris words=w1
+E-08 LimitWaitsProcessTests.An_ended_conversation_whose_account_the_person_picked_waits_for_it_with_another_ready_and_goes_on_there_at_its_reset:waits => Wait until=+2h why=AccountCooling accounts=account-1 doors=StartFrom
+E-09 LimitWaitsProcessTests.An_ended_conversation_whose_account_the_person_picked_waits_for_it_with_another_ready_and_goes_on_there_at_its_reset:resets => Resume words=w1
+E-10 LimitWaitsProcessTests.The_wake_of_a_picked_conversation_the_limit_ended_moves_it_nowhere_and_waits_for_its_own_accounts_reset => Wait until=+2h why=LimitReset accounts=account-1 doors=-
+E-11 LimitWaitsProcessTests.An_ended_conversation_with_every_account_cooling_waits_for_the_earliest_reset_of_any_then_goes_on_there:waits => Wait until=+1h why=AccountCooling accounts=account-1,account-2 doors=StartFrom
+E-12 LimitWaitsProcessTests.An_ended_conversation_with_every_account_cooling_waits_for_the_earliest_reset_of_any_then_goes_on_there:goes => Move when=Now where=Settled:account-2(chat/-) how=Brief why=Retry by=Daoris words=w1
+E-13 LimitWaitsProcessTests.Ask_Daoris_and_a_signed_out_account_are_unchanged:help => Wait until=+2h why=AccountCooling accounts=account-1 doors=StartFrom
+E-14 LimitWaitsProcessTests.Ask_Daoris_and_a_signed_out_account_are_unchanged:signed-out => Hold why=CannotGoOn doors=StartFrom repair=SignIn code=account
+E-15 LimitWaitsProcessTests.A_closed_quests_session_whose_account_cools_goes_on_as_a_conversation_on_the_ready_account => Move when=Now where=Settled:account-2(build/1) how=Brief why=Retry by=Daoris words=w1
+E-16 LimitWaitsProcessTests.A_closed_quests_session_carries_Daoris_s_rebase_word_to_the_new_part_said_as_Daoris_s => Move when=Now where=Settled:account-2(build/1) how=Brief why=Retry by=Daoris words=w1,r1
+E-17 LimitWaitsProcessTests.A_lost_conversation_on_its_ready_own_account_goes_on_in_a_new_part_never_cannot_go_on => Move when=Now where=Own:account-1(chat/-) how=Brief why=Limit by=Daoris words=w1
+E-18 LimitWaitsProcessTests.A_picked_conversation_the_ended_move_opens_a_part_for_keeps_its_pick_and_the_part_waits_for_that_account => Move when=Now where=Pick:account-1(chat/-)!kept how=Brief why=Limit by=Daoris words=w1
+E-19 LimitWaitsProcessTests.A_lost_conversation_whose_account_cools_waits_for_it_when_picked_and_walks_when_not:True => Wait until=+2h why=LimitReset accounts=account-1 doors=-
+E-20 LimitWaitsProcessTests.A_lost_conversation_whose_account_cools_waits_for_it_when_picked_and_walks_when_not:False => Move when=Now where=Settled:account-2(chat/-) how=Brief why=Limit by=Daoris words=w1
+E-21 LimitWaitsProcessTests.A_resume_refused_without_a_loss_waits_for_the_person_with_no_daoris_word_left => Hold why=CannotGoOn doors=GoOnBrief,StartFrom repair=None code=refused
+E-22 LimitWaitsProcessTests.Stop_waiting_leaves_the_wait_and_nothing_goes_on_by_itself => Hold why=Stays doors=- repair=None code=-
+E-23 LimitWaitsProcessTests.A_live_conversations_limit_move_opens_on_the_account_it_judged_counted_once => Move when=Now where=Settled:account-2(chat/-) how=Brief why=Limit by=Daoris words=w1
+E-24 LimitWaitsProcessTests.An_ended_conversation_with_every_account_of_its_agent_cooling_goes_on_with_its_next_choice => Move when=Now where=Settled@other(chat/2) how=Brief why=Limit by=Daoris words=w1
+E-25 LimitWaitsProcessTests.A_picked_conversation_with_every_account_cooling_waits_whatever_its_next_choice_is:account => Wait until=+2h why=LimitReset accounts=account-1 doors=-
+E-26 LimitWaitsProcessTests.A_picked_conversation_with_every_account_cooling_waits_whatever_its_next_choice_is:agent => Wait until=+2h why=LimitReset accounts=account-1 doors=-
+
+## J the briefed move: the person's press, and Daoris's on a conversation proven lost
+J-01 BriefedMoveTests.The_persons_press_opens_on_the_own_account_where_it_is_ready => Move when=Now where=Own:account-1(chat/-) how=Brief why=Resume by=Person words=w1
+J-02 BriefedMoveTests.The_persons_press_for_a_conversation_whose_account_cools_opens_on_another_ready_account => Move when=Now where=Settled:account-2(chat/-) how=Brief why=Resume by=Person words=w1
+J-03 BriefedMoveTests.The_persons_press_with_every_account_cooling_opens_nothing_and_counts_nothing => Wait until=+2h why=AccountCooling accounts=account-1 doors=StartFrom
+J-04 BriefedMoveTests.A_conversation_whose_account_the_person_picked_keeps_to_it_in_the_new_part => Move when=Now where=Pick:account-1(chat/-)!kept how=Brief why=Resume by=Person words=w1
+J-05 BriefedMoveTests.A_picked_conversations_new_part_keeps_the_pick_and_its_next_go_on_waits_for_that_account:False => Move when=Now where=Pick:account-1(chat/-)!kept how=Brief why=Resume by=Person words=w1
+J-06 BriefedMoveTests.A_picked_conversations_new_part_keeps_the_pick_and_its_next_go_on_waits_for_that_account:True => Move when=Now where=Pick:account-1(chat/-)!kept how=Brief why=Resume by=Daoris words=w1
+J-07 BriefedMoveTests.An_unpicked_conversations_new_part_keeps_no_pick_and_its_next_go_on_walks => Move when=Now where=Settled:account-2(chat/-) how=Brief why=Resume by=Person words=w1
+J-08 BriefedMoveTests.A_lost_conversation_goes_on_by_the_walk_with_its_own_account_first_where_ready:False,account-2 => Move when=Now where=Own:account-1(chat/-) how=Brief why=Resume by=Daoris words=w1
+J-09 BriefedMoveTests.A_lost_conversation_goes_on_by_the_walk_with_its_own_account_first_where_ready:True,account-2 => Move when=Now where=Settled:account-2(chat/-) how=Brief why=Resume by=Daoris words=w1
+
+## D the limit move of a live conversation
+D-01 LimitGoesOnProcessTests.A_chat_whose_account_answers_a_limit_goes_on_on_the_next_account_with_the_held_words => Move when=Now where=Settled:account-2(chat/-) how=Brief why=Limit by=Daoris words=w1
+D-02 LimitGoesOnProcessTests.A_chat_whose_account_the_person_picked_waits_for_it_at_its_limit_rather_than_going_on_on_the_next_account => Wait until=+2h why=LimitReset accounts=account-1 doors=-
+D-03 LimitGoesOnProcessTests.Ask_Daoris_whose_account_answers_a_limit_goes_on_in_its_room_on_the_next_account_with_the_held_words => Move when=Now where=Settled:account-2(ask-daoris/-) how=Brief why=Limit by=Daoris words=w1
+D-04 LimitGoesElsewhereProcessTests.A_chat_whose_agent_has_no_account_left_goes_on_with_its_actor_s_next_choice_on_another_agent => Move when=Now where=Settled@other(chat/2) how=Brief why=Limit by=Daoris words=w1
+D-05 LimitGoesElsewhereProcessTests.Ask_Daoris_whose_agent_has_no_account_left_goes_on_with_its_next_choice_in_its_room => Move when=Now where=Settled@other(ask-daoris/2) how=Brief why=Limit by=Daoris words=w1
+D-06 LimitGoesElsewhereProcessTests.A_chat_on_a_pick_or_with_no_other_choice_waits_saying_why:True => Wait until=+2h why=LimitReset accounts=account-1 doors=-
+D-07 LimitGoesElsewhereProcessTests.A_chat_on_a_pick_or_with_no_other_choice_waits_saying_why:False => Wait until=+2h why=LimitReset accounts=account-1 doors=-
+D-08 code:Course/Chat/LimitMove.cs:107 => Wait until=+2h why=LimitReset accounts=account-1 doors=-
+
+## A the driven go-on
+A-01 ContinuationTests.The_same_adapter_account_and_tree_with_a_kept_id_resume => Resume words=w1
+A-02 ContinuationTests.A_different_account_never_resumes:account-1,account-2 => Move when=Now where=Settled:account-2(build/1) how=Brief why=Retry by=Daoris words=w1
+A-03 ContinuationTests.A_changed_adapter_falls_back_naming_both => Move when=Now where=Own:account-1(build/1) how=Brief why=Retry by=Daoris words=w1
+A-04 ContinuationTests.A_tree_that_is_gone_falls_back => Move when=Now where=Own:account-1(build/1) how=Brief why=Retry by=Daoris words=w1
+A-05 ContinuationTests.No_kept_id_falls_back => Move when=Now where=Own:account-1(build/1) how=Brief why=Retry by=Daoris words=w1
+A-06 ContinuationTests.A_door_that_cannot_resume_falls_back_naming_the_adapter => Move when=Now where=Own:account-1(build/1) how=Brief why=Retry by=Daoris words=w1
+A-07 ContinuationTests.Only_another_client_holding_the_conversation_holds_a_driven_record_for_the_person => Hold why=CannotGoOn doors=- repair=None code=elsewhere
+A-08 ContinuationTests.Words_whose_agent_is_no_longer_here_wait_with_the_hand_overs_offer => Hold why=CannotGoOn doors=HandOver repair=None code=agent-gone
+A-09 ContinuationTests.Words_waiting_on_an_ended_record_resume_its_own_conversation:completed => Resume words=w1
+A-10 ContinuationTests.Words_waiting_on_an_ended_record_resume_its_own_conversation:declined => Resume words=w1
+A-11 ContinuationTests.Words_waiting_on_an_ended_record_resume_its_own_conversation:stopped => Resume words=w1
+A-12 ContinuationTests.Words_waiting_on_an_ended_record_resume_its_own_conversation:failed => Resume words=w1
+A-13 ContinuationTests.An_ended_record_with_no_words_waiting_has_ended => Hold why=Stays doors=- repair=None code=-
+A-14 ContinuationTests.What_never_goes_on_is_refused_before_anything_else:teammate => Never why=Teammate
+A-15 ContinuationTests.What_never_goes_on_is_refused_before_anything_else:intake => Never why=Intake
+A-16 ContinuationTests.What_never_goes_on_is_refused_before_anything_else:stood-down => Never why=StoodDown
+A-17 SessionMessagesTickTests.A_closed_quests_session_whose_conversation_was_lost_goes_on_as_a_conversation_where_a_runner_is:True => Move when=Now where=Own:account-1(build/1) how=Brief why=Resume by=Daoris words=w1
+A-18 SessionMessagesTickTests.A_closed_quests_session_whose_conversation_was_lost_goes_on_as_a_conversation_where_a_runner_is:False => Hold why=CannotGoOn doors=StartFrom repair=None code=gone
+A-19 SessionMessagesTickTests.Words_to_a_session_whose_quest_closed_go_on_in_the_same_session => Resume words=w1
+A-20 SessionMessagesTickTests.The_persons_answer_to_a_park_its_resume_made_goes_on_though_the_quest_still_names_its_question => Resume words=w1
+A-21 SessionMessagesTickTests.Words_a_closed_quests_session_cannot_go_on_with_wait_and_are_not_tried_again_until_more_are_said => Hold why=CannotGoOn doors=StartFrom repair=None code=elsewhere
+A-22 SessionMessagesTickTests.Words_to_a_session_whose_tree_was_removed_go_on_in_its_tree_made_again_on_its_branch => Resume words=w1
+A-23 SessionMessagesTickTests.Words_said_while_a_native_session_works_go_on_in_its_own_conversation_before_it_concludes => Resume words=w1
+A-24 SessionMessagesTickTests.A_taken_quests_record_whose_conversation_another_client_holds_waits_for_the_person => Hold why=CannotGoOn doors=- repair=None code=elsewhere
+A-25 PlannerTests.A_parked_session_the_person_answered_is_carried_on_from_it => Resume words=w1
+A-26 code:Loop/Driver.cs:2501 => Move when=Now where=Own:account-1(build/1) how=Brief why=Retry by=Daoris words=w1
+
+## F the driven limit resume, decided in the carry-on's own start
+F-01 LimitResumeTickTests.An_update_closed_take_resumes_in_its_own_conversation_without_a_strike => Resume words=-+Restart:restart/s1/b7
+F-02 LimitResumeTickTests.A_line_whose_own_account_freed_resumes_its_own_conversation_with_Daoris_s_word_and_no_brief:held => Wait until=+1h why=LimitReset accounts=account-1 doors=-
+F-03 LimitResumeTickTests.A_line_whose_own_account_freed_resumes_its_own_conversation_with_Daoris_s_word_and_no_brief:resumed => Resume words=-+LimitReset:limit-reset/s1/2026-10-03T16:00:00Z
+F-04 LimitResumeTickTests.A_full_resume_refused_gone_goes_on_briefed_in_the_same_start_and_leaves_no_word => Move when=Now where=Own:account-1(build/1) how=Brief why=Retry by=Daoris words=-
+F-05 LimitResumeTickTests.A_full_resume_refused_elsewhere_keeps_the_word_marked_and_holds_the_line_for_the_person => Hold why=CannotGoOn doors=- repair=None code=elsewhere
+F-06 LimitResumeTickTests.Words_on_a_limited_record_resumed_on_its_own_account_go_first_and_Daoris_s_word_last => Resume words=w1+LimitReset:limit-reset/s1/2026-10-03T16:00:00Z
+F-07 code:Agents/HarnessRoster.cs:1038 => Wait until=+1h why=LimitReset accounts=account-1 doors=-
+F-08 code:Loop/DriverContinuations.cs:58 => Move when=Now where=Settled:account-1(build/1) how=Brief why=CarryOn by=Daoris words=-
+
+## K the driven carry-on
+K-01 HandOverLookTests.A_quest_s_start_continues_the_session_it_was_handed_from_or_a_limit_cut_off_on_another_account:handed => Move when=Now where=Settled@other:account-2(build/1) how=Brief why=Agent by=Agent words=-
+K-02 HandOverLookTests.A_quest_s_start_continues_the_session_it_was_handed_from_or_a_limit_cut_off_on_another_account:limit => Move when=Now where=Settled:account-2(build/1) how=Brief why=Limit by=Daoris words=-
+K-03 HandOverLookTests.A_limit_s_move_to_another_agent_is_the_limit_s_move_though_both_accounts_are_named_alike => Move when=Now where=Settled@other:account-1(build/1) how=Brief why=Limit by=Daoris words=-
+K-04 HandOverLookTests.A_carry_on_names_its_link_retry_where_its_resume_fell_back_and_the_person_where_they_pressed_it:retry => Move when=Now where=Own:account-1(build/1) how=Brief why=Retry by=Daoris words=-
+K-05 HandOverLookTests.A_carry_on_names_its_link_retry_where_its_resume_fell_back_and_the_person_where_they_pressed_it:pressed => Move when=Now where=Settled:account-2(build/1) how=Brief why=CarryOn by=Person words=-
+K-06 HandOverLookTests.A_carry_on_names_its_link_retry_where_its_resume_fell_back_and_the_person_where_they_pressed_it:carry-on => Move when=Now where=Settled:account-2(build/1) how=Brief why=CarryOn by=Daoris words=-
+K-07 HandOverLookTests.A_carry_on_the_curve_moves_to_another_account_names_the_curve => Move when=Now where=Settled:account-2(build/1) how=Brief why=Curve by=Daoris words=-
+K-08 PlannerTests.A_taken_quest_whose_last_session_here_was_cut_off_is_carried_on_from_that_session => Move when=Now where=Settled:account-1(build/1) how=Brief why=CarryOn by=Daoris words=-
+K-09 PlannerTests.A_taken_quest_whose_last_session_here_was_interrupted_is_carried_on_from_that_session => Move when=Now where=Settled:account-1(build/1) how=Brief why=CarryOn by=Daoris words=-
+K-10 PlannerTests.An_open_quest_whose_last_session_a_limit_ended_is_carried_on_not_started_afresh => Move when=Now where=Settled:account-2(build/1) how=Brief why=Limit by=Daoris words=-
+K-11 PlannerTests.A_released_stop_of_a_taken_quest_is_carried_on_in_its_tree => Move when=Now where=Settled:account-1(build/1) how=Brief why=CarryOn by=Person words=-
+K-12 PlannerTests.A_stood_down_session_whose_lost_take_the_person_brought_forward_is_carried_on_in_its_tree => Move when=Now where=Settled:account-1(build/1) how=Brief why=CarryOn by=Person words=-
+K-13 PlannerTests.An_open_quest_whose_failed_session_committed_work_is_carried_on_in_that_tree => Move when=Now where=Settled:account-1(build/1) how=Brief why=CarryOn by=Daoris words=-
+K-14 PlannerTests.A_taken_quest_the_person_stopped_is_held_saying_why => Hold why=Stays doors=TryAgain repair=None code=-
+K-15 PlannerTests.A_take_the_pause_stopped_sits_and_Resume_carries_it_on => Hold why=Stays doors=- repair=None code=-
+
+## N past the transient bound
+N-01 TransientRetryTickTests.Past_the_bound_the_quest_is_held_across_looks_until_the_person_s_word_resumes_the_same_conversation:held => Hold why=TransientBound doors=TryAgain,Say repair=None code=-
+N-02 TransientRetryTickTests.Past_the_bound_the_quest_is_held_across_looks_until_the_person_s_word_resumes_the_same_conversation:word => Resume words=w1
+N-03 TransientRetryTickTests.An_open_quest_past_the_bound_is_never_started_afresh => Hold why=TransientBound doors=TryAgain,Say repair=None code=-
+N-04 TransientRetryTickTests.Try_again_releases_one_end_alone_and_the_same_record_exhausted_again_is_held_across_looks_and_a_restart:released => Resume words=-+TransientRetry:transient-release/s1/2026-10-03T14-00-00.0000000Z
+N-05 TransientRetryTickTests.Try_again_releases_one_end_alone_and_the_same_record_exhausted_again_is_held_across_looks_and_a_restart:again => Hold why=TransientBound doors=TryAgain,Say repair=None code=-
+N-06 TransientRetryTickTests.An_open_quest_with_no_commits_released_by_try_again_resumes_its_original_conversation => Resume words=-+TransientRetry:transient-release/s1/2026-10-03T14-00-00.0000000Z
+N-07 TransientRetryTickTests.A_resume_whose_open_fails_past_the_bound_holds_its_carried_words_until_a_new_word_of_theirs:held => Hold why=TransientBound doors=TryAgain,Say repair=None code=-
+N-08 TransientRetryTickTests.A_resume_whose_open_fails_past_the_bound_holds_its_carried_words_until_a_new_word_of_theirs:new-word => Resume words=w1,w2
+
+## G the curve
+G-01 CurveMoveTests.A_turn_s_end_is_judged_once_and_only_with_nothing_running_opening_or_queued => Hold why=Stays doors=- repair=None code=-
+G-02 CurveMoveTests.Over_its_curve_with_another_account_with_room_it_moves_there_by_the_box => Move when=TurnEnd where=Pick:account-2(chat/-) how=Brief why=Curve by=Daoris words=-
+G-03 CurveMoveTests.A_candidate_whose_reading_refuses_the_conversation_s_model_is_not_moved_to => Hold why=Stays doors=- repair=None code=-
+G-04 CurveMoveTests.Switch_off_moves_nothing => Hold why=SwitchOff doors=- repair=None code=-
+G-05 CurveMoveTests.Under_its_curve_by_the_margin_it_stays_and_reads_nothing => Hold why=Stays doors=- repair=None code=-
+G-06 CurveMoveTests.With_no_account_with_room_it_stays_and_nothing_is_said => Hold why=Stays doors=- repair=None code=-
+G-07 CurveMoveTests.A_conversation_moved_by_the_curve_is_held_for_thirty_minutes_from_its_record_s_making => Hold why=Stays doors=- repair=None code=-
+G-08 CurveMoveTests.A_conversation_handed_over_for_another_reason_is_not_held => Move when=TurnEnd where=Pick:account-2(chat/-) how=Brief why=Curve by=Daoris words=-
+G-09 CurveMoveTests.A_hand_over_waiting_or_being_taken_judges_nothing => Hold why=Stays doors=- repair=None code=-
+G-10 CurveMoveProcessTests.A_conversation_over_its_curve_moves_at_its_turn_s_end_once_and_is_held_after => Move when=TurnEnd where=Pick:account-2(chat/-) how=Brief why=Curve by=Daoris words=-
+G-11 code:Course/Chat/CurveMove.cs:73 => Hold why=Stays doors=- repair=None code=-
+
+## H a conversation's hand-over, with the consent before an agent's ask
+H-01 HandOverTests.A_conversation_is_handed_over_by_keeping_its_box => Move when=TurnEnd where=Pick@codex-acp:work(chat/-)!kept how=Brief why=Limit by=Person words=-
+H-02 HandOverTests.What_cannot_be_handed_over_is_refused_by_its_code_and_nothing_is_kept:laptop/s9 => Never why=Teammate
+H-03 HandOverTests.What_cannot_be_handed_over_is_refused_by_its_code_and_nothing_is_kept:1ntake00 => Never why=Intake
+H-04 HandOverTests.What_cannot_be_handed_over_is_refused_by_its_code_and_nothing_is_kept:same-agent => Hold why=Refused doors=- repair=None code=same-agent
+H-05 HandOverTests.What_cannot_be_handed_over_is_refused_by_its_code_and_nothing_is_kept:tr33g0n3 => Hold why=Refused doors=- repair=None code=tree-gone
+H-06 HandOverTests.What_cannot_be_handed_over_is_refused_by_its_code_and_nothing_is_kept:h4nd3d00 => Never why=Superseded
+H-07 HandOverTests.A_second_hand_over_waits_behind_the_first_and_Ask_Daoris_is_refused:second => Hold why=Refused doors=- repair=None code=waiting
+H-08 HandOverTests.A_second_hand_over_waits_behind_the_first_and_Ask_Daoris_is_refused:help => Hold why=Refused doors=- repair=None code=help
+H-09 ChatHandOverTests.A_hand_over_press_with_an_account_keeps_the_pick_and_no_other_hand_over_does:press,person,account-2,True => Move when=TurnEnd where=Pick@fake:account-2(chat/-)!kept how=Brief why=Press by=Person words=-
+H-10 ChatHandOverTests.A_hand_over_press_with_an_account_keeps_the_pick_and_no_other_hand_over_does:press,person,-,False => Move when=TurnEnd where=Settled@other(chat/-) how=Brief why=Press by=Person words=-
+H-11 ChatHandOverTests.A_hand_over_press_with_an_account_keeps_the_pick_and_no_other_hand_over_does:agent,agent,account-2,False => Move when=TurnEnd where=Pick@fake:account-2(chat/-) how=Brief why=Agent by=Agent words=-
+H-12 ChatHandOverTests.A_hand_over_press_with_an_account_keeps_the_pick_and_no_other_hand_over_does:curve,daoris,account-2,False => Move when=TurnEnd where=Pick@fake:account-2(chat/-) how=Brief why=Curve by=Daoris words=-
+H-13 ChatHandOverTests.A_hand_over_of_a_picked_conversation_to_another_agent_keeps_no_pick => Move when=TurnEnd where=Settled@other(chat/-) how=Brief why=Press by=Person words=-
+H-14 HandOverAskLookTests.Under_ask_the_ask_waits_for_the_persons_word_naming_the_agent_and_its_record_says_so_once => Hold why=ConsentRefused doors=LetAskGo,NotNow repair=None code=-
+H-15 HandOverAskLookTests.Under_off_the_ask_is_refused_and_its_record_says_why => Hold why=ConsentRefused doors=- repair=None code=off
+H-16 HandOverAskLookTests.Under_on_a_conversations_ask_is_kept_as_a_box_for_its_turns_end_or_handed_to_the_chat_runner => Move when=TurnEnd where=Settled@codex-acp(chat/-) how=Brief why=Agent by=Agent words=-
+H-17 HandOverAskLookTests.The_persons_yes_lets_a_waiting_ask_go_to_the_agent_named => Move when=TurnEnd where=Settled@codex-acp(chat/-) how=Brief why=Agent by=Agent words=-
+
+## I a quest's session's hand-over, with the consent before an agent's ask
+I-01 HandOverTests.A_quest_s_session_is_handed_over_by_keeping_its_box_for_the_drivers_look => Move when=Now where=Named@codex-acp:work(build/1) how=Brief why=Limit by=Person words=w1
+I-02 HandOverTests.What_a_quest_s_session_cannot_be_handed_over_for_is_refused_by_its_code_and_nothing_is_kept:same-agent => Hold why=Refused doors=- repair=None code=same-agent
+I-03 HandOverTests.What_a_quest_s_session_cannot_be_handed_over_for_is_refused_by_its_code_and_nothing_is_kept:d0n3q000 => Hold why=Refused doors=- repair=None code=quest-closed
+I-04 HandOverTests.What_a_quest_s_session_cannot_be_handed_over_for_is_refused_by_its_code_and_nothing_is_kept:st00d000 => Never why=StoodDown
+I-05 HandOverTests.What_a_quest_s_session_cannot_be_handed_over_for_is_refused_by_its_code_and_nothing_is_kept:0ld00000 => Never why=Superseded
+I-06 HandOverTests.What_a_quest_s_session_cannot_be_handed_over_for_is_refused_by_its_code_and_nothing_is_kept:p4rk0000 => Hold why=Refused doors=- repair=None code=parked
+I-07 HandOverTests.A_park_whose_own_agent_is_no_longer_here_may_be_handed_over => Move when=Now where=Settled@codex-acp(build/1) how=Brief why=Press by=Person words=w1
+I-08 HandOverTests.A_second_ask_for_a_quest_s_session_waits_behind_the_first_and_an_open_quest_may_be_handed_over:open => Move when=Now where=Settled@codex-acp(build/1) how=Brief why=Press by=Person words=w1
+I-09 HandOverTests.A_second_ask_for_a_quest_s_session_waits_behind_the_first_and_an_open_quest_may_be_handed_over:second => Hold why=Refused doors=- repair=None code=waiting
+I-10 HandOverAskLookTests.Under_on_a_running_quest_sessions_ask_waits_for_its_turns_end => Move when=TurnEnd where=Settled@codex-acp(build/1) how=Brief why=Agent by=Agent words=w1
+I-11 HandOverAskLookTests.Under_on_a_quest_session_that_ended_its_turn_is_handed_over_with_its_note => Move when=Now where=Settled@codex-acp(build/1) how=Brief why=Agent by=Agent words=w1
+I-12 HandOverAskLookTests.An_ask_of_a_session_whose_quest_is_closed_is_refused_at_the_ask_by_that_reason => Hold why=Refused doors=- repair=None code=quest-closed
+I-13 HandOverAtTurnEndTests.Under_on_the_ask_is_taken_at_the_turns_end_with_its_note => Move when=TurnEnd where=Settled@codex-acp(build/1) how=Brief why=Agent by=Agent words=w1
+I-14 HandOverAtTurnEndTests.Under_ask_nothing_is_taken_until_the_persons_yes => Hold why=ConsentRefused doors=LetAskGo,NotNow repair=None code=-
+I-15 HandOverAtTurnEndTests.Under_off_or_with_no_ask_nothing_is_taken:off => Hold why=ConsentRefused doors=- repair=None code=off
+I-16 HandOverAtTurnEndTests.Under_off_or_with_no_ask_nothing_is_taken:no-ask => Hold why=Stays doors=- repair=None code=-
+I-17 HandOverAtTurnEndTests.Under_on_the_ask_goes_to_builds_next_entry_on_another_agent_not_the_rosters => Move when=TurnEnd where=Settled@dsh(build/1) how=Brief why=Agent by=Agent words=w1
+I-18 HandOverAtTurnEndTests.A_cooling_build_hands_over_only_on_the_persons_press_under_ask_and_on_alike:no-ask => Hold why=Stays doors=- repair=None code=-
+I-19 HandOverAtTurnEndTests.A_cooling_build_hands_over_only_on_the_persons_press_under_ask_and_on_alike:pressed => Move when=Now where=Settled@dsh(build/1) how=Brief why=Limit by=Person words=w1
+I-20 HandOverAskTickTests.An_agents_ask_under_on_is_taken_at_its_turns_end_and_the_next_agent_is_told_its_note => Move when=TurnEnd where=Settled@codex-acp(build/1) how=Brief why=Agent by=Agent words=w1
+I-21 HandOverQuestTickTests.A_running_quest_session_handed_to_stub_is_stopped_and_the_quest_goes_on_in_the_same_tree_on_stub => Move when=Now where=Settled@stub(build/1) how=Brief why=Press by=Person words=w1
+I-22 HandOverLookTests.A_running_quest_session_is_stopped_the_quest_held_on_the_named_agent_and_carried_on_at_the_next_look => Move when=Now where=Settled@codex-acp(build/1) how=Brief why=Press by=Person words=w1
+I-23 HandOverLookTests.A_box_whose_quest_closed_meanwhile_stops_nothing_and_says_why => Hold why=Refused doors=- repair=None code=quest-closed
+
+## C go on in a new session; start a conversation with these words
+C-01 GoOnNewTests.Words_held_while_their_account_cools_are_chosen_to_go_on_in_a_new_session => Move when=Now where=Settled:account-2(build/1) how=Brief why=Retry by=Daoris words=w1,w2
+C-02 GoOnNewTests.An_answered_park_may_go_on_in_a_new_session => Move when=Now where=Settled:account-2(build/1) how=Brief why=Retry by=Daoris words=w1
+C-03 GoOnNewTests.What_cannot_go_on_in_a_new_session_is_refused_by_its_code_and_nothing_is_kept:laptop/s9 => Never why=Teammate
+C-04 GoOnNewTests.What_cannot_go_on_in_a_new_session_is_refused_by_its_code_and_nothing_is_kept:1ntake00 => Never why=Intake
+C-05 GoOnNewTests.What_cannot_go_on_in_a_new_session_is_refused_by_its_code_and_nothing_is_kept:st00d000 => Never why=StoodDown
+C-06 GoOnNewTests.What_cannot_go_on_in_a_new_session_is_refused_by_its_code_and_nothing_is_kept:e4rl1er0 => Never why=Superseded
+C-07 GoOnNewTests.What_cannot_go_on_in_a_new_session_is_refused_by_its_code_and_nothing_is_kept:h4nd3d00 => Never why=Superseded
+C-08 GoOnNewTests.What_cannot_go_on_in_a_new_session_is_refused_by_its_code_and_nothing_is_kept:qu1et000 => Hold why=Refused doors=- repair=None code=no-words
+C-09 GoOnNewTests.What_cannot_go_on_in_a_new_session_is_refused_by_its_code_and_nothing_is_kept:w0rk1ng0 => Hold why=Refused doors=- repair=None code=running
+C-10 GoOnNewTests.What_cannot_go_on_in_a_new_session_is_refused_by_its_code_and_nothing_is_kept:ch4t0000 => Hold why=Refused doors=StartFrom repair=None code=conversation
+C-11 GoOnNewTests.What_cannot_go_on_in_a_new_session_is_refused_by_its_code_and_nothing_is_kept:cl0sed00 => Hold why=Refused doors=StartFrom repair=None code=closed
+C-12 GoOnNewTests.Words_whose_account_is_not_cooling_are_not_moved_to_a_new_session => Hold why=Refused doors=- repair=None code=not-cooling
+C-13 StartFromTests.The_words_start_a_conversation_and_leave_their_record_naming_it => Start key=i-1 words=w1
+C-14 StartFromTests.An_ended_conversations_words_start_a_conversation_too => Start key=i-1 words=w1
+C-15 StartFromTests.A_helpers_answer_is_never_carried_into_a_new_conversation_as_the_persons_words => Start key=i-1 words=w1
+C-16 StartFromTests.What_is_refused_starts_nothing_and_takes_nothing:teammate => Never why=Teammate
+C-17 StartFromTests.What_is_refused_starts_nothing_and_takes_nothing:help => Hold why=Refused doors=- repair=None code=help
+C-18 StartFromTests.What_is_refused_starts_nothing_and_takes_nothing:stood-down => Never why=StoodDown
+C-19 StartFromTests.What_is_refused_starts_nothing_and_takes_nothing:working => Hold why=Refused doors=- repair=None code=running
+C-20 StartFromTests.What_is_refused_starts_nothing_and_takes_nothing:awaiting-person => Hold why=Refused doors=- repair=None code=running
+C-21 StartFromTests.What_is_refused_starts_nothing_and_takes_nothing:chat-working => Hold why=Refused doors=- repair=None code=running
+C-22 StartFromTests.What_is_refused_starts_nothing_and_takes_nothing:no-words => Hold why=Refused doors=- repair=None code=no-words
+C-23 StartFromTests.What_is_refused_starts_nothing_and_takes_nothing:taken => Hold why=Refused doors=- repair=None code=carried
+C-24 StartFromTests.What_is_refused_starts_nothing_and_takes_nothing:open => Hold why=Refused doors=- repair=None code=carried
+C-25 StartFromTests.A_conversation_that_went_on_in_another_starts_nothing_and_names_it => Never why=Superseded
+C-26 StartFromTests.An_intake_and_no_record_are_refused_by_their_codes:i1 => Never why=Intake
+C-27 StartWithTests.The_words_and_files_are_the_first_message => Start key=i-1 words=w1
+C-28 StartWithTests.A_retry_while_the_first_runs_shares_its_result => Start key=i-1 words=w1
+C-29 StartWithTests.A_retry_after_it_finished_answers_the_original_from_its_file => Start key=i-2 words=w1
+
+## AA the answers-alone hold (AnswersAloneHoldTests, AnswersAloneTests), as course rows
+AA-01 AnswersAloneHoldTests.A_third_answer_alone_is_marked_for_the_person_by_the_agent_that_answered_and_said_once => Hold why=AnswersAlone doors=LetAnswerGoOn,NotNow,Say repair=None code=answers-alone
+AA-02 AnswersAloneHoldTests.A_second_answer_alone_goes_on_unmarked => Resume words=h1
+AA-03 AnswersAloneHoldTests.The_line_is_counted_across_a_hand_over => Hold why=AnswersAlone doors=LetAnswerGoOn,NotNow,Say repair=None code=answers-alone
+AA-04 AnswersAloneHoldTests.A_line_with_no_events_here_and_a_teammates_record_never_hold:no-events => Resume words=h1
+AA-05 AnswersAloneHoldTests.A_line_with_no_events_here_and_a_teammates_record_never_hold:teammate => Never why=Teammate
+AA-06 AnswersAloneHoldTests.Words_with_the_persons_among_them_never_hold => Resume words=h1,w1
+AA-07 AnswersAloneHoldTests.The_look_marks_the_records_whose_answers_would_go_on_a_third_time => Hold why=AnswersAlone doors=LetAnswerGoOn,NotNow,Say repair=None code=answers-alone
+AA-08 AnswersAloneHoldTests.Go_on_with_this_answer_takes_the_mark_away_and_counts_as_the_persons_word => Resume words=h1
+AA-09 AnswersAloneHoldTests.Not_now_keeps_the_answer_for_the_person_until_their_own_word:kept => Hold why=AnswersAlone doors=Say repair=None code=not-now
+AA-10 AnswersAloneHoldTests.Not_now_keeps_the_answer_for_the_person_until_their_own_word:their-word => Resume words=h1,w1
+AA-11 AnswersAloneTests.The_third_answer_in_a_row_with_nobody_between_holds_and_the_second_does_not:third => Hold why=AnswersAlone doors=LetAnswerGoOn,NotNow,Say repair=None code=answers-alone
+AA-12 AnswersAloneTests.The_third_answer_in_a_row_with_nobody_between_holds_and_the_second_does_not:second => Resume words=h1
+AA-13 AnswersAloneTests.A_line_with_no_events_counts_nothing_and_never_holds => Resume words=h1
+AA-14 AnswersAloneTests.Only_answers_alone_are_held:persons => Resume words=h1,w1
+AA-15 AnswersAloneTests.Only_answers_alone_are_held:daoris => Resume words=h1,r1
+AA-16 AnswersAloneTests.Only_answers_alone_are_held:none => Hold why=Stays doors=- repair=None code=-
+AA-17 AnswersAloneTests.Supervisor_only_go_ons_count_and_the_third_in_a_row_is_held => Hold why=AnswersAlone doors=LetAnswerGoOn,NotNow,Say repair=None code=answers-alone
+AA-18 AnswersAloneTests.The_supervisors_route_is_at_the_bound_by_both_predicates => Hold why=AnswersAlone doors=- repair=None code=supervisor-bound
+
+## S a move record standing for the line, as the design has it; no path writes one yet
+S-01 design:§3.1-O-2 => Never why=StandingMove
+S-02 design:§3.1-round-5-§19.3 => Hold why=MoveHeld doors=- repair=None code=-
+S-03 design:§3.3 => Resume words=w1
+
+## Differences between paths: rows answering alike facts two ways, a decision each for the row that adopts it (D212's FOUNDATION1e part 2 note)
+# difference-N <adopting rows> <its rows> <what differs>
+difference-1 h,i B-30,B-29,E-16,A-26 which words go to a new part
+difference-2 h,i E-02,F-03 Daoris's limit word's key
+difference-3 h E-02,F-07 the maker's usage read before an own-account resume
+difference-4 h,i D-06,K-03 a move to another agent at a limit
+difference-5 h,i H-01,I-01 when a running hand-over happens
+difference-6 h E-14,LA-13 cannot-go-on's fall-back
+difference-7 h B-28,B-27,LA-19 the asked model not offered
+difference-8 h,i H-09,H-11,I-01 a named account: the pick
+difference-9 h,i AA-18,AA-17 the answers-alone hold's timing
+difference-10 h,i D-08,K-08 the same-account refusal for an automatic part
+
+## Reasons a case of a path's suite is no row: its answer is no course's
+E an executor's effect: a note, a mark, a word kept or taken off, a file, a line in the log, a record's state
+R a reading the executor hands the course as a fact: the resume judge, the walk, the answers-alone count, the curve's decision, an ask's judge, a tree made again
+P the planner's own judgement before any carry-on is planned: strikes, takes, claims, a pause
+W inside the run (D210 point 3): the transient retry, the native door's one retry
+V a press's argument its door validates: an unknown agent, a malformed id, a usage
+X a precondition the executor checks before it acts and asks again where one moved: a word taken back, a box that no longer holds
+T which executor takes a record, not how its line goes on
+
+## Left out, by suite, each with its reason
+out ChatGoOnTests.The_ledger_refusing_the_move_holds_the_words_and_says_what_held_them E
+out ChatGoOnTests.A_torn_driver_json_holds_the_words_and_says_so E
+out ChatGoOnTests.Only_words_kept_waiting_on_a_record_are_taken_up R
+out ChatGoOnTests.A_chat_taken_up_by_itself_announces_its_end E
+out ChatGoOnTests.A_word_taken_back_between_the_look_and_the_move_is_never_handed_to_the_run X
+out ChatGoOnTests.A_chat_put_back_after_its_words_were_taken_back_keeps_what_ended_it E
+out ChatGoOnTests.The_words_handed_are_the_records_after_the_move_and_the_looks_only_where_it_cannot_be_read X
+out ChatGoOnTests.A_conversation_going_on_in_its_own_tree_is_told_after_the_words_what_its_start_did_against_the_line E
+out ChatGoOnTests.A_going_on_with_a_helpers_answer_says_whose_words_it_goes_on_with E
+out ChatGoOnTests.A_helpers_answer_left_on_a_record_no_runner_holds_starts_nothing T
+out ChatGoOnTests.A_chat_the_sweep_takes_up_announces_its_end E
+out ChatGoOnTests.A_sweep_the_service_does_not_answer_takes_nothing_up E
+out ChatGoOnTests.A_record_is_read_with_what_going_on_needs R
+out ChatGoesOnProcessTests.A_native_chats_resume_that_ends_before_naming_its_conversation_is_tried_once_more W
+out ChatGoesOnProcessTests.A_stop_with_a_word_on_its_way_says_the_agent_may_have_read_it E
+out ChatGoesOnProcessTests.A_chat_whose_agent_named_no_conversation_says_so_as_it_ends E
+out ChatGoesOnProcessTests.An_update_keeps_one_unsent_restart_word_only_for_work_it_cuts E
+out ChatGoesOnProcessTests.A_door_opening_during_the_close_is_held_and_keeps_one_restart_word E
+out ChatGoesOnProcessTests.A_spoken_conversation_without_an_id_says_not_kept_beside_its_close E
+out ChatGoesOnProcessTests.A_turn_finishing_during_close_preparation_starts_no_next_turn_and_keeps_its_restart_unsent E
+out ChatGoesOnInSyncProcessTests.A_conversation_going_on_in_its_own_tree_starts_from_the_line_that_took_its_commit_and_is_told_after_the_words E
+out LimitWaitsProcessTests.A_part_the_live_limit_moves_start_opens_keeps_the_pick_only_on_the_account_the_person_picked E
+out LimitWaitsProcessTests.A_wait_cached_for_tomorrow_wakes_at_the_next_look_when_an_account_frees_early E
+out LimitWaitsProcessTests.A_move_opened_and_not_delivered_is_delivered_to_its_new_part_at_the_come_up E
+out LimitWaitsProcessTests.A_word_kept_between_the_moves_box_and_its_go_on_reaches_the_new_part_once E
+out LimitWaitsProcessTests.A_move_delivered_as_the_shell_ended_is_never_delivered_twice E
+out ContinuationTests.The_working_note_and_the_opening_name_the_supervisor_never_your_answer E
+out ContinuationTests.A_go_on_hands_a_supervisors_word_only_where_it_is_the_tickets E
+out ContinuationTests.The_tools_own_sign_in_against_itself_is_the_same_account R
+out ContinuationTests.An_account_named_in_another_case_is_the_same_account R
+out ContinuationTests.A_park_with_no_tree_named_falls_back_as_gone R
+out ContinuationTests.An_id_another_adapter_kept_is_not_kept_for_this_one R
+out ContinuationTests.A_record_the_answer_already_ended_falls_back R
+out ContinuationTests.The_record_having_ended_is_said_before_anything_else R
+out ContinuationTests.The_wires_reasons_have_their_lines E
+out ContinuationTests.The_native_doors_failed_exit_is_a_reason_of_its_own_apart_from_gone R
+out ContinuationTests.A_fallback_is_said_on_the_park_it_ends_and_on_the_session_that_carries_on E
+out ContinuationTests.The_resumed_runs_first_line_names_its_door_and_a_version_that_moved E
+out ContinuationTests.The_log_line_says_whether_an_answer_resumed_and_why_not_by_code E
+out ContinuationTests.A_move_is_said_on_both_parts_and_in_the_machine_log E
+out ContinuationTests.Only_a_parked_record_with_an_answer_is_an_answered_park R
+out ContinuationTests.Only_the_three_rows_are_nevers R
+out ContinuationTests.Another_client_holding_the_conversation_has_its_line E
+out ContinuationTests.Words_wait_where_said_holds_any_or_on_an_answered_park_from_before_said R
+out ContinuationTests.A_resumed_run_on_an_ended_record_opens_with_your_words E
+out ContinuationTests.A_resumed_run_is_handed_the_files_said_with_its_words E
+out ContinuationTests.A_kept_file_is_found_by_the_name_the_record_gives_it E
+out ContinuationTests.A_record_moved_to_working_goes_back_as_it_was_where_every_word_was_taken_back_first X
+out ContinuationTests.A_resumed_run_that_could_not_start_is_a_failed_start_with_its_words_waiting E
+out ContinuationTests.A_fallback_hands_on_the_words_the_record_holds_now_not_those_the_look_read X
+out ContinuationTests.An_ended_record_that_cannot_go_on_says_why_on_its_note E
+out ContinuationTests.An_open_quests_start_is_handed_the_words_its_session_could_not_go_on_with E
+out ContinuationTests.A_closed_quests_session_ends_as_it_was_or_failed E
+out ContinuationTests.A_closed_quests_session_whose_turn_failed_going_on_ends_failed_with_the_doors_reason E
+out ContinuationTests.The_words_a_failed_turn_carried_wait_to_go_again_and_after_a_second_failure_wait_for_the_person E
+out ContinuationTests.Words_a_limited_turn_carried_always_wait_and_a_later_ordinary_failure_is_not_their_second E
+out ContinuationTests.A_park_whose_resumed_run_closes_its_quest_ends_completed E
+out ContinuationTests.A_record_whose_quest_had_closed_ends_as_a_closed_quests E
+out ContinuationTests.A_resumed_run_that_ends_still_holding_its_quest_parks_again E
+out ContinuationTests.A_closed_quests_ending_never_leaves_a_record_live E
+out ContinuationTests.The_reopen_line_says_from_where_whether_it_resumed_and_why_not E
+out ContinuationTests.A_chats_reopen_line_names_its_kind E
+out ContinuationTests.A_chats_record_goes_on_only_by_the_id_kept_for_it R
+out ContinuationTests.A_note_about_the_persons_words_names_them_and_the_reason_by_its_code E
+out SessionMessagesTickTests.An_answered_parks_resumed_run_still_in_its_turn_at_the_next_look_goes_on_once E
+out SessionMessagesTickTests.Words_said_to_the_session_that_asked_while_its_quest_waits_reach_the_session_its_resume_opens T
+out SessionMessagesTickTests.A_folder_left_where_a_sessions_tree_was_is_moved_aside_and_the_tree_made_again E
+out SessionMessagesTickTests.Words_to_a_session_whose_tree_and_branch_are_gone_are_held_and_no_harness_starts R
+out SessionMessagesTickTests.A_word_said_mid_turn_to_a_door_that_fails_waits_on_the_failed_record_and_the_next_tick_carries_it E
+out SessionMessagesTickTests.A_word_taken_back_between_the_look_and_the_move_never_goes X
+out SessionMessagesTickTests.A_resumed_run_that_could_not_start_fails_as_a_start_and_its_words_wait_on_it E
+out SessionMessagesTickTests.A_native_resume_that_ends_before_naming_its_conversation_is_tried_once_more W
+out SessionMessagesTickTests.A_word_taken_back_before_a_fallbacks_open_is_never_handed_to_the_new_session X
+out SessionMessagesTickTests.Every_word_taken_back_before_a_fallbacks_open_sends_nothing_and_leaves_no_fresh_tree X
+out LimitResumeTickTests.Two_limited_full_resumes_running_leave_the_words_waiting_and_no_word_of_Daoris_s E
+out LimitResumeTickTests.A_refusal_with_the_same_limit_just_after_the_reset_says_it_was_not_lifted_once_and_never_parks E
+out LimitResumeTickTests.A_cool_off_whose_write_fails_is_still_limited_with_no_strike_and_passes_the_account_until_its_reset E
+out LimitResumeTickTests.A_paused_line_keeps_no_word_until_it_is_resumed P
+out LimitResumeTickTests.A_start_held_before_it_goes_on_keeps_no_word E
+out TransientRetryTickTests.A_driven_session_failing_transient_twice_goes_on_in_the_same_conversation_and_ends_as_its_work_does W
+out TransientRetryTickTests.A_resume_after_its_answered_question_is_tried_again_through_a_transient_failure W
+out TransientRetryTickTests.The_person_s_word_to_a_closed_quest_s_session_is_tried_again_through_a_transient_failure W
+out TransientRetryTickTests.A_limit_at_the_open_after_a_transient_failure_cools_its_account E
+out TransientRetryTickTests.An_access_refusal_at_the_open_after_a_transient_failure_marks_its_account E
+out HandOverLookTests.A_conversation_s_box_is_left_to_the_shell T
+out HandOverLookTests.A_box_naming_an_agent_this_build_does_not_have_is_refused V
+out HandOverLookTests.The_store_goes_when_the_quest_closes_or_is_taken_elsewhere E
+out HandOverLookTests.The_store_goes_in_the_reopens_words_when_the_take_was_lost_to_it E
+out HandOverLookTests.The_store_stays_while_the_quest_is_this_machine_s E
+out HandOverLookTests.A_carry_on_the_curve_moved_opens_saying_the_curve_s_step E
+out HandOverLookTests.A_quest_s_open_names_the_session_it_continues_on_its_record E
+out CarryOnHandedTests.A_carry_on_is_handed_the_brief_of_its_line_with_the_cut_off_session_s_plan_and_last_words E
+out CarryOnHandedTests.After_a_limit_a_carry_on_is_told_the_last_session_ran_on_another_account_now_cooling E
+out CarryOnHandedTests.A_handed_over_carry_on_says_it_was_handed_over_from_the_agent_and_never_that_it_was_released E
+out CarryOnHandedTests.A_brought_forward_carry_on_says_the_person_brought_the_work_forward_and_never_that_it_was_cut_off E
+out CarryOnHandedTests.With_no_brief_the_carry_on_reads_as_it_did E
+out CarryOnHandedTests.Only_a_carry_on_is_handed_the_brief E
+out CarryOnHandedTests.The_brief_comes_after_what_the_session_before_left_in_the_tree_and_before_finishing E
+out CarryOnHandedTests.The_plan_kept_is_the_record_s_last E
+out CarryOnHandedTests.A_session_with_no_record_here_or_no_id_keeps_no_plan E
+out CarryOnHandedTests.Another_account_is_the_record_s_account_against_the_start_s E
+out CarryOnHandedTests.The_last_run_says_which_account_it_ran_on_and_whether_a_limit_cut_it_off E
+out CurveMoveTests.The_scope_s_accounts_are_candidates_with_what_each_said_and_whether_the_walk_finds_it_ready R
+out CurveMoveTests.The_read_at_a_turn_s_end_asks_each_ready_stale_account_once_a_minute R
+out CurveMoveTests.The_kept_override_s_model_is_the_one_each_candidate_is_judged_for R
+out CurveMoveTests.Within_the_margin_the_others_said_long_ago_are_read_first_and_judged_as_read R
+out CurveMoveTests.A_record_says_when_it_was_created E
+out HandOverTests.The_box_round_trips_without_a_byte_order_mark_or_a_carriage_return_and_clears E
+out HandOverTests.A_box_that_does_not_read_is_none E
+out HandOverTests.Taking_the_box_ends_the_old_starts_the_new_in_its_tree_and_briefs_it E
+out HandOverTests.A_handed_over_conversation_is_named_by_the_person_s_first_words_after_its_brief E
+out HandOverTests.A_move_by_the_curve_is_said_by_the_moved_pair_in_place_of_the_hand_over_s_lines E
+out HandOverTests.A_box_that_no_longer_holds_is_refused_with_nothing_ended_or_started X
+out HandOverTests.A_start_that_is_refused_says_why_and_leaves_no_box E
+out HandOverTests.A_briefing_that_did_not_reach_the_new_conversation_is_said E
+out HandOverTests.The_request_is_the_first_message_the_person_wrote_whole E
+out HandOverTests.A_handed_over_conversation_records_its_note_in_place_of_a_person_s_message E
+out HandOverTests.The_closing_note_is_asked_only_on_the_persons_press_or_a_change_of_agent_with_none_left E
+out HandOverTests.The_closing_note_is_the_agents_last_message_of_its_turn E
+out HandOverTests.A_new_part_handed_the_brief_and_the_persons_words_records_both_in_that_order E
+out HandOverTests.The_terminal_reads_an_id_an_agent_and_an_account_and_its_usage_says_the_verb V
+out HandOverTests.The_terminal_hands_the_ask_to_the_host_s_door_and_says_so_where_there_is_none E
+out HandOverTests.The_terminal_keeps_a_quest_s_session_s_box_for_the_look_and_never_opens_a_conversation E
+out HandOverTests.The_terminal_s_ask_of_a_quest_s_session_is_named_on_its_record_as_the_person_s_at_a_terminal E
+out HandOverTests.The_terminal_says_where_no_loop_holds_the_home_and_refuses_with_the_judge_s_sentence E
+out HandOverTests.The_terminal_says_what_came_of_it_in_one_line E
+out HandOverTests.A_take_lost_to_the_persons_reopen_is_refused_as_that X
+out HandOverTests.The_handed_store_round_trips_without_a_byte_order_mark_or_a_carriage_return_and_clears E
+out HandOverTests.A_handed_file_that_does_not_read_or_a_quest_id_that_is_no_name_is_none E
+out HandOverTests.Curve_is_a_reason_a_record_continues_another_and_one_the_box_takes E
+out ChatHandOverTests.A_start_the_person_names_an_account_for_keeps_the_pick_and_one_they_name_none_for_keeps_none T
+out HandOverAskLookTests.A_draining_look_hands_no_conversation_over_and_says_the_drains_hold_once_and_after_not_now_it_does E
+out HandOverAskLookTests.A_part_a_hand_over_started_cannot_ask_before_its_first_turn_ends R
+out HandOverAskLookTests.An_approved_hand_over_of_a_closed_quests_session_is_said_as_not_taken_with_its_reason E
+out HandOverAskLookTests.An_ask_whose_session_is_gone_is_cleared E
+out HandOverAtTurnEndTests.A_session_a_hand_over_started_is_not_handed_over_again_at_its_first_turns_end R
+out GoOnNewTests.The_choice_covers_the_record_while_a_word_it_named_still_waits E
+out GoOnNewTests.A_choice_that_does_not_read_is_none E
+out GoOnNewTests.The_terminal_reads_one_session_s_id_and_its_usage_says_the_verb V
+out GoOnNewTests.The_terminal_says_what_comes_of_it_in_one_line E
+out StartFromTests.A_conversation_that_does_not_start_leaves_the_words_where_they_were E
+out StartFromTests.Words_the_new_conversation_did_not_take_stay_where_they_were E
+out StartFromTests.The_files_said_with_the_words_go_with_them_and_the_words_alone_where_they_cannot E
+out StartFromTests.The_runners_door_starts_through_its_own_start E
+out StartWithTests.Files_over_a_messages_limit_go_as_the_words_alone E
+out StartWithTests.Words_not_taken_are_answered_with_the_conversation_that_opened E
+out StartWithTests.A_start_that_does_not_open_says_nothing E
+out StartWithTests.The_tree_choice_is_absent_true_or_false V
+out StartWithTests.A_start_older_than_a_day_is_not_remembered E
+out StartWithTests.A_refused_start_is_not_remembered E
+out StartWithTests.A_malformed_id_is_refused_in_a_sentence V
+out StartWithTests.A_sixty_five_character_id_is_refused_and_sixty_four_taken V
+out AnswersAloneHoldTests.An_answer_the_bound_does_not_hold_is_answered_with_its_code_and_nothing_written V
+out AnswersAloneTests.Each_turn_prompted_by_answers_alone_counts_one_in_a_row R
+out AnswersAloneTests.A_pieces_answer_counts_and_its_notes_reset_nothing R
+out AnswersAloneTests.A_word_of_the_persons_or_of_Daoriss_on_the_line_resets_the_count R
+out AnswersAloneTests.The_persons_press_to_go_on_with_the_answer_counts_as_their_word R
+out AnswersAloneTests.An_answer_taken_inside_a_running_turn_counts_nothing R
+out AnswersAloneTests.A_hand_over_neither_counts_nor_resets R
+out AnswersAloneTests.Only_a_turn_that_happened_counts_and_it_counts_once R
+out AnswersAloneTests.Every_door_keeps_a_helpers_answer_marked_as_the_helpers E
+out AnswersAloneTests.Mixed_and_alternating_answers_are_one_count_and_the_supervisor_never_resets_it R
+out AnswersAloneTests.A_forged_supervisor_event_only_raises_the_count R
+out AnswersAloneTests.The_hold_reads_the_bound_from_the_lines_events_here R
+
+## Suites the paths decide in, each with its count of cases ([Fact] and [Theory])
+# PlannerTests' carry-on cases are rows of K; its other cases are the planner's own (P), so it is not counted here.
+suite ChatGoOnTests 23
+suite ChatGoesOnProcessTests 17
+suite ChatGoesOnInSyncProcessTests 1
+suite LimitWaitsProcessTests 24
+suite BriefedMoveTests 7
+suite LimitGoesOnProcessTests 3
+suite LimitGoesElsewhereProcessTests 3
+suite ContinuationTests 50
+suite SessionMessagesTickTests 17
+suite LimitResumeTickTests 10
+suite TransientRetryTickTests 10
+suite HandOverLookTests 13
+suite CarryOnHandedTests 11
+suite CurveMoveTests 14
+suite CurveMoveProcessTests 1
+suite HandOverTests 30
+suite ChatHandOverTests 3
+suite HandOverAskLookTests 11
+suite HandOverAtTurnEndTests 6
+suite HandOverAskTickTests 1
+suite HandOverQuestTickTests 1
+suite GoOnNewTests 8
+suite StartFromTests 10
+suite StartWithTests 11
+suite AnswersAloneHoldTests 9
+suite AnswersAloneTests 16

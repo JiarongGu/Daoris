@@ -52,6 +52,9 @@ internal static class Program
             return;
         }
 
+        // FOUNDATION1f-i: this process is the shell, and its run of the desktop store says so, before anything of it opens the store.
+        Daoris.Driver.StoreProcess.Kind = Daoris.Driver.StoreProcess.Shell;
+
         // The home before anything else (D63): an install's `data/` folder is the Daoris home for this
         // process and every host and session it spawns. Before the builder, because every module
         // captures its path at construction — and a workspace build is left alone, so the dev loop's
@@ -317,9 +320,11 @@ internal static class Program
             // the last swap's outcome is said once. Then the drain watches what is staged, holding the loop's starts.
             var updater = app.Services.GetRequiredService<InstallUpdater>();
             loop.Draining = () => updater.Draining;
-            // An update's drain is a stop's beginning for the pipe too: a terminal is told Daoris is updating (§6.3).
+            // An update's drain holds the pipe's presses that would add to what it waits on, a terminal told Daoris is updating; the close
+            // it ends in is a stop's beginning, which holds every press (§6.3, DRAINHOLD1).
             var pipe = app.Services.GetRequiredService<InstancePipe>();
             pipe.Draining = () => updater.Draining;
+            pipe.Applying = () => updater.Applying;
             loop.Pipe = pipe;
             loop.Stages = stages;
             // Its look may start the launcher for a build said *now*: through the start gate, off this thread

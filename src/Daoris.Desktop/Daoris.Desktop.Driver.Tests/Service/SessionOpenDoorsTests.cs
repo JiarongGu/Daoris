@@ -19,13 +19,21 @@ public sealed class SessionOpenDoorsTests
         public string? RawAnswer { get; set; }
         public string? RawCandidates { get; set; }
         public string? AnswerRun { get; set; } = "first";
+        /// <summary>The <c>head</c> mark the protocol answers (FOUNDATION1d-ii); none where null, as a d-i host answers.</summary>
+        public int? HeadMark { get; set; }
+        /// <summary>The protocol's answer as it comes, where set: a host whose marks do not read.</summary>
+        public string? RawProtocol { get; set; }
         public Task<string> GetAsync(string path, CancellationToken ct) => throw new NotSupportedException();
         public Task<string> PostAsync(string path, string json, CancellationToken ct) => throw new NotSupportedException();
         public Task<ServiceReply> SendAsync(ServiceVerb verb, string path, string? json, CancellationToken ct)
         {
             Heard.Add((path, json));
+            var marks = new Dictionary<string, int> { ["opens"] = Mark };
+            if (HeadMark is { } head) marks["head"] = head;
+            if (path == "/api/protocol" && RawProtocol is not null) return Task.FromResult(new ServiceReply(200, RawProtocol));
             if (path == "/api/protocol") return Task.FromResult(Run is null
-                ? new ServiceReply(404, "") : new ServiceReply(200, JsonSerializer.Serialize(new { run = Run, marks = new { opens = Mark } })) { Run = Run });
+                ? new ServiceReply(404, "") : new ServiceReply(200, JsonSerializer.Serialize(new { run = Run, marks })) { Run = Run });
+            if (path.EndsWith("/say", StringComparison.Ordinal)) return Task.FromResult(new ServiceReply(200, """{"message":"Kept."}""") { Run = AnswerRun });
             if (verb == ServiceVerb.Get) return Task.FromResult(new ServiceReply(200, RawCandidates ?? """[{"id":"candidate","from":"left"},{"id":"other","from":"elsewhere"}]""") { Run = AnswerRun });
             if (Lose) throw new HttpRequestException("answer lost");
             if (BrokenAnswer) return Task.FromResult(new ServiceReply(200, "{"));
@@ -174,6 +182,109 @@ public sealed class SessionOpenDoorsTests
         host.RawAnswer = null;
         Assert.True((await client.Opens.OpenAsync("/api/sessions/chat", Body, "key", "left")).Held);
         Assert.Single(host.Heard.Where(call => call.Body is not null));
+    }
+
+    /// <summary>
+    /// FOUNDATION1d-ii part 1 (§19.12): the <c>head</c> mark is kept beside <c>opens</c> by the host's run: read once while answers name that run,
+    /// and read again before the next step that depends on it once an answer names another run or none. A host with no mark keeps none.
+    /// </summary>
+    [Fact]
+    public async Task The_head_mark_is_kept_by_the_hosts_run_and_read_again_when_an_answer_names_another_or_none()
+    {
+        using var host = new Host { HeadMark = 1 };
+        using var client = new ServiceClient(host);
+
+        Assert.Equal(1, await client.Opens.HeadAsync());
+        await client.SayAsync("c1", "words", key: "press/1");
+        Assert.Equal(1, await client.Opens.HeadAsync());
+        Assert.Equal(1, host.Heard.Count(call => call.Path == "/api/protocol"));
+
+        // A host replaced by one with no mark: the say's answer names another run, so the marks are read again, and none is kept.
+        host.AnswerRun = "second";
+        host.Run = "second";
+        host.HeadMark = null;
+        await client.SayAsync("c1", "words", key: "press/2");
+        Assert.Equal(0, await client.Opens.HeadAsync());
+        Assert.Equal(2, host.Heard.Count(call => call.Path == "/api/protocol"));
+
+        // An answer naming no run: read again, here a host before the protocol, which answers none.
+        host.AnswerRun = null;
+        host.Run = null;
+        await client.SayAsync("c1", "words", key: "press/3");
+        Assert.Equal(0, await client.Opens.HeadAsync());
+        Assert.Equal(3, host.Heard.Count(call => call.Path == "/api/protocol"));
+    }
+
+    /// <summary>A d-i host (<c>opens</c> 1, no <c>head</c>), a protocol answer that does not read, and a host that does not answer: no head mark, never a throw.</summary>
+    [Theory]
+    [InlineData(null)]
+    [InlineData("[]")]
+    [InlineData("{")]
+    [InlineData("""{"run":"first","marks":{"head":"one"}}""")]
+    [InlineData("""{"marks":{"head":1}}""")]
+    public async Task A_host_whose_protocol_names_no_head_keeps_no_head_mark(string? raw)
+    {
+        using var host = new Host { RawProtocol = raw };
+        using var client = new ServiceClient(host);
+
+        Assert.Equal(0, await client.Opens.HeadAsync());
+    }
+
+    // ---- FOUNDATION1d-ii part 3 (§3.4 rule 3, §19.12): the open moves the words, asked only of a host whose `opens` is 2 ----
+
+    private static readonly MoveWords Moves = new("left", ["w1"], ["w1", "w0"]);
+
+    /// <summary>
+    /// 🔴 A host whose open moves words (<c>opens</c> 2) is sent the request's <c>moves</c> beside its key, and the answer says it was asked; a
+    /// d-i host (<c>opens</c> 1) and an unmarked one are sent none, whatever the caller's body carries, so the executor moves the words itself.
+    /// </summary>
+    [Theory]
+    [InlineData(2, true)]
+    [InlineData(3, true)]
+    [InlineData(1, false)]
+    [InlineData(0, false)]
+    public async Task Moves_go_only_to_a_host_whose_open_moves_words(int mark, bool sent)
+    {
+        using var host = new Host { Mark = mark, Run = mark == 0 ? null : "first", AnswerRun = mark == 0 ? null : "first" };
+        using var client = new ServiceClient(host);
+        const string Carrying = """{"repository":"Owner","adapter":"stub","from":"left","moves":{"from":"stale","words":[],"read":[]}}""";
+
+        var answer = await client.Opens.OpenAsync("/api/sessions/chat", Carrying, "key", "left", moves: Moves);
+
+        var request = host.Heard.Last(call => call.Body is not null).Body!;
+        Assert.DoesNotContain("stale", request);
+        Assert.Equal(sent, request.Contains("""
+            "moves":{"from":"left","words":["w1"],"read":["w1","w0"]}
+            """.Trim(), StringComparison.Ordinal));
+        Assert.Equal(sent, answer.Moves);
+        Assert.Equal("opened", answer.SessionId);
+    }
+
+    /// <summary>
+    /// 🔴 The transfer read whole: each moved word's id on the record left and on the record opened, its producer key (none where the host wrote
+    /// none) and its transfer id, in order; an element naming no <c>id</c>, as a d-i host's replay of this build's receipt answers it, reads as
+    /// its word's own id, which a moved word keeps. An element that names no word or no transfer id is an answer that does not read: held.
+    /// </summary>
+    [Fact]
+    public async Task The_transfer_reads_each_moved_words_ids_key_and_transfer_and_an_element_with_no_id_reads_its_words()
+    {
+        using var host = new Host
+        {
+            Mark = 2,
+            RawAnswer = """
+                {"session":{"id":"opened"},"opens":"key","transfer":[
+                  {"word":"w1","id":"w1","key":"press/1","transfer":"key/w1","order":0},
+                  {"word":"w2","transfer":"key/w2","order":1}]}
+                """,
+        };
+        using var client = new ServiceClient(host);
+
+        var answer = await client.Opens.OpenAsync("/api/sessions/chat", Body, "key", "left", moves: Moves);
+
+        Assert.Equal([new MovedWord("w1", "w1", "press/1", "key/w1", 0), new MovedWord("w2", "w2", null, "key/w2", 1)], answer.Moved);
+
+        host.RawAnswer = """{"session":{"id":"opened"},"opens":"other","transfer":[{"id":"w1","order":0}]}""";
+        Assert.True((await client.Opens.OpenAsync("/api/sessions/chat", Body, "other", "left", moves: Moves)).Held);
     }
 
     [Fact]

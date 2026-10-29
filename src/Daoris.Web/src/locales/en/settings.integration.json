@@ -1,0 +1,12 @@
+{
+  "settings.integration.label": "Integration declaration",
+  "settings.integration.why": "The `integration` object of the repository's `daoris.gates.json`: the generated files its integration writes, the rules it runs and the scratch its clean-up clears. It is used only as you accept it, by its blob, apart from the gates of the landed route; a repository's own file never grants itself.",
+  "settings.integration.accepted": "Accepted. Its generated files, line rules and scratch are used as you accepted them, at blob {{blob}} on {{branch}}'s tip {{commit}}.",
+  "settings.integration.acceptedNone": "Accepted as none: {{branch}}'s tip {{commit}} declares no integration, and nothing is used until one lands and you accept it.",
+  "settings.integration.changed": "The declaration changed since you accepted it: none of it is used until you accept it again.",
+  "settings.integration.unaccepted": "The declaration is not accepted yet: none of it is used until you accept it.",
+  "settings.integration.unread": "Where the integration declaration stands could not be read here.",
+  "settings.integration.declaration": "daoris.gates.json at {{branch}}'s tip {{commit}}",
+  "settings.integration.accept": "Accept the integration declaration",
+  "settings.integration.withdraw": "Withdraw"
+}

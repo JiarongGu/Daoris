@@ -61,10 +61,18 @@ internal sealed class BranchReplays(TreeContext context, PassLeftovers leftovers
         var tree = judged.Tree;
         if (tree is not null)
         {
-            // 🔴 The session's own tree, read again immediately before: still on this branch, at the commit judged, clean.
-            var (_, onOut, _) = await WorkingTree.GitAsync(tree, ["rev-parse", "--abbrev-ref", "HEAD"], ct).ConfigureAwait(false);
+            // 🔴 The session's own tree, read again immediately before: git's own working root for it (GITWORKTREECONFIG1), asked in the
+            // same start as its branch, then still on this branch, at the commit judged, clean. A tree git binds to another checkout is
+            // left before its status is read: a switch or a rebase in it would rewrite that checkout's files.
+            var (onCode, onOut, _) = await WorkingTree.GitAsync(tree, ["rev-parse", "--show-toplevel", "--abbrev-ref", "HEAD"], ct).ConfigureAwait(false);
+            var on = onOut.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            if (await TreeBinding.RefusalAsync(tree, ct, onCode == 0 && on.Length == 2 ? on[0] : null).ConfigureAwait(false) is { } bound)
+            {
+                return new(item, false, $"`{item.Branch}` was left: {bound}.");
+            }
+
             var (_, dirty, _) = await WorkingTree.GitAsync(tree, ["--no-optional-locks", "status", "--porcelain"], ct).ConfigureAwait(false);
-            if (onOut.Trim() != item.Branch || await CommitOfAsync(tree, "HEAD", ct).ConfigureAwait(false) != tip || !string.IsNullOrWhiteSpace(dirty))
+            if ((on.Length == 2 ? on[1] : "") != item.Branch || await CommitOfAsync(tree, "HEAD", ct).ConfigureAwait(false) != tip || !string.IsNullOrWhiteSpace(dirty))
             {
                 return new(item, false, $"`{item.Branch}` {TreeSync.LeftSince}");
             }
@@ -295,7 +303,18 @@ internal sealed class BranchReplays(TreeContext context, PassLeftovers leftovers
         var (added, _, addErr) = await WorkingTree.GitAsync(
             root, ["worktree", "add", "--quiet", "--detach", "--lock", "--reason", PassLeftovers.HeldBy(Environment.ProcessId), aside, at], ct)
             .ConfigureAwait(false);
-        return added == 0 ? (aside, "") : (null, $"Daoris could not make a tree to replay it in: {Failure(addErr)}");
+        if (added != 0) return (null, $"Daoris could not make a tree to replay it in: {Failure(addErr)}");
+
+        // GITWORKTREECONFIG1: where the repository's configuration binds its linked trees to another checkout, a rebase in this one would
+        // rewrite that checkout's files, so nothing is replayed. This tree is Daoris's own, made a moment ago and holding nothing, so it goes
+        // as every replay's own tree goes: git's removal names it by its record, never through it.
+        if (await TreeBinding.RefusalAsync(aside, ct).ConfigureAwait(false) is { } bound)
+        {
+            await CloseAsideAsync(root, aside).ConfigureAwait(false);
+            return (null, $"Daoris let go of the tree it made to replay it in, unused: {bound}.");
+        }
+
+        return (aside, "");
     }
 
     /// <summary>
@@ -323,6 +342,12 @@ internal sealed class BranchReplays(TreeContext context, PassLeftovers leftovers
 
         /// <summary>The joins union left that it set apart, in a commit on top (INTEGRATE1c); none where it set none.</summary>
         public IReadOnlyList<UnionJoins.Set> Joined { get; init; } = [];
+
+        /// <summary>The files it settled by a line rule the owner accepted for integration (INTEGRATE1d), with their writers; none where none.</summary>
+        public IReadOnlyList<LineRules.Settled> Lined { get; init; } = [];
+
+        /// <summary>What those writers wrote again from the replayed tree, in a commit on top; nothing run where it settled none.</summary>
+        public GeneratedWriters.Written LineWritten { get; init; } = GeneratedWriters.Written.None;
     }
 
     /// <summary>
@@ -335,6 +360,8 @@ internal sealed class BranchReplays(TreeContext context, PassLeftovers leftovers
     /// accepted for their folders write them again from the replayed tree, in a commit on top (<see cref="GeneratedWriters"/>).
     /// LANDBACKLOG1: the backlog the line declares at <paramref name="onto"/>, conflicted alone or beside generated files, is settled by
     /// its merge base as the merge tool settles it (<see cref="BacklogMerge"/>); a base line both sides changed still aborts it.
+    /// INTEGRATE1d: a file of a line rule the owner accepted for integration, declared at <paramref name="onto"/>, is settled by its
+    /// pattern and written again by its writer in a commit on top (<see cref="LineRules"/>); a writer that fails refuses the replay.
     /// </summary>
     /// <param name="commits">Every commit beyond the line, oldest first, which <paramref name="kept"/> is a subset of.</param>
     internal async Task<KeptReplay> ReplayKeptAsideAsync(
@@ -345,24 +372,38 @@ internal sealed class BranchReplays(TreeContext context, PassLeftovers leftovers
         var keeps = kept.Select(each => each.Sha).ToHashSet(StringComparer.Ordinal);
         var stretches = Stretches([.. commits.Select(each => each.Sha)], commits.Select(each => each.Sha).Where(sha => !keeps.Contains(sha)).ToHashSet(StringComparer.Ordinal));
 
+        var config = Config();
+        // INTEGRATE1d: the line rules the owner accepted for integration, read from the accepted blob alone where it is the one at `onto`.
+        var lines = config is null ? [] : await LineRules.AcceptedAsync(config, root, repository, onto, ct).ConfigureAwait(false);
         var (aside, notMade) = await OpenAsideAsync(root, workspace, repository, stretches[0].To, ct).ConfigureAwait(false);
         if (aside is null) return new(null, notMade, false);
         try
         {
-            var made = await RebaseStretchesAsync(aside, onto, stretches, switchFirst: false, ct, landing: new BacklogMerge.Stops(onto)).ConfigureAwait(false);
-            if (made.Now is not null)
+            var made = await RebaseStretchesAsync(aside, onto, stretches, switchFirst: false, ct, landing: new BacklogMerge.Stops(onto, lines)).ConfigureAwait(false);
+            if (made.Now is null) return made;
+
+            // INTEGRATE1c: what union joined in the replay is set apart as the merge tool sets it, in a commit on top.
+            var joined = await UnionJoins.SetApartAsync(aside, onto, commits[^1].Sha, ct).ConfigureAwait(false);
+            if (joined.Count > 0) made = made with { Now = await CommitOfAsync(aside, "HEAD", ct).ConfigureAwait(false) ?? made.Now, Joined = joined };
+
+            if (made.Generated.Count > 0)
             {
-                // INTEGRATE1c: what union joined in the replay is set apart as the merge tool sets it, in a commit on top.
-                var joined = await UnionJoins.SetApartAsync(aside, onto, commits[^1].Sha, ct).ConfigureAwait(false);
-                if (joined.Count > 0) made = made with { Now = await CommitOfAsync(aside, "HEAD", ct).ConfigureAwait(false) ?? made.Now, Joined = joined };
+                var writers = config is null ? [] : await GeneratedWriters.AcceptedAsync(config, root, repository, workspace, onto, ct).ConfigureAwait(false);
+                var written = await GeneratedWriters.WriteAsync(aside, writers, made.Generated, ct).ConfigureAwait(false);
+                made = written.Paths.Count == 0
+                    ? made with { Written = written }
+                    : made with { Now = await CommitOfAsync(aside, "HEAD", ct).ConfigureAwait(false) ?? made.Now, Written = written };
             }
 
-            if (made.Now is null || made.Generated.Count == 0) return made;
-            var writers = await AcceptedWritersAsync(root, repository, workspace, onto, ct).ConfigureAwait(false);
-            var written = await GeneratedWriters.WriteAsync(aside, writers, made.Generated, ct).ConfigureAwait(false);
-            return written.Paths.Count == 0
-                ? made with { Written = written }
-                : made with { Now = await CommitOfAsync(aside, "HEAD", ct).ConfigureAwait(false) ?? made.Now, Written = written };
+            if (made.Lined.Count == 0) return made;
+            // INTEGRATE1d: each file a line rule settled is written again by its accepted writer. No rule keeps one side's copy, so a
+            // writer that fails refuses the replay as the conflict it was, for the session to settle in its own tree.
+            var lineWriters = made.Lined.Select(each => new GeneratedWriters.Writer(each.Path, each.Run)).ToList();
+            var lineWritten = await GeneratedWriters.WriteAsync(aside, lineWriters, [.. made.Lined.Select(each => each.Path)], ct).ConfigureAwait(false);
+            if (lineWritten.Failed is { } failed) return new(null, LineRules.Unwritten(made.Lined, failed), true);
+            return lineWritten.Paths.Count == 0
+                ? made with { LineWritten = lineWritten }
+                : made with { Now = await CommitOfAsync(aside, "HEAD", ct).ConfigureAwait(false) ?? made.Now, LineWritten = lineWritten };
         }
         finally
         {
@@ -372,23 +413,19 @@ internal sealed class BranchReplays(TreeContext context, PassLeftovers leftovers
     }
 
     /// <summary>
-    /// The generated folders' writers the person accepted for <paramref name="repository"/>, as declared at <paramref name="onto"/>
-    /// (GENREGEN1); none where the driver's settings could not be read, and the replay leaves the line's copy as it would without one.
+    /// The person's choices a landing's replay reads its acceptances from, the generated folders' writers (GENREGEN1) and the line rules'
+    /// (INTEGRATE1d); null where the driver's settings could not be read, and the replay runs no writer, as it would with none accepted.
     /// </summary>
-    private async Task<IReadOnlyList<GeneratedWriters.Writer>> AcceptedWritersAsync(
-        string root, string repository, string workspace, string onto, CancellationToken ct)
+    private DriverConfig? Config()
     {
-        DriverConfig config;
         try
         {
-            config = context.Config();
+            return context.Config();
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException)
         {
-            return [];
+            return null;
         }
-
-        return await GeneratedWriters.AcceptedAsync(config, root, repository, workspace, onto, ct).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -462,7 +499,7 @@ internal sealed class BranchReplays(TreeContext context, PassLeftovers leftovers
             current = await CommitOfAsync(tree, "HEAD", ct).ConfigureAwait(false) ?? current;
         }
 
-        return new(current, "", false) { Generated = generated, Backlog = landing?.Settled, Tables = landing?.Tables ?? [] };
+        return new(current, "", false) { Generated = generated, Backlog = landing?.Settled, Tables = landing?.Tables ?? [], Lined = landing?.Lined ?? [] };
     }
 
     /// <summary>

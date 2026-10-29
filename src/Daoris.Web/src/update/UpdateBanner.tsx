@@ -27,6 +27,8 @@ export type UpdateState = {
    * is under way. The banner reads `outcome`, never this.
    */
   last: UpdateOutcome | null;
+  /** When the drain began (DRAINHOLD1): what a held Confirm's card says it waits since. Null with no drain; absent from an older shell. */
+  since?: string | null;
 };
 
 /**

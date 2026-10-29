@@ -143,6 +143,81 @@ public sealed class UpdateDrainTests : IDisposable
         }
     }
 
+    /// <summary>
+    /// DRAINHOLD1 (the driver follow-up): the loop's work beside the looks that removes trees or opens turns waits out the drain too. The
+    /// tidy and keeping pass stays due and begins no pass, and the wake of the conversations waiting for an account is not asked; after
+    /// *Not now* the tidy begins and the wake is asked.
+    /// </summary>
+    [Fact]
+    public async Task While_an_update_drains_the_tidy_and_the_limits_wake_begin_nothing_and_after_not_now_they_do()
+    {
+        var draining = true;
+        var tidy = new BranchTidying(_home) { Pace = TimeSpan.FromMinutes(5) };
+        var woken = 0;
+        var (watch, _) = Watch(() => draining, tidying: tidy, limits: (_, _) =>
+        {
+            Interlocked.Increment(ref woken);
+            return Task.CompletedTask;
+        });
+        var reports = new List<TickReport>();
+
+        var watching = watch.RunAsync(
+            (report, _) =>
+            {
+                lock (reports) reports.Add(report);
+                return Task.CompletedTask;
+            },
+            onError: null, _closing.Token);
+        try
+        {
+            await Poll.Until(() => Count(reports) >= 3, () => $"{Count(reports)} look(s)", Poll.Patience);
+
+            Assert.True(tidy.Due);
+            Assert.Equal(0, Volatile.Read(ref woken));
+
+            draining = false;
+            watch.Nudge();
+            await Poll.Until(() => !tidy.Due && Volatile.Read(ref woken) > 0, () => $"due {tidy.Due}, woken {woken}", Poll.Patience);
+        }
+        finally
+        {
+            await _closing.CancelAsync();
+            await Settled(watching);
+        }
+    }
+
+    /// <summary>DRAINHOLD1: the tidy of a ref move is refused with no try while an update drains, stays pending, and is tried after it.</summary>
+    [Fact]
+    public async Task A_tidy_of_a_ref_move_is_refused_while_an_update_drains_and_tried_after_it()
+    {
+        var draining = true;
+        var inner = new CountingEffect();
+        var held = new DrainHeldEffect(inner, () => draining);
+
+        Assert.Equal(ChainOutcome.Refused, (await held.TryAsync("engine", CancellationToken.None)).Outcome);
+        Assert.Equal(ChainOutcome.Refused, (await held.TryAsync("engine", due: true, CancellationToken.None)).Outcome);
+        Assert.Equal(0, inner.Tried);
+        Assert.Equal("engine", Assert.Single(await held.PendingAsync(CancellationToken.None)).Unit);
+
+        draining = false;
+        Assert.Equal(ChainOutcome.Done, (await held.TryAsync("engine", CancellationToken.None)).Outcome);
+        Assert.Equal(1, inner.Tried);
+    }
+
+    private sealed class CountingEffect : IChainEffect
+    {
+        public int Tried { get; private set; }
+
+        public Task<IReadOnlyList<ChainPending>> PendingAsync(CancellationToken ct) =>
+            Task.FromResult<IReadOnlyList<ChainPending>>([new ChainPending("engine")]);
+
+        public Task<ChainTry> TryAsync(string unit, CancellationToken ct)
+        {
+            Tried++;
+            return Task.FromResult(ChainTry.Done());
+        }
+    }
+
     private static int Count(List<TickReport> reports)
     {
         lock (reports) return reports.Count;
@@ -164,7 +239,8 @@ public sealed class UpdateDrainTests : IDisposable
         catch (OperationCanceledException) { }
     }
 
-    private (DriverWatch Watch, StandInRuns Runs) Watch(Func<bool> draining, string holds = "[]")
+    private (DriverWatch Watch, StandInRuns Runs) Watch(
+        Func<bool> draining, string holds = "[]", BranchTidying? tidying = null, Func<DriverConfig, CancellationToken, Task>? limits = null)
     {
         var config = DaorisHome.Entry(_home, HomeEntry.DriverConfig);
         File.WriteAllText(config, $$"""
@@ -178,6 +254,8 @@ public sealed class UpdateDrainTests : IDisposable
         {
             Runner = runs.Runner,
             Draining = draining,
+            Tidying = tidying,
+            Limits = limits,
         };
         runs.Keeping = watch.Running;
         return (watch, runs);

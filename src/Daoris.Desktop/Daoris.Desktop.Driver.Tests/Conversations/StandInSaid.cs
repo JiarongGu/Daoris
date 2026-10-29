@@ -27,6 +27,12 @@ internal sealed class StandInSaid : ISaidDoor
     /// <summary>A refusal every keep is answered with; null keeps.</summary>
     public string? Refusing { get; set; }
 
+    /// <summary>
+    /// The head of the record's line where it is no longer the record itself (FOUNDATION1d-ii part 1): every keep is refused <c>continued</c>,
+    /// naming it, as a host with the <c>head</c> mark answers before any other refusal, and nothing is kept; null keeps as ever.
+    /// </summary>
+    public string? Continues { get; set; }
+
     /// <summary>Every attempt answered not marked (AGENTERRORS1, Codex's finding 4): a record that would not mark a word.</summary>
     public bool RefusingAttempts { get; set; }
 
@@ -56,6 +62,7 @@ internal sealed class StandInSaid : ISaidDoor
 
     public async Task<SayAnswer> KeepAsync(ChatMessage word, CancellationToken ct)
     {
+        if (Continues is { } head) return new SayAnswer(false, $"went on in `{head}`, its line's head") { Refusal = SayAnswer.Continued, Head = head };
         if (Refusing is { } refusal) return new SayAnswer(false, $"refused: {refusal}") { Refusal = refusal };
 
         SaidWordView kept;

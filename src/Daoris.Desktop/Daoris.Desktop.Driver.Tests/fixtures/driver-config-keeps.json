@@ -76,6 +76,17 @@
     "    \"legacy\": {",
     "      \"form\": \"merge\",",
     "      \"cycle\": []",
+    "    },",
+    "    \"web\": {",
+    "      \"form\": \"branch\",",
+    "      \"pattern\": \"quest/{slug}-{quest}\",",
+    "      \"autoAccept\": true,",
+    "      \"integrate\": {",
+    "        \"request\": \"done\",",
+    "        \"batch\": 4,",
+    "        \"gates\": \"declared\",",
+    "        \"later\": \"a key a newer build knows\"",
+    "      }",
     "    }",
     "  },",
     "  \"workspaceLandings\": {",
@@ -103,6 +114,9 @@
     "    \"engine\": {",
     "      \"mode\": \"on\"",
     "    }",
+    "  },",
+    "  \"integrationGates\": {",
+    "    \"engine\": \"0123456789abcdef0123456789abcdef01234567\"",
     "  },",
     "  \"access\": {",
     "    \"engine\": {",
@@ -161,6 +175,39 @@
       "edit": { "op": "landing", "repository": "engine", "rule": { "form": "branch", "pattern": "work/{quest}", "plugin": "acme.pr", "tidy": true } },
       "changes": [
         { "from": ["      \"plugin\": \"acme.pr\","], "to": ["      \"plugin\": \"acme.pr\",", "      \"tidy\": true,"] }
+      ]
+    },
+    {
+      "name": "a rule carrying `integrate` edited by a door with no field for it (INTEGRATE1d): the pattern changes, `integrate` and the key a newer build knows in it stay as written, as a key no build knows stays",
+      "edit": { "op": "landing", "repository": "web", "rule": { "form": "branch", "pattern": "quest/{quest}", "autoAccept": true } },
+      "changes": [
+        { "from": ["      \"pattern\": \"quest/{slug}-{quest}\","], "to": ["      \"pattern\": \"quest/{quest}\","] }
+      ]
+    },
+    {
+      "name": "a rule set with its `integrate` (INTEGRATE1d): after the rule before it, its keys in the design's order, each only when set",
+      "edit": { "op": "landing", "repository": "orders", "rule": { "form": "branch", "pattern": "work/{quest}", "integrate": { "unconfirmed": { "reached": "hold" }, "gates": "declared", "commit": "rebase", "request": "owner" } } },
+      "changes": [
+        {
+          "from": ["      \"cycle\": []", "    },", "    \"web\": {"],
+          "to": [
+            "      \"cycle\": []",
+            "    },",
+            "    \"orders\": {",
+            "      \"form\": \"branch\",",
+            "      \"pattern\": \"work/{quest}\",",
+            "      \"integrate\": {",
+            "        \"request\": \"owner\",",
+            "        \"commit\": \"rebase\",",
+            "        \"gates\": \"declared\",",
+            "        \"unconfirmed\": {",
+            "          \"reached\": \"hold\"",
+            "        }",
+            "      }",
+            "    },",
+            "    \"web\": {"
+          ]
+        }
       ]
     },
     {
@@ -319,6 +366,27 @@
       ]
     },
     {
+      "name": "a repository's integration accepted beside another's (INTEGRATE1d): its blob after the one before it, in its own key beside the landed route's",
+      "edit": { "op": "integration-gates", "repository": "shop-api", "blob": "none" },
+      "changes": [
+        { "from": ["    \"engine\": \"0123456789abcdef0123456789abcdef01234567\""], "to": ["    \"engine\": \"0123456789abcdef0123456789abcdef01234567\",", "    \"shop-api\": \"none\""] }
+      ]
+    },
+    {
+      "name": "an integration accepted again at a later blob (INTEGRATE1d): the one value changes",
+      "edit": { "op": "integration-gates", "repository": "ENGINE", "blob": "89abcdef0123456789abcdef0123456789abcdef" },
+      "changes": [
+        { "from": ["    \"engine\": \"0123456789abcdef0123456789abcdef01234567\""], "to": ["    \"engine\": \"89abcdef0123456789abcdef0123456789abcdef\""] }
+      ]
+    },
+    {
+      "name": "the last integration acceptance cleared (INTEGRATE1d): the key goes, since the writer writes no empty map",
+      "edit": { "op": "integration-gates", "repository": "engine", "blob": null },
+      "changes": [
+        { "from": ["  \"integrationGates\": {", "    \"engine\": \"0123456789abcdef0123456789abcdef01234567\"", "  },", "  \"access\": {"], "to": ["  \"access\": {"] }
+      ]
+    },
+    {
       "name": "Try again released a later end of the same quest (AGENTERRORS1a2): its end changes, its session stays",
       "edit": { "op": "transient-release", "quest": "q8", "session": "s-40", "ended": "2026-10-24T09:30:00.5Z" },
       "changes": [
@@ -440,6 +508,17 @@
             "    \"legacy\": {",
             "      \"form\": \"merge\",",
             "      \"cycle\": []",
+            "    },",
+            "    \"web\": {",
+            "      \"form\": \"branch\",",
+            "      \"pattern\": \"quest/{slug}-{quest}\",",
+            "      \"autoAccept\": true,",
+            "      \"integrate\": {",
+            "        \"request\": \"done\",",
+            "        \"batch\": 4,",
+            "        \"gates\": \"declared\",",
+            "        \"later\": \"a key a newer build knows\"",
+            "      }",
             "    }",
             "  },",
             "  \"workspaceLandings\": {"
@@ -484,6 +563,17 @@
             "    \"legacy\": {",
             "      \"form\": \"merge\",",
             "      \"cycle\": []",
+            "    },",
+            "    \"web\": {",
+            "      \"form\": \"branch\",",
+            "      \"pattern\": \"quest/{slug}-{quest}\",",
+            "      \"autoAccept\": true,",
+            "      \"integrate\": {",
+            "        \"request\": \"done\",",
+            "        \"batch\": 4,",
+            "        \"gates\": \"declared\",",
+            "        \"later\": \"a key a newer build knows\"",
+            "      }",
             "    }",
             "  },"
           ],
@@ -760,6 +850,8 @@
     { "name": "a quest forgiven twice in any case reads its first mark", "map": "forgiven", "file": { "forgiven": { "Q7": 2, "q7": 5 } }, "read": { "Q7": 2 } },
     { "name": "a mark that is no count shadows none", "map": "forgiven", "file": { "forgiven": { "q7": 0, "Q7": 3 } }, "read": { "Q7": 3 } },
     { "name": "a language written twice in any case reads its first, as it did", "map": "languages", "file": { "languages": { "Engine": "zh", "engine": "en" } }, "read": { "Engine": "zh" } },
-    { "name": "a release written twice in any case reads its first, as it did", "map": "released", "file": { "released": { "Q9": "s-41", "q9": "s-42" } }, "read": { "Q9": "s-41" } }
+    { "name": "a release written twice in any case reads its first, as it did", "map": "released", "file": { "released": { "Q9": "s-41", "q9": "s-42" } }, "read": { "Q9": "s-41" } },
+    { "name": "an integration's acceptance written twice in any case reads its first (INTEGRATE1d)", "map": "integrationGates", "file": { "integrationGates": { "Engine": "none", "engine": "0123456789abcdef0123456789abcdef01234567" } }, "read": { "Engine": "none" } },
+    { "name": "an acceptance that is no blob id shadows none, and a short or upper-case id is none (INTEGRATE1d)", "map": "integrationGates", "file": { "integrationGates": { "engine": "0123ABCD", "ENGINE": "0123456789ABCDEF0123456789ABCDEF01234567", "Engine": "0123456789abcdef0123456789abcdef01234567" } }, "read": { "Engine": "0123456789abcdef0123456789abcdef01234567" } }
   ]
 }

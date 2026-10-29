@@ -401,6 +401,7 @@
  *   node tools/merge-branch.mjs --plan <branch> [--batch <branch>…] [--full]
  *   node tools/merge-branch.mjs --full [--keep-going] [--one-at-a-time]
  *   node tools/merge-branch.mjs --full --beside [<commit>] [--keep-going] [--one-at-a-time]
+ *   node tools/merge-branch.mjs --full --beside --daoris-verify [--keep-going] [--one-at-a-time]   (D192's declared runner, inputs in DAORIS_VERIFY_*)
  *   node tools/merge-branch.mjs --ci [--stage | --night] [<commit>] [--one-at-a-time]
  *   node tools/merge-branch.mjs --ci --watch [--one-at-a-time]
  *   node tools/merge-branch.mjs --ci --stop
@@ -420,10 +421,10 @@ import {
   closeSync, cpSync, existsSync, lstatSync, mkdirSync, openSync, readFileSync, readdirSync, realpathSync, rmSync, statSync, writeFileSync, writeSync,
 } from 'node:fs';
 import { constants as osConstants, cpus as osCpus, freemem as osFreemem, setPriority as osSetPriority, totalmem as osTotalmem } from 'node:os';
-import { basename, dirname, join, relative, resolve } from 'node:path';
+import { basename, dirname, isAbsolute, join, posix, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
-  CI_SWEEP, NIGHT_HOUR, appendReceipt, clearPasses, fileSighting, fingerprintOf, kindPlan, knownRedLines, knownRedStanding, nextRun, nightSatisfied, noteNight,
+  CI_SWEEP, NIGHT_HOUR, appendReceipt, clearKept, clearPasses, fileSighting, fingerprintOf, kindPlan, knownRedLines, knownRedStanding, nextRun, nightSatisfied, noteNight,
   noteSweeps, overdueLines, passingTests, readFindings, readReceipts, readSweep, receiptFor, sweepSatisfied, sweepState, writeFindings,
   writeSweep,
 } from './ci-background.mjs';
@@ -690,6 +691,7 @@ export const USAGE = [
   '       node tools/merge-branch.mjs --plan <branch> [--batch <branch>…] [--full]',
   '       node tools/merge-branch.mjs --full [--keep-going] [--one-at-a-time]',
   '       node tools/merge-branch.mjs --full --beside [<commit>] [--keep-going] [--one-at-a-time]',
+  '       node tools/merge-branch.mjs --full --beside --daoris-verify [--keep-going] [--one-at-a-time]',
   '       node tools/merge-branch.mjs --ci [--stage | --night] [<commit>] [--one-at-a-time]',
   '       node tools/merge-branch.mjs --ci --watch [--one-at-a-time]',
   '       node tools/merge-branch.mjs --ci --stop',
@@ -720,7 +722,7 @@ export function parseArgs(argv) {
     branches: [], keepGoing: false, commitCheck: true, resume: false, dropBatch: false, plan: false, prune: false, autoPrune: true,
     full: false, gated: false, rerun: [], passed: false, stale: false, oneAtATime: false, beside: false, besideCommit: null,
     ci: false, ciCommit: null, watch: false, stop: false, ciStage: false, ciNight: false,
-    preview: false, messageFile: null, queue: false, recheck: false, queueRun: false,
+    preview: false, messageFile: null, queue: false, recheck: false, queueRun: false, daorisVerify: false,
   };
   let batch = false;
   let rerun = false;
@@ -767,6 +769,7 @@ export function parseArgs(argv) {
     } else if (arg === '--queue') options.queue = true;
     else if (arg === '--recheck') options.recheck = true;
     else if (arg === '--queue-run') options.queueRun = true;
+    else if (arg === '--daoris-verify') options.daorisVerify = true;
     else if (arg === '--beside') {
       if (options.beside) throw usageError('--beside is given once, with the commit it gates after it');
       options.beside = true;
@@ -844,11 +847,18 @@ export function parseArgs(argv) {
     if (options.branches.length) throw usageError("--ci takes no branch: it gates a commit, main's tip unless named, in the gate tree");
     return options;
   }
+  // INTEGRATE1j (D192 point 9): the flag alone makes `--full --beside` the declared runner; anywhere else it is a mistake.
+  if (options.daorisVerify && !(options.full && options.beside)) {
+    throw usageError("--daoris-verify is the declared runner's: --full --beside --daoris-verify, its inputs in DAORIS_VERIFY_*");
+  }
   if (options.beside) {
     if (!options.full) throw usageError('--beside runs the full set: --full --beside [<commit>]');
     if (options.branches.length) throw usageError("--beside takes no branch: it gates a commit, main's tip unless named, in a worktree of its own");
-    if (flags.some((flag) => !['--full', '--beside', '--keep-going', '--one-at-a-time'].includes(flag))) {
-      throw usageError('--full --beside takes only a commit, --keep-going and --one-at-a-time');
+    if (flags.some((flag) => !['--full', '--beside', '--daoris-verify', '--keep-going', '--one-at-a-time'].includes(flag))) {
+      throw usageError('--full --beside takes only a commit, --keep-going and --one-at-a-time (and --daoris-verify, which takes its commit from DAORIS_VERIFY_COMMIT)');
+    }
+    if (options.daorisVerify && options.besideCommit) {
+      throw usageError('--daoris-verify takes its commit from DAORIS_VERIFY_COMMIT: name none beside --beside');
     }
   }
   // `--plan` is a verb of its own, or the prune's plan; `--full` is one when it names no branch and modifies nothing else.
@@ -922,7 +932,7 @@ export function workflowScripts(text) {
  * The ordered gates: every declared gate, and every workflow script the declaration does not run. By
  * kind, fast first; within a kind, workflow-only gates first, then the declared order.
  */
-export function gatePlan(declared, workflow = '') {
+export function gatePlan(declared, workflow = '', { keepDeclared = false } = {}) {
   const runs = new Set(declared.map((gate) => gate.run.trim()));
   const extras = workflowScripts(workflow)
     .filter((script) => !runs.has(`npm run ${script}`))
@@ -937,6 +947,8 @@ export function gatePlan(declared, workflow = '') {
       taken.add(name);
       return {
         name,
+        // INTEGRATE1j: the runner reports a gate under the name the declaration writes, where `name` is the slug its log is kept by.
+        ...(keepDeclared ? { declared: gate.name } : {}),
         run: gate.run.trim(),
         kind,
         ...(gate.cwd ? { cwd: gate.cwd } : {}),
@@ -950,21 +962,26 @@ export function gatePlan(declared, workflow = '') {
 export function readDeclared(root) {
   const file = join(root, 'daoris.gates.json');
   if (!existsSync(file)) throw new Refusal(`no daoris.gates.json at ${root}: there is no declared gate to run`);
+  return declaredIn(readFileSync(file, 'utf8'), 'daoris.gates.json');
+}
+
+/** The gates of a declaration's text, as `readDeclared` reads a file's; `label` says whose text it is in a refusal (INTEGRATE1j reads one it was handed). */
+export function declaredIn(text, label) {
   let parsed;
   try {
-    parsed = JSON.parse(readFileSync(file, 'utf8'));
+    parsed = JSON.parse(text);
   } catch (error) {
-    throw new Refusal(`daoris.gates.json is not valid JSON: ${error.message}`);
+    throw new Refusal(`${label} is not valid JSON: ${error.message}`);
   }
   const gates = Array.isArray(parsed?.gates) ? parsed.gates : [];
-  if (gates.length === 0) throw new Refusal('daoris.gates.json declares no gate');
+  if (gates.length === 0) throw new Refusal(`${label} declares no gate`);
   for (const gate of gates) {
     if (typeof gate?.name !== 'string' || typeof gate?.run !== 'string') {
-      throw new Refusal("daoris.gates.json: every gate needs both 'name' and 'run'");
+      throw new Refusal(`${label}: every gate needs both 'name' and 'run'`);
     }
     // MEMGATE1: a need of memory the tool cannot read is refused, never read as none.
     if ('memoryGb' in gate && !(typeof gate.memoryGb === 'number' && Number.isFinite(gate.memoryGb) && gate.memoryGb >= 0)) {
-      throw new Refusal(`daoris.gates.json: gate '${gate.name}': 'memoryGb' is the free memory it needs before it starts, in GB, a number 0 or more`);
+      throw new Refusal(`${label}: gate '${gate.name}': 'memoryGb' is the free memory it needs before it starts, in GB, a number 0 or more`);
     }
   }
   // FAMILYFAIL1d: `"clock": true` marks a gate whose tests are bounded by the wall clock, which a run beside raises.
@@ -1105,6 +1122,19 @@ export const REACH = Object.freeze([
   },
   { paths: ['tools/stage-package.mjs'], gates: ['rehearse', 'deployment'], why: "every pack runs it: the release rehearsal's, and the install's doctrine tool" },
   { paths: ['tools/family-rehearsal.mjs', 'tools/usage-report.mjs'], gates: ['rehearse-family'], why: 'the family rehearsal, what it imports, and what it runs' },
+  // AGENTPROVIDER1b part 3 (placed by INTEGRATE1d part 4): the stand-ins' reader, which its own tool test and the family rehearsal import.
+  { paths: ['tools/stand-ins.mjs'], gates: ['tool-tests', 'rehearse-family'], why: "the stand-ins' reader: its tool test (stand-ins.test.ts) and the family rehearsal, which finds the providers' stand-ins by it (AGENTPROVIDER1b)" },
+  // The same row's files in each provider's folder: the driver's (its lane's readers, ProviderFilesTests among them), and the tool
+  // test and the family rehearsal read them through `stand-ins.mjs`. A narrow rule, since the first rule decides.
+  {
+    paths: [
+      'src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Providers/*/provider.json',
+      'src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Providers/*/pending.json',
+      'src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Providers/*/Program/**',
+    ],
+    gates: [...DRIVER_READERS, 'tool-tests'],
+    why: "a provider's declaration, its pending cases and its stand-in's program: the driver's own (ProviderFilesTests and the conformance suite), and the tools' stand-ins.test.ts and the family rehearsal read them by `stand-ins.mjs` (AGENTPROVIDER1b)",
+  },
   { paths: ['tools/setup-kit.mjs'], gates: ['tool-tests', 'rehearse-family'], why: "the family rehearsal's set-up kit, and its tool-tests, which run it for real in a scratch repository (GATESLIM1)" },
   {
     paths: ['tools/desktop-publish.mjs', 'tools/ci-background.mjs', 'tools/test-failures.mjs'],
@@ -1177,12 +1207,26 @@ export const REACH = Object.freeze([
     gates: ['driver', 'tool-tests'],
     why: "the driver's BacklogMergeTests and the merge tool's tests read the backlog merges' table (LANDBACKLOG1)",
   },
+  // INTEGRATE1d: the integration declarations' table sits among the driver's tests, and the merge tool's twin reads it too.
+  {
+    paths: ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/integration-declarations.json'],
+    gates: ['driver', 'tool-tests'],
+    why: "the driver's IntegrationDeclarationTests and the merge tool's tests read the integration declarations' table (INTEGRATE1d)",
+  },
   // PUSH1f2e (D194, the alone-path design §4): the agent family's shared tables moved to the driver's fixtures with their last CLI
   // readers gone; the page reads three of them, and the modules one. The vendor's files and the reads table are the driver's alone.
   { paths: ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/shell-words.json'], gates: ['driver', 'web-unit'], why: "the driver's ShellWord twin and the page's shellWord read the shell-word table (ACCTQUOTE1b), and the CLI's suite holds it against the shells" },
   { paths: ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/rotation-use.json'], gates: ['driver', 'web-unit'], why: "the driver's RotationUseTwinTests and the page's curve rules read the shared rotation-use table (SWITCH1a, SWITCH1d)" },
   { paths: ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/usage-curves.json'], gates: ['driver', 'modules', 'web-unit'], why: "the driver's UsageCurvesTwinTests, the modules' DriverModuleAccountsTests (the verdicts .NET pushes, PUSH1e) and the page's curve rules read the shared usage curve table (SWITCH1b-iii, SWITCH1d)" },
   { paths: ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/park-question.json'], gates: ['driver', 'web-unit'], why: "the driver's QuestionFilesTests and the page's parkQuestion.test.ts read the shared table of a park's question as each reader takes it (PARKVIEW1)" },
+  {
+    paths: [
+      'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/provider-census.json',
+      'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/provider-vocabulary.json',
+    ],
+    gates: ['driver', 'service', 'web-unit', 'tool-tests'],
+    why: "the driver's ProviderCensusTests, the service's, the page's providerCensus.test.ts and the tools' provider-census.test.ts read the provider census's exceptions and the vocabulary it shares (AGENTPROVIDER1a)",
+  },
   { paths: ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/**'], gates: ['driver', 'driver-process', 'driver-process-git'], why: "the driver's tests, the fast half and both Process halves" },
   { paths: ['src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/**'], gates: ['modules', 'modules-process'], why: "the modules' tests, both halves" },
   // Before the service's tests, which would place it first: the driver's twin reads it too.
@@ -1244,6 +1288,8 @@ export const REACH = Object.freeze([
       // MIXAGENT1b-i: the say twin holds the hand-over's refusal table to its codes; FOUNDATION1 mod-vii moved the codes it aliases
       // into Events, so the twin reads their literals there.
       'HandOver.cs', 'HandOverAskWhy.cs',
+      // FOUNDATION1d-ii part 1: `WordsNever.Continued` forwards the say door's answer's own word, which this record declares.
+      'ServiceAnswers.cs',
       // SESSCTX1c part B: the say twin holds *Go on with Daoris's brief*'s refusal table to its codes.
       'BriefedMove.cs',
       // FLOWCHART1b: the parts flow's twin holds its words to `PartBegan`.
@@ -1432,32 +1478,164 @@ export function backlogOf(text) {
 }
 
 /**
- * The files a repository's declaration says settle by rows (INTEGRATE1c; design §4.1's `merge`): `daoris.gates.json`'s
- * `integration.merge`, each entry `{ "paths": file, "by": "rows" }`. A file whose conflict is settled as the backlog's is, by the
- * merge base, line by line: a row a side added is kept, one a side removed is dropped, rows both add at one place are both kept,
- * and a base row both changed stays a conflict. No command runs, so no acceptance is read; an entry naming a `line` or a `run`
- * writer is row d's (the acceptance's) and is passed over, as is any other `by`: no rule keeps one side's copy (C6, F10).
- *
- * Nothing: where the text is null, not JSON or not an object, has no `integration.merge` list, or an entry has no text `paths`.
- * Each path trimmed, a backslash a slash, once. A twin: a landing's replay reads the line's declaration by the driver's
- * `BacklogMerge.RowTablesOf`, and both hold `backlog-merges.json` among the driver's test fixtures, row for row.
+ * The sentences a repository's `integration` is refused in (INTEGRATE1d), the driver's `IntegrationDeclaration` sentence for
+ * sentence: a deliberate copy, held to `integration-declarations.json` among the driver's test fixtures by both twins' tests.
  */
-export function rowTablesOf(text) {
-  if (text === null) return [];
+const INTEGRATION_SAYS = {
+  notJson: '`daoris.gates.json` does not read as JSON, so it declares no integration.',
+  notObject: '`daoris.gates.json` holds no object, so it declares no integration.',
+  integration: '`integration` is an object: `by`, `gates`, `commits`, `scratch`, `merge`, `message` and `env`.',
+  by: '`integration.by` is `daoris` or `tool`.',
+  gates: "`integration.gates` is `reached`, or a list of one or more declared gates' names.",
+  gateUndeclared: (name) => `\`integration.gates\` names \`${name}\`, which \`gates\` does not declare.`,
+  gateTwice: (name) => `\`integration.gates\` names \`${name}\` twice.`,
+  commits: "`integration.commits` is `runner`, or a declared gate's name.",
+  commitsUndeclared: (name) => `\`integration.commits\` names \`${name}\`, which \`gates\` does not declare.`,
+  scratch: '`integration.scratch` is a list of globs, each text.',
+  scratchGlob: (glob) => `\`integration.scratch\` holds \`${glob}\`: a glob is a path from the repository's root, never absolute, never leaving it by \`..\`, never opening with a wildcard.`,
+  merge: '`integration.merge` is a list of rules.',
+  mergeRule: (at) => `\`integration.merge\`'s rule ${at} is neither \`{ paths, by: rows }\` nor \`{ paths, line, run }\`: no rule keeps one side's copy.`,
+  message: "`integration.message` is the merge commit's subject, as text.",
+  messageSays: (said) => `\`integration.message\` says \`${said}\`, and a subject says only \`{name}\`, \`{title}\`, \`{quest}\`, \`{repository}\` and \`{branch}\`.`,
+  env: "`integration.env` is an object, its `pass` a list of variables' names.",
+  passName: (name) => `\`integration.env.pass\` names \`${name}\`, which is no variable's name.`,
+  passDaoris: (name) => `\`integration.env.pass\` names \`${name}\`: a \`DAORIS_\` variable is the install's, and never passes to a gate.`,
+};
+
+/** What a merge message may say (design §4.1's `message`). */
+const MESSAGE_NAMES = ['name', 'title', 'quest', 'repository', 'branch'];
+
+const isRecord = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
+/** A key the object holds, written as something other than null: a key written null is absent. */
+const present = (record, key) => Object.hasOwn(record, key) && record[key] !== null;
+const isText = (value) => typeof value === 'string' && value.trim().length > 0;
+/** A path as both twins keep one: trimmed, each backslash a slash. */
+const keptPath = (text) => text.trim().replace(/\\/g, '/');
+
+/** Whether a scratch glob stays under the repository's root as the driver's `TreeScratch` takes one: not absolute, no `..`, no wildcard first. */
+function scratchGlobHolds(glob) {
+  if (glob.startsWith('/') || glob.includes(':')) return false;
+  const segments = glob.replace(/^\/+|\/+$/g, '').split('/');
+  return segments[0].length > 0 && !segments.includes('..') && !/[*?]/.test(segments[0]);
+}
+
+/**
+ * A repository's integration facts, read whole (INTEGRATE1d; D215 point 2, design §4.1): `daoris.gates.json`'s `integration`, its
+ * `by`, `gates`, `commits`, `scratch`, `merge`, `message` and `env.pass`, each key's shape checked in that order. `{ integration,
+ * problem }`: the facts, an absent `by`, `gates`, `commits` or `message` null and an absent list empty; or the one sentence naming
+ * the first key whose shape it breaks, and no facts, never a partial read. Nothing, and no problem, where the text is null or
+ * declares no `integration`; a key written null is absent, and one neither twin knows is passed over. Nothing acts on it here
+ * beyond row c's row tables (`rowTablesOf`): the writers, the scratch and the gates wait for the acceptance (C6).
+ *
+ * A twin: the driver's `IntegrationDeclaration.Read` (Workplace), and both hold `integration-declarations.json` among the driver's
+ * test fixtures, row for row. A change here is a change there, in the same commit.
+ */
+export function integrationOf(text) {
+  const refused = (problem) => ({ integration: null, problem });
+  if (text === null) return { integration: null, problem: null };
   let declaration;
   try {
     declaration = JSON.parse(text);
   } catch {
-    return [];
+    return refused(INTEGRATION_SAYS.notJson);
   }
-  const merge = declaration !== null && typeof declaration === 'object' && !Array.isArray(declaration) ? declaration.integration?.merge : undefined;
-  if (!Array.isArray(merge)) return [];
-  const paths = merge.flatMap((entry) => {
-    if (entry === null || typeof entry !== 'object' || Array.isArray(entry) || entry.by !== 'rows' || typeof entry.paths !== 'string') return [];
-    const path = entry.paths.trim().replace(/\\/g, '/');
-    return path.length ? [path] : [];
-  });
-  return [...new Set(paths)];
+  if (!isRecord(declaration)) return refused(INTEGRATION_SAYS.notObject);
+  if (!present(declaration, 'integration')) return { integration: null, problem: null };
+  const integration = declaration.integration;
+  if (!isRecord(integration)) return refused(INTEGRATION_SAYS.integration);
+  const declared = Array.isArray(declaration.gates)
+    ? declaration.gates.filter((gate) => isRecord(gate) && typeof gate.name === 'string').map((gate) => gate.name)
+    : [];
+
+  let by = null;
+  if (present(integration, 'by')) {
+    if (integration.by !== 'daoris' && integration.by !== 'tool') return refused(INTEGRATION_SAYS.by);
+    by = integration.by;
+  }
+
+  let gates = null;
+  if (present(integration, 'gates')) {
+    const value = integration.gates;
+    if (value === 'reached') gates = 'reached';
+    else if (Array.isArray(value) && value.length > 0 && value.every(isText)) {
+      gates = [];
+      for (const name of value) {
+        if (!declared.includes(name)) return refused(INTEGRATION_SAYS.gateUndeclared(name));
+        if (gates.includes(name)) return refused(INTEGRATION_SAYS.gateTwice(name));
+        gates.push(name);
+      }
+    } else return refused(INTEGRATION_SAYS.gates);
+  }
+
+  let commits = null;
+  if (present(integration, 'commits')) {
+    if (!isText(integration.commits)) return refused(INTEGRATION_SAYS.commits);
+    if (integration.commits !== 'runner' && !declared.includes(integration.commits)) return refused(INTEGRATION_SAYS.commitsUndeclared(integration.commits));
+    commits = integration.commits;
+  }
+
+  const scratch = [];
+  if (present(integration, 'scratch')) {
+    if (!Array.isArray(integration.scratch) || !integration.scratch.every(isText)) return refused(INTEGRATION_SAYS.scratch);
+    for (const written of integration.scratch) {
+      const glob = keptPath(written);
+      if (!scratchGlobHolds(glob)) return refused(INTEGRATION_SAYS.scratchGlob(glob));
+      scratch.push(glob);
+    }
+  }
+
+  const merge = [];
+  if (present(integration, 'merge')) {
+    if (!Array.isArray(integration.merge)) return refused(INTEGRATION_SAYS.merge);
+    for (const [at, rule] of integration.merge.entries()) {
+      const paths = isRecord(rule) && isText(rule.paths) ? keptPath(rule.paths) : null;
+      if (paths !== null && present(rule, 'by') && rule.by === 'rows' && !present(rule, 'line') && !present(rule, 'run')) merge.push({ paths, by: 'rows' });
+      else if (paths !== null && !present(rule, 'by') && isText(rule.line) && isText(rule.run)) merge.push({ paths, line: rule.line, run: rule.run });
+      else return refused(INTEGRATION_SAYS.mergeRule(at + 1));
+    }
+  }
+
+  let message = null;
+  if (present(integration, 'message')) {
+    if (!isText(integration.message)) return refused(INTEGRATION_SAYS.message);
+    for (const [said, name] of integration.message.matchAll(/\{([^{}]*)\}/g)) {
+      if (!MESSAGE_NAMES.includes(name)) return refused(INTEGRATION_SAYS.messageSays(said));
+    }
+    message = integration.message;
+  }
+
+  const pass = [];
+  if (present(integration, 'env')) {
+    const env = integration.env;
+    if (!isRecord(env)) return refused(INTEGRATION_SAYS.env);
+    if (present(env, 'pass')) {
+      if (!Array.isArray(env.pass) || !env.pass.every((name) => typeof name === 'string')) return refused(INTEGRATION_SAYS.env);
+      for (const name of env.pass) {
+        if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(name)) return refused(INTEGRATION_SAYS.passName(name));
+        if (/^daoris_/i.test(name)) return refused(INTEGRATION_SAYS.passDaoris(name));
+        pass.push(name);
+      }
+    }
+  }
+
+  return { integration: { by, gates, commits, scratch, merge, message, pass }, problem: null };
+}
+
+/**
+ * The files a repository's declaration says settle by rows (INTEGRATE1c; design §4.1's `merge`): `daoris.gates.json`'s
+ * `integration.merge`, each rule `{ "paths": file, "by": "rows" }`, read through the whole declaration (`integrationOf`,
+ * INTEGRATE1d). A file whose conflict is settled as the backlog's is, by the merge base, line by line: a row a side added is kept,
+ * one a side removed is dropped, rows both add at one place are both kept, and a base row both changed stays a conflict. No
+ * command runs, so no acceptance is read: a `line` rule's `run` writer waits for the acceptance and is passed over (C6, F10).
+ *
+ * Nothing where the text is null or declares no integration, or where the declaration has a problem (`integrationOf` names it):
+ * never a partial read. Each path trimmed, a backslash a slash, once, in the order first declared. A twin: a landing's replay reads
+ * the line's declaration by the driver's `BacklogMerge.RowTablesOf`, and both hold `backlog-merges.json` among the driver's test
+ * fixtures, row for row.
+ */
+export function rowTablesOf(text) {
+  const { integration } = integrationOf(text);
+  return integration === null ? [] : [...new Set(integration.merge.filter((rule) => rule.by === 'rows').map((rule) => rule.paths))];
 }
 
 /**
@@ -3309,6 +3487,8 @@ function removeGateTree(home, entry) {
   if (lock?.running) return { ...entry, remove: false, ...gateTreeVerdict({ ...entry, lock }) };
   let left = '';
   if (entry.listed) {
+    const bound = treeBinding(entry.path);
+    if (bound) return { ...entry, remove: false, why: bound };
     const removed = git(home, ['worktree', 'remove', entry.path], { allowFail: true });
     if (removed.status !== 0) {
       const still = parseWorktrees(git(home, ['worktree', 'list', '--porcelain']).out).some((known) => samePath(known.path, entry.path));
@@ -3340,6 +3520,8 @@ function removeOne(root, entry) {
   const tree = entry.worktree;
   let left = '';
   if (tree) {
+    const bound = treeBinding(tree.path);
+    if (bound) return { ...entry, remove: false, why: bound };
     if (entry.unlock) {
       const unlocked = git(root, ['worktree', 'unlock', tree.path], { allowFail: true });
       if (unlocked.status !== 0) return { ...entry, remove: false, why: `git refused to unlock its worktree: ${gitSays(unlocked.err || unlocked.out)}` };
@@ -4509,7 +4691,8 @@ async function gateCheckout(root, options, watch = null, trees = null) {
     throw new Refusal(`${SCRATCH}/ is not ignored here, so the gate logs would change the tree being gated`);
   }
   requireVerdictsIgnored(root);
-  const plan = readPlan(root);
+  // INTEGRATE1j (F6): the declared runner hands the plan it read from the declaration it was given; the tree's own file is never read for it.
+  const plan = options.givenPlan ?? readPlan(root);
   const dir = join(root, SCRATCH, `full-${head.slice(0, 7)}`);
   clearLogs(dir);
   const dirty = treeState(root).changed.length > 0;
@@ -4518,10 +4701,16 @@ async function gateCheckout(root, options, watch = null, trees = null) {
   const unwatch = watch ? watch.poll(TIP_POLL_MS) : () => {};
   let results;
   try {
-    results = await runRecorded(root, plan, dir, { keepGoing: options.keepGoing, oneAtATime: options.oneAtATime, halt, trees, kind: options.runKind ?? 'checkout' });
+    // INTEGRATE1j: the declared runner's scoped run records its verdicts as the queue's do (`verdictKind`), and none for the git half
+    // whose budget deferred classes (`gateVerdict`).
+    results = await runRecorded(root, plan, dir, {
+      keepGoing: options.keepGoing, oneAtATime: options.oneAtATime, halt, trees, kind: options.verdictKind ?? options.runKind ?? 'checkout',
+      onStart: options.onGateStart, onResult: options.onGateResult, gateVerdict: options.gateVerdict,
+    });
   } finally {
     unwatch();
   }
+  options.onResults?.(results);
   const failed = results.filter((result) => result.verdict === 'FAIL');
   const flakes = results.filter((result) => result.verdict === 'FLAKE');
   console.log('');
@@ -5110,6 +5299,7 @@ function prepareGateTree(home, commit) {
     console.log(`the gate tree: made at ${sha} (${GATE_TREE})`);
     return path;
   }
+  requireOwnTree(path);
   const changes = lines(git(path, ['--no-optional-locks', 'status', '--porcelain']).out);
   if (changes.length) {
     throw new Refusal(`the gate tree (${GATE_TREE}) holds changes, which the full set would gate as part of a tree no commit holds:\n`
@@ -5399,6 +5589,591 @@ async function gateBeside(root, options) {
 }
 
 // ---------------------------------------------------------------------------------------------------
+// INTEGRATE1j (design §5.9; D192 points 6 and 9): this tool as the repository's declared `verification` runner
+
+/** The runner's inputs (§5.9), each set on its job alone: D192's two, and the ones integration's calls add. */
+const VERIFY_INPUTS = ['COMMIT', 'RESULT', 'MODE', 'BASE', 'DECLARATION', 'GATES', 'FAILURE', 'TREE'];
+const VERIFY_MODES = ['run', 'plan', 'probe', 'commits'];
+/** Why each mode needs the candidate's base: every schema-2 answer names it, and `run` and `plan` reach their gates from it. */
+const VERIFY_BASE_NEED = Object.freeze({
+  run: 'the run mode reaches its gates by base..commit, and its answer names the base',
+  plan: 'the plan mode reaches its gates by base..commit, and its answer names the base',
+  probe: "the probe mode's answer names the candidate's base",
+  commits: 'the commits mode checks base..commit',
+});
+const FULL_OBJECT_ID = /^(?:[0-9a-f]{40}|[0-9a-f]{64})$/;
+
+/**
+ * The runner's inputs read from `env` (the environment the tool started with), each refused in a sentence where it is missing, not
+ * what it must be, or at odds with another: the tip (a full object id, never one a person's shell left behind: the flag alone reads it),
+ * the file to answer in, the declaration handed (the only source of the gates, F6), the mode (none asked is D192's schema 1), the
+ * base every mode answers for, the tree a caller made, the gates a `run` or a `plan` is narrowed to (comma-separated, by the names
+ * the declaration writes), and the file naming the failure a `probe` repeats. A refusal here has no file to be written to.
+ */
+export function verifyInputs(env, options = {}) {
+  const given = new Map();
+  for (const [name, value] of Object.entries(env)) {
+    const upper = name.toUpperCase();
+    if (!upper.startsWith('DAORIS_VERIFY_')) continue;
+    const short = upper.slice('DAORIS_VERIFY_'.length);
+    if (!VERIFY_INPUTS.includes(short)) throw new Refusal(`${upper} is no input of the runner: it reads ${VERIFY_INPUTS.map((each) => `DAORIS_VERIFY_${each}`).join(', ')}`);
+    if (value !== undefined) given.set(short, value);
+  }
+  const value = (short) => given.get(short) || null;
+  const absolute = (short) => {
+    const path = value(short);
+    if (path !== null && !isAbsolute(path)) throw new Refusal(`DAORIS_VERIFY_${short} is not an absolute path: ${path}`);
+    return path;
+  };
+  const objectId = (short) => {
+    const id = value(short);
+    if (id !== null && !FULL_OBJECT_ID.test(id)) throw new Refusal(`DAORIS_VERIFY_${short} is not a full object id (40 or 64 lower-case hex digits): ${id}`);
+    return id;
+  };
+  if (options.besideCommit) throw new Refusal('--daoris-verify takes its commit from DAORIS_VERIFY_COMMIT: name none beside --beside');
+  const result = absolute('RESULT');
+  if (result === null) throw new Refusal('DAORIS_VERIFY_RESULT is not set: the file to answer in, which the runner writes once, atomically, before it exits');
+  const commit = objectId('COMMIT');
+  if (commit === null) throw new Refusal('DAORIS_VERIFY_COMMIT is not set: --daoris-verify gates the commit it names, so it gates none without one');
+  const declaration = absolute('DECLARATION');
+  if (declaration === null) throw new Refusal('DAORIS_VERIFY_DECLARATION is not set: the gates are read from the declaration handed, never from the tree');
+
+  let mode = null;
+  if (given.has('MODE')) {
+    mode = given.get('MODE');
+    if (mode === '') throw new Refusal('DAORIS_VERIFY_MODE is set and empty: name a mode, or leave it unset for D192\'s answer');
+    if (!VERIFY_MODES.includes(mode)) throw new Refusal(`DAORIS_VERIFY_MODE '${mode}' is none of ${VERIFY_MODES.slice(0, -1).join(', ')} or ${VERIFY_MODES.at(-1)}`);
+  }
+  const base = objectId('BASE');
+  if (mode !== null && base === null) throw new Refusal(`DAORIS_VERIFY_BASE is not set: ${VERIFY_BASE_NEED[mode]}`);
+  if (mode === null && base !== null) throw new Refusal('DAORIS_VERIFY_BASE belongs to a mode: none is asked, and D192\'s answer takes no base');
+  let gates = null;
+  if (given.has('GATES')) {
+    if (mode !== 'run' && mode !== 'plan') throw new Refusal('DAORIS_VERIFY_GATES belongs to the run and plan modes, which are not asked here');
+    if (given.get('GATES').trim() === '') throw new Refusal("DAORIS_VERIFY_GATES is set and empty: name the gates, or leave it unset for the runner's own plan");
+    gates = given.get('GATES').split(',').map((name) => name.trim());
+    if (gates.includes('')) throw new Refusal('DAORIS_VERIFY_GATES holds an empty name: the gates are named as the declaration writes them, separated by commas');
+    const twice = gates.find((name, at) => gates.indexOf(name) !== at);
+    if (twice) throw new Refusal(`DAORIS_VERIFY_GATES names '${twice}' twice`);
+  }
+  if (mode !== 'probe' && value('FAILURE') !== null) throw new Refusal('DAORIS_VERIFY_FAILURE belongs to the probe mode, which is not asked here');
+  const failure = absolute('FAILURE');
+  if (mode === 'probe' && failure === null) throw new Refusal('DAORIS_VERIFY_FAILURE is not set: the probe mode repeats the failure that file names');
+  return { commit, result, mode, base, declaration, tree: absolute('TREE'), gates, failure };
+}
+
+/** INTEGRATE1j: the plan's gates `DAORIS_VERIFY_GATES` names, in the plan's order; a name the declaration handed does not write is refused. */
+export function verifyNamed(plan, names) {
+  const unknown = names.find((name) => !plan.some((gate) => gate.declared === name));
+  if (unknown !== undefined) {
+    throw new Refusal(`DAORIS_VERIFY_GATES names '${unknown}', which the declaration handed does not declare: it declares ${plan.map((gate) => `'${gate.declared}'`).join(', ')}`);
+  }
+  return plan.filter((gate) => names.includes(gate.declared));
+}
+
+/**
+ * The declaration's gates as the runner runs them (F6): read from the text it was handed, in the plan's order, each with `declared`,
+ * the name the declaration writes (the answer's name; `name` is the slug a log is kept by). No release-workflow step is added. A
+ * declaration that repeats a name, or whose `integration` breaks a shape, is refused: the answer could not name its gates apart.
+ */
+export function verifyPlan(text) {
+  const label = 'the declaration handed';
+  const declared = declaredIn(text, label);
+  const seen = new Set();
+  for (const gate of declared) {
+    if (seen.has(gate.name)) throw new Refusal(`${label} names '${gate.name}' twice: the answer reports each gate under the name written, so two of one name cannot be told apart`);
+    seen.add(gate.name);
+  }
+  const { problem } = integrationOf(text);
+  if (problem) throw new Refusal(`${label}: ${problem}`);
+  return gatePlan(declared, '', { keepDeclared: true });
+}
+
+/** The tool's verdicts as D192's schema 1 names them. */
+const VERIFY_VERDICTS = Object.freeze({ PASS: 'pass', FLAKE: 'flake', FAIL: 'fail', ENDED: 'ended' });
+
+/**
+ * The schema-1 `gates` of a run: every gate of the plan, under the declared name, `not-run` where no result is given. `keep` maps a
+ * log to the path where it stays once the run has ended (nothing, and no `log`, where it was not kept); `seconds` is a gate's wall.
+ */
+export function verifyGates(plan, results, { keep = (log) => log, seconds = () => undefined } = {}) {
+  return plan.map((gate) => {
+    const result = results.find((each) => each.gate.name === gate.name);
+    if (!result) return { name: gate.declared, verdict: 'not-run' };
+    const log = result.log ? keep(result.log) : undefined;
+    const wall = seconds(gate.name);
+    return {
+      name: gate.declared,
+      verdict: VERIFY_VERDICTS[result.verdict] ?? 'ended',
+      ...(result.verdict === 'FAIL' && typeof result.code === 'number' ? { exit: result.code } : {}),
+      ...(wall === undefined ? {} : { wallSeconds: wall }),
+      ...(log ? { log } : {}),
+    };
+  });
+}
+
+/** The `commits` mode's answer (schema 2): the commit check's attribution problems for the range, `declaration` the blob id it was handed. */
+export function verifyCommitsAnswer({ commit, base, declaration, commits }) {
+  return { schema: 2, mode: 'commits', commit, base, declaration, problems: commitAttributionProblems(commits) };
+}
+
+/**
+ * INTEGRATE1j (design §5.5): the environment a gate is composed with, as its composition records it: the rule (the names it never
+ * inherits, `GATE_REMOVED`, and the build servers of its own, `BESIDE_ENVIRONMENT`), never a value the machine holds, so two runs on
+ * one machine compose alike and a change of the rule changes every digest.
+ */
+export function compositionEnvironment() {
+  return { removed: GATE_REMOVED.map((pattern) => `/${pattern.source}/${pattern.flags}`), added: { ...BESIDE_ENVIRONMENT } };
+}
+
+/** A value as JSON with every object's keys in order, so one composition digests alike however its keys were written. */
+function canonicalJson(value) {
+  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(',')}]`;
+  if (value && typeof value === 'object') {
+    return `{${Object.keys(value).filter((key) => value[key] !== undefined).sort().map((key) => `${JSON.stringify(key)}:${canonicalJson(value[key])}`).join(',')}}`;
+  }
+  return JSON.stringify(value ?? null);
+}
+
+/** INTEGRATE1j: the digest of a composition, its units and its settings together, which a probe compares with the one it would build. */
+export function compositionDigest(units, settings) {
+  return `sha256:${createHash('sha256').update(canonicalJson({ units, settings })).digest('hex')}`;
+}
+
+/**
+ * INTEGRATE1j (design §4.5, §5.9): what a gate ran with, so one of its failures can be repeated as composed. `units`: the classes it
+ * ran where it ran by class (a Process half by reach, the git half within its budget), sorted; null where it ran whole, every unit its
+ * command selects. `settings`: the gate as the declaration writes it (its name, command and folder), the run settings its command
+ * names as the commit holds them (`runsettings`, null where it names none), the classes its run settings left out (`narrowed`), and
+ * the environment's rule. `digest`: of both. A probe builds its own the same way at its commit and runs only where the two agree.
+ */
+export function verifyComposition({ gate, runsettings = null, units = null, narrowed = [] }) {
+  const settings = {
+    gate: gate.declared ?? gate.name, run: gate.run, cwd: gate.cwd ?? null, runsettings, narrowed: [...narrowed].sort(), environment: compositionEnvironment(),
+  };
+  const sorted = units === null ? null : [...units].sort();
+  return { units: sorted, settings, digest: compositionDigest(sorted, settings) };
+}
+
+/** INTEGRATE1j: the parts of a composition's settings, each as a refusal names it when the probe's and the run's differ. */
+const COMPOSITION_PARTS = Object.freeze([
+  ['gate', 'the gate it names'], ['run', "the declaration's command"], ['cwd', 'the folder it runs in'], ['runsettings', 'the run settings'],
+  ['narrowed', 'the classes its run settings left out'], ['environment', "the gate environment's rule"],
+]);
+
+/** INTEGRATE1j: what differs between the settings a probe would build and the ones a run kept, in words; empty where nothing does. */
+export function compositionDifference(built, kept) {
+  return COMPOSITION_PARTS.filter(([part]) => canonicalJson(built?.[part]) !== canonicalJson(kept?.[part]))
+    .map(([part, words]) => (part === 'runsettings' ? `the run settings ${built?.runsettings?.path ?? kept?.runsettings?.path ?? ''}`.trim() : words));
+}
+
+/**
+ * INTEGRATE1j: the run settings a gate's command names (`dotnet test <project> --settings <file>`), as `commit` holds them:
+ * `{ path, text }`, the path from the repository's root, the text null where the commit holds no such file; null where the command
+ * names none. Read from the commit and not a tree, so a probe judges its composition before it takes any tree.
+ */
+function runSettingsAt(where, commit, gate) {
+  const half = halfOf(gate.run);
+  if (!half) return null;
+  const path = posix.normalize(posix.join(gate.cwd ? gate.cwd.replace(/\\/g, '/') : '.', half.settings));
+  // The blob as the commit holds it, to its last byte: `git` here trims what it reads.
+  const shown = spawnGit(['cat-file', 'blob', `${commit}:${path}`], { cwd: where, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
+  return { path, text: shown.status === 0 ? shown.stdout : null };
+}
+
+/**
+ * The `run` mode's gates (design §5.9): each gate it ran as schema 1 answers it (`verifyGates`), with its `composition` (`units`; the
+ * path where its settings file stays once the run has ended, omitted where it was not kept; `digest`) and its `failures`, each
+ * `{ unit, test, signature }`. `compositions` maps a gate's log name to its composition and the file it was written to.
+ */
+export function verifyRunGates(plan, results, { keep = (path) => path, seconds = () => undefined, compositions, failures }) {
+  return verifyGates(plan, results, { keep, seconds }).map((answered, at) => {
+    const composition = compositions.get(plan[at].name);
+    const settings = composition?.file ? keep(composition.file) : undefined;
+    return {
+      ...answered,
+      ...(composition ? { composition: { units: composition.units, ...(settings ? { settings } : {}), digest: composition.digest } } : {}),
+      failures: failures.get(plan[at].name) ?? [],
+    };
+  });
+}
+
+/** A Process half's or the git half's classes as a plan's line says them, after its scoped set's reason. */
+function classDetail(gate) {
+  if (!gate) return '';
+  if (gate.deferredClasses?.length) return `: ${classCount(gate.units.length)} within its budget, ${classCount(gate.deferredClasses.length)} deferred to the background run`;
+  if (gate.units) return `: ${classCount(gate.units.length)} by reach, ${classCount(gate.narrowed.length)} kept on passes that stand`;
+  if (gate.reach?.whole) return `: whole, ${gate.reach.whole}`;
+  return '';
+}
+
+/**
+ * INTEGRATE1j (design §4.3, §5.9): the `plan` mode's three lists, each declared gate in one of them once, under the name the declaration
+ * writes, in the plan's order. `run`, `{ name, why }`: the scoped set's run (`set`), with the classes a half runs (`gates`, as
+ * `scopedGates` shapes them). `kept`, `{ name, why, commit, tree, standing }`: a gate whose pass stands on the tree (`kept`, `ciPlan`'s),
+ * with the commit and tree that pass was given on and how it stands; a half every class of which is kept (`composed`) on its last pass.
+ * `deferred`, `{ name, why }`: the scoped set's, and a gate no path of the candidate reaches whose pass does not stand, which the
+ * background run answers for. With `named` (DAORIS_VERIFY_GATES), the plan is those gates, each run whole.
+ */
+export function verifyPlanAnswer({ plan, set = { run: [], kept: [], deferred: [] }, kept = [], gates = [], composed = [], named = null }) {
+  if (named) {
+    return { run: plan.filter((gate) => named.includes(gate.declared)).map((gate) => ({ name: gate.declared, why: 'named in DAORIS_VERIFY_GATES: it runs whole' })), kept: [], deferred: [] };
+  }
+  const answer = { run: [], kept: [], deferred: [] };
+  const standing = (name, why) => {
+    const entry = kept.find((each) => each.name === name);
+    return { why, commit: entry?.verdict?.commit ?? null, tree: entry?.verdict?.tree ?? null, standing: entry?.standing?.standing ?? null };
+  };
+  const of = (list, name) => list.find((each) => each.name === name);
+  for (const gate of plan) {
+    const name = gate.declared;
+    const half = of(composed, gate.name);
+    if (half) {
+      answer.kept.push({
+        name, why: `every class's pass stands, so it passes without running: ${half.why}`, commit: half.last?.verdict?.commit ?? null, tree: half.last?.verdict?.tree ?? null, standing: 'composed',
+      });
+    } else if (of(set.run, gate.name)) answer.run.push({ name, why: `${of(set.run, gate.name).why}${classDetail(of(gates, gate.name))}` });
+    else if (of(set.kept, gate.name)) answer.kept.push({ name, ...standing(gate.name, of(set.kept, gate.name).why) });
+    else if (of(set.deferred, gate.name)) answer.deferred.push({ name, why: of(set.deferred, gate.name).why });
+    else if (of(kept, gate.name)) answer.kept.push({ name, ...standing(gate.name, 'no path the candidate changes reaches it, and its pass stands on this tree') });
+    else answer.deferred.push({ name, why: 'no path the candidate changes reaches it: the background run answers for it' });
+  }
+  return answer;
+}
+
+/**
+ * INTEGRATE1j (design §5.9): the failure a `probe` repeats, read from the file `DAORIS_VERIFY_FAILURE` names: one failure of a `run`
+ * answer with the gate it failed in and that gate's composition as the answer gave them, `{ gate, unit, test, signature, composition:
+ * { units, settings, digest } }`. Answers the plan's gate, the failure as the queue's probe takes it (`names`: `gate` where its
+ * signature is a gate's step, `test` otherwise), and the composition; each part missing or misshapen is refused in a sentence.
+ */
+export function verifyFailure(text, plan) {
+  let parsed;
+  try {
+    parsed = JSON.parse(text);
+  } catch (error) {
+    throw new Refusal(`DAORIS_VERIFY_FAILURE is not valid JSON: ${error.message}`);
+  }
+  const shape = 'it names one failure of a run answer, { gate, unit, test, signature, composition }, with its gate\'s composition as the answer gave it';
+  const missing = (what) => new Refusal(`DAORIS_VERIFY_FAILURE ${what}: ${shape}`);
+  const isObject = (value) => Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+  if (!isObject(parsed)) throw missing('is not an object');
+  for (const field of ['gate', 'unit', 'test']) if (typeof parsed[field] !== 'string' || !parsed[field]) throw missing(`has no ${field}`);
+  if (!isObject(parsed.signature)) throw missing('has no signature');
+  const { composition } = parsed;
+  if (!isObject(composition)) throw missing('has no composition');
+  if (typeof composition.digest !== 'string' || !/^sha256:[0-9a-f]{64}$/.test(composition.digest)) throw missing('has no composition digest (sha256: and 64 hex digits)');
+  if (!(composition.units === null || (Array.isArray(composition.units) && composition.units.every((unit) => typeof unit === 'string')))) {
+    throw missing('has no composition units (null, or the names of the classes its gate ran)');
+  }
+  if (typeof composition.settings !== 'string' || !isAbsolute(composition.settings)) throw missing('has no composition settings (the absolute path of the file kept beside its log)');
+  const gate = plan.find((each) => each.declared === parsed.gate);
+  if (!gate) {
+    throw new Refusal(`DAORIS_VERIFY_FAILURE names the gate '${parsed.gate}', which the declaration handed does not declare: it declares ${plan.map((each) => `'${each.declared}'`).join(', ')}`);
+  }
+  return {
+    gate,
+    failure: { names: parsed.signature.gate !== undefined ? 'gate' : 'test', gate: gate.declared, unit: parsed.unit, test: parsed.test, signature: parsed.signature },
+    composition: { units: composition.units, settings: composition.settings, digest: composition.digest },
+  };
+}
+
+/**
+ * INTEGRATE1j: the answer of a run that started and did not finish (a thrown error: `npm ci` failing, a lane table that does not read),
+ * in its mode's shape with `unfinished` saying why, so its reader judges it unknown rather than reading nothing: schema 1 and `run` name
+ * each gate as far as it went (`not-run` where it never started, no log, no failure read); `plan` holds no list; `probe` answers `cannot`.
+ */
+export function verifyUnfinished(mode, { commit, base = null, declaration, why, plan = [], results = [], kept = [], deferred = [] }) {
+  const unfinished = `the run did not finish: ${why}`;
+  const gates = () => verifyGates(plan, results, { keep: () => undefined });
+  if (mode === null) return { schema: 1, commit, gates: gates(), unfinished };
+  const envelope = { schema: 2, mode, commit, base, declaration };
+  if (mode === 'run') return { ...envelope, gates: gates().map((gate) => ({ ...gate, failures: [] })), kept, deferred, unfinished };
+  if (mode === 'probe') return { ...envelope, result: 'cannot', signature: null, unfinished };
+  return { ...envelope, unfinished };
+}
+
+/** The runner's one answer: written whole and atomically (D192), its folder made where the caller has not. */
+function writeVerifyResult(file, answer) {
+  mkdirSync(dirname(file), { recursive: true });
+  writeAtomic(file, `${JSON.stringify(answer)}\n`);
+}
+
+/**
+ * INTEGRATE1j: what the runner's `run` would run of the declaration handed, and its plan's answer (`verifyPlanAnswer`). With `named`
+ * (DAORIS_VERIFY_GATES) those gates, each whole; else the scoped choice on the tree from `base` (`scopedChoice`, `scopedGates`), a half
+ * every class of which is kept answered on its last pass. With no `dir` nothing is written: the plan mode runs nothing.
+ */
+function verifyChosen(home, tree, plan, { base, commit, named, dir }) {
+  if (named) {
+    const gates = named.map((gate) => ({ ...gate, units: null, narrowed: [] }));
+    return { gates: dir ? gates.map((gate) => withTrx(gate, dir)) : gates, answer: verifyPlanAnswer({ plan, named: named.map((gate) => gate.declared) }) };
+  }
+  const choice = scopedChoice(home, tree, { plan, base, tip: commit });
+  const scoped = scopedGates(home, tree, plan, choice, dir);
+  const composed = scoped.composed.map((gate) => ({ name: gate.name, why: gate.reach.composed, last: lastVerdict(gate.name, choice.verdicts, choice.standing) }));
+  return { gates: scoped.gates, answer: verifyPlanAnswer({ plan, set: choice.set, kept: choice.judged.kept, gates: scoped.gates, composed }) };
+}
+
+/** The plan's three lists as the runner says them, a line a gate. */
+function verifyPlanLines(answer) {
+  return [['run', answer.run], ['kept', answer.kept], ['deferred', answer.deferred]]
+    .flatMap(([label, list]) => list.map((entry) => `  ${pad(label, 9)} ${pad(entry.name, 16)} ${entry.why}`));
+}
+
+/**
+ * INTEGRATE1j (design §5.9): a probe's failure and the composition it is to be repeated by, judged before the runner takes any tree,
+ * so a refusal writes nothing and runs nothing. The failure's file is read (`verifyFailure`); the settings file its composition names
+ * must be the one kept, its digest the one handed; and the composition the probe would build at `commit` (the declaration handed, the
+ * run settings the commit holds, the environment's rule, the units and the classes the run left out) must have that digest too, else
+ * it is refused, naming what differs. Answers the gate, the failure, and the settings the probe runs with.
+ */
+function probeComposition(where, inputs, plan, commit) {
+  if (!existsSync(inputs.failure)) throw new Refusal(`DAORIS_VERIFY_FAILURE names no file: ${inputs.failure}`);
+  const { gate, failure, composition } = verifyFailure(readFileSync(inputs.failure, 'utf8'), plan);
+  let kept;
+  try {
+    kept = JSON.parse(readFileSync(composition.settings, 'utf8'));
+  } catch (error) {
+    const why = error?.code === 'ENOENT' ? 'it is not there: a later run at its commit replaced the logs it was kept with, or it never was kept' : error.message;
+    throw new Refusal(`the composition's settings file does not read (${composition.settings}): ${why}`);
+  }
+  if (!kept?.settings || compositionDigest(composition.units, kept.settings) !== composition.digest) {
+    throw new Refusal(`the composition handed is not the one kept at ${composition.settings}: their digests differ, so the run it names cannot be repeated as composed`);
+  }
+  const narrowed = Array.isArray(kept.settings.narrowed) ? kept.settings.narrowed : [];
+  const built = verifyComposition({ gate, runsettings: runSettingsAt(where, commit, gate), units: composition.units, narrowed });
+  if (built.digest !== composition.digest) {
+    const parts = compositionDifference(built.settings, kept.settings);
+    throw new Refusal(`the composition at ${commit.slice(0, 7)} differs from the run's (${parts.join(', ') || 'its units'}): a probe repeats a failure only as it was composed`);
+  }
+  if (failure.names === 'test' && narrowed.includes(failure.unit)) {
+    throw new Refusal(`the failure's unit ${failure.unit} was left out of its gate's run by reach, so that run cannot have failed it`);
+  }
+  return { gate, failure, settings: built.settings };
+}
+
+/**
+ * INTEGRATE1j (design §4.5, §5.9; the nearest code is `prefixRunner`): one failure repeated as its gate composed it, in `tree` at the
+ * probe's commit: the failing test's class, or the gate's own command for a failure that named no test (`prefixCommand`), under the
+ * gate's run settings narrowed as its run's were, with the gate environment, holding the gate's place in the machine's admission. So a
+ * test its own class pollutes fails again, where it alone would pass. Judged on that run alone, whatever a Process half's FLAKE1 re-run
+ * alone says after it: `pass`; `fail` with the failure's own signature, or with the first other one; `cannot` where the gate failed
+ * outside any test. Its log stays in the main checkout's scratch.
+ */
+async function probeAsComposed(tree, home, { gate, failure, settings }, sha, trees) {
+  const dir = join(home, SCRATCH, `probe-${sha}`);
+  clearLogs(dir);
+  let run = gate.run;
+  if (settings.narrowed.length && typeof settings.runsettings?.text === 'string') {
+    const file = join(dir, `${gate.name}.probe.${basename(settings.runsettings.path)}`);
+    writeAtomic(file, reachSettings(settings.runsettings.text, settings.narrowed));
+    run = withSettings(run, file);
+  }
+  const narrowed = prefixCommand({ run }, failure);
+  const probe = { ...gate, name: `${gate.name}.probe`, run: narrowed };
+  // A Process half's own trx is written by `runGate`; any other `dotnet test` is given one, so its failing tests are read by name.
+  const own = /^dotnet test\b/.test(run.trim()) && !isProcessGate(probe) ? join(dir, `${probe.name}.trx`) : null;
+  if (own) {
+    rmSync(own, { force: true });
+    probe.run = trxCommand(narrowed, own);
+  }
+  console.log(`the probe of ${failure.test} (${gate.declared}) on ${sha}, as composed: ${narrowed}`);
+  const ran = await admitted(startAdmission(), gate, () => Boolean(trees.ended), () => runGate(tree, probe, dir, { trees, step: gateStep }));
+  if (!ran || ran.verdict === 'ENDED') throw new Refusal(`the probe ${probe.name} was ended before its verdict`);
+  if (ran.code === 0) return { result: 'pass', signature: null, log: ran.log };
+  const found = failuresOf(tree, { ...ran, gate: { ...gate, name: gate.declared } }, ran.trx ?? own);
+  const match = found.find((each) => signatureKey(each.signature) === signatureKey(failure.signature));
+  if (match) return { result: 'fail', signature: match.signature, log: ran.log };
+  const [first] = found;
+  return { result: first.names === 'gate' && failure.names === 'test' ? 'cannot' : 'fail', signature: first.signature, log: ran.log };
+}
+
+/**
+ * `--full --beside --daoris-verify`: this tool as D192's declared runner. Its inputs are the environment's `DAORIS_VERIFY_*`, read
+ * once from the start environment and then removed from this process, so nothing it starts holds one. It runs the handed declaration's
+ * gates at the named commit, in the gate tree it makes as `--full --beside` does, or in the tree a caller handed (the caller's: no
+ * lock taken, no private file copied in; only the dependencies the gates need, installed where the tree lacks them), and answers
+ * in `DAORIS_VERIFY_RESULT`: schema 1 by gate under the declared names, or `busy` (exit 75) written before it refuses, or in the
+ * `commits` mode the commit check's problems on base..commit. It writes no gate record and no receipt: a stage is allowed by
+ * `--full --beside` alone.
+ *
+ * INTEGRATE1j part 2 (design §5.9): the schema-2 modes. `run` runs its plan's run, each gate's composition written beside its log
+ * first, and answers by gate with each composition and the failures read from it, beside the plan's kept and deferred; `plan` says
+ * what a run would run, keep and defer, and runs nothing; `probe` repeats one failure of a run as composed. Every answer is written
+ * whole, or nothing is and the refusal exits 2; a run that started and did not finish answers `unfinished` (`verifyUnfinished`).
+ */
+async function gateVerify(root, options) {
+  const inputs = verifyInputs(START_ENVIRONMENT, options);
+  for (const name of Object.keys(process.env)) if (/^DAORIS_VERIFY_/i.test(name)) delete process.env[name];
+  const { commit, result, mode } = inputs;
+  const sha = commit.slice(0, 7);
+  // A file left by an earlier run must never be read for this one.
+  rmSync(result, { force: true });
+  if (!existsSync(inputs.declaration)) throw new Refusal(`DAORIS_VERIFY_DECLARATION names no file: ${inputs.declaration}`);
+  const text = readFileSync(inputs.declaration, 'utf8');
+  const plan = verifyPlan(text);
+  acceptedPass = integrationOf(text).integration?.pass ?? [];
+  const named = inputs.gates ? verifyNamed(plan, inputs.gates) : null;
+  const home = verdictsHome(root);
+  const where = inputs.tree ?? home;
+  if (inputs.tree && !existsSync(inputs.tree)) throw new Refusal(`DAORIS_VERIFY_TREE names no folder: ${inputs.tree}`);
+  for (const [name, id] of [['DAORIS_VERIFY_COMMIT', commit], ['DAORIS_VERIFY_BASE', inputs.base]]) {
+    if (id && git(where, ['cat-file', '-e', `${id}^{commit}`], { allowFail: true }).status !== 0) throw new Refusal(`${name} ${id} is no commit of this repository`);
+  }
+  const blob = git(where, ['hash-object', '--', inputs.declaration]).out.trim();
+  const envelope = mode === null ? null : { schema: 2, mode, commit, base: inputs.base, declaration: blob };
+
+  if (mode === 'commits') {
+    const rule = integrationOf(text).integration?.commits ?? null;
+    if (rule !== null && rule !== 'runner') {
+      throw new Refusal(`the declaration handed checks commits by its gate '${rule}', not by the runner: the commits mode answers only where \`commits\` is \`runner\``);
+    }
+    const commits = parseCommits(git(where, ['log', COMMIT_FORMAT, `${inputs.base}..${commit}`]).out);
+    const answer = verifyCommitsAnswer({ commit, base: inputs.base, declaration: blob, commits });
+    writeVerifyResult(result, answer);
+    console.log(`the commit check on ${inputs.base.slice(0, 7)}..${sha}: ${count(commits.length, 'commit')}, ${answer.problems.length} problem${answer.problems.length === 1 ? '' : 's'}`);
+    for (const problem of answer.problems) console.log(`  ${problem}`);
+    return answer.problems.length ? 1 : 0;
+  }
+  // A probe's failure and composition are judged before any tree is taken: a refusal writes nothing and runs nothing.
+  const probing = mode === 'probe' ? probeComposition(where, inputs, plan, commit) : null;
+
+  let tree;
+  let lock = false;
+  if (inputs.tree) {
+    tree = locate(inputs.tree);
+    if (!samePath(tree, inputs.tree)) throw new Refusal(`DAORIS_VERIFY_TREE is not the root of a work tree: ${inputs.tree}`);
+    const at = git(tree, ['rev-parse', 'HEAD']).out.trim();
+    if (at !== commit) throw new Refusal(`DAORIS_VERIFY_TREE stands at ${at.slice(0, 7)}, not at DAORIS_VERIFY_COMMIT ${sha}: the tree is the caller's, and the runner moves none`);
+  } else {
+    if (!isIgnored(home, GATE_TREE)) {
+      throw new Refusal(`${GATE_TREE} is not ignored in the main checkout, so the gate tree would be part of the tree its merges gate`);
+    }
+    requireVerdictsIgnored(home);
+    try {
+      const taken = takeGateLock(home, { commit, holder: 'full' });
+      lock = true;
+      if (taken.stale) console.log(`the gate tree's lock was left by pid ${taken.stale.pid} (on ${taken.stale.commit.slice(0, 7)} since ${when(taken.stale.at)}), which no longer runs: taken over`);
+    } catch (error) {
+      // D192: a runner whose own run holds its lock answers `busy` before it refuses, and the caller waits it out.
+      if (error?.busy) {
+        writeVerifyResult(result, envelope ? { ...envelope, busy: true } : { schema: 1, commit, busy: true });
+        error.exitCode = 75;
+      }
+      throw error;
+    }
+  }
+  const trees = stepTrees();
+  const unhook = stopOnInterrupt(trees);
+  // What the run has done, for the answer of a run that does not finish; once an answer is written, nothing else is.
+  const progress = { plan: mode === null ? plan : [], results: [], kept: [], deferred: [] };
+  let answered = false;
+  const answer = (said) => {
+    writeVerifyResult(result, said);
+    answered = true;
+  };
+  try {
+    if (mode !== 'plan') startBesideRun();
+    if (!inputs.tree) {
+      tree = locate(prepareGateTree(home, commit));
+      if (mode !== 'plan') {
+        for (const line of copyPrivateFiles(home, tree, privateGateFiles(home))) console.log(`  ${line}`);
+        for (const line of rescueGateLogs(tree, home)) console.log(`  ${line}`);
+      }
+    }
+    if (mode === 'plan') {
+      const { answer: planned } = verifyChosen(home, tree, plan, { base: inputs.base, commit, named, dir: null });
+      answer({ ...envelope, ...planned });
+      console.log(`the runner's plan for ${sha} on ${inputs.base.slice(0, 7)}: ${count(planned.run.length, 'gate')} to run, ${planned.kept.length} kept, ${planned.deferred.length} deferred; nothing ran`);
+      for (const line of verifyPlanLines(planned)) console.log(line);
+      return 0;
+    }
+    if (mode === 'probe') {
+      installDependencies(tree);
+      const probed = await probeAsComposed(tree, home, probing, sha, trees);
+      answer({ ...envelope, result: probed.result, signature: probed.signature, log: probed.log });
+      console.log(`merge-branch: the probe ${probed.result === 'fail' && signatureKey(probed.signature) === signatureKey(probing.failure.signature) ? 'failed again with its signature' : probed.result === 'pass' ? 'passed' : `answered ${probed.result}, with another signature`}: ${probed.log}`);
+      return probed.result === 'pass' ? 0 : 1;
+    }
+    const dir = join(tree, SCRATCH, `full-${sha}`);
+    let runPlan = plan;
+    const compositions = new Map();
+    if (mode === 'run') {
+      mkdirSync(dir, { recursive: true });
+      for (const name of readdirSync(dir)) if (name.endsWith('.composition.json')) rmSync(join(dir, name), { force: true });
+      const chosen = verifyChosen(home, tree, plan, { base: inputs.base, commit, named, dir });
+      runPlan = chosen.gates;
+      Object.assign(progress, { plan: runPlan, kept: chosen.answer.kept, deferred: chosen.answer.deferred });
+      console.log(`the runner's run of ${sha} on ${inputs.base.slice(0, 7)}: ${count(runPlan.length, 'gate')} to run, ${chosen.answer.kept.length} kept, ${chosen.answer.deferred.length} deferred`);
+      for (const line of verifyPlanLines(chosen.answer)) console.log(line);
+      // Design §5.9: each gate's composition is written beside where its log will be before it starts, and kept with its log.
+      for (const gate of runPlan) {
+        const declared = plan.find((each) => each.name === gate.name);
+        const composition = verifyComposition({ gate: declared, runsettings: runSettingsAt(tree, commit, declared), units: gate.units, narrowed: gate.narrowed });
+        const file = join(dir, `${gate.name}.composition.json`);
+        writeAtomic(file, `${JSON.stringify({ schema: 1, digest: composition.digest, units: composition.units, settings: composition.settings }, null, 2)}\n`);
+        compositions.set(gate.name, { units: composition.units, digest: composition.digest, file });
+      }
+    }
+    installDependencies(tree);
+    console.log(UNDER_LOAD);
+    const started = new Map();
+    const seconds = new Map();
+    let results = [];
+    // The commit is the caller's: no newer tip of main supersedes it (no `watch`).
+    const code = runPlan.length === 0 ? 0 : await gateCheckout(tree, {
+      ...options, runKind: 'full', givenPlan: runPlan,
+      ...(mode === 'run' ? { verdictKind: named ? 'full' : 'scoped', gateVerdict: (gate) => !gate.deferredClasses?.length } : {}),
+      onResults: (found) => { results = found; },
+      onGateStart: (gate) => { started.set(gate.name, Date.now()); },
+      onGateResult: (found) => {
+        progress.results.push(found);
+        seconds.set(found.gate.name, Math.round((Date.now() - (started.get(found.gate.name) ?? Date.now())) / 1000));
+      },
+    }, null, trees);
+    // The failures are read from the tree that ran them, before anything moves it.
+    const failures = new Map();
+    for (const found of mode === 'run' ? results.filter((each) => each.verdict === 'FAIL') : []) {
+      const gate = runPlan.find((each) => each.name === found.gate.name);
+      const read = failuresOf(tree, { ...found, gate: { ...found.gate, name: gate.declared } }, found.trx ?? gate.scopedTrx);
+      failures.set(found.gate.name, read.map(({ unit, test, signature }) => ({ unit, test, signature })));
+    }
+    // The logs the answer names must outlive the tree's next move.
+    const run = join(tree, SCRATCH, `full-${sha}`);
+    const kept = join(verdictsHome(tree), SCRATCH, `beside-${sha}`);
+    let keptNow = false;
+    try {
+      keptNow = keepGateLogs(tree, verdictsHome(tree), commit);
+      if (keptNow) console.log(`  The run's logs are kept: ${SCRATCH}/beside-${sha}`);
+    } catch (error) {
+      console.log(`  The run's logs could not be kept (${error.message}); the answer names none`);
+    }
+    const keep = (path) => (keptNow ? join(kept, relative(run, path)) : undefined);
+    const timed = (name) => seconds.get(name);
+    if (mode === 'run') {
+      answer({ ...envelope, gates: verifyRunGates(runPlan, results, { keep, seconds: timed, compositions, failures }), kept: progress.kept, deferred: progress.deferred });
+    } else {
+      answer({ schema: 1, commit, gates: verifyGates(plan, results, { keep, seconds: timed }) });
+    }
+    return code;
+  } catch (error) {
+    // A run that started and did not finish says so, so its reader judges it unknown rather than reading nothing.
+    if (!answered) {
+      try {
+        writeVerifyResult(result, verifyUnfinished(mode, { commit, base: inputs.base, declaration: blob, why: error?.message ?? String(error), ...progress }));
+      } catch (unwritten) {
+        console.log(`  the answer that the run did not finish could not be written (${unwritten.message})`);
+      }
+    }
+    throw error;
+  } finally {
+    unhook();
+    if (lock) releaseGateLock(home);
+  }
+}
+
+// ---------------------------------------------------------------------------------------------------
 // CI1: the local CI runner, main's tip gated after each merge in the gate tree
 
 /** CI1: the CI's record in the main checkout: its last green run, and each run's commit and end, the newest last. */
@@ -5586,6 +6361,7 @@ export function lastVerdict(gate, verdicts, { tree, drift, isRecord, reaching })
  * as `reach`; a whole half keeps its command and is handed its plan too, so its verdict says it kept none. A census that cannot
  * be read, or a half whose command names no settings, runs whole and says why. CISCOPE1b: each half is judged with its newest
  * gate verdict in `verdicts` (the gate store's) and how that stands, and a half its plan composes (`composed`) is not run.
+ * INTEGRATE1j: with no `dir` nothing is written, and a half by reach keeps its command: the declared runner's plan runs nothing.
  */
 function reachedHalves({ tree, treeId, gates, standing, verdicts = [], home, dir, now = Date.now(), whole = new Map(), owedAnyway = new Set() }) {
   const plans = new Map();
@@ -5618,7 +6394,7 @@ function reachedHalves({ tree, treeId, gates, standing, verdicts = [], home, dir
       plan = { whole: `its classes could not be read (${error.message}), so it runs whole`, run: [], kept: [], sweep: null };
     }
     plans.set(gate.name, { ...plan, census });
-    if (plan.whole || plan.composed) return { ...gate, reach: plan };
+    if (plan.whole || plan.composed || !dir) return { ...gate, reach: plan };
     const file = join(dir, `${gate.name}.${basename(half.settings)}`);
     writeAtomic(file, reachSettings(readFileSync(join(tree, half.settings), 'utf8'), plan.kept.map((each) => each.name)));
     return { ...gate, run: withSettings(gate.run, file), reach: plan };
@@ -5805,7 +6581,7 @@ const overdueSaid = (record, halves, hour) => overdueLines(hour === null ? { ...
  * the known red of its test (a trx's passing tests) or its gate on a commit on main's first-parent line from where it was last
  * seen. Answers what the run says of them, the overdue report and the known red the watch says.
  */
-function noteBackground({ home, tree, plan, commit, kind, state, started, ended, results }) {
+function noteBackground({ home, tree, plan, commit, kind, state, started, ended, results, kept = [], treeId = null }) {
   const halves = plan.filter(isProcessGate).map((gate) => gate.name);
   let sweep = sweepRecord(home, plan);
   const swept = results.filter((result) => isProcessGate(result.gate) && sweepSatisfied({ whole: result.gate.reach?.whole ?? null, verdict: result.verdict, trx: result.trx && existsSync(result.trx) ? result.trx : null }))
@@ -5855,6 +6631,25 @@ function noteBackground({ home, tree, plan, commit, kind, state, started, ended,
     findings = done.record;
     cleared += done.cleared.length;
   }
+  // CIFINDINGSKEEP1: the passes the run kept clear a finding under the same rules as one it ran; a trx of the kept run is read
+  // from the scratch folder of the run that gave it (a CI run's, or a scoped candidate's), and where none can be read a test
+  // finding stays open and is said.
+  let fromKept = 0;
+  let unread = [];
+  if (kept?.length) {
+    const trxOf = (entry) => {
+      const sha = String(entry.verdict.commit ?? '').slice(0, 7);
+      const name = entry.name;
+      const file = [join(home, SCRATCH, `ci-${sha}`, `${name}.trx`), join(home, SCRATCH, `scope-${sha}`, `${name}.scoped.trx`), join(home, SCRATCH, `scope-${sha}`, `${name}.trx`)]
+        .find((each) => sha && existsSync(each));
+      return file ? passingTests(readFileSync(file, 'utf8')) : null;
+    };
+    const done = clearKept(findings, { commit, tree: treeId, at: ended, kind, stopped: state === 'stopped', kept, descends, passesOf: trxOf });
+    findings = done.record;
+    fromKept = done.cleared.length;
+    cleared += fromKept;
+    unread = done.unread;
+  }
   if (filed || cleared) writeFindings(home, findings);
 
   const overdue = overdueSaid(sweep, halves, nightHour());
@@ -5863,7 +6658,8 @@ function noteBackground({ home, tree, plan, commit, kind, state, started, ended,
   const said = [];
   if (swept.length) said.push(`swept (${CI_SWEEP}): ${swept.map((each) => each.gate).join(', ')}, each class given a verdict`);
   if (kind === 'nightly') said.push(nightSatisfied(state) ? 'the night is satisfied: this nightly run finished' : `the night stays due: this nightly run ${state === 'stopped' ? 'was stopped' : 'did not finish'}`);
-  if (filed || cleared || open) said.push(`known red (local/ci-findings.json): ${filed} filed, ${cleared} cleared by this run; ${open} open`);
+  if (filed || cleared || open) said.push(`known red (local/ci-findings.json): ${filed} filed, ${cleared} cleared by this run${fromKept ? ` (of them, ${fromKept} from kept proof)` : ''}; ${open} open`);
+  if (unread.length) said.push(`known red left open: ${unread.map((each) => each.test).join(', ')}: the run kept a pass of ${[...new Set(unread.map((each) => each.gate))].join(', ')}, but no readable trx of it lists the test, so it clears nothing (CIFINDINGSKEEP1)`);
   return { lines: [...said, ...overdue, ...knownRed], overdue, knownRed };
 }
 
@@ -6061,7 +6857,7 @@ async function gateCi(root, options, { stopAsked = () => false } = {}) {
       commit, tree: treeId, kind, started: begun, ended, finished: state === 'green' || state === 'failed', state,
       gates: status.gates.map((gate) => ({ name: gate.name, state: gate.state, verdict: gate.verdict, kind: gate.state === 'kept' ? keptKind.get(gate.name) ?? null : gate.state === 'done' ? kind : null })),
     });
-    const background = noteBackground({ home, tree, plan, commit, kind, state, started, ended, results });
+    const background = noteBackground({ home, tree, plan, commit, kind, state, started, ended, results, kept: chosen.kept, treeId });
     status.overdue = background.overdue;
     status.knownRed = background.knownRed;
     // CIWATCHHOLD1: the status says the run ended only once the gate tree's hold is let go, so a reader told `green` (a stage
@@ -6338,13 +7134,24 @@ export const GATE_REMOVED = Object.freeze([
  * `GATE_REMOVED`, with the build servers of its own (`BESIDE_ENVIRONMENT`). It was the queue's alone (QUEUETESTLEAK1); on 2026-10-28
  * the steward's shell held the install's home, and every gate of every runner it started inherited it.
  */
-export function gateEnvironment(start = START_ENVIRONMENT) {
+export function gateEnvironment(start = START_ENVIRONMENT, { pass = [] } = {}) {
   const kept = Object.entries(start).filter(([name, value]) => value !== undefined && !GATE_REMOVED.some((pattern) => pattern.test(name)));
-  return { ...Object.fromEntries(kept), ...BESIDE_ENVIRONMENT };
+  // INTEGRATE1d part 4 (design §5.5): the names an accepted declaration's `env.pass` lists come back from the start environment, in
+  // any case, a name the removed list took among them, never a Daoris name (the declaration's own read refuses one; this holds it too).
+  const wanted = new Set(pass.filter((name) => !/^daoris_/i.test(name)).map((name) => name.toUpperCase()));
+  const passed = Object.entries(start).filter(([name, value]) => value !== undefined && wanted.has(name.toUpperCase()));
+  return { ...Object.fromEntries(kept), ...Object.fromEntries(passed), ...BESIDE_ENVIRONMENT };
 }
 
-/** INTEGRATE1a: the step the tool's gates and probes run by, each with `gateEnvironment`. */
-const gateStep = (command, cwd, fd, options = {}) => runStep(command, cwd, fd, { ...options, env: gateEnvironment() });
+/**
+ * INTEGRATE1d part 4: the names the owner accepted for a gate to receive beyond the composed base. Only the declared runner sets them,
+ * from the declaration it is handed, which the caller makes of the accepted blob (§5.9): a merge in place reads no acceptance, since the
+ * tool has no way to read the install's without its home, and passes nothing (D215's note).
+ */
+let acceptedPass = [];
+
+/** INTEGRATE1a: the step the tool's gates and probes run by, each with `gateEnvironment` and the accepted `env.pass` names. */
+const gateStep = (command, cwd, fd, options = {}) => runStep(command, cwd, fd, { ...options, env: gateEnvironment(START_ENVIRONMENT, { pass: acceptedPass }) });
 
 /**
  * INTEGRATE1a: the Daoris home as the tool read it at its start, before anything was composed or changed: the admission's file is found
@@ -6438,6 +7245,37 @@ export function queueHomeRefusal({ root, home, tool = null, sameRepository = fal
   return null;
 }
 
+/**
+ * GITWORKTREECONFIG1: why a tree is not one to reset, check out or remove through, or null. A `core.worktree` in the repository's
+ * shared git configuration (under `extensions.worktreeConfig`) binds every linked worktree to one folder, so `rev-parse
+ * --show-toplevel` in the scope tree, the gate tree or a pruned worktree answers the main checkout's root, and `reset --hard` or
+ * `checkout --force` there acts on the main checkout's files (2026-10-27 incident, `docs/2026-10-27-branch-recovery.md`). `reported`
+ * is that answer, null where git gave none (then git's own refusal stands). The tool writes no git configuration to mend it.
+ */
+export function treeBindingRefusal({ path, reported }) {
+  if (!reported || samePath(path, reported)) return null;
+  return `${path} reports ${reported} as its working root: a core.worktree in the repository's shared git configuration, set by something other than the merge tool, binds it there; `
+    + 'so nothing was reset, checked out or removed; move the value into the owning checkout\'s own worktree configuration (config.worktree) or unset it, then run again';
+}
+
+const treeAnswers = new Map();
+
+/** GITWORKTREECONFIG1: the refusal for `path` from git's own answer there, asked once per tree per run; null for a folder git cannot be asked in. */
+function treeBinding(path) {
+  const key = resolve(path);
+  if (!treeAnswers.has(key)) {
+    const asked = existsSync(key) ? git(key, ['rev-parse', '--show-toplevel'], { allowFail: true }) : { status: 1, out: '' };
+    treeAnswers.set(key, treeBindingRefusal({ path: key, reported: asked.status === 0 && asked.out.trim() ? asked.out.trim() : null }));
+  }
+  return treeAnswers.get(key);
+}
+
+/** GITWORKTREECONFIG1: the refusal, thrown, before the first write through `path`. */
+function requireOwnTree(path) {
+  const why = treeBinding(path);
+  if (why) throw new Refusal(why);
+}
+
 /** The checkout holding this tool, and whether it is one of `home`'s repository (QUEUETESTLEAK1); none where git finds none. */
 function toolCheckout(home) {
   const asked = git(dirname(fileURLToPath(import.meta.url)), ['rev-parse', '--show-toplevel', '--path-format=absolute', '--git-common-dir'], { allowFail: true });
@@ -6465,6 +7303,7 @@ function prepareScopeTree(home, commit) {
     git(home, ['worktree', 'add', '--detach', path, commit]);
     console.log(`the scope tree: made at ${commit.slice(0, 7)} (${SCOPE_TREE})`);
   } else {
+    requireOwnTree(path);
     git(path, ['merge', '--abort'], { allowFail: true });
     git(path, ['reset', '--quiet', '--hard']);
     git(path, ['checkout', '--quiet', '--force', '--detach', commit]);
@@ -6491,6 +7330,7 @@ export function containedBy(tree, member, base, formed) {
 function mergeMember(tree, member, onto, { base, formed = [] } = { base: onto }) {
   const held = containedBy(tree, member, base, formed);
   if (held) return { contained: held };
+  requireOwnTree(tree);
   git(tree, ['checkout', '--quiet', '--force', '--detach', onto]);
   const merged = git(tree, ['merge', '--no-ff', '--no-commit', member.tip], { allowFail: true });
   if (merged.status !== 0) {
@@ -6611,6 +7451,66 @@ function knownFor(home, failure) {
 }
 
 /**
+ * The scoped run's choice on a candidate's tree (§4.2; D207 point 3): the gates its paths `base..tip` reach by the lane table the tree
+ * holds; the gates whose pass stands on its tree (`ciPlan`, `judged`); the known reds open on the line (`open`); and `scopedSet`'s
+ * `run`, `kept` and `deferred`. The queue's runner gates its candidate by it, and the declared runner's `plan` and `run` answer it:
+ * `gates: reached` is today's scoped set for this repository (INTEGRATE1j; the integration design's §4.3).
+ */
+function scopedChoice(home, tree, { plan, base, tip, recordsOnly = false }) {
+  const treeId = contentTree(tree);
+  const standing = standingFor(tree, treeId);
+  const lanes = readLanes(tree)?.lanes ?? [];
+  const changed = zPaths(git(tree, ['--no-optional-locks', 'diff', '-z', '--name-only', '--no-renames', base, tip]).out);
+  const selection = selectGates(plan, changed, { lanes, gated: true });
+  const reached = new Set(selection.gates.filter((entry) => entry.run || entry.reached).map((entry) => entry.gate.name));
+  const verdicts = readVerdicts(home).verdicts;
+  const judged = ciPlan({ ...standing, plan: plan.map((gate) => gate.name), verdicts });
+  const open = readFindings(home).findings.filter((each) => each.state === 'red' && !knownRedStanding(each).expired);
+  const set = scopedSet({
+    gates: plan.map((gate) => ({ name: gate.name, kind: scopedKind(gate) })),
+    reached, standing: new Set(judged.kept.map((entry) => entry.name)), knownRed: new Set(open.map((each) => each.gate).filter(Boolean)), recordsOnly,
+  });
+  return { treeId, standing, verdicts, judged, open, set };
+}
+
+/**
+ * The gates a scoped choice runs, each as it will run (§4.2): a Process half by class, its run settings written into `dir` beside its
+ * log (`reachedHalves`); the git half's reached classes within its budget, a known-red class first, the rest deferred (point 5); a
+ * .NET suite with a trx of its own. A half every class of which is kept is not run, and is answered in `composed`. INTEGRATE1j: each
+ * gate carries `units`, the classes it runs where it runs by class (null where whole), and `narrowed`, the classes its run settings
+ * leave out, which its composition records. With no `dir` nothing is written and each gate keeps its declared command: a plan.
+ */
+function scopedGates(home, tree, plan, choice, dir) {
+  const chosen = plan.filter((gate) => choice.set.run.some((entry) => entry.name === gate.name));
+  const halves = reachedHalves({ tree, treeId: choice.treeId, gates: chosen, standing: choice.standing, verdicts: choice.verdicts, home, dir });
+  const deferredClasses = [];
+  const gates = halves.gates.filter((gate) => !gate.reach?.composed).map((gate) => {
+    const byClass = Boolean(gate.reach) && !gate.reach.whole;
+    const shaped = { ...gate, units: byClass ? gate.reach.run.map((each) => each.name) : null, narrowed: byClass ? gate.reach.kept.map((each) => each.name) : [] };
+    if (!isGitHalf(gate) || !gate.reach) return dir ? withTrx(shaped, dir) : shaped;
+    // §4.2 point 5: the git half's reached classes within its budget, a known-red class first, the rest deferred.
+    const census = gate.reach.whole ? (gate.reach.run ?? []) : gate.reach.run;
+    const times = classTimes(home, gate.name);
+    const red = new Set(choice.open.filter((each) => each.gate === gate.name).map((each) => testClass(each.test)));
+    const budgetMs = (gate.scope?.budgetMinutes ?? 8) * 60_000;
+    const budget = gitBudget({ classes: census.map((each) => ({ name: each.name, ms: times.get(each.name.split('.').at(-1)), knownRed: red.has(each.name.split('.').at(-1)) })), budgetMs });
+    if (!budget.deferred.length) return shaped;
+    deferredClasses.push(...budget.deferred);
+    const narrowed = [...(gate.reach.kept ?? []).map((each) => each.name), ...budget.deferred];
+    const declared = plan.find((each) => each.name === gate.name).run;
+    let run = declared;
+    if (dir) {
+      const half = halfOf(declared);
+      const file = join(dir, `${gate.name}.scoped.${basename(half.settings)}`);
+      writeAtomic(file, reachSettings(readFileSync(join(tree, half.settings), 'utf8'), narrowed));
+      run = withSettings(declared, file);
+    }
+    return { ...gate, run, deferredClasses: budget.deferred, units: budget.run, narrowed };
+  });
+  return { gates, deferredClasses, composed: halves.gates.filter((gate) => gate.reach?.composed) };
+}
+
+/**
  * The scoped run of the queue's candidate, judged (§4.1 points 2 and 4, §4.2): its set run in the scope tree at normal priority,
  * its light lane below normal while the Process lane runs (D180's split, as the CI's), each gate's verdict recorded as `scoped`;
  * on red each failure judged over the base and the prefixes. Answers what the queue does next (`candidateOutcome`), with the run.
@@ -6640,41 +7540,12 @@ async function runCandidateWatched(home, candidate, watch) {
   installDependencies(tree);
   copyPrivateFiles(home, tree, privateGateFiles(home));
   const plan = readPlan(tree);
-  const treeId = contentTree(tree);
-  const standing = standingFor(tree, treeId);
-  const lanes = readLanes(tree)?.lanes ?? [];
-  const changed = zPaths(git(tree, ['--no-optional-locks', 'diff', '-z', '--name-only', '--no-renames', candidate.base, candidate.tip]).out);
-  const selection = selectGates(plan, changed, { lanes, gated: true });
-  const reached = new Set(selection.gates.filter((entry) => entry.run || entry.reached).map((entry) => entry.gate.name));
-  const verdicts = readVerdicts(home).verdicts;
-  const names = plan.map((gate) => gate.name);
-  const stand = new Set(ciPlan({ ...standing, plan: names, verdicts }).kept.map((entry) => entry.name));
-  const open = readFindings(home).findings.filter((each) => each.state === 'red' && !knownRedStanding(each).expired);
-  const set = scopedSet({
-    gates: plan.map((gate) => ({ name: gate.name, kind: scopedKind(gate) })),
-    reached, standing: stand, knownRed: new Set(open.map((each) => each.gate).filter(Boolean)), recordsOnly: candidate.recordsOnly === true,
-  });
+  const choice = scopedChoice(home, tree, { plan, base: candidate.base, tip: candidate.tip, recordsOnly: candidate.recordsOnly === true });
+  const { treeId, set } = choice;
   const dir = join(home, SCRATCH, `scope-${candidate.tip.slice(0, 7)}`);
   mkdirSync(dir, { recursive: true });
   clearLogs(dir);
-  const chosen = plan.filter((gate) => set.run.some((entry) => entry.name === gate.name));
-  const halves = reachedHalves({ tree, treeId, gates: chosen, standing, verdicts, home, dir });
-  const deferredClasses = [];
-  const gates = halves.gates.filter((gate) => !gate.reach?.composed).map((gate) => {
-    if (!isGitHalf(gate) || !gate.reach) return withTrx(gate, dir);
-    // §4.2 point 5: the git half's reached classes within its budget, a known-red class first, the rest deferred.
-    const census = gate.reach.whole ? (gate.reach.run ?? []) : gate.reach.run;
-    const times = classTimes(home, gate.name);
-    const red = new Set(open.filter((each) => each.gate === gate.name).map((each) => testClass(each.test)));
-    const budgetMs = (gate.scope?.budgetMinutes ?? 8) * 60_000;
-    const budget = gitBudget({ classes: census.map((each) => ({ name: each.name, ms: times.get(each.name.split('.').at(-1)), knownRed: red.has(each.name.split('.').at(-1)) })), budgetMs });
-    if (!budget.deferred.length) return gate;
-    deferredClasses.push(...budget.deferred);
-    const half = halfOf(plan.find((each) => each.name === gate.name).run);
-    const file = join(dir, `${gate.name}.scoped.${basename(half.settings)}`);
-    writeAtomic(file, reachSettings(readFileSync(join(tree, half.settings), 'utf8'), [...(gate.reach.kept ?? []).map((each) => each.name), ...budget.deferred]));
-    return { ...gate, run: withSettings(plan.find((each) => each.name === gate.name).run, file), deferredClasses: budget.deferred };
-  });
+  const { gates, deferredClasses } = scopedGates(home, tree, plan, choice, dir);
   const sha = candidate.tip.slice(0, 7);
   console.log(`scoped run of ${sha} (${candidate.members.map((each) => each.branch).join(', ')}): ${count(gates.length, 'gate')} to run, ${count(set.kept.length, 'verdict')} kept, ${count(set.deferred.length, 'gate')} deferred to the background run${deferredClasses.length ? `; the git half's budget defers ${deferredClasses.length} of its classes` : ''}`);
   for (const entry of set.deferred) console.log(`  deferred: ${entry.name}, ${entry.why}`);
@@ -7268,7 +8139,7 @@ export async function main(argv) {
   if (options.resume) return resume(root, options);
   // CI1: one run of the CI, its watch, or the stop asked of the watch.
   if (options.ci) return options.stop ? ciStopVerb(root) : options.watch ? ciWatchVerb(root, options) : gateCi(root, options);
-  if (options.beside) return gateBeside(root, options);
+  if (options.beside) return options.daorisVerify ? gateVerify(root, options) : gateBeside(root, options);
   if (options.full && options.branches.length === 0) return gateCheckout(root, options);
   return start(root, options);
 }

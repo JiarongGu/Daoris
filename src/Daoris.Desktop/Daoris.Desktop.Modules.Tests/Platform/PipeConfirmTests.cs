@@ -1019,6 +1019,224 @@ public sealed class PipeConfirmTests : Bridge
         Assert.Equal(0, driver.Ran);
     }
 
+    /// <summary>
+    /// DRAINHOLD1, the row's proof (D156's DRAINHOLD1 note): with a driven session running and the update draining for it, a take-back's
+    /// Confirm is answered and its press runs, and a take-back sent meanwhile is asked; a start's Confirm is held, <c>draining</c>, and a
+    /// start sent meanwhile is refused as the update's; after *Not now* the start's Confirm takes; once the update applies, the take-back's
+    /// Confirm waits too, and no new hello is taken. The pipe is wired to the updater as the shell wires it.
+    /// </summary>
+    [Fact]
+    public async Task During_a_drain_a_take_back_runs_a_start_waits_until_not_now_and_once_it_applies_every_Confirm_waits()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var grounds = new StubGrounds();
+        grounds.Registered.Add("Lyntai");
+        grounds.Reads["SESSION_QUEUE"] = _ => new { queued = new[] { new { id = "w1" }, new { id = "w2" } } };
+        var (pipe, client, driver, services, log) = await ServeAsync(grounds);
+        using var _ = services;
+        using var __ = log;
+        using var ___ = pipe;
+        await using var ____ = client;
+        var install = Path.Combine(Home, "install");
+        StagedInstalls.Prepare(install);
+        var work = new UpdateWork(Driven: 1, Turns: 0);
+        var closed = 0;
+        using var updater = new InstallUpdater(install, Home, log, () => work, _ => Task.FromResult(true), () => closed++);
+        pipe.Draining = () => updater.Draining;
+        pipe.Applying = () => updater.Applying;
+
+        // Asked before anything is staged: a take-back of a word that waits, and a start, each waiting for the window.
+        var takeBack = await client.SendAsync(DriverModule.Name, "SESSION_QUEUE_EDIT", new { session = "s1a2b3c4", id = "w1" });
+        var start = await client.SendAsync(DriverModule.Name, "START_CHAT", new { repository = "Lyntai", text = "look at this" });
+        await UntilAsync(() => pipe.Confirmations.Now().Waiting.Count == 2);
+        var takeBackCard = Assert.Single(pipe.Confirmations.Now().Waiting, each => each.Route == "SESSION_QUEUE_EDIT");
+        var startCard = Assert.Single(pipe.Confirmations.Now().Waiting, each => each.Route == "START_CHAT");
+
+        // Staged while a driven session runs: the update drains for it.
+        StagedInstalls.Stage(install, "b1");
+        Assert.Equal(UpdateStates.Draining, (await updater.LookAsync()).State);
+
+        // The take-back starts nothing the drain waits on: its Confirm is answered, and its press runs.
+        Assert.Equal(PipeAnswered.Answered, (await pipe.Confirmations.AnswerAsync(takeBackCard.Id, confirm: true)).Outcome);
+        var tookBack = await client.AnswerAsync(takeBack);
+        Assert.True(tookBack.GetProperty("success").GetBoolean(), tookBack.GetRawText());
+        Assert.Equal(1, driver.Ran);
+
+        // The start would add to what the drain waits on: its Confirm is held as the drain's, and it still waits.
+        Assert.Equal(PipeAnswered.Draining, (await pipe.Confirmations.AnswerAsync(startCard.Id, confirm: true)).Outcome);
+        Assert.Equal("waiting", (await client.ResultAsync(start)).GetProperty("state").GetString());
+        Assert.Equal(1, driver.Ran);
+
+        // Sent during the drain, a take-back is asked, and a start refused as the update's, nothing asked.
+        await client.SendAsync(DriverModule.Name, "SESSION_QUEUE_EDIT", new { session = "s1a2b3c4", id = "w2" });
+        var refused = await client.AnswerAsync(await client.SendAsync(DriverModule.Name, "START_CHAT", new { repository = "Lyntai", text = "and this" }));
+        Assert.Equal(InstancePipe.Stopping, Code(refused));
+        Assert.Equal("update", refused.GetProperty("error").GetProperty("parameters").GetProperty("why").GetString());
+        await UntilAsync(() => pipe.Confirmations.Now().Waiting.Count == 2);
+        var anotherCard = Assert.Single(pipe.Confirmations.Now().Waiting, each => each.Route == "SESSION_QUEUE_EDIT");
+
+        // *Not now*: the drain ends, and the start's Confirm takes.
+        await updater.SayAsync(UpdateMode.NotNow, "screen");
+        Assert.Equal(PipeAnswered.Answered, (await pipe.Confirmations.AnswerAsync(startCard.Id, confirm: true)).Outcome);
+        Assert.True((await client.AnswerAsync(start)).GetProperty("success").GetBoolean());
+        Assert.Equal(2, driver.Ran);
+
+        // A newer build drains again, and with no work left it applies at once: the close's, so the take-back's Confirm waits too.
+        StagedInstalls.Stage(install, "b2");
+        work = new UpdateWork(0, 0);
+        Assert.Equal(UpdateStates.Applying, (await updater.LookAsync()).State);
+        Assert.Equal(1, closed);
+        Assert.Equal(PipeAnswered.Draining, (await pipe.Confirmations.AnswerAsync(anotherCard.Id, confirm: true)).Outcome);
+        Assert.Equal(anotherCard.Id, Assert.Single(pipe.Confirmations.Now().Waiting).Id);
+        Assert.Equal(2, driver.Ran);
+        await using var late = await PipeClient.ConnectAsync(pipe.Name!);
+        var hello = await late.HelloAsync(HomeId);
+        Assert.Equal(InstancePipe.Stopping, Code(hello));
+        Assert.Equal("update", hello.GetProperty("error").GetProperty("parameters").GetProperty("why").GetString());
+    }
+
+    /// <summary>A take-back asked during a drain, its card waiting, and the drain's two words the test moves.</summary>
+    private async Task<(InstancePipe Pipe, PipeClient Client, HeldModule Driver, ServiceProvider Services, MachineLog Log, string Id, PipeConfirmation Card, Action<bool> Applying)>
+        TakeBackDuringADrainAsync()
+    {
+        var grounds = new StubGrounds();
+        grounds.Reads["SESSION_QUEUE"] = _ => new { queued = new[] { new { id = "w1" } } };
+        var (pipe, client, driver, services, log) = await ServeAsync(grounds);
+        var applying = false;
+        pipe.Draining = () => true;
+        pipe.Applying = () => applying;
+        var id = await client.SendAsync(DriverModule.Name, "SESSION_QUEUE_EDIT", new { session = "s1a2b3c4", id = "w1" });
+        await UntilAsync(() => pipe.Confirmations.Now().Waiting.Count == 1);
+        return (pipe, client, driver, services, log, id, pipe.Confirmations.Now().Waiting[0], now => applying = now);
+    }
+
+    /// <summary>
+    /// DRAINHOLD1, a review's finding: the update begins to apply between a let-through Confirm's record saying <c>begun</c> and its run.
+    /// The person was told it is confirmed, so it runs, and the close is its to wait for; it is never answered and then dropped. The gate
+    /// is the record's own write, wrapped.
+    /// </summary>
+    [Fact]
+    public async Task A_take_back_confirmed_as_the_update_begins_to_apply_runs_once_it_is_begun()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var (pipe, client, driver, services, log, id, card, applying) = await TakeBackDuringADrainAsync();
+        using var _ = services;
+        using var __ = log;
+        using var ___ = pipe;
+        await using var ____ = client;
+        var persisted = pipe.Confirmations.Persisting!;
+        pipe.Confirmations.Persisting = (shown, ending) =>
+        {
+            var written = persisted(shown, ending);
+            applying(true);
+            return written;
+        };
+
+        Assert.Equal(PipeAnswered.Answered, (await pipe.Confirmations.AnswerAsync(card.Id, confirm: true)).Outcome);
+
+        var heard = await client.AnswerAsync(id);
+        Assert.True(heard.GetProperty("success").GetBoolean(), heard.GetRawText());
+        Assert.Equal(1, driver.Ran);
+        Assert.Empty(Records());
+    }
+
+    /// <summary>
+    /// DRAINHOLD1, a review's finding: a Confirm the window's check let through, which the drain's hold or the close reaches by the time its
+    /// record is written, is not taken: it answers <c>draining</c>, its buttons back, and it still waits in its record for the restart.
+    /// </summary>
+    [Fact]
+    public async Task A_Confirm_held_by_the_time_its_record_is_written_is_not_taken_and_still_waits()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var (pipe, client, driver, services, log, id, card, applying) = await TakeBackDuringADrainAsync();
+        using var _ = services;
+        using var __ = log;
+        using var ___ = pipe;
+        await using var ____ = client;
+        var persisted = pipe.Confirmations.Persisting!;
+        pipe.Confirmations.Persisting = (shown, ending) =>
+        {
+            applying(true);
+            return persisted(shown, ending);
+        };
+
+        Assert.Equal(PipeAnswered.Draining, (await pipe.Confirmations.AnswerAsync(card.Id, confirm: true)).Outcome);
+
+        var still = Assert.Single(pipe.Confirmations.Now().Waiting);
+        Assert.Equal(card.Id, still.Id);
+        Assert.False(still.Checking);
+        Assert.Equal("waiting", ReadRecord(Assert.Single(Records())).GetProperty("state").GetString());
+        Assert.Equal("waiting", (await client.ResultAsync(id)).GetProperty("state").GetString());
+        Assert.Equal(0, driver.Ran);
+    }
+
+    /// <summary>
+    /// DRAINHOLD1, a review's finding, the close's side: a close begun between a Confirm's record saying <c>begun</c> and its run does not
+    /// answer its line <c>waiting</c> nor take it out of what is under way: it runs, the close's drain waits for it, and its terminal hears it.
+    /// </summary>
+    [Fact]
+    public async Task A_close_begun_between_a_Confirm_s_record_and_its_run_waits_for_the_run()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var (pipe, client, driver, services, log, id, card, _) = await TakeBackDuringADrainAsync();
+        using var _s = services;
+        using var __ = log;
+        using var ___ = pipe;
+        await using var ____ = client;
+        var persisted = pipe.Confirmations.Persisting!;
+        pipe.Confirmations.Persisting = (shown, ending) =>
+        {
+            var written = persisted(shown, ending);
+            if (ending.End == PipeConfirmationEnd.Confirmed) pipe.BeginStopping();
+            return written;
+        };
+
+        Assert.Equal(PipeAnswered.Answered, (await pipe.Confirmations.AnswerAsync(card.Id, confirm: true)).Outcome);
+
+        var heard = client.AnswerAsync(id);
+        Assert.True(pipe.Drain(Poll.Patience));
+        Assert.True((await heard).GetProperty("success").GetBoolean(), (await heard).GetRawText());
+        Assert.Equal(1, driver.Ran);
+    }
+
+    /// <summary>
+    /// DRAINHOLD1 (the confirm-wait design §7.2): a press the drain let through and still under way when the update applies is the close's
+    /// to wait for, as any begun press is. It is not cut: the close's drain waits for its answer, and its terminal hears it.
+    /// </summary>
+    [Fact]
+    public async Task A_press_the_drain_let_through_and_under_way_as_it_applies_is_waited_for_by_the_close()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var grounds = new StubGrounds();
+        grounds.Reads["SESSION_QUEUE"] = _ => new { queued = new[] { new { id = "w1" } } };
+        using var log = new MachineLog(Home, "desktop");
+        var driver = new HeldModule(DriverModule.Name);
+        var (dispatcher, services) = Compose(log, driver);
+        using var _ = services;
+        using var pipe = Pipe(dispatcher, log, grounds: grounds);
+        await using var client = await PipeClient.ConnectAsync(pipe.Serve()!);
+        await client.HelloAsync(HomeId);
+        var (draining, applying) = (true, false);
+        pipe.Draining = () => draining || applying;
+        pipe.Applying = () => applying;
+
+        var id = await client.SendAsync(DriverModule.Name, "SESSION_QUEUE_EDIT", new { session = "s1a2b3c4", id = "w1" });
+        await UntilAsync(() => pipe.Confirmations.Now().Waiting.Count == 1);
+        Assert.Equal(PipeAnswered.Answered, (await pipe.Confirmations.AnswerAsync(pipe.Confirmations.Now().Waiting[0].Id, confirm: true)).Outcome);
+        await driver.Started.Task.WaitAsync(Poll.Patience);
+
+        applying = true;
+        pipe.BeginStopping();
+        Assert.False(pipe.Drain(TimeSpan.FromMilliseconds(200)));
+        // The terminal reads its line meanwhile, as the close's drain waits for each answer to be written to the terminal waiting on it.
+        var heard = client.AnswerAsync(id);
+        driver.Let.SetResult();
+
+        Assert.True(pipe.Drain(Poll.Patience));
+        Assert.True((await heard).GetProperty("success").GetBoolean());
+        Assert.Equal(1, driver.Ran);
+    }
+
     /// <summary>The design's withdraw rows (§10): a waiting press taken back, the race with a Confirm either way, and another key's.</summary>
     [Fact]
     public async Task Withdraw_takes_back_only_a_press_that_still_waits_and_never_a_confirmed_one()

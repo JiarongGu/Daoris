@@ -66,8 +66,10 @@ public sealed class PartnerLookTests : IDisposable
         }
     }
 
-    private Daoris.Driver.Driver Driver(OpinionStandIn host, Pass? pass, Keeper? keeper = null, int cap = 3, ReviewerChoice? choice = null) =>
-        new(host.Client(), DriverConfig.Empty with { Adapter = "claude-code-acp", Cap = cap }, AdapterSet.Built(), _home)
+    private Daoris.Driver.Driver Driver(
+        OpinionStandIn host, Pass? pass, Keeper? keeper = null, int cap = 3, ReviewerChoice? choice = null, bool drained = false) =>
+        new(host.Client(), drained ? InstallUpdate.Drained(DriverConfig.Empty with { Adapter = "claude-code-acp", Cap = cap })
+                : DriverConfig.Empty with { Adapter = "claude-code-acp", Cap = cap }, AdapterSet.Built(), _home)
         {
             PartnerPasses = pass is null ? (_, _, _) => throw new InvalidOperationException("no partner starts here") : pass.RunAsync,
             PartnerKeeps = (keeper ?? new Keeper()).KeepAsync,
@@ -98,6 +100,31 @@ public sealed class PartnerLookTests : IDisposable
         var events = new List<string>();
         var begun = await driver.PiecesAsync(new Snapshot([], [], []) { Pieces = Files.Reservations() }, taken, events, CancellationToken.None);
         return (begun, events);
+    }
+
+    /// <summary>
+    /// DRAINHOLD1 (the driver follow-up): an update's drain holds the piece's start, its restart's preparing and its keeping, which start a
+    /// session or change a tree. The look takes no slot, writes no state and says the drain's hold once; after *Not now* it starts.
+    /// </summary>
+    [Fact]
+    public async Task A_draining_look_starts_no_piece_and_says_the_drains_hold_once_and_after_not_now_it_starts()
+    {
+        Ask("p1");
+        var pass = new Pass(Files) { LastWords = "Changed the window." };
+        var draining = Driver(Host(), pass, drained: true);
+
+        var (begun, first) = await Look(draining);
+        var (_, second) = await Look(draining);
+
+        Assert.Equal(0, begun);
+        Assert.Equal(InstallUpdate.HeldLine("partner", "piece `p1`"), Assert.Single(first));
+        Assert.Empty(second);
+        Assert.Empty(pass.Asked);
+        Assert.Null(Files.ReadState("p1"));
+
+        var (after, _) = await Look(Driver(Host(), pass));
+        await Until(() => Files.ReadState("p1") is { State: PartnerStates.Answered });
+        Assert.Equal(1, after);
     }
 
     /// <summary>

@@ -115,12 +115,14 @@ public sealed class MeetingTests : IDisposable
     private static BrainstormRule Rule(int pass = 10, int request = 30) =>
         new(BrainstormRules.Ask, [], new BrainstormMinutes(pass, 10, 10, request));
 
-    private (Daoris.Driver.Driver Driver, Script Script) Start(TimeSpan minute, int cap = 3, BrainstormRule? rule = null, bool scripted = true)
+    private (Daoris.Driver.Driver Driver, Script Script) Start(
+        TimeSpan minute, int cap = 3, BrainstormRule? rule = null, bool scripted = true, bool drained = false)
     {
         var script = new Script();
+        var config = DriverConfig.Empty with { Adapter = "stub", Cap = cap, Brainstorms = rule };
         var driver = new Daoris.Driver.Driver(
             new ServiceClient("http://127.0.0.1:9", null, new HttpClient(new Refuses())),
-            DriverConfig.Empty with { Adapter = "stub", Cap = cap, Brainstorms = rule }, AdapterSet.Built(), _home)
+            drained ? InstallUpdate.Drained(config) : config, AdapterSet.Built(), _home)
         {
             MeetingTurns = scripted ? script.RunAsync : null,
             BrainstormMinute = minute,
@@ -255,6 +257,32 @@ public sealed class MeetingTests : IDisposable
     /// 🔴 The refreshed packet holds the first round's messages under a new digest, shown before it goes; the second round goes only by
     /// the person's press, naming it; its rooms hold that packet; and the meeting ends after it.
     /// </summary>
+    /// <summary>
+    /// DRAINHOLD1 (the driver follow-up): an update's drain holds a sent round, which would take agents' turns and slots. The look runs no
+    /// round, says the drain's hold once, and leaves the meeting frozen and sent; after *Not now* the round runs.
+    /// </summary>
+    [Fact]
+    public async Task A_draining_look_runs_no_round_and_says_the_drains_hold_once_and_after_not_now_it_runs()
+    {
+        var (driver, _) = Start(Second);
+        var id = await SentAsync(driver);
+        var (draining, held) = Start(Second, drained: true);
+
+        var first = await LookAsync(draining);
+        var second = await LookAsync(draining);
+
+        Assert.Empty(held.Started);
+        Assert.Equal(InstallUpdate.HeldLine("meeting", $"`{id}`"), Assert.Single(first));
+        Assert.Empty(second);
+        Assert.Equal(BrainstormStates.Frozen, Files.ReadState(id)!.State);
+
+        var (later, script) = Start(Second);
+        script.Answers["r1-a1"] = Say("Make the window inclusive of its end.");
+        script.Answers["r1-a2"] = Say("Cache the report, and read the window once.");
+        await LookAsync(later);
+        Assert.Equal(["r1-a1", "r1-a2"], script.Started);
+    }
+
     [Fact]
     public async Task The_second_round_goes_only_by_the_press_with_a_refreshed_packet_under_a_new_digest()
     {

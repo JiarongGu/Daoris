@@ -1,0 +1,203 @@
+{
+  "note": "AGENTPROVIDER1 row a: today's answer of each copy of own-else-owner, door by door, written down once. ProviderRegistryTests holds three things equal: this table, the answers the code gives today through HarnessRoster, AgentFamily and the toolchains, and the registry's. A door a case does not list is still held equal to today's code. Omitted fields read false (a bool) or null (a string); familyOwner reads as owner. `disagrees` lists the doors where two copies answer differently today: the walk's start reads the door's own toolchain for whether a start runs in its own home (HarnessRoster.cs:1212), the page's question reads the toolchain of the account owner's first door (HarnessRoster.cs:1702-1723). Each becomes a correction row of its own and is never row d's decision.",
+  "cases": [
+    {
+      "name": "built",
+      "plugins": [],
+      "doors": {
+        "claude-code": { "provider": "claude-code", "owner": "claude-code", "accountAgent": "claude-code", "reportingDoor": "claude-code", "limits": true, "signIn": true, "windows": true, "usage": true, "login": true, "keyVariable": "ANTHROPIC_API_KEY", "settingsFile": "settings.json", "homeVariable": "CLAUDE_CONFIG_DIR", "trustFile": ".claude.json" },
+        "claude-code-acp": { "provider": "claude-code", "owner": "claude-code", "accountAgent": "claude-code", "reportingDoor": "claude-code", "limits": true, "signIn": true, "windows": true, "usage": true, "login": true, "keyVariable": "ANTHROPIC_API_KEY", "settingsFile": "settings.json", "homeVariable": "CLAUDE_CONFIG_DIR", "trustFile": ".claude.json" },
+        "codex-acp": { "provider": "codex", "owner": "codex", "accountAgent": "codex", "reportingDoor": "codex-acp", "limits": true, "usage": true, "login": true, "homeVariable": "CODEX_HOME" },
+        "dsh": { "provider": "dsh", "owner": "dsh", "accountAgent": "dsh", "reportingDoor": "dsh", "homeVariable": "DSH_HOME" },
+        "stub": { "provider": "stub", "owner": "stub", "accountAgent": "stub", "reportingDoor": "stub", "limits": true, "signIn": true, "windows": true, "login": true, "homeVariable": "DAORIS_STUB_CONFIG_DIR", "ownHome": true },
+        "acp-stub": { "provider": "stub", "owner": "stub", "accountAgent": "stub", "reportingDoor": "stub", "limits": true, "signIn": true, "windows": true, "login": true, "homeVariable": "DAORIS_STUB_CONFIG_DIR", "ownHome": true }
+      },
+      "agents": { "codex": { "owner": "codex", "settingsFile": null }, "claude-code": { "owner": "claude-code", "settingsFile": "settings.json" } },
+      "pools": {
+        "claude-code": { "providers": ["claude-code"], "doors": ["claude-code", "claude-code-acp"] },
+        "codex": { "providers": ["codex"], "doors": ["codex-acp"] },
+        "dsh": { "providers": ["dsh"], "doors": ["dsh"] },
+        "stub": { "providers": ["stub"], "doors": ["acp-stub", "stub"] }
+      },
+      "unavailable": [],
+      "disagrees": []
+    },
+    {
+      "name": "joins a registered provider whose key is that string",
+      "plugins": [
+        { "id": "p.claude", "harnesses": [ { "name": "p-claude", "command": ["agent"], "accountOf": "claude-code", "profileVariable": "P_HOME" }, { "name": "p-claude-bare", "command": ["agent"], "accountOf": "claude-code" } ] },
+        { "id": "p.others", "harnesses": [ { "name": "p-stub", "command": ["agent"], "accountOf": "stub" }, { "name": "p-dsh", "command": ["agent"], "accountOf": "dsh", "profileVariable": "P_DSH_HOME", "ownHome": true } ] }
+      ],
+      "doors": {
+        "p-claude": { "provider": "claude-code", "owner": "claude-code", "accountAgent": "claude-code", "reportingDoor": "claude-code", "limits": true, "signIn": true, "windows": true, "usage": true, "login": true, "keyVariable": "ANTHROPIC_API_KEY", "settingsFile": "settings.json", "homeVariable": "P_HOME" },
+        "p-claude-bare": { "provider": "claude-code", "owner": "claude-code", "accountAgent": "claude-code", "reportingDoor": "claude-code", "limits": true, "signIn": true, "windows": true, "usage": true, "login": true, "keyVariable": "ANTHROPIC_API_KEY", "settingsFile": "settings.json" },
+        "p-stub": { "provider": "stub", "owner": "stub", "accountAgent": "stub", "reportingDoor": "stub", "limits": true, "signIn": true, "windows": true, "login": true },
+        "p-dsh": { "provider": "dsh", "owner": "dsh", "accountAgent": "dsh", "reportingDoor": "dsh", "homeVariable": "P_DSH_HOME", "ownHome": true }
+      },
+      "pools": {
+        "claude-code": { "providers": ["claude-code"], "doors": ["claude-code", "claude-code-acp", "p-claude", "p-claude-bare"] },
+        "dsh": { "providers": ["dsh"], "doors": ["dsh", "p-dsh"] }
+      },
+      "unavailable": [],
+      "disagrees": ["p-claude-bare", "p-dsh"]
+    },
+    {
+      "name": "names codex, the holder, and reads its sign-in alone",
+      "plugins": [
+        { "id": "p.codex", "harnesses": [ { "name": "p-codex", "command": ["agent"], "accountOf": "codex", "profileVariable": "P_CODEX_HOME" } ] }
+      ],
+      "doors": {
+        "p-codex": { "provider": "codex", "owner": "codex", "accountAgent": "codex", "reportingDoor": "p-codex", "login": true, "homeVariable": "P_CODEX_HOME" }
+      },
+      "agents": { "codex": { "owner": "codex", "settingsFile": null } },
+      "pools": { "codex": { "providers": ["codex"], "doors": ["codex-acp", "p-codex"] } },
+      "unavailable": [],
+      "disagrees": []
+    },
+    {
+      "name": "names claude-code-acp, another provider's door, and is a provider of its own",
+      "plugins": [
+        { "id": "p.acp", "harnesses": [ { "name": "p-a", "command": ["agent"], "accountOf": "claude-code-acp" }, { "name": "p-b", "command": ["agent"], "accountOf": "claude-code-acp", "profileVariable": "B_HOME" } ] }
+      ],
+      "doors": {
+        "p-a": { "provider": "p-a", "owner": "claude-code-acp", "accountAgent": "claude-code-acp", "reportingDoor": "claude-code-acp" },
+        "p-b": { "provider": "p-b", "owner": "claude-code-acp", "accountAgent": "claude-code-acp", "reportingDoor": "claude-code-acp", "homeVariable": "B_HOME" }
+      },
+      "pools": {
+        "claude-code-acp": { "providers": ["p-a", "p-b"], "doors": ["p-a", "p-b"] },
+        "claude-code": { "providers": ["claude-code"], "doors": ["claude-code", "claude-code-acp"] }
+      },
+      "unavailable": [],
+      "disagrees": ["p-b"]
+    },
+    {
+      "name": "names codex-acp and reads its limit words and usage question",
+      "plugins": [
+        { "id": "p.cx", "harnesses": [ { "name": "p-cx", "command": ["agent"], "accountOf": "codex-acp" } ] }
+      ],
+      "doors": {
+        "p-cx": { "provider": "p-cx", "owner": "codex-acp", "accountAgent": "codex-acp", "reportingDoor": "codex-acp", "limits": true, "usage": true }
+      },
+      "pools": {
+        "codex-acp": { "providers": ["p-cx"], "doors": ["p-cx"] },
+        "codex": { "providers": ["codex"], "doors": ["codex-acp"] }
+      },
+      "unavailable": [],
+      "disagrees": []
+    },
+    {
+      "name": "bar names foo, which names claude-code-acp, bar declared first",
+      "plugins": [
+        { "id": "a.bar", "harnesses": [ { "name": "bar", "command": ["agent"], "accountOf": "foo" } ] },
+        { "id": "b.foo", "harnesses": [ { "name": "foo", "command": ["agent"], "accountOf": "claude-code-acp" } ] }
+      ],
+      "doors": {
+        "foo": { "provider": "foo", "owner": "claude-code-acp", "accountAgent": "claude-code-acp", "reportingDoor": "claude-code-acp" },
+        "bar": { "provider": "bar", "owner": "foo", "accountAgent": "foo", "reportingDoor": "foo" }
+      },
+      "agents": { "foo": { "owner": "claude-code-acp", "settingsFile": null }, "bar": { "owner": "foo", "settingsFile": null } },
+      "pools": {
+        "claude-code-acp": { "providers": ["foo"], "doors": ["foo"] },
+        "foo": { "providers": ["bar"], "doors": ["bar"] }
+      },
+      "unavailable": [],
+      "disagrees": []
+    },
+    {
+      "name": "bar names foo, which names claude-code-acp, foo declared first",
+      "plugins": [
+        { "id": "a.foo", "harnesses": [ { "name": "foo", "command": ["agent"], "accountOf": "claude-code-acp" } ] },
+        { "id": "b.bar", "harnesses": [ { "name": "bar", "command": ["agent"], "accountOf": "foo" } ] }
+      ],
+      "doors": {
+        "foo": { "provider": "foo", "owner": "claude-code-acp", "accountAgent": "claude-code-acp", "reportingDoor": "claude-code-acp" },
+        "bar": { "provider": "bar", "owner": "foo", "accountAgent": "foo", "reportingDoor": "foo" }
+      },
+      "pools": {
+        "claude-code-acp": { "providers": ["foo"], "doors": ["foo"] },
+        "foo": { "providers": ["bar"], "doors": ["bar"] }
+      },
+      "unavailable": [],
+      "disagrees": []
+    },
+    {
+      "name": "two plugins name each other, a cycle, one level",
+      "plugins": [
+        { "id": "c.cycle", "harnesses": [ { "name": "x", "command": ["agent"], "accountOf": "y" }, { "name": "y", "command": ["agent"], "accountOf": "x" } ] }
+      ],
+      "doors": {
+        "x": { "provider": "x", "owner": "y", "accountAgent": "y", "reportingDoor": "y" },
+        "y": { "provider": "y", "owner": "x", "accountAgent": "x", "reportingDoor": "x" }
+      },
+      "pools": {
+        "y": { "providers": ["x"], "doors": ["x"] },
+        "x": { "providers": ["y"], "doors": ["y"] }
+      },
+      "unavailable": [],
+      "disagrees": []
+    },
+    {
+      "name": "bar names a disabled foo that names claude-code-acp, and bar's own door answers for it",
+      "plugins": [
+        { "id": "d.foo", "disabled": true, "harnesses": [ { "name": "foo", "command": ["agent"], "accountOf": "claude-code-acp" } ] },
+        { "id": "d.bar", "harnesses": [ { "name": "bar", "command": ["agent"], "accountOf": "foo" } ] }
+      ],
+      "doors": {
+        "bar": { "provider": "foo", "owner": "foo", "accountAgent": "bar", "reportingDoor": "bar" }
+      },
+      "pools": { "foo": { "providers": ["foo"], "doors": ["bar"] } },
+      "unavailable": [],
+      "disagrees": []
+    },
+    {
+      "name": "bar names a disabled foo that names nothing",
+      "plugins": [
+        { "id": "d.foo", "disabled": true, "harnesses": [ { "name": "foo", "command": ["agent"] } ] },
+        { "id": "d.bar", "harnesses": [ { "name": "bar", "command": ["agent"], "accountOf": "foo" } ] }
+      ],
+      "doors": {
+        "bar": { "provider": "foo", "owner": "foo", "accountAgent": "bar", "reportingDoor": "bar" }
+      },
+      "pools": { "foo": { "providers": ["foo"], "doors": ["bar"] } },
+      "unavailable": [],
+      "disagrees": []
+    },
+    {
+      "name": "names acme, which nothing registers, from two doors",
+      "plugins": [
+        { "id": "a.agent", "harnesses": [ { "name": "acme-agent", "command": ["agent"], "accountOf": "acme" }, { "name": "acme-two", "command": ["agent"], "accountOf": "acme" } ] }
+      ],
+      "doors": {
+        "acme-agent": { "provider": "acme", "owner": "acme", "accountAgent": "acme-agent", "reportingDoor": "acme-agent" },
+        "acme-two": { "provider": "acme", "owner": "acme", "accountAgent": "acme-two", "reportingDoor": "acme-two" }
+      },
+      "agents": { "acme": { "owner": "acme", "settingsFile": null } },
+      "pools": { "acme": { "providers": ["acme"], "doors": ["acme-agent", "acme-two"] } },
+      "unavailable": [],
+      "disagrees": []
+    },
+    {
+      "name": "names acme from a disabled plugin, so its names stay known as unavailable descriptors",
+      "plugins": [
+        { "id": "a.agent", "disabled": true, "harnesses": [ { "name": "acme-agent", "command": ["agent"], "accountOf": "acme" } ] }
+      ],
+      "doors": {},
+      "agents": { "acme": { "owner": "acme", "settingsFile": null }, "acme-agent": { "owner": "acme-agent", "settingsFile": null } },
+      "pools": { "acme": { "providers": ["acme"], "doors": [] }, "acme-agent": { "providers": ["acme-agent"], "doors": [] } },
+      "unavailable": ["acme", "acme-agent"],
+      "disagrees": []
+    },
+    {
+      "name": "declares no accountOf, a provider of its own",
+      "plugins": [
+        { "id": "s.solo", "harnesses": [ { "name": "solo", "command": ["agent"] } ] }
+      ],
+      "doors": {
+        "solo": { "provider": "solo", "owner": "solo", "accountAgent": "solo", "reportingDoor": "solo" }
+      },
+      "pools": { "solo": { "providers": ["solo"], "doors": ["solo"] } },
+      "unavailable": [],
+      "disagrees": []
+    }
+  ]
+}

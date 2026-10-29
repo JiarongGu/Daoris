@@ -224,6 +224,18 @@ describe('where Accept would land the parts: a prospective node, never done (§2
     ]);
   });
 
+  it('says a clash edge in its own words, never superseded', async () => {
+    const clashing: EntryAcceptPlan = {
+      ...plan, parts: [{ session: 'ap000001' }, { session: 'ap000002' }, { session: 'ap000003', clash: { by: 'ap000002', says: 'CLAUDE.md' } }],
+    };
+    const edge = () => flowOf(APP, 'ap000003', rows, clashing).edges.find((each) => each.id === 'ap000003>landing')!.says;
+
+    expect(edge()).toBe("conflicts with part 2's work in CLAUDE.md");
+    await i18n.changeLanguage('zh');
+    expect(edge()).toBe('与第 2 段的工作在 CLAUDE.md 上冲突');
+    await i18n.changeLanguage('en');
+  });
+
   it('claims no landing as done: nothing it says is in the past, and every word of it says would', () => {
     const flow = flowOf(APP, 'ap000003', rows, plan);
     const words = JSON.stringify([flow.nodes.find((node) => node.id === 'landing'), flow.edges.filter((edge) => edge.to === 'landing')]);

@@ -10,7 +10,7 @@ namespace Daoris.Driver;
 /// <param name="Verb">
 /// <c>list</c>, <c>stop</c>, <c>finish</c>, <c>decline</c>, <c>archive</c>, <c>unarchive</c>, <c>delete</c>, <c>say</c>,
 /// <c>take-back</c>, <c>reword</c>, <c>go-on-new</c> or <c>start-from</c>; COAGENT1b's <c>partner</c>, <c>partner-list</c> and
-/// <c>partner-stop</c>.
+/// <c>partner-stop</c>; HANDBACK1's <c>handback</c>.
 /// </param>
 public sealed record SessionsAsk(string Verb) : ISupervisorAsk, IParticipantsAsk
 {
@@ -247,6 +247,7 @@ public static class SessionsCommand
                daoris-driver sessions partner <id> "<piece>" --agent <name> [--paths <path>…]
                daoris-driver sessions partner <id> --list  ·  sessions partner <piece> --stop
                daoris-driver sessions supervise [<id>]  ·  sessions supervise <id> --question <qid> --generation <g> --choice <label>|--leave <bound> (--reason "…" --source <where>)…
+               daoris-driver sessions handback <session|quest> [--json]
         """;
 
     /// <summary>The fields of a row in <c>--json</c>, in order: <c>SESSION_GROUPS</c>' row, field for field.</summary>
@@ -352,6 +353,14 @@ public static class SessionsCommand
                 return SessionsSuperviseCommand.Read(args, out problem, (verb, ids, draft) => new SessionsAsk(verb) { Ids = ids, Supervised = draft });
             case ["partner", ..]:
                 return SessionsPartnerCommand.Read(args, out problem, MadeAsk);
+            // HANDBACK1: one quest's handback, by the quest's id or its session's.
+            case ["handback", var id] when Id(id):
+                return new SessionsAsk("handback") { Ids = [id.Trim().TrimStart('#')] };
+            case ["handback", var id, "--json"] when Id(id):
+                return new SessionsAsk("handback") { Ids = [id.Trim().TrimStart('#')], Json = true };
+            case ["handback", ..]:
+                problem = "`handback` takes one session's or quest's id, and `--json` for the service's answer as it gave it.";
+                return null;
         }
 
         var ask = new SessionsAsk("list");
@@ -467,6 +476,8 @@ public static class SessionsCommand
                 Body(("id", ask.Ids[0]), ("piece", ask.Text), ("agent", ask.Agent), ("paths", ask.Paths.Count > 0 ? ask.Paths : null)),
                 () => SessionsPartnerCommand.RunAsync(world, ask, output, ct), output, ct).ConfigureAwait(false),
             "partner-list" => await SessionsPartnerCommand.ListAsync(world, ask.Ids[0], output).ConfigureAwait(false),
+            // HANDBACK1: a read, so no press and never through the running Daoris.
+            "handback" => await HandbackAsync(world, ask, output, ct).ConfigureAwait(false),
             // SUPERVISOR1a-ii: the supervisor's holder's verb, through the running Daoris alone.
             "supervise-list" or "supervise-print" or "supervise-answer" or "supervise-leave" => await SessionsSuperviseCommand.RunAsync(world, ask, output, ct).ConfigureAwait(false),
             // A piece's stop is its partner's record's stop, the same press: the driver reads it as the person's and keeps the work.
@@ -1134,6 +1145,39 @@ public static class SessionsCommand
         }
     }
 
+    /// <summary>
+    /// <c>sessions handback &lt;session|quest&gt;</c> (HANDBACK1, D219): one quest's handback whole, by the quest's id or the id of the session
+    /// that served it, in any state, as the service's handback door answers it, in the words the connector's <c>handback_read</c> says.
+    /// <c>--json</c> prints the answer as the service gave it. Exit 0 where the id named a quest or a session, 1 where it named nothing
+    /// here, 2 where the service could not answer or has no door.
+    /// </summary>
+    private static async Task<int> HandbackAsync(SessionsWorld world, SessionsAsk ask, TextWriter output, CancellationToken ct)
+    {
+        string? answer;
+        try
+        {
+            answer = await world.Service.HandbackJsonAsync(ask.Ids[0], ct).ConfigureAwait(false);
+        }
+        catch (DriverException refused)
+        {
+            output.WriteLine($"sessions: {refused.Message}");
+            return 2;
+        }
+
+        if (answer is null)
+        {
+            output.WriteLine("sessions: the service has no handback door; is it older than this driver?");
+            return 2;
+        }
+
+        using var read = JsonDocument.Parse(answer);
+        var found = read.RootElement.TryGetProperty("found", out var named) && named.ValueKind == JsonValueKind.True;
+        output.WriteLine(ask.Json
+            ? answer
+            : read.RootElement.TryGetProperty("said", out var said) && said.ValueKind == JsonValueKind.String ? said.GetString() : answer);
+        return found ? 0 : 1;
+    }
+
     /// <summary>This machine's record of one session, or null with why it is not one this machine can act on.</summary>
     private static async Task<SessionRecord?> RecordAsync(SessionsWorld world, string id, TextWriter output, CancellationToken ct)
     {
@@ -1187,6 +1231,9 @@ public static class SessionsCommand
 
         var last = WordsNever.LastHere(json, record.Quest);
         var next = WordsNever.ContinuedIn(json, id);
+        // FOUNDATION1d-ii (the design §3.4 rule 2, §19.12): a host with the `head` mark judges the line's head inside its say door's step, across
+        // kinds, so the driver's own walk, which follows conversations alone, stands aside for it; a host without the mark keeps it, as today.
+        if (next is not null && await world.Service.Opens.HeadAsync(ct).ConfigureAwait(false) >= 1) next = null;
         if (WordsNever.Judge(record, last, next) is { } never)
         {
             output.WriteLine($"sessions: {Refusal(never, id, record, last, null, next)}");
@@ -1321,6 +1368,13 @@ public static class SessionsCommand
             case { Sent: true, Now: true, Reaches: not "resume" }:
                 output.WriteLine("sessions: sent now: it takes this as its next turn.");
                 return 0;
+            // FOUNDATION1d-ii: the loop said them at the head of the record's line, which it names: followed there.
+            case { Sent: true, Reaches: "resume", Head: { } head } when head != record.Id:
+                output.WriteLine($"sessions: {record.Id} went on in {head}, its line's head, which your words went to.");
+                var json = await world.Service.SessionRecordsJsonAsync(ct).ConfigureAwait(false);
+                var headRecord = SessionRecords.Parse(json).FirstOrDefault(each => string.Equals(each.Id, head, StringComparison.Ordinal))
+                    ?? record with { Id = head };
+                return await GoesOnAsync(world, headRecord, held.Word, waited, output, ct).ConfigureAwait(false);
             case { Sent: true, Reaches: "resume" }:
                 return await GoesOnAsync(world, record, held.Word, waited, output, ct).ConfigureAwait(false);
             case { Sent: true, Reaches: "next-step" }:
@@ -1458,17 +1512,23 @@ public static class SessionsCommand
             return loop ? 2 : 1;
         }
 
-        var said = await world.Service.SayAsync(record.Id, text, files, ct).ConfigureAwait(false);
+        // FOUNDATION1d-ii (the design §3.4 rules 1 and 2): kept at the head of the record's line where it went on, the same say, its files carried
+        // to the head's folder first, and the head named.
+        var (said, at) = await WordsHead.FollowAsync(
+                record.Id, named => world.Service.SayAsync(named, text, files, ct),
+                files.Count > 0 ? (from, to) => ChatFiles.Carry(world.Home, from, to, files) : null)
+            .ConfigureAwait(false);
         if (said.Kept)
         {
             if (!loop && said.Word is { } kept)
             {
-                new SessionEvents(DaorisHome.Entry(world.Home, HomeEntry.Sessions)).Keep(record.Id, LoopWords.Shown(kept, RequestDoor.Terminal), null);
+                new SessionEvents(DaorisHome.Entry(world.Home, HomeEntry.Sessions)).Keep(at, LoopWords.Shown(kept, RequestDoor.Terminal), null);
             }
 
-            output.WriteLine(loop
-                ? "sessions: held: the same session goes on with this at the driver's next look."
-                : "sessions: held: the same session goes on with this when a driver next runs on this machine.");
+            var when = loop ? "at the driver's next look" : "when a driver next runs on this machine";
+            output.WriteLine(at != record.Id
+                ? $"sessions: held: {record.Id} went on in {at}, which goes on with this {when}."
+                : $"sessions: held: the same session goes on with this {when}.");
             return 0;
         }
 

@@ -1,0 +1,9 @@
+{
+  "id": "stub",
+  "standIn": true,
+  "program": { "entry": "agent.mjs" },
+  "doors": [
+    { "id": "stub", "kind": "native", "arguments": ["--door", "native"] },
+    { "id": "acp-stub", "kind": "protocol", "arguments": ["--door", "protocol"] }
+  ]
+}

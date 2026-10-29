@@ -226,6 +226,12 @@ internal sealed class TreeStrays(TreeContext context, TreeSetAside setAside, Con
     /// </summary>
     private async Task<StrayResult> CutOffAsync(string root, string workspace, string repository, Found cut, CancellationToken done)
     {
+        // GITWORKTREECONFIG1: a tree git binds to another checkout keeps its lock, its folder and its branch, said, before any git write.
+        if (await TreeBinding.RefusalAsync(cut.Folder, done).ConfigureAwait(false) is { } bound)
+        {
+            return new StrayResult(cut.Folder, StrayKind.Opening, false, bound) { Branch = cut.Branch, Kept = TidyKept.Refused };
+        }
+
         var (unlocked, _, unlockErr) = await WorkingTree.GitAsync(root, ["worktree", "unlock", cut.Folder], done).ConfigureAwait(false);
         if (unlocked != 0)
         {

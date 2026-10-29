@@ -464,6 +464,7 @@ public sealed class BindingsTests : IDisposable
 
         using var store = DesktopStore.Open(Db, new DesktopStoreOptions { Settled = () => StoreSettled.Yes });
 
-        Assert.Equal([BindingStore.Run], store.Runs().Select(run => run.Run));
+        // The run and its kind are the process's own (FOUNDATION1f-i), the one every store of the process writes under, the move store's too.
+        Assert.Equal([(StoreProcess.Run, StoreProcess.Kind)], store.Runs().Select(run => (run.Run, run.Kind)));
     }
 }

@@ -30,6 +30,24 @@ function onDemandHalf(text: string): string {
 }
 
 /**
+ * The region's largest rules by bytes, each measured from its provenance line to the next one (CANONSIZE1).
+ * The name is the rule's file name, which is what the canon and the lock call it.
+ */
+function largestRules(body: string, count: number): { name: string; bytes: number }[] {
+  const lines = body.split('\n');
+  const starts = lines.flatMap((line, at) => (line.startsWith('<!-- daoris: ') ? [at] : []));
+  return starts
+    .map((start, i) => {
+      const source = /^<!-- daoris: (\S+) @/.exec(lines[start]!)?.[1] ?? 'rule';
+      const name = source.slice(source.lastIndexOf('/') + 1).replace(/\.md$/, '');
+      const text = lines.slice(start, starts[i + 1] ?? lines.length).join('\n');
+      return { name, bytes: Buffer.byteLength(text, 'utf8') };
+    })
+    .sort((a, b) => b.bytes - a.bytes || a.name.localeCompare(b.name))
+    .slice(0, count);
+}
+
+/**
  * The on-demand half split at the *Where things are* table, its last section (D122 §2.8): the tiers'
  * tables are rebuilt from disk, the records' table from the manifest, and a stale one says which.
  */
@@ -161,6 +179,21 @@ export function inspect(
   // the index no longer lists. Not while a move is pending — the move names them, and moves them.
   const agentsFile = Object.values(harness.tiers).find((tier) => tier.region)?.region?.file ?? 'AGENTS.md';
   const agentsBytes = isFile(join(root, agentsFile)) ? statSync(join(root, agentsFile)).size : 0;
+  // Only worked out over the limit: the own part is the file without the region, the rules are the
+  // region's provenance-marked sections (CANONSIZE1).
+  let agentsOwnBytes = agentsBytes;
+  let agentsRegionBytes = 0;
+  let agentsLargestRules: { name: string; bytes: number }[] = [];
+  const agentsRegion = Object.values(harness.tiers).find((tier) => tier.region)?.region;
+  if (agentsBytes > INSTRUCTION_LIMIT && agentsRegion) {
+    const text = fileText(agentsRegion.file);
+    const held = text === null ? null : findRegion(text, agentsRegion.name);
+    if (text !== null && held?.kind === 'present') {
+      agentsOwnBytes = Buffer.byteLength(removeRegion(text, agentsRegion.name) ?? '', 'utf8');
+      agentsRegionBytes = agentsBytes - agentsOwnBytes;
+      agentsLargestRules = largestRules(held.body, 3);
+    }
+  }
   const { unlisted, readAlone } = staleLayout
     ? { unlisted: [], readAlone: [] }
     : unlistedDocuments({ root, harness, target, mirrors: new Set(mirrored.keys()) });
@@ -284,7 +317,7 @@ export function inspect(
   return {
     drifted, missing, stalePacks, coreBytes, overBudget, index, indexStale, rosterStale, switchedOff, staleSwitches,
     staleLayout, mirrorsDrifted, mirrorsMissing, mirrorsBehind, roomsWithoutInstructions, roomPointersMissing,
-    links, agentsBytes, unlisted, readAlone, withoutFrontmatter,
+    links, agentsBytes, agentsOwnBytes, agentsRegionBytes, agentsLargestRules, unlisted, readAlone, withoutFrontmatter,
     documentsStale, documentsMissing, documentLinks: documentLinksFound, documentsOver, ceilingsUnmeasured, recordsUndeclared,
     ok,
   };
@@ -330,8 +363,16 @@ export function commandCheck({ root, write }: Pick<CommandArgs, 'root' | 'write'
   for (const problem of report.links) write(`  LINK      ${problem.path} — ${shortLink(problem)}`);
   // Reported, never failed on (D54).
   if (report.agentsBytes > INSTRUCTION_LIMIT) {
+    const split = report.agentsRegionBytes
+      ? `; own part ${report.agentsOwnBytes} bytes, doctrine region ${report.agentsRegionBytes} bytes`
+        + (report.agentsLargestRules.length
+          ? `; largest rules: ${report.agentsLargestRules.map((rule) => `${rule.name} (${rule.bytes})`).join(', ')}`
+          : '')
+        + ' — shorten the own part, or split a large rule to the on-demand tier in the canon'
+      : '';
     write(`  size      AGENTS.md is ${report.agentsBytes} bytes; codex reads ${INSTRUCTION_LIMIT} of a repository's `
-      + 'instruction files and cuts the rest, which is the region\'s last rules — advisory, not a gate');
+      + `instruction files and cuts the rest, which is the region's last rules — over by ${report.agentsBytes - INSTRUCTION_LIMIT}`
+      + `${split} — advisory, not a gate`);
   }
   // The declared documents (D122 §2.8): the facts first, each failing, then the judgements, never failing.
   for (const doc of report.documentsMissing) write(`  document  ${doc.path} (${doc.role}) is declared in daoris.json, and absent`);

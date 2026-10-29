@@ -95,7 +95,9 @@ public sealed class WorkPeerTests
     private static async Task<HookPeer> Started(
         Stand stand, IReadOnlyList<string>? declared = null, Action<string>? onLine = null, TimeSpan? patience = null)
     {
-        var peer = new HookPeer(stand.Incoming, stand.Outgoing, "acme.deploy", onLine, patience, frameLimit: WorkBounds.FrameBytes);
+        // No case here times a call against the peer's ten-second default, so a handshake a loaded machine answers late waits on
+        // Poll.Patience, a bound that elapses only on failure (FLAKE1, 2026-10-29).
+        var peer = new HookPeer(stand.Incoming, stand.Outgoing, "acme.deploy", onLine, patience ?? Poll.Patience, frameLimit: WorkBounds.FrameBytes);
         await peer.InitializeAsync("h", "d", declared ?? Declared, CancellationToken.None);
         return peer;
     }

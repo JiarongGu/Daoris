@@ -130,7 +130,7 @@ public static class WorkflowRunReader
             if (WorkOf(session, sessions) is { } work) return ChainsOf(new WorkflowRunAsk(Quest: work), quests, sessions, trees);
             if (session.Ask is { } ask) return ChainsOf(new WorkflowRunAsk(Ask: ask), quests, sessions, trees);
             if (OriginNamed(session, "ask") is { } asking) return ChainsOf(new WorkflowRunAsk(Ask: asking), quests, sessions, trees);
-            if (Same(session.Repository, HelpRoom.Repository)) return None(WorkflowNoRun.AskDaoris);
+            if (Same(session.Repository, ParticipantWork.HelpRepository)) return None(WorkflowNoRun.AskDaoris);
             if (session.Opinion is not null) return None(WorkflowNoRun.Reviewer);
             if (session.Piece is not null) return None(WorkflowNoRun.Partner);
             if (session.Serves is not null) return None(WorkflowNoRun.Helper);

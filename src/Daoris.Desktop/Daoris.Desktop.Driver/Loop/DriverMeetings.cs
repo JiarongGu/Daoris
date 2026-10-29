@@ -72,6 +72,13 @@ internal sealed class DriverMeetings(LoopContext context, DriverBrainstorms brai
                         events.Add(_context.Said.Wait("meeting", await FreezeAsync(request, snapshot, files, ct).ConfigureAwait(false)));
                         break;
                     case BrainstormStates.Frozen when state.Packet is { } digest && files.Sent(request.Id, state.Round) == digest:
+                        // DRAINHOLD1: a sent round's turns are sessions the drain waits on; it stays frozen and sent until a look that does not drain.
+                        if (_context.Config.Draining)
+                        {
+                            _context.DrainHolds(events, "meeting", request.Id, $"`{request.Id}`");
+                            break;
+                        }
+
                         if (_context.Config.Cap - snapshot.SlotsHeld - taken - begun <= 0) break;
                         if (!_context.Runs.TryOpinion(Claim(request.Id))) break;
                         begun++;

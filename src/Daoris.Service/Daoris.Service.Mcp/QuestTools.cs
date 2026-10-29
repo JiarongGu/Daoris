@@ -366,11 +366,16 @@ public sealed class QuestTools(
         + "quest_publish, then WAIT on that question here (action wait, on the question's id) and end "
         + "your turn: your quest stays yours, and the driver resumes you in the same tree with the answer. "
         + "Where quest_list says its graph closes it, finish with ready instead of done: the same reason and answers, kept as "
-        + "your submission, and Daoris closes the quest at the work's end.")]
+        + "your submission, and Daoris closes the quest at the work's end. The reason you finish, ready or decline with is your "
+        + "handback: the one record of the work whoever reads the quest later reads, never your messages. A reason that only points "
+        + "elsewhere (\"details are in my last message\", \"see the commit\") is refused.")]
     public async Task<string> RespondToQuestAsync(
         [Description("The quest id, from quest_list.")] string id,
         [Description("take, done, ready, decline, or wait. ready finishes a quest its graph closes.")] string action,
-        [Description("Required to decline; worth giving when finishing.")] string? reason = null,
+        [Description(
+            "Your handback: required to decline, and worth giving when finishing or saying ready. Say what changed, where (the commits), "
+            + "what you proved, and what you did not, in the note itself: one that only points elsewhere is refused.")]
+        string? reason = null,
         [Description("For wait: the id of the question you published to another repository.")] string? on = null,
         [Description(
             "For done or ready, on a quest that carries the person's requirements: one answer for each, by its number. Met, saying "
@@ -387,9 +392,9 @@ public sealed class QuestTools(
             .Select(answer => new QuestAnswer(answer.Requirement ?? 0, answer.Met, answer.Departed, answer.Quote))
             .ToList();
         // The session the driver started, as its connector was spawned naming it (FABRIC-CLOSE1o): a take binds the graph named for that
-        // session alone.
+        // session alone. Its close's note is its handback (HANDBACK1): refused where it only points elsewhere, and kept naming the session.
         var outcome = await exchange.RespondAsync(
-                id, action, reason, DateTimeOffset.UtcNow, ct, on: on, answers: answered, session: intake?.Session)
+                id, action, reason, DateTimeOffset.UtcNow, ct, on: on, answers: answered, session: intake?.Session, handback: true)
             .ConfigureAwait(false);
 
         // A take by a session the driver started is written on its record (STANDDOWN2): how its end is

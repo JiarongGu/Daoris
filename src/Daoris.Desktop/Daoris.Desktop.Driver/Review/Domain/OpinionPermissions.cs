@@ -23,10 +23,13 @@ public static class OpinionPermissions
 {
     private const string Connector = $"mcp__{KnowledgeConnector.ServerName}__";
 
-    /// <summary>Its connector's tools it may call: the knowledge it reads, the quests it reads, and its one say.</summary>
+    /// <summary>
+    /// Its connector's tools it may call: the knowledge it reads, the quests it reads and their handbacks (HANDBACK1), and its one say.
+    /// </summary>
     private static readonly string[] Offered =
     [
-        "registry", "knowledge_search", "knowledge_get", "knowledge_repositories", "knowledge_convergence", "quest_list", "opinion_give",
+        "registry", "knowledge_search", "knowledge_get", "knowledge_repositories", "knowledge_convergence", "quest_list", "handback_read",
+        "opinion_give",
     ];
 
     /// <summary>

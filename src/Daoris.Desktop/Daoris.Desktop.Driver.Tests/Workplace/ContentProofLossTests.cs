@@ -333,8 +333,29 @@ public sealed class ContentProofLossTests : LandedFixture
     }
 
     /// <summary>
+    /// INTEGRATE1d (D218's note): the owner's acceptance, for integration, of the declaration at the line's tip, as the window's door
+    /// writes it. A declared scratch is a list of files the tidy deletes, so it counts only once accepted, as a command runs only then.
+    /// </summary>
+    private async Task AcceptTheLinesDeclarationAsync(string root)
+    {
+        var blob = (await GitAsync(root, "rev-parse", "main:daoris.gates.json")).Trim();
+        var path = DaorisHome.Entry(Home, HomeEntry.DriverConfig);
+        DriverConfig.Load(path).WithIntegrationGates("engine", blob).Save(path);
+    }
+
+    /// <summary>A tree holding declared output in a folder the checkout lacks and one it holds, and a project's <c>bin</c> and <c>obj</c>.</summary>
+    private static async Task WriteOutputAsync(string tree)
+    {
+        await WriteLateAsync(Path.Combine(tree, "devtools", "_test-results", "run.xml"));
+        await WriteLateAsync(Path.Combine(tree, "devtools", "_e2e-p1-data", "lyntai.db"));
+        await WriteLateAsync(Path.Combine(tree, "samples", "bin", "Debug", "Samples.dll"));
+        await WriteLateAsync(Path.Combine(tree, "samples", "obj", "project.assets.json"));
+    }
+
+    /// <summary>
     /// TIDYOUTPUT1: a tree holding only what its repository declares as output (a folder the checkout does not have, a folder it
-    /// has) and a build's <c>bin</c> and <c>obj</c> (a project the checkout never built) is tidied with the landing, unforced.
+    /// has) and a build's <c>bin</c> and <c>obj</c> (a project the checkout never built) is tidied with the landing, unforced, where the
+    /// owner accepted that declaration for integration (INTEGRATE1d).
     /// </summary>
     [Fact]
     public async Task A_tree_holding_only_declared_output_and_a_builds_folders_is_tidied()
@@ -342,6 +363,7 @@ public sealed class ContentProofLossTests : LandedFixture
         var root = await RepositoryAsync("engine");
         await CommitAsync(root, ".gitignore", "devtools/_*\nbin/\nobj/\n", "ignore output");
         await CommitAsync(root, "daoris.gates.json", DeclaresOutput, "declare the output");
+        await AcceptTheLinesDeclarationAsync(root);
         Directory.CreateDirectory(Path.Combine(root, "devtools", "_e2e-p1-data"));
         await File.WriteAllTextAsync(Path.Combine(root, "devtools", "_e2e-p1-data", "old.db"), "the checkout's run\n");
         var trees = new SessionTrees(Home);
@@ -357,6 +379,57 @@ public sealed class ContentProofLossTests : LandedFixture
 
         Assert.True(removal.Removed, removal.Message);
         Assert.False(Directory.Exists(tree.Path));
+    }
+
+    /// <summary>
+    /// INTEGRATE1d (D218's note): the same declaration on the line, never accepted for integration, declares nothing, so the tree keeps
+    /// what it kept before TIDYOUTPUT1 and names it; a project's <c>bin</c> and <c>obj</c> still go, since a tool names those.
+    /// </summary>
+    [Fact]
+    public async Task Declared_output_under_a_declaration_never_accepted_keeps_the_tree_while_a_builds_folders_go()
+    {
+        var root = await RepositoryAsync("engine");
+        await CommitAsync(root, ".gitignore", "devtools/_*\nbin/\nobj/\n", "ignore output");
+        await CommitAsync(root, "daoris.gates.json", DeclaresOutput, "declare the output");
+        var trees = new SessionTrees(Home);
+        var tree = await trees.OpenAsync(root, "engine", "aurora");
+        await CommitAsync(tree.Path, "work.txt", "the work\n", "the work");
+        await SquashAsync(root, tree.Branch);
+        await WriteOutputAsync(tree.Path);
+
+        var removal = await trees.RemoveAsync(tree.Path);
+
+        Assert.False(removal.Removed, removal.Message);
+        Assert.Contains("devtools/_test-results/run.xml", removal.Message);
+        Assert.DoesNotContain("Samples.dll", removal.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain("project.assets.json", removal.Message, StringComparison.Ordinal);
+        Assert.True(File.Exists(Path.Combine(tree.Path, "devtools", "_test-results", "run.xml")));
+    }
+
+    /// <summary>
+    /// INTEGRATE1d: accepted, and the line's declaration changed since: the new one waits for the owner, and the tidy reads none, so the
+    /// tree is kept and named as with no acceptance.
+    /// </summary>
+    [Fact]
+    public async Task Declared_output_under_a_declaration_changed_since_its_acceptance_keeps_the_tree()
+    {
+        var root = await RepositoryAsync("engine");
+        await CommitAsync(root, ".gitignore", "devtools/_*\nbin/\nobj/\n", "ignore output");
+        await CommitAsync(root, "daoris.gates.json", DeclaresOutput, "declare the output");
+        await AcceptTheLinesDeclarationAsync(root);
+        await CommitAsync(root, "daoris.gates.json", DeclaresOutput.Replace("{ \"integration\"", "{ \"note\": 1, \"integration\"", StringComparison.Ordinal),
+            "change the declaration");
+        var trees = new SessionTrees(Home);
+        var tree = await trees.OpenAsync(root, "engine", "aurora");
+        await CommitAsync(tree.Path, "work.txt", "the work\n", "the work");
+        await SquashAsync(root, tree.Branch);
+        await WriteOutputAsync(tree.Path);
+
+        var removal = await trees.RemoveAsync(tree.Path);
+
+        Assert.False(removal.Removed, removal.Message);
+        Assert.Contains("devtools/_test-results/run.xml", removal.Message);
+        Assert.True(File.Exists(Path.Combine(tree.Path, "devtools", "_test-results", "run.xml")));
     }
 
     /// <summary>
@@ -393,6 +466,7 @@ public sealed class ContentProofLossTests : LandedFixture
         var root = await RepositoryAsync("engine");
         await CommitAsync(root, ".gitignore", "devtools/_*\nbin/\nobj/\n", "ignore output");
         await CommitAsync(root, "daoris.gates.json", DeclaresOutput, "declare the output");
+        await AcceptTheLinesDeclarationAsync(root);
         Directory.CreateDirectory(Path.Combine(root, "devtools", "_extra"));
         await File.WriteAllTextAsync(Path.Combine(root, "devtools", "_extra", "checkout.txt"), "the checkout's own\n");
         var trees = new SessionTrees(Home);
@@ -424,6 +498,7 @@ public sealed class ContentProofLossTests : LandedFixture
         var root = await RepositoryAsync("engine");
         await CommitAsync(root, ".gitignore", "local/\ndevtools/_*\nbin/\nobj/\n", "ignore local and output");
         await CommitAsync(root, "daoris.gates.json", DeclaresOutput, "declare the output");
+        await AcceptTheLinesDeclarationAsync(root);
         Directory.CreateDirectory(Path.Combine(root, "local"));
         await File.WriteAllTextAsync(Path.Combine(root, "local", "owner.md"), "the owner's note\n");
         var trees = new SessionTrees(Home);

@@ -367,6 +367,9 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'background.goes-on': { values: [] },
   // DONEEND1: the quest read again no longer waits on the work, so the session ends and the work still running ends with it.
   'background.wait-over': { values: ['works'] },
+  // RUNENDS1: the quest no longer waits, so the session ends rather than wait for a turn its agent's own wakeup starts, or is about to.
+  'background.turn-left': { values: [] },
+  'background.quest-closed': { values: [] },
   // A conversation's door that failed (CONVNOTE2e): a program's words follow each lead but the resume's; a refused resume is
   // its reason by MSG1f's family, the agent's words after it where it said any, then an answer carried on.
   'door.not-open': { values: [] },

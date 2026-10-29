@@ -41,6 +41,8 @@ public static class KnowledgeServer
         typeof(HandOverTools),
         // A session's line read back from this machine's event files (SESSCTX1f): what its brief's bound left out, a page at a time.
         typeof(LineTools),
+        // One quest's handback read whole (HANDBACK1), by its id or its session's, in any state, from the session's own workspace.
+        typeof(HandbackTools),
         typeof(ChannelTools),
         typeof(OpinionTools),
         // A brainstorm pass's result tools (BRAINSTORM1a2), refused to every session the driver names no brainstorm turn for.

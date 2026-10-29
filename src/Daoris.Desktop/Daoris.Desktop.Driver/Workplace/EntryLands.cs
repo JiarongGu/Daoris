@@ -37,6 +37,14 @@ public sealed record EntryLandingPart(string Session, string Tree)
 /// <param name="Conflicts">Whether it conflicts after the later part's work, rather than adding nothing.</param>
 public sealed record PartSuperseded(string By, string Says, bool Conflicts);
 
+/// <summary>
+/// A part that conflicts with a later part of its entry and has work of its own beside the conflict (ACCEPTCONFLICT1, D167's note on
+/// point 3): not redone, so the plan never offers to leave it out; leaving it out would lose that work.
+/// </summary>
+/// <param name="By">The later part it conflicts with.</param>
+/// <param name="Says">The conflicting files.</param>
+public sealed record PartClash(string By, string Says);
+
 /// <summary>What an entry's Accept would do with one of its parts (ACCEPTALL1): its own plan, as its review's Accept would say it.</summary>
 /// <param name="Plan">The part's landing plan, its branch the entry's; null for a part whose tree an earlier part's landing carries.</param>
 public sealed record EntryPartPlan(string Session, LandingPlan? Plan)
@@ -46,6 +54,9 @@ public sealed record EntryPartPlan(string Session, LandingPlan? Plan)
 
     /// <summary>A later part that redid its work (point 3); null where none did.</summary>
     public PartSuperseded? Superseded { get; init; }
+
+    /// <summary>A later part it conflicts with while having work of its own (ACCEPTCONFLICT1); null where none.</summary>
+    public PartClash? Clash { get; init; }
 }
 
 /// <summary>
@@ -146,14 +157,37 @@ public static class EntryLandings
     /// different from the later part's alone, is superseded; a trial git could not make says nothing.
     /// </summary>
     /// <param name="files">The files the earlier part changes, said where it adds nothing.</param>
-    public static PartSuperseded? Verdict(
+    public static (PartSuperseded? Superseded, PartClash? Clash) Verdict(
         string by, string? later, (string? Tree, string? Conflicts) after, IReadOnlyList<string> files)
     {
-        if (later is null) return null;
-        if (after.Conflicts is { } conflicts) return new PartSuperseded(by, conflicts, Conflicts: true);
-        if (after.Tree is null || !string.Equals(after.Tree, later, StringComparison.OrdinalIgnoreCase)) return null;
-        return new PartSuperseded(by, Files(files), Conflicts: false);
+        if (later is null) return (null, null);
+        if (after.Conflicts is { } conflicts)
+        {
+            // ACCEPTCONFLICT1: redone only where every file it changes is in the conflict; any other file is work of its own.
+            var inConflict = files.Where(file => InConflict(conflicts, file)).ToList();
+            return files.Count > 0 && inConflict.Count == files.Count
+                ? (new PartSuperseded(by, conflicts, Conflicts: true), null)
+                : (null, new PartClash(by, inConflict.Count > 0 ? Files(inConflict) : conflicts));
+        }
+
+        if (after.Tree is null || !string.Equals(after.Tree, later, StringComparison.OrdinalIgnoreCase)) return (null, null);
+        return (new PartSuperseded(by, Files(files), Conflicts: false), null);
     }
+
+    /// <summary>Whether git's <c>CONFLICT</c> lines name <paramref name="file"/> as a whole path, not as the tail of another.</summary>
+    private static bool InConflict(string conflicts, string file)
+    {
+        for (var from = 0; file.Length > 0 && conflicts.IndexOf(file, from, StringComparison.Ordinal) is var at and >= 0; from = at + 1)
+        {
+            var before = at == 0 ? ' ' : conflicts[at - 1];
+            var after = at + file.Length >= conflicts.Length ? ' ' : conflicts[at + file.Length];
+            if (!IsPathChar(before) && before != '.' && !IsPathChar(after)) return true;
+        }
+
+        return false;
+    }
+
+    private static bool IsPathChar(char c) => char.IsLetterOrDigit(c) || c is '/' or '_' or '-';
 
     /// <summary>Up to three files by name, and how many more.</summary>
     public static string Files(IReadOnlyList<string> files) =>
@@ -217,8 +251,9 @@ internal sealed class EntryLands(TreeContext context, TreeLands lands, TreeLandS
                 if (laterTree is null) continue;
                 var after = await LineHolds.TrialTreeAsync(earlier.Root, laterTree, earlier.Held.Kept, ct).ConfigureAwait(false);
                 var files = await LandedProofs.NamesAsync(earlier.Root, $"{earlier.Held.Kept[0].Sha}^", earlier.Held.Kept[^1].Sha, ct).ConfigureAwait(false) ?? [];
-                if (EntryLandings.Verdict(parts[judged[j].At].Session, laterTree, after, files) is not { } superseded) continue;
-                planned[at] = planned[at] with { Superseded = superseded };
+                var (superseded, clash) = EntryLandings.Verdict(parts[judged[j].At].Session, laterTree, after, files);
+                if (superseded is null && clash is null) continue;
+                planned[at] = planned[at] with { Superseded = superseded, Clash = clash };
                 break;
             }
         }

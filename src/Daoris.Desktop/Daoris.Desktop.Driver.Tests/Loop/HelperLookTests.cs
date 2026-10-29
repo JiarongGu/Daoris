@@ -79,17 +79,19 @@ public sealed class HelperLookTests : IDisposable
     private static readonly HelperCaptured Captured = new(
         "c0ffee123456", OpinionStandIn.Tip, At, [new CapturedFile("src/report.ts", new string('a', 64), 12)], ["old.md"], []);
 
+    private static DriverConfig Drain(DriverConfig config, bool drained) => drained ? InstallUpdate.Drained(config) : config;
+
     /// <param name="unset">No rule for the repository at all, so its workspace's or Daoris's default stands (HELPERDEFAULT1).</param>
     private Daoris.Driver.Driver Driver(
         OpinionStandIn host, Pass? pass, HelperRule? rule = null, int cap = 3, ReviewerChoice? choice = null,
         Func<string, CancellationToken, Task<HelperCaptureRead>>? capture = null, Func<ReviewerChoice>? choose = null,
-        bool unset = false, Dictionary<string, HelperRule>? workspaces = null) =>
-        new(host.Client(), DriverConfig.Empty with
+        bool unset = false, Dictionary<string, HelperRule>? workspaces = null, bool drained = false) =>
+        new(host.Client(), Drain(DriverConfig.Empty with
         {
             Adapter = "claude-code-acp", Cap = cap,
             Helpers = unset ? new Dictionary<string, HelperRule>() : new Dictionary<string, HelperRule> { ["reports"] = rule ?? On },
             WorkspaceHelpers = workspaces ?? new Dictionary<string, HelperRule>(),
-        }, AdapterSet.Built(), _home)
+        }, drained), AdapterSet.Built(), _home)
         {
             HelperPasses = pass is null ? (_, _, _) => throw new InvalidOperationException("no helper starts here") : pass.RunAsync,
             HelperTrees = (_, _) => Task.FromResult<(string?, string?)>((OpinionStandIn.Tip, "D:/checkouts/reports")),
@@ -169,6 +171,46 @@ public sealed class HelperLookTests : IDisposable
 
         Assert.Equal("helper  ask `a1` from session `s1` waits for the person's yes or no in What needs you", Assert.Single(first));
         Assert.Empty(second);
+    }
+
+    /// <summary>
+    /// DRAINHOLD1 (the driver follow-up): an update's drain holds the helper's start as it holds a quest's. Under the rule `on`, with a
+    /// free slot and an idle asker, no helper starts and the look says the drain's hold, once; the ask's state is left as it was; after
+    /// *Not now* (a look that no longer drains) the same ask starts.
+    /// </summary>
+    [Fact]
+    public async Task A_draining_look_starts_no_helper_and_says_the_drains_hold_once_and_after_not_now_it_starts()
+    {
+        Ask("a1");
+        var host = Host();
+        var pass = new Pass(Files) { Answer = "Line 42." };
+        var draining = Driver(host, pass, drained: true);
+
+        var first = await Look(draining);
+        var second = await Look(draining);
+
+        Assert.Equal(InstallUpdate.HeldLine("helper", "ask `a1` from session `s1`"), Assert.Single(first));
+        Assert.Empty(second);
+        Assert.Empty(pass.Asked);
+        Assert.Null(Files.ReadState("a1"));
+
+        await Look(Driver(host, pass));
+        await Until(() => host.HelperHands.Count == 1);
+        Assert.Single(pass.Asked);
+    }
+
+    /// <summary>An answered helper's hand and a started one's settling wait out the drain too: either can go a conversation on in a turn.</summary>
+    [Fact]
+    public async Task A_draining_look_hands_no_answer_and_settles_no_started_ask()
+    {
+        Ask("a1");
+        Files.WriteState(new HelperState("a1", HelperStates.Answered, null, Helper, At));
+        var host = Host();
+        var draining = Driver(host, pass: null, drained: true);
+
+        await Look(draining);
+
+        Assert.Empty(host.HelperHands);
     }
 
     /// <summary>A person's yes (`approved`, MIXAGENT2b's press) lets it go under `ask`: a helper starts and answers.</summary>

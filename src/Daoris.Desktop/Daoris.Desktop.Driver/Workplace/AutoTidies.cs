@@ -57,7 +57,10 @@ public static class TidyKept
     /// <summary>The service did not say which sessions run or wait, or which repositories are here.</summary>
     public const string Sessions = "sessions";
 
-    /// <summary>The removal did not happen: its tree is locked, git would not let its record go, or the branch moved.</summary>
+    /// <summary>
+    /// The removal did not happen: its tree is locked, git would not let its record go, the branch moved, or git binds its tree to
+    /// another checkout (GITWORKTREECONFIG1).
+    /// </summary>
     public const string Refused = "refused";
 
     /// <summary>Something on this machine holds its tree's folder open, so the folder could not be moved aside.</summary>

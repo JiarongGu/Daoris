@@ -48,6 +48,7 @@ public sealed class ServiceAutoLandingWorld(ServiceClient service) : IAutoLandin
     /// <summary>A new world over the same service, so nothing this one read is kept.</summary>
     public IAutoLandingWorld Again() => new ServiceAutoLandingWorld(service);
 
+    // FOUNDATION1d-ii: said at the head of the session's line where it went on, under the landing's key.
     public async Task<SayAnswer?> SayAsync(string session, string text, string key, CancellationToken ct) =>
-        await service.SayAsync(session, text, null, ct, from: SaidFrom.Daoris, key: key).ConfigureAwait(false);
+        (await WordsHead.FollowAsync(session, at => service.SayAsync(at, text, null, ct, from: SaidFrom.Daoris, key: key)).ConfigureAwait(false)).Said;
 }

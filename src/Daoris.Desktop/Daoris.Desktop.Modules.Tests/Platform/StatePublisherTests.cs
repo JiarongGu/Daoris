@@ -617,6 +617,8 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
     [InlineData("WORKFLOW_RUN", "", null)]
     // FABRIC-PIPELINE1a: the landed route set, which the page reads again by its own query, as every workflow route is read.
     [InlineData("WORKFLOW_LANDED", "", null)]
+    // INTEGRATE1d: the integration's own acceptance, the driver's standing choice, which every window's driver-keyed reads read again.
+    [InlineData("INTEGRATION_GATES", "driver", null)]
     // FABRIC-CUTOVER1f: the person's skip or stop of a run's node, kept on its record, which the run's view reads again under the driver's key.
     [InlineData("WORKFLOW_NODE", "driver", null)]
     [InlineData("START_HELP", "sessions", null)]

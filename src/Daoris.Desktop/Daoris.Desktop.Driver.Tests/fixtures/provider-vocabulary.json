@@ -1,0 +1,33 @@
+{
+  "_why": "AGENTPROVIDER1 row a (the agent-provider design §9, O1-F18): the words a provider owns, which the census (`ProviderCensusTests`, and its twins in the service, the page and the tools) holds no site outside the providers' folders to name. The design reads this list from each provider's registered `Vocabulary` part (§2.3); until every provider registers, it is seeded here from the survey's lists (§1, §3, §6, §8, §10, §11), and row t deletes this file once every word comes from a registration. `words` rows: [the word, the provider that owns it, what it is]. A word is matched as written: a name made of letters, digits and underscores whole-word, anything that starts or ends in a dot, a slash or an underscore as a plain substring. The kinds: `variable` (an environment variable), `file` (a file or folder the provider's program reads), `wire` (a key on a provider's wire or in its records). Owners are provider ids (`claude-code`, `codex`, `dsh`). `ids` rows: [an id an agent or a door goes by, the provider that owns it], the literals the census holds used as behaviour (a quoted literal, whatever the language's quote); `alt-stub` is the second stand-in, which owns no vocabulary. The four censuses (the driver's, the service's, the page's, the tools') read this one table.",
+
+  "ids": [
+    ["claude-code", "claude-code"],
+    ["claude-code-acp", "claude-code"],
+    ["claude", "claude-code"],
+    ["codex", "codex"],
+    ["codex-acp", "codex"],
+    ["dsh", "dsh"],
+    ["stub", "stub"],
+    ["acp-stub", "stub"],
+    ["alt-stub", "alt-stub"]
+  ],
+
+  "words": [
+    ["CLAUDE_CONFIG_DIR", "claude-code", "variable"],
+    ["CODEX_HOME", "codex", "variable"],
+    ["DSH_HOME", "dsh", "variable"],
+    ["ANTHROPIC_API_KEY", "claude-code", "variable"],
+    ["ANTHROPIC_MODEL", "claude-code", "variable"],
+    ["CLAUDE_CODE_EFFORT_LEVEL", "claude-code", "variable"],
+    ["CLAUDE_CODE_EXECUTABLE", "claude-code", "variable"],
+    ["DISABLE_UPDATES", "claude-code", "variable"],
+    ["ENABLE_TOOL_SEARCH", "claude-code", "variable"],
+    [".claude.json", "claude-code", "file"],
+    [".mcp.json", "claude-code", "file"],
+    ["_claude/", "claude-code", "wire"],
+    ["claudeCode.", "claude-code", "wire"],
+    ["thread_active_writer", "codex", "wire"],
+    ["x-codex-turn-metadata", "codex", "wire"]
+  ]
+}

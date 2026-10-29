@@ -159,6 +159,7 @@ node tools/merge-branch.mjs --stale
 node tools/merge-branch.mjs --rerun <gate>
 node tools/merge-branch.mjs --full
 node tools/merge-branch.mjs --full --beside [<commit>]
+node tools/merge-branch.mjs --full --beside --daoris-verify
 node tools/merge-branch.mjs --ci [<commit>]
 node tools/merge-branch.mjs --ci --stage [<commit>]
 node tools/merge-branch.mjs --ci --night [<commit>]
@@ -274,7 +275,11 @@ cannot merge is set aside and handed back. The resolvers take the backlog
 and each row table `daoris.gates.json`'s `integration.merge` declares `by: rows` (read from the line: the main checkout's `HEAD` for a
 merge there, the candidate's base for a queue member; never the branch's or an earlier member's copy) by the merge base: a row a side added
 is kept, one removed is dropped, rows both add at one place are both kept, a row both changed
-is a conflict (INTEGRATE1c; a `run` writer waits for its own acceptance). A branch whose work the candidate holds already is **contained**,
+is a conflict (INTEGRATE1c; a `run` writer waits for its own acceptance). The row tables are read through the whole `integration`
+key (`integrationOf`), so a declaration that breaks any key's shape settles none (INTEGRATE1d). This repository declares one row table, the
+router `docs/README.md`, which nothing reads until the owner accepts the declaration's blob on the page; the declared runner
+(`--full --beside --daoris-verify`) hands its gates the `integration.env.pass` names of the declaration it is handed, which is the accepted
+blob, and a merge in place passes none (INTEGRATE1d part 4, D215). A branch whose work the candidate holds already is **contained**,
 never set aside: one the line holds is settled at once; one an earlier member holds stays on the candidate, settled only when that member
 promotes, and merged or found contained again, as its own request, when the candidate ends otherwise (a hand-back, a split, a re-form, a
 drop), in the queue's order. One dropped by name alone leaves the candidate and its run standing. `--queue` shows it. The runner's gates
@@ -416,7 +421,11 @@ Each failure a run finds is filed as **known red** in `local/ci-findings.json`. 
 from its trx, with the fingerprint (the test with its case, the exception type, the assertion's file and line, and the
 message line) and the signature `tools/test-failures.mjs` gives. Any other gate's failure is filed by its step. A failure
 whose signature an open finding holds only moves that finding's last sighting. A pass of the test, or of the gate, clears
-it, but only on a commit on main's first-parent line from where it was last seen failing. A sighting within a day of a
+it, but only on a commit on main's first-parent line from where it was last seen failing. A pass the run kept instead of
+running clears it under the same rules: the kept verdict stands exactly on the run's tree, passed, and is of the same gate; a
+test's finding needs a readable trx of that kept run listing the test passed, and is left open, and said, where none can be
+read. The clearing commit is the run's own, and the ledger records the kept verdict's commit, tree, time and kind beside it. A
+sighting within a day of a
 clearing restores the finding with its first sighting. A test known red for 72 hours from its first sighting is past
 inheriting: the run and the watch say so, and warn twelve hours before. A death of memory is never filed.
 

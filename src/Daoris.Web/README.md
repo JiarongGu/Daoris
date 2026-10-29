@@ -28,7 +28,8 @@ enforced for a conversation (`chatChecksSaid`). A repository's and a
 workspace's Workflow tab draws its start node first, laid out by `Flow` (`workflow/WorkflowStartNode.tsx`): each route, the
 default, each kind by its label and paths, and the landed work, wired to the workflow it names; the landed route says where its
 gates stand against the line's tip and offers the person's *Accept the gates* (`WORKFLOW_LANDED`). A repository's Setup holds
-the same route as a row of *Line and landing* (`settings/repository/LandedRoute.tsx`).
+the same route as a row of *Line and landing* (`settings/repository/LandedRoute.tsx`), with the repository's integration
+declaration beside it, read as written and accepted or withdrawn by blob (`settings/repository/IntegrationDeclaration.tsx`).
 A second opinion's reviewer is a row of its own in Sessions' list, and says whose work it reads (XAGENT1g4c): the rail
 joins it to the working session through `GET /api/opinions`, asked only when the list holds a reviewer, and an unanswered
 read claims nothing. A session that continues another, and a helper, say so (MIXAGENT3a-i): the head's facts name the agent
@@ -403,7 +404,9 @@ fails on the locked DLL.
 A vitest settles what it starts inside `act`: a native `focus()` goes through the work-frame kit's `focus`
 (`test/workFrameKit.tsx`), since a focused trigger opens its tooltip outside `act` otherwise, and a fixture's update
 waits for what it renders. An agent's run of vitest prints no console output of a passing test, so a run looking for
-an `act` warning passes `--reporter=default` (FRAMEACT1, `docs/development.md`).
+an `act` warning passes `--reporter=default` (FRAMEACT1, `docs/development.md`). A fixture whose sentence depends on
+the day (a moment said by its time alone when it is today's) stamps that moment on the day the test runs, or fakes the
+clock, never a fixed date that reads as another day's after midnight (FIX-LOG, 2026-10-30).
 
 The landing-life and trace twins read the driver's declarations through `test/driverSource.ts`: `AutoLandingCode.cs` and
 `WorkplaceFacts.cs` in Knowledge hold their moved vocabulary. The Sweep twin still reads `Landing.cs`. MOD9e's rule in

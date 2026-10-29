@@ -200,7 +200,7 @@
         "agents.add.open", "agents.add.new", "agents.add.done", "agents.act.read", "agents.act.signInTo",
         "agents.rename.save", "agents.pooled.gotIt",
         "update.whenIdle", "update.now", "update.notNow",
-        "person.refuse", "person.confirm",
+        "person.refuse", "person.confirm", "person.installLater",
         "flow.asList", "flow.asChart",
         "asks.ask", "asks.channel.compose.send", "asks.channel.reply", "asks.compose.submit", "asks.goAhead.approve", "asks.goAhead.change", "asks.goAhead.refuse",
         "asks.record.abandon", "asks.record.abandonMeanIt", "asks.record.close",

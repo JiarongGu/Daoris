@@ -135,7 +135,11 @@ public sealed class BranchTidyingProcessTests : BranchTidyingFixture
         var second = await tidying.LookAsync(_ledger.Client(), log, _closing.Token).WaitAsync(Bound);
 
         Assert.Equal(2, first.Count);
-        Assert.Contains($"tidy  engine: `{unreadable.Branch}` stays, since git could not say what its tree holds.", first);
+        // GITWORKTREECONFIG1: the tree's binding is asked before what it holds, so a link git cannot follow is said as git's answer to
+        // where the tree's working root is, naming the tree and git's own words, and nothing is removed through it.
+        Assert.Contains(first, line => line.StartsWith(
+            $"tidy  engine: `{unreadable.Branch}` stays, since git could not say where the tree at {Path.GetFullPath(unreadable.Path)} has its working root (",
+            StringComparison.Ordinal));
         Assert.Contains($"tidy  engine: `{locked.Branch}` stays, since its tree is locked (a person's); `git worktree unlock` lets it go.", first);
         Assert.Empty(second);
         var kept = Events("branch.kept");

@@ -146,15 +146,25 @@ public sealed class TransientRetry
     }
 
     /// <summary>The owner's check, an unread one a yes (§5.5).</summary>
+    /// <remarks>
+    /// 🔴 Bounded by <paramref name="ct"/> (RUNENDS1, second read, findings 1 and 6): a check that never answers held the end of a
+    /// session whose quest closed, and a check that cancelled on a token of its own surfaced that token where only the caller's is the
+    /// caller's to read. The caller's cancellation ends the wait at once and is thrown as the caller's; anything else the check does,
+    /// its own cancellation among them, is an unread check, a yes, unless the caller cut it meanwhile.
+    /// </remarks>
     internal async Task<bool> WantedAsync(CancellationToken ct)
     {
         if (Wanted is null) return true;
         try
         {
-            return await Wanted(ct).ConfigureAwait(false);
+            var checking = Wanted(ct);
+            // A check the cut leaves behind is observed here, never by nobody.
+            _ = checking.ContinueWith(static check => check.Exception, TaskScheduler.Default);
+            return await checking.WaitAsync(ct).ConfigureAwait(false);
         }
-        catch (Exception error) when (error is not OperationCanceledException || !ct.IsCancellationRequested)
+        catch (Exception error) when (error is not OperationCanceledException cancelled || cancelled.CancellationToken != ct)
         {
+            ct.ThrowIfCancellationRequested();
             return true;
         }
     }

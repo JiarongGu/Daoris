@@ -116,11 +116,13 @@ internal sealed class TreeTidies(
             var unasked = inUse is null
                 ? "whether a session still holds its tree was not asked here"
                 : "a session was starting in one of the repository's trees";
+            // INTEGRATE1d: the output the accepted declaration names, read once for the repository's trees.
+            var declared = await context.ScratchAsync(root, repository, workspace, ct).ConfigureAwait(false);
             foreach (var (branch, tip) in held)
             {
                 results.Add(worktrees is null
                     ? new TidiedBranch(branch, false, false, ListUnread)
-                    : await TidyOneAsync(root, branch, tip, worktrees.GetValueOrDefault(branch), busy, unasked, rests, ct).ConfigureAwait(false));
+                    : await TidyOneAsync(root, branch, tip, worktrees.GetValueOrDefault(branch), busy, unasked, rests, declared, ct).ConfigureAwait(false));
             }
         }
 
@@ -196,11 +198,13 @@ internal sealed class TreeTidies(
         var unasked = inUse is null
             ? "whether a session still holds its tree was not asked here"
             : "a session was starting in one of the repository's trees";
+        // INTEGRATE1d: the output the accepted declaration names, read once for the repository's trees.
+        var declared = await context.ScratchAsync(root, repository, workspace, ct, line).ConfigureAwait(false);
         foreach (var (branch, tip, carrier) in carried)
         {
             var tidied = (worktrees is null
                     ? new TidiedBranch(branch, false, false, ListUnread)
-                    : await TidyOneAsync(root, branch, tip, worktrees.GetValueOrDefault(branch), busy, unasked, carrier.Rests, ct).ConfigureAwait(false))
+                    : await TidyOneAsync(root, branch, tip, worktrees.GetValueOrDefault(branch), busy, unasked, carrier.Rests, declared, ct).ConfigureAwait(false))
                 with { CarriedBy = carrier.Entry.Branch };
             results.Add(tidied);
             if (!tidied.Removed) continue;
@@ -219,9 +223,10 @@ internal sealed class TreeTidies(
 
     /// <param name="rests">What the proof that cleared it rested on, each ref at the commit it read (FABRIC-END4a, third review): the delete
     /// verifies exactly these; none keeps it.</param>
+    /// <param name="declared">The repository's declared output under the accepted declaration (INTEGRATE1d, <see cref="TreeContext.ScratchAsync"/>).</param>
     private async Task<TidiedBranch> TidyOneAsync(
         string root, string branch, string tip, string? tree, HashSet<string>? busy, string unasked,
-        IReadOnlyList<(string Ref, string Commit)> rests, CancellationToken ct)
+        IReadOnlyList<(string Ref, string Commit)> rests, IReadOnlyList<System.Text.RegularExpressions.Regex> declared, CancellationToken ct)
     {
         TidiedBranch Kept(string why) => new(branch, false, tree is not null, why);
         if (rests.Count == 0) return Kept("Daoris could not read what its proof rests on");
@@ -234,7 +239,9 @@ internal sealed class TreeTidies(
             // Everything no commit holds, whatever git's settings hide (SQUASHTIDY1c): what removing the tree would destroy.
             if (Directory.Exists(tree))
             {
-                var holds = await ContentHolds.HoldsAsync(tree, root, ct).ConfigureAwait(false);
+                // GITWORKTREECONFIG1: first, that git reads the tree as itself; bound to another checkout, its status is that checkout's.
+                if (await TreeBinding.RefusalAsync(tree, ct).ConfigureAwait(false) is { } bound) return Kept(bound);
+                var holds = await ContentHolds.HoldsAsync(tree, root, declared, ct).ConfigureAwait(false);
                 if (holds is null) return Kept("git could not say what its tree holds");
                 if (holds.Uncommitted.Count > 0) return Kept($"its tree has {holds.Uncommitted.Count} path(s) uncommitted");
                 if (holds.OwnSaid is { } own) return Kept($"its tree holds {own}");

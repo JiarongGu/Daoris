@@ -36,6 +36,15 @@ public static class ProbeLock
     // One gate per lock file in this process, so two of its callers wait on each other before either touches the file.
     private static readonly ConcurrentDictionary<string, SemaphoreSlim> Gates = new(StringComparer.OrdinalIgnoreCase);
 
+    // How many takes each lock file was asked for in this process, beside its gate: one entry per lock file, as the gates keep.
+    private static readonly ConcurrentDictionary<string, int> Asked = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// How many takes the lock at <paramref name="path"/> was asked for in this process: what tells one wait from two by count,
+    /// where a loaded machine's clock cannot (FLAKE1, 2026-10-29).
+    /// </summary>
+    internal static int AskedOf(string path) => Asked.TryGetValue(Path.GetFullPath(path), out var count) ? count : 0;
+
     /// <summary>The lock for one configuration home: an account's, or with <paramref name="profile"/> null the tool's own.</summary>
     public static string PathOf(string home, string owner, string? profile) => profile is null
         ? DaorisHome.Entry(home, HomeEntry.Probing, owner + ".lock")
@@ -91,6 +100,7 @@ public static class ProbeLock
     public static async Task<IAsyncDisposable?> TakeAsync(string path, TimeSpan? patience = null, CancellationToken ct = default)
     {
         var full = Path.GetFullPath(path);
+        Asked.AddOrUpdate(full, 1, (_, count) => count + 1);
         var bound = patience ?? Patience;
         var waited = Stopwatch.StartNew();
         var gate = Gates.GetOrAdd(full, _ => new SemaphoreSlim(1, 1));

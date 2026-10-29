@@ -31,6 +31,17 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
             return new(false, $"there is no tree at {path}.");
         }
 
+        // The main root, from git itself: the common dir is the main repository's .git, wherever the
+        // registered root is — nothing here guesses a layout it does not own.
+        // With its branch, in one start (PROC1d-iii), and the working root git reports for the tree (GITWORKTREECONFIG1): read
+        // before anything is written, the session lock a forced removal lets go of below included, since a tree git binds to
+        // another checkout stays, said, forced or not.
+        var here = await CommonDirAndBranchAsync(full, ct).ConfigureAwait(false);
+        if (here.Code == 0 && await TreeBinding.RefusalAsync(full, ct, here.TopLevel).ConfigureAwait(false) is { } bound)
+        {
+            return new(false, $"the tree at {path} stays: {bound}.");
+        }
+
         // TREELOCK2: keep the repository's starts out from the ledger read through the removal. A stale lock can name an ended
         // session while a later one holds the same tree, so the live-tree check precedes the lock owner's record.
         var owner = context.OwnerOf(full);
@@ -45,10 +56,6 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
                 await SessionLocks.LetGoEndedAsync(record).ConfigureAwait(false);
         }
 
-        // The main root, from git itself: the common dir is the main repository's .git, wherever the
-        // registered root is — nothing here guesses a layout it does not own.
-        // With its branch, in one start (PROC1d-iii).
-        var here = await CommonDirAndBranchAsync(full, ct).ConfigureAwait(false);
         if (here.Code != 0)
         {
             return new(false, $"{path} is not a working tree git recognises: {FirstLine(here.Err)}");
@@ -78,7 +85,9 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
             // committed or abandoned IN the tree; unmerged commits are merged FROM it (SURF6's surface).
             // Asked so no setting hides one (SQUASHTIDY1c): an untracked file `status.showUntrackedFiles=no` hides,
             // and an ignored one only this tree holds, which `git worktree remove` deletes without asking.
-            var holds = await ContentHolds.HoldsAsync(full, root, ct).ConfigureAwait(false);
+            // INTEGRATE1d (D218's note): the output the repository declares counts only as the owner accepted it for integration.
+            var declared = await context.ScratchAsync(root, owner.Repository, owner.Workspace, ct).ConfigureAwait(false);
+            var holds = await ContentHolds.HoldsAsync(full, root, declared, ct).ConfigureAwait(false);
             if (holds is null)
             {
                 return new(false, $"Daoris cannot tell what the tree at {path} holds beyond its commits. "

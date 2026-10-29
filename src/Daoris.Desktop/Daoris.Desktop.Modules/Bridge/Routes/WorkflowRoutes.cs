@@ -10,8 +10,9 @@ namespace Daoris.Desktop;
 /// How work moves in a repository or a workspace, the page's `bridge/workflow.ts` (WORKFLOW1b; D157 point 7, the workflow
 /// design §2.7, §6.1): its Current workflow, which <see cref="WorkflowCurrent.Derive"/> draws from this machine's driver file,
 /// its plugins and its registry exactly as `daoris driver workflow show` reads them; and where a piece of work stands in it
-/// (WORKFLOW1c), the runs <see cref="WorkflowRunReader"/> reads. Read-only but two: <c>WORKFLOW_LANDED</c>, the person's press that sets
-/// the landed route and accepts the gates it runs unasked (FABRIC-PIPELINE1a); and <c>WORKFLOW_NODE</c>, their skip or stop of a graph run's
+/// (WORKFLOW1c), the runs <see cref="WorkflowRunReader"/> reads. Read-only but three: <c>WORKFLOW_LANDED</c>, the person's press that sets
+/// the landed route and accepts the gates it runs unasked (FABRIC-PIPELINE1a); <c>INTEGRATION_GATES</c>, their acceptance of a
+/// repository's integration declaration by its blob (INTEGRATE1d); and <c>WORKFLOW_NODE</c>, their skip or stop of a graph run's
 /// node (FABRIC-CUTOVER1f).
 /// </summary>
 public sealed class WorkflowRoutes(DriverContext context)
@@ -71,15 +72,24 @@ public sealed class WorkflowRoutes(DriverContext context)
     /// each with the pipeline it names and what chose it; the landed route with its pipeline's name, the gates accepted and where they
     /// stand against the line's tip (<see cref="LandedGates.StateOf"/>), the tip and the declaration there where it is to be accepted, or
     /// why the tip could not be read; and the verification pipelines saved here. A workspace has no line, so its route's gates are
-    /// accepted repository by repository, and its tip is never read. git is asked only where a repository's route names a pipeline.
+    /// accepted repository by repository, and its tip is never read.
     /// </summary>
+    /// <remarks>
+    /// INTEGRATE1d (D215 point 2, the integration design §4.1): a repository's start node also says where its integration's own acceptance
+    /// stands, <c>integration</c>, in the landed route's shape: the blob accepted (<c>gates</c>), its state against the line's tip
+    /// (<see cref="IntegrationAcceptance.StateOf"/>), the tip, the declaration's text where it is to be accepted, or why the tip could not be
+    /// read. So git is asked for every repository, once, and both acceptances are judged against that one read of the tip; the landed
+    /// route's fields stay as they were where it names no pipeline. A workspace's <c>integration</c> is null, since a workspace has no line.
+    /// </remarks>
     private async Task<object> StartAsync(DriverConfig config, string? repository, string? workspace, CancellationToken ct)
     {
         var start = WorkflowStart.Read(config, repository, workspace, WorkflowStore.List(_loop.Home));
-        var (root, tip, problem) = repository is not null && start.Landed.Workflow != WorkflowSelection.Current
+        var (root, read, readProblem) = repository is not null
             ? await TipAsync(config, repository, workspace, ct).ConfigureAwait(false)
             : (null, null, null);
-        var state = repository is null && start.Landed.Workflow != WorkflowSelection.Current ? LandedGates.Unread : LandedGates.StateOf(start.Landed, tip);
+        var verifies = start.Landed.Workflow != WorkflowSelection.Current;
+        var (tip, problem) = verifies ? (read, readProblem) : (null, null);
+        var state = repository is null && verifies ? LandedGates.Unread : LandedGates.StateOf(start.Landed, tip);
         var declaration = root is not null && tip is not null && state is LandedGates.Changed or LandedGates.Unaccepted
             ? await LandedGates.TextAsync(root, tip.Gates, ct).ConfigureAwait(false)
             : null;
@@ -98,6 +108,29 @@ public sealed class WorkflowRoutes(DriverContext context)
                 Declaration = declaration,
             },
             Verifications = start.Verifications.Select(each => new { each.Id, each.Name }).ToArray(),
+            Integration = repository is null ? null : await IntegrationAsync(config, repository, root, read, readProblem, ct).ConfigureAwait(false),
+        };
+    }
+
+    /// <summary>
+    /// Where a repository's integration acceptance stands (INTEGRATE1d), from the tip read once for the start node: the blob accepted, its
+    /// state, the tip, the declaration's text where it is changed or unaccepted, and why the tip could not be read.
+    /// </summary>
+    private static async Task<object> IntegrationAsync(
+        DriverConfig config, string repository, string? root, LandedTip? tip, string? problem, CancellationToken ct)
+    {
+        var accepted = IntegrationAcceptance.Of(config, repository);
+        var state = IntegrationAcceptance.StateOf(accepted, tip?.Gates);
+        var declaration = root is not null && tip is not null && state is IntegrationAcceptance.Changed or IntegrationAcceptance.Unaccepted
+            ? await IntegrationAcceptance.TextAsync(root, tip.Gates, ct).ConfigureAwait(false)
+            : null;
+        return new
+        {
+            Gates = accepted,
+            State = state,
+            Tip = tip is null ? null : new { tip.Line, tip.Commit, tip.Gates },
+            Problem = problem,
+            Declaration = declaration,
         };
     }
 
@@ -177,6 +210,70 @@ public sealed class WorkflowRoutes(DriverContext context)
         {
             Start = await StartAsync(DriverConfig.Load(_loop.ConfigPath), repository, inWorkspace, cancellationToken).ConfigureAwait(false),
             Lowered = lowered,
+        };
+    }
+
+    /// <summary>
+    /// The person's press accepting a repository's integration declaration by its blob (INTEGRATE1d; D215 points 2 and 10, the integration
+    /// design §4.1, §4.3): <c>{repository}</c> and <c>gates</c>, the blob of the declaration the person read, or <c>clear: true</c> to
+    /// withdraw the acceptance. It reads the <c>daoris.gates.json</c> at the repository's line's tip in its checkout here, as
+    /// <c>WORKFLOW_LANDED</c> does, and keeps that blob in <c>driver.json</c>'s <c>integrationGates</c>, apart from the landed route's,
+    /// so integrating needs no verification pipeline. A blob named that is no longer the tip's is refused <c>moved</c>, and a tip that
+    /// cannot be read <c>unread</c>, each with the driver's sentence and nothing written: the person accepts what they read. Beside the
+    /// landed route, since both accept the one declaration at the one tip and the start node answers both. Only the person's: the
+    /// census makes it theirs, so a terminal's press waits for their Confirm, no standing confirmation covers it and no role's act
+    /// reaches it, and an agent never accepts what it would run under. Answers <c>{ start, done, refused, message }</c>, the start
+    /// node as it now stands.
+    /// </summary>
+    [DriverRoute("INTEGRATION_GATES")]
+    [Publishes("INTEGRATION_GATES", StateScopes.Driver)]
+    private async Task<object?> IntegrationGatesAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var repository = Optional(request, "repository")?.Trim();
+        if (string.IsNullOrEmpty(repository))
+        {
+            throw new DriverException("an integration's declaration is accepted for a `repository` — name it.");
+        }
+
+        var named = Optional(request, "gates");
+        var clear = Flag(request, "clear");
+        if (clear && named is not null) throw new DriverException("an integration's acceptance takes the blob read or withdraws it — name `gates` or `clear`, not both.");
+        if (named is not null && !IntegrationGatesKey.IsAcceptance(named)) throw new DriverException(IntegrationGatesKey.Problem);
+
+        var service = _loop.Service ?? throw NotReady();
+        var snapshot = await service.SnapshotAsync(cancellationToken).ConfigureAwait(false);
+        var workspace = snapshot.Repositories.FirstOrDefault(each => string.Equals(each.Repository, repository, StringComparison.OrdinalIgnoreCase))?.Workspace;
+
+        string? refused = null;
+        string? message = null;
+        if (clear)
+        {
+            _context.Change(each => each.WithIntegrationGates(repository, null));
+        }
+        else
+        {
+            var (_, tip, problem) = await TipAsync(DriverConfig.Load(_loop.ConfigPath), repository, workspace, cancellationToken).ConfigureAwait(false);
+            if (tip is null)
+            {
+                (refused, message) = ("unread", $"{problem ?? $"`{repository}`'s line could not be read here."} Nothing was accepted.");
+            }
+            else if (named is not null && named != tip.Gates)
+            {
+                (refused, message) = ("moved", $"`{repository}`'s line holds another declaration than the one you read, so nothing was accepted: "
+                    + "read it again, then accept it.");
+            }
+            else
+            {
+                _context.Change(each => each.WithIntegrationGates(repository, tip.Gates));
+            }
+        }
+
+        return new
+        {
+            Start = await StartAsync(DriverConfig.Load(_loop.ConfigPath), repository, workspace, cancellationToken).ConfigureAwait(false),
+            Done = refused is null,
+            Refused = refused,
+            Message = message,
         };
     }
 

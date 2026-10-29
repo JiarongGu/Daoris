@@ -46,7 +46,7 @@ public sealed class DriverModuleEntriesTests
             {
                 Superseded = new PartSuperseded("s2", "CONFLICT (content): Merge conflict in app.cs.", Conflicts: true),
             },
-            new EntryPartPlan("s2", new LandingPlan(LandingForm.Branch, "feature/x", "repository")),
+            new EntryPartPlan("s2", new LandingPlan(LandingForm.Branch, "feature/x", "repository")) { Clash = new PartClash("s3", "CLAUDE.md") },
             new EntryPartPlan("s3", null) { SameTreeAs = "s2" },
         ]);
 
@@ -60,6 +60,9 @@ public sealed class DriverModuleEntriesTests
         var superseded = parts[0].GetProperty("superseded");
         Assert.Equal(("s2", true), (superseded.GetProperty("by").GetString(), superseded.GetProperty("conflicts").GetBoolean()));
         Assert.Equal(JsonValueKind.Null, parts[1].GetProperty("superseded").ValueKind);
+        Assert.Equal(JsonValueKind.Null, parts[0].GetProperty("clash").ValueKind);
+        var clash = parts[1].GetProperty("clash");
+        Assert.Equal(("s3", "CLAUDE.md"), (clash.GetProperty("by").GetString(), clash.GetProperty("says").GetString()));
         Assert.Equal("s2", parts[2].GetProperty("sameTreeAs").GetString());
         Assert.Equal("feature/x", parts[1].GetProperty("target").GetString());
     }

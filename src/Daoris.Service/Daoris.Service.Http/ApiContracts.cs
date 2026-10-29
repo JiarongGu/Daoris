@@ -39,7 +39,9 @@ public static class HostVersion
 public sealed record ProvenanceResponse(
     string Commit, string ShortCommit, DateTimeOffset CommittedAt, string Branch, string? Origin);
 public sealed record RepositoryResponse(
-    string Name, int Total, int Local, int Canonical, string Workspace, ProvenanceResponse? Fed);
+    string Name, int Total, int Local, int Canonical, string Workspace, ProvenanceResponse? Fed,
+    // KNOWCURRENT1: when this host read the repository's checkout and the commit it was at; null where it read none.
+    DateTimeOffset? IndexedAt = null, string? IndexedCommit = null);
 // The lines (ORIENT2e): the entry's first and last line in its file, and the line its excerpt starts on, beside
 // the fields every client already reads. Null where the entry names none (a row read with its columns, a feed
 // that named none), never a guess.
@@ -342,7 +344,9 @@ public sealed record DeletedResponse(string Id, string Message);
 // many were longer than the window and split. Absent when it did not run, and `semanticError` says why.
 public sealed record RefreshResponse(
     int Entries, int Repositories, int Withheld, string? SemanticError, IReadOnlyList<string> Absent,
-    EmbeddedResponse? Embedded = null);
+    EmbeddedResponse? Embedded = null, IReadOnlyList<ReadingResponse>? Read = null);
+// KNOWCURRENT1: when a repository's checkout was read and the commit it was at (null for a folder with no commit).
+public sealed record ReadingResponse(string Repository, DateTimeOffset ReadAt, string? Commit);
 public sealed record EmbeddedResponse(int Entries, int Pieces, int Split, int Window);
 // `Uses` is what the repository says it depends on (D91); absent is nothing declared.
 public sealed record DomainRequest(
@@ -494,14 +498,17 @@ public sealed record SaidResponse(SessionResponse Session, string Message, SaidW
 // all, so a reader that reads a word finds none. Sent only to a request that asked with `settled`.
 public sealed record SettledResponse(string Message, string Settled);
 // The host's protocol (row p, the design §19.12): `run`, an id the host draws at its start, and the marks it keeps, each a version
-// (`settled` 1: a key the line has settled answered `Settled` to a request that asks).
+// (`settled` 1: a key the line has settled answered `Settled` to a request that asks; `opens` 1: row d-i's keyed open, 2 once it moves the words
+// its `moves` names, d-ii part 3's; `head` 1: row d-ii's `continued` with its `head`).
 public sealed record ProtocolResponse(string Run, IReadOnlyDictionary<string, int> Marks);
 // A say refused: the sentence as `error`, beside its word (`refusal`: `no-words`, `not-found`, `not-ours`, `intake`,
 // `stood-down`, `running`, XAGENT1c's `opinion`, a reviewer's record, and COWORK1b's `from`, an author this service does not
 // know), which a reader acts on instead of the sentence, and
-// the quest, ask, machine or second opinion it names.
+// the quest, ask, machine or second opinion it names. FOUNDATION1 row d-ii (D212): `continued`, the record's line went on past it, beside
+// `head`, the line's head where the words go; `unplaced`, a line that loops or runs past the walk's bound, nothing kept. A reader before the
+// row reads either as a refusal it does not know and says the sentence.
 public sealed record SessionSayRefusalResponse(
-    string Error, string Refusal, string? Quest = null, string? Ask = null, string? Origin = null, string? Opinion = null);
+    string Error, string Refusal, string? Quest = null, string? Ask = null, string? Origin = null, string? Opinion = null, string? Head = null);
 // XAGENT1c (D155 point 11; the second agent design §6.2): a pass the driver asks, every part nullable so one left out is
 // refused by the desk naming which. `minutes` is the rule's bound, said, never defaulted here: the service holds no rule.
 public sealed record OpinionAskRequest(
@@ -617,13 +624,19 @@ public sealed record AnswerSessionRequest(string? Answer);
 // MIXAGENT1a-iii: `from`, `fromWhy` and `fromBy` name the session the new one continues, as the driver knows it: a conversation
 // handed over, a quest's session carried on after a hand-over or onto another account after a limit. Absent for any other open.
 // AUTONOMY1a: `access`, the access setup the driver resolved for this start, each pause with its value; absent from a driver before it.
+// FOUNDATION1 d-ii part 3 (D212, the design §3.4 rule 3): `moves`, beside `opens` alone, the words the keyed open moves onto the record it opens in
+// its own step: `from`, the record they move from (the open's own `from`, or a start's source where it names none); `words`, the ids the course
+// named; `read`, the ids it saw waiting there when it read, so the person's words kept since move too. A host before it skips the member and
+// moves nothing, which its `opens` mark below 2 tells.
+public sealed record OpenMovesRequest(string? From, List<string>? Words, List<string>? Read);
 public sealed record OpenSessionRequest(
     string Quest, string Adapter, string? HarnessVersion, string? Profile, string? Tree,
     string? BaseCommit = null, string? From = null, string? FromWhy = null, string? FromBy = null,
-    Dictionary<string, string>? Access = null, string? Actor = null, string? Opens = null);
+    Dictionary<string, string>? Access = null, string? Actor = null, string? Opens = null, OpenMovesRequest? Moves = null);
 public sealed record OpenChatRequest(
     string Repository, string? Adapter, string? HarnessVersion, string? Profile, string? Tree,
-    string? BaseCommit = null, string? From = null, string? FromWhy = null, string? FromBy = null, string? Actor = null, string? Opens = null);
+    string? BaseCommit = null, string? From = null, string? FromWhy = null, string? FromBy = null, string? Actor = null, string? Opens = null,
+    OpenMovesRequest? Moves = null);
 // An intake (D65 §1b): the ask it answers and the room it runs in — the driver's, which is the half
 // that is about to run a process there. The circle comes from the ask, never from the caller.
 public sealed record OpenIntakeRequest(
@@ -680,6 +693,8 @@ public sealed record AdvanceSessionRequest(
 // SUPERVISOR1a-i (D208): a park the driver took up put back, less the supervisor's words it admitted and never handed.
 public sealed record RestoreParkRequest(IReadOnlyList<string>? TakeBack, string? Note, JsonElement? NoteParts = null);
 public sealed record SessionActionResponse(SessionResponse Session, string Message);
+// A keyed open's answer (row d-i): the key's echo and `transfer`, from d-ii part 3 each moved word in order, its id on the record left (`word`)
+// and on the record opened (`id`, which a moved word keeps), its producer `key` (no member for a word with none) and its `transfer` id.
 public sealed record SessionOpenResponse(SessionResponse? Session, string Message, string Opens,
     IReadOnlyList<OpenTransfer> Transfer, string? Head = null, string? Error = null, string? Code = null);
 // `FirstLine` and `LastLine` (ORIENT2e): the lines of its file an entry is, as `/api/entries` answers them, taken
@@ -755,6 +770,33 @@ public sealed record QuestMoveResponse(
     string? Evidence = null, string? SetUp = null, string? Verdict = null, string? Hold = null);
 // An operation by the machine and sequence that name it everywhere: what a dismissal names its conflict by.
 public sealed record QuestMoveRefResponse(string Machine, long Sequence);
+// HANDBACK1 (D219): one quest's handback as `GET /api/handbacks/{id}` answers it, by the quest's id or the id of the session that
+// served it, in any state. `Found`: whether the id named a quest or a session here, so a client tells this door's answer from an older
+// host's 404. `Session`: the session the id named, absent for a quest's id. `Quest`: the quest, with its own note as it keeps it.
+// `Handback`: where a session's close is recorded on it, whole, with the session that wrote it; absent where none is. `Said`: the read's
+// words, the same the connector's `handback_read` answers, which the terminal prints.
+public sealed record HandbackResponse(
+    string Id, bool Found, string? Session, HandbackQuestResponse? Quest, HandbackRecordResponse? Handback, string Said)
+{
+    public static HandbackResponse Of(HandbackReading read) => new(
+        read.Id, read.Found, read.Session?.Id,
+        read.Quest is { } quest
+            ? new HandbackQuestResponse(quest.Id, quest.Title, quest.Status.ToString(), quest.From, quest.To, quest.Workspace, quest.Note)
+            : null,
+        read.Handback is { } said
+            ? new HandbackRecordResponse(
+                said.Spelled, said.Note,
+                said.Answers.Count == 0 ? null : [.. said.Answers.Select(answer => new QuestAnswerWire(answer.Requirement, answer.Met, answer.Departed, answer.Quote))],
+                said.At, said.Machine, said.Session)
+            : null,
+        read.Said);
+}
+// The quest a handback hands back: its name, where it stands, between whom, and its note as the quest keeps it.
+public sealed record HandbackQuestResponse(string Id, string Title, string Status, string From, string To, string Workspace, string? Note);
+// A handback whole: its act (`done`, `ready` or `declined`), its note, how it answered each requirement (absent for none), when on
+// the machine that made it, and the session that wrote it.
+public sealed record HandbackRecordResponse(
+    string Act, string? Note, IReadOnlyList<QuestAnswerWire>? Answers, DateTimeOffset At, string Machine, string Session);
 public sealed record FeedResponse(int Accepted, string Message);
 // A repository's code map is answered in Core's shape (CodeMapWire, MAP3e), not a record here: the
 // host that brings a teammate's map down reads the same answer the door writes.
@@ -896,6 +938,7 @@ public sealed record ChangesResponse(string Since, IReadOnlyList<string> Moved);
 [JsonSerializable(typeof(MachineRetiredResponse))]
 [JsonSerializable(typeof(QuestClaimResponse))]
 [JsonSerializable(typeof(QuestMovesResponse))]
+[JsonSerializable(typeof(HandbackResponse))]
 [JsonSerializable(typeof(FeedResponse))]
 [JsonSerializable(typeof(FeedRefusalResponse))]
 [JsonSerializable(typeof(ErrorResponse))]

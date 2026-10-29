@@ -473,9 +473,10 @@ app.MapGet("/api/status", (ComposedService s, string? prove) => new StatusRespon
 
 // FOUNDATION1 row p (D212, the foundation design §19.12): how a newer client tells what this host does. `run` is an id this host draws at its
 // start, so a host replaced under one client is told from its predecessor; `marks` are the protocol versions it keeps, each a version: `settled` 1
-// is the settlement (a key the line settled answered `Settled` to a say or hand that asks with `settled: true`). A host before this answers none,
-// and a client keeps no mark for it.
-app.MapGet("/api/protocol", () => new ProtocolResponse(hostRun, new Dictionary<string, int> { ["settled"] = 1, ["opens"] = 1 }));
+// is the settlement (a key the line settled answered `Settled` to a say or hand that asks with `settled: true`), `opens` 2 row d-ii part 3's
+// keyed open, which moves the words its `moves` names in its own step (an `opens` 1 host, row d-i's, moves none), and `head` 1 row d-ii's say door,
+// which refuses a record its line left `continued` naming the head. A host before this answers none, and a client keeps no mark for it.
+app.MapGet("/api/protocol", () => new ProtocolResponse(hostRun, new Dictionary<string, int> { ["settled"] = 1, ["opens"] = 2, ["head"] = 1 }));
 
 // Every cross-repository answer below takes `workspace` — the unit of sharing (D48 §4). Absent spans
 // every circle this deployment holds, which for a shared host is one by construction and for a local
@@ -489,7 +490,8 @@ app.MapGet("/api/repositories", async (ComposedService s, string? workspace, Can
             r.Fed is null
                 ? null
                 : new ProvenanceResponse(
-                    r.Fed.Commit, r.Fed.ShortCommit, r.Fed.CommittedAt, r.Fed.Branch, r.Fed.Origin))));
+                    r.Fed.Commit, r.Fed.ShortCommit, r.Fed.CommittedAt, r.Fed.Branch, r.Fed.Origin),
+            r.IndexedAt, r.IndexedCommit)));
 
 app.MapGet("/api/search", async (
     ComposedService s, HttpContext http, string q, string? kinds, string? repositories, bool? localOnly, int? limit,
@@ -1503,6 +1505,12 @@ if (mode == ServiceMode.Local)
             : Results.Ok(ToDeletion(outcome));
     });
 
+    // One quest's handback whole (HANDBACK1, D219), by the quest's id or the id of the session that served it, in any state: what
+    // `daoris-driver sessions handback` prints, in the read's words the connector's `handback_read` answers too. Every workspace, or
+    // the one named. Any id is answered, one naming nothing as not found, so a client tells this door from an older host's 404.
+    app.MapGet("/api/handbacks/{id}", async (ComposedService s, string id, string? workspace, CancellationToken ct) =>
+        Results.Ok(HandbackResponse.Of(await new HandbackReader(s.Quests, s.Ledger).ReadAsync(id, workspace, ct))));
+
     // What the person added to a running session (DRIFT1a, D133 §1), as its driver reports it: the words
     // reach the session through the driver, which never passes them here otherwise, so this is where they
     // are kept on the ask its work is for. Local like the asks; a session on no ask is answered `kept:
@@ -1561,8 +1569,9 @@ if (mode == ServiceMode.Local)
             return Results.Ok(new SaidResponse(await ToSessionAsync(s, outcome.Session!, local), outcome.Message, local ? ToSaid(outcome.Word) : null));
         }
 
+        // Row d-ii (D212): `continued` names the line's head beside its word, at the conflict the door gives a record as it stands.
         var refused = new SessionSayRefusalResponse(
-            outcome.Message, SayRefusal(outcome.Refusal), outcome.Quest, outcome.Ask, outcome.Origin, outcome.Opinion);
+            outcome.Message, SayRefusal(outcome.Refusal), outcome.Quest, outcome.Ask, outcome.Origin, outcome.Opinion, outcome.Head);
         return outcome.Refusal switch
         {
             SessionSayRefusal.NotFound => Results.NotFound(refused),
@@ -1946,7 +1955,7 @@ app.MapPost("/api/sessions", async (
     {
         outcome = await s.Ledger.OpenAsync(
             body.Quest, body.Adapter, DateTimeOffset.UtcNow, body.HarnessVersion, body.Profile, body.Tree,
-            body.BaseCommit, ct, body.From, body.FromWhy, body.FromBy, body.Access, actor: body.Actor, opens: body.Opens);
+            body.BaseCommit, ct, body.From, body.FromWhy, body.FromBy, body.Access, actor: body.Actor, opens: body.Opens, moves: MovesOf(body.Moves));
     }
     catch (ArgumentException refused)
     {
@@ -1987,7 +1996,7 @@ app.MapPost("/api/sessions/chat", async (
             string.IsNullOrWhiteSpace(body.Adapter) ? "claude-code" : body.Adapter,
             DateTimeOffset.UtcNow, body.HarnessVersion, body.Profile, body.Tree, body.BaseCommit, ct,
             // The conversation a hand-over goes on from (MIXAGENT1a-iii), as the driver says it.
-            body.From, body.FromWhy, body.FromBy, actor: body.Actor, opens: body.Opens);
+            body.From, body.FromWhy, body.FromBy, actor: body.Actor, opens: body.Opens, moves: MovesOf(body.Moves));
     }
     catch (ArgumentException refused)
     {
@@ -2005,6 +2014,9 @@ app.MapPost("/api/sessions/chat", async (
         _ => Results.BadRequest(new ErrorResponse(outcome.Message)),
     };
 });
+
+// The request's `moves` as the ledger judges them (row d-ii part 3): a member missing is passed on missing, so the ledger refuses it with its sentence.
+static OpenMoves? MovesOf(OpenMovesRequest? moves) => moves is null ? null : new(moves.From!, moves.Words!, moves.Read!);
 
 IResult MalformedOpen(string? key, string message) => key is null
     ? Results.BadRequest(new ErrorResponse(message))
@@ -2269,7 +2281,8 @@ app.MapPost("/api/refresh", async (ComposedService s, CancellationToken ct) =>
         report.Entries, report.Repositories, report.Withheld, report.SemanticError, report.Absent,
         report.Embedded is { } embedded
             ? new EmbeddedResponse(embedded.Entries, embedded.Pieces, embedded.Split, embedded.Window)
-            : null));
+            : null,
+        report.Read.Select(r => new ReadingResponse(r.Repository, r.ReadAt, r.Commit)).ToList()));
 });
 
 // ——— The feed and sync doors (D47 §§4–6, D68). Which doors exist depends on the deployment's role: a
@@ -2944,36 +2957,6 @@ static IResult OffMachineOpinion() =>
 static IResult OffMachineBrainstorm() =>
     Results.NotFound(new ErrorResponse("A brainstorm is kept on this machine, and answered only to a caller on this machine."));
 
-// A say or a take refused (MSG1a), its word as the wire spells it, kebab-case like a session's state.
-static string SayRefusal(SessionSayRefusal refusal) => refusal switch
-{
-    SessionSayRefusal.Empty => "no-words",
-    SessionSayRefusal.NotFound => "not-found",
-    SessionSayRefusal.NotOurs => "not-ours",
-    SessionSayRefusal.Intake => "intake",
-    SessionSayRefusal.StoodDown => "stood-down",
-    SessionSayRefusal.Opinion => "opinion",
-    SessionSayRefusal.Helper => "helper",
-    SessionSayRefusal.Taken => "taken",
-    SessionSayRefusal.From => "from",
-    SessionSayRefusal.Level => "level",
-    // SUPERVISOR1a-i (D208; the supervisor design §3.1, §3.4): the release's refusals, in the route's own words.
-    SessionSayRefusal.SupervisorText => "supervisor-text",
-    SessionSayRefusal.KeyMismatch => "key-mismatch",
-    SessionSayRefusal.DecisionTaken => "decision-taken",
-    SessionSayRefusal.NotParked => "not-parked",
-    SessionSayRefusal.NoQuest => "no-quest",
-    SessionSayRefusal.QuestionChanged => "question-changed",
-    SessionSayRefusal.NotOfferedChoice => "not-offered-choice",
-    // SUPERVISOR1b (D208 §3.1, §4.1): the question's owner mark, checked again at the release.
-    SessionSayRefusal.OwnerQuestion => "owner-question",
-    SessionSayRefusal.GoAheadOpen => "go-ahead-open",
-    SessionSayRefusal.GoAheadUnread => "go-ahead-unread",
-    SessionSayRefusal.OwnerAnswered => "owner-answered",
-    SessionSayRefusal.NoHome => "no-home",
-    _ => "running",
-};
-
 // A session delete's judgement as its doors answer it (SESSUX1f): the sentence as `error`, beside its word and the facts
 // the word names. The words are the wire's, kebab-case like a session's state.
 static SessionDeletionResponse ToDeletion(SessionDeleteOutcome outcome) => outcome.Refusal == SessionDeleteRefusal.None
@@ -3018,3 +3001,49 @@ static string DefaultRepositoryRoot() =>
     HostComposition.AboveWorkspace()
     ?? Directory.GetParent(Directory.GetCurrentDirectory())?.FullName
     ?? Directory.GetCurrentDirectory();
+
+// The host's own members, declared after the top-level statements as C# requires: here so a test reads the say door's word table whole.
+public partial class Program
+{
+    /// <summary>
+    /// A say or a take refused (MSG1a), its word as the wire spells it, kebab-case like a session's state. Every refusal the ledger knows has
+    /// its own word (FOUNDATION1 row d-ii, D212), held cell for cell by <c>SaidSettledHostTests</c>, so the default is reached by no known value
+    /// and a new refusal is never sent as a running session's.
+    /// </summary>
+    public static string SayRefusal(SessionSayRefusal refusal) => refusal switch
+    {
+        // Never sent: a say that kept its words is answered with them, never with a refusal.
+        SessionSayRefusal.None => "none",
+        SessionSayRefusal.Empty => "no-words",
+        SessionSayRefusal.NotFound => "not-found",
+        SessionSayRefusal.NotOurs => "not-ours",
+        SessionSayRefusal.Intake => "intake",
+        SessionSayRefusal.StoodDown => "stood-down",
+        SessionSayRefusal.Running => "running",
+        SessionSayRefusal.Opinion => "opinion",
+        SessionSayRefusal.Helper => "helper",
+        SessionSayRefusal.Taken => "taken",
+        SessionSayRefusal.From => "from",
+        SessionSayRefusal.Level => "level",
+        // SUPERVISOR1a-i (D208; the supervisor design §3.1, §3.4): the release's refusals, in the route's own words.
+        SessionSayRefusal.SupervisorText => "supervisor-text",
+        SessionSayRefusal.KeyMismatch => "key-mismatch",
+        SessionSayRefusal.DecisionTaken => "decision-taken",
+        SessionSayRefusal.NotParked => "not-parked",
+        SessionSayRefusal.NoQuest => "no-quest",
+        SessionSayRefusal.QuestionChanged => "question-changed",
+        SessionSayRefusal.NotOfferedChoice => "not-offered-choice",
+        // SUPERVISOR1b (D208 §3.1, §4.1): the question's owner mark, checked again at the release.
+        SessionSayRefusal.OwnerQuestion => "owner-question",
+        SessionSayRefusal.GoAheadOpen => "go-ahead-open",
+        SessionSayRefusal.GoAheadUnread => "go-ahead-unread",
+        SessionSayRefusal.OwnerAnswered => "owner-answered",
+        SessionSayRefusal.NoHome => "no-home",
+        // FOUNDATION1 row d-ii (the foundation design §3.4 rule 2): the line went on past the record, its head beside the word as `head`;
+        // and a line that loops or runs past the walk's bound, so nothing is kept.
+        SessionSayRefusal.Continued => "continued",
+        SessionSayRefusal.Unplaced => "unplaced",
+        // Reached by no value the ledger declares, which the table's test holds; the word it always sent is kept for a value cast from outside.
+        _ => "running",
+    };
+}

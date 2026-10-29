@@ -41,7 +41,7 @@
       "reads": "other",
       "note": "a word's author, a pass's ask, a harness's rule or a repository type of the same name; no record's mark tells a work"
     },
-    "Conversations/Chat/ChatRunner.cs": {
+    "Loop/Chat/ChatRunner.cs": {
       "lines": 7,
       "reads": "tells",
       "row": "1j",
@@ -399,17 +399,17 @@
       "reads": "other",
       "note": "a workflow step's, a gate's or a landing's own opinion or ask, not a record's mark"
     },
-    "Trees/Nodes/NodeRuntime.cs": {
+    "Workflows/Nodes/NodeRuntime.cs": {
       "lines": 4,
       "reads": "other",
       "note": "a workflow step's, a gate's or a landing's own opinion or ask, not a record's mark"
     },
-    "Trees/Nodes/OpinionNode.cs": {
+    "Workflows/Nodes/OpinionNode.cs": {
       "lines": 1,
       "reads": "other",
       "note": "a workflow step's, a gate's or a landing's own opinion or ask, not a record's mark"
     },
-    "Trees/Nodes/WorkflowRunNodes.cs": {
+    "Workflows/Nodes/WorkflowRunNodes.cs": {
       "lines": 1,
       "reads": "other",
       "note": "a workflow step's, a gate's or a landing's own opinion or ask, not a record's mark"

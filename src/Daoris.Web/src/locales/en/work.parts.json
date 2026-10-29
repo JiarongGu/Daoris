@@ -45,7 +45,8 @@
   "work.parts.landing.problem": "would be refused now: {{says}}",
   "work.parts.landing.conflict": "conflicts with the line now ({{says}})",
   "work.parts.landing.sameTree": "lands with {{other}}'s, which shares its tree",
-  "work.parts.landing.superseded": "looks superseded by {{by}}, and lands unless you leave it out",
+  "work.parts.landing.clash": "conflicts with {{by}}'s work in {{says}}",
+  "work.parts.landing.superseded":"looks superseded by {{by}}, and lands unless you leave it out",
   "work.parts.landing.leavesOut": "leaves out {{count}} commit the line already holds",
   "work.parts.landing.leavesOut_other": "leaves out {{count}} commits the line already holds"
 }

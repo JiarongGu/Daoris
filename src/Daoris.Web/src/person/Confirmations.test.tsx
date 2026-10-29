@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Drawer } from '../design/ui';
 import i18n from '../locales/i18n';
 import { watchScreen } from '../test/onScreen';
+import type { UpdateState } from '../update/UpdateBanner';
 import {
   AdoptionNotice, type Confirmation, type ConfirmationAnswer, Confirmations, planDoor, type PlanDoor, PressArea, type PressNames,
   regionShown, routeKey,
@@ -332,6 +333,50 @@ describe("the window's confirmation of a terminal's press", () => {
 
     expect(await screen.findByRole('alert')).toHaveTextContent(words);
     expect(screen.getByRole('button', { name: confirm })).toBeEnabled();
+  });
+
+  // DRAINHOLD1 part 2: a Confirm held by a drain says what the drain waits on and since when, and offers the update's *not now* in place.
+  const HELD = async (): Promise<ConfirmationAnswer> => ({ answered: false, why: 'draining', message: 'Daoris is about to restart; this still waits.' });
+  // 14:05 of the day the test runs: the card says a moment of today by its time alone, and a fixed date read as another day's after it.
+  const today = new Date();
+  const DRAIN: UpdateState = {
+    state: 'draining', staged: { id: 'b1', version: '0.1.9' }, mode: 'when-idle', driven: 2, turns: 1, problem: null, outcome: null, last: null,
+    since: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 14, 5).toISOString(),
+  };
+
+  it.each([
+    ['en', 'Confirm', 'Install later', 'Waiting for 2 sessions and 1 turn to finish, since 14:05.', 'daoris-driver update --cancel'],
+    ['zh', '确认', '稍后安装', '正在等待 2 个会话和 1 轮对话完成，自 14:05 起。', 'daoris-driver update --cancel'],
+  ])('says what a drain waits on and since when under a held Confirm, and offers Install later (%s)', async (language, confirm, later, waits, door) => {
+    await i18n.changeLanguage(language);
+    const onSayUpdate = vi.fn();
+    const view = render(<Confirmations waiting={[STOP]} onAnswer={HELD} update={DRAIN} onSayUpdate={onSayUpdate} />);
+    expect(screen.queryByRole('button', { name: later })).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: confirm }));
+
+    expect(await screen.findByText(waits)).toBeInTheDocument();
+    expect(screen.getByRole('group')).toHaveTextContent(door);
+    await userEvent.click(screen.getByRole('button', { name: later }));
+    expect(onSayUpdate).toHaveBeenCalledWith('not-now');
+
+    // Once the drain ends, the held sentence goes and Confirm can be pressed again.
+    view.rerender(<Confirmations waiting={[STOP]} onAnswer={HELD} update={{ ...DRAIN, state: 'waiting', since: null, mode: 'not-now' }} onSayUpdate={onSayUpdate} />);
+    expect(screen.queryByText(waits)).not.toBeInTheDocument();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: later })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: confirm })).toBeEnabled();
+  });
+
+  it('says only that Daoris is restarting, with no button, once the drain has become the real close', async () => {
+    const view = render(<Confirmations waiting={[STOP]} onAnswer={HELD} update={DRAIN} onSayUpdate={vi.fn()} />);
+    await userEvent.click(screen.getByRole('button', { name: 'Confirm' }));
+    await screen.findByText(/Waiting for 2 sessions/);
+
+    view.rerender(<Confirmations waiting={[STOP]} onAnswer={HELD} update={{ ...DRAIN, state: 'applying' }} onSayUpdate={vi.fn()} />);
+
+    expect(screen.getByRole('group')).toHaveTextContent('Daoris is restarting now.');
+    expect(screen.queryByRole('button', { name: 'Install later' })).not.toBeInTheDocument();
   });
 
   // CONFIRMWAIT1 (the confirm-wait design §15.2 item 8): an answer Daoris could not keep is said on the card, which waits on, its buttons back.

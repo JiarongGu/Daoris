@@ -232,15 +232,19 @@ public sealed class AccountWalkGateTests : IDisposable
         var roster = Roster(patience: patience, asks: true);
 
         HarnessSelection selection;
-        var watch = Stopwatch.StartNew();
-        await using (await ProbeLock.TakeAsync(ProbeLock.PathOf(_home, "fake", "account-1")))
+        int asked;
+        var path = ProbeLock.PathOf(_home, "fake", "account-1");
+        await using (await ProbeLock.TakeAsync(path))
         {
+            var before = ProbeLock.AskedOf(path);
             selection = await roster.SelectAsync("fake", Config, null, null).WaitAsync(Poll.Patience);
+            asked = ProbeLock.AskedOf(path) - before;
         }
 
         Assert.Equal(("account-2", true), (selection.Profile, selection.Allowed));
-        // One wait for the lock, the question's: the account is not then chosen and waited for again to be counted.
-        Assert.True(watch.Elapsed < patience * 1.75, $"the walk waited {watch.Elapsed} for a lock it had already not had");
+        // One wait for the lock, the question's: the account is not then chosen and waited for again to be counted. Counted by the
+        // takes asked, never by the clock, which a loaded machine stretched past two waits while the walk's other work ran (FLAKE1).
+        Assert.True(asked == 1, $"the walk asked {asked} takes of a lock it had already not had");
         Assert.False(roster.Busy("fake", "account-1"));
         // Nothing was asked, so nothing was kept: its last reading stands.
         Assert.Equal(LoginState.Out, AccountReads.Of(_home, "fake").Accounts["account-1"].Login);

@@ -57,7 +57,7 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
                 }
 
                 if (fact.Judged is { } kept) judged!.Add(kept);
-                if (fact.Act is { } act && Begin(act, ct)) passes++;
+                if (fact.Act is { } act && !HeldByDrain(act, events) && Begin(act, ct)) passes++;
                 foreach (var (quest, why) in fact.Sits) sits[quest] = why;
             }
 
@@ -88,7 +88,7 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
     /// </summary>
     /// <param name="judged">Where each owed landing opinion's gate is kept, as its last judgment read it (XAGENT1g3).</param>
     internal (IReadOnlyDictionary<string, OpinionSit> Sits, int Passes) OpinionsBeside(
-        Snapshot snapshot, List<OpinionJudged> judged, LookStages stages, CancellationToken ct)
+        Snapshot snapshot, List<OpinionJudged> judged, LookStages stages, CancellationToken ct, List<string>? events = null)
     {
         var sits = new Dictionary<string, OpinionSit>(StringComparer.OrdinalIgnoreCase);
         var facts = _context.Runs.Facts;
@@ -98,7 +98,10 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
         foreach (var due in open)
         {
             var subject = Subject(due);
-            if (facts.TakeAct(subject) is OpinionAct act && Begin(act, ct)) passes++;
+            // DRAINHOLD1: a draining look leaves the act the judgment found where it is kept, never taken, so the first look that does not
+            // drain begins it; what is said of it is said once.
+            if (Config.Draining && facts.PeekAct(subject) is OpinionAct held) HeldByDrain(held, events);
+            else if (facts.TakeAct(subject) is OpinionAct act && Begin(act, ct)) passes++;
             if (facts.Opinion(subject) is OpinionFact fact)
             {
                 foreach (var (quest, why) in fact.Sits) sits[quest] = why;
@@ -114,6 +117,21 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
 
         Order(judged);
         return (sits, passes);
+    }
+
+    /// <summary>
+    /// Whether an update's drain holds the pass <paramref name="act"/> found owed (DRAINHOLD1), said once to <paramref name="events"/> where
+    /// the caller has them: a reviewer's session in a copy is work the drain waits on. The opinion stays owed and its quests stay sat.
+    /// </summary>
+    private bool HeldByDrain(OpinionAct act, List<string>? events)
+    {
+        if (!Config.Draining) return false;
+        if (events is not null)
+        {
+            _context.DrainHolds(events, "opinion", $"{act.Claim}", $"the second opinion owed on session `{act.Due.Session}`'s work");
+        }
+
+        return true;
     }
 
     /// <summary>An owed opinion's subject: its session's at its occasion, one owed each (<see cref="OpinionDues.Close"/>).</summary>
@@ -237,7 +255,9 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
         {
             act = new OpinionAct(due, key, claim, chain, due.Occasion, Person: false, process);
         }
-        else if (gate is { State: OpinionGateStates.WithSession or OpinionGateStates.ReadAgain, Opinion: { } first } && _context.Runs.TryOpinion(claim))
+        // DRAINHOLD1: a delivery goes a session on in a turn, which the drain does not count; it waits for a look that does not drain.
+        else if (gate is { State: OpinionGateStates.WithSession or OpinionGateStates.ReadAgain, Opinion: { } first } && !Config.Draining
+                 && _context.Runs.TryOpinion(claim))
         {
             OpinionBeside(claim, token => DeliverBesideAsync(due, chain, first, process, token), ct);
         }

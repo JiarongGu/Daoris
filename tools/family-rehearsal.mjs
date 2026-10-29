@@ -31,6 +31,7 @@ import {
   SETUP_RULES, SETUP_TITLE, readEvents, readFollowed, readRegister, readSetup, readWorkspaceSetup, withFirstOnPath,
   writeDoctrineLauncher,
 } from './setup-kit.mjs';
+import { doorCommand, programOf, providersFolder, readStandIns, scenarioPlan } from './stand-ins.mjs';
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const examplesRoot = join(repoRoot, 'examples');
@@ -6163,6 +6164,175 @@ check(
   existsSync(endedLog) && !endedSoFar().includes(gateHeldId),
   endedSoFar(),
 );
+
+// -------------------------------------------------- 18a. every stand-in the files declare
+
+section('18a. Every stand-in the files declare answers the scenario contract, each door through the driver (AGENTPROVIDER1b, D213)');
+
+// AGENTPROVIDER1 row b, part 3 (D213's row b part 3 note): the stand-ins are found from their files and named nowhere here. Each
+// provider folder's `provider.json` says whether it is a stand-in, its doors and their kinds, and its program's layout, which the driver
+// project's one glob carries into this run's own build of the driver host; its `pending.json` holds what it cannot answer yet. Over each
+// door the scenario contract is driven through the driver as a machine runs it (`scenarioPlan`): a case its file holds is said with its
+// row and never driven, a case no verb of the driver can drive for a stand-in is said with where it is read, and every other is driven
+// and checked by what Daoris records, never by the program's words beyond those the contract fixes. Each door works in a home of its own
+// (the folder its config is in), so the conversations it keeps and what a refused credential leaves on its account stay its own. The
+// stub phases above stay as they stand: they rehearse Claude Code's and Codex's paths over the programs they write.
+const standInOutput = ownBuilt(ownOutput, driverProject, '');
+const { standIns, problems: standInProblems } = readStandIns(providersFolder(repoRoot));
+check(
+  'the providers\' files declare the stand-ins, each in the one layout',
+  standIns.length > 0 && standInProblems.length === 0,
+  standInProblems.join('\n') || 'no provider.json declares a stand-in',
+);
+for (const standIn of standIns) {
+  check(
+    `${standIn.id}: its program is carried beside the driver this run built, by the project's glob`,
+    existsSync(programOf(standIn, standInOutput)),
+    programOf(standIn, standInOutput),
+  );
+}
+
+const standInRecords = async () => (await api('GET', '/api/sessions?repository=newcomer&includeClosed=true')).json ?? [];
+const standInQuestOf = async (id) => ((await api('GET', '/api/quests?repository=newcomer&includeClosed=true')).json ?? [])
+  .find((q) => q.id === id);
+const standInAsk = async (title) => (await api('POST', '/api/quests', {
+  body: { from: 'game', to: 'newcomer', title, body: 'A case of the scenario contract, driven over a stand-in by the family rehearsal.' },
+})).json?.quest?.id ?? '';
+const reopenedOf = (config, session) =>
+  readEvents(driver({ serviceUrl: BASE, config, mode: 'logs --event session.reopened --json' }).out, 'session.reopened')
+    .filter((data) => data.session === session);
+
+/**
+ * A door's place: its folder, which is the driver's home for every config written in it, the config each scenario runs it by (in the
+ * folder, or in one of the case's own), and what its cases left.
+ */
+const standInDoor = (standIn, door) => {
+  const folder = join(scratch, 'stand-ins', door.id);
+  const config = (scenario = 'open', at = folder) => {
+    mkdirSync(at, { recursive: true });
+    const file = join(at, scenario === 'open' ? 'driver.json' : `driver-${scenario}.json`);
+    const more = [...(scenario === 'open' ? [] : ['--scenario', scenario]), ...(door.kind === 'protocol' ? ['--seen', join(at, 'seen.txt')] : [])];
+    writeFileSync(file, `${JSON.stringify({
+      drivable: ['newcomer'], adapter: door.id, cap: 2, timeoutMinutes: 2,
+      commands: { [door.id]: doorCommand(standIn, door, standInOutput, more) },
+    }, null, 2)}\n`);
+    return file;
+  };
+  return { standIn, door, folder, config, ended: null };
+};
+
+const standInDrives = {
+  // A start: a quest run on the door to done, the stand-in's program taking and closing it through the service's door.
+  'live.start': async (place) => {
+    const quest = await standInAsk(`Answer the scenario contract's start on ${place.door.id}`);
+    const ran = driver({ serviceUrl: BASE, config: place.config(), mode: '--until-idle' });
+    const records = (await standInRecords()).filter((s) => s.quest === quest);
+    const closed = await standInQuestOf(quest);
+    check(
+      `${place.door.id}: a start, its quest run on the door to done and closed by the stand-in's program, one record naming the door`,
+      ran.code === 0 && records.length === 1 && records[0].state === 'completed' && records[0].adapter === place.door.id
+        && closed?.status === 'Done',
+      `${ran.out}\n${JSON.stringify(records)}\n${JSON.stringify(closed)}`,
+    );
+    place.ended = records.length === 1 && records[0].state === 'completed' ? records[0] : null;
+  },
+  // A turn: a conversation from a terminal, each line the person says said back, on one record that ends completed.
+  'live.turn': async (place) => {
+    const lines = [`the first words for ${place.door.id}`, `the second words for ${place.door.id}`];
+    const input = join(place.folder, 'turn-input.txt');
+    writeFileSync(input, `${lines.join('\n')}\n`);
+    const before = new Set((await standInRecords()).map((s) => s.id));
+    const chat = run(
+      `dotnet "${driverDll}" chat --repository newcomer --adapter ${place.door.id} < "${input}"`,
+      scratch,
+      { DAORIS_SERVICE_URL: BASE, DAORIS_DRIVER_CONFIG: place.config(), ...NO_REMOTE, ...NO_HARNESS },
+      DRIVE_TIMEOUT,
+    );
+    const record = (await standInRecords()).find((s) => !before.has(s.id) && s.kind === 'chat' && s.adapter === place.door.id);
+    check(
+      `${place.door.id}: a turn, each line a person says from a terminal said back, on one conversation that ends completed`,
+      chat.code === 0 && lines.every((line) => chat.out.includes(`heard: ${line}`)) && record?.state === 'completed',
+      `${chat.out}\n${JSON.stringify(record)}`,
+    );
+  },
+  // A resume of its own conversation: words said to the start's ended record go on in its own conversation. The protocol transport
+  // offers every protocol door its resume (§2.6); a native door resumes by its own flag, or resumes nothing, and then its words take
+  // the unsupported resume's fallback, which proves the conversation lost and carries them on in a new part.
+  'live.resume-own': async (place) => {
+    if (!place.ended) {
+      check(`${place.door.id}: a resume of its own conversation, after a start that ended completed`, false, 'its start left no completed record');
+      return;
+    }
+    const words = `go on with the scenario contract on ${place.door.id}`;
+    const said = driver({ serviceUrl: BASE, config: place.config(), mode: `sessions say ${place.ended.id} "${words}"` });
+    const ran = driver({ serviceUrl: BASE, config: place.config(), mode: '--until-idle' });
+    const reopened = reopenedOf(place.config(), place.ended.id);
+    const after = (await standInRecords()).find((s) => s.id === place.ended.id);
+    const resumed = reopened.length === 1 && reopened[0].resumed === true;
+    const fellBack = place.door.kind === 'native' && reopened.length === 1 && reopened[0].resumed === false
+      && ['unkept', 'unable'].includes(reopened[0].why);
+    check(
+      `${place.door.id}: a resume of its own conversation, the words said to its ended session going on in it${place.door.kind === 'native' ? ', or in the unsupported resume\'s fallback where its door resumes nothing' : ''}`,
+      said.code === 0 && ran.code === 0 && (resumed || fellBack) && after?.state === 'completed',
+      `${said.out}\n${ran.out}\n${JSON.stringify(reopened)}\n${JSON.stringify(after)}`,
+    );
+  },
+  // A missing one: a fresh start's conversation, words said to it, and a resume its agent refuses as gone, read as gone.
+  'live.missing-conversation': async (place) => {
+    const quest = await standInAsk(`Answer the scenario contract's missing conversation on ${place.door.id}`);
+    const first = driver({ serviceUrl: BASE, config: place.config(), mode: '--until-idle' });
+    const record = (await standInRecords()).find((s) => s.quest === quest);
+    const said = driver({ serviceUrl: BASE, config: place.config(), mode: `sessions say ${record?.id ?? 'none'} "go on where the conversation is gone"` });
+    const ran = driver({ serviceUrl: BASE, config: place.config('missing'), mode: '--until-idle' });
+    const reopened = reopenedOf(place.config('missing'), record?.id);
+    check(
+      `${place.door.id}: a missing one, a resume its agent refuses as gone read as gone, never as resumed`,
+      first.code === 0 && record?.state === 'completed' && said.code === 0 && ran.code === 0
+        && reopened.length === 1 && reopened[0].resumed === false && reopened[0].why === 'gone',
+      `${first.out}\n${said.out}\n${ran.out}\n${JSON.stringify(record)}\n${JSON.stringify(reopened)}`,
+    );
+  },
+  // A refused account: the credential refused at its run, in a home of the case's own, ends it failed with its quest not done; then the
+  // quest goes on to done in the door's home once the program answers again, so no later phase meets it open.
+  'live.access-and-fatal': async (place) => {
+    const quest = await standInAsk(`Answer the scenario contract's refused account on ${place.door.id}`);
+    const ran = driver({ serviceUrl: BASE, config: place.config('access', join(place.folder, 'refused')), mode: '--once' });
+    const records = (await standInRecords()).filter((s) => s.quest === quest);
+    const left = await standInQuestOf(quest);
+    check(
+      `${place.door.id}: a refused account, the credential refused at its run ending it failed with its quest not done`,
+      ran.code === 0 && records.length === 1 && records[0].state === 'failed' && left?.status !== 'Done',
+      `${ran.out}\n${JSON.stringify(records)}\n${JSON.stringify(left)}`,
+    );
+    const released = driver({ serviceUrl: BASE, config: place.config(), mode: '--until-idle' });
+    const closed = await standInQuestOf(quest);
+    check(
+      `${place.door.id}: …and its quest goes on to done once the program answers again`,
+      released.code === 0 && closed?.status === 'Done',
+      `${released.out}\n${JSON.stringify(closed)}`,
+    );
+  },
+};
+
+const standInPlaces = new Map();
+for (const row of scenarioPlan(standIns)) {
+  const standIn = standIns.find((each) => each.id === row.provider);
+  const door = standIn.doors.find((each) => each.id === row.door);
+  if (!standInPlaces.has(door.id)) standInPlaces.set(door.id, standInDoor(standIn, door));
+  if (row.held) {
+    console.log(`  held    ${row.case} on ${row.door} (row ${row.held.row}): ${row.held.why}`);
+  } else if (row.elsewhere) {
+    console.log(`  read    ${row.case} on ${row.door}: ${row.elsewhere}`);
+  } else if (standInDrives[row.case]) {
+    await standInDrives[row.case](standInPlaces.get(door.id));
+  } else {
+    check(
+      `${row.door}: ${row.says}`,
+      false,
+      `no drive answers ${row.case} yet, and ${row.provider}'s pending.json holds it nowhere: the row that writes its reader writes its drive here`,
+    );
+  }
+}
 
 // -------------------------------------------------- 19. report
 

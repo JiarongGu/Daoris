@@ -77,6 +77,9 @@ internal static class OwnerTargetRows
             Row(route, Repository());
         }
 
+        // INTEGRATE1d: a repository's integration declaration accepted by its blob, the owner's alone (D215 point 10).
+        Row("INTEGRATION_GATES", Repository());
+
         foreach (var route in new[]
                  {
                      "SET_LINE", "SET_LANGUAGE", "SET_LANDING", "SET_REVIEW", "SET_OPINION", "SET_HELPERS", "SET_HAND_OVER", "SET_COMMITS", "SET_ACCESS",

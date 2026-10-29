@@ -19,7 +19,7 @@ namespace Daoris.Driver;
 /// <param name="Recorded">The answers the reader was written against: an entry grows only with a recorded answer.</param>
 /// <param name="Kind">Which protocol the command speaks (USAGEREAD2a): Codex's JSON-RPC by default.</param>
 public sealed record UsageQuestion(
-    string Harness, IReadOnlyList<string> Command, IReadOnlyList<RecordedFrame> Recorded, UsageKind Kind = UsageKind.Codex)
+    string Harness, IReadOnlyList<string> Command, IReadOnlyList<RecordedFrame> Recorded, UsageKind Kind = UsageKind.Codex) : IUsageQuestion
 {
     /// <summary>
     /// How long a reading stands before a start asks the account again: Codex's five minutes, and Claude's minute, a floor

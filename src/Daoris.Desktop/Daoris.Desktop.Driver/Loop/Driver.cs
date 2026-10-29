@@ -897,6 +897,9 @@ public sealed class Driver(
         // meanwhile, so the account stays passed until its reset with no strike spent on a full disk.
         AccountCooling.WriteUnkept(home, Context.Harnesses.Clock());
 
+        // DRAINHOLD1: what an update's drain held is said again if a later drain holds it, once this look does not drain.
+        if (!config.Draining) Context.Runs.DrainLifted();
+
         // FOUNDATION1 z-iii (D212; the design §13.5, §13.6): the conversations the sessions' binding files keep move into the desktop store at
         // the first look the start's confirmation is settled, and a file an older build wrote during a downgrade at the look that finds it, so
         // a resume reads its id from the binding. A look with no such file asks nothing of the store.
@@ -1058,7 +1061,7 @@ public sealed class Driver(
         Context.Runs.TakeFactsMoved();
         var judgedOpinions = new List<OpinionJudged>();
         var (opinionSits, passes) = await Stages.TimeAsync("opinions", () => Context.Beside
-            ? Task.FromResult(Gate.OpinionsBeside(looked, judgedOpinions, Stages, ct))
+            ? Task.FromResult(Gate.OpinionsBeside(looked, judgedOpinions, Stages, ct, events))
             : OpinionsAsync(looked, events, ct, judgedOpinions)).ConfigureAwait(false);
         snapshot = snapshot with { Opinions = opinionSits };
 
@@ -1472,6 +1475,14 @@ public sealed class Driver(
         {
             // Not this process's to land: the lease holder's looks land it, and its wakes are this loop's to drop.
             WokeSpent = true;
+            return;
+        }
+
+        // DRAINHOLD1: a landing changes a tree and the repository's line, and its plugin may take minutes: none is chosen or begun while an
+        // update drains. The wakes are left unspent for the first look that does not.
+        if (config.Draining)
+        {
+            if (new AutoLandings(home).Open().Count > 0) Context.DrainHolds(events, "landing", "due", "the sessions due to land");
             return;
         }
 
@@ -4050,7 +4061,7 @@ public sealed class Driver(
         {
             await WordsLeft.KeepAsync(
                     service, Context.Events, sessionId, left, CancellationToken.None,
-                    why: swapped is not null && turnFailed is null ? Observation.WordsUnderNewSetup : null)
+                    why: swapped is not null && turnFailed is null ? Observation.WordsUnderNewSetup : null, home: home)
                 .ConfigureAwait(false);
         }
 

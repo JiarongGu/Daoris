@@ -71,6 +71,24 @@ public sealed class RunningSessions
         lock (_gate) return _opinions.Add(key);
     }
 
+    // The starts an update's drain held that a look has said so of (DRAINHOLD1), kept across the looks so each is said once per drain.
+    private readonly HashSet<string> _drainHeld = new(StringComparer.Ordinal);
+
+    /// <summary>
+    /// Note that a look says the drain held <paramref name="key"/> (DRAINHOLD1): true the first time since the drain began, so the hold is
+    /// said once however many looks meet it, as a person's hold on an ask is.
+    /// </summary>
+    internal bool DrainHeld(string key)
+    {
+        lock (_gate) return _drainHeld.Add(key);
+    }
+
+    /// <summary>A look that does not drain (*Not now*, the update installed or cancelled): what the drain held is said again if a later drain holds it.</summary>
+    internal void DrainLifted()
+    {
+        lock (_gate) _drainHeld.Clear();
+    }
+
     /// <summary>The run that held the claim has ended, however it ended.</summary>
     internal void OpinionDone(string key)
     {

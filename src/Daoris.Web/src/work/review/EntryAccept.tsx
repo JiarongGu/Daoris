@@ -23,6 +23,8 @@ export type EntryAcceptPart = {
   sameTreeAs?: string | null;
   /** A later part that redid its work (point 3): replayed after it, it conflicts or adds nothing. */
   superseded?: { by: string; says: string; conflicts: boolean } | null;
+  /** A later part it conflicts with while having work of its own (ACCEPTCONFLICT1): never redone, so never offered for leaving out. */
+  clash?: { by: string; says: string } | null;
 };
 
 /** Where an entry's parts would land (D167's amendment point 1): its one branch, or the line a merge goes into, and each part. */
@@ -158,6 +160,11 @@ function PlanLines({ t, plan, named, name, leaving, onLeave, held, refused }: {
               )}
               {part.problem && (
                 <span className="border-l-[3px] border-warn pl-2"><Inline text={t('work.accept.problem', { part: part_, says: part.problem })} /></span>
+              )}
+              {part.clash && (
+                <span className="border-l-[3px] border-warn pl-2">
+                  <Inline text={t('work.accept.clash', { part: part_, by: name(part.clash.by), says: part.clash.says })} />
+                </span>
               )}
               {part.superseded && (
                 <>

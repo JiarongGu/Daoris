@@ -75,6 +75,7 @@ public sealed class DriverConfigKeepsTests
             "forgiven" => Entries(config.Forgiven),
             "languages" => Entries(config.Languages),
             "released" => Entries(config.Released),
+            "integrationGates" => Entries(config.IntegrationGates),
             _ => throw new InvalidOperationException($"the table names a map this test does not read: {map}"),
         };
         var actual = new JsonObject([.. entries.Select(pair => new KeyValuePair<string, JsonNode?>(pair.Key, Value(pair.Value)))]);
@@ -147,6 +148,8 @@ public sealed class DriverConfigKeepsTests
             "heavy" => config.WithHeavyGates(Text("repository"), Gates(edit.GetProperty("gates"))),
             // FABRIC-PIPELINE1b: a repository's sessions' checks, through the door the terminal's `checks` and Setup go through.
             "session-checks" => config.WithSessionChecks(Text("repository"), edit.GetProperty("checks").GetString()),
+            // INTEGRATE1d: a repository's integration accepted by its blob, or cleared, through the setter the Accept door calls.
+            "integration-gates" => config.WithIntegrationGates(Text("repository"), edit.GetProperty("blob").GetString()),
             // MIXAGENT1c: a repository's hand-over rule, through the edit the route and the terminal make.
             "hand-over" => HandOverRules.Apply(
                 config, new HandOverEdit { Repository = Text("repository"), Set = new HandOverSet { Mode = Text("mode"), ModeGiven = true } }),
@@ -193,7 +196,11 @@ public sealed class DriverConfigKeepsTests
     {
         string? Text(string field) => rule.TryGetProperty(field, out var value) ? value.GetString() : null;
         bool On(string field) => rule.TryGetProperty(field, out var value) && value.ValueKind == JsonValueKind.True;
-        return new LandingRule(Text("form")!, Text("pattern"), Tidy: On("tidy"), Plugin: Text("plugin"), AutoAccept: On("autoAccept"), Key: Text("key"), Squash: On("squash"));
+        return new LandingRule(Text("form")!, Text("pattern"), Tidy: On("tidy"), Plugin: Text("plugin"), AutoAccept: On("autoAccept"), Key: Text("key"), Squash: On("squash"))
+        {
+            // INTEGRATE1d: a rule's `integrate`, read as the file's is.
+            Integrate = rule.TryGetProperty("integrate", out var integrate) ? LandingKey.IntegrateOf(integrate, out _) : null,
+        };
     }
 
     private static readonly JsonDocument Table =

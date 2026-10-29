@@ -161,6 +161,18 @@ internal sealed class LoopContext(
 
     private LookSaid? _said;
 
+    /// <summary>
+    /// A start the update's drain holds (DRAINHOLD1): said once as the drain's, under <paramref name="family"/>, for as long as it drains
+    /// (<see cref="InstallUpdate.HeldLine"/>). The caller starts nothing and writes no state, so the work waits as it was and goes at the
+    /// first look that does not drain.
+    /// </summary>
+    /// <param name="key">What is held, unique within the family, to say it once.</param>
+    /// <param name="held">What is held, in the line's words.</param>
+    public void DrainHolds(List<string> events, string family, string key, string held)
+    {
+        if (Runs.DrainHeld($"{family}/{key}")) events.Add(Said.Progress(family, InstallUpdate.HeldLine(family, held)));
+    }
+
     public ServiceClient Service { get; } = service;
 
     public DriverConfig Config { get; } = config;

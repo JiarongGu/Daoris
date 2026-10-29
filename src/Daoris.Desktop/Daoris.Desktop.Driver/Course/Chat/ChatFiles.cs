@@ -107,6 +107,26 @@ public static class ChatFiles
         [.. names.Select(name => Find(home, sessionId, name)).OfType<KeptFile>()];
 
     /// <summary>
+    /// A word's files, kept for <paramref name="from"/> under <paramref name="names"/>, kept again for <paramref name="to"/> under the same names
+    /// (FOUNDATION1d-ii): a word said to a record that went on goes to its line's head, whose go-on reads its files there (MSG1d3). One kept
+    /// nowhere, or that cannot be read now, is left out, as a resumed run leaves it out; never faults, so the words still go.
+    /// </summary>
+    public static void Carry(string home, string from, string to, IReadOnlyList<string> names)
+    {
+        foreach (var name in names)
+        {
+            try
+            {
+                if (Find(home, from, name) is { } kept) Keep(home, to, [new ChatUpload(name, AtomicFile.ReadBytes(kept.Path))]);
+            }
+            catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException)
+            {
+                // Held open or gone since it was kept: the words go without it.
+            }
+        }
+    }
+
+    /// <summary>
     /// A name made safe to keep: any directory in it dropped, a character no file system takes made an
     /// underscore, a trailing dot or space gone (Windows drops them when it opens a file), and a name
     /// that is nothing becoming <c>attachment</c> — <c>QuestFiles.SafeName</c>'s rules.

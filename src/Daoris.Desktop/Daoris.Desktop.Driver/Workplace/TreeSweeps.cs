@@ -345,8 +345,17 @@ internal sealed class TreeSweeps(
         // A registration whose folder is gone holds nothing on disk; git cannot be asked in it, and its removal says so.
         if (tree is not null && Directory.Exists(tree))
         {
+            // GITWORKTREECONFIG1: a tree git binds to another checkout is never removed: what git says it holds is that checkout's, so
+            // the row is kept as one whose holds could not be read, saying what binds it, on the list as at the press and the look.
+            if (await TreeBinding.RefusalAsync(tree, ct).ConfigureAwait(false) is { } bound)
+            {
+                return (Item(SweepKind.Dirty, detail: bound) with { Unread = true }, null);
+            }
+
             // Everything no commit holds, whatever git's settings hide (SQUASHTIDY1c): what a removal would destroy.
-            var holds = await ContentHolds.HoldsAsync(tree, root, ct).ConfigureAwait(false);
+            // INTEGRATE1d (D218's note): the output the repository declares counts only as the owner accepted it for integration.
+            var declared = await context.ScratchAsync(root, repository, workspace, ct, line).ConfigureAwait(false);
+            var holds = await ContentHolds.HoldsAsync(tree, root, declared, ct).ConfigureAwait(false);
             if (holds is null) return (Item(SweepKind.Dirty, detail: "git could not say what its tree holds") with { Unread = true }, null);
             seen?.Add(holds);
             shared = holds.Shared.Count;

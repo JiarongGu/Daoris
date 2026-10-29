@@ -66,6 +66,11 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
                 {
                     case HelperStates.Refused:
                         continue;
+                    case HelperStates.Answered or HelperStates.Started when config.Draining:
+                        // DRAINHOLD1: a hand or a settling would go a conversation on in a turn the drain does not count; the answer is kept
+                        // on file and handed at the first look that does not drain. A helper still running settles itself.
+                        if (state.State == HelperStates.Answered) _context.DrainHolds(events, "helper", ask.Id, $"the answer to ask `{ask.Id}`");
+                        continue;
                     case HelperStates.Answered:
                         // HELPERWAIT1 (point 6): a hand held while its asker stands as it did then waits on its asker's move, which wakes a look,
                         // and is not tried again at every look (200-480 ms each on the install, a record read whole).
@@ -145,6 +150,10 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
                             events.Add(_context.Said.Wait("helper", $"helper  ask `{ask.Id}` from session `{ask.Asker}` waits for the person's yes or no in What needs you"));
                         }
 
+                        break;
+                    case HelperVerdict.GoKind when config.Draining:
+                        // DRAINHOLD1: judged and left as it was, no state written and no slot taken; it goes at the first look that does not drain.
+                        _context.DrainHolds(events, "helper", ask.Id, $"ask `{ask.Id}` from session `{ask.Asker}`");
                         break;
                     case HelperVerdict.GoKind when _context.Runs.TryOpinion(HelperClaim(ask.Id)):
                         begun++;

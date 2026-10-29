@@ -23,9 +23,14 @@ public sealed record UpdateOutcome(string Phase, string? Build, string? Version,
 /// The last swap as the journal records it, told or not, on every state (UPDATE1d): what Settings → Driver's row says
 /// and the terminal's plain <c>daoris-driver update</c> says (D50). Null with no journal, and while a swap is under way.
 /// </param>
+/// <param name="Since">
+/// When the drain for the staged build began (DRAINHOLD1), while it drains and as it applies: beside <paramref name="Driven"/> and
+/// <paramref name="Turns"/>, what lets the page say how long it has waited. No end is said, since the drain ends only when the work does.
+/// Null with no drain, and for *Update now* asked before any.
+/// </param>
 public sealed record UpdateState(
     string State, UpdateBuild? Staged, string? Mode, int Driven, int Turns, UpdateProblem? Problem, UpdateOutcome? Outcome,
-    UpdateOutcome? Last);
+    UpdateOutcome? Last, DateTimeOffset? Since = null);
 
 /// <summary>The states an update is in, as the page reads them.</summary>
 public static class UpdateStates
@@ -103,12 +108,29 @@ public sealed class InstallUpdater(
     /// <summary>Hand the close its staged build before closing any window (D206 §3.9).</summary>
     public Action<string>? ClosingForUpdate { get; init; }
 
-    /// <summary>Whether the loop's starts are held for the update: the driver watch asks at every look (D139 §2).</summary>
+    /// <summary>
+    /// Whether the loop's starts are held for the update: the driver watch asks at every look (D139 §2). True while it drains and while
+    /// it applies, which <see cref="Applying"/> tells apart.
+    /// </summary>
     public bool Draining
     {
         get
         {
             lock (_gate) return _state.State is UpdateStates.Draining or UpdateStates.Applying;
+        }
+    }
+
+    /// <summary>
+    /// Whether the drain is over and the application closes for the update (DRAINHOLD1): from the moment a look finds the work allows it,
+    /// before it says <see cref="UpdateStates.Applying"/>, until a swap that did not take is put away. The pipe holds every press from here,
+    /// as at a close; while it only drains, it lets through what starts nothing the drain waits on. The build is checked and the work read
+    /// again under this hold, and work begun since the first read withdraws it, the drain going on.
+    /// </summary>
+    public bool Applying
+    {
+        get
+        {
+            lock (_gate) return _applying || _state.State is UpdateStates.Applying;
         }
     }
 
@@ -227,6 +249,7 @@ public sealed class InstallUpdater(
         var now = work();
         if (mode == UpdateMode.Now) return await ApplyAsync(id, staged, mode, now, "now").ConfigureAwait(false);
 
+        DateTimeOffset? since;
         lock (_gate)
         {
             if (!string.Equals(_drainedFor, id, StringComparison.Ordinal))
@@ -235,11 +258,13 @@ public sealed class InstallUpdater(
                 _drainSince = Now;
                 log.Info("update.draining", ("build", id), ("driven", now.Driven), ("turns", now.Turns));
             }
+
+            since = _drainSince;
         }
 
         return InstallUpdate.Idle(now.Driven, now.Turns)
             ? await ApplyAsync(id, staged, mode, now, "idle").ConfigureAwait(false)
-            : Publish(new UpdateState(UpdateStates.Draining, staged, mode, now.Driven, now.Turns, null, Outcome(), Last()));
+            : Publish(new UpdateState(UpdateStates.Draining, staged, mode, now.Driven, now.Turns, null, Outcome(), Last(), since));
     }
 
     /// <summary>
@@ -357,22 +382,56 @@ public sealed class InstallUpdater(
 
     private async Task<UpdateState> ApplyAsync(string id, UpdateBuild? staged, string mode, UpdateWork now, string by)
     {
-        // Checked by the application before it closes for it (D139 §4); the launcher checks again before it moves a file.
-        if (StagedBuild.Check(install!) is { } problem)
-        {
-            return Refuse(id, staged, mode, new UpdateProblem(problem.Code, problem.Sentence));
-        }
-
-        double waited;
         lock (_gate)
         {
             // Another look met the moment first, and its relaunch is under way: one launcher, however many looks.
             if (_applying) return _state;
+            // DRAINHOLD1: the presses are held from here (Applying), before the build is checked and the work read again.
             _applying = true;
-            waited = _drainSince is { } since ? Math.Max(0, (Now - since).TotalSeconds) : 0;
         }
 
-        var applying = Publish(new UpdateState(UpdateStates.Applying, staged, mode, now.Driven, now.Turns, null, Outcome(), Last()));
+        UpdateProblem? refused = null;
+        try
+        {
+            // Checked by the application before it closes for it (D139 §4); the launcher checks again before it moves a file.
+            if (StagedBuild.Check(install!) is { } problem) refused = new UpdateProblem(problem.Code, problem.Sentence);
+            // DRAINHOLD1, a review's finding: what began after the look read no work (a turn a press let through opened, a helper the look
+            // started, a conversation the window began) is read again now that no press passes, and the drain goes on for it. *Update now*
+            // closes whatever runs, so it reads nothing.
+            else if (by == "idle" && work() is var again && !InstallUpdate.Idle(again.Driven, again.Turns))
+            {
+                DateTimeOffset? since;
+                lock (_gate)
+                {
+                    _applying = false;
+                    since = _drainSince;
+                }
+
+                return Publish(new UpdateState(UpdateStates.Draining, staged, mode, again.Driven, again.Turns, null, Outcome(), Last(), since));
+            }
+        }
+        catch
+        {
+            // A check or a read that failed closes nothing, and the presses go on.
+            lock (_gate) _applying = false;
+            throw;
+        }
+
+        if (refused is not null)
+        {
+            lock (_gate) _applying = false;
+            return Refuse(id, staged, mode, refused);
+        }
+
+        double waited;
+        DateTimeOffset? drained;
+        lock (_gate)
+        {
+            drained = _drainSince;
+            waited = drained is { } since ? Math.Max(0, (Now - since).TotalSeconds) : 0;
+        }
+
+        var applying = Publish(new UpdateState(UpdateStates.Applying, staged, mode, now.Driven, now.Turns, null, Outcome(), Last(), drained));
         bool started;
         try
         {

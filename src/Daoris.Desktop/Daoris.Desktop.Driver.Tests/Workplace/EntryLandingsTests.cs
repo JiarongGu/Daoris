@@ -55,25 +55,48 @@ public sealed class EntryLandingsTests
     [Fact]
     public void A_part_that_conflicts_after_a_later_part_is_superseded_by_it()
     {
-        var superseded = EntryLandings.Verdict("s2", "laterTree", (null, "CONFLICT (content): Merge conflict in app.cs."), ["app.cs"]);
+        var (superseded, clash) = EntryLandings.Verdict("s2", "laterTree", (null, "CONFLICT (content): Merge conflict in app.cs."), ["app.cs"]);
 
         Assert.Equal(new PartSuperseded("s2", "CONFLICT (content): Merge conflict in app.cs.", Conflicts: true), superseded);
+        Assert.Null(clash);
+    }
+
+    /// <summary>ACCEPTCONFLICT1: a conflict beside a clean change is work of its own, which leaving the part out would lose.</summary>
+    [Fact]
+    public void A_part_that_conflicts_and_changes_a_file_outside_the_conflict_is_a_clash_naming_the_conflicting_files()
+    {
+        var (superseded, clash) = EntryLandings.Verdict(
+            "s2", "laterTree", (null, "CONFLICT (content): Merge conflict in CLAUDE.md"), ["CLAUDE.md", "docs/records.md"]);
+
+        Assert.Null(superseded);
+        Assert.Equal(new PartClash("s2", "CLAUDE.md"), clash);
+    }
+
+    [Fact]
+    public void A_file_is_in_the_conflict_by_its_whole_path_not_by_a_tail_of_another()
+    {
+        var (superseded, clash) = EntryLandings.Verdict(
+            "s2", "laterTree", (null, "CONFLICT (content): Merge conflict in src/data.cs"), ["data.cs"]);
+
+        Assert.Null(superseded);
+        Assert.NotNull(clash);
     }
 
     [Fact]
     public void A_part_that_adds_nothing_after_a_later_part_is_superseded_and_names_its_files()
     {
-        var superseded = EntryLandings.Verdict("s2", "laterTree", ("LATERTREE", null), ["a.cs", "b.cs", "c.cs", "d.cs"]);
+        var (superseded, clash) = EntryLandings.Verdict("s2", "laterTree", ("LATERTREE", null), ["a.cs", "b.cs", "c.cs", "d.cs"]);
 
         Assert.Equal(new PartSuperseded("s2", "a.cs, b.cs, c.cs and 1 more", Conflicts: false), superseded);
+        Assert.Null(clash);
     }
 
     [Fact]
     public void A_part_that_adds_something_or_a_trial_git_could_not_make_is_not_superseded()
     {
-        Assert.Null(EntryLandings.Verdict("s2", "laterTree", ("anotherTree", null), ["a.cs"]));
-        Assert.Null(EntryLandings.Verdict("s2", "laterTree", (null, null), ["a.cs"]));
-        Assert.Null(EntryLandings.Verdict("s2", null, (null, "CONFLICT (content): Merge conflict in a.cs."), ["a.cs"]));
+        Assert.Equal((null, null), EntryLandings.Verdict("s2", "laterTree", ("anotherTree", null), ["a.cs"]));
+        Assert.Equal((null, null), EntryLandings.Verdict("s2", "laterTree", (null, null), ["a.cs"]));
+        Assert.Equal((null, null), EntryLandings.Verdict("s2", null, (null, "CONFLICT (content): Merge conflict in a.cs."), ["a.cs"]));
     }
 
     [Fact]

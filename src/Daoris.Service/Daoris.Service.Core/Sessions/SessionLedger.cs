@@ -190,6 +190,20 @@ public enum SessionSayRefusal
 
     /// <summary>This host keeps no home, so no question file to check: a supervisor's word is a desktop's alone (§3.4 <c>no-home</c>).</summary>
     NoHome,
+
+    /// <summary>
+    /// The record's line went on past it (FOUNDATION1 row d-ii, D212; the foundation design §3.4 rule 2): words follow the line's head, which
+    /// <see cref="SessionSayOutcome.Head"/> names, so nothing is kept on a record the line has left, where no go-on ever reads them. Judged
+    /// inside the say door's step, after the settlement and before every other refusal, so no part opens between the judgement and the keep.
+    /// </summary>
+    Continued,
+
+    /// <summary>
+    /// The record's line cannot be walked to its head or read whole (row d-ii): it loops back on a record it already passed, or runs past
+    /// <see cref="Lines.Bound"/> records, so where the words would go, or whether the key's word was already taken, is not known and nothing is
+    /// kept. Never a guess at where the walk stopped.
+    /// </summary>
+    Unplaced,
 }
 
 /// <summary>What marking words attempted did (COWORK1c): the record as it now stands, and the words named that no longer wait.</summary>
@@ -217,6 +231,9 @@ public sealed record SessionSayOutcome(SessionSayRefusal Refusal, string Message
     /// (<c>settled</c>) is answered so.
     /// </summary>
     public string? SettledOn { get; init; }
+
+    /// <summary>The head of the record's line, where the say was refused <see cref="SessionSayRefusal.Continued"/> (row d-ii): the words go there.</summary>
+    public string? Head { get; init; }
 
     /// <summary>
     /// The words answered a park (ANSWER1b), which its door keeps on the ask at once. False for words to an ended record, which are
@@ -356,6 +373,12 @@ public sealed class SessionLedger(
 
     /// <summary>The set-up step's serve and say family over the ledger's stores (PART6).</summary>
     private readonly SessionReviews reviews = new(quests, sessions);
+
+    /// <summary>
+    /// Whether the say door walks the line's head (row d-ii): always, but for the landing measurement's copy of the door as it stood before
+    /// the row (<c>SaidSettledMeasureTests</c>), since the walk is code and not schema, so dropping a table cannot make that copy.
+    /// </summary>
+    internal bool WalksHead { get; init; } = true;
 
     /// <summary>
     /// Open an INTAKE for an ask (D65 §1b) — a conversation Daoris opens in a room it owns, which
@@ -669,15 +692,19 @@ public sealed class SessionLedger(
     /// the registry row is the machine's own wiring (D48 §2), and it is the only honest source.</para>
     /// </remarks>
     /// <param name="from">The conversation this one continues, handed over (MIXAGENT1a-iii), with <paramref name="fromWhy"/> and <paramref name="fromBy"/>; recorded as told.</param>
+    /// <param name="moves">The words a keyed open moves onto the record it opens (row d-ii part 3), in its own step; none moves without it.</param>
+    /// <exception cref="ArgumentException"><paramref name="moves"/> without <paramref name="opens"/>, or moves that do not read; nothing is opened.</exception>
     public async Task<SessionOpenOutcome> OpenChatAsync(
         string repository, string adapter, DateTimeOffset now,
         string? harnessVersion = null, string? profile = null, string? tree = null,
         string? baseCommit = null, CancellationToken ct = default,
-        string? from = null, string? fromWhy = null, string? fromBy = null, string? actor = null, string? opens = null)
+        string? from = null, string? fromWhy = null, string? fromBy = null, string? actor = null, string? opens = null,
+        OpenMoves? moves = null)
     {
         if (opens is not null)
-            return await KeyedOpenAsync(opens, from, inside => OpenChatAsync(repository, adapter, now,
+            return await KeyedOpenAsync(opens, from, moves, inside => OpenChatAsync(repository, adapter, now,
                 harnessVersion, profile, tree, baseCommit, inside, from, fromWhy, fromBy, actor), ct).ConfigureAwait(false);
+        if (moves is not null) throw Unkeyed();
 
         if (string.IsNullOrWhiteSpace(repository)) throw new ArgumentException("repository is required");
 
@@ -731,11 +758,25 @@ public sealed class SessionLedger(
         }, ct).ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// A keyed open (row d-i), and from row d-ii part 3 its move of the old part's words (the design §3.4 rule 3), as one exclusive step: the
+    /// key's receipt answered first, whatever the request says now; then the record the words leave, the record left or, where the open names no
+    /// <c>from</c>, its moves' own source (a start from another's words), which must stand, be its line's head and not be active; then the open,
+    /// the move and the receipt with every word moved. A receipt that cannot be written throws, and the step rolls the open and the move back.
+    /// </summary>
+    /// <remarks>
+    /// <b>What moves</b> is .NET's selection, never invented here: each word still waiting there that the course named, whoever said it, and
+    /// each of the person's words kept since the course read (no id it read or named), but one a dispatcher attempted, which may have reached
+    /// its agent and is never sent again by itself. Daoris's own words, a helper's answer and another agent's claim kept since are not
+    /// carried (rule 6): the course composes Daoris's again under their keys. Each keeps its id and its producer key, and its transfer id is
+    /// the open's key and that id, so a word with no key has one too.
+    /// </remarks>
     private Task<SessionOpenOutcome> KeyedOpenAsync(
-        string key, string? left, Func<CancellationToken, Task<SessionOpenOutcome>> open, CancellationToken ct) =>
+        string key, string? from, OpenMoves? moves, Func<CancellationToken, Task<SessionOpenOutcome>> open, CancellationToken ct) =>
         sessions.ExclusiveAsync(async inside =>
         {
-            // Replay precedes even the record-left and request checks: the committed result owns the key.
+            // Replay precedes even the record-left and request checks: the committed result owns the key, its transfer the receipt's, never
+            // read again from any record's words.
             if (await sessions.Opens.FindAsync(key, inside).ConfigureAwait(false) is { } kept)
             {
                 var record = kept.Gone ? null : await sessions.FindAsync(kept.Opened, inside).ConfigureAwait(false);
@@ -745,6 +786,8 @@ public sealed class SessionLedger(
                         { Opens = key, Transfer = kept.Transfer };
             }
 
+            moves?.Judge(from);
+            var left = from ?? moves?.From;
             var before = left is null ? null : await sessions.FindAsync(left, inside).ConfigureAwait(false);
             if (before is null)
                 return new SessionOpenOutcome(SessionOpenRefusal.Gone, $"The record left `{left}` is gone.", null) { Opens = key };
@@ -755,10 +798,33 @@ public sealed class SessionLedger(
                     { Opens = key, Head = head?.Id };
 
             var result = await open(inside).ConfigureAwait(false);
-            if (result.Session is { } opened && result.Refusal == SessionOpenRefusal.None)
-                await sessions.Opens.KeepAsync(key, before.Id, opened.Id, inside).ConfigureAwait(false);
-            return result with { Opens = key };
+            if (result.Session is not { } opened || result.Refusal != SessionOpenRefusal.None) return result with { Opens = key };
+
+            IReadOnlyList<OpenTransfer> transfer = [];
+            var message = result.Message;
+            if (moves is not null)
+            {
+                var named = moves.Words.ToHashSet(StringComparer.Ordinal);
+                var read = moves.Read.ToHashSet(StringComparer.Ordinal);
+                var moved = await sessions.MoveSaidAsync(before.Id, opened.Id,
+                    word => named.Contains(word.Id) || (word.Persons && word.Attempt is null && !read.Contains(word.Id)), inside).ConfigureAwait(false);
+                transfer = [.. moved.Select((word, order) => new OpenTransfer(word.Id, word.Key, $"{key}/{word.Id}", order, word.Id))];
+                if (moved.Count > 0) opened = await sessions.FindAsync(opened.Id, inside).ConfigureAwait(false) ?? opened;
+                message += moved.Count switch
+                {
+                    0 => $" No words waited on session `{before.Id}` to move.",
+                    1 => $" One word moved from session `{before.Id}`.",
+                    _ => $" {moved.Count} words moved from session `{before.Id}`.",
+                };
+            }
+
+            await sessions.Opens.KeepAsync(key, before.Id, opened.Id, transfer, inside).ConfigureAwait(false);
+            return result with { Opens = key, Transfer = transfer, Session = opened, Message = message };
         }, ct);
+
+    /// <summary>The refusal of moves asked of an open with no key: nothing would answer them again, so a lost answer could move twice.</summary>
+    private static ArgumentException Unkeyed() => new(
+        "Words move only under an open's key (`opens`), whose receipt answers a retry with what moved, so nothing was opened.");
 
     /// <summary>
     /// The record with the entry's key it answers (SESSONE1a, D167 point 3): the one stored, else the rule's over the facts held now.
@@ -917,6 +983,12 @@ public sealed class SessionLedger(
     /// someone else's. So is a running session, which hears words through the driver that runs it (D136), never its
     /// record.</para>
     ///
+    /// <para><b>Words follow the line's head</b> (FOUNDATION1 row d-ii, D212; the design §3.4 rule 2): inside the step, after the settlement
+    /// and before every refusal above, a record its line has left is refused <see cref="SessionSayRefusal.Continued"/> naming the head
+    /// (<see cref="Lines.WalkAsync"/>), so no part opens between the judgement and the keep; a line that loops or runs past
+    /// <see cref="Lines.Bound"/> is refused <see cref="SessionSayRefusal.Unplaced"/>. A key's word waiting at the head answers a retry named
+    /// to an earlier part settled; one waiting on a part the line has left is answered by the door as it stands.</para>
+    ///
     /// <para><b>The words are this machine's alone</b>, like a transcript: on an ended record nothing that travels changes,
     /// so no revision is written. A park's answer line is on its note, which travels, as ANSWER1b's always was.</para>
     ///
@@ -993,14 +1065,31 @@ public sealed class SessionLedger(
                 return new SessionSayOutcome(SessionSayRefusal.NotFound, $"No session `{id}`.", Session: null);
             }
 
-            // Row p (D212, the design §3.4 rule 5): asked first, before any refusal but the record's absence, so a retry after the take is
-            // answered as kept whatever the record is doing now (a re-say at the head, a record running again). A word still waiting on the
-            // record named is answered by the door as it stands, below: only a key that left a record of the line is settled.
-            if (settled && key is not null && !session.Said.Any(each => string.Equals(each.Key, key, StringComparison.Ordinal))
-                && await SaidKeys.SettledOnLineAsync(sessions, session, key, now, inside).ConfigureAwait(false) is { } held)
+            // Row d-ii (D212, the design §3.4 rule 2, §19.13): the line's head, read inside this step, so no part opens between this
+            // judgement and the keep below. One probe a hop on `sessions_from`, and one on `sessions_quest` for a driven part with none.
+            var line = WalksHead
+                ? await Lines.WalkAsync(sessions, session, inside).ConfigureAwait(false)
+                : new LineWalk(session, [session], LineEnd.Head);
+
+            // Row p (the design §3.4 rule 5): asked first, before any refusal but the record's absence, so a retry after the take is answered
+            // as kept whatever the record is doing now (a re-say at the head, a record running again, a record the line has left). A word still
+            // waiting on the record named is answered by the door as it stands, below: only a key that left a record of the line, or from row
+            // d-ii one whose word waits on the line's head (*O8-F1*), is settled. A word waiting on a record the line has left is neither.
+            if (settled && key is not null && !session.Said.Any(each => string.Equals(each.Key, key, StringComparison.Ordinal)))
             {
-                return SettledAnswer(key, held);
+                if (line.Head is { } at && at.Id != session.Id && at.Said.Any(each => string.Equals(each.Key, key, StringComparison.Ordinal)))
+                {
+                    return WaitsAtHeadAnswer(key, at.Id);
+                }
+
+                var (held, whole) = await SaidKeys.SettledOnLineAsync(sessions, session, line, key, now, inside).ConfigureAwait(false);
+                if (!whole) return UnplacedAnswer(session, line.End == LineEnd.Bound ? LineEnd.Bound : null);
+                if (held is not null) return SettledAnswer(key, held);
             }
+
+            // Row d-ii: words follow the line's head, so a record the line has left keeps nothing, whoever says it and whatever it is now.
+            if (line.Head is not { } head) return UnplacedAnswer(session, line.End);
+            if (head.Id != session.Id) return ContinuedAnswer(session, head);
 
             if (Never(session) is { } never) return never;
 
@@ -1042,6 +1131,39 @@ public sealed class SessionLedger(
         SessionSayRefusal.None,
         $"Already settled under key `{key}`: its word left session `{held.Record}` and nothing more was kept.",
         Session: null) { SettledOn = held.Record };
+
+    /// <summary>
+    /// The answer to a say whose key's word waits on the line's head, a record other than the one named (row d-ii, *O8-F1*): settled, naming
+    /// the head where the word waits to go, with no word and nothing kept.
+    /// </summary>
+    private static SessionSayOutcome WaitsAtHeadAnswer(string key, string head) => new(
+        SessionSayRefusal.None,
+        $"Already kept under key `{key}`: its word waits on session `{head}`, the newest part of its line, and nothing more was kept.",
+        Session: null) { SettledOn = head };
+
+    /// <summary>The refusal of a say to a record its line has left (row d-ii): the head named, beside its sentence, and nothing kept.</summary>
+    private static SessionSayOutcome ContinuedAnswer(Session session, Session head) => new(
+        SessionSayRefusal.Continued,
+        $"Session `{session.Id}` went on in session `{head.Id}`, the newest part of its line: words to it are kept there, so nothing was kept here.",
+        Session: null) { Head = head.Id };
+
+    /// <summary>
+    /// The refusal of a say whose line could not be walked (row d-ii): it loops (<paramref name="end"/> a cycle), it goes on past
+    /// <see cref="Lines.Bound"/> parts (the bound), or, with <paramref name="end"/> null, it runs back past them, so its settlement is not read.
+    /// </summary>
+    private static SessionSayOutcome UnplacedAnswer(Session session, LineEnd? end) => new(
+        SessionSayRefusal.Unplaced,
+        end switch
+        {
+            LineEnd.Cycle =>
+                $"Session `{session.Id}`'s line loops back on a part it already passed, so it has no newest part to keep words on, and nothing was kept.",
+            LineEnd.Bound =>
+                $"Session `{session.Id}`'s line goes on past {Lines.Bound} parts, more than Daoris follows, so its newest part is not read, and nothing was kept.",
+            _ =>
+                $"Session `{session.Id}`'s line runs back past {Lines.Bound} parts, more than Daoris follows, so whether these words were taken "
+                + "already is not read, and nothing was kept.",
+        },
+        Session: null);
 
     /// <summary>
     /// Keep the supervisor's answer on a park, the release's one conditional step (SUPERVISOR1a-i, D208; the supervisor design §3.4):
@@ -1585,17 +1707,22 @@ public sealed class SessionLedger(
     /// The access setup the start resolved (AUTONOMY1a, D184 point 1), each pause with its value; recorded as told, since the driver is
     /// the half that resolves it, and judged only as a short map of words (<see cref="SessionAccess.Judged"/>).
     /// </param>
-    /// <exception cref="ArgumentException"><paramref name="access"/> is not a short map of words; nothing is opened.</exception>
+    /// <param name="moves">The words a keyed open moves onto the record it opens (row d-ii part 3), in its own step; none moves without it.</param>
+    /// <exception cref="ArgumentException">
+    /// <paramref name="access"/> is not a short map of words, or <paramref name="moves"/> come without <paramref name="opens"/> or do not read;
+    /// nothing is opened.
+    /// </exception>
     public async Task<SessionOpenOutcome> OpenAsync(
         string questId, string adapter, DateTimeOffset now,
         string? harnessVersion = null, string? profile = null, string? tree = null,
         string? baseCommit = null, CancellationToken ct = default,
         string? from = null, string? fromWhy = null, string? fromBy = null,
-        IReadOnlyDictionary<string, string>? access = null, string? actor = null, string? opens = null)
+        IReadOnlyDictionary<string, string>? access = null, string? actor = null, string? opens = null, OpenMoves? moves = null)
     {
         if (opens is not null)
-            return await KeyedOpenAsync(opens, from, inside => OpenAsync(questId, adapter, now,
+            return await KeyedOpenAsync(opens, from, moves, inside => OpenAsync(questId, adapter, now,
                 harnessVersion, profile, tree, baseCommit, inside, from, fromWhy, fromBy, access, actor), ct).ConfigureAwait(false);
+        if (moves is not null) throw Unkeyed();
 
         if (string.IsNullOrWhiteSpace(questId) || string.IsNullOrWhiteSpace(adapter))
             throw new ArgumentException("quest and adapter are required");

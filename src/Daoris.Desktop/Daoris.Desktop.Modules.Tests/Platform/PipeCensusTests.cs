@@ -429,6 +429,117 @@ public sealed class PipeCensusTests
     }
 
     /// <summary>
+    /// DRAINHOLD1 (D156's DRAINHOLD1 note): every person's and role's route of every route-by-route module says what an update's drain
+    /// does with it, waits or passes, and every route the drain classes is one of them, so a route added later is classed for the drain in
+    /// the change that adds it, as it is for the pipe.
+    /// </summary>
+    [Fact]
+    public void Every_person_s_and_role_s_route_is_classed_for_the_drain_and_every_drain_class_names_one()
+    {
+        Assert.Empty(PipeCensus.Daoris.DrainUnclassed());
+        Assert.Empty(PipeCensus.Daoris.DrainStale());
+    }
+
+    /// <summary>The drain's census check fails on a person's route it does not class: the check the test above runs.</summary>
+    [Fact]
+    public void The_drain_names_a_person_s_route_it_does_not_class()
+    {
+        var census = PipeCensus.Daoris.With(DriverModule.Name, "NEW_PRESS", PipeClass.Person).With("TEST.PRESS", "MOVE", PipeClass.Open);
+
+        Assert.Equal([$"{DriverModule.Name}.NEW_PRESS"], census.DrainUnclassed());
+        Assert.Empty(census.DrainStale());
+    }
+
+    /// <summary>
+    /// DRAINHOLD1: while an update drains, a press waits for the restart only where it starts work the drain waits on, starts a process of
+    /// its own that runs on past its answer, or changes a repository through git; a stop, a take-back, an answer to a session under way and
+    /// a word whose resume is the loop's, which the drain holds, go on. A conversation's go-on after an answer alone is the chat runner's at
+    /// once, so that press waits too. A role's act waits until each act is classed.
+    /// </summary>
+    [Theory]
+    [InlineData("SESSION_QUEUE_EDIT", PipeDrain.Passes)]
+    [InlineData("STOP_SESSION", PipeDrain.Passes)]
+    [InlineData("RESOLVE_SESSION", PipeDrain.Passes)]
+    [InlineData("STOP_OPINION", PipeDrain.Passes)]
+    [InlineData("STOP_TASK", PipeDrain.Passes)]
+    [InlineData("CANCEL_TURN", PipeDrain.Passes)]
+    [InlineData("END_CHAT", PipeDrain.Passes)]
+    [InlineData("SESSION_PERMISSION_ANSWER", PipeDrain.Passes)]
+    [InlineData("SESSION_GO_AHEAD", PipeDrain.Passes)]
+    [InlineData("RETRY_QUEST", PipeDrain.Passes)]
+    [InlineData("SET_LANGUAGE", PipeDrain.Passes)]
+    [InlineData("SUPERVISOR_ANSWER", PipeDrain.Passes)]
+    // A review's findings: Ask Daoris is told a dismissal as a turn, and a setting can release work the look starts outside the drain's
+    // holds of quests (a helper asked under `ask`, now `on`).
+    [InlineData("HELP_DISMISS", PipeDrain.Waits)]
+    [InlineData("SET_HELPERS", PipeDrain.Waits)]
+    [InlineData("SESSION_ANSWER_ALONE", PipeDrain.Waits)]
+    [InlineData("SESSION_INPUT", PipeDrain.Waits)]
+    [InlineData("START_CHAT", PipeDrain.Waits)]
+    [InlineData("SESSION_HELPER_ASK", PipeDrain.Waits)]
+    [InlineData("SESSION_PARTNER_ASK", PipeDrain.Waits)]
+    [InlineData("ASK_OPINION", PipeDrain.Waits)]
+    [InlineData("PLUGIN_TRY", PipeDrain.Waits)]
+    [InlineData("TOOLS_DOWNLOAD", PipeDrain.Waits)]
+    [InlineData("LAND_SESSION_TREE", PipeDrain.Waits)]
+    [InlineData("LAND_ASK", PipeDrain.Waits)]
+    [InlineData("DISCARD_SESSION_TREE", PipeDrain.Waits)]
+    [InlineData("SYSTEM_SPACE_FREE", PipeDrain.Waits)]
+    [InlineData("ROLE_ACT", PipeDrain.Waits)]
+    public void A_drain_holds_what_starts_work_or_changes_a_repository_and_lets_the_rest_through(string route, PipeDrain expected)
+    {
+        Assert.Equal(expected, PipeCensus.Daoris.DrainOf(DriverModule.Name, route));
+        Assert.Equal(expected == PipeDrain.Waits, PipeCensus.Daoris.WaitsForDrain(DriverModule.Name, route, PipeCensus.Daoris.Of(DriverModule.Name, route)));
+    }
+
+    /// <summary>
+    /// DRAINHOLD1, a review's finding: every setting writes the driver's file and asks the look at once, and a draining look holds only
+    /// quests, answered parks and intakes (<c>InstallUpdate.Drained</c>). So a press that can let the look start anything else waits:
+    /// - helpers, which no repository's hold reaches: their rule, the cap's slot, the actor they run on, an account ready again;
+    /// - a hand-over, a second opinion, a landing (its rule, its review, its line, the opinion's answer over the gate);
+    /// - a workflow node's next step or a run's gates;
+    /// - the keeping pass's removals;
+    /// - a start held for a folder's trust, or by a plugin.
+    /// One that changes only how later sessions run, or what they say, goes on.
+    /// </summary>
+    [Fact]
+    public void A_press_that_can_release_work_the_drain_does_not_hold_waits_and_an_inert_setting_goes_on()
+    {
+        string[] releases =
+        [
+            "SET_HELPERS", "SET_CAP", "SET_ACTOR", "SET_COOLOFF", "ACCOUNT_USE", "HARNESSES_REFRESH", "SET_HAND_OVER", "SET_OPINION",
+            "SET_LANDING", "SET_REVIEW", "SET_LINE", "OPINION_ANYWAY", "OPINION_MYSELF", "WORK_HELD", "WORKFLOW_NODE", "WORK_RESUME",
+            "WORKFLOW_LANDED", "SET_KEEP", "TRUST_FOLDER", "PLUGIN_ACTION", "PLUGIN_ADD", "PLUGIN_INSTALL", "PLUGIN_UPDATE",
+        ];
+        string[] inert =
+        [
+            "SET_HOLD", "SET_DRIVABLE", "SET_STRIKES", "SET_TREES", "SET_STANDING", "SET_COMMITS", "SET_ACCESS", "SET_READ_ACROSS",
+            "SET_WRITE_ACROSS", "SET_HEAVY_GATES", "SET_SESSION_CHECKS", "SET_SESSION_OPTION", "SET_AGENT_SETTINGS", "SET_HELP_MODE",
+            "SET_HELP_GRANT", "SET_NOTIFY", "SET_LANGUAGE", "RULE_ACTION", "RULE_PROPOSAL", "TOOLS_LOCATION", "TOOLS_DELETE", "TOOLS_GIT",
+            // INTEGRATE1d: an acceptance of a repository's integration declaration, a standing choice that starts nothing.
+            "INTEGRATION_GATES",
+        ];
+
+        Assert.All(releases, route => Assert.Equal((route, PipeDrain.Waits), (route, PipeCensus.Daoris.DrainOf(DriverModule.Name, route))));
+        Assert.All(inert, route => Assert.Equal((route, PipeDrain.Passes), (route, PipeCensus.Daoris.DrainOf(DriverModule.Name, route))));
+    }
+
+    /// <summary>
+    /// DRAINHOLD1: a read waits for no drain, whatever its route; the other modules' presses go on; a person's route the drain does not
+    /// class waits, the strictest, as an unclassed press is the person's.
+    /// </summary>
+    [Fact]
+    public void A_read_never_waits_for_a_drain_and_an_unclassed_press_does()
+    {
+        Assert.False(PipeCensus.Daoris.WaitsForDrain(DriverModule.Name, "STATE", PipeClass.Open));
+        Assert.False(PipeCensus.Daoris.WaitsForDrain(DriverModule.Name, "SYSTEM_SPACE_FREE", PipeClass.Open));
+        Assert.Equal(PipeDrain.Passes, PipeCensus.Daoris.DrainOf("DAORIS.REGISTRY", "WRITE_DECLARATION"));
+        Assert.Equal(PipeDrain.Passes, PipeCensus.Daoris.DrainOf("daoris.remotes", "SET"));
+        Assert.Null(PipeCensus.Daoris.DrainOf(DriverModule.Name, "LAND_EVERYTHING"));
+        Assert.True(PipeCensus.Daoris.WaitsForDrain(DriverModule.Name, "LAND_EVERYTHING", PipeClass.Person));
+    }
+
+    /// <summary>
     /// CONFIRMWAIT1a-ii (the confirm-wait design §7.1): the person's routes whose payload carries a key D172 point 3 keeps in
     /// <c>profiles/</c> alone are keyed, kept in no record across a restart: today <c>DAORIS.REMOTES</c> <c>SET</c> alone, whose
     /// <c>key</c> is the workspace's deployment key (<c>remotes</c>, a <c>profiles</c> entry); each keyed route is a person's.

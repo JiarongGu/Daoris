@@ -27,7 +27,7 @@ public sealed record SessionFilesRemoved(
 /// <remarks>
 /// <para><b>What goes, by name</b>, in this order: its conversation, its transcript, its files (the whole
 /// <c>sessions/&lt;id&gt;/</c>, its native children's lineage among them, <see cref="ChildLineage"/>), its harness conversation id, a leftover process marker, its go-on mark, its reopen mark (<see cref="ReopenMarks"/>), its park's question (<see cref="QuestionFiles"/>) and the supervisor's decisions on it (<see cref="QuestionSupervisorDecisions"/>), each named <c>mark</c>, its choice of a new
-/// session, its hand-over boxes (<see cref="HandOverBox"/>, its agent's ask and that ask's state, and a limit's move), the spawn files a crash left, Ask Daoris's name and pin for it (ASKHIST1), its receipts (HELPWIRED1) and what it published (ASKQUESTS1), its held words, its closed automatic
+/// session, its hand-over boxes (<see cref="HandOverBox"/>, its agent's ask and that ask's state, and a limit's move) and its move records in the desktop store under the same name (FOUNDATION1f-i), the spawn files a crash left, Ask Daoris's name and pin for it (ASKHIST1), its receipts (HELPWIRED1) and what it published (ASKQUESTS1), its held words, its closed automatic
 /// landing and its archive mark. Until HIST1c the
 /// delete took the first five and the mark, and left the mark, the choice, the held words and the landing behind.</para>
 ///
@@ -293,6 +293,32 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
                 }
 
                 foreach (var id in held) Named(stayed[id], Harness);
+            }
+
+            // FOUNDATION1f-i: the record's move records go with it, under the name the boxes they replace went by. A store that will not
+            // take the delete leaves them, named among what stayed, its path once among what failed.
+            var moves = WorkplaceMoveRecords.Current.Open(home);
+            try
+            {
+                foreach (var id in moves.ForgetMoves(sessions))
+                {
+                    if (removed.TryGetValue(id, out var went)) Named(went, HandOver);
+                }
+            }
+            catch (Exception error) when (error is DesktopStoreException or Microsoft.Data.Sqlite.SqliteException or IOException or UnauthorizedAccessException)
+            {
+                if (!failed.Contains(moves.StoreLocation)) failed.Add(moves.StoreLocation);
+                IReadOnlyList<string> held;
+                try
+                {
+                    held = moves.MovesOf(sessions);
+                }
+                catch (Exception unread) when (unread is Microsoft.Data.Sqlite.SqliteException or IOException or UnauthorizedAccessException)
+                {
+                    held = sessions;
+                }
+
+                foreach (var id in held) Named(stayed[id], HandOver);
             }
         }
 

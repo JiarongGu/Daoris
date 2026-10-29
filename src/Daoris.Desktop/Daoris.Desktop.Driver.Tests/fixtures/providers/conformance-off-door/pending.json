@@ -1,0 +1,8 @@
+[
+  { "case": "recipe.daoris-name-refused", "door": "*", "row": "h", "why": "Registration refuses a declared name of Daoris's own list once row h writes Spawning.Daoris; today a provider declaring DAORIS_TARGET registers." },
+  { "case": "admission.not-widened", "door": "*", "row": "u", "why": "Reach is read only by the plan's walk row u builds, so no admission is held to a provider's statement yet." },
+  { "case": "containment.not-widened", "door": "*", "row": "h", "why": "The launcher contains a completed ProcessRecipe only from row h; until then a door's spawn prepares its own process." },
+  { "case": "applicability.one-fact-differs", "door": "*", "row": "r", "why": "A measurement admits by the effective configuration COAGENT1e's sheet reads, built as the roster's answer at row r." },
+  { "case": "applicability.other-opening", "door": "*", "row": "r", "why": "A negotiated reading kept per door, version and account is the sheet's, read from row r." },
+  { "case": "applicability.other-copy", "door": "*", "row": "r", "why": "The writable roots compared by their kind are the sheet's effective configuration, read from row r." }
+]

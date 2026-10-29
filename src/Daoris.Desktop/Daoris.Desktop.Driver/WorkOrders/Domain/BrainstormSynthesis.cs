@@ -9,7 +9,7 @@ namespace Daoris.Driver;
 public sealed record BrainstormBy(string Pass, string Maker, string Adapter, string? Account)
 {
     /// <summary>A stub door, which runs no model: its proposals are no maker's diversity.</summary>
-    public bool Stub => Adapter is "stub" or "acp-stub";
+    public bool Stub => Providers.IsStandIn(Adapter);
 }
 
 /// <summary>A validated proposal under its anonymous id, <c>P1</c>…, with who gave it kept beside it by Daoris.</summary>

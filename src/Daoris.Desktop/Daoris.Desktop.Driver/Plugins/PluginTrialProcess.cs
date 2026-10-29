@@ -45,6 +45,9 @@ internal sealed class PluginTrialProcess : IDisposable
             ?? throw new Win32Exception("the process did not start"));
     }
 
+    /// <summary>A process started elsewhere, for a test that holds the order of its exit against the trial's check.</summary>
+    internal static PluginTrialProcess Of(Process process) => new(process);
+
     /// <summary>Its stdout: the wire.</summary>
     public TextReader Output => _process.StandardOutput;
 

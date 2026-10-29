@@ -105,6 +105,12 @@ public sealed record TurnKept(TurnReach Reach, string? Word)
     /// </summary>
     public bool Settled { get; init; }
 
+    /// <summary>
+    /// The record is no longer its line's head (FOUNDATION1d-ii, the foundation design §3.4 rule 2): the say door refused the word <c>continued</c>,
+    /// naming this head, and nothing was queued, steered, attempted or written here. <see cref="Word"/> is null; the caller says the word there.
+    /// </summary>
+    public string? Head { get; init; }
+
     /// <summary>A word at <c>now</c>: what the door did with it (<c>ChatTurns.TakeNowAsync</c>).</summary>
     public SentNow? Now { get; init; }
 }
@@ -116,6 +122,9 @@ public sealed record ChatSaid(string? Reaches, string? Word)
 {
     /// <summary>The say was answered settled (row p): a retry of a word held already, nothing kept, queued, steered, attempted or taken.</summary>
     public bool Settled { get; init; }
+
+    /// <summary>The say was refused <c>continued</c> (FOUNDATION1d-ii): the line's head it named, where the word is said instead; nothing kept here.</summary>
+    public string? Head { get; init; }
 
     /// <summary>The person's *Send now*: what the door did with it.</summary>
     public SentNow? Now { get; init; }

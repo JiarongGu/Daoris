@@ -37,6 +37,15 @@ internal sealed record LandReplay(string Now, IReadOnlyList<LandingCommit> Lande
 
     /// <summary>The joins union left in the replay that were set apart in a commit on top (INTEGRATE1c): each file, line and label.</summary>
     internal IReadOnlyList<UnionJoins.Set> Joined { get; init; } = [];
+
+    /// <summary>
+    /// The files the replay settled by a line rule the owner accepted for integration (INTEGRATE1d), each with its writer, which wrote
+    /// them again from the replayed tree (<see cref="LineWritten"/>); none where it settled none.
+    /// </summary>
+    internal IReadOnlyList<LineRules.Settled> Lined { get; init; } = [];
+
+    /// <summary>What the line rules' writers wrote again: the files their commit changed and the commands run.</summary>
+    internal GeneratedWriters.Written LineWritten { get; init; } = GeneratedWriters.Written.None;
 }
 
 /// <summary>
@@ -125,7 +134,7 @@ internal sealed class TreeLandSyncs(TreeContext context, BranchReplays replays)
                     + "and the tree and its branch are as they were.") { Refusal = AutoLandingCode.Refused, LeftOut = sync.Held.LeftOut });
         }
 
-        if (await BeyondAsync(sync, now, onto, made.Written.Paths, ct).ConfigureAwait(false) is { } beyond)
+        if (await BeyondAsync(sync, now, onto, [.. made.Written.Paths, .. made.LineWritten.Paths], ct).ConfigureAwait(false) is { } beyond)
         {
             return (null, new TreeLanding(false, $"Nothing was landed: replaying its own commits onto `{sync.OntoName}` changed what the line did not bring "
                 + $"({beyond}), so the replay was not kept. Nothing was made, and the tree and its branch are as they were.")
@@ -151,6 +160,8 @@ internal sealed class TreeLandSyncs(TreeContext context, BranchReplays replays)
             Backlog = made.Backlog,
             Tables = made.Tables,
             Joined = made.Joined,
+            Lined = made.Lined,
+            LineWritten = made.LineWritten,
         }, null);
     }
 
@@ -191,9 +202,12 @@ internal sealed class TreeLandSyncs(TreeContext context, BranchReplays replays)
     {
         if (!Directory.Exists(full)) return "its tree is gone";
         if (inUse is not null && inUse.Any(tree => SamePath(tree, full))) return "a session still running or waiting holds it";
-        var (_, onOut, _) = await WorkingTree.GitAsync(full, ["rev-parse", "--abbrev-ref", "HEAD"], ct).ConfigureAwait(false);
+        // GITWORKTREECONFIG1: git's own working root for the tree, in the start that reads its branch, before its status or a switch.
+        var (onCode, onOut, _) = await WorkingTree.GitAsync(full, ["rev-parse", "--show-toplevel", "--abbrev-ref", "HEAD"], ct).ConfigureAwait(false);
+        var on = onOut.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (await TreeBinding.RefusalAsync(full, ct, onCode == 0 && on.Length == 2 ? on[0] : null).ConfigureAwait(false) is { } bound) return bound;
         var (_, dirty, _) = await WorkingTree.GitAsync(full, ["--no-optional-locks", "status", "--porcelain"], ct).ConfigureAwait(false);
-        if (onOut.Trim() != sync.Branch || await CommitOfAsync(full, "HEAD", ct).ConfigureAwait(false) != sync.Tip) return "it moved since it was judged";
+        if ((on.Length == 2 ? on[1] : "") != sync.Branch || await CommitOfAsync(full, "HEAD", ct).ConfigureAwait(false) != sync.Tip) return "it moved since it was judged";
         if (!string.IsNullOrWhiteSpace(dirty)) return "it has uncommitted work";
         if (await OnRemoteAsync(sync.Root, sync.Branch, ct).ConfigureAwait(false)) return $"`{sync.Branch}` is on its remote, which Daoris does not rewrite";
 
@@ -312,7 +326,16 @@ public static class LandingSyncWords
     /// </summary>
     internal static string Settled(LandReplay replay) =>
         Backlog(replay.Backlog?.Path, replay.Backlog?.Kept ?? 0, replay.Backlog?.Dropped ?? 0)
-        + string.Concat(replay.Tables.Select(table => Table(table.Path, table.Kept, table.Dropped))) + Joined(replay.Joined) + Generated(replay);
+        + string.Concat(replay.Tables.Select(table => Table(table.Path, table.Kept, table.Dropped))) + Joined(replay.Joined) + Generated(replay)
+        + Lines(replay.Lined);
+
+    /// <summary>
+    /// The files a replay settled by a line rule the owner accepted for integration (INTEGRATE1d), said after the sentence: each file and
+    /// the writer that wrote its lines again from the replayed tree. Nothing where it settled none.
+    /// </summary>
+    internal static string Lines(IReadOnlyList<LineRules.Settled> lined) => lined.Count == 0 ? ""
+        : $" The declared line rule settled {string.Join(", ", lined.Select(each => $"`{each.Path}`"))}, written again from the replayed tree by "
+          + string.Join(", ", lined.Select(each => $"`{each.Run}`").Distinct(StringComparer.Ordinal)) + ".";
 
     /// <summary>
     /// The joins union left in a replay and Daoris set apart (INTEGRATE1c), said after the sentence as the merge tool says them: each

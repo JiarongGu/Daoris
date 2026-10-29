@@ -47,6 +47,23 @@ public sealed class KnowledgeLinesTests(IndexedHost host) : IClassFixture<Indexe
         Assert.Contains(entries.Json.EnumerateArray(), e => e.GetProperty("firstLine").ValueKind == JsonValueKind.Number);
     }
 
+    /// <summary>KNOWCURRENT1: the summary and the refresh say when each repository was read, and from which commit where it has one.</summary>
+    [Fact]
+    public async Task The_summary_and_the_refresh_say_when_each_repository_was_read()
+    {
+        var refreshed = await host.PostAsync("/api/refresh", new { });
+
+        Assert.Equal(200, refreshed.Status);
+        var read = Assert.Single(refreshed.Json.GetProperty("read").EnumerateArray(), r => r.GetProperty("repository").GetString() == "atlas");
+        Assert.True(read.GetProperty("readAt").GetDateTimeOffset() > DateTimeOffset.UtcNow.AddMinutes(-5));
+        // Not a git checkout, so no commit: left out as every null of this wire is, never invented.
+        Assert.False(read.TryGetProperty("commit", out var commit) && commit.ValueKind != JsonValueKind.Null);
+
+        var summary = Assert.Single((await host.GetAsync("/api/repositories")).Json.EnumerateArray(), r => r.GetProperty("name").GetString() == "atlas");
+        Assert.Equal(read.GetProperty("readAt").GetDateTimeOffset(), summary.GetProperty("indexedAt").GetDateTimeOffset());
+        Assert.False(summary.TryGetProperty("indexedCommit", out var indexed) && indexed.ValueKind != JsonValueKind.Null);
+    }
+
     [Fact]
     public async Task An_unknown_kind_is_refused_naming_the_index_among_the_kinds()
     {

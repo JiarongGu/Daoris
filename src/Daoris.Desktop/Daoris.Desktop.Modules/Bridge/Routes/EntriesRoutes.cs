@@ -159,6 +159,7 @@ public sealed class EntriesRoutes(DriverContext context)
             Held = held?.GetValueOrDefault(part.Session),
             part.SameTreeAs,
             Superseded = part.Superseded is { } by ? new { by.By, by.Says, by.Conflicts } : null,
+            Clash = part.Clash is { } clash ? new { clash.By, clash.Says } : null,
         }).ToArray(),
     };
 
