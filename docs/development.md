@@ -159,6 +159,7 @@ node tools/merge-branch.mjs --stale
 node tools/merge-branch.mjs --rerun <gate>
 node tools/merge-branch.mjs --full
 node tools/merge-branch.mjs --full --beside [<commit>]
+node tools/merge-branch.mjs --full --beside --daoris-verify
 node tools/merge-branch.mjs --ci [<commit>]
 node tools/merge-branch.mjs --ci --stage [<commit>]
 node tools/merge-branch.mjs --ci --night [<commit>]
