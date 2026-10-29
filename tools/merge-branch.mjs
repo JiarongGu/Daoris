@@ -423,7 +423,7 @@ import { constants as osConstants, cpus as osCpus, freemem as osFreemem, setPrio
 import { basename, dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
-  CI_SWEEP, NIGHT_HOUR, appendReceipt, clearPasses, fileSighting, fingerprintOf, kindPlan, knownRedLines, knownRedStanding, nextRun, nightSatisfied, noteNight,
+  CI_SWEEP, NIGHT_HOUR, appendReceipt, clearKept, clearPasses, fileSighting, fingerprintOf, kindPlan, knownRedLines, knownRedStanding, nextRun, nightSatisfied, noteNight,
   noteSweeps, overdueLines, passingTests, readFindings, readReceipts, readSweep, receiptFor, sweepSatisfied, sweepState, writeFindings,
   writeSweep,
 } from './ci-background.mjs';
@@ -5948,7 +5948,7 @@ const overdueSaid = (record, halves, hour) => overdueLines(hour === null ? { ...
  * the known red of its test (a trx's passing tests) or its gate on a commit on main's first-parent line from where it was last
  * seen. Answers what the run says of them, the overdue report and the known red the watch says.
  */
-function noteBackground({ home, tree, plan, commit, kind, state, started, ended, results }) {
+function noteBackground({ home, tree, plan, commit, kind, state, started, ended, results, kept = [], treeId = null }) {
   const halves = plan.filter(isProcessGate).map((gate) => gate.name);
   let sweep = sweepRecord(home, plan);
   const swept = results.filter((result) => isProcessGate(result.gate) && sweepSatisfied({ whole: result.gate.reach?.whole ?? null, verdict: result.verdict, trx: result.trx && existsSync(result.trx) ? result.trx : null }))
@@ -5998,6 +5998,25 @@ function noteBackground({ home, tree, plan, commit, kind, state, started, ended,
     findings = done.record;
     cleared += done.cleared.length;
   }
+  // CIFINDINGSKEEP1: the passes the run kept clear a finding under the same rules as one it ran; a trx of the kept run is read
+  // from the scratch folder of the run that gave it (a CI run's, or a scoped candidate's), and where none can be read a test
+  // finding stays open and is said.
+  let fromKept = 0;
+  let unread = [];
+  if (kept?.length) {
+    const trxOf = (entry) => {
+      const sha = String(entry.verdict.commit ?? '').slice(0, 7);
+      const name = entry.name;
+      const file = [join(home, SCRATCH, `ci-${sha}`, `${name}.trx`), join(home, SCRATCH, `scope-${sha}`, `${name}.scoped.trx`), join(home, SCRATCH, `scope-${sha}`, `${name}.trx`)]
+        .find((each) => sha && existsSync(each));
+      return file ? passingTests(readFileSync(file, 'utf8')) : null;
+    };
+    const done = clearKept(findings, { commit, tree: treeId, at: ended, kind, stopped: state === 'stopped', kept, descends, passesOf: trxOf });
+    findings = done.record;
+    fromKept = done.cleared.length;
+    cleared += fromKept;
+    unread = done.unread;
+  }
   if (filed || cleared) writeFindings(home, findings);
 
   const overdue = overdueSaid(sweep, halves, nightHour());
@@ -6006,7 +6025,8 @@ function noteBackground({ home, tree, plan, commit, kind, state, started, ended,
   const said = [];
   if (swept.length) said.push(`swept (${CI_SWEEP}): ${swept.map((each) => each.gate).join(', ')}, each class given a verdict`);
   if (kind === 'nightly') said.push(nightSatisfied(state) ? 'the night is satisfied: this nightly run finished' : `the night stays due: this nightly run ${state === 'stopped' ? 'was stopped' : 'did not finish'}`);
-  if (filed || cleared || open) said.push(`known red (local/ci-findings.json): ${filed} filed, ${cleared} cleared by this run; ${open} open`);
+  if (filed || cleared || open) said.push(`known red (local/ci-findings.json): ${filed} filed, ${cleared} cleared by this run${fromKept ? ` (of them, ${fromKept} from kept proof)` : ''}; ${open} open`);
+  if (unread.length) said.push(`known red left open: ${unread.map((each) => each.test).join(', ')}: the run kept a pass of ${[...new Set(unread.map((each) => each.gate))].join(', ')}, but no readable trx of it lists the test, so it clears nothing (CIFINDINGSKEEP1)`);
   return { lines: [...said, ...overdue, ...knownRed], overdue, knownRed };
 }
 
@@ -6204,7 +6224,7 @@ async function gateCi(root, options, { stopAsked = () => false } = {}) {
       commit, tree: treeId, kind, started: begun, ended, finished: state === 'green' || state === 'failed', state,
       gates: status.gates.map((gate) => ({ name: gate.name, state: gate.state, verdict: gate.verdict, kind: gate.state === 'kept' ? keptKind.get(gate.name) ?? null : gate.state === 'done' ? kind : null })),
     });
-    const background = noteBackground({ home, tree, plan, commit, kind, state, started, ended, results });
+    const background = noteBackground({ home, tree, plan, commit, kind, state, started, ended, results, kept: chosen.kept, treeId });
     status.overdue = background.overdue;
     status.knownRed = background.knownRed;
     // CIWATCHHOLD1: the status says the run ended only once the gate tree's hold is let go, so a reader told `green` (a stage

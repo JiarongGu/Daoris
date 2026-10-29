@@ -6914,6 +6914,64 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     repo.cleanup();
   });
 
+  // CIFINDINGSKEEP1's proof: a stage CI kept scoped passes of two gates and left their older findings open.
+  test('--ci clears a gate\'s older finding from the pass it kept on this tree, with the kept verdict\'s provenance; a pass that does not stand on this tree clears nothing', async () => {
+    const repo = scratch('ci-keep', [
+      { name: 'universal', run: 'node ci-gate.mjs universal' },
+      { name: 'service', run: 'node ci-gate.mjs service' },
+    ], { 'ci-gate.mjs': CI_GATE, 'docs/a.md': 'a\n' });
+    const gateTree = join(repo.root, 'local', 'gate-tree');
+    const ranFile = join(gateTree, 'local', 'ran.txt');
+    const ranThere = () => (existsSync(ranFile) ? unordered(readFileSync(ranFile, 'utf8').split('\n').filter(Boolean)) : []);
+    const commit = (path: string, text: string) => {
+      writeFileSync(join(repo.root, path), text);
+      git(repo.root, 'add', '-A');
+      git(repo.root, 'commit', '--quiet', '-m', `change ${path}${TRAILER}`);
+      rmSync(ranFile, { force: true });
+      return git(repo.root, 'rev-parse', 'HEAD');
+    };
+    type Filed = { gate: string; state: string; lastSeen: { commit: string }; cleared: { commit: string; kind: string; kept?: { commit: string; tree: string; kind: string } } | null };
+    const findings = () => (JSON.parse(readFileSync(join(repo.root, 'local', 'ci-findings.json'), 'utf8')) as { findings: Filed[] }).findings;
+    const verdictsFile = join(repo.root, 'local', 'gate-verdicts.json');
+    const keep = (entry: object) => {
+      const store = JSON.parse(readFileSync(verdictsFile, 'utf8')) as { verdicts: object[] };
+      store.verdicts.push(entry);
+      writeFileSync(verdictsFile, `${JSON.stringify(store, null, 2)}\n`);
+    };
+    try {
+      let result = await repo.run(['--ci']);
+      assert.equal(result.status, 0, result.out);
+      const second = commit('docs/a.md', 'b\n');
+      result = await repo.run(['--ci'], { CI_FAIL: 'universal' });
+      assert.equal(result.status, 1, result.out);
+      assert.deepEqual(findings().map((each) => [each.gate, each.state, each.lastSeen.commit]), [['universal', 'red', second]]);
+
+      // A kept pass on another tree, a stale one, clears nothing: the gate runs and passes, and that clears it as it did before.
+      const third = commit('docs/a.md', 'c\n');
+      const thirdTree = git(repo.root, 'rev-parse', `${third}^{tree}`);
+      const scopedTip = 'f'.repeat(40);
+      keep({ gate: 'universal', verdict: 'PASS', tree: git(repo.root, 'rev-parse', `${second}^{tree}`), at: new Date().toISOString(), commit: scopedTip, branch: null, kind: 'scoped' });
+      result = await repo.run(['--ci'], { CI_FAIL: 'universal' });
+      assert.equal(result.status, 1, result.out);
+      assert.equal(findings()[0]!.state, 'red');
+
+      // A scoped exact pass of the same gate on the tree of the next commit: the run keeps it, runs nothing of that gate, and clears
+      // the finding on its own commit, recording the kept verdict's.
+      const fourth = commit('docs/a.md', 'd\n');
+      const fourthTree = git(repo.root, 'rev-parse', `${fourth}^{tree}`);
+      keep({ gate: 'universal', verdict: 'PASS', tree: fourthTree, at: new Date().toISOString(), commit: scopedTip, branch: null, kind: 'scoped' });
+      result = await repo.run(['--ci']);
+      assert.equal(result.status, 0, result.out);
+      assert.equal(ranThere().includes('universal'), false, 'the kept pass stands, so the gate does not run');
+      assert.equal(findings()[0]!.state, 'cleared');
+      assert.deepEqual([findings()[0]!.cleared!.commit, findings()[0]!.cleared!.kind], [fourth, 'ci']);
+      assert.deepEqual([findings()[0]!.cleared!.kept!.commit, findings()[0]!.cleared!.kept!.tree, findings()[0]!.cleared!.kept!.kind], [scopedTip, fourthTree, 'scoped']);
+      assert.match(result.out, /known red \(local\/ci-findings\.json\): 0 filed, 1 cleared by this run \(of them, 1 from kept proof\); 0 open/);
+    } finally {
+      repo.cleanup();
+    }
+  });
+
   // CIFAST1's proof: a CI run took 45 to 75 minutes, the family and deployment rehearsals 14 to 23 and 14 to 22 of it.
   test('--ci owes the family and deployment rehearsals a stage, running neither; --ci --stage runs them on the commit to stage, one after the other, and the stage asks their pass', async () => {
     const repo = scratch('ci-stage', [
