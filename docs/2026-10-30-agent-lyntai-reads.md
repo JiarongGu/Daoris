@@ -1,7 +1,8 @@
-# AGENTLYNTAI1: the reads of round 1 (D191)
+# AGENTLYNTAI1: the reads of rounds 1 and 2 (D191)
 
-The two makers' reads of round 1 of `docs/2026-10-30-agent-lyntai-design.md`, each written read-only and apart, neither seeing the other's
-before its own was written: the Opus maker's first, and Codex's beside it, added verbatim when it lands. Each finding names the line it rests
+The two makers' reads of each round of `docs/2026-10-30-agent-lyntai-design.md`, each written read-only and apart, neither seeing the other's
+before its own was written: for each round the Opus maker's first, and Codex's beside it, added verbatim when it lands. Round 2's reads
+follow round 1's, below. Each finding names the line it rests
 on in Daoris or in Lyntai, in the design's aliases: a bare path is under the driver library, `Tests/` is its tests, `Lyntai/Core/` and
 `Lyntai/Basic/` are Lyntai's `src/Lyntai.Core/` and `src/Lyntai.Providers.Basic/`, and a Lyntai line marked *(AG20)* is its commit
 `2fb2dc7e`'s, any other its `master` `9a41435c`'s. The steward checks each finding against the code before it is taken (D191 point 2), and
@@ -346,3 +347,223 @@ Paths use the design’s aliases: `Driver/` and `Tests/` denote the desktop driv
     **Change:** name the container’s disposal owner, and retain it for the lifetime of any future long-lived run. Add overlapping-start cases with distinct identities, accounts and cancellation, plus driven-word continuation across the move. Container cost and concurrent behavior remain **unmeasured**.
 
 Package closure, offline restore, published layout, installed parity, real held-permission waiting and provider latency remain **unmeasured**. This read establishes source findings and required proofs only.
+
+## The Opus maker, round 2
+
+*The Opus maker's read of round 2 at Daoris `d53705dda` (round 2 merged into the batch line) and Lyntai `master` `9a41435c` with AG20
+`2fb2dc7e` (read only, AG20's lines through `git show`); nothing run. Condensed by the steward from its hand-back in layout only: every
+finding, citation and change is kept.*
+
+**Result:** 10 findings, 4 blocking (O2-F1 to O2-F4). **Verdict: another round, kept narrow.** Round 3 need re-read only §5.3 to §5.5,
+§6.3, §8, §9.2's m-i and §12's m-i, 1b-i and 1d rows.
+
+### 0. Round-1 findings
+
+All sixteen O1 findings taken; no blocking finding left open. The three changes (O1-F1, O1-F6, C1-8) hold. F1 and F6 open new findings
+(O2-F2, O2-F6). C1-8: a pack is repository scratch, so it belongs under `_fixtures/`, not `local/`. F2 → O2-F1; F3 → O2-F3, O2-F9; F4 →
+O2-F10; F5 and F8 → O2-F5 (the lifetime across resumes is wrong); F9 → O2-F3; F11 → O2-F8. F10: `ProcessRunException` is public
+(`ProcessRunner.cs:48`). F13: binding the epoch into the subject key passes Lyntai's rule 7. F14: `AccountCooling.cs:236-246`,
+`ProbeLock.cs:14-18` hold. F16: the pending files match §6.4.
+
+### 1. Citations found wrong
+
+- `HarnessRoster.cs:2299-2305` (§3.1 row e, §3.2, §9.2) is the method's head; the key skip, probe lock and busy check are `:2308-2313`.
+- `HarnessRoster.cs:2321-2325` (LQ15, §9.2) is the command line; the `usage-read` folder is `:2326-2332`.
+- §5.5's `DriverContinuations.cs:1190-1193` for "go-ons and resumes" are `GoOnAsync`'s: go-ons only.
+
+### 2. §14's items
+
+1. The oracle: its observation list is incomplete; rule 1 needs a seam the design does not name (O2-F1, O2-F7).
+2. m-i: not with `AgentRun` as declared; the words' receipts belong to `DoorInput`, which is m-ii's (O2-F2).
+3. A door bound per run kind: holds for the home variable; treat the account key the same; the field is needed under another name (O2-F9).
+4. The ingress: one answer type over two entries is still D210's one reading, but `NormalizedFailure` lacks what cooling and the retry
+   read (O2-F3).
+5. 1s-i is rightly not ⚖; 1s-ii must run per mode (O2-F10).
+6. LQ13, LQ14 and LQ15 pass Lyntai's rules 1, 5 and 7; LQ13 needs a clause (O2-F6); LQ15 carries the client's version beside its name.
+   LQ2's closing condition is right (`CliUsageSource.cs:56`; turning it off also skips the probe, `:77-82`). LQ12's five operations are
+   complete.
+7. `IUsageRead` does not yet replace `IUsageQuestion` whole; 1c's table misses one difference (O2-F8).
+8. The containers and the clock hold only with O2-F5.
+
+### 3. Findings
+
+**O2-F1 (blocking). The oracle's observations are incomplete, and "equal is the only pass" cannot hold on fields that name the path.** The
+native capture hands each line to the lineage hook (`HarnessCapture.cs:153`), the harness's own words the ending reads (`:145`,
+`:159-161`), the beside streams, the conversation id (`:169`), the account-window readings (`:189`) and the live console. Each run also
+keeps the downloads it is handed (`DriverContinuations.cs:392`, read by `DownloadClearing.cs:398-415`), the watch's hearing stamps
+(`Driver.cs:4292`), machine-log lines (`TransientRetries.cs:28-30`, `:43-46`), the service's account lines (`Driver.cs:3366-3380`) and the
+weekly windows file (`HarnessRoster.cs:291-295`). Fields differ by construction: `AgentError.By` (`own:…` today, `layer:…` by §5.3), the
+usage history's `Source` and `Reader` (`HarnessRoster.cs:2354`), the log's `by`. *Change:* list the observations by the capture's consumers
+and the run's side effects; in 1b-i declare a fixed projection for the fields that name the path, each compared by a correspondence
+recorded per door (the layer's entry against the Daoris entry it replaces); the projection never grows inside a move.
+
+**O2-F2 (blocking). m-i cannot be written against `AgentRun` as declared, and its cut from m-ii is not clean.** `AgentRun` has eight
+Task-returning operations (`AgentRun.cs:9-31`) and no run end, records, carriers or process. Today's executors use go-ons as a
+`ProcessStartInfo` factory (`DriverContinuations.cs:1159-1182`), `KeepHandedAsync(info)` (`:392`), settings and servers handed onto the
+start (`:1176-1177`), and the ending's `Transient`, `ModelRefused` and own words (`HarnessEnding.cs:49`; `Driver.cs:2954-2960`). Words lose
+their receipts: `SendAsync(string)` has no id, while today's retry marks a word attempted before the wire and takes it off by its id once
+written (`TransientRetry.cs:42-47`); D213 gives that to `DoorInput`, m-ii's. The proof drops `HandOverTests` (D213's row m names it) and
+names no suite of the helpers', intakes', opinions' and partners' starts (`DriverHelpers.cs:1071`, `DriverIntakes.cs:342`,
+`DriverOpinions.cs:265`, `DriverPartners.cs:701`). *Change:* m-i names what it adds to `AgentRun` (the run's end, its records until l, the
+carriers' handing, the process for containment and the watch) and which of them l or m-ii later replace; either `DoorInput` moves into m-i,
+or words stay off `AgentRun` until m-ii and the design says so; the proof adds `HandOverTests` and the four executors' suites; m-i re-points
+`live.word-before-wire` to m-ii and adds m-i and m-ii to the closed row list (`ProviderConformance.cs:240-245`).
+
+**O2-F3 (blocking). The ingress reaches neither cooling nor the retry as they read today.** Cooling is a second path: `AccountLimited` →
+`HarnessRoster.Limited`, from seven callers each handing the sentence, read through Daoris's `Limits` table; a limit read by code is taken
+only when `Stated: false`, its end replaced (`HarnessRoster.cs:279-280`), so a layer limit with a stated reset is dropped or read again, and
+once 1f-i deletes the tables nothing reads it. The window is lost: `LimitSeen.Window` decides the weekly windows kept
+(`HarnessRoster.cs:291-295`) and LIMITRESUME1b's not-lifted check (`Course/LimitResume.cs:88`); the layer's restriction has no window
+(`AgentFailure.cs:100-104`, AG20), and its reader folds `rateLimitType` into `Cause` (`StreamJsonFailure.cs:88-94`). D125's margin, grace
+and furthest bounds are unstated for the layer's instant (`AccountLimits.cs:82`, `:88`, `:94`). "Uncertain holds" changes the retry: today
+a transient failure goes on in the same conversation whether or not a tool ran, and only words met before any update of the turn are held
+uncertain and never resent (`TransientRetry.cs:110-125`), which is the layer's `NeverSent`; the layer's `Taken` and `Uncertain` are both
+today's *taken*. *Change:* the ingress builds a whole `LimitSeen` applying D125's bounds over the layer's instant; cooling takes it through
+a new entry that reads no sentence, each of the seven callers routed there for a bound kind; a request (new, or LQ14 widened) asks for the
+restriction's window; delivery is mapped onto today's dispositions as above.
+
+**O2-F4 (blocking for 1d's request set). The native driven door relies on readings the layer drops.** The live window frames (TOOL6c): the
+`allowed` `rate_limit_info` frames feed the walk's windows (`StructuredOutput.cs:11-15`; `HarnessCapture.cs:182-193`), and the layer never
+keeps them (`StreamJsonAgentReader.cs:55-62`). The harness's own words: lines outside the protocol (`HarnessCapture.cs:159`) are discarded
+by the layer (`:37-40`). The refused model: D205's pipe exception (`Driver.cs:2954`; `HarnessCapture.cs:161`) is AG12's (Lyntai
+`TASKS.md:320`), which R-d does not carry. *Change:* §5.4's table and §8 gain all three; R-d gains AG12 and a request for the standing
+frames; the outside lines are kept from `LauncherRunner`'s own lines as the harness's words, never by a second frame decoder.
+
+**O2-F5 (not blocking; before 1b-i). The containers and the clock.** A resume is a start of its own: `ContinueAsync` takes the walk's pick,
+possibly another account (MSG1g; `DriverContinuations.cs:161-162`, `:176-178`), and prepares its own spawn (`:391`), possibly in a later
+driver process; only MSG1b's go-ons run under the start's spawn (`:1191`), so a resume builds its own container. No clock on a turn is safe
+only with the watch: the watch must see a layer turn as it does today (registered, stamped on every stdout line, the job's CPU read for
+busy; `SessionWatch.cs:63-85`); the layer's reader drops lines, so `LauncherRunner` stamps the raw lines, not the layer's events.
+`LauncherRunner` feeds `KeepHanded` from its spawn.
+
+**O2-F6 (not blocking; before LQ13 is sent). As worded, LQ13 makes every clean `stub` run fatal.** A stream that ends with no terminal
+becomes `no-terminal-event` Fatal even on exit 0 (`CliAgentLoop.cs:147-155`); `stub`'s plain lines have no terminal, and its success is its
+exit (`Adapters.cs:1680-1683`). *Change:* LQ13 also asks that the host's reader be told when the stream ends and with which exit code, so it
+can yield its terminal there.
+
+**O2-F7 (not blocking; before 1b-i). The old path needs a seam the design does not name.** `DriverWatch` builds each look's `Driver` over
+`AdapterSet.Built()` (`DriverWatch.cs:656-658`), which a test cannot inject; only the roster can be (`:77`). `ChatRunner` reads the
+registry directly (`:1133`, `:1286`, `:1315`, `:1440`). *Change:* make the watch's adapter set injectable for the oracle, and say that each
+static read on the path reads names alone.
+
+**O2-F8 (not blocking; before 1c). 1c's table and its port.** A fifth spawn-table difference: today's reads wait for `initialize`'s answer
+and give up on its error (`ClaudeUsage.cs:197-203`; `CodexUsage.cs:240-250`), while the layer writes every request at once
+(`CliUsageSource.cs:133-134`, AG20). Codex's `clientInfo` version, "0" today against "1" (`CodexUsage.cs:244`; `CodexUsageDialect.cs:35`),
+belongs in LQ15 beside the name. `IUsageRead` asks with the account alone, while today's read also uses the pinned command resolved against
+the configuration (`HarnessRoster.cs:2322-2323`), the toolchain composition, the patience each `Kind` selects, and the `Source`, `Reader`
+and `Plan` the history writes (`:2354`). *Change:* the port says where each of these comes from on the layer path.
+
+**O2-F9 (not blocking; before 1b-i). Run-kind naming.** `provider.json`'s door `kind` already means native or protocol, in the same folder
+and the same tool (`tools/stand-ins.mjs:32-39`); name the pending field `run`. The reader's closed field list, its twice-held rule and
+`Unmatched` all read the new field. §2.3 rule 2 reads the account key from the descriptor for both kinds once one is bound, as it does the
+home variable.
+
+**O2-F10 (not blocking; before 1s-i and 1s-ii). The proof cases.** 1s-i: add a non-ASCII prompt; argv carries UTF-16, but the driven spawn
+sets no stdin encoding (`Adapters.cs:1536-1541`), where the usage read sets BOM-less UTF-8 (`CodexUsage.cs:303-306`); whether the launcher
+and shell pass it intact is unmeasured. 1s-ii: measure each tool under each of the three driven modes and on a resume, since a tool refused
+under `default` may run under another mode.
+
+**Still unmeasured:** stdin encoding through the launcher; what the three tools do per mode; whether
+`Microsoft.Extensions.DependencyInjection` already comes in transitively through `Microsoft.Extensions.Http` (if not, 1a pins it so that
+1a's closure proof covers it).
+
+## Codex, round 2
+
+*Codex's read of round 2, read-only, at `d53705dda`, written without seeing the Opus maker's; kept verbatim, its headings one level down.*
+
+Read at Daoris `d53705dda`, Lyntai `9a41435c`, and AG20 `2fb2dc7e`, also present as `0cbd84c1` on `daoris/s-d553ab68`. Nothing changed; no builds, tests or agent processes ran.
+
+References: **P** = `docs/2026-10-30-agent-lyntai-design.md`; **D/** = `src/Daoris.Desktop/Daoris.Desktop.Driver/`; **T/** = `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/`; **L/Core/** and **L/Basic/** = Lyntai’s `src/Lyntai.Core/` and `src/Lyntai.Providers.Basic/`. References below use the current checkout unless marked **AG20**. I checked the cited targets I rely on; finding C2-6 records inaccurate AG20 document references.
+
+### 0. My round-1 findings against §16
+
+| Finding | Disposition |
+|---|---|
+| **C1-1 — independent parity oracle** | **Open.** P:674–692 supplies independent paths and compares observations, addressing the shared-registry defect. Its literal equality rule still cannot compare the different provenance and identities it deliberately introduces; C2-1 below. |
+| **C1-2 — complete allowance observations** | **Closed.** P:816 requests scope, missing values, precision, partial windows, server rows and stated-reset provenance. P:894–895 requires complete history-fixture comparison before deleting either reader. This covers the information preserved by `D/Agents/ClaudeUsage.cs:109–163` and `D/Agents/CodexUsage.cs:169–200`. |
+| **C1-3 — LQ2’s closing condition** | **Closed.** P:600–606 distinguishes library validation from explicitly configured host policy, keeps validated-only as the default, and requires the pinned versions’ recorded answers to retain today’s readings. Returning `VersionNotValidated` alone cannot close it. |
+| **C1-4 — normalized failure ingress** | **Open.** P:440–456 correctly separates raw classification from trusted ingress. However, its `Where = layer` loses a phase existing policy reads, and the downstream delivery carrier remains unspecified; C2-2 below. |
+| **C1-5 — usage boundary** | **Closed.** P:320 defines the Daoris-owned `IUsageRead`, its ask and answer, and both implementations. P:627–628 explicitly rejects the former cross-boundary mapping. |
+| **C1-6 — generation-safe restriction transitions** | **Closed as requested.** P:814 requires generation-safe identity, lease ownership and reservation against complete applicable state; P:434–436 names the counterexamples. P:421–427 keeps credential epochs in the host’s subject binding. C2-4 identifies a separate missing recovery operation. |
+| **C1-7 — concrete pending-row replacement** | **Closed.** P:649–659 adds run kind and the twin reader; P:708–728 supplies the replacement table, including the native split and wildcard splitting. The current pending files support that inventory. |
+| **C1-8 — D22 and exploratory packs** | **Closed with a change I accept.** P:767–783 removes the normative amendment and row dependency, requires an explicit property, and makes gates refuse it. The explanatory cross-reference in D22 is acceptable. |
+| **C1-9 — evidence before dsh-first** | **Closed.** P:152 and P:845–846 condition ordering on the complete corpus and preserved spawn facts. The narrower historical `DSH_HOME` measurement is supported by `docs/2026-09-22-acp3-probe-evidence.md:22`, :103–106; later versions and resume remain unmeasured. |
+| **C1-10 — container ownership and continuation proof** | **Closed at design level.** P:526–535 names the disposal owner, lifetime and overlapping-start cases; P:399 requires continuation of a record started before the move. Runtime lifetime, cost and concurrency remain unmeasured. |
+
+### Verdict: another round
+
+The package direction and ownership split hold. The remaining blocking questions concern the oracle’s comparison contract, failure policy across the ingress, and recovery operations required by stage B.
+
+### 1. New findings
+
+#### C2-1 — Blocking: the oracle needs a defined equivalence relation
+
+P:681–685 compares failure sources, complete spawns and records, with equality as the only pass and no allowance list. Yet the design deliberately changes an old table source into `layer:` plus the library’s `By` (P:447–451). Those strings cannot be equal: today’s source can be `owner:kind:rate_limit` (`D/Agents/AgentErrors.cs:164–169`), while the library supplies entries such as `claude.assistant.error=rate_limit` (`L/Basic/ClaudeCli/StreamJsonFailure.cs:112–118`).
+
+The initial comparison also pairs **different doors**: `alt-stub` against `acp-stub` (P:694–696), whose provider identities, home variables and command arguments intentionally differ. Independently generated times and identifiers add another source of unequal observations. The usage source itself reads its clock when producing the answer (`L/Basic/CliUsageSource.cs:89–90`).
+
+**Change:** define the comparison projection before implementing the oracle. Fix clocks and generated identities where possible; otherwise name explicit identity correspondences. Compare semantic outcomes and ordering exactly, while checking each path’s provenance against its own expected source. These correspondences must not permit dropped readings, changed recovery or reordered writes. Retain the replacement-only sabotage cases.
+
+This is a source-derived construction problem, not an executed failure.
+
+#### C2-2 — Blocking: the trusted ingress loses policy-bearing phase and does not finish the result contract
+
+P:450–451 assigns the logged `DoorFailure` a phase of `layer`. Existing consumers use that field for policy. A refused resume’s open applies account cooling or access handling only when `Failure.Where == DoorWhere.Open` (`D/Loop/DriverContinuations.cs:668–675`). The transport currently preserves that distinction explicitly (`D/Agents/Acp.cs:1497–1512`).
+
+`By` is also more than a log label today: `OpeningAccount` distinguishes refused credentials from sign-in failures by its suffix (`D/Loop/DriverContinuations.cs:617–630`). Replacing it with arbitrary library provenance does not preserve those decisions.
+
+Finally, the existing `AgentError` carries kind, raw failure, source and optional `LimitSeen`, but no delivery (`D/Agents/AgentErrors.cs:58–66`). P:449 says delivery is translated, without specifying how it leaves `NormalizedFailure` and reaches retry policy.
+
+**Change:** define the complete Daoris outcome crossing this boundary: semantic phase, access disposition, recovery and delivery, with provenance stored separately. Keep open versus prompt failures distinguishable; migrate consumers from interpreting provenance strings to typed decisions. Where the library cannot supply a required distinction, name a request and make the affected move wait. Add refused-open account-policy cases to the ingress proof.
+
+#### C2-3 — Blocking: “Uncertain holds” needs separation from D210’s same-conversation continuation
+
+P:461–465 says `Taken` resumes and `Uncertain` holds. The layer stamps a failed turn uncertain whenever a tool call or result occurred (`L/Basic/CliAgentLoop.cs:34–42`, :129–145).
+
+Today, a transient prompt failure enters the bounded episode without that exclusion (`D/Agents/Acp.cs:1476–1492`). Its next attempt sends a **new go-on**, rather than repeating the original prompt (`:1846–1852`, :1888–1890). That go-on explicitly tells the agent to check whether an interrupted effect already happened (`D/Agents/TransientRetry.cs:67–75`).
+
+As written, the new rule can therefore stop a continuation that today proceeds after tool activity, inside a move that promises no behavioral difference.
+
+**Change:** distinguish disposition of the original words from permission to send D210’s new continuation in the same conversation. Preserve today’s guarded go-on policy while forbidding replay of uncertain original words. If holding the whole run is intended instead, make it a separately reviewed correction before the move. Add a tool-call → transient failure → go-on comparison case.
+
+#### C2-4 — Blocking for stage B: LQ12’s five operations omit independent positive evidence
+
+P:814 now covers failure observation, admission/reservation, leasing, reporting an attempt by token, and revision-bound clear. None explicitly represents a positive status or credit observation obtained **without an admitted agent attempt**.
+
+The accepted infrastructure contract requires an authoritative newer report to discharge the matching restriction, and permits a positive credit check to resolve `OwnerAction(refill)` (`docs/2026-10-27-provider-infrastructure-design.md:176–185`). A one-attempt clear is deliberately different.
+
+Lyntai already has a separate `Lift` operation, but it handles only stated-time recoveries and explicitly excludes owner-action and unknown recovery (`L/Core/Agents/AgentPoolReducer.cs:173–190`). Merely exposing that operation would not satisfy the accepted contract either.
+
+**Change:** extend LQ12 with an evidence-observation operation over host-owned snapshots, identifying the exact restriction generation, revision, subject/binding and credential epoch. Specify which positive evidence can discharge each recovery kind, independently of an attempt token. Keep explicit one-attempt release separate. Prove stale, wrong-scope and old-epoch observations cannot discharge the replacement.
+
+#### C2-5 — Blocking for 1c: its exchange table misses Codex’s initialization dependency
+
+P:901–908 inventories the version probe, working directory, Claude’s `-p` and Codex’s client name. Another difference already exists:
+
+- Daoris sends `initialize`, **awaits its answer**, then sends `initialized` and the allowance request (`D/Agents/CodexUsage.cs:241–250`).
+- Lyntai queues every dialect request before reading any answer (`L/Basic/CliUsageSource.cs:129–142`, **AG20**); the three requests are listed at `L/Basic/CodexCli/CodexUsageDialect.cs:33–38`.
+
+Thus equal outgoing lines alone do not establish equal exchange behavior. LQ15 currently asks for working directory and client identity, not this dependency.
+
+**Change:** add this difference to 1c’s table and request a response-dependent usage exchange in the library, included in R-c’s closing condition. Use a fake server that withholds initialization’s reply and detects premature later messages. Keep this sequencing inside the library; the runner should not parse Codex’s protocol.
+
+Whether the installed server tolerates eager sending is **unmeasured**.
+
+#### C2-6 — Non-blocking: several AG20 document citations point to the wrong lines
+
+P:76 cites D234’s standing at `Lyntai/docs/DECISIONS.md:6711–6712`; P:770 cites D235 at :6753–6767. At the named AG20 commit, D234 starts at **:6650**, its standing is **:6652–6654**, and D235 starts at **:6688**, with its pack procedure at **:6693–6708**. The document ends at :6711.
+
+The contracts hold, but these references cannot substantiate them as written. P:91’s claimed correction of the proposal’s earlier line numbers is itself incorrect for that commit.
+
+**Change:** repair the AG20 document references against the exact cited commit, keeping them distinct from master’s line numbers.
+
+### 2. The other priority checks
+
+- **m-i against row m:** the split is defensible. P:269 retains native retry, `DoorInput`, conversation-home handling and consolidation in m-ii; P:857–865 gives m-i the transport wrapper and executor cut first. D213’s original row m remains the broader obligation (`docs/2026-10-26-agent-provider-design.md:1137`). No implementation feasibility proof has run.
+- **Binding per run kind:** P:311 preserves the native conversation’s spawn and framing while driven work is bound. That matches the actual distinction in `D/Agents/Adapters.cs:2188–2196`, :2224–2232 and :2274–2286. Reading the home variable once through the descriptor is coherent.
+- **1s-i and 1s-ii:** I accept their separation before 1d. Moving the same prompt to stdin is appropriately distinct from narrowing tools. The latter remains subject to the measurement and both-makers decision at P:922–926. Neither measurement has run here.
+- **LQ13–LQ15:** each passes Lyntai’s generic-library test. They request reusable turn machinery, allowance observations and host-controlled server context. LQ2’s closing condition is now sufficient; LQ12 and 1c need the additions above.
+- **`IUsageRead`:** its ownership and answer shape resolve the boundary defect. The retained key skip, probe lock and busy-account check correspond to `D/Agents/HarnessRoster.cs:2307–2313` at this checkout.
+- **Containers and clocks:** separate registry and run containers, with the run owning disposal, are coherent. Declining the runner’s inactivity bound preserves Daoris’s session policy; cancellation, abandonment cleanup and explicit stops must still work. P:504–509 and :530–535 name the relevant proofs. A partial or failed stdin write must remain uncertain unless the runner can prove no write began.
+
+Package closure, offline restore, publish layout, container cost and concurrency, installed parity, latency, actual isolated-runtime writers and real held-permission waiting remain **unmeasured**. This read establishes source findings and required proofs only.
