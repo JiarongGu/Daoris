@@ -181,6 +181,9 @@ public sealed class MoveTakeUp(
     private MoveRecord? Quiet(MoveRecord move, StoreRun run)
     {
         if (move.Phase is not { } phase || !Quieting.Contains(phase) || !move.Moments.TryGetValue(phase, out var moment)) return null;
+
+        // Said already for this phase, as the look read it: no write is asked for at every look after.
+        if (string.Equals(move.QuietAt, moment, StringComparison.Ordinal)) return null;
         if (!DateTimeOffset.TryParse(moment, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var since)) return null;
         var stood = _clock.GetUtcNow() - since;
         if (stood < QuietAfter || !store.SayQuiet(move, moment)) return null;

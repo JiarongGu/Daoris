@@ -429,13 +429,26 @@ public sealed class MoveStore(
     /// </summary>
     public bool SayQuiet(MoveRecord move, string since)
     {
-        using var store = Open();
-        return store.Write(Family, write => write.Execute(
-            """
-            UPDATE moves SET quiet_at = $since
-            WHERE id = $id AND phase = $phase AND claim_run = $run AND claim_generation = $generation AND (quiet_at IS NULL OR quiet_at <> $since)
-            """,
-            ("$since", since), ("$id", move.Id), ("$phase", move.PhaseWord), ("$run", move.ClaimRun), ("$generation", move.ClaimGeneration)) == 1);
+        try
+        {
+            using var store = Open();
+            return store.Write(Family, write =>
+            {
+                var said = write.Execute(
+                    """
+                    UPDATE moves SET quiet_at = $since
+                    WHERE id = $id AND phase = $phase AND claim_run = $run AND claim_generation = $generation AND (quiet_at IS NULL OR quiet_at <> $since)
+                    """,
+                    ("$since", since), ("$id", move.Id), ("$phase", move.PhaseWord), ("$run", move.ClaimRun), ("$generation", move.ClaimGeneration));
+
+                // Another said it, or the move moved: rolled back, so no revision moves and no wake is touched.
+                return said == 1 ? true : throw new Unwritten(false);
+            });
+        }
+        catch (Unwritten unwritten)
+        {
+            return (bool)unwritten.Answer;
+        }
     }
 
     // ——— The writes' own parts.

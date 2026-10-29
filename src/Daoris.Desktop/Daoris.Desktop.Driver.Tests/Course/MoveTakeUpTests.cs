@@ -329,6 +329,32 @@ public sealed class MoveTakeUpTests : IDisposable
     }
 
     [Fact]
+    public void Of_two_lookers_who_read_a_quiet_move_before_either_said_it_exactly_one_says_it_and_the_other_writes_nothing()
+    {
+        var hung = Store("run-hung");
+        var decided = hung.Decide(Decision("s1"));
+        var read = hung.Opening(decided.Claim!, "opens-1");
+        var since = read.Moments[MoveRecordPhase.Opening];
+        long Revision()
+        {
+            using var reader = DesktopStoreReader.Open(DesktopStore.LocationIn(_home))!;
+            return reader.Revisions()[MoveStore.Family];
+        }
+
+        Assert.True(Store("run-a").SayQuiet(read, since));
+        var after = Revision();
+        Assert.False(Store("run-b").SayQuiet(read, since));
+        Assert.Equal(after, Revision());
+        Assert.Equal(since, hung.Read(read.Id)!.QuietAt);
+
+        // The move moved on since it was read: nothing is said of the phase it left.
+        _clock.Advance(TimeSpan.FromMinutes(1));
+        var opened = hung.Opened(decided.Claim!, "s1-next", []);
+        Assert.False(Store("run-a").SayQuiet(read, "2026-10-20T09:30:00.0000000+00:00"));
+        Assert.True(Store("run-a").SayQuiet(opened, opened.Moments[MoveRecordPhase.Opened]));
+    }
+
+    [Fact]
     public async Task A_move_waiting_on_its_old_part_or_at_old_ended_or_held_is_never_said_quiet()
     {
         var store = Store("run-live");
