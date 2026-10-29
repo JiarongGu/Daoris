@@ -1046,16 +1046,7 @@
     "Plugins/WorkRuntimePorts.cs": "Plugins",
     "Workflows/WorkflowVerb.cs": "Workflows"
   },
-  "edges": [
-    {
-      "family": "Workflows names Help",
-      "after": "Workflows",
-      "files": {
-        "Workflows/ChatRuns.cs": ["HelpRoom"],
-        "Workflows/WorkflowRun.Read.cs": ["HelpRoom"]
-      }
-    }
-  ],
+  "edges": [],
   "pure": {
     "Course/Domain/DaorisWords.cs": ["async"],
     "Participants/Domain/PartnerInstruction.cs": ["DaorisHome"],

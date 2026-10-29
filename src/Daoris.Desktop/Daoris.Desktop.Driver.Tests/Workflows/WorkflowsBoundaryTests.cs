@@ -55,6 +55,8 @@ public sealed class WorkflowsBoundaryTests : IDisposable
     [Fact]
     public void A_chat_run_is_a_chat_in_a_tree_of_its_own_and_never_a_conversation_of_Ask_Daoris()
     {
+        // The room is told by the participants' work rule's spelling, which is the Help room's.
+        Assert.Equal(HelpRoom.Repository, ParticipantWork.HelpRepository);
         TracedSession Chat(string id, string repository) =>
             new(id, repository, "working") { Kind = "chat", Tree = "trees/default/engine/s-c1c1c1c1", Entry = $"session:{id}/{repository}" };
         IReadOnlyList<TracedSession> sessions = [Chat("c1c1c1c1", "engine"), Chat("a1a1a1a1", "daoris:help"), Chat("a2a2a2a2", "Daoris:Help")];

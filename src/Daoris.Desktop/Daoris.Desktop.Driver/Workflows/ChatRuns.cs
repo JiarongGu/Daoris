@@ -45,7 +45,7 @@ public static class ChatRuns
     public static string? ChatOf(TracedSession session, IReadOnlyList<TracedSession> sessions, Func<string, bool> holds)
     {
         if (session.Teammate || session.Quest is not null || session.Ask is not null || session.Opinion is not null || session.Piece is not null
-            || session.Serves is not null || Same(session.Repository, HelpRoom.Repository)
+            || session.Serves is not null || Same(session.Repository, ParticipantWork.HelpRepository)
             || session.Origin?.StartsWith("ask:", StringComparison.Ordinal) == true
             || WorkflowRunReader.WorkOf(session, sessions) is not null
             || session.Tree is not { Length: > 0 } tree || !holds(tree))
