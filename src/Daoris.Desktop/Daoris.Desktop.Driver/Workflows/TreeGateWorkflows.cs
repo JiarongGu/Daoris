@@ -92,6 +92,19 @@ internal static class TreeGateWorkflows
     }
 }
 
+/// <summary>
+/// The parts of a landing gate the workflows judge, as the workflows' own records: the gate (the review's) holds them as the facets it reads
+/// (<see cref="IWorkflowGatePart"/>, <see cref="IGraphGatePart"/>), and a reader that needs more of one casts back here.
+/// </summary>
+public static class LandingGateParts
+{
+    /// <summary>The run's own part, as <see cref="WorkflowGateState"/>; null where the gate has none.</summary>
+    public static WorkflowGateState? WorkflowPart(this LandingGate gate) => gate.Workflow as WorkflowGateState;
+
+    /// <summary>The graph's part, as <see cref="GraphGateState"/>; null where the gate has none.</summary>
+    public static GraphGateState? GraphPart(this LandingGate gate) => gate.Graph as GraphGateState;
+}
+
 /// <summary>The run's own part of a tree's gate, for a caller that holds the trees (the run's view reads it beside its own).</summary>
 public static class SessionTreeWorkflows
 {

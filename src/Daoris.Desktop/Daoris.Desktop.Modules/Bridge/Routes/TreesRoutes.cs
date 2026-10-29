@@ -695,7 +695,7 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
         landed.Withheld,
         Review = Waits(gate.Review),
         Opinion = Opinion(gate.Opinion),
-        Workflow = WorkflowWaits(gate.Workflow),
+        Workflow = WorkflowWaits(gate.WorkflowPart()),
         // LANDSYNC1: what it left out, and the conflict that refused it with the words the review offers to say to the session.
         LeftOut = LeftOut(landed.LeftOut),
         Conflict = Conflict(landed.Conflict),
@@ -745,7 +745,7 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
         // Own (TREEFOLLOW1): the target is the branch the session's agent made, which lands as it stands. Stands (ACCEPTALL1g): the
         // target already stands, an entry's or a chain's branch, so the press moves it on rather than making it.
         Session = session, plan.Form, plan.Target, plan.Source, plan.Plugin, plan.Problem, plan.Own, plan.Stands, Uncommitted = uncommitted,
-        Workflow = WorkflowWaits(gate.Workflow), Review = Waits(gate.Review), Opinion = Opinion(gate.Opinion),
+        Workflow = WorkflowWaits(gate.WorkflowPart()), Review = Waits(gate.Review), Opinion = Opinion(gate.Opinion),
         // LANDSYNC1 (D87's 2026-10-15 amendment point 4): what the press would leave out because the line holds it, what it would land,
         // and a conflict it would be refused for; `leftOut` empty beside `lands` where the line only moved since the work began and the
         // press replays it all (LANDREBASE1); each absent where the work lands as made.

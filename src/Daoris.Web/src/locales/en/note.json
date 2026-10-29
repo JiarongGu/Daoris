@@ -74,7 +74,7 @@
   "note.started.local-missing": "`{{input}}` was not copied: the repository's gates read it, and your checkout does not hold it.",
   "note.started.local-refused": "`{{input}}` was not copied: Daoris copies into a tree only a file under `local/` that git ignores there, and this is not one.",
   "note.started.local-failed": "`{{input}}` was not copied from your checkout, since the copy failed:",
-  "note.tree.remade": "Its tree was gone, so Daoris made it again in the same place on its branch {{branch}}, where its commits are. Anything it had not committed went with the folder, and its dependencies are installed again there.",
+  "note.tree.remade": "Its tree was gone, so Daoris made it again in the same place on its branch {{branch}}, where its commits are. Anything it had not committed went with the folder. It holds what git tracks and, as an opened tree does, what Daoris copies in again from your checkout: its installed dependencies and the machine-local files its gates read, read-only. What was copied, and what was not, follows.",
   "note.tree.gone": "Its tree and its branch {{branch}} are both gone, so nothing on this machine holds its work under that name. It does not start anywhere else: bring the branch back in the repository's checkout and the next look makes its tree again, or end this session.",
   "note.tree.unmade": "It does not start: its tree is gone and could not be made again.",
   "note.started.joined": "Went into the tree of session {{session}}, which holds the earlier part of this work.",

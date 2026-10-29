@@ -104,7 +104,15 @@ public static partial class SessionBalloon
         [Prefix + "holding.title"] = "{{repository}}: a session holds a tool call for you",
         [Prefix + "holding.help"] = "Ask Daoris holds a tool call for you",
         [Prefix + "holding.body"] = "Open Daoris to answer it before it is refused by itself.",
+        // The tray menu's one item (PAGELOOP1 c, D217): said in the window's language like the balloons, English before a page hands words.
+        [Prefix + "reloadPage"] = "Reload the page of every window",
     };
+
+    /// <summary>The tray menu's reload item, in the words <paramref name="handed"/> by the page (null: none handed, English).</summary>
+    public static string ReloadPageWord(IReadOnlyDictionary<string, string>? handed) =>
+        handed is not null && handed.TryGetValue(Prefix + "reloadPage", out var told) && !string.IsNullOrWhiteSpace(told)
+            ? told
+            : English[Prefix + "reloadPage"];
 
     /// <summary>
     /// The balloon for <paramref name="facts"/>, in the words <paramref name="handed"/> by the page (null: none handed, English). A kind

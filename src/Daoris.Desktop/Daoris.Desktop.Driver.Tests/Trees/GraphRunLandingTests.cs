@@ -80,7 +80,7 @@ public sealed class GraphRunLandingTests : AutoLandingFixture
         var trees = new SessionTrees(_home);
 
         var before = await trees.GateAsync(tree, "q1", _world, "s1");
-        Assert.Equal((GraphGateStates.NotJudged, true), (before.Graph!.State, before.Graph.PressWaits));
+        Assert.Equal((GraphGateStates.NotJudged, true), (before.Graph!.State, before.GraphPart()!.PressWaits));
         var held = await trees.LandAsync(tree, Work, gate: before);
         Assert.False(held.Landed, held.Message);
         Assert.Equal(AutoLandingCode.Refused, held.Refusal);

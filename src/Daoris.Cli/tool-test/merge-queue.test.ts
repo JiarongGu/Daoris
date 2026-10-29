@@ -83,6 +83,10 @@ const q = await import(
 const failures = await import(
   // @ts-expect-error — untyped workspace tooling
   '../../../tools/test-failures.mjs') as { gateSignature: (gate: string, step: string, output: string) => Signature };
+const machine = await import(
+  // @ts-expect-error — untyped workspace tooling
+  '../../../tools/machine-admission.mjs') as { admissionFile: (home: string) => string };
+
 const tool = await import(
   // @ts-expect-error — untyped workspace tooling
   '../../../tools/merge-branch.mjs') as {
@@ -94,7 +98,8 @@ const tool = await import(
   watchCandidate: (candidate: Candidate, current: () => Candidate | null, trees: Trees, options?: { ms?: number }) => Watch;
   prefixRunner: (tree: string, candidate: { base: string; members: Member[] }, plan: { name: string; run: string }[], dir: string, watch?: Watch | null) => (failure: Failure, k: number) => Promise<Outcome>;
   queueHomeRefusal: (facts: { root: string; home: string; tool?: string | null; sameRepository?: boolean; run?: boolean }) => string | null;
-  queueGateEnvironment: (start?: Record<string, string | undefined>) => Record<string, string>;
+  gateEnvironment: (start?: Record<string, string | undefined>) => Record<string, string>;
+  GATE_REMOVED: readonly (string | RegExp)[];
   waitSaid: (standing: Standing, facts: { branch: string; request?: string; holder?: string | boolean | null }) => { code: number; lines: string[] } | null;
   BESIDE_ENVIRONMENT: Record<string, string>;
 };
@@ -1079,12 +1084,18 @@ function treeGate(dir: string, holdWhen: string, record = ''): string {
 }
 
 /** QUEUETESTLEAK1: a gate that writes what of its environment a leak would carry into `file`, then passes. */
-const envGate = (file: string) => [
-  "import { writeFileSync } from 'node:fs';",
-  `if (process.argv[2] === 'check') writeFileSync(${JSON.stringify(file)}, JSON.stringify({ drain: process.env.QUEUE_DRAIN_DIR ?? null, tick: process.env.MERGE_BRANCH_QUEUE_TICK_MS ?? null, gitDir: process.env.GIT_DIR ?? null, path: process.env.PATH ?? '' }));`,
+const envGate = (file: string, admission = '', role = 'check') => [
+  "import { existsSync, readFileSync, writeFileSync } from 'node:fs';",
+  // INTEGRATE1a: also what of the install's home, a role and git's locating variables reached it, and the admission file it can read.
+  `const admission = ${JSON.stringify(admission)};`,
+  "const held = admission && existsSync(admission) ? JSON.parse(readFileSync(admission, 'utf8')).holds.map((hold) => hold.what) : null;",
+  `if (process.argv[2] === ${JSON.stringify(role)}) writeFileSync(${JSON.stringify(file)}, JSON.stringify({ drain: process.env.QUEUE_DRAIN_DIR ?? null, tick: process.env.MERGE_BRANCH_QUEUE_TICK_MS ?? null, gitDir: process.env.GIT_DIR ?? null, ceiling: process.env.GIT_CEILING_DIRECTORIES ?? null, home: process.env.DAORIS_HOME ?? null, role: process.env.DAORIS_ROLE ?? null, beside: process.env.MSBUILDDISABLENODEREUSE ?? null, held, path: process.env.PATH ?? '' }));`,
   'console.log(`${process.argv[2]} ran`);',
   '',
 ].join('\n');
+
+/** INTEGRATE1a: what `envGate` records. */
+interface SeenEnvironment { drain: string | null; tick: string | null; gitDir: string | null; ceiling: string | null; home: string | null; role: string | null; beside: string | null; held: string[] | null; path: string }
 
 // QUEUETESTLEAK1 (2026-10-28): a case's enqueue waited on the main checkout's queue and started a runner there from the tree's tool,
 // with the class-probe case's PATH. Its cases run one at a time here, so the variables it sets in the test process meet no other case.
@@ -1100,9 +1111,20 @@ describe('QUEUETESTLEAK1: a case reaches only its own scratch repository and que
     assert.equal(tool.queueHomeRefusal({ root: home, home, tool: 'X:/elsewhere', sameRepository: false, run: true }), null, "another repository's tool (the tool tests' scratch queues) runs it");
   });
 
-  test("a gate the queue's runner starts gets the runner's environment at its start, without the tool tests' variables or the tool's switches, with the build servers of its own", () => {
+  test("a gate the tool starts gets the environment the tool had at its start, without a Daoris name, git's locating variables, the tool tests' variables or the tool's switches, with the build servers of its own", () => {
     const start = { Path: 'X:/bin', HOME: 'X:/home', QUEUE_DRAIN_DIR: 'X:/drain', queue_drop_hold: 'X:/hold', MERGE_BRANCH_QUEUE_TICK_MS: '300', MERGE_BRANCH_MEMORY: 'off', GIT_OPTIONAL_LOCKS: '0' };
-    assert.deepEqual(tool.queueGateEnvironment(start), { Path: 'X:/bin', HOME: 'X:/home', GIT_OPTIONAL_LOCKS: '0', ...tool.BESIDE_ENVIRONMENT });
+    assert.deepEqual(tool.gateEnvironment(start), { Path: 'X:/bin', HOME: 'X:/home', GIT_OPTIONAL_LOCKS: '0', ...tool.BESIDE_ENVIRONMENT });
+  });
+
+  // INTEGRATE1a (design §5.5, F20): the steward's shell held the install's home on 2026-10-28, and every gate the queue's runners started inherited it.
+  test("a gate gets no Daoris home, role or key and none of git's locating variables, in either spelling, and what a person set for git otherwise stays", () => {
+    const start = {
+      Path: 'X:/bin', DAORIS_HOME: 'X:/install', daoris_role: 'steward', DAORIS_SUPERVISOR_KEY: 'k', DAORIS_ADMISSION_HOLD: 'h-1',
+      GIT_DIR: 'X:/g', git_work_tree: 'X:/w', GIT_INDEX_FILE: 'i', GIT_OBJECT_DIRECTORY: 'o', GIT_ALTERNATE_OBJECT_DIRECTORIES: 'a', GIT_COMMON_DIR: 'c', GIT_NAMESPACE: 'n',
+      GIT_CEILING_DIRECTORIES: 'X:/', GIT_CONFIG_COUNT: '1', GIT_CONFIG_KEY_0: 'k', GIT_CONFIG_GLOBAL: 'X:/cfg', GIT_AUTHOR_NAME: 'A', GIT_OPTIONAL_LOCKS: '0',
+    };
+    assert.deepEqual(tool.gateEnvironment(start), { Path: 'X:/bin', GIT_AUTHOR_NAME: 'A', GIT_OPTIONAL_LOCKS: '0', ...tool.BESIDE_ENVIRONMENT });
+    assert.ok(tool.GATE_REMOVED.length > 0, 'the list is exported, so the driver\'s twin and a census read the same names');
   });
 
   test('git\'s repository-locating variables, a stand-in gate\'s variable and a PATH set in the test process reach no case: its tool reads and writes only its scratch queue', async () => {
@@ -1622,6 +1644,70 @@ describe('the queue, end to end in a scratch repository', { concurrency: true },
       const seen = JSON.parse(readFileSync(record, 'utf8')) as { drain: string | null; tick: string | null };
       assert.deepEqual(seen.drain, null, 'the stand-in gate\'s variable is not passed on');
       assert.deepEqual(seen.tick, null, "the tool's own switches are not passed on");
+    } finally {
+      await repo.cleanup();
+    }
+  });
+
+  // INTEGRATE1a (F20): the invoker's shell held the install's home, a role and git's locating variables; the runner it started, and the gates
+  // of every verb, inherited them, while the machine's admission is still found from the home the tool read at its start.
+  const ownedGate = () => JSON.stringify({ gates: [{ name: 'universal', run: 'node qgate.mjs universal' }, { name: 'check', run: 'node qgate.mjs check', memoryGb: 0.1 }] });
+  // GIT_DIR is set only where the tool's own git may take it: in the queue's verbs it makes the tool's checkout and the scratch one repository,
+  // and the tool refuses (`queueHomeRefusal`); git's ceiling, which the case's environment always sets, is the locating variable proved there.
+  const shell = (repo: { root: string }, gitDir = false) => ({
+    DAORIS_HOME: join(repo.root, 'local', 'install-home'), DAORIS_ROLE: 'steward', MERGE_BRANCH_ADMISSION: 'on', ...(gitDir ? { GIT_DIR: join(repo.root, '.git') } : {}),
+  });
+  const assertClean = (seen: SeenEnvironment, what: string) => {
+    assert.equal(seen.home, null, `${what}: the home reached the gate`);
+    assert.equal(seen.role, null, `${what}: a role variable reached the gate`);
+    assert.equal(seen.gitDir, null, `${what}: GIT_DIR reached the gate`);
+    assert.equal(seen.ceiling, null, `${what}: git's ceiling reached the gate`);
+    assert.equal(seen.beside, '1', `${what}: the gate has the build servers of its own`);
+  };
+
+  test("INTEGRATE1a: a gate the queue's runner starts sees no Daoris home, role or git locating variable the shell that started the runner held, and the admission is still found from the home", async () => {
+    const repo = queueScratch('gate-shell');
+    try {
+      const home = join(repo.root, 'local', 'install-home');
+      mkdirSync(home, { recursive: true });
+      const record = join(repo.root, 'local', 'gate-shell.json');
+      repo.branch('b1', { 'qgate.mjs': envGate(record, machine.admissionFile(home)), 'daoris.gates.json': ownedGate() });
+      assert.equal((await repo.run(['b1', '--preview'], shell(repo))).status, 0);
+      const done = await repo.run(['b1', '--message', 'local/b1.msg'], shell(repo));
+      assert.equal(done.status, 0, `${done.out}\n${repo.log()}`);
+      const seen = JSON.parse(readFileSync(record, 'utf8')) as SeenEnvironment;
+      assertClean(seen, 'the queue');
+      assert.deepEqual(seen.held, ['check gate'], 'the runner took its place in the admission of the home it read at its start');
+    } finally {
+      await repo.cleanup();
+    }
+  });
+
+  test('INTEGRATE1a: a merge in place, a gate run again and a full run of the checkout start their gates the same way', async () => {
+    const repo = queueScratch('gate-shell-direct');
+    try {
+      const record = join(repo.root, 'local', 'gate-shell-direct.json');
+      // `universal` runs at every merge and every full run; `check` is skipped by the lane table for a file like this.
+      repo.branch('b1', { 'qgate.mjs': envGate(record, '', 'universal') });
+      // A gate run again on the checkout answers 1 while the full set lacks a verdict (`check` has none here): the gate ran all the same.
+      const seenAfter = (what: string, status: number | null, out: string) => {
+        assert.ok(status === 0 || (status === 1 && /^merge-branch: .*has NOT passed this checkout/m.test(out)), `${what}: ${status} ${out}`);
+        assert.ok(existsSync(record), `${what}: the check gate ran: ${out}`);
+        assertClean(JSON.parse(readFileSync(record, 'utf8')) as SeenEnvironment, what);
+        rmSync(record);
+      };
+      const direct = shell(repo, true);
+      const merged = await repo.run(['b1'], direct);
+      seenAfter('merge in place', merged.status, merged.out);
+      const open = await repo.run(['--rerun', 'universal'], direct);
+      seenAfter('--rerun with the merge open', open.status, open.out);
+      repo.git('commit', '--quiet', '-m', `Merge b1${TRAILER}`);
+      const again = await repo.run(['--rerun', 'universal'], direct);
+      seenAfter('--rerun with none open', again.status, again.out);
+      const full = await repo.run(['--full'], direct);
+      seenAfter('--full', full.status, full.out);
+      const beside = await repo.run(['--full', '--beside'], direct);
+      seenAfter('--full --beside', beside.status, beside.out);
     } finally {
       await repo.cleanup();
     }

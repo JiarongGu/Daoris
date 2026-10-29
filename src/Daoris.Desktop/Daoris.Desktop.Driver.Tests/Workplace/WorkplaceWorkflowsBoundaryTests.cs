@@ -144,7 +144,7 @@ public sealed class WorkplaceWorkflowsBoundaryTests : IDisposable
 
         Assert.Equal(WorkflowGateStates.None, gate.Workflow!.State);
         Assert.True(gate.Workflow.LetsGo);
-        Assert.Equal("s1", gate.Workflow.Session);
+        Assert.Equal("s1", gate.WorkflowPart()!.Session);
         Assert.False(gate.Process!.Named);
         Assert.Equal("Current", gate.Process.Name);
         Assert.Null(gate.Graph);
@@ -163,12 +163,12 @@ public sealed class WorkplaceWorkflowsBoundaryTests : IDisposable
         Assert.Equal(WorkflowGateStates.Follows, gate.Workflow!.State);
         Assert.True(gate.Process!.Named);
         Assert.Equal("`docs-to-pr` v1", gate.Process.Name);
-        Assert.Equal("q1", gate.Process.Binding!.Run);
+        Assert.Equal("q1", gate.WorkflowPart()!.Process.Binding!.Run);
         Assert.Equal(new LandingWorkflow("docs-to-pr", 1, WorkflowLevels.Repository), gate.Process.Record);
         Assert.Equal(LandingForm.Branch, gate.Process.Landing.Rule.Form);
 
         // The run's own part alone, judged for the process the door read: the same state, the session said.
-        var part = await trees.WorkflowAsync(Tree, gate.Process, "s1");
+        var part = await trees.WorkflowAsync(Tree, gate.WorkflowPart()!.Process, "s1");
         Assert.Equal((gate.Workflow.State, gate.Workflow.LetsGo, "s1"), (part.State, part.LetsGo, part.Session));
 
         // A process handed in is the one every part reads: the quest's chain is not read again.
@@ -189,7 +189,7 @@ public sealed class WorkplaceWorkflowsBoundaryTests : IDisposable
 
         Assert.Equal((WorkflowGateStates.Unread, false), (gate.Workflow!.State, gate.Workflow.LetsGo));
         Assert.Contains("binding could not be read", gate.Process!.Unread);
-        Assert.Null(gate.Process.Binding);
+        Assert.Null(gate.WorkflowPart()!.Process.Binding);
     }
 
     [Fact]

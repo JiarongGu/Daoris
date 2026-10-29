@@ -19,7 +19,7 @@ internal interface IParticipantsWorkflows
         DriverConfig config, string home, string run, string repository, string? workspace, IWorkplacePluginCatalog plugins, DateTimeOffset at);
 
     /// <summary>The process of a run, its binding read (see <c>WorkflowProcesses.Read</c>).</summary>
-    IWorkplaceProcess ReadProcess(string home, DriverConfig config, string repository, string? workspace, string run);
+    IWorkplaceProcess ReadProcess(string home, DriverConfig config, string repository, string? workspace, string? run);
 }
 
 /// <summary>What a chat run's bind came to, and what the conversation is told of it.</summary>

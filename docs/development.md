@@ -512,6 +512,7 @@ semantic review. Word and entry-shape ceilings report advisory overruns (D54/D12
 The date gate reads committed history, so an uncommitted guide correction still has its old date.
 A proposed-commit Git view may verify universal gates before committing. Keep that environment
 away from fixture tests: inherited `GIT_DIR`/`GIT_WORK_TREE` redirect their repository operations.
+The merge tool starts every gate, probe, re-run and repository script with `gateEnvironment` (its start environment without `GATE_REMOVED`: every `DAORIS_*` name, git's locating variables, `MERGE_BRANCH_*`; INTEGRATE1a).
 
 Regenerate owned output with its producer:
 

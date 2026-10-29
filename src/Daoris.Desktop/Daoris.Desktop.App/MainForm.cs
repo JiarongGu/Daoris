@@ -27,8 +27,35 @@ namespace Daoris.Desktop;
 /// module is handed. Un-minimizing with <c>WindowState = Normal</c> brings such a window back
 /// un-maximized: <see cref="Unminimize"/> restores it as it was.</para>
 /// </remarks>
-public sealed class MainForm : OptimizedForm
+public sealed class MainForm : OptimizedForm, IReloadableWindow
 {
+    /// <summary>The page's view, once it is made (PAGELOOP1 c); null while the window is on its splash for the service or on its trouble label.</summary>
+    private ChromiumView? _view;
+
+    string IReloadableWindow.Name => MainWindows.First;
+
+    /// <summary>
+    /// The tray's reload (PAGELOOP1 c, D217): the page this window shows is opened again, on this window's thread. A window still on
+    /// its splash or on its trouble label has no page to reload and reloads nothing.
+    /// </summary>
+    /// <remarks>
+    /// The kit's browser (<c>ChromiumChildBrowser</c>) exposes no reload, and a view opens its browser as its handle is created, so
+    /// the view is made again on the same path: the same page on the same profile, which handshakes its bridge again as any
+    /// reload does. The host, the driver and the service are not in the view and are untouched.
+    /// </remarks>
+    bool IReloadableWindow.ReloadPage()
+    {
+        if (_view is null || _splash is not { IsDisposed: true } || _trouble is not null) return false;
+        return Post(() =>
+        {
+            if (_view is not { } old || IsDisposed) return;
+            var fresh = _view = new ChromiumView(_engine, _viewLog) { Dock = DockStyle.Fill, Path = old.Path };
+            Controls.Remove(old);
+            old.Dispose();
+            Controls.Add(fresh);
+        });
+    }
+
     private readonly ChromiumEngine _engine;
     private readonly PlatformBundle _bundle;
     private readonly string _serviceUrl;
@@ -67,7 +94,8 @@ public sealed class MainForm : OptimizedForm
         MainWindowScopes? scopes = null,
         BringForward? forward = null,
         NoticeWords? notices = null,
-        StartStages? stages = null)
+        StartStages? stages = null,
+        PageReloads? reloads = null)
         : base(new OptimizedFormOptions
         {
             FramelessChrome = true,
@@ -152,7 +180,7 @@ public sealed class MainForm : OptimizedForm
         _notifier = new SessionNotifier(
             this, eventBus, takingBack: () => _mains?.TakeBackFirst(),
             picking: scopes is null ? null : (session, quest) => scopes.PickFor(driver.Slices, session, quest),
-            forwarding: forward, words: notices);
+            forwarding: forward, words: notices, reloading: reloads);
         _notifier.Attend += (session, window) => eventBus.Emit(
             new EventMessage { Module = "DAORIS", Type = "ATTEND_SESSION", Payload = new { Session = session, Window = window } });
 
@@ -437,7 +465,7 @@ public sealed class MainForm : OptimizedForm
 
             // The page on the engine's app origin, told where its host is (D92). Its browser opens as
             // the view's handle is created, which adding it to this shown window does.
-            var view = new ChromiumView(_engine, _viewLog)
+            var view = _view = new ChromiumView(_engine, _viewLog)
             {
                 Dock = DockStyle.Fill,
                 Path = DesktopPage.PathFor(_serviceUrl),

@@ -18,7 +18,7 @@ namespace Daoris.Driver;
 /// <para><b>A named workflow's run</b> takes its bound version's <c>checks</c> (<c>claimed</c>'s option in a graph version, the
 /// <c>work</c> step's field in a steps version), never this rule, which is Current's. A steps version's <c>work</c> takes <c>checks</c>
 /// (FABRIC-PIPELINE1b2), written into its canonical text only where set, so every version saved before keeps its digest; a graph version's
-/// option is read from the version its run bound (FABRIC-PIPELINE1b3, <see cref="WorkflowProcess.Claimed"/>). A run is bound before its
+/// option is read from the version its run bound (FABRIC-PIPELINE1b3, <see cref="ICheckedProcess.Claimed"/>). A run is bound before its
 /// take (FABRIC-CUTOVER1g), so its first session takes its version's as its later ones do (<see cref="Of"/>).</para>
 ///
 /// <para><b>Read as a stored shape</b>: a value this build does not know is passed over, read as no rule, and kept in the file by the
@@ -54,11 +54,11 @@ public static class SessionChecks
     /// workflow's, its bound version's: a steps version's <c>work</c> step's (FABRIC-PIPELINE1b2), a graph version's <c>claimed</c> node's
     /// option (FABRIC-PIPELINE1b3); none where it sets none or the version could not be read.
     /// </summary>
-    public static string? Of(DriverConfig config, string repository, WorkflowProcess? process) =>
+    public static string? Of(DriverConfig config, string repository, ICheckedProcess? process) =>
         process is { Named: true }
             ? process.Claimed is { } claimed
                 ? Claimed(claimed)
-                : Choice((string?)process.Steps.FirstOrDefault(step => step.Kind == WorkflowKinds.Work)?.Field("checks"))
+                : Choice(process.WorkChecks)
             : For(config, repository);
 
     /// <summary>

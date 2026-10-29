@@ -18,7 +18,7 @@ public static class OpinionLook
     /// <returns>The occasions it is owed at; empty where none.</returns>
     public static IReadOnlyList<string> Concluded(
         string home, DriverConfig config, string session, QuestView quest, string? status, string state, string tree, DateTimeOffset? at = null,
-        WorkflowProcess? process = null)
+        IWorkplaceProcess? process = null)
     {
         try
         {
@@ -60,7 +60,7 @@ public static class OpinionLook
     /// </param>
     public static async Task<string?> ClosesAsync(
         OpinionDue due, QuestView? quest, IReadOnlyList<QuestView> chain, DriverConfig config, LandedBranches landed, CancellationToken ct,
-        WorkflowProcess? process = null, IReadOnlyCollection<string>? pushHeld = null)
+        IWorkplaceProcess? process = null, IReadOnlyCollection<string>? pushHeld = null)
     {
         // FABRIC-CLOSE1h (§E5): in a closure graph its submission is the done it waits on.
         if (!QuestResults.Judged(quest)) return OpinionDueClosed.Undone;
@@ -102,7 +102,7 @@ public static class OpinionLook
     /// its run's process no longer reads at its occasion, <c>gone</c> with its tree, and <c>landed</c> once a landing of its line was recorded
     /// since it was owed or its tree holds nothing the line does not. Never <c>undone</c>: a chat run serves no quest whose done it waits on.
     /// </summary>
-    public static async Task<string?> RunClosesAsync(OpinionDue due, LandedBranches landed, WorkflowProcess process, CancellationToken ct)
+    public static async Task<string?> RunClosesAsync(OpinionDue due, LandedBranches landed, IWorkplaceProcess process, CancellationToken ct)
     {
         var reads = process.Problem is not null || process.Unread is not null || OpinionGate.Reads(process.Opinion, process.OpinionCannot, due.Occasion);
         if (!reads) return OpinionDueClosed.Off;

@@ -78,7 +78,7 @@ public sealed class OpinionPresses(string home, ServiceClient service)
         string session, LandingGate gate, string? token, string? tree, string? quest, CancellationToken ct = default, string? run = null,
         string door = ReviewDoors.Screen)
     {
-        if (!gate.Answers(token) || tree is null || (quest is null && !ChatRuns.IsChatRun(run)) || gate.Opinion.Tip is not { } tip) return gate;
+        if (!gate.Answers(token) || tree is null || (quest is null && !WorkplaceRunFiles.IsChatRun(run)) || gate.Opinion.Tip is not { } tip) return gate;
         var (work, _) = await WorkAsync(session, ct).ConfigureAwait(false);
         if (work is null) return gate;
         new OpinionGates(home).Said(work.Chain, work.Repository, new OpinionPersonWord(OpinionPersonSaid.Press, tip, DateTimeOffset.UtcNow)
@@ -103,7 +103,7 @@ public sealed class OpinionPresses(string home, ServiceClient service)
 
         // WORKFLOW1f: the run's named workflow's opinion step, where it has one, names which of the declared reviewers may read it.
         var config = DriverConfig.Load(DriverConfig.ResolvePath(home));
-        var process = WorkflowProcesses.Read(home, config, work.Repository, work.Workspace, work.Run);
+        var process = ParticipantsWorkflows.Current.ReadProcess(home, config, work.Repository, work.Workspace, work.Run);
         if ((process.OpinionCannot ?? process.Problem ?? process.Unread) is { } cannot)
         {
             return new(false, $"no second opinion is asked for `{work.Repository}`: its workflow cannot start one: {cannot}");
@@ -203,10 +203,7 @@ public sealed class OpinionPresses(string home, ServiceClient service)
         if (hold is PressHold.Busy or PressHold.Ending) return (null, 0, ChatPresses.Busy);
         try
         {
-            var records = Trace.ParseSessions(await service.SessionRecordsJsonAsync(ct).ConfigureAwait(false));
-            var line = records.FirstOrDefault(each => string.Equals(each.Id, work.Session, StringComparison.OrdinalIgnoreCase)) is { } record
-                ? ChatRuns.LineOf(record, records).Select(each => each.Id)
-                : [work.Session];
+            var line = WorkplaceWorkflows.Current.ChatPressOf(work.Session, await service.SessionRecordsJsonAsync(ct).ConfigureAwait(false)).Line;
             var turns = ChatPresses.TurnsOf(new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions)), line);
             return (await ReviewGit.HeadAsync(work.Tree, ct).ConfigureAwait(false), turns, null);
         }
@@ -228,7 +225,7 @@ public sealed class OpinionPresses(string home, ServiceClient service)
         if (await service.SessionQuestAsync(session, ct).ConfigureAwait(false) is not { } quest)
         {
             // CHATFLOW1d (the chat-flow design §7): a chat in a tree of its own is its chat run's work, its gate keyed by the run.
-            if (ChatRuns.ChatOf(session, await service.SessionRecordsJsonAsync(ct).ConfigureAwait(false), _trees.Holds) is { } chatRun)
+            if (ChatRunOf(session, await service.SessionRecordsJsonAsync(ct).ConfigureAwait(false)) is { } chatRun)
             {
                 var (chatWorkspace, chatRepository) = _trees.Owner(tree);
                 return (new Work(session, tree, null, chatRun, chatRepository, chatWorkspace, new ServiceReviewWorld(service))
@@ -245,8 +242,17 @@ public sealed class OpinionPresses(string home, ServiceClient service)
         var (workspace, repository) = _trees.Owner(tree);
         return (new Work(session, tree, quest, TreeGates.OpinionChain(chain, quest), repository, workspace, world)
         {
-            Run = WorkflowRunBindings.RunOf(chain, repository) ?? quest.TrimStart('#'),
+            Run = ReviewGate.RunOf(chain, repository) ?? quest.TrimStart('#'),
         }, null);
+    }
+
+    /// <summary>The chat run of the record <paramref name="session"/> names, read from the service's records as they were answered (the workflows' <c>ChatRuns.ChatOf</c>, through the participants' port).</summary>
+    private string? ChatRunOf(string session, string recordsJson)
+    {
+        var sessions = Trace.ParseSessions(recordsJson);
+        return sessions.FirstOrDefault(each => string.Equals(each.Id, session, StringComparison.OrdinalIgnoreCase)) is { } record
+            ? ParticipantsWorkflows.Current.ChatOf(record, sessions, _trees.Holds)
+            : null;
     }
 
     private static string? Words(string? words) => words?.Trim() is { Length: > 0 } said ? said : null;

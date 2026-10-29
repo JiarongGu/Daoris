@@ -188,6 +188,11 @@ internal static class Program
             ClosingForUpdate = build => sp.GetRequiredService<DriverLoop>().Processes.Close = Daoris.Driver.ShellClose.Update(build),
         });
         builder.Services.AddIpcModule<UpdateModule>();
+        // The tray's reload of every open window's page (PAGELOOP1 c, D217): the windows are resolved as it is pressed, since they are
+        // made after the tray is; each reload is said in the machine log by the window's name.
+        builder.Services.AddSingleton(sp => new PageReloads(
+            () => [sp.GetRequiredService<MainForm>(), .. sp.GetRequiredService<SecondaryWindowHost>().Reloadable()],
+            window => log.Info(PageReloads.Event, ("window", window))));
         builder.Services.AddSingleton<MainForm>();
         // A tool named as a file (TOOLS7): the system's file picker, owned by the window whose page asked (MAINWINDOWS2c), as the
         // folder picker is: the first main window is hidden while put away, and a dialog owned by it would open behind nobody.

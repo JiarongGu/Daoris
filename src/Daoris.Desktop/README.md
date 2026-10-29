@@ -61,6 +61,10 @@ The driver's `WorkOrders/` owns the person's orders (FOUNDATION1 mod-xv, D212): 
 
 Work orders names nothing above it: no Review, Plugins, Workflows, Setup or Help type. The session list and the terminal's verbs tell Ask Daoris's room by `KnowledgeRoomIdentity.Repository`, the terminal's door by Workplace's `WorkplaceDoors.Terminal`, and read the home's plugins through Agents' required `AgentPluginReads`. The quest's review door reads the rule standing for a repository through Knowledge's `KnowledgeReviews`, names a choice's problem by the settings' `ReviewKey.NameProblem`, and says its environments and its verdict line by `WorkOrders/Domain/ReviewDoorWords.cs` (which `ReviewRules.Either` and `ReviewLines.Verdict` answer through); the planner sits a set-up step by `WorkOrders/Domain/SetUpSits.cs`, which `ReviewSetUps.Sits` and `Environment` answer through. A look's report carries its judged opinions as the facet `IJudgedOpinion`, which the review's `OpinionJudged` implements. The workflow choice's words are the settings' `WorkflowKey` (`Current`, `WorkflowProblem`, `UndeclaredInWorkspace`, `IsId`), which `WorkflowSelection` aliases. What stays with the owners is reached through two required ports, resolved only where reached: `IWorkOrdersWorkflows` (a unit's obligations in the nodes' and the resources' records, whether a saved workflow can be chosen for an ask, and the workflow each kind of a workspace maps to with what it lowers), which Workflows installs from `Workflows/WorkOrdersWorkflowsWiring.cs` over `WorkflowObligations`, and `IWorkOrdersSetup` (what a checkout's own files say it is, for the intake's room), which Setup installs from `Setup/WorkOrdersSetupWiring.cs`; Setup's `RepositoryDescription` implements the room's `IIntakeDescription`.
 
+The driver's `Review/` owns the review of work (FOUNDATION1 mod-xvi, D212): the review's and the second opinion's records, rules, gates, presses, doors, dues, deliveries and files (with their `Domain/`), the chat's send-backs and presses, the session trees' gates, the opinion look's rules and delivery record (`OpinionLook.cs`, `OpinionDelivery.cs`, once `Loop/`'s), and the heavy run and the session's checks (`Heavy/`: `HeavyGates`, `HeavySlot`, `HeavyRun`, `HeavyStep`, `HeavyTold`, `HeavyMapping`, `HeavyWorkers`, `HeavyLease`, `LongCalls`, `MachineAdmission`, `SessionChecks` and their two commands, once `Sessions/Heavy/`), with the wiring Review installs for lower subdomains. The files kept their sub-folders below the old `Sessions/` (`Heavy/`); tests are mirrored under `Driver.Tests/Review/`. Namespaces remain `Daoris.Driver`, and the files moved byte-identically.
+
+Review names nothing above it: no Plugins, Workflows, Setup, Help or Loop type. A chat run's spelling and look folder are Workplace's (`WorkplaceRunFiles`), and the press's chat line and chat run come through `WorkplaceWorkflows.ChatPressOf` and the participants' `ParticipantsWorkflows` (whose `ReadProcess` takes a run that may be none); the run a chain's work is, is `ReviewGate.RunOf` (which `WorkflowRunBindings.RunOf` answers through); and the look a named version says is Review's `WorkflowLook`. The process is read through facets the workflows' `WorkflowProcess` implements: Workplace's `IWorkplaceProcess`, Review's `IReviewedProcess` (the review rule and the look) and `ICheckedProcess` (a graph version's claimed options and a steps version's work step's checks, for `SessionChecks` and `LongCalls`). The landing gate holds the run's own part and the graph's as the facets `IWorkflowGatePart` and `IGraphGatePart` (`Review/Domain/RunParts.cs`), which `WorkflowGateState` and `GraphGateState` implement and whose `Held` gives the machine log's line; a reader that needs more casts back through `LandingGateParts.WorkflowPart` and `GraphPart`.
+
 Plugins names nothing above it: no Workflows type. The node vocabulary a manifest's step is read into is Plugins' own, in `Plugins/Domain/NodeDeclaration.cs` (`NodeDeclaration`, `NodeRetry`, `NodePerform` and the reaches `NodeReach`), which the workflows' node table, the runtime and Ask Daoris's workflow proposals name from above. What only the node table can judge is reached through the required `IPluginStepRules` (`Plugins/PluginStepRules.cs`; whether a declared step is a sound node), which Workflows installs from `Workflows/PluginStepRulesWiring.cs` over `NodeDeclarations.Problem`, resolved only where a manifest's step is read. The work runtime's ports are Plugins' too, in `Plugins/WorkRuntimePorts.cs`: `IWorkPerformPort` (the performer's fenced calls) and `IWorkRuntimePort` (the supervision's two halves), which `HookSet` implements and the performer, the observer, the cleaner and the runtime take.
 
 Context names no Course, Review or Work orders type. The brief says the outgoing agent's note by `Context/Domain/OutgoingNote.cs`
@@ -288,6 +292,9 @@ cannot (TREELINK1, D51's note); the look's own tidy moves folders aside and neve
 A tree opens with its checkout's npm dependencies where its lockfile matches (`TreeDependencies`, TREEDEPS1) and the files under
 `local/` its repository's gates read, as the checkout's `daoris.gates.json` declares them, copied read-only (`TreeLocalInputs`,
 TREELOCAL1, D216); both are made under a name of their own inside the opening's lock, and the opening says each one it did not copy.
+A tree made again on its branch after it was gone (`TreeReturns`, TREEGONE1) takes the same two copies under the same lock, says them
+on its record and tells its agent (`TreeStanding.Told`); one cut off while copying takes back its copies and folder, never the branch
+(TREELOCAL2).
 The empty-leftover scan skips directory links at its root and every nested level, leaving both links and their targets
 untouched while removing ordinary empty leftovers (TREELEFTLINK1, D51).
 The machine's `cap` counts what the driver starts (CAPCOUNT1, D130's note): a driven quest's session, an intake, a helper and a
@@ -485,11 +492,11 @@ The extension blocks, forwards and ports the layering needed are folded back in 
 which reads its stores through `TraceHere`'s values) and the pause, abandon, delete, archive and history plans and words; the session events' records and rules
 (`SessionEvents.cs`, with `SessionEventText`'s bounds, id rule and cuts) and the observation rules are the events' now (`Events/Domain/`, FOUNDATION1 mod-vii). Its stores and use cases sit in scope folders (SCOPE1d): `Work/` (pause, abandon and their records), `Requests/`
 (the session requests, their watch and the moves), `History/` (clearing, its bytes and home files, archive and deletion), `Trace/`
-(the trace, its command and reads), `Events/` (the event log and last words; the session log and its watch are in the top-level `Events/`) and `Heavy/` (below); `RunningSessions`,
+(the trace, its command and reads), `Events/` (the event log and last words; the session log and its watch are in the top-level `Events/`) and `Heavy/` (now `Review/Heavy/`, below); `RunningSessions`,
 `SessionProcesses`, `SessionsCommand` and `HarnessEnding` (the loop's too) stay at the top. Review, with fifteen files at its top, stays flat.
 
 A session's heavy checks run through `daoris-driver run-heavy [--gate <name> | --look | -- <command>]` (HEAVYRUN1a, D180's HEAVYRUN1 notes), in
-`Sessions/Heavy/`: run in a checkout, it runs the gates its `daoris.gates.json` marks `"heavy": true` one after another, or the one
+`Review/Heavy/` (once `Sessions/Heavy/`): run in a checkout, it runs the gates its `daoris.gates.json` marks `"heavy": true` one after another, or the one
 named (`HeavyGates`), holding one slot per repository across its trees (`HeavySlot`: the repository's common git folder, read
 from git's own files, keys a file under the home's `locks/heavy/` whose open handle is the lock, with no lease; a waiting run says
 behind whom and how long from the holder's record beside it). Each gate starts suspended and joins the run's kill-on-close job
@@ -821,6 +828,13 @@ them is an HTTP route. A session's *record* is on the host; its console, events 
   services resolved as it (the pickers, the tray, the update), so the person's close of it while a
   `main:<n>` is open hides it (`MainWindows`); the last of those closing closes it for good, and a later launch or the tray
   shows it again rather than opening another. A close from code is not the person's: the update's is `CloseForGood`.
+- **A blank window can be reloaded from outside the page** (PAGELOOP1 c, D217). The tray icon's menu has one item, *Reload the
+  page of every window* (the words are the page's own, `notifications.system.reloadPage`, handed with the balloons' over
+  `SET_NOTICE_WORDS`; English before a page has handed any). It opens the page again in every open window, main or secondary
+  (`PageReloads`, each window's `IReloadableWindow.ReloadPage` on its own thread): the kit's `ChromiumChildBrowser` exposes no
+  reload, so the window's `ChromiumView` is made again on the same path. A window on its splash or its trouble label is
+  skipped; the host, the driver, the service and every session are not in the view and keep running. Each reload is one
+  `page.reloaded` line in the machine log, naming the window. There is no key and no page command for it.
 - 🔴 **A diff confirms the tree it was given** (`rev-parse --show-toplevel`): git searches upward, and
   would otherwise answer for the repository above it.
 

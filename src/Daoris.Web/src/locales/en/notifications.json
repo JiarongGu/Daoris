@@ -40,6 +40,7 @@
   "notifications.system.holding.title": "{{repository}}: a session holds a tool call for you",
   "notifications.system.holding.help": "Ask Daoris holds a tool call for you",
   "notifications.system.holding.body": "Open Daoris to answer it before it is refused by itself.",
+  "notifications.system.reloadPage": "Reload the page of every window",
   "notifications.done.title": "Done and failed",
   "notifications.done.ended": "A session in {{repository}} ended: {{state}}",
   "notifications.done.expired": "A terminal's press to {{act}} went unanswered, and ran out of time",

@@ -30,15 +30,6 @@ public static class WorkflowGateStates
 }
 
 /// <summary>
-/// D154's rows 5 and 6 as a named version says them (WORKFLOW1f, the workflow design §4.6): the environment its look step reads the
-/// work in, or none where it has no look; and why its look cannot start, where it names what the repository does not declare.
-/// </summary>
-/// <param name="Environment">The environment the look is in; null where the version has no look, or its look cannot start for want of one.</param>
-/// <param name="Cannot">Why the look cannot start (§3.7), a sentence naming the Setup row that declares what it needs; else null.</param>
-public sealed record WorkflowLook(string? Environment, string? Cannot);
-
-
-/// <summary>
 /// The process a chain's work in a repository follows at its gate (WORKFLOW1f, D157 points 4 and 6; the workflow design §2.3,
 /// §4.6): how it lands, the review rule its look reads and what rows 5 and 6 say, and the second opinion it waits for. Under
 /// Current, or with no binding here, the rules as they stand, read live as every gate reads them today; under a named workflow,
@@ -47,7 +38,7 @@ public sealed record WorkflowLook(string? Environment, string? Cannot);
 /// <param name="Landing">The landing rule the work lands by: the declared rule, or the version's landing step over it.</param>
 /// <param name="Review">The review rule as declared: its environments, which the chain's and the ask's <c>on</c> reads (§2.3).</param>
 /// <param name="Opinion">The second-opinion rule the gate reads; null where none is set, or the version has no opinion step.</param>
-public sealed record WorkflowProcess(string Repository, Landing Landing, ResolvedReview? Review, ResolvedOpinion? Opinion) : IWorkplaceProcess
+public sealed record WorkflowProcess(string Repository, Landing Landing, ResolvedReview? Review, ResolvedOpinion? Opinion) : IWorkplaceProcess, IReviewedProcess, ICheckedProcess
 {
     /// <summary>The run it was read for: the chain's first quest in the repository; null where none was named.</summary>
     public string? Run { get; init; }
@@ -109,6 +100,9 @@ public sealed record WorkflowProcess(string Repository, Landing Landing, Resolve
 
     /// <inheritdoc/>
     public string LandingSays => WorkflowGate.LandingSays(this);
+
+    /// <inheritdoc/>
+    public string? WorkChecks => (string?)Steps.FirstOrDefault(step => step.Kind == WorkflowKinds.Work)?.Field("checks");
 
     /// <summary>
     /// The rules as they stand, read live as every gate reads them today: Current, and work with no binding here. Its landing is the rule
@@ -441,7 +435,7 @@ public sealed record KindPathsRead(IReadOnlyList<string> Lowered, string Otherwi
 /// the run's own holds the work before the second opinion and the look.
 /// </summary>
 /// <param name="State">One of <see cref="WorkflowGateStates"/>.</param>
-public sealed record WorkflowGateState(string State, WorkflowProcess Process)
+public sealed record WorkflowGateState(string State, WorkflowProcess Process) : IWorkflowGatePart
 {
     /// <summary>The working session the door lands, which the terminal's doors name.</summary>
     public string? Session { get; init; }
@@ -463,6 +457,16 @@ public sealed record WorkflowGateState(string State, WorkflowProcess Process)
 
     /// <summary>What it says, in the driver's words: the terminal's line and every door's refusal.</summary>
     public string Says => WorkflowGate.Says(this);
+
+    /// <summary>Whether it has anything to say: its state is not <see cref="WorkflowGateStates.None"/>.</summary>
+    public bool Speaks => State != WorkflowGateStates.None;
+
+    /// <summary>The process the part was read with, as the review's gate reads it.</summary>
+    IWorkplaceProcess IWorkflowGatePart.Process => Process;
+
+    /// <summary>The machine log's line for a landing this part held: a landing step that cannot start is told as such (see <see cref="WorkflowLines.Held"/>).</summary>
+    LandingLine IWorkflowGatePart.Held(string session, string? repository, string? workspace, string door) =>
+        WorkflowLines.Held(session, repository, workspace, this, door, LetsGo ? WorkflowKinds.Landing : null);
 }
 
 /// <summary>

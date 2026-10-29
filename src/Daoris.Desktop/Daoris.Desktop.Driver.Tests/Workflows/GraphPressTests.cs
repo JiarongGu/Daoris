@@ -72,7 +72,7 @@ public sealed class GraphPressTests
         Assert.Equal(["answer kept", "pass asked, waiting 0s"], _did);
 
         _did.Clear();
-        var opinion = Gate(NotJudged.Graph, opinionHolds: true);
+        var opinion = Gate(NotJudged.GraphPart()!, opinionHolds: true);
         Assert.Same(opinion, await GraphPasses.PressAsync(_ => Answered(opinion), Reads(Lands), Passes(comes: true), CancellationToken.None));
         Assert.Equal(["answer kept"], _did);
 
