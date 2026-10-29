@@ -176,6 +176,14 @@ sends it on, the person's own press, on the ask's page and a session's panel ali
 know the semantic half was absent, and would read them as complete rather than as
 complete-for-word-overlap (D24).
 
+**A page that fails while drawing says so, and never leaves its window blank** (PAGELOOP1). `main.tsx` mounts
+`app/PageRoot.tsx`, both roots under the error screen (`app/PageBoundary.tsx`), which sits outside the query client and every
+provider and reads no query, scope or bridge hook. A render that throws below it draws *This window's page stopped on an error*,
+the error's message on one line, that the sessions and the driver behind the page go on, and *Reload the page*
+(`window.location.reload()`: the fresh page hands the window its ready handshake and lifts its splash again). It lifts a splash
+still up, and writes one `page.error` line, `where` `render` (`bridge/log.ts`'s `reportPageStopped`). A failure outside a render
+is still `installPageErrors`'s, `where` `window` or `promise`.
+
 ## Where things are in `src/` (STRUCT5c, D166)
 
 The top holds the entries alone: `main.tsx`, which `index.html` runs, the theme `tokens.css` it and Storybook load,

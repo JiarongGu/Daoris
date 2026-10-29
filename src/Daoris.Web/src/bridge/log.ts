@@ -87,6 +87,17 @@ export const useOpenLogFolder = () => useMutation({
   mutationFn: () => getBridge().invoke<{ opened: boolean; folder: string | null }>('DAORIS.LOG', 'OPEN_FOLDER', {}),
 });
 
+/** An error's message as the page reports it and its error screen says it: an `Error`'s own, anything else as its text. */
+export const errorMessage = (error: unknown): string => (error instanceof Error ? error.message : String(error ?? ''));
+
+/**
+ * A render the page's error screen caught (PAGELOOP1), into the machine log as `page.error` with `where` `render`: the message,
+ * cut short. Caught by the screen, so React never hands it to the window, and `installPageErrors` never hears it.
+ */
+export function reportPageStopped(error: unknown): void {
+  logEvent('page.error', { where: 'render', message: clipped(errorMessage(error)) });
+}
+
 let pageErrorsHeard = false;
 
 /**

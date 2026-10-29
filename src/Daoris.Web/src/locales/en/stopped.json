@@ -1,0 +1,6 @@
+{
+  "stopped.headline": "This window's page stopped on an error",
+  "stopped.behind": "Only the page stopped. The sessions, the driver and everything else running behind it go on, and reloading the page ends none of them.",
+  "stopped.logged": "The machine log keeps the error as `page.error`.",
+  "stopped.reload": "Reload the page"
+}

@@ -1,0 +1,6 @@
+{
+  "stopped.headline": "此窗口的页面因错误而停止",
+  "stopped.behind": "停止的只是页面。会话、驱动和它背后运行的其他一切都在继续，重新加载页面也不会结束其中任何一个。",
+  "stopped.logged": "本机日志已将这个错误记为 `page.error`。",
+  "stopped.reload": "重新加载页面"
+}
