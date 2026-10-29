@@ -337,9 +337,11 @@ describe("the window's confirmation of a terminal's press", () => {
 
   // DRAINHOLD1 part 2: a Confirm held by a drain says what the drain waits on and since when, and offers the update's *not now* in place.
   const HELD = async (): Promise<ConfirmationAnswer> => ({ answered: false, why: 'draining', message: 'Daoris is about to restart; this still waits.' });
+  // 14:05 of the day the test runs: the card says a moment of today by its time alone, and a fixed date read as another day's after it.
+  const today = new Date();
   const DRAIN: UpdateState = {
     state: 'draining', staged: { id: 'b1', version: '0.1.9' }, mode: 'when-idle', driven: 2, turns: 1, problem: null, outcome: null, last: null,
-    since: new Date(2026, 9, 29, 14, 5).toISOString(),
+    since: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 14, 5).toISOString(),
   };
 
   it.each([
