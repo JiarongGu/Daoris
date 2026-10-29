@@ -251,7 +251,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Service/Daoris.Service.Core/Quests/QuestLog.cs` | 54 | 848 |
 | `src/Daoris.Service/Daoris.Service.Core/Quests/Quests.cs` | 271 | 4605 |
 | `src/Daoris.Service/Daoris.Service.Core/Sessions/SessionLedger.cs` | 141 | 2483 |
-| `src/Daoris.Service/Daoris.Service.Core/Sessions/Sessions.cs` | 120 | 2006 |
+| `src/Daoris.Service/Daoris.Service.Core/Sessions/Sessions.cs` | 121 | 2016 |
 | `src/Daoris.Service/Daoris.Service.Http.Tests/ConfirmationTests.cs` | 57 | 1016 |
 | `src/Daoris.Service/Daoris.Service.Http.Tests/LocalHostTests.cs` | 166 | 2715 |
 | `src/Daoris.Service/Daoris.Service.Http/ApiContracts.cs` | 82 | 945 |
@@ -267,7 +267,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Service/Daoris.Service.Tests/Sessions/SaidSettledTests.cs` | 61 | 1142 |
 | `src/Daoris.Service/Daoris.Service.Tests/Sessions/SessionLedgerTests.cs` | 118 | 2254 |
 | `src/Daoris.Service/Daoris.Service.Tests/Sessions/SessionStoreTests.cs` | 47 | 918 |
-| `src/Daoris.Service/README.md` | 123 | 850 |
+| `src/Daoris.Service/README.md` | 124 | 868 |
 
 ### CLI (`cli`)
 
