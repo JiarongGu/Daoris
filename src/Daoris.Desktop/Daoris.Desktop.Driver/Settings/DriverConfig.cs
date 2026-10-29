@@ -61,6 +61,14 @@ public sealed record DriverConfig(
     public int? KeptTimeoutMinutes { get; init; }
 
     /// <summary>
+    /// Whether an update drains the look this configuration plans (DRAINHOLD1, D139 §2): set only by <see cref="InstallUpdate.Drained"/>,
+    /// never read from <c>driver.json</c> and never written. Each start the look makes on its own beyond a quest's (a helper, a partner's
+    /// piece, a second opinion's pass, a brainstorm's or meeting's round, an automatic landing, a keeping or tidy pass, a wake of the
+    /// conversations waiting for an account) reads it, so the drain holds them through the one view a draining look plans with.
+    /// </summary>
+    public bool Draining { get; init; }
+
+    /// <summary>
     /// The tests' one bound on a driven run, in minutes (SESSWATCH1a, the session-watch design §7): a backstop so a hung stand-in fails
     /// a fast suite in minutes, handed to <c>Driver.WaitAsync</c> as a pass's own minutes are. Never read from <c>driver.json</c> and
     /// never written; null, as every real configuration is, bounds nothing.

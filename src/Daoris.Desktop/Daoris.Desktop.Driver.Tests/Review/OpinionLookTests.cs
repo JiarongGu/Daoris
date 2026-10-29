@@ -63,6 +63,36 @@ public sealed class OpinionLookTests : IDisposable
     }
 
     /// <summary>
+    /// DRAINHOLD1 (the driver follow-up): an update's drain holds the second opinion's pass, a reviewer's session in a copy. The owed
+    /// opinion is still judged and its quests still sit, but no pass starts, none is kept at the gate, and the look says the drain's hold
+    /// once; after *Not now* the pass is asked.
+    /// </summary>
+    [Fact]
+    public async Task A_draining_look_asks_no_pass_for_an_owed_opinion_and_after_not_now_it_asks()
+    {
+        var (host, _, _) = await DoneAsync(required: false);
+        host.Quest("q2", "Open", parent: "q1", setUpIn: "local");
+        var draining = Driver(host, drained: true);
+        var events = new List<string>();
+
+        var (sits, passes) = await draining.OpinionsAsync(new Snapshot([], [], []), events, CancellationToken.None);
+        var (_, again) = await draining.OpinionsAsync(new Snapshot([], [], []), events, CancellationToken.None);
+        await draining.Running.SettledAsync();
+
+        Assert.Equal((0, 0), (passes, again));
+        Assert.Empty(_passes);
+        Assert.StartsWith("set-up step `#q2` waits for a second opinion", sits["q2"].Reason);
+        Assert.Empty(new OpinionGates(_home).Read("q1", "reports").Asks);
+        Assert.Equal(InstallUpdate.HeldLine("opinion", "the second opinion owed on session `s1`'s work"), Assert.Single(events));
+
+        var driver = Driver(host);
+        var (_, later) = await driver.OpinionsAsync(new Snapshot([], [], []), [], CancellationToken.None);
+        await driver.Running.SettledAsync();
+        Assert.Equal(1, later);
+        Assert.Single(_passes);
+    }
+
+    /// <summary>
     /// 🔴 LIMITRESUME1j (D206; the limit-resume design §3.6): an opinion asked on a line that ran on two makers refuses a reviewer of
     /// either as another maker's. s1's work went on with Claude Code from s0, cut off by its limit on Codex; the look judges the work's
     /// families from every part of the line, so a listed reviewer of either maker reads it only as the same agent, fresh, and says
@@ -388,7 +418,7 @@ public sealed class OpinionLookTests : IDisposable
 
     /// <summary>The build's own agents by name, each present by a file look, as <c>OpinionRecheckTests</c> has them.</summary>
     /// <param name="pass">What each pass does, opened by the stand-in; null opens <c>op1</c> and raises nothing.</param>
-    private Daoris.Driver.Driver Driver(OpinionStandIn host, Func<OpinionPassAsk, OpinionPassRun>? pass = null)
+    private Daoris.Driver.Driver Driver(OpinionStandIn host, Func<OpinionPassAsk, OpinionPassRun>? pass = null, bool drained = false)
     {
         var adapters = new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase);
         foreach (var name in new[] { "claude-code", "claude-code-acp", "codex-acp" })
@@ -401,7 +431,7 @@ public sealed class OpinionLookTests : IDisposable
         }
 
         var set = new AdapterSet(adapters);
-        return new Daoris.Driver.Driver(host.Client(), Config(), set, _home, harnesses: new HarnessRoster(set, DaorisHome.Entry(_home, HomeEntry.Harnesses)))
+        return new Daoris.Driver.Driver(host.Client(), drained ? InstallUpdate.Drained(Config()) : Config(), set, _home, harnesses: new HarnessRoster(set, DaorisHome.Entry(_home, HomeEntry.Harnesses)))
         {
             Passes = (ask, choice, _) =>
             {

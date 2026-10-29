@@ -39,11 +39,11 @@ public sealed class HandOverAskLookTests : IDisposable
             : config;
 
     /// <summary>A driver for a look: the roster's doors a stand-in, its starts only said, and the chat runner's take where <paramref name="wired"/>.</summary>
-    private Daoris.Driver.Driver Driver(string? mode = null, bool wired = false)
+    private Daoris.Driver.Driver Driver(string? mode = null, bool wired = false, bool drained = false)
     {
         var service = _ledger.Client();
         var adapters = AdapterSet.Built();
-        return new Daoris.Driver.Driver(service, Config(mode), adapters, _home, harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)))
+        return new Daoris.Driver.Driver(service, drained ? InstallUpdate.Drained(Config(mode)) : Config(mode), adapters, _home, harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)))
         {
             Stops = (session, note) =>
             {
@@ -137,6 +137,29 @@ public sealed class HandOverAskLookTests : IDisposable
         Assert.Equal([("c0nv0002", "codex-acp")], _handed);
         Assert.Null(new HandOverBox(_home).Read("c0nv0002"));
         Assert.Equal(HandOverAskStates.Taken, State("c0nv0002")!.State);
+    }
+
+    /// <summary>
+    /// DRAINHOLD1 (the driver follow-up): an update's drain holds a conversation's hand-over to the shell's chat runner, which opens a turn of
+    /// its own. The look hands nothing over, writes no state and says the drain's hold once; after *Not now* the runner takes it.
+    /// </summary>
+    [Fact]
+    public async Task A_draining_look_hands_no_conversation_over_and_says_the_drains_hold_once_and_after_not_now_it_does()
+    {
+        _ledger.Working("c0nv0002", "engine", Tree("tree-d"));
+        Asks("c0nv0002", id: "b1b2c3d4");
+        var draining = Driver(HandOverRules.On, wired: true, drained: true);
+
+        var first = await draining.TickAsync().WaitAsync(Poll.Patience);
+        var second = await draining.TickAsync().WaitAsync(Poll.Patience);
+
+        Assert.Single(first.Events, line => line == InstallUpdate.HeldLine("hand-over", "the ask to hand session `c0nv0002` over"));
+        Assert.DoesNotContain(second.Events, line => line.StartsWith("hand-over  ", StringComparison.Ordinal));
+        Assert.Empty(_handed);
+        Assert.Null(State("c0nv0002"));
+
+        await Driver(HandOverRules.On, wired: true).TickAsync().WaitAsync(Poll.Patience);
+        Assert.Equal([("c0nv0002", "codex-acp")], _handed);
     }
 
     /// <summary>🔴 `on`, a quest's session still working its turn: never stopped mid-turn; the ask goes at the turn's end.</summary>

@@ -234,6 +234,14 @@ internal sealed class DriverHandOvers(LoopContext context)
             return;
         }
 
+        // DRAINHOLD1: the shell's chat runner opens a conversation's hand-over as a turn of its own, which the drain waits on. A quest's is
+        // only a stop and a box (its go-on is a quest's start, which the drain holds), so it goes on.
+        if (!IsQuest(record) && _context.HandsOver is not null && _context.Config.Draining)
+        {
+            _context.DrainHolds(events, "hand-over", ask.Id, $"the ask to hand session `{session}` over");
+            return;
+        }
+
         bool kept;
         string? message;
         string? code;

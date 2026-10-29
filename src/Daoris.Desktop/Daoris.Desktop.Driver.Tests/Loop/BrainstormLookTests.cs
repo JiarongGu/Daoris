@@ -223,6 +223,36 @@ public sealed class BrainstormLookTests : IDisposable
     }
 
     /// <summary>
+    /// DRAINHOLD1 (the driver follow-up): an update's drain holds a sent brainstorm, which would take agents' turns and slots. The look
+    /// runs none, says the drain's hold once and leaves the packet frozen and sent; after *Not now* it runs.
+    /// </summary>
+    [Fact]
+    public async Task A_draining_look_runs_no_sent_brainstorm_and_says_the_drains_hold_once_and_after_not_now_it_runs()
+    {
+        var id = Files.WriteRequest("How should the daily report stop dropping its last day?", null, ["stub", "acp-stub"], At);
+        var (driver, _, _) = Start();
+        await LookAsync(driver);
+        var digest = Files.ReadState(id)!.Packet!;
+        Files.WriteSent(id, digest, At);
+        var (draining, _, held) = Start(config: InstallUpdate.Drained(DriverConfig.Empty with { Adapter = "stub", Cap = 3 }));
+
+        var first = await LookAsync(draining);
+        var second = await LookAsync(draining);
+
+        Assert.Empty(held.Seen);
+        Assert.Equal(InstallUpdate.HeldLine("brainstorm", $"`{id}`"), Assert.Single(first));
+        Assert.Empty(second);
+        Assert.Equal(BrainstormStates.Frozen, Files.ReadState(id)!.State);
+
+        var (later, _, turns) = Start();
+        turns.Answers["g1"] = Give(("Make the window inclusive of its last day", "yes", "low"));
+        turns.Answers["g2"] = Give(("Include the last day in the window", "yes", "low"));
+        turns.Answers["s1"] = Synthesize(("An inclusive window", 1, ["P1", "P2"]));
+        await LookAsync(later);
+        Assert.NotEmpty(turns.Seen);
+    }
+
+    /// <summary>
     /// 🔴 Sent, two stub doors each answer once in a room holding the one packet; the synthesis reads the proposals anonymous and
     /// ranks them; Daoris re-attaches who gave which, flags from the fields, keeps the document and prints it, says stubs are no
     /// maker diversity, removes the rooms, and asks the service nothing: no quest operation.

@@ -158,6 +158,13 @@ public sealed class DriverWatch(
     public Func<bool>? Draining { get; init; }
 
     /// <summary>
+    /// Whether an update drains now (<see cref="Draining"/>), asked where the loop starts work beside the looks (DRAINHOLD1): the tidy and
+    /// keeping pass, a tidy of a ref move, the wake of the conversations waiting for an account and the evaluation runtime's pass. A start
+    /// the loop holds stays due, so the first moment that does not drain begins it.
+    /// </summary>
+    private bool DrainsNow() => Draining?.Invoke() == true;
+
+    /// <summary>
     /// The look's own tidy of session branches (AUTOTIDY1, AUTOTIDY2a, D88's notes), run beside the looks once each pace, as the start's
     /// line-following runs beside them; what it says joins the report of the look that finds it done. Null keeps the watch's
     /// own, at <see cref="BranchTidying.DefaultPace"/>.
@@ -481,7 +488,8 @@ public sealed class DriverWatch(
                 // PARALLEL1a: and the facts that repository's refs move; OWNMOVES1: past their rest where Daoris moved them itself.
                 Heard?.Invoke(ChangeTopics.Refs, repository, mine);
             },
-            tidy: effect);
+            // DRAINHOLD1: a tidy of a ref move removes a branch and its tree, which the drain does not wait on: refused while it drains.
+            tidy: new DrainHeldEffect(effect, DrainsNow));
         _refs = refs;
         refs.Start();
 
@@ -572,6 +580,14 @@ public sealed class DriverWatch(
             // One pass, on the choices the latest look read. What it says joins the next look's report; what it acted on is in the records.
             async Task<IReadOnlyList<string>> PassAsync(CancellationToken token)
             {
+                // DRAINHOLD1: a pass performs plugins' steps, starts their processes and acts on trees, none of which the drain waits on. A door
+                // waiting on the pass is answered that none read; the whole look's ask and the awaited set's stay set for the pass after the drain.
+                if (DrainsNow())
+                {
+                    PassAsks.Done(asks.Take(), passed: false);
+                    return [];
+                }
+
                 var asked = asks.Take();
                 var whole = (Interlocked.Exchange(ref wholeAsked, 0) == 1) | asked.Asked;
                 var lines = new List<string>();
@@ -783,10 +799,12 @@ public sealed class DriverWatch(
                         effected.Clear();
                     }
 
-                    if (tidying is null && tidy.Due) tidying = TidyAsync(tidy, ct);
+                    // DRAINHOLD1: the tidy (and the keeping passes in it) removes trees and branches, and the limits' wake goes conversations on in
+                    // turns; neither begins while an update drains, and both stay due for the first look that does not.
+                    if (tidying is null && tidy.Due && !DrainsNow()) tidying = TidyAsync(tidy, ct);
 
                     if (limiting is { IsCompleted: true }) limiting = null;
-                    if (limiting is null && Limits is { } limits) limiting = LimitsAsync(limits, config, ct);
+                    if (limiting is null && Limits is { } limits && !DrainsNow()) limiting = LimitsAsync(limits, config, ct);
 
                     Looked(by, woke, part, nudges, began, failed: false);
                     await onReport(report, config).ConfigureAwait(false);
