@@ -298,7 +298,8 @@ inherited with no run. Every other failure first meets its gate's **confirm run*
 more on the candidate's tip as it was composed, holding every place of the machine's admission (below), once per failing gate.
 Failing again with its signature, it is judged as follows. Passing, it is a sighting (`local/integration-sightings.jsonl`, never
 a flake), and the candidate goes by `local/integration-policy.json`'s `unconfirmed`: `split` by default, the owner's `hold` (held
-for a decide, which no door gives yet) or `land` (promoted on that tip alone, its pass standing for no other). A confirm run whose
+for a decide, which has no door, so a drop or a commit on main moves it) or `land` (promoted on that tip alone, its pass standing
+for no other). A confirm run whose
 admission is not shown (the admission off, no `DAORIS_HOME`, a record it cannot write, another live hold beside it) is
 inconclusive and read as `split`. Neither runs anything on the base. `local/scope-runs.jsonl` keeps each confirm run's
 composition, admission evidence and wait. A failing test that fails the same way on the
