@@ -55,7 +55,9 @@ public sealed class TurnStopTests : IDisposable
         Assert.True(session.Runner.Say(session.Id, "second"));
         Assert.Equal(["second"], Texts(session.Runner.Queue(session.Id).Queued));
 
-        await Until(() => Turns(session) == 2, () => session.Seen());
+        // FLAKE1: the queue is told the turn ended after the turn's end is counted, so the wait is for both, as the cases below wait
+        // for the told queue; read at the count alone, the last notice could still say a turn was in flight (1 of 3 alone, 2026-10-29).
+        await Until(() => Turns(session) == 2 && LastQueue(session) is { Taking: false }, () => session.Seen());
 
         Assert.Equal(["user: first", "result: first", "user: second", "result: second"], HeardLines());
         Assert.Equal(
@@ -64,9 +66,11 @@ public sealed class TurnStopTests : IDisposable
         Assert.Empty(session.Runner.Queue(session.Id).Queued);
         // The queue was told as it moved, which is what the page shows as queued.
         // …and whether a turn was in flight, which is what the page's stop-the-turn control follows.
-        Assert.Contains(session.Queues, queue => queue.Taking && Texts(queue.Queued).SequenceEqual(["second"]));
-        Assert.False(session.Queues[^1].Taking);
-        Assert.Empty(session.Queues[^1].Queued);
+        List<ChatQueue> told;
+        lock (session.Queues) told = [.. session.Queues];
+        Assert.Contains(told, queue => queue.Taking && Texts(queue.Queued).SequenceEqual(["second"]));
+        Assert.False(told[^1].Taking);
+        Assert.Empty(told[^1].Queued);
     }
 
     /// <summary>
