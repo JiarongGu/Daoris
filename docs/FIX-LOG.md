@@ -5,6 +5,27 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-30 - The other-maker carry-on case moved its line by the machine's adapter key, which a carry-on no longer reads (FOUNDATION1j, MAKERTRAIL2)
+
+- **Symptom:** batch p's candidate failed `MakerTrailTickTests.A_carry_on_to_another_maker_is_told_the_first_makers_trailer_for_the_work_it_left` on every run since FOUNDATION1j part ii: `Sequence contains no matching element`, no `session/prompt` logged on the protocol stand-in.
+- **Root cause:** the case moved the line to another maker by running its second look with another machine `adapter` (`Driver(service, "acp-stub")`). Part ii decided that a quest's start going on from a record, with no hand-over naming an agent, starts on the record's agent, never on that key (D212's note, *The continuations*), so the carry-on ran on `stub` and the stand-in heard nothing. The product is right; the case drove a move the loop no longer makes.
+- **Fix:** test only. The case moves the line the way the incident did: the first harness's account is cut off (the record says `limit`, the account cools), and the second look's Build order lists the protocol stand-in alone, so the limited line's walk takes it (D206 point 6). The brief still names the first maker's trailer beside its own and the new agent, and `A_carry_on_within_a_maker_says_nothing_more` is unchanged. Searched the driver tests for a second machine adapter after a record exists: `Driver(service, "<x>")` elsewhere names a stand-in's mode, and the cases that pass an adapter (`DrivenSessionInputTests`, `HelperProcessTests`, `AccountLimitHoldTests`) use one per run; none else moved maker that way.
+- **Verify:** the case failed first (1 of 3 with `ContinuedChoiceTickTests`); then `MakerTrailTickTests` (2), `ContinuedChoiceTickTests` (1) and `AccountLimitHoldTests` (24) passed.
+
+## 2026-10-30 - A gave-way-hold case asserted the swap held one thing only (DEPLOYBUSY1, FLAKE1)
+
+- **Symptom:** batch p's candidate failed `StagedBuildTests.A_hold_that_gave_way_still_names_what_held_it` at `Assert.Single` over the journal's holds: two met, the case's own hold on `app` (named, `testhost`) and a second on `update/staged/app` for 0.2 s with no holder named, on a machine loaded with builders. No change of the batch touched `Install/`.
+- **Root cause:** the case holds a file in `app` and lets it go on the third try, then asserts the swap's one hold. The swap's next move, the staged folder into `app`, can be refused for a moment by another program on a loaded machine, and the swap records that as a hold of its own, with no holder found once it has let go. The swap is right to record it; the case counted every hold as its own.
+- **Fix:** test only. The case picks the hold it caused by the move it held (`From == "app"`) and holds that one to what it held before: released, naming `app/Daoris.Desktop.App.dll` and this process. No wait is longer and nothing is retried.
+- **Verify:** `StagedBuildTests`, `GitSeedTests` and `ShortWaitsCensusTests`, 58 passed. Not proved: the second hold's own reproduction.
+
+## 2026-10-30 - Three of batch p's failures passed alone: a closed quest's words case and two merge-tool cases (FLAKE1)
+
+- **Sighting 1:** batch p's driver Process half failed `AccountRotationTickTests.Words_to_a_session_of_a_closed_quest_still_wait_for_their_own_account_with_another_ready` (1 of 1,015, 11 s) at its first look's check, `AccountRotationTickTests.cs:555`: expected `("completed","Done","account-1")`, read `("failed","Open","account-1")`. Run alone it passed (6 s). Six sibling cases run the same `Resuming("closes")` stand-in and passed in the same half.
+- **Sighting 2:** the merge candidate's tool run failed `merge-branch: --full --beside on main's tip ends the gate it is running…` (`never happened: the run ending once main moved on`, `merge-branch.test.ts:3332`). Run alone in batch p's tree it passed (29 s).
+- **Sighting 3:** the same run failed `merge-branch: --ci owes the family and deployment rehearsals a stage…` (`merge-branch: git could not start: spawnSync git EPERM`, `:7405`), a process start the machine refused under load. Run alone it passed (310 s); with sighting 2, 3 of 3 passed.
+- **Cause:** none found. Sighting 1's record shows only that the first turn ended failed with the quest still open, which the trace does not explain; the others are load-shaped by their readings. Each passed alone, so they are kept as sightings, not fixed, and no code or test is changed for them.
+
 ## 2026-10-30 - An agent only a workspace pins was refused as not installed (WSPINONLY1)
 
 - **Symptom:** a start of an agent pinned for a workspace, with no machine-wide install or pin, was refused as not installed, though the pin's managed install was on disk. FOUNDATION1j part ii's voice test had to install a machine-wide version to pass.
@@ -12303,24 +12324,3 @@ did, with the old heuristic as the last resort.
 **Verification.** Launched with no environment at all: right port, right family. The family rehearsal
 re-ran after the change, 22/22. No store pollution had occurred — no request ever reached the
 mis-rooted instance.
-
-## 2026-10-30 - The other-maker carry-on case moved its line by the machine's adapter key, which a carry-on no longer reads (FOUNDATION1j, MAKERTRAIL2)
-
-- **Symptom:** batch p's candidate failed `MakerTrailTickTests.A_carry_on_to_another_maker_is_told_the_first_makers_trailer_for_the_work_it_left` on every run since FOUNDATION1j part ii: `Sequence contains no matching element`, no `session/prompt` logged on the protocol stand-in.
-- **Root cause:** the case moved the line to another maker by running its second look with another machine `adapter` (`Driver(service, "acp-stub")`). Part ii decided that a quest's start going on from a record, with no hand-over naming an agent, starts on the record's agent, never on that key (D212's note, *The continuations*), so the carry-on ran on `stub` and the stand-in heard nothing. The product is right; the case drove a move the loop no longer makes.
-- **Fix:** test only. The case moves the line the way the incident did: the first harness's account is cut off (the record says `limit`, the account cools), and the second look's Build order lists the protocol stand-in alone, so the limited line's walk takes it (D206 point 6). The brief still names the first maker's trailer beside its own and the new agent, and `A_carry_on_within_a_maker_says_nothing_more` is unchanged. Searched the driver tests for a second machine adapter after a record exists: `Driver(service, "<x>")` elsewhere names a stand-in's mode, and the cases that pass an adapter (`DrivenSessionInputTests`, `HelperProcessTests`, `AccountLimitHoldTests`) use one per run; none else moved maker that way.
-- **Verify:** the case failed first (1 of 3 with `ContinuedChoiceTickTests`); then `MakerTrailTickTests` (2), `ContinuedChoiceTickTests` (1) and `AccountLimitHoldTests` (24) passed.
-
-## 2026-10-30 - A gave-way-hold case asserted the swap held one thing only (DEPLOYBUSY1, FLAKE1)
-
-- **Symptom:** batch p's candidate failed `StagedBuildTests.A_hold_that_gave_way_still_names_what_held_it` at `Assert.Single` over the journal's holds: two met, the case's own hold on `app` (named, `testhost`) and a second on `update/staged/app` for 0.2 s with no holder named, on a machine loaded with builders. No change of the batch touched `Install/`.
-- **Root cause:** the case holds a file in `app` and lets it go on the third try, then asserts the swap's one hold. The swap's next move, the staged folder into `app`, can be refused for a moment by another program on a loaded machine, and the swap records that as a hold of its own, with no holder found once it has let go. The swap is right to record it; the case counted every hold as its own.
-- **Fix:** test only. The case picks the hold it caused by the move it held (`From == "app"`) and holds that one to what it held before: released, naming `app/Daoris.Desktop.App.dll` and this process. No wait is longer and nothing is retried.
-- **Verify:** `StagedBuildTests`, `GitSeedTests` and `ShortWaitsCensusTests`, 58 passed. Not proved: the second hold's own reproduction.
-
-## 2026-10-30 - Three of batch p's failures passed alone: a closed quest's words case and two merge-tool cases (FLAKE1)
-
-- **Sighting 1:** batch p's driver Process half failed `AccountRotationTickTests.Words_to_a_session_of_a_closed_quest_still_wait_for_their_own_account_with_another_ready` (1 of 1,015, 11 s) at its first look's check, `AccountRotationTickTests.cs:555`: expected `("completed","Done","account-1")`, read `("failed","Open","account-1")`. Run alone it passed (6 s). Six sibling cases run the same `Resuming("closes")` stand-in and passed in the same half.
-- **Sighting 2:** the merge candidate's tool run failed `merge-branch: --full --beside on main's tip ends the gate it is running…` (`never happened: the run ending once main moved on`, `merge-branch.test.ts:3332`). Run alone in batch p's tree it passed (29 s).
-- **Sighting 3:** the same run failed `merge-branch: --ci owes the family and deployment rehearsals a stage…` (`merge-branch: git could not start: spawnSync git EPERM`, `:7405`), a process start the machine refused under load. Run alone it passed (310 s); with sighting 2, 3 of 3 passed.
-- **Cause:** none found. Sighting 1's record shows only that the first turn ended failed with the quest still open, which the trace does not explain; the others are load-shaped by their readings. Each passed alone, so they are kept as sightings, not fixed, and no code or test is changed for them.
