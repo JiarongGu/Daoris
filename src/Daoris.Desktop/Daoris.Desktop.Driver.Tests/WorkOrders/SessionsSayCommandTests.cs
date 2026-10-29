@@ -425,6 +425,34 @@ public sealed class SessionsSayCommandTests : IDisposable
     public void The_say_doors_word_for_a_teammates_record_is_the_teammate_code() =>
         Assert.Equal((WordsNever.Teammate, WordsNever.Intake), (WordsNever.Code("not-ours"), WordsNever.Code("intake")));
 
+    private const string HeadSentence = "Session `d0ne0000` went on in `n3xt0000`, its line's head: say it to that one.";
+
+    /// <summary>
+    /// FOUNDATION1d-ii part 1 (the foundation design §19.12's row for the head, an older desktop beside a newer host): a refusal word the reader
+    /// does not act on is read as the refusal it is, its word and the service's sentence said as they come, whatever else the answer carries. So
+    /// an older desktop meeting the say door's <c>continued</c> with its <c>head</c> says the service's sentence, which names the head, both at
+    /// the terminal where no loop runs and at the headless door. A build before this row read the <c>continued</c> answer with its <c>head</c>
+    /// this way (the row's note on D212 names the run); this build reads it so where the answer names no head, and reads any word it does not
+    /// know so.
+    /// </summary>
+    [Theory]
+    [InlineData("continued", null)]
+    [InlineData("elsewhere", "n3xt0000")]
+    public async Task A_refusal_word_the_reader_does_not_act_on_says_the_services_sentence_as_it_comes(string word, string? head)
+    {
+        var room = new Room([Record("d0ne0000", "completed")], [Quest("q1", "Done")]) { Refusing = id => (word, HeadSentence, head) };
+        using var service = room.Client();
+
+        var (exit, said) = await SayAsync(room, ["d0ne0000", "also the changelog"], World(service, loop: false));
+        var held = await new LoopWords(new SessionProcesses(Pids), () => service).HoldAsync(
+            new SessionRequest("d0ne0000", SessionMove.Say, DateTimeOffset.UtcNow) { Text = "also the changelog", Key = SessionRequests.NewKey() },
+            CancellationToken.None);
+
+        Assert.Equal((1, $"sessions: {HeadSentence}\n"), (exit, said));
+        Assert.Equal((false, word, HeadSentence), (held.Sent, held.Why, held.Message));
+        Assert.Empty(room.Said("d0ne0000"));
+    }
+
     private static Room Running() => new([Record("w0rk1ng0", "working")], [Quest("q1", "Taken")]);
 
     /// <summary>A running session on a door that takes words during its turn (D136): held at its door, read at its next step.</summary>
@@ -1126,6 +1154,21 @@ public sealed class SessionsSayCommandTests : IDisposable
         /// <summary>How many times the take-back door was posted to (SAIDBACK1a).</summary>
         public int TakeBacks { get; private set; }
 
+        /// <summary>
+        /// FOUNDATION1d-ii part 1: a refusal the say door answers a say to a record with, its word, its sentence and the head it names where it
+        /// names one, before any other judgement, as a host answers a word it judges first; null for a record it judges as ever.
+        /// </summary>
+        public Func<string, (string Word, string Sentence, string? Head)?>? Refusing { get; init; }
+
+        /// <summary>
+        /// FOUNDATION1d-ii part 1: the head of each record's line where it is not the record itself, as a host with the <c>head</c> mark judges
+        /// it inside its say door's step: a say to such a record is refused <c>continued</c>, naming the head, before any other refusal.
+        /// </summary>
+        public Dictionary<string, string> Heads { get; } = new(StringComparer.Ordinal);
+
+        /// <summary>Whether the room answers <c>GET /api/protocol</c> with the <c>head</c> mark, as a host from row d-ii does; none answers it as a host before.</summary>
+        public bool HeadMark { get; init; }
+
         /// <summary>The words already given ids, so a word kept next is <c>w{Next + 1}</c>.</summary>
         public int Next
         {
@@ -1206,6 +1249,23 @@ public sealed class SessionsSayCommandTests : IDisposable
                     var id = Uri.UnescapeDataString(path["/api/sessions/".Length..^"/say".Length]);
                     var record = _records.FirstOrDefault(each => (string?)each["id"] == id);
                     if (record is null) return Refuse(HttpStatusCode.NotFound, "not-found", $"No session `{id}` of this machine's.");
+                    if (Refusing?.Invoke(id) is { } refused)
+                    {
+                        var answer = new JsonObject { ["error"] = refused.Sentence, ["refusal"] = refused.Word };
+                        if (refused.Head is { } named) answer["head"] = named;
+                        _keys.Add(body!["key"]?.GetValue<string>());
+                        return Answer(HttpStatusCode.Conflict, answer);
+                    }
+
+                    if (Heads.TryGetValue(id, out var head))
+                    {
+                        _keys.Add(body!["key"]?.GetValue<string>());
+                        return Answer(HttpStatusCode.Conflict, new JsonObject
+                        {
+                            ["error"] = $"Session `{id}` went on in `{head}`, its line's head: say it to that one.", ["refusal"] = "continued", ["head"] = head,
+                        });
+                    }
+
                     if (id.Contains('/')) return Refuse(HttpStatusCode.Conflict, "not-ours", $"Session `{id}` is a teammate's.");
                     if (record["ask"] is not null) return Refuse(HttpStatusCode.Conflict, "intake", "An intake is answered through its ask.");
                     if ((string)record["state"]! == "stood-down") return Refuse(HttpStatusCode.Conflict, "stood-down", "It stood down.");
@@ -1279,6 +1339,14 @@ public sealed class SessionsSayCommandTests : IDisposable
                     {
                         ["done"] = true, ["session"] = record.DeepClone(), ["said"] = reworded,
                         ["message"] = $"Reworded word `{named}` on session `{id}`: the new words wait last, as `{reworded["id"]}`.",
+                    });
+                }
+
+                if (request.Method == HttpMethod.Get && path == "/api/protocol" && HeadMark)
+                {
+                    return Answer(HttpStatusCode.OK, new JsonObject
+                    {
+                        ["run"] = "room", ["marks"] = new JsonObject { ["settled"] = 1, ["opens"] = 1, ["head"] = 1 },
                     });
                 }
 
