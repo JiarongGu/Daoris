@@ -9,6 +9,7 @@ import { fileURLToPath } from 'node:url';
 import { listenFetchable } from '../../../tools/listen-port.mjs';
 import {
   doorCommand, EVERY_DOOR, KINDS, programOf, providersFolder, readProviders, readStandIns, SCENARIO_CONTRACT, scenarioPlan,
+  type PlanRow, type ProviderRead, type StandInDoor,
 } from '../../../tools/stand-ins.mjs';
 import { makeFixture, PATIENCE, unroled } from '../test/_fixture.ts';
 
@@ -19,11 +20,9 @@ import { makeFixture, PATIENCE, unroled } from '../test/_fixture.ts';
  * a stand-in added later is held by these rows with no edit to them. Run by the `tool-tests` gate; only the parent runs the rehearsal.
  */
 
-type Door = { id: string; kind: string; arguments: string[] };
-type Line = { case: string; door: string; row: string; why: string };
-type StandIn = { id: string; standIn: boolean; folder: string; program: { entry: string } | null; doors: Door[]; pending: Line[] };
-type Row = { provider: string; door: string; kind: string; case: string; held: Line | null; elsewhere: string | null };
-type Read = { providers: StandIn[]; problems: string[] };
+type Door = StandInDoor;
+type StandIn = ProviderRead;
+type Row = PlanRow;
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 
@@ -57,13 +56,13 @@ function twoProviders(name: string): string {
 
 test('the files are read by one layout: every provider in its folders\' order, a stand-in with its pending lines, a folder with no file none', () => {
   const folder = twoProviders('stand-ins-read');
-  const read = readProviders(folder) as Read;
+  const read = readProviders(folder);
 
   assert.deepEqual(read.problems, []);
   assert.deepEqual(read.providers.map((each) => [each.id, each.folder, each.standIn]), [
     ['first-stand-in', 'First', true], ['real-agent', 'Real', false], ['second-stand-in', 'Second', true],
   ]);
-  const { standIns } = readStandIns(folder) as { standIns: StandIn[] };
+  const { standIns } = readStandIns(folder);
   assert.deepEqual(standIns.map((each) => each.id), ['first-stand-in', 'second-stand-in']);
   assert.deepEqual(standIns[0]!.pending.map((line) => [line.case, line.door, line.row]), [
     ['live.limit-cools', EVERY_DOOR, 'l'], ['live.missing-conversation', 'first-protocol', 'i'],
@@ -77,8 +76,8 @@ test('the files are read by one layout: every provider in its folders\' order, a
 });
 
 test('the phase plans the scenario contract over every stand-in\'s doors: held by its own file, read elsewhere, or driven', () => {
-  const { standIns } = readStandIns(twoProviders('stand-ins-plan')) as { standIns: StandIn[] };
-  const rows = scenarioPlan(standIns) as Row[];
+  const { standIns } = readStandIns(twoProviders('stand-ins-plan'));
+  const rows = scenarioPlan(standIns);
   const state = (row: Row) => (row.held ? `held ${row.held.row}` : row.elsewhere ? 'elsewhere' : 'driven');
   const of = (provider: string) => rows.filter((row) => row.provider === provider).map((row) => `${row.case} ${row.door} ${state(row)}`);
 
@@ -95,8 +94,8 @@ test('the phase plans the scenario contract over every stand-in\'s doors: held b
   ]);
   // The second stand-in holds nothing and has no protocol door, so it is planned by the same contract with no line of its own.
   assert.deepEqual(of('second-stand-in'), SCENARIO_CONTRACT
-    .filter((each: { kinds: readonly string[] }) => each.kinds.includes('native'))
-    .map((each: { case: string; elsewhere?: string }) => `${each.case} second-native ${each.elsewhere ? 'elsewhere' : 'driven'}`));
+    .filter((each) => each.kinds.includes('native'))
+    .map((each) => `${each.case} second-native ${each.elsewhere ? 'elsewhere' : 'driven'}`));
   assert.equal(rows.some((row) => row.provider === 'real-agent'), false, 'a provider that runs a model is no stand-in');
 });
 
@@ -107,7 +106,7 @@ test('a file out of the layout is refused, naming the field, and its provider is
   provider(fx, 'Extra', { id: 'c', standIn: false, doors: [{ id: 'c', kind: 'native' }], colour: 'blue' });
   provider(fx, 'Unchosen', { id: 'd', standIn: true, program: { entry: 'agent.mjs' }, doors: [{ id: 'd', kind: 'native' }] });
   provider(fx, 'Broken', '{ not json');
-  const read = readProviders(join(fx.root, 'Providers')) as Read;
+  const read = readProviders(join(fx.root, 'Providers'));
 
   assert.deepEqual(read.providers, []);
   for (const says of [
@@ -122,7 +121,7 @@ test('a file out of the layout is refused, naming the field, and its provider is
 });
 
 test('the repository\'s own stand-ins keep the layout, each door\'s kind one of the two, each program in its folder', () => {
-  const { standIns, problems } = readStandIns(providersFolder(root)) as { standIns: StandIn[]; problems: string[] };
+  const { standIns, problems } = readStandIns(providersFolder(root));
 
   assert.deepEqual(problems, []);
   assert.ok(standIns.length > 0, 'the files declare no stand-in');
@@ -155,7 +154,7 @@ async function questDoor(): Promise<{ url: string; moves: Move[]; close: () => P
 
 /** A door's program run from the driver's source with the environment a start or a conversation hands it, bounded by the shared patience. */
 function runDoor(standIn: StandIn, door: Door, env: Record<string, string>, more: string[] = []) {
-  const [, ...rest] = doorCommand(standIn, door, join(root, 'src', 'Daoris.Desktop', 'Daoris.Desktop.Driver'), more) as string[];
+  const [, ...rest] = doorCommand(standIn, door, join(root, 'src', 'Daoris.Desktop', 'Daoris.Desktop.Driver'), more);
   const fx = makeFixture(`stand-ins-run-${door.id}`);
   const child = spawn(process.execPath, rest, { cwd: fx.root, env: { ...unroled(), ...env }, stdio: ['pipe', 'pipe', 'pipe'] });
   let out = '';
@@ -173,7 +172,7 @@ function runDoor(standIn: StandIn, door: Door, env: Record<string, string>, more
 }
 
 test('each stand-in\'s program answers a start on each door, taking and closing its quest through the service\'s door', async () => {
-  const { standIns } = readStandIns(providersFolder(root)) as { standIns: StandIn[] };
+  const { standIns } = readStandIns(providersFolder(root));
   for (const standIn of standIns) {
     for (const door of standIn.doors) {
       const service = await questDoor();
@@ -213,7 +212,7 @@ test('each stand-in\'s program answers a start on each door, taking and closing 
 });
 
 test('each stand-in\'s native door says back each line a conversation hands it, and ends when its input closes', async () => {
-  const { standIns } = readStandIns(providersFolder(root)) as { standIns: StandIn[] };
+  const { standIns } = readStandIns(providersFolder(root));
   for (const door of standIns.flatMap((standIn) => standIn.doors.filter((each) => each.kind === 'native').map((each) => ({ standIn, door: each })))) {
     const ran = runDoor(door.standIn, door.door, { DAORIS_REPOSITORY: 'engine' });
     ran.child.stdin.end('first words\nsecond words\n');
