@@ -14,7 +14,7 @@ public sealed class CourseVocabularyTests
     /// <summary>The vocabulary's files, under <c>Course/Domain/</c>: part 1's three.</summary>
     private static readonly string[] Files = ["CourseFacts.cs", "CourseTriggers.cs", "CourseAnswers.cs"];
 
-    /// <summary>The decision's own file, part 2's, beside them: <c>LineCourse.Decide</c> and nothing else that decides.</summary>
+    /// <summary>The decision's own file, part 2's, beside them: <c>CourseDecision.Decide</c> and nothing else that decides.</summary>
     private const string Decision = "LineCourse.Decide.cs";
 
     /// <summary>Every file the course is written in, read by nothing outside them.</summary>

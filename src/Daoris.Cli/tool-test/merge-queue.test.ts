@@ -99,7 +99,7 @@ const tool = await import(
   prefixRunner: (tree: string, candidate: { base: string; members: Member[] }, plan: { name: string; run: string }[], dir: string, watch?: Watch | null) => (failure: Failure, k: number) => Promise<Outcome>;
   queueHomeRefusal: (facts: { root: string; home: string; tool?: string | null; sameRepository?: boolean; run?: boolean }) => string | null;
   treeBindingRefusal: (facts: { path: string; reported: string | null }) => string | null;
-  gateEnvironment: (start?: Record<string, string | undefined>) => Record<string, string>;
+  gateEnvironment: (start?: Record<string, string | undefined>, options?: { pass?: readonly string[] }) => Record<string, string>;
   GATE_REMOVED: readonly (string | RegExp)[];
   waitSaid: (standing: Standing, facts: { branch: string; request?: string; holder?: string | boolean | null }) => { code: number; lines: string[] } | null;
   BESIDE_ENVIRONMENT: Record<string, string>;
@@ -1141,6 +1141,17 @@ describe('QUEUETESTLEAK1: a case reaches only its own scratch repository and que
     assert.ok(tool.GATE_REMOVED.length > 0, 'the list is exported, so the driver\'s twin and a census read the same names');
   });
 
+  // INTEGRATE1d part 4 (design §5.5, §4.1's `env.pass`): the names an accepted declaration passes come back from the tool's own start environment,
+  // the removed list's included, and never a Daoris name; a name not passed stays out.
+  test("the names an accepted declaration passes reach a gate from the start environment, a removed one's among them; a Daoris name and a name not passed never do", () => {
+    const start = { Path: 'X:/bin', GIT_CONFIG_GLOBAL: 'X:/cfg', git_config_key_0: 'k', MERGE_BRANCH_MEMORY: 'off', DAORIS_HOME: 'X:/install', daoris_role: 'steward', TOKEN_FOR_GATE: 't' };
+    const base = { Path: 'X:/bin', TOKEN_FOR_GATE: 't', ...tool.BESIDE_ENVIRONMENT };
+    assert.deepEqual(tool.gateEnvironment(start), base, 'nothing is passed unless an accepted declaration says so');
+    assert.deepEqual(tool.gateEnvironment(start, { pass: ['GIT_CONFIG_GLOBAL'] }), { ...base, GIT_CONFIG_GLOBAL: 'X:/cfg' }, 'a removed name comes back only by name');
+    assert.deepEqual(tool.gateEnvironment(start, { pass: ['GIT_CONFIG_KEY_0', 'NOT_SET_HERE'] }), { ...base, git_config_key_0: 'k' }, 'the name is matched in any case, and one the start lacks adds nothing');
+    assert.deepEqual(tool.gateEnvironment(start, { pass: ['DAORIS_HOME', 'daoris_role'] }), base, 'a Daoris name is never passed, however it is spelled or declared');
+  });
+
   test('git\'s repository-locating variables, a stand-in gate\'s variable and a PATH set in the test process reach no case: its tool reads and writes only its scratch queue', async () => {
     // The repository around the tests, stood in for by a decoy with a queue of its own that must be left as it is.
     const decoy = makeFixture(`merge-queue-decoy-${process.pid}`);
@@ -1812,6 +1823,31 @@ describe('the queue, end to end in a scratch repository', { concurrency: true },
       assert.equal(realPath(seen.cwd), realPath(join(repo.root, 'local', 'gate-tree')), 'the runner made its own tree');
       assert.equal(seen.copied, true, 'the private files a gate reads are copied into a tree the runner made');
       assert.deepEqual(run.read()!.gates.map((gate: { name: string; verdict: string }) => [gate.name, gate.verdict]), [['recorder', 'pass']]);
+    } finally {
+      await repo.cleanup();
+    }
+  });
+
+  // INTEGRATE1d part 4: the declaration the runner is handed is the accepted blob (design §5.9), so its `env.pass` is the owner's.
+  test('INTEGRATE1d: the declared runner passes the names the declaration handed lists, from its start environment, and no Daoris name or other removed one', async () => {
+    const repo = queueScratch('verify-pass');
+    try {
+      const record = join(repo.root, 'local', 'passed.json');
+      mkdirSync(join(repo.root, 'local'), { recursive: true });
+      writeFileSync(join(repo.root, 'local', 'sensitive-patterns.txt'), 'x\n');
+      const commit = commitOnMain(repo, {
+        'pgate.mjs': [
+          "import { writeFileSync } from 'node:fs';",
+          `writeFileSync(${JSON.stringify(record)}, JSON.stringify(Object.fromEntries(['GIT_CONFIG_GLOBAL', 'GIT_CONFIG_NOSYSTEM', 'DAORIS_HOME'].map((name) => [name, process.env[name] ?? null]))));`,
+          '',
+        ].join('\n'),
+      }, 'a gate that reads what it was passed');
+      const run = verifier(repo);
+      // `DAORIS_HOME` is refused by the declaration's own read, so the case declares only what a declaration may; the install's home rides the shell.
+      run.declare({ gates: [{ name: 'passed', run: 'node pgate.mjs' }], integration: { env: { pass: ['GIT_CONFIG_GLOBAL'] } } });
+      const done = await repo.run(VERIFY, run.env(commit, { DAORIS_HOME: join(repo.root, 'local', 'install-home'), GIT_CONFIG_GLOBAL: 'X:/cfg', GIT_CONFIG_NOSYSTEM: '1' }));
+      assert.equal(done.status, 0, done.out);
+      assert.deepEqual(JSON.parse(readFileSync(record, 'utf8')), { GIT_CONFIG_GLOBAL: 'X:/cfg', GIT_CONFIG_NOSYSTEM: null, DAORIS_HOME: null }, 'only the name the declaration passes came through');
     } finally {
       await repo.cleanup();
     }

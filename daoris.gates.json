@@ -23,6 +23,12 @@
     { "name": "deployment", "run": "npm run rehearse:deploy" }
   ],
 
+  "integration": {
+    "merge": [
+      { "paths": "docs/README.md", "by": "rows" }
+    ]
+  },
+
   "generated": [
     { "paths": "docs/index", "run": "node tools/orient-index.mjs" }
   ],

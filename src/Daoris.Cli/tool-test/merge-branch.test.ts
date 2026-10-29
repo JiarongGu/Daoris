@@ -1571,8 +1571,15 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
     // the service's, the page's providerCensus.test.ts and the tools' provider-census.test.ts.
     ['the provider census', ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/provider-census.json'], [...BASE, 'driver', 'service', 'web-unit', 'tool-tests']],
     ['the provider vocabulary', ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/provider-vocabulary.json'], [...BASE, 'driver', 'service', 'web-unit', 'tool-tests']],
+    // AGENTPROVIDER1b part 3, placed by INTEGRATE1d part 4: the stand-ins' reader is the tools' (its tool test and the family rehearsal
+    // import it), and each provider's own files are the driver's, which the tool test and the rehearsal read too.
+    ["the stand-ins' reader", ['tools/stand-ins.mjs'], [...BASE, 'tool-tests', 'rehearse-family']],
+    ...['provider.json', 'pending.json', 'Program/agent.mjs'].map((file): [string, string[], string[]] => [
+      `a provider's ${file}`, [`src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Providers/Stub/${file}`],
+      [...BASE, 'driver', 'modules', 'driver-process', 'driver-process-git', 'modules-process', 'rehearse-family', 'tool-tests', 'deployment'],
+    ]),
     ['release tooling', ['tools/release-rehearsal.mjs'], [...BASE, 'rehearse']],
-    ['the CLI', ['src/Daoris.Cli/src/platform/args.ts'], [...BASE, 'driver', 'rehearse', 'rehearse-family', 'web', 'deployment']],
+    ['the CLI',['src/Daoris.Cli/src/platform/args.ts'], [...BASE, 'driver', 'rehearse', 'rehearse-family', 'web', 'deployment']],
     // PUSH1f2a: the driver's DriverProgramWordsProcessTests runs the CLI's entry, dispatcher, driver row and seam under node.
     ["the CLI's seam", ['src/Daoris.Cli/src/cli.ts'], [...BASE, 'driver', 'driver-process', 'rehearse', 'rehearse-family', 'web', 'deployment']],
     ["the CLI's seam's module", ['src/Daoris.Cli/src/platform/driverprogram.ts'], [...BASE, 'driver', 'driver-process', 'rehearse', 'rehearse-family', 'web', 'deployment']],
