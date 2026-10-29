@@ -11,6 +11,7 @@ public sealed class KnowledgeWorkplacePortsTests
         var read = KnowledgeWorkplace.Current;
         Assert.IsType<KnowledgeWorkplaceReads>(read);
         Assert.Equal(TreeGuard.Matcher, read.TreeGuardMatcher);
+        Assert.Equal(TreeGuard.EditMatcher, read.TreeGuardEditMatcher);
         Assert.Equal(new[] { LandingRules.PersonAccepted, LandingRules.AutoAccepted, LandingRules.HandNote(new TreeHand(true, "")).Text! }, read.AcceptanceNotes);
         Assert.Equal(LandedBranches.FileName, read.LandingsFileName);
         Assert.Equal(AutoLandings.FileName, read.AutoLandingsFileName);

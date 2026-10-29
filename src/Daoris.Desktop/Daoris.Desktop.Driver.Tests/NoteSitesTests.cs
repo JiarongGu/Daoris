@@ -306,6 +306,48 @@ public sealed class NoteSitesTests
         Assert.Equal(NoteBy.Program, none.Parts[7].By);
     }
 
+    /// <summary>
+    /// TREELOCAL1 (D216): the machine-local files a repository's gates read, copied in read-only, are said after the opening and its
+    /// dependencies' lines, and each declared one not copied says why; `started.tree` keeps its words.
+    /// </summary>
+    [Fact]
+    public void A_tree_s_opening_says_the_machine_local_inputs_copied_in_and_why_any_were_not()
+    {
+        var path = Path.Combine("data", "trees", "default", "engine", "s-1a2b3c4d");
+        var opening = SessionTrees.OpeningOf(path, "daoris/s-1a2b3c4d", "`main` (the line set for `engine`)", "main", unrecorded: null,
+            new DependencyCopy([], [new Uncopied("node_modules", UncopiedWhy.Uninstalled)]),
+            new LocalCopy(["local/sensitive-patterns.txt", "local/hosts.txt"],
+            [
+                new LocalUncopied("local/allowed.txt", LocalUncopiedWhy.Missing), new LocalUncopied("secrets/token.txt", LocalUncopiedWhy.Refused),
+                new LocalUncopied("local/big.bin", LocalUncopiedWhy.Failed, Detail: "disk full"),
+            ]));
+        Assert.Equal(
+            $"opened a session tree at {path} on `daoris/s-1a2b3c4d`, from `main` (the line set for `engine`) — a fresh tree holds "
+            + "nothing git does not track: no installed dependencies, no build outputs. The repository's own setup cost is paid "
+            + "here, and in exchange the root's uncommitted work holds nothing. "
+            + "`node_modules` was not copied from your checkout: the checkout holds no install of it at its lockfile. "
+            + "The machine-local files the repository's gates read were copied in from your checkout, read-only: "
+            + "`local/sensitive-patterns.txt`, `local/hosts.txt`. "
+            + "`local/allowed.txt` was not copied: the repository's gates read it, and your checkout does not hold it. "
+            + "`secrets/token.txt` was not copied: Daoris copies into a tree only a file under `local/` that git ignores there, and this is not one. "
+            + "`local/big.bin` was not copied from your checkout: the copy failed (disk full).",
+            opening.Note);
+        NoteAssert.Holds(opening);
+        Assert.Equal(
+            ["started.tree", "started.uncopied-uninstalled", "started.local-copied", "started.local-missing", "started.local-refused",
+                "started.local-failed", null],
+            NoteAssert.Codes(opening.Parts));
+        // The files as a list, each set as code and joined the reader's way; one not copied as itself.
+        Assert.Equal(["local/sensitive-patterns.txt", "local/hosts.txt"], Assert.IsAssignableFrom<IReadOnlyList<string>>(opening.Parts[2].Value("inputs")));
+        Assert.Equal("secrets/token.txt", opening.Parts[4].Value("input"));
+        Assert.Equal(NoteBy.Program, opening.Parts[6].By);
+
+        // Nothing declared: the opening as it was.
+        Assert.Equal(
+            SessionTrees.OpeningOf(path, "daoris/s-1a2b3c4d", "`main`", "main", unrecorded: null).Note,
+            SessionTrees.OpeningOf(path, "daoris/s-1a2b3c4d", "`main`", "main", unrecorded: null, inputs: LocalCopy.None).Note);
+    }
+
     private static QuestView Quest(string status = "Taken") => new("q1", "game", "engine", "Fix it", "Body", status);
 
     [Fact]

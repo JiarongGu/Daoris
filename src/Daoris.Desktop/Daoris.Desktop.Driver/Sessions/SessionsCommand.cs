@@ -449,10 +449,10 @@ public static class SessionsCommand
                 () => HandOverAsync(world, ask, output, ct), output, ct).ConfigureAwait(false),
             "hand-over-approve" => await ThroughAsync(
                 world, PersonPresses.SessionHandOverApprove, Body(("session", ask.Ids[0])),
-                () => HandOverAskWord.RunAsync(world, ask, output), output, ct).ConfigureAwait(false),
+                () => HandOverAskWord.RunAsync(world.Home, ask.Ids, ask.Verb, output), output, ct).ConfigureAwait(false),
             "hand-over-decline" => await ThroughAsync(
                 world, PersonPresses.SessionHandOverDecline, Body(("session", ask.Ids[0])),
-                () => HandOverAskWord.RunAsync(world, ask, output), output, ct).ConfigureAwait(false),
+                () => HandOverAskWord.RunAsync(world.Home, ask.Ids, ask.Verb, output), output, ct).ConfigureAwait(false),
             "helper" => await ThroughAsync(
                 world, PersonPresses.SessionHelperAsk, Body(("id", ask.Ids[0]), ("question", ask.Text), ("agent", ask.Agent)),
                 () => SessionsHelperCommand.RunAsync(world, ask, output, ct), output, ct).ConfigureAwait(false),
@@ -1590,7 +1590,7 @@ public static class SessionsCommand
         if (answer.Done && !world.LoopRuns())
         {
             var events = new SessionEvents(DaorisHome.Entry(world.Home, HomeEntry.Sessions));
-            events.Keep(id, ChatTurns.Withdrawn(word), null);
+            events.Keep(id, SessionNotes.Withdrawn(word), null);
             if (answer.Word is { } kept) events.Keep(id, LoopWords.Shown(kept, RequestDoor.Terminal), null);
         }
 

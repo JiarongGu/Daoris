@@ -2026,7 +2026,7 @@ public sealed class Driver(
         // conversation where its own account is ready again, decided here inside the carry-on's own start, never beside the look (round 2's
         // B1): the same look would plan the carry-on, and its walk land briefed on the account just freed. A hand-over made from it is the
         // person's press and decides the start instead (step 0).
-        var limitedLine = LimitResume.Line(start, handedFrom);
+        var limitedLine = LimitResume.Line(start.Quest, start.Resumes, handedFrom);
         // 🔴 WALKAGENT1 (D206 point 6, D205 §3.5): a driven line an account's limit cut off takes its agent from Build's own order, never
         // from the machine's legacy `adapter` key, which a stored order does not keep in step and which carried a line on to an agent the
         // role does not list, asking the part before's model there. Its own agent where the role lists it (step 1 resumes there), else the

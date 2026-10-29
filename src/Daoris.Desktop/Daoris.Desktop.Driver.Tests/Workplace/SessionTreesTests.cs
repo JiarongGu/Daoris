@@ -445,6 +445,87 @@ public sealed class SessionTreesTests : IDisposable
     }
 
     /// <summary>
+    /// TREELOCAL1 (D216): a tree of a repository declaring its private pattern list holds a read-only copy of the checkout's, which
+    /// git ignores there as in the checkout, and the repository's own sensitive scan, run in the tree, finds a token only that list
+    /// names. Without it the devkit's scan refuses to run, and a scan of a repository's own falls back to its built-in patterns.
+    /// </summary>
+    [Fact]
+    public async Task A_tree_of_a_repository_declaring_its_private_patterns_holds_a_read_only_copy_its_own_scan_reads()
+    {
+        var root = await MakeLocalRepositoryAsync("engine", """{ "sensitive": { "patternsFile": "local/sensitive-patterns.txt" } }""");
+        await File.WriteAllTextAsync(Path.Combine(root, "local", "sensitive-patterns.txt"), "# private names\nquiltmark\n");
+
+        var opened = await new SessionTrees(_home).OpenAsync(root, "engine", "aurora");
+
+        Assert.True(opened.Sentence.Contains("copied in from your checkout, read-only: `local/sensitive-patterns.txt`.", StringComparison.Ordinal), opened.Sentence);
+        var copy = Path.Combine(opened.Path, "local", "sensitive-patterns.txt");
+        Assert.Equal(await File.ReadAllBytesAsync(Path.Combine(root, "local", "sensitive-patterns.txt")), await File.ReadAllBytesAsync(copy));
+        Assert.True(File.GetAttributes(copy).HasFlag(FileAttributes.ReadOnly), "the copy is read-only");
+        Assert.Equal("", (await GitAsync(opened.Path, "status", "--porcelain", "--untracked-files=all")).Trim());
+        var (clean, _) = await WorkingTree.CleanAsync(opened.Path);
+        Assert.True(clean, "the copy is ignored in the tree as in the checkout");
+        Assert.Contains("read-only, the machine-local files its gates read: `local/sensitive-patterns.txt`", opened.Dependencies);
+
+        var (code, said) = await DevkitAsync(opened.Path, "scan", "--tree");
+        Assert.True(code == 1, $"the scan in the tree exited {code}: {said}");
+        Assert.Contains("notes.md: private pattern", said);
+    }
+
+    /// <summary>TREELOCAL1: a declared input the checkout does not hold is said on the opening, and the tree holds none.</summary>
+    [Fact]
+    public async Task A_declared_input_the_checkout_lacks_is_said_on_the_tree_s_opening()
+    {
+        var root = await MakeLocalRepositoryAsync("engine", """{ "localInputs": ["local/allowed-hosts.txt"] }""");
+
+        var opened = await new SessionTrees(_home).OpenAsync(root, "engine", "aurora");
+
+        Assert.Contains("nothing git does not track", opened.Sentence);
+        Assert.Contains("`local/allowed-hosts.txt` was not copied: the repository's gates read it, and your checkout does not hold it.", opened.Sentence);
+        // The devkit's default list, implied and absent from the checkout too, says nothing.
+        Assert.DoesNotContain("sensitive-patterns", opened.Sentence);
+        Assert.False(Directory.Exists(Path.Combine(opened.Path, "local")));
+        Assert.Null(opened.Dependencies);
+    }
+
+    /// <summary>TREELOCAL1, OPENCUT1: an open cut off while it copies the machine-local inputs leaves nothing, the checkout's untouched.</summary>
+    [Fact]
+    public async Task An_open_cancelled_while_it_copies_machine_local_inputs_leaves_nothing()
+    {
+        var root = await MakeLocalRepositoryAsync("engine", "{}");
+        await File.WriteAllTextAsync(Path.Combine(root, "local", "sensitive-patterns.txt"), "quiltmark\n");
+        using var closing = new CancellationTokenSource();
+        TreeLocalInputs.Copying.Value = _ => closing.Cancel();
+        try
+        {
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => new SessionTrees(_home).OpenAsync(root, "engine", "aurora", closing.Token));
+        }
+        finally
+        {
+            TreeLocalInputs.Copying.Value = null;
+        }
+
+        await AssertNothingLeftAsync(root);
+        Assert.Equal("quiltmark\n", await File.ReadAllTextAsync(Path.Combine(root, "local", "sensitive-patterns.txt")));
+    }
+
+    /// <summary>TREELOCAL1: a tree holding a read-only copy is removed as any other, the copy with it, and the checkout's file stays.</summary>
+    [Fact]
+    public async Task Removing_a_tree_holding_a_read_only_machine_local_input_removes_it_and_leaves_the_checkout_s()
+    {
+        var root = await MakeLocalRepositoryAsync("engine", "{}");
+        await File.WriteAllTextAsync(Path.Combine(root, "local", "sensitive-patterns.txt"), "quiltmark\n");
+        var trees = new SessionTrees(_home);
+        var opened = await trees.OpenAsync(root, "engine", "aurora");
+        Assert.True(File.GetAttributes(Path.Combine(opened.Path, "local", "sensitive-patterns.txt")).HasFlag(FileAttributes.ReadOnly));
+
+        var removal = await trees.RemoveAsync(opened.Path);
+
+        Assert.True(removal.Removed, removal.Message);
+        Assert.False(Directory.Exists(opened.Path));
+        Assert.Equal("quiltmark\n", await File.ReadAllTextAsync(Path.Combine(root, "local", "sensitive-patterns.txt")));
+    }
+
+    /// <summary>
     /// CHAIN2, the owner's answer: a chain's next step to the same repository starts ON the branch the
     /// step before it landed on, so a verify step sees the unmerged work it exists to check.
     /// </summary>
@@ -537,6 +618,66 @@ public sealed class SessionTreesTests : IDisposable
         File.SetLastWriteTimeUtc(hidden, File.GetLastWriteTimeUtc(lockfile).AddMinutes(1));
         if (workspace) TreeDependencies.Link(Path.Combine(root, "node_modules", "ui"), Path.Combine(root, "packages", "ui"));
         return root;
+    }
+
+    /// <summary>
+    /// A repository whose gates file is <paramref name="gates"/> (TREELOCAL1): <c>local/</c> ignored and made in the checkout, and a
+    /// tracked file holding a token no built-in pattern names.
+    /// </summary>
+    private async Task<string> MakeLocalRepositoryAsync(string name, string gates)
+    {
+        var root = await MakeRepositoryAsync(name);
+        await File.WriteAllTextAsync(Path.Combine(root, ".gitignore"), "local/\n");
+        await File.WriteAllTextAsync(Path.Combine(root, "daoris.gates.json"), gates);
+        await File.WriteAllTextAsync(Path.Combine(root, "notes.md"), "The quiltmark build is ours.\n");
+        await GitAsync(root, "add", ".");
+        await GitAsync(root, "commit", "-m", "gates and notes");
+        Directory.CreateDirectory(Path.Combine(root, "local"));
+        return root;
+    }
+
+    private static readonly SemaphoreSlim DevkitBuilding = new(1, 1);
+    private static string? _devkit;
+
+    /// <summary>
+    /// The devkit's own CLI run in <paramref name="cwd"/> (TREELOCAL1): built once a run with <c>--artifacts-path</c> under this
+    /// project's own <c>obj</c>, never referenced, as the service's host is (KEEPSIZE1b3), so the devkit's gate builds beside it.
+    /// </summary>
+    private static async Task<(int Code, string Said)> DevkitAsync(string cwd, params string[] arguments)
+    {
+        await DevkitBuilding.WaitAsync();
+        try
+        {
+            if (_devkit is null || !File.Exists(_devkit))
+            {
+                // This test's build is <desktop>/<tests>/bin/<configuration>/<framework>/.
+                var build = new DirectoryInfo(AppContext.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+                var tests = build.Parent!.Parent!.Parent!;
+                var project = Path.Combine(tests.Parent!.Parent!.FullName, "Daoris.Devkit", "Daoris.Devkit.Cli", "Daoris.Devkit.Cli.csproj");
+                var artifacts = Path.Combine(tests.FullName, "obj", "devkit-cli");
+                await RealServiceHost.BuildAsync(project, build.Parent.Name, artifacts);
+                _devkit = Assert.Single(Directory.GetFiles(Path.Combine(artifacts, "bin"), "daoris-devkit.dll", SearchOption.AllDirectories));
+            }
+        }
+        finally
+        {
+            DevkitBuilding.Release();
+        }
+
+        var info = new System.Diagnostics.ProcessStartInfo("dotnet")
+        {
+            WorkingDirectory = cwd, UseShellExecute = false, CreateNoWindow = true,
+            RedirectStandardInput = true, RedirectStandardOutput = true, RedirectStandardError = true,
+        };
+        info.ArgumentList.Add(_devkit);
+        foreach (var argument in arguments) info.ArgumentList.Add(argument);
+        using var process = System.Diagnostics.Process.Start(info)!;
+        process.StandardInput.Close();
+        var output = process.StandardOutput.ReadToEndAsync();
+        var error = process.StandardError.ReadToEndAsync();
+        using var limit = new CancellationTokenSource(TimeSpan.FromMinutes(2));
+        await process.WaitForExitAsync(limit.Token);
+        return (process.ExitCode, await output + await error);
     }
 
     /// <summary>Walk up from the test binary to the workspace manifest — the family's own locator shape.</summary>

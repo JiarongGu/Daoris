@@ -29,7 +29,10 @@ public sealed record ServiceStatus(string Tier, string? Home);
 public static class RunningService
 {
     /// <summary>How long the status door is given to answer.</summary>
-    private static readonly TimeSpan Within = TimeSpan.FromSeconds(2);
+    public static readonly TimeSpan Within = TimeSpan.FromSeconds(2);
+
+    /// <summary>The wait before a status door that did not answer is asked a second time (SERVICESTALL1).</summary>
+    public static readonly TimeSpan RetryAfter = TimeSpan.FromSeconds(1);
 
     /// <summary>
     /// The address the running desktop holds for <paramref name="home"/>, or null with the sentence that says why there is none:
@@ -37,8 +40,18 @@ public static class RunningService
     /// </summary>
     /// <param name="install">The install the asking program runs from, whose launcher starts Daoris.</param>
     /// <param name="status">What an address's status door answers as a Daoris host, or null: <see cref="Status"/>, or a test's.</param>
-    public static string? Find(string home, string install, Func<string, ServiceStatus?> status, out string why)
+    public static string? Find(string home, string install, Func<string, ServiceStatus?> status, out string why) =>
+        Find(home, install, status, out why, out _, RetryAfter);
+
+    /// <summary>
+    /// <see cref="Find(string, string, Func{string, ServiceStatus?}, out string)"/>, saying whether the address came from the home's record
+    /// and nothing answered there (<paramref name="unanswered"/>), which the refusal does not blame on the variable (SERVICESTALL1).
+    /// </summary>
+    /// <param name="retryAfter">The wait before the status door is asked once more where it did not answer, so a service busy for a moment is not taken for a missing one.</param>
+    public static string? Find(
+        string home, string install, Func<string, ServiceStatus?> status, out string why, out bool unanswered, TimeSpan retryAfter)
     {
+        unanswered = false;
         var start = Path.Combine(install, "Daoris.exe");
         if (RunningAddress.Read(home) is not { } entry || !Lives(entry.Pid, entry.Started))
         {
@@ -53,10 +66,21 @@ public static class RunningService
             return null;
         }
 
-        if (status(entry.Url) is not { } answered)
+        var answered = status(entry.Url);
+        if (answered is null)
         {
-            why = $"Daoris is running on {home} (pid {entry.Pid}), and nothing answered as its service at {entry.Url}: run this "
-                + $"again once its window is up, or start it again ({start}).";
+            // A service busy past the bound (a landing, a machine at full load) answers a second try; one that is not there does not.
+            Thread.Sleep(retryAfter);
+            answered = status(entry.Url);
+        }
+
+        if (answered is null)
+        {
+            unanswered = true;
+            why = $"Daoris is running on {home} (pid {entry.Pid}), and nothing answered as its service at {entry.Url} within "
+                + $"{Seconds(Within)}, asked twice, {Seconds(retryAfter)} apart. The address is the one Daoris "
+                + $"left in {home}, so {ServiceClient.UrlVariable} is not the cause: the service may be busy. Run this again in a moment, "
+                + $"or start Daoris again ({start}).";
             return null;
         }
 
@@ -71,6 +95,10 @@ public static class RunningService
         why = "";
         return entry.Url;
     }
+
+    /// <summary>A bound as a person reads it: <c>2 seconds</c>, <c>1 second</c>.</summary>
+    internal static string Seconds(TimeSpan span) =>
+        span.TotalSeconds == 1 ? "1 second" : $"{span.TotalSeconds.ToString(System.Globalization.CultureInfo.InvariantCulture)} seconds";
 
     /// <summary>Whether the process an address names still runs as the process it named: the home lease's test.</summary>
     public static bool Lives(int pid, long started)

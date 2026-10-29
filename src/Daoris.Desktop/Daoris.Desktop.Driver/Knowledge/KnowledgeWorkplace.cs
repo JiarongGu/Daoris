@@ -6,6 +6,7 @@ public interface IKnowledgeSweep;
 internal interface IKnowledgeWorkplace
 {
     string TreeGuardMatcher { get; }
+    string TreeGuardEditMatcher { get; }
     IReadOnlyList<string> AcceptanceNotes { get; }
     string LandingsFileName { get; }
     string AutoLandingsFileName { get; }

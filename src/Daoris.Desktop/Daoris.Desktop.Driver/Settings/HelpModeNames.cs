@@ -19,4 +19,10 @@ public static class HelpModeNames
     /// <summary>The mode <paramref name="value"/> names, trimmed and in any case, or null for none.</summary>
     public static string? Named(string? value) =>
         All.FirstOrDefault(mode => string.Equals(mode, value?.Trim(), StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>
+    /// A record's mode as read (HELPMODE1a2, D183 point 3): full where it says full, in any case; restricted for none, a record from
+    /// before the modes, and for one this build does not know, as the driver's file reads it.
+    /// </summary>
+    public static string Recorded(string? kept) => Named(kept) == Full ? Full : Restricted;
 }

@@ -138,4 +138,14 @@ public sealed class ChildLineageTests : IDisposable
         Assert.True(TraceRules.HandsTreeGuard(both.RootElement));
         Assert.False(TraceRules.HandsTreeGuard(alone.RootElement));
     }
+
+    /// <summary>A session still running from before the guard judged a shell's writes (TREESHELL1) was handed the edit tools' matcher: still the guard.</summary>
+    [Fact]
+    public void The_trace_still_reads_the_guard_a_session_started_before_the_shells_were_judged_was_handed()
+    {
+        using var before = JsonDocument.Parse(
+            "{\"hooks\":{\"PreToolUse\":[{\"matcher\":\"" + TreeGuardHook.EditMatcher + "\",\"hooks\":[]}]}}");
+
+        Assert.True(TraceRules.HandsTreeGuard(before.RootElement));
+    }
 }

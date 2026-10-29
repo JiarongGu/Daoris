@@ -152,7 +152,10 @@ public sealed class HostSupervisorTests : IDisposable
             }
         }
 
-        if (Directory.Exists(_root)) Directory.Delete(_root, recursive: true);
+        // A killed stand-in's files stay held for a moment while Windows lets them go (twice in one queue run on 2026-10-29,
+        // "being used by another process" at this delete after the body had passed): asked again within a bound, and a folder
+        // still held is left rather than failing the test (HOSTCLEAN1).
+        ScratchFolders.Remove(_root);
     }
 
     [Fact]

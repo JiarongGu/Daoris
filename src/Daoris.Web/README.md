@@ -213,7 +213,9 @@ A folder past twenty sources keeps its scopes in folders named for what they hol
   and place reads (identity, the list's groups and entries, an ask's channel, a note's words, the one ask) at its top.
   A note's words come from one map per reason family (`noteLines.ts`), each held key for key to the driver's `NoteCodes` by
   `locales/note.test.ts`: a helper's, a hand-over's, and a partner's piece (COAGENT1b), whose notes on the lead and the
-  partner are notes, never words, and reset nothing. A hand-over's note names who asked it (the person at a terminal, the
+  partner are notes, never words, and reset nothing. A tree's opening says, after its copied dependencies, the machine-local
+  files its repository's gates read that were copied in read-only, each as code, and why a declared one was not
+  (`started.local-*`, TREELOCAL1, D216). A hand-over's note names who asked it (the person at a terminal, the
   window or the agent) and says one Daoris could not take as not taken, with its reason, never as refused (HANDOVERSAID1);
   the person's words that never reached the session are one family of reasons, `UNREACHED_REASONS` (it ended first, Daoris kept
   no id for its conversation, and, since FOUNDATION1 row p, *its record did not mark them attempted*, said of words left

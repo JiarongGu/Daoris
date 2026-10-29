@@ -7,7 +7,7 @@
   "settings.rules.defaultWhy.connector": "会话通过 Daoris 的连接器接下并关闭自己的委托、为别人发布它的发现、提议更改这些规则——凡是需要询问的操作都会被拒绝。",
   "settings.rules.defaultWhy.commit": "会话在自己的工作树里提交自己的工作，因为提交是完成一项任务的一部分——推送仍然被拒绝。",
   "settings.rules.defaultWhy.no-push": "推送会离开本机，这一步始终由人来决定。",
-  "settings.rules.defaultWhy.tree-guard": "会话只在自己的工作树里写文件：在别处编辑或写入都会被拒绝，经由链接也一样。别处需要的改动是一项委托。",
+  "settings.rules.defaultWhy.tree-guard": "会话只在自己的工作树里写文件：在别处编辑、写入，或由 shell 命令写入，都会被拒绝，经由链接也一样。别处需要的改动是一项委托。",
   "settings.rules.hook": "钩子，作用于 {{tools}}",
   "settings.rules.list.allow": "允许",
   "settings.rules.list.ask": "询问",

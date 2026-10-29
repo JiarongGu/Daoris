@@ -76,6 +76,20 @@ public sealed class GateDeclarationTests : IDisposable
         Assert.Contains("docs", declaration.Disabled);
     }
 
+    /// <summary>
+    /// TREELOCAL1 (D216): the machine-local files the gates read beside the pattern list, which the desktop copies into a session's
+    /// tree; read as listed, none by default, and anything but a string passed over as the other lists are.
+    /// </summary>
+    [Fact]
+    public void Local_inputs_are_read_as_listed_and_none_by_default()
+    {
+        WriteDeclaration("{}");
+        Assert.Empty(GateDeclaration.Read(_fx.Path).LocalInputs);
+
+        WriteDeclaration("""{ "localInputs": ["local/allowed-hosts.txt", 3, "local/certs/ca.pem"] }""");
+        Assert.Equal(["local/allowed-hosts.txt", "local/certs/ca.pem"], GateDeclaration.Read(_fx.Path).LocalInputs);
+    }
+
     /// <summary>Case-insensitive, because a name typed into a list by hand is typed how it is typed.</summary>
     [Fact]
     public void Disabled_names_match_regardless_of_case()

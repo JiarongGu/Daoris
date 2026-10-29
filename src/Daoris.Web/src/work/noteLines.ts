@@ -120,6 +120,11 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'started.uncopied-link': { values: ['modules'] },
   'started.uncopied-unignored': { values: ['modules'] },
   'started.uncopied-failed': { values: ['modules'] },
+  // TREELOCAL1 (D216): the machine-local files a repository's gates read, copied into its tree read-only, and why a declared one was not.
+  'started.local-copied': { values: ['inputs'] },
+  'started.local-missing': { values: ['input'] },
+  'started.local-refused': { values: ['input'] },
+  'started.local-failed': { values: ['input'] },
   'tree.remade': { values: ['branch'] },
   'tree.gone': { values: ['branch'] },
   'tree.unmade': { values: [] },
@@ -681,6 +686,8 @@ export const NOTE_VALUES: Readonly<
   model: 'text', actor: 'actor', n: 'number', entry: 'text', passed: 'text',
   // The dependency folders a tree's open copied from its checkout, each as code, and one it did not copy (TREEDEPS1).
   copied: 'names', modules: 'text',
+  // The machine-local files a tree's open copied from its checkout, each as code, and one it did not copy (TREELOCAL1).
+  inputs: 'names', input: 'text',
   why: 'why',
   cooling: 'cooling',
   window: 'window',

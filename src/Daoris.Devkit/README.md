@@ -113,6 +113,7 @@ is inert data the CLI parses on every invocation, and this file names commands t
     { "name": "test",  "run": "npm test", "cwd": "src/web" }
   ],
   "sensitive": { "patternsFile": "local/sensitive-patterns.txt" },
+  "localInputs": ["local/allowed-hosts.txt"],
   "version":   { "source": "Directory.Build.props", "mirrors": ["src/web/package.json"] },
   "doctrine":  { "command": "daoris" },
   "docs": {
@@ -127,6 +128,15 @@ is inert data the CLI parses on every invocation, and this file names commands t
 The `devkit` field pins which toolkit the declaration was written against, and is **checked before
 any gate runs** — a different toolkit may read the same declaration differently, which is the failure
 pinning exists to prevent. It is optional: an unpinned declaration is allowed and silent.
+
+`localInputs` names the other machine-local files the gates read: ignored files under `local/` that only
+the owner's checkout holds, as the pattern list is. No gate here reads the key. The desktop does (TREELOCAL1,
+D216): a session's tree, which git checks out without them, opens with each copied from the checkout's file,
+read-only. The pattern list is among them whether `localInputs` names it or not, and the devkit's default
+counts where `sensitive` names none. So a tree's scan runs with the private names, as the checkout's does,
+rather than refusing for want of the list. A path outside `local/`, or one that climbs out of it, is not
+copied, and the tree's opening says so. A declared file the checkout lacks is said too, except the
+undeclared default, which a repository scanning with `--allow-builtins-only` never wrote.
 
 `.props`, `.csproj` and `package.json` version shapes are known, so the common case declares no
 `pattern`. A gate named in `disabled` does not run **and is printed on every run** — off because

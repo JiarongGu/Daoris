@@ -650,7 +650,7 @@ public sealed class PermissionRulesTests : IDisposable
 
         using var document = JsonDocument.Parse(File.ReadAllText(path!));
         var entry = Assert.Single(document.RootElement.GetProperty("hooks").GetProperty("PreToolUse").EnumerateArray());
-        Assert.Equal("Edit|Write|MultiEdit|NotebookEdit", entry.GetProperty("matcher").GetString());
+        Assert.Equal("Edit|Write|MultiEdit|NotebookEdit|Bash|PowerShell", entry.GetProperty("matcher").GetString());
         var hook = Assert.Single(entry.GetProperty("hooks").EnumerateArray());
         Assert.Equal("command", hook.GetProperty("type").GetString());
         // The node Tools resolves (TOOLS5): with no tools file, the one PATH finds, by its whole path.
