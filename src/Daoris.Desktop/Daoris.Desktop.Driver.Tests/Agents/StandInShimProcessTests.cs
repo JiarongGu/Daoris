@@ -67,7 +67,7 @@ public sealed class StandInShimProcessTests : IDisposable
         if (stdin is not null) await process.StandardInput.WriteLineAsync(stdin);
         if (info.RedirectStandardInput) process.StandardInput.Close();
         var output = await process.StandardOutput.ReadToEndAsync();
-        await process.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(30));
+        await process.WaitForExitAsync().WaitAsync(Poll.Patience);
         return (output.Replace("\r\n", "\n"), process.ExitCode);
     }
 
