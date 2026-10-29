@@ -1655,6 +1655,18 @@ public sealed class AcpBackgroundTests
         quest.Close();
     }
 
+    /// <summary>
+    /// The gates end, and the session says its wait for them is over: what it waits for from here is its harness's wake. Read before
+    /// the case moves on, so no close is read in the breath the wait takes after the work's last ending, a case of its own below.
+    /// </summary>
+    private static async Task GatesEndedAsync(Agent agent, Record record)
+    {
+        GatesEnd(agent);
+        await Poll.Until(
+            () => record.Lines.Any(line => line.StartsWith("note:— its background work ended", StringComparison.Ordinal)),
+            () => string.Join(" | ", record.Lines), Poll.Patience);
+    }
+
     /// <summary>The provider's 529 as <c>claude-agent-acp</c> 0.84.0 answers a prompt with it (AGENTERRORS1a): a transient failure.</summary>
     private static string Failed(JsonElement request) =>
         JsonSerializer.Serialize(new
@@ -1746,8 +1758,8 @@ public sealed class AcpBackgroundTests
             () => record.Lines.Any(line => line.StartsWith("note:", StringComparison.Ordinal)),
             () => string.Join(" | ", record.Lines), Poll.Patience);
 
-        // The gates end, the wakeup fires and its turn writes the handback, then closes the quest, and says no end.
-        GatesEnd(agent);
+        // The gates end while the build runs, the wakeup fires and its turn writes the handback, then closes the quest, and says no end.
+        GatesEnd(agent, "bdd847eoq");
         agent.Push(Said(WokenSilent));
         await Poll.Until(
             () => record.Lines.Contains($"message:{WokenSilent}"), () => string.Join(" | ", record.Lines), Poll.Patience);
@@ -1767,6 +1779,51 @@ public sealed class AcpBackgroundTests
             record.Lines.Where(line => line.StartsWith("note:— its quest", StringComparison.Ordinal)));
     }
 
+    /// <summary>
+    /// 🔴 RUNENDS1 after review: the quest read closed while work still ran, and the last of that work ended while the silent turn ran
+    /// on. The first build dropped the close it had read there, and the wait for the wake began a new minute's look and a new quiet. The
+    /// close is carried into that wait, and the turn is left at the bound counted from the close's read.
+    /// </summary>
+    [Fact]
+    public async Task A_close_read_while_work_still_ran_is_carried_into_the_wait_for_the_wake_when_that_work_ends()
+    {
+        var goOn = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var agent = Gates(goOn, self =>
+        {
+            self.Push(Update("""{"sessionUpdate":"async_task_spawned","asyncTaskId":"b2","name":"Build","taskType":"shell","canStop":true}"""));
+            SchedulesAWakeup(self);
+        });
+        var record = new Record();
+        var clock = new MovedClock();
+        var t0 = clock.GetUtcNow();
+        var quest = new Quest(clock, t0 + Minute);
+        var session = Clocked(agent, record, clock);
+
+        var run = session.RunAsync("X:/daoris/game", "close quest #12", CancellationToken.None, waitsOnBackground: quest.Waits);
+        await Poll.Until(
+            () => record.Lines.Any(line => line.StartsWith("note:", StringComparison.Ordinal)),
+            () => string.Join(" | ", record.Lines), Poll.Patience);
+
+        // The gates end while the build runs; the wakeup's turn runs silent; the look reads the quest closed.
+        GatesEnd(agent, "bdd847eoq");
+        agent.Push(Said(WokenSilent));
+        await Poll.Until(
+            () => record.Lines.Contains($"message:{WokenSilent}"), () => string.Join(" | ", record.Lines), Poll.Patience);
+        await ClosesAtTheLookAsync(clock, quest, t0 + Minute);
+
+        // The build ends with the turn still silent: the session waits on for the turn, its quiet still counted from the close.
+        GatesEnd(agent, "b2");
+        await Poll.Until(
+            () => record.Lines.Any(line => line.StartsWith("note:— its background work ended", StringComparison.Ordinal)),
+            () => string.Join(" | ", record.Lines), Poll.Patience);
+        await PassAsync(clock, t0 + Minute + DoneQuiet);
+        await EndsWithoutGoOn(run, goOn.Task);
+
+        Assert.Equal(["initialize", "session/new", "session/prompt", "session/close"], agent.Methods);
+        Assert.Empty(session.LeftRunning);
+        Assert.Equal(TurnLeft, record.Lines[^1]);
+    }
+
     /// <summary>RUNENDS1: the same turn, once all the session's work has ended, which went through BGWAIT2's wait for the harness's wake.</summary>
     [Fact]
     public async Task A_wakeup_turn_that_never_says_its_end_does_not_hold_a_session_whose_quest_closed_after_its_work_ended()
@@ -1784,7 +1841,7 @@ public sealed class AcpBackgroundTests
             () => record.Lines.Any(line => line.StartsWith("note:", StringComparison.Ordinal)),
             () => string.Join(" | ", record.Lines), Poll.Patience);
 
-        GatesEnd(agent);
+        await GatesEndedAsync(agent, record);
         agent.Push(Said(WokenSilent));
         await Poll.Until(
             () => record.Lines.Contains($"message:{WokenSilent}"), () => string.Join(" | ", record.Lines), Poll.Patience);
@@ -1881,7 +1938,7 @@ public sealed class AcpBackgroundTests
             () => record.Lines.Any(line => line.StartsWith("note:", StringComparison.Ordinal)),
             () => string.Join(" | ", record.Lines), Poll.Patience);
 
-        GatesEnd(agent);
+        await GatesEndedAsync(agent, record);
         agent.Push(Said("The wakeup fired; checking Docker."));
         await Poll.Until(
             () => record.Lines.Contains("message:The wakeup fired; checking Docker."), () => string.Join(" | ", record.Lines), Poll.Patience);
@@ -1921,7 +1978,7 @@ public sealed class AcpBackgroundTests
             () => string.Join(" | ", record.Lines), Poll.Patience);
 
         // The gates end and the wakeup fires: its turn runs, and the person's word goes into it at once.
-        GatesEnd(agent);
+        await GatesEndedAsync(agent, record);
         agent.Push(Said(WokenSilent));
         await Poll.Until(
             () => record.Lines.Contains($"message:{WokenSilent}"), () => string.Join(" | ", record.Lines), Poll.Patience);
@@ -1965,7 +2022,7 @@ public sealed class AcpBackgroundTests
             () => string.Join(" | ", record.Lines), Poll.Patience);
 
         // The gates end and nothing wakes within the minute: the go-on goes, and the person's word follows it at once.
-        GatesEnd(agent);
+        await GatesEndedAsync(agent, record);
         await Poll.Until(() => clock.Pending.Count(at => at == t0 + Minute) >= 2, () => string.Join(", ", clock.Pending));
         clock.Advance(Minute);
         await Poll.Until(() => agent.Prompts.Count == 2, () => string.Join(" | ", agent.Prompts));
@@ -2011,7 +2068,7 @@ public sealed class AcpBackgroundTests
             () => record.Lines.Any(line => line.StartsWith("note:", StringComparison.Ordinal)),
             () => string.Join(" | ", record.Lines), Poll.Patience);
 
-        GatesEnd(agent);
+        await GatesEndedAsync(agent, record);
         agent.Push(Said(WokenSilent));
         await Poll.Until(
             () => record.Lines.Contains($"message:{WokenSilent}"), () => string.Join(" | ", record.Lines), Poll.Patience);
@@ -2063,7 +2120,7 @@ public sealed class AcpBackgroundTests
             () => string.Join(" | ", record.Lines), Poll.Patience);
 
         // The gates end, nothing wakes within the minute, and the go-on fails on the provider's side: its episode waits a minute.
-        GatesEnd(agent);
+        await GatesEndedAsync(agent, record);
         await Poll.Until(() => clock.Pending.Count(at => at == t0 + Minute) >= 2, () => string.Join(", ", clock.Pending));
         clock.Advance(Minute);
         await Poll.Until(() => retry.Opened, () => "no episode opened");
@@ -2126,7 +2183,7 @@ public sealed class AcpBackgroundTests
             () => string.Join(" | ", record.Lines), Poll.Patience);
 
         // The gates end, nothing wakes, and the go-on goes; its turn says nothing at all.
-        GatesEnd(agent);
+        await GatesEndedAsync(agent, record);
         await Poll.Until(() => clock.Pending.Count(at => at == t0 + Minute) >= 2, () => string.Join(", ", clock.Pending));
         clock.Advance(Minute);
         await Poll.Until(() => agent.Prompts.Count == 2, () => string.Join(" | ", agent.Prompts));
@@ -2157,7 +2214,7 @@ public sealed class AcpBackgroundTests
         await Poll.Until(
             () => record.Lines.Any(line => line.StartsWith("note:", StringComparison.Ordinal)),
             () => string.Join(" | ", record.Lines), Poll.Patience);
-        GatesEnd(agent);
+        await GatesEndedAsync(agent, record);
         agent.Push(Said(WokenSilent));
         await Poll.Until(
             () => record.Lines.Contains($"message:{WokenSilent}"), () => string.Join(" | ", record.Lines), Poll.Patience);
@@ -2199,7 +2256,7 @@ public sealed class AcpBackgroundTests
         await Poll.Until(
             () => record.Lines.Any(line => line.StartsWith("note:", StringComparison.Ordinal)),
             () => string.Join(" | ", record.Lines), Poll.Patience);
-        GatesEnd(agent);
+        await GatesEndedAsync(agent, record);
         agent.Push(Said(WokenSilent));
         await Poll.Until(
             () => record.Lines.Contains($"message:{WokenSilent}"), () => string.Join(" | ", record.Lines), Poll.Patience);
@@ -2239,7 +2296,7 @@ public sealed class AcpBackgroundTests
         await Poll.Until(
             () => record.Lines.Any(line => line.StartsWith("note:", StringComparison.Ordinal)),
             () => string.Join(" | ", record.Lines), Poll.Patience);
-        GatesEnd(agent);
+        await GatesEndedAsync(agent, record);
         // The wakeup's turn starts a long command in the foreground: open until it ends.
         var calls = record.Count(SessionEventKind.Tool);
         agent.Push(Update("""{"sessionUpdate":"tool_call","toolCallId":"toolu_up","title":"docker compose up --wait","kind":"execute","status":"in_progress"}"""));
@@ -2276,7 +2333,7 @@ public sealed class AcpBackgroundTests
         await Poll.Until(
             () => record.Lines.Any(line => line.StartsWith("note:", StringComparison.Ordinal)),
             () => string.Join(" | ", record.Lines), Poll.Patience);
-        GatesEnd(agent);
+        await GatesEndedAsync(agent, record);
         agent.Push(Said("Docker needs a restart; asking first."));
         agent.Push(AsksPermission(900));
         await Poll.Until(() => registry.Held("d1").Count == 1, () => "nothing was held for the person");
@@ -2311,7 +2368,7 @@ public sealed class AcpBackgroundTests
         await Poll.Until(
             () => record.Lines.Any(line => line.StartsWith("note:", StringComparison.Ordinal)),
             () => string.Join(" | ", record.Lines), Poll.Patience);
-        GatesEnd(agent);
+        await GatesEndedAsync(agent, record);
         agent.Push(Said(WokenSilent));
         await Poll.Until(
             () => record.Lines.Contains($"message:{WokenSilent}"), () => string.Join(" | ", record.Lines), Poll.Patience);
