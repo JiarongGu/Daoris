@@ -24,10 +24,9 @@ public static class Lines
 {
     /// <summary>
     /// The most hops a walk of a line follows, forward to its head (<see cref="WalkAsync"/>) and back along <c>from</c> for the settlement
-    /// (<see cref="SaidKeys"/>), one bound for both (row d-ii). The design names none; row p's walk back stopped at 256 and the hand desks'
-    /// walks at 16. A line of 256 parts is far past any one the install has made, and each hop is one indexed probe, so the bound costs a
-    /// short line nothing. A walk that reaches it is refused with a sentence, never read as far as it got: a settlement read over a line cut
-    /// short could keep a taken word a second time.
+    /// (<see cref="SaidKeys"/>), one bound for both (row d-ii, D212's note of the part). A line of 256 parts is far past any the install makes,
+    /// and each hop is one indexed probe, so the bound costs a short line nothing. A walk that reaches it is refused with a sentence, never read
+    /// as far as it got: a settlement read over a line cut short could keep a taken word a second time.
     /// </summary>
     public const int Bound = 256;
 

@@ -5,6 +5,13 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-29 - A partner's piece was handed where the desk's walk stopped, a part its lead's line had left (FOUNDATION1d-ii part 2)
+
+- **Symptom:** none seen on the install; found reading the desks against the head walk. A lead's line longer than sixteen links, or one planted as a cycle, had its piece's answer kept on the part where the walk stopped.
+- **Root cause:** `PartnerDesk.HandAsync` walked `ContinuedByAsync` at most sixteen hops and handed to wherever the loop ended, the truncation HELPERWAIT1b had already removed from the helper's hand; it followed no driven quest's later run either. The say door's default word sent any refusal it did not name as `running`.
+- **Fix:** both desks and the say door read `Lines.WalkAsync`, which ends at the head, on a cycle or at `Lines.Bound` (256 hops); a line that loops or runs past the bound is refused with its sentence and nothing is kept, and the helper keeps its sixteen-link reach inside it. `Program.SayRefusal` names every value.
+- **Verification:** `SaidSettledTests.The_partner_desk_hands_to_the_head_and_refuses_a_line_that_loops` (a quest run again here takes the piece; a planted cycle refused with nothing kept) and `SaidSettledHostTests.Every_say_refusal_has_its_own_word_on_the_wire_cell_for_cell`, each seen failing first; `HelperHostTests`' sixteen and seventeen links unchanged.
+
 ## 2026-10-29 - A Codex session's first tool catalog could omit the connector still starting (CODEXTOOLS1)
 
 - **Symptom:** on the install, a Codex conversation's first turn had no `daoris-knowledge` tools while its next turn had fifty-one, intermittently; a pending optional server was seen at the first capture.

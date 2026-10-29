@@ -3004,8 +3004,8 @@ public partial class Program
 {
     /// <summary>
     /// A say or a take refused (MSG1a), its word as the wire spells it, kebab-case like a session's state. Every refusal the ledger knows has
-    /// its own word (FOUNDATION1 row d-ii, D212), held cell for cell by <c>SaidSettledHostTests</c>, so the default is reached by no known value:
-    /// before the row it sent any new refusal as <c>running</c>, which would have sent <c>continued</c> as a running session's.
+    /// its own word (FOUNDATION1 row d-ii, D212), held cell for cell by <c>SaidSettledHostTests</c>, so the default is reached by no known value
+    /// and a new refusal is never sent as a running session's.
     /// </summary>
     public static string SayRefusal(SessionSayRefusal refusal) => refusal switch
     {
