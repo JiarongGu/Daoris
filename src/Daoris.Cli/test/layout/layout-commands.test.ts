@@ -103,6 +103,47 @@ test('check reports AGENTS.md over the smallest limit an agent reads, and does n
   fx.cleanup();
 });
 
+/** An agents repository whose region carries a large, a middling and a small rule, its own part padded to `over` bytes past the limit. */
+function sizedBrief(tag: string, over: number): { fx: LayoutFixture; own: number; region: number } {
+  const fx = layoutFixture(tag, 'agents');
+  fx.canonFx.write('core/rules/big-rule.md', doc('big-rule', 'b '.repeat(1500)));
+  fx.canonFx.write('core/rules/mid-rule.md', doc('mid-rule', 'm '.repeat(800)));
+  fx.sync();
+  const region = Buffer.byteLength(fx.repoFx.read('AGENTS.md'), 'utf8');
+  const prefix = '# Ours\n\n';
+  const pad = 32768 + over - region - Buffer.byteLength(prefix, 'utf8') - 2;
+  fx.repoFx.write('AGENTS.md', `${prefix}${'x'.repeat(pad)}\n\n${fx.repoFx.read('AGENTS.md')}`);
+  // The own part ends at its last line; the blank line before the region belongs to the region's append.
+  const own = Buffer.byteLength(prefix, 'utf8') + pad + 1;
+  return { fx, own, region: 32768 + over - own };
+}
+
+test('check says nothing of size at exactly the limit', () => {
+  const { fx } = sizedBrief('cmd-check-size-under', 0);
+
+  const { code, out } = fx.cli('check');
+
+  assert.equal(code, 0, out);
+  assert.doesNotMatch(out, /AGENTS\.md is/);
+  fx.cleanup();
+});
+
+test('check names what to trim when AGENTS.md is just over the limit: own part, region, excess, largest rules (CANONSIZE1)', () => {
+  const { fx, own, region } = sizedBrief('cmd-check-size-over', 57);
+
+  const { code, out } = fx.cli('check');
+
+  assert.equal(code, 0, out);
+  const line = out.split('\n').filter((l) => /AGENTS\.md is \d+ bytes/.test(l));
+  assert.equal(line.length, 1, out);
+  assert.match(line[0]!, /32768/);
+  assert.match(line[0]!, /over by 57/);
+  assert.match(line[0]!, new RegExp(`own part ${own} bytes`));
+  assert.match(line[0]!, new RegExp(`doctrine region ${region} bytes`));
+  assert.match(line[0]!, /largest rules: big-rule \(\d+\), mid-rule \(\d+\), sensitive-info \(\d+\)/);
+  fx.cleanup();
+});
+
 test('check reports an own document in an old tier and a Claude-only skill, and does not fail on either', () => {
   const fx = agentsSynced('cmd-check-old-tier');
   fx.repoFx.write('.claude/knowledge/ours.md', doc('ours'));

@@ -229,6 +229,10 @@ export interface DriftReport {
   links: LinkProblem[];
   /** The root instruction file's whole size — reported against the smallest limit measured, never failed on. */
   agentsBytes: number;
+  /** Of `agentsBytes`, the repository's own part and the doctrine region's, and the region's largest rules, so an over-limit report says what to trim (CANONSIZE1). */
+  agentsOwnBytes: number;
+  agentsRegionBytes: number;
+  agentsLargestRules: { name: string; bytes: number }[];
   /** The repository's own documents in a tier the index no longer lists, with the move that fixes each. */
   unlisted: { path: string; move: string }[];
   /** The repository's own skills under the mirror root, read by that harness alone. */
