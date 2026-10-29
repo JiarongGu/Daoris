@@ -735,6 +735,16 @@ public sealed class SessionStore
             await settled.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
         }
 
+        // FOUNDATION1 row k part 1 (D212, the foundation design §4.1, §19.12): the event journal, the ledger's raw transitions in commit order,
+        // minted by triggers in the statement that writes the record, so every writer mints it, a connector built before the table included.
+        // Read by nothing yet. The store's identity is the journal's epoch, so the schema writes it (the change stream's observer wrote it
+        // until now and only reads it; an existing stamp stays as it stands).
+        await using (var journal = _db.Command())
+        {
+            journal.CommandText = EventJournal.Schema;
+            await journal.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+        }
+
         // SESSUX1f (D126 §5.4): whether a record went up to a remote, after the cursor it is derived from. For rows that
         // already exist it is read once from that cursor: a record of this machine's at or before what its workspace
         // pushed was examined by a push, so it is marked, which errs toward refusing a delete (a record of a repository
