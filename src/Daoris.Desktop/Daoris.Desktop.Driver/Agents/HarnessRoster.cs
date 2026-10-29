@@ -858,13 +858,11 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
         if (refresh) LookedAgain();
 
         var reports = new List<HarnessReport>();
+        var registry = ProviderRegistry.Of(adapters);
         foreach (var name in Known)
         {
-            if (adapters.Resolve(name).Toolchain is { Binary.Count: 0 }
-                && config.Commands.GetValueOrDefault(name) is not { Count: > 0 })
-            {
-                continue;
-            }
+            // The listing's rule (AGENTPROVIDER1 row b): a door naming a binary, or one the home's commands configure.
+            if (!registry.Listed(new DoorId(name), config.Commands.GetValueOrDefault(name) is { Count: > 0 })) continue;
 
             // The tool's own sign-in is never asked, at a press either (POOL1a3, D197 point 3; Fable's F2): it is theirs, and
             // their terminal and their other sessions run on it.

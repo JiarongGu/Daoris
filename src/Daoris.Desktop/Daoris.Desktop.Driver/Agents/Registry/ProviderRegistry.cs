@@ -41,9 +41,11 @@ public sealed class ProviderRegistry
                 throw new DriverException($"provider '{provider.Id}' is an unavailable descriptor and carries doors — it is known and never started.");
             }
 
-            if (!provider.Unavailable && provider.Doors.Count == 0)
+            // A holder (the agent a door runs as, with no door of that agent here: `codex`) declares its program and has no door; a
+            // set of tests' own may carry one with no door onto it at all.
+            if (!provider.Unavailable && provider.Doors.Count == 0 && !provider.Program.IsKnown)
             {
-                throw new DriverException($"provider '{provider.Id}' has no door — a provider has at least one, else it is an unavailable descriptor.");
+                throw new DriverException($"provider '{provider.Id}' has no door — a provider has at least one, else it is an unavailable descriptor or a holder naming its program.");
             }
 
             foreach (var door in provider.Doors)
@@ -197,6 +199,30 @@ public sealed class ProviderRegistry
         _doors.TryGetValue(agent, out var door)
             ? AccountAgentOf(door.Door.Id)?.Accounts.SettingsFile
             : _providers.TryGetValue(agent, out var holder) && holder.Accounts.IsKnown ? holder.Accounts.Required.Facts.SettingsFile : null;
+
+    // ---- Whether an agent is listed or named: two rules, kept apart (AGENTPROVIDER1 row b, C1-4.1) ----
+
+    /// <summary>
+    /// The roster's listing (<c>HarnessRoster.RosterAsync</c>): a door is listed when it names a binary of its own or declares no
+    /// program at all, or when the home's <c>commands</c> configure one for it. The stand-ins name none, so they are listed only
+    /// where a command is configured.
+    /// </summary>
+    public bool Listed(DoorId door, bool configured) => configured || Declarations(Entry(door)).Program is not { Binary.Count: 0 };
+
+    /// <summary>
+    /// The agents a verb may name as an operand (<c>AgentsCommand</c>, read by <c>AgentLoginCommand</c> through <c>Agent</c>), in the
+    /// roster's order: each door that names a real program and each agent a door runs as with no door here (a holder, <c>codex</c>),
+    /// configured or not, so no stand-in is one.
+    /// </summary>
+    public IReadOnlyList<string> Operands() =>
+    [
+        .. _doors.Values.Where(entry => Declarations(entry).Program is { Binary.Count: > 0 }).Select(entry => entry.Door.Id.Value)
+            .Concat(_providers.Values
+                .Where(provider => !_doors.ContainsKey(provider.Id.Value) && provider.Program is { IsKnown: true, Value.Binary.Count: > 0 })
+                .Select(provider => provider.Id.Value))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(name => name, StringComparer.Ordinal),
+    ];
 
     // ---- Internals ----
 

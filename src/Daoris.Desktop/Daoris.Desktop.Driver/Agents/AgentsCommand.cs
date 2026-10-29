@@ -650,12 +650,8 @@ public static class AgentsCommand
     /// </summary>
     internal static IReadOnlyList<string> Agents(AgentsWorld world, string path) => world.Adapters(HarnessSettings.HomeOf(path)).Agents;
 
-    private static List<string> Named(AdapterSet set)
-    {
-        bool Door(string each) => set.Names.Contains(each, StringComparer.OrdinalIgnoreCase);
-        HarnessToolchain? Of(string each) => Door(each) ? set.Resolve(each).Toolchain : set.Holder(each);
-        return [.. set.Reserved.Where(each => Of(each) is { Binary.Count: > 0 })];
-    }
+    // The operands' rule (AGENTPROVIDER1 row b), read from the registry: a door, or the agent a door runs as, naming a binary.
+    private static List<string> Named(AdapterSet set) => [.. ProviderRegistry.Of(set).Operands()];
 
     /// <summary>An account by its id or its name (ACCT2): its id, or what was given where it names none, for the verb to refuse.</summary>
     internal static string AccountNamed(string home, string owner, string given) =>

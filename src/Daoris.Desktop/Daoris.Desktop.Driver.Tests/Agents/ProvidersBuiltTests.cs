@@ -141,6 +141,45 @@ public sealed class ProvidersBuiltTests
         }
     }
 
+    /// <summary>Old against new through the shim: every member the readers ask of an adapter answers as the class answered it.</summary>
+    [Theory]
+    [InlineData("stub")]
+    [InlineData("acp-stub")]
+    public void The_shim_presents_a_stand_in_as_the_class_does(string name)
+    {
+        ISessionAdapter old = Old().Resolve(name);
+        var door = AdapterSet.Built().Resolve(name);
+        var target = new SessionTarget("q-1", "title", "body", "asker", "repo", Path.GetTempPath(), "http://svc");
+        var chat = new ChatTarget("repo", Path.GetTempPath(), "http://svc");
+        IReadOnlyList<string> command = ["node", "agent.mjs", "--flag"];
+
+        Assert.IsType<LegacyDoor>(door);
+        Assert.Equal(old.Name, door.Name);
+        Assert.Equal(old.Wire, door.Wire);
+        Assert.Equal(old.Interactive, door.Interactive);
+        Assert.Equal(old.Resumes, door.Resumes);
+        Assert.Equal(old.TakesSettings, door.TakesSettings);
+        Assert.Equal((old.AcpPosture, old.AskingPosture, old.FullPosture), (door.AcpPosture, door.AskingPosture, door.FullPosture));
+        Assert.Empty(Compared(old.Toolchain, door.Toolchain));
+        Assert.Equal(Shape(old.Prepare(target, command)), Shape(door.Prepare(target, command)));
+        Assert.Equal(Shape(old.PrepareChat(chat, command)), Shape(door.PrepareChat(chat, command)));
+        Assert.Null(door.PrepareResume(target, command, "conversation", "prompt"));
+        Assert.Null(door.StructuredOutput());
+        Assert.Null(door.FrameInterrupt());
+        Assert.Equal("a message", door.FrameMessage("a message"));
+        Assert.Empty(door.ToolsUpFront);
+    }
+
+    [Fact]
+    public void The_pipe_stand_in_is_read_by_the_plain_capture_and_the_protocol_one_keeps_its_stdin_open()
+    {
+        var target = new SessionTarget("q-1", "title", "body", "asker", "repo", Path.GetTempPath(), "http://svc");
+        IReadOnlyList<string> command = ["node", "agent.mjs"];
+
+        Assert.False(AdapterSet.Built().Resolve("stub").Prepare(target, command).RedirectStandardInput);
+        Assert.True(AdapterSet.Built().Resolve("acp-stub").Prepare(target, command).RedirectStandardInput);
+    }
+
     [Fact]
     public void The_stand_ins_state_their_spawn_and_stub_states_no_native_dialect()
     {
