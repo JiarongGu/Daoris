@@ -398,6 +398,6 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-30-agent-lyntai-proposal-opus.md` | 71 | 675 |
 | `docs/2026-10-30-agent-lyntai-survey.md` | 44 | 374 |
 | `docs/DAORIS_UNIFIED_COLLABORATION_ARCHITECTURE_AND_PLAN_2026-10-16.md` | 164 | 5380 |
-| `docs/README.md` | 62 | 288 |
+| `docs/README.md` | 63 | 289 |
 | `docs/development.md` | 52 | 575 |
 | `src/Daoris.Desktop/README.md` | 231 | 1153 |
