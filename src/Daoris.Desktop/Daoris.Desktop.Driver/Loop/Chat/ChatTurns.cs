@@ -822,6 +822,25 @@ internal sealed class ChatTurns(
     }
 
     /// <summary>
+    /// A word a keyed open moved onto this conversation's record (FOUNDATION1d-ii part 5, the foundation design §3.4 rule 3), taken as
+    /// <see cref="Take"/> takes it, as the record's own word under its id there: through <paramref name="door"/>, the record's, it is marked
+    /// attempted before its turn is written and taken off once on the wire, and its id is known, so a producer's retry the record answers with
+    /// that same word is acknowledged with no second turn (<see cref="KeepAsync"/>). A word whose id a keep took already is that word, and is
+    /// not taken twice. Null once nothing more is heard: the word then waits on the record for its go-on.
+    /// </summary>
+    public TurnReach? TakeMoved(ISaidDoor door, ChatMessage message)
+    {
+        lock (_gate)
+        {
+            _door ??= door;
+            // A retry the record answered with this word, kept here before the move's hand reached the turns: it is taken already.
+            if (message.Id is { } id && !_known.Add(id)) return TurnReach.TurnEnd;
+        }
+
+        return Take(message with { Kept = true });
+    }
+
+    /// <summary>
     /// Words the agent answered <c>promptRequired</c> (STEER2d): the turn ended between the press and the steer, and the adapter
     /// left them to the client. They go first among what waits, the person's choice, and are the next turn, taken there under
     /// their own id since the record showed them said already. False once the conversation is finishing or gone: the caller says

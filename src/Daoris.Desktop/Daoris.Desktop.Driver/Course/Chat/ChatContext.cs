@@ -109,14 +109,27 @@ internal sealed class ChatContext(
     public ConcurrentDictionary<string, (string Text, IReadOnlyList<SessionEvent> Events)> Shown { get; } = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
-    /// The moved words' events held for <paramref name="message"/> on <paramref name="sessionId"/>, taken once; null where none are held for
-    /// its words, so it is recorded as before.
+    /// What each word a keyed open moved onto a replacement's record shows there (FOUNDATION1d-ii part 5, O6-F2): its own <c>User</c> event under
+    /// its id, by session and then by that id, held from the replacement's hand until the door that writes the word's own turn records it, before
+    /// the write. Each moved word is a turn of its own there, so its event is held by its id rather than by a message's words.
+    /// </summary>
+    public ConcurrentDictionary<string, ConcurrentDictionary<string, SessionEvent>> ShownMoved { get; } = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Holds <paramref name="shown"/> for the moved word <paramref name="word"/>'s own turn on <paramref name="sessionId"/> (<see cref="ShownMoved"/>).</summary>
+    public void ShowMoved(string sessionId, string word, SessionEvent shown) =>
+        ShownMoved.GetOrAdd(sessionId, _ => new ConcurrentDictionary<string, SessionEvent>(StringComparer.Ordinal))[word] = shown;
+
+    /// <summary>
+    /// The moved words' events held for <paramref name="message"/> on <paramref name="sessionId"/>, taken once: those held for its words, else
+    /// the one held for its id where it is a moved word kept there (<see cref="ShownMoved"/>); null where none are held, so it is recorded as before.
     /// </summary>
     public IReadOnlyList<SessionEvent>? TakeShown(string sessionId, ChatMessage message) =>
         Shown.TryGetValue(sessionId, out var held) && string.Equals(held.Text, message.Text, StringComparison.Ordinal)
         && Shown.TryRemove(new KeyValuePair<string, (string Text, IReadOnlyList<SessionEvent> Events)>(sessionId, held))
             ? held.Events
-            : null;
+            : message is { Kept: true, Id: { } id } && ShownMoved.TryGetValue(sessionId, out var moved) && moved.TryRemove(id, out var own)
+                ? [own]
+                : null;
 
     /// <summary>
     /// What each curve move's decision said, by session, from its ask to its take: the take's two lines say it (SWITCH1c-i's
