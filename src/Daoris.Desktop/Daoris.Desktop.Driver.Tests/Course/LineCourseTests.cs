@@ -6,7 +6,7 @@ using T = Daoris.Driver.CourseTrigger;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1e part 2 (the foundation design §3.1, §3.2, §10 row 1e): <see cref="LineCourse.Decide"/>, the one decision of how a line goes
+/// FOUNDATION1e part 2 (the foundation design §3.1, §3.2, §10 row 1e): <see cref="CourseDecision.Decide"/>, the one decision of how a line goes
 /// on, read by nothing. Every case here is a case of today's suites, ported: its facts as the course reads them and its trigger, answered as
 /// the path answers it today, pinned in <c>course-cases.txt</c> beside this file as <c>line-account-cases.txt</c> pins the account rule's.
 /// </summary>
@@ -523,7 +523,7 @@ public sealed class LineCourseTests
     // ——— The proofs.
 
     /// <summary>
-    /// Every row of the table answers as its path answers today: its case's facts and trigger through <see cref="LineCourse.Decide"/>, the
+    /// Every row of the table answers as its path answers today: its case's facts and trigger through <see cref="CourseDecision.Decide"/>, the
     /// answer shaped as the table keeps it. Every case has its row and every row its case.
     /// </summary>
     [Fact]
@@ -541,7 +541,7 @@ public sealed class LineCourseTests
             string answered;
             try
             {
-                answered = Shape(LineCourse.Decide(each.Facts, each.Trigger));
+                answered = Shape(CourseDecision.Decide(each.Facts, each.Trigger));
             }
             catch (Exception error) when (error is not Xunit.Sdk.XunitException)
             {
@@ -675,7 +675,7 @@ public sealed class LineCourseTests
             Assert.All(difference.Adopts, adopts => Assert.Contains(adopts, new[] { "h", "i" }));
 
             // The decision itself tells the rows apart and gives each its path's answer: both are kept, neither is chosen.
-            var decided = difference.Rows.Select(id => Shape(LineCourse.Decide(cases[id].Facts, cases[id].Trigger))).ToList();
+            var decided = difference.Rows.Select(id => Shape(CourseDecision.Decide(cases[id].Facts, cases[id].Trigger))).ToList();
             if (decided.Distinct(StringComparer.Ordinal).Count() < 2) failures.Add($"{difference.Name} ({difference.Title}): its rows answer alike, {decided[0]}");
             foreach (var (id, answered) in difference.Rows.Zip(decided))
             {
@@ -695,7 +695,7 @@ public sealed class LineCourseTests
     {
         foreach (var (id, each) in Cases())
         {
-            var answer = LineCourse.Decide(each.Facts, each.Trigger);
+            var answer = CourseDecision.Decide(each.Facts, each.Trigger);
             var needs = answer switch
             {
                 LineCourse.Resume resume => resume.Needs,
@@ -726,11 +726,11 @@ public sealed class LineCourseTests
         foreach (var (id, each) in Cases().Where(pair => pair.Key.StartsWith("B-", StringComparison.Ordinal) && pair.Value.Trigger == T.WordsKept))
         {
             Assert.True(
-                Shape(LineCourse.Decide(each.Facts, T.SendBack)) == Shape(LineCourse.Decide(each.Facts, T.WordsKept)),
+                Shape(CourseDecision.Decide(each.Facts, T.SendBack)) == Shape(CourseDecision.Decide(each.Facts, T.WordsKept)),
                 $"{id}: a send-back answers otherwise than the words kept");
         }
 
-        Assert.All(Cases(), pair => Assert.False(LineCourse.Decide(pair.Value.Facts, pair.Value.Trigger) is LineCourse.Move { How: CourseHow.Carry }, pair.Key));
+        Assert.All(Cases(), pair => Assert.False(CourseDecision.Decide(pair.Value.Facts, pair.Value.Trigger) is LineCourse.Move { How: CourseHow.Carry }, pair.Key));
     }
 
     /// <summary>

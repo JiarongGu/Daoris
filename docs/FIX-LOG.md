@@ -5,6 +5,17 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-30 - Three of a batch's new cases broke rules their own branches never ran (FOUNDATION1e, AGENTPROVIDER1b, FOUNDATION1d-ii)
+
+- **Symptom:** candidate `a2f1b7d` (batches 1029l to n) failed three gates. The CLI's `partials` check refused `LineCourse` and `ConformanceCases`, each declared partial in two hand-written files. The page's `say.test.ts` could not read `SayAnswer`, the class `WordsNever.Continued` now forwards to. And the driver's fast half failed `HelpStartReadTests.A_start_with_a_repository_whose_judge_never_answers_starts_at_once_and_its_room_says_it_not_read_yet` ("the start took 00:00:14.16", against five seconds).
+- **Root cause:** the first two are rules the branches' filtered runs never reached. `partial` is for generated code (`tools/partials.mjs`, its list empty by design), and FOUNDATION1e part 2 and AGENTPROVIDER1 row b part 2 each split a class across two files. The page's refusal twin follows a forwarded constant only into a static class, while FOUNDATION1d-ii part 1 made `WordsNever.Continued` forward `SayAnswer.Continued`, a record's constant, the Course side naming the Service side because the structure gate forbids the reverse. The third is a clock: the case told "at once" by five seconds of the machine's clock, which five builders' load passed, where its own note and `Poll.Patience` already tell it.
+- **Fix:**
+  - The decision is `CourseDecision.Decide`, a static class of its own beside `LineCourse`, the answers' nested types in scope by `using static`.
+  - The suite's live half is `ConformanceLiveCases`, its two cross-read members internal.
+  - The page's twin reads an alias declared in a record as well as in a static class, and knows `ServiceAnswers.cs`.
+  - The help case drops its clock bound, since with its read bound at five minutes a start that waited would outlast `Poll.Patience` and say the room as written, not as not read yet.
+- **Verify:** `node tools/partials.mjs` clean. `say.test.ts` 9 passed. `LineCourseTests`, `CourseVocabularyTests`, `CourseCensusTests`, `ProviderConformance*`, `HelpStartReadTests`, `StructureTests` and `ShortWaitsCensusTests` 398 passed; the suite's Process half 68 passed.
+
 ## 2026-10-30 - The drain card's test fixed its moment to one day (DRAINHOLD1)
 
 - **Symptom:** the merge queue's web-unit run on candidate `209ea3e`, the first after midnight on 2026-10-30, failed both languages of `Confirmations.test.tsx`'s *says what a drain waits on and since when under a held Confirm*: it looked for "since 14:05" and the card said "since Oct 29, 14:05". The same case passed every run on 2026-10-29.

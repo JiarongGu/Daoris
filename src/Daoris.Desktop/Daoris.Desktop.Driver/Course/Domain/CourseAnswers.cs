@@ -2,7 +2,8 @@ namespace Daoris.Driver;
 
 // FOUNDATION1e part 1 (the foundation design §3.1's answer table): what the course answers, read by nothing. The six answers carry
 // their preconditions; a move's `why` and `by` are the closed enums at the end, today's nine reasons and three authors one to one.
-// Part 2's LineCourse.Decide is in LineCourse.Decide.cs beside this file, with the members it needed added here; no method here decides.
+// Part 2's decision, CourseDecision.Decide, is in LineCourse.Decide.cs beside this file, a class of its own (partial is for generated
+// code, tools/partials.mjs), with the members it needed added here; no method here decides.
 
 /// <summary>When a move opens its new part: at once, or when the running turn ends (the move's first axis, §3.1).</summary>
 public enum CourseWhen
@@ -178,7 +179,7 @@ public sealed record CoursePreconditions(
 /// How a line goes on: <see cref="Resume"/>, <see cref="Move"/>, <see cref="Start"/>, <see cref="Wait"/>, <see cref="Hold"/> or
 /// <see cref="Never"/> (the foundation design §3.1). Every answer but <see cref="Never"/> carries its <see cref="CoursePreconditions"/>.
 /// </summary>
-public abstract partial record LineCourse
+public abstract record LineCourse
 {
     private LineCourse()
     {

@@ -1,3 +1,5 @@
+using static Daoris.Driver.LineCourse;
+
 namespace Daoris.Driver;
 
 // FOUNDATION1e part 2 (the foundation design §3.1, §3.2, §10 row 1e): the one decision of how a line goes on, read by nothing until rows h
@@ -6,7 +8,7 @@ namespace Daoris.Driver;
 // difference a decision for the row that adopts it (D212's FOUNDATION1e part 2 note). It reads the account rule's answer once, as the
 // executor handed it, and never walks.
 
-public abstract partial record LineCourse
+public static class CourseDecision
 {
     /// <summary>
     /// How the line goes on, given what pulled the course and the facts the executor read (the foundation design §3.1): what never goes on

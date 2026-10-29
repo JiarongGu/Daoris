@@ -127,7 +127,6 @@ public sealed class HelpStartReadTests : IDisposable
         facts.Start();
         await facts.FirstAsync(HelpFacts.Lines, "engine", CancellationToken.None).WaitAsync(Poll.Patience);
         var gits = 0;
-        var took = Stopwatch.StartNew();
 
         using (ProcessStarts.Within(_ => null))
         {
@@ -144,7 +143,8 @@ public sealed class HelpStartReadTests : IDisposable
             }
         }
 
-        Assert.True(took.Elapsed < TimeSpan.FromSeconds(5), $"the start took {took.Elapsed}");
+        // "At once" is told by the note, not the machine's clock (FLAKE1, 2026-10-30): with this start's read bound at five minutes, a start
+        // that waited on the judge would outlast Poll.Patience above, and would say the room as written rather than not read yet.
         Assert.Equal(0, gits);
         var agents = File.ReadAllText(Path.Combine(HelpRoom.PathOf(_home), "AGENTS.md"));
         Assert.Contains("| `site` | not driven | not read yet |", agents);
