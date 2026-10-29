@@ -22,6 +22,14 @@ Completed 2026-10-28 (quest `#3d2f1806497d`): one machine-wide admission in the 
 
 Completed 2026-10-28: `PATIENCE` (two minutes) is exported by `src/Daoris.Cli/test/_fixture.ts` and read at 39 waits in 8 files; the bounds that are the claim, the staging delays and the product inputs stay, each marked. `tools/test-patience.mjs` (with its test, run by `verify`) refuses a new fixed wait of a second or more under it unless marked. Detail: FIX-LOG's TESTPATIENCE3 entry; the check is in `docs/development.md`'s census table.
 
+## INTEGRATE1c — mechanical resolution completed, the command-free part (2026-10-28, D215)
+
+> - [ ] **INTEGRATE1c — mechanical resolution completed** (merge tool and its driver twins). A member another member or the line already holds is recorded as contained, not set aside; declared row tables and line rules settle by rule. Contract and proof: §11 row c.
+
+(Quest `#215707073ceb`, asked by `#b233a0`.)
+
+**Outcome** 2026-10-28: built, apart from the line rules' `run` writers, which wait for row d's acceptance (C6) and stay on `INTEGRATE1d`. A member the line or an earlier member holds is recorded contained (provisional on the earlier one, settled at its promotion, given back to be judged again otherwise); the line's declared `by: rows` tables merge by the base in the tool and the driver's replay and plan; the replay sets apart what union joined. Detail and proof: D215's and D87's notes of the day.
+
 ## SERVICESTALL1 — a busy service is said as busy, not as missing (2026-10-28)
 
 > **SERVICESTALL1 — a busy service is said as busy, not as missing** (CLI, service; sighting 2026-10-28). A terminal's ask exited 2 with "no DAORIS_SERVICE_URL … nothing answered as its service" about a minute after a landing, while the service was up and slow. Say what the CLI saw (the address, the bound, that it tried again, and that the variable is not the cause when the address came from the home's record); retry an idempotent read once after a short wait; never retry a press that changes state blindly; find what stalls the service or say what was ruled out.

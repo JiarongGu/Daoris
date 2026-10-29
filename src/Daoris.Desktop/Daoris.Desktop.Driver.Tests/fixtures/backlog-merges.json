@@ -1,5 +1,5 @@
 {
-  "about": "The declared backlog and its merge by the merge base (MERGETASKS1, LANDBACKLOG1; D87's LANDBACKLOG1 note): the table both twins hold, the merge tool's backlogOf and mergeByBase (tools/merge-branch.mjs) and the driver's BacklogMerge, which a landing's replay settles a backlog-only conflict by. Each `paths` row is the text of daoris.json (null where there is none) and the backlog read from it: none is TASKS.md; text that is not JSON, or JSON that is not an object, reads as no backlog (null), so nothing is settled; documents.backlog as text, or as an object's text `path`, is that path with each backslash a slash; anything else is TASKS.md. Each `merges` row is the base's, our side's and their side's lines (joined by LF; a line keeps its CR), and what the merge makes of them: the merged lines, or null where both sides changed one base line (or one side added inside a run the other replaced), the lines kept from the hunks taken and the base lines they dropped, and each such base line (1-based). Ours is the side the work lands on (main in the merge tool, the line in a replay), and two sides adding at one place keep ours first.",
+  "about": "The declared backlog and its merge by the merge base (MERGETASKS1, LANDBACKLOG1; D87's LANDBACKLOG1 note): the table both twins hold, the merge tool's backlogOf and mergeByBase (tools/merge-branch.mjs) and the driver's BacklogMerge, which a landing's replay settles a backlog-only conflict by. Each `paths` row is the text of daoris.json (null where there is none) and the backlog read from it: none is TASKS.md; text that is not JSON, or JSON that is not an object, reads as no backlog (null), so nothing is settled; documents.backlog as text, or as an object's text `path`, is that path with each backslash a slash; anything else is TASKS.md. INTEGRATE1c: each `rows` row is the text of daoris.gates.json (null where there is none) and the files its `integration.merge` declares settle by rows (`by: \"rows\"`; the same merge by the base, line by line, as the backlog's), read by the merge tool's rowTablesOf and the driver's BacklogMerge.RowTablesOf: nothing where the text is not a JSON object, has no integration.merge list, or an entry has no non-blank text `paths`; each path trimmed with each backslash a slash, once, in the order first declared; an entry that is a `line` rule with a `run` writer, or has any other `by`, declares none (the writers wait for the accepted declaration, and no rule keeps one side's copy). Each `merges` row is the base's, our side's and their side's lines (joined by LF; a line keeps its CR), and what the merge makes of them: the merged lines, or null where both sides changed one base line (or one side added inside a run the other replaced), the lines kept from the hunks taken and the base lines they dropped, and each such base line (1-based). Ours is the side the work lands on (main in the merge tool, the line in a replay), and two sides adding at one place keep ours first.",
   "paths": [
     { "name": "no manifest is TASKS.md", "manifest": null, "backlog": "TASKS.md" },
     { "name": "a manifest with no documents is TASKS.md", "manifest": "{}", "backlog": "TASKS.md" },
@@ -14,6 +14,21 @@
     { "name": "a manifest that is not JSON reads as none", "manifest": "{ \"documents\": ", "backlog": null },
     { "name": "a manifest that is a list reads as none", "manifest": "[]", "backlog": null },
     { "name": "a manifest that is null reads as none", "manifest": "null", "backlog": null }
+  ],
+  "rows": [
+    { "name": "no declaration declares none", "declaration": null, "tables": [] },
+    { "name": "a declaration that is not JSON declares none", "declaration": "{ \"integration\": ", "tables": [] },
+    { "name": "a declaration that is a list declares none", "declaration": "[]", "tables": [] },
+    { "name": "a declaration with no integration declares none", "declaration": "{ \"generated\": [] }", "tables": [] },
+    { "name": "an integration that is not an object declares none", "declaration": "{ \"integration\": 5 }", "tables": [] },
+    { "name": "a merge that is not a list declares none", "declaration": "{ \"integration\": { \"merge\": \"docs/development.md\" } }", "tables": [] },
+    { "name": "a path by rows is a declared row table", "declaration": "{ \"integration\": { \"merge\": [ { \"paths\": \"docs/development.md\", \"by\": \"rows\" } ] } }", "tables": ["docs/development.md"] },
+    { "name": "its path is trimmed and a backslash is a slash", "declaration": "{ \"integration\": { \"merge\": [ { \"paths\": \" docs\\\\development.md \", \"by\": \"rows\" } ] } }", "tables": ["docs/development.md"] },
+    { "name": "a path twice is one table, in the order first declared", "declaration": "{ \"integration\": { \"merge\": [ { \"paths\": \"b.md\", \"by\": \"rows\" }, { \"paths\": \"a.md\", \"by\": \"rows\" }, { \"paths\": \"b.md\", \"by\": \"rows\" } ] } }", "tables": ["b.md", "a.md"] },
+    { "name": "a line rule with a writer is not a row table: it waits for the declaration's acceptance", "declaration": "{ \"integration\": { \"merge\": [ { \"paths\": \"docs/STATUS.md\", \"line\": \"^Status: \", \"run\": \"node tools/status.mjs\" } ] } }", "tables": [] },
+    { "name": "any other way of settling is none: no rule keeps one side's copy", "declaration": "{ \"integration\": { \"merge\": [ { \"paths\": \"a.md\", \"by\": \"ours\" }, { \"paths\": \"b.md\", \"by\": \"line\" }, { \"paths\": \"c.md\" } ] } }", "tables": [] },
+    { "name": "an entry with no text path, or a blank one, declares none", "declaration": "{ \"integration\": { \"merge\": [ { \"by\": \"rows\" }, { \"paths\": 5, \"by\": \"rows\" }, { \"paths\": \"  \", \"by\": \"rows\" }, 7, null ] } }", "tables": [] },
+    { "name": "rows beside a line rule: the row table is kept and the writer waits", "declaration": "{ \"integration\": { \"merge\": [ { \"paths\": \"docs/development.md\", \"by\": \"rows\" }, { \"paths\": \"docs/STATUS.md\", \"line\": \"^Status: \", \"run\": \"node tools/status.mjs\" } ] } }", "tables": ["docs/development.md"] }
   ],
   "merges": [
     {
@@ -95,6 +110,30 @@
       "theirs": ["# Tasks\r", "- [ ] **A1** one.\r", "- [ ] **A2** two.\r", "- [ ] **A3** three.\r", ""],
       "text": ["# Tasks\r", "- [ ] **A2** two.\r", "- [ ] **A3** three.\r", ""],
       "kept": 1, "dropped": 1, "both": []
+    },
+    {
+      "name": "a declared row table: two branches each add a row at the table's last line (2026-10-28's census set-aside), both kept, ours first",
+      "base": ["| When | Run |", "|---|---|", "| a test names a login | `node tools/live-logins.mjs` |", "", "Next."],
+      "ours": ["| When | Run |", "|---|---|", "| a test names a login | `node tools/live-logins.mjs` |", "| a tool reads git | `node tools/optional-locks.mjs` |", "", "Next."],
+      "theirs": ["| When | Run |", "|---|---|", "| a test names a login | `node tools/live-logins.mjs` |", "| a test waits | `node tools/short-waits.mjs` |", "", "Next."],
+      "text": ["| When | Run |", "|---|---|", "| a test names a login | `node tools/live-logins.mjs` |", "| a tool reads git | `node tools/optional-locks.mjs` |", "| a test waits | `node tools/short-waits.mjs` |", "", "Next."],
+      "kept": 2, "dropped": 0, "both": []
+    },
+    {
+      "name": "a declared row table: a row one side added mid-table beside a row the other removed",
+      "base": ["| When | Run |", "|---|---|", "| one | `a` |", "| two | `b` |", "| three | `c` |"],
+      "ours": ["| When | Run |", "|---|---|", "| one | `a` |", "| one and a half | `x` |", "| two | `b` |", "| three | `c` |"],
+      "theirs": ["| When | Run |", "|---|---|", "| one | `a` |", "| three | `c` |"],
+      "text": ["| When | Run |", "|---|---|", "| one | `a` |", "| one and a half | `x` |", "| three | `c` |"],
+      "kept": 1, "dropped": 1, "both": []
+    },
+    {
+      "name": "a declared row table: one row both sides changed differently is a conflict, left to the session",
+      "base": ["| When | Run |", "|---|---|", "| one | `a` |", "| two | `b` |"],
+      "ours": ["| When | Run |", "|---|---|", "| one | `a` |", "| two | `ours` |"],
+      "theirs": ["| When | Run |", "|---|---|", "| one | `a` |", "| two | `theirs` |"],
+      "text": null,
+      "kept": 2, "dropped": 2, "both": [4]
     }
   ]
 }

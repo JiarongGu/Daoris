@@ -435,9 +435,9 @@ import { censusOf, classesReached, halfOf, reachSettings, repository, withSettin
 import { endOrphans, endStranded } from './processes.mjs';
 import { gateSignature, readTrx, signatureKey, signatureOf } from './test-failures.mjs';
 import {
-  MERGE_QUEUE, MERGE_QUEUE_LOG, RUNNER_ACK_MS, SCOPE_TREE, appendScopeRun, candidateOutcome, dropQueued, enqueue, formCandidate, gitBudget,
+  IN_THE_LINE, MERGE_QUEUE, MERGE_QUEUE_LOG, RUNNER_ACK_MS, SCOPE_TREE, appendScopeRun, candidateOutcome, dropQueued, enqueue, formCandidate, gitBudget, inTheLine,
   changeCandidate, drainedLine, drainedRecord, judgeFailure, memoryStep, messageOf, nextMembers, notePreview, noteRecheck, overdueWaits, promotion, queueLines, readAdmission, readQueue, sameCandidate,
-  recheckDue, recordsOnly, reformCount, resumeCandidate, scopedSet, scopedTier, writeAdmission, writeQueue,
+  recheckDue, recordsOnly, reformCount, requestStanding, requestsOf, resumeCandidate, scopedSet, scopedTier, settleContained, writeAdmission, writeQueue,
 } from './merge-queue.mjs';
 
 export const MAIN = 'main';
@@ -1430,6 +1430,46 @@ export function backlogOf(text) {
   return typeof path === 'string' ? path.replace(/\\/g, '/') : 'TASKS.md';
 }
 
+/**
+ * The files a repository's declaration says settle by rows (INTEGRATE1c; design §4.1's `merge`): `daoris.gates.json`'s
+ * `integration.merge`, each entry `{ "paths": file, "by": "rows" }`. A file whose conflict is settled as the backlog's is, by the
+ * merge base, line by line: a row a side added is kept, one a side removed is dropped, rows both add at one place are both kept,
+ * and a base row both changed stays a conflict. No command runs, so no acceptance is read; an entry naming a `line` or a `run`
+ * writer is row d's (the acceptance's) and is passed over, as is any other `by`: no rule keeps one side's copy (C6, F10).
+ *
+ * Nothing: where the text is null, not JSON or not an object, has no `integration.merge` list, or an entry has no text `paths`.
+ * Each path trimmed, a backslash a slash, once. A twin: a landing's replay reads the line's declaration by the driver's
+ * `BacklogMerge.RowTablesOf`, and both hold `backlog-merges.json` among the driver's test fixtures, row for row.
+ */
+export function rowTablesOf(text) {
+  if (text === null) return [];
+  let declaration;
+  try {
+    declaration = JSON.parse(text);
+  } catch {
+    return [];
+  }
+  const merge = declaration !== null && typeof declaration === 'object' && !Array.isArray(declaration) ? declaration.integration?.merge : undefined;
+  if (!Array.isArray(merge)) return [];
+  const paths = merge.flatMap((entry) => {
+    if (entry === null || typeof entry !== 'object' || Array.isArray(entry) || entry.by !== 'rows' || typeof entry.paths !== 'string') return [];
+    const path = entry.paths.trim().replace(/\\/g, '/');
+    return path.length ? [path] : [];
+  });
+  return [...new Set(paths)];
+}
+
+/**
+ * The row tables the line declares at `line` (the side the work lands on, never the member's copy), by `rowTablesOf`; none where
+ * there is no declaration. A merge in the main checkout reads its `HEAD`; a queue candidate's member reads the base the candidate
+ * started on, never the candidate's tip, where an earlier member's own `integration.merge` stood (INTEGRATE1c; the driver reads
+ * `onto` the same way).
+ */
+function declaredRows(root, line = 'HEAD') {
+  const shown = git(root, ['show', `${line}:daoris.gates.json`], { allowFail: true });
+  return shown.status === 0 ? rowTablesOf(shown.out) : [];
+}
+
 /** The changes from `base` to `side`, as hunks of the base's lines `[start, end)` and what replaced them; by the longest common run of lines. */
 export function lineHunks(base, side) {
   let head = 0;
@@ -1528,31 +1568,35 @@ function stageText(root, stage, path) {
 }
 
 /**
- * The backlog's conflict in the merge in place resolved by its base and staged, with one line saying so; or, where both sides
- * changed one line, left as git wrote it, with one line naming where. Whether it was resolved.
+ * The backlog's conflict, and each declared row table's (`rowTablesOf`, INTEGRATE1c), in the merge in place resolved by its base and
+ * staged, with one line saying so; or, where both sides changed one line, left as git wrote it, with one line naming where.
+ * Whether any was resolved. The row tables are the ones `line` declares (`declaredRows`).
  */
-function resolveBacklog(root) {
-  const path = backlogPath(root);
-  if (path === null) {
-    console.log('daoris.json: it does not read as an object, so no backlog is resolved by the merge base; left for you');
-    return false;
+function resolveBacklog(root, { line = 'HEAD' } = {}) {
+  const backlog = backlogPath(root);
+  if (backlog === null) console.log('daoris.json: it does not read as an object, so no backlog is resolved by the merge base; left for you');
+  // INTEGRATE1c: the repository's declared row tables settle as the backlog does, by the merge base.
+  const paths = [...new Set([...(backlog === null ? [] : [backlog]), ...declaredRows(root, line)])];
+  const unmerged = paths.length ? unmergedPaths(root) : [];
+  let resolved = false;
+  for (const path of paths.filter((each) => unmerged.includes(each))) {
+    const [base, ours, theirs] = [1, 2, 3].map((stage) => stageText(root, stage, path));
+    if (base === null || ours === null || theirs === null) {
+      console.log(`${path}: not resolved by the merge base, since a side added or deleted it; left for you`);
+      continue;
+    }
+    const merged = mergeByBase(base, ours, theirs);
+    if (merged.text === null) {
+      const where = merged.both.map((entry) => entry.line).join(', ');
+      console.log(`${path}: both sides changed the same ${merged.both.length === 1 ? 'line' : 'lines'} (the merge base's line ${where}); left for you`);
+      continue;
+    }
+    writeAtomic(join(root, path), merged.text);
+    git(root, ['add', '--', path]);
+    console.log(`${path}: resolved by the merge base${path === backlog ? '' : ' (a declared row table)'}, ${count(merged.kept, 'line')} a side added kept and ${count(merged.dropped, 'line')} a side removed dropped`);
+    resolved = true;
   }
-  if (!unmergedPaths(root).includes(path)) return false;
-  const [base, ours, theirs] = [1, 2, 3].map((stage) => stageText(root, stage, path));
-  if (base === null || ours === null || theirs === null) {
-    console.log(`${path}: not resolved by the merge base, since a side added or deleted it; left for you`);
-    return false;
-  }
-  const merged = mergeByBase(base, ours, theirs);
-  if (merged.text === null) {
-    const where = merged.both.map((entry) => entry.line).join(', ');
-    console.log(`${path}: both sides changed the same ${merged.both.length === 1 ? 'line' : 'lines'} (the merge base's line ${where}); left for you`);
-    return false;
-  }
-  writeAtomic(join(root, path), merged.text);
-  git(root, ['add', '--', path]);
-  console.log(`${path}: resolved by the merge base, ${count(merged.kept, 'line')} a side added kept and ${count(merged.dropped, 'line')} a side removed dropped`);
-  return true;
+  return resolved;
 }
 
 // ---------------------------------------------------------------------------------------------------
@@ -3566,7 +3610,7 @@ export function descendants(listing, pid) {
  * The gate runners take it as a parameter, so their logic is tested without starting a process. Given the run's
  * `trees`, its child is held there while it runs, and a step the run ended answers `STEP_ENDED` (CIPRIO1c).
  */
-export function runStep(command, cwd, fd, { raise = null, trees = null } = {}) {
+export function runStep(command, cwd, fd, { raise = null, trees = null, env = null } = {}) {
   writeSync(fd, `$ ${command}\n`);
   return new Promise((done) => {
     let settled = false;
@@ -3577,7 +3621,8 @@ export function runStep(command, cwd, fd, { raise = null, trees = null } = {}) {
         done(child?.pid && trees?.release(child.pid) ? STEP_ENDED : code);
       }
     };
-    child = spawn(command, { cwd, shell: true, stdio: ['ignore', fd, fd], windowsHide: true });
+    // QUEUETESTLEAK1: a step given its environment gets that one, never this process's as it stands now.
+    child = spawn(command, { cwd, shell: true, stdio: ['ignore', fd, fd], windowsHide: true, ...(env ? { env } : {}) });
     // FAMILYFAIL1b: a rehearsal's step is raised to normal at once, so what it starts inherits normal. The shell has not yet
     // created its own child when `spawn` returns, so the race is small. `raise` says its own failure once.
     if (raise && child.pid) raise(child.pid);
@@ -4259,7 +4304,7 @@ const headCommit = (root) => git(root, ['rev-parse', 'HEAD'], { allowFail: true 
  */
 function runRecorded(root, gates, dir, {
   keepGoing = false, oneAtATime = false, branch = null, onResult = () => {}, onStart = () => {}, halt = undefined, trees = null, width = LIGHT_WIDTH, byMemory = false,
-  kind = null, gateVerdict = () => true,
+  kind = null, gateVerdict = () => true, step = runStep,
 } = {}) {
   const commit = headCommit(root);
   return runGates(root, gates, dir, {
@@ -4277,7 +4322,7 @@ function runRecorded(root, gates, dir, {
       const tree = contentTree(where);
       const started = nowIso();
       // GATEBUILD1: a Process half runs its fast half's build when that passed in this run on this same tree.
-      const result = await runGate(where, gate, logs, { ...beside, noBuild: reuseBuild(beside?.built, tree), trees });
+      const result = await runGate(where, gate, logs, { ...beside, noBuild: reuseBuild(beside?.built, tree), trees, step });
       Object.assign(result, { tree, at: started });
       if (result.verdict !== 'ENDED') {
         const home = verdictsHome(where);
@@ -6263,6 +6308,29 @@ const DROP_POLL_MS = Number(process.env.MERGE_BRANCH_DROP_POLL_MS) || 2_000;
 const DRAIN_WAIT_MS = Number(process.env.MERGE_BRANCH_DRAIN_WAIT_MS) || 30_000;
 const sleepMs = (ms) => new Promise((done) => { setTimeout(done, ms); });
 
+/** QUEUETESTLEAK1: this process's environment as the tool loaded, before anything in it changed `process.env`. */
+const START_ENVIRONMENT = Object.freeze({ ...process.env });
+
+/**
+ * QUEUETESTLEAK1: the variables the tool tests' stand-in gates read. The tests write their paths into their gates now, so a name here
+ * in a runner's environment was inherited from a test's process, as the leak's runner inherited the class probe's on 2026-10-28.
+ */
+export const HARNESS_VARIABLES = Object.freeze(['QUEUE_DRAIN_DIR', 'QUEUE_DROP_HOLD']);
+
+/**
+ * QUEUETESTLEAK1: the environment of a gate or a probe the queue's runner starts: the runner's own at its start (`start`), never
+ * `process.env` as something in this process changed it since, without the tool tests' variables (`HARNESS_VARIABLES`) or the
+ * tool's own switches (`MERGE_BRANCH_*`, the runner's inputs and no gate's), with the build servers of its own the runner sets
+ * (`BESIDE_ENVIRONMENT`). The rest of a gate's composition (the design §5.5, INTEGRATE1a) is not this.
+ */
+export function queueGateEnvironment(start = START_ENVIRONMENT) {
+  const kept = Object.entries(start).filter(([name, value]) => value !== undefined && !HARNESS_VARIABLES.includes(name.toUpperCase()) && !/^MERGE_BRANCH_/i.test(name));
+  return { ...Object.fromEntries(kept), ...BESIDE_ENVIRONMENT };
+}
+
+/** QUEUETESTLEAK1: the step the queue's gates and probes run by, each with `queueGateEnvironment`. */
+const queueGateStep = (command, cwd, fd, options = {}) => runStep(command, cwd, fd, { ...options, env: queueGateEnvironment() });
+
 /** The queue's record changed under its lock: `change(queue)` answers `{ queue }` to write, with anything else it says. */
 function withQueue(home, change) {
   return holdingLock(join(home, MERGE_QUEUE), () => {
@@ -6329,6 +6397,39 @@ function requireQueueIgnored(home) {
 }
 
 /**
+ * QUEUETESTLEAK1: why a queue verb is refused where it was started, or null. The queue is its home's (`verdictsHome`, the
+ * repository's first worktree), and only that checkout queues to it or runs it: a verb started in a linked worktree, or in a
+ * folder git read as one (a tool test's scratch whose `.git` a reset had removed, 2026-10-28), never reaches the main checkout's
+ * queue. A verb that may start the runner (`run`) is refused too where the tool running it is another checkout's of the queue's
+ * own repository (`tool`, `sameRepository`): a tree's tool never runs the main checkout's queue. Another repository's tool (the
+ * tool tests' own, over their scratch queues) is not refused.
+ */
+export function queueHomeRefusal({ root, home, tool = null, sameRepository = false, run = false }) {
+  if (!samePath(root, home)) {
+    return `${root} is not the queue's checkout: the queue is kept in ${home}, the repository's main checkout, and only that checkout queues to it or runs it; run this there`;
+  }
+  if (run && tool && sameRepository && !samePath(tool, home)) {
+    return `this is the tool of ${tool}, another checkout of the queue's repository: a tree's tool never runs ${home}'s queue; queue and run it with ${home}'s own tools/merge-branch.mjs`;
+  }
+  return null;
+}
+
+/** The checkout holding this tool, and whether it is one of `home`'s repository (QUEUETESTLEAK1); none where git finds none. */
+function toolCheckout(home) {
+  const asked = git(dirname(fileURLToPath(import.meta.url)), ['rev-parse', '--show-toplevel', '--path-format=absolute', '--git-common-dir'], { allowFail: true });
+  const [top, common] = asked.status === 0 ? lines(asked.out) : [];
+  if (!top || !common) return { tool: null, sameRepository: false };
+  const theirs = git(home, ['rev-parse', '--path-format=absolute', '--git-common-dir'], { allowFail: true });
+  return { tool: resolve(top), sameRepository: theirs.status === 0 && samePath(common, theirs.out.trim()) };
+}
+
+/** QUEUETESTLEAK1: the verb refused, with `queueHomeRefusal`'s sentence, where it was started outside the queue's own checkout. */
+function requireQueueHome(root, home, { run = false } = {}) {
+  const why = queueHomeRefusal({ root, home, ...(run ? toolCheckout(home) : {}), run });
+  if (why) throw new Refusal(why);
+}
+
+/**
  * The scope tree at `commit` (§4.1, *Where*): a detached worktree of its own, made where none stands, reset and moved where it
  * stands; its builds and dependencies stay warm between candidates. A merge left open there is aborted: the queue leaves none.
  */
@@ -6347,12 +6448,30 @@ function prepareScopeTree(home, commit) {
   return locate(path);
 }
 
-/** One member merged in the scope tree on `onto`, as today's merge makes it, and committed with its frozen message (§4.1). */
-function mergeMember(tree, member, onto) {
+/**
+ * Where the candidate holds a member's work already, or null (INTEGRATE1c, C4): `IN_THE_LINE` where the base holds its tip, else
+ * `{ branch, request }` of the first earlier member whose merge commit does. Judged by ancestry, as the merge itself would find
+ * nothing to make.
+ */
+export function containedBy(tree, member, base, formed) {
+  const holds = (commit) => git(tree, ['merge-base', '--is-ancestor', member.tip, commit], { allowFail: true }).status === 0;
+  if (holds(base)) return IN_THE_LINE;
+  const earlier = formed.find((each) => holds(each.commit));
+  return earlier ? { branch: earlier.branch, request: earlier.request } : null;
+}
+
+/**
+ * One member merged in the scope tree on `onto`, as today's merge makes it, and committed with its frozen message (§4.1). A member
+ * the candidate holds already is not merged: it is `{ contained }` (`containedBy`), never a conflict (INTEGRATE1c).
+ */
+function mergeMember(tree, member, onto, { base, formed = [] } = { base: onto }) {
+  const held = containedBy(tree, member, base, formed);
+  if (held) return { contained: held };
   git(tree, ['checkout', '--quiet', '--force', '--detach', onto]);
   const merged = git(tree, ['merge', '--no-ff', '--no-commit', member.tip], { allowFail: true });
   if (merged.status !== 0) {
-    const resolved = mergeInProgress(tree) && resolveBacklog(tree);
+    // INTEGRATE1c: the row tables the line declares where the candidate started, never what an earlier member declared.
+    const resolved = mergeInProgress(tree) && resolveBacklog(tree, { line: base });
     const { blocking, generated } = mergeInProgress(tree) ? conflicts(tree) : { blocking: [], generated: [] };
     if (blocking.length || (!generated.length && !resolved)) {
       git(tree, ['merge', '--abort'], { allowFail: true });
@@ -6447,7 +6566,7 @@ export function prefixRunner(tree, candidate, plan, dir, watch = null) {
     const trx = /^dotnet test\b/.test(gate.run.trim()) ? join(dir, `${slug(failure.gate)}.prefix-${n}.trx`) : null;
     const probe = { ...gate, name: `${gate.name}.prefix-${n}`, run: trx ? trxCommand(narrowed, trx) : narrowed };
     // HEAVYQUEUE1: a probe is a heavy run like its gate, and takes its place in the machine's admission before it starts.
-    const result = await admitted(machineAdmission(), gate, () => watch?.check() === true, () => runGate(tree, probe, dir, { trees: watch?.trees ?? null }));
+    const result = await admitted(machineAdmission(), gate, () => watch?.check() === true, () => runGate(tree, probe, dir, { trees: watch?.trees ?? null, step: queueGateStep }));
     if (!result) throw new Drained();
     if (result.verdict === 'ENDED') throw new Drained(probe.name);
     if (result.verdict === 'PASS' || result.verdict === 'FLAKE') return { result: 'pass' };
@@ -6541,7 +6660,7 @@ async function runCandidateWatched(home, candidate, watch) {
     // QUEUEDRAIN1: the run's step trees and its halt are the watch's, so a drop ends the gates running and starts no more; this
     // returns once every step has ended, and only then is the scoped tier released.
     results = await runRecorded(tree, gates, dir, {
-      keepGoing: true, byMemory: true, kind: 'scoped', gateVerdict: (gate) => !gate.deferredClasses?.length, trees: watch.trees, halt: () => watch.check(),
+      keepGoing: true, byMemory: true, kind: 'scoped', gateVerdict: (gate) => !gate.deferredClasses?.length, trees: watch.trees, halt: () => watch.check(), step: queueGateStep,
     });
   } finally {
     withAdmission(home, (record) => scopedTier(record, null, nowIso()));
@@ -6672,8 +6791,19 @@ async function queueStep(home) {
   const candidate = queue.candidate;
   const action = resumeCandidate(candidate, { mainTip, isAncestor: isAncestorIn(home) });
   if (action === 'promoted') {
-    withQueue(home, (q) => ({ queue: { ...q, candidate: null, landed: [...(q.landed ?? []), ...candidate.members.map((each) => ({ branch: each.branch, tip: each.tip, request: each.request, commit: each.commit, at }))].slice(-200) } }));
-    console.log(`${at} promoted ${candidate.tip.slice(0, 7)}: ${candidate.members.map((each) => each.branch).join(', ')}`);
+    // C4: the member that held a contained one has promoted, so the contained one is settled with it: the record's contained, read
+    // under the lock, so one dropped since is not settled.
+    const { settled } = withQueue(home, (q) => {
+      const kept = settleContained(sameCandidate(q.candidate, candidate) ? q.candidate : null, at);
+      return {
+        queue: {
+          ...q, candidate: null, landed: [...(q.landed ?? []), ...candidate.members.map((each) => ({ branch: each.branch, tip: each.tip, request: each.request, commit: each.commit, at }))].slice(-200),
+          ...(kept.length ? { contained: [...(q.contained ?? []), ...kept].slice(-200) } : {}),
+        },
+        settled: kept,
+      };
+    });
+    console.log(`${at} promoted ${candidate.tip.slice(0, 7)}: ${candidate.members.map((each) => each.branch).join(', ')}${settled.length ? `; contained in them, settled with them: ${settled.map((each) => each.branch).join(', ')}` : ''}`);
     return 'next';
   }
   if (action === 'reform') {
@@ -6681,7 +6811,13 @@ async function queueStep(home) {
     const lanes = readLanes(home)?.lanes ?? [];
     const counted = reformCount(candidate, { recordsOnlyMove: recordsOnly(paths, (path) => ruleFor(path, REACH, lanes)) });
     console.log(`${at} main moved to ${mainTip.slice(0, 7)} by a direct commit${counted.recordsOnly ? ', records only' : ''}: the candidate is formed again${counted.heldByDirect ? `, re-formed ${counted.reforms} times running: held by direct commits` : ''}`);
-    await formNext(home, candidate.members.map(({ commit, handedBack, ...request }) => request), mainTip, { reforms: counted.reforms, recordsOnly: counted.recordsOnly });
+    // QUEUEWAITEND1: its requests stand as `forming` while they form again, in the write that ends the old candidate; its contained
+    // members are the record's, so one dropped since is not formed again.
+    const formed = withQueue(home, (q) => changeCandidate(q, candidate, () => {
+      const forming = { base: mainTip, members: requestsOf(q.candidate, candidate.members.map(({ commit, handedBack, ...request }) => request)), reforms: counted.reforms, recordsOnly: counted.recordsOnly };
+      return { queue: { ...q, candidate: null, forming }, forming };
+    }));
+    if (!formed.obsolete) await formNext(home, formed.forming);
     return 'next';
   }
   if (action === 'promote') {
@@ -6711,30 +6847,60 @@ async function queueStep(home) {
     const outcome = await runCandidate(home, candidate);
     return judged(home, candidate, outcome);
   }
-  if (action === 'none' && queue.queued.length) {
+  if (action === 'none' && (queue.queued.length || queue.forming?.members?.length)) {
     // The tool's own tests hold the runner before it forms, so one candidate can take several branches queued one by one.
     const hold = process.env.MERGE_BRANCH_QUEUE_HOLD;
     if (hold && !existsSync(hold)) return 'wait';
     // FLAKE1: the members are taken from the queue as it stands under its lock, never from the step's first read, which a
     // request queued, dropped or queued again since (or while the hold was waited on) has left behind.
-    const { members } = withQueue(home, (q) => {
+    // QUEUEWAITEND1: they stand as `forming` in the same write, so each one's waiter reads it in flight until its candidate is
+    // written; a form a crash or a drop left is formed first.
+    const { forming } = withQueue(home, (q) => {
+      if (q.candidate) return {};
+      if (q.forming?.members?.length) return { forming: q.forming };
       const taken = nextMembers(q.queued, { oneAtATime: q.queued[0]?.oneAtATime === true });
-      return { queue: { ...q, queued: taken.rest }, members: taken.members };
+      if (!taken.members.length) return {};
+      const next = { base: mainTip, members: taken.members, reforms: 0, recordsOnly: false };
+      return { queue: { ...q, queued: taken.rest, forming: next }, forming: next };
     });
-    if (!members.length) return 'next';
-    await formNext(home, members, mainTip, {});
+    if (forming) await formNext(home, forming);
     return 'next';
   }
   return action === 'none' ? 'idle' : 'wait';
 }
 
-/** A candidate formed from frozen requests on `base` in the scope tree, its set-aside handed back. */
-async function formNext(home, members, base, { reforms = 0, recordsOnly: onlyRecords = false }) {
+/** QUEUEWAITEND1: whether the record's `forming` is still the one asked: its base and its requests, in order. */
+const sameForming = (now, asked) => Boolean(now && asked) && now.base === asked.base
+  && (now.members ?? []).map((each) => each.request).join(' ') === (asked.members ?? []).map((each) => each.request).join(' ');
+
+/**
+ * A candidate formed in the scope tree from the requests `forming` names (its `base`, `members`, `reforms`, `recordsOnly`), its
+ * set-aside handed back. QUEUEWAITEND1: it is written only over the same `forming`; a drop that took one of its requests out
+ * meanwhile leaves it unwritten, and what is left forms again at the next step.
+ */
+async function formNext(home, forming) {
+  const { base, members, reforms = 0, recordsOnly: onlyRecords = false } = forming;
   const tree = prepareScopeTree(home, base);
   const at = nowIso();
-  const { candidate, setAside } = await formCandidate({ base, members, merge: async (member, onto) => mergeMember(tree, member, onto), at, reforms, recordsOnly: onlyRecords });
+  const { candidate, setAside, contained } = await formCandidate({
+    base, members, merge: async (member, onto, formed) => mergeMember(tree, member, onto, { base, formed }), at, reforms, recordsOnly: onlyRecords,
+  });
+  // C4: a member the line holds is settled at once; one an earlier member holds waits on that member's promotion, on the candidate.
+  const settled = contained.filter((each) => inTheLine(each.containedIn))
+    .map((each) => ({ branch: each.branch, tip: each.tip, request: each.request, containedIn: { line: true }, at }));
+  const written = withQueue(home, (q) => (sameForming(q.forming, forming)
+    ? { queue: { ...q, candidate, forming: null, handedBack: [...(q.handedBack ?? []), ...setAside].slice(-100), ...(settled.length ? { contained: [...(q.contained ?? []), ...settled].slice(-200) } : {}) } }
+    : { changed: true }));
+  if (written.changed) {
+    console.log(`${at} a drop came while ${members.map((each) => each.branch).join(', ')} formed: that candidate is not written, and what is left forms again`);
+    return;
+  }
   for (const back of setAside) console.log(`${at} set aside: ${back.branch}, a conflict in ${back.handedBack.paths.join(', ')}; resolve it on the branch (merge ${MAIN} into it) and queue it again`);
-  withQueue(home, (q) => ({ queue: { ...q, candidate, handedBack: [...(q.handedBack ?? []), ...setAside].slice(-100) } }));
+  for (const each of contained) {
+    console.log(inTheLine(each.containedIn)
+      ? `${at} contained: ${each.branch} is in ${MAIN} already; nothing to merge`
+      : `${at} contained: ${each.branch} is in ${each.containedIn.branch} already; settled when ${each.containedIn.branch} promotes, and judged again if it does not`);
+  }
 }
 
 /** What the queue does with a run's outcome: promote next, hold, stop, hand back, split, or judge the kept members again. */
@@ -6766,22 +6932,33 @@ async function judged(home, candidate, outcome) {
     return 'next';
   }
   const back = (outcome.handedBack ?? []).map((each) => ({ ...each, handedBack: { ...each.handedBack, at } }));
+  // C4: the contained members given back are the record's, read under the lock with the write (`q.candidate`), never this run's
+  // copy: a member dropped by name while the run went on is off the record's candidate only, and the copy would bring it back.
+  const retained = (outcome.retain ?? []).map(({ commit, ...request }) => request);
   if (outcome.action === 'split') {
-    if (change((q) => ({ queue: { ...q, candidate: null, handedBack: [...(q.handedBack ?? []), ...back].slice(-100), queued: [...outcome.retain.map(({ commit, ...request }) => ({ ...request, oneAtATime: true })), ...q.queued] } })).obsolete) return obsolete();
+    if (change((q) => ({ queue: { ...q, candidate: null, handedBack: [...(q.handedBack ?? []), ...back].slice(-100), queued: [...requestsOf(q.candidate, retained).map((request) => ({ ...request, oneAtATime: true })), ...q.queued] } })).obsolete) return obsolete();
     for (const each of back) console.log(`${at} handed back: ${each.branch} (${each.handedBack.how}: ${each.handedBack.failure})`);
     console.log(`${at} unresolved: ${outcome.retain.map((each) => each.branch).join(', ')} run one at a time`);
     return 'next';
   }
-  if (change((q) => ({ queue: { ...q, candidate: null, handedBack: [...(q.handedBack ?? []), ...back].slice(-100) } })).obsolete) return obsolete();
-  for (const each of back) console.log(`${at} handed back: ${each.branch} (${each.handedBack.how}: ${each.handedBack.failure})`);
   // The retained candidate is judged again: the members kept, formed anew on the base, run on their own tree.
-  if (outcome.retain?.length) await formNext(home, outcome.retain.map(({ commit, ...request }) => request), candidate.base, {});
+  // C4: so are the members it held as contained, now that their container may be gone: each is merged again, or found contained again.
+  // QUEUEWAITEND1: they stand as `forming` in the write that ends this candidate.
+  const ended = change((q) => {
+    const again = requestsOf(q.candidate, retained);
+    const forming = again.length ? { base: candidate.base, members: again, reforms: 0, recordsOnly: false } : null;
+    return { queue: { ...q, candidate: null, forming, handedBack: [...(q.handedBack ?? []), ...back].slice(-100) }, forming };
+  });
+  if (ended.obsolete) return obsolete();
+  for (const each of back) console.log(`${at} handed back: ${each.branch} (${each.handedBack.how}: ${each.handedBack.failure})`);
+  if (ended.forming) await formNext(home, ended.forming);
   return 'next';
 }
 
 /** `--queue-run`: the detached runner. It acknowledges by writing its process id and start into the record, and ends when idle. */
 async function queueRunVerb(root) {
   const home = verdictsHome(root);
+  requireQueueHome(root, home, { run: true });
   requireQueueIgnored(home);
   const taken = withQueue(home, (queue) => (queue.runner && queue.runner.pid !== process.pid && pidAlive(queue.runner.pid)
     ? { busy: queue.runner }
@@ -6838,6 +7015,7 @@ async function ensureRunner(home, { ackMs = Number(process.env.MERGE_BRANCH_QUEU
  */
 function previewVerb(root, options) {
   const home = verdictsHome(root);
+  requireQueueHome(root, home);
   requireQueueIgnored(home);
   const [branch] = options.branches;
   const tip = requireBranch(home, branch);
@@ -6848,7 +7026,9 @@ function previewVerb(root, options) {
   if (merged.status > 1 || !tree) throw new Refusal(`git merge-tree could not merge ${branch} onto ${MAIN}:\n${merged.err || merged.out}`);
   const union = unionRecords(home);
   const generated = readGenerated(home);
-  const blocking = conflicted.filter((path) => !union.includes(path) && !isGenerated(path, generated) && path !== backlogPath(home));
+  // INTEGRATE1c: a row table the line declares is settled by the merge base as the backlog is, so it does not block either.
+  const rows = declaredRows(home, base);
+  const blocking = conflicted.filter((path) => !union.includes(path) && !isGenerated(path, generated) && path !== backlogPath(home) && !rows.includes(path));
   console.log(`preview: ${branch} at ${tip.slice(0, 7)} merged onto ${MAIN} at ${base.slice(0, 7)}; nothing is committed, and the queue takes this tip only`);
   console.log(git(home, ['--no-optional-locks', 'diff', '--stat', base, tree]).out.trimEnd());
   console.log('');
@@ -6857,7 +7037,7 @@ function previewVerb(root, options) {
   if (conflicted.length) {
     console.log(`conflicts: ${conflicted.join(', ')}`);
     if (blocking.length) console.log(`  ${blocking.join(', ')} the resolvers cannot merge: resolve it on the branch (merge ${MAIN} into it), then preview again`);
-    else console.log('  each is a union record, the backlog or a generated folder, which the merge resolves or writes');
+    else console.log('  each is a union record, the backlog, a declared row table or a generated folder, which the merge resolves or writes');
   }
   const plan = readPlan(home);
   const lanes = readLanes(home)?.lanes ?? [];
@@ -6874,6 +7054,7 @@ function previewVerb(root, options) {
 /** `<branch> --message <file>` (§4.1, *The queue*): the frozen request queued, the runner started, its outcome waited for. */
 async function enqueueVerb(root, options) {
   const home = verdictsHome(root);
+  requireQueueHome(root, home, { run: true });
   requireQueueIgnored(home);
   const [branch] = options.branches;
   const file = resolve(root, options.messageFile);
@@ -6899,22 +7080,74 @@ async function enqueueVerb(root, options) {
   return waitOutcome(home, branch, tip, out.request);
 }
 
-/** The queued request's outcome, waited for: promoted (0), or handed back (1); a hold or a stop said as it changes. */
+/**
+ * What a waiter says as its request's standing (`requestStanding`) ends its wait, and the code it ends with; null while the request
+ * is in flight. In main by its candidate's promotion, or contained (the line held it, or the member that held it promoted), is 0.
+ * Handed back is 1, and so is dropped (QUEUEWAITEND1), which says whether main holds the tip anyway (`holder`: the branch it landed
+ * with, or true where no landing names it); and so is a request in no record at all, which ends the wait instead of polling for ever.
+ */
+export function waitSaid(standing, { branch, request = '', holder = null }) {
+  if (standing.landed) {
+    return { code: 0, lines: [`merge-branch: ${branch} is in ${MAIN} (${standing.landed.commit.slice(0, 7)}), promoted with its candidate. The background run gates the tip.`] };
+  }
+  // C4: contained is an outcome of its own, said as one: the line holds it, or the member that held it has promoted.
+  if (standing.contained) {
+    const held = standing.contained.containedIn;
+    return {
+      code: 0,
+      lines: [inTheLine(held) || !held?.commit
+        ? `merge-branch: ${branch} is contained: ${MAIN} holds it already, so there was nothing to merge.`
+        : `merge-branch: ${branch} is contained in ${held.branch}, which promoted (${held.commit.slice(0, 7)}): it is in ${MAIN} with it.`],
+    };
+  }
+  if (standing.back?.handedBack?.how === 'dropped') {
+    const where = holder ? `${MAIN} holds its tip already${typeof holder === 'string' ? `, landed with ${holder}` : ''}: there is nothing to queue again.` : 'Preview it and queue it again to merge it.';
+    return { code: 1, lines: [`merge-branch: ${branch}'s request was taken off the queue (--drop-batch, ${standing.back.handedBack.at}): nothing of it was merged by this request. ${where}`] };
+  }
+  if (standing.back) {
+    const how = standing.back.handedBack;
+    return {
+      code: 1,
+      lines: [
+        `merge-branch: ${branch} is handed back (${how.how}${how.failure ? `: ${how.failure}` : ''}${how.paths ? `: a conflict in ${how.paths.join(', ')}` : ''}${how.with?.length ? `, with ${how.with.join(', ')}` : ''}${how.interacting?.length ? `; interacting: ${how.interacting.join(', ')}` : ''}${how.why ? `; ${how.why}` : ''}).`,
+        `  Fix it on the branch, preview it again and queue it again; ${MERGE_QUEUE_LOG} and local/scope-runs.jsonl hold its runs.`,
+      ],
+    };
+  }
+  if (standing.gone) {
+    return {
+      code: 1,
+      lines: [`merge-branch: ${branch}'s request (${String(request).slice(0, 8)}) is no longer in the queue's records: it is not queued, forming or on the candidate, and was neither landed, contained nor handed back. This wait ends; --queue says what the queue holds.`],
+    };
+  }
+  return null;
+}
+
+/** QUEUEWAITEND1: for a dropped request, the branch whose landing put its tip in main, true where main holds it otherwise, else null. */
+function dropHolder(home, queue, tip) {
+  const holds = isAncestorIn(home);
+  if (!holds(tip, mainTipOf(home))) return null;
+  return [...(queue.landed ?? [])].reverse().find((each) => each.commit && holds(tip, each.commit))?.branch ?? true;
+}
+
+/**
+ * The queued request's outcome, waited for (`waitSaid`): in main or contained (0), or handed back, dropped or in no record (1); a
+ * hold or a stop said as it changes.
+ */
 async function waitOutcome(home, branch, tip, request) {
   let said = null;
   for (;;) {
-    const queue = readQueue(home);
-    const landed = (queue.landed ?? []).find((each) => each.branch === branch && each.tip === tip && each.request === request);
-    if (landed) {
-      console.log(`merge-branch: ${branch} is in ${MAIN} (${landed.commit.slice(0, 7)}), promoted with its candidate. The background run gates the tip.`);
-      return 0;
+    let queue = readQueue(home);
+    let standing = requestStanding(queue, { branch, tip, request });
+    // QUEUEWAITEND1: a request in no record is read again under the queue's lock, so a read beside a writer is never taken for it.
+    if (standing.gone) {
+      queue = withQueue(home, (q) => ({ read: q })).read;
+      standing = requestStanding(queue, { branch, tip, request });
     }
-    const back = (queue.handedBack ?? []).find((each) => each.branch === branch && each.tip === tip && each.request === request);
-    if (back) {
-      const how = back.handedBack;
-      console.log(`merge-branch: ${branch} is handed back (${how.how}${how.failure ? `: ${how.failure}` : ''}${how.paths ? `: a conflict in ${how.paths.join(', ')}` : ''}${how.with?.length ? `, with ${how.with.join(', ')}` : ''}${how.interacting?.length ? `; interacting: ${how.interacting.join(', ')}` : ''}${how.why ? `; ${how.why}` : ''}).`);
-      console.log(`  Fix it on the branch, preview it again and queue it again; ${MERGE_QUEUE_LOG} and local/scope-runs.jsonl hold its runs.`);
-      return 1;
+    const ending = waitSaid(standing, { branch, request, holder: standing.back?.handedBack?.how === 'dropped' ? dropHolder(home, queue, tip) : null });
+    if (ending) {
+      for (const line of ending.lines) console.log(line);
+      return ending.code;
     }
     const now = queue.stop ? `stopped: ${queue.stop.said}` : queue.candidate?.state === 'held' ? `held on ${queue.candidate.held?.on}: ${queue.candidate.held?.why}` : null;
     if (now && now !== said) console.log(`  the queue is ${now}`);
@@ -6928,6 +7161,7 @@ async function waitOutcome(home, branch, tip, request) {
 async function queueVerb(root, options) {
   const home = verdictsHome(root);
   if (options.recheck) {
+    requireQueueHome(root, home, { run: true });
     const out = withQueue(home, (queue) => (queue.stop ? { queue: { ...queue, recheck: { at: nowIso() } } } : { none: true }));
     if (out.none) {
       console.log('merge-branch: the queue is not stopped; nothing to recheck');
@@ -6957,6 +7191,7 @@ async function queueVerb(root, options) {
 /** `--drop-batch <branch>…`: queued branches taken off the queue, or a candidate ended and its members handed back. */
 async function dropQueuedVerb(root, options) {
   const home = verdictsHome(root);
+  requireQueueHome(root, home);
   const asked = nowIso();
   const out = withQueue(home, (queue) => dropQueued(queue, options.branches, asked));
   console.log(out.dropped.length ? `merge-branch: taken off the queue: ${out.dropped.join(', ')}` : `merge-branch: none of ${options.branches.join(', ')} is queued`);

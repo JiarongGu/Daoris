@@ -26,6 +26,7 @@ import { makeFixture, PATIENCE } from '../test/_fixture.ts';
 // test-map: strings name paths as data
 // reaches: * — the lane table's tests hold it to every tracked file and lane, so any file added or moved can fail them
 // reaches: src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/backlog-merges.json — LANDBACKLOG1's twin reads the table row for row
+// reaches: src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/union-joins.json — INTEGRATE1c's twin sets the same joins apart, row for row
 
 interface Gate { name: string; run: string; kind: string; cwd?: string; clock?: boolean; memoryGb?: number }
 interface Lane { id: string; title: string; summary: string; steward: boolean; paths: string[]; gates?: string[] }
@@ -218,6 +219,7 @@ const tool = await import(
   noteName: (label: string) => string;
   backlogPath: (root: string) => string;
   backlogOf: (text: string | null) => string | null;
+  rowTablesOf: (text: string | null) => string[];
   mergeByBase: (base: string, ours: string, theirs: string) => { text: string | null; kept: number; dropped: number; both: { line: number }[] };
   REACH: readonly Rule[];
   PATH_CHECKS: readonly { gate: string; paths: string[]; why: string }[];
@@ -1362,6 +1364,8 @@ const BLOCKING = ['universal', 'code-map', 'orient-index', 'test-map'];
 const KEPT_NAMES = 'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/kept-names.json';
 /** The backlog merges' table (LANDBACKLOG1): among the driver's tests, and the merge tool's twin reads it too. */
 const BACKLOG_MERGES = 'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/backlog-merges.json';
+/** The joins union leaves and the merge sets apart (INTEGRATE1c): among the driver's tests, and the merge tool's twin reads it too. */
+const UNION_JOINS = 'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/union-joins.json';
 /**
  * The driver's sources whose declarations the page's twin vitests parse (MOD9e): SESSDEL1c's scan found them. Each by its
  * name, at whatever depth of the driver's folder it is tracked (STRUCT1, D166).
@@ -1759,16 +1763,32 @@ test("the declared backlog and its merge by base read as the table the driver's 
   type Row = { name: string; base: string[]; ours: string[]; theirs: string[]; text: string[] | null; kept: number; dropped: number; both: number[] };
   const table = JSON.parse(readFileSync(join(repoRoot, BACKLOG_MERGES), 'utf8')) as {
     paths: { name: string; manifest: string | null; backlog: string | null }[];
+    rows: { name: string; declaration: string | null; tables: string[] }[];
     merges: Row[];
   };
-  assert.ok(table.paths.length >= 10 && table.merges.length >= 8, 'the table holds its rows');
+  assert.ok(table.paths.length >= 10 && table.merges.length >= 8 && table.rows.length >= 10, 'the table holds its rows');
   for (const row of table.paths) assert.equal(tool.backlogOf(row.manifest), row.backlog, row.name);
+  // INTEGRATE1c: the declared row tables, merged by the same rule (the merges below), and read by the driver's twin from this table.
+  for (const row of table.rows) assert.deepEqual(tool.rowTablesOf(row.declaration), row.tables, row.name);
   for (const row of table.merges) {
     const merged = tool.mergeByBase(row.base.join('\n'), row.ours.join('\n'), row.theirs.join('\n'));
     assert.deepEqual(
       { text: merged.text, kept: merged.kept, dropped: merged.dropped, both: merged.both.map((entry: { line: number }) => entry.line) },
       { text: row.text?.join('\n') ?? null, kept: row.kept, dropped: row.dropped, both: row.both },
       row.name);
+  }
+});
+
+// INTEGRATE1c: the joins union leaves are set apart in a landing's replay too, by the driver's twin, which holds the same table.
+test("the joins a union merge leaves are set apart as the table the driver's replay holds too (INTEGRATE1c)", () => {
+  type Join = { name: string; kind: 'labels' | 'headings'; sides?: string[][]; text: string[]; result: string[]; set: { line: number; label: string }[] };
+  const table = JSON.parse(readFileSync(join(repoRoot, UNION_JOINS), 'utf8')) as { joins: Join[] };
+  assert.ok(table.joins.length >= 10 && table.joins.some((row) => row.kind === 'labels') && table.joins.some((row) => row.kind === 'headings'), 'the table holds its rows');
+  for (const row of table.joins) {
+    const made = row.kind === 'labels'
+      ? tool.setApart(row.text.join('\n'))
+      : tool.setApartHeadings(row.text.join('\n'), (row.sides ?? []).map((side) => side.join('\n')));
+    assert.deepEqual({ result: made.text.split('\n'), set: made.set }, { result: row.result, set: row.set }, row.name);
   }
 });
 
@@ -5698,6 +5718,56 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     assert.deepEqual(repo.ran(), ['first']);
     git(repo.root, 'merge', '--abort');
     repo.cleanup();
+  });
+
+  // INTEGRATE1c: the day's second set-aside (2026-10-28): two branches each added a row at one line of docs/development.md's census table.
+  test("a row table the line declares by rows merges by the merge base, two rows added at one line both kept; one the line does not declare is left, and a branch's own declaration changes nothing", async () => {
+    const census = (...rows: string[]) => ['# Guide', '', '| When | Run |', '|---|---|', '| a test names a login | `node tools/live-logins.mjs` |', ...rows, '', 'Next.', ''].join('\n');
+    const gates = [{ name: 'first', run: 'node gate.mjs first' }];
+    const declared = (merge: unknown[]) => `${JSON.stringify({ gates, integration: { merge } }, null, 2)}\n`;
+    const repo = scratch('rows', gates, {
+      'docs/development.md': census(),
+      'daoris.gates.json': declared([{ paths: 'docs/development.md', by: 'rows' }, { paths: 'docs/STATUS.md', line: '^Status: ', run: 'node tools/status.mjs' }]),
+    });
+    const guide = () => readFileSync(join(repo.root, 'docs', 'development.md'), 'utf8');
+
+    branch(repo.root, 'left', { 'docs/development.md': census('| a tool reads git | `node tools/optional-locks.mjs` |') });
+    writeFileSync(join(repo.root, 'docs', 'development.md'), census('| a test waits | `node tools/short-waits.mjs` |'));
+    git(repo.root, 'commit', '--quiet', '-am', `main moved${TRAILER}`);
+    let result = await repo.run(['left']);
+    assert.equal(result.status, 0, result.out);
+    assert.match(result.out, /docs\/development\.md: resolved by the merge base \(a declared row table\), 2 lines a side added kept and 0 lines a side removed dropped/);
+    assert.equal(guide(), census('| a test waits | `node tools/short-waits.mjs` |', '| a tool reads git | `node tools/optional-locks.mjs` |'), "the line's row first, then the branch's");
+    assert.equal(git(repo.root, 'diff', '--name-only', '--diff-filter=U'), '');
+    assert.deepEqual(repo.ran(), ['first']);
+    git(repo.root, 'commit', '--quiet', '--no-edit');
+
+    // A row both sides changed is still a conflict of meaning.
+    const now = guide();
+    branch(repo.root, 'right', { 'docs/development.md': now.replace('`node tools/optional-locks.mjs`', '`node tools/right.mjs`') });
+    writeFileSync(join(repo.root, 'docs', 'development.md'), now.replace('`node tools/optional-locks.mjs`', '`node tools/main.mjs`'));
+    git(repo.root, 'commit', '--quiet', '-am', `main moved again${TRAILER}`);
+    result = await repo.run(['right']);
+    assert.equal(result.status, 1, result.out);
+    assert.match(result.out, /docs\/development\.md: both sides changed the same line/);
+    assert.deepEqual(repo.ran(), ['first']);
+    git(repo.root, 'merge', '--abort');
+
+    // A file the line does not declare is git's own conflict, and a branch declaring it itself is not the line declaring it.
+    const other = scratch('rows-own', gates, { 'docs/development.md': census(), 'daoris.gates.json': declared([]) });
+    branch(other.root, 'mine', {
+      'docs/development.md': census('| a tool reads git | `node tools/optional-locks.mjs` |'),
+      'daoris.gates.json': declared([{ paths: 'docs/development.md', by: 'rows' }]),
+    });
+    writeFileSync(join(other.root, 'docs', 'development.md'), census('| a test waits | `node tools/short-waits.mjs` |'));
+    git(other.root, 'commit', '--quiet', '-am', `main moved${TRAILER}`);
+    result = await other.run(['mine']);
+    assert.equal(result.status, 1, result.out);
+    assert.doesNotMatch(result.out, /resolved by the merge base/);
+    assert.match(result.out, /conflict in 1 file:\n\s+docs\/development\.md/);
+    git(other.root, 'merge', '--abort');
+    repo.cleanup();
+    other.cleanup();
   });
 
   test('the orientation index is written into each merge from the merged tree, and a conflict in it is resolved by that writing', async () => {
