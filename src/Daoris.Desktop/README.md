@@ -813,11 +813,13 @@ them is an HTTP route. A session's *record* is on the host; its console, events 
   holder how a press ended, an id sent twice runs once, and one the journal cannot hold never runs. The address names the pipe as
   `pipe` once it is served; at the close every new hello is answered `stopping`, the pipe's presses answer, and only then
   does the address go. An update's drain is not yet its close (DRAINHOLD1): while it drains, a hello is answered and only a press
-  `PipeCensus.WaitsForDrain` names waits, one that starts work the drain waits on, starts a process that runs on past its answer,
-  or changes a repository through git; sent, it is refused `stopping` (`why: update`), and confirmed, `PERSON_CONFIRM` answers
-  `draining` and it waits. A read, a stop, a take-back or an answer runs as at any time. Once the update applies
-  (`InstallUpdater.Applying`) every press waits, as at a close, and one let through and still under way is the close's to wait
-  for. The client is the driver library's `InstanceDoor` (RPC1b, §7.2): a verb whose route is open sends it
+  `PipeCensus.WaitsForDrain` names waits, one that starts work the drain waits on, lets the look start what the drain's holds do
+  not reach (every setting asks the look at once), starts a process that runs on past its answer, or changes a repository through
+  git; sent, it is refused `stopping` (`why: update`), and confirmed, `PERSON_CONFIRM` answers `draining` and it waits. A read, a
+  stop, a take-back or an answer runs as at any time. A Confirm's hold is judged last where its record is written `begun`, so one
+  told it is confirmed always runs. Once the update applies (`InstallUpdater.Applying`) every press waits, as at a close, while the
+  build is checked and the work read again (work begun meanwhile keeps it draining), and one let through and still under way is
+  the close's to wait for. The client is the driver library's `InstanceDoor` (RPC1b, §7.2): a verb whose route is open sends it
   where the instance answers its hello, acts alone where none runs (a workspace build reads no address file; `DAORIS_INSTANCE`
   names a pipe), is refused where one lives and does not answer, and asks `RESULT` for a lost answer, never acting alone after
   a send. A `person` verb, every `trees` press among them (`TreesRoutes`), acts alone until RPC1c.
