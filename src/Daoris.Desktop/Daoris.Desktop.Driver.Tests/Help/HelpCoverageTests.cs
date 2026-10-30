@@ -398,13 +398,15 @@ public sealed partial class HelpCoverageTests
 
     /// <summary>
     /// FABRIC-CUTOVER1f's <c>daoris-driver workflow skip|stop</c> (D190 point 6, the cutover design §5.2), a verb of the headless host, and the
-    /// run's view's <i>Pass over…</i> and <i>Stop…</i> (<c>useRunNodeWord</c>): exempt, since passing a step over or stopping it is the person's
-    /// word on the work, as their word on a held attempt is.
+    /// run's view's <i>Pass over…</i> and <i>Stop…</i> (<c>useRunNodeWord</c>), and the same <i>Pass over…</i> on <i>What needs you</i>'s row for a run
+    /// held at a declined request (INTEGRATE1o part o3): exempt, since passing a step over or stopping it is the person's word on the work, as their
+    /// word on a held attempt is.
     /// </summary>
     private static readonly Exempt WorkflowNodeDoor = new(
         "passing a step of a run over, with your words, or stopping it is your word on that work, standing in for a go-ahead or a step's "
         + "proof nobody gave (D190 point 6), a judgement Ask Daoris cannot have made, as the word on a held attempt is; it can name "
-        + "`daoris-driver workflow skip` and `stop`, and the run's Workflow view.");
+        + "`daoris-driver workflow skip` and `stop`, and the run's Workflow view; the row for a run held at a request the receiver declined "
+        + "(\"What needs you\") presses the same word, so it is the person's too.");
 
     /// <summary>
     /// EVID1b's <c>daoris-driver quest check</c> (D144 §5), a verb of the headless host: a door Ask Daoris owes, until EVID1c

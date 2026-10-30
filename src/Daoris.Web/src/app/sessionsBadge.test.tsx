@@ -67,6 +67,11 @@ const PARKS: PushedAttention[] = SESSIONS.filter((one) => one.state === 'awaitin
 }));
 const PARKED_QUEST: PushedAttention = { kind: 'parked-quest', id: 'q1', since: PARKED.since!, where: 'engine', sitting: PARKED };
 const COUNTED = { 'session:c4a7c4a7': { kind: 'parked', workspace: 'default' } };
+/** INTEGRATE1o part o3: a run held at a quest the receiver declined, as .NET pushes it; its work is the quest below. */
+const DECLINED: PushedAttention = {
+  kind: 'request-declined', id: 'r7', since: '2026-10-01T10:00:00Z', workspace: 'default', where: 'engine',
+  declined: { node: 'requests', quest: 'q9', to: 'web', work: 'q1' },
+};
 
 /** The quest that tick parked, as the service lists it. */
 const QUESTS = [{
@@ -175,6 +180,7 @@ describe("A place's number", () => {
     ['Quests', [
       { kind: 'proposal', id: ASKS[0]!.id, since: ASKS[0]!.asked, workspace: 'default', where: 'default', publishTo: ['engine'], choices: ['engine'] },
       { ...PARKED_QUEST, workspace: 'default' },
+      DECLINED,
     ]],
     ['Repositories', [{
       kind: 'work', id: 'u-orphan', since: '2026-10-01T10:00:00Z', workspace: 'default', where: 'engine', title: 'daoris/s-orphan',
@@ -438,6 +444,26 @@ describe("The taskbar's count", () => {
    * AUTONOMY1b3c (D184 point 3): a tool call a session holds for the person's answer stands its turn still until they answer, or
    * the bound refuses it, so the badge counts it as the band lists it: the window behind others still says a turn waits on them.
    */
+  /** INTEGRATE1o part o3: a run held at a declined request is one wait, in the bell, the taskbar and the band, with its *Pass over…*. */
+  it('counts a run held at a declined request, lists it with Pass over…, and counts none for a run without one', async () => {
+    start([DECLINED], {}, {});
+
+    await waitFor(() => expect(within(bell()).getByText('1')).toBeInTheDocument());
+    await waitFor(() => expect(badges().at(-1)).toEqual(
+      ['DAORIS.WINDOWS', 'SET_BADGE', { payload: { count: 1, description: '1 waiting on you', order: expect.any(Number) } }]));
+    await openNotifications();
+    const row = await screen.findByRole('listitem', { name: 'Expose a streaming budget' });
+    expect(within(row).getByText('request declined')).toBeInTheDocument();
+    expect(within(row).getByRole('button', { name: 'Pass over…' })).toBeInTheDocument();
+  });
+
+  it('counts no run when none is pushed held', async () => {
+    start(PARKS, {}, {});
+
+    await waitFor(() => expect(within(bell()).getByText('2')).toBeInTheDocument());
+    expect(figure('Quests')).toBeNull();
+  });
+
   it('counts a tool call a session holds for the person, as the band lists it', async () => {
     const permission = {
       session: 'c4a7c4a7', request: '900', call: null, title: 'npm test', kind: 'execute', since: '2026-10-01T11:00:00Z', until: '2026-10-01T11:15:00Z',
