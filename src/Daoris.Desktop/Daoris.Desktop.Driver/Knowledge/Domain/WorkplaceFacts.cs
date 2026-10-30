@@ -350,16 +350,19 @@ public sealed record LandedIntegrate(string Request, string Source)
     /// <summary>The effective landing rule's <c>integrate</c>, under Current.</summary>
     public const string Rule = "rule";
 
-    /// <summary>The bound named version's own <c>integrate</c> step (row n).</summary>
+    /// <summary>The bound named version's own <c>integrate</c> step (INTEGRATE1n part n2).</summary>
     public const string Version = "version";
 
     /// <summary>
     /// What a landing under <paramref name="integrate"/> keeps: its <c>request</c> through the design's <i>Absent</i> column, the rule
     /// its source; none where the rule carries no <c>integrate</c>. Under a named version the rule's <c>request</c> is not the unit's
-    /// process (§4.1), its own <c>integrate</c> step is, which no version carries until row n: so none.
+    /// process (§4.1), its own <c>integrate</c> step is: its <paramref name="versionRequest"/> (the node's <c>request</c>), with
+    /// <see cref="Version"/> its source, and none where the version holds no such step.
     /// </summary>
-    public static LandedIntegrate? Of(LandingIntegrate? integrate, bool named) =>
-        named || integrate is null ? null : new(integrate.Resolved().Request ?? LandingIntegrate.Owner, Rule);
+    public static LandedIntegrate? Of(LandingIntegrate? integrate, bool named, string? versionRequest = null) =>
+        named ? (versionRequest is null ? null : new(versionRequest, Version))
+        : integrate is null ? null
+        : new(integrate.Resolved().Request ?? LandingIntegrate.Owner, Rule);
 }
 
 

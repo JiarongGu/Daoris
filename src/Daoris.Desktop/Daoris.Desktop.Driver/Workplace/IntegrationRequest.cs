@@ -78,9 +78,12 @@ public sealed record IntegrationRequester(string Kind, string Door)
 
     /// <summary>The steward's <c>request</c> act under <c>request: steward</c>.</summary>
     public static IntegrationRequester StewardAct(string act, long generation) => new(Steward, IntegrationDoors.Act) { Act = act, Generation = generation };
+
+    /// <summary>A unit's <c>integrate</c> node's start (INTEGRATE1n part n2): Daoris's, on the landing's own provenance.</summary>
+    public static IntegrationRequester NodeStart { get; } = new(Daoris, IntegrationDoors.Node);
 }
 
-/// <summary>The doors a request comes through (§4.6); the <c>integrate</c> node's start is row n's.</summary>
+/// <summary>The doors a request comes through (§4.6).</summary>
 public static class IntegrationDoors
 {
     /// <summary>The owner's card: <c>daoris-driver integrate --request</c>, with <c>--landed</c> for a recorded landing (row h).</summary>
@@ -91,11 +94,20 @@ public static class IntegrationDoors
 
     /// <summary>The steward's act (row i).</summary>
     public const string Act = "act";
+
+    /// <summary>The unit's <c>integrate</c> node's start (INTEGRATE1n part n2).</summary>
+    public const string Node = "node";
 }
 
-/// <summary>The routes into the line (§4.6): a unit's recorded landing, or a records branch. The unit's own landing is row n's.</summary>
+/// <summary>The routes into the line (§4.6): a unit's own landing by its provenance, a recorded landing, or a records branch.</summary>
 public static class IntegrationRoutes
 {
+    /// <summary>
+    /// A unit's own landing (INTEGRATE1n part n2, §17.4): a standing entry the unit's <c>integrate</c> node asks for, at the tip it froze,
+    /// admitted by the acceptance's provenance the entry keeps, and by its record, exact tip, gate proof and no double as a recorded one.
+    /// </summary>
+    public const string Node = "node";
+
     /// <summary>An existing recorded landing: a standing entry of the machine's landings.</summary>
     public const string Recorded = "recorded";
 
@@ -115,6 +127,15 @@ public sealed record IntegrationAsk(string Repository, string? Workspace, string
 
     /// <summary>The tip the caller froze, which must be the record's (or a records branch's own); null takes the record's.</summary>
     public string? Tip { get; init; }
+
+    /// <summary>
+    /// The <c>request</c> a version's own <c>integrate</c> step asks with (INTEGRATE1n part n2: the node's option, carried on the node
+    /// route's ask); null reads the landing's provenance, or the rule's.
+    /// </summary>
+    public string? Request { get; init; }
+
+    /// <summary>The <c>conflicts</c> the node's unit takes, the node's option; null reads the rule's.</summary>
+    public string? Conflicts { get; init; }
 }
 
 /// <summary>What the door answered: admitted with its request, or refused in a sentence with its code (<see cref="IntegrationRefusals"/>).</summary>
@@ -175,4 +196,13 @@ public static class IntegrationRefusals
 
     /// <summary>The line itself, asked as a records branch.</summary>
     public const string IsLine = "line";
+
+    /// <summary>The landing's record says neither that <c>integrate</c> stood at its acceptance nor a <c>request</c> it can read (§17.4).</summary>
+    public const string NoRequest = "no-request";
+
+    /// <summary>An automatic landing under <c>request: owner</c>: its landing is no request, the owner's card is.</summary>
+    public const string AwaitsOwner = "awaits-owner";
+
+    /// <summary>A landing under <c>request: steward</c>: no landing is the request, the steward's act or the owner's card is.</summary>
+    public const string AwaitsSteward = "awaits-steward";
 }

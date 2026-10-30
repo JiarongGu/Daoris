@@ -31,20 +31,85 @@ public sealed class IntegrationRequests(IIntegrationRecords records, IIntegratio
     {
         var settings = config();
         var landing = LandingRules.Effective(settings, ask.Repository, ask.Workspace);
+        if (ask.Route == IntegrationRoutes.Node || ask.Requester.Door == IntegrationDoors.Node) return await NodeAsync(ask, landing, settings, ct).ConfigureAwait(false);
         if (landing.Rule is not { Form: LandingForm.Branch, Integrate: { } integrate })
         {
-            return Refuse(IntegrationRefusals.NoIntegrate,
-                $"`{ask.Repository}`'s landing rule carries no `integrate`, so nothing was requested: its landed branches stay the result, as always.");
+            return Refuse(IntegrationRefusals.NoIntegrate, NoIntegrateSaid(ask.Repository));
         }
 
         var policy = integrate.Resolved();
         if (DoorRefusal(ask, policy) is { } closed) return Refuse(IntegrationRefusals.Door, closed);
         return ask.Route switch
         {
-            IntegrationRoutes.Recorded => await RecordedAsync(ask, landing, policy, settings, ct).ConfigureAwait(false),
+            IntegrationRoutes.Recorded => await RecordedAsync(ask, landing, _ => (policy, null), IntegrationRoutes.Recorded, settings, ct).ConfigureAwait(false),
             IntegrationRoutes.Records => await RecordsAsync(ask, landing, policy, settings, ct).ConfigureAwait(false),
             _ => Refuse(IntegrationRefusals.Door, $"`{ask.Route}` is no route this door knows: nothing was requested."),
         };
+    }
+
+    private static string NoIntegrateSaid(string repository) =>
+        $"`{repository}`'s landing rule carries no `integrate`, so nothing was requested: its landed branches stay the result, as always.";
+
+    /// <summary>
+    /// The unit's own landing (INTEGRATE1n part n2; §17.4, F40, C30): the <c>integrate</c> node's start, by Daoris, for the unit and the tip it
+    /// froze. The landing's record decides whether its acceptance was the request, by the provenance it keeps for that tip and who accepted it;
+    /// then it is admitted as a recorded landing is, on its record, exact tip, gate proof and no double.
+    /// </summary>
+    private async Task<IntegrationAdmission> NodeAsync(IntegrationAsk ask, Landing landing, DriverConfig settings, CancellationToken ct)
+    {
+        if (ask.Route != IntegrationRoutes.Node)
+        {
+            return Refuse(IntegrationRefusals.Door, "the `integrate` node asks only through its own route: nothing was requested.");
+        }
+
+        if (ask.Requester != IntegrationRequester.NodeStart)
+        {
+            return Refuse(IntegrationRefusals.Door, "the `integrate` node's route is Daoris's own: nothing was requested.");
+        }
+
+        if (ask.Unit is not { Length: > 0 } || ask.Tip is not { Length: > 0 })
+        {
+            return Refuse(IntegrationRefusals.Door, "a node's ask names its unit and the tip it froze, and this one does not: nothing was requested.");
+        }
+
+        return await RecordedAsync(ask, landing, entry => NodeJudgement(ask, entry, landing), IntegrationRoutes.Node, settings, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Whether the acceptance at <paramref name="entry"/>'s tip was the request (§17.4), by the provenance its newest advance, else its own,
+    /// keeps and who accepted it, and the policy the request then freezes: the request the acceptance stood under (the node's own where the
+    /// version's step asks), the rest the rule's. Nothing is read from git, and a record that says neither is no request.
+    /// </summary>
+    internal static (LandingIntegrate? Policy, IntegrationAdmission? Refused) NodeJudgement(IntegrationAsk ask, LandedBranch entry, Landing landing)
+    {
+        var (by, provenance) = entry.Advances.Count > 0 ? (entry.Advances[^1].AcceptedBy, entry.Advances[^1].Integrate) : (entry.AcceptedBy, entry.Integrate);
+        if (by is not (AcceptedBy.Person or AcceptedBy.Auto) || provenance is null || !LandingIntegrate.Requests.Contains(provenance.Request))
+        {
+            return (null, Refuse(IntegrationRefusals.NoRequest,
+                $"`{ask.Branch}`'s landing record does not say it was accepted where `integrate` stood, or what it asked, so its landing is no request: "
+                + "it waits for the owner's card, and under `request: done` for the come-up sweep. Nothing was requested."));
+        }
+
+        // A rule's step needs the rule to carry it still; a version's own step is the unit's process whatever the rule says (§4.1).
+        var rule = landing.Rule is { Form: LandingForm.Branch, Integrate: { } integrate } ? integrate : null;
+        if (provenance.Source != LandedIntegrate.Version && rule is null) return (null, Refuse(IntegrationRefusals.NoIntegrate, NoIntegrateSaid(ask.Repository)));
+        var request = provenance.Request;
+        if (request == LandingIntegrate.Steward)
+        {
+            return (null, Refuse(IntegrationRefusals.AwaitsSteward,
+                $"`{ask.Branch}` was accepted under `request: steward`, and under `request: steward` no landing is the request: it waits for the steward's "
+                + "`request` act, or the owner's card. Nothing was requested."));
+        }
+
+        if (request == LandingIntegrate.Owner && by != AcceptedBy.Person)
+        {
+            return (null, Refuse(IntegrationRefusals.AwaitsOwner,
+                $"`{ask.Branch}` was landed automatically under `request: owner`, so its landing is no request: it waits for the owner's card. "
+                + "Nothing was requested."));
+        }
+
+        var resolved = (rule ?? new LandingIntegrate()).Resolved();
+        return (resolved with { Request = ask.Request ?? request, Conflicts = ask.Conflicts ?? resolved.Conflicts }, null);
     }
 
     /// <summary>
@@ -104,7 +169,8 @@ public sealed class IntegrationRequests(IIntegrationRecords records, IIntegratio
     /// request open for it, nor the line holding it.
     /// </summary>
     private async Task<IntegrationAdmission> RecordedAsync(
-        IntegrationAsk ask, Landing landing, LandingIntegrate policy, DriverConfig settings, CancellationToken ct)
+        IntegrationAsk ask, Landing landing, Func<LandedBranch, (LandingIntegrate? Policy, IntegrationAdmission? Refused)> judge, string route,
+        DriverConfig settings, CancellationToken ct)
     {
         var named = records.Landings().Where(entry => SessionBranches.SameBranch(entry.Repository, entry.Branch, ask.Repository, ask.Branch)).ToList();
         if (named.LastOrDefault(entry => entry.GoneAt is null) is not { } entry)
@@ -115,12 +181,18 @@ public sealed class IntegrationRequests(IIntegrationRecords records, IIntegratio
                   + "through its own landing or its recorded landing, and a branch no landing made is a records branch. Nothing was requested.");
         }
 
-        if (ask.Unit is { } unit && !entry.Units.Contains(unit, StringComparer.Ordinal))
+        // The node's unit is the node record's own (a landed branch's, or a run's), which the landing's session units never name: the entry
+        // is found by its branch and its tip, and the unit is the key the request is kept under.
+        if (route != IntegrationRoutes.Node && ask.Unit is { } unit && !entry.Units.Contains(unit, StringComparer.Ordinal))
         {
             return Refuse(IntegrationRefusals.NotUnit,
                 $"`{ask.Branch}`'s landing carries no unit `{unit}`, so it is not that unit's to request: nothing was requested.");
         }
 
+        // The route's own judgement of the landing, before git is asked: the node's reads the acceptance's provenance (§17.4).
+        var (judged, unjudged) = judge(entry);
+        if (unjudged is not null) return unjudged;
+        var policy = judged!;
         var tip = entry.Tip;
         if (ask.Tip is { } asked && !SameCommit(asked, tip))
         {
@@ -148,7 +220,7 @@ public sealed class IntegrationRequests(IIntegrationRecords records, IIntegratio
         if (unlined is not null) return unlined;
 
         var work = entry.Work()[^1];
-        var request = new IntegrationRequest(NewId(), ask.Repository, entry.Workspace, ask.Branch, tip, IntegrationRoutes.Recorded, line!,
+        var request = new IntegrationRequest(NewId(), ask.Repository, entry.Workspace, ask.Branch, tip, route, line!,
             ask.Requester, policy, DateTimeOffset.UtcNow)
         {
             Unit = ask.Unit ?? work.Unit,
@@ -306,6 +378,7 @@ public sealed class IntegrationRequests(IIntegrationRecords records, IIntegratio
     private static string By(IntegrationRequester requester) => requester.Kind switch
     {
         IntegrationRequester.Person => "by the person's card",
+        IntegrationRequester.Daoris when requester.Door == IntegrationDoors.Node => "by the unit's `integrate` step",
         IntegrationRequester.Daoris => "by Daoris's come-up sweep",
         IntegrationRequester.Steward => $"by the steward's act `{requester.Act}`",
         _ => $"by `{requester.Kind}`",

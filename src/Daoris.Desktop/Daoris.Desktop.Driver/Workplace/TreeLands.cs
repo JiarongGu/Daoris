@@ -659,7 +659,7 @@ internal sealed class TreeLands(
                     {
                         AcceptedBy = acceptedBy, Review = review, Opinion = gate?.OpinionLanding, Workflow = named?.Record,
                         // INTEGRATE1e (design §17.4): its own acceptance's provenance, as it keeps its own AcceptedBy.
-                        Integrate = LandedIntegrate.Of(landing.Rule.Integrate, named is not null),
+                        Integrate = LandedIntegrate.Of(landing.Rule.Integrate, named is not null, named?.IntegrateRequest),
                         // The record moves to the session tip this advance squashed (PROCESS1b-ii point 4); a fast-forward keeps it.
                         Squashed = branched.Squashed,
                         // FABRIC-UNITLINK1, FABRIC-CLOSE1h13: whose work this is, its unit, and the submission it was accepted on.
@@ -683,7 +683,7 @@ internal sealed class TreeLands(
                     Rule = new LandedRule(plugin, landing.Rule.AutoAccept, landing.Source) { Access = landing.Access },
                     // INTEGRATE1e (design §17.4): that `integrate` stood at this acceptance, its `request` and whose step, so a landing made
                     // before the rule carried it never reads as one made for integration.
-                    Integrate = LandedIntegrate.Of(landing.Rule.Integrate, named is not null),
+                    Integrate = LandedIntegrate.Of(landing.Rule.Integrate, named is not null, named?.IntegrateRequest),
                     // The review that let it go (REVIEWENV1c, design §3.5): reviewed with its set-up's commit, or skipped.
                     Review = review,
                     // The second opinion that let it go (XAGENT1f, design §8.6), or why it landed without one.
