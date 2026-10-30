@@ -48,10 +48,6 @@ public sealed partial class ContinuedReadersCensusTests
         [
             (How.Follows, "a failed run's words kept again: each said at the head whole, its files carried, shown in the conversation of the record that kept it"),
         ],
-        ["LimitMove.cs"] =
-        [
-            (How.Follows, "the ended move's composed message to its destination, said again at each come-up: said at the destination's head under the move's key, its files named by path in the message"),
-        ],
         ["ReopenTelling.cs"] =
         [
             (How.Follows, "Daoris's reopen and go-on words through the reopen's doors: said at the head under the fact's key, the mark kept by the session the reopen names"),

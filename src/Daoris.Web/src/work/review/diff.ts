@@ -108,6 +108,11 @@ export type LandedWork = {
   reads: { kind: string; where: string | null; files: string[]; detail: string | null } | null;
   /** What the clean-up proved when it removed the branch, where it did. */
   removed: { kind: string; where: string | null; at: string | null } | null;
+  /**
+   * A branch the person withdrew (LANDRETIRE1 part 2): when, the reason they gave and the recovery ref its commits stay on, where the
+   * record kept them. Absent from a shell before it, and null where the branch was not withdrawn.
+   */
+  withdrawn?: { at: string | null; why: string | null; keptOn: string | null } | null;
   /** Why a standing branch's changes could not be read, in git's terms. */
   detail: string | null;
 };

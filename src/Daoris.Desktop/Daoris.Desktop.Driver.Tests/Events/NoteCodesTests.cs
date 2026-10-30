@@ -553,7 +553,7 @@ public sealed class BackgroundNotesTests
         NoteAssert.Holds(carried);
 
         var bound = BackgroundNotes.CarryBound();
-        Assert.StartsWith("— its session was carried on twice", bound.Note, StringComparison.Ordinal);
+        Assert.StartsWith("— its session was carried on for the uncommitted work", bound.Note, StringComparison.Ordinal);
         Assert.Equal("background.carry-bound", Assert.Single(bound.Parts).Code);
         NoteAssert.Holds(bound);
     }

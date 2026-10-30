@@ -54,6 +54,7 @@
   "work.milestone.code.unknown-unread": "没有任何记录说明它属于谁，git 也读不出它在哪个分支上，所以它的内容都不会被清理",
   "work.milestone.code.unknown-branch": "没有任何记录提到 {{branch}}，所以它的内容都不会被清理：在它所在工作区的“分支”中，按会话分支列表里的“丢弃分支…”即可移除",
   "work.milestone.code.unrecorded": "Daoris 没有记录 {{branch}}，所以它的内容都不会被清理：在它所在工作区的“分支”中，按会话分支列表里的“丢弃分支…”即可移除",
+  "work.milestone.code.landing-stale": "它的委托 #{{quest}} 已关闭，而主线一天以上都没有收下它，所以清理会保留它：如果主线永远不会采纳它的工作，在它所在工作区的“分支”中，按落地分支列表里的“撤回…”即可将它撤走",
   "work.milestone.code.kept.in-use": "查看时把它留下了，因为有会话正在运行或等待，占着它的工作树；下一次查看时会再试",
   "work.milestone.code.kept.dirty": "查看时把它留下了，因为它的工作树里有未提交或未跟踪的改动",
   "work.milestone.code.kept.busy": "查看时把它留下了，因为本机有程序占用着它的工作树文件夹；下一次查看时会再试",

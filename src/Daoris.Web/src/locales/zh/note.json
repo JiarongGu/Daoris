@@ -330,7 +330,7 @@
   "note.background.turn-left": "它的委托不再等待，而自行开始的一轮一直没有动静：会话结束，不再等那一轮的结束。",
   "note.background.quest-closed": "它的委托不再等待，会话原本在等它的智能体的下一轮：会话结束，也不再发送继续的提示。",
   "note.background.carried-on": "它的委托已完成，但它的工作树有未提交的工作（{{paths}} 个路径）：已让会话继续一轮，按仓库的惯例提交，或还原不需要的部分并说明是哪些。",
-  "note.background.carry-bound": "它的会话已因工作树里未提交的工作被继续两次，工作树仍不干净：会话结束，这些工作保持未提交，等你审阅。",
+  "note.background.carry-bound": "它的会话已因工作树里未提交的工作被继续过，工作树仍不干净：会话结束，这些工作保持未提交，等你审阅。",
   "note.door.not-open": "会话无法打开：",
   "note.door.turn-not-taken": "这一轮无法进行：",
   "note.door.failed": "会话失败了：",

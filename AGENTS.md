@@ -25,8 +25,8 @@ without a service. Model-dependent capabilities state the tier that actually ran
   Shared hosts exchange permitted records, serve no UI and answer no machine paths.
 - UI chrome translates in English and Chinese; authored content stays as written. Read the
   translation and UI contracts before changing visible text or screens.
-- Keep project facts in versioned records. Preserve historical evidence, append amendments to
-  decisions, and move completed tasks from the backlog to the archive.
+- Keep project facts in versioned records. Rewrite a present fact where it lives (D220); append
+  amendments to decisions as history, and move completed tasks from the backlog to the archive.
 - Do not hand-edit versions or release headings. The release workflow owns their stamping.
   Local commits follow green gates; push, publication and history rewrites remain the owner's call.
 - Keep Codex execution defaults in `.codex/config.toml`. Authorized scratch cleanup follows
@@ -264,6 +264,8 @@ Writing at the end is the same failure with extra steps. The end is where interr
   them do.
 - **Write it when it happens.** A note recorded at the moment of the decision costs a sentence; the same
   note reconstructed later costs an investigation, and is usually wrong.
+- **When a fact changes, rewrite its home.** Replace the sentence or entry that is now wrong; never add a
+  newer one beside it. Record only what the code cannot say, sized by what was decided.
 - Durable means *in the repository*, tracked and reviewable — not a scratch directory and not a
   conversation.
 

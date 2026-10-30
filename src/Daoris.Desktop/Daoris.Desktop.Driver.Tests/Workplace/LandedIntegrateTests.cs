@@ -122,4 +122,44 @@ public sealed class LandedIntegrateTests : IDisposable
         Assert.Null(LandedIntegrate.Of(null, named: false));
         Assert.Null(LandedIntegrate.Of(new LandingIntegrate(Request: LandingIntegrate.Owner), named: true));
     }
+
+    /// <summary>
+    /// A named version's own <c>integrate</c> step writes <c>source: version</c> (INTEGRATE1n part n2, D215 e1's note), its <c>request</c> the
+    /// node's option; the rule's is never the unit's process there, and a rule's source is written only under Current.
+    /// </summary>
+    [Fact]
+    public void A_versions_own_integrate_step_writes_source_version()
+    {
+        Assert.Equal(new LandedIntegrate(LandingIntegrate.Done, LandedIntegrate.Version),
+            LandedIntegrate.Of(new LandingIntegrate(Request: LandingIntegrate.Owner), named: true, versionRequest: LandingIntegrate.Done));
+        Assert.Equal(new LandedIntegrate(LandingIntegrate.Owner, LandedIntegrate.Version), LandedIntegrate.Of(null, named: true, versionRequest: LandingIntegrate.Owner));
+        Assert.Null(LandedIntegrate.Of(null, named: true, versionRequest: null));
+        Assert.Equal(new LandedIntegrate(LandingIntegrate.Owner, LandedIntegrate.Rule),
+            LandedIntegrate.Of(new LandingIntegrate(), named: false, versionRequest: LandingIntegrate.Done));
+    }
+
+    /// <summary>
+    /// The request a bound graph version's <c>integrate</c> node names: its <c>request</c> option, the owner's where it names none or a value
+    /// that is no choice; none where the version holds no such node, and under Current.
+    /// </summary>
+    [Fact]
+    public void A_graph_versions_integrate_node_names_the_request_its_landing_records()
+    {
+        static NodeGraph Graph(string? request) => NodeGraphs.Read($$"""
+            {"schemaVersion":2,"entries":["handed"],"end":"line",
+             "nodes":[{"id":"handed","kind":"handed","version":1,"reach":"observed"},
+                      {"id":"integrate","kind":"integrate","version":1,"reach":"waited"{{(request is null ? "" : $$""","options":{"request":"{{request}}"}""")}}},
+                      {"id":"line","kind":"line","version":1,"reach":"observed"}],
+             "wires":[{"id":"h>i","kind":"after","from":"handed","to":"integrate"},{"id":"i>l","kind":"after","from":"integrate","to":"line"}]}
+            """).Graph!;
+        var current = WorkflowProcess.Current(DriverConfig.Empty, "engine", null);
+
+        Assert.Null(current.IntegrateRequest);
+        Assert.Equal(LandingIntegrate.Done, (current with { Graph = Graph(LandingIntegrate.Done) }).IntegrateRequest);
+        Assert.Equal(LandingIntegrate.Owner, (current with { Graph = Graph(null) }).IntegrateRequest);
+        // A value that is no choice never reads as a graph; the node's own reading is defensive the same way.
+        var odd = new NodeDeclaration("integrate", NodeKinds.Integrate, 1, NodeReach.Waited) { Options = new Dictionary<string, string> { ["request"] = "\"whenever\"" } };
+        Assert.Equal(LandingIntegrate.Owner, IntegrateNodes.RequestOf(odd));
+        Assert.Null((current with { Graph = NodeGraphHomes.Landing(new LandingRule(LandingForm.Branch, "feature/{quest}")) }).IntegrateRequest);
+    }
 }

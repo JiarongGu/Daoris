@@ -162,12 +162,33 @@ public sealed class NodeGraphsTests
     {
         var row = GraphProblemsTable.Row("fragments", name);
         var form = (JsonObject)row["rule"]!;
-        var rule = new LandingRule((string)form["form"]!, (string?)form["pattern"], Plugin: (string?)form["plugin"]) { Cycle = row["cycle"]!.ToJsonString() };
+        var rule = new LandingRule((string)form["form"]!, (string?)form["pattern"], Plugin: (string?)form["plugin"])
+        {
+            Cycle = row["cycle"]!.ToJsonString(),
+            Integrate = form["integrate"] is JsonObject integrate ? new LandingIntegrate(Request: (string?)integrate["request"]) : null,
+        };
         var home = NodeGraphHomes.OfLanding(rule, LandingSource.Repository);
 
         Assert.Equal(GraphProblemsTable.Expected(row), GraphProblemsTable.Said(home.Problems));
         Assert.Equal(home.Problems.Count == 0, home.Readable);
         Assert.Equal(home.Problems.Count == 0, home.Graph is not null);
+    }
+
+    /// <summary>
+    /// INTEGRATE1n, F47: the refusal of a node that observes the landing before any <c>handed</c> is the save's alone. The same graph read
+    /// from a file that kept it still reads, as a stored version that read before is never made unreadable by a rule added after it.
+    /// </summary>
+    [Fact]
+    public void A_line_before_the_landing_is_refused_when_saved_and_read_as_it_was_from_a_file()
+    {
+        var json = GraphProblemsTable.Json(GraphProblemsTable.Row("graphs", "a line beside the landing, a way to which passes no landing (INTEGRATE1n, F47)")).ToJsonString();
+
+        Assert.Equal([GraphRefusal.BeforeLanding], NodeGraphs.Read(json, onSave: true).Problems.Select(problem => problem.Code));
+        var (graph, problems) = NodeGraphs.Read(json);
+        Assert.Empty(problems);
+        Assert.NotNull(graph);
+        Assert.Empty(NodeGraphs.Problems(graph, onSave: false));
+        Assert.Equal([GraphRefusal.BeforeLanding], NodeGraphs.Problems(graph).Select(problem => problem.Code));
     }
 
     /// <summary>Every code of the graph's own is held by a row of the shared table: one added without a row fails here.</summary>

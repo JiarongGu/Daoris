@@ -177,6 +177,15 @@ describe('what of a unit waits on the person', () => {
     expect(waitsOnPerson(unit({ end: unknown, cleanup: { state: 'pending', waits: [], gone: [] }, entries: [pending] }))).toEqual([pending]);
   });
 
+  // LANDRETIRE1 part 2: a landing's branch whose quest is closed and which the line has not held for a day is the person's to withdraw.
+  it('is a landing branch the line has not held for a day with its quest closed, as .NET judges it', () => {
+    const stale = entry({
+      kind: 'landing-branch', disposition: 'blocked', code: 'landing-stale', facts: { branch: 'feature/q2-fix', quest: 'q2', since: '2026-10-29T09:00:00Z' },
+    });
+    const kept = entry({ disposition: 'blocked', code: 'kept', facts: { why: 'nested' } });
+    expect(waitsOnPerson(unit({ cleanup: { state: 'pending', waits: [kept, stale], gone: [] } }))).toEqual([stale]);
+  });
+
   it('finds the unit a branch belongs to by its repository and either of its branches', () => {
     const held = unit({ entries: [entry({ kind: 'landing-branch', resource: 'feature/x' })] });
     expect(unitOfBranch([held], 'Engine', 'daoris/s-1')).toBe(held);

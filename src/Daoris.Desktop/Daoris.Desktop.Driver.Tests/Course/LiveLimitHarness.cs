@@ -5,7 +5,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The live limit move across a killed shell (FOUNDATION1f-ii part b, D212; the foundation design §13.5's downgrade table, §19.3, §19.4): one
+/// The live limit move, and the curve's (FOUNDATION1f-iii part b), across a killed shell (FOUNDATION1f-ii part b, D212; the foundation design
+/// §13.5's downgrade table, §19.3, §19.4): one
 /// home, one in-process ledger, and two kinds of shell over them. The <b>killed shell</b> runs the live move (<see cref="LimitMove.MoveAsync"/>)
 /// under a run of its own, its new part's door a stand-in that writes nothing but tells the case each write, and is stopped at a boundary of
 /// <see cref="Cuts"/> by blocking there for good, as a killed process never leaves it; its run is then declared dead the way the lease tells a
@@ -35,7 +36,7 @@ internal sealed class LiveLimitHarness : IAsyncDisposable
 
     private readonly ManualResetEventSlim _gate = new(false);
 
-    private Task<StartedFrom?>? _moving;
+    private Task<object?>? _moving;
 
     public LiveLimitHarness(string name)
     {
@@ -43,8 +44,15 @@ internal sealed class LiveLimitHarness : IAsyncDisposable
         Root = Path.Combine(Home, "engine");
         Directory.CreateDirectory(Root);
         Directory.CreateDirectory(Gate);
-        foreach (var account in new[] { "account-1", "account-2" }) Directory.CreateDirectory(HarnessSettings.ProfileHome(Home, "stub", account));
-        new HarnessSettings().WithRotation("stub", ["account-1", "account-2"]).Save(DaorisHome.Entry(Home, HomeEntry.Harnesses));
+        foreach (var account in new[] { "account-1", "account-2" })
+        {
+            Directory.CreateDirectory(HarnessSettings.ProfileHome(Home, "stub", account));
+            Directory.CreateDirectory(HarnessSettings.ProfileHome(Home, "talk", account));
+        }
+
+        File.WriteAllText(TalkCommand, "");
+        new HarnessSettings().WithRotation("stub", ["account-1", "account-2"]).WithRotation("talk", ["account-1", "account-2"])
+            .Save(DaorisHome.Entry(Home, HomeEntry.Harnesses));
         Ledger = new ChatLedger { Opens = 2 }.Register("engine", Root);
         Client = Ledger.Client();
     }
@@ -106,17 +114,8 @@ internal sealed class LiveLimitHarness : IAsyncDisposable
     /// <param name="cut">The boundary to stop at; none runs the move to its end.</param>
     public async Task<ShellRun> RunShellAsync(string? cut, Action<ChatMessage>? atTheWrite = null, Action<string>? atTheCut = null)
     {
-        Ledger.Chat("c1", "working", "talk", Root, profile: "account-1");
         var events = Events;
-        events.Append("c1", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = "Earlier answered exchange." });
-        events.Append("c1", new SessionEvent { Kind = SessionEventKind.Turn, StopReason = "end_turn" });
-        events.Append("c1", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = Refused });
-        events.Append("c1", new SessionEvent
-        {
-            Kind = SessionEventKind.Note, Text = "its account is cooling", Parts = [new NotePart { Code = NoteCodes.AccountCoolingWindow.Code }],
-        });
-        events.Append("c1", new SessionEvent { Kind = SessionEventKind.Turn, StopReason = "error" });
-        Ledger.For("c1").Say("k1", Word);
+        Limited(events, "working", null);
 
         var adapters = new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase) { ["talk"] = new Talk() });
         var context = new ChatContext(
@@ -128,8 +127,127 @@ internal sealed class LiveLimitHarness : IAsyncDisposable
         {
             Moves = new ConversationMoves(Home, Client, events, store: Store(Killed)),
         };
+        var hit = Hook(limit.Moves, cut, atTheCut);
+        _moving = Task.Run(async () => (object?)await limit.MoveAsync("c1", ActorChoices.With(DriverConfig.Empty, "chat", [new ActorChoice("talk")]), null));
+        await ReachedAsync(hit, cut);
+        return new ShellRun(runner, old) { Limit = limit };
+    }
+
+    /// <summary>
+    /// The curve's twin of <see cref="RunShellAsync"/> (FOUNDATION1f-iii part b): a live conversation <c>c1</c> on account-1, past its curve and
+    /// its last turn ended, the person's word kept on it; the curve's move (<see cref="CurveMove.MoveAsync"/>) run by a shell of run
+    /// <see cref="Killed"/>, stopped for good at <paramref name="cut"/>. Its brief is the one message the move writes; the word the open moves
+    /// waits on the new part for its own go-on, and no write of the move's carries it.
+    /// </summary>
+    /// <param name="atTheWrite">Told the new part's message as the door writes it, before the write returns.</param>
+    /// <param name="cut">The boundary to stop at; none runs the move to its end.</param>
+    /// <param name="atTheCut">Told each boundary as it is passed, after the old part's end is written.</param>
+    /// <param name="keep">Words the person kept on the old part, by key; the one default is <see cref="Word"/> under <c>k1</c>.</param>
+    public async Task<ShellRun> RunCurveShellAsync(
+        string? cut, Action<ChatMessage>? atTheWrite = null, Action<string>? atTheCut = null, IReadOnlyDictionary<string, string>? keep = null)
+    {
+        foreach (var (account, weekly) in new[] { ("account-1", 0.75), ("account-2", 0.30) })
+        {
+            AccountWindows.Said(
+                Home, "talk", account, [new WindowReading("session", 0.10, CurveNow.AddHours(1)), new WindowReading("weekly", weekly, CurveNow.AddDays(3.5))],
+                CurveNow.AddSeconds(-30), session: null, source: AccountWindows.SourceRead);
+        }
+
+        Ledger.Chat("c1", "working", "talk", Root, profile: "account-1");
+        var events = Events;
+        events.Append("c1", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = "Earlier answered exchange." });
+        events.Append("c1", new SessionEvent { Kind = SessionEventKind.Turn, StopReason = "end_turn" });
+        foreach (var (key, word) in keep ?? new Dictionary<string, string> { ["k1"] = Word }) Ledger.For("c1").Say(key, word);
+
+        var adapters = new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["talk"] = new CurveTalk(new HarnessToolchain(
+                Binary: [TalkCommand], VersionArguments: ["--version"], ProfileVariable: "TALK_HOME", ProbeByPresence: true,
+                Usage: new UsageQuestion("talk", ["talk-agent", "usage"], [], UsageKind.Claude))),
+        });
+        var context = new ChatContext(
+            Client, Home, new SessionProcesses(DaorisHome.Entry(Home, HomeEntry.Sessions)), output: null,
+            new HarnessRoster(adapters, DaorisHome.Entry(Home, HomeEntry.Harnesses)) { Clock = () => CurveNow }, events);
+        var old = Talking(context, "c1", shows: false);
+        var runner = new Opening(Client, context, atTheWrite);
+        var curve = new CurveMove(context, new ChatHandOver(context, runner))
+        {
+            Moves = new ConversationMoves(Home, Client, events, store: Store(Killed)),
+        };
+        var hit = Hook(curve.Moves, cut, atTheCut);
+        _moving = Task.Run(async () => (object?)await curve.MoveAsync("c1", DriverConfig.Empty, null));
+        await ReachedAsync(hit, cut);
+        return new ShellRun(runner, old) { Curve = curve };
+    }
+
+    /// <summary>
+    /// The ended move's twin of <see cref="RunShellAsync"/> (FOUNDATION1f-vi part b): an ended conversation <c>c1</c> on account-1, nothing of it
+    /// running, its last turn refused by its limit and its account cooling, the person's word waiting on it; the ended move
+    /// (<see cref="LimitMove.MoveEndedAsync"/>) run by a shell of run <see cref="Killed"/>, stopped for good at <paramref name="cut"/>. It passes
+    /// eight of <see cref="Cuts.All"/>, never <see cref="Cuts.OldEnded"/>, an ended record having no part to end, and at <see cref="Cuts.Decided"/>
+    /// the move already stands at <c>old-ended</c>. It writes the refused turn's word and the moved one in its one message, as the live move does.
+    /// </summary>
+    /// <param name="atTheWrite">Told the new part's message as the door writes it, before the write returns.</param>
+    /// <param name="cut">The boundary to stop at; none runs the move to its end.</param>
+    /// <param name="atTheCut">Told each boundary as it is passed.</param>
+    /// <param name="keep">Words the person kept on the record, by key; the one default is <see cref="Word"/> under <c>k1</c>.</param>
+    public async Task<ShellRun> RunEndedShellAsync(
+        string? cut, Action<ChatMessage>? atTheWrite = null, Action<string>? atTheCut = null, IReadOnlyDictionary<string, string>? keep = null)
+    {
+        var events = Events;
+        Limited(events, "stopped", keep);
+
+        var adapters = new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase) { ["talk"] = new Talk() });
+        var context = new ChatContext(
+            Client, Home, new SessionProcesses(DaorisHome.Entry(Home, HomeEntry.Sessions)), output: null,
+            new HarnessRoster(adapters, DaorisHome.Entry(Home, HomeEntry.Harnesses)), events);
+        var runner = new Opening(Client, context, atTheWrite);
+        var limit = new LimitMove(context, runner, new ChatHandOver(context, runner), new NoHelp())
+        {
+            Moves = new ConversationMoves(Home, Client, events, store: Store(Killed)),
+        };
+        var hit = Hook(limit.Moves, cut, atTheCut);
+        _moving = Task.Run(async () => (object?)await limit.MoveEndedAsync("c1", lost: null, ActorChoices.With(DriverConfig.Empty, "chat", [new ActorChoice("talk")]), null));
+        await ReachedAsync(hit, cut);
+        return new ShellRun(runner, null) { Limit = limit };
+    }
+
+    /// <summary>
+    /// An ended conversation <c>c1</c> as the ended move finds it and an older build leaves it, with no shell's move run: ended, on the protocol
+    /// stub's adapter so a go-on can resume it, its last turn refused by its limit, the words kept on it waiting.
+    /// </summary>
+    public void LeaveEnded(IReadOnlyDictionary<string, string>? keep = null)
+    {
+        Limited(Events, "stopped", keep);
+        Ledger.Edit("c1", record => record["adapter"] = "acp-stub");
+        Config();
+    }
+
+    /// <summary>A conversation <c>c1</c> on account-1 in <paramref name="state"/>, its last turn refused by its limit, the words kept on it waiting.</summary>
+    private void Limited(SessionEvents events, string state, IReadOnlyDictionary<string, string>? keep)
+    {
+        Ledger.Chat("c1", state, "talk", Root, profile: "account-1");
+        events.Append("c1", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = "Earlier answered exchange." });
+        events.Append("c1", new SessionEvent { Kind = SessionEventKind.Turn, StopReason = "end_turn" });
+        events.Append("c1", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = Refused });
+        events.Append("c1", new SessionEvent
+        {
+            Kind = SessionEventKind.Note, Text = "its account is cooling", Parts = [new NotePart { Code = NoteCodes.AccountCoolingWindow.Code }],
+        });
+        events.Append("c1", new SessionEvent { Kind = SessionEventKind.Turn, StopReason = "error" });
+        foreach (var (key, word) in keep ?? new Dictionary<string, string> { ["k1"] = Word }) Ledger.For("c1").Say(key, word);
+    }
+
+    /// <summary>When the curve is judged: ten minutes after the ledger's records are made, as the curve's own cases hold it.</summary>
+    private static readonly DateTimeOffset CurveNow = new(2026, 10, 3, 8, 10, 0, TimeSpan.Zero);
+
+    private string TalkCommand => Path.Combine(Home, "talk-agent");
+
+    /// <summary>The boundary hook: the old part's end as its watch writes it, which no process here makes, and the stop at the cut's place.</summary>
+    private TaskCompletionSource Hook(ConversationMoves moves, string? cut, Action<string>? atTheCut)
+    {
         var hit = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        limit.Moves.Cut = name =>
+        moves.Cut = name =>
         {
             // The old part's end as its watch writes it, which no process here makes: its record ends once the move has ended it.
             if (name == Cuts.OldEnded) Ledger.Edit("c1", record => record["state"] = "stopped");
@@ -140,28 +258,32 @@ internal sealed class LiveLimitHarness : IAsyncDisposable
             _gate.Wait();
             throw new ShellKilled();
         };
+        return hit;
+    }
 
-        _moving = Task.Run(() => limit.MoveAsync("c1", ActorChoices.With(DriverConfig.Empty, "chat", [new ActorChoice("talk")]), null));
+    private async Task ReachedAsync(TaskCompletionSource hit, string? cut)
+    {
         if (cut is not null)
         {
             // A boundary of the door's write is reached on the new part's pump after the move's own task has returned.
-            await Poll.Until(() => hit.Task.IsCompleted || _moving.IsFaulted, () => $"the shell reached {Reached ?? "nothing"}, its move {_moving.Status}, {Seen()}");
-            if (!hit.Task.IsCompleted) throw new InvalidOperationException($"the move faulted before `{cut}`: {await Settled(_moving)}");
+            await Poll.Until(() => hit.Task.IsCompleted || _moving!.IsFaulted, () => $"the shell reached {Reached ?? "nothing"}, its move {_moving!.Status}, {Seen()}");
+            if (!hit.Task.IsCompleted) throw new InvalidOperationException($"the move faulted before `{cut}`: {await Settled(_moving!)}");
         }
         else
         {
-            await _moving;
+            await _moving!;
         }
-
-        return new ShellRun(runner, limit, old);
     }
 
-    private static async Task<string> Settled(Task<StartedFrom?> task)
+    private static async Task<string> Settled(Task<object?> task)
     {
         try
         {
-            var done = await task;
-            return $"moved to {done?.SessionId}, sent {done?.Sent}";
+            return await task switch
+            {
+                StartedFrom done => $"moved to {done.SessionId}, sent {done.Sent}",
+                var other => $"judged {other}",
+            };
         }
         catch (Exception error)
         {
@@ -194,7 +316,14 @@ internal sealed class LiveLimitHarness : IAsyncDisposable
     }
 
     /// <summary>The killed shell's door, for the case to read what it wrote.</summary>
-    public sealed record ShellRun(Opening Runner, LimitMove Limit, Turned Old);
+    public sealed record ShellRun(Opening Runner, Turned? Old)
+    {
+        /// <summary>The live limit move or the ended one the shell ran, where it ran one (the ended one has no live part, so no <see cref="Old"/>).</summary>
+        public LimitMove? Limit { get; init; }
+
+        /// <summary>The curve's move the shell ran, where it ran one (FOUNDATION1f-iii part b).</summary>
+        public CurveMove? Curve { get; init; }
+    }
 
     // ——— The coming-up shell and the stub.
 
@@ -224,6 +353,13 @@ internal sealed class LiveLimitHarness : IAsyncDisposable
 
     /// <summary>How many prompts the killed shell's new part's door wrote that carried <paramref name="text"/>.</summary>
     public static int Wrote(ShellRun shell, string text) => shell.Runner.Opened?.Prompts.Count(prompt => prompt.Contains(text, StringComparison.Ordinal)) ?? 0;
+
+    /// <summary>How many times the stub heard <paramref name="text"/> as the conversation on <paramref name="account"/> (the stub names each prompt by its account).</summary>
+    public int HeardBy(string text, string account) =>
+        Prompts.Where(prompt => prompt.StartsWith($"prompt[{account}]", StringComparison.Ordinal)).Sum(prompt => Count(prompt, text));
+
+    /// <summary>How many messages the killed shell's new part's door wrote: the curve's brief, which is its one message.</summary>
+    public int Briefed(ShellRun shell) => shell.Runner.Opened?.Prompts.Count ?? 0;
 
     public static int Count(string text, string part)
     {
@@ -354,6 +490,22 @@ internal sealed class LiveLimitHarness : IAsyncDisposable
         public SessionWire Wire => SessionWire.Acp;
 
         public bool Interactive => true;
+
+        public ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command) => throw new InvalidOperationException("nothing spawns");
+
+        public ProcessStartInfo PrepareChat(ChatTarget target, IReadOnlyList<string>? command) => throw new InvalidOperationException("nothing spawns");
+    }
+
+    /// <summary>The curve's agent on the protocol door with accounts and a usage question, so the curve judges it and nothing is probed or spawned.</summary>
+    private sealed class CurveTalk(HarnessToolchain toolchain) : ISessionAdapter
+    {
+        public string Name => "talk";
+
+        public SessionWire Wire => SessionWire.Acp;
+
+        public bool Interactive => true;
+
+        public HarnessToolchain? Toolchain => toolchain;
 
         public ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command) => throw new InvalidOperationException("nothing spawns");
 

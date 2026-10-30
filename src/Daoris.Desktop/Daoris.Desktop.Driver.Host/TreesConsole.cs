@@ -207,7 +207,9 @@ internal static class TreesConsole
                         return listed;
                     }
 
-                    var plan = await asking.CleanPlanAsync(repositories, inUse).ConfigureAwait(false);
+                    // LANDRETIRE1 part 2: the quests the landings name that the service says are closed, read once for the list.
+                    var closed = await LandedStanding.ClosedAsync(new LandedBranches(home).Entries(), service.EveryQuestAsync, CancellationToken.None).ConfigureAwait(false);
+                    var plan = await asking.CleanPlanAsync(repositories, inUse, closedQuests: closed).ConfigureAwait(false);
                     // LAND4: the session each kept branch's tree is, so its landing is offered beside the discard, as on its page.
                     var records = plan.Sessions.Any(item => item.Kind == SweepKind.Unlanded && item.Tree is not null)
                         ? await SessionBranchDoors.RecordsOrNoneAsync(service).ConfigureAwait(false)

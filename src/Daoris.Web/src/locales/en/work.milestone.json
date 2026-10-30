@@ -54,6 +54,7 @@
   "work.milestone.code.unknown-unread": "nothing records whose it is, and git could not read which branch it is on, so nothing of it is cleaned up",
   "work.milestone.code.unknown-branch": "nothing records {{branch}}, so nothing of it is cleaned up: Discard branch… in the session branches on its workspace’s Branches removes it",
   "work.milestone.code.unrecorded": "Daoris did not record {{branch}}, so nothing of it is cleaned up: Discard branch… in the session branches on its workspace’s Branches removes it",
+  "work.milestone.code.landing-stale": "its quest #{{quest}} is closed and the line has not held it for a day or more, so the clean-up keeps it: Withdraw… in the landed branches on its workspace’s Branches takes it away if the line will never take its work",
   "work.milestone.code.kept.in-use": "the look kept it, since a session running or waiting holds its tree; it is tried again at the next look",
   "work.milestone.code.kept.dirty": "the look kept it, since its tree holds uncommitted or untracked work",
   "work.milestone.code.kept.busy": "the look kept it, since something on this machine holds its tree’s folder open; it is tried again at the next look",

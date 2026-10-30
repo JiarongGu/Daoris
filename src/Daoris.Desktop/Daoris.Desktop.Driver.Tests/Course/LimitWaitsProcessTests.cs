@@ -879,49 +879,48 @@ public sealed class LimitWaitsProcessTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 Codex 8: a shell that ended after the limit's move opened its new part and before its words were delivered. The come-up
-    /// delivers the box to that part, which goes on with the brief and both kinds of words in its own conversation; the old record's
-    /// waiting word stays on it until then, and leaves it once, as taken by the new part.
+    /// 🔴 Codex 8, FOUNDATION1f-vi part a: a box an older build wrote after its limit move opened its new part and moved the words there, a
+    /// shell ending before they were delivered. The come-up imports it once into the move record and sets it aside; the move is ended by its
+    /// phase with the words waiting on the new part never attempted, so the new part goes on with them in its own conversation, heard once,
+    /// and nothing is delivered from the box.
     /// </summary>
     [Fact]
-    public async Task A_move_opened_and_not_delivered_is_delivered_to_its_new_part_at_the_come_up()
+    public async Task A_box_an_older_build_wrote_is_imported_at_the_come_up_and_its_new_part_goes_on_with_the_moved_word_once()
     {
         var events = Events;
-        var ledger = HeldEnded(events, ("w1", "And add a test."));
-        ledger.Chat("c2", "stopped", "acp-stub", _root, profile: "account-2", from: new ContinuedFrom("c1", HandOverWhy.Limit, HandOverBy.Daoris));
+        var ledger = HeldEnded(events);
+        ledger.Chat("c2", "stopped", "acp-stub", _root, profile: "account-2", from: new ContinuedFrom("c1", HandOverWhy.Limit, HandOverBy.Daoris))
+            .Say("w1", "And add a test.");
         new HarnessConversations(_home).Keep("c2", "acp-stub", "conv-account-2");
         AccountCooling.End(_home, "stub", "account-2", _now);
         Cooling("account-1", _now.AddDays(1));
-        new LimitBoxes(_home).Write("c1", new LimitMoveBox(HandOverWhy.Limit, 2, events.After("c1", 0).Events.Count, ["w1"], "c2"));
+        new LimitBoxes(_home).Write("c1", new LimitMoveBox(HandOverWhy.Limit, 2, events.After("c1", 0).Events.Count, ["w1"], "c2", Moved: true));
         var config = Config();
         using var client = ledger.Client();
         var adapters = AdapterSet.Built();
         using var runner = Runner(client, adapters, Roster(adapters), events);
 
         await runner.TakeUpAsync();
-        await Poll.Until(() => Prompts.Count > 0 && ledger.Said("c1").Count == 0, () => Seen(ledger, events, "c2"));
+        await Poll.Until(() => Prompts.Count > 0 && ledger.Said("c2").Count == 0, () => Seen(ledger, events, "c2"));
         var handed = Assert.Single(Prompts);
         Assert.StartsWith("prompt[account-2]", handed, StringComparison.Ordinal);
-        Assert.Contains("You continue session `c1`", handed);
-        Assert.Equal((1, 1), (Count(handed, "Make the port configurable."), Count(handed, "And add a test.")));
+        Assert.Equal(1, Count(handed, "And add a test."));
         Assert.Contains("resumed[account-2]: conv-account-2", StubFile.Lines(Heard));
 
-        // The new part's own word left first, then the old record's, as taken by the new part.
-        var taken = ledger.TakenBy.ToList();
-        var own = taken.FindIndex(each => each.Session == "c2");
-        var old = taken.FindIndex(each => each == ("c1", "w1", "c2"));
-        Assert.True(own >= 0 && old > own, string.Join(" | ", taken));
+        // Imported once and set aside, never deleted; the move it kept is ended, and no box is left for today's readers.
         Assert.False(File.Exists(new LimitBoxes(_home).PathOf("c1")));
+        Assert.True(File.Exists(new LimitBoxes(_home).PathOf("c1") + ".imported"));
+        Assert.Equal("closed", new MoveStore(_home).Of("c1").Single().PhaseWord);
         Assert.Equal(2, ledger.Count);
     }
 
     /// <summary>
-    /// 🔴 LIMITWORD1: a word kept on the old record after the move's box was written and before the new part opened is in neither the
-    /// box nor the new part's record, so the move reads the record again at its go-on: the new part is handed it once, after the word
-    /// the box named, and the old part never; it leaves the old record as taken by the new part.
+    /// 🔴 LIMITWORD1: a word kept on the old record after the move was decided and before the new part opened is in neither the decision's
+    /// words nor the new part's record, so the move reads the record again at its go-on: the new part is handed it once, after the word
+    /// the move named, and the old part never; it leaves the old record as taken by the new part. No box is written meanwhile.
     /// </summary>
     [Fact]
-    public async Task A_word_kept_between_the_moves_box_and_its_go_on_reaches_the_new_part_once()
+    public async Task A_word_kept_between_the_moves_decision_and_its_go_on_reaches_the_new_part_once()
     {
         var events = Events;
         var ledger = HeldEnded(events, ("w1", "Make it fast."));
@@ -930,10 +929,11 @@ public sealed class LimitWaitsProcessTests : IDisposable
         var kept = 0;
         ledger.BeforeRequest = (request, _) =>
         {
-            // The new part's record opening is the go-on: the word lands on the old record just before it, the box already written.
+            // The new part's record opening is the go-on: the word lands on the old record just before it, the move already decided.
             if (request.Method == HttpMethod.Post && request.RequestUri!.AbsolutePath == "/api/sessions/chat" && Interlocked.Exchange(ref kept, 1) == 0)
             {
-                Assert.NotNull(new LimitBoxes(_home).Read("c1"));
+                Assert.Null(new LimitBoxes(_home).Read("c1"));
+                Assert.Equal("opening", new MoveStore(_home).Of("c1").Single().PhaseWord);
                 ledger.For("c1").Say("w2", "And add a test.");
             }
 
@@ -958,28 +958,30 @@ public sealed class LimitWaitsProcessTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 Codex 8: a shell that ended as the move's words were delivered, its new part having taken its turn. The come-up ends the box: the
-    /// old record's waiting word leaves it once, as taken by the new part, and nothing is delivered again.
+    /// 🔴 Codex 8, FOUNDATION1f-vi part a: a box an older build wrote as its move's words were delivered, its new part having taken its turn
+    /// (the moved word left the new part with it). The come-up imports it and sets it aside, and the move ends by what the new part holds:
+    /// nothing is delivered again, said again or taken again.
     /// </summary>
     [Fact]
-    public async Task A_move_delivered_as_the_shell_ended_is_never_delivered_twice()
+    public async Task A_box_whose_new_part_took_its_turn_is_imported_and_nothing_is_delivered_again()
     {
         var events = Events;
-        var ledger = HeldEnded(events, ("w1", "And add a test."));
+        var ledger = HeldEnded(events);
         ledger.Chat("c2", "stopped", "acp-stub", _root, profile: "account-2", from: new ContinuedFrom("c1", HandOverWhy.Limit, HandOverBy.Daoris));
         new HarnessConversations(_home).Keep("c2", "acp-stub", "conv-account-2");
         events.Append("c2", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = "Make the port configurable.\n\nAnd add a test." });
-        new LimitBoxes(_home).Write("c1", new LimitMoveBox(HandOverWhy.Limit, 2, events.After("c1", 0).Events.Count, ["w1"], "c2"));
+        new LimitBoxes(_home).Write("c1", new LimitMoveBox(HandOverWhy.Limit, 2, events.After("c1", 0).Events.Count, ["w1"], "c2", Moved: true));
         Config();
         using var client = ledger.Client();
         var adapters = AdapterSet.Built();
         using var runner = Runner(client, adapters, Roster(adapters), events);
 
         await runner.TakeUpAsync();
-        Assert.Equal([("c1", "w1", "c2")], ledger.TakenBy.Select(each => (each.Session, each.Ids, each.By)));
+        Assert.Empty(ledger.TakenBy);
         Assert.Empty(ledger.Said("c1"));
         Assert.Empty(ledger.Said("c2"));
         Assert.False(File.Exists(new LimitBoxes(_home).PathOf("c1")));
+        Assert.True(File.Exists(new LimitBoxes(_home).PathOf("c1") + ".imported"));
         Assert.Empty(StubFile.Lines(Heard));
     }
 

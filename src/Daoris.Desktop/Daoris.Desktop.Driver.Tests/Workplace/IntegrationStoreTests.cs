@@ -104,6 +104,32 @@ public sealed class IntegrationStoreTests : IDisposable
         Assert.Equal(records, store.Request("request-2"));
     }
 
+    /// <summary>
+    /// A request found by its key, the unit and the tip it froze (INTEGRATE1n part n2): closed ones too, so a node's restart finds the request it
+    /// made whatever became of it; another tip, another unit and an empty store find none; the newest where two share a key.
+    /// </summary>
+    [Fact]
+    public void A_request_is_found_by_its_unit_and_tip_open_or_closed()
+    {
+        var store = Store("run-a");
+        Assert.Null(store.FindByKey("unit-a", Tip));
+
+        var first = Request("r1", "feature/q1-fix") with { Unit = "unit-a" };
+        Assert.Null(store.Add(first));
+        Assert.Equal(first, store.FindByKey("unit-a", Tip));
+        Assert.Equal(first, store.FindByKey("unit-a", Tip.ToUpperInvariant()));
+        Assert.Null(store.FindByKey("unit-a", Next));
+        Assert.Null(store.FindByKey("unit-b", Tip));
+
+        Assert.True(store.Close("r1", IntegrationRequestCloses.HandedBack));
+        Assert.Equal(IntegrationRequestCloses.HandedBack, store.FindByKey("unit-a", Tip)!.ClosedWhy);
+
+        var again = Request("r2", "feature/q1-fix") with { Unit = "unit-a", At = At.AddMinutes(5) };
+        Assert.Null(store.Add(again));
+        Assert.Equal("r2", store.FindByKey("unit-a", Tip)!.Id);
+        Assert.Null(store.MemberOf("r2"));
+    }
+
     [Fact]
     public async Task Two_runs_on_two_connections_requesting_one_branch_at_once_keep_one_open_request_which_the_second_reads()
     {
@@ -549,6 +575,101 @@ public sealed class IntegrationStoreTests : IDisposable
 
         // An ended candidate takes no step.
         Assert.Throws<IntegrationRefusedException>(() => store.Begin(claim, IntegrationStepNames.Tidy));
+    }
+
+    // ——— A superseded member's pending disposition (INTEGRATE1e part e4b; §5.7).
+
+    private static IntegrationDisposition Disposition(string request, string commit = "c1") =>
+        new(request, commit, "refs/daoris/discarded/feature/q1-fix", "b1", ["a.txt"], "work made after the request froze");
+
+    /// <summary>A candidate of r1 and r2 promoted, its settle begun.</summary>
+    private (IntegrationStore Store, IntegrationClaim Claim, IntegrationStep Settle) Promoted()
+    {
+        var store = WithRequests("run-a", 2);
+        var claim = store.Form(Forming("r1", "r2")).Claim!;
+        store.End(claim, store.OpenStep(claim.Candidate)!.Id, new IntegrationStepEnd(IntegrationStepOutcomes.Done) { Tip = Tip });
+        var promote = store.Begin(claim, IntegrationStepNames.Promote, lineCommit: Line);
+        store.End(claim, promote.Id, new IntegrationStepEnd(IntegrationStepOutcomes.Promoted) { Promoted = true });
+        return (store, claim, store.Begin(claim, IntegrationStepNames.Settle));
+    }
+
+    private static IntegrationStepEnd Settling(params IntegrationDisposition[] kept) => new(IntegrationStepOutcomes.Done)
+    {
+        Members =
+        [
+            new IntegrationMemberChange("r1", IntegrationMemberStates.Settled) { Ends = true },
+            new IntegrationMemberChange("r2", IntegrationMemberStates.Settled) { Ends = true },
+        ],
+        Closes = [new IntegrationRequestClose("r1", IntegrationRequestCloses.Settled), new IntegrationRequestClose("r2", IntegrationRequestCloses.Settled)],
+        Dispositions = kept,
+    };
+
+    [Fact]
+    public void A_settling_end_keeps_a_superseded_commit_s_pending_disposition_in_the_same_transaction_as_its_member_settling()
+    {
+        var (store, claim, settle) = Promoted();
+        var revision = Revision();
+
+        store.End(claim, settle.Id, Settling(Disposition("r1"), Disposition("r1", "c2")));
+
+        Assert.Equal(revision + 1, Revision());
+        var kept = store.Dispositions("r1");
+        Assert.Equal(["c1", "c2"], kept.Select(each => each.Commit));
+        Assert.All(kept, each => Assert.Equal(
+            (claim.Candidate, "refs/daoris/discarded/feature/q1-fix", "b1", "work made after the request froze", true, (DateTimeOffset?)null),
+            (each.Candidate, each.Reference, each.By, each.Subject, each.Pending, each.AnsweredAt)));
+        Assert.Equal(["a.txt"], kept[0].Files);
+        Assert.Empty(store.Dispositions("r2"));
+        Assert.Equal(2, store.Pending().Count);
+        // Settled, and still standing: only the close step ends the candidate.
+        Assert.True(store.Candidate(claim.Candidate)!.Stands);
+        Assert.All(store.Members(claim.Candidate), each => Assert.Equal(IntegrationMemberStates.Settled, each.State));
+    }
+
+    [Fact]
+    public void An_end_written_again_is_the_first_end_s_and_writes_no_second_disposition_and_an_answer_leaves_the_row_but_not_the_pending_list()
+    {
+        var (store, claim, settle) = Promoted();
+        store.End(claim, settle.Id, Settling(Disposition("r1")));
+        var revision = Revision();
+
+        store.End(claim, settle.Id, Settling(Disposition("r1"), Disposition("r1", "c2")));
+
+        Assert.Equal(revision, Revision());
+        Assert.Equal(["c1"], store.Dispositions("r1").Select(each => each.Commit));
+
+        Assert.True(store.Answer("r1", "c1"));
+        Assert.False(store.Answer("r1", "c1"));
+        Assert.False(store.Answer("r1", "c9"));
+        Assert.Empty(store.Pending());
+        var answered = Assert.Single(store.Dispositions("r1"));
+        Assert.False(answered.Pending);
+        Assert.NotNull(answered.AnsweredAt);
+    }
+
+    [Fact]
+    public void A_disposition_for_a_request_the_candidate_does_not_hold_refuses_the_whole_end_and_writes_nothing()
+    {
+        var (store, claim, settle) = Promoted();
+        Assert.Null(store.Add(Request("r3", "feature/q3-fix")));
+        var revision = Revision();
+
+        Assert.Throws<IntegrationRefusedException>(() => store.End(claim, settle.Id, Settling(Disposition("r1"), Disposition("r3"))));
+
+        Assert.Equal(revision, Revision());
+        Assert.True(store.OpenStep(claim.Candidate)!.Open);
+        Assert.Empty(store.Pending());
+        Assert.Null(store.Request("r1")!.ClosedAt);
+        Assert.All(store.Members(claim.Candidate), each => Assert.Equal(IntegrationMemberStates.Formed, each.State));
+    }
+
+    [Fact]
+    public void A_home_with_no_store_has_no_pending_disposition_and_the_read_makes_none()
+    {
+        Assert.Empty(Store("run-a").Pending());
+        Assert.Empty(Store("run-a").Dispositions("r1"));
+        Assert.False(File.Exists(Db));
+        Assert.False(Store("run-a").Answer("r1", "c1"));
     }
 
     [Fact]

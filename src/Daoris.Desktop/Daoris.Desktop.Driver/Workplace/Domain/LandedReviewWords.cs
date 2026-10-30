@@ -31,7 +31,7 @@ public static class LandedReviewWords
                 + "replaced — so it is not read as this session's work.",
             LandedState.NoCheckout => $"{landed}; `{entry.Repository}` has no checkout on this machine to read it in.",
             // A branch removed on its pull request's answer says that answer in its removal, once.
-            _ => $"{landed}; that branch is gone now.{Removed(entry)}{Reads(review.Reads)}"
+            _ => $"{landed}; that branch is gone now.{Removed(entry)}{Withdrawn(entry)}{Reads(review.Reads)}"
                  + (entry.RemovedAs == LandedKind.PullRequest ? "" : PullRequest(entry, keptOnly: true)),
         };
     }
@@ -66,6 +66,16 @@ public static class LandedReviewWords
             : "";
         return $"{Describe(session, review)} {why}{hand}";
     }
+
+    /// <summary>
+    /// A branch withdrawn on the person's word (LANDRETIRE1 part 2): when, the reason they gave and the recovery ref its commits stay on. The
+    /// clean-up's removal (<see cref="LandedBranch.RemovedAs"/>) is its own sentence, and a branch that went outside Daoris says none.
+    /// </summary>
+    private static string Withdrawn(LandedBranch entry) => entry is { GoneAs: LandedGone.Withdrawn, GoneAt: { } at }
+        ? $" It was withdrawn on {at.ToUniversalTime().ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture)} UTC"
+            + (entry.GoneWhy is { Length: > 0 } why ? $" because {why}" : "")
+            + (entry.KeptOn is { } kept ? $"; its commits stay on `{kept}`." : ".")
+        : "";
 
     private static string Removed(LandedBranch entry) => entry.RemovedAs switch
     {

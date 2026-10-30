@@ -775,6 +775,13 @@ public sealed record HelpWorkPart(
     /// <summary>The trees this part's repositories' sessions recorded (OVERVIEWNOISE1b), from the sessions' look; none before it.</summary>
     public IReadOnlyList<RecordedTree> Recorded { get; init; } = [];
 
+    /// <summary>
+    /// The quests the service says are closed among those this part's landings name (LANDRETIRE1 part 2, <see cref="LandedStanding.ClosedAsync"/>),
+    /// read by the module's judge, which holds the service; none read, none is closed. The facts' deadline judges the part again, so a quest closing
+    /// or a day passing reaches the page within it, with no wake of its own.
+    /// </summary>
+    public IReadOnlySet<string> ClosedQuests { get; init; } = new HashSet<string>();
+
     /// <summary>Whether a repository the trees or the records name is this part's.</summary>
     public bool Holds(string repository) => Repository is { } own
         ? string.Equals(own, repository, StringComparison.OrdinalIgnoreCase)
@@ -786,7 +793,11 @@ public sealed record HelpWorkPart(
 /// <param name="Workspace">The workspace the registry names it in, which its line is read under.</param>
 /// <param name="Root">Its checkout here.</param>
 /// <param name="InUse">The trees sessions still running or waiting hold, kept whatever they hold.</param>
-public sealed record HelpSweepPart(string Repository, string Workspace, string Root, IReadOnlySet<string> InUse);
+public sealed record HelpSweepPart(string Repository, string Workspace, string Root, IReadOnlySet<string> InUse)
+{
+    /// <summary>The quests the service says are closed among those its landings name (LANDRETIRE1 part 2), as <see cref="HelpWorkPart.ClosedQuests"/> reads them.</summary>
+    public IReadOnlySet<string> ClosedQuests { get; init; } = new HashSet<string>();
+}
 
 /// <summary>
 /// What one part's sessions' trees hold (FACTSPLIT1b): each tree judged, by <see cref="KnowledgeWorkOrders.Current.Normal"/>, as

@@ -383,6 +383,15 @@ public static partial class WorkInventory
                 entries.Add(new InventoryEntry(draft.Id, InventoryKind.LandingBranch, landing.Branch, InventoryRole.Temporary, InventoryDisposition.Pending,
                     $"the line holds it ({ProofSaid(line.By, line.On)}); the look's tidy removes it"));
             }
+            else if (LandedStanding.Stale(landing, facts.ClosedQuests, facts.Now))
+            {
+                // LANDRETIRE1 part 2: its quest is closed and the line has not held it for a day, which no clean-up of Daoris's ends: the
+                // person says whether the work comes yet, or withdraws it (LandedWithdrawals), so it waits on them with the code the page words.
+                entries.Add(Coded(draft.Id, InventoryKind.LandingBranch, landing.Branch, InventoryCode.LandingStale,
+                    [("branch", landing.Branch), ("quest", landing.Quest!), ("since", Moments.Write(LandedStanding.Since(landing)))],
+                    $"its quest #{landing.Quest} is closed and the line has not held it for {LandedStanding.Age(facts.Now - landing.LandedAt)}, "
+                    + "so the clean-up keeps it; the Branches page of its workspace withdraws it if the line will never take its work"));
+            }
             else
             {
                 entries.Add(new InventoryEntry(draft.Id, InventoryKind.LandingBranch, landing.Branch, InventoryRole.Result, InventoryDisposition.Kept,

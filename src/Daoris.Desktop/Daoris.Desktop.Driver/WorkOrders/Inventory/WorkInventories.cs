@@ -24,10 +24,11 @@ public static class WorkInventories
     /// <param name="recorded">The trees this machine's sessions recorded (<see cref="RecordedOf"/>), each joined to its session; none, none joined.</param>
     public static async Task<(IReadOnlyList<WorkMilestone> Units, IReadOnlyList<InventoryEntry> Recovery, IReadOnlyList<InventoryUnread> Unread)> ReadPartAsync(
         string home, IReadOnlyDictionary<string, string> roots, IReadOnlySet<string> inUse, Func<string, bool> only, CancellationToken ct = default,
-        IReadOnlyList<RecordedTree>? recorded = null)
+        IReadOnlyList<RecordedTree>? recorded = null, IReadOnlySet<string>? closedQuests = null)
     {
         var unread = new List<InventoryUnread>();
-        var facts = await GatherAsync(home, roots, inUse, (repository, said) => unread.Add(new(repository, said)), only, ct, now: null, recorded).ConfigureAwait(false);
+        var facts = await GatherAsync(home, roots, inUse, (repository, said) => unread.Add(new(repository, said)), only, ct, now: null, recorded, closedQuests)
+            .ConfigureAwait(false);
         return (WorkInventory.Derive(facts), WorkInventory.Recoveries(facts), unread);
     }
 
@@ -45,7 +46,8 @@ public static class WorkInventories
 
     private static async Task<InventoryFacts> GatherAsync(
         string home, IReadOnlyDictionary<string, string> roots, IReadOnlySet<string> inUse, Action<string, string> unread,
-        Func<string, bool>? only, CancellationToken ct, DateTimeOffset? now, IReadOnlyList<RecordedTree>? recorded = null)
+        Func<string, bool>? only, CancellationToken ct, DateTimeOffset? now, IReadOnlyList<RecordedTree>? recorded = null,
+        IReadOnlySet<string>? closedQuests = null)
     {
         IReadOnlyList<T> Ours<T>(IReadOnlyList<T> all, Func<T, string> repository) => only is null ? all : [.. all.Where(each => only(repository(each)))];
 
@@ -99,16 +101,20 @@ public static class WorkInventories
         return new InventoryFacts(
             branches, landings, trees, Ours(new AutoLandings(home).All(), entry => entry.Repository), refs, inUse,
             session => Directory.Exists(DaorisHome.Entry(home, HomeEntry.Sessions, session)), at)
-        { Standing = standing, Recorded = recorded ?? [], SetAsideFor = days, Owed = WorkObligations.Read(home, at) };
+        {
+            Standing = standing, Recorded = recorded ?? [], SetAsideFor = days, Owed = WorkObligations.Read(home, at),
+            ClosedQuests = closedQuests ?? new HashSet<string>(),
+        };
     }
 
     /// <summary>The milestone of every unit this home names, and Daoris's own recoveries no unit names (CLEANUP1), from one read.</summary>
     /// <param name="recorded">The trees this machine's sessions recorded (<see cref="RecordedOf"/>), each joined to its session; none, none joined.</param>
+    /// <param name="closedQuests">The quests the service says are closed (<see cref="LandedStanding.ClosedAsync"/>); none, none is closed.</param>
     public static async Task<(IReadOnlyList<WorkMilestone> Units, IReadOnlyList<InventoryEntry> Recovery)> ReadAsync(
         string home, IReadOnlyDictionary<string, string> roots, IReadOnlySet<string> inUse, ICollection<string> unread, CancellationToken ct = default,
-        IReadOnlyList<RecordedTree>? recorded = null)
+        IReadOnlyList<RecordedTree>? recorded = null, IReadOnlySet<string>? closedQuests = null)
     {
-        var facts = await GatherAsync(home, roots, inUse, (_, said) => unread.Add(said), only: null, ct, now: null, recorded).ConfigureAwait(false);
+        var facts = await GatherAsync(home, roots, inUse, (_, said) => unread.Add(said), only: null, ct, now: null, recorded, closedQuests).ConfigureAwait(false);
         return (WorkInventory.Derive(facts), WorkInventory.Recoveries(facts));
     }
 

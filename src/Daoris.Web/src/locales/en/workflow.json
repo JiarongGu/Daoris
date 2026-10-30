@@ -40,6 +40,7 @@
   "workflow.step.stop": "Stop",
   "workflow.step.waitUnit": "Other work",
   "workflow.step.check": "The checks",
+  "workflow.step.integrate": "The integration",
   "workflow.step.pluginNode": "{{node}} by `{{plugin}}`",
   "workflow.participation.agent": "agent alone",
   "workflow.participation.agent-and-you": "agent + you",

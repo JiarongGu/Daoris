@@ -5,8 +5,8 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// An ended conversation's move at its limit's wake, kept until its words are delivered (LIMITRESUME1c, D206 §3.5, Codex 8):
-/// <c>&lt;home&gt;/sessions/&lt;session&gt;.limit-move.json</c>, beside D163's hand-over box. Written before the new part opens, it is
-/// the move's one durable owner: what the message is composed from, and what a shell coming up delivers again.
+/// <c>&lt;home&gt;/sessions/&lt;session&gt;.limit-move.json</c>, beside D163's hand-over box. An older build wrote it before the new part
+/// opened, as the move's one durable owner; this build writes none (FOUNDATION1f-vi part a) and reads one only to import it.
 /// </summary>
 /// <param name="Why">The move's reason: <c>limit</c> for another account ready first, or the refusal's code that proved its own conversation lost.</param>
 /// <param name="Before">How many of the record's events stand before the first refused turn's words: the brief is composed from those alone.</param>
@@ -24,8 +24,11 @@ namespace Daoris.Driver;
 public sealed record LimitMoveBox(string Why, int Before, int Through, IReadOnlyList<string> Said, string? To = null, bool Moved = false);
 
 /// <summary>
-/// The ended-record moves this home keeps (LIMITRESUME1c), read without trusting their shape and written whole, as BOM-less UTF-8
-/// with LF. <b>This machine's, never the record's.</b> A file that does not read is no move: the wake tries again.
+/// The ended-record moves' boxes this home keeps (LIMITRESUME1c), read without trusting their shape and written whole, as BOM-less UTF-8
+/// with LF. <b>This machine's, never the record's.</b> A file that does not read is no move: the wake tries again. Since FOUNDATION1f-vi
+/// part a no production code writes a box: the move is kept in the move record, and a box is only what an older build wrote, imported once
+/// at the come-up (<c>LimitBoxImport</c>) and, while it stands in place, its record's <c>Never</c>. <see cref="Write"/> stays for a test to
+/// leave the box an older build would.
 /// </summary>
 public sealed class LimitBoxes(string home)
 {

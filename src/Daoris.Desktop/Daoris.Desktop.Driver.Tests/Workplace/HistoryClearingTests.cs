@@ -60,8 +60,9 @@ public sealed class HistoryClearingTests : IDisposable
         File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.Spawn,$"{id}.settings.json"), "{}");
     }
 
-    /// <summary>What follows a session's id in the three files SESSFILES1 added to the inventory.</summary>
-    private static readonly string[] Boxes = [LimitBoxes.Suffix, HandOverAskFiles.AskSuffix, HandOverAskFiles.StateSuffix];
+    /// <summary>What follows a session's id in the three files SESSFILES1 added to the inventory, and in the limit box once it is set aside (FOUNDATION1f-vi part a).</summary>
+    private static readonly string[] Boxes =
+        [LimitBoxes.Suffix, HandOverAskFiles.AskSuffix, HandOverAskFiles.StateSuffix, LimitBoxes.Suffix + MoveBoxImport.SetAsideSuffix];
 
     private string[] KeptOf(string id) =>
     [
@@ -663,8 +664,9 @@ public sealed class HistoryClearingTests : IDisposable
         var plan = await HistoryClearing.PlanAsync(world, HistoryScope.Workspace, "aurora");
         var outcome = await HistoryClearing.ClearAsync(world, HistoryScope.Workspace, "aurora", [], PluginEvents.Screen);
 
-        Assert.Equal(3, plan.Reading!.LeftOver);
-        Assert.Equal(3, outcome.LeftOver);
+        // The gone session's three boxes and its limit box set aside (FOUNDATION1f-vi part a), each a file the inventory names.
+        Assert.Equal(4, plan.Reading!.LeftOver);
+        Assert.Equal(4, outcome.LeftOver);
         Assert.All(Files("gone1"), file => Assert.False(File.Exists(file), file));
         Assert.All(Files("young1"), file => Assert.True(File.Exists(file), file));
         Assert.All(Files("c1"), file => Assert.True(File.Exists(file), file));
