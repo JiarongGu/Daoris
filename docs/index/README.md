@@ -301,7 +301,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `tools/knowledge-bench.mjs` | 46 | 900 |
 | `tools/merge-branch.mjs` | 494 | 8337 |
 | `tools/merge-queue.mjs` | 65 | 1030 |
-| `tools/orient-index.mjs` | 66 | 1425 |
+| `tools/orient-index.mjs` | 70 | 1505 |
 | `tools/process-reach.mjs` | 43 | 906 |
 | `tools/rehearsal-kit.mjs` | 55 | 1073 |
 | `tools/rehearsal-kit.test.mjs` | 45 | 918 |
