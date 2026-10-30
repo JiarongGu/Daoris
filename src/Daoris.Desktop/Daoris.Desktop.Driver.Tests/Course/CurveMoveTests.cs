@@ -178,11 +178,12 @@ public sealed class CurveMoveTests : IDisposable
 
     /// <summary>
     /// 🔴 Over its curve, with another account of the agent that has room (the switch design §4): the conversation goes on there,
-    /// by the hand-over's box with its agent unchanged, why `curve`, asked by `daoris`; the new record continues the old. The stand-in
-    /// refuses to prepare, so the new record ends failed: that both lines are written is the Process half's.
+    /// by the move record the store keeps (FOUNDATION1f-iii part a), with its agent unchanged, why `curve`, asked by `daoris`, and no
+    /// hand-over box beside it; the new record continues the old. The stand-in refuses to prepare, so the new record ends failed and the
+    /// hand is not made: that both lines are written is the Process half's.
     /// </summary>
     [Fact]
-    public async Task Over_its_curve_with_another_account_with_room_it_moves_there_by_the_box()
+    public async Task Over_its_curve_with_another_account_with_room_it_moves_there_by_the_record()
     {
         Said("account-1", 0.75);
         Said("account-2", 0.55);
@@ -202,6 +203,13 @@ public sealed class CurveMoveTests : IDisposable
         Assert.Equal(("c0nv0001", "curve", "daoris"), (moved.From, moved.FromWhy, moved.FromBy));
         Assert.Null(new HandOverBox(_home).Read("c0nv0001"));
         Assert.Empty(Asked());
+
+        // The move is the store's record, decided by the curve for the account named, and ended by its phase since the stand-in's start did
+        // not hand the new part back; no box was ever kept.
+        var kept = Assert.Single(new MoveStore(_home, () => StoreSettled.Yes, _ => true, "run-probe", StoreProcess.Shell).Of("c0nv0001"));
+        Assert.Equal(("curve", "daoris", "conversation", "brief", "account-3"), (kept.Why, kept.By, kept.Executor, kept.How, kept.Account));
+        Assert.False(kept.Stands, $"the move stands at {kept.PhaseWord}");
+        Assert.Empty(new HandOverBox(_home).Pending());
     }
 
     /// <summary>The conversation's record asking <paramref name="model"/> of its entry, and the composer's change kept where one is given.</summary>

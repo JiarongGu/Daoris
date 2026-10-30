@@ -3,7 +3,8 @@ namespace Daoris.Driver;
 /// <summary>A word waiting on a record's <c>said</c> as a move reads it: its id there, and whether a dispatcher marked it attempted.</summary>
 /// <param name="Word">Its id on the record, which a moved word keeps from the record it left (row d-ii part 3).</param>
 /// <param name="Attempted">Whether a dispatcher marked it attempted before a write: it may have reached its agent.</param>
-public sealed record MoveWaiting(string Word, bool Attempted);
+/// <param name="Person">Whether it is the person's own word: another author's (a helper's answer, an agent's findings, Daoris's) is a claim, never offered as theirs to say (§19.3).</param>
+public sealed record MoveWaiting(string Word, bool Attempted, bool Person = true);
 
 /// <summary>
 /// A move's destination's <c>said</c>, as the move reads and settles it (FOUNDATION1f-i part 3, D212; the foundation design §3.3, §13.4 step 4,
@@ -23,6 +24,13 @@ public interface IMoveSaid
     /// record naming those that left, written by the move itself whatever its conversation shows (round 8, <i>O7-F4</i>). Never faults.
     /// </summary>
     Task SettleAsync(string record, IReadOnlyList<string> words, CancellationToken ct);
+
+    /// <summary>
+    /// The head of the line a record is on, where it is past the record: the newest record that continues it, which only an older build makes
+    /// while a move stands (§13.4 step 5, §19.3). Null where the record is the head, or where it cannot be told now. Never faults. A reader
+    /// handed none reads every record as the head.
+    /// </summary>
+    Task<string?> HeadPastAsync(string record, CancellationToken ct) => Task.FromResult<string?>(null);
 }
 
 /// <summary>
@@ -40,7 +48,22 @@ public sealed class MoveSaidDoor(ServiceClient service, SessionEvents? events) :
         {
             // No record of this machine's by that id holds no word; a host from before `said` answers none, which cannot be told.
             if (await service.RecordAsync(record, ct).ConfigureAwait(false) is not { } read) return [];
-            return read.Said is { } said ? [.. said.Where(word => word.Id is not null).Select(word => new MoveWaiting(word.Id!, word.Attempt is not null))] : null;
+            return read.Said is { } said
+                ? [.. said.Where(word => word.Id is not null).Select(word =>
+                    new MoveWaiting(word.Id!, word.Attempt is not null, word.By is null && word.Helper is null && word.From is null))]
+                : null;
+        }
+        catch (Exception error) when (Unanswered(error, ct))
+        {
+            return null;
+        }
+    }
+
+    public async Task<string?> HeadPastAsync(string record, CancellationToken ct)
+    {
+        try
+        {
+            return WordsNever.ContinuedIn(await service.SessionRecordsJsonAsync(ct).ConfigureAwait(false), record);
         }
         catch (Exception error) when (Unanswered(error, ct))
         {

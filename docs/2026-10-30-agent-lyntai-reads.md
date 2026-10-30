@@ -1,8 +1,10 @@
-# AGENTLYNTAI1: the reads of rounds 1, 2, 3 and 4 (D191)
+# AGENTLYNTAI1: the reads of rounds 1, 2, 3, 4 and 5 (D191)
 
 The two makers' reads of each round of `docs/2026-10-30-agent-lyntai-design.md`, each written read-only and apart, neither seeing the other's
 before its own was written: for each round the Opus maker's first, and Codex's beside it, added verbatim when it lands. Round 2's reads
-follow round 1's, round 3's follow round 2's, and round 4's follow round 3's, below; round 4's both read at Daoris `42304cfea`. Each finding names the line it rests
+follow round 1's, round 3's follow round 2's, round 4's follow round 3's, and round 5's, the acceptance reads, follow round 4's, below;
+round 4's both read at Daoris `42304cfea`, round 5's Opus maker at `fbc336353` and Codex at the *Read at* offsets, both accepting (the Opus maker after four named changes, none
+blocking, taken in the design's §20). Each finding names the line it rests
 on in Daoris or in Lyntai, in the design's aliases: a bare path is under the driver library, `Tests/` is its tests, `Lyntai/Core/` and
 `Lyntai/Basic/` are Lyntai's `src/Lyntai.Core/` and `src/Lyntai.Providers.Basic/`, and a Lyntai line marked *(AG20)* is its commit
 `2fb2dc7e`'s, any other its `master` `9a41435c`'s in rounds 1 and 2; round 3's reads cite `master` at `bbbe285b`, which merged AG20. The
@@ -902,3 +904,77 @@ The Claude reader initializes that value from system frames, then updates it fro
 - **LQ17 and m-i:** LQ17 states reusable reporting needs; vendor-specific decoding belongs in the adapter. Keeping conversation word paths beside `AgentRun` until `DoorInput` preserves m-i’s cut, and adding brainstorm passes closes the identified executor omission (`P:356`, `:1124–1127`). Implementation feasibility remains **unmeasured**.
 
 Package closure, offline restore and publication layout, container cost/concurrency, installed parity, actual isolated-runtime writers, stdin passage, tool behavior by mode, usage-server tolerance and real held-permission waiting remain **unmeasured**.
+
+## The Opus maker, round 5
+
+*The Opus maker's acceptance read of round 5, read-only and apart; kept as written, its headings one level down. Its `design:` lines are round 5's as it read them, before the named changes (the design's §20).*
+
+Read-only at Daoris `fbc336353` and Lyntai `master` `bbbe285b`; nothing built or run. Unprefixed paths are under the driver library, `design:` is the design's own line, `Lyntai/` the Lyntai checkout.
+
+**Lines at this tip.** The *Read at* offsets hold: `Loop/Driver.cs` +24 past :2783, `Loop/DriverContinuations.cs` +66 past :1135, `Loop/Chat/ChatRunner.cs` +3 between :693 and :1852 and +61 past :1915. Between `01b6a6240` and the tip, FOUNDATION1j part iii touched only `Course/Chat/`, `Roles/ActorChoices.cs` and `Workplace/`; nothing under `Agents/`, `Loop/`, `Platform/` or `Events/` moved. Lines re-read at their shifted places include `Driver.cs:2962-2963`, `:3001`, `:3910-3937`, `:3500`, `:3515-3519`, `:3996-4005`; `DriverContinuations.cs:460`, `:617-651`, `:1221`, `:1392-1401`; `ChatRunner.cs:1616-1645`, `:2729-2739`, `:3023-3034`, `:3079-3124`, `:3146`, `:3608-3609`.
+
+### Verdict: accept after named changes
+
+None blocks. O5-F1 before 1b-i fixes its host policy; O5-F2 to O5-F4 before 1d, 1e-i and 1f-i respectively. Nothing blocks m-i or 1a.
+
+### 0. Round-4 findings against §19
+
+| Finding | Round 5 | Shown at |
+|---|---|---|
+| O4-F1 | **Closed, change accepted.** A refusal identified by its whole outcome (Fatal, Model, OwnerAction, the door's entry); the native guard kept; a protocol open takes the D205 path, never `ModelRefused`; a conversation's open moves its words to the pending start (`ChatRunner.cs:3079-3096`); negative cases in 1b-i and 1d. Two loose ends: O5-F1 | design:591-605, :1359, :1463, :1469, :1471 |
+| O4-F2 | **Closed, change accepted.** Rows by run; the conversation's open handed no retry (`ChatRunner.cs:3023-3034`; `Acp.cs:2253-2261`); a pass with no retry ends as it came; the only `transientWanted` sites `Driver.cs:2899`, `DriverContinuations.cs:460`. Native conversation row missing: O5-F4 | design:710-726, :1471 |
+| O4-F3 | **Closed.** The protocol-door table, LQ17's context half, R-e and §8's footer present (`AcpAgentReader.cs:20`; `AcpAgentDoor.cs:35`; `Acp.cs:3549`, `:3618`; `Driver.cs:2902-2906`). R-e1's label does not list it: O5-F3 | design:762-769, :1102-1103, :1174, :1184 |
+| O4-F4 | **Closed.** `Hit` out of the projection, compared exactly, filled from Daoris's window names (`AccountReadings.cs:305`), else LQ16 | design:654-662, :1021-1022, :1173 |
+| O4-F5 | **Closed.** The conversation's sign-out routed by the words' evidence; a native conversation and a native brainstorm pass call no account entry (`ChatRunner.cs:1616-1627`; `DriverBrainstorms.cs:786`) | design:533-540, :1363-1364, :1472 |
+| O4-F6 | **Closed.** D125's note cited (`D125.md:163-166`, `:296-297`); any fix D125's own row, independent of 1d; the rejected frame's arrival unmeasured | design:504-519 |
+| O4-F7 | **Closed, the first way.** m-i's fifth member, the restart (`DriverContinuations.cs:1392-1401`); the accessor `TransportRun`'s alone, deleted at m-ii; `LayerRun` refuses a conversation before m-ii and reads the exit from `LauncherRunner` | design:378, :1231-1233, :1461 |
+| O4-F8 | **Closed.** LQ3 asks for the observation and states the change to `Taken`; LQ16 asks for an unresolved zone's parts back | design:705-709, :648-650, :1160, :1173 |
+| §1 citation | Closed (`AccountReadings.cs:302`, `:308`, `:319`) | design:511-512 |
+| §2 item 4 | Closed: 1b-iii writes the D125 note | design:646-648, :1464 |
+
+### 1. New findings
+
+**O5-F1 (not blocking; before 1b-i fixes its host policy). Round 4's refused-model rule still stands beside round 5's.** (a) Two sentences still give the rule round 5 withdrew: §5.2's "a refused model sets the ending's `ModelRefused` from the layer's restriction" (design:498-499) and §5.3's "subject `Model` sets the ending's `ModelRefused`" (design:588-590), neither marked withdrawn (as `Hit` is at design:657, :1021). Read alone, design:588 takes a credit limit scoped to one model as a refusal, which Lyntai's classifier produces (Limit, Credit, Model, OwnerAction: `Lyntai/src/Lyntai.Core/Inference/ProviderVerdictClassifier.cs:118-127`). (b) Design:600-601 says a refusal at a protocol open "takes today's D205 path … the re-ask on the same account"; today that re-ask is on the same session, no respawn (`Acp.cs:727-760`), while AG11 ends the turn before the prompt (`Lyntai/TASKS.md:314-315`), so the re-ask depends on LQ3's "a model re-asked on the same session", and AG12's Fatal outcome should reach Daoris only where no re-ask answers. *Change:* (a) mark both sentences "withdrawn by round 5 (O4-F1, C4-4)"; (b) add at design:600 that the re-ask is LQ3's same-session re-ask, made before the run ends, and a respawn is a difference the oracle's spawn observation fails.
+
+**O5-F2 (not blocking; before 1d). The native guard's "ran nothing" has no named evidence on the layer path.** Today `_ran` is set only by a non-synthetic `assistant` message with blocks (`StructuredOutput.cs:229-232`, `:367`). The layer emits text only from stream deltas, keeps an assistant message's text blocks as fallback text, and updates `_model` from any assistant message including `<synthetic>` (`Lyntai/src/Lyntai.Providers.Basic/ClaudeCli/StreamJsonAgentReader.cs:125-126`, `:140-146`). Both spawns pass `--include-partial-messages` (`Agents/Adapters.cs:2212`; `ClaudeCli/ClaudeAgentArgs.cs:53`). Unmeasured: whether the CLI streams a `<synthetic>` message's text as deltas; if it does, a layer path reading "ran" from `TextDelta` never sets `ModelRefused`. *Change:* at design:597-599 name the evidence (no `TextDelta`, `Thinking` or `ToolCall` of the session's own in the turn); hold 1d's refused-model case on a frame stream recorded with the spawn's own flags; if the deltas exist, the case goes into LQ17's request to keep the harness's own messages apart.
+
+**O5-F3 (not blocking; before 1e-i). R-e1's label leaves out LQ17's context half.** §5.4 says it is "carried … by R-e1 where dsh's recorded frames carry it" (design:769); §7.2's R-e1 lists only LQ3's ACP half and the conditional LQ7 (design:1099-1100). *Change:* add "LQ17's context half only where dsh's frames carry `usage_update`'s figures" to R-e1, mirroring LQ7's conditional.
+
+**O5-F4 (not blocking; before 1f-i). The retry table has no native conversation row.** `ChatRetry` is handed only on the `ProtocolChat` branch (`ChatRunner.cs:1637`); `NativeChat` is built with no retry (`:1678-1691`); 1f-i binds that kind, but the table's native rows cover only a driven start or go-on and a resume (design:718-719). *Change:* add the row "native, a conversation: no episode, no go-on, the layer's delivery not read for the original words, phase `Result` or `Harness`", and a native conversation's transient failure, ending as today, to 1f-i's proof.
+
+### 2. The three owner choices
+
+D191 point 3 leaves none of these with the owner (none spends, signs in, publishes or loses data); all three are sound as stated.
+
+1. **m-i's fifth member, the restart: sound.** It matches today's `AgainAsync` (the same `ProcessStartInfo`, the same keep list, `append: true`, `prompt: null`, `resume.Again()`). A second `AgentRun` would hand the records and carriers again at a second open, risking a second opening said and a second capture writer. The fifth member is narrower and dies at m-ii; `LayerRun` implements it at 1d, which does not wait for m-ii; 1d's proof holds "tried once and then `exited`" on both paths (design:1469).
+2. **Asking Lyntai for the native conversation's naming (LQ17 widened) rather than correcting the `init` boundary: sound.** Today's boundary is D189's and tested (`Tests/Loop/NativeResumeTests.cs:80-92`); Lyntai keys on the id deliberately because "not every emitter sets" `init` (`StreamJsonAgentReader.cs:74`), so the need is a host's. The fallback is named: a correction reviewed against D189 before 1d. Risk: Lyntai may answer it cannot tell initialization apart for every emitter; then 1d's path is that correction. Unmeasured: whether any Claude CLI emitter announces a session by a frame other than `init`.
+3. **D125's own row for native-door cooling: sound to keep it out of this design and 1d; file the row.** The defect is real (the same account picked into the same refusal until strikes park the quest); D125 gates it on evidence TOOL4b did not record (the native limit result "read and not measured", `D125.md:296-297`); no open row names it. File it as a D125 correction waiting on a recorded native limit (the recording spends an account: the owner's yes). 1d's proof follows whichever path is current (design:518), so its order against 1d is free.
+
+### 3. Unmeasured
+
+Whether a `<synthetic>` message streams deltas (O5-F2); whether dsh's frames carry `usage_update`'s figures (O5-F3); whether Lyntai can supply initialization evidence for every emitter (LQ17); whether the native stream sends a `rejected` frame at a limit; whether a usage read reaches the walk before the next start; whether a frame's `resetsAt` and its sentence agree to the minute; the vendors' access fields (LQ11); whether the installed usage servers tolerate the eager order; stdin passage and the tools per mode; the isolated runtime's writers; everything else §14 lists.
+
+## Codex, round 5
+
+*Codex's acceptance read of round 5, read-only, written without seeing the Opus maker's; kept verbatim (it has no headings of its own). Its `P:` lines are round 5's as it read them.*
+
+`P` = `docs/2026-10-30-agent-lyntai-design.md`; `D/` = `src/Daoris.Desktop/Daoris.Desktop.Driver/`; `T/` = its sibling `Daoris.Desktop.Driver.Tests/`. Lyntai references use `L/Core/` for `src/Lyntai.Core/` and `L/Basic/` for `src/Lyntai.Providers.Basic/`.
+
+| Round-4 finding | Acceptance disposition |
+|---|---|
+| **C4-1 — access evidence and account writes** | **Closed.** §19’s answer (`P:1925`) is carried into `P:521–540`, `P:627–629` and LQ11 (`P:1168`). Field evidence and the words’ readings remain separate; each reader retains its own precedence and writes. Conversation opens and prompts are included, with code-only and code-plus-matching-words cases. |
+| **C4-2 — retry applicability** | **Closed.** `P:1926` is implemented in the table at `P:714–719`: driven quest runs, conversations and passes handed no retry are distinguished. LQ3 leaves repetition of the opening operation to the host (`P:1160`); the paired proofs are at `P:724–726` and `P:1471`. |
+| **C4-3 — native naming evidence** | **Closed with a change I accept.** The design chooses the requested-evidence option (`P:1927`). LQ17 now distinguishes initialization from a later frame carrying an id and preserves the first accepted identity (`P:1174`). R-d includes it (`P:1098`), and 1d explicitly tests status-only failure, initialization and repeated/different ids (`P:1469`). |
+| **C4-4 — model scope versus refusal** | **Closed.** `P:1928` points to the whole-outcome rule at `P:591–605`: `Fatal`, model subject, `OwnerAction` and the door’s refusal entry, then mapping by door and phase under the native no-work guard. Model-scoped limit and capacity negatives are required beside `model_not_found` (`P:1463`, `P:1469`). |
+| **C4-5 — release prerequisites** | **Closed with a change I accept.** The split at `P:1261–1272` resolves `P:1929`: 1b-i uses R-a’s public members and explicitly labels tests of unavailable inputs as host-policy tests. Each later translation belongs to 1b-iii, tested through the layer before its first consuming move. The matching proof rows are `P:1463–1464`. |
+| **C4-6 — remembered model** | **Closed.** `P:1930`, `P:758` and LQ17 (`P:1174`) correctly describe one remembered model updated by assistant messages, rather than necessarily the startup model or a per-model split. |
+
+**Verdict: accept.** No named changes are required, and I have no new C5 findings.
+
+I read the acceptance portions named by §14 whole and checked their source evidence using the *Read at* offsets. The account distinction holds: `AgentErrors.Read` selects the authentication code before sign-in words (`D/Agents/AgentErrors.cs:168–176`), while `OpeningAccount` distinguishes the resulting writes (`D/Loop/DriverContinuations.cs:617–630`). The ordinary conclusion and conversation independently invoke the sentence-based sign-out reader (`D/Loop/Driver.cs:3515–3518`; `D/Loop/Chat/ChatRunner.cs:2729–2741`). Its writes include the signed-out reading, the tool’s own sign-in hold where applicable, and its note (`D/Agents/RefusedAccounts.cs:25–33`). Round 5 preserves these differences.
+
+The retry rows also match the source. Opening retries require an owner (`D/Agents/Acp.cs:1536–1540`); conversations receive that owner only after opening (`D/Loop/Chat/ChatRunner.cs:3255–3260`). Native naming remains initialization-only, with the first nonempty id retained (`D/Agents/StructuredOutput.cs:164`, `:179–183`; `T/Loop/NativeResumeTests.cs:80–92`), unlike Lyntai’s broader `SessionStarted` (`L/Basic/ClaudeCli/StreamJsonAgentReader.cs:66–79`). LQ17 addresses that difference without silently changing D189’s retry boundary.
+
+The whole-outcome model rule correctly excludes Lyntai’s model-scoped limit and capacity outcomes (`L/Core/Inference/ProviderVerdictClassifier.cs:116–140`). It also preserves the separate protocol-open path. The 1b-i / 1b-iii split keeps host-policy proof separate from proof that released layer members supply the evidence; `P:1271–1272` makes each consuming move wait. This remains consistent with D213’s package direction.
+
+Lyntai’s checkout reports `master` at `bbbe285b`. Nothing changed; no builds, tests or agent runs ran. The requested APIs’ implementation and live evidence remain **unmeasured**, including independent access evidence, emitter initialization behavior, frame-versus-sentence agreement, package closure/offline restore, container cost/concurrency and installed parity. The other runtime measurements listed in §14 remain **unmeasured in this read**. Acceptance settles the design; its release, translation and move proofs remain required.

@@ -94,12 +94,13 @@ public sealed class CommandShimTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 A shim is run by <c>cmd.exe</c>, which parses its arguments again and stops at a line break.
-    /// The pipe door's prompt is an argument with line breaks in it, so on a shim it is refused in a
-    /// sentence rather than cut short without anyone knowing.
+    /// 🔴 A shim is run by <c>cmd.exe</c>, which parses its arguments again and stops at a line break, so an argument it would
+    /// reinterpret is refused (<c>HarnessRunTests</c> holds that sentence). The pipe door's prompt, with its line breaks, now goes on
+    /// the harness's input (AGENTLYNTAI1s-i), which the shim's shell passes through unparsed: a driven start on a shim carries no
+    /// prompt in its arguments and is started, not refused.
     /// </summary>
     [Fact]
-    public void A_prompt_a_shim_s_shell_would_reinterpret_is_refused_rather_than_cut_short()
+    public void A_driven_prompt_goes_on_a_shim_s_input_so_its_shell_never_reinterprets_it()
     {
         if (!OperatingSystem.IsWindows()) return;
         NpmShim("claude");
@@ -107,11 +108,11 @@ public sealed class CommandShimTests : IDisposable
         var info = pipe.Prepare(Target(), command: null);
         info.Environment["PATH"] = _folder;
 
-        var error = Assert.Throws<DriverException>(() => HarnessProbe.Apply(info, pipe.Toolchain!, profileHome: null));
+        HarnessProbe.Apply(info, pipe.Toolchain!, profileHome: null);
 
-        Assert.Contains("cannot be passed to a Windows command shim safely", error.Message);
-        Assert.Contains("claude.cmd", error.Message, StringComparison.OrdinalIgnoreCase);
-        Assert.DoesNotContain("\n", error.Message);
+        Assert.Equal(Path.Combine(_folder, "claude.cmd"), info.FileName, ignoreCase: true);
+        Assert.True(info.RedirectStandardInput);
+        Assert.DoesNotContain(info.ArgumentList, argument => argument.Contains('\n'));
     }
 
     /// <summary>

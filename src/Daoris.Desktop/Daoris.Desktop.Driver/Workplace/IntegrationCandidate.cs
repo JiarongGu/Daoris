@@ -170,7 +170,13 @@ public static class IntegrationStepOutcomes
     /// <summary>A resume found the attempt begun and not ended, and the line not holding the candidate's tip: it runs again from its start.</summary>
     public const string Interrupted = "interrupted";
 
-    public static IReadOnlyList<string> All { get; } = [Done, Promoted, Held, HandedBack, Stopped, Interrupted];
+    /// <summary>
+    /// The judge ran the candidate's members one at a time (INTEGRATE1e part e4a): the failing members are handed back, the candidate is formed
+    /// again, and the next form takes one member. A word added beside the six, so an older step is read as it was.
+    /// </summary>
+    public const string Split = "split";
+
+    public static IReadOnlyList<string> All { get; } = [Done, Promoted, Held, HandedBack, Stopped, Interrupted, Split];
 }
 
 /// <summary>What the steps make of a member (§5.2, §17.4's states).</summary>
@@ -188,7 +194,13 @@ public static class IntegrationMemberStates
     public const string Promoted = "promoted";
     public const string Settled = "settled";
 
-    public static IReadOnlyList<string> All { get; } = [Formed, Replayed, Contained, Conflict, HandedBack, Dropped, Promoted, Settled];
+    /// <summary>
+    /// A conflict of meaning under <c>conflicts: hold</c>, or one whose session could not be told (INTEGRATE1e part e3b, §5.4): set aside, its
+    /// request open and out of the queue, for the steward's or the owner's act. A state added beside the eight, so an older row is read as it was.
+    /// </summary>
+    public const string Held = "held";
+
+    public static IReadOnlyList<string> All { get; } = [Formed, Replayed, Contained, Conflict, HandedBack, Dropped, Promoted, Settled, Held];
 }
 
 /// <summary>Why a candidate ended, freeing its line for the next.</summary>

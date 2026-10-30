@@ -53,6 +53,19 @@ public sealed class Driver(
     internal Func<Consideration, Action, CancellationToken, Task<StartRun>>? Runner { get; init; }
 
     /// <summary>
+    /// The move record the driven carry-on keeps (FOUNDATION1f-iv part a; the foundation design §3.3, §13.4): the one store the live limit move
+    /// writes, handed the lease holder's scope (executor <c>driven</c>). Made on first use, since the watch builds a driver for each look and the
+    /// store is opened for each use; a test hands one of its own run.
+    /// </summary>
+    internal ConversationMoves Moves
+    {
+        get => _moves ??= new ConversationMoves(home, service, Context.Events, output, scope: MoveTakeUpScope.LeaseHolder);
+        init => _moves = value;
+    }
+
+    private ConversationMoves? _moves;
+
+    /// <summary>
     /// How a running session is stopped for a take that lost (D68 §5): its process ended through <see cref="SessionProcesses"/>,
     /// unless a test hands in its stand-in run's stop beside <see cref="Runner"/> (DEV3b). True when the session was running here.
     /// </summary>
@@ -2569,6 +2582,35 @@ public sealed class Driver(
                 handing.Session, handing.Waiting.Where(DriverContinuations.Hands(resumed: fellBack is null, switched)).Select(word => word.Id),
                 handing.Waiting.Select(word => word.Id));
 
+        // 🔴 FOUNDATION1f-iv part a (the foundation design §3.3, §13.4 steps 1 and 3): a carry-on keeps its move record, decided before its open
+        // and asked under the key the open is sent with, so a crash between the old part's end and the new part's words is taken up and no word
+        // is sent twice. One the quest's hand-over made keeps none (row f-v's). A move already standing for the session it goes on from, or a store
+        // that will not take the decision, holds the start for the next look: nothing is opened and nothing is written. The record is let go on
+        // every way out below, ended by its phase unless it is delivered.
+        CarryOnRecord? carry = null;
+        var openKey = MoveWords.DrivenKey();
+        if (CarryOnRecord.Decision(continues, handedFrom, agent, selection.Profile) is { } decision)
+        {
+            var begun = await Moves.BeginAsync(decision, ct).ConfigureAwait(false);
+            if (begun.Move is not { } decided)
+            {
+                await fresh.LetGoAsync().ConfigureAwait(false);
+                return Hold(begun.Refused is { } unwritten
+                    ? $"its move to a new part could not be written, so it waits: {unwritten}"
+                    : $"a move of `{decision.Left}` to a new part is still standing, so `#{quest.Id}` waits for it to end.");
+            }
+
+            carry = new CarryOnRecord(decided);
+            if (carry.Opening(openKey) is { } unasked)
+            {
+                await carry.EndAsync().ConfigureAwait(false);
+                await fresh.LetGoAsync().ConfigureAwait(false);
+                return Hold($"its move to a new part could not be written, so it waits: {unasked}");
+            }
+        }
+
+        await using var recording = carry;
+
         // The ledger judges the open — the same door any other client would use. A refusal here is
         // an answer (someone else got there first), not an error. Once asked, the ledger may hold the
         // tree even where a close cuts its answer off, so a close from here leaves it (QUEUEDTREE1).
@@ -2576,12 +2618,14 @@ public sealed class Driver(
         // The tree this spawn will hold (D51) — its own where the repository opted in, the registered root otherwise. Stated rather than left to
         // the service to infer, because this side is the one that knows where it is about to run a process. Whether this is a set-up, for the
         // machine log alone, so a set-up's cost can be read back (WSSETUP11).
-        var keyed = moves is null
+        // FOUNDATION1f-iv part a: a carry-on that keeps its record is opened through the keyed door whether or not it hands a word, under the
+        // key its record names; it then asks no words to move where it hands none.
+        var keyed = moves is null && carry is null
             ? null
             : await service
                 .OpenSessionMovingAsync(
                     quest.Id, agent, selection.Version, selection.Profile, workTree, before, continues, moves, ct,
-                    setup: SetupQuests.IsSetup(quest.Title), access: access.Values)
+                    setup: SetupQuests.IsSetup(quest.Title), access: access.Values, opens: carry is null ? null : openKey)
                 .ConfigureAwait(false);
         var (sessionId, message) = keyed is not null
             ? (keyed.SessionId, keyed.Message)
@@ -2602,6 +2646,11 @@ public sealed class Driver(
             return new StartRun(
                 $"refused  #{quest.Id} → {quest.To}: {message}", false, null, start.GoesOn ? $"the service refused the open: {message}" : null);
         }
+
+        // FOUNDATION1f-iv part a (§13.4 steps 2 to 4): the open's answer with every word it moved, by its id on the new session, then
+        // `delivering` and the prompt's mark before the take. A write the store refuses stops the take of the moved words, which wait on the new
+        // session for its own go-on, never attempted; the record is then ended by its phase below.
+        var fenced = carry is null ? null : await carry.FenceAsync(sessionId, keyed?.Moved ?? []).ConfigureAwait(false);
 
         // TREELOCK1 (D51's note): its own tree locked in its name while it holds it, so no tool that prunes merged branches takes it;
         // asked before the starting hold goes, so the look's let-go of unheld locks sees it held. Never a reason to hold the start.
@@ -2657,13 +2706,31 @@ public sealed class Driver(
             // which the ask keeps alike, each shown here under its id and its files copied here first; never by the ids the record was read with.
             var movedBy = MovedWords.Moving(keyed) ? keyed : null;
             IReadOnlyList<SaidWordView>? movedOn = null;
-            if (fellBack is not null) movedOn = await GoOns.HandedOnAsync(written!, sessionId, fellBack, ct, switched: switched, opened: movedBy).ConfigureAwait(false);
+            // FOUNDATION1f-iv part a: the record's delivery is written where the take returns, as today's take reads it, so it goes with the take
+            // only where the fence was written; where the store refused it, the moved words are not taken here and wait on the new session.
+            var delivering = fenced is null ? carry : null;
+            if (fenced is not null && movedBy is not null)
+            {
+                output?.Append(sessionId, $"— the move's record could not be written ({fenced}), so the words moved to this session wait on it.");
+            }
+            else if (fellBack is not null)
+            {
+                movedOn = await GoOns.HandedOnAsync(written!, sessionId, fellBack, ct, switched: switched, opened: movedBy, delivery: delivering)
+                    .ConfigureAwait(false);
+            }
             // SAYHELD1 (A): and those said to the session that asked while its quest waited go to its resume, the same way.
             else if (handsOn is not null)
             {
-                movedOn = await GoOns.HandedOnAsync(handsOn, sessionId, ContinueWhy.Of(ContinueWhy.Resumed), ct, resumed: true, opened: movedBy)
+                movedOn = await GoOns.HandedOnAsync(
+                        handsOn, sessionId, ContinueWhy.Of(ContinueWhy.Resumed), ct, resumed: true, opened: movedBy, delivery: delivering)
                     .ConfigureAwait(false);
             }
+
+            // The take is made and nothing is left to hand: a carry-on that moved no word, an older host's, delivers where its old record's words
+            // were taken off, or where it handed none; one whose moved words' take did not come out is ended by its phase here, not at the end of
+            // a run that lasts as long as its session does.
+            if (delivering is not null && movedBy is null) await delivering.DeliveredAsync([]).ConfigureAwait(false);
+            if (carry is not null) await carry.EndAsync().ConfigureAwait(false);
 
             var adapter = Context.Adapters.Resolve(agent);
             // What it may read and write outside its tree (D107): the rules it is handed, and the sentence
@@ -3982,6 +4049,8 @@ public sealed class Driver(
             ? Structured(adapter, process, transcript, sessionId, prompt, ct, preamble, target.PersonSaid, said, keepAs, resume, account, own, target.Handed)
             : null;
         Task capture = acp ?? structured ?? CaptureAsync(process, transcript, sessionId, ct, preamble);
+        // AGENTLYNTAI1s-i: a native harness's prompt on its input, once its output is being read, then closed.
+        await NativePrompt.WriteAsync(process, adapter, prompt, ct).ConfigureAwait(false);
 
         if (!movedFirst)
         {

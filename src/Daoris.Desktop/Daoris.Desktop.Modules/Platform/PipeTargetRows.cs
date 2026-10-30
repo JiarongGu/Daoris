@@ -152,6 +152,8 @@ internal static class PipeTargetRows
         // The tree it removes, by `id` or by `path`: its head and index, and with `force` its uncommitted bytes (§15.1 item 2).
         Row("DISCARD_SESSION_TREE", new SessionGround("id"), BranchGround.HeadOf("id"), LoopGround.Plan("tree", Page, "id", "path", "force"));
         Row("DISCARD_SESSION_BRANCH", new RepositoryGround("repository"), BranchGround.Named("repository", "branch", "named"));
+        // LANDRETIRE1: the landing branch it takes away, at the tip it was judged on: a branch that moved before the Confirm is a changed ground.
+        Row("WITHDRAW_LANDING_BRANCH", new RepositoryGround("repository"), BranchGround.Named("repository", "branch"));
         Row("RECOVERY_DROP", new RepositoryGround("repository"), new BranchGround(["repository", "refs"], payload =>
             PipeGround.Text(payload, "repository") is { Length: > 0 } repository
                 ? [.. Each(Field(payload, "refs")).Select(each => Text(At(each, "ref"))).OfType<string>().Select(name => (repository, name))]
