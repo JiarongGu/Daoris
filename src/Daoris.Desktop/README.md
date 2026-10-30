@@ -656,6 +656,16 @@ that could not start ends `failed` as a start failure, its words waiting (`Conti
 that continues another says the move on both parts (`moved.on`, `moved.from`, with the part's context and the brief's size) and in the
 machine log as `session.moved`.
 
+A driven Claude Code session's prompt goes on its standard input, never in its arguments, which any process on the machine can read
+(AGENTLYNTAI1s-i; the agent-lyntai design §9.3, D213's note): the start, the resume that carries an answer, the run that carries words said
+while it worked, and the resume's one retry spawn `claude -p --permission-mode …` (`--resume <id>` beside it on a resume) with its input
+redirected as BOM-less UTF-8, and the driver writes the prompt in one call and closes the input (`NativePrompt.WriteAsync`) once the run's
+output is being read, so a harness that writes before it reads never fills a pipe. A harness that ended before the write is its own answer:
+its exit says why, and the write's refusal is swallowed. The protocol door, the stub and a conversation are unchanged: a conversation's
+`-p --input-format stream-json` already takes its messages as lines on its input, and the protocol door writes its own frames.
+`NativePromptProcessTests` holds the bytes through the built launcher, and `SessionMessagesTickTests` a Chinese prompt and one with
+U+1F600 on a start, a go-on and a resume.
+
 A conversation, a closed quest's session and Ask Daoris's conversation move by themselves only where their own conversation is proven
 lost (SESSCTX1c's part B, D189 point 3; `ContinueReason.Lost`: `gone`, `unkept`, `unable`, `offered`). `Course/Chat/BriefedMove`
 opens the new part in the old one's tree on its agent and account, `from` why `resume`, and hands it the brief and then the person's
