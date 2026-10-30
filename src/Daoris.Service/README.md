@@ -119,6 +119,15 @@ restamp read no source: each takes the generation inside its own write and alway
 The tables are named by the schema's version (6), so a connector an older build opened before the upgrade fails at its
 next statement and never writes what this build reads.
 
+A hit's `standing:` reads the entry, its file's notes and its repository's stored reading in one read transaction
+(`IKnowledgeStore.HeldAsync`). An entry another write replaced since the search found it says `unknown`, and a status git
+did not answer says `+ uncommitted unknown`. `KnowledgeService.CiteAsync` cites an entry at that reading (`Citation`: id,
+lines, commit, fed, the body's digest) and refuses one its own record already supersedes, naming the successor.
+`RecheckAsync` compares the root's signature with the stored one and reads a moved root again, then reads the three in one
+transaction, asks the cited file alone against that commit (`UncommittedRecords.OfFile`), and the signature again. It
+answers `Holds`, `Failed` (superseded), `Amended`, or `Inconclusive` (another digest, a file modified or not asked, no
+reading, a moved root, an id gone), which asks to be cited again on another digest and on the third try at a gone id.
+
 Since **D124** (WSSETUP8), until a repository adopts, the scanner reads its root `README.md`, in any case,
 as the repository's own word. Each section split at level-two headings is one local knowledge entry carrying
 the file's path, and the part before the first heading is titled *README*. It claims no role, and is never

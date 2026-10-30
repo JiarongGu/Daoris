@@ -82,6 +82,19 @@ public sealed class InMemoryKnowledgeStore : IKnowledgeStore
         }
     }
 
+    public async Task<IndexReading?> ReadingAsync(string repository, CancellationToken ct = default)
+    {
+        await _turn.WaitAsync(ct).ConfigureAwait(false);
+        try
+        {
+            return _readings.GetValueOrDefault(repository);
+        }
+        finally
+        {
+            _turn.Release();
+        }
+    }
+
     public async Task<HeldTogether> HeldAsync(
         IReadOnlyCollection<string> ids, Func<KnowledgeEntry, bool> withFile, CancellationToken ct = default)
     {

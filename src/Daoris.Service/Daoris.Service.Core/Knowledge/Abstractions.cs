@@ -49,6 +49,9 @@ public interface IKnowledgeStore
     /// <summary>The generation each repository's reading stands at; a repository absent here stands at 0.</summary>
     Task<IReadOnlyDictionary<string, long>> GenerationsAsync(CancellationToken ct = default);
 
+    /// <summary>One repository's reading as stored, or null where none is.</summary>
+    Task<IndexReading?> ReadingAsync(string repository, CancellationToken ct = default);
+
     /// <summary>
     /// The entries by these ids, each with its file's entries where <paramref name="withFile"/> says so, and each repository's
     /// reading, read together in one read (KNOWCENTRAL2a): no write lands between the three.

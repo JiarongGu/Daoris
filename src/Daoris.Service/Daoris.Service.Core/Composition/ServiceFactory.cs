@@ -371,7 +371,9 @@ public static class ServiceFactory
             // What a hit says of its reading (KNOWFRESH1a-ii): one git status a root as it is read, never a hit.
             uncommitted: readsLocalCheckouts ? root => UncommittedRecords.Of(root, options.Documents, options.Index) : null,
             // A record holds a person's words and this machine's names: a shared host never answers one (KEEPSIZE1c).
-            records: mode == ServiceMode.Local ? records : null);
+            records: mode == ServiceMode.Local ? records : null,
+            // A citation's recheck asks of the cited file alone (KNOWCENTRAL2a).
+            fileUncommitted: readsLocalCheckouts ? UncommittedRecords.OfFile : null);
 
         // The bootstrap (D48 §3): a store that has never been managed imports its configured root ONCE
         // and says so. Without it, a machine that has been running on DAORIS_KNOWLEDGE_ROOT would come

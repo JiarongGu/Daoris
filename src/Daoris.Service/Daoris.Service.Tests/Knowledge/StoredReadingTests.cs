@@ -95,6 +95,8 @@ public sealed class StoredReadingTests : IDisposable
 
         public Task<IReadOnlyDictionary<string, long>> GenerationsAsync(CancellationToken ct = default) => inner.GenerationsAsync(ct);
 
+        public Task<IndexReading?> ReadingAsync(string repository, CancellationToken ct = default) => inner.ReadingAsync(repository, ct);
+
         public Task<HeldTogether> HeldAsync(IReadOnlyCollection<string> ids, Func<KnowledgeEntry, bool> withFile, CancellationToken ct = default) =>
             inner.HeldAsync(ids, withFile, ct);
 

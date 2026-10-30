@@ -248,6 +248,9 @@ public sealed class SqliteKnowledgeStore : IKnowledgeStore, IAsyncDisposable
             return generations;
         }, ct);
 
+    public Task<IndexReading?> ReadingAsync(string repository, CancellationToken ct = default) =>
+        Refused<IndexReading?>() ?? _db.RunAsync(() => ReadingInAsync(repository, ct), ct);
+
     /// <remarks>One read transaction (<c>BEGIN</c>, deferred): a write another process commits waits for it to end.</remarks>
     public Task<HeldTogether> HeldAsync(
         IReadOnlyCollection<string> ids, Func<KnowledgeEntry, bool> withFile, CancellationToken ct = default) =>
