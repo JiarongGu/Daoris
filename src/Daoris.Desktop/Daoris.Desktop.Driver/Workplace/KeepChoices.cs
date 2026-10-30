@@ -77,7 +77,7 @@ public static class KeepRules
         var max = set.Volume is { } total ? Math.Min(FloorPolicy.HalfGb(total), KeepKey.PartMaxGb) : KeepKey.PartMaxGb;
         return new(ChoiceRefusal.KeepOutOfRange, $"the allowance takes {AllowanceChoices(set.Volume)}; {value} is out of its bounds, so nothing was written.",
             ("kind", Allowance), ("value", value), ("min", KeepKey.AllowanceMinGb.ToString(invariant)), ("max", max.ToString(invariant)),
-            ("unit", "gb"), ("context", "gb"));
+            ("unit", "gb"), ("context", "allowance"));
     }
 
     /// <summary>The free-space floor's word (KEEP1f): set beside the kinds' rules, though it keeps no kind of its own.</summary>
