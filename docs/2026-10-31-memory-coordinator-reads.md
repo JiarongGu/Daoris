@@ -123,3 +123,33 @@ The broad order is sensible, but **not buildable as written**.
 **4. Request A** is right, with one clause too many: drop "nothing stored before the approval" (Daoris holds the successor on its own `awaiting` row and calls Lyntai only after approval; the clause would reverse `MemoryChangeGate.cs:65-68` for nothing). Add: the end's reason, or a caller's key, kept on each predecessor, so receipts settle a replacement. Holding supersession off meanwhile is adequate; prefer `Disputes` to `Amends`, which Lyntai defines as leaving the rest standing (`MemoryRelations.cs:9`).
 
 **5. Rows:** buildable once the three changes are written. 2a can start now with its coherence in the store; 2b beside it over a stand-in engine; 2c after 2b's stand-in; 2d and 2e on Lyntai's release; 2f after 2a, 2c and 2d; 2g on §6 B, 2h on §6 A, 2i on the install.
+
+## Round 4: the reads of the third revision
+
+### Codex's read
+
+1. **Verdict: accept after named changes.** Correct durable model attribution and protect 2a against already-open older writers. No further design round is necessary for these bounded corrections.
+
+2. **Round-3 blockers**
+
+- **Recovery: resolved as a contract.** §3 now holds ambiguous additions, relations and confirmations without replay until C supplies receipts. Ends recover by their operation token; another operation’s end means `stale`. This addresses the recorded Lyntai effects: `src/Lyntai.Storage.Sqlite/SqliteMemoryGraphStore.cs:83,130`, `src/Lyntai.Core/Memory/Engines/GraphMemoryEngine.cs:592`, and `src/Lyntai.Core/Storage/MemoryGraphSql.cs:173`. Lyntai source is absent from this checkout, so these remain the recorded round-3 source checks, not fresh verification.
+
+- **Atomic replacement: resolved by deferral.** Refusing `supersedes` until A removes the insert-then-end guarantee. `Disputes` correctly leaves both claims current without claiming D220 replacement.
+
+- **Read effects: resolved at the design level.** Every coordinator engine must use `ReinforceOn = None`; 2d explicitly checks owner and child reads. The supporting Lyntai citation remains qualified as above.
+
+- **Coherent recheck: resolved for participating writers.** The proposed stored generation, conditional replacement and transactional entry/marks/reading snapshot replace process-local gates. I checked every production replacement: `Knowledge/KnowledgeIndex.cs:47,67` and `Knowledge/KnowledgeService.cs:550,653,753,848`, beneath `src/Daoris.Service/Daoris.Service.Core/`. This covers refresh, ghosts, retirement, restamping, withdrawal and feeds. One compatibility exception remains below.
+
+- **Historical attribution: not fully resolved.** Per-turn reports fix first-seen deduplication, but §1 incorrectly says their models are persisted in the event log. `src/Daoris.Desktop/Daoris.Desktop.Driver/Events/Domain/SessionEvents.cs:396` marks `Models` **`[JsonIgnore]`**; `Context/Events/SessionEventLog.cs:64` serializes using that contract. **Change:** specify a machine-local durable per-turn report containing session, sequence, instant and reported model names, handed into the commit transaction. Preserve `unknown` for missing evidence. Add restart-before-landing and A→B→A proofs; keep models off shared records.
+
+- **Work without landing: resolved.** Moving operations inside completion eliminates the crash gap: `Sessions/SessionLedger.cs:1929,1974` runs through `Sessions/Sessions.cs:847`’s transaction. `Sessions/WorkRecords.cs:369,408` likewise provides the transaction containing the record and session links. Posts without landings remain staged.
+
+- **Interrupted feed: resolved as specified.** Entries and provenance must commit together. The existing split is exactly `Knowledge/KnowledgeService.cs:848,855`; `Composition/ServiceFactory.cs:312` supplies their shared connection. The fault-and-restart proof in 2a targets the correct boundary.
+
+3. **New blocking issue: older open writers bypass the reading protocol.** `Knowledge/Store/SqliteKnowledgeStore.cs:102` checks schema at open; `:154` subsequently consults cached `Refusal`, then `:167` replaces entries. An already-open older connector can therefore change bodies while leaving a valid-looking new reading untouched. **Change:** put the new entry/reading pair in versioned entry tables older writers cannot reach, and add a proof using an old connection opened before upgrade. A schema bump alone is insufficient.
+
+4. **Requests A and C: yes, right as worded.** Both require operation-key receipts committed with effects and repeat-without-effect semantics. A correctly leaves approval with Daoris.
+
+5. **Rows:** **2a needs the older-writer correction before starting as written. 2b may start now**, independently over its specified stand-in.
+
+Read only; nothing changed, and no `local/` directory was opened.
