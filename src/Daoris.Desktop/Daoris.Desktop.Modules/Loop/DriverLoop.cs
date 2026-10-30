@@ -1249,8 +1249,7 @@ public sealed class DriverLoop(
     /// since the shape is the page's contract: the routes that start a conversation hand it to their runs, and a chat the
     /// runner took up by itself is announced by it (MSG1c2).
     /// </summary>
-    internal static Task Ended(IEventBus bus, string session, string state) =>
-        bus.EmitAsync("DAORIS", EndedType, new { Session = session, State = state });
+    public static Task Ended(IEventBus bus, string session, string state) => ConversationEnds.FromRouteAsync(bus, session, state);
 
     /// <summary>The event's type, spelled here alone: a slice that wakes on it names it by this (PUSH1a).</summary>
     public const string EndedType = "SESSION_ENDED";

@@ -17,6 +17,7 @@ public static class PartEndRelay
             if (PartEnds.Judge(row, batch.Store) is not { } ended) continue;
             await bus.EmitAsync("DAORIS", DriverLoop.PartEndedType, new PartEndedTold(
                 ended.Session, ended.State, ended.Reason, ended.Class, PartEnds.Causes[ended.Class], ended.Position, ended.Store)).ConfigureAwait(false);
+            if (EndReaders.Takes(EndReader.SessionEnded, ended)) await ConversationEnds.FromJournalAsync(bus, ended.Session, ended.State).ConfigureAwait(false);
         }
     }
 }
