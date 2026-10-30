@@ -317,6 +317,31 @@ public sealed class NodeRuntime(
             .Any(json => NodeGraphs.Read(json).Graph is var graph && (Acts(graph) || QuestClosing.Holds(graph)));
 
     /// <summary>
+    /// Whether the choices arm the runtime by <c>integrate</c> alone (INTEGRATE1n part n3, F51): a landing rule carries it, and no plugin's node,
+    /// no cycle that acts and no closure graph is named beside it. Only then can the look's inventory read be narrowed to the integrating
+    /// repositories' branch units, since nothing else the pass governs reads another's.
+    /// </summary>
+    public static bool IntegratesAlone(DriverConfig config)
+    {
+        var rules = config.Landings.Values.Concat(config.WorkspaceLandings.Values).ToList();
+        return rules.Any(rule => rule.Integrate is not null && Integrates(NodeGraphHomes.Landing(rule)))
+               && !rules.Any(rule => rule.Cycle is not null && Acts(NodeGraphHomes.OfLanding(rule, LandingSource.Repository).Graph))
+               && !config.WorkCycles.Values.Concat(config.WorkspaceWorkCycles.Values).SelectMany(kinds => kinds.Values)
+                   .Any(json => NodeGraphs.Read(json).Graph is var graph && (Acts(graph) || QuestClosing.Holds(graph)));
+    }
+
+    /// <summary>Whether a repository's Current branch graph holds <c>integrate</c> (INTEGRATE1n, F51): its branch units are the pass's, and no other's.</summary>
+    public static bool Integrating(DriverConfig config, string repository, string? workspace) =>
+        Integrates(NodeGraphHomes.Work(config, repository, workspace, WorkUnitKind.Branch).Graph);
+
+    /// <summary>
+    /// Whether the look's inventory read may be narrowed to the integrating repositories' branch units (INTEGRATE1n part n3, F51):
+    /// <see cref="IntegratesAlone"/>, with no closure graph kept and no run bound to a graph version, whose quests, sessions and branches the
+    /// wider read links. Read before each look, so a run opening or a rule changing widens the next read.
+    /// </summary>
+    public bool ReadsIntegratingOnly(DriverConfig config) => IntegratesAlone(config) && !KeepsClosures && !ArmsRuns;
+
+    /// <summary>
     /// The units a graph naming a plugin's performed node governs (<see cref="NodeGraphHomes.Work"/>), in id order, each with its graph, run
     /// and declarations. A plugin's performed node is evaluated and started under its plugin's step (<paramref name="steps"/>): that step's
     /// <c>perform</c>, and its retry, timeout and evidence where the graph's node declares none. A node whose plugin declares no such step at
@@ -391,6 +416,14 @@ public sealed class NodeRuntime(
 
             if (graph is null || (!Acts(graph) && !(unit.Kind == WorkUnitKind.Branch && Integrates(graph)) && !closes)) continue;
             var (declared, dispatchable, observable) = Declare(graph, steps);
+
+            // INTEGRATE1n part n3: the inventory gives an unproven landed branch no revision (only a proven end carries a tip), and a graph is
+            // judged on one, so a branch whose graph holds `integrate` is judged on its standing landing's recorded tip, the one `handed` binds.
+            if (unit.Kind == WorkUnitKind.Branch && unit.Subject.Revision is null && Integrates(graph)
+                && unit.Records.Landings.LastOrDefault(landing => landing.GoneAt is null) is { } standing)
+            {
+                unit = unit with { Subject = unit.Subject with { Revision = standing.Tip } };
+            }
 
             // FABRIC-PERFORM1i: the host's half of the frame, the unit it is told for and its repository's identity, read once per checkout.
             var digest = NodeGraphs.Digest(graph);
@@ -1608,7 +1641,15 @@ public sealed class NodeRuntime(
     /// </summary>
     private bool OwesStart(GovernedUnit governed) =>
         records.Read(governed.Unit.Id) is { } record
-        && governed.Dispatchable.Concat(governed.Observable).Any(node => record.Statuses.GetValueOrDefault(node)?.State == NodeStates.Ready);
+        && governed.Dispatchable.Concat(governed.Observable).Concat(IntegrateIds(governed)).Any(node => record.Statuses.GetValueOrDefault(node)?.State == NodeStates.Ready);
+
+    /// <summary>
+    /// The unit's <c>integrate</c> nodes (INTEGRATE1n part n3): waited, so neither dispatchable nor observable, yet a start owed when held ready
+    /// (for the card, or a gate its request's outcome lifted), so a wake judges the unit and the look's deadline is not the only thing that does.
+    /// Only where a door is set: a runtime with none starts none, and owes none.
+    /// </summary>
+    private IEnumerable<string> IntegrateIds(GovernedUnit governed) =>
+        Integration is null ? [] : governed.Declared.Values.Where(node => node.Kind == NodeKinds.Integrate).Select(node => node.Id);
 
     /// <summary>
     /// Whether a unit's plugin nodes bind to its branch's tip read in the pass (FABRIC-PERFORM1m), its plugins are told that tip and an answer

@@ -10,10 +10,11 @@ public static class WorkInventories
     /// <summary>The facts of this home. <paramref name="roots"/> names each repository's checkout; none is read for a repository without one.</summary>
     /// <param name="inUse">The trees a session still running or waiting holds, from the service.</param>
     /// <param name="unread">Said where a repository's recovery refs were not read, and why.</param>
+    /// <param name="only">Where given, whether a repository is read at all (INTEGRATE1n part n3, F51): another's trees, records and refs are not.</param>
     public static Task<InventoryFacts> GatherAsync(
         string home, IReadOnlyDictionary<string, string> roots, IReadOnlySet<string> inUse, ICollection<string> unread,
-        CancellationToken ct = default, DateTimeOffset? now = null) =>
-        GatherAsync(home, roots, inUse, (_, said) => unread.Add(said), only: null, ct, now);
+        CancellationToken ct = default, DateTimeOffset? now = null, Func<string, bool>? only = null) =>
+        GatherAsync(home, roots, inUse, (_, said) => unread.Add(said), only, ct, now);
 
     /// <summary>
     /// One part of the inventory (FACTSPLIT1a): the units, the recoveries no unit names and what could not be read, of the
