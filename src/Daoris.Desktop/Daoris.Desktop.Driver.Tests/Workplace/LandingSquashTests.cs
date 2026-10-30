@@ -65,7 +65,7 @@ public sealed class LandingSquashTests : IDisposable
         Assert.Equal("1", (await GitAsync(root, "rev-list", "--count", $"{line}..{Named}")).Trim());
         Assert.Equal("the line moved on\n", (await GitAsync(root, "show", $"{Named}:line.txt")).Replace("\r\n", "\n"));
         Assert.Equal("the second step\n", (await GitAsync(root, "show", $"{Named}:second.txt")).Replace("\r\n", "\n"));
-        Assert.Equal("Fix the gap\n\n- the first step\n- the second step\n\nSquashed by Daoris from session `s1`\n",
+        Assert.Equal("Fix the gap\n\n- the first step\n- the second step\n\nSquashed by Daoris from session `s1`\n\n" + DaorisMaker.Trailer + "\n",
             (await GitAsync(root, "log", "-1", "--format=%B", Named)).Replace("\r\n", "\n").TrimEnd('\n') + "\n");
         Assert.Equal("Fixture <fixture@example.test>", (await GitAsync(root, "log", "-1", "--format=%an <%ae>", Named)).Trim());
         Assert.Equal("Fixture <fixture@example.test>", (await GitAsync(root, "log", "-1", "--format=%cn <%ce>", Named)).Trim());
@@ -200,7 +200,7 @@ public sealed class LandingSquashTests : IDisposable
         Assert.Equal(squashedOnce, (await GitAsync(root, "rev-parse", $"{Named}^")).Trim());
         Assert.Equal("2", (await GitAsync(root, "rev-list", "--count", $"main..{Named}")).Trim());
         Assert.Equal((await GitAsync(root, "rev-parse", $"{secondTip}^{{tree}}")).Trim(), (await GitAsync(root, "rev-parse", $"{Named}^{{tree}}")).Trim());
-        Assert.Equal("Fix the gap\n\n- the verify step\n- the docs step\n\nSquashed by Daoris from session `s2`\n",
+        Assert.Equal("Fix the gap\n\n- the verify step\n- the docs step\n\nSquashed by Daoris from session `s2`\n\n" + DaorisMaker.Trailer + "\n",
             (await GitAsync(root, "log", "-1", "--format=%B", Named)).Replace("\r\n", "\n").TrimEnd('\n') + "\n");
         var record = trees.Recorded.Of("engine", Named)!;
         Assert.Equal(made, record.Tip);

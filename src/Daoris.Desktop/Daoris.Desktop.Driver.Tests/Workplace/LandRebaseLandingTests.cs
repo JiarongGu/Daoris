@@ -163,6 +163,7 @@ public sealed class LandRebaseLandingTests : LandedFixture
             landed.Message);
         Assert.Equal("shared.txt\nwork.txt\nzline.txt\n", await GitAsync(root, "show", $"{Branch}:index/map.md"));
         Assert.Equal("Write index again from the replayed tree", (await GitAsync(root, "log", "-1", "--format=%s", Branch)).Trim());
+        Assert.Equal(DaorisMaker.Trailer, (await GitAsync(root, "log", "-1", "--format=%(trailers:key=Co-Authored-By)", Branch)).Trim());
         Assert.Equal("the work", (await GitAsync(root, "log", "-1", "--format=%s", $"{Branch}~1")).Trim());
         Assert.Equal(line, (await GitAsync(root, "rev-parse", $"{Branch}~2")).Trim());
         Assert.Equal("the work\n", await GitAsync(root, "show", $"{Branch}:work.txt"));

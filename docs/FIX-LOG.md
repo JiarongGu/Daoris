@@ -5,6 +5,13 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-31 - Daoris's own commits named no maker, so the merge queue refused a replayed branch (DAORISMAKER1)
+
+- **Symptom:** a branch whose landing replay added "Set apart what union joined in the replay" was refused: no `Co-Authored-By` line.
+- **Root cause:** the driver's own commits (set-apart, regenerated writers, squash) carried no trailer, and the check knew only the three agent makers.
+- **Fix:** `DaorisMaker.Trailer` ends each of them; the check accepts Daoris and still refuses none.
+- **Verify:** land, squash and `MAKERTRAIL1` tests green.
+
 ## 2026-10-31 - A test still pinned the first-look baseline row m-iv replaced (FOUNDATION1 m-iv)
 
 - **Symptom:** `A_wait_already_there_at_the_first_look_is_a_baseline_never_a_backlog` failed every run.
