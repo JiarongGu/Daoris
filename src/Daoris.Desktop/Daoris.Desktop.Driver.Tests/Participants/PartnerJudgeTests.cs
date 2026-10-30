@@ -31,6 +31,7 @@ public sealed class PartnerJudgeTests
         Assert.Equal(PartnerWhy.AskerUnfit, PartnerJudge.Refusal(Ask(), Lead() with { Opinion = "o1" }));
         Assert.Equal(PartnerWhy.AskerUnfit, PartnerJudge.Refusal(Ask(), Lead() with { Ask = "a1" }));
         Assert.Equal(PartnerWhy.AskerUnfit, PartnerJudge.Refusal(Ask(), Lead() with { HelpMode = "restricted" }));
+        Assert.Equal(PartnerWhy.AskerUnfit, PartnerJudge.Refusal(Ask(), Lead() with { Repository = "daoris:help", Kind = "chat" }));
         Assert.Equal(PartnerWhy.AskerUnfit, PartnerJudge.Refusal(Ask(), new PriorSession("lead", null, "working", Repository: "reports")));
         Assert.Equal(PartnerWhy.Blank, PartnerJudge.Refusal(Ask(piece: "  "), Lead()));
         Assert.Equal(PartnerWhy.Blank, PartnerJudge.Refusal(Ask(piece: new string('x', PartnerAsk.PieceLimit + 1)), Lead()));

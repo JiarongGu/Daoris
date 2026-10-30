@@ -62,7 +62,7 @@ public static class HelperJudge
     {
         if (state is { State: HelperStates.Started or HelperStates.Answered or HelperStates.Refused }) return HelperVerdict.Done;
         if (asker is null or { Teammate: true }) return HelperVerdict.Refuse(HelperWhy.AskerGone);
-        if (asker.Serves is not null || asker.Opinion is not null || asker.Ask is { Length: > 0 }) return HelperVerdict.Refuse(HelperWhy.AskerUnfit);
+        if (StartAdmission.HelperAsker(StartAdmission.Marks(asker)) is not null) return HelperVerdict.Refuse(HelperWhy.AskerUnfit);
 
         if (ask.AskedBy == HelperAsk.ByAgent)
         {

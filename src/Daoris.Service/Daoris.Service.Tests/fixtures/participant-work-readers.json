@@ -101,10 +101,9 @@
       "note": "judges who may ask a helper, lead a partner's piece or hand over by the asker's marks; the start layer's (§2.3)"
     },
     "Participants/Domain/HelperJudge.cs": {
-      "lines": 2,
-      "reads": "tells",
-      "row": "1q",
-      "note": "judges who may ask a helper, lead a partner's piece or hand over by the asker's marks; the start layer's (§2.3)"
+      "lines": 1,
+      "reads": "other",
+      "note": "its asker judged by the start layer's table (StartAdmission, row 1q); the line left reads the helpers rule's `ask` mode"
     },
     "Participants/Domain/PartnerInstruction.cs": {
       "lines": 1,
@@ -112,10 +111,9 @@
       "note": "a word's author, a pass's ask, a harness's rule or a repository type of the same name; no record's mark tells a work"
     },
     "Participants/Domain/PartnerJudge.cs": {
-      "lines": 2,
-      "reads": "tells",
-      "row": "1q",
-      "note": "judges who may ask a helper, lead a partner's piece or hand over by the asker's marks; the start layer's (§2.3)"
+      "lines": 1,
+      "reads": "other",
+      "note": "its lead judged by the start layer's table (StartAdmission, row 1q), handed the record's Ask Daoris mode; the ask's own piece is read beside it"
     },
     "Participants/Domain/StartAdmission.cs": {
       "lines": 2,

@@ -20,6 +20,10 @@ public static class StartAdmission
     /// <summary>The asker is Ask Daoris's conversation (D203 point 6; the design's §7 row 9).</summary>
     public const string AskDaoris = "ask-daoris";
 
+    /// <summary>The marks a record the service answered carries, as the work's rule reads them.</summary>
+    public static WorkMarks Marks(PriorSession record) =>
+        new(record.Teammate, record.Kind, record.Repository, record.Ask, record.Serves, record.Piece, record.Opinion);
+
     /// <summary>Whether a session of <paramref name="work"/> may ask for a co-worker: a working session's alone, driven or a conversation.</summary>
     public static bool AsksCoWorker(string? work) => work is ParticipantWork.Build or ParticipantWork.Design or ParticipantWork.Chat;
 
