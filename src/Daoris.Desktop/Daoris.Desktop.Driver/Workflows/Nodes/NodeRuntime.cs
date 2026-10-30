@@ -234,6 +234,13 @@ public sealed class NodeRuntime(
 
     private IntegrateNode? _integrateNode;
 
+    /// <summary>The door a run's <c>request</c> publishes its quest through (INTEGRATE1p): none by default, so a runtime nobody wired starts none and its node waits ready.</summary>
+    public IRequestPort? Requests { get; set; }
+
+    private RequestNode Request => _requestNode ??= new RequestNode(records, () => Requests, clock);
+
+    private RequestNode? _requestNode;
+
     /// <summary>The choices the pass in hand reads, the door's rules under them: set by a pass holding <see cref="_one"/>.</summary>
     private DriverConfig? _config;
 
@@ -251,7 +258,7 @@ public sealed class NodeRuntime(
     /// so a pass over a node clears its hold before the next look. Empty before a pass has read.
     /// </summary>
     public IReadOnlyList<RequestHold> RequestHolds() =>
-        _governed is { } governed ? Daoris.Driver.RequestHolds.Of(governed.Values, records.Read) : [];
+        _governed is { } governed ? Daoris.Driver.RequestHolds.Of(governed.Values, records.Read, _quests) : [];
 
     private readonly Func<bool> _holdsLease = holdsLease ?? (() => true);
 
@@ -819,6 +826,13 @@ public sealed class NodeRuntime(
                 said.AddRange(Integrate.TakeSaid());
             }
 
+            // INTEGRATE1p (§17.5): a run's request is read on this look's projection of its quest before any new start, its key found first.
+            if (Requests is not null)
+            {
+                done.AddRange(await Request.ReconcileAsync(governed.Values, _quests, ct).ConfigureAwait(false));
+                said.AddRange(Request.TakeSaid());
+            }
+
             var named = done.Select(each => each.Unit).Concat(lagging.Select(each => each.Unit)).ToHashSet(StringComparer.Ordinal);
             var owing = new List<GovernedUnit>();
             foreach (var each in governed.Values)
@@ -913,6 +927,13 @@ public sealed class NodeRuntime(
                     var integrating = await IntegrateAsync(governed, node, start, evaluated.Statuses, said, ct).ConfigureAwait(false);
                     if (integrating is not null) done.Add(integrating);
                     started |= integrating is { What: not PerformedWhat.Refused };
+                }
+                // INTEGRATE1p (§17.5): a run's request, published under its key once its start is standing say-so.
+                else if (node.Kind == NodeKinds.Request && governed.Scope is not null)
+                {
+                    var asked = await RequestAsync(governed, node, start, evaluated.Statuses[start.Node], said, ct).ConfigureAwait(false);
+                    if (asked is not null) done.Add(asked);
+                    started |= asked is { What: not PerformedWhat.Refused };
                 }
                 // FABRIC-CUTOVER1d (the cutover design §3, §4): the doors read a run's record, so its opinion and look are begun as a unit's are,
                 // their gates read on its branch at the tip this pass read.
@@ -1013,6 +1034,31 @@ public sealed class NodeRuntime(
     }
 
     /// <summary>
+    /// A <c>request</c> the evaluation proposes to start (INTEGRATE1p; §17.5): sent only under <c>start: automatic</c>, the person's standing
+    /// say-so, and never to the run's own repository. Left ready, saying why once a look; null where nothing was done.
+    /// </summary>
+    private async Task<WorkPerformed?> RequestAsync(
+        GovernedUnit governed, NodeDeclaration node, WireStart start, NodeStatus status, List<string> said, CancellationToken ct)
+    {
+        if (Requests is null) return null;
+        var unit = governed.Unit.Id;
+        string? why = RequestOptions.Problem(node) is { } option ? $"its `{option}` option is not one a request takes"
+            : string.Equals(RequestOptions.Repository(NodeOptions.Text(node, "to") ?? ""), governed.Watched.Repository, StringComparison.OrdinalIgnoreCase)
+                ? "a request never goes to the run's own repository: a quest to itself is the chain's"
+            : NodeOptions.Text(node, "start") != RequestOptions.Automatic ? "it waits for your send" : null;
+        if (why is not null)
+        {
+            var line = $"work  {unit}: its request `{node.Id}` was not sent: {why}.";
+            if (!said.Contains(line, StringComparer.Ordinal)) said.Add(line);
+            return null;
+        }
+
+        var sent = await Request.StartAsync(node, start, status, governed.Run, governed.Watched.Repository, _quests, ct).ConfigureAwait(false);
+        said.AddRange(Request.TakeSaid());
+        return sent;
+    }
+
+    /// <summary>
     /// <c>work.integrated</c> (INTEGRATE1g; §5.1, FOUNDATION1 §4.2): a <c>line</c> this round moved to reached, in a graph whose <c>integrate</c> is
     /// reached, is the line holding work the unit's integration promoted. Told once, as the move is kept once.
     /// </summary>
@@ -1070,7 +1116,10 @@ public sealed class NodeRuntime(
         var settled = !NodeStates.Live.Contains(WorkPerformer.StatusOf(record, governed.Graph.End).State)
                       || !governed.Graph.Nodes.Any(node => WorkPerformer.StatusOf(record, node.Id).State
                           is NodeStates.Ready or NodeStates.Active or NodeStates.Unknown or NodeStates.Invalidated);
-        if (!settled) return;
+        // INTEGRATE1p (C33): a declined request waits on the person's word, so the run is not over while one stands.
+        var held = governed.Graph.Nodes.Any(node => node.Kind == NodeKinds.Request && NodeOptions.Text(node, "declined") != RequestOptions.Stop
+            && WorkPerformer.StatusOf(record, node.Id) is { State: NodeStates.Failed, Code: RequestOptions.DeclinedCode });
+        if (!settled || held) return;
 
         var ended = new RunEnd(newest.Id, clock());
         var (refused, _) = records.Edit(unit, current => (current with { Ended = ended }, true));

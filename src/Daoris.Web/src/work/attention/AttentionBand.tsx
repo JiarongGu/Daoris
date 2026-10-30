@@ -337,11 +337,12 @@ function Band({ doors, notify, onSessions, onRun, inView }: {
     },
     // A run held at a declined request (INTEGRATE1o part o3) passed over with the person's words, as the run's view passes its node: kept
     // for the driver's next look, which applies it and clears the row; a refusal by its code, in the ask.
-    passOver: (item, words, answered) => {
+    // INTEGRATE1p (C33): the run's own request is asked again or gone on without by the same door's other two words.
+    passOver: (item, words, answered, act) => {
       const node = item.declined?.node;
       if (!node) { answered.done(); return; }
       run(item, async () => {
-        const answer = await runNodeWord.mutateAsync({ run: item.id, node, act: 'skip', words });
+        const answer = await runNodeWord.mutateAsync({ run: item.id, node, act: act ?? 'skip', words: words || null });
         if (!answer.done) throw new Error(nodeWordRefused(t, answer));
       }, () => {}, answered);
     },

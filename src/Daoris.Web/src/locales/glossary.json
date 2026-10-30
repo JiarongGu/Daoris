@@ -290,7 +290,8 @@
         "opinion.findingsShow", "opinion.findingsHide",
         "asks.record.reviewApply", "asks.record.reviewSet", "asks.record.kindApply",
         "workflow.door.setup", "workflow.door.workspaceSetup", "workflow.run.door.*",
-        "workflow.run.node.skip", "workflow.run.node.stop", "workflow.run.node.skipMeanIt", "workflow.run.node.stopMeanIt"
+        "workflow.run.node.skip", "workflow.run.node.stop", "workflow.run.node.skipMeanIt", "workflow.run.node.stopMeanIt",
+        "workflow.run.node.askAgain", "workflow.run.node.goOn", "workflow.run.node.askAgainMeanIt", "workflow.run.node.goOnMeanIt"
       ]
     },
     "status": {

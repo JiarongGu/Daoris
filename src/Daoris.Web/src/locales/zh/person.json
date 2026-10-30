@@ -146,7 +146,7 @@
   "person.route.SET_HELP_GRANT": "更改问道衍的整理工作可以做什么",
   "person.route.WORKFLOW_LANDED": "更改一个仓库的落地路线及其检查",
   "person.route.INTEGRATION_GATES": "采纳一个仓库的集成声明",
-  "person.route.WORKFLOW_NODE": "跳过或停止一次进展中的一步",
+  "person.route.WORKFLOW_NODE": "跳过、停止、再次委托或不等回复而继续一次进展中的一步",
   "person.route.WORKFLOW_VERIFY": "验证一个仓库的某个分支或提交",
   "person.route.SET_HEAVY_GATES": "更改一个仓库的重型检查",
   "person.route.SET_HOLD": "暂停一个仓库的工作，或将其放开",

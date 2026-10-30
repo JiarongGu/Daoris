@@ -18,7 +18,7 @@ namespace Daoris.Driver;
 /// class over the client, reached through it (<c>Opinions</c>, <c>Helpers</c> and <c>Partners</c>, each its owner's member of the client; PART8): it reaches the HTTP, the
 /// JSON reading and <see cref="Opened"/> through the internal surface below (D166's PART8 note).
 /// </remarks>
-public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPort
+public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPort, IRequestPort
 {
     private readonly IServiceDoors _doors;
     private readonly string _base;
@@ -1467,6 +1467,30 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     }
 
     /// <summary>
+    /// A workflow request's quest (INTEGRATE1p, <c>POST /api/quests</c> with the request's key): the same key sent again answers the quest it
+    /// made, so a lost answer is sent once more without a second quest. The service's refusal comes back as an answer; an unanswered host throws.
+    /// </summary>
+    public async Task<RequestPublished> PublishAsync(RequestAsk ask, CancellationToken ct = default)
+    {
+        var body = WriteJson(writer =>
+        {
+            writer.WriteStartObject();
+            writer.WriteString("from", ask.From);
+            writer.WriteString("to", ask.To);
+            writer.WriteString("title", ask.Title);
+            writer.WriteString("body", ask.Body);
+            writer.WriteString("request", ask.Key);
+            writer.WriteEndObject();
+        });
+        var (ok, status, payload, root) = await PostJsonAsync("/api/quests", body, ct).ConfigureAwait(false);
+        if (root is not { } answer) return new(false, "no-door", $"the service at {_base} has no quest door ({status})", null);
+        if (!ok) return new(false, "refused", Text(answer, "error") ?? payload, null);
+        var quest = answer.TryGetProperty("quest", out var made) && made.ValueKind == JsonValueKind.Object
+            ? ReadQuests("[" + made.GetRawText() + "]").FirstOrDefault() : null;
+        return new(true, null, Text(answer, "message") ?? "", quest);
+    }
+
+    /// <summary>
     /// The driver binds a quest it took to the graph that closes it (FABRIC-CLOSE1a's <c>POST /api/quests/{id}/bind</c>), at its take. The
     /// service's sentence comes back verbatim, a refusal included, and a host older than the door is said to be.
     /// </summary>
@@ -1919,6 +1943,8 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
                 Paths = quest.TryGetProperty("paths", out var paths) && paths.ValueKind == JsonValueKind.Array
                     ? paths.EnumerateArray().Select(p => p.ValueKind == JsonValueKind.String ? p.GetString() : null).OfType<string>().ToList()
                     : [],
+                // A workflow request's key (INTEGRATE1p). Absent is a quest no request published, and a host from before it.
+                Request = Text(quest, "request") is { Length: > 0 } requested ? requested : null,
                 // Absent is not waiting: a host from before D79 answers without it.
                 Awaits = Text(quest, "awaits"),
                 // Absent is a person's publish or a chain's step: a host from before SESS1 answers without it.

@@ -192,7 +192,13 @@ public static class NodeWordActs
     /// <summary>Stop it, with the person's words where they give any (§E2's stop).</summary>
     public const string Stop = "stop";
 
-    public static readonly IReadOnlyList<string> All = [Skip, Stop];
+    /// <summary>A declined request asked again, as a new attempt under the next number (INTEGRATE1p, C33): the table's failed to ready by the person.</summary>
+    public const string AskAgain = "ask-again";
+
+    /// <summary>A declined request gone on without, with the person's words: a failed request passed over as a skip is (INTEGRATE1p, C33).</summary>
+    public const string GoOn = "go-on";
+
+    public static readonly IReadOnlyList<string> All = [Skip, Stop, AskAgain, GoOn];
 }
 
 /// <summary>

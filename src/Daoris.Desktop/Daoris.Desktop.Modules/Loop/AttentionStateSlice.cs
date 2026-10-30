@@ -122,7 +122,7 @@ public static class AttentionStateSlice
         // SESSWATCH1a: a quiet session brought to the person, or a busy one nothing is heard from.
         ["quiet"] = ["minutes", "busy", "intake", "words", "heavy"],
         // INTEGRATE1o part o3: a run held at a declined request, its node and the quest declined.
-        ["declined"] = ["node", "quest", "to", "work"],
+        ["declined"] = ["node", "quest", "to", "work", "request"],
     };
 
     /// <summary>Which shape a field holds, as <c>shape.field</c>, an object of it or a list of them; every other field is a value.</summary>
@@ -297,7 +297,7 @@ public static class AttentionStateSlice
             // INTEGRATE1o part o3: each run held at a declined request, from the node runtime's last look and its node records.
             Requests = Written(loop.RequestHolds.Select(hold => new
             {
-                hold.Run, hold.Node, hold.Repository, hold.Workspace, hold.Quest, hold.To, hold.Work, Since = Moments.Write(hold.Since),
+                hold.Run, hold.Node, hold.Repository, hold.Workspace, hold.Quest, hold.To, hold.Work, hold.Request, Since = Moments.Write(hold.Since),
             })),
             // SESSWATCH1a: each session the watcher brings to the person, from its memory.
             Quiet = Written(QuietWaits(SessionWatch.Of(loop.Events), loop.Processes)),

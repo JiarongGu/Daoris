@@ -270,6 +270,9 @@ public static class WorkflowRunWords
             },
             WorkflowGraphDetails.Reached => on is null ? "Reached." : $"Reached on {on}.",
             WorkflowGraphDetails.Skipped => step.Code == NodeSource.Person ? "Passed over for this work, by you." : "Passed over for this work by its record.",
+            // INTEGRATE1p (C33): a declined request is yours to ask again or go on without; its quest's note is what the receiver said.
+            WorkflowGraphDetails.Failed when node == NodeKinds.Request && step.Code == RequestOptions.DeclinedCode =>
+                "The repository it asked declined the quest: ask again, or go on without it with your words.",
             WorkflowGraphDetails.Failed => step.Code is { Length: > 0 } code ? $"Failed: `{code}`." : "Failed.",
             WorkflowGraphDetails.Rejected => "You refused it.",
             WorkflowGraphDetails.Stopped => "You stopped it.",

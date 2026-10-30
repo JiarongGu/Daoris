@@ -1065,6 +1065,8 @@ describe('what a row offers', () => {
     expect(attentionActs(offered('parked-quest'))).toEqual(['retry']);
     expect(attentionActs(offered('steward-stopped'))).toEqual(['retry']);
     expect(attentionActs(offered('request-declined', { declined: { node: 'requests', quest: 'q9', to: 'web' } }))).toEqual(['pass-over']);
+    // INTEGRATE1p (C33): a run's own declined request offers its two words, never the work's pass-over.
+    expect(attentionActs(offered('request-declined', { declined: { node: 'ask', quest: 'q9', to: 'web', request: true } }))).toEqual(['ask-again', 'go-on']);
     expect(attentionActs(offered('departure'))).toEqual(['accept-departure']);
     expect(attentionActs(offered('go-ahead'))).toEqual(['approve', 'refuse']);
     expect(attentionActs(offered('trust', { trust: { folder: 'f', trustFile: 'g' } }))).toEqual(['trust']);
@@ -1083,7 +1085,7 @@ describe('what a row offers', () => {
 
   it('asks once before what widens what Daoris may do, and before a choice', () => {
     expect([...ASKS_ONCE].sort())
-      .toEqual(['accept-rule', 'approve', 'choose', 'not-yet', 'opinion-anyway', 'pass-over', 'quiet-carry-on', 'quiet-stop', 'refuse', 'trust']);
+      .toEqual(['accept-rule', 'approve', 'ask-again', 'choose', 'go-on', 'not-yet', 'opinion-anyway', 'pass-over', 'quiet-carry-on', 'quiet-stop', 'refuse', 'trust']);
   });
 
   /**

@@ -146,7 +146,7 @@
   "person.route.SET_HELP_GRANT": "change what Ask Daoris's housekeeping may do",
   "person.route.WORKFLOW_LANDED": "change a repository's landed route and its gates",
   "person.route.INTEGRATION_GATES": "accept a repository's integration declaration",
-  "person.route.WORKFLOW_NODE": "pass over or stop a step of a run's workflow",
+  "person.route.WORKFLOW_NODE": "pass over, stop, ask again or go on without a step of a run's workflow",
   "person.route.WORKFLOW_VERIFY": "verify a branch or a commit of a repository",
   "person.route.SET_HEAVY_GATES": "change a repository's heavy gates",
   "person.route.SET_HOLD": "hold a repository's work, or let it go",

@@ -333,6 +333,28 @@ describe('What needs you on a machine', () => {
   });
 
   /**
+   * INTEGRATE1p (C33): a run's own declined request is listed with *Ask again…* and *Go on without it…*, each the run's node word through the
+   * run's door: the first asks once and says nothing, the second needs the person's words.
+   */
+  it('lists a run held at its own declined request and asks again, or goes on without it with the person’s words', async () => {
+    const declined = { node: 'ask', quest: 'q9', to: 'web', work: 'q1', request: true };
+    start([row('request-declined', 'r7', '2026-10-30T11:00:00Z', { where: 'engine', declined })]);
+
+    const item = await screen.findByRole('listitem', { name: 'Expose a streaming budget' });
+    expect(within(item).queryByRole('button', { name: 'Pass over…' })).toBeNull();
+    await userEvent.click(within(item).getByRole('button', { name: 'Ask again…' }));
+    await userEvent.click(within(within(item).getByRole('group', { name: 'Ask again…' })).getByRole('button', { name: 'Ask again' }));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'WORKFLOW_NODE', { payload: { run: 'r7', node: 'ask', act: 'ask-again' } }));
+
+    await userEvent.click(within(item).getByRole('button', { name: 'Go on without it…' }));
+    const asking = within(item).getByRole('group', { name: 'Go on without it…' });
+    expect(within(asking).getByRole('button', { name: 'Go on' })).toBeDisabled();
+    await userEvent.type(within(asking).getByRole('textbox'), 'web has no time');
+    await userEvent.click(within(asking).getByRole('button', { name: 'Go on' }));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'WORKFLOW_NODE', { payload: { run: 'r7', node: 'ask', act: 'go-on', words: 'web has no time' } }));
+  });
+
+  /**
    * GITAUTH1a (the git auth design §5.2, §7.4): a held git remote is listed with what waits for the person's word, and its *Try again*
    * asks the shell to lift its repositories' holds in its workspace, saying how many; one already lifted says so; a refusal in its words.
    */

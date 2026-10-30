@@ -14,6 +14,9 @@ public static class RequestOptions
     public const string Wait = "wait";
     public const string Stop = "stop";
 
+    /// <summary>The code a request fails with when its quest was declined.</summary>
+    public const string DeclinedCode = "declined";
+
     public static readonly IReadOnlyList<string> Starts = [You, Automatic];
     public static readonly IReadOnlyList<string> Untils = [Done, Taken];
     public static readonly IReadOnlyList<string> Declines = [Wait, Stop];
