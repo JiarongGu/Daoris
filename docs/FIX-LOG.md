@@ -82,6 +82,12 @@ repository.
 - **Root cause:** the hand-over called `EnsureAsync`, which starts the browser, to learn the endpoint.
 - **Fix:** it asks `EndpointAsync`; the shell hands a held port (`LazyEndpoint`) that starts the browser at the first connection.
 - **Verify:** hand-over, quest-start and chat tests red then green; relay tests.
+## 2026-10-31 - A terminal chat's running turn read idle in the window (CLITURN1)
+
+- **Symptom:** a capture showed idle during a terminal's turn; the window's stop was refused as "no door".
+- **Root cause:** the terminal owns its runner; the window's queue read fell back to idle for a chat it does not hold.
+- **Fix:** the owner tells its turns in `<id>.turn`; none told is unknown, never idle; the terminal honours a stop for its own session.
+- **Verify:** `DriverModuleTerminalTurnTests`, `TurnMarksTests`, `TerminalOwnerProcessTests`.
 
 ## 2026-10-31 - A test still pinned the first-look baseline row m-iv replaced (FOUNDATION1 m-iv)
 

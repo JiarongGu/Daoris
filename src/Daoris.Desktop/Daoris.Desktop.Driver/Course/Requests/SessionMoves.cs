@@ -32,6 +32,30 @@ public static class SessionMoves
         return new StopAnswer(stopped || orphan, orphan, elsewhere);
     }
 
+    /// <summary>How long a window's stop waits for the process that runs the session to take it (CLITURN1): short, since the owner looks within a second.</summary>
+    public static readonly TimeSpan OwnerWait = TimeSpan.FromSeconds(5);
+
+    /// <summary>
+    /// A stop of a session another Daoris process of this machine runs, asked of that process through the request folder (SESSUX1g)
+    /// and waited for until it takes it. True once the owner took it, which stops the session as its own Ctrl+C at rest does; false
+    /// once nothing took it in time, when the request is withdrawn so no process acts on it after the person was told.
+    /// </summary>
+    public static async Task<bool> StopThroughOwnerAsync(
+        string home, string id, TimeSpan wait, TimeSpan poll, Func<DateTimeOffset> clock, CancellationToken ct = default)
+    {
+        var requests = new SessionRequests(home);
+        requests.Write(new SessionRequest(id, SessionMove.Stop, clock()));
+        var waited = System.Diagnostics.Stopwatch.StartNew();
+        while (waited.Elapsed < wait)
+        {
+            await Task.Delay(poll, ct).ConfigureAwait(false);
+            if (!requests.IsPending(id)) return true;
+        }
+
+        // Withdrawn, none acts on it later; taken in this breath, the owner is stopping it.
+        return !requests.Withdraw(id);
+    }
+
     /// <summary>
     /// A parked session finished, declined or stopped (design §4): the process goes first, then the record moves, with the
     /// person's words or the sentence that says the person did it. A refusal is the ledger's, in its words.
