@@ -93,6 +93,15 @@ public sealed partial class HelpCoverageTests
     /// The integration declaration on a repository's Setup (INTEGRATE1d, the integration design §17.7): <i>Accept</i> and <i>Withdraw</i>
     /// for the <c>integration</c> object of its <c>daoris.gates.json</c>, by the blob the person read.
     /// </summary>
+    /// <summary>
+    /// <i>Verify…</i> on a repository's Workflow tab (FABRIC-PIPELINE1d part 5, D192), <c>daoris-driver verify</c>'s twin: a person's verification of a
+    /// branch or a commit under the gates they accepted.
+    /// </summary>
+    private const string VerifyRun =
+        "a verification runs the repository's own accepted gates on this machine, beside its sessions, which spends the person's machine "
+        + "and is the person's own press (D192): no proposal names `WORKFLOW_VERIFY`; Ask Daoris can name `daoris-driver verify` and the "
+        + "run's Workflow view, where the verdict shows.";
+
     private const string IntegrationDeclaration =
         "accepting a repository's integration declaration by its blob is what lets its generated-file writers, line rules and scratch "
         + "run, the person's door alone (D156), and an agent never lowers the person's part (D157 point 10): no proposal names "
@@ -979,6 +988,8 @@ public sealed partial class HelpCoverageTests
         ("projects", "useSetLanded", null, new Exempt(LandedRoute)),
         // INTEGRATE1d: the integration declaration's Accept and Withdraw, beside the landed route on a repository's Setup.
         ("projects", "useAcceptIntegration", null, new Exempt(IntegrationDeclaration)),
+        // FABRIC-PIPELINE1d part 5: *Verify…*, on a repository's Workflow tab beside the landed route's gates.
+        ("projects", "useVerify", null, new Exempt(VerifyRun)),
         // FABRIC-PIPELINE1b: *Sessions' checks*, beside the heavy gates on a repository's Setup.
         ("projects", "useSetSessionChecks", null, new Exempt(ChecksOfSessions)),
         ("projects", "useSetStanding", null, new Door("setting", "standing")),

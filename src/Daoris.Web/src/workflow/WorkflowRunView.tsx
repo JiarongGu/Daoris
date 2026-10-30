@@ -5,9 +5,10 @@ import { ExternalLink } from '../design/links';
 import { Button, Icon, Inline, Pill, Prose, SkeletonRows } from '../design/ui';
 import type { CurrentWorkflow } from './current';
 import { NodeWord } from './NodeWord';
-import { type NodeWordAnswer, type NodeWordAsk, type RunRequest, type RunStep, runTone, type WorkflowRun, type WorkflowRunAnswer } from './run';
+import { type CheckHeldAnswer, type CheckHeldAsk, type NodeWordAnswer, type NodeWordAsk, type RunRequest, type RunStep, runTone, type WorkflowRun, type WorkflowRunAnswer } from './run';
 import { whySaid } from './routeSaid';
-import { addedSaid, chatChecksSaid, graphSaid, noRunSaid, requestSaid, runSaid, runShort, stateSaid } from './runSaid';
+import { addedSaid, chatChecksSaid, graphSaid, noRunSaid, requestSaid, runSaid, runShort, stateSaid, stepWord } from './runSaid';
+import { CheckHeld } from './CheckHeld';
 import { type RunMarks, WorkflowChart } from './WorkflowChart';
 import { WorkflowHold } from './WorkflowHold';
 
@@ -47,7 +48,7 @@ const NODE_QUOTES: ReadonlySet<string> = new Set(['skipped', 'rejected', 'stoppe
  * here, the owner's control where it waits, and the door to where its record is. On the flowchart (FLOWCHART1d) the node wears
  * the state's pill itself, so its mark is drawn without it.
  */
-function StepMark({ run, step, here, doors, control, pill = true, onNodeWord }: {
+function StepMark({ run, step, here, doors, control, pill = true, onNodeWord, onHeld }: {
   run: WorkflowRun;
   step: RunStep;
   here: boolean;
@@ -55,6 +56,7 @@ function StepMark({ run, step, here, doors, control, pill = true, onNodeWord }: 
   control?: ReactNode;
   pill?: boolean;
   onNodeWord?: (ask: NodeWordAsk) => Promise<NodeWordAnswer>;
+  onHeld?: (ask: CheckHeldAsk) => Promise<CheckHeldAnswer>;
 }) {
   const { t } = useTranslation();
   const said = runSaid(t, step);
@@ -75,7 +77,7 @@ function StepMark({ run, step, here, doors, control, pill = true, onNodeWord }: 
     <div className="mt-1 grid min-w-0 gap-1">
       {(pill || here || when) && (
         <p className="m-0 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-          {pill && <Pill tone={runTone(step.state)}>{stateSaid(t, step.state)}</Pill>}
+          {pill && <Pill tone={runTone(step.state)}>{stepWord(t, step)}</Pill>}
           {here && (
             <span className="rounded-full border border-line-strong px-2 py-px text-meta text-ink-soft">{t('workflow.run.thisSession')}</span>
           )}
@@ -93,6 +95,8 @@ function StepMark({ run, step, here, doors, control, pill = true, onNodeWord }: 
       {added && <p className="m-0 text-meta text-ink-faint">{added}</p>}
       {/* FABRIC-CUTOVER1f: the person's skip and stop of a graph run's node, wherever the driver's table takes them, and a word kept. */}
       {step.node && run.graph && <NodeWord run={run.graph.run} step={step} onWord={onNodeWord} />}
+      {/* FABRIC-PIPELINE1d: a check held unknown for the person: *Run again* and *Not now*, the held attempt's own words. */}
+      {step.node === 'check' && <CheckHeld step={step} onHeld={onHeld} />}
       {control}
       {twin && <p className="m-0 text-meta text-ink-faint"><Inline text={twin} /></p>}
       {door && <div className="flex flex-wrap items-center gap-1.5"><DoorPress door={door} /></div>}
@@ -196,7 +200,7 @@ function doorFor(t: ReturnType<typeof useTranslation>['t'], run: WorkflowRun, st
 }
 
 /** One run: what it follows, where it stands in a few words, then its chart with each step's place. */
-function Run({ run, here, doors, controls, named, onNodeWord }: {
+function Run({ run, here, doors, controls, named, onNodeWord, onHeld }: {
   run: WorkflowRun;
   here?: string | null;
   doors?: RunDoors;
@@ -204,6 +208,7 @@ function Run({ run, here, doors, controls, named, onNodeWord }: {
   /** Several runs are drawn, so each says its repository first. */
   named: boolean;
   onNodeWord?: (ask: NodeWordAsk) => Promise<NodeWordAnswer>;
+  onHeld?: (ask: CheckHeldAsk) => Promise<CheckHeldAnswer>;
 }) {
   const { t } = useTranslation();
   const at = run.at ?? null;
@@ -218,6 +223,7 @@ function Run({ run, here, doors, controls, named, onNodeWord }: {
         control={step.step.id === at ? controls?.[step.step.id] : undefined}
         pill={pill}
         onNodeWord={onNodeWord}
+        onHeld={onHeld}
       />
     );
     const door = doorFor(t, run, step, doors);
@@ -227,7 +233,7 @@ function Run({ run, here, doors, controls, named, onNodeWord }: {
       mark: mark(true),
       // Its node on the flowchart (FLOWCHART1d): its state's word in `runTone`'s tone, done only where it is (a skip stays in view
       // when a long run folds), its lines without the pill the node draws, and its door for Enter.
-      state: { word: stateSaid(t, step.state), tone: runTone(step.state) },
+      state: { word: stepWord(t, step), tone: runTone(step.state) },
       settled: step.state === 'done',
       node: mark(false),
       ...(door && 'open' in door ? { open: door.open } : {}),
@@ -301,7 +307,7 @@ function Run({ run, here, doors, controls, named, onNodeWord }: {
  *
  * A molecule: the answer arrives as a prop, and every door goes out.
  */
-export function WorkflowRunView({ answer, reading = false, refusal = null, here = null, doors, controls, onNodeWord, onRetry }: {
+export function WorkflowRunView({ answer, reading = false, refusal = null, here = null, doors, controls, onNodeWord, onHeld, onRetry }: {
   /** What the shell answered; absent while it is read, or where it was refused. */
   answer?: WorkflowRunAnswer | null;
   reading?: boolean;
@@ -317,6 +323,8 @@ export function WorkflowRunView({ answer, reading = false, refusal = null, here 
    * word kept is drawn.
    */
   onNodeWord?: (ask: NodeWordAsk) => Promise<NodeWordAnswer>;
+  /** The person's *Run again* or *Not now* on a check held unknown (FABRIC-PIPELINE1d), answered by the driver; absent where nothing presses it. */
+  onHeld?: (ask: CheckHeldAsk) => Promise<CheckHeldAnswer>;
   /** Read again, where the service did not answer (CHATFLOW1b): *Try again*; absent where nothing reads again. */
   onRetry?: () => void;
 }) {
@@ -353,6 +361,7 @@ export function WorkflowRunView({ answer, reading = false, refusal = null, here 
           controls={controls}
           named={answer.runs.length > 1}
           onNodeWord={onNodeWord}
+          onHeld={onHeld}
         />
       ))}
     </div>

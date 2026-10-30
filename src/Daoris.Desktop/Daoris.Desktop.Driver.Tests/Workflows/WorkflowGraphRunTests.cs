@@ -97,6 +97,48 @@ public sealed class WorkflowGraphRunTests
     private static WorkflowRun Derive(WorkflowRunFacts facts, string graph, NodeRecord? record, params GrownBranch[] branches) =>
         WorkflowGraphRuns.Derive(new WorkflowGraphRunFacts(facts, Run, Graph(graph), record) { Branches = branches }, "default", "a1");
 
+    private const string ClaimedThenCheck = """
+        {"schemaVersion":2,"entries":["claimed"],"end":"gates",
+         "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},{"id":"gates","kind":"check","version":1,"reach":"performed"}],
+         "wires":[{"id":"c>g","kind":"after","from":"claimed","to":"gates"}]}
+        """;
+
+    private static NodeAttempt CheckAttempt(string state, string? outcome = null, string? code = null, string? resolution = null) =>
+        new("gates", 1, NodeKinds.Check, new WorkPerformCall(Self, "check", 1, "inv-1", "key-1", Tip, [], T), state)
+        { Outcome = outcome, Code = code, Resolution = resolution };
+
+    /// <summary>
+    /// FABRIC-PIPELINE1d part 5 (the pipeline design §4.4): a check's step carries the verdict's facts the page words: the gate a failed check named, and
+    /// the attempt held unknown with the words its person may say (<i>Run again</i> is <c>again</c>, <i>Not now</i> is <c>stop</c>), or kept as their stop.
+    /// </summary>
+    [Fact]
+    public void A_checks_step_names_its_failed_gate_and_its_held_attempt_with_the_words_the_person_may_say()
+    {
+        var failed = Derive(Records(Quest("q1")), ClaimedThenCheck, Record(Status("gates", NodeStates.Failed, Self, Tip)) with
+        {
+            Attempts = [CheckAttempt(AttemptStates.Settled, WorkStates.Failed, "gate-failed")],
+        });
+        // The reader names the gate from the attempt's result, which the pure derivation is handed.
+        var named = WorkflowGraphRuns.Derive(new WorkflowGraphRunFacts(Records(Quest("q1")), Run, Graph(ClaimedThenCheck),
+            Record(Status("gates", NodeStates.Failed, Self, Tip)) with { Attempts = [CheckAttempt(AttemptStates.Settled, WorkStates.Failed, "gate-failed")] })
+        { Failures = new Dictionary<string, string> { ["gates"] = "build" } }, "default", "a1");
+        Assert.Equal((null, "build"), (Step(failed, "gates").Gate, Step(named, "gates").Gate));
+
+        var held = Derive(Records(Quest("q1")), ClaimedThenCheck, Record(Status("gates", NodeStates.Unknown, Self, Tip)) with
+        {
+            Attempts = [CheckAttempt(AttemptStates.Held, WorkStates.Unknown, "bound")],
+        });
+        var step = Step(held, "gates");
+        Assert.Equal((Self, 1, "again,stop", null, "bound"), (step.Held!.Unit, step.Held.Attempt, string.Join(',', step.Held.Words), step.Held.Resolution, step.Code));
+
+        var stopped = Derive(Records(Quest("q1")), ClaimedThenCheck, Record(Status("gates", NodeStates.Unknown, Self, Tip)) with
+        {
+            Attempts = [CheckAttempt(AttemptStates.Settled, WorkStates.Unknown, "bound", HeldResolutions.Stop)],
+        });
+        Assert.Equal((Self, 1, 0, HeldResolutions.Stop), (Step(stopped, "gates").Held!.Unit, Step(stopped, "gates").Held!.Attempt, Step(stopped, "gates").Held!.Words.Count, Step(stopped, "gates").Held!.Resolution));
+        Assert.Null(Step(Derive(Records(Quest("q1")), ClaimedThenCheck, Record(Status("claimed", NodeStates.Reached, "quest:q1", "m"))), "claimed").Held);
+    }
+
     private static WorkflowRunStep Step(WorkflowRun run, string id) => run.Steps.Single(step => step.Step.Id == id);
 
     /// <summary>

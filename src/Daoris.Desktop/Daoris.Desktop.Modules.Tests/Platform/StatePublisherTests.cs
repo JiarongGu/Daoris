@@ -623,6 +623,8 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
     [InlineData("INTEGRATION_GATES", "driver", null)]
     // FABRIC-CUTOVER1f: the person's skip or stop of a run's node, kept on its record, which the run's view reads again under the driver's key.
     [InlineData("WORKFLOW_NODE", "driver", null)]
+    // FABRIC-PIPELINE1d: a verification bound for the running driver, which the Workflow tab's and the run's reads ask again under the driver's key.
+    [InlineData("WORKFLOW_VERIFY", "driver", null)]
     [InlineData("START_HELP", "sessions", null)]
     [InlineData("HELP_RENAME", "sessions,help", "id")]
     [InlineData("HELP_PIN", "sessions,help", "id")]

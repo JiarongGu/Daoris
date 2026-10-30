@@ -321,6 +321,8 @@ public sealed class PipeCensus
             "WORK_HELD",
             // FABRIC-CUTOVER1f: the person's skip or stop of a run's node, their word on what the run does next.
             "WORKFLOW_NODE",
+            // FABRIC-PIPELINE1d: a verification of a branch or a commit, the person's press, which runs the repository's accepted gates.
+            "WORKFLOW_VERIFY",
             "HELP_DISMISS", "CHANNEL_MARK",
             // NOTIFY2f: the person's news read or dismissed, which a terminal marking would hide from them.
             "NOTICES_READ", "NOTICE_DISMISS",
@@ -440,7 +442,7 @@ public sealed class PipeCensus
             // hold a start.
             "SET_HELPERS", "SET_CAP", "SET_ACTOR", "STAFFING_FOUND_ANSWER", "SET_ROLE", "SET_COOLOFF", "ACCOUNT_USE", "HARNESSES_REFRESH", "SET_HAND_OVER", "SET_OPINION",
             "SET_LANDING", "SET_REVIEW", "SET_LINE", "OPINION_ANYWAY", "OPINION_MYSELF", "WORK_HELD", "WORKFLOW_NODE", "WORK_RESUME",
-            "WORKFLOW_LANDED", "SET_KEEP", "TRUST_FOLDER", "PLUGIN_ACTION", "PLUGIN_ADD", "PLUGIN_INSTALL", "PLUGIN_UPDATE",
+            "WORKFLOW_LANDED", "WORKFLOW_VERIFY", "SET_KEEP", "TRUST_FOLDER", "PLUGIN_ACTION", "PLUGIN_ADD", "PLUGIN_INSTALL", "PLUGIN_UPDATE",
             // A process of its own that runs on past its answer, which the drain counts not and the close would cut: a plugin's try, a
             // harness's installer, updater or sign-in, and a tool's download (a managed use downloads first).
             "PLUGIN_TRY", "HARNESS_ACTION", "TOOLS_DOWNLOAD", "TOOLS_USE",

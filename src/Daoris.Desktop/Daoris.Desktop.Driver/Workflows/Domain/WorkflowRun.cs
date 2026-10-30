@@ -252,6 +252,16 @@ public static class WorkflowRunRequestKinds
 }
 
 /// <summary>
+/// A check's attempt held unknown for the person (FABRIC-PIPELINE1d): its unit and attempt, for their word on it (<c>WORK_HELD</c>), and the
+/// <see cref="HeldResolutions.Check"/> words they may say, none once their stop is kept as the <see cref="Resolution"/>.
+/// </summary>
+public sealed record WorkflowRunHeld(string Unit, int Attempt, IReadOnlyList<string> Words)
+{
+    /// <summary>The person's word kept on it: <c>stop</c>, shown as <i>Not now</i>.</summary>
+    public string? Resolution { get; init; }
+}
+
+/// <summary>
 /// One request the work's sessions made, drawn inside the work (INTEGRATE1o part o2; the integration design §17.3): a quest they published, or a
 /// helper they asked, each the record's own. Never stored: derived from the quests' and sessions' records at each look.
 /// </summary>
@@ -366,6 +376,12 @@ public sealed record WorkflowRunStep(WorkflowStep Step, string State, string Det
 
     /// <summary>The person's word on a graph run's node, kept by its door and not applied yet (FABRIC-CUTOVER1f); null where none waits.</summary>
     public NodeWord? Asked { get; init; }
+
+    /// <summary>The gate a failed check named (FABRIC-PIPELINE1d), read from the attempt's result by the reader; null on any other step.</summary>
+    public string? Gate { get; init; }
+
+    /// <summary>A check's newest attempt held unknown for the person, or settled by their stop (FABRIC-PIPELINE1d); null on any other step.</summary>
+    public WorkflowRunHeld? Held { get; init; }
 
     /// <summary>
     /// The requests the work's sessions made, on the work step only (INTEGRATE1o part o2; §17.3): the quests they published and the helpers they

@@ -3,7 +3,7 @@ import { InTheme } from '../plugins/storyIcons';
 import { chinese } from '../design/storyLanguage';
 import { Button } from '../design/ui';
 import {
-  answerOf, CHAT_RUN, FAILED, GO_AHEAD_REFUSAL, GRAPH_RUN, GRAPH_RUN_ADDED_LOOK, GRAPH_RUN_GO_AHEAD, GRAPH_RUN_GO_AHEAD_KEPT, GRAPH_RUN_REQUESTS, GRAPH_RUN_UNJUDGED,
+  answerOf, CHAT_RUN, CHECK_UNKNOWN_HELD, checkRun, FAILED, GO_AHEAD_REFUSAL, GRAPH_RUN, GRAPH_RUN_ADDED_LOOK, GRAPH_RUN_GO_AHEAD, GRAPH_RUN_GO_AHEAD_KEPT, GRAPH_RUN_REQUESTS, GRAPH_RUN_UNJUDGED,
   HELD_FOR_OPINION, IN_REVIEW, LANDED, MERGED, OPINION_DISPUTED, OPINION_SETTLED, PULL_REQUEST_OPEN, SEVERAL, WAITING_ON_YOU, WORKING,
 } from './runFixtures';
 import type { NodeWordAsk } from './run';
@@ -272,6 +272,31 @@ export const GraphRunWordKept: Story = { args: { answer: answerOf(GRAPH_RUN_GO_A
 
 // INTEGRATE1o part o2: the work's requests drawn inside its node, a decline holding the work's requests waiting on you, with Pass over….
 export const GraphRunDeclinedRequest: Story = { args: { answer: answerOf(GRAPH_RUN_REQUESTS), here: null, doors, onNodeWord: kept } };
+
+// FABRIC-PIPELINE1d part 5 (the pipeline design §4.4): a check's verdict in its status word, each in English and in 中文.
+const answered = async () => ({ done: true });
+
+/** *verified*: every gate passed at the commit. */
+export const CheckVerified: Story = { args: { answer: answerOf(checkRun('done', 'reached')), here: null } };
+export const CheckVerifiedChinese: Story = { ...CheckVerified, decorators: [chinese] };
+
+/** *failed: build*: the gate a failed check named. */
+export const CheckFailed: Story = { args: { answer: answerOf(checkRun('failed', 'failed', { code: 'gate-failed', gate: 'build' })), here: null } };
+export const CheckFailedChinese: Story = { ...CheckFailed, decorators: [chinese] };
+
+/** *waiting for its turn*: not started behind other heavy runs. */
+export const CheckWaiting: Story = { args: { answer: answerOf(checkRun('working', 'ready')), here: null } };
+export const CheckWaitingChinese: Story = { ...CheckWaiting, decorators: [chinese] };
+
+/** *not known: ran past its time*, held for the person: *Run again* and *Not now*. */
+export const CheckNotKnownHeld: Story = { args: { answer: answerOf(CHECK_UNKNOWN_HELD), here: null, onHeld: answered } };
+export const CheckNotKnownHeldChineseDark: Story = { ...CheckNotKnownHeld, decorators: [sideAt(300), chinese, dark] };
+
+/** *not now*: the person's stop kept, nothing more asked of the check. */
+export const CheckNotNow: Story = {
+  args: { answer: answerOf(checkRun('not-known', 'unknown', { held: { unit: 'run:q1', attempt: 1, words: [], resolution: 'stop' } })), here: null },
+};
+export const CheckNotNowChinese: Story = { ...CheckNotNow, decorators: [chinese] };
 
 /** **The one line** a quest's page carries among its head's facts, and an ask's for each of its runs, each a door into the run. */
 export const OneLine: StoryObj<typeof WorkflowLine> = {

@@ -236,6 +236,29 @@ export const GRAPH_RUN_REQUESTS = run([
   },
 });
 
+/**
+ * A graph run whose check stands as `state` and `detail` say, with the facts the driver reads of it (FABRIC-PIPELINE1d, the pipeline design §4.4):
+ * its gate where it failed, its held attempt where it is unknown for the person.
+ */
+export const checkRun = (state: string, detail: string, facts: Partial<RunStep> = {}): WorkflowRun => run([
+  at(nodeCell('claimed', 'work', 'agent', 'agent'), 'done', 'reached', { node: 'claimed', on: 'quest', quest: 'q1' }),
+  at(nodeCell('gates', 'check', 'automatic', 'daoris'), state, detail, { node: 'check', on: 'branch', branch: BRANCH, commit: COMMIT, ...facts }),
+  at(nodeCell('handed', 'landing', 'you', 'daoris', 'accept', { form: 'merge', accept: 'you' }), 'not-reached', 'blocked', { node: 'handed' }),
+], {
+  at: 'gates',
+  workflow: { version: 'gph-0a2b4c6d8e0f1a2b', startHolds: [], limits: {}, id: 'verify', boundVersion: 1 },
+  graph: {
+    run: 'q1', entries: ['claimed'], end: 'handed',
+    wires: [{ from: 'claimed', to: 'gates', kind: 'after' }, { from: 'gates', to: 'handed', kind: 'after' }],
+    quest: 'q1', branch: BRANCH, judged: true, unread: false, ended: null,
+  },
+});
+
+/** A check Daoris could not establish and holds for the person: *Run again* and *Not now*. */
+export const CHECK_UNKNOWN_HELD = checkRun('not-known', 'unknown', {
+  code: 'bound', acts: ['stop'], held: { unit: 'run:q1', attempt: 1, words: ['again', 'stop'], resolution: null },
+});
+
 /** A graph run Daoris has not judged yet: every node not reached, standing at its entry; no session of it has a branch yet. */
 export const GRAPH_RUN_UNJUDGED = run([
   at(nodeCell('claimed', 'work', 'agent', 'agent'), 'not-reached', 'blocked', { node: 'claimed', on: 'quest', quest: 'q1' }),

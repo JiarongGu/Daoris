@@ -167,5 +167,10 @@
   "workflow.start.landed.perRepository": "Its gates are accepted repository by repository, at each line's tip, on each repository's Workflow tab.",
   "workflow.start.landed.declaration": "daoris.gates.json at {{branch}}'s tip {{commit}}",
   "workflow.start.landed.accept": "Accept the gates",
-  "workflow.start.landed.notRun": "This build keeps the route and runs none of its checks yet."
+  "workflow.start.landed.notRun": "A verification you start here runs its checks; landed work is not verified by itself yet.",
+  "workflow.start.verify.open": "Verify…",
+  "workflow.start.verify.title": "Verify a branch or a commit of {{repository}}",
+  "workflow.start.verify.says": "Its checks run under the gates you accepted, after any verification ahead of it; the verdict shows on the run's Workflow view.",
+  "workflow.start.verify.meanIt": "Verify",
+  "workflow.start.verify.name": "a branch or a commit"
 }

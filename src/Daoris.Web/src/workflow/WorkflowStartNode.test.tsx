@@ -43,8 +43,40 @@ describe("a Workflow tab's start node", () => {
 
     const landed = node('Landed work');
     expect(landed).toHaveTextContent('Its gates run unasked as you accepted them, at blob 3b18e51 on main\'s tip aa11bb2.');
-    expect(landed).toHaveTextContent('This build keeps the route and runs none of its checks yet.');
+    expect(landed).toHaveTextContent('A verification you start here runs its checks; landed work is not verified by itself yet.');
     expect(within(landed).queryByRole('button', { name: 'Accept the gates' })).not.toBeInTheDocument();
+  });
+
+  // FABRIC-PIPELINE1d part 5: *Verify…*, daoris-driver verify's twin, asks for a branch or a commit once its gates are accepted.
+  it('offers Verify… once the gates are accepted, and sends a branch, or a commit by its hexadecimal name, for a verification', async () => {
+    const onVerify = vi.fn((_ask: unknown, answered: { done: () => void }) => answered.done());
+    render(<WorkflowTab page="repository" name="engine" current={ROUTED} onVerify={onVerify} />);
+
+    await userEvent.click(within(node('Landed work')).getByRole('button', { name: 'Verify…' }));
+    const ask = screen.getByRole('group', { name: 'Verify a branch or a commit of engine' });
+    expect(within(ask).getByRole('button', { name: 'Verify' })).toBeDisabled();
+    await userEvent.type(within(ask).getByRole('textbox', { name: 'a branch or a commit' }), 'docs/fix-header');
+    await userEvent.click(within(ask).getByRole('button', { name: 'Verify' }));
+    expect(onVerify).toHaveBeenLastCalledWith({ branch: 'docs/fix-header' }, expect.objectContaining({ done: expect.any(Function), refused: expect.any(Function) }));
+
+    await userEvent.click(within(node('Landed work')).getByRole('button', { name: 'Verify…' }));
+    await userEvent.type(screen.getByRole('textbox', { name: 'a branch or a commit' }), 'a1b2c3d');
+    await userEvent.click(screen.getByRole('button', { name: 'Verify' }));
+    expect(onVerify).toHaveBeenLastCalledWith({ commit: 'a1b2c3d' }, expect.anything());
+  });
+
+  it('offers no Verify… where its gates wait to be accepted, or no door is handed, and says it in 中文', async () => {
+    const { unmount } = render(<WorkflowTab page="repository" name="engine" current={{ ...ROUTED, start: GATES_CHANGED }} onVerify={vi.fn()} />);
+    expect(screen.queryByRole('button', { name: 'Verify…' })).not.toBeInTheDocument();
+    unmount();
+
+    const none = render(<WorkflowTab page="repository" name="engine" current={ROUTED} />);
+    expect(screen.queryByRole('button', { name: 'Verify…' })).not.toBeInTheDocument();
+    none.unmount();
+
+    await i18n.changeLanguage('zh');
+    render(<WorkflowTab page="repository" name="engine" current={ROUTED} onVerify={vi.fn()} />);
+    expect(screen.getByRole('button', { name: '验证…' })).toBeInTheDocument();
   });
 
   it("holds a changed declaration for the person's Accept the gates, showing what they accept, and the press goes out", async () => {

@@ -117,6 +117,10 @@ export const AFailurePathAtTheFloorChineseDark: Story = {
  */
 export const Routed: Story = { args: { current: ROUTED, onAcceptGates: nothing } };
 
+/** **Verify…** (FABRIC-PIPELINE1d part 5): the gates accepted, so the person may verify a branch or a commit of the repository. */
+export const WithVerify: Story = { args: { current: ROUTED, onAcceptGates: nothing, onVerify: (_ask, answered) => answered.done() } };
+export const WithVerifyChinese: Story = { ...WithVerify, decorators: [chinese] };
+
 /** The declaration at the tip changed since it was accepted: shown whole, nothing runs, and *Accept the gates* is the person's. */
 export const GatesChanged: Story = { args: { current: { ...ROUTED, start: GATES_CHANGED }, onAcceptGates: nothing } };
 

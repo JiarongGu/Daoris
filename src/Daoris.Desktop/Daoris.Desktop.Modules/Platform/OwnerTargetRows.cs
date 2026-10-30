@@ -81,6 +81,9 @@ internal static class OwnerTargetRows
         // INTEGRATE1d: a repository's integration declaration accepted by its blob, the owner's alone (D215 point 10).
         Row("INTEGRATION_GATES", Repository());
 
+        // FABRIC-PIPELINE1d: a person's verification of a branch or a commit of a repository.
+        Row("WORKFLOW_VERIFY", Repository());
+
         foreach (var route in new[]
                  {
                      "SET_LINE", "SET_LANGUAGE", "SET_LANDING", "SET_REVIEW", "SET_OPINION", "SET_HELPERS", "SET_HAND_OVER", "SET_COMMITS", "SET_ACCESS",

@@ -2,22 +2,35 @@ import { useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Flow, type FlowEdge, type FlowNode } from '../design/Flow';
 import { Button, Inline } from '../design/ui';
-import { type Answered, Refused } from '../work/InlineConfirm';
+import { type Answered, InlineConfirm, Refused } from '../work/InlineConfirm';
 import type { WorkflowLanded, WorkflowRoute, WorkflowStart } from './current';
 import { type RouteScope, whySaid } from './routeSaid';
+
+/** What *Verify…* asks of a repository: a branch, or a commit, which `daoris-driver verify` takes as `--branch` and `--commit`. */
+export type VerifyAsk = { branch: string } | { commit: string };
+
+/** A name typed as a commit where it is seven to forty hexadecimal digits, else a branch. */
+export const verifyAsk = (named: string): VerifyAsk => {
+  const word = named.trim();
+  return /^[0-9a-f]{7,40}$/i.test(word) ? { commit: word } : { branch: word };
+};
 
 /** A blob's or a commit's short name, as git abbreviates one. */
 const short = (id: string) => id.slice(0, 7);
 
 /** Where the landed route's gates stand against the line's tip, the declaration to accept, and the person's press. */
-function LandedLines({ landed, page, onAccept, accepting }: {
+function LandedLines({ landed, page, repository, onAccept, accepting, onVerify }: {
   landed: WorkflowLanded;
   page: 'repository' | 'workspace';
+  repository: string | null;
   onAccept?: (answered: Answered) => void;
   accepting?: boolean;
+  onVerify?: (ask: VerifyAsk, answered: Answered) => void;
 }) {
   const { t } = useTranslation();
   const [refused, setRefused] = useState<string | null>(null);
+  const [verifying, setVerifying] = useState(false);
+  const [named, setNamed] = useState('');
   if (landed.workflow === 'current') return null;
   const tip = landed.tip ?? null;
   const at = tip ? { branch: tip.line, commit: short(tip.commit) } : null;
@@ -60,6 +73,33 @@ function LandedLines({ landed, page, onAccept, accepting }: {
           </Button>
         </div>
       )}
+      {landed.state === 'accepted' && onVerify && page === 'repository' && !verifying && (
+        <div className="flex flex-wrap items-center gap-1.5">
+          <Button variant="ghost" className="min-h-0 border border-line px-2 py-0.5 text-small" onClick={() => setVerifying(true)}>
+            {t('workflow.start.verify.open')}
+          </Button>
+        </div>
+      )}
+      {verifying && onVerify && (
+        <InlineConfirm
+          tone="primary"
+          block
+          label={t('workflow.start.verify.title', { repository: repository ?? '' })}
+          says={t('workflow.start.verify.says')}
+          meanIt={t('workflow.start.verify.meanIt')}
+          ready={named.trim().length > 0}
+          onConfirm={(answered) => onVerify(verifyAsk(named), answered)}
+          onClose={() => { setVerifying(false); setNamed(''); }}
+        >
+          <input
+            aria-label={t('workflow.start.verify.name')}
+            placeholder={t('workflow.start.verify.name')}
+            value={named}
+            onChange={(event) => setNamed(event.target.value)}
+            className="min-h-[1.9rem] min-w-0 basis-full rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body"
+          />
+        </InlineConfirm>
+      )}
       {refused && <Refused sentence={refused} />}
       <p className="m-0 text-meta text-ink-faint">{t('workflow.start.landed.notRun')}</p>
     </div>
@@ -79,13 +119,15 @@ function LandedLines({ landed, page, onAccept, accepting }: {
  *
  * A molecule: the answer arrives as a prop, and the one press goes out.
  */
-export function WorkflowStartNode({ start, page, scope, onAccept, accepting = false }: {
+export function WorkflowStartNode({ start, page, scope, onAccept, accepting = false, onVerify }: {
   start: WorkflowStart;
   page: 'repository' | 'workspace';
   scope: RouteScope;
   /** The person's *Accept the gates*: the landed route's gates at the line's tip, accepted by their blob. */
   onAccept?: (answered: Answered) => void;
   accepting?: boolean;
+  /** The person's *Verify…* (FABRIC-PIPELINE1d): a branch or a commit verified under the accepted gates; offered once they are accepted. */
+  onVerify?: (ask: VerifyAsk, answered: Answered) => void;
 }) {
   const { t } = useTranslation();
   const headId = useId();
@@ -120,7 +162,7 @@ export function WorkflowStartNode({ start, page, scope, onAccept, accepting = fa
   wire(
     'route:landed',
     t('workflow.start.landed.title'),
-    <LandedLines landed={landed} page={page} onAccept={onAccept} accepting={accepting} />,
+    <LandedLines landed={landed} page={page} repository={scope.repository} onAccept={onAccept} accepting={accepting} onVerify={onVerify} />,
     t('workflow.start.edge.landed'),
     landed.workflow === 'current' ? { id: 'to:none', title: t('workflow.start.noVerification') } : named(landed),
     whySaid(t, landed.level, scope, null, true),

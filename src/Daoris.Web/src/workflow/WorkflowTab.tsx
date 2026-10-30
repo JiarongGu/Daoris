@@ -6,7 +6,7 @@ import type { CurrentWorkflow, WorkflowRepository } from './current';
 import type { Answered } from '../work/InlineConfirm';
 import { partSaid } from './said';
 import { type WorkflowDoors, WorkflowChart } from './WorkflowChart';
-import { WorkflowStartNode } from './WorkflowStartNode';
+import { type VerifyAsk, WorkflowStartNode } from './WorkflowStartNode';
 
 export type { WorkflowDoors } from './WorkflowChart';
 
@@ -26,6 +26,8 @@ export type WorkflowTabProps = {
   onAcceptGates?: (answered: Answered) => void;
   /** An acceptance is on its way. */
   accepting?: boolean;
+  /** The person's *Verify…* of a branch or a commit under the accepted gates (FABRIC-PIPELINE1d); none, and the start offers no press. */
+  onVerify?: (ask: VerifyAsk, answered: Answered) => void;
 };
 
 /**
@@ -42,7 +44,7 @@ export type WorkflowTabProps = {
  * **The start node comes first** (FABRIC-PIPELINE1a, `WorkflowStartNode`), where the answer carries one: each route, each kind
  * among them, wired to the workflow it names, named or Current. The chart below it draws Current; the editor is WORKFLOW1g's.
  */
-export function WorkflowTab({ page, name, current, reading = false, refusal = null, doors, onAcceptGates, accepting = false }: WorkflowTabProps & {
+export function WorkflowTab({ page, name, current, reading = false, refusal = null, doors, onAcceptGates, accepting = false, onVerify }: WorkflowTabProps & {
   page: 'repository' | 'workspace';
   /** The repository or the workspace whose page it is. */
   name: string;
@@ -93,6 +95,7 @@ export function WorkflowTab({ page, name, current, reading = false, refusal = nu
           scope={{ repository: current.repository ?? (page === 'repository' ? name : null), workspace: current.workspace }}
           onAccept={onAcceptGates}
           accepting={accepting}
+          onVerify={onVerify}
         />
       )}
 

@@ -119,6 +119,9 @@ public sealed record WorkflowGraphRunFacts(WorkflowRunFacts Run, string RunId, N
     /// is not offered, since nothing reverses the line (F50). Read by the reader, which asks the door; none here is none promoted.
     /// </summary>
     public IReadOnlySet<string> Promoted { get; init; } = new HashSet<string>(StringComparer.Ordinal);
+
+    /// <summary>The gate each failed check named (FABRIC-PIPELINE1d), by node, read by the reader from the attempt's result; none where unread.</summary>
+    public IReadOnlyDictionary<string, string> Failures { get; init; } = new Dictionary<string, string>(StringComparer.Ordinal);
 }
 
 /// <summary>
@@ -174,17 +177,21 @@ public static class WorkflowGraphRuns
             // INTEGRATE1o part o2: a declined request is read from the quests' records at this look, so the hold's code is never stored on the node.
             var held = node.Kind == NodeKinds.WorkRequests && status.State == NodeStates.Active && WorkRequests.Declined(run.Requests);
             var (state, detail) = StateOf(node, status.State, held ? WorkRequests.DeclinedCode : status.Code);
+            // FABRIC-PIPELINE1d: a check's newest attempt, held unknown for the person or settled by their stop, says why it is unknown.
+            var checkHeld = node.Kind == NodeKinds.Check && status.State == NodeStates.Unknown ? CheckHeld(facts.Record, node.Id) : null;
             var asked = facts.Record?.Pending.LastOrDefault(word => word.Node == node.Id);
             var acts = open && asked is null ? RunNodeWords.Acts(node, status, facts.Promoted.Contains(node.Id)) : [];
             var step = new WorkflowRunStep(cell, state, detail)
             {
                 Node = node.Kind,
                 Requests = node.Kind == NodeKinds.Claimed && run.Requests.Count > 0 ? run.Requests : null,
-                Code = held ? WorkRequests.DeclinedCode : status.State == NodeStates.Skipped ? status.By : status.Code,
+                Code = held ? WorkRequests.DeclinedCode : status.State == NodeStates.Skipped ? status.By : status.Code ?? checkHeld?.Code,
                 Words = status.State is NodeStates.Skipped or NodeStates.Rejected or NodeStates.Stopped ? status.Words
                     : node.Kind == NodeKinds.GoAhead ? NodeOptions.Text(node, "act") : null,
                 Acts = acts.Count > 0 ? acts : null,
                 Asked = asked,
+                Gate = node.Kind == NodeKinds.Check && status.State == NodeStates.Failed ? facts.Failures.GetValueOrDefault(node.Id) : null,
+                Held = checkHeld?.Held,
             };
             steps.Add(Observing(step, node, Bound(status), RunSubjects.Of(node, afterHanded)));
         }
@@ -253,6 +260,16 @@ public static class WorkflowGraphRuns
                     return step;
             }
         }
+    }
+
+    /// <summary>A check's newest attempt held unknown for the person, or one whose stop they kept; null where it is neither.</summary>
+    private static (WorkflowRunHeld Held, string? Code)? CheckHeld(NodeRecord? record, string node)
+    {
+        if (record?.Attempts.LastOrDefault(attempt => attempt.Node == node && attempt.Plugin == NodeKinds.Check) is not { } attempt) return null;
+        if (attempt.State == AttemptStates.Held) return (new WorkflowRunHeld(record.Unit, attempt.Attempt, HeldResolutions.Of(attempt)) { Resolution = attempt.Resolution }, attempt.Code);
+        return attempt is { State: AttemptStates.Settled, Resolution: HeldResolutions.Stop }
+            ? (new WorkflowRunHeld(record.Unit, attempt.Attempt, []) { Resolution = attempt.Resolution }, attempt.Code)
+            : null;
     }
 
     /// <summary>

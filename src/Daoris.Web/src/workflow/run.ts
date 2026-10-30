@@ -57,6 +57,10 @@ export interface RunStep {
   acts?: string[] | null;
   /** The person's word on a graph run's node, kept and not applied yet (FABRIC-CUTOVER1f); none where none waits. */
   asked?: NodeWordKept | null;
+  /** The gate a failed check named (FABRIC-PIPELINE1d); none on another step, and from a shell before it. */
+  gate?: string | null;
+  /** A check's attempt held unknown for the person, or settled by their stop (FABRIC-PIPELINE1d); none on another step. */
+  held?: CheckHeld | null;
   /**
    * The requests the work's sessions made (INTEGRATE1o part o2; the integration design §17.3), on the work step only: the quests they
    * published and the helpers they asked. None where there are none, and from a shell before it.
@@ -84,6 +88,32 @@ export interface RunRequest {
   /** What its close said, a done's note or a decline's reason, as written. */
   words?: string | null;
   at?: string | null;
+}
+
+/**
+ * A check held unknown (FABRIC-PIPELINE1d, the pipeline design §4.1): its unit and attempt, for the person's word (`WORK_HELD`), the words they
+ * may say (`again` is *Run again*, `stop` is *Not now*), and the word they gave that the driver's next look has not applied yet.
+ */
+export interface CheckHeld {
+  unit: string;
+  attempt: number;
+  words: string[];
+  resolution?: string | null;
+}
+
+/** The person's word on a held check (`WORK_HELD`): *Run again* is `again`, *Not now* is `stop`. */
+export interface CheckHeldAsk {
+  unit: string;
+  node: string;
+  attempt: number;
+  resolution: 'again' | 'stop';
+}
+
+/** What `WORK_HELD` answers: kept, or refused by its code with the driver's sentence. */
+export interface CheckHeldAnswer {
+  done: boolean;
+  refused?: string | null;
+  message?: string | null;
 }
 
 /** What the person may say of a graph run's node (FABRIC-CUTOVER1f): pass it over for the run, or stop it. */
