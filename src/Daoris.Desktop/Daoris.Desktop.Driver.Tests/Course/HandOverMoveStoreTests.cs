@@ -178,7 +178,8 @@ public sealed class HandOverMoveStoreTests : IDisposable
     {
         var ledger = new ChatLedger { Opens = opens }.Register("engine", _root);
         var client = ledger.Client();
-        ledger.Chat("c1", "working", "talk", _root, profile: "account-1");
+        // Its turns are this shell's own (a record in a live state that no turn here holds is another process's, which a press refuses).
+        ledger.Chat("c1", "stopped", "talk", _root, profile: "account-1");
         ledger.Chat("q1s", "stopped", "talk", _root, kind: "driven", quest: "q1", profile: "account-1");
         var adapters = new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
         {
@@ -237,12 +238,12 @@ public sealed class HandOverMoveStoreTests : IDisposable
         var handed = await Press(world);
 
         Assert.True(handed.Kept, handed.Message);
-        Assert.Equal("c2", handed.SessionId);
+        Assert.Equal("c3", handed.SessionId);
         Assert.Equal(("opening", "run-shell", HandOverWhy.Press, HandOverBy.Person, "talk", "account-2"), (atOpen!.PhaseWord, atOpen.ClaimRun, atOpen.Why, atOpen.By, atOpen.Agent, atOpen.Account));
         Assert.True(atOpen.Moments.ContainsKey(MoveRecordPhase.Decided) && atOpen.Moments.ContainsKey(MoveRecordPhase.OldEnded));
         Assert.StartsWith("chat-move/", atOpen.Opens, StringComparison.Ordinal);
         Assert.Equal(atOpen.Opens, openedUnder);
-        Assert.Equal(("delivering", "c2"), (atWire!.PhaseWord, atWire.Destination));
+        Assert.Equal(("delivering", "c3"), (atWire!.PhaseWord, atWire.Destination));
         Assert.Equal((MoveEffects.Prompt, (string?)null), (atWire.Effect!.What, atWire.Effect.Outcome));
         await Poll.Until(() => MoveFrom("c1")?.PhaseWord == "delivered", () => $"the move at {MoveFrom("c1")?.PhaseWord}");
         Assert.Equal(1, world.Runner.Opened!.Prompts.Count);
@@ -265,7 +266,7 @@ public sealed class HandOverMoveStoreTests : IDisposable
         world.Runner.Busy = true;
 
         var first = await Press(world);
-        var again = await world.HandOver.HandOverAsync("c1", "talk", "account-1", HandOverWhy.Press, HandOverBy.Person, Config(), null, CancellationToken.None);
+        var again = await world.HandOver.HandOverAsync("c1", "talk", "account-2", HandOverWhy.Press, HandOverBy.Person, Config(), null, CancellationToken.None);
 
         Assert.Equal(((string?)null, true), (first.SessionId, first.Kept));
         Assert.Equal((false, HandOver.Waiting), (again.Kept, again.Why));
@@ -293,6 +294,7 @@ public sealed class HandOverMoveStoreTests : IDisposable
         var world = Live();
         using var c = world.Client;
         world.Ledger.Edit("c1", record => record["state"] = "stopped");
+        _dead.Add("run-gone");
         var dead = new MoveStore(_home, () => StoreSettled.Yes, run: "run-gone", kind: StoreProcess.Shell);
         var decided = dead.Decide(Decision("c1"));
         using (var store = DesktopStore.Open(DesktopStore.LocationIn(_home), new DesktopStoreOptions { Settled = () => StoreSettled.Yes }))
@@ -306,7 +308,7 @@ public sealed class HandOverMoveStoreTests : IDisposable
 
         var taken = await world.HandOver.TakeAllAsync((_, _) => Task.CompletedTask, CancellationToken.None);
 
-        Assert.Equal("c2", Assert.Single(taken).SessionId);
+        Assert.Equal("c3", Assert.Single(taken).SessionId);
         await Poll.Until(() => MoveFrom("c1")?.PhaseWord == "delivered", () => $"the move at {MoveFrom("c1")?.PhaseWord}");
         Assert.Equal(1, world.Runner.Opened!.Prompts.Count);
     }
@@ -333,7 +335,7 @@ public sealed class HandOverMoveStoreTests : IDisposable
 
         var taken = await world.HandOver.TakeAllAsync((_, _) => Task.CompletedTask, CancellationToken.None);
 
-        Assert.Equal("c2", Assert.Single(taken).SessionId);
+        Assert.Equal("c3", Assert.Single(taken).SessionId);
         await Poll.Until(() => MoveFrom("c1")?.PhaseWord == "delivered", () => $"the move at {MoveFrom("c1")?.PhaseWord}");
         Assert.Empty(Boxes());
     }
