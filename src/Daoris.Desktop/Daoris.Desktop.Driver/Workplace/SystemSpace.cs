@@ -384,11 +384,26 @@ public static class SystemSpace
                 : null,
             ["volumeWhy"] = volume is null ? "unreadable" : null,
             ["kinds"] = kinds,
+            // KEEPSIZE1: the allowance over the whole, and the whole as the kinds' last counts sum it (null while any is not counted yet).
+            ["allowance"] = Allowance(world, policy),
             // KEEP1e: the press's run, under way or last ended in this process; none where this process ran none.
             ["run"] = world.Runs.Last(home)?.Json(),
             ["held"] = holder is null
                 ? null
                 : new JsonObject { ["pid"] = holder.Pid, ["since"] = Moments.Write(holder.Since), ["door"] = holder.Door, ["gone"] = holder.Gone },
+        };
+    }
+
+    private static JsonObject Allowance(SpaceWorld world, KeepPolicy policy)
+    {
+        var readings = SpaceKinds.Table.Select(kind => world.Sizes.Of(world.Home, kind.Id)).ToList();
+        var counted = readings.All(reading => reading is not null);
+        return new JsonObject
+        {
+            ["gb"] = policy.Limits.AllowanceGb,
+            ["default"] = policy.Limits.AllowanceGb == KeepPolicy.Default.Limits.AllowanceGb,
+            ["bytes"] = counted ? readings.Sum(reading => reading!.Bytes) : null,
+            ["partial"] = !counted || readings.Any(reading => reading!.Partial is not null),
         };
     }
 
