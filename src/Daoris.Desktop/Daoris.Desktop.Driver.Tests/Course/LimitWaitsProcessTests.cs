@@ -226,8 +226,15 @@ public sealed class LimitWaitsProcessTests : IDisposable
             kept = (await runner.SayKeptAsync(chat, "And add a test.", null, null, MessageLevel.Urgent, "press-1"))!.Word!;
         }
 
-        // The shell ended: the conversation ended with it, its waiting word still on its record.
-        Assert.Equal("stopped", ledger.State(chat));
+        // The shell ended: the conversation ended with it, its waiting word still on its record. FOUNDATION1g part c: as a driven end a limit
+        // made, `failed` with the ledger's flag and the refused turn's cooling line, so every reader reads it limited; its events still hold it
+        // waiting for an older build, which reads them alone.
+        Assert.Equal(("failed", true), (ledger.State(chat), ledger.Flag(chat, "limit")));
+        Assert.Contains(ledger.Record(chat)["noteParts"]!.AsArray(), part => part?["code"]?.GetValue<string>() == NoteCodes.AccountCoolingWindow.Code
+            || part?["code"]?.GetValue<string>() == NoteCodes.AccountCooling.Code || part?["code"]?.GetValue<string>() == NoteCodes.AccountCoolingNoWindow.Code);
+        var ended = SessionRecords.Parse(await client.SessionRecordsJsonAsync()).Single(each => each.Id == chat);
+        Assert.Equal(ShownState.Limited, ShownState.Of(ended));
+        Assert.NotNull(LimitHeld.Waiting(events.After(chat, 0).Events));
         Assert.Equal([kept], ledger.Said(chat));
 
         // Account-2 frees first; account-1 still cools.
@@ -368,6 +375,67 @@ public sealed class LimitWaitsProcessTests : IDisposable
         Assert.Equal((2, counted + 1), (ledger.Count, roster.Mark()));
         Assert.Empty(await runner.WakeLimitsAsync(config));
         Assert.Equal(2, ledger.Count);
+    }
+
+    /// <summary>
+    /// 🔴 FOUNDATION1g part c: the wake decides by the record's <c>limited</c> flag. A conversation a limit ended, its events holding none of it,
+    /// moves at the wake as one its limit holds, why <c>limit</c>, where the events alone read an ended conversation whose words wait for a
+    /// cooling account and moved it why <c>retry</c>.
+    /// </summary>
+    [Fact]
+    public async Task The_wake_reads_a_conversation_the_limit_ended_by_its_flag_where_its_events_say_nothing()
+    {
+        var ledger = new ChatLedger().Register("engine", _root);
+        ledger.Chat("c1", "failed", "acp-stub", _root, profile: "account-1").Say("w1", "Hello again.");
+        ledger.Edit("c1", record => record["limit"] = true);
+        new HarnessConversations(_home).Keep("c1", "acp-stub", "conv-account-1");
+        var config = Config();
+        var events = Events;
+        using var client = ledger.Client();
+        var adapters = AdapterSet.Built();
+        var roster = Roster(adapters);
+        Cooling("account-1", _now.AddDays(4));
+        using var runner = Runner(client, adapters, roster, events);
+
+        var woke = Assert.Single(await runner.WakeLimitsAsync(config));
+
+        Assert.Equal("c2", woke.SessionId);
+        var next = (await client.RecordAsync("c2"))!;
+        Assert.Equal(("account-2", "c1", HandOverWhy.Limit), (next.Profile, next.From, next.FromWhy));
+        await Poll.Until(() => Prompts.Any(line => IsHandedTo("account-2", line)), () => Seen(ledger, events, "c2"));
+        Assert.Equal(1, Count(Prompts.Single(line => IsHandedTo("account-2", line)), "Hello again."));
+        await Poll.Until(() => ledger.Said("c1").Count == 0, () => Seen(ledger, events, "c1"));
+    }
+
+    /// <summary>
+    /// FOUNDATION1g part c: the person's stop outranks the limit, as it does a driven end's. A conversation waiting for its limit that the
+    /// person stops ends <c>stopped</c>, no flag, and the wake leaves it.
+    /// </summary>
+    [Fact]
+    public async Task The_person_s_stop_of_a_conversation_waiting_for_its_limit_ends_it_stopped_with_no_flag()
+    {
+        var ledger = new ChatLedger().Register("engine", _root);
+        var config = Config();
+        var events = Events;
+        using var client = ledger.Client();
+        var adapters = AdapterSet.Built();
+        var roster = Roster(adapters);
+        var processes = new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions));
+        using var runner = new ChatRunner(client, adapters, _home, processes, events: events, harnesses: roster);
+
+        var chat = await WaitingAsync(runner, ledger, events, roster, config, help: false);
+        Limited("account-1");
+        Limited("account-2");
+        Assert.NotNull(roster.Limited("acp-stub", "account-2", Limit, "x0"));
+        await LimitedNowAsync(runner, ledger, events, roster, chat, "Make the port configurable.");
+
+        Assert.True(processes.Stop(chat));
+        await Poll.Until(() => ledger.State(chat) != "working", () => Seen(ledger, events, chat));
+
+        Assert.Equal(("stopped", false), (ledger.State(chat), ledger.Flag(chat, "limit")));
+        Lifted("account-1");
+        _now = _now.AddDays(8);
+        Assert.Empty(await runner.WakeLimitsAsync(config));
     }
 
     /// <summary>

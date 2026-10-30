@@ -5,6 +5,7 @@ with the version and date at release.
 
 ## Unreleased
 
+- A conversation that ends while its account's limit holds it, when Daoris quits or its agent exits, is now shown as *limited*, as a session a limit ended is, instead of stopped or finished, and it still goes on by itself at the reset or on another account. Your own stop of it stays a stop (FOUNDATION1g).
 - A driven session that finishes its quest with its work still uncommitted is now carried on in Daoris's own words to commit it, on every door: the protocol door, a native harness's session, and a closed quest's session resumed after it ended. You are no longer called in to finish a session's own work; a session still not clean after its carry-ons ends as it is, and says so (LANDBACK1).
 - A driven Claude Code session's prompt, a quest's text or your words to it, is now handed over on its standard input instead of in its command line, where any process on the machine could read it. Chinese text and emoji arrive exactly as written (AGENTLYNTAI1s-i).
 - A conversation that goes on to a new part when its account reaches its limit now keeps a record of the move in the desktop's store. A Daoris that quits during such a move has it taken up when Daoris comes back, never sending a word twice, and a move that stays stuck for ten minutes is said once on the conversation (FOUNDATION1f-ii).
