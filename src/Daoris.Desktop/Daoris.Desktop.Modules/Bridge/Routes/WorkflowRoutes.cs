@@ -435,6 +435,11 @@ public sealed class WorkflowRoutes(DriverContext context)
                 // not applied yet; null on a steps run's step and where none.
                 step.Acts,
                 Asked = step.Asked is { } asked ? new { asked.Node, asked.Act, asked.Words, asked.At } : null,
+                // INTEGRATE1o part o2, additive: the quests the work's sessions published and the helpers they asked, on the work step; null where none.
+                Requests = step.Requests?.Select(request => new
+                {
+                    request.Kind, request.Id, request.To, request.State, request.Session, request.Awaits, request.Words, request.At,
+                }).ToArray(),
             }).ToArray(),
             // FABRIC-CUTOVER1e: a run bound to a graph version, drawn from its record: its graph's wires and what its record says of it.
             Graph = run.Graph is { } graph

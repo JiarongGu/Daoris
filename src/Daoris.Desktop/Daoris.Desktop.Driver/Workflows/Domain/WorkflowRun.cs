@@ -233,6 +233,45 @@ public sealed record WorkflowRunFacts(string Repository, CurrentWorkflow Current
     /// null for a quest's run.
     /// </summary>
     public ChatRunFacts? Chat { get; init; }
+
+    /// <summary>
+    /// The requests the work's sessions made (INTEGRATE1o part o2, <see cref="WorkRequests.Draw"/>): the quests they published, and the helpers they
+    /// asked, read by the reader from every quest and session; drawn inside the work and never held on by this record.
+    /// </summary>
+    public IReadOnlyList<WorkflowRunRequest> Requests { get; init; } = [];
+}
+
+/// <summary>What a request inside the work is (<see cref="WorkflowRunRequest.Kind"/>).</summary>
+public static class WorkflowRunRequestKinds
+{
+    /// <summary>A quest a session of the work published, asked of the repository it names.</summary>
+    public const string Quest = "quest";
+
+    /// <summary>A helper a session of the work asked: a request to an agent.</summary>
+    public const string Agent = "agent";
+}
+
+/// <summary>
+/// One request the work's sessions made, drawn inside the work (INTEGRATE1o part o2; the integration design §17.3): a quest they published, or a
+/// helper they asked, each the record's own. Never stored: derived from the quests' and sessions' records at each look.
+/// </summary>
+/// <param name="Kind">One of <see cref="WorkflowRunRequestKinds"/>.</param>
+/// <param name="Id">The quest's id, or the helper's session.</param>
+/// <param name="To">The repository the quest was asked of; the helper's agent.</param>
+/// <param name="State">A quest's status lowercased (<c>open</c>, <c>taken</c>, <c>done</c>, <c>declined</c>); a helper's: <c>working</c>, <c>done</c>, <c>failed</c> or <c>stopped</c>.</param>
+public sealed record WorkflowRunRequest(string Kind, string Id, string To, string State)
+{
+    /// <summary>The session of the work that made it: the quest's publisher, the session a helper serves.</summary>
+    public string? Session { get; init; }
+
+    /// <summary>Whether a session of the work waits on its answer (D79): its quest names it and it is not closed. Never true of a helper.</summary>
+    public bool Awaits { get; init; }
+
+    /// <summary>What its close said, a done's note or a decline's reason; a helper's own note. Shown as written.</summary>
+    public string? Words { get; init; }
+
+    /// <summary>When it last moved, where its record kept a moment.</summary>
+    public DateTimeOffset? At { get; init; }
 }
 
 /// <summary>
@@ -327,6 +366,12 @@ public sealed record WorkflowRunStep(WorkflowStep Step, string State, string Det
 
     /// <summary>The person's word on a graph run's node, kept by its door and not applied yet (FABRIC-CUTOVER1f); null where none waits.</summary>
     public NodeWord? Asked { get; init; }
+
+    /// <summary>
+    /// The requests the work's sessions made, on the work step only (INTEGRATE1o part o2; §17.3): the quests they published and the helpers they
+    /// asked. Null where there are none, so a run without any reads and answers as it did before.
+    /// </summary>
+    public IReadOnlyList<WorkflowRunRequest>? Requests { get; init; }
 }
 
 /// <summary>A chain's work in one repository, read as steps (WORKFLOW1c; D157 point 11, design §5.1).</summary>
@@ -403,6 +448,8 @@ public static class WorkflowRuns
         var workStep = chat is null
             ? Work(Cell(facts, WorkflowKinds.Work), work, workSessions, facts)
             : ChatWork(Cell(facts, WorkflowKinds.Work), facts, chat, landed);
+        // INTEGRATE1o part o2 (§17.3): the requests the work's sessions made are drawn inside it, whatever state it stands at.
+        if (facts.Requests.Count > 0) workStep = workStep with { Requests = facts.Requests };
         steps.Add(workStep);
         var workDone = chat is null ? workStep.State == WorkflowRunStates.Done : Candidate(facts, chat, landed);
 

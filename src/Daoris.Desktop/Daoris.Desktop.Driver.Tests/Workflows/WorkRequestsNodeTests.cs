@@ -37,6 +37,37 @@ public sealed class WorkRequestsNodeTests
         Assert.Equal(["q1", "q2"], found.Select(quest => quest.Id));
     }
 
+    /// <summary>
+    /// What the run's view draws of each (§17.3): its repository, its state, whether a session of the work waits on it (the work quest that names it in
+    /// <c>Awaits</c> while it is not closed) and the close's note; and a helper a session of the work asked beside them, as a request to an agent.
+    /// </summary>
+    [Fact]
+    public void Each_published_quest_is_drawn_with_its_repository_state_wait_and_note_and_a_helper_beside_it_as_a_request_to_an_agent()
+    {
+        QuestView[] work = [Quest("q7", "Taken", by: null, to: "engine") with { Awaits = "q9" }];
+        QuestView[] published = [Quest("q9", "Taken"), Quest("q8", "Done", to: "docs", note: "shipped it"), Quest("q6", "Declined", note: "not here")];
+        TracedSession[] helpers =
+        [
+            new("h1", "engine", "working") { Serves = "s1", Adapter = "codex", Created = Then },
+            new("h2", "engine", "failed") { Serves = "s1", Adapter = "gemini", Note = "ran out", Updated = Then },
+        ];
+
+        var drawn = WorkRequests.Draw(published, work, helpers);
+
+        Assert.Equal(
+            [
+                ("quest", "q9", "tools", "taken", true, (string?)null), ("quest", "q8", "docs", "done", false, "shipped it"),
+                ("quest", "q6", "tools", "declined", false, "not here"), ("agent", "h1", "codex", "working", false, null), ("agent", "h2", "gemini", "failed", false, "ran out"),
+            ],
+            drawn.Select(request => (request.Kind, request.Id, request.To, request.State, request.Awaits, request.Words)));
+        Assert.All(drawn, request => Assert.Equal("s1", request.Session));
+
+        // Once it is closed its asker is resumed on the answer: the question quest still names it, and nothing waits any more.
+        Assert.False(WorkRequests.Draw([Quest("q9", "Done")], [Quest("q7", "Taken", by: null, to: "engine") with { Awaits = "q9" }], [])[0].Awaits);
+    }
+
+    private static readonly DateTimeOffset Then = new(2026, 10, 30, 9, 0, 0, TimeSpan.Zero);
+
     [Fact]
     public void It_is_active_while_one_is_open_or_taken_and_names_it()
     {

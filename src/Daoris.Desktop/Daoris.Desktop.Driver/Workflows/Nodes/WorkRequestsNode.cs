@@ -57,10 +57,3 @@ public static class WorkRequestsNode
         };
     }
 }
-
-/// <summary>What a run's published quests say beside the node that holds on them (INTEGRATE1o part o2): the one reading the run's view and its node share.</summary>
-public static class WorkRequests
-{
-    /// <summary>Whether a quest a session published was declined, which holds the work on the person's pass.</summary>
-    public static bool Declined(IEnumerable<QuestView> published) => published.Any(quest => quest.Status == "Declined");
-}
