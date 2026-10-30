@@ -23,7 +23,11 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
         if (!context.Holds(full))
         {
             return new(false, $"{path} is not a session tree — this removes only trees Daoris opened, "
-                + $"under {context.TreesRoot}. A checkout is never a side effect's to delete.");
+                + $"under {context.TreesRoot}. A checkout is never a side effect's to delete."
+                // LANDRETIRE1: a branch a landing made is not a tree, and has a door of its own.
+                + (context.Recorded.All().Any(entry => string.Equals(entry.Branch, path, StringComparison.Ordinal))
+                    ? $" `{path}` names a branch a landing made: `trees remove {path} --why \"…\"` withdraws it where the line will never hold its work."
+                    : ""));
         }
 
         if (!Directory.Exists(full))

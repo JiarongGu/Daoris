@@ -127,7 +127,9 @@ public sealed class IntegrationStore(
         Reading(reader => reader.Query($"SELECT {RequestColumns} FROM integration_requests WHERE closed_at IS NULL ORDER BY at, id", MapRequest), []);
 
     /// <summary>
-    /// A line's queue (§5.2 step 2's input): its repository's open requests for it that stand in no candidate, in the order admitted.
+    /// A line's queue (§5.2 step 2's input): its repository's open requests for it that stand in no candidate, in the order admitted. A request
+    /// whose member was held for its conflict (<see cref="IntegrationMemberStates.Held"/>, §5.4) is not queued: it waits for the steward's or the
+    /// owner's act, and queued again it would be formed, conflict and be held in every candidate for ever.
     /// </summary>
     public IReadOnlyList<IntegrationRequest> Queued(string repository, string line) =>
         Reading(reader => reader.Query(
@@ -135,9 +137,10 @@ public sealed class IntegrationStore(
             SELECT {RequestColumns} FROM integration_requests r
             WHERE r.repository = $repository COLLATE NOCASE AND r.line = $line AND r.closed_at IS NULL
               AND NOT EXISTS (SELECT 1 FROM integration_members m WHERE m.request = r.id AND m.ended_at IS NULL)
+              AND NOT EXISTS (SELECT 1 FROM integration_members h WHERE h.request = r.id AND h.state = $held)
             ORDER BY r.at, r.id
             """,
-            MapRequest, ("$repository", repository), ("$line", line)), []);
+            MapRequest, ("$repository", repository), ("$line", line), ("$held", IntegrationMemberStates.Held)), []);
 
     /// <summary>
     /// Close an open request that stands in no candidate (its requester's drop, before it is formed); whether it was open. A request standing
@@ -255,6 +258,17 @@ public sealed class IntegrationStore(
     public IntegrationCandidate? StandingFor(string repository, string line) =>
         Reading(reader => reader.Query(
                 $"SELECT {CandidateColumns} FROM integration_candidates WHERE repository = $repository COLLATE NOCASE AND line = $line AND ended_at IS NULL",
+                MapCandidate, ("$repository", repository), ("$line", line))
+            .FirstOrDefault(), null);
+
+    /// <summary>
+    /// The candidate of a repository's line that ended last, or null where none has (INTEGRATE1e part e4a): what the next form reads to know the
+    /// last one was split, so it takes one member. Read by the end's own moment; the later formed of two that ended together.
+    /// </summary>
+    public IntegrationCandidate? LastEnded(string repository, string line) =>
+        Reading(reader => reader.Query(
+                $"SELECT {CandidateColumns} FROM integration_candidates WHERE repository = $repository COLLATE NOCASE AND line = $line AND ended_at IS NOT NULL "
+                + "ORDER BY ended_at DESC, formed_at DESC, rowid DESC LIMIT 1",
                 MapCandidate, ("$repository", repository), ("$line", line))
             .FirstOrDefault(), null);
 

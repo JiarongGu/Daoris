@@ -701,6 +701,152 @@ public sealed class ChangeStreamTests : IAsyncLifetime
         Assert.Empty(answer.Moved);
     }
 
+    // ---- FOUNDATION1 row k part 2: the journal family, named only to a reader that asks ----
+
+    /// <summary>
+    /// The journal is not one of <see cref="ChangeFamilies.All"/>, which is what a reader that never asked is answered, and the revisions'
+    /// SQL, which is read by position, names the journal after every family there, so no reader's column shifts.
+    /// </summary>
+    [Fact]
+    public void The_journal_is_outside_every_family_and_its_revision_follows_theirs()
+    {
+        Assert.DoesNotContain(ChangeFamilies.Journal, ChangeFamilies.All);
+        Assert.Equal([.. ChangeFamilies.All, ChangeFamilies.Journal], ChangeFamilies.Observed);
+        Assert.Equal("journal", ChangeFamilies.Journal);
+    }
+
+    /// <summary>A reader that asks is answered the journal with every family at a bootstrap, a stale cursor and a malformed one; one that does not never is.</summary>
+    [Fact]
+    public async Task A_default_answer_never_names_the_journal_and_one_asked_for_it_does()
+    {
+        var current = await Bootstrap();
+
+        Assert.Equal(ChangeFamilies.All, (await _stream.WaitAsync(null, Long)).Moved);
+        Assert.Equal([.. ChangeFamilies.All, ChangeFamilies.Journal], (await _stream.WaitAsync(null, Long, journal: true)).Moved);
+        Assert.Equal([.. ChangeFamilies.All, ChangeFamilies.Journal], (await _stream.WaitAsync("nothing", Long, journal: true)).Moved);
+        Assert.Equal(
+            [.. ChangeFamilies.All, ChangeFamilies.Journal], (await _stream.WaitAsync("0123abcd." + current.Split('.')[1], Long, journal: true)).Moved);
+    }
+
+    /// <summary>
+    /// A word taken moves neither the session's revision nor the words family, so it is a journal-only append: a reader that asks is woken by
+    /// it, naming the journal alone, and the journal's place answered with it; an older client's reader, which never asks, is woken by
+    /// nothing, though the observer saw the write (§4.1, F10).
+    /// </summary>
+    [Fact]
+    public async Task A_journal_only_append_wakes_the_reader_that_asks_and_wakes_the_one_that_does_not_ask_by_nothing()
+    {
+        var session = await _sessions.CreateAsync(null, "Owner", "stub", Now, kind: SessionKind.Chat);
+        await _sessions.KeepSaidAsync(session.Id, new SaidWord("w1", "One.", Now, []));
+        var since = await Bootstrap();
+        var seen = _stream.Seen;
+        using var release = new CancellationTokenSource();
+        var older = _stream.WaitAsync(since, Long, release.Token);
+        var asking = _stream.WaitAsync(since, Long, journal: true);
+        await Task.Delay(100);
+        Assert.False(asking.IsCompleted);
+
+        await _sessions.TakeSaidAsync(session.Id, ["w1"]);
+        var answer = await asking.WaitAsync(Poll.Patience);
+        var deadline = DateTime.UtcNow + Poll.Patience;
+        while (_stream.Seen <= seen && DateTime.UtcNow < deadline) await Task.Delay(20);
+        var observed = _stream.Seen > seen;
+        release.Cancel();
+        var woken = await older.WaitAsync(Poll.Patience);
+
+        Assert.Equal([ChangeFamilies.Journal], answer.Moved);
+        Assert.True(observed, "no write was seen, so the older reader's silence proves nothing");
+        Assert.Empty(woken.Moved);
+        Assert.Null(woken.Journal);
+    }
+
+    /// <summary>A move that is also a family's moves both for the reader that asks, in the families' order and the journal last, and the family alone for one that does not.</summary>
+    [Fact]
+    public async Task A_state_move_names_its_family_to_both_readers_and_the_journal_only_to_the_one_that_asks()
+    {
+        var session = await _sessions.CreateAsync(null, "Owner", "stub", Now, kind: SessionKind.Chat);
+        var since = await Bootstrap();
+        var older = _stream.WaitAsync(since, Long);
+        var asking = _stream.WaitAsync(since, Long, journal: true);
+
+        await _sessions.SetStateAsync(session.Id, SessionState.Working, null, null, null, Now);
+
+        Assert.Equal([ChangeFamilies.Sessions], (await older.WaitAsync(Poll.Patience)).Moved);
+        Assert.Equal([ChangeFamilies.Sessions, ChangeFamilies.Journal], (await asking.WaitAsync(Poll.Patience)).Moved);
+    }
+
+    /// <summary>
+    /// Each table's trigger moves the journal: an operation kept, an ask moved, a message kept, each beside its own family. A write that
+    /// journals nothing (a word on an ask) moves its family and not the journal.
+    /// </summary>
+    [Fact]
+    public async Task Every_journalled_ledger_move_wakes_the_journal_beside_its_family_and_a_write_that_is_not_journalled_does_not()
+    {
+        await _asks.SaveAsync(Asked);
+        var next = await Bootstrap();
+
+        var asking = _stream.WaitAsync(next, Long, journal: true);
+        await _asks.RecordWordAsync(Asked.Id, new AskWord(AskWordKind.Answered, "Yes.", Now, "s1"), Now);
+        var answer = await asking.WaitAsync(Poll.Patience);
+        Assert.Equal([ChangeFamilies.Asks], answer.Moved);
+        next = answer.Since;
+
+        foreach (var (write, family) in new (Func<Task> Write, string Family)[]
+        {
+            (() => _quests.PublishAsync("Asker", "Owner", "Do the work", "why", Now), ChangeFamilies.Quests),
+            (() => _asks.RecordClosedAsync(Asked.Id, "Done.", Now), ChangeFamilies.Asks),
+            (() => _channel.AddAsync(Message("m1", Asked.Id), 10), ChangeFamilies.Channel),
+        })
+        {
+            asking = _stream.WaitAsync(next, Long, journal: true);
+            await write();
+            answer = await asking.WaitAsync(Poll.Patience);
+            Assert.Equal([family, ChangeFamilies.Journal], answer.Moved);
+            next = answer.Since;
+        }
+    }
+
+    /// <summary>
+    /// The answer to a reader that asks carries the journal's place with every read (§4.1): the store's identity, the lowest position kept (the
+    /// floor) and the newest position issued. A reader that does not ask is answered none, and an emptied journal's floor is one past its newest,
+    /// since positions are never reused.
+    /// </summary>
+    [Fact]
+    public async Task The_answer_to_a_reader_that_asks_carries_the_journals_place_and_the_floor()
+    {
+        var session = await _sessions.CreateAsync(null, "Owner", "stub", Now, kind: SessionKind.Chat);
+        await _sessions.SetStateAsync(session.Id, SessionState.Working, null, null, null, Now);
+        var since = await Bootstrap();
+        long Scalar(string sql)
+        {
+            using var read = _writer.CreateCommand();
+            read.CommandText = sql;
+            return Convert.ToInt64(read.ExecuteScalar());
+        }
+
+        var asked = (await _stream.WaitAsync(null, Long, journal: true)).Journal;
+        Assert.NotNull(asked);
+        Assert.Equal(2, asked.Newest);
+        Assert.Equal(1, asked.Floor);
+        Assert.Equal(Scalar("SELECT max(position) FROM event_journal"), asked.Newest);
+        Assert.Matches("^[0-9a-f]{32}$", asked.Store);
+        Assert.Null((await _stream.WaitAsync(null, Long)).Journal);
+
+        // A trim is no wake of its own (it comes with the insert that moves the newest position), so each place is read by a wait that
+        // samples first: no wait is held here, so its own sample is the one that reads the write.
+        async Task<JournalPlace> PlaceAfterAsync(string sql)
+        {
+            await Execute(sql);
+            return (await _stream.WaitAsync(since, TimeSpan.Zero, journal: true).WaitAsync(Poll.Patience)).Journal!;
+        }
+
+        var trimmed = await PlaceAfterAsync("DELETE FROM event_journal WHERE position < 2");
+        Assert.Equal((2L, 2L), (trimmed.Floor, trimmed.Newest));
+
+        var emptied = await PlaceAfterAsync("DELETE FROM event_journal");
+        Assert.Equal((3L, 2L), (emptied.Floor, emptied.Newest));
+    }
+
     private async Task Execute(string sql)
     {
         await using var command = _writer.CreateCommand();

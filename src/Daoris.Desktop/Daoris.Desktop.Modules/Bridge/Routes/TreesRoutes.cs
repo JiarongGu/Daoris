@@ -221,6 +221,11 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
                     At = Moments.Write(landed.Entry.GoneAt),
                 }
                 : null,
+            // LANDRETIRE1 part 2, a shape added: a branch the person withdrew, with when, their reason and the recovery ref its commits stay
+            // on; `removed` stays the clean-up's alone, and a trace from before the reason was kept says none.
+            Withdrawn = landed.Entry is { GoneAs: LandedGone.Withdrawn, GoneAt: { } withdrawnAt }
+                ? new { At = Moments.Write(withdrawnAt), Why = landed.Entry.GoneWhy, landed.Entry.KeptOn }
+                : null,
             landed.Detail,
         },
     };

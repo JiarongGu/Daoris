@@ -206,26 +206,8 @@ public sealed class DriverModuleReviewLeaveTests() : DriverModuleBridge("review-
         _released = Path.Combine(Home, "released");
         return ProcessStarts.Within(info =>
         {
-            var stand = new ProcessStartInfo("node")
-            {
-                RedirectStandardOutput = info.RedirectStandardOutput,
-                RedirectStandardError = info.RedirectStandardError,
-                RedirectStandardInput = info.RedirectStandardInput,
-                StandardOutputEncoding = info.StandardOutputEncoding,
-                StandardErrorEncoding = info.StandardErrorEncoding,
-                UseShellExecute = false,
-                CreateNoWindow = true,
-                WorkingDirectory = info.WorkingDirectory,
-            };
-            foreach (var (name, value) in info.Environment) stand.Environment[name] = value;
-            stand.ArgumentList.Add("-e");
-            stand.ArgumentList.Add(
-                "const fs=require('fs'),cp=require('child_process');const [released,git,...args]=process.argv.slice(1);"
-                + "const go=()=>{if(!fs.existsSync(released))return setTimeout(go,50);"
-                + "const r=cp.spawnSync(git,args,{stdio:'inherit'});process.exit(r.status===null?1:r.status)};go()");
-            stand.ArgumentList.Add(_released);
-            stand.ArgumentList.Add(info.FileName);
-            foreach (var argument in info.ArgumentList) stand.ArgumentList.Add(argument);
+            // PROCLEAK1: the stand-in takes this test's pid and a bound, and gives up with the one or at the other.
+            var stand = ReleaseStandIn.For(info, _released, Environment.ProcessId, Poll.Patience);
             var process = Process.Start(stand)!;
             var watched = Process.GetProcessById(process.Id);
             lock (_watched)

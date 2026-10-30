@@ -109,5 +109,46 @@ public sealed class ChangeStreamProcessTests : IDisposable
         Assert.Null(host.StopByInput(Poll.Patience));
     }
 
+    /// <summary>
+    /// FOUNDATION1 row k part 2 (the foundation design §4.1, F10): a journal-only append a connector's process makes, a word taken, wakes a reader
+    /// that asks for the journal and wakes an older client's reader by nothing. The older client's reader is the driver's own
+    /// (<c>Driver/Service/LedgerChanges.cs</c>), which a service test cannot run: it asks the route as that reader does (<c>wait</c>, then
+    /// <c>since</c>, no other parameter) and wakes its <c>ledger</c> topic for any family the answer names, which is what the cases below judge.
+    /// </summary>
+    [Fact]
+    public async Task A_word_taken_from_another_process_wakes_the_reader_that_asks_for_the_journal_and_the_older_clients_by_nothing()
+    {
+        using var host = await RealHost.StartAsync(_scratch, new Dictionary<string, string?> { [InputEndStop.Variable] = "1" });
+        using var http = new HttpClient { Timeout = Poll.Patience };
+        await using var connector = new SqliteConnection($"Data Source={Path.Combine(_scratch, "index", "knowledge.db")};Pooling=False");
+        await connector.OpenAsync();
+        var sessions = await SessionStore.OpenAsync(connector);
+        var held = await sessions.CreateAsync(null, "Keeper", "stub", DateTimeOffset.UtcNow, kind: SessionKind.Chat);
+        await sessions.KeepSaidAsync(held.Id, new SaidWord("w1", "One.", DateTimeOffset.UtcNow, []));
+
+        var since = Since(await http.GetStringAsync($"{host.Url}{ChangeStream.Route}"));
+        var seconds = (int)Wait.TotalSeconds;
+        // LedgerChanges.RunAsync's own ask, and its rule: the topic wakes for any family named.
+        var older = http.GetStringAsync($"{host.Url}{ChangeStream.Route}?wait={seconds}&since={Uri.EscapeDataString(since)}");
+        var asking = http.GetStringAsync($"{host.Url}{ChangeStream.Route}?wait={seconds}&since={Uri.EscapeDataString(since)}&journal=1");
+        await Task.Delay(300);
+        Assert.False(older.IsCompleted || asking.IsCompleted, "a current cursor was answered before anything moved");
+
+        var asked = Stopwatch.StartNew();
+        await sessions.TakeSaidAsync(held.Id, ["w1"]);
+        var named = JsonDocument.Parse(await asking.WaitAsync(Poll.Patience)).RootElement;
+        Assert.True(asked.Elapsed < Wait, $"answered at its wait's end, not woken: {asked.Elapsed}");
+        Assert.Equal([ChangeFamilies.Journal], Moved(named));
+        await Task.Delay(500);
+        Assert.False(older.IsCompleted, "the older client's reader was woken by a journal-only append: its ledger topic would wake");
+
+        // Alive: its own family wakes it, naming that family alone.
+        await sessions.CreateAsync(null, "Keeper", "stub", DateTimeOffset.UtcNow, kind: SessionKind.Chat);
+        Assert.Equal([ChangeFamilies.Sessions], Moved(JsonDocument.Parse(await older.WaitAsync(Poll.Patience)).RootElement));
+        Assert.Null(host.StopByInput(Poll.Patience));
+    }
+
+    private static string[] Moved(JsonElement answer) => [.. answer.GetProperty("moved").EnumerateArray().Select(family => family.GetString()!)];
+
     private static string Since(string body) => JsonDocument.Parse(body).RootElement.GetProperty("since").GetString()!;
 }

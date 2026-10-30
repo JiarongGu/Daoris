@@ -59,4 +59,10 @@ public sealed record InventoryFacts(
     /// receipts and its attempts not settled, joined to the unit of that id. None given, none joined.
     /// </summary>
     public IReadOnlyDictionary<string, IReadOnlyList<InventoryEntry>> Owed { get; init; } = new Dictionary<string, IReadOnlyList<InventoryEntry>>();
+
+    /// <summary>
+    /// The quests the service says are closed, among those the landings name (LANDRETIRE1, <see cref="LandedStanding.ClosedAsync"/>): a
+    /// landing the line has not held for a day whose quest is here is named to the person. None given, none is closed, as before.
+    /// </summary>
+    public IReadOnlySet<string> ClosedQuests { get; init; } = new HashSet<string>();
 }

@@ -110,6 +110,19 @@ internal static class MoveSaying
         }
     }
 
+    /// <summary>The head past a record, where an older build made one; null where the record is the head or it cannot be told now.</summary>
+    public static async Task<string?> HeadPastAsync(IMoveSaid said, string record, CancellationToken ct)
+    {
+        try
+        {
+            return await said.HeadPastAsync(record, ct).ConfigureAwait(false);
+        }
+        catch (Exception error) when (Faulted(error, ct))
+        {
+            return null;
+        }
+    }
+
     public static async Task TakeAsync(IMoveSaid said, string record, IReadOnlyList<string> words, CancellationToken ct)
     {
         if (words.Count == 0) return;

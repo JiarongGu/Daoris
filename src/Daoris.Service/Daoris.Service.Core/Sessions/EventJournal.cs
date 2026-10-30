@@ -22,8 +22,12 @@ namespace Daoris.Knowledge;
 /// 64 and one <c>words-overflow</c> row with the count past them.</para>
 ///
 /// <para><b>The moves.</b> A <c>state</c> row is a move of the state, carrying the limit flag on either side; a <c>limited</c> row is the flag
-/// moving with the state where it was, so a move that also limits is one row. The columns for the quest log, the asks and the channel
-/// (<c>op</c>, <c>ask</c>, <c>message</c>, <c>line_code</c>) are there for part 2's triggers and stay empty here.</para>
+/// moving with the state where it was, so a move that also limits is one row.</para>
+///
+/// <para><b>Part 2</b> adds the triggers of the quest log (<see cref="QuestLogSchema"/>), the asks (<see cref="AsksSchema"/>) and the channel
+/// (<see cref="ChannelSchema"/>) in the same shape, each in its own store's schema after <see cref="Table"/>, which every one of them runs
+/// first, and the change stream's <c>journal</c> family that wakes a reader who asks for it. <c>line_code</c> stays empty: it was set aside for
+/// Daoris's lines, which are read from the quests per read and never stored.</para>
 /// </remarks>
 internal static class EventJournal
 {
@@ -96,8 +100,12 @@ internal static class EventJournal
         AND (NEW.said IS NULL OR (json_valid(NEW.said) AND json_type(NEW.said) = 'array'))
         """;
 
-    /// <summary>The table, its index, the store's identity and the triggers, each created only where it is not already there.</summary>
-    internal static readonly string Schema = $"""
+    /// <summary>
+    /// The table, its index and the store's identity, each created only where it is not already there. Every store whose table has a trigger
+    /// that writes the journal runs this first, so a store opened alone on a new database never has a trigger writing to a table that is not
+    /// there (a trigger that failed would fail its writer's statement).
+    /// </summary>
+    internal const string Table = """
         CREATE TABLE IF NOT EXISTS store_identity (one INTEGER PRIMARY KEY CHECK (one = 1), id TEXT NOT NULL);
         INSERT OR IGNORE INTO store_identity (one, id) VALUES (1, lower(hex(randomblob(16))));
 
@@ -132,6 +140,11 @@ internal static class EventJournal
           line_code    TEXT NULL
         );
         CREATE INDEX IF NOT EXISTS event_journal_record ON event_journal (record, position);
+        """;
+
+    /// <summary>The table and the triggers on <c>sessions</c>.</summary>
+    internal static readonly string Schema = $"""
+        {Table}
 
         CREATE TRIGGER IF NOT EXISTS event_journal_opened AFTER INSERT ON sessions
         WHEN NEW.origin IS NULL
@@ -168,6 +181,70 @@ internal static class EventJournal
         BEGIN
           {WordRows("word-added", "NEW", "OLD", "AND NOT (OLD.said IS NULL AND OLD.answer IS NOT NULL AND json_extract(w.value, '$.id') = 'answer')", "")}
           {WordRows("word-removed", "OLD", "NEW", "", "-")}
+          {Trim}
+        END;
+        """;
+
+    /// <summary>
+    /// The quest log's trigger (row k part 2): one <c>quest-op</c> row for each operation kept, made here or integrated from a remote, naming the
+    /// quest and the operation's kind, never its payload. Bookkeeping on an operation kept (a remote's number, a rebase's rewrite in place) and a
+    /// delete of older operations are not moves and journal nothing, as the quests family does not wake for them.
+    /// </summary>
+    internal static readonly string QuestLogSchema = $"""
+        {Table}
+
+        CREATE TRIGGER IF NOT EXISTS event_journal_quest_op AFTER INSERT ON quest_log
+        BEGIN
+          INSERT INTO event_journal (at, record, family, change, op, quest)
+          VALUES ({Now}, COALESCE(substr(NEW.quest, 1, 64), ''), 'quest_log', 'quest-op', substr(NEW.kind, 1, 32), substr(NEW.quest, 1, 64));
+          {Trim}
+        END;
+        """;
+
+    /// <summary>
+    /// The asks' triggers (row k part 2): an <c>ask</c> row for an ask kept and for each move of its state, guarded on the state changing, so a
+    /// whole save that changes none, a word, a list appended to, an intake bound and a delete journal nothing. The row names the ask, its scope
+    /// and the state on either side, never its sentence, note or words.
+    /// </summary>
+    internal static readonly string AsksSchema = $"""
+        {Table}
+
+        CREATE TRIGGER IF NOT EXISTS event_journal_ask_kept AFTER INSERT ON asks
+        BEGIN
+          INSERT INTO event_journal (at, record, family, change, state_new, ask, workspace)
+          VALUES ({Now}, COALESCE(substr(NEW.id, 1, 64), ''), 'asks', 'ask', substr(NEW.state, 1, 32), substr(NEW.id, 1, 64), substr(NEW.workspace, 1, 64));
+          {Trim}
+        END;
+
+        CREATE TRIGGER IF NOT EXISTS event_journal_ask_state AFTER UPDATE OF state ON asks
+        WHEN OLD.state IS NOT NEW.state
+        BEGIN
+          INSERT INTO event_journal (at, record, family, change, state_old, state_new, ask, workspace)
+          VALUES ({Now}, COALESCE(substr(NEW.id, 1, 64), ''), 'asks', 'ask', substr(OLD.state, 1, 32), substr(NEW.state, 1, 32),
+                  substr(NEW.id, 1, 64), substr(NEW.workspace, 1, 64));
+          {Trim}
+        END;
+        """;
+
+    /// <summary>
+    /// The channel's trigger (row k part 2): one <c>message</c> row for each message kept, the person's, a session's and a teammate's mirrored
+    /// alike (a mirror seen again, a post the cap refused and a message already kept are no insert, so journal nothing). A message is never
+    /// changed once kept, and a read mark, a cursor and a channel forgotten with its ask are not moves. The row names the message, its ask, its
+    /// scope, the entry and the session it came from as ids, and its kind as closed codes (<c>message</c>, <c>question</c> or <c>answer</c>,
+    /// then <c>urgent</c> and <c>mirrored</c>); never its text, its repository or its agent. The channel's <c>line_code</c> stays empty: Daoris's
+    /// lines are read from the quests per read and never stored (§4.2).
+    /// </summary>
+    internal static readonly string ChannelSchema = $"""
+        {Table}
+
+        CREATE TRIGGER IF NOT EXISTS event_journal_message AFTER INSERT ON channel
+        BEGIN
+          INSERT INTO event_journal (at, record, family, change, message, ask, workspace, entry, from_session, marks)
+          VALUES ({Now}, COALESCE(substr(NEW.id, 1, 64), ''), 'channel', 'message', substr(NEW.id, 1, 64), substr(NEW.ask, 1, 64),
+                  substr(NEW.workspace, 1, 64), substr(NEW.entry, 1, 64), substr(NEW.session, 1, 64),
+                  CASE WHEN COALESCE(NEW.question, 0) <> 0 THEN 'question' WHEN COALESCE(NEW.re, '') <> '' THEN 'answer' ELSE 'message' END
+                    || CASE WHEN NEW.urgent = 1 THEN ',urgent' ELSE '' END
+                    || CASE WHEN NEW.origin IS NOT NULL THEN ',mirrored' ELSE '' END);
           {Trim}
         END;
         """;

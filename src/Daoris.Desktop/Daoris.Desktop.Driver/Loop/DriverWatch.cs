@@ -57,7 +57,10 @@ public sealed class DriverWatch(
     SessionEvents? events = null,
     // Daoris's own browser (D78), where a shell carries one. Null in the headless host, where a server
     // that drives it is not handed.
-    IInAppBrowser? browser = null)
+    IInAppBrowser? browser = null,
+    // The adapters every look's driver and the default roster are built over (AGENTPROVIDER1m-i, the agent-layer design §6.3 point 1): the
+    // seam the parity oracle builds a look over for either path. Null is today's, `AdapterSet.Built()`.
+    AdapterSet? adapters = null)
 {
     private CancellationTokenSource _pause = new();
 
@@ -73,8 +76,14 @@ public sealed class DriverWatch(
     // still ends that wait (DEV3): looks are short now, and a person's control nudges the loop often.
     private int _nudges;
 
+    /// <summary>
+    /// The adapters this loop runs on (AGENTPROVIDER1m-i): the set it was handed, or the built one. Each static read on a look's path reads
+    /// names alone (<c>AdapterSet.Built().Names</c>), as <c>ChatRunner</c>'s plugin catalogue does, so a set handed in is the one that runs.
+    /// </summary>
+    private readonly AdapterSet _adapters = adapters ?? AdapterSet.Built();
+
     /// <summary>This machine's harnesses, as the loop sees them — also what a roster surface reads.</summary>
-    private readonly HarnessRoster _harnesses = harnesses ?? new HarnessRoster(AdapterSet.Built(), HarnessSettings.ResolvePath(home));
+    private readonly HarnessRoster _harnesses = harnesses ?? new HarnessRoster(adapters ?? AdapterSet.Built(), HarnessSettings.ResolvePath(home));
 
     /// <inheritdoc cref="_harnesses"/>
     public HarnessRoster Harnesses => _harnesses;
@@ -654,7 +663,7 @@ public sealed class DriverWatch(
             // FABRIC-END7's review: the wakes this look's landing judges with, put back unless it did judge with them.
             var taken = _landing.Take(whole: part == LookPart.Look);
             var driver = new Driver(
-                    service, draining ? InstallUpdate.Drained(config) : config, AdapterSet.Built(), home, processes, sync, output,
+                    service, draining ? InstallUpdate.Drained(config) : config, _adapters, home, processes, sync, output,
                     _harnesses, usage, hooks, events, browser, Running)
                 {
                     Runner = Runner, Stops = Stops, HandsOver = HandsOver, SendsBack = SendsBack, GoesOnLost = GoesOnLost, Log = Log, Noticed = Noticed, Stages = Stages, Reviews = Reviews,

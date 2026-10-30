@@ -337,6 +337,58 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
     }
 
     /// <summary>
+    /// Withdrawing a landing's branch (LANDRETIRE1): before the driver is up it is the cold-start sentence, and a call naming no branch or no
+    /// repository is malformed.
+    /// </summary>
+    [Fact]
+    public async Task Withdrawing_a_landing_branch_before_the_driver_is_up_is_a_sentence()
+    {
+        var refusal = await RefusalAsync(Module(), "WITHDRAW_LANDING_BRANCH",
+            new { repository = "engine", branch = "quest/row-1", why = "landed by hand" });
+
+        Assert.Contains(Refusals.DriverNotReady, refusal);
+        Assert.Contains("still coming up", refusal);
+        await Assert.ThrowsAnyAsync<Exception>(() => AnswerAsync(Module(), "WITHDRAW_LANDING_BRANCH", new { repository = "engine" }));
+        await Assert.ThrowsAnyAsync<Exception>(() => AnswerAsync(Module(), "WITHDRAW_LANDING_BRANCH", new { branch = "quest/row-1" }));
+    }
+
+    /// <summary>
+    /// A withdrawal is an answer, never a throw (LANDRETIRE1): a process that does not hold the home's lease deletes nothing and says so before
+    /// the checkout is asked, and a plan, which changes nothing, goes on to the checkout, which this repository has none of here.
+    /// </summary>
+    [Fact]
+    public async Task A_withdrawal_is_refused_without_the_home_and_a_plan_asks_the_checkout_and_changes_nothing()
+    {
+        var service = new DiscardService(root: null);
+        var module = await ModuleOverAsync(service);
+
+        var press = await AnswerAsync(module, "WITHDRAW_LANDING_BRANCH", new { repository = "engine", branch = "quest/row-1", why = "landed by hand" });
+        Assert.False(press.GetProperty("done").GetBoolean());
+        Assert.Equal(RecoveryDropping.WithoutHome(Home), press.GetProperty("message").GetString());
+        Assert.DoesNotContain("/api/registry", service.Asked);
+
+        var plan = await AnswerAsync(module, "WITHDRAW_LANDING_BRANCH", new { repository = "engine", branch = "quest/row-1", plan = true });
+        Assert.False(plan.GetProperty("done").GetBoolean());
+        Assert.Equal("`engine` has no checkout here, so its branch `quest/row-1` cannot be withdrawn from this machine.", plan.GetProperty("message").GetString());
+        Assert.Contains("/api/registry", service.Asked);
+    }
+
+    /// <summary>
+    /// The screen's withdrawal composes none of the driver's pieces itself, so it cannot part from the terminal's door (D50): read from the
+    /// modules' sources, the judgement, the keep, the delete and the record are <see cref="LandedBranchWithdrawal"/>'s.
+    /// </summary>
+    [Fact]
+    public void The_screens_withdrawal_is_the_drivers_one_withdrawal()
+    {
+        var lines = File.ReadAllText(SourceFiles.Find(SourceFiles.ModulesProject, "LinesRoutes.cs"));
+
+        Assert.Contains(".WithdrawAsync(service, repository, branch, why, plan, cancellationToken)", lines, StringComparison.Ordinal);
+        Assert.Contains("TreesWords.Withdraw(withdrawal)", lines, StringComparison.Ordinal);
+        Assert.DoesNotContain("KeepDiscardedAsync", lines, StringComparison.Ordinal);
+        Assert.DoesNotContain("DeleteJudgedAsync", lines, StringComparison.Ordinal);
+    }
+
+    /// <summary>
     /// The person's delete of recovery refs (RECOVERYDROP1): before the driver is up it is the cold-start sentence; a call naming no
     /// repository or no refs is malformed; and a process that does not hold the home deletes nothing and says so, as an answer.
     /// </summary>

@@ -29,6 +29,12 @@ public static class TreesWords
     public static TreesSaid Remove(TreeRemoval removal) => new([$"trees: {removal.Message}"], [], removal.Removed ? 0 : 1);
 
     /// <summary>
+    /// <c>trees remove &lt;landing branch&gt; --why</c> (LANDRETIRE1): a landing's branch withdrawn, or what <c>--plan</c> says it would do, exit 0;
+    /// a refusal that keeps it is policy and exit 1.
+    /// </summary>
+    public static TreesSaid Withdraw(LandedWithdrawal withdrawal) => new([$"trees: {withdrawal.Message}"], [], withdrawal.Done || withdrawal.Planned ? 0 : 1);
+
+    /// <summary>
     /// <c>trees land &lt;session&gt;</c>: the plugin's lines as they came, then the landing's sentence; 1 where the step the rule asked for did
     /// not happen, a push held back once the branch was made among them (FABRIC-CLOSE1h3).
     /// </summary>

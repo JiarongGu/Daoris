@@ -299,8 +299,11 @@ public sealed class IntakeTests : IDisposable
 
         var info = new ClaudeCodeAdapter().Prepare(target, ["claude"]);
 
-        var prompt = info.ArgumentList[info.ArgumentList.IndexOf("-p") + 1];
-        Assert.Equal(target.Prompt, prompt);
+        // The intake's instruction is the composed prompt, written on the input and never an argument (AGENTLYNTAI1s-i).
+        Assert.Equal(target.Prompt, TargetPrompt.Compose(target));
+        Assert.DoesNotContain(target.Prompt, info.ArgumentList);
+        Assert.Equal("--permission-mode", info.ArgumentList[info.ArgumentList.IndexOf("-p") + 1]);
+        Assert.True(info.RedirectStandardInput);
     }
 
     /// <summary>

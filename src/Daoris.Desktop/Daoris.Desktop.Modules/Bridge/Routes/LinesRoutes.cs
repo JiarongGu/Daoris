@@ -276,7 +276,9 @@ public sealed class LinesRoutes(DriverContext context)
 
         if (kept is not null)
         {
-            var plan = await trees.CleanPlanAsync(repositories, inUse, cancellationToken);
+            // LANDRETIRE1 part 2: which quests a landing the line does not hold names are closed, the service's, read once for the list.
+            var closed = await LandedStanding.ClosedAsync(kept, (_loop.Service ?? throw NotReady()).EveryQuestAsync, cancellationToken);
+            var plan = await trees.CleanPlanAsync(repositories, inUse, cancellationToken, closed);
             // The person's look asks the plugins (D148 point 2) and keeps their answers in the landing record, which no watch hears and
             // which moves no ref: each repository whose kept answers it wrote has its part of the pushed list judged again now
             // (PUSH1c4a), rather than at its next ref move or deadline. Asked of no plugin again: the part reads what was kept.
@@ -364,6 +366,40 @@ public sealed class LinesRoutes(DriverContext context)
         var removal = await new SessionBranchDiscard(new SessionTrees(_loop.Home)).DiscardAsync(service, repository, branch, force, cancellationToken);
         _loop.Nudge();
         return new { Repository = repository, Branch = branch, Done = removal.Removed, removal.Message, Said = TreesWords.Remove(removal).ToWire() };
+    }
+
+    // Withdrawing a landing's branch the line will never hold (LANDRETIRE1, D102's note of it), beside the clean-up whose `Differs` rows it
+    // answers: `trees clean` keeps such a branch for ever, so this is the person's saying so. `daoris-driver trees remove <landing branch>
+    // --why "…"` is the terminal's door (D50), and both end in the driver's one withdrawal (`LandedBranchWithdrawal`). The page's own press
+    // and the steward's act are LANDRETIRE1's part 2 and a later one: nothing on the page calls this route yet.
+    /// <summary>
+    /// Withdraw a branch a landing made, by its name and its repository: its commits kept on a recovery ref, the branch deleted at the commit
+    /// judged, and its record saying why.
+    /// </summary>
+    /// <remarks>
+    /// A refusal is an ANSWER, as a discard's is: `{ done, planned, message, said }` with the driver's sentence, `keptRef` where it went. The
+    /// line holding its work, a pull request that may carry it, a tree having it checked out, a branch of the person's and a name no landing
+    /// recorded are refused; `plan: true` says what it would do and changes nothing. Only the process holding the home's lease acts, which the
+    /// running desktop does (<see cref="LandedBranchWithdrawal"/>).
+    /// </remarks>
+    [DriverRoute("WITHDRAW_LANDING_BRANCH")]
+    [Publishes("WITHDRAW_LANDING_BRANCH", Moves)]
+    private async Task<object?> WithdrawLandingBranchAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var repository = PayloadHelper.GetRequiredValue<string>(request.Payload, "repository");
+        var branch = PayloadHelper.GetRequiredValue<string>(request.Payload, "branch");
+        var why = Optional(request, "why") ?? "";
+        var plan = Flag(request, "plan");
+        var service = _loop.Service ?? throw NotReady();
+
+        var withdrawal = await new LandedBranchWithdrawal(new SessionTrees(_loop.Home), _loop.Home)
+            .WithdrawAsync(service, repository, branch, why, plan, cancellationToken);
+        if (!plan) _loop.Nudge();
+        return new
+        {
+            Repository = repository, Branch = branch, Done = withdrawal.Done, Planned = withdrawal.Planned, withdrawal.Message, withdrawal.KeptRef,
+            Said = TreesWords.Withdraw(withdrawal).ToWire(),
+        };
     }
 
     // The person's delete of the recovery refs nothing holds (RECOVERYDROP1, D102's CLEANUP1 note): CLEANUP1 keeps such a ref at any
@@ -568,8 +604,12 @@ public sealed class LinesRoutes(DriverContext context)
         var unread = new List<string>();
         // OVERVIEWNOISE1b: each tree joined to the session that recorded it, from the sessions' look the work slice reads too.
         var looked = _loop.Facts.Current.Value<SessionLook>(HelpFacts.Sessions, HelpFacts.Whole);
+        // LANDRETIRE1 part 2: which quests the landings the line does not hold name are closed, the service's, read once and only where one asks.
+        var closed = _loop.Service is { } ledger
+            ? await LandedStanding.ClosedAsync(new LandedBranches(_loop.Home).Entries(), ledger.EveryQuestAsync, cancellationToken)
+            : new HashSet<string>();
         var (units, recovery) = await WorkInventories.ReadAsync(
-            _loop.Home, roots, inUse, unread, cancellationToken, looked is null ? null : WorkInventories.RecordedOf(looked.Records));
+            _loop.Home, roots, inUse, unread, cancellationToken, looked is null ? null : WorkInventories.RecordedOf(looked.Records), closed);
         if (Optional(request, "unit") is { } named)
         {
             units = WorkInventories.Named(units, named);
@@ -782,6 +822,8 @@ public sealed class LinesRoutes(DriverContext context)
     {
         item.Repository, item.Workspace, item.Branch, item.Kind, item.Where, item.Files, item.Detail,
         item.PullRequest, item.Commits, item.Removable,
+        // LANDRETIRE1 part 2: when the landing recorded it, and its quest with whether the service says it is closed.
+        item.LandedAt, item.Quest, item.QuestClosed,
     };
 
     /// <summary>

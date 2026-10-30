@@ -140,6 +140,12 @@ public static class InventoryCode
 
     /// <summary>A dispatched attempt held for the person (FABRIC-PERFORM1d): fact <c>node</c>.</summary>
     public const string AttemptHeld = "attempt-held";
+
+    /// <summary>
+    /// A landing's branch whose quest is closed and which the line has not held for a day (LANDRETIRE1, <see cref="LandedStanding"/>): facts
+    /// <c>branch</c>, <c>quest</c>, and <c>since</c>, the moment the day passed. The person's to withdraw, or to wait on, never the clean-up's.
+    /// </summary>
+    public const string LandingStale = "landing-stale";
 }
 
 
