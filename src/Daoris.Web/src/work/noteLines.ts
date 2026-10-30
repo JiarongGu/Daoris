@@ -689,6 +689,8 @@ export const NOTE_VALUES: Readonly<
   // A window's use projected to now, as a window's use is (USAGEPROBE1).
   projected: 'percent',
   adapter: 'text', now: 'text', then: 'text',
+  // The working role a design-weighted quest started on (FOUNDATION1x), said as its name.
+  role: 'text',
   // An account id is worded by the name the person gave it where the page knows it (NOTENAME1); `owner` is the agent.
   account: 'account', over: 'account', first: 'account',
   // A list of account ids, each named so and set as code (ROSTERREFUSE2); `logins` are the sign-in commands, each set as code.

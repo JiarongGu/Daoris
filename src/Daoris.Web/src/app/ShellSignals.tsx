@@ -7,7 +7,8 @@ import { type AttentionTold, attentionToast } from '../notifications/noticeWords
 import { keys } from '../data/queries';
 import {
   accountsSlice, asksSlice, attentionSlice, callsSlice, considerationsSlice, driverSlice, groupsSlice, linesSlice, noticeOf, noticesSlice, notPushed,
-  questsSlice, sessionsSlice, sweepSlice, syncSlice, usageSlice, useDriverReady, useStandingUsed, useStateHub, useStateSlices, workSlice,
+  questsSlice, rulesSlice, sessionsSlice, sweepSlice, syncSlice, usageSlice, useDriverReady, useStandingUsed, useStateHub, useStateSlices,
+  workSlice,
 } from '../bridge/shell';
 import type { Notify } from '../design/ui';
 import { noticeWords } from '../notifications/DoneAndFailed';
@@ -18,7 +19,7 @@ type Tick = { events?: string[] };
 /** The slices the shell pushes with their data and this page reads pushed (PUSH1a, D182); every other family keeps its pulls. */
 export const PUSHED = [
   driverSlice, linesSlice, sessionsSlice, callsSlice, workSlice, groupsSlice, syncSlice, sweepSlice, questsSlice, asksSlice, usageSlice,
-  accountsSlice, attentionSlice, noticesSlice, considerationsSlice,
+  accountsSlice, attentionSlice, noticesSlice, considerationsSlice, rulesSlice,
 ];
 
 /**
@@ -90,14 +91,14 @@ export function ShellSignals({ notify, onAttend, attended, onConfirming, onMessa
     // What is read under the driver's key, but its state where the shell pushes it (PUSH1a, D182): its pushes write it, and a
     // tick reads none of it again.
     void client.invalidateQueries({ queryKey: keys.driver, predicate: notPushed(client) });
-    // Not the rules, the repositories or the registry (FOUNDATION1s, D182 point 7): a look that settled a proposal about the rules
-    // (PERM2) or found the registry moved declares that as their scopes' own change, which the state hub answers in every window.
+    // Not the rules, the repositories or the registry (FOUNDATION1s, D182 point 7): the rules are pushed as they move (part B), and a
+    // look that found the registry moved declares that as its scope's own change, which the state hub answers in every window.
     // Every tick runs a pass for each wired circle, so where each stands may have moved (SYNC6b); where the shell pushes the
     // standings, the pass's end pushes what it moved (PUSH1a2), and a tick reads none of them again.
     void client.invalidateQueries({ queryKey: keys.allSync, predicate: notPushed(client) });
     // (The registry and the repositories read from it moved by a terminal's import, FG4: the look declares that as the registry's
-    // scope. An index that was still feeding when the page asked (the status bar's size) is told by no look: it is read again at
-    // the next change of the registry or at a reload.)
+    // scope. An index still feeding when the page asked (the status bar's size) is told by the look as the repositories' scope while
+    // it feeds, FOUNDATION1s part B.)
     // And the accounts (TOOL4g): a session's end may have cooled one, its door may have said what one has left, and the
     // sessions running on each have moved. A file read, never a probe; where the shell pushes them (PUSH1e) its owner judges
     // those once for every window, and a tick reads none of them again.

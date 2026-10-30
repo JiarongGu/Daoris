@@ -179,6 +179,18 @@ public sealed class StateSlice
         }
     }
 
+    /// <summary>
+    /// The slice's own version (FOUNDATION1s): its epoch and the sum of its partitions' numbers, a gone one's among them, which every push
+    /// raises; what a held answer that reads this slice is versioned by.
+    /// </summary>
+    public string Version
+    {
+        get
+        {
+            lock (_gate) return $"{Epoch}:{_held.Values.Sum(each => each.Seq)}";
+        }
+    }
+
     /// <summary>Each partition's number, a gone one's among them, as the manifest tells it.</summary>
     public SliceManifest Manifest()
     {
