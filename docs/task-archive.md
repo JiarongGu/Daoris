@@ -22033,3 +22033,9 @@ The row is quoted by its head; its whole text and proof are the foundation desig
 > **QUESTIONUI1a2 — the head's card shares the frame's selection** (web; depends on nothing else here). The head's card's rows are the frame's one selection, as §8.4 stands, in place of its own (`AwaitingPerson.tsx:105-107`); `f17e2301d`, on a session's tree and not merged, builds it. Proof: §11.
 
 **Outcome** 2026-10-31: found already on main. `f17e2301d` (2026-10-24), the session tree's build this row waited on, had landed with QUESTIONUI1a's commits; the row was left open by mistake.
+
+## KNOWCENTRAL2c — the operation record, commit points, recovery, journal and read set (2026-10-31, D220)
+
+> **2c** (the design's §3 and §8): each move journalled once, in order, no text; `staged` and `awaiting` unchanged by a kill; a fault inside the advance's or `PostAsync`'s transaction leaving neither record nor move, a kill after it leaving `ready` rows the next start applies; models from the usage history's turn lines; after a kill in `applying`, an end settled by its token, `stale` under another's; ambiguous writes and relations `held`; cursors, bootstrap and the read set.
+
+**Outcome** 2026-10-31: built in four parts: the memory log of record in `knowledge.db` with its commit points (rows move inside the ledger's `completed` advance and the finished-tree post), the applier and its recovery by token and guard or hold, the journal with cursors and bootstrap, and the read set. Readings against the design: a main-tree session's `Session.Tree` is the registered root, not null (`SessionLedger.cs:728`, `:1813`); 2b's seam took a revision guard on `ConfirmAsync`. Left to 2d: the service's start of the applier, the driver's turn lines, the person's Keep or Drop, clearing a deleted session's rows. Detail in the service README and D220's note.
