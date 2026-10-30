@@ -818,6 +818,20 @@ public sealed class Driver(
         }
     }
 
+    /// <summary>The role a quest's start took and its record's revision (FOUNDATION1x), for its binding; null where none takes the work or the store will not read.</summary>
+    private (string Role, long Revision)? RoleTaken(Consideration start)
+    {
+        try
+        {
+            var catalogue = RoleCatalog.ReadHome(home);
+            return catalogue.RoleFor(StartWork(start.Quest), PlaceOf(start)).Role is { } role ? (role.Id, catalogue.RevisionOf(role.Id)) : null;
+        }
+        catch (DriverException)
+        {
+            return null;
+        }
+    }
+
     /// <summary>The work a quest's start is: design where its publisher or the intake marked its weight so (MODELROLE1l), else build.</summary>
     internal static string StartWork(QuestView quest) =>
         string.Equals(quest.Weight, ParticipantWork.Design, StringComparison.Ordinal) ? ParticipantWork.Design : ParticipantWork.Build;
@@ -2042,7 +2056,8 @@ public sealed class Driver(
         {
             try
             {
-                agent = StartPlan.ContinuedOn(goesOnFrom, config);
+                agent = StartPlan.ContinuedOn(
+                    goesOnFrom, config, StartWork(quest), Context.Conversations.RoleOf(goesOnFrom.Session)?.Role, CatalogueForReport(), PlaceOf(start));
             }
             catch (DriverException error)
             {
@@ -3026,6 +3041,8 @@ public sealed class Driver(
 
             return await HoldAsync(
                 "build", adapter, info, target, sessionId, transcript, workTree, JoinNotices(harnessNotice, browserNotice), rules, handed,
+                // FOUNDATION1x: `actor` stays the seeded id; the role the start took and its revision go on the binding. A continuation keeps its record's.
+                taken: start.Resumes is null ? RoleTaken(start) : null,
                 // 🔴 A driven session takes no person's line, on either door (INT4i) — INT4h's rule for
                 // an intake, for the same reason: it was handed its whole quest at once, the pipe door
                 // gives it no stdin, and the protocol door's stdin carries the driver's own frames.
@@ -3989,7 +4006,7 @@ public sealed class Driver(
         Action? working = null, Func<CancellationToken, Task<bool>>? waitsOnBackground = null, int? minutes = null,
         string? noConnector = null, Action<SessionStop?>? stopMade = null, bool movedFirst = false, Action? spawned = null,
         string? piece = null, OpenOffers? offers = null, Func<CancellationToken, Task<bool>>? transientWanted = null,
-        Func<CancellationToken, Task<TurnCarry>>? carriesOn = null, Action? written = null)
+        Func<CancellationToken, Task<TurnCarry>>? carriesOn = null, Action? written = null, (string Role, long Revision)? taken = null)
     {
         // Through the start gate (PROCSTART2): a press that starts a session reaches here before its first wait, and the
         // runtime's start lock is no thread's to wait on but the pool's. Seen through once begun, as the start always was.
@@ -4015,6 +4032,7 @@ public sealed class Driver(
             catch (Exception error) when (error is not OperationCanceledException) { Log?.Write("warn", "actor.read-failed", [("session", sessionId)]); }
         }
         actor = prior?.Actor ?? actor;
+        if (taken is { } role) Context.Conversations.KeepRole(sessionId, role.Role, role.Revision);
         var asked = ActorAsked.ForSpawn(adapter.Name, info, target.Asked ?? prior?.Asked);
         // MODELROLE1c: the entry a new start's walk took (D205 §4.0); a continuation keeps its record's own.
         var choice = target.Choice ?? prior?.Choice ?? "before";

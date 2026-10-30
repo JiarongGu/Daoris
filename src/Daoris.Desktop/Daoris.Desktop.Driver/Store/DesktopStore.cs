@@ -405,6 +405,19 @@ public sealed class DesktopStore : IDisposable
               PRIMARY KEY (id, revision)
             );
             """)),
+
+        // FOUNDATION1x: the role a start took and its revision, kept with its binding (§2.7, §13.3's Bindings family). A new table, as
+        // `binding_picks` was, so the role is known when a start opens while the conversation's id comes only when the wire names it, a
+        // build that knows no role never opens it, and each writer of a binding names its own columns (O3-16). The stamp stays.
+        new(11, WriterStamp, write => write.Execute(
+            """
+            CREATE TABLE binding_roles (
+              session  TEXT PRIMARY KEY,
+              role     TEXT NOT NULL,
+              revision INTEGER NOT NULL,
+              at       TEXT NOT NULL
+            );
+            """)),
     ];
 
     /// <summary>
