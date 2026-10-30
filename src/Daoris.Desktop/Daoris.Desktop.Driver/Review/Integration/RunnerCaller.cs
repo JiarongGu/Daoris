@@ -151,12 +151,12 @@ internal sealed class RunnerCaller(CandidateJob job, VerdictRunner runner, IRead
         return RunnerAnswers.Read(text, asked);
     }
 
-    /// <summary>The last of a log's words, for a refusal: the runner says there why it refused.</summary>
+    /// <summary>The last of a log's words, for a refusal: the runner says there why it refused. Read sharing its writing, as the gates' logs are.</summary>
     private static string Tail(string log)
     {
         try
         {
-            var lines = File.ReadAllLines(log).Select(line => line.Trim()).Where(line => line.Length > 0).TakeLast(3);
+            var lines = BesideReads.Text(log).Split('\n').Select(line => line.Trim()).Where(line => line.Length > 0).TakeLast(3);
             var text = string.Join(" / ", lines);
             return text.Length == 0 ? "it said nothing" : text.Length > 600 ? text[^600..] : text;
         }
