@@ -12403,3 +12403,11 @@ mis-rooted instance.
 **Fix.** `RealKnowledgeServer` builds its own copy under `obj/knowledge-host` through `RealServiceHost.BuildAsync`; the tests start that.
 
 **Verification.** With the service tree's `bin` absent, the three classes pass (11 tests).
+
+## A CI run for a stage kept running every gate after one failed (2026-10-30)
+
+**Root cause.** `gateCi` always ran with `keepGoing`, so a stage's run, which needs every gate green, held the gate tree for an hour after `driver-process` and `rehearse-family` had failed.
+
+**Fix.** A `--stage` run ends at its first `FAIL` (`endsStageRun`; a `FLAKE` does not): it ends the running gates' trees, starts none, releases the lock and names the failure and the gates not run. A plain run is unchanged.
+
+**Verification.** Two tool tests: stage ends, plain runs on; the verdict helper.
