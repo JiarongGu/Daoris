@@ -227,7 +227,7 @@ A folder past twenty sources keeps its scopes in folders named for what they hol
   partner are notes, never words, and reset nothing. A tree's opening says, after its copied dependencies, the machine-local
   files its repository's gates read that were copied in read-only, each as code, and why a declared one was not
   (`started.local-*`, TREELOCAL1, D216). A done quest's session carried on to commit its uncommitted tree, and the bound that ends
-  that, are said by `background.carried-on` (with its paths) and `background.carry-bound` (LANDBACK1 part 2). A move to a new part that a live Daoris has kept still for ten minutes is said once
+  that, are said by `background.carried-on` (with its paths) and `background.carry-bound` (LANDBACK1 parts 2 and 3, the bound's words naming no count). A move to a new part that a live Daoris has kept still for ten minutes is said once
   on its line by `move.quiet`, with its minutes, beside the watcher's quiet run (FOUNDATION1f-i part 2). A hand-over's note names who asked it (the person at a terminal, the
   window or the agent) and says one Daoris could not take as not taken, with its reason, never as refused (HANDOVERSAID1);
   the person's words that never reached the session are one family of reasons, `UNREACHED_REASONS` (it ended first, Daoris kept

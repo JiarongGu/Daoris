@@ -626,12 +626,12 @@ describe('noteLines', () => {
     /** LANDBACK1 part 2: a done quest's session carried on for the uncommitted work in its tree, and the bound that ends it. */
     it('words a session carried on for the uncommitted work its done quest left, and the bound', () => {
       const carried = coded('background.carried-on', '— its quest is done, but its tree holds uncommitted work (paths: 3): …', { paths: 3 });
-      const bound = coded('background.carry-bound', '— its session was carried on twice …');
+      const bound = coded('background.carry-bound', '— its session was carried on for the uncommitted work …');
       expect(noteLines(t, { parts: [carried] }, 'en')[0].text).toContain('uncommitted work (paths: 3)');
       expect(noteLines(zh, { parts: [carried] }, 'zh')[0].text).toContain('3 个路径');
       expect(noteLines(zh, { parts: [carried] }, 'zh')[0].text).not.toContain('清理');
-      expect(noteLines(t, { parts: [bound] }, 'en')[0].text).toContain('carried on twice');
-      expect(noteLines(zh, { parts: [bound] }, 'zh')[0].text).toContain('两次');
+      expect(noteLines(t, { parts: [bound] }, 'en')[0].text).toContain('carried on for the uncommitted work');
+      expect(noteLines(zh, { parts: [bound] }, 'zh')[0].text).toContain('继续过');
       expect(noteLines(zh, { parts: [coded('background.carried-on', '…', {})] }, 'zh')[0].kind).toBe('recorded');
     });
 
