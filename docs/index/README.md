@@ -266,7 +266,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Service/Daoris.Service.Http.Tests/ConfirmationTests.cs` | 57 | 1016 |
 | `src/Daoris.Service/Daoris.Service.Http.Tests/LocalHostTests.cs` | 170 | 2786 |
 | `src/Daoris.Service/Daoris.Service.Http/ApiContracts.cs` | 85 | 974 |
-| `src/Daoris.Service/Daoris.Service.Http/PersonDoors.cs` | 42 | 648 |
+| `src/Daoris.Service/Daoris.Service.Http/PersonDoors.cs` | 42 | 649 |
 | `src/Daoris.Service/Daoris.Service.Http/Program.cs` | 186 | 3100 |
 | `src/Daoris.Service/Daoris.Service.Tests/Asks/HistoryDeskTests.cs` | 46 | 864 |
 | `src/Daoris.Service/Daoris.Service.Tests/Knowledge/IndexEntriesTests.cs` | 50 | 983 |
