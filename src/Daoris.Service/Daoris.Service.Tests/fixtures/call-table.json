@@ -39,10 +39,9 @@
       "only": ["knowledge_convergence", "knowledge_get", "knowledge_repositories", "knowledge_search", "line_read", "partner_answer", "registry"]
     },
     "review": {
-      "allBut": [
-        "brainstorm_give", "brainstorm_synthesize", "channel_post", "channel_read", "checkout_read", "housekeeping_clean_up",
-        "housekeeping_discard_branch", "housekeeping_inspect", "settings_cap", "settings_cooloff", "settings_language", "settings_notify",
-        "settings_timeout"
+      "only": [
+        "handback_read", "knowledge_convergence", "knowledge_get", "knowledge_repositories", "knowledge_search", "opinion_give", "quest_list",
+        "registry"
       ]
     },
     "brainstorm:generator": {
@@ -52,10 +51,16 @@
       "only": ["brainstorm_synthesize"]
     },
     "unplaced": {
-      "allBut": []
+      "only": [
+        "handback_read", "knowledge_convergence", "knowledge_get", "knowledge_repositories", "knowledge_search", "line_read", "quest_list",
+        "registry"
+      ]
     },
     "unread": {
-      "only": ["knowledge_convergence", "knowledge_get", "knowledge_repositories", "knowledge_search", "line_read", "partner_answer", "registry"]
+      "only": [
+        "handback_read", "knowledge_convergence", "knowledge_get", "knowledge_repositories", "knowledge_search", "line_read", "quest_list",
+        "registry"
+      ]
     }
   }
 }

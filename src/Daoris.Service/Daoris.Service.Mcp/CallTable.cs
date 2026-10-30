@@ -11,7 +11,9 @@ public sealed record CallRefusal(string Code, string Text);
 /// <remarks>
 /// <c>McpRoleFilterTests</c> holds every cell to <c>fixtures/call-table.json</c> over the host's registration. Each work keeps what it
 /// was served before the table, at the filter and at the boxes that judged by the work alone, which keep their checks as their store's
-/// guard: the channel's, Ask Daoris's checkouts, housekeeping and settings, and a brainstorm's turn.
+/// guard: the channel's, Ask Daoris's checkouts, housekeeping and settings, and a brainstorm's turn. The foundation design §7 changes
+/// two answers: a named session the connector cannot place is served the reads alone (row 10), and a reviewer and a brainstorm's voice
+/// only what their handed rules allow (row 11).
 /// </remarks>
 public static class CallTable
 {
@@ -45,6 +47,18 @@ public static class CallTable
 
     private static readonly HashSet<string> Partner = new(PartnerServed, StringComparer.Ordinal);
 
+    /// <summary>
+    /// What a second opinion's reviewer is served (the foundation design §7 row 11; D155): the knowledge, the quests and their handbacks
+    /// it reads, and its one say. The driver's <c>OpinionPermissions.Offered</c> hands the same where its agent takes rules.
+    /// </summary>
+    public static IReadOnlyList<string> ReviewerServed { get; } =
+    [
+        "handback_read", "knowledge_convergence", "knowledge_get", "knowledge_repositories", "knowledge_search", "opinion_give", "quest_list",
+        "registry",
+    ];
+
+    private static readonly HashSet<string> Reviewer = new(ReviewerServed, StringComparer.Ordinal);
+
     private static readonly HashSet<string> Turns = new([BrainstormBox.GiveTool, BrainstormBox.SynthesizeTool], StringComparer.Ordinal);
 
     /// <summary>Ask Daoris's own tools, whose boxes serve its record alone.</summary>
@@ -69,8 +83,8 @@ public static class CallTable
         if (work == SessionWork.Unnamed) return null;
         var name = tool ?? "";
         if (ToolClasses.Of(tool) is not { } kind) return new(UnknownTool, Words.UnknownTool(name));
-        if (work == SessionWork.Unread) return Partner.Contains(name) ? null : new(Unread, Words.Unread(name));
-        if (work == SessionWork.Unplaced) return null;
+        // The foundation design §7 row 10: a named session that cannot be placed is served the reads, and every mutation refused.
+        if (work == SessionWork.Unread) return kind == ToolClass.Read ? null : new(Unread, Words.Unread(name));
 
         return work switch
         {
@@ -78,9 +92,10 @@ public static class CallTable
             { Work: ParticipantWork.Brainstorm, Turn: SessionWork.Synthesizer } => Turn(name, BrainstormBox.SynthesizeTool, "synthesis"),
             { Turn: not null } => Unknown(name, kind),
             { Work: ParticipantWork.Partner } => Partner.Contains(name) ? null : Forbidden(Words.Partner(name)),
+            // §7 row 11: a reviewer is served what its handed rules offer, on every door.
+            { Work: ParticipantWork.Review } => Reviewer.Contains(name) ? null : Forbidden(Words.Reviewer(name)),
             { Work: ParticipantWork.AskDaoris } => Ordinary(name, askDaoris: true),
             { Work: ParticipantWork.Help } => Serving(name) ?? Channelled(name) ?? Ordinary(name),
-            { Work: ParticipantWork.Review } => Channelled(name) ?? Ordinary(name),
             { Work: ParticipantWork.Build or ParticipantWork.Design or ParticipantWork.Chat or ParticipantWork.Intake } => Ordinary(name),
             _ => Unknown(name, kind),
         };
@@ -129,6 +144,10 @@ public static class CallTable
         public static string Partner(string name) =>
             $"`{name}` is not a partner's to call: a session Daoris started to write a piece asks nobody and acts on nothing outside its "
             + "copy. Leave your files in your copy, and say your answer with partner_answer.";
+
+        public static string Reviewer(string name) =>
+            $"`{name}` is not a second opinion's to call: a reviewer reads, gives its opinion with opinion_give, and changes nothing. "
+            + "Say in your opinion what you would have done.";
 
         public static string Pass(string name) =>
             $"`{name}` is not a brainstorm pass's to call: a pass reads the room it was handed and gives its one answer through its turn's "

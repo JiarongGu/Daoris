@@ -38,6 +38,22 @@ public sealed class McpRoleFilterTests : McpToolsFixture
             Interlocked.Increment(ref Ran);
             return "asked";
         }
+
+        [McpServerTool(Name = "quest_list")]
+        [Description("Stands in for the quest list.")]
+        public static string List()
+        {
+            Interlocked.Increment(ref Ran);
+            return "listed";
+        }
+
+        [McpServerTool(Name = "brainstorm_give")]
+        [Description("Stands in for a generator's answer.")]
+        public static string Give() => "given";
+
+        [McpServerTool(Name = "brainstorm_synthesize")]
+        [Description("Stands in for a synthesis.")]
+        public static string Synthesize() => "synthesized";
     }
 
     private static readonly SessionWork Partner = new(ParticipantWork.Partner);
@@ -111,6 +127,61 @@ public sealed class McpRoleFilterTests : McpToolsFixture
         var named = System.Text.RegularExpressions.Regex.Matches(list, "\"([a-z_]+)\"").Select(match => match.Groups[1].Value);
 
         Assert.Equal(CallTable.PartnerServed.Order(StringComparer.Ordinal), named.Order(StringComparer.Ordinal));
+    }
+
+    /// <summary>
+    /// 🔴 The foundation design §7 row 11: a reviewer and a brainstorm's voice are served at the server exactly what their handed rules
+    /// allow (<c>OpinionPermissions.Offered</c>, <c>BrainstormPermissions.ToolOf</c>), cell for cell, on every door.
+    /// </summary>
+    [Fact]
+    public void A_reviewer_and_a_voice_are_served_what_their_handed_rules_allow()
+    {
+        var advertised = ToolClassesTests.Advertised();
+        var opinion = File.ReadAllText(SourceFiles.Driver("OpinionPermissions.cs"));
+        var list = System.Text.RegularExpressions.Regex.Match(opinion, @"string\[\] Offered\s*=\s*\[(?<names>[^\]]*)\]").Groups["names"].Value;
+        var offered = System.Text.RegularExpressions.Regex.Matches(list, "\"([a-z_]+)\"").Select(match => match.Groups[1].Value).ToHashSet();
+        var brainstorm = File.ReadAllText(SourceFiles.Driver("BrainstormPermissions.cs"));
+
+        Assert.NotEmpty(offered);
+        Assert.All(advertised, tool => Assert.Equal(offered.Contains(tool), CallTable.Served(new SessionWork(ParticipantWork.Review), tool)));
+        Assert.Contains("ToolOf(string turn) => turn.StartsWith('s') ? Synthesize : Give;", brainstorm);
+        Assert.Equal([BrainstormBox.GiveTool], advertised.Where(tool => CallTable.Served(SessionWork.Generating, tool)));
+        Assert.Equal([BrainstormBox.SynthesizeTool], advertised.Where(tool => CallTable.Served(SessionWork.Synthesizing, tool)));
+    }
+
+    /// <summary>🔴 Through the server: a voice's own result tool reaches it, the other turn's and every other tool do not.</summary>
+    [Fact]
+    public async Task A_voices_result_tool_is_served_through_the_server()
+    {
+        var generator = await CallAsync(_ => Task.FromResult(SessionWork.Generating), "brainstorm_give", "brainstorm_synthesize", "knowledge_search");
+        var synthesizer = await CallAsync(_ => Task.FromResult(SessionWork.Synthesizing), "brainstorm_synthesize", "brainstorm_give");
+
+        Assert.Equal(("given", null), generator[0]);
+        Assert.Equal(CallTable.ForbiddenWork, generator[1].Code);
+        Assert.Equal(CallTable.ForbiddenWork, generator[2].Code);
+        Assert.Equal(("synthesized", null), synthesizer[0]);
+        Assert.Equal(CallTable.ForbiddenWork, synthesizer[1].Code);
+    }
+
+    /// <summary>
+    /// 🔴 The foundation design §7 row 10: a stand-in caller naming a session this machine keeps no record of is served the reads and
+    /// refused every mutation, unplaced; before, nothing was refused it.
+    /// </summary>
+    [Fact]
+    public async Task A_named_caller_with_no_record_is_served_reads_and_refused_mutations()
+    {
+        var ledger = await LedgerAsync();
+        var before = StandInTools.Ran;
+
+        var answers = await CallAsync(new SessionWorks(ledger, new IntakeScope(null, "s-stand-in")).ReadAsync,
+            "knowledge_search", "quest_list", "helper_ask", "brainstorm_give");
+
+        Assert.Equal(("found", null), answers[0]);
+        Assert.Equal(("listed", null), answers[1]);
+        Assert.Equal(CallTable.Unplaced, answers[2].Code);
+        Assert.Contains("serves this session the reads alone", answers[2].Text);
+        Assert.Equal(CallTable.Unplaced, answers[3].Code);
+        Assert.Equal(before + 2, StandInTools.Ran);
     }
 
     /// <summary>
@@ -188,19 +259,25 @@ public sealed class McpRoleFilterTests : McpToolsFixture
 
         var answers = await CallAsync(_ => Task.FromResult(Partner), "helper_ask", "knowledge_search");
 
-        Assert.Contains("not a partner's to call", answers[0]);
-        Assert.Equal("found", answers[1]);
+        Assert.Contains("not a partner's to call", answers[0].Text);
+        Assert.Equal(CallTable.ForbiddenWork, answers[0].Code);
+        Assert.Equal(("found", null), answers[1]);
         Assert.Equal(before + 1, StandInTools.Ran);
     }
 
-    /// <summary>A record that cannot be read lets the reading tools answer and refuses the rest, since nothing says they are allowed.</summary>
+    /// <summary>
+    /// 🔴 A record that cannot be read lets the reads answer, `quest_list` among them, and refuses the rest, since nothing says they are
+    /// allowed (the foundation design §7 row 10).
+    /// </summary>
     [Fact]
     public async Task An_unread_record_lets_only_the_reading_tools_answer()
     {
-        var answers = await CallAsync(_ => throw new InvalidOperationException("the store is gone"), "helper_ask", "knowledge_search");
+        var answers = await CallAsync(_ => throw new InvalidOperationException("the store is gone"), "helper_ask", "knowledge_search", "quest_list");
 
-        Assert.Contains("could not read this session's record", answers[0]);
-        Assert.Equal("found", answers[1]);
+        Assert.Contains("could not read this session's record", answers[0].Text);
+        Assert.Equal(CallTable.Unread, answers[0].Code);
+        Assert.Equal(("found", null), answers[1]);
+        Assert.Equal(("listed", null), answers[2]);
     }
 
     /// <summary>The host's own composition judges every call, so what the tests above hold is what a session's connector does.</summary>
@@ -214,7 +291,8 @@ public sealed class McpRoleFilterTests : McpToolsFixture
         Assert.Contains(".RefuseOutsideRole(new SessionWorks(composed.Ledger, intake, BrainstormScope.FromEnvironment()).ReadAsync)", program);
     }
 
-    private static async Task<List<string>> CallAsync(Func<CancellationToken, Task<SessionWork>> role, params string[] tools)
+    /// <summary>Each tool called through the server in turn: what it answered, and the refusal's code where it was refused.</summary>
+    private static async Task<List<(string Text, string? Code)>> CallAsync(Func<CancellationToken, Task<SessionWork>> role, params string[] tools)
     {
         var toServer = new Pipe();
         var fromServer = new Pipe();
@@ -225,7 +303,7 @@ public sealed class McpRoleFilterTests : McpToolsFixture
             .WithTools(toolTypes: [typeof(StandInTools)])
             .RefuseOutsideRole(role);
 
-        var answers = new List<string>();
+        var answers = new List<(string Text, string? Code)>();
         using (var host = builder.Build())
         {
             await host.StartAsync();
@@ -255,7 +333,9 @@ public sealed class McpRoleFilterTests : McpToolsFixture
                 {
                     ["jsonrpc"] = "2.0", ["id"] = id++, ["method"] = "tools/call", ["params"] = new JsonObject { ["name"] = tool },
                 });
-                answers.Add(string.Join("\n", answer["result"]!["content"]!.AsArray().Select(block => (string)block!["text"]!)));
+                var result = answer["result"]!;
+                answers.Add((string.Join("\n", result["content"]!.AsArray().Select(block => (string)block!["text"]!)),
+                    (string?)result["_meta"]?[RoleFilter.RefusalKey]));
             }
 
             await toServer.Writer.CompleteAsync();
