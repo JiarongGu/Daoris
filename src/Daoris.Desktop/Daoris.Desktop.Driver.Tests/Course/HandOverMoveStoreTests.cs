@@ -235,9 +235,14 @@ public sealed class HandOverMoveStoreTests : IDisposable
             return Task.CompletedTask;
         };
 
+        // TAKEWAITS1: the take is told over only once its move has ended in the store, so the words the shell held meanwhile go after the brief.
+        string? phaseAtEnd = null;
+        world.HandOver.TakeEnded += _ => phaseAtEnd = MoveFrom("c1")?.PhaseWord;
+
         var handed = await Press(world);
 
         Assert.True(handed.Kept, handed.Message);
+        Assert.Equal("delivered", phaseAtEnd);
         Assert.Equal("c3", handed.SessionId);
         Assert.Equal(("opening", "run-shell", HandOverWhy.Press, HandOverBy.Person, "talk", "account-2"), (atOpen!.PhaseWord, atOpen.ClaimRun, atOpen.Why, atOpen.By, atOpen.Agent, atOpen.Account));
         Assert.True(atOpen.Moments.ContainsKey(MoveRecordPhase.Decided) && atOpen.Moments.ContainsKey(MoveRecordPhase.OldEnded));
