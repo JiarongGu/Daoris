@@ -162,6 +162,8 @@ public sealed class RequestNodeRunTests : NodeRunFixture
         var pass = await RunPassAsync(runtime);
         Assert.Equal((NodeStates.Failed, RequestOptions.DeclinedCode), (Ask.State, Ask.Code));
         Assert.Single(pass.Said, line => line.Contains("was declined", StringComparison.Ordinal));
+        var hold = Assert.Single(runtime.RequestHolds());
+        Assert.Equal((RunId, "ask", "r1", "game", true), (hold.Run, hold.Node, hold.Quest, hold.To, hold.Request));
         await RunPassAsync(runtime);
         Assert.Equal(NodeStates.Failed, Ask.State);
         Assert.Single(_door.Sent);

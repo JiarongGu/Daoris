@@ -258,7 +258,7 @@ public sealed class NodeRuntime(
     /// so a pass over a node clears its hold before the next look. Empty before a pass has read.
     /// </summary>
     public IReadOnlyList<RequestHold> RequestHolds() =>
-        _governed is { } governed ? Daoris.Driver.RequestHolds.Of(governed.Values, records.Read) : [];
+        _governed is { } governed ? Daoris.Driver.RequestHolds.Of(governed.Values, records.Read, _quests) : [];
 
     private readonly Func<bool> _holdsLease = holdsLease ?? (() => true);
 
