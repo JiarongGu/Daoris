@@ -122,6 +122,29 @@ public sealed class OpinionDeliveryTests : IDisposable
     }
 
     /// <summary>
+    /// 🔴 FOUNDATION1i path 5 (the foundation design §10 row 1i): the findings a working session never takes are the course's answer for a
+    /// solicited answer, <c>Never</c> by why, and a session that takes them is the course's resume.
+    /// </summary>
+    [Fact]
+    public async Task What_never_takes_the_findings_is_the_course_s_answer_and_a_session_that_does_is_its_resume()
+    {
+        var heard = new List<LineCourse>();
+        var host = new OpinionStandIn().Opinion("op1", "s1", weights: ["must"]);
+        host.Session("s1", "completed").Set("s1", "ask", "a1");
+        var intake = Driver(host);
+        intake.Deliverer.Decided = heard.Add;
+        Assert.Equal(ContinueWhy.Intake, (await intake.DeliverAsync("op1", Asked)).Why);
+        Assert.Equal(CourseNeverWhy.Intake, Assert.IsType<LineCourse.Never>(Assert.Single(heard)).Why);
+
+        heard.Clear();
+        var takes = new OpinionStandIn().Session("s1", "completed").Opinion("op2", "s1", weights: ["must"]);
+        var driver = Driver(takes);
+        driver.Deliverer.Decided = heard.Add;
+        Assert.Equal(OpinionDeliveryStates.Handed, (await driver.DeliverAsync("op2", Asked)).State);
+        Assert.IsType<LineCourse.Resume>(Assert.Single(heard));
+    }
+
+    /// <summary>
     /// Words the working session could not go on with are marked by their ids (MSG1b): a look that finds the handed word marked
     /// says the findings went to the person, with the mark's reason, and keeps it.
     /// </summary>

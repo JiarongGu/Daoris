@@ -12395,3 +12395,11 @@ did, with the old heuristic as the last resort.
 **Verification.** Launched with no environment at all: right port, right family. The family rehearsal
 re-ran after the change, 22/22. No store pollution had occurred — no request ever reached the
 mis-rooted instance.
+
+## The knowledge-server process tests needed the service gate to have run first (2026-10-30)
+
+**Root cause.** Four driver process tests found `daoris-knowledge` only in the service tree's `bin`, an undeclared build dependency; a CI stage that kept the service verdict never built it.
+
+**Fix.** `RealKnowledgeServer` builds its own copy under `obj/knowledge-host` through `RealServiceHost.BuildAsync`; the tests start that.
+
+**Verification.** With the service tree's `bin` absent, the three classes pass (11 tests).

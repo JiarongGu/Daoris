@@ -744,6 +744,72 @@ public sealed class HandOverTests : IDisposable
 
     private MoveRecord? QuestMove(string session) => Store().Of(session).LastOrDefault();
 
+    /// <summary>A quest's ask as the door puts it, with the course's answer it heard (FOUNDATION1i path 2).</summary>
+    private async Task<(HandOverAnswer Answer, List<LineCourse> Heard)> HeardQuestAsync(
+        Room room, string id, string by = HandOverBy.Person, CourseRules? consent = null)
+    {
+        var heard = new List<LineCourse>();
+        var client = room.Client();
+        var moves = new ConversationMoves(_home, client, Events, store: Store(), scope: MoveTakeUpScope.LeaseHolder);
+        var asked = await QuestHandOver.AskAsync(
+            client, moves, Drives, id, "codex-acp", null, by == HandOverBy.Agent ? HandOverWhy.Agent : HandOverWhy.Press, by,
+            consent: consent, decided: heard.Add);
+        return (asked, heard);
+    }
+
+    /// <summary>
+    /// 🔴 FOUNDATION1i path 2 (the foundation design §10 row 1i, §3.1): whether a quest's session is handed over is the course's one decision
+    /// for <see cref="CourseTrigger.HandOver"/>, its old judge the adapter. Heard from the ask, a session that is handed over is a move now
+    /// by the person, on the agent named, at the turn's end where an agent asks of a session that runs; what the executor alone knows
+    /// (a quest closed, a take lost) is refused before it and asks the course nothing.
+    /// </summary>
+    [Fact]
+    public async Task A_quest_s_hand_over_is_the_course_s_move_where_the_executor_lets_it_through()
+    {
+        var room = QuestRoom(Driven("qu3st000"), Driven("d0n3q000", "q2"));
+
+        var (kept, keptHeard) = await HeardQuestAsync(room, "qu3st000");
+        Assert.True(kept.Kept, kept.Message);
+        var move = Assert.IsType<LineCourse.Move>(Assert.Single(keptHeard));
+        Assert.Equal((CourseWhen.Now, "codex-acp", CourseFromBy.Person), (move.When, move.Where.Agent, move.By));
+
+        var (closed, closedHeard) = await HeardQuestAsync(room, "d0n3q000");
+        Assert.Equal((false, HandOver.QuestClosed), (closed.Kept, closed.Why));
+        Assert.Empty(closedHeard);
+    }
+
+    /// <summary>
+    /// 🔴 FOUNDATION1i path 2 (D212's note on the branches' order): the hand-over rule's consent stays in the door that judges an agent's ask
+    /// and reaches the course as a fact, one answer to each door: under <c>off</c> the ask is refused, under <c>ask</c> it is put to the person
+    /// and nothing is kept, under <c>on</c> it is kept; none said is none, and the person's press needs none.
+    /// </summary>
+    [Fact]
+    public async Task A_quest_s_rule_consent_reaches_the_course_as_a_fact_one_answer_to_each_door()
+    {
+        var room = QuestRoom(Driven("qu3st000"));
+
+        var (off, offHeard) = await HeardQuestAsync(room, "qu3st000", HandOverBy.Agent, new CourseRules());
+        Assert.Equal((false, HandOverAskWhy.Off), (off.Kept, off.Why));
+        Assert.Equal(CourseHoldWhy.ConsentRefused, Assert.IsType<LineCourse.Hold>(Assert.Single(offHeard)).Why);
+        Assert.Null(QuestMove("qu3st000"));
+
+        var (asks, asksHeard) = await HeardQuestAsync(room, "qu3st000", HandOverBy.Agent, new CourseRules(HandOverAsks: true));
+        Assert.Equal((false, HandOver.AwaitsYes), (asks.Kept, asks.Why));
+        Assert.Equal([CourseDoor.LetAskGo, CourseDoor.NotNow], Assert.IsType<LineCourse.Hold>(Assert.Single(asksHeard)).Doors);
+        Assert.Null(QuestMove("qu3st000"));
+
+        Assert.Equal(HandOverAskWhy.Off, (await HeardQuestAsync(room, "qu3st000", HandOverBy.Agent)).Answer.Why);
+
+        var (on, onHeard) = await HeardQuestAsync(room, "qu3st000", HandOverBy.Agent, HandOver.ConsentOf(HandOverAskVerdict.Go("codex-acp")));
+        Assert.True(on.Kept, on.Message);
+        Assert.Equal(CourseFromBy.Agent, Assert.IsType<LineCourse.Move>(Assert.Single(onHeard)).By);
+        Assert.Equal(HandOverBy.Agent, QuestMove("qu3st000")!.By);
+
+        var (pressed, pressedHeard) = await HeardQuestAsync(QuestRoom(Driven("qu3st001")), "qu3st001", consent: new CourseRules());
+        Assert.True(pressed.Kept, pressed.Message);
+        Assert.IsType<LineCourse.Move>(Assert.Single(pressedHeard));
+    }
+
     /// <summary>
     /// 🔴 A quest's session handed to another agent keeps its move in the store (FOUNDATION1f-v part c), decided at the ask, and says the driver's
     /// next look takes it; no box is written.

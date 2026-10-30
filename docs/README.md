@@ -267,6 +267,7 @@ Read records by identifier; do not read a whole log to find one entry.
 | Document | Job and standing |
 |---|---|
 | `../TASKS.md` | Open work, dependencies, contract and proof |
+| `backlog-parked.md` | Open rows set aside outside the current direction; moved back to `TASKS.md` when taken up |
 | `../CHANGELOG.md` | Release-facing changes; workflow stamps headings |
 | `DECISIONS.md` | Pointer to decisions; append none here |
 | `decisions/` | Numbered decisions and dated amendments, one file each |
