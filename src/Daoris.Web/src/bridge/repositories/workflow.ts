@@ -84,6 +84,19 @@ export const useWorkflowRun = (scope: RunScope | null, { enabled = true }: { ena
   });
 };
 
+/** What `WORKFLOW_VERIFY` answers: the run bound, or refused by its code (`no-checkout`, `refused`, `unread`) with the driver's sentence. */
+export type VerifyAnswer = { repository: string; done: boolean; refused: string | null; message: string };
+
+/**
+ * The person's verification of a branch or a commit (FABRIC-PIPELINE1d part 5), the page's half of `daoris-driver verify`: bound under the
+ * landed route's gates they accepted, for the running driver to verify after any verification ahead of it. A refusal is an answer with the
+ * driver's sentence, never thrown. Its verdict shows on the run's view, which the state hub asks again under the driver's key.
+ */
+export const useVerify = () => useMutation({
+  mutationFn: ({ repository, branch, commit }: { repository: string; branch?: string; commit?: string }) =>
+    call<VerifyAnswer>('WORKFLOW_VERIFY', { repository, ...(branch ? { branch } : {}), ...(commit ? { commit } : {}) }),
+});
+
 /**
  * The person's skip or stop of a graph run's node (FABRIC-CUTOVER1f; D190 point 6, the cutover design §5.2), the page's half of
  * `daoris-driver workflow skip|stop`: kept on the run's record by the driver for its next look, which applies it. Answers what was kept, or

@@ -31,7 +31,7 @@ public static class SpaceKinds
     [
         new("set-aside", "days", null, KeepKinds.SetAside),
         new("downloads", "days", null, KeepKinds.Downloads),
-        new("browser-cache", "own", "browser", null),
+        new("browser-cache", "own", "browser", KeepKinds.BrowserCache),
         new("logs", "days", null, KeepKinds.Logs),
         new("history", "press", null, KeepKinds.History),
         new("trees", "proof", null, null),
@@ -488,9 +488,7 @@ public static class SystemSpace
             // KEEP1d: the person sets the rules of the kinds `KeepRules.Settable` names, on the card's *Change…* and `daoris driver keep`.
             ["settable"] = kind.Keeps is { } settable && KeepRules.Settable.Contains(settable),
             // KEEP1d: what the person may set, so the editor offers the kind's own choices and the driver's bounds, never a copy of them.
-            ["bounds"] = kind.Keeps is { } bounded && KeepRules.Settable.Contains(bounded)
-                ? new JsonObject { ["min"] = bounded.MinDays, ["max"] = bounded.MaxDays, ["whole"] = bounded.MaySetWhole, ["never"] = bounded.MaySetNever }
-                : null,
+            ["bounds"] = kind.Keeps is { } bounded && KeepRules.Settable.Contains(bounded) ? Bounds(bounded) : null,
             ["next"] = next,
             ["nextWhy"] = nextWhy,
             // KEEPSIZE1b (the keep-size design §4.5): the set-aside folders no rule may take yet, by why, from their manifests alone.
@@ -500,22 +498,38 @@ public static class SystemSpace
         };
     }
 
+    /// <summary>What the person may set of a kind: its days, and the size limit (KEEPSIZE1d) only where the kind takes one.</summary>
+    private static JsonObject Bounds(KeepKind kind)
+    {
+        var bounds = new JsonObject { ["min"] = kind.MinDays, ["max"] = kind.MaxDays, ["whole"] = kind.MaySetWhole, ["never"] = kind.MaySetNever };
+        if (kind.MayHavePart) bounds["gb"] = new JsonObject { ["min"] = KeepKey.PartMinGb, ["max"] = KeepKey.PartMaxGb };
+        if (kind.SizeOnly) bounds["sizeOnly"] = true;
+        return bounds;
+    }
+
     private static JsonObject Rule(SpaceKind kind, KeepPolicy policy)
     {
         var rule = new JsonObject { ["kind"] = kind.Rule, ["days"] = null, ["whole"] = null, ["default"] = true, ["whose"] = kind.Whose };
         // KEEP1f: what the floor frees early of a kind while the floor is on, which its rule then says (*cleared when space is low*).
-        rule["low"] = !policy.Floor.Off && kind.Id is "set-aside" or "downloads" or "browser-cache";
+        // KEEPSIZE1f: the floor frees nothing, so no kind says it is cleared when space is low.
+        rule["low"] = false;
         switch (kind.Id)
         {
             case "set-aside":
                 rule["days"] = (int)policy.SetAside.Days.TotalDays;
                 rule["whole"] = policy.SetAside.Whole;
-                rule["default"] = policy.SetAside == KeepPolicy.Default.SetAside;
+                rule["gb"] = policy.Limits.SetAsideGb;
+                rule["default"] = policy.SetAside == KeepPolicy.Default.SetAside && policy.Limits.SetAsideGb == KeepPolicy.Default.Limits.SetAsideGb;
                 break;
             case "downloads":
                 if (policy.Downloads.Days is { } days) rule["days"] = (int)days.TotalDays;
                 else rule["kind"] = "never";
-                rule["default"] = policy.Downloads == KeepPolicy.Default.Downloads;
+                rule["gb"] = policy.Limits.DownloadsGb;
+                rule["default"] = policy.Downloads == KeepPolicy.Default.Downloads && policy.Limits.DownloadsGb == KeepPolicy.Default.Limits.DownloadsGb;
+                break;
+            case "browser-cache":
+                rule["gb"] = policy.Limits.BrowserCacheGb;
+                rule["default"] = policy.Limits.BrowserCacheGb == KeepPolicy.Default.Limits.BrowserCacheGb;
                 break;
             case "logs":
                 rule["days"] = (int)policy.Logs.Days.TotalDays;

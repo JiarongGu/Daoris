@@ -57,6 +57,46 @@ export function stateSaid(t: TFunction, state: string): string {
   return knownState(state) ? t(`workflow.run.state.${state}`) : t('workflow.run.state.unknown', { state });
 }
 
+/** Why a check is not known, the codes the page words (`VerifyResult`'s `changed`, `bound`, `stopped`, `busy`); another is said as the general. */
+const CHECK_WHY = ['changed', 'bound', 'stopped', 'busy'];
+
+/**
+ * A check's verdict as a status word (FABRIC-PIPELINE1d, the pipeline design §4.4): *verified*, *failed: `<gate>`*, *not known: `<why>`*,
+ * *waiting for `<what>`*, *not now*; null for a step that is no check, or a check standing where no verdict word applies.
+ */
+export function checkWord(t: TFunction, step: RunStep): string | null {
+  if (step.node !== 'check') return null;
+  const why = t(`workflow.run.check.why.${CHECK_WHY.includes(step.code ?? '') ? step.code : 'other'}`);
+  switch (step.detail) {
+    case 'reached': return t('workflow.run.check.verified');
+    case 'failed': return step.gate ? t('workflow.run.check.failed', { gate: step.gate }) : t('workflow.run.check.failedNone');
+    case 'unknown': return step.held?.resolution === 'stop' ? t('workflow.run.check.notNow') : t('workflow.run.check.notKnown', { why });
+    case 'stopped': return t('workflow.run.check.notNow');
+    case 'ready': return t('workflow.run.check.waiting', { what: t('workflow.run.check.turn') });
+    case 'active': return t('workflow.run.check.waiting', { what: t('workflow.run.check.gates') });
+    default: return null;
+  }
+}
+
+/** A step's status word: a check's verdict where it has one, else its state's. */
+export const stepWord = (t: TFunction, step: RunStep): string => checkWord(t, step) ?? stateSaid(t, step.state);
+
+/** What a check says under its status word, where it says more (FABRIC-PIPELINE1d); null where the word says it all. */
+function checkSaid(t: TFunction, step: RunStep): string | null {
+  switch (step.detail) {
+    case 'reached': return t('workflow.run.check.said.verified');
+    case 'failed': return t('workflow.run.check.said.failed');
+    case 'unknown':
+      if (step.held?.resolution === 'stop') return t('workflow.run.check.said.notNow');
+      if (step.held?.resolution === 'again') return t('workflow.run.check.said.again');
+      return t(step.held && step.held.words.length > 0 ? 'workflow.run.check.said.held' : 'workflow.run.check.said.unknown');
+    case 'stopped': return t('workflow.run.check.said.notNow');
+    case 'ready':
+    case 'active': return t('workflow.run.check.said.waiting');
+    default: return null;
+  }
+}
+
 /**
  * What a step's state says (design §5.2's *Said*), or null where the state's word says it all (not reached). A state or a
  * detail the page has no words for is said as recorded, never dropped.
@@ -149,6 +189,10 @@ function onSaid(t: TFunction, step: RunStep): string | null {
 function nodeSaid(t: TFunction, step: RunStep, node: string): string | null {
   if (!knownState(step.state) || !(GRAPH_DETAILS as readonly string[]).includes(step.detail)) {
     return t('workflow.run.said.recorded', { state: step.state, detail: step.detail || '—' });
+  }
+  if (node === 'check') {
+    const said = checkSaid(t, step);
+    if (said) return said;
   }
   const on = onSaid(t, step);
   switch (step.detail) {

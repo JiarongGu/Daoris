@@ -132,9 +132,12 @@ export type SpaceKind = {
   rule: {
     kind: 'days' | 'never' | 'press' | 'proof' | 'own'; days: number | null; whole: boolean | null; default: boolean; whose: string | null;
     low?: boolean;
+    /** KEEPSIZE1d: the size limit in GB beside the days, on a kind that takes one; absent from a driver before it. */
+    gb?: number | null;
   };
   settable: boolean;
-  bounds?: { min: number; max: number; whole: boolean; never: boolean } | null;
+  /** `gb` (KEEPSIZE1d): the size limit's bounds, on a kind that takes one. */
+  bounds?: { min: number; max: number; whole: boolean; never: boolean; gb?: { min: number; max: number } | null; sizeOnly?: boolean } | null;
   next: { at: string; count: number; bytes: number | null } | null; nextWhy: Why;
   /**
    * KEEPSIZE1b: the set-aside folders no rule may take yet, awaiting their record or unread, or recorded where the registry names no checkout
@@ -149,7 +152,7 @@ export type SpaceKind = {
  * default; or the free-space floor (KEEP1f): a size in GB, a share in percent, `off`, or its default.
  */
 export type KeepSet =
-  | { kind: 'set-aside' | 'downloads' | 'logs' | 'history'; days?: number; never?: true; whole?: boolean; default?: true }
+  | { kind: 'set-aside' | 'downloads' | 'browser-cache' | 'logs' | 'history'; days?: number; never?: true; whole?: boolean; gb?: number; default?: true }
   | { kind: 'floor'; gb?: number; percent?: number; off?: true; default?: true };
 
 /**

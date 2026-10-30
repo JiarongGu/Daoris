@@ -588,11 +588,48 @@ describe('work to review, worded', () => {
   });
 });
 
+/** INTEGRATE1o part o3 (§17.3): a run held at a request the receiver declined, waiting on the person's *Pass over…*. */
+describe('a run held at a declined request, worded', () => {
+  const pushed = row('request-declined', 'r7', '2026-10-30T11:00:00Z', {
+    where: 'engine', declined: { node: 'requests', quest: 'q9', to: 'web', work: '7a82cc' },
+  });
+
+  it('says the work, its repository and the quest declined, offers Pass over… alone, and opens the run by its work', () => {
+    const item = words(pushed, { quests: [quest({ status: 'Taken' })] });
+    expect(item).toMatchObject({
+      id: 'r7', kind: 'request-declined', title: 'Expose a streaming budget on the chunk API', where: 'engine',
+      detail: 'Quest #q9 to `web` was declined, so the work holds here until you pass it over.',
+      declined: { node: 'requests', quest: 'q9', to: 'web', work: '7a82cc' },
+    });
+    expect(attentionActs(item)).toEqual(['pass-over']);
+    expect(rowRun(item)).toEqual({ quest: '7a82cc' });
+    expect(attentionGroup(item)).toBe('holding');
+    // With no fact of the node, nothing is pressed on it.
+    expect(attentionActs(words(row('request-declined', 'r8', null)))).toEqual([]);
+  });
+
+  it('holds work, the longest waiting first, beside a parked quest', () => {
+    expect(keyed([
+      row('request-declined', 'r-new', '2026-10-01T10:00:00+00:00'), row('parked-quest', 'q-old', '2026-09-30T10:00:00+00:00'),
+    ])).toEqual(['parked-quest:q-old', 'request-declined:r-new']);
+  });
+
+  it('says it in 中文', async () => {
+    await i18n.changeLanguage('zh');
+    try {
+      expect(words(pushed).detail).toBe('发往 `web` 的委托 #q9 被谢绝了，工作停在这里，直到你跳过它。');
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+  });
+});
+
 /** UX6c (design §6.2): the three groups, in the order a person acts on them, and none shown empty. */
 describe('the groups', () => {
   it('puts each kind in its group', () => {
     expect(ATTENTION_GROUP).toEqual({
-      parked: 'holding', 'parked-quest': 'holding', 'steward-stopped': 'holding', 'go-ahead': 'holding', permission: 'holding', answer: 'holding',
+      parked: 'holding', 'parked-quest': 'holding', 'steward-stopped': 'holding', 'request-declined': 'holding', 'go-ahead': 'holding',
+      permission: 'holding', answer: 'holding',
       confirmation: 'holding', trust: 'holding', quiet: 'holding', 'helper-ended': 'holding',
       'account-wait': 'holding', 'signed-out': 'holding',
       proposal: 'word', intake: 'word', departure: 'word', 'set-up': 'word', opinion: 'word', rule: 'word', helper: 'word',
@@ -950,7 +987,7 @@ describe('the place each wait is counted at', () => {
     expect(ATTENTION_PLACE).toEqual({
       parked: 'sessions', review: 'sessions', opinion: 'sessions', helper: 'sessions', 'hand-over': 'sessions',
       permission: 'sessions', answer: 'sessions', quiet: 'sessions', 'helper-ended': 'sessions',
-      proposal: 'quests', intake: 'quests', unanswerable: 'quests', 'parked-quest': 'quests', 'steward-stopped': 'quests', 'go-ahead': 'quests',
+      proposal: 'quests', intake: 'quests', unanswerable: 'quests', 'parked-quest': 'quests', 'steward-stopped': 'quests', 'request-declined': 'quests', 'go-ahead': 'quests',
       departure: 'quests', 'set-up': 'quests', trust: 'quests',
       work: 'projects',
       rule: 'agents', 'account-wait': 'agents', 'signed-out': 'agents',
@@ -1027,6 +1064,7 @@ describe('what a row offers', () => {
   it('tries a parked quest again, accepts a departure, and answers a go-ahead, a folder and a widening', () => {
     expect(attentionActs(offered('parked-quest'))).toEqual(['retry']);
     expect(attentionActs(offered('steward-stopped'))).toEqual(['retry']);
+    expect(attentionActs(offered('request-declined', { declined: { node: 'requests', quest: 'q9', to: 'web' } }))).toEqual(['pass-over']);
     expect(attentionActs(offered('departure'))).toEqual(['accept-departure']);
     expect(attentionActs(offered('go-ahead'))).toEqual(['approve', 'refuse']);
     expect(attentionActs(offered('trust', { trust: { folder: 'f', trustFile: 'g' } }))).toEqual(['trust']);
@@ -1045,7 +1083,7 @@ describe('what a row offers', () => {
 
   it('asks once before what widens what Daoris may do, and before a choice', () => {
     expect([...ASKS_ONCE].sort())
-      .toEqual(['accept-rule', 'approve', 'choose', 'not-yet', 'opinion-anyway', 'quiet-carry-on', 'quiet-stop', 'refuse', 'trust']);
+      .toEqual(['accept-rule', 'approve', 'choose', 'not-yet', 'opinion-anyway', 'pass-over', 'quiet-carry-on', 'quiet-stop', 'refuse', 'trust']);
   });
 
   /**

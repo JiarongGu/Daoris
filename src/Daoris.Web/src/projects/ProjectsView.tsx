@@ -27,7 +27,7 @@ import { sessionChecksToast, type SessionChecksValue } from '../settings/reposit
 import {
   useAcross, useDriver, useHarnesses, useLines, usePlugins, useRuleAction, useRules, useSetAccess, useSetCommits, useHeavyMarks, useHeavySlot, useSetDrivable, useSetHeavyGates, useSetHelpers,
   useSetHandOver, useSetHold, useSetLanding, useSetLanguage, useSetLine, useSetOpinion, useSetReadAcross, useSetReview, useSetSessionChecks, useSetStanding, useSetTrees,
-  useSetupPlan, useSetupPress, useSetWriteAcross, useSweepPlan, useWorkflowCurrent, useSetLanded, useAcceptIntegration, standingOf, useSetAppointment,
+  useSetupPlan, useSetupPress, useSetWriteAcross, useSweepPlan, useWorkflowCurrent, useSetLanded, useAcceptIntegration, useVerify, standingOf, useSetAppointment,
 } from '../bridge/shell';
 import type { SetUpForAgentsProps } from './setup/SetUpForAgents';
 import { doorOf } from '../agents/tools';
@@ -221,6 +221,7 @@ export function useProjectsView({
   const current = useWorkflowCurrent(chosenRepository === null ? null : { repository: chosenRepository }, { enabled: workflowShown || setupShown });
   const setLanded = useSetLanded();
   const acceptIntegration = useAcceptIntegration();
+  const verify = useVerify();
   // Session branches holding work no branch of the person's holds (WSR3, D88) — named on the repository,
   // so work is not lost in a pile nobody reads. A workspace's Branches lists them one by one (UX6g).
   const sweep = useSweepPlan();
@@ -690,6 +691,16 @@ export function useProjectsView({
         onError: (error) => answered.refused(sentence(error)),
       }) : undefined,
       accepting: setLanded.isPending,
+      // FABRIC-PIPELINE1d: *Verify…* of a branch or a commit under the accepted gates, `daoris-driver verify`'s twin; a refusal is an answer.
+      onVerify: (ask, answered) => verify.mutate({ repository: registration.repository, ...ask }, {
+        onSuccess: (answer) => {
+          if (answer.done) {
+            notify(t('projects.verify.started', { repository: registration.repository }));
+            answered.done();
+          } else answered.refused(answer.message);
+        },
+        onError: (error) => answered.refused(sentence(error)),
+      }),
     };
   };
 

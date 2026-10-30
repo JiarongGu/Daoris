@@ -74,7 +74,7 @@ public static class AttentionStateSlice
             "kind", "id", "since", "workspace", "where", "note", "detail", "publishTo", "choices", "ask", "number", "goAhead", "session",
             "departed", "setUp", "local", "environment", "shows", "opinion", "placed", "sitting", "trust", "quest", "proposal", "title",
             "permission", "blocked", "held", "unreadable", "wholeWorkspace", "holding", "read", "account", "answer", "ended",
-            "confirmation", "agent", "stands", "stale", "space", "git", "quiet",
+            "confirmation", "agent", "stands", "stale", "space", "git", "quiet", "declined",
         ],
         ["waiting"] = ["kind", "workspace"],
         ["working"] = ["workspace"],
@@ -121,6 +121,8 @@ public static class AttentionStateSlice
         ["git"] = ["host", "class", "holds", "remote", "repositories", "words"],
         // SESSWATCH1a: a quiet session brought to the person, or a busy one nothing is heard from.
         ["quiet"] = ["minutes", "busy", "intake", "words", "heavy"],
+        // INTEGRATE1o part o3: a run held at a declined request, its node and the quest declined.
+        ["declined"] = ["node", "quest", "to", "work"],
     };
 
     /// <summary>Which shape a field holds, as <c>shape.field</c>, an object of it or a list of them; every other field is a value.</summary>
@@ -156,6 +158,7 @@ public static class AttentionStateSlice
         ["confirmation.asker"] = "asker",
         ["row.space"] = "space",
         ["row.git"] = "git",
+        ["row.declined"] = "declined",
     };
 
     /// <summary>
@@ -291,6 +294,11 @@ public static class AttentionStateSlice
             Space = Written(SpaceWaits(SpaceFloors.Shared, loop.Home)),
             // GITAUTH1a: each remote held since it could not authenticate, from the home's run/git/held.json.
             Git = Written(GitWaits(loop.Home)),
+            // INTEGRATE1o part o3: each run held at a declined request, from the node runtime's last look and its node records.
+            Requests = Written(loop.RequestHolds.Select(hold => new
+            {
+                hold.Run, hold.Node, hold.Repository, hold.Workspace, hold.Quest, hold.To, hold.Work, Since = Moments.Write(hold.Since),
+            })),
             // SESSWATCH1a: each session the watcher brings to the person, from its memory.
             Quiet = Written(QuietWaits(SessionWatch.Of(loop.Events), loop.Processes)),
             // SUPERVISOR1a-i: the parks a supervisor's held or released decision answers for, from the decisions' memory.

@@ -12434,6 +12434,13 @@ mis-rooted instance.
 
 **Verification.** `rehearse:family` 448/448; red before, the same four failures.
 
+## The registry answered 500 for minutes after each start (2026-10-31)
+
+**Root cause.** The first index took one `git status` per registered repository before any answer, each seconds slow to start; the registry waited on all of them.
+
+**Fix.** The status is read behind the answer, one at a time. A hit waits for its own repository at most `StandingWait`, then says `+ uncommitted not yet read`.
+
+**Verification.** `A_slow_status_holds_neither_the_registry_nor_a_hit...`: red 63 s, green.
 ## A stop before the protocol handshake finished was recorded failed (2026-10-31)
 
 **Root cause.** 2ae495696 (FOUNDATION1x step 2) wrote the binding's role between the process's tracking and its handshake, widening the window for a stop to kill the process under the handshake's write. The resulting `IOException` skipped the conclusion, and the catch-all recorded `failed`.

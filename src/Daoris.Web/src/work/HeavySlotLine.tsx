@@ -147,7 +147,9 @@ export function HeavySlotRow({ slot, titleOf, onOpen }: {
     <span className="grid min-w-0 gap-1 text-small text-ink-soft">
       {holder && (
         <span className="flex min-w-0 flex-wrap items-baseline gap-x-1.5">
-          <SessionDoor session={holder.session} titleOf={titleOf} onOpen={onOpen} />
+          {holder.run
+            ? <span>{t('projects.heavy.verification', { run: holder.run })}</span>
+            : <SessionDoor session={holder.session} titleOf={titleOf} onOpen={onOpen} />}
           <Dot
             tone={failed ? 'failed' : 'live'}
             label={failed

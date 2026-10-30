@@ -259,16 +259,28 @@ public static class HeavyRun
 
         var session = world.Variable(IntakeRoom.SessionVariable) is { Length: > 0 } ofSession ? ofSession : null;
         var started = ThisProcessStarted();
-        HeavySlot slot;
+        HeavySlot? slot;
         try
         {
             // HEAVYSLOT1: while it waits it says so beside the slot, for the page to say who waits behind whom.
+            // FABRIC-PIPELINE1d (the pipeline design §4.2): a session's run (its tree read from git's lock) never waits behind a verification.
             var waiter = new HeavyWaiter(Environment.ProcessId, started, checkout, DateTimeOffset.UtcNow, session);
-            slot = await HeavySlot.TakeAsync(world.Home, key, repository, output, ct, world.Waiting, waiter).ConfigureAwait(false);
+            var sessions = SessionLocks.HolderOf(checkout) is not null;
+            slot = await HeavySlot.TakeUnlessAsync(
+                world.Home, key, repository, output, ct, world.Waiting, waiter, sessions ? holder => holder.Run is not null : null).ConfigureAwait(false);
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
             output.WriteLine("run-heavy: stopped while waiting for the slot; nothing ran.");
+            return 1;
+        }
+
+        if (slot is null)
+        {
+            output.WriteLine(
+                $"run-heavy: `{repository}`'s heavy-run slot is held by its verification run {HeavySlot.Holder(world.Home, key)?.Run}, which runs the repository's "
+                + "heavy gates on its line, so this session's run does not wait behind it; the verdict shows on the repository's Workflow tab. Run the "
+                + "checks your change reaches, filtered, instead.");
             return 1;
         }
 
@@ -422,7 +434,7 @@ public static class HeavyRun
         }
         else
         {
-            var who = holder.Session is { } session ? $"session {session}" : "a run from a terminal";
+            var who = holder.Run is { } run ? $"the verification run {run}" : holder.Session is { } session ? $"session {session}" : "a run from a terminal";
             var where = holder.Failed is { } failed
                 ? $"failed at `{failed.Gate}` (exit {failed.Exit}), ending what it started"
                 : holder.Now is { } gate

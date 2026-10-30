@@ -62,6 +62,9 @@ public sealed record AttentionFacts
     /// <summary>Each unit of work's milestone, as the work slice holds them.</summary>
     public IReadOnlyList<JsonObject> Works { get; init; } = [];
 
+    /// <summary>The runs held at a declined request (INTEGRATE1o part o3), as the runtime last read them: each run, its node, the declined quest and where it went.</summary>
+    public IReadOnlyList<JsonObject> Requests { get; init; } = [];
+
     /// <summary>Every plugin step's attempt held for the person, as the work slice holds them.</summary>
     public IReadOnlyList<JsonObject> Held { get; init; } = [];
 
@@ -292,6 +295,19 @@ public static class NeedsAPerson
             row["where"] = Text(consideration, "repository");
             row["session"] = Text((JsonObject)consideration["said"]!, "session");
             row["sitting"] = consideration.DeepClone();
+            rows.Add(row);
+        }
+
+        // INTEGRATE1o part o3 (§17.3): a run whose work.requests holds it at a declined request waits on the person's *Pass over…*, one row per
+        // run, keyed by it, since the decline. Its workspace is the run's own. Read from the runtime's last look, never stored on the node.
+        foreach (var hold in facts.Requests)
+        {
+            var row = Row("request-declined", Text(hold, "run"), Text(hold, "since"), Text(hold, "workspace") ?? "default");
+            row["where"] = Text(hold, "repository");
+            row["declined"] = new JsonObject
+            {
+                ["node"] = Text(hold, "node"), ["quest"] = Text(hold, "quest"), ["to"] = Text(hold, "to"), ["work"] = Text(hold, "work"),
+            };
             rows.Add(row);
         }
 

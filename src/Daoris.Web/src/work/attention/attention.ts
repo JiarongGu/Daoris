@@ -46,6 +46,8 @@ export const ATTENTION_GROUP: Readonly<Record<AttentionKind, AttentionGroup>> = 
   'parked-quest': 'holding',
   // STEWARDROLE1b (D209 §5.3): a quest the steward's stop holds for a Try again, the steward's or the person's.
   'steward-stopped': 'holding',
+  // INTEGRATE1o part o3 (§17.3): a run held at a request the receiver declined stands still until the person passes it over.
+  'request-declined': 'holding',
   // A stale one holds nothing and waits for the person's word instead (GOAHEADSTALE1, `attentionGroup`).
   'go-ahead': 'holding',
   // A tool call a session holds for the person's answer under asking (AUTONOMY1b3c, D184 point 3): its turn stands still until they
@@ -146,6 +148,8 @@ export const ATTENTION_PLACE: Readonly<Record<AttentionKind, AttentionPlace | nu
   unanswerable: 'quests',
   'parked-quest': 'quests',
   'steward-stopped': 'quests',
+  // INTEGRATE1o part o3: the run's door opens its quest, where the work and its declined request are read.
+  'request-declined': 'quests',
   'go-ahead': 'quests',
   departure: 'quests',
   'set-up': 'quests',
@@ -243,6 +247,8 @@ export function rowRun(item: Attention): { session?: string | null; quest?: stri
     case 'parked-quest': return { quest: item.id };
     // The steward's stop (STEWARDROLE1b): its quest, and the session it stopped.
     case 'steward-stopped': return { session: item.session ?? null, quest: item.id };
+    // INTEGRATE1o part o3: the run's newest work quest here, whose run the step waits in.
+    case 'request-declined': return item.declined?.work ? { quest: item.declined.work } : null;
     default: return null;
   }
 }
@@ -271,7 +277,9 @@ export type AttentionActId =
   // GITAUTH1a: a git remote held because it could not authenticate, tried again on the person's press.
   | 'git-try-again'
   // SESSWATCH1a: a quiet session's presses: *End and carry on*, *Hand over…*, *Stop…*, *Leave it running*.
-  | 'quiet-carry-on' | 'quiet-hand-over' | 'quiet-stop' | 'quiet-leave';
+  | 'quiet-carry-on' | 'quiet-hand-over' | 'quiet-stop' | 'quiet-leave'
+  // INTEGRATE1o part o3: the run's own skip of its `work.requests` node, with the person's words.
+  | 'pass-over';
 
 /** The act each word offered on a held attempt is pressed by (FABRIC-PERFORM1g, FABRIC-CLOSE1q): a close's stop is not a step's. */
 export function heldActs(held: HeldAttempt): AttentionActId[] {
@@ -324,6 +332,8 @@ export const ASKS_ONCE: ReadonlySet<AttentionActId> = new Set([
   'opinion-anyway',
   // SESSWATCH1a: ending a quiet session asks once, saying what it does and where the person's waiting words go.
   'quiet-carry-on', 'quiet-stop',
+  // INTEGRATE1o part o3: passing a declined request over goes on without it, and keeps the person's words with the skip.
+  'pass-over',
 ]);
 
 /** How many acts an account's row offers beside its door: three controls a row at most (design §9.3). */
@@ -369,6 +379,8 @@ export function attentionOffers(item: Attention): AttentionOffer[] {
     case 'parked-quest': return plain('retry');
     // STEWARDROLE1b (D209 §5.3, §5.4): the person's own *Try again*, the parked quest's press.
     case 'steward-stopped': return plain('retry');
+    // INTEGRATE1o part o3: the run's existing *Pass over…* (§17.3), offered where the node it is said on is named.
+    case 'request-declined': return item.declined ? plain('pass-over') : [];
     // GOAHEADSTALE1: nothing on a stale one's ask could use a yes but whatever starts there next, which no session asked it for, so
     // its refusal is the one answer offered.
     case 'go-ahead': return item.stale ? plain('refuse') : plain('approve', 'refuse');
@@ -531,7 +543,15 @@ export type PushedAttention = {
   git?: GitHeld;
   /** A session the watcher brings to the person (SESSWATCH1a): its watch, which its words and its presses read. */
   quiet?: QuietWait;
+  /** A run held at a declined request (INTEGRATE1o part o3): its `work.requests` node, the quest declined and where it went. */
+  declined?: DeclinedRequest;
 };
+
+/**
+ * A run held at a request the receiver declined (INTEGRATE1o part o3): the `work.requests` node the person's *Pass over…* is said on, the
+ * declined quest and the repository it was addressed to, and the run's newest work quest here (null where it has none), which its door reads.
+ */
+export type DeclinedRequest = { node: string; quest: string; to: string; work?: string | null };
 
 /**
  * Why a git remote is held (the git auth design §5.1): refused, its push refused, its host key unknown, its host key changed, or
@@ -592,7 +612,7 @@ export type AttentionPushed = {
  * floor, a held git remote (GITAUTH1a) and quests nobody can take; then review.
  */
 const KIND_ORDER: readonly AttentionKind[] = [
-  'account-wait', 'signed-out', 'parked', 'helper-ended', 'parked-quest', 'steward-stopped', 'go-ahead', 'permission', 'answer', 'confirmation', 'trust',
+  'account-wait', 'signed-out', 'parked', 'helper-ended', 'parked-quest', 'steward-stopped', 'request-declined', 'go-ahead', 'permission', 'answer', 'confirmation', 'trust',
   'quiet', 'proposal', 'departure', 'set-up', 'opinion', 'rule', 'helper', 'hand-over', 'work', 'space', 'git-held', 'unanswerable',
   'review',
 ];
@@ -762,6 +782,16 @@ export function attentionWorded(row: PushedAttention, names: AttentionNames = {}
         detail: row.sitting ? sittingSentence(row.sitting)
           : row.session ? i18n.t('work.attention.stewardStoppedSession', { session: row.session }) : null,
       };
+    // INTEGRATE1o part o3 (§17.3): the run's work as its quest names it, and the quest declined, to where it went, held until passed over.
+    case 'request-declined': {
+      const declined = row.declined;
+      return {
+        ...base,
+        title: declined?.work ? questOf(declined.work)?.title ?? `#${declined.work}` : `#${row.id}`,
+        detail: declined ? i18n.t('work.attention.requestDeclinedWhy', { quest: declined.quest, to: declined.to }) : null,
+        ...(declined ? { declined } : {}),
+      };
+    }
     case 'unanswerable':
       return { ...base, title: quested(row.id), detail: i18n.t('work.attention.unanswerableWhy', { repository: row.where ?? '' }) };
     case 'trust':

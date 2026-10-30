@@ -129,3 +129,40 @@ public static class BrowserCacheClearing
         }
     }
 }
+
+/// <summary>
+/// The browser's caches checked at the browser's start (KEEPSIZE1e, D195's keep-size note): the host calls it inside its start gate, with
+/// no browser running, so a browser over its caches' size limit starts with them cleared and one within it starts untouched.
+/// </summary>
+public static class BrowserCacheStart
+{
+    /// <summary>
+    /// Clear the caches where they hold more than the limit; null where there is no limit, none is over it, or the caches do not read.
+    /// </summary>
+    /// <param name="unit">The bytes in a limit's GB; a test's seam.</param>
+    public static BrowserCachesCleared? Check(string home, Func<string, KeepPolicy>? policy = null, long unit = 1L << 30, Action<string, string>? move = null)
+    {
+        if ((policy ?? KeepPolicy.Of)(home).Limits.BrowserCacheGb is not { } gb) return null;
+        try
+        {
+            var root = Path.TrimEndingDirectorySeparator(Path.GetFullPath(DaorisHome.Entry(home, HomeEntry.BrowserEngine)));
+            long bytes = 0;
+            foreach (var path in SpaceKinds.BrowserCaches)
+            {
+                var folder = Path.Combine([root, .. path.Split('/')]);
+                if (!Directory.Exists(folder)) continue;
+                bytes += new DirectoryInfo(folder).EnumerateFiles("*", new EnumerationOptions
+                {
+                    RecurseSubdirectories = true, IgnoreInaccessible = true, AttributesToSkip = FileAttributes.ReparsePoint,
+                }).Sum(file => file.Length);
+            }
+
+            return bytes > gb * unit ? BrowserCacheClearing.Clear(home, SpaceKinds.BrowserCaches, move) : null;
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or HomeEntryTwiceException)
+        {
+            // What does not read is not counted, and the unknown keeps.
+            return null;
+        }
+    }
+}

@@ -12,7 +12,29 @@ vi.mock('@shenora/react', async (original) => ({
   getBridge: () => ({ invoke }),
 }));
 
-import { useAcceptIntegration, useRunNodeWord } from './workflow';
+import { useAcceptIntegration, useRunNodeWord, useVerify } from './workflow';
+
+// FABRIC-PIPELINE1d part 5: *Verify…*, `daoris-driver verify`'s twin, binds a person's verification of a branch or a commit.
+describe("the person's verification of a branch or a commit", () => {
+  afterEach(() => invoke.mockReset());
+  const wrapper = ({ children }: { children: React.ReactNode }) => (
+    <QueryClientProvider client={new QueryClient()}>{children}</QueryClientProvider>
+  );
+
+  it('sends the repository and the branch or the commit, and answers what the driver bound or why it refused', async () => {
+    invoke.mockResolvedValueOnce({ repository: 'engine', done: true, refused: null, message: 'verify: `engine` at a1b2c3d (docs/fix): run v-1.' });
+    const { result } = renderHook(() => useVerify(), { wrapper });
+
+    const bound = await result.current.mutateAsync({ repository: 'engine', branch: 'docs/fix' });
+    expect(invoke).toHaveBeenLastCalledWith('DAORIS.DRIVER', 'WORKFLOW_VERIFY', { payload: { repository: 'engine', branch: 'docs/fix' } });
+    expect(bound.done).toBe(true);
+
+    invoke.mockResolvedValueOnce({ repository: 'engine', done: false, refused: 'refused', message: 'verify: the gates are not accepted yet.' });
+    const refused = await result.current.mutateAsync({ repository: 'engine', commit: 'a1b2c3d' });
+    expect(invoke).toHaveBeenLastCalledWith('DAORIS.DRIVER', 'WORKFLOW_VERIFY', { payload: { repository: 'engine', commit: 'a1b2c3d' } });
+    expect([refused.refused, refused.message]).toEqual(['refused', 'verify: the gates are not accepted yet.']);
+  });
+});
 
 // INTEGRATE1d part 3 (the integration design §17.7): the person's acceptance of a repository's integration declaration.
 describe("the person's acceptance of an integration declaration", () => {

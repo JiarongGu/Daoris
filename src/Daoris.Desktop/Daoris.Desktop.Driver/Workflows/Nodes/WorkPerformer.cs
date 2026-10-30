@@ -207,6 +207,12 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
     public Func<string, IReadOnlyList<PluginResource>?> Resources { get; set; } = _ => null;
 
     /// <summary>
+    /// The heavy executor's port (FABRIC-PIPELINE1d): a <c>check</c>'s attempt is sent there by its kind and asked after only once it says
+    /// it has an answer, or after a restart. Null starts no check: it stays ready.
+    /// </summary>
+    public ICheckPort? Checks { get; set; }
+
+    /// <summary>
     /// The invocations this performer's loop delivered: an attempt sent by a loop since ended is asked after before anything else, since a
     /// new loop's generations start again at 1 (FABRIC-PERFORM1a) and cannot tell its process from the old one's.
     /// </summary>
@@ -266,7 +272,9 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
     {
         if (start.Move.Binding is not { } binding) return new("", start.Node, PerformedWhat.Refused, NodeRefusal.NoBinding);
         var unit = binding.Unit;
-        if (!NodeKinds.IsPlugin(node.Kind) || node.Reach != NodeReach.Performed) return new(unit, node.Id, PerformedWhat.Refused, NotPlugin);
+        // FABRIC-PIPELINE1d: the one kind Daoris performs this way beside a plugin's, its attempt naming the executor.
+        var check = node.Kind == NodeKinds.Check && Checks is not null;
+        if (!(NodeKinds.IsPlugin(node.Kind) || check) || node.Reach != NodeReach.Performed) return new(unit, node.Id, PerformedWhat.Refused, NotPlugin);
 
         // §D6: the attempt (invocation, key, revision, inputs, deadline, state) on the unit's record first, with its start and its firings.
         var now = clock();
@@ -280,7 +288,7 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
             // never `run:`; on a unit's own record it is that unit, as before.
             var call = new WorkPerformCall(binding.Observes, node.Kind, node.Version, Random("i-", 12), Random("k-", 16), binding.SubjectRevision ?? "",
                 [.. binding.Inputs.OrderBy(input => input.Key, StringComparer.Ordinal).Select(input => input.Value.Ref)], now + Timeout(node));
-            var attempt = new NodeAttempt(node.Id, moved.Status.Attempt, node.Kind[..node.Kind.IndexOf('/')], call, AttemptStates.Recorded) { RecordedAt = now };
+            var attempt = new NodeAttempt(node.Id, moved.Status.Attempt, check ? NodeKinds.Check : node.Kind[..node.Kind.IndexOf('/')], call, AttemptStates.Recorded) { RecordedAt = now };
             var fired = record.Fired.Concat(start.Firings.Select(firing => firing.Key)).Distinct(StringComparer.Ordinal).ToList();
             return (Kept(record, moved, "start", now) with { Attempts = [.. record.Attempts, attempt], Fired = fired }, (attempt, null));
         });
@@ -648,6 +656,21 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
             return (Kept(cleared, again, "person-again", now), new(unit, node.Id, PerformedWhat.Resolved, word));
         }
 
+        // FABRIC-PIPELINE1d (the pipeline design §4.1): a held check's *Run again*, the one table's own: its node stopped and made ready by the
+        // person for a new attempt, the held attempt settled as theirs to answer for. Its *Not now* is the stop below.
+        if (word == HeldResolutions.Again && IsCheck(attempt) && attempt.State == AttemptStates.Held)
+        {
+            var held = StatusOf(record, node.Id);
+            if (NodeStates.Live.Contains(held.State)) record = Kept(record, NodeLifecycle.Apply(node, held, new NodeMove(NodeStates.Stopped, NodeCause.Person)), "person-stop", now);
+            var stopped = StatusOf(record, node.Id);
+            record = With(record, attempt, attempt with { State = AttemptStates.Settled, Outcome = WorkStates.Unknown, Resolution = null, ResolvedAt = null });
+            record = record with { Statuses = With(record.Statuses, NodeLifecycle.Reconciled(stopped, attempt.Attempt)) };
+            var ready = NodeLifecycle.Apply(node, StatusOf(record, node.Id), new NodeMove(NodeStates.Ready, NodeCause.Person));
+            return ready.Moved
+                ? (Kept(record, ready, "person-again", now), new(unit, node.Id, PerformedWhat.Resolved, word))
+                : (record, new(unit, node.Id, PerformedWhat.Refused, ready.Refused));
+        }
+
         // FABRIC-CLOSE1q: a close's word is never a plugin attempt's; one no door would record is taken back, saying why.
         if (WordRefused(attempt, word) is { } refused)
         {
@@ -713,6 +736,8 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
     private bool Asked(NodeAttempt attempt, DateTimeOffset now) => attempt.State switch
     {
         AttemptStates.Recorded or AttemptStates.Unknown => attempt.AskAt is not { } ask || ask <= now,
+        // FABRIC-PIPELINE1d: the executor owns a check's bound, so it is asked once it says it has an answer, or after a restart; never at its deadline.
+        AttemptStates.Sent when IsCheck(attempt) => !SentHere(attempt.Call.Invocation) || Checks?.Answered(attempt.Call.Invocation) == true,
         AttemptStates.Sent => !SentHere(attempt.Call.Invocation) || port.GenerationOf(attempt.Plugin) != attempt.Generation
             || (attempt.AskAt ?? attempt.Call.DeadlineAt) <= now,
         _ => false,
@@ -762,15 +787,19 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
             return decided.What == PerformedWhat.Redelivered && sends.Take() ? await SendAsync(unit, asked, node, PerformedWhat.Redelivered, ct).ConfigureAwait(false) : decided;
         }
 
-        if (port.GenerationOf(asked.Plugin) is null || !sends.Take()) return new(unit, node.Id, PerformedWhat.Unanswered);
+        var check = IsCheck(asked);
+        if ((check ? Checks is null : port.GenerationOf(asked.Plugin) is null) || !sends.Take()) return new(unit, node.Id, PerformedWhat.Unanswered);
         WorkReconcileAnswer answer;
         int generation;
         try
         {
+            // FABRIC-PIPELINE1d: a check's answer is the executor's, read from its attempt's folder.
             // FABRIC-CUTOVER1c (the cutover design §2.4.1): asked under the unit its call was sent for, a run's subject's, never the record's.
-            (answer, generation) = await port.ReconcileStepAsync(
-                asked.Plugin, new WorkReconcileCall(asked.Call.Unit, asked.Call.Step, invocation, asked.Call.IdempotencyKey, asked.Call.SubjectRevision), ct)
-                .ConfigureAwait(false);
+            (answer, generation) = check
+                ? (await Checks!.ReconcileAsync(unit, asked, ct).ConfigureAwait(false), CheckGeneration)
+                : await port.ReconcileStepAsync(
+                    asked.Plugin, new WorkReconcileCall(asked.Call.Unit, asked.Call.Step, invocation, asked.Call.IdempotencyKey, asked.Call.SubjectRevision), ct)
+                    .ConfigureAwait(false);
         }
         catch (Exception error) when (Unanswered(error))
         {
@@ -809,9 +838,13 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
                     var wait = current.Call.DeadlineAt > now ? current.Call.DeadlineAt : now + Timeout(node);
                     return (With(running, current, current with { State = isCurrent ? AttemptStates.Sent : AttemptStates.Unknown, Generation = generation, AskAt = wait }),
                         new WorkPerformed(unit, node.Id, PerformedWhat.Running));
+                case ReconcileStates.Unknown when check && !isCurrent:
+                    // FABRIC-PIPELINE1d: a check stopped meanwhile answers as a stale attempt's, settling it and moving nothing.
+                    var stopped = With(record, current, current with { State = AttemptStates.Settled, Outcome = WorkStates.Unknown, Code = answer.Outcome?.Code, Generation = generation });
+                    return (stopped with { Statuses = With(stopped.Statuses, NodeLifecycle.Reconciled(status, current.Attempt)) }, new WorkPerformed(unit, node.Id, PerformedWhat.Stale));
                 default:
-                    // §D6: unknown stops the step, and the person sees it; no new attempt is made by itself.
-                    return Hold(record, current with { Generation = generation }, ReconcileStates.Unknown);
+                    // §D6: unknown stops the step, and the person sees it; no new attempt is made by itself. A check's says why.
+                    return Hold(record, current with { Generation = generation }, check ? answer.Outcome?.Code ?? ReconcileStates.Unknown : ReconcileStates.Unknown);
             }
         }));
         Supersede(unit, asked, resources, applied);
@@ -845,13 +878,15 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
             return (stale with { Statuses = With(stale.Statuses, NodeLifecycle.Reconciled(status, attempt.Attempt)) }, new(unit, node.Id, PerformedWhat.Stale));
         }
 
+        // FABRIC-PIPELINE1d: a check's reach and failure are its kind's own source, the gates' exits as the executor ran them.
+        var source = IsCheck(attempt) ? NodeSource.Gates : NodeSource.Plugin;
         NodeMove move;
         switch (outcome.State)
         {
             case WorkStates.Reached:
                 move = new NodeMove(NodeStates.Reached, NodeCause.Authority)
                 {
-                    Source = NodeSource.Plugin, Attempt = attempt.Attempt, Acceptance = status.Binding is { } binding ? Accepted(node, attempt.Call.Invocation, binding, outcome) : null,
+                    Source = source, Attempt = attempt.Attempt, Acceptance = status.Binding is { } binding ? Accepted(node, attempt.Call.Invocation, binding, outcome) : null,
                 };
                 break;
             case WorkStates.Failed:
@@ -859,7 +894,7 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
                 settled = settled with { Code = code };
                 move = new NodeMove(NodeStates.Failed, NodeCause.Authority)
                 {
-                    Source = NodeSource.Plugin, Attempt = attempt.Attempt, Code = code, Transient = node.Perform?.Transient.Contains(code, StringComparer.Ordinal) == true,
+                    Source = source, Attempt = attempt.Attempt, Code = code, Transient = node.Perform?.Transient.Contains(code, StringComparer.Ordinal) == true,
                 };
                 break;
             default:
@@ -936,7 +971,16 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
         int generation;
         try
         {
-            generation = await port.PerformAsync(attempt.Plugin, attempt.Call, ct).ConfigureAwait(false);
+            if (IsCheck(attempt))
+            {
+                // FABRIC-PIPELINE1d: a hand-over; the executor runs it on its own task, never the pass's.
+                await (Checks ?? throw new DriverException("no executor takes a check here")).SendAsync(unit, attempt, node, ct).ConfigureAwait(false);
+                generation = CheckGeneration;
+            }
+            else
+            {
+                generation = await port.PerformAsync(attempt.Plugin, attempt.Call, ct).ConfigureAwait(false);
+            }
         }
         catch (Exception error) when (Unanswered(error))
         {
@@ -1050,6 +1094,25 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
         string.Equals(NodeRecordFiles.StatusText(one), NodeRecordFiles.StatusText(other), StringComparison.Ordinal);
 
     internal static TimeSpan Timeout(NodeDeclaration node) => node.TimeoutSeconds is { } seconds ? TimeSpan.FromSeconds(seconds) : DefaultTimeout;
+
+    /// <summary>Whether an attempt is a check's, sent to the heavy executor by its kind (FABRIC-PIPELINE1d).</summary>
+    internal static bool IsCheck(NodeAttempt attempt) => attempt.Plugin == NodeKinds.Check;
+
+    /// <summary>The generation a check's attempt records: the executor has one, the driver's own.</summary>
+    private const int CheckGeneration = 1;
+
+    /// <summary>
+    /// The person's stop of a check that was running (FABRIC-PIPELINE1d; the pipeline design §4.2): the pass that applied it tells the executor,
+    /// which ends its job as at its bound. Each named node that is stopped and still waits on an attempt sent here is told.
+    /// </summary>
+    public void StopChecks(string unit, IReadOnlyCollection<string> nodes)
+    {
+        if (Checks is null || records.Read(unit) is not { } record) return;
+        foreach (var attempt in record.Attempts.Where(each => IsCheck(each) && nodes.Contains(each.Node) && each.State is AttemptStates.Sent or AttemptStates.Recorded or AttemptStates.Unknown))
+        {
+            if (StatusOf(record, attempt.Node).State == NodeStates.Stopped) Checks.Stop(attempt.Call.Invocation);
+        }
+    }
 
     internal static string Random(string prefix, int bytes) => prefix + Convert.ToHexStringLower(RandomNumberGenerator.GetBytes(bytes));
 }

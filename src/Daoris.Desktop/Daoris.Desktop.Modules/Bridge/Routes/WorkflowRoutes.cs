@@ -151,6 +151,40 @@ public sealed class WorkflowRoutes(DriverContext context)
     }
 
     /// <summary>
+    /// The page's <i>Verify…</i> (FABRIC-PIPELINE1d part 5), <c>daoris-driver verify</c>'s twin: <c>{repository}</c> and one of <c>branch</c> or
+    /// <c>commit</c>, or neither for its checkout's HEAD. It binds the person's run through <see cref="VerifyCommand.BindAsync"/> in the first
+    /// checkout of the repository on this disk, so the library's refusals are the page's: answers <c>{ repository, done, refused, message }</c>,
+    /// <c>refused</c> being <c>no-checkout</c>, <c>refused</c> (no pipeline, gates not accepted, no version that reads) or <c>unread</c> (the commit).
+    /// </summary>
+    [DriverRoute("WORKFLOW_VERIFY")]
+    [Publishes("WORKFLOW_VERIFY", StateScopes.Driver)]
+    private async Task<object?> WorkflowVerifyAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var repository = Optional(request, "repository")?.Trim();
+        if (string.IsNullOrEmpty(repository)) throw new DriverException("a verification is asked for a `repository` — name it.");
+        var branch = Optional(request, "branch")?.Trim();
+        var commit = Optional(request, "commit")?.Trim();
+        if (!string.IsNullOrEmpty(branch) && !string.IsNullOrEmpty(commit)) throw new DriverException("`verify` verifies a branch or a commit, not both.");
+
+        var service = _loop.Service ?? throw NotReady();
+        var snapshot = await service.SnapshotAsync(cancellationToken).ConfigureAwait(false);
+        var workspace = snapshot.Repositories.FirstOrDefault(each => string.Equals(each.Repository, repository, StringComparison.OrdinalIgnoreCase))?.Workspace;
+        var root = LinesRoutes.Checkouts(await service.RegistryAsync(cancellationToken).ConfigureAwait(false), repository, null)
+            .Select(row => row.Root).FirstOrDefault(path => Directory.Exists(path));
+        if (root is null)
+        {
+            return new { repository, done = false, refused = "no-checkout", message = $"`{repository}` has no checkout on this machine to verify in." };
+        }
+
+        var route = WorkflowSelection.ResolveLanded(DriverConfig.Load(_loop.ConfigPath), repository, workspace);
+        using var said = new StringWriter();
+        var ask = new VerifyAsk(repository) { Branch = string.IsNullOrEmpty(branch) ? null : branch, Commit = string.IsNullOrEmpty(commit) ? null : commit };
+        var code = await VerifyCommand.BindAsync(_loop.Home, root, ask, route, workspace, said, cancellationToken).ConfigureAwait(false);
+        if (code == 0) _loop.Nudge();
+        return new { repository, done = code == 0, refused = code switch { 0 => null, 1 => "refused", _ => "unread" }, message = said.ToString().Trim() };
+    }
+
+    /// <summary>
     /// The person's press on the landed route (FABRIC-PIPELINE1a, D192 point 2; Setup's route row and the Workflow tab's <i>Accept the
     /// gates</i>, D156's door): <c>{repository}</c> or <c>{workspace}</c>, and <c>workflow</c>, a verification pipeline's id, <c>current</c>
     /// for no verification, or null to clear. For a repository naming a verification pipeline it reads the <c>daoris.gates.json</c> at its
@@ -434,7 +468,10 @@ public sealed class WorkflowRoutes(DriverContext context)
                 // FABRIC-CUTOVER1f, additive: what the person may say of a graph run's node now (`skip`, `stop`), and their word kept on it and
                 // not applied yet; null on a steps run's step and where none.
                 step.Acts,
-                Asked = step.Asked is { } asked ? new { asked.Node, asked.Act, asked.Words, asked.At } : null,
+                // FABRIC-PIPELINE1d, additive: a failed check's gate, and its attempt held unknown for the person or settled by their stop.
+                step.Gate,
+                Held = step.Held is { } held ? new { held.Unit, held.Attempt, held.Words, held.Resolution } : null,
+                Asked =step.Asked is { } asked ? new { asked.Node, asked.Act, asked.Words, asked.At } : null,
                 // INTEGRATE1o part o2, additive: the quests the work's sessions published and the helpers they asked, on the work step; null where none.
                 Requests = step.Requests?.Select(request => new
                 {

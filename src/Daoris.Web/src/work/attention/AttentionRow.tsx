@@ -9,7 +9,7 @@ import type { AccountRowFacts } from './accountWords';
 import type { RuleProposal } from '../../settings/repository/AgentRules';
 import type { GraphEnd, HeldAttempt, HeldResolution, UnreadableRecord } from '../head/milestone';
 import {
-  ASKS_ONCE, type AttentionActId, type AttentionOffer, attentionOffers, type GitHeld, type QuietWait, type StaleSince,
+  ASKS_ONCE, type AttentionActId, type AttentionOffer, attentionOffers, type DeclinedRequest, type GitHeld, type QuietWait, type StaleSince,
 } from './attention';
 import { Note } from '../Note';
 import { type Answered, InlineConfirm } from '../InlineConfirm';
@@ -25,7 +25,7 @@ export type AttentionKind =
   | 'parked' | 'parked-quest' | 'steward-stopped' | 'go-ahead' | 'trust' | 'account-wait' | 'signed-out'
   | 'proposal' | 'intake' | 'departure' | 'set-up' | 'rule' | 'unanswerable'
   | 'review' | 'opinion' | 'helper' | 'hand-over' | 'work' | 'permission' | 'answer' | 'confirmation' | 'space' | 'git-held'
-  | 'quiet' | 'helper-ended';
+  | 'quiet' | 'helper-ended' | 'request-declined';
 
 /**
  * One thing that is waiting on a person, as Overview's band shows it.
@@ -67,6 +67,9 @@ export type AttentionKind =
  * with nothing running, or busy with nothing heard. Daoris ended nothing: its presses are the person's, *End and carry on* (a quiet
  * quest session's alone), *Hand over…* (a quest session's), *Stop…* and *Leave it running*.
  *
+ * **INTEGRATE1o part o3 added `request-declined`** (§17.3): a run held at a quest its sessions published that the receiver declined, whose
+ * `work.requests` node waits for the person's *Pass over…* (the run's existing skip), with their words. Its `id` is the run.
+ *
  * **GITAUTH1a added `git-held`**: a git remote held because it could not authenticate (D198, the git auth design §5.2), said once.
  * Nothing connects for it until a change lifts it or the person's *Try again*, its one act, on the row itself.
  */
@@ -79,6 +82,8 @@ export type Attention = {
   kind: AttentionKind;
   /** A `trust` row's hold: the folder and the agent's own file — exactly what a grant writes. */
   trust?: TrustHold;
+  /** A `request-declined` row's node and the quest declined, to where it went and the run's newest work quest, which its door reads the run by. */
+  declined?: DeclinedRequest;
   /** The ask a `go-ahead` is on, or a `trust` row's held intake is for: what the door opens. */
   ask?: string;
   /** The quest a `trust` row holds: what the door opens. */
@@ -223,6 +228,8 @@ export type AttentionActs = {
    * running*, each told how it ended where it asked once.
    */
   quiet?: (item: Attention, act: 'carry-on' | 'hand-over' | 'stop' | 'leave', answered?: Answered) => void;
+  /** A run's `work.requests` node passed over, with the person's words, as the run's view passes it (INTEGRATE1o part o3). */
+  passOver?: (item: Attention, words: string, answered: Answered) => void;
 };
 
 /** Which handler each act needs. */
@@ -267,6 +274,7 @@ const HANDLER: Record<AttentionActId, keyof AttentionActs> = {
   'quiet-hand-over': 'quiet',
   'quiet-stop': 'quiet',
   'quiet-leave': 'quiet',
+  'pass-over': 'passOver',
 };
 
 /** The kinds that wait in a circle rather than in a repository. */
@@ -434,6 +442,8 @@ export function AttentionRow({ item, onOpen, onRun, acts = {}, busy = false, ope
       case 'quiet-hand-over': return t('work.attention.act.handOver');
       case 'quiet-stop': return t('work.act.stop');
       case 'quiet-leave': return t('work.attention.act.leave');
+      // INTEGRATE1o part o3: the run's own skip, as its Workflow view says it.
+      case 'pass-over': return t('workflow.run.node.skip');
     }
   };
 
@@ -547,6 +557,7 @@ export function AttentionRow({ item, onOpen, onRun, acts = {}, busy = false, ope
               } else if (asking === 'choose') acts.publish?.(item, [choice], answered);
               else if (asking === 'accept-rule') acts.acceptRule?.(item, answered);
               else if (asking === 'not-yet') acts.notYet?.(item, words.trim(), answered);
+              else if (asking === 'pass-over') acts.passOver?.(item, words.trim(), answered);
               else if (asking === 'opinion-anyway') acts.opinionAnyway?.(item, words.trim() || undefined, answered);
               else if (asking === 'quiet-carry-on') acts.quiet?.(item, 'carry-on', answered);
               else if (asking === 'quiet-stop') acts.quiet?.(item, 'stop', answered);
@@ -599,6 +610,8 @@ function AskOnce({ act, item, label, busy, words, onWords, choice, onChoice, onC
   const notYet = act === 'not-yet';
   // *Go on anyway…* says what stays unsettled, and takes words the person may give (XAGENT1g, the second-agent design §8.5).
   const anyway = act === 'opinion-anyway' && item.opinion ? item.opinion.opinion : null;
+  // INTEGRATE1o part o3: passing a run's declined request over needs the person's words, which the run's record keeps with the skip.
+  const passOver = act === 'pass-over';
   // SESSWATCH1a: what ending a quiet session does, and that the person's waiting words go to the next part (§5.2).
   const quietAsk = act === 'quiet-carry-on' || act === 'quiet-stop';
   const quietSays = act === 'quiet-carry-on' ? 'work.attention.ask.carryOn'
@@ -607,6 +620,8 @@ function AskOnce({ act, item, label, busy, words, onWords, choice, onChoice, onC
     ? [t(quietSays), ...(act === 'quiet-carry-on' && item.quiet?.words ? [t('work.attention.quietWords')] : [])].join(' ')
     : anyway
     ? t('opinion.ask.anyway', { unsettled: unsettledWords(t, opinionState(anyway.state), anyway) })
+    : passOver
+    ? t('workflow.run.node.skipSays', { node: item.declined?.node ?? '' })
     : notYet
     ? t(item.session ? 'review.ask.notYet' : 'review.ask.notYetOwn', { quest: item.id })
     : act === 'approve'
@@ -623,6 +638,8 @@ function AskOnce({ act, item, label, busy, words, onWords, choice, onChoice, onC
     ? t('work.act.stopMeanIt')
     : anyway
     ? t('opinion.ask.anywayMeanIt')
+    : passOver
+    ? t('workflow.run.node.skipMeanIt')
     : notYet
     ? t('review.ask.notYetMeanIt')
     : act === 'approve'
@@ -633,7 +650,8 @@ function AskOnce({ act, item, label, busy, words, onWords, choice, onChoice, onC
           ? t('work.attention.act.allowRule')
           : t('asks.record.publish');
   // The words a go-ahead's answer, a second opinion's gate or a *not yet* takes, in the one field each names.
-  const wordsLabel = answering ? t('asks.goAhead.words') : anyway ? t('opinion.ask.words') : notYet ? t('review.ask.notYetWords') : null;
+  const wordsLabel = answering ? t('asks.goAhead.words') : anyway ? t('opinion.ask.words') : notYet ? t('review.ask.notYetWords')
+    : passOver ? t('workflow.run.node.skipWords') : null;
   return (
     // Only a refusal ends or removes something (platform UX §4): every other ask here is outward and loses nothing.
     <InlineConfirm
@@ -643,7 +661,7 @@ function AskOnce({ act, item, label, busy, words, onWords, choice, onChoice, onC
       says={<Inline text={sentence} />}
       meanIt={move}
       busy={busy}
-      ready={!(act === 'choose' && !choice) && !(notYet && !words.trim())}
+      ready={!(act === 'choose' && !choice) && !((notYet || passOver) && !words.trim())}
       onConfirm={onConfirm}
       onClose={onCancel}
     >

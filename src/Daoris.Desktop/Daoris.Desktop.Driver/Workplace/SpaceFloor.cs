@@ -346,10 +346,9 @@ public static class SpaceFloor
         // A volume that did not read keeps its stretch as it stands: a failed read runs nothing and ends nothing.
         var acts = new List<FloorAct>();
         var due = volumes.Where(volume => volume.Below && (stretches[volume.Read.Id].Acted is not { } acted || now - acted >= Hourly)).ToList();
-        var slims = due.Any(volume => volume.Entries.Contains(HomeEntry.Trees.Name));
-        var downloads = due.Any(volume => volume.Entries.Contains(HomeEntry.Toolchain.Name) || volume.Entries.Contains(HomeEntry.ToolVersions.Name));
+        // KEEPSIZE1f: the floor is a warning and removes nothing; the allowance of each kind's limit lets go of what can be made again.
+        const bool slims = false, downloads = false, caches = false;
         var cachesOn = volumes.FirstOrDefault(volume => volume.Entries.Contains(HomeEntry.BrowserEngine.Name));
-        var caches = cachesOn is not null && due.Contains(cachesOn) && !stretches[cachesOn.Read.Id].Caches;
         var held = false;
         KeepingHolder? holder = null;
         if (slims || downloads || caches)

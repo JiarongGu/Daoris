@@ -134,7 +134,8 @@ public sealed class SpaceFloorTests : IDisposable
     [Fact]
     public void Each_volumes_floor_is_its_own_by_the_rule()
     {
-        Assert.Equal(20 * Gb, FloorPolicy.Default.Of(1024 * Gb));
+        Assert.Equal(100 * Gb, FloorPolicy.Default.Of(1024 * Gb));
+        Assert.Equal(100 * Gb, FloorPolicy.Default.Of(4096 * Gb));
         Assert.Equal(128 * Gb / 100 * 10, FloorPolicy.Default.Of(128 * Gb));
         Assert.Equal(30 * Gb, new FloorPolicy(30, null, false).Of(100 * Gb));
         Assert.Equal(20 * Gb, new FloorPolicy(30, null, false).Of(40 * Gb));
@@ -200,108 +201,31 @@ public sealed class SpaceFloorTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 §3.2: below the floor the three acts run at once, in order, and nothing else, each with its own guards: the slim due goes and one
-    /// within its hour stays; an unused download goes and one downloaded within the hour stays (<c>recent</c>); the browser's caches go by
-    /// the table's paths while it does not run, its cookies and preferences kept; a folder past its days, the machine log, stay their rules'.
+    /// 🔴 KEEPSIZE1f: below the floor nothing is removed, whatever the stretch's hour: a slim due, an unused download and the browser's
+    /// caches all stand, no act runs, no run lock is taken, and the volume is said.
     /// </summary>
     [Fact]
-    public async Task Below_the_floor_the_three_acts_run_in_order_and_nothing_else()
+    public async Task Below_the_floor_nothing_is_removed_and_the_volume_is_said()
     {
         var due = Aside("s-due", Moved);
-        var fresh = Aside("s-fresh", _now.AddMinutes(-30));
-        var past = Aside("s-past", Moved.AddDays(-20));
         var unused = Version("2.0.1", Moved.AddDays(-3));
-        var recent = Version("2.0.2", _now.AddMinutes(-10));
         Caches();
-        var log = Write(Path.Combine(DaorisHome.Entry(_home, HomeEntry.Logs), "2026-08-01.driver.jsonl"), 50);
         _free["A"] = 9 * Gb;
         var browser = new Browser(running: false);
 
         var pass = await SpaceFloor.PassAsync(World(browser));
+        _now = _now.AddHours(2);
+        var later = await SpaceFloor.PassAsync(World(browser));
 
-        Assert.Equal(["set-aside", "downloads", "browser-cache"], pass.Acts.Select(act => act.Kind));
-        Assert.False(Directory.Exists(Path.Combine(due, "node_modules")));
-        Assert.True(File.Exists(Path.Combine(due, "README.md")));
-        Assert.True(Directory.Exists(Path.Combine(fresh, "node_modules")));
-        Assert.True(Directory.Exists(past), "the purge is the look's at its days, never the floor's");
-        Assert.False(Directory.Exists(unused));
-        Assert.True(Directory.Exists(recent));
-        Assert.False(Directory.Exists(Path.Combine(Engine, "Default", "Cache")));
-        Assert.False(Directory.Exists(Path.Combine(Engine, "GrShaderCache")));
-        Assert.True(File.Exists(Path.Combine(Engine, "Default", "Cookies")));
-        Assert.True(File.Exists(Path.Combine(Engine, "Default", "Preferences")));
-        Assert.True(File.Exists(log));
-        Assert.Equal(1, browser.Asked);
-        var record = KeepingRecord.Read(_home);
-        Assert.Equal(KeepingRun.Floor, record.Last["downloads"].Door);
-        Assert.Contains(Logged("space.freed"), line => line.Contains("\"door\":\"floor\"", StringComparison.Ordinal) && line.Contains("\"early\":true", StringComparison.Ordinal));
-    }
-
-    /// <summary>🔴 §3.2 (Codex 3.1): the person's <c>never</c> is the press alone, below the floor too.</summary>
-    [Fact]
-    public async Task A_never_download_is_kept_below_the_floor()
-    {
-        var unused = Version("2.0.1", Moved.AddDays(-30));
-        _free["A"] = 1 * Gb;
-        var policy = KeepPolicy.From(KeepChoices.None with { DownloadsNever = true });
-
-        var pass = await SpaceFloor.PassAsync(World(policy: policy));
-
+        Assert.Empty(pass.Acts);
+        Assert.Empty(later.Acts);
+        Assert.Single(pass.Low);
+        Assert.True(Directory.Exists(Path.Combine(due, "node_modules")));
         Assert.True(Directory.Exists(unused));
-        var downloads = Assert.Single(pass.Acts, act => act.Kind == "downloads");
-        Assert.Equal((0, 1), (downloads.Removed, downloads.Kept["never"]));
-    }
-
-    /// <summary>🔴 §3.2, §3.5: a running browser's caches are kept, and with no Daoris to say whether it runs, they are kept too.</summary>
-    [Fact]
-    public async Task A_running_browsers_caches_are_kept_and_with_no_shell_too()
-    {
-        Caches();
-        _free["A"] = 1 * Gb;
-
-        var running = await SpaceFloor.PassAsync(World(new Browser(running: true)));
-        var shellless = await SpaceFloor.PassAsync(World(caches: null, floors: new SpaceFloors()));
-
         Assert.True(Directory.Exists(Path.Combine(Engine, "Default", "Cache")));
-        Assert.Equal(1, Assert.Single(running.Acts, act => act.Kind == "browser-cache").Kept[SpaceKept.Running]);
-        Assert.Equal(1, Assert.Single(shellless.Acts, act => act.Kind == "browser-cache").Kept[SpaceKept.NoShell]);
-    }
-
-    /// <summary>
-    /// 🔴 §3.2 (Fable F4.1): the browser's caches are cleared once in each stretch below the floor, not an hour later though the acts run
-    /// again; and again once the stretch ended at <c>space.ok</c> and a new one began.
-    /// </summary>
-    [Fact]
-    public async Task The_caches_are_cleared_once_a_stretch_and_again_after_space_ok()
-    {
-        Caches();
-        _free["A"] = 1 * Gb;
-        var browser = new Browser(running: false);
-
-        await SpaceFloor.PassAsync(World(browser));
-        Caches();
-        _now = _now.AddMinutes(30);
-        var within = await SpaceFloor.PassAsync(World(browser));
-        _now = _now.AddHours(1);
-        var hourLater = await SpaceFloor.PassAsync(World(browser));
-
-        Assert.Empty(within.Acts);
-        Assert.Contains(hourLater.Acts, act => act.Kind == "set-aside" || act.Kind == "downloads");
-        Assert.DoesNotContain(hourLater.Acts, act => act.Kind == "browser-cache");
-        Assert.Equal(1, browser.Asked);
-        Assert.True(Directory.Exists(Path.Combine(Engine, "Default", "Cache")));
-
-        _free["A"] = 20 * Gb;
-        _now = _now.AddMinutes(5);
-        var ok = await SpaceFloor.PassAsync(World(browser));
-        _free["A"] = 2 * Gb;
-        _now = _now.AddMinutes(5);
-        var again = await SpaceFloor.PassAsync(World(browser));
-
-        Assert.Single(ok.Ok);
-        Assert.Contains(again.Acts, act => act.Kind == "browser-cache");
-        Assert.Equal(2, browser.Asked);
-        Assert.False(Directory.Exists(Path.Combine(Engine, "Default", "Cache")));
+        Assert.Equal(0, browser.Asked);
+        Assert.False(File.Exists(KeepingRun.PathOf(_home)));
+        Assert.Single(Logged("space.low"));
     }
 
     /// <summary>
@@ -351,8 +275,8 @@ public sealed class SpaceFloorTests : IDisposable
 
         var pass = await SpaceFloor.PassAsync(World(new Browser(running: false)));
 
-        Assert.Equal(["set-aside"], pass.Acts.Select(act => act.Kind));
-        Assert.False(Directory.Exists(Path.Combine(due, "node_modules")));
+        Assert.Empty(pass.Acts);
+        Assert.True(Directory.Exists(Path.Combine(due, "node_modules")));
         Assert.True(Directory.Exists(unused));
         Assert.True(Directory.Exists(Path.Combine(Engine, "Default", "Cache")));
         Assert.Equal(@"D:\", Assert.Single(pass.Low).Read!.Read.Root);
@@ -392,12 +316,11 @@ public sealed class SpaceFloorTests : IDisposable
         _now = _now.AddMinutes(5);
         var ok = await tidying.LookAsync(ledger.Client(), log, CancellationToken.None);
 
-        Assert.Contains(said, line => line.StartsWith("tidy  the free space is below its floor: removed 2 of the browser's cache early (", StringComparison.Ordinal));
-        Assert.Contains(said, line => line.StartsWith(@"tidy  C:\ has 4096.0 MB free, below its floor of 10240.0 MB: Daoris freed ", StringComparison.Ordinal)
-                                      && line.Contains("Free up space… on This Daoris", StringComparison.Ordinal));
+        Assert.DoesNotContain(said, line => line.Contains("removed", StringComparison.Ordinal));
+        Assert.Contains(said, line => line.StartsWith(@"tidy  C:\ has 4096.0 MB free, below its floor of 10240.0 MB", StringComparison.Ordinal));
         Assert.Empty(again);
         Assert.Equal([@"tidy  C:\ has 16384.0 MB free again, above its floor of 10240.0 MB."], ok);
-        Assert.False(Directory.Exists(Path.Combine(Engine, "Default", "Cache")));
+        Assert.True(Directory.Exists(Path.Combine(Engine, "Default", "Cache")));
     }
 
     /// <summary>🔴 §6 point 7: a free-space read that fails runs no floor act, says nothing, and takes no lock.</summary>
@@ -426,14 +349,11 @@ public sealed class SpaceFloorTests : IDisposable
         {
             var held = await SpaceFloor.PassAsync(World());
 
-            Assert.True(held.WasHeld);
-            Assert.Empty(held.Low);
+            // KEEPSIZE1f: no act waits on the run lock any more; the warning is said at once.
+            Assert.False(held.WasHeld);
+            Assert.Single(held.Low);
             Assert.True(Directory.Exists(Path.Combine(due, "node_modules")));
         }
-
-        var after = await SpaceFloor.PassAsync(World());
-        Assert.False(Directory.Exists(Path.Combine(due, "node_modules")));
-        Assert.Single(after.Low);
     }
 
     /// <summary>The floor <c>off</c>: nothing runs or is said, and a stretch said before is forgotten.</summary>

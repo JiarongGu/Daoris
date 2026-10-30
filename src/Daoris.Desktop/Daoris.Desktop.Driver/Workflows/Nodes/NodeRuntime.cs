@@ -212,6 +212,12 @@ public sealed class NodeRuntime(
     /// </summary>
     public IIntegrationDoor? Integration { get; set; }
 
+    /// <summary>
+    /// The heavy executor's port (FABRIC-PIPELINE1d): none by default, so a runtime nobody wired starts no check and its node waits ready. The
+    /// watch sets it, with the executor's answer asking a pass.
+    /// </summary>
+    public ICheckPort? Checks { get => _performer.Checks; set => _performer.Checks = value; }
+
     /// <summary>The door over this home's records and integration store, built from the home the node records live in.</summary>
     public static IIntegrationDoor HomeDoor(string home) => new HomeIntegrationDoor(home);
 
@@ -231,6 +237,13 @@ public sealed class NodeRuntime(
     /// null before the first read of a start, where a door judges nothing.
     /// </summary>
     public IReadOnlyDictionary<string, QuestView>? LastQuests { get; private set; }
+
+    /// <summary>
+    /// The runs held at a declined request (INTEGRATE1o part o3), judged from the quests the runtime last read and each run's node record read now,
+    /// so a pass over a node clears its hold before the next look. Empty before a pass has read.
+    /// </summary>
+    public IReadOnlyList<RequestHold> RequestHolds() =>
+        _governed is { } governed ? Daoris.Driver.RequestHolds.Of(governed.Values, records.Read) : [];
 
     private readonly Func<bool> _holdsLease = holdsLease ?? (() => true);
 
@@ -467,6 +480,16 @@ public sealed class NodeRuntime(
         foreach (var node in graph.Nodes)
         {
             declared[node.Id] = node;
+
+            // FABRIC-PIPELINE1d (the pipeline design §4.1): a check's declaration is given its kind's perform once judged, as a plugin's node its
+            // step's; its executor is Daoris's own.
+            if (node.Kind == NodeKinds.Check && node.Reach == NodeReach.Performed)
+            {
+                declared[node.Id] = CheckNodes.Performed(node);
+                dispatchable.Add(node.Id);
+                continue;
+            }
+
             if (!(Performs(node) || Observes(node)) || steps.FirstOrDefault(step => step.Kind == node.Kind) is not { } step
                 || step.Version != node.Version || step.Reach != node.Reach)
             {
@@ -516,6 +539,23 @@ public sealed class NodeRuntime(
         }
 
         var repository = binding.Repository;
+
+        // FABRIC-PIPELINE1d (the pipeline design §4.3): a verification run has no quests and no branch; it observes itself at its commit, and
+        // once ended it is never judged again.
+        if (run.Line is { } line)
+        {
+            if (run.Ended is not null) return null;
+            var at = new WorkUnit(run.Unit, WorkUnitKind.Run, new WorkOwner(repository, binding.Workspace, VerifyFiles.Lines, WorkRecord.DriverWriter),
+                new WorkSubject(binding.Run, line.Commit), new MilestoneEnd(WorkEndState.NotEnded, null, null, null, null, "its verification runs"), []);
+            var (checks, sent, seen) = Declare(graph, steps);
+            var verifies = new RunScope(run, at) { Root = line.Root, Identity = IdentityOf(identities, line.Root), Tip = line.Commit };
+            return new GovernedUnit(at, graph, digest, binding.Run, checks, sent,
+                new WatchedUnit(repository, binding.Workspace, line.Root, "", line.Commit, null, null, []) { Unit = run.Unit })
+            {
+                Observable = seen, Scope = verifies,
+            };
+        }
+
         var units = read.Units.GroupBy(unit => unit.Id, StringComparer.Ordinal).ToDictionary(same => same.Key, same => same.First(), StringComparer.Ordinal);
         var quests = read.Units.Select(unit => unit.Records.Quest).OfType<QuestView>().ToList();
 
@@ -877,6 +917,15 @@ public sealed class NodeRuntime(
                     done.Add(begun);
                     started |= begun.What == PerformedWhat.Begun;
                 }
+                // FABRIC-PIPELINE1d: a check is handed to the heavy executor, which takes it at once and runs it on its own task: the pass never
+                // awaits its gates. With no executor here it stays ready.
+                else if (node.Kind == NodeKinds.Check)
+                {
+                    if (!governed.Dispatchable.Contains(node.Id) || _performer.Checks is null) continue;
+                    var handed = await _performer.StartAsync(node, start, ct).ConfigureAwait(false);
+                    done.Add(handed);
+                    started |= handed.What != PerformedWhat.Refused;
+                }
                 // FABRIC-PERFORM1p: a performed node whose branch's tip this pass did not read is left ready, as an observed one is: it is sent
                 // on no guess, and the pass that reads the tip sends it there. FABRIC-CUTOVER1d (the cutover design §3): a run's performed node is
                 // started as a unit's is, now its doors read the run; one on a subject whose revision was not read is offered no start (§2.2).
@@ -1027,6 +1076,9 @@ public sealed class NodeRuntime(
                 done.Add(new WorkPerformed(unit, word.Node, code is null ? PerformedWhat.Resolved : PerformedWhat.Refused, code ?? word.Act));
                 said.Add(RunNodeWords.AppliedSaid(unit, word, code));
             }
+
+            // FABRIC-PIPELINE1d (the pipeline design §4.2): the pass that applies the person's stop of a running check tells the executor.
+            _performer.StopChecks(unit, [.. applied.Where(each => each.Refused is null && each.Word.Act == NodeWordActs.Stop).Select(each => each.Word.Node)]);
         }
 
         return (done, said);
@@ -1091,7 +1143,8 @@ public sealed class NodeRuntime(
         var nodes = governed.Graph.Nodes.Select(node => governed.Declared[node.Id]).ToList();
         var before = nodes.ToDictionary(node => node.Id, node => record.Statuses.GetValueOrDefault(node.Id) ?? NodeLifecycle.Start(self.Id, node.Id), StringComparer.Ordinal);
         var units = new Dictionary<string, WorkUnit>(StringComparer.Ordinal) { [self.Id] = self };
-        var revisions = new Dictionary<string, string?>(StringComparer.Ordinal) { [self.Id] = null };
+        // FABRIC-PIPELINE1d: a verification run's nodes observe the run itself at its commit.
+        var revisions = new Dictionary<string, string?>(StringComparer.Ordinal) { [self.Id] = scope.Tip };
         if (scope.Quest is { } quest) (units[quest.Id], revisions[quest.Id]) = (quest, quest.Subject.Revision);
         if (scope.Branch is { } branch)
         {
@@ -1103,7 +1156,7 @@ public sealed class NodeRuntime(
         if (landed is { } on) units.TryAdd(on.Unit.Id, on.Unit);
         var subjects = new Dictionary<string, string?>(StringComparer.Ordinal);
         var own = new Dictionary<string, string?>(StringComparer.Ordinal);
-        foreach (var node in nodes)
+        foreach (var node in scope.Tip is null ? nodes : [])
         {
             switch (SubjectOf(node, scope))
             {
@@ -1795,6 +1848,8 @@ public sealed class NodeRuntime(
                     continue;
                 }
 
+                // FABRIC-PIPELINE1d: a check is no plugin's, and no plugin is told of it.
+                if (!NodeKinds.IsPlugin(each.Declared[id].Kind)) continue;
                 if ((each.Scope is null ? Told(each, tips) : RunFrame(each, record, id, tips)) is not { } frame) continue;
                 var kind = each.Declared[id].Kind;
                 var plugin = PluginOf(kind);

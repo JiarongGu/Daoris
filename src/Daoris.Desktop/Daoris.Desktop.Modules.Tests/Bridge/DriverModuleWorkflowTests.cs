@@ -302,6 +302,39 @@ public sealed class DriverModuleWorkflowTests : DriverModuleBridge
         Assert.Contains("name `gates` or `clear`", await RefusalAsync(module, "INTEGRATION_GATES", new { repository = "engine", gates = Blob, clear = true }));
     }
 
+    /// <summary>
+    /// <c>WORKFLOW_VERIFY</c>, the page's half of <c>daoris-driver verify</c> (FABRIC-PIPELINE1d part 5): a repository with no checkout here is
+    /// refused <c>no-checkout</c> in a sentence and binds nothing, and the press names a repository and no more than one of a branch or a commit.
+    /// </summary>
+    [Fact]
+    public async Task A_verification_of_a_repository_with_no_checkout_is_refused_and_binds_nothing()
+    {
+        var (module, _) = await UpAsync();
+
+        var refused = await AnswerAsync(module, "WORKFLOW_VERIFY", new { repository = "engine", branch = "main" });
+        Assert.Equal((false, "no-checkout"), (refused.GetProperty("done").GetBoolean(), refused.GetProperty("refused").GetString()));
+        Assert.Contains("`engine` has no checkout on this machine", refused.GetProperty("message").GetString());
+        Assert.Empty(VerifyRuns.All(Home));
+
+        Assert.Contains("asked for a `repository`", await RefusalAsync(module, "WORKFLOW_VERIFY", new { branch = "main" }));
+        Assert.Contains("a branch or a commit, not both", await RefusalAsync(module, "WORKFLOW_VERIFY", new { repository = "engine", branch = "main", commit = "abc1234" }));
+    }
+
+    /// <summary>A checkout whose landed route names no verification pipeline: the library's refusal, in its sentence, and nothing bound.</summary>
+    [Fact]
+    [Trait(Category.Name, Category.Process)]
+    public async Task A_verification_where_the_landed_route_names_no_pipeline_says_so_and_binds_nothing()
+    {
+        var root = await CheckoutAsync();
+        var (module, _) = await UpAsync(root);
+
+        var refused = await AnswerAsync(module, "WORKFLOW_VERIFY", new { repository = "engine", branch = "main" });
+
+        Assert.Equal((false, "refused"), (refused.GetProperty("done").GetBoolean(), refused.GetProperty("refused").GetString()));
+        Assert.Contains("names no verification pipeline", refused.GetProperty("message").GetString());
+        Assert.Empty(VerifyRuns.All(Home));
+    }
+
     private async Task<JsonElement> IntegrationAsync(DriverModule module) =>
         (await AnswerAsync(module, "WORKFLOW_CURRENT", new { repository = "engine" })).GetProperty("start").GetProperty("integration");
 

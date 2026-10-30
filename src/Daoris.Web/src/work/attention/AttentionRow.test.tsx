@@ -37,6 +37,13 @@ const STEWARD_STOPPED: Attention = {
   since: '2026-09-21T09:00:00Z', detail: 'The steward stopped session `s1`; Try again, by the steward or the owner, carries it on.',
 };
 
+/** INTEGRATE1o part o3 (§17.3): a run held at a request the receiver declined, waiting on the person's *Pass over…*. */
+const REQUEST_DECLINED: Attention = {
+  id: 'r7', kind: 'request-declined', title: 'Read the media field names from config', where: 'engine', since: '2026-09-21T09:00:00Z',
+  detail: 'Quest #q9 to `web` was declined, so the work holds here until you pass it over.',
+  declined: { node: 'requests', quest: 'q9', to: 'web', work: '7a82cc' },
+};
+
 const GO_AHEAD: Attention = {
   id: '7c1e9a04b2d5#2', kind: 'go-ahead', ask: '7c1e9a04b2d5', number: 2, title: 'push on prod: “the menu entries”',
   where: 'ask #7c1e9a04b2d5', since: '2026-09-21T09:00:00Z', detail: 'The menu ships with the release.',
@@ -109,7 +116,7 @@ const everyAct = (): Required<AttentionActs> => ({
   acceptDeparture: vi.fn(), acceptRule: vi.fn(), declineRule: vi.fn(),
   signIn: vi.fn(), signInNew: vi.fn(), read: vi.fn(), reviewed: vi.fn(), notYet: vi.fn(), showAgain: vi.fn(),
   opinionAgain: vi.fn(), opinionAnyway: vi.fn(), helper: vi.fn(), held: vi.fn(), permission: vi.fn(), answerAlone: vi.fn(),
-  openRecords: vi.fn(), handOver: vi.fn(), gitTryAgain: vi.fn(), quiet: vi.fn(),
+  openRecords: vi.fn(), handOver: vi.fn(), gitTryAgain: vi.fn(), quiet: vi.fn(), passOver: vi.fn(),
 });
 
 describe('a row in what needs you', () => {
@@ -345,6 +352,35 @@ describe('settling one where it stands', () => {
       render(<AttentionRow item={STEWARD_STOPPED} acts={everyAct()} onOpen={vi.fn()} />);
       expect(screen.getByText('管家已停止')).toBeInTheDocument();
       expect(screen.getByRole('button', { name: '重试' })).toBeInTheDocument();
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+  });
+
+  it('holds a run at a declined request with one press, Pass over…, that asks for the person’s words', async () => {
+    const acts = everyAct();
+    render(<AttentionRow item={REQUEST_DECLINED} acts={acts} onOpen={vi.fn()} />);
+
+    expect(screen.getByText('request declined')).toBeInTheDocument();
+    expect(screen.getByText('engine')).toBeInTheDocument();
+    expect(screen.getByText('web', { selector: 'code' })).toBeInTheDocument();
+    expect(screen.getAllByRole('button').filter((button) => button.textContent === 'Pass over…')).toHaveLength(1);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Pass over…' }));
+    const asking = screen.getByRole('group', { name: 'Pass over…' });
+    // The skip keeps the person's words, so it is not sent without them.
+    expect(within(asking).getByRole('button', { name: 'Pass over' })).toBeDisabled();
+    await userEvent.type(within(asking).getByRole('textbox'), 'web will not take it');
+    await userEvent.click(within(asking).getByRole('button', { name: 'Pass over' }));
+    expect(acts.passOver).toHaveBeenCalledWith(REQUEST_DECLINED, 'web will not take it', answeredByAct);
+  });
+
+  it('holds a run at a declined request in 中文', async () => {
+    await i18n.changeLanguage('zh');
+    try {
+      render(<AttentionRow item={REQUEST_DECLINED} acts={everyAct()} onOpen={vi.fn()} />);
+      expect(screen.getByText('委托被谢绝')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: '跳过…' })).toBeInTheDocument();
     } finally {
       await i18n.changeLanguage('en');
     }
@@ -749,6 +785,10 @@ describe('an ask under the row answers inside itself', () => {
       prepare: async (ask) => { await userEvent.type(within(ask).getByRole('textbox'), 'the chart is empty'); },
     },
     { name: 'opinion-anyway', item: OPINION, open: 'Go on anyway…', move: 'Go on anyway', handler: 'opinionAnyway' },
+    {
+      name: 'pass-over', item: REQUEST_DECLINED, open: 'Pass over…', move: 'Pass over', handler: 'passOver',
+      prepare: async (ask) => { await userEvent.type(within(ask).getByRole('textbox'), 'web will not take it'); },
+    },
   ];
 
   for (const one of cases) {

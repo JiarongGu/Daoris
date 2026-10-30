@@ -53,8 +53,8 @@ public sealed class KnowledgeSearchTools(KnowledgeService service, WorkspaceScop
         + "the files. Each hit names its file and lines, so read those lines rather than the file.")]
     public async Task<string> SearchAsync(
         [Description("What to look for, in plain words.")] string query,
-        [Description("Restrict to kinds: rule, knowledge, skill, decision, fix, task, index. Comma-separated; omit for all, "
-            + "which answers with at most two index entries.")]
+        [Description("Restrict to kinds: rule, knowledge, skill, decision, fix, task, index, record (a finished session's tree: its "
+            + "landing, commits and what its sessions said). Comma-separated; omit for all, which answers with at most two index entries and three records.")]
         string? kinds = null,
         [Description("Restrict to repositories by name. Comma-separated; omit for all.")]
         string? repositories = null,

@@ -409,7 +409,29 @@ public static class WorkflowRunReader
         var promoted = record is not null && graph.Nodes.Any(node => node.Kind == NodeKinds.Integrate)
             ? await IntegrateNodes.PromotedAsync(reads.Sources.Integration ?? NodeRuntime.HomeDoor(reads.Sources.Home), record, reads.Ct).ConfigureAwait(false)
             : new HashSet<string>(StringComparer.Ordinal);
-        return WorkflowGraphRuns.Derive(new WorkflowGraphRunFacts(facts, run, graph, record) { Branches = reads.Branches, Promoted = promoted }, workspace, askId);
+        return WorkflowGraphRuns.Derive(
+            new WorkflowGraphRunFacts(facts, run, graph, record) { Branches = reads.Branches, Promoted = promoted, Failures = FailedGates(reads.Sources.Home, run, graph, record) },
+            workspace, askId);
+    }
+
+    /// <summary>The gate each failed check named (FABRIC-PIPELINE1d), from its newest attempt's result in the run's folder; a result that is not there or does not read names none.</summary>
+    private static Dictionary<string, string> FailedGates(string home, string run, NodeGraph graph, NodeRecord? record)
+    {
+        var named = new Dictionary<string, string>(StringComparer.Ordinal);
+        if (record is null) return named;
+        foreach (var node in graph.Nodes.Where(each => each.Kind == NodeKinds.Check && record.Statuses.GetValueOrDefault(each.Id)?.State == NodeStates.Failed))
+        {
+            if (record.Attempts.LastOrDefault(attempt => attempt.Node == node.Id && attempt.Plugin == NodeKinds.Check) is not { } attempt) continue;
+            try
+            {
+                if (VerifyResult.Read(VerifyFiles.ResultOf(home, run, attempt.Call.Invocation))?.Failed is { } gate) named[node.Id] = gate;
+            }
+            catch (DriverException)
+            {
+            }
+        }
+
+        return named;
     }
 
     /// <summary>

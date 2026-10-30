@@ -31,6 +31,12 @@ public enum EntryKind
     /// or the records. Last, so the kinds stored before it keep their numbers.
     /// </summary>
     Index,
+
+    /// <summary>
+    /// A finished tree's record (KEEPSIZE1c): its landing, tip, commits and what it left, with its sessions' words. Kept in the records'
+    /// own tables, never in a repository's feed; local to this machine.
+    /// </summary>
+    Record,
 }
 
 /// <summary>
@@ -167,7 +173,9 @@ public sealed record KnowledgeEntry(
     /// duplicates. Deliberately derived from location rather than content: an entry whose text was
     /// edited is the same entry, and treating it as a new one is how an index accumulates ghosts.
     /// </summary>
-    public string Id => Anchor is null
-        ? $"{Repository}:{RelativePath}"
-        : $"{Repository}:{RelativePath}#{Anchor}";
+    public string Id => Kind == EntryKind.Record
+        ? $"record:{Workspace}/{Repository}/{RelativePath}"
+        : Anchor is null
+            ? $"{Repository}:{RelativePath}"
+            : $"{Repository}:{RelativePath}#{Anchor}";
 }

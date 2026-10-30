@@ -412,6 +412,29 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
         Is($$"""{"kind":"steward-stopped","id":"7a82cc","since":"2026-10-01T09:21:00+00:00","workspace":"default","where":"engine","session":"s1","sitting":{{steward.ToJsonString()}}}""", item);
     }
 
+    /// <summary>A run the node runtime holds at a declined request, as <see cref="AttentionStateSlice.FactsAsync"/> writes one (INTEGRATE1o part o3).</summary>
+    private static JsonObject Declined(string over = "{}") => With(
+        """{"run":"r7","node":"requests","repository":"engine","workspace":"aurora","quest":"q9","to":"web","work":"7a82cc","since":"2026-10-30T11:00:00.0000000+00:00"}""",
+        over);
+
+    /// <summary>
+    /// INTEGRATE1o part o3 (§17.3): a run held at a declined request is one row keyed by the run, since the decline, in the run's workspace,
+    /// carrying its node, the declined quest and where it went; a run with no decline, or whose hold the person passed over, is none.
+    /// </summary>
+    [Fact]
+    public void A_run_held_at_a_declined_request_is_one_row_in_its_workspace_and_a_run_without_one_is_none()
+    {
+        var item = Assert.Single(Rows(new() { Requests = [Declined(), Declined("""{"run":"r8","workspace":"default","since":"2026-10-30T11:05:00.0000000+00:00"}""")] }),
+            row => row["id"]!.GetValue<string>() == "r7");
+
+        Is("""
+            {"kind":"request-declined","id":"r7","since":"2026-10-30T11:00:00.0000000+00:00","workspace":"aurora","where":"engine",
+             "declined":{"node":"requests","quest":"q9","to":"web","work":"7a82cc"}}
+            """, item);
+        Assert.Equal("default", Only(Rows(new() { Requests = [Declined("""{"workspace":null}""")] }), "request-declined")["workspace"]!.GetValue<string>());
+        Assert.Empty(Rows(new() { Requests = [] }));
+    }
+
     [Fact]
     public void A_parked_quest_holds_work_beside_a_parked_session_and_a_folder() =>
         Assert.Equal(

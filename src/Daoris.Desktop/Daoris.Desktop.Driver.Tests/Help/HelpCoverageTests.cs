@@ -93,6 +93,15 @@ public sealed partial class HelpCoverageTests
     /// The integration declaration on a repository's Setup (INTEGRATE1d, the integration design §17.7): <i>Accept</i> and <i>Withdraw</i>
     /// for the <c>integration</c> object of its <c>daoris.gates.json</c>, by the blob the person read.
     /// </summary>
+    /// <summary>
+    /// <i>Verify…</i> on a repository's Workflow tab (FABRIC-PIPELINE1d part 5, D192), <c>daoris-driver verify</c>'s twin: a person's verification of a
+    /// branch or a commit under the gates they accepted.
+    /// </summary>
+    private const string VerifyRun =
+        "a verification runs the repository's own accepted gates on this machine, beside its sessions, which spends the person's machine "
+        + "and is the person's own press (D192): no proposal names `WORKFLOW_VERIFY`; Ask Daoris can name `daoris-driver verify` and the "
+        + "run's Workflow view, where the verdict shows.";
+
     private const string IntegrationDeclaration =
         "accepting a repository's integration declaration by its blob is what lets its generated-file writers, line rules and scratch "
         + "run, the person's door alone (D156), and an agent never lowers the person's part (D157 point 10): no proposal names "
@@ -398,13 +407,15 @@ public sealed partial class HelpCoverageTests
 
     /// <summary>
     /// FABRIC-CUTOVER1f's <c>daoris-driver workflow skip|stop</c> (D190 point 6, the cutover design §5.2), a verb of the headless host, and the
-    /// run's view's <i>Pass over…</i> and <i>Stop…</i> (<c>useRunNodeWord</c>): exempt, since passing a step over or stopping it is the person's
-    /// word on the work, as their word on a held attempt is.
+    /// run's view's <i>Pass over…</i> and <i>Stop…</i> (<c>useRunNodeWord</c>), and the same <i>Pass over…</i> on <i>What needs you</i>'s row for a run
+    /// held at a declined request (INTEGRATE1o part o3): exempt, since passing a step over or stopping it is the person's word on the work, as their
+    /// word on a held attempt is.
     /// </summary>
     private static readonly Exempt WorkflowNodeDoor = new(
         "passing a step of a run over, with your words, or stopping it is your word on that work, standing in for a go-ahead or a step's "
         + "proof nobody gave (D190 point 6), a judgement Ask Daoris cannot have made, as the word on a held attempt is; it can name "
-        + "`daoris-driver workflow skip` and `stop`, and the run's Workflow view.");
+        + "`daoris-driver workflow skip` and `stop`, and the run's Workflow view; the row for a run held at a request the receiver declined "
+        + "(\"What needs you\") presses the same word, so it is the person's too.");
 
     /// <summary>
     /// EVID1b's <c>daoris-driver quest check</c> (D144 §5), a verb of the headless host: a door Ask Daoris owes, until EVID1c
@@ -977,6 +988,8 @@ public sealed partial class HelpCoverageTests
         ("projects", "useSetLanded", null, new Exempt(LandedRoute)),
         // INTEGRATE1d: the integration declaration's Accept and Withdraw, beside the landed route on a repository's Setup.
         ("projects", "useAcceptIntegration", null, new Exempt(IntegrationDeclaration)),
+        // FABRIC-PIPELINE1d part 5: *Verify…*, on a repository's Workflow tab beside the landed route's gates.
+        ("projects", "useVerify", null, new Exempt(VerifyRun)),
         // FABRIC-PIPELINE1b: *Sessions' checks*, beside the heavy gates on a repository's Setup.
         ("projects", "useSetSessionChecks", null, new Exempt(ChecksOfSessions)),
         ("projects", "useSetStanding", null, new Door("setting", "standing")),

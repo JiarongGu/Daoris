@@ -589,7 +589,7 @@ describe('Settings → This Daoris', () => {
     expect(scope.getByText('removed only by your press')).toBeTruthy();
     expect(scope.getByRole('button', { name: 'Free up space…' })).toBeTruthy();
     // KEEP1d: the rules the person sets carry their editor and their terminal twin, history's age among them (KEEP1g).
-    expect(scope.getAllByRole('button', { name: 'Change…' })).toHaveLength(4);
+    expect(scope.getAllByRole('button', { name: 'Change…' })).toHaveLength(5);
     expect(card.textContent).toContain('daoris driver keep history …');
     expect(card.textContent).toContain('daoris driver keep set-aside …');
     await vi.waitFor(() => expect(invoke.mock.calls.some(([, type]) => type === 'SYSTEM_SPACE')).toBe(true));
@@ -802,6 +802,60 @@ describe('Settings → This Daoris', () => {
     expect((aside.getByRole('button', { name: 'The default' }) as HTMLButtonElement).disabled).toBe(true);
   });
 
+  // KEEPSIZE1d: a size limit per kind beside its days, set from the same editor and said on the row.
+  it("says each kind's size limit and when it is over, and sets the limit beside the days", async () => {
+    invoke.mockImplementation(keeping(() => DRIVER_STATE));
+    open();
+    const card = within(await screen.findByRole('region', { name: 'Disk space' }));
+    const aside = row(card, 'Set-aside trees');
+    expect(aside.getByText(/at most 8 GB; over it, the oldest folders whose record is kept go first/)).toBeTruthy();
+    expect(aside.getByText(/over its limit/)).toBeTruthy();
+    const downloads = row(card, 'Downloaded versions');
+    expect(downloads.getByText('at most 5 GB; over it, the versions unused longest go first')).toBeTruthy();
+
+    await userEvent.click(aside.getByRole('button', { name: 'Change…' }));
+    const limit = aside.getByRole('spinbutton', { name: 'Size limit' });
+    expect((limit as HTMLInputElement).value).toBe('8');
+    await userEvent.clear(limit);
+    await userEvent.type(limit, '20');
+    await userEvent.click(aside.getByRole('button', { name: 'Save' }));
+
+    await vi.waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_KEEP', { payload: { kind: 'set-aside', days: 14, whole: false, gb: 20 } }));
+  });
+
+  it("says a size limit and its editor in 中文", async () => {
+    await i18n.changeLanguage('zh');
+    invoke.mockImplementation(keeping(() => DRIVER_STATE));
+    open();
+    const card = within(await screen.findByRole('region', { name: '磁盘空间' }));
+    const downloads = row(card, '已下载的版本');
+
+    expect(downloads.getByText('最多 5 GB；超出时，先清理闲置最久的版本')).toBeTruthy();
+    await userEvent.click(downloads.getByRole('button', { name: '更改…' }));
+    expect(downloads.getByRole('spinbutton', { name: '容量上限' })).toBeTruthy();
+  });
+
+  // KEEPSIZE1e: the browser's cache takes a size and no days.
+  it("sets the browser's cache by a size alone, in English and in 中文", async () => {
+    invoke.mockImplementation(keeping(() => DRIVER_STATE));
+    open();
+    const card = within(await screen.findByRole('region', { name: 'Disk space' }));
+    const browser = row(card, "The browser's cache");
+    expect(browser.getByText(/at most 2 GB; over it, the caches are cleared while the browser is not running/)).toBeTruthy();
+
+    await userEvent.click(browser.getByRole('button', { name: 'Change…' }));
+    expect(browser.queryByRole('spinbutton', { name: 'Days' })).toBeNull();
+    const limit = browser.getByRole('spinbutton', { name: 'Size limit' });
+    await userEvent.clear(limit);
+    await userEvent.type(limit, '3');
+    await userEvent.click(browser.getByRole('button', { name: 'Save' }));
+    await vi.waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_KEEP', { payload: { kind: 'browser-cache', gb: 3 } }));
+
+    await i18n.changeLanguage('zh');
+    const zh = row(within(await screen.findByRole('region', { name: '磁盘空间' })), '浏览器缓存');
+    expect(zh.getByText(/最多 2 GB；超出时，在浏览器未运行时以及浏览器启动时清除缓存/)).toBeTruthy();
+  });
+
   it("sets the downloads to stay until the person removes them, and a rule back to its default", async () => {
     invoke.mockImplementation(keeping(() => DRIVER_STATE, SPACE_SET));
     open();
@@ -924,11 +978,11 @@ describe('Settings → This Daoris', () => {
 
     const line = free.getByText(`${size(8 * GIB)} of ${size(1024 * GIB)} · keep at least ${size(20 * GIB)}`);
     expect(line.className).toContain('text-warn');
-    expect(free.getByText(`Below the floor: Daoris freed ${size(2 * GIB)} early of what it can make again, last at ${clockOf('2026-10-22T09:00:00.000+00:00')}.`))
-      .toBeTruthy();
+    // KEEPSIZE1f: the floor only warns; it frees nothing.
+    expect(free.getByText('Below the floor: Daoris tells you and frees nothing by it; its own use is held to its allowance.')).toBeTruthy();
     expect(card.getByRole('button', { name: 'Free up space…' })).toBeTruthy();
     const aside = row(card, 'Set-aside trees');
-    expect(aside.getByText("a finished session's tree goes an hour after its record is kept; others after 14 days; sooner when space is low")).toBeTruthy();
+    expect(aside.getByText("a finished session's tree goes an hour after its record is kept; others after 14 days")).toBeTruthy();
     expect(aside.getByText(`on D:\\: ${size(300 * GIB)} of ${size(2048 * GIB)} · keep at least ${size(20 * GIB)}`).className).toContain('text-ink-soft');
   });
 
@@ -970,7 +1024,7 @@ describe('Settings → This Daoris', () => {
     invoke.mockImplementation(keeping(() => DRIVER_STATE, SPACE_FLOOR_OFF));
     open();
     const card = within(await screen.findByRole('region', { name: '磁盘空间' }));
-    expect(card.getByText(`共 ${size(1024 * GIB)}，可用 ${size(143.5 * GIB)} · 未设下限：道衍不会提前释放`)).toBeTruthy();
+    expect(card.getByText(`共 ${size(1024 * GIB)}，可用 ${size(143.5 * GIB)} · 未设下限：磁盘空间不足时道衍不会提醒`)).toBeTruthy();
     expect(row(card, '可用空间').getByRole('button', { name: '更改…' })).toBeTruthy();
   });
 

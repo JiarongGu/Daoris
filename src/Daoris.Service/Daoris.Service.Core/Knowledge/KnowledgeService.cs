@@ -162,7 +162,9 @@ public sealed class KnowledgeService(
     Func<string, RootSignature>? rootSignature = null,
     // Whether a root's record folders differ from its commit, asked once as the root is read (KNOWFRESH1a-ii) and never per
     // hit; null says nothing of it, as a host that cannot ask git does.
-    Func<string, bool?>? uncommitted = null)
+    Func<string, bool?>? uncommitted = null,
+    // The finished trees' records (KEEPSIZE1c): only a local host is given them, since a record holds a person's words and this machine's names.
+    IWorkRecordSearch? records = null)
 {
     private readonly TimeProvider _time = time ?? TimeProvider.System;
 
@@ -170,8 +172,15 @@ public sealed class KnowledgeService(
     public static readonly TimeSpan RootsJudgedEvery = TimeSpan.FromMinutes(1);
 
     /// <summary>What one registered root was when it was read: by whom it is named, when, from which commit, by which signature.</summary>
+    /// <remarks>
+    /// <c>Dirty</c> is the root's uncommitted reading, started once and shared: a background pass walks every root's, and a hit that asks
+    /// waits on its own repository's for <see cref="StandingWait"/> at most. Null where there is no seam or no commit to differ from.
+    /// </remarks>
     private sealed record RootReading(
-        string Repository, DateTimeOffset ReadAt, string? Commit, RootSignature? Signature, bool Uncommitted = false);
+        string Repository, DateTimeOffset ReadAt, string? Commit, RootSignature? Signature, Lazy<Task<bool?>>? Dirty = null);
+
+    /// <summary>How long a search waits, in all, for the uncommitted readings of the repositories its hits come from before it says "not yet read".</summary>
+    public static readonly TimeSpan StandingWait = TimeSpan.FromSeconds(3);
 
     private readonly Dictionary<string, RootReading> _readings = new(OperatingSystem.IsLinux() ? StringComparer.Ordinal : StringComparer.OrdinalIgnoreCase);
     private DateTimeOffset? _judgedAt;
@@ -227,6 +236,47 @@ public sealed class KnowledgeService(
     /// </remarks>
     public async Task<SearchAnswer> AnswerAsync(KnowledgeQuery query, CancellationToken ct = default)
     {
+        var answer = await AnswerEntriesAsync(query, ct).ConfigureAwait(false);
+        if (records is null || query.Provenance == Provenance.Canonical) return answer;
+        if (query.Kinds is not null && !query.Kinds.Contains(EntryKind.Record)) return answer;
+
+        IReadOnlyList<KnowledgeHit> found;
+        try
+        {
+            found = await records.SearchRecordsAsync(query, ct).ConfigureAwait(false);
+        }
+        catch (NewerWorkRecordsException)
+        {
+            return answer;
+        }
+
+        if (query.Kinds is null) found = [.. found.Take(RecordsUnasked)];
+        if (found.Count == 0) return answer;
+
+        // Reciprocal rank: the two tables' bm25 scores are never compared, only each hit's place in its own list.
+        var scores = new Dictionary<string, double>(StringComparer.Ordinal);
+        var hits = new Dictionary<string, KnowledgeHit>(StringComparer.Ordinal);
+        foreach (var list in new[] { answer.Hits, found })
+        {
+            for (var rank = 0; rank < list.Count; rank++)
+            {
+                var id = list[rank].Entry.Id;
+                scores[id] = scores.GetValueOrDefault(id) + 1.0 / (RankConstant + rank + 1);
+                hits.TryAdd(id, list[rank]);
+            }
+        }
+
+        var merged = scores.OrderByDescending(pair => pair.Value).Take(query.Limit).Select(pair => hits[pair.Key] with { Score = pair.Value }).ToList();
+        return answer with { Hits = merged };
+    }
+
+    /// <summary>How many records a search that names no kinds answers with, as <see cref="IndexEntriesUnasked"/> caps the index's entries.</summary>
+    public const int RecordsUnasked = 3;
+
+    private const int RankConstant = 60;
+
+    private async Task<SearchAnswer> AnswerEntriesAsync(KnowledgeQuery query, CancellationToken ct)
+    {
         RefuseNewerIndex();
         await EnsureIndexedAsync(ct).ConfigureAwait(false);
         var answer = await AnswerAnyAsync(query, ct).ConfigureAwait(false);
@@ -269,6 +319,19 @@ public sealed class KnowledgeService(
 
     public async Task<KnowledgeEntry?> FindAsync(string id, CancellationToken ct = default)
     {
+        if (id.StartsWith("record:", StringComparison.Ordinal))
+        {
+            if (records is null) return null;
+            try
+            {
+                return await records.FindRecordAsync(id, ct).ConfigureAwait(false);
+            }
+            catch (NewerWorkRecordsException)
+            {
+                return null;
+            }
+        }
+
         RefuseNewerIndex();
         await EnsureIndexedAsync(ct).ConfigureAwait(false);
         return await store.FindAsync(id, ct).ConfigureAwait(false);
@@ -290,15 +353,23 @@ public sealed class KnowledgeService(
         IEnumerable<KnowledgeEntry> entries, CancellationToken ct = default)
     {
         RefuseNewerIndex();
-        var readings = new Dictionary<string, (string? Commit, bool Fed, bool Uncommitted)>(StringComparer.Ordinal);
+        var readings = new Dictionary<string, (string? Commit, bool Fed, bool Uncommitted, bool Pending)>(StringComparer.Ordinal);
+        var deadline = Task.Delay(StandingWait, ct);
         var files = new Dictionary<(string Repository, string Path), IReadOnlyList<KnowledgeEntry>>();
         var standings = new Dictionary<string, EntryStanding>(StringComparer.Ordinal);
         foreach (var entry in entries)
         {
             if (standings.ContainsKey(entry.Id)) continue;
+            if (entry.Kind == EntryKind.Record)
+            {
+                // A record is no file read at a commit; its own tip says what it stands on.
+                standings[entry.Id] = new EntryStanding(null, false, false);
+                continue;
+            }
+
             if (!readings.TryGetValue(entry.Repository, out var reading))
             {
-                reading = await ReadingOfAsync(entry.Repository, ct).ConfigureAwait(false);
+                reading = await ReadingOfAsync(entry.Repository, deadline, ct).ConfigureAwait(false);
                 readings[entry.Repository] = reading;
             }
 
@@ -314,14 +385,14 @@ public sealed class KnowledgeService(
                 decision = DecisionStandingOf(entry, file);
             }
 
-            standings[entry.Id] = new EntryStanding(reading.Commit, reading.Fed, reading.Uncommitted, decision);
+            standings[entry.Id] = new EntryStanding(reading.Commit, reading.Fed, reading.Uncommitted, decision, reading.Pending);
         }
 
         return standings;
     }
 
     /// <summary>The commit a repository's reading was taken at on this machine, else the one a feed named, else none.</summary>
-    private async Task<(string? Commit, bool Fed, bool Uncommitted)> ReadingOfAsync(string repository, CancellationToken ct)
+    private async Task<(string? Commit, bool Fed, bool Uncommitted, bool Pending)> ReadingOfAsync(string repository, Task deadline, CancellationToken ct)
     {
         RootReading? reading;
         lock (_readings)
@@ -329,10 +400,16 @@ public sealed class KnowledgeService(
             reading = _readings.Values.FirstOrDefault(r => string.Equals(r.Repository, repository, StringComparison.Ordinal) && r.Commit is not null);
         }
 
-        if (reading is not null) return (reading.Commit, false, reading.Uncommitted);
+        if (reading is not null)
+        {
+            if (reading.Dirty is not { } dirty) return (reading.Commit, false, false, false);
+            var task = dirty.Value;
+            if (!task.IsCompleted) await Task.WhenAny(task, deadline).ConfigureAwait(false);
+            return task.IsCompleted ? (reading.Commit, false, task.Result == true, false) : (reading.Commit, false, false, true);
+        }
 
         var fed = registrations is null ? null : await registrations.ProvenanceAsync(repository, ct).ConfigureAwait(false);
-        return fed is null ? (null, false, false) : (fed.Commit, true, false);
+        return fed is null ? (null, false, false, false) : (fed.Commit, true, false, false);
     }
 
     /// <summary>A decision entry's notes after it and the marks that target it, from the entries of its file; null where they cannot be placed.</summary>
@@ -1037,7 +1114,7 @@ public sealed class KnowledgeService(
             await ReloadRegistryAsync(ct).ConfigureAwait(false);
 
             // What each root is, taken BEFORE it is read, so a write during the read is judged moved at the next use.
-            var taken = new List<(string Repository, string Root, RootSignature? Signature, string? Commit, bool Uncommitted)>();
+            var taken = new List<(string Repository, string Root, RootSignature? Signature, string? Commit, Lazy<Task<bool?>>? Dirty)>();
             if (readsRegisteredRoots)
             {
                 foreach (var (repository, root) in LocalRoots())
@@ -1045,8 +1122,22 @@ public sealed class KnowledgeService(
                     if (onlyRoots is not null && !onlyRoots.Contains(root, _readings.Comparer)) continue;
                     var signature = rootSignature?.Invoke(root);
                     var commit = signature is null ? RootSignature.Head(root) : signature.Commit;
-                    // One status a root a reading (KNOWFRESH1a-ii), only for a root that has a commit to differ from.
-                    taken.Add((repository, root, signature, commit, commit is not null && uncommitted?.Invoke(root) == true));
+                    // One status a root a reading (KNOWFRESH1a-ii), only for a root that has a commit to differ from. It is not
+                    // waited for here: a process start can take seconds a repository, and no answer waits on a repository's status.
+                    Lazy<Task<bool?>>? dirty = commit is not null && uncommitted is not null
+                        ? new Lazy<Task<bool?>>(() => Task.Run<bool?>(() =>
+                        {
+                            try
+                            {
+                                return uncommitted(root);
+                            }
+                            catch (Exception)
+                            {
+                                return null;
+                            }
+                        }))
+                        : null;
+                    taken.Add((repository, root, signature, commit, dirty));
                 }
             }
 
@@ -1102,6 +1193,16 @@ public sealed class KnowledgeService(
                 {
                     _readings[root] = new RootReading(repository, _refreshedAt, commit, signature, dirty);
                 }
+            }
+
+            // The statuses are read one at a time behind the answer, so a hit finds its repository's done or asks for it.
+            var pending = taken.Select(t => t.Dirty).OfType<Lazy<Task<bool?>>>().ToList();
+            if (pending.Count > 0)
+            {
+                _ = Task.Run(async () =>
+                {
+                    foreach (var status in pending) await status.Value.ConfigureAwait(false);
+                }, CancellationToken.None);
             }
 
             return report with { SemanticError = semanticError, Embedded = embedded, Read = Readings() };

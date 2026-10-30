@@ -127,6 +127,12 @@ public static class HeldResolutions
     public static readonly IReadOnlyList<string> Failure = [Again];
 
     /// <summary>
+    /// The words on a held check (FABRIC-PIPELINE1d; the pipeline design §4.1): <i>Run again</i> and <i>Not now</i>. <i>It happened</i> and
+    /// <i>it did not</i> stay a plugin's: a check's verdict is its gates', never a person's word.
+    /// </summary>
+    public static readonly IReadOnlyList<string> Check = [Again, Stop];
+
+    /// <summary>
     /// Every word a record may hold on an attempt. A record holding a close's word reads as unreadable on a build before FABRIC-CLOSE1q, and
     /// one holding <c>again</c> on a build before FABRIC-PERFORM1k, which is why the closer and the performer clear those words as they apply
     /// them: only a word not applied yet is ever written.
@@ -139,7 +145,8 @@ public static class HeldResolutions
     /// words coming back with its first outcome.
     /// </summary>
     public static IReadOnlyList<string> Of(NodeAttempt attempt) =>
-        attempt.Plugin != QuestClosing.Sender ? Plugin : attempt.Outcome == WorkStates.Reached ? Close : CloseUnkept;
+        attempt.Plugin == NodeKinds.Check ? Check
+        : attempt.Plugin != QuestClosing.Sender ? Plugin : attempt.Outcome == WorkStates.Reached ? Close : CloseUnkept;
 }
 
 /// <summary>A status a move took away (<see cref="NodeMoved.Cleared"/>): kept as the attempt's history before the reset (§D3).</summary>

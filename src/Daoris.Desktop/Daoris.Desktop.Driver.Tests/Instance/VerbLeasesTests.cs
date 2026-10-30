@@ -186,6 +186,8 @@ public sealed class VerbLeasesTests
     // A repository's heavy gates, which run for minutes and write the home only in their own slot (HEAVYRUN1a).
     [InlineData("run-heavy")]
     [InlineData("run-heavy --gate web")]
+    // A person's verification, which writes only its run's binding once (FABRIC-PIPELINE1d).
+    [InlineData("verify engine --branch feature/x")]
     // The driver's standing choices read, or the usage: `list`, the bare family, a verb it does not have, a plan (PUSH1f2a).
     [InlineData("driver")]
     [InlineData("driver list")]
