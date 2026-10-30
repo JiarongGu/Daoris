@@ -104,6 +104,32 @@ public sealed class IntegrationStoreTests : IDisposable
         Assert.Equal(records, store.Request("request-2"));
     }
 
+    /// <summary>
+    /// A request found by its key, the unit and the tip it froze (INTEGRATE1n part n2): closed ones too, so a node's restart finds the request it
+    /// made whatever became of it; another tip, another unit and an empty store find none; the newest where two share a key.
+    /// </summary>
+    [Fact]
+    public void A_request_is_found_by_its_unit_and_tip_open_or_closed()
+    {
+        var store = Store("run-a");
+        Assert.Null(store.FindByKey("unit-a", Tip));
+
+        var first = Request("r1", "feature/q1-fix") with { Unit = "unit-a" };
+        Assert.Null(store.Add(first));
+        Assert.Equal(first, store.FindByKey("unit-a", Tip));
+        Assert.Equal(first, store.FindByKey("unit-a", Tip.ToUpperInvariant()));
+        Assert.Null(store.FindByKey("unit-a", Next));
+        Assert.Null(store.FindByKey("unit-b", Tip));
+
+        Assert.True(store.Close("r1", IntegrationRequestCloses.HandedBack));
+        Assert.Equal(IntegrationRequestCloses.HandedBack, store.FindByKey("unit-a", Tip)!.ClosedWhy);
+
+        var again = Request("r2", "feature/q1-fix") with { Unit = "unit-a", At = At.AddMinutes(5) };
+        Assert.Null(store.Add(again));
+        Assert.Equal("r2", store.FindByKey("unit-a", Tip)!.Id);
+        Assert.Null(store.MemberOf("r2"));
+    }
+
     [Fact]
     public async Task Two_runs_on_two_connections_requesting_one_branch_at_once_keep_one_open_request_which_the_second_reads()
     {

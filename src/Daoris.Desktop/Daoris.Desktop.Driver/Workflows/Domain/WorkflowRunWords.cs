@@ -71,6 +71,7 @@ public static class WorkflowRunWords
         NodeKinds.Stop => "Stop",
         NodeKinds.WaitUnit => "Other work",
         NodeKinds.Check => "The checks",
+        NodeKinds.Integrate => "The integration",
         var plugin when NodeKinds.IsPlugin(plugin) => $"{plugin[(plugin.IndexOf('/') + 1)..]} by `{plugin[..plugin.IndexOf('/')]}`",
         _ => step.Id,
     };

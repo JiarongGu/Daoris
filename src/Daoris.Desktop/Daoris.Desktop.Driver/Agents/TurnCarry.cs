@@ -15,11 +15,15 @@ namespace Daoris.Driver;
 /// Read again under the write lock as the prompt is written: false where the person stopped the session since the look was taken, and
 /// nothing is written (<see cref="AcpTurnedAway"/>). Null always holds.
 /// </param>
-public sealed record TurnCarry(bool Eligible, int Paths, string Words, Func<bool>? Holds = null)
+/// <param name="Limit">
+/// How many times this run carries its session on, counting a carry-on that changed nothing: the look's own bound, which travels with
+/// it. A turn's end is carried on <see cref="Bound"/> times; a closed quest's resume once (part 3).
+/// </param>
+public sealed record TurnCarry(bool Eligible, int Paths, string Words, Func<bool>? Holds = null, int Limit = TurnCarry.Bound)
 {
     /// <summary>
-    /// How many times one run carries its session on for a done quest's uncommitted tree, counting a carry-on that changed nothing. One
-    /// number with the Accept's (<c>LandCarry.Bound</c>, part 1): a session is asked twice to clean its tree, by whichever door.
+    /// How many times one run carries its session on for a done quest's uncommitted tree at a turn's end, the default <see cref="Limit"/>.
+    /// One number with the Accept's (<c>LandCarry.Bound</c>, part 1): a session is asked twice to clean its tree, by whichever door.
     /// </summary>
     public const int Bound = 2;
 

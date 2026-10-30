@@ -237,7 +237,9 @@ run, reads the quest and the tree (`TurnCarries`, `AutoLander.ReadTreeAsync`), t
 would, and then sends Daoris's own prompt (`TurnCarries.WordsOf`, no key, no say door, no card, and no `CarriedAccepts` entry) to commit by the
 repository's conventions or restore what is not wanted. Two carry-ons a run (`TurnCarry.Bound`, one number with `LandCarry.Bound`), then
 `background.carry-bound` and the session concludes as before, completed with its tree dirty. A stopped session, a parked quest, an
-ask-and-wait, a stand-down and a failed exit are never carried on, and a resumed run on a quest closed as planned is not looked at (part 3's).
+ask-and-wait, a stand-down and a failed exit are never carried on; the native door, whose harness ends the work with its turn, is carried on by
+the same look as one more resumed run in `GoOns.GoOnAsync`, and a resume of a quest closed as planned once (`TurnCarry.Limit`) unless it is an
+Accept's own carry-on, neither with an inbox, a move record or a card (part 3).
 The terminal's land press tells its note
 through `IWorkplacePressTelling`, and history clearing reads and clears handed quests through `IWorkplaceHandedQuests`;
 Course installs both from `Course/Requests/WorkplacePressTellingWiring.cs` and

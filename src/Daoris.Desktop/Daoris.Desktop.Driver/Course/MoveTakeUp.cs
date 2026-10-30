@@ -47,8 +47,8 @@ public sealed record MoveLook(
 /// <summary>
 /// The take-up of dead runs' moves (FOUNDATION1f-i part 2, D212; the foundation design §3.3, §13.4, §13.5, §19.1): one unit an executor calls at
 /// its come-up and at each look, before anything else that could act on the same records, in the design's order. A conversation's runs at
-/// the shell's come-up before <c>LimitMove.TakeUpBoxesAsync</c> and beside each of its looks (FOUNDATION1f-ii part a, through
-/// <see cref="ConversationMoves"/>); a driven line's, where the look settles uncertain words, is row i's.
+/// the shell's come-up before its go-ons and beside each of its looks (FOUNDATION1f-ii part a, through <see cref="ConversationMoves"/>, which
+/// hands it the ended limit move's box importer, FOUNDATION1f-vi part a); a driven line's, where the look settles uncertain words, is row i's.
 /// </summary>
 /// <remarks>
 /// <para><b>1. The imports</b> of any box an older build wrote, each its importer's, which waits until the start's confirmation is settled and

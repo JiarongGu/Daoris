@@ -3791,23 +3791,31 @@ public sealed class Driver(
         };
     }
 
+    /// <summary>How many times a went-on run is carried on (LANDBACK1 part 3): the person's words were its turn, so one more.</summary>
+    internal const int WentOnCarryBound = 1;
+
     /// <summary>
     /// The look a turn's end takes of a quest that may have closed with uncommitted work in its tree (LANDBACK1 part 2, TURNWAIT1): the
     /// quest read again, and, where it is done or submitted and the person has not stopped the session, its tree (<see cref="TurnCarries"/>).
-    /// Null for a resumed run whose quest was closed as the look planned it, as <see cref="WaitsOnBackground"/> is: a closed quest's
-    /// carry-on there is part 3's. A parked quest (a question for the person), an ask-and-wait (D79), a stand-down and a failed exit are
-    /// none of them done or submitted, so none is carried on.
+    /// A resumed run whose quest was closed as the look planned it (a went-on run, part 3) is carried on once, not <see cref="TurnCarry.Bound"/>
+    /// times, and not at all where it is an Accept's own carry-on (null: the Accept's count bounds it). A parked quest (a question for the
+    /// person), an ask-and-wait (D79), a stand-down and a failed exit are none of them done or submitted, so none is carried on.
     /// </summary>
     /// <param name="stopped">Whether the person (or the driver) stopped the session, read at each look and again where the words are written.</param>
+    /// <param name="accepted">Whether the session's kept Accept (<c>CarriedAccepts</c>) is the cause of this resume, read as the run is built.</param>
     internal static Func<CancellationToken, Task<TurnCarry>>? CarriesOn(
-        ServiceClient service, QuestView planned, string tree, bool resumed, Func<bool> stopped)
+        ServiceClient service, QuestView planned, string tree, bool resumed, Func<bool> stopped, bool accepted = false)
     {
-        if (resumed && planned.Status is not ("Open" or "Taken")) return null;
+        // A went-on run (a resume of a quest closed as the look planned it, D83) is carried on once, a turn's end twice; an Accept's carry-on
+        // is the Accept's, bounded by its own count, so the run reads null for it and the session is never carried on by two counters.
+        var wentOn = resumed && planned.Status is not ("Open" or "Taken");
+        if (wentOn && accepted) return null;
+        var limit = wentOn ? WentOnCarryBound : TurnCarry.Bound;
         return async token =>
         {
             if (stopped()) return TurnCarry.None;
             var now = await service.FindQuestAsync(planned.Id, token).ConfigureAwait(false);
-            return await TurnCarries.LookAsync(now is { Status: "Done" } || QuestResults.Submitted(now), stopped, tree, token).ConfigureAwait(false);
+            return await TurnCarries.LookAsync(now is { Status: "Done" } || QuestResults.Submitted(now), stopped, tree, token, limit).ConfigureAwait(false);
         };
     }
 
@@ -4123,7 +4131,7 @@ public sealed class Driver(
         {
             (exitCode, used) = await GoOns.GoOnAsync(
                 held, goOn!, adapter, sessionId, transcript, refusesInput, drivesBrowser, exitCode, used, resume, said, wentOn, left, ct, own,
-                setupChanged)
+                setupChanged, carriesOn)
                 .ConfigureAwait(false);
         }
 

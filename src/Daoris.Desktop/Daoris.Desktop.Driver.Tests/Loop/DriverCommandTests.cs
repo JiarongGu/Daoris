@@ -158,7 +158,7 @@ public sealed class DriverCommandTests
         Assert.Equal(2, Count("var taken = TreesCommand.Take(await service.RegistryAsync().ConfigureAwait(false), ask);"));
         Assert.Equal(2, Count("if (taken.Refusal is { } refusal)"));
         Assert.Equal(2, Count("var repositories = taken.Repositories;"));
-        Assert.Contains("asking.CleanPlanAsync(repositories, inUse)", console);
+        Assert.Contains("asking.CleanPlanAsync(repositories, inUse, closedQuests: closed)", console);
         Assert.Contains("trees.CleanAsync(repositories, inUse)", console);
         Assert.Contains("trees.SyncAsync(repositories, inUse, only: null, fetch: true,", console);
         // The press each list suggests is the library's words' (`TreesPlanWords.CleanPlan` and `SyncPlan`, which the routes answer too).
@@ -699,7 +699,7 @@ public sealed class DriverCommandTests
         Assert.Contains("| state <session|branch> [--repository <name>]", console);
         Assert.Contains("asking.AskAgainAsync(root, entry)", console);
         Assert.Contains("PullRequestWords.AskedAgain(again)", console);
-        Assert.Contains("asking.CleanPlanAsync(repositories, inUse)", console);
+        Assert.Contains("asking.CleanPlanAsync(repositories, inUse, closedQuests: closed)", console);
         Assert.Contains("asking.SyncPlanAsync(repositories, inUse, fetch: true, scope: scope)", console);
         Assert.Contains("new LandingPlugins(home, say: (id, line) => Console.WriteLine($\"  plugin:{id}  {line}\"), log: log)", console);
     }

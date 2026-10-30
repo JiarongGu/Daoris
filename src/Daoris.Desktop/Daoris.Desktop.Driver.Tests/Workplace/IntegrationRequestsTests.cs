@@ -387,4 +387,131 @@ public sealed class IntegrationRequestsTests : IDisposable
         Assert.Null(store.Add(first with { Id = "r4", Tip = Next }));
         Assert.Equal(["r3", "r4"], store.Open().Select(each => each.Id).Order(StringComparer.Ordinal));
     }
+
+    // ——— The unit's own landing: the `integrate` node's route (INTEGRATE1n part n2; the design §17.4, F40, C30).
+
+    private static IntegrationAsk Node(string unit = "unit-a", string? tip = Tip) =>
+        new("engine", "aurora", Root, Branch, IntegrationRoutes.Node, IntegrationRequester.NodeStart) { Unit = unit, Tip = tip };
+
+    /// <summary>A landing record as the acceptance wrote it: who accepted, and the provenance of <c>integrate</c> there; none where null.</summary>
+    private static LandedBranch Written(string by, string? request, string source = LandedIntegrate.Rule, string tip = Tip) =>
+        Landed(tip: tip) with { AcceptedBy = by, Integrate = request is null ? null : new LandedIntegrate(request, source) };
+
+    /// <summary>
+    /// The start reads the landing's acceptance provenance: a person's Accept where <c>integrate</c> stood under <c>owner</c> or <c>done</c> is
+    /// the request, and an automatic landing under <c>done</c> is (the done is the request); the request is the record's, kept by key.
+    /// </summary>
+    [Fact]
+    public async Task A_persons_accept_or_an_automatic_done_under_integrate_is_the_request_and_is_found_by_its_key()
+    {
+        var store = Fresh();
+        var admitted = await AdmitAsync(Owner, new Records([Written(AcceptedBy.Person, LandingIntegrate.Owner)]), Node(), store);
+
+        Assert.True(admitted.Admitted, admitted.Message);
+        Assert.Equal($"`{Branch}` at 11111111 is requested for `main` from its landing's record, by the unit's `integrate` step.", admitted.Message);
+        var request = admitted.Request!;
+        Assert.Equal((IntegrationRoutes.Node, IntegrationRequester.NodeStart, "unit-a", Tip), (request.Route, request.Requester, request.Unit, request.Tip));
+        Assert.Equal(new LandingIntegrate(Request: LandingIntegrate.Owner).Resolved(), request.Policy);
+        Assert.Equal(request.Id, store.FindByKey("unit-a", Tip)!.Id);
+
+        foreach (var (config, by, asked) in new[]
+                 {
+                     (Done, AcceptedBy.Person, LandingIntegrate.Done), (Done, AcceptedBy.Auto, LandingIntegrate.Done),
+                 })
+        {
+            var each = await AdmitAsync(config, new Records([Written(by, asked)]), Node());
+            Assert.True(each.Admitted, each.Message);
+            Assert.Equal(asked, each.Request!.Policy.Request);
+        }
+    }
+
+    /// <summary>
+    /// An automatic landing under <c>owner</c> is never the request: the composition <c>accept: automatic</c>, <c>request: owner</c>,
+    /// <c>gates: none</c> makes the branch and waits for the owner's card. Under <c>steward</c> no landing is the request either.
+    /// </summary>
+    [Fact]
+    public async Task An_automatic_landing_under_owner_waits_for_the_card_and_steward_waits_for_its_act()
+    {
+        var ownerAuto = Config(new LandingIntegrate(Request: LandingIntegrate.Owner, Gates: LandingIntegrate.NoGates), autoAccept: true);
+        Refused(await AdmitAsync(ownerAuto, new Records([Written(AcceptedBy.Auto, LandingIntegrate.Owner)]), Node()), IntegrationRefusals.AwaitsOwner,
+            $"`{Branch}` was landed automatically under `request: owner`, so its landing is no request: it waits for the owner's card");
+
+        foreach (var by in new[] { AcceptedBy.Person, AcceptedBy.Auto })
+        {
+            Refused(await AdmitAsync(Steward, new Records([Written(by, LandingIntegrate.Steward)]), Node()), IntegrationRefusals.AwaitsSteward,
+                "under `request: steward` no landing is the request: it waits for the steward's `request` act, or the owner's card");
+        }
+
+        Assert.Empty(_asked);
+    }
+
+    /// <summary>
+    /// A record that says neither (a landing made before the rule carried <c>integrate</c>, before the field, or by a build that rewrote the
+    /// file without it) is no request: a rule gaining <c>integrate</c> over standing landings requests none of them.
+    /// </summary>
+    [Fact]
+    public async Task A_rule_gaining_integrate_over_standing_landings_requests_none_of_them()
+    {
+        var store = Fresh();
+
+        Refused(await AdmitAsync(Done, new Records([Written(AcceptedBy.Person, null)]), Node(), store), IntegrationRefusals.NoRequest,
+            "landing record does not say it was accepted where `integrate` stood");
+        Refused(await AdmitAsync(Done, new Records([Landed() with { AcceptedBy = null, Integrate = new LandedIntegrate(LandingIntegrate.Done, LandedIntegrate.Rule) }]), Node(), store),
+            IntegrationRefusals.NoRequest, "landing record does not say it was accepted where `integrate` stood");
+        Refused(await AdmitAsync(Done, new Records([Written(AcceptedBy.Person, "whenever")]), Node(), store), IntegrationRefusals.NoRequest,
+            "landing record does not say it was accepted where `integrate` stood");
+        Assert.Empty(store.Open());
+        Assert.Empty(_asked);
+    }
+
+    /// <summary>An advance is judged by its own provenance and acceptance, not the landing's first: its tip is the one the node froze.</summary>
+    [Fact]
+    public async Task An_advance_is_judged_by_its_own_provenance()
+    {
+        _refs[$"refs/heads/{Branch}"] = Next;
+        var first = Written(AcceptedBy.Person, LandingIntegrate.Owner);
+        var advance = new LandedAdvance(Tip, Next, At.AddHours(1), "s2") { AcceptedBy = AcceptedBy.Auto, Unit = "unit-b", Integrate = new LandedIntegrate(LandingIntegrate.Owner, LandedIntegrate.Rule) };
+        var moved = first with { Tip = Next, Advances = [advance], Units = ["unit-a", "unit-b"] };
+
+        Refused(await AdmitAsync(Owner, new Records([moved]), Node("unit-b", Next)), IntegrationRefusals.AwaitsOwner, "landed automatically under `request: owner`");
+
+        var accepted = moved with { Advances = [advance with { AcceptedBy = AcceptedBy.Person }] };
+        var admitted = await AdmitAsync(Owner, new Records([accepted]), Node("unit-b", Next));
+        Assert.True(admitted.Admitted, admitted.Message);
+        Assert.Equal((Next, "unit-b"), (admitted.Request!.Tip, admitted.Request.Unit));
+
+        // The tip the unit froze that the record no longer holds is the unit's next landing's, never this one.
+        Refused(await AdmitAsync(Owner, new Records([accepted]), Node("unit-b", Tip)), IntegrationRefusals.Moved, "not 11111111");
+    }
+
+    /// <summary>
+    /// A bound version's own <c>integrate</c> step (<c>source: version</c>) needs no rule carrying one, and asks with its node's <c>request</c>;
+    /// a rule's provenance whose rule has dropped <c>integrate</c> since is refused as the door refuses a rule with none.
+    /// </summary>
+    [Fact]
+    public async Task A_versions_own_step_asks_with_its_nodes_request_and_a_dropped_rule_refuses()
+    {
+        var versioned = new Records([Written(AcceptedBy.Auto, LandingIntegrate.Done, LandedIntegrate.Version)]);
+        var admitted = await AdmitAsync(Config(null), versioned, Node() with { Request = LandingIntegrate.Done, Conflicts = LandingIntegrate.Hold });
+        Assert.True(admitted.Admitted, admitted.Message);
+        Assert.Equal((LandingIntegrate.Done, LandingIntegrate.Hold), (admitted.Request!.Policy.Request, admitted.Request.Policy.Conflicts));
+
+        Refused(await AdmitAsync(Config(null), new Records([Written(AcceptedBy.Person, LandingIntegrate.Owner)]), Node()), IntegrationRefusals.NoIntegrate,
+            "`engine`'s landing rule carries no `integrate`");
+    }
+
+    /// <summary>The node's route is Daoris's own, and only for a unit and the tip it froze; no other requester or route uses its door.</summary>
+    [Fact]
+    public async Task The_nodes_door_opens_only_to_the_node_for_a_unit_and_its_tip()
+    {
+        var records = new Records([Written(AcceptedBy.Person, LandingIntegrate.Owner)]);
+
+        Refused(await AdmitAsync(Owner, records, Node() with { Requester = IntegrationRequester.Card }), IntegrationRefusals.Door,
+            "the `integrate` node's route is Daoris's own");
+        Refused(await AdmitAsync(Owner, records, Card() with { Requester = IntegrationRequester.NodeStart }), IntegrationRefusals.Door,
+            "the `integrate` node asks only through its own route");
+        Refused(await AdmitAsync(Owner, records, Node() with { Unit = null }), IntegrationRefusals.Door, "a node's ask names its unit and the tip it froze");
+        Refused(await AdmitAsync(Owner, records, Node(tip: null)), IntegrationRefusals.Door, "a node's ask names its unit and the tip it froze");
+        Assert.Empty(_asked);
+    }
 }

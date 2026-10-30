@@ -19,6 +19,13 @@
     },
     {
       "pack": "core",
+      "source": "core/knowledge/current-knowledge.md",
+      "target": "knowledge/current-knowledge.md",
+      "canonVersion": "0.0.1",
+      "sha256": "c8b5142035d984da13317a90588efdab72a7406605d628198aba9ed8906e5dfe"
+    },
+    {
+      "pack": "core",
       "source": "core/knowledge/development-documents.md",
       "target": "knowledge/development-documents.md",
       "canonVersion": "0.0.1",
@@ -81,7 +88,7 @@
       "source": "core/rules/persist-working-state.md",
       "target": "rules/persist-working-state.md",
       "canonVersion": "0.0.1",
-      "sha256": "cad00b1bb695fd5fe5ac9401736a7f7bce8288010d47f2c61730d18fbd5324e3",
+      "sha256": "2e517a2f46008bdf08d78f7438cd7a354e087d75291a28cebd25e0edbe180adb",
       "in": "AGENTS.md"
     },
     {
