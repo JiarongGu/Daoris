@@ -354,7 +354,7 @@ public sealed class NoticesStateSlice
         var (partition, arrived) = _messages.Judge(channels);
         _asks = partition;
         _asksRead = now;
-        if (arrived.Count > 0 && _notify())
+        if (arrived.Count > 0 && NotifyRule.Tells(NewsKind.Message, _notify()))
         {
             foreach (var message in arrived) _ = _bus.EmitAsync(StateSlice.Module, AskMessages.ArrivedType, message);
         }
@@ -389,7 +389,7 @@ public sealed class NoticesStateSlice
         if (first || claim.Refused is not null) return [];
         var told = claim.Told.Select(each => each.Key).ToHashSet(StringComparer.Ordinal);
         var arrived = candidates.Where(notice => told.Contains(ArrivalKey(notice))).ToList();
-        return arrived.Count > 0 && _notify() ? arrived : [];
+        return arrived.Count > 0 && NotifyRule.Tells(NewsKind.Arrival, _notify()) ? arrived : [];
     }
 
     /// <summary>A notice another event said already, claimed so that no restart says it again as an arrival.</summary>
@@ -427,15 +427,5 @@ public sealed class NoticesStateSlice
     }
 
     /// <summary>The notify switch, read from the machine's choices; one that does not read errs toward saying it, as the shell's notifier does.</summary>
-    private static bool Notifying(string configPath)
-    {
-        try
-        {
-            return DriverConfig.Load(configPath).Notify;
-        }
-        catch (DriverConfigUnreadableException)
-        {
-            return true;
-        }
-    }
+    private static bool Notifying(string configPath) => NotifyRule.SwitchOn(configPath);
 }

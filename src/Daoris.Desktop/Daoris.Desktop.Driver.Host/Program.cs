@@ -936,7 +936,7 @@ try
                 var item = await NewsAttention.OfAsync(service, piece, closing.Token);
                 // Kept in Notifications whatever the switch says (NOTIFY2f): the desktop's windows read the record again and say what this host wrote.
                 Notices.Keep(home, [item], DateTimeOffset.UtcNow, why => log.Warn("notices.refused", ("why", why)));
-                if (NotifyOn(configPath)) Console.WriteLine($"  !  {item.Line}");
+                if (NotifyRule.Tells(item, NotifyRule.SwitchOn(configPath))) Console.WriteLine($"  !  {item.Line}");
             }
         })
     {
@@ -1048,7 +1048,7 @@ try
                 // Kept in Notifications whatever the switch says (NOTIFY2f, the notification design §2.5): the desktop's windows
                 // read the record again and say what this host wrote; a write refused is logged and dropped.
                 Notices.Keep(home, events, DateTimeOffset.UtcNow, why => log.Warn("notices.refused", ("why", why)));
-                if (ticked.Notify) foreach (var item in events) Console.WriteLine($"  !  {item.Line}");
+                foreach (var item in events.Where(each => NotifyRule.Tells(each, ticked.Notify))) Console.WriteLine($"  !  {item.Line}");
             },
             onError: null,
             closing.Token,
@@ -1088,19 +1088,6 @@ catch (HttpRequestException error)
     Console.Error.WriteLine($"driver: could not reach the service — {error.Message}");
     log.Failed("the headless driver, reaching the service", error);
     return 2;
-}
-
-// The machine's notify switch, read from its choices now: news is told outside any look (FOUNDATION1 m-ii), and choices that do not read err toward saying it.
-static bool NotifyOn(string configPath)
-{
-    try
-    {
-        return DriverConfig.Load(configPath).Notify;
-    }
-    catch (DriverConfigUnreadableException)
-    {
-        return true;
-    }
 }
 
 static void Print(TickReport report, bool quietWhenIdle = false)

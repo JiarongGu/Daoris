@@ -985,10 +985,7 @@ public sealed class DriverLoop(
                 var attend = AttentionNews.Told(news, attention.Observe(report, read), DateTimeOffset.UtcNow);
                 // Kept in Notifications whatever the switch says (NOTIFY2f, the notification design §2.5): recording is not telling.
                 Notices.Keep(attend);
-                if (ticked.Notify)
-                {
-                    foreach (var item in attend) await AttendAsync(item).ConfigureAwait(false);
-                }
+                foreach (var item in attend.Where(each => NotifyRule.Tells(each, ticked.Notify))) await AttendAsync(item).ConfigureAwait(false);
 
                 // Forwarded when the tick has something to say: it did something, or what it says
                 // about the sitting quests CHANGED. The considerations are a standing answer the
@@ -1127,7 +1124,7 @@ public sealed class DriverLoop(
         {
             Workspace = MainWindowScopes.WorkspaceOf(Slices.Find(SessionsStateSlice.Name)?.Snapshot(), null, item.Session, null),
         });
-        return Notifying() ? AttendAsync(item) : Task.CompletedTask;
+        return NotifyRule.Tells(item, Notifying()) ? AttendAsync(item) : Task.CompletedTask;
     }
 
     /// <summary>
@@ -1135,17 +1132,7 @@ public sealed class DriverLoop(
     /// announcement made outside any look, a conversation's answer (NOTIFY1a) or a held tool call (NOTIFY2d). Choices that do not read
     /// err toward saying it, as the shell's notifier does.
     /// </summary>
-    public bool Notifying()
-    {
-        try
-        {
-            return DriverConfig.Load(ConfigPath).Notify;
-        }
-        catch (DriverConfigUnreadableException)
-        {
-            return true;
-        }
-    }
+    public bool Notifying() => NotifyRule.SwitchOn(ConfigPath);
 
     /// <summary>
     /// One news teller as a journal feed's teller (FOUNDATION1 m-ii): its rows claimed from its own cursor, and each claimed piece made the
@@ -1162,7 +1149,7 @@ public sealed class DriverLoop(
                     var item = await NewsAttention.OfAsync(service, piece, ct).ConfigureAwait(false);
                     // Kept in Notifications whatever the switch says (NOTIFY2f): recording is not telling.
                     Notices.Keep([item]);
-                    if (Notifying()) await AttendAsync(item).ConfigureAwait(false);
+                    if (NotifyRule.Tells(item, Notifying())) await AttendAsync(item).ConfigureAwait(false);
                 }
             })
         {
