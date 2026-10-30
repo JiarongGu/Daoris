@@ -1,5 +1,7 @@
 # Events over polling, and the end of a piece of work (FABRIC-EVENT1, FABRIC-END1)
 
+> Router standing, moved here when the router was cut to its size (DOCSIZE1): governing record: D173's FABRIC-EVENT1, acceptance and FABRIC-CHAIN1 notes.
+
 **Parts A and B accepted by the owner, 2026-10-16, with three amendments in their words (D173's acceptance note); part C,
 which answers them, accepted with the owner's answers (D173's part C note).** The contract is D173's notes of
 2026-10-16, *the end of a piece of work*, *events over polling* and the acceptance. Parts A and B design both directions

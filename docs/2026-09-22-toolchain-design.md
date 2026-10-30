@@ -1,5 +1,7 @@
 # The managed toolchain, its accounts, and what they cost
 
+> Router standing, moved here when the router was cut to its size (DOCSIZE1): also governed by D130.
+
 > Written 2026-09-22 from the owner's direction the same day: *"I still cannot see a proper credential
 > management since we need this for both claude/codex, and other llm if possible (this is kind more
 > from deepseek harness) and also we need to be able managed multiple account with usage management

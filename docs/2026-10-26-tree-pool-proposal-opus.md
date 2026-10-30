@@ -1,5 +1,7 @@
 # TREEPOOL1 — the independent Opus reader's sealed proposal
 
+> Router standing, moved here when the router was cut to its size (DOCSIZE1): used by D191.
+
 > Written from `docs/2026-10-26-tree-pool-brief.md` and `docs/2026-10-26-tree-pool-survey.md`, with the decisions and FOUNDATION1's design they cite. Every fact below was checked against the code at `a3f5be21a` with `git show` and `git grep`, and nothing was run. Paths follow the survey's aliases: no prefix means `src/Daoris.Desktop/Daoris.Desktop.Driver/`, and `Tests/`, `Core/`, `Web/` and `Svc.Tests/` mean what they mean there. Line numbers are `a3f5be21a`'s. Row mod-x has not landed, so `Trees/` is still `Trees/`. Every new file named below is written under `Workplace/` once mod-x has landed (foundation design §14.6, last paragraph). `<home>` is the Daoris folder.
 
 ## 0. The proposal in one page

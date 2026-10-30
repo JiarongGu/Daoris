@@ -1,5 +1,7 @@
 # AGENTPROVIDER1: Codex's sealed proposal (2026-10-26)
 
+> Router standing, moved here when the router was cut to its size (DOCSIZE1): used by D70.
+
 One of two sealed proposals written from `docs/2026-10-26-agent-provider-brief.md` and `docs/2026-10-26-agent-provider-survey.md` under D191, by Codex, read-only, at `9510a5390`, without the other. Kept verbatim, its headings set one level down; the steward ran it from outside the install. The other is `docs/2026-10-26-agent-provider-proposal-opus.md`.
 
 ## The proposal

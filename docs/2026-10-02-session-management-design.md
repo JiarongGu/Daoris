@@ -1,5 +1,7 @@
 # Sessions that are easy to manage (SESSUX1)
 
+> Router standing, moved here when the router was cut to its size (DOCSIZE1): also governed by D152 and D153.
+
 **Carried by:** SESSUX1 in `TASKS.md`. **Status:** design, written before the build, and **D126** records what it
 settles. §1 is the audit, read from the code at `c4c9725`; §2 onward is the design. It is built on the frame of
 `docs/2026-10-01-frame-model-design.md` (D118), and every name in it follows `docs/2026-10-01-naming-design.md` (D116)
