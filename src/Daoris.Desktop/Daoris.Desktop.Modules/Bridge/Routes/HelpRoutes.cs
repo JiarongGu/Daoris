@@ -965,7 +965,7 @@ public sealed class HelpRoutes(DriverContext context)
     {
         card.Id, card.Name, card.Base, card.Version, card.Scope,
         card.Diff, card.YourPart, card.Outward, card.Needs, card.AppliesTo, card.Choose,
-        card.Route, card.Saves, card.Verifies, card.Lowers,
+        card.Route, card.Saves, card.Verifies, card.Lowers, card.NoGates,
     };
 
     // A go naming an item on the view, read as the judge reads its view (`HelpGoProposals.Plan`); an item on any other view

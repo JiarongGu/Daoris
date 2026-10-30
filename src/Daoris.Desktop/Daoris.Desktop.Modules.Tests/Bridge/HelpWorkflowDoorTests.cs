@@ -65,6 +65,8 @@ public sealed class HelpWorkflowDoorTests : DriverModuleBridge
         Assert.Equal("default", card.GetProperty("route").GetString());
         Assert.False(card.GetProperty("verifies").GetBoolean());
         Assert.Equal(0, card.GetProperty("lowers").GetArrayLength());
+        // INTEGRATE1r part r3: the repositories a chosen graph integrates in with no gates, for the page to word.
+        Assert.Equal(0, card.GetProperty("noGates").GetArrayLength());
     }
 
     [Fact]

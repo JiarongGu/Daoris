@@ -135,6 +135,11 @@ public sealed class HelpWorkflowProposalsTests : HelpProposalsFixture
         Assert.Empty(card.Needs);
         Assert.Contains("`engine` integrates with no gates", plan.Describe);
         Assert.DoesNotContain("`game` integrates with no gates", plan.Describe);
+
+        // INTEGRATE1r part r3: the card carries the repositories by name, for the page to word the line in its own language; a card with
+        // none (a saved version, a repository whose rule declares gates) carries none.
+        Assert.Equal(["engine"], card.NoGates);
+        Assert.Empty(Card(HelpProposals.Plan(Propose(null, scope: "work", route: "default", workflow: "integrated"), Landings(GatedRule, GatedRule), Here())).NoGates);
     }
 
     /// <summary>INTEGRATE1r part r2: a repository whose rule is a merge rule cannot carry the integrate; the card is a draft naming it and the Setup row.</summary>
