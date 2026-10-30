@@ -31,7 +31,7 @@ internal static class ActorPress
         };
         return new(verb, ChoiceRoutes.Actor, payload, _ =>
         {
-            StandingChoices.Write(path, config => ActorChoices.With(config, actor, choices));
+            RoleStaffing.SetAt(path, actor, choices);
             return Task.FromResult<object?>(null);
         }, _ => null, _ =>
         {

@@ -117,7 +117,7 @@ public static class StaffingFile
     }
 
     /// <summary>The four staffing paths of a file's text, each as <see cref="RoleStaffing.Compact"/> text, null where the file holds none.</summary>
-    private static StaffingPaths PathsOf(string text)
+    internal static StaffingPaths PathsOf(string text)
     {
         using var document = JsonDocument.Parse(JsonKeeping.Once(text));
         string? Of(string name) => document.RootElement.TryGetProperty(name, out var value) ? RoleStaffing.Compact(value) : null;

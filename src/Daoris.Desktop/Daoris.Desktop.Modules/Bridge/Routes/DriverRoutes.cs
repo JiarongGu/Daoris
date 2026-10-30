@@ -329,7 +329,7 @@ public sealed class DriverRoutes(DriverContext context)
     {
         var actor = Optional(request, "actor") ?? throw new DriverException("the press named no actor.");
         var choices = ActorChoices.Payload(request.Payload);
-        _context.Change(config => ActorChoices.With(config, actor, choices));
+        _context.SetActor(actor, choices);
         return State(_loop);
     }
 

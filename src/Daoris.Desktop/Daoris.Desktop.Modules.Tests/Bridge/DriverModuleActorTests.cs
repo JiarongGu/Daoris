@@ -11,6 +11,34 @@ namespace Daoris.Desktop.Modules.Tests;
 /// </summary>
 public sealed class DriverModuleActorTests : DriverModuleBridge
 {
+    /// <summary>
+    /// FOUNDATION1w-s (the design §19.15): on a home whose staffing the store keeps, the press is the staffing's one write, the store's
+    /// staffing changed and the file its projection; a hand edit since is read nowhere until the person takes it.
+    /// </summary>
+    [Fact]
+    public async Task On_a_wired_home_the_press_writes_the_store_and_projects_the_file_and_a_hand_edit_waits_found()
+    {
+        File.WriteAllText(DriverConfigPath, """{ "adapter": "claude-code", "intakeAdapter": "claude-code" }""");
+        var staffing = RoleStaffing.Wire(Home, () => StoreSettled.Yes);
+        try
+        {
+            Assert.Equal(StaffingImported.Done, staffing.ImportFile().How);
+            var module = Module();
+
+            await AnswerAsync(module, "SET_ACTOR", new { actor = "intake", choices = Array.Empty<object>() });
+
+            Assert.Empty(staffing.Read()!.Actors["intake"]);
+            Assert.DoesNotContain("intakeAdapter", File.ReadAllText(DriverConfigPath));
+            File.WriteAllText(DriverConfigPath, File.ReadAllText(DriverConfigPath).Replace("\"claude-code\"", "\"codex-acp\""));
+            Assert.Equal(StaffingChecks.Found, staffing.Check(StaffingCheckAt.Look).How);
+            Assert.Equal("claude-code", DriverConfig.Load(DriverConfigPath).Adapter);
+        }
+        finally
+        {
+            RoleStaffingPort.Unwire(DriverConfigPath);
+        }
+    }
+
     [Fact]
     public async Task An_order_set_is_read_back_and_written_through_with_chat_and_brainstorm_kept()
     {
