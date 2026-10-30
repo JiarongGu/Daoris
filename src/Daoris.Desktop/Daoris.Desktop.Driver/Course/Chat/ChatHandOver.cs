@@ -207,7 +207,8 @@ internal sealed class ChatHandOver(ChatContext context, IChatRunning runner)
             // begins either started its turn first, and the move waits for that turn's end (Due), or takes nothing.
             if (_context.Turned.TryGetValue(sessionId, out var chat))
             {
-                if (!chat.Turns.Hold())
+                // FOUNDATION1o: where the host's open moves the old part's words, one said while held is kept on the record for that open.
+                if (!chat.Turns.Hold(await _context.Service.Opens.KeepsAsync(ct).ConfigureAwait(false)))
                 {
                     if (keeps) waits = true;
                     else record.Superseded();

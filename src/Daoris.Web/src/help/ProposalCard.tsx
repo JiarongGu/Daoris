@@ -42,7 +42,8 @@ export type HelpProposal = {
   revision?: string;
   /** A move to a workspace (`repository`, ENTRY1d1) has no card of its own: its sentence, Apply and Not now. */
   /** Archiving or unarchiving sessions (`session`, SESSUX1h2a) is the generic card too, with its command. */
-  kind: 'setting' | 'ask' | 'agent' | 'account' | 'delete' | 'go' | 'plugin' | 'hand' | 'browser' | 'sync' | 'accept' | 'repository' | 'session' | 'pause' | 'clear' | 'workflow' | 'setup';
+  /** A change of the role catalogue (`role`, FOUNDATION1y-i) is the generic card: its sentence, its `daoris driver role` command, Apply. */
+  kind: 'setting' | 'ask' | 'agent' | 'account' | 'delete' | 'go' | 'plugin' | 'hand' | 'browser' | 'sync' | 'accept' | 'repository' | 'session' | 'pause' | 'clear' | 'workflow' | 'setup' | 'role';
   describe: string;
   terminal: string;
   why: string;

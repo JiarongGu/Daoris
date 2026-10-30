@@ -6,8 +6,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <summary>
 /// FOUNDATION1c, census B (D212; the foundation design §10, row c): every line outside <c>ParticipantWork.Of</c> that reads a record's
 /// <c>Serves</c>, <c>Opinion</c>, <c>Ask</c>, <c>Piece</c>, <c>HelpMode</c> or the Ask Daoris repository to test its presence or identity is
-/// counted per source file of the driver library, each file named in <c>fixtures/participant-work-readers.json</c> among the service's
-/// tests with what it reads and the row that moves it, and a new line, or a new file, fails until it is listed there. The shell's
+/// found per source file of the driver library, each file named in <c>fixtures/participant-work-readers.json</c> among the service's
+/// tests with what it reads and the row that moves it. A file that reads and is not listed fails (the new reader the census exists to
+/// catch), and so does a listed file that reads none now; how many lines a listed file reads is not pinned (CENSUSRULES1). The shell's
 /// modules' census and the service's read the same table over their own sources.
 /// </summary>
 public sealed class ParticipantWorkReadersTests
@@ -30,26 +31,23 @@ public sealed class ParticipantWorkReadersTests
     internal static int Counted(string source) =>
         source.Split('\n').Count(raw => !raw.TrimStart().StartsWith("//", StringComparison.Ordinal) && Reads.Any(read => read.IsMatch(Trailing.Replace(raw, ""))));
 
-    /// <summary>Each source of a project's folder with the lines it reads, the rule's own file left out, by its path from the folder.</summary>
-    private static SortedDictionary<string, int> Scan(string project)
+    /// <summary>The files, by path, of the sources that read a mark: how many lines each reads is not the rule's (CENSUSRULES1).</summary>
+    internal static SortedSet<string> Reading(IEnumerable<(string File, string Source)> sources) =>
+        new(sources.Where(each => Counted(each.Source) > 0).Select(each => each.File), StringComparer.Ordinal);
+
+    /// <summary>Each source of a project's folder that reads a mark, the rule's own file left out, by its path from the folder.</summary>
+    private static SortedSet<string> Scan(string project)
     {
         var folder = SourceFiles.Project(project);
-        var found = new SortedDictionary<string, int>(StringComparer.Ordinal);
-        foreach (var path in SourceFiles.All(project, "*.cs").Where(path => Path.GetFileName(path) != "ParticipantWork.cs"))
-        {
-            if (Counted(File.ReadAllText(path)) is > 0 and var lines) found[Path.GetRelativePath(folder, path).Replace(Path.DirectorySeparatorChar, '/')] = lines;
-        }
-
-        return found;
+        return Reading(SourceFiles.All(project, "*.cs").Where(path => Path.GetFileName(path) != "ParticipantWork.cs")
+            .Select(path => (Path.GetRelativePath(folder, path).Replace(Path.DirectorySeparatorChar, '/'), File.ReadAllText(path))));
     }
 
     /// <summary>What differs between the files a scan found and the files the table lists, each as a sentence.</summary>
-    internal static List<string> Differences(IReadOnlyDictionary<string, int> scanned, IReadOnlyDictionary<string, int> listed) =>
+    internal static List<string> Differences(IReadOnlyCollection<string> scanned, IReadOnlyCollection<string> listed) =>
     [
-        .. scanned.Where(each => !listed.ContainsKey(each.Key)).Select(each => $"{each.Key} reads {each.Value} line(s) and is not listed"),
-        .. listed.Where(each => !scanned.ContainsKey(each.Key)).Select(each => $"{each.Key} is listed with {each.Value} line(s) and reads none now"),
-        .. scanned.Where(each => listed.TryGetValue(each.Key, out var lines) && lines != each.Value)
-            .Select(each => $"{each.Key} reads {each.Value} line(s) and the table lists {listed[each.Key]}"),
+        .. scanned.Where(file => !listed.Contains(file)).Select(file => $"{file} reads a mark and is not listed"),
+        .. listed.Where(file => !scanned.Contains(file)).Select(file => $"{file} is listed and reads none now"),
     ];
 
     private static JsonElement Table(string section)
@@ -59,35 +57,37 @@ public sealed class ParticipantWorkReadersTests
         return table.RootElement.GetProperty(section).Clone();
     }
 
-    private static SortedDictionary<string, int> Listed(string section) =>
-        new(Table(section).EnumerateObject().ToDictionary(each => each.Name, each => each.Value.GetProperty("lines").GetInt32()), StringComparer.Ordinal);
+    private static SortedSet<string> Listed(string section) => new(Table(section).EnumerateObject().Select(each => each.Name), StringComparer.Ordinal);
 
-    /// <summary>🔴 Every line of the driver library that reads a mark is a listed file's, line for line: a new reader fails until it is named.</summary>
+    /// <summary>🔴 Every file of the driver library that reads a mark is a listed file, and every listed file reads one: a new reader fails until it is named.</summary>
     [Fact]
-    public void Every_reader_of_a_mark_in_the_driver_is_listed_file_for_file_and_line_for_line()
+    public void Every_file_that_reads_a_mark_in_the_driver_is_listed_and_every_listed_file_reads_one()
     {
         var differences = Differences(Scan(SourceFiles.DriverProject), Listed("driver"));
         Assert.True(differences.Count == 0, string.Join('\n', differences));
     }
 
-    /// <summary>The census fails on a reader it does not list: a planted line in a listed file, and a planted file, each read as a difference.</summary>
+    /// <summary>The census fails on a file it does not list and on a listed file that reads none now, and passes one more read in a listed file (CENSUSRULES1).</summary>
     [Fact]
-    public void A_planted_reader_fails_the_census_in_a_listed_file_and_in_a_new_one()
+    public void A_new_reading_file_fails_the_census_and_one_more_read_in_a_listed_file_passes()
     {
         var listed = Listed("driver");
-        // A clean scan is the table itself, so this case holds the census's reading apart from the tree's state.
-        var scanned = new SortedDictionary<string, int>(listed);
-        var known = listed.First().Key;
+        // A clean stand-in is the table itself, one read in each file, so this case holds the census's reading apart from the tree's state.
+        var known = listed.First();
+        var stand = listed.Select(file => (File: file, Source: "if (record.Serves is not null) { }")).ToList();
 
         Assert.Equal(1, Counted("if (record.Serves is not null) { }"));
         Assert.Equal(1, Counted("var held = new { Opinion: null };\nvar quiet = 1; // record.Serves is not null\n// record.Opinion is null"));
         Assert.Equal(0, Counted("var seen = record.Serves;"));
         Assert.Equal(1, Counted("if (record.Repository == KnowledgeRoomIdentity.Repository) { }"));
         Assert.Equal(0, Counted("var name = KnowledgeRoomIdentity.RepositoryName;"));
-        Assert.Equal([$"{known} reads {scanned[known] + 1} line(s) and the table lists {scanned[known]}"],
-            Differences(new SortedDictionary<string, int>(scanned) { [known] = scanned[known] + 1 }, listed));
-        Assert.Equal(["Loop/Planted.cs reads 1 line(s) and is not listed"],
-            Differences(new SortedDictionary<string, int>(scanned) { ["Loop/Planted.cs"] = 1 }, listed));
+        Assert.Empty(Differences(Reading(stand), listed));
+        Assert.Empty(Differences(Reading(stand.Select(each => each.File == known
+            ? (each.File, each.Source + "\nif (record.Opinion is null) { }\nif (record.Piece is null) { }") : each)), listed));
+        Assert.Equal(["Loop/Planted.cs reads a mark and is not listed"],
+            Differences(Reading(stand.Append(("Loop/Planted.cs", "if (record.Serves is null) { }"))), listed));
+        Assert.Equal([$"{known} is listed and reads none now"],
+            Differences(Reading(stand.Select(each => each.File == known ? (each.File, "var seen = record.Serves;") : each)), listed));
     }
 
     /// <summary>Each listed file says what it reads, a file that tells a kind of session naming the row that moves it or none, and no row is named the table does not hold.</summary>

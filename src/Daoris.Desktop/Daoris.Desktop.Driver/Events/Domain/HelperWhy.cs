@@ -12,7 +12,7 @@ public static class HelperWhy
     /// <summary>The asking session is not on this machine's record.</summary>
     public const string AskerGone = "asker-gone";
 
-    /// <summary>The asking session is a helper, a reviewer or an intake (the files may be old).</summary>
+    /// <summary>The asking session is a helper, a reviewer, an intake or Ask Daoris (the files may be old).</summary>
     public const string AskerUnfit = "asker-unfit";
 
     /// <summary>The asker already has two helpers at work.</summary>
@@ -96,7 +96,7 @@ public static class HelperWhy
         CaptureMoved => "its work kept changing while it was captured",
         Off => "the rule for helpers is off for this repository",
         AskerGone => "the session that asked is not on this machine",
-        AskerUnfit => "the session that asked is itself a helper, a reviewer or an intake",
+        AskerUnfit => "the session that asked is itself a helper, a reviewer, an intake or Ask Daoris",
         TooMany => "that session already has two helpers at work",
         Unreadable => "its work could not be copied for a helper to read",
         NotStarted => "the helper could not be started",

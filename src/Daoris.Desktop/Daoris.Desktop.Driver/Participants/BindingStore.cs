@@ -127,6 +127,35 @@ public sealed class BindingStore(string home, Func<StoreSettled>? settled, Func<
         return store.Query("SELECT account FROM binding_picks WHERE session = $session", row => row.GetString(0), ("$session", session)).FirstOrDefault();
     }
 
+    /// <summary>
+    /// Keep the role a start took and its revision (FOUNDATION1x), set by name beside the binding: the record's <c>actor</c> keeps the seeded id
+    /// every build reads, and this is the role the newer build's continuation reads first. Throws what the store throws where it cannot write.
+    /// </summary>
+    public void KeepRole(string session, string role, long revision)
+    {
+        using var store = Open();
+        store.Write(
+            Family,
+            write => write.Execute(
+                """
+                INSERT INTO binding_roles (session, role, revision, at) VALUES ($session, $role, $revision, $at)
+                ON CONFLICT (session) DO UPDATE SET role = excluded.role, revision = excluded.revision, at = excluded.at
+                """,
+                ("$session", session), ("$role", role), ("$revision", revision),
+                ("$at", DateTimeOffset.UtcNow.ToString("O", System.Globalization.CultureInfo.InvariantCulture))));
+    }
+
+    /// <summary>The role and revision the store holds for a session's start, or null for none (a record from before, a mirror, no store); the store's failure is thrown.</summary>
+    public (string Role, long Revision)? RoleOf(string session)
+    {
+        using var store = DesktopStoreReader.Open(Location);
+        if (store is not { Version: >= 11 }) return null;
+        return store.Query(
+            "SELECT role, revision FROM binding_roles WHERE session = $session",
+            row => ((string, long)?)(row.GetString(0), row.GetInt64(1)),
+            ("$session", session)).FirstOrDefault();
+    }
+
     /// <summary>The bindings of these sessions gone, each by its record's deletion (§13.6): the ones that held a row. Nothing is made for a home with no store.</summary>
     public IReadOnlyList<string> Forget(IReadOnlyCollection<string> sessions)
     {
@@ -139,6 +168,7 @@ public sealed class BindingStore(string home, Func<StoreSettled>? settled, Func<
             {
                 write.Execute("DELETE FROM bindings WHERE session = $session", ("$session", session));
                 write.Execute("DELETE FROM binding_picks WHERE session = $session", ("$session", session));
+                write.Execute("DELETE FROM binding_roles WHERE session = $session", ("$session", session));
             }
         });
         return held;
@@ -154,9 +184,11 @@ public sealed class BindingStore(string home, Func<StoreSettled>? settled, Func<
         using var store = DesktopStoreReader.Open(Location);
         if (store is not { Version: >= 2 }) return [];
         var picks = store.Version >= 3;
+        var roles = store.Version >= 11;
         return [.. sessions.Where(session =>
             store.Query("SELECT 1 FROM bindings WHERE session = $session", row => row.GetInt32(0), ("$session", session)).Count > 0
-            || (picks && store.Query("SELECT 1 FROM binding_picks WHERE session = $session", row => row.GetInt32(0), ("$session", session)).Count > 0))];
+            || (picks && store.Query("SELECT 1 FROM binding_picks WHERE session = $session", row => row.GetInt32(0), ("$session", session)).Count > 0)
+            || (roles && store.Query("SELECT 1 FROM binding_roles WHERE session = $session", row => row.GetInt32(0), ("$session", session)).Count > 0))];
     }
 
     /// <summary>

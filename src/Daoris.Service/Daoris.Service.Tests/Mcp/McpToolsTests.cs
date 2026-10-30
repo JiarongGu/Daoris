@@ -89,6 +89,19 @@ public sealed class McpToolsTests : McpToolsFixture
         Assert.Single(await _quests.ListAsync(receiver: "Owner"));
     }
 
+    /// <summary>FOUNDATION1x: an agent marks design work through this door; one that marks nothing publishes unmarked.</summary>
+    [Fact]
+    public async Task Publishing_carries_a_weight_and_without_one_the_quest_is_unmarked()
+    {
+        Assert.Contains("Published quest", await _questTools.PublishQuestAsync(
+            "Asker", "Owner", "Decide how the frame is capped", "Two ways.", weight: "design"));
+        Assert.Contains("Published quest", await _questTools.PublishQuestAsync("Asker", "Owner", "Cap the frame's work", "It stalls."));
+
+        var held = await _quests.ListAsync(receiver: "Owner");
+        Assert.Equal("design", held.Single(q => q.Title.StartsWith("Decide")).Weight);
+        Assert.Null(held.Single(q => q.Title.StartsWith("Cap")).Weight);
+    }
+
     /// <summary>
     /// D115 §2.2 (DEV4): the registry's answer lists each repository's lanes, so an asker can see what it
     /// may address and how; a quest to one is published through this door and listed with its lanes.

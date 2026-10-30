@@ -66,6 +66,50 @@ public sealed class MoveStoreCensusTests
 
     private static string Relative(string path) => Path.GetRelativePath(Driver, path).Replace('\\', '/');
 
+    /// <summary>The production files allowed to name a type of the move store, each for the row above that adopts it.</summary>
+    private static readonly string[] Allowed =
+        [Window, CurveMove, LiveMove, Conversations, DrivenCourse, HandOverAsk, QuestAsk, Wiring, CarryOn, DrivenLine, QuestTake, Terminal];
+
+    /// <summary>Each "file names type" of the sources that name one of the types, the store's own files left out.</summary>
+    private static List<string> Readers(IEnumerable<(string File, string Source)> sources, IReadOnlyCollection<string> names)
+    {
+        var readers = new List<string>();
+        foreach (var (file, source) in sources)
+        {
+            if (Own.Contains(file)) continue;
+            var text = CourseCensusTests.WithoutComments(source);
+            readers.AddRange(names.Where(name => Regex.IsMatch(text, $@"\b{name}\b")).Select(name => $"{file} names {name}"));
+        }
+
+        return readers;
+    }
+
+    /// <summary>What differs between the files that name a type and the files allowed to, each as a sentence.</summary>
+    private static List<string> Differences(IEnumerable<string> readers, IReadOnlyCollection<string> allowed)
+    {
+        var files = readers.Select(reader => reader[..reader.IndexOf(" names ", StringComparison.Ordinal)]).ToHashSet(StringComparer.Ordinal);
+        return
+        [
+            .. files.Where(file => !allowed.Contains(file)).Order(StringComparer.Ordinal).Select(file => $"{file} names a type of the move store and is not listed"),
+            .. allowed.Where(file => !files.Contains(file)).Select(file => $"{file} is listed and names none now"),
+        ];
+    }
+
+    /// <summary>A new file naming a type fails the census; one more naming in a listed file, or another type there, passes (CENSUSRULES1).</summary>
+    [Fact]
+    public void A_new_file_naming_a_move_store_type_fails_and_one_more_naming_in_a_listed_file_passes()
+    {
+        string[] names = ["MoveStore", "MoveDecision"];
+        var stand = Allowed.Select(file => (file, "var a = new MoveStore(); // MoveDecision in a comment")).ToList();
+
+        Assert.Empty(Differences(Readers(stand, names), Allowed));
+        Assert.Empty(Differences(Readers(stand.Select(each => each.file == LiveMove ? (each.file, each.Item2 + "\nvar b = new MoveStore(); var c = MoveDecision.Of();") : each), names), Allowed));
+        Assert.Equal(["Course/Planted.cs names a type of the move store and is not listed"],
+            Differences(Readers(stand.Append(("Course/Planted.cs", "var s = new MoveStore();")), names), Allowed));
+        Assert.Equal([$"{LiveMove} is listed and names none now"],
+            Differences(Readers(stand.Select(each => each.file == LiveMove ? (each.file, "var a = 1;") : each), names), Allowed));
+    }
+
     [Fact]
     public void The_move_store_s_production_readers_are_the_workplace_s_delete_the_conversations_holder_and_the_live_limit_and_curve_moves()
     {
@@ -79,17 +123,11 @@ public sealed class MoveStoreCensusTests
         Assert.True(names.Count >= 10, $"found {names.Count} types: the pattern has drifted");
         Assert.Contains("MoveStore", names);
 
-        var readers = new List<string>();
-        foreach (var path in CourseCensusTests.ProductionFiles())
-        {
-            if (Own.Contains(Relative(path))) continue;
-            var text = CourseCensusTests.WithoutComments(File.ReadAllText(path));
-            readers.AddRange(names.Where(name => Regex.IsMatch(text, $@"\b{name}\b")).Select(name => $"{Relative(path)} names {name}"));
-        }
+        var readers = Readers(CourseCensusTests.ProductionFiles().Select(path => (Relative(path), File.ReadAllText(path))), names);
 
-        Assert.Equal(
-            [Window, CurveMove, LiveMove, Conversations, DrivenCourse, HandOverAsk, QuestAsk, Wiring, CarryOn, DrivenLine, QuestTake, Terminal],
-            readers.Select(reader => reader[..reader.IndexOf(" names ", StringComparison.Ordinal)]).Distinct().Order(StringComparer.Ordinal));
+        // The files, not how often each names a type (CENSUSRULES1): a new file fails, and so does a listed file that names none now.
+        var differences = Differences(readers, Allowed);
+        Assert.True(differences.Count == 0, string.Join('\n', differences));
         Assert.Contains($"{Wiring} names MoveStore", readers);
         Assert.All(
             ["MoveStore", "MoveTakeUp", "MoveTakeUpScope", "MoveDelivery", "MoveResolve", "IMoveSaid", "MoveSaidDoor"],

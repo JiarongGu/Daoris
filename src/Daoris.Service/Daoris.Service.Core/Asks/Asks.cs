@@ -846,6 +846,12 @@ public sealed record AskDraft(string? Title, string? Body)
     public string? Short { get; init; }
 
     /// <summary>
+    /// The mark the intake puts on the quest (FOUNDATION1x), <see cref="QuestWeights"/>: <c>design</c> where it reads the ask as design
+    /// or decision work. The desk has no rule of its own for it, so the intake's reading is the mark; the exchange judges it.
+    /// </summary>
+    public string? Weight { get; init; }
+
+    /// <summary>
     /// The chain's review choice (REVIEWENV1b, design §1.5): from an intake, only with the person's words it quotes, which
     /// the exchange checks against the ask's. Null for none.
     /// </summary>
@@ -1312,6 +1318,7 @@ public sealed class AskDesk(KnowledgeService service, AskStore asks, QuestExchan
                 // The intake's short title (SESSUX1j); where it gives none, the ask's own (TITLEONE1), so the quest and the ask
                 // it came from share one name. Neither, and the quest is named from the ask's words.
                 Short = string.IsNullOrWhiteSpace(draft?.Short) ? ask.Short : draft.Short,
+                Weight = draft?.Weight,
                 // The chain's review choice (REVIEWENV1b): the exchange checks a session's quote against this ask's words.
                 Review = draft?.Review,
                 // The intake's kind proposal (WORKFLOW1i): the exchange checks its reason quotes this ask's words.

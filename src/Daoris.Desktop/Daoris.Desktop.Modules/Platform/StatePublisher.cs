@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Daoris.Driver;
@@ -85,6 +86,11 @@ public enum StateScopes
 
     /// <summary>The notices of Done and failed and whether each is read, which the <c>notices</c> slice pushes.</summary>
     Notices = 1 << 20,
+
+    // FOUNDATION1s part B: after NOTIFY2f's, which keep their numbers.
+
+    /// <summary>The repositories the service lists with each one's knowledge index: told by a look while the index feeds. Declared by no route.</summary>
+    Repositories = 1 << 21,
 }
 
 /// <summary>
@@ -165,6 +171,41 @@ public static class StatePublisher
     /// <summary>The type of the event telling what is under way (STATEHUB1c).</summary>
     public const string UnderWayType = "UNDER_WAY";
 
+    // Each bus's count of the changes told per scope (FOUNDATION1s), moved before the event is raised, so a window's ask after it
+    // always reads it moved: what a held answer's version is made of.
+    private static readonly ConditionalWeakTable<IEventBus, long[]> s_told = new();
+
+    /// <summary>
+    /// How many changes <paramref name="bus"/> has told naming any of <paramref name="scopes"/> (FOUNDATION1s): a version that moves with
+    /// each, read by the held answers (<see cref="HeldAnswers"/>) as their inputs' version.
+    /// </summary>
+    public static long Version(IEventBus bus, StateScopes scopes)
+    {
+        var told = s_told.GetValue(bus, _ => new long[32]);
+        var sum = 0L;
+        for (var bit = 0; bit < told.Length; bit++)
+        {
+            if (((int)scopes & (1 << bit)) != 0) sum += Interlocked.Read(ref told[bit]);
+        }
+
+        return sum;
+    }
+
+    private static void Count(IEventBus bus, StateScopes scopes)
+    {
+        var told = s_told.GetValue(bus, _ => new long[32]);
+        for (var bit = 0; bit < told.Length; bit++)
+        {
+            if (((int)scopes & (1 << bit)) != 0) Interlocked.Increment(ref told[bit]);
+        }
+    }
+
+    /// <summary>The scopes named on the wire, read back to their flags; a name this build does not know is none.</summary>
+    private static StateScopes ScopesOf(IEnumerable<string> names) =>
+        Enum.GetValues<StateScopes>()
+            .Where(scope => names.Contains(JsonNamingPolicy.CamelCase.ConvertName(scope.ToString()), StringComparer.Ordinal))
+            .Aggregate(StateScopes.None, (all, scope) => all | scope);
+
     /// <summary>
     /// What a request's route declares it changes: the driver's marks, and the browser module's (BROWSERPUBLISH1). Any other
     /// module's request declares nothing: a module is added here when its presses move what a window reads.
@@ -208,6 +249,7 @@ public static class StatePublisher
                 // What moved before it is no longer under way: the views ask again while they still say *落地中…*.
                 if (response is { Success: true })
                 {
+                    Count(bus, change.Scopes);
                     bus.Emit(Module, Type, Event(change, request));
                 }
 
@@ -252,7 +294,9 @@ public static class StatePublisher
     /// </summary>
     public static void Publish(IEventBus bus, PressTold press)
     {
-        if (Told(press) is { } changed) bus.Emit(Module, Type, changed);
+        if (Told(press) is not { } changed) return;
+        Count(bus, ScopesOf(changed.Scopes));
+        bus.Emit(Module, Type, changed);
     }
 
     /// <summary>
@@ -260,8 +304,11 @@ public static class StatePublisher
     /// proposal written, a size landed. Published as a press's change is, in the same words, so the page's one hub asks again what
     /// it names; <paramref name="session"/> narrows it to the one session it was about. Not awaited, as the publisher's own is not.
     /// </summary>
-    public static void Publish(IEventBus bus, StateScopes scopes, string? session = null) =>
+    public static void Publish(IEventBus bus, StateScopes scopes, string? session = null)
+    {
+        Count(bus, scopes);
         bus.Emit(Module, Type, new StateChanged(Names(scopes), session is { Length: > 0 } ? [session] : null));
+    }
 
     /// <summary>The scopes' names on the wire, in the page's words and in their declared order.</summary>
     public static IReadOnlyList<string> Names(StateScopes scopes) =>

@@ -20,7 +20,7 @@ namespace Daoris.Driver;
 /// or a tool call); <c>turn.ended</c> {session, stopReason, turnMs, input, cacheRead, cacheWrite, output,
 /// calls, used, size}, a prompt to its turn's end with what the turn consumed;
 /// <c>session.parked</c> {session, kind, repository, workspace} as the record is moved to wait on the person;
-/// <c>session.ended</c> {session, state, seconds} as the record reaches a closed state; and
+/// <c>session.ended</c> {session, state, seconds, reason, class} as the journal tells a record reached a closed state; and
 /// <c>permission.refused</c> {session, adapter, tool, kind, by} for each call the record says was refused
 /// (UNBLOCK5, D122 §3.10). Beside the sessions, what the client says of the registry and of the workspace
 /// plans: <c>registry.followed</c> (WSSETUP5) and the <c>setup.*</c> lines (WSSETUP6); and of the accounts:
@@ -270,17 +270,31 @@ public sealed class SessionLog : IDisposable
             return;
         }
 
-        if (!Closed.Contains(moved.State)) return;
+        // An end is written from the journal alone (FOUNDATION1 l-iv, `TellAsync`), whoever wrote the record, so a move here is no line.
+    }
 
-        Watched? known;
-        lock (_gate)
+    /// <summary>
+    /// The ends a process read from the service's journal (FOUNDATION1 l-iv, the foundation design §4.2): <c>session.ended</c> for every end,
+    /// whichever process or connector wrote the record, with the note's <c>ended.*</c> code as <c>reason</c> and the end's <c>class</c>.
+    /// </summary>
+    public Task TellAsync(JournalBatch batch)
+    {
+        foreach (var row in batch.Rows)
         {
-            if (_disposed) return;
-            _watched.Remove(moved.Session, out known);
+            if (PartEnds.Judge(row, batch.Store) is not { } ended || !EndReaders.Takes(EndReader.Log, ended)) continue;
+
+            Watched? known;
+            lock (_gate)
+            {
+                if (_disposed) return Task.CompletedTask;
+                _watched.Remove(ended.Session, out known);
+            }
+
+            long? seconds = known?.Opened is { } opened ? (long)Math.Max(0, (_clock() - opened).TotalSeconds) : null;
+            _log.Info("session.ended", ("session", ended.Session), ("state", ended.State), ("seconds", seconds), ("reason", ended.Reason), ("class", ended.Class));
         }
 
-        long? seconds = known?.Opened is { } opened ? (long)Math.Max(0, (_clock() - opened).TotalSeconds) : null;
-        _log.Info("session.ended", ("session", moved.Session), ("state", moved.State), ("seconds", seconds));
+        return Task.CompletedTask;
     }
 
     /// <summary>

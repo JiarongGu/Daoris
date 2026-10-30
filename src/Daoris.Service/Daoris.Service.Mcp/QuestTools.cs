@@ -67,6 +67,10 @@ public sealed class QuestTools(
             + "Your own words, never the title cut short. Omit it and the quest is named from its own words.")]
         string? shortTitle = null,
         [Description(
+            "What kind of work this is, where it is design or decision work: `design`, so the machine that takes it starts it on "
+            + "the role taking design work. Omit it for ordinary work. An intake marks it by its own reading of the ask.")]
+        string? weight = null,
+        [Description(
             "Whether the person looks at this chain's work running before it lands, for a quest an ask asks: off, on (the "
             + "repository's default environment) or an environment's name, set only on the person's own words, which you quote "
             + "exactly. Every step inherits it. Without their words, propose one with reviewProposal instead. Your off, even on "
@@ -118,6 +122,7 @@ public sealed class QuestTools(
                     new AskDraft(title, body)
                     {
                         Links = links ?? [], Uploads = uploads, Then = steps, Requirements = required, Short = shortTitle,
+                        Weight = weight,
                         Review = chosen,
                         ReviewProposal = reviewProposal is null ? null : new ReviewProposed(reviewProposal.Choice, reviewProposal.Reason),
                         WorkflowProposal = workflowProposal is null ? null : new WorkflowProposed(workflowProposal.Kind, workflowProposal.Reason),
@@ -153,6 +158,7 @@ public sealed class QuestTools(
                     Then = steps,
                     Requirements = required,
                     Short = shortTitle,
+                    Weight = weight,
                     Review = chosen,
                     // Which session asked (SESS1), as the driver named it on this connector (PERM2).
                     PublishedBy = intake?.Session,

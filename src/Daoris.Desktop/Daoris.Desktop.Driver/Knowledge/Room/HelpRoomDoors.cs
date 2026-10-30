@@ -164,6 +164,8 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
         ("choose the agent driven sessions start on", "Settings → AI features → Actors, Build", "`daoris driver adapter <agent>`"),
         // MODELROLE1c (D205 §8.3): who does each kind of work, with which model, in order; its proposal door is owed (MODELROLE1h).
         ("choose who does each kind of work, and with which model", "Settings → AI features → Actors", "`daoris driver actor <actor> …`"),
+        // FOUNDATION1y-i (§2.7): the role catalogue, a role added, changed, removed or given back its seed; `role_propose` proposes it.
+        ("add, change or remove a role that takes a kind of work", "Settings → AI features → Role catalogue", "`daoris driver role set|remove|default <id> …`"),
         ("park a quest after failed sessions", "Settings → Driver", "`daoris driver strikes <n>`"),
         // SESSUX1b: FRAME1d made the quest's drawer a page. A stop's release names its session, since the terminal cannot
         // see which hold a quest is under (D50); the page's Try again on a stopped quest is the web shell's to add.

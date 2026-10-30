@@ -424,7 +424,8 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
         var reviewers = Reviewers(request, record, rule, Config);
         // D205 §4.4 and §3.5(f): the rule decides who, the opinion actor each agent's model; a refusal at the open is asked again here.
         Task<ReviewerChoice> Walk(IReadOnlyList<ReviewerPassed>? passed) =>
-            ReviewerChoice.ChooseAsync(_context.Harnesses, rule with { Reviewers = reviewers }, wrote, Config, due.Workspace, ct, passed: passed);
+            ReviewerChoice.ChooseAsync(_context.Harnesses, rule with { Reviewers = reviewers }, wrote, Config, due.Workspace, ct, passed: passed,
+                catalogue: () => RoleCatalog.ReadHome(_context.Harnesses.Home));
         var choice = await Walk(null).ConfigureAwait(false);
         var reading = choice;
 

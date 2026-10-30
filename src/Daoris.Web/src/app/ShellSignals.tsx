@@ -6,20 +6,20 @@ import { sentence } from '../locales/format';
 import { type AttentionTold, attentionToast } from '../notifications/noticeWords';
 import { keys } from '../data/queries';
 import {
-  accountsSlice, asksSlice, attentionSlice, callsSlice, driverSlice, groupsSlice, linesSlice, noticeOf, noticesSlice, notPushed,
-  questsSlice, sessionsSlice, sweepSlice, syncSlice, usageSlice, useDriverReady, useStandingUsed, useStateHub, useStateSlices, workSlice,
+  accountsSlice, asksSlice, attentionSlice, callsSlice, considerationsSlice, driverSlice, groupsSlice, linesSlice, noticeOf, noticesSlice, notPushed,
+  questsSlice, rulesSlice, sessionsSlice, sweepSlice, syncSlice, usageSlice, useDriverReady, useStandingUsed, useStateHub, useStateSlices,
+  workSlice,
 } from '../bridge/shell';
-import type { AccountWaitTick, Consideration, TrustHold } from '../data/signals';
 import type { Notify } from '../design/ui';
 import { noticeWords } from '../notifications/DoneAndFailed';
 import { FIRST_MAIN_WINDOW, ownWindowName } from '../work/window';
 
-type Tick = { events?: string[]; considered?: Consideration[]; untrusted?: TrustHold[]; waits?: AccountWaitTick[] };
+type Tick = { events?: string[] };
 
 /** The slices the shell pushes with their data and this page reads pushed (PUSH1a, D182); every other family keeps its pulls. */
-const PUSHED = [
+export const PUSHED = [
   driverSlice, linesSlice, sessionsSlice, callsSlice, workSlice, groupsSlice, syncSlice, sweepSlice, questsSlice, asksSlice, usageSlice,
-  accountsSlice, attentionSlice, noticesSlice,
+  accountsSlice, attentionSlice, noticesSlice, considerationsSlice, rulesSlice,
 ];
 
 /**
@@ -64,22 +64,14 @@ export function ShellSignals({ notify, onAttend, attended, onConfirming, onMessa
     });
   }, [isAvailable, bridge]);
 
-  useShenoraEvent<Tick>('DAORIS', 'DRIVER_TICK', (tick) => {
+  useShenoraEvent<Tick>('DAORIS', 'DRIVER_TICK', () => {
     /* 🔴 The tick's lines are toasted no more (NOTIFY2h, D196 point 7; the notification design §5.1). A tick report is a log (D62):
      * English, and mostly a look's passing failure the next look answers. Each line is written to the machine log as `look.said` with
      * its class where the look makes it; what is news is a notice in *Done and failed*, in the reader's language, and what waits on
      * the person is its row. The tick still says that something moved, which the refetches below act on. */
 
-    // Why every open quest is sitting, this tick — the half of the report that is not news but a
-    // STANDING answer, so it lands where the views read it rather than in a toast that dismisses
-    // itself. Replaced whole: a quest the driver no longer considers is no longer sitting.
-    client.setQueryData(keys.considered, tick?.considered ?? []);
-    // And which of those holds are the agent's trust (D73), as facts the screen can offer the person
-    // to grant. Replaced whole for the same reason; a shell older than the grant sends none.
-    client.setQueryData(keys.untrusted, tick?.untrusted ?? []);
-    // And which starts wait on their accounts (UX6d), an ask's intake among them, which no consideration names. Replaced whole; an
-    // older shell sends none. *What needs you* reads none of these three: who needs the person is pushed (PUSH1d4).
-    client.setQueryData(keys.waits, tick?.waits ?? []);
+    // Why every open quest is sitting, the trust holds and the starts waiting on accounts are standing answers, not news: the shell
+    // pushes them as the considerations' slice when they move (FOUNDATION1s), so a tick writes none of them.
 
     // 🔴 Refetching is NOT deduplicated. A tick that repeats its report can still have changed the
     // world — the two questions are different, and collapsing them would make a stale window the
@@ -99,22 +91,14 @@ export function ShellSignals({ notify, onAttend, attended, onConfirming, onMessa
     // What is read under the driver's key, but its state where the shell pushes it (PUSH1a, D182): its pushes write it, and a
     // tick reads none of it again.
     void client.invalidateQueries({ queryKey: keys.driver, predicate: notPushed(client) });
-    // And the rules: a tick settles what agents proposed about them (PERM2), applying a narrowing and
-    // holding a widening for the person, which the Agents place's rules show (*What needs you*'s row is pushed, PUSH1d4).
-    void client.invalidateQueries({ queryKey: keys.rules });
+    // Not the rules, the repositories or the registry (FOUNDATION1s, D182 point 7): the rules are pushed as they move (part B), and a
+    // look that found the registry moved declares that as its scope's own change, which the state hub answers in every window.
     // Every tick runs a pass for each wired circle, so where each stands may have moved (SYNC6b); where the shell pushes the
     // standings, the pass's end pushes what it moved (PUSH1a2), and a tick reads none of them again.
     void client.invalidateQueries({ queryKey: keys.allSync, predicate: notPushed(client) });
-    // 🔴 And the index. Seen on the deployed application: the status bar read "555 entries · 7
-    // repositories" for as long as the window stayed open, on an index that held 1,050 across 17 —
-    // the page had asked while a schema rebuild was still feeding, cached the partial answer, and
-    // nothing since had told it to look again. A rebuild is observable, so the tick that says "the
-    // world may have changed" has to include the world's size.
-    void client.invalidateQueries({ queryKey: keys.allRepositories });
-    // 🔴 And the registry (FG4). Seen on the deployed application: 29 repositories imported from a
-    // terminal, and Overview still said *no workspace yet* until a reload. The shell now forwards a
-    // tick when the registry moved, and this is the half that makes the page look again.
-    void client.invalidateQueries({ queryKey: keys.allRegistry });
+    // (The registry and the repositories read from it moved by a terminal's import, FG4: the look declares that as the registry's
+    // scope. An index still feeding when the page asked (the status bar's size) is told by the look as the repositories' scope while
+    // it feeds, FOUNDATION1s part B.)
     // And the accounts (TOOL4g): a session's end may have cooled one, its door may have said what one has left, and the
     // sessions running on each have moved. A file read, never a probe; where the shell pushes them (PUSH1e) its owner judges
     // those once for every window, and a tick reads none of them again.

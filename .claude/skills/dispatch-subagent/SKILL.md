@@ -108,8 +108,10 @@ test. A Process or Git class that calls what the builder changed is its own to r
 changed method's name, not by the class's name: batch s's candidate failed `CommandShimTests`, a Process class that prepares a
 driven start, after a member moved that start's prompt onto its input, and two more candidate failures that day were tests reading
 a path or a prompt no builder searched for. A builder that changes a public signature in the driver builds the modules' and the
-app's projects too, which call it: batch u's modules did not compile after one did. Before a batch is queued, the parent runs the driver's, the modules' and the service's fast halves whole on it: on
-2026-10-30 that found batch s's three census misses before a candidate did. The parent, running a class with `--no-build`, builds that
+app's projects too, which call it: batch u's modules did not compile after one did. Before a batch is queued, the parent runs the driver's, the modules' and the service's fast halves whole on it, and
+`npm run verify` and `npm run test:web:unit` (minutes each, against a candidate's forty): on 2026-10-30 the fast halves found
+batch s's three census misses before a candidate did, and batch w's three candidates failed on a web census, a record's
+link and a glued note, each of which those two would have caught. The parent, running a class with `--no-build`, builds that
 class's own project first: a build of another project leaves the test assembly stale, and twice that day it read as a
 red that was not there.
 
@@ -265,6 +267,12 @@ once three batches hold the targets (MODELROLE1).
    left inside; `--prune` does it at once. Read the kept lines: each names what holds a tree (work, a file under
    `local/`, a running process), and what holds it is yours to settle. 43 subagent worktrees had piled up by
    2026-10-15, and 24 stood with three agents running on 2026-10-18, the leftover the owner cleared by hand.
+   **A worker merged into the parent's batch goes at once, not at the landing**: once its tip is an ancestor of the batch
+   branch and its tree has no change, unlock and remove its worktree and delete its branch; the batch holds its commits.
+   On 2026-10-30, 21 merged workers' trees stood waiting for their batches to land. **After each landing**, `--prune`, then
+   the install's `daoris-driver trees clean --workspace <w> --yes` for its own session branches, then a look at the
+   machine's processes for anything a finished run left: a CI run on a superseded commit, a rehearsal's stand-in
+   install, idle build nodes. What the parent started it ends; what it did not start it names to the owner.
 8. **Measure the batch.** `node tools/subagent-usage.mjs <the harness's transcripts folder for this
    repository> --since <the batch's first day>` prints each agent type and model's turns and its context
    at the start, at the first edit and at the end. Feed the hand-back's *pack's gaps* into the next pack.

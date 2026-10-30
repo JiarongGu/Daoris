@@ -1248,6 +1248,11 @@ export const REACH = Object.freeze([
     gates: ['service', 'driver', 'modules'],
     why: "the service's, the driver's and the modules' ParticipantWorkReadersTests read the table of every reader of the marks that tells a work (FOUNDATION1c, census B)",
   },
+  {
+    paths: ['src/Daoris.Service/Daoris.Service.Tests/fixtures/helper-askers.json'],
+    gates: ['service', 'driver', 'modules'],
+    why: "the driver's HelperAskersTests, the modules' DriverModuleSessionHelpersTests and the service's HelperAskersTests ask the five doors of who may ask for a helper one table (FOUNDATION1q)",
+  },
   { paths: ['src/Daoris.Service/Daoris.Service.Tests/**', 'src/Daoris.Service/Daoris.Service.Http.Tests/**'], gates: ['service'], why: "the service's tests" },
   { paths: ['src/Daoris.Cli/test/fixtures/name-case.json'], gates: ['driver'], why: "the driver's NameCaseTests reads the shared name-case table (CASEFOLD1d)" },
   {
@@ -1397,6 +1402,11 @@ export const REACH = Object.freeze([
     paths: ['docs/index/**'],
     gates: [],
     why: 'written into every merge by tools/orient-index.mjs and held by its check, which every merge runs; no suite reads it',
+  },
+  {
+    paths: ['docs/model-roles.md'],
+    gates: ['service', 'driver'],
+    why: "the service's scan, and the driver's RoleDoorTests holds the Designer suggestion to its build-judgement row (FOUNDATION1y-i)",
   },
   {
     paths: ['docs/**', 'CHANGELOG.md', 'CLAUDE.md', 'ROADMAP.md', 'AGENTS.md', 'daoris.json', 'daoris.lock', '.claude/**'],

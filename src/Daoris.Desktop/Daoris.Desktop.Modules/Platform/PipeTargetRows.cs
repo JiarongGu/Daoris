@@ -38,6 +38,8 @@ internal static class PipeTargetRows
         ["SET_KEEP"] = "merges into a kind's keeping rule",
         ["SET_AGENT_SETTINGS"] = "merges into a profile's settings",
         ["SET_ACTOR"] = "edits an actor's row in place",
+        ["STAFFING_FOUND_ANSWER"] = "answers a found change, which then leaves the list",
+        ["SET_ROLE"] = "edits a role's row of the catalogue in place, its revision moving",
         ["WORKFLOW_LANDED"] = "reads the gates at the line's tip and accepts them by their blob",
         ["INTEGRATION_GATES"] = "reads the declaration at the line's tip and accepts it by its blob",
         ["TOOLS_USE"] = "checks a file's version or downloads a managed one",
@@ -254,6 +256,8 @@ internal static class PipeTargetRows
             p => Raw(Field(p, "chosen"))));
         Row("SET_ACTOR", Setting("ACTORS", ["actor"], _ => null,
             (a, p) => Fp(Raw(Named(At(a, "actors"), "id", Text(p, "actor"))))));
+        Row("STAFFING_FOUND_ANSWER", Setting("ACTORS", ["found", "answer"], _ => null, (a, _) => Fp(Raw(At(a, "found")))));
+        Row("SET_ROLE", Setting("ROLES", ["change", "id"], _ => null, (a, p) => Fp(Raw(Named(At(a, "roles"), "id", Text(p, "id"))))));
         Row("SET_KEEP", Setting("SYSTEM_SPACE", ["kind"], _ => null,
             (a, p) => Fp(Raw(At(Named(At(a, "kinds"), "id", Text(p, "kind")), "rule")), Raw(At(a, "volume", "floor")))));
         Row("SET_AGENT_SETTINGS", Setting("HARNESSES", ["harness", "profile"], _ => null,

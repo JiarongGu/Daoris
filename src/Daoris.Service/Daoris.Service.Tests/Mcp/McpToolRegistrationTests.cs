@@ -23,7 +23,7 @@ public sealed class McpToolRegistrationTests : McpToolsFixture
         "housekeeping_clean_up", "housekeeping_discard_branch", "housekeeping_inspect", "knowledge_convergence",
         "knowledge_get", "knowledge_refresh", "knowledge_repositories", "knowledge_search", "line_read", "opinion_answer", "opinion_give",
         "partner_answer", "pause_propose", "permission_propose", "plugin_propose", "quest_list", "quest_publish", "quest_respond", "question_ask", "registry",
-        "repository_propose", "review_ready", "review_serve", "session_propose", "setting_propose", "settings_cap", "settings_cooloff",
+        "repository_propose", "review_ready", "review_serve", "role_propose", "session_propose", "setting_propose", "settings_cap", "settings_cooloff",
         "settings_language", "settings_notify", "settings_timeout", "setup_propose", "sync_propose",
         "workflow_propose",
     ];
@@ -81,7 +81,7 @@ public sealed class McpToolRegistrationTests : McpToolsFixture
             [
                 "BrainstormTools", "ChannelTools", "CheckoutTools", "ChosenSettingsTools", "GoAheadTools", "HandOverTools", "HandbackTools", "HelpAcceptTool",
                 "HelpAccountTool", "HelpAgentTool", "HelpAskTool", "HelpBrowserTool", "HelpClearTool",
-                "HelpDeleteTool", "HelpGoTool", "HelpHandTool", "HelpPauseTool", "HelpPluginTool", "HelpRepositoryTool", "HelpSessionTool",
+                "HelpDeleteTool", "HelpGoTool", "HelpHandTool", "HelpPauseTool", "HelpPluginTool", "HelpRepositoryTool", "HelpRoleTool", "HelpSessionTool",
                 "HelpSettingTool", "HelpSetupTool", "HelpSyncTool", "HelpWorkflowTool", "HelperTools", "HousekeepingTools", "KnowledgeSearchTools",
                 "LineTools", "OpinionTools", "PartnerTools", "QuestTools", "QuestionTools",
                 "ReviewTools", "RuleProposalTools",

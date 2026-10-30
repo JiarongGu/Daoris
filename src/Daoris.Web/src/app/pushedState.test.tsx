@@ -43,21 +43,45 @@ vi.mock('./ShellSignals', async () => {
 
 import '../locales/i18n';
 import { App } from './App';
-import { ShellSignals } from './ShellSignals';
+import { PUSHED, ShellSignals } from './ShellSignals';
 import { AT_START } from '../help/setupGuide';
 import { WorkspaceScopeProvider } from '../data/scope';
 import { keys, useAsks, useHelpSessions, useQuests, useSessions, useSyncStanding } from '../data/queries';
-import { type DriverState, useDriver } from '../bridge/driver';
+import { type DriverState, useConsidered, useDriver, useTrustFolder, useUntrusted } from '../bridge/driver';
 import { useLines, useSweepLook, useSweepPlan, useWorkState } from '../bridge/repositories/lines';
 import { useSessionEntries, useSessionGroups } from '../bridge/sessions/sessions';
 import { type UsageAnswer, useUsage } from '../bridge/agents/agents';
 import { useAccounts } from '../bridge/agents/accounts';
+import { useRules } from '../bridge/agents/rules';
 import type { AccountsAnswer } from '../settings/accounts/accounts';
+import type { AgentRulesState } from '../settings/repository/AgentRules';
 
 const CHOICES = { drivable: ['engine'], holds: [], trees: [], notify: false, strikes: 3, forgiven: {} };
 
-/** How many slices a window reads pushed, each its one snapshot as the window opens (`PUSHED` in `ShellSignals`). */
-const SLICES = 14;
+/** How many slices a window reads pushed, each its one snapshot as the window opens: `PUSHED` in `ShellSignals`, so a slice joins every pin at once. */
+const SLICES = PUSHED.length;
+
+const CONSIDERED = { quest: 'q-1', repository: 'engine', verdict: 'Blocked', reason: 'no ready account' };
+const HOLD = { folder: 'X:/engine', trustFile: 'X:/profile/.claude.json', quest: 'q-1' };
+const WAIT = { agent: 'claude-code', account: 'account-2', until: '2026-10-20T12:00:00+00:00', stated: true, quests: ['q-1'], asks: [], signedOut: [] };
+
+/** Why quests sit, the trust holds and the account waits, as the shell's owner holds them (FOUNDATION1s): each pushed whole. */
+const CONSIDERATIONS_SNAPSHOT = {
+  slice: 'considerations', epoch: 'k1', status: 'ready',
+  partitions: [
+    { partition: 'considered', seq: 1, status: 'ready', data: [CONSIDERED] },
+    { partition: 'untrusted', seq: 1, status: 'ready', data: [HOLD] },
+    { partition: 'waits', seq: 1, status: 'ready', data: [WAIT] },
+  ],
+};
+
+/** What an agent Daoris starts may do, as the rules' owner pushes `RULES`'s answer whole (FOUNDATION1s part B). */
+const RULES: AgentRulesState = {
+  path: 'permissions.json', defaults: [], scopes: [{ scope: 'machine', allow: [], ask: [], deny: ['Bash(rm:*)'] }], proposals: [],
+};
+const RULES_SNAPSHOT = {
+  slice: 'rules', epoch: 'r1', status: 'ready', partitions: [{ partition: 'rules', seq: 1, status: 'ready', data: RULES }],
+};
 
 /** A session parked to ask, as the attention slice's owner pushes its row and what the Sessions badge counts (PUSH1d4). */
 const PARKED_ROW = { kind: 'parked', id: 'a-1', since: '2026-10-20T08:00:00+00:00', workspace: 'default', where: 'engine', note: {} };
@@ -275,7 +299,8 @@ function host(pushes: boolean) {
           : slice === 'work' ? WORK_SNAPSHOT : slice === 'groups' ? GROUPS_SNAPSHOT : slice === 'sync' ? SYNC_SNAPSHOT
             : slice === 'sweep' ? SWEEP_SNAPSHOT : slice === 'quests' ? QUESTS_SNAPSHOT : slice === 'asks' ? ASKS_SNAPSHOT
               : slice === 'usage' ? USAGE_SNAPSHOT : slice === 'accounts' ? ACCOUNTS_SNAPSHOT
-                : slice === 'attention' ? ATTENTION_SNAPSHOT : SNAPSHOT;
+                : slice === 'attention' ? ATTENTION_SNAPSHOT : slice === 'considerations' ? CONSIDERATIONS_SNAPSHOT
+                  : slice === 'rules' ? RULES_SNAPSHOT : SNAPSHOT;
       }
       throw Object.assign(new Error('NO_ROUTE'), { code: 'NO_ROUTE' });
     }
@@ -513,6 +538,119 @@ describe("the driver's state, pushed (PUSH1a)", () => {
 
     expect(questReads()).toBe(0);
     expect(askReads()).toBe(0);
+  });
+
+  it('reads why quests sit, the trust holds and the waits from their slice, which a tick and a focus neither read nor write (FOUNDATION1s)', async () => {
+    host(true);
+    const client = await open();
+    expect(client.getQueryData(keys.considerations)).toEqual({ considered: [CONSIDERED], untrusted: [HOLD], waits: [WAIT] });
+    let read: { considered: unknown; untrusted: unknown } | undefined;
+    function Readers() {
+      read = { considered: useConsidered().data, untrusted: useUntrusted().data };
+      return null;
+    }
+    render(<QueryClientProvider client={client}><Readers /></QueryClientProvider>);
+    await later(1_000);
+    expect(read).toEqual({ considered: [CONSIDERED], untrusted: [HOLD] });
+
+    // A tick that says nothing of them leaves them as they were, where it used to replace them whole with what it carried.
+    const before = asked();
+    await act(async () => {
+      heard.get('DRIVER_TICK')?.({ events: [] });
+      await vi.advanceTimersByTimeAsync(2_000);
+    });
+    hidden(true);
+    hidden(false);
+    await later(1_000);
+    expect(client.getQueryData(keys.considerations)).toEqual({ considered: [CONSIDERED], untrusted: [HOLD], waits: [WAIT] });
+    expect(since(before, asked())['DAORIS.DRIVER.STATE_SLICE']).toBeUndefined();
+
+    // And a push of one partition moves that list alone.
+    await act(async () => {
+      heard.get('STATE_PUSH')?.({ slice: 'considerations', epoch: 'k1', partition: 'untrusted', seq: 2, status: 'ready', data: [] });
+      await vi.advanceTimersByTimeAsync(100);
+    });
+    expect(client.getQueryData(keys.considerations)).toEqual({ considered: [CONSIDERED], untrusted: [], waits: [WAIT] });
+  });
+
+  it('shows a trust press at once: the shell takes the hold off its slice as it answers, and the push is the one writer (FOUNDATION1s)', async () => {
+    host(true);
+    const client = await open();
+    const base = invoke.getMockImplementation()!;
+    invoke.mockImplementation(async (module: string, type: string, options?: unknown) => (
+      type === 'TRUST_FOLDER' ? { folder: HOLD.folder, key: 'k', changed: true, verified: true, message: 'Trusted.' } : base(module, type, options)));
+    let press: ((hold: { folder: string; trustFile: string }) => Promise<unknown>) | undefined;
+    function Press() {
+      press = useTrustFolder().mutateAsync;
+      return null;
+    }
+    render(<QueryClientProvider client={client}><Press /></QueryClientProvider>);
+
+    await act(async () => { await press!(HOLD); });
+    // The page wrote nothing of its own: what shows is what the shell pushes.
+    expect(client.getQueryData<{ untrusted: unknown[] }>(keys.considerations)?.untrusted).toEqual([HOLD]);
+
+    await act(async () => {
+      heard.get('STATE_PUSH')?.({ slice: 'considerations', epoch: 'k1', partition: 'untrusted', seq: 2, status: 'ready', data: [] });
+      await vi.advanceTimersByTimeAsync(100);
+    });
+    expect(client.getQueryData<{ untrusted: unknown[] }>(keys.considerations)?.untrusted).toEqual([]);
+  });
+
+  it('asks neither the rules, the repositories nor the registry again at a tick, and does at their own scopes (FOUNDATION1s)', async () => {
+    host(true);
+    const client = await open();
+    const registryReads = () => vi.mocked(fetch).mock.calls.filter(([input]) => String(input).startsWith('/api/registry')).length;
+    const repositoryReads = () => vi.mocked(fetch).mock.calls.filter(([input]) => /^\/api\/repositories/.test(String(input))).length;
+    const registry = registryReads();
+    const repositories = repositoryReads();
+    expect(registry).toBeGreaterThan(0);
+    const rules = client.getQueryState(keys.rules);
+
+    await act(async () => {
+      heard.get('DRIVER_TICK')?.({ events: [] });
+      await vi.advanceTimersByTimeAsync(2_000);
+    });
+    expect(registryReads()).toBe(registry);
+    expect(repositoryReads()).toBe(repositories);
+    expect(client.getQueryState(keys.rules)?.isInvalidated ?? false).toBe(rules?.isInvalidated ?? false);
+
+    await act(async () => {
+      heard.get('STATE_CHANGED')?.({ scopes: ['registry'] });
+      await vi.advanceTimersByTimeAsync(2_000);
+    });
+    expect(registryReads()).toBeGreaterThan(registry);
+  });
+
+  it('holds the rules from their snapshot, a push moving them, and a tick, their scope or a focus reads no RULES (FOUNDATION1s part B)', async () => {
+    host(true);
+    const client = await open();
+    let read: AgentRulesState | undefined;
+    function Reader() {
+      read = useRules().data;
+      return null;
+    }
+    render(<QueryClientProvider client={client}><Reader /></QueryClientProvider>);
+    await later(1_000);
+    expect(read).toEqual(RULES);
+    expect(asked().get('DAORIS.DRIVER.RULES')).toBeUndefined();
+
+    const before = asked();
+    await act(async () => {
+      heard.get('DRIVER_TICK')?.({ events: ['rules  the proposals could not be settled this tick: busy'] });
+      heard.get('STATE_CHANGED')?.({ scopes: ['rules'] });
+      await vi.advanceTimersByTimeAsync(2_000);
+    });
+    hidden(true);
+    hidden(false);
+    await later(1_000);
+    expect(since(before, asked())['DAORIS.DRIVER.RULES']).toBeUndefined();
+
+    await act(async () => {
+      heard.get('STATE_PUSH')?.({ slice: 'rules', epoch: 'r1', partition: 'rules', seq: 2, status: 'ready', data: { ...RULES, scopes: [] } });
+      await vi.advanceTimersByTimeAsync(100);
+    });
+    expect(client.getQueryData(keys.rules)).toEqual({ ...RULES, scopes: [] });
   });
 
   it('carries an ask a connector wrote to two windows by one push, with no read in either (PUSH1d3)', async () => {

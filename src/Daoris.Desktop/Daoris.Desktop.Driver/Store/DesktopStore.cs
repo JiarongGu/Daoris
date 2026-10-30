@@ -348,6 +348,76 @@ public sealed class DesktopStore : IDisposable
             );
             CREATE INDEX role_staffing_found_pending ON role_staffing_found (id) WHERE answered_at IS NULL;
             """)),
+
+        // FOUNDATION1z-v: the news (§4.5, §13.3), Events'. New tables an older store-aware build never opens, so the stamp stays where it
+        // is and the step runs at the first start. `notices` holds `data/notices.json`'s notices by id, one column for each field the page
+        // reads; `news_said` the occurrences already told, apart from the notices so a prune or a dismissal never forgets one; and
+        // `journal_cursors` one journal position for each teller, with the store identity it was read against.
+        new(9, WriterStamp, write => write.Execute(
+            """
+            CREATE TABLE notices (
+              id         TEXT NOT NULL PRIMARY KEY,
+              kind       TEXT NOT NULL,
+              at         TEXT NOT NULL,
+              read       INTEGER NOT NULL,
+              workspace  TEXT,
+              session    TEXT,
+              quest      TEXT,
+              repository TEXT,
+              state      TEXT,
+              route      TEXT,
+              act        TEXT,
+              code       TEXT,
+              count      INTEGER
+            );
+            CREATE INDEX notices_at ON notices (at);
+            CREATE TABLE news_said (
+              key TEXT NOT NULL PRIMARY KEY,
+              at  TEXT NOT NULL
+            );
+            CREATE TABLE journal_cursors (
+              teller   TEXT NOT NULL PRIMARY KEY,
+              store    TEXT NOT NULL,
+              position INTEGER NOT NULL,
+              at       TEXT NOT NULL
+            );
+            """)),
+
+        // FOUNDATION1w: the role catalogue (§2.7, §13.3), Roles'. New tables an older store-aware build never opens, so the stamp stays where
+        // it is. `roles` holds one row for each role id the person changed: `state` is `set` (`record` the role's JSON, as written) or
+        // `removed` (a seeded role taken out); an id with no row is the seed's. `role_revisions` keeps every revision of every id, never
+        // rewritten and never reset by a removal; its `state` adds `default` (a seeded id's record deleted) and `deleted` (an added one's).
+        new(10, WriterStamp, write => write.Execute(
+            """
+            CREATE TABLE roles (
+              id       TEXT NOT NULL PRIMARY KEY,
+              state    TEXT NOT NULL,
+              record   TEXT NOT NULL,
+              revision INTEGER NOT NULL,
+              at       TEXT NOT NULL
+            );
+            CREATE TABLE role_revisions (
+              id       TEXT NOT NULL,
+              revision INTEGER NOT NULL,
+              state    TEXT NOT NULL,
+              record   TEXT,
+              at       TEXT NOT NULL,
+              PRIMARY KEY (id, revision)
+            );
+            """)),
+
+        // FOUNDATION1x: the role a start took and its revision, kept with its binding (§2.7, §13.3's Bindings family). A new table, as
+        // `binding_picks` was, so the role is known when a start opens while the conversation's id comes only when the wire names it, a
+        // build that knows no role never opens it, and each writer of a binding names its own columns (O3-16). The stamp stays.
+        new(11, WriterStamp, write => write.Execute(
+            """
+            CREATE TABLE binding_roles (
+              session  TEXT PRIMARY KEY,
+              role     TEXT NOT NULL,
+              revision INTEGER NOT NULL,
+              at       TEXT NOT NULL
+            );
+            """)),
     ];
 
     /// <summary>

@@ -3003,6 +3003,29 @@
       "after": null
     },
     {
+      "name": "role, every role the seed's",
+      "argv": [
+        "role"
+      ],
+      "before": null,
+      "exit": 0,
+      "out": [
+        "daoris: the roles that take this machine's work",
+        "  build       Build · takes build on the machine · its actor's order (the seed)",
+        "  intake      Intake · takes intake on the machine · its actor's order (the seed)",
+        "  opinion     Second opinion · takes review on the machine · its actor's order (the seed)",
+        "  helper      Helper · takes help on the machine · its actor's order (the seed)",
+        "  partner     Partner · takes partner on the machine · its actor's order (the seed)",
+        "  brainstorm  Brainstorm · takes brainstorm on the machine · its actor's order (the seed)",
+        "  ask-daoris  Ask Daoris · takes ask-daoris on the machine · its actor's order (the seed)",
+        "  chat        Chat · takes chat on the machine · its actor's order (the seed)",
+        "  <config>'s actors are the file's own here (not this home's store), so its roles are not set here.",
+        "  Change one: `driver role set <id> [--name \"…\"] [--zh \"…\"] [--takes <work,…>] [--scope machine|workspace:<id>|repository:<id>] [\"<agent> [<model>|-] [<effort>|-]\" …]`, `driver role remove <id>` or `driver role default <id>`."
+      ],
+      "err": [],
+      "after": null
+    },
+    {
       "name": "actor, every actor as before",
       "argv": [
         "actor"

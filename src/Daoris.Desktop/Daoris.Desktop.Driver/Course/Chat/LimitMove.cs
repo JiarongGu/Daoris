@@ -221,10 +221,12 @@ internal sealed class LimitMove(ChatContext context, IChatRunning runner, ChatHa
             decided = true;
 
             // Never mid-turn: a word said meanwhile started its turn first, and that turn's end judges again; the old part went on before
-            // anything began, so the move closes superseded.
+            // anything began, so the move closes superseded. FOUNDATION1o: where the host's open moves the old part's words, one said while
+            // held is kept on the record, which the open below moves.
+            var keeps = await context.Service.Opens.KeepsAsync(ct).ConfigureAwait(false);
             if (chat.Turns.Limited)
             {
-                if (chat.Turns.HoldLimited() is not { } heldWords)
+                if (chat.Turns.HoldLimited(keeps) is not { } heldWords)
                 {
                     move.Superseded();
                     record = null;
@@ -233,7 +235,7 @@ internal sealed class LimitMove(ChatContext context, IChatRunning runner, ChatHa
 
                 waited = heldWords;
             }
-            else if (!chat.Turns.Hold())
+            else if (!chat.Turns.Hold(keeps))
             {
                 move.Superseded();
                 record = null;

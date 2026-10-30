@@ -59,6 +59,7 @@ public sealed class PersonDoorTableTests
         // NOTIFY2j: what waits, held until it moves.
         ("GET", "/api/confirmations/waiting", Open),
         ("GET", "/api/changes", Open),
+        ("GET", "/api/journal", Open),
 
         ("POST", "/api/quests/{id}/respond", Agent),
         ("POST", "/api/quests", Agent),
@@ -181,8 +182,8 @@ public sealed class PersonDoorTableTests
         // versions a start of a record was handed, the driver's (KEEP1b), and what waits for confirmation held until it moves, a read
         // (NOTIFY2j), and a machine's retirement at a workspace's remote, the person's (FABRIC-CLOSE1i2), and a park the driver could
         // not hand put back, the driver's (SUPERVISOR1a-i), and a finished tree's record and its age, the driver's (KEEPSIZE1b), and the host's protocol, a read (FOUNDATION1 row p),
-        // and one quest's handback, a read (HANDBACK1).
-        Assert.Equal(31, Routes.Count(route => route.Class == Open));
+        // and one quest's handback, a read (HANDBACK1), and the event journal's rows after a position, a read (FOUNDATION1 l-i).
+        Assert.Equal(32, Routes.Count(route => route.Class == Open));
         Assert.Equal(4, Routes.Count(route => route.Class == Agent));
         Assert.Equal(30, Routes.Count(route => route.Class == Driver));
         Assert.Equal(33, Routes.Count(route => route.Class == Person));

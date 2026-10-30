@@ -163,16 +163,11 @@ public sealed class SessionsRoutes(DriverContext context)
             return Refused(HelperAskWhy.Agent, $"An agent is named as one word, as it is listed in Settings, and `{agent}` is not.");
         }
 
-        // The verb's sentences, so the person reads the same one from either door.
+        // The verb's sentences, so the person reads the same one from either door; who may ask is the start layer's (FOUNDATION1q).
         var asker = await service.RecordAsync(id, cancellationToken).ConfigureAwait(false);
-        var refused = asker switch
-        {
-            null or { Teammate: true } => (HelperAskWhy.NotHeld, $"No session `{id}` of this machine's is held to bring an answer back to."),
-            { Serves: { } serves } => (HelperAskWhy.Helper, $"Session `{id}` is itself a helper for session `{serves}`, and a helper cannot ask for a helper."),
-            { Opinion: { } opinion } => (HelperAskWhy.Reviewer, $"Session `{id}` reads another session's work for second opinion `{opinion}`, and a reviewer cannot ask for a helper."),
-            { Ask: { Length: > 0 } intake } => (HelperAskWhy.Intake, $"Session `{id}` is the intake for ask `#{intake}`, which does no work in a repository, and an intake cannot ask for a helper."),
-            _ => ((string, string)?)null,
-        };
+        var refused = asker is null or { Teammate: true }
+            ? (HelperAskWhy.NotHeld, $"No session `{id}` of this machine's is held to bring an answer back to.")
+            : SessionsHelperCommand.Unfit(id, asker);
         if (refused is var (why, sentence)) return Refused(why, sentence);
 
         var asked = new HelperFiles(_loop.Home).WriteAsk(id, question, agent, DateTimeOffset.UtcNow);
@@ -636,7 +631,7 @@ public sealed class SessionsRoutes(DriverContext context)
     // its own first ask (`at`) comes. A read naming no key:
     // `{ waiting: [{ session, repository, question, asked, generation }], at }`.
     [DriverRoute("SUPERVISOR_WAITING")]
-    [ByEvent("SUPERVISOR_WAITING")]
+    [ByEvent("SUPERVISOR_WAITING", Untold = "the question files, and the verb waits for an answer made after its own ask")]
     private async Task<object?> SupervisorWaitingAsync(IpcRequest request, CancellationToken cancellationToken) =>
         new { Waiting = await SupervisorDoor.WaitingAsync(_loop, cancellationToken).ConfigureAwait(false), At = Moments.Write(DateTimeOffset.UtcNow) };
 
@@ -690,7 +685,7 @@ public sealed class SessionsRoutes(DriverContext context)
     // this machine's own record — never the session record, which travels (D47 §4). Told by event (NOBLOCK1): each record's
     // read held the window up to 7.5 s, so an ask is answered from what is held and this runs on a task of its own.
     [DriverRoute("SESSION_OPENINGS")]
-    [ByEvent("SESSION_OPENINGS")]
+    [ByEvent("SESSION_OPENINGS", Untold = "a session's first words, which SESSION_EVENTS tells and no scope or slice does")]
     private async Task<object?> SessionOpeningsAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var ids = new List<string>();
@@ -743,7 +738,7 @@ public sealed class SessionsRoutes(DriverContext context)
     /// record is read once per ask.</para>
     /// </remarks>
     [DriverRoute("SESSION_WHERE")]
-    [ByEvent("SESSION_WHERE")]
+    [ByEvent("SESSION_WHERE", Reads = StateScopes.Sessions | StateScopes.Landing | StateScopes.Sweep, Slices = new[] { SweepStateSlice.Name })]
     private async Task<object?> SessionWhereAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var trees = new SessionTrees(_loop.Home);

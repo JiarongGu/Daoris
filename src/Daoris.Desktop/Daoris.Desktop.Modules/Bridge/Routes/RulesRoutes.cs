@@ -71,14 +71,19 @@ public sealed class RulesRoutes(DriverLoop loop)
         return Rules(PermissionRules.Load(_loop.Home));
     }
 
+    private object Rules(PermissionFile file) => Answer(_loop.Home, file);
+
+    /// <summary>The rules as <c>RULES</c> answers them now, what the rules' slice pushes (FOUNDATION1s part B).</summary>
+    public static object Answer(string home) => Answer(home, PermissionRules.Load(home));
+
     /// <summary>
     /// The rules as the page reads them (PERM1). 🔴 No null on the wire where the page tells anything
     /// by it: the bridge leaves a null out, so the machine's scope simply carries no <c>name</c>, and
     /// a file read cleanly carries no <c>problem</c>.
     /// </summary>
-    private object Rules(PermissionFile file) => new
+    private static object Answer(string home, PermissionFile file) => new
     {
-        Path = PermissionRules.PathOf(_loop.Home),
+        Path = PermissionRules.PathOf(home),
         file.Problem,
         Defaults = PermissionRules.Defaults.Select(shipped => new
         {
@@ -95,7 +100,7 @@ public sealed class RulesRoutes(DriverLoop loop)
             .Concat(file.Repositories.OrderBy(p => p.Key, StringComparer.Ordinal).Select(p => (Scope: "repository", Name: (string?)p.Key, Lists: p.Value)))
             .Select(held => new { held.Scope, held.Name, held.Lists.Allow, held.Lists.Ask, held.Lists.Deny })
             .ToArray(),
-        Proposals = Proposals(_loop.Home),
+        Proposals = Proposals(home),
     };
 
     /// <summary>

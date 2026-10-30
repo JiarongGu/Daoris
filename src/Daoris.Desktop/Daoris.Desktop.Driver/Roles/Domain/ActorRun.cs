@@ -173,7 +173,7 @@ public sealed class ActorRun : IAsyncDisposable
 
     public ActorRun(ISessionEvents events, string session, string actor, ActorRan? prior, Func<ActorRan, Task> keep, MachineLog? log = null)
     {
-        if (actor is not ("build" or "intake" or "opinion" or "helper" or "partner" or "brainstorm" or "ask-daoris" or "chat"))
+        if (!ActorChoices.Ids.Contains(actor, StringComparer.Ordinal))
             throw new ArgumentException("unknown actor", nameof(actor));
         _events = events; _session = session; _actor = actor; _keep = keep; _log = log ?? MachineLog.None;
         _reports = new(prior);

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Daoris.Driver;
 
 namespace Daoris.Desktop.Modules.Tests;
@@ -70,6 +71,53 @@ public sealed class DriverModuleSessionHelpersTests : DriverModuleBridge
         Assert.Equal(why, refused.GetProperty("why").GetString());
         Assert.EndsWith("Nothing was asked.", refused.GetProperty("message").GetString());
         Assert.Empty(new HelperFiles(loop.Home).Asks());
+    }
+
+    /// <summary>
+    /// FOUNDATION1q (the foundation design §2.3, §7 row 9): the page's door asks the start layer, held to the five doors' table
+    /// (<c>fixtures/helper-askers.json</c> among the service's tests) row for row, Ask Daoris refused by its own code.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(AskerRows))]
+    public async Task The_page_answers_each_asker_of_the_five_doors_table(string name)
+    {
+        var table = JsonNode.Parse(File.ReadAllText(Path.Combine(TableRoot(), "src", "Daoris.Service", "Daoris.Service.Tests", "fixtures", "helper-askers.json")))!;
+        var row = table["rows"]!.AsArray().Single(each => (string?)each!["name"] == name)!;
+        var marks = row["marks"]!.AsObject().DeepClone().AsObject();
+        marks["id"] = "s1";
+        marks["adapter"] = "claude-code";
+        marks["state"] = "completed";
+        marks["created"] = "2026-10-16T09:00:00Z";
+        marks["updated"] = "2026-10-16T09:05:00Z";
+        using var ledger = new LoopbackHost();
+        var records = System.Text.Encoding.UTF8.GetBytes(new JsonArray(marks).ToJsonString());
+        ledger.Serve("/api/sessions?includeClosed=true", records);
+        ledger.Serve("/api/sessions", records);
+        ledger.Serve("/api/quests?includeClosed=true", "[]"u8.ToArray());
+        ledger.Serve("/api/quests", "[]"u8.ToArray());
+        ledger.Serve("/api/registry", "[]"u8.ToArray());
+        var loop = Loop();
+        await loop.ComeUpAsync(new ServiceClient(ledger.Address, null));
+
+        var answer = await AnswerAsync(new DriverModule(Bus, loop), "SESSION_HELPER_ASK", new { id = "s1", question = "Why?" });
+
+        var refused = (string?)row["refused"];
+        Assert.Equal(refused, answer.GetProperty("why").GetString());
+        Assert.Equal(refused is null, answer.GetProperty("asked").ValueKind == JsonValueKind.String);
+        if (refused is not null) Assert.Contains((string)table["says"]![refused]!, answer.GetProperty("message").GetString());
+    }
+
+    public static TheoryData<string> AskerRows =>
+    [
+        .. JsonNode.Parse(File.ReadAllText(Path.Combine(TableRoot(), "src", "Daoris.Service", "Daoris.Service.Tests", "fixtures", "helper-askers.json")))!["rows"]!
+            .AsArray().Select(row => (string)row!["name"]!),
+    ];
+
+    private static string TableRoot()
+    {
+        var at = new DirectoryInfo(AppContext.BaseDirectory);
+        while (at is not null && !File.Exists(Path.Combine(at.FullName, "daoris.json"))) at = at.Parent;
+        return at?.FullName ?? throw new InvalidOperationException("no workspace root above the test binary");
     }
 
     [Fact]

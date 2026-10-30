@@ -111,6 +111,11 @@ public sealed record HelpProposal(
     /// <summary>The writes an <c>approve</c> accepts, each by name (HELPPLUG1c); null or empty accepts none, its reads only.</summary>
     public IReadOnlyList<string>? Writes { get; init; }
 
+    // The role kind's.
+
+    /// <summary>A role proposal's own <c>press</c> (FOUNDATION1y-i): its names, work, scope, choices and the revision read; null for every other kind.</summary>
+    public System.Text.Json.JsonElement? RolePress { get; init; }
+
     // The sync kind's.
 
     /// <summary>The rows a sync proposal's look listed (HELP10), kept in its file; null before the person looked.</summary>
@@ -373,6 +378,11 @@ public sealed record HelpPlan(string? Refusal, string Describe, string Terminal,
     /// <summary>For an accept the route takes (DRIFT1d2): the quest and its departures, for the card; null for every other kind.</summary>
     public HelpAcceptPlan? Accept { get; init; }
 
+    // The setting kind's.
+
+    /// <summary>An actor's order a setting proposal sets (FOUNDATION1w-s), applied through the staffing's one write; null for every other plan.</summary>
+    public HelpStaffing? Staffing { get; init; }
+
     // The clear kind's.
 
     /// <summary>What a clear proposal's Apply sends (HIST1f-b); null where the card changes nothing, and for every other kind.</summary>
@@ -411,6 +421,11 @@ public sealed record HelpPlan(string? Refusal, string Describe, string Terminal,
 
     /// <summary>For a move the route takes (ENTRY1d1): what moves, and where to; null for every other kind.</summary>
     public HelpRepositoryMove? Move { get; init; }
+
+    // The role kind's.
+
+    /// <summary>For a role change the judge takes (FOUNDATION1y-i): the change, its choices and the revision read; null for every other kind.</summary>
+    public HelpRoleChange? Role { get; init; }
 
     // The session kind's.
 

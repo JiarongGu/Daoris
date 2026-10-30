@@ -49,59 +49,51 @@ public sealed class ShortWaitsCensusTests
         ];
     }
 
-    /// <summary>Every short bound of the two projects, by <c>project/path: bound</c>, the census's own file left out.</summary>
-    private static SortedDictionary<string, int> Scan()
-    {
-        var found = new SortedDictionary<string, int>(StringComparer.Ordinal);
-        foreach (var project in Projects)
-        {
-            var folder = SourceFiles.Project(project);
-            foreach (var path in SourceFiles.All(project, "*.cs").Where(path => Path.GetFileName(path) != nameof(ShortWaitsCensusTests) + ".cs"))
-            {
-                var relative = project + "/" + Path.GetRelativePath(folder, path).Replace(Path.DirectorySeparatorChar, '/');
-                foreach (var bound in Shorts(File.ReadAllText(path))) found[$"{relative}: {bound}"] = found.GetValueOrDefault($"{relative}: {bound}") + 1;
-            }
-        }
+    /// <summary>Every short bound of the sources, by <c>path: bound</c>; how many times a file has one is not the rule's (CENSUSRULES1).</summary>
+    internal static SortedSet<string> Bounds(IEnumerable<(string File, string Source)> sources) =>
+        new(sources.SelectMany(each => Shorts(each.Source).Select(bound => $"{each.File}: {bound}")), StringComparer.Ordinal);
 
-        return found;
-    }
+    /// <summary>Every short bound of the two projects, by <c>project/path: bound</c>, the census's own file left out.</summary>
+    private static SortedSet<string> Scan() => Bounds(Projects.SelectMany(project =>
+    {
+        var folder = SourceFiles.Project(project);
+        return SourceFiles.All(project, "*.cs").Where(path => Path.GetFileName(path) != nameof(ShortWaitsCensusTests) + ".cs")
+            .Select(path => (project + "/" + Path.GetRelativePath(folder, path).Replace(Path.DirectorySeparatorChar, '/'), File.ReadAllText(path)));
+    }));
 
     private const string Driver = SourceFiles.DriverTestsProject;
 
-    /// <summary>What each listed short bound is, by <c>project/path: bound</c>: how many there are, and why none of them is a wait on a signal.</summary>
-    private static readonly (string Site, int Count, string Reason)[] Listed =
+    /// <summary>What each listed short bound is, by <c>project/path: bound</c>, and why none of its sites is a wait on a signal.</summary>
+    private static readonly (string Site, string Reason)[] Listed =
     [
-        ($"{Driver}/Agents/AccountWalkGateTests.cs: TimeSpan LockWait", 1, "an input: the lock patience the roster is handed where a test sets none"),
-        ($"{Driver}/Agents/AccountWalkGateTests.cs: TimeSpan Short", 1, "an input: a start's patience for its account's lock, short so that a held lock runs it out"),
-        ($"{Driver}/Agents/AcpBackgroundTests.cs: TimeSpan Look", 1, "an input: how often the session reads its quest again while it waits on background work"),
-        ($"{Driver}/Agents/AcpBackgroundTests.cs: TimeSpan Minute", 1, "an input: the background look's pace at the product's default, spent on the case's own moved clock"),
-        ($"{Driver}/Agents/AcpBackgroundTests.cs: TimeSpan Soon", 1, "an input: the session's quiet wait before it goes on, which a case also states as its claim"),
-        ($"{Driver}/Agents/OutputTailTests.cs: TimeSpan Fast", 1, "an input: the tail's own polling interval"),
-        ($"{Driver}/Events/ChainTests.cs: TimeSpan LookDeadline", 1, "an input: a topic's deadline, spent on the test's own clock"),
-        ($"{Driver}/Events/ChainTests.cs: TimeSpan RequestsDeadline", 1, "an input: a topic's deadline, spent on the test's own clock"),
-        ($"{Driver}/Events/ChangeWatchTests.cs: TimeSpan Deadline", 1, "an input: a topic's deadline, spent on the test's own clock"),
-        ($"{Driver}/Events/SessionWatchTests.cs: TimeSpan Pace", 1, "an input: the watch's pace, spent on the test's own clock"),
-        ($"{Driver}/Loop/BrainstormBoundsTests.cs: TimeSpan Minute", 1, "an input: a brainstorm's minute shrunk, which the product spends"),
-        ($"{Driver}/Loop/MeetingTests.cs: TimeSpan Second", 1, "an input: a meeting's minute shrunk, which the product spends"),
-        ($"{Driver}/Loop/MeetingTests.cs: TimeSpan Tenth", 1, "an input: a meeting's minute shrunk, which the product spends"),
-        ($"{Driver}/Workflows/GraphPressTests.cs: WaitAsync(TimeSpan.FromMilliseconds(20))", 1, "a window in which nothing happens: past the bound the ask is no longer waited on, and the claim is that it says false"),
-        ($"{Driver}/Workflows/GraphPressTests.cs: WaitAsync(TimeSpan.FromMinutes(1))", 2, "the product's own timeout argument on its pass asks, not a wait of the test's: its answer is read after the pass is done"),
-        ($"{Driver}/Workplace/RefWatchProcessTests.cs: TimeSpan Within", 1, "an elapsed-time bound that states the claim: a judgement begun within a second of git's exit"),
-        ($"{Driver}/Workplace/SetAsideSlimTests.cs: TimeSpan Budget", 1, "an input: the budget the keep's set-aside is handed"),
+        ($"{Driver}/Agents/AccountWalkGateTests.cs: TimeSpan LockWait", "an input: the lock patience the roster is handed where a test sets none"),
+        ($"{Driver}/Agents/AccountWalkGateTests.cs: TimeSpan Short", "an input: a start's patience for its account's lock, short so that a held lock runs it out"),
+        ($"{Driver}/Agents/AcpBackgroundTests.cs: TimeSpan Look", "an input: how often the session reads its quest again while it waits on background work"),
+        ($"{Driver}/Agents/AcpBackgroundTests.cs: TimeSpan Minute", "an input: the background look's pace at the product's default, spent on the case's own moved clock"),
+        ($"{Driver}/Agents/AcpBackgroundTests.cs: TimeSpan Soon", "an input: the session's quiet wait before it goes on, which a case also states as its claim"),
+        ($"{Driver}/Agents/OutputTailTests.cs: TimeSpan Fast", "an input: the tail's own polling interval"),
+        ($"{Driver}/Events/ChainTests.cs: TimeSpan LookDeadline", "an input: a topic's deadline, spent on the test's own clock"),
+        ($"{Driver}/Events/ChainTests.cs: TimeSpan RequestsDeadline", "an input: a topic's deadline, spent on the test's own clock"),
+        ($"{Driver}/Events/ChangeWatchTests.cs: TimeSpan Deadline", "an input: a topic's deadline, spent on the test's own clock"),
+        ($"{Driver}/Events/SessionWatchTests.cs: TimeSpan Pace", "an input: the watch's pace, spent on the test's own clock"),
+        ($"{Driver}/Loop/BrainstormBoundsTests.cs: TimeSpan Minute", "an input: a brainstorm's minute shrunk, which the product spends"),
+        ($"{Driver}/Loop/MeetingTests.cs: TimeSpan Second", "an input: a meeting's minute shrunk, which the product spends"),
+        ($"{Driver}/Loop/MeetingTests.cs: TimeSpan Tenth", "an input: a meeting's minute shrunk, which the product spends"),
+        ($"{Driver}/Workflows/GraphPressTests.cs: WaitAsync(TimeSpan.FromMilliseconds(20))", "a window in which nothing happens: past the bound the ask is no longer waited on, and the claim is that it says false"),
+        ($"{Driver}/Workflows/GraphPressTests.cs: WaitAsync(TimeSpan.FromMinutes(1))", "the product's own timeout argument on its pass asks, not a wait of the test's: its answer is read after the pass is done"),
+        ($"{Driver}/Workplace/RefWatchProcessTests.cs: TimeSpan Within", "an elapsed-time bound that states the claim: a judgement begun within a second of git's exit"),
+        ($"{Driver}/Workplace/SetAsideSlimTests.cs: TimeSpan Budget", "an input: the budget the keep's set-aside is handed"),
     ];
 
     /// <summary>What differs between the short bounds a scan found and the ones listed, each as a sentence.</summary>
-    internal static List<string> Differences(IReadOnlyDictionary<string, int> scanned, IReadOnlyDictionary<string, int> listed) =>
+    internal static List<string> Differences(IReadOnlyCollection<string> scanned, IReadOnlyCollection<string> listed) =>
     [
-        .. scanned.Where(each => !listed.ContainsKey(each.Key))
-            .Select(each => $"{each.Key} ({each.Value}) is shorter than Poll.Patience and is not listed: wait on Poll.Patience, or list it with its reason"),
-        .. listed.Where(each => !scanned.ContainsKey(each.Key)).Select(each => $"{each.Key} is listed ({each.Value}) and is not there now: take it off the list"),
-        .. scanned.Where(each => listed.TryGetValue(each.Key, out var count) && count != each.Value)
-            .Select(each => $"{each.Key} is there {each.Value} time(s) and the list says {listed[each.Key]}"),
+        .. scanned.Where(site => !listed.Contains(site))
+            .Select(site => $"{site} is shorter than Poll.Patience and is not listed: wait on Poll.Patience, or list it with its reason"),
+        .. listed.Where(site => !scanned.Contains(site)).Select(site => $"{site} is listed and is not there now: take it off the list"),
     ];
 
-    private static SortedDictionary<string, int> Table() =>
-        new(Listed.ToDictionary(each => each.Site, each => each.Count), StringComparer.Ordinal);
+    private static SortedSet<string> Table() => new(Listed.Select(each => each.Site), StringComparer.Ordinal);
 
     /// <summary>🔴 Every short fixed wait and every short private bound in the desktop tests is a listed one, or a wait on the shared patience.</summary>
     [Fact]
@@ -126,25 +118,29 @@ public sealed class ShortWaitsCensusTests
         Assert.Empty(Shorts("    private static readonly TimeSpan Never = TimeSpan.FromHours(1);"));
         Assert.Empty(Shorts("// await run.WaitAsync(TimeSpan.FromSeconds(10));\nvar quiet = 1; // TimeSpan Bound = TimeSpan.FromSeconds(10);"));
 
+        // Stand-in sources: each listed site once, then one more of a listed bound in its file (passes), a new file's bound (fails), a listed one gone.
         var listed = Table();
-        var scanned = new SortedDictionary<string, int>(listed, StringComparer.Ordinal);
-        var known = listed.First().Key;
-        Assert.Empty(Differences(scanned, listed));
-        Assert.Equal([$"{known} is there {scanned[known] + 1} time(s) and the list says {scanned[known]}"],
-            Differences(new SortedDictionary<string, int>(scanned) { [known] = scanned[known] + 1 }, listed));
-        Assert.Single(Differences(new SortedDictionary<string, int>(scanned) { [$"{Driver}/Loop/Planted.cs: WaitAsync(TimeSpan.FromSeconds(5))"] = 1 }, listed),
+        var known = listed.First();
+        var file = known[..known.IndexOf(": ", StringComparison.Ordinal)];
+        var bound = known[(file.Length + 2)..];
+        var source = bound.StartsWith("WaitAsync", StringComparison.Ordinal) ? $"await run.{bound};" : $"private static readonly {bound} = TimeSpan.FromSeconds(5);";
+        var stand = listed.Select(site => (File: site[..site.IndexOf(": ", StringComparison.Ordinal)],
+            Source: site[(site.IndexOf(": ", StringComparison.Ordinal) + 2)..] is var each && each.StartsWith("WaitAsync", StringComparison.Ordinal)
+                ? $"await run.{each};" : $"private static readonly {each} = TimeSpan.FromSeconds(5);")).ToList();
+        Assert.Empty(Differences(Bounds(stand), listed));
+        Assert.Empty(Differences(Bounds(stand.Append((file, source)).Append((file, source))), listed));
+        Assert.Single(Differences(Bounds(stand.Append(($"{Driver}/Loop/Planted.cs", "await run.WaitAsync(TimeSpan.FromSeconds(5));"))), listed),
             each => each.Contains("Planted.cs", StringComparison.Ordinal) && each.Contains("not listed", StringComparison.Ordinal));
-        scanned.Remove(known);
-        Assert.Single(Differences(scanned, listed), each => each.StartsWith(known, StringComparison.Ordinal) && each.Contains("take it off the list", StringComparison.Ordinal));
+        Assert.Single(Differences(Bounds(stand.Where(each => each.File != file || each.Source != source)), listed),
+            each => each.StartsWith(known, StringComparison.Ordinal) && each.Contains("take it off the list", StringComparison.Ordinal));
     }
 
     /// <summary>Each listed bound says why it is not a wait on a signal.</summary>
     [Fact]
     public void Each_listed_bound_says_why_it_is_not_a_wait_on_a_signal()
     {
-        foreach (var (site, count, reason) in Listed)
+        foreach (var (site, reason) in Listed)
         {
-            Assert.True(count > 0, $"{site} is listed with no count");
             Assert.False(string.IsNullOrWhiteSpace(reason), $"{site} says nothing of why it stays");
         }
 

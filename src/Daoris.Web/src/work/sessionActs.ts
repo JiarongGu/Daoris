@@ -53,7 +53,7 @@ const FRAME_ACTS = new Set<SessionActId>([
  * said in the catalogue's words. A code a later driver adds is said in the driver's own sentence.
  */
 const HELPER_REFUSALS = new Set([
-  'blank', 'too-long', 'agent', 'not-held', 'helper', 'reviewer', 'intake', 'gone', 'person', 'waits', 'past', 'approved', 'unread',
+  'blank', 'too-long', 'agent', 'not-held', 'helper', 'reviewer', 'intake', 'ask-daoris', 'gone', 'person', 'waits', 'past', 'approved', 'unread',
 ]);
 
 /** The codes a piece's ask answers by (COAGENT1b; the bridge's `PartnerAskWhy`), each said in the catalogue's words. */

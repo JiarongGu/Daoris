@@ -22,6 +22,7 @@ public sealed class DriverModuleHeldTests : DriverModuleBridge
         ["SESSION_WHERE"] = new { sessions = Array.Empty<object>() },
         ["SESSION_OPENINGS"] = new { ids = new[] { "a1b2c3d4" } },
         ["HEAVY_SLOT"] = new { repository = "engine" },
+        ["ROLES"] = new { },
         ["HELP_PROPOSALS"] = new { session = "a1b2c3d4" },
         ["TOOLS_LIST"] = new { },
         ["SUPERVISOR_WAITING"] = new { },
@@ -107,6 +108,8 @@ public sealed class DriverModuleHeldTests : DriverModuleBridge
 
         var at = DateTimeOffset.Parse("2026-10-01T08:00:00Z", System.Globalization.CultureInfo.InvariantCulture);
         trees.Recorded.Record(new LandedBranch("engine", "aurora", "feature/42-streamer", "main", "abc123", "landed1", "42", null, at));
+        // The landing's press tells its scope, one of the inputs the route declares (FOUNDATION1s).
+        StatePublisher.Publish(Bus, StateScopes.Landing);
         // What was held, at once; the look's answer, by event.
         var stale = JsonSerializer.SerializeToElement((await module.HandleMessageAsync(Request("SESSION_WHERE", payload, "where"), CancellationToken.None)).Data, Wire);
         Assert.Equal(JsonValueKind.Null, stale.GetProperty("sessions")[0].GetProperty("landed").ValueKind);
@@ -118,6 +121,72 @@ public sealed class DriverModuleHeldTests : DriverModuleBridge
         Assert.DoesNotContain(JsonSerializer.Serialize(Home).Trim('"'), told.Last().GetRawText(), StringComparison.OrdinalIgnoreCase);
 
         static JsonElement Row(JsonElement told) => told.GetProperty("answer").GetProperty("sessions")[0];
+    }
+
+    /// <summary>
+    /// FOUNDATION1s: an answer held at its inputs' versions is served with no work while they stand, and made again once one moves; a
+    /// version unknown (null) works at every ask, as a route declaring nothing does.
+    /// </summary>
+    [Fact]
+    public async Task A_held_answer_is_served_with_no_work_while_its_inputs_stand_and_made_again_when_one_moves()
+    {
+        var held = new HeldAnswers(Bus) { Patience = TimeSpan.FromSeconds(5) };
+        var version = "v1";
+        var works = 0;
+        Task<object?> Work(CancellationToken _) => Task.FromResult<object?>($"answer{Interlocked.Increment(ref works)}");
+
+        Assert.Equal("answer1", await held.AskAsync("k", "q", Work, () => version));
+        await held.LandedAsync("k");
+        Assert.Equal("answer1", await held.AskAsync("k", "q", Work, () => version));
+        await held.LandedAsync("k");
+        Assert.Equal(1, works);
+
+        version = "v2";
+        Assert.Equal("answer1", await held.AskAsync("k", "q", Work, () => version));
+        await held.LandedAsync("k");
+        Assert.Equal("answer2", await held.AskAsync("k", "q", Work, () => version));
+        await held.LandedAsync("k");
+        Assert.Equal(2, works);
+
+        Assert.Equal("answer2", await held.AskAsync("k", "q", Work, () => null));
+        await held.LandedAsync("k");
+        Assert.Equal(3, works);
+        Assert.Equal(2, held.Served);
+    }
+
+    /// <summary>
+    /// FOUNDATION1s: <c>SESSION_WHERE</c> declares the sessions, the landings and the clean-up as what its answer reads, so a change to
+    /// one of them makes it again, and any other change serves it held with no work.
+    /// </summary>
+    [Fact]
+    public async Task Where_is_made_again_on_its_declared_scopes_and_served_held_on_any_other()
+    {
+        var module = new DriverModule(Bus, Loop()) { Patience = TimeSpan.FromSeconds(5) };
+        var works = 0;
+        module.Held.BeforeWork = _ =>
+        {
+            Interlocked.Increment(ref works);
+            return Task.CompletedTask;
+        };
+        var request = Request("SESSION_WHERE", new { sessions = Array.Empty<object>() }, "where");
+
+        async Task Ask()
+        {
+            Assert.True((await module.HandleMessageAsync(request, CancellationToken.None)).Success);
+            await module.Held.LandedAsync(DriverModule.HeldKey(request));
+        }
+
+        await Ask();
+        await Ask();
+        Assert.Equal(1, works);
+
+        StatePublisher.Publish(Bus, StateScopes.Browser | StateScopes.Tools);
+        await Ask();
+        Assert.Equal(1, works);
+
+        StatePublisher.Publish(Bus, StateScopes.Sweep);
+        await Ask();
+        Assert.Equal(2, works);
     }
 
     /// <summary>A press overtakes the work under way: the ask after it begins its own, and an older work landing late moves nothing.</summary>
