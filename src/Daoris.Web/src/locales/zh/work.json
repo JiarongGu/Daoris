@@ -346,6 +346,7 @@
   "work.sitting.RepositoryBusy_treeThisLook": "排在委托 `#{{other}}` 之后：这一轮查看中，它会进入 `#{{quest}}` 要回到的工作树——每个工作树同时只有一个会话。",
   "work.sitting.RepositoryBusy_repository": "会话 `{{session}}` 正在受托方的仓库中运行——每个仓库同时只有一个会话，因为仓库的根目录就是它唯一的工作树。那里的会话各自开出工作树后，就能并行运行。",
   "work.sitting.RepositoryBusy_queued": "在受托方的仓库中排在委托 `#{{other}}` 之后——先到先办，一次一个。",
+  "work.sitting.RepositoryBusy_overlaps": "等待委托 `#{{other}}`：两者都涉及 {{paths}}。那项工作集成之后，它才开始。",
   "work.sitting.RepositoryBusy_repositoryOpening": "排在委托 `#{{other}}` 之后：它正在受托方的仓库中启动——每个仓库同时只有一个会话，因为仓库的根目录就是它唯一的工作树。",
   "work.sitting.Waiting_asked": "在等 `#{{other}}`（已向 `{{to}}` 提出）——得到答复后，它会在同一个工作树中继续。",
   "work.sitting.Waiting_unreadRunning": "在等 `#{{other}}`：`{{to}}` 已将它标为完成，它的证据会在会话 `{{session}}` 停下时读取——找到证据后，它会在同一个工作树中继续。",

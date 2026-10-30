@@ -1095,6 +1095,16 @@ public sealed class Driver(
         // carries the quest on in that tree rather than building its work again in a new one. No git starts where no such quest is.
         var handed = snapshot;
         snapshot = await Stages.TimeAsync("committed", () => CommittedWork.LookAsync(handed, CommittedWork.CountAsync, ct)).ConfigureAwait(false);
+        // INTEGRATE1l (the integration design §9): what each running unit changed, one git read per running session, and the quests whose
+        // integration request is open, for the planner's comparison at a start; two running units changing one path are each told once.
+        var committedLook = snapshot;
+        var integrating = config.Landings.Values.Concat(config.WorkspaceLandings.Values).Any(rule => rule.Integrate is not null)
+            ? new IntegrationStore(home).Open().Select(request => request.Quest).OfType<string>().ToHashSet(StringComparer.OrdinalIgnoreCase)
+            : new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        snapshot = await Stages.TimeAsync("overlaps", () => WorkOverlaps.LookAsync(committedLook, integrating, WorkOverlaps.DiffAsync, ct)).ConfigureAwait(false);
+        var overlapLook = snapshot;
+        await Stages.TimeAsync("overlaps-told", () => WorkOverlaps.TellAsync(home, overlapLook, async (session, text, key, token) =>
+            await service.SayAsync(session, text, ct: token, from: DaorisWords.From, key: key, running: true).ConfigureAwait(false), ct)).ConfigureAwait(false);
         Context.Harnesses.Look(snapshot.Started, mark);
 
         // The ask's channel (SESSONE2b, D167 point 7; the co-working design §2.3): what is new for each line of work on an ask reaches

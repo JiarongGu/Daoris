@@ -158,6 +158,12 @@ public sealed record QuestView(string Id, string From, string To, string Title, 
     /// </summary>
     public string? Weight { get; init; }
 
+    /// <summary>
+    /// The paths its publisher declared it touches (INTEGRATE1l): repository-relative globs a start compares with the repository's other
+    /// open work (<see cref="PathOverlap"/>). Empty for none, and from a host before the field.
+    /// </summary>
+    public IReadOnlyList<string> Paths { get; init; } = [];
+
     /// <summary>The quest's name where one is shown (SESSUX1j): its short title, else its title.</summary>
     public string Name => Short is { Length: > 0 } named ? named : Title;
 

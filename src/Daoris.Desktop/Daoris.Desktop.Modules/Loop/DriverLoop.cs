@@ -434,7 +434,7 @@ public sealed class DriverLoop(
     /// </summary>
     public static object? SaidShown(SittingFact? said) => said is null
         ? null
-        : new { said.Code, said.Cap, said.Session, said.Quest, said.Repository, said.Environment, said.State };
+        : new { said.Code, said.Cap, said.Session, said.Quest, said.Repository, said.Environment, said.State, said.Paths };
 
     /// <summary>
     /// One wait as the tick hands it to the page (UX6d, D150 §6.2): starts held because every account they may use is
