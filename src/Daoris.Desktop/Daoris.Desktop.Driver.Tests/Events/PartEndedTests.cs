@@ -71,6 +71,28 @@ public sealed class PartEndedTests
         Assert.Equal(DateTimeOffset.FromUnixTimeMilliseconds(1_761_800_000_000), chat.At);
     }
 
+    /// <summary>
+    /// FOUNDATION1 l-iii: <c>session/ended</c> keeps the ends the look drained and its D101 fields, with the <c>reason</c> and <c>class</c> the one
+    /// judge gives; the look's own flags refine the class, since only it knows whose decision a stop was.
+    /// </summary>
+    [Theory]
+    [InlineData("failed", false, false, false, "ended.exit", "failed")]
+    [InlineData("completed", false, false, false, "ended.done", "completed")]
+    [InlineData("stopped", true, false, false, "ended.stopped", "stopped-person")]
+    [InlineData("failed", false, true, false, "ended.exit", "limited")]
+    [InlineData("failed", false, false, true, "ended.choice-not-offered", "refused-choice")]
+    [InlineData("failed", false, false, false, null, "failed")]
+    public void The_hook_s_frame_carries_the_reason_and_class_the_judge_gives(string state, bool byPerson, bool limit, bool notOffered, string? reason, string expected)
+    {
+        var ended = new SessionEnded("s1", "Engine", state, byPerson, "a note", Quest: "q1", Adapter: "claude-code") { Limit = limit, NotOffered = notOffered, Reason = reason };
+
+        var frame = System.Text.Json.JsonSerializer.SerializeToNode(HookFrames.Ended(ended))!.AsObject();
+
+        Assert.Equal((reason, expected), (frame["reason"]?.GetValue<string>(), frame["class"]!.GetValue<string>()));
+        Assert.Equal(["session", "quest", "repository", "state", "adapter", "account", "byPerson", "note"], frame.Select(each => each.Key).Take(8));
+        Assert.Equal(reason, SessionEnded.ReasonOf([new NotePart { Code = reason }, new NotePart { Code = "account.cooling" }]));
+    }
+
     /// <summary>Every <c>ended.*</c> code of <see cref="NoteCodes"/> is in the class table or says it takes its class from the state, and the table names no code that is gone.</summary>
     [Fact]
     public void The_class_table_matches_the_note_codes_both_ways()

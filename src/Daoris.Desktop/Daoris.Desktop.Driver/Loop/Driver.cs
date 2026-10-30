@@ -3144,7 +3144,12 @@ public sealed class Driver(
                             : new SessionEnded(
                                 sessionId, quest.To, conclusion.State,
                                 ByPerson: stop is { ByPerson: true }, conclusion.Note,
-                                Quest: quest.Id, Adapter: adapter.Name, Account: selection.Profile) { Limit = limited, NotOffered = notOffered || modelRefused });
+                                Quest: quest.Id, Adapter: adapter.Name, Account: selection.Profile)
+                            {
+                                Limit = limited,
+                                NotOffered = notOffered || modelRefused,
+                                Reason = SessionEnded.ReasonOf(conclusion.Parts),
+                            });
                 }).ConfigureAwait(false);
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
