@@ -139,6 +139,7 @@
   "projects.tab.branches": "分支",
   "projects.tab.history": "历史",
   "projects.tab.setup": "配置",
+  "projects.tab.integration": "集成",
   "projects.tab.workflow": "工作流",
   "projects.git.reading.branches": "正在读取 {{repository}} 的分支…",
   "projects.git.reading.history": "正在读取 {{repository}} 的历史…",

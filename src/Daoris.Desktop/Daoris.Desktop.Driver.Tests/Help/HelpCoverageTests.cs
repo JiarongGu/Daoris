@@ -102,6 +102,11 @@ public sealed partial class HelpCoverageTests
         + "and is the person's own press (D192): no proposal names `WORKFLOW_VERIFY`; Ask Daoris can name `daoris-driver verify` and the "
         + "run's Workflow view, where the verdict shows.";
 
+    private const string IntegrationActs =
+        "an integration's request, drop and recheck are the owner's cards (D156): they admit or drop a request the line's run then moves, "
+        + "which no proposal names (`INTEGRATE` is a Person route); Ask Daoris can name `daoris-driver integrate` and the repository's "
+        + "Integration tab, where each act shows.";
+
     private const string IntegrationDeclaration =
         "accepting a repository's integration declaration by its blob is what lets its generated-file writers, line rules and scratch "
         + "run, the person's door alone (D156), and an agent never lowers the person's part (D157 point 10): no proposal names "
@@ -988,6 +993,8 @@ public sealed partial class HelpCoverageTests
         ("projects", "useSetLanded", null, new Exempt(LandedRoute)),
         // INTEGRATE1d: the integration declaration's Accept and Withdraw, beside the landed route on a repository's Setup.
         ("projects", "useAcceptIntegration", null, new Exempt(IntegrationDeclaration)),
+        // INTEGRATE1h: the Integration tab's *Drop* and *Check again*, the owner's acts on a repository's integration.
+        ("projects", "useIntegrate", null, new Exempt(IntegrationActs)),
         // FABRIC-PIPELINE1d part 5: *Verify…*, on a repository's Workflow tab beside the landed route's gates.
         ("projects", "useVerify", null, new Exempt(VerifyRun)),
         // FABRIC-PIPELINE1b: *Sessions' checks*, beside the heavy gates on a repository's Setup.
