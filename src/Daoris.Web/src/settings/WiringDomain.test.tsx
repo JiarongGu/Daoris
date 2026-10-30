@@ -589,7 +589,7 @@ describe('Settings → This Daoris', () => {
     expect(scope.getByText('removed only by your press')).toBeTruthy();
     expect(scope.getByRole('button', { name: 'Free up space…' })).toBeTruthy();
     // KEEP1d: the rules the person sets carry their editor and their terminal twin, history's age among them (KEEP1g).
-    expect(scope.getAllByRole('button', { name: 'Change…' })).toHaveLength(4);
+    expect(scope.getAllByRole('button', { name: 'Change…' })).toHaveLength(5);
     expect(card.textContent).toContain('daoris driver keep history …');
     expect(card.textContent).toContain('daoris driver keep set-aside …');
     await vi.waitFor(() => expect(invoke.mock.calls.some(([, type]) => type === 'SYSTEM_SPACE')).toBe(true));
