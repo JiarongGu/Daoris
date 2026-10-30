@@ -58,6 +58,7 @@
 
   "docs": {
     "changelog": "CHANGELOG.md",
+    "graceDays": 7,
     "tracked": [
       { "document": "docs/guide/README.md", "describes": ["src/Daoris.Cli/src", "src/Daoris.Cli/bin"] },
       { "document": "src/Daoris.Service/README.md", "describes": ["src/Daoris.Service/Daoris.Service.Core", "src/Daoris.Service/Daoris.Service.Http", "src/Daoris.Service/Daoris.Service.Mcp"] },

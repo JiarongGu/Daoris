@@ -43,7 +43,7 @@ public static class QuestsStateSlice
     ];
 
     /// <summary>What the service answers of a quest that no view reads from the list: what was read of its evidence.</summary>
-    public static readonly IReadOnlyList<string> PulledOnly = ["awaitsEvidence", "evidence"];
+    public static readonly IReadOnlyList<string> PulledOnly = ["awaitsEvidence", "evidence", "weight"];
 
     /// <summary>What each file a quest or an ask carries is pushed with, as the service answers it.</summary>
     public static readonly IReadOnlyList<string> FileFields = ["name", "sha256", "bytes"];
