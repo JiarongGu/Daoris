@@ -24,10 +24,7 @@ public sealed class KnowledgeConnectorStartTests : IDisposable
         GitSeed.Discard(_root);
     }
 
-    private static string? DevelopmentHost() =>
-        KnowledgeConnector.Candidates(null, null, WorkspaceRoot.Folder)
-            .Where(path => path.Contains(Path.Combine("Daoris.Service.Mcp", "bin")))
-            .FirstOrDefault(File.Exists);
+    private static string DevelopmentHost() => RealKnowledgeServer.Executable();
 
     private static ProcessStartInfo Start(string command, IEnumerable<KeyValuePair<string, string>> variables)
     {
@@ -51,7 +48,7 @@ public sealed class KnowledgeConnectorStartTests : IDisposable
     [Fact]
     public async Task The_host_answers_initialize_under_the_entrys_own_variables_alone()
     {
-        var host = DevelopmentHost() ?? throw new InvalidOperationException("build src/Daoris.Service/Daoris.Service.Mcp first");
+        var host = DevelopmentHost();
         var home = Directory.CreateDirectory(Path.Combine(_root, "home")).FullName;
         var entry = KnowledgeConnector.Offer(
             host, home, WorkspaceRoot.Folder, new Dictionary<string, string?>());
@@ -80,7 +77,7 @@ public sealed class KnowledgeConnectorStartTests : IDisposable
     [Fact]
     public async Task The_host_started_without_the_home_exits_2_and_answers_nothing()
     {
-        var host = DevelopmentHost() ?? throw new InvalidOperationException("build src/Daoris.Service/Daoris.Service.Mcp first");
+        var host = DevelopmentHost();
 
         using var process = Process.Start(Start(host, []))!;
         using var limit = new CancellationTokenSource(TimeSpan.FromSeconds(60));

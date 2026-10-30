@@ -57,6 +57,33 @@ export interface RunStep {
   acts?: string[] | null;
   /** The person's word on a graph run's node, kept and not applied yet (FABRIC-CUTOVER1f); none where none waits. */
   asked?: NodeWordKept | null;
+  /**
+   * The requests the work's sessions made (INTEGRATE1o part o2; the integration design §17.3), on the work step only: the quests they
+   * published and the helpers they asked. None where there are none, and from a shell before it.
+   */
+  requests?: RunRequest[] | null;
+}
+
+/** What a request inside the work is: a quest a session published, or a helper it asked (a request to an agent). */
+export type RunRequestKind = 'quest' | 'agent';
+
+/** One request the work's sessions made, as the driver draws it; its words are the page's. */
+export interface RunRequest {
+  /** One of `RunRequestKind`. */
+  kind: string;
+  /** The quest's id, or the helper's session. */
+  id: string;
+  /** The repository the quest was asked of; the helper's agent. */
+  to: string;
+  /** A quest's status lowercased (`open`, `taken`, `done`, `declined`); a helper's `working`, `done`, `failed` or `stopped`. */
+  state: string;
+  /** The session of the work that made it. */
+  session?: string | null;
+  /** Whether a session of the work waits on its answer. */
+  awaits: boolean;
+  /** What its close said, a done's note or a decline's reason, as written. */
+  words?: string | null;
+  at?: string | null;
 }
 
 /** What the person may say of a graph run's node (FABRIC-CUTOVER1f): pass it over for the run, or stop it. */

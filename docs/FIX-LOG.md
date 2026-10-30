@@ -12395,3 +12395,27 @@ did, with the old heuristic as the last resort.
 **Verification.** Launched with no environment at all: right port, right family. The family rehearsal
 re-ran after the change, 22/22. No store pollution had occurred — no request ever reached the
 mis-rooted instance.
+
+## The knowledge-server process tests needed the service gate to have run first (2026-10-30)
+
+**Root cause.** Four driver process tests found `daoris-knowledge` only in the service tree's `bin`, an undeclared build dependency; a CI stage that kept the service verdict never built it.
+
+**Fix.** `RealKnowledgeServer` builds its own copy under `obj/knowledge-host` through `RealServiceHost.BuildAsync`; the tests start that.
+
+**Verification.** With the service tree's `bin` absent, the three classes pass (11 tests).
+
+## A CI run for a stage kept running every gate after one failed (2026-10-30)
+
+**Root cause.** `gateCi` always ran with `keepGoing`, so a stage's run, which needs every gate green, held the gate tree for an hour after `driver-process` and `rehearse-family` had failed.
+
+**Fix.** A `--stage` run ends at its first `FAIL` (`endsStageRun`; a `FLAKE` does not): it ends the running gates' trees, starts none, releases the lock and names the failure and the gates not run. A plain run is unchanged.
+
+**Verification.** Two tool tests: stage ends, plain runs on; the verdict helper.
+
+## The family rehearsal's stand-in phase failed four acp-stub checks (2026-10-30)
+
+**Root cause.** Each door drives in a home of its own over one service. The stub's resume fallback leaves its words waiting for the person, marked unable in its home alone; the acp-stub home planned them on `stub`, held it as not installed, and queued every later quest behind it.
+
+**Fix.** Section 18a takes back, by the person's press, the words a case leaves waiting (`takeBackHeld`).
+
+**Verification.** `rehearse:family` 448/448; red before, the same four failures.

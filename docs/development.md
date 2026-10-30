@@ -366,7 +366,7 @@ two rehearsals it owes a stage (below), in the same
 `local/gate-tree`, holding its lock, and never touches the main checkout's tree. It runs only the gates that commit's
 verdicts lack. A gate runs again when it has no verdict, when a path changed since its last pass reaches it, or when its
 last verdict failed, whatever changed since. Every other gate keeps the verdict that stands, and the first run on a machine
-runs every gate. The records are not forgiven here as the stage forgives them. A run keeps going past a failure, runs at
+runs every gate. The records are not forgiven here as the stage forgives them. A plain run keeps going past a failure, for the whole picture; a stage's run (`--stage`) ends at its first failed gate (one that failed again alone, not a sighting that passed alone): it starts no gate, ends the running ones with their trees, lets the gate tree go and says nothing was staged. A run runs at
 below normal priority with its Process lane at normal, and measures the machine before its gates start: the light lane
 runs five wide when the machine is idle, three otherwise. It is scheduled by memory: a `Process` half waits only for the
 fast half that builds its project, and the heavy light gates run beside it, each once its free memory allows (MEMGATE1).

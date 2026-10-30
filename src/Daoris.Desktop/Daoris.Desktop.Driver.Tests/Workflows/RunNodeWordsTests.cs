@@ -59,6 +59,38 @@ public sealed class RunNodeWordsTests : NodeRunFixture
         Assert.Equal(NodeStates.Skipped, RunStatus("go").State);
     }
 
+    /// <summary>
+    /// INTEGRATE1o part o2 (§17.3): a quest the run's session published and the other repository declined holds <c>work.requests</c> active, never
+    /// failed, and the landing behind it blocked; the person's <i>Pass over…</i> with words is the run's existing skip on the kind, and the landing
+    /// begins at the next pass.
+    /// </summary>
+    [Fact]
+    public async Task A_declined_request_holds_the_work_until_the_person_passes_it_over_with_words()
+    {
+        BoundTo("""
+            {"schemaVersion":2,"entries":["claimed"],"end":"handed",
+             "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},
+                      {"id":"requests","kind":"work.requests","version":1,"reach":"observed"},
+                      {"id":"handed","kind":"handed","version":1,"reach":"observed"}],
+             "wires":[{"id":"c>r","kind":"after","from":"claimed","to":"requests"},{"id":"r>h","kind":"after","from":"requests","to":"handed"}]}
+            """);
+        _branchTips["daoris/s1"] = Tip1;
+        var serving = new SessionRecord("s1", "engine", "completed") { Quest = RunId };
+        var declined = RunHome.Quest("q9", "Declined", to: "other") with { PublishedBy = "s1", Note = "not ours" };
+        _units = [.. QuestUnits.Read([RunHome.Quest(RunId, "Done"), declined], [serving]), RunHome.Branch("unit-b1", "daoris/s1", Opened, [RunId])];
+        var runtime = Runtime();
+        await RunPassAsync(runtime);
+        await RunPassAsync(runtime);
+        Assert.Equal((NodeStates.Active, NodeStates.Blocked), (RunStatus("requests").State, RunStatus("handed").State));
+
+        var worded = Word("requests", NodeWordActs.Skip, "the other repository will not take it; I will do it myself");
+        Assert.True(worded.Done, worded.Refused);
+        await RunPassAsync(runtime, whole: false);
+
+        Assert.Equal((NodeStates.Skipped, NodeSource.Person), (RunStatus("requests").State, RunStatus("requests").By));
+        Assert.Equal(NodeStates.Active, RunStatus("handed").State);
+    }
+
     /// <summary>A skip passes a node over with the person's words, and none were given: refused at the door, nothing kept.</summary>
     [Theory]
     [InlineData(null)]

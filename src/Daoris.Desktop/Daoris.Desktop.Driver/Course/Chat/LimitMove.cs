@@ -28,6 +28,39 @@ internal sealed class LimitMove(ChatContext context, IChatRunning runner, ChatHa
     /// <summary>What each move came to, by the session it moved from: a test hears it; no person reads it.</summary>
     public event Action<string, StartedFrom>? Moved;
 
+    /// <summary>What the course answered each limit move, live or ended, by session (FOUNDATION1h branch 5): a test hears it; no person reads it.</summary>
+    internal event Action<string, LineCourse>? Decided;
+
+    /// <summary>The account rule's answer where no account of the agent has room: the course holds the words and opens nothing.</summary>
+    private static readonly LineAnswer NoRoom = new LineAnswer.Hold(NextHold.Cooling, LineRepair.None);
+
+    /// <summary>
+    /// The facts a limit move reads into the course (FOUNDATION1h branch 5, the foundation design §3.1): a conversation between its parts, its
+    /// words, whether its account was picked and the account rule's answer as the walk gave it, with its actor's later choice on another agent
+    /// where one can run (D212's differences 4 and 10: a conversation never takes its own account for an automatic part, except where lost).
+    /// </summary>
+    private LineCourse Decide(
+        string sessionId, PriorSession prior, bool isHelp, CourseTrigger trigger, IReadOnlyList<SaidWordView> waiting, bool picked, LineAnswer answer,
+        IReadOnlyList<ActorEffective>? order, bool restarted, bool limited = true, bool ended = false)
+    {
+        List<CourseWord> words = [.. waiting.Select(word => new CourseWord(word.Id ?? "", BriefedMove.AuthorOf(word), word.Key))];
+        // A restart's go-on carries its own word, which the record's waiting words need not name.
+        if (restarted && !words.Any(word => DaorisKeys.IsRestart(word.Key)))
+        {
+            words.Add(new CourseWord("", CourseAuthor.Daoris, DaorisKeys.Restart(sessionId, "restart")));
+        }
+
+        var facts = new CourseFacts(
+            new CourseHead(
+                prior.State, Limited: limited, Role: prior.Actor ?? (isHelp ? "ask-daoris" : "chat"), Choice: prior.Choice, Adapter: prior.Adapter,
+                Profile: prior.Profile, Conversation: true, AskDaoris: isHelp, Waiting: words, Session: sessionId, Tree: prior.Tree),
+            ended ? CourseBoundary.ProcessExited : CourseBoundary.BetweenTurns,
+            Account: new CourseAccount(
+                Answer: answer, Picked: picked, Later: order is { Count: > 0 } later ? new CourseLater(later[0].Agent) : null),
+            Rules: new CourseRules(Runner: true));
+        return CourseDecision.Decide(facts, trigger);
+    }
+
     /// <summary>
     /// The conversations' move record (FOUNDATION1f-ii part a): the live move's record is written there, and the shell's come-up takes a dead
     /// shell's moves up through it. A test hands one over a store of its own run.
@@ -106,37 +139,48 @@ internal sealed class LimitMove(ChatContext context, IChatRunning runner, ChatHa
         // The account the walk offers now, the cooling one passed (D197): where it is the same, or none, nothing has room, and it stays.
         // FOUNDATION1a-ii (D205 §3.5(d)): an account the person picked is never moved off, at a limit as at a go-on: its conversation waits
         // for it, its words with it, and the look's stage wakes it at that account's reset.
-        if (context.Conversations.PickedOn(sessionId, prior.Profile))
-        {
-            if (!chat.Turns.Limited) Stays?.Invoke(sessionId, chat, ranOn, prior.Profile);
-            return new StartedFrom(null, false, null, $"you picked `{prior.Profile}` for `{sessionId}`, so it waits on it.");
-        }
-
-        var workspace = isHelp ? prior.Workspace : await WorkspaceOfAsync(prior.Repository, ct).ConfigureAwait(false);
+        var picked = context.Conversations.PickedOn(sessionId, prior.Profile);
+        var workspace = picked || isHelp ? prior.Workspace : await WorkspaceOfAsync(prior.Repository, ct).ConfigureAwait(false);
         // The one walk (FOUNDATION1a-iii, as LIMITSWITCH2 made the ended move): the account judged here is the one the new part opens on,
         // handed the selection rather than asking the roster again, so a second walk neither names another account nor counts a start
         // never made. Ask Daoris's room places itself through its own walk, which counts, so this one judges only there.
-        var selection = await context.Harnesses
-            .SelectAsync(agent.Name, config, workspace, null, StartKind.Conversation, ct, counts: !isHelp).ConfigureAwait(false);
+        var selection = picked
+            ? null!
+            : await context.Harnesses
+                .SelectAsync(agent.Name, config, workspace, null, StartKind.Conversation, ct, counts: !isHelp).ConfigureAwait(false);
         Elsewhere? elsewhere = null;
-        if (!selection.Allowed || string.Equals(selection.Profile ?? "", prior.Profile ?? "", StringComparison.OrdinalIgnoreCase))
+        var answer = picked ? NoRoom : new LineAnswer.Elsewhere(selection, NextHold.Ready);
+        if (!picked && (!selection.Allowed || string.Equals(selection.Profile ?? "", prior.Profile ?? "", StringComparison.OrdinalIgnoreCase)))
         {
             // Counted as chosen, and none chosen after all: its count is given back.
             if (selection.Allowed) context.Harnesses.Release(selection.Number);
             // LIMITGOON2 (D205 §3.5(e)): no account of its agent has room, so its line goes on with its actor's next choice on another
             // agent, where the person allowed one; else it waits, said why.
             elsewhere = await ElsewhereAsync(prior, ranOn, isHelp, config, workspace, ct).ConfigureAwait(false);
-            if (elsewhere.Order is null)
-            {
-                // LIMITRESUME1c: it waits for its limit, its words with it, and the look's stage wakes it (D206 §3.5).
-                if (!chat.Turns.Limited)
-                {
-                    context.Note(sessionId, elsewhere.Stays!);
-                    Stays?.Invoke(sessionId, chat, ranOn, null);
-                }
+            answer = NoRoom;
+        }
 
-                return new StartedFrom(null, false, null, $"no other account of {agent.Name} has room, so `{sessionId}` waits on its own: {elsewhere.Why}");
+        // FOUNDATION1h branch 5 (the foundation design §3.1): the course decides for a limit's end from what was read above. An account the
+        // person picked, or the walk's own account, is no room, and another agent's choice is the course's later one; only a move opens, and
+        // where the course holds, the conversation waits as it did.
+        var course = Decide(sessionId, prior, isHelp, CourseTrigger.LimitEnd, prior.Waiting, picked, answer, elsewhere?.Order, restarted: false);
+        Decided?.Invoke(sessionId, course);
+        if (picked)
+        {
+            if (!chat.Turns.Limited) Stays?.Invoke(sessionId, chat, ranOn, prior.Profile);
+            return new StartedFrom(null, false, null, $"you picked `{prior.Profile}` for `{sessionId}`, so it waits on it.");
+        }
+
+        if (elsewhere is { Order: null })
+        {
+            // LIMITRESUME1c: it waits for its limit, its words with it, and the look's stage wakes it (D206 §3.5).
+            if (!chat.Turns.Limited)
+            {
+                context.Note(sessionId, elsewhere.Stays!);
+                Stays?.Invoke(sessionId, chat, ranOn, null);
             }
+
+            return new StartedFrom(null, false, null, $"no other account of {agent.Name} has room, so `{sessionId}` waits on its own: {elsewhere.Why}");
         }
 
         // The start the one walk counted, given back below unless the new part opens. Going on another agent, the walk over its actor's other
@@ -404,17 +448,19 @@ internal sealed class LimitMove(ChatContext context, IChatRunning runner, ChatHa
         var boxes = new LimitBoxes(context.Home);
         if (context.Closing || context.Holds(sessionId) || boxes.Read(sessionId) is not null) return null;
         var events = context.Events.After(sessionId, 0).Events;
-        var held = LimitHeld.Of(events);
-        if (held is null && !restarted && !switching) return null;
-        var moveWhy = ComposedWhy(held is not null, switching);
 
         var json = await context.Service.SessionRecordsJsonAsync(ct).ConfigureAwait(false);
         if (ServiceClient.ReadRecord(json, sessionId) is not { Teammate: false, Ask: null, Adapter: { Length: > 0 } ranOn } prior
-            || prior.Tree is not { Length: > 0 } tree || WordsNever.ContinuedIn(json, sessionId) is not null
-            || !await EndedLineAsync(prior, json, switching, ct).ConfigureAwait(false))
+            || prior.Tree is not { Length: > 0 } tree || WordsNever.ContinuedIn(json, sessionId) is not null)
         {
             return null;
         }
+
+        // FOUNDATION1g part c: the ended record's flag decides; its events give the words, and decide alone for a record an older build ended.
+        var held = LimitHeld.Of(events, prior.Limit);
+        if (held is null && !restarted && !switching) return null;
+        var moveWhy = ComposedWhy(held is not null, switching);
+        if (!await EndedLineAsync(prior, json, switching, ct).ConfigureAwait(false)) return null;
 
         var listed = SessionRecords.Parse(json).First(each => string.Equals(each.Id, sessionId, StringComparison.Ordinal));
         var isHelp = WordsNever.IsHelp(listed);
@@ -434,41 +480,55 @@ internal sealed class LimitMove(ChatContext context, IChatRunning runner, ChatHa
         // for the picked account alone, starts afresh there once it is ready and keeps the pick, and waits while it cools, so the walk
         // below is for a conversation with no pick.
         var onPick = context.Conversations.PickedOn(sessionId, prior.Profile);
-        if (onPick && lost is null)
+        // FOUNDATION1h branch 5 (the foundation design §3.1): each entry has its own trigger, a limit's end, a restart or a conversation proven
+        // lost (the conversation lost), and a switch off a cooling account (the words kept). The executor reads the walk, and the course
+        // decides; where it holds, the conversation waits as it did, and where it answers a move the executor opens as before.
+        var trigger = lost is not null || restarted ? CourseTrigger.ConversationLost
+            : held is not null ? CourseTrigger.LimitEnd
+            : CourseTrigger.WordsKept;
+        Elsewhere? elsewhere = null;
+        HarnessSelection selection = null!;
+        LineAnswer answer = NoRoom;
+        string? workspace = null;
+        if (!(onPick && lost is null))
+        {
+            workspace = isHelp ? prior.Workspace : await WorkspaceOfAsync(prior.Repository, ct).ConfigureAwait(false);
+            // The one walk (LIMITSWITCH2): the account judged here is the one the new part opens on, which is handed the selection rather than
+            // asking the roster again, so a second walk neither names another account nor counts a start never made.
+            // Ask Daoris's room places itself through its own walk, which counts, so this one judges only there.
+            selection = await context.Harnesses
+                .SelectAsync(agent.Name, config, workspace, onPick ? prior.Profile : null, StartKind.Conversation, ct, counts: !isHelp)
+                .ConfigureAwait(false);
+            var same = string.Equals(selection.Profile ?? "", prior.Profile ?? "", StringComparison.OrdinalIgnoreCase);
+            if (!selection.Allowed || (lost is null && same))
+            {
+                // Counted as chosen, and none chosen after all: its count is given back.
+                if (selection.Allowed) context.Harnesses.Release(selection.Number);
+                // FOUNDATION1a-iii (O2-13, as the live move has it, LIMITGOON2, D205 §3.5(e)): a limit ended it and every account of its agent
+                // cools, so it goes on with its actor's next choice on another agent where the person allowed one; else it waits. Never for a
+                // closed quest's session, or a go-on outside a limit, whose going elsewhere is the owner's to say (the design's §8).
+                if (!onPick && held is not null && !switching)
+                {
+                    elsewhere = await ElsewhereAsync(prior, ranOn, isHelp, config, workspace, ct).ConfigureAwait(false);
+                }
+            }
+            else
+            {
+                answer = same ? new LineAnswer.Resume() : new LineAnswer.Elsewhere(selection, NextHold.Ready, Switched: switching);
+            }
+        }
+
+        var course = Decide(
+            sessionId, prior, isHelp, trigger, prior.Waiting, onPick, answer, elsewhere?.Order, restarted, limited: held is not null, ended: true);
+        Decided?.Invoke(sessionId, course);
+        if (onPick && answer == NoRoom)
         {
             return new StartedFrom(null, false, OnPick, $"you picked `{prior.Profile}` for `{sessionId}`, so it waits on it.");
         }
 
-        var workspace = isHelp ? prior.Workspace : await WorkspaceOfAsync(prior.Repository, ct).ConfigureAwait(false);
-        // The one walk (LIMITSWITCH2): the account judged here is the one the new part opens on, which is handed the selection rather than
-        // asking the roster again, so a second walk neither names another account nor counts a start never made.
-        // Ask Daoris's room places itself through its own walk, which counts, so this one judges only there.
-        var selection = await context.Harnesses
-            .SelectAsync(agent.Name, config, workspace, onPick ? prior.Profile : null, StartKind.Conversation, ct, counts: !isHelp)
-            .ConfigureAwait(false);
-        Elsewhere? elsewhere = null;
-        if (!selection.Allowed
-            || (lost is null && string.Equals(selection.Profile ?? "", prior.Profile ?? "", StringComparison.OrdinalIgnoreCase)))
+        if (answer == NoRoom && elsewhere?.Order is null)
         {
-            // Counted as chosen, and none chosen after all: its count is given back.
-            if (selection.Allowed) context.Harnesses.Release(selection.Number);
-            if (onPick)
-            {
-                return new StartedFrom(null, false, OnPick, $"you picked `{prior.Profile}` for `{sessionId}`, so it waits on it.");
-            }
-
-            // FOUNDATION1a-iii (O2-13, as the live move has it, LIMITGOON2, D205 §3.5(e)): a limit ended it and every account of its agent
-            // cools, so it goes on with its actor's next choice on another agent where the person allowed one; else it waits. Never for a
-            // closed quest's session, or a go-on outside a limit, whose going elsewhere is the owner's to say (the design's §8).
-            if (held is not null && !switching)
-            {
-                elsewhere = await ElsewhereAsync(prior, ranOn, isHelp, config, workspace, ct).ConfigureAwait(false);
-            }
-
-            if (elsewhere?.Order is null)
-            {
-                return new StartedFrom(null, false, null, $"no other account of {agent.Name} has room, so `{sessionId}` waits on its own.");
-            }
+            return new StartedFrom(null, false, null, $"no other account of {agent.Name} has room, so `{sessionId}` waits on its own.");
         }
 
         // The start the one walk counted, given back unless the new part opens; going on another agent, the walk over its actor's other

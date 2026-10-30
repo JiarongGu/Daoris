@@ -14,8 +14,17 @@ public static class StartWith
     /// <param name="say">Hands a conversation its first message: false where nothing took it; throws <see cref="DriverException"/> where the files are too many.</param>
     public static async Task<StartedFrom> RunAsync(
         Func<CancellationToken, Task<ChatStart>> start, Func<string, string, IReadOnlyList<ChatUpload>, string?, bool> say,
-        string text, IReadOnlyList<ChatUpload> files, CancellationToken ct = default)
+        string text, IReadOnlyList<ChatUpload> files, CancellationToken ct = default, Action<LineCourse>? decided = null)
     {
+        // FOUNDATION1h branch 8 (the foundation design §3.1): a conversation with no record yet and the person's words as its first is the course's
+        // start for CourseTrigger.StartFrom, no refusal applying to a line that has none; the words are the person's own.
+        var course = CourseDecision.Decide(
+            new CourseFacts(
+                new CourseHead("new", Conversation: true, Waiting: [new CourseWord("first", CourseAuthor.Person)]), CourseBoundary.ProcessExited),
+            CourseTrigger.StartFrom);
+        decided?.Invoke(course);
+        if (course is not LineCourse.Start) return new StartedFrom(null, false, null, "no conversation starts with these words.");
+
         var started = await start(ct).ConfigureAwait(false);
         if (started.SessionId is not { } to) return new StartedFrom(null, false, null, started.Message);
 

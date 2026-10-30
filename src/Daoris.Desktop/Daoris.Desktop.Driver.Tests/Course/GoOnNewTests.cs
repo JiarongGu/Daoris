@@ -148,6 +148,56 @@ public sealed class GoOnNewTests : IDisposable
         Assert.Null(new NewSessionChoices(_home).Read("s1"));
     }
 
+    /// <summary>
+    /// 🔴 FOUNDATION1h branch 2 (the foundation design §3.1, C5-1.14): whether the words may go on in a new session is the course's one decision
+    /// for <see cref="CourseTrigger.GoOnNew"/>. Heard from the door, its answer is what kept the choice (a wait for the cooling account) or
+    /// what refused (a never, or a hold by its code); every sentence the person reads stays the door's.
+    /// </summary>
+    [Fact]
+    public async Task The_course_s_answer_is_what_keeps_the_choice_or_refuses_it()
+    {
+        var room = new Room(
+            [
+                Record("s1", said: ["w1"]),
+                Record("cl0sed00", quest: "q4", said: ["w1"]),
+                Record("e4rl1er0", state: "failed", quest: "q2", said: ["w1"]),
+                Record("l4t3r000", quest: "q2", minutes: 10),
+                Record("h4nd3d00", quest: null, kind: "chat", said: ["w1"]),
+                Record("m0v3d000", state: "working", quest: null, kind: "chat", minutes: 1, from: "h4nd3d00"),
+            ],
+            [Quest("q1", "Taken"), Quest("q2", "Taken"), Quest("q4", "Done")]);
+        var client = room.Client();
+        var heard = new List<LineCourse>();
+
+        var kept = await GoOnNew.AskAsync(client, _home, (_, _) => Cooling, "s1", T0, heard.Add);
+        Assert.True(kept.Sent);
+        var wait = Assert.IsType<LineCourse.Wait>(Assert.Single(heard));
+        Assert.Equal((CourseWaitWhy.AccountCooling, Cooling.Until), (wait.Why, wait.Until));
+        Assert.Equal(["w1"], new NewSessionChoices(_home).Read("s1")!.Said);
+
+        heard.Clear();
+        var closed = await GoOnNew.AskAsync(client, _home, (_, _) => Cooling, "cl0sed00", T0, heard.Add);
+        Assert.Equal((false, GoOnNew.Closed), (closed.Sent, closed.Why));
+        var hold = Assert.IsType<LineCourse.Hold>(Assert.Single(heard));
+        Assert.Equal((CourseHoldWhy.Refused, GoOnNew.Closed), (hold.Why, hold.Code));
+        Assert.Equal([CourseDoor.StartFrom], hold.Doors);
+
+        heard.Clear();
+        var later = await GoOnNew.AskAsync(client, _home, (_, _) => Cooling, "e4rl1er0", T0, heard.Add);
+        Assert.Equal((false, WordsNever.Superseded), (later.Sent, later.Why));
+        Assert.Equal(CourseNeverWhy.Superseded, Assert.IsType<LineCourse.Never>(Assert.Single(heard)).Why);
+
+        heard.Clear();
+        var continued = await GoOnNew.AskAsync(client, _home, (_, _) => Cooling, "h4nd3d00", T0, heard.Add);
+        Assert.Equal((false, WordsNever.Continued), (continued.Sent, continued.Why));
+        Assert.IsType<LineCourse.Never>(Assert.Single(heard));
+
+        heard.Clear();
+        var cold = await GoOnNew.AskAsync(client, _home, (_, _) => null, "s1", T0, heard.Add);
+        Assert.Equal((false, GoOnNew.NotCooling), (cold.Sent, cold.Why));
+        Assert.Equal(GoOnNew.NotCooling, Assert.IsType<LineCourse.Hold>(Assert.Single(heard)).Code);
+    }
+
     // ——— The kept choice.
 
     private static PriorSession Waiting(params string[] ids) =>

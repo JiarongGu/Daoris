@@ -156,11 +156,12 @@ public sealed class EndedLimitMoveStoreTests : IDisposable
     /// (or, with <paramref name="limited"/> off, ended as any turn ends), the words named waiting on its record; the ended move keeps its record
     /// under this shell's run, <c>run-shell</c>.
     /// </summary>
-    private World Ended(int opens, bool limited = true, Action<ChatMessage>? wire = null, params (string Id, string Text)[] waiting)
+    private World Ended(
+        int opens, bool limited = true, Action<ChatMessage>? wire = null, string? profile = "account-1", params (string Id, string Text)[] waiting)
     {
         var ledger = new ChatLedger { Opens = opens }.Register("engine", _root);
         var client = ledger.Client();
-        var words = ledger.Chat("c1", "stopped", "talk", _root, profile: "account-1");
+        var words = ledger.Chat("c1", "stopped", "talk", _root, profile: profile);
         foreach (var (id, text) in waiting) words.Say(id, text);
         var events = Events;
         events.Append("c1", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = "Earlier answered exchange." });
@@ -312,6 +313,65 @@ public sealed class EndedLimitMoveStoreTests : IDisposable
         Assert.Equal((why, why, (int?)bound, (int?)seen.Count), (move.Why, move.RecipeWhy, move.RecipeBound, move.RefusedBound));
         Assert.Equal(("daoris", "conversation", "brief"), (move.By, move.Executor, move.How));
         Assert.Empty(new LimitBoxes(_home).Pending());
+    }
+
+    private static string Said(LineCourse answer) => answer switch
+    {
+        LineCourse.Hold hold => $"hold:{hold.Why}",
+        LineCourse.Move move => $"move:{move.Why}:{move.By}:{move.Where.Source}",
+        _ => answer.GetType().Name,
+    };
+
+    /// <summary>
+    /// 🔴 FOUNDATION1h branch 5 (the foundation design §3.1, §14.2): the ended limit move decides through <c>CourseDecision.Decide</c>, each of
+    /// its four entries by its own trigger: a limit's end, a restart or a conversation proven lost (the conversation lost), and a switch off a
+    /// cooling account (the words kept). A move opens only where the course answers one; no account with room, or one the person picked
+    /// whose conversation is not lost, is the course's hold and nothing opens.
+    /// </summary>
+    [Theory]
+    [InlineData("limit", "move:Limit:Daoris:Settled", true)]
+    [InlineData("restart", "move:Resume:Daoris:Settled", true)]
+    [InlineData("lost", "move:Limit:Daoris:Settled", true)]
+    [InlineData("switch", "move:Retry:Daoris:Settled", true)]
+    [InlineData("none", "hold:Stays", false)]
+    [InlineData("pick", "hold:Stays", false)]
+    public async Task The_ended_move_asks_the_course_by_its_entry_and_only_a_move_opens(string what, string course, bool opens)
+    {
+        var world = Ended(2, limited: what is not ("restart" or "switch"), profile: what == "none" ? null : "account-1", waiting: ("w1", "Make it fast."));
+        using var c = world.Client;
+        if (what == "pick") world.Context.Conversations.Pick("c1", "account-1");
+        var decided = new List<(string Session, LineCourse Answer)>();
+        world.Limit.Decided += (session, answer) => decided.Add((session, answer));
+
+        var moved = what switch
+        {
+            "lost" => await world.Limit.MoveEndedAsync("c1", new ContinueReason("session-not-found", "it is gone"), Config(), null),
+            "switch" => await world.Limit.MoveEndedAsync("c1", lost: null, Config(), null, switching: true),
+            _ => await world.Limit.MoveEndedAsync("c1", lost: null, Config(), null, restarted: what == "restart"),
+        };
+
+        Assert.Equal(opens, moved?.SessionId is not null);
+        var (session, heard) = Assert.Single(decided);
+        Assert.Equal(("c1", course), (session, Said(heard)));
+    }
+
+    /// <summary>
+    /// 🔴 Where the ended move finds nothing to move for a conversation its limit held and proven lost, the course's lost answer is no briefed
+    /// move in its place: the caller's fall-back to the briefed move is the caller's own decision (<c>BriefedPress</c> or its own trigger).
+    /// </summary>
+    [Fact]
+    public void A_lost_conversation_with_no_room_is_no_briefed_move_in_the_limit_moves_place()
+    {
+        var head = new CourseHead(
+            "stopped", Limited: true, Role: "chat", Adapter: "talk", Profile: "account-1", Conversation: true, Session: "c1",
+            Waiting: [new CourseWord("w1", CourseAuthor.Person)], Tree: "tree");
+        var none = new LineAnswer.Hold(NextHold.Cooling, LineRepair.None);
+
+        var answer = CourseDecision.Decide(
+            new CourseFacts(head, CourseBoundary.ProcessExited, Account: new CourseAccount(Answer: none), Rules: new CourseRules(Runner: true)),
+            CourseTrigger.ConversationLost);
+
+        Assert.IsNotType<LineCourse.Move>(answer);
     }
 
     /// <summary>

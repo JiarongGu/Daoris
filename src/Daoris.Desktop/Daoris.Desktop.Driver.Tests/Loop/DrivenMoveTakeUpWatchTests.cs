@@ -43,6 +43,76 @@ public sealed class DrivenMoveTakeUpWatchTests : IDisposable
         store.Write("probe", write => write.Execute("UPDATE store_runs SET started = 1 WHERE run = $run", ("$run", run)));
     }
 
+    /// <summary>A dead loop's carry-on move standing for each of <paramref name="lines"/>, in order, its run declared dead.</summary>
+    private void LeaveDead(string run, params string[] lines)
+    {
+        var dying = new MoveStore(_home, () => StoreSettled.Yes, run: run, kind: StoreProcess.Host);
+        foreach (var line in lines)
+        {
+            var decision = CarryOnRecord.Decision(new ContinuedFrom(line, HandOverWhy.Retry, HandOverBy.Daoris), "stub", null)!;
+            Assert.NotNull(dying.Decide(decision).Claim);
+        }
+
+        Die(run);
+    }
+
+    private string Configured()
+    {
+        var config = DaorisHome.Entry(_home, HomeEntry.DriverConfig);
+        File.WriteAllText(config, """{ "drivable": ["engine"], "adapter": "stub", "pollSeconds": 60, "trees": ["engine"] }""");
+        return config;
+    }
+
+    private async Task<DriverWatch> LookedAsync(DriverWatch watch, Func<bool> done, Func<string> said)
+    {
+        var watching = Task.Run(() => watch.RunAsync((_, _) => Task.CompletedTask, onError: null, _closing.Token));
+        try
+        {
+            await Poll.Until(done, said, Poll.Patience);
+        }
+        finally
+        {
+            await _closing.CancelAsync();
+            try { await watching; } catch (OperationCanceledException) { }
+        }
+
+        return watch;
+    }
+
+    /// <summary>
+    /// SHAREMOVES1 (D212): a <c>--share</c> loop's first look takes up only the lines it runs, so another line's dead move stands for the
+    /// lease holder; the dead loop's moves are visited oldest first, so the line it runs closing means the other was passed over.
+    /// </summary>
+    [Fact]
+    public async Task A_shared_loop_s_first_look_takes_up_its_own_line_and_leaves_another_line_s_move_standing()
+    {
+        LeaveDead("run-gone", "other", "mine");
+        var watch = new DriverWatch(
+            _ledger.Client(), Configured(), _home, new SessionProcesses(), sync: null,
+            harnesses: new HarnessRoster(AdapterSet.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses))) { Share = true };
+        watch.Running.Live["q-mine"] = "mine";
+
+        await LookedAsync(watch, () => MoveFrom("mine") is { Stands: false }, () => $"mine stood at {MoveFrom("mine")?.PhaseWord}");
+
+        Assert.Equal(("closed", MoveCloseWhy.Gone), (MoveFrom("mine")!.PhaseWord, MoveFrom("mine")!.ClosedWhy));
+        Assert.Equal("old-ended", MoveFrom("other")!.PhaseWord);
+    }
+
+    /// <summary>SHAREMOVES1: the lease holder's first look still takes up every dead run's driven move, whichever line runs it.</summary>
+    [Fact]
+    public async Task The_lease_holder_s_first_look_takes_up_every_dead_run_s_driven_move()
+    {
+        LeaveDead("run-gone", "other", "mine");
+        var watch = new DriverWatch(
+            _ledger.Client(), Configured(), _home, new SessionProcesses(), sync: null,
+            harnesses: new HarnessRoster(AdapterSet.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)));
+        watch.Running.Live["q-mine"] = "mine";
+
+        await LookedAsync(watch, () => MoveFrom("mine") is { Stands: false }, () => $"mine stood at {MoveFrom("mine")?.PhaseWord}");
+
+        Assert.Equal(("closed", MoveCloseWhy.Gone), (MoveFrom("other")!.PhaseWord, MoveFrom("other")!.ClosedWhy));
+    }
+
     /// <summary>
     /// 🔴 A loop that died with its carry-on's move standing at <c>old-ended</c> leaves its line held at each look: the first look of the next
     /// loop takes the move up and ends it by its phase, the line staying on its old part, so the carry-on it plans is not held by it.

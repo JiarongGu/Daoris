@@ -59,7 +59,14 @@ public static class NodeKinds
     /// </summary>
     public const string Integrate = "integrate";
 
-    public static readonly IReadOnlyList<string> BuiltIn = [Claimed, Handed, Pushed, PullRequest, Line, Human, Look, GoAhead, WaitUnit, QuestClose, All, Opinion, Stop, Check, Integrate];
+    /// <summary>
+    /// The hold on the work's own requests (INTEGRATE1o; the integration design §17.3): observed from the quests the run's sessions published,
+    /// placed after <c>claimed</c> and before the landing. A kind and no option of <c>claimed</c>, since an older build reads an option as
+    /// readable and runs it with the hold dropped, where it refuses this kind and holds the run whole (§17.6 point 8).
+    /// </summary>
+    public const string WorkRequests = "work.requests";
+
+    public static readonly IReadOnlyList<string> BuiltIn = [Claimed, Handed, Pushed, PullRequest, Line, Human, Look, GoAhead, WaitUnit, QuestClose, All, Opinion, Stop, Check, Integrate, WorkRequests];
 
     /// <summary>Whether a kind is a plugin's own node: <c>&lt;plugin&gt;/&lt;node&gt;</c>, both parts named.</summary>
     public static bool IsPlugin(string kind)
@@ -186,6 +193,12 @@ public static class NodeSource
     /// settled, or handed back, as the line's run writes it (§5.6). Never a person's word and never a plugin's.
     /// </summary>
     public const string Integration = "integration";
+
+    /// <summary>
+    /// The quests' records (INTEGRATE1o; §17.3's <i>its authority</i>): what reaches a <c>work.requests</c>, each quest the run's sessions published
+    /// here done, as the exchange keeps it. A decline reaches nothing and fails nothing: it holds the node active and waiting on the person.
+    /// </summary>
+    public const string Requests = "requests";
 }
 
 /// <summary>
@@ -281,6 +294,9 @@ public static class NodeAuthorities
         // INTEGRATE1n (§17.4): reached and failed by the integration record, never skipped, since a skip satisfies `after` and would read as
         // integrated where nothing was; the person's door is the stop, which the record bounds (F50, row n2).
         [NodeKinds.Integrate] = new(NodeKinds.Integrate, NodeReach.Waited, NodeSource.Integration, NodeSource.Integration, false, PersonSkips: false, true, true),
+        // INTEGRATE1o (§17.3, C28): reached by the quests' records, each the run's sessions published here done. A decline holds it active and
+        // waiting on the person, so nothing fails it; the person's pass with words is the run's existing skip, and no record passes it over.
+        [NodeKinds.WorkRequests] = new(NodeKinds.WorkRequests, NodeReach.Observed, NodeSource.Requests, null, false, PersonSkips: true, true, true),
     };
 
     /// <summary>
@@ -317,6 +333,9 @@ public static class NodeDeclarations
     /// </summary>
     public static string? Problem(NodeDeclaration node) => Problem(node, NodeAuthorities.BuiltIn);
 
+    /// <summary>The option name round 4 gave <c>claimed</c> for the hold on the work's requests, refused by name (INTEGRATE1o, C28): the hold is <see cref="NodeKinds.WorkRequests"/>.</summary>
+    private const string WorkRequestsOption = "requests";
+
     /// <summary>The declaration's checks as a build whose built-in table is <paramref name="table"/> makes them (INTEGRATE1n, §17.6 point 6).</summary>
     internal static string? Problem(NodeDeclaration node, IReadOnlyDictionary<string, NodeAuthority> table)
     {
@@ -333,6 +352,9 @@ public static class NodeDeclarations
         if (builtIn && node.Rejectable) return "rejectable";
         if (builtIn && !node.Skippable) return "skippable";
         if (node.Kind == NodeKinds.Integrate && IntegrateOptionProblem(node) is { } option) return option;
+        // INTEGRATE1o (§17.6 point 8, C28): the hold on the work's requests is the kind `work.requests`. Written as an option of `claimed`, a build
+        // that knows `claimed` would read it and run the work with the hold dropped, so no file may say it there.
+        if (node.Kind == NodeKinds.Claimed && node.Options.ContainsKey(WorkRequestsOption)) return WorkRequestsOption;
 
         // FABRIC-UNIT1d (§D6): how a plugin performs its node is that node's alone, and a retry or a transient code is refused where
         // it could never be taken, as a retry on a kind nothing can fail is. Daoris's own performed kind's retry stays its kind's.

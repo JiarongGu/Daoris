@@ -178,9 +178,15 @@ public static class AskWork
     /// Whether a quest's <c>publishedBy</c> names this record's session: as the record is keyed, or, for a teammate's record
     /// (keyed <c>origin/id</c>, SYNC4), as their machine spells it.
     /// </summary>
-    private static bool Spells(SessionRecord record, string by) =>
-        string.Equals(record.Id, by, StringComparison.Ordinal)
-        || (record.Teammate && string.Equals(record.Id[(record.Id.IndexOf('/') + 1)..], by, StringComparison.Ordinal));
+    private static bool Spells(SessionRecord record, string by) => Spells(record.Id, by);
+
+    /// <summary>
+    /// Whether <paramref name="by"/> names the session keyed <paramref name="session"/>: as keyed, or, for a teammate's (keyed <c>origin/id</c>, SYNC4), as
+    /// their machine spells it. Where only the id is held: a run's work quests' executors (INTEGRATE1o).
+    /// </summary>
+    public static bool Spells(string session, string by) =>
+        string.Equals(session, by, StringComparison.Ordinal)
+        || (session.Contains('/') && string.Equals(session[(session.IndexOf('/') + 1)..], by, StringComparison.Ordinal));
 
     /// <summary>A session as the work names it: its tree and branch where the tree is this home's, and none for a teammate's.</summary>
     private static WorkSession Place(SessionRecord record, Func<string, bool> held)

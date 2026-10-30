@@ -259,7 +259,10 @@ public static class WorkflowRunReader
 
         // FABRIC-CUTOVER1e (D190 points 2 and 3): a run bound to a graph version is the runtime's, so it is drawn from its record, and its gates
         // read the version from its nodes (CUTOVER1d).
-        if (process is { Graph: { } graph, Run: { } run }) return await GraphRunAsync(chain, repository, part, mine, workspace, current, process, graph, run, reads).ConfigureAwait(false);
+        if (process is { Graph: { } graph, Run: { } run })
+        {
+            return await GraphRunAsync(chain, repository, part, mine, sessions, workspace, current, process, graph, run, reads).ConfigureAwait(false);
+        }
 
         if (process.Problem is not null || process.Unread is not null)
             return new WorkflowRun(repository, workspace, current, [.. part.Select(quest => quest.Id)], [])
@@ -306,6 +309,7 @@ public static class WorkflowRunReader
             Opinion = opinion,
             Process = process,
             WorkflowGate = workflow,
+            Requests = RequestsOf(part, mine, sessions, reads),
             Landings = [.. reads.Landings.Where(entry => sessionIds.Any(id => entry.Names(id) && Counts(id, entry.AcceptedAt(id))))],
             Accepted = reads.Records.Acceptances(mine)
                 .Where(pair => Counts(pair.Key, pair.Value))
@@ -376,8 +380,8 @@ public static class WorkflowRunReader
     /// work's own choice adds, whose rows the graph replaces with none of the rule's (D154's rows 5 and 6 are its graph's).
     /// </summary>
     private static async Task<WorkflowRun> GraphRunAsync(
-        IReadOnlyList<QuestView> chain, string repository, IReadOnlyList<QuestView> part, IReadOnlyList<TracedSession> mine, string workspace,
-        CurrentWorkflow current, WorkflowProcess process, NodeGraph graph, string run, Reads reads)
+        IReadOnlyList<QuestView> chain, string repository, IReadOnlyList<QuestView> part, IReadOnlyList<TracedSession> mine, IReadOnlyList<TracedSession> sessions,
+        string workspace, CurrentWorkflow current, WorkflowProcess process, NodeGraph graph, string run, Reads reads)
     {
         var askId = chain.Select(quest => AskWords.AskOf(quest.From)).FirstOrDefault(id => id is not null);
         var (ask, askUnread) = askId is null ? (null, null) : await reads.AskAsync(askId).ConfigureAwait(false);
@@ -396,6 +400,7 @@ public static class WorkflowRunReader
             GoAheads = ask?.GoAheads ?? [],
             Review = review,
             Process = process,
+            Requests = RequestsOf(part, mine, sessions, reads),
             Landings = [.. reads.Landings.Where(entry => sessionIds.Any(entry.Names))],
             AutoLandings = [.. reads.AutoLandings.Where(entry => sessionIds.Contains(entry.Session))],
         };
@@ -405,6 +410,21 @@ public static class WorkflowRunReader
             ? await IntegrateNodes.PromotedAsync(reads.Sources.Integration ?? NodeRuntime.HomeDoor(reads.Sources.Home), record, reads.Ct).ConfigureAwait(false)
             : new HashSet<string>(StringComparer.Ordinal);
         return WorkflowGraphRuns.Derive(new WorkflowGraphRunFacts(facts, run, graph, record) { Branches = reads.Branches, Promoted = promoted }, workspace, askId);
+    }
+
+    /// <summary>
+    /// The requests a run's work made (INTEGRATE1o part o2; §17.3): each quest a session serving its work quests here published, from every quest the
+    /// service answered, and each helper such a session asked, from every session record, drawn as <see cref="WorkRequests.Draw"/> says them.
+    /// </summary>
+    private static IReadOnlyList<WorkflowRunRequest> RequestsOf(
+        IReadOnlyList<QuestView> part, IReadOnlyList<TracedSession> mine, IReadOnlyList<TracedSession> sessions, Reads reads)
+    {
+        var work = part.Where(quest => quest.SetUpIn is null).ToList();
+        var workIds = work.Select(quest => quest.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var serving = mine.Where(session => session.Quest is { } quest && workIds.Contains(quest)).Select(session => session.Id).ToList();
+        var helpers = sessions.Where(session => session is { Piece: null, Opinion: null, Teammate: false } && session.Serves is { } served
+            && serving.Any(each => string.Equals(each, served, StringComparison.OrdinalIgnoreCase)));
+        return WorkRequests.Draw(WorkRequestsNode.Published(reads.EveryQuest, serving, workIds), work, helpers);
     }
 
     /// <summary>
@@ -459,6 +479,9 @@ public static class WorkflowRunReader
         public IOpinionWorld World => this;
 
         public Task<IReadOnlyList<QuestView>> QuestsAsync(CancellationToken cancel) => Task.FromResult(quests);
+
+        /// <summary>Every quest the service answered, whichever chain and repository: where the quests a run's sessions published are found (INTEGRATE1o).</summary>
+        public IReadOnlyList<QuestView> EveryQuest => quests;
 
         public Task<AskView?> AskAsync(string id, CancellationToken cancel) => sources.Service.FindAskAsync(id, cancel);
 
