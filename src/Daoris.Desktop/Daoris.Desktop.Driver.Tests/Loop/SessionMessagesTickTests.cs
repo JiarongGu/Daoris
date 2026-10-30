@@ -886,6 +886,64 @@ public sealed class SessionMessagesTickTests : IDisposable
     }
 
     /// <summary>
+    /// 🔴 FOUNDATION1f-iv part a (the foundation design §3.3, §13.4; D212): the carry-on keeps its move record in the store. A fallback that moves
+    /// the old record's word with its open is decided <c>old-ended</c> as a driven move of the session it goes on from, <c>retry</c> by Daoris;
+    /// its <c>opens</c> is the very key the open was sent with; it names the new session and the word the open moved by its id; and its take
+    /// returned, the word has <c>sent</c> and the move is <c>delivered</c>, the word reaching its agent once.
+    /// </summary>
+    [Fact]
+    public async Task A_carry_on_keeps_its_move_record_with_the_key_its_open_was_sent_and_its_moved_word_delivered()
+    {
+        await using var service = SaidStandIn.Start(_repository);
+        await FailedFirstRunAsync(service);
+        service.Opens = 2;
+        service.Asks = true;
+        Assert.Equal("w1", await service.SayAsync("s1", "Also log the port."));
+
+        var look = await Protocol(service, "refuses").RunOnceAsync().WaitAsync(Poll.Patience);
+
+        var seen = $"look: {string.Join(" | ", look.Events)}\nafter: {service.Record("s1")}\ntaken: {string.Join(" | ", service.Taken)}";
+        Assert.True(service.SessionCount == 2, seen);
+        var (key, _) = Assert.Single(service.Opened);
+        var store = new MoveStore(_home);
+        var move = Assert.Single(store.Of("s1"));
+        Assert.Equal(("delivered", "driven", "brief", "retry", "daoris", "s2"), (move.PhaseWord, move.Executor, move.How, move.Why, move.By, move.Destination));
+        Assert.Equal(key, move.Opens);
+        Assert.True(move.Moments.ContainsKey(MoveRecordPhase.OldEnded) && !move.Moments.ContainsKey(MoveRecordPhase.Quiescing), seen);
+        var word = Assert.Single(store.WordsOf(move.Id));
+        Assert.Equal(("w1", MoveWordDispositions.Sent), (word.Word, word.Disposition));
+        Assert.Equal((MoveEffects.Prompt, MoveWordDispositions.Sent), (move.Effect!.What, move.Effect.Outcome));
+        Assert.Equal([("Also log the port.", "s2")], service.AskWords);
+    }
+
+    /// <summary>
+    /// 🔴 FOUNDATION1f-iv part a: a carry-on that hands no word keeps its record too, its open asked under its key through the keyed door and
+    /// asking no word to move; the move closes <c>delivered</c> on its prompt's outcome, a move of no word. Against a host whose open moves
+    /// nothing (its <c>opens</c> mark 1) the record is the same.
+    /// </summary>
+    [Theory]
+    [InlineData(2)]
+    [InlineData(1)]
+    public async Task A_carry_on_that_hands_no_word_keeps_its_record_and_asks_no_word_to_move(int opens)
+    {
+        await using var service = SaidStandIn.Start(_repository);
+        await FailedFirstRunAsync(service);
+        service.Opens = opens;
+
+        var look = await Protocol(service, "refuses").RunOnceAsync().WaitAsync(Poll.Patience);
+
+        var seen = $"look: {string.Join(" | ", look.Events)}\nafter: {service.Record("s1")}";
+        Assert.True(service.SessionCount == 2, seen);
+        var (key, moves) = Assert.Single(service.Opened);
+        Assert.Null(moves);
+        var store = new MoveStore(_home);
+        var move = Assert.Single(store.Of("s1"));
+        Assert.Equal(("delivered", "driven", "s2", key), (move.PhaseWord, move.Executor, move.Destination, move.Opens));
+        Assert.Empty(store.WordsOf(move.Id));
+        Assert.Equal(MoveWordDispositions.Sent, move.Effect!.Outcome);
+    }
+
+    /// <summary>
     /// The protocol door's stand-in: it names its conversation <c>conv-&lt;session&gt;</c>, and on its first prompt takes and
     /// closes the quest. The mode is how it resumes: <c>resumes</c> honours <c>session/resume</c>, and a resumed prompt is
     /// logged with its blocks; <c>elsewhere</c> refuses it as <c>codex-acp</c> does a thread another client holds; <c>refuses</c>
