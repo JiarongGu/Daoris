@@ -6202,6 +6202,23 @@ const reopenedOf = (config, session) =>
   readEvents(driver({ serviceUrl: BASE, config, mode: 'logs --event session.reopened --json' }).out, 'session.reopened')
     .filter((data) => data.session === session);
 
+// Words a case leaves waiting for the person are taken back by their press before the next case (AGENTPROVIDER1b, D213). A closed
+// quest's session whose conversation is proven lost keeps its words for the person, since a headless loop has no chat runner to go on
+// with them, and marks them unable to go on in its door's home alone: a mark is the machine's, never the record's. The record is the
+// one service's, which every door's home reads, so another door's loop planned those words as a go-on on an agent its config has not,
+// held it as not installed, and queued every later quest of the repository behind it: one door's fallback failed four of another's.
+const takeBackHeld = async (place, id) => {
+  const waiting = ((await standInRecords()).find((s) => s.id === id)?.said ?? []).map((word) => word.id);
+  if (waiting.length === 0) return;
+  const taken = waiting.map((word) => driver({ serviceUrl: BASE, config: place.config(), mode: `sessions take-back ${id} ${word}` }));
+  const left = (await standInRecords()).find((s) => s.id === id)?.said ?? [];
+  check(
+    `${place.door.id}: …and the words it keeps for the person taken back by their press, so no other door's home goes on with them`,
+    taken.every((each) => each.code === 0) && left.length === 0,
+    `${taken.map((each) => each.out).join('\n')}\n${JSON.stringify(left)}`,
+  );
+};
+
 /**
  * A door's place: its folder, which is the driver's home for every config written in it, the config each scenario runs it by (in the
  * folder, or in one of the case's own), and what its cases left.
@@ -6257,7 +6274,7 @@ const standInDrives = {
   },
   // A resume of its own conversation: words said to the start's ended record go on in its own conversation. The protocol transport
   // offers every protocol door its resume (§2.6); a native door resumes by its own flag, or resumes nothing, and then its words take
-  // the unsupported resume's fallback, which proves the conversation lost and carries them on in a new part.
+  // the unsupported resume's fallback, which proves the conversation lost; its quest closed, they wait for the person, who takes them back.
   'live.resume-own': async (place) => {
     if (!place.ended) {
       check(`${place.door.id}: a resume of its own conversation, after a start that ended completed`, false, 'its start left no completed record');
@@ -6276,6 +6293,7 @@ const standInDrives = {
       said.code === 0 && ran.code === 0 && (resumed || fellBack) && after?.state === 'completed',
       `${said.out}\n${ran.out}\n${JSON.stringify(reopened)}\n${JSON.stringify(after)}`,
     );
+    await takeBackHeld(place, place.ended.id);
   },
   // A missing one: a fresh start's conversation, words said to it, and a resume its agent refuses as gone, read as gone.
   'live.missing-conversation': async (place) => {
@@ -6291,6 +6309,7 @@ const standInDrives = {
         && reopened.length === 1 && reopened[0].resumed === false && reopened[0].why === 'gone',
       `${first.out}\n${said.out}\n${ran.out}\n${JSON.stringify(record)}\n${JSON.stringify(reopened)}`,
     );
+    if (record?.id) await takeBackHeld(place, record.id);
   },
   // A refused account: the credential refused at its run, in a home of the case's own, ends it failed with its quest not done; then the
   // quest goes on to done in the door's home once the program answers again, so no later phase meets it open.
