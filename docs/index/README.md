@@ -24,7 +24,7 @@ Listed first, because nothing below restates their rows: open one of these for w
 | `decisions.md` | each decision's title with its entry's lines, then each dated note with its lines |
 | `outlines/<path>.md` | the declarations or headings of a file over 40 KB, each with its line range |
 
-## Files over 40 KB (349)
+## Files over 40 KB (348)
 
 Each has its outline at `outlines/<its path>.md`: open the outline, then read the range you need, not the file.
 
@@ -325,17 +325,17 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-09-30-machine-log-design.md` | 70 | 538 |
 | `docs/2026-10-01-account-rotation-design.md` | 52 | 613 |
 | `docs/2026-10-01-agent-layout-design.md` | 59 | 790 |
-| `docs/2026-10-01-development-documents-design.md` | 62 | 825 |
+| `docs/2026-10-01-development-documents-design.md` | 62 | 827 |
 | `docs/2026-10-01-naming-audit.md` | 95 | 1004 |
 | `docs/2026-10-01-plugin-distribution-design.md` | 64 | 910 |
 | `docs/2026-10-01-plugins-screen-design.md` | 66 | 925 |
 | `docs/2026-10-01-self-development-design.md` | 50 | 651 |
 | `docs/2026-10-01-tools-design.md` | 61 | 857 |
-| `docs/2026-10-01-workspace-setup-design.md` | 58 | 744 |
+| `docs/2026-10-01-workspace-setup-design.md` | 58 | 746 |
 | `docs/2026-10-02-account-use-design.md` | 87 | 983 |
 | `docs/2026-10-02-knowledge-design-review.md` | 43 | 542 |
 | `docs/2026-10-02-pause-and-clean-up-design.md` | 49 | 670 |
-| `docs/2026-10-02-session-management-design.md` | 69 | 856 |
+| `docs/2026-10-02-session-management-design.md` | 69 | 858 |
 | `docs/2026-10-03-session-messages-design.md` | 41 | 486 |
 | `docs/2026-10-04-ux6-redesign.md` | 72 | 895 |
 | `docs/2026-10-05-ux7-design.md` | 67 | 792 |
@@ -343,7 +343,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-08-review-environment-design.md` | 56 | 692 |
 | `docs/2026-10-08-second-agent-design.md` | 57 | 769 |
 | `docs/2026-10-09-workflow-design.md` | 79 | 1038 |
-| `docs/2026-10-16-fabric-events-design.md` | 176 | 2136 |
+| `docs/2026-10-16-fabric-events-design.md` | 176 | 2138 |
 | `docs/2026-10-20-fabric-cutover-design.md` | 80 | 720 |
 | `docs/2026-10-20-flowchart-design.md` | 60 | 698 |
 | `docs/2026-10-20-message-urgency-design.md` | 67 | 661 |
@@ -396,13 +396,13 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-25-foundation-reads.md` | 278 | 2284 |
 | `docs/2026-10-25-foundation-survey.md` | 103 | 597 |
 | `docs/2026-10-26-agent-provider-design.md` | 282 | 1656 |
-| `docs/2026-10-26-agent-provider-proposal-codex.md` | 49 | 464 |
+| `docs/2026-10-26-agent-provider-proposal-codex.md` | 49 | 466 |
 | `docs/2026-10-26-agent-provider-proposal-opus.md` | 83 | 654 |
 | `docs/2026-10-26-agent-provider-reads.md` | 122 | 1270 |
 | `docs/2026-10-26-agent-provider-survey.md` | 79 | 632 |
 | `docs/2026-10-26-tree-pool-design.md` | 222 | 1621 |
-| `docs/2026-10-26-tree-pool-proposal-codex.md` | 53 | 606 |
-| `docs/2026-10-26-tree-pool-proposal-opus.md` | 52 | 601 |
+| `docs/2026-10-26-tree-pool-proposal-codex.md` | 53 | 608 |
+| `docs/2026-10-26-tree-pool-proposal-opus.md` | 52 | 603 |
 | `docs/2026-10-26-tree-pool-reads.md` | 74 | 702 |
 | `docs/2026-10-26-tree-pool-survey.md` | 47 | 562 |
 | `docs/2026-10-28-integration-design.md` | 204 | 1923 |
@@ -412,7 +412,6 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-30-agent-lyntai-reads.md` | 126 | 980 |
 | `docs/2026-10-30-agent-lyntai-survey.md` | 44 | 374 |
 | `docs/DAORIS_UNIFIED_COLLABORATION_ARCHITECTURE_AND_PLAN_2026-10-16.md` | 164 | 5380 |
-| `docs/README.md` | 66 | 293 |
 | `docs/backlog-parked.md` | 184 | 956 |
 | `docs/development.md` | 53 | 591 |
 | `src/Daoris.Desktop/README.md` | 256 | 1255 |
