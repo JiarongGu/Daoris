@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Text.Json;
+using Daoris.Desktop.Driver.Tests;
 using Daoris.Driver;
 using Shenora.Core.Ipc;
 
@@ -161,7 +162,7 @@ public sealed class DriverModuleReviewLeaveTests() : DriverModuleBridge("review-
     {
         var info = new ProcessStartInfo("git") { WorkingDirectory = _tree, RedirectStandardOutput = true, RedirectStandardError = true, UseShellExecute = false };
         foreach (var argument in arguments) info.ArgumentList.Add(argument);
-        using var git = Process.Start(info)!;
+        using var git = Process.Start(TestGit.Past(info))!;
         var output = git.StandardOutput.ReadToEnd();
         var error = git.StandardError.ReadToEnd();
         git.WaitForExit();

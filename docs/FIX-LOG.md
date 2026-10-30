@@ -19,6 +19,13 @@ repository.
 - **Fix:** `JournalRows.ReadAsync` takes the service's connection and runs inside its gate; the composed service carries the read.
 - **Verify:** gate, `JournalRowsTests` and Platform tests green.
 
+## 2026-10-31 - A test's git in a fixture that was no repository acted on the checkout's (GITISOLATE1)
+
+- **Symptom:** a filtered run left the shared repository config with `core.bare=true`.
+- **Root cause:** git climbs from its folder to the nearest repository, and fixtures sit under the checkout.
+- **Fix:** `TestGit.Ceiling` caps each start at its fixture; `GitCeilingCensusTests` fails an uncapped one.
+- **Verify:** a fixture `rev-parse` is refused and the config unchanged; census 17 passed.
+
 ## 2026-10-30 - The window's quest hand-over still called the old ask, and the modules did not build (FOUNDATION1f-v part c)
 
 - **Symptom:** batch u's modules project failed to compile: `ConversationRoutes.cs:244`, no overload of `AskAsync` takes 10 arguments.

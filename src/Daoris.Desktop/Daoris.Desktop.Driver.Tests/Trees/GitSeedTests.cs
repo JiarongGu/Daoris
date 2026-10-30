@@ -154,7 +154,8 @@ public sealed class GitSeedTests : IDisposable
         foreach (var path in SourceFiles.All(SourceFiles.DriverTestsProject, "*.cs"))
         {
             var name = Path.GetFileName(path);
-            if (name == "GitSeed.cs") continue;
+            // TestGit is linked into the modules tests, which have no GitSeed; its walks use Path.Exists, as RootFrom does.
+            if (name is "GitSeed.cs" or "TestGit.cs") continue;
             var text = File.ReadAllText(path);
             if (text.Contains("_fixtures", StringComparison.Ordinal) && plainDelete.IsMatch(text)) breaches.Add($"{name}: deletes scratch with Directory.Delete; use GitSeed.Discard or GitSeed.Remove");
             if (ownWalk.IsMatch(text)) breaches.Add($"{name}: walks to .git by itself; use GitSeed.RepoRoot()");
