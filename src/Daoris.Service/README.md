@@ -504,13 +504,21 @@ Indexing the whole family takes **~500 ms for 408 entries** into a 7 MB database
 
 ## A call's lineage
 
-**What a call's harness says of it is written down, and nothing is decided by it yet** (FABRIC-C1a, D173). A native
-subagent calls through the connector its root was handed, with the root's `DAORIS_SESSION_ID`. So the connector reads
-each `tools/call`'s `_meta` before the tool runs and appends what the harness wrote there to the session's lineage file,
-`<home>/sessions/<session>/lineage.jsonl`, the home as for a proposal: Claude Code's id of the call, or Codex's thread,
-its parent and the spawn kind. It keeps ids only. Codex's workspace path beside them is never read, a value not shaped as
-an id is dropped, and the arguments, which the model writes, are not read for it. A connector that names no session
-writes nothing. The driver binds each child to the session's part from these lines and its own (`ChildBindings`).
+**What a call's harness says of it is written down, and decides what the call may change** (FABRIC-C1a, FABRIC-C2a,
+D173). A native subagent calls through the connector its root was handed, with the root's `DAORIS_SESSION_ID`. So the
+connector reads each `tools/call`'s `_meta` before the tool runs and appends what the harness wrote there to the session's
+lineage file, `<home>/sessions/<session>/lineage.jsonl`, the home as for a proposal: Claude Code's id of the call, or
+Codex's thread, its parent, the spawn kind, the source and the root. It keeps ids only. Codex's workspace path beside them
+is never read, a value sent that is not an id is named `malformed` and not kept, and the arguments, which the model
+writes, are not read for it. The driver binds each child to the session's part from these lines and its own
+(`ChildBindings`).
+
+For a connector that names a session, the reads (`ToolClasses`) answer every caller, and every other tool runs only for a
+caller proven the root (`CallerProof`): a Claude Code call whose id joins a hook line naming no agent (`HookJoin`, read
+from the file's end, two seconds at most), or a Codex call whose thread is its session's root with no child signal. A
+child, or a call whose lineage is missing, malformed, conflicting or unjoined, gets an error result before the tool runs,
+saying nothing was done, why, and that the reads remain. A plain `quest_publish` alone passes it. A connector that names no
+session, a person's own agent's, writes nothing and is not guarded.
 
 ## Running it
 
