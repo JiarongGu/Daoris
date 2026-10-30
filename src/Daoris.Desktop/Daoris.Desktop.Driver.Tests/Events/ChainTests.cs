@@ -86,8 +86,8 @@ public sealed class ChainTests : IDisposable
     // The fixed table and its ranks.
 
     /// <summary>
-    /// §C6's seven links and FABRIC-RUN1's eighth, ranked: each event a link may emit is heard only by links ranked above it, so none wakes
-    /// itself.
+    /// §C6's links and FABRIC-RUN1's eighth, ranked: each event a link may emit is heard only by links ranked above it, so none wakes
+    /// itself. Ranks 3 and 4, declared and bound nowhere, are gone (FOUNDATION1s, the foundation design §7 row 14); the rest keep their numbers.
     /// </summary>
     [Fact]
     public void The_fixed_table_is_ranked_so_that_no_link_hears_what_it_or_a_link_above_it_emits()
@@ -95,9 +95,9 @@ public sealed class ChainTests : IDisposable
         var table = ChainTable.Fixed;
 
         Assert.Empty(ChainTable.Check(table.Links));
-        Assert.Equal([1, 2, 3, 4, 5, 6, 7, 8], table.Links.Select(link => link.Rank));
+        Assert.Equal([1, 2, 5, 6, 7, 8], table.Links.Select(link => link.Rank));
         Assert.Equal(
-            [ChainKind.Fact, ChainKind.Effect, ChainKind.Fact, ChainKind.Fact, ChainKind.Reader, ChainKind.Reader, ChainKind.Reader, ChainKind.Reader],
+            [ChainKind.Fact, ChainKind.Effect, ChainKind.Reader, ChainKind.Reader, ChainKind.Reader, ChainKind.Reader],
             table.Links.Select(link => link.Kind));
 
         // The evaluation runtime hears what the plan hears, the look's deadline, a plugin's step and its own wakes, and emits nothing.
@@ -131,10 +131,11 @@ public sealed class ChainTests : IDisposable
     [Fact]
     public void A_link_to_a_lower_rank_fails()
     {
-        // The plugins' observation (3) made to emit `work.held`, which the tidy (2) hears below it, and the publish (4) above.
+        // A fact link at rank 3 made to emit `work.held`, which the tidy (2) hears below it.
         ChainLink[] lower =
         [
-            .. ChainTable.Fixed.Links.Select(link => link.Rank == ChainRanks.Ended ? link with { Emits = [ChainEvents.WorkHeld] } : link),
+            .. ChainTable.Fixed.Links,
+            new ChainLink(3, "lower", ChainKind.Fact, [ChainEvents.WorkTidied], [ChainEvents.WorkHeld]),
         ];
         var problem = Assert.Single(ChainTable.Check(lower));
         Assert.Contains("link 3", problem, StringComparison.Ordinal);
@@ -193,19 +194,18 @@ public sealed class ChainTests : IDisposable
         var reached = reachedBy == ChainEvents.Refs ? RefsMoved() : new ChainEvent(reachedBy, "u1");
         await rig.Chain.FireAsync([reached], CancellationToken.None);
 
-        // One wake: the judgement once, the tidy once, the publish once with what both said.
+        // One wake: the judgement once and the tidy once, with what both said.
         Assert.Equal(1, rig.Judged);
         Assert.Equal(1, rig.Tidy.Tries);
-        Assert.Equal(1, rig.Publishes);
         Assert.Equal(
             new[] { ChainEvents.WorkHeld, ChainEvents.WorkEnded, ChainEvents.WorkTidied }.Order(StringComparer.Ordinal),
-            rig.Published.Select(heard => heard.Type).Order(StringComparer.Ordinal));
+            rig.Said.Select(heard => heard.Type).Order(StringComparer.Ordinal));
 
         // The tidy's ref move heard back: judged once, and nothing follows.
         await rig.Chain.FireAsync([RefsMoved()], CancellationToken.None);
         Assert.Equal(2, rig.Judged);
         Assert.Equal(1, rig.Tidy.Tries);
-        Assert.Equal(1, rig.Publishes);
+        Assert.Equal(3, rig.Said.Count);
     }
 
     // Canary 11: a chain that changes nothing wakes nothing.
@@ -227,7 +227,7 @@ public sealed class ChainTests : IDisposable
         Assert.Equal(1, rig.Judged);
         Assert.Empty(Lines("chain.fired"));
 
-        // The work lands on the line: one change, one tidy, one publish.
+        // The work lands on the line: one change, one tidy.
         _world.Units["u1"].OnLine = true;
         refs.Raise("refs/heads/main", ChangeKind.Changed);
         await Step(rig, ChangeWatch.Quiet);
@@ -235,14 +235,15 @@ public sealed class ChainTests : IDisposable
         Assert.Equal(1, rig.Tidy.Done);
         Assert.False(_world.Units["u1"].Branch);
         Assert.NotNull(_world.Units["u1"].GoneAt);
-        Assert.Equal([ChainRanks.Judge, ChainRanks.Tidy, ChainRanks.Publish], LinksOf(Lines("chain.fired")));
+        Assert.Equal([ChainRanks.Judge, ChainRanks.Tidy], LinksOf(Lines("chain.fired")));
+        var said = rig.Said.Count;
 
         // The tidy deleted the branch and the source heard it: judged once, and nothing fired.
         await Step(rig, ChangeWatch.Quiet);
         Assert.Equal(3, rig.Judged);
         Assert.Equal(1, rig.Tidy.Tries);
-        Assert.Equal(1, rig.Publishes);
-        Assert.Equal([ChainRanks.Judge, ChainRanks.Tidy, ChainRanks.Publish], LinksOf(Lines("chain.fired")));
+        Assert.Equal(said, rig.Said.Count);
+        Assert.Equal([ChainRanks.Judge, ChainRanks.Tidy], LinksOf(Lines("chain.fired")));
 
         // And the chain is quiet: nothing more is due.
         await Step(rig, ChangeWatch.Cap);
@@ -256,17 +257,18 @@ public sealed class ChainTests : IDisposable
     {
         await using var rig = Start();
         rig.Chain.Log = Log();
-        rig.Undeclared = new ChainEvent(ChainEvents.WorkTidied, "u1");
+        // A ledger move, which the look (5) above it hears: dropped, so the look never runs.
+        rig.Undeclared = new ChainEvent(ChainEvents.Ledger, "sessions");
         _world.Add("u1", onLine: false);
 
         await rig.Chain.FireAsync([RefsMoved()], CancellationToken.None);
 
         Assert.Equal(1, rig.Judged);
-        Assert.Equal(0, rig.Publishes);
+        Assert.Equal(0, rig.Looks);
         var dropped = Assert.Single(Lines("chain.dropped"));
         Assert.Equal("undeclared", dropped.GetProperty("code").GetString());
         Assert.Equal(ChainRanks.Judge, dropped.GetProperty("link").GetInt32());
-        Assert.Equal(ChainEvents.WorkTidied, dropped.GetProperty("event").GetString());
+        Assert.Equal(ChainEvents.Ledger, dropped.GetProperty("event").GetString());
     }
 
     // Canary 4: more wakes are not more full looks.
@@ -344,7 +346,7 @@ public sealed class ChainTests : IDisposable
         Assert.Equal(3, rig.Tidy.Tries);
         Assert.Equal(1, rig.Tidy.Done);
         Assert.False(_world.Units["u1"].Branch);
-        Assert.Contains(rig.Published, heard => heard == new ChainEvent(ChainEvents.WorkTidied, "u1"));
+        Assert.Contains(rig.Said, heard => heard == new ChainEvent(ChainEvents.WorkTidied, "u1"));
     }
 
     // Canary 16: a restart between a fact and its effect.
@@ -488,11 +490,10 @@ public sealed class ChainTests : IDisposable
         {
             _test = test;
             Watch = new ChangeWatch(test._source, () => test._now);
-            Tidy = new FakeTidy(test, wait);
+            Tidy = new FakeTidy(test, wait, Said);
             Chain = new Chain(Watch, clock: () => test._now)
                 .Bind(ChainRanks.Judge, JudgeAsync)
                 .Bind(ChainRanks.Tidy, Tidy)
-                .Bind(ChainRanks.Publish, PublishAsync)
                 .Bind(ChainRanks.Plan, LookAsync)
                 .Bind(ChainRanks.Read, ReadAsync);
             Chain.Topic(ChangeTopics.Refs, ChainEvents.Refs, RefsDeadline);
@@ -514,9 +515,8 @@ public sealed class ChainTests : IDisposable
 
         public List<ChainEvent> JudgedBy { get; } = [];
 
-        public int Publishes { get; private set; }
-
-        public List<ChainEvent> Published { get; } = [];
+        /// <summary>What the judgement and the tidy emitted, in the order they did.</summary>
+        public List<ChainEvent> Said { get; } = [];
 
         public int Looks { get; private set; }
 
@@ -563,19 +563,9 @@ public sealed class ChainTests : IDisposable
             }
 
             KillAfterFact?.Cancel();
+            lock (Said) Said.AddRange(emitted);
             if (Undeclared is not null) emitted.Add(Undeclared);
             return Task.FromResult(ChainFired.Of(emitted));
-        }
-
-        private Task<ChainFired> PublishAsync(IReadOnlyList<ChainEvent> heard, CancellationToken ct)
-        {
-            lock (Published)
-            {
-                Publishes++;
-                Published.AddRange(heard);
-            }
-
-            return Task.FromResult(new ChainFired(heard.Count, []));
         }
 
         private Task<ChainFired> LookAsync(IReadOnlyList<ChainEvent> heard, CancellationToken ct)
@@ -608,7 +598,7 @@ public sealed class ChainTests : IDisposable
     /// Link 2 on fakes: pending while <c>Held</c> stands and the branch is still there, refused while a session works in the tree;
     /// done, it deletes the branch, leaves a trace, and the source hears the deletion.
     /// </summary>
-    private sealed class FakeTidy(ChainTests test, TimeSpan? wait) : IChainEffect
+    private sealed class FakeTidy(ChainTests test, TimeSpan? wait, List<ChainEvent> said) : IChainEffect
     {
         public int Tries { get; private set; }
 
@@ -641,7 +631,9 @@ public sealed class ChainTests : IDisposable
             }
 
             test._source.On(CommonDir)?.Raise($"refs/heads/{unit}", ChangeKind.Deleted);
-            return Task.FromResult(ChainTry.Done(new ChainEvent(ChainEvents.WorkTidied, unit)));
+            var tidied = new ChainEvent(ChainEvents.WorkTidied, unit);
+            lock (said) said.Add(tidied);
+            return Task.FromResult(ChainTry.Done(tidied));
         }
     }
 }
