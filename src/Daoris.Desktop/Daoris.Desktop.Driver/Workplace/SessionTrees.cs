@@ -822,13 +822,14 @@ public sealed class SessionTrees(string home, IWorkplacePluginWire? plugins = nu
     /// <inheritdoc cref="LandedCleanups.CleanPlanAsync"/>
     public Task<SweepPlan> CleanPlanAsync(
         IEnumerable<(string Repository, string? Workspace, string? Root)> repositories, IReadOnlySet<string> inUse,
-        CancellationToken ct = default) =>
-        Cleanups.CleanPlanAsync(repositories, inUse, ct);
+        CancellationToken ct = default, IReadOnlySet<string>? closedQuests = null) =>
+        Cleanups.CleanPlanAsync(repositories, inUse, ct, closedQuests);
 
     /// <inheritdoc cref="LandedCleanups.SweepPartAsync"/>
     public Task<SweepPlan> SweepPartAsync(
-        string repository, string? workspace, string root, IReadOnlySet<string> inUse, CancellationToken ct = default) =>
-        Cleanups.SweepPartAsync(repository, workspace, root, inUse, ct);
+        string repository, string? workspace, string root, IReadOnlySet<string> inUse, CancellationToken ct = default,
+        IReadOnlySet<string>? closedQuests = null) =>
+        Cleanups.SweepPartAsync(repository, workspace, root, inUse, ct, closedQuests);
 
     /// <inheritdoc cref="LandedCleanups.CleanAsync"/>
     public Task<SweepDone> CleanAsync(

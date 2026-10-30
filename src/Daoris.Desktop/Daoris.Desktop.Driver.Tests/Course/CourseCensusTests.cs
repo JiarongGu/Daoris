@@ -132,7 +132,7 @@ public sealed class CourseCensusTests
     /// read from the destination's moved words (<c>MovedWords.Moving</c>), the driven carry-on and the refused open among them since part 5;
     /// <c>unkeyed</c>, the hand-over and the curve, which carry no person's words and stay unkeyed until rows f-v and h; <c>no move</c>, a site
     /// that hands words to its own record or to a fresh one, with no record left, the driven go-on's resume among them. The ended limit move's
-    /// box members that read the destination's moved words are named until row f-vi retires the box (O6-F13).
+    /// box members that read the destination's moved words were named until row f-vi retired the box (O6-F13; FOUNDATION1f-vi part a).
     /// </summary>
     [Fact]
     public void Every_site_that_hands_words_names_how_its_open_moves_them()
@@ -153,12 +153,11 @@ public sealed class CourseCensusTests
             Assert.True(Regex.IsMatch(text, @"\bMovedWords\.(Moving|OnAsync)\("), $"{file} is named as moving its words but reads no destination's moved words");
         }
 
-        var box = table.GetProperty("box");
-        var source = WithoutComments(File.ReadAllText(Path.Combine(Root, box.GetProperty("file").GetString()!)));
-        var members = box.GetProperty("members").EnumerateArray().Select(member => member.GetString()!).ToList();
-        Assert.Equal(["MoveEndedAsync", "DeliveredAsync", "TakeUpBoxesAsync"], members);
-        foreach (var member in members) Assert.Matches(@"\bTask(<[^>]+>)?\??\s+" + member + @"\(", source);
-        Assert.Matches(@"\bbox\.Moved\b", source);
+        // The ended limit move's box members were named here until row f-vi retired the box (FOUNDATION1f-vi part a): its move is read from the
+        // store's record, so the table names none and the move's source has none of them.
+        Assert.False(table.TryGetProperty("box", out _), "the ended limit move's box members are retired");
+        var source = WithoutComments(File.ReadAllText(Path.Combine(Root, "Daoris.Desktop.Driver/Course/Chat/LimitMove.cs")));
+        Assert.DoesNotMatch(@"\b(DeliveredAsync|DeliveredToAsync|TakeUpBoxesAsync|TakeUpMovedAsync|box\.Moved)\b", source);
     }
 
     /// <summary>

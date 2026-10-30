@@ -124,7 +124,7 @@ public sealed class TurnCarryTickTests : IDisposable
         Assert.Equal(3, told.Count);
         Assert.All(told.Skip(1), prompt => Assert.StartsWith(Words, prompt, StringComparison.Ordinal));
         Assert.Equal(2, Occurrences(transcript, "the session was carried on to commit it"));
-        Assert.Contains("its session was carried on twice for the uncommitted work in its tree", transcript, StringComparison.Ordinal);
+        Assert.Contains("its session was carried on for the uncommitted work in its tree", transcript, StringComparison.Ordinal);
         Assert.Equal("?? fix.txt", Git(record["tree"]!.GetValue<string>(), "status", "--porcelain").Trim());
     }
 

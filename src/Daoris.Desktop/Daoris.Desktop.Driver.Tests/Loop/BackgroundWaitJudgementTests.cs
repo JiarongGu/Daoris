@@ -190,12 +190,57 @@ public sealed class BackgroundWaitJudgementTests : IDisposable
         Assert.False((await LookAsync(Planned("Taken"), resumed: false, tree, () => stopped))!.Eligible);
     }
 
-    /// <summary>A resumed run on a quest already closed as planned keeps BGWAIT1b's null: the closed-quest carry-on is part 3's.</summary>
+    /// <summary>
+    /// LANDBACK1 part 3 (b): a resumed run on a quest already closed as planned (a went-on run, D83) is carried on once where the quest
+    /// stands done and its tree is dirty, and owes nothing where the tree is clean or the quest was declined. It still never waits on
+    /// background work: <see cref="Daoris.Driver.Driver.WaitsOnBackground"/> keeps BGWAIT1b's null for it.
+    /// </summary>
     [Fact]
-    public async Task A_resumed_run_on_a_quest_closed_as_planned_is_not_looked_at()
+    public async Task A_resumed_run_on_a_quest_closed_as_planned_is_carried_on_once_where_its_tree_is_dirty()
     {
-        Assert.Null(await LookAsync(Planned("Done"), resumed: true, Tree(dirty: true)));
-        Assert.Null(await LookAsync(Planned("Declined"), resumed: true, Tree(dirty: true)));
+        _ledger.Move("q1", "Done");
+
+        var dirty = await LookAsync(Planned("Done"), resumed: true, Tree(dirty: true));
+        Assert.True(dirty!.Dirty);
+        Assert.Equal(1, dirty.Limit);
+        // A turn's end, resumed or not, keeps the two of part 2.
+        Assert.Equal(TurnCarry.Bound, (await LookAsync(Planned("Taken"), resumed: false, Tree(dirty: true)))!.Limit);
+        Assert.Null(Daoris.Driver.Driver.WaitsOnBackground(_ledger.Client(), Planned("Done"), "s1", resumed: true));
+    }
+
+    [Fact]
+    public async Task A_resumed_run_on_a_closed_quest_whose_tree_is_clean_or_that_was_declined_owes_nothing()
+    {
+        _ledger.Move("q1", "Done");
+        Assert.False((await LookAsync(Planned("Done"), resumed: true, Tree(dirty: false)))!.Dirty);
+
+        _ledger.Move("q1", "Declined");
+        Assert.False((await LookAsync(Planned("Declined"), resumed: true, Tree(dirty: true)))!.Eligible);
+    }
+
+    /// <summary>
+    /// A resumed run that is an Accept's carry-on (the session's yes is kept, LANDBACK1 part 1) is carried on by that Accept's own bound,
+    /// never also by the run's: one cause has one counter.
+    /// </summary>
+    [Fact]
+    public async Task A_resumed_run_that_is_an_accepts_carry_on_is_not_also_carried_on_from_inside_the_run()
+    {
+        _ledger.Move("q1", "Done");
+        var tree = Tree(dirty: true);
+
+        var look = Daoris.Driver.Driver.CarriesOn(_ledger.Client(), Planned("Done"), tree, resumed: true, () => false, accepted: false)!;
+        Assert.True((await look(CancellationToken.None)).Dirty);
+
+        Assert.Null(Daoris.Driver.Driver.CarriesOn(_ledger.Client(), Planned("Done"), tree, resumed: true, () => false, accepted: true));
+    }
+
+    /// <summary>A stopped session is never carried on, a closed quest's resume included.</summary>
+    [Fact]
+    public async Task A_stopped_closed_quests_resume_is_not_carried_on()
+    {
+        _ledger.Move("q1", "Done");
+
+        Assert.False((await LookAsync(Planned("Done"), resumed: true, Tree(dirty: true), () => true))!.Eligible);
     }
 
     /// <summary>A resumed run whose quest closed while it ran is judged as a start's is, each read the quest as it stands.</summary>

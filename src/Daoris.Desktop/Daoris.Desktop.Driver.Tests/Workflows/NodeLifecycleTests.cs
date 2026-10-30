@@ -554,6 +554,66 @@ public sealed class NodeLifecycleTests
     }
 
     /// <summary>
+    /// INTEGRATE1n part n1 (the integration design §17.4): <c>integrate</c> is a built-in kind that waits, reached and failed by the integration
+    /// record and by nothing else, never passed over and never the person's to reject, whose start has an effect outside its record, so a new
+    /// attempt waits until the last is known.
+    /// </summary>
+    [Fact]
+    public void Integrate_waits_on_the_integration_record_and_is_never_skipped()
+    {
+        Assert.Contains(NodeKinds.Integrate, NodeKinds.BuiltIn);
+        var authority = NodeAuthorities.BuiltIn[NodeKinds.Integrate];
+        Assert.Equal((NodeReach.Waited, NodeSource.Integration, NodeSource.Integration), (authority.Reach, authority.ReachBy, authority.FailureBy));
+        Assert.Equal((false, false, true, true, true), (authority.PersonJudges, authority.PersonSkips, authority.MayEnd, authority.Evidenced, authority.Dispatches));
+        Assert.Null(authority.SkipBy);
+        Assert.False(authority.OnPluginWord);
+        Assert.Null(NodeDeclarations.Problem(Declared(NodeKinds.Integrate)));
+        Assert.Equal("reach", NodeDeclarations.Problem(Declared(NodeKinds.Integrate) with { Reach = NodeReach.Observed }));
+        Assert.Equal("rejectable", NodeDeclarations.Problem(Declared(NodeKinds.Integrate, rejectable: true)));
+    }
+
+    /// <summary>
+    /// INTEGRATE1n (§17.4, <i>its options</i>): the unit's half of the install's policy is <c>request</c> (<c>owner</c>, <c>done</c>,
+    /// <c>steward</c>) and <c>conflicts</c> (<c>session</c>, <c>hold</c>), each a text of one of those; any other value, or a value that is no
+    /// text, is the declaration's refusal, named by the option. An option the kind has none of is left to later rows, as a graph's options are
+    /// opaque to a reader that does not know them.
+    /// </summary>
+    [Theory]
+    [InlineData("request", "\"owner\"", null)]
+    [InlineData("request", "\"done\"", null)]
+    [InlineData("request", "\"steward\"", null)]
+    [InlineData("conflicts", "\"session\"", null)]
+    [InlineData("conflicts", "\"hold\"", null)]
+    [InlineData("request", "\"nobody\"", "request")]
+    [InlineData("request", "\"Done\"", "request")]
+    [InlineData("request", "true", "request")]
+    [InlineData("request", "null", "request")]
+    [InlineData("conflicts", "\"steward\"", "conflicts")]
+    [InlineData("conflicts", "3", "conflicts")]
+    [InlineData("later", "\"anything\"", null)]
+    public void Integrates_options_are_held_to_the_install_s_choices(string name, string json, string? problem)
+    {
+        var node = Declared(NodeKinds.Integrate) with { Options = new Dictionary<string, string> { [name] = json } };
+        Assert.Equal(problem, NodeDeclarations.Problem(node));
+    }
+
+    /// <summary>
+    /// INTEGRATE1n (§17.6 point 6): a build without the kind reads a declaration naming it as one of no kind this build knows, so a version
+    /// that names it is unreadable there and its run is held whole. The older build's table is this one's without the row.
+    /// </summary>
+    [Fact]
+    public void An_older_build_whose_table_omits_integrate_reads_it_as_no_kind()
+    {
+        var older = NodeAuthorities.BuiltIn.Where(pair => pair.Key != NodeKinds.Integrate).ToDictionary(pair => pair.Key, pair => pair.Value);
+        var node = Declared(NodeKinds.Integrate);
+
+        Assert.Equal(NodeRefusal.UnknownKind, NodeDeclarations.Problem(node, older));
+        Assert.Null(NodeAuthorities.Of(node, older));
+        Assert.Null(NodeDeclarations.Problem(Declared(NodeKinds.Line) with { Retry = null }, older));
+        Assert.Null(NodeDeclarations.Problem(node));
+    }
+
+    /// <summary>
     /// FABRIC-UNIT1d (§D6): only a plugin's own performed node says how it is performed, and its retry is one it can take: a transient
     /// code to retry, on a node that is idempotent or reconciled. A retry or a code nothing could ever take is refused, as NODE1 refuses
     /// a retry on a kind nothing can fail.

@@ -372,6 +372,34 @@ public sealed class DriverModuleTreesTests : DriverModuleBridge
     }
 
     /// <summary>
+    /// LANDRETIRE1 part 2: a branch the person withdrew is answered with when, their reason and the recovery ref its commits stay on, beside
+    /// `removed`, which stays the clean-up's alone (a withdrawn entry has none); a branch removed or standing answers none.
+    /// </summary>
+    [Fact]
+    public void A_withdrawn_landing_says_when_why_and_where_its_commits_stay_and_the_others_say_none()
+    {
+        var at = new DateTimeOffset(2026, 10, 2, 8, 0, 0, TimeSpan.Zero);
+        var entry = Landing() with
+        {
+            GoneAt = at, GoneAs = LandedGone.Withdrawn, GoneWhy = "the row landed another way", KeptOn = "refs/daoris/discarded/feature/q2-fix",
+        };
+
+        var landed = JsonSerializer.SerializeToElement(
+            TreesRoutes.ReviewAnswer("s1a2b3c4", null, "branch", new LandedReview(entry, LandedState.Gone), treeGone: true), Camel).GetProperty("landed");
+
+        Assert.Equal(JsonValueKind.Null, landed.GetProperty("removed").ValueKind);
+        var withdrawn = landed.GetProperty("withdrawn");
+        Assert.Equal(at, withdrawn.GetProperty("at").GetDateTimeOffset());
+        Assert.Equal("the row landed another way", withdrawn.GetProperty("why").GetString());
+        Assert.Equal("refs/daoris/discarded/feature/q2-fix", withdrawn.GetProperty("keptOn").GetString());
+
+        var removed = Landing() with { GoneAt = at, RemovedAs = LandedKind.OnLine, RemovedOn = "main" };
+        Assert.Equal(JsonValueKind.Null, JsonSerializer.SerializeToElement(
+            TreesRoutes.ReviewAnswer("s1a2b3c4", null, "branch", new LandedReview(removed, LandedState.Gone), treeGone: true), Camel)
+            .GetProperty("landed").GetProperty("withdrawn").ValueKind);
+    }
+
+    /// <summary>
     /// A tree still here after its landed branch went may have carried on (WSR6): its review is the tree's, and it does
     /// not read as landed, so accepting the work since is a door again. While the branch stands, it reads as landed.
     /// </summary>

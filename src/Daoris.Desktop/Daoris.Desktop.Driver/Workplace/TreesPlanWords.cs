@@ -13,8 +13,10 @@ public static class TreesPlanWords
     /// landings made, and what <c>--yes</c> would remove; or that there is nothing to clean.
     /// </summary>
     /// <param name="records">The sessions' records, read only where a kept branch's row could offer its landing; none otherwise.</param>
-    public static TreesSaid CleanPlan(SweepPlan plan, IReadOnlyList<SessionRecord> records, TreesAsk ask)
+    /// <param name="now">The moment a landed row's age is counted to (LANDRETIRE1 part 2); now where none is given.</param>
+    public static TreesSaid CleanPlan(SweepPlan plan, IReadOnlyList<SessionRecord> records, TreesAsk ask, DateTimeOffset? now = null)
     {
+        now ??= DateTimeOffset.UtcNow;
         if (plan.Sessions.Count == 0 && plan.Landed.Count == 0) return new([TreesCommand.NothingToClean(ask)], [], 0);
         var said = new List<string>();
         foreach (var item in plan.Sessions)
@@ -30,7 +32,14 @@ public static class TreesPlanWords
 
         // The branches landings made (WSR5), in a group of their own: each goes where its work reached the line.
         if (plan.Landed.Count > 0) said.Add("  landed branches — each goes once its work reads on the line:");
-        foreach (var item in plan.Landed) said.Add($"  {(item.Removable ? "goes " : "kept ")} {LandedWords.Describe(item)}");
+        foreach (var item in plan.Landed)
+        {
+            // LANDRETIRE1 part 2: a row the line does not hold says how long it has stood and whether its quest closed, and the door
+            // that withdraws it stands under it, as a session branch's doors do.
+            said.Add($"  {(item.Removable ? "goes " : "kept ")} {LandedWords.Describe(item)}{LandedWords.Standing(item, now.Value)}");
+            if (LandedWords.Door(item) is { } door) said.Add($"         {door}");
+        }
+
         var going = plan.Sessions.Count(item => item.Removable) + plan.Landed.Count(item => item.Removable);
         said.Add(going == 0
             ? "trees: nothing to clean — every branch listed holds something of its own."

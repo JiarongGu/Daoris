@@ -17,10 +17,11 @@ public static class TurnCarries
     /// The look: closed quests only (<paramref name="closed"/>: done, or taken with its result submitted), then the tree read as the landing
     /// reads it (<see cref="AutoLander.ReadTreeAsync"/>). A tree that cannot be read, or has no commit, reads as owing nothing.
     /// </summary>
-    internal static async Task<TurnCarry> LookAsync(bool closed, Func<bool> stopped, string tree, CancellationToken ct)
+    internal static async Task<TurnCarry> LookAsync(
+        bool closed, Func<bool> stopped, string tree, CancellationToken ct, int limit = TurnCarry.Bound)
     {
         if (!closed || stopped()) return TurnCarry.None;
         var (tip, _, paths) = await AutoLander.ReadTreeAsync(tree, ct).ConfigureAwait(false);
-        return tip is null ? TurnCarry.None : new TurnCarry(true, paths, WordsOf(paths), () => !stopped());
+        return tip is null ? TurnCarry.None : new TurnCarry(true, paths, WordsOf(paths), () => !stopped(), limit);
     }
 }

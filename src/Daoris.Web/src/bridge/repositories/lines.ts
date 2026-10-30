@@ -11,7 +11,7 @@ import type { LandingChange, RepositoryLanding } from '../../settings/repository
 import type { LanguageChange, RepositoryLanguage } from '../../settings/repository/Languages';
 import type { OpinionChange, RepositoryOpinion } from '../../settings/repository/Opinions';
 import type { RepositoryReview, ReviewChange } from '../../settings/repository/Reviews';
-import type { BranchDiscard, LandedBranch, SweepBranch } from '../../settings/Sweep';
+import type { BranchDiscard, LandedBranch, LandedWithdrawal, SweepBranch } from '../../settings/Sweep';
 import type { LinePull, RebaseBranch, SyncInclude, SyncPlan, SyncRepository } from '../../settings/Sync';
 import { type HeldResolution, readWorkState, type RecoveryDropGroup, type RecoveryDropResult, type WorkState, workOf } from '../../work/head/milestone';
 import { call, lookBound, pressBound } from '../call';
@@ -252,6 +252,18 @@ export const useDiscardSessionBranch = () =>
   useMutation({
     mutationFn: ({ repository, branch }: { repository: string; branch: string }) =>
       call<BranchDiscard>('DISCARD_SESSION_BRANCH', { repository, branch, force: true }),
+  });
+
+/**
+ * Withdraw a branch a landing made whose work the line will never hold (LANDRETIRE1, D102's note): the screen's half of
+ * `daoris-driver trees remove <branch> --repository <name> --why "…"`. The reason is the person's, kept with the record; the commits stay
+ * on a recovery ref, which the answer names. A branch the driver kept is an answer with its sentence, never an error. What it moved is
+ * asked again by the state hub, as the route declares it (STATEHUB1b, D169), and never the hook's own (STATEHUB1f).
+ */
+export const useWithdrawLandingBranch = () =>
+  useMutation({
+    mutationFn: ({ repository, branch, why }: { repository: string; branch: string; why: string }) =>
+      call<LandedWithdrawal>('WITHDRAW_LANDING_BRANCH', { repository, branch, why }),
   });
 
 /**
