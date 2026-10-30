@@ -146,7 +146,7 @@ public sealed class RoleCatalog
     /// <summary>
     /// The role that takes <paramref name="work"/> at <paramref name="place"/>: the most specific scope's, design falling back to what takes
     /// build; its <c>Held</c> where a record that does not read holds the start, or two roles take the work in one scope. A work no role
-    /// takes there answers neither, and starts nothing.
+    /// takes there, its role removed or scoped elsewhere, holds its starts until the person gives it one (FOUNDATION1y-i, §2.7), said.
     /// </summary>
     public RoleFound RoleFor(string work, RolePlace place)
     {
@@ -172,8 +172,15 @@ public sealed class RoleCatalog
                 : new RoleFound(null, $"Two roles take `{work}` in one scope ({string.Join(", ", best.Select(role => $"`{role.Id}`"))}), so its starts hold until one is removed.");
         }
 
-        return work == RoleWork.Design ? RoleFor(RoleWork.Build, place) : new RoleFound(null, null);
+        return work == RoleWork.Design ? RoleFor(RoleWork.Build, place) : new RoleFound(null, NoRole(work));
     }
+
+    /// <summary>
+    /// What a start of <paramref name="work"/> says where no role takes it (FOUNDATION1y-i): its role was removed or scoped elsewhere, so it
+    /// holds until the person gives the work a role. A work that is off has its role, with no choices, and is not this.
+    /// </summary>
+    public static string NoRole(string work) =>
+        $"No role takes `{work}` here, so its starts hold until one is given it: Settings → AI features → Roles, or `daoris driver role`.";
 
     /// <summary>
     /// The roles whose entry in <c>driver.json</c> the projection narrows for an older build (§19.15, <i>C6-1.7</i>): Intake and Ask Daoris

@@ -169,13 +169,16 @@ public sealed class RoleCatalogTests : IDisposable
     }
 
     [Fact]
-    public void A_removed_seeded_role_leaves_its_work_with_no_role_and_an_off_role_reads_off()
+    public void A_removed_seeded_role_leaves_its_work_with_no_role_whose_starts_hold_said_and_an_off_role_reads_off()
     {
         var catalog = RoleCatalog.Of([new("intake", "removed", "{}", 2)]);
 
+        // FOUNDATION1y-i: no role is not off; the work's starts hold until the person gives it one.
         var found = catalog.RoleFor(ParticipantWork.Intake, Machine);
-        Assert.Equal((null, null), (found.Role, found.Held));
-        Assert.Empty(catalog.Order(ParticipantWork.Intake, Machine, DriverConfig.Empty with { IntakeAdapter = "codex" }));
+        Assert.Equal((null, RoleCatalog.NoRole(ParticipantWork.Intake)), (found.Role, found.Held));
+        var held = Assert.Throws<DriverException>(() => catalog.Order(ParticipantWork.Intake, Machine, DriverConfig.Empty with { IntakeAdapter = "codex" }));
+        Assert.Equal(RoleCatalog.NoRole(ParticipantWork.Intake), held.Message);
+        Assert.Empty(RoleCatalog.Of([]).Order(ParticipantWork.Intake, Machine, ActorChoices.With(DriverConfig.Empty, "intake", [])));
     }
 
     [Fact]

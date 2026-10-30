@@ -143,12 +143,22 @@ internal sealed class DriverIntakes(LoopContext context, Driver driver)
         var output = _context.Output;
         // MODELROLE1d (D205 §4.1): Intake's effective order, read once for this start by its plan (FOUNDATION1j). The gate above found it
         // not off.
-        var plan = PlanOf(ask, config);
-        var order = plan.Order;
-        var adapterName = order[0].Agent;
         var named = $"ask #{ask.Id} in {ask.Workspace}";
         // The hold's own sentence beside its line, as a quest's hold carries it: what a wait the intake is among says (UX6d1).
         StartRun Hold(string why) => new($"held  intake for {named}: {why}", false, Held: why);
+        StartPlan plan;
+        try
+        {
+            plan = PlanOf(ask, config);
+        }
+        catch (DriverException held)
+        {
+            // FOUNDATION1y-i: the catalogue holds the start where no role takes intake here, its role removed, or a record does not read.
+            return Hold(held.Message);
+        }
+
+        var order = plan.Order;
+        var adapterName = order[0].Agent;
 
         // Asked BEFORE the record, like every hold a driven spawn asks: a record for a spawn that could
         // never happen would mark the ask served and explain nothing.
