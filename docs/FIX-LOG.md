@@ -5,6 +5,13 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-30 - An integration test's fixture archive read as a read of this repository's archive (INTEGRATE1e part e3b)
+
+- **Symptom:** batch s's candidate failed the tool tests' reach census (MOD9's incident): `IntegrationFormGitTests.cs` "reads `docs/task-archive.md`, and a merge changing it does not run driver".
+- **Root cause:** the union-join case names its fixture repository's record `docs/task-archive.md`, a path this repository tracks. The census passes a path written after a plain local (`root, "…"`) as a fixture's, but one written after `second.Replayed!` reads as a repository read, so the case looked like a driver test reading the archive.
+- **Fix:** the fixture's record is `docs/archive.md`, which this repository does not track; production finds a union-merged file by `.gitattributes`, so the case proves the same join, and a comment says why the name differs.
+- **Verify:** `IntegrationFormGitTests.Two_archive_entries…` passed; the reach census passed alone (1 of 1).
+
 ## 2026-10-30 - Batch s's members met three censuses their builders never ran (AGENTLYNTAI1s-i, AGENTPROVIDER1m-i)
 
 - **Symptom:** the driver's fast half over batch s failed `ProviderCensusTests` (`Agents/NativePrompt.cs` and `Agents/TransportRun.cs` read a door's wire as unnamed sites), `GitLaunchTests` (`TransportRun.cs` holds a start the census did not list), and `LineCourseTests` (`SessionMessagesTickTests` grew a case the port table neither ports nor leaves out). `HookStateTests`' wrong-shape case failed once (a plugin's `initialize` past 10 s, four builders beside it) and passed alone: a FLAKE1 sighting.

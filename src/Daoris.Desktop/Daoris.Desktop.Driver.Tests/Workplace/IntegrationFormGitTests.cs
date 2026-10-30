@@ -399,12 +399,13 @@ public sealed class IntegrationFormGitTests : LandedFixture
     {
         var root = await RepositoryAsync("engine");
         Directory.CreateDirectory(Path.Combine(root, "docs"));
-        await File.WriteAllTextAsync(Path.Combine(root, ".gitattributes"), "docs/task-archive.md merge=union\n");
+        // Named apart from this repository's own archive: a path it tracks reads to the merge tool's reach census as a read of that file.
+        await File.WriteAllTextAsync(Path.Combine(root, ".gitattributes"), "docs/archive.md merge=union\n");
         // The line's own copy holds a join already, which the merge never made.
         var held = Archive + "## HELD - held (2026-10-02)\nHeld.\n";
-        await CommitAsync(root, "docs/task-archive.md", held, "the archive");
-        var a = await BranchAsync(root, "feature/a", ("docs/task-archive.md", held + "\n## A - a (2026-10-27)\nOutcome A.\n"));
-        var b = await BranchAsync(root, "feature/b", ("docs/task-archive.md", held + "\n## B - b (2026-10-28)\nOutcome B.\n"));
+        await CommitAsync(root, "docs/archive.md", held, "the archive");
+        var a = await BranchAsync(root, "feature/a", ("docs/archive.md", held + "\n## A - a (2026-10-27)\nOutcome A.\n"));
+        var b = await BranchAsync(root, "feature/b", ("docs/archive.md", held + "\n## B - b (2026-10-28)\nOutcome B.\n"));
         var c = await BranchAsync(root, "feature/c", ("c.txt", "c\n"));
         var store = Store("run-a");
         Queue(store, "ra", "feature/a", a, 1);
@@ -418,12 +419,12 @@ public sealed class IntegrationFormGitTests : LandedFixture
         Assert.Equal(IntegrationMemberStates.Replayed, second.State);
         Assert.Equal(
             held + "\n## A - a (2026-10-27)\nOutcome A.\n\n## B - b (2026-10-28)\nOutcome B.\n",
-            await ShowAsync(root, second.Replayed!, "docs/task-archive.md"));
+            await ShowAsync(root, second.Replayed!, "docs/archive.md"));
         // One merge commit for the member, its second parent the frozen tip: nothing was committed on top.
         Assert.Equal([Member(store, candidate, "ra").Replayed!, b], await ParentsOfAsync(root, second.Replayed!));
         var step = store.Steps(candidate.Id).Single(each => each is { Step: IntegrationStepNames.Replay, Request: "rb" });
         Assert.Contains("set apart", step.Said, StringComparison.Ordinal);
-        Assert.Contains("docs/task-archive.md:", step.Said, StringComparison.Ordinal);
+        Assert.Contains("docs/archive.md:", step.Said, StringComparison.Ordinal);
         Assert.Equal("", await StatusAsync(run.Tree!));
         Assert.Equal(Member(store, candidate, "rc").Replayed, candidate.Tip);
     }
