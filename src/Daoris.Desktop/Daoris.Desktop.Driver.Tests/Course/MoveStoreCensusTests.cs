@@ -61,6 +61,9 @@ public sealed class MoveStoreCensusTests
     /// <summary>The driver, which builds the driven holder over the lease holder's scope and runs the carry-on's record.</summary>
     private const string DrivenLine = "Loop/Driver.cs";
 
+    /// <summary>The driven paths' course (FOUNDATION1i), which reads the destination's standing move through the resolve before a limit move.</summary>
+    private const string DrivenCourse = "Course/GoOn/DrivenCourse.cs";
+
     private static string Relative(string path) => Path.GetRelativePath(Driver, path).Replace('\\', '/');
 
     [Fact]
@@ -85,7 +88,7 @@ public sealed class MoveStoreCensusTests
         }
 
         Assert.Equal(
-            [Window, CurveMove, LiveMove, Conversations, HandOverAsk, QuestAsk, Wiring, CarryOn, DrivenLine, QuestTake, Terminal],
+            [Window, CurveMove, LiveMove, Conversations, DrivenCourse, HandOverAsk, QuestAsk, Wiring, CarryOn, DrivenLine, QuestTake, Terminal],
             readers.Select(reader => reader[..reader.IndexOf(" names ", StringComparison.Ordinal)]).Distinct().Order(StringComparer.Ordinal));
         Assert.Contains($"{Wiring} names MoveStore", readers);
         Assert.All(

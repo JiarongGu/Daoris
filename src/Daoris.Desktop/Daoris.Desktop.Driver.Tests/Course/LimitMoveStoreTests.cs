@@ -167,11 +167,11 @@ public sealed class LimitMoveStoreTests : IDisposable
     /// A live conversation <c>c1</c> on account-1, its last turn refused by its limit with <c>Make the port configurable.</c>, its turns held by
     /// nothing; the limit's move keeps its record under this shell's run, <c>run-shell</c>.
     /// </summary>
-    private World Live(int opens, Action<ChatMessage>? wire = null)
+    private World Live(int opens, Action<ChatMessage>? wire = null, string? profile = "account-1")
     {
         var ledger = new ChatLedger { Opens = opens }.Register("engine", _root);
         var client = ledger.Client();
-        ledger.Chat("c1", "working", "talk", _root, profile: "account-1");
+        ledger.Chat("c1", "working", "talk", _root, profile: profile);
         var events = Events;
         events.Append("c1", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = "Earlier answered exchange." });
         events.Append("c1", new SessionEvent { Kind = SessionEventKind.Turn, StopReason = "end_turn" });
@@ -405,6 +405,39 @@ public sealed class LimitMoveStoreTests : IDisposable
         Assert.Empty(world.Ledger.TakenBy);
         Assert.Equal(["k1"], world.Ledger.Said("c2"));
         Assert.Null(move.Effect);
+    }
+
+    private static string Said(LineCourse answer) => answer switch
+    {
+        LineCourse.Never never => $"never:{never.Why}",
+        LineCourse.Hold hold => $"hold:{hold.Why}",
+        LineCourse.Move move => $"move:{move.Why}:{move.By}:{move.Where.Source}",
+        _ => answer.GetType().Name,
+    };
+
+    /// <summary>
+    /// 🔴 FOUNDATION1h branch 5 (the foundation design §3.1, §14.2): the live limit move decides through <c>CourseDecision.Decide</c> for
+    /// <see cref="CourseTrigger.LimitEnd"/>. Heard from the move, another account with room is a <c>limit</c> move by Daoris on the walk's
+    /// account; none with room, or an account the person picked, is the course's <c>Stays</c>, and nothing opens or is held.
+    /// </summary>
+    [Theory]
+    [InlineData("room", "move:Limit:Daoris:Settled", true)]
+    [InlineData("none", "hold:Stays", false)]
+    [InlineData("pick", "hold:Stays", false)]
+    public async Task The_live_move_asks_the_course_and_only_a_move_opens(string what, string course, bool opens)
+    {
+        var world = Live(opens: 2, profile: what == "none" ? null : "account-1");
+        using var c = world.Client;
+        if (what == "pick") world.Context.Conversations.Pick("c1", "account-1");
+        var decided = new List<(string Session, LineCourse Answer)>();
+        world.Limit.Decided += (session, answer) => decided.Add((session, answer));
+
+        var moved = await world.Limit.MoveAsync("c1", Config(), null);
+
+        Assert.Equal(opens, moved?.SessionId is not null);
+        var (session, heard) = Assert.Single(decided);
+        Assert.Equal(("c1", course), (session, Said(heard)));
+        Assert.Equal(opens, world.Runner.Opened is not null);
     }
 
     // ——— The conversations' take-up (§3.3, §13.4, §19.1).
