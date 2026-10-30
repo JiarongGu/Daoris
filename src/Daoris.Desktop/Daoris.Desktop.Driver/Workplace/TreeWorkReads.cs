@@ -146,12 +146,7 @@ internal sealed class TreeWorkReads(TreeContext context, TreeSquashes squashes, 
             var proof = await ContentHolds.HeldByContentAsync(full, judged, line, notHolders, ct).ConfigureAwait(false);
             if (proof.Hold is not { } held) return (null, proof.Lacks);
 
-            var holds = await ContentHolds.HoldsAsync(full, root, await context.ScratchAsync(root, repository, workspace, ct, line).ConfigureAwait(false), ct)
-                .ConfigureAwait(false);
-            var stays = holds is null ? "Daoris cannot tell what it holds beyond its commits"
-                : holds.Uncommitted.Count > 0 ? $"it has {holds.Uncommitted.Count} uncommitted path(s), which a discard would destroy"
-                : holds.OwnSaid is { } own ? $"it holds {own}, which a discard would destroy"
-                : null;
+            var stays = await StaysAsync(full, root, repository, workspace, line, ct).ConfigureAwait(false);
             if (stays is not null) return (new HeldWork(held, null, stays), null);
 
             // The name the discard keeps its commits under: the tree's branch, or for a detached tree the one its layout names.
@@ -164,6 +159,50 @@ internal sealed class TreeWorkReads(TreeContext context, TreeSquashes squashes, 
         {
             // A comparison that could not be made proves nothing: its commits are offered to land as ancestry counted them.
             return (null, null);
+        }
+    }
+
+    private async Task<string?> StaysAsync(string full, string root, string repository, string workspace, string? line, CancellationToken ct) =>
+        await StaysOfAsync(full, root, await context.ScratchAsync(root, repository, workspace, ct, line).ConfigureAwait(false), ct).ConfigureAwait(false);
+
+    private static async Task<string?> StaysOfAsync(string full, string root, IReadOnlyList<System.Text.RegularExpressions.Regex> declared, CancellationToken ct)
+    {
+        var holds = await ContentHolds.HoldsAsync(full, root, declared, ct).ConfigureAwait(false);
+        return holds is null ? "Daoris cannot tell what it holds beyond its commits"
+            : holds.Uncommitted.Count > 0 ? $"it has {holds.Uncommitted.Count} uncommitted path(s), which a discard would destroy"
+            : holds.OwnSaid is { } own ? $"it holds {own}, which a discard would destroy"
+            : null;
+    }
+
+    /// <summary>The output the tree's repository declares at its line's tip (<see cref="ContentHolds.HoldsAsync"/>'s), for a kept read to hold.</summary>
+    internal async Task<IReadOnlyList<System.Text.RegularExpressions.Regex>> DeclaredAsync(string tree, string common, CancellationToken ct)
+    {
+        var root = Path.GetDirectoryName(common.TrimEnd('\\', '/'))!;
+        var (workspace, repository) = context.OwnerOf(Path.GetFullPath(tree));
+        var line = (await context.LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
+        return await context.ScratchAsync(root, repository, workspace, ct, line).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// A held tree's <see cref="HeldWork"/> read again (TREELOOK2): the proof <paramref name="kept"/> stands, and what the tree holds
+    /// that no commit does is asked of its working tree now. <paramref name="common"/> is the repository's git dir, as the kept read's stamp read it.
+    /// </summary>
+    /// <param name="declared">The repository's declared output as an earlier read of it found (it rests on the refs and the choices the stamp holds); null reads it.</param>
+    internal async Task<(HeldWork? Work, IReadOnlyList<System.Text.RegularExpressions.Regex>? Declared)> HeldAgainAsync(
+        string tree, string common, HeldWork kept, IReadOnlyList<System.Text.RegularExpressions.Regex>? declared, CancellationToken ct)
+    {
+        try
+        {
+            var full = Path.GetFullPath(tree);
+            var root = Path.GetDirectoryName(common.TrimEnd('\\', '/'))!;
+            declared ??= await DeclaredAsync(full, common, ct).ConfigureAwait(false);
+            var stays = await StaysOfAsync(full, root, declared, ct).ConfigureAwait(false);
+            // The ref a discard keeps its commits at was named when the proof was read; where none was, it is named by a walk.
+            return (stays is not null ? kept with { Keeps = null, Stays = stays } : kept.Keeps is null ? null : kept with { Stays = null }, declared);
+        }
+        catch (Exception error) when (error is DriverException or IOException or UnauthorizedAccessException)
+        {
+            return (null, declared);
         }
     }
 

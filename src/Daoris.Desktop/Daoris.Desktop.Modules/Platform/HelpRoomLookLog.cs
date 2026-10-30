@@ -51,6 +51,13 @@ public static class HelpRoomLookLog
             data.Add(("trees", times.Trees));
         }
 
+        // TREELOOK2: the five slowest trees' steps (a folder name, never a path), so the install's slow tree is read, not guessed.
+        if (times is { TreeSteps.Count: > 0 })
+        {
+            var slowest = times.TreeSteps.OrderByDescending(step => step.Ms).Take(5).Select(step => $"{step.Tree} {step.Step} {step.Ms}ms");
+            data.Add(("slowTrees", string.Join("; ", slowest)));
+        }
+
         if (slow) log?.Warn(Event, [.. data]);
         else log?.Info(Event, [.. data]);
     }

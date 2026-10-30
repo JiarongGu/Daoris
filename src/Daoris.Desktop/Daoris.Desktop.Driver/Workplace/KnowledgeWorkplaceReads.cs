@@ -31,7 +31,7 @@ internal sealed class KnowledgeWorkplaceReads : IKnowledgeWorkplace
     public async Task<HelpTrees> ReadTreesAsync(string home, HelpTreesPart part, CancellationToken ct, LookTimes? times)
     {
         var trees = new SessionTrees(home);
-        var pass = TreeReadMemo.Of(home).Begin(trees);
+        var pass = TreeReadMemo.Of(home).Begin(trees, times);
         return await HelpFacts.ReadTreesAsync(part, trees.Holds, pass.WorkAsync, ct, times, HelpFacts.TreesAtOnce, TreeFolders.Walkable).ConfigureAwait(false);
     }
 

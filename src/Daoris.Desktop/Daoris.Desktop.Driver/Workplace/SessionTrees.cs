@@ -922,6 +922,15 @@ public sealed class SessionTrees(string home, IWorkplacePluginWire? plugins = nu
     /// </summary>
     internal Task<int?> StatusCountAsync(string tree, CancellationToken ct = default) => TreeWorkReads.UncommittedOfAsync(tree, ct);
 
+    /// <inheritdoc cref="TreeWorkReads.DeclaredAsync"/>
+    internal Task<IReadOnlyList<System.Text.RegularExpressions.Regex>> DeclaredAsync(string tree, string common, CancellationToken ct = default) =>
+        WorkReads.DeclaredAsync(tree, common, ct);
+
+    /// <inheritdoc cref="TreeWorkReads.HeldAgainAsync"/>
+    internal Task<(HeldWork? Work, IReadOnlyList<System.Text.RegularExpressions.Regex>? Declared)> HeldAgainAsync(
+        string tree, string common, HeldWork kept, IReadOnlyList<System.Text.RegularExpressions.Regex>? declared, CancellationToken ct = default) =>
+        WorkReads.HeldAgainAsync(tree, common, kept, declared, ct);
+
     /// <summary>The landings record a tree's walk reads (TREELOOK1's stamp).</summary>
     internal string LandingsPath => _context.Recorded.FilePath;
 
