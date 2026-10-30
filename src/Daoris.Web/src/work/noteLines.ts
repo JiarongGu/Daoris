@@ -260,6 +260,8 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'opening.said-clear': { values: [] },
   // MODELROLE1c2 (D205 §4.6 item 1): a later choice of an actor's ran, each choice passed said in the walk's own words.
   'opening.actor': { values: ['actor', 'n', 'entry', 'passed'] },
+  // FOUNDATION1x: a quest marked design ran on the order of the role taking design, Build's while none does; the role's name as written.
+  'opening.design': { values: ['role'] },
   // CHATFLOW1c (the chat-flow design §4.3): a chat run's binding, said once in the conversation that grew its tree: the named workflow and
   // the repository or workspace that chose it (`owner`, set as code), the one bound with why it cannot land, or a bind the home did not keep.
   'chat.workflow': { values: ['workflow', 'version', 'owner'] },
@@ -687,6 +689,8 @@ export const NOTE_VALUES: Readonly<
   // A window's use projected to now, as a window's use is (USAGEPROBE1).
   projected: 'percent',
   adapter: 'text', now: 'text', then: 'text',
+  // The working role a design-weighted quest started on (FOUNDATION1x), said as its name.
+  role: 'text',
   // An account id is worded by the name the person gave it where the page knows it (NOTENAME1); `owner` is the agent.
   account: 'account', over: 'account', first: 'account',
   // A list of account ids, each named so and set as code (ROSTERREFUSE2); `logins` are the sign-in commands, each set as code.

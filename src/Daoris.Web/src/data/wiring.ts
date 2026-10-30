@@ -226,6 +226,38 @@ export type ActorEntry = { agent: string; model?: string | null; effort?: string
 export type ActorRow = { id: string; state: 'set' | 'before' | 'off' | 'unreadable'; choices: ActorEntry[]; error?: string | null };
 
 /**
+ * A change of driver.json's actors another program made, as `ACTORS` answers it beside the rows (FOUNDATION1w-s, the foundation design
+ * §19.15): each role it moved, as Daoris last wrote it and as that file showed it, `applied` where it turned Intake or Ask Daoris off at
+ * once. It waits for the person's *Take it* or *Dismiss* (`STAFFING_FOUND_ANSWER`).
+ */
+export type StaffingFound = { id: number; at: string; changes: { role: string; was: ActorRow; now: ActorRow; applied: boolean }[] };
+
+/** A role's choice as the catalogue stores it: an agent, its model and effort in the tool's own words, absent for account default. */
+export type RoleChoice = { agent: string; model?: string | null; effort?: string | null };
+
+/**
+ * One role of the catalogue as `ROLES` answers it (FOUNDATION1y-i, the foundation design §2.7): the seed's, one the person set, one
+ * removed or one whose record does not read; its names as authored, the work it takes, where, and its stored choices.
+ */
+export type RoleRow = {
+  id: string; state: 'seed' | 'set' | 'removed' | 'unreadable'; seeded: boolean; nameEn?: string | null; nameZh?: string | null;
+  takes: string[]; scopeKind?: string | null; scopeId?: string | null; revision: number; error?: string | null; choices?: RoleChoice[] | null;
+};
+
+/** A role Daoris suggests adding (FOUNDATION1y-i): the Designer while no role takes design, applied only by the person's press. */
+export type SuggestedRole = { id: string; nameEn: string; nameZh: string; takes: string[]; scopeKind: string; choices: RoleChoice[] };
+
+/** The catalogue as `ROLES` answers it: its roles, the work a role may take, whether this home keeps it, and what is suggested. */
+export type RoleCatalogue = { roles: RoleRow[]; works: string[]; kept: boolean; suggested: SuggestedRole[] };
+
+/** A role's change as `SET_ROLE` takes it: set with its record and choices, removed, or given back its seed. */
+export type RoleChangePress = {
+  change: 'set' | 'remove' | 'default'; id: string; revision?: number | null;
+  role?: { name: { en: string; zh: string }; takes: string[]; scope: { kind: string; id?: string | null } };
+  choices?: RoleChoice[] | null;
+};
+
+/**
  * The set-aside folders of the press's early group by class (KEEPSIZE1b, the keep-size design §5): recorded, its tip held by a ref or the
  * line; awaiting its record; its branch standing; stopped between its steps; what holds its commits not confirmed (`unheld`); and
  * unmarked, from before this build or not a finished tree; and `unread`, whose manifest does not read. `stopped`, `unheld` and `unread` are

@@ -1015,10 +1015,15 @@ public sealed class SessionLedger(
     /// <param name="decision">With <c>from: supervisor</c> only: the decision whose release this is (SUPERVISOR1a-i).</param>
     /// <param name="question">With <c>from: supervisor</c> only: the recorded question it answers.</param>
     /// <param name="choice">With <c>from: supervisor</c> only: the offered label it chose, from which the service composes the text.</param>
+    /// <param name="ending">
+    /// The shell asks for a record that winds up or moves, its dispatcher closed (FOUNDATION1o, the foundation design §3.4 rule 4): a running
+    /// record keeps the word as one said once it ended, for its next part to go on with, where the shell held it before. Without it a running
+    /// record refuses as before.
+    /// </param>
     public async Task<SessionSayOutcome> SayAsync(
         string id, string? text, IReadOnlyList<string>? files, DateTimeOffset now, CancellationToken ct = default, string? channel = null,
         string? from = null, string? key = null, string? level = null, bool running = false,
-        string? decision = null, string? question = null, string? choice = null, bool settled = false)
+        string? decision = null, string? question = null, string? choice = null, bool settled = false, bool ending = false)
     {
         if (from == SaidFrom.Supervisor)
         {
@@ -1095,7 +1100,9 @@ public sealed class SessionLedger(
 
             var parked = session.State == SessionState.AwaitingPerson;
             // COWORK1c: a running record keeps words only for its own run, asked by the driver that runs it.
-            var forRun = session.Active && !parked;
+            // FOUNDATION1o: a record that winds up or moves keeps the word for its next part, as an ended record keeps one.
+            var forNext = session.Active && !parked && ending && !running;
+            var forRun = session.Active && !parked && !forNext;
             if (forRun && !running)
             {
                 return new SessionSayOutcome(
@@ -1119,7 +1126,8 @@ public sealed class SessionLedger(
                 NewWordId(), words, now, Names(files), Reopens: !parked && !forRun, Channel: channel, From: from, Key: key, Level: level);
             var (note, parts) = parked ? AnsweredNote(session, words, from) : (null, null);
             var kept = await KeepOwnersWordAsync(session, word, note, parts, inside).ConfigureAwait(false);
-            return new SessionSayOutcome(SessionSayRefusal.None, forRun ? ForRunMessage(id, from) : KeptMessage(session, from), kept, word)
+            var message = forRun ? ForRunMessage(id, from) : forNext ? ForNextMessage(id, from) : KeptMessage(session, from);
+            return new SessionSayOutcome(SessionSayRefusal.None, message, kept, word)
             {
                 Answers = parked,
             };
@@ -1593,6 +1601,10 @@ public sealed class SessionLedger(
     /// <summary>The say's sentence for words kept for a running session's run (COWORK1c).</summary>
     private static string ForRunMessage(string id, string? from) =>
         $"Kept for session `{id}`, which runs: {(from == SaidFrom.Daoris ? "Daoris's words wait" : "your words wait")} on its record until its run takes them.";
+
+    /// <summary>The say's sentence for words kept for a record that winds up or moves (FOUNDATION1o).</summary>
+    private static string ForNextMessage(string id, string? from) =>
+        $"Kept for session `{id}`, which is ending: {(from == SaidFrom.Daoris ? "Daoris's words wait" : "your words wait")} on its record for it to go on with.";
 
     private static string KeptMessage(Session session, string? from = null)
     {

@@ -45,10 +45,14 @@ function respond(url: string): Response {
 function show() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   // What the last tick said (ShellSignals writes it): one quest held, one sitting for another reason.
-  client.setQueryData(keys.considered, [
-    { quest: 'held01', repository: 'engine', verdict: 'Held', reason: '`engine` is held by the person.' },
-    { quest: 'free02', repository: 'game', verdict: 'NotDrivable', reason: '`game` is not driven on this machine.' },
-  ]);
+  client.setQueryData(keys.considerations, {
+    considered: [
+      { quest: 'held01', repository: 'engine', verdict: 'Held', reason: '`engine` is held by the person.' },
+      { quest: 'free02', repository: 'game', verdict: 'NotDrivable', reason: '`game` is not driven on this machine.' },
+    ],
+    untrusted: [],
+    waits: [],
+  });
   return render(
     <QueryClientProvider client={client}>
       <Tooltip.Provider>

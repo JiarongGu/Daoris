@@ -126,9 +126,15 @@ public sealed class DriverLoop(
         WorkStateSlice.Of(this, eventBus), GroupsStateSlice.Of(this, eventBus), SweepStateSlice.Of(this, eventBus),
         SyncStateSlice.Of(this, eventBus), QuestsStateSlice.Of(this, eventBus), AsksStateSlice.Of(this, eventBus),
         UsageStateSlice.Of(this, eventBus), AccountsStateSlice.Of(this, eventBus), AttentionStateSlice.Of(this, eventBus),
-        Notices.Slice));
+        Notices.Slice, ConsiderationsStateSlice.Of(this, eventBus), RulesStateSlice.Of(this, eventBus)));
 
     private StateSlices? _slices;
+
+    /// <summary>The rules' reading, shared by their slice and each look, which tells their scope only where it moved (FOUNDATION1s part B).</summary>
+    public RulesReading RulesRead { get; } = new();
+
+    /// <summary>The knowledge index's size as the service lists it, read at each look, which tells the repositories while it feeds.</summary>
+    public IndexFeed IndexRead { get; } = new();
 
     /// <summary>
     /// <i>Done and failed</i> (NOTIFY2f, D196 point 6): the notices this process records and reads again, which the <c>NOTICES_READ</c>
@@ -496,6 +502,16 @@ public sealed class DriverLoop(
     private volatile IReadOnlyList<object>? _considered;
 
     /// <summary>
+    /// Keep what a look considered and ask the considerations' slice to judge it with what the look kept beside it (FOUNDATION1s, D182):
+    /// the trust holds and the waits, pushed only where one moved.
+    /// </summary>
+    public void RecordConsidered(IReadOnlyList<object> sitting)
+    {
+        _considered = sitting;
+        Slices.Find(ConsiderationsStateSlice.Name)?.Wake();
+    }
+
+    /// <summary>
     /// What the last tick parked by its strikes (DRV6) — the verdict the quest drawer shows its Retry by, and what
     /// Ask Daoris's <c>retry</c> is judged against and its room lists (HELP10).
     /// </summary>
@@ -725,6 +741,8 @@ public sealed class DriverLoop(
         var homeDirectory = Home;
         var key = Environment.GetEnvironmentVariable(ServiceClient.KeyVariable);
         using var service = new ServiceClient(serviceUrl, key);
+        // The service's doors for the one read the client does not carry: the repositories' index sizes (FOUNDATION1s part B).
+        using var doors = new ServiceHttp(service.BaseUrl, key);
 
         // Every session this loop and its conversations open, move and hear, timed into the machine log
         // (LOG1b) — declared after the client and before the chat runner, so it hears the runner's
@@ -786,6 +804,25 @@ public sealed class DriverLoop(
         // on the home whoever holds its lease, since the windows are this process's either way. It ends with the loop.
         _ = Task.Run(() => ServiceConfirmations.RunAsync(service.Confirmations, ct), ct);
 
+        // FOUNDATION1 l-i (the foundation design §4.1): the service's journal read from this process's come-up, whoever holds the lease, so an end
+        // a headless loop drove reaches this window's slices as a conversation's own does. It ends with the loop.
+        // FOUNDATION1 m-ii: and the news of the conversations, a park among them, told by this shell from a cursor it keeps, so a park made just
+        // before a restart is told once after it. The driven work's is the lease holder's, below.
+        var news = new News(homeDirectory);
+        _ = Task.Run(
+            () => JournalFeed.RunAsync(
+                service,
+                [
+                    new JournalTeller(async batch =>
+                    {
+                        await PartEndRelay.TellAsync(eventBus, batch).ConfigureAwait(false);
+                        if (sessionLog is not null) await sessionLog.TellAsync(batch).ConfigureAwait(false);
+                    }),
+                    NewsFeed("shell", news, service, row => row.Marks.Contains("chat", StringComparer.Ordinal), ct),
+                ],
+                log, ct),
+            ct);
+
         // Every loop on the home watches the requests a terminal's `sessions stop|finish|decline` writes (SESSUX1g, D126
         // §7.1): one for a session this registry runs, a conversation or a driven session, is acted on as the screen's
         // route would act. Before the home's lock, so a conversation is reached while a terminal's loop drives the home.
@@ -819,6 +856,7 @@ public sealed class DriverLoop(
         // NOTIFY2f (D196 point 6): the notices' record, read again by this window's process whoever holds the lease, since any process
         // on the home writes it; another's write is heard, or found at the topic's deadline, and its own wakes nothing, since its writer
         // pushes it. Before the lease is waited on, as the proposals are.
+        global::Daoris.Driver.Notices.ImportFile(homeDirectory);
         await using var notices = HomeWatch.ForNotices(homeDirectory, (_, _) => Notices.Slice.Wake(), log: log);
         notices.Start();
         using var noticesResumed = Power?.Hear(notices.Resumed);
@@ -840,6 +878,12 @@ public sealed class DriverLoop(
         // holds it, and everything above — the host, the page, the conversations — carries on meanwhile.
         using var held = await HoldHomeAsync(ct).ConfigureAwait(false);
         if (held is null) return;
+
+        // FOUNDATION1 m-ii: the driven work's news is the lease holder's, told from its own cursor on a wait of its own.
+        _ = Task.Run(
+            () => JournalFeed.RunAsync(
+                service, [NewsFeed("lease", news, service, row => !row.Marks.Contains("chat", StringComparer.Ordinal), ct)], log, ct),
+            ct);
 
         // The terminal's pipe (RPC1a, the terminal RPC design §6.3): served once this loop holds the home, the one writer, and only
         // then named in the address, so a terminal that reads it finds it served. A name already held serves none, said in the log.
@@ -955,13 +999,11 @@ public sealed class DriverLoop(
                 var read = await parks.LookAsync(
                     report, ticked.ForgivenAt, token => SessionRecords.ReadAsync(service.BaseUrl, key, ct: token), ct)
                     .ConfigureAwait(false);
-                var attend = attention.Observe(report, read);
+                // The look's own news, told once across restarts by the said-set and not by a first look's baseline (FOUNDATION1 m-iv).
+                var attend = AttentionNews.Told(news, attention.Observe(report, read), DateTimeOffset.UtcNow);
                 // Kept in Notifications whatever the switch says (NOTIFY2f, the notification design §2.5): recording is not telling.
                 Notices.Keep(attend);
-                if (ticked.Notify)
-                {
-                    foreach (var item in attend) await AttendAsync(item).ConfigureAwait(false);
-                }
+                foreach (var item in attend.Where(each => NotifyRule.Tells(each, ticked.Notify))) await AttendAsync(item).ConfigureAwait(false);
 
                 // Forwarded when the tick has something to say: it did something, or what it says
                 // about the sitting quests CHANGED. The considerations are a standing answer the
@@ -1013,7 +1055,7 @@ public sealed class DriverLoop(
                         report.Waits.FirstOrDefault(wait =>
                             wait.Quests.Contains(consideration.Quest.Id, StringComparer.OrdinalIgnoreCase))))
                     .ToArray();
-                _considered = sitting;
+                RecordConsidered(sitting);
                 // And the driver's state judged again (PUSH1a, D182), pushed only where it moved: what runs and what waits for review
                 // move at a look, and a terminal's edit of `driver.json` is read here. A wake only asks; the slice's worker judges.
                 DriverSlice.Wake();
@@ -1048,32 +1090,30 @@ public sealed class DriverLoop(
                 // none moves anything above, and the page said *no workspace yet* over 29 repositories
                 // just registered, until it was reloaded.
                 var registered = await RegisteredAsync(service, ct).ConfigureAwait(false);
+                var registryMoved = false;
                 if (RegistryHeard(Facts, registered, lastRegistered))
                 {
                     changed = true;
+                    registryMoved = lastRegistered is not null;
                     lastRegistered = registered;
+                }
+
+                // What this look moved of the rules, the registry and the knowledge index, told as the scopes' own changes (FOUNDATION1s):
+                // the page's tick asks none of them again, since a press's change reaches it the same way. Part B: the rules where their
+                // reading moved, never at each line said about them; the index while it feeds.
+                var indexMoved = IndexRead.Moved(await IndexFeed.ReadAsync(doors, ct).ConfigureAwait(false));
+                if (LookScopes(RulesRead.Read(Home).Moved, registryMoved, indexMoved) is var moved && moved != StateScopes.None)
+                {
+                    StatePublisher.Publish(eventBus, moved);
                 }
 
                 if (report.PlannedAnything || changed)
                 {
                     await eventBus.EmitAsync("DAORIS", "DRIVER_TICK", new
                     {
+                        // What the look considered, the trust holds and the waits are the considerations' slice's, pushed
+                        // when they move (FOUNDATION1s); the tick says only that something moved.
                         Events = report.Events,
-                        Considered = sitting,
-                        // The trust holds as facts (D73): machine-local paths, so over this bridge only.
-                        // A hold's `quest` or `ask`, whichever it is not, is left out by the bridge, and so is `own` but
-                        // where its file is the own sign-in's (POOL1a3, D197 point 3).
-                        Untrusted = report.Untrusted.Select(hold => new
-                        {
-                            hold.Folder,
-                            hold.TrustFile,
-                            hold.Quest,
-                            hold.Ask,
-                            Own = hold.Own ? true : (bool?)null,
-                        }).ToArray(),
-                        // The starts held on cooling accounts, one per account, an ask's intake among them (UX6d): what
-                        // *What needs you* says waits for an account, from the look's own wait and nothing asked.
-                        Waits = report.Waits.Select(TickWait).ToArray(),
                     }).ConfigureAwait(false);
                 }
             },
@@ -1100,7 +1140,7 @@ public sealed class DriverLoop(
         {
             Workspace = MainWindowScopes.WorkspaceOf(Slices.Find(SessionsStateSlice.Name)?.Snapshot(), null, item.Session, null),
         });
-        return Notifying() ? AttendAsync(item) : Task.CompletedTask;
+        return NotifyRule.Tells(item, Notifying()) ? AttendAsync(item) : Task.CompletedTask;
     }
 
     /// <summary>
@@ -1108,16 +1148,31 @@ public sealed class DriverLoop(
     /// announcement made outside any look, a conversation's answer (NOTIFY1a) or a held tool call (NOTIFY2d). Choices that do not read
     /// err toward saying it, as the shell's notifier does.
     /// </summary>
-    public bool Notifying()
+    public bool Notifying() => NotifyRule.SwitchOn(ConfigPath);
+
+    /// <summary>
+    /// One news teller as a journal feed's teller (FOUNDATION1 m-ii): its rows claimed from its own cursor, and each claimed piece made the
+    /// attention event the notifier reads, told while the machine's notify switch is on and never while it is off.
+    /// </summary>
+    private JournalTeller NewsFeed(string name, News news, ServiceClient service, Func<JournalEntry, bool> takes, CancellationToken ct)
     {
-        try
+        var teller = new NewsTeller(
+            news, name, takes, () => DateTimeOffset.UtcNow,
+            async pieces =>
+            {
+                foreach (var piece in pieces)
+                {
+                    var item = await NewsAttention.OfAsync(service, piece, ct).ConfigureAwait(false);
+                    // Kept in Notifications whatever the switch says (NOTIFY2f): recording is not telling.
+                    Notices.Keep([item]);
+                    if (NotifyRule.Tells(item, Notifying())) await AttendAsync(item).ConfigureAwait(false);
+                }
+            })
         {
-            return DriverConfig.Load(ConfigPath).Notify;
-        }
-        catch (DriverConfigUnreadableException)
-        {
-            return true;
-        }
+            Incomplete = batch => log?.Warn("news.incomplete", ("teller", name), ("store", batch.Store), ("floor", batch.Floor)),
+            Refused = why => log?.Warn("news.refused", ("teller", name), ("why", why)),
+        };
+        return new JournalTeller(teller.TellAsync, () => news.Cursor(name), position => news.Advance(name, position));
     }
 
     /// <summary>What is worth interrupting the person for (SURF5b), in the one shape the shell's notifier and the page's toast read.</summary>
@@ -1244,11 +1299,16 @@ public sealed class DriverLoop(
     /// since the shape is the page's contract: the routes that start a conversation hand it to their runs, and a chat the
     /// runner took up by itself is announced by it (MSG1c2).
     /// </summary>
-    internal static Task Ended(IEventBus bus, string session, string state) =>
-        bus.EmitAsync("DAORIS", EndedType, new { Session = session, State = state });
+    public static Task Ended(IEventBus bus, string session, string state) => ConversationEnds.FromRouteAsync(bus, session, state);
 
     /// <summary>The event's type, spelled here alone: a slice that wakes on it names it by this (PUSH1a).</summary>
     public const string EndedType = "SESSION_ENDED";
+
+    /// <summary>
+    /// An end the journal told this process (FOUNDATION1 l-i): any part's, driven or a conversation's, with its reason and class, so a
+    /// slice that follows ends wakes on it rather than on the conversation's route alone.
+    /// </summary>
+    public const string PartEndedType = "PART_ENDED";
 
     /// <summary>
     /// A conversation's start refused at its open went on in its replacement (MODELROLE1d2, D205 §3.5(b)): <c>{ from, to }</c>, the refused
@@ -1350,6 +1410,16 @@ public sealed class DriverLoop(
             return null;
         }
     }
+
+    /// <summary>
+    /// What a look moved that the page reads by pull or a slice reads by scope, as scopes (FOUNDATION1s, D182 point 7): the rules, where
+    /// their reading moved (<see cref="RulesReading"/>; a retry line said again each look moves nothing); the registry, where its signature
+    /// moved; and the repositories, where the knowledge index fed further (<see cref="IndexFeed"/>). Each first reading is the page's own.
+    /// </summary>
+    public static StateScopes LookScopes(bool rulesMoved, bool registryMoved, bool indexMoved) =>
+        (rulesMoved ? StateScopes.Rules : StateScopes.None)
+        | (registryMoved ? StateScopes.Registry : StateScopes.None)
+        | (indexMoved ? StateScopes.Repositories : StateScopes.None);
 
     /// <summary>
     /// Whether the registry's signature the tick read is a change. A change also wakes the machine's facts (REGWAKE1): a repository

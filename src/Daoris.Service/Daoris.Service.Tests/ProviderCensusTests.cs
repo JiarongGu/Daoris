@@ -8,7 +8,7 @@ namespace Daoris.Service.Tests;
 /// AGENTPROVIDER1 row a, part 3 (the agent-provider design §9, D213): the service's twin of the driver's <c>ProviderCensusTests</c>. The
 /// service names no driver type, so what can cross is a literal and a key: every site in the service's four production projects that
 /// names a provider's id, variable, file or wire key is counted over the source with its comments blanked, and each is a named exception
-/// in the <c>service</c> section of the driver's <c>fixtures/provider-census.json</c>, with its exact count, the design's row that moves
+/// in the <c>service</c> section of the driver's <c>fixtures/provider-census.json</c>, by file and token (the count is not pinned, CENSUSRULES1), the design's row that moves
 /// it and its class. The ids and the vocabulary are read from <c>fixtures/provider-vocabulary.json</c>, the one table the four censuses
 /// share; nothing here copies a word of it. The service's ordered call readers (<c>Core/Sessions/CallLineage.cs</c>, §3.3) and its open's
 /// default (D23's supported default, §6) are named exceptions with the row or the decision that keeps them.
@@ -23,7 +23,7 @@ public sealed class ProviderCensusTests
 
     private sealed record Token(string Name, Regex Pattern);
 
-    private sealed record Row(string File, string Token, int Count, string Rank, string Class, string Why);
+    private sealed record Row(string File, string Token, string Rank, string Class, string Why);
 
     private static string Fixtures() => Path.Combine(
         SourceFiles.WorkspaceFolder(), "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Tests", "fixtures");
@@ -37,7 +37,7 @@ public sealed class ProviderCensusTests
         return (
             service.GetProperty("roots").EnumerateArray().Select(each => each.GetString()!).ToArray(),
             service.GetProperty("exceptions").EnumerateArray().Select(row => new Row(
-                row[0].GetString()!, row[1].GetString()!, row[2].GetInt32(), row[3].GetString()!, row[4].GetString()!, row[5].GetString()!)).ToList());
+                row[0].GetString()!, row[1].GetString()!, row[2].GetString()!, row[3].GetString()!, row[4].GetString()!)).ToList());
     });
 
     private static readonly Lazy<List<Token>> Tokens = new(() =>
@@ -88,14 +88,13 @@ public sealed class ProviderCensusTests
     /// <summary>The problems a census holds against the fixture, in order; none is a passing census.</summary>
     private static List<string> Problems(Dictionary<string, Dictionary<string, int>> found, List<Row> rows, bool exact = true)
     {
-        var allowed = rows.ToDictionary(each => (each.File, each.Token), each => each.Count);
+        var allowed = rows.Select(each => (each.File, each.Token)).ToHashSet();
         var problems = new List<string>();
         foreach (var (file, counts) in found.OrderBy(each => each.Key, StringComparer.Ordinal))
         {
             foreach (var (token, count) in counts.OrderBy(each => each.Key, StringComparer.Ordinal))
             {
-                if (!allowed.TryGetValue((file, token), out var named)) problems.Add($"{file}: unnamed site {token} x{count}");
-                else if (count != named) problems.Add($"{file}: {token} found {count}, the fixture names {named}");
+                if (!allowed.Contains((file, token))) problems.Add($"{file}: unnamed site {token} x{count}");
             }
         }
 
@@ -121,7 +120,7 @@ public sealed class ProviderCensusTests
 
         Assert.True(problems.Count == 0, $"{problems.Count} problem(s):\n" + string.Join('\n', problems) + "\n\nthe sites found, as fixture rows:\n"
             + string.Join('\n', Baseline.Value.OrderBy(each => each.Key, StringComparer.Ordinal).SelectMany(each => each.Value
-                .OrderBy(token => token.Key, StringComparer.Ordinal).Select(token => $"[\"{each.Key}\", \"{token.Key.Replace("\"", "\\\"")}\", {token.Value}]"))));
+                .OrderBy(token => token.Key, StringComparer.Ordinal).Select(token => $"[\"{each.Key}\", \"{token.Key.Replace("\"", "\\\"")}\"]"))));
     }
 
     /// <summary>The fixture's own shape: every row a known row letter and class, a reason, a file that exists, no duplicate, in order.</summary>
@@ -140,7 +139,7 @@ public sealed class ProviderCensusTests
         {
             Assert.Contains(each.Rank, Rows);
             Assert.Contains(each.Class, Classes);
-            Assert.True(each.Count > 0 && each.Why.Length > 0, $"{each.File}: {each.Token} says no reason");
+            Assert.True(each.Why.Length > 0,$"{each.File}: {each.Token} says no reason");
             Assert.Contains(each.Token, known);
             Assert.True(File.Exists(Path.Combine(workspace, each.File)), $"{each.File} is no file");
             // Only a behaviour is removed by a row; a permanent site, an id in words and a measurement stay.
@@ -180,17 +179,17 @@ public sealed class ProviderCensusTests
             $"expected {token} named in {file}, got: {string.Join(" | ", problems)}");
     }
 
-    /// <summary>A second site in a file that already holds a named one, and a named one gone, are both named: the counts are exact.</summary>
+    /// <summary>A second site in a file that already holds a named one passes, and a named one gone is named: the sites are not counted (CENSUSRULES1).</summary>
     [Fact]
-    public void A_site_added_to_a_named_file_or_gone_from_it_is_named_by_the_census()
+    public void A_site_added_to_a_named_file_passes_and_one_gone_from_it_is_named_by_the_census()
     {
         var first = Section.Value.Rows[0];
         var more = Baseline.Value.ToDictionary(each => each.Key, each => new Dictionary<string, int>(each.Value));
-        more[first.File][first.Token] = first.Count + 1;
+        more[first.File][first.Token] += 1;
         var fewer = Baseline.Value.ToDictionary(each => each.Key, each => new Dictionary<string, int>(each.Value));
         fewer[first.File].Remove(first.Token);
 
-        Assert.Contains($"{first.File}: {first.Token} found {first.Count + 1}, the fixture names {first.Count}", Problems(more, Section.Value.Rows));
+        Assert.Empty(Problems(more, Section.Value.Rows));
         Assert.Contains($"{first.File}: {first.Token} is no site now: take it off the fixture", Problems(fewer, Section.Value.Rows));
     }
 

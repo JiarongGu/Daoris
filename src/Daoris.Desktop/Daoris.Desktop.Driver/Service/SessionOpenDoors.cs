@@ -131,6 +131,17 @@ public sealed class SessionOpenDoors
     }
 
     /// <summary>
+    /// Whether the host's marks keep the moving open and the head (FOUNDATION1o, the design §3.4 rule 4, §19.11): <c>opens</c> 2 or more and
+    /// <c>head</c> 1 or more, so a word for a record that winds up or moves is kept on its <c>said</c>, which the open moves and the say door
+    /// follows past, rather than held by the shell. False for a host without both, or one that does not answer the protocol; never throws for it.
+    /// </summary>
+    public async Task<bool> KeepsAsync(CancellationToken ct = default)
+    {
+        if (await HeadAsync(ct).ConfigureAwait(false) < 1) return false;
+        lock (_marks) return _opens >= 2;
+    }
+
+    /// <summary>
     /// Opens a driven or chat destination. The body's fields are the existing open request, without an opens member.
     /// A caller recovering a lost answer passes retry; each retry re-reads protocol before it sends anything. The moves that hand a part words
     /// open through it (FOUNDATION1d-ii parts 4 and 5: <see cref="ServiceClient.OpenChatMovingAsync"/>, <see cref="ServiceClient.OpenSessionMovingAsync"/>).

@@ -21802,3 +21802,61 @@ machine-log design §3 say the contract.
 > | **1j** one start plan and one walk | §2.4, one start per branch; four walks into one, one pass-code set, one re-ask; the reservation at the selection, probes uncounted; §7 row 5; the role the seeded role of the work and its order `ActorChoices.Effective` over today's actor choices, no catalogue read, row x adopting `RoleCatalog.RoleFor` (round 6, *C5-3.6*) | `ActorChoicesTests`, `HelperLookTests`, `OneTurnReaskTests`, the intake's and the brainstorm's suites; a record on Build's second choice resumed by the person's words; exactly one reservation per start; a look's starts spread as today |
 
 **Outcome** 2026-10-30: every start (quest, intake, reviewer, helper, brainstorm voice, chat, Ask Daoris, handed quest) walks `StartPlan` with one pass-code set and one re-ask comparison, one reservation per start, probes uncounted; a start names its plan's agent (`StartPlan.AgentFor`). Readings: Ask Daoris's resume is an account asked by name, not an order walk, so it keeps its course call; the handed quest's re-ask keeps its own candidate order as the plan's input. Detail in D212's FOUNDATION1j notes.
+
+## FOUNDATION1w-s ⚖ — the roles' staffing in `role_staffing`, `driver.json`'s staffing its projection (2026-10-30, D212, D50)
+
+> | **1w-s** ⚖ the roles' staffing in `role_staffing`, `driver.json`'s staffing its projection (round 5, §19.15, the steward's change; …) | §19.15: `driver.json`'s staffing imported once into `role_staffing` once the start's confirmation is settled, … | §19.15's proof: … |
+
+The row is quoted by its head; its whole text and proof are the foundation design's Part B table, row 1w-s, and §19.15.
+
+**Outcome** 2026-10-30: built in five parts. The staffing lives in the store, imported once; every `driver.json` save is fenced at its rename; every writer (`SET_ACTOR`, the actor verbs, Ask Daoris's proposals) goes through Roles' one write under the staffing lock; the check at each start, look and write keeps another writer's change whole for the person's *Take it* or *Dismiss*, a turn-off applied at once; `daoris driver actor export|import|found`. Settings' port carries the staffing's five fields, not three strings (a reading: they are Settings' own types). Owed: the p95 of a load and a look on the install. Detail in D50's and D212's notes.
+
+## FOUNDATION1q ⚖ — one policy shape and start admission (2026-10-30, D212)
+
+> | **1q** ⚖ one policy shape and start admission | §2.3's policy over today's keys and the start layer's table, keyed by the work; §7 row 9 | `HelperLookTests`, `HelperJudgeTests`, `PartnerJudgeTests`; the five doors of survey §1.3 row 6 asked the same cases; `DriverConfigKeepsTests` (no key moved) |
+
+**Outcome** 2026-10-30: `WorkPolicies.Of` gives every work one policy over today's keys, no key moved; the opinion, hand-over and brainstorm rules resolve through it; `StartAdmission`, keyed by the work, answers the five helper doors one table of cases (`fixtures/helper-askers.json`). The one decided change is §7 row 9: Ask Daoris is refused a helper at every door (`ask-daoris`), worded on the page in both languages. The intake's and Ask Daoris's start gates still read their keys directly. Detail in D212's FOUNDATION1q note.
+
+## FOUNDATION1o — words never held outside `said` (2026-10-30, D212)
+
+> | **1o** words never held outside `said` | §3.4 rule 4, after 1h and 1i: the say door's keep for a winding-up or moving record, on `said` itself, where the host's marks keep `opens` and the head (round 5, §19.11); … |
+
+The row is quoted by its head; its whole text and proof are the foundation design's Part B table, row 1o, and §19.11.
+
+**Outcome** 2026-10-30: against a host whose marks keep `opens` 2 and the head, a word said to a record that winds up or moves is kept on `said` and goes on with the part that continues it; a chat's hold keeps and queues; `held-words.json` is read once and written only for a host without the marks, which keeps today's hold. Owed: an older shell's come-up over the new path (the test host answers no `head`), and the say-to-wire latency on the install. Detail in D212's FOUNDATION1o note.
+
+## FOUNDATION1w — the catalogue of working roles, read beside (2026-10-30, D212)
+
+> | **1w** the catalogue of working roles, read beside (round 6, *C5-2.5*, *O5-F5*) | the work vocabulary alone, its capabilities the work codes, and the working shape; … read by nothing | the seed reproduces today's every start case; … |
+
+The row is quoted by its head; its whole text and proof are the foundation design's Part B table, row 1w.
+
+**Outcome** 2026-10-30: store migration 10 adds `roles` and `role_revisions`; `RoleCatalog.Read` over the seed per id, `RoleFor` by the most specific scope, `Judge` with eight closed codes refusing an appointed record first, one write keeping revisions, and the projection narrowing Intake and Ask Daoris for an older build while the store's own keys are never narrowed; its census holds every writer. Read by nothing: row x wires the starts. Detail in D212's FOUNDATION1w note.
+
+## CENSUSRULES1 — the censuses pin rules, not counts (2026-10-30, D220)
+
+> - [ ] **CENSUSRULES1 — the censuses pin rules, not counts** (driver and modules tests; D220). Censuses that count sites per file (the provider census's wire counts, git starts per file, the course table's minimum file lengths) fail on edits unrelated to what they guard and are updated by rote. Each pins its rule by name, each allowed site with its reason. Proof: each census fails on the call it exists to catch and passes an unrelated edit of a file it reads. Evidence, 2026-10-30: a count census stopped the steward's merges six times in one day, each fixed by raising a number (the participant-work readers three times, the move store's readers, the provider census's fixture counts, the page's pinned list of hand-over codes), and two candidates went red on one.
+
+**Outcome** 2026-10-30: the participant-work readers, the move store's readers, the provider census (driver, service, web and CLI twins), the page's driver codes, the process and git starts, the short waits and the course table now pin the files allowed to make a call, each with its reason: a new file fails, another call in a listed file passes, and each has both proofs. Counts stay only where a census guards a bound, said in one line. D220's note gives the rule.
+
+## FOUNDATION1s — push only (2026-10-31, D212, D182)
+
+> | **1s** push only | with D182's remaining rows: `DRIVER_TICK`'s data into slices; `STATE_CHANGED` for unmoved scopes and plugins alone; held answers by declared inputs and versions; §7 row 14 | `pushedState.test.tsx`, `bridge/state/*.test.ts*`, `StateSlicesTests`; bridge reads per minute on the install with two windows, before and after (D182 point 8) |
+
+**Outcome** 2026-10-31: built in two parts. The tick's considerations are a pushed slice and the tick refetches nothing; rules are a slice told only when they change; the index feed is told while it fills; a held answer is served with no work while the versions of the scopes and slices its route declares stand (only `SESSION_WHERE` declares any; the others read git, processes or files no version tracks); the chain's unbound ranks 3 and 4 are gone. Owed: bridge reads per minute on the install, from the module's `bridge.asked` log line. Detail in D182's last two notes.
+
+## FOUNDATION1x — starts take their role (2026-10-31, D212)
+
+> | **1x** starts take their role | the start plan finds each start's role by its work and place; `actor` written as the seeded role of its work, the role taken and its revision on the binding, each binding writer updating its own columns by name (O3-16); census C, … the `design` capability … taken by a quest whose `weight` its publisher or the intake marks `design` | … |
+
+The row is quoted by its head; its whole text and proof are the foundation design's Part B table, row 1x.
+
+**Outcome** 2026-10-31: built in two parts. Every start (quest, intake, chat, reviewer, helper, partner, brainstorm voice) takes its role from the catalogue through the start plan; `actor` stays the seeded role and the role and revision are kept on `binding_roles` (store migration 11); census C is a rule with its tests; a quest's `weight` travels through the service's publish, wire and door, and one marked `design` starts on the role taking design, Build's while none does. The intake marks nothing of itself, having no rule for design work. Detail in D212's two FOUNDATION1x notes.
+
+## FOUNDATION1y-i ⚖ — the person sets the catalogue up (2026-10-31, D212)
+
+> | **1y-i** ⚖ the person sets the catalogue up | adding, changing and removing a working role (name, work, staffing, scope) in Settings, with `daoris driver role` and through `role_propose` with the person's press; … ⚖ since removing a role holds its work's starts | … |
+
+The row is quoted by its head; its whole text and proof are the foundation design's Part B table, row 1y-i.
+
+**Outcome** 2026-10-31: one judged door (`Roles/RoleDoor.cs`) for `SET_ROLE`, `daoris driver role` and `role_propose`'s press; Settings → AI features → Role catalogue in both languages, with the Designer suggested there (MODELROLE1g's card is unbuilt); a work no role takes holds its starts and says why, an intake's on its ask; a running session goes on; no `settings_*` grant names a role. Owed: the owner adding a role on the install. Detail in D212's FOUNDATION1y-i note.

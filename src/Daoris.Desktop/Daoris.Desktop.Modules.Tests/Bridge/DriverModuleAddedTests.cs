@@ -127,7 +127,8 @@ public sealed class DriverModuleAddedTests : DriverModuleBridge
 
         Assert.True(sent.GetProperty("sent").GetBoolean());
         await Task.Delay(200);
-        Assert.Equal(["/api/sessions/s1/say"], standIn.Heard.Select(heard => heard.Path).Where(path => path != "/api/sessions"));
+        // The say door asks the host's marks first (FOUNDATION1o), which is a read, not a word sent.
+        Assert.Equal(["/api/sessions/s1/say"], standIn.Heard.Select(heard => heard.Path).Where(path => path is not "/api/sessions" and not "/api/protocol"));
     }
 
     /// <summary>A service standing in: each request recorded by its path and body, then answered.</summary>

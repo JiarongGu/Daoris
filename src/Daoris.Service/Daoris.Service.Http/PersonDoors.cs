@@ -227,6 +227,9 @@ public static class PersonDoors
         // Which ledger families moved (FABRIC-EVENT3b, the fabric events design §A4.2): families and a cursor, never a record, as
         // the connector reads the same store. A local host's alone, with at most eight waits held at once.
         new("GET", ChangeStream.Route, DoorClass.Open),
+        // The event journal's rows after a position (FOUNDATION1 l-i): what the change stream's `journal` family says moved, read in order by
+        // each process that tells from it; ids, codes and moments, never a text. A local host's alone, as the stream is.
+        new("GET", JournalRows.Route, DoorClass.Open),
 
         // What an agent may do (3): the exchange the connector's tools use, so the two doors cannot drift. And asking the
         // person to confirm (PERSONDOOR1b): a session can ask, and its card is one the person refuses or lets expire.

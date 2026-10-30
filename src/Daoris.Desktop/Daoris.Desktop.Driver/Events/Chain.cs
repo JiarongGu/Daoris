@@ -14,7 +14,7 @@ public static class ChainEvents
     /// <summary>A ledger family moved: the service's change stream (§A4.2), or a session leaving its tree or ending.</summary>
     public const string Ledger = "ledger";
 
-    /// <summary>A route answered a person's or a terminal's press (D169): never the chain's own publish, which link 4 makes.</summary>
+    /// <summary>A route answered a person's or a terminal's press (D169): never a publish of the chain's own.</summary>
     public const string Press = "press";
 
     /// <summary>The window has the person's focus (the shell only).</summary>
@@ -76,7 +76,7 @@ public sealed record ChainEvent(string Type, string Subject, string? Topic = nul
 /// <summary>The sorts of link (the design §C6).</summary>
 public enum ChainKind
 {
-    /// <summary>Fires when a fact changes, never on a fact that stands: it emits only what its judgement found changed (links 1, 3, 4).</summary>
+    /// <summary>Fires when a fact changes, never on a fact that stands: it emits only what its judgement found changed (link 1).</summary>
     Fact,
 
     /// <summary>
@@ -89,7 +89,11 @@ public enum ChainKind
     Reader,
 }
 
-/// <summary>The design §C6's links by number, which is their rank. Which rows are bound, and by whom, is D173's FABRIC-CHAIN2 note.</summary>
+/// <summary>
+/// The design §C6's links by number, which is their rank. Which rows are bound, and by whom, is D173's FABRIC-CHAIN2 note. Ranks 3
+/// (<c>work/ended</c> to the plugins) and 4 (<c>STATE_CHANGED</c>) were declared and bound nowhere, and are gone (FOUNDATION1s, the
+/// foundation design §7 row 14); the rest keep their numbers, which the machine log's <c>chain.*</c> lines name.
+/// </summary>
 public static class ChainRanks
 {
     /// <summary>The end judgement for a repository or a unit (§B4).</summary>
@@ -97,12 +101,6 @@ public static class ChainRanks
 
     /// <summary>The look's automatic tidy, judging again inside its hold (D88).</summary>
     public const int Tidy = 2;
-
-    /// <summary><c>work/ended</c> to the plugins that listen.</summary>
-    public const int Ended = 3;
-
-    /// <summary><c>STATE_CHANGED</c> with the existing scopes (D169).</summary>
-    public const int Publish = 4;
 
     /// <summary>The local plan.</summary>
     public const int Plan = 5;
@@ -167,9 +165,6 @@ public sealed class ChainTable
             // and the start, which finds it from the persisted facts.
             Wakes = [ChainEvents.Ledger, ChainEvents.Press, ChainEvents.Home, ChainEvents.TimerOf(ChangeTopics.Refs), ChainEvents.Start],
         },
-        new(ChainRanks.Ended, "ended", ChainKind.Fact, [ChainEvents.WorkEnded], []),
-        new(ChainRanks.Publish, "publish", ChainKind.Fact,
-            [ChainEvents.WorkStep, ChainEvents.WorkHeld, ChainEvents.WorkEnded, ChainEvents.WorkTidied], []),
         new(ChainRanks.Plan, "plan", ChainKind.Reader, [ChainEvents.Ledger, ChainEvents.TimerOf(ChangeTopics.Look)], []),
         new(ChainRanks.Ask, "ask", ChainKind.Reader, [ChainEvents.Refs, ChainEvents.Press, ChainEvents.Focus], []),
         // Each home folder's reader hears its own deadline: the requests folder's, and the record files' (FABRIC-EVENT4).

@@ -68,8 +68,7 @@ public static class PartnerPersonAsk
 
         var lead = await service.RecordAsync(session, ct).ConfigureAwait(false);
         if (lead is null or { Teammate: true }) return No(PartnerAskWhy.NotHeld, $"No session `{session}` of this machine's is held to bring a piece back to.");
-        if (lead.Serves is not null || lead.Opinion is not null || lead.Ask is { Length: > 0 } || lead.HelpMode is { Length: > 0 }
-            || lead.Tree is not { Length: > 0 })
+        if (!StartAdmission.LeadsPiece(StartAdmission.Marks(lead), lead.HelpMode, lead.Tree))
         {
             return No(PartnerAskWhy.Unfit,
                 $"Session `{session}` cannot lead a piece: only a session working in a tree of its own does, never a partner, a helper, a reviewer, "

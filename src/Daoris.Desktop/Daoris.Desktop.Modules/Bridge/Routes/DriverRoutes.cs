@@ -164,7 +164,7 @@ public sealed class DriverRoutes(DriverContext context)
     /// (NOBLOCK1): it held the window up to 2.9 s, so an ask is answered from what is held and this runs on a task of its own.
     /// </summary>
     [DriverRoute("HEAVY_SLOT")]
-    [ByEvent("HEAVY_SLOT")]
+    [ByEvent("HEAVY_SLOT", Untold = "a run's records beside the slot and whether its process lives")]
     private async Task<object?> HeavySlotAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var repository = (Optional(request, "repository") ?? "").Trim();
@@ -316,8 +316,34 @@ public sealed class DriverRoutes(DriverContext context)
 
     // Each actor's order, where it came from and its effective entries (MODELROLE1c, D205 §9.4): a read, the same `daoris driver actor`
     // says. An actor whose stored entry does not read says why.
+    // FOUNDATION1w-s (the design §19.15): beside them, each change of driver.json's actors another program made that the check kept, with
+    // what it changed, none where the home's file is not the store's.
     [DriverRoute("ACTORS")]
-    private object? Actors(IpcRequest request) => new { Actors = ActorView.All(DriverConfig.Load(_loop.ConfigPath)) };
+    private object? Actors(IpcRequest request) => new
+    {
+        Actors = ActorView.All(DriverConfig.Load(_loop.ConfigPath)),
+        Found = RoleStaffing.Of(_loop.ConfigPath)?.Found().Select(found => new { found.Id, found.At, found.Changes }).ToList() ?? [],
+    };
+
+    // A found change answered (FOUNDATION1w-s, §19.15): the person's *Take it*, the actors as that file showed them, a turn-on of Intake or
+    // Ask Daoris among them by this press, or *Dismiss*, the actors as they are. Through the staffing's one write, then a nudge.
+    [DriverRoute("STAFFING_FOUND_ANSWER")]
+    [Publishes("STAFFING_FOUND_ANSWER", StateScopes.Driver | StateScopes.Harnesses)]
+    private object? AnswerStaffingFound(IpcRequest request)
+    {
+        var id = Number(request, "found") ?? throw new DriverException("the press named no found change.");
+        var staffing = RoleStaffing.Of(_loop.ConfigPath)
+            ?? throw new DriverException("this home's actors are the file's own, so no found change is answered here.");
+        switch (Optional(request, "answer"))
+        {
+            case "take": staffing.Take(id); break;
+            case "dismiss": staffing.Dismiss(id); break;
+            default: throw new DriverException("a found change is taken (`take`) or dismissed (`dismiss`).");
+        }
+
+        _loop.Nudge();
+        return State(_loop);
+    }
 
     // One actor's order set, made off, or back to as before (MODELROLE1c, D205 §8.2, §9.4): the person's press, the same `actors` key
     // `daoris driver actor` edits: one truth, two doors (D50). Judged by `ActorChoices.Judge` before anything is written, and written
@@ -329,7 +355,41 @@ public sealed class DriverRoutes(DriverContext context)
     {
         var actor = Optional(request, "actor") ?? throw new DriverException("the press named no actor.");
         var choices = ActorChoices.Payload(request.Payload);
-        _context.Change(config => ActorChoices.With(config, actor, choices));
+        _context.SetActor(actor, choices);
+        return State(_loop);
+    }
+
+    // The role catalogue (FOUNDATION1y-i, the foundation design §2.7): every role, the seed's and the person's, with its work, scope and
+    // stored choices, and the work codes a role may take; a read, the same `daoris driver role` says. Beside them, the roles Daoris
+    // suggests adding (the Designer while no role takes design), each the person's press alone.
+    [DriverRoute("ROLES")]
+    private object? Roles(IpcRequest request)
+    {
+        var catalogue = RoleCatalog.ReadHome(_loop.Home);
+        return new
+        {
+            Roles = RoleDoor.Rows(catalogue, DriverConfig.Load(_loop.ConfigPath)),
+            Works = RoleWork.Codes,
+            Kept = RoleStaffing.Of(_loop.ConfigPath) is not null,
+            Suggested = RoleSuggestion.For(catalogue).Select(each => new
+            {
+                each.Role.Id, each.Role.NameEn, each.Role.NameZh, each.Role.Takes, ScopeKind = each.Role.Scope.Kind, each.Choices,
+            }),
+        };
+    }
+
+    // A working role added, changed, removed or given back its seed (FOUNDATION1y-i): the person's press, the same change `daoris driver
+    // role` makes and Ask Daoris's `role_propose` asks for: one door, `RoleDoor.Apply`, whose judge refuses with nothing written. A
+    // removed role's work holds its starts, said; a running session goes on.
+    [DriverRoute("SET_ROLE")]
+    [Publishes("SET_ROLE", StateScopes.Driver | StateScopes.Harnesses)]
+    private object? SetRole(IpcRequest request)
+    {
+        var staffing = RoleStaffing.Of(_loop.ConfigPath)
+            ?? throw new DriverException("this home's actors are the file's own (not this home's store), so its roles are not set here.");
+        var (change, choices, read) = RoleDoor.Read(request.Payload);
+        RoleDoor.Apply(staffing, change, choices, read);
+        _loop.Nudge();
         return State(_loop);
     }
 
@@ -395,6 +455,14 @@ public sealed class DriverRoutes(DriverContext context)
         }
 
         var grant = ClaudeTrust.Grant(hold.TrustFile, hold.Folder);
+        // The hold is off the slice the windows read now, not a look from now (FOUNDATION1s): the grant is what the person just did,
+        // and a look that still held it would put it back and push it again.
+        if (grant.Verified)
+        {
+            _loop.Trust.Record([.. _loop.Trust.Latest.Where(held => held != hold)]);
+            _loop.Slices.Find(ConsiderationsStateSlice.Name)?.Wake();
+        }
+
         _loop.Nudge();
         return new
         {

@@ -15,11 +15,7 @@ public static class PartnerJudge
     public static string? Refusal(PartnerAsk ask, PriorSession? lead)
     {
         if (lead is null) return PartnerWhy.AskerGone;
-        if (lead.Serves is not null || lead.Opinion is not null || lead.Ask is { Length: > 0 } || lead.HelpMode is { Length: > 0 }
-            || lead.Tree is not { Length: > 0 })
-        {
-            return PartnerWhy.AskerUnfit;
-        }
+        if (!StartAdmission.LeadsPiece(StartAdmission.Marks(lead), lead.HelpMode, lead.Tree)) return PartnerWhy.AskerUnfit;
 
         if (string.IsNullOrWhiteSpace(ask.Piece) || ask.Piece.Length > PartnerAsk.PieceLimit) return PartnerWhy.Blank;
         if (ask.Paths.Any(path => !Inside(path))) return PartnerWhy.PathOutside;

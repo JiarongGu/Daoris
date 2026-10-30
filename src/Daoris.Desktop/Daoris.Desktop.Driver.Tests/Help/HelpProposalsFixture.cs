@@ -392,6 +392,12 @@ public sealed class HelpStandInDoors : IHelpDoors
         Calls.Add("change");
     }
 
+    public void SetActor(string actor, IReadOnlyList<ActorChoice>? choices)
+    {
+        Config = ActorChoices.With(Config, actor, choices);
+        Calls.Add("change");
+    }
+
     // IHelpSetupDoors
     /// <summary>What the set-up press answers (LAYOUT8): one quest published by default, or a refusal in the service's words.</summary>
     public SetupOutcome SetUp { get; set; } = new(true, "Published.", "a1", "q1", []);

@@ -51,6 +51,12 @@ public sealed record Quest(
     public string? Short { get; init; }
 
     /// <summary>
+    /// The mark its publisher or its intake put on the work (FOUNDATION1x), <see cref="QuestWeights"/>: <c>design</c> starts it on the
+    /// role taking design. Null for an unmarked quest, which is every quest from before the field, and starts on Build's order.
+    /// </summary>
+    public string? Weight { get; init; }
+
+    /// <summary>
     /// Its note's parts beside <see cref="Note"/> (QUESTCLOSE1b1, D142 point 2), as <see cref="Knowledge.NoteParts"/> keeps
     /// them: Daoris's lead by its code, worded in the reader's language, then someone's words as written. Set by the move that
     /// wrote the note, and cleared by one that wrote a note without them. Null for every quest from before, and for a note
@@ -1039,6 +1045,8 @@ public sealed class QuestStore
             ("quests", "held", "held INTEGER NOT NULL DEFAULT 0"),
             // The publisher's short title (SESSUX1j); a quest from before was given none, and is named from its words.
             ("quests", "short_title", "short_title TEXT NULL"),
+            // The work's mark (FOUNDATION1x); a quest from before was marked none, and starts on Build's order.
+            ("quests", "weight", "weight TEXT NULL"),
             // What Daoris last read of a done's evidence (EVID1a); a quest from before named none, so none was read.
             ("quests", "evidence", "evidence TEXT NULL"),
             // The chain's review choice, a set-up step's environment, its set-ups and the person's verdicts (REVIEWENV1b); a
@@ -1284,7 +1292,8 @@ public sealed class QuestStore
         string? shortTitle = null,
         QuestReview? review = null,
         string? setUpIn = null,
-        string? parent = null)
+        string? parent = null,
+        string? weight = null)
     {
         var sorted = Sorted(lanes);
         var id = MakeId(from, to, title, parent, sorted);
@@ -1309,6 +1318,7 @@ public sealed class QuestStore
                 Review = review,
                 SetUpIn = setUpIn,
                 Parent = parent,
+                Weight = string.IsNullOrWhiteSpace(weight) ? null : weight.Trim(),
             };
 
             return await PublishInAsync(asked, transaction, inside).ConfigureAwait(false);
@@ -1509,8 +1519,8 @@ public sealed class QuestStore
         await using var command = _db.Command();
         command.Transaction = transaction;
         command.CommandText = """
-            INSERT INTO quests (id, sender, receiver, title, body, status, note, note_parts, filed, updated, workspace, links, attachments, then_steps, parent, conflicts, awaits, published_by, lanes, requirements, answers, accepted, held, short_title, evidence, review, set_up_in, set_ups, verdicts, closure, submission, grew_from, source_reopened, reopened, workflow_choices)
-            VALUES ($id, $sender, $receiver, $title, $body, $status, $note, $noteParts, $filed, $updated, $workspace, $links, $attachments, $then, $parent, $conflicts, $awaits, $publishedBy, $lanes, $requirements, $answers, $accepted, $held, $short, $evidence, $review, $setUpIn, $setUps, $verdicts, $closure, $submission, $grewFrom, $sourceReopened, $reopened, $workflowChoices)
+            INSERT INTO quests (id, sender, receiver, title, body, status, note, note_parts, filed, updated, workspace, links, attachments, then_steps, parent, conflicts, awaits, published_by, lanes, requirements, answers, accepted, held, short_title, evidence, review, set_up_in, set_ups, verdicts, closure, submission, grew_from, source_reopened, reopened, workflow_choices, weight)
+            VALUES ($id, $sender, $receiver, $title, $body, $status, $note, $noteParts, $filed, $updated, $workspace, $links, $attachments, $then, $parent, $conflicts, $awaits, $publishedBy, $lanes, $requirements, $answers, $accepted, $held, $short, $evidence, $review, $setUpIn, $setUps, $verdicts, $closure, $submission, $grewFrom, $sourceReopened, $reopened, $workflowChoices, $weight)
             ON CONFLICT (id) DO UPDATE SET
               sender = excluded.sender, receiver = excluded.receiver, title = excluded.title, body = excluded.body,
               status = excluded.status, note = excluded.note, note_parts = excluded.note_parts, filed = excluded.filed, updated = excluded.updated,
@@ -1522,8 +1532,9 @@ public sealed class QuestStore
               review = excluded.review, set_up_in = excluded.set_up_in, set_ups = excluded.set_ups, verdicts = excluded.verdicts,
               closure = excluded.closure, submission = excluded.submission,
               grew_from = excluded.grew_from, source_reopened = excluded.source_reopened, reopened = excluded.reopened,
-              workflow_choices = excluded.workflow_choices
+              workflow_choices = excluded.workflow_choices, weight = excluded.weight
             """;
+        command.Parameters.AddWithValue("$weight", (object?)quest.Weight ?? DBNull.Value);
         command.Parameters.AddWithValue("$workflowChoices", JsonFields.Written(writer =>
         {
             writer.WriteStartArray();
@@ -4067,6 +4078,7 @@ public sealed class QuestStore
             ? null
             : Moments.ReadRequired(reader.GetString(reader.GetOrdinal("accepted"))),
         Short = reader.IsDBNull(reader.GetOrdinal("short_title")) ? null : reader.GetString(reader.GetOrdinal("short_title")),
+        Weight = reader.IsDBNull(reader.GetOrdinal("weight")) ? null : reader.GetString(reader.GetOrdinal("weight")),
         NoteParts = reader.IsDBNull(reader.GetOrdinal("note_parts")) ? null : reader.GetString(reader.GetOrdinal("note_parts")),
         Evidence = reader.IsDBNull(reader.GetOrdinal("evidence")) ? null : ReadVerdict(reader.GetString(reader.GetOrdinal("evidence"))),
         Review = reader.IsDBNull(reader.GetOrdinal("review")) ? null : ReadColumn(reader.GetString(reader.GetOrdinal("review")), Reviews.JudgedReview),
@@ -4166,6 +4178,8 @@ public sealed class QuestStore
                 Requirements = payload.TryGetProperty("requirements", out var required) ? ReadRequirements(required) : [],
                 // Absent from every publish before short titles, and from one that gave none (SESSUX1j).
                 Short = payload.TryGetProperty("short", out var shortTitle) ? shortTitle.GetString() : null,
+                // Absent from every publish before weights, and from one that was marked none (FOUNDATION1x).
+                Weight = payload.TryGetProperty("weight", out var weight) ? weight.GetString() : null,
                 // Absent from every publish before reviews, and from one that chose none or is no set-up step (REVIEWENV1b).
                 Review = payload.TryGetProperty("review", out var chosen) ? Reviews.JudgedReview(chosen) : null,
                 SetUpIn = payload.TryGetProperty("setUpIn", out var setUpIn) ? setUpIn.GetString() : null,
@@ -4306,6 +4320,9 @@ public sealed class QuestStore
 
             // Only when its publisher gave one (SESSUX1j), for the lanes' reason; a derived name is never written.
             if (published.Short is not null) writer.WriteString("short", published.Short);
+
+            // Only when marked (FOUNDATION1x), for the lanes' reason: an unmarked publish reads as it did, and an older build reads a marked one as unweighted.
+            if (published.Weight is not null) writer.WriteString("weight", published.Weight);
 
             // Only when set (REVIEWENV1b), for the lanes' reason: a quest that chose nothing and is no set-up step reads as it did.
             if (published.Review is { } chosen)

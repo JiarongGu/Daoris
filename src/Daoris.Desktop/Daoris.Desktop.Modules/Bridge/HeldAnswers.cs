@@ -24,6 +24,10 @@ namespace Daoris.Desktop;
 /// <para><b>Told only when it moved.</b> A work answering what was held tells nothing, so the page's ask, the work and the event
 /// never chase each other. The event names the page's own query (the payload's <c>held</c>, its key's hash), never the payload,
 /// whose trees are machine paths: the page sends <c>held</c>, and an ask without one is answered and told nothing.</para>
+///
+/// <para><b>Or by its inputs' versions</b> (FOUNDATION1s, D182's part B note): an ask handed its route's versions (the scopes and slices
+/// its answer is made of, <see cref="ByEventAttribute"/>) is answered with no work while they are those of the answer held, and works
+/// again once one moved; a work under way at those versions is joined. Null versions work at every ask, as above.</para>
 /// </remarks>
 public sealed class HeldAnswers
 {
@@ -49,8 +53,16 @@ public sealed class HeldAnswers
     private readonly Dictionary<string, Held> _held = new(StringComparer.Ordinal);
     private long _seq;
     private long _forgotten;
+    private long _served;
+    private long _worked;
 
     public HeldAnswers(IEventBus bus) => _bus = bus;
+
+    /// <summary>How many asks were answered from what was held with no work begun, its inputs standing (FOUNDATION1s).</summary>
+    public long Served => Interlocked.Read(ref _served);
+
+    /// <summary>How many works were begun.</summary>
+    public long Worked => Interlocked.Read(ref _worked);
 
     /// <summary>
     /// How long a first ask waits for its work, off the window's thread, before it is answered <see cref="Pending"/>: well inside
@@ -69,12 +81,15 @@ public sealed class HeldAnswers
 
     /// <summary>
     /// Answer <paramref name="key"/> from what is held, and start its <paramref name="work"/> on a task of its own, or join the
-    /// one under way. <paramref name="held"/> is the page's query the event names; null tells nothing.
+    /// one under way. <paramref name="held"/> is the page's query the event names; null tells nothing. <paramref name="versions"/>
+    /// reads the route's inputs' versions now: while they are the held answer's, no work begins (FOUNDATION1s); null works.
     /// </summary>
-    public async Task<object?> AskAsync(string key, string? held, Func<CancellationToken, Task<object?>> work)
+    public async Task<object?> AskAsync(
+        string key, string? held, Func<CancellationToken, Task<object?>> work, Func<string?>? versions = null)
     {
         Held entry;
         Task<object?> flight;
+        var at = versions?.Invoke();
         lock (_gate)
         {
             if (!_held.TryGetValue(key, out entry!))
@@ -85,10 +100,19 @@ public sealed class HeldAnswers
 
             entry.Asked = ++_seq;
             if (held is not null) entry.Pages.Add(held);
-            if (entry.Flight is not { } under || entry.Begun <= _forgotten)
+            if (at is not null && entry.Answered && entry.Made == at)
+            {
+                Interlocked.Increment(ref _served);
+                return entry.Answer;
+            }
+
+            // Versions read join only a work begun at them; none read join any begun since the last press.
+            var stale = at is null ? entry.Begun <= _forgotten : entry.FlightAt != at;
+            if (entry.Flight is not { } under || stale)
             {
                 entry.Begun = ++_seq;
-                under = entry.Flight = Begin(key, entry, entry.Begun, work);
+                entry.FlightAt = at;
+                under = entry.Flight = Begin(key, entry, entry.Begun, at, work);
             }
 
             flight = under;
@@ -115,29 +139,31 @@ public sealed class HeldAnswers
     }
 
     /// <summary>
-    /// The work under way for <paramref name="key"/>, or none: what a test waits for when an ask was answered <see cref="Pending"/>.
+    /// The last work begun for <paramref name="key"/> landed, its answer held: what a test waits for when an ask was answered
+    /// <see cref="Pending"/>, or held.
     /// </summary>
     public Task LandedAsync(string key)
     {
-        lock (_gate) return _held.TryGetValue(key, out var entry) && entry.Flight is { } flight ? flight : Task.CompletedTask;
+        lock (_gate) return _held.TryGetValue(key, out var entry) ? entry.Landing : Task.CompletedTask;
     }
 
     // The work on a task of its own: Task.Run, so not a line of it runs on the asker's thread, whatever the work does before its
     // first wait. Its token is none: the page that asked has been answered, and the next asker reads what it lands.
-    private Task<object?> Begin(string key, Held entry, long begun, Func<CancellationToken, Task<object?>> work)
+    private Task<object?> Begin(string key, Held entry, long begun, string? at, Func<CancellationToken, Task<object?>> work)
     {
         var slowed = BeforeWork;
+        Interlocked.Increment(ref _worked);
         var flight = Task.Run(async () =>
         {
             if (slowed is not null) await slowed(key).ConfigureAwait(false);
             return await work(CancellationToken.None).ConfigureAwait(false);
         });
-        _ = flight.ContinueWith(done => Land(key, entry, begun, done), CancellationToken.None,
+        entry.Landing = flight.ContinueWith(done => Land(key, entry, begun, at, done), CancellationToken.None,
             TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
         return flight;
     }
 
-    private void Land(string key, Held entry, long begun, Task<object?> done)
+    private void Land(string key, Held entry, long begun, string? at, Task<object?> done)
     {
         string[] pages;
         object? answer = null;
@@ -156,6 +182,7 @@ public sealed class HeldAnswers
                 entry.Answer = answer;
                 entry.Wire = wire;
                 entry.Answered = true;
+                entry.Made = at;
                 entry.Fault = null;
                 if (!moved) return;
             }
@@ -195,6 +222,11 @@ public sealed class HeldAnswers
         public bool Answered;
         public Exception? Fault;
         public Task<object?>? Flight;
+        public Task Landing = Task.CompletedTask;
+
+        // The versions the work under way began at, and those the answer held was made at (FOUNDATION1s); null where none was read.
+        public string? FlightAt;
+        public string? Made;
         public long Begun;
         public long Landed;
         public long Asked;

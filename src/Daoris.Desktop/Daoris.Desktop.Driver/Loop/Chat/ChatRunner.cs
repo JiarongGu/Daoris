@@ -563,6 +563,11 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
         }
     }
 
+    // Asked BEFORE the record is opened: a session record for a conversation that could never have happened would hold the repository and
+    // explain nothing.
+    private static string NotInteractive(string adapter) =>
+        $"the `{adapter}` adapter does not hold conversations — it spawns an agent that takes its target once and runs to completion.";
+
     private async Task<ChatStart> StartCoreAsync(
         string repository, string adapter, DriverConfig config,
         Func<string, string, Task>? onEnded, string? profile, bool? ownTree,
@@ -580,15 +585,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
         // hands the roster the build's adapters plus whatever the plugins declare (D64), so a harness
         // declared since the shell started is a harness a conversation can run on now.
         var resolved = walking ? null! : _harnesses.Adapters.Resolve(adapter);
-        if (!walking && !resolved.Interactive)
-        {
-            // Asked BEFORE the record is opened: a session record for a conversation that could never
-            // have happened would hold the repository and explain nothing.
-            return new(
-                null,
-                $"the `{resolved.Name}` adapter does not hold conversations — it spawns an agent that "
-                + "takes its target once and runs to completion.");
-        }
+        if (!walking && !resolved.Interactive) return new(null, NotInteractive(resolved.Name));
 
         var snapshot = await _service.SnapshotAsync(ct).ConfigureAwait(false);
         var known = snapshot.Repositories
@@ -600,6 +597,35 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
                 null,
                 $"`{repository}` has no checkout on this machine — a conversation runs IN a working "
                 + "tree. `daoris connect` from inside it, or add it from Repositories.");
+        }
+
+        // FOUNDATION1x (§2.4, §2.7): the role that takes chat at this workspace, found now that the workspace is known. The seeded catalogue
+        // answers Chat, whose order the caller already holds, so nothing changes; an added role taking chat walks its own order, a person's
+        // pick (an agent named for this start) kept as the pick it is. A conversation that continues another (no order) keeps its agent.
+        var place = new RolePlace(known!.Workspace);
+        var roleTaken = "chat";
+        long roleRevision = 0;
+        try
+        {
+            var roles = RoleCatalog.ReadHome(_home);
+            var found = roles.RoleFor(ParticipantWork.Chat, place);
+            if (found.Held is { } held) return new(null, held);
+            if (found.Role is not { } role) return new(null, "No role takes chat on this machine, so it starts no conversation until one does.");
+            (roleTaken, roleRevision) = (role.Id, roles.RevisionOf(role.Id));
+            if (order is not null && pending is null && roleTaken != "chat" && order is not [{ From: "pick" }])
+            {
+                order = roles.Order(ParticipantWork.Chat, place, config);
+                if (order.Count == 0) return new(null, $"{role.NameEn} is off on this machine, so it starts no conversation until it is given a choice.");
+                chosen = order is [var sole] ? sole : null;
+                if (chosen is not null) adapter = chosen.Agent;
+                walking = order.Count > 1;
+                resolved = walking ? null! : _harnesses.Adapters.Resolve(adapter);
+                if (!walking && !resolved.Interactive) return new(null, NotInteractive(resolved.Name));
+            }
+        }
+        catch (DriverException error)
+        {
+            return new(null, error.Message);
         }
 
         // The harness and the account (D49 §4), asked before the record exists — the same place the
@@ -689,6 +715,8 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
             return new(null, message);
         }
 
+        // FOUNDATION1x: the role this start took and its revision, on its binding beside its pick, which a continuation reads (§2.4).
+        _context.Conversations.KeepRole(sessionId, roleTaken, roleRevision);
         // FOUNDATION1a-ii: a start the person named an account for keeps, on its binding in the desktop store and nowhere else, that they
         // picked the account it opened on, so the account rule holds the conversation to it (§3.2 step 4). Never the walk's own choice.
         if (picked) _context.Conversations.Pick(sessionId, selection.Profile);
@@ -1004,14 +1032,26 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
         // A conversation has no record yet while it is walked, and what its walk passes is fixed by the actor's order and the place it
         // is asked in, so those name the subject whose passes are not said again while they stand (LOGCOLLECTION1). FOUNDATION1j part v: the
         // start plan's one walk, its gate what a conversation cannot run on.
-        var plan = new StartPlan(actor, config, _harnesses, _harnesses.Adapters, _passed, order: order)
+        StartPlan plan;
+        try
         {
-            Workspace = workspace, Kind = StartKind.Conversation, Subject = $"conversation:{actor}:{workspace}:{profile}", Log = log,
-            Pinned = profile, WalksOne = true,
-            Gate = (_, adapter) => !adapter.Interactive ? (StartPasses.Unavailable, $"`{adapter.Name}` does not hold conversations")
-                : actor == "ask-daoris" && HelpAccess.For(config.HelpMode, adapter).Refusal is { } unposed ? (StartPasses.NoPosture, unposed)
-                : null,
-        };
+            // FOUNDATION1x: through the plan with the catalogue and the place, so the walk's role is the one that takes the work there.
+            plan = new StartPlan(
+                actor, config, _harnesses, _harnesses.Adapters, _passed, order: order, catalogue: RoleCatalog.ReadHome(_home), place: new RolePlace(workspace))
+            {
+                Workspace = workspace, Kind = StartKind.Conversation, Subject = $"conversation:{actor}:{workspace}:{profile}", Log = log,
+                Pinned = profile, WalksOne = true,
+                Gate = (_, adapter) => !adapter.Interactive ? (StartPasses.Unavailable, $"`{adapter.Name}` does not hold conversations")
+                    : actor == "ask-daoris" && HelpAccess.For(config.HelpMode, adapter).Refusal is { } unposed ? (StartPasses.NoPosture, unposed)
+                    : null,
+            };
+        }
+        catch (DriverException error)
+        {
+            // A catalogue that will not read, or two roles taking the work in one scope: the start holds, saying so.
+            return new(null, null, null, [], error.Message);
+        }
+
         var settled = await plan.ResolveAsync(ct, counts, refused, except).ConfigureAwait(false);
         return settled.Chosen is null
             ? new(null, null, null, settled.Passes, settled.Selection.Refusal)

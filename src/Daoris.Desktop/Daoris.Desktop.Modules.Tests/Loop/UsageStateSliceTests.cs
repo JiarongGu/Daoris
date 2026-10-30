@@ -140,16 +140,20 @@ public sealed partial class UsageStateSliceTests : DriverModuleBridge
     }
 
     [Theory]
-    [InlineData("SESSION_ENDED", true)]
+    [InlineData("PART_ENDED", true)]
+    [InlineData("SESSION_ENDED", false)]
     [InlineData("DRIVER_READY", true)]
     [InlineData("DRIVER_TICK", false)]
     [InlineData("STATE_CHANGED", false)]
     public void What_wakes_the_usage_slice(string type, bool wakes) =>
         Assert.Equal(wakes, UsageStateSlice.WakesOn.Any(each => each.Type == type && each.When is null));
 
-    /// <summary>Run as the loop runs it: a session's end wakes it, and what the end measured reaches the windows.</summary>
+    /// <summary>
+    /// Run as the loop runs it: a driven end, one no conversation's route announced, wakes it as the journal tells it, and what the end
+    /// measured reaches the windows (FOUNDATION1 l-i).
+    /// </summary>
     [Fact]
-    public async Task A_session_s_end_reaches_the_windows_by_one_push()
+    public async Task A_driven_end_reaches_the_windows_by_one_push()
     {
         var (loop, slice) = Up();
         using var stop = new CancellationTokenSource();
@@ -157,7 +161,8 @@ public sealed partial class UsageStateSliceTests : DriverModuleBridge
         await UntilAsync(() => Pushes().Count == 2);
 
         Measured("s1", "work", 5_000, 0);
-        await Bus.EmitAsync(StateSlice.Module, DriverLoop.EndedType, new { Session = "s1" });
+        var driven = new JournalBatch("store-1", 1, 9, [new JournalEntry(9, 1_761_800_000_000, "s1", "sessions", "state", "Working", "Completed", false, false, ["ended.done"], ["driven"], "team", null)]);
+        await PartEndRelay.TellAsync(Bus, driven);
 
         await UntilAsync(() => Pushes().Count >= 4);
         Assert.Contains(Pushes(), push => push.Partition == UsageStateSlice.Sessions && Written(push.Data).ContainsKey("s1"));
