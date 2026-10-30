@@ -85,13 +85,16 @@ public sealed class TerminalOwnerProcessTests : IDisposable
         var window = new SessionProcesses(Markers);
         var owner = new TerminalOwner(_home, id, runner, terminal, looking: TimeSpan.FromMilliseconds(50));
 
+        // The harness is marked once its door has opened, a moment after the start answers.
+        await Poll.Until(() => window.AliveOnThisMachine(id), () => $"markers [{string.Join(", ", Directory.GetFiles(Markers))}]");
         var asked = await SessionMoves.StopAsync(window, null, id);
         Assert.True(asked.Elsewhere);
 
         Assert.True(await SessionMoves.StopThroughOwnerAsync(
             _home, id, Poll.Patience, TimeSpan.FromMilliseconds(25), () => DateTimeOffset.UtcNow));
 
-        Assert.True(terminal.WasStopRequested(id));
+        // Taken is the owner stopping it, a moment before the stop is made; the record then says the person stopped it.
+        await Poll.Until(() => ledger.State(id) == "stopped", () => $"the record says {ledger.State(id)}");
         await owner.DisposeAsync();
         Assert.Null(marks.Read(id));
     }
