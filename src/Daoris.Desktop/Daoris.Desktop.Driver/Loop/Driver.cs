@@ -3287,6 +3287,25 @@ public sealed class Driver(
                 true,
                 new SessionEnded(sessionId, quest.To, "stopped", ByPerson: true, Quest: quest.Id, Adapter: agent));
         }
+        catch (Exception) when (stoppedFirst is not null)
+        {
+            // A wire that broke after a stop (the process killed under a handshake's write) is that stop's end, not a failure: the
+            // stop decided it, as its conclusion would have, and the person's is never interrupted (D104, FLAKE3).
+            var (stopped, _) = Observation.Closed(stoppedFirst);
+            try
+            {
+                await service.AdvanceAsync(sessionId, stopped.State, stopped.AsNoted(), ct: CancellationToken.None).ConfigureAwait(false);
+            }
+            catch (Exception)
+            {
+                // Best-effort, as the failure's own write below.
+            }
+
+            return new StartRun(
+                $"{stopped.State}  session {sessionId} (#{quest.Id} → {quest.To}): {stopped.Note}",
+                true,
+                new SessionEnded(sessionId, quest.To, stopped.State, ByPerson: stoppedFirst!.ByPerson, stopped.Note, Quest: quest.Id, Adapter: agent));
+        }
         catch (Exception error)
         {
             // Everything but the shutdown above — which includes a client TIMEOUT: HttpClient's is an

@@ -12433,3 +12433,11 @@ mis-rooted instance.
 **Fix.** Section 18a takes back, by the person's press, the words a case leaves waiting (`takeBackHeld`).
 
 **Verification.** `rehearse:family` 448/448; red before, the same four failures.
+
+## A stop before the protocol handshake finished was recorded failed (2026-10-31)
+
+**Root cause.** 2ae495696 (FOUNDATION1x step 2) wrote the binding's role between the process's tracking and its handshake, widening the window for a stop to kill the process under the handshake's write. The resulting `IOException` skipped the conclusion, and the catch-all recorded `failed`.
+
+**Fix.** A stop made first decides the end in `Driver.RunAsync`'s catch, the person's never interrupted.
+
+**Verification.** `DrivenSessionInputTests` 15/15, red before.
