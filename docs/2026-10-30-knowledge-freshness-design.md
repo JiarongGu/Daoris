@@ -1,139 +1,176 @@
 # Knowledge freshness: what a hit says of its standing, and how a stale record is found
 
-**Standing:** proposed, round 1 (KNOWFRESH1a under D191). **Governing:** D220 and the canon's `current-knowledge`.
-Parts b (Lyntai's memory, quest `#d9c80453e46f`) and c (the machine's memory server) are not this design's.
+**Standing:** proposed, round 2 (KNOWFRESH1a under D191), after Codex's and the Opus reader's reads of round 1 (§7).
+**Governing:** D220 and the canon's `current-knowledge`. Parts b (Lyntai's memory, quest `#d9c80453e46f`) and c (the
+machine's memory server) are not this design's.
 
 ## 1. The problem as the code shows it
 
-- **The index is current; a hit's standing is not said.** An entry's id is its location
-  (`Knowledge/KnowledgeEntry.cs:165-172`), so an edited section replaces its own entry, and a moved checkout is read
-  again (`Knowledge/Store/CheckoutFreshness.cs:3-42`, `Knowledge/KnowledgeService.cs:1137-1177`). The commit each
-  checkout was read at is known (`KnowledgeService.cs:944-1006`) and told only by `knowledge_refresh`
-  (`KnowledgeSearchTools.cs:395-399`). A hit says its title, kind, path, lines and excerpt (`KnowledgeSearchTools.cs:104-117`):
-  no date, no commit, nothing of what came after it.
-- **History and the present are read alike.** Each dated note of a decision is an entry of its own
-  (`Knowledge/Ingest/DecisionNotes.cs:12-29`), of the same kind as the decision it amends
-  (`Registry/RepositoryScanner.cs:455-467`). The note parser already reads
-  a `Superseded` label (`DecisionNotes.cs:127-130`), but nothing reads what it supersedes. 17 of 219 decision files
-  say "supersede" at all, and most of those name a product state (`superseded` as a session's code), not a record replaced.
-- **Nothing finds a record the code no longer matches.** The docs gate compares five READMEs' last-commit days with
-  their areas' (`daoris.gates.json:61-66`, `Daoris.Devkit.Core/DocsGate.cs:43-65`): any commit to the README passes it,
-  and an unrelated code edit fails it. `tools/doc-system.mjs:2` leaves semantic claims to a review; `tools/doc-links.mjs:5-6`
-  resolves links, not the names a record quotes in code spans.
-- **Nothing finds two entries of one repository that disagree**: `knowledge_convergence` groups entries of different
-  repositories by similarity (`Knowledge/Search/ConvergenceDetector.cs:19-29`), never one repository's, and never contradiction.
-- **Nothing holds "retire in the same step"** beyond the canon's words and `post-feature`'s audit.
+- **A hit is current but silent about its standing.** Ids are locations (`Knowledge/KnowledgeEntry.cs:165-172`) and a
+  moved checkout is read again (`Knowledge/Store/CheckoutFreshness.cs:3-42`), but only `knowledge_refresh` tells the
+  commit read (`KnowledgeSearchTools.cs:395-399`); a hit does not (`:104-117`).
+- **History and the present read alike.** Each dated note is an entry of its decision's kind
+  (`Registry/RepositoryScanner.cs:455-467`). The record already writes an amendment mark, `*Amended by D<n> (ROW, date): …*`,
+  54 times in 36 files, each naming a newer decision; nothing reads it. No note says `Superseded by`. Present documents
+  have no kind of their own: a README, a design and a proposal are all `Knowledge` (`RepositoryScanner.cs:554-572`).
+- **Nothing finds a record the code no longer matches.** The docs gate compares last-commit days
+  (`Daoris.Devkit.Core/DocsGate.cs:43-65`): a touch passes it, an unrelated edit fails it.
+- **Nothing holds "retire in the same step"** beyond the canon and `post-feature`.
 
 ## 2. What a session needs from a hit and a record
 
-From a hit, before it reads further: which commit the text was read at; when the text was written, where the record
-says; whether something later in its own record amends or supersedes it; and whether the names it quotes still exist.
-Each is a fact read from the files or from git, never a judgement of which text is true; an entry with no mark is
-said to have none, never to be current.
+From a hit: the commit its text was read at, and whether a later note amends or supersedes it. From a record: one home
+per present fact, and a mark written by whoever replaced the fact, when they did.
 
-From a record: one home per present fact (D220), and history marked as history, so a mark is written by the person or
-agent who replaced the fact, at the moment they knew it. Lyntai's evidence binds every choice below: its D90 forbids
-"newest wins", its D109 found a relevance judge endorsing the superseded fact 3.4 times as often as the current one, and
-its D217 found a model-chosen key matched its predecessor a quarter of the time. So **no proposal here asks a model which
-of two entries is current, or which entry a new one replaces**; the writer names it, and the tools read the name.
+Lyntai's `docs/DECISIONS.md` binds every choice here: D90 rules out "newest wins" (`:2430`); D109 measured a relevance
+judge endorsing the superseded fact 3.4 times as often as the current one (`:3102-3105`); D215 has the writer name what
+it replaces, since similarity never establishes contradiction (`:6165`, `:6178-6179`); D217 found a model filed a revised
+value under its predecessor's key in only a quarter of questions (`:6203-6204`). **No proposal asks a model which entry
+is current or which one a new entry replaces.**
 
 ## 3. Proposals
 
-### 3.1 A hit says its standing
+### 3.1 A hit says its standing; the record's existing mark is read
 
-Each hit gains one line: `read at <commit>` (the reading's, already held per repository); `written <date>` where the
-record writes one (a note's label, an archive or fix-log entry's heading); `file last changed <date> <commit>`, asked of
-git once per distinct file among the hits shown and cached per reading; and, for a decision or one of its notes,
-`later: <n> notes, last <label>` and `superseded by D<n>` or `amended by D<n>` where a marked note says so. `knowledge_get`
-says the same. A fed host, with no checkout, says `no commit` rather than leaving the line out.
+Each hit gains one line: `read at <commit>`, with `+ uncommitted` where one `git status` of the record folders at the
+reading found changes (a signature reads disk, `Knowledge/Store/RootSignature.cs:4-10`); `fed at <commit>` where a feed
+named one (`KnowledgeService.cs:19-20`); `unknown` only without either. A decision or note adds `later: <n> notes` (a
+fact of position) and its marks. `knowledge_get` says the same.
 
-**The form a decision's note uses.** The older decision gains a note at its end (D134's place for a note on an older
-decision): `**Superseded by D<n> (<ROW>, <date>).**` or `**Amended by D<n> (<ROW>, <date>).**`, its sentence saying
-which part. The newer decision's opening names it back: `(supersedes D<m>)` or `(amends D<m>)`. The mark is per
-decision; the note's text says the part, for the reader. An older note, written before the form, reads as **unmarked**:
-its hit gives its date and the notes after it, which are facts of position, and no standing.
+**The form, one home: the older record's note.**
+- `*Amended by D<n> (ROW, date): …*`, as written now, in either emphasis, ending in a colon or a period: D<n> amends
+  the opening in part.
+- `**Superseded by D<n> (ROW, date): …**`, the one form added: D<n> replaces the opening whole.
+- Either may add `, replacing "<label>"` to target a note of the same file instead of the opening. A same-decision
+  amendment is `**Amended (ROW, date), replacing "<label>": …**`, the shape `docs/decisions/D191.md:36-44` needed.
+- The reverse (D<n> amends D<m>) is derived in the reading, from the entries, so a fed reading derives the same marks.
+  Nothing is written in the newer decision.
+- Older prose stays unmarked: its hit says `no mark`, never current.
 
-**Rejected.** A section's last change by `git blame` on every entry at every reading: thousands of entries against a
-read of one to two seconds (`CheckoutFreshness.cs:37-42`), for a precision the file's commit and the record's own date
-already give. File modification times: a checkout resets them (`DocsGate.cs:7-10`). Ranking a newer entry above an older
-one: "newest wins" by another name. Reading prose such as "this replaces …" with a model to mark the 17 older files:
-D109's failure, at write time instead of read time; the few real ones are marked by hand.
+`orient-index --check`, in GATESLIM1's `BLOCKING` set (`tools/merge-branch.mjs:1020`), gates the one-sided facts: the
+named decision exists, is numbered higher, is not itself, makes no cycle, and a quoted label exists. The 54 marks pass.
+
+**Rejected.** A two-sided form: 42 of the 54 lack a counterpart (Opus read), and a second side is a second home. The
+file's last-changed date: 0.44 to 0.96 seconds of `git log` a file (Opus read), moved by a touch. Blame, file times,
+ranking by date, a model reading old prose.
 
 ### 3.2 A record the code no longer matches is reported
 
-A new report, `tools/doc-current.mjs` (a pure audit like `doc-system.mjs`, import-safe, no writes), reads the
-present-fact homes (component READMEs, rooms, the router, this repository's own `.claude/knowledge`, `docs/development.md`,
-and designs whose standing is accepted or a contract) and resolves what they quote in code spans: a repository path
-against the tracked files; a `path:line` against that file's length; a symbol (a two-hump or dotted identifier) by a
-whole-word search of the tracked code; a route, a verb or a catalogue key against `docs/index/` (`routes.md`, `verbs.md`,
-`catalogues.md`); a `DAORIS_*` variable against the code. For each README `daoris.gates.json` tracks, it lists the
-folders of its area the README names nowhere. It prints each finding with its record and line, and exits 0: whether a
-quoted word is a claim about the code is a judgement, so it reports, as every ceiling does
-(`canon/core/knowledge/development-documents.md:131-134`).
+`tools/doc-current.mjs`, a pure audit like `doc-system.mjs`, reads a declared list, `documents.present` in `daoris.json`:
+each home's path, the bases its short paths are written after, and its runtime roots. Here: the root README, `AGENTS.md`,
+`docs/development.md`, `docs/guide/README.md`, the four component READMEs and `tools/dsh-probes/README.md`. Designs,
+contracts and decisions are not on it; their baseline is history (`docs/README.md:7-8`).
 
-History (decisions, the archive, the fix log, the changelog) is not read: a record of what was true names what has since
-gone (`doc-links.mjs:23-25`). The report stays this repository's until a second repository asks, for
-`doc-shapes.mjs:21-24`'s reason: the shapes it reads are this repository's conventions.
+**Resolution.** A code span outside fences:
+- **Path.** `:line` is stripped and never range-checked. Resolved exactly, relative to the file, then the root, then
+  each declared base. It is present if tracked, a tracked folder, or ignored (a folder span tested as a folder). Under a
+  runtime root, excluded. Checked only where it starts at a top-level folder or a base; any other path-shaped span (a
+  protocol method, a folder named in its sentence's context) is counted unchecked. No basename rescue.
+- **Symbol** (two humps, or dotted). Each part must be a whole word of the product code, comments stripped, with tests and
+  `docs/index` left out. A name found only in tests counts as test-only. External names sit on an allow-list, each with
+  its reason.
+- **Route** (`/api/…`): checked against `docs/index/routes.md`. **Variable** (`DAORIS_*`): checked against the code.
 
-**Rejected.** A model reading a record against the code: the review `doc-system.mjs:2` names, not a check. A failing
-gate: a quoted word that is not a symbol would stop a merge. Keeping the date comparison as the measure: it is the
-census shape D220 names, passed by a touch and failed by an unrelated edit.
+It prints findings, unchecked and test-only counts, each finding with its record and line, and exits 0.
 
-### 3.3 Two entries of one repository that may disagree: restatement, not contradiction
+**Measured** by a read-only probe of this rule at round 2's base: 9 homes, 6,017 spans.
+- **Paths.** 684 path-shaped: 391 present (216 only through a base), 50 runtime, 240 unchecked. None of the 243
+  unresolved was true by hand review: files under a project the sentence names, folder names read in context, protocol
+  names (`session/new`, `application/json`), another repository's `devtools/dev.mjs`. Anchored, 2 remain, both false:
+  `src/test/driverSource.ts` (`docs/development.md:118`, web-relative) and `tools/call` (`src/Daoris.Service/README.md:505`).
+- **Symbols.** 1,060 checked, 50 not in product code: 41 test classes or helpers, 3 external (`SendKeys`,
+  `Input.dispatchMouseEvent`, the kit's `ChromiumChildBrowser`, cited only in a comment), and **6 true**:
+  - `InstanceRoutes`, `PipeGrounds` and `SetupPorts`, each removed (`git log -S`: d89788aa6, 247003ad5, 584837457);
+  - `ChannelWords`, `WorkOrdersSetupWiring` and `CourseHelpWiring`, absent from every file.
+  
+  None is false after the allow-list.
+- **Routes and variables.** 25 routes, 1 unresolved (`/api/confirmations/waiting`), unconfirmed because a route built from
+  parts is not text; 61 variables, all present.
 
-`knowledge_convergence` gains a scope within one repository, over the present-fact kinds only, by its two lexical
-methods (`ConvergenceDetector.cs:9-13`). It reports two present homes stating one thing, which D220 calls the defect
-whichever is right; it does not say which is current, rank them, or read history against the present. Its semantic
-method runs only where a model is named, and says so (D24's tier).
+A missing root-anchored path is a fact, and may gate as router rows do (`tools/doc-system.mjs:65-70`) once a run shows no
+false finding. This one shows two, so it reports.
 
-Lyntai's evidence does not reach this, because nothing here chooses: a pair is shown, and the person or agent who
-holds the fact picks its one home and removes the copy. Contradiction by meaning is not attempted yet: telling two
-statements that disagree from two that differ in scope is the judgement D109 measured failing.
+**Rejected.** A model's review; a failing gate now; the date rule as the measure; a README's folder coverage, which would
+push READMEs to restate the tree.
 
-**Rejected.** A second detector in a node tool: a twin needing a twin table, the cost `DecisionNotes.cs:31-33` carries.
-A gate: the similarity threshold has no right default (`ConvergenceDetector.cs:32-35`).
+### 3.3 Findings reach the writer at the change
 
-### 3.4 Retire in the same step: two checks at the change, no new prompt
+`doc-current --since <base>`, where the base is the merge base with `main`, lists findings in the homes the diff touched
+and the homes quoting a path or symbol the diff deleted or renamed; `post-feature` points at it. A hit does not carry
+the verdict: a node tool's verdict on a service hit is a twin (the cost `DecisionNotes.cs:31-33` carries). "A hit says its record has an open finding" is a later row, if the report earns it.
 
-- **The supersession form is checked both ways**, by `tools/doc-duplicates.mjs`, which already reads each decision's
-  notes (`doc-duplicates.mjs:17-26`): a newer decision saying `supersedes D<m>` with no `Superseded by` note in D<m>,
-  or the reverse, fails. It is a fact about the files, and a fact gates (`doc-duplicates.mjs:28-31`). Prose without the
-  form is not read.
-- **A change's deletions name the records they made stale.** `doc-current.mjs --since <base>` takes the paths and the
-  symbols the diff deleted or renamed and lists every present-fact home quoting one. It reports at verify and in the
-  merge's quick checks; `post-feature`, which already asks for the records a change made stale, is pointed at its output.
+### 3.4 Retire in the same step
 
-**Rejected.** A new review prompt: `post-feature` is that prompt, and it lacked a list, not a reminder. Failing on a
-deletion's report: a quoted name in a sentence that still holds would stop a merge.
+The supersession mark has one home, so nothing is checked both ways; §3.1's gate holds its one-sided facts. Deletions
+reach the writer through §3.3, which reports and never fails. **Rejected:** a new review prompt, since `post-feature` is that
+prompt and lacked a list.
+
+### 3.5 Restatement within one repository: a later row
+
+Its preconditions:
+- the declared present homes read as a kind of their own; a component README is read by default nowhere
+  (`RepositoryScanner.cs:195-201`);
+- comparison at the sentence, since the detector compares whole-entry token sets (`ConvergenceDetector.cs:159-183`)
+  against a 0.82 default (`:45`);
+- a measured candidate set.
+
+It shows pairs and never ranks or chooses (D215, D109).
 
 ## 4. What it does not cover
 
-An agent's memory outside the repository (the harness's per-project folder, the machine's memory server): project
-facts do not belong there (`no-global-memory`), and parts b and c hold the retirement of a memory entry. Daoris's half
-meets part b only through the store's vectors, which are rebuilt from the records at each reading, so a record's mark
-is the source and Lyntai's retirement need not reach the index. Contradiction by meaning. The censuses (CENSUSRULES1).
-Other repositories: the form and the report enter the canon only after they hold here.
+Memory outside the repository (`no-global-memory`; parts b and c); the index's vectors are rebuilt from the records, so a
+record's mark is the source. Contradiction by meaning. The censuses (CENSUSRULES1). Other repositories, until this holds.
 
 ## 5. Rows it would file
 
-- **KNOWFRESH1a-i, the form and its check** (records tools, decisions). D134's forms gain `Superseded by` and `Amended
-  by`, read by `DecisionNotes` and the digest alike through the twin table; `doc-duplicates` checks both sides; the real
-  supersessions among the 17 are marked by hand. Proof: twin-table rows (a one-sided mark fails, a pair passes, older
-  prose "superseded" reads unmarked) pass in both twins; the digest shows the marked decisions.
-- **KNOWFRESH1a-ii, a hit's standing** (service). Proof: a fixture decision with an opening, two notes and a
-  `Superseded by` note: a hit on the opening shows the mark, a hit on the first note `later: 2 notes`, an unmarked
-  decision no mark and never "current", a fed entry `no commit`; `knowledge_get` says the same.
-- **KNOWFRESH1a-iii, the record report** (tools). Proof: on a fixture tree, a README quoting a deleted file, a missing
-  symbol and an unknown route, and an area with an unnamed folder, is reported with exit 0; `--since` lists the records
-  quoting a file the diff deleted; the count of findings on this repository at landing is in the commit.
-- **KNOWFRESH1a-iv, restatement within one repository** (service). Proof: two fixture READMEs restating a sentence are
-  one candidate; a decision and its own note are never paired; the answer orders no pair by date.
+- **KNOWFRESH1a-i, the form and its gate** (records tools). **Proof:** fixtures in `orient-index` and the twin table of
+  `DecisionNotes`, each read:
+  - italic and bold marks, colon and period;
+  - `Superseded by`;
+  - a same-decision `replacing` note;
+  - older prose, which reads unmarked;
+  - each one-sided fault, which fails;
+  - the 54 existing marks, which pass.
+- **KNOWFRESH1a-ii, a hit's standing** (service). **Proof:**
+  - a fixture decision's opening hit shows `superseded by`, a note's hit `later: 2 notes`, and an unmarked decision `no mark`;
+  - a dirty root says `+ uncommitted`;
+  - a fed reading round-trips with its commit and the same marks.
+- **KNOWFRESH1a-iii, the report and `documents.present`** (tools, records). **Proof:**
+  - negative fixtures: a symbol kept only in a comment is reported, one kept only in a test is test-only, a moved file is
+    reported and never rescued, and a shifted `path:line` reads present;
+  - this repository's run matches §3.2's counts;
+  - the six findings are fixed in the same row.
+- **KNOWFRESH1a-iv, restatement** (service), filed blocked on §3.5's preconditions. **Proof:** a sentence restated in two
+  homes is one candidate, and a decision is never paired with its own note.
 
 ## 6. Questions for the owner
 
-1. **The docs gate's date rule.** It ships in the devkit and fails in every repository that tracks a README. Replace
-   it with the record report (3.2), which reports and never fails, there too, or keep it beside the report here only?
-   Yes to replacing retires a failing gate in adopting repositories.
-2. **Marking the older decisions.** 1a-i marks only the hand-checked supersessions among the 17 files that say the
-   word. Should a session also read the other 202 for supersessions written in other words, or is an older decision
-   left unmarked until someone finds it replaced?
+1. **The docs gate.** The recommendation: keep the devkit's date rule for adopters; here, run `--since` beside it for one
+   batch, then switch here to a reporting mode (`doc-system.mjs:109-113` requires each component README's declaration, so
+   the switch is a mode). Codex's alternative: retire the date comparison everywhere and keep the missing-document check
+   (`DocsGate.cs:37-40`).
+2. **Older decisions.** Both readers advise against a blanket read of the 202 unmarked files: parse the existing marks
+   and mark the rest as found. Agreed?
+
+## 7. Round 1's findings answered
+
+| Finding | Answer |
+|---|---|
+| C1 | Taken: a mark targets the opening or a quoted note, part or whole (§3.1). |
+| C2 | Taken in substance: one home, legacy marks read as written, one-sided gate. |
+| C3 | Taken: measured, with samples (§3.2). |
+| C4 | Taken, but not declaration-aware parsing: six true findings and no false one need none. |
+| C5 | Taken: restatement is a later row (§3.5). |
+| C6 | Taken: fed commit shown; marks derived from entries. |
+| C7 | Taken: to the writer at the change; the hit later (§3.3). |
+| C8 | Moot: no git call at answer time. |
+| O-F1 | Taken: only `Superseded by` is added. |
+| O-F2 | Taken: reverse derived; gate in `orient-index --check`. |
+| O-F3 | Taken: declared homes, designs out, measured. |
+| O-F4 | Taken (§3.2). |
+| O-F5 | Taken: presence only. |
+| O-F6 | Taken: cut. |
+| O-F7 | Taken. |
+| O-F8 | Taken: `documents.present`. |
+| O-F9 | Taken: cut; the switch is a mode (§6). |
+| O-F10 | Taken: 0.82, the base, gating once clean, sources by path. |
