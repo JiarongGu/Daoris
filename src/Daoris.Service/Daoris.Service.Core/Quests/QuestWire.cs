@@ -31,7 +31,7 @@ public static class QuestWire
         + "and its forward, where it says one, names a take's machine and sequence; an evidenced verdict names "
         + "the full commit read, how it was read, and each item's requirement, path or gate, and result, with a "
         + "spelling only on a `case` read; a publish's review choice, where it has one, is off, on or an environment's "
-        + "name, and a set-up step's environment is a name that never reads as production; a set-up names its full "
+        + "name, a publish's weight, where it has one, is design or exact, and a set-up step's environment is a name that never reads as production; a set-up names its full "
         + "commit and, unless it is local, where to look; a review's verdict says reviewed or not-yet, naming the "
         + "set-up's machine, sequence and commit, or skipped, and a not-yet carries the person's words; a reopen and a rebind "
         + "each name a submission's machine and sequence, as a step's grewFrom does where it says one, and a take's submission does where "
@@ -321,6 +321,10 @@ public static class QuestWire
             // Only when its publisher gave one (SESSUX1j): an older build reads the quest as it always did, named by its title.
             if (asked.Short is not null) writer.WriteString("short", asked.Short);
 
+            // Only when marked (FOUNDATION1x): an unmarked quest crosses exactly as it did, and an older build reads a marked one
+            // as unweighted, which starts it on Build's order.
+            if (asked.Weight is not null) writer.WriteString("weight", asked.Weight);
+
             // Only when set (REVIEWENV1b): a quest that chose nothing and is no set-up step crosses exactly as it did, and an
             // older build reads one as the quest it always was.
             if (asked.Review is { } chosen)
@@ -479,6 +483,10 @@ public static class QuestWire
                 return null;
             }
 
+            // A weight no publish would keep is half a quest (FOUNDATION1x): replayed, it would start work on a mark nobody gave.
+            var (weight, unfitWeight) = QuestWeights.Judge(Text(asked, "weight"));
+            if (unfitWeight is not null || (asked.TryGetProperty("weight", out _) && Text(asked, "weight") is null)) return null;
+
             // The submission a step grew from (FABRIC-CLOSE1c), where it names one: not whole, the step could not be reopened by it.
             QuestOperationRef? grewFrom = null;
             if (asked.TryGetProperty("grewFrom", out var grew) && (grewFrom = QuestStore.ReadRef(grew)) is null) return null;
@@ -515,6 +523,7 @@ public static class QuestWire
                 Lanes = lanes.Select(lane => lane.GetString()!).ToList(),
                 Requirements = requirements,
                 Short = Text(asked, "short"),
+                Weight = weight,
                 Review = choice,
                 SetUpIn = setUpIn,
                 GrewFrom = grewFrom,

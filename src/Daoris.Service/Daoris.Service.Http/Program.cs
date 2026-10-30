@@ -2780,7 +2780,9 @@ static QuestResponse ToQuest(
     // The person's workflow choices before it started (WORKFLOW1e2): ids and their words, as its note travels; only where there are some.
     q.WorkflowChoices.Count == 0
         ? null
-        : q.WorkflowChoices.Select(c => new AskWorkflowChoiceResponse(c.Kind, c.Workflow, c.At ?? q.Updated, c.Words)).ToList());
+        : q.WorkflowChoices.Select(c => new AskWorkflowChoiceResponse(c.Kind, c.Workflow, c.At ?? q.Updated, c.Words)).ToList(),
+    // The mark on the work (FOUNDATION1x): a word, which every door may answer.
+    q.Weight);
 
 // Requirements as a door hands them to the exchange (DRIFT1c): a half left out, or a whole one, arrives
 // blank and is refused there naming which — the same sentence every door gives. So does an evidence item
