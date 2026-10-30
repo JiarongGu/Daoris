@@ -82,6 +82,7 @@ public static class Notices
     /// </summary>
     public static IReadOnlyList<Notice>? Read(string home, DateTimeOffset now)
     {
+        if (NoticeStore.InUse(home)) return NoticeStore.Read(home, now);
         var path = PathOf(home);
         string text;
         try
@@ -185,6 +186,7 @@ public static class Notices
         try
         {
             using var held = KeepLock.Take(path, within);
+            if (NoticeStore.InUse(home)) return NoticeStore.Edit(home, now, change);
             Parsed? record = null;
             var begun = false;
             if (File.Exists(path))
@@ -217,12 +219,18 @@ public static class Notices
         }
     }
 
+    /// <summary>
+    /// Move the file's notices into the store's <c>notices</c> once the start's confirmation is settled (FOUNDATION1 z-v); the file stays as
+    /// the backup. <paramref name="settled"/> is the reading of that confirmation; null reads this install's swap journal.
+    /// </summary>
+    public static NoticesImport ImportFile(string home, Func<StoreSettled>? settled = null) => NoticeStore.Import(home, DateTimeOffset.UtcNow, settled);
+
     /// <summary>The notices younger than <see cref="Week"/>, newest first.</summary>
-    private static IEnumerable<Notice> Young(IEnumerable<Notice> notices, DateTimeOffset now) =>
+    internal static IEnumerable<Notice> Young(IEnumerable<Notice> notices, DateTimeOffset now) =>
         notices.Where(notice => now - notice.At < Week).OrderByDescending(notice => notice.At).ThenBy(notice => notice.Id, StringComparer.Ordinal);
 
     /// <summary>The unreadable record moved aside under a dated name, never written over.</summary>
-    private static void SetAside(string path, DateTimeOffset now)
+    internal static void SetAside(string path, DateTimeOffset now)
     {
         var folder = Path.GetDirectoryName(path)!;
         var stamp = now.UtcDateTime.ToString("yyyyMMdd'T'HHmmss'Z'", CultureInfo.InvariantCulture);
@@ -274,6 +282,8 @@ public static class Notices
             if (value is not null) writer.WriteString(name, value);
         }
     }
+
+    internal static Parsed? ParseRecord(string text) => Parse(text);
 
     /// <summary>The record parsed; null where it is no JSON object.</summary>
     private static Parsed? Parse(string text)
@@ -328,7 +338,7 @@ public static class Notices
         string? Text(string name) => element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
     }
 
-    private sealed record Parsed(string? SchemaVersion, bool Newer, Dictionary<string, Notice> Notices);
+    internal sealed record Parsed(string? SchemaVersion, bool Newer, Dictionary<string, Notice> Notices);
 }
 
 /// <summary>

@@ -819,6 +819,7 @@ public sealed class DriverLoop(
         // NOTIFY2f (D196 point 6): the notices' record, read again by this window's process whoever holds the lease, since any process
         // on the home writes it; another's write is heard, or found at the topic's deadline, and its own wakes nothing, since its writer
         // pushes it. Before the lease is waited on, as the proposals are.
+        global::Daoris.Driver.Notices.ImportFile(homeDirectory);
         await using var notices = HomeWatch.ForNotices(homeDirectory, (_, _) => Notices.Slice.Wake(), log: log);
         notices.Start();
         using var noticesResumed = Power?.Hear(notices.Resumed);

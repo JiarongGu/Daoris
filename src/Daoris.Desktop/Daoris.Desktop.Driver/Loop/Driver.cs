@@ -894,6 +894,9 @@ public sealed class Driver(
         // a resume reads its id from the binding. A look with no such file asks nothing of the store.
         Context.Conversations.ImportFiles();
 
+        // FOUNDATION1 z-v: the notices' file moves into the store the same way, and stays as the backup.
+        Notices.ImportFile(home);
+
         // The sync runs BESIDE the sessions, not only around them (D68 §6): every whole look syncs, and a whole look comes
         // round at the watch's pace while sessions work. After it, every session this driver runs whose take came
         // back LOST is stopped, because its quest is another machine's and its work would double theirs (D68 §5).
