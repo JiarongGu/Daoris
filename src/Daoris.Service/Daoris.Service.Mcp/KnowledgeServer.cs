@@ -60,6 +60,7 @@ public static class KnowledgeServer
         typeof(HelpPauseTool),
         typeof(HelpPluginTool),
         typeof(HelpRepositoryTool),
+        typeof(HelpRoleTool),
         typeof(HelpSessionTool),
         typeof(HelpSettingTool),
         typeof(HelpSetupTool),

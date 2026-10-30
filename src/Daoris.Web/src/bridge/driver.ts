@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { type QueryClient, useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenora, useShenoraEvent } from '@shenora/react';
 import type { SyncStanding } from '../data/api';
-import type { ActorRow, KeepSet, StaffingFound } from '../data/wiring';
+import type { ActorRow, KeepSet, RoleCatalogue, RoleChangePress, StaffingFound } from '../data/wiring';
 import { keys, SYNC_SLICE } from '../data/queries';
 import type { AccountWaitTick, Consideration, TrustHold } from '../data/signals';
 import type { AccessLevel } from '../settings/repository/Access';
@@ -536,6 +536,33 @@ export const useStaffingFound = () => {
  * by this press, or *Dismiss*. `daoris driver actor found take|dismiss <n>` is its terminal twin (D50).
  */
 export const useAnswerStaffingFound = () => useDriverChange<{ found: number; answer: 'take' | 'dismiss' }>('STAFFING_FOUND_ANSWER');
+
+export type { RoleCatalogue, RoleChangePress, RoleRow, SuggestedRole } from '../data/wiring';
+
+/**
+ * The role catalogue (FOUNDATION1y-i, the foundation design §2.7): every role with its work, place and choices, the works a role may
+ * take, whether this home keeps the catalogue, and the roles Daoris suggests. `daoris driver role` says the same. Under the driver's
+ * key, so every press that changes the driver's state asks it again. Null in a browser and from an older shell, which answers no roles.
+ */
+export const useRoles = () => {
+  const { isAvailable } = useShenora();
+  return useQuery({
+    queryKey: [...keys.driver, 'roles'] as const,
+    queryFn: async (): Promise<RoleCatalogue | null> => {
+      const answer = await call<Partial<RoleCatalogue> | null>('ROLES');
+      if (!answer || !Array.isArray(answer.roles)) return null;
+      return { roles: answer.roles, works: answer.works ?? [], kept: answer.kept === true, suggested: answer.suggested ?? [] };
+    },
+    enabled: isAvailable,
+  });
+};
+
+/**
+ * A working role added, changed, removed or given back its seed (FOUNDATION1y-i): the person's press through the driver's role door,
+ * whose judge refuses with nothing written. `daoris driver role` is its terminal twin (D50), and Ask Daoris's `role_propose` is applied
+ * by the person's press on its card. What starts may move with it, so the route publishes the roster's key too.
+ */
+export const useSetRole = () => useDriverChange<RoleChangePress>('SET_ROLE');
 
 /**
  * "Look now": a quest just published, or an ask just made, is looked at on the driver's next breath

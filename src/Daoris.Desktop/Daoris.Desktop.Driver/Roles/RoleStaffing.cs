@@ -144,6 +144,9 @@ public sealed class RoleStaffing(string home, Func<StoreSettled>? settled = null
 
     private Func<StoreSettled> Settled => settled ?? StartConfirmation.Read;
 
+    /// <summary>The reading of the start's confirmation this staffing writes under, which the catalogue's write beside it takes too.</summary>
+    internal Func<StoreSettled> Confirmation => Settled;
+
     /// <summary>The store's file in this home.</summary>
     public string Location => DesktopStore.LocationIn(home);
 
@@ -332,6 +335,33 @@ public sealed class RoleStaffing(string home, Func<StoreSettled>? settled = null
 
         Commit(read, Changed(StaffingProjection.Config(read), changes, kept), read.AsFound, also: null);
         return kept;
+    }
+
+    /// <summary>
+    /// The staffing of an added role (FOUNDATION1y-i): its own row of <c>role_staffing</c> set, or deleted where <paramref name="choices"/> is
+    /// null, under the staffing's lock in one transaction. The file holds no added role, so nothing of it is projected; the caller judged the
+    /// choices by the role's work (<see cref="RoleCatalog.Judge(RoleRecord, IReadOnlyList{ActorChoice}?)"/>) and runs the check once the
+    /// catalogue is written, since an added role taking Intake or Ask Daoris moves the projection's narrowing.
+    /// </summary>
+    /// <exception cref="DriverException">The staffing is not in the store yet, a lock held past its wait, or a write not done; said.</exception>
+    public void SetAdded(string role, IReadOnlyList<ActorChoice>? choices)
+    {
+        if (ActorChoices.Ids.Contains(role, StringComparer.Ordinal)) throw new ArgumentException($"`{role}` is a seeded role, whose staffing is Set's.", nameof(role));
+        using var held = Lock();
+        if (Read() is null)
+        {
+            throw new DriverException("the roles' staffing is not in this home's store yet (its first start imports it), so an added role's choices are not kept; nothing was written.");
+        }
+
+        using var store = DesktopStore.Open(Location, StoreProcess.Options(Settled));
+        store.Write(Family, write =>
+        {
+            write.Execute("DELETE FROM role_staffing WHERE role = $role", ("$role", role));
+            if (choices is null) return;
+            write.Execute(
+                "INSERT INTO role_staffing (role, state, choices, why, first_agent, at) VALUES ($role, 'set', $choices, NULL, NULL, $at)",
+                ("$role", role), ("$choices", Write(choices)), ("$at", Now()));
+        });
     }
 
     /// <summary>

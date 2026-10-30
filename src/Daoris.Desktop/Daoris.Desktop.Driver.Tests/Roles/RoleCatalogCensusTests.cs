@@ -21,7 +21,10 @@ public sealed partial class RoleCatalogCensusTests : IDisposable
         GitSeed.Discard(_home);
     }
 
-    /// <summary>Each writer and the files that reach the judge or the staffing's write for it. `daoris driver role` has none yet (a later row's).</summary>
+    /// <summary>
+    /// Each writer and the files that reach the judge or the staffing's write for it. FOUNDATION1y-i: the role door, which `SET_ROLE`,
+    /// `daoris driver role` and `role_propose` call.
+    /// </summary>
     private static readonly (string Writer, string[] Files)[] Census =
     [
         ("SET_ACTOR", ["Daoris.Desktop.Modules/Bridge/DriverContext.cs"]),
@@ -29,9 +32,13 @@ public sealed partial class RoleCatalogCensusTests : IDisposable
         ("Ask Daoris's proposals", ["Daoris.Desktop.Driver/Help/Proposals/HelpSettingProposals.cs"]),
         ("the import and the check", ["Daoris.Desktop.Driver/Roles/RoleStaffing.cs"]),
         ("the judges themselves", ["Daoris.Desktop.Driver/Roles/ActorChoices.cs", "Daoris.Desktop.Driver/Roles/RoleCatalog.cs"]),
+        ("the role door", ["Daoris.Desktop.Driver/Roles/RoleDoor.cs"]),
+        ("SET_ROLE", ["Daoris.Desktop.Modules/Bridge/Routes/DriverRoutes.cs"]),
+        ("daoris driver role", ["Daoris.Desktop.Driver/Roles/RoleVerbs.cs"]),
+        ("role_propose", ["Daoris.Desktop.Driver/Help/Proposals/HelpRoleProposals.cs"]),
     ];
 
-    [GeneratedRegex(@"ActorChoices\.(Judge|Judged|With)\(|RoleStaffing\.SetAt\(|\.WithIntake\(|\.WithHelper\(|RoleCatalog\.Write\(|public static DriverConfig With(Intake|Helper)\(")]
+    [GeneratedRegex(@"ActorChoices\.(Judge|Judged|With)\(|RoleStaffing\.SetAt\(|\.WithIntake\(|\.WithHelper\(|RoleCatalog\.Write\(|RoleDoor\.Apply\(|public static DriverConfig With(Intake|Helper)\(")]
     private static partial Regex Reaches();
 
     private static IEnumerable<string> Reaching()
@@ -52,7 +59,7 @@ public sealed partial class RoleCatalogCensusTests : IDisposable
 
         Assert.Equal(named, Reaching().Order(StringComparer.Ordinal).ToList());
         Assert.Equal(
-            ["SET_ACTOR", "daoris driver actor", "Ask Daoris's proposals", "the import and the check", "the judges themselves"],
+            ["SET_ACTOR", "daoris driver actor", "Ask Daoris's proposals", "the import and the check", "the judges themselves", "the role door", "SET_ROLE", "daoris driver role", "role_propose"],
             Census.Select(each => each.Writer));
     }
 

@@ -851,6 +851,8 @@ public sealed partial class HelpCoverageTests
         ("adapter", new Door("setting", "adapter")),
         // MODELROLE1c (D205 §9.4): an actor's order, owed to MODELROLE1h's `actor_propose`.
         ("actor", new Owed(HelpRoomOwed.Actor)),
+        // FOUNDATION1y-i (the foundation design §2.7): the role catalogue's change, Ask Daoris's `role_propose`.
+        ("role", new Door("role", "set")),
     ];
 
     /// <summary>
@@ -862,6 +864,8 @@ public sealed partial class HelpCoverageTests
         // MODELROLE1c: Build's order on *Actors*, owed to MODELROLE1h's `actor_propose` (D205 §8.1); since MODELROLE1d, Intake's and Ask
         // Daoris's rows too, the two cards folded into them (their `setting` doors write the same one-choice order until row h).
         ("ai", "useSetActor", null, new Owed(HelpRoomOwed.Actor)),
+        // FOUNDATION1y-i: the role catalogue's Add, Edit, Remove, Back to the default and the suggested Designer's Add, over SET_ROLE.
+        ("ai", "useSetRole", null, new Door("role", "set")),
         // FOUNDATION1w-s: *Take it* and *Dismiss* of a change of the actors another program made.
         ("ai", "useAnswerStaffingFound", null, new Exempt(
             "A change of driver.json's actors another program made is the person's to take or dismiss (the foundation design §19.15): "

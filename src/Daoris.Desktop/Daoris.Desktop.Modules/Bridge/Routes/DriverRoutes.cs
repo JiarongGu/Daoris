@@ -359,6 +359,40 @@ public sealed class DriverRoutes(DriverContext context)
         return State(_loop);
     }
 
+    // The role catalogue (FOUNDATION1y-i, the foundation design §2.7): every role, the seed's and the person's, with its work, scope and
+    // stored choices, and the work codes a role may take; a read, the same `daoris driver role` says. Beside them, the roles Daoris
+    // suggests adding (the Designer while no role takes design), each the person's press alone.
+    [DriverRoute("ROLES")]
+    private object? Roles(IpcRequest request)
+    {
+        var catalogue = RoleCatalog.ReadHome(_loop.Home);
+        return new
+        {
+            Roles = RoleDoor.Rows(catalogue, DriverConfig.Load(_loop.ConfigPath)),
+            Works = RoleWork.Codes,
+            Kept = RoleStaffing.Of(_loop.ConfigPath) is not null,
+            Suggested = RoleSuggestion.For(catalogue).Select(each => new
+            {
+                each.Role.Id, each.Role.NameEn, each.Role.NameZh, each.Role.Takes, ScopeKind = each.Role.Scope.Kind, each.Choices,
+            }),
+        };
+    }
+
+    // A working role added, changed, removed or given back its seed (FOUNDATION1y-i): the person's press, the same change `daoris driver
+    // role` makes and Ask Daoris's `role_propose` asks for: one door, `RoleDoor.Apply`, whose judge refuses with nothing written. A
+    // removed role's work holds its starts, said; a running session goes on.
+    [DriverRoute("SET_ROLE")]
+    [Publishes("SET_ROLE", StateScopes.Driver | StateScopes.Harnesses)]
+    private object? SetRole(IpcRequest request)
+    {
+        var staffing = RoleStaffing.Of(_loop.ConfigPath)
+            ?? throw new DriverException("this home's actors are the file's own (not this home's store), so its roles are not set here.");
+        var (change, choices, read) = RoleDoor.Read(request.Payload);
+        RoleDoor.Apply(staffing, change, choices, read);
+        _loop.Nudge();
+        return State(_loop);
+    }
+
     // Ask Daoris's access mode (HELPMODE1a2, D183 point 2): `restricted` or `full`, the person's press alone, over the same key
     // `daoris-driver help mode` sets: one truth, two doors (D50). Each start reads it, and a conversation running under another ends
     // at its turn's end, its next words resuming it under the mode chosen (ACCESSSWAP1): nothing it runs with changes while it runs.

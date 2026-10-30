@@ -95,6 +95,7 @@ public static class ChoiceRoutes
     public static InstanceRoute Commits { get; } = Person("SET_COMMITS");
     public static InstanceRoute Keep { get; } = Person("SET_KEEP");
     public static InstanceRoute Actor { get; } = Person("SET_ACTOR");
+    public static InstanceRoute Role { get; } = Person("SET_ROLE");
 
     /// <summary>Each verb that changes the home, in the verb's words: the route it sends while Daoris runs, or null with why it acts alone.</summary>
     public static IReadOnlyList<(string Verb, InstanceRoute? Route, string Reason)> Verbs { get; } =
@@ -123,6 +124,7 @@ public static class ChoiceRoutes
         ("driver keep <kind> …", Keep, "the Disk space card's rule of that kind"),
         ("driver actor <actor> …", Actor, "an actor's order (D205 §9.4)"),
         ("driver adapter <name>", Actor, "Build's order, one choice at account default (D205 §6.4)"),
+        ("driver role set|remove|default <id> …", Role, "a working role of the catalogue, its record and its choices (FOUNDATION1y-i)"),
         ("driver actor import <file>", null, "alone: no route takes a file of the terminal's; the staffing's lock serializes it with the window's presses"),
         ("driver actor found take|dismiss <n>", null, "alone: the staffing's lock serializes it with the window's Take it and Dismiss"),
         ("driver timeout <minutes>", null, "alone: no route sets a session's timeout"),
@@ -159,7 +161,7 @@ public static class DriverChoicesCommand
     [
         "list", "drive", "undrive", "hold", "resume", "trees", "notify", "cap", "strikes", "retry", "timeout", "cooloff", "adapter", "helper",
         "intake", "line", "landing", "across", "standing", "language", "review", "opinion", "helpers", "handover", "commits", "work-cycle",
-        "brainstorms", "workflow", "keep", "actor",
+        "brainstorms", "workflow", "keep", "actor", "role",
     ];
 
     public const string Usage =
@@ -202,6 +204,9 @@ public static class DriverChoicesCommand
                daoris-driver driver actor [<actor>] · actor <actor> "<agent> [<model>|-] [<effort>|-]" … · actor <actor> --clear
                       · actor intake|ask-daoris off
                daoris-driver driver actor export [<file>] · actor import <file> · actor found [take|dismiss <n>]
+               daoris-driver driver role [<id>] · role set <id> [--name "…"] [--zh "…"] [--takes <work,…>]
+                      [--scope machine|workspace:<id>|repository:<id>] ["<agent> [<model>|-] [<effort>|-]" …]
+                      · role remove|default <id>
         `daoris driver …` runs these.
         Each change takes --wait <minutes> (0 to 30, the default 30) or --no-wait: how long to wait on its Confirm in Daoris's window.
         """;
@@ -244,6 +249,8 @@ public static class DriverChoicesCommand
             "keep" => args.Count > 1,
             // `actor` naming one actor, or none, says its order, a read (MODELROLE1c).
             "actor" => args.Count > 2,
+            // `role` naming one role, or none, says it, a read (FOUNDATION1y-i).
+            "role" => args.Count > 1 && args[1] is "set" or "remove" or "default",
             _ => Verbs.Contains(verb, StringComparer.Ordinal),
         };
     }

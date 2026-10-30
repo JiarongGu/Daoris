@@ -341,6 +341,7 @@
     "Help/Proposals/HelpPluginProposals.cs": "Help",
     "Help/Proposals/HelpRepositoryProposals.cs": "Help",
     "Help/Proposals/HelpSessionProposals.cs": "Help",
+    "Help/Proposals/HelpRoleProposals.cs": "Help",
     "Help/Proposals/HelpSettingProposals.cs": "Help",
     "Help/Proposals/HelpSetupProposals.cs": "Help",
     "Help/Proposals/HelpSyncProposals.cs": "Help",
