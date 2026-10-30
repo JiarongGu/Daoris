@@ -463,10 +463,10 @@ if (args is ["verify", .. var verifyArgs])
     return await Daoris.Driver.Host.VerifyConsole.RunAsync(verifyArgs);
 }
 
-// A repository's integration shown (INTEGRATE1h): read from the record, no lease; its acts are the owner's cards in the window.
+// A repository's integration shown (INTEGRATE1h): read from the record, no lease; its acts are the owner's cards in the running window's, which it waits on.
 if (args is ["integrate", .. var integrateArgs])
 {
-    return Daoris.Driver.Host.IntegrateConsole.Run(integrateArgs);
+    return await Daoris.Driver.Host.IntegrateConsole.RunAsync(integrateArgs, CancellationToken.None);
 }
 
 // The machine log (LOG1, D94): this host's watch and every exception nothing caught, in a file of its
