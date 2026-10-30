@@ -66,6 +66,14 @@ public sealed class Driver(
     private ConversationMoves? _moves;
 
     /// <summary>
+    /// The watch's first look of a loop (FOUNDATION1f-iv part b; the foundation design §3.3, §19.1): every dead loop's driven move taken up
+    /// through <see cref="Moves"/>, whose scope is the lease holder's, and ended by its phase, so a line a dead loop left a move standing for
+    /// is carried on by this loop and a word it sent and never took is taken, none sent again. The look reading each hold, not the shell's
+    /// come-up, since a come-up's say of another shell on the home is the shell's own chat run's. Never faults.
+    /// </summary>
+    internal async Task TakeUpMovesAsync(CancellationToken ct) => await Moves.LookAsync(ct).ConfigureAwait(false);
+
+    /// <summary>
     /// How a running session is stopped for a take that lost (D68 §5): its process ended through <see cref="SessionProcesses"/>,
     /// unless a test hands in its stand-in run's stop beside <see cref="Runner"/> (DEV3b). True when the session was running here.
     /// </summary>
@@ -2706,8 +2714,9 @@ public sealed class Driver(
             // which the ask keeps alike, each shown here under its id and its files copied here first; never by the ids the record was read with.
             var movedBy = MovedWords.Moving(keyed) ? keyed : null;
             IReadOnlyList<SaidWordView>? movedOn = null;
-            // FOUNDATION1f-iv part a: the record's delivery is written where the take returns, as today's take reads it, so it goes with the take
-            // only where the fence was written; where the store refused it, the moved words are not taken here and wait on the new session.
+            // FOUNDATION1f-iv part b: the record's delivery is written where each door's write of the first prompt returns, the moved words'
+            // `sent` first and their take after it, so it goes with the take only where the fence was written; where the store refused it,
+            // the moved words are not taken here and wait on the new session.
             var delivering = fenced is null ? carry : null;
             if (fenced is not null && movedBy is not null)
             {
@@ -2726,11 +2735,10 @@ public sealed class Driver(
                     .ConfigureAwait(false);
             }
 
-            // The take is made and nothing is left to hand: a carry-on that moved no word, an older host's, delivers where its old record's words
-            // were taken off, or where it handed none; one whose moved words' take did not come out is ended by its phase here, not at the end of
-            // a run that lasts as long as its session does.
-            if (delivering is not null && movedBy is null) await delivering.DeliveredAsync([]).ConfigureAwait(false);
-            if (carry is not null) await carry.EndAsync().ConfigureAwait(false);
+            // The record that was not fenced is ended by its phase here, not at the end of a run that lasts as long as its session does. One that
+            // was fenced goes on to its door's write, which is where it delivers: the moved words' `sent` and their take, or, for a carry-on that
+            // moved no word, an older host's, the prompt's outcome alone; a run that never writes ends it by its phase as it is let go.
+            if (carry is not null && delivering is null) await carry.EndAsync().ConfigureAwait(false);
 
             var adapter = Context.Adapters.Resolve(agent);
             // What it may read and write outside its tree (D107): the rules it is handed, and the sentence
@@ -2788,9 +2796,15 @@ public sealed class Driver(
             var heavy = HeavyTold.Hand(workTree, home, quest.To, checks, adapter.TakesSettings);
             var checksKept = SessionChecks.Hold(home, sessionId, checks, LongCalls.MinutesOf(process));
             using var checksHeld = new Disposer(() => SessionChecks.LetGo(checksKept));
-            var target = WithAccess(WithLanguage(WithStanding(
-                await WithAskWordsAsync(SessionTarget.ForQuest(quest, workTree, service.BaseUrl), service, ct).ConfigureAwait(false),
-                config), config, start.Workspace), access) with
+            var asking = await WithAskWordsAsync(SessionTarget.ForQuest(quest, workTree, service.BaseUrl), service, ct).ConfigureAwait(false);
+            // FOUNDATION1f-iv part b: a carry-on's moved words are taken once its first prompt is written, and the take is what keeps the
+            // person's among them on the ask this instruction reads, so the instruction is handed them here, as the take will have kept them.
+            if (delivering is not null && movedBy is not null && movedOn is { Count: > 0 } && asking.Words is AskWords askRead)
+            {
+                asking = asking with { Words = askRead.WithMoved(movedOn, sessionId, quest.Id) };
+            }
+
+            var target = WithAccess(WithLanguage(WithStanding(asking, config), config, start.Workspace), access) with
             {
                 // The mode its repository's permission prompts name on its harness (AUTONOMY1b), on either door.
                 Access = permissions,
@@ -2952,6 +2966,8 @@ public sealed class Driver(
                 waitsOnBackground: WaitsOnBackground(service, quest, sessionId, resumed: start.Resumes is not null),
                 // LANDBACK1 part 2: a turn that ends with the quest done and the tree uncommitted is carried on, not concluded.
                 carriesOn: CarriesOn(service, quest, workTree, resumed: start.Resumes is not null, () => Context.Processes.StopMade(sessionId) is not null),
+                // FOUNDATION1f-iv part b: where the first prompt's write returns, the carry-on's moved words are `sent`, then taken.
+                written: delivering is null ? null : delivering.Written,
                 // MODELROLE1c2 (D205 §3.3): its agent's refusal of the entry's model at the open is re-asked; a new start's walk may answer a
                 // later entry on the same agent and account, set on this session. A continuation keeps its asked choice, so its record ends.
                 // PRESSMODEL1: a handed quest's start asks its named agent's own choice (Build's entry for it, else its default), so a
@@ -3874,7 +3890,7 @@ public sealed class Driver(
         Action? working = null, Func<CancellationToken, Task<bool>>? waitsOnBackground = null, int? minutes = null,
         string? noConnector = null, Action<SessionStop?>? stopMade = null, bool movedFirst = false, Action? spawned = null,
         string? piece = null, OpenOffers? offers = null, Func<CancellationToken, Task<bool>>? transientWanted = null,
-        Func<CancellationToken, Task<TurnCarry>>? carriesOn = null)
+        Func<CancellationToken, Task<TurnCarry>>? carriesOn = null, Action? written = null)
     {
         // Through the start gate (PROCSTART2): a press that starts a session reaches here before its first wait, and the
         // runtime's start lock is no thread's to wait on but the pool's. Seen through once begun, as the start always was.
@@ -4041,7 +4057,7 @@ public sealed class Driver(
                 // asked and not carried, so the record never says a choice was taken that was not.
                 asked: asked, carried: target.Brainstorm is not null ? null
                     : notCarried => _ = service.TryKeepActorAsync(sessionId, Log, choice, notCarried, ct: CancellationToken.None),
-                modelRefused: refusedAt, offerRead: offered, retry: retry, carriesOn: carriesOn)
+                modelRefused: refusedAt, offerRead: offered, retry: retry, carriesOn: carriesOn, written: written)
             : null;
         // What the native door's harness says in its own words, apart from its agent's, for its ending (AGT3c).
         var own = new HarnessWords();
@@ -4049,8 +4065,9 @@ public sealed class Driver(
             ? Structured(adapter, process, transcript, sessionId, prompt, ct, preamble, target.PersonSaid, said, keepAs, resume, account, own, target.Handed)
             : null;
         Task capture = acp ?? structured ?? CaptureAsync(process, transcript, sessionId, ct, preamble);
-        // AGENTLYNTAI1s-i: a native harness's prompt on its input, once its output is being read, then closed.
-        await NativePrompt.WriteAsync(process, adapter, prompt, ct).ConfigureAwait(false);
+        // AGENTLYNTAI1s-i: a native harness's prompt on its input, once its output is being read, then closed. FOUNDATION1f-iv part b: the
+        // write's return is where a carry-on's moved words are `sent`, never the process's start, which a crash can precede the write by.
+        if (await NativePrompt.WriteAsync(process, adapter, prompt, ct).ConfigureAwait(false)) written?.Invoke();
 
         if (!movedFirst)
         {
@@ -4472,6 +4489,10 @@ public sealed class Driver(
     /// <param name="account">What the prompt was composed of (CONTEXT1), kept beside it on its event; null for a resume.</param>
     /// <param name="waitsOnBackground">Whether a turn that ended on its own background work waits for it (BGWAIT1); null never.</param>
     /// <param name="carriesOn">What a turn's end reads of a done quest's tree, so its session is carried on to commit (LANDBACK1 part 2); null never.</param>
+    /// <param name="written">
+    /// Told as the first prompt's write returns, and again as a transient try's does (FOUNDATION1f-iv part b): a carry-on's moved words' <c>sent</c>.
+    /// Null for every run that moved none.
+    /// </param>
     /// <param name="noConnector">What is said where there is no connector, when it is neither a quest's nor an intake's sentence.</param>
     /// <param name="ending">Where the run's wait says the timeout before its kill (BGWAIT2), handed the door once it is made.</param>
     /// <param name="unoffered">
@@ -4492,7 +4513,7 @@ public sealed class Driver(
         Func<string, string, string>? unoffered = null, Func<bool>? setupChanged = null, IReadOnlyList<SaidWordView>? handed = null,
         ActorAsked? asked = null, Action<ActorAsked>? carried = null, Func<ModelRefusal, Task<ActorAsked?>>? modelRefused = null,
         Action<IReadOnlyList<AcpConfigOption>>? offerRead = null, TransientRetry? retry = null,
-        Func<CancellationToken, Task<TurnCarry>>? carriesOn = null)
+        Func<CancellationToken, Task<TurnCarry>>? carriesOn = null, Action? written = null)
     {
         await using var file = TranscriptFile.Open(transcript, append: resume is not null);
 
@@ -4648,7 +4669,12 @@ public sealed class Driver(
                     resume: resume?.Conversation,
                     // Each of the person's words its own block (MSG1b, D137 §2.2), and taken once the prompt is on the wire.
                     blocks: resume?.Blocks,
-                    prompted: resume is null ? null : () => resume.Prompted = true,
+                    // FOUNDATION1f-iv part b: and a carry-on's moved words are `sent` as its first prompt is on the wire.
+                    prompted: resume is null ? written : () =>
+                    {
+                        resume.Prompted = true;
+                        written?.Invoke();
+                    },
                     // COWORK1c: marked attempted on the record before the opening prompt carrying them is written.
                     // FOUNDATION1 row p (the design §3.4 rule 5): acknowledged, the opening narrowed to the words the record names marked, and
                     // none named, nothing prompted.

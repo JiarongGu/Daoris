@@ -49,7 +49,7 @@
   "records": [
     { "file": "Daoris.Desktop.Driver/Course/Chat/LimitMove.cs", "member": "MoveAsync", "row": "f-ii", "why": "the live limit move: decided before its turns are held, each phase written before what it fences, each handed word's sent at the wire before its take, and delivered after it" },
     { "file": "Daoris.Desktop.Driver/Course/Chat/CurveMove.cs", "member": "MoveAsync", "row": "f-iii", "why": "the curve's move: decided where it is judged to move, taken through the hand-over's take with each phase written before what it fences and the prompt's outcome at the wire (its message carries no word id, so no word's sent), and no hand-over box written beside it" },
-    { "file": "Daoris.Desktop.Driver/Loop/Driver.cs", "member": "RunAsync", "row": "f-iv", "why": "the driven carry-on: decided at old-ended before its keyed open, a hand-over's carry-on keeping none (row f-v), each phase written before what it fences, each handed word's sent where today's take returns (part a; part b moves it to the door's write return), and ended by its phase wherever the start stops" }
+    { "file": "Daoris.Desktop.Driver/Loop/Driver.cs", "member": "RunAsync", "row": "f-iv", "why": "the driven carry-on: decided at old-ended before its keyed open, a hand-over's carry-on keeping none (row f-v), each phase written before what it fences, each handed word's sent where the door's write of the first prompt returns, with the take after it (part b; part a wrote it where the take returned), and ended by its phase wherever the start stops" }
   ],
   "notDecisions": [
     { "path": "L", "why": "A workflow's send-back is a word between turns that the dispatcher owns; an ended conversation's go-on from it is path B, with B's own-account rule." },

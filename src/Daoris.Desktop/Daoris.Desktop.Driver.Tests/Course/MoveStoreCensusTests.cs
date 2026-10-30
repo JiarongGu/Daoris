@@ -89,8 +89,8 @@ public sealed class MoveStoreCensusTests
         // The take of the curve's move writes its phases through the holder's move, never the store: it names no type of the store's.
         Assert.DoesNotContain(readers, reader => reader.StartsWith("Course/Chat/ChatHandOver.cs ", StringComparison.Ordinal));
 
-        // The driver names only the scope its driven holder is built with (FOUNDATION1f-iv part a); its take-up, part b's, goes through
-        // the holder.
+        // The driver names only the scope its driven holder is built with (FOUNDATION1f-iv part a); its take-up (part b, below) goes through
+        // the holder, and the watch names no type of the move record at all.
         Assert.Equal([$"{DrivenLine} names MoveTakeUpScope"], readers.Where(reader => reader.StartsWith(DrivenLine + " ", StringComparison.Ordinal)));
         Assert.Contains("MoveTakeUp", names);
         Assert.All(Importers, importer => Assert.Contains(importer, names));
@@ -114,6 +114,25 @@ public sealed class MoveStoreCensusTests
             Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Modules", "Loop", "DriverLoop.cs")));
         Assert.Matches(@"new ConversationMoves\(homeDirectory, service, Events, Output\)", loop);
         Assert.Matches(@"Limits = async \(looked, token\) =>\s*\{\s*await moves\.LookAsync\(token\)[^;]*;\s*await chat\.WakeLimitsAsync\(", loop);
+    }
+
+    /// <summary>
+    /// FOUNDATION1f-iv part b (the foundation design §3.3): a driven line's take-up runs at the watch's first look, at the slot where uncertain
+    /// words are settled and before it, after the orphan sweep and the supervisor's, through the driver's own holder (<c>Driver.Moves</c>, whose
+    /// scope is the lease holder's), so the watch names no type of the move record and the census of readers gains none.
+    /// </summary>
+    [Fact]
+    public void The_driven_take_up_runs_at_the_watch_s_first_look_through_the_drivers_holder_before_uncertain_words_are_settled()
+    {
+        var watch = CourseCensusTests.WithoutComments(File.ReadAllText(Path.Combine(Driver, "Loop", "DriverWatch.cs")));
+        var sweep = watch.IndexOf("Supervisor.SweepAtStart(", StringComparison.Ordinal);
+        var take = watch.IndexOf(".TakeUpMovesAsync(ct)", StringComparison.Ordinal);
+        var uncertain = watch.IndexOf("UncertainWords.SettleAsync(", StringComparison.Ordinal);
+        Assert.True(sweep > 0 && take > sweep && uncertain > take, $"sweep {sweep}, take-up {take}, uncertain {uncertain}");
+        Assert.Matches(@"Stages\.TimeAsync\(\s*""moves"",\s*\(\)\s*=>\s*new Driver\([^;]*\)\s*\{\s*Log = Log\s*\}\.TakeUpMovesAsync\(ct\)\)", watch);
+
+        var driver = CourseCensusTests.WithoutComments(File.ReadAllText(Path.Combine(Driver, "Loop", "Driver.cs")));
+        Assert.Matches(@"internal async Task TakeUpMovesAsync\(CancellationToken ct\) => await Moves\.LookAsync\(ct\)", driver);
     }
 
     /// <summary>

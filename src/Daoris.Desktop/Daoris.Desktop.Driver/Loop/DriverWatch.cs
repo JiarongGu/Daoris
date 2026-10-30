@@ -759,6 +759,13 @@ public sealed class DriverWatch(
                         // A record the sweep ended concludes too (LAND2b, design §2): one whose quest its session closed done
                         // before the crash is due, and this first look lands it.
                         await OrphansDueAsync(orphans, config, ct).ConfigureAwait(false);
+                        // FOUNDATION1f-iv part b (the foundation design §3.3): a loop that died with a carry-on's move standing is taken up here, at the
+                        // slot where uncertain words are settled and before it, so the move says the `lost` note of a word it moved and never sent, and
+                        // the carry-ons the look plans are no longer held by it. Through a driver's holder, whose scope is the lease holder's.
+                        await Stages.TimeAsync(
+                            "moves",
+                            () => new Driver(service, config, _adapters, home, processes, sync, output, _harnesses, usage, hooks, events, browser, Running)
+                                { Log = Log }.TakeUpMovesAsync(ct)).ConfigureAwait(false);
                         // COWORK1c (the message-urgency design §6, trap 8): the words a shell before this one wrote to its agent and never
                         // took off leave their records, said where their conversation never showed them taken, and are never sent again.
                         carried.AddRange(await Stages.TimeAsync("uncertain", () => UncertainWords.SettleAsync(service, events, ct, Lines)).ConfigureAwait(false));
