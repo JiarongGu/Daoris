@@ -102,7 +102,7 @@
         "workflow.step.look", "workflow.step.lookAnywhere", "workflow.step.landingMerge", "workflow.step.landingBranch",
         "workflow.step.pullRequest", "workflow.step.goAhead", "workflow.step.task", "workflow.step.pushed", "workflow.step.line",
         "workflow.step.questClose", "workflow.step.join", "workflow.step.stop", "workflow.step.waitUnit", "workflow.step.check",
-        "workflow.step.integrate", "workflow.step.workRequests", "workflow.step.pluginNode", "workflow.repositories.title", "settings.daoris.card.*", "quests.flow.title"
+        "workflow.step.integrate", "workflow.step.workRequests", "workflow.step.request", "workflow.step.pluginNode", "workflow.repositories.title", "settings.daoris.card.*", "quests.flow.title"
       ]
     },
     "field": {
