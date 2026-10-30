@@ -43,4 +43,10 @@ public interface IWorkplaceProcess
 
     /// <summary>Why the version's opinion step cannot start; else null.</summary>
     string? OpinionCannot { get; }
+
+    /// <summary>
+    /// The <c>request</c> the bound version's own <c>integrate</c> step names (INTEGRATE1n part n2), which its landing records as the
+    /// acceptance's provenance; null where the version holds no such step, and under Current, whose rule's <c>integrate</c> is read instead.
+    /// </summary>
+    string? IntegrateRequest => null;
 }

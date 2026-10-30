@@ -55,7 +55,7 @@ public static class NodeKinds
     /// <summary>
     /// The unit's step in the line's integration (INTEGRATE1n; the integration design §17.4): its landed branch asked of the one request door and
     /// waited on, reached and failed by the integration record. Declared and judged here, drawn by Current under a rule carrying
-    /// <c>integrate</c>; nothing starts it until rows n2 and n3.
+    /// <c>integrate</c>; its start is <see cref="IntegrateNode"/>, and nothing runs the integration until row g.
     /// </summary>
     public const string Integrate = "integrate";
 

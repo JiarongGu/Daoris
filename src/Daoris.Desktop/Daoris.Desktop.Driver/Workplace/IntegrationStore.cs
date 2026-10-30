@@ -121,6 +121,22 @@ public sealed class IntegrationStore(
         }
     }
 
+    /// <inheritdoc/>
+    public IntegrationRequest? FindByKey(string unit, string tip) =>
+        Reading(reader => reader.Query(
+                $"SELECT {RequestColumns} FROM integration_requests WHERE unit = $unit AND tip = $tip COLLATE NOCASE ORDER BY at DESC, id DESC",
+                MapRequest, ("$unit", unit), ("$tip", tip))
+            .FirstOrDefault(), null);
+
+    /// <summary>
+    /// The newest membership of a request in any candidate, standing or ended; null where it stands in none. What a node's stop reads to
+    /// refuse itself once the member promoted (§17.4, F50).
+    /// </summary>
+    public IntegrationMember? MemberOf(string request) =>
+        Reading(reader => reader.Query(
+                $"SELECT {MemberColumns} FROM integration_members WHERE request = $request ORDER BY joined_at DESC, position DESC", MapMember, ("$request", request))
+            .FirstOrDefault(), null);
+
     /// <summary>A request by its id, open or closed; null where the store holds none.</summary>
     public IntegrationRequest? Request(string id) =>
         Reading(reader => reader.Query($"SELECT {RequestColumns} FROM integration_requests WHERE id = $id", MapRequest, ("$id", id)).FirstOrDefault(), null);

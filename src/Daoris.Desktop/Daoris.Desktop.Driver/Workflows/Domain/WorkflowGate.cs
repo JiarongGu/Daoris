@@ -64,6 +64,11 @@ public sealed record WorkflowProcess(string Repository, Landing Landing, Resolve
     /// </summary>
     public NodeGraph? Graph { get; init; }
 
+    /// <inheritdoc/>
+    public string? IntegrateRequest => Graph?.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Integrate) is { } integrate
+        ? IntegrateNodes.RequestOf(integrate)
+        : null;
+
     /// <summary>Rows 5 and 6 of D154's table as the version says them; null under Current, where the rule says them, as today.</summary>
     public WorkflowLook? Look { get; init; }
 

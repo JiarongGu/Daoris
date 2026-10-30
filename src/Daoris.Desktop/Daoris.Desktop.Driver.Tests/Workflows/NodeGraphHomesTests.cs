@@ -188,8 +188,9 @@ public sealed class NodeGraphHomesTests
 
     /// <summary>
     /// INTEGRATE1n (§17.6 point 7, <c>compatible-builds.md</c>): an older build reads a rule carrying <c>integrate</c> as the branch rule it is and
-    /// draws <c>handed</c> then <c>line</c>, holding no <c>integrate</c> node, and that graph arms nothing: this build's Current arms nothing
-    /// either, since nothing starts the step yet (rows n2 and n3), and a rule whose cycle names a plugin's node arms both builds alike.
+    /// draws <c>handed</c> then <c>line</c>, holding no <c>integrate</c> node, and that graph arms nothing. Since part n2 starts the step, this
+    /// build's Current arms the runtime for that rule (F51: for that repository's branch units alone), and a rule carrying none arms nothing;
+    /// a rule whose cycle names a plugin's node arms both builds alike.
     /// </summary>
     [Fact]
     public void An_older_build_draws_no_integrate_for_the_same_rule_and_arms_nothing()
@@ -207,7 +208,9 @@ public sealed class NodeGraphHomesTests
         // The file the newer build wrote keeps the key through a round trip, and reads back as the same rule.
         Assert.Equal(rule.Integrate, DriverConfig.Parse(config.ToJson()).Landings["engine"].Integrate);
 
-        Assert.False(NodeRuntime.Armed(config));
+        // The older build's graph arms nothing; this build's does since n2 starts the step, for the rule carrying it alone (INTEGRATE1n, F51).
+        Assert.True(NodeRuntime.Armed(config));
+        Assert.False(NodeRuntime.Armed(config.WithLandingIntegrate("engine", null)));
         Assert.False(NodeRuntime.Armed(DriverConfig.Empty.WithLanding("engine", new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}"))));
     }
 

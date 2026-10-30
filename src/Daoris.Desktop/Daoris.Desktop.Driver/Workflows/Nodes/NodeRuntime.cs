@@ -205,6 +205,24 @@ public sealed class NodeRuntime(
     /// <summary>Daoris's own close (FABRIC-CLOSE1b), where the loop holds the close door; none, and no quest is closed by a graph.</summary>
     private readonly QuestCloser? _closer = closes is null ? null : new QuestCloser(records, closes, clock);
 
+    /// <summary>
+    /// The one door a unit's <c>integrate</c> asks for its landed branch (INTEGRATE1n part n2; the integration design §17.4): none by default, so
+    /// a runtime nobody wired starts none and reconciles none, and its node waits ready. The watch sets it (<see cref="HomeDoor"/>), and nothing
+    /// in this part runs an integration: an admitted request waits queued for row g.
+    /// </summary>
+    public IIntegrationDoor? Integration { get; set; }
+
+    /// <summary>The door over this home's records and integration store, built from the home the node records live in.</summary>
+    public static IIntegrationDoor HomeDoor(string home) => new HomeIntegrationDoor(home);
+
+    /// <summary>A unit's <c>integrate</c>, over the door set when it asks (INTEGRATE1n part n2).</summary>
+    private IntegrateNode Integrate => _integrateNode ??= new IntegrateNode(records, () => Integration, clock);
+
+    private IntegrateNode? _integrateNode;
+
+    /// <summary>The choices the pass in hand reads, the door's rules under them: set by a pass holding <see cref="_one"/>.</summary>
+    private DriverConfig? _config;
+
     /// <summary>Every quest the last look read, by id: a close's chain, and what its quests now read (FABRIC-CLOSE1b).</summary>
     private Dictionary<string, QuestView> _quests = new(StringComparer.Ordinal);
 
@@ -288,10 +306,13 @@ public sealed class NodeRuntime(
     /// <remarks>
     /// FABRIC-PERFORM1i: a plugin's observed node arms it too, the parent's ruling for the row (the owner's aim, "maximize the automation", and a
     /// graph a person wrote naming the step): RUN1 armed on performed nodes alone. Choices naming neither still read, tell, write and start nothing.
+    /// INTEGRATE1n (§17.4, F51): a landing rule carrying <c>integrate</c> arms it too, for the branch units of the repositories whose rule
+    /// carries it alone (<see cref="Integrates"/> on the rule's own landing graph, read with no cycle parsed): a rule with none arms nothing.
     /// </remarks>
     public static bool Armed(DriverConfig config) =>
         config.Landings.Values.Concat(config.WorkspaceLandings.Values)
-            .Any(rule => rule.Cycle is not null && Acts(NodeGraphHomes.OfLanding(rule, LandingSource.Repository).Graph))
+            .Any(rule => (rule.Cycle is not null && Acts(NodeGraphHomes.OfLanding(rule, LandingSource.Repository).Graph))
+                         || (rule.Integrate is not null && Integrates(NodeGraphHomes.Landing(rule))))
         || config.WorkCycles.Values.Concat(config.WorkspaceWorkCycles.Values).SelectMany(kinds => kinds.Values)
             .Any(json => NodeGraphs.Read(json).Graph is var graph && (Acts(graph) || QuestClosing.Holds(graph)));
 
@@ -324,11 +345,18 @@ public sealed class NodeRuntime(
         var identities = new Dictionary<string, string>(StringComparer.Ordinal);
         var quests = Quests(read);
         var owners = new RunOwners(quests, runs ?? [], read.Unread.Count == 0);
+
+        // INTEGRATE1n (F51): a graph is judged once for each repository, workspace and kind, never again for every unit of it, so the units of
+        // a repository whose rule carries no `integrate` (nor any plugin's node) cost a lookup each, and only an integrating repository's are governed.
+        var homes = new Dictionary<(string Repository, string? Workspace, string Kind), NodeGraph?>();
         foreach (var each in read.Units.OrderBy(unit => unit.Id, StringComparer.Ordinal))
         {
             var unit = each;
             var repository = unit.Owner.Repository ?? "";
-            var graph = NodeGraphHomes.Work(config, repository, unit.Owner.Workspace, unit.Kind).Graph;
+            if (!homes.TryGetValue((repository, unit.Owner.Workspace, unit.Kind), out var graph))
+            {
+                homes[(repository, unit.Owner.Workspace, unit.Kind)] = graph = NodeGraphHomes.Work(config, repository, unit.Owner.Workspace, unit.Kind).Graph;
+            }
 
             // FABRIC-CLOSE1b: a closure graph governs a quest bound to it at its take, and only that quest; any other keeps today's done.
             // FABRIC-CLOSE1l, the review's finding 6: the graph it was bound to, kept by this home where the choices hold another or none.
@@ -361,7 +389,7 @@ public sealed class NodeRuntime(
                 continue;
             }
 
-            if (graph is null || (!Acts(graph) && !closes)) continue;
+            if (graph is null || (!Acts(graph) && !(unit.Kind == WorkUnitKind.Branch && Integrates(graph)) && !closes)) continue;
             var (declared, dispatchable, observable) = Declare(graph, steps);
 
             // FABRIC-PERFORM1i: the host's half of the frame, the unit it is told for and its repository's identity, read once per checkout.
@@ -595,6 +623,7 @@ public sealed class NodeRuntime(
         try
         {
             if (!_holdsLease()) return new NodeRuntimePass(true, [], [], []);
+            _config = look.Config;
 
             // FABRIC-RUN1e: governance is read afresh at the look's deadline, at the first pass, and at a wake under choices other than the
             // ones it was judged under, before any attempt is heard, asked after, retried or started; read afresh, every governed unit is judged.
@@ -678,7 +707,7 @@ public sealed class NodeRuntime(
             if (_closer is not null) done.AddRange(_closer.Resolve(Declared, _quests));
             // FABRIC-CUTOVER1f (the cutover design §3, §5.2): the person's skip or stop of a run's node, kept on its record by their door, applied
             // before anything on it is judged; a run it names is judged this pass.
-            var worded = Worded(governed.Values);
+            var worded = await WordedAsync(governed.Values, ct).ConfigureAwait(false);
             done.AddRange(worded.Done);
             done.AddRange(await _performer.ReconcileAsync(Declared, sends, ct).ConfigureAwait(false));
             done.AddRange(_performer.Due(Declared));
@@ -695,6 +724,14 @@ public sealed class NodeRuntime(
             {
                 done.AddRange(await _closer.ReconcileAsync(sends, ct).ConfigureAwait(false));
                 said.AddRange(_closer.TakeSaid());
+            }
+
+            // INTEGRATE1n (§17.4, F41): a unit's request is asked after, by its key, before any new start: a request a restart finds, one a new
+            // landing tip invalidated its node of and the outcome that lifts the gate on a second one, and one the door never took.
+            if (Integration is not null)
+            {
+                done.AddRange(await Integrate.ReconcileAsync(ct).ConfigureAwait(false));
+                said.AddRange(Integrate.TakeSaid());
             }
 
             var named = done.Select(each => each.Unit).Concat(lagging.Select(each => each.Unit)).ToHashSet(StringComparer.Ordinal);
@@ -780,6 +817,13 @@ public sealed class NodeRuntime(
                     // next pass reads it again, and no further round reads git again only to find the same stale revision.
                     if (_governed is null) return;
                 }
+                // INTEGRATE1n (§17.4): a waited node, begun through its adapter: the unit's request asked of row e's one door, by its key.
+                else if (node.Kind == NodeKinds.Integrate)
+                {
+                    var integrating = await IntegrateAsync(governed, node, start, evaluated.Statuses, said, ct).ConfigureAwait(false);
+                    if (integrating is not null) done.Add(integrating);
+                    started |= integrating is { What: not PerformedWhat.Refused };
+                }
                 // FABRIC-CUTOVER1d (the cutover design §3, §4): the doors read a run's record, so its opinion and look are begun as a unit's are,
                 // their gates read on its branch at the tip this pass read.
                 else if ((node.Reach == NodeReach.Observed && (Begins(node.Kind) || governed.Observable.Contains(node.Id)))
@@ -822,13 +866,77 @@ public sealed class NodeRuntime(
                     started |= sent.What != PerformedWhat.Refused;
                 }
 
-                // A pressed node's task and a waited node's wait are HUMAN1's and WAITUNIT1's to start: left ready.
+                // A pressed node's task and any other waited node's wait are HUMAN1's and WAITUNIT1's to start: left ready.
             }
 
             if (evaluated.Settled && !started) break;
         }
 
         if (governed.Scope is { } run) End(governed, run, said);
+    }
+
+    /// <summary>
+    /// An <c>integrate</c> the evaluation proposes to start (INTEGRATE1n; §17.4): the landing's own branch at the tip <c>handed</c> recorded,
+    /// asked of the door by the unit and that tip, once the landing's acceptance was the request (its provenance, F40) and nothing is unreconciled
+    /// on the node (F41). Left ready, saying why once a pass, where the landing waits for the owner's card or the steward's act, or where no door
+    /// is set; null where nothing was done.
+    /// </summary>
+    private async Task<WorkPerformed?> IntegrateAsync(
+        GovernedUnit governed, NodeDeclaration node, WireStart start, IReadOnlyDictionary<string, NodeStatus> statuses, List<string> said, CancellationToken ct)
+    {
+        if (Integration is null || _config is not { } settings) return null;
+        var unit = governed.Unit.Id;
+        if (LandingOf(governed, statuses) is not { } landed)
+        {
+            var line = $"work  {unit}: its integration waits: its landing's record does not hold the tip `handed` recorded.";
+            if (!said.Contains(line, StringComparer.Ordinal)) said.Add(line);
+            return null;
+        }
+
+        var repository = governed.Watched.Repository;
+        var ask = new IntegrationAsk(repository, governed.Watched.Workspace, landed.Root, landed.Entry.Branch, IntegrationRoutes.Node, IntegrationRequester.NodeStart)
+        {
+            Unit = unit, Tip = landed.Tip, Request = NodeOptions.Text(node, "request"), Conflicts = NodeOptions.Text(node, "conflicts"),
+        };
+
+        // The landing's acceptance read first, with no git and no write: where it was no request, the node waits ready for the owner's card
+        // or the steward's act, and nothing is written (a rule gaining `integrate` over standing landings requests none of them).
+        if (IntegrationRequests.NodeJudgement(ask, landed.Entry, LandingRules.Effective(settings, repository, governed.Watched.Workspace)).Refused is { } waits)
+        {
+            var line = $"work  {unit}: its integration waits: {waits.Message}";
+            if (!said.Contains(line, StringComparer.Ordinal)) said.Add(line);
+            return null;
+        }
+
+        var sent = await Integrate.StartAsync(node, start, statuses[start.Node], ask, settings, ct).ConfigureAwait(false);
+        said.AddRange(Integrate.TakeSaid());
+        return sent;
+    }
+
+    /// <summary>
+    /// The landing an <c>integrate</c> asks for (§17.4): the landed branch at the tip <c>handed</c> recorded, with its landing's record. A unit's
+    /// own <c>handed</c> reached on a landing's tip, or a run's (<see cref="Landed"/>); null while <c>handed</c> is not reached or no entry of the
+    /// unit's landings holds that tip.
+    /// </summary>
+    private static (LandedBranch Entry, string Tip, string Root)? LandingOf(GovernedUnit governed, IReadOnlyDictionary<string, NodeStatus> statuses)
+    {
+        if (governed.Scope is { } scope)
+        {
+            if (Landed(governed, statuses) is not { } on) return null;
+            return on.Unit.Records.Landings.LastOrDefault(each => each.GoneAt is null && string.Equals(each.Tip, on.Tip, StringComparison.OrdinalIgnoreCase)) is { } held
+                ? (held, on.Tip, scope.Root)
+                : null;
+        }
+
+        if (governed.Graph.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Handed) is not { } handed
+            || statuses.GetValueOrDefault(handed.Id) is not { State: NodeStates.Reached, Acceptance.Evidence.Revision: { } tip })
+        {
+            return null;
+        }
+
+        return governed.Unit.Records.Landings.LastOrDefault(each => each.GoneAt is null && string.Equals(each.Tip, tip, StringComparison.OrdinalIgnoreCase)) is { } entry
+            ? (entry, tip, governed.Watched.Root)
+            : null;
     }
 
     /// <summary>
@@ -861,17 +969,21 @@ public sealed class NodeRuntime(
     /// cutover design §3, §5.2), applied through the one table under the run's declarations and the scope its starts take, and taken off whether
     /// applied or not. Each is said, and names its run, so the run is judged this pass. A record that does not read keeps them: the evaluation says it.
     /// </summary>
-    private (List<WorkPerformed> Done, List<string> Said) Worded(IEnumerable<GovernedUnit> governed)
+    private async Task<(List<WorkPerformed> Done, List<string> Said)> WordedAsync(IEnumerable<GovernedUnit> governed, CancellationToken ct)
     {
         var done = new List<WorkPerformed>();
         var said = new List<string>();
         foreach (var each in governed)
         {
             var unit = each.Unit.Id;
-            if (each.Scope is null || records.Read(unit) is not { Pending.Count: > 0 }) continue;
+            if (each.Scope is null || records.Read(unit) is not { Pending.Count: > 0 } pending) continue;
             var scope = new NodeScope(each.GraphDigest, each.Run);
             var now = clock();
-            var (refused, applied) = records.Edit(unit, record => RunNodeWords.Apply(record, each.Declared, scope, now));
+            // INTEGRATE1n (F50): a stop of an `integrate` whose member promoted is refused, read from the integration record before it is applied.
+            var promoted = Integration is { } door && pending.Pending.Any(word => word.Act == NodeWordActs.Stop && each.Declared.GetValueOrDefault(word.Node)?.Kind == NodeKinds.Integrate)
+                ? await IntegrateNodes.PromotedAsync(door, pending, ct).ConfigureAwait(false)
+                : null;
+            var (refused, applied) = records.Edit(unit, record => RunNodeWords.Apply(record, each.Declared, scope, now, promoted));
             if (refused is not null) continue;
             foreach (var (word, code) in applied!)
             {
@@ -1736,4 +1848,10 @@ public sealed class NodeRuntime(
 
     /// <summary>Whether a graph names a plugin's performed or observed node: what arms the runtime and makes a unit governed (FABRIC-PERFORM1i).</summary>
     private static bool Acts(NodeGraph? graph) => graph?.Nodes.Any(node => Performs(node) || Observes(node)) == true;
+
+    /// <summary>
+    /// Whether a graph holds an <c>integrate</c> (INTEGRATE1n; §17.4): the unit's step in the line's integration, started through row e's door.
+    /// What arms the runtime for a branch rule carrying <c>integrate</c> and makes its repository's branch units governed (F51).
+    /// </summary>
+    private static bool Integrates(NodeGraph? graph) => graph?.Nodes.Any(node => node.Kind == NodeKinds.Integrate) == true;
 }
