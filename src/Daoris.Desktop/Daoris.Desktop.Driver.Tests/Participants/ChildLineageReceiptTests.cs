@@ -19,15 +19,18 @@ public sealed class ChildLineageReceiptTests
 
     private static IEnumerable<string> Lines(string name) => File.ReadAllLines(Path.Combine(Fixtures, name)).Where(line => line.Length > 0);
 
-    /// <summary>The run's lineage file, with the stream's lines as the driver writes them beside it, and the part's end where given.</summary>
-    private static ChildBindings Run(string name, bool? clean = null)
+    /// <summary>
+    /// The run's lineage file, with the stream's lines as the driver writes them beside it, and the part's end where given: lines
+    /// written before row a, so history, read under a chat's record unless <paramref name="kind"/> says otherwise.
+    /// </summary>
+    private static ChildBindings Run(string name, bool? clean = null, string? kind = ChildBindings.Chat)
     {
         var agents = new HashSet<string>(StringComparer.Ordinal);
         var stream = File.Exists(Path.Combine(Fixtures, $"{name}.stream.jsonl"))
             ? Lines($"{name}.stream.jsonl").Select(line => ChildBindings.StreamLine(line, DateTimeOffset.UnixEpoch, agents)).OfType<string>()
             : [];
         var end = clean is { } ended ? [ChildBindings.EndLine(ended, DateTimeOffset.UnixEpoch)] : Array.Empty<string>();
-        return ChildBindings.Fold([.. Lines($"{name}.lineage.jsonl"), .. stream, .. end]);
+        return ChildBindings.Fold([.. Lines($"{name}.lineage.jsonl"), .. stream, .. end], kind);
     }
 
     [Fact]
@@ -48,8 +51,8 @@ public sealed class ChildLineageReceiptTests
         {
             Assert.Equal(["hook", "call", "stream"], child.Provenance);
             Assert.Equal((ChildBindings.Connected, 1, "general-purpose"), (child.Connectivity, child.Calls, child.Type));
-            // Each said its own stop, on the hook and on the stream.
-            Assert.Equal(ChildBindings.Finished, child.State);
+            // Each said its own stop, on the hook and on the stream, whose word wins.
+            Assert.Equal(ChildBindings.Completed, child.State);
         });
     }
 
@@ -70,23 +73,28 @@ public sealed class ChildLineageReceiptTests
         Assert.All(running.Children, child =>
         {
             Assert.Equal(["call"], child.Provenance);
-            Assert.Equal((ChildBindings.Connected, ChildBindings.Active), (child.Connectivity, child.State));
+            // Written before row a with no end: its process's exit proven by nothing, so not known.
+            Assert.Equal((ChildBindings.Connected, ChildBindings.Uncertain), (child.Connectivity, child.State));
             Assert.Null(child.Type);
         });
-        // Codex says nothing of a thread's end: each ends with the part, never "finished" (canary 9).
+        // Codex says nothing of a thread's end: each ends with its agent at a chat's clean end, never "finished" (canary 9).
         Assert.All(ended.Children, child => Assert.Equal(ChildBindings.Ended, child.State));
     }
 
+    /// <summary>
+    /// COWORKVIEW1a (C10-1): an older build wrote a killed root's end unclean without reading its exit, so that end proves nothing,
+    /// and its running child reads not known under a chat's record; under a driven one its end was never recorded.
+    /// </summary>
     [Fact]
-    public void A_real_killed_root_leaves_its_running_child_lost()
+    public void A_real_killed_root_s_unclean_end_from_before_row_a_leaves_its_running_child_not_known()
     {
         var running = Run("claude-kill");
         var killed = Run("claude-kill", clean: false);
 
         var child = Assert.Single(running.Children);
-        Assert.Equal(("a47dc441076104543", ChildBindings.Active, ChildBindings.Connected), (child.Native, child.State, child.Connectivity));
-        Assert.True(killed.PartEnded);
-        Assert.Equal(ChildBindings.Lost, Assert.Single(killed.Children).State);
+        Assert.Equal(("a47dc441076104543", ChildBindings.Uncertain, ChildBindings.Connected), (child.Native, child.State, child.Connectivity));
+        Assert.Equal(ChildBindings.Uncertain, Assert.Single(killed.Children).State);
+        Assert.Equal(ChildBindings.Unrecorded, Assert.Single(Run("claude-kill", clean: false, kind: null).Children).State);
     }
 
     /// <summary>What the connector and the hook wrote names no place on a disk: every value is an id, a moment or a flag.</summary>

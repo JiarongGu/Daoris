@@ -67,15 +67,14 @@ public sealed class ChildLineageTests : IDisposable
     }
 
     [Fact]
-    public void The_end_is_appended_where_the_session_has_lineage_and_a_killed_root_loses_its_children()
+    public void The_end_is_appended_where_the_session_has_lineage_and_a_killed_process_loses_its_children()
     {
-        ChildLineage.Append(_home, "s1", """{"by":"hook","event":"started","agent":"a1"}""");
+        ChildLineage.Start(_home, "s1", "0123456789abcdef", "4242 1", DateTimeOffset.UnixEpoch);
+        ChildLineage.Append(_home, "s1", """{"by":"hook","event":"started","agent":"a1","proc":"0123456789abcdef"}""");
 
-        ChildLineage.End(_home, "s1", clean: false, DateTimeOffset.UnixEpoch);
+        ChildLineage.End(_home, "s1", clean: false, DateTimeOffset.UnixEpoch, "0123456789abcdef");
 
-        var bound = ChildLineage.Read(_home, "s1");
-        Assert.True(bound.PartEnded);
-        Assert.Equal(ChildBindings.Lost, Assert.Single(bound.Children).State);
+        Assert.Equal(ChildBindings.Lost, Assert.Single(ChildLineage.Read(_home, "s1").Children).State);
     }
 
     [Fact]
@@ -100,7 +99,7 @@ public sealed class ChildLineageTests : IDisposable
 
         var bound = ChildLineage.Read(_home, "s1");
         Assert.Equal(
-            [("a1", (string?)null, (int?)1, ChildBindings.Active), ("a2", "a1", 2, ChildBindings.Finished)],
+            [("a1", (string?)null, (int?)1, ChildBindings.Uncertain), ("a2", "a1", 2, ChildBindings.Completed)],
             bound.Children.Select(child => (child.Native, child.Parent, child.Depth, child.State)));
     }
 

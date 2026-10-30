@@ -145,8 +145,12 @@ public static class ChildLineage
         Append(home, sessionId, ChildBindings.EndLine(clean, at, proc));
     }
 
-    /// <summary>The part's children, as its lineage says; none where it has no file.</summary>
-    public static ChildBindings Read(string home, string sessionId)
+    /// <summary>
+    /// The part's children, as its lineage says, read in this window: each process this window issued by its token's reading in this
+    /// flow's set (COWORKVIEW1a); none where it has no file.
+    /// </summary>
+    /// <param name="kind">The record's kind, <see cref="ChildBindings.Chat"/> or driven, which null reads as.</param>
+    public static ChildBindings Read(string home, string sessionId, string? kind = null)
     {
         if (!SessionShape.IsMatch(sessionId)) return ChildBindings.Fold([]);
         var path = PathOf(home, sessionId);
@@ -154,7 +158,7 @@ public static class ChildLineage
         {
             using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
             using var reader = new StreamReader(stream, Utf8);
-            return ChildBindings.Fold(reader.ReadToEnd().Split('\n'));
+            return ChildBindings.Fold(reader.ReadToEnd().Split('\n'), kind, LineageTokens.Current.Of);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {

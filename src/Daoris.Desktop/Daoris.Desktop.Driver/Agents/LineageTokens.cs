@@ -76,6 +76,9 @@ public sealed class LineageTokens
         return token;
     }
 
+    /// <summary>A recorded generation's reading here: its token's, where its <c>start</c>'s issuer is this process; null where another's.</summary>
+    public TokenReading? Of(string token, string? issuer) => Issued(issuer) ? Reading(token) : null;
+
     public TokenReading Reading(string token)
     {
         lock (_gate)
