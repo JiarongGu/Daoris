@@ -912,6 +912,18 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
         throw new DriverException($"the service refused ageing the finished trees' records: {(root is { } refused ? Text(refused, "error") : null) ?? payload}");
     }
 
+    /// <summary>
+    /// The record of the finished tree a session ran in (<c>GET /api/sessions/{id}/record</c>), as the service answers it; null where none
+    /// is kept or the service has no such door.
+    /// </summary>
+    public async Task<string?> SessionRecordAsync(string session, CancellationToken ct = default)
+    {
+        var answer = await SendAsync(ServiceVerb.Get, $"/api/sessions/{Uri.EscapeDataString(session)}/record", null, ct).ConfigureAwait(false);
+        if (answer.Ok) return answer.Payload;
+        if (answer.Status == 404) return null;
+        throw new DriverException($"the service refused reading session `{session}`'s record: {answer.Payload}");
+    }
+
     /// <summary>This machine's asks that are not closed, newest first — what the loop finds intakes in.</summary>
     public async Task<IReadOnlyList<AskView>> AsksAsync(CancellationToken ct = default)
     {
