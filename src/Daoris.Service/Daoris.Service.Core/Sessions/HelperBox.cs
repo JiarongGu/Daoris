@@ -125,7 +125,7 @@ public sealed class HelperBox(string? home)
     }
 
     /// <summary>
-    /// Whether an asker's record is no working session that may ask: a helper, a reviewer or an intake never asks for a helper,
+    /// Whether an asker's record is no working session that may ask: a helper, a reviewer, an intake or Ask Daoris never asks for a helper,
     /// and a teammate's record is no session here. The sentence says which, or null when it may.
     /// </summary>
     private static string? Unfit(Session asker) =>
@@ -135,6 +135,8 @@ public sealed class HelperBox(string? home)
             ? $"Session `{asker.Id}` reads another session's work for second opinion `{opinion}`, and a reviewer cannot ask for a helper."
         : asker.Ask is { } ask
             ? $"Session `{asker.Id}` is the intake for ask `#{ask}`, which does no work in a repository, and an intake cannot ask for a helper."
+        : SessionLedger.IsHelp(asker)
+            ? $"Session `{asker.Id}` is Ask Daoris's conversation, and Ask Daoris cannot ask for a helper."
         : null;
 
     /// <summary>One ask's state as the driver wrote it, or null when there is none or it is unreadable.</summary>

@@ -561,13 +561,13 @@
       "note": "judges who may ask, answer or lead by the asker's marks, the desk's own guard (§2.3)"
     },
     "Core/Sessions/HelperBox.cs": {
-      "lines": 3,
+      "lines": 4,
       "reads": "tells",
       "row": "1q",
       "note": "judges who may ask, answer or lead by the asker's marks, the desk's own guard (§2.3)"
     },
     "Core/Sessions/HelperDesk.cs": {
-      "lines": 6,
+      "lines": 7,
       "reads": "tells",
       "row": "1q",
       "note": "judges who may ask, answer or lead by the asker's marks, the desk's own guard (§2.3)"
