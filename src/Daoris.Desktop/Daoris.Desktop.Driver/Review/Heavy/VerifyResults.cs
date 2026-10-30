@@ -123,7 +123,7 @@ public sealed record VerifyResult(string Invocation, string Commit, string Verdi
         try
         {
             if (!File.Exists(path)) return null;
-            text = File.ReadAllText(path, Encoding.UTF8);
+            text = AtomicFile.ReadText(path);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {

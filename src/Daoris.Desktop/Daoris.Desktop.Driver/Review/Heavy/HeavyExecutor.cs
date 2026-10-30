@@ -844,7 +844,7 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
     {
         try
         {
-            return File.Exists(path) ? File.ReadAllText(path, new UTF8Encoding(false)) : null;
+            return File.Exists(path) ? AtomicFile.ReadText(path) : null;
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
