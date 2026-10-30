@@ -6206,7 +6206,7 @@ const reopenedOf = (config, session) =>
 // quest's session whose conversation is proven lost keeps its words for the person, since a headless loop has no chat runner to go on
 // with them, and marks them unable to go on in its door's home alone: a mark is the machine's, never the record's. The record is the
 // one service's, which every door's home reads, so another door's loop planned those words as a go-on on an agent its config has not,
-// held it as not installed, and queued every later quest of the repository behind it: the stub's fallback held four acp-stub checks.
+// held it as not installed, and queued every later quest of the repository behind it: one door's fallback failed four of another's.
 const takeBackHeld = async (place, id) => {
   const waiting = ((await standInRecords()).find((s) => s.id === id)?.said ?? []).map((word) => word.id);
   if (waiting.length === 0) return;
