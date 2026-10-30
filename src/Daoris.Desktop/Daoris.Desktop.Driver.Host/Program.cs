@@ -397,6 +397,10 @@ if (OperatingSystem.IsWindows())
 // running desktop left in this home. A workspace build is no install, and keeps needing both named.
 DaorisHome.Adopt(AppContext.BaseDirectory);
 
+// FOUNDATION1w-s (the foundation design §19.15): the home's own driver.json reads its staffing from the store, wired before any door or the
+// loop loads it; a file DAORIS_DRIVER_CONFIG names is read and written as today, with no store.
+RoleStaffing.WireHome(Environment.GetEnvironmentVariable);
+
 // One writer per home (HOMELEASE1, the terminal RPC design §5): a verb acting alone holds the home's lease for its mutation,
 // never for a read (`VerbLeases` says which). Beside a running instance it acts as it always did, holding nothing, until RPC1's
 // pipe makes it that instance's client; where another verb, the first-start move or the launcher's swap holds the home, it

@@ -297,23 +297,85 @@ public sealed class RoleStaffingTests : IDisposable
         Assert.Equal(1, Rows("SELECT COUNT(*) FROM imports WHERE family = 'role_staffing'", row => row.GetInt32(0))[0]);
     }
 
-    // ——— Read by no production source.
+    // ——— The census (FOUNDATION1w-s parts 3 to 5, §19.15): who names the family, every root wired, every writer through its one write.
+
+    private static IEnumerable<string> Production() =>
+        new[] { SourceFiles.DriverProject, "Daoris.Desktop.Driver.Host", "Daoris.Desktop.Modules", "Daoris.Desktop.App" }
+            .SelectMany(project => SourceFiles.All(project, "*.cs"));
+
+    private static string Relative(string path) =>
+        Path.GetRelativePath(SourceFiles.Project(SourceFiles.DriverProject), path).Replace(Path.DirectorySeparatorChar, '/');
 
     [Fact]
-    public void The_staffing_family_is_read_by_no_production_source_but_its_own()
+    public void The_staffing_family_is_named_by_its_own_files_the_roots_that_wire_it_the_loops_check_and_its_writers_doors_alone()
     {
-        // The file step (part 2) is the family's own and names it; its callers are parts 3 and 4's.
-        // Settings' port (part 3) reads it through the interface; no root wires it yet.
-        var own = new[] { "RoleStaffing.cs", "StaffingFile.cs", "RoleStaffingPort.cs", "DriverConfig.cs" };
-        var readers = new[] { SourceFiles.DriverProject, "Daoris.Desktop.Driver.Host", "Daoris.Desktop.Modules", "Daoris.Desktop.App" }
-            .SelectMany(project => SourceFiles.All(project, "*.cs"))
+        var own = new[] { "RoleStaffing.cs", "StaffingFile.cs", "StaffingProjection.cs", "RoleStaffingPort.cs", "DriverConfig.cs" };
+        var naming = Production()
             .Where(path => !own.Contains(Path.GetFileName(path)))
             .Where(path => File.ReadAllText(path).Contains("RoleStaffing", StringComparison.Ordinal))
-            .Select(path => Path.GetRelativePath(SourceFiles.Project(SourceFiles.DriverProject), path).Replace(Path.DirectorySeparatorChar, '/'))
+            .Select(Relative)
+            .Order(StringComparer.Ordinal)
             .ToList();
 
-        // The roots' wiring and the import at start are the rest of FOUNDATION1w-s part 3; until then no production source names the unit.
-        Assert.Empty(readers);
+        Assert.Equal(
+            [
+                "../Daoris.Desktop.App/Program.cs", "../Daoris.Desktop.Driver.Host/Program.cs", "../Daoris.Desktop.Modules/Bridge/DriverContext.cs",
+                "../Daoris.Desktop.Modules/Bridge/Routes/DriverRoutes.cs",
+                "Loop/DriverWatch.cs", "Roles/ActorVerbs.cs", "Roles/StaffingVerbs.cs",
+            ],
+            naming);
     }
 
+    [Fact]
+    public void Each_composition_root_wires_the_staffing_before_its_first_load_of_driver_json()
+    {
+        foreach (var root in (string[])["Daoris.Desktop.App", "Daoris.Desktop.Driver.Host"])
+        {
+            var text = File.ReadAllText(Path.Combine(SourceFiles.Project(root), "Program.cs"));
+            var wired = text.IndexOf("RoleStaffing.WireHome(Environment.GetEnvironmentVariable)", StringComparison.Ordinal);
+            Assert.True(wired > 0, $"{root} wires no staffing");
+            // The shell's own loads are its loop's and routes', made after Program wires it; the host's are its doors' and its loop's.
+            foreach (var first in (string[])["DriverConfig.Load(", "DriverConfig.FindHome(", "new DriverLoop("])
+            {
+                var at = text.IndexOf(first, StringComparison.Ordinal);
+                Assert.True(at < 0 || wired < at, $"{root} reaches `{first}` before it wires the staffing");
+            }
+        }
+    }
+
+    [Fact]
+    public void No_production_writer_hands_a_staffing_change_to_the_configurations_write_nor_parses_driver_json_outside_its_load()
+    {
+        var handed = new System.Text.RegularExpressions.Regex(@"(Change|Write|Save)\(.*(ActorChoices\.With\(|\.WithIntake\(|\.WithHelper\()");
+        var lines = Production()
+            .SelectMany(path => File.ReadLines(path).Select((line, at) => (Path: Relative(path), At: at + 1, Line: line)))
+            .ToList();
+
+        Assert.Empty(lines.Where(each => handed.IsMatch(each.Line)).Select(each => $"{each.Path}:{each.At}"));
+        Assert.Equal(["Roles/StaffingProjection.cs"], lines.Where(each => each.Line.Contains("DriverConfig.Parse(", StringComparison.Ordinal))
+            .Select(each => each.Path).Distinct());
+    }
+
+    [Fact]
+    public void A_root_wires_the_homes_own_file_and_never_a_file_the_variable_names()
+    {
+        var file = DaorisHome.Entry(_home, HomeEntry.DriverConfig);
+        try
+        {
+            Assert.Null(RoleStaffing.WireHome(name => name switch
+            {
+                DaorisHome.Variable => _home,
+                DriverConfig.PathVariable => file,
+                _ => null,
+            }));
+            Assert.False(RoleStaffingPort.IsWired(file));
+
+            Assert.NotNull(RoleStaffing.WireHome(name => name == DaorisHome.Variable ? _home : null));
+            Assert.True(RoleStaffingPort.IsWired(file));
+        }
+        finally
+        {
+            RoleStaffingPort.Unwire(file);
+        }
+    }
 }

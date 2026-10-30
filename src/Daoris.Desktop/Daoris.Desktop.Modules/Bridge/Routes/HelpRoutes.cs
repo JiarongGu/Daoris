@@ -630,6 +630,9 @@ public sealed class HelpRoutes(DriverContext context)
         // SET_DRIVABLE, SET_LINE, SET_LANDING…: an edit to the driver's file, then a nudge.
         public void Change(Func<DriverConfig, DriverConfig> edit) => context.Change(edit);
 
+        // SET_ACTOR's own write: the staffing's (FOUNDATION1w-s).
+        public void SetActor(string actor, IReadOnlyList<ActorChoice>? choices) => context.SetActor(actor, choices);
+
         // The ask composer's door, the local host's `POST /api/asks`, with its review choice and words (ENTRY1c). A named
         // environment the workspace does not declare is refused before anything is sent, as `daoris-driver ask --review` refuses
         // it: the service holds no rule, and the proposal's plan holds no repositories per workspace.

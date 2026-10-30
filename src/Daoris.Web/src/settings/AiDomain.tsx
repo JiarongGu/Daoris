@@ -1,7 +1,8 @@
 import { useTranslation } from 'react-i18next';
 import { useRegistry, useStatus } from '../data/queries';
 import {
-  helpModeOf, useActors, useDriver, useHarnesses, usePlugins, useSetActor, useSetHelpGrant, useSetHelpMode, useStarts,
+  helpModeOf, useActors, useAnswerStaffingFound, useDriver, useHarnesses, usePlugins, useSetActor, useSetHelpGrant, useSetHelpMode,
+  useStaffingFound, useStarts,
 } from '../bridge/shell';
 import type { HelpGrantChoice, HelpGrantId } from '../help/access/wired';
 import { doorLabel } from '../agents/tools';
@@ -106,6 +107,17 @@ function MachineAi({ search, notify, onGo }: { search?: SearchTier; notify: Noti
       onError: (error) => answered.refused(sentence(error)),
     });
   };
+  // FOUNDATION1w-s: the changes of driver.json's actors another program made, which the driver kept for the person.
+  const found = useStaffingFound();
+  const answerFound = useAnswerStaffingFound();
+  const answerStaffingFound = (id: number, answer: 'take' | 'dismiss', answered: { done: () => void; refused: (sentence: string) => void }) =>
+    answerFound.mutate({ found: id, answer }, {
+      onSuccess: () => {
+        notify(t(answer === 'take' ? 'settings.ai.actors.found.taken' : 'settings.ai.actors.found.dismissed'));
+        answered.done();
+      },
+      onError: (error) => answered.refused(sentence(error)),
+    });
 
   // The Intake and Ask Daoris cards folded into their actor rows (MODELROLE1d, D205 §7): each row's ⓘ, and what it does now, under
   // its order; Intake's per circle, the driver's own resolution. Each order is set in its editor, over SET_ACTOR.
@@ -161,7 +173,12 @@ function MachineAi({ search, notify, onGo }: { search?: SearchTier; notify: Noti
         : undefined}
     />
     {/* An older shell answers no actors, and gets no card. */}
-    {actorRows.length > 0 && <ActorsCard rows={actorRows} agents={agents} about={about} busy={setActor.isPending} onSave={saveActor} />}
+    {actorRows.length > 0 && (
+      <ActorsCard
+        rows={actorRows} agents={agents} about={about} busy={setActor.isPending || answerFound.isPending} onSave={saveActor}
+        found={found.data ?? []} onAnswerFound={answerStaffingFound}
+      />
+    )}
     </CardStack>
   );
 }

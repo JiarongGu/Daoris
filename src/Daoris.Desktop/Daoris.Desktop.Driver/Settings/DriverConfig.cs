@@ -523,7 +523,8 @@ public sealed record DriverConfig(
 
     /// <summary>
     /// Each actor's order as the person set it (D205 §9.1, MODELROLE1c), by its id; an actor absent is <i>as before</i>, read from today's
-    /// keys (<see cref="ActorChoices.Effective"/>). Written through <see cref="ActorChoices.With(DriverConfig, string, IReadOnlyList{ActorChoice}?)"/> alone.
+    /// keys (<see cref="ActorChoices.Effective"/>). Written through <see cref="ActorChoices.With(DriverConfig, string, IReadOnlyList{ActorChoice}?)"/> alone,
+    /// by the staffing's one write (<c>RoleStaffing.SetAt</c>, FOUNDATION1w-s) where the home's file is wired.
     /// </summary>
     public IReadOnlyDictionary<string, IReadOnlyList<ActorChoice>> Actors { get; init; } =
         new Dictionary<string, IReadOnlyList<ActorChoice>>(StringComparer.Ordinal);

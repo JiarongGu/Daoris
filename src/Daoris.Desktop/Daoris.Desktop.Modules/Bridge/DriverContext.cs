@@ -152,6 +152,16 @@ public sealed class DriverContext(IEventBus events, DriverLoop loop, OpenFolder?
         Loop.Nudge();
     }
 
+    /// <summary>
+    /// An actor's order set (FOUNDATION1w-s, the design §19.15): the staffing's one write where the home's file is wired, the file's own
+    /// otherwise, and a nudge. A save of the staffing's paths through <see cref="Change"/> would keep them as the file held them.
+    /// </summary>
+    public void SetActor(string actor, IReadOnlyList<ActorChoice>? choices)
+    {
+        RoleStaffing.SetAt(Loop.ConfigPath, actor, choices);
+        Loop.Nudge();
+    }
+
     /// <summary>The configured adapter's wire, as the loop plans by it (D70); the pipe, the stricter door, when it names none this build has.</summary>
     public SessionWire Door(DriverConfig config) => DoorOf(Loop, config);
 

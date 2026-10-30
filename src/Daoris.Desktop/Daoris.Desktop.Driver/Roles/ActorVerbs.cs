@@ -31,7 +31,7 @@ internal static class ActorPress
         };
         return new(verb, ChoiceRoutes.Actor, payload, _ =>
         {
-            StandingChoices.Write(path, config => ActorChoices.With(config, actor, choices));
+            RoleStaffing.SetAt(path, actor, choices);
             return Task.FromResult<object?>(null);
         }, _ => null, _ =>
         {
@@ -190,6 +190,10 @@ public sealed class IntakeVerb : ChoiceVerb
 public sealed class ActorVerb : ChoiceVerb
 {
     public override string Word => "actor";
+
+    /// <summary><c>actor export|import|found</c> (FOUNDATION1w-s, §19.15): the staffing's own verbs, each acting alone; null for the rest.</summary>
+    public override Task<int>? RunAsync(IReadOnlyList<string> args, DriverConfig before, DriverChoicesWorld world, CancellationToken ct) =>
+        args.Count > 1 && args[1] is "export" or "import" or "found" ? Task.FromResult(StaffingVerbs.Run(args, before, world)) : null;
 
     /// <summary>
     /// <c>actor &lt;actor&gt; …</c> (MODELROLE1c, D205 §9.4): an actor's order set from its quoted entries, <c>"agent [model|-] [effort|-]"</c>
