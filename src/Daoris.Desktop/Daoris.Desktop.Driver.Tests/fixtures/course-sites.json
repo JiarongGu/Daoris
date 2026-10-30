@@ -47,7 +47,8 @@
   ],
   "box": { "file": "Daoris.Desktop.Driver/Course/Chat/LimitMove.cs", "members": ["MoveEndedAsync", "DeliveredAsync", "TakeUpBoxesAsync"], "why": "the ended limit move's body, its delivery and its come-up's take-up, each reading the destination's moved words where the box says the open moved them (O6-F13), until row f-vi retires the box" },
   "records": [
-    { "file": "Daoris.Desktop.Driver/Course/Chat/LimitMove.cs", "member": "MoveAsync", "row": "f-ii", "why": "the live limit move: decided before its turns are held, each phase written before what it fences, each handed word's sent at the wire before its take, and delivered after it" }
+    { "file": "Daoris.Desktop.Driver/Course/Chat/LimitMove.cs", "member": "MoveAsync", "row": "f-ii", "why": "the live limit move: decided before its turns are held, each phase written before what it fences, each handed word's sent at the wire before its take, and delivered after it" },
+    { "file": "Daoris.Desktop.Driver/Course/Chat/CurveMove.cs", "member": "MoveAsync", "row": "f-iii", "why": "the curve's move: decided where it is judged to move, taken through the hand-over's take with each phase written before what it fences and the prompt's outcome at the wire (its message carries no word id, so no word's sent), and no hand-over box written beside it" }
   ],
   "notDecisions": [
     { "path": "L", "why": "A workflow's send-back is a word between turns that the dispatcher owns; an ended conversation's go-on from it is path B, with B's own-account rule." },
