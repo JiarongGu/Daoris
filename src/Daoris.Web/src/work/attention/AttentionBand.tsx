@@ -5,7 +5,7 @@ import { useAcceptQuest, useAnswerGoAhead, useAsks, usePublishAsk, useQuests, us
 import {
   retryNotice, useApproveHelper, useAttention, useDeclineHelper, useHarnesses, useNudge, useRefreshHarnesses,
   useOpenWorkRecords, useResolveHeld, useRetryQuest, useTrustFolder, useAnswerPermission, useAnswerAlone, useApproveHandOver,
-  useDeclineHandOver, useGitTryAgain, useQuietCarryOn, useQuietLeave, useStopSession,
+  useDeclineHandOver, useGitTryAgain, useQuietCarryOn, useQuietLeave, useRunNodeWord, useStopSession,
 } from '../../bridge/shell';
 import { permissionSaid } from '../waits/PermissionAsks';
 import { answerAloneSaid } from '../waits/AnswerAlone';
@@ -24,6 +24,7 @@ import { ruleHearing, useRuleAnswer } from '../waits/ruleAnswer';
 import { helperSaid } from '../sessionActs';
 import { handOverRefused } from '../waits/HandOverAgentAsk';
 import { runSessionOf } from '../../workflow/run';
+import { nodeWordRefused } from '../../workflow/NodeWord';
 
 export type { AttentionDoors } from './AttentionList';
 
@@ -115,6 +116,7 @@ function Band({ doors, notify, onSessions, onRun, inView }: {
   const quietCarryOn = useQuietCarryOn();
   const quietLeave = useQuietLeave();
   const stopSession = useStopSession();
+  const runNodeWord = useRunNodeWord();
 
   const publish = usePublishAsk();
   const answerGoAhead = useAnswerGoAhead();
@@ -332,6 +334,16 @@ function Band({ doors, notify, onSessions, onRun, inView }: {
         if (answer.done) notify(t(act === 'carry-on' ? 'work.attention.quietCarried' : 'work.attention.quietLeft'));
         else notify(answer.message || t('work.attention.quietGone'), 'error');
       }, answered && releasing(answered));
+    },
+    // A run held at a declined request (INTEGRATE1o part o3) passed over with the person's words, as the run's view passes its node: kept
+    // for the driver's next look, which applies it and clears the row; a refusal by its code, in the ask.
+    passOver: (item, words, answered) => {
+      const node = item.declined?.node;
+      if (!node) { answered.done(); return; }
+      run(item, async () => {
+        const answer = await runNodeWord.mutateAsync({ run: item.id, node, act: 'skip', words });
+        if (!answer.done) throw new Error(nodeWordRefused(t, answer));
+      }, () => {}, answered);
     },
     // A third answer alone held for the person let go on or kept, as its session's page answers it (COWORK1e, §8.3): its answer said
     // in the page's words, a refusal by its code in the error's tone.

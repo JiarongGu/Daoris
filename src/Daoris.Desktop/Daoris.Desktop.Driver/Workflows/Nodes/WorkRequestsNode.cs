@@ -27,6 +27,9 @@ public static class WorkRequestsNode
             && work?.Contains(quest.Id) != true).DistinctBy(quest => quest.Id, StringComparer.OrdinalIgnoreCase)];
     }
 
+    /// <summary>The first quest among <paramref name="published"/> the receiver declined, or null: what holds the node and waits on the person.</summary>
+    public static QuestView? Declined(IEnumerable<QuestView> published) => published.FirstOrDefault(quest => quest.Status == "Declined");
+
     /// <summary>What the quests say of <paramref name="node"/> for <paramref name="unit"/>'s run: reached once each is done, or none.</summary>
     public static NodeObservation Observe(WorkUnit unit, NodeDeclaration node, NodeAcceptance binding, IReadOnlyList<QuestView>? published)
     {
@@ -39,7 +42,7 @@ public static class WorkRequestsNode
         }
 
         if (published is null) return Seen(null, "the quests the run's sessions published were not read");
-        if (published.FirstOrDefault(quest => quest.Status == "Declined") is { } declined)
+        if (Declined(published) is { } declined)
         {
             return Seen(null, $"quest #{declined.Id} to `{declined.To}` was declined: yours to pass over");
         }

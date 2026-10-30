@@ -807,7 +807,9 @@ reads of them moved), each look, a held tool call's move and the rules', session
 who needs the person and a tick reads none of what the band was judged from. A unit of work is a row there only where the person's
 press settles it (OVERVIEWNOISE1b, D173's note): an owner nothing records, or a tree its session recorded that no branch record
 follows; the work parts join each tree to the session that recorded it (`InventoryFacts.Recorded`, from the facts' sessions look),
-and each blocked entry carries a `code` and its `facts`, which the page words. And *Done and failed* the fourteenth
+and each blocked entry carries a `code` and its `facts`, which the page words. A run held at a request the receiver declined is a row too
+(`request-declined`, INTEGRATE1o part o3), read from the node runtime's last look at the quests and the run's node record (`RequestHolds`),
+so the person's pass over its `work.requests` node clears it. And *Done and failed* the fourteenth
 (`NoticesStateSlice`, NOTIFY2f, D196 point 6), its partition `news` keyed by notice, `{id, kind, at, read, workspace?, session?,
 quest?, repository?, state?, route?, act?, code?, count?}` (`code` a look's news, NOTIFY2h; `count` how many presses a `lost` notice names, CONFIRMWAIT1a-ii), read from the machine's record `data/notices.json` (`Notices`, written by any process on
 the home under its keep lock) at the start, at each change this process's own watch of the file hears (`HomeWatch.ForNotices`) and at

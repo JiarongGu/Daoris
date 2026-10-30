@@ -44,7 +44,11 @@ public sealed partial class RoleCatalogCensusTests : IDisposable
     private static IEnumerable<string> Reaching()
     {
         var root = Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Desktop");
-        foreach (var file in Directory.EnumerateFiles(root, "*.cs", SearchOption.AllDirectories))
+        // The two projects a writer can live in, named apart so the merge tool's reach places each read in its lane.
+        var driver = Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver");
+        var modules = Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Modules");
+        foreach (var file in Directory.EnumerateFiles(driver, "*.cs", SearchOption.AllDirectories)
+                     .Concat(Directory.EnumerateFiles(modules, "*.cs", SearchOption.AllDirectories)))
         {
             var relative = Path.GetRelativePath(root, file).Replace('\\', '/');
             if (relative.Contains(".Tests/") || relative.Contains("/bin/") || relative.Contains("/obj/")) continue;
