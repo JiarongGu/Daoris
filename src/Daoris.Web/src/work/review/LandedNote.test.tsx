@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { render, screen } from '@testing-library/react';
-import '../../locales/i18n';
+import { cleanup, render, screen } from '@testing-library/react';
+import i18n from '../../locales/i18n';
 import type { LandedWork } from './diff';
 import { LandedNote } from './LandedNote';
 
@@ -61,6 +61,34 @@ describe('LandedNote', () => {
     expect(note).toMatch(/That branch is gone from engine now\./);
     expect(note).toMatch(/The clean-up removed it once its work read on origin\/main\./);
     expect(note).toMatch(/Its work reads on main\./);
+  });
+
+  // LANDRETIRE1 part 2: a branch the person withdrew says when, their reason and the recovery ref its commits stay on, never that the
+  // clean-up removed it, and an older shell's answer with no `withdrawn` reads as it did.
+  it('says a branch the person withdrew, with why and where its commits stay, and never the clean-up’s removal', () => {
+    show({
+      ...LANDED, state: 'gone',
+      withdrawn: { at: '2026-10-02T08:00:00Z', why: 'the row landed another way', keptOn: 'refs/daoris/discarded/feature/0fda18-fix-the-api-gap' },
+    });
+
+    const note = screen.getByRole('region').textContent;
+    expect(note).toMatch(/That branch is gone from engine now\./);
+    expect(note).toMatch(/It was withdrawn because the row landed another way; its commits stay on refs\/daoris\/discarded\/feature\/0fda18-fix-the-api-gap\./);
+    expect(note).not.toMatch(/The clean-up removed it/);
+  });
+
+  it('says a withdrawal in 中文 and without a reason or a ref where the record kept none', async () => {
+    show({ ...LANDED, state: 'gone', withdrawn: { at: '2026-10-02T08:00:00Z', why: null, keptOn: null } });
+    expect(screen.getByRole('region').textContent).toMatch(/It was withdrawn\./);
+    cleanup();
+
+    await i18n.changeLanguage('zh');
+    try {
+      show({ ...LANDED, state: 'gone', withdrawn: { at: '2026-10-02T08:00:00Z', why: '这一行已另行落地', keptOn: 'refs/daoris/discarded/x' } });
+      expect(screen.getByRole('region').textContent).toMatch(/它已被撤回，原因：这一行已另行落地；它的提交保留在 refs\/daoris\/discarded\/x 上。/);
+    } finally {
+      await i18n.changeLanguage('en');
+    }
   });
 
   it('names the files a gone branch changed that read otherwise on the line', () => {

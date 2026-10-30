@@ -25,7 +25,8 @@ public sealed record MoveBoxPass(IReadOnlyList<MoveRecord> Imported, IReadOnlyLi
 
 /// <summary>
 /// The import of one kind of box an older build writes, into the move record (FOUNDATION1f-i part 2; §3.3, §13.5). Called by the take-up
-/// (<see cref="MoveTakeUp"/>) before anything else at each come-up and look, and by no production site until rows f-v and f-vi.
+/// (<see cref="MoveTakeUp"/>) before anything else at each come-up and look; the limit box's is handed it by the conversations' holder since
+/// FOUNDATION1f-vi part a, and the hand-over's is row f-v's.
 /// </summary>
 public interface IMoveBoxImport
 {
@@ -52,8 +53,9 @@ public interface IMoveBoxImport
 /// <para><b>Once.</b> A box whose very bytes an import already holds was imported, and a crash stopped short of setting it aside: only its
 /// set-aside is left to do. A box whose record has a standing move waits behind it, left in place, and is imported once that move ends; there
 /// are never two records of one move (§3.3).</para>
-/// <para><b>Called from no production site until rows f-v and f-vi</b>: importing a box now would set it aside from today's readers, which
-/// still own it (<c>MoveStoreCensusTests</c>).</para>
+/// <para><b>Called by one production site per box, in the row that retires its reader</b>: importing a box sets it aside from today's readers,
+/// so the limit box is imported since FOUNDATION1f-vi part a, its move read from the store, and the hand-over box waits for row f-v
+/// (<c>MoveStoreCensusTests</c>).</para>
 /// </remarks>
 public abstract class MoveBoxImport(string home, MoveStore store) : IMoveBoxImport
 {
@@ -246,10 +248,16 @@ public sealed class LimitBoxImport(string home, MoveStore store, Func<string, in
             RefusedBound = box.Through,
         };
         if (box.To is not { } to) return new MoveFromBox(decision, MoveRecordPhase.OldEnded);
+
+        // Only a box whose open moved the words (`moved`) names them on its destination. One an older host's open wrote moved none, its words
+        // still on the old record: the move is opened with no word, as the live move records such an open, since naming them as the
+        // destination's would read them gone from it, left (FOUNDATION1f-vi part a).
         return new MoveFromBox(decision, MoveRecordPhase.Opened)
         {
             Destination = to,
-            Words = [.. box.Said.Distinct(StringComparer.Ordinal).Select((word, at) => new MoveRecordWord(word, null, $"{KeyOf(session)}/{word}", at))],
+            Words = box.Moved
+                ? [.. box.Said.Distinct(StringComparer.Ordinal).Select((word, at) => new MoveRecordWord(word, null, $"{KeyOf(session)}/{word}", at))]
+                : [],
         };
     }
 }

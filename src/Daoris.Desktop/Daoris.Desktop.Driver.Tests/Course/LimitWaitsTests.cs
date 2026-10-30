@@ -144,18 +144,18 @@ public sealed class LimitWaitsTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 The ended move's body from the emptied predecessor: a word kept after the box's first snapshot, the open moving it with the one the box
+    /// 🔴 The ended move's body from the emptied predecessor: a word kept after the move's decision, the open moving it with the one the move
     /// named and the old record left holding none. The first prompt is the brief, the refused turn's words, then every moved word in order with
     /// its file linked from the new part's folder; each moved word is shown on the new part by its own event under its id before the agent's
     /// answer, the refused turn's words as one; the moved words leave the new part once on the wire, nothing is taken off the old record, and
-    /// the box goes with the new part holding none of them.
+    /// the move is delivered with the new part holding none of them, no box written at any point (FOUNDATION1f-vi part a).
     /// </summary>
     [Fact]
     public async Task The_ended_moves_first_prompt_is_the_refused_words_then_every_moved_word_with_its_file_a_late_one_among_them()
     {
         var ledger = HeldEnded(2, ("w1", "Make it fast.", ["trace.txt"]));
         ChatFiles.Keep(_home, "c1", [new ChatUpload("trace.txt", Encoding.UTF8.GetBytes("exit 3"))]);
-        LateWord(ledger, "c1", "w2", "And add a test.", () => Assert.NotNull(new LimitBoxes(_home).Read("c1")));
+        LateWord(ledger, "c1", "w2", "And add a test.", () => Assert.Equal("opening", Moved("c1")?.PhaseWord));
         var config = Config();
         var (runner, _, client) = Runner(ledger);
         using var r = runner;
@@ -177,7 +177,8 @@ public sealed class LimitWaitsTests : IDisposable
         Assert.DoesNotContain(ledger.TakenBy, taken => taken.Session == "c1");
         Assert.Contains(("c2", "w1,w2", (string?)null), ledger.TakenBy);
         Assert.Empty(ledger.Said("c2"));
-        await Poll.Until(() => new LimitBoxes(_home).Read("c1") is null, () => Seen(ledger, "c2"));
+        await Poll.Until(() => Moved("c1")?.PhaseWord == "delivered", () => Seen(ledger, "c2"));
+        Assert.Empty(new LimitBoxes(_home).Pending());
 
         await Poll.Until(() => Events.After("c2", 0).Events.Any(e => e.Kind == SessionEventKind.Message), () => Seen(ledger, "c2"));
         var shown = Events.After("c2", 0).Events.ToList();
@@ -191,12 +192,13 @@ public sealed class LimitWaitsTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 The box ends only on what the new part holds after the delivery's take, never on the take's answer, since a take naming words that do not
-    /// wait answers success: a new part that still holds its moved words once the move is on the wire keeps the box, and the old record, which
-    /// holds none of them, is never asked to take them.
+    /// 🔴 The move ends only on what the new part holds after the delivery's take, never on the take's answer, since a take naming words that do
+    /// not wait answers success: a new part that still holds its moved words once the move is on the wire leaves the move standing, never
+    /// closed <c>delivered</c>, and the old record, which holds none of them, is never asked to take them. No box is written for it
+    /// (FOUNDATION1f-vi part a).
     /// </summary>
     [Fact]
-    public async Task The_ended_moves_box_stays_while_the_new_part_still_holds_its_moved_words()
+    public async Task The_ended_move_is_not_delivered_while_the_new_part_still_holds_its_moved_words()
     {
         var ledger = HeldEnded(2, ("w1", "Make it fast.", []));
         ledger.Keeps.Add("c2");
@@ -210,10 +212,15 @@ public sealed class LimitWaitsTests : IDisposable
         await Poll.Until(() => ledger.TakenBy.Any(taken => taken.Session == "c2"), () => Seen(ledger, "c2"));
         Assert.Equal(["w1"], ledger.Said("c2"));
         Assert.DoesNotContain(ledger.TakenBy, taken => taken.Session == "c1");
-        var box = new LimitBoxes(_home).Read("c1");
-        Assert.NotNull(box);
-        Assert.Equal(("c2", true, "w1"), (box!.To, box.Moved, string.Join(',', box.Said)));
+        Assert.Empty(new LimitBoxes(_home).Pending());
+        var move = Moved("c1");
+        Assert.NotNull(move);
+        Assert.Equal("c2", move!.Destination);
+        Assert.NotEqual("delivered", move.PhaseWord);
     }
+
+    /// <summary>The ended conversation's move record, read from the home's store.</summary>
+    private MoveRecord? Moved(string left) => new MoveStore(_home).Of(left).LastOrDefault();
 
     /// <summary>
     /// 🔴 The live move: a word the person said to the old part after its end and before the new part's open is moved by the open, and reaches the

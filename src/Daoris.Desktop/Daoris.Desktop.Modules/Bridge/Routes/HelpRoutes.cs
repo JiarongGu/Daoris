@@ -318,10 +318,26 @@ public sealed class HelpRoutes(DriverContext context)
     /// The work's topic's judge (PARALLEL1a), one part at a time since FACTSPLIT1a: where each unit's work has got to
     /// (FABRIC-MILESTONE1b), the inventory's read-only derivation as `work state` and the WORK_STATE route read it, with Daoris's own
     /// recoveries no unit names (RECOVERYASK1, CLEANUP1), of the part's repositories alone. Its checkout and the trees in use are the
-    /// service's answers the facts hold (<see cref="HelpFacts.PartOf"/>), so a part asks the service nothing.
+    /// service's answers the facts hold (<see cref="HelpFacts.PartOf"/>), so a part asks the service nothing but, where a landing the line
+    /// does not hold names a quest, which of those are closed (<see cref="ClosedQuestsAsync"/>).
     /// </summary>
     private async Task<HelpWork?> WorkAsync(HelpWorkPart part, CancellationToken cancellationToken) =>
-        await HelpFacts.ReadWorkAsync(_loop.Home, part, cancellationToken).ConfigureAwait(false);
+        await HelpFacts.ReadWorkAsync(
+            _loop.Home, part with { ClosedQuests = await ClosedQuestsAsync(entry => part.Holds(entry.Repository), cancellationToken).ConfigureAwait(false) },
+            cancellationToken).ConfigureAwait(false);
+
+    /// <summary>
+    /// The quests the service says are closed among those the part's landings name (LANDRETIRE1 part 2): the one service read a part's
+    /// judge makes, and only where a landing the line does not hold names a quest (<see cref="LandedStanding.ClosedAsync"/>), so a machine
+    /// with none asks the service nothing. A service not ready closes nothing.
+    /// </summary>
+    private async Task<IReadOnlySet<string>> ClosedQuestsAsync(Func<LandedBranch, bool> ours, CancellationToken cancellationToken)
+    {
+        var service = _loop.Service;
+        return service is null
+            ? new HashSet<string>()
+            : await LandedStanding.ClosedAsync(new LandedBranches(_loop.Home).Entries().Where(ours), service.EveryQuestAsync, cancellationToken).ConfigureAwait(false);
+    }
 
     /// <summary>
     /// The clean-up's list's topic's judge (PUSH1c4a, D182), one repository at a time: its session branches and its landings' branches
@@ -329,7 +345,14 @@ public sealed class HelpRoutes(DriverContext context)
     /// slice reads them. Its checkout, workspace and trees in use are the service's answers the facts hold (<see cref="HelpFacts.SweepPartOf"/>).
     /// </summary>
     private async Task<IKnowledgeSweep?> SweepPartAsync(HelpSweepPart part, CancellationToken cancellationToken) =>
-        await HelpFacts.ReadSweepAsync(_loop.Home, part, cancellationToken).ConfigureAwait(false);
+        await HelpFacts.ReadSweepAsync(
+            _loop.Home,
+            part with
+            {
+                ClosedQuests = await ClosedQuestsAsync(
+                    entry => string.Equals(entry.Repository, part.Repository, StringComparison.OrdinalIgnoreCase), cancellationToken).ConfigureAwait(false),
+            },
+            cancellationToken).ConfigureAwait(false);
 
     /// <summary>
     /// Keep Ask Daoris's facts on the loop's (PARALLEL1a, D181 point 2): this module's judges registered for each of the room's topics,

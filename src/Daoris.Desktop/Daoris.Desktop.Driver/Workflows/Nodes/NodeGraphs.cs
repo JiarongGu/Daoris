@@ -115,6 +115,24 @@ public static class GraphRefusal
 
     /// <summary>A cleanup of no kind, a bound outside 1-90 days or at <i>held</i>, or a wait for an end at or before the line.</summary>
     public const string Cleanup = "cleanup";
+
+    /// <summary>A second <c>integrate</c> (INTEGRATE1n; §17.4): the graph's one landing is integrated once.</summary>
+    public const string IntegrateTwice = "integrate-twice";
+
+    /// <summary>An <c>integrate</c> in a graph holding no <c>handed</c>, whose landing it integrates (INTEGRATE1n).</summary>
+    public const string IntegrateUnlanded = "integrate-unlanded";
+
+    /// <summary>
+    /// An <c>integrate</c> beside a plugin's landing (INTEGRATE1n; D215 §4.1): a <c>pushed</c> or a <c>pull-request</c>, a <c>handed</c> naming a
+    /// plugin, or a <c>handed</c> by a merge, since the integration is the step of a branch no plugin lands.
+    /// </summary>
+    public const string IntegratePlugin = "integrate-plugin";
+
+    /// <summary>
+    /// A node that observes the landing with a way to it that passes no <c>handed</c> (INTEGRATE1n, F47; §17.4): <c>pushed</c>,
+    /// <c>pull-request</c>, <c>line</c> or <c>integrate</c> would wait for ever before a landing record. Said in a graph that holds a <c>handed</c>.
+    /// </summary>
+    public const string BeforeLanding = "before-landing";
 }
 
 /// <summary>
@@ -150,7 +168,10 @@ public static class NodeGraphs
 
     /// <summary>The kinds an end is at or before the line by: the cleanup waits for no such end (§C2, §C3).</summary>
     private static readonly HashSet<string> AtOrBeforeTheLine =
-        new([NodeKinds.Claimed, NodeKinds.Handed, NodeKinds.Pushed, NodeKinds.PullRequest, NodeKinds.Line], StringComparer.Ordinal);
+        new([NodeKinds.Claimed, NodeKinds.Handed, NodeKinds.Pushed, NodeKinds.PullRequest, NodeKinds.Integrate, NodeKinds.Line], StringComparer.Ordinal);
+
+    /// <summary>The kinds that observe the landing record (INTEGRATE1n, F47): none can be reached before a <c>handed</c> has made one.</summary>
+    private static readonly string[] OfTheLanding = [NodeKinds.Pushed, NodeKinds.PullRequest, NodeKinds.Line, NodeKinds.Integrate];
 
     /// <summary>
     /// Everything a save refuses in <paramref name="graph"/>, in a stable order; empty when it holds. The schema and the bounds; each
@@ -160,7 +181,10 @@ public static class NodeGraphs
     /// <param name="graph">The graph judged.</param>
     /// <param name="saved">True for a graph a person authored and saves (a named graph version, a cycle): the rules only an authored graph is held to, the
     /// observed nodes of one plugin step (FABRIC-GRAPH1g). False for <see cref="WorkflowGraphs"/>' decoding of a stored schema 1 version.</param>
-    public static IReadOnlyList<WireProblem> Problems(NodeGraph graph, bool saved = true)
+    /// <param name="onSave">True where the graph is being saved now, rather than read from a file that kept it: INTEGRATE1n's F47 (a node that
+    /// observes the landing, with a way to it that passes no <c>handed</c>) is refused then alone, since a stored version that read before is
+    /// never made unreadable by a rule added after it (<c>compatible-builds.md</c>). Current's own graphs are judged on save, as they are drawn.</param>
+    public static IReadOnlyList<WireProblem> Problems(NodeGraph graph, bool saved = true, bool onSave = true)
     {
         var problems = new List<WireProblem>();
         void Say(string code, string? wire, string? node, string words) => problems.Add(new(code, wire, node, words));
@@ -284,6 +308,55 @@ public static class NodeGraphs
                     Say(GraphRefusal.ProtectedWire, null, gate.Id, $"the {gate.Kind} `{gate.Id}` is not wired into the {what} `{next.Id}`: a skip of a gate between them would let an `after` "
                         + $"wire pass while `{gate.Id}` is unsettled, so wire `{gate.Id}` into `{next.Id}` (D157 §2.2's order: holds, opinion, look, landing).");
                 }
+            }
+        }
+
+        // INTEGRATE1n (§17.4's graph rules): at most one `integrate`, after a `handed`, and that `handed` a branch no plugin lands: no `pushed` or
+        // `pull-request` beside it and no plugin or merge on the `handed` itself, as the version says (the repository's rule is judged where the
+        // version is chosen, row r). Each is said against the node it is about, once.
+        var integrates = byId.Values.Where(node => node.Kind == NodeKinds.Integrate).ToList();
+        foreach (var again in integrates.Skip(1))
+        {
+            Say(GraphRefusal.IntegrateTwice, null, again.Id, $"node `{again.Id}`: `{integrates[0].Id}` and `{again.Id}` are both an `{NodeKinds.Integrate}`, and the graph's landing is integrated once.");
+        }
+
+        if (integrates.Count > 0)
+        {
+            if (landings.Count == 0)
+            {
+                Say(GraphRefusal.IntegrateUnlanded, null, integrates[0].Id, $"node `{integrates[0].Id}`: an `{NodeKinds.Integrate}` integrates the landing a `{NodeKinds.Handed}` makes, and the graph holds no `{NodeKinds.Handed}`.");
+            }
+
+            foreach (var plugged in byId.Values.Where(node => node.Kind is NodeKinds.Pushed or NodeKinds.PullRequest))
+            {
+                Say(GraphRefusal.IntegratePlugin, null, plugged.Id, $"node `{plugged.Id}`: a `{plugged.Kind}` is a plugin's landing node, and an `{NodeKinds.Integrate}` is the step of a branch no plugin lands.");
+            }
+
+            foreach (var landing in landings)
+            {
+                if (!string.IsNullOrEmpty(NodeOptions.Text(landing, "plugin")))
+                {
+                    Say(GraphRefusal.IntegratePlugin, null, integrates[0].Id, $"node `{integrates[0].Id}`: the landing `{landing.Id}` names the plugin `{NodeOptions.Text(landing, "plugin")}`, "
+                        + $"and an `{NodeKinds.Integrate}` is the step of a branch no plugin lands.");
+                }
+                else if (NodeOptions.Text(landing, "form") == LandingForm.Merge)
+                {
+                    Say(GraphRefusal.IntegratePlugin, null, integrates[0].Id, $"node `{integrates[0].Id}`: the landing `{landing.Id}` is a merge, and an `{NodeKinds.Integrate}` is the step of a branch's landing.");
+                }
+            }
+        }
+
+        // INTEGRATE1n, F47 (§17.4): every kind that observes the landing record is refused when saved where some way to it passes no `handed`,
+        // since it would wait for ever before a landing. A way is any wire from an entry, a failure's included, and a `handed` is passed
+        // through whole: its own wires are not followed. Said only of a graph that holds a landing, so one without (a quest's cycle) is as it was.
+        if (saved && onSave && landings.Count > 0)
+        {
+            var landed = landings.Select(landing => landing.Id).ToHashSet(StringComparer.Ordinal);
+            var unlanded = Reach(starts, [.. local.Where(wire => !landed.Contains(wire.From!.Node))], forward: true);
+            foreach (var node in byId.Values.Where(node => OfTheLanding.Contains(node.Kind, StringComparer.Ordinal) && unlanded.Contains(node.Id)))
+            {
+                Say(GraphRefusal.BeforeLanding, null, node.Id, $"node `{node.Id}`: {(node.Kind == NodeKinds.Integrate ? "an" : "a")} `{node.Kind}` observes the landing, and a way to it passes no "
+                    + $"`{NodeKinds.Handed}` ({string.Join(", ", landings.Select(landing => $"`{landing.Id}`"))}), so it would wait for ever before one.");
             }
         }
 
@@ -549,11 +622,14 @@ public static class NodeGraphs
     /// A whole graph from its JSON (a <c>workCycles</c> entry, a named graph): the graph and what its save refuses, or no graph and the one
     /// <see cref="GraphRefusal.Unreadable"/> problem naming where it is not a graph's shape. Never read in part.
     /// </summary>
-    public static (NodeGraph? Graph, IReadOnlyList<WireProblem> Problems) Read(string json)
+    /// <param name="json">The graph's JSON.</param>
+    /// <param name="onSave">True where the graph is being saved (a version added, a cycle set): INTEGRATE1n's F47 refusal is the save's alone, so
+    /// a stored graph that read before still reads (see <see cref="Problems"/>).</param>
+    public static (NodeGraph? Graph, IReadOnlyList<WireProblem> Problems) Read(string json, bool onSave = false)
     {
         if (Parts(json, out var unread) is not { } parts) return (null, [unread!]);
         var graph = new NodeGraph(parts.Nodes, parts.Wires, parts.Entries, parts.End ?? "") { SchemaVersion = parts.SchemaVersion, Cleanup = parts.Cleanup ?? GraphCleanup.Held };
-        var problems = Problems(graph);
+        var problems = Problems(graph, onSave: onSave);
         return (problems.Count == 0 ? graph : null, problems);
     }
 
@@ -748,14 +824,20 @@ public static class NodeGraphHomes
 
     private static readonly string[] Pulled = [NodeKinds.Handed, NodeKinds.Pushed, NodeKinds.PullRequest, NodeKinds.Line];
 
+    private static readonly string[] Integrated = [NodeKinds.Handed, NodeKinds.Integrate, NodeKinds.Line];
+
     /// <summary>
     /// The landing's own graph, as its rule reaches: <c>handed</c>, then <c>pushed</c> and <c>pull-request</c> where a branch rule names
-    /// the plugin that pushes, then <c>line</c>, each after the one before; entered at <c>handed</c>, ended at <c>line</c>, cleaned up
-    /// at <i>held</i>. A rule with no cycle is this, today's behaviour (§C2's default).
+    /// the plugin that pushes, or <c>integrate</c> where a branch rule with no plugin and no squash carries <c>integrate</c> (INTEGRATE1n;
+    /// the integration design §17.4: the forms the key refuses carry none, so a file naming one draws today's), then <c>line</c>, each
+    /// after the one before; entered at <c>handed</c>, ended at <c>line</c>, cleaned up at <i>held</i>. A rule with no cycle is this, today's
+    /// behaviour (§C2's default).
     /// </summary>
     public static NodeGraph Landing(LandingRule rule)
     {
-        var kinds = rule.Form == LandingForm.Branch && rule.Plugin is not null ? Pulled : Landed;
+        var kinds = rule.Form == LandingForm.Branch && rule.Plugin is not null ? Pulled
+            : rule is { Form: LandingForm.Branch, Integrate: not null, Squash: false } ? Integrated
+            : Landed;
         return new NodeGraph(
             [.. kinds.Select(kind => new NodeDeclaration(kind, kind, 1, NodeAuthorities.BuiltIn[kind].Reach))],
             [.. kinds.Skip(1).Select((kind, index) => new Wire($"landing/{kinds[index]}-{kind}", WireKinds.After, new(kinds[index]), new(kind)))],
@@ -775,7 +857,7 @@ public static class NodeGraphHomes
 
         var problems = new List<WireProblem>();
         var held = landing.Nodes.Select(node => node.Id).ToHashSet(StringComparer.Ordinal);
-        foreach (var node in parts.Nodes.Where(node => Pulled.Contains(node.Kind, StringComparer.Ordinal)))
+        foreach (var node in parts.Nodes.Where(node => Pulled.Contains(node.Kind, StringComparer.Ordinal) || node.Kind == NodeKinds.Integrate))
         {
             problems.Add(new(GraphRefusal.LandingKind, null, node.Id, $"node `{node.Id}` is a `{node.Kind}`, a landing's node, which the landing rule holds already: wire from it."));
         }

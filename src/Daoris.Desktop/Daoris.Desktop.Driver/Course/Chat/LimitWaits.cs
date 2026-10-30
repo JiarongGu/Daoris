@@ -132,6 +132,16 @@ internal sealed class LimitWaits(ChatContext context, LimitMove move, ChatGoOn g
         string session, string json, DriverConfig config, Func<string, string, Task>? onEnded, CancellationToken ct)
     {
         if (context.GoingOn.ContainsKey(session)) return (null, null);
+
+        // FOUNDATION1f-vi part a (§3.3, §13.5): an older build's box for the record's ended limit move still in place is its `Never`: the wake
+        // neither goes on in its own conversation nor moves it, and the record stays held, asked again at the next look, which imports the box
+        // once the start's confirmation is settled or the standing move behind which it waited has ended.
+        if (new LimitBoxes(context.Home).Read(session) is not null)
+        {
+            _dirty = true;
+            return (null, null);
+        }
+
         if (ServiceClient.ReadRecord(json, session) is not { Kind: "chat", Teammate: false, Adapter: { Length: > 0 } adapter } record
             || WordsNever.ContinuedIn(json, session) is not null)
         {

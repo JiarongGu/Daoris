@@ -58,7 +58,8 @@ public sealed class NativePromptProcessTests : IDisposable
         var read = process.StandardOutput.ReadToEndAsync();
         _ = process.StandardError.ReadToEndAsync();
 
-        await NativePrompt.WriteAsync(process, new ClaudeCodeAdapter(), Prompt, CancellationToken.None);
+        // FOUNDATION1f-iv part b: the write's return is what a carry-on's moved words' `sent` waits for.
+        Assert.True(await NativePrompt.WriteAsync(process, new ClaudeCodeAdapter(), Prompt, CancellationToken.None));
 
         // The reader ends only once its input is closed: an unclosed input fails this by its bound.
         var said = (await read.WaitAsync(Poll.Patience)).Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
@@ -84,7 +85,7 @@ public sealed class NativePromptProcessTests : IDisposable
         var read = process.StandardOutput.ReadToEndAsync();
         _ = process.StandardError.ReadToEndAsync();
 
-        await NativePrompt.WriteAsync(process, stub, Prompt, CancellationToken.None);
+        Assert.False(await NativePrompt.WriteAsync(process, stub, Prompt, CancellationToken.None));
 
         await process.WaitForExitAsync().WaitAsync(Poll.Patience);
         Assert.Equal("ok", (await read).Trim());
@@ -101,7 +102,7 @@ public sealed class NativePromptProcessTests : IDisposable
         var read = process.StandardOutput.ReadToEndAsync();
         _ = process.StandardError.ReadToEndAsync();
 
-        await NativePrompt.WriteAsync(process, acp, Prompt, CancellationToken.None);
+        Assert.False(await NativePrompt.WriteAsync(process, acp, Prompt, CancellationToken.None));
         process.StandardInput.Close();
 
         await process.WaitForExitAsync().WaitAsync(Poll.Patience);
@@ -119,7 +120,8 @@ public sealed class NativePromptProcessTests : IDisposable
         _ = process.StandardError.ReadToEndAsync();
         await process.WaitForExitAsync().WaitAsync(Poll.Patience);
 
-        await NativePrompt.WriteAsync(process, new ClaudeCodeAdapter(), new string('x', 1 << 20), CancellationToken.None);
+        // FOUNDATION1f-iv part b: a write the pipe refused never returned, so a moved word it carried reads unsent.
+        Assert.False(await NativePrompt.WriteAsync(process, new ClaudeCodeAdapter(), new string('x', 1 << 20), CancellationToken.None));
 
         Assert.Equal(3, process.ExitCode);
     }

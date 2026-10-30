@@ -39,6 +39,11 @@ export function LandedNote({ landed, source = 'tree' }: {
         ? t('work.review.landed.removedInside', { where: removed.where ?? '' })
         : t('work.review.landed.removed', { where: removed.where ?? '' }));
     }
+    // LANDRETIRE1 part 2: withdrawn on the person's word, with their reason and where its commits stay (never the clean-up's removal).
+    if (landed.withdrawn) {
+      const { why, keptOn } = landed.withdrawn;
+      sentences.push(t(`work.review.landed.withdrawn${why ? 'Why' : ''}${keptOn ? 'Kept' : ''}`, { why: why ?? '', ref: keptOn ?? '' }));
+    }
     if (reads?.kind === 'on-line' || reads?.kind === 'merged') {
       sentences.push(t('work.review.landed.readsOnLine', { where: reads.where ?? '' }));
     } else if (reads?.kind === 'differs') {

@@ -20,7 +20,7 @@ internal sealed class KnowledgeWorkOrderReads : IKnowledgeWorkOrders
 
     public async Task<HelpWork> ReadWorkAsync(string home, HelpWorkPart part, CancellationToken ct)
     {
-        var (units, recovery, unread) = await WorkInventories.ReadPartAsync(home, part.Roots, part.InUse, part.Holds, ct, part.Recorded).ConfigureAwait(false);
+        var (units, recovery, unread) = await WorkInventories.ReadPartAsync(home, part.Roots, part.InUse, part.Holds, ct, part.Recorded, part.ClosedQuests).ConfigureAwait(false);
         return new HelpWork(units, unread, recovery);
     }
 

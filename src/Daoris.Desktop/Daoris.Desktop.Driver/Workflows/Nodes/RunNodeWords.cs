@@ -50,11 +50,22 @@ public static class RunNodeWords
     public const string Worded = "worded";
 
     /// <summary>
+    /// The stop of an <c>integrate</c> whose member the integration record says promoted (INTEGRATE1n; §17.4, F50): nothing reverses the line,
+    /// so there is nothing to stop, and the node reads its record's reach.
+    /// </summary>
+    public const string Promoted = "promoted";
+
+    /// <summary>
     /// Keep the person's <paramref name="act"/> on <paramref name="node"/> of <paramref name="run"/>, with their <paramref name="words"/>, on the
     /// run's record for the next pass: judged first on the run's graph and record by the one table, so a skip with no words, a node the person may
     /// not pass over, or one that cannot move from where it stands is refused here and nothing is kept.
     /// </summary>
-    public static NodeWorded Word(NodeRecordFiles records, string run, string node, string act, string? words, Func<DateTimeOffset>? clock = null)
+    /// <param name="promoted">
+    /// The nodes whose integration the record says promoted (<see cref="IntegrateNodes.PromotedAsync"/>): a stop of one is refused
+    /// (<see cref="Promoted"/>, F50). Null where the caller reads none, and nothing is refused on a guess.
+    /// </param>
+    public static NodeWorded Word(
+        NodeRecordFiles records, string run, string node, string act, string? words, Func<DateTimeOffset>? clock = null, IReadOnlySet<string>? promoted = null)
     {
         run = run.Trim().TrimStart('#');
         words = string.IsNullOrWhiteSpace(words) ? null : words.Trim();
@@ -70,6 +81,7 @@ public static class RunNodeWords
         {
             if (record.Ended is { } ended) return (null, Refuse(Ended) with { Detail = ended.Quest });
             if (record.Pending.Any(each => each.Node == node)) return (null, Refuse(Worded));
+            if (act == NodeWordActs.Stop && promoted?.Contains(node) == true) return (null, Refuse(Promoted));
             var status = WorkPerformer.StatusOf(record, node);
             var judged = NodeLifecycle.Apply(declared, status, Move(new NodeWord(node, act, words, now), new NodeScope(digest, bound.Run)));
             if (!judged.Moved) return (null, Refuse(judged.Refused!) with { State = status.State });
@@ -84,7 +96,7 @@ public static class RunNodeWords
     /// </summary>
     /// <returns>The record after them, null where none waited; and each word with why it was not applied, or null where it was.</returns>
     public static (NodeRecord? Next, IReadOnlyList<(NodeWord Word, string? Refused)> Applied) Apply(
-        NodeRecord record, IReadOnlyDictionary<string, NodeDeclaration> declared, NodeScope scope, DateTimeOffset now)
+        NodeRecord record, IReadOnlyDictionary<string, NodeDeclaration> declared, NodeScope scope, DateTimeOffset now, IReadOnlySet<string>? promoted = null)
     {
         if (record.Pending.Count == 0) return (null, []);
         var next = record;
@@ -94,6 +106,13 @@ public static class RunNodeWords
             if (!declared.TryGetValue(word.Node, out var node))
             {
                 applied.Add((word, NotNode));
+                continue;
+            }
+
+            // INTEGRATE1n (F50): a stop said before the member promoted, and applied after, is refused as the door refuses it.
+            if (word.Act == NodeWordActs.Stop && promoted?.Contains(word.Node) == true)
+            {
+                applied.Add((word, Promoted));
                 continue;
             }
 
@@ -121,11 +140,15 @@ public static class RunNodeWords
     /// lets the person pass it over, and its stop wherever it is under way or about to be judged. A node not reached yet is offered neither, though
     /// the door takes a word on it as the table does; a run that ended or does not read offers none, which its reader decides.
     /// </summary>
-    public static IReadOnlyList<string> Acts(NodeDeclaration node, NodeStatus status)
+    /// <param name="promoted">
+    /// Whether the integration record says this node's member promoted onto the line (INTEGRATE1n; §17.4, F50): its stop is then not offered,
+    /// since nothing reverses the line, and the node reads its record's reach.
+    /// </param>
+    public static IReadOnlyList<string> Acts(NodeDeclaration node, NodeStatus status, bool promoted = false)
     {
         var acts = new List<string>();
         if (status.State is NodeStates.Ready or NodeStates.Active && NodeAuthorities.Of(node)?.PersonSkips == true) acts.Add(NodeWordActs.Skip);
-        if (status.State is NodeStates.Ready or NodeStates.Active or NodeStates.Unknown or NodeStates.Invalidated) acts.Add(NodeWordActs.Stop);
+        if (status.State is NodeStates.Ready or NodeStates.Active or NodeStates.Unknown or NodeStates.Invalidated && !promoted) acts.Add(NodeWordActs.Stop);
         return acts;
     }
 
@@ -150,6 +173,7 @@ public static class RunNodeWords
         (NotAct, _) => $"workflow: `{done.Act}` is not a word for a run's node: say skip or stop.",
         (Ended, _) => $"workflow: run {done.Run} ended at quest #{done.Detail}, so nothing of its graph moves again until its chain comes back here.",
         (Worded, _) => $"workflow: `{done.Node}` on run {done.Run} already has your word, which Daoris's next look applies.",
+        (Promoted, _) => $"workflow: `{done.Node}` on run {done.Run} has promoted onto the line, and nothing reverses the line, so there is nothing to stop: its record reads its reach.",
         (NodeRefusal.NoWords, _) => $"workflow: passing `{done.Node}` over keeps your words with it, and none were given: say why.",
         (NodeRefusal.NotSkippable, _) =>
             $"workflow: `{done.Node}` is a step its kind never lets be passed over, since a skip would read as its proof: stop it instead.",
