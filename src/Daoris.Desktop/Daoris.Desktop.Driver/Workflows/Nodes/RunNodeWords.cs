@@ -91,6 +91,24 @@ public static class RunNodeWords
     }
 
     /// <summary>
+    /// <see cref="Word"/> for the doors the person presses through (INTEGRATE1n part n3, F50): a stop first reads the integration record through
+    /// <paramref name="door"/> for the run's nodes whose open request's member promoted, so it is refused before anything is kept. A skip, a run
+    /// that is not bound and a record with no request of an <c>integrate</c> of its own read nothing of it. The pass judges the word again.
+    /// </summary>
+    public static async Task<NodeWorded> WordAsync(
+        NodeRecordFiles records, IIntegrationDoor door, string run, string node, string act, string? words, Func<DateTimeOffset>? clock = null,
+        CancellationToken ct = default)
+    {
+        IReadOnlySet<string>? promoted = null;
+        if (act == NodeWordActs.Stop && new GraphRuns(records).Find(run.Trim().TrimStart('#')) is { } bound && records.Read(bound.Unit) is { } record)
+        {
+            promoted = await IntegrateNodes.PromotedAsync(door, record, ct).ConfigureAwait(false);
+        }
+
+        return Word(records, run, node, act, words, clock, promoted);
+    }
+
+    /// <summary>
     /// The person's words a run's record holds, applied through the one table under the run's declarations and its scope (the graph's digest and
     /// the run, as its starts are scoped), each kept with what it cleared; every word is taken off, applied or not. Pure: the runtime writes it.
     /// </summary>

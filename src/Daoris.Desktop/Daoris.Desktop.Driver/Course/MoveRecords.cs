@@ -156,6 +156,9 @@ public static class MoveTakeRefusals
 
     /// <summary>No such move: its record was deleted, and the move with it.</summary>
     public const string Gone = "gone";
+
+    /// <summary>The move is no hand-over waiting to be taken (FOUNDATION1f-v part c): it has begun, or it names no agent, so its own executor goes on with it.</summary>
+    public const string NotWaiting = "not-waiting";
 }
 
 /// <summary>What the course decided a move of a record left to be, as the move record writes it at its claim (§3.3, §13.4 step 1).</summary>

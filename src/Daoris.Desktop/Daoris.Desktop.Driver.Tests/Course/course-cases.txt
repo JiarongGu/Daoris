@@ -187,14 +187,14 @@ G-10 CurveMoveProcessTests.A_conversation_over_its_curve_moves_at_its_turn_s_end
 G-11 code:Course/Chat/CurveMove.cs:73 => Hold why=Stays doors=- repair=None code=-
 
 ## H a conversation's hand-over, with the consent before an agent's ask
-H-01 HandOverTests.A_conversation_is_handed_over_by_keeping_its_box => Move when=TurnEnd where=Pick@codex-acp:work(chat/-)!kept how=Brief why=Limit by=Person words=-
+H-01 HandOverTests.A_conversation_is_handed_over_by_deciding_its_move => Move when=TurnEnd where=Pick@codex-acp:work(chat/-)!kept how=Brief why=Limit by=Person words=-
 H-02 HandOverTests.What_cannot_be_handed_over_is_refused_by_its_code_and_nothing_is_kept:laptop/s9 => Never why=Teammate
 H-03 HandOverTests.What_cannot_be_handed_over_is_refused_by_its_code_and_nothing_is_kept:1ntake00 => Never why=Intake
 H-04 HandOverTests.What_cannot_be_handed_over_is_refused_by_its_code_and_nothing_is_kept:same-agent => Hold why=Refused doors=- repair=None code=same-agent
 H-05 HandOverTests.What_cannot_be_handed_over_is_refused_by_its_code_and_nothing_is_kept:tr33g0n3 => Hold why=Refused doors=- repair=None code=tree-gone
 H-06 HandOverTests.What_cannot_be_handed_over_is_refused_by_its_code_and_nothing_is_kept:h4nd3d00 => Never why=Superseded
-H-07 HandOverTests.A_second_hand_over_waits_behind_the_first_and_Ask_Daoris_is_refused:second => Hold why=Refused doors=- repair=None code=waiting
-H-08 HandOverTests.A_second_hand_over_waits_behind_the_first_and_Ask_Daoris_is_refused:help => Hold why=Refused doors=- repair=None code=help
+H-07 HandOverTests.A_second_hand_over_waits_behind_the_first_read_from_the_store_and_Ask_Daoris_is_refused:second => Hold why=Refused doors=- repair=None code=waiting
+H-08 HandOverTests.A_second_hand_over_waits_behind_the_first_read_from_the_store_and_Ask_Daoris_is_refused:help => Hold why=Refused doors=- repair=None code=help
 H-09 ChatHandOverTests.A_hand_over_press_with_an_account_keeps_the_pick_and_no_other_hand_over_does:press,person,account-2,True => Move when=TurnEnd where=Pick@fake:account-2(chat/-)!kept how=Brief why=Press by=Person words=-
 H-10 ChatHandOverTests.A_hand_over_press_with_an_account_keeps_the_pick_and_no_other_hand_over_does:press,person,-,False => Move when=TurnEnd where=Settled@other(chat/-) how=Brief why=Press by=Person words=-
 H-11 ChatHandOverTests.A_hand_over_press_with_an_account_keeps_the_pick_and_no_other_hand_over_does:agent,agent,account-2,False => Move when=TurnEnd where=Pick@fake:account-2(chat/-) how=Brief why=Agent by=Agent words=-
@@ -206,7 +206,7 @@ H-16 HandOverAskLookTests.Under_on_a_conversations_ask_is_kept_as_a_box_for_its_
 H-17 HandOverAskLookTests.The_persons_yes_lets_a_waiting_ask_go_to_the_agent_named => Move when=TurnEnd where=Settled@codex-acp(chat/-) how=Brief why=Agent by=Agent words=-
 
 ## I a quest's session's hand-over, with the consent before an agent's ask
-I-01 HandOverTests.A_quest_s_session_is_handed_over_by_keeping_its_box_for_the_drivers_look => Move when=Now where=Named@codex-acp:work(build/1) how=Brief why=Limit by=Person words=w1
+I-01 HandOverTests.A_quest_s_session_is_handed_over_by_deciding_its_driven_move_for_the_drivers_look => Move when=Now where=Named@codex-acp:work(build/1) how=Brief why=Limit by=Person words=w1
 I-02 HandOverTests.What_a_quest_s_session_cannot_be_handed_over_for_is_refused_by_its_code_and_nothing_is_kept:same-agent => Hold why=Refused doors=- repair=None code=same-agent
 I-03 HandOverTests.What_a_quest_s_session_cannot_be_handed_over_for_is_refused_by_its_code_and_nothing_is_kept:d0n3q000 => Hold why=Refused doors=- repair=None code=quest-closed
 I-04 HandOverTests.What_a_quest_s_session_cannot_be_handed_over_for_is_refused_by_its_code_and_nothing_is_kept:st00d000 => Never why=StoodDown
@@ -228,7 +228,7 @@ I-19 HandOverAtTurnEndTests.A_cooling_build_hands_over_only_on_the_persons_press
 I-20 HandOverAskTickTests.An_agents_ask_under_on_is_taken_at_its_turns_end_and_the_next_agent_is_told_its_note => Move when=TurnEnd where=Settled@codex-acp(build/1) how=Brief why=Agent by=Agent words=w1
 I-21 HandOverQuestTickTests.A_running_quest_session_handed_to_stub_is_stopped_and_the_quest_goes_on_in_the_same_tree_on_stub => Move when=Now where=Settled@stub(build/1) how=Brief why=Press by=Person words=w1
 I-22 HandOverLookTests.A_running_quest_session_is_stopped_the_quest_held_on_the_named_agent_and_carried_on_at_the_next_look => Move when=Now where=Settled@codex-acp(build/1) how=Brief why=Press by=Person words=w1
-I-23 HandOverLookTests.A_box_whose_quest_closed_meanwhile_stops_nothing_and_says_why => Hold why=Refused doors=- repair=None code=quest-closed
+I-23 HandOverLookTests.A_move_whose_quest_closed_meanwhile_stops_nothing_and_says_why => Hold why=Refused doors=- repair=None code=quest-closed
 
 ## C go on in a new session; start a conversation with these words
 C-01 GoOnNewTests.Words_held_while_their_account_cools_are_chosen_to_go_on_in_a_new_session => Move when=Now where=Settled:account-2(build/1) how=Brief why=Retry by=Daoris words=w1,w2
@@ -400,7 +400,10 @@ out TransientRetryTickTests.The_person_s_word_to_a_closed_quest_s_session_is_tri
 out TransientRetryTickTests.A_limit_at_the_open_after_a_transient_failure_cools_its_account E
 out TransientRetryTickTests.An_access_refusal_at_the_open_after_a_transient_failure_marks_its_account E
 out HandOverLookTests.A_conversation_s_box_is_left_to_the_shell T
-out HandOverLookTests.A_box_naming_an_agent_this_build_does_not_have_is_refused V
+out HandOverLookTests.A_move_naming_an_agent_this_build_does_not_have_is_refused V
+out HandOverLookTests.An_older_build_s_quest_box_is_imported_once_by_the_look_and_set_aside_and_its_move_taken T
+out HandOverLookTests.A_move_the_terminal_decided_is_taken_by_the_loop_s_look_whether_the_terminal_lives_or_not T
+out HandOverLookTests.A_dead_loop_s_decided_hand_over_is_left_standing_by_the_take_up_and_taken_by_the_look T
 out HandOverLookTests.The_store_goes_when_the_quest_closes_or_is_taken_elsewhere E
 out HandOverLookTests.The_store_goes_in_the_reopens_words_when_the_take_was_lost_to_it E
 out HandOverLookTests.The_store_stays_while_the_quest_is_this_machine_s E
@@ -437,7 +440,7 @@ out HandOverTests.The_closing_note_is_the_agents_last_message_of_its_turn E
 out HandOverTests.A_new_part_handed_the_brief_and_the_persons_words_records_both_in_that_order E
 out HandOverTests.The_terminal_reads_an_id_an_agent_and_an_account_and_its_usage_says_the_verb V
 out HandOverTests.The_terminal_hands_the_ask_to_the_host_s_door_and_says_so_where_there_is_none E
-out HandOverTests.The_terminal_keeps_a_quest_s_session_s_box_for_the_look_and_never_opens_a_conversation E
+out HandOverTests.The_terminal_decides_a_quest_s_session_s_move_for_the_look_and_never_opens_a_conversation E
 out HandOverTests.The_terminal_s_ask_of_a_quest_s_session_is_named_on_its_record_as_the_person_s_at_a_terminal E
 out HandOverTests.The_terminal_says_where_no_loop_holds_the_home_and_refuses_with_the_judge_s_sentence E
 out HandOverTests.The_terminal_says_what_came_of_it_in_one_line E
@@ -500,7 +503,7 @@ suite ContinuationTests 50
 suite SessionMessagesTickTests 23
 suite LimitResumeTickTests 10
 suite TransientRetryTickTests 10
-suite HandOverLookTests 13
+suite HandOverLookTests 16
 suite CarryOnHandedTests 11
 suite CurveMoveTests 14
 suite CurveMoveProcessTests 1

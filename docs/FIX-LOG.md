@@ -5,6 +5,13 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-30 - The window's quest hand-over still called the old ask, and the modules did not build (FOUNDATION1f-v part c)
+
+- **Symptom:** batch u's modules project failed to compile: `ConversationRoutes.cs:244`, no overload of `AskAsync` takes 10 arguments.
+- **Root cause:** part c changed `QuestHandOver.AskAsync` to take the driven holder in place of the home and the clock, and updated its driver callers and the terminal; the window's route in the modules calls it too, and the builder built only the driver's projects.
+- **Fix:** the route builds the driven holder over the lease holder's scope, as the terminal does, and its comment says the move rather than a box; the move-store census names the route as a reader. The dispatch skill now has a builder that changes a public driver signature build the modules too.
+- **Verify:** the modules' fast half, 2,747 passed; the hand-over and conversation module classes, 76; `MoveStoreCensusTests` and `StructureTests`, 60.
+
 ## 2026-10-30 - Batch t's fast half met two stale pins its builders never ran (LANDRETIRE1 part 2, FOUNDATION1f-vi part a)
 
 - **Symptom:** the driver's fast half over batch t failed `DriverCommandTests` twice (the terminal's clean-up call not found) and `SettledReadersCensusTests` (`LimitMove.cs` listed as a reader it no longer is).

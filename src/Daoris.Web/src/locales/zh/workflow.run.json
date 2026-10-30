@@ -222,5 +222,6 @@
   "workflow.run.node.refused.no-words": "跳过 {{node}} 会保存你的话：请说明原因。",
   "workflow.run.node.refused.not-skippable": "{{node}} 从不被跳过，因为跳过会被当作它的证明：请改为停止它。",
   "workflow.run.node.refused.not-in-table": "{{node}} 在这里画出之后已有变动，所以现在这里没有可做的。",
-  "workflow.run.node.refused.not-held": "这个 Daoris 没有持有它的主目录，所以没有保存任何东西：请在运行它的 Daoris 中操作。"
+  "workflow.run.node.refused.not-held": "这个 Daoris 没有持有它的主目录，所以没有保存任何东西：请在运行它的 Daoris 中操作。",
+  "workflow.run.node.refused.promoted": "{{node}} 已并入主线，主线无法撤回，所以没有可停止的。"
 }

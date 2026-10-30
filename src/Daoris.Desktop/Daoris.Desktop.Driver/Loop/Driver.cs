@@ -335,7 +335,7 @@ public sealed class Driver(
 
     private DriverContinuations GoOns => LazyInitializer.EnsureInitialized(ref _continuations, () => new DriverContinuations(Context, this));
 
-    private DriverHandOvers HandOvers => LazyInitializer.EnsureInitialized(ref _handOvers, () => new DriverHandOvers(Context));
+    private DriverHandOvers HandOvers => LazyInitializer.EnsureInitialized(ref _handOvers, () => new DriverHandOvers(Context, () => Moves));
 
     private DriverHelpers Helpers => LazyInitializer.EnsureInitialized(ref _helpers, () => new DriverHelpers(Context, this));
 
@@ -2592,15 +2592,16 @@ public sealed class Driver(
 
         // 🔴 FOUNDATION1f-iv part a (the foundation design §3.3, §13.4 steps 1 and 3): a carry-on keeps its move record, decided before its open
         // and asked under the key the open is sent with, so a crash between the old part's end and the new part's words is taken up and no word
-        // is sent twice. One the quest's hand-over made keeps none (row f-v's). A move already standing for the session it goes on from, or a store
-        // that will not take the decision, holds the start for the next look: nothing is opened and nothing is written. The record is let go on
-        // every way out below, ended by its phase unless it is delivered.
+        // is sent twice. One the quest's hand-over starts (FOUNDATION1f-v part c) goes on from the hand-over's own move, decided at the ask and
+        // left at `old-ended` by the look's take: one move from ask to delivery, not two. A move already standing for the session it goes on
+        // from that is not that one, or a store that will not take the decision, holds the start for the next look: nothing is opened and
+        // nothing is written. The record is let go on every way out below, ended by its phase unless it is delivered.
         CarryOnRecord? carry = null;
         var openKey = MoveWords.DrivenKey();
-        if (CarryOnRecord.Decision(continues, handedFrom, agent, selection.Profile) is { } decision)
+        if (CarryOnRecord.Decision(continues, agent, selection.Profile) is { } decision)
         {
             var begun = await Moves.BeginAsync(decision, ct).ConfigureAwait(false);
-            if (begun.Move is not { } decided)
+            if (CarryOnRecord.Of(Moves, begun, handedFrom, agent) is not { } decided)
             {
                 await fresh.LetGoAsync().ConfigureAwait(false);
                 return Hold(begun.Refused is { } unwritten
@@ -2608,8 +2609,8 @@ public sealed class Driver(
                     : $"a move of `{decision.Left}` to a new part is still standing, so `#{quest.Id}` waits for it to end.");
             }
 
-            carry = new CarryOnRecord(decided);
-            if (carry.Opening(openKey) is { } unasked)
+            carry = decided;
+            if ((carry.OldEnded() ?? carry.Opening(openKey)) is { } unasked)
             {
                 await carry.EndAsync().ConfigureAwait(false);
                 await fresh.LetGoAsync().ConfigureAwait(false);

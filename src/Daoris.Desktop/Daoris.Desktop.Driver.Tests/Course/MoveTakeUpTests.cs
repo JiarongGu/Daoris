@@ -264,7 +264,7 @@ public sealed class MoveTakeUpTests : IDisposable
         var older = DeadMove("s1");
         _settled = StoreSettled.Not("the install's swap journal is at `swapping`");
         var shell = Store("run-shell");
-        var unit = TakeUp(shell, null, new HandOverBoxImport(_home, shell));
+        var unit = TakeUp(shell, null, new HandOverBoxImport(_home, shell, _ => true));
         MoveLook? swept = null;
 
         var held = await unit.LookAsync(Standing, (found, _) =>

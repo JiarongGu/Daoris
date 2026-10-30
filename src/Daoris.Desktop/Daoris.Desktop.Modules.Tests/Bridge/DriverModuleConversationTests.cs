@@ -336,29 +336,32 @@ public sealed class DriverModuleConversationTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// 🔴 HANDWORDS1: words said while a conversation is handed over or moved (its box kept until the take is done) are held here, never
-    /// kept on the record that is ending, even once it has ended; when the take is told done they go to the conversation that
-    /// continues it, kept and shown there, and nothing is held any more.
+    /// 🔴 HANDWORDS1, TAKEWAITS1: words said while a conversation is handed over or moved (its move standing in the store until the take is
+    /// done) are held here, never kept on the record that is ending, even once it has ended; when the take is told done, its move ended, they go
+    /// to the conversation that continues it, kept and shown there, and nothing is held any more.
     /// </summary>
     [Fact]
     public async Task Words_said_while_a_conversation_is_handed_over_go_to_the_one_that_continues_it()
     {
         var ledger = new Ledger { Records = Records(Chat("c1", "working")) };
         var (loop, module) = await UpAsync(ledger);
-        new HandOverBox(loop.Home).Write("c1", new HandOverRequest("talk", "account-2", HandOverWhy.Curve, HandOverBy.Daoris, DateTimeOffset.UtcNow));
+        var moves = new ConversationMoves(loop.Home, loop.Service!, loop.Events);
+        loop.Words.TakeStanding = moves.Stands;
+        var decided = moves.Store.Decide(new MoveDecision("c1", MoveExecutors.Conversation, MoveHows.Brief, HandOverWhy.Curve, HandOverBy.Daoris) { Agent = "talk", Account = "account-2" });
 
         var sent = await AnswerAsync(module, "SESSION_INPUT", new { id = "c1", text = "and the readme" });
 
         Assert.Equal((true, "resume"), (sent.GetProperty("sent").GetBoolean(), sent.GetProperty("reaches").GetString()));
         Assert.Empty(ledger.Posts);
 
-        // The take ends the old conversation and opens the one that continues it; until its box is gone the words still wait.
+        // The take ends the old conversation and opens the one that continues it; until its move has ended the words still wait, a record
+        // moved through the client waking them and finding the move standing.
         ledger.Records = Records(Chat("c1", "completed"), Chat("c2", "working", from: "c1"));
         await loop.Service!.AdvanceAsync("c1", "completed", note: "the conversation went on in c2.");
         await Task.Delay(300);
         Assert.Empty(ledger.Posts);
 
-        new HandOverBox(loop.Home).Clear("c1");
+        moves.Store.Close(decided.Claim!, MoveCloseWhy.Superseded);
         loop.Words.OnTakeEnded("c1");
 
         await UntilAsync(() => ledger.Posts.Count >= 1);

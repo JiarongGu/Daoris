@@ -276,4 +276,19 @@ public sealed class WorkflowGraphRunTests
         Assert.All(Derive(Records(Quest("q1")), GoAheadAndADeployAfter, record with { Ended = new RunEnd("q1", T) }).Steps, step => Assert.Null(step.Acts));
         Assert.All(Derive(Records(Quest("q1")), GoAheadAndADeployAfter, null).Steps, step => Assert.Null(step.Acts));
     }
+
+    /// <summary>
+    /// INTEGRATE1n part n3 (F50): a node whose integration the record says promoted is offered no stop, since nothing reverses the line; a node
+    /// beside it is offered what the table takes as before.
+    /// </summary>
+    [Fact]
+    public void A_node_the_integration_record_says_promoted_is_offered_no_stop()
+    {
+        var record = Record(Status("go", NodeStates.Active, Self), Status("handed", NodeStates.Active, "unit-b", Tip));
+        var facts = new WorkflowGraphRunFacts(Records(Quest("q1")), Run, Graph(GoAheadAndADeployAfter), record) { Promoted = new HashSet<string> { "handed" } };
+
+        var run = WorkflowGraphRuns.Derive(facts, "default", "a1");
+
+        Assert.Equal([("go", (IReadOnlyList<string>?)[NodeWordActs.Skip, NodeWordActs.Stop]), ("handed", null)], run.Steps.Where(step => step.Step.Id is "go" or "handed").Select(step => (step.Step.Id, step.Acts)));
+    }
 }

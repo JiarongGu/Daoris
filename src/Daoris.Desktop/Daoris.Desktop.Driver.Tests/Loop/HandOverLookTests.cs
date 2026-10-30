@@ -3,7 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// MIXAGENT1a-ii (D163 point 1): the driver's look takes a quest's session hand-over. A box the terminal kept is judged again, the
+/// MIXAGENT1a-ii (D163 point 1): the driver's look takes a quest's session hand-over, whose move the ask decided in the move store
+/// (FOUNDATION1f-v part c; an older build's box is imported into it). The move is judged again, the
 /// running session is stopped as the person's with a line of its own, the quest is held on the named agent in
 /// <c>&lt;home&gt;/handed/&lt;quest&gt;.json</c>, and the next look carries it on, the stop read as released; the store goes when the quest
 /// leaves this machine.
@@ -35,10 +36,23 @@ public sealed class HandOverLookTests : IDisposable
     public void Dispose()
     {
         _ledger.Dispose();
+        Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
         try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 
     private static DriverConfig Config() => DriverConfig.Empty with { Drivable = ["engine"], Adapter = "stub", Cap = 3, PollSeconds = 1, Trees = ["engine"] };
+
+    private readonly HashSet<string> _dead = new(StringComparer.Ordinal);
+
+    /// <summary>The home's move record under one run, dead where the case says so and alive otherwise; the loop's is <c>run-loop</c>, a host's.</summary>
+    private MoveStore Store(string run = "run-loop", string kind = StoreProcess.Host) =>
+        new(_home, () => StoreSettled.Yes, each => !_dead.Contains(each.Run), run, kind);
+
+    private MoveRecord? MoveFrom(string left) => Store("run-probe").Of(left).LastOrDefault();
+
+    /// <summary>The loop's driven holder (FOUNDATION1f-v part c): the lease holder's scope over the home's store, under its own run.</summary>
+    private ConversationMoves Moves() =>
+        new(_home, _ledger.Client(), new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)), store: Store(), scope: MoveTakeUpScope.LeaseHolder);
 
     /// <summary>A driver for a look, its stop landing at once as a real run's record does once its process exited, and its starts only said.</summary>
     private Daoris.Driver.Driver Driver()
@@ -47,9 +61,11 @@ public sealed class HandOverLookTests : IDisposable
         var adapters = AdapterSet.Built();
         return new Daoris.Driver.Driver(service, Config(), adapters, _home, harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)))
         {
+            Moves = Moves(),
             Stops = (session, note) =>
             {
                 _stopped.Add((session, note));
+                _phaseAtStop = MoveFrom(session)?.PhaseWord;
                 service.AdvanceAsync(session, "stopped", note).GetAwaiter().GetResult();
                 return true;
             },
@@ -61,17 +77,23 @@ public sealed class HandOverLookTests : IDisposable
         };
     }
 
-    private void Ask(string session, string agent = "codex-acp") =>
-        new HandOverBox(_home).Write(session, new HandOverRequest(agent, null, HandOverWhy.Limit, HandOverBy.Person, T0));
+    private string? _phaseAtStop;
+
+    /// <summary>The ask as the terminal or an agent's go makes it: judged, and decided as a driven move in the store, no box.</summary>
+    private async Task Ask(string session, string agent = "codex-acp") =>
+        Assert.True((await QuestHandOver.AskAsync(
+            _ledger.Client(), Moves(), QuestHandOver.Roster(AdapterSet.Built(), _home), session, agent, null, HandOverWhy.Limit, HandOverBy.Person)).Kept);
 
     /// <summary>
-    /// 🔴 A running quest session with a box is stopped at once with its own coded line, the quest is held on the named agent, and the
-    /// box is gone; the next look reads that stop as released and carries the quest on, with a sentence that says it was handed over.
+    /// 🔴 A running quest session with a move decided is stopped at once with its own coded line, the quest is held on the named agent, and the
+    /// move goes on to <c>old-ended</c> for the carry-on to continue (FOUNDATION1f-v part c), written <c>quiescing</c> while the session ran and
+    /// never as a box; the next look reads that stop as released and carries the quest on, with a sentence that says it was handed over.
     /// </summary>
     [Fact]
     public async Task A_running_quest_session_is_stopped_the_quest_held_on_the_named_agent_and_carried_on_at_the_next_look()
     {
-        Ask("s1");
+        await Ask("s1");
+        Assert.Equal("decided", MoveFrom("s1")!.PhaseWord);
 
         var first = await Driver().TickAsync().WaitAsync(Bound);
 
@@ -81,6 +103,9 @@ public sealed class HandOverLookTests : IDisposable
         Assert.Equal("codex-acp", stop.Note.Parts[0].Value("agent"));
         Assert.Equal(("codex-acp", "s1", HandOverWhy.Limit), (new HandedQuests(_home).Read("q1")!.Agent, new HandedQuests(_home).Read("q1")!.From, new HandedQuests(_home).Read("q1")!.Why));
         Assert.Null(new HandOverBox(_home).Read("s1"));
+        Assert.Equal("quiescing", _phaseAtStop);
+        var move = Assert.Single(Store("run-probe").Of("s1"));
+        Assert.Equal(("old-ended", "run-loop", MoveExecutors.Driven), (move.PhaseWord, move.ClaimRun, move.Executor));
         Assert.Contains(first.Events, line => line == "hand-over  session `s1` (#q1): stopped, and `#q1` goes on with codex-acp.");
         Assert.Equal("stopped", State("s1"));
 
@@ -94,45 +119,121 @@ public sealed class HandOverLookTests : IDisposable
         Assert.Equal(["q1"], _starts.Select(start => start.Quest.Id));
     }
 
-    /// <summary>A box for a conversation is the shell's, not this look's: nothing is stopped and the box stays for its runner.</summary>
+    /// <summary>A box for a conversation is the shell's, not this look's: nothing is stopped and the box stays for its runner, which imports it.</summary>
     [Fact]
     public async Task A_conversation_s_box_is_left_to_the_shell()
     {
         _ledger.Working("c0nv0001", "engine", Path.Combine(_home, "tree-c"));
-        Ask("c0nv0001");
+        new HandOverBox(_home).Write("c0nv0001", new HandOverRequest("codex-acp", null, HandOverWhy.Limit, HandOverBy.Person, T0));
 
         await Driver().TickAsync().WaitAsync(Bound);
 
         Assert.Empty(_stopped);
         Assert.NotNull(new HandOverBox(_home).Read("c0nv0001"));
         Assert.Empty(new HandedQuests(_home).All());
+        Assert.Empty(Store("run-probe").Of("c0nv0001"));
     }
 
-    /// <summary>A box judged again as it is taken: a quest closed meanwhile stops nothing and keeps nothing, and the box does not stay.</summary>
+    /// <summary>A move judged again as it is taken: a quest closed meanwhile stops nothing and keeps nothing, and the move ends on its old part.</summary>
     [Fact]
-    public async Task A_box_whose_quest_closed_meanwhile_stops_nothing_and_says_why()
+    public async Task A_move_whose_quest_closed_meanwhile_stops_nothing_and_says_why()
     {
-        Ask("s1");
+        await Ask("s1");
         _ledger.Move("q1", "Done");
 
         var look = await Driver().TickAsync().WaitAsync(Bound);
 
         Assert.Empty(_stopped);
-        Assert.Null(new HandOverBox(_home).Read("s1"));
         Assert.Empty(new HandedQuests(_home).All());
+        var move = Assert.Single(Store("run-probe").Of("s1"));
+        Assert.Equal(("fell-back", ConversationMoves.NotOpened), (move.PhaseWord, move.FellBackCode));
         Assert.Contains(look.Events, line => line.StartsWith("hand-over  session `s1` (#q1): #q1 is not open or taken any more", StringComparison.Ordinal));
     }
 
-    /// <summary>An agent this build has not is refused at the take, as at the ask, and nothing is stopped.</summary>
+    /// <summary>An agent this build has not is refused at the take, as at the ask, nothing is stopped, and the move is ended, not taken again at every look.</summary>
     [Fact]
-    public async Task A_box_naming_an_agent_this_build_does_not_have_is_refused()
+    public async Task A_move_naming_an_agent_this_build_does_not_have_is_refused()
     {
-        Ask("s1", agent: "no-such-agent");
+        Store().Decide(new MoveDecision("s1", MoveExecutors.Driven, MoveHows.Brief, HandOverWhy.Limit, HandOverBy.Person) { Agent = "no-such-agent" });
 
         var look = await Driver().TickAsync().WaitAsync(Bound);
 
         Assert.Empty(_stopped);
         Assert.Contains(look.Events, line => line == "hand-over  session `s1` (#q1): no agent here is called no-such-agent.");
+        Assert.Equal("fell-back", MoveFrom("s1")!.PhaseWord);
+    }
+
+    /// <summary>
+    /// 🔴 FOUNDATION1f-v part c: an older build's quest box is imported once by the driven take-up and set aside, each look that finds one pending,
+    /// and its move is taken as an ask's is: the session stopped, the quest held on the agent named, no box taken as a file.
+    /// </summary>
+    [Fact]
+    public async Task An_older_build_s_quest_box_is_imported_once_by_the_look_and_set_aside_and_its_move_taken()
+    {
+        var box = new HandOverBox(_home);
+        box.Write("s1", new HandOverRequest("codex-acp", null, HandOverWhy.Limit, HandOverBy.Person, T0));
+
+        var first = await Driver().TickAsync().WaitAsync(Bound);
+
+        Assert.Null(box.Read("s1"));
+        Assert.True(File.Exists(box.PathOf("s1") + ".imported"));
+        Assert.Equal("s1", Assert.Single(_stopped).Session);
+        Assert.Equal("codex-acp", new HandedQuests(_home).Read("q1")!.Agent);
+        var move = Assert.Single(Store("run-probe").Of("s1"));
+        Assert.Equal(("old-ended", "run-loop", HandOverWhy.Limit, HandOverBy.Person), (move.PhaseWord, move.ClaimRun, move.Why, move.By));
+        Assert.Contains(first.Events, line => line == "hand-over  session `s1` (#q1): stopped, and `#q1` goes on with codex-acp.");
+
+        // Once: another look imports and stops nothing more.
+        await Driver().TickAsync().WaitAsync(Bound);
+        Assert.Single(_stopped);
+        Assert.Single(Store("run-probe").Of("s1"));
+    }
+
+    /// <summary>
+    /// 🔴 FOUNDATION1f-v part c: a move the terminal decided is claimed by the terminal's run, which goes no further with it, so the loop's look
+    /// takes it whether that run is gone (it quit at once) or still lives, and a live shell's own decision is left to it.
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task A_move_the_terminal_decided_is_taken_by_the_loop_s_look_whether_the_terminal_lives_or_not(bool gone)
+    {
+        var terminal = Store("run-verb", StoreProcess.Verb);
+        var decided = terminal.Decide(new MoveDecision("s1", MoveExecutors.Driven, MoveHows.Brief, HandOverWhy.Press, HandOverBy.Person) { Agent = "codex-acp" });
+        if (gone) _dead.Add("run-verb");
+
+        await Driver().TickAsync().WaitAsync(Bound);
+
+        Assert.Equal("s1", Assert.Single(_stopped).Session);
+        var move = Assert.Single(Store("run-probe").Of("s1"));
+        Assert.Equal(("old-ended", "run-loop", 2L), (move.PhaseWord, move.ClaimRun, move.ClaimGeneration));
+        Assert.Throws<MoveClaimLostException>(() => terminal.Advance(decided.Claim!, MoveRecordPhase.Quiescing));
+    }
+
+    /// <summary>
+    /// 🔴 A hand-over a dead loop decided and never took is taken by the next loop (§13.5's first row): at the first look's take-up it is left
+    /// standing under the new run, not fallen back, and the look takes it, so the quest's hand-over is not lost with the loop.
+    /// </summary>
+    [Fact]
+    public async Task A_dead_loop_s_decided_hand_over_is_left_standing_by_the_take_up_and_taken_by_the_look()
+    {
+        var old = Store("run-old");
+        var decided = old.Decide(new MoveDecision("s1", MoveExecutors.Driven, MoveHows.Brief, HandOverWhy.Press, HandOverBy.Person) { Agent = "codex-acp" });
+        _dead.Add("run-old");
+        using (var store = DesktopStore.Open(DesktopStore.LocationIn(_home), new DesktopStoreOptions { Settled = () => StoreSettled.Yes }))
+        {
+            store.Write("probe", write => write.Execute("UPDATE store_runs SET started = 1 WHERE run = 'run-old'"));
+        }
+
+        var driver = Driver();
+        await driver.TakeUpMovesAsync(CancellationToken.None);
+        var standing = Store("run-probe").Read(decided.Move.Id)!;
+        Assert.Equal(("decided", "run-loop"), (standing.PhaseWord, standing.ClaimRun));
+
+        await driver.TickAsync().WaitAsync(Bound);
+
+        Assert.Equal("s1", Assert.Single(_stopped).Session);
+        Assert.Equal("old-ended", MoveFrom("s1")!.PhaseWord);
     }
 
     /// <summary>
@@ -185,7 +286,7 @@ public sealed class HandOverLookTests : IDisposable
     [Fact]
     public async Task The_store_stays_while_the_quest_is_this_machine_s()
     {
-        Ask("s1");
+        await Ask("s1");
         await Driver().TickAsync().WaitAsync(Bound);
 
         await Driver().TickAsync().WaitAsync(Bound);

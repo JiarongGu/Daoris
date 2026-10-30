@@ -26,7 +26,7 @@ import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { after, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { noteLabel, planIndex } from './orient-index.mjs';
+import { markFindings, noteLabel, planIndex, readDecision, readMarks } from './orient-index.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = dirname(here);
@@ -75,6 +75,104 @@ test('the table holds a decision with notes and one without, and a line that is 
   assert.ok(TABLE.decisions.some((decision) => decision.notes.length === 0));
   assert.ok(TABLE.labels.some(([, , label]) => label !== null));
   assert.ok(TABLE.labels.some(([, , label]) => label === null));
+});
+
+// ---------------------------------------------------------------------------------------------------
+// The mark a note carries (KNOWFRESH1a-i): the twin table the service's DecisionNotes is held to, and the gate
+
+const MARKS = JSON.parse(readFileSync(join(here, 'orient-index-fixtures', 'note-marks.json'), 'utf8'));
+
+/** A decision's marks as the table writes them: `D10:19 amended by D121 replacing D10:5`. */
+function markRows(id, lines) {
+  return readMarks(readDecision(id, lines)).map((mark) => {
+    const target = mark.quote === null ? '' : ` replacing ${mark.target === null ? 'none' : `${id}:${mark.target}`}`;
+    return `${id}:${mark.line} ${mark.kind} by ${mark.by === null ? 'self' : `D${mark.by}`}${target}`;
+  });
+}
+
+test("each decision's marks are the rows the mark table gives them", () => {
+  for (const decision of MARKS.decisions) {
+    assert.deepEqual(markRows(decision.id, decision.lines), decision.marks, `${decision.id}: ${decision.why}`);
+  }
+});
+
+test('the mark table holds each form of mark and a decision with none, and the repository real lines', () => {
+  assert.ok(MARKS.decisions.some((decision) => decision.marks.length === 0));
+  const marks = MARKS.decisions.flatMap((decision) => decision.marks);
+  for (const form of ['amended by D', 'superseded by D', 'by self', 'replacing none', 'replacing D10:']) {
+    assert.ok(marks.some((row) => row.includes(form)), `a row holds ${form}`);
+  }
+  const text = MARKS.decisions[0].lines.join('\n');
+  for (const real of ["**Amended by D158's ASKSCOPE1c note, 2026-10-19:**", '*Amended by D124 (WSSETUP5, 2026-10-01), §6.5:', '**Amended by D85 (2026-09-28).**', '*(Amended by D70, 2026-09-24:']) {
+    assert.ok(text.includes(real), `the table carries ${real}`);
+  }
+});
+
+test('a quote is held to the note label in full, which the digest cuts at 80 characters', () => {
+  const long = MARKS.decisions[0].lines[6].split('**')[1];
+  assert.ok(long.length > 80, 'the long label is longer than the digest keeps');
+  const [quoted, cut] = [20, 22].map((at) => /replacing "(.*)":/.exec(MARKS.decisions[0].lines[at])[1]);
+  assert.equal(quoted, long);
+  assert.equal(noteLabel(MARKS.decisions[0].lines[6]).endsWith('…'), true);
+  assert.ok(cut.endsWith('…'), 'the cut label is the one the digest shows');
+});
+
+/** The findings of the gate over a scratch tree whose decisions are `files`, each `D<n>` to its lines. */
+function gate(name, files) {
+  const at = join(scratch, name);
+  mkdirSync(join(at, 'docs', 'decisions'), { recursive: true });
+  writeFileSync(join(at, 'daoris.json'), JSON.stringify({ documents: { decisions: 'docs/decisions' } }));
+  const paths = ['daoris.json'];
+  for (const [id, lines] of Object.entries(files)) {
+    writeFileSync(join(at, 'docs', 'decisions', `${id}.md`), lines.join('\n'));
+    paths.push(`docs/decisions/${id}.md`);
+  }
+  return markFindings(at, paths).map((finding) => `${finding.file}:${finding.line} ${finding.fact}`);
+}
+
+const OPENING = (id) => [`## ${id} — Subject (2026-09-01)`, '', `**Decision (${id}, 2026-09-01).** The rule.`, ''];
+
+test('the gate passes a mark that names a known, higher decision and a quote that names an earlier note', () => {
+  const older = [...OPENING('D10'), '**Built 2026-09-02 (A): the first.** It.', '', '*Amended by D20 (B, 2026-09-03): changed.*', '', '**Superseded by D20 (C, 2026-09-04), replacing "Built 2026-09-02 (A): the first.":** gone.', ''];
+  assert.deepEqual(gate('gate-pass', { D10: older, D20: OPENING('D20') }), []);
+});
+
+test('the gate refuses a mark naming a decision that does not exist', () => {
+  const older = [...OPENING('D10'), '*Amended by D99 (B, 2026-09-03): changed.*', ''];
+  assert.deepEqual(gate('gate-unknown', { D10: older }), ['docs/decisions/D10.md:5 names D99, which is no decision of this repository']);
+});
+
+test('the gate refuses a mark naming a decision numbered no higher than the one it sits in', () => {
+  const same = [...OPENING('D30'), '*Amended by D30 (B, 2026-09-03): itself.*', '', '*Amended by D20 (C, 2026-09-04): an older one.*', ''];
+  assert.deepEqual(gate('gate-lower', { D30: same, D20: OPENING('D20') }), [
+    'docs/decisions/D30.md:5 names D30, which is not numbered higher than D30',
+    'docs/decisions/D30.md:7 names D20, which is not numbered higher than D30',
+  ]);
+});
+
+test('the gate refuses a quote that names no earlier note: a later one, a cut label, and none at all', () => {
+  const older = [
+    ...OPENING('D10'),
+    '**Amended by D20 (B, 2026-09-03), replacing "Built 2026-09-05 (L): later.":** a later note is no earlier one.',
+    '',
+    '**Built 2026-09-05 (L): later.** It.',
+    '',
+    '**Built 2026-09-06 (M): a note whose label runs past the eighty characters the digest keeps, to the end.** It.',
+    '',
+    '**Amended (X, 2026-09-07), replacing "Built 2026-09-06 (M): a note whose label runs past the eighty characters…":** cut.',
+    '',
+    '**Amended (Y, 2026-09-08), replacing "Built 2026-09-06 (M): a note whose label runs past the eighty characters the digest keeps, to the end.":** whole.',
+    '',
+  ];
+  assert.deepEqual(gate('gate-quote', { D10: older, D20: OPENING('D20') }), [
+    'docs/decisions/D10.md:5 quotes a label that is no earlier note of D10, the full text of one and never the digest\'s cut',
+    'docs/decisions/D10.md:11 quotes a label that is no earlier note of D10, the full text of one and never the digest\'s cut',
+  ]);
+});
+
+test('the gate reads a mark by the same rule the table does: an opening decision and a mid-paragraph remark are no mark', () => {
+  const older = [...OPENING('D10'), '**Amended by D99 (B, 2026-09-03):** an entry that does not exist.', '', 'A paragraph.', '*(Amended by D98, 2026-09-24: inline.)*', ''];
+  assert.deepEqual(gate('gate-reads', { D10: older }), ['docs/decisions/D10.md:5 names D99, which is no decision of this repository']);
 });
 
 // ---------------------------------------------------------------------------------------------------
