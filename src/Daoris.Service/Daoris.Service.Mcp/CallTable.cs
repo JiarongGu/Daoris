@@ -41,7 +41,8 @@ public static class CallTable
     /// </summary>
     public static IReadOnlyList<string> PartnerServed { get; } =
     [
-        "knowledge_convergence", "knowledge_get", "knowledge_repositories", "knowledge_search", "line_read", "partner_answer", "registry",
+        "knowledge_convergence", "knowledge_get", "knowledge_repositories", "knowledge_search", "line_read", "memory_get", "memory_search",
+        "partner_answer", "registry",
     ];
 
     private static readonly HashSet<string> Partner = new(PartnerServed, StringComparer.Ordinal);
@@ -52,8 +53,8 @@ public static class CallTable
     /// </summary>
     public static IReadOnlyList<string> ReviewerServed { get; } =
     [
-        "handback_read", "knowledge_convergence", "knowledge_get", "knowledge_repositories", "knowledge_search", "opinion_give", "quest_list",
-        "registry",
+        "handback_read", "knowledge_convergence", "knowledge_get", "knowledge_repositories", "knowledge_search", "memory_get", "memory_search",
+        "opinion_give", "quest_list", "registry",
     ];
 
     private static readonly HashSet<string> Reviewer = new(ReviewerServed, StringComparer.Ordinal);
@@ -67,8 +68,14 @@ public static class CallTable
         "settings_language", "settings_notify", "settings_timeout",
     ], StringComparer.Ordinal);
 
-    /// <summary>What a record that serves another is refused, a helper's as a partner's: it publishes, takes and closes no quest.</summary>
-    private static readonly HashSet<string> Quests = new(["quest_publish", "quest_respond"], StringComparer.Ordinal);
+    /// <summary>
+    /// What a record that serves another is refused, a helper's as a partner's: it publishes, takes and closes no quest, a memory proposal
+    /// being one.
+    /// </summary>
+    private static readonly HashSet<string> Quests = new(["quest_publish", "quest_respond", "memory_propose"], StringComparer.Ordinal);
+
+    /// <summary>A change to a repository's memory, refused to every work that has no repository of its own or serves another's.</summary>
+    private static readonly HashSet<string> MemoryChanges = new(["memory_end", "memory_write"], StringComparer.Ordinal);
 
     /// <summary>The ask's channel, which a helper and a reviewer do not have.</summary>
     private static readonly HashSet<string> Channel = new(["channel_post", "channel_read"], StringComparer.Ordinal);
@@ -93,9 +100,10 @@ public static class CallTable
             { Work: ParticipantWork.Partner } => Partner.Contains(name) ? null : Forbidden(Words.Partner(name)),
             // §7 row 11: a reviewer is served what its handed rules offer, on every door.
             { Work: ParticipantWork.Review } => Reviewer.Contains(name) ? null : Forbidden(Words.Reviewer(name)),
-            { Work: ParticipantWork.AskDaoris } => Ordinary(name, askDaoris: true),
+            { Work: ParticipantWork.AskDaoris } => Ordinary(name, askDaoris: true) ?? Unowned(name, "Ask Daoris"),
             { Work: ParticipantWork.Help } => Serving(name) ?? Channelled(name) ?? Ordinary(name),
-            { Work: ParticipantWork.Build or ParticipantWork.Design or ParticipantWork.Chat or ParticipantWork.Intake } => Ordinary(name),
+            { Work: ParticipantWork.Intake } => Ordinary(name) ?? Unowned(name, "an intake"),
+            { Work: ParticipantWork.Build or ParticipantWork.Design or ParticipantWork.Chat } => Ordinary(name),
             _ => Unknown(name, kind),
         };
     }
@@ -119,6 +127,16 @@ public static class CallTable
         Quests.Contains(name)
             ? Forbidden($"`{name}` is refused to a session that serves another: it publishes, takes and closes no quest. Say what you found in "
                         + "your answer to the session you serve.")
+            : MemoryChanges.Contains(name)
+                ? Forbidden($"`{name}` is refused to a session that serves another: it changes no repository's memory. Say what you found in "
+                            + "your answer to the session you serve.")
+                : null;
+
+    /// <summary>A memory change refused to a work that has no repository of its own (the memory coordinator design §2).</summary>
+    private static CallRefusal? Unowned(string name, string who) =>
+        MemoryChanges.Contains(name)
+            ? Forbidden($"`{name}` is refused to {who}: it works in no repository of its own, so it changes no repository's memory. Ask an "
+                        + "entry's owner with memory_propose. Nothing was kept.")
             : null;
 
     private static CallRefusal? Channelled(string name) =>

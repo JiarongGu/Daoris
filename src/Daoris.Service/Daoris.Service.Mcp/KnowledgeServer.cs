@@ -43,6 +43,8 @@ public static class KnowledgeServer
         typeof(LineTools),
         // One quest's handback read whole (HANDBACK1), by its id or its session's, in any state, from the session's own workspace.
         typeof(HandbackTools),
+        // A repository's memory (KNOWCENTRAL2b): read across the session's workspace, changed in its own repository, corrected by proposal.
+        typeof(MemoryTools),
         typeof(ChannelTools),
         typeof(OpinionTools),
         // A brainstorm pass's result tools (BRAINSTORM1a2), refused to every session the driver names no brainstorm turn for.

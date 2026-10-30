@@ -37,7 +37,10 @@ public sealed class ToolClassesTests
     public void The_table_is_the_note_s()
     {
         Assert.Equal(
-            ["handback_read", "knowledge_convergence", "knowledge_get", "knowledge_repositories", "knowledge_search", "line_read", "quest_list", "registry"],
+            [
+                "handback_read", "knowledge_convergence", "knowledge_get", "knowledge_repositories", "knowledge_search", "line_read", "memory_get",
+                "memory_search", "quest_list", "registry",
+            ],
             Advertised().Where(name => ToolClasses.Of(name) == ToolClass.Read));
         Assert.Equal(["quest_publish"], Advertised().Where(name => ToolClasses.Of(name) == ToolClass.Publish));
         Assert.All(
@@ -45,6 +48,7 @@ public sealed class ToolClassesTests
             {
                 "helper_ask", "channel_post", "quest_respond", "go_ahead_ask", "opinion_give", "permission_propose", "channel_read",
                 "helper_answer", "opinion_answer", "review_serve", "review_ready", "knowledge_refresh", "checkout_read", "housekeeping_inspect",
+                "memory_write", "memory_end", "memory_propose",
             }.Concat(Advertised().Where(name => name.EndsWith("_propose", StringComparison.Ordinal))),
             name => Assert.Equal(ToolClass.Restricted, ToolClasses.Of(name)));
     }

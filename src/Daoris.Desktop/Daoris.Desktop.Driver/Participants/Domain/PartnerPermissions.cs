@@ -17,7 +17,8 @@ public static class PartnerPermissions
     /// <summary>Its connector's tools it may call: the knowledge it reads, its lead's line, and its answer (the service's <c>CallTable.PartnerServed</c>).</summary>
     internal static readonly string[] Offered =
     [
-        "knowledge_convergence", "knowledge_get", "knowledge_repositories", "knowledge_search", "line_read", "partner_answer", "registry",
+        "knowledge_convergence", "knowledge_get", "knowledge_repositories", "knowledge_search", "line_read", "memory_get", "memory_search",
+        "partner_answer", "registry",
     ];
 
     /// <summary>Every other tool the connector offers, each denied by name: a partner asks nobody and acts on nothing outside its copy.</summary>

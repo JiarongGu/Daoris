@@ -1,5 +1,5 @@
 {
-  "_why": "FOUNDATION1r (D212; the foundation design §2.3): the call layer's table, every tool the connector registers against every column a named session is placed in. A column lists the tools it is served under `only`, or serves every registered tool `allBut` those it lists. McpRoleFilterTests holds CallTable to this file cell for cell over the host's registration, so a tool added later is refused to every column until it is classed and placed here. A connector naming no session (a person's own agent) is no column: it keeps its scope before the table. The brainstorm result tools, the channel and Ask Daoris's checkouts, housekeeping and settings are refused by their boxes too, which judge by the work alone and keep their checks as their store's guard. A reviewer's row is the driver's OpinionPermissions.Offered, a partner's PartnerPermissions.Offered, each voice's its turn's one result tool (the foundation design §7 row 11); unplaced and unread are served ToolClasses' reads (row 10).",
+  "_why": "FOUNDATION1r (D212; the foundation design §2.3): the call layer's table, every tool the connector registers against every column a named session is placed in. A column lists the tools it is served under `only`, or serves every registered tool `allBut` those it lists. McpRoleFilterTests holds CallTable to this file cell for cell over the host's registration, so a tool added later is refused to every column until it is classed and placed here. A connector naming no session (a person's own agent) is no column: it keeps its scope before the table. The brainstorm result tools, the channel and Ask Daoris's checkouts, housekeeping and settings are refused by their boxes too, which judge by the work alone and keep their checks as their store's guard. A reviewer's row is the driver's OpinionPermissions.Offered, a partner's PartnerPermissions.Offered, each voice's its turn's one result tool (the foundation design §7 row 11); unplaced and unread are served ToolClasses' reads (row 10). An intake and Ask Daoris work in no repository of their own, so they are refused memory_write and memory_end, and a helper memory_propose as it is refused a quest (KNOWCENTRAL2b; the memory coordinator design §2). Four permission sources in the driver move with this table: OpinionPermissions.Offered (the review row, and a helper's handed reads), PartnerPermissions.Offered (the partner row), BrainstormPermissions.ConnectorTools (every registered tool, each denied a pass but its turn's) and PermissionRules.Defaults (the connector tools a working session calls unprompted).",
   "columns": {
     "build": {
       "allBut": [
@@ -22,26 +22,29 @@
     "intake": {
       "allBut": [
         "brainstorm_give", "brainstorm_synthesize", "checkout_read", "housekeeping_clean_up", "housekeeping_discard_branch", "housekeeping_inspect",
-        "settings_cap", "settings_cooloff", "settings_language", "settings_notify", "settings_timeout"
+        "memory_end", "memory_write", "settings_cap", "settings_cooloff", "settings_language", "settings_notify", "settings_timeout"
       ]
     },
     "ask-daoris": {
-      "allBut": ["brainstorm_give", "brainstorm_synthesize"]
+      "allBut": ["brainstorm_give", "brainstorm_synthesize", "memory_end", "memory_write"]
     },
     "help": {
       "allBut": [
         "brainstorm_give", "brainstorm_synthesize", "channel_post", "channel_read", "checkout_read", "housekeeping_clean_up",
-        "housekeeping_discard_branch", "housekeeping_inspect", "quest_publish", "quest_respond", "settings_cap", "settings_cooloff",
-        "settings_language", "settings_notify", "settings_timeout"
+        "housekeeping_discard_branch", "housekeeping_inspect", "memory_end", "memory_propose", "memory_write", "quest_publish", "quest_respond",
+        "settings_cap", "settings_cooloff", "settings_language", "settings_notify", "settings_timeout"
       ]
     },
     "partner": {
-      "only": ["knowledge_convergence", "knowledge_get", "knowledge_repositories", "knowledge_search", "line_read", "partner_answer", "registry"]
+      "only": [
+        "knowledge_convergence", "knowledge_get", "knowledge_repositories", "knowledge_search", "line_read", "memory_get", "memory_search",
+        "partner_answer", "registry"
+      ]
     },
     "review": {
       "only": [
-        "handback_read", "knowledge_convergence", "knowledge_get", "knowledge_repositories", "knowledge_search", "opinion_give", "quest_list",
-        "registry"
+        "handback_read", "knowledge_convergence", "knowledge_get", "knowledge_repositories", "knowledge_search", "memory_get", "memory_search",
+        "opinion_give", "quest_list", "registry"
       ]
     },
     "brainstorm:generator": {
@@ -52,14 +55,14 @@
     },
     "unplaced": {
       "only": [
-        "handback_read", "knowledge_convergence", "knowledge_get", "knowledge_repositories", "knowledge_search", "line_read", "quest_list",
-        "registry"
+        "handback_read", "knowledge_convergence", "knowledge_get", "knowledge_repositories", "knowledge_search", "line_read", "memory_get",
+        "memory_search", "quest_list", "registry"
       ]
     },
     "unread": {
       "only": [
-        "handback_read", "knowledge_convergence", "knowledge_get", "knowledge_repositories", "knowledge_search", "line_read", "quest_list",
-        "registry"
+        "handback_read", "knowledge_convergence", "knowledge_get", "knowledge_repositories", "knowledge_search", "line_read", "memory_get",
+        "memory_search", "quest_list", "registry"
       ]
     }
   }

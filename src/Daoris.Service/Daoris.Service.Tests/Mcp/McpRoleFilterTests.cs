@@ -102,11 +102,36 @@ public sealed class McpRoleFilterTests : McpToolsFixture
         }
     }
 
+    /// <summary>
+    /// 🔴 KNOWCENTRAL2b (the memory coordinator design §2): the table's file names the driver's four permission sources that move with it,
+    /// each a list in the driver's code, so a tool placed here is placed there in the same change.
+    /// </summary>
+    [Fact]
+    public void The_tables_file_names_the_four_permission_sources_that_move_with_it()
+    {
+        using var table = JsonDocument.Parse(File.ReadAllText(CallTableFile()));
+        var why = table.RootElement.GetProperty("_why").GetString()!;
+
+        foreach (var (file, owner, list) in new[]
+        {
+            ("OpinionPermissions.cs", "OpinionPermissions", "Offered"), ("PartnerPermissions.cs", "PartnerPermissions", "Offered"),
+            ("BrainstormPermissions.cs", "BrainstormPermissions", "ConnectorTools"), ("Permissions.cs", "PermissionRules", "Defaults"),
+        })
+        {
+            Assert.Contains($"{owner}.{list}", why);
+            var source = File.ReadAllText(SourceFiles.Driver(file));
+            Assert.Contains($"class {owner}", source);
+            Assert.Matches($@"\b{list}\s*(\{{\s*get;\s*\}})?\s*=", source);
+        }
+    }
+
+    private static string CallTableFile() =>
+        Path.Combine(SourceFiles.WorkspaceFolder(), "src", "Daoris.Service", "Daoris.Service.Tests", "fixtures", "call-table.json");
+
     /// <summary>The table's rows as the fixture names them: a column's served tools, or every tool but those listed.</summary>
     private static Dictionary<string, (string[]? Only, string[]? AllBut)> CallTableRows()
     {
-        using var file = JsonDocument.Parse(File.ReadAllText(
-            Path.Combine(SourceFiles.WorkspaceFolder(), "src", "Daoris.Service", "Daoris.Service.Tests", "fixtures", "call-table.json")));
+        using var file = JsonDocument.Parse(File.ReadAllText(CallTableFile()));
         string[]? Names(JsonElement row, string list) =>
             row.TryGetProperty(list, out var names) ? [.. names.EnumerateArray().Select(name => name.GetString()!)] : null;
 

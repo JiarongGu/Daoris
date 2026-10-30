@@ -222,6 +222,23 @@ public sealed partial class McpToolDescriptionTests
             parameter => parameter.Name == "lines" && parameter.HasDefaultValue);
     }
 
+    /// <summary>
+    /// KNOWCENTRAL2b (the memory coordinator design §2, §4): the memory reads say they change nothing, an end that it waits for its approver
+    /// and that another repository's entry is proposed instead, and a proposal that it reaches the owner as a quest.
+    /// </summary>
+    [Fact]
+    public void The_memory_tools_say_a_read_changes_nothing_and_a_change_waits_on_its_owner()
+    {
+        string Of(string tool) => string.Join(" ", Descriptions().Where(d => d.Tool == tool).Select(d => d.Text));
+
+        Assert.Contains("Read-only", Of("memory_search"));
+        Assert.Contains("Read-only", Of("memory_get"));
+        Assert.Contains("approver", Of("memory_end"));
+        Assert.Contains("memory_propose", Of("memory_end"));
+        Assert.Contains("the repository this session works in", Of("memory_write"));
+        Assert.Contains("quest", Of("memory_propose"));
+    }
+
     /// <summary>A server over one checkout says a reading may be a hit's lines, not only an entry whole.</summary>
     [Fact]
     public void A_server_over_one_checkout_says_the_reader_takes_a_hit_s_lines()

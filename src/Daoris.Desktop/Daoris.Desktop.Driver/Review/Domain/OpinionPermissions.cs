@@ -24,13 +24,14 @@ public static class OpinionPermissions
     private const string Connector = $"mcp__{KnowledgeConnector.ServerName}__";
 
     /// <summary>
-    /// Its connector's tools it may call: the knowledge it reads, the quests it reads and their handbacks (HANDBACK1), and its one say.
-    /// The service's <c>CallTable.ReviewerServed</c> serves a reviewer the same on every door, held to this list by its tests.
+    /// Its connector's tools it may call: the knowledge it reads, the quests it reads and their handbacks (HANDBACK1), a repository's
+    /// memory it reads (KNOWCENTRAL2b), and its one say. The service's <c>CallTable.ReviewerServed</c> serves a reviewer the same on every
+    /// door, held to this list by its tests.
     /// </summary>
     private static readonly string[] Offered =
     [
         "registry", "knowledge_search", "knowledge_get", "knowledge_repositories", "knowledge_convergence", "quest_list", "handback_read",
-        "opinion_give",
+        "memory_search", "memory_get", "opinion_give",
     ];
 
     /// <summary>
@@ -39,13 +40,14 @@ public static class OpinionPermissions
     /// no helper, and is none), the ask's channel (SESSONE2b, D167 point 7: each answers one question, and the service refuses both
     /// it anyway), an ask to hand over (MIXAGENT1c: a reviewer and a helper answer one question and go on with nobody), a line's
     /// history (SESSCTX1f: neither continues another session, and the record it would read is the working session's), the
-    /// machine's own index rebuild, and a park's question (PARKVIEW1: neither parks, and the service refuses both it anyway).
+    /// machine's own index rebuild, a park's question (PARKVIEW1: neither parks, and the service refuses both it anyway), and a change to
+    /// a repository's memory or a proposal of one (KNOWCENTRAL2b: neither keeps memory, and a proposal is a quest).
     /// </summary>
     private static readonly string[] Acting =
     [
         "quest_respond", "quest_publish", "go_ahead_ask", "permission_propose", "review_serve", "review_ready", "opinion_answer",
         "helper_ask", "helper_answer", "partner_answer", "channel_post", "channel_read", "handover_propose", "line_read", "knowledge_refresh",
-        "question_ask",
+        "question_ask", "memory_write", "memory_end", "memory_propose",
     ];
 
     /// <summary>What it reads its history with: git's reading commands, and the <c>cd</c> an agent prefixes one with.</summary>

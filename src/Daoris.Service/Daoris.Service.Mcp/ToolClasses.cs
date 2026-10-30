@@ -19,7 +19,8 @@ public enum ToolClass
 /// it is given one here.
 /// </summary>
 /// <remarks>
-/// The note's reads, and <c>line_read</c> and <c>handback_read</c>, added since, which read records and move nothing.
+/// The note's reads, and <c>line_read</c> and <c>handback_read</c>, added since, which read records and move nothing, and
+/// <c>memory_search</c> and <c>memory_get</c>, which open every engine with no reinforcement (KNOWCENTRAL2b).
 /// <c>channel_read</c> is restricted because it moves the parent's read mark, <c>knowledge_refresh</c> because it rebuilds the
 /// index every session shares, and <c>checkout_read</c> and <c>housekeeping_inspect</c> because they read under a person's grant
 /// to the session. Every <c>*_propose</c> is restricted by its suffix.
@@ -39,6 +40,8 @@ public static class ToolClasses
         ["quest_list"] = ToolClass.Read,
         ["line_read"] = ToolClass.Read,
         ["handback_read"] = ToolClass.Read,
+        ["memory_search"] = ToolClass.Read,
+        ["memory_get"] = ToolClass.Read,
         ["quest_publish"] = ToolClass.Publish,
         ["quest_respond"] = ToolClass.Restricted,
         ["helper_ask"] = ToolClass.Restricted,
@@ -64,6 +67,8 @@ public static class ToolClasses
         ["settings_language"] = ToolClass.Restricted,
         ["settings_notify"] = ToolClass.Restricted,
         ["settings_timeout"] = ToolClass.Restricted,
+        ["memory_write"] = ToolClass.Restricted,
+        ["memory_end"] = ToolClass.Restricted,
     };
 
     /// <summary>The reads, which a refusal names as what remains.</summary>
