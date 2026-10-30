@@ -29,7 +29,12 @@ internal sealed class PluginTrialProcess : IDisposable
     /// The kit's stand-in world (FABRIC-PERFORM1e, <see cref="PluginCycles.World"/>): a file answering in a working plugin's platform's place,
     /// so a trial's attempt reaches nothing. Null where nothing it is sent can reach a platform's work.
     /// </param>
-    public static async Task<PluginTrialProcess> StartAsync(PluginEntry entry, string home, string? noRepositoryAt, CancellationToken ct, string? world = null)
+    /// <param name="machineHome">
+    /// The machine's home, whose install holds the launcher and whose log says the start (PLUGINTRYJOB1); never the scratch <paramref name="home"/>
+    /// a folder's plugin is told. Defaults to <paramref name="home"/>, which is the machine's for an installed plugin.
+    /// </param>
+    public static async Task<PluginTrialProcess> StartAsync(
+        PluginEntry entry, string home, string? noRepositoryAt, CancellationToken ct, string? world = null, string? machineHome = null)
     {
         var info = HookProcess.StartInfo(entry, home);
         if (noRepositoryAt is not null)
@@ -41,7 +46,7 @@ internal sealed class PluginTrialProcess : IDisposable
         if (world is not null) info.Environment[PluginCycles.World] = world;
 
         // Through the launcher (TERMTRUST1a, D201 point 4), as the driver starts the plugin: born in this process's agents' job.
-        return new(await AgentStarts.StartAsync(info, ContainedKind.Plugin, StartClass.Person, home, log: null, ct).ConfigureAwait(false)
+        return new(await AgentStarts.StartAsync(info, ContainedKind.Plugin, StartClass.Person, machineHome ?? home, log: null, ct).ConfigureAwait(false)
             ?? throw new Win32Exception("the process did not start"));
     }
 

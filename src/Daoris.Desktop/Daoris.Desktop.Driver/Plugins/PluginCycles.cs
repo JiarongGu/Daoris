@@ -127,7 +127,7 @@ public static class PluginCycles
             var told = Path.Combine(scratch, "home");
             PluginFolders.Make(told);
             PluginFolders.Make(data);
-            var cycle = new Cycle(new PluginEntry(manifest, full, data, Enabled: true, problem), told, scratch, fixture);
+            var cycle = new Cycle(new PluginEntry(manifest, full, data, Enabled: true, problem), told, scratch, fixture, home);
             return await cycle.RunAsync(ct).ConfigureAwait(false);
         }
         finally
@@ -150,7 +150,7 @@ public static class PluginCycles
     }
 
     /// <summary>One cycle's run: its steps, the plugin's words, and each life of its process.</summary>
-    private sealed class Cycle(PluginEntry entry, string told, string scratch, CycleFixture fixture)
+    private sealed class Cycle(PluginEntry entry, string told, string scratch, CycleFixture fixture, string machineHome)
     {
         private readonly List<TrialStep> _steps = [];
         private readonly List<string> _said = [];
@@ -350,7 +350,7 @@ public static class PluginCycles
             PluginTrialProcess process;
             try
             {
-                process = await PluginTrialProcess.StartAsync(entry, told, noRepositoryAt: scratch, ct, world: _world).ConfigureAwait(false);
+                process = await PluginTrialProcess.StartAsync(entry, told, noRepositoryAt: scratch, ct, world: _world, machineHome: machineHome).ConfigureAwait(false);
             }
             catch (DriverException error)
             {

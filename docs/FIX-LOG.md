@@ -5,6 +5,13 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-31 - A folder's plugin trial started outside the agents' job (PLUGINTRYJOB1)
+
+- **Symptom:** `plugins try <folder>` started `node` and its children uncontained; `contained: false` went to a log then deleted.
+- **Root cause:** `PluginTrialProcess.StartAsync` gave `AgentStarts` the plugin's scratch home, so `PieceStarts.LauncherPath` found no `app/bin` and the log was the scratch's.
+- **Fix:** a `machineHome` (the trial's `toolsHome`) names the launcher and the log; the plugin is still told the scratch home.
+- **Verify:** `AgentStartsProcessTests`' folder trial, red before.
+
 ## 2026-10-31 - A candidate's failing gate read as split under load: its log was read as empty
 
 - **Symptom:** `IntegrationVerdictProcessTests`' no-runner case answered `split`, not `hand back`, in the Process half; alone it passed.
