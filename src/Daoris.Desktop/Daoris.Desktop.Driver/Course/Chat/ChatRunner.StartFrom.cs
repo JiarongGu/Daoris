@@ -60,7 +60,7 @@ public static class StartFrom
         ServiceClient service, string home, SessionEvents events, SessionOutput? output, string id,
         Func<string, MoveWords, CancellationToken, Task<ChatStart>> start,
         Func<string, string, IReadOnlyList<ChatUpload>, string, IReadOnlyList<SessionEvent>?, bool> say,
-        CancellationToken ct = default)
+        CancellationToken ct = default, Action<string, LineCourse>? decided = null)
     {
         var json = await service.SessionRecordsJsonAsync(ct).ConfigureAwait(false);
         var record = SessionRecords.Parse(json).FirstOrDefault(each => string.Equals(each.Id, id, StringComparison.Ordinal));
@@ -70,50 +70,60 @@ public static class StartFrom
         var next = WordsNever.ContinuedIn(json, id);
         // Ask Daoris's own conversation has no repository to start one in (ASKHIST1): its words go on in itself, or its history
         // starts a new one from it.
-        switch (WordsNever.Judge(record, last, next) ?? (WordsNever.IsHelp(record) ? WordsNever.Help : null))
+        var never = WordsNever.Judge(record, last, next) ?? (WordsNever.IsHelp(record) ? WordsNever.Help : null);
+        var prior = ServiceClient.ReadRecord(json, id);
+
+        // The quest of a closed session is read only where nothing before it refused, as it was.
+        string? questStatus = null;
+        if (never is null && !record.Live && prior is { WordsWaiting: true } && record.Kind != "chat" && record.Quest is { } quest)
         {
-            // HANDWORDS1: a conversation handed over or moved went on in another, which takes its words; no new one starts from them.
-            case WordsNever.Continued:
-                return Refused(WordsNever.Continued, WordsNever.WentOn(id, next!));
-            case WordsNever.Teammate:
-                return Refused(WordsNever.Teammate, $"{id} ran on {id[..id.IndexOf('/')]}, where its words are; nothing here takes them.");
-            case WordsNever.Help:
-                return Refused(WordsNever.Help,
-                    $"{id} is Ask Daoris's own conversation, which no repository holds: its words go on in it, or Ask Daoris's history "
-                    + "starts a new conversation from it.");
-            case WordsNever.Intake:
-                return Refused(WordsNever.Intake, $"{id} is an intake; answer its ask #{record.Ask} instead: publish it or close it.");
-            case WordsNever.StoodDown:
-                return Refused(WordsNever.StoodDown, $"it stood down: #{record.Quest} is someone else's, so it keeps no words to start with.");
-            case WordsNever.Superseded:
-                return Refused(WordsNever.Superseded, $"#{record.Quest} went on in a later session here, {last}, and its words go there.");
+            questStatus = (await service.FindQuestAsync(quest, ct).ConfigureAwait(false))?.Status;
         }
 
-        if (record.Live)
+        // FOUNDATION1h branch 8 (the foundation design §3.1, §14.2): what the record is, its words and its quest are read into the course, which
+        // decides for CourseTrigger.StartFrom; each refusal is said by the code and sentence it has always had, and the words that go are the
+        // course's (the person's alone, D212's difference 1).
+        var facts = new CourseFacts(
+            new CourseHead(
+                record.State, Conversation: record.Kind == "chat" || record.Quest is null, Teammate: never == WordsNever.Teammate,
+                Intake: never == WordsNever.Intake, StoodDown: never == WordsNever.StoodDown,
+                SupersededBy: never == WordsNever.Superseded ? last ?? "" : never == WordsNever.Continued ? next ?? "" : null,
+                Waiting: [.. (prior?.Waiting ?? []).Select(word => new CourseWord(word.Id ?? "", BriefedMove.AuthorOf(word), word.Key))],
+                Session: id, QuestStatus: questStatus, AskDaoris: never == WordsNever.Help),
+            record.Live ? CourseBoundary.TurnRunning : CourseBoundary.ProcessExited,
+            Press: new CoursePress(CoursePressKind.StartFrom, Intent: id));
+        var course = CourseDecision.Decide(facts, CourseTrigger.StartFrom);
+        decided?.Invoke(id, course);
+        if (course is not LineCourse.Start fresh)
         {
-            return Refused(Running, $"{id} is {record.State}: words reach it there, so it needs no new conversation.");
-        }
+            var code = course switch
+            {
+                LineCourse.Never => never,
+                LineCourse.Hold { Why: CourseHoldWhy.Refused, Code: { } refused } => refused,
+                _ => NoWords,
+            };
+            if (code == Running) return Refused(Running, $"{id} is {record.State}: words reach it there, so it needs no new conversation.");
+            if (code == Carried)
+            {
+                return Refused(Carried, $"#{record.Quest} is {questStatus!.ToLowerInvariant()}, so the driver carries these words on with it by itself.");
+            }
 
-        if (ServiceClient.ReadRecord(json, id) is not { WordsWaiting: true } prior)
-        {
-            return Refused(NoWords, $"no words wait on {id} to start a conversation with.");
-        }
+            if (code == NoWords)
+            {
+                return Refused(
+                    NoWords,
+                    prior is { WordsWaiting: true }
+                        ? $"only another agent's answer waits on {id}, which goes on in its own conversation and is never a new one's words."
+                        : $"no words wait on {id} to start a conversation with.");
+            }
 
-        if (record.Kind != "chat" && record.Quest is { } quest
-            && await service.FindQuestAsync(quest, ct).ConfigureAwait(false) is { Status: "Open" or "Taken" } serving)
-        {
-            return Refused(Carried,
-                $"#{quest} is {serving.Status.ToLowerInvariant()}, so the driver carries these words on with it by itself.");
+            return NeverWords(code, id, record, last, next);
         }
 
         // Another agent's claims (a helper's answer, MIXAGENT2a-iii; a second opinion's findings) are never the person's words: a new
-        // conversation is handed only the person's, and where none wait there is nothing to start one with. The claims stay on the
-        // record, for the conversation they were meant for.
-        var words = prior.Waiting.Where(word => word.Persons).ToList();
-        if (words.Count == 0)
-        {
-            return Refused(NoWords, $"only another agent's answer waits on {id}, which goes on in its own conversation and is never a new one's words.");
-        }
+        // conversation is handed only the person's, which the course names; the claims stay on the record, for the conversation they were meant for.
+        var wanted = fresh.Words.Ids.ToHashSet(StringComparer.Ordinal);
+        var words = prior!.Waiting.Where(word => wanted.Contains(word.Id ?? "")).ToList();
 
         // FOUNDATION1d-ii part 4: the start's open moves the person's words, and any of theirs kept here since this read, in its own step.
         var started = await start(
@@ -257,4 +267,19 @@ public static class StartFrom
     }
 
     private static StartedFrom Refused(string why, string message) => new(null, false, why, message);
+
+    /// <summary>What never goes on, refused by its code with the sentence each always had (D137 §2.2).</summary>
+    private static StartedFrom NeverWords(string? code, string id, SessionRecord record, string? last, string? next) => code switch
+    {
+        // HANDWORDS1: a conversation handed over or moved went on in another, which takes its words; no new one starts from them.
+        WordsNever.Continued => Refused(WordsNever.Continued, WordsNever.WentOn(id, next!)),
+        WordsNever.Teammate => Refused(WordsNever.Teammate, $"{id} ran on {id[..id.IndexOf('/')]}, where its words are; nothing here takes them."),
+        WordsNever.Help => Refused(
+            WordsNever.Help,
+            $"{id} is Ask Daoris's own conversation, which no repository holds: its words go on in it, or Ask Daoris's history "
+            + "starts a new conversation from it."),
+        WordsNever.Intake => Refused(WordsNever.Intake, $"{id} is an intake; answer its ask #{record.Ask} instead: publish it or close it."),
+        WordsNever.StoodDown => Refused(WordsNever.StoodDown, $"it stood down: #{record.Quest} is someone else's, so it keeps no words to start with."),
+        _ => Refused(WordsNever.Superseded, $"#{record.Quest} went on in a later session here, {last}, and its words go there."),
+    };
 }

@@ -48,6 +48,25 @@ public sealed class ChatGoOnTests : IDisposable
             throw new InvalidOperationException("a judgement test spawns nothing");
     }
 
+    /// <summary>What the course answered each go-on, by session (FOUNDATION1h branch 7), heard from the runner's go-on.</summary>
+    private static List<(string Session, LineCourse Answer)> Deciding(ChatRunner runner)
+    {
+        var decided = new List<(string Session, LineCourse Answer)>();
+        runner.GoOn.Decided += (session, answer) =>
+        {
+            lock (decided) decided.Add((session, answer));
+        };
+        return decided;
+    }
+
+    private static string Said(LineCourse answer) => answer switch
+    {
+        LineCourse.Wait wait => $"wait:{wait.Why}",
+        LineCourse.Hold hold => $"hold:{hold.Why}:{hold.Code}",
+        LineCourse.Move move => $"move:{move.Why}",
+        _ => answer.GetType().Name,
+    };
+
     private ChatRunner Runner(ChatLedger ledger, SessionEvents events, List<AccountLine>? lines = null)
     {
         var adapters = new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
@@ -166,10 +185,13 @@ public sealed class ChatGoOnTests : IDisposable
         AccountCooling.Cool(_home, new CoolingEntry("stub", "account-1", until, true, "session", DateTimeOffset.UtcNow, "s0"), DateTimeOffset.UtcNow);
         var events = Events;
         using var runner = Runner(ledger, events);
+        var decided = Deciding(runner);
 
         events.Append("c1", Shown("w1", "Also log the port."));
 
         var held = await NoteAsync(events, "c1", e => e.Text?.Contains("does not go on yet") == true);
+        // FOUNDATION1h branch 7: the course's answer is the wait, for the account's reset.
+        Assert.Equal(("c1", "wait:AccountCooling"), Assert.Single(decided) is var (session, answer) ? (session, Said(answer)) : default);
         Assert.Contains("the `stub` account `account-1` is cooling until", held.Text);
         Assert.Contains("its conversation is on that account, so your words wait to go on in it then.", held.Text);
         Assert.EndsWith("`daoris-driver sessions start-from c1`.", held.Text);
@@ -196,10 +218,13 @@ public sealed class ChatGoOnTests : IDisposable
         new HarnessConversations(_home).Keep("c1", "acp-stub", "conv-c1");
         var events = Events;
         using var runner = Runner(ledger, events);
+        var decided = Deciding(runner);
 
         events.Append("c1", Shown("w1", "Also log the port."));
 
         var cannot = await NoteAsync(events, "c1", e => e.Why is not null);
+        // FOUNDATION1h branch 7: the course's answer is a hold, cannot go on, by the account's code.
+        Assert.Equal(("c1", "hold:CannotGoOn:account"), Assert.Single(decided) is var (session, answer) ? (session, Said(answer)) : default);
         Assert.Equal(ContinueWhy.Account, cannot.Why);
         Assert.Equal(["w1"], cannot.Words!);
         Assert.EndsWith("this start runs on another. That account is not on this machine any more.", cannot.Text);
@@ -478,10 +503,13 @@ public sealed class ChatGoOnTests : IDisposable
         using var runner = Runner(ledger, events);
         var ended = new List<(string Session, string State)>();
         runner.TakenUpEnded += (session, state) => { lock (ended) ended.Add((session, state)); };
+        var decided = Deciding(runner);
 
         events.Append("c1", Shown("w3", "Another agent says five.") with { Origin = "target", Helper = "h1" });
 
         var held = await NoteAsync(events, "c1", e => e.Parts?.Any(part => part.Code == NoteCodes.AnswersHeld.Code) == true);
+        // FOUNDATION1h branch 7: the course's answer is the answers-alone hold, which offers the person's three doors.
+        Assert.Equal(("c1", "hold:AnswersAlone:answers-alone"), Assert.Single(decided) is var (session, answer) ? (session, Said(answer)) : default);
         Assert.Equal(["w3"], held.Words!);
         Assert.Equal((GoOnMarks.AnswersAlone, "codex-acp"), (new GoOnMarks(_home).Read("c1")!.Why, new GoOnMarks(_home).Read("c1")!.Agent));
         Assert.Empty(ledger.Moves("c1"));

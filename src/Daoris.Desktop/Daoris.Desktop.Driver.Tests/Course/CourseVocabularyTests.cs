@@ -160,6 +160,19 @@ public sealed class CourseVocabularyTests
         ["Course/HandOver/HandOver.cs"] = "FOUNDATION1h branch 3: a conversation's hand-over",
         ["Course/Chat/ChatHandOver.cs"] = "FOUNDATION1h branch 3: the chat runner's adapter of it",
         ["Course/Chat/BriefedMove.cs"] = "FOUNDATION1h branch 4: the briefed move",
+        ["Course/GoOn/DrivenCourse.cs"] = "FOUNDATION1i: the driven paths' facts and answers",
+        ["Loop/Driver.cs"] = "FOUNDATION1i path 1: the driven go-on's resume and the limit resume",
+        ["Loop/DriverContinuations.cs"] = "FOUNDATION1i path 1: the driven go-on",
+        ["Loop/DriverHandOvers.cs"] = "FOUNDATION1i path 2: a quest's hand-over, its consent handed in as a fact",
+        ["Course/HandOver/HandOverQuest.cs"] = "FOUNDATION1i path 2: a quest's hand-over",
+        ["WorkOrders/Domain/Planner.cs"] = "FOUNDATION1i path 4: what follows a transient bound",
+        ["Loop/OpinionDeliverer.cs"] = "FOUNDATION1i path 5: the findings sent back to a driven record",
+        ["Course/Chat/LimitMove.cs"] = "FOUNDATION1h branch 5: the live and ended limit moves",
+        ["Course/Chat/LimitWaits.cs"] = "FOUNDATION1h branch 6: the limit's wake",
+        ["Course/Chat/ChatGoOn.cs"] = "FOUNDATION1h branch 7: the conversation's go-on",
+        ["Course/Chat/ChatHelperWords.cs"] = "FOUNDATION1h branch 7: the helper's go-on",
+        ["Course/Chat/ChatRunner.StartFrom.cs"] = "FOUNDATION1h branch 8: start-from",
+        ["Course/Chat/StartWith.cs"] = "FOUNDATION1h branch 8: start-with",
     };
 
     /// <summary>

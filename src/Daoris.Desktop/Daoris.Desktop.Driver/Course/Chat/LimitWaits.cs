@@ -33,6 +33,9 @@ internal sealed class LimitWaits(ChatContext context, LimitMove move, ChatGoOn g
     private string? _stamp;
     private DateTimeOffset? _due;
 
+    /// <summary>What the course answered each wake, by session (FOUNDATION1h branch 6): a test hears it; no person reads it.</summary>
+    internal event Action<string, LineCourse>? Decided;
+
     /// <summary>How many times the stage asked the service anything: a test holds that a look with no wait come asks nothing.</summary>
     internal int Asked { get; private set; }
 
@@ -185,13 +188,28 @@ internal sealed class LimitWaits(ChatContext context, LimitMove move, ChatGoOn g
         // wake's move and its ended move walk for themselves, and the one walk this stage judges is the go-on's (FOUNDATION1a-i).
         // An account the person picked is the rule's constraint (FOUNDATION1a-ii): it waits for that account alone (D205 §3.5(d)).
         var picked = context.Conversations.PickedOn(session, record.Profile);
-        var resumes = LineAccount.Decide(
+        var answer = LineAccount.Decide(
             LineOwn.Of(own), new LineTrigger(Limited: limited is not null), picked ? LineConstraint.Pick(record.Profile!) : LineConstraint.None,
             LineKind.Conversation(carries: false),
-            ask => throw new InvalidOperationException($"the wake asks no {ask.Place} walk of the account rule")) is LineAnswer.Resume;
-        if (resumes)
+            ask => throw new InvalidOperationException($"the wake asks no {ask.Place} walk of the account rule"));
+
+        // FOUNDATION1h branch 6 (the foundation design §3.1): the wake is the course's answer for CourseTrigger.LimitWake, read over the rule's
+        // answer as above. Its own account ready, it resumes; a picked account cooling, it waits for that account alone. Where another account
+        // might free first, the course reads no walk, so the executor goes on to the move, which walks for itself (a reading, not a change).
+        var until = context.Harnesses.Clock();
+        var course = CourseDecision.Decide(
+            new CourseFacts(
+                new CourseHead(
+                    record.State, Limited: limited is not null || live, Role: record.Actor ?? "chat", Choice: record.Choice, Adapter: adapter,
+                    Profile: record.Profile, Conversation: true, AskDaoris: string.Equals(record.Repository, KnowledgeRoomIdentity.Repository, StringComparison.OrdinalIgnoreCase),
+                    Waiting: [.. record.Waiting.Select(word => new CourseWord(word.Id ?? "", BriefedMove.AuthorOf(word), word.Key))], Session: session,
+                    Tree: record.Tree),
+                live ? CourseBoundary.BetweenTurns : CourseBoundary.ProcessExited,
+                Account: new CourseAccount(Answer: answer, Picked: picked), Limit: new CourseLimit(Woke: until)),
+            CourseTrigger.LimitWake);
+        Decided?.Invoke(session, course);
+        if (course is LineCourse.Resume)
         {
-            var until = context.Harnesses.Clock();
             ChatStart start;
             if (live)
             {

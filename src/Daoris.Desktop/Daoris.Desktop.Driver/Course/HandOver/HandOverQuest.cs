@@ -101,9 +101,10 @@ public static class QuestHandOver
     /// <param name="moves">The driven holder, its scope the lease holder's, whose store the move is decided in.</param>
     public static async Task<HandOverAnswer> AskAsync(
         ServiceClient service, ConversationMoves moves, Func<string, HandOverAgent?> drives, string id, string agent, string? account,
-        string why, string askedBy, CancellationToken ct = default)
+        string why, string askedBy, CancellationToken ct = default, CourseRules? consent = null, Action<LineCourse>? decided = null)
     {
-        var (refused, _) = await JudgeAsync(service, drives, id, agent, account, ct, agentAsk: askedBy == HandOverBy.Agent).ConfigureAwait(false);
+        var (refused, _) = await JudgeAsync(
+            service, drives, id, agent, account, ct, agentAsk: askedBy == HandOverBy.Agent, askedWhy: why, consent: consent, decided: decided).ConfigureAwait(false);
         if (refused is not null) return refused;
 
         var named = string.IsNullOrWhiteSpace(account) ? null : account.Trim();
@@ -133,9 +134,15 @@ public static class QuestHandOver
     /// The session's own agent asked (MIXAGENT1c): a park it ended its turn on is that ask's, not a question for the person, so it is
     /// handed over rather than refused <see cref="HandOver.Parked"/>.
     /// </param>
+    /// <param name="askedWhy">The ask's reason, one of <see cref="HandOverWhy"/>.</param>
+    /// <param name="consent">
+    /// The hand-over rule's consent for an agent's ask, as the door that judged it says it (<see cref="HandOver.ConsentOf"/>, FOUNDATION1i):
+    /// the course admits an agent's ask only where <c>on</c> let it go, puts it to the person under <c>ask</c> and refuses it otherwise.
+    /// </param>
+    /// <param name="decided">Told the course's answer for what the executor let through: a test's, no person's.</param>
     public static async Task<(HandOverAnswer? Refused, PriorSession? Prior)> JudgeAsync(
         ServiceClient service, Func<string, HandOverAgent?> drives, string id, string agent, string? account, CancellationToken ct = default,
-        bool agentAsk = false)
+        bool agentAsk = false, string askedWhy = HandOverWhy.Press, CourseRules? consent = null, Action<LineCourse>? decided = null)
     {
         var json = await service.SessionRecordsJsonAsync(ct).ConfigureAwait(false);
         var record = SessionRecords.Parse(json).FirstOrDefault(each => string.Equals(each.Id, id, StringComparison.Ordinal));
@@ -213,7 +220,27 @@ public static class QuestHandOver
                   + "a session there would have no connector to take the quest with."), null);
         }
 
-        return (null, prior);
+        // FOUNDATION1i path 2: what the executor alone knows is refused above; whether the session goes is the course's, over the consent
+        // the door that judged an agent's ask handed in.
+        // A move now for the person's press, which stops it as their stop, and at the turn's end for the agent's ask of a session that runs.
+        var course = CourseDecision.Decide(
+            new CourseFacts(
+                DrivenCourse.HeadOf(prior, found.Status) with { AgentGone = AgentGone(prior.Adapter, drives) },
+                record.Live ? CourseBoundary.TurnRunning : CourseBoundary.ProcessExited,
+                Press: new CoursePress(
+                    CoursePressKind.HandOver, agent, named, Why: CourseFrom.WhyOf(askedWhy), By: agentAsk ? CourseFromBy.Agent : CourseFromBy.Person),
+                Rules: consent),
+            CourseTrigger.HandOver);
+        decided?.Invoke(course);
+        return course switch
+        {
+            LineCourse.Move => (null, prior),
+            LineCourse.Hold { Why: CourseHoldWhy.ConsentRefused, Doors.Count: > 0 } => (HandOver.Refused(
+                HandOver.AwaitsYes, "its agent's ask waits for the person's yes first: the look keeps it, and nothing is kept here."), null),
+            LineCourse.Hold { Why: CourseHoldWhy.ConsentRefused } => (HandOver.Refused(HandOverAskWhy.Off, HandOverAskWhy.Said(HandOverAskWhy.Off)), null),
+            LineCourse.Hold { Code: { } code } => (HandOver.Refused(code, $"{id} cannot be handed over."), null),
+            _ => (HandOver.Refused(HandOverAskWhy.Cannot, $"{id} cannot be handed over."), null),
+        };
     }
 
     /// <summary>Whether the agent a record ran on is one this machine no longer drives: named, and not in the roster.</summary>
