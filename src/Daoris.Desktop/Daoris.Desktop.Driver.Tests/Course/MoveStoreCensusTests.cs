@@ -4,9 +4,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1f-i part 1 (D212; the foundation design §10's row 1f-i): the move record is read by nothing. No production source names a type
-/// the move store's two files declare, but the one wiring through which the workplace's delete takes a record's moves with it: rows f-ii to
-/// f-vi, h and i adopt it, so until then Daoris works exactly as before. A source that names it is a row's adoption, and moves this check.
+/// FOUNDATION1f-i part 1 (D212; the foundation design §10's row 1f-i): the move record's readers, each a row's adoption. Until row f-ii none
+/// but the one wiring through which the workplace's delete takes a record's moves with it; since FOUNDATION1f-ii part a the conversations'
+/// holder and the live limit move, which writes its move through it. A source that names a type the move store's files declare is a row's
+/// adoption, and moves this check.
 /// </summary>
 /// <remarks>Not a twin of <see cref="CourseVocabularyTests"/>' check of the course's vocabulary (<c>twins.md</c>): it shares that check's shape and reads other files.</remarks>
 public sealed class MoveStoreCensusTests
@@ -26,13 +27,19 @@ public sealed class MoveStoreCensusTests
     /// <summary>The importers, which only rows f-v and f-vi may call: importing a box sets it aside from today's readers, which still own it.</summary>
     private static readonly string[] Importers = ["LimitBoxImport", "HandOverBoxImport", "MoveBoxImport"];
 
-    /// <summary>The one production reader allowed: the workplace's delete port, opened over a home.</summary>
+    /// <summary>The workplace's delete port, opened over a home: the first production reader, row f-i's.</summary>
     private const string Wiring = "Course/WorkplaceMoveRecordsWiring.cs";
+
+    /// <summary>The conversations' holder (FOUNDATION1f-ii part a): the store, the said door and the take-up a shell's conversation moves go through.</summary>
+    private const string Conversations = "Course/ConversationMoves.cs";
+
+    /// <summary>The live limit move (FOUNDATION1f-ii part a), which decides its move through the holder.</summary>
+    private const string LiveMove = "Course/Chat/LimitMove.cs";
 
     private static string Relative(string path) => Path.GetRelativePath(Driver, path).Replace('\\', '/');
 
     [Fact]
-    public void No_production_source_names_the_move_store_but_the_wiring_of_the_workplace_s_delete()
+    public void The_move_store_s_production_readers_are_the_workplace_s_delete_the_conversations_holder_and_the_live_limit_move()
     {
         var names = Own
             .SelectMany(file => Regex.Matches(
@@ -52,15 +59,45 @@ public sealed class MoveStoreCensusTests
             readers.AddRange(names.Where(name => Regex.IsMatch(text, $@"\b{name}\b")).Select(name => $"{Relative(path)} names {name}"));
         }
 
-        Assert.Equal([$"{Wiring} names MoveStore"], readers);
+        Assert.Equal([LiveMove, Conversations, Wiring], readers.Select(reader => reader[..reader.IndexOf(" names ", StringComparison.Ordinal)]).Distinct().Order(StringComparer.Ordinal));
+        Assert.Contains($"{Wiring} names MoveStore", readers);
+        Assert.All(
+            ["MoveStore", "MoveTakeUp", "MoveTakeUpScope", "MoveDelivery", "MoveResolve", "IMoveSaid", "MoveSaidDoor"],
+            used => Assert.Contains($"{Conversations} names {used}", readers));
+
+        // The live move names the decision alone: every write of its record goes through the holder's claim.
+        Assert.Equal(
+            [$"{LiveMove} names MoveDecision", $"{LiveMove} names MoveExecutors", $"{LiveMove} names MoveHows"],
+            readers.Where(reader => reader.StartsWith(LiveMove + " ", StringComparison.Ordinal)).Order(StringComparer.Ordinal));
         Assert.Contains("MoveTakeUp", names);
         Assert.All(Importers, importer => Assert.Contains(importer, names));
         Assert.All(["MoveDelivery", "MoveResolve", "IMoveSaid", "MoveSaidDoor", "MoveWordDispositions"], part3 => Assert.Contains(part3, names));
     }
 
     /// <summary>
+    /// FOUNDATION1f-ii part a (the foundation design §3.3): the conversations' take-up runs at the shell's come-up before anything else that
+    /// could act on their records, the limit boxes' take-up first among them, and at each look of the shell beside the limits' wake and before
+    /// it, the shell's one periodic place for its conversations; so a dead shell's move is taken up and a live one's quiet is said.
+    /// </summary>
+    [Fact]
+    public void The_conversations_take_up_runs_at_the_shell_s_come_up_and_at_each_of_its_looks_before_what_acts_on_their_records()
+    {
+        var goOn = CourseCensusTests.WithoutComments(File.ReadAllText(Path.Combine(Driver, "Course", "Chat", "ChatGoOn.cs")));
+        var comeUp = goOn[goOn.IndexOf("Task<IReadOnlyList<ChatStart>> TakeUpAsync(", StringComparison.Ordinal)..];
+        Assert.Matches(@"^[^;]*\{\s*await _limit\.Moves\.ComeUpAsync\(", comeUp);
+        Assert.True(comeUp.IndexOf("Moves.ComeUpAsync(", StringComparison.Ordinal) < comeUp.IndexOf("TakeUpBoxesAsync(", StringComparison.Ordinal));
+
+        var loop = CourseCensusTests.WithoutComments(File.ReadAllText(
+            Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Modules", "Loop", "DriverLoop.cs")));
+        Assert.Matches(@"new ConversationMoves\(homeDirectory, service, Events, Output\)", loop);
+        Assert.Matches(@"Limits = async \(looked, token\) =>\s*\{\s*await moves\.LookAsync\(token\)[^;]*;\s*await chat\.WakeLimitsAsync\(", loop);
+    }
+
+    /// <summary>
     /// FOUNDATION1f-i part 2: no production source names an importer, the take-up's own file included, which takes whatever importers its
     /// caller hands it and is handed none yet; the box files' readers name no move type, so today's owners of the boxes read them as before.
+    /// The limit box's reader, <c>LimitMove.cs</c>, left that list at FOUNDATION1f-ii part a, its live move writing its record through the
+    /// conversations' holder; its ended move and its box are read as before until row f-vi.
     /// </summary>
     [Fact]
     public void No_production_source_calls_a_box_importer_and_the_boxes_readers_name_no_move_type()
@@ -74,7 +111,7 @@ public sealed class MoveStoreCensusTests
         }
 
         Assert.Empty(callers);
-        foreach (var reader in new[] { "Course/Chat/LimitBox.cs", "Course/HandOver/HandOverFiles.cs", "Course/HandOver/HandOver.cs", "Course/Chat/LimitMove.cs" })
+        foreach (var reader in new[] { "Course/Chat/LimitBox.cs", "Course/HandOver/HandOverFiles.cs", "Course/HandOver/HandOver.cs" })
         {
             Assert.DoesNotMatch(@"\bMove(Store|Record|TakeUp|BoxImport|FromBox|Imported)\b", CourseCensusTests.WithoutComments(File.ReadAllText(Path.Combine(Driver, reader))));
         }

@@ -389,6 +389,11 @@
       "reads": "other",
       "note": "a workflow step's, a gate's or a landing's own opinion or ask, not a record's mark"
     },
+    "Workplace/IntegrationStore.cs": {
+      "lines": 1,
+      "reads": "other",
+      "note": "an integration request's landing proof keeps the landing's own opinion in the landing record's shape (INTEGRATE1e part e2), not a record's mark"
+    },
     "Workplace/AutoLander.cs": {
       "lines": 1,
       "reads": "other",

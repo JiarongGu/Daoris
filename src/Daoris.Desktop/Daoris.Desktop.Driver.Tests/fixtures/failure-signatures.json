@@ -1,0 +1,127 @@
+{
+  "about": "INTEGRATE1f part f1 (D207, the integration design §5.3): the failure reader and the signature, one table for both readers: tools/test-failures.mjs (src/Daoris.Cli/tool-test/integration-judge.test.ts) and the driver's FailureReader (FailureReadingTests). Every expected value was read from the tool; a path is neutral, X:/work.",
+  "normalise": [
+    { "in": "tree 4f3c2a1b-9d8e-4c7b-a6f5-0e1d2c3b4a59 at 0f086f0e4ab held 3", "out": "tree <guid> at <hex> held <n>" },
+    { "in": "cannot open X:\\work\\gate-tree\\src\\T.cs and file:///X:/work/a.cs, then /home/u/x/y.txt", "out": "cannot open <path> and <path>, then <path>" },
+    { "in": "a  tab\tand\u00a0nbsp   and\n newline", "out": "a tab and nbsp and newline" },
+    { "in": "Expected: 3.5 Actual: 40", "out": "Expected: <n> Actual: <n>" },
+    { "in": "deadbeef is not hex enough; abc12345 neither; 12345678 is a number; cafe1234 is hex", "out": "deadbeef is not hex enough; <hex> neither; <n> is a number; <hex> is hex" },
+    { "in": "https://example.com/a/b is not a path to <n>", "out": "http<path> is not a path to <n>" }
+  ],
+  "methods": [
+    { "in": "N.C.<Run>d__5.MoveNext()", "out": "N.C.Run" },
+    { "in": "N.C.<>c__DisplayClass3_0.<Run>b__0()", "out": "N.C.Run" },
+    { "in": "N.C.<Run>g__Local|2_0()", "out": "N.C.Run" },
+    { "in": "N.C.Plain(Int32 a, String b)", "out": "N.C.Plain" },
+    { "in": "N.C.<>c.<Run>b__1_0(Object o)", "out": "N.C.Run" },
+    { "in": "N.Outer+<>c.M()", "out": "N.Outer+<>c.M" },
+    { "in": "N.C.<Run>d__2.MoveNext", "out": "N.C.Run" }
+  ],
+  "dotnetFrames": {
+    "stack": "   at N.Core.Store.Open(String id) in X:\\work\\src\\N.Core\\Store.cs:line 40\r\n   at N.Tests.T.<M>d__2.MoveNext() in X:\\work\\src\\N.Tests\\T.cs:line 9\r\n   at System.Threading.Tasks.Task.Run()\r\nnot a frame\r\n  at N.X.Y() in /home/u/src/N/Y.cs:line 7",
+    "frames": [
+      { "method": "N.Core.Store.Open", "file": "X:\\work\\src\\N.Core\\Store.cs", "line": 40 },
+      { "method": "N.Tests.T.M", "file": "X:\\work\\src\\N.Tests\\T.cs", "line": 9 },
+      { "method": "System.Threading.Tasks.Task.Run", "file": null, "line": null },
+      { "method": "N.X.Y", "file": "/home/u/src/N/Y.cs", "line": 7 }
+    ]
+  },
+  "v8Frames": {
+    "stack": "Error: boom\n    at run (X:/work/src/a.ts:3:20)\n    at X:/work/src/b.ts:4:5\n    at file:///X:/work/src/c%20d.ts:9:1\n    at node:internal/x:1:1\n    at Object.<anonymous> (node:internal/y:2:2)\n    at internal/process/task_queues:1:1\n    at TestContext.<anonymous> (file:///X:/work/src/Daoris.Cli/tool-test/x.test.ts:6:10)",
+    "frames": [
+      { "method": "run", "file": "X:/work/src/a.ts", "line": 3 },
+      { "method": "<anonymous>", "file": "X:/work/src/b.ts", "line": 4 },
+      { "method": "<anonymous>", "file": "X:/work/src/c d.ts", "line": 9 },
+      { "method": "TestContext.<anonymous>", "file": "X:/work/src/Daoris.Cli/tool-test/x.test.ts", "line": 6 }
+    ]
+  },
+  "exceptions": [
+    { "message": "System.InvalidOperationException : tree gone", "named": null, "out": "System.InvalidOperationException" },
+    { "message": "Xunit.Sdk.EqualException [Failure]: Values differ", "named": null, "out": "Xunit.Sdk.EqualException" },
+    { "message": "TypeError", "named": null, "out": "TypeError" },
+    { "message": "AssertionError: expected", "named": null, "out": "AssertionError" },
+    { "message": "Assert.Equal() Failure: Values differ", "named": null, "out": "Assert.Equal" },
+    { "message": "Something odd happened", "named": null, "out": "" },
+    { "message": "anything", "named": "AssertionError", "out": "AssertionError" },
+    { "message": "\nSystem.IO.IOException : first nonblank is not the first line", "named": null, "out": "" },
+    { "message": "", "named": null, "out": "" }
+  ],
+  "paths": [
+    { "file": "X:\\work\\gate-tree\\src\\N.Tests\\T.cs", "root": null, "out": "src/N.Tests/T.cs" },
+    { "file": "X:\\work\\gate-tree\\src\\N.Tests\\T.cs", "root": "X:/work/gate-tree", "out": "src/N.Tests/T.cs" },
+    { "file": "x:/WORK/gate-tree/src/a.cs", "root": "X:\\work\\gate-tree\\", "out": "src/a.cs" },
+    { "file": "src/a.cs", "root": null, "out": "src/a.cs" },
+    { "file": "/home/u/tools/x.mjs", "root": null, "out": "tools/x.mjs" },
+    { "file": "/home/u/other/x.mjs", "root": null, "out": null },
+    { "file": "/home/u/canon/a.md", "root": "X:/work", "out": "canon/a.md" },
+    { "file": null, "root": null, "out": null }
+  ],
+  "reports": [
+    {
+      "name": "a trx: a theory case, a nested class, a timeout with no stack; a passed result is not read",
+      "kind": "trx",
+      "text": "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<TestRun id=\"1\" xmlns=\"http://microsoft.com/schemas/VisualStudio/TeamTest/2010\">\n  <Results>\n    <UnitTestResult testId=\"t1\" testName=\"N.Tests.WidgetTests.Adds(left: 1, right: 2)\" outcome=\"Failed\">\n      <Output><ErrorInfo>\n        <Message>Assert.Equal() Failure: Values differ&#xD;\nExpected: 3&#xD;\nActual:   4</Message>\n        <StackTrace>   at N.Tests.WidgetTests.Adds(Int32 left, Int32 right) in X:\\work\\gate-tree\\src\\N.Tests\\WidgetTests.cs:line 4</StackTrace>\n      </ErrorInfo></Output>\n    </UnitTestResult>\n    <UnitTestResult testId=\"t2\" testName=\"N.Tests.WidgetTests+Nested.Throws\" outcome=\"Failed\">\n      <Output><ErrorInfo>\n        <Message>System.InvalidOperationException : tree s-a2762239 at 4f3c2a1b-9d8e-4c7b-a6f5-0e1d2c3b4a59 is gone</Message>\n        <StackTrace>   at N.Core.Store.Open(String id) in X:\\work\\gate-tree\\src\\N.Core\\Store.cs:line 40\n   at N.Tests.WidgetTests.Nested.&lt;Throws&gt;d__2.MoveNext() in X:\\work\\gate-tree\\src\\N.Tests\\WidgetTests.cs:line 9</StackTrace>\n      </ErrorInfo></Output>\n    </UnitTestResult>\n    <UnitTestResult testId=\"t3\" testName=\"N.Tests.WidgetTests.Passes\" outcome=\"Passed\" />\n    <UnitTestResult testId=\"t4\" testName=\"N.Tests.Orphan.Lost\" outcome=\"Timeout\">\n      <Output><ErrorInfo>\n        <Message>The operation timed out after 30 seconds</Message>\n      </ErrorInfo></Output>\n    </UnitTestResult>\n  </Results>\n  <TestDefinitions>\n    <UnitTest id=\"t1\"><TestMethod className=\"N.Tests.WidgetTests\" name=\"Adds\" /></UnitTest>\n    <UnitTest id=\"t2\"><TestMethod className=\"N.Tests.WidgetTests+Nested\" name=\"Throws\" /></UnitTest>\n    <UnitTest id=\"t3\"><TestMethod className=\"N.Tests.WidgetTests\" name=\"Passes\" /></UnitTest>\n  </TestDefinitions>\n</TestRun>",
+      "failures": [
+        { "runner": "trx", "unit": "N.Tests.WidgetTests", "test": "N.Tests.WidgetTests.Adds(left: 1, right: 2)", "exception": "Assert.Equal", "message": "Assert.Equal() Failure: Values differ", "frames": [{ "method": "N.Tests.WidgetTests.Adds", "file": "X:\\work\\gate-tree\\src\\N.Tests\\WidgetTests.cs", "line": 4 }] },
+        { "runner": "trx", "unit": "N.Tests.WidgetTests+Nested", "test": "N.Tests.WidgetTests+Nested.Throws", "exception": "System.InvalidOperationException", "message": "System.InvalidOperationException : tree s-a2762239 at 4f3c2a1b-9d8e-4c7b-a6f5-0e1d2c3b4a59 is gone", "frames": [{ "method": "N.Core.Store.Open", "file": "X:\\work\\gate-tree\\src\\N.Core\\Store.cs", "line": 40 }, { "method": "N.Tests.WidgetTests.Nested.Throws", "file": "X:\\work\\gate-tree\\src\\N.Tests\\WidgetTests.cs", "line": 9 }] },
+        { "runner": "trx", "unit": "N.Tests.Orphan", "test": "N.Tests.Orphan.Lost", "exception": "", "message": "The operation timed out after 30 seconds", "frames": [] }
+      ]
+    },
+    {
+      "name": "vitest: a failed assertion with its titles, one with no stack; a passed one is not read",
+      "kind": "vitest",
+      "json": {
+        "testResults": [{
+          "name": "X:/work/src/Daoris.Web/src/work/Board.test.tsx",
+          "assertionResults": [
+            { "status": "passed", "title": "draws", "ancestorTitles": ["Board"], "fullName": "Board draws", "failureMessages": [] },
+            { "status": "failed", "title": "sorts", "ancestorTitles": ["Board", "rows"], "fullName": "Board rows sorts", "failureMessages": ["AssertionError: expected [ 2, 1 ] to deeply equal [ 1, 2 ]\n    at X:/work/src/Daoris.Web/src/work/Board.test.tsx:3:20\n    at node:internal/x:1:1"] },
+            { "status": "failed", "title": "lone", "ancestorTitles": ["Board"], "failureMessages": ["TypeError: x is not a function"] }
+          ]
+        }]
+      },
+      "failures": [
+        { "runner": "vitest", "unit": "X:/work/src/Daoris.Web/src/work/Board.test.tsx", "test": "Board rows sorts", "exception": "AssertionError", "message": "AssertionError: expected [ 2, 1 ] to deeply equal [ 1, 2 ]", "frames": [{ "method": "<anonymous>", "file": "X:/work/src/Daoris.Web/src/work/Board.test.tsx", "line": 3 }] },
+        { "runner": "vitest", "unit": "X:/work/src/Daoris.Web/src/work/Board.test.tsx", "test": "Board > lone", "exception": "TypeError", "message": "TypeError: x is not a function", "frames": [] }
+      ]
+    },
+    {
+      "name": "node --test: a test's own failure, not the suite that failed for its subtest",
+      "kind": "tap",
+      "text": "TAP version 13\n# Subtest: the census\n    # Subtest: reads a class\n    not ok 1 - reads a class\n      ---\n      duration_ms: 1.2\n      location: 'X:\\\\work\\\\src\\\\Daoris.Cli\\\\tool-test\\\\x.test.ts:5:3'\n      failureType: 'testCodeFailure'\n      error: |-\n        Expected values to be strictly equal:\n        \n        1 !== 2\n      code: 'ERR_ASSERTION'\n      name: 'AssertionError'\n      stack: |-\n        TestContext.<anonymous> (file:///X:/work/src/Daoris.Cli/tool-test/x.test.ts:6:10)\n        Test.runInAsyncScope (node:async_hooks:211:14)\n      ...\n    1..1\nnot ok 1 - the census\n  ---\n  failureType: 'subtestsFailed'\n  ...",
+      "failures": [
+        { "runner": "node", "unit": "X:\\work\\src\\Daoris.Cli\\tool-test\\x.test.ts", "test": "the census > reads a class", "exception": "AssertionError", "message": "Expected values to be strictly equal:", "frames": [{ "method": "TestContext.<anonymous>", "file": "X:/work/src/Daoris.Cli/tool-test/x.test.ts", "line": 6 }] }
+      ]
+    }
+  ],
+  "sources": {
+    "src/N.Tests/WidgetTests.cs": "public class WidgetTests {\n  [Theory] [InlineData(1, 2)] public void Adds(int left, int right) {\n    var sum = left + right;\n    Assert.Equal(3, sum + 1);\n  }\n  public class Nested {\n    [Fact] public async Task Throws() {\n      await Task.Yield();\n      Store.Open(\"x\");\n    }\n  }\n}",
+    "src/T.cs": "class T {\r\n void M() {\r\n  Throw();\r\n  Throw();\r\n }\r\n void N() {\r\n  Throw();\r\n }\r\n}",
+    "src/Daoris.Web/src/work/Board.test.tsx": "import { it } from 'vitest';\nit('sorts', () => {\n  expect(sort([2, 1])).toEqual([1, 2]);\n});",
+    "src/Daoris.Cli/tool-test/x.test.ts": "import { test } from 'node:test';\n\ntest('the census', async (t) => {\n  // a\n  await t.test('reads a class', () => {\n    assert.equal(1, 2);\n  });\n});"
+  },
+  "signatures": [
+    { "name": "a theory case: the location is the assertion line, not the message", "failure": { "runner": "trx", "unit": "N.Tests.WidgetTests", "test": "N.Tests.WidgetTests.Adds(left: 1, right: 2)", "exception": "Assert.Equal", "message": "Assert.Equal() Failure: Values differ", "frames": [{ "method": "N.Tests.WidgetTests.Adds", "file": "X:\\work\\gate-tree\\src\\N.Tests\\WidgetTests.cs", "line": 4 }] }, "signature": { "test": "N.Tests.WidgetTests.Adds(left: 1, right: 2)", "exception": "Assert.Equal", "location": { "method": "N.Tests.WidgetTests.Adds", "text": "Assert.Equal(<n>, sum + <n>);", "ordinal": 0 } }, "key": "[\"N.Tests.WidgetTests.Adds(left: 1, right: 2)\",\"Assert.Equal\",[\"N.Tests.WidgetTests.Adds\",\"Assert.Equal(<n>, sum + <n>);\",0],null]" },
+    { "name": "a nested class: the test file's frame among others", "failure": { "runner": "trx", "unit": "N.Tests.WidgetTests+Nested", "test": "N.Tests.WidgetTests+Nested.Throws", "exception": "System.InvalidOperationException", "message": "System.InvalidOperationException : tree s-a2762239 at 4f3c2a1b-9d8e-4c7b-a6f5-0e1d2c3b4a59 is gone", "frames": [{ "method": "N.Core.Store.Open", "file": "X:\\work\\gate-tree\\src\\N.Core\\Store.cs", "line": 40 }, { "method": "N.Tests.WidgetTests.Nested.Throws", "file": "X:\\work\\gate-tree\\src\\N.Tests\\WidgetTests.cs", "line": 9 }] }, "signature": { "test": "N.Tests.WidgetTests+Nested.Throws", "exception": "System.InvalidOperationException", "location": { "method": "N.Tests.WidgetTests.Nested.Throws", "text": "Store.Open(\"x\");", "ordinal": 0 } }, "key": "[\"N.Tests.WidgetTests+Nested.Throws\",\"System.InvalidOperationException\",[\"N.Tests.WidgetTests.Nested.Throws\",\"Store.Open(\\\"x\\\");\",0],null]" },
+    { "name": "an identical line earlier in the method: its ordinal", "failure": { "runner": "trx", "unit": "N.T", "test": "N.T.M", "exception": "System.Exception", "message": "boom", "frames": [{ "method": "N.T.M", "file": "X:\\w\\src\\T.cs", "line": 4 }] }, "signature": { "test": "N.T.M", "exception": "System.Exception", "location": { "method": "N.T.M", "text": "Throw();", "ordinal": 1 } }, "key": "[\"N.T.M\",\"System.Exception\",[\"N.T.M\",\"Throw();\",1],null]" },
+    { "name": "the same text in another method: ordinal zero", "failure": { "runner": "trx", "unit": "N.T", "test": "N.T.N", "exception": "System.Exception", "message": "boom", "frames": [{ "method": "N.T.N", "file": "X:\\w\\src\\T.cs", "line": 7 }] }, "signature": { "test": "N.T.N", "exception": "System.Exception", "location": { "method": "N.T.N", "text": "Throw();", "ordinal": 0 } }, "key": "[\"N.T.N\",\"System.Exception\",[\"N.T.N\",\"Throw();\",0],null]" },
+    { "name": "no frame of the test's own file: the message line, normalised", "failure": { "runner": "trx", "unit": "N.T", "test": "N.T.M", "exception": "System.IO.IOException", "message": "tree 4f3c2a1b-9d8e-4c7b-a6f5-0e1d2c3b4a59 at 0f086f0e4ab held 3", "frames": [{ "method": "N.Core.Store.Open", "file": "X:\\w\\src\\N.Core\\Store.cs", "line": 40 }] }, "signature": { "test": "N.T.M", "exception": "System.IO.IOException", "message": "tree <guid> at <hex> held <n>" }, "key": "[\"N.T.M\",\"System.IO.IOException\",null,\"tree <guid> at <hex> held <n>\"]" },
+    { "name": "a source that cannot be read: the message line", "failure": { "runner": "trx", "unit": "N.Missing", "test": "N.Missing.M", "exception": "Assert.True", "message": "Assert.True() Failure", "frames": [{ "method": "N.Missing.M", "file": "X:\\w\\src\\Missing.cs", "line": 3 }] }, "signature": { "test": "N.Missing.M", "exception": "Assert.True", "message": "Assert.True() Failure" }, "key": "[\"N.Missing.M\",\"Assert.True\",null,\"Assert.True() Failure\"]" },
+    { "name": "a source line beyond its end: the message line", "failure": { "runner": "trx", "unit": "N.T", "test": "N.T.M", "exception": "System.Exception", "message": "boom 7", "frames": [{ "method": "N.T.M", "file": "X:\\w\\src\\T.cs", "line": 99 }] }, "signature": { "test": "N.T.M", "exception": "System.Exception", "message": "boom <n>" }, "key": "[\"N.T.M\",\"System.Exception\",null,\"boom <n>\"]" },
+    { "name": "a vitest failure: the frame in its own file", "failure": { "runner": "vitest", "unit": "X:/work/src/Daoris.Web/src/work/Board.test.tsx", "test": "Board rows sorts", "exception": "AssertionError", "message": "AssertionError: expected [ 2, 1 ] to deeply equal [ 1, 2 ]", "frames": [{ "method": "<anonymous>", "file": "X:/work/src/Daoris.Web/src/work/Board.test.tsx", "line": 3 }] }, "signature": { "test": "Board rows sorts", "exception": "AssertionError", "location": { "method": "<anonymous>", "text": "expect(sort([<n>, <n>])).toEqual([<n>, <n>]);", "ordinal": 0 } }, "key": "[\"Board rows sorts\",\"AssertionError\",[\"<anonymous>\",\"expect(sort([<n>, <n>])).toEqual([<n>, <n>]);\",0],null]" },
+    { "name": "a node --test failure: the frame in its unit", "failure": { "runner": "node", "unit": "X:\\work\\src\\Daoris.Cli\\tool-test\\x.test.ts", "test": "the census > reads a class", "exception": "AssertionError", "message": "Expected values to be strictly equal:", "frames": [{ "method": "TestContext.<anonymous>", "file": "X:/work/src/Daoris.Cli/tool-test/x.test.ts", "line": 6 }] }, "signature": { "test": "the census > reads a class", "exception": "AssertionError", "location": { "method": "TestContext.<anonymous>", "text": "assert.equal(<n>, <n>);", "ordinal": 0 } }, "key": "[\"the census > reads a class\",\"AssertionError\",[\"TestContext.<anonymous>\",\"assert.equal(<n>, <n>);\",0],null]" },
+    { "name": "a root: the frame under it is read from the repository path", "root": "X:/work/gate-tree", "failure": { "runner": "trx", "unit": "N.Tests.WidgetTests", "test": "N.Tests.WidgetTests.Adds(left: 1, right: 2)", "exception": "Assert.Equal", "message": "Assert.Equal() Failure: Values differ", "frames": [{ "method": "N.Tests.WidgetTests.Adds", "file": "X:\\work\\gate-tree\\src\\N.Tests\\WidgetTests.cs", "line": 4 }] }, "signature": { "test": "N.Tests.WidgetTests.Adds(left: 1, right: 2)", "exception": "Assert.Equal", "location": { "method": "N.Tests.WidgetTests.Adds", "text": "Assert.Equal(<n>, sum + <n>);", "ordinal": 0 } }, "key": "[\"N.Tests.WidgetTests.Adds(left: 1, right: 2)\",\"Assert.Equal\",[\"N.Tests.WidgetTests.Adds\",\"Assert.Equal(<n>, sum + <n>);\",0],null]" },
+    { "name": "another exception type is another failure", "failure": { "runner": "trx", "unit": "N.Tests.WidgetTests", "test": "N.Tests.WidgetTests.Adds(left: 1, right: 2)", "exception": "System.TimeoutException", "message": "Assert.Equal() Failure: Values differ", "frames": [{ "method": "N.Tests.WidgetTests.Adds", "file": "X:\\work\\gate-tree\\src\\N.Tests\\WidgetTests.cs", "line": 4 }] }, "signature": { "test": "N.Tests.WidgetTests.Adds(left: 1, right: 2)", "exception": "System.TimeoutException", "location": { "method": "N.Tests.WidgetTests.Adds", "text": "Assert.Equal(<n>, sum + <n>);", "ordinal": 0 } }, "key": "[\"N.Tests.WidgetTests.Adds(left: 1, right: 2)\",\"System.TimeoutException\",[\"N.Tests.WidgetTests.Adds\",\"Assert.Equal(<n>, sum + <n>);\",0],null]" }
+  ],
+  "gates": [
+    { "name": "a build: the set of its errors with their files, sorted", "gate": "driver", "step": "build", "output": "src/A/A.cs(3,5): error CS0103: The name x does not exist\nsrc/B/B.cs(9,1): error CS1002: ; expected\n", "root": null, "signature": { "gate": "driver", "step": "build", "errors": ["CS0103 src/A/A.cs", "CS1002 src/B/B.cs"] }, "key": "[\"driver\",\"build\",[\"CS0103 src/A/A.cs\",\"CS1002 src/B/B.cs\"],null]" },
+    { "name": "a build printed in another order, a repeat and CRLF is the same set", "gate": "driver", "step": "build", "output": "src/B/B.cs(9,1): error CS1002: ; expected\r\nsrc/A/A.cs(3,5): error CS0103: The name x does not exist\r\nsrc/A/A.cs(3,5): error CS0103: The name x does not exist\r\n", "root": null, "signature": { "gate": "driver", "step": "build", "errors": ["CS0103 src/A/A.cs", "CS1002 src/B/B.cs"] }, "key": "[\"driver\",\"build\",[\"CS0103 src/A/A.cs\",\"CS1002 src/B/B.cs\"],null]" },
+    { "name": "a build's file under the root is repository-relative", "gate": "driver", "step": "build", "output": "X:\\work\\gate-tree\\src\\A\\A.cs(3,5): error CS0103: The name x does not exist", "root": "X:/work/gate-tree", "signature": { "gate": "driver", "step": "build", "errors": ["CS0103 src/A/A.cs"] }, "key": "[\"driver\",\"build\",[\"CS0103 src/A/A.cs\"],null]" },
+    { "name": "a TypeScript error", "gate": "web", "step": "build", "output": "src/Daoris.Web/src/a.tsx(4,2): error TS2322: Type string is not assignable", "root": null, "signature": { "gate": "web", "step": "build", "errors": ["TS2322 src/Daoris.Web/src/a.tsx"] }, "key": "[\"web\",\"build\",[\"TS2322 src/Daoris.Web/src/a.tsx\"],null]" },
+    { "name": "compiler errors in a step that is not the build: its first error line, normalised", "gate": "driver", "step": "run", "output": "src/A/A.cs(3,5): error CS0103: The name x does not exist\n", "root": null, "signature": { "gate": "driver", "step": "run", "message": "src<path>,<n>): error CS<n>: The name x does not exist" }, "key": "[\"driver\",\"run\",null,\"src<path>,<n>): error CS<n>: The name x does not exist\"]" },
+    { "name": "a check: its first error line, normalised", "gate": "universal", "step": "check", "output": "docs/README.md: error: a broken link at line 12\nother", "root": null, "signature": { "gate": "universal", "step": "check", "message": "docs/README.md: error: a broken link at line <n>" }, "key": "[\"universal\",\"check\",null,\"docs/README.md: error: a broken link at line <n>\"]" },
+    { "name": "a host that crashed prints no error line: an empty message", "gate": "modules", "step": "host", "output": "The active test run was aborted. Reason: Test host process crashed", "root": null, "signature": { "gate": "modules", "step": "host", "message": "" }, "key": "[\"modules\",\"host\",null,\"\"]" },
+    { "name": "an output with no error line", "gate": "modules", "step": "discovery", "output": "nothing printed that looks bad", "root": null, "signature": { "gate": "modules", "step": "discovery", "message": "" }, "key": "[\"modules\",\"discovery\",null,\"\"]" },
+    { "name": "an Error: line is found after others, a hex run normalised", "gate": "code-map", "step": "check", "output": "ok\ncode-map: Error: tools/x.mjs has no module 0f086f0e4ab", "root": null, "signature": { "gate": "code-map", "step": "check", "message": "code-map: Error: tools/x.mjs has no module <hex>" }, "key": "[\"code-map\",\"check\",null,\"code-map: Error: tools/x.mjs has no module <hex>\"]" }
+  ]
+}

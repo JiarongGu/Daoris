@@ -623,6 +623,18 @@ describe('noteLines', () => {
         .toBe('它的委托不再等待，会话原本在等它的智能体的下一轮：会话结束，也不再发送继续的提示。');
     });
 
+    /** LANDBACK1 part 2: a done quest's session carried on for the uncommitted work in its tree, and the bound that ends it. */
+    it('words a session carried on for the uncommitted work its done quest left, and the bound', () => {
+      const carried = coded('background.carried-on', '— its quest is done, but its tree holds uncommitted work (paths: 3): …', { paths: 3 });
+      const bound = coded('background.carry-bound', '— its session was carried on twice …');
+      expect(noteLines(t, { parts: [carried] }, 'en')[0].text).toContain('uncommitted work (paths: 3)');
+      expect(noteLines(zh, { parts: [carried] }, 'zh')[0].text).toContain('3 个路径');
+      expect(noteLines(zh, { parts: [carried] }, 'zh')[0].text).not.toContain('清理');
+      expect(noteLines(t, { parts: [bound] }, 'en')[0].text).toContain('carried on twice');
+      expect(noteLines(zh, { parts: [bound] }, 'zh')[0].text).toContain('两次');
+      expect(noteLines(zh, { parts: [coded('background.carried-on', '…', {})] }, 'zh')[0].kind).toBe('recorded');
+    });
+
     it('words that a wait could not be read and leaves the program’s words as written', () => {
       const parts = [coded('background.unread', '— its turn ended …:'), words('the agent said no', 'program')];
       expect(noteLines(zh, { parts }, 'zh')).toEqual([
@@ -1256,6 +1268,36 @@ describe('noteLines', () => {
       { kind: 'said', text: '未自动采纳：把它的工作重放到主线上会冲突，所以已请它的会话在自己的工作树里变基，详情如下。它的工作树改变后，下一轮会落地它的工作。' },
       { kind: 'words', text: refused, by: 'program' },
     ]);
+  });
+
+  /**
+   * LANDBACK1 part 1 (D87's note): an Accept that carried its session on to clear a dirty tree or a conflict, the bound where it is still
+   * not clean after two, and the landing the kept yes made, each a code of its own in either language: the work is accepted, never refused.
+   */
+  it('words an Accept that carried its session on, its bound, and the landing it made, in either language', () => {
+    const dirty = [coded('landing.carried-dirty', 'accepted: its tree has 3 uncommitted path(s) …', { paths: 3 })];
+    expect(noteLines(t, { parts: dirty }, 'en')).toEqual([
+      {
+        kind: 'said',
+        text: "Accepted: its tree holds uncommitted work (paths: 3), so its session was carried on to commit it by its repository's "
+          + 'conventions, or to restore what it does not want and say which. It lands when its tree is clean.',
+      },
+    ]);
+    expect(noteLines(zh, { parts: dirty }, 'zh')[0]).toMatchObject({ kind: 'said', text: expect.stringContaining('3 个路径') });
+
+    const conflict = [coded('landing.carried-conflict', 'accepted: replaying its work onto the line conflicts …')];
+    expect(noteLines(t, { parts: conflict }, 'en')[0]).toMatchObject({ text: expect.stringContaining('carried on to rebase in its own tree') });
+    expect(noteLines(zh, { parts: conflict }, 'zh')[0]).toMatchObject({ text: expect.stringContaining('工作树干净后即会落地') });
+
+    const bound = [coded('landing.carry-bound', 'accepted, but its session was carried on 2 times …')];
+    expect(noteLines(t, { parts: bound }, 'en')[0]).toMatchObject({ text: expect.stringContaining('carried on twice and its tree is still not clean') });
+    expect(noteLines(zh, { parts: bound }, 'zh')[0]).toMatchObject({ text: expect.stringContaining('没有落地') });
+
+    const landed = [coded('landing.accepted-carried', 'accepted by your press once its tree was clean …', { branch: 'feature/x' })];
+    expect(noteLines(t, { parts: landed }, 'en')).toEqual([
+      { kind: 'said', text: 'Accepted by your press once its tree was clean: its work is on `feature/x`.' },
+    ]);
+    expect(noteLines(zh, { parts: landed }, 'zh')[0]).toMatchObject({ text: expect.stringContaining('`feature/x`') });
   });
 
   /**

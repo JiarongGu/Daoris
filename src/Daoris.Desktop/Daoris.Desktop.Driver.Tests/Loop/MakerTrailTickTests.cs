@@ -85,7 +85,9 @@ public sealed class MakerTrailTickTests : IDisposable
         // The next look: Build's order lists only the protocol stand-in, so the carry-on walks to it, whatever the machine's `adapter` key.
         await Driver(client, adapters, roster, "stub", build: [new ActorChoice("acp-stub")]).RunOnceAsync().WaitAsync(Poll.Patience);
 
-        var prompt = Runs().Last(line => line["method"]?.GetValue<string>() == "session/prompt")["prompt"]!.GetValue<string>();
+        // The carry-on's brief is the part's first prompt: the stub's left work stays uncommitted in the tree, so the part's turn
+        // ending done is carried on in Daoris's own words after it (LANDBACK1 part 2), and that prompt is a later one.
+        var prompt = Runs().First(line => line["method"]?.GetValue<string>() == "session/prompt")["prompt"]!.GetValue<string>();
         Assert.Contains("You are carrying on quest `#q1`", prompt);
         Assert.Contains("This start runs on `acp-stub`", prompt);
         Assert.Contains(Left, prompt);

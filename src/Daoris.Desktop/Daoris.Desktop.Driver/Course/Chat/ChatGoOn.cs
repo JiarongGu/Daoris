@@ -190,6 +190,10 @@ internal sealed class ChatGoOn
     /// <returns>What became of each chat it took up, in the records' order; none where the service did not answer.</returns>
     public async Task<IReadOnlyList<ChatStart>> TakeUpAsync(CancellationToken ct = default)
     {
+        // FOUNDATION1f-ii part a (the foundation design §3.3): a dead shell's conversation moves are taken up first, before anything else that
+        // could act on their records, each ended by its phase so its records go on below by their own come-up; nothing is sent there.
+        await _limit.Moves.ComeUpAsync(say: null, ct).ConfigureAwait(false);
+
         // LIMITRESUME1c (D206 §3.5, Codex 8): a limit's move a shell before this one opened and never delivered is delivered first, from
         // its box, so the new part's words wait on its record as the records are read below; one it never opened is left for the wake.
         await _limit.TakeUpBoxesAsync(ct).ConfigureAwait(false);
@@ -565,8 +569,19 @@ internal sealed class ChatGoOn
             return new(fresh.SessionId, fresh.Message);
         }
 
-        // Its conversation is the adapter's that opened it, so it goes on on that one or not at all.
-        var ranOn = record.Adapter ?? config.Adapter;
+        // Its conversation is the adapter's that opened it, so it goes on on that one or not at all. A record naming none (one from before
+        // the adapter was kept) goes on with its role's choice, Chat's order, never the machine's `adapter` key (FOUNDATION1j part iii,
+        // the foundation design §2.4's first row); Chat off, or its entry unread, holds the words with the sentence.
+        string ranOn;
+        try
+        {
+            ranOn = record.Adapter is { Length: > 0 } opened ? opened : StartPlan.ContinuedOn(record, config, "chat");
+        }
+        catch (DriverException unchosen)
+        {
+            return Held(sessionId, HeldWords.Program(unchosen.Message));
+        }
+
         ISessionAdapter? adapter = null;
         try
         {

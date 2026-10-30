@@ -3,8 +3,8 @@ namespace Daoris.Driver;
 /// <summary>
 /// The one door a request to integrate a repository's line comes through (INTEGRATE1e part e1; the integration design §4.6, D215): who
 /// asked, under the rule and policy as they stand, for which branch at which frozen tip. Built and tested, and called from no production
-/// path yet: the owner's card (row h), the steward's act (row i) and the <c>integrate</c> node's start (row n) are its callers to come, and
-/// part e2's store family replaces the in-memory store.
+/// path yet: the owner's card (row h), the steward's act (row i) and the <c>integrate</c> node's start (row n) are its callers to come. Its
+/// requests are kept in the desktop store's integration family (part e2, <see cref="IntegrationStore"/>).
 /// </summary>
 /// <remarks>
 /// <para><b>A unit's request comes only from that unit's own landing.</b> So no request passes a session's stopped <c>handed</c>, a required

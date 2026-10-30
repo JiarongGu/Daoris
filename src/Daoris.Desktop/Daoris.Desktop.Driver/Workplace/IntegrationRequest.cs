@@ -3,8 +3,8 @@ namespace Daoris.Driver;
 /// <summary>
 /// One request to integrate a branch into its repository's line (INTEGRATE1e part e1; the integration design §4.6): the requester, the rule
 /// and its policy as they stood, and the frozen tip. A recorded landing's carries the unit, session and quest its record binds it to and the
-/// gate proof the record keeps; a records branch's carries none of them, since it is no unit's and no run's. Kept in memory until part e2's
-/// store family, which this shape is the first reader of.
+/// gate proof the record keeps; a records branch's carries none of them, since it is no unit's and no run's. Kept as a row of the desktop
+/// store's <c>integration_requests</c> (part e2, <see cref="IntegrationStore"/>), one open per repository and branch.
 /// </summary>
 /// <param name="Id">The request's own id.</param>
 /// <param name="Tip">The frozen tip: the commit the request integrates, and nothing made after it (C11).</param>
@@ -33,6 +33,12 @@ public sealed record IntegrationRequest(
 
     /// <summary>Where the effective rule came from as it stood (<see cref="LandingSource"/>).</summary>
     public string? RuleSource { get; init; }
+
+    /// <summary>When it stopped being open (part e2): settled, handed back or dropped; null while it is open, as the door makes it.</summary>
+    public DateTimeOffset? ClosedAt { get; init; }
+
+    /// <summary>One of <see cref="IntegrationRequestCloses"/>, or a newer build's word, kept as written; null while it is open.</summary>
+    public string? ClosedWhy { get; init; }
 }
 
 /// <summary>

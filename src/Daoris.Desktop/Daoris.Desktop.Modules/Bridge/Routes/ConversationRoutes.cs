@@ -47,8 +47,7 @@ public sealed class ConversationRoutes(DriverContext context)
         // Chat's first entry for that agent (§3.5(d)). This route took a blank one as a name (REV3 CLEAN1); the page happens never to
         // send one.
         var named = Optional(request, "adapter");
-        var order = ActorChoices.Effective("chat", config, pick: named);
-        var adapter = named ?? order.FirstOrDefault()?.Agent ?? config.Adapter;
+        var (adapter, order) = ActorChoices.NewChat(config, named);
 
         // The end of a conversation is news the page wants without asking: the drawer is
         // probably open, and a record that moved silently reads as one that hung.
@@ -168,10 +167,9 @@ public sealed class ConversationRoutes(DriverContext context)
         var chat = _loop.Chat ?? throw NotReady();
         var config = DriverConfig.Load(_loop.ConfigPath);
         // A new conversation: Chat's order walked (MODELROLE1d, D205 §4.1).
-        var order = ActorChoices.Effective("chat", config);
+        var (adapter, order) = ActorChoices.NewChat(config);
         var started = await chat.StartFromAsync(
-                id, order.FirstOrDefault()?.Agent ?? config.Adapter, config, onEnded: (session, state) => DriverLoop.Ended(_events, session, state),
-                cancellationToken, order)
+                id, adapter, config, onEnded: (session, state) => DriverLoop.Ended(_events, session, state), cancellationToken, order)
             .ConfigureAwait(false);
         _loop.Nudge();
         return new { started.SessionId, started.Sent, started.Why, started.Message };

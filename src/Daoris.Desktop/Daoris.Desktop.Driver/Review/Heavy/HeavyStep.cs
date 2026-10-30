@@ -8,6 +8,13 @@ using Microsoft.Win32.SafeHandles;
 namespace Daoris.Driver;
 
 /// <summary>
+/// How an integration candidate's step differs from a heavy gate (INTEGRATE1f part f2): its environment is exactly <see cref="Environment"/>
+/// (composed from the install's by <see cref="GateEnvironment"/>, with none of this process's own to leak a Daoris name into it), and its
+/// standard output and error go to the file <see cref="Log"/> names, so a runner's answer is read from its file and never from its output.
+/// </summary>
+internal sealed record StepOptions(IReadOnlyDictionary<string, string>? Environment = null, string? Log = null);
+
+/// <summary>
 /// One gate of a heavy run (HEAVYRUN1a): its command line through the platform's shell, in the gate's folder, writing to this
 /// process's own output, held in the run's job from before it runs.
 /// </summary>
@@ -64,9 +71,10 @@ internal sealed class HeavyStep : IDisposable
 
     /// <summary>Start <paramref name="run"/> in <paramref name="directory"/>, this process's environment with <paramref name="added"/> over it.</summary>
     /// <param name="job">The run's job, which the gate joins before it runs; null off Windows.</param>
+    /// <param name="options">Where the step is not a heavy gate but an integration candidate's (INTEGRATE1f part f2): its own environment and log.</param>
     /// <exception cref="DriverException">The gate would not start, or could not be held in the job, so it did not run.</exception>
-    public static HeavyStep Start(ProcessJob? job, string run, string directory, IReadOnlyDictionary<string, string> added) =>
-        OperatingSystem.IsWindows() ? StartHeld(job, run, directory, added) : StartElsewhere(run, directory, added);
+    public static HeavyStep Start(ProcessJob? job, string run, string directory, IReadOnlyDictionary<string, string> added, StepOptions? options = null) =>
+        OperatingSystem.IsWindows() ? StartHeld(job, run, directory, added, options) : StartElsewhere(run, directory, added, options);
 
     /// <summary>The gate's exit code, once it has exited.</summary>
     /// <exception cref="OperationCanceledException">Stopped first; the gate is not ended by this.</exception>
@@ -108,12 +116,20 @@ internal sealed class HeavyStep : IDisposable
     internal static string SystemShell() => GeneratedWriters.SystemShell();
 
     /// <summary>This process's environment with <paramref name="added"/> over it, as the block CreateProcess reads, sorted as the system keeps its own.</summary>
-    internal static string EnvironmentBlock(IReadOnlyDictionary<string, string> added)
+    internal static string EnvironmentBlock(IReadOnlyDictionary<string, string> added, IReadOnlyDictionary<string, string>? only = null)
     {
         var variables = new SortedDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        foreach (DictionaryEntry entry in Environment.GetEnvironmentVariables())
+        if (only is not null)
         {
-            if (entry.Key is string name && entry.Value is string value) variables[name] = value;
+            // An integration candidate's step is composed from the install's environment and holds nothing else of this process's.
+            foreach (var (name, value) in only) variables[name] = value;
+        }
+        else
+        {
+            foreach (DictionaryEntry entry in Environment.GetEnvironmentVariables())
+            {
+                if (entry.Key is string name && entry.Value is string value) variables[name] = value;
+            }
         }
 
         foreach (var (name, value) in added) variables[name] = value;
@@ -124,7 +140,7 @@ internal sealed class HeavyStep : IDisposable
         return block.Append('\0').ToString();
     }
 
-    private static HeavyStep StartHeld(ProcessJob? job, string run, string directory, IReadOnlyDictionary<string, string> added)
+    private static HeavyStep StartHeld(ProcessJob? job, string run, string directory, IReadOnlyDictionary<string, string> added, StepOptions? options)
     {
         if (job is null) throw new DriverException("there is no job to hold the gate's processes in, so it was not run.");
 
@@ -132,14 +148,26 @@ internal sealed class HeavyStep : IDisposable
         var attributes = IntPtr.Zero;
         var handles = IntPtr.Zero;
         var environment = IntPtr.Zero;
+        FileStream? log = null;
         try
         {
             var startup = new StartupInfoEx();
             startup.StartupInfo.Size = Marshal.SizeOf<StartupInfoEx>();
             startup.StartupInfo.Flags = UseStdHandles;
-            startup.StartupInfo.StdInput = Inheritable(StdInput, inherited);
-            startup.StartupInfo.StdOutput = Inheritable(StdOutput, inherited);
-            startup.StartupInfo.StdError = Inheritable(StdError, inherited);
+            if (options?.Log is { } logPath)
+            {
+                // The candidate's step writes to a log of its own, standard output and error alike, and reads nothing: the answer is a file.
+                log = new FileStream(logPath, FileMode.Create, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete);
+                var copy = Duplicated(log.SafeFileHandle.DangerousGetHandle(), inherited);
+                startup.StartupInfo.StdOutput = copy;
+                startup.StartupInfo.StdError = copy;
+            }
+            else
+            {
+                startup.StartupInfo.StdInput = Inheritable(StdInput, inherited);
+                startup.StartupInfo.StdOutput = Inheritable(StdOutput, inherited);
+                startup.StartupInfo.StdError = Inheritable(StdError, inherited);
+            }
 
             var flags = Suspended | UnicodeEnvironment;
             if (GetConsoleCP() == 0) flags |= NoWindow;
@@ -163,7 +191,7 @@ internal sealed class HeavyStep : IDisposable
                 flags |= ExtendedStartupInfoPresent;
             }
 
-            environment = Marshal.StringToHGlobalUni(EnvironmentBlock(added));
+            environment = Marshal.StringToHGlobalUni(EnvironmentBlock(added, options?.Environment));
             if (!CreateProcessW(
                     null, new StringBuilder(CommandLine(run)), IntPtr.Zero, IntPtr.Zero, inherited.Count > 0, flags, environment, directory,
                     ref startup, out var started))
@@ -201,6 +229,7 @@ internal sealed class HeavyStep : IDisposable
             if (handles != IntPtr.Zero) Marshal.FreeHGlobal(handles);
             if (environment != IntPtr.Zero) Marshal.FreeHGlobal(environment);
             foreach (var handle in inherited) CloseHandle(handle);
+            log?.Dispose();
         }
     }
 
@@ -209,19 +238,31 @@ internal sealed class HeavyStep : IDisposable
     {
         var own = GetStdHandle(which);
         if (own == IntPtr.Zero || own == new IntPtr(-1)) return IntPtr.Zero;
+        return Duplicated(own, made);
+    }
+
+    /// <summary>An inheritable copy of a handle of this process's, kept in <paramref name="made"/> to close once the step has it; none where it would not copy.</summary>
+    private static IntPtr Duplicated(IntPtr own, List<IntPtr> made)
+    {
         var self = GetCurrentProcess();
         if (!DuplicateHandle(self, own, self, out var copy, 0, true, DuplicateSameAccess)) return IntPtr.Zero;
         made.Add(copy);
         return copy;
     }
 
-    private static HeavyStep StartElsewhere(string run, string directory, IReadOnlyDictionary<string, string> added)
+    private static HeavyStep StartElsewhere(string run, string directory, IReadOnlyDictionary<string, string> added, StepOptions? options)
     {
         // Not the tools' environment (TOOLS5): the gate runs in the calling session's own environment, which that
         // session's start already handed the tools; the Windows path builds its block from the same environment.
         var info = new ProcessStartInfo("/bin/sh") { UseShellExecute = false, CreateNoWindow = true, WorkingDirectory = directory };
         info.ArgumentList.Add("-c");
-        info.ArgumentList.Add(run);
+        info.ArgumentList.Add(options?.Log is { } log ? $"({run}) >'{log.Replace("'", "'\\''")}' 2>&1 </dev/null" : run);
+        if (options?.Environment is { } only)
+        {
+            info.Environment.Clear();
+            foreach (var (name, value) in only) info.Environment[name] = value;
+        }
+
         foreach (var (name, value) in added) info.Environment[name] = value;
         try
         {

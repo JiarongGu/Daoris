@@ -87,9 +87,11 @@ internal static class ChatConsole
     {
         var configPath = DriverConfig.ResolvePath();
         var config = DriverConfig.Load(configPath);
+        // Chat's order, as the screen's press walks it (FOUNDATION1j part iii, the foundation design §2.4's third row), never the machine's `adapter`.
+        var (adapter, order) = ActorChoices.NewChat(config);
         return await ConverseAsync(configPath, async (runner, onEnded) =>
         {
-            var started = await runner.StartFromAsync(session, config.Adapter, config, onEnded).ConfigureAwait(false);
+            var started = await runner.StartFromAsync(session, adapter, config, onEnded, order: order).ConfigureAwait(false);
             return (started.SessionId, SessionsCommand.Started(started, Console.Error));
         }).ConfigureAwait(false);
     }
@@ -117,11 +119,12 @@ internal static class ChatConsole
 
         var configPath = DriverConfig.ResolvePath();
         var config = DriverConfig.Load(configPath);
-        var adapter = Flag(args, "--adapter") ?? config.Adapter;
+        // `--adapter` is the person's pick; without it Chat's order is walked, as the screen's press walks it (FOUNDATION1j part iii).
+        var (adapter, order) = ActorChoices.NewChat(config, Flag(args, "--adapter"));
         return await ConverseAsync(configPath, async (runner, onEnded) =>
         {
             var start = await runner.StartAsync(
-                repository, adapter, config, onEnded,
+                repository, adapter, config, onEnded, order: order,
                 // The per-session picker, on the surface a machine with no screen has (D49 §4, D50).
                 profile: Flag(args, "--profile"),
                 // The per-conversation tree choice (D51) — beside the repository's standing opt-in.

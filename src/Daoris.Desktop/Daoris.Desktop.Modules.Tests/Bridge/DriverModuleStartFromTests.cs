@@ -90,6 +90,24 @@ public sealed class DriverModuleStartFromTests : DriverModuleBridge
         Assert.Contains("this test spawns nothing", started.GetProperty("message").GetString());
     }
 
+    /// <summary>
+    /// FOUNDATION1j part iii (the foundation design §2.4's third row): a new conversation, from a start and from a record's words, starts on Chat's
+    /// order, never the machine's <c>adapter</c> key, which here names no agent this machine has: the open that reaches the agent's spawn is
+    /// <c>talk</c>'s, Chat's.
+    /// </summary>
+    [Fact]
+    public async Task A_new_conversation_starts_on_Chat_s_order_never_the_machine_s_adapter()
+    {
+        var (_, module, _) = await UpAsync(words: true);
+        ActorChoices.With(DriverConfig.Empty with { Adapter = "ghost" }, "chat", [new ActorChoice("talk", null)]).Save(DriverConfigPath);
+
+        var started = await AnswerAsync(module, "START_CHAT", new { repository = "engine" });
+        var from = await AnswerAsync(module, "SESSION_START_FROM", new { id = "c1" });
+
+        Assert.Contains("this test spawns nothing", started.GetProperty("message").GetString());
+        Assert.Contains("this test spawns nothing", from.GetProperty("message").GetString());
+    }
+
     /// <summary>A request id that is not one word of letters, digits and dashes is refused in a sentence, before anything starts.</summary>
     [Fact]
     public async Task A_malformed_request_id_is_refused()
