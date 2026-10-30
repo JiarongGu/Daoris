@@ -557,6 +557,10 @@ public sealed class NodeRuntime(
             Branches = branches,
             AfterHanded = RunSubjects.AfterHanded(graph),
             GoAheads = goAheads,
+            // INTEGRATE1o part o2 (§17.3): the quests a session serving the run's work published, which its `work.requests` holds the work on.
+            Requests = WorkRequestsNode.Published(quests,
+                work.SelectMany(quest => units.GetValueOrDefault(QuestUnits.IdOf(quest.Id))?.Executors ?? []).Distinct(StringComparer.Ordinal),
+                work.Select(quest => quest.Id).ToHashSet(StringComparer.OrdinalIgnoreCase)),
             Root = root,
             Identity = identity,
         };
@@ -1133,6 +1137,7 @@ public sealed class NodeRuntime(
             GoAheads = scope.GoAheads is { } asked
                 ? new Dictionary<string, IReadOnlyList<GoAheadView>>(StringComparer.Ordinal) { [self.Id] = asked }
                 : new Dictionary<string, IReadOnlyList<GoAheadView>>(StringComparer.Ordinal),
+            Requests = new Dictionary<string, IReadOnlyList<QuestView>>(StringComparer.Ordinal) { [self.Id] = scope.Requests },
             Opinions = gates.Opinion is { } opinion && scope.Branch is { } judged
                 ? new Dictionary<string, OpinionGateState>(StringComparer.Ordinal) { [judged.Id] = opinion }
                 : new Dictionary<string, OpinionGateState>(StringComparer.Ordinal),

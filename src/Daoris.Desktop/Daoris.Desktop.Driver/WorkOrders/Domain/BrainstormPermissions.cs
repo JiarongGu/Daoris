@@ -11,8 +11,10 @@ namespace Daoris.Driver;
 /// folder or the web was made for sessions that work in a repository, which a pass is not. Every connector tool but the turn's is
 /// denied by name, since the person's composition and the defaults name them all, and an unlisted one is the classifier's to judge.</para>
 ///
-/// <para><b>Measured only where it is handed.</b> Claude Code, by either door, honours these rules; for any other maker the room's
-/// contents are the floor until its posture is measured (BRAINSTORM1c, D53).</para>
+/// <para><b>Two forms, by what the harness takes</b> (BRAINSTORM1c). A harness that takes Daoris's rules (Claude Code, by either door) is
+/// handed these rules. One that takes none (Codex) is handed its own mode that changes nothing (<see cref="Posture"/>), required, so it
+/// never runs a pass in its writing mode; beside it the room's contents are the floor. Whether either keeps a pass's reads inside its
+/// room is the measurement's (<c>BrainstormRoomMeasure</c>, D53), run on real makers by the owner's go.</para>
 /// </remarks>
 public static class BrainstormPermissions
 {
@@ -26,6 +28,22 @@ public static class BrainstormPermissions
 
     /// <summary>The result tool a turn answers through: a synthesis's (<c>s1</c>, <c>s1r</c>), else a generator's.</summary>
     public static string ToolOf(string turn) => turn.StartsWith('s') ? Synthesize : Give;
+
+    /// <summary>
+    /// The protocol-door posture a pass asks of <paramref name="adapter"/> (BRAINSTORM1c): its mode that changes nothing, marked required
+    /// (<see cref="AgentPostures.Required"/>), where it takes no rules to narrow it with (<see cref="ISessionAdapter.ReadingPosture"/>);
+    /// null otherwise, which keeps the adapter's own posture and leaves a rule-taking harness to <see cref="Shape"/>.
+    /// </summary>
+    public static string? Posture(ISessionAdapter adapter) =>
+        !adapter.TakesSettings && adapter.ReadingPosture is { Length: > 0 } mode ? $"{AgentPostures.Required}{mode}" : null;
+
+    /// <summary>
+    /// What a pass's open says where its agent does not offer the mode <see cref="Posture"/> asked: the mode and what the agent offers, and
+    /// that the pass is not run in another under that name.
+    /// </summary>
+    public static string Unoffered(string named, string offers) =>
+        $"the agent does not offer `{named}`, the mode in which a brainstorm's pass changes nothing ({offers}), so the pass does not run in "
+        + "another mode under that name";
 
     /// <summary>
     /// Every tool the connector offers, each denied a pass but its turn's own. 🔴 The service's <c>McpToolRegistrationTests</c> holds
