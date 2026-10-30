@@ -123,11 +123,14 @@ public sealed class SessionDeletionTests : IDisposable
         Assert.Contains("\"c2\"", File.ReadAllText(HeldWordsFile.PathOf(_home)));
     }
 
-    /// <summary>The three files a limit's move and an agent's ask to hand over keep for a session (SESSFILES1), named by its id.</summary>
+    /// <summary>
+    /// The files a limit's move and an agent's ask to hand over keep for a session (SESSFILES1), named by its id, and the limit's box once the
+    /// come-up has imported it into the move record and set it aside (FOUNDATION1f-vi part a).
+    /// </summary>
     private string[] Boxes(string id) =>
     [
         Path.Combine(Sessions, id + LimitBoxes.Suffix), Path.Combine(Sessions, id + HandOverAskFiles.AskSuffix),
-        Path.Combine(Sessions, id + HandOverAskFiles.StateSuffix),
+        Path.Combine(Sessions, id + HandOverAskFiles.StateSuffix), Path.Combine(Sessions, id + LimitBoxes.Suffix + MoveBoxImport.SetAsideSuffix),
     ];
 
     private void KeepBoxes(string id)

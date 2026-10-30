@@ -61,7 +61,14 @@ public sealed class ConversationMoves
         Said = said ?? new MoveSaidDoor(service, events);
         Delivery = new MoveDelivery(Store, Said);
         Resolve = new MoveResolve(Store, Said);
-        _takeUp = new MoveTakeUp(home, Store, scope ?? MoveTakeUpScope.Conversations, imports: null, note: Note, clock: clock, said: Said);
+        scope ??= MoveTakeUpScope.Conversations;
+
+        // FOUNDATION1f-vi part a (§3.3, §13.5): the conversations' scope imports the ended limit move's box an older build writes, at its
+        // come-up and look; the lease holder's scope has no box of its own to import, the driven carry-on never having written one.
+        IMoveBoxImport[] imports = string.Equals(scope.Executor, MoveExecutors.Conversation, StringComparison.Ordinal)
+            ? [new LimitBoxImport(home, Store, (session, through) => LimitHeld.Of([.. events.After(session, 0).Events.Take(through)]) is not null)]
+            : [];
+        _takeUp = new MoveTakeUp(home, Store, scope, imports, note: Note, clock: clock, said: Said);
     }
 
     /// <summary>
@@ -167,6 +174,13 @@ public sealed class ConversationMoves
         foreach (var taken in look.Taken)
         {
             if (taken is { Claim: { } claim, Move: { } move }) await Settle(() => EndAsync(claim, move.Phase, unwritten: false, ct)).ConfigureAwait(false);
+        }
+
+        // A box an older build wrote, imported this look (FOUNDATION1f-vi part a): the importing run claims the move, so the take-up never
+        // takes it, and it goes on from its phase here as a taken move does, its prompt's write unknown.
+        foreach (var imported in look.Imported)
+        {
+            if (imported.Stands) await Settle(() => EndAsync(new MoveClaim(imported.Id, imported.ClaimRun, imported.ClaimGeneration), imported.Phase, unwritten: false, ct)).ConfigureAwait(false);
         }
     }
 
