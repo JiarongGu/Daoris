@@ -39,6 +39,7 @@ public sealed class HandOverQuestTickTests : IDisposable
 
     public void Dispose()
     {
+        Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
         try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 
@@ -59,7 +60,12 @@ public sealed class HandOverQuestTickTests : IDisposable
         var tree = first["tree"]!.GetValue<string>();
 
         // 2. The person hands it to `stub`: the look takes the box and stops the session as theirs, with the hand-over's own line.
-        new HandOverBox(_home).Write("s1", new HandOverRequest("stub", null, HandOverWhy.Press, HandOverBy.Person, DateTimeOffset.UtcNow));
+        // FOUNDATION1f-v part c: the ask decides the hand-over's move in the store through the driver's own holder, and no box is written.
+        var asked = await QuestHandOver.AskAsync(
+            new ServiceClient(service.Url, null), driver.Moves, QuestHandOver.Roster(AdapterSet.Built(), _home), "s1", "stub", null, HandOverWhy.Press, HandOverBy.Person);
+        Assert.True(asked.Kept, asked.Message);
+        Assert.Empty(new HandOverBox(_home).Pending());
+        Assert.Equal("decided", Move().PhaseWord);
         var taking = await driver.TickAsync().WaitAsync(Poll.Patience);
         Assert.Contains(taking.Events, line => line == "hand-over  session `s1` (#q1): stopped, and `#q1` goes on with stub.");
         await UntilAsync(() => service.Session("s1")["state"]!.GetValue<string>() == "stopped");
@@ -68,10 +74,16 @@ public sealed class HandOverQuestTickTests : IDisposable
         Assert.Equal("Taken", service.Status("q1"));
         Assert.Equal("stub", new HandedQuests(_home).Read("q1")!.Agent);
         Assert.Null(new HandOverBox(_home).Read("s1"));
+        Assert.Equal("old-ended", Move().PhaseWord);
 
-        // 3. The next look reads that stop as released: the quest is carried on in the same tree, on `stub`, and closes.
+        // 3. The next look reads that stop as released: the quest is carried on in the same tree, on `stub`, and closes. The carry-on goes on
+        // from the hand-over's own move, which closes delivered with the new part named: one move from ask to delivery, its words heard once.
         await driver.TickAsync().WaitAsync(Poll.Patience);
         await driver.Running.SettledAsync().WaitAsync(Poll.Patience);
+        await Poll.Until(() => Move().PhaseWord == "delivered", () => $"the hand-over's move at {Move().PhaseWord}");
+        var moves = new MoveStore(_home).Of("s1");
+        Assert.Single(moves);
+        Assert.Equal(("s2", "stub", "press", "person"), (moves[0].Destination, moves[0].Agent, moves[0].Why, moves[0].By));
 
         var carried = service.Session("s2");
         Assert.Equal("stub", carried["adapter"]!.GetValue<string>());
@@ -92,6 +104,8 @@ public sealed class HandOverQuestTickTests : IDisposable
         await driver.TickAsync().WaitAsync(Poll.Patience);
         Assert.Empty(new HandedQuests(_home).All());
     }
+
+    private MoveRecord Move() => new MoveStore(_home).Of("s1").Single();
 
     private DriverConfig Config(string log) => DriverConfig.Empty with
     {

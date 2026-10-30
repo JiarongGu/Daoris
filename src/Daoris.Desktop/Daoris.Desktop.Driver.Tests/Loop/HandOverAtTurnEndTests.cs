@@ -140,10 +140,16 @@ public sealed class HandOverAtTurnEndTests : IDisposable
         // The person's press, at the offer's choice (Build's next entry on another agent), is kept under either rule.
         var next = HandOverOrder.Steps("stub", [new("stub", true, null), new("codex-acp", true, "codex"), new("dsh", true, null)], ActorChoices.Effective("build", ActorChoices.With(DriverConfig.Empty with { Adapter = "stub" }, "build", build)))[0];
         Assert.Equal(("dsh", "m1", "2"), (next.Harness, next.Model, next.From));
+        var client = _ledger.Client();
+        var moves = new ConversationMoves(
+            _home, client, new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)), store: new MoveStore(_home, () => StoreSettled.Yes),
+            scope: MoveTakeUpScope.LeaseHolder);
         var pressed = await QuestHandOver.AskAsync(
-            _ledger.Client(), _home, _ => new HandOverAgent([], SessionWire.Acp), "s1", next.Harness, null, HandOverWhy.Limit, HandOverBy.Person, T0);
+            client, moves, _ => new HandOverAgent([], SessionWire.Acp), "s1", next.Harness, null, HandOverWhy.Limit, HandOverBy.Person);
         Assert.True(pressed.Kept, pressed.Message);
-        Assert.Equal("dsh", new HandOverBox(_home).Read("s1")!.Agent);
+        // FOUNDATION1f-v part c: the press is kept as a driven move in the store, never a box.
+        Assert.Equal("dsh", new MoveStore(_home).Standing("s1")!.Agent);
+        Assert.Null(new HandOverBox(_home).Read("s1"));
     }
 
     /// <summary>🔴 A quest's session a hand-over started works its quest in its first turn: its ask then is refused, no second hand-over in a row.</summary>

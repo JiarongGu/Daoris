@@ -39,8 +39,12 @@ public sealed class DrivenCarryOnStoreTests : IDisposable
         new(_home, new ServiceClient("http://carry-on.test", null), new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)),
             store: Store(run), said: _said, scope: MoveTakeUpScope.LeaseHolder);
 
-    private static MoveDecision Carry(string why = HandOverWhy.CarryOn, bool handed = false) =>
-        CarryOnRecord.Decision(new ContinuedFrom("s1", why, HandOverBy.Daoris), handedFrom: handed, agent: "claude-code", account: "account-2")!;
+    private static MoveDecision Carry(string why = HandOverWhy.CarryOn) =>
+        CarryOnRecord.Decision(new ContinuedFrom("s1", why, HandOverBy.Daoris), agent: "claude-code", account: "account-2")!;
+
+    /// <summary>The quest's hand-over as its ask decides it (<c>QuestHandOver.AskAsync</c>): driven, the agent and account named, at <c>decided</c>.</summary>
+    private static MoveDecision HandOver(string agent = "codex-acp") =>
+        new("s1", MoveExecutors.Driven, MoveHows.Brief, HandOverWhy.Press, HandOverBy.Person) { Agent = agent, Account = "work" };
 
     private MoveRecord? MoveFrom(string left) => Store("run-probe").Of(left).LastOrDefault();
 
@@ -240,21 +244,73 @@ public sealed class DrivenCarryOnStoreTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 A carry-on of a quest's hand-over keeps no record here (the hand-over is row f-v's), and a start that continues nothing keeps none; every
-    /// other why a start continues by does, by its own code.
+    /// 🔴 A start that continues nothing keeps no move; every why a start continues by does, by its own code, the quest's hand-over's among them
+    /// (FOUNDATION1f-v part c: a handed start whose hand-over left no move, an agent's ask taken at its turn's end or an older build's take, is
+    /// decided as any carry-on is).
     /// </summary>
     [Fact]
-    public void A_handed_carry_on_and_a_start_that_continues_nothing_decide_no_move()
+    public void A_start_that_continues_nothing_decides_no_move_and_every_other_why_decides_one()
     {
-        var handed = new ContinuedFrom("s1", HandOverWhy.Press, HandOverBy.Person);
-        Assert.Null(CarryOnRecord.Decision(handed, handedFrom: true, "claude-code", null));
-        Assert.Null(CarryOnRecord.Decision(null, handedFrom: false, "claude-code", null));
+        Assert.Null(CarryOnRecord.Decision(null, "claude-code", null));
 
-        foreach (var why in new[] { HandOverWhy.CarryOn, HandOverWhy.Retry, HandOverWhy.Limit, HandOverWhy.Curve })
+        foreach (var why in new[] { HandOverWhy.CarryOn, HandOverWhy.Retry, HandOverWhy.Limit, HandOverWhy.Curve, HandOverWhy.Press, HandOverWhy.Agent })
         {
-            var decision = CarryOnRecord.Decision(new ContinuedFrom("s1", why, HandOverBy.Daoris), handedFrom: false, "claude-code", null)!;
+            var decision = CarryOnRecord.Decision(new ContinuedFrom("s1", why, HandOverBy.Daoris), "claude-code", null)!;
             Assert.Equal(("s1", MoveExecutors.Driven, why, true), (decision.Left, decision.Executor, decision.Why, decision.FromEnded));
         }
+    }
+
+    /// <summary>
+    /// 🔴 FOUNDATION1f-v part c (§3.3: a hand-over is one move from ask to delivery): the carry-on the quest's hand-over starts goes on from the
+    /// hand-over's own move, decided at the ask and left at <c>old-ended</c> by the look's take, never from a second one; it is written in the
+    /// carry-on's order from there and closes <c>delivered</c>, the one row, its why, asker, agent and account the ask's.
+    /// </summary>
+    [Fact]
+    public async Task The_carry_on_a_hand_over_starts_goes_on_from_the_hand_overs_own_move_and_writes_no_second()
+    {
+        var holder = Holder();
+        var asked = await holder.BeginAsync(HandOver(), default);
+        Assert.Equal("decided", MoveFrom("s1")!.PhaseWord);
+        Assert.Null(asked.Move!.Quiescing());
+        Assert.Null(asked.Move.OldEnded());
+
+        // The carry-on's own decision finds the move standing, and goes on from it, claimed by this run.
+        var again = await holder.BeginAsync(Carry(HandOverWhy.Press), default);
+        Assert.Null(again.Move);
+        await using var record = CarryOnRecord.Of(holder, again, handedFrom: true, "codex-acp")!;
+        Assert.Null(record.OldEnded());
+        Assert.Null(record.Opening(MoveWords.DrivenKey()));
+        Assert.Null(await record.FenceAsync("s2", []));
+        record.Written();
+        await record.DisposeAsync();
+
+        var move = Assert.Single(Store("run-probe").Of("s1"));
+        Assert.Equal(asked.Move.Claim.Move, move.Id);
+        Assert.Equal(("delivered", "run-loop", HandOverWhy.Press, HandOverBy.Person, "codex-acp", "work"), (move.PhaseWord, move.ClaimRun, move.Why, move.By, move.Agent, move.Account));
+        Assert.Equal("s2", move.Destination);
+    }
+
+    /// <summary>
+    /// 🔴 A standing move that is not the hand-over's own is not continued: a start that did not come of the hand-over, a move another run holds, one
+    /// naming another agent, or one past its open holds the carry-on as before, so no two carry-ons share a move.
+    /// </summary>
+    [Fact]
+    public async Task A_standing_move_that_is_not_the_hand_overs_own_is_not_continued()
+    {
+        var holder = Holder();
+        await holder.BeginAsync(HandOver(), default);
+        var standing = await holder.BeginAsync(Carry(HandOverWhy.Press), default);
+
+        Assert.Null(CarryOnRecord.Of(holder, standing, handedFrom: false, "codex-acp"));
+        Assert.Null(CarryOnRecord.Of(holder, standing, handedFrom: true, "claude-code"));
+        Assert.Null(CarryOnRecord.Of(Holder("run-other"), standing, handedFrom: true, "codex-acp"));
+
+        var opened = Store("run-loop");
+        var claim = new MoveClaim(standing.Standing!.Id, "run-loop", standing.Standing.ClaimGeneration);
+        opened.Advance(claim, MoveRecordPhase.OldEnded);
+        opened.Opening(claim, "drive-move/x");
+        var past = await holder.BeginAsync(Carry(HandOverWhy.Press), default);
+        Assert.Null(CarryOnRecord.Of(holder, past, handedFrom: true, "codex-acp"));
     }
 
     /// <summary>
