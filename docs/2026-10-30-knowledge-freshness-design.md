@@ -1,6 +1,7 @@
 # Knowledge freshness: what a hit says of its standing, and how a stale record is found
 
-**Standing:** proposed, round 3 (KNOWFRESH1a under D191), after two rounds of Codex's and the Opus reader's reads (§7).
+**Standing:** accepted by the steward, 2026-10-30, after both makers accepted round 3 (KNOWFRESH1a under D191; D220's note);
+the Opus reader's three round-3 notes are carried into §5's rows.
 **Governing:** D220 and the canon's `current-knowledge`. Parts b (Lyntai's memory, quest `#d9c80453e46f`) and c (the
 machine's memory server) are not this design's.
 
@@ -124,14 +125,16 @@ record's mark is the source. Contradiction by meaning. The censuses (CENSUSRULES
 - **KNOWFRESH1a-i, the mark and its gate** (records tools). **Proof:** fixtures in `orient-index` and `DecisionNotes`' twin
   table carry the actual text of `D107.md:123`, `D117.md:131`, `D84.md:41` and an italic mark. Each reads as a mark, as do
   `Superseded by` and a `replacing` note. `D33.md:53` reads unmarked. An unknown or lower decision fails, as does a
-  `replacing` label naming no earlier note. The 54 marks pass.
+  `replacing` label naming no earlier note. The 54 marks pass. A `replacing` quote matches the note label's full text, not the
+  index's 80-character digest, in the gate and the twin table alike.
 - **KNOWFRESH1a-ii, a hit's standing** (service). **Proof:** a fixture decision's opening shows `superseded by`, its note
   `later: 2 notes`, an unmarked decision `no mark`; a dirty root says `+ uncommitted`; a fed reading round-trips its commit
   and marks.
 - **KNOWFRESH1a-iii, the report and `documents.present`** (tools, records). **Proof:** negative fixtures, each reported as
   it should be: a symbol kept only in a comment or in JSON data, one only in test source (printed), a moved file never
   rescued, a shifted `path:line` present, a file's stem present. The landing run on this repository is reviewed by hand,
-  and its true findings are fixed in the row.
+  and its true findings are fixed in the row, with the product comments that still name the same retired twins
+  (`PluginSteps.cs:283` among them). `AGENTS.md` is read only above its generated doctrine region, which the canon owns.
 - **KNOWFRESH1a-iv, restatement** (service), blocked on §3.5's preconditions.
 
 ## 6. Settled by the steward (D191 point 3)
