@@ -32,7 +32,7 @@ public sealed class NewsTeller(News news, string name, Func<JournalEntry, bool> 
         var told = new Dictionary<string, NewsTold>(StringComparer.Ordinal);
         foreach (var row in batch.Rows.Where(takes))
         {
-            if (Of(row, batch.Store) is { } piece) told[News.KeyOf(batch.Store, row.Position)] = piece;
+            if (Of(row, batch.Store) is { } piece && !(piece.Kind == AttentionKind.Ended && news.Covered(piece.Session))) told[News.KeyOf(batch.Store, row.Position)] = piece;
         }
 
         // Nothing to claim: the feed's own keep moves the cursor, and no write is made for a batch with no news.
