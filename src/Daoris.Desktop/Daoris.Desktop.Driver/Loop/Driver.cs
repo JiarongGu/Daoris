@@ -3982,6 +3982,8 @@ public sealed class Driver(
             ? Structured(adapter, process, transcript, sessionId, prompt, ct, preamble, target.PersonSaid, said, keepAs, resume, account, own, target.Handed)
             : null;
         Task capture = acp ?? structured ?? CaptureAsync(process, transcript, sessionId, ct, preamble);
+        // AGENTLYNTAI1s-i: a native harness's prompt on its input, once its output is being read, then closed.
+        await NativePrompt.WriteAsync(process, adapter, prompt, ct).ConfigureAwait(false);
 
         if (!movedFirst)
         {

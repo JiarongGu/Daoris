@@ -5,6 +5,7 @@ with the version and date at release.
 
 ## Unreleased
 
+- A driven Claude Code session's prompt, a quest's text or your words to it, is now handed over on its standard input instead of in its command line, where any process on the machine could read it. Chinese text and emoji arrive exactly as written (AGENTLYNTAI1s-i).
 - A conversation that goes on to a new part when its account reaches its limit now keeps a record of the move in the desktop's store. A Daoris that quits during such a move has it taken up when Daoris comes back, never sending a word twice, and a move that stays stuck for ten minutes is said once on the conversation (FOUNDATION1f-ii).
 - When a session goes on in a new part, the words you said to the old one, one said just as the new part opened among them, now go with it in one step, and the new part's conversation shows each of them on its own line, with its files, where it used to show them joined as one message or leave a late word behind on the old part. This holds for a quest's session carried on in a new one and for a conversation whose first account refused its model, which goes on in a replacement; a press sent twice there reaches the agent once (FOUNDATION1d-ii, D212).
 
