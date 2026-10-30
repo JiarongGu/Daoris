@@ -166,6 +166,17 @@ landing and commit facts through lower contracts; `Workplace/AgentWorkplaceWirin
 Tools are handed before Workplace removes inherited tokens, resolves the author and hands long paths. The installed
 tree-guard carrier and matcher belong to Agents; the actual resource, installer and guard remain Workplace's.
 
+`IntegrationReplays` forms a line's candidate and replays each member onto it in the line's own warm integration tree, called from no production
+path yet (INTEGRATE1e parts e3a and e3b; the integration design §5.2 steps 2 to 5, §5.4). Each member's merge is resolved in its replay effect
+(`IntegrationResolves`), so the merge commit is made once: the conflicted paths the repository settles by a rule it declares at the candidate's
+base (the backlog and declared row tables by the merge base, generated files taking the candidate's copy and written again where the integration
+acceptance accepts their writer, accepted line rules) are settled by `BacklogMerge.Stops`, `GeneratedPaths`, `GeneratedWriters` and `LineRules`,
+and the joins union left are set apart (`UnionJoins`). A path none settles is a conflict of meaning, and the member goes by its request's
+`conflicts` word as it was frozen: `session` tells its session to rebase in the landing's words (`RebaseTelling`, keyed by session and frozen tip,
+the files, the line's commits and the member it met named by `IntegrationConflicts`) and hands the member back with its request closed; `hold`,
+and a session that cannot be told, sets it aside as `held`, its request open and out of `IntegrationStore.Queued` until an act. The `Say` and
+`Config` of its ask are handed in by the caller. The landing agent is a later design's.
+
 Workplace reads and removes conversations through the supplied `IWorkplaceEventHistory` and `ISessionEventRemoval`
 facets. Context's `Context/Events/SessionEventLog.cs` answers them on the original record, retaining its numbering,
 lock and subscriptions. `Context/WorkplaceEventRecordsWiring.cs` installs the required factory for standalone landing;

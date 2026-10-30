@@ -218,18 +218,37 @@ internal static partial class UnionJoins
     /// </summary>
     internal static async Task<IReadOnlyList<Set>> SetApartAsync(string tree, string onto, string session, CancellationToken ct)
     {
+        var set = await StageSetApartAsync(tree, onto, session, declaredAt: onto, merging: false, ct).ConfigureAwait(false);
+        if (set.Count == 0) return [];
+        var (made, _, _) = await WorkingTree.GitAsync(
+            tree, ["commit", "--quiet", "-m", "Set apart what union joined in the replay"], environment: null, SyncBounds.Replay, ct).ConfigureAwait(false);
+        return made == 0 ? set : [];
+    }
+
+    /// <summary>
+    /// The set-apart of <see cref="SetApartAsync"/>, written and staged and not committed: the joins in the files a merge in progress changed
+    /// against <paramref name="onto"/> (the index, read as <c>--cached</c>), for the merge's own commit to take (INTEGRATE1e part e3b's resolve,
+    /// as the merge tool's <c>setApartJoins</c> runs before its commit). Where <paramref name="merging"/> is false the files are the replay's,
+    /// <paramref name="onto"/> to HEAD. <paramref name="declaredAt"/> is the commit whose <c>.gitattributes</c> and <c>daoris.json</c> say which
+    /// files are union records and where the decisions are: the line's, never the work's.
+    /// </summary>
+    internal static async Task<IReadOnlyList<Set>> StageSetApartAsync(
+        string tree, string onto, string session, string declaredAt, bool merging, CancellationToken ct)
+    {
         var (listed, changed, _) = await WorkingTree.GitAsync(
-            tree, ["--no-optional-locks", "-c", "core.quotePath=false", "diff", "--name-only", "-z", "--diff-filter=d", onto, "HEAD"], ct).ConfigureAwait(false);
+            tree,
+            ["--no-optional-locks", "-c", "core.quotePath=false", "diff", "--name-only", "-z", "--diff-filter=d", .. merging ? new[] { "--cached", onto } : new[] { onto, "HEAD" }],
+            ct).ConfigureAwait(false);
         if (listed != 0) return [];
         var paths = changed.Split('\0', StringSplitOptions.RemoveEmptyEntries);
         if (paths.Length == 0) return [];
 
-        var union = UnionPatternsOf(await ShowAsync(tree, onto, ".gitattributes", ct).ConfigureAwait(false)).Select(PatternOf).ToList();
-        var folder = DecisionsOf(await ShowAsync(tree, onto, "daoris.json", ct).ConfigureAwait(false));
+        var union = UnionPatternsOf(await ShowAsync(tree, declaredAt, ".gitattributes", ct).ConfigureAwait(false)).Select(PatternOf).ToList();
+        var folder = DecisionsOf(await ShowAsync(tree, declaredAt, "daoris.json", ct).ConfigureAwait(false));
         if (folder is not null)
         {
             // A folder, as `doc-duplicates` asks the disk: a decisions record that is one file holds no note a folder's rule reads.
-            var (typed, kind, _) = await WorkingTree.GitAsync(tree, ["cat-file", "-t", $"{onto}:{folder}"], ct).ConfigureAwait(false);
+            var (typed, kind, _) = await WorkingTree.GitAsync(tree, ["cat-file", "-t", $"{declaredAt}:{folder}"], ct).ConfigureAwait(false);
             if (typed != 0 || kind.Trim() != "tree") folder = null;
         }
 
@@ -251,10 +270,7 @@ internal static partial class UnionJoins
             set.AddRange(apart.Select(each => new Set(path, each.Line, each.Label)));
         }
 
-        if (set.Count == 0) return [];
-        var (made, _, _) = await WorkingTree.GitAsync(
-            tree, ["commit", "--quiet", "-m", "Set apart what union joined in the replay"], environment: null, SyncBounds.Replay, ct).ConfigureAwait(false);
-        return made == 0 ? set : [];
+        return set;
     }
 
     /// <summary>A file as <paramref name="commit"/> holds it, its bytes read as UTF-8; null where it holds none or git could not say.</summary>

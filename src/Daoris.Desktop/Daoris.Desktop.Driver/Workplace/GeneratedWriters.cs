@@ -93,7 +93,12 @@ internal static class GeneratedWriters
     /// (a replay's own, standing at its new tip), each folder staged, and what they changed committed on top as one commit of Daoris's,
     /// so the session's commits stay as replayed. A writer that fails or outlasts the replay's bound commits nothing, and says why.
     /// </summary>
-    internal static async Task<Written> WriteAsync(string tree, IReadOnlyList<Writer> writers, IReadOnlyList<string> taken, CancellationToken ct)
+    /// <param name="commit">
+    /// False inside a merge not yet committed (INTEGRATE1e part e3b, the integration's resolve): each folder is staged and nothing is committed,
+    /// so what the writers wrote is part of the member's one merge commit; <see cref="Written.Paths"/> is then what they changed, read before staging.
+    /// </param>
+    internal static async Task<Written> WriteAsync(
+        string tree, IReadOnlyList<Writer> writers, IReadOnlyList<string> taken, CancellationToken ct, bool commit = true)
     {
         var running = writers.Where(writer => taken.Any(writer.Holds)).ToList();
         if (running.Count == 0) return Written.None;
@@ -107,8 +112,19 @@ internal static class GeneratedWriters
         }
 
         var folders = running.Select(writer => writer.Folder).Distinct(StringComparer.Ordinal).ToList();
+        IReadOnlyList<string> changed = [];
+        if (!commit)
+        {
+            // What differs from the index before it is staged: modified, removed and new files, the merge's own staged changes not among them.
+            var (listed, touched, _) = await WorkingTree.GitAsync(
+                tree, ["--no-optional-locks", "-c", "core.quotePath=false", "ls-files", "-z", "--modified", "--others", "--exclude-standard", "--", .. folders], ct)
+                .ConfigureAwait(false);
+            if (listed == 0) changed = [.. touched.Split('\0', StringSplitOptions.RemoveEmptyEntries).Distinct(StringComparer.Ordinal)];
+        }
+
         var (added, _, addErr) = await WorkingTree.GitAsync(tree, ["add", "-A", "--", .. folders], ct).ConfigureAwait(false);
         if (added != 0) return new([], runs, $"git would not stage what it wrote: {TreeGit.Failure(addErr)}");
+        if (!commit) return new(changed, runs, null);
         var (same, _, _) = await WorkingTree.GitAsync(tree, ["--no-optional-locks", "diff", "--cached", "--quiet", "HEAD"], ct).ConfigureAwait(false);
         if (same == 0) return new([], runs, null);
 
