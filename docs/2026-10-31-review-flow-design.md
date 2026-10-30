@@ -120,7 +120,7 @@ the one landing after (§17.4).
 already built. ACCEPTCONFLICT1 left this door to LINESTOGETHER1 (`docs/decisions/D167.md:447-448`). Integration deferred a landing
 agent because a new session needs a record, authority and a re-review (§5.4); the head is an existing session, the press attributed,
 the one Accept the re-review. **Rejects:** X's door through INTEGRATE1: a unit not yet landed is requested only through its own
-landing (D215 point 4), so three sessions need three Accepts or a new Accept across sessions; its rows n, g, h and i are unbuilt
+landing (D215 point 4), so three sessions need three Accepts or a new Accept across sessions; its steward's acts (row i) are unbuilt
 (`TASKS.md:28`); it hands a conflict of meaning to each member apart (§5.4); and it lands three branches where the session lands one.
 Also Daoris merging for the head (a conflict of meaning is a session's); acceptance inside the door (X).
 
