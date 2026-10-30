@@ -117,6 +117,11 @@
       "row": "1q",
       "note": "judges who may ask a helper, lead a partner's piece or hand over by the asker's marks; the start layer's (§2.3)"
     },
+    "Participants/Domain/StartAdmission.cs": {
+      "lines": 2,
+      "reads": "tells",
+      "note": "the start layer's table itself (§2.3, row 1q): who may ask for a co-worker by the work, an empty `serves` or `opinion` and Ask Daoris's mode kept refused as every door refused them; no row of this design moves it"
+    },
     "Course/GoOn/AnswersAloneHold.cs": {
       "lines": 1,
       "reads": "other",
