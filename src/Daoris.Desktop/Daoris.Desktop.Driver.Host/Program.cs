@@ -924,6 +924,8 @@ try
     // client's opens and moves and the record's events, so the record is handed to every driver below.
     var events = new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions));
     using var sessionLog = new SessionLog(log, service, events);
+    // FOUNDATION1 l-iv: the service's journal read from this process's come-up, so `session.ended` is written for every end, whoever wrote it.
+    _ = Task.Run(() => JournalFeed.RunAsync(service, sessionLog.TellAsync, null, null, log, closing.Token), closing.Token);
     // SESSWATCH1a (D200): no session is ended on time; --quiet-end ends one of this run unheard that long, and says so.
     if (loop.QuietEnd is { } quietEnd)
     {

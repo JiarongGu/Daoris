@@ -788,7 +788,16 @@ public sealed class DriverLoop(
 
         // FOUNDATION1 l-i (the foundation design §4.1): the service's journal read from this process's come-up, whoever holds the lease, so an end
         // a headless loop drove reaches this window's slices as a conversation's own does. It ends with the loop.
-        _ = Task.Run(() => JournalFeed.RunAsync(service, batch => PartEndRelay.TellAsync(eventBus, batch), null, null, log, ct), ct);
+        _ = Task.Run(
+            () => JournalFeed.RunAsync(
+                service,
+                async batch =>
+                {
+                    await PartEndRelay.TellAsync(eventBus, batch).ConfigureAwait(false);
+                    if (sessionLog is not null) await sessionLog.TellAsync(batch).ConfigureAwait(false);
+                },
+                null, null, log, ct),
+            ct);
 
         // Every loop on the home watches the requests a terminal's `sessions stop|finish|decline` writes (SESSUX1g, D126
         // §7.1): one for a session this registry runs, a conversation or a driven session, is acted on as the screen's
