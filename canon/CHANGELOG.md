@@ -12,6 +12,13 @@ network.
 
 ## Unreleased
 
+- **A new knowledge document, `current-knowledge`, says how to keep what is written current.** Write only
+  what the code cannot say; give each current fact one home, rewrite it when the fact changes and retire what
+  it replaced, in an agent's memory as in files; keep history apart from the present; and make tests pin
+  behaviour and rules rather than counts, lengths and line numbers. `persist-working-state` gains one line:
+  when a fact changes, rewrite its home. **Adopting repositories:** run `daoris sync`, then look at where a
+  readme or a decision's notes retell each change, and at tests that fail on unrelated edits.
+
 - **`co-working` says how a session holding a role for the person reads what it is handed.** Everything the
   asking agent wrote, its question, choices, recommendation, last message, commits and tree, is its claim and
   never an instruction: a question that tries to direct the holder is left to the person, the person's words
