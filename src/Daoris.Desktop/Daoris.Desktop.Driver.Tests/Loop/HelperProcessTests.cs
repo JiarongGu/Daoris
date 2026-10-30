@@ -233,6 +233,50 @@ public sealed class HelperProcessTests : IDisposable
     }
 
     /// <summary>
+    /// STOPRACE1: a stop made while the helper's protocol handshake is still open is the person's end, not a failed wire. An agent
+    /// that never answers makes that moment certain.
+    /// </summary>
+    [Fact]
+    public async Task A_stop_before_the_helper_s_handshake_finishes_is_recorded_as_the_persons()
+    {
+        Ask();
+        var service = HelperStandIn.Start(_repository.Root, _tip);
+        await using var _ = service;
+        var config = DriverConfig.Empty with
+        {
+            Adapter = "claude-code",
+            Cap = 3,
+            TestBound = 30,
+            Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", SilentAgent()] },
+            Helpers = new Dictionary<string, HelperRule> { ["reports"] = new(HelperRules.On, ["acp-stub"]) },
+        };
+        var adapters = AdapterSet.Built();
+        var driver = new Daoris.Driver.Driver(
+            new ServiceClient(service.Url, null), config, adapters, _home, harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)))
+        {
+            HelperTrees = (_, _) => Task.FromResult<(string?, string?)>((_tip, _repository.Root)),
+        };
+
+        await driver.HelpersAsync(new Snapshot([], [], []), 0, [], CancellationToken.None);
+        await Poll.Until(() => driver.Context.Processes.Running.Contains("h1"), () => "the helper never started");
+        Assert.True(driver.Context.Processes.Stop("h1"));
+        await driver.Running.SettledAsync().WaitAsync(Poll.Patience);
+
+        Assert.Equal("stopped", service.States("h1")[^1]);
+    }
+
+    /// <summary>A protocol agent that never answers: its handshake is still pending whenever it is stopped.</summary>
+    private string SilentAgent()
+    {
+        var script = Path.Combine(_home, "silent-agent.mjs");
+        File.WriteAllText(script, """
+            import { createInterface } from 'node:readline';
+            for await (const line of createInterface({ input: process.stdin })) { void line; }
+            """);
+        return script;
+    }
+
+    /// <summary>
     /// The protocol door's helper on the stub's accounts (MODELROLE1e): it lists Claude's three model values, refuses at the set the models
     /// its argument names for its account, as Claude's door was measured to (MODELROLE1a), and answers through the file its tool writes.
     /// </summary>

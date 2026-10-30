@@ -3291,15 +3291,7 @@ public sealed class Driver(
         {
             // A wire that broke after a stop (the process killed under a handshake's write) is that stop's end, not a failure: the
             // stop decided it, as its conclusion would have, and the person's is never interrupted (D104, FLAKE3).
-            var (stopped, _) = Observation.Closed(stoppedFirst);
-            try
-            {
-                await service.AdvanceAsync(sessionId, stopped.State, stopped.AsNoted(), ct: CancellationToken.None).ConfigureAwait(false);
-            }
-            catch (Exception)
-            {
-                // Best-effort, as the failure's own write below.
-            }
+            var stopped = await EndStoppedAsync(sessionId, stoppedFirst).ConfigureAwait(false);
 
             return new StartRun(
                 $"{stopped.State}  session {sessionId} (#{quest.Id} → {quest.To}): {stopped.Note}",
@@ -3341,6 +3333,26 @@ public sealed class Driver(
             // since a close is one of the ways. A record that still holds it keeps the lock.
             if (locksTree && !holdsTree) await SessionLocks.LetGoAsync(workTree, sessionId, CancellationToken.None).ConfigureAwait(false);
         }
+    }
+
+    /// <summary>
+    /// The record of a run whose wire broke after a stop made first (STOPRACE1, FLAKE3): ended as that stop's conclusion would
+    /// have ended it, never interrupted, and shared by every run that catches a failure after <c>HoldAsync</c>. Best-effort, as
+    /// the failure's own write is.
+    /// </summary>
+    internal async Task<SessionConclusion> EndStoppedAsync(string sessionId, SessionStop stop)
+    {
+        var (stopped, _) = Observation.Closed(stop);
+        try
+        {
+            await service.AdvanceAsync(sessionId, stopped.State, stopped.AsNoted(), ct: CancellationToken.None).ConfigureAwait(false);
+        }
+        catch (Exception)
+        {
+            // The first failure is the report; a host that is gone here must not turn the stop into a second throw.
+        }
+
+        return stopped;
     }
 
     /// <summary>
