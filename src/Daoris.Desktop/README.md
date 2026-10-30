@@ -825,8 +825,10 @@ look said as standing facts (`ConsiderationsStateSlice`, FOUNDATION1s): `conside
 trust holds, machine paths, so this bridge only) and `waits` (the starts held on accounts), each a list pushed whole, from the loop's
 memory, woken by each look and by a verified `TRUST_FOLDER`, which takes its hold off at once; the tick carries only its `events`. The
 sixteenth, the rules (`RulesStateSlice`, FOUNDATION1s part B): one partition, `rules`, `RULES`' answer whole, woken by a change told to
-the rules and at its period. The registry, the repositories and the agents' roster stay pulled: the first two are the service's own
-HTTP answers, and `HARNESSES` carries settings paths and homes. A read told by event declares what its answer reads (`[ByEvent]`'s
+the rules and at its period; a look tells `rules` only where their reading moved (`RulesReading`, shared with the slice), and
+`repositories` while the knowledge index feeds (`IndexFeed`, `/api/repositories`' sizes), so the status bar's size is read again. The
+registry, the repositories and the agents' roster stay pulled: the first two are the service's own HTTP answers, and `HARNESSES` carries
+settings paths and homes. A read told by event declares what its answer reads (`[ByEvent]`'s
 `Reads` and `Slices`): `SESSION_WHERE` the sessions, the landings, the clean-up and the `sweep` slice, so an ask while their versions
 stand does no work; the others name what no version tells (`Untold`) and work at every ask. The module writes its asks a minute as
 `bridge.asked` (reads, presses, held answers served and works begun).

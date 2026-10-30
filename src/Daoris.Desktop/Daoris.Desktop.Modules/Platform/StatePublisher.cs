@@ -86,6 +86,11 @@ public enum StateScopes
 
     /// <summary>The notices of Done and failed and whether each is read, which the <c>notices</c> slice pushes.</summary>
     Notices = 1 << 20,
+
+    // FOUNDATION1s part B: after NOTIFY2f's, which keep their numbers.
+
+    /// <summary>The repositories the service lists with each one's knowledge index: told by a look while the index feeds. Declared by no route.</summary>
+    Repositories = 1 << 21,
 }
 
 /// <summary>

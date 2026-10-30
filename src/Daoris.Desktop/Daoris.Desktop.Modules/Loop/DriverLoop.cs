@@ -130,6 +130,12 @@ public sealed class DriverLoop(
 
     private StateSlices? _slices;
 
+    /// <summary>The rules' reading, shared by their slice and each look, which tells their scope only where it moved (FOUNDATION1s part B).</summary>
+    public RulesReading RulesRead { get; } = new();
+
+    /// <summary>The knowledge index's size as the service lists it, read at each look, which tells the repositories while it feeds.</summary>
+    public IndexFeed IndexRead { get; } = new();
+
     /// <summary>
     /// <i>Done and failed</i> (NOTIFY2f, D196 point 6): the notices this process records and reads again, which the <c>NOTICES_READ</c>
     /// and <c>NOTICE_DISMISS</c> routes write through.
@@ -735,6 +741,8 @@ public sealed class DriverLoop(
         var homeDirectory = Home;
         var key = Environment.GetEnvironmentVariable(ServiceClient.KeyVariable);
         using var service = new ServiceClient(serviceUrl, key);
+        // The service's doors for the one read the client does not carry: the repositories' index sizes (FOUNDATION1s part B).
+        using var doors = new ServiceHttp(service.BaseUrl, key);
 
         // Every session this loop and its conversations open, move and hear, timed into the machine log
         // (LOG1b) — declared after the client and before the chat runner, so it hears the runner's
@@ -1090,9 +1098,11 @@ public sealed class DriverLoop(
                     lastRegistered = registered;
                 }
 
-                // What this look moved of the rules and the registry, told as the scopes' own changes (FOUNDATION1s): the page's tick
-                // asks neither again, since a press's change reaches it the same way.
-                if (LookScopes(report.Events, registryMoved) is var moved && moved != StateScopes.None)
+                // What this look moved of the rules, the registry and the knowledge index, told as the scopes' own changes (FOUNDATION1s):
+                // the page's tick asks none of them again, since a press's change reaches it the same way. Part B: the rules where their
+                // reading moved, never at each line said about them; the index while it feeds.
+                var indexMoved = IndexRead.Moved(await IndexFeed.ReadAsync(doors, ct).ConfigureAwait(false));
+                if (LookScopes(RulesRead.Read(Home).Moved, registryMoved, indexMoved) is var moved && moved != StateScopes.None)
                 {
                     StatePublisher.Publish(eventBus, moved);
                 }
@@ -1402,13 +1412,14 @@ public sealed class DriverLoop(
     }
 
     /// <summary>
-    /// What a look moved that the page reads by pull, as scopes (FOUNDATION1s, D182 point 7): the rules, where it settled an agent's
-    /// proposal (PERM2: a line classed <c>rules</c>, applied, refused or held), and the registry, where its signature moved after the
-    /// first reading. The first reading is the page's own first read.
+    /// What a look moved that the page reads by pull or a slice reads by scope, as scopes (FOUNDATION1s, D182 point 7): the rules, where
+    /// their reading moved (<see cref="RulesReading"/>; a retry line said again each look moves nothing); the registry, where its signature
+    /// moved; and the repositories, where the knowledge index fed further (<see cref="IndexFeed"/>). Each first reading is the page's own.
     /// </summary>
-    public static StateScopes LookScopes(IEnumerable<string> events, bool registryMoved) =>
-        (events.Any(line => line.StartsWith("rules  ", StringComparison.Ordinal)) ? StateScopes.Rules : StateScopes.None)
-        | (registryMoved ? StateScopes.Registry : StateScopes.None);
+    public static StateScopes LookScopes(bool rulesMoved, bool registryMoved, bool indexMoved) =>
+        (rulesMoved ? StateScopes.Rules : StateScopes.None)
+        | (registryMoved ? StateScopes.Registry : StateScopes.None)
+        | (indexMoved ? StateScopes.Repositories : StateScopes.None);
 
     /// <summary>
     /// Whether the registry's signature the tick read is a change. A change also wakes the machine's facts (REGWAKE1): a repository

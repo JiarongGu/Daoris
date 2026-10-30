@@ -97,8 +97,8 @@ export function ShellSignals({ notify, onAttend, attended, onConfirming, onMessa
     // standings, the pass's end pushes what it moved (PUSH1a2), and a tick reads none of them again.
     void client.invalidateQueries({ queryKey: keys.allSync, predicate: notPushed(client) });
     // (The registry and the repositories read from it moved by a terminal's import, FG4: the look declares that as the registry's
-    // scope. An index that was still feeding when the page asked (the status bar's size) is told by no look: it is read again at
-    // the next change of the registry or at a reload.)
+    // scope. An index still feeding when the page asked (the status bar's size) is told by the look as the repositories' scope while
+    // it feeds, FOUNDATION1s part B.)
     // And the accounts (TOOL4g): a session's end may have cooled one, its door may have said what one has left, and the
     // sessions running on each have moved. A file read, never a probe; where the shell pushes them (PUSH1e) its owner judges
     // those once for every window, and a tick reads none of them again.
