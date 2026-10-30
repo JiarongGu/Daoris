@@ -181,6 +181,24 @@ internal sealed class HelpWorkflowProposals : IHelpProposalKind
         List<string> needs = (unchanged && use is null) || stepsNow is null
             ? []
             : Needs(after, facts, id, version, stepsNow, [.. reached.Union(Scoped(after, facts, repository, workspace), StringComparer.OrdinalIgnoreCase)]);
+
+        // INTEGRATE1r part r2 (the integration design §17.7): a graph chosen with no save integrates its landing in each repository it reaches, so
+        // each that cannot carry it is a need, and each whose rule integrates with no gates is said (F42).
+        var integrates = new List<string>();
+        if (!saves && !verifies && !landed && use is not null && newest?.Graph is { } chosenGraph && IntegrateChoice.Matters(chosenGraph))
+        {
+            var asks = IntegrateChoice.NeedsAccepted(chosenGraph);
+            foreach (var touched in reached.Union(Scoped(after, facts, repository, workspace), StringComparer.OrdinalIgnoreCase))
+            {
+                var accepted = !asks ? null
+                    : facts.AcceptedGates.TryGetValue(touched, out var read) ? read
+                    : AcceptedGates.NotRead($"`{touched}`'s accepted declaration was not read here");
+                var answer = IntegrateChoice.Of(after, id, version, chosenGraph, touched, WorkspaceOf(facts, touched), accepted);
+                needs.AddRange(answer.Cannots.Select(cannot => $"`{touched}`: {cannot}"));
+                if (answer.NoGates) integrates.Add(IntegrateCarry.NoGatesSaid(touched));
+            }
+        }
+
         var diff = steps is not null ? WorkflowDiff.Of(before?.Steps, steps) : null;
         var nodes = graph is not null ? GraphLines(before?.Graph, graph) : [];
 
@@ -233,6 +251,8 @@ internal sealed class HelpWorkflowProposals : IHelpProposalKind
                 ? $"Its gates wait for your *Accept the gates* on `{repository}`'s Workflow tab, which reads `daoris.gates.json` at its line's tip."
                 : "Each repository's gates wait for your *Accept the gates* on its Workflow tab, which reads `daoris.gates.json` at its line's tip.");
         }
+
+        said.AddRange(integrates);
 
         if (needs.Count > 0)
         {

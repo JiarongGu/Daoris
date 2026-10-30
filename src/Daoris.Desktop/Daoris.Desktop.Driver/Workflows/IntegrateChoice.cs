@@ -6,7 +6,7 @@ namespace Daoris.Driver;
 /// carry the version, and whether its line integrates with no gates. The terminal's <c>use</c> and Ask Daoris's card ask it; a door that
 /// reads the accepted declaration does so here, asynchronously, and the pure check (<see cref="IntegrateCarry"/>) is handed the answer.
 /// </summary>
-internal static class IntegrateChoice
+public static class IntegrateChoice
 {
     /// <summary>What one repository the choice reaches answers.</summary>
     /// <param name="Cannots">Why its declarations cannot carry the version, a sentence each; empty where they can.</param>
@@ -84,6 +84,24 @@ internal static class IntegrateChoice
         {
             return AcceptedGates.NotRead(error.Message);
         }
+    }
+
+    /// <summary>
+    /// The accepted gates of each registered repository with a checkout, for a workflow card (<see cref="HelpMachineFacts.AcceptedGates"/>): read
+    /// only where a saved workflow's newest version is a graph asking with <c>done</c> or <c>steward</c>, since only that judges a declaration.
+    /// </summary>
+    public static async Task<IReadOnlyDictionary<string, AcceptedGates>> ReadForCardsAsync(
+        DriverConfig config, IReadOnlyList<WorkflowFileFound> workflows, IEnumerable<(string Repository, string? Workspace, string? Root)> registered,
+        CancellationToken ct)
+    {
+        var read = new Dictionary<string, AcceptedGates>(StringComparer.OrdinalIgnoreCase);
+        if (!workflows.Any(file => file.Read is { Problem: null, Versions: [.., { Graph: { } graph }] } && NeedsAccepted(graph))) return read;
+        foreach (var (repository, workspace, root) in registered)
+        {
+            if (!read.ContainsKey(repository)) read[repository] = await ReadAcceptedAsync(config, repository, workspace, root, ct).ConfigureAwait(false);
+        }
+
+        return read;
     }
 
     /// <summary>
