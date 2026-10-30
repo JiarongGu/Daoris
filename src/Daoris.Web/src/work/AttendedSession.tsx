@@ -18,7 +18,7 @@ import { WorkMilestone } from './head/WorkMilestone';
 import type { Answered } from './InlineConfirm';
 import type { SayRebase } from './review/LandingSync';
 import type { SessionEntry } from './entries';
-import { EntryAccept } from './review/EntryAccept';
+import type { EntryPress } from './review/EntryAccept';
 import type { DiscardOffer, LandOffer } from './groups';
 import { PartsFold } from './head/PartsFold';
 import type { PartFacts } from './head/PartsStrip';
@@ -112,10 +112,10 @@ export function AttendedSession({
     onShow: (session: string) => void;
   };
   /**
-   * Its line of work's one Accept (ACCEPTALL1, D167's 2026-10-15 amendment), where more than one of its parts offers work to land:
-   * the frame holds the plan and the press. Absent where one part or none does, whose own Accept is the head's.
+   * The session's one Accept (ACCEPTALL1, REVIEWFLOW1a), where its parts offer work to land and the attended part has no work of its
+   * own or another has: the frame holds the plan and the press, drawn by the head's work line. Absent where the part's own is the head's.
    */
-  entryAccept?: ComponentProps<typeof EntryAccept>;
+  entryAccept?: EntryPress;
   /**
    * Passed straight through to the head: the session it continues and the one a helper helps, where the frame holds them
    * (MIXAGENT3a-i). Its *Details* opens them with `onSession`.
@@ -302,13 +302,12 @@ export function AttendedSession({
         pieces={pieces}
         permissions={permissions}
         answers={answers}
+        entry={entryAccept}
       />
       {/* Its parts as a flowchart, the strip its rail (FLOWCHART1b); Accept's plan, once read, is where they would land. Folded to one
           line (HEADFIT1: the drawing alone was over the head's whole budget), keyed by the line of work, not the session: a press on
           a part shows another session of it, and the flow being read stays open. */}
       {parts && <PartsFold key={`parts:${parts.entry.entry}`} {...parts} plan={entryAccept?.open ? entryAccept.plans?.[0] ?? null : null} />}
-      {/* One Accept for every part with work to land (ACCEPTALL1, D167's 2026-10-15 amendment), under the strip that lists them. */}
-      {entryAccept && <div className="grid justify-items-start gap-1"><EntryAccept {...entryAccept} /></div>}
       {/* Every stop a door (the study's §5: "every stop pressable"): a session attends, a quest opens.
           One line of stops by default, since the whole strip stood 350 to 450px between the head and
           the conversation, saying the head's title again (SESS2 H7); whole on a press. */}

@@ -76,6 +76,18 @@ repository.
 - **Root cause:** Codex's only rejection for a file change interrupts the turn, which ended `cancelled`; a clean exit with the quest taken read as a question.
 - **Fix:** `AcpOutcome.Cut` carries a cancel nobody asked for; `Observation.Cut` parks as `ended.parked-cut`, naming the call. Asking on Codex is `workspace-write`.
 - **Verify:** the mapping tests fail on `read-only`; `AcpTests`, `ObservationTests`, `DrivenAccessTests`, `NoteCodesTests` and the note catalogues green.
+## 2026-10-31 - Daoris's browser opened at every session start and restart (BROWSERSTART1)
+
+- **Symptom:** a restart that took up a chat or a quest session whose servers drive the browser brought its window up.
+- **Root cause:** the hand-over called `EnsureAsync`, which starts the browser, to learn the endpoint.
+- **Fix:** it asks `EndpointAsync`; the shell hands a held port (`LazyEndpoint`) that starts the browser at the first connection.
+- **Verify:** hand-over, quest-start and chat tests red then green; relay tests.
+## 2026-10-31 - A terminal chat's running turn read idle in the window (CLITURN1)
+
+- **Symptom:** a capture showed idle during a terminal's turn; the window's stop was refused as "no door".
+- **Root cause:** the terminal owns its runner; the window's queue read fell back to idle for a chat it does not hold.
+- **Fix:** the owner tells its turns in `<id>.turn`; none told is unknown, never idle; the terminal honours a stop for its own session.
+- **Verify:** `DriverModuleTerminalTurnTests`, `TurnMarksTests`, `TerminalOwnerProcessTests`.
 
 ## 2026-10-31 - A test still pinned the first-look baseline row m-iv replaced (FOUNDATION1 m-iv)
 

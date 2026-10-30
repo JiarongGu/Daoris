@@ -37,6 +37,14 @@ public sealed class SessionsRoutes(DriverContext context)
         // host can neither stop it nor call it ended: the record still says working (REV3).
         // The one implementation the terminal's request is honoured by too (SESSUX1g).
         var answer = await SessionMoves.StopAsync(_loop.Processes, _loop.Service, id, cancellationToken).ConfigureAwait(false);
+        // CLITURN1: the process that runs it takes the stop, as its own; none that does not is claimed to have stopped.
+        if (answer.Elsewhere
+            && await SessionMoves.StopThroughOwnerAsync(
+                _loop.Home, id, SessionMoves.OwnerWait, TimeSpan.FromMilliseconds(100), () => DateTimeOffset.UtcNow, cancellationToken).ConfigureAwait(false))
+        {
+            answer = answer with { Stopped = true, Elsewhere = false };
+        }
+
         _loop.Nudge();
         return new { answer.Stopped, answer.Orphan, answer.Elsewhere };
     }

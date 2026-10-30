@@ -2,6 +2,7 @@ import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import type { ReactNode } from 'react';
 import type { GoAhead, Session } from '../../data/api';
 import { chinese } from '../../design/storyLanguage';
+import { storyWidths } from '../../design/storyWidths';
 import { InTheme } from '../../plugins/storyIcons';
 import { DETAIL, GATES } from '../gates/opinionFixtures';
 import { STEP_SHOWN } from '../gates/reviewFixtures';
@@ -127,6 +128,35 @@ export const WorkToAccept: Story = { args: { session: session(), lands: LANDS, l
 
 /** The same in 中文 and dark. */
 export const WorkToAcceptDarkChinese: Story = { ...WorkToAccept, decorators: [chinese, dark] };
+
+/**
+ * REVIEWFLOW1a (D168's table): the session's *Accept all* at the foot, in the place of the part's own *Accept…*, where its parts
+ * offer work to land; the same press the head draws, its ask open in one of them.
+ */
+const SESSION_PRESS = { scope: 'entry' as const, offered: 2, open: false, onOpen: nothing, onLand: nothing };
+export const SessionAccept: Story = {
+  args: { session: session(), lands: LANDS, landing: PLAN, onLand: nothing, onReview: nothing, entry: SESSION_PRESS },
+  decorators: [storyWidths.wide],
+};
+export const SessionAcceptHalf: Story = { ...SessionAccept, decorators: [storyWidths.half] };
+export const SessionAcceptNarrow: Story = { ...SessionAccept, decorators: [storyWidths.narrow] };
+export const SessionAcceptChinese: Story = { ...SessionAccept, decorators: [storyWidths.wide, chinese] };
+export const SessionAcceptHalfChinese: Story = { ...SessionAccept, decorators: [storyWidths.half, chinese] };
+export const SessionAcceptNarrowChinese: Story = { ...SessionAccept, decorators: [storyWidths.narrow, chinese] };
+export const SessionAcceptDark: Story = { ...SessionAccept, decorators: [storyWidths.wide, dark] };
+export const SessionAcceptHalfDark: Story = { ...SessionAccept, decorators: [storyWidths.half, dark] };
+export const SessionAcceptNarrowDark: Story = { ...SessionAccept, decorators: [storyWidths.narrow, chinese, dark] };
+
+/** The head has no work of its own beside a part that has some: the session's *Accept…* stands alone, held while it asks elsewhere. */
+export const SessionAcceptBesideAPart: Story = {
+  args: { session: session(), entry: { ...SESSION_PRESS, offered: 1 } },
+  decorators: [storyWidths.half],
+};
+export const SessionAcceptBesideAPartNarrowChinese: Story = { ...SessionAcceptBesideAPart, decorators: [storyWidths.narrow, chinese, dark] };
+export const SessionAcceptHeldElsewhere: Story = {
+  args: { ...SessionAcceptBesideAPart.args, entry: { ...SESSION_PRESS, offered: 1, held: true } },
+  decorators: [storyWidths.half],
+};
 
 /**
  * WAITFOOT2a: the head's waits are on screen, so the strip stands aside and only the box is drawn here, each wait in the head

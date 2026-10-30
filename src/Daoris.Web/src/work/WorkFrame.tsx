@@ -1345,6 +1345,8 @@ export function WorkFrame({
       const followingEntry = following ? entryOfSession(entries, following.id) : null;
       return withWhose(
         <DiffPane
+          // The session's one press, where the part reviewed is the attended one (REVIEWFLOW1a, D168).
+          entryPress={following && following.id === attended?.id ? entryAt('review') ?? null : null}
           entry={followingEntry?.entry ?? null}
           ask={followingEntry && !isIntakeEntry(followingEntry) ? askOfEntry(followingEntry) : null}
           // The followed session's (UX6b): off Sessions an ended one is reviewed on Sessions, where it is attended.
@@ -1922,22 +1924,31 @@ export function WorkFrame({
     // Under way for this session from either place or another window (STATEHUB1c, D169 point 7), never another session's press.
     workBusy: landsNow || discardsNow,
   } : null;
-  // ACCEPTALL1 (D167's 2026-10-15 amendment): its line of work's one Accept, where more than one of its parts offers work to land
-  // here; the plan reads git for every part, so it is asked only once the ask is open.
+  // Where the work's ask (*Accept…*, *Discard branch…*) is open: in the head or at the foot, never both (D168 point 3). The session's
+  // own press (REVIEWFLOW1a) is that ask in the place of a part's.
+  const [workAsk, setWorkAsk] = useState<{ session: string; at: 'head' | 'foot' | 'review' } | null>(null);
+  const workAskAt = (at: 'head' | 'foot'): WorkAsk | undefined => (attended ? {
+    open: workAsk?.session === attended.id && workAsk.at === at,
+    onOpen: (open) => setWorkAsk((was) => (open
+      ? { session: attended.id, at }
+      : was?.session === attended.id && was.at === at ? null : was)),
+  } : undefined);
+  // ACCEPTALL1 (D167's 2026-10-15 amendment), REVIEWFLOW1a: its line of work's one Accept, where its parts offer work to land and
+  // more than one does or the attended part has none of its own; the plan reads git for every part, so it is asked only once the ask
+  // is open.
   const entryOffered = attendedEntry && here
     ? attendedEntry.parts.filter((part) => (groups.data ?? []).some((row) => row.session === part.session && row.lands)).length
     : 0;
-  const entryAccepts = attendedEntry && entryOffered > 1 ? attendedEntry.entry : null;
-  const [entryAsking, setEntryAsking] = useState<string | null>(null);
-  const entryPlan = useEntryLanding(entryAccepts, entryAccepts !== null && entryAsking === entryAccepts);
+  const entryAccepts = attendedEntry && (entryOffered > 1 || (entryOffered === 1 && !lands)) ? attendedEntry.entry : null;
+  const entryPlan = useEntryLanding(entryAccepts, entryAccepts !== null && Boolean(attended && workAsk?.session === attended.id));
   const landEntry = useLandEntry();
   // Under way in any window (ACCEPTALL1e): this one's press from its send, another's from the driver's telling.
   const entryLandsNow = useUnderWaySubject('LAND_ENTRY', entryAccepts);
-  const entryAccept: ComponentProps<typeof EntryAccept> | undefined = entryAccepts && attendedEntry ? {
+  const entryBase: ComponentProps<typeof EntryAccept> | undefined = entryAccepts && attendedEntry ? {
     scope: 'entry',
     offered: entryOffered,
-    open: entryAsking === entryAccepts,
-    onOpen: (open) => setEntryAsking(open ? entryAccepts : null),
+    open: false,
+    onOpen: () => {},
     plans: entryPlan.data ? [entryPlan.data] : null,
     reading: entryPlan.isFetching && !entryPlan.data,
     busy: entryLandsNow,
@@ -1955,11 +1966,25 @@ export function WorkFrame({
       onError: (error) => answered.refused(sentence(error)),
     }),
   } : undefined;
+  // The press where it is drawn: its ask open there, and held where the ask is open in another place (D168 point 3).
+  const entryAt = (at: 'head' | 'foot' | 'review'): ComponentProps<typeof EntryAccept> | undefined => {
+    if (!entryBase || !attended) return undefined;
+    const mine = workAsk?.session === attended.id ? workAsk.at : null;
+    return {
+      ...entryBase,
+      open: mine === at,
+      held: mine !== null && mine !== at,
+      onOpen: (open) => setWorkAsk((was) => (open
+        ? { session: attended.id, at }
+        : was?.session === attended.id && was.at === at ? null : was)),
+    };
+  };
+  const entryAccept = entryAt('head');
   // WAITFOOT1c (D168 point 4): the waits that stand where the strip draws them, and the events that raised them, which the
   // conversation finds and tells; the way to each is handed to the head and the strip alike, and a raising block's *To the wait*
   // leads to its line where it is on screen (WAITFOOT2b).
   const answerBelow = answering || (talking && box.kind === 'chat');
-  const standing = attended && here && waits ? waitsOf({ ...waits, answerBelow }) : [];
+  const standing = attended && here && waits ? waitsOf({ ...waits, entry: entryAccept, answerBelow }) : [];
   // PARKVIEW1: where the box answers the park, its question and its go-aheads stand in the box, so *To the wait* leads there.
   const inTheBox = (wait: AnchorWait) => answering && (wait === 'question' || wait.startsWith('goAhead:'));
   const [anchored, setAnchored] = useState<(AnchorState & { session: string }) | null>(null);
@@ -1971,14 +1996,6 @@ export function WorkFrame({
   // Spent once the person attends another: the strip drawn again on coming back takes no focus from it.
   useEffect(() => { setToWait(null); }, [attended?.id]);
   const seekAt = (at: 'head' | 'foot' | 'box') => (attended && toWait?.session === attended.id && toWait.at === at ? toWait : null);
-  // Where the work's ask (*Accept…*, *Discard branch…*) is open: in the head or at the foot, never both (D168 point 3).
-  const [workAsk, setWorkAsk] = useState<{ session: string; at: 'head' | 'foot' } | null>(null);
-  const workAskAt = (at: 'head' | 'foot'): WorkAsk | undefined => (attended ? {
-    open: workAsk?.session === attended.id && workAsk.at === at,
-    onOpen: (open) => setWorkAsk((was) => (open
-      ? { session: attended.id, at }
-      : was?.session === attended.id && was.at === at ? null : was)),
-  } : undefined);
   // And a rule's *Allow…* (PROPOSEHERE1b), by the proposal it asks about: open in the head or at the foot, never both.
   const [ruleAsk, setRuleAsk] = useState<{ session: string; id: string; at: 'head' | 'foot' } | null>(null);
   const ruleAskAt = (at: 'head' | 'foot'): RuleAsk | undefined => (attended ? {
@@ -2640,6 +2657,7 @@ export function WorkFrame({
               // The box below takes the park's answer: a driven park's answer box, or a parked chat's composer.
               answerBelow={answerBelow}
               workAsk={workAskAt('foot')}
+              entry={entryAt('foot')}
               ruleAsk={ruleAskAt('foot')}
               toEvent={toEvent}
               seek={seekAt('foot')}

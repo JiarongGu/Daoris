@@ -572,6 +572,12 @@ public sealed class SessionProcesses(string? markers = null)
             return false;
         }
 
+        return IsRunning(pid, started);
+    }
+
+    /// <summary>Whether the process with this id is alive as the one that started at <paramref name="started"/> (UTC ticks): what a marker and a turn mark (CLITURN1) both name.</summary>
+    internal static bool IsRunning(int pid, long started)
+    {
         try
         {
             using var process = Process.GetProcessById(pid);

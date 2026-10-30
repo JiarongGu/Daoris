@@ -1,5 +1,6 @@
 {
-  "work.accept.entry": "Accept all {{count}} parts…",
+  "work.accept.entry": "Accept…",
+  "work.accept.entry_other": "Accept all {{count}} parts…",
   "work.accept.ask": "Accept the ask's {{count}} parts…",
   "work.accept.title.entry": "accept every part of this line of work",
   "work.accept.title.ask": "accept the ask's work",

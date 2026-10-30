@@ -12,7 +12,8 @@ import { HelperAsks, type HelperWaits } from './HelperAsks';
 import { HandOverAgentAsk, type HandOverAskWait } from './HandOverAgentAsk';
 import type { Answered } from '../InlineConfirm';
 import type { SayRebase } from '../review/LandingSync';
-import { Discards, type HeadOpinion, type HeadReview, type LandingPlan, Lands, type WorkAsk } from '../review/Lands';
+import { Discards, EntryWork, type HeadOpinion, type HeadReview, type LandingPlan, Lands, type WorkAsk } from '../review/Lands';
+import type { EntryPress } from '../review/EntryAccept';
 import { heldFor, PermissionAsks, type PermissionWaits } from './PermissionAsks';
 import { AnswerAlone, answerFor, type AnswerWaits } from './AnswerAlone';
 import { ProposedRules, type RuleAsk, type RuleWaits } from './ProposedRules';
@@ -78,6 +79,8 @@ export type WaitProps = {
    */
   handOver?: HandOverAskWait | null;
   lands?: LandOffer | null;
+  /** The session's own press, where its parts offer work: in the strip's place of *Accept…* (REVIEWFLOW1a). */
+  entry?: EntryPress | null;
   landing?: LandingPlan | null;
   planning?: boolean;
   onLand?: (answered: Answered, answers?: string | null, branch?: string | null) => void;
@@ -295,6 +298,11 @@ export function WaitStrip({ answerBelow = false, workAsk, ruleAsk, onTop, seek, 
                 <HandOverAgentAsk {...props.handOver} />
               </div>
             )}
+            {work && !props.lands && props.entry && (
+              <div data-wait="work" tabIndex={-1} className={cn('grid gap-2', sought === 'work' ? SOUGHT : 'outline-none')}>
+                <EntryWork entry={props.entry} />
+              </div>
+            )}
             {work && props.lands && (
               <div
                 data-wait="work"
@@ -316,6 +324,7 @@ export function WaitStrip({ answerBelow = false, workAsk, ruleAsk, onTop, seek, 
                   ask={workAsk}
                   busy={props.workBusy}
                   toEvent={toEvent}
+                  entry={props.entry}
                 />
               </div>
             )}

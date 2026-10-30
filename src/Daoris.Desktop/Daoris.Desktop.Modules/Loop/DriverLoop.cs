@@ -849,6 +849,8 @@ public sealed class DriverLoop(
             // STATEHUB1e (D169 point 8): a terminal's `trees` press, told here, reaches every window as the window's press would,
             // and the plugins at `state/changed` with it.
             Told = press => StatePublisher.Publish(eventBus, press),
+            // CLITURN1: a terminal's chat tells its turns; the windows are told its queue as one this process holds would tell it.
+            Turned = session => _ = TurnedAsync(session, ct),
             // FABRIC-EVENT2: each look the folder woke, with its ms and why.
             Log = log,
         };
@@ -1207,6 +1209,23 @@ public sealed class DriverLoop(
         // NOTIFY2d, a field added: how many sessions failed before a quest parked, which its notification says in the window's words.
         item.Strikes,
     });
+
+    /// <summary>
+    /// A conversation another Daoris process runs told its turns anew, or left (CLITURN1): the windows hear its queue as
+    /// <c>SESSION_QUEUED</c>, read the way <c>SESSION_QUEUE</c> reads it. A service that does not answer tells nothing; the next change tells.
+    /// </summary>
+    private async Task TurnedAsync(string session, CancellationToken ct)
+    {
+        try
+        {
+            var reach = await Words.ReachAsync(session, ct).ConfigureAwait(false);
+            await eventBus.EmitAsync("DAORIS", "SESSION_QUEUED", ConversationRoutes.QueueAnswer(this, session, reach)).ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is OperationCanceledException or HttpRequestException or DriverException)
+        {
+            // Nothing known is nothing claimed: the page asks again when it opens the conversation.
+        }
+    }
 
     /// <summary>
     /// The loop's service, handed to the routes, and the page told (LOOK2a): until now every route that reads the
