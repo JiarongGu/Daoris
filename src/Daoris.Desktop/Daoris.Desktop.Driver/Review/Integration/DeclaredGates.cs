@@ -3,7 +3,11 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>A gate the accepted declaration declares: the name it writes (the one a runner's answer names it by), its command, the folder it runs in (relative to the tree) and whether it is heavy.</summary>
-internal sealed record DeclaredGate(string Name, string Run, string? Cwd, bool Heavy);
+internal sealed record DeclaredGate(string Name, string Run, string? Cwd, bool Heavy)
+{
+    /// <summary>Marked <c>clock</c> (the pipeline design §4.2): its run is bound by the clock, so a verification starts it at normal priority.</summary>
+    public bool Clock { get; init; }
+}
 
 /// <summary>
 /// The gates of the accepted declaration's text (INTEGRATE1f part f2; the integration design §4.3, F6): read from the blob alone, never from
@@ -32,7 +36,10 @@ internal static class DeclaredGates
                 if (each.ValueKind != JsonValueKind.Object) continue;
                 string? Text(string name) => each.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String && value.GetString() is { Length: > 0 } read ? read : null;
                 if (Text("name") is not { } gate || Text("run") is not { } run || gates.Any(known => known.Name == gate)) continue;
-                gates.Add(new DeclaredGate(gate, run, Text("cwd"), each.TryGetProperty("heavy", out var heavy) && heavy.ValueKind == JsonValueKind.True));
+                gates.Add(new DeclaredGate(gate, run, Text("cwd"), each.TryGetProperty("heavy", out var heavy) && heavy.ValueKind == JsonValueKind.True)
+                {
+                    Clock = each.TryGetProperty("clock", out var clock) && clock.ValueKind == JsonValueKind.True,
+                });
             }
 
             return gates;

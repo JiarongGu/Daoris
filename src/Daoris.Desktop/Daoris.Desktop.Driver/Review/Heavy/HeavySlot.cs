@@ -24,6 +24,9 @@ public sealed record HeavyHolder(
 
     /// <summary>The gate that failed and its exit, written before what it left is ended and the slot let go (HEAVYSLOT1).</summary>
     public HeavyGateFailed? Failed { get; init; }
+
+    /// <summary>The verification run holding it (FABRIC-PIPELINE1d), where the heavy executor does; an older reader passes over it.</summary>
+    public string? Run { get; init; }
 }
 
 /// <summary>The gate a holder runs now (HEAVYSLOT1): its name, its place in the holder's gates from 0, and when it started.</summary>
@@ -354,6 +357,7 @@ public sealed class HeavySlot : IDisposable
             writer.WriteString("since", Stamp(holder.Since));
             if (holder.Session is { } session) writer.WriteString("session", session);
             if (holder.Job is { } job) writer.WriteString("job", job);
+            if (holder.Run is { } run) writer.WriteString("run", run);
             if (holder.Now is { } now)
             {
                 writer.WriteStartObject("now");
@@ -451,7 +455,7 @@ public sealed class HeavySlot : IDisposable
             return new HeavyHolder(
                 id, ticks, checkout.GetString()!,
                 [.. gates.EnumerateArray().Where(gate => gate.ValueKind == JsonValueKind.String).Select(gate => gate.GetString()!)],
-                at, Text(root, "session"), Text(root, "job")) { Now = NowOf(root), Failed = FailedOf(root) };
+                at, Text(root, "session"), Text(root, "job")) { Now = NowOf(root), Failed = FailedOf(root), Run = Text(root, "run") };
         }
         catch (JsonException)
         {
