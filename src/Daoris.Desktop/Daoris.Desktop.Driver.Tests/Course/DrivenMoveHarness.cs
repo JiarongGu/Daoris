@@ -225,7 +225,7 @@ internal sealed class DrivenMoveHarness : IAsyncDisposable
         if (_looking is null) return "no look";
         try
         {
-            await _looking.WaitAsync(TimeSpan.FromSeconds(30));
+            await _looking.WaitAsync(Poll.Patience);
             return "ended";
         }
         catch (Exception error)
@@ -348,7 +348,7 @@ internal sealed class DrivenMoveHarness : IAsyncDisposable
         await _closing.CancelAsync();
         try
         {
-            if (_watching is not null) await _watching.WaitAsync(TimeSpan.FromSeconds(30));
+            if (_watching is not null) await _watching.WaitAsync(Poll.Patience);
         }
         catch (Exception error) when (error is OperationCanceledException or TimeoutException)
         {
