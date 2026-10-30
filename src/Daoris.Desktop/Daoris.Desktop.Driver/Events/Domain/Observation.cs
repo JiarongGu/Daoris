@@ -541,3 +541,10 @@ public static class FailedTurnWords
         _ => null,
     };
 }
+
+/// <summary>
+/// A turn its agent ended <c>cancelled</c> though nobody stopped it (CODEXPERM1): Codex ends a turn when the only rejection it offers for a
+/// file change is chosen, so a refused edit cuts the turn rather than only the edit. The edits made before it stand.
+/// </summary>
+/// <param name="Call">The call whose permission was refused as the turn was cut, as the agent titled it; null where none was.</param>
+public sealed record TurnCut(string? Call);

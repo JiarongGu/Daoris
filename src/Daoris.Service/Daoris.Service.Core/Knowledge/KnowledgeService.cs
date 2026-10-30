@@ -164,31 +164,39 @@ public sealed class KnowledgeService(
     // hit; null says nothing of it, as a host that cannot ask git does.
     Func<string, bool?>? uncommitted = null,
     // The finished trees' records (KEEPSIZE1c): only a local host is given them, since a record holds a person's words and this machine's names.
-    IWorkRecordSearch? records = null)
+    IWorkRecordSearch? records = null,
+    // Whether one record file of a root differs from its commit (KNOWCENTRAL2a): a citation's recheck asks it of the cited file
+    // alone. Null leaves every recheck of a read reading inconclusive, as a host that cannot ask git.
+    Func<string, string, bool?>? fileUncommitted = null)
 {
     private readonly TimeProvider _time = time ?? TimeProvider.System;
+
+    /// <summary>How many rechecks in a row find a cited id gone before its owner's next session is asked to cite it again.</summary>
+    public const int GoneTries = 3;
 
     /// <summary>How often a host over the registered roots judges them (KNOWCURRENT1): the minute a one-checkout server reads again by.</summary>
     public static readonly TimeSpan RootsJudgedEvery = TimeSpan.FromMinutes(1);
 
-    /// <summary>What one registered root was when it was read: by whom it is named, when, from which commit, by which signature.</summary>
-    /// <remarks>
-    /// <c>Dirty</c> is the root's uncommitted reading, started once and shared: a background pass walks every root's, and a hit that asks
-    /// waits on its own repository's for <see cref="StandingWait"/> at most. Null where there is no seam or no commit to differ from.
-    /// </remarks>
-    private sealed record RootReading(
-        string Repository, DateTimeOffset ReadAt, string? Commit, RootSignature? Signature, Lazy<Task<bool?>>? Dirty = null);
+    /// <summary>What one registered root was when this process read it: by whom it is named, when, from which commit, by which signature.</summary>
+    private sealed record RootReading(string Repository, DateTimeOffset ReadAt, string? Commit, RootSignature? Signature);
 
     /// <summary>How long a search waits, in all, for the uncommitted readings of the repositories its hits come from before it says "not yet read".</summary>
     public static readonly TimeSpan StandingWait = TimeSpan.FromSeconds(3);
 
     private readonly Dictionary<string, RootReading> _readings = new(OperatingSystem.IsLinux() ? StringComparer.Ordinal : StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Each root's uncommitted status, asked once for the commit and signature it was taken at and shared: a background pass walks
+    /// the ones a refresh started, and a hit whose stored reading is another's starts its own (KNOWCENTRAL2a). Under <see cref="_readings"/>'s lock.
+    /// </summary>
+    private readonly Dictionary<string, (string? Commit, RootSignature? Signature, Lazy<Task<bool?>> Dirty)> _probes =
+        new(OperatingSystem.IsLinux() ? StringComparer.Ordinal : StringComparer.OrdinalIgnoreCase);
     private DateTimeOffset? _judgedAt;
 
     /// <summary>When the last refresh finished, on <see cref="_time"/>; what the reread window is measured from.</summary>
     private DateTimeOffset _refreshedAt;
 
-    private readonly KnowledgeIndex _index = new(store, disclosure);
+    private readonly KnowledgeIndex _index = new(store, disclosure, time);
 
     /// <summary>
     /// ONE detector, not one per call.
@@ -341,9 +349,11 @@ public sealed class KnowledgeService(
     /// What each entry's reading and, for a decision, its own record say of its standing, by entry id (KNOWFRESH1a-ii).
     /// </summary>
     /// <remarks>
-    /// <para>The commit is the reading's, kept when the root was read, or the commit a feed named (<see cref="FeedProvenance"/>);
-    /// neither costs a git call here, and the dirty flag was taken with the reading. A decision's notes are read from its file's
-    /// entries, one read a file however many of its entries are hits, and the marks derived from them
+    /// <para>🔴 The entry, its file's entries and its repository's reading are read together, from the index every connector
+    /// writes (KNOWCENTRAL2a): a reading this process kept beside marks another connector wrote said one commit over another's
+    /// record. An entry another write replaced since it was found, or one whose reading names no commit, says <c>unknown</c>.
+    /// The commit is the stored reading's, read or fed, and costs no git call; the uncommitted status is asked once for that
+    /// reading's commit and signature. A decision's marks are derived from its file's note entries
     /// (<see cref="DecisionNotes.Marks(IEnumerable{KnowledgeEntry})"/>), so a fed host derives what a local one does.</para>
     ///
     /// <para>A decision whose file has no entry of its own before its notes (a section of one decisions log) has none to
@@ -353,67 +363,100 @@ public sealed class KnowledgeService(
         IEnumerable<KnowledgeEntry> entries, CancellationToken ct = default)
     {
         RefuseNewerIndex();
-        var readings = new Dictionary<string, (string? Commit, bool Fed, bool Uncommitted, bool Pending)>(StringComparer.Ordinal);
+        var asked = entries.ToList();
+        var indexed = asked.Where(entry => entry.Kind != EntryKind.Record).Select(entry => entry.Id).ToList();
+        var held = indexed.Count == 0
+            ? null
+            : await store.HeldAsync(indexed, entry => entry.Kind == EntryKind.Decision, ct).ConfigureAwait(false);
         var deadline = Task.Delay(StandingWait, ct);
-        var files = new Dictionary<(string Repository, string Path), IReadOnlyList<KnowledgeEntry>>();
+        var statuses = new Dictionary<string, (bool Uncommitted, bool Pending, bool Unknown)>(StringComparer.Ordinal);
         var standings = new Dictionary<string, EntryStanding>(StringComparer.Ordinal);
-        foreach (var entry in entries)
+        foreach (var entry in asked)
         {
             if (standings.ContainsKey(entry.Id)) continue;
-            if (entry.Kind == EntryKind.Record)
+
+            // A record is no file read at a commit; its own tip says what it stands on.
+            if (held is null || entry.Kind == EntryKind.Record
+                || !held.Entries.TryGetValue(entry.Id, out var now) || !SameText(now, entry)
+                || !held.Readings.TryGetValue(entry.Repository, out var reading) || reading.Commit is null)
             {
-                // A record is no file read at a commit; its own tip says what it stands on.
                 standings[entry.Id] = new EntryStanding(null, false, false);
                 continue;
             }
 
-            if (!readings.TryGetValue(entry.Repository, out var reading))
+            if (!statuses.TryGetValue(entry.Repository, out var status))
             {
-                reading = await ReadingOfAsync(entry.Repository, deadline, ct).ConfigureAwait(false);
-                readings[entry.Repository] = reading;
+                status = reading.Fed ? default : await StatusOfAsync(reading, deadline).ConfigureAwait(false);
+                statuses[entry.Repository] = status;
             }
 
-            DecisionStanding? decision = null;
-            if (entry.Kind == EntryKind.Decision)
-            {
-                if (!files.TryGetValue((entry.Repository, entry.RelativePath), out var file))
-                {
-                    file = await store.OfFileAsync(entry.Repository, entry.RelativePath, ct).ConfigureAwait(false);
-                    files[(entry.Repository, entry.RelativePath)] = file;
-                }
-
-                decision = DecisionStandingOf(entry, file);
-            }
-
-            standings[entry.Id] = new EntryStanding(reading.Commit, reading.Fed, reading.Uncommitted, decision, reading.Pending);
+            var decision = held.Files.TryGetValue((now.Repository, now.RelativePath), out var file) ? DecisionStandingOf(now, file) : null;
+            standings[entry.Id] = new EntryStanding(reading.Commit, reading.Fed, status.Uncommitted, decision, status.Pending, status.Unknown);
         }
 
         return standings;
     }
 
-    /// <summary>The commit a repository's reading was taken at on this machine, else the one a feed named, else none.</summary>
-    private async Task<(string? Commit, bool Fed, bool Uncommitted, bool Pending)> ReadingOfAsync(string repository, Task deadline, CancellationToken ct)
+    /// <summary>Whether two readings of an entry say the same: its text and its place, whatever workspace stamps it.</summary>
+    private static bool SameText(KnowledgeEntry held, KnowledgeEntry found) =>
+        held.Kind == found.Kind && held.Title == found.Title && held.Body == found.Body && held.RelativePath == found.RelativePath
+        && held.Anchor == found.Anchor && held.Lines == found.Lines;
+
+    /// <summary>
+    /// A read reading's uncommitted status, waited for until <paramref name="deadline"/>: pending where it has not landed, unknown
+    /// where git did not answer, nothing where no root here or no seam can ask it.
+    /// </summary>
+    private async Task<(bool Uncommitted, bool Pending, bool Unknown)> StatusOfAsync(IndexReading reading, Task deadline)
     {
-        RootReading? reading;
-        lock (_readings)
-        {
-            reading = _readings.Values.FirstOrDefault(r => string.Equals(r.Repository, repository, StringComparison.Ordinal) && r.Commit is not null);
-        }
-
-        if (reading is not null)
-        {
-            if (reading.Dirty is not { } dirty) return (reading.Commit, false, false, false);
-            var task = dirty.Value;
-            if (!task.IsCompleted) await Task.WhenAny(task, deadline).ConfigureAwait(false);
-            return task.IsCompleted ? (reading.Commit, false, task.Result == true, false) : (reading.Commit, false, false, true);
-        }
-
-        var fed = registrations is null ? null : await registrations.ProvenanceAsync(repository, ct).ConfigureAwait(false);
-        return fed is null ? (null, false, false, false) : (fed.Commit, true, false, false);
+        if (RootOf(reading.Repository) is not { } root || ProbeOf(root, reading.Commit, reading.Signature) is not { } probe) return default;
+        var task = probe.Value;
+        if (!task.IsCompleted) await Task.WhenAny(task, deadline).ConfigureAwait(false);
+        if (!task.IsCompleted) return (false, true, false);
+        return task.Result is { } dirty ? (dirty, false, false) : (false, false, true);
     }
 
+    /// <summary>The root's status for this commit and signature: the one already asked, or one started now; null without a seam or a commit.</summary>
+    private Lazy<Task<bool?>>? ProbeOf(string root, string? commit, RootSignature? signature)
+    {
+        if (commit is null || uncommitted is null) return null;
+        lock (_readings)
+        {
+            if (_probes.TryGetValue(root, out var held) && held.Commit == commit && held.Signature == signature) return held.Dirty;
+            var probe = Probe(root);
+            _probes[root] = (commit, signature, probe);
+            return probe;
+        }
+    }
+
+    /// <summary>One status of a root, started when first asked for; a git that throws answers nothing.</summary>
+    private Lazy<Task<bool?>> Probe(string root) => new(() => Task.Run<bool?>(() =>
+    {
+        try
+        {
+            return uncommitted!(root);
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }));
+
+    /// <summary>The root a registered repository's checkout is at on this machine, or null where none is read here.</summary>
+    private string? RootOf(string repository) =>
+        readsRegisteredRoots
+            ? LocalRoots().Where(r => string.Equals(r.Repository, repository, StringComparison.Ordinal)).Select(r => r.Root).FirstOrDefault()
+            : null;
+
     /// <summary>A decision entry's notes after it and the marks that target it, from the entries of its file; null where they cannot be placed.</summary>
-    private static DecisionStanding? DecisionStandingOf(KnowledgeEntry entry, IReadOnlyList<KnowledgeEntry> file)
+    private static DecisionStanding? DecisionStandingOf(KnowledgeEntry entry, IReadOnlyList<KnowledgeEntry> file) =>
+        MarksOn(entry, file) is not { } placed
+            ? null
+            : new DecisionStanding(
+                placed.Later,
+                [.. placed.Targeted.Select(mark => $"{mark.Kind} by {(mark.By is { } by ? $"D{by}" : "a later note here")}")]);
+
+    /// <summary>How many notes of its file follow a decision entry, and the marks that target it in line order; null where they cannot be placed.</summary>
+    private static (int Later, IReadOnlyList<NoteMark> Targeted)? MarksOn(KnowledgeEntry entry, IReadOnlyList<KnowledgeEntry> file)
     {
         var decision = file.Where(held => held.Kind == EntryKind.Decision).ToList();
         if (decision.All(held => held.Anchor is not null)) return null;
@@ -437,10 +480,134 @@ public sealed class KnowledgeService(
             return null;
         }
 
-        return new DecisionStanding(
-            later,
-            [.. targeted.OrderBy(mark => mark.Line).Select(mark =>
-                $"{mark.Kind} by {(mark.By is { } by ? $"D{by}" : "a later note here")}")]);
+        return (later, [.. targeted.OrderBy(mark => mark.Line)]);
+    }
+
+    /// <summary>
+    /// Cite an entry at the reading the index stores for it (KNOWCENTRAL2a; the memory coordinator design's §5): its commit, read
+    /// or fed, and its body's digest, the root read again first where it moved. An entry its own record already supersedes is
+    /// refused, naming what superseded it.
+    /// </summary>
+    /// <param name="lines">The span a hit named, which must be lines of the entry; null cites it whole.</param>
+    public async Task<CitationAnswer> CiteAsync(string id, LineSpan? lines = null, CancellationToken ct = default)
+    {
+        RefuseNewerIndex();
+        await EnsureIndexedAsync(ct).ConfigureAwait(false);
+        await ReadAgainWhereMovedAsync(RepositoryOfId(id), ct).ConfigureAwait(false);
+        var held = await store.HeldAsync([id], entry => entry.Kind == EntryKind.Decision, ct).ConfigureAwait(false);
+        if (!held.Entries.TryGetValue(id, out var entry)) return new(null, $"No entry with id `{id}` is indexed. Ids come from `knowledge_search`.");
+        if (lines is { } range && entry.Cut(range) is null) return new(null, $"Lines {range} are not lines of `{id}`, as a hit names them.");
+        if (!held.Readings.TryGetValue(entry.Repository, out var reading) || reading.Commit is null)
+        {
+            return new(null, $"No reading of `{entry.Repository}` names a commit, so nothing of it can be cited yet.");
+        }
+
+        if (Marked(entry, held, "superseded") is { } superseded)
+        {
+            var successor = superseded.By is { } by ? $"D{by}" : null;
+            return new(null, $"`{id}` is already superseded by {successor ?? "a later note of its own record"}: cite that instead.", successor);
+        }
+
+        return new(new Citation(id, lines, reading.Commit, reading.Fed, FeedDigest.Of(entry.Body)));
+    }
+
+    /// <summary>
+    /// Whether a citation still holds (KNOWCENTRAL2a; the memory coordinator design's §5). The root's signature is compared with
+    /// the stored one and the root read again where it moved; the entry, its file's marks and the reading are read in one
+    /// transaction; then the cited file's own state is asked against that commit, and the signature again. No in-process gate is
+    /// taken but a moved root's read.
+    /// </summary>
+    /// <param name="attempt">How many rechecks in a row this one is: a cited id found gone asks to be cited again at <see cref="GoneTries"/>.</param>
+    public async Task<CitationCheck> RecheckAsync(Citation citation, int attempt = 1, CancellationToken ct = default)
+    {
+        RefuseNewerIndex();
+        await EnsureIndexedAsync(ct).ConfigureAwait(false);
+        var root = await ReadAgainWhereMovedAsync(RepositoryOfId(citation.Id), ct).ConfigureAwait(false);
+        var held = await store.HeldAsync([citation.Id], entry => entry.Kind == EntryKind.Decision, ct).ConfigureAwait(false);
+        if (!held.Entries.TryGetValue(citation.Id, out var entry))
+        {
+            var again = attempt >= GoneTries;
+            return Inconclusive($"`{citation.Id}` is no longer indexed{(again ? "; cite it again" : "")}", null, again);
+        }
+
+        if (!held.Readings.TryGetValue(entry.Repository, out var reading) || reading.Commit is null)
+        {
+            return Inconclusive($"no reading of `{entry.Repository}` names a commit", null);
+        }
+
+        if (FeedDigest.Of(entry.Body) != citation.Digest) return Inconclusive("its body changed since it was cited; cite it again", reading, citeAgain: true);
+
+        // A fed reading answers for its fed commit; a read one, for its file as that commit has it, here.
+        if (!reading.Fed)
+        {
+            if (root is null || fileUncommitted is null) return Inconclusive("its file's state cannot be asked here", reading);
+            bool? modified;
+            try
+            {
+                modified = fileUncommitted(root, entry.RelativePath);
+            }
+            catch (Exception)
+            {
+                modified = null;
+            }
+
+            if (modified is null) return Inconclusive("its file's state is unknown", reading);
+            if (modified == true) return Inconclusive("its file has changes not committed", reading);
+            var moved = rootSignature is null ? RootSignature.Head(root) != reading.Commit : rootSignature(root) != reading.Signature;
+            if (moved) return Inconclusive("its root moved during the check", reading);
+        }
+
+        if (Marked(entry, held, "superseded") is { } superseded)
+        {
+            var by = superseded.By is { } failed ? $"D{failed}" : null;
+            return new(CitationStanding.Failed, $"superseded by {by ?? "a later note of its own record"}", by, reading.Commit, reading.Fed);
+        }
+
+        if (Marked(entry, held, "amended") is { } amended)
+        {
+            var by = amended.By is { } later ? $"D{later}" : null;
+            return new(CitationStanding.Amended, $"cited record amended by {by ?? "a later note of its own record"}", by, reading.Commit, reading.Fed);
+        }
+
+        return new(CitationStanding.Holds, $"holds, {(reading.Fed ? "fed" : "read")} at {Short(reading.Commit)}", null, reading.Commit, reading.Fed);
+
+        static CitationCheck Inconclusive(string why, IndexReading? reading, bool citeAgain = false) =>
+            new(CitationStanding.Inconclusive, $"inconclusive: {why}", null, reading?.Commit, reading?.Fed ?? false, citeAgain);
+    }
+
+    /// <summary>The first mark of this kind its own record puts on a decision entry, or null.</summary>
+    private static NoteMark? Marked(KnowledgeEntry entry, HeldTogether held, string kind) =>
+        held.Files.TryGetValue((entry.Repository, entry.RelativePath), out var file) && MarksOn(entry, file) is { } placed
+            ? placed.Targeted.FirstOrDefault(mark => mark.Kind == kind)
+            : null;
+
+    /// <summary>The repository an entry id names: what stands before its first colon.</summary>
+    private static string RepositoryOfId(string id) => id.IndexOf(':') is var colon and > 0 ? id[..colon] : id;
+
+    /// <summary>
+    /// The root a repository's checkout is at here, read again first where its signature moved from the stored reading's
+    /// (KNOWCENTRAL2a); null where no checkout of it is read here.
+    /// </summary>
+    private async Task<string?> ReadAgainWhereMovedAsync(string repository, CancellationToken ct)
+    {
+        await ReloadRegistryAsync(ct).ConfigureAwait(false);
+        if (RootOf(repository) is not { } root) return null;
+        if (rootSignature is null) return root;
+
+        if ((await store.ReadingAsync(repository, ct).ConfigureAwait(false))?.Signature != rootSignature(root))
+        {
+            await _refreshLock.WaitAsync(ct).ConfigureAwait(false);
+            try
+            {
+                await RefreshReadingAsync(ct, [root]).ConfigureAwait(false);
+            }
+            finally
+            {
+                _refreshLock.Release();
+            }
+        }
+
+        return root;
     }
 
     /// <param name="workspace">The circle to summarize (D48). Null is every one this machine holds.</param>
@@ -546,8 +713,13 @@ public sealed class KnowledgeService(
 
         // 🔴 Its entries go with it (REV3). "They leave on the next refresh" held only for a host that
         // refreshes — a fed deployment never does, so it served a retired repository's knowledge to
-        // every keyed caller for as long as it ran.
-        if (stored || known) await store.ReplaceRepositoryAsync(repository, [], ct).ConfigureAwait(false);
+        // every keyed caller for as long as it ran. It reads no source, so it always writes, moving the generation a
+        // refresh begun before it read (KNOWCENTRAL2a).
+        if (stored || known)
+        {
+            await store.ReplaceRepositoryAsync(repository, [], ReadingWrite.Taken(_time.GetUtcNow()), ct: ct).ConfigureAwait(false);
+        }
+
         return stored || known;
     }
 
@@ -634,31 +806,14 @@ public sealed class KnowledgeService(
     /// <remarks>
     /// An entry is stamped with the workspace it was indexed under, and a local host reads its checkouts again only
     /// into an empty store or on request: a repository moved between workspaces kept its old stamp, and the
-    /// workspace it moved to counted none of its knowledge. Re-stamped under the refresh's lock, so a reading that
-    /// took the old wiring cannot land after it; over an index a newer Daoris wrote, nothing is rewritten (KSCHEMA1).
+    /// workspace it moved to counted none of its knowledge. Re-stamped in one write of the store's, which leaves the bodies
+    /// as they are and moves the generation, so a reading that took the old wiring is refused after it, whichever
+    /// connector took it (KNOWCENTRAL2a); over an index a newer Daoris wrote, nothing is rewritten (KSCHEMA1).
     /// </remarks>
     private async Task RestampAsync(string repository, string workspace, CancellationToken ct)
     {
         if (store.Refusal is not null) return;
-
-        await _refreshLock.WaitAsync(ct).ConfigureAwait(false);
-        try
-        {
-            var held = (await store.AllAsync(ct).ConfigureAwait(false))
-                .Where(entry => string.Equals(entry.Repository, repository, StringComparison.OrdinalIgnoreCase))
-                .GroupBy(entry => entry.Repository, StringComparer.Ordinal);
-            foreach (var group in held)
-            {
-                if (group.All(entry => Workspaces.Same(entry.Workspace, workspace))) continue;
-                await store.ReplaceRepositoryAsync(
-                    group.Key, group.Select(entry => entry with { Workspace = workspace }).ToList(), ct)
-                    .ConfigureAwait(false);
-            }
-        }
-        finally
-        {
-            _refreshLock.Release();
-        }
+        await store.RestampAsync(repository, workspace, ct).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -750,12 +905,12 @@ public sealed class KnowledgeService(
             // again from that commit would be "already held" into an index that holds nothing.
             if (!(registered.Joined && registered.SharesKnowledge) && store.Refusal is null)
             {
-                await store.ReplaceRepositoryAsync(registered.Repository, [], ct).ConfigureAwait(false);
-                await held.ForgetKnowledgeAsync(registered.Repository, ct).ConfigureAwait(false);
+                await store.ReplaceRepositoryAsync(
+                    registered.Repository, [], ReadingWrite.Taken(_time.GetUtcNow()),
+                    inside => held.ForgetKnowledgeAsync(registered.Repository, inside), ct).ConfigureAwait(false);
             }
 
-            // After the row, as the knowledge feed records its commit after its entries: a store that
-            // failed between the two must never claim a declaration it does not hold.
+            // After the row: a store that failed between the two must never claim a declaration it does not hold.
             await held.RecordRegistrationProvenanceAsync(registration.Repository, arriving, ct).ConfigureAwait(false);
             return (new(
                 FeedRefusal.None,
@@ -830,6 +985,8 @@ public sealed class KnowledgeService(
         await _feedGate.WaitAsync(ct).ConfigureAwait(false);
         try
         {
+            // Read before the held commit is judged, so another connector's write between the judgement and this one refuses it.
+            var generations = await store.GenerationsAsync(ct).ConfigureAwait(false);
             var held = registrations is null
                 ? null
                 : await registrations.ProvenanceAsync(registration!.Repository, ct).ConfigureAwait(false);
@@ -845,15 +1002,22 @@ public sealed class KnowledgeService(
 
             if (verdict != FeedVerdict.Take) return NotTaken(verdict, registration!.Repository, "knowledge", held!, arriving);
 
-            await store.ReplaceRepositoryAsync(registration!.Repository, normalized, ct).ConfigureAwait(false);
-
-            // Recorded AFTER the entries land, so a store that fails mid-replace never claims a commit
-            // it does not hold — the next feed from that commit would then be refused as a duplicate
-            // of work that never happened.
-            if (registrations is not null)
+            // 🔴 The provenance is recorded in the entries' own write (KNOWCENTRAL2a): a fault between the two left new bodies
+            // under the old commit, and a store that failed mid-replace claiming a commit it does not hold would refuse the
+            // next feed from that commit as a duplicate of work that never happened.
+            var named = registration!.Repository;
+            var wrote = await store.ReplaceRepositoryAsync(
+                named, normalized,
+                new ReadingWrite(generations.TryGetValue(named, out var generation) ? generation : 0, arriving.Commit, null, Fed: true, _time.GetUtcNow()),
+                registrations is null ? null : inside => registrations.RecordProvenanceAsync(named, arriving, inside),
+                ct).ConfigureAwait(false);
+            if (!wrote)
             {
-                await registrations.RecordProvenanceAsync(registration.Repository, arriving, ct)
-                    .ConfigureAwait(false);
+                return new(
+                    FeedRefusal.Moved,
+                    $"`{named}` was written here by another connector while this feed was judged, so nothing of it was "
+                    + "taken. The next pass judges it again.",
+                    Entries: 0);
             }
         }
         finally
@@ -1111,7 +1275,17 @@ public sealed class KnowledgeService(
     {
         // (The body keeps the block it had inside the lock, so the change to the lock's shape is the whole diff.)
         {
+            // 🔴 Each repository's generation, read before the registry and the source (KNOWCENTRAL2a): a write any connector
+            // makes after this, a retirement included, refuses this refresh's write of that repository.
+            var generations = await store.GenerationsAsync(ct).ConfigureAwait(false);
             await ReloadRegistryAsync(ct).ConfigureAwait(false);
+
+            // A root named before the registry was read again is read only while it is still registered.
+            if (onlyRoots is not null && readsRegisteredRoots)
+            {
+                var registered = LocalRoots().Select(r => r.Root).ToHashSet(_readings.Comparer);
+                onlyRoots = [.. onlyRoots.Where(registered.Contains)];
+            }
 
             // What each root is, taken BEFORE it is read, so a write during the read is judged moved at the next use.
             var taken = new List<(string Repository, string Root, RootSignature? Signature, string? Commit, Lazy<Task<bool?>>? Dirty)>();
@@ -1124,19 +1298,7 @@ public sealed class KnowledgeService(
                     var commit = signature is null ? RootSignature.Head(root) : signature.Commit;
                     // One status a root a reading (KNOWFRESH1a-ii), only for a root that has a commit to differ from. It is not
                     // waited for here: a process start can take seconds a repository, and no answer waits on a repository's status.
-                    Lazy<Task<bool?>>? dirty = commit is not null && uncommitted is not null
-                        ? new Lazy<Task<bool?>>(() => Task.Run<bool?>(() =>
-                        {
-                            try
-                            {
-                                return uncommitted(root);
-                            }
-                            catch (Exception)
-                            {
-                                return null;
-                            }
-                        }))
-                        : null;
+                    var dirty = commit is not null && uncommitted is not null ? Probe(root) : null;
                     taken.Add((repository, root, signature, commit, dirty));
                 }
             }
@@ -1146,13 +1308,21 @@ public sealed class KnowledgeService(
             var wiring = (registry?.Read() ?? [])
                 .ToDictionary(r => r.Repository, r => r.InWorkspace, StringComparer.OrdinalIgnoreCase);
 
-            var report = await _index.RefreshAsync(
+            var readAt = taken
+                .GroupBy(t => t.Repository, StringComparer.Ordinal)
+                .ToDictionary(g => g.Key, g => (g.First().Commit, g.First().Signature), StringComparer.Ordinal);
+            var (report, refused) = await _index.RefreshReadingAsync(
                 source,
                 repository => wiring.TryGetValue(repository, out var workspace)
                     ? workspace
                     : Workspaces.Default,
                 readsRegisteredRoots && registry is not null ? wiring.ContainsKey : null,
-                ct, onlyRoots).ConfigureAwait(false);
+                onlyRoots, generations,
+                repository => readAt.TryGetValue(repository, out var read) ? read : (null, null),
+                ct).ConfigureAwait(false);
+
+            // A root whose write was refused keeps no reading here, so its next use reads it again.
+            taken.RemoveAll(t => refused.Contains(t.Repository));
 
             report = report with { Absent = AbsentCheckouts() };
 
@@ -1191,7 +1361,8 @@ public sealed class KnowledgeService(
                 if (onlyRoots is null) _readings.Clear();
                 foreach (var (repository, root, signature, commit, dirty) in taken)
                 {
-                    _readings[root] = new RootReading(repository, _refreshedAt, commit, signature, dirty);
+                    _readings[root] = new RootReading(repository, _refreshedAt, commit, signature);
+                    if (dirty is not null) _probes[root] = (commit, signature, dirty);
                 }
             }
 

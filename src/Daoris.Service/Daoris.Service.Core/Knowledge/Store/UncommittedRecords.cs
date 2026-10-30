@@ -33,7 +33,18 @@ public static class UncommittedRecords
     /// </summary>
     /// <param name="documents">The documents folder the deployment names, relative to the root, or null.</param>
     /// <param name="index">The index folder the deployment names, relative to the root, or null.</param>
-    public static bool? Of(string root, string? documents = null, string? index = null)
+    public static bool? Of(string root, string? documents = null, string? index = null) =>
+        Status(root, [.. Folders(root, documents, index), .. Top]);
+
+    /// <summary>
+    /// Whether one record file of <paramref name="root"/> differs from the commit its <c>HEAD</c> names, a new file git does not
+    /// ignore included (KNOWCENTRAL2a): a citation's recheck asks of the cited file alone, so another file's edit changes nothing.
+    /// Null where git did not answer.
+    /// </summary>
+    /// <param name="relativePath">The file, repository-relative with forward slashes, as an entry names it.</param>
+    public static bool? OfFile(string root, string relativePath) => Status(root, [$":(literal){relativePath}"]);
+
+    private static bool? Status(string root, IReadOnlyList<string> specs)
     {
         // A checkout's own: its `.git` folder, or the file a worktree has there. Never a repository above it, which git would
         // otherwise answer for, at paths that are not this root's.
@@ -42,7 +53,7 @@ public static class UncommittedRecords
 
         try
         {
-            using var git = Process.Start(Start(root, Folders(root, documents, index)));
+            using var git = Process.Start(Start(root, specs));
             if (git is null) return null;
             var answer = git.StandardOutput.ReadToEndAsync();
             var said = git.StandardError.ReadToEndAsync();
@@ -89,7 +100,8 @@ public static class UncommittedRecords
     }
 
     /// <summary>The start of the one git <see cref="Of"/> asks, past Git for Windows' launcher where that is the git found (GITSTART2).</summary>
-    internal static ProcessStartInfo Start(string root, IReadOnlyList<string> folders)
+    /// <param name="specs">The pathspecs the status reads, each as git takes it.</param>
+    internal static ProcessStartInfo Start(string root, IReadOnlyList<string> specs)
     {
         var start = new ProcessStartInfo("git")
         {
@@ -104,7 +116,7 @@ public static class UncommittedRecords
             start.ArgumentList.Add(argument);
         }
 
-        foreach (var spec in folders.Concat(Top)) start.ArgumentList.Add(spec);
+        foreach (var spec in specs) start.ArgumentList.Add(spec);
         foreach (var variable in new[] { "GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_COMMON_DIR" }) start.Environment.Remove(variable);
         start.Environment["GIT_CEILING_DIRECTORIES"] = Path.GetDirectoryName(Path.GetFullPath(root).TrimEnd(Path.DirectorySeparatorChar, '/')) ?? string.Empty;
         GitForWindows.Past(start);
