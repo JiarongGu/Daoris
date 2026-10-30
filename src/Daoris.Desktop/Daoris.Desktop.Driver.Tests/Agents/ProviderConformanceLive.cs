@@ -29,7 +29,7 @@ internal static class ConformanceLiveCases
         Live("live.missing-conversation", "a missing conversation refused at the open, nothing prompted", LiveMissing, ResumesOnTheWire),
         Live("live.other-writer", "another active writer refused at the open, nothing prompted", LiveOtherWriter, ResumesOnTheWire),
         Live("live.word-before-wire", "a word attempted before the wire and acknowledged after it, never replayed once uncertain",
-            _ => Pending("DoorInput with Course's attempt port, a word's attempt and acknowledgement read around the wire")),
+            _ => Pending("m-ii's DoorInput with Course's attempt port, a word's attempt and acknowledgement read around the wire")),
         Live("live.limit-cools", "a limit cooling the bound account with no strike",
             _ => Pending("the one failure channel a limit cools the bound account through")),
         Live("live.transient-retried", "a transient error tried again in the same conversation within D210's bounds", LiveTransient, Protocol),

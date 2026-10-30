@@ -38,6 +38,12 @@ in `Agents/Providers/Stub/`, which `LegacyDoor` presents to today's readers as a
 operands read the registry. `Driver.Tests/Agents/ProviderConformanceTests.cs` is the conformance suite (design §10), every case run per provider
 and door, each one a provider cannot pass yet held in its own `pending.json` (a stand-in's beside its `provider.json`, a real provider's under
 `Driver.Tests/fixtures/providers/<id>/`) with the row that makes it pass.
+`AgentRun` holds, beside its eight operations, the five members every executor uses (AGENTPROVIDER1 row m-i, D213's 2026-10-30 note): the records
+handed at the open, the carriers, the end, the go-on and the restart. `Agents/TransportRun.cs` implements it over today's two transports, a
+protocol door's `AcpSession` and the native capture, as one unit of a start (process, tracking, reaper, capture, wait, bounded capture), admitting
+each operation by its door's evidence and refusing the words until m-ii; what it asks of the loop is `ITransportHost`, answered by
+`Loop/DriverTransportHost.cs` from the driver. `DriverWatch` takes an optional adapter
+set for its roster and each look's driver, `AdapterSet.Built()` when none is given.
 A stand-in's program is one Node module in its folder's `Program/`, both doors chosen by the arguments its `provider.json` states, and the
 project's one glob (`Agents/Providers/*/Program/**`) carries it beside the driver, so the suite's live cases run it from their build output
 and the family rehearsal finds every stand-in from the `provider.json` files (`tools/stand-ins.mjs`) and drives the scenario contract over

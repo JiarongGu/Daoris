@@ -98,7 +98,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/AgentsCommandTests.cs` | 44 | 821 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/HarnessTests.cs` | 54 | 1165 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/LineAccountTests.cs` | 40 | 756 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/ProviderConformanceCases.cs` | 42 | 741 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/ProviderConformanceCases.cs` | 45 | 788 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/ResumeAccountTests.cs` | 42 | 747 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Course/ChatGoOnTests.cs` | 68 | 1262 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Course/ContinuationTests.cs` | 46 | 856 |
@@ -182,7 +182,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/DriverContinuations.cs` | 96 | 1481 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/DriverHelpers.cs` | 69 | 1124 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/DriverPartners.cs` | 45 | 747 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/DriverWatch.cs` | 68 | 1138 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/DriverWatch.cs` | 69 | 1147 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/SystemWiring.cs` | 50 | 1063 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Plugins/Hooks.cs` | 62 | 1216 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Review/Domain/OpinionGate.cs` | 41 | 707 |
@@ -405,4 +405,4 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/DAORIS_UNIFIED_COLLABORATION_ARCHITECTURE_AND_PLAN_2026-10-16.md` | 164 | 5380 |
 | `docs/README.md` | 65 | 289 |
 | `docs/development.md` | 53 | 584 |
-| `src/Daoris.Desktop/README.md` | 245 | 1204 |
+| `src/Daoris.Desktop/README.md` | 246 | 1210 |
