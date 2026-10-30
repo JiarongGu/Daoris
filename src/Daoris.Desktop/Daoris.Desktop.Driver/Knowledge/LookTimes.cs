@@ -21,6 +21,22 @@ public sealed class LookTimes
         }
     }
 
+    private readonly List<(string Tree, string Step, long Ms)> _treeSteps = [];
+
+    /// <summary>Each tree's step of the trees read (TREELOOK2): <c>status</c>, <c>holds</c> or <c>walk</c>, by the tree's folder name.</summary>
+    public IReadOnlyList<(string Tree, string Step, long Ms)> TreeSteps
+    {
+        get
+        {
+            lock (_gate) return [.. _treeSteps];
+        }
+    }
+
+    internal void AddTree(string tree, string step, long ms)
+    {
+        lock (_gate) _treeSteps.Add((Path.GetFileName(tree.TrimEnd('\\', '/')), step, ms));
+    }
+
     /// <summary>How many trees the git check was asked about.</summary>
     public int Trees { get; set; }
 
