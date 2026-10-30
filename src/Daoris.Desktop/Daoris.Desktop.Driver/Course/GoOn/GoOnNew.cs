@@ -104,18 +104,19 @@ public static class GoOnNew
         var last = WordsNever.LastHere(json, record.Quest);
         var next = WordsNever.ContinuedIn(json, id);
         var prior = ServiceClient.ReadRecord(json, id);
+        var judged = WordsNever.Judge(record, last, next);
 
         // The facts, read lazily as the door's refusals were: a driven record's quest is read only where nothing before it refused, and the
         // account only where its quest is open or taken. The first pass assumes an open quest and no cooling, so its answer says whether a
         // later fact could change it (the not-cooling refusal is the one that reached them).
-        var facts = FactsOf(record, prior, last, next, record.Quest is null || record.Kind == "chat" ? null : "Open", null);
+        var facts = FactsOf(record, prior, judged, last, next, record.Quest is null || record.Kind == "chat" ? null : "Open", null);
         var course = CourseDecision.Decide(facts, CourseTrigger.GoOnNew);
         if (course is LineCourse.Hold { Code: NotCooling } && facts.Head.QuestStatus is not null)
         {
             // Words the course would hold only for an account's cool-off: whether the quest has closed, and whether the account cools.
             var quest = await service.FindQuestAsync(record.Quest!, ct).ConfigureAwait(false);
             var status = quest?.Status ?? "missing";
-            facts = FactsOf(record, prior, last, next, status, status is "Open" or "Taken" ? CoolingFact(coolingOf, prior!) : null);
+            facts = FactsOf(record, prior, judged, last, next, status, status is "Open" or "Taken" ? CoolingFact(coolingOf, prior!) : null);
             course = CourseDecision.Decide(facts, CourseTrigger.GoOnNew);
         }
 
@@ -131,7 +132,7 @@ public static class GoOnNew
                     CourseNeverWhy.Intake => Refused(WordsNever.Intake, $"{id} is an intake; answer its ask #{record.Ask} instead: publish it or close it."),
                     CourseNeverWhy.StoodDown => Refused(WordsNever.StoodDown, $"it stood down: #{record.Quest} is someone else's, so it has nothing to go on with."),
                     // A later session of its quest is a quest's; none is a conversation that went on in another (HANDWORDS1).
-                    _ when IsSupersededByQuest(record, last) =>
+                    _ when judged == WordsNever.Superseded =>
                         Refused(WordsNever.Superseded, $"#{record.Quest} went on in a later session here, {last}, and its words go there."),
                     _ => Refused(WordsNever.Continued, WordsNever.WentOn(id, next!)),
                 };
@@ -173,21 +174,19 @@ public static class GoOnNew
         _ => Refused(code, $"{id} cannot go on in a new session."),
     };
 
-    // WordsNever.Judge's order for a later part: a quest's later session here first, then the conversation it went on in (HANDWORDS1).
-    private static bool IsSupersededByQuest(SessionRecord record, string? last) =>
-        record.Quest is not null && last is not null && !string.Equals(last, record.Id, StringComparison.Ordinal);
-
-    // What the course reads of the record: the nevers, whether it runs, the words waiting and the quest's status. Ask Daoris's own
-    // conversation has no quest a new session would serve (ASKHIST1). A park is live, but the course reads it as no running turn.
+    // What the course reads of the record: the nevers, whether it runs, the words waiting and the quest's status. The nevers are
+    // WordsNever's one table, read by its code (a later session of its quest, or the conversation it went on in, is the head's later
+    // part either way). Ask Daoris's own conversation has no quest a new session would serve (ASKHIST1). A park is live, but the
+    // course reads it as no running turn.
     private static CourseFacts FactsOf(
-        SessionRecord record, PriorSession? prior, string? last, string? next, string? questStatus, CourseAccount? account)
+        SessionRecord record, PriorSession? prior, string? never, string? last, string? next, string? questStatus, CourseAccount? account)
     {
         var words = prior is { WordsWaiting: true } ? [.. prior.Waiting.Select(word => new CourseWord(word.Id ?? "", CourseAuthor.Person))] : new List<CourseWord>();
         var head = new CourseHead(
-            record.State, Adapter: prior?.Adapter, Profile: prior?.Profile, Conversation: record.Kind == "chat", Teammate: record.Teammate,
-            Intake: record.Ask is not null, StoodDown: record.State == "stood-down",
-            SupersededBy: IsSupersededByQuest(record, last) ? last : next, Waiting: words, Session: record.Id, QuestStatus: questStatus,
-            AskDaoris: WordsNever.IsHelp(record));
+            record.State, Adapter: prior?.Adapter, Profile: prior?.Profile, Conversation: record.Kind == "chat",
+            Teammate: never == WordsNever.Teammate, Intake: never == WordsNever.Intake, StoodDown: never == WordsNever.StoodDown,
+            SupersededBy: never == WordsNever.Superseded ? last : never == WordsNever.Continued ? next : null, Waiting: words,
+            Session: record.Id, QuestStatus: questStatus, AskDaoris: WordsNever.IsHelp(record));
         return new CourseFacts(head, record.Live ? CourseBoundary.TurnRunning : CourseBoundary.ProcessExited, account);
     }
 
