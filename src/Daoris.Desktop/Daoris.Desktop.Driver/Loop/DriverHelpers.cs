@@ -610,7 +610,7 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
         Task<ReviewerChoice> Walk(IReadOnlyList<ReviewerPassed>? passed) =>
             _context.HelperChoices is { } choose
                 ? choose(ask, rule, asker, ct)
-                : HelperChoice.ChooseAsync(_context.Harnesses, ask, rule, asker.Adapter, _context.Config, asker.Workspace, ct, passed);
+                : HelperChoice.ChooseAsync(_context.Harnesses, ask, rule, asker.Adapter, _context.Config, asker.Workspace, ct, passed, () => RoleCatalog.ReadHome(_context.Harnesses.Home));
         var choice = await Walk(null).ConfigureAwait(false);
         if (!choice.Chosen)
         {

@@ -649,6 +649,8 @@ app.MapPost("/api/quests", async (
             Requirements = RequirementsOf(body.Requirements),
             // The person's short title from the composer (SESSUX1j), judged by the exchange with every other door's.
             Short = body.Short,
+            // The mark on the work (FOUNDATION1x), judged by the exchange with every other door's.
+            Weight = body.Weight,
             // The chain's review choice (REVIEWENV1b): the person's own at this door, with any words they give.
             Review = ReviewOf(body.Review),
             // An agent's publish where the host holds a person key and the call carried none (PERSONDOOR1a, design §3.2):
@@ -2780,7 +2782,9 @@ static QuestResponse ToQuest(
     // The person's workflow choices before it started (WORKFLOW1e2): ids and their words, as its note travels; only where there are some.
     q.WorkflowChoices.Count == 0
         ? null
-        : q.WorkflowChoices.Select(c => new AskWorkflowChoiceResponse(c.Kind, c.Workflow, c.At ?? q.Updated, c.Words)).ToList());
+        : q.WorkflowChoices.Select(c => new AskWorkflowChoiceResponse(c.Kind, c.Workflow, c.At ?? q.Updated, c.Words)).ToList(),
+    // The mark on the work (FOUNDATION1x): a word, which every door may answer.
+    q.Weight);
 
 // Requirements as a door hands them to the exchange (DRIFT1c): a half left out, or a whole one, arrives
 // blank and is refused there naming which — the same sentence every door gives. So does an evidence item

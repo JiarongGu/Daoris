@@ -50,6 +50,66 @@ public sealed class StartRoleTests
         Assert.Equal("Design work: it ran on designer's order.", RotatedOpening.DesignLine("designer").Note);
     }
 
+    /// <summary>The service's quest answer (its door carries <c>weight</c>), read by the client and started, with and without a role taking design.</summary>
+    [Fact]
+    public void A_quest_published_with_weight_design_starts_on_Build_s_order_then_on_the_role_that_takes_it()
+    {
+        var answered = ServiceClient.ReadQuests(
+            """[{"id":"q1","from":"a","to":"b","title":"Decide the cap","body":"Two ways.","status":"Open","weight":"design"},""" +
+            """{"id":"q2","from":"a","to":"b","title":"Cap it","body":"b","status":"Open"}]""");
+
+        Assert.Equal("design", answered[0].Weight);
+        Assert.Null(answered[1].Weight);
+
+        var marked = Daoris.Driver.Driver.StartWork(answered[0]);
+        Assert.Equal("build", Plan(marked, RoleCatalog.Of([]), Machine).Role);
+        Assert.Equal("designer", Plan(marked, WithDesigner(), Machine).Role);
+        Assert.Equal("build", Plan(Daoris.Driver.Driver.StartWork(answered[1]), WithDesigner(), Machine).Role);
+    }
+
+    [Fact]
+    public void A_chat_continuation_keeps_its_binding_s_role_and_a_removed_role_falls_to_the_one_that_takes_chat_now()
+    {
+        var catalogue = RoleCatalog.Of(
+        [
+            new StoredRole("chat", "removed", "{}", 2), RoleCatalogTests.Stored(RoleCatalogTests.Working("talker", "chat"), 4),
+        ]);
+        var config = Config with
+        {
+            Actors = new Dictionary<string, IReadOnlyList<ActorChoice>>(Config.Actors)
+            {
+                ["chat"] = [new ActorChoice("claude")], ["talker"] = [new ActorChoice("codex")],
+            },
+        };
+        var record = new PriorSession("s1", null) { Actor = "chat" };
+
+        Assert.Equal("claude", StartPlan.ContinuedOn(record, config, "chat"));
+        Assert.Equal("codex", StartPlan.ContinuedOn(record, config, "chat", bound: "talker", catalogue: catalogue, place: Machine));
+        Assert.Equal("talker", StartPlan.BoundRole("gone", "chat", catalogue, Machine));
+    }
+
+    [Fact]
+    public void A_helper_takes_the_catalogue_s_role_and_the_seeded_catalogue_changes_nothing()
+    {
+        var config = Config with
+        {
+            Actors = new Dictionary<string, IReadOnlyList<ActorChoice>>(Config.Actors)
+            {
+                ["helper"] = [new ActorChoice("claude", "haiku")], ["second"] = [new ActorChoice("claude", "opus")],
+            },
+        };
+        var ask = new HelperAsk("h1", "s1", "Read this.", "claude", HelperAsk.ByPerson, DateTimeOffset.UnixEpoch);
+        var adapters = new AdapterSet(new Dictionary<string, ISessionAdapter>());
+        IReadOnlyList<ActorEffective> Order(RoleCatalog? catalogue) => HelperChoice.Order(ask, HelperRule.Default, adapters, null, config, catalogue);
+
+        var today = Order(null);
+        Assert.Equal([new ActorEffective("claude", "haiku", null, "1")], today);
+        Assert.Equal(today, Order(RoleCatalog.Of([])));
+
+        var added = RoleCatalog.Of([new StoredRole("helper", "removed", "{}", 2), RoleCatalogTests.Stored(RoleCatalogTests.Working("second", "help"), 5)]);
+        Assert.Equal([new ActorEffective("claude", "opus", null, "1")], Order(added));
+    }
+
     [Fact]
     public void An_unmarked_quest_starts_on_Build_s_order_though_a_role_takes_design()
     {

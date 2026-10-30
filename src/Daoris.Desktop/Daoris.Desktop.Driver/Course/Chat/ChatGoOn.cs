@@ -623,7 +623,11 @@ internal sealed class ChatGoOn
         string ranOn;
         try
         {
-            ranOn = record.Adapter is { Length: > 0 } opened ? opened : StartPlan.ContinuedOn(record, config, "chat");
+            // FOUNDATION1x: its binding's role first, as a quest's go-on reads it (§2.4).
+            ranOn = record.Adapter is { Length: > 0 } opened
+                ? opened
+                : StartPlan.ContinuedOn(
+                    record, config, "chat", _context.Conversations.RoleOf(sessionId)?.Role, RoleCatalog.ReadHome(_context.Home), new RolePlace());
         }
         catch (DriverException unchosen)
         {
