@@ -208,7 +208,9 @@ public sealed record PublishQuestRequest(
     string From, string To, string Title, string Body,
     IReadOnlyList<string>? Links = null, IReadOnlyList<QuestAttachmentRequest>? Attachments = null,
     IReadOnlyList<QuestStepWire?>? Then = null, IReadOnlyList<QuestRequirementWire?>? Requirements = null,
-    string? Short = null, QuestReviewWire? Review = null);
+    string? Short = null, QuestReviewWire? Review = null,
+    // FOUNDATION1x: the mark on the work, `design` or `exact`, judged by the exchange with every other door's; absent for none.
+    string? Weight = null);
 // A set-up posted on a set-up step (REVIEWENV1b, design §2.6, §3.3): the commit Daoris read and the environment's kind (`local`
 // or `deployed`), with `Session`, whose said set-ups the driver posts, or the person's own `Look`, `Shows` and `Again`.
 public sealed record QuestSetUpRequest(

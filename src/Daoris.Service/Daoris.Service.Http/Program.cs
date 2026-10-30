@@ -649,6 +649,8 @@ app.MapPost("/api/quests", async (
             Requirements = RequirementsOf(body.Requirements),
             // The person's short title from the composer (SESSUX1j), judged by the exchange with every other door's.
             Short = body.Short,
+            // The mark on the work (FOUNDATION1x), judged by the exchange with every other door's.
+            Weight = body.Weight,
             // The chain's review choice (REVIEWENV1b): the person's own at this door, with any words they give.
             Review = ReviewOf(body.Review),
             // An agent's publish where the host holds a person key and the call carried none (PERSONDOOR1a, design §3.2):
