@@ -363,10 +363,11 @@ public sealed class DriverRoutes(DriverContext context)
     // stored choices, and the work codes a role may take; a read, the same `daoris driver role` says. Beside them, the roles Daoris
     // suggests adding (the Designer while no role takes design), each the person's press alone.
     [DriverRoute("ROLES")]
-    private object? Roles(IpcRequest request)
+    [ByEvent("ROLES", Untold = "the store's roles and driver.json's staffing")]
+    private Task<object?> RolesAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var catalogue = RoleCatalog.ReadHome(_loop.Home);
-        return new
+        return Task.FromResult<object?>(new
         {
             Roles = RoleDoor.Rows(catalogue, DriverConfig.Load(_loop.ConfigPath)),
             Works = RoleWork.Codes,
@@ -375,7 +376,7 @@ public sealed class DriverRoutes(DriverContext context)
             {
                 each.Role.Id, each.Role.NameEn, each.Role.NameZh, each.Role.Takes, ScopeKind = each.Role.Scope.Kind, each.Choices,
             }),
-        };
+        });
     }
 
     // A working role added, changed, removed or given back its seed (FOUNDATION1y-i): the person's press, the same change `daoris driver

@@ -544,15 +544,20 @@ export type { RoleCatalogue, RoleChangePress, RoleRow, SuggestedRole } from '../
  * take, whether this home keeps the catalogue, and the roles Daoris suggests. `daoris driver role` says the same. Under the driver's
  * key, so every press that changes the driver's state asks it again. Null in a browser and from an older shell, which answers no roles.
  */
+const readRoles = (raw: unknown): RoleCatalogue | null => {
+  const answer = raw as Partial<RoleCatalogue> | null;
+  if (!answer || !Array.isArray(answer.roles)) return null;
+  return { roles: answer.roles, works: answer.works ?? [], kept: answer.kept === true, suggested: answer.suggested ?? [] };
+};
+
 export const useRoles = () => {
   const { isAvailable } = useShenora();
+  const client = useQueryClient();
+  const queryKey = [...keys.driver, 'roles'] as const;
   return useQuery({
-    queryKey: [...keys.driver, 'roles'] as const,
-    queryFn: async (): Promise<RoleCatalogue | null> => {
-      const answer = await call<Partial<RoleCatalogue> | null>('ROLES');
-      if (!answer || !Array.isArray(answer.roles)) return null;
-      return { roles: answer.roles, works: answer.works ?? [], kept: answer.kept === true, suggested: answer.suggested ?? [] };
-    },
+    queryKey,
+    // Told by event (NOBLOCK1): the shell answers what it holds, and its read of the store and `driver.json` comes as `ANSWERED`.
+    queryFn: () => askHeld('ROLES', client, queryKey, {}, readRoles),
     enabled: isAvailable,
   });
 };
