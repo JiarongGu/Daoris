@@ -195,6 +195,15 @@ internal sealed class DrivenMoveHarness : IAsyncDisposable
     public async Task KillAsync()
     {
         Die(Killed);
+        await EndLiveAsync();
+    }
+
+    /// <summary>
+    /// The records the killed loop left live ended as <see cref="KillAsync"/> ends them, its run left reading as alive: the view an older build's
+    /// come-up has of it, whose take-up takes no run's move up.
+    /// </summary>
+    public async Task EndLiveAsync()
+    {
         using var http = new HttpClient();
         for (var at = 1; at <= Service.SessionCount; at++)
         {
@@ -219,6 +228,38 @@ internal sealed class DrivenMoveHarness : IAsyncDisposable
         {
             return error.GetType().Name + ": " + error.Message;
         }
+    }
+
+    // ——— An older build's statements, made at the service as a build before the store made them.
+
+    /// <summary>An older build's open of a successor for the quest, unkeyed and moving no word: the record's id.</summary>
+    public async Task<string> OlderOpenAsync()
+    {
+        using var http = new HttpClient();
+        var body = new JsonObject { ["quest"] = "q1", ["adapter"] = "acp-stub", ["tree"] = Repository };
+        using var response = await http.PostAsync($"{Service.Url}/api/sessions", new StringContent(body.ToJsonString(), System.Text.Encoding.UTF8, "application/json"));
+        Assert.True(response.IsSuccessStatusCode, await response.Content.ReadAsStringAsync());
+        return JsonNode.Parse(await response.Content.ReadAsStringAsync())!["session"]!["id"]!.GetValue<string>();
+    }
+
+    /// <summary>A state move of a record as an older build asks it; the status the service answered.</summary>
+    public async Task<int> AdvanceAsync(string session, string state, bool interrupted = false)
+    {
+        using var http = new HttpClient();
+        var body = new JsonObject { ["state"] = state, ["interrupted"] = interrupted };
+        using var response = await http.PostAsync(
+            $"{Service.Url}/api/sessions/{session}/state", new StringContent(body.ToJsonString(), System.Text.Encoding.UTF8, "application/json"));
+        return (int)response.StatusCode;
+    }
+
+    /// <summary>The words a record holds taken off it, as an older build's go-on takes the words it carries.</summary>
+    public async Task TakeAsync(string session, params string[] words)
+    {
+        using var http = new HttpClient();
+        var body = new JsonObject { ["said"] = new JsonArray([.. words.Select(word => (JsonNode)JsonValue.Create(word)!)]) };
+        using var response = await http.PostAsync(
+            $"{Service.Url}/api/sessions/{session}/taken", new StringContent(body.ToJsonString(), System.Text.Encoding.UTF8, "application/json"));
+        Assert.True(response.IsSuccessStatusCode, await response.Content.ReadAsStringAsync());
     }
 
     // ——— The coming-up loop.
@@ -252,13 +293,13 @@ internal sealed class DrivenMoveHarness : IAsyncDisposable
     /// Waits for the coming-up loop to have nothing more to do: no record of the quest live, no move standing, and nothing seen to change for a
     /// while (a second delivery would show in that while), bounded by <see cref="Poll.Patience"/>.
     /// </summary>
-    public async Task SettleAsync(TimeSpan? quiet = null)
+    /// <param name="movesMayStand">The loop leaves a move standing by design (an older build's come-up takes none up), so one standing is no work left.</param>
+    /// <param name="quiet">How long nothing may change.</param>
+    public async Task SettleAsync(bool movesMayStand = false, TimeSpan? quiet = null)
     {
         var last = "";
         var since = Stopwatch.GetTimestamp();
         var still = quiet ?? TimeSpan.FromSeconds(8);
-        Changes.Clear();
-        var begun = Stopwatch.GetTimestamp();
         await Poll.Until(
             () =>
             {
@@ -267,24 +308,21 @@ internal sealed class DrivenMoveHarness : IAsyncDisposable
                 {
                     last = now;
                     since = Stopwatch.GetTimestamp();
-                    Changes.Add((int)Stopwatch.GetElapsedTime(begun).TotalSeconds);
                     return false;
                 }
 
-                return Stopwatch.GetElapsedTime(since) > still && !Live();
+                return Stopwatch.GetElapsedTime(since) > still && !Live(movesMayStand);
             },
             Seen);
     }
 
-    public List<int> Changes { get; } = [];
-
-    private bool Live()
+    private bool Live(bool movesMayStand)
     {
         var store = Store("run-probe");
         for (var at = 1; at <= Service.SessionCount; at++)
         {
             if (Service.State($"s{at}") is "queued" or "starting" or "working") return true;
-            if (store.Of($"s{at}").Any(move => move.Stands)) return true;
+            if (!movesMayStand && store.Of($"s{at}").Any(move => move.Stands)) return true;
         }
 
         return false;
