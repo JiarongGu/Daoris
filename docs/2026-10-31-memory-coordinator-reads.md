@@ -153,3 +153,18 @@ The broad order is sensible, but **not buildable as written**.
 5. **Rows:** **2a needs the older-writer correction before starting as written. 2b may start now**, independently over its specified stand-in.
 
 Read only; nothing changed, and no `local/` directory was opened.
+
+### The Opus maker's read
+
+**Verdict:** accept after one change, a sentence in §1; no further round.
+1. **Writers across processes: resolved.** All six replacing paths are named (`KnowledgeIndex.cs:47`, `:67`; `KnowledgeService.cs:550`, `:653`, `:753`, `:848`, the only callers of `ReplaceRepositoryAsync`); the store's transaction is `BEGIN IMMEDIATE` (`ConnectionGate.cs:129-135`) with provenance on the same connection (`ServiceFactory.cs:307-312`). One sentence for 2a: retirement, withdrawal and restamping read no source, so each takes the generation inside its own transaction and always writes; as worded, a retirement losing a race to another connector's refresh would leave the retired repository served.
+2. **BLOCKING: the model at the commit point.** The event log's Turn line carries no models (`SessionEvents.cs:393-397`, `[JsonIgnore]`, D179 point 2), and its `At` is the append (`SessionEventLog.cs:53`), so after a restart every row reads `unknown`. Change: read the models from the usage history's turn lines, the durable per-turn record (`UsageHistory.cs:286-299`, `:613-650`: session, seq, started, ended, model or split); match a row to the turn whose `started`..`ended` holds its instant; where `started` is missing, an asked `User` event between the instant and the turn leaves `unknown` (a chat stopped mid-turn and continued, `SessionLedger.cs:1947`); a pruned or dropped line reads `unknown`. 2c's proof gains the stopped-then-continued case and a restart before the commit point.
+3. **The move at the commit point: resolved** (`SessionLedger.cs:1929-1974` one `ExclusiveAsync`; `WorkRecords.cs:366-412` one transaction; `ready` applied at start; connectors write only `staged`).
+
+**New choices: nothing blocking.** Holding outcomes is sound and rare. A confirmation needs no hold: `Confirm` is guarded by the revision read (`MemoryGraphSql.cs:171-177`), so settle it `stale` and the next sweep rechecks. "From the entry's history" overstates: Lyntai keeps no per-entry change log (`MemoryRecords.cs:169`); the person settles from the entry's current state (present, `encoding_at`, revision, relations). Request A: say the gate's store-first path (`MemoryChangeGate.cs:65-68`) may stay for agents while the requested call stores nothing before it applies. Request C: add how long a receipt is kept, a key reused with other content refused, and an outcome telling created from refreshed (`SqliteMemoryGraphStore.cs:104`).
+
+**Rows:** 2a and 2b may start now, 2a carrying point 1's sentence; 2c waits on point 2's change.
+
+### The steward's settlement
+
+Both reads accept after named changes; no further round. Every named change is taken in the design: the models from the usage history's turn lines (Opus 2, Codex's attribution); the entry and reading pair in versioned tables an older open writer cannot reach (Codex 3); retirement, withdrawal and restamping taking the generation in their own transaction and always writing (Opus 1); a confirmation settled `stale`, not held; the person settling from the entry's current state; requests A and C as both reads word them.

@@ -1,8 +1,9 @@
 # The memory coordinator: Daoris's half of a shared, model-kept memory (KNOWCENTRAL1, round 3)
 
-**Standing:** a synthesis, 2026-10-31, revised in place after rounds 2 and 3 (`…-reads.md`); nothing built. The steward's, under
-D191, from the brief and the sealed proposals of the Opus maker (O) and Codex (X); checked at Daoris `a0dbbc423`, Lyntai `5cfdc76a`.
-It grants authority and ends entries, so it is accepted only on both makers' reads (D191's note of 2026-10-24).
+**Standing:** accepted 2026-10-31 under D191: both makers' reads of the third revision accepted after named changes, each taken here
+by the steward (`…-reads.md`, round 4 and the settlement). The steward's synthesis from the brief and the sealed proposals of the Opus
+maker (O) and Codex (X), revised in place after rounds 2 and 3; checked at Daoris `a0dbbc423`, Lyntai `5cfdc76a`. Rows 2a and 2b are
+buildable now.
 **Governing:** D220; Lyntai's D241 as amended; D205; D212; D173; D191.
 
 ## 0. Where the two proposals agree
@@ -24,11 +25,13 @@ version (`Sessions/Sessions.cs:101-117`); the role and revision the driver names
 
 **Which model, at the commit point.** `ran` cannot say at the call: it is kept as a turn ends (`ActorRun.cs:185-198`;
 `Agents/StructuredOutput.cs:355-363`), asynchronously (`ActorRun.cs:200-207`), even after a chat's record ended
-(`Loop/Chat/ChatRunner.cs:2839`, `:2939`), and first-seen (`ActorRun.cs:142-150`). Each Turn event, its instant and reported models,
-is in the session's event log before anything is told of it (`Context/Events/SessionEventLog.cs:18-20`;
-`Events/Domain/SessionEvents.cs:193-195`, `:397`), after its calls returned. The driver hands each moved session's turns with the
-commit point; a row's models are those the first turn at or after its instant reported, else `unknown`. A row that travels says
-`not shared` for the model (D205).
+(`Loop/Chat/ChatRunner.cs:2839`, `:2939`), and first-seen (`ActorRun.cs:142-150`). Nor can the event log: its Turn line carries no
+models (`Events/Domain/SessionEvents.cs:393-397`, `[JsonIgnore]`, D179 point 2). The usage history's turn lines are the durable
+per-turn record (`Accounts/Usage/UsageHistory.cs:286-299`, `:613-650`: session, seq, started, ended, model or split). At the commit
+point the driver hands each moved session's turn lines; a row's models are those of the turn whose `started`..`ended` holds its
+instant. Where `started` is missing, an asked `User` event between the instant and the turn leaves `unknown` (a chat stopped
+mid-turn and continued, `SessionLedger.cs:1947`, takes no later turn's model); a pruned or dropped line reads `unknown`. A row
+that travels says `not shared` for the model (D205).
 
 **An operation is released in the transaction that records its session's commit point.** Rows are staged by session id, never by
 tree, a machine-local path (`Sessions.cs:88-98`):
@@ -93,9 +96,11 @@ marks `applying`, calls the engine, settles and sweeps.
   - an end's reason carries its row id as a trailing token the page strips (readers see the reason, `MemoryTools.cs:74`), and an end is
     one statement guarded by `ended_reason IS NULL` and the revision (`MemoryGraphSql.cs:154-166`): ended under this token, `applied`;
     under another's, otherwise, gone, or unended at another revision, `stale`; unended at the revision read, ended again;
-  - an addition, relation or confirmation is **`held`**, never replayed by itself: nothing names which operation ran (§6 C). The
-    person settles it from the entry's history, as `MoveStore.MarkEffect` holds an effect (`Course/MoveStore.cs:24-25`, `:472-488`);
-    §6 C's receipt would settle it (2j).
+  - an addition or relation is **`held`**, never replayed by itself: nothing names which operation ran (§6 C). The person settles
+    it from the entry's current state (present, `encoding_at`, revision, relations; Lyntai keeps no per-entry change log,
+    `MemoryRecords.cs:169`), as `MoveStore.MarkEffect` holds an effect (`Course/MoveStore.cs:24-25`, `:472-488`); §6 C's receipt
+    would settle it (2j);
+  - a confirmation is guarded by the revision read (`MemoryGraphSql.cs:171-177`), so it settles `stale` and the next sweep rechecks.
 - **While an end awaits**, a Holds on its target is recorded on its row and the entry not confirmed: a confirmation bumps the revision
   the approver read (`MemoryGraphSql.cs:173`).
 - **The sweep.** Lyntai keeps a re-check text (2,000 characters at most) and runs nothing (`GraphMemoryEngine.cs:463-475`,
@@ -151,9 +156,11 @@ repository's reading, `index_readings`: generation, commit, root signature (`Roo
 transaction replacing the entries (`Store/SqliteKnowledgeStore.cs:152-156`), a feed's provenance with it (one connection,
 `ServiceFactory.cs:312`), only where the generation is still the one its writer read before reading the source (as the signature is,
 `KnowledgeService.cs:1116`), else not at all. Every replacing path passes one: refresh and ghosts (`KnowledgeIndex.cs:47`, `:67`),
-feed (`KnowledgeService.cs:848`), retirement (`:550`), restamping (`:653`), a withdrawn registration (`:753`). A crash leaves both old
-or both new; entries without a reading read inconclusive. The schema version moves, so the index rebuilds
-(`SqliteKnowledgeStore.cs:36`).
+feed (`KnowledgeService.cs:848`), retirement (`:550`), restamping (`:653`), a withdrawn registration (`:753`). Retirement, withdrawal
+and restamping read no source, so each takes the generation inside its own transaction and always writes: a retirement that loses a
+race to a refresh never leaves the retired repository served. A crash leaves both old or both new; entries without a reading read
+inconclusive. An older connector already open checks the schema only at its open (`Store/SqliteKnowledgeStore.cs:102`, `:154-167`),
+so the entries and readings move to versioned tables it cannot reach, and the index rebuilds once (`SqliteKnowledgeStore.cs:36`).
 
 **The recheck reads one reading.** A new `RecheckAsync` compares the root's signature with the stored one, reading that root again
 where it moved (`KnowledgeService.cs:1110`); then, in one transaction (`Platform/ConnectionGate.cs:129-135`), reads the entry, its
@@ -183,8 +190,8 @@ is ended by it, or nothing changed; each predecessor guarded by the revision its
 operation key, whose receipt commits in the replacement's transaction and is kept on each predecessor, so a repeat with that key
 answers that it applied, naming the successor, and changes nothing. Why: Daoris presents one repository's memory to others as current,
 and insert-then-end shows both entries current between the calls, repaired only by a retry from a session that may have ended. Daoris
-holds the successor on its own `awaiting` row and calls only after approval, so storing the observation first
-(`MemoryChangeGate.cs:65-68`) need not change. It asks D241 to reopen its rejection of a transaction over insert and end, or to meet
+holds the successor on its own `awaiting` row and calls only after approval: the gate's store-first path (`MemoryChangeGate.cs:65-68`)
+may stay for agents, while the requested call stores nothing before it applies. It asks D241 to reopen its rejection of a transaction over insert and end, or to meet
 the need another way.
 
 **B. MC7's view over another task key:** (1) no write path in its type; (2) a read moving nothing of the owner's (use stamp,
@@ -193,8 +200,9 @@ and a cheap `RevisionOf(reference)`; (4) expansion asking the host per reference
 without the view saying so.
 
 **C. An operation key on every write** (2j). Needed: a remember, relation, confirmation and end each accept a caller's key; its receipt
-(reference, revision after, outcome) commits in the effect's transaction; a repeat with the key answers the receipt and changes
-nothing; the receipt reads without effect. Why: after a lost response Daoris must know whether its operation ran, and the store cannot
+(reference, revision after, an outcome telling created from refreshed, since a remember can land on another writer's content,
+`SqliteMemoryGraphStore.cs:104`) commits in the effect's transaction and is kept for a stated period; a repeat with the key answers
+the receipt and changes nothing; a key reused with other content is refused; the receipt reads without effect. Why: after a lost response Daoris must know whether its operation ran, and the store cannot
 say: a same-content write advances the engine and bumps the revision (`SqliteMemoryGraphStore.cs:83-89`, `:130`), a repeated relation
 adds weight (`GraphMemoryEngine.cs:592-593`), a stamp names no confirmation (`MemoryGraphSql.cs:171-177`). Until then Daoris holds
 each such outcome for the person.
@@ -222,7 +230,8 @@ Each row, then its proof:
   `KnowledgeService` over the file writing, retiring or restamping between entry and standing never mixing readings; a refresh begun
   before another's write refused; a restamp racing a refresh never writing old bodies back; a fault between a feed's entries and
   provenance, then a restart, leaving the old pair; no reading, or the root moved mid-check, inconclusive; a superseded entry refused
-  at citation; `+ uncommitted unknown`.
+  at citation; `+ uncommitted unknown`; a retirement racing a refresh never leaving the retired repository served; a connector opened
+  before the upgrade unable to write the new tables.
 - **KNOWCENTRAL2b: tools, grants, workspace check** (connector, driver), over a stand-in repeating the write effects §6 C names and a
   confirmation's revision bump: the census over `fixtures/call-table.json`, its `_why` naming the four sources; `ConnectorTools` held
   to the registration; the driver's lists; `Defaults` naming the five; a child served reads alone; another workspace's reference
@@ -231,9 +240,10 @@ Each row, then its proof:
 - **KNOWCENTRAL2c: record, commit points, recovery, journal, read set** (service store, over 2b's stand-in): each move journalled once,
   in order, no text; `staged` and `awaiting` unchanged by a kill; a fault inside the advance's or `PostAsync`'s transaction leaving
   neither record nor move, a kill after it leaving `ready` rows the next start applies; a post naming no landing leaving rows `staged`;
-  models from handed turns (one turn, its model; turns A, B, A, a row of the third naming A; none later, `unknown`); after a kill in
-  `applying`, an end settled by its token, `stale` under another's, ended again at the revision read; a concurrent same-content write,
-  a repeated relation and an unrelated later confirmation each `held`, no second effect; a Holds during an awaiting end kept on the row;
+  models from the usage history's turn lines (one turn, its model; turns A, B, A, a row of the third naming A; a chat stopped
+  mid-turn and continued, `unknown`; a restart before the commit point keeping them; a pruned line, `unknown`); after a kill in
+  `applying`, an end settled by its token, `stale` under another's, ended again at the revision read; a concurrent same-content write
+  and a repeated relation each `held`, no second effect; an unrelated later confirmation `stale`, rechecked by the next sweep; a Holds during an awaiting end kept on the row;
   two ends of one entry, one `applied`, one `stale`; cursors re-validating below the floor or across stores; a bootstrap missing no row
   a second connection commits; a trimmed reference never told.
 - **KNOWCENTRAL2d: engine, the driver's commit points, approver, sweep** (on a Lyntai release with MC1 to MC6): decay state, links,
