@@ -150,7 +150,8 @@ internal sealed class LimitWaits(ChatContext context, LimitMove move, ChatGoOn g
         }
 
         var events = context.Events.After(session, 0).Events;
-        var limited = LimitHeld.Waiting(events);
+        // FOUNDATION1g part c: an ended record's flag decides; a live one, and one an older build ended, by its events.
+        var limited = LimitHeld.Waiting(events, record.Limit);
         var live = context.Turned.TryGetValue(session, out var chat);
         if (live && chat!.Turns.Limited is false)
         {
@@ -203,7 +204,7 @@ internal sealed class LimitWaits(ChatContext context, LimitMove move, ChatGoOn g
 
             _held.TryRemove(session, out _);
             // Its account refused again: a new cool-off, which the stamp hears, holds it once more.
-            if (start.SessionId is null && WaitsAgain(session)) _held[session] = 0;
+            if (start.SessionId is null && await WaitsAgainAsync(session, ct).ConfigureAwait(false)) _held[session] = 0;
             return (start, null);
         }
 
@@ -319,10 +320,14 @@ internal sealed class LimitWaits(ChatContext context, LimitMove move, ChatGoOn g
         }
     }
 
-    /// <summary>Whether a conversation the wake could not take on still waits for its limit: its record's events read again.</summary>
-    private bool WaitsAgain(string session) =>
-        LimitHeld.Waiting(context.Events.After(session, 0).Events) is not null
-        && !(context.Turned.TryGetValue(session, out var chat) && !chat.Turns.Limited);
+    /// <summary>Whether a conversation the wake could not take on still waits for its limit: its record and its events read again.</summary>
+    private async Task<bool> WaitsAgainAsync(string session, CancellationToken ct)
+    {
+        if (context.Turned.TryGetValue(session, out var chat) && !chat.Turns.Limited) return false;
+        // A record the service did not answer for is read by its events alone, as one from before the flag.
+        var record = await context.ReadAgainAsync(session, ct).ConfigureAwait(false);
+        return LimitHeld.Waiting(context.Events.After(session, 0).Events, record?.Limit == true) is not null;
+    }
 
     /// <summary>A conversation a runner coming up looks at: an ended chat of this machine's held by its limit, or whose words wait.</summary>
     private bool Candidate(SessionRecord record, string json)
@@ -331,7 +336,7 @@ internal sealed class LimitWaits(ChatContext context, LimitMove move, ChatGoOn g
         if (context.Turned.TryGetValue(record.Id, out var chat)) return chat.Turns.Limited;
         if (ServiceClient.ReadRecord(json, record.Id) is not { } prior || !Ended(prior) || PersonStopped(prior)) return false;
         if (WordsNever.ContinuedIn(json, record.Id) is not null) return false;
-        if (LimitHeld.Waiting(context.Events.After(record.Id, 0).Events) is not null) return true;
+        if (LimitHeld.Waiting(context.Events.After(record.Id, 0).Events, prior.Limit) is not null) return true;
         return prior.WordsWaiting && !GoOnMarks.Judged(prior, context.Marks.Read(record.Id))
             && LineAccount.OwnHold(context.Harnesses.CoolingOf(prior.Adapter ?? "", prior.Profile)) == NextHold.Cooling;
     }

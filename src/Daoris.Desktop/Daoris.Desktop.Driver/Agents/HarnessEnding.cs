@@ -49,6 +49,13 @@ public sealed record HarnessEnding(int? Exit, string? Failure, IReadOnlyList<str
     public TransientRetry? Transient { get; init; }
 
     /// <summary>
+    /// The refusal the protocol door's turn ended on (FOUNDATION1g part b), as the door carried it with its code: what a run handed no
+    /// transient retry, a brainstorm's pass, reads through <see cref="AgentErrors.Read"/> for a limit by its code, where
+    /// <see cref="Transient"/> keeps no reading. Null where the turn was not refused, on every other door, and where another failure ended it.
+    /// </summary>
+    public AcpRefusal? Refusal { get; init; }
+
+    /// <summary>
     /// Its agent did not offer, or refused, the choice its actor asked at the open, and nothing else could run on that session, so it
     /// ended before any prompt (D205 §3.3, MODELROLE1c2): its record ends <c>choice-not-offered</c>. Null on every other run.
     /// </summary>

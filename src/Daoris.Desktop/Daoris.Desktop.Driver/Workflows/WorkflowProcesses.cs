@@ -30,15 +30,23 @@ public static class WorkflowProcesses
     /// its <c>claimed</c> node's options kept for its sessions (<see cref="WorkflowProcess.Claimed"/>, FABRIC-PIPELINE1b3).
     /// </summary>
     /// <param name="run">The run: the chain's first quest in the repository (<see cref="WorkflowRunBindings.RunOf"/>); null for none.</param>
-    public static WorkflowProcess Read(string home, DriverConfig config, string repository, string? workspace, string? run) =>
-        Read(WorkflowPorts.Store(home), WorkflowPorts.Runs(home), config, repository, workspace, run);
+    /// <param name="accepted">
+    /// What a door read of the repository's accepted integration declaration (INTEGRATE1r part r2): handed to the pure check of a graph's
+    /// <c>integrate</c>, whose <c>done</c> and <c>steward</c> need a gate named. Null where the caller did not read it, and then that one fact is
+    /// not judged; the facts the config carries always are.
+    /// </param>
+    public static WorkflowProcess Read(
+        string home, DriverConfig config, string repository, string? workspace, string? run, AcceptedGates? accepted = null) =>
+        Read(WorkflowPorts.Store(home), WorkflowPorts.Runs(home), config, repository, workspace, run, accepted);
 
     /// <summary>The process of a run, its binding read from <paramref name="runs"/> and its version from <paramref name="store"/>.</summary>
     /// <param name="run">The run: the chain's first quest in the repository (<see cref="WorkflowRunBindings.RunOf"/>); null for none.</param>
+    /// <param name="accepted">The accepted declaration's gates as a door read them; null where not read.</param>
     public static WorkflowProcess Read(
-        IWorkflowStore store, IWorkflowRunStore runs, DriverConfig config, string repository, string? workspace, string? run)
+        IWorkflowStore store, IWorkflowRunStore runs, DriverConfig config, string repository, string? workspace, string? run,
+        AcceptedGates? accepted = null)
     {
-        if (run is not null && runs.Read(run) is { } binding) return Bound(store, config, repository, workspace, run, binding);
+        if (run is not null && runs.Read(run) is { } binding) return Bound(store, config, repository, workspace, run, binding, accepted);
         var current = WorkflowProcess.Current(config, repository, workspace) with { Run = run };
         // Absence keeps legacy work on Current; a damaged record may name gates we cannot safely replace.
         return run is not null && runs.Bound(run) ? current with { Unread = "its stored run binding could not be read." } : current;
@@ -51,12 +59,14 @@ public static class WorkflowProcesses
     /// </summary>
     /// <param name="run">The run the bind named; null for none.</param>
     /// <param name="binding">Its binding as the bind kept or read it; null where it named no run.</param>
-    public static WorkflowProcess Bound(string home, DriverConfig config, string repository, string? workspace, string? run, WorkflowRunBinding? binding) =>
-        Bound(WorkflowPorts.Store(home), config, repository, workspace, run, binding);
+    public static WorkflowProcess Bound(
+        string home, DriverConfig config, string repository, string? workspace, string? run, WorkflowRunBinding? binding, AcceptedGates? accepted = null) =>
+        Bound(WorkflowPorts.Store(home), config, repository, workspace, run, binding, accepted);
 
     /// <summary>The process of a run from its binding, a named workflow's version read from <paramref name="store"/>.</summary>
     public static WorkflowProcess Bound(
-        IWorkflowStore store, DriverConfig config, string repository, string? workspace, string? run, WorkflowRunBinding? binding)
+        IWorkflowStore store, DriverConfig config, string repository, string? workspace, string? run, WorkflowRunBinding? binding,
+        AcceptedGates? accepted = null)
     {
         var current = WorkflowProcess.Current(config, repository, workspace) with { Run = run };
         if (binding is null) return current;
@@ -82,7 +92,7 @@ public static class WorkflowProcesses
                 };
             }
 
-            return Graphed(config, repository, workspace, run, binding, number, graph, held);
+            return Graphed(config, repository, workspace, run, binding, number, graph, held, accepted);
         }
         if (binding.Digest is { } digest && !string.Equals(digest, version.Digest, StringComparison.Ordinal))
         {
@@ -103,11 +113,12 @@ public static class WorkflowProcesses
     /// record. Its steps are its person part (<see cref="Involvement.StepsOf(NodeGraph)"/>), so its kind's paths are judged on what a graph
     /// version's are judged on where it is the workflow the work would follow without its kind. A gate node whose option does not read holds
     /// the run, saying which; so does a graph that closes its quests (<c>quest.close</c>), whose close this build does not make for a run yet
-    /// (FABRIC-CUTOVER1h). FABRIC-PIPELINE1b3: its <c>claimed</c> node's options are its sessions' either way.
+    /// (FABRIC-CUTOVER1h). FABRIC-PIPELINE1b3: its <c>claimed</c> node's options are its sessions' either way. INTEGRATE1r part r2: so does a graph
+    /// whose <c>integrate</c> or plugin nodes the repository's declarations cannot carry (<see cref="IntegrateCarry.Cannots"/>), each case its sentence.
     /// </summary>
     private static WorkflowProcess Graphed(
         DriverConfig config, string repository, string? workspace, string? run, WorkflowRunBinding binding, int number, NodeGraph graph,
-        WorkflowProcess held)
+        WorkflowProcess held, AcceptedGates? accepted)
     {
         var claimed = graph.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Claimed)?.Options ?? new Dictionary<string, string>();
         held = held with { Claimed = claimed, Graph = graph };
@@ -128,10 +139,12 @@ public static class WorkflowProcesses
             };
         }
 
-        return WorkflowProcess.Of(config, repository, workspace, binding, steps) with
+        var process = WorkflowProcess.Of(config, repository, workspace, binding, steps) with
         {
             Run = run, Steps = Involvement.StepsOf(graph), Claimed = claimed, Graph = graph,
         };
+        var cannots = IntegrateCarry.Cannots(repository, graph, held.Landing.Rule, process.Landing.Rule, accepted);
+        return cannots.Count == 0 ? process : process with { Problem = string.Join(' ', cannots) };
     }
 
     /// <summary>

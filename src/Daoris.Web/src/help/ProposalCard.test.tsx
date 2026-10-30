@@ -327,6 +327,43 @@ describe('the kinds that reach every door', () => {
     expect(screen.getByRole('button', { name: 'Not now' })).toBeInTheDocument();
   });
 
+  // INTEGRATE1r part r3 (the integration design §17.7, F42): a graph chosen for a repository whose landing rule declares no gates says so,
+  // each repository by its name as code, the sentence the page's own words (it is no refusal); a cannot is a need, the driver's sentence
+  // as sent, since it names the Setup row to run.
+  it('says, per repository it reaches, that the version integrates with no gates, in English and in 中文', async () => {
+    const chosen = { ...WORKFLOW.workflow!, choose: true, noGates: ['engine', 'game'] };
+    const { default: i18n } = await import('../locales/i18n');
+    try {
+      render(<ul><ProposalCard proposal={{ ...WORKFLOW, workflow: chosen }} onApply={vi.fn()} onDismiss={vi.fn()} /></ul>);
+      expect(headings()).toEqual(['Your part', 'Steps', 'Without asking you each time', 'Integrates with no gates', 'Applies to']);
+      const lines = screen.getAllByRole('listitem').map((each) => each.textContent).filter((text) => /^\w+ integrates with no gates/.test(text ?? ''));
+      expect(lines).toEqual([
+        'engine integrates with no gates: its landing rule declares none, so the line moves on your Accept as a merge does today, and a version with no press is refused there.',
+        'game integrates with no gates: its landing rule declares none, so the line moves on your Accept as a merge does today, and a version with no press is refused there.',
+      ]);
+      cleanup();
+
+      await i18n.changeLanguage('zh');
+      render(<ul><ProposalCard proposal={{ ...WORKFLOW, workflow: chosen }} onApply={vi.fn()} onDismiss={vi.fn()} /></ul>);
+      expect(headings()).toEqual(['你的部分', '步骤', '不再每次询问你', '集成不跑关卡', '适用于']);
+      const said = screen.getAllByRole('listitem').map((each) => each.textContent).filter((text) => /^\w+ 集成时不跑关卡/.test(text ?? ''));
+      expect(said).toHaveLength(2);
+      expect(said[0]).toMatch(/^engine 集成时不跑关卡：/);
+    } finally {
+      cleanup();
+      await i18n.changeLanguage('en');
+    }
+  });
+
+  it('draws the cannot sentences as needs, as the driver sent them, and no section for a card with no gates said', () => {
+    const cannot = '`engine`: its `merge-in` (`integrate`) integrates the branch the landing `land` makes, and the landing rule names a pattern in Line and landing.';
+    render(<ul><ProposalCard proposal={{ ...WORKFLOW, workflow: { ...WORKFLOW.workflow!, needs: [cannot] } }} onApply={vi.fn()} onDismiss={vi.fn()} /></ul>);
+
+    expect(headings()).toContain('Needs first');
+    expect(headings()).not.toContain('Integrates with no gates');
+    expect(screen.getByText(/integrates the branch the landing/)).toBeInTheDocument();
+  });
+
   it('says the scope also chooses the workflow when it does', () => {
     const chosen = { ...WORKFLOW.workflow!, choose: true };
     render(<ul><ProposalCard proposal={{ ...WORKFLOW, workflow: chosen }} onApply={vi.fn()} onDismiss={vi.fn()} /></ul>);

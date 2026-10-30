@@ -5,9 +5,9 @@ import { ExternalLink } from '../design/links';
 import { Button, Icon, Inline, Pill, Prose, SkeletonRows } from '../design/ui';
 import type { CurrentWorkflow } from './current';
 import { NodeWord } from './NodeWord';
-import { type NodeWordAnswer, type NodeWordAsk, type RunStep, runTone, type WorkflowRun, type WorkflowRunAnswer } from './run';
+import { type NodeWordAnswer, type NodeWordAsk, type RunRequest, type RunStep, runTone, type WorkflowRun, type WorkflowRunAnswer } from './run';
 import { whySaid } from './routeSaid';
-import { addedSaid, chatChecksSaid, graphSaid, noRunSaid, runSaid, runShort, stateSaid } from './runSaid';
+import { addedSaid, chatChecksSaid, graphSaid, noRunSaid, requestSaid, runSaid, runShort, stateSaid } from './runSaid';
 import { type RunMarks, WorkflowChart } from './WorkflowChart';
 import { WorkflowHold } from './WorkflowHold';
 
@@ -83,6 +83,12 @@ function StepMark({ run, step, here, doors, control, pill = true, onNodeWord }: 
         </p>
       )}
       {said && <p className="m-0 text-small text-ink-soft"><Inline text={said} /></p>}
+      {/* INTEGRATE1o part o2: the requests the work's sessions made, inside the work: each quest they published and each helper they asked. */}
+      {step.requests && step.requests.length > 0 && (
+        <ul aria-label={t('workflow.run.requests.title')} className="m-0 grid list-none gap-1 p-0">
+          {step.requests.map((request) => <RequestRow key={`${request.kind}:${request.id}`} request={request} doors={doors} />)}
+        </ul>
+      )}
       {quoted && <p className="m-0 text-small text-ink">{t('workflow.run.quoted', { words: quoted })}</p>}
       {added && <p className="m-0 text-meta text-ink-faint">{added}</p>}
       {/* FABRIC-CUTOVER1f: the person's skip and stop of a graph run's node, wherever the driver's table takes them, and a word kept. */}
@@ -91,6 +97,28 @@ function StepMark({ run, step, here, doors, control, pill = true, onNodeWord }: 
       {twin && <p className="m-0 text-meta text-ink-faint"><Inline text={twin} /></p>}
       {door && <div className="flex flex-wrap items-center gap-1.5"><DoorPress door={door} /></div>}
     </div>
+  );
+}
+
+/**
+ * One request the work's sessions made (INTEGRATE1o part o2): where it was asked, its state, whether a session of the work waits on the
+ * answer, and its close's note as written; a quest's door opens its page where one is handed in.
+ */
+function RequestRow({ request, doors }: { request: RunRequest; doors?: RunDoors }) {
+  const { t } = useTranslation();
+  const { what, state, awaits } = requestSaid(t, request);
+  return (
+    <li data-request={request.kind} className="m-0 flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5 text-small text-ink-soft">
+      <Inline text={what} />
+      <span className={request.state === 'declined' || request.state === 'failed' ? 'text-ink' : undefined}>{state}</span>
+      {awaits && <span className="text-ink-faint">{awaits}</span>}
+      {request.words && <span className="text-ink">{t('workflow.run.quoted', { words: request.words })}</span>}
+      {request.kind === 'quest' && doors?.quest && (
+        <Button variant="ghost" className="min-h-0 px-1.5 py-0.5 text-small" onClick={() => doors.quest?.(request.id)}>
+          {t('workflow.run.door.quest', { id: request.id })}
+        </Button>
+      )}
+    </li>
   );
 }
 

@@ -66,6 +66,8 @@
   "help.proposal.workflow.steps": "Steps",
   "help.proposal.workflow.outward": "Without asking you each time",
   "help.proposal.workflow.nothingLeaves": "Nothing new leaves this machine without you.",
+  "help.proposal.workflow.noGates": "Integrates with no gates",
+  "help.proposal.workflow.noGatesLine": "`{{repository}}` integrates with no gates: its landing rule declares none, so the line moves on your Accept as a merge does today, and a version with no press is refused there.",
   "help.proposal.workflow.needs": "Needs first",
   "help.proposal.workflow.needsNote": "Apply is offered once each of these is met.",
   "help.proposal.workflow.appliesTo": "Applies to",

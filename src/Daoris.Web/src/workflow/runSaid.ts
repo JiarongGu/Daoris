@@ -1,5 +1,5 @@
 import type { TFunction } from 'i18next';
-import { type GraphRun, knownState, type RunStep, standsAt, type WorkflowRun, type WorkflowRunAnswer } from './run';
+import { type GraphRun, knownState, type RunRequest, type RunStep, standsAt, type WorkflowRun, type WorkflowRunAnswer } from './run';
 
 // What a run says in the reader's language (WORKFLOW1c, the workflow design §5.2's *Said*, §7): each step's state and the row
 // of its table, composed from the step's typed fields, so it cannot drift from what the driver read. A name from a record (an
@@ -25,6 +25,23 @@ const DETAILS: Record<string, readonly string[]> = {
   landing: ['accept', 'automatic', 'branch', 'merge', 'already', 'nothing', 'refused', 'gone', 'elsewhere'],
   'pull-request': ['merge', 'merged', 'abandoned', 'not-pushed', 'ask-failed', 'no-branch', 'nothing'],
 };
+
+/** The code a `work.requests` node carries while a quest the work's sessions published stays declined (`WorkRequests.DeclinedCode`). */
+export const DECLINED = 'declined';
+
+/** The states a request's own state is worded by; another is said as the driver spelled it. */
+const REQUEST_STATES = ['open', 'taken', 'done', 'declined', 'working', 'failed', 'stopped'];
+
+/** What one request inside the work says: its kind and where it was asked, and its state as the driver read it (INTEGRATE1o part o2). */
+export function requestSaid(t: TFunction, request: RunRequest): { what: string; state: string; awaits: string | null } {
+  const what = request.kind === 'agent'
+    ? (request.to ? t('workflow.run.request.agent', { to: request.to }) : t('workflow.run.request.agentAnyone'))
+    : t('workflow.run.request.quest', { id: request.id, to: request.to });
+  const state = REQUEST_STATES.includes(request.state)
+    ? t(`workflow.run.request.state.${request.state}`)
+    : t('workflow.run.request.state.other', { state: request.state });
+  return { what, state, awaits: request.awaits ? t('workflow.run.request.awaits') : null };
+}
 
 /** A hold's codes this page words (D133, D144); another is said as the departure's. */
 const HOLDS = ['departed', 'evidence-unread', 'evidence-missing'];
@@ -141,6 +158,10 @@ function nodeSaid(t: TFunction, step: RunStep, node: string): string | null {
         return step.words ? t('workflow.run.graph.said.goAhead', { act: step.words }) : t('workflow.run.graph.said.goAheadNone');
       }
       if (node === 'human') return t('workflow.run.graph.said.task');
+      // INTEGRATE1o part o2: a decline holds the work's requests active and waiting on you; the driver reads it from the quests, as its code.
+      if (node === 'work.requests') {
+        return t(step.code === DECLINED ? 'workflow.run.graph.said.requestsDeclined' : 'workflow.run.graph.said.requests');
+      }
       return on ? t('workflow.run.graph.said.active', { on }) : t('workflow.run.graph.said.activeRun');
     case 'reached': return on ? t('workflow.run.graph.said.reached', { on }) : t('workflow.run.graph.said.reachedRun');
     case 'skipped': return t(step.code === 'person' ? 'workflow.run.graph.said.skippedByYou' : 'workflow.run.graph.said.skippedByRecord');

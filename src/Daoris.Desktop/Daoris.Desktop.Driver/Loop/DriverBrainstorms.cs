@@ -690,6 +690,81 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
         return plan.AccountsAsync(turn.Agent, plan.Order[0].Model, turn.Passed, ct);
     }
 
+    /// <summary>The minutes a room measurement's one pass may take (BRAINSTORM1c): the policy's default for a pass, the first run's to read again.</summary>
+    internal const int MeasureMinutes = 10;
+
+    /// <summary>
+    /// A room measurement of <paramref name="agent"/> (BRAINSTORM1c, D176 point 2, D53): one probe pass through the same walk, posture,
+    /// connector and usage as a brainstorm's generator, judged by what its run shows (<see cref="BrainstormRoomProbe"/>), and kept as evidence
+    /// under <see cref="BrainstormFiles.MeasureId"/>. Not <paramref name="spend"/>, it only walks: the account it would run on, nothing started.
+    /// </summary>
+    /// <remarks>
+    /// One pass is one turn on the walk's first ready account: a spend, said as one, and the owner's to ask for. It never runs by itself: its
+    /// verb is the press. Its probe names paths a real pass is never told, in a folder of its own that is removed when it ends; nothing is
+    /// written in any repository.
+    /// </remarks>
+    internal async Task<RoomMeasure> MeasureRoomAsync(string agent, bool spend, CancellationToken ct)
+    {
+        var files = new BrainstormFiles(_context.Home);
+        var id = BrainstormFiles.MeasureId(agent);
+        var entry = new ActorEffective(agent, null, null, "before");
+        HarnessSelection selection;
+        try
+        {
+            _context.Adapters.Resolve(agent);
+            selection = await VoiceAsync(new BrainstormTurn(id, "g1", agent, "", "", "", MeasureMinutes, entry), _context.Config, _context.Harnesses, ct)
+                .ConfigureAwait(false);
+        }
+        catch (DriverException)
+        {
+            return new RoomMeasure(agent, null, RoomVerdicts.NotRun, StartPasses.Unavailable, [], DateTimeOffset.UtcNow);
+        }
+
+        if (!selection.Allowed) return new RoomMeasure(agent, null, RoomVerdicts.NotRun, PassCode(selection), [], DateTimeOffset.UtcNow);
+        if (!spend) return new RoomMeasure(agent, selection.Profile, RoomVerdicts.NotRun, "dry-run", [], DateTimeOffset.UtcNow);
+
+        files.Clear(id);
+        var laid = BrainstormRoomFiles.Lay(
+            Path.Combine(files.Rooms(id), "g1"), files.PathOf(id, "probe"), () => "probe-" + Guid.NewGuid().ToString("N")[..12]);
+        var instruction = BrainstormRoomProbe.Instruction(laid);
+        File.WriteAllText(Path.Combine(laid.Room, BrainstormInstruction.InstructionFile), instruction);
+        var turn = new BrainstormTurn(id, "g1", agent, laid.Room, instruction, files.AnswerPath(id, "g1"), MeasureMinutes, entry);
+        try
+        {
+            using var limit = new CancellationTokenSource(Minute * MeasureMinutes, Clock);
+            using var window = CancellationTokenSource.CreateLinkedTokenSource(ct, limit.Token);
+            BrainstormTurnRun ran;
+            try
+            {
+                ran = await (_context.BrainstormTurns ?? TurnAsync)(turn, window.Token).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) when (limit.IsCancellationRequested && !ct.IsCancellationRequested)
+            {
+                ran = new BrainstormTurnRun(true, null, TimedOut, $"stopped  room measurement of {agent}");
+            }
+
+            // What the turn did not start is not a verdict: nothing ran, and nothing is said of the posture.
+            var transcript = BrainstormFiles.ReadText(files.PathOf(id, "passes", "g1.log")) ?? "";
+            var probes = ran.Ran ? BrainstormRoomFiles.Judge(laid, transcript) : [];
+            var measure = new RoomMeasure(
+                agent, ran.Account ?? selection.Profile, ran.Ran ? BrainstormRoomProbe.Verdict(probes) : RoomVerdicts.NotRun, ran.Code, probes, DateTimeOffset.UtcNow);
+            files.WriteMeasure(id, measure);
+            return measure;
+        }
+        finally
+        {
+            files.RemoveRooms(id);
+            BrainstormFiles.Remove(files.PathOf(id, "probe"));
+        }
+    }
+
+    /// <summary>
+    /// The code a pass is <c>unavailable</c> with where its voice's walk found no ready account (BRAINSTORM1c, D176 point 7): the walk's own,
+    /// read from its facts and never its words (<see cref="StartPasses.Of"/>), the one vocabulary every walk over an entry says: <c>unavailable</c>
+    /// where nothing of the agent can run here, <c>not-offered</c>, <c>cooling</c>, <c>signed-out</c>, else <c>held</c>.
+    /// </summary>
+    internal static string PassCode(HarnessSelection selection) => StartPasses.Of(selection);
+
     /// <summary>
     /// One real turn (BRAINSTORM1a, BRAINSTORM1a2): the agent's account by the walk, its spawn prepared as any session's, the
     /// <c>brainstorm</c> posture held to its room, one turn framed as one prompt, its connector its only one and carrying the turn so
@@ -725,10 +800,7 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
 
         if (!selection.Allowed)
         {
-            return new BrainstormTurnRun(
-                false, null,
-                selection.NotOffered is not null ? AgentOffers.NotOffered : selection.Cooling is not null ? "cooling" : "unavailable",
-                $"held  brainstorm turn {turn.Turn}: {selection.Refusal}");
+            return new BrainstormTurnRun(false, null, PassCode(selection), $"held  brainstorm turn {turn.Turn}: {selection.Refusal}");
         }
 
         var files = new BrainstormFiles(_context.Home);
@@ -774,7 +846,11 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
                 {
                     if (used is not null)
                     {
-                        _context.Usage?.Record(new UsageEntry(sessionId, "", adapter.Name, selection.Profile, used.Used, used.Size, DateTimeOffset.UtcNow));
+                        // The usage is the brainstorm's own (D176 point 7): the reading names it, and its account counts it.
+                        _context.Usage?.Record(new UsageEntry(sessionId, "", adapter.Name, selection.Profile, used.Used, used.Size, DateTimeOffset.UtcNow)
+                        {
+                            Brainstorm = turn.Id,
+                        });
                     }
 
                     if (ended.NotOffered is not null)
@@ -783,7 +859,7 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
                         return Task.FromResult(new BrainstormTurnRun(true, selection.Profile, AgentOffers.NotOffered, $"{AgentOffers.NotOffered}  brainstorm turn {turn.Turn}"));
                     }
 
-                    var code = turnFailed is { Length: > 0 } failure && Cooled(adapter, selection, failure, sessionId) ? Limit
+                    var code = turnFailed is { Length: > 0 } failure && Cooled(adapter, selection, failure, sessionId, ended.Refusal) ? Limit
                         : turnFailed is { Length: > 0 } ? "turn-failed"
                         : exitCode is null ? TimedOut
                         : exitCode != 0 ? "exited" : null;
@@ -807,11 +883,19 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
     /// A limit the turn's door reported, read as the roster reads one (D125 §2): the account cools for the time the agent named or
     /// the machine's cool-off, and no strike is counted. False where the words are no limit, or the cool-off could not be kept.
     /// </summary>
-    private bool Cooled(ISessionAdapter adapter, HarnessSelection selection, string failure, string sessionId)
+    /// <remarks>
+    /// FOUNDATION1g part b: the failure is also read by the one reader (<see cref="AgentErrors.Read"/>), from the refusal the door carried with
+    /// its code, so a limit it says by its code alone cools the account as a driven run's and a conversation's do (§3.1). The pass is handed
+    /// no transient retry, which would open an episode the design has not decided for a voice (row 1d), so it reads the refusal itself, once.
+    /// </remarks>
+    private bool Cooled(ISessionAdapter adapter, HarnessSelection selection, string failure, string sessionId, AcpRefusal? refusal)
     {
         try
         {
-            return _context.Harnesses.Limited(adapter.Name, selection.Profile, failure, sessionId, _context.Config.CoolOff) is not null;
+            var read = refusal is null ? null
+                : AgentErrors.Read(_context.Adapters, adapter, DoorFailure.OfPrompt(refusal), _context.Harnesses.Clock(), _context.Harnesses.Zone);
+            var byCode = read is { Kind: AgentErrorKind.Limit, Limit: { } coded } ? coded : null;
+            return _context.Harnesses.Limited(adapter.Name, selection.Profile, failure, sessionId, _context.Config.CoolOff, byCode) is not null;
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {

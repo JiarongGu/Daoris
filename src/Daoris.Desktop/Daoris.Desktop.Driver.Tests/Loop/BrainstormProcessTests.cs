@@ -145,7 +145,7 @@ public sealed class BrainstormProcessTests : IDisposable
     private const string Imports = """
         import { spawn } from 'node:child_process';
         import { createHash } from 'node:crypto';
-        import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+        import { existsSync, mkdirSync, readFileSync, readdirSync, unlinkSync, writeFileSync } from 'node:fs';
         import { dirname, join } from 'node:path';
         import { createInterface } from 'node:readline';
         """;
@@ -167,6 +167,7 @@ public sealed class BrainstormProcessTests : IDisposable
     private string Protocol()
     {
         var script = Path.Combine(_home, "acp-agent.mjs");
+        var home = _home.Replace("\\", "/");
         File.WriteAllText(script, $$"""
             {{Imports}}
             {{Work()}}
@@ -181,6 +182,14 @@ public sealed class BrainstormProcessTests : IDisposable
                 servers.push(...(frame.params.mcpServers ?? []));
                 send({ jsonrpc: '2.0', id: frame.id, result: { sessionId: 'conv-' + process.env.DAORIS_BRAINSTORM_TURN } });
               } else if (frame.method === 'session/prompt') {
+                // FOUNDATION1g part b: a refusal the test left for the next prompt, answered once as the error it holds, then taken off.
+                const refusal = join('{{home}}', 'refuse-once.json');
+                if (existsSync(refusal)) {
+                  const error = JSON.parse(readFileSync(refusal, 'utf8'));
+                  unlinkSync(refusal);
+                  send({ jsonrpc: '2.0', id: frame.id, error });
+                  return;
+                }
                 if (process.env.DAORIS_BRAINSTORM_TURN.startsWith('g')) await give(servers);
                 else work();
                 send({ jsonrpc: '2.0', method: 'session/update', params: { sessionId: frame.params.sessionId,
@@ -239,6 +248,8 @@ public sealed class BrainstormProcessTests : IDisposable
         var passTurns = UsageHistory.ReadTurns(_home).Turns.Where(turn => turn.Session.StartsWith($"brainstorm-{id}-", StringComparison.Ordinal)).ToList();
         Assert.NotEmpty(passTurns);
         Assert.All(passTurns, turn => Assert.NotNull(turn.Agent));
+        // BRAINSTORM1c (D176 point 7): and they name the brainstorm they were spent for, as no quest's or session's.
+        Assert.All(passTurns, turn => Assert.Equal(id, turn.Brainstorm));
 
         // One packet, byte for byte, in every room; each room the packet and its instruction (and the synthesis's proposals) alone.
         var frozen = Convert.ToHexStringLower(SHA256.HashData(files.PacketBytes(id)!));
@@ -283,6 +294,63 @@ public sealed class BrainstormProcessTests : IDisposable
         Assert.False(Directory.Exists(files.Rooms(id)));
         Assert.Equal(refs, _repository.Output("for-each-ref --format=\"%(refname) %(objectname)\""));
         Assert.Equal("", _repository.Output("status --porcelain"));
+    }
+
+    /// <summary>
+    /// 🔴 FOUNDATION1g part b (the foundation design §1g): a brainstorm pass whose agent refuses its prompt with a limit cools its account as a
+    /// driven run's and a conversation's do, whether the refusal says it in a sentence the adapter's table reads (<c>Stated</c>) or by its
+    /// code alone (<c>rate_limit</c>, a sentence no table reads: cooled for D125's unstated default). The pass starts once more on the
+    /// next account and answers, and the other maker's turn is untouched.
+    /// </summary>
+    [Theory]
+    [InlineData("code", false)]
+    [InlineData("sentence", true)]
+    public async Task A_pass_limit_cools_its_account_by_the_readers_code_as_well_as_its_sentence(string shape, bool stated)
+    {
+        OwnConnector();
+        foreach (var account in new[] { "account-1", "account-2" }) Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "stub", account));
+        new HarnessSettings().WithRotation("stub", ["account-1", "account-2"]).Save(DaorisHome.Entry(_home, HomeEntry.Harnesses));
+        var adapters = AdapterSet.Built();
+        var roster = new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses));
+        var driver = new Daoris.Driver.Driver(
+            new ServiceClient("http://127.0.0.1:9", null),
+            DriverConfig.Empty with
+            {
+                Adapter = "stub", Cap = 3, TestBound = 2,
+                Commands = new Dictionary<string, IReadOnlyList<string>> { ["stub"] = ["node", Native()], ["acp-stub"] = ["node", Protocol()] },
+            },
+            adapters, _home, harnesses: roster)
+        {
+            Variable = Variable,
+        };
+        var files = new BrainstormFiles(_home);
+        var id = files.WriteRequest("Why does the daily report drop its last day?", "reports", ["stub", "acp-stub"], DateTimeOffset.UtcNow);
+        var snapshot = new Snapshot([], [new RepoView("reports", true, _repository.Root)], []);
+        await driver.BrainstormsAsync(snapshot, 0, [], CancellationToken.None);
+        files.WriteSent(id, files.ReadState(id)!.Packet!, DateTimeOffset.UtcNow);
+
+        // The next prompt of the protocol stub is refused once: by its kind and an unread sentence, or by the sentence the table reads.
+        var error = shape == "code"
+            ? new JsonObject { ["code"] = -32603, ["message"] = "Internal error: Rate limited.", ["data"] = new JsonObject { ["errorKind"] = "rate_limit" } }
+            : new JsonObject { ["code"] = -32603, ["message"] = "Internal error: You've hit your weekly limit · resets 11pm (UTC)" };
+        File.WriteAllText(Path.Combine(_home, "refuse-once.json"), error.ToJsonString());
+
+        var events = new List<string>();
+        await driver.BrainstormsAsync(snapshot, 0, events, CancellationToken.None);
+        await driver.Running.SettledAsync().WaitAsync(Poll.Patience);
+
+        var detail = string.Join('\n', events) + "\n" + File.ReadAllText(files.PathOf(id, "state.json"));
+        Assert.True(files.ReadState(id)!.State == BrainstormStates.Ended, detail);
+        var cooling = AccountCooling.Read(_home, DateTimeOffset.UtcNow);
+        var cooled = Assert.Single(cooling);
+        Assert.Equal(("stub", stated), (cooled.Agent, cooled.Stated));
+        Assert.NotNull(cooled.Account);
+        Assert.NotNull(roster.CoolingOf("acp-stub", cooled.Account));
+
+        // The pass went on: its one repair ran on the next account and the document has both makers.
+        var pass = JsonNode.Parse(File.ReadAllText(files.PathOf(id, "passes", "g2.json")))!;
+        Assert.Equal("answered", pass["state"]!.GetValue<string>());
+        Assert.Equal(2, pass["turns"]!.GetValue<int>());
     }
 
     /// <summary>

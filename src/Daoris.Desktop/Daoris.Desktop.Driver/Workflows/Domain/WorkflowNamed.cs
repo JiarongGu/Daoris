@@ -171,7 +171,7 @@ public static class WorkflowNamed
 
     /// <summary>The kinds a verification pipeline's graph never holds: each observes a chain's work, or lands it (the pipeline design §2.1).</summary>
     private static readonly string[] NotVerified =
-        [NodeKinds.Claimed, NodeKinds.Opinion, NodeKinds.Look, NodeKinds.GoAhead, NodeKinds.Handed, NodeKinds.Integrate, NodeKinds.QuestClose];
+        [NodeKinds.Claimed, NodeKinds.Opinion, NodeKinds.Look, NodeKinds.GoAhead, NodeKinds.Handed, NodeKinds.Integrate, NodeKinds.WorkRequests, NodeKinds.QuestClose];
 
     /// <summary>A workflow's or a step's id: lower-case letters, digits and dashes, at most 40.</summary>
     public static bool IsId(string? value) => value is { Length: > 0 and <= 40 } && SafeNames.IsKebabId(value);
@@ -312,7 +312,7 @@ public static class WorkflowNamed
     /// <summary>
     /// Why a verification pipeline's graph is not one, or null (FABRIC-PIPELINE1a, D192 point 3, the pipeline design §2.1): it holds none
     /// of <c>claimed</c>, <c>opinion</c>, <c>look</c>, <c>go-ahead</c>, <c>handed</c>, <c>integrate</c> (INTEGRATE1n: its subject is a chain's
-    /// landing) or <c>quest.close</c>, whose subjects (a chain's
+    /// landing), <c>work.requests</c> (INTEGRATE1o: it holds a chain's work on the quests its sessions published) or <c>quest.close</c>, whose subjects (a chain's
     /// quests, its branch, its ask) a landed run has none of, the first in node order named; then at least one <c>check</c>. Held to
     /// <c>workflow-graph-versions.json</c>.
     /// </summary>
@@ -321,7 +321,7 @@ public static class WorkflowNamed
         if (graph.Nodes.FirstOrDefault(node => NotVerified.Contains(node.Kind, StringComparer.Ordinal)) is { } held)
         {
             return $"v{number}: its graph holds `{held.Id}`, a `{held.Kind}`, and a verification pipeline's graph lands nothing and observes no "
-                + "chain's work: it holds no `claimed`, `opinion`, `look`, `go-ahead`, `handed`, `integrate` or `quest.close`.";
+                + "chain's work: it holds no `claimed`, `opinion`, `look`, `go-ahead`, `handed`, `integrate`, `work.requests` or `quest.close`.";
         }
 
         return graph.Nodes.Any(node => node.Kind == NodeKinds.Check)

@@ -244,7 +244,8 @@ internal sealed class ChatGoOn
             if (ServiceClient.ReadRecord(json, each.Id) is not { WordsWaiting: true } record) continue;
 
             // LIMITRESUME1c: one held by its limit is the look's limits stage's, which wakes it, its own account first, with Daoris's word.
-            if (LimitHeld.Waiting(_context.Events.After(each.Id, 0).Events) is not null)
+            // FOUNDATION1g part c: held by the record's flag, its events read alone for a record an older build ended.
+            if (LimitHeld.Waiting(_context.Events.After(each.Id, 0).Events, record.Limit) is not null)
             {
                 Waits?.Invoke(each.Id);
                 continue;
@@ -674,7 +675,7 @@ internal sealed class ChatGoOn
         }
 
         // LIMITRESUME1c (D206 §3.5): the words its account's limit refused, handed again first, before the words that waited.
-        var limited = LimitHeld.Waiting(_context.Events.After(sessionId, 0).Events);
+        var limited = LimitHeld.Waiting(_context.Events.After(sessionId, 0).Events, record.Limit);
 
         // A tree of its own is taken again: its repository's trees are held until the ledger holds this one once more (LEFT2),
         // so bringing the repository up to date does not rebase it under the conversation.
@@ -799,7 +800,7 @@ internal sealed class ChatGoOn
             files: word => ChatFiles.Kept(_context.Home, sessionId, word.Files))
         {
             // LIMITRESUME1c (D206 §3.5): the words its account's limit refused, handed again first.
-            Resent = Resent(sessionId, LimitHeld.Waiting(_context.Events.After(sessionId, 0).Events)),
+            Resent = Resent(sessionId, LimitHeld.Waiting(_context.Events.After(sessionId, 0).Events, record.Limit)),
         };
 
         // ASKSCOPE1b: the room it ran in, its workspace's, or the machine's where it started there before each workspace had its own.
@@ -952,7 +953,7 @@ internal sealed class ChatGoOn
 
         // A conversation its limit held keeps the refused turns' words in its events alone: it goes on by the limit's own ended-record
         // move, its own account allowed since its conversation is lost, handed the brief, those words and the words that waited.
-        if (!_context.Closing && (restarted || LimitHeld.Waiting(_context.Events.After(record.Session, 0).Events) is not null))
+        if (!_context.Closing && (restarted || LimitHeld.Waiting(_context.Events.After(record.Session, 0).Events, record.Limit) is not null))
         {
             StartedFrom? moved;
             try

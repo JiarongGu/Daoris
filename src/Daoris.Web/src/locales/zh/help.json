@@ -66,6 +66,8 @@
   "help.proposal.workflow.steps": "步骤",
   "help.proposal.workflow.outward": "不再每次询问你",
   "help.proposal.workflow.nothingLeaves": "没有你的同意，不会有新的内容离开本机。",
+  "help.proposal.workflow.noGates": "集成不跑关卡",
+  "help.proposal.workflow.noGatesLine": "`{{repository}}` 集成时不跑关卡：它的落地规则没有声明关卡，所以主线像现在的合并一样，在你采纳时前进；不经你采纳就前进的版本在那里会被拒绝。",
   "help.proposal.workflow.needs": "需要先完成",
   "help.proposal.workflow.needsNote": "以下每一项都满足后，才会提供“应用”。",
   "help.proposal.workflow.appliesTo": "适用于",

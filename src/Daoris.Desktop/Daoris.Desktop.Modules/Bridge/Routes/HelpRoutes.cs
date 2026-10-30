@@ -965,7 +965,7 @@ public sealed class HelpRoutes(DriverContext context)
     {
         card.Id, card.Name, card.Base, card.Version, card.Scope,
         card.Diff, card.YourPart, card.Outward, card.Needs, card.AppliesTo, card.Choose,
-        card.Route, card.Saves, card.Verifies, card.Lowers,
+        card.Route, card.Saves, card.Verifies, card.Lowers, card.NoGates,
     };
 
     // A go naming an item on the view, read as the judge reads its view (`HelpGoProposals.Plan`); an item on any other view
@@ -1145,7 +1145,14 @@ public sealed class HelpRoutes(DriverContext context)
         // registered repositories and plugins it also reads are in the facts already.
         if (JudgedAgainstWorkflows(proposals))
         {
-            facts = facts with { Workflows = WorkflowStore.List(_loop.Home), WorkflowRuns = BoundRuns(_loop.Home) };
+            var workflows = WorkflowStore.List(_loop.Home);
+            facts = facts with
+            {
+                Workflows = workflows,
+                WorkflowRuns = BoundRuns(_loop.Home),
+                // A graph that asks with done or steward is judged by the gates the accepted declaration names (INTEGRATE1r part r2).
+                AcceptedGates = await IntegrateChoice.ReadForCardsAsync(config, workflows, facts.Registered, ct).ConfigureAwait(false),
+            };
         }
 
         // A set-up proposal is judged by the press's plan for the repository it names, as `daoris-driver setup <repository> --plan`

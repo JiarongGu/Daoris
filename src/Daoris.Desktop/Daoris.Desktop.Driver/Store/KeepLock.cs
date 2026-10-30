@@ -59,8 +59,9 @@ internal sealed class KeepLock : IDisposable
     public static string PathOf(string file) => Path.GetFullPath(file) + ".lock";
 
     /// <summary>Hold the lock of <paramref name="file"/>, waiting while another writer holds it.</summary>
+    /// <param name="clock">The time the lock says it was taken at; a test hands one to age a lock without waiting out its minute.</param>
     /// <exception cref="IOException">A live writer held it for the whole of the wait; nothing was taken.</exception>
-    public static KeepLock Take(string file, TimeSpan? within = null)
+    public static KeepLock Take(string file, TimeSpan? within = null, TimeProvider? clock = null)
     {
         var path = PathOf(file);
         var until = DateTime.UtcNow + (within ?? Wait);
@@ -75,7 +76,8 @@ internal sealed class KeepLock : IDisposable
             Directory.CreateDirectory(Path.GetDirectoryName(path)!);
             while (true)
             {
-                var mine = $"{{\"pid\":{Environment.ProcessId},\"since\":\"{DateTime.UtcNow.ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'", CultureInfo.InvariantCulture)}\"}}\n";
+                var at = clock is null ? DateTime.UtcNow : clock.GetUtcNow().UtcDateTime;
+                var mine = $"{{\"pid\":{Environment.ProcessId},\"since\":\"{at.ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'", CultureInfo.InvariantCulture)}\"}}\n";
                 var failed = TryCreate(path, mine);
                 if (failed is null) return new KeepLock(path, mine, gate);
 
@@ -219,6 +221,33 @@ internal sealed class KeepLock : IDisposable
         }
     }
 
+    /// <summary>
+    /// Whether the lock is still this holder's: its file there and saying what this holder wrote. An aged lock another writer took as stale
+    /// (<see cref="IsStale"/>) says that writer's text, or nothing once it finished, and a lock this holder has let go says nothing of its own.
+    /// </summary>
+    public bool Holds() => !_released && Read(_path) == _written;
+
+    /// <summary>
+    /// <paramref name="text"/> renamed over <paramref name="target"/> only while this lock still holds this holder's text, read again just
+    /// before the rename (FOUNDATION1w-s part 2, the design §19.15 C8-1.2): the minute that makes a lock stale runs from its take, however
+    /// short the pause after its holder's last read, so a holder whose lock was taken from it must not rename over that writer. Written
+    /// beside first, as every write is, and the beside file removed where the rename is refused.
+    /// <para>The window from that read to the rename is not closed: a writer that takes the lock and finishes inside it is renamed over. The
+    /// older build's writers share only this lock and read none of this, so no fence the newer build keeps closes it (<c>compatible-builds</c>).</para>
+    /// </summary>
+    /// <exception cref="KeepLockTakenException">The lock was another writer's at the read; nothing was written.</exception>
+    public void Write(string target, string text, KeepSeams? seams = null)
+    {
+        var done = AtomicFile.WriteTextWhile(target, text, () =>
+        {
+            seams?.BeforeLook?.Invoke();
+            var holds = Holds();
+            if (holds) seams?.AfterLook?.Invoke();
+            return holds;
+        });
+        if (!done) throw new KeepLockTakenException(_path, target);
+    }
+
     public void Dispose()
     {
         if (_released) return;
@@ -238,3 +267,27 @@ internal sealed class KeepLock : IDisposable
         }
     }
 }
+
+/// <summary>
+/// What a test hands a fenced write to stand where a real writer pauses (FOUNDATION1w-s part 2): a clock that ages the lock at its take,
+/// and the two instants the fence is about, each run in the write itself so the other writer's take lands exactly there.
+/// </summary>
+internal sealed class KeepSeams
+{
+    /// <summary>The time the write's lock says it was taken at.</summary>
+    public TimeProvider? Clock { get; init; }
+
+    /// <summary>Run just before the lock is read again: a writer that took the aged lock and finished here is seen.</summary>
+    public Action? BeforeLook { get; init; }
+
+    /// <summary>Run after the lock was read and found its own, before the rename: a writer that finished here is renamed over, the bound.</summary>
+    public Action? AfterLook { get; init; }
+}
+
+/// <summary>
+/// A write refused, nothing written: the keeping lock it held when it composed its text was another writer's, or gone, when it came to
+/// rename (FOUNDATION1w-s part 2, C8-1.2). An <see cref="IOException"/>, as a lock held for the whole of the wait raises, so every door
+/// says it as it says that; the next read of the file finds what that writer left.
+/// </summary>
+public sealed class KeepLockTakenException(string lockFile, string target)
+    : IOException($"the edit lock {lockFile} was taken from this edit by another writer before {Path.GetFileName(target)} was renamed, so this edit was not written. Try again.");

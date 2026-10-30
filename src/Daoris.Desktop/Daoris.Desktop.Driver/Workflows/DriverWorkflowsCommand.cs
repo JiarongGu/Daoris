@@ -386,15 +386,66 @@ public static class DriverWorkflowsCommand
 
             var given = new WorkflowUse(chosen, repository, workspace, kind) { Pipeline = pipeline };
             if (argv.Contains("--landed")) return await UseLandedAsync(given, repository, workspace, chosen).ConfigureAwait(false);
-            if (workspace is not null) return UseApplied(given with { Repository = null }, null, repository, workspace, kind, chosen);
-            if (kind is null || chosen is null) return UseApplied(given, null, repository, workspace, kind, chosen);
+            var reach = await IntegrateReachAsync(chosen, repository, workspace).ConfigureAwait(false);
+            if (workspace is not null) return UseApplied(given with { Repository = null }, null, repository, workspace, kind, chosen, reach);
+            if (kind is null || chosen is null) return UseApplied(given, null, repository, workspace, kind, chosen, reach);
             var (read, inWorkspace, unread) = await WorkspaceOfAsync(repository!).ConfigureAwait(false);
             return read
-                ? UseApplied(given with { InKnown = true, In = inWorkspace }, null, repository, workspace, kind, chosen)
-                : UseApplied(given, unread, repository, workspace, kind, chosen);
+                ? UseApplied(given with { InKnown = true, In = inWorkspace }, null, repository, workspace, kind, chosen, reach)
+                : UseApplied(given, unread, repository, workspace, kind, chosen, reach);
         }
 
-        private int UseApplied(WorkflowUse edit, string? unchecked_, string? repository, string? workspace, string? kind, string? chosen)
+        /// <summary>
+        /// The repositories a choice of a graph that integrates its landing reaches (INTEGRATE1r part r2; the integration design §17.7, F42): a
+        /// repository's own, or a workspace's from the registry, the ones whose own choice does not replace it. It refuses, before anything is
+        /// written, where one cannot carry the version, each case its own sentence; and says, for each, <i>integrates with no gates</i> where its
+        /// rule's <c>integrate.gates</c> is absent or <c>none</c>. Nothing where the version is not a graph that integrates or pushes.
+        /// </summary>
+        /// <returns>The lines said after the choice.</returns>
+        private async Task<IReadOnlyList<string>> IntegrateReachAsync(string? chosen, string? repository, string? workspace)
+        {
+            if (chosen is null || chosen == WorkflowSelection.Current || !WorkflowNamed.IsId(chosen)) return [];
+            if (Load(chosen)?.Read.Versions is not [.., { Graph: { } graph } newest] || !IntegrateChoice.Matters(graph)) return [];
+
+            var registry = await world.Registry(ct).ConfigureAwait(false);
+            var said = new List<string>();
+            IReadOnlyList<(string Repository, string? Workspace, string? Root)> reached;
+            if (registry.Checkouts is not { } checkouts)
+            {
+                if (repository is null)
+                {
+                    said.Add($"  The registry was not read ({registry.Unread}), so the repositories the workspace `{workspace}` reaches were not checked "
+                        + "for what the version integrates.");
+                    return said;
+                }
+
+                reached = [(repository, null, null)];
+            }
+            else if (repository is not null)
+            {
+                var own = checkouts.FirstOrDefault(each => InScope(each.Repository, repository));
+                reached = [own.Repository is null ? (repository, null, null) : own];
+            }
+            else
+            {
+                // A repository whose own choice names a workflow replaces its workspace's whole (D157 point 10), so the workspace's does not reach it.
+                reached =
+                [
+                    .. checkouts
+                        .Where(each => each.Repository is not null && string.Equals(RemoteTarget.Workspace(each.Workspace), workspace!.Trim(), StringComparison.OrdinalIgnoreCase)
+                            && ChoiceAt(choices.Workflows, each.Repository) is not { NamesDevelopment: true })
+                        .DistinctBy(each => each.Repository, StringComparer.OrdinalIgnoreCase)
+                        .OrderBy(each => each.Repository, StringComparer.OrdinalIgnoreCase),
+                ];
+            }
+
+            var answers = await IntegrateChoice.ReachAsync(choices, chosen, newest.Version, graph, reached, ct).ConfigureAwait(false);
+            if (answers.Where(each => each.Cannots.Count > 0).ToList() is { Count: > 0 } refused) throw new ChoiceWords(IntegrateChoice.Refusal(chosen, newest.Version, refused), 1);
+            said.AddRange(answers.Where(each => each.NoGates).Select(each => $"  {IntegrateCarry.NoGatesSaid(each.Repository)}"));
+            return said;
+        }
+
+        private int UseApplied(WorkflowUse edit, string? unchecked_, string? repository, string? workspace, string? kind, string? chosen, IReadOnlyList<string> reach)
         {
             DriverConfig edited;
             try
@@ -447,7 +498,12 @@ public static class DriverWorkflowsCommand
                 Say($"  The registry was not read ({unchecked_}), so kind `{kind}` was not checked against the kinds `{owner}`'s workspace declares.");
             }
 
-            if (chosen is not null) Say("  Each new piece of work binds what is chosen at its first start; work already started keeps what it bound.");
+            if (chosen is not null)
+            {
+                foreach (var line in reach) Say(line);
+                Say("  Each new piece of work binds what is chosen at its first start; work already started keeps what it bound.");
+            }
+
             return SavedChoice(edit);
         }
 

@@ -737,7 +737,7 @@ export function confirmReadings(confirm, failures) {
  * The integration policy (§11 row b): `{ unconfirmed, said }`, read from `local/integration-policy.json` in the main checkout
  * `root` alone, `{ "unconfirmed": "split" | "hold" | "land" }`. A file that is missing, does not read, or names no setting this
  * knows reads `split`, and `said` says which. No repository file, gate environment or `MERGE_BRANCH_*` variable is read, so a
- * steward's run cannot set `land`: it is the owner's, written into that ignored file by hand (F19).
+ * run cannot set `land`: it is the owner's choice, written into that ignored file on their say, by them or the steward (F19).
  */
 export function readIntegrationPolicy(root) {
   const split = (said) => ({ unconfirmed: 'split', said: `${INTEGRATION_POLICY} ${said}: an unconfirmed failure splits its candidate` });

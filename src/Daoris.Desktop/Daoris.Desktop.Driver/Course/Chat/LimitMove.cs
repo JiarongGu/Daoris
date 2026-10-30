@@ -404,17 +404,19 @@ internal sealed class LimitMove(ChatContext context, IChatRunning runner, ChatHa
         var boxes = new LimitBoxes(context.Home);
         if (context.Closing || context.Holds(sessionId) || boxes.Read(sessionId) is not null) return null;
         var events = context.Events.After(sessionId, 0).Events;
-        var held = LimitHeld.Of(events);
-        if (held is null && !restarted && !switching) return null;
-        var moveWhy = ComposedWhy(held is not null, switching);
 
         var json = await context.Service.SessionRecordsJsonAsync(ct).ConfigureAwait(false);
         if (ServiceClient.ReadRecord(json, sessionId) is not { Teammate: false, Ask: null, Adapter: { Length: > 0 } ranOn } prior
-            || prior.Tree is not { Length: > 0 } tree || WordsNever.ContinuedIn(json, sessionId) is not null
-            || !await EndedLineAsync(prior, json, switching, ct).ConfigureAwait(false))
+            || prior.Tree is not { Length: > 0 } tree || WordsNever.ContinuedIn(json, sessionId) is not null)
         {
             return null;
         }
+
+        // FOUNDATION1g part c: the ended record's flag decides; its events give the words, and decide alone for a record an older build ended.
+        var held = LimitHeld.Of(events, prior.Limit);
+        if (held is null && !restarted && !switching) return null;
+        var moveWhy = ComposedWhy(held is not null, switching);
+        if (!await EndedLineAsync(prior, json, switching, ct).ConfigureAwait(false)) return null;
 
         var listed = SessionRecords.Parse(json).First(each => string.Equals(each.Id, sessionId, StringComparison.Ordinal));
         var isHelp = WordsNever.IsHelp(listed);

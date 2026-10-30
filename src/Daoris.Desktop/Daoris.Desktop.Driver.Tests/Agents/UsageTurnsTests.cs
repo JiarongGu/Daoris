@@ -56,6 +56,43 @@ public sealed class UsageTurnsTests : IDisposable
         Assert.Contains("\"actor\":\"build\"", Lines()[0]);
     }
 
+    /// <summary>
+    /// BRAINSTORM1c (D176 point 7): a brainstorm pass's turns name the brainstorm they were spent for, bound by the session's id, beside the
+    /// account the walk chose; a turn of any other session has none, and its line gains no field.
+    /// </summary>
+    [Fact]
+    public void A_brainstorm_pass_s_turns_name_the_brainstorm_and_every_other_turn_has_none()
+    {
+        var events = Watched();
+        UsageTurns.Bound(_home, events, "brainstorm-b7-g1", Claude with { Actor = "brainstorm" });
+        UsageTurns.BrainstormBound(_home, events, "brainstorm-b7-g1", "b7");
+        UsageTurns.Bound(_home, events, "s2", Claude);
+        UsageHistory.Turned(_home, Claude with { Brainstorm = "b7" }, Seen(session: "brainstorm-b7-g1", tokens: Total), Now);
+        UsageHistory.Turned(_home, Claude, Seen(session: "s2", tokens: Total), Now);
+
+        var turns = UsageHistory.ReadTurns(_home).Turns;
+
+        Assert.Equal(("b7", "account-1"), (turns[0].Brainstorm, turns[0].Account));
+        Assert.Null(turns[1].Brainstorm);
+        Assert.Contains("\"brainstorm\":\"b7\"", Lines()[0]);
+        Assert.DoesNotContain("brainstorm", Lines()[1], StringComparison.Ordinal);
+    }
+
+    /// <summary>The binding the pass's start made is what its turns are kept under: a turn the watch hears names the brainstorm.</summary>
+    [Fact]
+    public void A_pass_s_bound_turn_heard_by_the_watch_is_kept_under_its_brainstorm()
+    {
+        var events = Watched();
+        UsageTurns.Bound(_home, events, "brainstorm-b7-g1", Claude);
+        UsageTurns.BrainstormBound(_home, events, "brainstorm-b7-g1", "b7");
+        events.Append("brainstorm-b7-g1", new SessionEvent { Kind = SessionEventKind.User, Origin = "driver", Text = "ask", At = Now.AddMinutes(-1) });
+        events.Append("brainstorm-b7-g1", new SessionEvent { Kind = SessionEventKind.Turn, Tokens = Total, At = Now });
+
+        var turn = Assert.Single(UsageHistory.ReadTurns(_home).Turns);
+
+        Assert.Equal(("brainstorm-b7-g1", "b7"), (turn.Session, turn.Brainstorm));
+    }
+
     // ——— A turn.
 
     [Fact]
