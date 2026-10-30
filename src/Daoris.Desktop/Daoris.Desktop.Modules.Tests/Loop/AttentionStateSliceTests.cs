@@ -918,6 +918,37 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
            """, Assert.Single(rows));
     }
 
+    /// <summary>
+    /// LANDRETIRE1 part 2: a landing's branch whose quest is closed and which the line has not held for a day (the inventory's
+    /// <c>landing-stale</c>) is a row for the person, who withdraws it from the Branches tab, titled by the landing's branch and standing
+    /// since the day passed; the same unit's other waits that end by themselves, or a landing that has not stood a day, are none.
+    /// </summary>
+    [Fact]
+    public void A_landing_the_line_has_not_held_for_a_day_with_its_quest_closed_is_a_row_naming_its_branch_and_since_the_day_passed()
+    {
+        var stale = Entry("""
+            {"unit":"landing:engine/feature/q2-fix","kind":"landing-branch","resource":"feature/q2-fix","code":"landing-stale",
+             "facts":{"branch":"feature/q2-fix","quest":"q2","since":"2026-10-29T09:00:00Z"},"detail":"its quest #q2 is closed and the line has not held it for 29 hours"}
+            """).ToJsonString();
+        var rows = Rows(new()
+        {
+            Works =
+            [
+                Unit($$$"""
+                    {"unit":"landing:engine/feature/q2-fix","session":"s7","branch":"feature/q2-fix","end":{"state":"handed","at":null,"said":"carried, not on the line"},
+                     "cleanup":{"state":"pending","waits":[{{{stale}}}],"gone":[]}}
+                    """),
+            ],
+        });
+
+        Is("""
+           {"kind":"work","id":"s7","since":"2026-10-29T09:00:00Z","where":"engine","session":"s7","title":"feature/q2-fix",
+            "blocked":{"unknown":false,"entries":[{"kind":"landing-branch","resource":"feature/q2-fix",
+              "detail":"its quest #q2 is closed and the line has not held it for 29 hours","code":"landing-stale",
+              "facts":{"branch":"feature/q2-fix","quest":"q2","since":"2026-10-29T09:00:00Z"}}]}}
+           """, Assert.Single(rows));
+    }
+
     /// <summary>OVERVIEWNOISE1b: a tree no record and no session names is titled by its folder's name, never the unit id its path makes.</summary>
     [Fact]
     public void An_unknown_owner_s_tree_is_titled_by_its_folder_s_name_with_its_code()

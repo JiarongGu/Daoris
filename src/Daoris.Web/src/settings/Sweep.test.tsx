@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { describe, expect, it, vi } from 'vitest';
@@ -350,6 +350,91 @@ describe('the landed branches in the session branches card', () => {
   it('draws no group where no landing made a branch', () => {
     draw({ landed: [] });
     expect(screen.queryByRole('region', { name: 'Landed branches' })).not.toBeInTheDocument();
+  });
+});
+
+// LANDRETIRE1 part 2: a landing's branch the line has not held says how long it has stood and whether its quest is closed, with the
+// action that withdraws it beside it (`WITHDRAW_LANDING_BRANCH`), asked once with the person's reason.
+
+describe('a landed branch the line will never hold', () => {
+  const HOURS_AGO = (hours: number) => new Date(Date.now() - hours * 3_600_000).toISOString();
+  const STALE = landed({
+    branch: 'feature/q3-third', kind: 'differs', where: 'main', files: ['shared.txt'], landedAt: HOURS_AGO(29), quest: 'q3', questClosed: true,
+  });
+  const row = (name: string) => screen.getByRole('listitem', { name });
+
+  it('says its age and its closed quest under what holds it, and only a quest the service says is closed', () => {
+    draw({ landed: [STALE, landed({ branch: 'feature/q4-fourth', kind: 'differs', files: ['a.txt'], landedAt: HOURS_AGO(3), quest: 'q4' })], onWithdraw: vi.fn() });
+
+    expect(within(row('feature/q3-third')).getByText('Landed 1d ago; its quest #q3 is closed.')).toBeInTheDocument();
+    expect(within(row('feature/q3-third')).getByText(/1 file still differs on the line/)).toBeInTheDocument();
+    expect(within(row('feature/q4-fourth')).getByText('Landed 3h ago.')).toBeInTheDocument();
+  });
+
+  it('offers the withdrawal beside a row whose files still differ, and beside no other', () => {
+    draw({ landed: [STALE, ...LANDED.slice(0, 2), LANDED[3]!], onWithdraw: vi.fn() });
+
+    expect(within(row('feature/q3-third')).getByRole('button', { name: 'Withdraw…' })).toBeInTheDocument();
+    expect(within(row('feature/q2-second')).queryByRole('button', { name: 'Withdraw…' })).toBeNull();
+    expect(within(row('feature/q4-fourth')).queryByRole('button', { name: 'Withdraw…' })).toBeNull();
+    // Nothing can press it where the page has no door to it.
+    cleanup();
+    draw({ landed: [STALE] });
+    expect(screen.queryByRole('button', { name: 'Withdraw…' })).toBeNull();
+  });
+
+  it('asks once for the reason, names the branch and that its commits stay on a recovery ref, and sends the reason typed', async () => {
+    const onWithdraw = vi.fn();
+    draw({ landed: [STALE], onWithdraw });
+
+    await userEvent.click(within(row('feature/q3-third')).getByRole('button', { name: 'Withdraw…' }));
+    expect(onWithdraw).not.toHaveBeenCalled();
+    const ask = screen.getByRole('group', { name: 'withdraw feature/q3-third' });
+    expect(ask).toHaveTextContent('Withdraws feature/q3-third in engine: the line will never hold its work. Its commits stay on a recovery ref');
+    // While it asks the first press is not offered twice, and the move waits for a reason.
+    expect(within(row('feature/q3-third')).queryByRole('button', { name: 'Withdraw…' })).toBeNull();
+    expect(within(ask).getByRole('button', { name: 'Withdraw branch' })).toBeDisabled();
+
+    await userEvent.type(within(ask).getByRole('textbox', { name: 'Why the line will never hold it' }), '  the row landed another way  ');
+    await userEvent.click(within(ask).getByRole('button', { name: 'Withdraw branch' }));
+    expect(onWithdraw).toHaveBeenCalledOnce();
+    expect(onWithdraw).toHaveBeenCalledWith(expect.objectContaining({ repository: 'engine', branch: 'feature/q3-third' }), 'the row landed another way', expect.anything());
+  });
+
+  it('says a refusal inside the ask and closes it only once the withdrawal landed', async () => {
+    let answered: Answered | undefined;
+    draw({ landed: [STALE], onWithdraw: (_branch, _why, told) => { answered = told; } });
+
+    await userEvent.click(within(row('feature/q3-third')).getByRole('button', { name: 'Withdraw…' }));
+    const ask = screen.getByRole('group', { name: 'withdraw feature/q3-third' });
+    await userEvent.type(within(ask).getByRole('textbox'), 'done by hand');
+    await userEvent.click(within(ask).getByRole('button', { name: 'Withdraw branch' }));
+    act(() => answered!.refused('`feature/q3-third` in `engine` is not withdrawn: it is checked out in a working tree.'));
+    expect(within(ask).getByRole('alert')).toHaveTextContent('it is checked out in a working tree');
+
+    await userEvent.click(within(ask).getByRole('button', { name: 'Withdraw branch' }));
+    act(() => answered!.done());
+    expect(screen.queryByRole('group', { name: 'withdraw feature/q3-third' })).toBeNull();
+  });
+
+  it('waits on a withdrawal on its way, and says all of it in 中文 too', async () => {
+    const { unmount } = render(
+      <Tooltip.Provider>
+        <SweepList branches={[]} landed={[STALE]} onLook={vi.fn()} onClean={vi.fn()} onWithdraw={vi.fn()} withdrawing="engine:feature/q3-third" />
+      </Tooltip.Provider>,
+    );
+    expect(within(row('feature/q3-third')).getByRole('button', { name: 'Withdraw…' })).toBeDisabled();
+    unmount();
+
+    await i18n.changeLanguage('zh');
+    try {
+      draw({ landed: [STALE], onWithdraw: vi.fn() });
+      expect(within(row('feature/q3-third')).getByText('落地于 1 天前；它的委托 #q3 已关闭。')).toBeInTheDocument();
+      await userEvent.click(within(row('feature/q3-third')).getByRole('button', { name: '撤回…' }));
+      expect(screen.getByRole('group', { name: '撤回 feature/q3-third' })).toHaveTextContent('撤回 engine 中的 feature/q3-third：主线永远不会采纳它的工作。');
+    } finally {
+      await i18n.changeLanguage('en');
+    }
   });
 });
 
