@@ -11,7 +11,7 @@ namespace Daoris.Knowledge;
 /// </summary>
 /// <remarks>
 /// <para><b>This judges what only the record can say</b>: that a session speaks, that it is a working session and not a
-/// helper, a reviewer or an intake (a helper cannot ask for a helper). Whether the rule allows an ask, the two at once and which
+/// helper, a reviewer, an intake or Ask Daoris (a helper cannot ask for a helper). Whether the rule allows an ask, the two at once and which
 /// agent are the driver's, which alone reads <c>driver.json</c>; it answers a refusal through the state file's code.</para>
 ///
 /// <para><b>Never fed to a remote or served over HTTP</b>, as <see cref="RuleProposalBox"/>'s files are: the driver's helper

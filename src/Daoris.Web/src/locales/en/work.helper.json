@@ -34,6 +34,7 @@
   "work.helper.refused.helper": "A helper cannot ask for a helper: ask from the session it helps.",
   "work.helper.refused.reviewer": "A second opinion’s reviewer cannot ask for a helper.",
   "work.helper.refused.intake": "An intake does no work in a repository, so it cannot ask for a helper.",
+  "work.helper.refused.ask-daoris": "Ask Daoris does no work in a repository, so it cannot ask for a helper.",
   "work.helper.refused.gone": "That ask is no longer this session’s.",
   "work.helper.refused.person": "It is your own ask, which needs no yes.",
   "work.helper.refused.waits": "It waits on a free slot or an agent, not on your yes.",
