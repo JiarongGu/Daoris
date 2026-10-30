@@ -1314,6 +1314,7 @@ export const REACH = Object.freeze([
     paths: [
       'src/Daoris.Desktop/Daoris.Desktop.Driver/**/BrainstormPermissions.cs',
       'src/Daoris.Desktop/Daoris.Desktop.Driver/**/PartnerPermissions.cs',
+      'src/Daoris.Desktop/Daoris.Desktop.Driver/**/OpinionPermissions.cs',
     ],
     gates: [...DRIVER_READERS, 'service'],
     why: "the driver's own, and the service's McpToolRegistrationTests and McpRoleFilterTests read the brainstorm posture's and the partner's lists of the connector's tools (BRAINSTORM1a2, COAGENT1b)",
@@ -1402,11 +1403,6 @@ export const REACH = Object.freeze([
     paths: ['docs/index/**'],
     gates: [],
     why: 'written into every merge by tools/orient-index.mjs and held by its check, which every merge runs; no suite reads it',
-  },
-  {
-    paths: ['src/Daoris.Desktop/Daoris.Desktop.Driver/Review/Domain/OpinionPermissions.cs'],
-    gates: ['service', 'driver'],
-    why: "the service's McpRoleFilterTests holds the reviewer's offered tools to the call table (FOUNDATION1r)",
   },
   {
     paths: ['docs/model-roles.md'],
