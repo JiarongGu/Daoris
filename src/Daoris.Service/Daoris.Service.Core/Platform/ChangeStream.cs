@@ -47,24 +47,52 @@ public static class ChangeFamilies
     /// </summary>
     public const string Words = "words";
 
-    /// <summary>Every family, in the order an answer names them.</summary>
+    /// <summary>
+    /// The event journal (FOUNDATION1 row k part 2, the foundation design §4.1): its newest position, which every journalled move of a record
+    /// raises, a word taken included, which moves no family above. <b>Never one of <see cref="All"/></b> and never in a default answer: a
+    /// client from before it wakes its <c>ledger</c> topic for any family an answer names, so the stream names this one only to a reader that
+    /// asks for it (<c>journal=1</c> on the route; <see cref="ChangeStream.WaitAsync"/>'s <c>journal</c>), and an older client is woken by
+    /// nothing a journal-only append does. The host's <c>journal</c> protocol mark says it does.
+    /// </summary>
+    public const string Journal = "journal";
+
+    /// <summary>Every family, in the order an answer names them. A reader that never asked for the journal is answered these alone.</summary>
     public static IReadOnlyList<string> All { get; } = [Sessions, Quests, Asks, Channel, Words];
 
-    /// <summary>Each family's revision, in <see cref="All"/>'s order, in one autocommit read.</summary>
+    /// <summary>Every family the sampler follows, in <see cref="Revisions"/>' order: <see cref="All"/>, then the journal, which a reader that asks is also answered.</summary>
+    internal static IReadOnlyList<string> Observed { get; } = [.. All, Journal];
+
+    /// <summary>
+    /// Each family's revision, in <see cref="Observed"/>'s order, in one autocommit read, then the journal's floor, which is no family: the
+    /// columns are read by position, so what is new follows what is there and no reader's column shifts. The journal's revision is its newest
+    /// position, the key's own count, so a trim or an emptied table never takes it back; its floor is the lowest position kept, one past the
+    /// newest where none is kept.
+    /// </summary>
     internal const string Revisions = """
         SELECT COALESCE((SELECT revision FROM session_revision WHERE one = 1), 0),
                COALESCE((SELECT MAX(position) FROM quest_log), 0),
                COALESCE((SELECT revision FROM ask_revision WHERE one = 1), 0),
                COALESCE((SELECT revision FROM channel_revision WHERE one = 1), 0),
-               COALESCE((SELECT revision FROM words_revision WHERE one = 1), 0)
+               COALESCE((SELECT revision FROM words_revision WHERE one = 1), 0),
+               COALESCE((SELECT seq FROM sqlite_sequence WHERE name = 'event_journal'), 0),
+               COALESCE((SELECT MIN(position) FROM event_journal),
+                        COALESCE((SELECT seq FROM sqlite_sequence WHERE name = 'event_journal'), 0) + 1)
         """;
 }
 
 /// <summary>
 /// What a wait on the change stream answers: the cursor to ask from next, and the families that moved after the one asked from,
-/// in <see cref="ChangeFamilies.All"/>'s order. Families, never records, and no path (D169 §3).
+/// in <see cref="ChangeFamilies.All"/>'s order, the journal after them where the reader asked for it. Families, never records, and no
+/// path (D169 §3). <paramref name="Journal"/> is the journal's place, answered only to a reader that asked for the journal.
 /// </summary>
-public sealed record ChangesAnswer(string Since, IReadOnlyList<string> Moved);
+public sealed record ChangesAnswer(string Since, IReadOnlyList<string> Moved, JournalPlace? Journal = null);
+
+/// <summary>
+/// Where the event journal stands (FOUNDATION1 row k part 2, §4.1): the store's identity, which a position is of (the journal's epoch), the
+/// lowest position kept (<paramref name="Floor"/>), and the newest issued (<paramref name="Newest"/>). A reader whose cursor is below the floor
+/// has lost the moves between, and one whose store is another has no cursor of this one's.
+/// </summary>
+public sealed record JournalPlace(string Store, long Floor, long Newest);
 
 /// <summary>
 /// The local host's change stream (FABRIC-EVENT3b, the fabric events design §A4.2): one sampler serving every wait, on an observer
@@ -146,6 +174,9 @@ public sealed class ChangeStream : IAsyncDisposable
     private Task? _pump;
     private TaskCompletionSource _moved = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
+    // Where the journal stood at the last sample, answered to a reader that asks for it; null before the observer first reads.
+    private JournalPlace? _place;
+
     private ChangeStream(string database, MachineLog? log, TimeProvider clock, TimeSpan pace, TimeSpan? identityPace, TimeSpan reopenAfter)
     {
         _database = database;
@@ -218,7 +249,12 @@ public sealed class ChangeStream : IAsyncDisposable
     /// What moved after <paramref name="since"/>, answered as soon as a family moves or at <paramref name="wait"/> with nothing.
     /// A cancelled wait answers what it would have answered then.
     /// </summary>
-    public async Task<ChangesAnswer> WaitAsync(string? since, TimeSpan wait, CancellationToken ct = default)
+    /// <param name="journal">
+    /// Whether the reader asks for the event journal (FOUNDATION1 row k part 2): it is then woken by, and answered with, the
+    /// <see cref="ChangeFamilies.Journal"/> family and the journal's place. By default it is neither: a reader from before the journal is
+    /// woken by nothing a journal-only append does.
+    /// </param>
+    public async Task<ChangesAnswer> WaitAsync(string? since, TimeSpan wait, CancellationToken ct = default, bool journal = false)
     {
         if (wait < TimeSpan.Zero) wait = TimeSpan.Zero;
         if (wait > LongestWait) wait = LongestWait;
@@ -229,7 +265,7 @@ public sealed class ChangeStream : IAsyncDisposable
         {
             // A wait past the bound is answered at once with what the last sample counted, and never samples itself: it never
             // queues behind a sample a writer's lock holds, so the bound bounds the work too.
-            if (_waits >= MostWaits) return Judged(since).Answer;
+            if (_waits >= MostWaits) return Judged(since, journal).Answer;
             _waits++;
             _pump ??= Task.Run(PumpAsync);
         }
@@ -252,7 +288,7 @@ public sealed class ChangeStream : IAsyncDisposable
 
             while (true)
             {
-                var (answer, moved) = Judged(since);
+                var (answer, moved) = Judged(since, journal);
                 var left = wait - _clock.GetElapsedTime(arrived);
                 if (answer.Moved.Count > 0 || left <= TimeSpan.Zero || ct.IsCancellationRequested) return answer;
 
@@ -293,19 +329,22 @@ public sealed class ChangeStream : IAsyncDisposable
     }
 
     /// <summary>The answer to a cursor now, and what the next move will complete.</summary>
-    private (ChangesAnswer Answer, Task Moved) Judged(string? since)
+    private (ChangesAnswer Answer, Task Moved) Judged(string? since, bool journal)
     {
         lock (_gate)
         {
             _issued = true;
             var current = CursorOf();
+            // The journal is named, and its place answered, to the reader that asked for it and to none else.
+            var families = journal ? ChangeFamilies.Observed : ChangeFamilies.All;
+            var place = journal ? _place : null;
             if (!TryParse(since, out var epoch, out var n) || epoch != _epoch || n > _count)
             {
-                return (new ChangesAnswer(current, ChangeFamilies.All), _moved.Task);
+                return (new ChangesAnswer(current, families, place), _moved.Task);
             }
 
-            IReadOnlyList<string> moved = [.. ChangeFamilies.All.Where(family => _movedAt.GetValueOrDefault(family) > n)];
-            return (new ChangesAnswer(current, moved), _moved.Task);
+            IReadOnlyList<string> moved = [.. families.Where(family => _movedAt.GetValueOrDefault(family) > n)];
+            return (new ChangesAnswer(current, moved, place), _moved.Task);
         }
     }
 
@@ -400,12 +439,18 @@ public sealed class ChangeStream : IAsyncDisposable
             _version = version;
             Interlocked.Increment(ref _seen);
 
-            var moved = ChangeFamilies.All.Where((_, i) => revisions[i] != _revisions[i]).ToList();
+            var moved = ChangeFamilies.Observed.Where((_, i) => revisions[i] != _revisions[i]).ToList();
             _revisions = revisions;
-            if (moved.Count == 0) return;
+            if (moved.Count == 0)
+            {
+                // The floor moves with no family (a trim comes with the insert that moves the newest position, a person's own delete does not).
+                lock (_gate) _place = PlaceOf(_identity, revisions);
+                return;
+            }
 
             lock (_gate)
             {
+                _place = PlaceOf(_identity, revisions);
                 _count++;
                 foreach (var family in moved) _movedAt[family] = _count;
                 Signal();
@@ -452,6 +497,7 @@ public sealed class ChangeStream : IAsyncDisposable
 
             lock (_gate)
             {
+                _place = PlaceOf(identity, revisions);
                 // The start's own open keeps the epoch only while no cursor went out: one issued before the observer could read
                 // anything holds no baseline, and what moved since it would otherwise be taken as the baseline and never answered.
                 if (first && !_issued) return;
@@ -555,14 +601,18 @@ public sealed class ChangeStream : IAsyncDisposable
         || atPath is null
         || (before.SequenceEqual(after) && !atPath.SequenceEqual(before));
 
+    /// <summary>The families' revisions, the journal's newest position after them, then its floor.</summary>
     private static long[] Revisions(ConnectionGate observer)
     {
         using var read = observer.Command();
         read.CommandText = ChangeFamilies.Revisions;
         using var row = read.ExecuteReader();
         if (!row.Read()) throw new InvalidOperationException("the families' revisions read no row");
-        return [.. Enumerable.Range(0, ChangeFamilies.All.Count).Select(row.GetInt64)];
+        return [.. Enumerable.Range(0, ChangeFamilies.Observed.Count + 1).Select(row.GetInt64)];
     }
+
+    private static JournalPlace? PlaceOf(string? identity, long[] revisions) =>
+        identity is null ? null : new JournalPlace(identity, Floor: revisions[ChangeFamilies.Observed.Count], Newest: revisions[ChangeFamilies.Observed.Count - 1]);
 
     private static long Scalar(ConnectionGate connection, string sql)
     {
