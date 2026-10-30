@@ -41,6 +41,7 @@ internal static class PipeTargetRows
         ["STAFFING_FOUND_ANSWER"] = "answers a found change, which then leaves the list",
         ["SET_ROLE"] = "edits a role's row of the catalogue in place, its revision moving",
         ["WORKFLOW_LANDED"] = "reads the gates at the line's tip and accepts them by their blob",
+        ["WORKFLOW_VERIFY"] = "starts a run of the accepted gates beside the route, and sets no value",
         ["INTEGRATION_GATES"] = "reads the declaration at the line's tip and accepts it by its blob",
         ["TOOLS_USE"] = "checks a file's version or downloads a managed one",
         ["TOOLS_LOCATION"] = "edits the list of locations in place",
@@ -240,6 +241,10 @@ internal static class PipeTargetRows
             (a, _) => Fp(Pick(At(a, "start", "landed"), "workflow", "level"))));
         // INTEGRATE1d: the blob accepted and the one at the line's tip, so a declaration the line changed between the ask and the Confirm
         // is never accepted unseen.
+        // FABRIC-PIPELINE1d: a verification of a branch or a commit, asked under the landed route and the gates accepted at the tip.
+        Row("WORKFLOW_VERIFY", new RepositoryGround("repository"), Setting("WORKFLOW_CURRENT", ["repository", "branch", "commit"],
+            p => new { repository = Text(p, "repository") },
+            (a, _) => Fp(Pick(At(a, "start", "landed"), "workflow", "level"))));
         Row("INTEGRATION_GATES", new RepositoryGround("repository"), Setting("WORKFLOW_CURRENT", ["repository", "gates", "clear"],
             p => new { repository = Text(p, "repository") },
             (a, _) => Fp(Pick(At(a, "start", "integration"), "gates", "state"), Pick(At(a, "start", "integration", "tip"), "gates"))));

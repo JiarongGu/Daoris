@@ -173,6 +173,7 @@ public static class PipeWording
         Row("SETUP_PRESS", W("repository", PipeRole.Repository));
         Row("WORKFLOW_LANDED", W("repository", PipeRole.Repository));
         Row("INTEGRATION_GATES", W("repository", PipeRole.Repository));
+        Row("WORKFLOW_VERIFY", W("repository", PipeRole.Repository));
         Row("SET_DRIVABLE", W("repository", PipeRole.Repository));
         Row("SET_HEAVY_GATES", W("repository", PipeRole.Repository));
         Row("SET_HOLD", W("repository", PipeRole.Repository));
