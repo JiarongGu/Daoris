@@ -403,6 +403,23 @@ public sealed class WorkflowRunTests
         Assert.All(run.Steps, step => Assert.Null(step.Added));
     }
 
+    /// <summary>
+    /// INTEGRATE1r (F43): a Current run tolerates the <c>integrate</c> step Current now draws: the run's cells are read by the steps' kinds,
+    /// so the step has no mark of its own until row g, and the run's Current still holds it for the page to draw.
+    /// </summary>
+    [Fact]
+    public void A_current_run_tolerates_the_integrate_step_with_no_mark_of_its_own()
+    {
+        var current = WorkflowCurrent.Derive(
+            DriverConfig.Parse("""{"landings":{"engine":{"form":"branch","pattern":"work/{session}","integrate":{}}}}"""), "engine", "aurora", []);
+        var facts = new WorkflowRunFacts("engine", current) { Quests = [Quest("q1", "Done")], Sessions = [Session("s1", "q1", "completed")] };
+
+        var run = WorkflowRuns.Derive(facts, "aurora");
+
+        Assert.Equal(["work", "landing", "integrate"], run.Current.Steps.Select(step => step.Id));
+        Assert.Equal(["work", "landing"], run.Steps.Select(step => step.Step.Id));
+    }
+
     [Fact]
     public void A_look_the_work_asked_for_says_which_level_added_it()
     {

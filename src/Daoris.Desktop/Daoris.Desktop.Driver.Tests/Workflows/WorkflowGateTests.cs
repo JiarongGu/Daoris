@@ -501,6 +501,35 @@ public sealed class WorkflowGateTests : IDisposable
         Assert.Equal(["it lands with no press of yours", Lowers], Involvement.Lowers(automatic, owned));
     }
 
+    /// <summary>
+    /// INTEGRATE1r (§17.4, §17.7): Current's <c>integrate</c> step carries its <c>request</c>, so a version compared against Current reads
+    /// the rule's, not the owner's by default: a graph version asking for the owner's card lowers against a Current that requests on its
+    /// own, and a version whose request matches Current's lowers nothing; Current's step matches a version's node by its id, <c>integrate</c>.
+    /// </summary>
+    [Fact]
+    public void Currents_integrate_carries_its_request_so_the_comparison_reads_the_rules_and_not_the_owners()
+    {
+        static IReadOnlyList<NamedStep> Current(string integrate) => Involvement.StepsOf(WorkflowCurrent.Derive(
+            DriverConfig.Parse("""{"landings":{"web-app":{"form":"branch","pattern":"work/{session}","autoAccept":true,"integrate":""" + integrate + "}}}"),
+            "web-app", null, []));
+
+        var owner = Current("{}");
+        var done = Current("""{"request":"done","gates":"declared"}""");
+        Assert.Equal(["work", "landing", "integrate"], owner.Select(step => step.Id));
+        Assert.Equal("owner", owner[2].Field("request"));
+        Assert.Equal("done", done[2].Field("request"));
+
+        const string Lowers = "it requests the integration with no press of yours";
+        var asksDone = Involvement.StepsOf(Integrating("integrate", "done"));
+        var asksOwner = Involvement.StepsOf(Integrating("integrate", "owner"));
+        // A version asking for the owner's card, chosen where Current would request on its own: nothing lowers, it asks more.
+        Assert.Empty(Involvement.Lowers(asksOwner, done));
+        // A version that requests on its own, chosen where Current asks the owner: it lowers.
+        Assert.Contains(Lowers, Involvement.Lowers(asksDone, owner));
+        // The same request as Current's lowers nothing by it; read as the owner's before, `done` lowered here.
+        Assert.DoesNotContain(Lowers, Involvement.Lowers(asksDone, done));
+    }
+
     private static WorkflowProcess Kind(WorkflowKept? kept = null) =>
         WorkflowProcess.Of(Config(Declared), "web-app", "work",
             Binding(WorkflowLevels.WorkspaceKind, ["docs/**", "**/*.md"]) with { Kept = kept },

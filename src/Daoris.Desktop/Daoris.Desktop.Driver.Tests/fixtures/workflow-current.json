@@ -394,6 +394,75 @@
         {"id": "landing", "kind": "landing", "participation": "you", "executor": "daoris", "press": "accept", "source": {"rule": "landing", "level": "default"}, "settings": {"form": "merge", "accept": "you", "pattern": null, "plugin": null, "tidy": false}, "runtime": "built", "limit": null}
       ],
       "version": "06e90f358edc"
+    },
+    {
+      "name": "INTEGRATE1r: a branch rule carrying integrate draws the step after the landing, on your press, with nothing running it yet",
+      "config": {"landings": {"web-app": {"form": "branch", "pattern": "work/{session}", "integrate": {}}}},
+      "repository": "web-app",
+      "workspace": null,
+      "plugins": [],
+      "startHolds": [],
+      "steps": [
+        {"id": "work", "kind": "work", "participation": "agent", "executor": "agent", "press": null, "source": {"rule": null, "level": "default"}, "settings": {"standing": null}, "runtime": "built", "limit": null},
+        {"id": "landing", "kind": "landing", "participation": "you", "executor": "daoris", "press": "accept", "source": {"rule": "landing", "level": "repository"}, "settings": {"form": "branch", "accept": "you", "pattern": "work/{session}", "plugin": null, "tidy": false}, "runtime": "built", "limit": null},
+        {"id": "integrate", "kind": "integrate", "participation": "you", "executor": "daoris", "press": "accept", "source": {"rule": "landing", "level": "repository"}, "settings": {"request": "owner", "gates": "none", "conflicts": "session"}, "runtime": "declared", "limit": "not-integrated-yet"}
+      ],
+      "version": "05b1cc9a230c"
+    },
+    {
+      "name": "INTEGRATE1r: request done on an automatic landing is automatic, gates declared and a conflict held",
+      "config": {"landings": {"web-app": {"form": "branch", "pattern": "work/{session}", "autoAccept": true, "integrate": {"request": "done", "gates": "declared", "conflicts": "hold"}}}},
+      "repository": "web-app",
+      "workspace": null,
+      "plugins": [],
+      "startHolds": [],
+      "steps": [
+        {"id": "work", "kind": "work", "participation": "agent", "executor": "agent", "press": null, "source": {"rule": null, "level": "default"}, "settings": {"standing": null}, "runtime": "built", "limit": null},
+        {"id": "landing", "kind": "landing", "participation": "automatic", "executor": "daoris", "press": null, "source": {"rule": "landing", "level": "repository"}, "settings": {"form": "branch", "accept": "automatic", "pattern": "work/{session}", "plugin": null, "tidy": false}, "runtime": "built", "limit": null},
+        {"id": "integrate", "kind": "integrate", "participation": "automatic", "executor": "daoris", "press": null, "source": {"rule": "landing", "level": "repository"}, "settings": {"request": "done", "gates": "declared", "conflicts": "hold"}, "runtime": "declared", "limit": "not-integrated-yet"}
+      ],
+      "version": "866940ff4c1c"
+    },
+    {
+      "name": "INTEGRATE1r: request steward is automatic too, and the workspace's rule says its own level",
+      "config": {"workspaceLandings": {"work": {"form": "branch", "pattern": "work/{quest}", "integrate": {"request": "steward", "gates": "declared"}}}},
+      "repository": "web-app",
+      "workspace": "work",
+      "plugins": [],
+      "startHolds": [],
+      "steps": [
+        {"id": "work", "kind": "work", "participation": "agent", "executor": "agent", "press": null, "source": {"rule": null, "level": "default"}, "settings": {"standing": null}, "runtime": "built", "limit": null},
+        {"id": "landing", "kind": "landing", "participation": "you", "executor": "daoris", "press": "accept", "source": {"rule": "landing", "level": "workspace"}, "settings": {"form": "branch", "accept": "you", "pattern": "work/{quest}", "plugin": null, "tidy": false}, "runtime": "built", "limit": null},
+        {"id": "integrate", "kind": "integrate", "participation": "automatic", "executor": "daoris", "press": null, "source": {"rule": "landing", "level": "workspace"}, "settings": {"request": "steward", "gates": "declared", "conflicts": "session"}, "runtime": "declared", "limit": "not-integrated-yet"}
+      ],
+      "version": "ec0d7e54f70d"
+    },
+    {
+      "name": "INTEGRATE1r: a rule that names a plugin carries no integrate that reads, so the pull request is drawn and no integration",
+      "config": {"landings": {"web-app": {"form": "branch", "pattern": "work/{quest}", "plugin": "example.pull-request", "integrate": {}}}},
+      "repository": "web-app",
+      "workspace": null,
+      "plugins": [{"id": "example.pull-request", "points": ["work/land", "work/state"]}],
+      "startHolds": [],
+      "steps": [
+        {"id": "work", "kind": "work", "participation": "agent", "executor": "agent", "press": null, "source": {"rule": null, "level": "default"}, "settings": {"standing": null}, "runtime": "built", "limit": null},
+        {"id": "landing", "kind": "landing", "participation": "you", "executor": "daoris", "press": "accept", "source": {"rule": "landing", "level": "repository"}, "settings": {"form": "branch", "accept": "you", "pattern": "work/{quest}", "plugin": "example.pull-request", "tidy": false}, "runtime": "built", "limit": null},
+        {"id": "pull-request", "kind": "pull-request", "participation": "you", "executor": "plugin", "press": "merge", "source": {"rule": "landing", "level": "repository"}, "settings": {"plugin": "example.pull-request"}, "runtime": "partial", "limit": "pull-request-at-clean-up"}
+      ],
+      "version": "f9391de8db7d"
+    },
+    {
+      "name": "INTEGRATE1r: a squash rule carries no integrate that reads, so the landing is drawn as before",
+      "config": {"landings": {"web-app": {"form": "branch", "pattern": "work/{quest}", "squash": true, "integrate": {}}}},
+      "repository": "web-app",
+      "workspace": null,
+      "plugins": [],
+      "startHolds": [],
+      "steps": [
+        {"id": "work", "kind": "work", "participation": "agent", "executor": "agent", "press": null, "source": {"rule": null, "level": "default"}, "settings": {"standing": null}, "runtime": "built", "limit": null},
+        {"id": "landing", "kind": "landing", "participation": "you", "executor": "daoris", "press": "accept", "source": {"rule": "landing", "level": "repository"}, "settings": {"form": "branch", "accept": "you", "pattern": "work/{quest}", "plugin": null, "tidy": false}, "runtime": "built", "limit": null}
+      ],
+      "version": "8bf4576f2f3a"
     }
   ],
   "limits": [
@@ -402,6 +471,7 @@
     {"code": "plugin-unready", "says": "Its plugin cannot land work on this machine now: it is not installed, is switched off, contributes nothing, or speaks on no `work/land` point. `daoris plugin list` says which."},
     {"code": "pull-request-unread", "says": "Its plugin answers no `work/state`, so Daoris never reads whether the pull request was merged or abandoned."},
     {"code": "pull-request-at-clean-up", "says": "Its state is asked of its plugin only when branches are cleaned up, never while someone waits on it."},
-    {"code": "go-ahead-partial", "says": "Partial: a session asks you for a go-ahead as it needs one; a step that raises one at its place and waits on your answer is not built yet."}
+    {"code": "go-ahead-partial", "says": "Partial: a session asks you for a go-ahead as it needs one; a step that raises one at its place and waits on your answer is not built yet."},
+    {"code": "not-integrated-yet", "says": "Not integrated yet: the rule carries `integrate`, but nothing runs an integration in this build, so work stays on its branch as it always did."}
   ]
 }

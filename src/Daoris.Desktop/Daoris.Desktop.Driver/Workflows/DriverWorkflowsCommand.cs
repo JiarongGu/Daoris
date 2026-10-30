@@ -740,7 +740,9 @@ public static class DriverWorkflowsCommand
                 var repository = from["current:".Length..];
                 if (repository.Length == 0) throw new ChoiceWords($"`current:` names a repository, such as `current:web-app` — {Usage}");
                 var drawn = (await CurrentOfAsync(repository).ConfigureAwait(false)).Drawn;
-                return Save(WorkflowWords.StepsOfCurrent(drawn), $"`{repository}`'s Current (version {drawn.Version})", $"{repository}'s Current");
+                var saved = Save(WorkflowWords.StepsOfCurrent(drawn), $"`{repository}`'s Current (version {drawn.Version})", $"{repository}'s Current");
+                if (drawn.Steps.Any(step => step.Kind == NodeKinds.Integrate)) Say(WorkflowWords.IntegrateLeftOut);
+                return saved;
             }
 
             if (!from.Contains('@', StringComparison.Ordinal) && WorkflowPresets.Of(from) is { } preset)
