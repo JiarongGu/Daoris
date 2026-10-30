@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { aroundTheLanding, setupDoorOf, yourPart } from './current';
-import { BRANCH_AUTOMATIC, FULL, LOOK, MERGE_YOU_ACCEPT, NOTHING_SET, OPINION, PULL_REQUEST, WORK, WORKSPACE } from './fixtures';
+import { aroundTheLanding, KNOWN_KINDS, KNOWN_LIMITS, setupDoorOf, yourPart } from './current';
+import {
+  BRANCH_AUTOMATIC, BRANCH_YOU_PUSH, FULL, INTEGRATE_OWNER, INTEGRATING, LOOK, MERGE_YOU_ACCEPT, NOTHING_SET, OPINION, PULL_REQUEST, WORK,
+  WORKSPACE,
+} from './fixtures';
 
 // WORKFLOW1b: what the page reads off a Current it was answered, and nothing it derives (design §2.7): the steps around
 // the landing, the Setup section that sets each step, and the person's part composed from the steps.
@@ -27,5 +30,19 @@ describe('a Current read for drawing', () => {
     expect(yourPart(FULL.steps)).toEqual([{ press: 'reviewed', environment: 'dev' }, { press: 'merge' }]);
     expect(yourPart(NOTHING_SET.steps)).toEqual([{ press: 'accept' }]);
     expect(yourPart([WORK(), BRANCH_AUTOMATIC])).toEqual([]);
+  });
+
+  // INTEGRATE1r: the integrate step rides the landing's Accept where the person presses it, so the part does not say it twice; a
+  // request the owner presses on its own, after an automatic landing, is a part of its own.
+  it('says an owner-requested integration beside the landing once, and on its own after an automatic landing', () => {
+    expect(yourPart(INTEGRATING.steps)).toEqual([{ press: 'accept' }]);
+    expect(yourPart([WORK(), BRANCH_AUTOMATIC, INTEGRATE_OWNER])).toEqual([{ press: 'accept' }]);
+    expect(yourPart([WORK(), BRANCH_YOU_PUSH, { ...INTEGRATE_OWNER, participation: 'automatic', press: null }])).toEqual([{ press: 'accept' }]);
+  });
+
+  it('words the integrate step by its node kind and its limit, and draws it after the landing', () => {
+    expect(KNOWN_KINDS).not.toContain('integrate');
+    expect(KNOWN_LIMITS).toContain('not-integrated-yet');
+    expect(aroundTheLanding(INTEGRATING.steps)).toEqual({ before: [INTEGRATING.steps[0], BRANCH_YOU_PUSH], after: [INTEGRATE_OWNER] });
   });
 });

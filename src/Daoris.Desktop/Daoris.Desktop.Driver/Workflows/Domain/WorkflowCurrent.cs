@@ -86,6 +86,9 @@ public static class WorkflowLimits
     /// <summary>A named workflow's go-ahead step (WORKFLOW1d): Current never draws one, and a run raising one is WORKFLOW1l's.</summary>
     public const string GoAheadPartial = "go-ahead-partial";
 
+    /// <summary>The <c>integrate</c> step Current draws where the rule carries <c>integrate</c> (INTEGRATE1r): nothing runs an integration until row g.</summary>
+    public const string NotIntegratedYet = "not-integrated-yet";
+
     public static IReadOnlyList<(string Code, string Says)> Table { get; } =
     [
         // XAGENT1f gates every landing door on it; the screens are XAGENT1g's and the task level's choice XAGENT1h's.
@@ -102,6 +105,9 @@ public static class WorkflowLimits
         (PullRequestAtCleanUp, "Its state is asked of its plugin only when branches are cleaned up, never while someone waits on it."),
         (GoAheadPartial, "Partial: a session asks you for a go-ahead as it needs one; a step that raises one at its place and waits "
             + "on your answer is not built yet."),
+        // INTEGRATE1r: the step is drawn from the rule; the integration run (row g) arms it.
+        (NotIntegratedYet, "Not integrated yet: the rule carries `integrate`, but nothing runs an integration in this build, so work stays "
+            + "on its branch as it always did."),
     ];
 
     /// <summary>The sentence a limit is said in.</summary>
@@ -148,7 +154,8 @@ public static class WorkflowCurrent
     /// <summary>
     /// A repository's Current (design §2.7): the plugins that may hold a start; the work, with its standing answer; the second
     /// opinion where a rule stands that is not <c>false</c>, with its own occasions; the look where the review rule is required,
-    /// in its default environment; the landing as its rule says; and the pull request where a branch rule names a plugin. A null
+    /// in its default environment; the landing as its rule says; and the pull request where a branch rule names a plugin, or the
+    /// <c>integrate</c> step where a branch rule with no plugin and no squash carries <c>integrate</c> (INTEGRATE1r). A null
     /// <paramref name="repository"/> draws the workspace's Current, which no repository's rule and no standing answer reach.
     /// </summary>
     /// <param name="plugins">The plugins switched on and sound, in catalogue order (<see cref="PluginsOf"/>).</param>
@@ -231,6 +238,20 @@ public static class WorkflowCurrent
                 !lands ? WorkflowLimits.PluginUnready
                     : speaker!.Points.Contains(HookPoints.State, StringComparer.Ordinal) ? WorkflowLimits.PullRequestAtCleanUp
                     : WorkflowLimits.PullRequestUnread));
+        }
+
+        // INTEGRATE1r (§17.4, F43): where the landing's own graph carries the `integrate` node (a branch rule with no plugin and no squash
+        // that carries the key: NodeGraphHomes.Landing is the one test), drawn after the landing as a cell of its node kind, never a row of
+        // the steps' kinds. Its request is the participation: the owner's press, or none. Declared until row g runs integrations; the
+        // digest is unchanged for every rule that carries none.
+        if (NodeGraphHomes.Landing(rule).Nodes.Any(node => node.Kind == NodeKinds.Integrate))
+        {
+            var integrate = (rule.Integrate ?? new LandingIntegrate()).Resolved();
+            var owner = integrate.Request == LandingIntegrate.Owner;
+            steps.Add(new(NodeKinds.Integrate, NodeKinds.Integrate, owner ? WorkflowParticipation.You : WorkflowParticipation.Automatic,
+                WorkflowExecutor.Daoris, owner ? WorkflowPress.Accept : null, new WorkflowSource(WorkflowRule.Landing, landing.Source),
+                [new("request", integrate.Request), new("gates", integrate.Gates), new("conflicts", integrate.Conflicts)],
+                WorkflowRuntime.Declared, WorkflowLimits.NotIntegratedYet));
         }
 
         var version = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(Canonical(startHolds, steps))))[..12];

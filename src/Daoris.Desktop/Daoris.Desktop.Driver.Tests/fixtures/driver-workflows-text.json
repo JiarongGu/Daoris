@@ -519,6 +519,75 @@
       }
     },
     {
+      "name": "workflow new, from a Current whose rule carries integrate",
+      "argv": [
+        "workflow",
+        "new",
+        "web-app-integrating",
+        "--from",
+        "current:web-app"
+      ],
+      "before": "{\"landings\":{\"web-app\":{\"form\":\"branch\",\"pattern\":\"work/{session}\",\"integrate\":{}}}}",
+      "registry": [
+        {
+          "repository": "web-app",
+          "workspace": "work",
+          "root": null
+        }
+      ],
+      "exit": 0,
+      "out": [
+        "daoris: `web-app-integrating` v1, a new workflow — web-app's Current, from `web-app`'s Current (version 05b1cc9a230c):",
+        "  You accept each piece of work onto a branch, and push it yourself.",
+        "  Your part:",
+        "    + landing: you accept each piece of work before it lands.",
+        "  Steps, by id:",
+        "    + work · work",
+        "    + landing · landing: form `branch`; accept `you`; pattern `work/{session}`; plugin `none`",
+        "  Without asking you each time:",
+        "    nothing new leaves this machine without you.",
+        "  Written to <home>/data/workflows/web-app-integrating.json.",
+        "  A choice names a workflow (`daoris driver workflow use <id> --repository <name>|--workspace <name> [--kind <kind>]`), and work binds its newest version at its first start; every gate then reads that version.",
+        "  Current's `integrate` step is not one of the steps saved: the rule's graph integrates the steps run's branch."
+      ],
+      "err": [],
+      "after": "{\"landings\":{\"web-app\":{\"form\":\"branch\",\"pattern\":\"work/{session}\",\"integrate\":{}}}}",
+      "written": {
+        "data/workflows/web-app-integrating.json": "{\n  \"id\": \"web-app-integrating\",\n  \"name\": \"web-app's Current\",\n  \"versions\": [\n    {\n      \"version\": 1,\n      \"at\": \"2026-10-09T09:12:34Z\",\n      \"door\": \"terminal\",\n      \"steps\": [\n        {\n          \"id\": \"work\",\n          \"kind\": \"work\"\n        },\n        {\n          \"id\": \"landing\",\n          \"kind\": \"landing\",\n          \"form\": \"branch\",\n          \"accept\": \"you\",\n          \"pattern\": \"work/{session}\",\n          \"plugin\": \"none\"\n        }\n      ]\n    }\n  ]\n}\n"
+      }
+    },
+    {
+      "name": "workflow show, a Current whose rule carries integrate",
+      "argv": [
+        "workflow",
+        "show",
+        "--repository",
+        "web-app"
+      ],
+      "before": "{\"landings\":{\"web-app\":{\"form\":\"branch\",\"pattern\":\"work/{session}\",\"integrate\":{}}}}",
+      "registry": [
+        {
+          "repository": "web-app",
+          "workspace": "work",
+          "root": null
+        }
+      ],
+      "exit": 0,
+      "out": [
+        "daoris: `web-app` follows Current: in the workspace `work`, read from the rules as they stand at each gate (version 05b1cc9a230c).",
+        "  Its start node routes the work that comes here:",
+        "    the default → Current, since nothing names a workflow",
+        "    landed work → no verification here",
+        "  No plugin here may hold a start.",
+        "  The work — Agent alone · an agent. The chain's steps in this repository; a done that departs from your words or lacks its evidence waits for your yes. Always.",
+        "  The landing — You · Daoris · your press: Accept. On a branch named `work/{session}`, for you to push. This repository's landing rule.",
+        "  The integration — You · Daoris · your press: Accept. Integrates the landed branch into its line, requested by you, with no gates; a conflict goes back to its session. This repository's landing rule.",
+        "      Not integrated yet: the rule carries `integrate`, but nothing runs an integration in this build, so work stays on its branch as it always did."
+      ],
+      "err": [],
+      "after": "{\"landings\":{\"web-app\":{\"form\":\"branch\",\"pattern\":\"work/{session}\",\"integrate\":{}}}}"
+    },
+    {
       "name": "workflow new, from Current, a repository not in the registry",
       "argv": [
         "workflow",
