@@ -281,7 +281,10 @@ public sealed class AccessSwapTickTests : IDisposable
             // this stub keeps no plan and says nothing, so the account reads as unknown (D57), and it is no run.
             if (!argv.includes('-p')) process.exit(0);
             const after = (flag) => { const at = argv.indexOf(flag); return at < 0 ? null : argv[at + 1]; };
-            const prompt = after('-p');
+            // AGENTLYNTAI1s-i: the prompt is the input read to its end, never an argument.
+            const chunks = [];
+            for await (const chunk of process.stdin) chunks.push(chunk);
+            const prompt = Buffer.concat(chunks).toString('utf8');
             const resume = after('--resume');
             const url = process.env.DAORIS_SERVICE_URL;
             const line = (frame) => process.stdout.write(JSON.stringify(frame) + '\n');

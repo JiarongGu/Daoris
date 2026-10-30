@@ -68,6 +68,54 @@ public sealed class ChangeStreamHostTests(HeldChangesHost host) : IClassFixture<
         Assert.Equal(Every, moved);
     }
 
+    /// <summary>
+    /// FOUNDATION1 row k part 2 (§4.1): the family <c>journal</c> and the journal's place are answered to a reader that asks with
+    /// <c>journal=1</c> and to none else, so a read as every client from before it makes names no more than it always did and carries no new
+    /// member.
+    /// </summary>
+    [Fact]
+    public async Task The_journal_is_named_and_its_place_answered_only_to_a_reader_that_asks()
+    {
+        var older = await host.GetAsync(ChangeStream.Route + "?wait=10").WaitAsync(Poll.Patience);
+        var asked = await host.GetAsync(ChangeStream.Route + "?wait=10&journal=1").WaitAsync(Poll.Patience);
+
+        Assert.Equal(Every, Read(older).Moved);
+        Assert.Equal([.. Every, ChangeFamilies.Journal], Read(asked).Moved);
+        Assert.Equal(["since", "moved"], older.Json.EnumerateObject().Select(member => member.Name).ToArray());
+        var place = asked.Json.GetProperty("journal");
+        Assert.Matches("^[0-9a-f]{32}$", place.GetProperty("store").GetString()!);
+        Assert.True(place.GetProperty("floor").GetInt64() >= 1);
+        Assert.True(place.GetProperty("newest").GetInt64() >= 0);
+    }
+
+    /// <summary>
+    /// An older client's reader, which names no <c>journal</c>, is woken by nothing a journal-only append does (a word taken moves no family),
+    /// while a reader that asks is woken by it, naming the journal alone (§4.1, F10). The older reader is shown alive by the write after, which
+    /// wakes it with its family alone.
+    /// </summary>
+    [Fact]
+    public async Task A_journal_only_append_wakes_the_reader_that_asks_and_an_older_clients_reader_by_nothing()
+    {
+        var sessions = host.Composed.Sessions;
+        var held = await sessions.CreateAsync(null, "Keeper", "stub", DateTimeOffset.UtcNow, kind: SessionKind.Chat);
+        await sessions.KeepSaidAsync(held.Id, new SaidWord("w1", "One.", DateTimeOffset.UtcNow, []));
+        var (since, _) = Read(await host.GetAsync(ChangeStream.Route).WaitAsync(Poll.Patience));
+        var older = host.GetAsync($"{ChangeStream.Route}?since={since}&wait=30");
+        var asking = host.GetAsync($"{ChangeStream.Route}?since={since}&wait=30&journal=1");
+        await Task.Delay(200);
+        Assert.False(older.IsCompleted || asking.IsCompleted, "a current cursor was answered before anything moved");
+
+        await sessions.TakeSaidAsync(held.Id, ["w1"]);
+        var (_, named) = Read(await asking.WaitAsync(Poll.Patience));
+        await Task.Delay(300);
+
+        Assert.Equal([ChangeFamilies.Journal], named);
+        Assert.False(older.IsCompleted, "the older client's reader was woken by a journal-only append");
+
+        await sessions.CreateAsync(null, "Keeper", "stub", DateTimeOffset.UtcNow, kind: SessionKind.Chat);
+        Assert.Equal([ChangeFamilies.Sessions], Read(await older.WaitAsync(Poll.Patience)).Moved);
+    }
+
     /// <summary>A shared host maps no change stream: its circles keep their own cursors, and it holds no machine's waits.</summary>
     [Fact]
     public void A_shared_host_maps_no_change_stream()

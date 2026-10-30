@@ -26,7 +26,10 @@ public sealed class NativeResumeTests
 
         var arguments = info.ArgumentList.ToList();
         Assert.Equal("claude", info.FileName);
-        Assert.Equal("Port 8080.", arguments[arguments.IndexOf("-p") + 1]);
+        // AGENTLYNTAI1s-i: the answer goes on the input (SessionMessagesTickTests proves the bytes), so `-p` is bare here.
+        Assert.Equal("--resume", arguments[arguments.IndexOf("-p") + 1]);
+        Assert.DoesNotContain("Port 8080.", arguments);
+        Assert.True(info.RedirectStandardInput);
         Assert.Equal("0b5e7c1a", arguments[arguments.IndexOf("--resume") + 1]);
         Assert.Equal("acceptEdits", arguments[arguments.IndexOf("--permission-mode") + 1]);
         Assert.Equal("stream-json", arguments[arguments.IndexOf("--output-format") + 1]);
@@ -104,7 +107,9 @@ public sealed class NativeResumeTests
             settings: "D:/daoris-data/sessions/s1.settings.json", servers: "D:/daoris-data/sessions/s1.mcp.json")!;
 
         var arguments = info.ArgumentList.ToList();
-        Assert.Equal("Also log the port.", arguments[arguments.IndexOf("-p") + 1]);
+        Assert.Equal("--resume", arguments[arguments.IndexOf("-p") + 1]);
+        Assert.DoesNotContain("Also log the port.", arguments);
+        Assert.True(info.RedirectStandardInput);
         Assert.Equal("0b5e7c1a", arguments[arguments.IndexOf("--resume") + 1]);
         Assert.Equal("D:/daoris-data/sessions/s1.settings.json", arguments[arguments.IndexOf("--settings") + 1]);
         Assert.Equal("D:/daoris-data/sessions/s1.mcp.json", arguments[arguments.IndexOf("--mcp-config") + 1]);
@@ -133,7 +138,10 @@ public sealed class NativeResumeTests
         var info = new ClaudeCodeAdapter().PrepareResume(Target(), ["claude"], resume.Conversation, resume.Prompt)!;
 
         var arguments = info.ArgumentList.ToList();
-        Assert.Equal("Also log the port.\n\n" + Findings, arguments[arguments.IndexOf("-p") + 1]);
+        // The prompt is the resume's own, written on the input (AGENTLYNTAI1s-i), so it is read where it is composed.
+        Assert.Equal("Also log the port.\n\n" + Findings, resume.Prompt);
+        Assert.DoesNotContain(resume.Prompt, arguments);
+        Assert.Equal("--resume", arguments[arguments.IndexOf("-p") + 1]);
         Assert.Equal("0b5e7c1a", arguments[arguments.IndexOf("--resume") + 1]);
         Assert.DoesNotContain(arguments, argument => argument.Contains("Fix the flaky gate"));
         // The record shows them as Daoris's turn around another agent's claims, never the person's words.

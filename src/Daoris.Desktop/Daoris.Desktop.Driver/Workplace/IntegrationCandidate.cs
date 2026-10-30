@@ -188,7 +188,13 @@ public static class IntegrationMemberStates
     public const string Promoted = "promoted";
     public const string Settled = "settled";
 
-    public static IReadOnlyList<string> All { get; } = [Formed, Replayed, Contained, Conflict, HandedBack, Dropped, Promoted, Settled];
+    /// <summary>
+    /// A conflict of meaning under <c>conflicts: hold</c>, or one whose session could not be told (INTEGRATE1e part e3b, §5.4): set aside, its
+    /// request open and out of the queue, for the steward's or the owner's act. A state added beside the eight, so an older row is read as it was.
+    /// </summary>
+    public const string Held = "held";
+
+    public static IReadOnlyList<string> All { get; } = [Formed, Replayed, Contained, Conflict, HandedBack, Dropped, Promoted, Settled, Held];
 }
 
 /// <summary>Why a candidate ended, freeing its line for the next.</summary>

@@ -59,6 +59,13 @@ public sealed class ConversationMoves
         _takeUp = new MoveTakeUp(home, Store, MoveTakeUpScope.Conversations, imports: null, note: Note, clock: clock, said: Said);
     }
 
+    /// <summary>
+    /// Told each boundary the live move's executor reaches (<see cref="Cuts"/>), as it passes it: after the write of the phase it names has
+    /// returned, and before the effect that follows. A proof of a crash at every phase blocks there, which a killed shell never leaves; nothing
+    /// in production sets it.
+    /// </summary>
+    internal Action<string>? Cut { get; set; }
+
     /// <summary>The move record, under this process's run.</summary>
     public MoveStore Store { get; }
 
@@ -93,7 +100,9 @@ public sealed class ConversationMoves
 
             if (standing is not null) return new(null, standing, null);
             var decided = Store.Decide(decision);
-            return decided.Claim is { } claim ? new(new ConversationMove(this, claim), null, null) : new(null, decided.Move, null);
+            if (decided.Claim is not { } claim) return new(null, decided.Move, null);
+            Cut?.Invoke(Cuts.Decided);
+            return new(new ConversationMove(this, claim), null, null);
         }
         catch (Exception error) when (error is DriverException or SqliteException or IOException or UnauthorizedAccessException)
         {
@@ -167,6 +176,14 @@ public sealed class ConversationMoves
         switch (phase)
         {
             case MoveRecordPhase.Decided or MoveRecordPhase.Quiescing or MoveRecordPhase.OldEnded:
+                // No open was asked: a record that continues the old part is none under this move's key, so an older build made it (§13.5's
+                // first row), and the move is superseded. Otherwise the line stays on its old part, which goes on by its own come-up.
+                if (Store.Read(claim.Move) is { } before && await MoveSaying.HeadPastAsync(Said, before.Left, ct).ConfigureAwait(false) is not null)
+                {
+                    Store.Close(claim, MoveCloseWhy.Superseded);
+                    return;
+                }
+
                 Store.FallBack(claim, NotOpened);
                 return;
             case MoveRecordPhase.Opening:
@@ -268,18 +285,38 @@ internal sealed class ConversationMove(ConversationMoves moves, MoveClaim claim)
     public MoveClaim Claim => claim;
 
     /// <summary>The old part ended, or there was none to end.</summary>
-    public string? OldEnded() => Write(() => moves.Store.Advance(claim, MoveRecordPhase.OldEnded));
+    public string? OldEnded() => Write(() => moves.Store.Advance(claim, MoveRecordPhase.OldEnded), Cuts.OldEnded);
 
     /// <summary>The open asked under <paramref name="key"/>, the key its keyed open is sent with, so a retried open whose answer was lost reuses it.</summary>
-    public string? Opening(string key) => Write(() => moves.Store.Opening(claim, key));
+    public string? Opening(string key) => Write(() => moves.Store.Opening(claim, key), Cuts.Opening);
+
+    /// <summary>The open made and answered, its answer not yet written: the boundary a crash leaves the move at <c>opening</c> with its destination made.</summary>
+    public void Answered() => moves.Cut?.Invoke(Cuts.Answered);
 
     /// <summary>The open's answer: the record it made and every word it moved, each by its id there, in the transfer's order.</summary>
     public string? Opened(string destination, IReadOnlyList<MovedWord> moved) =>
-        Write(() => moves.Store.Opened(claim, destination, [.. moved.Select(word => new MoveRecordWord(word.Id, word.Key, word.Transfer, word.Order))]));
+        Write(() => moves.Store.Opened(claim, destination, [.. moved.Select(word => new MoveRecordWord(word.Id, word.Key, word.Transfer, word.Order))]), Cuts.Opened);
+
+    /// <summary>
+    /// Before anything is handed to the destination, the line's head is read (§13.4 step 5): where an older build has continued it, nothing is
+    /// delivered there and the move is held <see cref="MoveHoldWhy.Superseded"/>. True where it is held and the executor hands nothing. Never faults.
+    /// </summary>
+    public async Task<bool> SupersededAsync()
+    {
+        try
+        {
+            return await moves.Delivery.HeldPastAsync(claim, CancellationToken.None).ConfigureAwait(false) is not null;
+        }
+        catch (Exception error) when (error is DriverException or SqliteException)
+        {
+            // The store would not take the hold now: the executor goes on, and the next reading finds the head again.
+            return false;
+        }
+    }
 
     /// <summary>The words going across: <c>delivering</c>, then the prompt's mark, before the hand.</summary>
     public string? Delivering() =>
-        Write(() => moves.Store.Advance(claim, MoveRecordPhase.Delivering)) ?? Write(() => moves.Store.MarkEffect(claim, MoveEffects.Prompt));
+        Write(() => moves.Store.Advance(claim, MoveRecordPhase.Delivering)) ?? Write(() => moves.Store.MarkEffect(claim, MoveEffects.Prompt), Cuts.Marked);
 
     /// <summary>Whether the write's return was recorded (<see cref="Wire"/>).</summary>
     public bool Wired => Volatile.Read(ref _wired) == 1;
@@ -290,12 +327,16 @@ internal sealed class ConversationMove(ConversationMoves moves, MoveClaim claim)
     /// </summary>
     public void Wire(IReadOnlyCollection<string> transfers)
     {
-        if (Interlocked.Exchange(ref _wired, 1) == 0) moves.Delivery.Wrote(claim, transfers);
+        if (Interlocked.Exchange(ref _wired, 1) != 0) return;
+        moves.Cut?.Invoke(Cuts.Written);
+        moves.Delivery.Wrote(claim, transfers);
+        moves.Cut?.Invoke(Cuts.Sent);
     }
 
     /// <summary>After the take: the one reading, finished (<see cref="ConversationMoves.ReadAsync"/>). Never faults.</summary>
     public async Task ReadAsync()
     {
+        moves.Cut?.Invoke(Cuts.Taken);
         try
         {
             await moves.ReadAsync(claim, CancellationToken.None).ConfigureAwait(false);
@@ -322,16 +363,56 @@ internal sealed class ConversationMove(ConversationMoves moves, MoveClaim claim)
     /// <summary>The move ended <c>superseded</c>: the old part went on before anything began. Never faults.</summary>
     public void Superseded() => Write(() => moves.Store.Close(claim, MoveCloseWhy.Superseded));
 
-    private static string? Write(Func<MoveRecord> write)
+    private string? Write(Func<MoveRecord> write, string? cut = null)
     {
         try
         {
             write();
-            return null;
         }
         catch (Exception error) when (error is DriverException or SqliteException)
         {
             return error.Message;
         }
+
+        if (cut is not null) moves.Cut?.Invoke(cut);
+        return null;
     }
+}
+
+/// <summary>
+/// The boundaries of a live conversation move (FOUNDATION1f-ii part b, D212): each place a shell can be killed that leaves the move's record
+/// in a state of its own, named for the write that came just before it. <see cref="ConversationMoves.Cut"/> is told each as it is passed, and
+/// the crash proof (<c>LimitMoveCrashProcessTests</c>) runs one case for each, so a boundary added here and not proved fails its census.
+/// </summary>
+internal static class Cuts
+{
+    /// <summary>The decision written, nothing held or ended.</summary>
+    public const string Decided = "decided";
+
+    /// <summary>The old part ended, no open asked.</summary>
+    public const string OldEnded = "old-ended";
+
+    /// <summary>The open's key written as <c>opening</c>, the open not yet made.</summary>
+    public const string Opening = "opening";
+
+    /// <summary>The open made and answered, its answer not yet written: <c>opening</c> with its destination made and its words moved.</summary>
+    public const string Answered = "answered";
+
+    /// <summary>The destination and its moved words written as <c>opened</c>.</summary>
+    public const string Opened = "opened";
+
+    /// <summary>The prompt marked at <c>delivering</c>, before the write.</summary>
+    public const string Marked = "marked";
+
+    /// <summary>The door's write has returned, <c>sent</c> not yet written.</summary>
+    public const string Written = "written";
+
+    /// <summary><c>sent</c> written, the take not yet made.</summary>
+    public const string Sent = "sent";
+
+    /// <summary>The take made, <c>delivered</c> not yet written.</summary>
+    public const string Taken = "taken";
+
+    /// <summary>Every boundary, in the order the executor passes them.</summary>
+    public static readonly IReadOnlyList<string> All = [Decided, OldEnded, Opening, Answered, Opened, Marked, Written, Sent, Taken];
 }

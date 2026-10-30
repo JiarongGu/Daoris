@@ -309,6 +309,14 @@ public sealed class ChannelStore
         // none, which keeps its old reach and is never read as ordinary.
         await SchemaColumns.EnsureAsync(_db, "channel", "urgent", "urgent INTEGER NULL", ct).ConfigureAwait(false);
 
+        // FOUNDATION1 row k part 2 (D212, the foundation design §4.1): a message kept as a row of the event journal, minted by a trigger in the
+        // statement that writes it. After the columns the trigger reads (`urgent` is the last added), so it names none that is not there.
+        await using (var journal = _db.Command())
+        {
+            journal.CommandText = EventJournal.ChannelSchema;
+            await journal.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+        }
+
         // COWORK1d (the design §6): each entry's acknowledgment of each message, by its id, which a mark by moment could not keep. A
         // channel from before has marks and no rows: every message at or before an entry's mark counts as taken, written once as the
         // table is made, so a message mirrored later with an older moment is still the entry's to be handed.
