@@ -36,7 +36,7 @@ internal sealed class KnowledgeWorkplaceReads : IKnowledgeWorkplace
     }
 
     public async Task<IKnowledgeSweep> ReadSweepAsync(string home, HelpSweepPart part, CancellationToken ct) =>
-        await new SessionTrees(home).SweepPartAsync(part.Repository, part.Workspace, part.Root, part.InUse, ct).ConfigureAwait(false);
+        await new SessionTrees(home).SweepPartAsync(part.Repository, part.Workspace, part.Root, part.InUse, ct, part.ClosedQuests).ConfigureAwait(false);
 
     public Task<string?> GuessAsync(string root, CancellationToken ct) => LineGuesses.Shared.GuessAsync(root, ct);
     public Line? JudgedLine(DriverConfig config, string repository, string? workspace, string? root, HelpLineGuess? guessed) =>

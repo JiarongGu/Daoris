@@ -276,7 +276,9 @@ public sealed class LinesRoutes(DriverContext context)
 
         if (kept is not null)
         {
-            var plan = await trees.CleanPlanAsync(repositories, inUse, cancellationToken);
+            // LANDRETIRE1 part 2: which quests a landing the line does not hold names are closed, the service's, read once for the list.
+            var closed = await LandedStanding.ClosedAsync(kept, (_loop.Service ?? throw NotReady()).EveryQuestAsync, cancellationToken);
+            var plan = await trees.CleanPlanAsync(repositories, inUse, cancellationToken, closed);
             // The person's look asks the plugins (D148 point 2) and keeps their answers in the landing record, which no watch hears and
             // which moves no ref: each repository whose kept answers it wrote has its part of the pushed list judged again now
             // (PUSH1c4a), rather than at its next ref move or deadline. Asked of no plugin again: the part reads what was kept.
@@ -602,8 +604,12 @@ public sealed class LinesRoutes(DriverContext context)
         var unread = new List<string>();
         // OVERVIEWNOISE1b: each tree joined to the session that recorded it, from the sessions' look the work slice reads too.
         var looked = _loop.Facts.Current.Value<SessionLook>(HelpFacts.Sessions, HelpFacts.Whole);
+        // LANDRETIRE1 part 2: which quests the landings the line does not hold name are closed, the service's, read once and only where one asks.
+        var closed = _loop.Service is { } ledger
+            ? await LandedStanding.ClosedAsync(new LandedBranches(_loop.Home).Entries(), ledger.EveryQuestAsync, cancellationToken)
+            : new HashSet<string>();
         var (units, recovery) = await WorkInventories.ReadAsync(
-            _loop.Home, roots, inUse, unread, cancellationToken, looked is null ? null : WorkInventories.RecordedOf(looked.Records));
+            _loop.Home, roots, inUse, unread, cancellationToken, looked is null ? null : WorkInventories.RecordedOf(looked.Records), closed);
         if (Optional(request, "unit") is { } named)
         {
             units = WorkInventories.Named(units, named);
