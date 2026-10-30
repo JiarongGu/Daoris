@@ -140,6 +140,137 @@ public sealed class RoleCatalog
         return work == ParticipantWork.Design ? RoleFor(ParticipantWork.Build, place) : new RoleFound(null, null);
     }
 
+    /// <summary>The judge's refusal codes, the closed set every door answers.</summary>
+    public static IReadOnlyList<string> Codes { get; } =
+        ["appointed-not-configurable", "mixed-shape", "unknown-work", "reserved-id", "bad-record", "may-not-be-off", "two-roles-one-work", "choices"];
+
+    /// <summary>
+    /// Whether <paramref name="choices"/> may be the staffing of a role taking <paramref name="work"/>: today's <see cref="ActorChoices.Judge"/>
+    /// keyed by the work (design judged as Build), its sentence unchanged; null where it may.
+    /// </summary>
+    public static RoleRefusal? Judge(string work, IReadOnlyList<ActorChoice>? choices)
+    {
+        if (!ParticipantWork.Codes.Contains(work, StringComparer.Ordinal)) return Refused("unknown-work", $"`{work}` is not a work — one of {string.Join(", ", ParticipantWork.Codes)}.");
+        return ActorChoices.Judge(StartPlan.RoleOf(work), choices) is { } said ? Refused(choices is { Count: 0 } ? "may-not-be-off" : "choices", said) : null;
+    }
+
+    /// <summary><see cref="Judge(string, IReadOnlyList{ActorChoice}?)"/> for each work <paramref name="role"/> takes, the first refusal.</summary>
+    public static RoleRefusal? Judge(RoleRecord role, IReadOnlyList<ActorChoice>? choices) =>
+        role.Takes.Select(work => Judge(work, choices)).FirstOrDefault(refusal => refusal is not null);
+
+    /// <summary>
+    /// Whether <paramref name="change"/> may be made to this catalogue, for every door alike: an appointed record is refused before anything
+    /// else of it, then a mixed shape, an unknown work, an id the shell keeps, a record that is not one, two roles taking one work in one
+    /// scope, and the removal or scoping away of the role of a work that may not be off from the machine. Null where it may.
+    /// </summary>
+    public RoleRefusal? Judge(RoleChange change)
+    {
+        if (change is RoleChange.SetRole { Role: var role })
+        {
+            if (role.Filled == RoleRecord.Appointed) return Refused("appointed-not-configurable", $"`{role.Id}` is an appointed role: this build configures working roles alone.");
+            if (role.Authority is not null) return Refused("mixed-shape", $"`{role.Id}` mixes the working and the appointed shape: a role takes work or holds acts, never both.");
+            if (role.Filled != RoleRecord.Always) return Refused("bad-record", $"`{role.Id}` is not `always` or `appointed`.");
+            if (Reserved.Contains(role.Id, StringComparer.Ordinal)) return Refused("reserved-id", $"`{role.Id}` is the shell's: the supervisor and the steward are not configured here.");
+            if (!IdShape.IsMatch(role.Id)) return Refused("bad-record", $"`{role.Id}` is not an id: lowercase letters, digits and hyphens, from a letter, at most 40.");
+            if (string.IsNullOrWhiteSpace(role.NameEn) || string.IsNullOrWhiteSpace(role.NameZh)) return Refused("bad-record", $"`{role.Id}` needs a name in English and in Chinese.");
+            if (!RoleScope.Kinds.Contains(role.Scope.Kind, StringComparer.Ordinal) || (role.Scope.Kind == RoleScope.Machine) != string.IsNullOrWhiteSpace(role.Scope.Id))
+            {
+                return Refused("bad-record", $"`{role.Id}`'s scope is the machine alone, or a workspace or a repository with its id.");
+            }
+
+            if (role.Takes.Count == 0) return Refused("bad-record", $"`{role.Id}` takes no work.");
+            if (role.Takes.FirstOrDefault(work => !ParticipantWork.Codes.Contains(work, StringComparer.Ordinal)) is { } unknown)
+            {
+                return Refused("unknown-work", $"`{unknown}` is not a work — one of {string.Join(", ", ParticipantWork.Codes)}.");
+            }
+        }
+        else if (Reserved.Contains(change.Id, StringComparer.Ordinal)) return Refused("reserved-id", $"`{change.Id}` is the shell's: the supervisor and the steward are not configured here.");
+        else if (Slots.All(slot => slot.Id != change.Id)) return Refused("bad-record", $"no role `{change.Id}` is in the catalogue.");
+
+        var after = After(change);
+        if (change is RoleChange.SetRole { Role: var set })
+        {
+            var clash = after.Where(slot => slot.Role is { } other && other.Id != set.Id && other.Scope == set.Scope && other.Takes.Intersect(set.Takes).Any()).Select(slot => slot.Role!).FirstOrDefault();
+            if (clash is not null)
+            {
+                return Refused("two-roles-one-work", $"`{clash.Id}` already takes `{clash.Takes.Intersect(set.Takes).First()}` in that scope: at most one role takes a work in one scope.");
+            }
+        }
+
+        // An unreadable seeded id is left to the person's next edit of it, so it is not counted as uncovered here.
+        foreach (var work in ParticipantWork.Codes.Where(work => work != ParticipantWork.Design && !ActorChoices.MayBeOff(StartPlan.RoleOf(work))))
+        {
+            if (after.Any(slot => slot.State == RoleState.Unreadable && slot.Id == StartPlan.RoleOf(work))) continue;
+            if (!after.Any(slot => slot.Role is { } role && role.Scope.Rank == 0 && role.Takes.Contains(work, StringComparer.Ordinal)))
+            {
+                return Refused("may-not-be-off", $"`{work}` may not be off: a role must take it on the machine, so `{change.Id}` cannot be removed or scoped away from it.");
+            }
+        }
+
+        return null;
+    }
+
+    private IReadOnlyList<RoleSlot> After(RoleChange change)
+    {
+        var slots = Slots.Where(slot => slot.Id != change.Id).ToList();
+        var seeded = Seed.FirstOrDefault(role => role.Id == change.Id);
+        switch (change)
+        {
+            case RoleChange.SetRole set: slots.Add(new RoleSlot(set.Id, RoleState.Set, set.Role, null, 0)); break;
+            case RoleChange.RemoveRole when seeded is not null: slots.Add(new RoleSlot(change.Id, RoleState.Removed, null, null, 0)); break;
+            case RoleChange.DefaultRole when seeded is not null: slots.Add(new RoleSlot(change.Id, RoleState.Seed, seeded, null, 0)); break;
+        }
+
+        return slots;
+    }
+
+    /// <summary>
+    /// The catalogue's one write: <paramref name="change"/> judged against the store's roles inside its transaction, then one row of
+    /// <c>roles</c> written or deleted and one row of <c>role_revisions</c> kept, the id's next revision, which a removal never resets.
+    /// Nothing is written for a refusal. Read by nothing yet: no door is wired to it.
+    /// </summary>
+    /// <returns>The id's new revision.</returns>
+    /// <exception cref="DriverException">The judge's refusal; nothing changed.</exception>
+    public static long Write(string location, RoleChange change, Func<StoreSettled>? settled = null)
+    {
+        using var store = DesktopStore.Open(location, StoreProcess.Options(settled));
+        return store.Write("roles", write =>
+        {
+            var current = Of(write.Query("SELECT id, state, record, revision FROM roles", row => new StoredRole(row.GetString(0), row.GetString(1), row.GetString(2), row.GetInt64(3))));
+            if (current.Judge(change) is { } refusal) throw new DriverException(refusal.Said);
+
+            var revision = write.Scalar<long>("SELECT MAX(revision) FROM role_revisions WHERE id = $id", ("$id", change.Id)) + 1;
+            var at = DateTimeOffset.UtcNow.ToString("O", System.Globalization.CultureInfo.InvariantCulture);
+            var seeded = ActorChoices.Ids.Contains(change.Id, StringComparer.Ordinal);
+            (string State, string? Record) kept = change switch
+            {
+                RoleChange.SetRole set => ("set", set.Role.Json()),
+                RoleChange.RemoveRole when seeded => ("removed", "{}"),
+                RoleChange.RemoveRole => ("deleted", null),
+                _ => (seeded ? "default" : "deleted", null),
+            };
+            write.Execute(
+                "INSERT INTO role_revisions (id, revision, state, record, at) VALUES ($id, $revision, $state, $record, $at)",
+                ("$id", change.Id), ("$revision", revision), ("$state", kept.State), ("$record", kept.Record), ("$at", at));
+            if (kept.State is "set" or "removed")
+            {
+                write.Execute(
+                    """
+                    INSERT INTO roles (id, state, record, revision, at) VALUES ($id, $state, $record, $revision, $at)
+                    ON CONFLICT (id) DO UPDATE SET state = $state, record = $record, revision = $revision, at = $at
+                    """,
+                    ("$id", change.Id), ("$state", kept.State), ("$record", kept.Record), ("$revision", revision), ("$at", at));
+            }
+            else write.Execute("DELETE FROM roles WHERE id = $id", ("$id", change.Id));
+
+            return revision;
+        });
+    }
+
+    private static RoleRefusal Refused(string code, string said) => new(code, said);
+
+    private static readonly System.Text.RegularExpressions.Regex IdShape = new("^[a-z][a-z0-9-]{0,39}$", System.Text.RegularExpressions.RegexOptions.CultureInvariant);
+
     /// <summary>
     /// The order a start of <paramref name="work"/> at <paramref name="place"/> walks: its role's <see cref="ActorChoices.Effective"/> over
     /// <paramref name="config"/>, the staffing <c>role_staffing</c> fills; empty where no role takes the work there.
