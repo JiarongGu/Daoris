@@ -1,15 +1,15 @@
-# The memory coordinator: Daoris's half of a shared, model-kept memory (KNOWCENTRAL1, round 2)
+# The memory coordinator: Daoris's half of a shared, model-kept memory (KNOWCENTRAL1, round 3)
 
-**Standing:** a synthesis, 2026-10-31, revised after both makers' reads (`…-reads.md`); nothing built. The steward's, under D191,
-from the brief and the sealed proposals of the Opus maker (O) and Codex (X); claims checked at `cd205046b`, Lyntai's at `5cfdc76a`. It
-grants authority and ends entries, so it is accepted only on both makers' reads (D191's note of 2026-10-24).
+**Standing:** a synthesis, 2026-10-31, revised in place after rounds 2 and 3 (`…-reads.md`); nothing built. The steward's, under
+D191, from the brief and the sealed proposals of the Opus maker (O) and Codex (X); checked at Daoris `a0dbbc423`, Lyntai `5cfdc76a`.
+It grants authority and ends entries, so it is accepted only on both makers' reads (D191's note of 2026-10-24).
 **Governing:** D220; Lyntai's D241 as amended; D205; D212; D173; D191.
 
 ## 0. Where the two proposals agree
 
-One memory per repository; role and session as attribution; identity from the connector's placement. A child only reads; a
-correction is a quest. A record is cited, never ingested; an amended record never ends an entry whole (that cut an amendment's recall
-from 66% to 14%). `DueAsync` proves no currency. No model approves an end before MC8's verdict.
+One memory per repository; role and session as attribution, identity from the connector's placement; a child only reads; a
+correction is a quest; a record cited, never ingested, an amendment never ending an entry whole (that cut its recall from 66% to 14%);
+`DueAsync` proves no currency; no model approves an end before MC8's verdict.
 
 ## 1. Where memory lives and who owns a fact
 
@@ -17,28 +17,33 @@ from 66% to 14%). `DueAsync` proves no currency. No model approves an end before
 its only writer. The repository owns every entry. Intake and Ask Daoris name no repository (`Service/Domain/SessionRecord.cs:12`), so
 they write none.
 
-**Attribution is written at the call**, from the caller's record, never from arguments: session, work, repository, workspace, quest,
-adapter and harness version (`Sessions/Sessions.cs:101-117`); the role and its revision, which the driver names on the connector's
-environment at each start as it names the session (`IntakeScope.cs:28`), so a continuation writes its own; and the newest model the
-record's `ran` reports (D205, `ActorRan.cs:3-5`). What is not read is written `unknown`; nothing is joined later from `binding_roles`,
-which `KeepRole` overwrites and `Forget` deletes (`BindingStore.cs:134-146`, `:160-172`). D205 keeps `ran` off the wire, so a row that
-travels says `not shared` for the model until the exchange's permitted record admits it.
+**Who, at the call**, from the caller's record, never from arguments: session, work, repository, workspace, quest, adapter, harness
+version (`Sessions/Sessions.cs:101-117`); the role and revision the driver names on the connector's environment at each start
+(`IntakeScope.cs:28`), so a continuation writes its own; the call's instant. Nothing is joined later from `binding_roles`, which
+`KeepRole` overwrites and `Forget` deletes (`BindingStore.cs:134-146`, `:160-172`).
 
-**An operation applies at its session's commit point.** Rows are staged by session id, never by tree, a machine-local path
-(`Sessions.cs:88-98`):
-- a session with a tree commits at its landing; a tree discarded unlanded drops its rows;
-- a session with no landing, a chat or any session in the main tree (`Session.Tree` null, `Sessions.cs:116`), commits when its record
-  ends `completed` (`Loop/Chat/ChatRunner.cs:2936`);
-- one ended otherwise (stopped, failed, interrupted, declined) keeps its rows `staged`: a continuation of the record carries them, and
-  the record's page offers the person *Keep* or *Drop*. Nothing staged applies by itself.
+**Which model, at the commit point.** `ran` cannot say at the call: it is kept as a turn ends (`ActorRun.cs:185-198`;
+`Agents/StructuredOutput.cs:355-363`), asynchronously (`ActorRun.cs:200-207`), even after a chat's record ended
+(`Loop/Chat/ChatRunner.cs:2839`, `:2939`), and first-seen (`ActorRun.cs:142-150`). Each Turn event, its instant and reported models,
+is in the session's event log before anything is told of it (`Context/Events/SessionEventLog.cs:18-20`;
+`Events/Domain/SessionEvents.cs:193-195`, `:397`), after its calls returned. The driver hands each moved session's turns with the
+commit point; a row's models are those the first turn at or after its instant reported, else `unknown`. A row that travels says
+`not shared` for the model (D205).
 
-Only its own session sees a staged row.
+**An operation is released in the transaction that records its session's commit point.** Rows are staged by session id, never by
+tree, a machine-local path (`Sessions.cs:88-98`):
+- a session with a tree: the post of its finished tree's record naming a landing (`WorkRecordStore.PostAsync`,
+  `Sessions/WorkRecords.cs:366`, `:44-48`; its sessions in `work_record_sessions`, `:72-73`);
+- a chat or any session in the main tree (`Session.Tree` null, `Sessions.cs:116`): the ledger's advance to `completed`, one
+  transaction (`SessionLedger.cs:1929`, `:1974`; from `ChatRunner.cs:3865`);
+- otherwise (stopped, failed, interrupted, declined, a post naming no landing) rows stay `staged`, carried by a continuation, the
+  record's page offering the person *Keep* or *Drop*. Nothing staged applies by itself.
 
-**Why.** A session changes its own repository and asks another by quest; interference advances per engine; a commit point is where
-the work an observation came from is accepted.
+Only its own session sees a staged row, and a hand-over continuation its predecessor's, by `From` (`Sessions.cs:175`).
 
-**Rejected.** A workspace memory, which no session owns; a role's task, holding one fact twice. X's private task memory: staging by
-session holds the same. X's audited reassignment: an end and a write, two changes and a request. Attribution joined where shown.
+**Why.** A session changes its own repository; a commit point is where its work is accepted; a model is evidence of a turn.
+**Rejected.** A workspace's or role's memory. X's private task memory (staging holds it) and audited reassignment (two changes and a
+request). The model at the call, or `ran`'s last name.
 
 ## 2. Grants on every operation
 
@@ -56,198 +61,218 @@ is served the reads alone (`CallLineageFilter.cs:51`). Until the engine exists (
 | Unread, unplaced, a child | yes | refused | refused |
 | Unnamed (a person's own agent) | yes | yes | refused by the memory box |
 
-**A Read is observational**, the owner's and a child's alike. `Read` changes nothing (`ToolClasses.cs:6-7`), but a Lyntai recall or
-expansion reinforces, co-activates and logs what it returns. So every engine the coordinator opens sets `ReinforceOn = None` (Lyntai's
-`GraphMemoryOptions.cs:285`), whose gate skips touches, links and review rows (`GraphMemoryEngine.cs:1942`); recall and expansion write
-nothing else (`:1022`, `:1281`) and age nothing (`:1908`). A confirmation is the coordinator's recorded write; whether use should
-reinforce is measured (2i). The read set (§3) is the coordinator's bookkeeping, like the lineage line
-every call writes (`CallLineageFilter.cs:35`).
+**A Read is observational**, root or child. A Lyntai recall reinforces, co-activates and logs what it returns, so every engine the
+coordinator opens sets `ReinforceOn = None` (`GraphMemoryOptions.cs:285`), whose gate skips touches, links and review rows
+(`GraphMemoryEngine.cs:1942`); recall and expansion write nothing else (`:1022`, `:1281`) and age nothing (`:1908`).
 
-**The workspace check is new.** `WorkspaceScope.Outside` refuses only a bound session (`WorkspaceScope.cs:62-66`), and an unbound one
-may name another workspace or `all` (`:31-41`). So every door that takes or yields a reference (search, get, expansion, history,
-citation resolution, subscription) checks its repository against the registry's members of the caller record's `Workspace`
-(`Sessions.cs:112`) at each call, bound or not; an unnamed caller's is the ambient one (`AmbientWorkspace.cs:51`). Where none resolves,
-the call is refused, never spanning every workspace. No memory tool takes a workspace or repository argument.
+**The workspace check is new.** `WorkspaceScope.Outside` refuses only a bound session (`WorkspaceScope.cs:62-66`; `:31-41`). Every door
+that takes or yields a reference checks its repository against the registry's members of the caller record's `Workspace`
+(`Sessions.cs:112`) at each call, bound or not, an unnamed caller's being the ambient one (`AmbientWorkspace.cs:51`); none resolved is
+refused. No memory tool takes a workspace or repository argument.
 
-**Four permission sources move with the table** (O): `OpinionPermissions.Offered` and `PartnerPermissions.Offered` gain the two reads,
-as `ReviewerServed` and `PartnerServed` do (`CallTable.cs:42-57`); `BrainstormPermissions.ConnectorTools` gains all five, denied to a
-pass, held to the registration by `McpToolRegistrationTests` (`:53-57`); `PermissionRules.Defaults` allows the five unprompted
-(`Agents/Permissions.cs:111`), since a write stages, an end waits on its approver and a proposal is a quest.
+**Four permission sources move with the table** (O): `OpinionPermissions.Offered` and `PartnerPermissions.Offered` gain the two reads
+(`CallTable.cs:42-57`); `BrainstormPermissions.ConnectorTools` gains all five, denied, held by `McpToolRegistrationTests` (`:53-57`);
+`PermissionRules.Defaults` allows the five unprompted (`Agents/Permissions.cs:111`): a write stages, an end waits, a proposal is a quest.
 
-**Why.** FOUNDATION1r made `CallTable` the one place a tool meets a work, failing closed.
-
-**Rejected.** X's ceilings on `WorkPolicy`, which the connector never reads. X's owner assignment. A child's proposal. A scope from
-arguments. `knowledge_get`'s check, which binds only Ask Daoris.
+**Rejected.** X's ceilings on `WorkPolicy`, which the connector never reads; X's owner assignment; a child's proposal; a scope from
+arguments; `knowledge_get`'s check, which binds only Ask Daoris.
 
 ## 3. The change log, recovery and cursors
 
-**Choice (O's record, X's limits).** The change log of record is `memory_ops`, in the service's store: id, session, repository, kind
-(`write`, `relate`, `end`, `confirm`, `propose`), target, revision read, attribution, approver, and a state:
-`staged → awaiting → applying → applied`, or `dropped`, `declined`, `stale`, `held`.
+**Choice (O's record, X's limits).** The log of record is `memory_ops`, in `knowledge.db` beside the sessions and the finished trees'
+records: id, session, repository, kind (`write`, `relate`, `end`, `confirm`, `propose`), target, revision read, attribution, approver,
+and a state: `staged → ready → applying → applied` (an end `staged → awaiting → ready → …`), or `dropped`, `declined`, `stale`, `held`.
+A connector writes `staged` rows and reads; a commit point's transaction moves rows, whichever process records it; only the service
+marks `applying`, calls the engine, settles and sweeps.
 
-- **`staged`** waits on its session's commit point. An addition or relation then goes to `applying`, an end to **`awaiting`** its
-  approver (§4): a durable state shown on the landing or the record and decided through the row, as a go-ahead is kept on the ask store
-  (`SessionGoAheads.cs:7-11`); never a `PersonConfirmations` card, held in memory for two minutes, five at once
-  (`PersonConfirmations.cs:124-127`, `:180`).
-- **`applying` is the effect mark**, written in its own transaction before the engine is called; the outcome is written after with the
-  state. A guard mismatch ends `stale`.
-- **Recovery names the operation.** After a crash only `applying` rows are settled, each read observationally for its receipt:
-  - an addition or relation is applied again: a write is keyed by its content (Lyntai's `IMemoryGraphStore.cs:428`), so a repeat
-    returns the same entry, and a repeated relation changes nothing (`MemoryRelations.cs:28-29`);
-  - each end's reason carries its row's id, so a target ended under it is `applied`; a confirmation's stamp at or past its row's
-    instant settles it;
-  - a target still at the revision read is applied again under the same guard;
-  - anything else, moved by what no receipt names, is **`held`**: never applied again by itself, settled by the person from the
-    entry's history, as `MoveStore.MarkEffect` holds an effect with no outcome (`Course/MoveStore.cs:24-25`, `:472-488`).
-- **Journal.** A trigger journals `memory` rows into `event_journal` (ids and codes, never text), waking local readers; it never
-  travels (D212 point 11). **Cursor:** `(store, position)` (`Platform/JournalRows.cs:15`); a new store, or a floor past it,
-  re-validates all held. **X's reader rules:** an unsettled row counts as a change; a bootstrap reads rows and newest position in one
-  read transaction; a change of scope invalidates.
-- **The read set** (O): who read which reference at which revision; local, never journalled, bounded (the newest 256 per session,
-  65,536 in all), so a running session is told once that an entry it read moved.
+- **`awaiting`** holds an end for its approver (§4), durable, decided through the row as a go-ahead is kept (`SessionGoAheads.cs:7-11`),
+  never an in-memory `PersonConfirmations` card (`PersonConfirmations.cs:124-127`, `:180`).
+- **`ready`** was never tried; the service applies it, at its start too.
+- **`applying`** is written in its own transaction before the engine call, the outcome after; a guard mismatch is `stale`.
+- **Recovery holds what no receipt names** (X). At start each `applying` row is read observationally:
+  - an end's reason carries its row id as a trailing token the page strips (readers see the reason, `MemoryTools.cs:74`), and an end is
+    one statement guarded by `ended_reason IS NULL` and the revision (`MemoryGraphSql.cs:154-166`): ended under this token, `applied`;
+    under another's, otherwise, gone, or unended at another revision, `stale`; unended at the revision read, ended again;
+  - an addition, relation or confirmation is **`held`**, never replayed by itself: nothing names which operation ran (§6 C). The
+    person settles it from the entry's history, as `MoveStore.MarkEffect` holds an effect (`Course/MoveStore.cs:24-25`, `:472-488`);
+    §6 C's receipt would settle it (2j).
+- **While an end awaits**, a Holds on its target is recorded on its row and the entry not confirmed: a confirmation bumps the revision
+  the approver read (`MemoryGraphSql.cs:173`).
+- **The sweep.** Lyntai keeps a re-check text (2,000 characters at most) and runs nothing (`GraphMemoryEngine.cs:463-475`,
+  `MemoryRecords.cs:195`). The service reads `DueAsync` (`GraphMemoryEngine.cs:524`), calls `RecheckAsync` (§5) per citation, and
+  writes a Holds as a `ready` confirmation, a Failed as an `awaiting` end.
+- **Journal.** A trigger journals `memory` rows into `event_journal` (ids and codes), waking readers and the applier, and never travels
+  (D212 point 11); rows travel later, as a permitted record. **Cursor:** `(store, position)` (`Platform/JournalRows.cs:15`); a new store or a floor
+  past it re-validates. An unsettled row counts as a change; a bootstrap reads rows and newest position in one transaction; a change of
+  scope invalidates (X).
+- **The read set** (O): who read which reference at which revision; local, bounded (256 per session, 65,536 in all), so a running
+  session is told once that an entry it read moved. A reference trimmed from it is never told.
 
-The rows travel later, as a permitted record, once a second machine reads memory. Subscribers: the driver (FOUNDATION1m), EVENTHOOK1's
-plugins, the page, MC7's caches.
+Subscribers: the driver (FOUNDATION1m), EVENTHOOK1's plugins, the page, MC7's caches.
 
-**Rejected.** X's transactional outbox: Lyntai's stores open their own connection and transaction per call
-(`SqliteMemoryGraphStore.cs:80-81`), so its write cannot join Daoris's; receipts establish recovery, and an outcome none names is held,
-never assumed. Settling by revision alone: it sees that something moved, not what. A second stream identity. Triggers on Lyntai's
+**Rejected.** X's outbox: Lyntai's store opens its own transaction per call (`SqliteMemoryGraphStore.cs:80-81`). Content
+deduplication as idempotence: it repeats effects. Settling by revision or stamp alone. A second stream identity. Triggers on Lyntai's
 tables.
 
 ## 4. A reader's proposal
 
 **Choice (both).** A quest. `memory_propose` on another repository's entry publishes one to its owner, or joins the open one from the
-same repository, as a go-ahead joins an act already asked (`SessionGoAheads.cs:10-11`). Its body is a versioned packet (X): target,
-revision read, relation (`Amends`, `Disputes`, an end; a supersession once §6 A is met), citations, proposer. The owner's session
-decides through its own operations or declines with a reason. Closing the quest applies nothing; its handback names the outcome.
+same repository (`SessionGoAheads.cs:10-11`). Its body is a versioned packet (X): target, revision read, relation (`Disputes`,
+`Amends`, an end), citations, proposer. The owner's session decides through its own operations or declines with a reason. Closing the
+quest applies nothing; its handback names the outcome.
 
 **The approver (MC6).**
-- An addition, a relation and a confirmation apply at their commit point; a relation ends nothing (D241).
-- An end needs an approver who is neither its proposer nor its lineage. Until MC8's verdict that is the person, deciding on the row
-  where the landing or the record lists its ends with evidence, proposer, adapter and model; the row keeps the revision shown.
-- After MC8, another maker's second opinion where `WorkPolicies.Of(…, Review, …)` names one (D155); the person keeps a chat's ends and
-  any the reviewer declines.
-- A `Superseded by` mark is evidence, never the approver (X). Meanwhile the predecessor's hits say `end proposed by <session>,
-  awaiting <approver>`.
-- **Supersession waits on Lyntai.** Lyntai's gate stores the successor live, then ends each predecessor in another call
-  (`MemoryChangeGate.cs:65-68`, `:110-111`), and D241 rejected a transaction over the two: between them both are current. So
-  `memory_write` refuses `supersedes`, naming §6 A, until 2h. Meanwhile an owner writes the new fact with `Amends` naming the old and
-  proposes the old one's end: two decisions, each shown as such.
+- An addition, relation or confirmation is released at its commit point; a relation ends nothing (D241).
+- An end needs an approver neither its proposer nor its lineage: until MC8's verdict, the person, on the row where the landing or record
+  lists its ends with evidence, proposer, adapter and model, keeping the revision shown. After MC8, another maker's second opinion where
+  `WorkPolicies.Of(…, Review, …)` names one (D155); the person keeps a chat's ends and any the reviewer declines.
+- A `Superseded by` mark is evidence, never the approver (X); meanwhile hits say `end proposed by <session>, awaiting <approver>`.
+- **Supersession waits on Lyntai.** Its gate stores the successor, then ends each predecessor in another call
+  (`MemoryChangeGate.cs:65-68`, `:110-111`): between them both are current. So `memory_write` refuses `supersedes`, naming §6 A, until
+  2h. Meanwhile an owner replacing a fact writes the new one with `Disputes` naming the old and proposes its end: two decisions, both
+  current until approval, a disputed claim and never D220's replacement. `Amends` is only a correction leaving the rest standing
+  (`MemoryRelations.cs:9-10`).
 
 The person sees each citation's standing on the quest, and a landing's memory changes beside its commits.
 
-**Rejected.** A word, and a new kind of request. A mark as approver: it retires a record, not every claim citing it. Appointed staff
-before MC8. A same-maker approver (Lyntai's D109). Hiding the successor until the end lands: a second home for currency.
+**Rejected.** A word, or a new kind of request. A mark as approver. Appointed staff before MC8. A same-maker approver (Lyntai's
+D109). Hiding the successor until the end lands.
 
 ## 5. Records cited
 
-**Choice (O's shape, X's reading).** A citation is `{id, lines?, commit, fed, digest}`: `id` is `KnowledgeEntry.Id`,
-repository-qualified, with no machine path; `lines` the span a hit names; `commit` and `fed` from `EntryStanding`; `digest` of the
-entry's body. The session names id and lines; the coordinator fills the rest. Citing an entry already superseded is refused, naming its
-successor.
+**Choice (O's shape, X's reading).** A citation is `{id, lines?, commit, fed, digest}`: the repository-qualified `KnowledgeEntry.Id`,
+with no machine path; the span a hit names; `commit` and `fed` from the stored reading; the body's digest. The session names id and
+lines; the coordinator fills the rest. Citing an already superseded entry is refused, naming its successor.
 
-**The recheck reads one coherent reading.** `FindAsync` and `StandingsAsync` (`KnowledgeService.cs:320`, `:352`) taken apart can
-straddle a refresh; the uncommitted flag covers a whole repository's record folders (`:163-165`), and a failed probe reads clean
-(`:1130-1137`, `:408`). So a new `RecheckAsync`, which Lyntai's `Recheck` calls, brings the repository's reading current as a search
-does (`RootSignature.cs:11`), then, holding the index's writer gates for a bounded wait (`:203-206`), reads the entry, its file's marks,
-the reading's commit or feed, and the cited file's own state against that commit (one status per repository and pass).
+**The reading is a stored fact** (O, X). Connectors are processes over one `knowledge.db` (`Daoris.Service.Mcp/Program.cs:18-20`,
+`:104`); a reading lives in one process (`KnowledgeService.cs:185`, `:1189-1195`); the writer gates are in-process (`:203-206`),
+retirement takes neither (`:538-551`), and a feed records provenance after its entries (`:848`, `:855`). So the index keeps each
+repository's reading, `index_readings`: generation, commit, root signature (`RootSignature.cs:11`), fed or read; written in the
+transaction replacing the entries (`Store/SqliteKnowledgeStore.cs:152-156`), a feed's provenance with it (one connection,
+`ServiceFactory.cs:312`), only where the generation is still the one its writer read before reading the source (as the signature is,
+`KnowledgeService.cs:1116`), else not at all. Every replacing path passes one: refresh and ghosts (`KnowledgeIndex.cs:47`, `:67`),
+feed (`KnowledgeService.cs:848`), retirement (`:550`), restamping (`:653`), a withdrawn registration (`:753`). A crash leaves both old
+or both new; entries without a reading read inconclusive. The schema version moves, so the index rebuilds
+(`SqliteKnowledgeStore.cs:36`).
 
-- **Holds**: the same digest, no mark, the cited file unmodified at a commit read here, or a fed reading. A `ConfirmAsync`, never a
-  use. Another file's edit changes nothing (O).
+**The recheck reads one reading.** A new `RecheckAsync` compares the root's signature with the stored one, reading that root again
+where it moved (`KnowledgeService.cs:1110`); then, in one transaction (`Platform/ConnectionGate.cs:129-135`), reads the entry, its
+file's marks (`:381`) and the reading; then the cited file's own state against that commit, and the signature again. It takes no
+in-process gate (one path already holds `_feedGate`, then `_refreshLock`: `:686`, `:745`, `:644`). `StandingsAsync` reads the stored
+reading too.
+
+- **Holds**: the same digest, no mark, the cited file unmodified at a commit read here, or a fed reading; another file's edit changes
+  nothing (O).
 - **Failed**: a `Superseded by D<n>` under the same condition, sent to the approver.
 - **Amended**: no end; hits say `cited record amended by D<n>`.
-- **Inconclusive**, retried, validity untouched: the cited file modified or its state unknown (a failed probe, no seam, a gate not
-  taken in time); no commit and no feed; another digest, or an id gone, which asks the owner's next session to cite again (the id after
-  three tries); a scope refusal.
+- **Inconclusive**, retried, validity untouched: the cited file modified or its state unknown (a failed probe, no seam); the signature
+  moved during the check; no reading, commit or feed; another digest, or an id gone, asking the owner's next session to cite again (the
+  id after three tries); a scope refusal.
 
 A fed reading answers about its fed commit. A hit whose probe failed says `+ uncommitted unknown`.
 
-**Rejected.** Ingesting records. X's `standingRevision`: the coherent reading is the alternative X named, and the one mark a token would
-add, a supersession at citation, is refused there. X's `owner` and `sourceView`, which the id and `fed` carry. The commit alone. A
-moved id as Failed.
+**Rejected.** Ingesting records. The in-process gates as the snapshot. X's `standingRevision` (the stored generation is that token),
+`owner` and `sourceView` (the id and `fed` carry them). The commit alone. A moved id as Failed.
 
 ## 6. Requests to Lyntai, by quest
 
 Published at acceptance; Lyntai decides, and nothing is written into Lyntai.
 
-**A. A supersession that applies as one change** (2h waits on it). Needed: afterwards either the successor is current and every named
-predecessor is ended by it, or nothing changed; each predecessor guarded by the revision its approver read; nothing stored before the
-approval; a repeat after a lost response answering that it applied, naming the successor. Why: Daoris presents one repository's memory
-to other repositories as current, and the insert-then-end order shows both entries current between the calls, repaired only by a
-retry from a session that may have ended. It asks D241 to reopen its rejection of a transaction over insert and end, or to meet the
-need another way.
+**A. A supersession that applies as one change** (2h). Needed: afterwards either the successor is current and every named predecessor
+is ended by it, or nothing changed; each predecessor guarded by the revision its approver read; the call carries the caller's
+operation key, whose receipt commits in the replacement's transaction and is kept on each predecessor, so a repeat with that key
+answers that it applied, naming the successor, and changes nothing. Why: Daoris presents one repository's memory to others as current,
+and insert-then-end shows both entries current between the calls, repaired only by a retry from a session that may have ended. Daoris
+holds the successor on its own `awaiting` row and calls only after approval, so storing the observation first
+(`MemoryChangeGate.cs:65-68`) need not change. It asks D241 to reopen its rejection of a transaction over insert and end, or to meet
+the need another way.
 
-**B. MC7's view over another task key:** (1) no write path in its type, not a flag; (2) a read that moves nothing of the owner's (use
-stamp, confirmation, co-activation, decay), whatever the engine's options; (3) each result's source task, reference, opaque revision,
-relations and retirement standing, with a cheap `RevisionOf(reference)`; (4) expansion asking the host per reference before following
-it, a historical one saying so; (5) references, never copies, a foreign entry cited as a record is; (6) an engine without the view
-saying so.
+**B. MC7's view over another task key:** (1) no write path in its type; (2) a read moving nothing of the owner's (use stamp,
+confirmation, co-activation, decay); (3) each result's source task, reference, opaque revision, relations and retirement standing,
+and a cheap `RevisionOf(reference)`; (4) expansion asking the host per reference first; (5) references, never copies; (6) an engine
+without the view saying so.
+
+**C. An operation key on every write** (2j). Needed: a remember, relation, confirmation and end each accept a caller's key; its receipt
+(reference, revision after, outcome) commits in the effect's transaction; a repeat with the key answers the receipt and changes
+nothing; the receipt reads without effect. Why: after a lost response Daoris must know whether its operation ran, and the store cannot
+say: a same-content write advances the engine and bumps the revision (`SqliteMemoryGraphStore.cs:83-89`, `:130`), a repeated relation
+adds weight (`GraphMemoryEngine.cs:592-593`), a stamp names no confirmation (`MemoryGraphSql.cs:171-177`). Until then Daoris holds
+each such outcome for the person.
 
 **At presentation (X).** Cached material shown as current is first rechecked and stamped `checked at <revision>`; an invalidation
 before delivery discards it; where no check answers, it shows as historical.
 
-**Rejected.** Federation or merged ranking in the library. Replicas. The library knowing repositories, quests or policy.
+**Rejected.** Federation or merged ranking in the library; replicas; the library knowing repositories, quests or policy. Asking that
+nothing be stored before approval (O): Daoris's row holds it.
 
 ## 7. The order
 
-Smallest first, each proof seen failing first (O): the citation, which can start now (an amendment is a separate anchored entry, so
-the cited digest holds); the tools; the record and its recovery; the engine once a Lyntai release carries MC1 to MC6; presentation
-only after recheck, recovery and observational reads hold. One machine closes the order; cross-machine behavior waits on its transport
-(X). **Rejected:** X's first row of identities and contracts, which nothing proves until a door uses them.
+Smallest first, each proof seen failing first (O). **Can start now:** 2a (an amendment is a separate anchored entry, so the cited
+digest holds) and 2b beside it. **Then:** 2c after 2b's stand-in; 2d and 2e on a Lyntai release carrying MC1 to MC6; 2f after 2a, 2c
+and 2d; 2g on §6 B, 2h on §6 A, 2j on §6 C; 2i on the install. Cross-machine behavior waits on its transport (X). **Rejected:** X's
+first row of identities and contracts.
 
 ## 8. The rows
 
-- **KNOWCENTRAL2a: the citation and its recheck** (service; nothing of Lyntai's). **Proof:** a committed `Superseded by`
-  Failed; the same mark with the cited file modified, its probe failed or no seam, inconclusive; `Amended by` Amended; an edited body
-  inconclusive, a new citation asked; the same body at a later commit, another record file uncommitted, Holds; a removed id re-cited on
-  the third try; no commit and no feed inconclusive; a fed reading naming its commit; a refresh released by a test gate between entry
-  and standing never mixing two readings; the gates held past their bound inconclusive; a superseded entry refused at citation; a
-  failed probe's hit saying `+ uncommitted unknown`.
-- **KNOWCENTRAL2b: the tools, grants and workspace check, over a stand-in engine** (connector and driver). **Proof:**
-  `McpRoleFilterTests`' census over `fixtures/call-table.json`, its `_why` naming the four sources; `McpToolRegistrationTests` holding
-  `ConnectorTools`; the driver's lists matching `ReviewerServed` and `PartnerServed`; `Defaults` naming the five; a child served reads
-  alone, in C2a's words; another workspace's reference refused at each door for Build, Chat, Help, a bound and an unnamed caller; an
-  unnamed caller with no ambient workspace refused; a repository moved out of the workspace refused at the next call; Intake, Ask Daoris
-  and an unnamed caller refused write and end; the stand-in counting no write from a Read tool, root or child.
-- **KNOWCENTRAL2c: the record, recovery, journal and read set** (service store, over 2b's stand-in). **Proof:** each state move
-  journalled once, in order, no text; `staged` and `awaiting` unchanged by a kill; a kill before the engine call, and after its commit
-  but before the outcome, settled by each kind's receipt; an entry moved by a writer no receipt names `held`; two ends of one entry, one
-  `applied`, one `stale`; a cursor below the floor or across a new store re-validating; a bootstrap missing no row a writer on a second
-  connection commits during it; the read set trimmed at its bounds.
-- **KNOWCENTRAL2d: the engine, staging, approver and attribution** (after a Lyntai release carries MC1 to MC6). **Proof:** decay state,
-  links, review rows and revision equal across a search, a get and an expansion, by root and child; a tree's addition seen `staged` by
-  its own session alone until landing, dropped at discard; a chat's applied at `completed`, kept after a stop or failure until the
-  person decides, carried by a continuation; no row holding a tree path; an end `awaiting` across a restart, decided by the person
-  through the row; a proposer or its child approving its own end refused; attribution surviving a continuation (its new role revision
-  on later rows) and `BindingStore.Forget`, an unreported model `unknown`; `supersedes` refused, naming §6 A.
-- **KNOWCENTRAL2e: a reader's proposal as a quest.** **Proof:** two proposals from one repository one quest; a decline reaching the
-  proposer; a moved target stale; closing applying nothing; no proposer's door ending the entry; both languages.
-- **KNOWCENTRAL2f: currency at presentation** (after 2a, 2c, 2d). **Proof:** an entry ended between a read and a hand-over's brief
-  shown ended; an invalidation before delivery discarding the answer; a reader told once; an inconclusive recheck never stamped.
-- **KNOWCENTRAL2g: MC7's views** (after §6 B). **Proof:** the owner's counters equal across a foreign read; a foreign expansion outside
-  the scope refused before lookup; a foreign citation rechecked through the view; an engine without it saying so.
-- **KNOWCENTRAL2h: supersession** (after §6 A). **Proof:** a replacement killed between its parts leaving all or nothing; no read seeing
-  both current; a repeat after a lost response `applied`, naming the successor; a mismatch writing nothing.
-- **KNOWCENTRAL2i: the installed measurement** (two repositories on one machine). **Measures:** the journal's p95 and size beside
+Each row, then its proof:
+- **KNOWCENTRAL2a: stored reading, citation, recheck** (service): `index_readings`, the generation check on every replacing path, the
+  feed's provenance in its transaction, `RecheckAsync` and `StandingsAsync` over it. `Superseded by` Failed, inconclusive with the file
+  modified, its probe failed or no seam; `Amended by` Amended; an edited body inconclusive, re-cited; the same body at a later commit,
+  or another record file uncommitted, Holds; a removed id re-cited on the third try; a fed reading naming its commit; a second
+  `KnowledgeService` over the file writing, retiring or restamping between entry and standing never mixing readings; a refresh begun
+  before another's write refused; a restamp racing a refresh never writing old bodies back; a fault between a feed's entries and
+  provenance, then a restart, leaving the old pair; no reading, or the root moved mid-check, inconclusive; a superseded entry refused
+  at citation; `+ uncommitted unknown`.
+- **KNOWCENTRAL2b: tools, grants, workspace check** (connector, driver), over a stand-in repeating the write effects §6 C names and a
+  confirmation's revision bump: the census over `fixtures/call-table.json`, its `_why` naming the four sources; `ConnectorTools` held
+  to the registration; the driver's lists; `Defaults` naming the five; a child served reads alone; another workspace's reference
+  refused at each door for Build, Chat, Help, bound and unnamed callers, and with no ambient workspace; a repository moved out refused
+  at its next call; Intake, Ask Daoris and an unnamed caller refused write and end; no write from a Read tool.
+- **KNOWCENTRAL2c: record, commit points, recovery, journal, read set** (service store, over 2b's stand-in): each move journalled once,
+  in order, no text; `staged` and `awaiting` unchanged by a kill; a fault inside the advance's or `PostAsync`'s transaction leaving
+  neither record nor move, a kill after it leaving `ready` rows the next start applies; a post naming no landing leaving rows `staged`;
+  models from handed turns (one turn, its model; turns A, B, A, a row of the third naming A; none later, `unknown`); after a kill in
+  `applying`, an end settled by its token, `stale` under another's, ended again at the revision read; a concurrent same-content write,
+  a repeated relation and an unrelated later confirmation each `held`, no second effect; a Holds during an awaiting end kept on the row;
+  two ends of one entry, one `applied`, one `stale`; cursors re-validating below the floor or across stores; a bootstrap missing no row
+  a second connection commits; a trimmed reference never told.
+- **KNOWCENTRAL2d: engine, the driver's commit points, approver, sweep** (on a Lyntai release with MC1 to MC6): decay state, links,
+  review rows and revision equal across search, get and expansion, root and child; a connector writing only `staged` rows; a tree's
+  addition seen by its session and hand-over continuation alone until the post; a chat's released at `completed`, kept after a stop
+  until the person decides; no tree path on a row; an end `awaiting` across a restart, decided through the row; a proposer or its child
+  approving its own end refused; attribution surviving a continuation and `BindingStore.Forget`; a one-turn driven session's write
+  naming its model; a run killed mid-turn `unknown`; the sweep rechecking `DueAsync`'s entries; no token on the page; `supersedes`
+  refused, naming §6 A.
+- **KNOWCENTRAL2e: a proposal as a quest** (after 2d): two proposals from one repository one quest; a decline reaching the proposer; a
+  moved target stale; closing applying nothing; no proposer's door ending the entry; `Disputes` and a proposed end shown as two
+  decisions; both languages.
+- **KNOWCENTRAL2f: currency at presentation** (after 2a, 2c, 2d): an entry ended between a read and a hand-over's brief shown ended; an
+  invalidation before delivery discarding the answer; a reader told once; an inconclusive recheck never stamped.
+- **KNOWCENTRAL2g: MC7's views** (after §6 B): the owner's counters equal across a foreign read; a foreign expansion outside the scope
+  refused before lookup; a foreign citation rechecked through the view; an engine without it saying so.
+- **KNOWCENTRAL2h: supersession** (after §6 A): a replacement killed between its parts leaving all or nothing; no read seeing both
+  current; a repeat by key `applied`, naming the successor, the key on each predecessor; a mismatch writing nothing.
+- **KNOWCENTRAL2i: the installed measurement** (two repositories, one machine), measuring the journal's p95 and size beside
   FOUNDATION1k's; proposals a week; recheck latency and inconclusive rate; false-current answers across a restart and an interrupted
-  delivery; `held` rows; the model that ran; whether use should reinforce.
+  delivery; `held` rows; models named and `unknown`; whether use should reinforce.
+- **KNOWCENTRAL2j: recovery by key** (after §6 C): a lost response repeated by its key applied once; a held row settled by its
+  receipt; a key with no receipt applied again.
 
-**Waits on measurement.** The second opinion approves only once MC8's verdict meets its bar; MC3's candidate coverage is Lyntai's.
+## How each finding was resolved
 
-## Round 2: how each finding was resolved
-
-| Finding | Answered in |
+| Finding | Resolution, where |
 |---|---|
-| Recovery (X); states against crash settlement (O 3) | §3; 2c |
-| Atomic replacement (X) | §4, §6 A; 2h |
-| Reads' internal effects (X) | §2; 2b, 2d |
-| Recheck evidence (X); the repository-wide flag (O 5) | §5, narrowed to the cited file; 2a |
-| Historical attribution (X); the tier (O 4) | §1, at the call (X's operation time); 2d |
-| Work without a landing (X); no tree, the tree path (O 8) | §1; 2d |
-| No workspace check to copy (O 1) | §2; 2b |
-| The person's card (O 2) | §3 `awaiting`; 2d |
-| Four permission sources (O 6) | §2; 2b |
-| The read record (O 7) | §3; 2c, 2f |
-| Outbox rejection (X) | §3, rejected with a new reason |
-| `standingRevision` rejection (X) | §5: rejected; X's coherent reading taken |
-| Rows, 2f, 2h (X); 2a now, bootstrap (O) | §7, §8 |
+| 2 X recovery, O 3 states | Only `applying` settled (§3, 2c) |
+| 2 X atomic replacement | `supersedes` refused until §6 A (§4, 2h) |
+| 2 X read effects, recheck; O 5 flag | `ReinforceOn = None`; the cited file, a failed probe inconclusive (§2, §5) |
+| 2 X attribution, O 4 tier | Role and revision at the call (§1) |
+| 2 X no landing, O 8 tree | Commit points by session; Keep, Drop (§1) |
+| 2 O 1, 2, 6, 7 | Workspace check; `awaiting`; four sources; read set (§2, §3) |
+| 2 X outbox, `standingRevision` | Outbox rejected; the generation is the token (§3, §5) |
+| 3 O 1, X gates; X interrupted feed | Reading stored with entries, generation-checked, read in one transaction (§5, 2a) |
+| 3 O 2, X the model | Models from each row's turn at the commit point (§1, 2c) |
+| 3 O 3, X lifecycle | Moved in the commit point's transaction; only the service calls the engine (§1, §3) |
+| 3 X recovery, O 5 | Ends by token, else `stale`; the rest held; §6 C (§3, 2c) |
+| 3 O 4, 6, 7, trim | Holds on the row; sweep calls `RecheckAsync`; `From`; stripped token; trimmed never told (§1, §3) |
+| 3 X `Amends`, O, X request A | `Disputes`, not D220's replacement; A gains a key, loses the approval clause (§4, §6) |
+| 2, 3 rows | 2a, 2b now; 2j added (§7, §8) |
