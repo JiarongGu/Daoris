@@ -48,6 +48,13 @@ public static class AtomicFile
     public static void WriteText(string path, string text) =>
         Write(path, beside => File.WriteAllText(beside, text, Utf8));
 
+    /// <summary>
+    /// Write <paramref name="text"/> to <paramref name="path"/> whole, or not at all, renaming only where <paramref name="proceed"/>, asked
+    /// just before the rename, says so (FOUNDATION1w-s part 2: a keeping lock read again). False where it did not, and the beside file is gone.
+    /// </summary>
+    internal static bool WriteTextWhile(string path, string text, Func<bool> proceed) =>
+        Write(path, beside => File.WriteAllText(beside, text, Utf8), proceed);
+
     /// <summary>Write <paramref name="bytes"/> to <paramref name="path"/> whole, or not at all.</summary>
     public static void WriteBytes(string path, byte[] bytes) =>
         Write(path, beside => File.WriteAllBytes(beside, bytes));
@@ -107,13 +114,15 @@ public static class AtomicFile
         }
     }
 
-    private static void Write(string path, Action<string> write)
+    private static bool Write(string path, Action<string> write, Func<bool>? proceed = null)
     {
         var beside = $"{path}.{Guid.NewGuid():N}.writing";
         try
         {
             write(beside);
+            if (proceed is not null && !proceed()) return false;
             Replace(beside, path);
+            return true;
         }
         finally
         {
