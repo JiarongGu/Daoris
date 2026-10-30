@@ -1404,6 +1404,11 @@ export const REACH = Object.freeze([
     why: 'written into every merge by tools/orient-index.mjs and held by its check, which every merge runs; no suite reads it',
   },
   {
+    paths: ['src/Daoris.Desktop/Daoris.Desktop.Driver/Review/Domain/OpinionPermissions.cs'],
+    gates: ['service', 'driver'],
+    why: "the service's McpRoleFilterTests holds the reviewer's offered tools to the call table (FOUNDATION1r)",
+  },
+  {
     paths: ['docs/model-roles.md'],
     gates: ['service', 'driver'],
     why: "the service's scan, and the driver's RoleDoorTests holds the Designer suggestion to its build-judgement row (FOUNDATION1y-i)",
