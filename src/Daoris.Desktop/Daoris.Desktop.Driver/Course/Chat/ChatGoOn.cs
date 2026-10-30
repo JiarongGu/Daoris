@@ -213,11 +213,9 @@ internal sealed class ChatGoOn
     /// Whether an older build's box for the record's ended limit move or its hand-over is still in place, or a hand-over the store carries waits
     /// to be taken (FOUNDATION1f-vi part a, f-v part a; §3.3, §13.5): the record is the course's <c>Never</c> until the come-up's import has set
     /// the box aside and the hand-over has been taken, so no go-on, sweep or take-up resumes its old part meanwhile. The box's presence is the
-    /// reading, which holds between come-ups and for a box held behind a standing move or for the start's confirmation alike. FOUNDATION1o
-    /// (§3.4 rule 4): so is any conversation move standing for it, whose open carries the words kept there meanwhile.
+    /// reading, which holds between come-ups and for a box held behind a standing move or for the start's confirmation alike.
     /// </summary>
-    private bool Boxed(string session) =>
-        new LimitBoxes(_context.Home).Read(session) is not null || _handOver.Holds(session) || _limit.Moves.Stands(session);
+    private bool Boxed(string session) => new LimitBoxes(_context.Home).Read(session) is not null || _handOver.Holds(session);
 
     /// <summary>
     /// The ended chats whose words wait on their record from while no runner heard them (MSG1c2): words kept while no shell
@@ -333,7 +331,14 @@ internal sealed class ChatGoOn
             return;
         }
 
-        if (_context.Talking.ContainsKey(session) || _context.Turned.ContainsKey(session) || _context.GoingOn.ContainsKey(session) || Boxed(session)) return;
+        // FOUNDATION1o (§3.4 rule 4): a word shown while a conversation move stands is the move's, which its open carries. The come-up and the
+        // sweep take up dead runs' moves first, and keep their own guards, so an older build's come-up reads as it did.
+        if (_context.Talking.ContainsKey(session) || _context.Turned.ContainsKey(session) || _context.GoingOn.ContainsKey(session)
+            || _limit.Moves.Stands(session))
+        {
+            return;
+        }
+
         _ = Task.Run(async () =>
         {
             try
