@@ -6,8 +6,8 @@ import i18n from '../../locales/i18n';
 import { HandOverField, type HandOverRule, handOverRowSays, handOverSays, handOverSummary, handOverToast } from './HandOver';
 
 // MIXAGENT1c (D163 point 3): what an agent's ask to hand its session over does, set on a repository's Setup and on a workspace's
-// Defaults as `daoris driver handover` sets it from a terminal (D50). Each mode's sentence is the terminal's (`handOverModeSays` in
-// the CLI's `handover.ts`, the driver's `HandOverRules.Says`), and the field sends the twins' edit, which the driver judges.
+// Defaults as `daoris driver handover` sets it from a terminal (D50). Each mode's sentence is the terminal's (the driver's
+// `HandOverRules.Says`), and the field sends the twins' edit, which the driver judges.
 
 const t = i18n.t.bind(i18n);
 
