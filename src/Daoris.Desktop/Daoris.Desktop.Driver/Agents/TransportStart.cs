@@ -67,6 +67,9 @@ internal sealed record TransportProtocol(string Cwd)
     /// <summary>The permission posture, in the adapter's own vocabulary (ACP3); null asks none.</summary>
     public string? Posture { get; init; }
 
+    /// <summary>Whether its agent is asked for typed session failures (CODEXSTATUS1, <see cref="AcpSession.TypedFailures"/>).</summary>
+    public bool TypedFailures { get; init; }
+
     /// <summary>What <c>session/new</c> carries for the rules composed for this session (PERM1).</summary>
     public object? Meta { get; init; }
 

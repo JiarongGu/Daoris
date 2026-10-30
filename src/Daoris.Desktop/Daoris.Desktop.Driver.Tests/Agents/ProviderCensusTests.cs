@@ -56,7 +56,7 @@ public sealed class ProviderCensusTests
     [
         ("claude-code", ["ClaudeStreamJson", "ClaudeStreams", "ClaudeUsage", "ClaudeTrust", "ClaudeErrors", "ClaudeAcpErrors", "ClaudeAcp",
             "ClaudeLimits", "ClaudeWindows", "ClaudeSignIn", "ClaudeReleases", "ClaudeReleaseDownloads", "ClaudeCodeAdapter", "ClaudeAcpAdapter"]),
-        ("codex", ["CodexUsage", "CodexAccounts", "CodexLimits", "CodexReleases", "CodexReleaseDownloads", "CodexAcpAdapter"]),
+        ("codex", ["CodexUsage", "CodexAccounts", "CodexLimits", "CodexErrors", "CodexReleases", "CodexReleaseDownloads", "CodexAcpAdapter"]),
         ("dsh", ["DshProfile", "DshAdapter"]),
         ("stub", ["StubAdapter", "AcpStubAdapter"]),
     ];

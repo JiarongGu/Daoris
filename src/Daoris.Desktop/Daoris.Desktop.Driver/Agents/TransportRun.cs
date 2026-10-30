@@ -292,7 +292,10 @@ internal sealed class TransportRun(ITransportHost host, ISessionAdapter adapter,
         var session = new AcpSession(
             host.Hearing(process.StandardOutput, id), process.StandardInput, Line, closeTimeout: null, protocol.Posture, protocol.Meta, Event,
             streams: records.Output?.ForSession(id),
-            onConversation: records.KeepAs is not { } keepAs ? null : named => host.KeepConversation(id, keepAs, named));
+            onConversation: records.KeepAs is not { } keepAs ? null : named => host.KeepConversation(id, keepAs, named))
+        {
+            TypedFailures = protocol.TypedFailures,
+        };
         Session = session;
         protocol.Configure?.Invoke(session);
         protocol.Ending?.Open(session);

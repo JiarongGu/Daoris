@@ -135,6 +135,40 @@ public sealed class AgentErrorsTests
         static (AgentErrorKind, string) Pair(AgentError read) => (read.Kind, read.By);
     }
 
+    /// <summary>
+    /// 🔴 CODEXCREDITS1: the workspace-credit refusal the install met, as the door carries it, is a limit with D125's unstated reset, read
+    /// by Codex's own table: never fatal (a strike) and never transient (a blind retry).
+    /// </summary>
+    [Fact]
+    public void Codex_s_workspace_out_of_credits_reads_as_a_limit_with_an_unstated_reset()
+    {
+        var read = Read(
+            "codex-acp", -32603, null,
+            "Internal error: Your workspace is out of credits. Ask your workspace owner to refill in order to continue.");
+
+        Assert.Equal((AgentErrorKind.Limit, "own:words:limit", false), (read.Kind, read.By, read.Limit!.Stated));
+        Assert.Equal(Seen + AccountLimits.DefaultCoolOff, read.Limit.Until);
+    }
+
+    /// <summary>
+    /// 🔴 CODEXSTATUS1 (§4.3): <c>codex-acp</c>'s typed categories, read by the category alone and never by the words beside it:
+    /// <c>service</c> and <c>connection</c> are transient, <c>limit</c> a limit with the unstated reset, <c>access</c> access, <c>request</c>
+    /// and a category nobody recorded fatal.
+    /// </summary>
+    [Theory]
+    [InlineData("service", AgentErrorKind.Transient)]
+    [InlineData("connection", AgentErrorKind.Transient)]
+    [InlineData("limit", AgentErrorKind.Limit)]
+    [InlineData("access", AgentErrorKind.Access)]
+    [InlineData("request", AgentErrorKind.Fatal)]
+    [InlineData("unknown", AgentErrorKind.Fatal)]
+    public void Codex_s_typed_categories_read_by_the_category_alone(string category, AgentErrorKind kind)
+    {
+        Assert.Equal(kind, Read("codex-acp", null, category, "Selected model is at capacity. Please try a different model.").Kind);
+        // The words alone, with no category, are read by no table: a sentence an agent wrote is nothing to match.
+        Assert.Equal(AgentErrorKind.Fatal, Read("codex-acp", null, null, "Selected model is at capacity. Please try a different model.").Kind);
+    }
+
     /// <summary>The harness's own lines are read for access alone (§3.3): a transient sentence there is no transient.</summary>
     [Fact]
     public void The_harness_s_lines_are_read_for_access_alone()

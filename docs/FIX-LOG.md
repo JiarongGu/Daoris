@@ -57,6 +57,19 @@ repository.
 - **Root cause:** `codex-acp` streams the command's output and completes its call after the prompt is answered; `AcpWake` took that as a turn begun, and a Codex turn says no end (no origin on `usage_update`).
 - **Fix:** such updates begin no turn; where the adapter is not Claude Code's, a turn's quiet, with no call open, ends it.
 - **Verify:** `AcpBackgroundCodexTests`, the wake case red first.
+## 2026-10-31 - Codex's workspace-credit refusal was an ordinary failed turn (CODEXCREDITS1)
+
+- **Symptom:** three driven sessions ended on `Your workspace is out of credits…` as a strike.
+- **Root cause:** `CodexLimits` recorded only the usage-limit sentence, so the reader called this one fatal.
+- **Fix:** the sentence is recorded as a limit with no stated reset (D125's default). The account cools, the next allowed account takes the work, and with none the quest waits.
+- **Verify:** `AccountLimitsTests`, `AgentErrorsTests`, `CodexCreditsTickTests` (red without the marker).
+
+## 2026-10-31 - Codex's capacity failure bypassed the error policy (CODEXSTATUS1)
+
+- **Symptom:** a turn ended on `Selected model is at capacity…` as agent text, read as a clean turn.
+- **Root cause:** `codex-acp` 2.1.1 marks a terminal failure only for a client that negotiates AIR `sessionFailure`; the initialize never did.
+- **Fix:** the Codex door's toolchain declares it, the initialize asks, and an `error`-severity marker fails the prompt as an error: `service` and `connection` retry transient with the words kept. Agent text is never read.
+- **Verify:** `AcpTypedFailureTests`, `AgentErrorsTests`.
 
 ## 2026-10-31 - A test still pinned the first-look baseline row m-iv replaced (FOUNDATION1 m-iv)
 
