@@ -466,6 +466,53 @@ public sealed class IntegrationFormGitTests : LandedFixture
     }
 
     /// <summary>
+    /// 🔴 A declared line rule (INTEGRATE1d, §5.2 step 4's <c>run</c> writer): both members change only the line its pattern matches, which the
+    /// merge by the base settles for its writer to write again from the merged tree, inside the member's merge commit; the rule is read from the
+    /// declaration the person accepted for integration, at the line, or it settles nothing and the file is a conflict.
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task A_conflict_in_the_line_a_declared_rule_matches_is_settled_and_written_again_only_where_its_declaration_is_accepted(bool accepted)
+    {
+        var root = await RepositoryAsync("engine");
+        Directory.CreateDirectory(Path.Combine(root, "docs"));
+        await File.WriteAllTextAsync(Path.Combine(root, "docs", "STATUS.md"), "Status: base\n");
+        await CommitAsync(
+            root, "daoris.gates.json",
+            """{ "integration": { "merge": [ { "paths": "docs/STATUS.md", "line": "^Status: ", "run": "git ls-files -- *.txt > docs/STATUS.md" } ] } }""" + "\n",
+            "the declaration");
+        var declared = (await GitAsync(root, "rev-parse", "HEAD:daoris.gates.json")).Trim();
+        var a = await BranchAsync(root, "feature/a", ("a.txt", "a\n"), ("docs/STATUS.md", "Status: a\n"));
+        var b = await BranchAsync(root, "feature/b", ("b.txt", "b\n"), ("docs/STATUS.md", "Status: b\n"));
+        var store = Store("run-a");
+        Queue(store, "ra", "feature/a", a, 1);
+        Queue(store, "rb", "feature/b", b, 2);
+        var config = accepted ? DriverConfig.Empty.WithIntegrationGates("engine", declared) : null;
+
+        var run = await Replays(store).RunAsync(Ask(root, config: config));
+
+        var candidate = store.Candidate(run.Candidate!.Id)!;
+        var second = Member(store, candidate, "rb");
+        if (accepted)
+        {
+            Assert.Equal(IntegrationMemberStates.Replayed, second.State);
+            Assert.Equal([Member(store, candidate, "ra").Replayed!, b], await ParentsOfAsync(root, second.Replayed!));
+            Assert.Equal("a.txt\nb.txt\nshared.txt\n", await ShowAsync(root, second.Replayed!, "docs/STATUS.md"));
+            var step = store.Steps(candidate.Id).Single(each => each is { Step: IntegrationStepNames.Replay, Request: "rb" });
+            Assert.Contains("The declared line rule settled `docs/STATUS.md`", step.Said, StringComparison.Ordinal);
+        }
+        else
+        {
+            Assert.Equal(IntegrationMemberStates.Held, second.State);
+            Assert.Contains("docs/STATUS.md", second.Said, StringComparison.Ordinal);
+        }
+
+        Assert.Equal("", await StatusAsync(run.Tree!));
+        await AssertNoMergeAsync(run.Tree!);
+    }
+
+    /// <summary>
     /// 🔴 A real conflict under <c>conflicts: hold</c> (§5.4): nobody is told, the member is set aside in its own state with the conflict said, its
     /// request stays open and standing on the line, and the members after it go on in a clean tree. Its request is not queued again, so the next
     /// candidate does not form it to conflict and hold it for ever.
