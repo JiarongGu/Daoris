@@ -145,7 +145,8 @@ public sealed class MoveStoreCensusTests
     /// <summary>
     /// FOUNDATION1f-iv part b (the foundation design §3.3): a driven line's take-up runs at the watch's first look, at the slot where uncertain
     /// words are settled and before it, after the orphan sweep and the supervisor's, through the driver's own holder (<c>Driver.Moves</c>, whose
-    /// scope is the lease holder's), so the watch names no type of the move record and the census of readers gains none.
+    /// scope is the lease holder's, or a <c>--share</c> loop's own lines, SHAREMOVES1), so the watch names no type of the move record and the census
+    /// of readers gains none; the headless host tells the watch it runs beside the lease holder, and the watch tells each driver it builds.
     /// </summary>
     [Fact]
     public void The_driven_take_up_runs_at_the_watch_s_first_look_through_the_drivers_holder_before_uncertain_words_are_settled()
@@ -155,10 +156,15 @@ public sealed class MoveStoreCensusTests
         var take = watch.IndexOf(".TakeUpMovesAsync(ct)", StringComparison.Ordinal);
         var uncertain = watch.IndexOf("UncertainWords.SettleAsync(", StringComparison.Ordinal);
         Assert.True(sweep > 0 && take > sweep && uncertain > take, $"sweep {sweep}, take-up {take}, uncertain {uncertain}");
-        Assert.Matches(@"Stages\.TimeAsync\(\s*""moves"",\s*\(\)\s*=>\s*new Driver\([^;]*\)\s*\{\s*Log = Log\s*\}\.TakeUpMovesAsync\(ct\)\)", watch);
+        Assert.Matches(@"Stages\.TimeAsync\(\s*""moves"",\s*\(\)\s*=>\s*new Driver\([^;]*\)\s*\{\s*Log = Log,\s*Share = Share\s*\}\.TakeUpMovesAsync\(ct\)\)", watch);
 
         var driver = CourseCensusTests.WithoutComments(File.ReadAllText(Path.Combine(Driver, "Loop", "Driver.cs")));
         Assert.Matches(@"internal async Task TakeUpMovesAsync\(CancellationToken ct\) => await Moves\.LookAsync\(ct\)", driver);
+        Assert.Matches(@"scope: Share \? MoveTakeUpScope\.Shared\([^;]*\) : MoveTakeUpScope\.LeaseHolder", driver);
+        Assert.Matches(@"new Driver\([^;]*\)\s*\{\s*Share = Share,", watch);
+
+        var host = CourseCensusTests.WithoutComments(File.ReadAllText(Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Host", "Program.cs")));
+        Assert.Matches(@"new DriverWatch\([^;]*\)\s*\{\s*Log = log, Share = held\.Beside is not null \}", host);
     }
 
     /// <summary>

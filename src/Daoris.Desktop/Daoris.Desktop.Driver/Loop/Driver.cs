@@ -54,22 +54,31 @@ public sealed class Driver(
 
     /// <summary>
     /// The move record the driven carry-on keeps (FOUNDATION1f-iv part a; the foundation design §3.3, §13.4): the one store the live limit move
-    /// writes, handed the lease holder's scope (executor <c>driven</c>). Made on first use, since the watch builds a driver for each look and the
-    /// store is opened for each use; a test hands one of its own run.
+    /// writes, handed the lease holder's scope (executor <c>driven</c>), or a shared loop's, only the lines it runs (SHAREMOVES1, <see cref="Share"/>).
+    /// Made on first use, since the watch builds a driver for each look and the store is opened for each use; a test hands one of its own run.
     /// </summary>
     internal ConversationMoves Moves
     {
-        get => _moves ??= new ConversationMoves(home, service, Context.Events, output, scope: MoveTakeUpScope.LeaseHolder);
+        get => _moves ??= new ConversationMoves(
+            home, service, Context.Events, output,
+            scope: Share ? MoveTakeUpScope.Shared(session => Context.Runs.Live.Values.Contains(session)) : MoveTakeUpScope.LeaseHolder);
         init => _moves = value;
     }
 
     private ConversationMoves? _moves;
 
     /// <summary>
-    /// The watch's first look of a loop (FOUNDATION1f-iv part b; the foundation design §3.3, §19.1): every dead loop's driven move taken up
-    /// through <see cref="Moves"/>, whose scope is the lease holder's, and ended by its phase, so a line a dead loop left a move standing for
-    /// is carried on by this loop and a word it sent and never took is taken, none sent again. The look reading each hold, not the shell's
-    /// come-up, since a come-up's say of another shell on the home is the shell's own chat run's. Never faults.
+    /// Whether this is a <c>--share</c> loop running beside the lease holder (SHAREMOVES1, the foundation design §3.3): its holder takes up only
+    /// the moves of the lines this loop runs, the sessions its <see cref="RunningSessions"/> holds as the take-up reads them, and the lease
+    /// holder's look takes up the rest. False, the default, is the lease holder's own: every dead run's driven move.
+    /// </summary>
+    public bool Share { get; init; }
+
+    /// <summary>
+    /// The watch's first look of a loop (FOUNDATION1f-iv part b; the foundation design §3.3, §19.1): every dead loop's driven move of this
+    /// loop's scope taken up through <see cref="Moves"/> (the lease holder's, or a shared loop's own lines), and ended by its phase, so a line a
+    /// dead loop left a move standing for is carried on by this loop and a word it sent and never took is taken, none sent again. The look
+    /// reading each hold, not the shell's come-up, since a come-up's say of another shell on the home is the shell's own chat run's. Never faults.
     /// </summary>
     internal async Task TakeUpMovesAsync(CancellationToken ct) => await Moves.LookAsync(ct).ConfigureAwait(false);
 
