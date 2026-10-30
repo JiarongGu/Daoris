@@ -5,6 +5,13 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-30 - The other-maker carry-on case read the last prompt, which the turn-end carry-on now writes (MAKERTRAIL2, LANDBACK1 part 2)
+
+- **Symptom:** the q-and-r candidate's driver Process half failed `MakerTrailTickTests.A_carry_on_to_another_maker_is_told_the_first_makers_trailer_for_the_work_it_left`, and it failed again alone: the prompt read began "Your quest is done, but your tree has 1 u…", not "You are carrying on quest `#q1`".
+- **Root cause:** the case takes the protocol stand-in's last `session/prompt`. Its first maker's work stays uncommitted in the tree by design (the incident's shape), so the carried-on part's turn now ends done with a dirty tree, and LANDBACK1 part 2 carries it on in Daoris's words: a later prompt. The product is right; the case named the wrong prompt.
+- **Fix:** test only. The case reads the part's first prompt, the carry-on's brief, and says why.
+- **Verify:** `MakerTrailTickTests`, `TurnCarryTickTests` and `ContinuedChoiceTickTests` together, 6 passed. The same candidate's tool case `merge-queue.test.ts:1778` (a member the line already holds, contained at once; 709 s in the run, "it is merged already") passed alone: a FLAKE1 sighting.
+
 ## 2026-10-30 - Batch q's candidate met four checks its members' builders never ran (INTEGRATE1e, INTEGRATE1f, LANDBACK1)
 
 - **Symptom:** batch q's candidate failed the driver's `ParticipantWorkReadersTests` (`Workplace/IntegrationStore.cs reads 1 line(s) and is not listed`), the cli gate's `optional-locks` (`IntegrationAfterLanding.cs:197: git diff without --no-optional-locks`), `test-map --check` (the admission fixture's hand row omitted `driver-process`) and the modules' `DriverModuleLandSyncTests` (the press answer's fields gained `carried`). The tool-tests gate's `as-merged.test.mjs:113` case (a commit-date check during a merge, `1 !== 0`) passed alone, 8 of 8: a FLAKE1 sighting.
