@@ -113,6 +113,12 @@ public sealed record WorkflowGraphRunFacts(WorkflowRunFacts Run, string RunId, N
 {
     /// <summary>This machine's session branches (<see cref="SessionBranches"/>), which name a branch unit its nodes observe by its branch.</summary>
     public IReadOnlyList<GrownBranch> Branches { get; init; } = [];
+
+    /// <summary>
+    /// The nodes whose integration the integration record says promoted (INTEGRATE1n part n3, <see cref="IntegrateNodes.PromotedAsync"/>): their stop
+    /// is not offered, since nothing reverses the line (F50). Read by the reader, which asks the door; none here is none promoted.
+    /// </summary>
+    public IReadOnlySet<string> Promoted { get; init; } = new HashSet<string>(StringComparer.Ordinal);
 }
 
 /// <summary>
@@ -167,7 +173,7 @@ public static class WorkflowGraphRuns
             var status = StatusOf(node.Id);
             var (state, detail) = StateOf(node, status.State);
             var asked = facts.Record?.Pending.LastOrDefault(word => word.Node == node.Id);
-            var acts = open && asked is null ? RunNodeWords.Acts(node, status) : [];
+            var acts = open && asked is null ? RunNodeWords.Acts(node, status, facts.Promoted.Contains(node.Id)) : [];
             var step = new WorkflowRunStep(cell, state, detail)
             {
                 Node = node.Kind,

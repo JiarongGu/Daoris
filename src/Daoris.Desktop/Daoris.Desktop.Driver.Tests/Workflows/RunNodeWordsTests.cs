@@ -137,6 +137,40 @@ public sealed class RunNodeWordsTests : NodeRunFixture
         Assert.True(RunNodeWords.Word(Files, RunId, "go", NodeWordActs.Stop, "not promoted", () => _now, new HashSet<string> { "handed" }).Done);
     }
 
+    /// <summary>A door whose request for the run's unit at a tip is open, its member promoted or not (INTEGRATE1n part n3).</summary>
+    private sealed class PromotingDoor(bool promoted, DateTimeOffset at) : IIntegrationDoor
+    {
+        public Task<IntegrationRequest?> FindAsync(string unit, string tip, CancellationToken ct) =>
+            Task.FromResult<IntegrationRequest?>(new IntegrationRequest("request-1", "engine", "default", "feature/q7", tip, IntegrationRoutes.Node, "main",
+                IntegrationRequester.NodeStart, new LandingIntegrate().Resolved(), at) { Unit = unit });
+
+        public Task<IntegrationAdmission> AskAsync(IntegrationAsk ask, DriverConfig config, CancellationToken ct) => throw new InvalidOperationException();
+
+        public Task<bool> PromotedAsync(IntegrationRequest request, CancellationToken ct) => Task.FromResult(promoted);
+
+        public Task<bool> DropAsync(IntegrationRequest request, CancellationToken ct) => Task.FromResult(false);
+    }
+
+    /// <summary>
+    /// INTEGRATE1n part n3 (F50): the doors the person presses a stop through (the page's route and the terminal's verb) read the integration
+    /// record before they keep it: a node whose open request's member promoted is refused its stop with nothing kept, while a node whose request
+    /// is still queued, and a node with no request of its own, are kept as before.
+    /// </summary>
+    [Fact]
+    public async Task The_stop_of_a_node_whose_request_promoted_is_refused_by_the_door_that_reads_the_integration_record()
+    {
+        await GoAheadWaitingAsync();
+        var call = new WorkPerformCall(RunUnit, "integrate", 1, "i-1", IntegrateNodes.Key(RunUnit, Tip1), Tip1, [], _now);
+        Files.Write(Files.Read(RunUnit)! with { Attempts = [new NodeAttempt("go", 1, IntegrateNodes.Sender, call, AttemptStates.Recorded) { RecordedAt = _now }] });
+
+        var refused = await RunNodeWords.WordAsync(Files, new PromotingDoor(true, _now), RunId, "go", NodeWordActs.Stop, "too late", () => _now);
+        Assert.Equal(RunNodeWords.Promoted, refused.Refused);
+        Assert.Empty(Files.Read(RunUnit)!.Pending);
+
+        Assert.Equal(RunNodeWords.NotNode, (await RunNodeWords.WordAsync(Files, new PromotingDoor(true, _now), RunId, "deploy", NodeWordActs.Stop, null, () => _now)).Refused);
+        Assert.True((await RunNodeWords.WordAsync(Files, new PromotingDoor(false, _now), RunId, "go", NodeWordActs.Stop, "still queued", () => _now)).Done);
+    }
+
     /// <summary>The lease's holder alone keeps a word: a process that does not hold it keeps nothing, and says where to say it.</summary>
     [Fact]
     public async Task A_process_without_the_lease_keeps_no_word()

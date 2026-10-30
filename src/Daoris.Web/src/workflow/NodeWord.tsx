@@ -6,7 +6,7 @@ import { type Answered, InlineConfirm } from '../work/InlineConfirm';
 import type { NodeAct, NodeWordAnswer, NodeWordAsk, RunStep } from './run';
 
 /** The refusals of `WORKFLOW_NODE` the page words in the reader's language; any other is the driver's own sentence (D182). */
-const WORDED: ReadonlySet<string> = new Set(['worded', 'ended', 'no-words', 'not-skippable', 'not-in-table', 'not-held']);
+const WORDED: ReadonlySet<string> = new Set(['worded', 'ended', 'no-words', 'not-skippable', 'not-in-table', 'not-held', 'promoted']);
 
 /** What a refused word says, in the reader's language where the page words its code, else in the driver's sentence. */
 export function nodeWordRefused(t: ReturnType<typeof useTranslation>['t'], answer: NodeWordAnswer): string {
