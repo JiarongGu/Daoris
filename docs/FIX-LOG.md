@@ -5,6 +5,20 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-31 - A test still pinned the first-look baseline row m-iv replaced (FOUNDATION1 m-iv)
+
+- **Symptom:** `A_wait_already_there_at_the_first_look_is_a_baseline_never_a_backlog` failed every run.
+- **Root cause:** m-iv gave the baseline to the said-set; the watch finds a standing wait at its first look and `AttentionNews` takes it as said on a home's first run. The test was not updated.
+- **Fix:** the test expects the watch to find it once, citing the design.
+- **Verify:** attention, news and hold classes green.
+
+## 2026-10-31 - The journal route made commands outside the connection's gate (FOUNDATION1 l-i)
+
+- **Symptom:** `ConnectionGateTests` failed naming `JournalRows.cs` `.CreateCommand(`.
+- **Root cause:** the read opened a connection of its own and made commands on it, bypassing the gate every store goes through.
+- **Fix:** `JournalRows.ReadAsync` takes the service's connection and runs inside its gate; the composed service carries the read.
+- **Verify:** gate, `JournalRowsTests` and Platform tests green.
+
 ## 2026-10-30 - The window's quest hand-over still called the old ask, and the modules did not build (FOUNDATION1f-v part c)
 
 - **Symptom:** batch u's modules project failed to compile: `ConversationRoutes.cs:244`, no overload of `AskAsync` takes 10 arguments.

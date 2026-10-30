@@ -56,7 +56,7 @@ public sealed class JournalRowsTests : IAsyncLifetime
     {
         var record = await EndedAsync("ended.done");
 
-        var page = await JournalRows.ReadAsync(Database, since: 0, limit: 100);
+        var page = await JournalRows.ReadAsync(_connection, since: 0, limit: 100);
 
         Assert.Equal(["opened", "state", "state"], page.Rows.Select(row => row.Change));
         Assert.Equal(page.Rows.Select(row => row.Position).Order(), page.Rows.Select(row => row.Position));
@@ -72,10 +72,10 @@ public sealed class JournalRowsTests : IAsyncLifetime
     public async Task A_cursor_is_exclusive_and_a_limit_holds_the_page()
     {
         await EndedAsync("ended.done");
-        var all = await JournalRows.ReadAsync(Database, 0, 100);
+        var all = await JournalRows.ReadAsync(_connection, 0, 100);
 
-        var second = await JournalRows.ReadAsync(Database, all.Rows[0].Position, 1);
-        var none = await JournalRows.ReadAsync(Database, all.Newest, 100);
+        var second = await JournalRows.ReadAsync(_connection, all.Rows[0].Position, 1);
+        var none = await JournalRows.ReadAsync(_connection, all.Newest, 100);
 
         Assert.Equal([all.Rows[1].Position], second.Rows.Select(row => row.Position));
         Assert.Empty(none.Rows);
@@ -87,15 +87,15 @@ public sealed class JournalRowsTests : IAsyncLifetime
     public async Task A_database_with_no_journal_is_answered_an_empty_page()
     {
         var bare = Path.Combine(_root, "bare.db");
-        await using (var made = new SqliteConnection(new SqliteConnectionStringBuilder { DataSource = bare, Mode = SqliteOpenMode.ReadWriteCreate, Pooling = false }.ToString()))
+        await using var made = new SqliteConnection(new SqliteConnectionStringBuilder { DataSource = bare, Mode = SqliteOpenMode.ReadWriteCreate, Pooling = false }.ToString());
+        await made.OpenAsync();
+        await using (var command = made.CreateCommand())
         {
-            await made.OpenAsync();
-            await using var command = made.CreateCommand();
             command.CommandText = "CREATE TABLE other (x)";
             await command.ExecuteNonQueryAsync();
         }
 
-        var page = await JournalRows.ReadAsync(bare, 0, 100);
+        var page = await JournalRows.ReadAsync(made, 0, 100);
 
         Assert.Empty(page.Rows);
         Assert.Equal((0L, 0L), (page.Floor, page.Newest));
