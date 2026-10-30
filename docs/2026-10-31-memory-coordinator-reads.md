@@ -123,3 +123,48 @@ The broad order is sensible, but **not buildable as written**.
 **4. Request A** is right, with one clause too many: drop "nothing stored before the approval" (Daoris holds the successor on its own `awaiting` row and calls Lyntai only after approval; the clause would reverse `MemoryChangeGate.cs:65-68` for nothing). Add: the end's reason, or a caller's key, kept on each predecessor, so receipts settle a replacement. Holding supersession off meanwhile is adequate; prefer `Disputes` to `Amends`, which Lyntai defines as leaving the rest standing (`MemoryRelations.cs:9`).
 
 **5. Rows:** buildable once the three changes are written. 2a can start now with its coherence in the store; 2b beside it over a stand-in engine; 2c after 2b's stand-in; 2d and 2e on Lyntai's release; 2f after 2a, 2c and 2d; 2g on §6 B, 2h on §6 A, 2i on the install.
+
+## Round 4: the reads of the third revision
+
+### Codex's read
+
+1. **Verdict: accept after named changes.** Correct durable model attribution and protect 2a against already-open older writers. No further design round is necessary for these bounded corrections.
+
+2. **Round-3 blockers**
+
+- **Recovery: resolved as a contract.** §3 now holds ambiguous additions, relations and confirmations without replay until C supplies receipts. Ends recover by their operation token; another operation’s end means `stale`. This addresses the recorded Lyntai effects: `src/Lyntai.Storage.Sqlite/SqliteMemoryGraphStore.cs:83,130`, `src/Lyntai.Core/Memory/Engines/GraphMemoryEngine.cs:592`, and `src/Lyntai.Core/Storage/MemoryGraphSql.cs:173`. Lyntai source is absent from this checkout, so these remain the recorded round-3 source checks, not fresh verification.
+
+- **Atomic replacement: resolved by deferral.** Refusing `supersedes` until A removes the insert-then-end guarantee. `Disputes` correctly leaves both claims current without claiming D220 replacement.
+
+- **Read effects: resolved at the design level.** Every coordinator engine must use `ReinforceOn = None`; 2d explicitly checks owner and child reads. The supporting Lyntai citation remains qualified as above.
+
+- **Coherent recheck: resolved for participating writers.** The proposed stored generation, conditional replacement and transactional entry/marks/reading snapshot replace process-local gates. I checked every production replacement: `Knowledge/KnowledgeIndex.cs:47,67` and `Knowledge/KnowledgeService.cs:550,653,753,848`, beneath `src/Daoris.Service/Daoris.Service.Core/`. This covers refresh, ghosts, retirement, restamping, withdrawal and feeds. One compatibility exception remains below.
+
+- **Historical attribution: not fully resolved.** Per-turn reports fix first-seen deduplication, but §1 incorrectly says their models are persisted in the event log. `src/Daoris.Desktop/Daoris.Desktop.Driver/Events/Domain/SessionEvents.cs:396` marks `Models` **`[JsonIgnore]`**; `Context/Events/SessionEventLog.cs:64` serializes using that contract. **Change:** specify a machine-local durable per-turn report containing session, sequence, instant and reported model names, handed into the commit transaction. Preserve `unknown` for missing evidence. Add restart-before-landing and A→B→A proofs; keep models off shared records.
+
+- **Work without landing: resolved.** Moving operations inside completion eliminates the crash gap: `Sessions/SessionLedger.cs:1929,1974` runs through `Sessions/Sessions.cs:847`’s transaction. `Sessions/WorkRecords.cs:369,408` likewise provides the transaction containing the record and session links. Posts without landings remain staged.
+
+- **Interrupted feed: resolved as specified.** Entries and provenance must commit together. The existing split is exactly `Knowledge/KnowledgeService.cs:848,855`; `Composition/ServiceFactory.cs:312` supplies their shared connection. The fault-and-restart proof in 2a targets the correct boundary.
+
+3. **New blocking issue: older open writers bypass the reading protocol.** `Knowledge/Store/SqliteKnowledgeStore.cs:102` checks schema at open; `:154` subsequently consults cached `Refusal`, then `:167` replaces entries. An already-open older connector can therefore change bodies while leaving a valid-looking new reading untouched. **Change:** put the new entry/reading pair in versioned entry tables older writers cannot reach, and add a proof using an old connection opened before upgrade. A schema bump alone is insufficient.
+
+4. **Requests A and C: yes, right as worded.** Both require operation-key receipts committed with effects and repeat-without-effect semantics. A correctly leaves approval with Daoris.
+
+5. **Rows:** **2a needs the older-writer correction before starting as written. 2b may start now**, independently over its specified stand-in.
+
+Read only; nothing changed, and no `local/` directory was opened.
+
+### The Opus maker's read
+
+**Verdict:** accept after one change, a sentence in §1; no further round.
+1. **Writers across processes: resolved.** All six replacing paths are named (`KnowledgeIndex.cs:47`, `:67`; `KnowledgeService.cs:550`, `:653`, `:753`, `:848`, the only callers of `ReplaceRepositoryAsync`); the store's transaction is `BEGIN IMMEDIATE` (`ConnectionGate.cs:129-135`) with provenance on the same connection (`ServiceFactory.cs:307-312`). One sentence for 2a: retirement, withdrawal and restamping read no source, so each takes the generation inside its own transaction and always writes; as worded, a retirement losing a race to another connector's refresh would leave the retired repository served.
+2. **BLOCKING: the model at the commit point.** The event log's Turn line carries no models (`SessionEvents.cs:393-397`, `[JsonIgnore]`, D179 point 2), and its `At` is the append (`SessionEventLog.cs:53`), so after a restart every row reads `unknown`. Change: read the models from the usage history's turn lines, the durable per-turn record (`UsageHistory.cs:286-299`, `:613-650`: session, seq, started, ended, model or split); match a row to the turn whose `started`..`ended` holds its instant; where `started` is missing, an asked `User` event between the instant and the turn leaves `unknown` (a chat stopped mid-turn and continued, `SessionLedger.cs:1947`); a pruned or dropped line reads `unknown`. 2c's proof gains the stopped-then-continued case and a restart before the commit point.
+3. **The move at the commit point: resolved** (`SessionLedger.cs:1929-1974` one `ExclusiveAsync`; `WorkRecords.cs:366-412` one transaction; `ready` applied at start; connectors write only `staged`).
+
+**New choices: nothing blocking.** Holding outcomes is sound and rare. A confirmation needs no hold: `Confirm` is guarded by the revision read (`MemoryGraphSql.cs:171-177`), so settle it `stale` and the next sweep rechecks. "From the entry's history" overstates: Lyntai keeps no per-entry change log (`MemoryRecords.cs:169`); the person settles from the entry's current state (present, `encoding_at`, revision, relations). Request A: say the gate's store-first path (`MemoryChangeGate.cs:65-68`) may stay for agents while the requested call stores nothing before it applies. Request C: add how long a receipt is kept, a key reused with other content refused, and an outcome telling created from refreshed (`SqliteMemoryGraphStore.cs:104`).
+
+**Rows:** 2a and 2b may start now, 2a carrying point 1's sentence; 2c waits on point 2's change.
+
+### The steward's settlement
+
+Both reads accept after named changes; no further round. Every named change is taken in the design: the models from the usage history's turn lines (Opus 2, Codex's attribution); the entry and reading pair in versioned tables an older open writer cannot reach (Codex 3); retirement, withdrawal and restamping taking the generation in their own transaction and always writing (Opus 1); a confirmation settled `stale`, not held; the person settling from the entry's current state; requests A and C as both reads word them.

@@ -3155,6 +3155,9 @@ public sealed class Driver(
                             : Watch.EndedMinutes(sessionId) is { } quietMinutes
                                 ? Observation.AfterQuiet(quietMinutes, quest.Status, status)
                                 : Observation.AfterTimeout(config.TestBound ?? 0, quest.Status, status);
+                    // CODEXPERM1: a park whose turn its agent cut asked the person nothing, and says so.
+                    if (stop is null) conclusion = Observation.Cut(conclusion, ended.Cut);
+
                     // ACCESSSWAP1b: a run Daoris ended at its turn's end for a changed setup is neither a park nor a failure, and goes on.
                     var swappedOn = stop is null && ended.SetupChanged is not null;
                     if (swappedOn) conclusion = Observation.SetupChanged(conclusion, ended.SetupChanged!);
@@ -4241,7 +4244,8 @@ public sealed class Driver(
                 // asked and not carried, so the record never says a choice was taken that was not.
                 asked: asked, carried: target.Brainstorm is not null ? null
                     : notCarried => _ = service.TryKeepActorAsync(sessionId, Log, choice, notCarried, ct: CancellationToken.None),
-                modelRefused: refusedAt, offerRead: offered, retry: retry, carriesOn: carriesOn, written: written, proc: proc)
+                modelRefused: refusedAt, offerRead: offered, retry: retry, carriesOn: carriesOn, written: written,
+                typedFailures: adapter.Toolchain?.ErrorWords?.TypedFailures == true, proc: proc)
             : null;
         // What the native door's harness says in its own words, apart from its agent's, for its ending (AGT3c).
         var own = new HarnessWords();
@@ -4329,6 +4333,8 @@ public sealed class Driver(
                     SetupChanged = left.Count > 0 ? swapped : null,
                     // APIREFUSAL1: the door's own word that its provider refused the turn it ended on.
                     ProviderRefused = outcome?.ProviderRefused == true,
+                    // CODEXPERM1: its agent cut the turn it ended on.
+                    Cut = outcome?.Cut,
                     // MODELROLE1c2: its agent refused its choice at the open, before any prompt.
                     NotOffered = outcome?.NotOffered,
                     // AGENTERRORS1a: what its transient retry read and did, for the conclusion.
@@ -4698,7 +4704,8 @@ public sealed class Driver(
         Func<string, string, string>? unoffered = null, Func<bool>? setupChanged = null, IReadOnlyList<SaidWordView>? handed = null,
         ActorAsked? asked = null, Action<ActorAsked>? carried = null, Func<ModelRefusal, Task<ActorAsked?>>? modelRefused = null,
         Action<IReadOnlyList<AcpConfigOption>>? offerRead = null, TransientRetry? retry = null,
-        Func<CancellationToken, Task<TurnCarry>>? carriesOn = null, Action? written = null, string? proc = null)
+        Func<CancellationToken, Task<TurnCarry>>? carriesOn = null, Action? written = null, bool typedFailures = false,
+        string? proc = null)
     {
         await using var file = TranscriptFile.Open(transcript, append: resume is not null);
 
@@ -4776,6 +4783,7 @@ public sealed class Driver(
             {
                 Unoffered = unoffered,
                 Lineage = ChildLineage.Writer(home, sessionId, proc),
+                TypedFailures = typedFailures, // CODEXSTATUS1: asked for only by a door declared to need it
                 Permissions = HeldPermissions.Of(Context.Events).For(sessionId), // AUTONOMY1b3a: held only under asking's mark
                 SetupChanged = setupChanged,
                 CarriesOn = carriesOn, // LANDBACK1 part 2: a done quest's uncommitted tree carries the session on before it ends
@@ -4876,7 +4884,7 @@ public sealed class Driver(
                     retry: retry)
                 .ConfigureAwait(false);
 
-            Line($"— the turn ended: {outcome.StopReason}, after {outcome.Updates} update(s). The "
+            Line($"— {outcome.TurnEnd}. The "
                  + "session record is concluded from the exit code and the quest's own state, not "
                  + "from this line (D46 §4).");
             // ACCESSSWAP1b: the words a changed setup handed back, kept on the record once it concluded, to go on under the new one.

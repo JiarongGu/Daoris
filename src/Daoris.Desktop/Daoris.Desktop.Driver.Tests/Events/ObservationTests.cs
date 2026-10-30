@@ -431,6 +431,33 @@ public sealed class ObservationTests
              Observation.Conclude(0, "Taken", took: true, lastWords: "Which port?").Parts![0].Code));
     }
 
+    /// <summary>
+    /// CODEXPERM1: a turn its agent ended <c>cancelled</c> with nobody having stopped it, after a permission was refused, parks on the
+    /// person but says so: the call refused and that it asked nothing, never "to ask you" with the agent's last words quoted as a question.
+    /// A cancel with no refusal behind it says the agent cancelled it. A run that ended otherwise than parked keeps its ending.
+    /// </summary>
+    [Fact]
+    public void A_turn_cut_by_a_refused_permission_says_so_and_never_reads_as_a_question()
+    {
+        var parked = Observation.Conclude(0, "Taken", took: true, lastWords: "I could not edit the file.");
+
+        var cut = Observation.Cut(parked, new TurnCut("Edit docs/a.md"));
+        Assert.Equal(("awaiting-person", NoteCodes.EndedParkedCut.Code), (cut.State, cut.Parts![0].Code));
+        Assert.Equal("Edit docs/a.md", cut.Parts[0].Value("call"));
+        Assert.Contains("refused", cut.Note);
+        Assert.Contains("asked you nothing", cut.Note);
+        Assert.DoesNotContain("to ask you", cut.Note);
+        Assert.DoesNotContain("I could not edit the file.", cut.Note);
+
+        var cancelled = Observation.Cut(parked, new TurnCut(null));
+        Assert.Equal(("awaiting-person", NoteCodes.EndedParkedCancelled.Code), (cancelled.State, cancelled.Parts![0].Code));
+        Assert.Contains("cancelled", cancelled.Note);
+
+        var done = Observation.Conclude(0, "Done");
+        Assert.Same(done, Observation.Cut(done, new TurnCut("Edit docs/a.md")));
+        Assert.Same(parked, Observation.Cut(parked, null));
+    }
+
     private const string HelperAsked = "I asked a helper about the window; I will go on when it answers.";
 
     /// <summary>

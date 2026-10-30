@@ -204,6 +204,7 @@ public static class PersonDoors
         new("GET", "/api/channel/elsewhere", DoorClass.Open),
         new("GET", "/api/sessions", DoorClass.Open),
         new("GET", "/api/sessions/{id}/deletable", DoorClass.Open),
+        new("GET", "/api/sessions/{id}/record", DoorClass.Open),
         // One quest's handback whole, by the quest's id or its session's (HANDBACK1): a read, as the connector's `handback_read` is.
         new("GET", "/api/handbacks/{id}", DoorClass.Open),
         // A plan, which deletes nothing.

@@ -73,7 +73,7 @@ Routed in `src/Daoris.Desktop/Daoris.Desktop.Driver.Host/Program.cs`, its usage 
 | `space` | `Program.cs:850` | `Daoris.Desktop.Driver/Workplace/SpaceCommand.cs:17` SpaceCommand | free `SpaceCommand.cs:54` |
 | `logs` | `Program.cs:859` | `Daoris.Desktop.Driver.Host/LogsConsole.cs:18` LogsConsole | — |
 | `plugins` | `Program.cs:866` | `Daoris.Desktop.Driver/Plugins/PluginsCommand.cs:25` PluginsCommand | install `Program.cs:807` · new `PluginsCommand.cs:90` · try `PluginsCommand.cs:90` · show `PluginsCommand.cs:92` · activity `PluginsCommand.cs:94` · approve `PluginsCommand.cs:62` · withdraw `PluginsCommand.cs:67` |
-| `drive` | `Program.cs:482` | `Daoris.Desktop.Driver/Loop/DriverCommand.cs:371` DriverCommand.Read | — |
+| `drive` | `Program.cs:482` | `Daoris.Desktop.Driver/Loop/DriverCommand.cs:374` DriverCommand.Read | — |
 
 ## `daoris-devkit`
 

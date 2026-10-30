@@ -132,7 +132,24 @@ public sealed record AcpOutcome(
 
     /// <summary>The refusal that ended its open before any prompt (D205 §3.3, MODELROLE1c2), or null for every run that prompted.</summary>
     public ModelRefusal? NotOffered { get; init; }
+
+    /// <summary>How its last turn was cut (CODEXPERM1), or null where it was not: see <see cref="TurnCut"/>.</summary>
+    public TurnCut? Cut { get; init; }
+
+    /// <summary>What the console says of the turn's end: a cut says what cut it, any other end the agent's stop reason.</summary>
+    public string TurnEnd => Cut is { } cut
+        ? $"the turn was cut: its agent ended it `{StopReason}` "
+          + (cut.Call is { } call ? $"after the permission it asked for, {call}, was refused" : "though nobody stopped it")
+          + $", after {Updates} update(s)"
+        : $"the turn ended: {StopReason}, after {Updates} update(s)";
 }
+
+/// <summary>
+/// A turn its agent ended <c>cancelled</c> though nobody stopped it (CODEXPERM1): Codex ends a turn when the only rejection it offers for a
+/// file change is chosen, so a refused edit cuts the turn rather than only the edit. The edits made before it stand.
+/// </summary>
+/// <param name="Call">The call whose permission was refused as the turn was cut, as the agent titled it; null where none was.</param>
+public sealed record TurnCut(string? Call);
 
 /// <summary>A choice refused at the open with nothing else to set on the same session (D205 §3.3): the open ends before its prompt.</summary>
 public sealed class AcpChoiceNotOffered(ModelRefusal refusal)
@@ -346,6 +363,12 @@ public sealed class AcpSession(
     /// session's own background work wakes is its own (BGWAIT1), so neither is cut.
     /// </remarks>
     public Func<bool>? SetupChanged { get; init; }
+
+    /// <summary>
+    /// Whether this client asks the agent for AIR's typed session failures (CODEXSTATUS1, the agent-errors design §4.3): set for an
+    /// agent whose toolchain declares it marks a terminal failure for such a client alone (<see cref="ErrorWords.TypedFailures"/>).
+    /// </summary>
+    public bool TypedFailures { get; init; }
 
     /// <summary>
     /// Asked at a turn's end (LANDBACK1 part 2, D87's note): what the quest and its tree say, so a turn that ended with the quest done and
@@ -1027,7 +1050,7 @@ public sealed class AcpSession(
             }
 
             await CloseAsync(ct).ConfigureAwait(false);
-            lock (_measured) return new AcpOutcome(stopReason, _sessionId!, _updates, _usage);
+            lock (_measured) return new AcpOutcome(stopReason, _sessionId!, _updates, _usage) { Cut = _turnCut };
         }
         finally
         {
@@ -2186,7 +2209,7 @@ public sealed class AcpSession(
             new
             {
                 protocolVersion = ProtocolVersion,
-                clientCapabilities = Capabilities(streams is not null),
+                clientCapabilities = Capabilities(streams is not null, TypedFailures),
                 clientInfo = new { name = "daoris-driver", version = "0" },
             },
             ct).ConfigureAwait(false);
@@ -2309,20 +2332,46 @@ public sealed class AcpSession(
     /// parked on work still running. Where no stream takes the frames, the record and the console keep none of them
     /// (<see cref="Map"/>, <see cref="Render"/>). A subagent's own session is asked for only where streams route it.</para>
     /// </remarks>
-    internal static object Capabilities(bool streams) => streams
-        ? new
+    internal static object Capabilities(bool streams, bool typedFailures = false)
+    {
+        // CODEXSTATUS1: asked for only by a door declared to mark a terminal failure for such a client alone (the design §4.3, §10).
+        var asked = new List<string>();
+        if (streams) asked.Add("nativeSubagentSessions");
+        asked.Add("asyncTasks");
+        if (typedFailures) asked.Add("sessionFailure");
+        var meta = new { jetbrains = new { air = new { version = 1, capabilities = asked } } };
+        if (streams) return new { fs = new { readTextFile = false, writeTextFile = false }, terminal = false, subagents = new { }, _meta = meta };
+        return new { fs = new { readTextFile = false, writeTextFile = false }, terminal = false, _meta = meta };
+    }
+
+    /// <summary>
+    /// The terminal failure a typed client's prompt was answered with (CODEXSTATUS1, the design §4.3): <c>end_turn</c> with
+    /// <c>_meta.jetbrains.air.sessionFailure</c> at <c>error</c> severity, written as the error frame a refused prompt is, its
+    /// <c>category</c> the error's kind and its <c>title</c> the provider's words, as written. Null for any other answer: a warning
+    /// is an attempt that failed and another follows, and the agent's own message is never read.
+    /// </summary>
+    internal static JsonElement? TypedFailure(JsonElement result)
+    {
+        if (result.ValueKind != JsonValueKind.Object || !result.TryGetProperty("_meta", out var meta)
+            || !meta.TryGetProperty("jetbrains", out var jetbrains) || jetbrains.ValueKind != JsonValueKind.Object
+            || !jetbrains.TryGetProperty("air", out var air) || air.ValueKind != JsonValueKind.Object
+            || !air.TryGetProperty("sessionFailure", out var failure) || failure.ValueKind != JsonValueKind.Object
+            || Json.Text(failure, "severity") != "error" || Json.Text(failure, "category") is not { Length: > 0 } category)
         {
-            fs = new { readTextFile = false, writeTextFile = false },
-            terminal = false,
-            subagents = new { },
-            _meta = new { jetbrains = new { air = new { version = 1, capabilities = new[] { "nativeSubagentSessions", "asyncTasks" } } } },
+            return null;
         }
-        : new
+
+        var frame = new JsonObject
         {
-            fs = new { readTextFile = false, writeTextFile = false },
-            terminal = false,
-            _meta = new { jetbrains = new { air = new { version = 1, capabilities = new[] { "asyncTasks" } } } },
+            ["error"] = new JsonObject
+            {
+                ["message"] = Json.Text(failure, "title") ?? "the agent's turn failed",
+                ["data"] = new JsonObject { ["errorKind"] = category },
+            },
         };
+        using var document = JsonDocument.Parse(frame.ToJsonString());
+        return document.RootElement.Clone();
+    }
 
     /// <summary>
     /// One turn: the text as a prompt on the open session, answered by the agent's stop reason — which
@@ -2762,6 +2811,11 @@ public sealed class AcpSession(
                 Models = TurnModelsOf(result, tokens),
             });
 
+            // CODEXPERM1: a turn that ends cancelled when this client never asked it to stop was cut by the agent, after a refusal if one came.
+            _turnCut = stopReason == "cancelled" && !_cancelAsked ? new TurnCut(_lastRefused) : null;
+            _lastRefused = null;
+            _cancelAsked = false;
+
             // COWORK1c (the design §7): the turn that took the words ended with an answer, their receipt `answered`. Acted upon, never
             // obeyed; and only where the words were taken here.
             bool took;
@@ -2916,6 +2970,7 @@ public sealed class AcpSession(
     public async Task CancelTurnAsync()
     {
         if (_sessionId is null) return;
+        _cancelAsked = true;
         try
         {
             await NotifyAsync("session/cancel", new { sessionId = _sessionId }).ConfigureAwait(false);
@@ -3154,6 +3209,11 @@ public sealed class AcpSession(
     /// <summary>The tool calls this client refused, by id (HELP4).</summary>
     private readonly ConcurrentDictionary<string, byte> _refused = new(StringComparer.Ordinal);
 
+    // CODEXPERM1: the last call refused in the turn running, whether this client asked the turn to stop, and how the last turn was cut.
+    private volatile string? _lastRefused;
+    private volatile bool _cancelAsked;
+    private volatile TurnCut? _turnCut;
+
     /// <summary>
     /// A call this client refused ends on the wire as `failed`, and the record says `refused` (HELP4):
     /// the person read Ask Daoris as failing at a command it was never allowed to run. The console, the
@@ -3184,6 +3244,12 @@ public sealed class AcpSession(
     private void Complete(JsonElement id, JsonElement frame)
     {
         if (!id.TryGetInt32(out var key) || !_pending.TryRemove(key, out var waiting)) return;
+
+        // CODEXSTATUS1: a typed client's prompt answered with a terminal failure fails as a prompt answered with an error does (§4.3).
+        if (TypedFailures && _answered.ContainsKey(key) && frame.TryGetProperty("result", out var ended) && TypedFailure(ended) is { } failed)
+        {
+            frame = failed;
+        }
 
         // What the answer does here, on the reader's thread, before the next frame is read (STEER1).
         if (_answered.TryRemove(key, out var answered))
@@ -3298,6 +3364,7 @@ public sealed class AcpSession(
         {
             _refused[refusedName] = 0;
         }
+        _lastRefused = Named(call).Trim('`');
         // The console is the raw view, and keeps the request as the wire said it.
         onLine($"  permission refused: {(call is { } raw ? Compact(raw) : "a tool call")} {governs}");
         // 🔴 The record names the call as a reader knows it (SESS1 S6): its title, else its kind — the
@@ -3432,6 +3499,7 @@ public sealed class AcpSession(
             else
             {
                 if (callId is not null) _refused[callId] = 0;
+                _lastRefused = title.Trim('`');
                 var minutes = Math.Max(1, (int)Math.Ceiling(bound.TotalMinutes));
                 var close = end.Why switch
                 {

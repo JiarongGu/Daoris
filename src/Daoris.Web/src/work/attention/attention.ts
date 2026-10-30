@@ -279,7 +279,9 @@ export type AttentionActId =
   // SESSWATCH1a: a quiet session's presses: *End and carry on*, *Hand over…*, *Stop…*, *Leave it running*.
   | 'quiet-carry-on' | 'quiet-hand-over' | 'quiet-stop' | 'quiet-leave'
   // INTEGRATE1o part o3: the run's own skip of its `work.requests` node, with the person's words.
-  | 'pass-over';
+  | 'pass-over'
+  // INTEGRATE1p (C33): a run's own declined request, asked again or gone on without, each the run's node word.
+  | 'ask-again' | 'go-on';
 
 /** The act each word offered on a held attempt is pressed by (FABRIC-PERFORM1g, FABRIC-CLOSE1q): a close's stop is not a step's. */
 export function heldActs(held: HeldAttempt): AttentionActId[] {
@@ -334,6 +336,8 @@ export const ASKS_ONCE: ReadonlySet<AttentionActId> = new Set([
   'quiet-carry-on', 'quiet-stop',
   // INTEGRATE1o part o3: passing a declined request over goes on without it, and keeps the person's words with the skip.
   'pass-over',
+  // INTEGRATE1p (C33): asking again publishes a quest anew, and going on without it keeps the person's words.
+  'ask-again', 'go-on',
 ]);
 
 /** How many acts an account's row offers beside its door: three controls a row at most (design §9.3). */
@@ -380,7 +384,7 @@ export function attentionOffers(item: Attention): AttentionOffer[] {
     // STEWARDROLE1b (D209 §5.3, §5.4): the person's own *Try again*, the parked quest's press.
     case 'steward-stopped': return plain('retry');
     // INTEGRATE1o part o3: the run's existing *Pass over…* (§17.3), offered where the node it is said on is named.
-    case 'request-declined': return item.declined ? plain('pass-over') : [];
+    case 'request-declined': return !item.declined ? [] : item.declined.request ? plain('ask-again', 'go-on') : plain('pass-over');
     // GOAHEADSTALE1: nothing on a stale one's ask could use a yes but whatever starts there next, which no session asked it for, so
     // its refusal is the one answer offered.
     case 'go-ahead': return item.stale ? plain('refuse') : plain('approve', 'refuse');
@@ -551,7 +555,7 @@ export type PushedAttention = {
  * A run held at a request the receiver declined (INTEGRATE1o part o3): the `work.requests` node the person's *Pass over…* is said on, the
  * declined quest and the repository it was addressed to, and the run's newest work quest here (null where it has none), which its door reads.
  */
-export type DeclinedRequest = { node: string; quest: string; to: string; work?: string | null };
+export type DeclinedRequest = { node: string; quest: string; to: string; work?: string | null; request?: boolean };
 
 /**
  * Why a git remote is held (the git auth design §5.1): refused, its push refused, its host key unknown, its host key changed, or
@@ -788,7 +792,9 @@ export function attentionWorded(row: PushedAttention, names: AttentionNames = {}
       return {
         ...base,
         title: declined?.work ? questOf(declined.work)?.title ?? `#${declined.work}` : `#${row.id}`,
-        detail: declined ? i18n.t('work.attention.requestDeclinedWhy', { quest: declined.quest, to: declined.to }) : null,
+        detail: declined
+          ? i18n.t(declined.request ? 'work.attention.requestAskedDeclinedWhy' : 'work.attention.requestDeclinedWhy', { quest: declined.quest, to: declined.to })
+          : null,
         ...(declined ? { declined } : {}),
       };
     }

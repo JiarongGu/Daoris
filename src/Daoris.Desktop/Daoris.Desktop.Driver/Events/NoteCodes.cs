@@ -212,6 +212,15 @@ public static class NoteCodes
     public static readonly NoteCode EndedParkedShort = new("ended.parked-short", []);
 
     /// <summary>
+    /// CODEXPERM1: its agent ended its turn <c>cancelled</c> though nobody stopped it, after the permission it asked for (<c>call</c>, as
+    /// the agent titled it) was refused: a park on the person that says it asked them nothing, never the agent's last words as a question.
+    /// </summary>
+    public static readonly NoteCode EndedParkedCut = new("ended.parked-cut", ["call"]);
+
+    /// <summary>CODEXPERM1: as <see cref="EndedParkedCut"/>, with no refused call behind the agent's cancel.</summary>
+    public static readonly NoteCode EndedParkedCancelled = new("ended.parked-cancelled", []);
+
+    /// <summary>
     /// HELPERWAIT1 (D163's and D188's notes): it ended its turn cleanly on its own open helper ask, holding its quest as a park would, so
     /// it waits on that helper and not on the person: completed, its helper's answer reopening it once (D188 point 4). A twin: the
     /// service's ledger reads this spelling to bring the session back to the person when the helper ends with no answer

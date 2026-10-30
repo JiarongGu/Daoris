@@ -1712,6 +1712,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
                 // MODELROLE1d (D205 §3.2): its actor's model and effort set before its first prompt, the composer opening on them; what
                 // the agent would not take kept as asked and not carried, and what its open listed kept as its agent's reading (§9.2).
                 Asked = carrying,
+                TypedFailures = resolved.Toolchain?.ErrorWords?.TypedFailures == true, // CODEXSTATUS1
                 Carried = overriding is not null ? null
                     : notCarried => _ = _service.TryKeepActorAsync(sessionId, null, choice, notCarried, ct: CancellationToken.None),
                 OffersRead = options => KeepOffers(resolved.Name, selection, sessionId, options),
@@ -3094,6 +3095,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
             onConversation: keep)
         {
             Lineage = ChildLineage.Writer(_home, sessionId, proc),
+            TypedFailures = chat.TypedFailures,
             Carry = chat.Asked,
             Carried = chat.Carried,
             OffersRead = chat.OffersRead,
@@ -3282,6 +3284,9 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
         public object? Meta { get; }
 
         public string Cwd { get; }
+
+        /// <summary>Whether its agent is asked for typed session failures (CODEXSTATUS1, <see cref="AcpSession.TypedFailures"/>).</summary>
+        public bool TypedFailures { get; init; }
 
         /// <summary>What its actor asks, set on the session before its first prompt (D205 §3.2, MODELROLE1d); null sets nothing.</summary>
         public ActorAsked? Asked { get; init; }

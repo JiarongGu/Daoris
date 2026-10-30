@@ -349,10 +349,20 @@ public static class CodexLimits
         "read, not measured: codex 0.159.3's source at rust-v0.159.3 (codex-rs/protocol/src/error.rs, UsageLimitReachedError), which codex-acp 2.1.1 sends as the JSON-RPC error's data.message beside the message `Internal error` (limit-signals evidence §4)";
 
     public static LimitWords Words { get; } = new(
-        Markers: [@"(?:^|: )you've hit your (?<hit>usage) limit(?: for .+?)?\.(?= |$)"],
+        Markers:
+        [
+            @"(?:^|: )you've hit your (?<hit>usage) limit(?: for .+?)?\.(?= |$)",
+            // The workspace's credits are spent (CODEXCREDITS1): the owner refills, so the sentence names no reset.
+            @"(?:^|: )your workspace is out of (?<hit>credits)\.(?= |$)",
+        ],
         Resets: [@"\btry again at (?<when>.+?)\.?$"],
         Recorded:
         [
+            new(
+                "Your workspace is out of credits. Ask your workspace owner to refill in order to continue.",
+                "2026-10-26",
+                "the protocol door, codex-acp 2.1.1: the JSON-RPC error `Internal error` answering session/prompt in three driven sessions, the sentence in data.message (CODEXCREDITS1)",
+                "2.1.1"),
             new("You’ve hit your usage limit. … Try again at 4:05 PM.", "2026-10-02", $"{Source}; the plan's own next step elided", "0.159.3"),
             new("You’ve hit your usage limit. … or try again at Oct 3rd, 2026 4:05 PM.", "2026-10-02", $"{Source}; the plan's own next step elided", "0.159.3"),
             new("You’ve hit your usage limit for …. Switch to another model now, or try again at 4:05 PM.", "2026-10-02", $"{Source}; a named model's limit, the model elided", "0.159.3"),

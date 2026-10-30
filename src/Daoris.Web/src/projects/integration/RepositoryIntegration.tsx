@@ -1,4 +1,4 @@
-import { useIntegrate, useIntegration } from '../../bridge/repositories/integration';
+import { useIntegrate, useIntegration } from '../../bridge/repositories/integrate';
 import { IntegrationTab } from './IntegrationTab';
 
 /** A repository's Integration tab with its look and acts (INTEGRATE1h): read only while the tab draws it, the owner's acts the window's. */

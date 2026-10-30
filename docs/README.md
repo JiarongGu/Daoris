@@ -178,7 +178,7 @@ Paths below are relative to this file. Historical documents have their own [arch
 | `2026-10-31-memory-coordinator-brief.md` | Brief: KNOWCENTRAL1 round 2, Daoris coordinating Lyntai's memory
 | `2026-10-31-memory-coordinator-proposal-opus.md` | Proposal: KNOWCENTRAL1 round 2, Opus, sealed
 | `2026-10-31-memory-coordinator-proposal-codex.md` | Proposal: KNOWCENTRAL1 round 2, Codex, sealed
-| `2026-10-31-memory-coordinator-design.md` | Synthesis, revised after round 2's reads: KNOWCENTRAL1, the memory coordinator
+| `2026-10-31-memory-coordinator-design.md` | Accepted design: KNOWCENTRAL1 round 2, the memory coordinator
 | `2026-10-31-memory-coordinator-reads.md` | Reads: KNOWCENTRAL1 round 2's synthesis
 
 ## UI, browser, tools and plugin contracts

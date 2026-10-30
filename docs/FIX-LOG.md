@@ -57,6 +57,25 @@ repository.
 - **Root cause:** `codex-acp` streams the command's output and completes its call after the prompt is answered; `AcpWake` took that as a turn begun, and a Codex turn says no end (no origin on `usage_update`).
 - **Fix:** such updates begin no turn; where the adapter is not Claude Code's, a turn's quiet, with no call open, ends it.
 - **Verify:** `AcpBackgroundCodexTests`, the wake case red first.
+## 2026-10-31 - Codex's workspace-credit refusal was an ordinary failed turn (CODEXCREDITS1)
+
+- **Symptom:** three driven sessions ended on `Your workspace is out of credits…` as a strike.
+- **Root cause:** `CodexLimits` recorded only the usage-limit sentence, so the reader called this one fatal.
+- **Fix:** the sentence is recorded as a limit with no stated reset (D125's default). The account cools, the next allowed account takes the work, and with none the quest waits.
+- **Verify:** `AccountLimitsTests`, `AgentErrorsTests`, `CodexCreditsTickTests` (red without the marker).
+
+## 2026-10-31 - Codex's capacity failure bypassed the error policy (CODEXSTATUS1)
+
+- **Symptom:** a turn ended on `Selected model is at capacity…` as agent text, read as a clean turn.
+- **Root cause:** `codex-acp` 2.1.1 marks a terminal failure only for a client that negotiates AIR `sessionFailure`; the initialize never did.
+- **Fix:** the Codex door's toolchain declares it, the initialize asks, and an `error`-severity marker fails the prompt as an error: `service` and `connection` retry transient with the words kept. Agent text is never read.
+- **Verify:** `AcpTypedFailureTests`, `AgentErrorsTests`.
+## 2026-10-31 - A refused Codex edit cut the turn and the session parked as if it had asked (CODEXPERM1)
+
+- **Symptom:** on Auto a Codex edit was refused and the session parked "to ask you", quoting its last words.
+- **Root cause:** Codex's only rejection for a file change interrupts the turn, which ended `cancelled`; a clean exit with the quest taken read as a question.
+- **Fix:** `AcpOutcome.Cut` carries a cancel nobody asked for; `Observation.Cut` parks as `ended.parked-cut`, naming the call. Asking on Codex is `workspace-write`.
+- **Verify:** the mapping tests fail on `read-only`; `AcpTests`, `ObservationTests`, `DrivenAccessTests`, `NoteCodesTests` and the note catalogues green.
 
 ## 2026-10-31 - A test still pinned the first-look baseline row m-iv replaced (FOUNDATION1 m-iv)
 
@@ -12508,6 +12527,14 @@ mis-rooted instance.
 **Fix.** A stop made first decides the end in `Driver.RunAsync`'s catch, the person's never interrupted.
 
 **Verification.** `DrivenSessionInputTests` 15/15, red before.
+
+## A streamed hand-back stopped the window's page with React #185 (2026-10-31)
+
+**Root cause.** React 19.2 counts a commit that leaves an update waiting as nested. `useFollowTail` set `atTail` again in a layout effect and `useWaitsOnScreen` set its answer after every drawing, unchanged, updates React keeps when their holder just drew; each streamed line left them, and fifty in a row threw.
+
+**Fix.** Both set state only on a change.
+
+**Verification.** Real Chromium: 51 nested to 2. `sessionEnd.test.tsx`: 24 `nested-update` commits, now 0; two hook tests red, green.
 ## An ended chat's words shown as its run closed never woke it (2026-10-31)
 
 **Root cause.** `ChatRunner.WatchAsync` concludes the record before its disposal releases `Talking`; `ChatGoOn.Heard` dropped a word shown between, so it waited for the next come-up.
@@ -12515,3 +12542,11 @@ mis-rooted instance.
 **Fix.** `Heard` leaves such a word owed, before reading the hold; the watch's last disposal (`ChatGoOn.LetGo`) takes it up.
 
 **Verification.** `ChatGoOnTests.A_word_shown_to_an_ended_chat_its_run_still_holds_...`: red 2 m 41 s, green; `ChatGoesOnProcessTests` 24/24 three times.
+
+## A refreshed service install still ran the old flat host (2026-10-31)
+
+**Root cause.** `ServiceHostLocator` ranked a flat `bin/` executable above the packaged `bin/daoris-knowledge-http/`; `service-publish --install` replaces only the packaged folder, so an older flat host and its bundle kept running.
+
+**Fix.** The packaged host ranks first; a flat one is the legacy fallback. A named path still wins.
+
+**Verification.** `ServiceHostLocatorTests`: republish over a flat install, red before.

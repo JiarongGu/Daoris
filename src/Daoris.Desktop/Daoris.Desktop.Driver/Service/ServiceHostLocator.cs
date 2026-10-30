@@ -13,7 +13,8 @@ public sealed record HostLocation(string Executable, string WorkingDirectory);
 /// Where the service's HTTP host lives on this machine — the shell's question when it starts and
 /// nothing is answering yet. Ordered: what the person said, then what the install carries (the host
 /// `desktop-publish --service` puts beside the shell), then the installed home (`$DAORIS_HOME/bin`,
-/// the service publish's landing place — D63), then the workspace build for development.
+/// the service publish's landing place — D63: its packaged folder, then a legacy flat binary), then the
+/// workspace build for development.
 /// </summary>
 /// <remarks>
 /// Location only — spawning and probing stay with the supervisor. Kept beside the driver because it
@@ -61,10 +62,6 @@ public static class ServiceHostLocator
         {
             var bin = DaorisHome.Entry(home, HomeEntry.Bin);
 
-            // A binary someone placed here by hand — the most deliberate thing short of naming a path.
-            var installed = Path.Combine(bin, ExecutableName);
-            candidates.Add(new(installed, Path.GetDirectoryName(installed)!));
-
             // 🔴 Where the installer actually puts it. `service-publish --install` gives the HTTP host a
             // directory of its own because its `wwwroot` must travel BESIDE the executable, while the
             // MCP host installs flat. Looking only flat made a correctly installed host invisible —
@@ -72,6 +69,15 @@ public static class ServiceHostLocator
             // deployed one, which has no workspace to fall through to. Found by deploying.
             var packaged = Path.Combine(bin, "daoris-knowledge-http", ExecutableName);
             candidates.Add(new(packaged, Path.GetDirectoryName(packaged)!));
+
+            // 🔴 LEGACYHOST1: the flat executable is the LEGACY layout, so it ranks BELOW the packaged one.
+            // A republish replaces only the packaged folder and never touches an older flat binary and its
+            // `wwwroot` beside it; ranked first, that stale pair kept running after every refresh. The
+            // choice is ranking, not retiring: the publish stays out of files it did not write, and a
+            // flat host with nothing packaged is still found. Naming a path (above) is the way to run
+            // a specific host.
+            var installed = Path.Combine(bin, ExecutableName);
+            candidates.Add(new(installed, Path.GetDirectoryName(installed)!));
         }
 
         // Development: walk up from the running binary to the workspace manifest, then take the HTTP

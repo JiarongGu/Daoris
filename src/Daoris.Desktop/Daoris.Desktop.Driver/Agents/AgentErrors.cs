@@ -94,12 +94,17 @@ public sealed record StatusKind(int From, int To, AgentErrorKind Kind);
 /// <param name="Transient">Anchored, case-blind patterns over the error's own words, each a recorded transient sentence's.</param>
 /// <param name="Recorded">The sentences and frames the entries stand on.</param>
 /// <param name="AuthRequiredCode">The JSON-RPC code this door's own server says means authentication required, or null.</param>
+/// <param name="TypedFailures">
+/// Whether this door's server marks a terminal failure, by a category in <see cref="Kinds"/>, only for a client that asked for AIR's
+/// typed session failures (CODEXSTATUS1, §4.3): the client then asks, for this door alone.
+/// </param>
 public sealed record ErrorWords(
     IReadOnlyDictionary<string, AgentErrorKind> Kinds,
     IReadOnlyList<StatusKind> Statuses,
     IReadOnlyList<string> Transient,
     IReadOnlyList<RecordedError> Recorded,
-    int? AuthRequiredCode = null);
+    int? AuthRequiredCode = null,
+    bool TypedFailures = false);
 
 /// <summary>
 /// The one reader of an agent's failure at the agent interface (AGENTERRORS1a, D210, the design §3.2, §4.1): a door's failure read
@@ -341,4 +346,35 @@ public static class ClaudeAcpErrors
                 SourceDerived: true),
         ],
         AuthRequiredCode: -32000);
+}
+
+/// <summary>
+/// <c>codex-acp</c>'s error words (CODEXSTATUS1, the design §4.3): the categories of AIR's typed session failure, which its server marks
+/// a terminal failure with only for a client that asked (<see cref="ErrorWords.TypedFailures"/>). The category is the adapter's own
+/// field, never the agent's words, so only it is read: <c>service</c> and <c>connection</c> are the provider's or the way to it, for a
+/// moment; <c>limit</c> is read first by <see cref="CodexLimits"/>'s sentences and else is a limit with D125's unstated reset;
+/// <c>access</c> needs the person; <c>request</c> cannot succeed by repeating it.
+/// </summary>
+public static class CodexErrors
+{
+    public static ErrorWords Words { get; } = new(
+        Kinds: new Dictionary<string, AgentErrorKind>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["service"] = AgentErrorKind.Transient,
+            ["connection"] = AgentErrorKind.Transient,
+            ["limit"] = AgentErrorKind.Limit,
+            ["access"] = AgentErrorKind.Access,
+            ["request"] = AgentErrorKind.Fatal,
+        },
+        Statuses: [],
+        Transient: [],
+        Recorded:
+        [
+            new(
+                "_meta.jetbrains.air.sessionFailure.category: service | connection | limit | access | request",
+                "2026-10-27",
+                "codex-acp 2.1.1's source: SESSION_FAILURE_POLICY and createSessionFailureMeta, dist/index.js (read, not measured)",
+                SourceDerived: true),
+        ],
+        TypedFailures: true);
 }
