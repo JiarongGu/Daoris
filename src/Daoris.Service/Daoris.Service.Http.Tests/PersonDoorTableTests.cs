@@ -59,6 +59,7 @@ public sealed class PersonDoorTableTests
         // NOTIFY2j: what waits, held until it moves.
         ("GET", "/api/confirmations/waiting", Open),
         ("GET", "/api/changes", Open),
+        ("GET", "/api/journal", Open),
 
         ("POST", "/api/quests/{id}/respond", Agent),
         ("POST", "/api/quests", Agent),

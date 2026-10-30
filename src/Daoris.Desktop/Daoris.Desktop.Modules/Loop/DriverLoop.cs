@@ -786,6 +786,10 @@ public sealed class DriverLoop(
         // on the home whoever holds its lease, since the windows are this process's either way. It ends with the loop.
         _ = Task.Run(() => ServiceConfirmations.RunAsync(service.Confirmations, ct), ct);
 
+        // FOUNDATION1 l-i (the foundation design §4.1): the service's journal read from this process's come-up, whoever holds the lease, so an end
+        // a headless loop drove reaches this window's slices as a conversation's own does. It ends with the loop.
+        _ = Task.Run(() => JournalFeed.RunAsync(service, batch => PartEndRelay.TellAsync(eventBus, batch), null, null, log, ct), ct);
+
         // Every loop on the home watches the requests a terminal's `sessions stop|finish|decline` writes (SESSUX1g, D126
         // §7.1): one for a session this registry runs, a conversation or a driven session, is acted on as the screen's
         // route would act. Before the home's lock, so a conversation is reached while a terminal's loop drives the home.
@@ -1250,6 +1254,12 @@ public sealed class DriverLoop(
 
     /// <summary>The event's type, spelled here alone: a slice that wakes on it names it by this (PUSH1a).</summary>
     public const string EndedType = "SESSION_ENDED";
+
+    /// <summary>
+    /// An end the journal told this process (FOUNDATION1 l-i): any part's, driven or a conversation's, with its reason and class, so a
+    /// slice that follows ends wakes on it rather than on the conversation's route alone.
+    /// </summary>
+    public const string PartEndedType = "PART_ENDED";
 
     /// <summary>
     /// A conversation's start refused at its open went on in its replacement (MODELROLE1d2, D205 §3.5(b)): <c>{ from, to }</c>, the refused
