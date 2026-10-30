@@ -35,6 +35,14 @@ internal static class IntegrationSettles
         {
             var request = store.Request(member.Request)!;
             var branch = request.Branch;
+
+            // A merge rule's press (INTEGRATE1g): nothing after it is the request's; the session's tree follows the merge as the landing says.
+            if (request.Route == IntegrationRoutes.Merge)
+            {
+                members.Add(new IntegrationSettlement(member.Request, branch, request.Tip, "merged on the person's press.", [], 0, 0));
+                continue;
+            }
+
             var (read, unread) = await ReadAsync(root, candidate, member, request, ct).ConfigureAwait(false);
             if (read is null) return new IntegrationSettled([], [], unread);
             var judged = await IntegrationAfterLanding.JudgeAsync(root, line, candidate.Tip!, read.Fork, request.Tip, read.BranchTip, read.Own, ct).ConfigureAwait(false);

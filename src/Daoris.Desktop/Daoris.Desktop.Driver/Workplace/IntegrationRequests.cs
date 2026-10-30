@@ -49,6 +49,40 @@ public sealed class IntegrationRequests(IIntegrationRecords records, IIntegratio
         };
     }
 
+    /// <summary>
+    /// The merge rule's policy as the transport carries it (§4.2's named legacy exception, C9, C18): the owner's press, no gates, one member at a
+    /// time, a merge commit. It claims no gate, so a build that merged it on the press as before loses nothing it promised.
+    /// </summary>
+    public static LandingIntegrate Legacy { get; } =
+        new LandingIntegrate(Request: LandingIntegrate.Owner, Commit: LandingIntegrate.Merge, Batch: 1, Gates: LandingIntegrate.NoGates).Resolved();
+
+    /// <summary>
+    /// The person's press under a merge rule (INTEGRATE1g): the session's branch at <paramref name="tip"/>, the commit the press merges, admitted
+    /// for <paramref name="line"/> under <see cref="Legacy"/> only where the repository's effective rule is a merge rule.
+    /// </summary>
+    public IntegrationAdmission Press(string repository, string? workspace, string branch, string tip, string line)
+    {
+        var landing = LandingRules.Effective(config(), repository, workspace);
+        if (landing.Rule.Form != LandingForm.Merge)
+        {
+            return Refuse(IntegrationRefusals.Door, $"`{repository}`'s landing rule is no merge rule, so its press is not carried as one: nothing was requested.");
+        }
+
+        var request = new IntegrationRequest(NewId(), repository, RemoteTarget.Workspace(workspace), branch, tip, IntegrationRoutes.Merge, line,
+            IntegrationRequester.Press, Legacy, DateTimeOffset.UtcNow)
+        {
+            RuleSource = landing.Source,
+        };
+        // An earlier press of the same commit still open (its run held) is this press's request: the press goes on with it.
+        return store.Add(request) switch
+        {
+            null => new IntegrationAdmission(true, $"`{branch}` at {Short(tip)} is requested for `{line}` by the person's press, as the merge rule's.") { Request = request },
+            { Route: IntegrationRoutes.Merge } open when SameCommit(open.Tip, tip) =>
+                new IntegrationAdmission(true, $"`{branch}` at {Short(tip)} was requested for `{line}` by an earlier press, which this one goes on with.") { Request = open },
+            var open => Opened(open, branch, tip),
+        };
+    }
+
     private static string NoIntegrateSaid(string repository) =>
         $"`{repository}`'s landing rule carries no `integrate`, so nothing was requested: its landed branches stay the result, as always.";
 

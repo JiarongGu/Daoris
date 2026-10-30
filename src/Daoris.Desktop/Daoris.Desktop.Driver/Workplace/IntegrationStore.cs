@@ -141,6 +141,12 @@ public sealed class IntegrationStore(
     public IntegrationRequest? Request(string id) =>
         Reading(reader => reader.Query($"SELECT {RequestColumns} FROM integration_requests WHERE id = $id", MapRequest, ("$id", id)).FirstOrDefault(), null);
 
+    /// <summary>Every request of a repository's branch, open or closed, in the order admitted.</summary>
+    public IReadOnlyList<IntegrationRequest> Of(string repository, string branch) =>
+        Reading(reader => reader.Query(
+            $"SELECT {RequestColumns} FROM integration_requests WHERE repository = $repository COLLATE NOCASE AND branch = $branch ORDER BY at, id",
+            MapRequest, ("$repository", repository), ("$branch", branch)), []);
+
     /// <summary>Every open request, in the order admitted.</summary>
     public IReadOnlyList<IntegrationRequest> Open() =>
         Reading(reader => reader.Query($"SELECT {RequestColumns} FROM integration_requests WHERE closed_at IS NULL ORDER BY at, id", MapRequest), []);

@@ -616,8 +616,10 @@ internal sealed class IntegrationPromotes(IntegrationStore store, string treesRo
     /// </summary>
     private async Task TidyAsync(IntegrationClaim claim, IntegrationPromoteAsk ask, CancellationToken ct)
     {
+        // A merge rule's press carried no landed branch: its session's branch and tree stay the person's to discard, as a merge left them (INTEGRATE1g).
         var settled = store.Members(claim.Candidate).Where(each => each.State == IntegrationMemberStates.Settled)
-            .Select(each => store.Request(each.Request)!).GroupBy(each => each.Branch, StringComparer.Ordinal).Select(group => group.First()).ToList();
+            .Select(each => store.Request(each.Request)!).Where(each => each.Route != IntegrationRoutes.Merge)
+            .GroupBy(each => each.Branch, StringComparer.Ordinal).Select(group => group.First()).ToList();
         await new IntegrationSteps(store).RunAsync(
             claim, IntegrationStepNames.Tidy,
             async (_, token) =>

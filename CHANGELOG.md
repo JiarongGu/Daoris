@@ -5,6 +5,7 @@ with the version and date at release.
 
 ## Unreleased
 
+- A repository whose landing rule carries `integrate` now has its landed work merged into its line by Daoris: the unit's request, its Accept or its done as the rule says, is taken through the declared gates and the line moved only to a candidate that passed, each step written to the machine log. A merge rule's Accept is merged the same way, with its message and its repository's hooks as before, and your checkout is only ever fast-forwarded to that merge (INTEGRATE1g, D215).
 - A repository's Workflow tab has a *Verify…* door once its gates are accepted: it verifies a branch or a commit under them, as `daoris-driver verify` does, and a check's verdict shows on the run's Workflow view as *verified*, *failed: gate*, *not known*, *waiting for* or *not now*, with *Run again* and *Not now* on one that could not be established.
 - A change to the actors' staffing made outside Daoris (a hand edit of `driver.json`, an older Daoris) is no longer silently taken or lost: Settings → AI features → Actors lists it under *Changed outside Daoris*, to *Take it* or *Dismiss*, and a turn-off of Intake or Ask Daoris applies at once. `daoris driver actor export`, `import` and `found` do the same from the terminal.
 - Ask Daoris is no longer offered *Ask another agent…*: a helper is asked only by a session that works in a repository, and every door says so in your language.
