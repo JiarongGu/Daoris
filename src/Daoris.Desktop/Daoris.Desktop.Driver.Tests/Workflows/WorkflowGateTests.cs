@@ -501,6 +501,39 @@ public sealed class WorkflowGateTests : IDisposable
         Assert.Equal(["it lands with no press of yours", Lowers], Involvement.Lowers(automatic, owned));
     }
 
+    /// <summary>A graph holding a claim and, where <paramref name="id"/> is named, a <c>work.requests</c> of that node id before the landing.</summary>
+    private static NodeGraph RequestsGraph(string? id) => Graph(
+        """[{"id":"work","kind":"claimed","version":1,"reach":"observed"},""" + (id is null ? "" : "{\"id\":\"" + id + "\",\"kind\":\"work.requests\",\"version\":1,\"reach\":\"observed\"},")
+        + """{"id":"land","kind":"handed","version":1,"reach":"observed","options":{"form":"branch"}}]""");
+
+    /// <summary>
+    /// INTEGRATE1o part o1 (§17.6 point 9; C29): a <c>work.requests</c> has no step of its own either, so the comparison reads it by its node's id.
+    /// One the chosen version no longer holds under that id lowers, said as what it no longer does; one kept, one added and one in neither
+    /// lower nothing. A node under another id is another node (§2.5), so the old one is gone and lowers.
+    /// </summary>
+    [Fact]
+    public void A_graph_versions_work_requests_removed_lowers_matched_by_its_node_id()
+    {
+        const string Lowers = "it no longer holds the work on its requests, nor asks you about one declined";
+        IReadOnlyList<NamedStep> Of(string? id) => Involvement.StepsOf(RequestsGraph(id));
+        Assert.Equal([("work", "work"), ("requests", "work.requests"), ("land", "landing")], Of("requests").Select(step => (step.Id, step.Kind)));
+
+        Assert.Equal([Lowers], Involvement.Lowers(Of(null), Of("requests")));
+        Assert.Empty(Involvement.Lowers(Of("requests"), Of("requests")));
+        Assert.Empty(Involvement.Lowers(Of(null), Of(null)));
+        Assert.Empty(Involvement.Lowers(Of("requests"), Of(null)));
+
+        // By the node's id: the old id is not in the chosen version, so what it held is no longer held there.
+        Assert.Equal([Lowers], Involvement.Lowers(Of("hold"), Of("requests")));
+
+        // Beside the table's other rows: a look dropped lowers as it did, and the requests' row adds its own after the landing's.
+        var looked = Involvement.StepsOf(Graph("""
+            [{"id":"work","kind":"claimed","version":1,"reach":"observed"},{"id":"requests","kind":"work.requests","version":1,"reach":"observed"},
+             {"id":"look","kind":"look","version":1,"reach":"observed"},{"id":"land","kind":"handed","version":1,"reach":"observed"}]
+            """));
+        Assert.Equal(["it drops your look", Lowers], Involvement.Lowers(Of(null), looked));
+    }
+
     /// <summary>
     /// INTEGRATE1r (§17.4, §17.7): Current's <c>integrate</c> step carries its <c>request</c>, so a version compared against Current reads
     /// the rule's, not the owner's by default: a graph version asking for the owner's card lowers against a Current that requests on its
