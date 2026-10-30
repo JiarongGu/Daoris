@@ -201,7 +201,19 @@ public sealed class HeldAnswers
         return flight;
     }
 
+    /// <summary>
+    /// Told each answer that lands as the one held, its key beside it, whether it moved or not, never one a newer landing superseded: what
+    /// a read's own judge registers its dependencies by (COWORKVIEW1a, the design §4.1).
+    /// </summary>
+    public event Action<string, object?>? Landed;
+
     private void Land(string key, Held entry, long begun, string? at, Task<object?> done)
+    {
+        if (Took(key, entry, begun, at, done) && done.IsCompletedSuccessfully) Landed?.Invoke(key, done.Result);
+    }
+
+    // Whether the landing became the one held.
+    private bool Took(string key, Held entry, long begun, string? at, Task<object?> done)
     {
         string[] pages;
         object? answer = null;
@@ -210,7 +222,7 @@ public sealed class HeldAnswers
         {
             if (ReferenceEquals(entry.Flight, done)) entry.Flight = null;
             // An older work landing after a newer one moves nothing.
-            if (begun < entry.Landed) return;
+            if (begun < entry.Landed) return false;
             entry.Landed = begun;
             if (done.IsCompletedSuccessfully)
             {
@@ -224,7 +236,7 @@ public sealed class HeldAnswers
                 entry.Made = at;
                 entry.Fault = null;
                 entry.Kept = null;
-                if (!moved) return;
+                if (!moved) return true;
                 if (entry.Numbered) answer = Reply(entry);
             }
             else if (entry.Numbered)
@@ -238,12 +250,12 @@ public sealed class HeldAnswers
             else
             {
                 // A failure keeps what was held: the page goes on reading it. With nothing held it is the next ask's refusal.
-                if (entry.Answered) return;
+                if (entry.Answered) return true;
                 entry.Fault = done.Exception?.InnerException ?? done.Exception;
                 failed = true;
             }
 
-            if (!_held.ContainsKey(key)) return;
+            if (!_held.ContainsKey(key)) return true;
             pages = [.. entry.Pages];
         }
 
@@ -251,6 +263,8 @@ public sealed class HeldAnswers
         {
             _bus.Emit(Module, Event, failed ? new { Held = page, Failed = true } : new { Held = page, Answer = answer });
         }
+
+        return true;
     }
 
     // Under the gate: room for one more, the least recently asked let go.

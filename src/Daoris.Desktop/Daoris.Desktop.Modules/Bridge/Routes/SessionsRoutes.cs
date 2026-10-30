@@ -713,8 +713,13 @@ public sealed class SessionsRoutes(DriverContext context)
         var session = PayloadHelper.GetRequiredValue<string>(request.Payload, "session");
         await Task.CompletedTask;
         var slices = _loop.Slices;
-        return AtWorkRead.Compose(session, slices.Find(GroupsStateSlice.Name), slices.Find(SessionsStateSlice.Name),
-            record => ChildLineage.Reading(_loop.Home, record.Id, record.Kind, LineageTokens.Shared));
+        AtWorkHeld Compose() => AtWorkRead.Compose(session, slices.Find(GroupsStateSlice.Name), slices.Find(SessionsStateSlice.Name),
+            record => ChildLineage.Reading(_loop.Home, record.Id, record.Kind, LineageTokens.Shared), id => ChildLineage.PathOf(_loop.Home, id));
+
+        // The source fence (rule 11): an input moved while it composed is composed again, at most three times; the last lands.
+        var held = Compose();
+        for (var again = 0; again < 3 && held.Dependencies is AtWorkDependencies read && !_loop.AtWork.Stands(read); again++) held = Compose();
+        return held;
     }
 
     /// <summary>

@@ -59,6 +59,10 @@ public sealed record AtWorkHeld
 
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public AtWorkWhy? Stale { get; init; }
+
+    /// <summary>What the composition read, each input with the version it read (the design §4.1): kept beside it, never sent.</summary>
+    [JsonIgnore]
+    public object? Dependencies { get; init; }
 }
 
 public sealed record AtWorkOf(string Session);

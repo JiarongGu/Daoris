@@ -97,7 +97,7 @@ public sealed class DriverModule : ModuleBase
         : base(events: events)
     {
         _context = new DriverContext(events, loop, openFolder, pickFile);
-        _held = new HeldAnswers(events);
+        _held = Registering(new HeldAnswers(events));
         _handlers = [.. Domains.Select(domain => domain.Build(_context))];
         // Ask Daoris's room as START_HELP writes it, for a conversation going on in it (ASKHIST1). Since PARALLEL1a from the facts the
         // judges keep on the loop: their judges registered here, and the room written again as the facts it said not read yet land.
@@ -130,7 +130,17 @@ public sealed class DriverModule : ModuleBase
     public TimeSpan Patience
     {
         get => _held.Patience;
-        init => _held = new HeldAnswers(_context.Events) { Patience = value };
+        init => _held = Registering(new HeldAnswers(_context.Events) { Patience = value });
+    }
+
+    /// <summary>Each landed composition of who is at work registered with its judge (COWORKVIEW1a), which wakes it once it moved.</summary>
+    private HeldAnswers Registering(HeldAnswers held)
+    {
+        held.Landed += (key, answer) =>
+        {
+            if (answer is AtWorkHeld { Dependencies: AtWorkDependencies read }) _context.Loop.AtWork.Register(key, read);
+        };
+        return held;
     }
 
     /// <summary>The reads a page may stop (GITAPP1a-iii), and who waits on them: the tests' window on a shared read's callers.</summary>

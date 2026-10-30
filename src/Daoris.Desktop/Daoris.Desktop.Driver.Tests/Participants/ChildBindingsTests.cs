@@ -748,4 +748,34 @@ public sealed class ChildBindingsTests
         Assert.Equal(("t-a", "codex", Working, 1), (child.Native, child.Harness, child.State, child.Calls));
         Assert.Equal(1, bound.Unmatched);
     }
+
+    /// <summary>
+    /// COWORKVIEW1a's rule 13: a line appended after a reading wakes the read only where it moves what that reading holds; a call
+    /// naming the root, a held working child, a counted unmatched or unplaced id moves nothing.
+    /// </summary>
+    [Fact]
+    public void An_appended_line_wakes_the_read_only_where_it_moves_what_the_reading_holds()
+    {
+        string[] lines = [StartAt(P1, 0), HookAt("started", SiblingA, 1, P1), HookCallAt("t1", SiblingA, 2, P1), HookCallAt("t9", Grandchild, 3)];
+        var read = ChildBindings.Fold(lines, window: Watching(P1));
+
+        Assert.False(read.Wakes(HookCall("t2", null, P1)));
+        Assert.False(read.Wakes(Call("t2", P1)));
+        Assert.False(read.Wakes(HookCallAt("t3", SiblingA, 4, P1)));
+        Assert.True(read.Wakes(HookCallAt("t4", SiblingB, 5, P1)));
+        Assert.True(read.Wakes(StartAt(P2, 6)));
+        Assert.True(read.Wakes(HookAt("stopped", SiblingA, 7, P1)));
+        Assert.True(read.Wakes(EndAt(P1, clean: true, 8)));
+        // Tied to no process: a new id is counted once, one counted already moves nothing.
+        Assert.False(read.Wakes(HookCallAt("t5", Grandchild, 9)));
+        Assert.True(read.Wakes(HookCallAt("t6", SiblingB, 10)));
+        // A child read not known: its call moves its last seen.
+        Assert.True(ChildBindings.Fold(lines).Wakes(HookCallAt("t7", SiblingA, 11, P1)));
+
+        var codex = ChildBindings.Fold([StartAt(P1, 0), CodexAt("t-root", null, 1, P1), CodexAt("t-1", "t-root", 2, P1)], window: Watching(P1));
+        Assert.False(codex.Wakes(CodexAt("t-other", null, 3, P1)));
+        Assert.False(codex.Wakes(CodexAt("t-1", "t-root", 4, P1)));
+        Assert.True(codex.Wakes(CodexAt("t-1", null, 5, P1)));
+        Assert.True(codex.Wakes(CodexAt("t-2", "t-root", 6, P1)));
+    }
 }
