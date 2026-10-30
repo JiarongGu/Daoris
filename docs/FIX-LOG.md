@@ -12411,3 +12411,11 @@ mis-rooted instance.
 **Fix.** A `--stage` run ends at its first `FAIL` (`endsStageRun`; a `FLAKE` does not): it ends the running gates' trees, starts none, releases the lock and names the failure and the gates not run. A plain run is unchanged.
 
 **Verification.** Two tool tests: stage ends, plain runs on; the verdict helper.
+
+## The family rehearsal's stand-in phase failed four acp-stub checks (2026-10-30)
+
+**Root cause.** Each door drives in a home of its own over one service. The stub's resume fallback leaves its words waiting for the person, marked unable in its home alone; the acp-stub home planned them on `stub`, held it as not installed, and queued every later quest behind it.
+
+**Fix.** Section 18a takes back, by the person's press, the words a case leaves waiting (`takeBackHeld`).
+
+**Verification.** `rehearse:family` 448/448; red before, the same four failures.

@@ -1,5 +1,5 @@
 {
-  "_why": "FOUNDATION1c census B (D212; the foundation design §10, row c): every line outside ParticipantWork.Of that reads a record's `Serves`, `Opinion`, `Ask`, `Piece`, `HelpMode` or the Ask Daoris repository (`HelpRoom.Repository`, `SessionLedger.HelpRepository`, `WordsNever.IsHelp`) in a test of presence, identity or shape is counted per source file, each file named *not yet moved* with the row that moves it, and a new one fails. A line is counted where it matches one of the census's patterns (a mark tested for null, empty or a property pattern, an `.Ask` tested for null, the repository's spelling, `IsHelp(`), a comment's line not counted, ParticipantWork.cs not counted since it is the rule. `reads` is `tells` where the file's lines tell a kind of session from its marks (the work's reading, an admission or a refusal that depends on it, a label by it), and `other` where they read another thing the word names (a workflow step's or a gate's own opinion, an ask's own fields, a join key, a parse off the wire, a type named alike); `row` is the Part B row that moves a `tells` file, and where none is named no row of the design moves it and the file keeps reading as today. Row c moves no reader but the cap's slot (ActiveSessions.HoldsSlot, now the work's table) and draws the partner (identity.ts); a disagreement of the participant-work table other than the partner's is kept as today (O4-9). A line added to a listed file, or a file added, fails the census of its project until it is listed here with its row. Each project's census reads its own sources: the driver's reads the driver library's, the modules' the shell's modules', the service's its Core, Http and Mcp projects'.",
+  "_why": "FOUNDATION1c census B (D212; the foundation design §10, row c): every line outside ParticipantWork.Of that reads a record's `Serves`, `Opinion`, `Ask`, `Piece`, `HelpMode` or the Ask Daoris repository (`HelpRoom.Repository`, `SessionLedger.HelpRepository`, `WordsNever.IsHelp`) in a test of presence, identity or shape is found per source file, each file named *not yet moved* with the row that moves it, and a file that reads and is not listed fails, as does a listed file that reads none now; how many lines a listed file reads is not pinned (CENSUSRULES1). A line is a read where it matches one of the census's patterns (a mark tested for null, empty or a property pattern, an `.Ask` tested for null, the repository's spelling, `IsHelp(`), a comment's line not counted, ParticipantWork.cs not counted since it is the rule. `reads` is `tells` where the file's lines tell a kind of session from its marks (the work's reading, an admission or a refusal that depends on it, a label by it), and `other` where they read another thing the word names (a workflow step's or a gate's own opinion, an ask's own fields, a join key, a parse off the wire, a type named alike); `row` is the Part B row that moves a `tells` file, and where none is named no row of the design moves it and the file keeps reading as today. Row c moves no reader but the cap's slot (ActiveSessions.HoldsSlot, now the work's table) and draws the partner (identity.ts); a disagreement of the participant-work table other than the partner's is kept as today (O4-9). A file added that reads fails the census of its project until it is listed here with its row. Each project's census reads its own sources: the driver's reads the driver library's, the modules' the shell's modules', the service's its Core, Http and Mcp projects'.",
   "rows": {
     "1e": "the course: LineCourse.Decide over the paths, one closed reason (§3.1)",
     "1h": "conversations onto the course, one path per branch (§3.1), what never goes on among them",
@@ -10,608 +10,496 @@
   },
   "driver": {
     "Agents/HarnessRoster.cs": {
-      "lines": 1,
       "reads": "other",
       "note": "a word's author, a pass's ask, a harness's rule or a repository type of the same name; no record's mark tells a work"
     },
     "Agents/Adapters.cs": {
-      "lines": 4,
       "reads": "tells",
       "row": "1j",
       "note": "reads the start target's marks to tell a one-turn start (an intake, a reviewer, a helper, a partner, a brainstorm); the start plan's (§2.4); one more line names a type"
     },
     "Agents/RuleProposals.cs": {
-      "lines": 1,
       "reads": "other",
       "note": "a word's author, a pass's ask, a harness's rule or a repository type of the same name; no record's mark tells a work"
     },
     "Course/Chat/BriefedMove.cs": {
-      "lines": 2,
       "reads": "tells",
       "row": "1h",
       "note": "tells Ask Daoris's record or an intake for what never goes on or moves; the conversations' path onto the course (§3.1)"
     },
     "Course/Chat/ChatGoOn.cs": {
-      "lines": 3,
       "reads": "tells",
       "row": "1h",
       "note": "tells Ask Daoris's record or an intake for what never goes on or moves; the conversations' path onto the course (§3.1)"
     },
     "Participants/Chat/ChatRunBinds.cs": {
-      "lines": 1,
       "reads": "other",
       "note": "a word's author, a pass's ask, a harness's rule or a repository type of the same name; no record's mark tells a work"
     },
     "Loop/Chat/ChatRunner.cs": {
-      "lines": 7,
       "reads": "tells",
       "row": "1j",
       "note": "tells Ask Daoris's place for its start (three lines); the others read a go-on's ask or Ask Daoris's access mode, not a record's mark; the start plan's (§2.4)"
     },
     "Course/Chat/ChatRunner.StartFrom.cs": {
-      "lines": 1,
       "reads": "tells",
       "row": "1h",
       "note": "tells Ask Daoris's record or an intake for what never goes on or moves; the conversations' path onto the course (§3.1)"
     },
     "Course/Chat/CurveMove.cs": {
-      "lines": 1,
       "reads": "tells",
       "row": "1h",
       "note": "tells Ask Daoris's record or an intake for what never goes on or moves; the conversations' path onto the course (§3.1)"
     },
     "Course/Chat/LimitMove.cs": {
-      "lines": 2,
       "reads": "tells",
       "row": "1h",
       "note": "tells Ask Daoris's record or an intake for what never goes on or moves; the conversations' path onto the course (§3.1)"
     },
     "Course/Chat/LimitWaits.cs": {
-      "lines": 1,
       "reads": "tells",
       "row": "1h",
       "note": "tells Ask Daoris's room for the wake's facts; the conversations' path onto the course (§3.1)"
     },
     "Course/GoOn/DrivenCourse.cs": {
-      "lines": 1,
       "reads": "tells",
       "row": "1i",
       "note": "tells an intake for the driven paths' facts; the driven lines' path onto the course (§3.1)"
     },
     "Course/Domain/AnswersAlone.cs": {
-      "lines": 1,
       "reads": "other",
       "note": "a word's author, a pass's ask, a harness's rule or a repository type of the same name; no record's mark tells a work"
     },
     "Context/Domain/ContextBrief.cs": {
-      "lines": 1,
       "reads": "other",
       "note": "a word's author, a pass's ask, a harness's rule or a repository type of the same name; no record's mark tells a work"
     },
     "Course/Domain/Continuation.cs": {
-      "lines": 1,
       "reads": "tells",
       "row": "1e",
       "note": "tells an intake by its ask for its continue reason; the course's (§3.1)"
     },
     "Course/Domain/HandOverAsks.cs": {
-      "lines": 2,
       "reads": "tells",
       "row": "1q",
       "note": "judges who may ask a helper, lead a partner's piece or hand over by the asker's marks; the start layer's (§2.3)"
     },
     "Participants/Domain/HelperJudge.cs": {
-      "lines": 1,
       "reads": "other",
       "note": "its asker judged by the start layer's table (StartAdmission, row 1q); the line left reads the helpers rule's `ask` mode"
     },
     "Participants/Domain/PartnerInstruction.cs": {
-      "lines": 1,
       "reads": "other",
       "note": "a word's author, a pass's ask, a harness's rule or a repository type of the same name; no record's mark tells a work"
     },
     "Participants/Domain/PartnerJudge.cs": {
-      "lines": 1,
       "reads": "other",
       "note": "its lead judged by the start layer's table (StartAdmission, row 1q), handed the record's Ask Daoris mode; the ask's own piece is read beside it"
     },
     "Participants/Domain/StartAdmission.cs": {
-      "lines": 2,
       "reads": "tells",
       "note": "the start layer's table itself (§2.3, row 1q): who may ask for a co-worker by the work, an empty `serves` or `opinion` and Ask Daoris's mode kept refused as every door refused them; no row of this design moves it"
     },
     "Course/GoOn/AnswersAloneHold.cs": {
-      "lines": 1,
       "reads": "other",
       "note": "a word's author, a pass's ask, a harness's rule or a repository type of the same name; no record's mark tells a work"
     },
     "Course/GoOn/GoOnNew.cs": {
-      "lines": 1,
       "reads": "tells",
       "row": "1h",
       "note": "tells Ask Daoris's record or an intake for what never goes on or moves; the conversations' path onto the course (§3.1)"
     },
     "Course/GoOn/SessionSay.cs": {
-      "lines": 2,
       "reads": "tells",
       "row": "1h",
       "note": "tells Ask Daoris's record or an intake for what never goes on or moves; the conversations' path onto the course (§3.1)"
     },
     "Course/HandOver/HandOver.cs": {
-      "lines": 1,
       "reads": "tells",
       "row": "1h",
       "note": "tells Ask Daoris's record or an intake for what never goes on or moves; the conversations' path onto the course (§3.1)"
     },
     "Course/HandOver/HandOverAskWord.cs": {
-      "lines": 2,
       "reads": "other",
       "note": "an ask's own fields, a channel entry's, a file's lookup by ask, or a join key; no record's mark tells a work"
     },
     "Events/Domain/AskDaorisRoom.cs": {
-      "lines": 1,
       "reads": "other",
       "note": "declares the room repository's identity for Events' attention headline, which the participant-work rule aliases; no record's mark tells a work"
     },
     "Events/Domain/AttentionEvent.cs": {
-      "lines": 1,
       "reads": "other",
       "note": "an ask's own fields, a channel entry's, a file's lookup by ask, or a join key; no record's mark tells a work"
     },
     "Help/HelpCommand.cs": {
-      "lines": 1,
       "reads": "tells",
       "row": "1q",
       "note": "tells Ask Daoris's own conversation by its repository for its gates and its room's reads; the start layer's (§2.3), Help's judges kept as they read until then (mod-xx)"
     },
     "Context/HelpConversations.cs": {
-      "lines": 1,
       "reads": "tells",
       "row": "1q",
       "note": "tells Ask Daoris's own conversation by its repository for its gates and its room's reads; the start layer's (§2.3), Help's judges kept as they read until then (mod-xx)"
     },
     "Help/HelpHousekeeping.cs": {
-      "lines": 1,
       "reads": "tells",
       "row": "1q",
       "note": "tells Ask Daoris's own conversation by its repository for its gates and its room's reads; the start layer's (§2.3), Help's judges kept as they read until then (mod-xx)"
     },
     "Help/HelpPublished.cs": {
-      "lines": 1,
       "reads": "other",
       "note": "an ask's own fields, a channel entry's, a file's lookup by ask, or a join key; no record's mark tells a work"
     },
     "Help/HelpRoom.cs": {
-      "lines": 1,
       "reads": "other",
       "note": "forwards the room repository's identity from KnowledgeRoomIdentity; no record's mark tells a work"
     },
     "Help/HelpRoomDescriptions.cs": {
-      "lines": 2,
       "reads": "tells",
       "row": "1q",
       "note": "the waiting-session projection moved from Knowledge/Room/HelpRoomMachineNow.cs still excludes Ask Daoris's own conversation; the other line constructs the repository view moved from HelpRoomWorkspaces.cs; the start layer's (§2.3), Help's judges kept as they read until then (mod-xx)"
     },
     "Help/HelpSettings.cs": {
-      "lines": 1,
       "reads": "tells",
       "row": "1q",
       "note": "tells Ask Daoris's own conversation by its repository for its gates and its room's reads; the start layer's (§2.3), Help's judges kept as they read until then (mod-xx)"
     },
     "Help/Proposals/HelpDeleteProposals.cs": {
-      "lines": 2,
       "reads": "tells",
       "row": "1q",
       "note": "tells Ask Daoris's own conversation by its repository for its gates and its room's reads; the start layer's (§2.3), Help's judges kept as they read until then (mod-xx)"
     },
     "Help/Proposals/HelpGoProposals.cs": {
-      "lines": 2,
       "reads": "tells",
       "row": "1q",
       "note": "tells Ask Daoris's own conversation by its repository for its gates and its room's reads; the start layer's (§2.3), Help's judges kept as they read until then (mod-xx)"
     },
     "Help/Proposals/HelpPauseProposals.cs": {
-      "lines": 1,
       "reads": "other",
       "note": "an ask's own fields, a channel entry's, a file's lookup by ask, or a join key; no record's mark tells a work"
     },
     "Help/Proposals/HelpSessionProposals.cs": {
-      "lines": 1,
       "reads": "tells",
       "row": "1q",
       "note": "tells Ask Daoris's own conversation by its repository for its gates and its room's reads; the start layer's (§2.3), Help's judges kept as they read until then (mod-xx)"
     },
     "Knowledge/Domain/Trace.Chain.cs": {
-      "lines": 3,
       "reads": "other",
       "note": "an ask's own fields, a channel entry's, a file's lookup by ask, or a join key; no record's mark tells a work"
     },
     "Knowledge/Domain/Trace.Words.cs": {
-      "lines": 3,
       "reads": "tells",
       "note": "tells a conversation, an intake or Ask Daoris's record by its marks to name it or to list it; no row of this design moves it"
     },
     "Knowledge/HelpCheckouts.cs": {
-      "lines": 1,
       "reads": "tells",
       "row": "1q",
       "note": "tells Ask Daoris's own conversation by its repository for its gates and its room's reads; the start layer's (§2.3), Help's judges kept as they read until then (mod-xx)"
     },
     "Knowledge/HelpCircle.cs": {
-      "lines": 1,
       "reads": "tells",
       "row": "1q",
       "note": "tells Ask Daoris's own conversation by its repository for its gates and its room's reads; the start layer's (§2.3), Help's judges kept as they read until then (mod-xx)"
     },
     "Knowledge/HelpMachine.cs": {
-      "lines": 1,
       "reads": "other",
       "note": "the repository view's type moved from Help/HelpRoom.cs; no record's mark tells a work"
     },
     "Knowledge/Room/HelpRoomMachineNow.cs": {
-      "lines": 1,
       "reads": "tells",
       "row": "1q",
       "note": "tells Ask Daoris's own conversation by its repository for its gates and its room's reads; the start layer's (§2.3), Help's judges kept as they read until then (mod-xx)"
     },
     "Knowledge/Room/HelpRoomWorkspaces.cs": {
-      "lines": 2,
       "reads": "other",
       "note": "a word's author, a pass's ask, a harness's rule or a repository type of the same name; no record's mark tells a work"
     },
     "WorkOrders/ChannelReach.cs": {
-      "lines": 3,
       "reads": "other",
       "note": "an ask's own fields, a channel entry's, a file's lookup by ask, or a join key; no record's mark tells a work"
     },
     "Loop/Driver.cs": {
-      "lines": 3,
       "reads": "tells",
       "row": "1j",
       "note": "reads the start target's marks to tell a one-turn start; the start plan's (§2.4)"
     },
     "Loop/DriverHandOvers.cs": {
-      "lines": 3,
       "reads": "other",
       "note": "an ask's own fields, a channel entry's, a file's lookup by ask, or a join key; no record's mark tells a work"
     },
     "Loop/DriverHelpers.cs": {
-      "lines": 3,
       "reads": "tells",
       "row": "1q",
       "note": "tells who may ask a helper by the asker's marks; the start layer's (§2.3), which `HelperJudge` replaces; one more line names an ask's id"
     },
     "Loop/DriverIntakes.cs": {
-      "lines": 2,
       "reads": "tells",
       "row": "1q",
       "note": "tells a parked intake by its ask for the look's intake pass; the start layer's (§2.3)"
     },
     "Loop/DriverPartners.cs": {
-      "lines": 1,
       "reads": "other",
       "note": "an ask's own fields, a channel entry's, a file's lookup by ask, or a join key; no record's mark tells a work"
     },
     "Loop/OpinionDeliverer.cs": {
-      "lines": 1,
       "reads": "other",
       "note": "a workflow step's, a gate's or a landing's own opinion or ask, not a record's mark"
     },
     "Loop/OpinionGateLook.cs": {
-      "lines": 4,
       "reads": "other",
       "note": "a workflow step's, a gate's or a landing's own opinion or ask, not a record's mark"
     },
     "WorkOrders/AskReviewCommand.cs": {
-      "lines": 1,
       "reads": "other",
       "note": "an ask's own fields, a channel entry's, a file's lookup by ask, or a join key; no record's mark tells a work"
     },
     "WorkOrders/AskWorkflowCommand.cs": {
-      "lines": 1,
       "reads": "other",
       "note": "an ask's own fields, a channel entry's, a file's lookup by ask, or a join key; no record's mark tells a work"
     },
     "WorkOrders/ChannelCommand.cs": {
-      "lines": 1,
       "reads": "other",
       "note": "an ask's own fields, a channel entry's, a file's lookup by ask, or a join key; no record's mark tells a work"
     },
     "Review/Domain/OpinionAsk.cs": {
-      "lines": 1,
       "reads": "other",
       "note": "a workflow step's, a gate's or a landing's own opinion or ask, not a record's mark"
     },
     "Review/Domain/OpinionGate.cs": {
-      "lines": 7,
       "reads": "other",
       "note": "a workflow step's, a gate's or a landing's own opinion or ask, not a record's mark"
     },
     "Review/OpinionGateFiles.cs": {
-      "lines": 1,
       "reads": "other",
       "note": "a workflow step's, a gate's or a landing's own opinion or ask, not a record's mark"
     },
     "Review/OpinionPresses.cs": {
-      "lines": 3,
       "reads": "other",
       "note": "a workflow step's, a gate's or a landing's own opinion or ask, not a record's mark"
     },
     "Service/Domain/SessionRecord.cs": {
-      "lines": 1,
       "reads": "tells",
       "note": "tells a partner (`Piece is not null`); the record's view moved here from Trees/SessionGroups.cs (FOUNDATION1 mod-iv); no row of this design moves it"
     },
     "Service/ServiceClient.cs": {
-      "lines": 5,
       "reads": "other",
       "note": "parses the marks off the service's answer into the driver's views; it tells no work"
     },
     "Service/SessionRecords.cs": {
-      "lines": 3,
       "reads": "other",
       "note": "parses the marks off the service's answer into the record view (moved from Trees/SessionGroups.cs, FOUNDATION1 mod-iv); it tells no work"
     },
     "Workplace/HistoryClearing.cs": {
-      "lines": 1,
       "reads": "other",
       "note": "an ask's own fields, a channel entry's, a file's lookup by ask, or a join key; no record's mark tells a work"
     },
     "Workplace/HistoryHome.cs": {
-      "lines": 2,
       "reads": "tells",
       "note": "tells a conversation, an intake or Ask Daoris's record by its marks to name it or to list it; no row of this design moves it"
     },
     "Workplace/SessionDeletion.cs": {
-      "lines": 3,
       "reads": "tells",
       "note": "tells a conversation, an intake or Ask Daoris's record by its marks to name it or to list it; no row of this design moves it"
     },
     "Participants/RunningSessions.cs": {
-      "lines": 1,
       "reads": "other",
       "note": "an ask's own fields, a channel entry's, a file's lookup by ask, or a join key; no record's mark tells a work"
     },
     "WorkOrders/SessionsCommand.cs": {
-      "lines": 4,
       "reads": "tells",
       "note": "tells a conversation, an intake or Ask Daoris's record by its marks to name it or to list it; no row of this design moves it"
     },
     "WorkOrders/Work/WorkAbandoning.cs": {
-      "lines": 1,
       "reads": "other",
       "note": "an ask's own fields, a channel entry's, a file's lookup by ask, or a join key; no record's mark tells a work"
     },
     "WorkOrders/Inventory/KnowledgeWorkOrderReads.cs": {
-      "lines": 1,
       "reads": "tells",
       "row": "1q",
       "note": "the session-group projection moved from Knowledge/Room/HelpRoomMachineNow.cs still excludes Ask Daoris's own conversation by the same repository identity; the start layer's (§2.3), Help's judges kept as they read until then (mod-xx)"
     },
     "Workplace/LandedBranches.cs": {
-      "lines": 3,
       "reads": "other",
       "note": "a workflow step's, a gate's or a landing's own opinion or ask, not a record's mark"
     },
     "Workplace/IntegrationStore.cs": {
-      "lines": 1,
       "reads": "other",
       "note": "an integration request's landing proof keeps the landing's own opinion in the landing record's shape (INTEGRATE1e part e2), not a record's mark"
     },
     "Workplace/AutoLander.cs": {
-      "lines": 1,
       "reads": "other",
       "note": "a workflow step's, a gate's or a landing's own opinion or ask, not a record's mark"
     },
     "Review/ChatPresses.cs": {
-      "lines": 1,
       "reads": "other",
       "note": "a workflow step's, a gate's or a landing's own opinion or ask, not a record's mark"
     },
     "Workflows/Nodes/NodeRuntime.cs": {
-      "lines": 4,
       "reads": "other",
       "note": "a workflow step's, a gate's or a landing's own opinion or ask, not a record's mark"
     },
     "Workflows/Nodes/OpinionNode.cs": {
-      "lines": 1,
       "reads": "other",
       "note": "a workflow step's, a gate's or a landing's own opinion or ask, not a record's mark"
     },
     "Workflows/Nodes/WorkflowRunNodes.cs": {
-      "lines": 1,
       "reads": "other",
       "note": "a workflow step's, a gate's or a landing's own opinion or ask, not a record's mark"
     },
     "WorkOrders/SessionEntryReader.cs": {
-      "lines": 2,
       "reads": "tells",
       "note": "tells an intake from its ask and the absence of a quest; no row of this design moves it (the reader moved here, to Work orders, from Workplace/SessionEntries.cs in FOUNDATION1 mod-x's Work orders cut)"
     },
     "WorkOrders/SessionGroups.cs": {
-      "lines": 1,
       "reads": "tells",
       "note": "tells Ask Daoris's record by its repository; no row of this design moves it (the record's parse and its view moved to Service, FOUNDATION1 mod-iv)"
     },
     "Workplace/LandedCleanups.cs": {
-      "lines": 1,
       "reads": "other",
       "note": "a workflow step's, a gate's or a landing's own opinion or ask, not a record's mark"
     },
     "Workflows/ChatRuns.cs": {
-      "lines": 2,
       "reads": "tells",
       "note": "tells an ordinary conversation from every other kind by its marks; no row of this design moves it"
     },
     "Workflows/Domain/WorkflowGate.cs": {
-      "lines": 2,
       "reads": "other",
       "note": "a workflow step's, a gate's or a landing's own opinion or ask, not a record's mark"
     },
     "Workflows/Domain/WorkflowRun.cs": {
-      "lines": 7,
       "reads": "other",
       "note": "a workflow step's, a gate's or a landing's own opinion or ask, not a record's mark"
     },
     "Workflows/Domain/WorkflowRunBinding.cs": {
-      "lines": 1,
       "reads": "other",
       "note": "a workflow step's, a gate's or a landing's own opinion or ask, not a record's mark"
     },
     "Workflows/Domain/WorkflowRunGraph.cs": {
-      "lines": 1,
       "reads": "other",
       "note": "a workflow step's, a gate's or a landing's own opinion or ask, not a record's mark"
     },
     "Workflows/Domain/WorkflowRunWords.cs": {
-      "lines": 6,
       "reads": "other",
       "note": "a workflow step's, a gate's or a landing's own opinion or ask, not a record's mark"
     },
     "Workflows/WorkflowRun.Read.cs": {
-      "lines": 8,
       "reads": "tells",
       "note": "tells which kinds of record run no workflow (Ask Daoris's, a reviewer's, a partner's, a helper's) and which sessions are the work's helpers (INTEGRATE1o2); two lines read an ask; no row of this design moves it"
     },
     "Workflows/WorkflowRunFiles.cs": {
-      "lines": 1,
       "reads": "other",
       "note": "a workflow step's, a gate's or a landing's own opinion or ask, not a record's mark"
     }
   },
   "modules": {
     "Bridge/Routes/HelpRoutes.cs": {
-      "lines": 3,
       "reads": "tells",
       "row": "1q",
       "note": "tells Ask Daoris's own conversation by its repository; the start layer's (§2.3)"
     },
     "Bridge/Routes/TreesRoutes.cs": {
-      "lines": 1,
       "reads": "other",
       "note": "a gate's opinion or an ask id named in a request, not a record's mark"
     },
     "Bridge/Routes/WorkflowRoutes.cs": {
-      "lines": 1,
       "reads": "other",
       "note": "a gate's opinion or an ask id named in a request, not a record's mark"
     },
     "Loop/NeedsAPerson.cs": {
-      "lines": 2,
       "reads": "tells",
       "note": "tells Ask Daoris's record by its repository to leave it out of a wait; no row of this design moves it"
     },
     "Loop/SessionWords.cs": {
-      "lines": 1,
       "reads": "tells",
       "row": "1h",
       "note": "tells an intake by its ask for the words it refuses; the conversations' path onto the course (§3.1)"
     },
     "Windows/SessionBalloon.cs": {
-      "lines": 2,
       "reads": "tells",
       "note": "tells Ask Daoris's record by its repository to word its balloon; no row of this design moves it"
     }
   },
   "service": {
     "Core/Asks/Channel.cs": {
-      "lines": 1,
       "reads": "tells",
       "row": "1r",
       "note": "refuses a channel post to a record that serves or reads an opinion; the call layer's (§2.3)"
     },
     "Core/Asks/History.cs": {
-      "lines": 1,
       "reads": "other",
       "note": "an ask's own field or a scope's ask, not a record's mark"
     },
     "Core/Help/CheckoutBox.cs": {
-      "lines": 1,
       "reads": "tells",
       "row": "1r",
       "note": "lets only Ask Daoris's record call its box; the call layer's (§2.3)"
     },
     "Core/Help/HousekeepingBox.cs": {
-      "lines": 1,
       "reads": "tells",
       "row": "1r",
       "note": "lets only Ask Daoris's record call its box; the call layer's (§2.3)"
     },
     "Core/Help/SettingsBox.cs": {
-      "lines": 1,
       "reads": "tells",
       "row": "1r",
       "note": "lets only Ask Daoris's record call its box; the call layer's (§2.3)"
     },
     "Core/Remote/SessionSync.cs": {
-      "lines": 1,
       "reads": "tells",
       "note": "keeps Ask Daoris's record off every feed; no row of this design moves it"
     },
     "Core/Review/OpinionDesk.cs": {
-      "lines": 9,
       "reads": "tells",
       "row": "1q",
       "note": "judges who may be read or asked for an opinion by the record's marks, the desk's own guard (§2.3); a reviewer's `serves` is row 1v's"
     },
     "Core/Sessions/HandOverAskBox.cs": {
-      "lines": 4,
       "reads": "tells",
       "row": "1q",
       "note": "judges who may ask, answer or lead by the asker's marks, the desk's own guard (§2.3)"
     },
     "Core/Sessions/HelperBox.cs": {
-      "lines": 4,
       "reads": "tells",
       "row": "1q",
       "note": "judges who may ask, answer or lead by the asker's marks, the desk's own guard (§2.3)"
     },
     "Core/Sessions/HelperDesk.cs": {
-      "lines": 7,
       "reads": "tells",
       "row": "1q",
       "note": "judges who may ask, answer or lead by the asker's marks, the desk's own guard (§2.3)"
     },
     "Core/Sessions/PartnerDesk.cs": {
-      "lines": 5,
       "reads": "tells",
       "row": "1q",
       "note": "judges who may ask, answer or lead by the asker's marks, the desk's own guard (§2.3)"
     },
     "Core/Sessions/QuestionBox.cs": {
-      "lines": 4,
       "reads": "tells",
       "row": "1q",
       "note": "judges who may ask, answer or lead by the asker's marks, the desk's own guard (§2.3)"
     },
     "Core/Sessions/SessionEntries.cs": {
-      "lines": 3,
       "reads": "tells",
       "note": "tells an intake or a record that serves for its line of work's key; no row of this design moves it"
     },
     "Core/Sessions/SessionLedger.cs": {
-      "lines": 16,
       "reads": "tells",
       "row": "1q",
       "note": "the ledger's own guards by the marks (what a helper, a reviewer or an intake may open or be moved to) and Ask Daoris's one-running rule; the start layer's (§2.3)"
     },
     "Core/Sessions/Sessions.cs": {
-      "lines": 4,
       "reads": "other",
       "note": "writes the marks at the open and reads Ask Daoris's mode for its default; it tells no work"
     },
     "Http/Program.cs": {
-      "lines": 1,
       "reads": "other",
       "note": "an ask's own field or a scope's ask, not a record's mark"
     },
     "Mcp/Program.cs": {
-      "lines": 1,
       "reads": "other",
       "note": "an ask's own field or a scope's ask, not a record's mark"
     },
     "Mcp/RoleFilter.cs": {
-      "lines": 3,
       "reads": "tells",
       "row": "1r",
       "note": "`SessionRole` reads `serves` with `piece` for a partner and `serves` for a record that serves; it becomes the work (§2.3)"

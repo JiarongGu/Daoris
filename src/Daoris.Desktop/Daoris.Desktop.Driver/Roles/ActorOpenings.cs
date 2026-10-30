@@ -17,6 +17,18 @@ public static class ActorOpenings
         }
 
         /// <summary>
+        /// Where a quest marked design started (FOUNDATION1x, MODELROLE1l), whose order it ran on: the role taking <c>design</c> by its name,
+        /// or Build while none does; kept in the local conversation's record beside the opening, like the actor line.
+        /// </summary>
+        internal static void SayDesign(ISessionEvents events, string sessionId, string role)
+        {
+            var line = RotatedOpening.DesignLine(role);
+            events.Keep(sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = line.Note, Parts = line.Parts }, say: null);
+        }
+
+        internal static Noted DesignLine(string role) => Noted.Of(NoteCodes.OpeningDesign, $"Design work: it ran on {role}'s order.", ("role", role));
+
+        /// <summary>
         /// <c>Ran as Build's choice 2, claude-code-acp · sonnet: choice 1, claude-code-acp · opus: …</c> (§4.6, §7.1), by code; null where the
         /// entry that ran is no later choice of an order, or nothing was passed.
         /// </summary>

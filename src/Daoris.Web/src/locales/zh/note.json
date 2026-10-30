@@ -168,6 +168,7 @@
   "note.opening.said-projected": "按 Daoris 此后自己的轮次推算，它的{{window}}上限此刻约已用 {{projected}}。",
   "note.opening.said-clear": "它说用量正常。",
   "note.opening.actor": "以{{actor}}的第 {{n}} 个选择运行，{{entry}}：{{passed}}。",
+  "note.opening.design": "设计工作：按{{role}}的顺序运行。",
   "note.chat.workflow": "这个对话的工作遵循 `{{owner}}` 选定的工作流 `{{workflow}}` v{{version}}。",
   "note.chat.workflow-unread": "这个对话的工作已绑定到 `{{owner}}` 选定的工作流 `{{workflow}}`，但它无法让这项工作落地：{{problem}}",
   "note.chat.workflow-failed": "它所在仓库的工作流无法绑定，所以这个对话的工作暂时还不能落地：{{problem}}。",

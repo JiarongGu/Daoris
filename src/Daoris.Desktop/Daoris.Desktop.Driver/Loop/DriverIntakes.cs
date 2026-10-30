@@ -119,7 +119,7 @@ internal sealed class DriverIntakes(LoopContext context, Driver driver)
     /// anything else ending the record <c>choice-not-offered</c>, its ask let go.
     /// </summary>
     private StartPlan PlanOf(AskView ask, DriverConfig config) =>
-        new(ParticipantWork.Intake, config, _context.Harnesses, _context.Adapters, _driver.Passed)
+        new(ParticipantWork.Intake, config, _context.Harnesses, _context.Adapters, _driver.Passed, catalogue: RoleCatalog.ReadHome(_context.Harnesses.Home), place: new RolePlace(ask.Workspace))
         {
             Workspace = ask.Workspace,
             Kind = StartKind.Driven,

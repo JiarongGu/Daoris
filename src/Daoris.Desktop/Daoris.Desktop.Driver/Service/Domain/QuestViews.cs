@@ -152,6 +152,12 @@ public sealed record QuestView(string Id, string From, string To, string Title, 
     /// </summary>
     public string? Short { get; init; }
 
+    /// <summary>
+    /// The mark its publisher or the intake gave the work (FOUNDATION1x, O2-9): <c>design</c> for design or decision work, which a role taking
+    /// <c>design</c> takes. A fact of the work carrying no path or name; null from a host before the field, which starts on Build's order.
+    /// </summary>
+    public string? Weight { get; init; }
+
     /// <summary>The quest's name where one is shown (SESSUX1j): its short title, else its title.</summary>
     public string Name => Short is { Length: > 0 } named ? named : Title;
 
