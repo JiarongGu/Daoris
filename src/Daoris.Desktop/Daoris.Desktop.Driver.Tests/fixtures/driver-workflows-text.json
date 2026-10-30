@@ -279,7 +279,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `nothing-like-it` is no preset, no saved workflow and no `current:<repository>` — the presets are `merge-after-accept`, `branch-to-push`, `pull-request-after-accept`, `pull-request-no-press`."
+        "daoris: `nothing-like-it` is no preset, no saved workflow and no `current:<repository>` — the presets are `merge-after-accept`, `branch-to-push`, `pull-request-after-accept`, `pull-request-no-press`, `integrated`, `integrated-no-press`, `pull-request`."
       ],
       "after": null
     },
@@ -2247,6 +2247,9 @@
         "  `branch-to-push` — A branch for you to push. You accept each piece of work onto a branch, and push it yourself.",
         "  `pull-request-after-accept` — A pull request after you accept. You accept; the plugin pushes and opens a pull request; you merge it.",
         "  `pull-request-no-press` — A pull request with no press. A pull request opens once its quest is done; you merge it.",
+        "  `integrated` — Integrated into the line, a graph. You accept each piece of work onto a branch, and you ask for it to be integrated into the line. Its agent's done closes the quest; the flow's end is the work's.",
+        "  `integrated-no-press` — Integrated into the line with no press, a graph. Each piece of work is integrated into the line once its agent is done, on gates the repository accepted. Its agent's done closes the quest; the flow's end is the work's.",
+        "  `pull-request` — A pull request, a graph. You accept; the plugin pushes and opens a pull request; you merge it. Its agent's done closes the quest; the flow's end is the work's.",
         "  A choice names a workflow (`daoris driver workflow use <id> --repository <name>|--workspace <name> [--kind <kind>]`), and work binds its newest version at its first start; every gate then reads that version."
       ],
       "err": [],
@@ -2295,6 +2298,9 @@
         "  `branch-to-push` — A branch for you to push. You accept each piece of work onto a branch, and push it yourself.",
         "  `pull-request-after-accept` — A pull request after you accept. You accept; the plugin pushes and opens a pull request; you merge it.",
         "  `pull-request-no-press` — A pull request with no press. A pull request opens once its quest is done; you merge it.",
+        "  `integrated` — Integrated into the line, a graph. You accept each piece of work onto a branch, and you ask for it to be integrated into the line. Its agent's done closes the quest; the flow's end is the work's.",
+        "  `integrated-no-press` — Integrated into the line with no press, a graph. Each piece of work is integrated into the line once its agent is done, on gates the repository accepted. Its agent's done closes the quest; the flow's end is the work's.",
+        "  `pull-request` — A pull request, a graph. You accept; the plugin pushes and opens a pull request; you merge it. Its agent's done closes the quest; the flow's end is the work's.",
         "  A choice names a workflow (`daoris driver workflow use <id> --repository <name>|--workspace <name> [--kind <kind>]`), and work binds its newest version at its first start; every gate then reads that version."
       ],
       "err": [],
@@ -4173,6 +4179,9 @@
         "  `branch-to-push` — A branch for you to push. You accept each piece of work onto a branch, and push it yourself.",
         "  `pull-request-after-accept` — A pull request after you accept. You accept; the plugin pushes and opens a pull request; you merge it.",
         "  `pull-request-no-press` — A pull request with no press. A pull request opens once its quest is done; you merge it.",
+        "  `integrated` — Integrated into the line, a graph. You accept each piece of work onto a branch, and you ask for it to be integrated into the line. Its agent's done closes the quest; the flow's end is the work's.",
+        "  `integrated-no-press` — Integrated into the line with no press, a graph. Each piece of work is integrated into the line once its agent is done, on gates the repository accepted. Its agent's done closes the quest; the flow's end is the work's.",
+        "  `pull-request` — A pull request, a graph. You accept; the plugin pushes and opens a pull request; you merge it. Its agent's done closes the quest; the flow's end is the work's.",
         "  A choice names a workflow (`daoris driver workflow use <id> --repository <name>|--workspace <name> [--kind <kind>]`), and work binds its newest version at its first start; every gate then reads that version."
       ],
       "err": [],
