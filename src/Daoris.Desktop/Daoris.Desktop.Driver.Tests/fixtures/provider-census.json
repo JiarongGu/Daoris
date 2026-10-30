@@ -350,7 +350,7 @@
       ["src/Daoris.Web/src/workflow/fixtures.ts", "\"codex-acp\"", 2, "-", "measurement", "fixture data for the stories names the doors it stands for"],
       ["src/Daoris.Web/src/workflow/fixtures.ts", "\"dsh\"", 1, "-", "measurement", "fixture data for the stories names the agents it stands for"],
       ["src/Daoris.Web/src/workflow/runFixtures.ts", "\"claude-code\"", 12, "-", "measurement", "fixture data for the stories names the agents it stands for"],
-      ["src/Daoris.Web/src/workflow/runFixtures.ts", "\"codex-acp\"", 1, "-", "measurement", "fixture data for the stories names the doors it stands for"]
+      ["src/Daoris.Web/src/workflow/runFixtures.ts", "\"codex-acp\"", 2, "-", "measurement", "fixture data for the stories names the doors it stands for"]
     ]
   },
 
