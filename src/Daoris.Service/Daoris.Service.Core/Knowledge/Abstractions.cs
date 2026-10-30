@@ -59,6 +59,16 @@ public interface IKnowledgeStore
     NewerIndexException? Refusal => null;
 }
 
+/// <summary>The finished trees' records, searched and read (KEEPSIZE1c); machine-local, so only a local host is given one.</summary>
+public interface IWorkRecordSearch
+{
+    /// <summary>Records matching a query, best first; none where the query's kinds, provenance or workspace leave them out.</summary>
+    Task<IReadOnlyList<KnowledgeHit>> SearchRecordsAsync(KnowledgeQuery query, CancellationToken ct = default);
+
+    /// <summary>One record read whole, by its id (<c>record:&lt;workspace&gt;/&lt;repository&gt;/&lt;folder&gt;</c>); null where none is kept.</summary>
+    Task<KnowledgeEntry?> FindRecordAsync(string id, CancellationToken ct = default);
+}
+
 /// <summary>
 /// How entries are found.
 /// </summary>

@@ -61,7 +61,7 @@ public sealed record KnowledgeQuery(string Text = "")
             if (!Enum.TryParse<EntryKind>(normalized, ignoreCase: true, out var kind) || int.TryParse(normalized, out _))
             {
                 throw new ArgumentException(
-                    $"'{name}' is not a kind of knowledge — one of: rule, knowledge, skill, decision, fix, task, index.");
+                    $"'{name}' is not a kind of knowledge — one of: rule, knowledge, skill, decision, fix, task, index, record.");
             }
 
             kinds.Add(kind);
