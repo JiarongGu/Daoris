@@ -16,7 +16,7 @@ namespace Daoris.Desktop.Driver.Tests;
 public sealed class AcpBackgroundTests
 {
     /// <summary>A scripted agent: each frame the client sends is answered by the handler, which may push frames first.</summary>
-    private sealed class Agent(Func<JsonElement, Agent, string?> handle)
+    internal sealed class Agent(Func<JsonElement, Agent, string?> handle)
     {
         private readonly Channel<string> _toClient = Channel.CreateUnbounded<string>();
 
@@ -94,13 +94,13 @@ public sealed class AcpBackgroundTests
         }
     }
 
-    private static string Ok(JsonElement request, string result) =>
+    internal static string Ok(JsonElement request, string result) =>
         $$"""{"jsonrpc":"2.0","id":{{request.GetProperty("id").GetRawText()}},"result":{{result}}}""";
 
-    private static string Answer(int id, string stopReason) =>
+    internal static string Answer(int id, string stopReason) =>
         $$$"""{"jsonrpc":"2.0","id":{{{id}}},"result":{"stopReason":"{{{stopReason}}}"}}""";
 
-    private static string Update(string update) => UpdateOf("s-1", update);
+    internal static string Update(string update) => UpdateOf("s-1", update);
 
     private static string UpdateOf(string session, string update) =>
         """{"jsonrpc":"2.0","method":"session/update","params":{"sessionId":""" + JsonSerializer.Serialize(session) + ""","update":"""
@@ -126,13 +126,13 @@ public sealed class AcpBackgroundTests
     private static readonly TimeSpan Never = TimeSpan.FromHours(1);
 
     /// <summary>A bound a test of the go-on waits past.</summary>
-    private static readonly TimeSpan Soon = TimeSpan.FromMilliseconds(300);
+    internal static readonly TimeSpan Soon = TimeSpan.FromMilliseconds(300);
 
     /// <summary>The session as these tests run it: the go-on goes only after <paramref name="wake"/> with no wake.</summary>
-    private static AcpSession Session(Agent agent, Record record, TimeSpan wake, TimeSpan? close = null) =>
+    internal static AcpSession Session(Agent agent, Record record, TimeSpan wake, TimeSpan? close = null) =>
         new(agent.Incoming, agent.Outgoing, _ => { }, closeTimeout: close, onEvent: record.Event, wakeQuiet: wake);
 
-    private static string Said(string text) =>
+    internal static string Said(string text) =>
         Update("""{"sessionUpdate":"agent_message_chunk","content":{"type":"text","text":""" + JsonSerializer.Serialize(text) + "}}");
 
     /// <summary>What <c>claude-agent-acp</c> answers at <c>initialize</c> (CONSOLE2a; docs/2026-10-03-steer-evidence.md §1).</summary>
@@ -199,7 +199,7 @@ public sealed class AcpBackgroundTests
     }
 
     /// <summary>The run's record: the turns, the agent's words and the driver's notes, in order.</summary>
-    private sealed class Record
+    internal sealed class Record
     {
         private readonly List<string> _lines = [];
         private readonly List<string?> _kinds = [];
@@ -233,14 +233,14 @@ public sealed class AcpBackgroundTests
     /// A prompt after the first, which the install's adapter never answered (BGWAIT2): its echo took the woken turn, whose
     /// result is autonomous and settles nothing. Told to <paramref name="goOn"/>, and never answered here either.
     /// </summary>
-    private static string? Unanswered(JsonElement frame, TaskCompletionSource<int> goOn)
+    internal static string? Unanswered(JsonElement frame, TaskCompletionSource<int> goOn)
     {
         goOn.TrySetResult(frame.GetProperty("id").GetInt32());
         return null;
     }
 
     /// <summary>Waits for the run, or for a prompt it should never have sent: the latter fails at once rather than at the patience.</summary>
-    private static async Task<AcpOutcome> EndsWithoutGoOn(Task<AcpOutcome> run, Task<int> goOn)
+    internal static async Task<AcpOutcome> EndsWithoutGoOn(Task<AcpOutcome> run, Task<int> goOn)
     {
         await Task.WhenAny(run, goOn).WaitAsync(Poll.Patience);
         Assert.False(goOn.IsCompleted, "Daoris's own go-on went into the turn its harness woke");

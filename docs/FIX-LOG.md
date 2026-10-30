@@ -37,6 +37,12 @@ repository.
 - **Root cause:** the driver's own commits (set-apart, regenerated writers, squash) carried no trailer, and the check knew only the three agent makers.
 - **Fix:** `DaorisMaker.Trailer` ends each of them; the check accepts Daoris and still refuses none.
 - **Verify:** land, squash and `MAKERTRAIL1` tests green.
+## 2026-10-31 - A Codex background completion left the continuation waiting (CODEXWAKE1)
+
+- **Symptom:** after a backgrounded measurement completed, the driven turn produced nothing more.
+- **Root cause:** `codex-acp` streams the command's output and completes its call after the prompt is answered; `AcpWake` took that as a turn begun, and a Codex turn says no end (no origin on `usage_update`).
+- **Fix:** such updates begin no turn; where the adapter is not Claude Code's, a turn's quiet, with no call open, ends it.
+- **Verify:** `AcpBackgroundCodexTests`, the wake case red first.
 
 ## 2026-10-31 - A test still pinned the first-look baseline row m-iv replaced (FOUNDATION1 m-iv)
 

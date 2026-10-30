@@ -161,7 +161,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workplace/LandingTests.cs` | 45 | 801 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workplace/ReviewGraphCensusTests.cs` | 47 | 1045 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/AccountRotation.cs` | 74 | 1200 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Acp.cs` | 219 | 4236 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Acp.cs` | 219 | 4248 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Adapters.cs` | 151 | 2596 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/AgentAccountsCommand.cs` | 48 | 907 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/AgentsCommand.cs` | 53 | 982 |
@@ -290,7 +290,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Cli/test/dogfood.test.ts` | 48 | 840 |
 | `src/Daoris.Cli/test/usage-report.test.ts` | 87 | 1455 |
 | `src/Daoris.Cli/tool-test/desktop-publish.test.ts` | 82 | 1391 |
-| `src/Daoris.Cli/tool-test/merge-branch.test.ts` | 528 | 7739 |
+| `src/Daoris.Cli/tool-test/merge-branch.test.ts` | 528 | 7740 |
 | `src/Daoris.Cli/tool-test/merge-queue.test.ts` | 223 | 3293 |
 | `src/Daoris.Cli/tool-test/setup-kit.test.ts` | 56 | 1039 |
 
@@ -303,7 +303,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `tools/desktop.mjs` | 54 | 1097 |
 | `tools/family-rehearsal.mjs` | 371 | 6428 |
 | `tools/knowledge-bench.mjs` | 46 | 900 |
-| `tools/merge-branch.mjs` | 496 | 8365 |
+| `tools/merge-branch.mjs` | 496 | 8366 |
 | `tools/merge-queue.mjs` | 65 | 1030 |
 | `tools/orient-index.mjs` | 70 | 1505 |
 | `tools/process-reach.mjs` | 43 | 906 |
@@ -415,4 +415,4 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/README.md` | 67 | 297 |
 | `docs/backlog-parked.md` | 184 | 956 |
 | `docs/development.md` | 53 | 591 |
-| `src/Daoris.Desktop/README.md` | 258 | 1264 |
+| `src/Daoris.Desktop/README.md` | 258 | 1266 |
