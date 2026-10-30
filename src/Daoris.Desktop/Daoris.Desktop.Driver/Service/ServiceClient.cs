@@ -361,10 +361,14 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// The supervisor's release (SUPERVISOR1a-i, D208; the supervisor design §3.4): its decision, question and choice, sent with no text,
     /// since the service composes the word from the choice. Null for every other say.
     /// </param>
+    /// <param name="ending">
+    /// The shell keeps the words on a record that winds up or moves (FOUNDATION1o, the foundation design §3.4 rule 4), for its next part to go on
+    /// with; a host before the row ignores it and refuses them as <c>running</c>, which the shell then holds as before.
+    /// </param>
     public async Task<SayAnswer> SayAsync(
         string id, string text, IReadOnlyList<string>? files = null, CancellationToken ct = default, string? channel = null,
         string? from = null, string? key = null, string? level = null, bool running = false,
-        (string Decision, string Question, string Choice)? supervised = null)
+        (string Decision, string Question, string Choice)? supervised = null, bool ending = false)
     {
         var body = WriteJson(writer =>
         {
@@ -389,6 +393,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
             if (key is { Length: > 0 } && supervised is null) writer.WriteBoolean("settled", true);
             if (level is { Length: > 0 }) writer.WriteString("level", level);
             if (running) writer.WriteBoolean("running", true);
+            if (ending) writer.WriteBoolean("ending", true);
             if (files is { Count: > 0 })
             {
                 writer.WriteStartArray("files");
