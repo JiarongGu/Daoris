@@ -93,7 +93,8 @@ follow the survey's aliases (a bare path is under the driver library; `Tests/`, 
 `src/Lyntai.Core/`, `Lyntai/Basic/` its `src/Lyntai.Providers.Basic/`); a Lyntai line marked *(AG20)* is `2fb2dc7e`'s, any other `master`'s.
 *X §n* is a section of Codex's proposal, *O Qn* the Opus reader's answer to question n; X's rows are M0 to M16 and its requests Q-F, Q-L, Q-O,
 Q-R, Q-K, Q-C, Q-M and Q-U; O's rows are L1 to L8 and its requests Y1 to Y8. This design's requests to Lyntai are **LQ1 to LQ17** (§8; LQ13 to
-LQ15 from round 2, LQ16 from round 3, LQ17 from round 4) and its new rows **AGENTLYNTAI1a to 1f** with the corrections **1s-i** and **1s-ii** (§9); D213's rows keep their
+LQ15 from round 2, LQ16 from round 3, LQ17 from round 4; LQ16 and LQ17 travel to Lyntai as LQ23 and LQ24, since KNOWFRESH1b's requests
+took LQ16 to LQ20 in Lyntai's records on 2026-10-30) and its new rows **AGENTLYNTAI1a to 1f** with the corrections **1s-i** and **1s-ii** (§9); D213's rows keep their
 letters (*row d* is AGENTPROVIDER1d), and its row m is cut in two, **m-i** and **m-ii** (§3.1). FOUNDATION1's rows share this design's short
 names (its 1d-i, 1e, 1f-i), so in prose they are always *FOUNDATION1's*, and a record, a commit or a pending line names this design's rows
 whole (`AGENTLYNTAI1d`). Read for it: the brief, the survey and
