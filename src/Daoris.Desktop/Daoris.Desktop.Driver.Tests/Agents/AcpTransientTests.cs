@@ -18,7 +18,7 @@ public sealed class AcpTransientTests
         "Internal error: API Error: 529 Overloaded. This is a server-side issue, usually temporary — try again in a moment. If it persists, check https://status.claude.com.";
 
     /// <summary>A scripted agent: each frame the client sends is answered by the handler, which may push frames first.</summary>
-    private sealed class Agent(Func<JsonElement, Agent, string?> handle)
+    internal sealed class Agent(Func<JsonElement, Agent, string?> handle)
     {
         private readonly Channel<string> _toClient = Channel.CreateUnbounded<string>();
 
@@ -86,10 +86,10 @@ public sealed class AcpTransientTests
         }
     }
 
-    private static string Ok(JsonElement request, string result) =>
+    internal static string Ok(JsonElement request, string result) =>
         $$"""{"jsonrpc":"2.0","id":{{request.GetProperty("id").GetRawText()}},"result":{{result}}}""";
 
-    private static string Answer(JsonElement request, string stopReason) => Ok(request, $$"""{"stopReason":"{{stopReason}}"}""");
+    internal static string Answer(JsonElement request, string stopReason) => Ok(request, $$"""{"stopReason":"{{stopReason}}"}""");
 
     /// <summary>The 529 as <c>claude-agent-acp</c> 0.84.0 answers a prompt with it: <c>-32603</c>, <c>data.errorKind</c> (source-derived).</summary>
     private static string Failed(JsonElement request, string kind = "overloaded", string message = Overloaded) =>
@@ -100,7 +100,7 @@ public sealed class AcpTransientTests
             error = new { code = -32603, message, data = new { errorKind = kind } },
         });
 
-    private static string Said(string text) =>
+    internal static string Said(string text) =>
         """{"jsonrpc":"2.0","method":"session/update","params":{"sessionId":"s-1","update":{"sessionUpdate":"agent_message_chunk","content":{"type":"text","text":"""
         + JsonSerializer.Serialize(text) + "}}}}";
 
@@ -110,7 +110,7 @@ public sealed class AcpTransientTests
     private const string Queues = """{"protocolVersion":1,"agentCapabilities":{"_meta":{"claudeCode":{"promptQueueing":true}}}}""";
 
     /// <summary>The agent: it opens <c>s-1</c>, and answers its n-th prompt by <paramref name="prompt"/>, counted from one.</summary>
-    private static Agent Scripted(Func<int, JsonElement, Agent, string?> prompt)
+    internal static Agent Scripted(Func<int, JsonElement, Agent, string?> prompt)
     {
         var count = 0;
         return new Agent((frame, self) =>
@@ -130,7 +130,7 @@ public sealed class AcpTransientTests
     }
 
     /// <summary>What the retry told, in order: the line once, each try with its next, each wait's start and end.</summary>
-    private sealed class Told
+    internal sealed class Told
     {
         private readonly List<string> _lines = [];
 
@@ -164,7 +164,7 @@ public sealed class AcpTransientTests
     };
 
     /// <summary>Moves the held clock past each wait the run makes, once it waits: <paramref name="minutes"/> one wait at a time.</summary>
-    private static async Task PassAsync(Told told, MovedClock clock, Task run, params int[] minutes)
+    internal static async Task PassAsync(Told told, MovedClock clock, Task run, params int[] minutes)
     {
         for (var at = 0; at < minutes.Length; at++)
         {

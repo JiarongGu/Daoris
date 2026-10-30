@@ -353,13 +353,30 @@ public sealed class AccountLimitsTests
     }
 
     /// <summary>
+    /// 🔴 CODEXCREDITS1: the workspace's credits are spent, as three driven sessions met it on the install. It is a limit whose sentence
+    /// names no reset (the owner refills), so the default stands in, said as unstated.
+    /// </summary>
+    [Fact]
+    public void Codex_s_workspace_out_of_credits_is_a_limit_on_the_default()
+    {
+        var seen = At("2026-10-26 14:00", Machine);
+        var limit = AccountLimits.Read(
+            Codex, $"{CodexDoor}Your workspace is out of credits. Ask your workspace owner to refill in order to continue.", seen, Machine);
+
+        Assert.NotNull(limit);
+        Assert.Equal(seen + AccountLimits.DefaultCoolOff, limit.Until);
+        Assert.False(limit.Stated);
+        Assert.Equal("credits", limit.Hit);
+    }
+
+    /// <summary>
     /// Anything else is not Codex's limit: the door's bare <i>Internal error</i>, as it said before it kept the data;
-    /// the words quoted in the middle of a sentence; a workspace sentence no entry records; Claude Code's words.
+    /// the words quoted in the middle of a sentence, a workspace sentence among them; Claude Code's words.
     /// </summary>
     [Theory]
     [InlineData("the ACP agent refused the call: Internal error")]
     [InlineData("the test said You’ve hit your usage limit. Try again at 4:05 PM.")]
-    [InlineData("the ACP agent refused the call: Internal error: Your workspace is out of credits…")]
+    [InlineData("the ACP agent refused the call: Internal error: the log said Your workspace is out of credits. Ask your workspace owner to refill.")]
     [InlineData("the ACP agent refused the call: Internal error: You've hit your weekly limit · resets 7am")]
     public void A_failure_that_is_not_codex_s_limit_is_none(string failure)
     {

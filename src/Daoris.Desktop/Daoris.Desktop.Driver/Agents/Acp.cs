@@ -345,6 +345,12 @@ public sealed class AcpSession(
     public Func<bool>? SetupChanged { get; init; }
 
     /// <summary>
+    /// Whether this client asks the agent for AIR's typed session failures (CODEXSTATUS1, the agent-errors design §4.3): set for an
+    /// agent whose toolchain declares it marks a terminal failure for such a client alone (<see cref="ErrorWords.TypedFailures"/>).
+    /// </summary>
+    public bool TypedFailures { get; init; }
+
+    /// <summary>
     /// Asked at a turn's end (LANDBACK1 part 2, D87's note): what the quest and its tree say, so a turn that ended with the quest done and
     /// the tree uncommitted is carried on rather than the session's end (<see cref="CarryOnAsync"/>). Dirty, with carry-ons left, the run
     /// also waits for the session's own background work as a park would have it wait (<see cref="Waits"/>), never cutting that wait on
@@ -2183,7 +2189,7 @@ public sealed class AcpSession(
             new
             {
                 protocolVersion = ProtocolVersion,
-                clientCapabilities = Capabilities(streams is not null),
+                clientCapabilities = Capabilities(streams is not null, TypedFailures),
                 clientInfo = new { name = "daoris-driver", version = "0" },
             },
             ct).ConfigureAwait(false);
@@ -2294,20 +2300,46 @@ public sealed class AcpSession(
     /// parked on work still running. Where no stream takes the frames, the record and the console keep none of them
     /// (<see cref="Map"/>, <see cref="Render"/>). A subagent's own session is asked for only where streams route it.</para>
     /// </remarks>
-    internal static object Capabilities(bool streams) => streams
-        ? new
+    internal static object Capabilities(bool streams, bool typedFailures = false)
+    {
+        // CODEXSTATUS1: asked for only by a door declared to mark a terminal failure for such a client alone (the design §4.3, §10).
+        var asked = new List<string>();
+        if (streams) asked.Add("nativeSubagentSessions");
+        asked.Add("asyncTasks");
+        if (typedFailures) asked.Add("sessionFailure");
+        var meta = new { jetbrains = new { air = new { version = 1, capabilities = asked } } };
+        if (streams) return new { fs = new { readTextFile = false, writeTextFile = false }, terminal = false, subagents = new { }, _meta = meta };
+        return new { fs = new { readTextFile = false, writeTextFile = false }, terminal = false, _meta = meta };
+    }
+
+    /// <summary>
+    /// The terminal failure a typed client's prompt was answered with (CODEXSTATUS1, the design §4.3): <c>end_turn</c> with
+    /// <c>_meta.jetbrains.air.sessionFailure</c> at <c>error</c> severity, written as the error frame a refused prompt is, its
+    /// <c>category</c> the error's kind and its <c>title</c> the provider's words, as written. Null for any other answer: a warning
+    /// is an attempt that failed and another follows, and the agent's own message is never read.
+    /// </summary>
+    internal static JsonElement? TypedFailure(JsonElement result)
+    {
+        if (result.ValueKind != JsonValueKind.Object || !result.TryGetProperty("_meta", out var meta)
+            || !meta.TryGetProperty("jetbrains", out var jetbrains) || jetbrains.ValueKind != JsonValueKind.Object
+            || !jetbrains.TryGetProperty("air", out var air) || air.ValueKind != JsonValueKind.Object
+            || !air.TryGetProperty("sessionFailure", out var failure) || failure.ValueKind != JsonValueKind.Object
+            || Json.Text(failure, "severity") != "error" || Json.Text(failure, "category") is not { Length: > 0 } category)
         {
-            fs = new { readTextFile = false, writeTextFile = false },
-            terminal = false,
-            subagents = new { },
-            _meta = new { jetbrains = new { air = new { version = 1, capabilities = new[] { "nativeSubagentSessions", "asyncTasks" } } } },
+            return null;
         }
-        : new
+
+        var frame = new JsonObject
         {
-            fs = new { readTextFile = false, writeTextFile = false },
-            terminal = false,
-            _meta = new { jetbrains = new { air = new { version = 1, capabilities = new[] { "asyncTasks" } } } },
+            ["error"] = new JsonObject
+            {
+                ["message"] = Json.Text(failure, "title") ?? "the agent's turn failed",
+                ["data"] = new JsonObject { ["errorKind"] = category },
+            },
         };
+        using var document = JsonDocument.Parse(frame.ToJsonString());
+        return document.RootElement.Clone();
+    }
 
     /// <summary>
     /// One turn: the text as a prompt on the open session, answered by the agent's stop reason — which
@@ -3169,6 +3201,12 @@ public sealed class AcpSession(
     private void Complete(JsonElement id, JsonElement frame)
     {
         if (!id.TryGetInt32(out var key) || !_pending.TryRemove(key, out var waiting)) return;
+
+        // CODEXSTATUS1: a typed client's prompt answered with a terminal failure fails as a prompt answered with an error does (§4.3).
+        if (TypedFailures && _answered.ContainsKey(key) && frame.TryGetProperty("result", out var ended) && TypedFailure(ended) is { } failed)
+        {
+            frame = failed;
+        }
 
         // What the answer does here, on the reader's thread, before the next frame is read (STEER1).
         if (_answered.TryRemove(key, out var answered))

@@ -4216,7 +4216,8 @@ public sealed class Driver(
                 // asked and not carried, so the record never says a choice was taken that was not.
                 asked: asked, carried: target.Brainstorm is not null ? null
                     : notCarried => _ = service.TryKeepActorAsync(sessionId, Log, choice, notCarried, ct: CancellationToken.None),
-                modelRefused: refusedAt, offerRead: offered, retry: retry, carriesOn: carriesOn, written: written)
+                modelRefused: refusedAt, offerRead: offered, retry: retry, carriesOn: carriesOn, written: written,
+                typedFailures: adapter.Toolchain?.ErrorWords?.TypedFailures == true)
             : null;
         // What the native door's harness says in its own words, apart from its agent's, for its ending (AGT3c).
         var own = new HarnessWords();
@@ -4674,7 +4675,7 @@ public sealed class Driver(
         Func<string, string, string>? unoffered = null, Func<bool>? setupChanged = null, IReadOnlyList<SaidWordView>? handed = null,
         ActorAsked? asked = null, Action<ActorAsked>? carried = null, Func<ModelRefusal, Task<ActorAsked?>>? modelRefused = null,
         Action<IReadOnlyList<AcpConfigOption>>? offerRead = null, TransientRetry? retry = null,
-        Func<CancellationToken, Task<TurnCarry>>? carriesOn = null, Action? written = null)
+        Func<CancellationToken, Task<TurnCarry>>? carriesOn = null, Action? written = null, bool typedFailures = false)
     {
         await using var file = TranscriptFile.Open(transcript, append: resume is not null);
 
@@ -4751,6 +4752,7 @@ public sealed class Driver(
                 onConversation: keepAs is null ? null : conversation => Context.Conversations.Keep(sessionId, keepAs, conversation))
             {
                 Unoffered = unoffered,
+                TypedFailures = typedFailures, // CODEXSTATUS1: asked for only by a door declared to need it
                 Permissions = HeldPermissions.Of(Context.Events).For(sessionId), // AUTONOMY1b3a: held only under asking's mark
                 SetupChanged = setupChanged,
                 CarriesOn = carriesOn, // LANDBACK1 part 2: a done quest's uncommitted tree carries the session on before it ends
