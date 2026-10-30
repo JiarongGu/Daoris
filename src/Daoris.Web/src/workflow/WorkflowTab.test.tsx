@@ -115,6 +115,7 @@ describe("a repository's Workflow tab", () => {
 
     expect(integrate).toHaveTextContent('you');
     expect(integrate).toHaveTextContent('by Daoris');
+    expect(integrate).toHaveTextContent('Integrates the landed branch into its line, requested by you, with no gates; a conflict goes back to its session.');
     expect(integrate).toHaveTextContent("Set by this repository's landing rule.");
     expect(integrate).toHaveTextContent('declared only');
     expect(integrate).toHaveTextContent('Not integrated yet: the rule carries integrate, but nothing runs an integration in this build');
@@ -124,6 +125,7 @@ describe("a repository's Workflow tab", () => {
     await i18n.changeLanguage('zh');
     expect(screen.getByRole('list', { name: '落地之后' }).textContent).toContain('集成');
     expect(steps()[2]).toHaveTextContent('尚未集成');
+    expect(steps()[2]).toHaveTextContent('把已落地的分支集成进它的主线，由你发起，不跑关卡；冲突退回它的会话。');
   });
 
   it('says a limit whole on every step that has one, never folded away', () => {

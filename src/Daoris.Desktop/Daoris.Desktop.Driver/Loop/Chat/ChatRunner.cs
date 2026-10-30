@@ -204,7 +204,9 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
     public async Task<string?> StopWaitingAsync(string sessionId, CancellationToken ct = default)
     {
         if (_context.Holds(sessionId)) return $"conversation `{sessionId}` runs here: stop it to end its wait.";
-        if (LimitHeld.Waiting(_context.Events.After(sessionId, 0).Events) is null)
+        // FOUNDATION1g part c: held by the record's flag, or by its events where an older build ended it.
+        var ended = await _context.ReadAgainAsync(sessionId, ct).ConfigureAwait(false);
+        if (LimitHeld.Waiting(_context.Events.After(sessionId, 0).Events, ended?.Limit == true) is null)
         {
             return $"conversation `{sessionId}` does not wait for its account's limit.";
         }
@@ -416,6 +418,9 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
     internal Task<SwitchChoice?> MoveByCurveAsync(
         string sessionId, DriverConfig config, Func<string, string, Task>? onEnded, CancellationToken ct = default) =>
         _curve.MoveAsync(sessionId, config, onEnded, ct);
+
+    /// <summary>The curve's move, whose <see cref="CurveMove.Decided"/> a test hears (FOUNDATION1h branch 1): the runner names no course type.</summary>
+    internal CurveMove Curve => _curve;
 
     /// <summary>What each judged turn's end came to, by session: a test hears it; no person reads it.</summary>
     internal event Action<string, SwitchChoice>? CurveJudged
@@ -3834,9 +3839,10 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
     {
         // Its agent has ended: an Ask Daoris conversation whose access changed is pending no more once its end is told (ACCESSSWAP1).
         ForgetAccess(sessionId);
+        (state, note, var limit) = LimitedEnd(sessionId, state, note);
         try
         {
-            await _service.AdvanceAsync(sessionId, state, note).ConfigureAwait(false);
+            await _service.AdvanceAsync(sessionId, state, note, limit: limit).ConfigureAwait(false);
         }
         catch (Exception)
         {
@@ -3857,5 +3863,22 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
                 // A listener's failure is its own; the record is already written.
             }
         }
+    }
+
+    /// <summary>
+    /// FOUNDATION1g part c (the foundation design §3.5, §4.2's end class): a conversation whose last turn its account's limit refused ends as a
+    /// driven end a limit made does (<c>Driver.AccountLimited</c>), <c>failed</c> with the ledger's <c>limited</c> flag and that turn's cooling
+    /// line after its own note, so its state, flag and note's code say <i>limited</i> alike, and every reader decides by the flag. The person's
+    /// stop stays theirs, as a driven one's does, and an agent's refusal of the choice at the open keeps its own end.
+    /// </summary>
+    /// <remarks>Why <c>failed</c>, never the flag on another state: D212's note of FOUNDATION1g part c.</remarks>
+    private (string State, Noted Note, bool Limit) LimitedEnd(string sessionId, string state, Noted note)
+    {
+        var personStopped = state == "stopped" && _processes.WasStopRequested(sessionId) && _processes.StopReason(sessionId) is null;
+        if (personStopped || note.Parts.Any(part => part.Code == NoteCodes.EndedChoiceNotOffered.Code)) return (state, note, false);
+        if (LimitHeld.Of(_events.After(sessionId, 0).Events) is not { } held) return (state, note, false);
+
+        var cooled = held.Cooled is { } line ? Noted.From(line.Text, line.Parts) : null;
+        return ("failed", cooled is { Note.Length: > 0 } ? note.Then(" ", cooled) : note, true);
     }
 }

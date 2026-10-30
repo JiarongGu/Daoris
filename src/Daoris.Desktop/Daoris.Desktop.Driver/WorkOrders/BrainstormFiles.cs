@@ -253,6 +253,22 @@ public sealed class BrainstormFiles(string home)
         return room;
     }
 
+    /// <summary>
+    /// The id a room measurement of <paramref name="agent"/> is kept under (BRAINSTORM1c): its own folder beside the brainstorms', holding no
+    /// request, so it is no brainstorm to <c>list</c>, <c>show</c> or the look, and <c>clear</c> removes it as it removes one.
+    /// </summary>
+    public static string MeasureId(string agent) => "measure-" + agent;
+
+    /// <summary>A room measurement kept as evidence (BRAINSTORM1c): its JSON and the Markdown the person reads, atomically.</summary>
+    public void WriteMeasure(string id, RoomMeasure measure)
+    {
+        Bytes(PathOf(id, "room-measure.json"), BrainstormRoomProbe.Json(measure));
+        Bytes(PathOf(id, "room-measure.md"), System.Text.Encoding.UTF8.GetBytes(BrainstormRoomProbe.Markdown(measure)));
+    }
+
+    /// <summary>The measurement a room measurement's Markdown kept, or null where none was.</summary>
+    public string? MeasureText(string id) => ReadText(PathOf(id, "room-measure.md"));
+
     /// <summary>The brainstorm's rooms removed; what could not be, said, never thrown.</summary>
     public string? RemoveRooms(string id) => Remove(Rooms(id));
 

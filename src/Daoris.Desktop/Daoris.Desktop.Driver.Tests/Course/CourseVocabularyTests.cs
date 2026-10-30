@@ -150,8 +150,21 @@ public sealed class CourseVocabularyTests
     }
 
     /// <summary>
-    /// C5-3.3: no production source names a type this part added, so no path reads the course before rows h and i adopt it. A site that
-    /// reads the course then also leaves the census's list (<see cref="CourseCensusTests"/>) and this check moves with that row.
+    /// The files that read the course, each with the row that moved it (FOUNDATION1h): a branch that moves a path onto the course adds its file
+    /// here beside the census's own entry leaving (<see cref="CourseCensusTests"/>), a path from the driver's root with forward slashes.
+    /// </summary>
+    private static readonly Dictionary<string, string> Readers = new(StringComparer.Ordinal)
+    {
+        ["Course/Chat/CurveMove.cs"] = "FOUNDATION1h branch 1: the curve",
+        ["Course/GoOn/GoOnNew.cs"] = "FOUNDATION1h branch 2: go-on-new",
+        ["Course/HandOver/HandOver.cs"] = "FOUNDATION1h branch 3: a conversation's hand-over",
+        ["Course/Chat/ChatHandOver.cs"] = "FOUNDATION1h branch 3: the chat runner's adapter of it",
+    };
+
+    /// <summary>
+    /// C5-3.3: no production source names a type this part added unless it is a named reader of the course (<see cref="Readers"/>, one line per
+    /// file and the row that moved it), so a path reads the course only once its row adopts it; a line whose file no longer names one is a
+    /// stale line and fails too.
     /// </summary>
     [Fact]
     public void No_production_source_names_a_type_the_vocabulary_added()
@@ -169,15 +182,22 @@ public sealed class CourseVocabularyTests
 
         var mine = Course.Select(file => Path.Combine("Course", "Domain", file)).ToHashSet(StringComparer.Ordinal);
         var readers = new List<string>();
+        var reading = new HashSet<string>(StringComparer.Ordinal);
         foreach (var path in CourseCensusTests.ProductionFiles())
         {
-            if (mine.Contains(Path.GetRelativePath(Driver, path))) continue;
+            var relative = Path.GetRelativePath(Driver, path);
+            if (mine.Contains(relative)) continue;
 
+            var key = relative.Replace('\\', '/');
             var text = CourseCensusTests.WithoutComments(File.ReadAllText(path));
-            foreach (var name in names.Where(name => Regex.IsMatch(text, $@"\b{name}\b"))) readers.Add($"{Path.GetFileName(path)} names {name}");
+            var named = names.Where(name => Regex.IsMatch(text, $@"\b{name}\b")).ToList();
+            if (named.Count > 0) reading.Add(key);
+            if (named.Count > 0 && !Readers.ContainsKey(key)) readers.Add($"{key} names {string.Join(", ", named)}");
         }
 
-        Assert.True(readers.Count == 0, "read by nothing, yet: " + string.Join("; ", readers));
+        Assert.True(readers.Count == 0, "read by no named reader, yet (add a line to Readers with its row): " + string.Join("; ", readers));
+        var stale = Readers.Keys.Where(key => !reading.Contains(key)).ToList();
+        Assert.True(stale.Count == 0, "named readers that no longer name the course: " + string.Join("; ", stale));
     }
 
     private static List<string> Constants(Type type) =>

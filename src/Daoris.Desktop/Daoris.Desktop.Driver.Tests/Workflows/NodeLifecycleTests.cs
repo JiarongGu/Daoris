@@ -614,6 +614,69 @@ public sealed class NodeLifecycleTests
     }
 
     /// <summary>
+    /// INTEGRATE1o part o1 (the integration design §17.3, §17.6 point 2 and 3): <c>work.requests</c> is a built-in kind that observes, reached by
+    /// the quests' records and by nothing else; a declined quest holds it active and waiting on the person rather than failing it, so nothing
+    /// fails it. The person may pass it over (the run's existing skip, §17.3) and nothing else passes it; it is never the person's to reject.
+    /// </summary>
+    [Fact]
+    public void WorkRequests_observes_the_quests_records_and_the_person_alone_may_pass_it_over()
+    {
+        Assert.Contains(NodeKinds.WorkRequests, NodeKinds.BuiltIn);
+        Assert.Equal("work.requests", NodeKinds.WorkRequests);
+        var authority = NodeAuthorities.BuiltIn[NodeKinds.WorkRequests];
+        Assert.Equal((NodeReach.Observed, NodeSource.Requests, null), (authority.Reach, authority.ReachBy, authority.FailureBy));
+        Assert.Equal((false, true, true, true), (authority.PersonJudges, authority.PersonSkips, authority.MayEnd, authority.Evidenced));
+        Assert.Null(authority.SkipBy);
+        Assert.Null(NodeDeclarations.Problem(Declared(NodeKinds.WorkRequests) with { Retry = null }));
+        Assert.Equal("retry", NodeDeclarations.Problem(Declared(NodeKinds.WorkRequests)));
+        Assert.Equal("reach", NodeDeclarations.Problem(Declared(NodeKinds.WorkRequests) with { Retry = null, Reach = NodeReach.Waited }));
+        Assert.Equal("rejectable", NodeDeclarations.Problem(Declared(NodeKinds.WorkRequests, rejectable: true) with { Retry = null }));
+        Assert.Equal("skippable", NodeDeclarations.Problem(Declared(NodeKinds.WorkRequests) with { Retry = null, Skippable = false }));
+    }
+
+    /// <summary>
+    /// INTEGRATE1o (§17.6 point 8; C28): a hold on the work's requests written as an option of <c>claimed</c> would be read by a build that knows
+    /// <c>claimed</c> and run with the hold dropped, so this build refuses a <c>requests</c> option there by name, whatever its value; every other
+    /// option of <c>claimed</c> and a <c>requests</c> option on another kind are left as written (a graph's options are opaque to a reader that
+    /// does not know them).
+    /// </summary>
+    [Theory]
+    [InlineData(NodeKinds.Claimed, "requests", "\"wait\"", "requests")]
+    [InlineData(NodeKinds.Claimed, "requests", "\"go-on\"", "requests")]
+    [InlineData(NodeKinds.Claimed, "requests", "true", "requests")]
+    [InlineData(NodeKinds.Claimed, "requests", "null", "requests")]
+    [InlineData(NodeKinds.Claimed, "later", "\"anything\"", null)]
+    [InlineData(NodeKinds.Handed, "requests", "\"wait\"", null)]
+    [InlineData(NodeKinds.WorkRequests, "requests", "\"wait\"", null)]
+    public void A_requests_option_on_claimed_is_refused_by_name(string kind, string name, string json, string? problem)
+    {
+        var node = Declared(kind) with { Retry = null, Options = new Dictionary<string, string> { [name] = json } };
+        Assert.Equal(problem, NodeDeclarations.Problem(node));
+    }
+
+    /// <summary>
+    /// INTEGRATE1o (§17.6 point 6 and 8): the build before this one reads a declaration naming <c>work.requests</c> as no kind, so a version that
+    /// names it is unreadable there and its run is held whole, where it reads a <c>claimed</c> carrying a <c>requests</c> option as readable and runs
+    /// it with the option dropped, which is why the hold is a kind. The older build's table is this one's without the row.
+    /// </summary>
+    [Fact]
+    public void An_older_build_reads_work_requests_as_no_kind_where_it_would_run_an_option_with_the_hold_dropped()
+    {
+        var older = NodeAuthorities.BuiltIn.Where(pair => pair.Key != NodeKinds.WorkRequests).ToDictionary(pair => pair.Key, pair => pair.Value);
+        var kind = Declared(NodeKinds.WorkRequests) with { Retry = null };
+
+        Assert.Equal(NodeRefusal.UnknownKind, NodeDeclarations.Problem(kind, older));
+        Assert.Null(NodeAuthorities.Of(kind, older));
+        Assert.Null(NodeDeclarations.Problem(kind));
+
+        // The option an older build cannot see: its table holds `claimed`, so it reads that node as the kind it knows and judges nothing of an
+        // option it has no word for (a graph's options are opaque to a reader that does not know them); this build says no, by name.
+        var option = Declared(NodeKinds.Claimed) with { Retry = null, Options = new Dictionary<string, string> { ["requests"] = "\"wait\"" } };
+        Assert.Equal(NodeKinds.Claimed, NodeAuthorities.Of(option, older)?.Kind);
+        Assert.Equal("requests", NodeDeclarations.Problem(option));
+    }
+
+    /// <summary>
     /// FABRIC-UNIT1d (§D6): only a plugin's own performed node says how it is performed, and its retry is one it can take: a transient
     /// code to retry, on a node that is idempotent or reconciled. A retry or a code nothing could ever take is refused, as NODE1 refuses
     /// a retry on a kind nothing can fail.

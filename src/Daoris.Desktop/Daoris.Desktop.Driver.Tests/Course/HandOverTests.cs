@@ -123,6 +123,115 @@ public sealed class HandOverTests : IDisposable
         return record;
     }
 
+    /// <summary>An ask as the door puts it, with the course's answer it heard (FOUNDATION1h branch 3).</summary>
+    private async Task<(HandOverAnswer Answer, List<LineCourse> Heard)> HeardAsync(
+        Room room, string id, string agent = "codex-acp", string? account = null, string by = HandOverBy.Person, CourseRules? consent = null)
+    {
+        var heard = new List<LineCourse>();
+        var client = room.Client();
+        var moves = new ConversationMoves(_home, client, Events, store: Store());
+        var asked = await HandOver.AskAsync(
+            client, moves, Roster, id, agent, account, by == HandOverBy.Agent ? HandOverWhy.Agent : HandOverWhy.Press, by, T0.AddMinutes(30),
+            consent: consent, decided: heard.Add);
+        return (asked.Answer, heard);
+    }
+
+    /// <summary>
+    /// 🔴 FOUNDATION1h branch 3 (the foundation design §3.1, §14.2): whether a conversation is handed over is the course's one decision for
+    /// <see cref="CourseTrigger.HandOver"/>. Heard from the ask, its answer is the move (at the turn's end, the account named a pick only the
+    /// person's press keeps) or the refusal by its code, each sentence still the ask's own.
+    /// </summary>
+    [Fact]
+    public async Task The_course_s_answer_is_what_hands_a_conversation_over_or_refuses_it()
+    {
+        var room = new Room(
+        [
+            Chat("c0nv0001"), Chat("laptop/s9"), Chat("1ntake00", state: "awaiting-person", ask: "a1"), Chat("tr33g0n3", tree: Path.Combine(_home, "gone")),
+            Chat("h4nd3d00"), Chat("m0v3d000", state: "working", from: "h4nd3d00"), HelpChat("h31p0001"),
+        ]);
+
+        var (named, namedHeard) = await HeardAsync(room, "c0nv0001", account: "work");
+        Assert.True(named.Kept);
+        var pick = Assert.IsType<LineCourse.Move>(Assert.Single(namedHeard));
+        Assert.Equal((CourseWhen.TurnEnd, CourseAccountSource.Pick, "work", "codex-acp", true), (pick.When, pick.Where.Source, pick.Where.Account, pick.Where.Agent, pick.Where.Kept));
+
+        // An agent's ask opens on the account it named as a pick it does not keep; the person's is the only one kept.
+        var (_, agentHeard) = await HeardAsync(room, "c0nv0001", account: "work", by: HandOverBy.Agent, consent: HandOver.ConsentOf(HandOverAskVerdict.Go("codex-acp")));
+        Assert.False(Assert.IsType<LineCourse.Move>(Assert.Single(agentHeard)).Where.Kept);
+
+        var (teammate, teammateHeard) = await HeardAsync(room, "laptop/s9");
+        Assert.Equal((false, WordsNever.Teammate), (teammate.Kept, teammate.Why));
+        Assert.Equal(CourseNeverWhy.Teammate, Assert.IsType<LineCourse.Never>(Assert.Single(teammateHeard)).Why);
+
+        var (intake, intakeHeard) = await HeardAsync(room, "1ntake00");
+        Assert.Equal((false, WordsNever.Intake), (intake.Kept, intake.Why));
+        Assert.Equal(CourseNeverWhy.Intake, Assert.IsType<LineCourse.Never>(Assert.Single(intakeHeard)).Why);
+
+        var (continued, continuedHeard) = await HeardAsync(room, "h4nd3d00");
+        Assert.Equal((false, WordsNever.Continued), (continued.Kept, continued.Why));
+        Assert.Equal(CourseNeverWhy.Superseded, Assert.IsType<LineCourse.Never>(Assert.Single(continuedHeard)).Why);
+
+        var (help, helpHeard) = await HeardAsync(room, "h31p0001");
+        Assert.Equal((false, WordsNever.Help), (help.Kept, help.Why));
+        Assert.Equal(WordsNever.Help, Assert.IsType<LineCourse.Hold>(Assert.Single(helpHeard)).Code);
+
+        var (same, sameHeard) = await HeardAsync(room, "c0nv0001", "claude-code", "account-1");
+        Assert.Equal((false, HandOver.SameAgent), (same.Kept, same.Why));
+        var refusedSame = Assert.IsType<LineCourse.Hold>(Assert.Single(sameHeard));
+        Assert.Equal((CourseHoldWhy.Refused, HandOver.SameAgent), (refusedSame.Why, refusedSame.Code));
+
+        var (gone, goneHeard) = await HeardAsync(room, "tr33g0n3");
+        Assert.Equal((false, HandOver.TreeGone), (gone.Kept, gone.Why));
+        Assert.Equal(HandOver.TreeGone, Assert.IsType<LineCourse.Hold>(Assert.Single(goneHeard)).Code);
+
+        // Judged before the course: no such session, an agent or an account the roster does not hold.
+        var (nobody, nobodyHeard) = await HeardAsync(room, "nobody00");
+        Assert.Equal((false, WordsNever.NotFound), (nobody.Kept, nobody.Why));
+        Assert.Empty(nobodyHeard);
+        Assert.Equal(HandOver.UnknownAgent, (await HeardAsync(room, "c0nv0001", "gemini")).Answer.Why);
+        Assert.Equal(HandOver.NotItsAccount, (await HeardAsync(room, "c0nv0001", "codex-acp", "other")).Answer.Why);
+    }
+
+    /// <summary>
+    /// 🔴 FOUNDATION1h branch 3 (D212's note on the branches' order): the hand-over rule's consent stays in the door that judges an agent's ask
+    /// and reaches the course as a fact, so the course never admits an agent's ask otherwise. Under <c>off</c> the ask is refused, under
+    /// <c>ask</c> it is put to the person first and nothing is kept, under <c>on</c> it is kept; the person's press needs none.
+    /// </summary>
+    [Fact]
+    public async Task The_rule_s_consent_reaches_the_course_as_a_fact_one_answer_to_each_door()
+    {
+        var room = new Room([Chat("c0nv0001"), Chat("c0nv0002")]);
+
+        var (off, offHeard) = await HeardAsync(room, "c0nv0001", by: HandOverBy.Agent, consent: new CourseRules());
+        Assert.Equal((false, HandOverAskWhy.Off), (off.Kept, off.Why));
+        var refused = Assert.IsType<LineCourse.Hold>(Assert.Single(offHeard));
+        Assert.Equal((CourseHoldWhy.ConsentRefused, HandOverAskWhy.Off), (refused.Why, refused.Code));
+        Assert.Empty(Store().Of("c0nv0001"));
+
+        var (asks, asksHeard) = await HeardAsync(room, "c0nv0001", by: HandOverBy.Agent, consent: new CourseRules(HandOverAsks: true));
+        Assert.Equal((false, HandOver.AwaitsYes), (asks.Kept, asks.Why));
+        var waiting = Assert.IsType<LineCourse.Hold>(Assert.Single(asksHeard));
+        Assert.Equal(CourseHoldWhy.ConsentRefused, waiting.Why);
+        Assert.Equal([CourseDoor.LetAskGo, CourseDoor.NotNow], waiting.Doors);
+        Assert.Empty(Store().Of("c0nv0001"));
+
+        // No consent said is no consent: an agent's ask is never admitted by the course on its own.
+        Assert.Equal(HandOverAskWhy.Off, (await HeardAsync(room, "c0nv0001", by: HandOverBy.Agent)).Answer.Why);
+        Assert.Empty(Store().Of("c0nv0001"));
+
+        // The person's press is admitted whatever the rule says of an agent's.
+        var (pressed, pressedHeard) = await HeardAsync(room, "c0nv0001", consent: new CourseRules());
+        Assert.True(pressed.Kept);
+        Assert.IsType<LineCourse.Move>(Assert.Single(pressedHeard));
+        Assert.Equal(HandOverBy.Person, Assert.Single(Store().Of("c0nv0001")).By);
+
+        var (on, onHeard) = await HeardAsync(room, "c0nv0002", by: HandOverBy.Agent, consent: HandOver.ConsentOf(HandOverAskVerdict.Go("codex-acp")));
+        Assert.True(on.Kept);
+        Assert.IsType<LineCourse.Move>(Assert.Single(onHeard));
+        var kept = Assert.Single(Store().Of("c0nv0002"));
+        Assert.Equal((HandOverWhy.Agent, HandOverBy.Agent), (kept.Why, kept.By));
+    }
+
     // ——— The box.
 
     [Fact]
