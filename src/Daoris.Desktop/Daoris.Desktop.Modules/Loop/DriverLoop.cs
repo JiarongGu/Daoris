@@ -126,7 +126,7 @@ public sealed class DriverLoop(
         WorkStateSlice.Of(this, eventBus), GroupsStateSlice.Of(this, eventBus), SweepStateSlice.Of(this, eventBus),
         SyncStateSlice.Of(this, eventBus), QuestsStateSlice.Of(this, eventBus), AsksStateSlice.Of(this, eventBus),
         UsageStateSlice.Of(this, eventBus), AccountsStateSlice.Of(this, eventBus), AttentionStateSlice.Of(this, eventBus),
-        Notices.Slice));
+        Notices.Slice, ConsiderationsStateSlice.Of(this, eventBus)));
 
     private StateSlices? _slices;
 
@@ -494,6 +494,16 @@ public sealed class DriverLoop(
     public IReadOnlyList<object>? Considered => _considered;
 
     private volatile IReadOnlyList<object>? _considered;
+
+    /// <summary>
+    /// Keep what a look considered and ask the considerations' slice to judge it with what the look kept beside it (FOUNDATION1s, D182):
+    /// the trust holds and the waits, pushed only where one moved.
+    /// </summary>
+    public void RecordConsidered(IReadOnlyList<object> sitting)
+    {
+        _considered = sitting;
+        Slices.Find(ConsiderationsStateSlice.Name)?.Wake();
+    }
 
     /// <summary>
     /// What the last tick parked by its strikes (DRV6) — the verdict the quest drawer shows its Retry by, and what
@@ -1037,7 +1047,7 @@ public sealed class DriverLoop(
                         report.Waits.FirstOrDefault(wait =>
                             wait.Quests.Contains(consideration.Quest.Id, StringComparer.OrdinalIgnoreCase))))
                     .ToArray();
-                _considered = sitting;
+                RecordConsidered(sitting);
                 // And the driver's state judged again (PUSH1a, D182), pushed only where it moved: what runs and what waits for review
                 // move at a look, and a terminal's edit of `driver.json` is read here. A wake only asks; the slice's worker judges.
                 DriverSlice.Wake();
@@ -1082,22 +1092,9 @@ public sealed class DriverLoop(
                 {
                     await eventBus.EmitAsync("DAORIS", "DRIVER_TICK", new
                     {
+                        // What the look considered, the trust holds and the waits are the considerations' slice's, pushed
+                        // when they move (FOUNDATION1s); the tick says only that something moved.
                         Events = report.Events,
-                        Considered = sitting,
-                        // The trust holds as facts (D73): machine-local paths, so over this bridge only.
-                        // A hold's `quest` or `ask`, whichever it is not, is left out by the bridge, and so is `own` but
-                        // where its file is the own sign-in's (POOL1a3, D197 point 3).
-                        Untrusted = report.Untrusted.Select(hold => new
-                        {
-                            hold.Folder,
-                            hold.TrustFile,
-                            hold.Quest,
-                            hold.Ask,
-                            Own = hold.Own ? true : (bool?)null,
-                        }).ToArray(),
-                        // The starts held on cooling accounts, one per account, an ask's intake among them (UX6d): what
-                        // *What needs you* says waits for an account, from the look's own wait and nothing asked.
-                        Waits = report.Waits.Select(TickWait).ToArray(),
                     }).ConfigureAwait(false);
                 }
             },
