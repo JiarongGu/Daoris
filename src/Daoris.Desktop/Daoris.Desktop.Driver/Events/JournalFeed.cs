@@ -14,6 +14,9 @@ namespace Daoris.Driver;
 /// </param>
 public sealed record JournalBatch(string Store, long Floor, long Newest, IReadOnlyList<JournalEntry> Rows, bool Missed = false);
 
+/// <summary>One teller of the feed: what it does with a batch, and its kept cursor, if it keeps one.</summary>
+public sealed record JournalTeller(Func<JournalBatch, Task> Told, Func<JournalPosition?>? Load = null, Action<JournalPosition>? Keep = null);
+
 /// <summary>A teller's place in the journal: where it read to, in which store.</summary>
 public sealed record JournalPosition(string Store, long Position);
 
@@ -49,11 +52,18 @@ public static class JournalFeed
     /// Read the journal until <paramref name="ct"/> ends, handing each batch to <paramref name="told"/>. <paramref name="load"/> is the teller's
     /// kept cursor, or null for none; <paramref name="keep"/> is called after each batch the teller took.
     /// </summary>
-    public static async Task RunAsync(
+    public static Task RunAsync(
         ServiceClient service, Func<JournalBatch, Task> told, Func<JournalPosition?>? load, Action<JournalPosition>? keep, MachineLog? log,
-        CancellationToken ct, TimeSpan? floor = null)
+        CancellationToken ct, TimeSpan? floor = null) =>
+        RunAsync(service, [new JournalTeller(told, load, keep)], log, ct, floor);
+
+    /// <summary>
+    /// Read the journal for several tellers over one wait on the change stream, each from its own cursor (the lease's loop's and the shell's
+    /// news tellers keep theirs; a reader from its come-up keeps none), so a process holds one wait however many tellers it has.
+    /// </summary>
+    public static async Task RunAsync(ServiceClient service, IReadOnlyList<JournalTeller> tellers, MachineLog? log, CancellationToken ct, TimeSpan? floor = null)
     {
-        var cursor = load?.Invoke();
+        var cursors = tellers.Select(teller => teller.Load?.Invoke()).ToArray();
         string? since = null;
         var backOff = TimeSpan.Zero;
         var said = false;
@@ -88,8 +98,18 @@ public static class JournalFeed
                     else
                     {
                         said = false;
-                        cursor ??= new JournalPosition(place.Store, place.Newest);
-                        cursor = await CatchUpAsync(service, place, cursor, told, keep, ct).ConfigureAwait(false);
+                        for (var n = 0; n < tellers.Count; n++)
+                        {
+                            // A teller with no cursor begins at the newest position and keeps that, so its first restart finds its place.
+                            if (cursors[n] is null)
+                            {
+                                cursors[n] = new JournalPosition(place.Store, place.Newest);
+                                tellers[n].Keep?.Invoke(cursors[n]!);
+                            }
+
+                            cursors[n] = await CatchUpAsync(service, place, cursors[n]!, tellers[n].Told, tellers[n].Keep, ct).ConfigureAwait(false);
+                        }
+
                         var took = Stopwatch.GetElapsedTime(began);
                         (pause, backOff) = ((floor ?? Floor) - took, TimeSpan.Zero);
                     }

@@ -157,6 +157,36 @@ public sealed class JournalFeedTests
         Assert.Equal([6L, 7L], teller.Batches[0].Rows.Select(row => row.Position));
     }
 
+    /// <summary>
+    /// Tellers over one wait each read from their own cursor: one that kept its place hears what it had not read, though the process came up
+    /// after those rows, and one with none begins at the newest.
+    /// </summary>
+    [Fact]
+    public async Task Tellers_over_one_wait_each_read_from_their_own_cursor()
+    {
+        var journal = new StandIn();
+        for (var n = 1; n <= 4; n++) journal.Add(n);
+        var behind = new Teller();
+        var fresh = new Teller();
+        var kept = new List<JournalPosition>();
+        using var stop = new CancellationTokenSource();
+        var client = new ServiceClient("http://ledger.test", null, new HttpClient(journal));
+        var run = Task.Run(() => JournalFeed.RunAsync(
+            client,
+            [new JournalTeller(behind.Told, () => new JournalPosition("store-a", 2), position => { lock (kept) kept.Add(position); }), new JournalTeller(fresh.Told)],
+            null, stop.Token, Hurry));
+
+        await Until<bool>(() => behind.Positions.Count() >= 2 ? true : null);
+        journal.Add(5);
+        await Until<bool>(() => fresh.Positions.Any() ? true : null);
+        await stop.CancelAsync();
+        await run;
+
+        Assert.Equal([3L, 4L, 5L], behind.Positions);
+        Assert.Equal([5L], fresh.Positions);
+        Assert.Equal(new JournalPosition("store-a", 5), kept[^1]);
+    }
+
     /// <summary>A host with no journal tells nothing and is not a failure.</summary>
     [Fact]
     public async Task A_host_with_no_journal_tells_nothing()

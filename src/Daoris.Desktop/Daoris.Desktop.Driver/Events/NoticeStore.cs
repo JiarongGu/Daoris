@@ -157,6 +157,17 @@ internal static class NoticeStore
         }
     }
 
+    /// <summary>
+    /// A notice kept inside a transaction the caller holds (the news' claim): one of its id already there is left as it is, or with
+    /// <paramref name="renew"/> replaced where it is older, as <see cref="Notices.Add"/> and <see cref="Notices.Renew"/> do.
+    /// </summary>
+    public static void Put(DesktopWrite write, Notice notice, bool renew)
+    {
+        var held = write.Query($"SELECT {Columns} FROM notices WHERE id = $id", Map, ("$id", notice.Id)).FirstOrDefault();
+        if (held is not null && (!renew || held.At >= notice.At)) return;
+        Upsert(write, notice);
+    }
+
     private static void Upsert(DesktopWrite write, Notice notice) =>
         write.Execute(
             $"""
