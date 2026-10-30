@@ -424,7 +424,7 @@ internal sealed class BriefedMove(ChatContext context, IChatRunning runner, Chat
         $"#{quest} is {status.ToLowerInvariant()}, so the driver carries these words on with it by itself.";
 
     /// <summary>Who wrote a word, as the course tells them apart (the person's, Daoris's, the supervisor's, a second opinion's, a helper's).</summary>
-    private static CourseAuthor AuthorOf(SaidWordView word) =>
+    internal static CourseAuthor AuthorOf(SaidWordView word) =>
         word.Persons ? CourseAuthor.Person
         : word.Daoris ? CourseAuthor.Daoris
         : word.Supervisors ? CourseAuthor.Supervisor

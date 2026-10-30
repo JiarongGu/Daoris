@@ -160,6 +160,7 @@ public sealed class CourseVocabularyTests
         ["Course/HandOver/HandOver.cs"] = "FOUNDATION1h branch 3: a conversation's hand-over",
         ["Course/Chat/ChatHandOver.cs"] = "FOUNDATION1h branch 3: the chat runner's adapter of it",
         ["Course/Chat/BriefedMove.cs"] = "FOUNDATION1h branch 4: the briefed move",
+        ["Course/Chat/LimitMove.cs"] = "FOUNDATION1h branch 5: the live and ended limit moves",
     };
 
     /// <summary>
