@@ -162,7 +162,9 @@ public sealed class KnowledgeService(
     Func<string, RootSignature>? rootSignature = null,
     // Whether a root's record folders differ from its commit, asked once as the root is read (KNOWFRESH1a-ii) and never per
     // hit; null says nothing of it, as a host that cannot ask git does.
-    Func<string, bool?>? uncommitted = null)
+    Func<string, bool?>? uncommitted = null,
+    // The finished trees' records (KEEPSIZE1c): only a local host is given them, since a record holds a person's words and this machine's names.
+    IWorkRecordSearch? records = null)
 {
     private readonly TimeProvider _time = time ?? TimeProvider.System;
 
@@ -234,6 +236,47 @@ public sealed class KnowledgeService(
     /// </remarks>
     public async Task<SearchAnswer> AnswerAsync(KnowledgeQuery query, CancellationToken ct = default)
     {
+        var answer = await AnswerEntriesAsync(query, ct).ConfigureAwait(false);
+        if (records is null || query.Provenance == Provenance.Canonical) return answer;
+        if (query.Kinds is not null && !query.Kinds.Contains(EntryKind.Record)) return answer;
+
+        IReadOnlyList<KnowledgeHit> found;
+        try
+        {
+            found = await records.SearchRecordsAsync(query, ct).ConfigureAwait(false);
+        }
+        catch (NewerWorkRecordsException)
+        {
+            return answer;
+        }
+
+        if (query.Kinds is null) found = [.. found.Take(RecordsUnasked)];
+        if (found.Count == 0) return answer;
+
+        // Reciprocal rank: the two tables' bm25 scores are never compared, only each hit's place in its own list.
+        var scores = new Dictionary<string, double>(StringComparer.Ordinal);
+        var hits = new Dictionary<string, KnowledgeHit>(StringComparer.Ordinal);
+        foreach (var list in new[] { answer.Hits, found })
+        {
+            for (var rank = 0; rank < list.Count; rank++)
+            {
+                var id = list[rank].Entry.Id;
+                scores[id] = scores.GetValueOrDefault(id) + 1.0 / (RankConstant + rank + 1);
+                hits.TryAdd(id, list[rank]);
+            }
+        }
+
+        var merged = scores.OrderByDescending(pair => pair.Value).Take(query.Limit).Select(pair => hits[pair.Key] with { Score = pair.Value }).ToList();
+        return answer with { Hits = merged };
+    }
+
+    /// <summary>How many records a search that names no kinds answers with, as <see cref="IndexEntriesUnasked"/> caps the index's entries.</summary>
+    public const int RecordsUnasked = 3;
+
+    private const int RankConstant = 60;
+
+    private async Task<SearchAnswer> AnswerEntriesAsync(KnowledgeQuery query, CancellationToken ct)
+    {
         RefuseNewerIndex();
         await EnsureIndexedAsync(ct).ConfigureAwait(false);
         var answer = await AnswerAnyAsync(query, ct).ConfigureAwait(false);
@@ -276,6 +319,19 @@ public sealed class KnowledgeService(
 
     public async Task<KnowledgeEntry?> FindAsync(string id, CancellationToken ct = default)
     {
+        if (id.StartsWith("record:", StringComparison.Ordinal))
+        {
+            if (records is null) return null;
+            try
+            {
+                return await records.FindRecordAsync(id, ct).ConfigureAwait(false);
+            }
+            catch (NewerWorkRecordsException)
+            {
+                return null;
+            }
+        }
+
         RefuseNewerIndex();
         await EnsureIndexedAsync(ct).ConfigureAwait(false);
         return await store.FindAsync(id, ct).ConfigureAwait(false);
@@ -304,6 +360,13 @@ public sealed class KnowledgeService(
         foreach (var entry in entries)
         {
             if (standings.ContainsKey(entry.Id)) continue;
+            if (entry.Kind == EntryKind.Record)
+            {
+                // A record is no file read at a commit; its own tip says what it stands on.
+                standings[entry.Id] = new EntryStanding(null, false, false);
+                continue;
+            }
+
             if (!readings.TryGetValue(entry.Repository, out var reading))
             {
                 reading = await ReadingOfAsync(entry.Repository, deadline, ct).ConfigureAwait(false);

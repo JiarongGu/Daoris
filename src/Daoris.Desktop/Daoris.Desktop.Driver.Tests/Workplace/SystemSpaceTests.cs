@@ -82,7 +82,7 @@ public sealed class SystemSpaceTests : IDisposable
             Assert.False((bool)kind["counting"]!);
             // KEEP1d: the person sets the set-aside folders', the downloads' and the logs' rules, and history's age (KEEP1g); the rest are
             // not theirs here.
-            Assert.Equal((string?)kind["id"] is "set-aside" or "downloads" or "logs" or "history", (bool)kind["settable"]!);
+            Assert.Equal((string?)kind["id"] is "set-aside" or "downloads" or "browser-cache" or "logs" or "history", (bool)kind["settable"]!);
         });
         Assert.All(SpaceKinds.Table, kind => Assert.Null(world.Sizes.Of(_home, kind.Id)));
         Assert.Equal(143L << 30, (long)space["volume"]!["free"]!);

@@ -369,7 +369,7 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
     [InlineData("cap", null, null, "0", "a whole number, 1 or more")]
     [InlineData("cooloff", null, null, "0", "a whole number of minutes, 1 or more")]
     [InlineData("cooloff", null, null, "soon", "a whole number of minutes, 1 or more")]
-    [InlineData("keep", null, null, "browser-cache 30", "`keep` names a kind and its rule")]
+    [InlineData("keep", null, null, "trees 30", "`keep` names a kind and its rule")]
     [InlineData("keep", null, null, "set-aside", "`keep` names a kind and its rule")]
     [InlineData("keep", "engine", null, "set-aside 30", "for this machine")]
     [InlineData("adapter", null, null, null, "an agent")]

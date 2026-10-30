@@ -1,3 +1,4 @@
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Data.Sqlite;
@@ -75,12 +76,20 @@ public sealed class NewerWorkRecordsException(int found, int known)
 /// once no session names them. Machine-local: no wire carries them, and a shared host maps no door to them.
 /// </summary>
 /// <remarks>
-/// Not yet searched (KEEPSIZE1c builds <c>work_records_fts</c>): this build writes and keeps them.
+/// Searched through <c>work_records_fts</c> (KEEPSIZE1c): one row of the record's own facts and one per linked session, holding that session's
+/// note and the person's words in its row. The table is derived, carries its own version and is rebuilt from the records when it is missing
+/// or older; the conversations' transcript files are the driver's and are not read here.
 /// </remarks>
-public sealed class WorkRecordStore
+public sealed class WorkRecordStore : IWorkRecordSearch
 {
     /// <summary>The version of the records' tables this build writes and reads.</summary>
     public const int Version = 1;
+
+    /// <summary>The version of <c>work_records_fts</c> this build writes; an older or missing one is rebuilt.</summary>
+    public const int IndexVersion = 1;
+
+    /// <summary>The most characters of one session's words the index holds (the design's 256 KB).</summary>
+    private const int SessionWordsLimit = 256 * 1024;
 
     /// <summary>The schema number each record carries, of the post's shape.</summary>
     public const int RecordSchema = 1;
@@ -140,6 +149,144 @@ public sealed class WorkRecordStore
             var stamped = Convert.ToInt32(await stamp.ExecuteScalarAsync(inside).ConfigureAwait(false));
             return stamped > Version ? stamped : (int?)null;
         }, ct).ConfigureAwait(false);
+
+        if (NewerVersion is null) await _db.InTransactionAsync<bool>(EnsureIndexAsync, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>The index made where missing or older, and filled from the records kept (the records written before it existed included).</summary>
+    private async Task<bool> EnsureIndexAsync(SqliteTransaction transaction, CancellationToken ct)
+    {
+        await using (var make = _db.Command())
+        {
+            make.Transaction = transaction;
+            make.CommandText = """
+                CREATE TABLE IF NOT EXISTS work_record_fts_version (one INTEGER PRIMARY KEY CHECK (one = 1), version INTEGER NOT NULL);
+                """;
+            await make.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+        }
+
+        int? held;
+        await using (var read = _db.Command())
+        {
+            read.Transaction = transaction;
+            read.CommandText = """
+                SELECT (SELECT version FROM work_record_fts_version WHERE one = 1),
+                       (SELECT COUNT(*) FROM sqlite_master WHERE name = 'work_records_fts')
+                """;
+            await using var row = await read.ExecuteReaderAsync(ct).ConfigureAwait(false);
+            await row.ReadAsync(ct).ConfigureAwait(false);
+            held = row.IsDBNull(0) || row.GetInt32(1) == 0 ? null : row.GetInt32(0);
+        }
+
+        if (held == IndexVersion) return true;
+        await using (var rebuild = _db.Command())
+        {
+            rebuild.Transaction = transaction;
+            rebuild.CommandText = """
+                DROP TABLE IF EXISTS work_records_fts;
+                CREATE VIRTUAL TABLE work_records_fts
+                  USING fts5(workspace UNINDEXED, repository UNINDEXED, folder UNINDEXED, session UNINDEXED, body, tokenize='unicode61');
+                """;
+            await rebuild.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+        }
+
+        var keys = new List<(string Workspace, string Repository, string Folder)>();
+        await using (var list = _db.Command())
+        {
+            list.Transaction = transaction;
+            list.CommandText = "SELECT workspace, repository, folder FROM work_records";
+            await using var rows = await list.ExecuteReaderAsync(ct).ConfigureAwait(false);
+            while (await rows.ReadAsync(ct).ConfigureAwait(false)) keys.Add((rows.GetString(0), rows.GetString(1), rows.GetString(2)));
+        }
+
+        foreach (var (workspace, repository, folder) in keys)
+        {
+            if (await FindInsideAsync(workspace, repository, folder, ct).ConfigureAwait(false) is { } record) await IndexAsync(record, ct).ConfigureAwait(false);
+        }
+
+        await using var stamp = _db.Command();
+        stamp.Transaction = transaction;
+        stamp.CommandText = """
+            INSERT INTO work_record_fts_version (one, version) VALUES (1, $version)
+            ON CONFLICT(one) DO UPDATE SET version = excluded.version
+            """;
+        stamp.Parameters.AddWithValue("$version", IndexVersion);
+        await stamp.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+        return true;
+    }
+
+    /// <summary>The record's own facts as one row of words, and each linked session's note and the person's words as a row of its own.</summary>
+    private async Task IndexAsync(WorkRecord record, CancellationToken ct)
+    {
+        var post = record.Post;
+        var own = new StringBuilder();
+        own.Append(post.Folder).Append(' ').Append(post.Branch).Append(' ').Append(post.Line).Append(' ').Append(post.Unit).Append(' ')
+            .Append(post.Tip).Append(' ').Append(post.Ref).Append(' ').Append(post.Hold.Kind).Append(' ').Append(post.Hold.Where).Append(' ')
+            .Append(post.Landing?.Branch).Append(' ').Append(post.Landing?.PullRequest).Append(' ');
+        foreach (var commit in post.Commits ?? [])
+        {
+            own.Append(commit.Id).Append(' ').Append(commit.Subject).Append(' ');
+            foreach (var file in commit.Files) own.Append(file.Path).Append(' ');
+        }
+
+        foreach (var name in post.Left.Names) own.Append(name).Append(' ');
+        await InsertRowAsync(post, string.Empty, own.ToString(), ct).ConfigureAwait(false);
+
+        foreach (var session in record.Sessions)
+        {
+            if (await SessionWordsAsync(session.Session, ct).ConfigureAwait(false) is { Length: > 0 } words)
+            {
+                await InsertRowAsync(post, session.Session, words, ct).ConfigureAwait(false);
+            }
+        }
+    }
+
+    private async Task InsertRowAsync(WorkRecordPost post, string session, string body, CancellationToken ct)
+    {
+        await using var insert = _db.Command();
+        insert.CommandText = "INSERT INTO work_records_fts (workspace, repository, folder, session, body) VALUES ($workspace, $repository, $folder, $session, $body)";
+        Key(insert, post.Workspace, post.Repository, post.Folder);
+        insert.Parameters.AddWithValue("$session", session);
+        insert.Parameters.AddWithValue("$body", body);
+        await insert.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+    }
+
+    /// <summary>A session's note and the words the person said to it, never an agent's or a tool's; at most <see cref="SessionWordsLimit"/> characters.</summary>
+    private async Task<string?> SessionWordsAsync(string session, CancellationToken ct)
+    {
+        string? note;
+        string? said;
+        await using (var read = _db.Command())
+        {
+            read.CommandText = "SELECT note, said FROM sessions WHERE id = $id";
+            read.Parameters.AddWithValue("$id", session);
+            await using var row = await read.ExecuteReaderAsync(ct).ConfigureAwait(false);
+            if (!await row.ReadAsync(ct).ConfigureAwait(false)) return null;
+            note = row.IsDBNull(0) ? null : row.GetString(0);
+            said = row.IsDBNull(1) ? null : row.GetString(1);
+        }
+
+        var words = new StringBuilder(note);
+        if (said is not null)
+        {
+            try
+            {
+                using var list = JsonDocument.Parse(said);
+                foreach (var word in list.RootElement.EnumerateArray())
+                {
+                    var persons = !word.TryGetProperty("by", out var by) || by.ValueKind == JsonValueKind.Null;
+                    persons &= !word.TryGetProperty("helper", out var helper) || helper.ValueKind == JsonValueKind.Null;
+                    persons &= !word.TryGetProperty("from", out var from) || from.ValueKind == JsonValueKind.Null;
+                    if (persons && word.TryGetProperty("text", out var text) && text.ValueKind == JsonValueKind.String) words.Append('\n').Append(text.GetString());
+                }
+            }
+            catch (JsonException)
+            {
+                // Words that do not read are not indexed; the row itself stands.
+            }
+        }
+
+        return words.Length > SessionWordsLimit ? words.ToString(0, SessionWordsLimit) : words.ToString();
     }
 
     /// <summary>The version's own table, made first, read before the rest.</summary>
@@ -222,7 +369,7 @@ public sealed class WorkRecordStore
         return _db.InTransactionAsync<(WorkRecord, bool)>(async (_, inside) =>
         {
             await RefuseNewerAsync(inside).ConfigureAwait(false);
-            if (await FindInsideAsync(post.Workspace, post.Repository, post.Folder, inside).ConfigureAwait(false) is { } kept) return (kept, false);
+            if (await FindInsideAsync(post.Workspace, post.Repository, post.Folder, inside).ConfigureAwait(false) is { } already) return (already, false);
 
             var sessions = Attributed(post, await SessionsOfAsync(post, inside).ConfigureAwait(false));
             await using (var insert = _db.Command())
@@ -267,7 +414,9 @@ public sealed class WorkRecordStore
                 await link.ExecuteNonQueryAsync(inside).ConfigureAwait(false);
             }
 
-            return (new WorkRecord(post, now, RecordSchema, sessions), true);
+            var kept = new WorkRecord(post, now, RecordSchema, sessions);
+            await IndexAsync(kept, inside).ConfigureAwait(false);
+            return (kept, true);
         }, ct);
     }
 
@@ -281,6 +430,93 @@ public sealed class WorkRecordStore
             await RefuseNewerAsync(ct).ConfigureAwait(false);
             return await FindInsideAsync(workspace, repository, folder, ct).ConfigureAwait(false);
         }, ct);
+    }
+
+    /// <inheritdoc />
+    public Task<IReadOnlyList<KnowledgeHit>> SearchRecordsAsync(KnowledgeQuery query, CancellationToken ct = default)
+    {
+        var match = SqliteKnowledgeSearch.BuildMatchExpression(query.Text);
+        if (Refusal is { } refused) throw refused;
+        if (match is null) return Task.FromResult<IReadOnlyList<KnowledgeHit>>([]);
+        return _db.RunAsync<IReadOnlyList<KnowledgeHit>>(async () =>
+        {
+            await RefuseNewerAsync(ct).ConfigureAwait(false);
+            var found = new List<(string Workspace, string Repository, string Folder, string Excerpt)>();
+            await using (var read = _db.Command())
+            {
+                read.CommandText = """
+                    SELECT workspace, repository, folder, snippet(work_records_fts, 4, '', '', '...', 24)
+                    FROM work_records_fts
+                    WHERE work_records_fts MATCH $match AND ($workspace IS NULL OR workspace = $workspace COLLATE NOCASE)
+                    ORDER BY bm25(work_records_fts)
+                    LIMIT 200
+                    """;
+                read.Parameters.AddWithValue("$match", match);
+                read.Parameters.AddWithValue("$workspace", (object?)query.Workspace ?? DBNull.Value);
+                await using var rows = await read.ExecuteReaderAsync(ct).ConfigureAwait(false);
+                while (await rows.ReadAsync(ct).ConfigureAwait(false))
+                {
+                    found.Add((rows.GetString(0), rows.GetString(1), rows.GetString(2), rows.GetString(3)));
+                }
+            }
+
+            // One hit a record, at the place its best row ranked.
+            var hits = new List<KnowledgeHit>();
+            var seen = new HashSet<(string, string, string)>();
+            foreach (var (workspace, repository, folder, excerpt) in found)
+            {
+                if (query.Repositories is not null && !query.Repositories.Contains(repository)) continue;
+                if (!seen.Add((workspace, repository, folder)) || await FindInsideAsync(workspace, repository, folder, ct).ConfigureAwait(false) is not { } record) continue;
+                hits.Add(new KnowledgeHit(Entry(record), 1.0 / (hits.Count + 1), excerpt));
+            }
+
+            return hits;
+        }, ct);
+    }
+
+    /// <inheritdoc />
+    public async Task<KnowledgeEntry?> FindRecordAsync(string id, CancellationToken ct = default)
+    {
+        if (!id.StartsWith("record:", StringComparison.Ordinal)) return null;
+        var parts = id["record:".Length..].Split('/', 3);
+        if (parts.Length != 3) return null;
+        return await FindAsync(parts[0], parts[1], parts[2], ct).ConfigureAwait(false) is { } record ? Entry(record) : null;
+    }
+
+    /// <summary>The record as an entry: what a person reads of it, and the command that makes its tree again while a ref holds the tip.</summary>
+    private static KnowledgeEntry Entry(WorkRecord record)
+    {
+        var post = record.Post;
+        var text = new StringBuilder();
+        text.AppendLine($"Branch {post.Branch}, from {post.GrewFrom ?? "unknown"} to {post.Tip}; held by {post.Hold.Kind}{(post.Hold.Where is { } where ? $" ({where})" : "")}.");
+        if (post.Landing is { } landing)
+        {
+            text.AppendLine($"Landed as {landing.Branch} on {landing.Line ?? "its line"} at {Moments.Write(landing.At)}{(landing.PullRequest is { } pull ? $", pull request {pull}" : "")}.");
+        }
+        else if (post.LandingWhy is { } why)
+        {
+            text.AppendLine($"No landing named: {why}");
+        }
+
+        if (post.Ref is { } held) text.AppendLine($"Recovery ref: {held}.");
+        text.AppendLine($"To make the tree again while something holds the tip: git worktree add <path> {post.Tip}");
+        text.AppendLine($"Sessions: {(record.Sessions.Count == 0 ? "none named" : string.Join(", ", record.Sessions.Select(session => session.Session)))}.");
+        text.AppendLine();
+        if (post.Commits is null) text.AppendLine($"Commits not read{(post.CommitsUnread is { } unread ? $": {unread}" : "")}.");
+        foreach (var commit in post.Commits ?? [])
+        {
+            text.AppendLine($"- {commit.Id} {commit.Subject}");
+            foreach (var file in commit.Files) text.AppendLine($"    {file.Path} +{file.Added} -{file.Removed}");
+        }
+
+        if (post.Left.Count > 0)
+        {
+            text.AppendLine();
+            text.AppendLine($"Held no commit ({post.Left.Count}{(post.Left.Cut ? ", names cut" : "")}): {string.Join(", ", post.Left.Names)}");
+        }
+
+        var title = post.Commits?.FirstOrDefault() is { } first ? $"Finished tree {post.Folder}: {first.Subject}" : $"Finished tree {post.Folder}";
+        return new KnowledgeEntry(post.Repository, EntryKind.Record, Provenance.Local, title, text.ToString().TrimEnd(), post.Folder, Workspace: post.Workspace);
     }
 
     /// <summary>How many records this machine keeps (the card says the count, §4.5); none where a newer build stamped them.</summary>
@@ -321,6 +557,35 @@ public sealed class WorkRecordStore
             """;
         command.Parameters.AddWithValue("$session", session);
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+
+        // The session's words leave the index with its link, whichever record kept them (§2.2).
+        if (await IndexedAsync(db, ct).ConfigureAwait(false))
+        {
+            await using var words = db.Command();
+            words.CommandText = "DELETE FROM work_records_fts WHERE session = $session";
+            words.Parameters.AddWithValue("$session", session);
+            await words.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+            await PruneIndexAsync(db, ct).ConfigureAwait(false);
+        }
+    }
+
+    private static async Task<bool> IndexedAsync(ConnectionGate db, CancellationToken ct)
+    {
+        await using var probe = db.Command();
+        probe.CommandText = "SELECT COUNT(*) FROM sqlite_master WHERE name = 'work_records_fts'";
+        return Convert.ToInt32(await probe.ExecuteScalarAsync(ct).ConfigureAwait(false)) > 0;
+    }
+
+    /// <summary>The index's rows of a record that is gone, gone with it.</summary>
+    private static async Task PruneIndexAsync(ConnectionGate db, CancellationToken ct)
+    {
+        await using var prune = db.Command();
+        prune.CommandText = """
+            DELETE FROM work_records_fts WHERE NOT EXISTS (
+              SELECT 1 FROM work_records r
+              WHERE r.workspace = work_records_fts.workspace AND r.repository = work_records_fts.repository AND r.folder = work_records_fts.folder)
+            """;
+        await prune.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -383,6 +648,7 @@ public sealed class WorkRecordStore
             await delete.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
         }
 
+        if (gone.Count > 0 && await IndexedAsync(db, ct).ConfigureAwait(false)) await PruneIndexAsync(db, ct).ConfigureAwait(false);
         return gone.Count;
     }
 

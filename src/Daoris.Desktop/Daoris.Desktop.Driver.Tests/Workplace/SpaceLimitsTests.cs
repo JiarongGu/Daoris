@@ -118,7 +118,7 @@ public sealed class SpaceLimitsTests : IDisposable
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         File.WriteAllText(path, """{ "keep": { "setAside": { "gb": 0 }, "downloads": { "gb": 3 } } }""");
 
-        Assert.Equal(new LimitsPolicy(KeepKinds.SetAside.DefaultGb, 3), KeepPolicy.Of(Home).Limits);
+        Assert.Equal(new LimitsPolicy(KeepKinds.SetAside.DefaultGb, 3, KeepKinds.BrowserCache.DefaultGb), KeepPolicy.Of(Home).Limits);
         File.WriteAllText(path, "{ not json");
         Assert.Equal(LimitsPolicy.None, KeepPolicy.Of(Home).Limits);
     }

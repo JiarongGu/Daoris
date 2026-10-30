@@ -46,6 +46,7 @@ public static class SpaceLimits
         {
             asked.AddRange(SetAside(world, policy, ct, unit, ref uncounted));
             asked.AddRange(Downloads(world, policy, ct, unit));
+            asked.AddRange(BrowserCache(world, policy, unit, ref uncounted));
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or HomeEntryTwiceException or DriverException)
         {
@@ -87,6 +88,31 @@ public static class SpaceLimits
                 Class = ListedClass.Of(folder), Ref = folder.Ref,
             };
         });
+    }
+
+    /// <summary>
+    /// The browser's caches, all of them together (KEEPSIZE1e), when the kind's count is over its limit; whether the browser runs is the
+    /// press's own judgement, which keeps them while it does. A count not made yet, or partial and within the limit, takes nothing.
+    /// </summary>
+    private static IEnumerable<SpaceAsked> BrowserCache(SpaceFreeWorld world, KeepPolicy policy, long unit, ref bool uncounted)
+    {
+        if (policy.Limits.BrowserCacheGb is not { } gb || world.Caches is null) return [];
+        var reading = world.Sizes.Of(world.Home, "browser-cache");
+        if (reading is null)
+        {
+            world.Sizes.Start(world.Home, ["browser-cache"], WiringBudget.Default);
+            uncounted = true;
+            return [];
+        }
+
+        var limit = gb * unit;
+        if (reading.Bytes <= limit)
+        {
+            uncounted |= reading.Partial is not null;
+            return [];
+        }
+
+        return SpaceKinds.BrowserCaches.Select(path => new SpaceAsked("browser-cache", path, Early: true, "early", Own: false));
     }
 
     private static IEnumerable<SpaceAsked> Downloads(SpaceFreeWorld world, KeepPolicy policy, CancellationToken ct, long unit)

@@ -32,7 +32,7 @@ public sealed record KeepSet(
 public static class KeepRules
 {
     /// <summary>The kinds the person sets in this build, by id, in the table's order.</summary>
-    public static IReadOnlyList<KeepKind> Settable { get; } = [KeepKinds.SetAside, KeepKinds.Downloads, KeepKinds.Logs, KeepKinds.History];
+    public static IReadOnlyList<KeepKind> Settable { get; } = KeepKinds.Table;
 
     /// <summary>One kind's keep rule set, or its default again, through <see cref="Apply"/>.</summary>
     /// <exception cref="DriverException">The rule's refusal (<see cref="ChoiceRefusal"/> out of its bounds), nothing changed.</exception>
@@ -68,7 +68,8 @@ public static class KeepRules
             return config with { Keep = Cleared(keep, kind.Id) };
         }
 
-        if (set.Days is null && !set.Never && set.Whole is null && set.Gb is null) throw new DriverException($"name `{kind.Id}`'s days, {Choices(kind)}.");
+        if (kind.SizeOnly && (set.Days is not null || set.Never || set.Whole is not null)) throw OutOfRange(kind, "days, never or whole, which it does not take");
+        if (set.Days is null && !set.Never && set.Whole is null && set.Gb is null) throw new DriverException($"name `{kind.Id}`'s {(kind.SizeOnly ? "size" : "days")}, {Choices(kind)}.");
         if (set.Gb is { } limit && (limit < KeepKey.PartMinGb || limit > KeepKey.PartMaxGb)) throw LimitOutOfRange(kind, limit);
         if (set.Days is { } days && (days < kind.MinDays || days > kind.MaxDays)) throw OutOfRange(kind, $"{days} days");
         if (set.Never && !kind.MaySetNever) throw OutOfRange(kind, "never");
@@ -86,6 +87,7 @@ public static class KeepRules
                 : set.Days is null
                     ? keep with { DownloadsGb = set.Gb }
                     : keep with { DownloadsNever = false, DownloadsDays = set.Days, DownloadsGb = set.Gb ?? keep.DownloadsGb },
+            "browser-cache" => keep with { BrowserCacheGb = set.Gb },
             // History's `never` is its default: no age, written as nothing (KEEP1g).
             "history" => keep with { HistoryDays = set.Never ? null : set.Days },
             _ => keep with { LogsDays = set.Days },
@@ -132,6 +134,7 @@ public static class KeepRules
             "downloads" => policy.Downloads.Days is { } days
                 ? $"a downloaded version nothing uses goes {days.TotalDays:0} days into its unused stretch"
                 : "a downloaded version nothing uses stays until you remove it",
+            "browser-cache" => $"the browser's caches are cleared when over {policy.Limits.BrowserCacheGb} GB, while the browser does not run and at its start",
             "history" => policy.History.Days is { } age
                 ? $"finished work's records go {age.TotalDays:0} days after their last move, through the clear, each refusal holding"
                 : "finished work's records stay until you clear them",
@@ -142,7 +145,7 @@ public static class KeepRules
     /// <summary>What <paramref name="kind"/> takes, in the words its refusal and its usage say.</summary>
     public static string Choices(KeepKind kind)
     {
-        List<string> choices = [$"{kind.MinDays} to {kind.MaxDays} days"];
+        List<string> choices = kind.SizeOnly ? [] : [$"{kind.MinDays} to {kind.MaxDays} days"];
         if (kind.MaySetWhole) choices.AddRange(["`whole`", "`slim`"]);
         if (kind.MaySetNever) choices.Add("`never`");
         if (kind.MayHavePart) choices.Add($"a size limit of {KeepKey.PartMinGb} to {KeepKey.PartMaxGb} GB (`<n>GB`)");
@@ -217,6 +220,7 @@ public static class KeepRules
     {
         "set-aside" => keep with { SetAsideDays = null, SetAsideWhole = false, SetAsideGb = null },
         "downloads" => keep with { DownloadsDays = null, DownloadsNever = false, DownloadsGb = null },
+        "browser-cache" => keep with { BrowserCacheGb = null },
         "history" => keep with { HistoryDays = null },
         _ => keep with { LogsDays = null },
     };

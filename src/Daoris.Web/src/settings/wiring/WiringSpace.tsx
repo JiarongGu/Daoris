@@ -106,6 +106,14 @@ function KeepEditor({ kind, onKeep, onClose }: { kind: SpaceKind; onKeep: (set: 
       return;
     }
     const sized = limit !== undefined && limit !== kind.rule.gb ? { gb: limit } : {};
+    // KEEPSIZE1e: the browser's caches keep no days, only a size.
+    if (bounds.sizeOnly) {
+      if (limit === undefined) {
+        setSaid(t('settings.daoris.space.edit.notAGb'));
+        return;
+      }
+      return send({ kind: id, gb: limit });
+    }
     if (never) return send({ kind: id, never: true, ...sized });
     const count = Number(days);
     if (days.trim() === '' || !Number.isInteger(count)) {
@@ -117,6 +125,7 @@ function KeepEditor({ kind, onKeep, onClose }: { kind: SpaceKind; onKeep: (set: 
   return (
     <div className="grid gap-2 rounded-control border border-line bg-page/60 px-3 py-2" role="group" aria-label={t('settings.daoris.button.change')}>
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+        {!bounds.sizeOnly && (
         <span className="inline-flex items-center gap-1.5">
           <input
             type="number"
@@ -131,6 +140,7 @@ function KeepEditor({ kind, onKeep, onClose }: { kind: SpaceKind; onKeep: (set: 
           <span className="text-small text-ink-soft">{t('settings.daoris.space.edit.unit')}</span>
           <span className="text-small text-ink-faint">{t('settings.daoris.space.edit.bounds', { min: bounds.min, max: bounds.max })}</span>
         </span>
+        )}
         {bounds.gb && (
           <span className="inline-flex items-center gap-1.5">
             <input
@@ -285,9 +295,7 @@ function FreedEarly({ volume }: { volume: SpaceVolume }) {
   if (!volume.below) return null;
   return (
     <p className="m-0 text-small text-ink-soft">
-      {volume.freedEarly
-        ? t('settings.daoris.space.freedEarly', { size: size(volume.freedEarly.bytes), when: clockOf(volume.freedEarly.at) })
-        : t('settings.daoris.space.belowNothing')}
+      {t('settings.daoris.space.belowNothing')}
     </p>
   );
 }
