@@ -1472,9 +1472,12 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
         Action<System.Text.Json.JsonElement>? said, List<IDisposable> keep, HarnessWords? own, AcpUsage? used, CancellationToken ct)
     {
         System.Diagnostics.Process? started;
+        // COWORKVIEW1a: the continuation's own token, its start before its spawn.
+        var proc = Driver.Bracketed(_context.Home, sessionId, info);
         try
         {
-            started = await AgentStarts.StartAsync(info, ContainedKind.Agent, StartClass.Person, _context.Home, _driver.Log, ct).ConfigureAwait(false);
+            started = await Driver.Spawned(
+                proc, () => AgentStarts.StartAsync(info, ContainedKind.Agent, StartClass.Person, _context.Home, _driver.Log, ct)).ConfigureAwait(false);
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
@@ -1505,14 +1508,15 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
                 _driver.Hearing(process.StandardOutput, sessionId), _driver.Hearing(process.StandardError, sessionId), transcript, sessionId,
                 _context.Output, _context.Events, mapper,
                 prompt: null, ct, opened: opening, append: true, said: said, own: own,
-                lineageHome: _context.Home),
+                lineage: ChildLineage.Writer(_context.Home, sessionId, proc)),
                 sessionId, adapter.Name, resume: null)
             : null;
         await NativePrompt.WriteAsync(process, adapter, prompt, ct).ConfigureAwait(false);
         var exitCode = await _driver.WaitAsync(process, ct).ConfigureAwait(false);
         // State E (SESSWATCH1a): the capture bounded past the exit, as the first run's is.
-        if (capture is not null && await _driver.CaptureWithinAsync(capture, sessionId).ConfigureAwait(false)
-            && await capture.ConfigureAwait(false) is { } reported) used = reported;
+        var drained = capture is not null && await _driver.CaptureWithinAsync(capture, sessionId).ConfigureAwait(false);
+        _driver.Ended(sessionId, proc, exitCode);
+        if (drained && await capture!.ConfigureAwait(false) is { } reported) used = reported;
         return (exitCode, used);
     }
 
@@ -1531,8 +1535,11 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
     {
         _context.Output?.Append(sessionId, "— its harness ended before it reopened its conversation, so the same resume is tried once more.");
         resume.Again();
-        // The first run's start again, already the launcher's where that one was (TERMTRUST1a): left as it is, and said again.
-        var process = await AgentStarts.StartAsync(info, ContainedKind.Agent, StartClass.Person, _context.Home, _driver.Log, ct).ConfigureAwait(false)
+        // The first run's start again, already the launcher's where that one was (TERMTRUST1a): left as it is, and said again, under
+        // a token of its own (COWORKVIEW1a).
+        var proc = Driver.Bracketed(_context.Home, sessionId, info);
+        var process = await Driver.Spawned(
+                proc, () => AgentStarts.StartAsync(info, ContainedKind.Agent, StartClass.Person, _context.Home, _driver.Log, ct)).ConfigureAwait(false)
             ?? throw new DriverException($"the {adapter.Name} adapter's process did not start");
         keep.Add(process);
         keep.Add(_context.Processes.Track(sessionId, process, refusesInput, drivesBrowser));
@@ -1542,14 +1549,15 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
             ? _driver.KeepingAsync(mapper, HarnessCapture.CaptureStructuredAsync(
                 _driver.Hearing(process.StandardOutput, sessionId), _driver.Hearing(process.StandardError, sessionId), transcript, sessionId,
                 _context.Output, _context.Events, mapper,
-                prompt: null, ct, append: true, said: said, own: own, lineageHome: _context.Home),
+                prompt: null, ct, append: true, said: said, own: own, lineage: ChildLineage.Writer(_context.Home, sessionId, proc)),
                 sessionId, keepAs, resume)
             : null;
         await NativePrompt.WriteAsync(process, adapter, resume.Prompt, ct).ConfigureAwait(false);
         var exitCode = await _driver.WaitAsync(process, ct).ConfigureAwait(false);
         // State E (SESSWATCH1a): the capture bounded past the exit, as the first run's is.
-        return (exitCode, capture is null || !await _driver.CaptureWithinAsync(capture, sessionId).ConfigureAwait(false)
-            ? null : await capture.ConfigureAwait(false));
+        var drained = capture is not null && await _driver.CaptureWithinAsync(capture, sessionId).ConfigureAwait(false);
+        _driver.Ended(sessionId, proc, exitCode);
+        return (exitCode, drained ? await capture!.ConfigureAwait(false) : null);
     }
 
     /// <summary>The driver's line in the record for words the person said that never reached the session, and why.</summary>

@@ -4080,7 +4080,10 @@ public sealed class Driver(
         // TERMTRUST1a (D201 point 4): through the launcher, so the harness is born in this process's agents' job, and a partner's in its
         // piece's job beneath it; the process answered is the launcher's, which the doors read as the session's.
         var whose = resume is null ? StartClass.Background : StartClass.Person;
-        using var process = await AgentStarts.StartAsync(info, piece is null ? ContainedKind.Agent : ContainedKind.Piece, whose, home, Log, ct, piece)
+        // COWORKVIEW1a: the process's own token, its start written before the spawn and handed it at the spawn.
+        var proc = Bracketed(home, sessionId, info);
+        using var process = await Spawned(
+                proc, () => AgentStarts.StartAsync(info, piece is null ? ContainedKind.Agent : ContainedKind.Piece, whose, home, Log, ct, piece))
                 .ConfigureAwait(false)
             ?? throw new DriverException($"the {adapter.Name} adapter's process did not start");
         spawned?.Invoke();
@@ -4242,12 +4245,12 @@ public sealed class Driver(
                 asked: asked, carried: target.Brainstorm is not null ? null
                     : notCarried => _ = service.TryKeepActorAsync(sessionId, Log, choice, notCarried, ct: CancellationToken.None),
                 modelRefused: refusedAt, offerRead: offered, retry: retry, carriesOn: carriesOn, written: written,
-                typedFailures: adapter.Toolchain?.ErrorWords?.TypedFailures == true)
+                typedFailures: adapter.Toolchain?.ErrorWords?.TypedFailures == true, proc: proc)
             : null;
         // What the native door's harness says in its own words, apart from its agent's, for its ending (AGT3c).
         var own = new HarnessWords();
         var structured = acp is null
-            ? Structured(adapter, process, transcript, sessionId, prompt, ct, preamble, target.PersonSaid, said, keepAs, resume, account, own, target.Handed)
+            ? Structured(adapter, process, transcript, sessionId, prompt, ct, preamble, target.PersonSaid, said, keepAs, resume, account, own, target.Handed, proc)
             : null;
         Task capture = acp ?? structured ?? CaptureAsync(process, transcript, sessionId, ct, preamble);
         // AGENTLYNTAI1s-i: a native harness's prompt on its input, once its output is being read, then closed. FOUNDATION1f-iv part b: the
@@ -4286,6 +4289,8 @@ public sealed class Driver(
         // DONEEND1: an agent the run ended because it lingered after its session had ended exited as its session did, cleanly: on this
         // door the agent exits 0 once its stdin closes whatever happened, and the kill was Daoris's own, never the agent's end.
         if (ending?.EndedLingering == true && exitCode is not null) exitCode = 0;
+        // COWORKVIEW1a: this process's end at its drain, judged of it alone, before a retry's or a continuation's process starts.
+        Ended(sessionId, proc, exitCode);
         List<ChatMessage> left = [.. acpLeft];
         var used = acp is not null ? outcome?.Usage
             : structured is not null && drained ? await structured.ConfigureAwait(false)
@@ -4338,10 +4343,6 @@ public sealed class Driver(
                     Refusal = refused,
                 })
             .ConfigureAwait(false);
-
-        // The part's native children end with it (FABRIC-C1a): a run killed, stopped or failed says nothing of theirs, so each its
-        // harness did not see stop is lost; a clean end ends them with it.
-        ChildLineage.End(home, sessionId, clean: exitCode == 0 && Context.Processes.StopMade(sessionId) is null, DateTimeOffset.UtcNow);
 
         // The words its failed door never delivered wait on its ended record to go again (TURNFAIL1, USERSHOWN1): kept once the
         // conclusion moved it, since the say door refuses a running record. ACCESSSWAP1b: so do the words a changed setup handed back,
@@ -4612,12 +4613,13 @@ public sealed class Driver(
         ISessionAdapter adapter, Process process, string transcript, string sessionId, string prompt,
         CancellationToken ct, string? preamble = null, string? personSaid = null, Action<JsonElement>? said = null,
         string? keepAs = null, ResumeAsk? resume = null, InstructionAccount? account = null, HarnessWords? own = null,
-        IReadOnlyList<SaidWordView>? handed = null) =>
+        IReadOnlyList<SaidWordView>? handed = null, string? proc = null) =>
         adapter.StructuredOutput() is { } mapper
             ? KeepingAsync(mapper, HarnessCapture.CaptureStructuredAsync(
                 Hearing(process.StandardOutput, sessionId), Hearing(process.StandardError, sessionId), transcript, sessionId, output,
                 Context.Events, mapper, resume is null ? prompt : null, ct, preamble, personSaid: personSaid, handed: handed,
-                opened: resume?.Opening(), append: resume is not null, said: said, account: account, own: own, lineageHome: home),
+                opened: resume?.Opening(), append: resume is not null, said: said, account: account, own: own,
+                lineage: ChildLineage.Writer(home, sessionId, proc)),
                 sessionId, keepAs, resume)
             : null;
 
@@ -4702,7 +4704,8 @@ public sealed class Driver(
         Func<string, string, string>? unoffered = null, Func<bool>? setupChanged = null, IReadOnlyList<SaidWordView>? handed = null,
         ActorAsked? asked = null, Action<ActorAsked>? carried = null, Func<ModelRefusal, Task<ActorAsked?>>? modelRefused = null,
         Action<IReadOnlyList<AcpConfigOption>>? offerRead = null, TransientRetry? retry = null,
-        Func<CancellationToken, Task<TurnCarry>>? carriesOn = null, Action? written = null, bool typedFailures = false)
+        Func<CancellationToken, Task<TurnCarry>>? carriesOn = null, Action? written = null, bool typedFailures = false,
+        string? proc = null)
     {
         await using var file = TranscriptFile.Open(transcript, append: resume is not null);
 
@@ -4758,7 +4761,7 @@ public sealed class Driver(
             // The session's voice (ACP4). Located per run rather than once, because a machine can
             // gain the host between ticks — and a machine that has none still drives, without a
             // connector, exactly as it did before.
-            var connector = Connector(sessionId, scope);
+            var connector = Connector(sessionId, scope, proc);
             if (connector is null)
             {
                 Said(noConnector ?? (scope is null ? NoConnectorForSession : DriverIntakes.NoConnectorForIntake));
@@ -4779,6 +4782,7 @@ public sealed class Driver(
                 onConversation: keepAs is null ? null : conversation => Context.Conversations.Keep(sessionId, keepAs, conversation))
             {
                 Unoffered = unoffered,
+                Lineage = ChildLineage.Writer(home, sessionId, proc),
                 TypedFailures = typedFailures, // CODEXSTATUS1: asked for only by a door declared to need it
                 Permissions = HeldPermissions.Of(Context.Events).For(sessionId), // AUTONOMY1b3a: held only under asking's mark
                 SetupChanged = setupChanged,
@@ -4982,8 +4986,46 @@ public sealed class Driver(
     /// gain the host between ticks — carrying who the session is, where its rules live, and an intake's
     /// ask when it is one.
     /// </summary>
-    internal AcpMcpServer? Connector(string sessionId, IReadOnlyDictionary<string, string>? scope) =>
-        KnowledgeConnector.Offer(Variable, AppContext.BaseDirectory, KnowledgeConnector.SessionScope(home, sessionId, scope));
+    /// <param name="proc">The lineage token of the process this entry is composed for, on the protocol door alone.</param>
+    internal AcpMcpServer? Connector(string sessionId, IReadOnlyDictionary<string, string>? scope, string? proc = null) =>
+        KnowledgeConnector.Offer(Variable, AppContext.BaseDirectory, KnowledgeConnector.SessionScope(home, sessionId, scope, proc));
+
+    /// <summary>
+    /// A process's lineage token (COWORKVIEW1a): issued, its <c>start</c> written to the session's lineage, and set anew on the
+    /// spawn's environment, all before the spawn.
+    /// </summary>
+    internal static string Bracketed(string home, string sessionId, ProcessStartInfo info)
+    {
+        var tokens = LineageTokens.Current;
+        var proc = tokens.Issue();
+        ChildLineage.Start(home, sessionId, proc, tokens.Issuer, DateTimeOffset.UtcNow);
+        info.Environment[ChildMarks.LineageProcVariable] = proc;
+        return proc;
+    }
+
+    /// <summary>The spawn under <paramref name="proc"/>: its process handed the token, or the token let go where it made none.</summary>
+    internal static async Task<Process?> Spawned(string proc, Func<Task<Process?>> spawn)
+    {
+        var tokens = LineageTokens.Current;
+        Process? process;
+        try
+        {
+            process = await spawn().ConfigureAwait(false);
+        }
+        catch
+        {
+            tokens.Unspawned(proc);
+            throw;
+        }
+
+        if (process is null) tokens.Unspawned(proc);
+        else tokens.Hand(proc, process);
+        return process;
+    }
+
+    /// <summary>A process's end once its exit was read and its capture drained: clean, or killed, stopped or failed.</summary>
+    internal void Ended(string sessionId, string proc, int? exitCode) =>
+        ChildLineage.End(home, sessionId, clean: exitCode == 0 && Context.Processes.StopMade(sessionId) is null, DateTimeOffset.UtcNow, proc);
 
     /// <summary>
     /// Why the graph named for a session's take did not bind it (CLOSETAKE1), or null: a line's extra word is never worth failing the end of a

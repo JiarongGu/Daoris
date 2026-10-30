@@ -24,12 +24,14 @@ public sealed class LineageHookProcessTests : IDisposable
     /// <summary>Spelled in pieces, as a test's example path is.</summary>
     private static readonly string Place = string.Join('\\', "C:", "work", "repo");
 
-    private (int Exit, string Out) Run(LineageHook hook, string input)
+    private (int Exit, string Out) Run(LineageHook hook, string input, string? proc = null)
     {
         var info = new ProcessStartInfo(hook.Node)
         {
             RedirectStandardInput = true, RedirectStandardOutput = true, UseShellExecute = false, CreateNoWindow = true,
         };
+        if (proc is null) info.Environment.Remove(ChildMarks.LineageProcVariable);
+        else info.Environment[ChildMarks.LineageProcVariable] = proc;
         info.ArgumentList.Add(hook.Script);
         info.ArgumentList.Add(hook.File);
         using var process = Process.Start(info)!;
@@ -107,6 +109,20 @@ public sealed class LineageHookProcessTests : IDisposable
             [("toolu_bad", true), ("toolu_null", false)],
             lines.Select(line => ((string)line["toolUse"]!, line["agentUnreadable"] is not null)));
         Assert.All(lines, line => Assert.Null(line["agent"]));
+    }
+
+    /// <summary>COWORKVIEW1a: each line names the process the hook runs under, its token as the driver handed it, where it is one.</summary>
+    [Fact]
+    public void Each_line_names_the_process_its_environment_handed_where_that_is_a_token()
+    {
+        var hook = ChildLineage.HookFor(_home, "s1")!;
+
+        Run(hook, """{"hook_event_name":"SubagentStart","agent_id":"a1"}""", proc: "0123456789abcdef");
+        Run(hook, """{"hook_event_name":"SubagentStart","agent_id":"a2"}""", proc: "not a token");
+        Run(hook, """{"hook_event_name":"SubagentStart","agent_id":"a3"}""");
+
+        var lines = File.ReadAllLines(hook.File).Select(line => JsonNode.Parse(line)!.AsObject()).ToList();
+        Assert.Equal(["0123456789abcdef", null, null], lines.Select(line => (string?)line["proc"]));
     }
 
     [Fact]

@@ -6,7 +6,8 @@ namespace Daoris.Driver;
 /// <summary>
 /// A session's lineage file, where its native children are bound to its part (FABRIC-C1a, D173): the connector writes a line
 /// per call with the lineage its harness carried, the hook this driver hands Claude Code writes what it says of each agent, and
-/// this driver writes what Claude Code's stream says of each subagent and the part's end. <see cref="ChildBindings"/> reads them.
+/// this driver writes each process's start and end (COWORKVIEW1a) and what Claude Code's stream and the protocol door say of each
+/// subagent. Every line names the process it was written for where it has a token. <see cref="ChildBindings"/> reads them.
 /// </summary>
 /// <remarks>
 /// <para><b>The file is the contract</b> (<c>.claude/knowledge/twins.md</c>): <c>&lt;home&gt;/sessions/&lt;id&gt;/lineage.jsonl</c>,
@@ -104,13 +105,22 @@ public static class ChildLineage
     }
 
     /// <summary>
-    /// The part's end, where the session has lineage: clean, or killed, stopped or failed, which leaves each child its harness
-    /// said nothing more of lost. A session with no file gets none.
+    /// A process's start, before its spawn (COWORKVIEW1a): it makes the file where there is none, so every line its process can
+    /// write follows it.
     /// </summary>
-    public static void End(string home, string sessionId, bool clean, DateTimeOffset at)
+    public static void Start(string home, string sessionId, string proc, string issuer, DateTimeOffset at)
+    {
+        if (ChildBindings.StartLine(proc, issuer, at) is { } line) Append(home, sessionId, line);
+    }
+
+    /// <summary>
+    /// A process's end once its exit was read, where the session has lineage: clean, or killed, stopped or failed, naming the
+    /// process where it has a token. A session with no file gets none.
+    /// </summary>
+    public static void End(string home, string sessionId, bool clean, DateTimeOffset at, string? proc = null)
     {
         if (!SessionShape.IsMatch(sessionId) || !File.Exists(PathOf(home, sessionId))) return;
-        Append(home, sessionId, ChildBindings.EndLine(clean, at));
+        Append(home, sessionId, ChildBindings.EndLine(clean, at, proc));
     }
 
     /// <summary>The part's children, as its lineage says; none where it has no file.</summary>
@@ -131,16 +141,32 @@ public static class ChildLineage
     }
 
     /// <summary>
-    /// What reads Claude Code's stream for one run (<see cref="ChildBindings.StreamLine"/>): told every line, it appends each
-    /// subagent's start and end. Every other harness's lines say none.
+    /// What one process's run tells its part's lineage (COWORKVIEW1a): each subagent's start and end Claude Code's stream says
+    /// (<see cref="ChildBindings.StreamLine"/>), and each the protocol door announces and ends, every line naming
+    /// <paramref name="proc"/> where it is a token.
     /// </summary>
-    public static Action<string> Watch(string home, string sessionId)
+    public static ILineageWriter Writer(string home, string sessionId, string? proc = null) => new ProcessWriter(home, sessionId, proc);
+
+    private sealed class ProcessWriter(string home, string sessionId, string? proc) : ILineageWriter
     {
-        var agents = new HashSet<string>(StringComparer.Ordinal);
-        return line =>
+        private readonly HashSet<string> _agents = new(StringComparer.Ordinal);
+
+        public void Stream(string line)
         {
-            if (ChildBindings.StreamLine(line, DateTimeOffset.UtcNow, agents) is { } said) Append(home, sessionId, said);
-        };
+            string? said;
+            lock (_agents) said = ChildBindings.StreamLine(line, DateTimeOffset.UtcNow, _agents, proc);
+            if (said is not null) Append(home, sessionId, said);
+        }
+
+        public void Spawned(LineageAnnouncement said)
+        {
+            if (ChildBindings.AcpStarted(said, DateTimeOffset.UtcNow, proc) is { } line) Append(home, sessionId, line);
+        }
+
+        public void Ended(string agent, string? state)
+        {
+            if (ChildBindings.AcpEnded(agent, state, DateTimeOffset.UtcNow, proc) is { } line) Append(home, sessionId, line);
+        }
     }
 
     private static string ReadSource()

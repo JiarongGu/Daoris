@@ -468,7 +468,8 @@ public sealed class AdapterTests
         Spawning.Unrole(inherited);
 
         Assert.Equal(["DAORIS_HOME", "PATH"], inherited.Keys.Order(StringComparer.Ordinal));
-        foreach (var name in new[] { "DAORIS_QUEST_ID", "DAORIS_TARGET", IntakeRoom.SessionVariable, IntakeRoom.AskVariable })
+        Assert.Equal("DAORIS_LINEAGE_PROC", ChildMarks.LineageProcVariable);
+        foreach (var name in new[] { "DAORIS_QUEST_ID", "DAORIS_TARGET", IntakeRoom.SessionVariable, IntakeRoom.AskVariable, ChildMarks.LineageProcVariable })
         {
             Assert.Contains(name, Spawning.Roles);
         }

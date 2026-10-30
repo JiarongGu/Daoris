@@ -305,10 +305,11 @@ public sealed record ChildBindings
 
     /// <summary>
     /// The lineage line a line of Claude Code's <c>stream-json</c> says, or null: a subagent's start (<c>task_started</c>,
-    /// <c>local_agent</c>) with its parent and depth, and the end (<c>task_notification</c>) of one whose start was seen, which
-    /// <paramref name="agents"/> keeps. Every other line, a background command's included, says none.
+    /// <c>local_agent</c>) with its parent, depth and task's description, and the end (<c>task_notification</c>) of one whose start
+    /// was seen, which <paramref name="agents"/> keeps. Every other line, a background command's included, says none.
     /// </summary>
-    public static string? StreamLine(string line, DateTimeOffset at, ISet<string> agents)
+    /// <param name="proc">The token of the process whose stream it is, written where it is shaped as an id.</param>
+    public static string? StreamLine(string line, DateTimeOffset at, ISet<string> agents, string? proc = null)
     {
         if (!line.Contains("\"task_", StringComparison.Ordinal) || Parse(line) is not { } root || Text(root, "type") != "system") return null;
         switch (Text(root, "subtype"))
@@ -316,18 +317,19 @@ public sealed record ChildBindings
             case "task_started" when Text(root, "task_type") == "local_agent" && Id(root, "task_id") is { } agent:
             {
                 agents.Add(agent);
-                var said = Stamped(at, "started", agent);
+                var said = Stamped(at, "stream", "started", agent);
                 if (Id(root, "parent_task_id") is { } parent) said["parent"] = parent;
                 if (Number(root, "spawn_depth") is { } depth) said["depth"] = depth;
                 if (Id(root, "subagent_type") is { } type) said["type"] = type;
-                return said.ToJsonString();
+                if (LineageLabels.Task(Text(root, "description")) is { } description) said["description"] = description;
+                return Named(said, proc);
             }
 
             case "task_notification" when Id(root, "task_id") is { } agent && agents.Contains(agent):
             {
-                var said = Stamped(at, "ended", agent);
+                var said = Stamped(at, "stream", "ended", agent);
                 if (Id(root, "status") is { } status) said["status"] = status;
-                return said.ToJsonString();
+                return Named(said, proc);
             }
 
             default:
@@ -335,12 +337,55 @@ public sealed record ChildBindings
         }
     }
 
-    /// <summary>The part's end: clean, or killed, stopped or failed.</summary>
-    public static string EndLine(bool clean, DateTimeOffset at) =>
-        new JsonObject { ["at"] = Moment(at), ["by"] = "end", ["clean"] = clean }.ToJsonString();
+    /// <summary>
+    /// A child the protocol door announced (COWORKVIEW1a), or null where its id is not one: its place, <c>parent</c> or
+    /// <c>depth: 1</c>, and its label as bounded.
+    /// </summary>
+    public static string? AcpStarted(LineageAnnouncement said, DateTimeOffset at, string? proc = null)
+    {
+        if (!IdShape.IsMatch(said.Agent)) return null;
+        var line = Stamped(at, "acp", "started", said.Agent);
+        if (said.Parent is { } parent && IdShape.IsMatch(parent)) line["parent"] = parent;
+        else if (said.ByRoot) line["depth"] = 1;
+        if (said.Name is { } name) line["name"] = name;
+        if (said.Task is { } task) line["task"] = task;
+        return Named(line, proc);
+    }
 
-    private static JsonObject Stamped(DateTimeOffset at, string @event, string agent) =>
-        new() { ["at"] = Moment(at), ["by"] = "stream", ["event"] = @event, ["agent"] = agent };
+    /// <summary>A child's end the protocol door's wire said, with its word where that is one; null where its id is not one.</summary>
+    public static string? AcpEnded(string agent, string? state, DateTimeOffset at, string? proc = null)
+    {
+        if (!IdShape.IsMatch(agent)) return null;
+        var line = Stamped(at, "acp", "ended", agent);
+        if (state is not null && IdShape.IsMatch(state)) line["state"] = state;
+        return Named(line, proc);
+    }
+
+    /// <summary>
+    /// A process's start (COWORKVIEW1a), written before its spawn: its token, and the Daoris process that issued it as
+    /// <c>{pid} {ticks}</c>; null where the token is not one.
+    /// </summary>
+    public static string? StartLine(string proc, string issuer, DateTimeOffset at) => IdShape.IsMatch(proc)
+        ? new JsonObject { ["at"] = Moment(at), ["by"] = "start", ["proc"] = proc, ["issuer"] = issuer }.ToJsonString()
+        : null;
+
+    /// <summary>A process's end once its exit was read: clean, or killed, stopped or failed; naming its process where it has a token.</summary>
+    public static string EndLine(bool clean, DateTimeOffset at, string? proc = null)
+    {
+        var line = new JsonObject { ["at"] = Moment(at), ["by"] = "end" };
+        if (proc is not null && IdShape.IsMatch(proc)) line["proc"] = proc;
+        line["clean"] = clean;
+        return line.ToJsonString();
+    }
+
+    private static JsonObject Stamped(DateTimeOffset at, string by, string @event, string agent) =>
+        new() { ["at"] = Moment(at), ["by"] = by, ["event"] = @event, ["agent"] = agent };
+
+    private static string Named(JsonObject line, string? proc)
+    {
+        if (proc is not null && IdShape.IsMatch(proc)) line["proc"] = proc;
+        return line.ToJsonString();
+    }
 
     private static string Moment(DateTimeOffset at) =>
         at.UtcDateTime.ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'", CultureInfo.InvariantCulture);

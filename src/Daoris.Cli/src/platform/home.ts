@@ -112,6 +112,7 @@ export const HOME_ENTRIES = [
   row('landings', 'data', 'data/landings.json', 'landings.json'),
   row('session-branches', 'data', 'data/session-branches.json', 'session-branches.json'),
   row('lines-moved', 'data', 'data/lines-moved.json', 'lines-moved.json'),
+  row('overlaps-told', 'data', 'data/overlaps-told.json', 'data/overlaps-told.json'),
   row('registry-followed', 'data', 'data/registry-followed.json', 'registry-followed.json'),
   row('abandoned', 'data', 'data/abandoned.json', 'abandoned.json'),
   row('update', 'data', 'data/update.json', 'update.json'),

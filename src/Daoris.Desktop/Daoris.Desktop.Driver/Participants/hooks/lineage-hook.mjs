@@ -22,13 +22,15 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ID = /^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$/;
+// The token of the process the hook runs under (COWORKVIEW1a); the driver's `ChildMarks.LineageProcVariable`, spelt as its twin.
+const PROC = 'DAORIS_LINEAGE_PROC';
 const EVENTS = { PreToolUse: 'call', SubagentStart: 'started', SubagentStop: 'stopped' };
 const HELD = new Set(['EBUSY', 'EPERM', 'EACCES']);
 
 const id = (value) => (typeof value === 'string' && ID.test(value) ? value : undefined);
 
 /** The line one hook input becomes, or null for an event this hook does not record. */
-export function lineageLine(input, at = new Date()) {
+export function lineageLine(input, at = new Date(), proc = process.env[PROC]) {
   const event = EVENTS[input?.hook_event_name];
   if (!event) return null;
   const line = { at: at.toISOString(), by: 'hook', event };
@@ -44,6 +46,7 @@ export function lineageLine(input, at = new Date()) {
     put('tool', id(input.tool_name));
   }
   put('session', id(input.session_id));
+  put('proc', id(proc));
   return JSON.stringify(line);
 }
 

@@ -8,5 +8,5 @@ internal sealed class ParticipantLineageStreams : ILineageStreams
     [ModuleInitializer]
     internal static void Install() => LineageStreams.Current = new ParticipantLineageStreams();
 
-    public Action<string> Watch(string home, string sessionId) => ChildLineage.Watch(home, sessionId);
+    public ILineageWriter Writer(string home, string sessionId, string? proc = null) => ChildLineage.Writer(home, sessionId, proc);
 }

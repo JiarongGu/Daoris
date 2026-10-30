@@ -251,6 +251,19 @@ public sealed class PermissionSpawnTests : IDisposable
         Assert.Equal("i9n8t7k6", intake[IntakeRoom.SessionVariable]);
     }
 
+    /// <summary>COWORKVIEW1a: a connector entry composed for one process carries that process's token, and one for none carries none.</summary>
+    [Fact]
+    public void The_connector_entry_carries_its_process_s_lineage_token()
+    {
+        var first = KnowledgeConnector.SessionScope("C:/somewhere/data", "s1a2b3c4", scope: null, proc: "0123456789abcdef");
+        var second = KnowledgeConnector.SessionScope("C:/somewhere/data", "s1a2b3c4", scope: null, proc: "fedcba9876543210");
+        var none = KnowledgeConnector.SessionScope("C:/somewhere/data", "s1a2b3c4", scope: null);
+
+        Assert.Equal("0123456789abcdef", first[ChildMarks.LineageProcVariable]);
+        Assert.Equal("fedcba9876543210", second[ChildMarks.LineageProcVariable]);
+        Assert.False(none.ContainsKey(ChildMarks.LineageProcVariable));
+    }
+
     /// <summary>
     /// 🔴 On the protocol door the rules ride `session/new` — the stand-in agent writes down the `_meta`
     /// it was given, and the file it names is the one composed for this session.
