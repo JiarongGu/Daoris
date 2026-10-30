@@ -39,92 +39,31 @@ public sealed class AttentionTests
         Assert.Empty(watch.Observe(Tick([Session("s1", "awaiting-person") with { Note = "Which host should it bind?" }])));
     }
 
+    /// <summary>
+    /// FOUNDATION1 m-iii: an end is the journal's row, told by <c>NewsTeller</c> by the one class table (<c>NewsTellerTests</c>: the person's stop,
+    /// an account's limit, LIMITRESUME1a, and an agent's refusal of the choice, D205 §3.5(c), raise none), so no look's concluded ends say one here.
+    /// </summary>
     [Fact]
-    public void A_session_the_driver_concluded_is_worth_saying()
+    public void No_look_s_concluded_ends_say_an_end()
     {
         var watch = new AttentionWatch();
         watch.Observe(Tick([Session("s1", "working")]));
 
-        var events = watch.Observe(Tick([], new SessionEnded("s1", "engine", "completed", ByPerson: false)));
-
-        var ended = Assert.Single(events);
-        Assert.Equal(AttentionKind.Ended, ended.Kind);
-        Assert.Equal("completed", ended.State);
-        Assert.Equal("engine", ended.Repository);
+        Assert.Empty(watch.Observe(Tick([], new SessionEnded("s1", "engine", "failed", ByPerson: false), new SessionEnded("s2", "engine", "completed", ByPerson: false))));
     }
 
     /// <summary>
-    /// NOTIFY2f (the notification design §2.5): an end carries the workspace its session was filed under at the last look that saw it
-    /// active, which its notice keeps; one no look saw active carries none, and its notice is every window's.
+    /// NOTIFY2f (the notification design §2.5): an end's notice keeps its workspace and state; a park keeps none.
     /// </summary>
     [Fact]
-    public void An_end_carries_the_workspace_its_session_was_filed_under()
+    public void An_end_s_notice_keeps_its_workspace_and_a_park_none()
     {
-        var watch = new AttentionWatch();
-        watch.Observe(Tick([Session("s1", "working") with { Workspace = "games" }]));
+        var item = new AttentionEvent(AttentionKind.Ended, "s1", "engine", "failed") { Workspace = "games" };
 
-        var events = watch.Observe(Tick([], new SessionEnded("s1", "engine", "failed", ByPerson: false), new SessionEnded("s2", "engine", "failed", ByPerson: false)));
-
-        Assert.Equal([("s1", "games"), ("s2", null)], events.Select(item => (item.Session, item.Workspace)));
-        var notice = Notices.Of(events[0], DateTimeOffset.UnixEpoch)!;
-        Assert.Equal(new Notice("ended-s1", Notices.Ended, DateTimeOffset.UnixEpoch, Workspace: "games", Session: "s1", Repository: "engine", State: "failed"), notice);
+        Assert.Equal(
+            new Notice("ended-s1", Notices.Ended, DateTimeOffset.UnixEpoch, Workspace: "games", Session: "s1", Repository: "engine", State: "failed"),
+            Notices.Of(item, DateTimeOffset.UnixEpoch));
         Assert.Null(Notices.Of(new AttentionEvent(AttentionKind.Parked, "s1", "engine"), DateTimeOffset.UnixEpoch));
-    }
-
-    /// <summary>
-    /// 🔴 The rule design §4 states outright: **never for an ending the person caused**, because a
-    /// toast telling you what you just pressed is how people learn to dismiss toasts unread. The
-    /// driver already knows whose decision it was — `WasStopRequested` is the flag, and the driver's
-    /// own comment says only it knows.
-    /// </summary>
-    [Fact]
-    public void An_ending_the_person_caused_is_never_worth_saying()
-    {
-        var watch = new AttentionWatch();
-        watch.Observe(Tick([Session("s1", "working")]));
-
-        var events = watch.Observe(Tick([], new SessionEnded("s1", "engine", "stopped", ByPerson: true)));
-
-        Assert.Empty(events);
-    }
-
-    /// <summary>
-    /// LIMITRESUME1a (D206 point 1; the limit-resume design §3.1): an end an account's limit made is no failure and no news of its
-    /// own. Its line goes on by itself, and the line's own news says where; an <i>Ended</i> for each part a limit cut off was the
-    /// install's three failures in a row. A failure beside it in the same look is still said.
-    /// </summary>
-    [Fact]
-    public void A_limited_conclusion_raises_no_ended()
-    {
-        var watch = new AttentionWatch();
-        watch.Observe(Tick([Session("s1", "working"), Session("s2", "working")]));
-
-        var events = watch.Observe(Tick(
-            [],
-            new SessionEnded("s1", "engine", "failed", ByPerson: false, "You've hit your limit.", Quest: "q1") { Limit = true },
-            new SessionEnded("s2", "engine", "failed", ByPerson: false, "the gate went red.")));
-
-        Assert.Equal("s2", Assert.Single(events, e => e.Kind == AttentionKind.Ended).Session);
-        Assert.DoesNotContain(events, e => e.Session == "s1");
-    }
-
-    /// <summary>
-    /// MODELROLE1c2 (D205 §3.5(c), §4.6): an end its agent's refusal of the choice made at the open raises no <i>Ended</i>: the next look
-    /// starts what the walk answers, and a fallback asks nothing. A failure beside it in the same look is still said.
-    /// </summary>
-    [Fact]
-    public void A_choice_not_offered_conclusion_raises_no_ended()
-    {
-        var watch = new AttentionWatch();
-        watch.Observe(Tick([Session("s1", "working"), Session("s2", "working")]));
-
-        var events = watch.Observe(Tick(
-            [],
-            new SessionEnded("s1", "engine", "failed", ByPerson: false, "Not started.", Quest: "q1") { NotOffered = true },
-            new SessionEnded("s2", "engine", "failed", ByPerson: false, "the gate went red.")));
-
-        Assert.Equal("s2", Assert.Single(events, e => e.Kind == AttentionKind.Ended).Session);
-        Assert.DoesNotContain(events, e => e.Session == "s1");
     }
 
     /// <summary>
@@ -139,40 +78,6 @@ public sealed class AttentionTests
         watch.Observe(Tick([Session("s1", "working")]));
 
         Assert.Empty(watch.Observe(Tick([])));
-    }
-
-    /// <summary>
-    /// A session that parks and then ends is two pieces of news, and the second must survive the
-    /// first — the state it was remembered in must not make it look unchanged.
-    /// </summary>
-    [Fact]
-    public void A_parked_session_that_then_ends_says_both()
-    {
-        var watch = new AttentionWatch();
-        watch.Observe(Tick([Session("s1", "working")]));
-        Assert.Empty(watch.Observe(Tick([Session("s1", "awaiting-person")])));
-
-        var events = watch.Observe(Tick([], new SessionEnded("s1", "engine", "failed", ByPerson: false)));
-
-        Assert.Equal(AttentionKind.Ended, Assert.Single(events).Kind);
-    }
-
-    /// <summary>
-    /// Several at once is a normal tick on a machine driving a family. Every one is reported, so the
-    /// count a person sees matches what actually happened.
-    /// </summary>
-    [Fact]
-    public void Everything_that_happened_in_one_tick_is_reported()
-    {
-        var watch = new AttentionWatch();
-        watch.Observe(Tick([Session("s1", "working"), Session("s2", "working", "tools")]));
-
-        var events = watch.Observe(Tick(
-            [Session("s1", "awaiting-person")],
-            new SessionEnded("s2", "tools", "completed", ByPerson: false)));
-
-        Assert.Equal(AttentionKind.Ended, Assert.Single(events).Kind);
-        Assert.Equal("s2", events[0].Session);
     }
 
     /// <summary>
@@ -334,11 +239,11 @@ public sealed class AttentionTests
     }
 
     /// <summary>
-    /// The park says the last failure's note, so that failure's own end in the same look is not said beside it: one
-    /// thing happened to the person's work, and two notices of one note is the second saying nothing.
+    /// The park says the last failure's note. Its session's end is the journal's now (FOUNDATION1 m-iii) and no look's concluded end is said
+    /// beside it here; a quest's park is still the look's, found from the planner's verdict.
     /// </summary>
     [Fact]
-    public void The_last_failure_is_said_by_its_quest_s_park_and_not_twice()
+    public void A_quest_s_park_is_the_look_s_and_no_concluded_end_is_said_beside_it()
     {
         var watch = new AttentionWatch();
         watch.Observe(Tick([Session("s3", "working")]), []);
@@ -349,9 +254,7 @@ public sealed class AttentionTests
                             new SessionEnded("s4", "tools", "failed", ByPerson: false, "the gate went red.")]),
             [Park("s3")]);
 
-        Assert.Equal(2, events.Count);
-        Assert.Equal(AttentionKind.QuestParked, events[0].Kind);
-        Assert.Equal("s4", Assert.Single(events, e => e.Kind == AttentionKind.Ended).Session);
+        Assert.Equal(AttentionKind.QuestParked, Assert.Single(events).Kind);
     }
 
     /// <summary>

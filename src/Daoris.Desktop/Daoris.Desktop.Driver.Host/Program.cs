@@ -934,6 +934,8 @@ try
             foreach (var piece in pieces)
             {
                 var item = await NewsAttention.OfAsync(service, piece, closing.Token);
+                // Kept in Notifications whatever the switch says (NOTIFY2f): the desktop's windows read the record again and say what this host wrote.
+                Notices.Keep(home, [item], DateTimeOffset.UtcNow, why => log.Warn("notices.refused", ("why", why)));
                 if (NotifyOn(configPath)) Console.WriteLine($"  !  {item.Line}");
             }
         })

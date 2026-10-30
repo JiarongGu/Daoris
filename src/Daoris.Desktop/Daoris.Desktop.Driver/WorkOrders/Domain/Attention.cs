@@ -55,10 +55,6 @@ public sealed class AttentionWatch
 {
     private Dictionary<string, string>? _seen;
 
-    // The workspace of each session the last look saw active (NOTIFY2f): an ended session has left the report's active ones by the
-    // look that concludes it, so its notice keeps the workspace it was filed under then. Bounded by what is active.
-    private Dictionary<string, string> _workspaces = new(StringComparer.Ordinal);
-
     // Each conversation's turns as this watch judged them (NOTIFY1a), by session: whether the person spoke since its last
     // answer, and the turn's end it was last judged at. Told from the conversations' threads, so each is locked on its own.
     private readonly ConcurrentDictionary<string, Turns> _turns = new(StringComparer.OrdinalIgnoreCase);
@@ -107,9 +103,6 @@ public sealed class AttentionWatch
 
         var previous = _seen;
         _seen = now;
-        var workspaces = _workspaces;
-        _workspaces = report.Active.GroupBy(session => session.Id, StringComparer.Ordinal)
-            .ToDictionary(same => same.Key, same => same.First().Workspace, StringComparer.Ordinal);
 
         // A wait whose cool-off was not said yet (TOOL4d, D125 §4) — recorded on the first look too, which says nothing.
         var waits = report.Waits.Where(Unsaid).ToList();
@@ -130,20 +123,8 @@ public sealed class AttentionWatch
             Strikes = park.Strikes,
         }));
 
-        // The last failure is said by its quest's park, which carries its note. An end an account's limit made is no failure: its line
-        // goes on by itself and says so as its own news (LIMITRESUME1a, D206 point 1). Nor is one its agent's refusal of the choice ended
-        // at the open: the next look starts what the walk answers, and a fallback asks nothing (D205 §3.5(c), §4.6).
-        var saidByPark = parked.Select(park => park.Session).OfType<string>().ToHashSet(StringComparer.Ordinal);
-        foreach (var ended in report.Concluded)
-        {
-            if (!EndReaders.Notifies(ended.Class) || saidByPark.Contains(ended.Session)) continue;
-            events.Add(new AttentionEvent(
-                AttentionKind.Ended, ended.Session, ended.Repository, ended.State, ended.Note)
-            {
-                Workspace = workspaces.GetValueOrDefault(ended.Session) ?? _workspaces.GetValueOrDefault(ended.Session),
-            });
-        }
-
+        // A session's end is told from the journal (FOUNDATION1 m-iii, `NewsTeller`) by the one class table, so an account's limit, an agent's
+        // refusal of the choice and the person's own stop raise none (LIMITRESUME1a, D206 point 1; D205 §3.5(c); `EndReaders`).
         return events;
     }
 

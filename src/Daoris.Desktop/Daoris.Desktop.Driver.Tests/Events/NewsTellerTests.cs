@@ -86,6 +86,49 @@ public sealed class NewsTellerTests : IDisposable
         Assert.Equal([5L], _shown.Select(told => told.Position));
     }
 
+    // ---- m-iii: ends ----
+
+    /// <summary>
+    /// An end is told once by the class table: a failure is news; the person's own stop, an account's limit (LIMITRESUME1a) and an agent's refusal of
+    /// the choice are not; and a conversation's end never is.
+    /// </summary>
+    [Fact]
+    public async Task An_end_is_told_once_by_the_class_table()
+    {
+        await Teller().TellAsync(Batch(
+            Row(10, "Working", "Failed", codes: "ended.exit", record: "d1"),
+            Row(11, "Working", "Stopped", codes: "ended.stopped", record: "d2"),
+            Row(12, "Working", "Failed", codes: "ended.exit,account.cooling", record: "d3", limited: true),
+            Row(13, "Working", "Completed", marks: "chat", codes: "ended.done", record: "c1"),
+            Row(14, "Working", "Failed", codes: "ended.choice-not-offered", record: "d5"),
+            Row(15, "Working", "Completed", codes: "ended.done", record: "d4")));
+        await Teller("shell").TellAsync(Batch(Row(10, "Working", "Failed", codes: "ended.exit", record: "d1")));
+
+        Assert.Equal([("d1", "failed"), ("d4", "completed")], _shown.Select(told => (told.Session, told.Class!)));
+        Assert.All(_shown, told => Assert.Equal(AttentionKind.Ended, told.Kind));
+        Assert.Equal(("ended.exit", "failed"), (_shown[0].Reason, _shown[0].State));
+    }
+
+    /// <summary>An end, a reopen and an end are two positions and told as two.</summary>
+    [Fact]
+    public async Task An_end_a_reopen_and_an_end_are_told_as_two_positions()
+    {
+        await Teller().TellAsync(Batch(
+            Row(20, "Working", "Failed", codes: "ended.exit"), Row(21, "Failed", "Working"), Row(22, "Working", "Failed", codes: "ended.exit")));
+
+        Assert.Equal([20L, 22L], _shown.Select(told => told.Position));
+    }
+
+    /// <summary>A write that moves no state after an end leaves no row, and a row that is no move tells nothing new.</summary>
+    [Fact]
+    public async Task A_row_that_is_no_move_tells_nothing_new()
+    {
+        await Teller().TellAsync(Batch(Row(30, "Working", "Failed", codes: "ended.exit")));
+        await Teller().TellAsync(Batch(Row(31, "Failed", "Failed", codes: "ended.exit")));
+
+        Assert.Equal([30L], _shown.Select(told => told.Position));
+    }
+
     /// <summary>
     /// A teller whose cursor is below the floor tells what the journal still holds, none of the gap, and says its history is incomplete since its
     /// cursor (§4.1, §19.6).

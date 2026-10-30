@@ -64,6 +64,12 @@ public sealed class NewsTeller(News news, string name, Func<JournalEntry, bool> 
             return new NewsTold(AttentionKind.Parked, row.Record, row.Position, store, row.Workspace, null, null, null, at);
         }
 
+        // An end by the one table: the classes the watch said before, never a conversation's (§4.2).
+        if (PartEnds.Judge(row, store) is { } ended && EndReaders.Takes(EndReader.Notified, ended))
+        {
+            return new NewsTold(AttentionKind.Ended, ended.Session, ended.Position, store, ended.Workspace, ended.State, ended.Reason, ended.Class, at);
+        }
+
         return null;
     }
 

@@ -1159,6 +1159,8 @@ public sealed class DriverLoop(
                 foreach (var piece in pieces)
                 {
                     var item = await NewsAttention.OfAsync(service, piece, ct).ConfigureAwait(false);
+                    // Kept in Notifications whatever the switch says (NOTIFY2f): recording is not telling.
+                    Notices.Keep([item]);
                     if (Notifying()) await AttendAsync(item).ConfigureAwait(false);
                 }
             })
