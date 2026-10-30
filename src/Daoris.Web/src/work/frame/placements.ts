@@ -14,8 +14,10 @@ export type ViewId = 'notifications' | 'timeline' | 'review' | 'workflow' | 'atW
  * @remarks
  * A new view is named here and in `DEFAULT_PLACES`; its tab's name and icon (`ViewsMenu`) and the name Ask
  * Daoris is told (`help/where.ts`) are records over `ViewId`, so the compiler asks for them; its surface and
- * where it is present are the Work frame's. The one place nothing checks is Ask Daoris's room (`Help.cs`,
- * *The window*), which lists the views in prose: its test holds a phrase for each (CONSOLE4b found it).
+ * where it is present are the Work frame's. The one place nothing checks is Ask Daoris's room
+ * (`Knowledge/Room/HelpRoomWindow.cs`), which lists the views in prose: its test holds a phrase for each, and its
+ * goldens are written again with `DAORIS_GOLDEN_WRITE=1` (CONSOLE4b found it). A view on the right by default also
+ * joins the frame tests that move every side bar view to the panel (COWORKVIEW1a found it).
  */
 // The workflow (WORKFLOW1c, the workflow design §7): where the attended session's work stands, beside its timeline and review.
 // *Notifications* first (NOTIFY2b, the notification design §2.1): everything that comes to the person, the same on every view.
