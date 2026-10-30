@@ -539,6 +539,23 @@ public sealed class NodeRuntime(
         }
 
         var repository = binding.Repository;
+
+        // FABRIC-PIPELINE1d (the pipeline design §4.3): a verification run has no quests and no branch; it observes itself at its commit, and
+        // once ended it is never judged again.
+        if (run.Line is { } line)
+        {
+            if (run.Ended is not null) return null;
+            var at = new WorkUnit(run.Unit, WorkUnitKind.Run, new WorkOwner(repository, binding.Workspace, VerifyFiles.Lines, WorkRecord.DriverWriter),
+                new WorkSubject(binding.Run, line.Commit), new MilestoneEnd(WorkEndState.NotEnded, null, null, null, null, "its verification runs"), []);
+            var (checks, sent, seen) = Declare(graph, steps);
+            var verifies = new RunScope(run, at) { Root = line.Root, Identity = IdentityOf(identities, line.Root), Tip = line.Commit };
+            return new GovernedUnit(at, graph, digest, binding.Run, checks, sent,
+                new WatchedUnit(repository, binding.Workspace, line.Root, "", line.Commit, null, null, []) { Unit = run.Unit })
+            {
+                Observable = seen, Scope = verifies,
+            };
+        }
+
         var units = read.Units.GroupBy(unit => unit.Id, StringComparer.Ordinal).ToDictionary(same => same.Key, same => same.First(), StringComparer.Ordinal);
         var quests = read.Units.Select(unit => unit.Records.Quest).OfType<QuestView>().ToList();
 
@@ -1126,7 +1143,8 @@ public sealed class NodeRuntime(
         var nodes = governed.Graph.Nodes.Select(node => governed.Declared[node.Id]).ToList();
         var before = nodes.ToDictionary(node => node.Id, node => record.Statuses.GetValueOrDefault(node.Id) ?? NodeLifecycle.Start(self.Id, node.Id), StringComparer.Ordinal);
         var units = new Dictionary<string, WorkUnit>(StringComparer.Ordinal) { [self.Id] = self };
-        var revisions = new Dictionary<string, string?>(StringComparer.Ordinal) { [self.Id] = null };
+        // FABRIC-PIPELINE1d: a verification run's nodes observe the run itself at its commit.
+        var revisions = new Dictionary<string, string?>(StringComparer.Ordinal) { [self.Id] = scope.Tip };
         if (scope.Quest is { } quest) (units[quest.Id], revisions[quest.Id]) = (quest, quest.Subject.Revision);
         if (scope.Branch is { } branch)
         {
@@ -1138,7 +1156,7 @@ public sealed class NodeRuntime(
         if (landed is { } on) units.TryAdd(on.Unit.Id, on.Unit);
         var subjects = new Dictionary<string, string?>(StringComparer.Ordinal);
         var own = new Dictionary<string, string?>(StringComparer.Ordinal);
-        foreach (var node in nodes)
+        foreach (var node in scope.Tip is null ? nodes : [])
         {
             switch (SubjectOf(node, scope))
             {

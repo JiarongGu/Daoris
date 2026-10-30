@@ -540,7 +540,7 @@ public sealed class HeavyExecutor(string home, VerifyWorld? world = null) : IAsy
             var candidate = await CandidateJob.OpenAsync(job).ConfigureAwait(false);
             try
             {
-                var run = new VerifyRun(home, send, candidate, _world, key, change =>
+                var run = new VerifyExecution(home, send, candidate, _world, key, change =>
                 {
                     holder = change(holder);
                     try
@@ -641,7 +641,7 @@ internal sealed record VerifyRunner(string Run, string? Cwd, bool Clock, bool Re
 }
 
 /// <summary>One attempt's run, holding both slots: the accepted declaration read at the commit, then its runner or its gates in the job.</summary>
-internal sealed class VerifyRun(string home, VerifySend send, CandidateJob job, VerifyWorld world, string key, Action<Func<HeavyHolder, HeavyHolder>> keep)
+internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob job, VerifyWorld world, string key, Action<Func<HeavyHolder, HeavyHolder>> keep)
 {
     private readonly string _folder = VerifyFiles.AttemptFolder(home, send.Run, send.Invocation);
 
