@@ -18,6 +18,7 @@ repository.
 - **Root cause:** the read opened a connection of its own and made commands on it, bypassing the gate every store goes through.
 - **Fix:** `JournalRows.ReadAsync` takes the service's connection and runs inside its gate; the composed service carries the read.
 - **Verify:** gate, `JournalRowsTests` and Platform tests green.
+
 ## 2026-10-31 - A test's git in a fixture that was no repository acted on the checkout's (GITISOLATE1)
 
 - **Symptom:** a filtered run left the shared repository config with `core.bare=true`.
