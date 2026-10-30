@@ -1283,14 +1283,20 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
     /// run here goes on under the start's spawn, so where it did, the words are handed back to <paramref name="left"/> and the record
     /// concludes, its next look going on under the setup standing then. Null never asks.
     /// </param>
+    /// <param name="carriesOn">
+    /// The look at the quest and its tree a run's end takes (LANDBACK1 part 3, <see cref="Driver.CarriesOn"/>): where nothing is held, a
+    /// closed quest with an uncommitted tree resumes the conversation once more in Daoris's own words. Null never carries on.
+    /// </param>
     internal async Task<(int? ExitCode, AcpUsage? Used)> GoOnAsync(
         DrivenInbox held, Func<string, string, System.Diagnostics.ProcessStartInfo?> goOn, ISessionAdapter adapter,
         string sessionId, string transcript, string? refusesInput, bool drivesBrowser, int? exitCode, AcpUsage? used,
         ResumeAsk? resume, Action<System.Text.Json.JsonElement>? said, List<IDisposable> keep, List<ChatMessage> left,
-        CancellationToken ct, HarnessWords? own = null, Func<bool>? setupChanged = null)
+        CancellationToken ct, HarnessWords? own = null, Func<bool>? setupChanged = null,
+        Func<CancellationToken, Task<TurnCarry>>? carriesOn = null)
     {
         var processes = _context.Processes;
         IReadOnlyList<ChatMessage> carried = [];
+        var carriedOn = 0;
         while (exitCode is not null && !processes.WasStopRequested(sessionId))
         {
             // TURNFAIL2: a run whose turn the harness said failed is not gone on from: the words it carried and those held wait,
@@ -1301,7 +1307,20 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
                 return (exitCode, used);
             }
 
-            if (held.TakeAllOrClose() is not { Count: > 0 } taken) break;
+            if (held.TakeAllOrClose() is not { Count: > 0 } taken)
+            {
+                // LANDBACK1 part 3: nothing held, so the turn's end is here. A clean exit whose quest is closed with its tree uncommitted
+                // is carried on in Daoris's own words, bounded by the look's own limit; a failed exit is not (Left read it above).
+                if (carriesOn is null || exitCode != 0) break;
+                var ran = await CarryOnNativeAsync(
+                        held, goOn, carriesOn, adapter, sessionId, transcript, refusesInput, drivesBrowser, carriedOn, resume, said, keep, own, used, ct)
+                    .ConfigureAwait(false);
+                if (ran is not { } carry) break;
+                carriedOn++;
+                (exitCode, used) = carry;
+                continue;
+            }
+
             // ACCESSSWAP1b: its setup changed while the run worked, so the words go back unjudged, to go on under the new one at the next
             // look rather than in a run spawned under the start's; the look judges Daoris's words on the record before its go-on.
             if (setupChanged?.Invoke() == true)
@@ -1359,52 +1378,120 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
                 }
             }
 
-            // Through the start gate (PROCSTART2), as the first run's start is, waiting for its place on the loop's token
-            // (PARALLEL1f). A driver closing while it waits starts no run, so the words it took are said never to have reached
-            // the session, as a stop's are, and the close ends the record as it ends any run it cuts off (D104). Through the launcher
-            // (TERMTRUST1a), as the first run's is: its harness born in this process's agents' job.
-            System.Diagnostics.Process? started;
-            try
-            {
-                started = await AgentStarts.StartAsync(info, ContainedKind.Agent, StartClass.Person, _context.Home, _driver.Log, ct).ConfigureAwait(false);
-            }
-            catch (OperationCanceledException) when (ct.IsCancellationRequested)
-            {
-                Went(words);
-                Untaken(sessionId, held.Close().Count + words.Count, UnreachedWhy.EndedFirst);
-                throw;
-            }
-
-            var process = started ?? throw new DriverException($"the {adapter.Name} adapter's process did not start");
-            // COWORK1c (the design §7): the resumed run carries them from its start, their receipt `sent`, and they leave the record.
-            foreach (var word in words)
-            {
-                if (word.Id is { } id) _context.Events.Keep(sessionId, new SessionEvent { Kind = SessionEventKind.Receipt, Id = id, Receipt = Receipts.Sent }, say: null);
-            }
-
-            Went(words);
-            // As the first run's: the process, tracked so a stop reaches it, and a reaper that ends it while still tracked.
-            keep.Add(process);
-            keep.Add(processes.Track(sessionId, process, refusesInput, drivesBrowser));
-            keep.Add(new Disposer(() => SessionProcesses.EndIfRunning(process)));
-
-            var capture = adapter.StructuredOutput() is { } mapper
-                ? _driver.KeepingAsync(mapper, HarnessCapture.CaptureStructuredAsync(
-                    _driver.Hearing(process.StandardOutput, sessionId), _driver.Hearing(process.StandardError, sessionId), transcript, sessionId,
-                    _context.Output, _context.Events, mapper,
-                    prompt: null, ct, opened: NativeWords.Opening(adapter.Name, words), append: true, said: said, own: own,
-                    lineageHome: _context.Home),
-                    sessionId, adapter.Name, resume: null)
-                : null;
-            await NativePrompt.WriteAsync(process, adapter, NativeWords.Prompt(words), ct).ConfigureAwait(false);
-            exitCode = await _driver.WaitAsync(process, ct).ConfigureAwait(false);
-            // State E (SESSWATCH1a): the capture bounded past the exit, as the first run's is.
-            if (capture is not null && await _driver.CaptureWithinAsync(capture, sessionId).ConfigureAwait(false)
-                && await capture.ConfigureAwait(false) is { } reported) used = reported;
+            (exitCode, used) = await ResumeRunAsync(
+                    held, info, adapter, sessionId, transcript, refusesInput, drivesBrowser, words, NativeWords.Prompt(words),
+                    NativeWords.Opening(adapter.Name, words), said, keep, own, used, ct)
+                .ConfigureAwait(false);
         }
 
         // Words held when it could go on no more: a stop, a timeout. Said, never dropped without a trace.
         if (held.Close() is { Count: > 0 } unreached) Untaken(sessionId, unreached.Count, UnreachedWhy.EndedFirst);
+        return (exitCode, used);
+    }
+
+    /// <summary>
+    /// The carry-on a native run's end owes (LANDBACK1 part 3): its harness ends the session's own work with its turn, so where the
+    /// quest stands closed with the tree uncommitted the conversation is resumed once more with Daoris's own words as the run's
+    /// prompt, as held words are, and the look is taken again at its end. Null where nothing is owed: the look is clean or unread, the
+    /// session was stopped, no conversation was kept, or the bound was met, which is said once. No inbox, no move record and no card
+    /// takes part; Daoris commits nothing (D164).
+    /// </summary>
+    private async Task<(int? ExitCode, AcpUsage? Used)?> CarryOnNativeAsync(
+        DrivenInbox held, Func<string, string, System.Diagnostics.ProcessStartInfo?> goOn, Func<CancellationToken, Task<TurnCarry>> carriesOn,
+        ISessionAdapter adapter, string sessionId, string transcript, string? refusesInput, bool drivesBrowser, int carried, ResumeAsk? resume,
+        Action<System.Text.Json.JsonElement>? said, List<IDisposable> keep, HarnessWords? own, AcpUsage? used, CancellationToken ct)
+    {
+        TurnCarry look;
+        try
+        {
+            look = await carriesOn(ct).ConfigureAwait(false);
+        }
+        catch (Exception) when (!ct.IsCancellationRequested)
+        {
+            // A look that cannot be taken owes nothing: the end is as it always was.
+            return null;
+        }
+
+        if (look is not { Dirty: true } || look.Holds?.Invoke() == false || _context.Processes.WasStopRequested(sessionId)) return null;
+        if (carried >= look.Limit)
+        {
+            KeepNote(sessionId, BackgroundNotes.CarryBound());
+            return null;
+        }
+
+        var conversation = _context.Conversations.Read(sessionId)?.Conversation ?? resume?.Conversation;
+        var info = conversation is null ? null : goOn(conversation, look.Words);
+        if (info is null) return null;
+        var note = BackgroundNotes.CarriedOn(look.Paths);
+        return await ResumeRunAsync(
+                held, info, adapter, sessionId, transcript, refusesInput, drivesBrowser, [], look.Words, NativeWords.Opening(note), said, keep, own, used, ct)
+            .ConfigureAwait(false);
+    }
+
+    /// <summary>The driver's own sentence by its code, on the console and in the record.</summary>
+    private void KeepNote(string sessionId, Noted noted)
+    {
+        _context.Output?.Append(sessionId, noted.Note);
+        _context.Events.Keep(
+            sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = noted.Note, Parts = noted.Parts.Count > 0 ? noted.Parts : null }, say: null);
+    }
+
+    /// <summary>
+    /// One resumed run of a native conversation, the held words' and a carry-on's alike (the start, its capture and its wait are one):
+    /// through the start gate (PROCSTART2), waiting for its place on the loop's token (PARALLEL1f). A driver closing while it waits starts
+    /// no run, so the words it took are said never to have reached the session, as a stop's are, and the close ends the record as it
+    /// ends any run it cuts off (D104). Through the launcher (TERMTRUST1a), as the first run's is: its harness born in this process's
+    /// agents' job.
+    /// </summary>
+    /// <param name="words">The held words this run carries, none for a carry-on, whose <paramref name="prompt"/> is Daoris's own.</param>
+    /// <param name="opening">What the record opens the run with: the words under their ids, or the carry-on's note.</param>
+    private async Task<(int? ExitCode, AcpUsage? Used)> ResumeRunAsync(
+        DrivenInbox held, System.Diagnostics.ProcessStartInfo info, ISessionAdapter adapter, string sessionId, string transcript,
+        string? refusesInput, bool drivesBrowser, IReadOnlyList<ChatMessage> words, string prompt, IReadOnlyList<SessionEvent> opening,
+        Action<System.Text.Json.JsonElement>? said, List<IDisposable> keep, HarnessWords? own, AcpUsage? used, CancellationToken ct)
+    {
+        System.Diagnostics.Process? started;
+        try
+        {
+            started = await AgentStarts.StartAsync(info, ContainedKind.Agent, StartClass.Person, _context.Home, _driver.Log, ct).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            if (words.Count > 0)
+            {
+                Went(words);
+                Untaken(sessionId, held.Close().Count + words.Count, UnreachedWhy.EndedFirst);
+            }
+
+            throw;
+        }
+
+        var process = started ?? throw new DriverException($"the {adapter.Name} adapter's process did not start");
+        // COWORK1c (the design §7): the resumed run carries them from its start, their receipt `sent`, and they leave the record.
+        foreach (var word in words)
+        {
+            if (word.Id is { } id) _context.Events.Keep(sessionId, new SessionEvent { Kind = SessionEventKind.Receipt, Id = id, Receipt = Receipts.Sent }, say: null);
+        }
+
+        Went(words);
+        // As the first run's: the process, tracked so a stop reaches it, and a reaper that ends it while still tracked.
+        keep.Add(process);
+        keep.Add(_context.Processes.Track(sessionId, process, refusesInput, drivesBrowser));
+        keep.Add(new Disposer(() => SessionProcesses.EndIfRunning(process)));
+
+        var capture = adapter.StructuredOutput() is { } mapper
+            ? _driver.KeepingAsync(mapper, HarnessCapture.CaptureStructuredAsync(
+                _driver.Hearing(process.StandardOutput, sessionId), _driver.Hearing(process.StandardError, sessionId), transcript, sessionId,
+                _context.Output, _context.Events, mapper,
+                prompt: null, ct, opened: opening, append: true, said: said, own: own,
+                lineageHome: _context.Home),
+                sessionId, adapter.Name, resume: null)
+            : null;
+        await NativePrompt.WriteAsync(process, adapter, prompt, ct).ConfigureAwait(false);
+        var exitCode = await _driver.WaitAsync(process, ct).ConfigureAwait(false);
+        // State E (SESSWATCH1a): the capture bounded past the exit, as the first run's is.
+        if (capture is not null && await _driver.CaptureWithinAsync(capture, sessionId).ConfigureAwait(false)
+            && await capture.ConfigureAwait(false) is { } reported) used = reported;
         return (exitCode, used);
     }
 
@@ -1480,6 +1567,10 @@ internal static class NativeWords
     /// </summary>
     public static IReadOnlyList<ChatMessage>? Left(HarnessWords? own, int? exit, DrivenInbox held, IReadOnlyList<ChatMessage> carried) =>
         own?.Ended(exit).Failure is { Length: > 0 } ? [.. carried, .. held.Close()] : null;
+
+    /// <summary>The opening of a carry-on's run (LANDBACK1 part 3): its note alone, since its words are Daoris's own prompt, never a message.</summary>
+    public static IReadOnlyList<SessionEvent> Opening(Noted carry) =>
+        [new SessionEvent { Kind = SessionEventKind.Note, Text = carry.Note, Parts = carry.Parts.Count > 0 ? carry.Parts : null }];
 
     /// <summary>
     /// The run's opening in the record: the driver's line, then the same words again under the ids they were shown with

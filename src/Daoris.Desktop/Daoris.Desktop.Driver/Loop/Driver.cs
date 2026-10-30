@@ -4123,7 +4123,7 @@ public sealed class Driver(
         {
             (exitCode, used) = await GoOns.GoOnAsync(
                 held, goOn!, adapter, sessionId, transcript, refusesInput, drivesBrowser, exitCode, used, resume, said, wentOn, left, ct, own,
-                setupChanged)
+                setupChanged, carriesOn)
                 .ConfigureAwait(false);
         }
 
