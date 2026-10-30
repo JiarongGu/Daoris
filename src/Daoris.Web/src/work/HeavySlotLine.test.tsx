@@ -193,4 +193,17 @@ describe('where it is said', () => {
     expect(screen.getByText('a run from a terminal')).toBeTruthy();
     expect(screen.queryByRole('button')).toBeNull();
   });
+
+  // FABRIC-PIPELINE1d (the pipeline design §4.4): the *Heavy run* row names the verification run while it holds the slot, in both languages.
+  it('names the verification run holding the slot', async () => {
+    const read = readHeavySlot({ repository: 'engine', holder: { run: 'v-0123456789abcdef', gates: ['suite'], since: ago(2) }, waiters: [] });
+    expect(read?.holder?.run).toBe('v-0123456789abcdef');
+    render(<HeavySlotRow slot={read!} titleOf={titleOf} />);
+    expect(screen.getByText('verification run v-0123456789abcdef')).toBeTruthy();
+    cleanup();
+    await i18n.changeLanguage('zh');
+    render(<HeavySlotRow slot={read!} titleOf={titleOf} />);
+    expect(screen.getByText('验证运行 v-0123456789abcdef')).toBeTruthy();
+    await i18n.changeLanguage('en');
+  });
 });

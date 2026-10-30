@@ -11,6 +11,8 @@ export type HeavyGateNow = { gate: string; at: number; since: string };
 export type HeavyHolder = {
   /** The session whose run it is; absent for a run from a terminal. */
   session?: string | null;
+  /** The verification run holding it (FABRIC-PIPELINE1d); absent for a session's or a terminal's run. */
+  run?: string | null;
   gates: string[];
   since: string;
   now?: HeavyGateNow | null;
@@ -62,6 +64,7 @@ export function readHeavySlot(raw: unknown): HeavySlot | null {
   const failed = record(held?.failed);
   const holder: HeavyHolder | null = held && text(held.since) ? {
     session: text(held.session),
+    run: text(held.run),
     gates: Array.isArray(held.gates) ? held.gates.filter((gate): gate is string => typeof gate === 'string') : [],
     since: held.since as string,
     now: now && text(now.gate) && typeof now.at === 'number' && text(now.since)
