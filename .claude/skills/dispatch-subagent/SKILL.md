@@ -87,6 +87,15 @@ a batch ran on Opus because the definition still named it, though the reference 
 days before. The worker's definition also fixes `isolation: worktree`, which a dispatch cannot turn off, so each worker
 gets a fresh tree; a finished worker's tree cannot be handed to the next one, and it goes with the prune once its branch
 is in main.
+
+A builder runs before it hands back the checks a candidate runs that its lines reach, not only its own classes: on
+2026-10-30 three candidates of one batch went red on checks no member's builder had run (the mark census, `optional-locks`,
+`test-map --check`'s hand rows, the pack-safety read of the CLI package, a route answer's pinned field list, and the
+page's twins of a driver code list). Its brief names them: `node tools/optional-locks.mjs`, `node tools/test-map.mjs
+--check`, the driver's `ParticipantWorkReadersTests`, `ContinuedReadersCensusTests` and `SystemWiringTests`, and for a
+new code in a list the page copies, the page's twin test. The parent, running a class with `--no-build`, builds that
+class's own project first: a build of another project leaves the test assembly stale, and twice that day it read as a
+red that was not there.
 | A read of a design, a decision or a risky merge by another maker | decide-support or review |
 
 Measure each batch (step 8) against the reference's targets, note the numbers under D160, and move the reference when
