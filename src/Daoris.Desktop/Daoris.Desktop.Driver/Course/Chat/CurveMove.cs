@@ -125,12 +125,13 @@ internal sealed class CurveMove(ChatContext context, ChatHandOver handOver)
 
         // FOUNDATION1h branch 1 (the foundation design §3.1): whether this line may move, and where, is the course's one decision. The account
         // reading above is the adapter's to read (the others' windows are read only where it says so); the scope's switch is the course's
-        // consent (`SwitchAdmits`), so a hold, the switch's or a stay, is no move, and the account moved to is the course's answer.
+        // consent (`SwitchAdmits`), so a hold, the switch's or a stay, is no move, and the account moved to is the course's answer. Ask Daoris's
+        // own conversation was passed over above (it has no account to move), so the head is never one.
         var course = CourseDecision.Decide(
             new CourseFacts(
                 new CourseHead(
                     prior.State, Role: prior.Actor ?? "chat", Choice: prior.Choice, Adapter: adapter, Profile: account, Conversation: true,
-                    AskDaoris: prior.Ask is not null, Session: sessionId),
+                    AskDaoris: false, Session: sessionId),
                 CourseBoundary.BetweenTurns,
                 Rules: new CourseRules(SwitchAdmits: Admits(scope.Use), CurveAccount: (choice as SwitchChoice.MoveTo)?.Account)),
             CourseTrigger.TurnEnd);
