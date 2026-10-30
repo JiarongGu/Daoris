@@ -832,6 +832,21 @@ public sealed class Driver(
         }
     }
 
+    /// <summary>The name of the role a design quest's start took, as its opening says it; null where the catalogue will not read.</summary>
+    private string? DesignRoleName(Consideration start)
+    {
+        try
+        {
+            return RoleCatalog.ReadHome(home).RoleFor(ParticipantWork.Design, PlaceOf(start)).Role is { } role
+                ? ActorChoices.Ids.Contains(role.Id, StringComparer.Ordinal) ? ActorWords.Name(role.Id) : role.NameEn
+                : null;
+        }
+        catch (DriverException)
+        {
+            return null;
+        }
+    }
+
     /// <summary>The work a quest's start is: design where its publisher or the intake marked its weight so (MODELROLE1l), else build.</summary>
     internal static string StartWork(QuestView quest) =>
         string.Equals(quest.Weight, ParticipantWork.Design, StringComparison.Ordinal) ? ParticipantWork.Design : ParticipantWork.Build;
@@ -2786,6 +2801,11 @@ public sealed class Driver(
                     prior.Limit ? RotatedOpening.ContextOf(usage, Context.Events, prior.Session) : null));
         // Where a later choice of Build's ran, its actor line beside it, naming each choice passed (D205 §4.6 item 1, MODELROLE1c2).
         if (chosen is not null) RotatedOpening.SayActor(Context.Events, sessionId, "build", chosen, buildPasses);
+        // A quest marked design says whose order it ran on: the role taking design, Build's while none does (FOUNDATION1x, MODELROLE1l).
+        if (start.Resumes is null && StartWork(quest) == ParticipantWork.Design && DesignRoleName(start) is { } designer)
+        {
+            RotatedOpening.SayDesign(Context.Events, sessionId, designer);
+        }
 
         // Its setup in one line, after the account's (AUTONOMY1a), and the mode it got on its harness (AUTONOMY1b), after the change
         // from the session it goes on from where its permission prompts moved since: a start under today's behaviour going on from none
