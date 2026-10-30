@@ -52,7 +52,14 @@ public static class NodeKinds
     /// </summary>
     public const string Check = "check";
 
-    public static readonly IReadOnlyList<string> BuiltIn = [Claimed, Handed, Pushed, PullRequest, Line, Human, Look, GoAhead, WaitUnit, QuestClose, All, Opinion, Stop, Check];
+    /// <summary>
+    /// The unit's step in the line's integration (INTEGRATE1n; the integration design §17.4): its landed branch asked of the one request door and
+    /// waited on, reached and failed by the integration record. Declared and judged here, drawn by Current under a rule carrying
+    /// <c>integrate</c>; nothing starts it until rows n2 and n3.
+    /// </summary>
+    public const string Integrate = "integrate";
+
+    public static readonly IReadOnlyList<string> BuiltIn = [Claimed, Handed, Pushed, PullRequest, Line, Human, Look, GoAhead, WaitUnit, QuestClose, All, Opinion, Stop, Check, Integrate];
 
     /// <summary>Whether a kind is a plugin's own node: <c>&lt;plugin&gt;/&lt;node&gt;</c>, both parts named.</summary>
     public static bool IsPlugin(string kind)
@@ -173,6 +180,12 @@ public static class NodeSource
     /// fails a <c>check</c>.
     /// </summary>
     public const string Gates = "gates";
+
+    /// <summary>
+    /// The integration record (INTEGRATE1n; §17.4's <i>its authority</i>): what reaches and fails an <c>integrate</c>, its member promoted and
+    /// settled, or handed back, as the line's run writes it (§5.6). Never a person's word and never a plugin's.
+    /// </summary>
+    public const string Integration = "integration";
 }
 
 /// <summary>
@@ -265,6 +278,9 @@ public static class NodeAuthorities
         // FABRIC-PIPELINE1a (the pipeline design §4.1): reached and failed by the gates' exits, never skipped by its kind, since a skip
         // would read as a verdict a stage and the line rest on; the person's doors on it are a new attempt and a stop.
         [NodeKinds.Check] = new(NodeKinds.Check, NodeReach.Performed, NodeSource.Gates, NodeSource.Gates, false, false, true, true),
+        // INTEGRATE1n (§17.4): reached and failed by the integration record, never skipped, since a skip satisfies `after` and would read as
+        // integrated where nothing was; the person's door is the stop, which the record bounds (F50, row n2).
+        [NodeKinds.Integrate] = new(NodeKinds.Integrate, NodeReach.Waited, NodeSource.Integration, NodeSource.Integration, false, PersonSkips: false, true, true),
     };
 
     /// <summary>
@@ -272,8 +288,14 @@ public static class NodeAuthorities
     /// skip unless declared otherwise); null for a kind this build does not know. A plugin's answer is named <see cref="NodeSource.Plugin"/>
     /// here alone: that the answer came from the declaring plugin is <see cref="WorkBelief.Completion"/>'s sender check, not the lifecycle's.
     /// </summary>
-    public static NodeAuthority? Of(NodeDeclaration node) =>
-        BuiltIn.TryGetValue(node.Kind, out var builtIn) ? builtIn
+    public static NodeAuthority? Of(NodeDeclaration node) => Of(node, BuiltIn);
+
+    /// <summary>
+    /// The node's authority as a build whose built-in table is <paramref name="table"/> reads it: an older build's table lacks a later row, so
+    /// a declaration naming that kind is no kind there (INTEGRATE1n; §17.6 point 6).
+    /// </summary>
+    internal static NodeAuthority? Of(NodeDeclaration node, IReadOnlyDictionary<string, NodeAuthority> table) =>
+        table.TryGetValue(node.Kind, out var builtIn) ? builtIn
         : NodeKinds.IsPlugin(node.Kind) ? new NodeAuthority(node.Kind, node.Reach, NodeSource.Plugin, NodeSource.Plugin, node.Rejectable, node.Skippable, true, true)
         : null;
 }
@@ -288,14 +310,20 @@ public static class NodeDeclarations
     /// rejection a built-in's declaration tries to grant or a skip it tries to forbid (the kind's own, never a declaration's). Then
     /// FABRIC-UNIT1d's (§D6): a <c>perform</c> on any node but a plugin's performed one, a transient code not of
     /// <see cref="NodePerform.CodeShape"/> or named twice, transient codes with no retry to take them, and a plugin's retry of more
-    /// than one attempt that nothing could take: a transient code, on a node that is idempotent or reconciled.
+    /// than one attempt that nothing could take: a transient code, on a node that is idempotent or reconciled. Then INTEGRATE1n's: an
+    /// <c>integrate</c>'s <c>request</c> and <c>conflicts</c> (the unit's half of the install's policy, §17.4) each a text of the install's own
+    /// choices, judged here with the declaration so a cycle, a version and a stored file are held to one check; the graph's rules about where it
+    /// stands are <see cref="NodeGraphs.Problems"/>'s.
     /// </summary>
-    public static string? Problem(NodeDeclaration node)
+    public static string? Problem(NodeDeclaration node) => Problem(node, NodeAuthorities.BuiltIn);
+
+    /// <summary>The declaration's checks as a build whose built-in table is <paramref name="table"/> makes them (INTEGRATE1n, §17.6 point 6).</summary>
+    internal static string? Problem(NodeDeclaration node, IReadOnlyDictionary<string, NodeAuthority> table)
     {
         if (string.IsNullOrWhiteSpace(node.Id)) return "id";
-        var authority = NodeAuthorities.Of(node);
+        var authority = NodeAuthorities.Of(node, table);
         if (authority is null) return NodeRefusal.UnknownKind;
-        var builtIn = NodeAuthorities.BuiltIn.ContainsKey(node.Kind);
+        var builtIn = table.ContainsKey(node.Kind);
         if (builtIn ? node.Reach != authority.Reach : node.Reach is not (NodeReach.Observed or NodeReach.Performed)) return "reach";
         if (node.Version < 1) return "version";
         if (node.Retry is { } retry && (retry.MaxAttempts < 1 || retry.DelaysSeconds.Any(delay => delay < 0) || authority.FailureBy is null)) return "retry";
@@ -304,6 +332,7 @@ public static class NodeDeclarations
         if (node.Outputs.ContainsKey(WireEnd.Evidence)) return "outputs";
         if (builtIn && node.Rejectable) return "rejectable";
         if (builtIn && !node.Skippable) return "skippable";
+        if (node.Kind == NodeKinds.Integrate && IntegrateOptionProblem(node) is { } option) return option;
 
         // FABRIC-UNIT1d (§D6): how a plugin performs its node is that node's alone, and a retry or a transient code is refused where
         // it could never be taken, as a retry on a kind nothing can fail is. Daoris's own performed kind's retry stays its kind's.
@@ -321,6 +350,21 @@ public static class NodeDeclarations
         if (!builtIn && node.Retry is { MaxAttempts: > 1 } && !(node.Perform is { Transient.Count: > 0 } taken && (taken.Idempotent || taken.Reconcile)))
         {
             return "retry";
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// The first of an <c>integrate</c>'s options that holds no choice of the install's, by its name (INTEGRATE1n; §17.4): <c>request</c> is
+    /// one of <see cref="LandingIntegrate.Requests"/> and <c>conflicts</c> one of <see cref="LandingIntegrate.ConflictChoices"/>, each written as
+    /// text. Any other option is left as written, as a graph's options are opaque to a reader that does not know them.
+    /// </summary>
+    private static string? IntegrateOptionProblem(NodeDeclaration node)
+    {
+        foreach (var (name, choices) in new (string, IReadOnlyList<string>)[] { ("request", LandingIntegrate.Requests), ("conflicts", LandingIntegrate.ConflictChoices) })
+        {
+            if (node.Options.ContainsKey(name) && !(NodeOptions.Text(node, name) is { } text && choices.Contains(text, StringComparer.Ordinal))) return name;
         }
 
         return null;

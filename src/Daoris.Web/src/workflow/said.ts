@@ -28,6 +28,7 @@ const NODE_TITLES: Record<string, string> = {
   stop: 'workflow.step.stop',
   'wait.unit': 'workflow.step.waitUnit',
   check: 'workflow.step.check',
+  integrate: 'workflow.step.integrate',
 };
 
 /** A plugin's own node's kind, `<plugin>/<node>`, both parts named: the driver's `NodeKinds.IsPlugin`. */
