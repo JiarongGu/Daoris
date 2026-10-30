@@ -22027,3 +22027,9 @@ The row is quoted by its head; its whole text and proof are the foundation desig
 > **2a** (the design's §5 and §8): `index_readings` written in the transaction replacing the entries, a feed's provenance with it, only where the generation is still the one its writer read; retirement, withdrawal and restamping taking the generation in their own transaction and always writing; every replacing path through it; versioned tables an older open connector cannot reach; `RecheckAsync` and `StandingsAsync` reading entry, marks and reading in one read transaction.
 
 **Outcome** 2026-10-31: built. Schema 6 keeps the entries, the search table and `index_readings_6` in tables named by the version; every replace writes its reading in its transaction and is refused where the generation moved; restamping updates in place; standing, citation and recheck read in one transaction. Readings against the design: the generation is read before the registry reloads, not only before the source; a hit whose entry was replaced between search and standing reads `unknown`; a refused feed answers `FeedRefusal.Moved`; a connector opened before the upgrade cannot write the new tables, and its searches fail until its session restarts. Detail in the service README and D220's note.
+
+## QUESTIONUI1a2 — the head's card shares the frame's selection (2026-10-31, found landed)
+
+> **QUESTIONUI1a2 — the head's card shares the frame's selection** (web; depends on nothing else here). The head's card's rows are the frame's one selection, as §8.4 stands, in place of its own (`AwaitingPerson.tsx:105-107`); `f17e2301d`, on a session's tree and not merged, builds it. Proof: §11.
+
+**Outcome** 2026-10-31: found already on main. `f17e2301d` (2026-10-24), the session tree's build this row waited on, had landed with QUESTIONUI1a's commits; the row was left open by mistake.
