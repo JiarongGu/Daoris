@@ -84,7 +84,7 @@ describe("a repository's Branches and History tabs", () => {
     answering();
     show(<ProjectsView notify={() => {}} />);
     const page = await chooseRepository('engine');
-    expect(within(page).getAllByRole('tab').map((tab) => tab.textContent)).toEqual(['Details', 'Branches', 'History', 'Workflow', 'Setup']);
+    expect(within(page).getAllByRole('tab').map((tab) => tab.textContent)).toEqual(['Details', 'Branches', 'History', 'Integration', 'Workflow', 'Setup']);
     expect(asked('GIT_BRANCHES')).toEqual([]);
 
     await userEvent.click(within(page).getByRole('tab', { name: 'Branches' }));
