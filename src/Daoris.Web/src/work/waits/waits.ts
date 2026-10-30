@@ -127,6 +127,8 @@ export type WaitFacts = {
   /** Its agent's own ask to hand it over as the driver's look left it, and the yes that answers it (MIXAGENT1c). */
   handOver?: { ask?: HandOverAskRow | null; onApprove?: unknown } | null;
   lands?: LandOffer | null;
+  /** The session's own press where its parts offer work (REVIEWFLOW1a): how many offer it. */
+  entry?: { offered: number } | null;
   landing?: LandingPlan | null;
   behind?: LineBehind | null;
   onLand?: unknown;
@@ -178,9 +180,11 @@ export function waitsOf(facts: WaitFacts): Wait[] {
   // (MIXAGENT1c, D163 point 3), whatever the session's state: one not read yet, one with their yes, taken or refused waits on none.
   const handing = facts.handOver?.ask;
   if (facts.handOver?.onApprove && handing && waitsOnHandOverWord(handing)) waits.push({ kind: 'handOver', id: handing.id });
+  // The session's work to land stands on its offer, any of its parts (REVIEWFLOW1a, D168): its one press, whichever part is attended.
+  const entryStands = (facts.entry?.offered ?? 0) > 0;
   if (facts.lands) {
     const stands = landingStands({ lands: facts.lands, landing: facts.landing, behind: facts.behind });
-    if (facts.onLand && stands.acceptable && !stands.conflict) waits.push({ kind: 'accept' });
+    if (entryStands || (facts.onLand && stands.acceptable && !stands.conflict)) waits.push({ kind: 'accept' });
     if (facts.onLand && stands.conflict && facts.onSayRebase) waits.push({ kind: 'rebase' });
     if (stands.second && facts.opinion?.acts && opinionTone(opinionState(stands.second.state), { holds: stands.second.holds }) === 'open') {
       waits.push({ kind: 'opinion' });
@@ -188,8 +192,11 @@ export function waitsOf(facts: WaitFacts): Wait[] {
     if (stands.review && facts.review?.acts && REVIEW_TONE[reviewState(stands.review.state)] === 'open') {
       waits.push({ kind: 'review' });
     }
-  } else if (facts.discards && heldDiscardable(facts.discards, facts.onDiscardTree as Parameters<typeof heldDiscardable>[1])) {
-    waits.push({ kind: 'discard' });
+  } else {
+    if (entryStands) waits.push({ kind: 'accept' });
+    if (facts.discards && heldDiscardable(facts.discards, facts.onDiscardTree as Parameters<typeof heldDiscardable>[1])) {
+      waits.push({ kind: 'discard' });
+    }
   }
   return waits;
 }
