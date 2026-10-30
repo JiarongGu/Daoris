@@ -783,7 +783,7 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
                         return Task.FromResult(new BrainstormTurnRun(true, selection.Profile, AgentOffers.NotOffered, $"{AgentOffers.NotOffered}  brainstorm turn {turn.Turn}"));
                     }
 
-                    var code = turnFailed is { Length: > 0 } failure && Cooled(adapter, selection, failure, sessionId) ? Limit
+                    var code = turnFailed is { Length: > 0 } failure && Cooled(adapter, selection, failure, sessionId, ended.Refusal) ? Limit
                         : turnFailed is { Length: > 0 } ? "turn-failed"
                         : exitCode is null ? TimedOut
                         : exitCode != 0 ? "exited" : null;
@@ -807,11 +807,19 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
     /// A limit the turn's door reported, read as the roster reads one (D125 §2): the account cools for the time the agent named or
     /// the machine's cool-off, and no strike is counted. False where the words are no limit, or the cool-off could not be kept.
     /// </summary>
-    private bool Cooled(ISessionAdapter adapter, HarnessSelection selection, string failure, string sessionId)
+    /// <remarks>
+    /// FOUNDATION1g part b: the failure is also read by the one reader (<see cref="AgentErrors.Read"/>), from the refusal the door carried with
+    /// its code, so a limit it says by its code alone cools the account as a driven run's and a conversation's do (§3.1). The pass is handed
+    /// no transient retry, which would open an episode the design has not decided for a voice (row 1d), so it reads the refusal itself, once.
+    /// </remarks>
+    private bool Cooled(ISessionAdapter adapter, HarnessSelection selection, string failure, string sessionId, AcpRefusal? refusal)
     {
         try
         {
-            return _context.Harnesses.Limited(adapter.Name, selection.Profile, failure, sessionId, _context.Config.CoolOff) is not null;
+            var read = refusal is null ? null
+                : AgentErrors.Read(_context.Adapters, adapter, DoorFailure.OfPrompt(refusal), _context.Harnesses.Clock(), _context.Harnesses.Zone);
+            var byCode = read is { Kind: AgentErrorKind.Limit, Limit: { } coded } ? coded : null;
+            return _context.Harnesses.Limited(adapter.Name, selection.Profile, failure, sessionId, _context.Config.CoolOff, byCode) is not null;
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
