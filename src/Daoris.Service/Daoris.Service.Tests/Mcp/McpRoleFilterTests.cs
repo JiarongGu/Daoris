@@ -1,20 +1,20 @@
 using System.ComponentModel;
 using System.IO.Pipelines;
 using System.Text;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using Daoris.Knowledge;
 using Daoris.Knowledge.Mcp;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Options;
 using ModelContextProtocol.Server;
 
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// COAGENT1b (D199 point 4; the co-agent design §7.4): the connector refuses, by the session's record and before the tool runs, every
-/// tool outside a partner's allow-list, and the quest tools to any record that serves another. The census holds the partner's two lists
-/// to every tool the host advertises, so a tool added later is classified when it is added.
+/// FOUNDATION1r (the foundation design §2.3; COAGENT1b before it): the connector refuses, by the work of the session it names and
+/// before the tool runs, every tool its row of the call layer's table does not serve. The census holds the table to every tool the
+/// host registers and every column, so a tool added later is refused until it is classed and placed.
 /// </summary>
 public sealed class McpRoleFilterTests : McpToolsFixture
 {
@@ -42,21 +42,60 @@ public sealed class McpRoleFilterTests : McpToolsFixture
 
     private static readonly SessionWork Partner = new(ParticipantWork.Partner);
 
-    private static readonly SessionWork Helper = new(ParticipantWork.Help);
-
-    /// <summary>🔴 The census: the partner's allowed and refused lists name every advertised tool, each once, and nothing else.</summary>
+    /// <summary>
+    /// 🔴 FOUNDATION1r, the census: every tool the host registers against every column the call layer places a named session in, each
+    /// cell as <c>fixtures/call-table.json</c> names it, and the file names every column and no tool the host does not register.
+    /// </summary>
     [Fact]
-    public void Every_advertised_tool_is_allowed_or_refused_to_a_partner_once()
+    public void Every_work_is_served_exactly_the_tools_its_row_of_the_table_names()
     {
-        var collection = new ServiceCollection();
-        collection.AddMcpServer().WithKnowledgeTools();
-        using var host = collection.BuildServiceProvider();
-        var advertised = host.GetRequiredService<IOptions<McpServerOptions>>().Value.ToolCollection!
-            .Select(tool => tool.ProtocolTool.Name).Order(StringComparer.Ordinal).ToList();
+        var advertised = ToolClassesTests.Advertised();
+        var table = CallTableRows();
 
-        Assert.Empty(ConnectorRoles.PartnerAllowed.Intersect(ConnectorRoles.PartnerRefused));
-        Assert.Equal(advertised, ConnectorRoles.PartnerAllowed.Concat(ConnectorRoles.PartnerRefused).Order(StringComparer.Ordinal));
-        Assert.All(ConnectorRoles.ServingRefused, name => Assert.Contains(name, ConnectorRoles.PartnerRefused));
+        Assert.Equal(CallTable.Columns.Select(column => column.ToString()).Order(StringComparer.Ordinal), table.Keys.Order(StringComparer.Ordinal));
+        var differences = new List<string>();
+        foreach (var column in CallTable.Columns)
+        {
+            var (only, allBut) = table[column.ToString()];
+            differences.AddRange((only ?? allBut!).Where(name => !advertised.Contains(name)).Select(name => $"{column} names `{name}`, which is not registered"));
+            foreach (var tool in advertised)
+            {
+                var served = only?.Contains(tool) ?? !allBut!.Contains(tool);
+                if (served != CallTable.Served(column, tool)) differences.Add($"{column} × {tool}: the table says {(served ? "served" : "refused")}");
+            }
+        }
+
+        Assert.True(differences.Count == 0, string.Join('\n', differences));
+    }
+
+    /// <summary>
+    /// 🔴 FOUNDATION1r, failing closed: a tool the table does not class is refused to every column, and a work it does not know (a
+    /// brainstorm with no turn, a work added later) is served the reads alone. A connector naming no session keeps its scope.
+    /// </summary>
+    [Fact]
+    public void An_unclassed_tool_or_an_unknown_work_refuses()
+    {
+        Assert.All(CallTable.Columns, column => Assert.Equal(CallTable.UnknownTool, CallTable.Refusal(column, "a_tool_added_later")?.Code));
+        Assert.Equal(CallTable.UnknownTool, CallTable.Refusal(new SessionWork(ParticipantWork.Build), null)?.Code);
+        Assert.Null(CallTable.Refusal(SessionWork.Unnamed, "a_tool_added_later"));
+
+        foreach (var unknown in new[] { new SessionWork(ParticipantWork.Brainstorm), new SessionWork("steward"), new SessionWork(ParticipantWork.Build, "g1") })
+        {
+            Assert.All(ToolClassesTests.Advertised(), tool => Assert.Equal(
+                ToolClasses.Of(tool) == ToolClass.Read ? null : CallTable.Unplaced, CallTable.Refusal(unknown, tool)?.Code));
+        }
+    }
+
+    /// <summary>The table's rows as the fixture names them: a column's served tools, or every tool but those listed.</summary>
+    private static Dictionary<string, (string[]? Only, string[]? AllBut)> CallTableRows()
+    {
+        using var file = JsonDocument.Parse(File.ReadAllText(
+            Path.Combine(SourceFiles.WorkspaceFolder(), "src", "Daoris.Service", "Daoris.Service.Tests", "fixtures", "call-table.json")));
+        string[]? Names(JsonElement row, string list) =>
+            row.TryGetProperty(list, out var names) ? [.. names.EnumerateArray().Select(name => name.GetString()!)] : null;
+
+        return file.RootElement.GetProperty("columns").EnumerateObject()
+            .ToDictionary(column => column.Name, column => (Names(column.Value, "only"), Names(column.Value, "allBut")));
     }
 
     /// <summary>
@@ -71,63 +110,28 @@ public sealed class McpRoleFilterTests : McpToolsFixture
         var list = System.Text.RegularExpressions.Regex.Match(source, @"Offered\s*=\s*\[(?<names>[^\]]*)\]").Groups["names"].Value;
         var named = System.Text.RegularExpressions.Regex.Matches(list, "\"([a-z_]+)\"").Select(match => match.Groups[1].Value);
 
-        Assert.Equal(ConnectorRoles.PartnerAllowed.Order(StringComparer.Ordinal), named.Order(StringComparer.Ordinal));
-    }
-
-    /// <summary>A partner reads, reads its lead's line and answers; it publishes, asks, proposes and posts nothing.</summary>
-    [Theory]
-    [InlineData("knowledge_search", true)]
-    [InlineData("line_read", true)]
-    [InlineData("partner_answer", true)]
-    [InlineData("quest_publish", false)]
-    [InlineData("quest_respond", false)]
-    [InlineData("quest_list", false)]
-    // HANDBACK1: a quest's record, refused as the quest list is, since a partner reads its lead's line and no quest.
-    [InlineData("handback_read", false)]
-    [InlineData("helper_ask", false)]
-    [InlineData("go_ahead_ask", false)]
-    [InlineData("channel_post", false)]
-    [InlineData("permission_propose", false)]
-    [InlineData("a_tool_added_later", false)]
-    public void A_partner_is_held_to_its_allow_list(string tool, bool allowed)
-    {
-        var refusal = ConnectorRoles.Refusal(tool, Partner);
-
-        Assert.Equal(allowed, refusal is null);
-        if (!allowed) Assert.Contains("not a partner's to call", refusal);
-    }
-
-    /// <summary>A helper keeps its tools but the quest tools; a working session, or a connector naming none, is refused nothing.</summary>
-    [Fact]
-    public void A_record_that_serves_publishes_and_takes_no_quest_and_others_are_refused_nothing()
-    {
-        Assert.Contains("publishes, takes and closes no quest", ConnectorRoles.Refusal("quest_publish", Helper));
-        Assert.Contains("publishes, takes and closes no quest", ConnectorRoles.Refusal("quest_respond", Helper));
-        Assert.Null(ConnectorRoles.Refusal("helper_answer", Helper));
-        Assert.Null(ConnectorRoles.Refusal("quest_list", Helper));
-        Assert.Null(ConnectorRoles.Refusal("handback_read", Helper));
-        Assert.All(ConnectorRoles.PartnerRefused, tool => Assert.Null(ConnectorRoles.Refusal(tool, SessionWork.Unnamed)));
+        Assert.Equal(CallTable.PartnerServed.Order(StringComparer.Ordinal), named.Order(StringComparer.Ordinal));
     }
 
     /// <summary>
-    /// 🔴 BRAINSTORM1a2 (D176 point 2) held on the server too (the review of HANDBACK1, 2026-10-29): a brainstorm pass's connector,
-    /// known by the turn the driver names on it, is refused every tool but the two result tools, `handback_read` and `quest_list` among
-    /// them, whatever rules its agent takes. The result tools judge the turn themselves.
+    /// Each refusal says why in the words its caller read before the table, where it was refused before: by the filter (a partner, a
+    /// record that serves, a brainstorm pass) or by the box that judged by the work alone (the channel, Ask Daoris's tools, a turn).
     /// </summary>
     [Theory]
-    [InlineData("handback_read", false)]
-    [InlineData("quest_list", false)]
-    [InlineData("knowledge_search", false)]
-    [InlineData("line_read", false)]
-    [InlineData("a_tool_added_later", false)]
-    [InlineData("brainstorm_give", true)]
-    [InlineData("brainstorm_synthesize", true)]
-    public void A_brainstorm_pass_is_held_to_its_result_tools(string tool, bool allowed)
+    [InlineData("partner", null, "quest_list", "not a partner's to call")]
+    [InlineData("help", null, "quest_publish", "publishes, takes and closes no quest")]
+    [InlineData("help", null, "channel_post", "has no channel")]
+    [InlineData("build", null, "settings_cap", "is Ask Daoris's alone")]
+    [InlineData("build", null, "brainstorm_give", "serves no brainstorm turn Daoris started")]
+    [InlineData("brainstorm", "generator", "quest_list", "not a brainstorm pass's to call")]
+    [InlineData("brainstorm", "generator", "brainstorm_synthesize", "answer through `brainstorm_give`")]
+    [InlineData("brainstorm", "synthesizer", "brainstorm_give", "answer through `brainstorm_synthesize`")]
+    public void Each_refusal_says_why_in_the_words_it_was_said_before(string work, string? turn, string tool, string words)
     {
-        var refusal = ConnectorRoles.Refusal(tool, SessionWork.Generating);
+        var refusal = CallTable.Refusal(new SessionWork(work, turn), tool);
 
-        Assert.Equal(allowed, refusal is null);
-        if (!allowed) Assert.Contains("not a brainstorm pass's to call", refusal);
+        Assert.Equal(CallTable.ForbiddenWork, refusal?.Code);
+        Assert.Contains(words, refusal!.Text);
     }
 
     /// <summary>

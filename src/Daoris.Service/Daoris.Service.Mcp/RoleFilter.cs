@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using Microsoft.Extensions.DependencyInjection;
 using ModelContextProtocol.Protocol;
 
@@ -34,90 +35,6 @@ public sealed record SessionWork(string Work, string? Turn = null)
 }
 
 /// <summary>
-/// The connector's tools by role (COAGENT1b, D199 point 4; the co-agent design §7.4): what a partner may call, what it is refused, and
-/// what every record that serves another is refused; and a brainstorm pass, which may call its result tools alone (BRAINSTORM1a2, D176
-/// point 2). The partner's two lists together name every tool the host advertises, held by a
-/// census (<c>McpRoleFilterTests</c>), so a tool added later is classified when it is added.
-/// </summary>
-/// <remarks>
-/// The refusal is the server's, by the session's record, before the tool runs: a partner on an agent that takes no rules is held to its
-/// role all the same, and a native child that inherits the connector's environment inherits its refusals.
-/// </remarks>
-public static class ConnectorRoles
-{
-    /// <summary>
-    /// What a partner may call: the knowledge and reading tools, its lead's line, and its answer. Nothing that publishes, asks, proposes,
-    /// posts or acts.
-    /// </summary>
-    public static IReadOnlyList<string> PartnerAllowed { get; } =
-    [
-        "knowledge_convergence", "knowledge_get", "knowledge_repositories", "knowledge_search", "line_read", "partner_answer", "registry",
-    ];
-
-    /// <summary>Every other tool the host advertises, each refused to a partner by name.</summary>
-    public static IReadOnlyList<string> PartnerRefused { get; } =
-    [
-        "accept_propose", "agent_propose", "agent_settings_propose", "ask_propose", "brainstorm_give", "brainstorm_synthesize",
-        "browser_propose", "channel_post", "channel_read", "checkout_read", "clear_propose", "delete_propose", "go_ahead_ask",
-        "go_propose", "hand_propose", "handback_read", "handover_propose", "helper_answer", "helper_ask", "housekeeping_clean_up",
-        "housekeeping_discard_branch", "housekeeping_inspect", "knowledge_refresh", "opinion_answer", "opinion_give", "pause_propose",
-        "permission_propose", "plugin_propose", "quest_list", "quest_publish", "quest_respond", "question_ask", "repository_propose",
-        "review_ready", "review_serve", "role_propose", "session_propose", "setting_propose", "settings_cap", "settings_cooloff", "settings_language",
-        "settings_notify", "settings_timeout", "setup_propose", "sync_propose", "workflow_propose",
-    ];
-
-    /// <summary>
-    /// What every record that serves another is refused, a helper's as a partner's: a record with <c>serves</c> publishes, takes and
-    /// closes nothing (the co-agent design §7.4).
-    /// </summary>
-    public static IReadOnlyList<string> ServingRefused { get; } = ["quest_publish", "quest_respond"];
-
-    private static readonly HashSet<string> Allowed = new(PartnerAllowed, StringComparer.Ordinal);
-
-    private static readonly HashSet<string> Serving = new(ServingRefused, StringComparer.Ordinal);
-
-    /// <summary>
-    /// The sentence that refuses <paramref name="tool"/> to <paramref name="role"/>, or null where it may be called. A partner is held
-    /// to its allow-list, so a name on neither list is refused too.
-    /// </summary>
-    public static string? Refusal(string? tool, SessionWork role)
-    {
-        var name = tool ?? "";
-        if (role == SessionWork.Unread) return Unread(tool);
-        // BRAINSTORM1a2 (D176 point 2), held here as its harness rules hold it: a pass reads its room and calls its result tool alone,
-        // and the two result tools judge the turn themselves.
-        if (role.Work == ParticipantWork.Brainstorm && name is not (BrainstormBox.GiveTool or BrainstormBox.SynthesizeTool))
-        {
-            return $"`{name}` is not a brainstorm pass's to call: a pass reads the room it was handed and gives its one answer through its "
-                   + "turn's result tool, and calls nothing else.";
-        }
-
-        if (role.Work == ParticipantWork.Partner && !Allowed.Contains(name))
-        {
-            return $"`{name}` is not a partner's to call: a session Daoris started to write a piece asks nobody and acts on nothing outside "
-                   + "its copy. Leave your files in your copy, and say your answer with partner_answer.";
-        }
-
-        if (role.Work is ParticipantWork.Help or ParticipantWork.Partner && Serving.Contains(name))
-        {
-            return $"`{name}` is refused to a session that serves another: it publishes, takes and closes no quest. Say what you found in "
-                   + "your answer to the session you serve.";
-        }
-
-        return null;
-    }
-
-    /// <summary>
-    /// The sentence for a call whose session's record could not be read: a reading tool still answers, and anything else is refused,
-    /// since nothing could say it is allowed.
-    /// </summary>
-    public static string? Unread(string? tool) =>
-        tool is { } name && Allowed.Contains(name)
-            ? null
-            : $"`{tool}` waits: Daoris could not read this session's record, so it cannot say the tool is this session's to call. Try again.";
-}
-
-/// <summary>
 /// The connector's session's work (FOUNDATION1r): a brainstorm's turn placed first, else the record's work by the one rule, read once it
 /// is found (the marks are set at the open and never change), and read again while it is not.
 /// </summary>
@@ -145,12 +62,16 @@ public sealed class SessionWorks(SessionLedger? ledger, IntakeScope? intake, Bra
 }
 
 /// <summary>
-/// Every <c>tools/call</c> judged by the session's role before its tool runs (COAGENT1b, the co-agent design §7.4): a refused call is
-/// answered with its sentence and never reaches the tool.
+/// Every <c>tools/call</c> judged by the session's work before its tool runs (FOUNDATION1r, by <see cref="CallTable"/>): a refused call
+/// is answered with its sentence, its code in <c>_meta</c>, and never reaches the tool. A native child that inherits the connector's
+/// environment inherits its refusals.
 /// </summary>
 public static class RoleFilter
 {
-    /// <summary>Each call refused where <paramref name="role"/>'s answer refuses it, else passed on.</summary>
+    /// <summary>The <c>_meta</c> key a refusal's code is answered under.</summary>
+    public const string RefusalKey = "daoris/refusal";
+
+    /// <summary>Each call refused where the table refuses it to the session's work, else passed on; a work that cannot be read is unread.</summary>
     public static IMcpServerBuilder RefuseOutsideRole(this IMcpServerBuilder builder, Func<CancellationToken, Task<SessionWork>> role) =>
         builder.WithRequestFilters(filters => filters.AddCallToolFilter(next => async (request, cancellationToken) =>
         {
@@ -165,10 +86,8 @@ public static class RoleFilter
                 work = SessionWork.Unread;
             }
 
-            var refusal = ConnectorRoles.Refusal(name, work);
-
-            return refusal is null
-                ? await next(request, cancellationToken).ConfigureAwait(false)
-                : new CallToolResult { Content = [new TextContentBlock { Text = refusal }] };
+            return CallTable.Refusal(work, name) is { } refusal
+                ? new CallToolResult { Content = [new TextContentBlock { Text = refusal.Text }], Meta = new JsonObject { [RefusalKey] = refusal.Code } }
+                : await next(request, cancellationToken).ConfigureAwait(false);
         }));
 }

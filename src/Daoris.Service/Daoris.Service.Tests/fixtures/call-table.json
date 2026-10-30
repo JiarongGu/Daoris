@@ -1,0 +1,61 @@
+{
+  "_why": "FOUNDATION1r (D212; the foundation design §2.3): the call layer's table, every tool the connector registers against every column a named session is placed in. A column lists the tools it is served under `only`, or serves every registered tool `allBut` those it lists. McpRoleFilterTests holds CallTable to this file cell for cell over the host's registration, so a tool added later is refused to every column until it is classed and placed here. A connector naming no session (a person's own agent) is no column: it keeps its scope before the table. The brainstorm result tools, the channel and Ask Daoris's checkouts, housekeeping and settings were refused before this table by their boxes, which judged by the work alone and keep their checks as their store's guard.",
+  "columns": {
+    "build": {
+      "allBut": [
+        "brainstorm_give", "brainstorm_synthesize", "checkout_read", "housekeeping_clean_up", "housekeeping_discard_branch", "housekeeping_inspect",
+        "settings_cap", "settings_cooloff", "settings_language", "settings_notify", "settings_timeout"
+      ]
+    },
+    "design": {
+      "allBut": [
+        "brainstorm_give", "brainstorm_synthesize", "checkout_read", "housekeeping_clean_up", "housekeeping_discard_branch", "housekeeping_inspect",
+        "settings_cap", "settings_cooloff", "settings_language", "settings_notify", "settings_timeout"
+      ]
+    },
+    "chat": {
+      "allBut": [
+        "brainstorm_give", "brainstorm_synthesize", "checkout_read", "housekeeping_clean_up", "housekeeping_discard_branch", "housekeeping_inspect",
+        "settings_cap", "settings_cooloff", "settings_language", "settings_notify", "settings_timeout"
+      ]
+    },
+    "intake": {
+      "allBut": [
+        "brainstorm_give", "brainstorm_synthesize", "checkout_read", "housekeeping_clean_up", "housekeeping_discard_branch", "housekeeping_inspect",
+        "settings_cap", "settings_cooloff", "settings_language", "settings_notify", "settings_timeout"
+      ]
+    },
+    "ask-daoris": {
+      "allBut": ["brainstorm_give", "brainstorm_synthesize"]
+    },
+    "help": {
+      "allBut": [
+        "brainstorm_give", "brainstorm_synthesize", "channel_post", "channel_read", "checkout_read", "housekeeping_clean_up",
+        "housekeeping_discard_branch", "housekeeping_inspect", "quest_publish", "quest_respond", "settings_cap", "settings_cooloff",
+        "settings_language", "settings_notify", "settings_timeout"
+      ]
+    },
+    "partner": {
+      "only": ["knowledge_convergence", "knowledge_get", "knowledge_repositories", "knowledge_search", "line_read", "partner_answer", "registry"]
+    },
+    "review": {
+      "allBut": [
+        "brainstorm_give", "brainstorm_synthesize", "channel_post", "channel_read", "checkout_read", "housekeeping_clean_up",
+        "housekeeping_discard_branch", "housekeeping_inspect", "settings_cap", "settings_cooloff", "settings_language", "settings_notify",
+        "settings_timeout"
+      ]
+    },
+    "brainstorm:generator": {
+      "only": ["brainstorm_give"]
+    },
+    "brainstorm:synthesizer": {
+      "only": ["brainstorm_synthesize"]
+    },
+    "unplaced": {
+      "allBut": []
+    },
+    "unread": {
+      "only": ["knowledge_convergence", "knowledge_get", "knowledge_repositories", "knowledge_search", "line_read", "partner_answer", "registry"]
+    }
+  }
+}

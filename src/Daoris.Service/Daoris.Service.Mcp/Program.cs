@@ -171,9 +171,8 @@ builder.Services
     // Every call's lineage, as its harness wrote it in `_meta`, written for the driver to bind a native child to the session's
     // part (FABRIC-C1a, D173): a child calls with this process's session, so the environment cannot tell it apart.
     .RecordCallLineage(LineageFile.FromEnvironment())
-    // Every call judged by the session's role before its tool runs (COAGENT1b, D199 point 4): a partner's record is held to its
-    // allow-list, and any record that serves another publishes, takes and closes no quest, whatever rules its agent takes. A brainstorm
-    // pass, known by the turn named on this connector, is held to its result tools (D176 point 2; HANDBACK1's review).
+    // Every call judged by the session's work before its tool runs (FOUNDATION1r, the call layer's table), whatever rules its agent
+    // takes: a brainstorm pass is placed first by the turn named on this connector, else the work is its record's.
     .RefuseOutsideRole(new SessionWorks(composed.Ledger, intake, BrainstormScope.FromEnvironment()).ReadAsync)
     // Every answer ends with what waits for the session on its ask's channel, once per new message (COWORK1d, D188's note): the pull
     // an agent meets at its next call, whatever its door.
