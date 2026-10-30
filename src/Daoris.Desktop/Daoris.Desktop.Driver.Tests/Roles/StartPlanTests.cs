@@ -167,6 +167,29 @@ public sealed class StartPlanTests : IDisposable
         Assert.Equal("fine", settled.Adapter!.Name);
     }
 
+    /// <summary>
+    /// FOUNDATION1j part v: a conversation's plan walks an order of one as it walks any (an agent this machine lacks is passed and the wait
+    /// said in the role's words), and one start counts once on the account its pick pinned.
+    /// </summary>
+    [Fact]
+    public async Task A_conversation_s_plan_walks_an_order_of_one_and_counts_once_on_its_pinned_account()
+    {
+        TwoAccounts();
+        var config = ActorChoices.With(DriverConfig.Empty, "chat", [new ActorChoice("gone")]);
+        var lone = new StartPlan("chat", config, _roster, _adapters, _memory) { Subject = "conversation:chat", Kind = StartKind.Conversation, WalksOne = true };
+        var waits = await lone.ResolveAsync(CancellationToken.None);
+        Assert.Null(waits.Chosen);
+        Assert.StartsWith("Chat waits: none of its choices can run now. choice 1, gone", waits.Selection.Refusal, StringComparison.Ordinal);
+
+        var counted = _roster.Mark();
+        var pinned = new StartPlan("chat", ActorChoices.With(config, "chat", [new ActorChoice("cool")]), _roster, _adapters, _memory)
+        {
+            Subject = "conversation:chat", Kind = StartKind.Conversation, WalksOne = true, Pinned = "account-2",
+        };
+        var started = await pinned.ResolveAsync(CancellationToken.None);
+        Assert.Equal(("account-2", counted + 1, counted + 1), (started.Selection.Profile, _roster.Mark(), started.Reservation));
+    }
+
     /// <summary>A probe (<c>counts: false</c>) takes no count, says no pass and remembers none, so the start after it is its quest's first look.</summary>
     [Fact]
     public async Task A_probe_takes_no_count_says_nothing_and_leaves_the_last_look_as_it_was()

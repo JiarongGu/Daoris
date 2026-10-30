@@ -1000,55 +1000,22 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
         string actor, IReadOnlyList<ActorEffective> order, DriverConfig config, string? workspace, string? profile, CancellationToken ct,
         (ActorEffective Entry, string? Account)? refused = null, bool counts = true, long except = 0)
     {
-        var passes = new List<BuildPass>();
         using var log = new MachineLog(_home, "driver");
         // A conversation has no record yet while it is walked, and what its walk passes is fixed by the actor's order and the place it
-        // is asked in, so those name the subject whose passes are not said again while they stand (LOGCOLLECTION1).
-        using var look = _passed.Walk($"conversation:{actor}:{workspace}:{profile}", counts);
-        foreach (var entry in order)
+        // is asked in, so those name the subject whose passes are not said again while they stand (LOGCOLLECTION1). FOUNDATION1j part v: the
+        // start plan's one walk, its gate what a conversation cannot run on.
+        var plan = new StartPlan(actor, config, _harnesses, _harnesses.Adapters, _passed, order: order)
         {
-            string? code = null;
-            string? why = null;
-            ISessionAdapter? resolved = null;
-            if (!_harnesses.Adapters.Names.Contains(entry.Agent, StringComparer.OrdinalIgnoreCase))
-            {
-                (code, why) = ("unavailable", $"`{entry.Agent}` is not an agent on this machine");
-            }
-            else
-            {
-                resolved = _harnesses.Adapters.Resolve(entry.Agent);
-                if (!resolved.Interactive) (code, why) = ("unavailable", $"`{resolved.Name}` does not hold conversations");
-                else if (actor == "ask-daoris" && HelpAccess.For(config.HelpMode, resolved).Refusal is { } unposed) (code, why) = ("no-posture", unposed);
-            }
-
-            if (code is null)
-            {
-                IReadOnlyCollection<string>? passed = refused is { Entry: var at, Account: { } account } && at == entry ? [account] : null;
-                var selection = await _harnesses
-                    .SelectAsync(resolved!.Name, config, workspace, profile, StartKind.Conversation, ct, entry.Model, passed, except, counts)
-                    .ConfigureAwait(false);
-                if (selection.Allowed)
-                {
-                    if (counts)
-                    {
-                        log.Write("info", "actor.chose", [("actor", actor), ("choice", entry.From), ("agent", entry.Agent), ("model", entry.Model),
-                            ("passed", passes.Select(pass => pass.Word).ToList())]);
-                    }
-
-                    return new(resolved, selection, entry, passes, null);
-                }
-
-                (code, why) = (selection.NotOffered is not null ? AgentOffers.NotOffered
-                    : selection.Cooling is not null ? "cooling" : selection.SignedOut is not null ? "signed-out" : "held", selection.Refusal);
-            }
-
-            var thisPass = new BuildPass(entry, code, why);
-            passes.Add(thisPass);
-            if (look.Fresh(thisPass)) log.Write("info", "actor.passed", [("actor", actor), ("choice", entry.From), ("agent", entry.Agent), ("code", code)]);
-        }
-
-        return new(null, null, null, passes,
-            $"{ActorWords.Name(actor)} waits: none of its choices can run now. {string.Join("; ", passes.Select(pass => pass.Said))}.");
+            Workspace = workspace, Kind = StartKind.Conversation, Subject = $"conversation:{actor}:{workspace}:{profile}", Log = log,
+            Pinned = profile, WalksOne = true,
+            Gate = (_, adapter) => !adapter.Interactive ? (StartPasses.Unavailable, $"`{adapter.Name}` does not hold conversations")
+                : actor == "ask-daoris" && HelpAccess.For(config.HelpMode, adapter).Refusal is { } unposed ? (StartPasses.NoPosture, unposed)
+                : null,
+        };
+        var settled = await plan.ResolveAsync(ct, counts, refused, except).ConfigureAwait(false);
+        return settled.Chosen is null
+            ? new(null, null, null, settled.Passes, settled.Selection.Refusal)
+            : new(settled.Adapter, settled.Selection, settled.Chosen, settled.Passes, null);
     }
 
     /// <summary>
@@ -1863,9 +1830,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
             again = new ConversationWalk(null, null, null, pending.Passes, error.Message);
         }
 
-        var same = again.Chosen is { } later && later != refused
-                   && string.Equals(later.Agent, refused.Agent, StringComparison.OrdinalIgnoreCase)
-                   && string.Equals(again.Selection?.Profile, selection.Profile, StringComparison.OrdinalIgnoreCase);
+        var same = ReaskMove.Same(refused, selection.Profile, again.Chosen, again.Selection?.Profile);
         log.Write("info", "actor.reasked", [("actor", pending.Actor), ("session", sessionId), ("refused", refused.From),
             ("answer", again.Chosen?.From), ("same", same)]);
         if (!same)
