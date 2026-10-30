@@ -59,7 +59,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/work/WorkFrame.conversation.test.tsx` | 61 | 1192 |
 | `src/Daoris.Web/src/work/WorkFrame.landed.test.tsx` | 113 | 1974 |
 | `src/Daoris.Web/src/work/WorkFrame.test.tsx` | 97 | 1802 |
-| `src/Daoris.Web/src/work/WorkFrame.tsx` | 162 | 2790 |
+| `src/Daoris.Web/src/work/WorkFrame.tsx` | 162 | 2794 |
 | `src/Daoris.Web/src/work/WorkFrame.words.test.tsx` | 52 | 953 |
 | `src/Daoris.Web/src/work/attention/AttentionBand.test.tsx` | 54 | 879 |
 | `src/Daoris.Web/src/work/attention/AttentionRow.test.tsx` | 43 | 828 |
@@ -78,7 +78,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/work/noteLines.ts` | 57 | 968 |
 | `src/Daoris.Web/src/work/rail/SessionRail.test.tsx` | 56 | 1103 |
 | `src/Daoris.Web/src/work/rail/SessionRow.test.tsx` | 47 | 859 |
-| `src/Daoris.Web/src/workflow/WorkflowRunView.test.tsx` | 48 | 771 |
+| `src/Daoris.Web/src/workflow/WorkflowRunView.test.tsx` | 49 | 786 |
 
 ### Web settings (`web-settings`)
 
@@ -204,7 +204,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/WorkOrders/SessionsCommand.cs` | 102 | 1892 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/WorkOrders/Work/WorkAbandoning.cs` | 43 | 765 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/Domain/WorkflowNamed.cs` | 47 | 838 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/Domain/WorkflowRun.cs` | 62 | 1079 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/Domain/WorkflowRun.cs` | 62 | 1082 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/DriverWorkflowsCommand.cs` | 67 | 1156 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/Nodes/NodeGraphs.cs` | 61 | 1031 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/Nodes/NodeRuntime.cs` | 135 | 2037 |
