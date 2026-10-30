@@ -142,7 +142,7 @@ internal sealed class HandOverQuestHarness : IAsyncDisposable
     public async Task ReleaseAsync()
     {
         _gate.Set();
-        try { await Task.WhenAll(_held).WaitAsync(TimeSpan.FromSeconds(30)); } catch (Exception) { /* a killed look's writes fail once it is let go */ }
+        try { await Task.WhenAll(_held).WaitAsync(Poll.Patience); } catch (Exception) { /* a killed look's writes fail once it is let go */ }
     }
 
     public async ValueTask DisposeAsync()
