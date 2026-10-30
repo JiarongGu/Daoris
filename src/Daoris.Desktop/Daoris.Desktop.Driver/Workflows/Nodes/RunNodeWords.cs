@@ -43,6 +43,9 @@ public static class RunNodeWords
     /// <summary>The word is neither <c>skip</c> nor <c>stop</c>.</summary>
     public const string NotAct = "not-act";
 
+    /// <summary>The word is <c>ask-again</c> or <c>go-on</c>, which only a declined <c>request</c> takes.</summary>
+    public const string NotRequest = "not-request";
+
     /// <summary>The run's record holds its end: nothing of its graph moves again until its chain comes back here.</summary>
     public const string Ended = "ended";
 
@@ -75,6 +78,7 @@ public static class RunNodeWords
         if (new GraphRuns(records).Find(run) is not { } bound) return Refuse(NotRun);
         if (bound.Version is not { Graph: { } graph, GraphDigest: { } digest }) return Refuse(UnreadVersion) with { Detail = bound.Version.Unreadable };
         if (graph.Nodes.FirstOrDefault(each => each.Id == node) is not { } declared) return Refuse(NotNode);
+        if (OfRequests(act) && declared.Kind != NodeKinds.Request) return Refuse(NotRequest);
 
         var now = (clock ?? (() => DateTimeOffset.UtcNow))();
         var (refused, result) = records.Edit(bound.Unit, record =>
@@ -149,9 +153,15 @@ public static class RunNodeWords
     }
 
     /// <summary>A word as the one table's move: the person's skip with their words and the run's scope, or their stop.</summary>
-    private static NodeMove Move(NodeWord word, NodeScope scope) => word.Act == NodeWordActs.Skip
-        ? new NodeMove(NodeStates.Skipped, NodeCause.Person) { Words = word.Words, Scope = scope }
-        : new NodeMove(NodeStates.Stopped, NodeCause.Person) { Words = word.Words };
+    private static NodeMove Move(NodeWord word, NodeScope scope) => word.Act switch
+    {
+        NodeWordActs.Skip or NodeWordActs.GoOn => new NodeMove(NodeStates.Skipped, NodeCause.Person) { Words = word.Words, Scope = scope },
+        NodeWordActs.AskAgain => new NodeMove(NodeStates.Ready, NodeCause.Person),
+        _ => new NodeMove(NodeStates.Stopped, NodeCause.Person) { Words = word.Words },
+    };
+
+    /// <summary>The acts of a declined request alone: asking again and going on without it are no word of any other kind.</summary>
+    private static bool OfRequests(string act) => act is NodeWordActs.AskAgain or NodeWordActs.GoOn;
 
     /// <summary>
     /// What the run's view offers the person on a node standing at <paramref name="status"/>: its skip where it is ready or under way and its kind
@@ -167,12 +177,21 @@ public static class RunNodeWords
         var acts = new List<string>();
         if (status.State is NodeStates.Ready or NodeStates.Active && NodeAuthorities.Of(node)?.PersonSkips == true) acts.Add(NodeWordActs.Skip);
         if (status.State is NodeStates.Ready or NodeStates.Active or NodeStates.Unknown or NodeStates.Invalidated && !promoted) acts.Add(NodeWordActs.Stop);
+        // INTEGRATE1p (C33): a request's decline waits on the person, unless its workflow said `declined: stop`.
+        if (node.Kind == NodeKinds.Request && status.State == NodeStates.Failed && status.Code == RequestOptions.DeclinedCode
+            && NodeOptions.Text(node, "declined") != RequestOptions.Stop)
+        {
+            acts.Add(NodeWordActs.AskAgain);
+            acts.Add(NodeWordActs.GoOn);
+        }
+
         return acts;
     }
 
     /// <summary>The usage of the terminal's skip and stop, as it says them when their words are not understood.</summary>
     public const string Usage =
         "usage: daoris-driver workflow skip <run> <node> \"…\"  ·  daoris-driver workflow stop <run> <node> [\"…\"]\n"
+        + "       daoris-driver workflow ask-again <run> <node>  ·  daoris-driver workflow go-on <run> <node> \"…\"  (a declined request)\n"
         + "       pass a node of a run bound to a graph version over with your words, or stop it, your words if you have any; the run's\n"
         + "       id and its nodes are what `workflow run` prints. Kept on the run's record, and Daoris's next look applies it.";
 
@@ -188,7 +207,8 @@ public static class RunNodeWords
         (UnreadVersion, _) =>
             $"workflow: the graph version run {done.Run} is bound to does not read here ({done.Detail}), so the run is held whole and nothing on it is changed.",
         (NotNode, _) => $"workflow: run {done.Run}'s graph has no node `{done.Node}`; `workflow run` names its nodes.",
-        (NotAct, _) => $"workflow: `{done.Act}` is not a word for a run's node: say skip or stop.",
+        (NotAct, _) => $"workflow: `{done.Act}` is not a word for a run's node: say skip, stop, ask-again or go-on.",
+        (NotRequest, _) => $"workflow: `{done.Node}` is no request, and only a declined request is asked again or gone on without.",
         (Ended, _) => $"workflow: run {done.Run} ended at quest #{done.Detail}, so nothing of its graph moves again until its chain comes back here.",
         (Worded, _) => $"workflow: `{done.Node}` on run {done.Run} already has your word, which Daoris's next look applies.",
         (Promoted, _) => $"workflow: `{done.Node}` on run {done.Run} has promoted onto the line, and nothing reverses the line, so there is nothing to stop: its record reads its reach.",
