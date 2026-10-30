@@ -131,18 +131,14 @@ internal sealed class LiveLimitHarness : IAsyncDisposable
         var hit = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         limit.Moves.Cut = name =>
         {
+            // The old part's end as its watch writes it, which no process here makes: its record ends once the move has ended it.
+            if (name == Cuts.OldEnded) Ledger.Edit("c1", record => record["state"] = "stopped");
             atTheCut?.Invoke(name);
             if (name != cut) return;
             Reached = name;
             hit.TrySetResult();
             _gate.Wait();
             throw new ShellKilled();
-        };
-        Ledger.BeforeRequest = (request, _) =>
-        {
-            // The old part's end as its watch writes it, which no process here makes: its record ends once the new part's open is asked.
-            if (request.Method == HttpMethod.Post && request.RequestUri!.AbsolutePath == "/api/sessions/chat") Ledger.Edit("c1", record => record["state"] = "stopped");
-            return Task.CompletedTask;
         };
 
         _moving = Task.Run(() => limit.MoveAsync("c1", ActorChoices.With(DriverConfig.Empty, "chat", [new ActorChoice("talk")]), null));
