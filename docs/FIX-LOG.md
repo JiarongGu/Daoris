@@ -12448,3 +12448,11 @@ mis-rooted instance.
 **Fix.** A stop made first decides the end in `Driver.RunAsync`'s catch, the person's never interrupted.
 
 **Verification.** `DrivenSessionInputTests` 15/15, red before.
+
+## A refreshed service install still ran the old flat host (2026-10-31)
+
+**Root cause.** `ServiceHostLocator` ranked a flat `bin/` executable above the packaged `bin/daoris-knowledge-http/`; `service-publish --install` replaces only the packaged folder, so an older flat host and its bundle kept running.
+
+**Fix.** The packaged host ranks first; a flat one is the legacy fallback. A named path still wins.
+
+**Verification.** `ServiceHostLocatorTests`: republish over a flat install, red before.

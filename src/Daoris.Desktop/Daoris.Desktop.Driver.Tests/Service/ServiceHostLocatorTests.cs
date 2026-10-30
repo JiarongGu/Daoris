@@ -28,7 +28,8 @@ public sealed class ServiceHostLocatorTests : IDisposable
 
     /// <summary>
     /// Then what the install carries, then the installed home — `$DAORIS_HOME/bin`, the CLI's
-    /// `publish:service --install` landing place (D63) — and the home runs beside its bundle.
+    /// `publish:service --install` landing place (D63), its packaged folder before a legacy flat
+    /// binary — and the home runs beside its bundle.
     /// Asserted as an ORDER, because the order is the contract: the second deployment found the
     /// machine's older host outranking the one `desktop-publish --service` had just put beside the
     /// shell, and the window showed the previous page with nothing failed.
@@ -44,11 +45,11 @@ public sealed class ServiceHostLocatorTests : IDisposable
             [
                 Path.Combine(_root, "daoris-knowledge-http", ServiceHostLocator.ExecutableName),
                 Path.Combine(_root, "app", "daoris-knowledge-http", ServiceHostLocator.ExecutableName),
-                Path.Combine(bin, ServiceHostLocator.ExecutableName),
                 Path.Combine(bin, "daoris-knowledge-http", ServiceHostLocator.ExecutableName),
+                Path.Combine(bin, ServiceHostLocator.ExecutableName),
             ],
             candidates.Select(c => c.Executable).Take(4));
-        Assert.Equal(bin, candidates[2].WorkingDirectory);
+        Assert.Equal(Path.Combine(bin, "daoris-knowledge-http"), candidates[2].WorkingDirectory);
     }
 
     /// <summary>
@@ -148,20 +149,66 @@ public sealed class ServiceHostLocatorTests : IDisposable
     }
 
     /// <summary>
-    /// A flat executable someone placed by hand still wins over the nested one — it is the more
-    /// deliberate of the two, and the order has to be predictable either way.
+    /// LEGACYHOST1: <b>a service republish over a legacy flat install runs the refreshed host.</b>
+    /// `service-publish --install` replaces only the packaged `bin/daoris-knowledge-http/` folder; an
+    /// older install still holds a flat executable and a flat `wwwroot` beside it, which the republish
+    /// never touches. The refreshed host and its own bundle must be the ones located.
     /// </summary>
     [Fact]
-    public void A_hand_placed_flat_binary_still_comes_first()
+    public void A_republish_over_a_legacy_flat_install_resolves_the_refreshed_host_and_its_bundle()
+    {
+        var home = Path.Combine(_root, "home");
+        var bin = DaorisHome.Entry(home, HomeEntry.Bin);
+        Directory.CreateDirectory(Path.Combine(bin, "wwwroot"));
+        File.WriteAllText(Path.Combine(bin, ServiceHostLocator.ExecutableName), "");
+        var packaged = Path.Combine(bin, "daoris-knowledge-http");
+        Directory.CreateDirectory(Path.Combine(packaged, "wwwroot"));
+        var refreshed = Path.Combine(packaged, ServiceHostLocator.ExecutableName);
+        File.WriteAllText(refreshed, "");
+
+        var found = ServiceHostLocator.Locate(null, home, _root);
+
+        Assert.NotNull(found);
+        Assert.Equal(refreshed, found.Executable);
+        Assert.Equal(packaged, found.WorkingDirectory);
+        Assert.True(Directory.Exists(Path.Combine(found.WorkingDirectory, "wwwroot")));
+    }
+
+    /// <summary>A legacy flat install nobody has republished over is still found, beside its own bundle.</summary>
+    [Fact]
+    public void A_legacy_flat_binary_is_still_found_when_nothing_packaged_exists()
+    {
+        var home = Path.Combine(_root, "home");
+        var bin = DaorisHome.Entry(home, HomeEntry.Bin);
+        Directory.CreateDirectory(bin);
+        var flat = Path.Combine(bin, ServiceHostLocator.ExecutableName);
+        File.WriteAllText(flat, "");
+
+        var found = ServiceHostLocator.Locate(null, home, _root);
+
+        Assert.NotNull(found);
+        Assert.Equal(flat, found.Executable);
+        Assert.Equal(bin, found.WorkingDirectory);
+    }
+
+    /// <summary>LEGACYHOST1: naming a host still wins over every installed one, packaged or flat.</summary>
+    [Fact]
+    public void An_explicit_host_override_wins_over_a_refreshed_install()
     {
         var home = Path.Combine(_root, "home");
         var bin = DaorisHome.Entry(home, HomeEntry.Bin);
         Directory.CreateDirectory(Path.Combine(bin, "daoris-knowledge-http"));
         File.WriteAllText(Path.Combine(bin, "daoris-knowledge-http", ServiceHostLocator.ExecutableName), "");
-        var flat = Path.Combine(bin, ServiceHostLocator.ExecutableName);
-        File.WriteAllText(flat, "");
+        File.WriteAllText(Path.Combine(bin, ServiceHostLocator.ExecutableName), "");
+        var named = Path.Combine(_root, "named", ServiceHostLocator.ExecutableName);
+        Directory.CreateDirectory(Path.GetDirectoryName(named)!);
+        File.WriteAllText(named, "");
 
-        Assert.Equal(flat, ServiceHostLocator.Locate(null, home, _root)!.Executable);
+        var found = ServiceHostLocator.Locate(named, home, _root);
+
+        Assert.NotNull(found);
+        Assert.Equal(named, found.Executable);
+        Assert.Equal(Path.GetDirectoryName(named), found.WorkingDirectory);
     }
 
     /// <summary>
