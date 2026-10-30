@@ -221,7 +221,7 @@ public sealed class GitLaunchTests
                 "AgentStarts.cs: 1", "ChatRunner.cs: 1", "ChildProcess.cs: 1", "CodexUsage.cs: 1", "Driver.cs: 1", "DriverContinuations.cs: 2",
                 "GeneratedWriters.cs: 1", "GitDoors.cs: 3", "GitIdentityActs.cs: 1", "HarnessActions.cs: 2", "HarnessSelection.cs: 1",
                 "HeavyStep.cs: 1", "HookProcess.cs: 1", "PieceLauncher.cs: 1", "PluginToolRuns.cs: 1", "PluginTrialProcess.cs: 1",
-                "ProcessStarts.cs: 2", "SetupWorld.cs: 1", "ToolQuestions.cs: 1", "WorkingTree.cs: 8",
+                "ProcessStarts.cs: 2", "SetupWorld.cs: 1", "ToolQuestions.cs: 1", "TransportRun.cs: 1", "WorkingTree.cs: 8",
             ],
             found.Order(StringComparer.Ordinal));
 

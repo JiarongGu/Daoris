@@ -239,11 +239,16 @@ internal sealed class LimitMove(ChatContext context, IChatRunning runner, ChatHa
             }
 
             made = true;
+            move.Answered();
 
             // FOUNDATION1f-ii part a (§13.4 steps 2 and 3): the open's answer, every word it moved by its id on the new part, read whatever
             // `Moves` says; then `delivering` and the prompt's mark, before any word is marked attempted or handed. A write the store refuses
             // makes no hand, and the moved words wait on the new part, never attempted.
-            var fenced = move.Opened(to, started.Moved) ?? move.Delivering();
+            var fenced = move.Opened(to, started.Moved);
+            // Part b (§13.4 step 5, §19.3): the line's head is read before anything is handed, and where an older build has continued the new
+            // part, nothing is delivered there and the move is held for the person.
+            if (fenced is null && await move.SupersededAsync().ConfigureAwait(false)) fenced = "the line went on past its new part";
+            fenced ??= move.Delivering();
 
             // The agent and account the new part opened on: the walk's, which is another agent where its own had no account left.
             var opened = await context.Service.RecordAsync(to, ct).ConfigureAwait(false);

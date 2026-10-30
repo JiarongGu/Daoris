@@ -95,6 +95,7 @@
   "person.route.OPINION_ANYWAY": "go on past a second opinion's disputed findings",
   "person.route.OPINION_MYSELF": "answer a second opinion's disputed findings yourself",
   "person.route.DISCARD_SESSION_BRANCH": "delete a session branch",
+  "person.route.WITHDRAW_LANDING_BRANCH": "withdraw a landing branch the line will never hold",
   "person.route.RECOVERY_DROP": "drop the commits kept for recovery",
   "person.route.HISTORY_CLEAR": "clear finished work's records from this machine",
   "person.route.SYSTEM_DOWNLOADS_CLEAR": "clear the downloads Daoris kept",

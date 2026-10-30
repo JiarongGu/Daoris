@@ -433,10 +433,11 @@ import { isMain, renameHeld, spawnGit, stagedTree, writeAtomic } from './fsx.mjs
 import { indexLockNote, mentionsIndexLock, readIndexLock } from './index-lock.mjs';
 import { admissionLines, createAdmission, lookAt } from './machine-admission.mjs';
 import { censusOf, classesReached, halfOf, reachSettings, repository, withSettings } from './process-reach.mjs';
-import { endOrphans, endStranded } from './processes.mjs';
+import { endOrphans, endStranded, processList } from './processes.mjs';
 import { gateSignature, readTrx, signatureKey, signatureOf } from './test-failures.mjs';
 import {
-  IN_THE_LINE, MERGE_QUEUE, MERGE_QUEUE_LOG, RUNNER_ACK_MS, SCOPE_TREE, appendScopeRun, appendSighting, candidateOutcome, confirmReadings, confirmStep, dropQueued, enqueue,
+  IN_THE_LINE, MERGE_QUEUE, MERGE_QUEUE_LOG, RUNNER_ACK_MS, SCOPE_TREE, appendScopeRun, appendSighting, candidateOutcome, censusLine, censusTrees, confirmReadings, confirmStep, dropQueued, enqueue,
+  orphansUnder, runnerStanding,
   formCandidate, gitBudget, inTheLine, changeCandidate, drainedLine, drainedRecord, judgeFailure, memoryStep, messageOf, nextMembers, notePreview, noteRecheck, overdueWaits,
   promotion, queueLines, readAdmission, readIntegrationPolicy, readQueue, sameCandidate, recheckDue, recordsOnly, reformCount, requestStanding, requestsOf, resumeCandidate,
   scopedSet, scopedTier, settleContained, sightingOf, writeAdmission, writeQueue,
@@ -7107,6 +7108,29 @@ const DROP_POLL_MS = Number(process.env.MERGE_BRANCH_DROP_POLL_MS) || 2_000;
 const DRAIN_WAIT_MS = Number(process.env.MERGE_BRANCH_DRAIN_WAIT_MS) || 30_000;
 const sleepMs = (ms) => new Promise((done) => { setTimeout(done, ms); });
 
+/**
+ * PROCLEAK1: why a runner or a waiter started by a test ends with it, or null. `MERGE_BRANCH_QUEUE_OWNER` names the pid of the
+ * process that owns it (the tool's tests set it to their own): a test killed before its cleanup left its runner and its waiters
+ * polling for days, and a waiter whose runner has ended starts another. A person's start names no owner, and has none to lose.
+ */
+export function ownerEnded(environment = process.env, alive = pidAlive) {
+  const owner = Number(environment.MERGE_BRANCH_QUEUE_OWNER);
+  return Number.isInteger(owner) && owner > 0 && !alive(owner) ? `its owner (pid ${owner}), the process that started it, has ended` : null;
+}
+
+/**
+ * PROCLEAK1: why this runner must end, or null while it stands: its owner has gone, or the queue names another process as its
+ * runner (or none), read again under the queue's lock before it is believed, as a waiter's read of a record gone is.
+ */
+function runnerLost(home) {
+  const owner = ownerEnded(START_ENVIRONMENT);
+  if (owner) return `${owner}: this runner (pid ${process.pid}) ends`;
+  if (runnerStanding(readQueue(home), process.pid).stands) return null;
+  const { read } = withQueue(home, (queue) => ({ read: queue }));
+  const standing = runnerStanding(read, process.pid);
+  return standing.stands ? null : `this runner (pid ${process.pid}) is no longer the queue's: ${standing.why}; it ends`;
+}
+
 /** QUEUETESTLEAK1: this process's environment as the tool loaded, before anything in it changed `process.env`. */
 const START_ENVIRONMENT = Object.freeze({ ...process.env });
 
@@ -7179,7 +7203,7 @@ function withQueue(home, change) {
  * same cancellation a superseded run uses (CIPRIO1c), and the run starts nothing more. It is asked at each tick and before each
  * probe; the timer keeps no process alive.
  */
-export function watchCandidate(candidate, current, trees, { ms = DROP_POLL_MS } = {}) {
+export function watchCandidate(candidate, current, trees, { ms = DROP_POLL_MS, superseded = () => null } = {}) {
   const watch = {
     trees,
     check() {
@@ -7190,7 +7214,18 @@ export function watchCandidate(candidate, current, trees, { ms = DROP_POLL_MS } 
       } catch {
         return false;
       }
-      if (!sameCandidate(now, candidate)) trees.end('the candidate was dropped or replaced');
+      if (!sameCandidate(now, candidate)) trees.end(DROPPED);
+      // PROCLEAK1: a runner the queue no longer names (or whose owner ended) ends its steps as a dropped candidate's are ended; a
+      // read that fails is never taken for it.
+      if (!trees.ended) {
+        let lost = null;
+        try {
+          lost = superseded();
+        } catch {
+          // Asked again at the next tick.
+        }
+        if (lost) trees.end(lost);
+      }
       return Boolean(trees.ended);
     },
     start() {
@@ -7209,6 +7244,9 @@ export function watchCandidate(candidate, current, trees, { ms = DROP_POLL_MS } 
   };
   return watch;
 }
+
+/** The reason a watch ends a run for a drop or a replacement of its candidate (QUEUEDRAIN1). */
+const DROPPED = 'the candidate was dropped or replaced';
 
 /** QUEUEDRAIN1: a probe the drop ended: the judgement stops where it stands, and the run answers that it was drained. */
 class Drained extends Error {
@@ -7519,7 +7557,7 @@ function scopedGates(home, tree, plan, choice, dir) {
 async function runCandidate(home, candidate) {
   // QUEUEDRAIN1: every step this run starts, its gates and its failure probes, is held in one set of step trees, which the
   // candidate's own drop or replacement ends.
-  const watch = watchCandidate(candidate, () => withQueue(home, (queue) => ({ candidate: queue.candidate })).candidate, stepTrees()).start();
+  const watch = watchCandidate(candidate, () => withQueue(home, (queue) => ({ candidate: queue.candidate })).candidate, stepTrees(), { superseded: () => runnerLost(home) }).start();
   try {
     return await runCandidateWatched(home, candidate, watch);
   } finally {
@@ -7528,10 +7566,12 @@ async function runCandidate(home, candidate) {
 }
 
 /** QUEUEDRAIN1: what the runner does once the drop has ended the candidate's steps: say what was ended, tell the drop, take the next work. */
-function drained(home, candidate, run, { ended = [], left = [], probe = null } = {}) {
+function drained(home, candidate, run, { ended = [], left = [], probe = null, why = null } = {}) {
   const record = drainedRecord(candidate, { ended, left, probe });
-  console.log(`${record.at} ${candidate.tip.slice(0, 7)} was dropped or replaced: ${drainedLine(record)}; the runner takes the next queued work`);
-  appendScopeRun(home, { ...run, state: 'ended', why: 'the candidate was dropped or replaced', drained: record });
+  // PROCLEAK1: a run ended because its runner is no longer the queue's (or its owner went) says that, and the runner's loop ends it.
+  const dropped = !why || why === DROPPED;
+  console.log(`${record.at} ${candidate.tip.slice(0, 7)} ${dropped ? 'was dropped or replaced' : `was ended: ${why}`}: ${drainedLine(record)}; ${dropped ? 'the runner takes the next queued work' : 'the runner ends'}`);
+  appendScopeRun(home, { ...run, state: 'ended', why: dropped ? DROPPED : why, drained: record });
   withQueue(home, (queue) => ({ queue: { ...queue, drained: record } }));
   return { action: 'drained' };
 }
@@ -7640,7 +7680,7 @@ async function runCandidateWatched(home, candidate, watch) {
     ended: results.filter((result) => result.verdict === 'ENDED').map((result) => result.gate.name),
     left: gates.filter((gate) => !results.some((result) => result.gate.name === gate.name)).map((gate) => gate.name),
   });
-  if (watch.check()) return drained(home, candidate, run, gone());
+  if (watch.check()) return drained(home, candidate, run, { ...gone(), why: watch.trees.ended });
   if (!sameCandidate(readQueue(home).candidate, candidate)) {
     appendScopeRun(home, { ...run, state: 'ended', why: 'the candidate was dropped or replaced' });
     return { action: 'obsolete' };
@@ -7692,12 +7732,12 @@ async function runCandidateWatched(home, candidate, watch) {
     }
   } catch (error) {
     // QUEUEDRAIN1: a drop ended the probe running (or none was started): what was judged so far is not filed, and the runner goes on.
-    if (error instanceof Drained) return drained(home, candidate, withConfirms(run), { probe: error.probe, ...gone() });
+    if (error instanceof Drained) return drained(home, candidate, withConfirms(run), { probe: error.probe, ...gone(), why: watch.trees.ended });
     throw error;
   }
-  if (watch.check()) return drained(home, candidate, withConfirms(run), { ...gone() });
+  if (watch.check()) return drained(home, candidate, withConfirms(run), { ...gone(), why: watch.trees.ended });
   const outcome = candidateOutcome(judgements, candidate.members, policy);
-  if (outcome.action === 'dropped') return drained(home, candidate, withConfirms(run), { ...gone() });
+  if (outcome.action === 'dropped') return drained(home, candidate, withConfirms(run), { ...gone(), why: watch.trees.ended });
   fileJudged(home, candidate, outcome);
   // INTEGRATE1b: each failure that did not recur is a sighting, in a record of its own and never among the known red's flakes.
   for (const { failure, confirm } of outcome.sightings ?? []) appendSighting(home, sightingOf({ failure, candidate, confirm, policy: policy.unconfirmed, at: nowIso() }));
@@ -7971,17 +8011,42 @@ async function queueRunVerb(root) {
   // A merge waits on the scoped run, so it runs at normal priority (D207's amendment of D180's budget note), with build servers
   // of its own as the background's gates have, so no gate leaves a server alive or borrows one.
   Object.assign(process.env, BESIDE_ENVIRONMENT);
+  let lost = null;
   try {
     for (;;) {
+      // PROCLEAK1: a runner the queue no longer names, or whose owner ended, goes on with nothing: three of them ran for up to
+      // fifty hours beside the one the queue named, and a test's outlived it by a day.
+      lost = runnerLost(home);
+      if (lost) {
+        console.log(`${nowIso()} ${lost}`);
+        break;
+      }
+      const before = readQueue(home).candidate?.tip ?? null;
       const step = await queueStep(home);
+      if (before && before !== (readQueue(home).candidate?.tip ?? null)) candidateCensus(home);
       if (step === 'idle') break;
       if (step === 'wait') await sleepMs(QUEUE_TICK_MS);
     }
   } finally {
+    // A record that names another process is not this runner's to clear.
     withQueue(home, (queue) => ({ queue: queue.runner?.pid === process.pid ? { ...queue, runner: null } : queue }));
-    console.log(`${nowIso()} the queue's runner ended: nothing queued`);
+    console.log(`${nowIso()} the queue's runner ended: ${lost ? 'it is no longer the queue\'s' : 'nothing queued'}`);
   }
   return 0;
+}
+
+/**
+ * PROCLEAK1: the census at a candidate's end (promoted, handed back, split, re-formed or dropped): the processes whose command
+ * line names this repository's trees and whose parent is gone, counted and the first few said in the log, so a leak is said rather
+ * than found a day later. It stops none: what a runner did not start is not its to end.
+ */
+function candidateCensus(home) {
+  try {
+    const processes = processList();
+    console.log(`${nowIso()} ${processes ? censusLine(orphansUnder(processes, { trees: censusTrees(home), ignore: [process.pid] })) : "census at the candidate's end: the machine's process list could not be read"}`);
+  } catch (error) {
+    console.log(`${nowIso()} census at the candidate's end: it failed (${error?.message ?? error})`);
+  }
 }
 
 /** The runner started detached where none runs, its acknowledgement waited for; its absence said with the log's last lines. */
@@ -8152,6 +8217,12 @@ async function waitOutcome(home, branch, tip, request) {
     const now = queue.stop ? `stopped: ${queue.stop.said}` : queue.candidate?.state === 'held' ? `held on ${queue.candidate.held?.on}: ${queue.candidate.held?.why}` : null;
     if (now && now !== said) console.log(`  the queue is ${now}`);
     said = now;
+    // PROCLEAK1: a wait started by a test ends with the test, as its runner does, and starts no runner for it.
+    const owner = ownerEnded(START_ENVIRONMENT);
+    if (owner) {
+      console.log(`merge-branch: ${owner}: this wait ends; ${branch} stays queued if it still is, and --queue says what the queue holds.`);
+      return 1;
+    }
     if (!queue.runner || !pidAlive(queue.runner.pid)) await ensureRunner(home);
     await sleepMs(QUEUE_POLL_MS);
   }

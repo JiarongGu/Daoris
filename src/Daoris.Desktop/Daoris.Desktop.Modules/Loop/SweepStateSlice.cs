@@ -53,7 +53,12 @@ public static class SweepStateSlice
             "landable",
         ],
         ["session"] = ["id", "state"],
-        ["landed"] = ["repository", "workspace", "branch", "kind", "where", "files", "detail", "pullRequest", "commits", "removable"],
+        ["landed"] =
+        [
+            "repository", "workspace", "branch", "kind", "where", "files", "detail", "pullRequest", "commits", "removable",
+            // LANDRETIRE1 part 2: how long the landing has stood and whether its quest is closed, which the Branches tab names beside its door.
+            "landedAt", "quest", "questClosed",
+        ],
     };
 
     /// <summary>Which shape a field holds, as <c>shape.field</c>, an object of it or a list of them; every other field is a value.</summary>

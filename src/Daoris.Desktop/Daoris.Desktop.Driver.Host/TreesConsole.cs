@@ -50,6 +50,21 @@ internal static class TreesConsole
         return await new SessionBranchDiscard(trees).DiscardNamedAsync(service, named, repository, force).ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// A landing's branch the line will never hold, withdrawn on the person's reason (LANDRETIRE1): its commits kept on a recovery ref and its
+    /// record saying why. The driver's one withdrawal, which the screen's <c>WITHDRAW_LANDING_BRANCH</c> ends in as well; <paramref name="plan"/>
+    /// says what it would do and changes nothing. Told to the open windows once it has acted, whatever it answered.
+    /// </summary>
+    private static async Task<int> WithdrawLandingAsync(SessionTrees trees, string home, string named, string? repository, string why, bool plan)
+    {
+        using var service = ServiceClient.FromEnvironment();
+        var withdrawal = await new LandedBranchWithdrawal(trees, home).WithdrawNamedAsync(service, named, repository, why, plan).ConfigureAwait(false);
+        if (!plan) Told(home, PressesTold.WithdrawLanding);
+        var said = TreesWords.Withdraw(withdrawal);
+        said.Print(Console.Out, Console.Error);
+        return said.Code;
+    }
+
     /// <summary>What a `trees land` or `trees hand` says once before it waits behind another landing or push (LANDHOLD2).</summary>
     internal const string WaitingBehind = "trees: waiting for another landing of this work to end…";
 
@@ -136,6 +151,20 @@ internal static class TreesConsole
             case ["remove", var named, ..]:
             {
                 var force = args.Contains("--force");
+                // LANDRETIRE1: a branch a landing recorded (`quest/…` holds a separator, so this is asked before the path is) is withdrawn on a
+                // reason, never removed as a session's is: the driver's one withdrawal, the call the screen's WITHDRAW_LANDING_BRANCH ends in.
+                if (new LandedBranchWithdrawal(trees, home).Owners(named, Option(args, "--repository")).Count > 0)
+                {
+                    if (force) return Usage($"`{named}` is a branch a landing made, which is withdrawn with --why and never forced: its commits stay on a recovery ref");
+                    if (Option(args, "--why") is null && !args.Contains("--plan"))
+                    {
+                        return Usage($"`{named}` is a branch a landing made; say why the line will never hold its work with --why \"…\" (--plan says what it would do)");
+                    }
+
+                    return await WithdrawLandingAsync(trees, home, named, Option(args, "--repository"), Option(args, "--why") ?? "", args.Contains("--plan"))
+                        .ConfigureAwait(false);
+                }
+
                 // TREELOCK2: the ledger is asked where a service is there to ask; alone, the removal judges from the files, as before.
                 using var service = ServiceOrNone();
                 var removal = LooksLikePath(named)
@@ -178,7 +207,9 @@ internal static class TreesConsole
                         return listed;
                     }
 
-                    var plan = await asking.CleanPlanAsync(repositories, inUse).ConfigureAwait(false);
+                    // LANDRETIRE1 part 2: the quests the landings name that the service says are closed, read once for the list.
+                    var closed = await LandedStanding.ClosedAsync(new LandedBranches(home).Entries(), service.EveryQuestAsync, CancellationToken.None).ConfigureAwait(false);
+                    var plan = await asking.CleanPlanAsync(repositories, inUse, closedQuests: closed).ConfigureAwait(false);
                     // LAND4: the session each kept branch's tree is, so its landing is offered beside the discard, as on its page.
                     var records = plan.Sessions.Any(item => item.Kind == SweepKind.Unlanded && item.Tree is not null)
                         ? await SessionBranchDoors.RecordsOrNoneAsync(service).ConfigureAwait(false)
@@ -615,6 +646,7 @@ internal static class TreesConsole
     {
         if (problem is not null) Console.Error.WriteLine($"trees: {problem}");
         Console.Error.WriteLine("usage: daoris-driver trees [list | remove <path|session|branch> [--repository <name>] [--force]");
+        Console.Error.WriteLine("                           | remove <landing branch> [--repository <name>] --why \"…\" [--plan]");
         Console.Error.WriteLine("                           | clean [--workspace <name>] [--yes] | land <session> [--plan] [--branch <name>] [--without-look \"…\"]");
         Console.Error.WriteLine("                           | land --entry <id> | --ask <id> [--leave-out <session>]... [--plan]");
         Console.Error.WriteLine("                           | hand <session|branch> [--repository <name>] [--plugin <id>] [--plan]");
@@ -626,6 +658,10 @@ internal static class TreesConsole
         Console.Error.WriteLine("  A session or its branch removes a failed or superseded attempt's branch,");
         Console.Error.WriteLine("  with its tree where it is still here (LAND3); one whose tree a session");
         Console.Error.WriteLine("  still running or waiting holds is kept, even with --force (LAND3c).");
+        Console.Error.WriteLine("  A branch a landing made whose work the line will never hold is withdrawn with --why \"…\": its");
+        Console.Error.WriteLine("  commits stay on a recovery ref and its record says why (LANDRETIRE1). Only one whose files still");
+        Console.Error.WriteLine("  differ on the line goes, and never one checked out, a pull request may still carry, or the line holds;");
+        Console.Error.WriteLine("  --plan says what it would do. Only the process holding the home acts: the desktop's window, or this alone.");
         Console.Error.WriteLine("  clean lists every session branch with what it holds; --yes removes those");
         Console.Error.WriteLine("  whose work is on a branch of yours, or that hold nothing (D88), and every");
         Console.Error.WriteLine("  branch a landing made whose files read on the line as it left them (WSR5).");

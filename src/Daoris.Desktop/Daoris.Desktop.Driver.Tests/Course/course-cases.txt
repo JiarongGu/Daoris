@@ -175,7 +175,7 @@ N-08 TransientRetryTickTests.A_resume_whose_open_fails_past_the_bound_holds_its_
 
 ## G the curve
 G-01 CurveMoveTests.A_turn_s_end_is_judged_once_and_only_with_nothing_running_opening_or_queued => Hold why=Stays doors=- repair=None code=-
-G-02 CurveMoveTests.Over_its_curve_with_another_account_with_room_it_moves_there_by_the_box => Move when=TurnEnd where=Pick:account-2(chat/-) how=Brief why=Curve by=Daoris words=-
+G-02 CurveMoveTests.Over_its_curve_with_another_account_with_room_it_moves_there_by_the_record => Move when=TurnEnd where=Pick:account-2(chat/-) how=Brief why=Curve by=Daoris words=-
 G-03 CurveMoveTests.A_candidate_whose_reading_refuses_the_conversation_s_model_is_not_moved_to => Hold why=Stays doors=- repair=None code=-
 G-04 CurveMoveTests.Switch_off_moves_nothing => Hold why=SwitchOff doors=- repair=None code=-
 G-05 CurveMoveTests.Under_its_curve_by_the_margin_it_stays_and_reads_nothing => Hold why=Stays doors=- repair=None code=-
@@ -385,6 +385,9 @@ out SessionMessagesTickTests.A_word_taken_back_before_a_fallbacks_open_is_never_
 out SessionMessagesTickTests.Every_word_taken_back_before_a_fallbacks_open_sends_nothing_and_leaves_no_fresh_tree X
 out SessionMessagesTickTests.A_word_said_between_a_carry_ons_read_and_its_open_moves_with_the_open_and_reaches_the_new_session_once E
 out SessionMessagesTickTests.Against_a_host_whose_open_moves_nothing_a_carry_on_takes_the_old_records_words_as_before E
+out SessionMessagesTickTests.A_native_sessions_prompts_reach_its_input_byte_for_byte_on_a_start_a_go_on_and_a_resume E
+out SessionMessagesTickTests.A_carry_on_keeps_its_move_record_with_the_key_its_open_was_sent_and_its_moved_word_delivered E
+out SessionMessagesTickTests.A_carry_on_that_hands_no_word_keeps_its_record_and_asks_no_word_to_move E
 out LimitResumeTickTests.Two_limited_full_resumes_running_leave_the_words_waiting_and_no_word_of_Daoris_s E
 out LimitResumeTickTests.A_refusal_with_the_same_limit_just_after_the_reset_says_it_was_not_lifted_once_and_never_parks E
 out LimitResumeTickTests.A_cool_off_whose_write_fails_is_still_limited_with_no_strike_and_passes_the_account_until_its_reset E
@@ -493,7 +496,7 @@ suite BriefedMoveTests 10
 suite LimitGoesOnProcessTests 3
 suite LimitGoesElsewhereProcessTests 3
 suite ContinuationTests 50
-suite SessionMessagesTickTests 19
+suite SessionMessagesTickTests 22
 suite LimitResumeTickTests 10
 suite TransientRetryTickTests 10
 suite HandOverLookTests 13

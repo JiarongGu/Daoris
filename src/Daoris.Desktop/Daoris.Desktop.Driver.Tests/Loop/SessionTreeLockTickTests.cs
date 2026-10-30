@@ -85,7 +85,12 @@ public sealed class SessionTreeLockTickTests : IDisposable
             const respond = (body) => fetch(`${process.env.DAORIS_SERVICE_URL}/api/quests/q1/respond`, {
               method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
             await respond({ action: 'take' });
-            while (!existsSync(release)) await new Promise((done) => setTimeout(done, 50));
+            // PROCLEAK1: bound by Poll.Patience, so a stand-in whose test was killed ends and polls no more.
+            const until = Date.now() + 120000;
+            while (!existsSync(release)) {
+              if (Date.now() > until) process.exit(3);
+              await new Promise((done) => setTimeout(done, 50));
+            }
             await respond({ action: 'done', reason: 'landed' });
             """);
         return script;

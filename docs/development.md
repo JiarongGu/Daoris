@@ -328,6 +328,15 @@ waits, for thirty seconds at most, for the runner's record of what it ended, and
 installs its dependencies lets the install finish, and no gate starts after it. What a step's own process left running after its
 parent ended is in no tree (CIPRIO1c's limit).
 
+**The runner ends with its record, and the queue says what was left** (PROCLEAK1). Before every step, and every two seconds during a
+run, the runner reads the queue: where the record names another process as its runner, or none, it ends the steps it owns with their
+trees and ends, saying so in `local/merge-queue.log`, and never clears a record that names another. `MERGE_BRANCH_QUEUE_OWNER`, a pid
+the tool tests set to their own for every case, ends a runner and its waiter when that process is gone (a waiter then starts no
+runner), so a test killed before its cleanup leaves neither. At each candidate's end (promoted, handed back, split, re-formed or
+dropped) the runner's log gains a `census` line: how many processes have a command line naming `local/scope-tree`, `local/gate-tree`,
+`.claude/worktrees/` or `_fixtures/` and a parent that is gone, with the first three, and none stopped. A test stand-in that waits on
+a file takes its test's pid or a bound of `Poll.Patience`.
+
 `local/admission.json` is the admission record both runners will share (§5.1): the scoped tier's state, and reservations
 released only on a read of their job that finds it empty. The scoped runner writes its tier there. The background run does not
 yet read it, and gates run in no job object yet (CISCOPE1e2). The scoped runner runs at normal priority with build servers of

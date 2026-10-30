@@ -39,8 +39,7 @@ internal static class ConformanceCases
             (_, _, door) => door.Abilities.Interactive is { IsKnown: true, Value: false }),
         OfProvider("tables.recorded-sentences", "each word table's patterns standing on a recorded sentence and reading it (AgentErrorsTests' rule, generalized)", TablesRecorded),
         OfDoor("tables.d210-precedence", "D210's precedence over its tables: a limit's sentence first, the source before any kind, access before transient, the unread fatal", D210Precedence),
-        OfDoor("run.unsupported-refused", "an unsupported operation refused before a write (O1-F16)",
-            _ => NotYet("AgentRun held by the executors, refusing an operation the run's own evidence does not admit before it writes")),
+        OfDoorAsync("run.unsupported-refused", "an operation the run's own evidence does not admit refused before a write, over TransportRun (O1-F16, m-i)", RunUnsupportedRefused),
         OfDoor("frames.unknown-unread", "unknown and malformed frames kept unread, never guessed", FramesUnknownUnread),
         OfProvider("admission.not-widened", "a provider unable to widen admission",
             _ => NotYet("the plan's walk reading each choice's provider's Reach before any context or credential is sent")),
@@ -398,6 +397,54 @@ internal static class ConformanceCases
         Assert.Equal(0, ledger.Count);
         // And the door's own spawn refuses the conversation, naming it, before anything starts.
         Assert.Contains($"`{door.Id}`", Assert.Throws<DriverException>(() => run.Adapter.PrepareChat(run.Chat(), run.Command())).Message);
+    }
+
+    /// <summary>
+    /// A door's run, over today's transport, refuses what its own evidence does not admit before it writes (AGENTPROVIDER1m-i): the words
+    /// until m-ii, a native door's turn and task stops and choice, a protocol door's go-on and retry, and a resume its door cannot make. Each
+    /// refusal is the contract's sentence, and nothing was started.
+    /// </summary>
+    private static async Task RunUnsupportedRefused(ConformanceRun run)
+    {
+        var (door, adapter) = (run.TheDoor, run.Adapter);
+        var home = run.Home();
+        using var client = new ServiceClient("http://127.0.0.1:9", null);
+        var processes = new SessionProcesses(DaorisHome.Entry(home, HomeEntry.Sessions));
+        var driver = new Daoris.Driver.Driver(client, DriverConfig.Empty, run.Subject.Adapters, home, processes);
+        await using var transport = new TransportRun(
+            new DriverTransportHost(driver), adapter, new TransportStart(new ProcessStartInfo("never-started"), StartClass.Person));
+        var choice = new ActorAsked(door.Id.Value, new ActorValue("entry", "m-2", true), new ActorValue("entry", null, false));
+        var never = CancellationToken.None;
+
+        // What this door's evidence does not admit: the words on every door, then by its wire and its resume.
+        var refused = new List<(Task Operation, string Ability)>
+        {
+            (transport.SendAsync("go on", never), TransportRun.WordsAbility),
+            (transport.SteerAsync("go on", never), TransportRun.WordsAbility),
+            (transport.ApplyChoiceAsync(choice, never), TransportRun.ChoiceAbility),
+        };
+        if (!Protocol(door))
+        {
+            refused.Add((transport.StopTurnAsync(never), "a stop that keeps the conversation"));
+            refused.Add((transport.StopTaskAsync("t-1", never), "one task stopped"));
+        }
+        else
+        {
+            refused.Add((transport.GoOnAsync("c-1", "go on", [], never), "a go-on"));
+            refused.Add((transport.RestartAsync(never), "a restart"));
+        }
+
+        if (!adapter.Resumes) refused.Add((transport.ResumeAsync("c-1", never), "a resume"));
+
+        foreach (var (operation, ability) in refused)
+        {
+            var error = await Assert.ThrowsAsync<DriverException>(() => operation);
+            Assert.Equal($"this door does not support {ability} — nothing was written.", error.Message);
+        }
+
+        Assert.False(transport.Started, $"`{door.Id}`: a refusal comes before the run starts anything");
+        Assert.Null(transport.Session);
+        Assert.False(processes.RunsHere("s-1"));
     }
 
     private static void TablesRecorded(ConformanceRun run)

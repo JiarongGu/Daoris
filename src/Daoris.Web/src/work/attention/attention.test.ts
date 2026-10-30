@@ -649,6 +649,44 @@ describe('the groups', () => {
     }
   });
 
+  /**
+   * LANDRETIRE1 part 2: a landing's branch whose quest is closed and which the line has not held for a day is a row named by its branch,
+   * its block worded by its code in each language with the quest, and the door the row opens is the workspace's Branches, where the
+   * landed branches' action withdraws it.
+   */
+  it('words a landing branch the line has not held for a day by its code, with its quest, in each language', async () => {
+    const stale = row('work', 's7', '2026-10-29T09:00:00Z', {
+      where: 'engine', session: 's7', title: 'feature/q2-fix',
+      blocked: {
+        unknown: false,
+        entries: [{
+          kind: 'landing-branch', resource: 'feature/q2-fix', code: 'landing-stale',
+          facts: { branch: 'feature/q2-fix', quest: 'q2', since: '2026-10-29T09:00:00Z' }, detail: 'as recorded',
+        }],
+      },
+    });
+
+    const item = words(stale);
+    expect(item).toMatchObject({ title: 'feature/q2-fix', where: 'engine' });
+    expect(item.detail).toBe(
+      'Blocked: landing branch feature/q2-fix, its quest #q2 is closed and the line has not held it for a day or more, so the clean-up keeps it: '
+      + 'Withdraw… in the landed branches on its workspace’s Branches takes it away if the line will never take its work');
+    expect(attentionActs(item)).toEqual([]);
+    expect(placeOf(stale, [])).toBe('projects');
+    expect(placeCounts([stale])).toEqual({ projects: 1 });
+
+    await i18n.changeLanguage('zh');
+    try {
+      const said = words(stale).detail ?? '';
+      expect(said).toBe(
+        '受阻：落地分支 feature/q2-fix，它的委托 #q2 已关闭，而主线一天以上都没有收下它，所以清理会保留它：如果主线永远不会采纳它的工作，'
+        + '在它所在工作区的“分支”中，按落地分支列表里的“撤回…”即可将它撤走');
+      expect(said).not.toMatch(/[a-z]{3,} [a-z]{3,}/);
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+  });
+
   /** OVERVIEWNOISE1b: an owner nothing records is said once, by the entry's own code, with the press that removes it. */
   it('words an unknown owner by its code once, in each language, with the press that removes it', async () => {
     const orphan = row('work', 'unknown-branch:engine/daoris/orphan', null, {

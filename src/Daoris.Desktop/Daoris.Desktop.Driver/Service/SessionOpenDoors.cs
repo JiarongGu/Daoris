@@ -44,6 +44,9 @@ public sealed record MoveWords(string From, IReadOnlyList<string> Words, IReadOn
 
     /// <summary>A new key for a chat's keyed open.</summary>
     public static string ChatKey() => "chat-move/" + Guid.NewGuid().ToString("N");
+
+    /// <summary>A new key for a driven record's keyed open (FOUNDATION1f-iv part a): the carry-on's move record's <c>opens</c>, written before the open.</summary>
+    public static string DrivenKey() => "drive-move/" + Guid.NewGuid().ToString("N");
 }
 
 /// <summary>

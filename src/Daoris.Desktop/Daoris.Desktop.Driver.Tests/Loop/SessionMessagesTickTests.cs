@@ -486,6 +486,76 @@ public sealed class SessionMessagesTickTests : IDisposable
         Assert.Contains(events, e => e is { Kind: SessionEventKind.User, Origin: "person", Id: "said-1", Reaches: "turn-end" });
         Assert.Contains(events, e => e is { Kind: SessionEventKind.User, Origin: "person", Id: "said-1", Reaches: null, Text: "Also log the port." });
         Assert.Null(processes.InboxOf("s1"));
+        // AGENTLYNTAI1s-i: both runs read their prompt from the input, and the arguments carry none of it.
+        Assert.All(runs, run => Assert.DoesNotContain(
+            run["args"]!.AsArray().Select(a => a!.GetValue<string>()), argument => argument.Contains("Also log the port.")));
+    }
+
+    /// <summary>
+    /// AGENTLYNTAI1s-i: a driven native session's prompt goes on its standard input as BOM-less UTF-8 and the input is closed (the
+    /// stand-in reads it to its end), never in its arguments, which any process on the machine can read. A Chinese prompt and one
+    /// with an astral character (U+1F600, a surrogate pair) arrive byte for byte on a start, on the run that carries words said
+    /// while it worked, and on a resume of its ended record.
+    /// </summary>
+    [Fact]
+    public async Task A_native_sessions_prompts_reach_its_input_byte_for_byte_on_a_start_a_go_on_and_a_resume()
+    {
+        var profile = DaorisHome.Entry(_home, HomeEntry.AgentHomes, "claude-code", "work");
+        Directory.CreateDirectory(profile);
+        File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.Harnesses), """{"defaults":{"claude-code":"work"}}""");
+        var taken = Path.Combine(_home, "taken.flag");
+        var go = Path.Combine(_home, "go.flag");
+        await using var service = SaidStandIn.Start(_repository);
+        service.Retell("报告 \U0001F600 Serve the report", "端口 8080 \U0001F600");
+        var adapters = AdapterSet.Built();
+        var config = DriverConfig.Empty with
+        {
+            Drivable = ["engine"],
+            Trees = ["engine"],
+            Adapter = "claude-code",
+            TestBound = 1,
+            Commands = new Dictionary<string, IReadOnlyList<string>> { ["claude-code"] = ["node", NativeHarness(), Log, taken, go] },
+        };
+        var processes = new SessionProcesses();
+        Daoris.Driver.Driver Native(SessionProcesses held) => new(
+            new ServiceClient(service.Url, null), config, adapters, _home, processes: held,
+            harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
+        var driver = Native(processes);
+
+        var tick = driver.RunOnceAsync();
+        await Poll.Until(() => File.Exists(taken) && processes.InboxOf("s1") is not null, () => "the first run never took its quest");
+        const string GoOn = "再记录端口 \U0001F600 Also log the port.";
+        Assert.True(processes.InboxOf("s1")!.Hold(new ChatMessage(GoOn, [])));
+        File.WriteAllText(go, "");
+        await tick.WaitAsync(Poll.Patience);
+        Assert.Equal(("completed", "Done"), (service.State("s1"), service.Status("q1")));
+
+        const string Resume = "再来一次 \U0001F600 and use 9090.";
+        Assert.Equal("w1", await service.SayAsync("s1", Resume));
+        await Native(new SessionProcesses()).RunOnceAsync().WaitAsync(Poll.Patience);
+
+        var runs = Heard();
+        var seen = string.Join(" | ", runs.Select(run => run.ToJsonString()));
+        Assert.True(runs.Length == 3, seen);
+        string Sent(int run) => runs[run]["sent"]!.GetValue<string>();
+        static string Hex(string text) => Convert.ToHexString(new System.Text.UTF8Encoding(false).GetBytes(text)).ToLowerInvariant();
+
+        // The start: the composed target, whole, carrying the quest's own words, and no byte order mark before them.
+        var start = runs[0]["prompt"]!.GetValue<string>();
+        Assert.Contains("报告 \U0001F600 Serve the report", start);
+        Assert.Contains("端口 8080 \U0001F600", start);
+        Assert.Equal(Hex(start), Sent(0));
+        Assert.False(Sent(0).StartsWith("efbbbf", StringComparison.Ordinal), "a byte order mark leads the prompt");
+        Assert.Null(runs[0]["resume"]);
+
+        Assert.Equal(("native-1", Hex(GoOn)), (runs[1]["resume"]!.GetValue<string>(), Sent(1)));
+        Assert.Equal(("native-1", Hex(Resume)), (runs[2]["resume"]!.GetValue<string>(), Sent(2)));
+        foreach (var run in runs)
+        {
+            var arguments = run["args"]!.AsArray().Select(argument => argument!.GetValue<string>()).ToList();
+            Assert.Contains("-p", arguments);
+            Assert.DoesNotContain(arguments, argument => argument.Contains("端口") || argument.Contains("再") || argument.Contains("Serve the report"));
+        }
     }
 
     /// <summary>
@@ -663,6 +733,10 @@ public sealed class SessionMessagesTickTests : IDisposable
         Assert.True(service.SessionCount == 1, seen);
         Assert.True(runs.Count(run => run["resume"]?.GetValue<string>() == "native-1") == 2, seen);
         Assert.True(runs.Count(run => run["exited"] is not null) == exits, seen);
+        // AGENTLYNTAI1s-i: the retry writes the same words on its input as the resume it repeats, and none in its arguments.
+        var resumed = runs.Where(run => run["resume"]?.GetValue<string>() == "native-1").ToList();
+        Assert.True(resumed.Select(run => run["sent"]!.GetValue<string>()).Distinct().Count() == 1, seen);
+        Assert.True(resumed.All(run => !run["args"]!.AsArray().Any(argument => argument!.GetValue<string>().Contains("Also log the port."))), seen);
         if (exits == 1)
         {
             Assert.True(service.State("s1") == "completed" && service.Said("s1").Count == 0, seen);
@@ -812,6 +886,64 @@ public sealed class SessionMessagesTickTests : IDisposable
     }
 
     /// <summary>
+    /// 🔴 FOUNDATION1f-iv part a (the foundation design §3.3, §13.4; D212): the carry-on keeps its move record in the store. A fallback that moves
+    /// the old record's word with its open is decided <c>old-ended</c> as a driven move of the session it goes on from, <c>retry</c> by Daoris;
+    /// its <c>opens</c> is the very key the open was sent with; it names the new session and the word the open moved by its id; and its take
+    /// returned, the word has <c>sent</c> and the move is <c>delivered</c>, the word reaching its agent once.
+    /// </summary>
+    [Fact]
+    public async Task A_carry_on_keeps_its_move_record_with_the_key_its_open_was_sent_and_its_moved_word_delivered()
+    {
+        await using var service = SaidStandIn.Start(_repository);
+        await FailedFirstRunAsync(service);
+        service.Opens = 2;
+        service.Asks = true;
+        Assert.Equal("w1", await service.SayAsync("s1", "Also log the port."));
+
+        var look = await Protocol(service, "refuses").RunOnceAsync().WaitAsync(Poll.Patience);
+
+        var seen = $"look: {string.Join(" | ", look.Events)}\nafter: {service.Record("s1")}\ntaken: {string.Join(" | ", service.Taken)}";
+        Assert.True(service.SessionCount == 2, seen);
+        var (key, _) = Assert.Single(service.Opened);
+        var store = new MoveStore(_home);
+        var move = Assert.Single(store.Of("s1"));
+        Assert.Equal(("delivered", "driven", "brief", "retry", "daoris", "s2"), (move.PhaseWord, move.Executor, move.How, move.Why, move.By, move.Destination));
+        Assert.Equal(key, move.Opens);
+        Assert.True(move.Moments.ContainsKey(MoveRecordPhase.OldEnded) && !move.Moments.ContainsKey(MoveRecordPhase.Quiescing), seen);
+        var word = Assert.Single(store.WordsOf(move.Id));
+        Assert.Equal(("w1", MoveWordDispositions.Sent), (word.Word, word.Disposition));
+        Assert.Equal((MoveEffects.Prompt, MoveWordDispositions.Sent), (move.Effect!.What, move.Effect.Outcome));
+        Assert.Equal([("Also log the port.", "s2")], service.AskWords);
+    }
+
+    /// <summary>
+    /// 🔴 FOUNDATION1f-iv part a: a carry-on that hands no word keeps its record too, its open asked under its key through the keyed door and
+    /// asking no word to move; the move closes <c>delivered</c> on its prompt's outcome, a move of no word. Against a host whose open moves
+    /// nothing (its <c>opens</c> mark 1) the record is the same.
+    /// </summary>
+    [Theory]
+    [InlineData(2)]
+    [InlineData(1)]
+    public async Task A_carry_on_that_hands_no_word_keeps_its_record_and_asks_no_word_to_move(int opens)
+    {
+        await using var service = SaidStandIn.Start(_repository);
+        await FailedFirstRunAsync(service);
+        service.Opens = opens;
+
+        var look = await Protocol(service, "refuses").RunOnceAsync().WaitAsync(Poll.Patience);
+
+        var seen = $"look: {string.Join(" | ", look.Events)}\nafter: {service.Record("s1")}";
+        Assert.True(service.SessionCount == 2, seen);
+        var (key, moves) = Assert.Single(service.Opened);
+        Assert.Null(moves);
+        var store = new MoveStore(_home);
+        var move = Assert.Single(store.Of("s1"));
+        Assert.Equal(("delivered", "driven", "s2", key), (move.PhaseWord, move.Executor, move.Destination, move.Opens));
+        Assert.Empty(store.WordsOf(move.Id));
+        Assert.Equal(MoveWordDispositions.Sent, move.Effect!.Outcome);
+    }
+
+    /// <summary>
     /// The protocol door's stand-in: it names its conversation <c>conv-&lt;session&gt;</c>, and on its first prompt takes and
     /// closes the quest. The mode is how it resumes: <c>resumes</c> honours <c>session/resume</c>, and a resumed prompt is
     /// logged with its blocks; <c>elsewhere</c> refuses it as <c>codex-acp</c> does a thread another client holds; <c>refuses</c>
@@ -909,6 +1041,8 @@ public sealed class SessionMessagesTickTests : IDisposable
     /// A stand-in for Claude Code's native door: it answers its version and its login question; run with a prompt it speaks
     /// <c>stream-json</c>, naming its conversation <c>native-1</c> on its <c>init</c> line. A first run takes the quest, says so
     /// in a file, waits for the test's word to go on, and closes it; a resumed run logs what it was resumed with.
+    /// AGENTLYNTAI1s-i: as the real binary does under a bare <c>-p</c>, it reads its prompt from its input to the end (never
+    /// from its arguments), and logs it with the raw bytes it read (<c>sent</c>, hex) and the arguments it was given.
     /// </summary>
     private string NativeHarness()
     {
@@ -922,7 +1056,12 @@ public sealed class SessionMessagesTickTests : IDisposable
             // this stub keeps no plan and says nothing, so the account reads as unknown (D57), and it is no run.
             if (!argv.includes('-p')) process.exit(0);
             const after = (flag) => { const at = argv.indexOf(flag); return at < 0 ? null : argv[at + 1]; };
-            const prompt = after('-p');
+            // The prompt is the input read to its end: a driver that never closes it leaves this waiting, and the test fails by its bound.
+            const chunks = [];
+            for await (const chunk of process.stdin) chunks.push(chunk);
+            const raw = Buffer.concat(chunks);
+            const prompt = raw.toString('utf8');
+            const sent = raw.toString('hex');
             const resume = after('--resume');
             const url = process.env.DAORIS_SERVICE_URL;
             const line = (frame) => process.stdout.write(JSON.stringify(frame) + '\n');
@@ -933,10 +1072,10 @@ public sealed class SessionMessagesTickTests : IDisposable
             const left = resume && existsSync(exits) ? Number(readFileSync(exits, 'utf8')) : 0;
             if (left > 0) {
               writeFileSync(exits, String(left - 1));
-              appendFileSync(log, JSON.stringify({ resume, prompt, exited: true }) + '\n');
+              appendFileSync(log, JSON.stringify({ resume, prompt, sent, args: argv, exited: true }) + '\n');
               process.exitCode = 1;
             } else {
-              appendFileSync(log, JSON.stringify({ resume, prompt: resume ? prompt : null }) + '\n');
+              appendFileSync(log, JSON.stringify({ resume, prompt, sent, args: argv }) + '\n');
               line({ type: 'system', subtype: 'init', session_id: resume ?? 'native-1', cwd: process.cwd(), tools: [], model: 'stub' });
               if (!resume) {
                 await respond({ action: 'take' });
@@ -1016,6 +1155,16 @@ public sealed class SessionMessagesTickTests : IDisposable
         public void SayAtOpen(string id, string text, params string[] files)
         {
             lock (_sessions) _atOpen = (id, text, files);
+        }
+
+        /// <summary>The first quest's title and body, set before its first look (AGENTLYNTAI1s-i: words a prompt must carry byte for byte).</summary>
+        public void Retell(string title, string body)
+        {
+            lock (_sessions)
+            {
+                _quests[0]["title"] = title;
+                _quests[0]["body"] = body;
+            }
         }
 
         private SaidStandIn(HttpListener listener, string url, string root)

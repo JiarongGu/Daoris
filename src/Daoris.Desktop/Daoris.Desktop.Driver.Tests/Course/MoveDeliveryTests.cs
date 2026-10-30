@@ -311,6 +311,107 @@ public sealed class MoveDeliveryTests : IDisposable
         fresh.Advance(unmarked, MoveRecordPhase.Delivering);
         Assert.Equal(MoveDeliveryOutcome.GoesOn, (await Delivery(fresh).ReadAsync(unmarked)).Outcome);
     }
+
+    // ——— The line's head, read before anything is delivered (FOUNDATION1f-ii part b; §13.4 step 5, §19.3).
+
+    /// <summary>
+    /// 🔴 Where an older build has continued the destination, nothing is delivered there: the move is held <c>superseded</c>, naming the person's
+    /// own waiting words for the person to take back and say at the head, the attempted one uncertain, settled and said, and another author's
+    /// word kept on the destination as a claim, named by nothing.
+    /// </summary>
+    [Fact]
+    public async Task A_head_past_the_destination_holds_the_move_superseded_and_names_only_the_persons_own_waiting_words()
+    {
+        var store = Store("run-a");
+        var claim = Delivering(store, words: 3);
+        _said.Attempt("s2", "w2");
+        _said.Claim("s2", "w3");
+        _said.Heads["s2"] = "s3";
+
+        var read = await Delivery(store).ReadAsync(claim);
+
+        Assert.Equal(MoveDeliveryOutcome.Held, read.Outcome);
+        Assert.Equal(MoveHoldWhy.Superseded, read.Held!.HeldWhy);
+        var move = store.Read(claim.Move)!;
+        Assert.Equal(MoveRecordPhase.Held, move.Phase);
+        Assert.Equal(
+            [("w1", MoveWordDispositions.Held), ("w2", MoveWordDispositions.Uncertain), ("w3", null)],
+            store.WordsOf(claim.Move).Select(word => (word.Word, word.Disposition)));
+        Assert.Equal(["w1"], Words(read.Waiting.Where(word => word.Word != "w3").ToList()));
+
+        // Nothing was written to the destination or taken off it as delivered; the attempted word was settled, and the person's and the claim wait.
+        Assert.Equal(["settle s2 w2"], _said.Calls);
+        Assert.Equal(["w1", "w3"], _said.Of("s2"));
+        Assert.Null(store.Read(claim.Move)!.Effect!.Outcome);
+    }
+
+    /// <summary>
+    /// 🔴 The hold stands while a word it names waits and closes <c>resolved</c> by §3.3's one rule once the person takes it back, the claim
+    /// left on the destination keeping it open no longer.
+    /// </summary>
+    [Fact]
+    public async Task The_superseded_hold_closes_resolved_once_the_persons_words_are_taken_back()
+    {
+        var store = Store("run-a");
+        var claim = Delivering(store, words: 2);
+        _said.Claim("s2", "w2");
+        _said.Heads["s2"] = "s3";
+        await Delivery(store).ReadAsync(claim);
+        Assert.Equal(MoveRecordPhase.Held, store.Read(claim.Move)!.Phase);
+
+        _said.Gone("s2", "w1");
+        var read = await new MoveResolve(store, _said).ReadAsync(claim);
+
+        Assert.Equal(("closed", MoveCloseWhy.Resolved), (read.PhaseWord, read.ClosedWhy));
+        Assert.Equal(["w2"], _said.Of("s2"));
+    }
+
+    /// <summary>
+    /// 🔴 A word the move wrote (<c>sent</c>) that still waits is taken off as taken before the hold, since its agent was written; the word not
+    /// yet written is the one the hold names.
+    /// </summary>
+    [Fact]
+    public async Task A_head_past_the_destination_takes_a_sent_word_off_as_taken_and_holds_the_rest()
+    {
+        var store = Store("run-a");
+        var claim = Delivering(store, words: 2);
+        _said.Attempt("s2", "w1");
+        store.Sent(claim, [Transfer(1)]);
+        _said.Heads["s2"] = "s3";
+
+        var read = await Delivery(store).ReadAsync(claim);
+
+        Assert.Equal(MoveDeliveryOutcome.Held, read.Outcome);
+        Assert.Equal(["take s2 w1"], _said.Calls);
+        Assert.Equal(["w2"], _said.Of("s2"));
+        Assert.Equal(
+            [("w1", MoveWordDispositions.Sent), ("w2", MoveWordDispositions.Held)],
+            store.WordsOf(claim.Move).Select(word => (word.Word, word.Disposition)));
+    }
+
+    /// <summary>
+    /// Where every word the move moved has <c>sent</c>, nothing is left to deliver, so a head past the destination holds nothing: the move
+    /// closes <c>delivered</c> as ever. A destination that is the head reads as before (a guard: the case already holds).
+    /// </summary>
+    [Fact]
+    public async Task A_head_past_a_destination_whose_words_all_sent_still_closes_delivered_and_the_head_itself_reads_as_before()
+    {
+        var store = Store("run-a");
+        var claim = Delivering(store, words: 1);
+        _said.Attempt("s2", "w1");
+        store.Sent(claim, [Transfer(1)]);
+        _said.Heads["s2"] = "s3";
+
+        Assert.Equal(MoveDeliveryOutcome.Delivered, (await Delivery(store).ReadAsync(claim)).Outcome);
+
+        var other = Store("run-b");
+        var fresh = other.Decide(new MoveDecision("s5", MoveExecutors.Conversation, MoveHows.Brief, HandOverWhy.Limit, HandOverBy.Daoris) { FromEnded = true }).Claim!;
+        other.Opening(fresh, "opens-s5");
+        other.Opened(fresh, "s6", [new MoveRecordWord("v1", null, "opens-s5/v1", 0)]);
+        _said.Wait("s6", "v1");
+        other.Advance(fresh, MoveRecordPhase.Delivering);
+        Assert.Equal(MoveDeliveryOutcome.GoesOn, (await Delivery(other).ReadAsync(fresh)).Outcome);
+    }
 }
 
 /// <summary>
@@ -335,6 +436,22 @@ internal sealed class MoveSaidStandIn : IMoveSaid
 
     /// <summary>Called with the record before each take, still holding its words: what a case reads at that moment.</summary>
     public Action<string>? OnTake { get; set; }
+
+    /// <summary>The head past a record, where an older build continued it (FOUNDATION1f-ii part b); a record named here is read so, others as the head.</summary>
+    public Dictionary<string, string> Heads { get; } = new(StringComparer.Ordinal);
+
+    Task<string?> IMoveSaid.HeadPastAsync(string record, CancellationToken ct) => Task.FromResult(Heads.GetValueOrDefault(record));
+
+    /// <summary>A waiting word that is another author's, a claim and never the person's to say (§19.3).</summary>
+    public void Claim(string record, string word)
+    {
+        lock (_gate)
+        {
+            var held = _records[record];
+            var at = held.FindIndex(each => each.Word == word);
+            held[at] = held[at] with { Person = false };
+        }
+    }
 
     /// <summary>A word waiting on a record, after those already there.</summary>
     public MoveSaidStandIn Wait(string record, string word)

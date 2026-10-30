@@ -166,6 +166,17 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
     internal int LimitsAsked => _waits.Asked;
 
     /// <summary>
+    /// The conversations' move record this runner's live limit move and curve move write and its come-up takes up (FOUNDATION1f-ii part b,
+    /// f-iii part a): a proof of an older build's come-up hands it a holder whose take-up reads every run as alive, and so takes nothing, as a
+    /// build before the store does.
+    /// </summary>
+    internal ConversationMoves Moves
+    {
+        get => _limit.Moves;
+        set => _limit.Moves = _curve.Moves = value;
+    }
+
+    /// <summary>
     /// The clock a conversation's waits between tries of a transient failure are read off (AGENTERRORS1b, D210,
     /// <c>.claude/knowledge/held-clocks.md</c>): the machine's, and a held one in a test that passes each wait.
     /// </summary>

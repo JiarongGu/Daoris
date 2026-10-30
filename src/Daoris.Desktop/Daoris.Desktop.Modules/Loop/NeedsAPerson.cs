@@ -428,11 +428,13 @@ public static class NeedsAPerson
             var end = unit["end"] as JsonObject;
             var unknown = Text(end, "state") == "unknown";
             // A unit no record owns carries none, deliberately: nothing says whose it is, so every window shows it.
-            var row = Row("work", Text(unit, "session") ?? Text(unit, "unit"), Text(end, "at"), UnitScope(Text(unit, "unit")));
+            // LANDRETIRE1 part 2: a stale landing is named by its own branch, and stands since its day passed, where no end says since when.
+            var stale = waits.Where(entry => Text(entry, "code") == InventoryCode.LandingStale).Select(entry => entry["facts"] as JsonObject).FirstOrDefault();
+            var row = Row("work", Text(unit, "session") ?? Text(unit, "unit"), Text(end, "at") ?? Text(stale, "since"), UnitScope(Text(unit, "unit")));
             row["where"] = Text(unit, "repository");
             row["session"] = Text(unit, "session");
             // Its branch, else its tree's folder by name: never the unit's id, which a tree's path makes.
-            row["title"] = Text(unit, "branch") ?? TreeName(waits.Concat(Objects(unit["entries"]))) ?? Text(unit, "unit");
+            row["title"] = Text(stale, "branch") ?? Text(unit, "branch") ?? TreeName(waits.Concat(Objects(unit["entries"]))) ?? Text(unit, "unit");
             row["blocked"] = new JsonObject
             {
                 ["unknown"] = unknown,
@@ -745,7 +747,11 @@ public static class NeedsAPerson
     private static List<JsonObject> WaitsOnPerson(JsonObject unit)
     {
         var blocked = Objects((unit["cleanup"] as JsonObject)?["waits"]).Where(entry => Text(entry, "disposition") == "blocked").ToList();
-        if (Text(unit["end"] as JsonObject, "state") != "unknown") return [.. blocked.Where(entry => Text(entry, "code") == InventoryCode.Unfollowed)];
+        // LANDRETIRE1 part 2: and a landing's branch whose quest is closed and which the line has not held for a day, which the person withdraws.
+        if (Text(unit["end"] as JsonObject, "state") != "unknown")
+        {
+            return [.. blocked.Where(entry => Text(entry, "code") is InventoryCode.Unfollowed or InventoryCode.LandingStale)];
+        }
         return blocked.Count > 0 ? blocked : [.. Objects(unit["entries"]).Take(1)];
     }
 

@@ -232,6 +232,56 @@ export function requestStanding(queue, { branch, tip, request }) {
 }
 
 /**
+ * PROCLEAK1: whether the queue still names the process `pid` as its runner. A runner whose record another runner took, or that a
+ * reset or a hand edit cleared, is no runner of the queue's: it ends, never going on beside the one the queue names. Answers
+ * `{ stands: true }`, or `{ stands: false, why }` saying what the record names.
+ */
+export function runnerStanding(queue, pid) {
+  if (queue.runner?.pid === pid) return { stands: true };
+  return { stands: false, why: queue.runner ? `the queue names pid ${queue.runner.pid} as its runner` : 'the queue names no runner' };
+}
+
+/** PROCLEAK1: the folders of this repository a process's command line names when it is one of the queue's, its candidates', its sessions' or its tests'. */
+export const CENSUS_TREES = Object.freeze(['local/scope-tree', 'local/gate-tree', '.claude/worktrees/', '_fixtures/']);
+
+/** The census's folders under `home`, each as an absolute path with forward slashes. */
+export const censusTrees = (home) => CENSUS_TREES.map((tree) => `${String(home).replaceAll('\\', '/').replace(/\/+$/, '')}/${tree}`);
+
+const pathText = (text) => String(text ?? '').replaceAll('\\', '/').toLowerCase();
+
+/**
+ * PROCLEAK1: the processes (`{ pid, ppid, command }`) whose command line names one of `trees` (as a folder: the name ends there or
+ * goes on with a separator) and whose parent is in none of `processes`, so no one holds them. `ignore` lists pids left out. The
+ * machine's own list is the whole of it: a process whose parent ended is an orphan whatever its command, and one that names no
+ * tree is not this repository's to say.
+ */
+export function orphansUnder(processes, { trees, ignore = [] }) {
+  const alive = new Set(processes.map((each) => each.pid));
+  const names = trees.map(pathText).map((tree) => ({ tree, folder: tree.endsWith('/') }));
+  const under = (command) => {
+    const text = pathText(command);
+    return names.some(({ tree, folder }) => {
+      for (let at = text.indexOf(tree); at >= 0; at = text.indexOf(tree, at + 1)) {
+        const next = text[at + tree.length];
+        if (folder || next === undefined || /[/\s"']/.test(next)) return true;
+      }
+      return false;
+    });
+  };
+  return processes.filter((each) => !ignore.includes(each.pid) && !alive.has(each.ppid) && under(each.command));
+}
+
+/** PROCLEAK1: the queue log's line for a candidate's end: how many of those processes run on, and the first few. Stops none. */
+export function censusLine(orphans, { limit = 3, width = 140 } = {}) {
+  const head = "census at the candidate's end:";
+  if (!orphans.length) return `${head} no process under this repository's trees has lost its parent`;
+  const said = (each) => `pid ${each.pid} (${each.command.length > width ? `${each.command.slice(0, width - 1)}…` : each.command})`;
+  const more = orphans.length > limit ? ` and ${orphans.length - limit} more` : '';
+  const many = orphans.length === 1;
+  return `${head} ${orphans.length} process${many ? '' : 'es'} under this repository's trees ${many ? 'has' : 'have'} lost ${many ? 'its' : 'their'} parent and ${many ? 'runs' : 'run'} on (this runner stops none): ${orphans.slice(0, limit).map(said).join(', ')}${more}`;
+}
+
+/**
  * QUEUEDRAIN1: what the runner records once it has ended a dropped candidate's run, for the drop's answer to read: the candidate's
  * tip, the gates it ended running and the ones it never started, and the probe it ended (a failure probe's name), else null.
  */
