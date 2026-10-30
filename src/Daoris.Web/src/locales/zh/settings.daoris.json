@@ -448,7 +448,7 @@
   "settings.daoris.space.edit.notAGb": "请填写整数 GB。",
   "settings.daoris.space.limit.set-aside": "最多 {{gb}} GB；超出时，先清理已保存记录、时间最久的文件夹",
   "settings.daoris.space.limit.downloads": "最多 {{gb}} GB；超出时，先清理闲置最久的版本",
-  "settings.daoris.space.limit.browser-cache": "最多 {{gb}} GB；超出时，在浏览器未运行时以及浏览器启动时清理缓存",
+  "settings.daoris.space.limit.browser-cache": "最多 {{gb}} GB；超出时，在浏览器未运行时以及浏览器启动时清除缓存",
   "settings.daoris.space.limit.over": "已占用 {{size}}，超出上限；下一次每日清理或“释放空间…”会将其降至上限以内",
   "settings.daoris.button.freeUp": "释放空间…",
   "settings.daoris.space.kind.updateFailed": "失败的更新",
