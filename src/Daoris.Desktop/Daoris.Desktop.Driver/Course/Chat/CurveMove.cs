@@ -4,26 +4,35 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// A conversation over its account's usage curve moves on its own as its turn ends (SWITCH1c-ii; D165 point 3; the switch design
-/// §1.2, §2 and §4): to another account of the same agent in its scope that has room, by the hand-over's box (MIXAGENT1a, D163)
-/// with its agent unchanged, why <c>curve</c>, asked by <c>daoris</c>. <see cref="SwitchDecision"/> decides; this class asks it,
-/// reads the others where it says so, asks again, and asks the box, whose take (<see cref="ChatHandOver.TakeAsync"/>) ends the old
-/// conversation and starts the new one, its record continuing the old. Over the runner's context (PART10g, D166).
+/// §1.2, §2 and §4): to another account of the same agent in its scope that has room, as a hand-over with its agent unchanged, why
+/// <c>curve</c>, asked by <c>daoris</c>. <see cref="SwitchDecision"/> decides; this class asks it, reads the others where it says so, asks
+/// again, decides the move in the store (<see cref="Moves"/>, FOUNDATION1f-iii part a; no hand-over box is written beside it), and takes it
+/// (<see cref="ChatHandOver"/>'s take of a move), which ends the old conversation and starts the new one, its record continuing the old.
+/// Over the runner's context (PART10g, D166).
 /// </summary>
 /// <remarks>
 /// <para><b>Never mid-turn, never during a take.</b> A conversation is judged once per turn's end, as its turns tell it with
 /// nothing running, opening or queued (<see cref="TurnJustEnded"/>); never while a hand-over waits or is taken, whose box is kept
-/// until its take is done; and the take holds the turns (<see cref="ChatTurns.Hold"/>), so a word said as it begins either runs
-/// its turn first, the box then waiting for that turn's end, or takes nothing.</para>
+/// until its take is done (a box an older build left is still the hand-over's own); and the take holds the turns
+/// (<see cref="ChatTurns.Hold"/>), so a word said as it begins either runs its turn first, the move then closed and the next turn's end
+/// judging again, or takes nothing.</para>
 /// <para><b>Never across agents, never outside the scope's list.</b> The candidates are the other accounts of the scope's list of
 /// the conversation's own agent; another agent is the <c>handOver</c> rule's (MIXAGENT1c). Where none has room it stays and says
 /// nothing: the person's offer (MIXAGENT1b) is the fallback. <c>switch: off</c> moves nothing.</para>
 /// </remarks>
-/// <param name="handOver">The hand-over a move asks and takes: a move by the curve is a hand-over with its agent unchanged.</param>
+/// <param name="handOver">The hand-over a move takes: a move by the curve is a hand-over with its agent unchanged.</param>
 internal sealed class CurveMove(ChatContext context, ChatHandOver handOver)
 {
     private readonly ChatContext _context = context;
 
     private readonly ChatHandOver _handOver = handOver;
+
+    /// <summary>
+    /// The conversations' move record (FOUNDATION1f-iii part a): the curve's move is decided there, as the live limit move's is since f-ii, over
+    /// the home's one store file, so the shell's come-up takes a dead shell's curve move up through either holder. A test hands one over a store
+    /// of its own run.
+    /// </summary>
+    internal ConversationMoves Moves { get; set; } = new(context.Home, context.Service, context.Events, context.Output);
 
     /// <summary>What each judged turn's end came to, by session: a test hears it; no person reads it.</summary>
     public event Action<string, SwitchChoice>? Judged;
@@ -110,19 +119,20 @@ internal sealed class CurveMove(ChatContext context, ChatHandOver handOver)
         Judged?.Invoke(sessionId, choice);
         if (choice is not SwitchChoice.MoveTo move) return choice;
 
-        _context.CurveMoves[sessionId] = move;
-        var asked = await HandOver.AskAsync(
-            _context.Service, _context.Home, _handOver.AccountsOf, sessionId, agent, move.Account, HandOverWhy.Curve, HandOverBy.Daoris,
-            DateTimeOffset.UtcNow, ct)
-            .ConfigureAwait(false);
-        if (!asked.Kept)
-        {
-            _context.CurveMoves.TryRemove(sessionId, out _);
-            return choice;
-        }
+        // What the hand-over's own ask judged before it kept a box (no such session, a conversation that went on, an account not the agent's,
+        // a tree gone): refused here the same way, quietly, before anything is decided.
+        var (refused, _) = await HandOver.JudgeAsync(_context.Service, _handOver.AccountsOf, sessionId, agent, move.Account, ct).ConfigureAwait(false);
+        if (refused is not null) return choice;
 
-        // Taken now, the turns held while it is; where a word started a turn meanwhile, the box waits for that turn's end.
-        await _handOver.TakeAsync(sessionId, config, onEnded, ct).ConfigureAwait(false);
+        // FOUNDATION1f-iii part a (the foundation design §3.3, §13.4 step 1): the move is decided in the store, and no box is written beside it.
+        // A record a move still stands for, the one it left or the one whose open made it, takes no move now; a store that will not take the
+        // decision moves nothing, and the next turn's end judges again.
+        var begun = await Moves.BeginAsync(Decision(sessionId, move.Account), ct).ConfigureAwait(false);
+        if (begun.Move is not { } record) return choice;
+
+        // Taken now, the turns held while it is; where a word started a turn meanwhile, the move closes and the next turn's end judges again.
+        var asked = new HandOverRequest(agent, move.Account, HandOverWhy.Curve, HandOverBy.Daoris, DateTimeOffset.UtcNow);
+        await _handOver.TakeAsync(sessionId, asked, move, record, config, onEnded, ct).ConfigureAwait(false);
         return choice;
 
         SwitchChoice Decide(bool othersRead)
@@ -133,6 +143,13 @@ internal sealed class CurveMove(ChatContext context, ChatHandOver handOver)
                 othersRead);
         }
     }
+
+    /// <summary>
+    /// The move as the course decided it (FOUNDATION1f-iii part a, §3.3): a conversation's, by the brief, for the curve, asked by Daoris, on the
+    /// account the decision named; the agent is the conversation's own, so none is named.
+    /// </summary>
+    private static MoveDecision Decision(string sessionId, string account) =>
+        new(sessionId, MoveExecutors.Conversation, MoveHows.Brief, HandOverWhy.Curve, HandOverBy.Daoris) { Account = account, RecipeWhy = HandOverWhy.Curve };
 
     /// <summary>What the conversation's own account last said of its windows: its frames, or a read; null for nothing.</summary>
     private AccountSaid? SaidOf(string owner, string account, DateTimeOffset now)
