@@ -7,7 +7,8 @@ namespace Daoris.Driver;
 /// The conversations' move record (FOUNDATION1f-ii part a, D212; the foundation design §3.3, §13.4, §19.4): the store a shell's conversation
 /// moves are written in, the door to their destinations' <c>said</c>, and the take-up of a dead shell's conversation moves, at the shell's
 /// come-up and at each look. The live limit move writes its move here (<see cref="BeginAsync"/>); the curve and the hand-over are rows f-iii
-/// and f-v's.
+/// and f-v's. Since FOUNDATION1f-iv part a the driver's carry-on writes its own through the same holder, handed the lease holder's scope
+/// (executor <c>driven</c>): the one store, the one decision, the one reading of a delivery, whichever executor writes the move.
 /// </summary>
 /// <remarks>
 /// <para><b>Nothing here sends a word.</b> A move this holder ends on its executor's failure, or takes up from a dead run, is read by its
@@ -45,9 +46,13 @@ public sealed class ConversationMoves
     /// <param name="store">The move record; null for the home's, under this process's run.</param>
     /// <param name="clock">What time it is, for a phase's quiet; null for the machine's.</param>
     /// <param name="said">The destinations' <c>said</c>; null for the service's.</param>
+    /// <param name="scope">
+    /// Whose moves its take-up takes (FOUNDATION1f-iv part a): the conversations' by default; the driven carry-on's holder is handed the lease
+    /// holder's, over the same store and the same readings. Part a takes none up, the driven take-up being part b's.
+    /// </param>
     public ConversationMoves(
         string home, ServiceClient service, SessionEvents events, SessionOutput? output = null, MoveStore? store = null, TimeProvider? clock = null,
-        IMoveSaid? said = null)
+        IMoveSaid? said = null, MoveTakeUpScope? scope = null)
     {
         _service = service;
         _events = events;
@@ -56,7 +61,7 @@ public sealed class ConversationMoves
         Said = said ?? new MoveSaidDoor(service, events);
         Delivery = new MoveDelivery(Store, Said);
         Resolve = new MoveResolve(Store, Said);
-        _takeUp = new MoveTakeUp(home, Store, MoveTakeUpScope.Conversations, imports: null, note: Note, clock: clock, said: Said);
+        _takeUp = new MoveTakeUp(home, Store, scope ?? MoveTakeUpScope.Conversations, imports: null, note: Note, clock: clock, said: Said);
     }
 
     /// <summary>

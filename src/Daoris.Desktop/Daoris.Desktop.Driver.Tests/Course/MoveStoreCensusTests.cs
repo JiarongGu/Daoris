@@ -6,7 +6,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <summary>
 /// FOUNDATION1f-i part 1 (D212; the foundation design §10's row 1f-i): the move record's readers, each a row's adoption. Until row f-ii none
 /// but the one wiring through which the workplace's delete takes a record's moves with it; since FOUNDATION1f-ii part a the conversations'
-/// holder and the live limit move, which writes its move through it. A source that names a type the move store's files declare is a row's
+/// holder and the live limit move, which writes its move through it, and since FOUNDATION1f-iv part a the driven carry-on's record and the
+/// driver that runs it. A source that names a type the move store's files declare is a row's
 /// adoption, and moves this check.
 /// </summary>
 /// <remarks>Not a twin of <see cref="CourseVocabularyTests"/>' check of the course's vocabulary (<c>twins.md</c>): it shares that check's shape and reads other files.</remarks>
@@ -36,6 +37,12 @@ public sealed class MoveStoreCensusTests
     /// <summary>The live limit move (FOUNDATION1f-ii part a), which decides its move through the holder.</summary>
     private const string LiveMove = "Course/Chat/LimitMove.cs";
 
+    /// <summary>The driven carry-on's record (FOUNDATION1f-iv part a), which decides its move through the same holder.</summary>
+    private const string CarryOn = "Loop/CarryOnRecord.cs";
+
+    /// <summary>The driver, which builds the driven holder over the lease holder's scope and runs the carry-on's record.</summary>
+    private const string DrivenLine = "Loop/Driver.cs";
+
     private static string Relative(string path) => Path.GetRelativePath(Driver, path).Replace('\\', '/');
 
     [Fact]
@@ -59,7 +66,9 @@ public sealed class MoveStoreCensusTests
             readers.AddRange(names.Where(name => Regex.IsMatch(text, $@"\b{name}\b")).Select(name => $"{Relative(path)} names {name}"));
         }
 
-        Assert.Equal([LiveMove, Conversations, Wiring], readers.Select(reader => reader[..reader.IndexOf(" names ", StringComparison.Ordinal)]).Distinct().Order(StringComparer.Ordinal));
+        Assert.Equal(
+            [LiveMove, Conversations, Wiring, CarryOn, DrivenLine],
+            readers.Select(reader => reader[..reader.IndexOf(" names ", StringComparison.Ordinal)]).Distinct().Order(StringComparer.Ordinal));
         Assert.Contains($"{Wiring} names MoveStore", readers);
         Assert.All(
             ["MoveStore", "MoveTakeUp", "MoveTakeUpScope", "MoveDelivery", "MoveResolve", "IMoveSaid", "MoveSaidDoor"],
@@ -69,6 +78,13 @@ public sealed class MoveStoreCensusTests
         Assert.Equal(
             [$"{LiveMove} names MoveDecision", $"{LiveMove} names MoveExecutors", $"{LiveMove} names MoveHows"],
             readers.Where(reader => reader.StartsWith(LiveMove + " ", StringComparison.Ordinal)).Order(StringComparer.Ordinal));
+
+        // The driven carry-on's record names the same decision alone, and the driver only the scope its holder is built with (FOUNDATION1f-iv
+        // part a): a driven move's every write goes through the holder's claim, and its take-up, part b's, through the holder.
+        Assert.Equal(
+            [$"{CarryOn} names MoveDecision", $"{CarryOn} names MoveExecutors", $"{CarryOn} names MoveHows"],
+            readers.Where(reader => reader.StartsWith(CarryOn + " ", StringComparison.Ordinal)).Order(StringComparer.Ordinal));
+        Assert.Equal([$"{DrivenLine} names MoveTakeUpScope"], readers.Where(reader => reader.StartsWith(DrivenLine + " ", StringComparison.Ordinal)));
         Assert.Contains("MoveTakeUp", names);
         Assert.All(Importers, importer => Assert.Contains(importer, names));
         Assert.All(["MoveDelivery", "MoveResolve", "IMoveSaid", "MoveSaidDoor", "MoveWordDispositions"], part3 => Assert.Contains(part3, names));

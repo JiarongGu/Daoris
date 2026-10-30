@@ -576,14 +576,21 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// as the record names it, as <see cref="OpenSessionAsync"/>'s is. A lost answer is held, naming the records that continue the one left,
     /// and opens nothing here.
     /// </summary>
+    /// <param name="moves">
+    /// The words to move; null for an open that moves none, which still goes under its key (FOUNDATION1f-iv part a: a carry-on that hands no
+    /// word keeps a move record, whose <c>opens</c> is that key) and then names the record it continues by <paramref name="from"/>.
+    /// </param>
+    /// <param name="opens">The key the open is sent under: the move record's, written before the open; null draws one of the open's own.</param>
     public async Task<DestinationOpen> OpenSessionMovingAsync(
         string questId, string adapter, string? harnessVersion, string? profile, string? tree, string? baseCommit, ContinuedFrom? from,
-        MoveWords moves, CancellationToken ct = default, bool setup = false, IReadOnlyDictionary<string, string>? access = null)
+        MoveWords? moves, CancellationToken ct = default, bool setup = false, IReadOnlyDictionary<string, string>? access = null,
+        string? opens = null)
     {
+        var left = moves?.From ?? from?.Session ?? throw new ArgumentException("A keyed open names the record it continues.", nameof(from));
         var opened = await Opens
             .OpenAsync(
                 "/api/sessions", SessionOpenBody(questId, adapter, harnessVersion, profile, tree, baseCommit, from, access),
-                "drive-move/" + Guid.NewGuid().ToString("N"), moves.From, ct: ct, moves: moves)
+                opens ?? moves?.Opens ?? MoveWords.DrivenKey(), left, ct: ct, moves: moves)
             .ConfigureAwait(false);
         if (opened.SessionId is { } id)
         {

@@ -1100,12 +1100,17 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
     /// (<see cref="HandedMovedAsync"/>), never taken off <paramref name="record"/> by the ids it was read with. Null for an open that moved
     /// nothing, against a host whose <c>opens</c> mark is below 2 or that keeps none, which takes them off the record as before.
     /// </param>
+    /// <param name="delivery">
+    /// The carry-on's move record (FOUNDATION1f-iv part a), where it keeps one and its fence was written: the moved words' <c>sent</c> is written
+    /// where their take returns, today's delivery, and the move closes <c>delivered</c> after it. Null for a start that keeps none, a
+    /// hand-over's among them (row f-v's). Part b moves <c>sent</c> to the door's write return, and the take after it.
+    /// </param>
     /// <returns>The words the open moved and the new session was handed, as it holds them; null where they were taken off the record as before.</returns>
     internal async Task<IReadOnlyList<SaidWordView>?> HandedOnAsync(
         PriorSession record, string to, ContinueReason why, CancellationToken ct, bool resumed = false, bool switched = false,
-        DestinationOpen? opened = null)
+        DestinationOpen? opened = null, CarryOnRecord? delivery = null)
     {
-        if (MovedWords.Moving(opened)) return await HandedMovedAsync(record, to, why, opened!, ct, resumed, switched).ConfigureAwait(false);
+        if (MovedWords.Moving(opened)) return await HandedMovedAsync(record, to, why, opened!, ct, resumed, switched, delivery).ConfigureAwait(false);
         if (!record.WordsWaiting) return null;
 
         var output = _context.Output;
@@ -1170,7 +1175,8 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
     /// wait on it, for its own go-on.
     /// </summary>
     private async Task<IReadOnlyList<SaidWordView>> HandedMovedAsync(
-        PriorSession record, string to, ContinueReason why, DestinationOpen opened, CancellationToken ct, bool resumed, bool switched)
+        PriorSession record, string to, ContinueReason why, DestinationOpen opened, CancellationToken ct, bool resumed, bool switched,
+        CarryOnRecord? delivery)
     {
         var output = _context.Output;
         StaysWithPerson(record, why, Hands(resumed, switched));
@@ -1197,6 +1203,13 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
         if (!await moved.TakeAsync(_context.Service, ct).ConfigureAwait(false))
         {
             output?.Append(to, "— the words moved to this session could not be taken off it, so they still wait on it.");
+        }
+        else if (delivery is not null)
+        {
+            // FOUNDATION1f-iv part a: the take returned, which is where this path delivers today: each word it took has `sent`, then the reading
+            // closes the move. A take that did not come out leaves the record to be ended by its phase, its words waiting on the new part.
+            await delivery.DeliveredAsync(
+                [.. opened.Moved.Where(word => moved.Ids.Contains(word.Id, StringComparer.Ordinal)).Select(word => word.Transfer)]).ConfigureAwait(false);
         }
 
         return moved.Words;
