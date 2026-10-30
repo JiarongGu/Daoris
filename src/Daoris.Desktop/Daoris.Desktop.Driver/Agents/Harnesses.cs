@@ -234,12 +234,11 @@ public sealed record HarnessToolchain(
     // reads its owner's; null says it was never measured, which the history keeps as `unknown`. Not a twin: the CLI keeps no turn.
     string? TurnReport = null,
     // The tool's sign-in by a device code, beside its own flow in `LoginArguments`, which is offered first (CODEXLOGIN1, D125's
-    // note): arguments to the binary, run as `LoginArguments` are. Declared only where measured; null offers no second way. The
-    // CLI's `deviceLogin` is the twin.
+    // note): arguments to the binary, run as `LoginArguments` are. Declared only where measured; null offers no second way.
     IReadOnlyList<string>? DeviceLoginArguments = null,
     // The local ports the tool's own sign-in waits on for the browser's answer, in the order it tries them (CODEXLOGIN1: Codex
     // 0.160.0 takes 1455, else 1457). Where none can be bound the sign-in is refused before it starts and the device code is
-    // offered (`SignInPorts`). Null checks nothing. The CLI's `loginPorts` is the twin.
+    // offered (`SignInPorts`). Null checks nothing.
     IReadOnlyList<int>? LoginPorts = null,
     // The tool's map from its door's codes, kind words and statuses to an error's kind, with its recorded transient sentences
     // (AGENTERRORS1a, D210, the agent-errors design §4.1), read by `AgentErrors.Read` from the door's failure, never from the

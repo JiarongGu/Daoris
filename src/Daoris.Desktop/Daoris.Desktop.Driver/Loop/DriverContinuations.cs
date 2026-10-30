@@ -1193,6 +1193,13 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
             return [];
         }
 
+        // DRIVENATTEMPT1 (§13.5's `delivering` row, §19.4, the live move's mark: design §3.4 rule 5): each moved word is marked attempted on the new
+        // part at the fence, before the door writes it, so a loop killed from here on never lets the part's own go-on send it again; the come-up
+        // reads it attempted and settles it uncertain. The mark is the hand's, not the write's: a kill after it and before the write leaves a word
+        // never written read uncertain too, the conservative side, as a live move's is. A word the mark does not name is not handed and waits on
+        // the part for its own go-on. A start keeping no record takes the words before its instruction, so it marks none.
+        if (delivery is not null) moved = await moved.AttemptedAsync(_context.Service).ConfigureAwait(false);
+
         // A word the instruction hands by itself under its id (the target's `Handed`: a resume's words, the switch's Daoris words) its opening
         // shows there already, after the instruction (HarnessCapture.Opening); every other moved word is shown here, once. The person's words of
         // any other carry-on reach the instruction through the ask instead.

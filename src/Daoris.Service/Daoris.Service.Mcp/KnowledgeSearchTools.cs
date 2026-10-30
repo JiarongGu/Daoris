@@ -99,6 +99,7 @@ public sealed class KnowledgeSearchTools(KnowledgeService service, WorkspaceScop
                   + "repository would have used." + DidNotAnswer(answer);
         }
 
+        var standings = await service.StandingsAsync(hits.Select(hit => hit.Entry), ct).ConfigureAwait(false);
         var text = new StringBuilder();
         text.AppendLine($"{hits.Count} result(s) for \"{query}\"{Scoped(scope)}:\n");
         foreach (var hit in hits)
@@ -109,6 +110,7 @@ public sealed class KnowledgeSearchTools(KnowledgeService service, WorkspaceScop
             text.AppendLine($"### {hit.Entry.Title}");
             text.AppendLine($"`{hit.Entry.Repository}` · {hit.Entry.Kind} · `{place}`");
             text.AppendLine($"id: `{hit.Entry.Id}`");
+            text.AppendLine(standings[hit.Entry.Id].Says);
             if (hit.Excerpt is { Length: > 0 })
             {
                 text.AppendLine(hit.ExcerptLine is { } line ? $"\n> line {line}: {hit.Excerpt}" : $"\n> {hit.Excerpt}");
@@ -155,6 +157,8 @@ public sealed class KnowledgeSearchTools(KnowledgeService service, WorkspaceScop
         // ASKSCOPE1c: an id is no argument past the workspace a conversation is bound to.
         if (circle.Outside(entry) is { } outside) return outside;
 
+        // The same line a hit carries (KNOWFRESH1a-ii), so what a search said of its standing holds when the entry is read.
+        var standing = (await service.StandingsAsync([entry], ct).ConfigureAwait(false))[entry.Id].Says;
         var whole = entry.Lines is { } span ? $"{entry.RelativePath}:{span}" : entry.RelativePath;
         if (string.IsNullOrWhiteSpace(lines)) return Read(entry, whole, entry.Body);
 
@@ -176,10 +180,11 @@ public sealed class KnowledgeSearchTools(KnowledgeService service, WorkspaceScop
         }
         return Read(entry, $"{entry.RelativePath}:{cut.Lines}", cut.Text);
 
-        static string Read(KnowledgeEntry entry, string place, string text) => $"""
+        string Read(KnowledgeEntry entry, string place, string text) => $"""
             # {entry.Title}
 
             `{entry.Repository}` · {entry.Kind} · {entry.Provenance} · `{place}`
+            {standing}
 
             {text}
             """;

@@ -537,6 +537,13 @@ the code. Compare changed behavioral claims with implementation and tests, and r
 unmeasured. The devkit's `docs` gate compares commit dates; it is also a freshness signal, not a
 semantic review. Word and entry-shape ceilings report advisory overruns (D54/D127).
 
+`node tools/doc-current.mjs` reads the present records declared in `daoris.json`'s `documents.present`
+(the guides, the component READMEs and the knowledge this repository owns) for paths, names, routes
+and variables the code lacks, and reports without failing (D220). Before committing a change that
+deletes or renames code, run it with `--since main`: it lists the records that quote what the diff
+removed, and those are rewritten in the same change. A name only test source has is printed after
+the rest. An external name goes on the declaration's `allow` list with its reason.
+
 The date gate reads committed history, so an uncommitted guide correction still has its old date.
 A proposed-commit Git view may verify universal gates before committing. Keep that environment
 away from fixture tests: inherited `GIT_DIR`/`GIT_WORK_TREE` redirect their repository operations.

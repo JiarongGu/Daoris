@@ -71,6 +71,45 @@ public sealed class WorkflowCurrentTests
         Assert.DoesNotContain(OpinionRules.DeclaredOnly, WorkflowLimits.Table.Select(limit => limit.Says));
     }
 
+    /// <summary>
+    /// INTEGRATE1r (§17.4): the step is drawn from the landing's graph (<see cref="NodeGraphHomes.Landing"/>), so a rule the file cannot
+    /// carry <c>integrate</c> on, held in memory with it, draws none: a plugin, a squash or a merge rule. It is a cell of its node kind and
+    /// never one of the steps' kinds, and its limit is said by the shared table.
+    /// </summary>
+    [Fact]
+    public void The_integrate_step_is_the_landing_graphs_and_a_rule_beside_a_plugin_a_squash_or_a_merge_draws_none()
+    {
+        var integrating = new LandingIntegrate();
+        var branch = new LandingRule(LandingForm.Branch, "work/{session}") { Integrate = integrating };
+
+        // Held in memory as the record, since the setter refuses what the file's reader passes over.
+        DriverConfig With(LandingRule rule) => DriverConfig.Parse("{}") with
+        {
+            Landings = new Dictionary<string, LandingRule>(StringComparer.OrdinalIgnoreCase) { ["web-app"] = rule },
+        };
+        IReadOnlyList<string> Kinds(LandingRule rule) =>
+            [.. WorkflowCurrent.Derive(With(rule), "web-app", null, [new("example.pull-request", [HookPoints.Land])]).Steps.Select(step => step.Kind)];
+
+        Assert.Equal(["work", "landing", "integrate"], Kinds(branch));
+        Assert.Equal(["work", "landing", "pull-request"], Kinds(branch with { Plugin = "example.pull-request" }));
+        Assert.Equal(["work", "landing"], Kinds(branch with { Squash = true }));
+        Assert.Equal(["work", "landing"], Kinds(LandingRule.Merge with { Integrate = integrating }));
+        Assert.Equal(["work", "landing"], Kinds(branch with { Integrate = null }));
+        Assert.DoesNotContain(NodeKinds.Integrate, new[]
+        {
+            WorkflowKinds.Work, WorkflowKinds.Opinion, WorkflowKinds.Look, WorkflowKinds.Landing, WorkflowKinds.PullRequest,
+            WorkflowKinds.GoAhead, WorkflowKinds.Check, WorkflowKinds.Stage, WorkflowKinds.All,
+        });
+
+        var step = WorkflowCurrent.Derive(With(branch), "web-app", null, []).Steps[2];
+        Assert.Equal(NodeKinds.Integrate, step.Id);
+        Assert.Equal(WorkflowRuntime.Declared, step.Runtime);
+        Assert.Equal(WorkflowLimits.NotIntegratedYet, step.Limit);
+        Assert.StartsWith("Not integrated yet", WorkflowLimits.Says(WorkflowLimits.NotIntegratedYet));
+        // The workspace's Current draws no repository's rule, so none draws the step.
+        Assert.DoesNotContain(WorkflowCurrent.Derive(With(branch), null, "work", []).Steps, each => each.Kind == NodeKinds.Integrate);
+    }
+
     [Fact]
     public void The_version_is_a_digest_of_the_text_drawn_escaped_by_hand()
     {

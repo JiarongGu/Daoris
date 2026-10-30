@@ -181,6 +181,49 @@ internal sealed class LiveLimitHarness : IAsyncDisposable
     }
 
     /// <summary>
+    /// The conversation's hand-over, the third of this harness's moves (FOUNDATION1f-v part b): a conversation <c>c1</c> on account-1 of <c>talk</c>,
+    /// its last turn ended, the person's word kept on it, handed to <c>acp-stub</c> on account-2 by Daoris (<see cref="HandOverWhy.Near"/>, which asks
+    /// the outgoing agent no closing note) through <see cref="ChatHandOver.HandOverAsync"/>, run by a shell of run <see cref="Killed"/> and stopped
+    /// for good at <paramref name="cut"/>. It passes every boundary of <see cref="Cuts.All"/> as the curve's move does, the one brief its only message.
+    /// </summary>
+    /// <param name="atTheWrite">Told the new part's message as the door writes it, before the write returns.</param>
+    /// <param name="cut">The boundary to stop at; none runs the move to its end.</param>
+    /// <param name="atTheCut">Told each boundary as it is passed.</param>
+    /// <param name="keep">Words the person kept on the old part, by key; the one default is <see cref="Word"/> under <c>k1</c>.</param>
+    /// <param name="turn">Whether the old part's turn is running: the ask then stands at <c>quiescing</c> and the shell stops there.</param>
+    public async Task<ShellRun> RunHandOverShellAsync(
+        string? cut, Action<ChatMessage>? atTheWrite = null, Action<string>? atTheCut = null, IReadOnlyDictionary<string, string>? keep = null, bool turn = false)
+    {
+        // Stopped, as the record is once its shell's end is written; the live turn's stand-in is the shell's own, so nothing here refuses it.
+        Ledger.Chat("c1", "stopped", "talk", Root, profile: "account-1");
+        var events = Events;
+        events.Append("c1", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = "Earlier answered exchange." });
+        events.Append("c1", new SessionEvent { Kind = SessionEventKind.Turn, StopReason = "end_turn" });
+        foreach (var (key, word) in keep ?? new Dictionary<string, string> { ["k1"] = Word }) Ledger.For("c1").Say(key, word);
+
+        var adapters = new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["talk"] = new Talk(),
+            ["acp-stub"] = new CurveTalk(new HarnessToolchain(
+                Binary: [TalkCommand], VersionArguments: ["--version"], ProfileVariable: "STUB_HOME", AccountOf: "stub", ProbeByPresence: true)),
+        });
+        var context = new ChatContext(
+            Client, Home, new SessionProcesses(DaorisHome.Entry(Home, HomeEntry.Sessions)), output: null,
+            new HarnessRoster(adapters, DaorisHome.Entry(Home, HomeEntry.Harnesses)), events);
+        var old = Talking(context, "c1", shows: false);
+        var runner = new Opening(Client, context, atTheWrite) { Busy = turn };
+        var handOver = new ChatHandOver(context, runner)
+        {
+            Moves = new ConversationMoves(Home, Client, events, store: Store(Killed)),
+        };
+        var hit = Hook(handOver.Moves, cut, atTheCut);
+        _moving = Task.Run(async () => (object?)await handOver.HandOverAsync(
+            "c1", "acp-stub", "account-2", HandOverWhy.Near, HandOverBy.Daoris, DriverConfig.Empty, null, CancellationToken.None));
+        await ReachedAsync(hit, cut);
+        return new ShellRun(runner, old);
+    }
+
+    /// <summary>
     /// The ended move's twin of <see cref="RunShellAsync"/> (FOUNDATION1f-vi part b): an ended conversation <c>c1</c> on account-1, nothing of it
     /// running, its last turn refused by its limit and its account cooling, the person's word waiting on it; the ended move
     /// (<see cref="LimitMove.MoveEndedAsync"/>) run by a shell of run <see cref="Killed"/>, stopped for good at <paramref name="cut"/>. It passes
@@ -430,6 +473,9 @@ internal sealed class LiveLimitHarness : IAsyncDisposable
     {
         public Turned? Opened { get; private set; }
 
+        /// <summary>Whether the old part's turn runs, so a hand-over asked waits at <c>quiescing</c> for its end (FOUNDATION1f-v part b).</summary>
+        public bool Busy { get; init; }
+
         public async Task<ChatStart> StartAsync(
             string repository, string adapter, DriverConfig config, Func<string, string, Task>? onEnded = null, string? profile = null,
             bool? ownTree = null, CancellationToken ct = default, string? tree = null, ContinuedFrom? from = null,
@@ -462,7 +508,7 @@ internal sealed class LiveLimitHarness : IAsyncDisposable
 
         public Task<bool> AnswersFindingsAsync(string sessionId, string tree, DriverConfig config) => Task.FromResult(false);
 
-        public bool Taking(string sessionId) => false;
+        public bool Taking(string sessionId) => Busy;
 
         public ChatMessage WithProcess(string sessionId, ChatMessage message) => message;
 

@@ -50,6 +50,13 @@ const MANIFEST_ROWS: { name: string; documents: unknown; harness?: string; read:
       { role: 'decisions', path: 'docs/decisions', words: null },
     ],
   },
+  // KNOWFRESH1a-iii: `present` is the repository's own declaration for `tools/doc-current.mjs` (the present records it reads),
+  // never a role: it is no document, so nothing lists it and the service's reader skips it as an unknown member.
+  {
+    name: "`present` is a repository's own declaration, no role",
+    documents: { decisions: 'docs/decisions', present: { homes: ['README.md'] } },
+    read: [{ role: 'decisions', path: 'docs/decisions', words: null }],
+  },
 ];
 
 const REFUSED_ROWS: { name: string; documents?: unknown; raw?: string; harness?: string; says: RegExp }[] = [

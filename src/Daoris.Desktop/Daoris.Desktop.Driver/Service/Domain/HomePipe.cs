@@ -7,12 +7,12 @@ namespace Daoris.Driver;
 /// this rule through here.
 /// </summary>
 /// <remarks>
-/// A twin of the CLI's <c>PIPE_PREFIX</c> and <c>isPipeOf</c> (<c>service.ts</c>), which hold the same rule and share no code
-/// (<c>twins.md</c>). The id is never a path, so the name may travel where a path may not.
+/// Only the driver's program reads a pipe's name (<c>twins.md</c>). The id is never a path, so the name may travel where a path
+/// may not.
 /// </remarks>
 public static class HomePipe
 {
-    /// <summary>What every Daoris pipe's name begins with. The CLI's <c>PIPE_PREFIX</c> is its copy.</summary>
+    /// <summary>What every Daoris pipe's name begins with.</summary>
     public const string Prefix = "daoris-";
 
     /// <summary>

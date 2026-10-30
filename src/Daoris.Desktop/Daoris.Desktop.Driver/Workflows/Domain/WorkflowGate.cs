@@ -340,6 +340,8 @@ public static class Involvement
                     new("form", Setting("form")), new("accept", Setting("accept")), new("pattern", Setting("pattern")),
                     new("plugin", Setting("plugin")),
                 ],
+                // INTEGRATE1r: the rule's request, so the comparison does not read Current's `done` as the owner's (its id is its node's, §2.5).
+                NodeKinds.Integrate => [new("request", Setting("request"))],
                 _ => [],
             };
             return new NamedStep(step.Id, step.Kind, fields);

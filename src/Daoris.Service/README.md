@@ -104,7 +104,10 @@ scan reads (`Core/Knowledge/Store/RootSignature.cs`). A root whose signature mov
 The one-checkout server keeps its watch and its minute (ORIENT1c, FABRIC-EVENT6). Per repository the service keeps when
 it read the checkout and the commit it read: `/api/repositories` answers `indexedAt` and `indexedCommit` beside each row
 (left out where nothing was read, as a fed repository's is), `POST /api/refresh` answers `read` (`repository`, `readAt`,
-`commit`), and the `knowledge_repositories` table and `knowledge_refresh` text print them.
+`commit`), and the `knowledge_repositories` table and `knowledge_refresh` text print them. A `knowledge_search` hit and
+`knowledge_get` carry one `standing:` line (`EntryStanding.Says`, KNOWFRESH1a-ii): the reading's commit (`+ uncommitted` from the
+one `git status` the reading takes a root, `fed at` for a feed's), and for a decision the notes after it and the mark its record
+puts on it, derived from the note entries by `DecisionNotes.Marks`; no mark is `no mark`, never "current".
 
 Since **D124** (WSSETUP8), until a repository adopts, the scanner reads its root `README.md`, in any case,
 as the repository's own word. Each section split at level-two headings is one local knowledge entry carrying

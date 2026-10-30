@@ -44,8 +44,7 @@ public sealed record PluginTool(
 /// process runs, read by the catalogue by one table.
 /// </summary>
 /// <remarks>
-/// <para><b>One table holds the rules</b> (<c>PluginToolsTests</c>), in order and in their sentences; the CLI's <c>plugins.ts</c>
-/// held its twin (<c>toolsDeclared</c>) to it until it left with <c>daoris plugin</c>'s TypeScript (PUSH1f2f).</para>
+/// <para><b>One table holds the rules</b> (<c>PluginToolsTests</c>), in order and in their sentences; no other reader holds a twin of them.</para>
 ///
 /// <para>🔴 <b>A problem in <c>tools</c> never refuses the plugin.</b> A tool is something the plugin needs, never what it
 /// is; the problem is said beside the tool. 🔴 <b>Reading starts nothing</b>: a tool is found, asked its version and

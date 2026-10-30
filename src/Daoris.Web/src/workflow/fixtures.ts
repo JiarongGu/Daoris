@@ -17,6 +17,8 @@ export const LIMITS: Record<string, string> = {
   'pull-request-at-clean-up': 'Its state is asked of its plugin only when branches are cleaned up, never while someone waits on it.',
   'go-ahead-partial': 'Partial: a session asks you for a go-ahead as it needs one; a step that raises one at its place and waits '
     + 'on your answer is not built yet.',
+  'not-integrated-yet': 'Not integrated yet: the rule carries `integrate`, but nothing runs an integration in this build, so work stays '
+    + 'on its branch as it always did.',
 };
 
 const limits = (steps: WorkflowStep[]) =>
@@ -102,6 +104,22 @@ export const FULL = current({
   version: '4740fb017006',
 });
 
+/**
+ * The repository's branch rule for you to push, carrying `integrate` (INTEGRATE1r; the integration design §17.4): Current draws the
+ * step after the landing, declared, on your press, with its limit *not integrated yet*. A cell of its node kind, never of the steps'.
+ */
+export const BRANCH_YOU_PUSH: WorkflowStep = {
+  id: 'landing', kind: 'landing', participation: 'you', executor: 'daoris', press: 'accept',
+  source: { rule: 'landing', level: 'repository' },
+  settings: { form: 'branch', accept: 'you', pattern: 'work/{session}', plugin: null, tidy: false }, runtime: 'built', limit: null,
+};
+
+export const INTEGRATE_OWNER: WorkflowStep = {
+  id: 'integrate', kind: 'integrate', participation: 'you', executor: 'daoris', press: 'accept',
+  source: { rule: 'landing', level: 'repository' }, settings: { request: 'owner', gates: 'none', conflicts: 'session' },
+  runtime: 'declared', limit: 'not-integrated-yet',
+};
+
 /** A branch rule whose plugin is not on this machine: the landing and its pull request each say it is not ready. */
 export const PLUGIN_UNREADY = current({
   repository: 'engine', workspace: 'aurora', registered: true, startHolds: [],
@@ -114,6 +132,12 @@ export const PLUGIN_UNREADY = current({
     { ...PULL_REQUEST, limit: 'plugin-unready' },
   ],
   version: '24bf4508996f',
+});
+
+/** A branch rule for you to push that carries `integrate`: the step after the landing, the table's row (INTEGRATE1r). */
+export const INTEGRATING = current({
+  repository: 'engine', workspace: 'default', registered: true, startHolds: [],
+  steps: [WORK(), BRANCH_YOU_PUSH, INTEGRATE_OWNER], version: '05b1cc9a230c',
 });
 
 /** A line's tip and the declaration's blob there, as the driver reads them (FABRIC-PIPELINE1a). */

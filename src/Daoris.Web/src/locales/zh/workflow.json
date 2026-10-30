@@ -90,6 +90,7 @@
   "workflow.limit.plugin-unready": "它的插件现在无法在本机落地工作：它没有安装、已停用、什么都不提供，或者不在 `work/land` 挂点上说话。`daoris plugin list` 会说明是哪一种。",
   "workflow.limit.pull-request-unread": "它的插件不回答 `work/state`，所以 Daoris 从不读取这个拉取请求是被合并还是被放弃。",
   "workflow.limit.pull-request-at-clean-up": "只有在清理分支时才会向它的插件询问它的状态，有人在等时从不询问。",
+  "workflow.limit.not-integrated-yet": "尚未集成：规则写了 `integrate`，但这个版本里还没有任何东西执行集成，所以工作仍像以前一样留在它的分支上。",
   "workflow.limit.recorded": "按原文显示",
   "workflow.edge.automatic": "随后自动继续",
   "workflow.edge.reviewed": "你确认已审阅后继续",
