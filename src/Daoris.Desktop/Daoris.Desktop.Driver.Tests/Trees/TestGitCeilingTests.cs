@@ -52,8 +52,8 @@ public sealed class TestGitCeilingTests
         variable.Environment.Remove(Ceiling);
         variable.Environment["GIT_DIR"] = "x";
 
-        Assert.Equal(Environment.GetEnvironmentVariable(Ceiling), Held(argument));
-        Assert.Equal(Environment.GetEnvironmentVariable(Ceiling), Held(TestGit.Ceiling(variable)));
+        Assert.Equal(Held(new ProcessStartInfo("git")), Held(argument));
+        Assert.Null(Held(TestGit.Ceiling(variable)));
     }
 
     [Fact]
