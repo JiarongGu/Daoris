@@ -12534,3 +12534,11 @@ mis-rooted instance.
 **Fix.** `Heard` leaves such a word owed, before reading the hold; the watch's last disposal (`ChatGoOn.LetGo`) takes it up.
 
 **Verification.** `ChatGoOnTests.A_word_shown_to_an_ended_chat_its_run_still_holds_...`: red 2 m 41 s, green; `ChatGoesOnProcessTests` 24/24 three times.
+
+## A refreshed service install still ran the old flat host (2026-10-31)
+
+**Root cause.** `ServiceHostLocator` ranked a flat `bin/` executable above the packaged `bin/daoris-knowledge-http/`; `service-publish --install` replaces only the packaged folder, so an older flat host and its bundle kept running.
+
+**Fix.** The packaged host ranks first; a flat one is the legacy fallback. A named path still wins.
+
+**Verification.** `ServiceHostLocatorTests`: republish over a flat install, red before.
