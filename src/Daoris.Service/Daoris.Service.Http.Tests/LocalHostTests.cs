@@ -730,6 +730,34 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
+    /// INTEGRATE1l: a quest published with paths answers them, as the driver reads them to compare a start with the repository's
+    /// other open work; one declaring none answers an empty list, and a path outside the repository is refused, 400. The ask door
+    /// keeps and answers an asker's paths the same way.
+    /// </summary>
+    [Fact]
+    public async Task The_quest_and_ask_doors_answer_the_paths_they_were_published_with()
+    {
+        var declared = await host.PostAsync("/api/quests", new
+        {
+            from = "Asker", to = "Keeper", title = "Cap the frame's paths", body = "It stalls.", paths = new[] { "src/frame/**" },
+        });
+        Assert.Equal(200, declared.Status);
+        Assert.Equal("src/frame/**", Assert.Single(declared.Json.GetProperty("quest").GetProperty("paths").EnumerateArray()).GetString());
+
+        var plain = await host.PostAsync("/api/quests", new { from = "Asker", to = "Keeper", title = "Log the frame's paths", body = "b" });
+        Assert.Empty(plain.Json.GetProperty("quest").GetProperty("paths").EnumerateArray());
+
+        var refused = await host.PostAsync("/api/quests", new
+        {
+            from = "Asker", to = "Keeper", title = "Reach outside", body = "b", paths = new[] { "../elsewhere" },
+        });
+        Assert.Equal(400, refused.Status);
+
+        var ask = await host.PostAsync("/api/asks", new { sentence = "cap the frame's declared paths", paths = new[] { "src/frame/**" } });
+        Assert.Equal("src/frame/**", Assert.Single(ask.Json.GetProperty("ask").GetProperty("paths").EnumerateArray()).GetString());
+    }
+
+    /// <summary>
     /// DRIFT1c: the quest door keeps working for a client that names no requirements, answering the quest
     /// with none; a repository naming some is asking on no ask, so there is nothing to quote, 400.
     /// </summary>

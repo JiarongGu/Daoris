@@ -172,7 +172,10 @@ public sealed record QuestResponse(
     IReadOnlyList<AskWorkflowChoiceResponse>? WorkflowChoices = null,
     // FOUNDATION1x: the mark on the work, `design` or `exact`, a fact of the work carrying no path or name. Absent for an unmarked quest and
     // from a host before it, which a reader starts on Build's order.
-    string? Weight = null);
+    string? Weight = null,
+    // INTEGRATE1l: the repository-relative globs its publisher declared it touches, a fact of the work naming no machine's path. Empty
+    // where it declared none; absent from a host before it, which a reader reads as none.
+    IReadOnlyList<string>? Paths = null);
 // The person's kind and workflow on a quest published with no ask, before it starts (WORKFLOW1e2): either, both, or neither to clear them.
 public sealed record QuestWorkflowRequest(string? Kind = null, string? Workflow = null, string? Words = null);
 // A quest's own reopen (FABRIC-CLOSE1c4), answered only: the reopen by its machine and sequence, the submission it reopened (`Of`),
@@ -210,7 +213,9 @@ public sealed record PublishQuestRequest(
     IReadOnlyList<QuestStepWire?>? Then = null, IReadOnlyList<QuestRequirementWire?>? Requirements = null,
     string? Short = null, QuestReviewWire? Review = null,
     // FOUNDATION1x: the mark on the work, `design` or `exact`, judged by the exchange with every other door's; absent for none.
-    string? Weight = null);
+    string? Weight = null,
+    // INTEGRATE1l: the paths the work declares it touches, repository-relative globs judged by the exchange; absent for none.
+    IReadOnlyList<string>? Paths = null);
 // A set-up posted on a set-up step (REVIEWENV1b, design §2.6, §3.3): the commit Daoris read and the environment's kind (`local`
 // or `deployed`), with `Session`, whose said set-ups the driver posts, or the person's own `Look`, `Shows` and `Again`.
 public sealed record QuestSetUpRequest(
@@ -236,10 +241,12 @@ public sealed record ForwardConflictRequest(string? Machine, long? Sequence);
 // `Review` and `ReviewWords` (REVIEWENV1b, design §1.5): the person's review choice from the composer, and their words with it.
 // `Kind`, `Workflow` and `WorkflowWords` (WORKFLOW1e, the workflow design §4.3): the person's kind and workflow for its work.
 // `Short` (HEAD2e): the asker's short title, at most 40 characters, judged as a quest's is; absent for none.
+// `Paths` (INTEGRATE1l): the paths the asker declares the work touches, judged as a quest's are; each quest it publishes carries them.
 public sealed record AskRequestBody(
     string? Workspace, string? Sentence, IReadOnlyList<string>? Links,
     IReadOnlyList<QuestAttachmentRequest>? Attachments, string? To, string? Review = null, string? ReviewWords = null,
-    string? Kind = null, string? Workflow = null, string? WorkflowWords = null, string? Short = null);
+    string? Kind = null, string? Workflow = null, string? WorkflowWords = null, string? Short = null,
+    IReadOnlyList<string>? Paths = null);
 // A publish is a person's `To` alone; an intake (D65 §1b) adds its own words, carry and chain, and
 // names its `Session` — which moves the ask's tier to `intake` only when it is the ask's own. Its
 // `Requirements` quote the person (DRIFT1c), judged against the ask's words. `Review` is the chain's choice, an intake's only on
@@ -248,7 +255,9 @@ public sealed record AskPublishRequest(
     string? To, string? Title = null, string? Body = null, IReadOnlyList<string>? Links = null,
     IReadOnlyList<QuestAttachmentRequest>? Attachments = null, IReadOnlyList<QuestStepWire?>? Then = null,
     string? Session = null, IReadOnlyList<QuestRequirementWire?>? Requirements = null, string? Short = null,
-    QuestReviewWire? Review = null, ReviewProposalWire? ReviewProposal = null, WorkflowProposalWire? WorkflowProposal = null);
+    QuestReviewWire? Review = null, ReviewProposalWire? ReviewProposal = null, WorkflowProposalWire? WorkflowProposal = null,
+    // INTEGRATE1l: the paths an intake declares, added to the ask's own and never in place of them.
+    IReadOnlyList<string>? Paths = null);
 // An intake's review proposal (REVIEWENV1b, design §1.5): a choice and its reason, at most 300 characters.
 public sealed record ReviewProposalWire(string? Choice, string? Reason);
 // An intake's kind proposal (WORKFLOW1i, design §4.3): a kind and its reason, the person's own words it quotes, at most 300 characters.
@@ -282,7 +291,9 @@ public sealed record AskResponse(
     IReadOnlyList<GoAheadResponse>? GoAheads = null,
     IReadOnlyList<AskReviewChoiceResponse>? ReviewChoices = null, IReadOnlyList<AskReviewProposalResponse>? ReviewProposals = null,
     IReadOnlyList<AskWorkflowChoiceResponse>? WorkflowChoices = null, IReadOnlyList<AskWorkflowProposalResponse>? WorkflowProposals = null,
-    string? Short = null);
+    string? Short = null,
+    // INTEGRATE1l: the paths its asker declared, empty for none; absent from a host before it.
+    IReadOnlyList<string>? Paths = null);
 public sealed record AskWorkflowProposalResponse(string Kind, string Reason, DateTimeOffset At, string? Session, string? Quest);
 public sealed record AskReviewChoiceResponse(string Choice, DateTimeOffset At, string? Words);
 public sealed record AskWorkflowChoiceResponse(string? Kind, string? Workflow, DateTimeOffset At, string? Words);

@@ -43,6 +43,8 @@ public sealed class QuestOperationKindsTests
             },
         ],
         Short = "The report",
+        // The paths it declares (INTEGRATE1l), so the log's, the cache's and the wire's theories see them kept.
+        Paths = ["docs/report.md", "src/report/**"],
         // The submission it grew from (FABRIC-CLOSE1c), so a publish is held to carrying it, and a reopen naming it reaches it.
         GrewFrom = new QuestOperationRef("m9", 3),
     };
