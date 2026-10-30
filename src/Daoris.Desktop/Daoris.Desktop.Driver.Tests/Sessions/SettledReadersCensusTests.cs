@@ -40,6 +40,7 @@ public sealed partial class SettledReadersCensusTests
         ["AgentCourseWiring.cs"] = "the episode's go-on: no word to keep, so the try's go-on is the plain block",
         ["WordsLeft.cs"] = "a word kept again on the record: kept, with no view to show",
         ["ReopenTelling.cs"] = "Daoris's reopen and go-on words: kept, the mark written",
+        ["DriverWatch.cs"] = "the integration transport's word about a conflict: kept, the conflict told to the session",
         ["AutoLandingWorld.cs"] = "the landing's word to a session, said through the lander's world: kept",
         ["TreesConsole.cs"] = "the terminal's tree word to a session: kept",
         ["TreesRoutes.cs"] = "the window's Accept carrying a session on (LANDBACK1 part 1): kept, and the person's yes is kept with it",
