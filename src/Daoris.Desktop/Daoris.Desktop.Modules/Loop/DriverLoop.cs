@@ -934,8 +934,13 @@ public sealed class DriverLoop(
             {
                 await moves.LookAsync(token).ConfigureAwait(false);
                 await chat.WakeLimitsAsync(looked, onEnded: (ended, state) => Ended(eventBus, ended, state), token).ConfigureAwait(false);
+                // FOUNDATION1f-v part a: a hand-over the take-up left standing under this run (a dead run's, an older build's box imported)
+                // is taken beside the look, as the come-up takes the ones it finds.
+                await chat.TakeHandOversAsync((ended, state) => Ended(eventBus, ended, state), token).ConfigureAwait(false);
             },
         };
+        // TAKEWAITS1: a word said while a conversation move stands is held until it ends, read from the move record.
+        Words.TakeStanding = moves.Stands;
         // FABRIC-END6c: a focus heard before the watch existed is told to it now, once; the watch keeps it until its moments exist.
         _focus.Ready(_watch.Focused);
         // FABRIC-EVENT4: and the record files' watchers, reopened at a resume as the requests folder's are.

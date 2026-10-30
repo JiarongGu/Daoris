@@ -120,8 +120,10 @@ public sealed class HandOverProcessTests : IDisposable
         Assert.DoesNotContain("This start runs on", StubFile.Text(DaorisHome.Entry(_home, HomeEntry.Sessions,$"{old}.log")));
         Assert.Equal("chat.handed-over", events.After(old, 0).Events.Select(CodeOf).Last(code => code is not null));
         Assert.Equal(next, NewSessionOf(ledger, old));
-        // The take clears the box last, after the old one's last line: poll, as CurveMoveProcessTests does.
-        await Poll.Until(() => new HandOverBox(_home).Read(old) is null, () => $"the box still holds {old}'s hand-over; {Seen(ledger, events, old)}");
+        // The move ends last, after the old one's last line, and no box was ever written (FOUNDATION1f-v part a): poll, as CurveMoveProcessTests does.
+        await Poll.Until(() => new MoveStore(_home).Standing(old) is null, () => $"the store still holds {old}'s hand-over; {Seen(ledger, events, old)}");
+        Assert.Equal("delivered", new MoveStore(_home).Of(old).Last().PhaseWord);
+        Assert.Null(new HandOverBox(_home).Read(old));
     }
 
     /// <summary>
@@ -186,13 +188,15 @@ public sealed class HandOverProcessTests : IDisposable
         var asked = await runner.HandOverAsync(old, "stub", null, HandOverWhy.Press, HandOverBy.Person, config);
 
         Assert.Equal((null, true, null), (asked.SessionId, asked.Kept, asked.Why));
-        Assert.NotNull(new HandOverBox(_home).Read(old));
+        // The move waits for the turn's end at quiescing, in the store; no box is kept.
+        Assert.Equal("quiescing", new MoveStore(_home).Standing(old)!.PhaseWord);
+        Assert.Null(new HandOverBox(_home).Read(old));
         Assert.Equal("working", ledger.State(old));
         Assert.Equal(1, ledger.Count);
 
         await runner.CancelTurnAsync(old);
 
-        await Poll.Until(() => ledger.Count == 2 && Ended(ledger.State(old)) && new HandOverBox(_home).Read(old) is null, () => Seen(ledger, events, old));
+        await Poll.Until(() => ledger.Count == 2 && Ended(ledger.State(old)) && new MoveStore(_home).Standing(old) is null, () => Seen(ledger, events, old));
         Assert.Equal("chat.handed-over", events.After(old, 0).Events.Select(CodeOf).Last(code => code is not null));
     }
 
@@ -221,7 +225,9 @@ public sealed class HandOverProcessTests : IDisposable
         var started = Assert.Single(taken);
         Assert.NotNull(started.SessionId);
         Assert.Equal(2, ledger.Count);
+        // Imported at the come-up and set aside, then taken as a move (FOUNDATION1f-v part a).
         Assert.Null(new HandOverBox(_home).Read(old));
+        Assert.True(File.Exists(new HandOverBox(_home).PathOf(old) + ".imported"));
         await Poll.Until(() => events.After(started.SessionId!, 0).Events.Any(e => CodeOf(e) == "chat.taken-over"), () => Seen(ledger, events, started.SessionId!));
         var opening = events.After(started.SessionId!, 0).Events.First(e => CodeOf(e) == "chat.taken-over").Parts![0];
         Assert.Equal("near", opening.Value("why"));

@@ -187,14 +187,14 @@ G-10 CurveMoveProcessTests.A_conversation_over_its_curve_moves_at_its_turn_s_end
 G-11 code:Course/Chat/CurveMove.cs:73 => Hold why=Stays doors=- repair=None code=-
 
 ## H a conversation's hand-over, with the consent before an agent's ask
-H-01 HandOverTests.A_conversation_is_handed_over_by_keeping_its_box => Move when=TurnEnd where=Pick@codex-acp:work(chat/-)!kept how=Brief why=Limit by=Person words=-
+H-01 HandOverTests.A_conversation_is_handed_over_by_deciding_its_move => Move when=TurnEnd where=Pick@codex-acp:work(chat/-)!kept how=Brief why=Limit by=Person words=-
 H-02 HandOverTests.What_cannot_be_handed_over_is_refused_by_its_code_and_nothing_is_kept:laptop/s9 => Never why=Teammate
 H-03 HandOverTests.What_cannot_be_handed_over_is_refused_by_its_code_and_nothing_is_kept:1ntake00 => Never why=Intake
 H-04 HandOverTests.What_cannot_be_handed_over_is_refused_by_its_code_and_nothing_is_kept:same-agent => Hold why=Refused doors=- repair=None code=same-agent
 H-05 HandOverTests.What_cannot_be_handed_over_is_refused_by_its_code_and_nothing_is_kept:tr33g0n3 => Hold why=Refused doors=- repair=None code=tree-gone
 H-06 HandOverTests.What_cannot_be_handed_over_is_refused_by_its_code_and_nothing_is_kept:h4nd3d00 => Never why=Superseded
-H-07 HandOverTests.A_second_hand_over_waits_behind_the_first_and_Ask_Daoris_is_refused:second => Hold why=Refused doors=- repair=None code=waiting
-H-08 HandOverTests.A_second_hand_over_waits_behind_the_first_and_Ask_Daoris_is_refused:help => Hold why=Refused doors=- repair=None code=help
+H-07 HandOverTests.A_second_hand_over_waits_behind_the_first_read_from_the_store_and_Ask_Daoris_is_refused:second => Hold why=Refused doors=- repair=None code=waiting
+H-08 HandOverTests.A_second_hand_over_waits_behind_the_first_read_from_the_store_and_Ask_Daoris_is_refused:help => Hold why=Refused doors=- repair=None code=help
 H-09 ChatHandOverTests.A_hand_over_press_with_an_account_keeps_the_pick_and_no_other_hand_over_does:press,person,account-2,True => Move when=TurnEnd where=Pick@fake:account-2(chat/-)!kept how=Brief why=Press by=Person words=-
 H-10 ChatHandOverTests.A_hand_over_press_with_an_account_keeps_the_pick_and_no_other_hand_over_does:press,person,-,False => Move when=TurnEnd where=Settled@other(chat/-) how=Brief why=Press by=Person words=-
 H-11 ChatHandOverTests.A_hand_over_press_with_an_account_keeps_the_pick_and_no_other_hand_over_does:agent,agent,account-2,False => Move when=TurnEnd where=Pick@fake:account-2(chat/-) how=Brief why=Agent by=Agent words=-

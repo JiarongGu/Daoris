@@ -26,7 +26,7 @@ public sealed record MoveBoxPass(IReadOnlyList<MoveRecord> Imported, IReadOnlyLi
 /// <summary>
 /// The import of one kind of box an older build writes, into the move record (FOUNDATION1f-i part 2; §3.3, §13.5). Called by the take-up
 /// (<see cref="MoveTakeUp"/>) before anything else at each come-up and look; the limit box's is handed it by the conversations' holder since
-/// FOUNDATION1f-vi part a, and the hand-over's is row f-v's.
+/// FOUNDATION1f-vi part a, and the hand-over's, a conversation's box, since FOUNDATION1f-v part a.
 /// </summary>
 public interface IMoveBoxImport
 {
@@ -54,8 +54,8 @@ public interface IMoveBoxImport
 /// set-aside is left to do. A box whose record has a standing move waits behind it, left in place, and is imported once that move ends; there
 /// are never two records of one move (§3.3).</para>
 /// <para><b>Called by one production site per box, in the row that retires its reader</b>: importing a box sets it aside from today's readers,
-/// so the limit box is imported since FOUNDATION1f-vi part a, its move read from the store, and the hand-over box waits for row f-v
-/// (<c>MoveStoreCensusTests</c>).</para>
+/// so the limit box is imported since FOUNDATION1f-vi part a and a conversation's hand-over box since FOUNDATION1f-v part a, each move read
+/// from the store; a quest session's hand-over box waits for part c (<c>MoveStoreCensusTests</c>).</para>
 /// </remarks>
 public abstract class MoveBoxImport(string home, MoveStore store) : IMoveBoxImport
 {
@@ -82,11 +82,18 @@ public abstract class MoveBoxImport(string home, MoveStore store) : IMoveBoxImpo
     /// <summary>The move a box's text keeps, or null where it does not read as one.</summary>
     protected abstract MoveFromBox? Read(string session, string text);
 
+    /// <summary>
+    /// Whether this importer owns the session's box. A kind of box another reader owns, the quest session's hand-over box (the driver's look
+    /// takes it), is left where it is, imported by nobody and read as nobody's <c>Never</c>.
+    /// </summary>
+    protected virtual bool Owns(string session) => true;
+
     /// <inheritdoc />
     public IReadOnlyList<string> Pending() =>
         [.. HandOverFiles.Leaves(DaorisHome.Entry(home, HomeEntry.Sessions), "*" + Suffix)
             .Select(leaf => leaf[..^Suffix.Length])
             .Where(SessionEventText.IsLocalId)
+            .Where(Owns)
             .Order(StringComparer.Ordinal)];
 
     /// <inheritdoc />
@@ -267,13 +274,22 @@ public sealed class LimitBoxImport(string home, MoveStore store, Func<string, in
 /// (FOUNDATION1f-i part 2): a hand-over decided and not yet taken, to the agent and account it names, by its why and its asker, at the moment
 /// it was asked.
 /// </summary>
-public sealed class HandOverBoxImport(string home, MoveStore store) : MoveBoxImport(home, store)
+/// <param name="home">The home whose boxes these are.</param>
+/// <param name="store">The move record the boxes are imported into, under its run.</param>
+/// <param name="conversation">
+/// Whether a session is a conversation, read from its record's kind (FOUNDATION1f-v part a): the same file name holds a quest session's box,
+/// which the driver's look takes until part c, so only a conversation's is imported. False for a record the ledger could not be asked about.
+/// </param>
+public sealed class HandOverBoxImport(string home, MoveStore store, Func<string, bool> conversation) : MoveBoxImport(home, store)
 {
     /// <inheritdoc />
     public override string Box => "hand-over";
 
     /// <inheritdoc />
     protected override string Suffix => HandOverBox.Suffix;
+
+    /// <inheritdoc />
+    protected override bool Owns(string session) => conversation(session);
 
     /// <inheritdoc />
     protected override MoveFromBox? Read(string session, string text) =>

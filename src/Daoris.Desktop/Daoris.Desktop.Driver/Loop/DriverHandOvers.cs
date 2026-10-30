@@ -260,8 +260,11 @@ internal sealed class DriverHandOvers(LoopContext context)
         }
         else
         {
-            var asked = await HandOver.AskAsync(
-                service, _context.Home, AccountsOf, session, agent, null, HandOverWhy.Agent, HandOverBy.Agent, DateTimeOffset.UtcNow, ct).ConfigureAwait(false);
+            // FOUNDATION1f-v part a: a headless look keeps the ask as a move in the store, claimed by this run, which a shell takes at its come-up
+            // or look once this run is gone, as it took the box. No box is written.
+            var moves = new ConversationMoves(_context.Home, service, _context.Events, _context.Output);
+            var asked = (await HandOver.AskAsync(
+                service, moves, AccountsOf, session, agent, null, HandOverWhy.Agent, HandOverBy.Agent, DateTimeOffset.UtcNow, ct).ConfigureAwait(false)).Answer;
             (kept, message, code) = (asked.Kept, asked.Message, asked.Why);
         }
 

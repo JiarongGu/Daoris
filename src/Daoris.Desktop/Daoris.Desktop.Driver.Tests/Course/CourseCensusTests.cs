@@ -124,13 +124,15 @@ public sealed class CourseCensusTests
     /// The closed values of a site's <c>moving</c>, which says how the open of a site that hands words moves them (FOUNDATION1d-ii part 4; part
     /// 5 adopted the driven carry-on and the refused open, so no site waits on a later part).
     /// </summary>
-    private static readonly string[] Moving = ["moves", "unkeyed", "no move"];
+    private static readonly string[] Moving = ["moves", "keyed", "no move"];
 
     /// <summary>
     /// FOUNDATION1d-ii parts 4 and 5 (the foundation design §3.4 rule 3): every site that opens a part and hands it words names how its open
     /// moves them, and none that does not: <c>moves</c>, its open asked to move the old part's words (<c>MovedWords.Asked</c>) and its delivery
     /// read from the destination's moved words (<c>MovedWords.Moving</c>), the driven carry-on and the refused open among them since part 5;
-    /// <c>unkeyed</c>, the hand-over and the curve, which carry no person's words and stay unkeyed until rows f-v and h; <c>no move</c>, a site
+    /// <c>keyed</c>, the hand-over's take (FOUNDATION1f-v part a), which asks its open under the move's key with nothing named and nothing read,
+    /// as the curve's does, so the host moves every word of the person's kept on the old part meanwhile and the new part's own go-on says it
+    /// after the brief; it hands no word of its own, so it reads none; <c>no move</c>, a site
     /// that hands words to its own record or to a fresh one, with no record left, the driven go-on's resume among them. The ended limit move's
     /// box members that read the destination's moved words were named until row f-vi retired the box (O6-F13; FOUNDATION1f-vi part a).
     /// </summary>
@@ -147,9 +149,10 @@ public sealed class CourseCensusTests
             if (named is null) continue;
 
             Assert.Contains(named, Moving);
-            if (named != "moves") continue;
+            if (named == "no move") continue;
             var text = WithoutComments(File.ReadAllText(Path.Combine(Root, file)));
             Assert.True(Regex.IsMatch(text, @"\bMovedWords\.Asked\("), $"{file} is named as moving its words but asks no open to move them");
+            if (named != "moves") continue;
             Assert.True(Regex.IsMatch(text, @"\bMovedWords\.(Moving|OnAsync)\("), $"{file} is named as moving its words but reads no destination's moved words");
         }
 
@@ -164,14 +167,15 @@ public sealed class CourseCensusTests
     /// FOUNDATION1f-ii part a (the foundation design §3.3): every move that keeps its move record is named in <c>records</c> with its member
     /// and the row that adopted it, and none that does not: a source that decides a move through the conversations' holder
     /// (<c>Moves.BeginAsync(</c>) is named, and each named member decides through it. The live limit move is the first and the curve's move
-    /// the second (f-iii part a); rows f-iii's other parts to f-vi add theirs.
+    /// the second (f-iii part a), the conversation's hand-over's ask the next (f-v part a, through the holder it is handed); rows f-iii's other
+    /// parts to f-vi add theirs.
     /// </summary>
     [Fact]
     public void Every_move_that_keeps_its_record_is_named_with_its_member()
     {
         var named = Table().GetProperty("records").EnumerateArray().ToList();
         var deciding = ProductionFiles()
-            .Where(path => Regex.IsMatch(WithoutComments(File.ReadAllText(path)), @"\bMoves\.BeginAsync\("))
+            .Where(path => Regex.IsMatch(WithoutComments(File.ReadAllText(path)), @"\b[Mm]oves\.BeginAsync\("))
             .Select(Relative).Order(StringComparer.Ordinal).ToList();
         Assert.Equal(deciding, named.Select(record => record.GetProperty("file").GetString()!).Distinct().Order(StringComparer.Ordinal));
         foreach (var record in named)
@@ -182,7 +186,7 @@ public sealed class CourseCensusTests
             Assert.True(at.Success, $"{member} is not in {record.GetProperty("file").GetString()}");
             var next = Regex.Match(source[(at.Index + at.Length)..], @"\n    (public|internal|private|protected)\s");
             var body = source.Substring(at.Index, next.Success ? next.Index + at.Length : source.Length - at.Index);
-            Assert.Matches(@"\bMoves\.BeginAsync\(", body);
+            Assert.Matches(@"\b[Mm]oves\.BeginAsync\(", body);
             Assert.Matches(@"^f-(ii|iii|iv|v|vi)$", record.GetProperty("row").GetString()!);
         }
 

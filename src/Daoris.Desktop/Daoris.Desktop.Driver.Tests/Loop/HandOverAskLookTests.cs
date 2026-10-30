@@ -29,6 +29,7 @@ public sealed class HandOverAskLookTests : IDisposable
 
     public void Dispose()
     {
+        Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
         _ledger.Dispose();
         try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
@@ -125,8 +126,10 @@ public sealed class HandOverAskLookTests : IDisposable
 
         await Driver(HandOverRules.On).TickAsync().WaitAsync(Poll.Patience);
 
-        var box = new HandOverBox(_home).Read("c0nv0001")!;
-        Assert.Equal(("codex-acp", HandOverWhy.Agent, HandOverBy.Agent), (box.Agent, box.Why, box.AskedBy));
+        // FOUNDATION1f-v part a: kept as a move the store carries, decided, and no box.
+        var move = new MoveStore(_home).Standing("c0nv0001")!;
+        Assert.Equal(("decided", "codex-acp", HandOverWhy.Agent, HandOverBy.Agent), (move.PhaseWord, move.Agent, move.Why, move.By));
+        Assert.Null(new HandOverBox(_home).Read("c0nv0001"));
         Assert.Equal((HandOverAskStates.Taken, "codex-acp"), (State("c0nv0001")!.State, State("c0nv0001")!.Agent));
         Assert.Equal(["handover.taking"], Notes("c0nv0001"));
 
@@ -210,7 +213,7 @@ public sealed class HandOverAskLookTests : IDisposable
         await Driver().TickAsync().WaitAsync(Poll.Patience);
 
         Assert.True(yes.Stands);
-        Assert.Equal("codex-acp", new HandOverBox(_home).Read("c0nv0001")!.Agent);
+        Assert.Equal("codex-acp", new MoveStore(_home).Standing("c0nv0001")!.Agent);
         Assert.Equal(HandOverAskStates.Taken, State("c0nv0001")!.State);
     }
 

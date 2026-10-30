@@ -199,9 +199,9 @@ public sealed class SessionWords : IDisposable
     public void OnMoved(SessionMoved moved) => Wake(moved.Session);
 
     /// <summary>
-    /// A conversation's hand-over or curve move was taken (<see cref="ChatRunner.TakeEnded"/>, HANDWORDS1), its box gone: words held
-    /// for it while it was taken go on now, to the conversation that continues it, and what a word said to it now would do is told
-    /// again, since it went on elsewhere.
+    /// A conversation's hand-over, curve move or limit move was taken (<see cref="ChatRunner.TakeEnded"/>, HANDWORDS1, TAKEWAITS1), its move
+    /// ended in the store: words held for it while it was taken go on now, to the conversation that continues it, and what a word said to it
+    /// now would do is told again, since it went on elsewhere.
     /// </summary>
     public void OnTakeEnded(string session) => Wake(session);
 
@@ -604,7 +604,14 @@ public sealed class SessionWords : IDisposable
     /// take is over, however it came out. A quest's session's box is the driver's look's, which carries its words on itself.
     /// </summary>
     private bool TakeWaits(SessionRecord record) =>
-        record is { Kind: "chat", Teammate: false } && new HandOverBox(_loop.Home).Read(record.Id) is not null;
+        record is { Kind: "chat", Teammate: false } && TakeStanding(record.Id);
+
+    /// <summary>
+    /// Whether a conversation move, the hand-over, the curve's or the limit move, stands for a record and has not yet put its words on the line's
+    /// head (FOUNDATION1f-v part a, TAKEWAITS1): the shell hands it a reading of the move record, which this names no type of. Never true for a
+    /// move held for the person or ended, whose line has gone on and whose words follow its head; false until the shell hands one.
+    /// </summary>
+    public Func<string, bool> TakeStanding { get; set; } = _ => false;
 
     /// <summary>
     /// What never goes on, as the answer says it (D137 §2.2): a conversation that went on in another names that one (HANDWORDS1),
@@ -639,7 +646,7 @@ public sealed class SessionWords : IDisposable
         }
 
         // Taken while it was held: no end will be told for it now.
-        if (new HandOverBox(_loop.Home).Read(id) is null) Wake(id);
+        if (!TakeStanding(id)) Wake(id);
         return new(true, "resume", null);
     }
 

@@ -30,7 +30,7 @@ public sealed class MoveBoxImportsTests : IDisposable
 
     private LimitBoxImport Limits(MoveStore store, Func<string, int, bool>? limited = null) => new(_home, store, limited ?? ((_, _) => true));
 
-    private HandOverBoxImport HandOvers(MoveStore store) => new(_home, store);
+    private HandOverBoxImport HandOvers(MoveStore store, Func<string, bool>? conversation = null) => new(_home, store, conversation ?? (_ => true));
 
     private string LimitPath(string session) => new LimitBoxes(_home).PathOf(session);
 
@@ -152,6 +152,27 @@ public sealed class MoveBoxImportsTests : IDisposable
         Assert.False(File.Exists(HandOverPath("s1")));
         Assert.True(File.Exists(HandOverPath("s1") + ".imported"));
         Assert.Null(new HandOverBox(_home).Read("s1"));
+    }
+
+    /// <summary>
+    /// 🔴 Only a conversation's hand-over box is imported (FOUNDATION1f-v part a): the same file name holds a quest session's, which the driver's
+    /// look takes, so a box whose record the filter does not name a conversation is left in place, listed by nobody and imported by nobody.
+    /// </summary>
+    [Fact]
+    public void A_box_whose_record_is_not_a_conversation_is_left_for_the_look_that_takes_it()
+    {
+        new HandOverBox(_home).Write("s1", new HandOverRequest("codex", null, HandOverWhy.Press, HandOverBy.Person, DateTimeOffset.UtcNow));
+        new HandOverBox(_home).Write("q1s", new HandOverRequest("codex", null, HandOverWhy.Press, HandOverBy.Person, DateTimeOffset.UtcNow));
+        var store = Store();
+        var importer = HandOvers(store, session => session == "s1");
+
+        var pass = importer.Import();
+
+        Assert.Equal(["s1"], pass.Imported.Select(move => move.Left));
+        Assert.Empty(pass.Never);
+        Assert.Empty(importer.Pending());
+        Assert.True(File.Exists(HandOverPath("q1s")));
+        Assert.Empty(store.Of("q1s"));
     }
 
     // ——— When, and how often.
