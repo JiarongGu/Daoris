@@ -219,8 +219,8 @@ export const SPACE: SystemSpace = {
   kinds: [
     spaceKind('set-aside', {
       entries: ['trees'], bytes: 37.4 * GB, files: 370_000,
-      rule: { kind: 'days', days: 14, whole: false, default: true, whose: null },
-      settable: true, bounds: { min: 1, max: 90, whole: true, never: false },
+      rule: { kind: 'days', days: 14, whole: false, default: true, whose: null, gb: 8 },
+      settable: true, bounds: { min: 1, max: 90, whole: true, never: false, gb: { min: 1, max: 1_048_576 } },
       next: { at: '2026-10-29T09:00:00.000+00:00', count: 3, bytes: 0.6 * GB },
       last: { at: '2026-10-16T08:10:00.000+00:00', door: 'look', removed: { count: 2, bytes: 1.1 * GB }, kept: {} },
       // KEEPSIZE1b: what waits with no rule's date.
@@ -228,8 +228,8 @@ export const SPACE: SystemSpace = {
     }),
     spaceKind('downloads', {
       entries: ['toolchain', 'tool-versions'], bytes: 1.4 * GB,
-      rule: { kind: 'days', days: 7, whole: null, default: true, whose: null },
-      settable: true, bounds: { min: 0, max: 365, whole: false, never: true },
+      rule: { kind: 'days', days: 7, whole: null, default: true, whose: null, gb: 5 },
+      settable: true, bounds: { min: 0, max: 365, whole: false, never: true, gb: { min: 1, max: 1_048_576 } },
       next: { at: '2026-10-28T09:00:00.000+00:00', count: 1, bytes: null },
       last: { at: '2026-10-11T08:10:00.000+00:00', door: 'look', removed: { count: 1, bytes: 0.3 * GB }, kept: {} },
     }),

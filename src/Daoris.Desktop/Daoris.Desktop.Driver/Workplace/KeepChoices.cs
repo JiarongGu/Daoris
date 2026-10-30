@@ -226,7 +226,7 @@ public static class KeepRules
         var invariant = System.Globalization.CultureInfo.InvariantCulture;
         return new(ChoiceRefusal.KeepOutOfRange, $"`{kind.Id}`'s size limit takes {KeepKey.PartMinGb} to {KeepKey.PartMaxGb} GB; {gb} GB is out of its bounds, so nothing was written.",
             ("kind", kind.Id), ("value", $"{gb} GB"), ("min", KeepKey.PartMinGb.ToString(invariant)), ("max", KeepKey.PartMaxGb.ToString(invariant)),
-            ("unit", "gb"), ("context", "gb"));
+            ("unit", "gb"), ("context", "limit"));
     }
 
     private static ChoiceRefusal OutOfRange(KeepKind kind, string value) =>
