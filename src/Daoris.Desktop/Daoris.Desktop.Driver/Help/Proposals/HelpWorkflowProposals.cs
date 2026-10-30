@@ -185,6 +185,7 @@ internal sealed class HelpWorkflowProposals : IHelpProposalKind
         // INTEGRATE1r part r2 (the integration design §17.7): a graph chosen with no save integrates its landing in each repository it reaches, so
         // each that cannot carry it is a need, and each whose rule integrates with no gates is said (F42).
         var integrates = new List<string>();
+        var noGates = new List<string>();
         if (!saves && !verifies && !landed && use is not null && newest?.Graph is { } chosenGraph && IntegrateChoice.Matters(chosenGraph))
         {
             var asks = IntegrateChoice.NeedsAccepted(chosenGraph);
@@ -195,7 +196,11 @@ internal sealed class HelpWorkflowProposals : IHelpProposalKind
                     : AcceptedGates.NotRead($"`{touched}`'s accepted declaration was not read here");
                 var answer = IntegrateChoice.Of(after, id, version, chosenGraph, touched, WorkspaceOf(facts, touched), accepted);
                 needs.AddRange(answer.Cannots.Select(cannot => $"`{touched}`: {cannot}"));
-                if (answer.NoGates) integrates.Add(IntegrateCarry.NoGatesSaid(touched));
+                if (answer.NoGates)
+                {
+                    integrates.Add(IntegrateCarry.NoGatesSaid(touched));
+                    noGates.Add(touched);
+                }
             }
         }
 
@@ -295,6 +300,7 @@ internal sealed class HelpWorkflowProposals : IHelpProposalKind
             Route = chosen,
             Verifies = verifies,
             Lowers = judged.Lowered,
+            NoGates = noGates,
         };
         return new HelpPlan(null, string.Join('\n', said), terminals.Count > 0 ? string.Join(" && ", terminals) : $"daoris driver workflow show {id}", null)
         {
@@ -655,6 +661,13 @@ public sealed record HelpWorkflowCard(
 
     /// <summary>The route the card chooses for (FABRIC-PIPELINE1i): <c>default</c>, <c>landed</c> or <c>kind:&lt;id&gt;</c>; null where none.</summary>
     public string? Route { get; init; }
+
+    /// <summary>
+    /// The repositories a chosen graph integrates its landing in with no gates (INTEGRATE1r part r3; the integration design §17.7, F42), by name,
+    /// so the page words the line in its own language; the plan's text says the same sentence for the terminal. Empty where none, or where
+    /// the card saves a version.
+    /// </summary>
+    public IReadOnlyList<string> NoGates { get; init; } = [];
 
     /// <summary>Whether the workflow is a verification pipeline, or is made one by the save (the pipeline design §2.1).</summary>
     public bool Verifies { get; init; }

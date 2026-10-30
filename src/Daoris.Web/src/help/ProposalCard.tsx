@@ -87,6 +87,11 @@ export type HelpWorkflowShown = {
   verifies?: boolean;
   /** What the change asks less of the person, in the driver's words; only their Apply makes it. */
   lowers?: string[];
+  /**
+   * INTEGRATE1r part r3 (F42): the repositories a chosen graph integrates in with no gates, by name; the page words the line. Absent from
+   * an older driver, which said it in the plan's text alone. What a repository cannot carry stays in `needs`, as the driver sent it.
+   */
+  noGates?: string[];
 };
 
 /**
@@ -210,6 +215,7 @@ function WorkflowChange({ workflow }: { workflow: HelpWorkflowShown }) {
   // change asks less of the person leads, since only their Apply makes it.
   const kind = workflow.route?.startsWith('kind:') ? workflow.route.slice('kind:'.length) : null;
   const lowers = workflow.lowers ?? [];
+  const noGates = workflow.noGates ?? [];
   return (
     <>
       <p className="m-0 mt-1 text-small text-ink">
@@ -227,6 +233,9 @@ function WorkflowChange({ workflow }: { workflow: HelpWorkflowShown }) {
       {workflow.outward.length > 0
         ? section(t('help.proposal.workflow.outward'), workflow.outward, 'outward')
         : section(t('help.proposal.workflow.outward'), [t('help.proposal.workflow.nothingLeaves')], 'outward')}
+      {noGates.length > 0 && section(
+        t('help.proposal.workflow.noGates'), noGates.map((repository) => t('help.proposal.workflow.noGatesLine', { repository })), 'no-gates',
+      )}
       {workflow.needs.length > 0 && section(t('help.proposal.workflow.needs'), workflow.needs, 'need')}
       {workflow.needs.length > 0 && <p className="m-0 mt-1 text-meta text-ink-faint">{t('help.proposal.workflow.needsNote')}</p>}
       {section(t('help.proposal.workflow.appliesTo'), [workflow.appliesTo], 'applies')}

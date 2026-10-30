@@ -103,6 +103,16 @@ export function stepSet(t: TFunction, step: WorkflowStep): string | null {
       const plugin = textOf(step, 'plugin');
       return plugin ? t('workflow.set.pullRequest', { plugin }) : null;
     }
+    // INTEGRATE1r part r3: a graph-only kind (F43), said as the terminal says it (`WorkflowWords`): a value this page does not know reads
+    // as the owner's, no gates, back to its session, as the driver reads an absent or unrecognised one.
+    case 'integrate': {
+      const request = textOf(step, 'request');
+      return t('workflow.set.integrate.says', {
+        request: t(`workflow.set.integrate.request.${request === 'done' || request === 'steward' ? request : 'owner'}`),
+        gates: t(`workflow.set.integrate.gates.${textOf(step, 'gates') === 'declared' ? 'declared' : 'none'}`),
+        conflicts: t(`workflow.set.integrate.conflicts.${textOf(step, 'conflicts') === 'hold' ? 'hold' : 'session'}`),
+      });
+    }
     default:
       return null;
   }
