@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
  * AGENTPROVIDER1 row a, part 3 (the agent-provider design §9, D213): the tools' twin of the driver's `ProviderCensusTests`. Every site
  * in the repository's tools (`tools/`) and in the CLI's doctrine code (`src/Daoris.Cli/src/`) that names a provider's id, variable, file
  * or wire key is counted over the source with its comments blanked, and each is a named exception in the `tools` section of the driver's
- * `fixtures/provider-census.json` with its exact count, the design's row that moves it and its class. The ids and the vocabulary are read
+ * `fixtures/provider-census.json` by file and token (the count is not pinned, CENSUSRULES1), the design's row that moves it and its class. The ids and the vocabulary are read
  * from `fixtures/provider-vocabulary.json`, the one table the four censuses share; nothing here copies a word of it. Run by the `tool-tests`
  * gate (the merge tool's `REACH` rows send both fixtures here).
  */
@@ -20,7 +20,7 @@ const fixtures = join(root, 'src', 'Daoris.Desktop', 'Daoris.Desktop.Driver.Test
 const ROWS = ['-', 'b', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't'];
 const CLASSES = ['behaviour', 'permanent', 'words', 'measurement'];
 
-type Row = [file: string, token: string, count: number, row: string, kind: string, why: string];
+type Row = [file: string, token: string, row: string, kind: string, why: string];
 interface Section { roots: string[]; exceptions: Row[] }
 interface Token { name: string; pattern: RegExp }
 
@@ -124,14 +124,13 @@ function count(sources: Iterable<[file: string, source: string]>): Map<string, M
 
 /** The problems a census holds against the fixture, in order; none is a passing census. */
 function problems(found: Map<string, Map<string, number>>, rows: Row[], exact = true): string[] {
-  const named = new Map(rows.map((row) => [`${row[0]}\n${row[1]}`, row[2]]));
+  // How often a listed file names a token is not the rule's (CENSUSRULES1): a listed file and token pass at any count.
+  const named = new Set(rows.map((row) => `${row[0]}\n${row[1]}`));
   const out: string[] = [];
   for (const file of [...found.keys()].sort()) {
     const sites = found.get(file)!;
     for (const token of [...sites.keys()].sort()) {
-      const at = named.get(`${file}\n${token}`);
-      if (at === undefined) out.push(`${file}: unnamed site ${token} x${sites.get(token)}`);
-      else if (at !== sites.get(token)) out.push(`${file}: ${token} found ${sites.get(token)}, the fixture names ${at}`);
+      if (!named.has(`${file}\n${token}`)) out.push(`${file}: unnamed site ${token} x${sites.get(token)}`);
     }
   }
 
@@ -168,7 +167,7 @@ const baseline = count(sources());
 
 test('every site in a tool that knows a provider is a named exception with the row that moves it', () => {
   const rows = [...baseline.entries()].sort(([a], [b]) => (a < b ? -1 : 1)).flatMap(([file, sites]) =>
-    [...sites.entries()].sort(([a], [b]) => (a < b ? -1 : 1)).map(([token, n]) => `["${file}", ${JSON.stringify(token)}, ${n}]`));
+    [...sites.entries()].sort(([a], [b]) => (a < b ? -1 : 1)).map(([token]) => `["${file}", ${JSON.stringify(token)}]`));
   const found = problems(baseline, section.exceptions);
   assert.equal(found.length, 0, `${found.length} problem(s):\n${found.join('\n')}\n\nthe sites found, as fixture rows:\n${rows.join('\n')}`);
 });
@@ -178,10 +177,10 @@ test("the fixture's tools section names each exception once, in order, with its 
   const keys = section.exceptions.map((row) => `${row[0]}\n${row[1]}`);
   assert.deepEqual(keys, [...keys].sort((a, b) => (a < b ? -1 : 1)), 'rows are in ordinal order of file, then token');
   assert.equal(new Set(keys).size, keys.length, 'a file and token once');
-  for (const [file, token, n, row, kind, why] of section.exceptions) {
+  for (const [file, token, row, kind, why] of section.exceptions) {
     assert.ok(ROWS.includes(row), `${file}: ${token} names row ${row}, which the design has none of`);
     assert.ok(CLASSES.includes(kind), `${file}: ${token} has class ${kind}`);
-    assert.ok(n > 0 && why.length > 0, `${file}: ${token} says no reason`);
+    assert.ok(why.length > 0,`${file}: ${token} says no reason`);
     assert.ok(known.has(token), `${file}: ${token} is no token of the census`);
     assert.ok(existsSync(join(root, file)), `${file} is no file`);
     // Only a behaviour is removed by a row; a permanent site, an id in words and a measurement stay.
@@ -209,13 +208,13 @@ for (const [file, source, token] of [
   });
 }
 
-test('a second site in a file that holds a named one, and a named one gone, are both named: the counts are exact', () => {
-  const [file, token, n] = section.exceptions[0]!;
+test('a second site in a file that holds a named one passes, and a named one gone is named: the sites are not counted', () => {
+  const [file, token] = section.exceptions[0]!;
   const more = new Map([...baseline].map(([name, sites]) => [name, new Map(sites)]));
-  more.get(file)!.set(token, n + 1);
+  more.get(file)!.set(token, more.get(file)!.get(token)! + 1);
   const fewer = new Map([...baseline].map(([name, sites]) => [name, new Map(sites)]));
   fewer.get(file)!.delete(token);
-  assert.ok(problems(more, section.exceptions).includes(`${file}: ${token} found ${n + 1}, the fixture names ${n}`));
+  assert.deepEqual(problems(more, section.exceptions), []);
   assert.ok(problems(fewer, section.exceptions).includes(`${file}: ${token} is no site now: take it off the fixture`));
 });
 

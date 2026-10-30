@@ -38,10 +38,14 @@ public sealed class ParticipantWorkReadersTests
     }
 
     /// <summary>Each source of the three projects with the lines it reads, the rule's own file left out, by its path from the services' folder, each project named by its last word.</summary>
-    private static SortedDictionary<string, int> Scan()
+    /// <summary>The files, by path, of the sources that read a mark: how many lines each reads is not the rule's (CENSUSRULES1).</summary>
+    internal static SortedSet<string> Reading(IEnumerable<(string File, string Source)> sources) =>
+        new(sources.Where(each => Counted(each.Source) > 0).Select(each => each.File), StringComparer.Ordinal);
+
+    private static SortedSet<string> Scan()
     {
         var services = Path.Combine(Root(), "src", "Daoris.Service");
-        var found = new SortedDictionary<string, int>(StringComparer.Ordinal);
+        var found = new List<(string, string)>();
         foreach (var project in Projects)
         {
             var folder = Path.Combine(services, project);
@@ -49,53 +53,52 @@ public sealed class ParticipantWorkReadersTests
             {
                 var relative = Path.GetRelativePath(folder, path).Replace(Path.DirectorySeparatorChar, '/');
                 if (relative.Split('/')[0] is "bin" or "obj" || Path.GetFileName(path) == "ParticipantWork.cs") continue;
-                if (Counted(File.ReadAllText(path)) is > 0 and var lines) found[project["Daoris.Service.".Length..] + "/" + relative] = lines;
+                found.Add((project["Daoris.Service.".Length..] + "/" + relative, File.ReadAllText(path)));
             }
         }
 
-        return found;
+        return Reading(found);
     }
 
-    internal static List<string> Differences(IReadOnlyDictionary<string, int> scanned, IReadOnlyDictionary<string, int> listed) =>
+    internal static List<string> Differences(IReadOnlyCollection<string> scanned, IReadOnlyCollection<string> listed) =>
     [
-        .. scanned.Where(each => !listed.ContainsKey(each.Key)).Select(each => $"{each.Key} reads {each.Value} line(s) and is not listed"),
-        .. listed.Where(each => !scanned.ContainsKey(each.Key)).Select(each => $"{each.Key} is listed with {each.Value} line(s) and reads none now"),
-        .. scanned.Where(each => listed.TryGetValue(each.Key, out var lines) && lines != each.Value)
-            .Select(each => $"{each.Key} reads {each.Value} line(s) and the table lists {listed[each.Key]}"),
+        .. scanned.Where(file => !listed.Contains(file)).Select(file => $"{file} reads a mark and is not listed"),
+        .. listed.Where(file => !scanned.Contains(file)).Select(file => $"{file} is listed and reads none now"),
     ];
 
-    private static SortedDictionary<string, int> Listed()
+    private static SortedSet<string> Listed()
     {
         using var table = JsonDocument.Parse(File.ReadAllText(Path.Combine(
             Root(), "src", "Daoris.Service", "Daoris.Service.Tests", "fixtures", "participant-work-readers.json")));
-        return new(table.RootElement.GetProperty("service").EnumerateObject()
-            .ToDictionary(each => each.Name, each => each.Value.GetProperty("lines").GetInt32()), StringComparer.Ordinal);
+        return new(table.RootElement.GetProperty("service").EnumerateObject().Select(each => each.Name), StringComparer.Ordinal);
     }
 
-    /// <summary>🔴 Every line of the service that reads a mark is a listed file's, line for line: a new reader fails until it is named.</summary>
+    /// <summary>🔴 Every file of the service that reads a mark is listed and every listed file reads one: a new reader fails until it is named.</summary>
     [Fact]
-    public void Every_reader_of_a_mark_in_the_service_is_listed_file_for_file_and_line_for_line()
+    public void Every_file_that_reads_a_mark_in_the_service_is_listed_and_every_listed_file_reads_one()
     {
         var differences = Differences(Scan(), Listed());
         Assert.True(differences.Count == 0, string.Join('\n', differences));
     }
 
-    /// <summary>The census fails on a reader it does not list: a planted line in a listed file, and a planted file, each read as a difference.</summary>
+    /// <summary>The census fails on a file it does not list and on a listed file that reads none now, and passes one more read in a listed file (CENSUSRULES1).</summary>
     [Fact]
-    public void A_planted_reader_fails_the_census_in_a_listed_file_and_in_a_new_one()
+    public void A_new_reading_file_fails_the_census_and_one_more_read_in_a_listed_file_passes()
     {
         var listed = Listed();
-        // A clean scan is the table itself, so this case holds the census's reading apart from the tree's state.
-        var scanned = new SortedDictionary<string, int>(listed);
-        var known = listed.First().Key;
+        var known = listed.First();
+        var stand = listed.Select(file => (File: file, Source: "if (session.Serves is not null) { }")).ToList();
 
         Assert.Equal(1, Counted("if (session.Serves is not null) { }"));
         Assert.Equal(1, Counted("if (SessionLedger.IsHelp(session)) { }\n// record.Opinion is null\nvar quiet = 1; // record.Serves is not null"));
         Assert.Equal(0, Counted("var seen = record.Serves;"));
         Assert.Equal(1, Counted("if (record.Repository == KnowledgeRoomIdentity.Repository) { }"));
-        Assert.Equal([$"{known} reads {scanned[known] + 1} line(s) and the table lists {scanned[known]}"],
-            Differences(new SortedDictionary<string, int>(scanned) { [known] = scanned[known] + 1 }, listed));
-        Assert.Equal(["Core/Sessions/Planted.cs reads 1 line(s) and is not listed"],
-            Differences(new SortedDictionary<string, int>(scanned) { ["Core/Sessions/Planted.cs"] = 1 }, listed));
+        Assert.Empty(Differences(Reading(stand), listed));
+        Assert.Empty(Differences(Reading(stand.Select(each => each.File == known
+            ? (each.File, each.Source + "\nif (session.Opinion is null) { }\nif (session.Piece is null) { }") : each)), listed));
+        Assert.Equal(["Core/Sessions/Planted.cs reads a mark and is not listed"],
+            Differences(Reading(stand.Append(("Core/Sessions/Planted.cs", "if (session.Serves is null) { }"))), listed));
+        Assert.Equal([$"{known} is listed and reads none now"],
+            Differences(Reading(stand.Select(each => each.File == known ? (each.File, "var seen = record.Serves;") : each)), listed));
     }
 }
