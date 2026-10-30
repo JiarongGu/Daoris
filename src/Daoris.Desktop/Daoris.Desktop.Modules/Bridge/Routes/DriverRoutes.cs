@@ -360,14 +360,23 @@ public sealed class DriverRoutes(DriverContext context)
     }
 
     // The role catalogue (FOUNDATION1y-i, the foundation design §2.7): every role, the seed's and the person's, with its work, scope and
-    // stored choices, and the work codes a role may take; a read, the same `daoris driver role` says.
+    // stored choices, and the work codes a role may take; a read, the same `daoris driver role` says. Beside them, the roles Daoris
+    // suggests adding (the Designer while no role takes design), each the person's press alone.
     [DriverRoute("ROLES")]
-    private object? Roles(IpcRequest request) => new
+    private object? Roles(IpcRequest request)
     {
-        Roles = RoleDoor.Rows(RoleCatalog.ReadHome(_loop.Home), DriverConfig.Load(_loop.ConfigPath)),
-        Works = RoleWork.Codes,
-        Kept = RoleStaffing.Of(_loop.ConfigPath) is not null,
-    };
+        var catalogue = RoleCatalog.ReadHome(_loop.Home);
+        return new
+        {
+            Roles = RoleDoor.Rows(catalogue, DriverConfig.Load(_loop.ConfigPath)),
+            Works = RoleWork.Codes,
+            Kept = RoleStaffing.Of(_loop.ConfigPath) is not null,
+            Suggested = RoleSuggestion.For(catalogue).Select(each => new
+            {
+                each.Role.Id, each.Role.NameEn, each.Role.NameZh, each.Role.Takes, ScopeKind = each.Role.Scope.Kind, each.Choices,
+            }),
+        };
+    }
 
     // A working role added, changed, removed or given back its seed (FOUNDATION1y-i): the person's press, the same change `daoris driver
     // role` makes and Ask Daoris's `role_propose` asks for: one door, `RoleDoor.Apply`, whose judge refuses with nothing written. A

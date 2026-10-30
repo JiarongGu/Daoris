@@ -1,8 +1,8 @@
 import { useTranslation } from 'react-i18next';
 import { useRegistry, useStatus } from '../data/queries';
 import {
-  helpModeOf, useActors, useAnswerStaffingFound, useDriver, useHarnesses, usePlugins, useSetActor, useSetHelpGrant, useSetHelpMode,
-  useStaffingFound, useStarts,
+  helpModeOf, useActors, useAnswerStaffingFound, useDriver, useHarnesses, usePlugins, useRoles, useSetActor, useSetHelpGrant, useSetHelpMode,
+  useSetRole, useStaffingFound, useStarts, type RoleChangePress,
 } from '../bridge/shell';
 import type { HelpGrantChoice, HelpGrantId } from '../help/access/wired';
 import { doorLabel } from '../agents/tools';
@@ -13,6 +13,7 @@ import { useModeChoice } from '../help/access/HelpModePicker';
 import { fullAdds } from '../help/access/modes';
 import { AiJobs, type SearchTier } from './AiJobs';
 import { ActorsCard, type ActorChoice } from './ai/Actors';
+import { RolesCard, roleName } from './ai/Roles';
 import { AskDaorisAbout, IntakeAbout } from './ai/ActorAbout';
 import { namer } from './accounts/namer';
 import type { StarterDoor } from '../help/starters';
@@ -37,7 +38,7 @@ export function AiDomain({ attached, notify, onGo }: { attached: boolean; notify
 }
 
 function MachineAi({ search, notify, onGo }: { search?: SearchTier; notify: Notify; onGo?: (door: StarterDoor) => void }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const driver = useDriver();
   const roster = useHarnesses();
   const registry = useRegistry('machine');
@@ -119,6 +120,23 @@ function MachineAi({ search, notify, onGo }: { search?: SearchTier; notify: Noti
       onError: (error) => answered.refused(sentence(error)),
     });
 
+  // FOUNDATION1y-i: the role catalogue, each change the person's press over SET_ROLE, judged by the driver's role door.
+  const roles = useRoles();
+  const setRole = useSetRole();
+  const pressRole = (press: RoleChangePress, answered: { done: () => void; refused: (sentence: string) => void }) => {
+    const row = roles.data?.roles.find((each) => each.id === press.id);
+    const named = press.role
+      ? roleName(t, i18n.language, { id: press.id, seeded: row?.seeded ?? false, nameEn: press.role.name.en, nameZh: press.role.name.zh })
+      : roleName(t, i18n.language, row ?? { id: press.id, seeded: false });
+    setRole.mutate(press, {
+      onSuccess: () => {
+        notify(t(press.change === 'set' ? 'settings.ai.roles.saved' : press.change === 'remove' ? 'settings.ai.roles.removedSaved' : 'settings.ai.roles.defaulted', { role: named }));
+        answered.done();
+      },
+      onError: (error) => answered.refused(sentence(error)),
+    });
+  };
+
   // The Intake and Ask Daoris cards folded into their actor rows (MODELROLE1d, D205 §7): each row's ⓘ, and what it does now, under
   // its order; Intake's per circle, the driver's own resolution. Each order is set in its editor, over SET_ACTOR.
   const first = (id: string) => actorRows.find((row) => row.id === id)?.choices[0]?.agent ?? null;
@@ -179,6 +197,8 @@ function MachineAi({ search, notify, onGo }: { search?: SearchTier; notify: Noti
         found={found.data ?? []} onAnswerFound={answerStaffingFound}
       />
     )}
+    {/* An older shell answers no roles, and gets no card. */}
+    {roles.data && <RolesCard catalogue={roles.data} agents={agents} busy={setRole.isPending} onSet={pressRole} />}
     </CardStack>
   );
 }

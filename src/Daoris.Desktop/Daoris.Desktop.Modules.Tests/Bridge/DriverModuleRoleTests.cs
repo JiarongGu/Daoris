@@ -18,6 +18,8 @@ public sealed class DriverModuleRoleTests : DriverModuleBridge
         {
             Assert.Equal(StaffingImported.Done, staffing.ImportFile().How);
             var module = Module();
+            var suggested = Assert.Single((await AnswerAsync(module, "ROLES")).GetProperty("suggested").EnumerateArray().ToList());
+            Assert.Equal(("designer", "opus"), (suggested.GetProperty("id").GetString(), suggested.GetProperty("choices")[0].GetProperty("model").GetString()));
 
             await AnswerAsync(module, "SET_ROLE", new
             {
@@ -28,6 +30,7 @@ public sealed class DriverModuleRoleTests : DriverModuleBridge
 
             var answer = await AnswerAsync(module, "ROLES");
             Assert.True(answer.GetProperty("kept").GetBoolean());
+            Assert.Empty(answer.GetProperty("suggested").EnumerateArray());
             Assert.Contains("design", answer.GetProperty("works").EnumerateArray().Select(work => work.GetString()));
             var designer = answer.GetProperty("roles").EnumerateArray().Single(row => row.GetProperty("id").GetString() == "designer");
             Assert.Equal(("set", "设计师", 1L), (designer.GetProperty("state").GetString(), designer.GetProperty("nameZh").GetString(), designer.GetProperty("revision").GetInt64()));
