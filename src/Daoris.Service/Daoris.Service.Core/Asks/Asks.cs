@@ -55,6 +55,12 @@ public sealed record Ask(
     /// </summary>
     public string? Short { get; init; }
 
+    /// <summary>
+    /// The paths its asker declared the work touches (INTEGRATE1l), <see cref="QuestPaths"/>: each quest it publishes carries them, with
+    /// whatever its intake's draft adds. Empty where none were given, which is every ask from before.
+    /// </summary>
+    public IReadOnlyList<string> Paths { get; init; } = [];
+
     /// <summary>Files it carries, by name — the bytes are kept under this machine's home until it becomes quests.</summary>
     public IReadOnlyList<QuestAttachment> Attachments { get; init; } = [];
 
@@ -291,6 +297,9 @@ public sealed class AskStore
         // each holding none, so a page heads it with its sentence's first line as it did.
         await SchemaColumns.EnsureAsync(_db, "asks", "short_title", "short_title TEXT NULL", ct).ConfigureAwait(false);
 
+        // INTEGRATE1l: the paths its asker declared; an ask from before declared none.
+        await SchemaColumns.EnsureAsync(_db, "asks", "paths", "paths TEXT NULL", ct).ConfigureAwait(false);
+
         // PUSH1d1 (D182 point 5): the asks' revision, the change stream's `asks` family, one row moved by every insert, update and
         // delete of an ask. Kept by triggers, as `session_revision` is, because the triggers live in the file: a connector built
         // before them writes the row and still moves it, and no writer here has to remember to. A count, not a moment, so a
@@ -421,8 +430,8 @@ public sealed class AskStore
         // The review choices are written with a new ask, from its composer (REVIEWENV1b), and only appended after: a later save
         // of the whole record never drops one a door appended meanwhile (REV3). The kind and workflow choices likewise (WORKFLOW1e).
         command.CommandText = """
-            INSERT INTO asks (id, workspace, sentence, state, tier, asked, updated, asker, note, links, attachments, proposal, quests, intake, review_choices, workflow_choices, short_title)
-            VALUES ($id, $workspace, $sentence, $state, $tier, $asked, $updated, $asker, $note, $links, $attachments, $proposal, $quests, $intake, $reviewChoices, $workflowChoices, $short)
+            INSERT INTO asks (id, workspace, sentence, state, tier, asked, updated, asker, note, links, attachments, proposal, quests, intake, review_choices, workflow_choices, short_title, paths)
+            VALUES ($id, $workspace, $sentence, $state, $tier, $asked, $updated, $asker, $note, $links, $attachments, $proposal, $quests, $intake, $reviewChoices, $workflowChoices, $short, $paths)
             ON CONFLICT (id) DO UPDATE SET
               state = $state, tier = $tier, updated = $updated, note = $note,
               links = $links, attachments = $attachments, proposal = $proposal, quests = $quests, intake = $intake
@@ -438,6 +447,7 @@ public sealed class AskStore
         command.Parameters.AddWithValue("$workflowChoices", Json(ask.WorkflowChoices, WriteWorkflowChoice));
         command.Parameters.AddWithValue("$intake", (object?)ask.Intake ?? DBNull.Value);
         command.Parameters.AddWithValue("$short", (object?)ask.Short ?? DBNull.Value);
+        command.Parameters.AddWithValue("$paths", ask.Paths.Count == 0 ? DBNull.Value : Json(ask.Paths, (w, path) => w.WriteStringValue(path)));
         command.Parameters.AddWithValue("$id", ask.Id);
         command.Parameters.AddWithValue("$workspace", ask.Workspace);
         command.Parameters.AddWithValue("$sentence", ask.Sentence);
@@ -654,7 +664,8 @@ public sealed class AskStore
             Quests = Items(Text("quests"), e => e.GetString() ?? ""),
             Intake = Maybe("intake"),
             Short = Maybe("short_title"),
-            Later = LaterWords(Text("words")),
+            Paths = Maybe("paths") is { } paths ? Items(paths, e => e.GetString() ?? "") : [],
+            Later =LaterWords(Text("words")),
             WordsKeptFrom = Maybe("words_kept_from") is { } from ? Moments.ReadRequired(from) : null,
             GoAheads = GoAheads.Read(Text("go_aheads")),
             ReviewChoices = ReviewChoicesOf(Text("review_choices")),
@@ -786,6 +797,9 @@ public sealed record AskRequest(string Workspace, string Sentence)
     /// </summary>
     public string? Short { get; init; }
 
+    /// <summary>The paths the asker declares the work touches (INTEGRATE1l), judged as a quest's are (<see cref="QuestPaths.Judge"/>).</summary>
+    public IReadOnlyList<string> Paths { get; init; } = [];
+
     /// <summary>Who asked, when the door knows.</summary>
     public string? Asker { get; init; }
 
@@ -852,6 +866,12 @@ public sealed record AskDraft(string? Title, string? Body)
     public string? Weight { get; init; }
 
     /// <summary>
+    /// The paths the intake declares the work touches (INTEGRATE1l): added to the ask's own, never in place of them, so an agent's
+    /// declaration cannot drop the person's. The exchange judges them.
+    /// </summary>
+    public IReadOnlyList<string> Paths { get; init; } = [];
+
+    /// <summary>
     /// The chain's review choice (REVIEWENV1b, design §1.5): from an intake, only with the person's words it quotes, which
     /// the exchange checks against the ask's. Null for none.
     /// </summary>
@@ -915,6 +935,9 @@ public enum AskRefusal
 
     /// <summary>A short title past <see cref="QuestTitles.MaxShort"/> characters, or over a line break (HEAD2e).</summary>
     BadShort,
+
+    /// <summary>A declared path that is no repository-relative glob, or too many (INTEGRATE1l).</summary>
+    BadPaths,
 }
 
 /// <param name="Refusal"><see cref="AskRefusal.None"/> when it did what was asked.</param>
@@ -1130,6 +1153,10 @@ public sealed class AskDesk(KnowledgeService service, AskStore asks, QuestExchan
         var (shortTitle, unfitShort) = QuestTitles.Judge(request.Short);
         if (unfitShort is not null) return new(AskRefusal.BadShort, unfitShort, Ask: null);
 
+        // The asker's declared paths (INTEGRATE1l), judged by the quest's own rule before anything is kept.
+        var (paths, unfitPaths) = QuestPaths.Judge(request.Paths);
+        if (unfitPaths is not null) return new(AskRefusal.BadPaths, unfitPaths, Ask: null);
+
         // The person's review choice from the composer (REVIEWENV1b), judged before anything is kept.
         AskReviewChoice? chosen = null;
         if (request.Review is not null)
@@ -1174,6 +1201,7 @@ public sealed class AskDesk(KnowledgeService service, AskStore asks, QuestExchan
         {
             Links = links,
             Short = shortTitle,
+            Paths = paths,
             Attachments = attachments.DistinctBy(a => a.Sha256).ToList(),
             Proposal = DeclarationsTier.Rank(sentence, registered, workspace),
             ReviewChoices = chosen is null ? [] : [chosen],
@@ -1319,6 +1347,8 @@ public sealed class AskDesk(KnowledgeService service, AskStore asks, QuestExchan
                 // it came from share one name. Neither, and the quest is named from the ask's words.
                 Short = string.IsNullOrWhiteSpace(draft?.Short) ? ask.Short : draft.Short,
                 Weight = draft?.Weight,
+                // The ask's declared paths always travel, the intake's added beside them (INTEGRATE1l).
+                Paths = [.. ask.Paths, .. draft?.Paths ?? []],
                 // The chain's review choice (REVIEWENV1b): the exchange checks a session's quote against this ask's words.
                 Review = draft?.Review,
                 // The intake's kind proposal (WORKFLOW1i): the exchange checks its reason quotes this ask's words.
