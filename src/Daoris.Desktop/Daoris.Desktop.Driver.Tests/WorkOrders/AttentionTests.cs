@@ -222,20 +222,20 @@ public sealed class AttentionTests
     }
 
     /// <summary>
-    /// Never again on a relaunch (§4.7): a quest already parked when the loop starts is one the person was told about
-    /// before, and the first look is a baseline, never a backlog, as a session's park is. Nor when its records could not
-    /// be read at that first look, and are read at a later one.
+    /// Never again on a relaunch (§4.7), and no baseline in the watch (FOUNDATION1 m-iv): a quest already parked at the first look is found, once, and
+    /// whether the person was told of it before is the said-set's to answer (<c>AttentionNewsTests</c>). One whose records could not be read at that look
+    /// is found at the later one that reads them.
     /// </summary>
     [Fact]
-    public void A_quest_already_parked_at_the_first_look_is_never_said()
+    public void A_quest_already_parked_at_the_first_look_is_found_once_and_the_said_set_decides()
     {
         var watch = new AttentionWatch();
-        Assert.Empty(watch.Observe(Considered(Exhausted(Q1)), [Park("s3")]));
+        Assert.Single(watch.Observe(Considered(Exhausted(Q1)), [Park("s3")]));
         Assert.Empty(watch.Observe(Considered(Exhausted(Q1)), [Park("s3")]));
 
         var unread = new AttentionWatch();
         Assert.Empty(unread.Observe(Considered(Exhausted(Q1))));
-        Assert.Empty(unread.Observe(Considered(Exhausted(Q1)), [Park("s3")]));
+        Assert.Single(unread.Observe(Considered(Exhausted(Q1)), [Park("s3")]));
     }
 
     /// <summary>

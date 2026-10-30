@@ -62,7 +62,10 @@ public sealed class News(string home, Func<StoreSettled>? settled = null)
                 Family,
                 write =>
                 {
-                    write.Execute("DELETE FROM news_said WHERE at < $before", ("$before", (now - Horizon).UtcDateTime.ToString(Moment, CultureInfo.InvariantCulture)));
+                    // A baseline's key is the branch's one first run and never expires with the horizon.
+                    write.Execute(
+                        "DELETE FROM news_said WHERE at < $before AND key NOT LIKE 'baseline:%'",
+                        ("$before", (now - Horizon).UtcDateTime.ToString(Moment, CultureInfo.InvariantCulture)));
                     var claimed = new List<NewsOccurrence>();
                     foreach (var each in occurrences.Where(each => now - each.At < Horizon).OrderByDescending(each => each.At))
                     {
@@ -96,6 +99,31 @@ public sealed class News(string home, Func<StoreSettled>? settled = null)
         catch (Exception error) when (error is DesktopStoreException or SqliteException or IOException or UnauthorizedAccessException)
         {
             return new NewsClaimed([], error.Message);
+        }
+    }
+
+    /// <summary>The key a notice's arrival is claimed by: its id and the moment it was written, so a notice renewed at a later answer is news again.</summary>
+    public static string KeyOfNotice(Notice notice) => $"notice:{notice.Id}:{notice.At.UtcTicks.ToString(CultureInfo.InvariantCulture)}";
+
+    /// <summary>
+    /// Whether this is the first run of branch <paramref name="branch"/> on this home (§4.5: only a home with no said-set yet takes what stands as
+    /// said): true once, the call that claims its baseline key, so what stands then is claimed and told to no one, and false for every call after, in
+    /// any process. A store that will not take it answers false, which tells what stands rather than swallow it silently.
+    /// </summary>
+    public bool First(string branch, DateTimeOffset now)
+    {
+        try
+        {
+            using var store = Open();
+            return store.Write(
+                Family,
+                write => write.Execute(
+                    "INSERT OR IGNORE INTO news_said (key, at) VALUES ($key, $at)",
+                    ("$key", "baseline:" + branch), ("$at", now.UtcDateTime.ToString(Moment, CultureInfo.InvariantCulture))) == 1);
+        }
+        catch (Exception error) when (error is DesktopStoreException or SqliteException or IOException or UnauthorizedAccessException)
+        {
+            return false;
         }
     }
 

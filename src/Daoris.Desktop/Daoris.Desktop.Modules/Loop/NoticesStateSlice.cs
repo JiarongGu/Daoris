@@ -29,7 +29,8 @@ namespace Daoris.Desktop;
 /// process marked wakes nothing on its watch. A write refused is logged (<c>notices.refused</c>) and dropped.</para>
 ///
 /// <para><b>Arrivals</b> (§5): a notice id this host's read has not seen is said once, as <see cref="ArrivedType"/>, while the notify
-/// switch is on; the first read is a baseline and says nothing, so a restart repeats nothing. A session's end this process recorded
+/// switch is on; each is claimed in the said-set (<see cref="News"/>), so a restart repeats nothing and says what it missed, and only the first run on
+/// a home takes what stands as said (FOUNDATION1 m-iv). A session's end this process recorded
 /// is said already by its own <c>SESSION_ATTENTION</c>, so it is not said again; a press's unanswered end has no other voice, and is. A
 /// look's news (<see cref="Notices.Look"/>, NOTIFY2h) is never said: the design's §5 lists it with a dot and nothing at the window.
 /// With the headless loop driving, this re-read is the only way its notice reaches the windows.</para>
@@ -69,6 +70,7 @@ public sealed class NoticesStateSlice
     private const int SaidBound = 256;
 
     private readonly string _home;
+    private readonly Daoris.Driver.News _news;
     private readonly IEventBus _bus;
     private readonly MachineLog? _log;
     private readonly TimeProvider _clock;
@@ -98,6 +100,7 @@ public sealed class NoticesStateSlice
         Func<CancellationToken, Task<IReadOnlyList<AskChannel>?>>? channels = null, IReadOnlyList<Func<Action, IDisposable>>? hears = null)
     {
         _home = home;
+        _news = new Daoris.Driver.News(home);
         _bus = bus;
         _log = log;
         _clock = clock ?? TimeProvider.System;
@@ -173,7 +176,11 @@ public sealed class NoticesStateSlice
     {
         if (Notices.Of(item, _clock.GetUtcNow()) is not { } notice) return;
         Said(notice.Id);
-        if (!Written(Notices.Renew(_home, notice, _clock.GetUtcNow())))
+        if (Written(Notices.Renew(_home, notice, _clock.GetUtcNow())))
+        {
+            Claimed(notice);
+        }
+        else
         {
             lock (_gate) _said.Remove(notice.Id);
         }
@@ -234,7 +241,12 @@ public sealed class NoticesStateSlice
     public void Record(Notice notice, bool said)
     {
         if (said) Said(notice.Id);
-        if (Written(Notices.Add(_home, notice, _clock.GetUtcNow()))) return;
+        if (Written(Notices.Add(_home, notice, _clock.GetUtcNow())))
+        {
+            if (said) Claimed(notice);
+            return;
+        }
+
         if (said)
         {
             lock (_gate) _said.Remove(notice.Id);
@@ -350,25 +362,42 @@ public sealed class NoticesStateSlice
         return partition;
     }
 
-    /// <summary>The notices read now that no read before held, none at the first read, and none said already or with the switch off.</summary>
+    /// <summary>
+    /// The notices read now that no read before held, claimed in the said-set (FOUNDATION1 m-iv, the foundation design §4.5): one claimed before,
+    /// by this process or another or before a restart, is never said again, and the first run on a home takes what stands as said. Claimed
+    /// whatever the switch says, so turning it on later announces nothing that happened while it was off.
+    /// </summary>
     private List<Notice> Arrived(IReadOnlyList<Notice> read)
     {
-        List<Notice> arrived = [];
+        List<Notice> candidates = [];
         lock (_gate)
         {
             var known = _known;
             _known = read.Select(notice => notice.Id).ToHashSet(StringComparer.Ordinal);
-            if (known is null) return arrived;
             foreach (var notice in read)
             {
                 // A look's news is listed and counted, never said aloud (NOTIFY2h, the design §5's table).
-                if (known.Contains(notice.Id) || _said.Remove(notice.Id) || notice.Kind == Notices.Look) continue;
-                arrived.Add(notice);
+                if ((known?.Contains(notice.Id) ?? false) || _said.Remove(notice.Id) || notice.Kind == Notices.Look) continue;
+                candidates.Add(notice);
             }
         }
 
+        if (candidates.Count == 0) return [];
+        var now = _clock.GetUtcNow();
+        var first = _news.First("notices", now);
+        var claim = _news.Claim("notices", [.. candidates.Select(notice => new NewsOccurrence(ArrivalKey(notice), notice.At))], null, now);
+        if (first || claim.Refused is not null) return [];
+        var told = claim.Told.Select(each => each.Key).ToHashSet(StringComparer.Ordinal);
+        var arrived = candidates.Where(notice => told.Contains(ArrivalKey(notice))).ToList();
         return arrived.Count > 0 && _notify() ? arrived : [];
     }
+
+    /// <summary>A notice another event said already, claimed so that no restart says it again as an arrival.</summary>
+    private void Claimed(Notice notice) =>
+        _news.Claim("notices", [new NewsOccurrence(ArrivalKey(notice), notice.At)], null, _clock.GetUtcNow());
+
+    // The said-set's key of a notice's arrival; this class's own `News` is the partition's name, so the owner of the news is reached by its namespace.
+    private static string ArrivalKey(Notice notice) => Daoris.Driver.News.KeyOfNotice(notice);
 
     /// <summary>A notice as the partition and its arrival carry it: the allow-list's fields, an absent one left out.</summary>
     public static JsonObject Picked(Notice notice)

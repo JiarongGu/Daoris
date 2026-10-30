@@ -106,6 +106,70 @@ public sealed class NewsTests : IDisposable
         Assert.Equal("failed", kept.Single(notice => notice.Id == "ended-s1").State);
     }
 
+    // ---- m-iv: the said-set in place of each first-read baseline ----
+
+    /// <summary>Only a home with no said-set yet takes what stands as said: the first look of a branch is its baseline, once, and every later one tells.</summary>
+    [Fact]
+    public void Each_branch_has_one_baseline_and_only_the_first_run_takes_it()
+    {
+        var desk = Desk();
+
+        Assert.Equal([true, false, true], [desk.First("attention", Now), desk.First("attention", Now.AddDays(30)), desk.First("notices", Now)]);
+        Assert.Equal([false, false], [Desk().First("attention", Now), Desk().First("notices", Now)]);
+    }
+
+    /// <summary>More than the notices' 200 eligible at once: the newest are told, every one is claimed, and none is told twice.</summary>
+    [Fact]
+    public void More_than_two_hundred_eligible_at_once_tell_the_newest_and_claim_all()
+    {
+        var all = Enumerable.Range(0, 250).Select(n => Said($"k{n}", minutesAgo: 300 - n)).ToList();
+
+        var first = Desk().Claim("lease", all, null, Now);
+        var again = Desk().Claim("lease", all, null, Now);
+
+        Assert.Equal(News.Most, first.Told.Count);
+        Assert.Equal("k249", first.Told[0].Key);
+        Assert.DoesNotContain(first.Told, each => each.Key == "k0");
+        Assert.Empty(again.Told);
+    }
+
+    /// <summary>
+    /// A key expires with the horizon: one older than it is never told, however it arrives, and the said-set forgets the key at the next claim, so
+    /// the set stays as small as the week's news; a baseline never expires.
+    /// </summary>
+    [Fact]
+    public void A_key_expires_with_the_horizon_and_a_baseline_never_does()
+    {
+        Assert.True(Desk().First("attention", Now));
+        Assert.Single(Desk().Claim("lease", [Said("old")], null, Now).Told);
+
+        var later = Now.AddDays(8);
+        var stale = Desk().Claim("lease", [new NewsOccurrence("old", Now.AddDays(-1))], null, later);
+        var fresh = Desk().Claim("lease", [new NewsOccurrence("new", later.AddMinutes(-1))], null, later);
+
+        Assert.Empty(stale.Told);
+        Assert.Single(fresh.Told);
+        Assert.Equal(["baseline:attention", "new"], InStore("SELECT key FROM news_said ORDER BY key", row => row.GetString(0)));
+    }
+
+    /// <summary>A teller new to a home, reading what another teller claimed, tells none of it.</summary>
+    [Fact]
+    public void A_new_teller_tells_none_of_what_was_claimed_before_it()
+    {
+        Desk().Claim("lease", [Said("a"), Said("b")], null, Now);
+
+        var fresh = Desk().Claim("newcomer", [Said("a"), Said("b"), Said("c")], new JournalPosition("store-1", 3), Now);
+
+        Assert.Equal(["c"], fresh.Told.Select(each => each.Key));
+        Assert.Equal(new JournalPosition("store-1", 3), Desk().Cursor("newcomer"));
+    }
+
+    private IReadOnlyList<T> InStore<T>(string sql, Func<Microsoft.Data.Sqlite.SqliteDataReader, T> map)
+    {
+        using var reader = DesktopStoreReader.Open(DesktopStore.LocationIn(_home))!;
+        return reader.Query(sql, map);
+    }
+
     /// <summary>A store that refuses the claim shows nothing, which keeps a piece of news at most once.</summary>
     [Fact]
     public void A_store_that_refuses_the_claim_tells_nothing()

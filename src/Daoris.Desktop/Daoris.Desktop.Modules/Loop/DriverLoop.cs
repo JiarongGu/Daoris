@@ -981,7 +981,8 @@ public sealed class DriverLoop(
                 var read = await parks.LookAsync(
                     report, ticked.ForgivenAt, token => SessionRecords.ReadAsync(service.BaseUrl, key, ct: token), ct)
                     .ConfigureAwait(false);
-                var attend = attention.Observe(report, read);
+                // The look's own news, told once across restarts by the said-set and not by a first look's baseline (FOUNDATION1 m-iv).
+                var attend = AttentionNews.Told(news, attention.Observe(report, read), DateTimeOffset.UtcNow);
                 // Kept in Notifications whatever the switch says (NOTIFY2f, the notification design §2.5): recording is not telling.
                 Notices.Keep(attend);
                 if (ticked.Notify)

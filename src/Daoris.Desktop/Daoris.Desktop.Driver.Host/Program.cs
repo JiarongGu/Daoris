@@ -1043,7 +1043,8 @@ try
                 // everything that happened while they were off — the switch is about being TOLD.
                 var read = await parks.LookAsync(
                     report, ticked.ForgivenAt, token => SessionRecords.ReadAsync(service.BaseUrl, key, ct: token), closing.Token);
-                var events = attention.Observe(report, read);
+                // The look's own news, told once across restarts by the said-set and not by a first look's baseline (FOUNDATION1 m-iv).
+                var events = AttentionNews.Told(news, attention.Observe(report, read), DateTimeOffset.UtcNow);
                 // Kept in Notifications whatever the switch says (NOTIFY2f, the notification design §2.5): the desktop's windows
                 // read the record again and say what this host wrote; a write refused is logged and dropped.
                 Notices.Keep(home, events, DateTimeOffset.UtcNow, why => log.Warn("notices.refused", ("why", why)));

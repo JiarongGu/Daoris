@@ -68,7 +68,7 @@ public sealed class AttentionWatch
     // The quests' parks already said or seen at the first look, by quest, with the last session each park was for
     // (SESSUX1i). Bounded by what the planner still considers. A null session is a park seen at a first look whose records
     // were not read, taken as said when they are.
-    private Dictionary<string, string?>? _parks;
+    private readonly Dictionary<string, string?> _parks = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>The sessions whose state is being remembered — bounded by what is active.</summary>
     public IReadOnlyList<string> Watching => _seen is null ? [] : [.. _seen.Keys.Order(StringComparer.Ordinal)];
@@ -101,14 +101,12 @@ public sealed class AttentionWatch
     {
         var now = report.Active.ToDictionary(session => session.Id, Seen, StringComparer.Ordinal);
 
-        var previous = _seen;
         _seen = now;
 
-        // A wait whose cool-off was not said yet (TOOL4d, D125 §4) — recorded on the first look too, which says nothing.
+        // A wait whose cool-off was not said yet (TOOL4d, D125 §4), and a quest's park not said yet (SESSUX1i): the first look's too, since a
+        // restart's baseline is the said-set's (FOUNDATION1 m-iv, `AttentionNews`).
         var waits = report.Waits.Where(Unsaid).ToList();
-        // And a quest's park not said yet (SESSUX1i), the same way.
         var parked = UnsaidParks(report, parks);
-        if (previous is null) return [];
 
         var events = new List<AttentionEvent>();
         events.AddRange(waits.Select(wait => new AttentionEvent(
@@ -129,23 +127,11 @@ public sealed class AttentionWatch
     }
 
     /// <summary>
-    /// The parks among <paramref name="parks"/> not said yet; each is marked said either way. The first look marks every
-    /// quest the planner parked and says none.
+    /// The parks among <paramref name="parks"/> not said yet by this watch; each is marked said either way. What a restart owes is the
+    /// said-set's (<see cref="AttentionNews"/>), not a first look's baseline (FOUNDATION1 m-iv).
     /// </summary>
     private List<QuestPark> UnsaidParks(TickReport report, IReadOnlyList<QuestPark>? parks)
     {
-        if (_parks is null)
-        {
-            _parks = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
-            foreach (var consideration in report.Considerations.Where(c => c.Verdict == StartVerdict.Exhausted))
-            {
-                _parks[consideration.Quest.Id] = null;
-            }
-
-            foreach (var park in parks ?? []) _parks[park.Quest] = park.Session;
-            return [];
-        }
-
         // A quest the planner no longer considers is done, declined or gone, and its park with it.
         var considered = report.Considerations.Select(c => c.Quest.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
         foreach (var quest in _parks.Keys.Where(quest => !considered.Contains(quest)).ToList()) _parks.Remove(quest);
