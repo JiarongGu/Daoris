@@ -427,7 +427,11 @@ internal sealed class ContentHolds(TreeContext context)
 
         if (context.BeforeRefDeleted is { } late) await late(branch).ConfigureAwait(false);
         var none = CancellationToken.None;
-        var (code, _, err) = await WorkingTree.GitAsync(root, ["update-ref", "--stdin"], Verified(held, $"delete refs/heads/{branch} {judged}\n"), none)
+        // LANDRETIRE1: a proof that rests on the branch itself at the commit judged (a withdrawal, which no other ref holds) is the delete's own
+        // old value: git refuses one transaction naming a ref twice ("multiple updates"), so it is not verified beside the delete.
+        var self = $"refs/heads/{branch}";
+        var verified = held.Where(each => each.Ref != self || each.Commit != judged).ToList();
+        var (code, _, err) = await WorkingTree.GitAsync(root, ["update-ref", "--stdin"], Verified(verified, $"delete refs/heads/{branch} {judged}\n"), none)
             .ConfigureAwait(false);
         if (code != 0) return await RefusedAsync(root, branch, judged, held, err).ConfigureAwait(false);
 

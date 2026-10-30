@@ -69,6 +69,7 @@ internal static class OwnerTargetRows
         // A repository's lines and branches, and its standing choices, at its scope or its workspace's.
         Row("DISCARD_SESSION_BRANCH", Repository());
         Row("RECOVERY_DROP", Repository());
+        Row("WITHDRAW_LANDING_BRANCH", Repository());
         Row("SWEEP", Workspace());
         Row("TREES_SYNC", Repository(), Workspace());
         Row("SETUP_PRESS", Repository());

@@ -58,6 +58,13 @@ public static class LandedGone
     /// Read only where the end judgement kept no end first (CLEANUP1b, <see cref="EndKeeping.KeepGoneAsync"/>): a line that holds it ends it.
     /// </summary>
     public const string Moved = "moved";
+
+    /// <summary>
+    /// The person, or the steward, withdrew it (LANDRETIRE1, <see cref="LandedWithdrawals"/>): the line will never hold its work, so Daoris
+    /// took the branch away on their word, kept its commits on a recovery ref (<see cref="LandedBranch.KeptOn"/>) and the reason beside
+    /// them (<see cref="LandedBranch.GoneWhy"/>). Daoris's own act, never the person's removal outside it, and never an end the line proved.
+    /// </summary>
+    public const string Withdrawn = "withdrawn";
 }
 
 /// <param name="Where">On the line: the form of the line it was proven on (`main`, `origin/main`). Inside: the branch it is inside. Leaned on: the session branch.</param>
@@ -123,7 +130,10 @@ public static class LandedWords
     public static string Describe(LandedItem item) => Proof(item)
         + (item.Removable ? "" : PullRequestWords.Row(item.State, item.StateCode, item.AskFailed, item.NotAsked));
 
-    private static string Proof(LandedItem item) => $"{item.Repository}  {item.Branch}  " + item.Kind switch
+    private static string Proof(LandedItem item) => $"{item.Repository}  {item.Branch}  " + Clause(item);
+
+    /// <summary>What proved a row or keeps it, with no repository or branch before it (LANDRETIRE1): a refusal says it after its own subject.</summary>
+    public static string Clause(LandedItem item) => item.Kind switch
     {
         LandedKind.OnLine => $"its pull request reached `{item.Where}`: every file it changed reads there as it left it",
         LandedKind.Merged => $"merged into `{item.Where}`",

@@ -315,7 +315,7 @@ public sealed class PipeCensus
             // The yes, and what answers for the person's verdict: a landing, a hand-off, an opinion overridden or taken on.
             "LAND_SESSION_TREE", "LAND_WITHOUT_LOOK", "LAND_ENTRY", "LAND_ASK", "HANDOFF", "OPINION_ANYWAY", "OPINION_MYSELF",
             // Deletes, clears and closes: a discard, a sweep, an archive, a delete, a stop, an end, an abandon.
-            "DISCARD_SESSION_TREE", "DISCARD_SESSION_BRANCH", "RECOVERY_DROP", "SWEEP", "HISTORY_CLEAR", "SYSTEM_DOWNLOADS_CLEAR", "SESSION_ARCHIVE", "SESSION_DELETE",
+            "DISCARD_SESSION_TREE", "DISCARD_SESSION_BRANCH", "WITHDRAW_LANDING_BRANCH", "RECOVERY_DROP", "SWEEP", "HISTORY_CLEAR", "SYSTEM_DOWNLOADS_CLEAR", "SESSION_ARCHIVE", "SESSION_DELETE",
             "STOP_SESSION", "STOP_OPINION", "STOP_TASK", "CANCEL_TURN", "END_CHAT", "WORK_ABANDON", "WORK_PAUSE", "WORK_RESUME",
             // FABRIC-PERFORM1g: the person's word on a plugin step's attempt held for them, which settles what nothing else can.
             "WORK_HELD",
@@ -443,7 +443,7 @@ public sealed class PipeCensus
             // A repository changed through git: a landing, a hand-off, a discard, a drop of recovery refs, a sweep, a sync, an abandon
             // and a delete, each of which removes a tree or a branch, and Free up space's run, which takes finished trees too.
             "LAND_SESSION_TREE", "LAND_WITHOUT_LOOK", "LAND_ENTRY", "LAND_ASK", "HANDOFF", "DISCARD_SESSION_TREE", "DISCARD_SESSION_BRANCH",
-            "RECOVERY_DROP", "SWEEP", "TREES_SYNC", "WORK_ABANDON", "SESSION_DELETE", "SYSTEM_SPACE_FREE",
+            "WITHDRAW_LANDING_BRANCH", "RECOVERY_DROP", "SWEEP", "TREES_SYNC", "WORK_ABANDON", "SESSION_DELETE", "SYSTEM_SPACE_FREE",
             // A role's act is a row of its role's table, which no act fills yet: the strictest until each is classed.
             "ROLE_ACT");
         Add(PipeDrain.Passes,

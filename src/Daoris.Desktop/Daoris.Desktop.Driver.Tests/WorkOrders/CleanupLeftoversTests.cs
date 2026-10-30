@@ -355,6 +355,78 @@ public sealed class CleanupLeftoversTests : IDisposable
         Assert.Empty(new LandedBranches(_home).All());
     }
 
+    // ---- (4) LANDRETIRE1: a landing branch withdrawn on a word
+
+    /// <summary>
+    /// A withdrawal writes the landing it was made of alone, as a trace with its reason and its recovery ref, and reads back the same; a new
+    /// landing of the name keeps its standing, a trace is never written again, and a trace from before the field reads with none.
+    /// </summary>
+    [Fact]
+    public void A_withdrawal_is_written_to_that_landing_alone_with_its_reason_and_reads_back()
+    {
+        var landings = new LandedBranches(_home);
+        var withdrawn = Landed("feature/x", "unit-a");
+        landings.Record(withdrawn);
+        landings.Record(Landed("feature/y", "unit-c"));
+
+        Assert.True(landings.Withdrawn(withdrawn, "it landed by hand", "refs/daoris/discarded/feature/x"));
+        // A new landing of the name is recorded since: it stands, and the trace of the first stays.
+        landings.Record(Landed("feature/x", "unit-b", tip: "t2", at: Then.AddHours(1)));
+        // Written once: the first landing is a trace now, and a second word changes neither it nor the new landing.
+        Assert.False(landings.Withdrawn(withdrawn, "another reason", "refs/daoris/discarded/feature/x-2"));
+
+        var read = new LandedBranches(_home).Entries();
+        var trace = Assert.Single(read, each => each.Branch == "feature/x" && each.GoneAt is not null);
+        Assert.Equal((LandedGone.Withdrawn, "it landed by hand", "refs/daoris/discarded/feature/x"), (trace.GoneAs, trace.GoneWhy, trace.KeptOn));
+        Assert.Null(trace.RemovedAs);
+        var standing = Assert.Single(read, each => each.Branch == "feature/x" && each.GoneAt is null);
+        Assert.Equal("t2", standing.Tip);
+        Assert.Null(standing.GoneWhy);
+        Assert.Null(Assert.Single(read, each => each.Branch == "feature/y").GoneAs);
+
+        // The field is written only where known: an entry that never had one writes no `goneWhy`.
+        var file = File.ReadAllText(landings.FilePath);
+        Assert.Equal(1, System.Text.RegularExpressions.Regex.Matches(file, "\"goneWhy\"").Count);
+    }
+
+    /// <summary>
+    /// The unit a withdrawn landing carried ends dropped with its recovery kept and its reason said: the person's or the steward's word, never
+    /// git's, and never a claim that the line holds the work. Its entry reads removed, saying why.
+    /// </summary>
+    [Fact]
+    public void A_withdrawn_landing_reads_dropped_with_its_reason_and_its_recovery()
+    {
+        var landing = Landed(gone: Then, goneAs: LandedGone.Withdrawn) with { GoneWhy = "it landed by hand", KeptOn = "refs/daoris/discarded/feature/x" };
+
+        var unit = Assert.Single(WorkInventory.Units(Facts(landings: [landing])));
+        var milestone = WorkMilestone.Of(unit);
+
+        Assert.Equal(WorkEndState.Dropped, milestone.End.State);
+        Assert.Contains("withdrawn", milestone.End.Said, StringComparison.Ordinal);
+        Assert.Contains("it landed by hand", milestone.End.Said, StringComparison.Ordinal);
+        Assert.Contains("`refs/daoris/discarded/feature/x`", milestone.End.Said, StringComparison.Ordinal);
+        Assert.DoesNotContain("outside Daoris", milestone.End.Said, StringComparison.Ordinal);
+        Assert.Equal("completed", milestone.Cleanup.State);
+        var entry = Assert.Single(milestone.Cleanup.Gone);
+        Assert.Equal(("landing-branch", "removed"), (entry.Kind, entry.Disposition));
+        Assert.Contains("withdrawn", entry.Detail, StringComparison.Ordinal);
+        Assert.Contains("it landed by hand", entry.Detail, StringComparison.Ordinal);
+        Assert.Contains("`refs/daoris/discarded/feature/x`", entry.Detail, StringComparison.Ordinal);
+        Assert.Equal(WorkUnitState.Retired, unit.State);
+    }
+
+    /// <summary>A withdrawn landing whose session branch still stands is not dropped: that branch's work nothing proved anywhere.</summary>
+    [Fact]
+    public void A_withdrawn_landing_while_its_session_branch_stands_is_not_dropped()
+    {
+        var landing = Landed(gone: Then, goneAs: LandedGone.Withdrawn) with { GoneWhy = "by hand", KeptOn = "refs/daoris/discarded/feature/x" };
+
+        var milestone = Assert.Single(WorkInventory.Derive(Facts(branches: [Grown()], landings: [landing])));
+
+        Assert.NotEqual(WorkEndState.Dropped, milestone.End.State);
+        Assert.Contains("withdrawn", milestone.End.Said, StringComparison.Ordinal);
+    }
+
     /// <summary>
     /// 🔴 After review: an observation applies to the landing it was made of, by its identity (repository, branch, session, when recorded,
     /// and the tip read), never by name: a new landing of the same name recorded since keeps its standing.
