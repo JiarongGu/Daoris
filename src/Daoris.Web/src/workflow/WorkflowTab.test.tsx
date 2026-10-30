@@ -5,7 +5,7 @@ import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import i18n from '../locales/i18n';
 import { code } from '../test/code';
-import { FULL, NOTHING_SET, PLUGIN_UNREADY, WORK, WORKSPACE } from './fixtures';
+import { FULL, INTEGRATING, NOTHING_SET, PLUGIN_UNREADY, WORK, WORKSPACE } from './fixtures';
 import { WorkflowTab } from './WorkflowTab';
 
 // WORKFLOW1b (D157 point 12; the workflow design §6.1, §6.2, §6.4): the Workflow tab draws Current read-only, a vertical
@@ -103,6 +103,27 @@ describe("a repository's Workflow tab", () => {
     expect(landing.querySelector('[data-edge]')).toHaveTextContent('then once you accept it');
     expect(screen.queryByRole('list', { name: 'After it lands' })).toBeNull();
     expect(screen.getByText(/^Your part:/)).toHaveTextContent('Your part: you accept it.');
+  });
+
+  // INTEGRATE1r (F43): the rule's integrate step is drawn after the landing from its node kind, named, said where it was read, its
+  // limit whole and its press said once in the person's part; in 中文 too. Nothing runs it until the integration run is built.
+  it("draws a rule's integrate step after the landing, named and said, in English and in 中文", async () => {
+    render(<WorkflowTab page="repository" name="engine" current={INTEGRATING} />);
+    const after = screen.getByRole('list', { name: 'After it lands' });
+    expect(within(after).getAllByRole('heading', { level: 4 }).map((head) => head.textContent)).toEqual(['The integration']);
+    const [, , integrate] = steps();
+
+    expect(integrate).toHaveTextContent('you');
+    expect(integrate).toHaveTextContent('by Daoris');
+    expect(integrate).toHaveTextContent("Set by this repository's landing rule.");
+    expect(integrate).toHaveTextContent('declared only');
+    expect(integrate).toHaveTextContent('Not integrated yet: the rule carries integrate, but nothing runs an integration in this build');
+    expect(integrate).not.toHaveTextContent('shown as recorded');
+    expect(screen.getByText(/^Your part:/)).toHaveTextContent('Your part: you accept it.');
+
+    await i18n.changeLanguage('zh');
+    expect(screen.getByRole('list', { name: '落地之后' }).textContent).toContain('集成');
+    expect(steps()[2]).toHaveTextContent('尚未集成');
   });
 
   it('says a limit whole on every step that has one, never folded away', () => {
