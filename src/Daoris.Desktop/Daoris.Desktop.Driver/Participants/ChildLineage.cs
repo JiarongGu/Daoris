@@ -114,6 +114,28 @@ public static class ChildLineage
     }
 
     /// <summary>
+    /// A process's token, issued from this flow's set with its <c>start</c> written: before its spawn, or as its run's move returns
+    /// where the run is moved first (a resume, a chat's go-on). Its holder lets it go where no process is spawned under it.
+    /// </summary>
+    public static string Opened(string home, string sessionId)
+    {
+        var tokens = LineageTokens.Current;
+        var proc = tokens.Issue();
+        Start(home, sessionId, proc, tokens.Issuer, DateTimeOffset.UtcNow);
+        return proc;
+    }
+
+    /// <summary>
+    /// A process's exit its run read itself: told to the token set, and its <c>end</c> written where the run concludes nothing by it
+    /// (a refused advance, a wait thrown as the loop closes, a drain that faulted).
+    /// </summary>
+    public static void Exited(string home, string sessionId, string proc, bool clean)
+    {
+        LineageTokens.Current.Exited(proc);
+        End(home, sessionId, clean, DateTimeOffset.UtcNow, proc);
+    }
+
+    /// <summary>
     /// A process's end once its exit was read, where the session has lineage: clean, or killed, stopped or failed, naming the
     /// process where it has a token. A session with no file gets none.
     /// </summary>

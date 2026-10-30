@@ -1436,8 +1436,8 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
         var drivesBrowser = false;
         string? modeSaid = null;
         string? helpMode = null;
-        // COWORKVIEW1a: this process's own lineage token, a go-on's retry's its own too.
-        string? proc = null;
+        // COWORKVIEW1a: this process's own lineage token, a go-on's issued at its move, its retry's its own.
+        var proc = goOn?.Proc;
         try
         {
             // A conversation going on is working already: the ledger moved it there before anything was spawned.
@@ -1475,7 +1475,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
 
             // KEEP1b: what this run is handed of the downloads, on its record before it is spawned, a go-on as a first start.
             await DownloadKeeping.KeepHandedAsync(_service, _home, sessionId, info, ct).ConfigureAwait(false);
-            proc = Driver.Bracketed(_home, sessionId, info);
+            proc = Driver.Bracketed(_home, sessionId, info, proc);
 
             // HELP5: the helper paid a model round trip to find its own knowledge tools. Which variable
             // stops that is a fact about the harness, so the adapter names it, and nothing here does.
@@ -2877,6 +2877,8 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
             // Last, so the queue told empty above judges nothing it still waited on (NOTIFY1a).
             _answers.Forget(sessionId);
         });
+        // What its end waits for once its exit is read (COWORKVIEW1a).
+        Task? drain = null;
         try
         {
             // The conversation's messages are recorded as the person sends them (`Say`), so the
@@ -2905,11 +2907,14 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
                         },
                         lineage: ChildLineage.Writer(_home, sessionId, watched.Proc))
                     : HarnessCapture.CaptureAsync(process, transcript, sessionId, _output, CancellationToken.None, watched.Preamble));
+            drain = capture;
 
             // A conversation going on is working already: the ledger moved it out of its ended state before the spawn.
             if (goOn is null) await _service.AdvanceAsync(sessionId, "working", transcript: transcript).ConfigureAwait(false);
 
             await process.WaitForExitAsync().ConfigureAwait(false);
+            // COWORKVIEW1a: the exit read here told to the token set, which may not watch this process.
+            if (watched.Proc is { } exited) LineageTokens.Current.Exited(exited);
             await capture.ConfigureAwait(false);
 
             // 🔴 The native door's harness ended on a failed exit before naming its conversation: it never opened it, which a
@@ -2990,10 +2995,23 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
             SpawnSettings.Remove(rules);
             SpawnServers.Remove(servers);
             SpawnSkills.Remove(watched.Skills);
-            // Its native children end with this run (FABRIC-C1a): lost where it was stopped or failed, ended where it ended clean.
-            ChildLineage.End(
-                _home, sessionId, clean: EndedClean(process) && !_processes.WasStopRequested(sessionId), DateTimeOffset.UtcNow, watched.Proc);
+            await EndedAsync(_home, sessionId, process, drain, watched.Proc, () => _processes.WasStopRequested(sessionId)).ConfigureAwait(false);
         }
+    }
+
+    /// <summary>
+    /// A conversation's process's end in its lineage (FABRIC-C1a): lost where it was stopped or failed, ended where it ended clean. Only
+    /// once its exit is read within <paramref name="within"/> (<see cref="Driver.AbandonedWait"/>; the catch's kill is not waited for),
+    /// then its capture waited for within the same bound (COWORKVIEW1a): past it no end, its token leaving at the exit the set sees.
+    /// </summary>
+    internal static async Task EndedAsync(
+        string home, string sessionId, Process process, Task? drain, string? proc, Func<bool> stopped, TimeSpan? within = null)
+    {
+        var bound = within ?? Driver.AbandonedWait;
+        if (!await Driver.ExitReadAsync(process, bound).ConfigureAwait(false)) return;
+        if (proc is not null) LineageTokens.Current.Exited(proc);
+        if (drain is not null) await Task.WhenAny(drain, Task.Delay(bound)).ConfigureAwait(false);
+        ChildLineage.End(home, sessionId, clean: EndedClean(process) && !stopped(), DateTimeOffset.UtcNow, proc);
     }
 
     private Noted EndedNoteFor(string session, Watched watched, bool stopped)

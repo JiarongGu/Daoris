@@ -306,44 +306,55 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
             return (new StartRun($"held  #{quest.Id} → {quest.To}: {refused.Message}", false, null, refused.Message), null, false);
         }
 
-        // TREELOCK1 (D51's note): its tree locked in its name again while it goes on, a park's kept from its run before, asked before
-        // the starting hold goes, as a start's is. Never a reason to hold it.
-        var locksTree = _context.Trees.Holds(workTree);
-        if (locksTree && await SessionLocks.HoldAsync(workTree, sessionId, ct).ConfigureAwait(false) is { } unlocked)
-        {
-            _driver.Log?.Warn("tree.unlocked", ("session", sessionId), ("why", unlocked));
-        }
-
-        // The ledger holds its tree again (LEFT2).
-        starting?.Dispose();
-
-        // Under permission prompts changed since it started it says so first, with the mode it got (AUTONOMY1b, D183 point 3 as
-        // HELPMODE1a2 says Ask Daoris's). Its record keeps the setup it opened under.
-        if (permissions is not null && DrivenAccess.GoingOnNote(park, permissions) is { } changed)
-        {
-            _context.Events.Keep(sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = changed }, say: null);
-        }
-
-        // AUTONOMY1b2 (D184 point 1): and its record names the setup this run goes on under, before anything is spawned, as Ask Daoris's
-        // record names its mode (HELPMODE1a2). A refusal is said on its console; the run goes on, since the setup it runs under is
-        // already set.
-        if (permissions is not null)
-        {
-            try
-            {
-                await DrivenAccess.KeepAsync(
-                    service, park, permissions, AccessRules.Resolve(config, quest.To, start.Workspace), ct).ConfigureAwait(false);
-            }
-            catch (DriverException refused)
-            {
-                _context.Events.Keep(sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = refused.Message }, say: null);
-            }
-        }
-
-        ResumeAsk? resume = null;
+        // COWORKVIEW1a: its process's token and `start` as its move returns, before the tree lock and the start gate; let go wherever
+        // no process is spawned under it.
+        var proc = ChildLineage.Opened(home, sessionId);
         // Whether its process started: a failure before then started no run, so the record goes back with its words (SAIDBACK1e),
         // and so does the driver's close before then (PARALLEL1f).
         var spawned = false;
+        // TREELOCK1 (D51's note): its tree locked in its name again while it goes on, a park's kept from its run before, asked before
+        // the starting hold goes, as a start's is. Never a reason to hold it.
+        var locksTree = _context.Trees.Holds(workTree);
+        try
+        {
+            if (locksTree && await SessionLocks.HoldAsync(workTree, sessionId, ct).ConfigureAwait(false) is { } unlocked)
+            {
+                _driver.Log?.Warn("tree.unlocked", ("session", sessionId), ("why", unlocked));
+            }
+
+            // The ledger holds its tree again (LEFT2).
+            starting?.Dispose();
+
+            // Under permission prompts changed since it started it says so first, with the mode it got (AUTONOMY1b, D183 point 3 as
+            // HELPMODE1a2 says Ask Daoris's). Its record keeps the setup it opened under.
+            if (permissions is not null && DrivenAccess.GoingOnNote(park, permissions) is { } changed)
+            {
+                _context.Events.Keep(sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = changed }, say: null);
+            }
+
+            // AUTONOMY1b2 (D184 point 1): and its record names the setup this run goes on under, before anything is spawned, as Ask
+            // Daoris's record names its mode (HELPMODE1a2). A refusal is said on its console; the run goes on, since the setup it runs
+            // under is already set.
+            if (permissions is not null)
+            {
+                try
+                {
+                    await DrivenAccess.KeepAsync(
+                        service, park, permissions, AccessRules.Resolve(config, quest.To, start.Workspace), ct).ConfigureAwait(false);
+                }
+                catch (DriverException refused)
+                {
+                    _context.Events.Keep(sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = refused.Message }, say: null);
+                }
+            }
+        }
+        catch
+        {
+            LineageTokens.Current.Unspawned(proc);
+            throw;
+        }
+
+        ResumeAsk? resume = null;
         // The stop made of it before a close cut its conclusion off, told as its run lets go (FLAKE3).
         SessionStop? stoppedFirst = null;
         // TREELOCK1: whether its record still holds its tree as the run ends.
@@ -458,6 +469,7 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
                     accepted: new CarriedAccepts(home).Of(sessionId) is not null),
                 stopMade: stop => stoppedFirst = stop,
                 movedFirst: true,
+                moved: proc,
                 spawned: () =>
                 {
                     spawned = true;
@@ -554,6 +566,8 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
         }
         finally
         {
+            // COWORKVIEW1a: a run put back before its spawn, or whose spawn made none, tells its token so.
+            if (!spawned) LineageTokens.Current.Unspawned(proc);
             output?.Close(sessionId);
             // A resume that was tried lets the starting hold go however it ended, so a carry-on takes it again (LEFT2).
             starting?.Dispose();
@@ -1512,9 +1526,9 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
                 sessionId, adapter.Name, resume: null)
             : null;
         await NativePrompt.WriteAsync(process, adapter, prompt, ct).ConfigureAwait(false);
-        var exitCode = await _driver.WaitAsync(process, ct).ConfigureAwait(false);
+        var exitCode = await _driver.WaitedAsync(sessionId, proc, _driver.WaitAsync(process, ct), ct).ConfigureAwait(false);
         // State E (SESSWATCH1a): the capture bounded past the exit, as the first run's is.
-        var drained = capture is not null && await _driver.CaptureWithinAsync(capture, sessionId).ConfigureAwait(false);
+        var drained = capture is not null && await _driver.DrainedAsync(sessionId, proc, capture).ConfigureAwait(false);
         _driver.Ended(sessionId, proc, exitCode);
         if (drained && await capture!.ConfigureAwait(false) is { } reported) used = reported;
         return (exitCode, used);
@@ -1553,9 +1567,9 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
                 sessionId, keepAs, resume)
             : null;
         await NativePrompt.WriteAsync(process, adapter, resume.Prompt, ct).ConfigureAwait(false);
-        var exitCode = await _driver.WaitAsync(process, ct).ConfigureAwait(false);
+        var exitCode = await _driver.WaitedAsync(sessionId, proc, _driver.WaitAsync(process, ct), ct).ConfigureAwait(false);
         // State E (SESSWATCH1a): the capture bounded past the exit, as the first run's is.
-        var drained = capture is not null && await _driver.CaptureWithinAsync(capture, sessionId).ConfigureAwait(false);
+        var drained = capture is not null && await _driver.DrainedAsync(sessionId, proc, capture).ConfigureAwait(false);
         _driver.Ended(sessionId, proc, exitCode);
         return (exitCode, drained ? await capture!.ConfigureAwait(false) : null);
     }

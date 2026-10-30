@@ -4070,7 +4070,8 @@ public sealed class Driver(
         Action? working = null, Func<CancellationToken, Task<bool>>? waitsOnBackground = null, int? minutes = null,
         string? noConnector = null, Action<SessionStop?>? stopMade = null, bool movedFirst = false, Action? spawned = null,
         string? piece = null, OpenOffers? offers = null, Func<CancellationToken, Task<bool>>? transientWanted = null,
-        Func<CancellationToken, Task<TurnCarry>>? carriesOn = null, Action? written = null, (string Role, long Revision)? taken = null)
+        Func<CancellationToken, Task<TurnCarry>>? carriesOn = null, Action? written = null, (string Role, long Revision)? taken = null,
+        string? moved = null)
     {
         // Through the start gate (PROCSTART2): a press that starts a session reaches here before its first wait, and the
         // runtime's start lock is no thread's to wait on but the pool's. Seen through once begun, as the start always was.
@@ -4080,8 +4081,9 @@ public sealed class Driver(
         // TERMTRUST1a (D201 point 4): through the launcher, so the harness is born in this process's agents' job, and a partner's in its
         // piece's job beneath it; the process answered is the launcher's, which the doors read as the session's.
         var whose = resume is null ? StartClass.Background : StartClass.Person;
-        // COWORKVIEW1a: the process's own token, its start written before the spawn and handed it at the spawn.
-        var proc = Bracketed(home, sessionId, info);
+        // COWORKVIEW1a: the process's own token, its start written before the spawn (at the move, for a run moved first) and handed
+        // it at the spawn.
+        var proc = Bracketed(home, sessionId, info, moved);
         using var process = await Spawned(
                 proc, () => AgentStarts.StartAsync(info, piece is null ? ContainedKind.Agent : ContainedKind.Piece, whose, home, Log, ct, piece))
                 .ConfigureAwait(false)
@@ -4268,20 +4270,25 @@ public sealed class Driver(
             {
                 // 🔴 The record would not become this run's (ANSWER2: a second resume met working → working), so the run is ended
                 // here, and what was reading its output is observed: its failure is written with its reason, never left unawaited.
-                await AbandonedAsync(process, capture, sessionId, Log, output).ConfigureAwait(false);
+                await AbandonedAsync(
+                        process, capture, sessionId, Log, output, exitRead: () => ChildLineage.Exited(home, sessionId, proc, clean: false))
+                    .ConfigureAwait(false);
                 throw;
             }
         }
 
         working?.Invoke();
 
-        var exitCode = await WaitAsync(
-                process, ct, minutes, timingOut: ending is null ? null : bound => ending.Say(Observation.TimedOut(bound)),
-                quiet: watched?.Ending ?? default,
-                quietEnding: ending is null ? null : () => ending.Say(Observation.Quiet(watched!.EndedMinutes ?? 0)))
+        var exitCode = await WaitedAsync(
+                sessionId, proc,
+                WaitAsync(
+                    process, ct, minutes, timingOut: ending is null ? null : bound => ending.Say(Observation.TimedOut(bound)),
+                    quiet: watched?.Ending ?? default,
+                    quietEnding: ending is null ? null : () => ending.Say(Observation.Quiet(watched!.EndedMinutes ?? 0))),
+                ct)
             .ConfigureAwait(false);
         // 🔴 State E (SESSWATCH1a): a stray its agent started may hold the capture open past the exit; bounded, and concluded by the exit.
-        var drained = await CaptureWithinAsync(capture, sessionId).ConfigureAwait(false);
+        var drained = await DrainedAsync(sessionId, proc, capture).ConfigureAwait(false);
 
         // What it consumed, where the door reported it (TOOL3/D57 §4). A pipe with only text reports
         // nothing, and a surface then says "not measured" rather than zero.
@@ -4400,10 +4407,19 @@ public sealed class Driver(
     /// Waited for within <see cref="AbandonedWait"/>, as the ordinary path awaits a capture once its process exited; past it the
     /// run goes on to say how it ended, and the capture is still observed whenever it finishes. Never throws.
     /// </remarks>
+    /// <param name="exitRead">
+    /// Told once the ended process's exit is read within <see cref="AbandonedWait"/>, before the capture is waited for
+    /// (COWORKVIEW1a): where its <c>end</c> is written. Never told past the bound.
+    /// </param>
     internal static async Task AbandonedAsync(
-        Process? process, Task capture, string sessionId, MachineLog? log, SessionOutput? output, TimeSpan? within = null)
+        Process? process, Task capture, string sessionId, MachineLog? log, SessionOutput? output, TimeSpan? within = null, Action? exitRead = null)
     {
-        if (process is not null) SessionProcesses.EndIfRunning(process);
+        if (process is not null)
+        {
+            SessionProcesses.EndIfRunning(process);
+            if (exitRead is not null && await ExitReadAsync(process, AbandonedWait).ConfigureAwait(false)) exitRead();
+        }
+
         var observed = capture.ContinueWith(
             done =>
             {
@@ -4994,11 +5010,10 @@ public sealed class Driver(
     /// A process's lineage token (COWORKVIEW1a): issued, its <c>start</c> written to the session's lineage, and set anew on the
     /// spawn's environment, all before the spawn.
     /// </summary>
-    internal static string Bracketed(string home, string sessionId, ProcessStartInfo info)
+    /// <param name="moved">The token its run's move issued (a resume, a chat's go-on), whose <c>start</c> is written already.</param>
+    internal static string Bracketed(string home, string sessionId, ProcessStartInfo info, string? moved = null)
     {
-        var tokens = LineageTokens.Current;
-        var proc = tokens.Issue();
-        ChildLineage.Start(home, sessionId, proc, tokens.Issuer, DateTimeOffset.UtcNow);
+        var proc = moved ?? ChildLineage.Opened(home, sessionId);
         info.Environment[ChildMarks.LineageProcVariable] = proc;
         return proc;
     }
@@ -5026,6 +5041,54 @@ public sealed class Driver(
     /// <summary>A process's end once its exit was read and its capture drained: clean, or killed, stopped or failed.</summary>
     internal void Ended(string sessionId, string proc, int? exitCode) =>
         ChildLineage.End(home, sessionId, clean: exitCode == 0 && Context.Processes.StopMade(sessionId) is null, DateTimeOffset.UtcNow, proc);
+
+    /// <summary>
+    /// Loop's wait on a bracketed process (COWORKVIEW1a): the exit it read told to the token set, which may not watch that process;
+    /// where the wait throws as the loop closes, its kill having read the exit, the process's end written unclean before the throw
+    /// leaves the run.
+    /// </summary>
+    internal async Task<int?> WaitedAsync(string sessionId, string proc, Task<int?> wait, CancellationToken ct)
+    {
+        try
+        {
+            var exitCode = await wait.ConfigureAwait(false);
+            LineageTokens.Current.Exited(proc);
+            return exitCode;
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            ChildLineage.Exited(home, sessionId, proc, clean: false);
+            throw;
+        }
+    }
+
+    /// <summary>A bracketed process's drain (COWORKVIEW1a): a capture that faults past the exit writes its end, unclean, before the fault leaves.</summary>
+    internal async Task<bool> DrainedAsync(string sessionId, string proc, Task capture)
+    {
+        try
+        {
+            return await CaptureWithinAsync(capture, sessionId).ConfigureAwait(false);
+        }
+        catch
+        {
+            ChildLineage.Exited(home, sessionId, proc, clean: false);
+            throw;
+        }
+    }
+
+    /// <summary>Whether <paramref name="process"/>'s exit is read within <paramref name="within"/>; one that cannot say has not exited.</summary>
+    internal static async Task<bool> ExitReadAsync(Process process, TimeSpan within)
+    {
+        try
+        {
+            await process.WaitForExitAsync().WaitAsync(within).ConfigureAwait(false);
+            return true;
+        }
+        catch (Exception error) when (error is TimeoutException or InvalidOperationException or System.ComponentModel.Win32Exception)
+        {
+            return false;
+        }
+    }
 
     /// <summary>
     /// Why the graph named for a session's take did not bind it (CLOSETAKE1), or null: a line's extra word is never worth failing the end of a

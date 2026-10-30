@@ -63,7 +63,35 @@ public sealed class LineageBracketTickTests : IDisposable
         await Poll.Until(() => tokens.Reading(proc) == TokenReading.Gone, () => $"the token {proc} is still held", TimeSpan.FromSeconds(20));
     }
 
-    private Daoris.Driver.Driver Driver(AskAndWaitTickTests.StandIn service, string told)
+    /// <summary>
+    /// A driven run whose loop closes while it waits on its process: the wait's kill reads the exit, so the process's <c>end</c> is
+    /// written unclean as the throw leaves the run, and its token leaves, the agent's last word never said.
+    /// </summary>
+    [Fact]
+    public async Task A_driven_run_whose_loop_closes_while_it_waits_writes_its_end_unclean()
+    {
+        await using var service = AskAndWaitTickTests.StandIn.Start(_repository);
+        service.Took = true;
+        var told = Path.Combine(_home, "proc.txt");
+        var tokens = new LineageTokens(Environment.ProcessId, DateTime.UtcNow);
+        using var within = LineageTokens.Within(tokens);
+        using var closing = new CancellationTokenSource();
+
+        var tick = Driver(service, told, hangs: true).RunOnceAsync(closing.Token);
+        await Poll.Until(() => File.Exists(told) && File.ReadAllText(told).Trim().Length > 0, () => "the agent never started", Poll.Patience);
+        await closing.CancelAsync();
+        try { await tick.WaitAsync(Poll.Patience); } catch (OperationCanceledException) { }
+
+        var lines = File.ReadAllLines(ChildLineage.PathOf(_home, "s1")).Select(line => JsonDocument.Parse(line).RootElement).ToList();
+        var proc = File.ReadAllText(told).Trim();
+        Assert.Equal("start", lines[0].GetProperty("by").GetString());
+        var end = Assert.Single(lines, line => line.GetProperty("by").GetString() == "end");
+        Assert.Equal(proc, end.GetProperty("proc").GetString());
+        Assert.False(end.GetProperty("clean").GetBoolean());
+        Assert.Equal(TokenReading.Gone, tokens.Reading(proc));
+    }
+
+    private Daoris.Driver.Driver Driver(AskAndWaitTickTests.StandIn service, string told, bool hangs = false)
     {
         var config = DriverConfig.Empty with
         {
@@ -71,7 +99,7 @@ public sealed class LineageBracketTickTests : IDisposable
             Adapter = "acp-stub",
             TestBound = 3,
             PollSeconds = 1,
-            Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", Agent(), told] },
+            Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", Agent(), told, hangs ? "hangs" : "ends"] },
         };
         var adapters = AdapterSet.Built();
         return new Daoris.Driver.Driver(
@@ -104,6 +132,7 @@ public sealed class LineageBracketTickTests : IDisposable
                 send({ jsonrpc: '2.0', id: frame.id, result: { sessionId: 'acp-1' } });
               } else if (frame.method === 'session/prompt') {
                 await respond({ action: 'take' });
+                if (process.argv[3] === 'hangs') continue;
                 update({ sessionUpdate: 'subagent_spawned', subagentSessionId: 'a1', name: 'Reader', task: 'Read the README.' });
                 update({ sessionUpdate: 'subagent_state_update', subagentSessionId: 'a1', state: 'completed' });
                 await respond({ action: 'done', reason: 'landed' });
