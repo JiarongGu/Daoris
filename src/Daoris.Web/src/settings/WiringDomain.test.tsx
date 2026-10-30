@@ -853,7 +853,7 @@ describe('Settings → This Daoris', () => {
 
     await i18n.changeLanguage('zh');
     const zh = row(within(await screen.findByRole('region', { name: '磁盘空间' })), '浏览器缓存');
-    expect(zh.getByText(/最多 2 GB；超出时，在浏览器未运行时以及浏览器启动时清理缓存/)).toBeTruthy();
+    expect(zh.getByText(/最多 2 GB；超出时，在浏览器未运行时以及浏览器启动时清除缓存/)).toBeTruthy();
   });
 
   it("sets the downloads to stay until the person removes them, and a rule back to its default", async () => {
