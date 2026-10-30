@@ -183,6 +183,19 @@ the files, the line's commits and the member it met named by `IntegrationConflic
 and a session that cannot be told, sets it aside as `held`, its request open and out of `IntegrationStore.Queued` until an act. The `Say` and
 `Config` of its ask are handed in by the caller. The landing agent is a later design's.
 
+`IntegrationPromotes` promotes a replayed candidate onto its line and settles its members, called from no production path yet (INTEGRATE1e part
+e4a; the integration design §5.2 steps 6 to 9, §5.6, §5.7). It asks the verdict port (`IntegrationVerdicts.Current`, which Review implements) for
+the integration tree put at the candidate's tip, its base, the accepted declaration's text and blob, the members' replayed tips, the declaration's
+`verification` runner and the owner's `unconfirmed` word, and acts on its answer only for that tip: `green` promotes, `land` only where the
+owner's rule chose it for both kinds of unit and a gate is named, `hold` ends the `judge` step `held`, `split` and `hand back` hand each named
+member back and form the rest again (a split's next candidate takes one member), `stop` and `dropped` end the candidate, and `unknown`, `busy`,
+an unknown word and a verdict for a tree that left the tip are never a pass and write nothing. The `promote` step reads the line's commit
+immediately before and refuses a line that is not at the candidate's base (the candidate is formed again); its effect reads `integration.by`
+from the declaration committed at the commit it moves, never the working tree, and moves the line by one `update-ref` verifying that old value, or
+by a fast-forward in the clean checkout that has it out (held, said why, where it is not, and never an `update-ref` under a checkout). The settle
+(`IntegrationSettles`) judges each promoted member's commits after its freeze with `IntegrationAfterLanding`: contained and new are said and the
+member settled; a superseded commit leaves its member standing, its request open, until part e4b. Every end of the candidate closes its one job.
+
 Workplace reads and removes conversations through the supplied `IWorkplaceEventHistory` and `ISessionEventRemoval`
 facets. Context's `Context/Events/SessionEventLog.cs` answers them on the original record, retaining its numbering,
 lock and subscriptions. `Context/WorkplaceEventRecordsWiring.cs` installs the required factory for standalone landing;

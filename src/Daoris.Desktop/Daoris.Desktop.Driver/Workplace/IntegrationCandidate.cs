@@ -170,7 +170,13 @@ public static class IntegrationStepOutcomes
     /// <summary>A resume found the attempt begun and not ended, and the line not holding the candidate's tip: it runs again from its start.</summary>
     public const string Interrupted = "interrupted";
 
-    public static IReadOnlyList<string> All { get; } = [Done, Promoted, Held, HandedBack, Stopped, Interrupted];
+    /// <summary>
+    /// The judge ran the candidate's members one at a time (INTEGRATE1e part e4a): the failing members are handed back, the candidate is formed
+    /// again, and the next form takes one member. A word added beside the six, so an older step is read as it was.
+    /// </summary>
+    public const string Split = "split";
+
+    public static IReadOnlyList<string> All { get; } = [Done, Promoted, Held, HandedBack, Stopped, Interrupted, Split];
 }
 
 /// <summary>What the steps make of a member (§5.2, §17.4's states).</summary>
