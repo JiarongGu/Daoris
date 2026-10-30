@@ -206,6 +206,13 @@ public sealed class ConversationMoves
         move is { Agent: not null, Executor: MoveExecutors.Conversation or MoveExecutors.Driven, Phase: MoveRecordPhase.Decided or MoveRecordPhase.Quiescing };
 
     /// <summary>
+    /// Whether a move is a driven line's that names its agent and has not asked its open (FOUNDATION1f-v part c): a quest's hand-over, taken or
+    /// not yet, or a carry-on decided at <c>old-ended</c>. The carry-on a hand-over starts goes on from such a move, where it is its own.
+    /// </summary>
+    internal static bool DrivenBeforeOpen(MoveRecord move) =>
+        move is { Agent: not null, Executor: MoveExecutors.Driven, Phase: MoveRecordPhase.Decided or MoveRecordPhase.Quiescing or MoveRecordPhase.OldEnded };
+
+    /// <summary>
     /// Whether a conversation move stands for the record and has not yet put its words on the line's head (FOUNDATION1f-v part a, TAKEWAITS1):
     /// the shell's judge of the person's words holds a word said meanwhile and says it once the move ends. A move held for the person has gone
     /// on past its destination, so its words follow the line's head and it holds none. False for a store that will not answer.

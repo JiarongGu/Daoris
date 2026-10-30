@@ -61,7 +61,8 @@ internal sealed class CarryOnRecord(ConversationMove move) : IAsyncDisposable
     {
         if (begun.Move is { } decided) return new CarryOnRecord(decided);
         return handedFrom
-               && begun.Standing is { Executor: MoveExecutors.Driven, Agent: { } named, Phase: MoveRecordPhase.Decided or MoveRecordPhase.Quiescing or MoveRecordPhase.OldEnded } standing
+               && begun.Standing is { Agent: { } named } standing
+               && ConversationMoves.DrivenBeforeOpen(standing)
                && string.Equals(named, agent, StringComparison.OrdinalIgnoreCase)
                && moves.Claimed(standing) is { } mine
             ? new CarryOnRecord(mine)

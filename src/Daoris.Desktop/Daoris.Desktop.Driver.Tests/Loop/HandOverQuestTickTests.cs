@@ -77,13 +77,14 @@ public sealed class HandOverQuestTickTests : IDisposable
         Assert.Equal("old-ended", Move().PhaseWord);
 
         // 3. The next look reads that stop as released: the quest is carried on in the same tree, on `stub`, and closes. The carry-on goes on
-        // from the hand-over's own move, which closes delivered with the new part named: one move from ask to delivery, its words heard once.
+        // from the hand-over's own move, the one row from ask to the end, naming the new part. This door's prompt goes on its arguments, so no
+        // write of it is told and the record ends by its phase, as any carry-on's does there; the ACP door's delivered is part b's proof.
         await driver.TickAsync().WaitAsync(Poll.Patience);
         await driver.Running.SettledAsync().WaitAsync(Poll.Patience);
-        await Poll.Until(() => Move().PhaseWord == "delivered", () => $"the hand-over's move at {Move().PhaseWord}");
+        await Poll.Until(() => !Move().Stands, () => $"the hand-over's move at {Move().PhaseWord}");
         var moves = new MoveStore(_home).Of("s1");
         Assert.Single(moves);
-        Assert.Equal(("s2", "stub", "press", "person"), (moves[0].Destination, moves[0].Agent, moves[0].Why, moves[0].By));
+        Assert.Equal(("s2", "stub", "press", "person", "driven"), (moves[0].Destination, moves[0].Agent, moves[0].Why, moves[0].By, moves[0].Executor));
 
         var carried = service.Session("s2");
         Assert.Equal("stub", carried["adapter"]!.GetValue<string>());

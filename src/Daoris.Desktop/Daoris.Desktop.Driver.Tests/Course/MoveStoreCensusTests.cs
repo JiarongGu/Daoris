@@ -43,6 +43,15 @@ public sealed class MoveStoreCensusTests
     /// <summary>The conversation's hand-over's ask (FOUNDATION1f-v part a), which decides its move through the same holder.</summary>
     private const string HandOverAsk = "Course/HandOver/HandOver.cs";
 
+    /// <summary>The quest's hand-over's ask (FOUNDATION1f-v part c), which decides its driven move through the same holder.</summary>
+    private const string QuestAsk = "Course/HandOver/HandOverQuest.cs";
+
+    /// <summary>The driver's look of the quest's hand-overs (FOUNDATION1f-v part c), which takes each move the ask decided from the holder.</summary>
+    private const string QuestTake = "Loop/DriverHandOvers.cs";
+
+    /// <summary>The terminal's hand-over verb (FOUNDATION1f-v part c), which builds the driven holder for a quest session's ask and names its scope alone.</summary>
+    private const string Terminal = "WorkOrders/SessionsCommand.cs";
+
     /// <summary>The driven carry-on's record (FOUNDATION1f-iv part a), which decides its move through the same holder.</summary>
     private const string CarryOn = "Loop/CarryOnRecord.cs";
 
@@ -73,16 +82,16 @@ public sealed class MoveStoreCensusTests
         }
 
         Assert.Equal(
-            [CurveMove, LiveMove, Conversations, HandOverAsk, Wiring, CarryOn, DrivenLine],
+            [CurveMove, LiveMove, Conversations, HandOverAsk, QuestAsk, Wiring, CarryOn, DrivenLine, QuestTake, Terminal],
             readers.Select(reader => reader[..reader.IndexOf(" names ", StringComparison.Ordinal)]).Distinct().Order(StringComparer.Ordinal));
         Assert.Contains($"{Wiring} names MoveStore", readers);
         Assert.All(
             ["MoveStore", "MoveTakeUp", "MoveTakeUpScope", "MoveDelivery", "MoveResolve", "IMoveSaid", "MoveSaidDoor"],
             used => Assert.Contains($"{Conversations} names {used}", readers));
 
-        // The live moves, the limit's and the curve's, the conversation's hand-over's ask and the driven carry-on's record name the decision
-        // alone: every write of their records goes through the holder's claim.
-        foreach (var move in new[] { LiveMove, CurveMove, HandOverAsk, CarryOn })
+        // The live moves, the limit's and the curve's, the conversation's and the quest's hand-over's ask and the driven carry-on's record name the
+        // decision alone: every write of their records goes through the holder's claim.
+        foreach (var move in new[] { LiveMove, CurveMove, HandOverAsk, QuestAsk, CarryOn })
         {
             Assert.Equal(
                 [$"{move} names MoveDecision", $"{move} names MoveExecutors", $"{move} names MoveHows"],
@@ -95,6 +104,13 @@ public sealed class MoveStoreCensusTests
         // The driver names only the scope its driven holder is built with (FOUNDATION1f-iv part a); its take-up (part b, below) goes through
         // the holder, and the watch names no type of the move record at all.
         Assert.Equal([$"{DrivenLine} names MoveTakeUpScope"], readers.Where(reader => reader.StartsWith(DrivenLine + " ", StringComparison.Ordinal)));
+
+        // The look of the quest's hand-overs (FOUNDATION1f-v part c) reads a move the holder hands it and writes its phases through that move's
+        // own claim, never the store: it names the executor it asks for, the record it reads and its phase, and the scope of its own holder.
+        Assert.Equal(
+            [$"{QuestTake} names MoveExecutors", $"{QuestTake} names MoveRecord", $"{QuestTake} names MoveRecordPhase", $"{QuestTake} names MoveTakeUpScope"],
+            readers.Where(reader => reader.StartsWith(QuestTake + " ", StringComparison.Ordinal)).Order(StringComparer.Ordinal));
+        Assert.Equal([$"{Terminal} names MoveTakeUpScope"], readers.Where(reader => reader.StartsWith(Terminal + " ", StringComparison.Ordinal)));
         Assert.Contains("MoveTakeUp", names);
         Assert.All(Importers, importer => Assert.Contains(importer, names));
         Assert.All(["MoveDelivery", "MoveResolve", "IMoveSaid", "MoveSaidDoor", "MoveWordDispositions"], part3 => Assert.Contains(part3, names));
@@ -142,9 +158,9 @@ public sealed class MoveStoreCensusTests
     }
 
     /// <summary>
-    /// FOUNDATION1f-i part 2, with FOUNDATION1f-vi part a and FOUNDATION1f-v part a: the one production source that names an importer is the
-    /// conversations' holder, which hands the limit box's importer and the conversation's hand-over box's to its take-up; the box files' readers
-    /// name no move type, so today's owners of the boxes read them as before (the quest's hand-over, part c's, reads its box as it did). No
+    /// FOUNDATION1f-i part 2, with FOUNDATION1f-vi part a and FOUNDATION1f-v parts a and c: the one production source that names an importer is the
+    /// conversations' holder, which hands the limit box's importer and the hand-over box's, a conversation's or a quest session's by its scope,
+    /// to its take-up; the box files' readers name no move type, so today's owners of the boxes read them as before. No
     /// production source writes the limit box any more: its writer is kept for a test to leave the box an older build would, and for nothing else.
     /// </summary>
     [Fact]
