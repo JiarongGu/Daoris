@@ -74,7 +74,7 @@ internal static class StaffingVerbs
         IReadOnlyList<(string Actor, IReadOnlyList<ActorChoice>? Choices)> changes;
         try
         {
-            using var document = JsonDocument.Parse(File.ReadAllText(file));
+            using var document = JsonDocument.Parse(AtomicFile.ReadText(file));
             if (document.RootElement.ValueKind != JsonValueKind.Object
                 || !document.RootElement.TryGetProperty("actors", out var named) || named.ValueKind != JsonValueKind.Object)
             {
