@@ -21,7 +21,8 @@ public sealed class McpToolRegistrationTests : McpToolsFixture
         "channel_read", "checkout_read", "clear_propose", "delete_propose", "go_ahead_ask", "go_propose", "hand_propose", "handback_read", "handover_propose",
         "helper_answer", "helper_ask",
         "housekeeping_clean_up", "housekeeping_discard_branch", "housekeeping_inspect", "knowledge_convergence",
-        "knowledge_get", "knowledge_refresh", "knowledge_repositories", "knowledge_search", "line_read", "opinion_answer", "opinion_give",
+        "knowledge_get", "knowledge_refresh", "knowledge_repositories", "knowledge_search", "line_read", "memory_end", "memory_get", "memory_propose",
+        "memory_search", "memory_write", "opinion_answer", "opinion_give",
         "partner_answer", "pause_propose", "permission_propose", "plugin_propose", "quest_list", "quest_publish", "quest_respond", "question_ask", "registry",
         "repository_propose", "review_ready", "review_serve", "role_propose", "session_propose", "setting_propose", "settings_cap", "settings_cooloff",
         "settings_language", "settings_notify", "settings_timeout", "setup_propose", "sync_propose",
@@ -83,7 +84,7 @@ public sealed class McpToolRegistrationTests : McpToolsFixture
                 "HelpAccountTool", "HelpAgentTool", "HelpAskTool", "HelpBrowserTool", "HelpClearTool",
                 "HelpDeleteTool", "HelpGoTool", "HelpHandTool", "HelpPauseTool", "HelpPluginTool", "HelpRepositoryTool", "HelpRoleTool", "HelpSessionTool",
                 "HelpSettingTool", "HelpSetupTool", "HelpSyncTool", "HelpWorkflowTool", "HelperTools", "HousekeepingTools", "KnowledgeSearchTools",
-                "LineTools", "OpinionTools", "PartnerTools", "QuestTools", "QuestionTools",
+                "LineTools", "MemoryTools", "OpinionTools", "PartnerTools", "QuestTools", "QuestionTools",
                 "ReviewTools", "RuleProposalTools",
             ],
             KnowledgeServer.ToolTypes.Select(type => type.Name).Order(StringComparer.Ordinal));
