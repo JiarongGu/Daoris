@@ -5,6 +5,13 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-31 - A branch the transport integrated was refused as a merged pull request (INTEGRATE1g follow-up)
+
+- **Symptom:** the next Accept on a kept branch said its pull request was merged and its plugin opens a new one, where neither was involved.
+- **Root cause:** `LandingAdvance.Refusal` told every branch whose work reads on the line in the pull request's words.
+- **Fix:** a record carrying `integrate` with no push or pull request is told as integrated into the line by Daoris; the pull request's sentence stays for a plugin's.
+- **Verify:** `LandingChainTests` holds both sentences.
+
 ## 2026-10-31 - A test still pinned the first-look baseline row m-iv replaced (FOUNDATION1 m-iv)
 
 - **Symptom:** `A_wait_already_there_at_the_first_look_is_a_baseline_never_a_backlog` failed every run.
