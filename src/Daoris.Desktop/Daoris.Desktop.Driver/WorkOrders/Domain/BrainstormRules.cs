@@ -73,14 +73,14 @@ public static class BrainstormRules
 
     /// <summary>
     /// The rule standing for a question (D176 point 9): its repository's workspace's whole, else this machine's, else the default.
-    /// A question with no repository (<paramref name="workspace"/> null) takes this machine's. Names matched in any case.
+    /// A question with no repository (<paramref name="workspace"/> null) takes this machine's. Names matched in any case. Read by the
+    /// policy's one reader (<see cref="WorkPolicies.Brainstorms"/>, FOUNDATION1q).
     /// </summary>
-    public static ResolvedBrainstorms Resolve(DriverConfig config, string? workspace) =>
-        workspace?.Trim() is { Length: > 0 } named && config.WorkspaceBrainstorms.TryGetValue(named, out var shared)
-            ? new ResolvedBrainstorms(shared, FromWorkspace)
-            : config.Brainstorms is { } machine
-                ? new ResolvedBrainstorms(machine, FromMachine)
-                : new ResolvedBrainstorms(BrainstormRule.Default, DefaultSource);
+    public static ResolvedBrainstorms Resolve(DriverConfig config, string? workspace)
+    {
+        var (rule, source) = WorkPolicies.Brainstorms(config, workspace);
+        return new ResolvedBrainstorms(rule, source);
+    }
 
     /// <summary>A rule as the list says it: its mode; its agents in order, or that each request names its own; its minutes.</summary>
     public static string Listed(BrainstormRule rule)
