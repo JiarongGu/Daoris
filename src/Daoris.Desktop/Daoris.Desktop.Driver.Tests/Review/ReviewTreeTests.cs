@@ -345,6 +345,49 @@ public sealed class ReviewTreeTests : IDisposable
         Assert.Empty(Directory.EnumerateDirectories(DaorisHome.Entry(_home, HomeEntry.Trees, "work", "reports")));
     }
 
+    /// <summary>
+    /// STOPRACE1: a stop made while the reviewer's protocol handshake is still open is the person's end, not a failed wire. An agent
+    /// that never answers makes that moment certain.
+    /// </summary>
+    [Fact]
+    public async Task A_stop_before_the_reviewer_s_handshake_finishes_is_recorded_as_the_persons()
+    {
+        await using var service = OpinionStandIn.Start();
+        var config = DriverConfig.Empty with
+        {
+            Adapter = "claude-code",
+            TestBound = 30,
+            Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", SilentAgent()] },
+        };
+        var adapters = AdapterSet.Built();
+        var roster = new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses));
+        var driver = new Daoris.Driver.Driver(new ServiceClient(service.Url, null), config, adapters, _home, harnesses: roster);
+        var rule = new OpinionRule(["acp-stub"], [OpinionRules.Landing], Minutes: 30);
+        var choice = await ReviewerChoice.ChooseAsync(roster, rule, ["claude-code"], config, "work");
+        Assert.True(choice.Chosen, choice.Sentence);
+
+        var pass = driver.PassAsync(
+            new OpinionPassAsk(OpinionRules.Landing, "w1", "reports", _repository.Root, _base, "daoris/s-1a2b3c4d", rule) { Workspace = "work" },
+            choice);
+        await Poll.Until(() => driver.Context.Processes.Running.Contains("r1"), () => "the reviewer never started");
+        Assert.True(driver.Context.Processes.Stop("r1"));
+        var run = await pass.WaitAsync(Poll.Patience);
+
+        Assert.Equal("stopped", run.State);
+        Assert.Equal("stopped", service.States("r1")[^1]);
+    }
+
+    /// <summary>A protocol agent that never answers: its handshake is still pending whenever it is stopped.</summary>
+    private string SilentAgent()
+    {
+        var script = Path.Combine(_home, "silent-agent.mjs");
+        File.WriteAllText(script, """
+            import { createInterface } from 'node:readline';
+            for await (const line of createInterface({ input: process.stdin })) { void line; }
+            """);
+        return script;
+    }
+
     /// <summary>The protocol door's reviewer on the stub's accounts (MODELROLE1e): it refuses at the open the models its argument names for its account.</summary>
     private string RefusingReviewer()
     {

@@ -18,6 +18,12 @@ repository.
 - **Root cause:** `LandingAdvance.Refusal` told every branch whose work reads on the line in the pull request's words.
 - **Fix:** a record carrying `integrate` with no push or pull request is told as integrated into the line by Daoris; the pull request's sentence stays for a plugin's.
 - **Verify:** `LandingChainTests` holds both sentences.
+## 2026-10-31 - A stop made while an intake's, helper's, reviewer's or partner's handshake was open was recorded failed (STOPRACE1)
+
+- **Symptom:** a person's stop made before the protocol handshake finished ended the record `failed`, as the driven run's did before its fix.
+- **Root cause:** those four runs kept the driven run's catch-all and told `HoldAsync` no `stopMade`, so a wire the stop broke was a failure.
+- **Fix:** each passes `stopMade` and catches a failure after a stop first, ending as the stop's conclusion through `Driver.EndStoppedAsync` (the driven run's catch uses it too).
+- **Verify:** a case per run (`IntakeTests`, `HelperProcessTests`, `ReviewTreeTests`, `PartnerProcessTests`), red before; each class green.
 
 ## 2026-10-31 - A test still pinned the first-look baseline row m-iv replaced (FOUNDATION1 m-iv)
 
