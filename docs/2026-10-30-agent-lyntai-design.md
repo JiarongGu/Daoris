@@ -1995,7 +1995,8 @@ O5-F2 to O5-F4 before 1d, 1e-i and 1f-i. The four are taken as named in the body
 first at this branch's tip (§20.3); with them the design is **accepted by the steward** under D191 (D213's acceptance note of
 2026-10-30). The read's three owner choices (m-i's restart, LQ17 widened over a correction of D189's boundary, D125's own row for
 native-door cooling) are not the owner's under D191 point 3, since none spends, signs in, publishes or loses data, and the read finds
-each sound as stated; D125's row is filed in the backlog beside this design's rows, independent of 1d.
+each sound as stated; D125's row is filed in the backlog as TOOL4n beside this design's rows, independent of 1d, waiting on a recorded
+native limit, which spends an account and so is the owner's yes.
 
 ### 20.1 The Opus maker's read (4 findings, none blocking)
 
