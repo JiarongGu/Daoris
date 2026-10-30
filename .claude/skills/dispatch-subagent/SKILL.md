@@ -47,7 +47,8 @@ each failing test first and RUN it to watch it fail before writing the code (a c
 and say which you saw fail; commit each piece once its tests pass. Tests prove the row's proof and nothing beside it: one
 test per point the proof names; add no count pin, census entry or wording twin the change does not force. Records are the
 commit message and the hand-back's outcome line; a decision's note only for a reading the code and tests cannot show, at
-most 100 words. A README changes only where a command or a shape its reader uses changed. New words on the page run `src/locales`' tests too:
+most 100 words. A README changes only where a command or a shape its reader uses changed. Code comments are short and
+only where the code cannot say it: no `<remarks>` retelling the design, no row or section ids beside every member. New words on the page run `src/locales`' tests too:
 `names:check --strict` does not hold a sentence's glossary words, `names.test.ts` does (WORKFLOW1h-d's 这台机器).
 Run only your own tests, filtered (the ones you add or change and those covering the code you change), and the quick
 checks before hand-back; never a whole project, a fast half, the web's whole suite or `npm run verify`: the CI beside
