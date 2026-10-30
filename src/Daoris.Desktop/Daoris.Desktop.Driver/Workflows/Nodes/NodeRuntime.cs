@@ -212,6 +212,12 @@ public sealed class NodeRuntime(
     /// </summary>
     public IIntegrationDoor? Integration { get; set; }
 
+    /// <summary>
+    /// The heavy executor's port (FABRIC-PIPELINE1d): none by default, so a runtime nobody wired starts no check and its node waits ready. The
+    /// watch sets it, with the executor's answer asking a pass.
+    /// </summary>
+    public ICheckPort? Checks { get => _performer.Checks; set => _performer.Checks = value; }
+
     /// <summary>The door over this home's records and integration store, built from the home the node records live in.</summary>
     public static IIntegrationDoor HomeDoor(string home) => new HomeIntegrationDoor(home);
 
@@ -467,6 +473,16 @@ public sealed class NodeRuntime(
         foreach (var node in graph.Nodes)
         {
             declared[node.Id] = node;
+
+            // FABRIC-PIPELINE1d (the pipeline design §4.1): a check's declaration is given its kind's perform once judged, as a plugin's node its
+            // step's; its executor is Daoris's own.
+            if (node.Kind == NodeKinds.Check && node.Reach == NodeReach.Performed)
+            {
+                declared[node.Id] = CheckNodes.Performed(node);
+                dispatchable.Add(node.Id);
+                continue;
+            }
+
             if (!(Performs(node) || Observes(node)) || steps.FirstOrDefault(step => step.Kind == node.Kind) is not { } step
                 || step.Version != node.Version || step.Reach != node.Reach)
             {
@@ -877,6 +893,15 @@ public sealed class NodeRuntime(
                     done.Add(begun);
                     started |= begun.What == PerformedWhat.Begun;
                 }
+                // FABRIC-PIPELINE1d: a check is handed to the heavy executor, which takes it at once and runs it on its own task: the pass never
+                // awaits its gates. With no executor here it stays ready.
+                else if (node.Kind == NodeKinds.Check)
+                {
+                    if (!governed.Dispatchable.Contains(node.Id) || _performer.Checks is null) continue;
+                    var handed = await _performer.StartAsync(node, start, ct).ConfigureAwait(false);
+                    done.Add(handed);
+                    started |= handed.What != PerformedWhat.Refused;
+                }
                 // FABRIC-PERFORM1p: a performed node whose branch's tip this pass did not read is left ready, as an observed one is: it is sent
                 // on no guess, and the pass that reads the tip sends it there. FABRIC-CUTOVER1d (the cutover design §3): a run's performed node is
                 // started as a unit's is, now its doors read the run; one on a subject whose revision was not read is offered no start (§2.2).
@@ -1027,6 +1052,9 @@ public sealed class NodeRuntime(
                 done.Add(new WorkPerformed(unit, word.Node, code is null ? PerformedWhat.Resolved : PerformedWhat.Refused, code ?? word.Act));
                 said.Add(RunNodeWords.AppliedSaid(unit, word, code));
             }
+
+            // FABRIC-PIPELINE1d (the pipeline design §4.2): the pass that applies the person's stop of a running check tells the executor.
+            _performer.StopChecks(unit, [.. applied.Where(each => each.Refused is null && each.Word.Act == NodeWordActs.Stop).Select(each => each.Word.Node)]);
         }
 
         return (done, said);
@@ -1795,6 +1823,8 @@ public sealed class NodeRuntime(
                     continue;
                 }
 
+                // FABRIC-PIPELINE1d: a check is no plugin's, and no plugin is told of it.
+                if (!NodeKinds.IsPlugin(each.Declared[id].Kind)) continue;
                 if ((each.Scope is null ? Told(each, tips) : RunFrame(each, record, id, tips)) is not { } frame) continue;
                 var kind = each.Declared[id].Kind;
                 var plugin = PluginOf(kind);
