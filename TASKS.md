@@ -101,8 +101,6 @@ a → b, c → d, e → f → g → h → i. Keep person and driver authorizatio
 
 steward under D191; Codex's read of the final text owed when its credits return), §11 in this order.
 
-- [ ] **QUESTIONUI1a2 — the head's card shares the frame's selection** (web; depends on nothing else here). The head's card's rows are the frame's one selection, as §8.4 stands, in place of its own (`AwaitingPerson.tsx:105-107`); `f17e2301d`, on a session's tree and not merged, builds it. Proof: §11.
-
 ## Landing, trace and Git
 
 `docs/2026-10-04-built-in-git-design.md` (D147 amended by D150).
