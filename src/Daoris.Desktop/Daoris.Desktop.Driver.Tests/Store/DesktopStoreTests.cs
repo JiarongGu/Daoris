@@ -483,6 +483,23 @@ public sealed class DesktopStoreTests : IDisposable
         Assert.Equal(0, Count(older, "integration_dispositions"));
     }
 
+    // ——— Step 10, the role catalogue (FOUNDATION1w; the foundation design §2.7, §13.3).
+
+    [Fact]
+    public void Step_10_makes_the_roles_and_their_revisions_with_required_columns_and_raises_no_stamp()
+    {
+        var step = Assert.Single(DesktopStore.Steps, each => each.Version == 10);
+        Assert.Equal(1, step.Writer);
+
+        var store = Open();
+
+        Assert.Equal((Own, 1), store.Stamp);
+        Assert.Equal([("id", true), ("state", true), ("record", true), ("revision", true), ("at", true)], Columns(store, "roles"));
+        Assert.Equal(
+            [("id", true), ("revision", true), ("state", true), ("record", false), ("at", true)],
+            Columns(store, "role_revisions"));
+    }
+
     // ——— Step 8, the roles' staffing (FOUNDATION1w-s part 1; the foundation design §19.15, D212's note).
 
     [Fact]

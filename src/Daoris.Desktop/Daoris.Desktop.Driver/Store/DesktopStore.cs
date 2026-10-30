@@ -382,6 +382,29 @@ public sealed class DesktopStore : IDisposable
               at       TEXT NOT NULL
             );
             """)),
+
+        // FOUNDATION1w: the role catalogue (§2.7, §13.3), Roles'. New tables an older store-aware build never opens, so the stamp stays where
+        // it is. `roles` holds one row for each role id the person changed: `state` is `set` (`record` the role's JSON, as written) or
+        // `removed` (a seeded role taken out); an id with no row is the seed's. `role_revisions` keeps every revision of every id, never
+        // rewritten and never reset by a removal; its `state` adds `default` (a seeded id's record deleted) and `deleted` (an added one's).
+        new(10, WriterStamp, write => write.Execute(
+            """
+            CREATE TABLE roles (
+              id       TEXT NOT NULL PRIMARY KEY,
+              state    TEXT NOT NULL,
+              record   TEXT NOT NULL,
+              revision INTEGER NOT NULL,
+              at       TEXT NOT NULL
+            );
+            CREATE TABLE role_revisions (
+              id       TEXT NOT NULL,
+              revision INTEGER NOT NULL,
+              state    TEXT NOT NULL,
+              record   TEXT,
+              at       TEXT NOT NULL,
+              PRIMARY KEY (id, revision)
+            );
+            """)),
     ];
 
     /// <summary>
