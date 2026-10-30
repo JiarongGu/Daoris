@@ -135,9 +135,31 @@ public static partial class DecisionNotes
     /// quote mark is tried at each place it could end. The tool's <c>readMarks</c> reads the same, and both are held
     /// to <c>tools/orient-index-fixtures/note-marks.json</c>.
     /// </summary>
-    public static IReadOnlyList<NoteMark> Marks(string text)
+    public static IReadOnlyList<NoteMark> Marks(string text) => Marks(Split(text).Notes);
+
+    /// <summary>
+    /// The same marks read from a decision's note entries, the ones <see cref="Split"/> made into entries of their own
+    /// (KNOWFRESH1a-ii): each note's label opens its body and its lines say where it is in the file. A host holding the
+    /// entries and no file, as a fed one does, derives the marks from them, so a mark has no field of its own on the wire.
+    /// An entry that names no lines is left out, since its place among the notes is not known.
+    /// </summary>
+    public static IReadOnlyList<NoteMark> Marks(IEnumerable<KnowledgeEntry> noteEntries) =>
+        Marks(noteEntries
+            .Where(entry => entry.Lines is not null)
+            .OrderBy(entry => entry.Lines!.Value.First)
+            .Select(entry =>
+            {
+                var span = entry.Lines!.Value;
+                var line = entry.Body.Split('\n', 2)[0];
+                var heading = DatedHeading().Match(line);
+                var dated = heading.Success && IsoDate().IsMatch(heading.Groups[1].Value);
+                var full = (dated ? Whitespace().Replace(heading.Groups[1].Value, " ").Trim() : Span(line)) ?? line;
+                return new DecisionNote(Truncate(full), span.First, span.Last, entry.Body, full, !dated && Span(line) is not null);
+            })
+            .ToList());
+
+    private static IReadOnlyList<NoteMark> Marks(IReadOnlyList<DecisionNote> notes)
     {
-        var (_, notes) = Split(text);
         var marks = new List<NoteMark>();
         for (var k = 0; k < notes.Count; k++)
         {

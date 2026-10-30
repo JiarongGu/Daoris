@@ -364,7 +364,9 @@ public static class ServiceFactory
             // (KNOWCURRENT1); the one-checkout shape keeps its watch and its minute above.
             rootSignature: options.Repository is null && readsLocalCheckouts
                 ? root => RootSignature.Of(root, options.Documents, options.Index)
-                : null);
+                : null,
+            // What a hit says of its reading (KNOWFRESH1a-ii): one git status a root as it is read, never a hit.
+            uncommitted: readsLocalCheckouts ? root => UncommittedRecords.Of(root, options.Documents, options.Index) : null);
 
         // The bootstrap (D48 §3): a store that has never been managed imports its configured root ONCE
         // and says so. Without it, a machine that has been running on DAORIS_KNOWLEDGE_ROOT would come
