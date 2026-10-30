@@ -316,6 +316,24 @@ internal sealed class StartPlan
     }
 
     /// <summary>
+    /// The agent a start of <paramref name="work"/> is named for before its walk runs, for the look's report of a wait and a hold the walk
+    /// has not yet answered (the design §2.4's second row): a hand-over's, else a continuation's (<see cref="ContinuedOn"/>), else its role's
+    /// first entry; the machine's own key only where that entry does not read or the role is off, which the walk then holds for itself.
+    /// </summary>
+    public static string AgentFor(string work, DriverConfig config, PriorSession? record = null, string? handed = null)
+    {
+        if (handed is { Length: > 0 }) return handed;
+        try
+        {
+            return record is null ? ActorChoices.FirstAgent(RoleOf(work), config) ?? ActorKey.Before(RoleOf(work), config) ?? config.Adapter : ContinuedOn(record, config, work);
+        }
+        catch (DriverException)
+        {
+            return ActorKey.Before(RoleOf(work), config) ?? config.Adapter;
+        }
+    }
+
+    /// <summary>
     /// The start's re-ask where its agent refused the entry's model at the open (D205 §3.3, §3.5(f)): the plan walked again as if the refusal
     /// had been known before the spawn, a probe ranking without the start's own count (<paramref name="selection"/>'s reservation). Its
     /// answer is a later entry to set on the same session where the walk names the same agent on the same account

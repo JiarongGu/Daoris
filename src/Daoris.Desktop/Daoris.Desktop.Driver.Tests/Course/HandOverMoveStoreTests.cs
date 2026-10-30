@@ -260,6 +260,39 @@ public sealed class HandOverMoveStoreTests : IDisposable
     }
 
     /// <summary>
+    /// 🔴 FOUNDATION1h branch 3 (the foundation design §3.1, §14.2): the hand-over of a conversation is decided by the course's one decision, and
+    /// the shell's chat runner is only its adapter: the person's press with an account keeps it as a pick, an agent's ask, which reaches the
+    /// course admitted by the door that judged it, opens on its account without keeping the pick, and a second ask is still the store's waiting.
+    /// </summary>
+    [Fact]
+    public async Task The_press_and_the_agent_s_ask_are_decided_by_the_course_and_only_the_press_keeps_its_pick()
+    {
+        var world = Live();
+        using var c = world.Client;
+        world.Runner.Busy = true;
+        var heard = new List<(string Session, LineCourse Course)>();
+        world.HandOver.Decided += (session, course) => heard.Add((session, course));
+
+        var pressed = await Press(world);
+        Assert.True(pressed.Kept, pressed.Message);
+        var pick = Assert.IsType<LineCourse.Move>(Assert.Single(heard).Course);
+        Assert.Equal((CourseWhen.TurnEnd, CourseAccountSource.Pick, "account-2", true), (pick.When, pick.Where.Source, pick.Where.Account, pick.Where.Kept));
+
+        // The course answered a move, and the store's standing one is what refuses the second: the order of today's refusals.
+        heard.Clear();
+        var again = await world.HandOver.HandOverAsync("c1", "talk", "account-2", HandOverWhy.Agent, HandOverBy.Agent, Config(), null, CancellationToken.None);
+        Assert.Equal((false, HandOver.Waiting), (again.Kept, again.Why));
+        var agent = Assert.IsType<LineCourse.Move>(Assert.Single(heard).Course);
+        Assert.Equal((CourseAccountSource.Pick, "account-2", false, CourseFromBy.Agent), (agent.Where.Source, agent.Where.Account, agent.Where.Kept, agent.By));
+
+        // What the course refuses is refused by its code, the sentence the ask's own.
+        heard.Clear();
+        var same = await world.HandOver.HandOverAsync("c1", "talk", "account-1", HandOverWhy.Press, HandOverBy.Person, Config(), null, CancellationToken.None);
+        Assert.Equal((false, HandOver.SameAgent), (same.Kept, same.Why));
+        Assert.Equal(HandOver.SameAgent, Assert.IsType<LineCourse.Hold>(Assert.Single(heard).Course).Code);
+    }
+
+    /// <summary>
     /// 🔴 A conversation that is talking keeps the move decided, at <c>quiescing</c>, until its turn ends; a second ask meanwhile is refused as
     /// waiting, read from the store, and the turn's end takes the one move once.
     /// </summary>

@@ -9,6 +9,9 @@ namespace Daoris.Driver;
 /// </summary>
 internal sealed class ChatHelperWords(ChatContext context)
 {
+    /// <summary>What the course answered a helper's answer held at the bound, by session (FOUNDATION1h branch 7): a test hears it; no person reads it.</summary>
+    internal event Action<string, LineCourse>? Decided;
+
     // The helper words this runner is already saying, by id: the event and the shell's come-up may both hear one.
     private readonly System.Collections.Concurrent.ConcurrentDictionary<string, byte> _helperSaying = new(StringComparer.Ordinal);
 
@@ -97,6 +100,17 @@ internal sealed class ChatHelperWords(ChatContext context)
         {
             return false;
         }
+
+        // FOUNDATION1h branch 7 (the foundation design §3.1): the helper's answer at the bound is the course's hold for an answer, the count
+        // `AnswersAloneHold` read being the fact; a live conversation's own turn takes the word, so the hold is the one answer it can have.
+        Decided?.Invoke(
+            sessionId,
+            CourseDecision.Decide(
+                new CourseFacts(
+                    new CourseHead(
+                        record.State, Conversation: true, Waiting: [new CourseWord(word.Id ?? "", CourseAuthor.Helper, word.Key)], Session: sessionId),
+                    CourseBoundary.TurnRunning, Alone: new CourseAlone(AnswersAlone.Bound)),
+                CourseTrigger.Answer));
 
         if (word.Id is { } id) _helperSaying.TryRemove(id, out _);
         return true;

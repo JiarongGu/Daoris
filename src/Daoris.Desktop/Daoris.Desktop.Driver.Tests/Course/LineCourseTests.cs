@@ -226,6 +226,8 @@ public sealed class LineCourseTests
         ["E-24"] = new(T.LimitWake, Later(Ended(Chat(P()) with { Limited = true }, WaitsWalk()), "other", "2")),
         ["E-25"] = new(T.LimitWake, Later(Ended(Chat(P()) with { Limited = true }, WaitsPick(), picked: true), "other", "2")),
         ["E-26"] = new(T.LimitWake, Later(Ended(Chat(P()) with { Limited = true, Choice = "pick" }, WaitsWalk()), "other", "2")),
+        // FOUNDATION1g part c: a conversation the limit ended, as its end now writes it, `failed` with the flag.
+        ["E-27"] = new(T.LimitWake, Ended(Chat(P()) with { State = "failed", Limited = true }, Goes("account-2"))),
 
         // ——— J: the briefed move, the person's and Daoris's on a lost conversation.
         ["J-01"] = new(T.BriefedPress, Ended(Chat(P()), Resumes)),

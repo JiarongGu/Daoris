@@ -94,6 +94,12 @@ public sealed class DriverWatch(
     /// </summary>
     public RunningSessions Running { get; } = new();
 
+    /// <summary>
+    /// Whether this loop runs beside the lease holder, as <c>drive --share</c> does (SHAREMOVES1): handed to every look's driver
+    /// (<see cref="Driver.Share"/>), so the first look takes up only the dead runs' moves of the lines this loop runs.
+    /// </summary>
+    public bool Share { get; init; }
+
     /// <summary>Handed to every look's driver: <see cref="Driver.Runner"/>, a test's in-process stand-in for a start's run (DEV3).</summary>
     internal Func<Consideration, Action, CancellationToken, Task<StartRun>>? Runner { get; init; }
 
@@ -674,7 +680,7 @@ public sealed class DriverWatch(
                     service, draining ? InstallUpdate.Drained(config) : config, _adapters, home, processes, sync, output,
                     _harnesses, usage, hooks, events, browser, Running)
                 {
-                    Runner = Runner, Stops = Stops, HandsOver = HandsOver, SendsBack = SendsBack, GoesOnLost = GoesOnLost, Log = Log, Noticed = Noticed, Stages = Stages, Reviews = Reviews,
+                    Share = Share, Runner = Runner, Stops = Stops, HandsOver = HandsOver, SendsBack = SendsBack, GoesOnLost = GoesOnLost, Log = Log, Noticed = Noticed, Stages = Stages, Reviews = Reviews,
                     Part = part, Woke = taken.Woke,
                     LandingEnded = Reoffered, Wanted = token => WantedAsync(part, token), WokeBack = () => Unspent(taken, busy: false),
                     // FABRIC-CUTOVER1c: an ended graph run whose chain came back here re-arms link 8, which a wake then judges on what is there now.
@@ -773,7 +779,7 @@ public sealed class DriverWatch(
                         await Stages.TimeAsync(
                             "moves",
                             () => new Driver(service, config, _adapters, home, processes, sync, output, _harnesses, usage, hooks, events, browser, Running)
-                                { Log = Log }.TakeUpMovesAsync(ct)).ConfigureAwait(false);
+                                { Log = Log, Share = Share }.TakeUpMovesAsync(ct)).ConfigureAwait(false);
                         // COWORK1c (the message-urgency design §6, trap 8): the words a shell before this one wrote to its agent and never
                         // took off leave their records, said where their conversation never showed them taken, and are never sent again.
                         carried.AddRange(await Stages.TimeAsync("uncertain", () => UncertainWords.SettleAsync(service, events, ct, Lines)).ConfigureAwait(false));

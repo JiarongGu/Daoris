@@ -39,6 +39,11 @@ public sealed class DrivenCarryOnStoreTests : IDisposable
         new(_home, new ServiceClient("http://carry-on.test", null), new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)),
             store: Store(run), said: _said, scope: MoveTakeUpScope.LeaseHolder);
 
+    /// <summary>The driven holder of a <c>--share</c> loop (SHAREMOVES1): the same store, handed the scope of only the lines the loop runs.</summary>
+    private ConversationMoves SharedHolder(string run, Func<string, bool> lines) =>
+        new(_home, new ServiceClient("http://carry-on.test", null), new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)),
+            store: Store(run), said: _said, scope: MoveTakeUpScope.Shared(lines));
+
     private static MoveDecision Carry(string why = HandOverWhy.CarryOn) =>
         CarryOnRecord.Decision(new ContinuedFrom("s1", why, HandOverBy.Daoris), agent: "claude-code", account: "account-2")!;
 
@@ -154,6 +159,30 @@ public sealed class DrivenCarryOnStoreTests : IDisposable
         Assert.Equal(("closed", MoveHoldWhy.Undelivered, ConversationMoves.Unsent), (move.PhaseWord, move.HeldWhy, move.Effect!.Outcome));
         Assert.Null(Store("run-probe").WordsOf(move.Id).Single().Disposition);
         Assert.Equal(["w1"], _said.Of("s2"));
+    }
+
+    /// <summary>
+    /// SHAREMOVES1: a shared loop's look takes up a dead run's move of a line it runs and leaves another line's standing, for the lease holder's
+    /// look, which takes up every dead run's driven move.
+    /// </summary>
+    [Fact]
+    public async Task A_shared_loop_s_look_takes_up_only_its_own_line_s_move_and_the_lease_holder_s_takes_the_rest()
+    {
+        var dying = Holder("run-dying");
+        Assert.NotNull((await dying.BeginAsync(Carry(), default)).Move);
+        Assert.NotNull((await dying.BeginAsync(CarryOnRecord.Decision(new ContinuedFrom("s2", HandOverWhy.CarryOn, HandOverBy.Daoris), agent: "claude-code", account: "account-2")!, default)).Move);
+        _dead.Add("run-dying");
+
+        var shared = await SharedHolder("run-share", line => line == "s2").LookAsync(default);
+
+        Assert.Equal(["s2"], shared.Taken.Select(each => each.Move!.Left));
+        Assert.Equal("old-ended", MoveFrom("s1")!.PhaseWord);
+        Assert.Equal("run-dying", MoveFrom("s1")!.ClaimRun);
+
+        var holder = await Holder("run-holder").LookAsync(default);
+
+        Assert.Equal(["s1"], holder.Taken.Select(each => each.Move!.Left));
+        Assert.Equal("run-holder", MoveFrom("s1")!.ClaimRun);
     }
 
     /// <summary>

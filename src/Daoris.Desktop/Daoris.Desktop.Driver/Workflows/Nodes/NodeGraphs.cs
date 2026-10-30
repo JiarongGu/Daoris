@@ -133,6 +133,18 @@ public static class GraphRefusal
     /// <c>pull-request</c>, <c>line</c> or <c>integrate</c> would wait for ever before a landing record. Said in a graph that holds a <c>handed</c>.
     /// </summary>
     public const string BeforeLanding = "before-landing";
+
+    /// <summary>A second <c>work.requests</c> (INTEGRATE1o; §17.3): the graph holds the work on its requests once.</summary>
+    public const string WorkRequestsTwice = "work-requests-twice";
+
+    /// <summary>A <c>work.requests</c> no <c>claimed</c> comes before (INTEGRATE1o): it holds the work a <c>claimed</c> observes.</summary>
+    public const string WorkRequestsUnclaimed = "work-requests-unclaimed";
+
+    /// <summary>
+    /// A landing that can start before a <c>work.requests</c> is reached (INTEGRATE1o; §17.3: placed before the landing): a way to it that passes
+    /// no such node would land the work with its requests unanswered, a hold dropped.
+    /// </summary>
+    public const string WorkRequestsLate = "work-requests-late";
 }
 
 /// <summary>
@@ -168,7 +180,7 @@ public static class NodeGraphs
 
     /// <summary>The kinds an end is at or before the line by: the cleanup waits for no such end (§C2, §C3).</summary>
     private static readonly HashSet<string> AtOrBeforeTheLine =
-        new([NodeKinds.Claimed, NodeKinds.Handed, NodeKinds.Pushed, NodeKinds.PullRequest, NodeKinds.Integrate, NodeKinds.Line], StringComparer.Ordinal);
+        new([NodeKinds.Claimed, NodeKinds.WorkRequests, NodeKinds.Handed, NodeKinds.Pushed, NodeKinds.PullRequest, NodeKinds.Integrate, NodeKinds.Line], StringComparer.Ordinal);
 
     /// <summary>The kinds that observe the landing record (INTEGRATE1n, F47): none can be reached before a <c>handed</c> has made one.</summary>
     private static readonly string[] OfTheLanding = [NodeKinds.Pushed, NodeKinds.PullRequest, NodeKinds.Line, NodeKinds.Integrate];
@@ -346,6 +358,35 @@ public static class NodeGraphs
             }
         }
 
+        // INTEGRATE1o (§17.3's graph rules): at most one `work.requests`, after a `claimed` and before every landing. After: a `claimed` of this graph
+        // reaches it through wires an order holds. Before: no landing can start with it unreached, by the look's own reading
+        // (StartsWithout), so a way to the landing past it is refused as an `anyOf` member or a bare wire alike. Each is said once,
+        // against the node it is about.
+        var holds = byId.Values.Where(node => node.Kind == NodeKinds.WorkRequests).ToList();
+        foreach (var again in holds.Skip(1))
+        {
+            Say(GraphRefusal.WorkRequestsTwice, null, again.Id, $"node `{again.Id}`: `{holds[0].Id}` and `{again.Id}` are both a `{NodeKinds.WorkRequests}`, and the graph holds the work on its requests once.");
+        }
+
+        if (holds.Count > 0)
+        {
+            var claimed = Reach(byId.Values.Where(node => node.Kind == NodeKinds.Claimed).Select(node => node.Id), ordered, forward: true);
+            foreach (var hold in holds.Where(hold => !claimed.Contains(hold.Id)))
+            {
+                Say(GraphRefusal.WorkRequestsUnclaimed, null, hold.Id, $"node `{hold.Id}`: a `{NodeKinds.WorkRequests}` holds the work a `{NodeKinds.Claimed}` observes, and no `{NodeKinds.Claimed}` of this graph comes before it.");
+            }
+
+            foreach (var hold in holds)
+            {
+                var early = StartsWithout(byId, starts, local, node => node.Id == hold.Id);
+                foreach (var landing in landings.Where(landing => early.Contains(landing.Id)))
+                {
+                    Say(GraphRefusal.WorkRequestsLate, null, hold.Id, $"node `{hold.Id}`: the landing `{landing.Id}` can start before `{hold.Id}` is reached, and a `{NodeKinds.WorkRequests}` holds the work before every landing: "
+                        + $"every way to it passes `{hold.Id}`.");
+                }
+            }
+        }
+
         // INTEGRATE1n, F47 (§17.4): every kind that observes the landing record is refused when saved where some way to it passes no `handed`,
         // since it would wait for ever before a landing. A way is any wire from an entry, a failure's included, and a `handed` is passed
         // through whole: its own wires are not followed. Said only of a graph that holds a landing, so one without (a quest's cycle) is as it was.
@@ -425,7 +466,15 @@ public static class NodeGraphs
     /// <para>A node fails only where its kind's authority lets something fail it, and a join only where a member may (the second re-check,
     /// finding 3: <see cref="MayFail"/>): a join of a look and a person's press has no failed path, so its failure's wire is never met.</para>
     /// </summary>
-    private static HashSet<string> StartsWithNoLook(Dictionary<string, NodeDeclaration> byId, IReadOnlyList<string> starts, IReadOnlyList<Wire> local)
+    private static HashSet<string> StartsWithNoLook(Dictionary<string, NodeDeclaration> byId, IReadOnlyList<string> starts, IReadOnlyList<Wire> local) =>
+        StartsWithout(byId, starts, local, node => node.Kind == NodeKinds.Look);
+
+    /// <summary>
+    /// The nodes that can start while no node <paramref name="gate"/> names has passed: <see cref="StartsWithNoLook"/>'s reading, whichever node
+    /// is the gate (the look's, and INTEGRATE1o's <c>work.requests</c>, whose own id is the gate it names).
+    /// </summary>
+    private static HashSet<string> StartsWithout(
+        Dictionary<string, NodeDeclaration> byId, IReadOnlyList<string> starts, IReadOnlyList<Wire> local, Func<NodeDeclaration, bool> gate)
     {
         var started = new HashSet<string>(starts, StringComparer.Ordinal);
         var failing = new HashSet<string>(StringComparer.Ordinal);
@@ -434,7 +483,7 @@ public static class NodeGraphs
         {
             WireKinds.Failed => mayFail.Contains(wire.From!.Node) && (started.Contains(wire.From.Node) || failing.Contains(wire.From.Node)),
             WireKinds.Rejected => started.Contains(wire.From!.Node) || failing.Contains(wire.From!.Node),
-            _ => started.Contains(wire.From!.Node) && byId[wire.From.Node].Kind != NodeKinds.Look,
+            _ => started.Contains(wire.From!.Node) && !gate(byId[wire.From.Node]),
         };
         for (var moved = true; moved;)
         {

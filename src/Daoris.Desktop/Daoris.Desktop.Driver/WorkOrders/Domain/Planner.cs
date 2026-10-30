@@ -598,7 +598,8 @@ public static class Planner
     /// release only where it holds that release's operation at <c>released</c>. Null honours none, as a build before the key reads it.
     /// </param>
     public static IReadOnlyList<Consideration> Plan(
-        Snapshot snapshot, DriverConfig config, SessionWire door = SessionWire.Pipe, bool window = false, IRoleStarts? roles = null)
+        Snapshot snapshot, DriverConfig config, SessionWire door = SessionWire.Pipe, bool window = false, IRoleStarts? roles = null,
+        Action<LineCourse>? decided = null)
     {
         var considerations = new List<Consideration>();
         // 🔴 Grouped, never keyed straight off the list: two active sessions in one repository is a
@@ -808,9 +809,18 @@ public static class Planner
             && snapshot.LastRun.TryGetValue(quest.Id, out var last)
             && EndedTransient(last)
             && !HandedFrom(quest, last)
-            && !TransientReleased(quest, last)
+            // FOUNDATION1i path 4: past its bound the course says what follows, and Try again's release of that end is its press.
+            && DrivenCourse.PastBound(last, quest.Status, TransientReleased(quest, last)) is { } course
+            && Told(course) is LineCourse.Hold { Why: CourseHoldWhy.TransientBound }
                 ? last
                 : null;
+
+        // The course's answer, told to the one listening (a test's, no person's), and handed back.
+        LineCourse Told(LineCourse course)
+        {
+            decided?.Invoke(course);
+            return course;
+        }
 
         // The held record a hand-over was made from (round 3's read, R3-O3), or the one Try again released (AGENTERRORS1a2): what an Open
         // quest is carried on from, in its tree, ahead of RetriedFrom's commit rule, never started afresh.
@@ -891,8 +901,9 @@ public static class Planner
                 // bound goes on only with a word of the person's said after it ended. A helper's answer, Daoris's word or another session's
                 // message would resume an exhausted line with nobody between; a word said before the end never releases it. Try again's
                 // release of that end does (AGENTERRORS1a2, round 3's read, R3-O4): a word kept meanwhile goes on under it, by this GoOn.
-                && (!EndedTransient(record) || HandedFrom(quest, record) || TransientReleased(quest, record)
-                    || record.Waiting.Any(word => word.Persons && record.Updated is { } ended && word.At > ended));
+                // FOUNDATION1i path 4: the course reads those words and that release, a hand-over from the record passing the hold as above.
+                && !(EndedTransient(record) && !HandedFrom(quest, record)
+                    && Told(DrivenCourse.PastBound(record, quest.Status, TransientReleased(quest, record))) is LineCourse.Hold { Why: CourseHoldWhy.TransientBound });
         }
 
         // Words going on in the record they were said to (MSG1b, D137 §2.2), `continuing` it: a park is still an active record

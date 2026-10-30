@@ -171,13 +171,16 @@ public static class WorkflowGraphRuns
         foreach (var (node, cell) in graph.Nodes.Zip(cells))
         {
             var status = StatusOf(node.Id);
-            var (state, detail) = StateOf(node, status.State);
+            // INTEGRATE1o part o2: a declined request is read from the quests' records at this look, so the hold's code is never stored on the node.
+            var held = node.Kind == NodeKinds.WorkRequests && status.State == NodeStates.Active && WorkRequests.Declined(run.Requests);
+            var (state, detail) = StateOf(node, status.State, held ? WorkRequests.DeclinedCode : status.Code);
             var asked = facts.Record?.Pending.LastOrDefault(word => word.Node == node.Id);
             var acts = open && asked is null ? RunNodeWords.Acts(node, status, facts.Promoted.Contains(node.Id)) : [];
             var step = new WorkflowRunStep(cell, state, detail)
             {
                 Node = node.Kind,
-                Code = status.State == NodeStates.Skipped ? status.By : status.Code,
+                Requests = node.Kind == NodeKinds.Claimed && run.Requests.Count > 0 ? run.Requests : null,
+                Code = held ? WorkRequests.DeclinedCode : status.State == NodeStates.Skipped ? status.By : status.Code,
                 Words = status.State is NodeStates.Skipped or NodeStates.Rejected or NodeStates.Stopped ? status.Words
                     : node.Kind == NodeKinds.GoAhead ? NodeOptions.Text(node, "act") : null,
                 Acts = acts.Count > 0 ? acts : null,
@@ -273,11 +276,14 @@ public static class WorkflowGraphRuns
     /// A node's state on the record as a run's step says it, and its detail (<see cref="WorkflowGraphDetails"/>): the one table the drawing
     /// reads, held by <c>WorkflowGraphRunTests</c>. A state this build does not know is said as recorded.
     /// </summary>
-    public static (string State, string Detail) StateOf(NodeDeclaration node, string state) => state switch
+    public static (string State, string Detail) StateOf(NodeDeclaration node, string state, string? code = null) => state switch
     {
         NodeStates.Blocked => (WorkflowRunStates.NotReached, WorkflowGraphDetails.Blocked),
         NodeStates.Ready => (WorkflowRunStates.Working, WorkflowGraphDetails.Ready),
         NodeStates.Active when node.Kind is NodeKinds.GoAhead or NodeKinds.Human or NodeKinds.Look =>
+            (WorkflowRunStates.WaitingOnYou, WorkflowGraphDetails.Active),
+        // INTEGRATE1o part o2 (§17.3): a decline holds `work.requests` active, never failed, and it waits on the person, whose pass lets the flow go on.
+        NodeStates.Active when node.Kind == NodeKinds.WorkRequests && code == WorkRequests.DeclinedCode =>
             (WorkflowRunStates.WaitingOnYou, WorkflowGraphDetails.Active),
         NodeStates.Active => (WorkflowRunStates.Working, WorkflowGraphDetails.Active),
         NodeStates.Reached => (WorkflowRunStates.Done, WorkflowGraphDetails.Reached),

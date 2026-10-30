@@ -449,7 +449,7 @@ public sealed class WorkflowGateTests : IDisposable
     }
 
     /// <summary>A graph holding a landing and an <c>integrate</c> of the given node id, its <c>request</c> as written or left out.</summary>
-    private static NodeGraph Integrating(string id, string? request)
+    private static NodeGraph IntegrateGraph(string id, string? request)
     {
         var options = request is null ? "" : ",\"options\":{\"request\":\"" + request + "\"}";
         return Graph("""[{"id":"land","kind":"handed","version":1,"reach":"observed","options":{"form":"branch"}},""" + "{\"id\":\"" + id + "\",\"kind\":\"integrate\",\"version\":1,\"reach\":\"waited\"" + options + "}]");
@@ -464,7 +464,7 @@ public sealed class WorkflowGateTests : IDisposable
     [Fact]
     public void A_graph_versions_integrate_lowers_where_its_request_leaves_the_owner_matched_by_its_node_id()
     {
-        IReadOnlyList<NamedStep> Of(string id, string? request) => Involvement.StepsOf(Integrating(id, request));
+        IReadOnlyList<NamedStep> Of(string id, string? request) => Involvement.StepsOf(IntegrateGraph(id, request));
         Assert.Equal([("land", "landing"), ("merge", "integrate")], Of("merge", "done").Select(step => (step.Id, step.Kind)));
         Assert.Null(Of("merge", null)[1].Field("request"));
         Assert.Equal("done", Of("merge", "done")[1].Field("request"));
@@ -501,6 +501,39 @@ public sealed class WorkflowGateTests : IDisposable
         Assert.Equal(["it lands with no press of yours", Lowers], Involvement.Lowers(automatic, owned));
     }
 
+    /// <summary>A graph holding a claim and, where <paramref name="id"/> is named, a <c>work.requests</c> of that node id before the landing.</summary>
+    private static NodeGraph RequestsGraph(string? id) => Graph(
+        """[{"id":"work","kind":"claimed","version":1,"reach":"observed"},""" + (id is null ? "" : "{\"id\":\"" + id + "\",\"kind\":\"work.requests\",\"version\":1,\"reach\":\"observed\"},")
+        + """{"id":"land","kind":"handed","version":1,"reach":"observed","options":{"form":"branch"}}]""");
+
+    /// <summary>
+    /// INTEGRATE1o part o1 (§17.6 point 9; C29): a <c>work.requests</c> has no step of its own either, so the comparison reads it by its node's id.
+    /// One the chosen version no longer holds under that id lowers, said as what it no longer does; one kept, one added and one in neither
+    /// lower nothing. A node under another id is another node (§2.5), so the old one is gone and lowers.
+    /// </summary>
+    [Fact]
+    public void A_graph_versions_work_requests_removed_lowers_matched_by_its_node_id()
+    {
+        const string Lowers = "it no longer holds the work on its requests, nor asks you about one declined";
+        IReadOnlyList<NamedStep> Of(string? id) => Involvement.StepsOf(RequestsGraph(id));
+        Assert.Equal([("work", "work"), ("requests", "work.requests"), ("land", "landing")], Of("requests").Select(step => (step.Id, step.Kind)));
+
+        Assert.Equal([Lowers], Involvement.Lowers(Of(null), Of("requests")));
+        Assert.Empty(Involvement.Lowers(Of("requests"), Of("requests")));
+        Assert.Empty(Involvement.Lowers(Of(null), Of(null)));
+        Assert.Empty(Involvement.Lowers(Of("requests"), Of(null)));
+
+        // By the node's id: the old id is not in the chosen version, so what it held is no longer held there.
+        Assert.Equal([Lowers], Involvement.Lowers(Of("hold"), Of("requests")));
+
+        // Beside the table's other rows: a look dropped lowers as it did, and the requests' row adds its own after the landing's.
+        var looked = Involvement.StepsOf(Graph("""
+            [{"id":"work","kind":"claimed","version":1,"reach":"observed"},{"id":"requests","kind":"work.requests","version":1,"reach":"observed"},
+             {"id":"look","kind":"look","version":1,"reach":"observed"},{"id":"land","kind":"handed","version":1,"reach":"observed"}]
+            """));
+        Assert.Equal(["it drops your look", Lowers], Involvement.Lowers(Of(null), looked));
+    }
+
     /// <summary>
     /// INTEGRATE1r (§17.4, §17.7): Current's <c>integrate</c> step carries its <c>request</c>, so a version compared against Current reads
     /// the rule's, not the owner's by default: a graph version asking for the owner's card lowers against a Current that requests on its
@@ -520,8 +553,8 @@ public sealed class WorkflowGateTests : IDisposable
         Assert.Equal("done", done[2].Field("request"));
 
         const string Lowers = "it requests the integration with no press of yours";
-        var asksDone = Involvement.StepsOf(Integrating("integrate", "done"));
-        var asksOwner = Involvement.StepsOf(Integrating("integrate", "owner"));
+        var asksDone = Involvement.StepsOf(IntegrateGraph("integrate", "done"));
+        var asksOwner = Involvement.StepsOf(IntegrateGraph("integrate", "owner"));
         // A version asking for the owner's card, chosen where Current would request on its own: nothing lowers, it asks more.
         Assert.Empty(Involvement.Lowers(asksOwner, done));
         // A version that requests on its own, chosen where Current asks the owner: it lowers.
@@ -690,7 +723,11 @@ public sealed class WorkflowGateTests : IDisposable
     private WorkflowProcess GraphProcess(string config, string nodes, params (string From, string To)[] extra) => GraphProcess("q1", config, nodes, extra);
 
     /// <summary>The run <paramref name="run"/> so bound, the version written over whatever the file held, and its process.</summary>
-    private WorkflowProcess GraphProcess(string run, string config, string nodes, params (string From, string To)[] extra)
+    private WorkflowProcess GraphProcess(string run, string config, string nodes, params (string From, string To)[] extra) =>
+        GraphProcess(run, config, nodes, null, extra);
+
+    /// <summary>The same, read by a door that handed the gates the repository's accepted declaration names (INTEGRATE1r part r2).</summary>
+    private WorkflowProcess GraphProcess(string run, string config, string nodes, AcceptedGates? accepted, params (string From, string To)[] extra)
     {
         Directory.CreateDirectory(WorkflowStore.FolderOf(_home));
         File.WriteAllText(WorkflowStore.PathOf(_home, "docs-to-pr"),
@@ -699,7 +736,7 @@ public sealed class WorkflowGateTests : IDisposable
         Assert.True(version.Problem is null, version.Problem);
         Assert.Null(version.Unrun);
         Bind(new WorkflowRunBinding(run, "web-app", "work", "docs-to-pr", WorkflowLevels.Repository, At) { Version = 1, Digest = version.Digest });
-        return WorkflowProcesses.Read(_home, Config(config), "web-app", "work", run);
+        return WorkflowProcesses.Read(_home, Config(config), "web-app", "work", run, accepted);
     }
 
     public static TheoryData<string, string, string, string> GraphRows => new()
@@ -811,6 +848,135 @@ public sealed class WorkflowGateTests : IDisposable
         Assert.NotNull(closing.Graph);
         var held = WorkflowGate.Judge(closing);
         Assert.Equal((WorkflowGateStates.CannotStart, false), (held.State, held.LetsGo));
+    }
+
+    // ——— the choice knows the `integrate` step (INTEGRATE1r part r2; the integration design §17.7, §17.4)
+
+    private const string Branch = """{"landings":{"web-app":{"form":"branch","pattern":"w/{quest}"}}}""";
+
+    private const string Gated = """{"landings":{"web-app":{"form":"branch","pattern":"w/{quest}","autoAccept":true,"integrate":{"gates":"declared"}}}}""";
+
+    private const string GatesOff = """{"landings":{"web-app":{"form":"branch","pattern":"w/{quest}","autoAccept":true,"integrate":{"gates":"none"}}}}""";
+
+    /// <summary>A graph whose landing is integrated asking as <paramref name="request"/>, the landing's own options as given.</summary>
+    private static string Integrating(string request = "owner", string landing = "{}") => $$$"""
+        [{"id":"claim","kind":"claimed","version":1,"reach":"observed"},
+         {"id":"land","kind":"handed","version":1,"reach":"observed","options":{{{landing}}}},
+         {"id":"merge-in","kind":"integrate","version":1,"reach":"waited","options":{"request":"{{{request}}}"}}]
+        """;
+
+    /// <summary>The gate holds the version as cannot start, and its sentences each name the Setup row that settles it (D157 §2.3).</summary>
+    private static void Holds(WorkflowProcess process, params string[] sentences)
+    {
+        Assert.Equal(WorkflowGateStates.CannotStart, WorkflowGate.Judge(process).State);
+        foreach (var sentence in sentences) Assert.Contains(sentence, process.Problem);
+        Assert.Contains("Line and landing", process.Problem);
+    }
+
+    [Fact]
+    public void An_integrate_with_no_pattern_declared_cannot_start_and_names_the_pattern_and_the_setup_row()
+    {
+        var process = GraphProcess("q1", """{"landings":{"web-app":{"form":"merge"}}}""", Integrating());
+        Holds(process, "its `merge-in` (`integrate`) integrates the branch the landing `land` makes", "names a pattern", "daoris driver landing web-app branch <pattern>");
+
+        // The version's own pattern is a pattern declared.
+        var own = GraphProcess("q2", """{"landings":{"web-app":{"form":"merge"}}}""", Integrating(landing: """{"form":"branch","pattern":"x/{quest}"}"""));
+        Assert.Null(own.Problem);
+        Assert.Equal(WorkflowGateStates.Follows, WorkflowGate.Judge(own).State);
+    }
+
+    [Fact]
+    public void An_integrate_after_a_landing_a_plugin_lands_cannot_start_naming_the_plugin()
+    {
+        // The rule's plugin. (A plugin on the version's own `handed` is refused when the version is saved, so it never reaches here.)
+        var ruled = GraphProcess("q1", Declared, Integrating());
+        Holds(ruled, "the landing `land` is landed by the plugin `example.pull-request`, which `web-app`'s landing rule names", "a pull-request version");
+
+        // `plugin: none` is not saved beside an integrate either (the plugin option is refused whole), so the rule's decides.
+        Assert.Null(GraphProcess("q2", Branch, Integrating()).Problem);
+    }
+
+    [Fact]
+    public void Done_and_steward_cannot_start_where_the_rules_gates_are_not_declared_each_case_its_own_sentence()
+    {
+        var absent = GraphProcess("q1", Branch, Integrating("steward"), new AcceptedGates(["build"]));
+        Holds(absent, "asks with `steward`, which needs the line's gates", "`web-app`'s landing rule does not set `integrate.gates` to `declared`");
+        Assert.DoesNotContain("no declaration the owner accepted", absent.Problem);
+
+        // The accepted blob with gates off (C31): `done` refused though a gate is named, `owner` integrates with no gates.
+        var off = GraphProcess("q2", GatesOff, Integrating("done", """{"accept":"automatic"}"""), new AcceptedGates(["build"]));
+        Holds(off, "`integrate.gates` to `declared`");
+        Assert.DoesNotContain("no declaration the owner accepted", off.Problem);
+        var owner = GraphProcess("q3", GatesOff, Integrating(), new AcceptedGates(["build"]));
+        Assert.Null(owner.Problem);
+        Assert.True(IntegrateCarry.NoGates(WorkflowProcess.Current(Config(GatesOff), "web-app", "work").Landing.Rule));
+        Assert.True(IntegrateCarry.NoGates(WorkflowProcess.Current(Config(Branch), "web-app", "work").Landing.Rule));
+
+        // Neither fact holding is two sentences.
+        var neither = GraphProcess("q4", Branch, Integrating("done", """{"accept":"automatic"}"""), new AcceptedGates([]));
+        Holds(neither, "does not set `integrate.gates` to `declared`", "no declaration the owner accepted names a gate");
+    }
+
+    [Fact]
+    public void Done_and_steward_cannot_start_where_no_accepted_declaration_names_a_gate_or_none_could_be_read()
+    {
+        var none = GraphProcess("q1", Gated, Integrating("steward"), new AcceptedGates([]));
+        Holds(none, "no declaration the owner accepted names a gate");
+        Assert.DoesNotContain("does not set", none.Problem);
+
+        var unread = GraphProcess("q2", Gated, Integrating("done", """{"accept":"automatic"}"""), AcceptedGates.NotRead("git could not say"));
+        Holds(unread, "whether the declaration the owner accepted names a gate could not be read (git could not say)");
+
+        var named = GraphProcess("q3", Gated, Integrating("done", """{"accept":"automatic"}"""), new AcceptedGates(["build"]));
+        Assert.Null(named.Problem);
+        Assert.False(IntegrateCarry.NoGates(WorkflowProcess.Current(Config(Gated), "web-app", "work").Landing.Rule));
+
+        // Owner's request needs no gates at all.
+        Assert.Null(GraphProcess("q4", Gated, Integrating(), new AcceptedGates([])).Problem);
+    }
+
+    [Fact]
+    public void Done_cannot_start_where_the_effective_landing_accepts_by_press_and_steward_can()
+    {
+        // The rule's switch is off and the version leaves the press out: it is pressed.
+        var rule = """{"landings":{"web-app":{"form":"branch","pattern":"w/{quest}","integrate":{"gates":"declared"}}}}""";
+        var pressed = GraphProcess("q1", rule, Integrating("done"), new AcceptedGates(["build"]));
+        Holds(pressed, "asks with `done`, which a landing accepted automatically starts", "the landing `land` accepts on your press");
+
+        // The version's own `accept` wins over the rule's switch, either way.
+        var automatic = GraphProcess("q2", rule, Integrating("done", """{"accept":"automatic"}"""), new AcceptedGates(["build"]));
+        Assert.Null(automatic.Problem);
+        var youOverSwitch = GraphProcess("q3", Gated, Integrating("done", """{"accept":"you"}"""), new AcceptedGates(["build"]));
+        Holds(youOverSwitch, "accepts on your press");
+
+        Assert.Null(GraphProcess("q4", rule, Integrating("steward"), new AcceptedGates(["build"])).Problem);
+    }
+
+    [Fact]
+    public void A_pushed_or_pull_request_after_a_landing_no_plugin_pushes_cannot_start_and_a_plugin_lets_it()
+    {
+        var nodes = """
+            [{"id":"claim","kind":"claimed","version":1,"reach":"observed"},{"id":"land","kind":"handed","version":1,"reach":"observed"},
+             {"id":"push","kind":"pushed","version":1,"reach":"observed"},{"id":"pr","kind":"pull-request","version":1,"reach":"observed"}]
+            """;
+        var bare = GraphProcess("q1", Branch, nodes);
+        Holds(bare, "its `push` (`pushed`) pushes the landing's branch through a plugin", "its `pr` (`pull-request`)", "`daoris driver landing web-app branch <pattern> --plugin <id>`");
+
+        Assert.Null(GraphProcess("q2", Declared, nodes).Problem);
+        // `plugin: none` on the landing is a choice among what is declared: nothing then pushes.
+        var none = """
+            [{"id":"claim","kind":"claimed","version":1,"reach":"observed"},{"id":"land","kind":"handed","version":1,"reach":"observed","options":{"plugin":"none"}},
+             {"id":"pr","kind":"pull-request","version":1,"reach":"observed"}]
+            """;
+        Holds(GraphProcess("q3", Declared, none), "its `pr` (`pull-request`)");
+    }
+
+    [Fact]
+    public void A_graph_that_integrates_nothing_and_pushes_nothing_is_judged_as_it_was()
+    {
+        var plain = GraphProcess("q1", Branch, """[{"id":"claim","kind":"claimed","version":1,"reach":"observed"},{"id":"land","kind":"handed","version":1,"reach":"observed"}]""",
+            AcceptedGates.NotRead("never asked"));
+        Assert.Null(plain.Problem);
     }
 
     // ——— the landing gate's graph part, read from the run's record (FABRIC-CUTOVER1d; the cutover design §4's table)

@@ -308,6 +308,14 @@ public static class Involvement
             }
         }
 
+        // INTEGRATE1o (§17.6 point 9, C29): a `work.requests` the chosen version no longer holds under its node id. It held the work on the quests
+        // its sessions published and asked you about one declined, so its removal asks you for less; one kept or added lowers nothing.
+        var held = chosen.Where(step => step.Kind == NodeKinds.WorkRequests).Select(step => step.Id).ToHashSet(StringComparer.Ordinal);
+        if (otherwise.Any(step => step.Kind == NodeKinds.WorkRequests && !held.Contains(step.Id)))
+        {
+            lowered.Add("it no longer holds the work on its requests, nor asks you about one declined");
+        }
+
         return lowered;
     }
 
@@ -353,7 +361,7 @@ public static class Involvement
     /// gate and go-ahead nodes in the graph's order, each as the step of its kind, its options as that step's fields (the work's checks, the
     /// opinion's switches, the look's environment, the landing's form and press, each go-ahead's act). A plugin's node, a person's task, a
     /// stop and every other node is no part of it, as no step stood for one; except the graph-only kinds the comparison reads by their node's
-    /// id (INTEGRATE1n: <c>integrate</c>, kept under its own kind). An option absent is a field absent, so a graph that leaves the
+    /// id (INTEGRATE1n: <c>integrate</c>; INTEGRATE1o: <c>work.requests</c>, each kept under its own kind). An option absent is a field absent, so a graph that leaves the
     /// landing's press to the repository's rule lowers nothing by it, as 1d reads that press from the rule.
     /// </summary>
     public static IReadOnlyList<NamedStep> StepsOf(NodeGraph graph) =>
@@ -370,6 +378,7 @@ public static class Involvement
                 NodeKinds.GoAhead => WorkflowKinds.GoAhead,
                 // INTEGRATE1n: a graph-only kind, kept by its own kind and its node's id for the comparison's graph part (<see cref="Lowers"/>).
                 NodeKinds.Integrate => NodeKinds.Integrate,
+                NodeKinds.WorkRequests => NodeKinds.WorkRequests,
                 _ => null,
             };
             return kind is null ? null

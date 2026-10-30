@@ -101,6 +101,34 @@ internal sealed class ChatGoOn
     /// </summary>
     internal Action<string>? Waits { get; set; }
 
+    /// <summary>What the course answered each conversation's go-on, by session (FOUNDATION1h branch 7): a test hears it; no person reads it.</summary>
+    internal event Action<string, LineCourse>? Decided;
+
+    /// <summary>
+    /// The course's answer for an ended conversation's go-on (FOUNDATION1h branch 7, the foundation design §3.1): the record, the words waiting
+    /// and what the go-on has read so far go in as facts, the conversation stands between its parts, and <paramref name="alone"/> is the answers-alone
+    /// reading <see cref="AnswersAloneHold"/> made (the course never reads an event file). Where the course would answer another thing than the go-on
+    /// does it keeps today's answer (D212's differences 6 and 9), so what it says is heard and the go-on's reading stays its own.
+    /// </summary>
+    private LineCourse Decide(PriorSession record, string? judged = null, bool agentGone = false, bool alone = false, LineAnswer? answer = null)
+    {
+        var course = CourseDecision.Decide(
+            new CourseFacts(
+                new CourseHead(
+                    record.State, Role: record.Actor ?? "chat", Choice: record.Choice, Adapter: record.Adapter, Profile: record.Profile,
+                    Tree: record.Tree, Conversation: true,
+                    AskDaoris: string.Equals(record.Repository, KnowledgeRoomIdentity.Repository, StringComparison.OrdinalIgnoreCase),
+                    AgentGone: agentGone, Judged: judged,
+                    Waiting: [.. record.Waiting.Select(word => new CourseWord(word.Id ?? "", BriefedMove.AuthorOf(word), word.Key))],
+                    Session: record.Session),
+                CourseBoundary.ProcessExited,
+                Account: new CourseAccount(Answer: answer, Picked: _context.Conversations.PickedOn(record.Session, record.Profile)),
+                Alone: alone ? new CourseAlone(AnswersAlone.Bound) : null, Rules: new CourseRules(Runner: true)),
+            CourseTrigger.WordsKept);
+        Decided?.Invoke(record.Session, course);
+        return course;
+    }
+
     public ChatGoOn(
         ChatContext context, IChatRunning runner, ChatHandOver handOver, IChatHelping help, ChatHelperWords words, BriefedMove move, LimitMove limit)
     {
@@ -244,7 +272,8 @@ internal sealed class ChatGoOn
             if (ServiceClient.ReadRecord(json, each.Id) is not { WordsWaiting: true } record) continue;
 
             // LIMITRESUME1c: one held by its limit is the look's limits stage's, which wakes it, its own account first, with Daoris's word.
-            if (LimitHeld.Waiting(_context.Events.After(each.Id, 0).Events) is not null)
+            // FOUNDATION1g part c: held by the record's flag, its events read alone for a record an older build ended.
+            if (LimitHeld.Waiting(_context.Events.After(each.Id, 0).Events, record.Limit) is not null)
             {
                 Waits?.Invoke(each.Id);
                 continue;
@@ -562,6 +591,7 @@ internal sealed class ChatGoOn
         // them go. Its line is read over the records already in hand.
         if (new AnswersAloneHold(_context.Events, _context.Marks).Holds(record, ServiceClient.ReadRecords(json), DateTimeOffset.UtcNow))
         {
+            Decide(record, alone: true);
             return new(null, $"conversation `{sessionId}`'s answer waits for you: it would take its work on a third time with nobody between.");
         }
 
@@ -613,10 +643,11 @@ internal sealed class ChatGoOn
         {
             var reason = why ?? ContinueWhy.Of(ContinueWhy.Unkept);
             // 🔴 SESSCTX1c part B (D189 point 3): no id kept, or a door that cannot resume, proves its conversation lost, so it goes on by
-            // itself in a new part handed the brief; anything else waits for the person, the brief ready.
-            return adapter is not null && reason.Lost
-                ? await LostAsync(record, reason, adapter.Name, config, onEnded, held: true, ct).ConfigureAwait(false)
-                : CannotGoOn(record, reason, ranOn);
+            // itself in a new part handed the brief; anything else waits for the person, the brief ready. A lost conversation is decided by
+            // the move it goes on in (ConversationLost, which knows the walk's answer); what cannot go on is the course's hold here.
+            if (adapter is not null && reason.Lost) return await LostAsync(record, reason, adapter.Name, config, onEnded, held: true, ct).ConfigureAwait(false);
+            Decide(record, judged: reason.Code, agentGone: adapter is null);
+            return CannotGoOn(record, reason, ranOn);
         }
 
         if (string.Equals(record.Repository, KnowledgeRoomIdentity.Repository, StringComparison.OrdinalIgnoreCase))
@@ -640,7 +671,8 @@ internal sealed class ChatGoOn
         // there, through the ended limit move's body, which walks once and opens on what it judged; otherwise they wait for the earliest
         // reset of any account of its agent, never its own alone.
         var resume = await SwitchableAsync(record, adapter.Name, config, known.Workspace, ct).ConfigureAwait(false);
-        if (resume.Switched)
+        var course = Decide(record, answer: resume.Answer);
+        if (resume.Switched || course is LineCourse.Move { Why: CourseFromWhy.Retry })
         {
             StartedFrom? moved;
             try
@@ -657,7 +689,7 @@ internal sealed class ChatGoOn
             return moved is { SessionId: { } onTo } ? new(onTo, moved.Message) : new(null, moved?.Message ?? $"conversation `{sessionId}` did not go on in a new part now.");
         }
 
-        if (resume.Waits)
+        if (resume.Waits || course is LineCourse.Wait)
         {
             _context.Note(sessionId, ResumeWords.NotYetOn(resume, ResumeWords.ChatDoorOf(sessionId)));
             // LIMITRESUME1c (D206 §3.5, D137 point 7): the look's limits stage wakes it at the reset.
@@ -674,7 +706,7 @@ internal sealed class ChatGoOn
         }
 
         // LIMITRESUME1c (D206 §3.5): the words its account's limit refused, handed again first, before the words that waited.
-        var limited = LimitHeld.Waiting(_context.Events.After(sessionId, 0).Events);
+        var limited = LimitHeld.Waiting(_context.Events.After(sessionId, 0).Events, record.Limit);
 
         // A tree of its own is taken again: its repository's trees are held until the ledger holds this one once more (LEFT2),
         // so bringing the repository up to date does not rebase it under the conversation.
@@ -758,7 +790,8 @@ internal sealed class ChatGoOn
         var resume = await _context.Harnesses
             .ResumeAsync(adapter.Name, config, workspace: null, record.Profile, StartKind.Conversation, line: LineKind.AskDaoris, ct: ct)
             .ConfigureAwait(false);
-        if (resume.Waits)
+        var course = Decide(record, answer: resume.Answer);
+        if (resume.Waits || course is LineCourse.Wait)
         {
             _context.Note(sessionId, ResumeWords.NotYetOn(resume, ResumeWords.HelpDoorOf()));
             // LIMITRESUME1c (D206 §3.5, D137 point 7): the look's limits stage wakes it on its own account at the reset.
@@ -799,7 +832,7 @@ internal sealed class ChatGoOn
             files: word => ChatFiles.Kept(_context.Home, sessionId, word.Files))
         {
             // LIMITRESUME1c (D206 §3.5): the words its account's limit refused, handed again first.
-            Resent = Resent(sessionId, LimitHeld.Waiting(_context.Events.After(sessionId, 0).Events)),
+            Resent = Resent(sessionId, LimitHeld.Waiting(_context.Events.After(sessionId, 0).Events, record.Limit)),
         };
 
         // ASKSCOPE1b: the room it ran in, its workspace's, or the machine's where it started there before each workspace had its own.
@@ -952,7 +985,7 @@ internal sealed class ChatGoOn
 
         // A conversation its limit held keeps the refused turns' words in its events alone: it goes on by the limit's own ended-record
         // move, its own account allowed since its conversation is lost, handed the brief, those words and the words that waited.
-        if (!_context.Closing && (restarted || LimitHeld.Waiting(_context.Events.After(record.Session, 0).Events) is not null))
+        if (!_context.Closing && (restarted || LimitHeld.Waiting(_context.Events.After(record.Session, 0).Events, record.Limit) is not null))
         {
             StartedFrom? moved;
             try
