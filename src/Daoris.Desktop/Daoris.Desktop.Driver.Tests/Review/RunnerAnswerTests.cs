@@ -10,7 +10,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// schema, names another commit, base or declaration blob than the accepted one, names a gate the accepted declaration does not declare, or
 /// lacks a gate its plan named or holds one ended or not-run; promotion consumes only a run for the exact tip and base under the accepted
 /// blob, every planned gate pass or flake beside the plan's kept. Held to ONE table, <c>fixtures/runner-answers.json</c>, whose answers the
-/// merge tool writes (<c>src/Daoris.Cli/tool-test/integration-runner-answers.test.ts</c> builds each piece with its own writers). Text
+/// merge tool writes (the CLI's tool test <c>integration-runner-answers.test.ts</c> builds each piece with its own writers). Text
 /// only, no file and no process.
 /// </summary>
 public sealed class RunnerAnswerTests

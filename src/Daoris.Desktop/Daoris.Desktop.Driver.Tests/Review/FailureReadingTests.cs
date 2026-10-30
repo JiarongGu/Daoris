@@ -7,7 +7,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <summary>
 /// INTEGRATE1f part f1 (D207, the integration design §5.3): the failure reader and the signature, the driver's twin of
 /// <c>tools/test-failures.mjs</c>. Held cell for cell to ONE table, <c>fixtures/failure-signatures.json</c>, which
-/// <c>src/Daoris.Cli/tool-test/integration-failures.test.ts</c> holds the tool to, row for row: a failure's reading from a trx, vitest's
+/// the CLI's tool test <c>integration-failures.test.ts</c> holds the tool to, row for row: a failure's reading from a trx, vitest's
 /// JSON or node's TAP, its signature and the key two runs compare by. Text only, no process.
 /// </summary>
 public sealed class FailureReadingTests
