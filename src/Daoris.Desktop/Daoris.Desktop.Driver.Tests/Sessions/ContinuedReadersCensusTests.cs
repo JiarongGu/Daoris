@@ -92,6 +92,7 @@ public sealed partial class ContinuedReadersCensusTests
         ["Driver.cs"] =
         [
             (How.NotOn, "the supervisor's release, whose door stays today's (O7-F12): it answers the park this record holds, and reads the refusal's word as it reads any, held for the owner"),
+            (How.NotOn, "the overlap word to a running unit (INTEGRATE1l), kept for the run this process holds (`running`): it goes into that run's own turn in this process alone, and the pair is marked told only once the say returned"),
         ],
         ["ChannelReach.cs"] =
         [
