@@ -465,9 +465,9 @@
       "note": "a workflow step's, a gate's or a landing's own opinion or ask, not a record's mark"
     },
     "Workflows/WorkflowRun.Read.cs": {
-      "lines": 7,
+      "lines": 8,
       "reads": "tells",
-      "note": "tells which kinds of record run no workflow (Ask Daoris's, a reviewer's, a partner's, a helper's); two lines read an ask; no row of this design moves it"
+      "note": "tells which kinds of record run no workflow (Ask Daoris's, a reviewer's, a partner's, a helper's) and which sessions are the work's helpers (INTEGRATE1o2); two lines read an ask; no row of this design moves it"
     },
     "Workflows/WorkflowRunFiles.cs": {
       "lines": 1,
