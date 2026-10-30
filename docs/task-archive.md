@@ -21860,3 +21860,9 @@ The row is quoted by its head; its whole text and proof are the foundation desig
 The row is quoted by its head; its whole text and proof are the foundation design's Part B table, row 1y-i.
 
 **Outcome** 2026-10-31: one judged door (`Roles/RoleDoor.cs`) for `SET_ROLE`, `daoris driver role` and `role_propose`'s press; Settings → AI features → Role catalogue in both languages, with the Designer suggested there (MODELROLE1g's card is unbuilt); a work no role takes holds its starts and says why, an intake's on its ask; a running session goes on; no `settings_*` grant names a role. Owed: the owner adding a role on the install. Detail in D212's FOUNDATION1y-i note.
+
+## GITISOLATE1 — no test's git reaches the repository it runs in (2026-10-31)
+
+> - [ ] **GITISOLATE1 — no test's git reaches the repository it runs in** (driver tests; 2026-10-31). A builder's filtered run in its worktree left the shared repository config with `core.bare=true`, which every worktree of this repository reads; it was reset by hand, and the test is not known. Many git tests make bare repositories under `_fixtures`, where a git command that climbs past its fixture reaches the worktree's repository. Every test's git runs with `GIT_CEILING_DIRECTORIES` at its fixture (or an explicit `--git-dir`), and a census fails a git start in a test that sets neither. Proof: a fixture command that would climb is refused; the shared config is unchanged after the git test classes run.
+
+**Outcome** 2026-10-31: built by the owner's install (quest `#18ea8df46b4b`). The tests' git starts set `GIT_CEILING_DIRECTORIES` on the start's own environment (`TestGit.Ceiling`), and a census fails a test's git start that sets neither it nor `--git-dir`. Detail in the FIX-LOG entry.
