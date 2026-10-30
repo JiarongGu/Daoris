@@ -303,6 +303,30 @@ public sealed class DriverModuleWorkflowRunTests : DriverModuleBridge
             run.GetProperty("workflow").GetProperty("limits").GetProperty(WorkflowLimits.PullRequestAtCleanUp).GetString());
     }
 
+    /// <summary>
+    /// INTEGRATE1r part r3: Current draws an <c>integrate</c> step after the landing where the rule carries one (part r1), but a run under Current
+    /// is drawn by its own steps, the work and its landing, so it never lists that step nor its <c>not-integrated-yet</c> limit: the run's page has
+    /// nothing of Current's integrate step to say until the integration run draws one (row g).
+    /// </summary>
+    [Fact]
+    public async Task A_run_under_a_rule_that_integrates_draws_no_integrate_step_and_lists_no_such_limit()
+    {
+        File.WriteAllText(DriverConfigPath, """
+            { "landings": { "engine": { "form": "branch", "pattern": "work/{quest}", "integrate": { "request": "owner" } } } }
+            """);
+        new LandedBranches(Home).Record(new LandedBranch("engine", "aurora", "work/q1", "main", Commit, "s1", "q1", "Quest q1", T));
+        var (module, _) = await UpAsync();
+
+        var answer = await AnswerAsync(module, "WORKFLOW_RUN", new { quest = "q1" });
+
+        var current = WorkflowCurrent.Derive(
+            DriverConfig.Load(DriverConfigPath), "engine", "aurora", WorkflowCurrent.PluginsOf(PluginCatalog.Load(Home, AdapterSet.Built().Names)));
+        Assert.Contains(current.Steps, step => step.Kind == NodeKinds.Integrate);
+        var run = Assert.Single(answer.GetProperty("runs").EnumerateArray());
+        Assert.DoesNotContain(run.GetProperty("steps").EnumerateArray(), step => step.GetProperty("step").GetProperty("kind").GetString() == NodeKinds.Integrate);
+        Assert.False(run.GetProperty("workflow").GetProperty("limits").TryGetProperty(WorkflowLimits.NotIntegratedYet, out _));
+    }
+
     /// <summary>A session's run is its quest's, and an ask's is each run of each chain it asked: the same records, read the same.</summary>
     [Fact]
     public async Task A_session_and_an_ask_read_the_same_run_as_the_quest()

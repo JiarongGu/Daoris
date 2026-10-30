@@ -176,4 +176,52 @@ public sealed class IntegrationRequestsGitTests : LandedFixture
         Assert.Equal((AcceptedBy.Person, new LandedIntegrate(LandingIntegrate.Done, LandedIntegrate.Rule)), (advance.AcceptedBy, advance.Integrate));
         Assert.Equal(new LandedIntegrate(LandingIntegrate.Owner, LandedIntegrate.Rule), moved.Integrate);
     }
+
+    private const string IntegratingGraph = """
+        {"schemaVersion":2,"entries":["handed"],"end":"line",
+         "nodes":[{"id":"handed","kind":"handed","version":1,"reach":"observed"},
+                  {"id":"integrate","kind":"integrate","version":1,"reach":"waited","options":{"request":"steward"}},
+                  {"id":"line","kind":"line","version":1,"reach":"observed"}],
+         "wires":[{"id":"h>i","kind":"after","from":"handed","to":"integrate"},{"id":"i>l","kind":"after","from":"integrate","to":"line"}]}
+        """;
+
+    /// <summary>
+    /// INTEGRATE1r part r3's check (the integration design §17.4): a landing under a named version whose graph holds <c>integrate</c> writes
+    /// <c>source: version</c> and the node's own <c>request</c>, though <see cref="WorkflowProcess.Of"/> builds its landing rule without the
+    /// rule's <c>integrate</c> (the value INTEGRATE1n's <c>LandedIntegrate.Of</c> reads under Current only): the version's step is read from
+    /// its graph. The rule asks <c>done</c> here and the version <c>steward</c>, so a record that took the rule's would say so.
+    /// </summary>
+    [Fact]
+    public async Task A_landing_under_a_named_version_whose_graph_integrates_writes_the_versions_own_provenance()
+    {
+        var root = await RepositoryAsync("engine");
+        Save(new LandingRule(LandingForm.Branch, Pattern, AutoAccept: true),
+            new LandingIntegrate(Request: LandingIntegrate.Done, Gates: LandingIntegrate.Declared));
+        Directory.CreateDirectory(WorkflowStore.FolderOf(Home));
+        File.WriteAllText(WorkflowStore.PathOf(Home, "integrated"),
+            $$"""{"id":"integrated","name":"Integrated","versions":[{"version":1,"at":"2026-10-30T09:00:00Z","door":"terminal","schema":2,"graph":{{IntegratingGraph}}}]}""");
+        var version = Assert.Single(new WorkflowFiles(Home).Load("integrated")!.Read.Versions);
+        Assert.True(version.Problem is null, version.Problem);
+        Assert.True(WorkflowRunBindings.Bind(Home,
+            new WorkflowRunBinding("q1", "engine", "aurora", "integrated", WorkflowLevels.Repository, DateTimeOffset.UnixEpoch) { Version = 1, Digest = version.Digest }));
+        var process = WorkflowProcesses.Read(Home, DriverConfig.Load(DaorisHome.Entry(Home, HomeEntry.DriverConfig)), "engine", "aurora", "q1", new AcceptedGates(["build"]));
+        Assert.True(process.Problem is null, process.Problem);
+        Assert.True(process.Named);
+        Assert.Null(process.Landing.Rule.Integrate);
+
+        var gate = new LandingGate(new OpinionGateState(OpinionGateStates.None, "engine"),
+            new ReviewGateState(ReviewStates.None, new ReviewDecision(ReviewLevels.Nothing, null) { Repository = "engine" }))
+        {
+            Workflow = new WorkflowGateState(WorkflowGateStates.Follows, process),
+        };
+        var trees = new SessionTrees(Home);
+        var opened = await trees.OpenAsync(root, "engine", "aurora");
+        await CommitAsync(opened.Path, "work.txt", "the work\n", "the work");
+        var landed = await trees.LandAsync(opened.Path, new LandingSubject("s1", "q1", "Fix the gap"), gate: gate);
+        Assert.True(landed.Landed, landed.Message);
+
+        var entry = trees.Recorded.Of("engine", landed.Branch!)!;
+        Assert.Equal(new LandedIntegrate(LandingIntegrate.Steward, LandedIntegrate.Version), entry.Integrate);
+        Assert.Equal("integrated", entry.Workflow?.Workflow);
+    }
 }
