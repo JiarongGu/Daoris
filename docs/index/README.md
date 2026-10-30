@@ -52,14 +52,14 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/help/ProposalCard.test.tsx` | 41 | 752 |
 | `src/Daoris.Web/src/menus/commands.ts` | 43 | 824 |
 | `src/Daoris.Web/src/projects/ProjectsView.test.tsx` | 109 | 1901 |
-| `src/Daoris.Web/src/projects/ProjectsView.tsx` | 49 | 854 |
+| `src/Daoris.Web/src/projects/ProjectsView.tsx` | 49 | 865 |
 | `src/Daoris.Web/src/projects/setup/RepositorySetup.test.tsx` | 47 | 820 |
 | `src/Daoris.Web/src/quests/QuestPage.tsx` | 59 | 1069 |
 | `src/Daoris.Web/src/quests/QuestsView.test.tsx` | 75 | 1464 |
 | `src/Daoris.Web/src/work/WorkFrame.conversation.test.tsx` | 61 | 1192 |
 | `src/Daoris.Web/src/work/WorkFrame.landed.test.tsx` | 113 | 1974 |
 | `src/Daoris.Web/src/work/WorkFrame.test.tsx` | 97 | 1802 |
-| `src/Daoris.Web/src/work/WorkFrame.tsx` | 161 | 2784 |
+| `src/Daoris.Web/src/work/WorkFrame.tsx` | 161 | 2787 |
 | `src/Daoris.Web/src/work/WorkFrame.words.test.tsx` | 52 | 953 |
 | `src/Daoris.Web/src/work/attention/AttentionBand.test.tsx` | 53 | 857 |
 | `src/Daoris.Web/src/work/attention/AttentionRow.test.tsx` | 43 | 828 |
@@ -77,7 +77,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/work/noteLines.ts` | 57 | 965 |
 | `src/Daoris.Web/src/work/rail/SessionRail.test.tsx` | 56 | 1103 |
 | `src/Daoris.Web/src/work/rail/SessionRow.test.tsx` | 47 | 859 |
-| `src/Daoris.Web/src/workflow/WorkflowRunView.test.tsx` | 43 | 689 |
+| `src/Daoris.Web/src/workflow/WorkflowRunView.test.tsx` | 47 | 750 |
 
 ### Web settings (`web-settings`)
 
@@ -109,7 +109,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Course/LimitWaitsProcessTests.cs` | 75 | 1317 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Course/LineCourseTests.cs` | 58 | 804 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Events/NoteCodesTests.cs` | 44 | 828 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/HelpCoverageTests.cs` | 143 | 2195 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/HelpCoverageTests.cs` | 143 | 2206 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/Proposals/HelpSettingProposalsTests.cs` | 56 | 828 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Install/StagedBuildTests.cs` | 41 | 957 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Install/ToolInstallTests.cs` | 41 | 724 |
@@ -203,7 +203,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/WorkOrders/SessionsCommand.cs` | 102 | 1892 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/WorkOrders/Work/WorkAbandoning.cs` | 43 | 765 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/Domain/WorkflowNamed.cs` | 47 | 838 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/Domain/WorkflowRun.cs` | 61 | 1063 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/Domain/WorkflowRun.cs` | 62 | 1079 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/DriverWorkflowsCommand.cs` | 66 | 1138 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/Nodes/NodeGraphs.cs` | 61 | 1031 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/Nodes/NodeRuntime.cs` | 130 | 1958 |
@@ -237,7 +237,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Platform/PipeConfirmTests.cs` | 81 | 1492 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Platform/PipeStandingTests.cs` | 46 | 857 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Platform/StandingConfirmationTests.cs` | 59 | 1078 |
-| `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Platform/StatePublisherTests.cs` | 43 | 831 |
+| `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Platform/StatePublisherTests.cs` | 44 | 833 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/DriverRoutes.cs` | 48 | 750 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/HelpRoutes.cs` | 84 | 1405 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/LinesRoutes.cs` | 66 | 1060 |

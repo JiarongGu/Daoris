@@ -7,7 +7,7 @@ import i18n from '../locales/i18n';
 import { code } from '../test/code';
 import type { RunStep, WorkflowRun } from './run';
 import {
-  answerOf, CHAT_RUN, FAILED, GRAPH_RUN, GRAPH_RUN_ADDED_LOOK, GRAPH_RUN_GO_AHEAD, GRAPH_RUN_GO_AHEAD_KEPT, GRAPH_RUN_REQUESTS, GRAPH_RUN_UNJUDGED, HELD_FOR_OPINION, IN_REVIEW, LANDED, MERGED, OPINION_DISPUTED,
+  answerOf, CHAT_RUN, CHECK_UNKNOWN_HELD, checkRun, FAILED, GRAPH_RUN, GRAPH_RUN_ADDED_LOOK, GRAPH_RUN_GO_AHEAD, GRAPH_RUN_GO_AHEAD_KEPT, GRAPH_RUN_REQUESTS, GRAPH_RUN_UNJUDGED, HELD_FOR_OPINION, IN_REVIEW, LANDED, MERGED, OPINION_DISPUTED,
   OPINION_SETTLED, PULL_REQUEST_OPEN, SEVERAL, WAITING_ON_YOU, WORKING,
 } from './runFixtures';
 import { WorkflowLine } from './WorkflowLine';
@@ -685,5 +685,66 @@ describe("a quest's and an ask's one line", () => {
     await i18n.changeLanguage('zh');
     render(<WorkflowLine runs={[PULL_REQUEST_OPEN]} onOpen={vi.fn()} />);
     expect(screen.getByRole('button', { name: '工作流：已落地；拉取请求已开启' })).toBeInTheDocument();
+  });
+});
+
+// FABRIC-PIPELINE1d part 5 (the pipeline design §4.4): a check's verdict in its status words, the unknown held for the person offering *Run again*
+// and *Not now*. Seen failing first.
+describe("a check's verdict on the run's view", () => {
+  afterEach(async () => { await i18n.changeLanguage('en'); });
+
+  const words = (id: string) => within(row(id)).getAllByText(/./).map((node) => node.textContent);
+
+  it('says each status word in English and in 中文', async () => {
+    const cases: [ReturnType<typeof checkRun>, string, string][] = [
+      [checkRun('done', 'reached'), 'verified', '已验证'],
+      [checkRun('failed', 'failed', { code: 'gate-failed', gate: 'build' }), 'failed: build', '失败：build'],
+      [checkRun('not-known', 'unknown', { code: 'changed' }), 'not known: gates changed', '未知：检查项已更改'],
+      [checkRun('working', 'ready'), 'waiting for its turn', '正在等待轮到它'],
+      [checkRun('not-known', 'unknown', { held: { unit: 'run:q1', attempt: 1, words: [], resolution: 'stop' } }), 'not now', '暂不处理'],
+    ];
+    for (const [run, en] of cases) {
+      const { unmount } = render(<WorkflowRunView answer={answerOf(run)} />);
+      expect(words('gates')).toContain(en);
+      unmount();
+    }
+    await i18n.changeLanguage('zh');
+    for (const [run, , zh] of cases) {
+      const { unmount } = render(<WorkflowRunView answer={answerOf(run)} />);
+      expect(words('gates')).toContain(zh);
+      unmount();
+    }
+  });
+
+  it('offers Run again and Not now on an unknown held for the person, and sends their word on the held attempt', async () => {
+    const onHeld = vi.fn().mockResolvedValue({ done: true });
+    render(<WorkflowRunView answer={answerOf(CHECK_UNKNOWN_HELD)} onHeld={onHeld} />);
+
+    await userEvent.click(within(row('gates')).getByRole('button', { name: 'Run again' }));
+    expect(onHeld).toHaveBeenCalledWith({ unit: 'run:q1', node: 'gates', attempt: 1, resolution: 'again' });
+    await userEvent.click(within(row('gates')).getByRole('button', { name: 'Not now' }));
+    expect(onHeld).toHaveBeenLastCalledWith({ unit: 'run:q1', node: 'gates', attempt: 1, resolution: 'stop' });
+  });
+
+  it('offers neither where nothing is held, where nothing presses them, or once their word is given', () => {
+    const { unmount } = render(<WorkflowRunView answer={answerOf(checkRun('failed', 'failed', { gate: 'build' }))} onHeld={vi.fn()} />);
+    expect(screen.queryByRole('button', { name: 'Run again' })).toBeNull();
+    unmount();
+
+    const quiet = render(<WorkflowRunView answer={answerOf(CHECK_UNKNOWN_HELD)} />);
+    expect(screen.queryByRole('button', { name: 'Run again' })).toBeNull();
+    quiet.unmount();
+
+    const given = checkRun('not-known', 'unknown', { held: { unit: 'run:q1', attempt: 1, words: ['again', 'stop'], resolution: 'again' } });
+    render(<WorkflowRunView answer={answerOf(given)} onHeld={vi.fn()} />);
+    expect(screen.queryByRole('button', { name: 'Run again' })).toBeNull();
+    expect(screen.getByText(/You asked to run it again/)).toBeInTheDocument();
+  });
+
+  it("says a refused word in the driver's sentence", async () => {
+    const onHeld = vi.fn().mockResolvedValue({ done: false, refused: 'not-held', message: 'work held: nothing is held there.' });
+    render(<WorkflowRunView answer={answerOf(CHECK_UNKNOWN_HELD)} onHeld={onHeld} />);
+    await userEvent.click(within(row('gates')).getByRole('button', { name: 'Run again' }));
+    expect(await within(row('gates')).findByRole('alert')).toHaveTextContent('work held: nothing is held there.');
   });
 });
