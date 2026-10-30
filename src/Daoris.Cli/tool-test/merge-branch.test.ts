@@ -1071,12 +1071,13 @@ test('MAKERTRAIL1 accepts each allowed maker, legacy harness trailers, and names
     'OpenAI gpt-fixture <fixture@example.test>',
     'DeepSeek (fixture-model) <noreply@deepseek.com>',
     'Human <person@example.test>\nCodex gpt-fixture <fixture@example.test>',
+    'Daoris <noreply@daoris.invalid>',
   ]) assert.deepEqual(tool.commitAttributionProblems([commit(trailer)]), [], trailer);
   assert.deepEqual(tool.commitAttributionProblems([commit('', true)]), []);
-  for (const trailer of ['', 'Fixture <fixture@example.test>', 'OpenAI', 'Someone <OpenAI@example.test>']) {
+  for (const trailer of ['', 'Fixture <fixture@example.test>', 'OpenAI', 'Someone <OpenAI@example.test>', 'Someone <Daoris@example.test>']) {
     const problems = tool.commitAttributionProblems([commit(trailer)]);
     assert.equal(problems.length, 1, trailer);
-    assert.match(problems[0]!, /abc1234 work.*Co-Authored-By.*expected.*Anthropic.*OpenAI.*DeepSeek/);
+    assert.match(problems[0]!, /abc1234 work.*Co-Authored-By.*expected.*Anthropic.*OpenAI.*DeepSeek.*Daoris/);
   }
 });
 
