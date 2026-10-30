@@ -27,9 +27,7 @@ public sealed class BrainstormRoomMeasureProcessTests : IDisposable
 
     private void OwnConnector()
     {
-        var host = KnowledgeConnector.Candidates(null, null, WorkspaceRoot.Folder)
-            .Where(path => path.Contains(Path.Combine("Daoris.Service.Mcp", "bin")))
-            .FirstOrDefault(File.Exists) ?? throw new InvalidOperationException("build src/Daoris.Service/Daoris.Service.Mcp first");
+        var host = RealKnowledgeServer.Executable();
         var store = Directory.CreateDirectory(Path.Combine(_home, "store")).FullName;
         foreach (var (name, value) in new[]
                  {
