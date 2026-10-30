@@ -2448,6 +2448,10 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
         _ => null,
     };
 
+    /// <summary>Whether this runner holds the conversation: its turns, its text door or its go-on. What it does not hold, it knows nothing of (CLITURN1).</summary>
+    public bool Holds(string sessionId) =>
+        _context.Turned.ContainsKey(sessionId) || _context.Talking.ContainsKey(sessionId) || _context.GoingOn.ContainsKey(sessionId);
+
     /// <summary>Where a conversation's turns stand; <see cref="ChatQueue.Idle"/> for one nothing here holds.</summary>
     public ChatQueue Queue(string sessionId) =>
         _context.Turned.TryGetValue(sessionId, out var chat) ? chat.Turns.State : ChatQueue.Idle;
