@@ -1,5 +1,7 @@
 # A regular task through Daoris — from a sentence to a landed, tested change
 
+> Router standing, moved here when the router was cut to its size (DOCSIZE1): also governed by D154.
+
 > Written 2026-09-23 from the owner's direction: *"think about a regular task we will do via
 > daoris"* — a workspace of real repositories, a command like *"check the jira ticket <url> and
 > this should be using media config instead hard code the video/image field name"*, and Daoris

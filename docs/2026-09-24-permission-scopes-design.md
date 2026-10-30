@@ -1,5 +1,7 @@
 # Permission scopes — what an agent Daoris starts may do (PERM1)
 
+> Router standing, moved here when the router was cut to its size (DOCSIZE1): also governed by D156.
+
 > Written 2026-09-24 at the owner's direction, answering whether Daoris may set a safety guard (HELP3)
 > and pre-approve its own connector's tools (INT3b) when it starts a session: *"so we should be able to
 > do just like how claude code scopes configured by rules in daoris (which daoris can also use llm to

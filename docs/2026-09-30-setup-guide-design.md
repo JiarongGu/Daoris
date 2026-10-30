@@ -1,5 +1,7 @@
 # The setup guide: what a first start walks through (SETUP1)
 
+> Router standing, moved here when the router was cut to its size (DOCSIZE1): also governed by D150.
+
 **Status: the contract for SETUP1a–b, recorded as D97 before any code.** The owner, 2026-09-30:
 *"we also will need a setup guide for first use daoris, so setup agent and agent for "daoris" (the
 main agent for daoris system) and other rules"*, and the same day: *"we need to have a good ui/ux or

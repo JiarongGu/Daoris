@@ -31,7 +31,7 @@ public static class QuestWire
         + "and its forward, where it says one, names a take's machine and sequence; an evidenced verdict names "
         + "the full commit read, how it was read, and each item's requirement, path or gate, and result, with a "
         + "spelling only on a `case` read; a publish's review choice, where it has one, is off, on or an environment's "
-        + "name, a publish's weight, where it has one, is design or exact, and a set-up step's environment is a name that never reads as production; a set-up names its full "
+        + "name, a publish's weight, where it has one, is design or exact, a publish's paths, where it declares some, are repository-relative globs, a publish's request, where it names one, is a run, a node and a number, and a set-up step's environment is a name that never reads as production; a set-up names its full "
         + "commit and, unless it is local, where to look; a review's verdict says reviewed or not-yet, naming the "
         + "set-up's machine, sequence and commit, or skipped, and a not-yet carries the person's words; a reopen and a rebind "
         + "each name a submission's machine and sequence, as a step's grewFrom does where it says one, and a take's submission does where "
@@ -325,6 +325,19 @@ public static class QuestWire
             // as unweighted, which starts it on Build's order.
             if (asked.Weight is not null) writer.WriteString("weight", asked.Weight);
 
+            // Only when it declares some (INTEGRATE1l): a quest declaring none crosses exactly as it did, and an older build reads one
+            // that declares some as declaring none, which a start there compares by its branch's changes alone.
+            if (asked.Paths.Count > 0)
+            {
+                writer.WriteStartArray("paths");
+                foreach (var path in asked.Paths) writer.WriteStringValue(path);
+                writer.WriteEndArray();
+            }
+
+            // Only on a workflow request's publish (INTEGRATE1p): every other quest crosses exactly as it did. The key is part of the id, so an
+            // older build that reads none keeps the quest under that id and says no run asked it; it publishes no request of its own.
+            if (asked.Request is not null) writer.WriteString("request", asked.Request);
+
             // Only when set (REVIEWENV1b): a quest that chose nothing and is no set-up step crosses exactly as it did, and an
             // older build reads one as the quest it always was.
             if (asked.Review is { } chosen)
@@ -487,6 +500,14 @@ public static class QuestWire
             var (weight, unfitWeight) = QuestWeights.Judge(Text(asked, "weight"));
             if (unfitWeight is not null || (asked.TryGetProperty("weight", out _) && Text(asked, "weight") is null)) return null;
 
+            // A path no publish would keep is half a quest (INTEGRATE1l): replayed, it would hold a start on a place outside the repository.
+            var paths = Items(asked, "paths");
+            if (paths.Any(path => path.ValueKind != JsonValueKind.String || !QuestPaths.Fits(path.GetString()))) return null;
+
+            // A request's key no publish would keep is half a quest (INTEGRATE1p): its run would never find it again.
+            var request = Text(asked, "request");
+            if (asked.TryGetProperty("request", out _) && !QuestRequests.Fits(request)) return null;
+
             // The submission a step grew from (FABRIC-CLOSE1c), where it names one: not whole, the step could not be reopened by it.
             QuestOperationRef? grewFrom = null;
             if (asked.TryGetProperty("grewFrom", out var grew) && (grewFrom = QuestStore.ReadRef(grew)) is null) return null;
@@ -524,6 +545,8 @@ public static class QuestWire
                 Requirements = requirements,
                 Short = Text(asked, "short"),
                 Weight = weight,
+                Paths = paths.Select(path => path.GetString()!).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToList(),
+                Request = request,
                 Review = choice,
                 SetUpIn = setUpIn,
                 GrewFrom = grewFrom,

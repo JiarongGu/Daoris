@@ -17,6 +17,12 @@ describe('stepTitle', () => {
     expect(stepTitle(i18n.getFixedT('zh'), stepOf('integrate'))).toBe('集成');
   });
 
+  // INTEGRATE1p (§17.5): a graph's `request` node, another repository asked as a step, named as the driver's title names it.
+  it('names the request step in English and in 中文', () => {
+    expect(stepTitle(i18n.getFixedT('en'), stepOf('request'))).toBe('The quest to another repository');
+    expect(stepTitle(i18n.getFixedT('zh'), stepOf('request'))).toBe('给另一个仓库的委托');
+  });
+
   // INTEGRATE1r: Current's integrate step is named, said where it was read, and its limit said in the reader's words, not as recorded.
   it("says Current's integrate step: its press, its source and its limit in both languages", () => {
     for (const [language, title, limit] of [

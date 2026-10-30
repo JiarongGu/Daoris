@@ -30,6 +30,8 @@ const NODE_TITLES: Record<string, string> = {
   check: 'workflow.step.check',
   integrate: 'workflow.step.integrate',
   'work.requests': 'workflow.step.workRequests',
+  // INTEGRATE1p (§17.5): another repository asked, as a step.
+  request: 'workflow.step.request',
 };
 
 /** A plugin's own node's kind, `<plugin>/<node>`, both parts named: the driver's `NodeKinds.IsPlugin`. */

@@ -316,8 +316,24 @@ public static class Involvement
             lowered.Add("it no longer holds the work on its requests, nor asks you about one declined");
         }
 
+        // INTEGRATE1p (§17.6 point 9, C29): a `request` that sends with no press of yours where, under its node id, it waited for your Send or
+        // was not there. Each is named, so of two requests only the one moved is said; one removed, or added with `start: you`, lowers nothing.
+        foreach (var after in chosen.Where(step => step.Kind == NodeKinds.Request && StartOf(step) == RequestOptions.Automatic))
+        {
+            if (otherwise.FirstOrDefault(step => step.Kind == NodeKinds.Request && step.Id == after.Id) is { } before
+                && StartOf(before) == RequestOptions.Automatic)
+            {
+                continue;
+            }
+
+            lowered.Add($"it sends `{after.Field("title")}` to `{after.Field("to")}` with no press of yours");
+        }
+
         return lowered;
     }
+
+    /// <summary>A <c>request</c> step's <c>start</c>, the person's <c>you</c> where it names none.</summary>
+    private static string StartOf(NamedStep step) => step.Field("start") as string ?? RequestOptions.You;
 
     /// <summary>An <c>integrate</c> step's <c>request</c>, the owner's where it names none or a value that is no choice (the install's table).</summary>
     private static string RequestOf(NamedStep step) =>
@@ -379,6 +395,7 @@ public static class Involvement
                 // INTEGRATE1n: a graph-only kind, kept by its own kind and its node's id for the comparison's graph part (<see cref="Lowers"/>).
                 NodeKinds.Integrate => NodeKinds.Integrate,
                 NodeKinds.WorkRequests => NodeKinds.WorkRequests,
+                NodeKinds.Request => NodeKinds.Request,
                 _ => null,
             };
             return kind is null ? null

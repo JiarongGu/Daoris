@@ -1,5 +1,7 @@
 # Landing done work automatically, and proof that outlives the environment
 
+> Router standing, moved here when the router was cut to its size (DOCSIZE1): D87's LANDSYNC0 amendment and its LANDREBASE1 note replace §5's moved-line row.
+
 **Standing:** D145/D146, amended by D149 and D154–D157's review, opinion and workflow gates.
 Implementation notes live in those decisions; remaining work is in `TASKS.md`. The opening
 implementation summary and installed observations below describe the original design baseline.
