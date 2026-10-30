@@ -20,7 +20,7 @@ namespace Daoris.Knowledge;
 /// is said as none, never guessed (canary 9).</para>
 ///
 /// <para>🔴 <b>Ids only.</b> Codex's metadata also names the workspace's absolute path and commit: neither is read, and a value
-/// that is not shaped as an id (a path, a blank, a sentence) is not kept (D46, D47).</para>
+/// that is not shaped as an id (a path, a blank, a sentence) is not kept (D46, D47), only named in <see cref="Malformed"/>.</para>
 /// </remarks>
 /// <param name="Harness"><see cref="Claude"/> or <see cref="Codex"/>.</param>
 public sealed record CallLineage(string Harness)
@@ -61,23 +61,48 @@ public sealed record CallLineage(string Harness)
     /// <summary>Codex's root session.</summary>
     public string? Root { get; init; }
 
+    /// <summary>
+    /// The fields the harness sent that are not ids, comma-joined, or null. Kept as malformed, never dropped to look absent: an
+    /// absent parent is what a root has (FABRIC-C2a, D173's note, point 1).
+    /// </summary>
+    public string? Malformed { get; init; }
+
     /// <summary>The lineage a call's <c>_meta</c> carries, or null when it names neither harness's.</summary>
     public static CallLineage? Read(JsonObject? meta)
     {
         if (meta is null) return null;
-        if (Id(meta[ClaudeToolUse]) is { } toolUse) return new CallLineage(Claude) { ToolUse = toolUse };
-        if (Turn(meta[CodexTurn]) is not { } turn) return null;
+        if (Sent(meta[ClaudeToolUse]))
+        {
+            return Id(meta[ClaudeToolUse]) is { } toolUse
+                ? new CallLineage(Claude) { ToolUse = toolUse }
+                : new CallLineage(Claude) { Malformed = "toolUse" };
+        }
+
+        if (!Sent(meta[CodexTurn])) return null;
+        if (Turn(meta[CodexTurn]) is not { } turn) return new CallLineage(Codex) { Malformed = "turn" };
+
+        var malformed = new List<string>();
+        string? Field(string name, string key)
+        {
+            var value = Id(turn[key]);
+            if (value is null && Sent(turn[key])) malformed.Add(name);
+            return value;
+        }
 
         var lineage = new CallLineage(Codex)
         {
-            Thread = Id(turn["thread_id"]),
-            Parent = Id(turn["parent_thread_id"]),
-            Kind = Id(turn["subagent_kind"]),
-            Source = Id(turn["thread_source"]),
-            Root = Id(turn["session_id"]),
+            Thread = Field("thread", "thread_id"),
+            Parent = Field("parent", "parent_thread_id"),
+            Kind = Field("kind", "subagent_kind"),
+            Source = Field("source", "thread_source"),
+            Root = Field("root", "session_id"),
         };
+        if (malformed.Count > 0) return lineage with { Malformed = string.Join(',', malformed) };
         return lineage.Thread is null && lineage.Root is null ? null : lineage;
     }
+
+    /// <summary>Whether the harness sent a value: a JSON null, like a key left out, sent nothing.</summary>
+    private static bool Sent(JsonNode? value) => value is not null && value.GetValueKind() != JsonValueKind.Null;
 
     /// <summary>A value kept only where it is a string shaped as an id.</summary>
     public static string? Id(JsonNode? value) =>

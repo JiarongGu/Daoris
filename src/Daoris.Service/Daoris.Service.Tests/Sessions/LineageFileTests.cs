@@ -63,6 +63,21 @@ public sealed class LineageFileTests : IDisposable
         Assert.Null(file.Path);
     }
 
+    /// <summary>
+    /// FABRIC-C2a (D173's note, point 1): a connector told a session is guarded for it even where its id or home names no file;
+    /// only one told none, a person's own agent's, is not.
+    /// </summary>
+    [Theory]
+    [InlineData("s1", true)]
+    [InlineData("a/b", true)]
+    [InlineData("  ", false)]
+    [InlineData(null, false)]
+    public void A_connector_names_a_session_whenever_it_was_told_one(string? session, bool names)
+    {
+        Assert.Equal(names, new LineageFile(_home, session).NamesSession);
+        Assert.Equal(names, new LineageFile(null, session).NamesSession);
+    }
+
     [Fact]
     public void The_home_is_the_rules_home_the_driver_named_else_the_daoris_home_and_the_session_is_the_connectors()
     {
