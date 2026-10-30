@@ -5,6 +5,20 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-31 - A merge press through the transport started 28 more git processes (INTEGRATE1g follow-up)
+
+- **Symptom:** `LandGitCountTests`' merge ceiling went from 39 to 67; a process start costs seconds on the owner's machine.
+- **Root cause:** the replay found and put back the integration tree the form of the same run had just done, the promotion asked a fresh candidate's ancestry and read the line twice before its effect, and a press's containment ran the content judgement the landing had already made.
+- **Fix:** a run's warm tree is carried from form to replay, a fresh candidate skips the resume, the move begins from the line the promotion read, a press's containment is ancestry alone; the ceiling is 57, the test prints a breakdown by command.
+- **Verify:** `LandGitCountTests`, the transport's and the merge rule's git classes green.
+
+## 2026-10-31 - A branch the transport integrated was refused as a merged pull request (INTEGRATE1g follow-up)
+
+- **Symptom:** the next Accept on a kept branch said its pull request was merged and its plugin opens a new one, where neither was involved.
+- **Root cause:** `LandingAdvance.Refusal` told every branch whose work reads on the line in the pull request's words.
+- **Fix:** a record carrying `integrate` with no push or pull request is told as integrated into the line by Daoris; the pull request's sentence stays for a plugin's.
+- **Verify:** `LandingChainTests` holds both sentences.
+
 ## 2026-10-31 - A test still pinned the first-look baseline row m-iv replaced (FOUNDATION1 m-iv)
 
 - **Symptom:** `A_wait_already_there_at_the_first_look_is_a_baseline_never_a_backlog` failed every run.

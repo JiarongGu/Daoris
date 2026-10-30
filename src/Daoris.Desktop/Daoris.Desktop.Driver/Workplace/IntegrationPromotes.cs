@@ -117,10 +117,14 @@ internal sealed class IntegrationPromotes(IntegrationStore store, string treesRo
     /// (<see cref="IntegrationSteps.ResumeAsync"/>), then the verdict and the promotion where the line does not hold the tip, then the settle.
     /// </summary>
     /// <exception cref="IntegrationClaimLostException">The claim no longer holds the candidate.</exception>
-    public async Task<IntegrationPromoteRun> RunAsync(IntegrationClaim claim, IntegrationPromoteAsk ask, CancellationToken ct = default)
+    /// <param name="formedHere">
+    /// The claim's candidate was formed and replayed by this very run, with no step open and nothing promoted, so there is no cut attempt for
+    /// the resume to find and its ancestry read of the line is spared.
+    /// </param>
+    public async Task<IntegrationPromoteRun> RunAsync(IntegrationClaim claim, IntegrationPromoteAsk ask, CancellationToken ct = default, bool formedHere = false)
     {
-        var resumed = await new IntegrationSteps(store).ResumeAsync(claim, ask.Root, ct).ConfigureAwait(false);
-        if (resumed.Kind is IntegrationResumes.Ended or IntegrationResumes.Unread or IntegrationResumes.Unheld)
+        IntegrationResumed? resumed = formedHere ? null : await new IntegrationSteps(store).ResumeAsync(claim, ask.Root, ct).ConfigureAwait(false);
+        if (resumed?.Kind is IntegrationResumes.Ended or IntegrationResumes.Unread or IntegrationResumes.Unheld)
         {
             return await AnswerAsync(IntegrationPromoteRuns.Resumed, resumed.Said, claim).ConfigureAwait(false);
         }
@@ -206,9 +210,9 @@ internal sealed class IntegrationPromotes(IntegrationStore store, string treesRo
         switch (action)
         {
             case VerdictActions.Green:
-                return await MoveAsync(claim, ask, candidate, replayed, Words(verdict, first.Policy), rerun, ct).ConfigureAwait(false);
+                return await MoveAsync(claim, ask, candidate, replayed, Words(verdict, first.Policy), rerun ?? line, ct).ConfigureAwait(false);
             case VerdictActions.Land when first.Policy.Gates == LandingIntegrate.Declared && Unconfirmed(first.Policy) == LandingIntegrate.Land && verdict.PassedOnConfirm.Count > 0:
-                return await MoveAsync(claim, ask, candidate, replayed, Words(verdict, first.Policy), rerun, ct).ConfigureAwait(false);
+                return await MoveAsync(claim, ask, candidate, replayed, Words(verdict, first.Policy), rerun ?? line, ct).ConfigureAwait(false);
             case VerdictActions.Hold:
                 return await JudgedAsync(claim, IntegrationPromoteRuns.Held, action, new IntegrationStepEnd(IntegrationStepOutcomes.Held)
                 {
@@ -365,20 +369,13 @@ internal sealed class IntegrationPromotes(IntegrationStore store, string treesRo
         + "and the candidate is formed again from the requests that are left.";
 
     /// <summary>
-    /// The <c>promote</c> step (§5.2 step 8): begun with the line's commit read immediately before, or, for an attempt run again, the one its cut
-    /// attempt recorded; its effect is <see cref="EffectAsync"/>. Null where the line now holds the candidate's tip.
+    /// The <c>promote</c> step (§5.2 step 8): begun with <paramref name="lineCommit"/>, the line's commit the promotion read before the gates, or, for an
+    /// attempt run again, the one its cut attempt recorded; its effect reads the line again and forms the candidate again where it moved. Its
+    /// effect is <see cref="EffectAsync"/>. Null where the line now holds the candidate's tip.
     /// </summary>
     private async Task<IntegrationPromoteRun?> MoveAsync(
-        IntegrationClaim claim, IntegrationPromoteAsk ask, IntegrationCandidate candidate, IReadOnlyList<IntegrationMember> replayed, string verdict, string? rerun, CancellationToken ct)
+        IntegrationClaim claim, IntegrationPromoteAsk ask, IntegrationCandidate candidate, IReadOnlyList<IntegrationMember> replayed, string verdict, string lineCommit, CancellationToken ct)
     {
-        var lineCommit = rerun;
-        if (lineCommit is null)
-        {
-            var (line, why) = await LineAsync(ask.Root, ask.Line, ct).ConfigureAwait(false);
-            if (line is null) return await AnswerAsync(IntegrationPromoteRuns.Unread, $"git could not read where `{ask.Line}` stands ({why}): nothing was written, and it is asked again at the next look.", claim).ConfigureAwait(false);
-            lineCommit = line;
-        }
-
         var lapsed = false;
         var ended = await new IntegrationSteps(store).RunAsync(
             claim, IntegrationStepNames.Promote,

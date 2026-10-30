@@ -313,6 +313,17 @@ public static class LandingAdvance
 
         if (facts.Completed is { } where)
         {
+            // The transport's own integration (the rule's integrate): no pull request or plugin was in it.
+            if (facts.Recorded is { Integrate: not null, Pushed: false, PullRequest: null })
+            {
+                return new TreeLanding(false,
+                    $"`{name}`'s work was integrated into `{where}` by Daoris, so Daoris does not move it on: commits added to it now "
+                    + "would land on a branch the line already holds. Bring the repository up to date (`daoris-driver trees sync`, or "
+                    + "Bring up to date on the page), which replays this session's own commits onto the line and removes that branch; "
+                    + $"then Accept lands this work on a fresh `{name}`, which Daoris integrates into the line in turn.")
+                { Refusal = AutoLandingCode.Completed };
+            }
+
             return new TreeLanding(false,
                 $"`{name}`'s work already reads on `{where}` — its pull request was merged — so Daoris does not move it on: commits "
                 + "added to it now would ride no pull request. Bring the repository up to date (`daoris-driver trees sync`, or "

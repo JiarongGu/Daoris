@@ -143,7 +143,7 @@ internal sealed class IntegrationLines(IntegrationStore store, string treesRoot)
                     if (formed is { Kind: IntegrationReplayRuns.Replayed, Claim: { } claim, Candidate.Stands: true }
                         && store.Candidate(claim.Candidate) is { Stands: true })
                     {
-                        var promoted = await _promotes.RunAsync(claim, asks.Promote, ct).ConfigureAwait(false);
+                        var promoted = await _promotes.RunAsync(claim, asks.Promote, ct, formedHere: true).ConfigureAwait(false);
                         said.Add(promoted.Said);
                     }
                 }
