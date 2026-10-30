@@ -21810,3 +21810,17 @@ machine-log design §3 say the contract.
 The row is quoted by its head; its whole text and proof are the foundation design's Part B table, row 1w-s, and §19.15.
 
 **Outcome** 2026-10-30: built in five parts. The staffing lives in the store, imported once; every `driver.json` save is fenced at its rename; every writer (`SET_ACTOR`, the actor verbs, Ask Daoris's proposals) goes through Roles' one write under the staffing lock; the check at each start, look and write keeps another writer's change whole for the person's *Take it* or *Dismiss*, a turn-off applied at once; `daoris driver actor export|import|found`. Settings' port carries the staffing's five fields, not three strings (a reading: they are Settings' own types). Owed: the p95 of a load and a look on the install. Detail in D50's and D212's notes.
+
+## FOUNDATION1q ⚖ — one policy shape and start admission (2026-10-30, D212)
+
+> | **1q** ⚖ one policy shape and start admission | §2.3's policy over today's keys and the start layer's table, keyed by the work; §7 row 9 | `HelperLookTests`, `HelperJudgeTests`, `PartnerJudgeTests`; the five doors of survey §1.3 row 6 asked the same cases; `DriverConfigKeepsTests` (no key moved) |
+
+**Outcome** 2026-10-30: `WorkPolicies.Of` gives every work one policy over today's keys, no key moved; the opinion, hand-over and brainstorm rules resolve through it; `StartAdmission`, keyed by the work, answers the five helper doors one table of cases (`fixtures/helper-askers.json`). The one decided change is §7 row 9: Ask Daoris is refused a helper at every door (`ask-daoris`), worded on the page in both languages. The intake's and Ask Daoris's start gates still read their keys directly. Detail in D212's FOUNDATION1q note.
+
+## FOUNDATION1o — words never held outside `said` (2026-10-30, D212)
+
+> | **1o** words never held outside `said` | §3.4 rule 4, after 1h and 1i: the say door's keep for a winding-up or moving record, on `said` itself, where the host's marks keep `opens` and the head (round 5, §19.11); … |
+
+The row is quoted by its head; its whole text and proof are the foundation design's Part B table, row 1o, and §19.11.
+
+**Outcome** 2026-10-30: against a host whose marks keep `opens` 2 and the head, a word said to a record that winds up or moves is kept on `said` and goes on with the part that continues it; a chat's hold keeps and queues; `held-words.json` is read once and written only for a host without the marks, which keeps today's hold. Owed: an older shell's come-up over the new path (the test host answers no `head`), and the say-to-wire latency on the install. Detail in D212's FOUNDATION1o note.
