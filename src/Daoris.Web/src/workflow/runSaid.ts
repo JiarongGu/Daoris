@@ -209,7 +209,10 @@ function nodeSaid(t: TFunction, step: RunStep, node: string): string | null {
       return on ? t('workflow.run.graph.said.active', { on }) : t('workflow.run.graph.said.activeRun');
     case 'reached': return on ? t('workflow.run.graph.said.reached', { on }) : t('workflow.run.graph.said.reachedRun');
     case 'skipped': return t(step.code === 'person' ? 'workflow.run.graph.said.skippedByYou' : 'workflow.run.graph.said.skippedByRecord');
-    case 'failed': return step.code ? t('workflow.run.graph.said.failed', { code: step.code }) : t('workflow.run.graph.said.failedNone');
+    // INTEGRATE1p (C33): a declined request is the person's to ask again or go on without.
+    case 'failed':
+      if (node === 'request' && step.code === DECLINED) return t('workflow.run.graph.said.requestDeclined');
+      return step.code ? t('workflow.run.graph.said.failed', { code: step.code }) : t('workflow.run.graph.said.failedNone');
     case 'rejected': return t('workflow.run.graph.said.rejected');
     case 'stopped': return t('workflow.run.graph.said.stopped');
     case 'unknown': return t('workflow.run.graph.said.unknown');

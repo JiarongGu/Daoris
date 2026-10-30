@@ -6,7 +6,9 @@ import { type Answered, InlineConfirm } from '../work/InlineConfirm';
 import type { NodeAct, NodeWordAnswer, NodeWordAsk, RunStep } from './run';
 
 /** The refusals of `WORKFLOW_NODE` the page words in the reader's language; any other is the driver's own sentence (D182). */
-const WORDED: ReadonlySet<string> = new Set(['worded', 'ended', 'no-words', 'not-skippable', 'not-in-table', 'not-held', 'promoted']);
+const WORDED: ReadonlySet<string> = new Set(['worded', 'ended', 'no-words', 'not-skippable', 'not-in-table', 'not-held', 'promoted', 'not-request']);
+
+const ACTS: readonly NodeAct[] = ['skip', 'stop', 'ask-again', 'go-on'];
 
 /** What a refused word says, in the reader's language where the page words its code, else in the driver's sentence. */
 export function nodeWordRefused(t: ReturnType<typeof useTranslation>['t'], answer: NodeWordAnswer): string {
@@ -42,7 +44,7 @@ export function NodeWord({ run, step, onWord }: {
   const node = step.step.id;
 
   if (step.asked) {
-    const act = step.asked.act === 'skip' ? 'skip' : 'stop';
+    const act = ACTS.find((each) => each === step.asked?.act) ?? 'stop';
     return (
       <div className="grid gap-0.5">
         <p className="m-0 text-small text-ink-soft">{t(`workflow.run.node.asked.${act}`)}</p>
@@ -51,7 +53,7 @@ export function NodeWord({ run, step, onWord }: {
     );
   }
 
-  const acts = (step.acts ?? []).filter((act): act is NodeAct => act === 'skip' || act === 'stop');
+  const acts = (step.acts ?? []).filter((act): act is NodeAct => ACTS.includes(act as NodeAct));
   if (!onWord || acts.length === 0) return null;
 
   const close = () => { setAsking(null); setWords(''); };
@@ -76,7 +78,50 @@ export function NodeWord({ run, step, onWord }: {
               {t('workflow.run.node.stop')}
             </Button>
           )}
+          {/* INTEGRATE1p (C33): a declined request is asked again or gone on without. */}
+          {acts.includes('ask-again') && (
+            <Button variant="ghost" className="min-h-0 px-1.5 py-0.5 text-small" onClick={() => setAsking('ask-again')}>
+              {t('workflow.run.node.askAgain')}
+            </Button>
+          )}
+          {acts.includes('go-on') && (
+            <Button variant="ghost" className="min-h-0 px-1.5 py-0.5 text-small" onClick={() => setAsking('go-on')}>
+              {t('workflow.run.node.goOn')}
+            </Button>
+          )}
         </div>
+      )}
+      {asking === 'ask-again' && (
+        <InlineConfirm
+          tone="primary"
+          block
+          label={t('workflow.run.node.askAgainTitle', { node })}
+          says={t('workflow.run.node.askAgainSays', { node })}
+          meanIt={t('workflow.run.node.askAgainMeanIt')}
+          onConfirm={(answered) => send('ask-again', answered)}
+          onClose={close}
+        />
+      )}
+      {asking === 'go-on' && (
+        <InlineConfirm
+          tone="primary"
+          block
+          label={t('workflow.run.node.goOnTitle', { node })}
+          says={t('workflow.run.node.goOnSays', { node })}
+          meanIt={t('workflow.run.node.goOnMeanIt')}
+          ready={words.trim().length > 0}
+          onConfirm={(answered) => send('go-on', answered)}
+          onClose={close}
+        >
+          <textarea
+            aria-label={t('workflow.run.node.goOnWords')}
+            placeholder={t('workflow.run.node.goOnWords')}
+            rows={2}
+            value={words}
+            onChange={(event) => setWords(event.target.value)}
+            className="min-w-0 basis-full resize-y rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body text-ink"
+          />
+        </InlineConfirm>
       )}
       {asking === 'skip' && (
         <InlineConfirm
