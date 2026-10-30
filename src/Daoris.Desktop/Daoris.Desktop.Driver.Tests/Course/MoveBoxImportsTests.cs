@@ -78,7 +78,7 @@ public sealed class MoveBoxImportsTests : IDisposable
     [Fact]
     public void A_limit_box_naming_its_new_part_is_imported_at_opened_with_its_destination_and_the_words_it_said_in_order()
     {
-        new LimitBoxes(_home).Write("s1", new LimitMoveBox(HandOverWhy.Limit, 4, 9, ["w2", "w1"], "s2"));
+        new LimitBoxes(_home).Write("s1", new LimitMoveBox(HandOverWhy.Limit, 4, 9, ["w2", "w1"], "s2", Moved: true));
         var store = Store();
 
         var move = Assert.Single(Limits(store).Import().Imported);
@@ -90,6 +90,27 @@ public sealed class MoveBoxImportsTests : IDisposable
             [("w2", "limit-move/s1/w2", 0), ("w1", "limit-move/s1/w1", 1)],
             store.WordsOf(move.Id).Select(word => (word.Word, word.Transfer, word.Position)));
         Assert.Equal(2, store.LastImport("data/sessions/s1.limit-move.json")!.Import.Rows - 1);
+    }
+
+    /// <summary>
+    /// FOUNDATION1f-vi part a: a box that names its new part and moved no words (<c>moved</c> unwritten: an older host's open, the words still on
+    /// the old record) is imported as the live move's own record reads an open whose host moved none: opened with its destination and no word,
+    /// since naming those words as the destination's would read them gone from it, <i>left</i>.
+    /// </summary>
+    [Fact]
+    public void A_limit_box_naming_its_new_part_that_moved_no_words_is_imported_opened_with_no_word()
+    {
+        new LimitBoxes(_home).Write("s1", new LimitMoveBox(HandOverWhy.Limit, 4, 9, ["w2", "w1"], "s2"));
+        var store = Store();
+
+        var move = Assert.Single(Limits(store).Import().Imported);
+
+        Assert.Equal((MoveRecordPhase?)MoveRecordPhase.Opened, move.Phase);
+        Assert.Equal("s2", move.Destination);
+        Assert.Empty(store.WordsOf(move.Id));
+        Assert.Equal(1, store.LastImport("data/sessions/s1.limit-move.json")!.Import.Rows);
+        Assert.False(File.Exists(LimitPath("s1")));
+        Assert.True(File.Exists(LimitPath("s1") + ".imported"));
     }
 
     [Theory]
