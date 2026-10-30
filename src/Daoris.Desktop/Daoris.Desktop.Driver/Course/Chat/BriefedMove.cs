@@ -117,7 +117,11 @@ internal sealed class BriefedMove(ChatContext context, IChatRunning runner, Chat
         {
             try
             {
-                named = record.Adapter is { Length: > 0 } opened ? opened : StartPlan.ContinuedOn(record, config, "chat");
+                // FOUNDATION1x: its binding's role first, as a quest's go-on reads it (§2.4).
+                named = record.Adapter is { Length: > 0 } opened
+                    ? opened
+                    : StartPlan.ContinuedOn(
+                        record, config, "chat", context.Conversations.RoleOf(sessionId)?.Role, RoleCatalog.ReadHome(context.Home), new RolePlace());
                 resolved = context.Harnesses.Adapters.Resolve(named);
             }
             catch (DriverException unchosen)

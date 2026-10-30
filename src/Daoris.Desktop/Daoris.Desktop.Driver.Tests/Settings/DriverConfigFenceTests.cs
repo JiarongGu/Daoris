@@ -33,7 +33,8 @@ public sealed class DriverConfigFenceTests : IDisposable
     /// <summary>The lock as another writer's take of it leaves it: its process, its time now.</summary>
     private string TakenByAnother()
     {
-        var text = $"{{\"pid\":{Environment.ProcessId},\"since\":\"{Moment(DateTimeOffset.UtcNow)}\"}}\n";
+        // A second back, so it never equals the save's own lock, taken by this process in the same millisecond.
+        var text = $"{{\"pid\":{Environment.ProcessId},\"since\":\"{Moment(DateTimeOffset.UtcNow.AddSeconds(-1))}\"}}\n";
         File.WriteAllText(KeepLock.PathOf(_path), text);
         return text;
     }

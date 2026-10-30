@@ -667,6 +667,10 @@ public static class NoteCodes
     // record only, never the record's note: the actor by its id, the choice's number, the entry that ran and each one passed.
     public static readonly NoteCode OpeningActor = new("opening.actor", ["actor", "n", "entry", "passed"]);
 
+    // FOUNDATION1x (MODELROLE1l): a quest marked design ran on the order of the role taking `design`, Build's while none does; the role by
+    // its name as written, since an added role has no id the page knows.
+    public static readonly NoteCode OpeningDesign = new("opening.design", ["role"]);
+
     // ——— A chat run's binding (CHATFLOW1c, the chat-flow design §4.3), said once in the conversation that grew its tree: the named workflow
     // and the repository or workspace that chose it, the one bound with why it cannot land the work, or a bind the home could not keep.
     // Under Current nothing is said, as a start's binding says nothing.

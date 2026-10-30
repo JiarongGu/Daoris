@@ -62,6 +62,8 @@ const scopes = new Map<string, (sessions: string[] | null) => QueryKey[]>([
   ['wiring', () => [keys.systemWiring, keys.systemDownloads, keys.systemSpace]],
   // NOTIFY2f: Done and failed, which the notices slice pushes whole, so no query is asked again.
   ['notices', () => []],
+  // FOUNDATION1s part B: the knowledge index fed further, told by a look while it feeds, so the status bar's size is read again.
+  ['repositories', () => [keys.allRepositories]],
 ]);
 
 const words = (value: unknown): string[] =>

@@ -38,6 +38,7 @@ public sealed partial class HelpProposalKindsTests
         ("clear", "clear_propose"),
         ("workflow", "workflow_propose"),
         ("setup", "setup_propose"),
+        ("role", "role_propose"),
     ];
 
     /// <summary>

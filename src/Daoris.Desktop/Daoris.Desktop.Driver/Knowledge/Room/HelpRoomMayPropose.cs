@@ -96,6 +96,12 @@ internal sealed class HelpRoomMayPropose : IHelpRoomSection
         text.Append("  or a new name, which the move starts. It changes one row of this machine's registry and touches no file.\n");
         text.Append("  Adding or importing a repository needs a folder, which stays the person's pick: `go_propose` opens\n");
         text.Append("  Repositories' `add` or `import` with the workspace filled, and the person picks the folder there.\n");
+        // FOUNDATION1y-i (the foundation design §2.7): the role catalogue's change, judged by the role door's judge and applied only by
+        // the person's press, whatever access the room has (D205 point 9's no `settings_*` grant, extended to roles).
+        text.Append("- `role_propose`: add, change or remove a role of this machine's role catalogue, as Settings → AI features →\n");
+        text.Append("  Role catalogue does: `set` with the role's names, the work it takes, its scope and its choices (a field left\n");
+        text.Append("  out keeps the role's own), `remove`, or `default` to give a seeded role back its seed. A removed role's work\n");
+        text.Append("  waits until a role takes it; running work goes on. It is the person's Apply alone, whatever access you have.\n");
         // SESSUX1h2b (D126 §5.2, §5.3): Sessions' Archive, Archive what ended… and Unarchive, judged as the list judges them. A stop
         // is the session's own conversation, which a go reaches (D161's SESSUX1h1 note).
         text.Append("- `session_propose`: archive sessions on this machine, or unarchive them, by id as Sessions lists them,\n");

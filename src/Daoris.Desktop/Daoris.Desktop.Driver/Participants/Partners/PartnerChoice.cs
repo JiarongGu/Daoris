@@ -20,7 +20,8 @@ public static class PartnerChoice
     /// </param>
     public static async Task<ReviewerChoice> ChooseAsync(
         HarnessRoster roster, PartnerAsk ask, string? leadAdapter, DriverConfig config, string? workspace,
-        IReadOnlyList<PartnerMeasurement>? measured = null, CancellationToken ct = default, IReadOnlyList<ReviewerPassed>? passed = null)
+        IReadOnlyList<PartnerMeasurement>? measured = null, CancellationToken ct = default, IReadOnlyList<ReviewerPassed>? passed = null,
+        Func<RoleCatalog>? catalogue = null)
     {
         // The person's ask names its agent; a lead's ask under the rule is COAGENT1d's. Nothing is substituted for a name.
         if (ask.Agent is not { Length: > 0 } named)
@@ -31,7 +32,7 @@ public static class PartnerChoice
         // D205 §4.4: named by the ask, so the actor supplies only the model and effort of the agent named, as its entries for it in order.
         var walked = await ReviewerChoice.ChooseAsync(
                 roster, OpinionRule.None with { Reviewers = [named] }, leadAdapter is { Length: > 0 } adapter ? [adapter] : [], config, workspace, ct,
-                "partner", passed)
+                "partner", passed, catalogue: catalogue)
             .ConfigureAwait(false);
         return walked.Chosen ? Admit(walked, measured ?? PartnerMeasurements.Rows, production: measured is null) : walked;
     }

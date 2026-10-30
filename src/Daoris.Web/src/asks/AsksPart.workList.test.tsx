@@ -47,7 +47,7 @@ describe("the ask's work in the shell", () => {
   it('lists the chosen ask’s work with why each quest sits, from the tick, and attends a session from its door', async () => {
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     // What the last tick said of each quest, as the shell's signals write it.
-    client.setQueryData(keys.considered, LISTED_CONSIDERED);
+    client.setQueryData(keys.considerations, { considered: LISTED_CONSIDERED, untrusted: [], waits: [] });
     const onAttend = vi.fn();
     show(<QuestsView notify={vi.fn()} onAttend={onAttend} />, client);
 

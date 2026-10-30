@@ -169,7 +169,10 @@ public sealed record QuestResponse(
     // WORKFLOW1e2 (the workflow design §4.1 row 1): the person's kind and workflow choices on a quest published with no ask, made on
     // its page before it started, oldest first, the latest standing, one naming neither a choice cleared; an ask's shape. Absent where
     // there is none, which is every quest an ask published, and from a host before it.
-    IReadOnlyList<AskWorkflowChoiceResponse>? WorkflowChoices = null);
+    IReadOnlyList<AskWorkflowChoiceResponse>? WorkflowChoices = null,
+    // FOUNDATION1x: the mark on the work, `design` or `exact`, a fact of the work carrying no path or name. Absent for an unmarked quest and
+    // from a host before it, which a reader starts on Build's order.
+    string? Weight = null);
 // The person's kind and workflow on a quest published with no ask, before it starts (WORKFLOW1e2): either, both, or neither to clear them.
 public sealed record QuestWorkflowRequest(string? Kind = null, string? Workflow = null, string? Words = null);
 // A quest's own reopen (FABRIC-CLOSE1c4), answered only: the reopen by its machine and sequence, the submission it reopened (`Of`),
@@ -205,7 +208,9 @@ public sealed record PublishQuestRequest(
     string From, string To, string Title, string Body,
     IReadOnlyList<string>? Links = null, IReadOnlyList<QuestAttachmentRequest>? Attachments = null,
     IReadOnlyList<QuestStepWire?>? Then = null, IReadOnlyList<QuestRequirementWire?>? Requirements = null,
-    string? Short = null, QuestReviewWire? Review = null);
+    string? Short = null, QuestReviewWire? Review = null,
+    // FOUNDATION1x: the mark on the work, `design` or `exact`, judged by the exchange with every other door's; absent for none.
+    string? Weight = null);
 // A set-up posted on a set-up step (REVIEWENV1b, design §2.6, §3.3): the commit Daoris read and the environment's kind (`local`
 // or `deployed`), with `Session`, whose said set-ups the driver posts, or the person's own `Look`, `Shows` and `Again`.
 public sealed record QuestSetUpRequest(
@@ -491,7 +496,10 @@ public sealed record SayRequest(
     string? Level = null, bool? Running = null, string? Decision = null, string? Question = null, string? Choice = null,
     // FOUNDATION1 row p (the design §3.4 rule 5): that the caller reads a settled answer, which its keyed say may be given where the key's
     // word left a record of its line. A say without it, an older client's, is answered by the door as it was; a host before the row reads none.
-    bool? Settled = null);
+    bool? Settled = null,
+    // FOUNDATION1o (the design §3.4 rule 4): the shell's word for a record that winds up or moves, kept on it for its next part; a host before
+    // the row reads none and refuses it `running`, which the shell then holds as before.
+    bool? Ending = null);
 // The session as it stands, the ledger's sentence, and the word as kept (to this machine only).
 public sealed record SaidResponse(SessionResponse Session, string Message, SaidWordResponse? Said);
 // A keyed say or hand answered settled (row p): a success that names the record the key's word left, with no session, no `said` and no word at
@@ -845,6 +853,7 @@ public sealed record ChangesJournalResponse(string Store, long Floor, long Newes
 
 [JsonSerializable(typeof(StatusResponse))]
 [JsonSerializable(typeof(ChangesResponse))]
+[JsonSerializable(typeof(JournalPage))]
 [JsonSerializable(typeof(IEnumerable<RepositoryResponse>))]
 [JsonSerializable(typeof(IEnumerable<HitResponse>))]
 [JsonSerializable(typeof(EntryResponse))]

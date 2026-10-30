@@ -126,6 +126,10 @@ under *Doors Daoris still owes* (below), say Daoris still owes that door and nam
   or a new name, which the move starts. It changes one row of this machine's registry and touches no file.
   Adding or importing a repository needs a folder, which stays the person's pick: `go_propose` opens
   Repositories' `add` or `import` with the workspace filled, and the person picks the folder there.
+- `role_propose`: add, change or remove a role of this machine's role catalogue, as Settings → AI features →
+  Role catalogue does: `set` with the role's names, the work it takes, its scope and its choices (a field left
+  out keeps the role's own), `remove`, or `default` to give a seeded role back its seed. A removed role's work
+  waits until a role takes it; running work goes on. It is the person's Apply alone, whatever access you have.
 - `session_propose`: archive sessions on this machine, or unarchive them, by id as Sessions lists them,
   or `ended` to archive every session that ended, as the list's ⋯ → Archive what ended… does.
   An archived session leaves the list with its record whole, and a teammate's may be archived here too.
@@ -221,6 +225,7 @@ session named; never propose adding one that has not landed.
 | choose the agent Ask Daoris runs on | Settings → AI features → Actors, Ask Daoris | `daoris driver helper <agent>|off` |
 | choose the agent driven sessions start on | Settings → AI features → Actors, Build | `daoris driver adapter <agent>` |
 | choose who does each kind of work, and with which model | Settings → AI features → Actors | `daoris driver actor <actor> …` |
+| add, change or remove a role that takes a kind of work | Settings → AI features → Role catalogue | `daoris driver role set|remove|default <id> …` |
 | park a quest after failed sessions | Settings → Driver | `daoris driver strikes <n>` |
 | start a quest its failed sessions parked again | Quests → the quest's page → Try again | `daoris driver retry <quest>` |
 | start a quest your stop holds again: carry a taken one on in its tree, or plan an open one | Quests → the quest's page, whose *Sitting* names the session | `daoris driver retry <quest> --session <id>` |

@@ -71,7 +71,7 @@ public sealed class HelperDesk(SessionStore sessions, bool local = true)
     /// <summary>
     /// Open the helper's record: a chat on no quest that serves <paramref name="open"/>'s asker, in the repository and workspace
     /// the asker works in, in the tree the driver cloned. Judged first: the asker is a session of this machine's that is no
-    /// helper, no reviewer and no intake, and the clone is nobody's but the helper's.
+    /// helper, no reviewer, no intake and not Ask Daoris, and the clone is nobody's but the helper's.
     /// </summary>
     public async Task<HelperOutcome> OpenAsync(HelperOpen open, DateTimeOffset now, CancellationToken ct = default)
     {
@@ -93,6 +93,8 @@ public sealed class HelperDesk(SessionStore sessions, bool local = true)
                 asker.Serves is { } serves ? $"Session `{asker.Id}` is a helper for session `{serves}`, and a helper cannot ask for a helper"
                 : asker.Opinion is { } reads ? $"Session `{asker.Id}` reads another session's work for second opinion `{reads}`, and a reviewer cannot ask for a helper"
                 : asker.Ask is { } ask ? $"Session `{asker.Id}` is the intake for ask `#{ask}`, and an intake cannot ask for a helper"
+                // FOUNDATION1q (D203 point 6): the store's own guard, held to the driver's start layer by fixtures/helper-askers.json.
+                : SessionLedger.IsHelp(asker) ? $"Session `{asker.Id}` is Ask Daoris's conversation, and Ask Daoris cannot ask for a helper"
                 : string.Equals(Trees.Normalize(asker.Tree), tree, StringComparison.Ordinal)
                     ? $"`{tree}` is session `{asker.Id}`'s own tree: a helper reads a clone of its own"
                 : null;

@@ -107,7 +107,7 @@ internal static class OwnerTargetRows
 
         // The machine's own settings and programs: its plugins, its agents' accounts and its tools.
         None(OwnerNone.MachineSetting,
-            "SET_ACTOR", "SET_AGENT_SETTINGS", "SET_CAP", "SET_COOLOFF", "SET_HELP_MODE", "SET_HELP_GRANT", "SET_KEEP", "SET_NOTIFY", "SET_STRIKES",
+            "SET_ACTOR", "STAFFING_FOUND_ANSWER", "SET_ROLE", "SET_AGENT_SETTINGS", "SET_CAP", "SET_COOLOFF", "SET_HELP_MODE", "SET_HELP_GRANT", "SET_KEEP", "SET_NOTIFY", "SET_STRIKES",
             "TRUST_FOLDER", "ACCOUNT_USE", "HARNESS_ACTION", "HARNESSES_REFRESH", "TOOLS_DELETE", "TOOLS_DOWNLOAD", "TOOLS_LOCATION", "TOOLS_STOP",
             "TOOLS_USE", "TOOLS_GIT", "SYSTEM_DOWNLOADS_CLEAR", "SYSTEM_SPACE_FREE", "SET_STANDING_CONFIRMATION", "PLUGIN_ACTION", "PLUGIN_UPDATE",
             "PLUGIN_NEW", "PLUGIN_TRY", "PLUGIN_ADD", "PLUGIN_INSTALL",

@@ -25,6 +25,7 @@ public static class DriverChoiceVerbs
         new HelperVerb(),
         new IntakeVerb(),
         new ActorVerb(),
+        new RoleVerb(),
         new LandingVerb(),
         new WorkCycleVerb(),
         new WorkflowVerb(),

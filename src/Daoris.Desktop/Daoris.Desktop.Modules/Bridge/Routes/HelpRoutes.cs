@@ -399,7 +399,7 @@ public sealed class HelpRoutes(DriverContext context)
     // shown: it is settled refused, and the agent hears why in the route's words. Told by event (NOBLOCK1): its pending list and
     // the service's facts held the window up to 1.3 s, so an ask is answered from what is held and this runs on a task of its own.
     [DriverRoute("HELP_PROPOSALS")]
-    [ByEvent("HELP_PROPOSALS")]
+    [ByEvent("HELP_PROPOSALS", Untold = "each proposal judged against the checkouts' git and the service's records, which no scope tells")]
     private async Task<object?> HelpProposalsAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var session = PayloadHelper.GetRequiredValue<string>(request.Payload, "session");
@@ -629,6 +629,9 @@ public sealed class HelpRoutes(DriverContext context)
 
         // SET_DRIVABLE, SET_LINE, SET_LANDING…: an edit to the driver's file, then a nudge.
         public void Change(Func<DriverConfig, DriverConfig> edit) => context.Change(edit);
+
+        // SET_ACTOR's own write: the staffing's (FOUNDATION1w-s).
+        public void SetActor(string actor, IReadOnlyList<ActorChoice>? choices) => context.SetActor(actor, choices);
 
         // The ask composer's door, the local host's `POST /api/asks`, with its review choice and words (ENTRY1c). A named
         // environment the workspace does not declare is refused before anything is sent, as `daoris-driver ask --review` refuses

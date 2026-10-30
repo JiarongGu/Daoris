@@ -356,15 +356,23 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
     /// policy's, else Brainstorm's voices (D205 §4.4, MODELROLE1c: its actor's agents, <c>adapter</c>'s as before, at account default).
     /// One the policy does not list keeps its pass, never run.
     /// </summary>
-    internal List<(string Pass, string Agent, bool Allowed, ActorEffective Entry)> Generators(BrainstormRequest request, BrainstormRule rule)
+    /// <param name="workspace">The request's workspace, which a scoped role is found by (FOUNDATION1x); null for the machine's.</param>
+    /// <exception cref="DriverException">The role catalogue does not read, or two roles take brainstorming in one scope.</exception>
+    internal List<(string Pass, string Agent, bool Allowed, ActorEffective Entry)> Generators(
+        BrainstormRequest request, BrainstormRule rule, string? workspace = null)
     {
+        // FOUNDATION1x: the role that takes brainstorming at the request's workspace; the seeded catalogue answers Brainstorm.
+        var found = RoleCatalog.ReadHome(_context.Harnesses.Home).RoleFor(ParticipantWork.Brainstorm, new RolePlace(workspace));
+        if (found.Held is { } held) throw new DriverException(held);
+        var role = found.Role?.Id ?? "brainstorm";
         var named = request.Agents.Select(agent => agent.Trim()).Where(agent => agent.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
         // D205 §4.4 (MODELROLE1e): the request's and the policy's agents decide who, each taking the actor's entry for it, else account
         // default (rule-default); with none named, the actor's entries are the voices, one each. The plan is read once and frozen for the
         // brainstorm: a later change of the actor never reaches a run begun, and a voice that cannot run is dropped, never replaced.
-        var voices = named.Count > 0 ? ActorChoices.Effective("brainstorm", _context.Config, fence: named)
-            : rule.Agents.Count > 0 ? ActorChoices.Effective("brainstorm", _context.Config, fence: rule.Agents)
-            : ActorChoices.Effective("brainstorm", _context.Config);
+        var voices = found.Role is null ? []
+            : named.Count > 0 ? ActorChoices.Effective(role, _context.Config, fence: named)
+            : rule.Agents.Count > 0 ? ActorChoices.Effective(role, _context.Config, fence: rule.Agents)
+            : ActorChoices.Effective(role, _context.Config);
         var plan = new List<(string Pass, string Agent, bool Allowed, ActorEffective Entry)>();
         var running = 0;
         foreach (var voice in voices.DistinctBy(each => each.Agent, StringComparer.OrdinalIgnoreCase))
@@ -403,7 +411,7 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
             var deadline = started + minutes.Request * Minute;
             var generatorsEnd = started + minutes.Generators * Minute;
             var sources = packet.Sources.Select(source => source.Id).ToHashSet(StringComparer.Ordinal);
-            var plan = Generators(request, rule);
+            var plan = Generators(request, rule, workspace);
             var generators = plan.Select(each => each.Allowed
                 ? PassAsync<BrainstormAnswer>(
                     id, each.Pass, each.Agent, BrainstormPassRecord.Generate, bytes, BrainstormInstruction.Generator(digest), null,
@@ -675,7 +683,8 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
     /// the request's, for the version that workspace pins.
     /// </summary>
     internal static StartPlan Voice(BrainstormTurn turn, DriverConfig config, HarnessRoster roster) =>
-        new(ParticipantWork.Brainstorm, config, roster, roster.Adapters, new PassMemory(), order: [turn.Entry ?? new ActorEffective(turn.Agent, null, null, "before")])
+        new(ParticipantWork.Brainstorm, config, roster, roster.Adapters, new PassMemory(), order: [turn.Entry ?? new ActorEffective(turn.Agent, null, null, "before")],
+            catalogue: RoleCatalog.ReadHome(roster.Home), place: new RolePlace(turn.Workspace))
         {
             Workspace = turn.Workspace, Subject = $"brainstorm:{turn.Id}",
         };

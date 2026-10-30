@@ -301,7 +301,7 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
     private Task<ReviewerChoice> ChoosePartnerAsync(PartnerAsk ask, PriorSession lead, IReadOnlyList<ReviewerPassed>? passed, CancellationToken ct) =>
         _context.PartnerChoices is { } choose
             ? choose(ask, lead, ct)
-            : PartnerChoice.ChooseAsync(_context.Harnesses, ask, lead.Adapter, _context.Config, lead.Workspace, _context.PartnerMeasured, ct, passed);
+            : PartnerChoice.ChooseAsync(_context.Harnesses, ask, lead.Adapter, _context.Config, lead.Workspace, _context.PartnerMeasured, ct, passed, () => RoleCatalog.ReadHome(_context.Harnesses.Home));
 
     /// <summary>An approved or preparing piece a restart left: a partial copy removed, the lead read again, then prepared as at first.</summary>
     private async Task<LookLine> PrepareAgainAsync(PartnerAsk ask, PartnerState state, bool removeCopy, PartnerFiles files, CancellationToken ct)

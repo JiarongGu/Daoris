@@ -1386,6 +1386,34 @@ public sealed class SessionLedgerTests : IAsyncLifetime
     }
 
     /// <summary>
+    /// FOUNDATION1o (the foundation design §3.4 rule 4, §19.11): a word for a record that winds up or moves, its dispatcher closed, asked by the
+    /// shell with <c>ending</c>, is kept on the record as a word said once it ended, so its next part goes on with it and its take keeps it on the
+    /// ask; once by its key, nothing that travels changed. Asked without it, a running record refuses as before.
+    /// </summary>
+    [Fact]
+    public async Task Words_for_a_record_that_winds_up_wait_on_it_for_its_next_part()
+    {
+        var quest = await Publish();
+        var session = (await _ledger.OpenAsync(quest.Id, "stub", Now)).Session!;
+        await Advance(session.Id, "starting");
+        await Advance(session.Id, "working");
+        var revision = await RevisionOf(session.Id);
+
+        var kept = await _ledger.SayAsync(session.Id, "And the readme.", null, Now.AddMinutes(1), key: "press/1", ending: true);
+        var again = await _ledger.SayAsync(session.Id, "And the readme.", null, Now.AddMinutes(2), key: "press/1", ending: true);
+        var unasked = await _ledger.SayAsync(session.Id, "Hello.", null, Now.AddMinutes(3));
+
+        Assert.Equal(SessionSayRefusal.None, kept.Refusal);
+        Assert.Equal($"Kept for session `{session.Id}`, which is ending: your words wait on its record for it to go on with.", kept.Message);
+        var record = (await _sessions.FindAsync(session.Id))!;
+        var word = Assert.Single(record.Said);
+        Assert.Equal((kept.Word!.Id, "press/1", true, true, (DateTimeOffset?)null), (word.Id, word.Key, word.Reopens, word.Persons, word.Attempt));
+        Assert.Equal((true, kept.Word.Id), (again.Again, again.Word!.Id));
+        Assert.Equal(SessionSayRefusal.Running, unasked.Refusal);
+        Assert.Equal((SessionState.Working, revision), (record.State, await RevisionOf(session.Id)));
+    }
+
+    /// <summary>
     /// MSG1a (D137 §2.2, §5.3): words said to a parked session are its answer — kept with their line on its note, the park
     /// kept, joining what was said before — so the answer door is the parked case of saying.
     /// </summary>

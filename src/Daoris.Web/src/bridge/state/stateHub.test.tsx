@@ -97,6 +97,20 @@ describe('the state hub (STATE_CHANGED)', () => {
     for (const key of [keys.diff('s1'), keys.diff('s2'), keys.handOff('s1'), keys.handOff('s2')]) expect(invalid(key)).toBe(true);
   });
 
+  /**
+   * FOUNDATION1s part B: the knowledge index fed further, told as the repositories' scope, asks the repositories again, whose sizes the
+   * status bar sums (a summary read mid-feed said 555 of 1,050), and nothing of the registry.
+   */
+  it("the index's feed asks the repositories again, and not the registry", () => {
+    const { invalid } = holding(keys.repositories(null), keys.repositories('aurora'), keys.registry(null));
+
+    changed({ scopes: ['repositories'] });
+
+    expect(invalid(keys.repositories(null))).toBe(true);
+    expect(invalid(keys.repositories('aurora'))).toBe(true);
+    expect(invalid(keys.registry(null))).toBe(false);
+  });
+
   /** A wire's words are added to (D169 point 3): a scope a newer shell names that this page does not know is no change here. */
   it('a scope it does not know, an empty event or none at all changes nothing', () => {
     const { client } = holding(keys.allSessions, keys.landing('s1'));

@@ -649,6 +649,8 @@ app.MapPost("/api/quests", async (
             Requirements = RequirementsOf(body.Requirements),
             // The person's short title from the composer (SESSUX1j), judged by the exchange with every other door's.
             Short = body.Short,
+            // The mark on the work (FOUNDATION1x), judged by the exchange with every other door's.
+            Weight = body.Weight,
             // The chain's review choice (REVIEWENV1b): the person's own at this door, with any words they give.
             Review = ReviewOf(body.Review),
             // An agent's publish where the host holds a person key and the call carried none (PERSONDOOR1a, design §3.2):
@@ -1551,7 +1553,7 @@ if (mode == ServiceMode.Local)
             string.IsNullOrWhiteSpace(body.Decision) ? null : body.Decision.Trim(),
             string.IsNullOrWhiteSpace(body.Question) ? null : body.Question.Trim(),
             string.IsNullOrEmpty(body.Choice) ? null : body.Choice,
-            settled: body.Settled == true);
+            settled: body.Settled == true, ending: body.Ending == true);
         // Row p: a key the line settled is answered with the record its word left and no word, nothing kept, so nothing beside the say is.
         if (outcome.SettledOn is { } settledOn) return Results.Ok(new SettledResponse(outcome.Message, settledOn));
         if (outcome.Refusal == SessionSayRefusal.None)
@@ -1930,6 +1932,14 @@ if (changes is not null)
         return new ChangesResponse(
             answer.Since, answer.Moved, answer.Journal is { } place ? new ChangesJournalResponse(place.Store, place.Floor, place.Newest) : null);
     });
+}
+
+// FOUNDATION1 l-i (the foundation design §4.1): the journal's rows after a position, oldest first, with where the journal stands, for each process
+// that tells from it. The same local-only door as the stream whose `journal` family wakes it.
+if (changes is not null)
+{
+    app.MapGet(JournalRows.Route, async (ComposedService s, long? since, int? limit, CancellationToken ct) =>
+        await s.Journal(since ?? 0, limit ?? JournalRows.Most, ct));
 }
 
 // The driver's session records (D46). State only: the service never spawns a process — the record is
@@ -2772,7 +2782,9 @@ static QuestResponse ToQuest(
     // The person's workflow choices before it started (WORKFLOW1e2): ids and their words, as its note travels; only where there are some.
     q.WorkflowChoices.Count == 0
         ? null
-        : q.WorkflowChoices.Select(c => new AskWorkflowChoiceResponse(c.Kind, c.Workflow, c.At ?? q.Updated, c.Words)).ToList());
+        : q.WorkflowChoices.Select(c => new AskWorkflowChoiceResponse(c.Kind, c.Workflow, c.At ?? q.Updated, c.Words)).ToList(),
+    // The mark on the work (FOUNDATION1x): a word, which every door may answer.
+    q.Weight);
 
 // Requirements as a door hands them to the exchange (DRIFT1c): a half left out, or a whole one, arrives
 // blank and is refused there naming which — the same sentence every door gives. So does an evidence item

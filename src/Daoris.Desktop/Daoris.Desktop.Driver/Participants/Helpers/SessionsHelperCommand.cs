@@ -7,8 +7,8 @@ namespace Daoris.Driver;
 /// the rule's <c>ask</c> and <c>off</c> do not hold it and the driver starts it within the limits.
 /// </summary>
 /// <remarks>
-/// <para>It judges only what a reader of the file cannot know: that the session is one of this machine's that may ask (no helper, no
-/// reviewer, no intake: a helper cannot ask for a helper), that the question is a question within the bound, and that an agent is one
+/// <para>It judges only what a reader of the file cannot know: that the session is one of this machine's that may ask (the start layer's
+/// table, <see cref="StartAdmission"/>: no helper, reviewer, intake or Ask Daoris), that the question is a question within the bound, and that an agent is one
 /// word. Everything else is the driver's, at its next look.</para>
 /// <para>Exit codes are the family's: 0 asked · 1 refused, a policy answer · 2 could not, the usage among them.</para>
 /// </remarks>
@@ -71,18 +71,10 @@ public static class SessionsHelperCommand
             return 2;
         }
 
-        // The box's words for each, so an asker reads the same sentence from either door.
-        var refused = asker switch
-        {
-            null => $"no session `{id}` of this machine's is held to bring an answer back to.",
-            { Serves: { } serves } => $"session `{id}` is itself a helper for session `{serves}`, and a helper cannot ask for a helper.",
-            { Opinion: { } opinion } => $"session `{id}` reads another session's work for second opinion `{opinion}`, and a reviewer cannot ask for a helper.",
-            { Ask: { Length: > 0 } intake } => $"session `{id}` is the intake for ask `#{intake}`, which does no work in a repository, and an intake cannot ask for a helper.",
-            _ => null,
-        };
+        var refused = asker is null ? $"No session `{id}` of this machine's is held to bring an answer back to." : Unfit(id, asker)?.Sentence;
         if (refused is not null)
         {
-            output.WriteLine($"sessions: {refused} Nothing was asked.");
+            output.WriteLine($"sessions: {char.ToLowerInvariant(refused[0])}{refused[1..]} Nothing was asked.");
             return 1;
         }
 
@@ -102,6 +94,22 @@ public static class SessionsHelperCommand
             + "read-only, within the limits; its answer comes back to that session as its next turn, marked as the helper's.");
         return 0;
     }
+
+    /// <summary>
+    /// Why the start layer refuses <paramref name="asker"/> a helper (<see cref="StartAdmission.HelperAsker"/>, FOUNDATION1q), by its code
+    /// and in the sentence the page and this verb both say, the connector's words; null where its work may ask.
+    /// </summary>
+    public static (string Why, string Sentence)? Unfit(string id, PriorSession asker) =>
+        StartAdmission.HelperAsker(StartAdmission.Marks(asker)) switch
+        {
+            null => null,
+            StartAdmission.Helper => (HelperAskWhy.Helper, $"Session `{id}` is itself a helper for session `{asker.Serves}`, and a helper cannot ask for a helper."),
+            StartAdmission.Reviewer => (HelperAskWhy.Reviewer,
+                $"Session `{id}` reads another session's work for second opinion `{asker.Opinion}`, and a reviewer cannot ask for a helper."),
+            StartAdmission.Intake => (HelperAskWhy.Intake,
+                $"Session `{id}` is the intake for ask `#{asker.Ask}`, which does no work in a repository, and an intake cannot ask for a helper."),
+            _ => (HelperAskWhy.AskDaoris, $"Session `{id}` is Ask Daoris's conversation, and Ask Daoris cannot ask for a helper."),
+        };
 
     /// <summary>
     /// <c>helper --approve|--decline &lt;ask&gt;</c> (HELPERTERM1): the person's yes or no to an agent's ask that waits on it, by the

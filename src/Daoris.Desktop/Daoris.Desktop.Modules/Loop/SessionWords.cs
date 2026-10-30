@@ -106,6 +106,11 @@ public sealed record WaitingWord(string Id, string Text, IReadOnlyList<string> F
 /// whichever comes first, <b>and in a small file under the home</b> (<see cref="HeldPath"/>, MSG1d4), written whole beside
 /// and renamed each time a word is held or leaves. The page was told they are held, so a restart in that moment must not
 /// lose them: the next shell's judge reads them back as it starts and tries them as before.</para>
+///
+/// <para><b>Against a host whose marks keep the moving open and the head nothing is held</b> (FOUNDATION1o, the foundation design §3.4 rule 4,
+/// §19.11): a word for a record that winds up, or whose conversation move stands, is kept on its <c>said</c> at once, asked <c>ending</c>; the
+/// move's open moves it and the say door refuses the old part a word after it, naming the head. The file is read once as the shell starts, its
+/// words kept so, and written only for a word such a host still refused, one from before the row.</para>
 /// </remarks>
 public sealed class SessionWords : IDisposable
 {
@@ -196,14 +201,24 @@ public sealed class SessionWords : IDisposable
     /// A record moved through this machine's client (<see cref="ServiceClient.Moved"/>): words held for it are tried now, and
     /// what a word said to it now would do is told again (MSG1f2), since a move is what changes it.
     /// </summary>
-    public void OnMoved(SessionMoved moved) => Wake(moved.Session);
+    public void OnMoved(SessionMoved moved)
+    {
+        Wake(moved.Session);
+        // FOUNDATION1o: a record a word was kept on for its next part has ended, so it goes on with it.
+        if (moved.State is "completed" or "declined" or "failed" or "stopped") GoesOn(moved.Session, move: false);
+    }
 
     /// <summary>
     /// A conversation's hand-over, curve move or limit move was taken (<see cref="ChatRunner.TakeEnded"/>, HANDWORDS1, TAKEWAITS1), its move
     /// ended in the store: words held for it while it was taken go on now, to the conversation that continues it, and what a word said to it
-    /// now would do is told again, since it went on elsewhere.
+    /// now would do is told again, since it went on elsewhere. FOUNDATION1o: a word kept on its record meanwhile went with the move's open, or,
+    /// where the move ended before it, waits there for the record's go-on.
     /// </summary>
-    public void OnTakeEnded(string session) => Wake(session);
+    public void OnTakeEnded(string session)
+    {
+        Wake(session);
+        GoesOn(session, move: true);
+    }
 
     /// <summary>The words held for a record are tried now, and what a word said to it now would do is told again (MSG1f2).</summary>
     private void Wake(string session)
@@ -499,9 +514,12 @@ public sealed class SessionWords : IDisposable
         // Kept as a conversation keeps what is attached (CONV4c), so the names on the record name files that exist.
         var kept = files.Count > 0 ? ChatFiles.Keep(_loop.Home, id, files) : [];
         var word = new Word(text, [.. kept.Select(file => file.Name)], door, choice, key, level);
-        if (holding) return await HoldForTakeAsync(id, word, ct).ConfigureAwait(false);
+        // FOUNDATION1o (the design §3.4 rule 4, §19.11): a host whose marks keep the moving open and the head keeps the word on the record the
+        // move leaves, which its open moves, or refuses it naming the head; a host without them, today's hold.
+        var keeps = await KeepsAsync(ct).ConfigureAwait(false);
+        if (holding && !keeps) return await HoldForTakeAsync(id, word, ct).ConfigureAwait(false);
 
-        var (answer, at) = await KeepOrHoldAsync(id, word, ct).ConfigureAwait(false);
+        var (answer, at) = await KeepOrHoldAsync(id, word, ct, keeps, moving: holding).ConfigureAwait(false);
         // FOUNDATION1d-ii: the record is no longer its line's head: said at the head, once this record's held words let go.
         return at is { } onward ? await OnAsync(onward, text, files, preface, door, ct, level, key, choice, walk).ConfigureAwait(false) : answer;
     }
@@ -753,7 +771,13 @@ public sealed class SessionWords : IDisposable
     /// record still runs; or refused by the service's word. FOUNDATION1d-ii: where the record is no longer its line's head, nothing is
     /// kept, held or shown here, and the head is answered instead, for the caller to say them there once this record's turn let go.
     /// </summary>
-    private async Task<(WordsAnswer? Answer, string? Head)> KeepOrHoldAsync(string id, Word word, CancellationToken ct)
+    /// <param name="keeps">
+    /// The host's marks keep the moving open and the head (FOUNDATION1o): the say asks <c>ending</c>, so a record that winds up or moves keeps the
+    /// word for its next part; one refused <c>running</c> all the same, by a host before the row, is held as before.
+    /// </param>
+    /// <param name="moving">A conversation move stands for the record: the word kept is the move's, which shows it at its destination, never here.</param>
+    private async Task<(WordsAnswer? Answer, string? Head)> KeepOrHoldAsync(
+        string id, Word word, CancellationToken ct, bool keeps = false, bool moving = false)
     {
         var service = _loop.Service ?? throw new DriverException(NotUp);
         var waiting = WaitingFor(id);
@@ -773,7 +797,7 @@ public sealed class SessionWords : IDisposable
             SayAnswer said;
             try
             {
-                said = await service.SayAsync(id, word.Text, word.Files, ct, key: word.Key).ConfigureAwait(false);
+                said = await service.SayAsync(id, word.Text, word.Files, ct, key: word.Key, ending: keeps).ConfigureAwait(false);
             }
             catch (Exception error) when (Unanswered(error))
             {
@@ -791,7 +815,7 @@ public sealed class SessionWords : IDisposable
 
             if (said.Kept)
             {
-                Show(id, said, word);
+                Kept(id, said, word, keeps, moving);
                 return (new(true, "resume", null) { Word = said.Word?.Id }, null);
             }
 
@@ -800,6 +824,7 @@ public sealed class SessionWords : IDisposable
                 // It winds up, or runs where this machine's routes do not reach (D137 §2.1): held for its record to end.
                 Hold(waiting, word);
                 StartPump(id, waiting, moved);
+                if (moving && !TakeStanding(id)) _ = Task.Run(() => Wake(id));
                 return (new(true, "resume", null), null);
             }
 
@@ -811,6 +836,44 @@ public sealed class SessionWords : IDisposable
         {
             waiting.Turn.Release();
         }
+    }
+
+    /// <summary>Whether the loop's host keeps words for a record that winds up or moves (FOUNDATION1o); false with no service yet.</summary>
+    private async Task<bool> KeepsAsync(CancellationToken ct) =>
+        _loop.Service is { } service && await service.Opens.KeepsAsync(ct).ConfigureAwait(false);
+
+    // FOUNDATION1o: the records this shell kept a word on for their next part, which the record's end hands to the go-on, and those it kept one
+    // on while their move stood, which the move's end does.
+    private readonly HashSet<string> _forNext = new(StringComparer.OrdinalIgnoreCase);
+    private readonly HashSet<string> _forMove = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// A word the record kept: shown under its id and the loop nudged, as before; but a word kept for a moving record is the move's, which its open
+    /// carries and its delivery shows at its destination, so nothing is shown here (FOUNDATION1o). A word kept for a record's next part is noted, so
+    /// the record's end, or its move's, hands it to the go-on (<see cref="OnMoved"/>, <see cref="OnTakeEnded"/>).
+    /// </summary>
+    private void Kept(string id, SayAnswer said, Word word, bool keeps, bool moving)
+    {
+        if (keeps)
+        {
+            lock (_gate) (moving ? _forMove : _forNext).Add(id);
+        }
+
+        if (!moving) Show(id, said, word);
+    }
+
+    /// <summary>
+    /// A record this shell kept a word on for its next part ended, or its move was told over (FOUNDATION1o): an ended conversation goes on with what
+    /// waits on it, as a word kept on it then would have; one the move's open left, or that went on elsewhere, its go-on refuses as it stands.
+    /// </summary>
+    private void GoesOn(string id, bool move)
+    {
+        lock (_gate)
+        {
+            if (!(move ? _forMove : _forNext).Remove(id)) return;
+        }
+
+        _loop.Chat?.AnswerGoesOn(id);
     }
 
     private Waiting WaitingFor(string id)
@@ -849,7 +912,9 @@ public sealed class SessionWords : IDisposable
                     lock (_gate) moved = waiting.Moved;
                     // HANDWORDS1: while its conversation is being handed over or moved the words wait; once it went on in another,
                     // they go there, never onto the record that ended.
-                    var (waits, next) = await WhereAsync(id, ct).ConfigureAwait(false);
+                    var (waits, next, moving) = await WhereAsync(id, ct).ConfigureAwait(false);
+                    // FOUNDATION1o: a host with the marks keeps each held word on its record, an older shell's from its file among them.
+                    var keeps = !waits && await KeepsAsync(ct).ConfigureAwait(false);
                     while (!waits && waiting.Words.TryPeek(out var word))
                     {
                         if (next is not null)
@@ -863,7 +928,7 @@ public sealed class SessionWords : IDisposable
                         SayAnswer said;
                         try
                         {
-                            said = await service.SayAsync(id, word.Text, word.Files, ct, key: word.Key).ConfigureAwait(false);
+                            said = await service.SayAsync(id, word.Text, word.Files, ct, key: word.Key, ending: keeps).ConfigureAwait(false);
                         }
                         catch (Exception error) when (Unanswered(error) && !ct.IsCancellationRequested)
                         {
@@ -889,7 +954,7 @@ public sealed class SessionWords : IDisposable
                         // Row p (the design §3.4 rule 5): settled, a retry of a word whose first say was kept and taken, its answer lost: off the
                         // file, and nothing shown, since no word came back and the conversation shows it already.
                         if (said.Settled is not null) continue;
-                        if (said.Kept) Show(id, said, word);
+                        if (said.Kept) Kept(id, said, word, keeps, moving);
                         else Lost(id, said);
                     }
 
@@ -914,19 +979,21 @@ public sealed class SessionWords : IDisposable
     /// <summary>
     /// Where held words go now (HANDWORDS1): nowhere yet while the record's conversation is handed over or moved (its box stands), or
     /// where the service did not answer; to the conversation it went on in where one did; else to the record itself, as before.
+    /// FOUNDATION1o: a host with the marks keeps them on the moving record, which its open moves (<c>Moving</c>).
     /// </summary>
-    private async Task<(bool Waits, string? Next)> WhereAsync(string id, CancellationToken ct)
+    private async Task<(bool Waits, string? Next, bool Moving)> WhereAsync(string id, CancellationToken ct)
     {
         try
         {
-            if (await ReadAsync(id, ct).ConfigureAwait(false) is not { Record: { } record } read) return (false, null);
+            if (await ReadAsync(id, ct).ConfigureAwait(false) is not { Record: { } record } read) return (false, null, false);
+            if (TakeWaits(record)) return await KeepsAsync(ct).ConfigureAwait(false) ? (false, null, true) : (true, null, false);
             // FOUNDATION1d-ii: where the host has the `head` mark, its say door names the head, and the driver's own walk stands aside.
-            return TakeWaits(record) ? (true, null) : (false, (await JudgedAsync(read, ct).ConfigureAwait(false)).Next);
+            return (false, (await JudgedAsync(read, ct).ConfigureAwait(false)).Next, false);
         }
         catch (Exception error) when (Unanswered(error) && !ct.IsCancellationRequested)
         {
             // Nothing known is nothing claimed: the words are tried again at the record's next move, or the next look.
-            return (true, null);
+            return (true, null, false);
         }
     }
 

@@ -101,6 +101,40 @@ public sealed class HarnessConversations(string home, Func<StoreSettled>? settle
     }
 
     /// <summary>
+    /// Keep the role a start took and its revision on the session's binding (FOUNDATION1x). A write that fails is lost, which costs the newer
+    /// build's continuation its role and never the start: the record's <c>actor</c>, the seeded id, then says what it ran as.
+    /// </summary>
+    public void KeepRole(string session, string role, long revision)
+    {
+        if (!SessionEventText.IsLocalId(session) || string.IsNullOrWhiteSpace(role)) return;
+
+        try
+        {
+            _bindings.KeepRole(session, role, revision);
+        }
+        catch (Exception error) when (error is DesktopStoreException or SqliteException or IOException or UnauthorizedAccessException)
+        {
+            using var log = new MachineLog(home, "driver");
+            log.Warn("role.unkept", ("session", session), ("role", role), ("error", error.GetType().Name));
+        }
+    }
+
+    /// <summary>The role and revision a session's start took, or null where the binding holds none or the store cannot say.</summary>
+    public (string Role, long Revision)? RoleOf(string session)
+    {
+        if (!SessionEventText.IsLocalId(session)) return null;
+
+        try
+        {
+            return _bindings.RoleOf(session);
+        }
+        catch (Exception error) when (error is SqliteException or IOException or UnauthorizedAccessException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
     /// Whether the person picked the account a session's record runs on (<paramref name="account"/>): what the account rule reads as its
     /// pick constraint. False for an agent's pick, the curve's account, a record from before and a teammate's mirror, none of which holds
     /// one, and where the store cannot say, the conversation then walking as such a record does.

@@ -581,3 +581,64 @@ describe('Actors on AI features', () => {
     await i18n.changeLanguage('en');
   });
 });
+
+/**
+ * FOUNDATION1y-i (the foundation design §2.7): the role catalogue under the actors, as `ROLES` answers it, each change the person's
+ * press over `SET_ROLE`; the Designer Daoris suggests is added by its own press, and a refusal is the driver's sentence under it.
+ */
+describe('The role catalogue on AI features', () => {
+  const ROLES = {
+    roles: [{ id: 'build', state: 'seed', seeded: true, nameEn: 'Build', nameZh: '开发', takes: ['build'], scopeKind: 'machine', revision: 0 }],
+    works: ['build', 'design'],
+    kept: true,
+    suggested: [{ id: 'designer', nameEn: 'Designer', nameZh: '设计师', takes: ['design'], scopeKind: 'machine', choices: [{ agent: 'claude-code', model: 'opus', effort: 'high' }] }],
+  };
+  let refuse = false;
+
+  beforeEach(() => {
+    refuse = false;
+    i18n.changeLanguage('en');
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input))));
+    invoke.mockImplementation(async (module: string, type: string) => {
+      if (module !== 'DAORIS.DRIVER') return WIRING;
+      if (type === 'SET_ROLE' && refuse) throw new Error('`build` may not be off: a role must take it on the machine.');
+      if (type === 'STATE' || type === 'SET_ROLE') return DRIVER_STATE;
+      if (type === 'ROLES') return ROLES;
+      if (type === 'STARTS') return { adapter: 'claude-code', starts: [] };
+      return undefined;
+    });
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    invoke.mockReset();
+  });
+
+  it('adds the suggested Designer over SET_ROLE and says so', async () => {
+    const notify = vi.fn();
+    show(<SettingsView notify={notify} section="ai" />);
+    const user = userEvent.setup();
+
+    expect(await screen.findByText('Role catalogue')).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: 'Add the Designer' }));
+
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_ROLE', {
+      payload: {
+        change: 'set', id: 'designer', revision: 0,
+        role: { name: { en: 'Designer', zh: '设计师' }, takes: ['design'], scope: { kind: 'machine', id: null } },
+        choices: [{ agent: 'claude-code', model: 'opus', effort: 'high' }],
+      },
+    });
+    await waitFor(() => expect(notify).toHaveBeenCalledWith('Designer is saved; new work takes it.'));
+  });
+
+  it("says the driver's refusal of a removal under the role's row", async () => {
+    refuse = true;
+    show(<SettingsView notify={() => {}} section="ai" />);
+    const user = userEvent.setup();
+
+    await user.click(await screen.findByRole('button', { name: 'Remove Build' }));
+
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_ROLE', { payload: { change: 'remove', id: 'build', revision: 0 } });
+    expect(await screen.findByText(/a role must take it on the machine/)).toBeTruthy();
+  });
+});
