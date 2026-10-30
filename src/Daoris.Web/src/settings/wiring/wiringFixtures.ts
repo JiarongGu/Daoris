@@ -233,7 +233,8 @@ export const SPACE: SystemSpace = {
       next: { at: '2026-10-28T09:00:00.000+00:00', count: 1, bytes: null },
       last: { at: '2026-10-11T08:10:00.000+00:00', door: 'look', removed: { count: 1, bytes: 0.3 * GB }, kept: {} },
     }),
-    spaceKind('browser-cache', { entries: ['browser-engine'], bytes: 0.7 * GB, rule: { kind: 'own', days: null, whole: null, default: true, whose: 'browser' } }),
+    spaceKind('browser-cache', { entries: ['browser-engine'], bytes: 0.7 * GB, rule: { kind: 'own', days: null, whole: null, default: true, whose: 'browser', gb: 2 },
+      settable: true, bounds: { min: 0, max: 0, whole: false, never: false, gb: { min: 1, max: 1_048_576 }, sizeOnly: true } }),
     spaceKind('logs', {
       entries: ['logs'], bytes: 11 * 1024 ** 2, rule: { kind: 'days', days: 30, whole: null, default: true, whose: null },
       settable: true, bounds: { min: 7, max: 30, whole: false, never: false },
@@ -295,14 +296,14 @@ export const SPACE_LOW: SystemSpace = {
   ...SPACE,
   volume: {
     ...SPACE.volume!, free: 8 * GB, total: 1024 * GB, floor: { bytes: 20 * GB, from: 'default' }, below: true,
-    freedEarly: { bytes: 2 * GB, at: '2026-10-22T09:00:00.000+00:00' },
+    freedEarly: null,
   },
   kinds: SPACE.kinds.map((kind) => (kind.id === 'set-aside'
     ? {
-      ...kind, rule: { ...kind.rule, low: true },
+      ...kind,
       volume: { path: 'D:\\', free: 300 * GB, total: 2048 * GB, floor: { bytes: 20 * GB, from: 'default' as const }, below: false, freedEarly: null },
     }
-    : kind.id === 'downloads' || kind.id === 'browser-cache' ? { ...kind, rule: { ...kind.rule, low: true } } : kind)),
+    : kind)),
 };
 
 /** The floor turned off (KEEP1f): Daoris frees nothing early, and says so. */

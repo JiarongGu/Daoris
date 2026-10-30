@@ -339,8 +339,9 @@ public sealed class BranchTidying(string home)
 
         foreach (var kind in pass.Kinds.Where(each => each.Removed > 0))
         {
-            lines.Add(Look.Progress("tidy", $"tidy  {(kind.Id == "set-aside" ? "the folders moved aside" : "the downloads")} were over their size limit: removed "
-                + $"{kind.Removed} of the oldest ({Size(kind.Bytes)}); each is made again, or only a copy of what the repository holds."));
+            var what = kind.Id switch { "set-aside" => "the folders moved aside", "browser-cache" => "the browser's caches", _ => "the downloads" };
+            lines.Add(Look.Progress("tidy", $"tidy  {what} were over their size limit: removed "
+                + $"{kind.Removed} {(kind.Id == "browser-cache" ? "caches" : "of the oldest")} ({Size(kind.Bytes)}); each is made again, or only a copy of what the repository holds."));
         }
 
         return lines;
@@ -402,8 +403,8 @@ public sealed class BranchTidying(string home)
             foreach (var low in pass.Low)
             {
                 var read = low.Read!;
-                lines.Add(Look.Progress("tidy", $"tidy  {read.Read.Root} has {Size(read.Read.Free)} free, below its floor of {Size(read.Floor ?? 0)}: Daoris freed "
-                    + $"{Size(low.Freed)} of what it can make again, and the rest is yours to free"
+                lines.Add(Look.Progress("tidy", $"tidy  {read.Read.Root} has {Size(read.Read.Free)} free, below its floor of {Size(read.Floor ?? 0)}: Daoris tells you and "
+                    + "frees nothing by it; the rest is yours to free"
                     + (low.Could is { } could and > 0 ? $" (Free up space… on This Daoris lists about {Size(could)} you could remove)" : " (Free up space… on This Daoris lists what could go)")
                     + "."));
             }

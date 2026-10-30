@@ -142,6 +142,8 @@ public sealed class EngineBrowserHost(string home) : IInAppBrowser, IBrowserCach
                 await running.WaitForExitAsync(ct).WaitAsync(Going, ct).ConfigureAwait(false);
             }
 
+            // KEEPSIZE1e: no browser runs here, and the gate is held, so a cache over its limit is cleared before the engine opens it.
+            _ = await Task.Run(() => BrowserCacheStart.Check(home), ct).ConfigureAwait(false);
             var options = new EngineBrowserOptions(EngineBrowser.ProfileFolder(home), _port, Environment.ProcessId, background);
             try
             {

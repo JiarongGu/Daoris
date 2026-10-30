@@ -86,6 +86,9 @@ public sealed record KeepChoices
     /// <summary>The downloads' size limit in GB (KEEPSIZE1d), or null for the default.</summary>
     public int? DownloadsGb { get; init; }
 
+    /// <summary>The browser's caches' size limit in GB (KEEPSIZE1e), or null for the default.</summary>
+    public int? BrowserCacheGb { get; init; }
+
     /// <summary>The machine log's days, or null for the default thirty.</summary>
     public int? LogsDays { get; init; }
 
@@ -109,6 +112,7 @@ public sealed record KeepChoices
     {
         "set-aside" => SetAsideDays is null && !SetAsideWhole && SetAsideGb is null,
         "downloads" => DownloadsDays is null && !DownloadsNever && DownloadsGb is null,
+        "browser-cache" => BrowserCacheGb is null,
         "logs" => LogsDays is null,
         "history" => HistoryDays is null,
         "floor" => FloorGb is null && FloorPercent is null && !FloorOff,
@@ -142,6 +146,7 @@ public sealed record KeepChoices
             choices = choices with { DownloadsGb = Whole(downloads, "gb", KeepKey.PartMinGb, KeepKey.PartMaxGb) };
         }
 
+        if (Kind(keep, "browserCache") is { } browser) choices = choices with { BrowserCacheGb = Whole(browser, "gb", KeepKey.PartMinGb, KeepKey.PartMaxGb) };
         if (Kind(keep, "logs") is { } logs) choices = choices with { LogsDays = Days(logs, KeepKey.LogsMinDays, KeepKey.LogsMaxDays) };
         // `history.days` written null is `never`, its default, so it reads as none.
         if (Kind(keep, "history") is { } history) choices = choices with { HistoryDays = Days(history, KeepKey.HistoryMinDays, KeepKey.HistoryMaxDays) };
@@ -176,6 +181,13 @@ public sealed record KeepChoices
             if (DownloadsNever) writer.WriteNull("days");
             else if (DownloadsDays is { } downloadsDays) writer.WriteNumber("days", downloadsDays);
             if (DownloadsGb is { } downloadsGb) writer.WriteNumber("gb", downloadsGb);
+            writer.WriteEndObject();
+        }
+
+        if (BrowserCacheGb is { } browserGb)
+        {
+            writer.WriteStartObject("browserCache");
+            writer.WriteNumber("gb", browserGb);
             writer.WriteEndObject();
         }
 
