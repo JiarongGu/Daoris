@@ -103,6 +103,84 @@ public sealed class HelpWorkflowProposalsTests : HelpProposalsFixture
         Assert.Single(WorkflowStore.Load(_home, Id)!.Read.Versions);
     }
 
+    /// <summary>A development graph that integrates its landing, asking as <paramref name="request"/>, saved as the workflow `integrated`.</summary>
+    private void SavedIntegrating(string request = "owner", string landing = "{}") =>
+        WorkflowStore.Add(_home, new WorkflowVersionAdded("integrated", "Integrated into the line", "terminal", "2026-10-30T09:00:00Z", null, JsonNode.Parse(
+            $$$"""
+            {"schemaVersion":2,"entries":["claim"],"end":"merge-in",
+             "nodes":[{"id":"claim","kind":"claimed","version":1,"reach":"observed"},
+                      {"id":"land","kind":"handed","version":1,"reach":"observed","options":{{{landing}}}},
+                      {"id":"merge-in","kind":"integrate","version":1,"reach":"waited","options":{"request":"{{{request}}}"}}],
+             "wires":[{"id":"a","kind":"after","from":"claim","to":"land"},{"id":"b","kind":"after","from":"land","to":"merge-in"}]}
+            """)), kept: []);
+
+    private static DriverConfig Landings(string engine, string game) =>
+        DriverConfig.Parse("{\"landings\":{\"engine\":" + engine + ",\"game\":" + game + "}}");
+
+    private const string BranchRule = """{"form":"branch","pattern":"w/{quest}"}""";
+
+    private const string GatedRule = """{"form":"branch","pattern":"w/{quest}","autoAccept":true,"integrate":{"gates":"declared"}}""";
+
+    /// <summary>
+    /// INTEGRATE1r part r2 (the integration design §17.7, F42): the card that chooses a graph that integrates its landing says, per repository it
+    /// reaches, <i>integrates with no gates</i> where the rule's <c>integrate.gates</c> is absent or <c>none</c>, and only for those.
+    /// </summary>
+    [Fact]
+    public void A_choice_of_a_graph_that_integrates_says_each_repository_it_reaches_that_integrates_with_no_gates()
+    {
+        SavedIntegrating();
+        var plan = HelpProposals.Plan(Propose(null, scope: "work", route: "default", workflow: "integrated"), Landings(BranchRule, GatedRule), Here());
+        var card = Card(plan);
+
+        Assert.Empty(card.Needs);
+        Assert.Contains("`engine` integrates with no gates", plan.Describe);
+        Assert.DoesNotContain("`game` integrates with no gates", plan.Describe);
+    }
+
+    /// <summary>INTEGRATE1r part r2: a repository whose rule is a merge rule cannot carry the integrate; the card is a draft naming it and the Setup row.</summary>
+    [Fact]
+    public void A_choice_reaching_a_repository_that_cannot_carry_the_integrate_is_a_draft_naming_it_and_the_setup_row()
+    {
+        SavedIntegrating();
+        var plan = HelpProposals.Plan(Propose(null, scope: "work", route: "default", workflow: "integrated"), Landings("""{"form":"merge"}""", BranchRule), Here());
+        var card = Card(plan);
+
+        var need = Assert.Single(card.Needs);
+        Assert.StartsWith("`engine`: its `merge-in` (`integrate`) integrates the branch the landing `land` makes", need);
+        Assert.Contains("Setup → Line and landing → How work lands", need);
+    }
+
+    /// <summary>INTEGRATE1r part r2: <c>done</c> needs the declaration's gates read, and the facts the box gathered answer for it; none gathered holds the card.</summary>
+    [Fact]
+    public void A_choice_that_asks_with_done_needs_the_accepted_declaration_read_and_naming_a_gate()
+    {
+        SavedIntegrating("done", """{"accept":"automatic"}""");
+        var proposal = Propose(null, scope: "engine", route: "default", workflow: "integrated");
+        var config = Landings(GatedRule, BranchRule);
+
+        var unread = Card(HelpProposals.Plan(proposal, config, Here()));
+        Assert.Contains("could not be read", Assert.Single(unread.Needs));
+
+        var none = Card(HelpProposals.Plan(proposal, config, Here() with { AcceptedGates = new Dictionary<string, AcceptedGates> { ["engine"] = new([]) } }));
+        Assert.Contains("no declaration the owner accepted names a gate", Assert.Single(none.Needs));
+
+        var named = Card(HelpProposals.Plan(proposal, config, Here() with { AcceptedGates = new Dictionary<string, AcceptedGates> { ["engine"] = new(["unit"]) } }));
+        Assert.Empty(named.Needs);
+    }
+
+    /// <summary>INTEGRATE1r part r2: the box reads an accepted declaration only where a saved graph asks with done or steward, and never passes one it cannot read.</summary>
+    [Fact]
+    public async Task The_boxes_read_of_accepted_gates_is_made_only_for_a_graph_that_needs_it()
+    {
+        (string Repository, string? Workspace, string? Root)[] registered = [("engine", "work", null)];
+        SavedIntegrating();
+        Assert.Empty(await IntegrateChoice.ReadForCardsAsync(Chosen, WorkflowStore.List(_home), registered, CancellationToken.None));
+
+        SavedIntegrating("done", """{"accept":"automatic"}""");
+        var read = await IntegrateChoice.ReadForCardsAsync(Chosen, WorkflowStore.List(_home), registered, CancellationToken.None);
+        Assert.Contains("has no checkout here", read["engine"].Unread);
+    }
+
     /// <summary>FABRIC-PIPELINE1i: a kind's route, as the terminal's <c>use … --kind</c> chooses it; once chosen, a second says so.</summary>
     [Fact]
     public void A_kind_s_route_with_no_version_chooses_it_for_that_kind()
