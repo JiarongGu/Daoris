@@ -27,6 +27,9 @@ internal sealed class DriverHandOvers(LoopContext context, Func<ConversationMove
 
     private ConversationMoves? _moves;
 
+    /// <summary>Told each answer the course gave a quest's hand-over (FOUNDATION1i path 2): a test's, no person's.</summary>
+    internal Action<LineCourse>? Decided { get; init; }
+
     /// <summary>The driven holder the quest's hand-over is decided and taken in: the lease holder's scope over the home's one move store.</summary>
     private ConversationMoves Moves =>
         moves?.Invoke() ?? (_moves ??= new ConversationMoves(_context.Home, _context.Service, _context.Events, _context.Output, scope: MoveTakeUpScope.LeaseHolder));
@@ -113,7 +116,9 @@ internal sealed class DriverHandOvers(LoopContext context, Func<ConversationMove
 
         var quest = record.Quest!;
         var agentAsk = ask.AskedBy == HandOverBy.Agent;
-        var (refused, _) = await QuestHandOver.JudgeAsync(service, Drives, id, ask.Agent, ask.Account, ct, agentAsk).ConfigureAwait(false);
+        // The rule admitted the ask when it was kept, so the take judges it as admitted: its consent is what the course reads of it.
+        var (refused, _) = await QuestHandOver.JudgeAsync(
+            service, Drives, id, ask.Agent, ask.Account, ct, agentAsk, consent: HandOver.ConsentOf(HandOverAskVerdict.Go(ask.Agent)), decided: Decided).ConfigureAwait(false);
         if (refused is not null)
         {
             await move.EndAsync().ConfigureAwait(false);
@@ -229,7 +234,7 @@ internal sealed class DriverHandOvers(LoopContext context, Func<ConversationMove
                     "hand-over", $"hand-over  session `{session}`'s agent asks to hand it over to {verdict.Agent}: it waits for the person's yes or no in What needs you"));
                 break;
             case HandOverAskVerdict.GoKind:
-                await GoAsync(ask, own, record!, verdict.Agent!, files, events, ct).ConfigureAwait(false);
+                await GoAsync(ask, own, record!, verdict, files, events, ct).ConfigureAwait(false);
                 break;
         }
     }
@@ -249,8 +254,10 @@ internal sealed class DriverHandOvers(LoopContext context, Func<ConversationMove
     /// takes, and a conversation goes to the chat runner, or is decided as its move.
     /// </summary>
     private async Task GoAsync(
-        HandOverAsk ask, HandOverAskState? own, PriorSession record, string agent, HandOverAskFiles files, List<string> events, CancellationToken ct)
+        HandOverAsk ask, HandOverAskState? own, PriorSession record, HandOverAskVerdict verdict, HandOverAskFiles files, List<string> events,
+        CancellationToken ct)
     {
+        var agent = verdict.Agent!;
         var session = ask.Session;
         var service = _context.Service;
         var said = own is { State: HandOverAskStates.Approved, Agent: { } before } && before == agent;
@@ -279,7 +286,7 @@ internal sealed class DriverHandOvers(LoopContext context, Func<ConversationMove
         {
             // FOUNDATION1f-v part c: decided as a driven move in the store, which the take below, in this very look, takes.
             var asked = await QuestHandOver.AskAsync(
-                service, Moves, Drives, session, agent, null, HandOverWhy.Agent, HandOverBy.Agent, ct).ConfigureAwait(false);
+                service, Moves, Drives, session, agent, null, HandOverWhy.Agent, HandOverBy.Agent, ct, HandOver.ConsentOf(verdict), Decided).ConfigureAwait(false);
             (kept, message, code) = (asked.Kept, asked.Message, asked.Why);
         }
         else if (_context.HandsOver is { } take)
@@ -295,8 +302,10 @@ internal sealed class DriverHandOvers(LoopContext context, Func<ConversationMove
             // further with it, so a shell receives it at its next look while this host lives (MoveStore.Receive), never held for as long as the
             // host runs. No box is written.
             var moves = new ConversationMoves(_context.Home, service, _context.Events, _context.Output);
+            // FOUNDATION1h branch 3: the rule's verdict, `go`, is the consent the course reads as a fact; the door keeps the judging.
             var asked = (await HandOver.AskAsync(
-                service, moves, AccountsOf, session, agent, null, HandOverWhy.Agent, HandOverBy.Agent, DateTimeOffset.UtcNow, ct).ConfigureAwait(false)).Answer;
+                service, moves, AccountsOf, session, agent, null, HandOverWhy.Agent, HandOverBy.Agent, DateTimeOffset.UtcNow, ct,
+                HandOver.ConsentOf(verdict)).ConfigureAwait(false)).Answer;
             (kept, message, code) = (asked.Kept, asked.Message, asked.Why);
         }
 
@@ -420,7 +429,8 @@ internal sealed class DriverHandOvers(LoopContext context, Func<ConversationMove
     private async Task<HandOverAnswer?> TakeRefusesAsync(PriorSession record, string agent, CancellationToken ct)
     {
         var (refused, _) = IsQuest(record)
-            ? await QuestHandOver.JudgeAsync(_context.Service, Drives, record.Session, agent, null, ct, agentAsk: true).ConfigureAwait(false)
+            ? await QuestHandOver.JudgeAsync(
+                _context.Service, Drives, record.Session, agent, null, ct, agentAsk: true, consent: HandOver.ConsentOf(HandOverAskVerdict.Go(agent))).ConfigureAwait(false)
             : await HandOver.JudgeAsync(_context.Service, AccountsOf, record.Session, agent, null, ct).ConfigureAwait(false);
         return refused;
     }

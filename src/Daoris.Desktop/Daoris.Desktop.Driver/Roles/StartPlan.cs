@@ -61,6 +61,9 @@ public sealed record SettledSelection(string Role, HarnessSelection Selection, A
     /// <summary>The taken entry's agent as the walk resolved it; null for an order of one entry, whose agent the account walk is asked by name.</summary>
     public ISessionAdapter? Adapter { get; init; }
 
+    /// <summary>The revision of the role's record the start took (FOUNDATION1x), kept on its binding; 0 for the seed.</summary>
+    public long Revision { get; init; }
+
     /// <summary>
     /// The start's one count on its account (<see cref="HarnessSelection.Number"/>), taken by the roster at the selection under its gate, so
     /// the next start in the same look spreads (D197; PARALLEL1c, D181 point 3); 0 for a probe and for an agent with no accounts. A refusal at
@@ -135,21 +138,41 @@ internal sealed class StartPlan
     /// </param>
     /// <param name="order">The entries the caller holds already (a helper's own order, a recheck's continuation), walked as given; no entry is read.</param>
     /// <exception cref="ActorUnreadableException">The role's stored entry does not read: the start that reads it holds.</exception>
+    /// <param name="catalogue">
+    /// The role catalogue (FOUNDATION1x, §2.7): the role that takes the work at <paramref name="place"/> is the start's; null reads the seeded
+    /// role of the work, which a catalogue of the seed alone answers the same.
+    /// </param>
+    /// <param name="place">Where the start is: its workspace and repository, by which a scoped role is found.</param>
+    /// <exception cref="DriverException">A role record that does not read, or two roles taking the work in one scope, hold the start.</exception>
     public StartPlan(
         string work, DriverConfig config, HarnessRoster roster, AdapterSet adapters, PassMemory memory, IReadOnlyList<string>? fence = null,
-        IReadOnlyList<ActorEffective>? order = null)
+        IReadOnlyList<ActorEffective>? order = null, RoleCatalog? catalogue = null, RolePlace place = default)
     {
         Work = work;
-        Role = RoleOf(work);
-        Order = order ?? ActorChoices.Effective(Role, config, fence: fence);
+        Seeded = RoleOf(work);
+        var found = catalogue?.RoleFor(work, place);
+        if (found?.Held is { } held) throw new DriverException(held);
+        Role = found?.Role?.Id ?? Seeded;
+        RoleName = found?.Role is { } taken && !ActorChoices.Ids.Contains(taken.Id, StringComparer.Ordinal) ? taken.NameEn : ActorWords.Name(Role);
+        Revision = found?.Role is { } kept ? catalogue!.RevisionOf(kept.Id) : 0;
+        Order = order ?? (found is { Role: null } ? [] : ActorChoices.Effective(Role, config, fence: fence));
         (_config, _roster, _adapters, _memory) = (config, roster, adapters, memory);
     }
 
     /// <summary>The start's work.</summary>
     public string Work { get; }
 
-    /// <summary>The role whose order the start walks: the work's seeded role.</summary>
+    /// <summary>The seeded role of the work, which a record's <c>actor</c> keeps so every build reads an id it knows (O2-3).</summary>
+    public string Seeded { get; }
+
+    /// <summary>The role the start took, whose order it walks: the catalogue's role of the work at its place, the seeded one without a catalogue.</summary>
     public string Role { get; }
+
+    /// <summary>The role's name in the wait's sentence: an added role's own, else the seeded role's.</summary>
+    public string RoleName { get; }
+
+    /// <summary>The revision of the role's record the start took, kept on its binding; 0 for the seed.</summary>
+    public long Revision { get; }
 
     /// <summary>The role's effective order, read once for this start: its walk and its re-ask at the open read the same.</summary>
     public IReadOnlyList<ActorEffective> Order { get; }
@@ -159,6 +182,15 @@ internal sealed class StartPlan
 
     /// <summary>Driven work or a conversation: driven work never starts on an account kept for conversations (D130 §4.6).</summary>
     public StartKind Kind { get; init; } = StartKind.Driven;
+
+    /// <summary>The account the person pinned for a conversation's start (its pick), which every entry's account walk is asked for; null for none.</summary>
+    public string? Pinned { get; init; }
+
+    /// <summary>
+    /// Walk an order of one entry as a longer order is walked, passing and saying what it cannot run (a conversation's, FOUNDATION1j part v),
+    /// not as today's one ask whose own hold or refusal stands.
+    /// </summary>
+    public bool WalksOne { get; init; }
 
     /// <summary>Whose passes are remembered between walks (<see cref="PassMemory"/>): <c>quest:&lt;id&gt;</c>, <c>ask:&lt;id&gt;</c>.</summary>
     public required string Subject { get; init; }
@@ -204,10 +236,10 @@ internal sealed class StartPlan
     {
         IReadOnlyCollection<string>? PassedFor(ActorEffective entry) =>
             refused is { Entry: var at, Account: { } account } && at == entry ? [account] : null;
-        if (Order.Count == 1)
+        if (Order.Count == 1 && !WalksOne)
         {
             var only = await AccountsAsync(Order[0].Agent, Order[0].Model, PassedFor(Order[0]), ct, counts, except).ConfigureAwait(false);
-            return new SettledSelection(Role, only, Order[0], []);
+            return new SettledSelection(Role, only, Order[0], []) { Revision = Revision };
         }
 
         using var walk = _memory.Walk(Subject, counts);
@@ -226,11 +258,11 @@ internal sealed class StartPlan
                     ("passed", walked.Passes.Select(pass => pass.Word).ToList())));
             }
 
-            return new SettledSelection(Role, walked.Selection!, taken, walked.Passes) { Adapter = _adapters.Resolve(taken.Agent) };
+            return new SettledSelection(Role, walked.Selection!, taken, walked.Passes) { Adapter = _adapters.Resolve(taken.Agent), Revision = Revision };
         }
 
         // The wait's sentence (D205 §4.5): judged again at every look, the first choice that can run, in order, taken.
-        var wait = $"{ActorWords.Name(Role)} waits: none of its choices can run now. {string.Join("; ", walked.Passes.Select(pass => pass.Said))}.";
+        var wait = $"{RoleName} waits: none of its choices can run now. {string.Join("; ", walked.Passes.Select(pass => pass.Said))}.";
         return new SettledSelection(Role, (walked.Held ?? new HarnessSelection(wait)) with { Refusal = wait, Cooling = walked.Soonest }, null, walked.Passes);
     }
 
@@ -277,7 +309,7 @@ internal sealed class StartPlan
     /// <param name="except">The start's own count, left out of the accounts' facts for a re-ask.</param>
     public Task<HarnessSelection> AccountsAsync(
         string agent, string? model, IReadOnlyCollection<string>? passed, CancellationToken ct, bool counts = true, long except = 0) =>
-        _roster.SelectAsync(agent, _config, Workspace, chosen: null, Kind, ct, model, passed, except, counts);
+        _roster.SelectAsync(agent, _config, Workspace, Pinned, Kind, ct, model, passed, except, counts);
 
     /// <summary>
     /// The plan's own try of an entry: an agent this machine lacks passed <c>unavailable</c>, and one the caller's gate refuses by the gate's
@@ -306,13 +338,42 @@ internal sealed class StartPlan
     /// <param name="record">The record it goes on from; null for none, which reads the work's role.</param>
     /// <param name="work">The work a record naming no role was opened for: a driven quest's, unless the caller says a conversation's.</param>
     /// <exception cref="DriverException">The role's stored entry does not read, or the role is off: the continuation holds, saying so.</exception>
-    public static string ContinuedOn(PriorSession? record, DriverConfig config, string work = "build")
+    /// <param name="bound">
+    /// The role the record's binding says its start took (FOUNDATION1x, §2.4), read before <c>actor</c>; where the catalogue no longer holds
+    /// it, the role that takes the work now does, as a removed role's record continues.
+    /// </param>
+    public static string ContinuedOn(
+        PriorSession? record, DriverConfig config, string work = "build", string? bound = null, RoleCatalog? catalogue = null, RolePlace place = default)
     {
         if (record?.Asked?.Agent is { Length: > 0 } asked) return asked;
         if (record?.Adapter is { Length: > 0 } opened) return opened;
-        var role = record?.Actor is { } actor && ActorChoices.Ids.Contains(actor, StringComparer.Ordinal) ? actor : RoleOf(work);
+        var role = bound is { Length: > 0 } && catalogue is not null
+            ? catalogue.Slots.Any(slot => slot.Id == bound && slot.Role is not null) ? bound : catalogue.RoleFor(work, place).Role?.Id ?? RoleOf(work)
+            : record?.Actor is { } actor && ActorChoices.Ids.Contains(actor, StringComparer.Ordinal) ? actor : RoleOf(work);
         return ActorChoices.FirstAgent(role, config)
             ?? throw new DriverException($"{ActorWords.Name(role)} is off on this machine, so a record of its work does not go on until it is given a choice.");
+    }
+
+    /// <summary>
+    /// The agent a start of <paramref name="work"/> is named for before its walk runs, for the look's report of a wait and a hold the walk
+    /// has not yet answered (the design §2.4's second row): a hand-over's, else a continuation's (<see cref="ContinuedOn"/>), else its role's
+    /// first entry; the machine's own key only where that entry does not read or the role is off, which the walk then holds for itself.
+    /// </summary>
+    public static string AgentFor(
+        string work, DriverConfig config, PriorSession? record = null, string? handed = null, RoleCatalog? catalogue = null, RolePlace place = default,
+        string? bound = null)
+    {
+        if (handed is { Length: > 0 }) return handed;
+        try
+        {
+            if (record is not null) return ContinuedOn(record, config, work, bound, catalogue, place);
+            var role = catalogue is null ? RoleOf(work) : catalogue.RoleFor(work, place).Role?.Id ?? RoleOf(work);
+            return ActorChoices.FirstAgent(role, config) ?? ActorKey.Before(RoleOf(work), config) ?? config.Adapter;
+        }
+        catch (DriverException)
+        {
+            return ActorKey.Before(RoleOf(work), config) ?? config.Adapter;
+        }
     }
 
     /// <summary>

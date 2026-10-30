@@ -131,6 +131,33 @@ public sealed class MoveResolveTests : IDisposable
         Assert.True(shell.Decide(Decision("s2")).Claimed);
     }
 
+    /// <summary>
+    /// 🔴 FOUNDATION1i path 1 (the foundation design §10 row 1i; round 8, <i>O7-F11</i>'s driven half, <i>O8-F6</i>): a driven line's limit
+    /// resume reads its destination's standing move through the course's one read, which closes a hold whose words the person took back, and
+    /// the destination's limit move is then made; while the hold stands, the course holds it, and the limit's own account resumes as ever.
+    /// </summary>
+    [Fact]
+    public async Task A_driven_line_s_held_move_whose_words_were_taken_back_closes_when_its_limit_resume_reads_the_destination_and_the_move_is_made()
+    {
+        var shell = Store("run-shell");
+        HeldSuperseded(shell, words: ["w1"]);
+        var limited = new PriorSession("s2", _home, "failed") { Limit = true, Profile = "account-1", Adapter = "claude-code-acp" };
+        LineAnswer elsewhere = new LineAnswer.Elsewhere(new HarnessSelection(Refusal: null, Profile: "account-2"), NextHold.Cooling);
+
+        var standing = await DrivenCourse.StandingAsync(Resolve(shell), "s2");
+        var held = Assert.IsType<LineCourse.Hold>(DrivenCourse.LimitOwn(limited, elsewhere, standing));
+        Assert.Equal(CourseHoldWhy.MoveHeld, held.Why);
+
+        _said.Gone("s2", "w1");
+        standing = await DrivenCourse.StandingAsync(Resolve(shell), "s2");
+
+        Assert.Null(standing);
+        Assert.Equal(MoveCloseWhy.Resolved, shell.Of("s1").Single().ClosedWhy);
+        var made = Assert.IsType<LineCourse.Move>(DrivenCourse.LimitOwn(limited, elsewhere, standing));
+        Assert.Equal((CourseFromWhy.Limit, CourseAccountSource.Settled, "account-2"), (made.Why, made.Where.Source, made.Where.Account));
+        Assert.IsType<LineCourse.Resume>(DrivenCourse.LimitOwn(limited, new LineAnswer.Resume(), standing));
+    }
+
     [Fact]
     public async Task A_hold_naming_only_a_begun_effect_closes_at_its_first_read_and_its_effect_is_never_made_again()
     {

@@ -88,6 +88,10 @@ internal static class Program
             return;
         }
 
+        // FOUNDATION1w-s (the foundation design §19.15): the home's own driver.json reads its staffing from the store, wired before the loop
+        // and the routes load it; a file DAORIS_DRIVER_CONFIG names is read and written as today, with no store.
+        Daoris.Driver.RoleStaffing.WireHome(Environment.GetEnvironmentVariable);
+
         var serviceUrl = Environment.GetEnvironmentVariable(Daoris.Driver.ServiceClient.UrlVariable)
             ?? "http://localhost:5177";
 

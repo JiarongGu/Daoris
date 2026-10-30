@@ -98,20 +98,17 @@ describe('trusting a folder the driver is holding (D73)', () => {
 
   const holding = (holds: unknown[] = [HOLD]) => {
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    client.setQueryData(keys.untrusted, holds);
+    client.setQueryData(keys.considerations, { considered: [], untrusted: holds, waits: [] });
     return client;
   };
 
-  it('a tick\'s holds land where the views read them, replaced whole', () => {
-    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  it('a tick writes no holds: the views read what the shell pushed (FOUNDATION1s)', () => {
+    const client = holding();
     show(<ShellSignals notify={() => {}} />, client);
 
-    eventHandlers.get('DAORIS.DRIVER_TICK')!({ events: [], untrusted: [HOLD] });
-    expect(client.getQueryData(keys.untrusted)).toEqual([HOLD]);
+    eventHandlers.get('DAORIS.DRIVER_TICK')!({ events: [], untrusted: [] });
 
-    // A shell older than the grant sends no field at all: nothing is held, rather than a stale list.
-    eventHandlers.get('DAORIS.DRIVER_TICK')!({ events: [] });
-    expect(client.getQueryData(keys.untrusted)).toEqual([]);
+    expect(client.getQueryData(keys.considerations)).toEqual({ considered: [], untrusted: [HOLD], waits: [] });
   });
 
   it('the quest the driver holds offers the grant on its page, and writes it only on the press', async () => {
@@ -156,10 +153,10 @@ describe('trusting a folder the driver is holding (D73)', () => {
   it('a quest parked by its strikes offers the retry on its page, and retries on the press', async () => {
     const notify = vi.fn();
     const client = holding([]);
-    client.setQueryData(keys.considered, [{
+    client.setQueryData(keys.considerations, { considered: [{
       quest: 'abc123', repository: 'engine', verdict: 'Exhausted',
       reason: '3 sessions failed on this quest, so it is parked. `daoris driver retry abc123` starts it again.',
-    }]);
+    }], untrusted: [], waits: [] });
     show(<QuestsView notify={notify} />, client);
 
     const page = await chooseRow('Expose a streaming budget');
@@ -177,10 +174,10 @@ describe('trusting a folder the driver is holding (D73)', () => {
   it('a quest the person’s stop holds offers Try again on its page, and says the stop was released', async () => {
     const notify = vi.fn();
     const client = holding([]);
-    client.setQueryData(keys.considered, [{
+    client.setQueryData(keys.considerations, { considered: [{
       quest: 'abc123', repository: 'engine', verdict: 'Stopped', heldBy: 's1a2b3c4',
       reason: 'you stopped session `s1a2b3c4`; Try again starts it again — `daoris driver retry abc123 --session s1a2b3c4`.',
-    }]);
+    }], untrusted: [], waits: [] });
     invoke.mockImplementation(async (_module: string, type: string) => (type === 'RETRY_QUEST'
       ? { ...DRIVER_STATE, retried: { quest: 'abc123', did: 'released', session: 's1a2b3c4' } }
       : DRIVER_STATE));
@@ -197,9 +194,9 @@ describe('trusting a folder the driver is holding (D73)', () => {
 
   it('a quest sitting for any other reason offers no retry', async () => {
     const client = holding([]);
-    client.setQueryData(keys.considered, [{
+    client.setQueryData(keys.considerations, { considered: [{
       quest: 'abc123', repository: 'engine', verdict: 'NotDrivable', reason: 'engine is not driven on this machine.',
-    }]);
+    }], untrusted: [], waits: [] });
     show(<QuestsView notify={() => {}} />, client);
 
     const page = await chooseRow('Expose a streaming budget');

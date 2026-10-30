@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { type QueryClient, useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenora, useShenoraEvent } from '@shenora/react';
 import type { SyncStanding } from '../data/api';
-import type { ActorRow, KeepSet } from '../data/wiring';
+import type { ActorRow, KeepSet, StaffingFound } from '../data/wiring';
 import { keys, SYNC_SLICE } from '../data/queries';
 import type { AccountWaitTick, Consideration, TrustHold } from '../data/signals';
 import type { AccessLevel } from '../settings/repository/Access';
@@ -328,41 +328,61 @@ export const useDriverReady = () => {
  */
 export const readUnderWay = () => call<{ seq?: unknown; presses?: unknown } | null>('UNDER_WAY');
 
-/**
- * Why each open quest is sitting, in the driver's own words, as of its last tick (D46 §3). Written
- * by the tick (`ShellSignals`) and never fetched — the driver says it and nothing else knows — so
- * this query only ever answers what the last tick put there. Empty in a browser, where no tick
- * arrives, and empty before the first one.
- */
-export const useConsidered = () => useQuery({
-  queryKey: keys.considered,
-  queryFn: () => [] as Consideration[],
-  staleTime: Infinity,
-  gcTime: Infinity,
-});
+/** The considerations' slice, as the shell's owner names it (`ConsiderationsStateSlice`). */
+export const CONSIDERATIONS_SLICE = 'considerations';
 
 /**
- * The starts the driver held because the agent has not been trusted where they would run (D73), as
- * of its last tick — written by the tick like `useConsidered`, and empty in a browser.
+ * What the driver's last look said and the page draws as standing facts (FOUNDATION1s, D182): why each open quest is sitting
+ * (D46 §3), the starts held for the agent's trust (D73), and the starts held on cooling accounts, an ask's intake among them (UX6d)
+ * and on signed-out accounts with none cooling (UX6d1).
  */
-export const useUntrusted = () => useQuery({
-  queryKey: keys.untrusted,
-  queryFn: () => [] as TrustHold[],
-  staleTime: Infinity,
-  gcTime: Infinity,
-});
+export type Considerations = { considered: Consideration[]; untrusted: TrustHold[]; waits: AccountWaitTick[] };
+
+const NOTHING_CONSIDERED: Considerations = { considered: [], untrusted: [], waits: [] };
+
+const listOf = <T,>(part: unknown): T[] => (Array.isArray(part) ? (part as T[]) : []);
 
 /**
- * The starts the driver held on cooling accounts, an ask's intake among them (UX6d), and on signed-out accounts with none
- * cooling (UX6d1), as of its last tick — written by the tick like `useConsidered`, and empty in a browser and before the
- * first tick.
+ * The considerations as the shell pushes them (`ConsiderationsStateSlice`): each list a partition pushed whole when it moves, composed
+ * into the one entry the readers select from. Nothing before the shell has judged them, which is before its first look.
  */
-export const useWaits = () => useQuery({
-  queryKey: keys.waits,
-  queryFn: () => [] as AccountWaitTick[],
-  staleTime: Infinity,
-  gcTime: Infinity,
-});
+export const considerationsSlice: SliceSpec = {
+  name: CONSIDERATIONS_SLICE,
+  key: keys.considerations,
+  read: () => readSlice(CONSIDERATIONS_SLICE),
+  compose: (partitions, judged): Considerations | undefined => judged
+    ? {
+      considered: listOf<Consideration>(partitions.get('considered')),
+      untrusted: listOf<TrustHold>(partitions.get('untrusted')),
+      waits: listOf<AccountWaitTick>(partitions.get('waits')),
+    }
+    : undefined,
+};
+
+/**
+ * One list of the considerations, from memory: written by the shell's pushes and never fetched, so no tick, focus or staleness asks
+ * for it. Empty in a browser, where nothing is pushed, and before the shell's first look.
+ */
+function useConsiderations<T>(select: (all: Considerations) => T) {
+  const client = useQueryClient();
+  return useQuery({
+    queryKey: keys.considerations,
+    queryFn: () => readPushed(client, CONSIDERATIONS_SLICE, async () => NOTHING_CONSIDERED),
+    select,
+    staleTime: Infinity,
+    gcTime: Infinity,
+    refetchOnWindowFocus: false,
+  });
+}
+
+const consideredOf = (all: Considerations) => all.considered;
+const untrustedOf = (all: Considerations) => all.untrusted;
+
+/** Why every open quest is sitting, in the driver's own words, as of its last look (D46 §3). */
+export const useConsidered = () => useConsiderations(consideredOf);
+
+/** The starts the driver held because the agent has not been trusted where they would run (D73), as of its last look. */
+export const useUntrusted = () => useConsiderations(untrustedOf);
 
 /** What a grant answered: the key it wrote, whether it wrote, whether a re-read says yes, and why. */
 export type TrustGranted = { folder: string; key: string; changed: boolean; verified: boolean; message: string };
@@ -371,22 +391,13 @@ export type TrustGranted = { folder: string; key: string; changed: boolean; veri
  * The person's grant of a folder the driver is holding (D73) — the screen's half of
  * `daoris agent trust … --yes`. The shell writes it only for a hold its last tick produced, in the
  * file that tick read, and the driver looks again at once. Its route publishes the driver's state, which the state hub asks
- * again in every window (STATEHUB1h, D169).
+ * again in every window (STATEHUB1h, D169). A grant it verified takes the hold off the considerations' slice as it answers, and
+ * the push shows that in every window at once (FOUNDATION1s): the page writes nothing of its own.
  */
-export const useTrustFolder = () => {
-  const client = useQueryClient();
-  return useMutation({
-    mutationFn: (hold: Pick<TrustHold, 'folder' | 'trustFile'>) =>
-      call<TrustGranted>('TRUST_FOLDER', { folder: hold.folder, trustFile: hold.trustFile }),
-    onSuccess: (granted, hold) => {
-      // Off the list now, rather than a tick from now: the grant is what the person just did.
-      if (granted.verified) {
-        client.setQueryData<TrustHold[]>(keys.untrusted, (holds = []) =>
-          holds.filter((held) => held.folder !== hold.folder || held.trustFile !== hold.trustFile));
-      }
-    },
-  });
-};
+export const useTrustFolder = () => useMutation({
+  mutationFn: (hold: Pick<TrustHold, 'folder' | 'trustFile'>) =>
+    call<TrustGranted>('TRUST_FOLDER', { folder: hold.folder, trustFile: hold.trustFile }),
+});
 
 /**
  * One mutation shape for the standing choices, these and the rules' (`bridge/repositories/lines.ts`): edit the file, and the loop looks now,
@@ -476,7 +487,7 @@ export const useSetHelpMode = () => useDriverChange<{ mode: 'restricted' | 'full
 export const useSetHelpGrant = () => useDriverChange<{ grant: string; operation: string; chosen: boolean }>('SET_HELP_GRANT');
 
 // The actors' wire types live in `data/wiring` so the presentational Actors card reads them without reaching the bridge.
-export type { ActorEntry, ActorRow } from '../data/wiring';
+export type { ActorEntry, ActorRow, StaffingFound } from '../data/wiring';
 
 /**
  * Each actor's order, where it came from (MODELROLE1c): a read of `driver.json`'s `actors`, the same `daoris driver actor` says. Kept
@@ -503,6 +514,28 @@ export const useActors = () => {
  */
 export const useSetActor = () =>
   useDriverChange<{ actor: string; choices: { agent: string; model?: string | null; effort?: string | null }[] | null }>('SET_ACTOR');
+
+/**
+ * The changes of driver.json's actors another program made, which the driver kept for the person (FOUNDATION1w-s, §19.15): `ACTORS`'
+ * `found`, none where the home's file is not the store's. Under the driver's key, as the rows are. Empty in a browser.
+ */
+export const useStaffingFound = () => {
+  const { isAvailable } = useShenora();
+  return useQuery({
+    queryKey: [...keys.driver, 'actors', 'found'] as const,
+    queryFn: async () => {
+      const answer = await call<{ found?: StaffingFound[] } | null>('ACTORS');
+      return Array.isArray(answer?.found) ? answer.found : [];
+    },
+    enabled: isAvailable,
+  });
+};
+
+/**
+ * A found change answered (FOUNDATION1w-s): *Take it*, the actors as that file showed them, a turn-on of Intake or Ask Daoris among them
+ * by this press, or *Dismiss*. `daoris driver actor found take|dismiss <n>` is its terminal twin (D50).
+ */
+export const useAnswerStaffingFound = () => useDriverChange<{ found: number; answer: 'take' | 'dismiss' }>('STAFFING_FOUND_ANSWER');
 
 /**
  * "Look now": a quest just published, or an ask just made, is looked at on the driver's next breath

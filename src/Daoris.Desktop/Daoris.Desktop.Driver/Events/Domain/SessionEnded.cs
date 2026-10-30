@@ -28,4 +28,21 @@ public sealed record SessionEnded(
     /// MODELROLE1c3), ended with the account's <c>account.refused-model</c> line.
     /// </summary>
     public bool NotOffered { get; init; }
+
+    /// <summary>The note's <c>ended.*</c> code (FOUNDATION1 l-iii): the end's reason, where its writer composed the note as parts.</summary>
+    public string? Reason { get; init; }
+
+    /// <summary>
+    /// The end's class (§4.2), judged by the one judge, <see cref="PartEnds.ClassOf"/>, with this look's own flags refining it: the
+    /// journal's row cannot know whose decision the stop was, the look does (<see cref="ByPerson"/>, <see cref="Limit"/>, <see cref="NotOffered"/>).
+    /// </summary>
+    public string Class =>
+        NotOffered ? "refused-choice"
+        : Limit ? "limited"
+        : ByPerson ? "stopped-person"
+        : PartEnds.ClassOf(State, limited: false, Reason is null ? [] : [Reason]);
+
+    /// <summary>The first <c>ended.*</c> code among a note's parts, or null.</summary>
+    public static string? ReasonOf(IReadOnlyList<NotePart>? parts) =>
+        parts?.Select(part => part.Code).FirstOrDefault(code => code is not null && code.StartsWith("ended.", StringComparison.Ordinal));
 }

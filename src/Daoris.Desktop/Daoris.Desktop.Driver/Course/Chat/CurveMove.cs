@@ -5,8 +5,9 @@ namespace Daoris.Driver;
 /// <summary>
 /// A conversation over its account's usage curve moves on its own as its turn ends (SWITCH1c-ii; D165 point 3; the switch design
 /// §1.2, §2 and §4): to another account of the same agent in its scope that has room, as a hand-over with its agent unchanged, why
-/// <c>curve</c>, asked by <c>daoris</c>. <see cref="SwitchDecision"/> decides; this class asks it, reads the others where it says so, asks
-/// again, decides the move in the store (<see cref="Moves"/>, FOUNDATION1f-iii part a; no hand-over box is written beside it), and takes it
+/// <c>curve</c>, asked by <c>daoris</c>. <see cref="SwitchDecision"/> reads the account and <see cref="CourseDecision"/> decides whether and where the line moves (FOUNDATION1h
+/// branch 1; the scope's switch is its consent); this class asks the first, reads the others where it says so, asks
+/// again, asks the course, decides the move in the store (<see cref="Moves"/>, FOUNDATION1f-iii part a; no hand-over box is written beside it), and takes it
 /// (<see cref="ChatHandOver"/>'s take of a move), which ends the old conversation and starts the new one, its record continuing the old.
 /// Over the runner's context (PART10g, D166).
 /// </summary>
@@ -36,6 +37,9 @@ internal sealed class CurveMove(ChatContext context, ChatHandOver handOver)
 
     /// <summary>What each judged turn's end came to, by session: a test hears it; no person reads it.</summary>
     public event Action<string, SwitchChoice>? Judged;
+
+    /// <summary>What the course answered each judged turn's end, by session (FOUNDATION1h branch 1): a test hears it; no person reads it.</summary>
+    internal event Action<string, LineCourse>? Decided;
 
     /// <summary>
     /// Whether the turns, as just told, are a turn's end not yet judged (SWITCH1c-ii): nothing running, the door not opening, none
@@ -118,21 +122,35 @@ internal sealed class CurveMove(ChatContext context, ChatHandOver handOver)
         }
 
         Judged?.Invoke(sessionId, choice);
-        if (choice is not SwitchChoice.MoveTo move) return choice;
+
+        // FOUNDATION1h branch 1 (the foundation design §3.1): whether this line may move, and where, is the course's one decision. The account
+        // reading above is the adapter's to read (the others' windows are read only where it says so); the scope's switch is the course's
+        // consent (`SwitchAdmits`), so a hold, the switch's or a stay, is no move, and the account moved to is the course's answer. Ask Daoris's
+        // own conversation was passed over above (it has no account to move), so the head is never one.
+        var course = CourseDecision.Decide(
+            new CourseFacts(
+                new CourseHead(
+                    prior.State, Role: prior.Actor ?? "chat", Choice: prior.Choice, Adapter: adapter, Profile: account, Conversation: true,
+                    AskDaoris: false, Session: sessionId),
+                CourseBoundary.BetweenTurns,
+                Rules: new CourseRules(SwitchAdmits: Admits(scope.Use), CurveAccount: (choice as SwitchChoice.MoveTo)?.Account)),
+            CourseTrigger.TurnEnd);
+        Decided?.Invoke(sessionId, course);
+        if (course is not LineCourse.Move { Where.Account: { } to } || choice is not SwitchChoice.MoveTo move) return choice;
 
         // What the hand-over's own ask judged before it kept a box (no such session, a conversation that went on, an account not the agent's,
         // a tree gone): refused here the same way, quietly, before anything is decided.
-        var (refused, _) = await HandOver.JudgeAsync(_context.Service, _handOver.AccountsOf, sessionId, agent, move.Account, ct).ConfigureAwait(false);
+        var (refused, _) = await HandOver.JudgeAsync(_context.Service, _handOver.AccountsOf, sessionId, agent, to, ct).ConfigureAwait(false);
         if (refused is not null) return choice;
 
         // FOUNDATION1f-iii part a (the foundation design §3.3, §13.4 step 1): the move is decided in the store, and no box is written beside it.
         // A record a move still stands for, the one it left or the one whose open made it, takes no move now; a store that will not take the
         // decision moves nothing, and the next turn's end judges again.
-        var begun = await Moves.BeginAsync(Decision(sessionId, move.Account), ct).ConfigureAwait(false);
+        var begun = await Moves.BeginAsync(Decision(sessionId, to), ct).ConfigureAwait(false);
         if (begun.Move is not { } record) return choice;
 
         // Taken now, the turns held while it is; where a word started a turn meanwhile, the move closes and the next turn's end judges again.
-        var asked = new HandOverRequest(agent, move.Account, HandOverWhy.Curve, HandOverBy.Daoris, DateTimeOffset.UtcNow);
+        var asked = new HandOverRequest(agent, to, HandOverWhy.Curve, HandOverBy.Daoris, DateTimeOffset.UtcNow);
         await _handOver.TakeAsync(sessionId, asked, move, record, config, onEnded, ct).ConfigureAwait(false);
         return choice;
 
@@ -144,6 +162,12 @@ internal sealed class CurveMove(ChatContext context, ChatHandOver handOver)
                 othersRead);
         }
     }
+
+    /// <summary>
+    /// The course's consent for Daoris's own move (<see cref="CourseRules.SwitchAdmits"/>): the scope's switch is not <c>off</c>. Daoris's own
+    /// offer is not the hand-over rule's (<see cref="HandOverRules"/>), so the person's hand-over rule never gates the curve.
+    /// </summary>
+    private static bool Admits(RotationUse use) => use.Switch != "off";
 
     /// <summary>
     /// The move as the course decided it (FOUNDATION1f-iii part a, §3.3): a conversation's, by the brief, for the curve, asked by Daoris, on the

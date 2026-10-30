@@ -1551,7 +1551,7 @@ if (mode == ServiceMode.Local)
             string.IsNullOrWhiteSpace(body.Decision) ? null : body.Decision.Trim(),
             string.IsNullOrWhiteSpace(body.Question) ? null : body.Question.Trim(),
             string.IsNullOrEmpty(body.Choice) ? null : body.Choice,
-            settled: body.Settled == true);
+            settled: body.Settled == true, ending: body.Ending == true);
         // Row p: a key the line settled is answered with the record its word left and no word, nothing kept, so nothing beside the say is.
         if (outcome.SettledOn is { } settledOn) return Results.Ok(new SettledResponse(outcome.Message, settledOn));
         if (outcome.Refusal == SessionSayRefusal.None)
@@ -1930,6 +1930,14 @@ if (changes is not null)
         return new ChangesResponse(
             answer.Since, answer.Moved, answer.Journal is { } place ? new ChangesJournalResponse(place.Store, place.Floor, place.Newest) : null);
     });
+}
+
+// FOUNDATION1 l-i (the foundation design §4.1): the journal's rows after a position, oldest first, with where the journal stands, for each process
+// that tells from it. The same local-only door as the stream whose `journal` family wakes it.
+if (changes is not null)
+{
+    app.MapGet(JournalRows.Route, async (long? since, int? limit, CancellationToken ct) =>
+        await JournalRows.ReadAsync(options.DatabasePath, since ?? 0, limit ?? JournalRows.Most, ct));
 }
 
 // The driver's session records (D46). State only: the service never spawns a process — the record is

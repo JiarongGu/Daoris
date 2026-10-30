@@ -12,7 +12,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <remarks>
 /// <para><b>A direct start</b> is the runtime's <c>Process.Start</c>, called or handed as a method, a <c>Process</c> built
 /// to be started, or the system's <c>CreateProcessW</c>, declared or called (TERMSTART1); comments are read out first. Each
-/// that may stay is named below, by file and count, with why.</para>
+/// file that may stay is named below, with why; how many starts a listed file makes is not pinned (CENSUSRULES1).</para>
 /// <para><b>The file manager</b> is the window kit's launcher, which starts its own process: each module that opens a folder
 /// calls it through <c>OpenFolders.OpenAsync</c>, which passes the gate's <c>RunAsync</c>.</para>
 /// <para><b>The agents' route</b> (TERMTRUST1a part (i), D201 point 4): every agent, plugin process and piece is started through
@@ -26,41 +26,65 @@ public sealed class ProcessStartsCensusTests
         "Daoris.Desktop.Driver", "Daoris.Desktop.Driver.Host", "Daoris.Desktop.Modules", "Daoris.Desktop.App", "Daoris.Desktop.Launcher",
     ];
 
-    /// <summary>The direct starts that stay, by file and how many, each with its reason.</summary>
-    private static readonly Dictionary<string, (int Count, string Why)> Allowed = new(StringComparer.Ordinal)
+    /// <summary>The files whose direct starts stay, each with its reason; how many a listed file makes is not pinned (CENSUSRULES1).</summary>
+    private static readonly Dictionary<string, string> Allowed = new(StringComparer.Ordinal)
     {
-        ["Daoris.Desktop.Driver/Platform/ProcessStarts.cs"] = (1, "the gate itself: the one place the runtime's start is handed in"),
-        ["Daoris.Desktop.Driver/Workplace/GitDoors.cs"] = (3, "the git doors (GITAUTH1b), compiled into a program of their own that git starts, "
-            + "with no window and no bridge: the repository's ssh setting asked of git, the ssh, and git's own transport"),
-        ["Daoris.Desktop.Driver/Platform/PieceLauncher.cs"] = (1, "the agents' launcher (COAGENT1b, TERMTRUST1a), compiled "
+        ["Daoris.Desktop.Driver/Platform/ProcessStarts.cs"] = "the gate itself: the one place the runtime's start is handed in",
+        ["Daoris.Desktop.Driver/Workplace/GitDoors.cs"] = "the git doors (GITAUTH1b), compiled into a program of their own that git starts, "
+            + "with no window and no bridge: the repository's ssh setting asked of git, the ssh, and git's own transport",
+        ["Daoris.Desktop.Driver/Platform/PieceLauncher.cs"] = "the agents' launcher (COAGENT1b, TERMTRUST1a), compiled "
             + "into a program of its own that the driver starts for every agent, plugin process and piece, with no window and no bridge: "
-            + "the harness, once the launcher is in the jobs it was named"),
-        ["Daoris.Desktop.Launcher/Program.cs"] = (1,"the launcher is a program of its own, with no window and no bridge: it starts the application once and exits"),
-        ["Daoris.Desktop.Driver/Platform/PseudoConsole.cs"] = (2, "a terminal's shell under a pseudo-console, which .NET cannot start: "
-            + "CreateProcessW, declared and called once; the terminal module runs that start through the gate's RunAsync"),
-        ["Daoris.Desktop.Driver/Review/Heavy/HeavyStep.cs"] = (3, "a heavy run's gate (HEAVYRUN1a), in the verb's own process, "
+            + "the harness, once the launcher is in the jobs it was named",
+        ["Daoris.Desktop.Launcher/Program.cs"] = "the launcher is a program of its own, with no window and no bridge: it starts the application once and exits",
+        ["Daoris.Desktop.Driver/Platform/PseudoConsole.cs"] = "a terminal's shell under a pseudo-console, which .NET cannot start: "
+            + "CreateProcessW, declared and called once; the terminal module runs that start through the gate's RunAsync",
+        ["Daoris.Desktop.Driver/Review/Heavy/HeavyStep.cs"] = "a heavy run's gate (HEAVYRUN1a), in the verb's own process, "
             + "not the desktop's: CreateProcessW, declared and called once, so the gate starts suspended and joins the run's "
-            + "kill-on-close job before it can start a child of its own; and /bin/sh off Windows, where no job holds it"),
+            + "kill-on-close job before it can start a child of its own; and /bin/sh off Windows, where no job holds it",
     };
 
-    [Fact]
-    public void No_process_is_started_outside_the_gate_but_the_ones_named_with_their_reason()
+    /// <summary>The files, with how many direct starts each makes, of the sources that make one.</summary>
+    private static Dictionary<string, int> DirectStarts(IEnumerable<(string File, string Source)> sources)
     {
         var found = new Dictionary<string, int>(StringComparer.Ordinal);
-        foreach (var (file, source) in Sources())
+        foreach (var (file, source) in sources)
         {
             var direct = Regex.Matches(source, @"\bProcess\.Start\b|\bnew\s+(?:System\.Diagnostics\.)?Process\s*[({]|\bCreateProcessW\s*\(").Count;
             if (direct > 0) found[file] = direct;
         }
 
-        var outside = found
-            .Where(each => !Allowed.TryGetValue(each.Key, out var allowed) || each.Value > allowed.Count)
-            .Select(each => $"{each.Key}: {each.Value} direct start(s)")
-            .ToList();
-        Assert.True(outside.Count == 0, "a start outside ProcessStarts waits on the runtime's start lock on its caller's thread, "
-            + "the window's among them:\n" + string.Join('\n', outside));
-        // An allowance nothing needs any more is taken back, so the list stays the reasons that are true.
-        Assert.All(Allowed, allowed => Assert.True(found.ContainsKey(allowed.Key), $"{allowed.Key} starts nothing directly now: take it off the list"));
+        return found;
+    }
+
+    /// <summary>The problems of a scan against the list: a file that starts directly and is not listed, and a listed file that no longer does.</summary>
+    private static List<string> DirectProblems(Dictionary<string, int> found) =>
+    [
+        .. found.Where(each => !Allowed.ContainsKey(each.Key)).Select(each => $"{each.Key}: {each.Value} direct start(s) and not listed"),
+        .. Allowed.Keys.Where(file => !found.ContainsKey(file)).Select(file => $"{file} starts nothing directly now: take it off the list"),
+    ];
+
+    [Fact]
+    public void No_process_is_started_outside_the_gate_but_in_the_files_named_with_their_reason()
+    {
+        var problems = DirectProblems(DirectStarts(Sources()));
+
+        Assert.True(problems.Count == 0, "a start outside ProcessStarts waits on the runtime's start lock on its caller's thread, "
+            + "the window's among them:\n" + string.Join('\n', problems));
+    }
+
+    /// <summary>A new file with a direct start fails; one more direct start in a listed file passes (CENSUSRULES1).</summary>
+    [Fact]
+    public void A_direct_start_in_a_new_file_fails_the_census_and_one_more_in_a_listed_file_passes()
+    {
+        var listed = Allowed.Keys.Select(file => (File: file, Source: "var p = Process.Start(info);")).ToList();
+
+        Assert.Empty(DirectProblems(DirectStarts(listed)));
+        Assert.Empty(DirectProblems(DirectStarts(listed.Select(each => each.File == listed[0].File
+            ? (each.File, each.Source + "\nvar q = Process.Start(info);\nvar r = new Process();") : each))));
+        Assert.Equal(["Daoris.Desktop.Driver/Loop/Planted.cs: 1 direct start(s) and not listed"],
+            DirectProblems(DirectStarts(listed.Append(("Daoris.Desktop.Driver/Loop/Planted.cs", "var p = Process.Start(info);")))));
+        Assert.Equal([$"{listed[0].File} starts nothing directly now: take it off the list"],
+            DirectProblems(DirectStarts(listed.Select(each => each.File == listed[0].File ? (each.File, "var p = 1;") : each))));
     }
 
     /// <summary>The starts the row named, and the file manager's three doors: each passes the gate (the agents' route passes it too).</summary>
@@ -149,23 +173,23 @@ public sealed class ProcessStartsCensusTests
     private const string AgentRoute = "Daoris.Desktop.Driver/Platform/AgentStarts.cs";
 
     /// <summary>
-    /// Every start through the agents' route (TERMTRUST1a part (i), D201 point 4; the terminal-trust design §0.6 and §8 case 2), by file:
-    /// how many, and what each starts. A new one is named here with its kind.
+    /// Every file that starts through the agents' route (TERMTRUST1a part (i), D201 point 4; the terminal-trust design §0.6 and §8 case 2),
+    /// and what it starts. A new file is named here with its kind; how many starts a listed file makes is not pinned (CENSUSRULES1).
     /// </summary>
-    private static readonly Dictionary<string, (int Count, string Kind)> Routed = new(StringComparer.Ordinal)
+    private static readonly Dictionary<string, string> Routed = new(StringComparer.Ordinal)
     {
         // The driver's one run: driven sessions, intakes, helpers, reviewers, brainstorm passes, workflow nodes, carry-ons and partners.
-        ["Daoris.Desktop.Driver/Loop/Driver.cs"] = (1, "piece is null ? ContainedKind.Agent : ContainedKind.Piece"),
-        // A native run going on with the person's words (MSG1b), and its one retry (SESSCTX1c).
-        ["Daoris.Desktop.Driver/Loop/DriverContinuations.cs"] = (2, "ContainedKind.Agent"),
-        // The one start of the run over today's transports (AGENTPROVIDER1m-i): the executors' starts, their go-on and their retry,
+        ["Daoris.Desktop.Driver/Loop/Driver.cs"] = "piece is null ? ContainedKind.Agent : ContainedKind.Piece",
+        // A native run going on with the person's words (MSG1b), and its retry (SESSCTX1c).
+        ["Daoris.Desktop.Driver/Loop/DriverContinuations.cs"] = "ContainedKind.Agent",
+        // The start of the run over today's transports (AGENTPROVIDER1m-i): the executors' starts, their go-on and their retry,
         // once each executor holds it; no executor does yet, so these sites stay beside it until m-i's later parts move them.
-        ["Daoris.Desktop.Driver/Agents/TransportRun.cs"] = (1, "piece is null ? ContainedKind.Agent : ContainedKind.Piece"),
+        ["Daoris.Desktop.Driver/Agents/TransportRun.cs"] = "piece is null ? ContainedKind.Agent : ContainedKind.Piece",
         // A conversation, Ask Daoris's among them.
-        ["Daoris.Desktop.Driver/Loop/Chat/ChatRunner.cs"] = (1, "ContainedKind.Agent"),
+        ["Daoris.Desktop.Driver/Loop/Chat/ChatRunner.cs"] = "ContainedKind.Agent",
         // A plugin's hook program, and the kit's trial of it.
-        ["Daoris.Desktop.Driver/Plugins/HookProcess.cs"] = (1, "ContainedKind.Plugin"),
-        ["Daoris.Desktop.Driver/Plugins/PluginTrialProcess.cs"] = (1, "ContainedKind.Plugin"),
+        ["Daoris.Desktop.Driver/Plugins/HookProcess.cs"] = "ContainedKind.Plugin",
+        ["Daoris.Desktop.Driver/Plugins/PluginTrialProcess.cs"] = "ContainedKind.Plugin",
     };
 
     /// <summary>
@@ -201,16 +225,14 @@ public sealed class ProcessStartsCensusTests
             + "an agent's goes through AgentStarts.StartAsync, and Daoris's own is named in DaorisOwn with why:\n" + string.Join('\n', unrouted));
         Assert.All(DaorisOwn.Keys, file => Assert.True(Sources().Any(each => each.File == file && GateCalls(each.Source) > 0),
             $"{file} starts nothing through the gate now: take it off DaorisOwn"));
-        Assert.Equal(
-            Routed.OrderBy(each => each.Key, StringComparer.Ordinal).Select(each => $"{each.Key}: {each.Value.Count}"),
-            routed.OrderBy(each => each.Key, StringComparer.Ordinal).Select(each => $"{each.Key}: {each.Value}"));
+        Assert.Equal(Routed.Keys.Order(StringComparer.Ordinal), routed.Keys.Order(StringComparer.Ordinal));
     }
 
     /// <summary>Each routed start says what it starts, as the log's <c>kind</c> will.</summary>
     [Fact]
     public void Each_routed_start_says_its_kind()
     {
-        foreach (var (file, (_, kind)) in Routed)
+        foreach (var (file, kind) in Routed)
         {
             var source = Sources().Single(each => each.File == file).Source;
             Assert.True(Regex.IsMatch(source, @"AgentStarts\.StartAsync\(\s*info,\s*" + Regex.Escape(kind)), $"{file}: its start says {kind}");
@@ -227,6 +249,11 @@ public sealed class ProcessStartsCensusTests
         var (unrouted, _) = Census(planted);
 
         Assert.Equal(["Daoris.Desktop.Driver/Loop/Planted.cs: 1 start(s) through the gate"], unrouted);
+
+        // One more start in a file already named as Daoris's own passes (CENSUSRULES1).
+        var own = DaorisOwn.Keys.First(file => file != AgentRoute);
+        var more = Sources().Append((own, "ProcessStarts.Shared.StartAsync(a, b, c); ProcessStarts.Shared.StartAsync(a, b, c);"));
+        Assert.Empty(Census(more).Unrouted);
     }
 
     /// <summary>The starts through the gate outside the route and Daoris's own, and the route's calls by file.</summary>

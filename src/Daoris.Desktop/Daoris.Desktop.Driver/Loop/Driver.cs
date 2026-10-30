@@ -53,23 +53,59 @@ public sealed class Driver(
     internal Func<Consideration, Action, CancellationToken, Task<StartRun>>? Runner { get; init; }
 
     /// <summary>
+    /// Told each answer the course gave a driven path as it is decided (FOUNDATION1i, <see cref="DrivenCourse"/>): a test's, no person's.
+    /// </summary>
+    internal Action<LineCourse>? Decided { get; set; }
+
+    /// <summary>The course's answer for a start's resume of the words kept on its record, which the account its record ran on may hold.</summary>
+    private LineCourse DecideResume(PriorSession record, string questStatus, ResumeChoice resume)
+    {
+        var course = DrivenCourse.GoOn(record, questStatus, null, false, resume.Answer);
+        Decided?.Invoke(course);
+        return course;
+    }
+
+    /// <summary>
+    /// The limit resume's step 1, decided by the course (path F): the record's own account the roster found ready resumes its own
+    /// conversation, a move that still stands to the record as its destination holds it, read first (round 8, O7-F11).
+    /// </summary>
+    private async Task<LineCourse> DecideLimitOwnAsync(PriorSession limited, ResumeChoice own, CancellationToken ct)
+    {
+        LineAnswer? answer = own is { Own: NextHold.Ready, Selection.Allowed: true } ? new LineAnswer.Resume()
+            : own.Answer is LineAnswer.Resume ? null : own.Answer;
+        var standing = await DrivenCourse.StandingAsync(Moves.Resolve, limited.Session, ct).ConfigureAwait(false);
+        var course = DrivenCourse.LimitOwn(limited, answer, standing);
+        Decided?.Invoke(course);
+        return course;
+    }
+
+    /// <summary>
     /// The move record the driven carry-on keeps (FOUNDATION1f-iv part a; the foundation design §3.3, §13.4): the one store the live limit move
-    /// writes, handed the lease holder's scope (executor <c>driven</c>). Made on first use, since the watch builds a driver for each look and the
-    /// store is opened for each use; a test hands one of its own run.
+    /// writes, handed the lease holder's scope (executor <c>driven</c>), or a shared loop's, only the lines it runs (SHAREMOVES1, <see cref="Share"/>).
+    /// Made on first use, since the watch builds a driver for each look and the store is opened for each use; a test hands one of its own run.
     /// </summary>
     internal ConversationMoves Moves
     {
-        get => _moves ??= new ConversationMoves(home, service, Context.Events, output, scope: MoveTakeUpScope.LeaseHolder);
+        get => _moves ??= new ConversationMoves(
+            home, service, Context.Events, output,
+            scope: Share ? MoveTakeUpScope.Shared(session => Context.Runs.Live.Values.Contains(session)) : MoveTakeUpScope.LeaseHolder);
         init => _moves = value;
     }
 
     private ConversationMoves? _moves;
 
     /// <summary>
-    /// The watch's first look of a loop (FOUNDATION1f-iv part b; the foundation design §3.3, §19.1): every dead loop's driven move taken up
-    /// through <see cref="Moves"/>, whose scope is the lease holder's, and ended by its phase, so a line a dead loop left a move standing for
-    /// is carried on by this loop and a word it sent and never took is taken, none sent again. The look reading each hold, not the shell's
-    /// come-up, since a come-up's say of another shell on the home is the shell's own chat run's. Never faults.
+    /// Whether this is a <c>--share</c> loop running beside the lease holder (SHAREMOVES1, the foundation design §3.3): its holder takes up only
+    /// the moves of the lines this loop runs, the sessions its <see cref="RunningSessions"/> holds as the take-up reads them, and the lease
+    /// holder's look takes up the rest. False, the default, is the lease holder's own: every dead run's driven move.
+    /// </summary>
+    public bool Share { get; init; }
+
+    /// <summary>
+    /// The watch's first look of a loop (FOUNDATION1f-iv part b; the foundation design §3.3, §19.1): every dead loop's driven move of this
+    /// loop's scope taken up through <see cref="Moves"/> (the lease holder's, or a shared loop's own lines), and ended by its phase, so a line a
+    /// dead loop left a move standing for is carried on by this loop and a word it sent and never took is taken, none sent again. The look
+    /// reading each hold, not the shell's come-up, since a come-up's say of another shell on the home is the shell's own chat run's. Never faults.
     /// </summary>
     internal async Task TakeUpMovesAsync(CancellationToken ct) => await Moves.LookAsync(ct).ConfigureAwait(false);
 
@@ -335,7 +371,7 @@ public sealed class Driver(
 
     private DriverContinuations GoOns => LazyInitializer.EnsureInitialized(ref _continuations, () => new DriverContinuations(Context, this));
 
-    private DriverHandOvers HandOvers => LazyInitializer.EnsureInitialized(ref _handOvers, () => new DriverHandOvers(Context, () => Moves));
+    private DriverHandOvers HandOvers => LazyInitializer.EnsureInitialized(ref _handOvers, () => new DriverHandOvers(Context, () => Moves) { Decided = course => Decided?.Invoke(course) });
 
     private DriverHelpers Helpers => LazyInitializer.EnsureInitialized(ref _helpers, () => new DriverHelpers(Context, this));
 
@@ -474,6 +510,12 @@ public sealed class Driver(
     /// <summary>The brainstorms on file at a look (BRAINSTORM1a, D176): <see cref="DriverBrainstorms.BrainstormsAsync"/>.</summary>
     internal Task<int> BrainstormsAsync(Snapshot snapshot, int taken, List<string> events, CancellationToken ct) =>
         Brainstorms.BrainstormsAsync(snapshot, taken, events, ct);
+
+    /// <summary>
+    /// A room measurement of an agent's pass (BRAINSTORM1c, <see cref="DriverBrainstorms.MeasureRoomAsync"/>): the walk's account alone where
+    /// <paramref name="spend"/> is false, else one probe pass on it, kept as evidence. The terminal's <c>brainstorm measure</c> is its press.
+    /// </summary>
+    public Task<RoomMeasure> MeasureRoomAsync(string agent, bool spend, CancellationToken ct) => Brainstorms.MeasureRoomAsync(agent, spend, ct);
 
     /// <summary>How a meeting's turn is run (AGENTROOM1a): refused with no stand-in, since no tool carries its message yet.</summary>
     internal Func<BrainstormTurn, CancellationToken, Task<BrainstormTurnRun>>? MeetingTurns
@@ -695,7 +737,7 @@ public sealed class Driver(
         IReadOnlyList<ActorEffective> order;
         try
         {
-            order = ActorChoices.Effective("build", config);
+            order = RoleCatalog.ReadHome(home).Order(ParticipantWork.Build, new RolePlace(), config);
         }
         catch (DriverException)
         {
@@ -763,6 +805,59 @@ public sealed class Driver(
         }
     }
 
+    /// <summary>The catalogue for the look's report of a start, which never faults the look: a store that will not read says the seed's, and the start itself holds.</summary>
+    private RoleCatalog? CatalogueForReport()
+    {
+        try
+        {
+            return RoleCatalog.ReadHome(home);
+        }
+        catch (DriverException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>The role a quest's start took and its record's revision (FOUNDATION1x), for its binding; null where none takes the work or the store will not read.</summary>
+    private (string Role, long Revision)? RoleTaken(Consideration start)
+    {
+        try
+        {
+            var catalogue = RoleCatalog.ReadHome(home);
+            return catalogue.RoleFor(StartWork(start.Quest), PlaceOf(start)).Role is { } role ? (role.Id, catalogue.RevisionOf(role.Id)) : null;
+        }
+        catch (DriverException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>The name of the role a design quest's start took, as its opening says it; null where the catalogue will not read.</summary>
+    private string? DesignRoleName(Consideration start)
+    {
+        try
+        {
+            return RoleCatalog.ReadHome(home).RoleFor(ParticipantWork.Design, PlaceOf(start)).Role is { } role
+                ? ActorChoices.Ids.Contains(role.Id, StringComparer.Ordinal) ? ActorWords.Name(role.Id) : role.NameEn
+                : null;
+        }
+        catch (DriverException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>The work a quest's start is: design where its publisher or the intake marked its weight so (MODELROLE1l), else build.</summary>
+    internal static string StartWork(QuestView quest) =>
+        string.Equals(quest.Weight, ParticipantWork.Design, StringComparison.Ordinal) ? ParticipantWork.Design : ParticipantWork.Build;
+
+    /// <summary>Where a quest's start is, by which a scoped role is found: its circle and the repository it is asked of.</summary>
+    internal static RolePlace PlaceOf(Consideration start) => new(start.Workspace, start.Quest.To);
+
+    /// <summary>The order the role taking a quest's work walks (FOUNDATION1x), with the fence, the pick or the hand-over's agent a caller names.</summary>
+    private IReadOnlyList<ActorEffective> QuestOrder(Consideration start, IReadOnlyList<string>? fence = null, string? handed = null) =>
+        RoleCatalog.ReadHome(home).Order(StartWork(start.Quest), PlaceOf(start), config, fence, handed: handed);
+
     /// <summary>
     /// A quest's start plan (FOUNDATION1j): Build's order for its work, its passes remembered and said under the quest, its gate the quest's
     /// own: an agent whose harness has no mode for the repository's permission prompts, and a pipe door where the repository has not adopted
@@ -781,7 +876,8 @@ public sealed class Driver(
                 : null;
         }
 
-        return new StartPlan(ParticipantWork.Build, config, Context.Harnesses, Context.Adapters, Passed)
+        return new StartPlan(
+            StartWork(quest), config, Context.Harnesses, Context.Adapters, Passed, catalogue: RoleCatalog.ReadHome(home), place: PlaceOf(start))
         {
             Workspace = start.Workspace,
             Kind = StartKind.Driven,
@@ -805,18 +901,23 @@ public sealed class Driver(
         (ActorAsked Asked, string Choice)? answer = null;
         try
         {
-            var candidates = ActorChoices.Effective("build", config, fence: [agent]).ToList();
+            var candidates = QuestOrder(start, fence: [agent]).ToList();
             if (!candidates.Any(entry => entry.Model is null)) candidates.Add(new ActorEffective(agent, null, null, "rule-default"));
-            foreach (var entry in candidates)
-            {
-                if (entry.Model is { } model && refused.Contains(model)) continue;
-                var (picked, _) = await Context.Harnesses
-                    .SelectHandedAsync(agent, config, start.Workspace, selection.Profile, StartKind.Driven, ct, entry.Model, null, selection.Number, counts: false)
-                    .ConfigureAwait(false);
-                if (!picked.Allowed || !string.Equals(picked.Profile, selection.Profile, StringComparison.OrdinalIgnoreCase)) continue;
-                answer = (entry.Asked, entry.From);
-                break;
-            }
+            // The plan's one loop over today's candidates (FOUNDATION1j part v): a handed quest names its agent and its account, so the ask
+            // stays the handed one on the account the refusal named, and a model already refused is held, neither asked nor passed.
+            var walked = await StartPlan.LoopAsync(
+                candidates, entry => entry,
+                async entry =>
+                {
+                    var (picked, _) = await Context.Harnesses
+                        .SelectHandedAsync(agent, config, start.Workspace, selection.Profile, StartKind.Driven, ct, entry.Model, null, selection.Number, counts: false)
+                        .ConfigureAwait(false);
+                    return picked.Allowed && string.Equals(picked.Profile, selection.Profile, StringComparison.OrdinalIgnoreCase)
+                        ? EntryTry.Runs(picked)
+                        : EntryTry.Passed(StartPasses.Held, picked.Refusal, picked);
+                },
+                holds: (entry, _) => entry.Model is { } model && refused.Contains(model)).ConfigureAwait(false);
+            if (walked.Taken is { } taken) answer = (taken.Asked, taken.From);
         }
         catch (DriverException)
         {
@@ -878,6 +979,9 @@ public sealed class Driver(
         // the first look the start's confirmation is settled, and a file an older build wrote during a downgrade at the look that finds it, so
         // a resume reads its id from the binding. A look with no such file asks nothing of the store.
         Context.Conversations.ImportFiles();
+
+        // FOUNDATION1 z-v: the notices' file moves into the store the same way, and stays as the backup.
+        Notices.ImportFile(home);
 
         // The sync runs BESIDE the sessions, not only around them (D68 §6): every whole look syncs, and a whole look comes
         // round at the watch's pace while sessions work. After it, every session this driver runs whose take came
@@ -1138,13 +1242,15 @@ public sealed class Driver(
         {
             // The agent it runs on: a handed quest's own (MIXAGENT1a-ii), which the held-wait report names its cooling by.
             var started = new StartBegun(
-                start.Quest.Id, null, start.Quest.To, start.Workspace, new HandedQuests(home).Read(start.Quest.Id)?.Agent ?? config.Adapter, start);
+                start.Quest.Id, null, start.Quest.To, start.Workspace,
+                StartPlan.AgentFor(
+                    StartWork(start.Quest), config, start.Resumes, new HandedQuests(home).Read(start.Quest.Id)?.Agent, CatalogueForReport(), PlaceOf(start)), start);
             Begin(started, new StartReservation(start.Quest.Id, null, start.Quest.To, TreeGoneBackInto(start)), (own, opened) => ClaimedAsync(start, own, opened));
         }
 
         foreach (var ask in intakes)
         {
-            var started = new StartBegun(null, ask.Id, $"ask #{ask.Id}", ask.Workspace, config.IntakeAdapter!);
+            var started = new StartBegun(null, ask.Id, $"ask #{ask.Id}", ask.Workspace, StartPlan.AgentFor(ParticipantWork.Intake, config, catalogue: CatalogueForReport(), place: new RolePlace(ask.Workspace)));
             Begin(started, new StartReservation(null, ask.Id, $"ask #{ask.Id}", null), (own, opened) => RunIntakeAsync(ask, own, opened, ct));
         }
 
@@ -1958,14 +2064,15 @@ public sealed class Driver(
         // point 1): the agent its asked choice was asked of, never the machine's `adapter` key, so a part that ran on Build's second choice
         // goes on there; a first start's is the walk's, below. A local, and a parameter wherever it is passed on: starts run side by side.
         var handedQuest = new HandedQuests(home).Read(quest.Id);
-        var agent = handedQuest?.Agent ?? config.Adapter;
+        var agent = StartPlan.AgentFor(StartWork(quest), config, handed: handedQuest?.Agent, catalogue: CatalogueForReport(), place: PlaceOf(start));
         // Each hold names the agent the start asked, which the look's report of a wait names (the design §2.4's second row).
         StartRun Hold(string why) => new($"held  #{quest.Id} → {quest.To}: {why}", false, null, why) { Agent = agent };
         if (handedQuest is null && start.Resumes is { } goesOnFrom)
         {
             try
             {
-                agent = StartPlan.ContinuedOn(goesOnFrom, config);
+                agent = StartPlan.ContinuedOn(
+                    goesOnFrom, config, StartWork(quest), Context.Conversations.RoleOf(goesOnFrom.Session)?.Role, CatalogueForReport(), PlaceOf(start));
             }
             catch (DriverException error)
             {
@@ -2039,7 +2146,7 @@ public sealed class Driver(
         {
             try
             {
-                var role = ActorChoices.Effective("build", config);
+                var role = QuestOrder(start);
                 if (role.Count > 0)
                 {
                     agent = role.FirstOrDefault(entry => string.Equals(entry.Agent, cut.Adapter, StringComparison.OrdinalIgnoreCase))?.Agent
@@ -2071,7 +2178,7 @@ public sealed class Driver(
             if (handedQuest is not null && start.Resumes?.Asked is { } wasAsked
                 && !string.Equals(wasAsked.Agent, agent, StringComparison.OrdinalIgnoreCase))
             {
-                chosen = movedTo = ActorChoices.Effective("build", config, handed: agent)[0];
+                chosen = movedTo = QuestOrder(start, handed: agent)[0];
             }
 
             if (GoOns.ResumesOwn(start, agent) is { } words)
@@ -2099,7 +2206,8 @@ public sealed class Driver(
                      && await Context.Harnesses
                              .ResumeAsync(agent, config, start.Workspace, limitedLine.Profile, StartKind.Driven, line: LineKind.DrivenLimit, ct: ct, limited: true,
                                  model: CarriedModel(limitedLine))
-                             .ConfigureAwait(false) is { Own: NextHold.Ready, Selection.Allowed: true } own)
+                             .ConfigureAwait(false) is { } own
+                     && await DecideLimitOwnAsync(limitedLine, own, ct).ConfigureAwait(false) is LineCourse.Resume)
             {
                 // Step 1: its own account ready, its maker's reading asked, the judge passing and a door known to fail closed, so its
                 // own conversation resumes there, asked before the walk, so its own account wins where another is ready too.
@@ -2130,7 +2238,7 @@ public sealed class Driver(
                 // handed quest asks for the account its hand-over named first, and the walk goes on within the named agent's, its model
                 // Build's entry for that agent (D205 §4.0, `handed`). A carry-on keeps its record's asked choice (§3.5(a)).
                 // Each account judged by its reading for the model: the carry-on's record's asked, a handed quest's Build entry (§3.5(a), (d)).
-                if (handedQuest is not null && start.Resumes is null) chosen = ActorChoices.Effective("build", config, handed: agent)[0];
+                if (handedQuest is not null && start.Resumes is null) chosen = QuestOrder(start, handed: agent)[0];
                 var model = chosen is not null ? chosen.Model : CarriedModel(start.Resumes);
                 (selection, passedAccount) = await Context.Harnesses
                     .SelectHandedAsync(agent, config, start.Workspace, handedQuest?.Account, StartKind.Driven, ct, model)
@@ -2142,7 +2250,7 @@ public sealed class Driver(
             return AgentGone() ?? Hold(error.Message);
         }
 
-        if (resume is { Waits: true })
+        if (resume is not null && DecideResume(start.Resumes!, quest.Status, resume) is LineCourse.Wait)
         {
             // The words wait for the account's reset (MSG1g, D125 §2), held as any start on a cooling account is, so the look
             // says the wait once and a screen shows the quest waiting for an account; the record's conversation says why, with
@@ -2577,7 +2685,7 @@ public sealed class Driver(
             handedQuest, carryingOn ? start.Resumes : null, selection.Profile, selection.Steps?.FirstOrDefault()?.Why,
             retried: fellBack is not null,
             pressed: start.BroughtForward is not null || (start.Resumes?.PersonStopped == true && !handedFrom),
-            agent: limitWalks ? agent : null);
+            agent: limitWalks ? agent : null, decided: Decided);
 
         // 🔴 FOUNDATION1d-ii part 5 (the foundation design §3.4 rule 3): a carry-on that hands the new session the words of the record it goes on
         // from, its fallback's or a resume's asker's, opens it through the keyed door, which moves them in the open's own step, the words named and
@@ -2693,6 +2801,11 @@ public sealed class Driver(
                     prior.Limit ? RotatedOpening.ContextOf(usage, Context.Events, prior.Session) : null));
         // Where a later choice of Build's ran, its actor line beside it, naming each choice passed (D205 §4.6 item 1, MODELROLE1c2).
         if (chosen is not null) RotatedOpening.SayActor(Context.Events, sessionId, "build", chosen, buildPasses);
+        // A quest marked design says whose order it ran on: the role taking design, Build's while none does (FOUNDATION1x, MODELROLE1l).
+        if (start.Resumes is null && StartWork(quest) == ParticipantWork.Design && DesignRoleName(start) is { } designer)
+        {
+            RotatedOpening.SayDesign(Context.Events, sessionId, designer);
+        }
 
         // Its setup in one line, after the account's (AUTONOMY1a), and the mode it got on its harness (AUTONOMY1b), after the change
         // from the session it goes on from where its permission prompts moved since: a start under today's behaviour going on from none
@@ -2948,6 +3061,8 @@ public sealed class Driver(
 
             return await HoldAsync(
                 "build", adapter, info, target, sessionId, transcript, workTree, JoinNotices(harnessNotice, browserNotice), rules, handed,
+                // FOUNDATION1x: `actor` stays the seeded id; the role the start took and its revision go on the binding. A continuation keeps its record's.
+                taken: start.Resumes is null ? RoleTaken(start) : null,
                 // 🔴 A driven session takes no person's line, on either door (INT4i) — INT4h's rule for
                 // an intake, for the same reason: it was handed its whole quest at once, the pipe door
                 // gives it no stdin, and the protocol door's stdin carries the driver's own frames.
@@ -3126,7 +3241,12 @@ public sealed class Driver(
                             : new SessionEnded(
                                 sessionId, quest.To, conclusion.State,
                                 ByPerson: stop is { ByPerson: true }, conclusion.Note,
-                                Quest: quest.Id, Adapter: adapter.Name, Account: selection.Profile) { Limit = limited, NotOffered = notOffered || modelRefused });
+                                Quest: quest.Id, Adapter: adapter.Name, Account: selection.Profile)
+                            {
+                                Limit = limited,
+                                NotOffered = notOffered || modelRefused,
+                                Reason = SessionEnded.ReasonOf(conclusion.Parts),
+                            });
                 }).ConfigureAwait(false);
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
@@ -3370,6 +3490,13 @@ public sealed class Driver(
 
         return (file, adapter.AcpSessionMeta(file, plugins ?? []), handed);
     }
+
+    /// <summary>
+    /// The protocol-door posture a brainstorm's pass asks (BRAINSTORM1c, <see cref="BrainstormPermissions.Posture"/>): its harness's mode that
+    /// changes nothing where it takes no rules; null for every other session, and for a pass whose harness a rule narrows.
+    /// </summary>
+    internal static string? PassPosture(SessionTarget target, ISessionAdapter adapter) =>
+        target.Brainstorm is not null ? BrainstormPermissions.Posture(adapter) : null;
 
     /// <summary>
     /// What a partner's start hands its agent beside the instruction (COAGENT1b, the co-agent design §3.3): the rules
@@ -3899,7 +4026,7 @@ public sealed class Driver(
         Action? working = null, Func<CancellationToken, Task<bool>>? waitsOnBackground = null, int? minutes = null,
         string? noConnector = null, Action<SessionStop?>? stopMade = null, bool movedFirst = false, Action? spawned = null,
         string? piece = null, OpenOffers? offers = null, Func<CancellationToken, Task<bool>>? transientWanted = null,
-        Func<CancellationToken, Task<TurnCarry>>? carriesOn = null, Action? written = null)
+        Func<CancellationToken, Task<TurnCarry>>? carriesOn = null, Action? written = null, (string Role, long Revision)? taken = null)
     {
         // Through the start gate (PROCSTART2): a press that starts a session reaches here before its first wait, and the
         // runtime's start lock is no thread's to wait on but the pool's. Seen through once begun, as the start always was.
@@ -3925,12 +4052,15 @@ public sealed class Driver(
             catch (Exception error) when (error is not OperationCanceledException) { Log?.Write("warn", "actor.read-failed", [("session", sessionId)]); }
         }
         actor = prior?.Actor ?? actor;
+        if (taken is { } role) Context.Conversations.KeepRole(sessionId, role.Role, role.Revision);
         var asked = ActorAsked.ForSpawn(adapter.Name, info, target.Asked ?? prior?.Asked);
         // MODELROLE1c: the entry a new start's walk took (D205 §4.0); a continuation keeps its record's own.
         var choice = target.Choice ?? prior?.Choice ?? "before";
         if (target.Brainstorm is null)
             await service.TryKeepActorAsync(sessionId, Log, choice, asked, ct: ct).ConfigureAwait(false);
         UsageTurns.ActorBound(home, Context.Events, sessionId, actor);
+        // BRAINSTORM1c: a pass's turns are the brainstorm's usage, kept naming it beside the account its walk chose.
+        if (target.Brainstorm is { } brainstorm) UsageTurns.BrainstormBound(home, Context.Events, sessionId, brainstorm);
         await using var actorRun = new ActorRun(Context.Events, sessionId, actor, prior?.Ran,
             ran => target.Brainstorm is null ? service.KeepActorAsync(sessionId, ran: ran) : Task.CompletedTask, Log);
         // SESSWATCH1a (D200): a quest's session and an intake are watched while they run, never ended on time; a pass keeps minutes of
@@ -4059,9 +4189,10 @@ public sealed class Driver(
             // same D37 boundary three different ways, and one of them does not name it on the wire. A driven session's repository's
             // asking or unrestricted permission prompts name the adapter's mode for it, required (AUTONOMY1b, D184 point 3).
             ? CaptureAcpAsync(
-                process, transcript, sessionId, cwd, prompt, target.Access?.Posture ?? adapter.AcpPosture, harnessNotice, ct, scope, rules.Meta,
+                process, transcript, sessionId, cwd, prompt, target.Access?.Posture ?? PassPosture(target, adapter) ?? adapter.AcpPosture, harnessNotice, ct, scope, rules.Meta,
                 handedServers ?? Context.Servers, target.PersonSaid, inbox, said, keepAs, resume, account, waitsOnBackground, noConnector, ending,
-                unoffered: target.Access is { } access ? access.Unoffered : null, setupChanged: setupChanged, handed: target.Handed,
+                unoffered: target.Access is { } access ? access.Unoffered : PassPosture(target, adapter) is not null ? BrainstormPermissions.Unoffered : null,
+                setupChanged: setupChanged, handed: target.Handed,
                 // D205 §3.2: what its actor asked, set on the session before the first prompt; what the agent would not take is kept as
                 // asked and not carried, so the record never says a choice was taken that was not.
                 asked: asked, carried: target.Brainstorm is not null ? null
@@ -4106,7 +4237,7 @@ public sealed class Driver(
 
         // What it consumed, where the door reported it (TOOL3/D57 §4). A pipe with only text reports
         // nothing, and a surface then says "not measured" rather than zero.
-        var (outcome, turnFailed, acpLeft) = acp is not null && drained ? await acp.ConfigureAwait(false) : (null, null, []);
+        var (outcome, turnFailed, acpLeft, refused) = acp is not null && drained ? await acp.ConfigureAwait(false) : (null, null, [], null);
         // DONEEND1: an agent the run ended because it lingered after its session had ended exited as its session did, cleanly: on this
         // door the agent exits 0 once its stdin closes whatever happened, and the kill was Daoris's own, never the agent's end.
         if (ending?.EndedLingering == true && exitCode is not null) exitCode = 0;
@@ -4156,6 +4287,8 @@ public sealed class Driver(
                     NotOffered = outcome?.NotOffered,
                     // AGENTERRORS1a: what its transient retry read and did, for the conclusion.
                     Transient = retry,
+                    // FOUNDATION1g part b: the refusal its turn ended on, read for a limit by a run with no transient retry.
+                    Refusal = refused,
                 })
             .ConfigureAwait(false);
 
@@ -4512,7 +4645,7 @@ public sealed class Driver(
     /// Asked at a turn's end before a held word is prompted, whether the setup the run started under changed (ACCESSSWAP1b,
     /// <see cref="AcpSession.SetupChanged"/>): yes ends the run there, the held words handed back as <c>Left</c>. Null never asks.
     /// </param>
-    private async Task<(AcpOutcome? Outcome, string? Failure, IReadOnlyList<ChatMessage> Left)> CaptureAcpAsync(
+    private async Task<(AcpOutcome? Outcome, string? Failure, IReadOnlyList<ChatMessage> Left, AcpRefusal? Refused)> CaptureAcpAsync(
         Process process, string transcript, string sessionId, string cwd, string prompt,
         string? posture, string? harnessNotice, CancellationToken ct,
         IReadOnlyDictionary<string, string>? scope = null, object? meta = null,
@@ -4703,7 +4836,7 @@ public sealed class Driver(
                  + "session record is concluded from the exit code and the quest's own state, not "
                  + "from this line (D46 §4).");
             // ACCESSSWAP1b: the words a changed setup handed back, kept on the record once it concluded, to go on under the new one.
-            return (outcome, null, session.HandedBack.Select(ChatMessage.FromAgent).ToArray());
+            return (outcome, null, session.HandedBack.Select(ChatMessage.FromAgent).ToArray(), null);
         }
         catch (AcpResumeRefused refused) when (resume is not null)
         {
@@ -4714,7 +4847,7 @@ public sealed class Driver(
             // runs on, which is the one it ran on, so that is the agent `elsewhere` names. SESSCTX1c: a record that waits for the
             // person (`elsewhere`) says no carry-on.
             SaidByCode(refused.Why.Holds ? DoorNotes.ResumeRefused(refused, keepAs) : DoorNotes.AnswerCarriedOn(refused, keepAs));
-            return (null, null, []);
+            return (null, null, [], null);
         }
         catch (DriverException error)
         {
@@ -4729,7 +4862,9 @@ public sealed class Driver(
             // 🔴 The person's words it never took (TURNFAIL1, USERSHOWN1): sent behind the failed turn, or held for its end. They
             // go back to the run, which keeps them on the record once it ended, to go again (WordsLeft); closed here, so the
             // finally below says nothing of them.
-            return (null, error.Message, [.. (session?.Unreached ?? []).Select(ChatMessage.FromAgent), .. (session?.HandedBack ?? []).Select(ChatMessage.FromAgent), .. inbox?.Close() ?? []]);
+            return (null, error.Message, [.. (session?.Unreached ?? []).Select(ChatMessage.FromAgent), .. (session?.HandedBack ?? []).Select(ChatMessage.FromAgent), .. inbox?.Close() ?? []],
+                // FOUNDATION1g part b: the refusal as the door carried it, for a conclusion that reads its code (`HarnessEnding.Refusal`).
+                error as AcpRefusal ?? (error as AcpWordTurnFailed)?.Refusal);
         }
         finally
         {
@@ -4903,15 +5038,7 @@ public sealed class Driver(
     /// </param>
     internal static ContinuedFrom? ContinuesFrom(
         HandedQuest? handed, PriorSession? carried, string? profile, string? walked = null, bool retried = false, bool pressed = false,
-        string? agent = null) =>
-        carried is null ? null
-        : handed is not null && string.Equals(carried.Session, handed.From, StringComparison.Ordinal)
-            ? new ContinuedFrom(carried.Session, handed.Why, handed.AskedBy)
-        : carried.Limit && AccountIdentity.OnAnotherAccount(carried, profile, agent)
-            ? new ContinuedFrom(carried.Session, HandOverWhy.Limit, HandOverBy.Daoris)
-        : walked is OpeningWhy.OverCurve or OpeningWhy.MostRoom && AccountIdentity.OnAnotherAccount(carried, profile)
-            ? new ContinuedFrom(carried.Session, HandOverWhy.Curve, HandOverBy.Daoris)
-        : retried
-            ? new ContinuedFrom(carried.Session, HandOverWhy.Retry, HandOverBy.Daoris)
-        : new ContinuedFrom(carried.Session, HandOverWhy.CarryOn, pressed ? HandOverBy.Person : HandOverBy.Daoris);
+        string? agent = null, Action<LineCourse>? decided = null) =>
+        // FOUNDATION1i path 3: the link is the course's move, its why and who asked, over the readings this has always made.
+        carried is null ? null : DrivenCourse.From(handed, carried, profile, walked, retried, pressed, agent, decided);
 }

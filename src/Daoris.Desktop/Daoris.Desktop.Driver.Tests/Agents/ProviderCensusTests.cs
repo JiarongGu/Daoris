@@ -20,7 +20,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// host are not in that compilation, so this census reads all three the same way: by name in the source text, a type by its whole word
 /// (a qualified, aliased or statically imported reference carries the name and counts; a different type of the same name would too, and
 /// is named as another sense below). One reading for three projects keeps the exceptions in one table.</para>
-/// <para><b>Outside the providers' folders</b> every site is an exception, exactly counted. <b>Inside</b> <c>Agents/Providers/&lt;Id&gt;/</c>
+/// <para><b>Outside the providers' folders</b> every site is an exception, listed by file and token with its reason; how many times a listed
+/// file names a token is not pinned (CENSUSRULES1). <b>Inside</b> <c>Agents/Providers/&lt;Id&gt;/</c>
 /// a provider's folder names another provider's type, variable or wire key only where the fixture declares that reference;
 /// <c>Agents/Registry/Providers.cs</c>, the one registration list, names registrations and nothing else.</para>
 /// </remarks>
@@ -39,7 +40,7 @@ public sealed class ProviderCensusTests
 
     private sealed record Token(string Kind, string Name, Regex Pattern, Scan On, string Owner);
 
-    private sealed record Allowance(string File, string Token, int Count, string Row, string Class, string Why);
+    private sealed record Allowance(string File, string Token, string Row, string Class, string Why);
 
     private sealed record Fixture(
         string ProviderFolders, string RegistrationList, Dictionary<string, string> Folders,
@@ -114,7 +115,7 @@ public sealed class ProviderCensusTests
             root.GetProperty("declaredReferences").EnumerateArray().Select(row => (row[0].GetString()!, row[1].GetString()!, row[2].GetString()!)).ToList(),
             root.GetProperty("otherSense").EnumerateArray().Select(row => (row[0].GetString()!, row[1].GetString()!, row[2].GetString()!)).ToList(),
             root.GetProperty("exceptions").EnumerateArray().Select(row => new Allowance(
-                row[0].GetString()!, row[1].GetString()!, row[2].GetInt32(), row[3].GetString()!, row[4].GetString()!, row[5].GetString()!)).ToList());
+                row[0].GetString()!, row[1].GetString()!, row[2].GetString()!, row[3].GetString()!, row[4].GetString()!)).ToList());
     }
 
     private static readonly Lazy<Fixture> TheFixture = new(ReadFixture);
@@ -149,7 +150,8 @@ public sealed class ProviderCensusTests
     {
         var problems = new List<string>();
         var owners = TheTokens.Value.ToDictionary(token => token.Name, token => token.Owner, StringComparer.Ordinal);
-        var allowed = fixture.Exceptions.ToDictionary(each => (each.File, each.Token), each => each.Count);
+        // How often a listed file names a token is not the rule's (CENSUSRULES1): a file and token that are listed pass at any count.
+        var allowed = fixture.Exceptions.Select(each => (each.File, each.Token)).ToHashSet();
         foreach (var (file, counts) in found.OrderBy(each => each.Key, StringComparer.Ordinal))
         {
             foreach (var (token, count) in counts.OrderBy(each => each.Key, StringComparer.Ordinal))
@@ -170,13 +172,9 @@ public sealed class ProviderCensusTests
                         problems.Add($"{file}: {own}'s folder names {token}, which is {owners[token]}'s, and its registration declares no such reference");
                     }
                 }
-                else if (!allowed.TryGetValue((file, token), out var named))
+                else if (!allowed.Contains((file, token)))
                 {
                     problems.Add($"{file}: unnamed site {token} x{count}");
-                }
-                else if (count != named)
-                {
-                    problems.Add($"{file}: {token} found {count}, the fixture names {named}");
                 }
             }
         }
@@ -203,7 +201,7 @@ public sealed class ProviderCensusTests
 
         Assert.True(problems.Count == 0, $"{problems.Count} problem(s):\n" + string.Join('\n', problems) + "\n\nthe sites found, as fixture rows:\n"
             + string.Join('\n', Baseline.Value.OrderBy(each => each.Key, StringComparer.Ordinal).SelectMany(each => each.Value
-                .OrderBy(token => token.Key, StringComparer.Ordinal).Select(token => $"[\"{each.Key}\", \"{token.Key.Replace("\"", "\\\"")}\", {token.Value}]"))));
+                .OrderBy(token => token.Key, StringComparer.Ordinal).Select(token => $"[\"{each.Key}\", \"{token.Key.Replace("\"", "\\\"")}\"]"))));
     }
 
     /// <summary>The fixture's own shape: every row a known row letter and class, a reason, a file that exists, no duplicate, in order.</summary>
@@ -222,7 +220,7 @@ public sealed class ProviderCensusTests
         {
             Assert.Contains(each.Row, Rows);
             Assert.Contains(each.Class, Classes);
-            Assert.True(each.Count > 0 && each.Why.Length > 0, $"{each.File}: {each.Token} says no reason");
+            Assert.True(each.Why.Length > 0,$"{each.File}: {each.Token} says no reason");
             Assert.Contains(each.Token, tokens);
             Assert.True(File.Exists(Path.Combine(root, each.File)), $"{each.File} is no file");
             // Only a behaviour is removed by a row; a permanent site, an id in words and a measurement stay.
@@ -277,9 +275,9 @@ public sealed class ProviderCensusTests
             $"expected {token} named in {file}, got: {string.Join(" | ", problems)}");
     }
 
-    /// <summary>A second site in a file that already holds a named one, and a named one gone, are both named: the counts are exact.</summary>
+    /// <summary>A second site in a file that already holds a named one passes, and a named one gone is named: the sites are not counted (CENSUSRULES1).</summary>
     [Fact]
-    public void A_site_added_to_a_named_file_or_gone_from_it_is_named_by_the_census()
+    public void A_site_added_to_a_named_file_passes_and_one_gone_from_it_is_named_by_the_census()
     {
         const string file = "Daoris.Desktop.Driver/Course/HandOver/HandOverQuest.cs";
         var source = File.ReadAllText(Path.Combine(EveryChildIsHandedTheToolsTests.SourceRoot(), file)).Replace("\r\n", "\n");
@@ -287,7 +285,7 @@ public sealed class ProviderCensusTests
         var more = Census(Sources().Where(each => each.File != file).Append((file, source + "\nvar again = wire == SessionWire.Acp;")));
         var fewer = Census(Sources().Where(each => each.File != file).Append((file, source.Replace("SessionWire.Acp", "Other"))));
 
-        Assert.Contains($"{file}: SessionWire.Acp found 2, the fixture names 1", Problems(more, TheFixture.Value));
+        Assert.Empty(Problems(more, TheFixture.Value));
         Assert.Contains($"{file}: SessionWire.Acp is no site now: take it off the fixture", Problems(fewer, TheFixture.Value));
     }
 

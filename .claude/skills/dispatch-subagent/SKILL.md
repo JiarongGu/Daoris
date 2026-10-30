@@ -44,10 +44,11 @@ Decision number: D<n>, reserved for this branch: write docs/decisions/D<n>.md. (
 How you work: edit files only with Edit and Write, never through python, sed, perl, cat/printf redirection or any
 shell redirect (a hook refuses them; that includes appending a decision note); write
 each failing test first and RUN it to watch it fail before writing the code (a compile failure is a red: run it),
-and say which you saw fail; commit each piece once its tests pass. Records stay short: a decision's note says what was
-decided and why in at most 150 words, each reading one sentence; the tests run, their counts and times go in the hand-back
-and the commit message, never the note. A README changes only where the component's shape changed, never a sentence per
-part: the docs gate compares by day, so a README already touched that day keeps up. New words on the page run `src/locales`' tests too:
+and say which you saw fail; commit each piece once its tests pass. Tests prove the row's proof and nothing beside it: one
+test per point the proof names; add no count pin, census entry or wording twin the change does not force. Records are the
+commit message and the hand-back's outcome line; a decision's note only for a reading the code and tests cannot show, at
+most 100 words. A README changes only where a command or a shape its reader uses changed. Code comments are short and
+only where the code cannot say it: no `<remarks>` retelling the design, no row or section ids beside every member. New words on the page run `src/locales`' tests too:
 `names:check --strict` does not hold a sentence's glossary words, `names.test.ts` does (WORKFLOW1h-d's 这台机器).
 Run only your own tests, filtered (the ones you add or change and those covering the code you change), and the quick
 checks before hand-back; never a whole project, a fast half, the web's whole suite or `npm run verify`: the CI beside
@@ -107,8 +108,10 @@ test. A Process or Git class that calls what the builder changed is its own to r
 changed method's name, not by the class's name: batch s's candidate failed `CommandShimTests`, a Process class that prepares a
 driven start, after a member moved that start's prompt onto its input, and two more candidate failures that day were tests reading
 a path or a prompt no builder searched for. A builder that changes a public signature in the driver builds the modules' and the
-app's projects too, which call it: batch u's modules did not compile after one did. Before a batch is queued, the parent runs the driver's, the modules' and the service's fast halves whole on it: on
-2026-10-30 that found batch s's three census misses before a candidate did. The parent, running a class with `--no-build`, builds that
+app's projects too, which call it: batch u's modules did not compile after one did. Before a batch is queued, the parent runs the driver's, the modules' and the service's fast halves whole on it, and
+`npm run verify` and `npm run test:web:unit` (minutes each, against a candidate's forty): on 2026-10-30 the fast halves found
+batch s's three census misses before a candidate did, and batch w's three candidates failed on a web census, a record's
+link and a glued note, each of which those two would have caught. The parent, running a class with `--no-build`, builds that
 class's own project first: a build of another project leaves the test assembly stale, and twice that day it read as a
 red that was not there.
 
@@ -132,7 +135,8 @@ once three batches hold the targets (MODELROLE1).
    in `docs/decisions/` and every number already reserved for a branch in flight. Name it in the prompt.
 3. **Dispatch a feature, end to end** (D187). One builder takes one feature a person can see working, across every
    lane it needs, driver to page, and hands it back working; its rows become one block row in the backlog, with one
-   decision note where something is decided and one archive entry. Never split a feature into a host half and a page
+   decision note where something is decided and one archive entry. A part of a row writes no archive entry and no
+   note of its own: its commit message is its record, and the row's entry is written once, when its last part lands. Never split a feature into a host half and a page
    half: each slice's scout, brief, merge, records and CI pass were round trips, and the person saw nothing until the
    last landed. Split only a feature too large for one builder's context, into parts that each work and are each
    seen working. The longer branch's cost per turn (D160: branches of 100 to 200 turns cost three times those under
@@ -250,6 +254,9 @@ once three batches hold the targets (MODELROLE1).
    hand-back's one-line outcome and its pointer, add the changelog entry, and update the counts in
    `TASKS.md`'s State. `doc-shapes` reports an outcome or a row over its shape.
    Then commit as `Merge <ROW>: <what>`, with a body and the `Co-Authored-By:` line.
+   The parent's own builds and runs leave no server behind while builders run: `-nodeReuse:false -p:UseSharedCompilation=false`
+   on `dotnet build`/`test`, `--disable-build-servers` on `dotnet run`, never `dotnet build-server shutdown` (it ends the compiler
+   server a builder's build is using); on 2026-10-30 one `dotnet run` of the scan left fourteen MSBuild nodes.
    **Scan what you staged first** (`daoris-devkit scan`): records written after the gates, and every records
    commit made outside a merge, are the one change no universal gate reads before it is committed. A
    backlog row quoting a window's caption put a private name into history that way (2026-10-08).
@@ -260,6 +267,12 @@ once three batches hold the targets (MODELROLE1).
    left inside; `--prune` does it at once. Read the kept lines: each names what holds a tree (work, a file under
    `local/`, a running process), and what holds it is yours to settle. 43 subagent worktrees had piled up by
    2026-10-15, and 24 stood with three agents running on 2026-10-18, the leftover the owner cleared by hand.
+   **A worker merged into the parent's batch goes at once, not at the landing**: once its tip is an ancestor of the batch
+   branch and its tree has no change, unlock and remove its worktree and delete its branch; the batch holds its commits.
+   On 2026-10-30, 21 merged workers' trees stood waiting for their batches to land. **After each landing**, `--prune`, then
+   the install's `daoris-driver trees clean --workspace <w> --yes` for its own session branches, then a look at the
+   machine's processes for anything a finished run left: a CI run on a superseded commit, a rehearsal's stand-in
+   install, idle build nodes. What the parent started it ends; what it did not start it names to the owner.
 8. **Measure the batch.** `node tools/subagent-usage.mjs <the harness's transcripts folder for this
    repository> --since <the batch's first day>` prints each agent type and model's turns and its context
    at the start, at the first edit and at the end. Feed the hand-back's *pack's gaps* into the next pack.

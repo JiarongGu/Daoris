@@ -87,6 +87,10 @@ internal sealed class ChatTurns(
     private bool _finishing;
     // Held for a hand-over's take (SWITCH1c-ii): no word starts a turn the take's end would cut.
     private bool _held;
+    // FOUNDATION1o: held for a move whose open moves the old part's words, so a word said meanwhile is kept on the record and waits here, behind
+    // the hold, for a release that did not end the conversation; gone, it stays on the record for the open.
+    private bool _keepsHeld;
+    private readonly List<ChatMessage> _heldBack = [];
     private bool _closeHeld;
     // Waiting for its account's limit to reset (LIMITRESUME1c, D206 §3.5): a word is kept and waits, and starts no turn on a process
     // whose account would refuse it, until the wake hands them all over in one (WakeFromLimit) or a move takes them (HoldLimited).
@@ -191,11 +195,13 @@ internal sealed class ChatTurns(
         await _keeping.WaitAsync(ct).ConfigureAwait(false);
         try
         {
+            bool forMove;
             lock (_gate)
             {
                 // MODELROLE1d2: moved to the replacement opening in its place, the word joins the words moved there, kept nowhere here.
                 if (_onward is { } onward) return onward(message) ? new TurnKept(TurnReach.TurnEnd, null) : null;
-                if (_finishing || _gone || _held) return null;
+                forMove = _held && _keepsHeld && !_closeHeld;
+                if (_finishing || _gone || (_held && !forMove)) return null;
             }
 
             SayAnswer? said;
@@ -221,6 +227,8 @@ internal sealed class ChatTurns(
 
             var id = said is { Kept: true, Word.Id: { } kept } ? kept : null;
             var word = id is null ? message : message with { Id = id, Kept = true };
+            // Held for a move, the record would not keep it: nothing is heard, and the shell keeps or holds it as it judges the record.
+            if (forMove && id is null) return null;
             if (id is not null)
             {
                 lock (_gate)
@@ -228,6 +236,13 @@ internal sealed class ChatTurns(
                     _door ??= door;
                     // A producer's retry under the key of a word that waits already: taken once.
                     if (!_known.Add(id)) return new TurnKept(TurnReach.TurnEnd, id);
+
+                    // FOUNDATION1o: the move's, while the hold stands, and the record's for its open once the move ended the conversation.
+                    if (forMove && (_held || _gone || _finishing))
+                    {
+                        if (_held && !_gone && !_finishing) _heldBack.Add(word);
+                        return new TurnKept(TurnReach.TurnEnd, id);
+                    }
                 }
             }
 
@@ -484,12 +499,17 @@ internal sealed class ChatTurns(
     /// for that turn's end, or finds the turns held. Checked first and held after, a word between the two started a turn the take's
     /// end then cut.
     /// </remarks>
-    public bool Hold()
+    /// <param name="keeps">
+    /// The host's open moves the old part's words (FOUNDATION1o, the foundation design §3.4 rule 4): a word said while held is kept on the record
+    /// and waits behind the hold, starting no turn, as under a limit's wait and a press, where without it a word is neither kept nor taken.
+    /// </param>
+    public bool Hold(bool keeps = false)
     {
         lock (_gate)
         {
             if (_pumping || _holding is not null || _waiting.Count > 0 || _finishing || _gone || _held) return false;
             _held = true;
+            _keepsHeld = keeps;
             return true;
         }
     }
@@ -508,10 +528,29 @@ internal sealed class ChatTurns(
 
     public Func<bool>? Closing { get; set; }
 
-    /// <summary>Take words again after <see cref="Hold"/>: the take did not end the conversation, or it has ended and nothing listens.</summary>
+    /// <summary>
+    /// Take words again after <see cref="Hold"/>: the take did not end the conversation, or it has ended and nothing listens. FOUNDATION1o: a word
+    /// kept while held is the next turn where the conversation goes on, and stays on its record for the move's open where it ended.
+    /// </summary>
     public void Release()
     {
-        lock (_gate) _held = false;
+        bool start;
+        lock (_gate)
+        {
+            _held = false;
+            _keepsHeld = false;
+            if (!_gone && !_finishing) _waiting.AddRange(_heldBack);
+            _heldBack.Clear();
+            start = _waiting.Count > 0 && !_pumping && !_limited && !_pressing && !_sendingBack && !_gone && !_finishing && !_closeHeld;
+            if (start)
+            {
+                _pumping = true;
+                _drained = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            }
+        }
+
+        if (start) _ = PumpAsync();
+        lock (_gate) Publish();
     }
 
     /// <summary>
@@ -571,7 +610,7 @@ internal sealed class ChatTurns(
     /// that waited are handed out, in the order said, for the move to carry, and nothing more is taken until <see cref="Release"/>.
     /// Null where it was not waiting, a turn runs, or it is finishing, held or gone.
     /// </summary>
-    public IReadOnlyList<ChatMessage>? HoldLimited()
+    public IReadOnlyList<ChatMessage>? HoldLimited(bool keeps = false)
     {
         lock (_gate)
         {
@@ -580,6 +619,7 @@ internal sealed class ChatTurns(
             _waiting.Clear();
             _limited = false;
             _held = true;
+            _keepsHeld = keeps;
             Publish();
             return waited;
         }
@@ -1155,6 +1195,8 @@ internal sealed class ChatTurns(
             if (personStopped) TakeOff([.. (_holding is null ? [] : new[] { _holding }).Concat(_waiting).Where(message => !message.OnRecord)]);
             _holding = null;
             _waiting.Clear();
+            // FOUNDATION1o: words kept behind a move's hold stay on the record for its open.
+            _heldBack.Clear();
             Publish();
         }
     }

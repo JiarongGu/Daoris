@@ -70,6 +70,15 @@ public sealed class SessionLogTests : IDisposable
 
     private static JsonElement Data(JsonElement line) => line.GetProperty("data");
 
+    /// <summary>
+    /// An end as a process that reads the journal tells it to the log (FOUNDATION1 l-iv): the journal's row, which is where
+    /// <c>session.ended</c> comes from for every end whoever wrote the record.
+    /// </summary>
+    private static Task Told(Watching w, string? session, string state, string? codes = null, string marks = "chat") =>
+        w.Watch.TellAsync(new JournalBatch(
+            "store-1", 1, 9,
+            [new JournalEntry(9, 0, session!, "sessions", "state", "Working", state, false, false, codes?.Split(','), marks.Split(','), "work", null)]));
+
     private void Said(SessionEvents events, string session, SessionEvent e, double atSeconds) =>
         events.Append(session, e with { At = _now.AddSeconds(atSeconds) });
 
@@ -83,6 +92,8 @@ public sealed class SessionLogTests : IDisposable
         await w.Client.AdvanceAsync(id!, "working");
         _now = _now.AddSeconds(90.7);
         await w.Client.AdvanceAsync(id!, "completed", note: "the conversation ended");
+        Assert.Empty(Named("session.ended"));
+        await Told(w, id, "Completed", "ended.done");
 
         var started = Data(Assert.Single(Named("session.started")));
         Assert.Equal(id, started.GetProperty("session").GetString());
@@ -95,6 +106,7 @@ public sealed class SessionLogTests : IDisposable
         Assert.Equal(id, ended.GetProperty("session").GetString());
         Assert.Equal("completed", ended.GetProperty("state").GetString());
         Assert.Equal(90, ended.GetProperty("seconds").GetInt64());
+        Assert.Equal(("ended.done", "completed"), (ended.GetProperty("reason").GetString(), ended.GetProperty("class").GetString()));
         Assert.DoesNotContain("the conversation ended", Raw());
     }
 
@@ -196,6 +208,7 @@ public sealed class SessionLogTests : IDisposable
         Said(w.Events, "orphan1", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = "hello" }, 1);
         Said(w.Events, "orphan1", new SessionEvent { Kind = SessionEventKind.Message, Text = "hi" }, 3);
         await w.Client.AdvanceAsync("orphan1", "stopped", note: "swept");
+        await Told(w, "orphan1", "Stopped");
 
         Assert.Empty(Named("session.opened"));
         Assert.Equal(2000, Data(Assert.Single(Named("turn.answered"))).GetProperty("firstAnswerMs").GetInt64());
@@ -320,6 +333,7 @@ public sealed class SessionLogTests : IDisposable
         var (ok, _) = await w.Client.AnswerSessionAsync(id!, "yes, the second option");
 
         Assert.True(ok);
+        await Told(w, id, "Completed");
         var ended = Data(Assert.Single(Named("session.ended")));
         Assert.Equal("completed", ended.GetProperty("state").GetString());
         Assert.Equal(42, ended.GetProperty("seconds").GetInt64());
@@ -348,6 +362,7 @@ public sealed class SessionLogTests : IDisposable
         Assert.DoesNotContain("daily one", Raw());
 
         await w.Client.AnswerSessionAsync(id!, "the one the plant reads");
+        await Told(w, id, "Completed", marks: "driven");
 
         Assert.Equal("completed", Data(Assert.Single(Named("session.ended"))).GetProperty("state").GetString());
         Assert.Single(Named("session.parked"));

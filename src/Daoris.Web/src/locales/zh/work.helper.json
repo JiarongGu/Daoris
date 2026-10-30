@@ -34,6 +34,7 @@
   "work.helper.refused.helper": "助手不能再请助手：请在它协助的会话里提问。",
   "work.helper.refused.reviewer": "第二意见的阅读者不能请助手。",
   "work.helper.refused.intake": "受理不在仓库里工作，不能请助手。",
+  "work.helper.refused.ask-daoris": "Ask Daoris 不在仓库里工作，不能请助手。",
   "work.helper.refused.gone": "这个提问已不属于这个会话。",
   "work.helper.refused.person": "这是你自己的提问，不需要同意。",
   "work.helper.refused.waits": "它在等空闲名额或智能体，不是在等你同意。",

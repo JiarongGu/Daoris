@@ -23,6 +23,9 @@ internal sealed class OpinionDeliverer(LoopContext context, DriverOpinions opini
 {
     private readonly LoopContext _context = context;
 
+    /// <summary>Told each answer the course gave a driven record's findings (FOUNDATION1i path 5): a test's, no person's.</summary>
+    internal Action<LineCourse>? Decided { get; set; }
+
     private readonly DriverOpinions _opinions = opinions;
 
     // What this machine's driver did with each opinion, beside its packet (XAGENT1e).
@@ -152,14 +155,19 @@ internal sealed class OpinionDeliverer(LoopContext context, DriverOpinions opini
             return await SendBackAsync(view, named, asked, chatLine, ct).ConfigureAwait(false);
         }
 
+        // FOUNDATION1i path 5: what never takes findings is the course's answer for a solicited answer; a conversation is the chat runner's,
+        // which the line above sent it to where it has a run, and nothing else is the course's to say.
         var never = record switch
         {
             null => OpinionToPerson.NotFound,
-            { Teammate: true } => ContinueWhy.Teammate,
-            { Ask.Length: > 0 } => ContinueWhy.Intake,
-            { Kind: "chat" } => OpinionToPerson.Conversation,
-            _ when string.Equals(record.State, "stood-down", StringComparison.OrdinalIgnoreCase) => ContinueWhy.StoodDown,
-            _ => null,
+            _ => DrivenCourse.SendBack(record, Decided) switch
+            {
+                LineCourse.Never { Why: CourseNeverWhy.Teammate } => ContinueWhy.Teammate,
+                LineCourse.Never { Why: CourseNeverWhy.Intake } => ContinueWhy.Intake,
+                _ when record.Kind == "chat" => OpinionToPerson.Conversation,
+                LineCourse.Never { Why: CourseNeverWhy.StoodDown } => ContinueWhy.StoodDown,
+                _ => null,
+            },
         };
         if (never is not null) return ToPersonKept(view, named, never);
 

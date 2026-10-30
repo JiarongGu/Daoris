@@ -34,6 +34,13 @@ public static class ImportClass
 
     /// <summary>The file is set aside as <c>&lt;file&gt;.imported</c> and never deleted, its readers taking it up only after the import.</summary>
     public const string SetAside = "set-aside";
+
+    /// <summary>
+    /// The file stays and is the store's projection (§13.5, §19.15): it is not the backup of what was imported but what the newer build keeps
+    /// written for the same staffing, so an older build reads it as its own. Unlike <see cref="Left"/> its content is not held to the SHA-256
+    /// the import recorded, since the newer build writes it again; unlike <see cref="SetAside"/> it is never renamed.
+    /// </summary>
+    public const string Projected = "projected";
 }
 
 /// <summary>One file imported into a family (§13.3's <c>imports</c>), as the row records it.</summary>

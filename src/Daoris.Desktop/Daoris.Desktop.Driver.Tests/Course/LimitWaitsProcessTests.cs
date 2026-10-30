@@ -101,6 +101,24 @@ public sealed class LimitWaitsProcessTests : IDisposable
         return count;
     }
 
+    /// <summary>What the course answered each wake, by session (FOUNDATION1h branch 6), heard from the runner's stage.</summary>
+    private static List<(string Session, LineCourse Answer)> Deciding(ChatRunner runner)
+    {
+        var decided = new List<(string Session, LineCourse Answer)>();
+        runner.Waits.Decided += (session, answer) =>
+        {
+            lock (decided) decided.Add((session, answer));
+        };
+        return decided;
+    }
+
+    private static string WakeSaid(LineCourse answer) => answer switch
+    {
+        LineCourse.Resume resume => $"Resume:{(resume.Words.Daoris == CourseDaorisWord.LimitReset ? "limit-reset" : "none")}",
+        LineCourse.Wait wait => $"Wait:{wait.Why}",
+        _ => answer.GetType().Name,
+    };
+
     private static bool Coded(SessionEvent e, string code) =>
         e.Kind == SessionEventKind.Note && e.Parts?.Any(part => part.Code == code) == true;
 
@@ -177,9 +195,16 @@ public sealed class LimitWaitsProcessTests : IDisposable
         Lifted("account-1");
         Lifted("account-2");
         _now = _now.AddHours(2);
+        var decided = Deciding(runner);
         var woke = await runner.WakeLimitsAsync(config);
         Assert.Equal([chat, help], woke.Select(start => start.SessionId).Order());
         Assert.Empty(await runner.WakeLimitsAsync(config));
+
+        // FOUNDATION1h branch 6: the wake of each is the course's answer for the limit's wake, its own conversation resumed, Daoris's word
+        // keyed by the wake's clock.
+        Assert.Equal(
+            [(chat, "Resume:limit-reset"), (help, "Resume:limit-reset")],
+            decided.Where(each => each.Answer is LineCourse.Resume).Select(each => (each.Session, WakeSaid(each.Answer))).OrderBy(each => each.Session == chat ? 0 : 1));
 
         await Poll.Until(() => Prompts.Any(line => line.Contains("And add a test.", StringComparison.Ordinal)), () => Seen(ledger, events, chat));
         await Poll.Until(
@@ -226,8 +251,15 @@ public sealed class LimitWaitsProcessTests : IDisposable
             kept = (await runner.SayKeptAsync(chat, "And add a test.", null, null, MessageLevel.Urgent, "press-1"))!.Word!;
         }
 
-        // The shell ended: the conversation ended with it, its waiting word still on its record.
-        Assert.Equal("stopped", ledger.State(chat));
+        // The shell ended: the conversation ended with it, its waiting word still on its record. FOUNDATION1g part c: as a driven end a limit
+        // made, `failed` with the ledger's flag and the refused turn's cooling line, so every reader reads it limited; its events still hold it
+        // waiting for an older build, which reads them alone.
+        Assert.Equal(("failed", true), (ledger.State(chat), ledger.Flag(chat, "limit")));
+        Assert.Contains(ledger.Record(chat)["noteParts"]!.AsArray(), part => part?["code"]?.GetValue<string>() == NoteCodes.AccountCoolingWindow.Code
+            || part?["code"]?.GetValue<string>() == NoteCodes.AccountCooling.Code || part?["code"]?.GetValue<string>() == NoteCodes.AccountCoolingNoWindow.Code);
+        var ended = SessionRecords.Parse(await client.SessionRecordsJsonAsync()).Single(each => each.Id == chat);
+        Assert.Equal(ShownState.Limited, ShownState.Of(ended));
+        Assert.NotNull(LimitHeld.Waiting(events.After(chat, 0).Events));
         Assert.Equal([kept], ledger.Said(chat));
 
         // Account-2 frees first; account-1 still cools.
@@ -371,6 +403,67 @@ public sealed class LimitWaitsProcessTests : IDisposable
     }
 
     /// <summary>
+    /// 🔴 FOUNDATION1g part c: the wake decides by the record's <c>limited</c> flag. A conversation a limit ended, its events holding none of it,
+    /// moves at the wake as one its limit holds, why <c>limit</c>, where the events alone read an ended conversation whose words wait for a
+    /// cooling account and moved it why <c>retry</c>.
+    /// </summary>
+    [Fact]
+    public async Task The_wake_reads_a_conversation_the_limit_ended_by_its_flag_where_its_events_say_nothing()
+    {
+        var ledger = new ChatLedger().Register("engine", _root);
+        ledger.Chat("c1", "failed", "acp-stub", _root, profile: "account-1").Say("w1", "Hello again.");
+        ledger.Edit("c1", record => record["limit"] = true);
+        new HarnessConversations(_home).Keep("c1", "acp-stub", "conv-account-1");
+        var config = Config();
+        var events = Events;
+        using var client = ledger.Client();
+        var adapters = AdapterSet.Built();
+        var roster = Roster(adapters);
+        Cooling("account-1", _now.AddDays(4));
+        using var runner = Runner(client, adapters, roster, events);
+
+        var woke = Assert.Single(await runner.WakeLimitsAsync(config));
+
+        Assert.Equal("c2", woke.SessionId);
+        var next = (await client.RecordAsync("c2"))!;
+        Assert.Equal(("account-2", "c1", HandOverWhy.Limit), (next.Profile, next.From, next.FromWhy));
+        await Poll.Until(() => Prompts.Any(line => IsHandedTo("account-2", line)), () => Seen(ledger, events, "c2"));
+        Assert.Equal(1, Count(Prompts.Single(line => IsHandedTo("account-2", line)), "Hello again."));
+        await Poll.Until(() => ledger.Said("c1").Count == 0, () => Seen(ledger, events, "c1"));
+    }
+
+    /// <summary>
+    /// FOUNDATION1g part c: the person's stop outranks the limit, as it does a driven end's. A conversation waiting for its limit that the
+    /// person stops ends <c>stopped</c>, no flag, and the wake leaves it.
+    /// </summary>
+    [Fact]
+    public async Task The_person_s_stop_of_a_conversation_waiting_for_its_limit_ends_it_stopped_with_no_flag()
+    {
+        var ledger = new ChatLedger().Register("engine", _root);
+        var config = Config();
+        var events = Events;
+        using var client = ledger.Client();
+        var adapters = AdapterSet.Built();
+        var roster = Roster(adapters);
+        var processes = new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions));
+        using var runner = new ChatRunner(client, adapters, _home, processes, events: events, harnesses: roster);
+
+        var chat = await WaitingAsync(runner, ledger, events, roster, config, help: false);
+        Limited("account-1");
+        Limited("account-2");
+        Assert.NotNull(roster.Limited("acp-stub", "account-2", Limit, "x0"));
+        await LimitedNowAsync(runner, ledger, events, roster, chat, "Make the port configurable.");
+
+        Assert.True(processes.Stop(chat));
+        await Poll.Until(() => ledger.State(chat) != "working", () => Seen(ledger, events, chat));
+
+        Assert.Equal(("stopped", false), (ledger.State(chat), ledger.Flag(chat, "limit")));
+        Lifted("account-1");
+        _now = _now.AddDays(8);
+        Assert.Empty(await runner.WakeLimitsAsync(config));
+    }
+
+    /// <summary>
     /// 🔴 FOUNDATION1a-ii (D205 §3.5(d)): the same ended conversation whose account the person picked, its binding in the store saying so,
     /// does not go on elsewhere. The person's words wait for <c>account-1</c> though <c>account-2</c> is ready, said as the wait for its own
     /// account, nothing opened, counted or handed; the limits stage's look moves nothing either, and at the account's own reset the
@@ -431,9 +524,13 @@ public sealed class LimitWaitsProcessTests : IDisposable
         using var runner = Runner(client, adapters, Roster(adapters), events);
 
         // account-2 frees first, in a day, and a record on no pick goes on there; the picked one waits for account-1's four days.
+        var decided = Deciding(runner);
         Assert.Empty(await runner.WakeLimitsAsync(config));
         _now = _now.AddDays(2);
         Assert.Empty(await runner.WakeLimitsAsync(config));
+        // FOUNDATION1h branch 6: the course holds a picked account's wake as a wait for its own reset, never a move.
+        Assert.All(decided, each => Assert.Equal(("c1", "Wait:LimitReset"), (each.Session, WakeSaid(each.Answer))));
+        Assert.NotEmpty(decided);
         Assert.Equal(1, ledger.Count);
         Assert.Empty(Prompts);
         Assert.Equal(["w1"], ledger.Said("c1"));

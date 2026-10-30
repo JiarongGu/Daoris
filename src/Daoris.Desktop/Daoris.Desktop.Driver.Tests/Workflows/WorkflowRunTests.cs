@@ -45,6 +45,38 @@ public sealed class WorkflowRunTests
         Assert.DoesNotContain("Current workflow", said);
     }
 
+    /// <summary>
+    /// INTEGRATE1o part o2 (§17.3): each quest the work's sessions published, and a helper's ask beside it, is drawn inside the work step of a steps
+    /// run, whatever state the work stands at, and by the terminal as a line under it; a run with none draws none and reads as before.
+    /// </summary>
+    [Fact]
+    public void The_works_requests_are_drawn_inside_its_step_and_the_terminal_says_each_under_it()
+    {
+        var facts = new WorkflowRunFacts("engine", WorkflowCurrent.Derive(DriverConfig.Empty, "engine", "aurora", []))
+        {
+            Quests = [Quest("q1", "Taken")], Sessions = [Session("s1", "q1", "stood-down")],
+            Requests =
+            [
+                new(WorkflowRunRequestKinds.Quest, "q9", "docs", "taken") { Session = "s1", Awaits = true },
+                new(WorkflowRunRequestKinds.Quest, "q8", "tools", "done") { Session = "s1", Words = "shipped it" },
+                new(WorkflowRunRequestKinds.Quest, "q7", "tools", "declined") { Session = "s1", Words = "not here" },
+                new(WorkflowRunRequestKinds.Agent, "h1", "codex", "working") { Session = "s1" },
+            ],
+        };
+
+        var run = WorkflowRuns.Derive(facts, "aurora");
+
+        Assert.Equal(["q9", "q8", "q7", "h1"], run.Steps[0].Requests!.Select(request => request.Id));
+        Assert.All(run.Steps.Skip(1), step => Assert.Null(step.Requests));
+        var said = WorkflowRunWords.Say([run], null);
+        Assert.Contains("Request: quest #q9 to `docs` is taken, and its session waits on the answer.", said);
+        Assert.Contains("Request: quest #q8 to `tools` is done: “shipped it”.", said);
+        Assert.Contains("Request: quest #q7 to `tools` is declined: “not here”.", said);
+        Assert.Contains("Request to an agent: `codex` is working.", said);
+
+        Assert.Null(WorkflowRuns.Derive(facts with { Requests = [] }, "aurora").Steps[0].Requests);
+    }
+
     /// <summary>A branch landing pushed by a plugin that lands and answers its state.</summary>
     private const string PullRequestRule =
         """{"landings":{"engine":{"form":"branch","pattern":"work/{quest}","plugin":"example.pull-request"}}}""";

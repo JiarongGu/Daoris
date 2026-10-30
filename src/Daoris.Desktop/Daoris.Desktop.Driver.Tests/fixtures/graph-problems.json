@@ -503,6 +503,60 @@
         "nodes": [{ "id": "landing", "kind": "handed", "version": 1, "reach": "observed" }, { "id": "integrate", "kind": "integrate", "version": 1, "reach": "waited" }],
         "wires": [{ "id": "a", "kind": "after", "from": "landing", "to": "integrate" }] },
       "problems": [{ "code": "cleanup", "wire": null, "node": "integrate", "words": "the end `integrate` is at or before the line, so its cleanup goes at `held`: the wait is for an end after the line." }] },
+    { "name": "the work's requests held after the claim and before the landing (INTEGRATE1o)",
+      "graph": { "entries": ["work"], "end": "landing",
+        "nodes": [
+          { "id": "work", "kind": "claimed", "version": 1, "reach": "observed" },
+          { "id": "requests", "kind": "work.requests", "version": 1, "reach": "observed" },
+          { "id": "landing", "kind": "handed", "version": 1, "reach": "observed" }
+        ],
+        "wires": [{ "id": "a", "kind": "after", "from": "work", "to": "requests" }, { "id": "b", "kind": "after", "from": "requests", "to": "landing" }] },
+      "problems": [] },
+    { "name": "two work.requests (INTEGRATE1o)",
+      "graph": { "entries": ["work"], "end": "landing",
+        "nodes": [
+          { "id": "work", "kind": "claimed", "version": 1, "reach": "observed" },
+          { "id": "requests", "kind": "work.requests", "version": 1, "reach": "observed" },
+          { "id": "again", "kind": "work.requests", "version": 1, "reach": "observed" },
+          { "id": "landing", "kind": "handed", "version": 1, "reach": "observed" }
+        ],
+        "wires": [
+          { "id": "a", "kind": "after", "from": "work", "to": "requests" }, { "id": "b", "kind": "after", "from": "requests", "to": "again" },
+          { "id": "c", "kind": "after", "from": "again", "to": "landing" }
+        ] },
+      "problems": [{ "code": "work-requests-twice", "wire": null, "node": "again", "words": "node `again`: `requests` and `again` are both a `work.requests`, and the graph holds the work on its requests once." }] },
+    { "name": "a work.requests no claim comes before (INTEGRATE1o)",
+      "graph": { "entries": ["requests"], "end": "landing",
+        "nodes": [{ "id": "requests", "kind": "work.requests", "version": 1, "reach": "observed" }, { "id": "landing", "kind": "handed", "version": 1, "reach": "observed" }],
+        "wires": [{ "id": "a", "kind": "after", "from": "requests", "to": "landing" }] },
+      "problems": [{ "code": "work-requests-unclaimed", "wire": null, "node": "requests", "words": "node `requests`: a `work.requests` holds the work a `claimed` observes, and no `claimed` of this graph comes before it." }] },
+    { "name": "a work.requests the landing does not wait on (INTEGRATE1o)",
+      "graph": { "entries": ["work"], "end": "landing",
+        "nodes": [
+          { "id": "work", "kind": "claimed", "version": 1, "reach": "observed" },
+          { "id": "requests", "kind": "work.requests", "version": 1, "reach": "observed" },
+          { "id": "landing", "kind": "handed", "version": 1, "reach": "observed" }
+        ],
+        "wires": [{ "id": "a", "kind": "after", "from": "work", "to": "requests" }, { "id": "b", "kind": "after", "from": "work", "to": "landing" }] },
+      "problems": [{ "code": "work-requests-late", "wire": null, "node": "requests", "words": "node `requests`: the landing `landing` can start before `requests` is reached, and a `work.requests` holds the work before every landing: every way to it passes `requests`." }] },
+    { "name": "a work.requests with a way to the landing past it, in a group (INTEGRATE1o)",
+      "graph": { "entries": ["work"], "end": "landing",
+        "nodes": [
+          { "id": "work", "kind": "claimed", "version": 1, "reach": "observed" },
+          { "id": "requests", "kind": "work.requests", "version": 1, "reach": "observed" },
+          { "id": "landing", "kind": "handed", "version": 1, "reach": "observed" }
+        ],
+        "wires": [
+          { "id": "a", "kind": "after", "from": "work", "to": "requests" },
+          { "id": "b", "kind": "after", "from": "requests", "to": "landing", "group": { "id": "g", "mode": "anyOf" } },
+          { "id": "c", "kind": "after", "from": "work", "to": "landing", "group": { "id": "g", "mode": "anyOf" } }
+        ] },
+      "problems": [{ "code": "work-requests-late", "wire": null, "node": "requests", "words": "node `requests`: the landing `landing` can start before `requests` is reached, and a `work.requests` holds the work before every landing: every way to it passes `requests`." }] },
+    { "name": "a wait for an end at a work.requests (INTEGRATE1o)",
+      "graph": { "entries": ["work"], "end": "requests", "cleanup": { "until": "end" },
+        "nodes": [{ "id": "work", "kind": "claimed", "version": 1, "reach": "observed" }, { "id": "requests", "kind": "work.requests", "version": 1, "reach": "observed" }],
+        "wires": [{ "id": "a", "kind": "after", "from": "work", "to": "requests" }] },
+      "problems": [{ "code": "cleanup", "wire": null, "node": "requests", "words": "the end `requests` is at or before the line, so its cleanup goes at `held`: the wait is for an end after the line." }] },
     { "name": "a cycle through the graph is said beside its other problems", "base": "graphBase",
       "add": { "wires": [{ "id": "x", "kind": "after", "from": "deploy", "to": "dependency" }] },
       "problems": [

@@ -483,6 +483,81 @@ public sealed class DesktopStoreTests : IDisposable
         Assert.Equal(0, Count(older, "integration_dispositions"));
     }
 
+    // ——— Step 10, the role catalogue (FOUNDATION1w; the foundation design §2.7, §13.3).
+
+    [Fact]
+    public void Step_10_makes_the_roles_and_their_revisions_with_required_columns_and_raises_no_stamp()
+    {
+        var step = Assert.Single(DesktopStore.Steps, each => each.Version == 10);
+        Assert.Equal(1, step.Writer);
+
+        var store = Open();
+
+        Assert.Equal((Own, 1), store.Stamp);
+        Assert.Equal([("id", true), ("state", true), ("record", true), ("revision", true), ("at", true)], Columns(store, "roles"));
+        Assert.Equal(
+            [("id", true), ("revision", true), ("state", true), ("record", false), ("at", true)],
+            Columns(store, "role_revisions"));
+    }
+
+    // ——— Step 8, the roles' staffing (FOUNDATION1w-s part 1; the foundation design §19.15, D212's note).
+
+    [Fact]
+    public void Step_8_makes_the_staffing_its_one_projection_row_and_the_found_rows_with_required_columns_and_raises_no_stamp()
+    {
+        var step = Assert.Single(DesktopStore.Steps, each => each.Version == 8);
+        Assert.Equal(1, step.Writer);
+
+        var store = Open();
+
+        Assert.Equal((Own, 1), store.Stamp);
+        Assert.Equal(
+            [("role", true), ("state", true), ("choices", false), ("why", false), ("first_agent", false), ("at", true)],
+            Columns(store, "role_staffing"));
+        Assert.Equal(
+            [("one", false), ("actors", false), ("adapter", false), ("intake_adapter", false), ("helper_adapter", false), ("at", true)],
+            Columns(store, "role_staffing_projection"));
+        Assert.Equal(
+            [
+                ("id", false), ("at", true), ("actors", false), ("adapter", false), ("intake_adapter", false), ("helper_adapter", false),
+                ("written_actors", false), ("written_adapter", false), ("written_intake_adapter", false), ("written_helper_adapter", false),
+                ("answer", false), ("answered_at", false),
+            ],
+            Columns(store, "role_staffing_found"));
+        Assert.Contains(
+            "CREATE INDEX role_staffing_found_pending ON role_staffing_found (id) WHERE answered_at IS NULL",
+            Indexes(store, "role_staffing_found"));
+    }
+
+    [Fact]
+    public void The_projection_is_one_row_whatever_the_writer_sets()
+    {
+        var store = Open(new DesktopStoreOptions { Settled = () => StoreSettled.Yes });
+        void Project(int one) => store.Write("role_staffing", write => write.Execute(
+            "INSERT INTO role_staffing_projection (one, at) VALUES ($one, '2026-10-30T00:00:00.0000000+00:00')", ("$one", one)));
+
+        Project(1);
+
+        Assert.Equal(275, Assert.Throws<SqliteException>(() => Project(2)).SqliteExtendedErrorCode);
+        Assert.Equal(1555, Assert.Throws<SqliteException>(() => Project(1)).SqliteExtendedErrorCode);
+        Assert.Equal(1, Count(store, "role_staffing_projection"));
+    }
+
+    [Fact]
+    public void A_store_of_the_seven_steps_before_is_migrated_to_8_at_the_first_start_whatever_the_confirmation_says()
+    {
+        using (var older = Open(new DesktopStoreOptions { Steps = [.. DesktopStore.Steps.Take(7)], Settled = () => StoreSettled.Yes }))
+        {
+            Assert.Equal((7, 1), older.Stamp);
+        }
+
+        var store = Open(new DesktopStoreOptions { Settled = () => StoreSettled.Not("the swap journal is at `started`") });
+
+        Assert.Null(store.Held);
+        Assert.Equal((Own, 1), store.Stamp);
+        foreach (var table in new[] { "role_staffing", "role_staffing_projection", "role_staffing_found" }) Assert.True(HasTable(store, table), table);
+    }
+
     // ——— A run entered with no family's write (FOUNDATION1f-i part 2, §19.1 point 3).
 
     [Fact]

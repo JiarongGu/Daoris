@@ -33,6 +33,9 @@ internal sealed class LimitWaits(ChatContext context, LimitMove move, ChatGoOn g
     private string? _stamp;
     private DateTimeOffset? _due;
 
+    /// <summary>What the course answered each wake, by session (FOUNDATION1h branch 6): a test hears it; no person reads it.</summary>
+    internal event Action<string, LineCourse>? Decided;
+
     /// <summary>How many times the stage asked the service anything: a test holds that a look with no wait come asks nothing.</summary>
     internal int Asked { get; private set; }
 
@@ -150,7 +153,8 @@ internal sealed class LimitWaits(ChatContext context, LimitMove move, ChatGoOn g
         }
 
         var events = context.Events.After(session, 0).Events;
-        var limited = LimitHeld.Waiting(events);
+        // FOUNDATION1g part c: an ended record's flag decides; a live one, and one an older build ended, by its events.
+        var limited = LimitHeld.Waiting(events, record.Limit);
         var live = context.Turned.TryGetValue(session, out var chat);
         if (live && chat!.Turns.Limited is false)
         {
@@ -184,13 +188,28 @@ internal sealed class LimitWaits(ChatContext context, LimitMove move, ChatGoOn g
         // wake's move and its ended move walk for themselves, and the one walk this stage judges is the go-on's (FOUNDATION1a-i).
         // An account the person picked is the rule's constraint (FOUNDATION1a-ii): it waits for that account alone (D205 §3.5(d)).
         var picked = context.Conversations.PickedOn(session, record.Profile);
-        var resumes = LineAccount.Decide(
+        var answer = LineAccount.Decide(
             LineOwn.Of(own), new LineTrigger(Limited: limited is not null), picked ? LineConstraint.Pick(record.Profile!) : LineConstraint.None,
             LineKind.Conversation(carries: false),
-            ask => throw new InvalidOperationException($"the wake asks no {ask.Place} walk of the account rule")) is LineAnswer.Resume;
-        if (resumes)
+            ask => throw new InvalidOperationException($"the wake asks no {ask.Place} walk of the account rule"));
+
+        // FOUNDATION1h branch 6 (the foundation design §3.1): the wake is the course's answer for CourseTrigger.LimitWake, read over the rule's
+        // answer as above. Its own account ready, it resumes; a picked account cooling, it waits for that account alone. Where another account
+        // might free first, the course reads no walk, so the executor goes on to the move, which walks for itself (a reading, not a change).
+        var until = context.Harnesses.Clock();
+        var course = CourseDecision.Decide(
+            new CourseFacts(
+                new CourseHead(
+                    record.State, Limited: limited is not null || live, Role: record.Actor ?? "chat", Choice: record.Choice, Adapter: adapter,
+                    Profile: record.Profile, Conversation: true, AskDaoris: string.Equals(record.Repository, KnowledgeRoomIdentity.Repository, StringComparison.OrdinalIgnoreCase),
+                    Waiting: [.. record.Waiting.Select(word => new CourseWord(word.Id ?? "", BriefedMove.AuthorOf(word), word.Key))], Session: session,
+                    Tree: record.Tree),
+                live ? CourseBoundary.BetweenTurns : CourseBoundary.ProcessExited,
+                Account: new CourseAccount(Answer: answer, Picked: picked), Limit: new CourseLimit(Woke: until)),
+            CourseTrigger.LimitWake);
+        Decided?.Invoke(session, course);
+        if (course is LineCourse.Resume)
         {
-            var until = context.Harnesses.Clock();
             ChatStart start;
             if (live)
             {
@@ -203,7 +222,7 @@ internal sealed class LimitWaits(ChatContext context, LimitMove move, ChatGoOn g
 
             _held.TryRemove(session, out _);
             // Its account refused again: a new cool-off, which the stamp hears, holds it once more.
-            if (start.SessionId is null && WaitsAgain(session)) _held[session] = 0;
+            if (start.SessionId is null && await WaitsAgainAsync(session, ct).ConfigureAwait(false)) _held[session] = 0;
             return (start, null);
         }
 
@@ -319,10 +338,14 @@ internal sealed class LimitWaits(ChatContext context, LimitMove move, ChatGoOn g
         }
     }
 
-    /// <summary>Whether a conversation the wake could not take on still waits for its limit: its record's events read again.</summary>
-    private bool WaitsAgain(string session) =>
-        LimitHeld.Waiting(context.Events.After(session, 0).Events) is not null
-        && !(context.Turned.TryGetValue(session, out var chat) && !chat.Turns.Limited);
+    /// <summary>Whether a conversation the wake could not take on still waits for its limit: its record and its events read again.</summary>
+    private async Task<bool> WaitsAgainAsync(string session, CancellationToken ct)
+    {
+        if (context.Turned.TryGetValue(session, out var chat) && !chat.Turns.Limited) return false;
+        // A record the service did not answer for is read by its events alone, as one from before the flag.
+        var record = await context.ReadAgainAsync(session, ct).ConfigureAwait(false);
+        return LimitHeld.Waiting(context.Events.After(session, 0).Events, record?.Limit == true) is not null;
+    }
 
     /// <summary>A conversation a runner coming up looks at: an ended chat of this machine's held by its limit, or whose words wait.</summary>
     private bool Candidate(SessionRecord record, string json)
@@ -331,7 +354,7 @@ internal sealed class LimitWaits(ChatContext context, LimitMove move, ChatGoOn g
         if (context.Turned.TryGetValue(record.Id, out var chat)) return chat.Turns.Limited;
         if (ServiceClient.ReadRecord(json, record.Id) is not { } prior || !Ended(prior) || PersonStopped(prior)) return false;
         if (WordsNever.ContinuedIn(json, record.Id) is not null) return false;
-        if (LimitHeld.Waiting(context.Events.After(record.Id, 0).Events) is not null) return true;
+        if (LimitHeld.Waiting(context.Events.After(record.Id, 0).Events, prior.Limit) is not null) return true;
         return prior.WordsWaiting && !GoOnMarks.Judged(prior, context.Marks.Read(record.Id))
             && LineAccount.OwnHold(context.Harnesses.CoolingOf(prior.Adapter ?? "", prior.Profile)) == NextHold.Cooling;
     }

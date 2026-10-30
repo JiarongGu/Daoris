@@ -235,6 +235,14 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
         ];
     }
 
+    /// <summary>
+    /// One session record as it stands, an ended one included (FOUNDATION1 m-ii: what a piece of news says of its session, which the journal's
+    /// row never carries); null where the service has none.
+    /// </summary>
+    public async Task<SessionView?> FindSessionAsync(string id, CancellationToken ct = default) =>
+        ReadSessions(await GetAsync("/api/sessions?includeClosed=true", ct).ConfigureAwait(false))
+            .FirstOrDefault(session => string.Equals(session.Id, id, StringComparison.OrdinalIgnoreCase));
+
     /// <summary>This machine's active sessions — the one read an orphan sweep needs, without a whole snapshot.</summary>
     public async Task<IReadOnlyList<SessionView>> ActiveSessionsAsync(CancellationToken ct = default) =>
         ReadSessions(await GetAsync("/api/sessions", ct).ConfigureAwait(false));
@@ -361,10 +369,14 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// The supervisor's release (SUPERVISOR1a-i, D208; the supervisor design §3.4): its decision, question and choice, sent with no text,
     /// since the service composes the word from the choice. Null for every other say.
     /// </param>
+    /// <param name="ending">
+    /// The shell keeps the words on a record that winds up or moves (FOUNDATION1o, the foundation design §3.4 rule 4), for its next part to go on
+    /// with; a host before the row ignores it and refuses them as <c>running</c>, which the shell then holds as before.
+    /// </param>
     public async Task<SayAnswer> SayAsync(
         string id, string text, IReadOnlyList<string>? files = null, CancellationToken ct = default, string? channel = null,
         string? from = null, string? key = null, string? level = null, bool running = false,
-        (string Decision, string Question, string Choice)? supervised = null)
+        (string Decision, string Question, string Choice)? supervised = null, bool ending = false)
     {
         var body = WriteJson(writer =>
         {
@@ -389,6 +401,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
             if (key is { Length: > 0 } && supervised is null) writer.WriteBoolean("settled", true);
             if (level is { Length: > 0 }) writer.WriteString("level", level);
             if (running) writer.WriteBoolean("running", true);
+            if (ending) writer.WriteBoolean("ending", true);
             if (files is { Count: > 0 })
             {
                 writer.WriteStartArray("files");
@@ -1888,6 +1901,8 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
                 Here = Text(quest, "here") is { Length: > 0 } here ? here : null,
                 // What a list calls it (SESSUX1j). Absent is a host from before the field: the title names it.
                 Short = Text(quest, "short") is { Length: > 0 } named ? named : null,
+                // The work's mark (FOUNDATION1x). Absent is a host from before it: the quest starts on Build's order.
+                Weight = Text(quest, "weight") is { Length: > 0 } weight ? weight : null,
                 // Absent is not waiting: a host from before D79 answers without it.
                 Awaits = Text(quest, "awaits"),
                 // Absent is a person's publish or a chain's step: a host from before SESS1 answers without it.

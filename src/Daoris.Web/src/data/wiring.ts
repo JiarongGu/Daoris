@@ -226,6 +226,13 @@ export type ActorEntry = { agent: string; model?: string | null; effort?: string
 export type ActorRow = { id: string; state: 'set' | 'before' | 'off' | 'unreadable'; choices: ActorEntry[]; error?: string | null };
 
 /**
+ * A change of driver.json's actors another program made, as `ACTORS` answers it beside the rows (FOUNDATION1w-s, the foundation design
+ * §19.15): each role it moved, as Daoris last wrote it and as that file showed it, `applied` where it turned Intake or Ask Daoris off at
+ * once. It waits for the person's *Take it* or *Dismiss* (`STAFFING_FOUND_ANSWER`).
+ */
+export type StaffingFound = { id: number; at: string; changes: { role: string; was: ActorRow; now: ActorRow; applied: boolean }[] };
+
+/**
  * The set-aside folders of the press's early group by class (KEEPSIZE1b, the keep-size design §5): recorded, its tip held by a ref or the
  * line; awaiting its record; its branch standing; stopped between its steps; what holds its commits not confirmed (`unheld`); and
  * unmarked, from before this build or not a finished tree; and `unread`, whose manifest does not read. `stopped`, `unheld` and `unread` are

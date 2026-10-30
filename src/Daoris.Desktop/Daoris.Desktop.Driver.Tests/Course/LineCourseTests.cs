@@ -226,6 +226,8 @@ public sealed class LineCourseTests
         ["E-24"] = new(T.LimitWake, Later(Ended(Chat(P()) with { Limited = true }, WaitsWalk()), "other", "2")),
         ["E-25"] = new(T.LimitWake, Later(Ended(Chat(P()) with { Limited = true }, WaitsPick(), picked: true), "other", "2")),
         ["E-26"] = new(T.LimitWake, Later(Ended(Chat(P()) with { Limited = true, Choice = "pick" }, WaitsWalk()), "other", "2")),
+        // FOUNDATION1g part c: a conversation the limit ended, as its end now writes it, `failed` with the flag.
+        ["E-27"] = new(T.LimitWake, Ended(Chat(P()) with { State = "failed", Limited = true }, Goes("account-2"))),
 
         // ——— J: the briefed move, the person's and Daoris's on a lost conversation.
         ["J-01"] = new(T.BriefedPress, Ended(Chat(P()), Resumes)),
@@ -459,7 +461,7 @@ public sealed class LineCourseTests
 
     private sealed record Table(
         IReadOnlyList<Row> Rows, IReadOnlyList<string> Groups, IReadOnlyList<Difference> Differences,
-        IReadOnlyDictionary<string, string> LeftOut, IReadOnlyDictionary<string, int> Suites, IReadOnlyDictionary<string, string> Reasons);
+        IReadOnlyDictionary<string, string> LeftOut, IReadOnlyCollection<string> Suites, IReadOnlyDictionary<string, string> Reasons);
 
     private static Table Read()
     {
@@ -467,7 +469,7 @@ public sealed class LineCourseTests
         var groups = new List<string>();
         var differences = new List<Difference>();
         var leftOut = new Dictionary<string, string>(StringComparer.Ordinal);
-        var suites = new Dictionary<string, int>(StringComparer.Ordinal);
+        var suites = new HashSet<string>(StringComparer.Ordinal);
         var reasons = new Dictionary<string, string>(StringComparer.Ordinal);
         string? group = null;
         foreach (var raw in File.ReadAllLines(TablePath))
@@ -503,7 +505,7 @@ public sealed class LineCourseTests
                 case "Suites":
                 {
                     var parts = line.Split(' ');
-                    suites[parts[1]] = int.Parse(parts[2], CultureInfo.InvariantCulture);
+                    suites.Add(parts[1]);
                     break;
                 }
                 default:
@@ -599,7 +601,8 @@ public sealed class LineCourseTests
             {
                 var at = source["code:".Length..].Split(':');
                 var file = Path.Combine(driver, at[0].Replace('/', Path.DirectorySeparatorChar));
-                if (!File.Exists(file) || File.ReadAllLines(file).Length < int.Parse(at[1], CultureInfo.InvariantCulture)) missing.Add($"{row.Id}: {source}");
+                // The line is where the path answered when the row was ported, a pointer: the file's length is not pinned (CENSUSRULES1).
+                if (!File.Exists(file)) missing.Add($"{row.Id}: {source}");
             }
             else if (source.StartsWith("design:", StringComparison.Ordinal))
             {
@@ -616,43 +619,65 @@ public sealed class LineCourseTests
     }
 
     /// <summary>
-    /// Each path's suites, counted: every case (<c>[Fact]</c> or <c>[Theory]</c>) of each is a row's source or left out with its why, and the
-    /// table's count of each suite is the suite's, so a case added to a path's suite is placed in the table as it lands.
+    /// Each path's suites: every case (<c>[Fact]</c> or <c>[Theory]</c>) of each is a row's source or left out with its why, so a case added to
+    /// a path's suite is placed in the table as it lands. How many cases a suite has is not pinned (CENSUSRULES1): the case itself is.
     /// </summary>
     [Fact]
     public void Every_case_of_the_paths_suites_is_ported_or_left_out_with_why()
     {
         var table = Read();
-        var ported = table.Rows.Where(row => !row.Source.Contains(':', StringComparison.Ordinal) || char.IsUpper(row.Source[0]))
+        var failures = CaseFailures(table.Rows, table.LeftOut, table.Suites, table.Reasons, Methods);
+        Assert.True(failures.Count == 0, string.Join("\n", failures));
+    }
+
+    /// <summary>What a table's rows, left-out cases and suites say against the cases the suites have, each failure as a sentence.</summary>
+    private static List<string> CaseFailures(
+        IEnumerable<Row> rows, IReadOnlyDictionary<string, string> leftOutCases, IReadOnlyCollection<string> suites,
+        IReadOnlyDictionary<string, string> reasons, Func<string, IReadOnlyList<string>> methodsOf)
+    {
+        var ported = rows.Where(row => !row.Source.Contains(':', StringComparison.Ordinal) || char.IsUpper(row.Source[0]))
             .Select(row => row.Source.Split(':')[0]).ToHashSet(StringComparer.Ordinal);
         var failures = new List<string>();
-        foreach (var (suite, count) in table.Suites)
+        foreach (var suite in suites)
         {
-            var methods = Methods(suite);
-            if (methods.Count != count) failures.Add($"{suite}: the table counts {count} cases, the suite has {methods.Count}");
-            foreach (var method in methods)
+            foreach (var method in methodsOf(suite))
             {
                 var key = $"{suite}.{method}";
-                var left = table.LeftOut.ContainsKey(key);
+                var left = leftOutCases.ContainsKey(key);
                 if (ported.Contains(key) == left) failures.Add($"{key}: {(left ? "both ported and left out" : "neither ported nor left out")}");
             }
         }
 
-        foreach (var (key, why) in table.LeftOut)
+        foreach (var (key, why) in leftOutCases)
         {
-            if (!table.Reasons.ContainsKey(why)) failures.Add($"{key}: left out for {why}, which is no reason the table names");
-            if (!table.Suites.ContainsKey(key[..key.IndexOf('.')])) failures.Add($"{key}: a suite the table does not count");
+            if (!reasons.ContainsKey(why)) failures.Add($"{key}: left out for {why}, which is no reason the table names");
+            if (!suites.Contains(key[..key.IndexOf('.')])) failures.Add($"{key}: a suite the table does not list");
         }
 
-        foreach (var row in table.Rows.Where(row => char.IsUpper(row.Source[0])))
+        foreach (var row in rows.Where(row => char.IsUpper(row.Source[0])))
         {
-            if (!table.Suites.ContainsKey(SuiteAndMethod(row.Source).Suite) && !row.Source.StartsWith("PlannerTests.", StringComparison.Ordinal))
+            if (!suites.Contains(SuiteAndMethod(row.Source).Suite) && !row.Source.StartsWith("PlannerTests.", StringComparison.Ordinal))
             {
-                failures.Add($"{row.Id}: its suite {row.Source} is not counted");
+                failures.Add($"{row.Id}: its suite {row.Source} is not listed");
             }
         }
 
-        Assert.True(failures.Count == 0, string.Join("\n", failures));
+        return failures;
+    }
+
+    /// <summary>A case added to a listed suite and placed nowhere fails the census; one placed as left out (or ported) passes, however many the suite has (CENSUSRULES1).</summary>
+    [Fact]
+    public void A_case_added_to_a_listed_suite_fails_until_it_is_placed_and_the_count_of_cases_is_no_rule()
+    {
+        var rows = new[] { new Row("X-01", "X", "FooTests.A", "Resume words=w1") };
+        var reasons = new Dictionary<string, string> { ["R"] = "a reason" };
+        string[] suites = ["FooTests"];
+        var left = new Dictionary<string, string> { ["FooTests.B"] = "R" };
+
+        Assert.Empty(CaseFailures(rows, left, suites, reasons, _ => ["A", "B"]));
+        Assert.Equal(["FooTests.C: neither ported nor left out"], CaseFailures(rows, left, suites, reasons, _ => ["A", "B", "C"]));
+        Assert.Empty(CaseFailures(rows, new Dictionary<string, string>(left) { ["FooTests.C"] = "R" }, suites, reasons, _ => ["A", "B", "C"]));
+        Assert.Equal(["FooTests.B: a suite the table does not list"], CaseFailures(rows, left, [], reasons, _ => ["A", "B"]).Where(each => each.StartsWith("FooTests.B", StringComparison.Ordinal)));
     }
 
     /// <summary>

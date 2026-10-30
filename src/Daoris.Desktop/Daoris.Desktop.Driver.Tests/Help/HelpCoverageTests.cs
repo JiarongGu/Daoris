@@ -862,6 +862,10 @@ public sealed partial class HelpCoverageTests
         // MODELROLE1c: Build's order on *Actors*, owed to MODELROLE1h's `actor_propose` (D205 §8.1); since MODELROLE1d, Intake's and Ask
         // Daoris's rows too, the two cards folded into them (their `setting` doors write the same one-choice order until row h).
         ("ai", "useSetActor", null, new Owed(HelpRoomOwed.Actor)),
+        // FOUNDATION1w-s: *Take it* and *Dismiss* of a change of the actors another program made.
+        ("ai", "useAnswerStaffingFound", null, new Exempt(
+            "A change of driver.json's actors another program made is the person's to take or dismiss (the foundation design §19.15): "
+            + "a take may turn Intake or Ask Daoris on, so no proposal names it, and a helper never answers what another program wrote.")),
         // HELPMODE1b: Ask Daoris's access, pressed from Settings → AI features and from the panel's own chip.
         ("ai", "useSetHelpMode", null, new Exempt(
             "Ask Daoris's access mode is the person's choice alone, never made for them (D183 point 2): no proposal names it, so "

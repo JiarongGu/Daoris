@@ -94,6 +94,12 @@ public sealed class DriverWatch(
     /// </summary>
     public RunningSessions Running { get; } = new();
 
+    /// <summary>
+    /// Whether this loop runs beside the lease holder, as <c>drive --share</c> does (SHAREMOVES1): handed to every look's driver
+    /// (<see cref="Driver.Share"/>), so the first look takes up only the dead runs' moves of the lines this loop runs.
+    /// </summary>
+    public bool Share { get; init; }
+
     /// <summary>Handed to every look's driver: <see cref="Driver.Runner"/>, a test's in-process stand-in for a start's run (DEV3).</summary>
     internal Func<Consideration, Action, CancellationToken, Task<StartRun>>? Runner { get; init; }
 
@@ -404,6 +410,10 @@ public sealed class DriverWatch(
         // Once, as the loop starts: how its git is wired, a coded line (GITAUTH1b, the git-auth design §11).
         Wired(home);
 
+        // FOUNDATION1w-s (the foundation design §19.15): the staffing imported once the start's confirmation is settled, and checked.
+        var staffing = RoleStaffing.Of(configPath);
+        staffing?.Check(StaffingCheckAt.Start);
+
         // Once, before the first tick: what the last run left `working` with nothing behind it — a
         // crash, a kill, a power cut — ended before this tick counts it against the cap and its
         // repository's lock (2026-09-25). Retried each tick until the service has answered it once.
@@ -674,7 +684,7 @@ public sealed class DriverWatch(
                     service, draining ? InstallUpdate.Drained(config) : config, _adapters, home, processes, sync, output,
                     _harnesses, usage, hooks, events, browser, Running)
                 {
-                    Runner = Runner, Stops = Stops, HandsOver = HandsOver, SendsBack = SendsBack, GoesOnLost = GoesOnLost, Log = Log, Noticed = Noticed, Stages = Stages, Reviews = Reviews,
+                    Share = Share, Runner = Runner, Stops = Stops, HandsOver = HandsOver, SendsBack = SendsBack, GoesOnLost = GoesOnLost, Log = Log, Noticed = Noticed, Stages = Stages, Reviews = Reviews,
                     Part = part, Woke = taken.Woke,
                     LandingEnded = Reoffered, Wanted = token => WantedAsync(part, token), WokeBack = () => Unspent(taken, busy: false),
                     // FABRIC-CUTOVER1c: an ended graph run whose chain came back here re-arms link 8, which a wake then judges on what is there now.
@@ -750,6 +760,9 @@ public sealed class DriverWatch(
                     // and the watch died on its first tick — silently, in the shell. Now it is said, nothing
                     // ticks on choices it cannot read, and the next look after the fix ticks again.
                     config = Load(configPath);
+                    // FOUNDATION1w-s: the look's check takes both locks with no wait, leaving a held one to the next look; a turn-off it
+                    // found is applied in the store, so the look reads the choices again.
+                    if (staffing?.Check(StaffingCheckAt.Look, config.Source).How == StaffingChecks.Found) config = Load(configPath);
 
                     if (!swept)
                     {
@@ -773,7 +786,7 @@ public sealed class DriverWatch(
                         await Stages.TimeAsync(
                             "moves",
                             () => new Driver(service, config, _adapters, home, processes, sync, output, _harnesses, usage, hooks, events, browser, Running)
-                                { Log = Log }.TakeUpMovesAsync(ct)).ConfigureAwait(false);
+                                { Log = Log, Share = Share }.TakeUpMovesAsync(ct)).ConfigureAwait(false);
                         // COWORK1c (the message-urgency design §6, trap 8): the words a shell before this one wrote to its agent and never
                         // took off leave their records, said where their conversation never showed them taken, and are never sent again.
                         carried.AddRange(await Stages.TimeAsync("uncertain", () => UncertainWords.SettleAsync(service, events, ct, Lines)).ConfigureAwait(false));
