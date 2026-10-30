@@ -7,7 +7,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <summary>
 /// INTEGRATE1f part f1 (the integration design §5.5, §5.9): the environment a gate is composed with, and the digest of a gate's
 /// composition, the driver's twins of <c>gateEnvironment</c> and <c>compositionDigest</c> in <c>tools/merge-branch.mjs</c>. Held cell for
-/// cell to ONE table, <c>fixtures/gate-environment.json</c>, which <c>src/Daoris.Cli/tool-test/integration-gates.test.ts</c> holds the tool
+/// cell to ONE table, <c>fixtures/gate-environment.json</c>, which the CLI's tool test <c>integration-gates.test.ts</c> holds the tool
 /// to, row for row; its <c>driverOnly</c> rows are what the driver's gate is given beyond the tool's. Values only, no process.
 /// </summary>
 public sealed class GateEnvironmentTests

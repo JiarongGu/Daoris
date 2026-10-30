@@ -8,7 +8,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// INTEGRATE1f part f1 (D207, the integration design §4.5, §5.3, §11 row f): how a red candidate's failures are judged, the driver's twin
 /// of the merge queue's judge (<c>placeOnPrefixes</c>, <c>judgeFailure</c>, <c>candidateOutcome</c>, <c>confirmStep</c>,
 /// <c>confirmReadings</c>, <c>memoryStep</c>, <c>recheckDue</c>, <c>noteRecheck</c> and the known red's standing). Held cell for cell to ONE
-/// table, <c>fixtures/failure-judging.json</c>, which <c>src/Daoris.Cli/tool-test/integration-judge.test.ts</c> holds the tool to, row for
+/// table, <c>fixtures/failure-judging.json</c>, which the CLI's tool test <c>integration-judge.test.ts</c> holds the tool to, row for
 /// row and sentence for sentence, so the integration step Daoris runs gives the verdict the queue gives on the same runs. The runs, the
 /// admission and the clock are values here: no process, no file. A sighting is never a pass.
 /// </summary>
