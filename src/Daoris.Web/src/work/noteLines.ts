@@ -48,6 +48,9 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'ended.parked-asked': { values: [] },
   'ended.parked-transcript': { values: [] },
   'ended.parked-short': { values: [] },
+  // CODEXPERM1: its agent cut its turn (cancelled, nobody stopped it), after a refused permission or none: a park that asked nothing.
+  'ended.parked-cut': { values: ['call'] },
+  'ended.parked-cancelled': { values: [] },
   // HELPERWAIT1: it ended its turn on its own helper's ask, and waits on that helper, not on the person.
   'ended.awaits-helper': { values: [] },
   'ended.answered-unfinished': { values: ['awaits', 'exit'] },

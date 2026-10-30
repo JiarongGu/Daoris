@@ -347,6 +347,25 @@ public static class Observation
     }
 
     /// <summary>
+    /// A park whose turn its agent cut (CODEXPERM1, <see cref="HarnessEnding.Cut"/>): the agent ended it <c>cancelled</c> though nobody
+    /// stopped it, so the session asked the person nothing and its last words are no question. Still waiting on the person, who alone can
+    /// widen what refused it or say how to go on, but saying what happened. Any other ending stands.
+    /// </summary>
+    /// <param name="observed">How the run concluded by the exit and the quest's state, the person's stop first.</param>
+    public static SessionConclusion Cut(SessionConclusion observed, TurnCut? cut) =>
+        cut is null || observed.State != "awaiting-person"
+            ? observed
+            : SessionConclusion.Of("awaiting-person", cut.Call is { } call
+                ? Noted.Of(
+                    NoteCodes.EndedParkedCut,
+                    $"Its turn was cut short: the agent ended it `cancelled` after the permission it asked for, {call}, was refused. "
+                    + "It asked you nothing; say how it should go on, or change its permission prompts.",
+                    ("call", call))
+                : Noted.Of(
+                    NoteCodes.EndedParkedCancelled,
+                    "Its turn was cancelled by its agent, not stopped by you, with its quest still taken. It asked you nothing; say how it should go on."));
+
+    /// <summary>
     /// What the record and the conversation say of the words a run handed back for a changed setup (ACCESSSWAP1b): they never went, so
     /// they go on, not again (<see cref="FailedTurnWords"/>).
     /// </summary>

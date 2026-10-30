@@ -70,7 +70,7 @@ public static class PartEnds
     public static readonly IReadOnlyList<string> ByState =
     [
         "ended.awaits", "ended.exit", "ended.turn-failed-taken", "ended.turn-failed-open", "ended.provider-refused", "ended.parked-asked",
-        "ended.parked-transcript", "ended.parked-short", "ended.answered-unfinished", "ended.carried-unfinished", "ended.taken-exit",
+        "ended.parked-transcript", "ended.parked-short", "ended.parked-cut", "ended.parked-cancelled", "ended.answered-unfinished", "ended.carried-unfinished", "ended.taken-exit",
         "ended.untouched", "ended.untouched-exit", "ended.went-on-failed", "ended.words-wait", "ended.words-wait-you", "ended.lost-claim",
         "ended.lost-claim-reopened",
     ];

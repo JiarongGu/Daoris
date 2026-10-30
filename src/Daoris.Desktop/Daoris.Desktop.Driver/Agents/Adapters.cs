@@ -2096,11 +2096,12 @@ public sealed class CodexAcpAdapter : ISessionAdapter
     public string? FullPosture => "agent-full-access";
 
     /// <summary>
-    /// <c>read-only</c>, Codex's asking mode (<i>Ask for approval</i>: approvals on request, reviewed by the user; read from codex-acp
-    /// 1.12.0's bundle, docs/2026-09-22-acp3-probe-evidence.md §2), for a repository's asking permission prompts (AUTONOMY1b, D184).
-    /// Each request it sends there waits for the person (AUTONOMY1b3a); an agent that no longer offers it fails the open.
+    /// <c>workspace-write</c>, Codex's asking mode for a repository's asking permission prompts (CODEXPERM1, D184): approvals on request
+    /// reviewed by the user, the sandbox bounded to the session's own tree, so an edit inside it is done unasked and anything past it
+    /// (a write beyond the tree, the network) waits for the person (AUTONOMY1b3a). Not <c>read-only</c>, which asks for every edit inside
+    /// the tree too (codex-acp 2.1.1's bundle, <c>AgentMode</c>). An agent that does not offer it fails the open.
     /// </summary>
-    public string? AskingPosture => "read-only";
+    public string? AskingPosture => "workspace-write";
 
     /// <summary>
     /// <c>read-only</c> too, for a brainstorm's pass (BRAINSTORM1c, D176 point 2): Codex takes no rules file, so the mode is the whole of its

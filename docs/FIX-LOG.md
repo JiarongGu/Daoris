@@ -70,6 +70,12 @@ repository.
 - **Root cause:** `codex-acp` 2.1.1 marks a terminal failure only for a client that negotiates AIR `sessionFailure`; the initialize never did.
 - **Fix:** the Codex door's toolchain declares it, the initialize asks, and an `error`-severity marker fails the prompt as an error: `service` and `connection` retry transient with the words kept. Agent text is never read.
 - **Verify:** `AcpTypedFailureTests`, `AgentErrorsTests`.
+## 2026-10-31 - A refused Codex edit cut the turn and the session parked as if it had asked (CODEXPERM1)
+
+- **Symptom:** on Auto a Codex edit was refused and the session parked "to ask you", quoting its last words.
+- **Root cause:** Codex's only rejection for a file change interrupts the turn, which ended `cancelled`; a clean exit with the quest taken read as a question.
+- **Fix:** `AcpOutcome.Cut` carries a cancel nobody asked for; `Observation.Cut` parks as `ended.parked-cut`, naming the call. Asking on Codex is `workspace-write`.
+- **Verify:** the mapping tests fail on `read-only`; `AcpTests`, `ObservationTests`, `DrivenAccessTests`, `NoteCodesTests` and the note catalogues green.
 
 ## 2026-10-31 - A test still pinned the first-look baseline row m-iv replaced (FOUNDATION1 m-iv)
 

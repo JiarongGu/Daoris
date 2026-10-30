@@ -326,7 +326,7 @@ internal sealed class TransportRun(ITransportHost host, ISessionAdapter adapter,
         try
         {
             var outcome = await run(session, conversation, ct).ConfigureAwait(false);
-            line($"— the turn ended: {outcome.StopReason}, after {outcome.Updates} update(s). The "
+            line($"— {outcome.TurnEnd}. The "
                  + "session record is concluded from the exit code and the quest's own state, not "
                  + "from this line (D46 §4).");
             return (outcome, null);
@@ -385,6 +385,8 @@ internal sealed class TransportRun(ITransportHost host, ISessionAdapter adapter,
         {
             // APIREFUSAL1: the door's own word that its provider refused the turn it ended on.
             ProviderRefused = outcome?.ProviderRefused == true,
+            // CODEXPERM1: its agent cut the turn it ended on.
+            Cut = outcome?.Cut,
             // MODELROLE1c2: its agent refused its choice at the open, before any prompt.
             NotOffered = outcome?.NotOffered,
         };

@@ -743,6 +743,9 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
                 : _driver.Watch.EndedMinutes(sessionId) is { } quietMinutes
                     ? Observation.AfterQuiet(quietMinutes, quest.Status, status)
                     : Observation.AfterTimeout(config.TestBound ?? 0, quest.Status, status);
+        // CODEXPERM1: a park whose turn its agent cut asked the person nothing, and says so, as a first run's does.
+        if (stop is null) conclusion = Observation.Cut(conclusion, ended.Cut);
+
         // ACCESSSWAP1b: a run Daoris ended at its turn's end for a changed setup is neither a park nor a failure, and goes on again.
         var swappedOn = stop is null && ended.SetupChanged is not null;
         if (swappedOn) conclusion = Observation.SetupChanged(conclusion, ended.SetupChanged!);

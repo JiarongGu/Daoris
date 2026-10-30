@@ -1694,11 +1694,11 @@ public sealed class AcpTests
             };
         });
 
-        var codex = Offering("""{"id":"read-only"},{"id":"agent"},{"id":"agent-full-access"}""");
+        var codex = Offering(CodexModes);
         var asking = DrivenAccess.For(Permissions(AccessRules.Asking), "engine", AdapterSet.Built().Resolve("codex-acp"));
         await new AcpSession(codex.Incoming, codex.Outgoing, _ => { }, closeTimeout: null, asking.Posture) { Unoffered = asking.Unoffered }
             .RunAsync("D:/fam/Game", "do the thing", CancellationToken.None);
-        Assert.Equal("read-only", ModeSet(codex));
+        Assert.Equal("workspace-write", ModeSet(codex));
 
         var claude = Offering("""{"id":"default"},{"id":"acceptEdits"},{"id":"agent"}""");
         var unrestricted = DrivenAccess.For(Permissions(AccessRules.Unrestricted), "engine", AdapterSet.Built().Resolve("claude-code-acp"));
@@ -3046,6 +3046,165 @@ public sealed class AcpTests
 
         await Assert.ThrowsAsync<DriverException>(() => session.SetConfigOptionAsync("model", "sonnet", CancellationToken.None));
         Assert.Empty(agent.Sent);
+    }
+
+    // ---- CODEXPERM1 (D184): Codex's modes match their work boundary ----
+
+    private const string CodexModes =
+        """{"id":"read-only"},{"id":"workspace-write"},{"id":"agent"},{"id":"agent-full-access"}""";
+
+    /// <summary>Codex's file-change request as codex-acp 2.1.1 sends it: its only rejection is the one that interrupts the turn.</summary>
+    private const string CodexEditOptions =
+        """[{"optionId":"allow_once","name":"Yes, proceed","kind":"allow_once"},{"optionId":"allow_for_session","name":"Yes, and don't ask again for these files","kind":"allow_always"},{"optionId":"cancel","name":"No, and tell Codex what to do differently","kind":"reject_once"}]""";
+
+    /// <summary>
+    /// A Codex session that edits a file in its tree (<c>e1</c>, done unasked), then asks to edit one beyond it (<c>e2</c>, request 900),
+    /// and ends its turn <c>cancelled</c> where that was refused with its interrupting option, else <c>end_turn</c>. Each answer is kept.
+    /// </summary>
+    private static FakeAgent CodexEditing(ConcurrentQueue<JsonElement> answers)
+    {
+        JsonElement? prompt = null;
+        return new FakeAgent((frame, self) =>
+        {
+            if (!frame.TryGetProperty("method", out _))
+            {
+                if (frame.TryGetProperty("id", out var id) && id.GetRawText() == "900")
+                {
+                    var outcome = frame.GetProperty("result").GetProperty("outcome").Clone();
+                    answers.Enqueue(outcome);
+                    var allowed = outcome.TryGetProperty("optionId", out var chosen) && chosen.GetString() is "allow_once";
+                    self.Push(Update("s-1", $$"""{"sessionUpdate":"tool_call_update","toolCallId":"e2","status":"{{(allowed ? "completed" : "failed")}}"}"""));
+                    self.Push(Ok(prompt!.Value, allowed ? """{"stopReason":"end_turn"}""" : """{"stopReason":"cancelled"}"""));
+                }
+
+                return null;
+            }
+
+            switch (frame.GetProperty("method").GetString())
+            {
+                case "initialize": return Ok(frame, """{"protocolVersion":1}""");
+                case "session/new":
+                    return Ok(frame, $$$"""{"sessionId":"s-1","modes":{"currentModeId":"agent","availableModes":[{{{CodexModes}}}]}}""");
+                case "session/prompt":
+                    prompt = frame.Clone();
+                    self.Push(Update("s-1", """{"sessionUpdate":"tool_call","toolCallId":"e1","title":"Edit src/a.cs","kind":"edit","status":"pending"}"""));
+                    self.Push(Update("s-1", """{"sessionUpdate":"tool_call_update","toolCallId":"e1","status":"completed"}"""));
+                    self.Push(Update("s-1", """{"sessionUpdate":"tool_call","toolCallId":"e2","title":"Edit ../outside.md","kind":"edit","status":"pending"}"""));
+                    self.Push($$$"""{"jsonrpc":"2.0","id":900,"method":"session/request_permission","params":{"sessionId":"s-1","toolCall":{"toolCallId":"e2","title":"Edit ../outside.md","kind":"edit"},"options":{{{CodexEditOptions}}}}}""");
+                    return null;
+                default: return frame.TryGetProperty("id", out _) ? Ok(frame, "{}") : null;
+            }
+        });
+    }
+
+    private static DrivenAccess CodexAsking() =>
+        DrivenAccess.For(PermissionsOf(AccessRules.Asking), "engine", AdapterSet.Built().Resolve("codex-acp"));
+
+    /// <summary>
+    /// 🔴 The workspace boundary: Asking on Codex sets <c>workspace-write</c>, whose boundary is the session's own tree. An edit inside it is
+    /// done unasked; one beyond it waits for the person, who refuses it, and it reads <c>refused</c> while the edit made before it stands.
+    /// Never <c>read-only</c>, which asks for the edits inside the tree too, and never the mode that asks nothing.
+    /// </summary>
+    [Fact]
+    public async Task Codex_asking_sets_the_workspace_mode_so_an_edit_in_the_tree_is_unasked_and_one_beyond_it_waits_for_the_person()
+    {
+        var answers = new ConcurrentQueue<JsonElement>();
+        var events = new ConcurrentQueue<SessionEvent>();
+        var registry = new HeldPermissions();
+        var agent = CodexEditing(answers);
+        var asking = CodexAsking();
+        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, closeTimeout: null, asking.Posture, onEvent: events.Enqueue)
+        {
+            Unoffered = asking.Unoffered,
+            Permissions = registry.For("d1"),
+        };
+
+        var run = session.RunAsync("X:/daoris/engine", "edit two files", CancellationToken.None);
+        var held = await HeldAsync(registry, "d1");
+
+        Assert.Equal("workspace-write", ModeSet(agent));
+        Assert.DoesNotContain(agent.Sent, line => line.Contains("agent-full-access") || line.Contains("\"read-only\""));
+        Assert.Equal(("e2", "Edit ../outside.md"), (held.Call, held.Title));
+        Assert.Equal("completed", events.Last(e => e is { Kind: SessionEventKind.Tool, Id: "e1" }).Status);
+        Assert.Empty(answers);
+
+        Assert.True(registry.Answer("d1", "900", "cancel").Answered);
+        await run.WaitAsync(Poll.Patience);
+
+        Assert.Equal(("selected", "cancel"), (answers.Single().GetProperty("outcome").GetString(), answers.Single().GetProperty("optionId").GetString()));
+        Assert.Equal("refused", events.Last(e => e is { Kind: SessionEventKind.Tool, Id: "e2" }).Status);
+        Assert.Equal("completed", events.Last(e => e is { Kind: SessionEventKind.Tool, Id: "e1" }).Status);
+    }
+
+    /// <summary>
+    /// An agent too old to offer <c>workspace-write</c> (codex-acp 1.12.0 offered three modes) fails the open naming it, and is never set to
+    /// <c>read-only</c> or <c>agent</c> under Asking's name.
+    /// </summary>
+    [Fact]
+    public async Task Codex_asking_on_an_agent_without_the_workspace_mode_fails_the_open_naming_it()
+    {
+        var agent = PostureAgent("""{"id":"read-only"},{"id":"agent"},{"id":"agent-full-access"}""");
+        var asking = CodexAsking();
+        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, closeTimeout: null, asking.Posture) { Unoffered = asking.Unoffered };
+        try
+        {
+            var refused = await Assert.ThrowsAsync<DriverException>(() => session.OpenAsync("X:/daoris/engine", CancellationToken.None));
+
+            Assert.Contains("`workspace-write`", refused.Message);
+            Assert.Null(ModeSet(agent));
+        }
+        finally
+        {
+            session.Release();
+        }
+    }
+
+    /// <summary>
+    /// 🔴 Honest cancellation: on Auto the driver refuses the edit beyond the tree with the only rejection Codex offers, which ends the
+    /// turn <c>cancelled</c> though nobody stopped it. The outcome says the turn was cut by that refusal, naming the call, and the edit
+    /// made before it is kept in the record.
+    /// </summary>
+    [Fact]
+    public async Task A_refused_edit_that_ends_the_turn_cancelled_is_said_as_a_cut_naming_the_call_and_keeps_the_edit_before_it()
+    {
+        var answers = new ConcurrentQueue<JsonElement>();
+        var events = new ConcurrentQueue<SessionEvent>();
+        var agent = CodexEditing(answers);
+        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, closeTimeout: null,
+            AdapterSet.Built().Resolve("codex-acp").AcpPosture, onEvent: events.Enqueue);
+
+        var outcome = await session.RunAsync("X:/daoris/engine", "edit two files", CancellationToken.None);
+
+        Assert.Equal("cancelled", outcome.StopReason);
+        Assert.Equal(new TurnCut("Edit ../outside.md"), outcome.Cut);
+        Assert.Contains("cut", outcome.TurnEnd);
+        Assert.Contains("Edit ../outside.md", outcome.TurnEnd);
+        Assert.Equal("cancel", answers.Single().GetProperty("optionId").GetString());
+        Assert.Equal("completed", events.Last(e => e is { Kind: SessionEventKind.Tool, Id: "e1" }).Status);
+        Assert.Equal("refused", events.Last(e => e is { Kind: SessionEventKind.Tool, Id: "e2" }).Status);
+    }
+
+    /// <summary>The person's own stop ends a turn <c>cancelled</c> too, and that is no cut: it is theirs, and the outcome says plainly it ended.</summary>
+    [Fact]
+    public async Task A_turn_the_person_stopped_is_no_cut()
+    {
+        var answers = new ConcurrentQueue<JsonElement>();
+        var registry = new HeldPermissions();
+        var agent = CodexEditing(answers);
+        var asking = CodexAsking();
+        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, closeTimeout: null, asking.Posture)
+        {
+            Permissions = registry.For("d1"),
+        };
+
+        var run = session.RunAsync("X:/daoris/engine", "edit two files", CancellationToken.None);
+        await HeldAsync(registry, "d1");
+        await session.CancelTurnAsync();
+        var outcome = await run.WaitAsync(Poll.Patience);
+
+        Assert.Equal("cancelled", outcome.StopReason);
+        Assert.Null(outcome.Cut);
+        Assert.StartsWith("the turn ended: cancelled", outcome.TurnEnd, StringComparison.Ordinal);
     }
 
     /// <summary>An agent that answers the three calls and nothing else — the shape most tests need.</summary>
