@@ -1882,7 +1882,7 @@ public sealed class AcpSession(
             if (_wake.Running)
             {
                 // RUNENDS1, second read (finding 4): the stream's end ends this wait too, as every wait of the session's.
-                if (!await _wake.IdleAsync(Prompted, Ended, ct).ConfigureAwait(false))
+                if (!await _wake.IdleAsync(Prompted, Ended, ct, _wakeQuiet).ConfigureAwait(false))
                 {
                     throw StreamEnded("the ACP agent's stream ended while the run waited to try again after its provider failed.");
                 }
@@ -2189,8 +2189,20 @@ public sealed class AcpSession(
             ct).ConfigureAwait(false);
         _takesWordsMidTurn = TakesWordsMidTurn(initialized);
         _steersNow = SteersNow(initialized);
+        _wake.EndsBySilence = !SaysOrigins(initialized);
         return initialized;
     }
+
+    /// <summary>
+    /// Whether the agent is Claude Code's adapter (CODEXWAKE1), which stamps the origin of a turn it did not prompt on that turn's end
+    /// (<see cref="AcpWake"/>): <c>agentCapabilities._meta.claudeCode</c> is an object. Another adapter, <c>codex-acp</c> among them,
+    /// says no end for a turn its harness starts.
+    /// </summary>
+    internal static bool SaysOrigins(JsonElement initialized) =>
+        initialized.ValueKind == JsonValueKind.Object
+        && initialized.TryGetProperty("agentCapabilities", out var capabilities) && capabilities.ValueKind == JsonValueKind.Object
+        && capabilities.TryGetProperty("_meta", out var meta) && meta.ValueKind == JsonValueKind.Object
+        && meta.TryGetProperty("claudeCode", out var claudeCode) && claudeCode.ValueKind == JsonValueKind.Object;
 
     /// <summary>
     /// Whether the agent says it takes a prompt while one runs (STEER1, D136): <c>agentCapabilities._meta.claudeCode

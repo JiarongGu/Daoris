@@ -5,6 +5,13 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-31 - A Codex background completion left the continuation waiting (CODEXWAKE1)
+
+- **Symptom:** after a backgrounded measurement completed, the driven turn produced nothing more.
+- **Root cause:** `codex-acp` streams the command's output and completes its call after the prompt is answered; `AcpWake` took that as a turn begun, and a Codex turn says no end (no origin on `usage_update`).
+- **Fix:** such updates begin no turn; where the adapter is not Claude Code's, a turn's quiet, with no call open, ends it.
+- **Verify:** the four `codex` cases of `AcpBackgroundTests`, red first.
+
 ## 2026-10-31 - A test still pinned the first-look baseline row m-iv replaced (FOUNDATION1 m-iv)
 
 - **Symptom:** `A_wait_already_there_at_the_first_look_is_a_baseline_never_a_backlog` failed every run.

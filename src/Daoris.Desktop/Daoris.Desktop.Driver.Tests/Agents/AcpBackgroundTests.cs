@@ -13,7 +13,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// the task ended later by <c>async_task_state_update</c>, <c>stopped</c> then <c>completed</c> in one breath. The agent's last
 /// words are the owner's real case (2026-10-08). No process and no model, so the fast half.
 /// </summary>
-public sealed class AcpBackgroundTests
+public sealed partial class AcpBackgroundTests
 {
     /// <summary>A scripted agent: each frame the client sends is answered by the handler, which may push frames first.</summary>
     private sealed class Agent(Func<JsonElement, Agent, string?> handle)

@@ -20,8 +20,12 @@ namespace Daoris.Driver;
 /// open, by the agent saying, thinking, calling a tool or planning, and only its own end ends it. A turn that began before the
 /// last ending is not the wake for it, and an end said twice is one.</para>
 ///
-/// <para><b>Silence is never an end.</b> A woken turn that began and whose end is never said waits for the session's own
-/// bounds, the timeout among them, as BGWAIT1's wait did. Quiet counts only while no turn runs and no prompt is open: then
+/// <para><b>Silence is never an end, where the adapter says one.</b> A woken turn that began and whose end is never said waits for the
+/// session's own bounds, the timeout among them, as BGWAIT1's wait did. An adapter that says none (<see cref="EndsBySilence"/>,
+/// CODEXWAKE1: <c>codex-acp</c>) has its quiet as the end, with no call open and no request held; and what Codex says of a
+/// backgrounded command after its prompt was answered (its output, its completed call) is the work's, never a turn's.</para>
+///
+/// <para>Quiet counts only while no turn runs and no prompt is open: then
 /// none began, and Daoris's own go-on is a fresh turn the adapter answers. One exception, where the quest no longer waits
 /// (RUNENDS1, <see cref="Judge"/>): a turn silent for the bound is left, its silence read from what it did, never from a signal.</para>
 ///
@@ -48,6 +52,12 @@ internal sealed class AcpWake
     /// </summary>
     public TimeProvider Clock { get; set; } = TimeProvider.System;
 
+    /// <summary>
+    /// Whether a turn the harness starts says no end on the wire (CODEXWAKE1): <c>codex-acp</c> 2.1.1 stamps no origin on its
+    /// <c>usage_update</c> and sends nothing at <c>turn/completed</c>. Its quiet is then its end, with no call open and no request held.
+    /// </summary>
+    public bool EndsBySilence { get; set; }
+
     private readonly object _gate = new();
 
     // Positions in the session's own updates, counted from one as they are read; zero is none.
@@ -70,6 +80,9 @@ internal sealed class AcpWake
     private readonly HashSet<string> _calls = new(StringComparer.Ordinal);
     private int _holding;
 
+    // CODEXWAKE1: the calls background work was spawned from; what they say later is the work's, never a turn's.
+    private readonly HashSet<string> _work = new(StringComparer.Ordinal);
+
     /// <summary>
     /// Read one of the session's own updates, never a subagent's, in the wire's order. <paramref name="prompted"/> says whether
     /// a prompt is open as it arrives: what the agent says then is that prompt's turn, never a woken one.
@@ -89,6 +102,12 @@ internal sealed class AcpWake
             if (kind is "tool_call" or "tool_call_update" && !OfSubagent(update)) _step = _read;
             if (kind is { } speaks && Turns(speaks)) _spoke = Clock.GetUtcNow();
             if (kind is "tool_call" or "tool_call_update") Track(update, kind);
+            if (kind is "async_task_spawned" or "async_task_progress" or "async_task_state_update"
+                && Json.Text(update, "toolCallId") is { Length: > 0 } spawner)
+            {
+                _work.Add(spawner);
+            }
+
             switch (kind)
             {
                 case "async_task_state_update" when Json.Text(update, "state") is { } state and not ("running" or "paused"):
@@ -104,7 +123,7 @@ internal sealed class AcpWake
                     }
 
                     break;
-                case { } said when _began == 0 && !prompted && Turns(said):
+                case { } said when _began == 0 && !prompted && Turns(said) && !Late(update, said):
                     _began = _read;
                     break;
             }
@@ -114,6 +133,14 @@ internal sealed class AcpWake
 
         changed.TrySetResult();
     }
+
+    /// <summary>
+    /// A call's closing or its background work's output (CODEXWAKE1): it opens no turn. Codex goes on streaming a backgrounded command
+    /// after the prompt is answered, and completes its call when the command ends; a turn begins with a call's announcement.
+    /// </summary>
+    private bool Late(JsonElement update, string kind) =>
+        kind == "tool_call_update"
+        && (Json.Text(update, "status") is "completed" or "failed" || Json.Text(update, "toolCallId") is { } id && _work.Contains(id));
 
     /// <summary>A call opened or closed by <paramref name="update"/> (RUNENDS1); an update that says no status keeps what the call was. Under the gate.</summary>
     private void Track(JsonElement update, string kind)
@@ -286,25 +313,29 @@ internal sealed class AcpWake
             // end completes: whether the stream is over is read before the turn's end is, never after, so a turn's end the reader
             // took and read past to the stream's end is still read here as the turn's end (BGWAIT2c).
             var over = ended.IsCompleted;
+            Settle(quiet, prompted);
             Task changed;
             bool running;
+            TimeSpan? left;
             lock (_gate)
             {
                 if (_woke > _ending) return true;
                 changed = _changed.Task;
                 running = _began > 0;
+                left = SilentLeft(quiet, prompted);
             }
 
             if (over) return null;
             var waits = running || prompted();
 
             using var bounded = CancellationTokenSource.CreateLinkedTokenSource(ct);
-            var silence = Task.Delay(waits ? Timeout.InfiniteTimeSpan : quiet, Clock, bounded.Token);
+            var silence = Task.Delay(left is { } until ? Max(until) : waits ? Timeout.InfiniteTimeSpan : quiet, Clock, bounded.Token);
             var first = await Task.WhenAny(changed, ended, silence).ConfigureAwait(false);
             await bounded.CancelAsync().ConfigureAwait(false);
             ct.ThrowIfCancellationRequested();
 
-            if (first == silence && !prompted())
+            // A running turn's silence is settled above, on the next pass, never a quiet that sends the go-on.
+            if (first == silence && !running && !prompted())
             {
                 lock (_gate)
                 {
@@ -328,26 +359,56 @@ internal sealed class AcpWake
     /// <param name="prompted">Whether a prompt is open now: its answer is that turn's end.</param>
     /// <param name="ended">The agent's stream: once it is over, nothing more can end the turn (RUNENDS1, second read, finding 4).</param>
     /// <returns>True once no turn runs; false where the stream ended first, a turn still unsaid.</returns>
-    public async Task<bool> IdleAsync(Func<bool> prompted, Task ended, CancellationToken ct)
+    public async Task<bool> IdleAsync(Func<bool> prompted, Task ended, CancellationToken ct, TimeSpan? quiet = null)
     {
         while (true)
         {
             // The signal is taken before what it guards is read, so a change between the two wakes the wait rather than being lost; and
             // whether the stream is over is read before both (BGWAIT2c), so a turn's end the reader took before it is still its end.
             var over = ended.IsCompleted;
+            if (quiet is { } bound) Settle(bound, prompted);
             Task changed;
             bool running;
+            TimeSpan? left = null;
             lock (_gate)
             {
                 changed = _changed.Task;
                 running = _began > 0;
+                if (quiet is { } silent) left = SilentLeft(silent, prompted);
             }
 
             if (!running && !prompted()) return true;
             if (over) return false;
-            await Task.WhenAny(changed, ended).WaitAsync(ct).ConfigureAwait(false);
+
+            using var bounded = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            var silence = Task.Delay(left is { } until ? Max(until) : Timeout.InfiniteTimeSpan, Clock, bounded.Token);
+            await Task.WhenAny(changed, ended, silence).WaitAsync(ct).ConfigureAwait(false);
+            await bounded.CancelAsync().ConfigureAwait(false);
         }
     }
+
+    /// <summary>
+    /// What is left of <paramref name="quiet"/> to a turn that says no end (CODEXWAKE1): it runs, no prompt is open, no call is open and no
+    /// request is held, counted from its last word. Null where the turn ends by its adapter's word, or none runs. Under the gate.
+    /// </summary>
+    private TimeSpan? SilentLeft(TimeSpan quiet, Func<bool> prompted) =>
+        EndsBySilence && _began > 0 && _calls.Count == 0 && _holding == 0 && !prompted() ? _spoke + quiet - Clock.GetUtcNow() : null;
+
+    /// <summary>Ends the turn that said no end once its quiet has run out (CODEXWAKE1), as the adapter's word would: the waits read it ended.</summary>
+    private void Settle(TimeSpan quiet, Func<bool> prompted)
+    {
+        TaskCompletionSource changed;
+        lock (_gate)
+        {
+            if (SilentLeft(quiet, prompted) is not { } left || left > TimeSpan.Zero) return;
+            (_woke, _began) = (_began, 0);
+            changed = Swap();
+        }
+
+        changed.TrySetResult();
+    }
+
+    private static TimeSpan Max(TimeSpan left) => left > TimeSpan.Zero ? left : TimeSpan.Zero;
 
     /// <summary>
     /// What a session whose quest no longer waits reads at the moment it would end (RUNENDS1, D83's note), in one look under the gate:
