@@ -378,6 +378,35 @@ public sealed class LimitMoveStoreTests : IDisposable
         await Poll.Until(() => MoveFrom("c1")?.PhaseWord == "delivered", () => $"the move at {MoveFrom("c1")?.PhaseWord}");
     }
 
+    /// <summary>
+    /// 🔴 FOUNDATION1f-ii part b (§13.4 step 5, §19.3): before the new part is handed anything its line's head is read; where an older build has
+    /// continued the new part meanwhile (a record from it that no key of the move's made), nothing is written to it and the move is held
+    /// <c>superseded</c>, naming the person's word that waits there, which stays there never attempted for the person to take back.
+    /// </summary>
+    [Fact]
+    public async Task A_head_moved_past_the_new_part_before_the_hand_holds_the_move_and_hands_nothing()
+    {
+        var world = Live(opens: 2);
+        using var c = world.Client;
+        world.Ledger.For("c1").Say("k1", "And add a test.");
+        world.Limit.Moves.Cut = name =>
+        {
+            if (name == Cuts.Opened) world.Ledger.Chat("c3", "stopped", "talk", _root, from: new ContinuedFrom("c2", HandOverWhy.Limit, HandOverBy.Daoris));
+        };
+
+        var moved = await world.Limit.MoveAsync("c1", Config(), null);
+
+        Assert.Equal(("c2", false), (moved!.SessionId, moved.Sent));
+        var move = MoveFrom("c1")!;
+        Assert.Equal(("held", MoveHoldWhy.Superseded, "c2"), (move.PhaseWord, move.HeldWhy, move.Destination));
+        var held = Assert.Single(Store("run-probe").WordsOf(move.Id));
+        Assert.Equal(("k1", MoveWordDispositions.Held), (held.Word, held.Disposition));
+        Assert.Empty(world.Runner.Opened!.Prompts);
+        Assert.Empty(world.Ledger.TakenBy);
+        Assert.Equal(["k1"], world.Ledger.Said("c2"));
+        Assert.Null(move.Effect);
+    }
+
     // ——— The conversations' take-up (§3.3, §13.4, §19.1).
 
     /// <summary>A record of this machine's for each id, so a move's records stand.</summary>
@@ -421,6 +450,31 @@ public sealed class LimitMoveStoreTests : IDisposable
         Assert.Equal([decided.Move.Id], look!.Taken.Select(each => each.Move!.Id));
         Assert.Empty(again!.Taken);
         Assert.Empty(again.Refused);
+    }
+
+    /// <summary>
+    /// 🔴 FOUNDATION1f-ii part b (§13.5's first row): a dead run's move before its open was asked, whose old part an older build has since
+    /// continued (a record from it, under no key of the move's), closes <c>superseded</c> at the take-up rather than falling back on a part
+    /// that went on elsewhere.
+    /// </summary>
+    [Theory]
+    [InlineData("decided")]
+    [InlineData("old-ended")]
+    public async Task The_take_up_closes_a_dead_runs_unopened_move_superseded_where_an_older_build_continued_its_old_part(string phase)
+    {
+        var ledger = Records("c1");
+        ledger.Chat("c3", "stopped", "talk", "engine", from: new ContinuedFrom("c1", HandOverWhy.Limit, HandOverBy.Daoris));
+        using var client = ledger.Client();
+        var dead = Store("run-dead");
+        var decided = dead.Decide(Decision("c1"));
+        if (phase == "old-ended") dead.Advance(decided.Claim!, MoveRecordPhase.OldEnded);
+        _dead.Add("run-dead");
+        var moves = new ConversationMoves(_home, client, Events, store: Store("run-shell"));
+
+        await moves.LookAsync(CancellationToken.None);
+
+        var now = Store("run-probe").Read(decided.Move.Id)!;
+        Assert.Equal(("closed", MoveCloseWhy.Superseded, (string?)null), (now.PhaseWord, now.ClosedWhy, now.FellBackCode));
     }
 
     /// <summary>
