@@ -239,6 +239,62 @@ public sealed class HeavyRunCommandTests : IDisposable
         Assert.StartsWith("run-heavy: `lint` is not marked heavy", Assert.Single(said.Lines));
     }
 
+    /// <summary>
+    /// FABRIC-PIPELINE1d (the pipeline design §4.2): a session's run that finds its repository's slot held by a verification run does not wait
+    /// behind it: it says the verification runs these gates on the line and where its verdict shows, exits 1, and leaves no waiter.
+    /// </summary>
+    [Fact]
+    public async Task A_session_s_run_behind_a_verification_exits_1_with_its_sentence_and_never_waits()
+    {
+        _fixture.Gates(_fixture.Tree, ("build", "dotnet build", true));
+        Locked("daoris session s-1");
+        SessionChecks.Hold(_fixture.Home, "s-1", SessionChecks.HeavyAtEnd);
+        var key = HeavySlot.KeyOf(_fixture.Checkout)!;
+        using var verifying = Verifying(key);
+        var said = new SaidWriter();
+
+        var exit = await HeavyRun.RunAsync(new HeavyRunAsk(null), World(_fixture.Tree), said, CancellationToken.None).WaitAsync(Poll.Patience);
+
+        Assert.Equal(1, exit);
+        Assert.Equal(
+            "run-heavy: `engine`'s heavy-run slot is held by its verification run v-0123456789abcdef, which runs the repository's heavy gates on "
+            + "its line, so this session's run does not wait behind it; the verdict shows on the repository's Workflow tab. Run the checks your "
+            + "change reaches, filtered, instead.",
+            Assert.Single(said.Lines));
+        Assert.Empty(HeavySlot.Look(_fixture.Home, key).Waiters);
+    }
+
+    /// <summary>A person's run behind a verification waits as today, saying behind which run, and they may stop it.</summary>
+    [Fact]
+    public async Task A_person_s_run_behind_a_verification_waits_and_says_it()
+    {
+        _fixture.Gates(_fixture.Checkout, ("build", "dotnet build", true));
+        var key = HeavySlot.KeyOf(_fixture.Checkout)!;
+        using var verifying = Verifying(key);
+        using var stop = new CancellationTokenSource();
+        var said = new SaidWriter();
+
+        var running = HeavyRun.RunAsync(new HeavyRunAsk(null), World(_fixture.Checkout), said, stop.Token);
+        await Poll.Until(() => said.Text.Contains("this run waits for it", StringComparison.Ordinal), () => said.Text);
+        Assert.Contains("held by the verification run v-0123456789abcdef", said.Text);
+        await stop.CancelAsync();
+
+        Assert.Equal(1, await running.WaitAsync(Poll.Patience));
+        Assert.Contains("stopped while waiting for the slot", said.Text);
+    }
+
+    /// <summary>The repository's slot held by a verification run of this process, as the heavy executor holds it.</summary>
+    private HeavySlot Verifying(string key)
+    {
+        var slot = HeavySlot.TryTake(_fixture.Home, key)!;
+        using var self = System.Diagnostics.Process.GetCurrentProcess();
+        slot.Keep(new HeavyHolder(Environment.ProcessId, self.StartTime.ToUniversalTime().Ticks, _fixture.Checkout, ["build"], DateTimeOffset.UtcNow, null, null)
+        {
+            Run = "v-0123456789abcdef",
+        });
+        return slot;
+    }
+
     /// <summary>The checkout itself is never a session's tree: git locks only a linked tree, so a run there is the person's.</summary>
     [Fact]
     public async Task From_the_checkout_itself_it_runs_as_today()
