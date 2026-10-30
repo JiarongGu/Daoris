@@ -83,7 +83,7 @@ internal static class IntegrationPromoteRuns
 /// <summary>
 /// The integration run's gates verdict, promotion and settle over git (INTEGRATE1e part e4a, D215; the integration design §5.2 steps 6 to 9,
 /// §5.6, §5.7): a verified candidate promoted onto its line only on a passing verdict for its exact tip, and only if the line has not moved
-/// under it, and its members settled. Called from no production path: the unit's <c>integrate</c> node and the transport call it.
+/// under it, and its members settled. The line's run calls it (<see cref="IntegrationLines"/>).
 /// </summary>
 /// <remarks>
 /// <para><b>The verdict first.</b> The verdict port (<see cref="IntegrationVerdicts"/>) is asked for the integration tree put at the candidate's

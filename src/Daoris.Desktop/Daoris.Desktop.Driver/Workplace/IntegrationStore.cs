@@ -7,8 +7,8 @@ namespace Daoris.Driver;
 /// <summary>
 /// The integration's family in the desktop store (INTEGRATE1e part e2, D215; the integration design §5.2, §5.6, D212 §13): Workplace's
 /// requests, candidates, members and steps, in <c>integration_requests</c>, <c>integration_candidates</c>, <c>integration_members</c> and
-/// <c>integration_steps</c>. Read by the one door (<see cref="IntegrationRequests"/>) and by nothing else yet; no production path makes
-/// one, so Daoris works as before. Rows e3 and e4 run the steps over it.
+/// <c>integration_steps</c>. Written by the one door (<see cref="IntegrationRequests"/>) and by the line's run (<see cref="IntegrationLines"/>),
+/// whose steps run over it.
 /// </summary>
 /// <remarks>
 /// <para><b>One open request per repository and branch, one standing candidate per line, one standing membership per request, one open step

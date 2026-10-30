@@ -70,7 +70,7 @@ internal static class IntegrationReplayRuns
 /// <summary>
 /// The integration run's form and replay steps over git (INTEGRATE1e part e3a, D215; the integration design §5.2 steps 2 and 3): a candidate
 /// made from a line's queued requests, and each member judged and replayed onto it in the line's integration tree, a warm tree of Daoris's own
-/// under the trees home. Called from no production path: row e4 and the node call it.
+/// under the trees home. The line's run calls it (<see cref="IntegrationLines"/>).
 /// </summary>
 /// <remarks>
 /// <para><b>The tree.</b> One per line, under <c>&lt;trees home&gt;/&lt;workspace&gt;/&lt;repository&gt;/i-&lt;line&gt;</c>: made as a replay's tree is

@@ -2,8 +2,8 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// The one door a request to integrate a repository's line comes through (INTEGRATE1e part e1; the integration design §4.6, D215): who
-/// asked, under the rule and policy as they stand, for which branch at which frozen tip. The <c>integrate</c> node's start is its one
-/// caller so far (<see cref="IntegrationRoutes.Node"/>); the owner's card (row h) and the steward's act (row i) are to come. Its requests
+/// asked, under the rule and policy as they stand, for which branch at which frozen tip. Its callers are the <c>integrate</c> node's start
+/// (<see cref="IntegrationRoutes.Node"/>) and a merge rule's press (<see cref="Press"/>); the owner's card (row h) and the steward's act (row i) are to come. Its requests
 /// are kept in the desktop store's integration family (<see cref="IntegrationStore"/>).
 /// </summary>
 /// <remarks>

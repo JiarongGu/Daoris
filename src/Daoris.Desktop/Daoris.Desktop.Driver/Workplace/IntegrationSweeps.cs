@@ -23,8 +23,7 @@ internal static class IntegrationSweptKinds
 }
 
 /// <summary>
-/// The come-up's sweep of the standing candidates (INTEGRATE1e part e4b, D215; the integration design §5.6's recovery at the come-up), called
-/// from no production path yet: each candidate <see cref="IntegrationStore.Standing"/> lists is taken from its dead run
+/// The come-up's sweep of the standing candidates (INTEGRATE1e part e4b, D215; the integration design §5.6's recovery at the come-up): each candidate <see cref="IntegrationStore.Standing"/> lists is taken from its dead run
 /// (<see cref="IntegrationStore.Take"/>, refused from a live one), resumed first (<see cref="IntegrationSteps.ResumeAsync"/>, which asks git
 /// whether the line holds the tip before anything is retried), and gone on with from the step it names.
 /// </summary>
