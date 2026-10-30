@@ -196,6 +196,7 @@ public sealed class DriverModule : ModuleBase
     private Task<object?> RouteAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         if (request.Type is not { } type || !Table.TryGetValue(type, out var route)) throw UnknownType(request);
+        Count(route.Change is not null);
         var handler = _handlers[route.Domain];
         if (PipeDoor.Role is null && OwnerDoor(type, request.Payload) is { Count: > 0 } named)
         {
@@ -203,6 +204,35 @@ public sealed class DriverModule : ModuleBase
         }
 
         return HandleAsync(route, handler, type, request, cancellationToken);
+    }
+
+    /// <summary>The machine log's event: this module's asks over about a minute (FOUNDATION1s), what the install's bridge reads are read by.</summary>
+    public const string AskedEvent = "bridge.asked";
+
+    // The asks since the last line, and when that minute began.
+    private long _reads;
+    private long _presses;
+    private long _minute = System.Diagnostics.Stopwatch.GetTimestamp();
+    private long _servedBefore;
+    private long _workedBefore;
+
+    /// <summary>
+    /// One ask counted, and the minute's counts written as <see cref="AskedEvent"/> by the first ask after it ends: reads, presses, and of
+    /// the held reads how many were served with no work and how many works began. Counts only, never a route's name or payload.
+    /// </summary>
+    private void Count(bool press)
+    {
+        if (press) Interlocked.Increment(ref _presses);
+        else Interlocked.Increment(ref _reads);
+        var from = Interlocked.Read(ref _minute);
+        var elapsed = System.Diagnostics.Stopwatch.GetElapsedTime(from);
+        if (elapsed < TimeSpan.FromMinutes(1)) return;
+        if (Interlocked.CompareExchange(ref _minute, System.Diagnostics.Stopwatch.GetTimestamp(), from) != from) return;
+        var served = _held.Served;
+        var worked = _held.Worked;
+        _context.Loop.Log?.Info(AskedEvent,
+            ("seconds", (int)elapsed.TotalSeconds), ("reads", Interlocked.Exchange(ref _reads, 0)), ("presses", Interlocked.Exchange(ref _presses, 0)),
+            ("served", served - Interlocked.Exchange(ref _servedBefore, served)), ("worked", worked - Interlocked.Exchange(ref _workedBefore, worked)));
     }
 
     /// <summary>
@@ -229,7 +259,12 @@ public sealed class DriverModule : ModuleBase
 
     private Task<object?> HandleAsync(Handler route, object handler, string type, IpcRequest request, CancellationToken cancellationToken)
     {
-        if (route.ByEvent) return _held.AskAsync(HeldKey(request), HeldOf(request), token => route.Answer(handler, request, token));
+        if (route.Held is { } held)
+        {
+            return _held.AskAsync(HeldKey(request), HeldOf(request), token => route.Answer(handler, request, token),
+                held.Versioned ? () => VersionsOf(held) : null);
+        }
+
         if (route.Shared is { } shared) return JoinAsync(route, shared, handler, type, request, cancellationToken);
 
         return route.Change is null ? route.Answer(handler, request, cancellationToken) : PressAsync(route, handler, request, cancellationToken);
@@ -261,6 +296,22 @@ public sealed class DriverModule : ModuleBase
         // No ConfigureAwait: the kit's pipeline keeps the caller's context, as the publisher's says.
         return await _flights.JoinAsync(
             FlightOf(type, request, shared.By), token => route.Answer(handler, request, token), read.Token, read.Joined);
+    }
+
+    /// <summary>
+    /// A held route's inputs' versions now (FOUNDATION1s): its scopes' told count and each slice's own, or null where a slice it names is
+    /// not this Daoris's, so it works at every ask.
+    /// </summary>
+    private string? VersionsOf(ByEventAttribute held)
+    {
+        var versions = StatePublisher.Version(_context.Events, held.Reads).ToString(System.Globalization.CultureInfo.InvariantCulture);
+        foreach (var name in held.Slices)
+        {
+            if (_context.Loop.Slices.Find(name) is not { } slice) return null;
+            versions += "|" + slice.Version;
+        }
+
+        return versions;
     }
 
     /// <summary>The payload's <c>held</c>, the page's query a read told by event names (NOBLOCK1), where the page sent one.</summary>
@@ -301,7 +352,14 @@ public sealed class DriverModule : ModuleBase
     public static IReadOnlyCollection<string> Routes => Table.Keys;
 
     /// <summary>The reads answered from what is held, their work told by event (NOBLOCK1), by name.</summary>
-    public static IReadOnlyCollection<string> ByEventRoutes => [.. Table.Where(entry => entry.Value.ByEvent).Select(entry => entry.Key)];
+    public static IReadOnlyCollection<string> ByEventRoutes => [.. Table.Where(entry => entry.Value.Held is not null).Select(entry => entry.Key)];
+
+    /// <summary>
+    /// Each read told by event and what it declares its answer reads (FOUNDATION1s): its scopes and slices, or why none is told.
+    /// </summary>
+    public static IReadOnlyDictionary<string, (StateScopes Reads, IReadOnlyList<string> Slices, string? Untold)> HeldInputs =>
+        Table.Where(entry => entry.Value.Held is not null)
+            .ToDictionary(entry => entry.Key, entry => (entry.Value.Held!.Reads, (IReadOnlyList<string>)entry.Value.Held.Slices, entry.Value.Held.Untold), StringComparer.Ordinal);
 
     /// <summary>The reads whose identical asks share the one under way (SWEEPFLIGHT1), by name.</summary>
     public static IReadOnlyCollection<string> OneFlightRoutes => [.. Table.Where(entry => entry.Value.Shared is not null).Select(entry => entry.Key)];
@@ -359,7 +417,7 @@ public sealed class DriverModule : ModuleBase
         var table = new Dictionary<string, Handler>(StringComparer.Ordinal);
         for (var place = 0; place < Domains.Length; place++)
         {
-            foreach (var (route, answer, change, shared, byEvent) in Domains[place].Routes) table.Add(route, new Handler(place, answer, change, shared, byEvent));
+            foreach (var (route, answer, change, shared, held) in Domains[place].Routes) table.Add(route, new Handler(place, answer, change, shared, held));
         }
 
         return table.ToFrozenDictionary(StringComparer.Ordinal);
@@ -368,17 +426,17 @@ public sealed class DriverModule : ModuleBase
     /// <summary>
     /// A route's entry in the table: its domain's place in <see cref="Domains"/>, the handler over that domain's instance, what
     /// it declares a successful answer changed (D169), null for a read, how its identical asks share one under way, null where they do not,
-    /// and whether it is answered from what is held, its work told by event (NOBLOCK1).
+    /// and whether it is answered from what is held, its work told by event (NOBLOCK1), with what its answer reads (FOUNDATION1s).
     /// </summary>
     private readonly record struct Handler(
-        int Domain, Func<object, IpcRequest, CancellationToken, Task<object?>> Answer, StateChange? Change, OneFlightAttribute? Shared, bool ByEvent);
+        int Domain, Func<object, IpcRequest, CancellationToken, Task<object?>> Answer, StateChange? Change, OneFlightAttribute? Shared, ByEventAttribute? Held);
 
     /// <summary>One line of <see cref="Domains"/>: how a domain's handler class is built over the context, and the routes that class marks.</summary>
     private sealed class Domain(
         Func<DriverContext, object> build,
-        IReadOnlyList<(string Route, Func<object, IpcRequest, CancellationToken, Task<object?>> Answer, StateChange? Change, OneFlightAttribute? Shared, bool ByEvent)> routes)
+        IReadOnlyList<(string Route, Func<object, IpcRequest, CancellationToken, Task<object?>> Answer, StateChange? Change, OneFlightAttribute? Shared, ByEventAttribute? Held)> routes)
     {
-        public IReadOnlyList<(string Route, Func<object, IpcRequest, CancellationToken, Task<object?>> Answer, StateChange? Change, OneFlightAttribute? Shared, bool ByEvent)> Routes => routes;
+        public IReadOnlyList<(string Route, Func<object, IpcRequest, CancellationToken, Task<object?>> Answer, StateChange? Change, OneFlightAttribute? Shared, ByEventAttribute? Held)> Routes => routes;
 
         public object Build(DriverContext context) => build(context);
 
@@ -390,13 +448,14 @@ public sealed class DriverModule : ModuleBase
         /// </summary>
         public static Domain Of<T>(Func<DriverContext, T> build) where T : class
         {
-            var routes = new List<(string, Func<object, IpcRequest, CancellationToken, Task<object?>>, StateChange?, OneFlightAttribute?, bool)>();
+            var routes = new List<(string, Func<object, IpcRequest, CancellationToken, Task<object?>>, StateChange?, OneFlightAttribute?, ByEventAttribute?)>();
             foreach (var method in typeof(T).GetMethods(BindingFlags.Instance | BindingFlags.NonPublic))
             {
                 var marks = method.GetCustomAttributes<DriverRouteAttribute>().ToList();
                 var publishes = method.GetCustomAttributes<PublishesAttribute>().ToDictionary(each => each.Route, StringComparer.Ordinal);
                 var shared = method.GetCustomAttributes<OneFlightAttribute>().ToDictionary(each => each.Route, StringComparer.Ordinal);
-                var byEvent = method.GetCustomAttributes<ByEventAttribute>().Select(each => each.Route).ToHashSet(StringComparer.Ordinal);
+                var held = method.GetCustomAttributes<ByEventAttribute>().ToDictionary(each => each.Route, StringComparer.Ordinal);
+                var byEvent = held.Keys;
                 // A declaration for a route this method does not mark is a typo that would publish nothing: refused here, at the
                 // module's first use, as a route marked twice is.
                 if (publishes.Keys.Concat(shared.Keys).Concat(byEvent).FirstOrDefault(route => marks.All(mark => mark.Type != route)) is { } stray)
@@ -417,13 +476,20 @@ public sealed class DriverModule : ModuleBase
                     throw new InvalidOperationException($"{typeof(T).Name}.{method.Name} tells `{both}` by event, and it is a press or a shared read.");
                 }
 
+                // FOUNDATION1s: a read told by event says what its answer reads, or why no scope or slice tells it; never both, never neither.
+                if (held.Values.FirstOrDefault(each => each.Versioned == each.Untold is not null) is { } undeclared)
+                {
+                    throw new InvalidOperationException(
+                        $"{typeof(T).Name}.{method.Name} tells `{undeclared.Route}` by event: it declares its inputs (Reads, Slices) or why none is told (Untold), one of the two.");
+                }
+
                 foreach (var route in marks)
                 {
                     routes.Add((route.Type, method.GetParameters().Length == 1
                         ? Now(method.CreateDelegate<Func<T, IpcRequest, object?>>())
                         : Later(method.CreateDelegate<Func<T, IpcRequest, CancellationToken, Task<object?>>>()),
                         publishes.TryGetValue(route.Type, out var declared) ? new StateChange(declared.Changes, declared.Session, declared.Subject) : null,
-                        shared.GetValueOrDefault(route.Type), byEvent.Contains(route.Type)));
+                        shared.GetValueOrDefault(route.Type), held.GetValueOrDefault(route.Type)));
                 }
             }
 
@@ -505,8 +571,25 @@ internal sealed class OneFlightAttribute(string route) : Attribute
 /// the module's first use; named by its route, as <see cref="PublishesAttribute"/> is.
 /// </summary>
 /// <param name="route">The read it tells by event, one this method marks.</param>
+/// <remarks>
+/// Each declares what its answer is made of (FOUNDATION1s, D182's part B note): the scopes a change to it is told by
+/// (<see cref="Reads"/>) and the slices it reads (<see cref="Slices"/>), so an ask while their versions stand is answered with no work;
+/// or, where it reads what neither tells, why (<see cref="Untold"/>), and every ask works. One or the other, checked at the module's first use.
+/// </remarks>
 [AttributeUsage(AttributeTargets.Method, AllowMultiple = true)]
 internal sealed class ByEventAttribute(string route) : Attribute
 {
     public string Route { get; } = route;
+
+    /// <summary>The scopes whose told changes move the answer: their count is its version (<see cref="StatePublisher.Version"/>).</summary>
+    public StateScopes Reads { get; set; }
+
+    /// <summary>The slices the answer reads, by name: each one's version is its own (<see cref="StateSlice.Version"/>).</summary>
+    public string[] Slices { get; set; } = [];
+
+    /// <summary>What the answer reads that no scope or slice tells, where it does: every ask works, as before FOUNDATION1s.</summary>
+    public string? Untold { get; set; }
+
+    /// <summary>Whether the route declares inputs, so its versions are read.</summary>
+    public bool Versioned => Reads != StateScopes.None || Slices.Length > 0;
 }

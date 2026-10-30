@@ -631,7 +631,7 @@ public sealed class SessionsRoutes(DriverContext context)
     // its own first ask (`at`) comes. A read naming no key:
     // `{ waiting: [{ session, repository, question, asked, generation }], at }`.
     [DriverRoute("SUPERVISOR_WAITING")]
-    [ByEvent("SUPERVISOR_WAITING")]
+    [ByEvent("SUPERVISOR_WAITING", Untold = "the question files, and the verb waits for an answer made after its own ask")]
     private async Task<object?> SupervisorWaitingAsync(IpcRequest request, CancellationToken cancellationToken) =>
         new { Waiting = await SupervisorDoor.WaitingAsync(_loop, cancellationToken).ConfigureAwait(false), At = Moments.Write(DateTimeOffset.UtcNow) };
 
@@ -685,7 +685,7 @@ public sealed class SessionsRoutes(DriverContext context)
     // this machine's own record — never the session record, which travels (D47 §4). Told by event (NOBLOCK1): each record's
     // read held the window up to 7.5 s, so an ask is answered from what is held and this runs on a task of its own.
     [DriverRoute("SESSION_OPENINGS")]
-    [ByEvent("SESSION_OPENINGS")]
+    [ByEvent("SESSION_OPENINGS", Untold = "a session's first words, which SESSION_EVENTS tells and no scope or slice does")]
     private async Task<object?> SessionOpeningsAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var ids = new List<string>();
@@ -738,7 +738,7 @@ public sealed class SessionsRoutes(DriverContext context)
     /// record is read once per ask.</para>
     /// </remarks>
     [DriverRoute("SESSION_WHERE")]
-    [ByEvent("SESSION_WHERE")]
+    [ByEvent("SESSION_WHERE", Reads = StateScopes.Sessions | StateScopes.Landing | StateScopes.Sweep, Slices = new[] { SweepStateSlice.Name })]
     private async Task<object?> SessionWhereAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var trees = new SessionTrees(_loop.Home);
