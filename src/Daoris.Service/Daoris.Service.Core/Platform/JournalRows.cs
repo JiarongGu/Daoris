@@ -16,8 +16,8 @@ public sealed record JournalRow(
 public sealed record JournalPage(string Store, long Floor, long Newest, IReadOnlyList<JournalRow> Rows);
 
 /// <summary>
-/// The journal read by position (FOUNDATION1 l-i): a short read-only connection of its own, so a reader never waits on the stream's observer
-/// or a writer under write-ahead logging. A database with no journal yet answers an empty page.
+/// The journal read by position (FOUNDATION1 l-i): read on the service's one connection inside its gate, as every store does (SQLITETX1).
+/// A database with no journal yet answers an empty page.
 /// </summary>
 public static class JournalRows
 {
@@ -32,27 +32,23 @@ public static class JournalRows
         + "workspace, quest, word, word_author, word_level, word_keyed, words_over, op, ask, message";
 
     /// <summary>The rows with a position past <paramref name="since"/>, oldest first, at most <paramref name="limit"/> (and <see cref="Most"/>).</summary>
-    public static async Task<JournalPage> ReadAsync(string database, long since, int limit, CancellationToken ct = default)
+    public static Task<JournalPage> ReadAsync(SqliteConnection connection, long since, int limit, CancellationToken ct = default) =>
+        ConnectionGate.For(connection).RunAsync(() => ReadGatedAsync(ConnectionGate.For(connection), since, limit, ct), ct);
+
+    private static async Task<JournalPage> ReadGatedAsync(ConnectionGate db, long since, int limit, CancellationToken ct)
     {
-        await using var connection = new SqliteConnection(new SqliteConnectionStringBuilder
-        {
-            DataSource = database,
-            Mode = SqliteOpenMode.ReadOnly,
-            Pooling = false,
-        }.ToString());
-        await connection.OpenAsync(ct).ConfigureAwait(false);
-        if (await ScalarAsync(connection, "SELECT count(*) FROM sqlite_master WHERE name IN ('event_journal', 'store_identity')", ct) < 2)
+        if (await ScalarAsync(db, "SELECT count(*) FROM sqlite_master WHERE name IN ('event_journal', 'store_identity')", ct) < 2)
         {
             return new JournalPage("", 0, 0, []);
         }
 
-        await using var command = connection.CreateCommand();
+        await using var command = db.Command();
         command.CommandText = "SELECT id FROM store_identity WHERE one = 1";
         var store = (await command.ExecuteScalarAsync(ct).ConfigureAwait(false)) as string ?? "";
-        var newest = await ScalarAsync(connection, "SELECT COALESCE((SELECT seq FROM sqlite_sequence WHERE name = 'event_journal'), 0)", ct);
-        var floor = await ScalarAsync(connection, $"SELECT COALESCE((SELECT min(position) FROM event_journal), {newest + 1})", ct);
+        var newest = await ScalarAsync(db, "SELECT COALESCE((SELECT seq FROM sqlite_sequence WHERE name = 'event_journal'), 0)", ct);
+        var floor = await ScalarAsync(db, $"SELECT COALESCE((SELECT min(position) FROM event_journal), {newest + 1})", ct);
 
-        await using var read = connection.CreateCommand();
+        await using var read = db.Command();
         read.CommandText = $"SELECT {Columns} FROM event_journal WHERE position > $since ORDER BY position LIMIT $limit";
         read.Parameters.AddWithValue("$since", since);
         read.Parameters.AddWithValue("$limit", Math.Clamp(limit, 1, Most));
@@ -72,9 +68,9 @@ public static class JournalRows
         return new JournalPage(store, floor, newest, rows);
     }
 
-    private static async Task<long> ScalarAsync(SqliteConnection connection, string sql, CancellationToken ct)
+    private static async Task<long> ScalarAsync(ConnectionGate db, string sql, CancellationToken ct)
     {
-        await using var command = connection.CreateCommand();
+        await using var command = db.Command();
         command.CommandText = sql;
         return Convert.ToInt64(await command.ExecuteScalarAsync(ct).ConfigureAwait(false), System.Globalization.CultureInfo.InvariantCulture);
     }

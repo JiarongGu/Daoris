@@ -468,11 +468,13 @@ public sealed class AccountLimitHoldTests : IDisposable
     }
 
     [Fact]
-    public void A_wait_already_there_at_the_first_look_is_a_baseline_never_a_backlog()
+    public void A_wait_already_there_at_the_first_look_is_found_once_and_the_said_set_decides_what_a_restart_owes()
     {
+        // Foundation design §4.5 and row 1m-iv: "the baseline gives way to the said-set". The watch finds the wait once, at its first look too;
+        // `AttentionNews` takes what stands as said on a home's first run (AttentionNewsTests) and tells only what it has not claimed after.
         var watch = new AttentionWatch();
 
-        Assert.Empty(watch.Observe(Look(Wait(Until))));
+        Assert.Single(watch.Observe(Look(Wait(Until))));
         Assert.Empty(watch.Observe(Look(Wait(Until))));
     }
 

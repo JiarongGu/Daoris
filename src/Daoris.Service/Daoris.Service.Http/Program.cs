@@ -1938,8 +1938,8 @@ if (changes is not null)
 // that tells from it. The same local-only door as the stream whose `journal` family wakes it.
 if (changes is not null)
 {
-    app.MapGet(JournalRows.Route, async (long? since, int? limit, CancellationToken ct) =>
-        await JournalRows.ReadAsync(options.DatabasePath, since ?? 0, limit ?? JournalRows.Most, ct));
+    app.MapGet(JournalRows.Route, async (ComposedService s, long? since, int? limit, CancellationToken ct) =>
+        await s.Journal(since ?? 0, limit ?? JournalRows.Most, ct));
 }
 
 // The driver's session records (D46). State only: the service never spawns a process — the record is

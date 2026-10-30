@@ -5,6 +5,10 @@ with the version and date at release.
 
 ## Unreleased
 
+- A change to the actors' staffing made outside Daoris (a hand edit of `driver.json`, an older Daoris) is no longer silently taken or lost: Settings → AI features → Actors lists it under *Changed outside Daoris*, to *Take it* or *Dismiss*, and a turn-off of Intake or Ask Daoris applies at once. `daoris driver actor export`, `import` and `found` do the same from the terminal.
+- Ask Daoris is no longer offered *Ask another agent…*: a helper is asked only by a session that works in a repository, and every door says so in your language.
+- Settings → Agent rules shows a rule change without a reload, and the status bar's index size keeps up while a repository's index is still filling.
+- A session parked for you and then ended tells you once, not twice.
 - Settings → AI features has a new *Role catalogue* card: add a role that takes a kind of work on this machine, in one workspace or in one repository, with its names in English and Chinese and its choices of agent, model and effort; change or remove one, or give a default role back its default. A Designer, taking design and decision work on Claude Code · opus · high, is suggested while no role takes it. A work whose role you removed waits, saying so, until a role takes it, and running work goes on. `daoris driver role` does the same from a terminal, and Ask Daoris can propose a change for you to apply (FOUNDATION1y-i).
 - A conversation that ends while its account's limit holds it, when Daoris quits or its agent exits, is now shown as *limited*, as a session a limit ended is, instead of stopped or finished, and it still goes on by itself at the reset or on another account. Your own stop of it stays a stop (FOUNDATION1g).
 - A driven session that finishes its quest with its work still uncommitted is now carried on in Daoris's own words to commit it, on every door: the protocol door, a native harness's session, and a closed quest's session resumed after it ended. You are no longer called in to finish a session's own work; a session still not clean after its carry-ons ends as it is, and says so (LANDBACK1).
