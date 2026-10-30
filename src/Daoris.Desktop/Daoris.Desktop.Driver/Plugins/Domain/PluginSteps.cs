@@ -280,9 +280,9 @@ public static class PluginSteps
     private static PluginStepsRead Refused(string code, string? name) => new([], [], code, Words(code, name));
 
     // ——— What a person reads (FABRIC-UNIT1e, §D9): `plugin list`, a package's description and an update's change list say a step
-    // and a resource in these words. Twin: the CLI's `stepName`, `stepSaid` and `resourceSaid`, word for word.
+    // and a resource in these words.
 
-    /// <summary>A step's name as its manifest writes it: its kind past <c>&lt;plugin&gt;/</c>. Twin: the CLI's <c>stepName</c>.</summary>
+    /// <summary>A step's name as its manifest writes it: its kind past <c>&lt;plugin&gt;/</c>.</summary>
     public static string NameOf(NodeDeclaration step) => step.Kind[(step.Kind.IndexOf('/', StringComparison.Ordinal) + 1)..];
 
     /// <summary>
@@ -317,7 +317,7 @@ public static class PluginSteps
         return $"{NameOf(step)} ({string.Join("; ", parts)})";
     }
 
-    /// <summary>A resource as a description and an update's change say it: its schema and its role. Twin: the CLI's <c>resourceSaid</c>.</summary>
+    /// <summary>A resource as a description and an update's change say it: its schema and its role.</summary>
     public static string Said(PluginResource resource) => $"{resource.Schema} ({resource.Role})";
 
     /// <summary>The words each code is said in, naming the step by its manifest's id or the resource by its schema. Twin: <c>steps.ts</c>.</summary>

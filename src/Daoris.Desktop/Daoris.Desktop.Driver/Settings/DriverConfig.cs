@@ -952,7 +952,7 @@ public sealed record DriverConfig(
     /// is refused and left as it is; one that is gone is written from nothing. The edit touches only the key paths it changed (the second
     /// re-check, finding 1, <see cref="JsonKeeping"/>): an object taken out since is made again with only the edit's keys, and one that is
     /// no longer an object refuses it. A config built in memory is written whole, and one parsed from a text (<see cref="Parse"/>) or read
-    /// from another file over that text (<see cref="ToJson"/>). The CLI's <c>writeDriverChoices</c> does the same.
+    /// from another file over that text (<see cref="ToJson"/>).
     /// <para>🔴 The re-read and the rename are made holding the file's lock (CONFIGLOCK1, D173's CONFIG1 note; <see cref="KeepLock"/>),
     /// which the CLI's writer takes too: with none, another writer's change landing between them was lost.</para>
     /// </remarks>

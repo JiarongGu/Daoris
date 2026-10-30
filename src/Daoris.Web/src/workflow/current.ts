@@ -143,7 +143,7 @@ export const KNOWN_KINDS = ['work', 'opinion', 'look', 'landing', 'pull-request'
 
 /** The limits this page words; a code it does not know is said in the driver's words, marked as such. */
 export const KNOWN_LIMITS = [
-  'opinion-partial', 'look-partial', 'plugin-unready', 'pull-request-unread', 'pull-request-at-clean-up',
+  'opinion-partial', 'look-partial', 'plugin-unready', 'pull-request-unread', 'pull-request-at-clean-up', 'not-integrated-yet',
 ] as const;
 
 /**
@@ -197,8 +197,11 @@ export type YourPress = { press: WorkflowPress; environment?: string };
  * press in order, the look's with its environment. Empty is a part too: work moves on with no press of theirs.
  */
 export function yourPart(steps: readonly WorkflowStep[]): YourPress[] {
-  return steps.flatMap((step): YourPress[] => {
+  return steps.flatMap((step, at): YourPress[] => {
     if (step.press === null) return [];
+    // INTEGRATE1r: an integration the owner requests rides the landing's own Accept, so the part says it once; after a landing with no
+    // press of its own (an automatic one) it is a press of its own.
+    if (step.kind === 'integrate' && steps.slice(0, at).some((before) => before.press === step.press)) return [];
     const environment = step.press === 'reviewed' ? textOf(step, 'environment') ?? undefined : undefined;
     return [environment ? { press: step.press, environment } : { press: step.press }];
   });

@@ -58,7 +58,7 @@ public sealed class DrivenMoveDowngradeProcessTests : IAsyncLifetime
     [MemberData(nameof(Boundaries))]
     public async Task A_downgrade_at_each_boundary_delivers_the_word_once_and_the_returning_build_acts_once(string cut, bool word)
     {
-        var expect = DrivenMoveCrashProcessTests.Row(cut);
+        var expect = DrivenMoveCrashProcessTests.Row(cut, word);
         await _h.SeedAsync(word);
         await _h.KillAtAsync(cut);
         var left = _h.MoveFrom("s1")!;
@@ -77,7 +77,10 @@ public sealed class DrivenMoveDowngradeProcessTests : IAsyncLifetime
         _h.Trail.Add($"after the older come-up: {seen}");
         Assert.True(standing.Stands, $"an older build's come-up leaves the move standing under its dead run: {seen}");
         Assert.Equal((left.PhaseWord, left.ClaimRun, left.ClaimGeneration), (standing.PhaseWord, standing.ClaimRun, standing.ClaimGeneration));
-        if (cut != Cuts.Answered) Assert.Equal(before, _h.SnapshotOf());
+        // DRIVENATTEMPT1: a word written to the part's agent was marked attempted at the hand, so the older come-up's uncertain settlement
+        // (§13.5's `delivering` row) takes it back, with no `lost` note for a moved word, where it waited unmarked before.
+        var settledByOlder = word && cut is Cuts.Written or Cuts.Sent;
+        if (cut != Cuts.Answered) Assert.Equal(settledByOlder ? before.Replace("waiting [s2:w1]", "waiting []", StringComparison.Ordinal) : before, _h.SnapshotOf());
         else Assert.Equal(word ? 1 : 0, _h.Prompts().Count(prompt => prompt.Text.Contains(DrivenMoveHarness.Word, StringComparison.Ordinal)));
 
         // This build returns: its take-up reads what the older one left, and acts once.

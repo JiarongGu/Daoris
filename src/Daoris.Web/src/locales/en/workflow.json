@@ -90,6 +90,7 @@
   "workflow.limit.plugin-unready": "Its plugin cannot land work on this machine now: it is not installed, is switched off, contributes nothing, or speaks on no `work/land` point. `daoris plugin list` says which.",
   "workflow.limit.pull-request-unread": "Its plugin answers no `work/state`, so Daoris never reads whether the pull request was merged or abandoned.",
   "workflow.limit.pull-request-at-clean-up": "Its state is asked of its plugin only when branches are cleaned up, never while someone waits on it.",
+  "workflow.limit.not-integrated-yet": "Not integrated yet: the rule carries `integrate`, but nothing runs an integration in this build, so the work stays on its branch as it always did.",
   "workflow.limit.recorded": "shown as recorded",
   "workflow.edge.automatic": "then automatically",
   "workflow.edge.reviewed": "then once you say it is reviewed",

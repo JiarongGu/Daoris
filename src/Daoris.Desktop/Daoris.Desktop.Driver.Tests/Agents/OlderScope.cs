@@ -3,8 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// How a build before POOL1a read a scope of <c>harnesses.json</c> (D130 §2 rule 1), kept here when <c>HarnessSettings.ResolveScope</c>
-/// left with its last callers in POOL1b (D197): the workspace's scope where it names a default or a list of its own for the agent,
+/// How a build before POOL1a read a scope of <c>harnesses.json</c> (D130 §2 rule 1), kept here now that
+/// <c>HarnessSettings</c> reads no per-workspace scope (POOL1b, D197): the workspace's scope where it names a default or a list of its own for the agent,
 /// else the machine's; a scope's settings read only with its list, its kept account only within it, and it begins at its default
 /// where its list holds it, else at its first. The fold reads the raw file by this rule, and an older build reads a folded file so.
 /// </summary>

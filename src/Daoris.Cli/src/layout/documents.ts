@@ -64,6 +64,9 @@ export const RECORD_ROLES = ['backlog', 'decisions'] as const;
 
 const FIELDS = new Set(['path', 'words']);
 
+/** The member of `documents` that declares a repository's present records for its own freshness report: no role, never listed. */
+const PRESENT = 'present';
+
 /**
  * `documents`, checked at the edge (D122 §2.7, D18): what every command reads, before a single path is
  * planned. Refused rather than corrected, as a room is: a role nobody knows, a path that leaves the
@@ -92,6 +95,8 @@ export function checkDocuments(raw: unknown, text: string, target: string, harne
   const known = ROLES.map((row) => row.role).join(', ');
   const found = new Map<string, DeclaredDocument>();
   for (const [role, value] of Object.entries(raw as Record<string, unknown>)) {
+    // KNOWFRESH1a-iii: the present records `tools/doc-current.mjs` reads are declared beside the roles and are no document.
+    if (role === PRESENT) continue;
     const name = `daoris.json's documents.${role}`;
     const tier = TIER_ROLES[role];
     if (tier !== undefined) {
