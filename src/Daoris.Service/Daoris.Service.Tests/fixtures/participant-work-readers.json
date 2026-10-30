@@ -148,18 +148,6 @@
       "reads": "other",
       "note": "an ask's own fields, a channel entry's, a file's lookup by ask, or a join key; no record's mark tells a work"
     },
-    "Participants/Helpers/SessionsHelperCommand.cs": {
-      "lines": 3,
-      "reads": "tells",
-      "row": "1q",
-      "note": "judges who may ask a helper, lead a partner's piece or hand over by the asker's marks; the start layer's (§2.3)"
-    },
-    "Participants/Partners/PartnerPersonAsk.cs": {
-      "lines": 1,
-      "reads": "tells",
-      "row": "1q",
-      "note": "judges who may ask a helper, lead a partner's piece or hand over by the asker's marks; the start layer's (§2.3)"
-    },
     "Events/Domain/AskDaorisRoom.cs": {
       "lines": 1,
       "reads": "other",
@@ -497,12 +485,6 @@
       "reads": "tells",
       "row": "1q",
       "note": "tells Ask Daoris's own conversation by its repository; the start layer's (§2.3)"
-    },
-    "Bridge/Routes/SessionsRoutes.cs": {
-      "lines": 3,
-      "reads": "tells",
-      "row": "1q",
-      "note": "tells who may ask a helper by the asker's marks, the shell's twin of the driver's judge; the start layer's (§2.3)"
     },
     "Bridge/Routes/TreesRoutes.cs": {
       "lines": 1,
