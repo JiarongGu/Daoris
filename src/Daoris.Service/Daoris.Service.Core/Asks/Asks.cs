@@ -322,6 +322,14 @@ public sealed class AskStore
             await revision.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
         }
 
+        // FOUNDATION1 row k part 2 (D212, the foundation design §4.1): an ask kept, and each move of its state, as a row of the event journal,
+        // minted by triggers in the statement that writes it, so a connector built before them mints it too.
+        await using (var journal = _db.Command())
+        {
+            journal.CommandText = EventJournal.AsksSchema;
+            await journal.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+        }
+
         return this;
     }
 
