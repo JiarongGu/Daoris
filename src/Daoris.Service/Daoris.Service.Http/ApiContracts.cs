@@ -845,6 +845,7 @@ public sealed record ChangesJournalResponse(string Store, long Floor, long Newes
 
 [JsonSerializable(typeof(StatusResponse))]
 [JsonSerializable(typeof(ChangesResponse))]
+[JsonSerializable(typeof(JournalPage))]
 [JsonSerializable(typeof(IEnumerable<RepositoryResponse>))]
 [JsonSerializable(typeof(IEnumerable<HitResponse>))]
 [JsonSerializable(typeof(EntryResponse))]

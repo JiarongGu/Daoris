@@ -52,6 +52,49 @@ public static class JsonKeeping
     }
 
     /// <summary>
+    /// <paramref name="original"/> with the top-level keys <paramref name="values"/> names each set to its JSON text whole, or taken out where
+    /// the text is null, and every other key as <see cref="Kept"/> keeps it (FOUNDATION1w-s part 2): the file step's edit of the staffing's four
+    /// paths. Each value is written as given, never merged into the value the file holds, so what the file shows at the path afterwards is
+    /// the text and not that text's keys laid over another's; a key the file lacks is added after the key before it in
+    /// <paramref name="values"/>' order that the file holds, else before the one after it, else last. Lines end as the first line's do.
+    /// </summary>
+    /// <param name="values">The keys in the writer's order, each with its JSON text or null for none.</param>
+    /// <exception cref="JsonEditRefusedException">The file is not a JSON object.</exception>
+    internal static string Replaced(string original, IReadOnlyList<(string Name, string? Json)> values)
+    {
+        using var file = JsonDocument.Parse(original);
+        if (file.RootElement.ValueKind != JsonValueKind.Object) throw new JsonEditRefusedException("", "");
+        var documents = values.Select(value => value.Json is null ? null : JsonDocument.Parse(value.Json)).ToList();
+        try
+        {
+            var set = values.Select((value, index) => (value.Name, Index: index)).ToDictionary(each => each.Name, each => each.Index, StringComparer.Ordinal);
+            var plan = new List<(string Name, Action<Utf8JsonWriter> Value)>();
+            foreach (var property in file.RootElement.EnumerateObject())
+            {
+                var kept = property.Value;
+                if (!set.TryGetValue(property.Name, out var index)) plan.Add((property.Name, kept.WriteTo));
+                else if (documents[index] is { } now) plan.Add((property.Name, now.RootElement.WriteTo));
+            }
+
+            for (var index = 0; index < values.Count; index++)
+            {
+                if (documents[index] is not { } now || file.RootElement.TryGetProperty(values[index].Name, out _)) continue;
+                var before = plan.FindLastIndex(each => set.TryGetValue(each.Name, out var at) && at < index);
+                var after = plan.FindIndex(each => set.TryGetValue(each.Name, out var at) && at > index);
+                plan.Insert(before >= 0 ? before + 1 : after >= 0 ? after : plan.Count, (values[index].Name, now.RootElement.WriteTo));
+            }
+
+            var text = JsonFile.Serialize(writer => Write(writer, plan));
+            var end = original.IndexOf('\n');
+            return end > 0 && original[end - 1] == '\r' ? text.Replace("\n", "\r\n", StringComparison.Ordinal) : text;
+        }
+        finally
+        {
+            foreach (var document in documents) document?.Dispose();
+        }
+    }
+
+    /// <summary>
     /// An edit of a home file made onto the file as it stands, and written (KEEPALL1): every file a door edits keeps what its writer does
     /// not own, as <c>driver.json</c> does through <see cref="DriverConfig.Save"/>. <paramref name="understood"/> is the file as its reader
     /// understood it when it read it, and <paramref name="edited"/> the edited choices, both written by one writer; only the key paths that

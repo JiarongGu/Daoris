@@ -289,8 +289,7 @@ public sealed class DesktopStore : IDisposable
         // store-aware build never opens, so the stamp stays where it is and the step runs at the first start. One row for each superseded commit
         // of a request, written in the settle step's own end, so the member settling and its work being kept in view are one write; it stays
         // pending (no `answered_at`) until the session, the steward or the owner answers it. `reference` is the recovery ref under
-        // `refs/daoris/discarded/` the member's branch work is kept on, `by_commit` the line's commit that superseded it. Migration 8 is the
-        // next branch's (FOUNDATION1w-s); this one is 7.
+        // `refs/daoris/discarded/` the member's branch work is kept on, `by_commit` the line's commit that superseded it.
         new(7, WriterStamp, write => write.Execute(
             """
             CREATE TABLE integration_dispositions (
@@ -306,6 +305,82 @@ public sealed class DesktopStore : IDisposable
               PRIMARY KEY (request, commit_id)
             );
             CREATE INDEX integration_dispositions_pending ON integration_dispositions (at) WHERE answered_at IS NULL;
+            """)),
+
+        // FOUNDATION1w-s part 1: the roles' staffing (the foundation design §19.15), Roles'. New tables an older store-aware build never
+        // opens, so the stamp stays where it is and the step runs at the first start. `role_staffing` holds one row for each role that has
+        // a stored entry or, for Build, Intake and Ask Daoris, a first-agent key: `state` is `before` (no entry, the key alone), `set`
+        // (`choices` the entry's list, `[]` being off) or `unreadable` (`choices` the entry as the file showed it, `why` what does not
+        // read). `first_agent` is the store's own key, `adapter` for Build, `intakeAdapter` for Intake and `helperAdapter` for Ask Daoris,
+        // null where the file shows none. The projection's one row, `written`, and each found row hold `driver.json`'s four staffing paths
+        // as that file's own JSON text, compact, a null being a path the file does not hold.
+        new(8, WriterStamp, write => write.Execute(
+            """
+            CREATE TABLE role_staffing (
+              role        TEXT NOT NULL PRIMARY KEY,
+              state       TEXT NOT NULL,
+              choices     TEXT,
+              why         TEXT,
+              first_agent TEXT,
+              at          TEXT NOT NULL
+            );
+            CREATE TABLE role_staffing_projection (
+              one            INTEGER PRIMARY KEY CHECK (one = 1),
+              actors         TEXT,
+              adapter        TEXT,
+              intake_adapter TEXT,
+              helper_adapter TEXT,
+              at             TEXT NOT NULL
+            );
+            CREATE TABLE role_staffing_found (
+              id                     INTEGER PRIMARY KEY AUTOINCREMENT,
+              at                     TEXT NOT NULL,
+              actors                 TEXT,
+              adapter                TEXT,
+              intake_adapter         TEXT,
+              helper_adapter         TEXT,
+              written_actors         TEXT,
+              written_adapter        TEXT,
+              written_intake_adapter TEXT,
+              written_helper_adapter TEXT,
+              answer                 TEXT,
+              answered_at            TEXT
+            );
+            CREATE INDEX role_staffing_found_pending ON role_staffing_found (id) WHERE answered_at IS NULL;
+            """)),
+
+        // FOUNDATION1z-v: the news (§4.5, §13.3), Events'. New tables an older store-aware build never opens, so the stamp stays where it
+        // is and the step runs at the first start. `notices` holds `data/notices.json`'s notices by id, one column for each field the page
+        // reads; `news_said` the occurrences already told, apart from the notices so a prune or a dismissal never forgets one; and
+        // `journal_cursors` one journal position for each teller, with the store identity it was read against.
+        new(9, WriterStamp, write => write.Execute(
+            """
+            CREATE TABLE notices (
+              id         TEXT NOT NULL PRIMARY KEY,
+              kind       TEXT NOT NULL,
+              at         TEXT NOT NULL,
+              read       INTEGER NOT NULL,
+              workspace  TEXT,
+              session    TEXT,
+              quest      TEXT,
+              repository TEXT,
+              state      TEXT,
+              route      TEXT,
+              act        TEXT,
+              code       TEXT,
+              count      INTEGER
+            );
+            CREATE INDEX notices_at ON notices (at);
+            CREATE TABLE news_said (
+              key TEXT NOT NULL PRIMARY KEY,
+              at  TEXT NOT NULL
+            );
+            CREATE TABLE journal_cursors (
+              teller   TEXT NOT NULL PRIMARY KEY,
+              store    TEXT NOT NULL,
+              position INTEGER NOT NULL,
+              at       TEXT NOT NULL
+            );
             """)),
     ];
 

@@ -45,6 +45,9 @@ public static class GoOnBrief
 /// </remarks>
 internal sealed class BriefedMove(ChatContext context, IChatRunning runner, ChatHandOver handOver, IChatHelping help)
 {
+    /// <summary>What the course answered each briefed move, by session (FOUNDATION1h branch 4): a test hears it; no person reads it.</summary>
+    internal event Action<string, LineCourse>? Decided;
+
     /// <summary>
     /// Go on in a new part handed the brief, one at a time per session: the person's press, a closed quest's session the driver hands
     /// over, and a conversation whose resume was refused on the wire once its run let go.
@@ -81,73 +84,111 @@ internal sealed class BriefedMove(ChatContext context, IChatRunning runner, Chat
         var listed = SessionRecords.Parse(json).FirstOrDefault(each => string.Equals(each.Id, sessionId, StringComparison.Ordinal));
         if (listed is null) return Refused(WordsNever.NotFound, $"no session here is {sessionId}.");
 
+        // FOUNDATION1h branch 4 (the foundation design §3.1, §14.2): this is the course's adapter for the briefed move. What the line is, the
+        // words waiting, the tree and the agent are read into the facts, and the course decides for CourseTrigger.BriefedPress (the person's
+        // press) or CourseTrigger.ConversationLost (Daoris's, on a conversation proven lost); every refusal is said by the code and sentence
+        // it has always had. The account's answer is not asked here: the new part's own walk (`ownFirst`) takes it, as before.
+        var person = by == HandOverBy.Person;
         var next = WordsNever.ContinuedIn(json, sessionId);
-        if (WordsNever.Judge(listed, WordsNever.LastHere(json, listed.Quest), next) is { } never)
-        {
-            return Refused(never, never == WordsNever.Continued
-                ? WordsNever.WentOn(sessionId, next!)
-                : $"{sessionId} never goes on in a new part here ({never}).");
-        }
+        var last = WordsNever.LastHere(json, listed.Quest);
+        var never = WordsNever.Judge(listed, last, next);
+        var record = ServiceClient.ReadRecord(json, sessionId);
 
-        if (listed.Live) return Refused(StartFrom.Running, $"{sessionId} is {listed.State}: words reach it there, so it needs no new part.");
-        if (ServiceClient.ReadRecord(json, sessionId) is not { WordsWaiting: true } record)
-        {
-            return Refused(StartFrom.NoWords, $"no words wait on {sessionId} to go on with.");
-        }
+        // A part that runs is judged before the course only for Daoris's own go-on of a lost conversation, which the course does not ask the
+        // boundary of; for the person's press the course refuses it.
+        if (!person && never is null && listed.Live) return Refused(StartFrom.Running, RunningWords(sessionId, listed));
 
-        if (record.Kind != "chat" && record.Quest is { } quest
-            && await context.Service.FindQuestAsync(quest, ct).ConfigureAwait(false) is { Status: "Open" or "Taken" } serving)
+        // The quest of a closed session is read only where nothing before it refused, as it was. A quest the driver carries on by itself is
+        // the course's refusal of the person's press; a lost go-on's is its own (the course's lost answer for it is the driver's fall-back).
+        var carried = (Quest: (string?)null, Status: (string?)null);
+        if (never is null && !listed.Live && record is { WordsWaiting: true, Quest: { } quest } && record.Kind != "chat")
         {
-            return Refused(StartFrom.Carried, $"#{quest} is {serving.Status.ToLowerInvariant()}, so the driver carries these words on with it by itself.");
-        }
-
-        // Only the person's words go to a new part (XAGENT1e, MIXAGENT2a-iii): another agent's claims stay for the person.
-        var words = record.Waiting.Where(word => word.Persons).ToList();
-        if (words.Count == 0)
-        {
-            return Refused(StartFrom.NoWords, $"only another agent's answer waits on {sessionId}, which is never a new part's words.");
-        }
-
-        if (record.Tree is not { Length: > 0 } tree || !ConversationTrees.Stands(tree))
-        {
-            return Refused(HandOver.TreeGone, $"the tree {sessionId} ran in is gone, so there is nothing to go on in.");
+            var serving = await context.Service.FindQuestAsync(quest, ct).ConfigureAwait(false);
+            carried = (quest, serving?.Status);
+            if (!person && serving is { Status: "Open" or "Taken" }) return Refused(StartFrom.Carried, CarriedWords(quest, serving.Status));
         }
 
         // Its agent is the one whose conversation it is; a record naming none goes on with its role's choice, Chat's order, never the
         // machine's `adapter` key (FOUNDATION1j part iii, the foundation design §2.4's first row). Chat off, or its entry unread, is said below.
-        ISessionAdapter? agent = null;
-        var named = record.Adapter;
-        try
+        ISessionAdapter? resolved = null;
+        var named = record?.Adapter;
+        var unchosenWords = (string?)null;
+        if (record is not null)
         {
-            named = record.Adapter is { Length: > 0 } opened ? opened : StartPlan.ContinuedOn(record, config, "chat");
-            agent = context.Harnesses.Adapters.Resolve(named);
-        }
-        catch (DriverException unchosen)
-        {
-            // Said below: only the person can choose the agent it goes on with.
-            if (named is not { Length: > 0 }) return Refused(GoOnBrief.AgentGone, $"{unchosen.Message} Hand {sessionId} over to another agent.");
+            try
+            {
+                named = record.Adapter is { Length: > 0 } opened ? opened : StartPlan.ContinuedOn(record, config, "chat");
+                resolved = context.Harnesses.Adapters.Resolve(named);
+            }
+            catch (DriverException unchosen)
+            {
+                // Said below: only the person can choose the agent it goes on with.
+                if (named is not { Length: > 0 }) unchosenWords = $"{unchosen.Message} Hand {sessionId} over to another agent.";
+            }
         }
 
-        if (agent is not { Interactive: true })
+        var waiting = (record?.Waiting ?? []).Select(word => new CourseWord(word.Id ?? "", AuthorOf(word), word.Key)).ToList();
+        var tree = record?.Tree is { Length: > 0 } held && ConversationTrees.Stands(held) ? held : null;
+        var pinned = record is not null && context.Conversations.PickedOn(sessionId, record.Profile);
+        var help = WordsNever.IsHelp(listed);
+        var facts = new CourseFacts(
+            new CourseHead(
+                listed.State, Adapter: record?.Adapter, Profile: record?.Profile, Tree: tree, Conversation: record is null || record.Kind == "chat" || record.Quest is null,
+                Teammate: never == WordsNever.Teammate, Intake: never == WordsNever.Intake, StoodDown: never == WordsNever.StoodDown,
+                SupersededBy: never == WordsNever.Superseded ? last ?? "" : never == WordsNever.Continued ? next ?? "" : null, Waiting: waiting,
+                Session: sessionId, QuestStatus: carried.Status, AskDaoris: help, AgentGone: record is not null && resolved is not { Interactive: true },
+                Judged: lost?.Code),
+            listed.Live ? CourseBoundary.TurnRunning : CourseBoundary.ProcessExited,
+            // An account the person picked stays the one account (§3.5(d)): the course says it as the pick the new part keeps.
+            Account: new CourseAccount(Picked: pinned), Press: person ? new CoursePress(CoursePressKind.Briefed) : null,
+            Rules: new CourseRules(Runner: true));
+        var course = CourseDecision.Decide(facts, person ? CourseTrigger.BriefedPress : CourseTrigger.ConversationLost);
+        Decided?.Invoke(sessionId, course);
+
+        if (course is not LineCourse.Move move)
         {
-            return Refused(GoOnBrief.AgentGone, $"`{named}` is no longer an agent on this machine that holds conversations: hand {sessionId} over to another.");
+            // What the course held, said by the code the refusal has always had: its own refusal's, or, for Daoris's cannot-go-on, the first
+            // thing the facts lack in the course's order.
+            var code = course switch
+            {
+                LineCourse.Never => never,
+                LineCourse.Hold { Why: CourseHoldWhy.Refused, Code: { } refused } => refused,
+                _ => record is not { WordsWaiting: true } || !waiting.Any(word => word.Persons) ? StartFrom.NoWords
+                    : tree is null && !help ? HandOver.TreeGone : GoOnBrief.AgentGone,
+            };
+            return Refused(code!, code switch
+            {
+                StartFrom.Running => RunningWords(sessionId, listed),
+                StartFrom.NoWords when record is not { WordsWaiting: true } => $"no words wait on {sessionId} to go on with.",
+                StartFrom.NoWords => $"only another agent's answer waits on {sessionId}, which is never a new part's words.",
+                StartFrom.Carried => CarriedWords(carried.Quest!, carried.Status!),
+                HandOver.TreeGone => $"the tree {sessionId} ran in is gone, so there is nothing to go on in.",
+                GoOnBrief.AgentGone => unchosenWords
+                    ?? $"`{named}` is no longer an agent on this machine that holds conversations: hand {sessionId} over to another.",
+                WordsNever.Continued => WordsNever.WentOn(sessionId, next!),
+                _ => $"{sessionId} never goes on in a new part here ({code}).",
+            });
         }
+
+        // Which words go is the course's (D212's difference 1): the person's alone (XAGENT1e, MIXAGENT2a-iii), another agent's claims stay.
+        var wanted = move.Words.Ids.ToHashSet(StringComparer.Ordinal);
+        var words = record!.Waiting.Where(word => wanted.Contains(word.Id ?? "")).ToList();
+        var agent = resolved!;
 
         // The brief of its line, composed before the new part opens, while the old part is the last of it.
         var brief = await ContextBriefs.ComposeAsync(
                 context.Service, context.Events, context.Home, sessionId, HandOverWhy.Resume, conversation: record.Kind == "chat", ct: ct)
             .ConfigureAwait(false);
-        var help = WordsNever.IsHelp(listed);
         // FOUNDATION1a-iii (the design's §3.2 step 6, §7 row 4): the new part takes the walk with its own account first where that is ready,
         // the person's press and a part whose own conversation is proven lost alike, rather than the cooling account as a pick, which
         // refused exactly when the person needed it. An account the person picked stays the one account (§3.5(d)): it waits while it cools.
-        var pinned = context.Conversations.PickedOn(sessionId, record.Profile);
         // FOUNDATION1d-ii part 4: the new part's open moves the person's words, and any of theirs kept since this read, in its own step.
         var started = help
             ? await HelpStartAsync(record, agent.Name, config, onEnded, ct).ConfigureAwait(false)
             : await runner.StartAsync(
                     record.Repository!, agent.Name, config, onEnded, record.Profile, ct: ct, tree: tree,
-                    from: new ContinuedFrom(sessionId, HandOverWhy.Resume, by), ownFirst: !pinned, moves: Moves(record, words))
+                    from: new ContinuedFrom(sessionId, HandOverWhy.Resume, by), ownFirst: move.Where.Source != CourseAccountSource.Pick,
+                    moves: Moves(record, words))
                 .ConfigureAwait(false);
         if (started.SessionId is not { } to) return new StartedFrom(null, false, null, started.Message);
 
@@ -196,15 +237,28 @@ internal sealed class BriefedMove(ChatContext context, IChatRunning runner, Chat
         PriorSession record, string json, DriverConfig config, Func<string, string, Task>? onEnded, CancellationToken ct)
     {
         var sessionId = record.Session;
-        var words = record.Waiting.Where(word => word.Persons).ToList();
-        if (words.Count == 0) return Refused(StartFrom.NoWords, $"only another agent's answer waits on {sessionId}, which is never a new part's words.");
-
         var isHelp = string.Equals(record.Repository, KnowledgeRoomIdentity.Repository, StringComparison.OrdinalIgnoreCase);
         var actor = isHelp ? "ask-daoris" : "chat";
-        if (!isHelp && (record.Tree is not { Length: > 0 } || !ConversationTrees.Stands(record.Tree)))
+
+        // FOUNDATION1h branch 4: a fresh start of the actor is the course's too (the go-on of a conversation its agent refused at the open);
+        // the executor reads the facts and says the refusals by the codes they have always had.
+        var facts = new CourseFacts(
+            new CourseHead(
+                record.State, Role: actor, Choice: record.Choice, Adapter: record.Adapter, Profile: record.Profile,
+                Tree: record.Tree is { Length: > 0 } held && ConversationTrees.Stands(held) ? held : null, Conversation: true, AskDaoris: isHelp,
+                NotOffered: true, Waiting: [.. record.Waiting.Select(word => new CourseWord(word.Id ?? "", AuthorOf(word), word.Key))], Session: sessionId),
+            CourseBoundary.ProcessExited);
+        var course = CourseDecision.Decide(facts, CourseTrigger.WordsKept);
+        Decided?.Invoke(sessionId, course);
+        if (course is not LineCourse.Move fresh)
         {
-            return Refused(HandOver.TreeGone, $"the tree {sessionId} ran in is gone, so there is nothing to go on in.");
+            return course is LineCourse.Hold { Code: HandOver.TreeGone }
+                ? Refused(HandOver.TreeGone, $"the tree {sessionId} ran in is gone, so there is nothing to go on in.")
+                : Refused(StartFrom.NoWords, $"only another agent's answer waits on {sessionId}, which is never a new part's words.");
         }
+
+        var wanted = fresh.Words.Ids.ToHashSet(StringComparer.Ordinal);
+        var words = record.Waiting.Where(word => wanted.Contains(word.Id ?? "")).ToList();
 
         IReadOnlyList<ActorEffective> order;
         string? pinned = null;
@@ -362,4 +416,18 @@ internal sealed class BriefedMove(ChatContext context, IChatRunning runner, Chat
     }
 
     private static StartedFrom Refused(string why, string message) => new(null, false, why, message);
+
+    private static string RunningWords(string sessionId, SessionRecord listed) =>
+        $"{sessionId} is {listed.State}: words reach it there, so it needs no new part.";
+
+    private static string CarriedWords(string quest, string status) =>
+        $"#{quest} is {status.ToLowerInvariant()}, so the driver carries these words on with it by itself.";
+
+    /// <summary>Who wrote a word, as the course tells them apart (the person's, Daoris's, the supervisor's, a second opinion's, a helper's).</summary>
+    internal static CourseAuthor AuthorOf(SaidWordView word) =>
+        word.Persons ? CourseAuthor.Person
+        : word.Daoris ? CourseAuthor.Daoris
+        : word.Supervisors ? CourseAuthor.Supervisor
+        : word.By is not null ? CourseAuthor.Findings
+        : CourseAuthor.Helper;
 }

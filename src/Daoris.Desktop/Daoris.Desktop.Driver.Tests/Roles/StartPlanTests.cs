@@ -167,6 +167,29 @@ public sealed class StartPlanTests : IDisposable
         Assert.Equal("fine", settled.Adapter!.Name);
     }
 
+    /// <summary>
+    /// FOUNDATION1j part v: a conversation's plan walks an order of one as it walks any (an agent this machine lacks is passed and the wait
+    /// said in the role's words), and one start counts once on the account its pick pinned.
+    /// </summary>
+    [Fact]
+    public async Task A_conversation_s_plan_walks_an_order_of_one_and_counts_once_on_its_pinned_account()
+    {
+        TwoAccounts();
+        var config = ActorChoices.With(DriverConfig.Empty, "chat", [new ActorChoice("gone")]);
+        var lone = new StartPlan("chat", config, _roster, _adapters, _memory) { Subject = "conversation:chat", Kind = StartKind.Conversation, WalksOne = true };
+        var waits = await lone.ResolveAsync(CancellationToken.None);
+        Assert.Null(waits.Chosen);
+        Assert.StartsWith("Chat waits: none of its choices can run now. choice 1, gone", waits.Selection.Refusal, StringComparison.Ordinal);
+
+        var counted = _roster.Mark();
+        var pinned = new StartPlan("chat", ActorChoices.With(config, "chat", [new ActorChoice("cool")]), _roster, _adapters, _memory)
+        {
+            Subject = "conversation:chat", Kind = StartKind.Conversation, WalksOne = true, Pinned = "account-2",
+        };
+        var started = await pinned.ResolveAsync(CancellationToken.None);
+        Assert.Equal(("account-2", counted + 1, counted + 1), (started.Selection.Profile, _roster.Mark(), started.Reservation));
+    }
+
     /// <summary>A probe (<c>counts: false</c>) takes no count, says no pass and remembers none, so the start after it is its quest's first look.</summary>
     [Fact]
     public async Task A_probe_takes_no_count_says_nothing_and_leaves_the_last_look_as_it_was()
@@ -361,6 +384,24 @@ public sealed class StartPlanTests : IDisposable
         Assert.Equal("cool", StartPlan.ContinuedOn(before, config with { Adapter = "piped" }));
         Assert.Equal("fine", StartPlan.ContinuedOn(before, ActorChoices.With(config, "chat", [new ActorChoice("fine")]), work: "chat"));
         Assert.Equal("piped", StartPlan.ContinuedOn(before with { Actor = "garden" }, DriverConfig.Empty with { Adapter = "piped" }));
+    }
+
+    /// <summary>
+    /// 🔴 FOUNDATION1j part iv (the foundation design §2.4's second row): the agent a start is named for before its walk runs, which the look's
+    /// report of a wait names, is a hand-over's, else a continuation's record's, else its role's first entry, the machine's <c>adapter</c> key
+    /// only where that entry does not read.
+    /// </summary>
+    [Fact]
+    public void A_start_is_named_for_the_hand_over_the_record_or_its_role_s_first_entry_before_its_walk()
+    {
+        var config = ActorChoices.With(DriverConfig.Empty with { Adapter = "cool" }, "build", [new ActorChoice("fine", "opus"), new ActorChoice("cool")]);
+        config = config with { Adapter = "piped" };
+        Assert.Equal("fine", StartPlan.AgentFor("build", config));
+        Assert.Equal("handed", StartPlan.AgentFor("build", config, handed: "handed"));
+        Assert.Equal("fine", StartPlan.AgentFor("design", config));
+        var second = new PriorSession("s1", null, "failed") { Actor = "build", Choice = "2", Adapter = "cool" };
+        Assert.Equal("cool", StartPlan.AgentFor("build", config, record: second));
+        Assert.Equal("piped", StartPlan.AgentFor("build",DriverConfig.Empty with { Adapter = "piped", ActorErrors = new Dictionary<string, string> { ["build"] = "unreadable" } }));
     }
 
     /// <summary>

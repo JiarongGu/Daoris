@@ -786,6 +786,25 @@ public sealed class DriverLoop(
         // on the home whoever holds its lease, since the windows are this process's either way. It ends with the loop.
         _ = Task.Run(() => ServiceConfirmations.RunAsync(service.Confirmations, ct), ct);
 
+        // FOUNDATION1 l-i (the foundation design §4.1): the service's journal read from this process's come-up, whoever holds the lease, so an end
+        // a headless loop drove reaches this window's slices as a conversation's own does. It ends with the loop.
+        // FOUNDATION1 m-ii: and the news of the conversations, a park among them, told by this shell from a cursor it keeps, so a park made just
+        // before a restart is told once after it. The driven work's is the lease holder's, below.
+        var news = new News(homeDirectory);
+        _ = Task.Run(
+            () => JournalFeed.RunAsync(
+                service,
+                [
+                    new JournalTeller(async batch =>
+                    {
+                        await PartEndRelay.TellAsync(eventBus, batch).ConfigureAwait(false);
+                        if (sessionLog is not null) await sessionLog.TellAsync(batch).ConfigureAwait(false);
+                    }),
+                    NewsFeed("shell", news, service, row => row.Marks.Contains("chat", StringComparer.Ordinal), ct),
+                ],
+                log, ct),
+            ct);
+
         // Every loop on the home watches the requests a terminal's `sessions stop|finish|decline` writes (SESSUX1g, D126
         // §7.1): one for a session this registry runs, a conversation or a driven session, is acted on as the screen's
         // route would act. Before the home's lock, so a conversation is reached while a terminal's loop drives the home.
@@ -819,6 +838,7 @@ public sealed class DriverLoop(
         // NOTIFY2f (D196 point 6): the notices' record, read again by this window's process whoever holds the lease, since any process
         // on the home writes it; another's write is heard, or found at the topic's deadline, and its own wakes nothing, since its writer
         // pushes it. Before the lease is waited on, as the proposals are.
+        global::Daoris.Driver.Notices.ImportFile(homeDirectory);
         await using var notices = HomeWatch.ForNotices(homeDirectory, (_, _) => Notices.Slice.Wake(), log: log);
         notices.Start();
         using var noticesResumed = Power?.Hear(notices.Resumed);
@@ -840,6 +860,12 @@ public sealed class DriverLoop(
         // holds it, and everything above — the host, the page, the conversations — carries on meanwhile.
         using var held = await HoldHomeAsync(ct).ConfigureAwait(false);
         if (held is null) return;
+
+        // FOUNDATION1 m-ii: the driven work's news is the lease holder's, told from its own cursor on a wait of its own.
+        _ = Task.Run(
+            () => JournalFeed.RunAsync(
+                service, [NewsFeed("lease", news, service, row => !row.Marks.Contains("chat", StringComparer.Ordinal), ct)], log, ct),
+            ct);
 
         // The terminal's pipe (RPC1a, the terminal RPC design §6.3): served once this loop holds the home, the one writer, and only
         // then named in the address, so a terminal that reads it finds it served. A name already held serves none, said in the log.
@@ -955,13 +981,11 @@ public sealed class DriverLoop(
                 var read = await parks.LookAsync(
                     report, ticked.ForgivenAt, token => SessionRecords.ReadAsync(service.BaseUrl, key, ct: token), ct)
                     .ConfigureAwait(false);
-                var attend = attention.Observe(report, read);
+                // The look's own news, told once across restarts by the said-set and not by a first look's baseline (FOUNDATION1 m-iv).
+                var attend = AttentionNews.Told(news, attention.Observe(report, read), DateTimeOffset.UtcNow);
                 // Kept in Notifications whatever the switch says (NOTIFY2f, the notification design §2.5): recording is not telling.
                 Notices.Keep(attend);
-                if (ticked.Notify)
-                {
-                    foreach (var item in attend) await AttendAsync(item).ConfigureAwait(false);
-                }
+                foreach (var item in attend.Where(each => NotifyRule.Tells(each, ticked.Notify))) await AttendAsync(item).ConfigureAwait(false);
 
                 // Forwarded when the tick has something to say: it did something, or what it says
                 // about the sitting quests CHANGED. The considerations are a standing answer the
@@ -1100,7 +1124,7 @@ public sealed class DriverLoop(
         {
             Workspace = MainWindowScopes.WorkspaceOf(Slices.Find(SessionsStateSlice.Name)?.Snapshot(), null, item.Session, null),
         });
-        return Notifying() ? AttendAsync(item) : Task.CompletedTask;
+        return NotifyRule.Tells(item, Notifying()) ? AttendAsync(item) : Task.CompletedTask;
     }
 
     /// <summary>
@@ -1108,16 +1132,31 @@ public sealed class DriverLoop(
     /// announcement made outside any look, a conversation's answer (NOTIFY1a) or a held tool call (NOTIFY2d). Choices that do not read
     /// err toward saying it, as the shell's notifier does.
     /// </summary>
-    public bool Notifying()
+    public bool Notifying() => NotifyRule.SwitchOn(ConfigPath);
+
+    /// <summary>
+    /// One news teller as a journal feed's teller (FOUNDATION1 m-ii): its rows claimed from its own cursor, and each claimed piece made the
+    /// attention event the notifier reads, told while the machine's notify switch is on and never while it is off.
+    /// </summary>
+    private JournalTeller NewsFeed(string name, News news, ServiceClient service, Func<JournalEntry, bool> takes, CancellationToken ct)
     {
-        try
+        var teller = new NewsTeller(
+            news, name, takes, () => DateTimeOffset.UtcNow,
+            async pieces =>
+            {
+                foreach (var piece in pieces)
+                {
+                    var item = await NewsAttention.OfAsync(service, piece, ct).ConfigureAwait(false);
+                    // Kept in Notifications whatever the switch says (NOTIFY2f): recording is not telling.
+                    Notices.Keep([item]);
+                    if (NotifyRule.Tells(item, Notifying())) await AttendAsync(item).ConfigureAwait(false);
+                }
+            })
         {
-            return DriverConfig.Load(ConfigPath).Notify;
-        }
-        catch (DriverConfigUnreadableException)
-        {
-            return true;
-        }
+            Incomplete = batch => log?.Warn("news.incomplete", ("teller", name), ("store", batch.Store), ("floor", batch.Floor)),
+            Refused = why => log?.Warn("news.refused", ("teller", name), ("why", why)),
+        };
+        return new JournalTeller(teller.TellAsync, () => news.Cursor(name), position => news.Advance(name, position));
     }
 
     /// <summary>What is worth interrupting the person for (SURF5b), in the one shape the shell's notifier and the page's toast read.</summary>
@@ -1244,11 +1283,16 @@ public sealed class DriverLoop(
     /// since the shape is the page's contract: the routes that start a conversation hand it to their runs, and a chat the
     /// runner took up by itself is announced by it (MSG1c2).
     /// </summary>
-    internal static Task Ended(IEventBus bus, string session, string state) =>
-        bus.EmitAsync("DAORIS", EndedType, new { Session = session, State = state });
+    public static Task Ended(IEventBus bus, string session, string state) => ConversationEnds.FromRouteAsync(bus, session, state);
 
     /// <summary>The event's type, spelled here alone: a slice that wakes on it names it by this (PUSH1a).</summary>
     public const string EndedType = "SESSION_ENDED";
+
+    /// <summary>
+    /// An end the journal told this process (FOUNDATION1 l-i): any part's, driven or a conversation's, with its reason and class, so a
+    /// slice that follows ends wakes on it rather than on the conversation's route alone.
+    /// </summary>
+    public const string PartEndedType = "PART_ENDED";
 
     /// <summary>
     /// A conversation's start refused at its open went on in its replacement (MODELROLE1d2, D205 §3.5(b)): <c>{ from, to }</c>, the refused

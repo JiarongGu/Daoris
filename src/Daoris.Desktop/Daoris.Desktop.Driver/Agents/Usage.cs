@@ -13,7 +13,14 @@ namespace Daoris.Driver;
 /// <param name="Size">The window it was held against.</param>
 public sealed record UsageEntry(
     string Session, string Repository, string Harness, string? Profile,
-    long Used, long Size, DateTimeOffset When);
+    long Used, long Size, DateTimeOffset When)
+{
+    /// <summary>
+    /// The brainstorm a pass's reading was spent for (BRAINSTORM1c, D176 point 7): its usage is the brainstorm's own kind, never a
+    /// quest's or a repository's. Null for every other session, which is written with no such field.
+    /// </summary>
+    public string? Brainstorm { get; init; }
+}
 
 /// <summary>One account's share of the load — a derivation over the sessions, never a second tally.</summary>
 public sealed record AccountUsage(string Harness, string? Profile, int Sessions, long Used);
@@ -55,6 +62,10 @@ public sealed class SessionUsage(string home)
     /// <summary>What one session used, or null when it was never measured.</summary>
     public UsageEntry? Of(string session) =>
         Load().FirstOrDefault(e => string.Equals(e.Session, session, StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>What a brainstorm's passes used (BRAINSTORM1c), oldest first: the readings that name it.</summary>
+    public IReadOnlyList<UsageEntry> OfBrainstorm(string brainstorm) =>
+        [.. Load().Where(e => string.Equals(e.Brainstorm, brainstorm, StringComparison.Ordinal))];
 
     /// <summary>
     /// Which account carried what — the question "multiple accounts with usage management" actually
@@ -160,7 +171,10 @@ public sealed class SessionUsage(string home)
             Json.Long(row, "size") ?? 0,
             row.TryGetProperty("when", out var when) && when.TryGetDateTimeOffset(out var at)
                 ? at
-                : DateTimeOffset.MinValue);
+                : DateTimeOffset.MinValue)
+        {
+            Brainstorm = Json.Text(row, "brainstorm") is { Length: > 0 } brainstorm ? brainstorm : null,
+        };
     }
 
     /// <summary>Written atomically, beside-then-rename, like every write in this family.</summary>
@@ -176,6 +190,7 @@ public sealed class SessionUsage(string home)
                 writer.WriteString("repository", entry.Repository);
                 writer.WriteString("harness", entry.Harness);
                 if (entry.Profile is { Length: > 0 } profile) writer.WriteString("profile", profile);
+                if (entry.Brainstorm is { Length: > 0 } brainstorm) writer.WriteString("brainstorm", brainstorm);
                 writer.WriteNumber("used", entry.Used);
                 writer.WriteNumber("size", entry.Size);
                 writer.WriteString("when", entry.When);

@@ -6,10 +6,26 @@ namespace Daoris.Driver;
 /// alone, so a shell that comes up reads what the one before it saw: a turn is refused by a limit where its account's cooling line
 /// (<c>account.cooling</c>, CONVNOTE1b) was said before its end, which the door ends <c>error</c>.
 /// </summary>
+/// <remarks>
+/// FOUNDATION1g part c (the foundation design §3.5): whether an ended conversation is limited is its record's <c>limited</c> flag, which its
+/// end writes as a driven end's does (<c>ChatRunner</c>'s conclusion), so every reader reads one record; the events still give the words and
+/// where they stand, which a flag cannot hold. A record with no flag is read from its events alone, as one an older build ended, which
+/// wrote none, and as a live conversation, which has not ended.
+/// </remarks>
 /// <param name="Words">The person's words of the refused turns since the last turn that ended otherwise, oldest first.</param>
 /// <param name="Before">How many of the record's events stand before the first of them: the brief is composed from those alone.</param>
 public sealed record LimitHeld(IReadOnlyList<SessionEvent> Words, int Before)
 {
+    /// <summary>The last refused turn's cooling line, which a conversation's end carries in its note; null where the events hold none.</summary>
+    public SessionEvent? Cooled { get; init; }
+
+    /// <summary>
+    /// What an ended conversation's record holds (FOUNDATION1g part c): limited where its <paramref name="limited"/> flag says so, with the
+    /// words its events hold, none where they hold none; without the flag, its events decide, as <see cref="Of(IReadOnlyList{SessionEvent})"/>.
+    /// </summary>
+    public static LimitHeld? Of(IReadOnlyList<SessionEvent> events, bool limited) =>
+        Of(events) ?? (limited ? new LimitHeld([], events.Count) : null);
+
     /// <summary>
     /// The words held where the record's last turn ended refused by its account's limit; null where it ended otherwise, or where no
     /// turn ended. Only the person's words are held: Daoris's own and another agent's are never a new part's words (XAGENT1e).
@@ -19,7 +35,8 @@ public sealed record LimitHeld(IReadOnlyList<SessionEvent> Words, int Before)
         var held = new List<SessionEvent>();
         var heldFrom = -1;
         var asked = new List<(SessionEvent Word, int At)>();
-        var cooled = false;
+        SessionEvent? cooled = null;
+        SessionEvent? lastCooled = null;
         bool? lastLimited = null;
         for (var at = 0; at < events.Count; at++)
         {
@@ -30,7 +47,7 @@ public sealed record LimitHeld(IReadOnlyList<SessionEvent> Words, int Before)
             }
             else if (e.Kind == SessionEventKind.Note && e.Parts?.Any(part => part.Code is { } code && Cooling(code)) == true)
             {
-                cooled = true;
+                cooled = e;
             }
             else if (e.Kind == SessionEventKind.Transient)
             {
@@ -42,11 +59,12 @@ public sealed record LimitHeld(IReadOnlyList<SessionEvent> Words, int Before)
             }
             else if (e.Kind == SessionEventKind.Turn)
             {
-                var limited = cooled && e.StopReason == "error";
+                var limited = cooled is not null && e.StopReason == "error";
                 if (limited)
                 {
                     if (held.Count == 0 && asked.Count > 0) heldFrom = asked[0].At;
                     held.AddRange(asked.Select(each => each.Word));
+                    lastCooled = cooled;
                 }
                 else
                 {
@@ -55,12 +73,12 @@ public sealed record LimitHeld(IReadOnlyList<SessionEvent> Words, int Before)
                 }
 
                 asked.Clear();
-                cooled = false;
+                cooled = null;
                 lastLimited = limited;
             }
         }
 
-        return lastLimited == true ? new LimitHeld(held, heldFrom < 0 ? events.Count : heldFrom) : null;
+        return lastLimited == true ? new LimitHeld(held, heldFrom < 0 ? events.Count : heldFrom) { Cooled = lastCooled } : null;
     }
 
     /// <summary>
@@ -68,9 +86,15 @@ public sealed record LimitHeld(IReadOnlyList<SessionEvent> Words, int Before)
     /// limit, and nothing since let it go. The person's *Stop waiting* (<c>chat.limit-stopped-waiting</c>) and a refusal that waits for
     /// them (a cannot line, which names its reason) each leave the wait: no look then tries it again by itself.
     /// </summary>
-    public static LimitHeld? Waiting(IReadOnlyList<SessionEvent> events)
+    public static LimitHeld? Waiting(IReadOnlyList<SessionEvent> events) => Waiting(events, limited: false);
+
+    /// <summary>
+    /// The same for an ended record whose <paramref name="limited"/> flag its end wrote (FOUNDATION1g part c): the flag says the limit ended
+    /// it, and its events whether anything since let it go.
+    /// </summary>
+    public static LimitHeld? Waiting(IReadOnlyList<SessionEvent> events, bool limited)
     {
-        if (Of(events) is not { } held) return null;
+        if (Of(events, limited) is not { } held) return null;
         for (var at = events.Count - 1; at >= 0; at--)
         {
             var e = events[at];

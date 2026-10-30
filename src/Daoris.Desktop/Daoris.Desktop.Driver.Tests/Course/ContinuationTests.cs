@@ -71,6 +71,26 @@ public sealed class ContinuationTests : IDisposable
         Assert.Same(plain, Continuations.Ticketed(plain, null));
     }
 
+    /// <summary>
+    /// 🔴 FOUNDATION1i path 1 (the foundation design §10 row 1i): the driven go-on is the course's answer for the judge's reading. The judge
+    /// passing resumes its own conversation; refusing it falls back to a new part, `retry` by Daoris; another client holding the conversation,
+    /// or an agent no longer here, waits for the person.
+    /// </summary>
+    [Fact]
+    public void The_driven_go_on_is_the_course_s_a_resume_a_new_part_or_the_person_s()
+    {
+        Assert.IsType<LineCourse.Resume>(DrivenCourse.GoOn(Park(), "Taken", null, agentGone: false));
+
+        var refused = Continuations.Judge(Park(adapter: "codex-acp"), "claude-code-acp", doorResumes: true, profile: "account-1", Kept);
+        var move = Assert.IsType<LineCourse.Move>(DrivenCourse.GoOn(Park(), "Taken", refused!.Code, agentGone: false));
+        Assert.Equal((CourseFromWhy.Retry, CourseFromBy.Daoris), (move.Why, move.By));
+
+        var elsewhere = Assert.IsType<LineCourse.Hold>(DrivenCourse.GoOn(Park(), "Taken", ContinueWhy.Elsewhere, agentGone: false));
+        Assert.Equal((CourseHoldWhy.CannotGoOn, ContinueWhy.Elsewhere), (elsewhere.Why, elsewhere.Code));
+        var gone = Assert.IsType<LineCourse.Hold>(DrivenCourse.GoOn(Park(), "Taken", null, agentGone: true));
+        Assert.Equal((CourseHoldWhy.CannotGoOn, GoOnBrief.AgentGone), (gone.Why, gone.Code));
+    }
+
     [Fact]
     public void The_same_adapter_account_and_tree_with_a_kept_id_resume()
     {

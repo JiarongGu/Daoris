@@ -101,6 +101,78 @@ public sealed class BrainstormPostureTests : IDisposable
         Assert.Equal(handed.Deny.Distinct(StringComparer.Ordinal).Count(), handed.Deny.Count);
     }
 
+    // ——— BRAINSTORM1c: both real doors under the posture. Claude Code takes the rules above on either door; Codex takes none, so its
+    // ——— posture is its own mode that changes nothing, required. Nothing here starts a process.
+
+    private static SessionTarget Pass(string turn = "g1") =>
+        new(QuestId: "", "Brainstorm", "", "Daoris", "", "room", "") { Brainstorm = "b1", BrainstormTurn = turn };
+
+    /// <summary>
+    /// 🔴 Claude Code's protocol door is handed the posture's rules as its pipe door is, through the file its session takes on `session/new`,
+    /// and asks no posture of its own beyond the adapter's: it never asks the mode that asks nothing, and no required mode.
+    /// </summary>
+    [Theory]
+    [InlineData("g1", "give.json")]
+    [InlineData("s1", "synthesize.json")]
+    public void Claude_Code_s_protocol_door_is_handed_the_golden_rules_through_its_session_meta(string turn, string golden)
+    {
+        var adapters = AdapterSet.Built();
+        var driver = new Daoris.Driver.Driver(new ServiceClient("http://127.0.0.1:9", null), DriverConfig.Empty, adapters, _home);
+        var adapter = adapters.Resolve("claude-code-acp");
+
+        var (file, meta, _) = driver.HandRules(
+            adapter, new ProcessStartInfo("claude-agent-acp"), $"brainstorm-b1-{turn}", null, null, tree: Room(turn), kept: null,
+            brainstorm: BrainstormPermissions.ToolOf(turn));
+
+        Assert.NotNull(file);
+        Assert.Equal(file, JsonNode.Parse(System.Text.Json.JsonSerializer.Serialize(meta))!["claudeCode"]!["options"]!["settings"]!.GetValue<string>());
+        var handed = JsonNode.Parse(File.ReadAllText(file!))!;
+        var expected = JsonNode.Parse(File.ReadAllText(GoldenPath(golden)))!;
+        var room = PermissionRules.ReadRule(Room(turn));
+        Assert.Equal(Strings(expected["allow"]), Strings(handed["permissions"]!["allow"]).Select(rule => rule == room ? "Read(<room>)" : rule));
+        Assert.Equal(expected["hardDeny"]!.GetValue<string>(), Strings(handed["autoMode"]!["hard_deny"]).Last());
+        Assert.Null(BrainstormPermissions.Posture(adapter));
+        Assert.Null(Daoris.Driver.Driver.PassPosture(Pass(turn), adapter));
+        Assert.Equal("auto|acceptEdits", adapter.AcpPosture);
+    }
+
+    /// <summary>
+    /// 🔴 Codex takes no rules, so none is written and no `_meta` rides its open; its pass asks its mode that changes nothing, required, in
+    /// place of `agent`, whose sandbox writes the folder it runs in, and never `agent-full-access`.
+    /// </summary>
+    [Fact]
+    public void Codex_is_handed_no_rules_and_asks_its_read_only_mode_required()
+    {
+        var adapters = AdapterSet.Built();
+        var driver = new Daoris.Driver.Driver(new ServiceClient("http://127.0.0.1:9", null), DriverConfig.Empty, adapters, _home);
+        var adapter = adapters.Resolve("codex-acp");
+
+        var (file, meta, handed) = driver.HandRules(
+            adapter, new ProcessStartInfo("codex-acp"), "brainstorm-b1-g1", null, null, tree: Room("g1"), kept: null, brainstorm: BrainstormPermissions.Give);
+
+        Assert.Null(file);
+        Assert.Null(meta);
+        Assert.Equal(HandedNones.Agent, handed.None);
+        var posture = Daoris.Driver.Driver.PassPosture(Pass(), adapter);
+        Assert.Equal($"{AgentPostures.Required}read-only", posture);
+        Assert.NotEqual(adapter.AcpPosture, posture!.TrimStart(AgentPostures.Required));
+        Assert.NotEqual(adapter.FullPosture, posture.TrimStart(AgentPostures.Required));
+        Assert.Contains("`read-only`", BrainstormPermissions.Unoffered("read-only", "it offers `agent`"), StringComparison.Ordinal);
+    }
+
+    /// <summary>The posture is a brainstorm pass's alone: a quest's session on Codex keeps `agent`, and a harness with no mode maps none.</summary>
+    [Fact]
+    public void Only_a_brainstorm_pass_asks_the_reading_mode_and_a_harness_with_none_keeps_its_own()
+    {
+        var adapters = AdapterSet.Built();
+        var quest = new SessionTarget("q1", "Quest", "", "Daoris", "", "tree", "");
+
+        Assert.Null(Daoris.Driver.Driver.PassPosture(quest, adapters.Resolve("codex-acp")));
+        Assert.Null(Daoris.Driver.Driver.PassPosture(Pass(), adapters.Resolve("dsh")));
+        Assert.Null(Daoris.Driver.Driver.PassPosture(Pass(), adapters.Resolve("acp-stub")));
+        Assert.Null(Daoris.Driver.Driver.PassPosture(Pass(), adapters.Resolve("claude-code")));
+    }
+
     [Theory]
     [InlineData("g1", BrainstormPermissions.Give)]
     [InlineData("g2r", BrainstormPermissions.Give)]

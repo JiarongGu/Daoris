@@ -314,6 +314,26 @@ public sealed class HelpPlaceWorkspaceTests : IDisposable
     }
 
     /// <summary>
+    /// FOUNDATION1j part v: a conversation's start holds one reservation, the taken entry's, however many it passed; a probe (the limit
+    /// move's judging, the re-ask) takes none, and the next start's count follows the last one's.
+    /// </summary>
+    [Fact]
+    public async Task A_conversation_s_walk_takes_one_reservation_and_a_probe_none()
+    {
+        var runner = Runner(new ChatLedger());
+        var config = ActorChoices.With(Config, "ask-daoris", [new ActorChoice("mute"), new ActorChoice("door", "sonnet")]);
+        var order = ActorChoices.Effective("ask-daoris", config);
+
+        var first = await runner.WalkAsync("ask-daoris", order, config, null, null, CancellationToken.None);
+        var probe = await runner.WalkAsync("ask-daoris", order, config, null, null, CancellationToken.None, counts: false);
+        var second = await runner.WalkAsync("ask-daoris", order, config, null, null, CancellationToken.None);
+
+        Assert.Equal(0, probe.Selection!.Number);
+        Assert.True(first.Selection!.Number > 0);
+        Assert.Equal(first.Selection.Number + 1, second.Selection!.Number);
+    }
+
+    /// <summary>
     /// LOGCOLLECTION1: Chat's walk says a pass the first time and not at the looks that pass the same choice for the same reason, and
     /// its `actor.chose` carries the passes as names in an array, never the walk's sentence.
     /// </summary>

@@ -130,6 +130,8 @@
     { "node": "go-ahead", "kind": "go-ahead", "state": "waiting-on-you", "detail": "active", "words": "deploy the release", "said": "Waits for your go-ahead: deploy the release" },
     { "node": "go-ahead", "kind": "go-ahead", "state": "waiting-on-you", "detail": "active", "said": "Waits for your go-ahead." },
     { "node": "human", "kind": "human", "state": "waiting-on-you", "detail": "active", "said": "Waits for your task." },
+    { "node": "work.requests", "kind": "work.requests", "detail": "active", "said": "Waits on the quests the work's sessions published here: each must be done, and one declined is yours to pass over." },
+    { "node": "work.requests", "kind": "work.requests", "state": "waiting-on-you", "detail": "active", "code": "declined", "said": "A quest the work's sessions published was declined: it waits on you, and passing it over lets the work go on." },
     { "node": "claimed", "kind": "work", "detail": "active", "on": "quest", "quest": "q2", "said": "Observed on quest #q2." },
     { "node": "handed", "kind": "landing", "detail": "active", "on": "branch", "branch": "daoris/q2-work", "commit": "1111111111111111111111111111111111111111", "said": "Observed on `daoris/q2-work` at `11111111`." },
     { "node": "handed", "kind": "landing", "detail": "active", "on": "branch", "branch": "daoris/q2-work", "said": "Observed on `daoris/q2-work`." },

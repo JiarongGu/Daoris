@@ -235,6 +235,14 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
         ];
     }
 
+    /// <summary>
+    /// One session record as it stands, an ended one included (FOUNDATION1 m-ii: what a piece of news says of its session, which the journal's
+    /// row never carries); null where the service has none.
+    /// </summary>
+    public async Task<SessionView?> FindSessionAsync(string id, CancellationToken ct = default) =>
+        ReadSessions(await GetAsync("/api/sessions?includeClosed=true", ct).ConfigureAwait(false))
+            .FirstOrDefault(session => string.Equals(session.Id, id, StringComparison.OrdinalIgnoreCase));
+
     /// <summary>This machine's active sessions — the one read an orphan sweep needs, without a whole snapshot.</summary>
     public async Task<IReadOnlyList<SessionView>> ActiveSessionsAsync(CancellationToken ct = default) =>
         ReadSessions(await GetAsync("/api/sessions", ct).ConfigureAwait(false));

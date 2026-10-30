@@ -3,6 +3,7 @@
   "rows": {
     "1e": "the course: LineCourse.Decide over the paths, one closed reason (§3.1)",
     "1h": "conversations onto the course, one path per branch (§3.1), what never goes on among them",
+    "1i": "driven lines onto the course, one path per branch (§3.1)",
     "1j": "one start plan and one walk (§2.4)",
     "1q": "one policy shape and start admission (§2.3), the judges and desks it replaces",
     "1r": "the connector by work, failing closed: `SessionRole` becomes the work (§2.3)"
@@ -31,7 +32,7 @@
       "note": "tells Ask Daoris's record or an intake for what never goes on or moves; the conversations' path onto the course (§3.1)"
     },
     "Course/Chat/ChatGoOn.cs": {
-      "lines": 2,
+      "lines": 3,
       "reads": "tells",
       "row": "1h",
       "note": "tells Ask Daoris's record or an intake for what never goes on or moves; the conversations' path onto the course (§3.1)"
@@ -64,6 +65,18 @@
       "reads": "tells",
       "row": "1h",
       "note": "tells Ask Daoris's record or an intake for what never goes on or moves; the conversations' path onto the course (§3.1)"
+    },
+    "Course/Chat/LimitWaits.cs": {
+      "lines": 1,
+      "reads": "tells",
+      "row": "1h",
+      "note": "tells Ask Daoris's room for the wake's facts; the conversations' path onto the course (§3.1)"
+    },
+    "Course/GoOn/DrivenCourse.cs": {
+      "lines": 1,
+      "reads": "tells",
+      "row": "1i",
+      "note": "tells an intake for the driven paths' facts; the driven lines' path onto the course (§3.1)"
     },
     "Course/Domain/AnswersAlone.cs": {
       "lines": 1,
@@ -465,9 +478,9 @@
       "note": "a workflow step's, a gate's or a landing's own opinion or ask, not a record's mark"
     },
     "Workflows/WorkflowRun.Read.cs": {
-      "lines": 7,
+      "lines": 8,
       "reads": "tells",
-      "note": "tells which kinds of record run no workflow (Ask Daoris's, a reviewer's, a partner's, a helper's); two lines read an ask; no row of this design moves it"
+      "note": "tells which kinds of record run no workflow (Ask Daoris's, a reviewer's, a partner's, a helper's) and which sessions are the work's helpers (INTEGRATE1o2); two lines read an ask; no row of this design moves it"
     },
     "Workflows/WorkflowRunFiles.cs": {
       "lines": 1,

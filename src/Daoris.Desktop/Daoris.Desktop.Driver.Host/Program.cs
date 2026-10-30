@@ -529,6 +529,13 @@ try
         return await Daoris.Driver.Host.OpinionConsole.RunAsync(opinionArgs);
     }
 
+    // A pass's room measured (BRAINSTORM1c, D176 point 2): without --run the account the walk would take, with it one probe pass on it,
+    // a spend the person presses by running it. Before the brainstorm's own verb, which only writes files.
+    if (args is ["brainstorm", "measure", .. var measureArgs])
+    {
+        return await Daoris.Driver.Host.BrainstormMeasureConsole.RunAsync(measureArgs);
+    }
+
     // A brainstorm (BRAINSTORM1a, D176 point 1): the verb writes a request the driver's look takes, and show, send and clear are
     // the person's own. Files under this home only: it spawns nothing and asks no service.
     if (args is ["brainstorm", .. var brainstormArgs])
@@ -917,6 +924,31 @@ try
     // client's opens and moves and the record's events, so the record is handed to every driver below.
     var events = new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions));
     using var sessionLog = new SessionLog(log, service, events);
+    // FOUNDATION1 l-iv: the service's journal read from this process's come-up, so `session.ended` is written for every end, whoever wrote it.
+    // FOUNDATION1 m-ii: and this host's own teller of the driven work's news, from a cursor it keeps, so a park made just before a restart is told once after it.
+    var news = new News(home);
+    var hostNews = new NewsTeller(
+        news, "host", row => !row.Marks.Contains("chat", StringComparer.Ordinal), () => DateTimeOffset.UtcNow,
+        async pieces =>
+        {
+            foreach (var piece in pieces)
+            {
+                var item = await NewsAttention.OfAsync(service, piece, closing.Token);
+                // Kept in Notifications whatever the switch says (NOTIFY2f): the desktop's windows read the record again and say what this host wrote.
+                Notices.Keep(home, [item], DateTimeOffset.UtcNow, why => log.Warn("notices.refused", ("why", why)));
+                if (NotifyRule.Tells(item, NotifyRule.SwitchOn(configPath))) Console.WriteLine($"  !  {item.Line}");
+            }
+        })
+    {
+        Incomplete = batch => log.Warn("news.incomplete", ("teller", "host"), ("store", batch.Store), ("floor", batch.Floor)),
+        Refused = why => log.Warn("news.refused", ("teller", "host"), ("why", why)),
+    };
+    _ = Task.Run(
+        () => JournalFeed.RunAsync(
+            service,
+            [new JournalTeller(sessionLog.TellAsync), new JournalTeller(hostNews.TellAsync, () => news.Cursor("host"), position => news.Advance("host", position))],
+            log, closing.Token),
+        closing.Token);
     // SESSWATCH1a (D200): no session is ended on time; --quiet-end ends one of this run unheard that long, and says so.
     if (loop.QuietEnd is { } quietEnd)
     {
@@ -1002,7 +1034,7 @@ try
         // below, which is this door's exit-2 contract; what that look had said before it failed, a
         // stop among it, is printed first (DEV3c).
         // The machine log rides each look, where a run's failure nothing else awaits is written with its place (ANSWER2).
-        watching = new DriverWatch(service, configPath, home, processes, sync, hooks: hooks, events: events) { Log = log };
+        watching = new DriverWatch(service, configPath, home, processes, sync, hooks: hooks, events: events) { Log = log, Share = held.Beside is not null };
         await watching.RunAsync(
             async (report, ticked) =>
             {
@@ -1011,11 +1043,12 @@ try
                 // everything that happened while they were off — the switch is about being TOLD.
                 var read = await parks.LookAsync(
                     report, ticked.ForgivenAt, token => SessionRecords.ReadAsync(service.BaseUrl, key, ct: token), closing.Token);
-                var events = attention.Observe(report, read);
+                // The look's own news, told once across restarts by the said-set and not by a first look's baseline (FOUNDATION1 m-iv).
+                var events = AttentionNews.Told(news, attention.Observe(report, read), DateTimeOffset.UtcNow);
                 // Kept in Notifications whatever the switch says (NOTIFY2f, the notification design §2.5): the desktop's windows
                 // read the record again and say what this host wrote; a write refused is logged and dropped.
                 Notices.Keep(home, events, DateTimeOffset.UtcNow, why => log.Warn("notices.refused", ("why", why)));
-                if (ticked.Notify) foreach (var item in events) Console.WriteLine($"  !  {item.Line}");
+                foreach (var item in events.Where(each => NotifyRule.Tells(each, ticked.Notify))) Console.WriteLine($"  !  {item.Line}");
             },
             onError: null,
             closing.Token,
