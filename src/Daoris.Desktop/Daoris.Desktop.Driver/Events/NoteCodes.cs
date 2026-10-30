@@ -616,6 +616,14 @@ public static class NoteCodes
     // Replaying its work onto the line conflicts, and its session was told to rebase in its own tree (LANDREBASE1): a code of its own,
     // so the page says the session has it; a refusal it could not tell keeps `landing.refused`.
     public static readonly NoteCode LandingRebase = new("landing.rebase", []);
+    // The person's Accept on a session whose tree holds uncommitted work or whose replay conflicts (LANDBACK1 part 1): the session was
+    // carried on in Daoris's words, and the yes stays on it until its tree is clean; its own codes, since the work is accepted, not refused.
+    public static readonly NoteCode LandingCarriedDirty = new("landing.carried-dirty", ["paths"]);
+    public static readonly NoteCode LandingCarriedConflict = new("landing.carried-conflict", []);
+    // Carried on twice for one Accept and still not clean: it waits in Review's ready group, the yes taken back.
+    public static readonly NoteCode LandingCarryBound = new("landing.carry-bound", []);
+    // The work an Accept carried on landed once its tree was clean: the person's press, not the rule's switch, accepted it.
+    public static readonly NoteCode LandingAcceptedCarried = new("landing.accepted-carried", ["branch"]);
     // Held by the review's gate (REVIEWENV1c2): a code of its own, so a look's wait is never said as a refused landing; a note
     // written before it keeps `landing.refused`.
     public static readonly NoteCode LandingUnreviewed = new("landing.unreviewed", []);
@@ -739,6 +747,10 @@ public static class NoteCodes
     // a turn its harness started that said nothing, or the turn its harness was about to wake.
     public static readonly NoteCode BackgroundTurnLeft = new("background.turn-left", []);
     public static readonly NoteCode BackgroundQuestClosed = new("background.quest-closed", []);
+    // LANDBACK1 part 2 (D87's note): a turn that ended with its quest done and its tree uncommitted is carried on in Daoris's words, and
+    // the bound says when the session ends as today; the person's Accept is no part of either (`landing.carried-dirty` is that one's).
+    public static readonly NoteCode BackgroundCarriedOn = new("background.carried-on", ["paths"]);
+    public static readonly NoteCode BackgroundCarryBound = new("background.carry-bound", []);
 
     // ——— A conversation's door that failed (CONVNOTE2e, <see cref="DoorNotes"/>): the protocol session that could not open or failed,
     // and a turn that could not be taken, each a lead with a program's message after it (it may hold a path). A resume the agent
@@ -981,6 +993,24 @@ public static class BackgroundNotes
         Noted.Of(
             NoteCodes.BackgroundQuestClosed,
             "— its quest no longer waits while the session waited for its agent's next turn: the session ends, and no go-on is sent.");
+
+    /// <summary>
+    /// The turn ended with its quest done and its tree holding uncommitted work (LANDBACK1 part 2): the session is carried on to commit it
+    /// by its repository's conventions, or to restore what it does not want, rather than end with that work left.
+    /// </summary>
+    public static Noted CarriedOn(int paths) =>
+        Noted.Of(
+            NoteCodes.BackgroundCarriedOn,
+            $"— its quest is done, but its tree holds uncommitted work (paths: {paths}): the session was carried on to commit it by its "
+            + "repository's conventions, or to restore what it does not want and say which.",
+            ("paths", paths));
+
+    /// <summary>The session was carried on as often as one run is (<see cref="TurnCarry.Bound"/>) and its tree is still not clean: it ends as it always did.</summary>
+    public static Noted CarryBound() =>
+        Noted.Of(
+            NoteCodes.BackgroundCarryBound,
+            "— its session was carried on twice for the uncommitted work in its tree and it is still not clean: the session ends, and that "
+            + "work waits uncommitted for your review.");
 
     /// <summary>Each work and the state it ended in, as the English and the prompt to the agent both say them.</summary>
     public static string EndedSaid(IEnumerable<(string Name, string State)> ended) =>

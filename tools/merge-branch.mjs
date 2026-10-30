@@ -1097,13 +1097,13 @@ export const REACH = Object.freeze([
   // HEAVYQUEUE1: the machine's heavy-run admission, which the merge tool's gates take places in; its own tests run in verify.
   {
     paths: ['tools/machine-admission.mjs', 'tools/machine-admission.test.mjs'],
-    gates: ['cli', 'tool-tests'],
-    why: "the machine's heavy-run admission the merge tool's gates take places in (HEAVYQUEUE1): its table-driven tests run in verify, and the merge tool's tests hold its use",
+    gates: ['cli', 'tool-tests', 'driver', 'driver-process'],
+    why: "the machine's heavy-run admission the merge tool's gates take places in (HEAVYQUEUE1): its table-driven tests run in verify, the merge tool's tests hold its use, and the driver's whole-take Process class (INTEGRATE1f part f2) starts the tool's admission beside the driver's",
   },
   {
     paths: ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/machine-admission.json'],
-    gates: ['driver', 'cli'],
-    why: "the driver's MachineAdmissionTests and the merge tool's admission tests (run in verify) read the admission's table (HEAVYQUEUE1)",
+    gates: ['driver', 'driver-process', 'cli'],
+    why: "the driver's MachineAdmissionTests, its whole take's Process class (INTEGRATE1f part f2) and the merge tool's admission tests (run in verify) read the admission's table (HEAVYQUEUE1)",
   },
   {
     paths: ['tools/rehearsal-kit.mjs'],

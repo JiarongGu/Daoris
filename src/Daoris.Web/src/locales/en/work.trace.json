@@ -167,6 +167,8 @@
   "work.trace.try.push-held": "landed; its quest or its landing's gate held it back before its plugin was told, so nothing was pushed yet",
   "work.trace.try.already": "its work reached a branch of yours another way",
   "work.trace.try.carried": "its work is already on the line or a branch of yours by content, so it was not landed again",
+  "work.trace.try.carried-on": "your Accept carried its session on to clear its tree; it lands once the tree is clean",
+  "work.trace.try.carry-bound": "carried on twice and its tree is still not clean, so your Accept was taken back; it waits for you",
   "work.trace.try.superseded": "a newer session in its tree stands for it",
   "work.trace.try.gone": "its tree was discarded",
   "work.trace.try.undone": "its quest is no longer done",

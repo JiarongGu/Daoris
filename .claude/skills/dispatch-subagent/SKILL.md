@@ -78,7 +78,15 @@ current entry.
 | Parent: plan, review, merge | steward |
 | `branch-scout` | orient |
 | `branch-worker`, one lane, the pack names the change exactly | build-exact |
-| `branch-worker`, design, UI, more than one lane, a decision to write, deletion or concurrency | build-judgement |
+| `branch-worker`, a row whose design is accepted: UI, more than one lane, deletion or concurrency the design decided | build-settled |
+| `branch-worker`, writing a design or a decision, answering a design's reads, a row whose design is the work | build-judgement |
+
+The worker's definition names the model most rows take (build-settled, Sonnet); a build-judgement dispatch passes
+`model: opus` and the role's effort. A dispatch that passes no `model` runs the definition's: on 2026-10-30 every builder of
+a batch ran on Opus because the definition still named it, though the reference had moved settled builds to Sonnet five
+days before. The worker's definition also fixes `isolation: worktree`, which a dispatch cannot turn off, so each worker
+gets a fresh tree; a finished worker's tree cannot be handed to the next one, and it goes with the prune once its branch
+is in main.
 | A read of a design, a decision or a risky merge by another maker | decide-support or review |
 
 Measure each batch (step 8) against the reference's targets, note the numbers under D160, and move the reference when
@@ -132,6 +140,9 @@ once three batches hold the targets (MODELROLE1).
    **Nothing the parent or a worker starts outlives its work.** A background loop ends when the work that wanted it ends
    (a stop file, a parent's pid it watches, a time it gives up at): the parent's own `renice.ps1` loop ran a hundred hours
    past its session, asking the machine's management service for every process every ten seconds (2026-10-19 audit). A
+   watch on the queue's log is a loop that ends on the outcome it waits for (`until grep -q …; do sleep 30; done`, run in the
+   background), never an open-ended `tail -F | grep` pipeline: on 2026-10-30 another session found 75 such pipelines of
+   the parent's, one left behind by each monitor since 2026-10-27, slowing every process start on the machine. A
    worker's builds run without the build servers staying behind (`-nodeReuse:false`, or `MSBUILDDISABLENODEREUSE=1`, and
    `dotnet build-server shutdown` at the end); the audit found thirteen MSBuild nodes holding 1.4 GB, three orphaned.
    **Never brief a worker to run or time a long run** (a `Process` half, a rehearsal, or a measurement of either):

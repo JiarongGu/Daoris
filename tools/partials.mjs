@@ -12,7 +12,7 @@
  *
  * Types are matched by bare name over the whole of `src/`, nested types included, so two unrelated types of one name in
  * different projects would merge; none do today (the list is generated and the survey checked it). A `partial` in a
- * comment or a string is not a declaration; `bin/`, `obj/` and `node_modules/` are skipped. `partial void M()` is a
+ * comment or a string is not a declaration; `bin/`, `obj/`, `node_modules/` and `_fixtures/` are skipped. `partial void M()` is a
  * method, not a type, and is not matched. There is no .NET build.
  */
 import { readdirSync, readFileSync } from 'node:fs';
@@ -20,7 +20,8 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { isMain, writeAtomic } from './fsx.mjs';
 
-const SKIPPED = new Set(['bin', 'obj', 'node_modules']);
+// `_fixtures/` is repository scratch, never source: a run beside the check makes and removes it while the walk reads it.
+const SKIPPED = new Set(['bin', 'obj', 'node_modules', '_fixtures']);
 const DECLARATION = /\bpartial\s+(?:record\s+struct|record\s+class|class|record|struct|interface)\s+([A-Za-z_]\w*)/g;
 
 /** The source with comments, strings and character literals blanked (newlines kept), so a keyword inside one is not read. */
@@ -83,7 +84,15 @@ export function blank(src) {
 }
 
 function* sources(dir) {
-  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+  let entries;
+  try {
+    entries = readdirSync(dir, { withFileTypes: true });
+  } catch (error) {
+    // A folder another run removed between its listing and this read holds no source of this tree.
+    if (error?.code === 'ENOENT') return;
+    throw error;
+  }
+  for (const entry of entries) {
     if (entry.isDirectory()) {
       if (!SKIPPED.has(entry.name)) yield* sources(join(dir, entry.name));
     } else if (entry.name.endsWith('.cs')) {

@@ -226,7 +226,8 @@ A folder past twenty sources keeps its scopes in folders named for what they hol
   `locales/note.test.ts`: a helper's, a hand-over's, and a partner's piece (COAGENT1b), whose notes on the lead and the
   partner are notes, never words, and reset nothing. A tree's opening says, after its copied dependencies, the machine-local
   files its repository's gates read that were copied in read-only, each as code, and why a declared one was not
-  (`started.local-*`, TREELOCAL1, D216). A move to a new part that a live Daoris has kept still for ten minutes is said once
+  (`started.local-*`, TREELOCAL1, D216). A done quest's session carried on to commit its uncommitted tree, and the bound that ends
+  that, are said by `background.carried-on` (with its paths) and `background.carry-bound` (LANDBACK1 part 2). A move to a new part that a live Daoris has kept still for ten minutes is said once
   on its line by `move.quiet`, with its minutes, beside the watcher's quiet run (FOUNDATION1f-i part 2). A hand-over's note names who asked it (the person at a terminal, the
   window or the agent) and says one Daoris could not take as not taken, with its reason, never as refused (HANDOVERSAID1);
   the person's words that never reached the session are one family of reasons, `UNREACHED_REASONS` (it ended first, Daoris kept
@@ -240,6 +241,11 @@ A folder past twenty sources keeps its scopes in folders named for what they hol
   conversation, a hand-over or a helper), `console/` (a session's console and streams, the monitor, a detached
   session), `terminals/` (the person's terminals), `history/` (clearing finished work) and `pausing/` (pausing and
   abandoning it).
+
+*Accept* carries a session whose tree holds uncommitted work on, never refusing it (LANDBACK1 part 1, D87's note): the press's answer's
+`carried` (`why`, `told`) closes its ask and says the sentence, asks the person for no card, and the plan's `carried` shows the session as
+carried on in the foot and the head (`work.review.carriedOn`, `work.head.carriedOn`, English and 中文) while the driver keeps the yes, never as
+finished work.
 
 Words an account's limit holds on an ended record, the person's or Daoris's own (a rebase request), are said as one wait wherever a row
 is read, from the driver's hold alone (`placedFact` in `rail/SessionRow.tsx`, shared by the rail row, the head's facts and *What needs

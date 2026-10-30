@@ -45,8 +45,8 @@ public sealed record MoveDelivered(MoveRecord Move, MoveDeliveryOutcome Outcome)
 
 /// <summary>
 /// The moved words' delivery and the one reading of a crash at <c>delivering</c> (FOUNDATION1f-i part 3, D212; the foundation design §3.3,
-/// §13.4 step 4, §13.5's <c>opened</c> and <c>delivering</c> rows, §19.4). Called by nothing yet: rows f-ii to f-vi adopt it, each where its
-/// door's write returns.
+/// §13.4 step 4, §13.5's <c>opened</c> and <c>delivering</c> rows, §19.4). Rows f-ii to f-vi adopt it, each where its door's write returns:
+/// the live limit move first (FOUNDATION1f-ii part a, through <see cref="ConversationMoves"/>).
 /// </summary>
 /// <remarks>
 /// <para><b>The order.</b> The prompt's mark and the service's acknowledged attempt, then the write; <b>as the write returns, one

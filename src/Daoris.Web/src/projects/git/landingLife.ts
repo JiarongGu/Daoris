@@ -11,7 +11,7 @@ type Translate = TFunction;
 /** What a try to land a due session came to (`AutoLandingCode`), held to its source by `landingLife.test.ts`. */
 export const TRY_CODES = [
   'landed', 'advanced', 'nothing', 'held', 'uncommitted', 'exists', 'completed', 'plugin-unready', 'plugin-failed', 'push-held',
-  'already', 'superseded', 'gone', 'undone', 'off', 'refused', 'unreviewed', 'opinion', 'carried',
+  'already', 'superseded', 'gone', 'undone', 'off', 'refused', 'unreviewed', 'opinion', 'carried', 'carried-on', 'carry-bound',
 ] as const;
 
 /** The proofs an end rests on (`EndBy`), each worded as the milestone words it (`work.milestone.by.*`). */

@@ -1,7 +1,7 @@
 # FOUNDATION1e part 2 (the foundation design §3.1, §10 row 1e): LineCourse.Decide's pinned table, as line-account-cases.txt is the
 # account rule's. A row: its id, the case it is ported from, then the course's answer as LineCourseTests shapes it. A source is a suite's
 # test (a theory's case after a colon), a row of line-account-cases.txt, the source line a path answers at where no suite pins the case
-# (code:), or the design's for a move record, which no path writes yet (design:). LineCourseTests builds each row's facts and trigger.
+# (code:), or the design's for a move record, which no course reads yet (design:). LineCourseTests builds each row's facts and trigger.
 
 ## LA the account rule's answers (line-account-cases.txt), read once, as the conversation's go-on and the driven go-on read them
 LA-01 line-account-cases:row-001 => Resume words=w1
@@ -281,7 +281,7 @@ AA-16 AnswersAloneTests.Only_answers_alone_are_held:none => Hold why=Stays doors
 AA-17 AnswersAloneTests.Supervisor_only_go_ons_count_and_the_third_in_a_row_is_held => Hold why=AnswersAlone doors=LetAnswerGoOn,NotNow,Say repair=None code=answers-alone
 AA-18 AnswersAloneTests.The_supervisors_route_is_at_the_bound_by_both_predicates => Hold why=AnswersAlone doors=- repair=None code=supervisor-bound
 
-## S a move record standing for the line, as the design has it; no path writes one yet
+## S a move record standing for the line, as the design has it; the live limit move writes one since FOUNDATION1f-ii part a, and no course reads it yet
 S-01 design:§3.1-O-2 => Never why=StandingMove
 S-02 design:§3.1-round-5-§19.3 => Hold why=MoveHeld doors=- repair=None code=-
 S-03 design:§3.3 => Resume words=w1
@@ -383,6 +383,8 @@ out SessionMessagesTickTests.A_resumed_run_that_could_not_start_fails_as_a_start
 out SessionMessagesTickTests.A_native_resume_that_ends_before_naming_its_conversation_is_tried_once_more W
 out SessionMessagesTickTests.A_word_taken_back_before_a_fallbacks_open_is_never_handed_to_the_new_session X
 out SessionMessagesTickTests.Every_word_taken_back_before_a_fallbacks_open_sends_nothing_and_leaves_no_fresh_tree X
+out SessionMessagesTickTests.A_word_said_between_a_carry_ons_read_and_its_open_moves_with_the_open_and_reaches_the_new_session_once E
+out SessionMessagesTickTests.Against_a_host_whose_open_moves_nothing_a_carry_on_takes_the_old_records_words_as_before E
 out LimitResumeTickTests.Two_limited_full_resumes_running_leave_the_words_waiting_and_no_word_of_Daoris_s E
 out LimitResumeTickTests.A_refusal_with_the_same_limit_just_after_the_reset_says_it_was_not_lifted_once_and_never_parks E
 out LimitResumeTickTests.A_cool_off_whose_write_fails_is_still_limited_with_no_strike_and_passes_the_account_until_its_reset E
@@ -491,7 +493,7 @@ suite BriefedMoveTests 10
 suite LimitGoesOnProcessTests 3
 suite LimitGoesElsewhereProcessTests 3
 suite ContinuationTests 50
-suite SessionMessagesTickTests 17
+suite SessionMessagesTickTests 19
 suite LimitResumeTickTests 10
 suite TransientRetryTickTests 10
 suite HandOverLookTests 13

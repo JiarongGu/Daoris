@@ -15,12 +15,14 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 /// <remarks>
 /// The stand-in service models MSG1a: words kept on a parked or ended record (<c>say</c>), taken off by their ids
-/// (<c>taken</c>), and the ledger's one move out of an ended state, to working with words waiting.
+/// (<c>taken</c>), and the ledger's one move out of an ended state, to working with words waiting. Where a case sets its
+/// <c>opens</c> mark it answers the keyed open too (FOUNDATION1d-ii), and the ask a case asks it to keep. Every case has its own
+/// scratch home under <c>_fixtures/</c>.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
 public sealed class SessionMessagesTickTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-msg-tick-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "msg-tick", Guid.NewGuid().ToString("N")[..8]);
 
     private readonly string _repository;
 
@@ -37,10 +39,7 @@ public sealed class SessionMessagesTickTests : IDisposable
         Git("commit", "-qm", "the starting point");
     }
 
-    public void Dispose()
-    {
-        try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
-    }
+    public void Dispose() => GitSeed.Discard(_home);
 
     private string Log => Path.Combine(_home, "agent.log");
 
@@ -740,6 +739,79 @@ public sealed class SessionMessagesTickTests : IDisposable
     }
 
     /// <summary>
+    /// 🔴 FOUNDATION1d-ii part 5 (the foundation design §3.4 rule 3; the pre-mortem's first case): against a host whose open moves the words (its
+    /// <c>opens</c> mark 2), a word the person said to the record a fallback carries on, after the look and the fallback read it and before the
+    /// new session's open, moves with that open, in its own step, beside the word they read. The new session's agent is handed each exactly once,
+    /// in its instruction, the ask keeping both as words that reopened the work, said to the new session, as a take of the old record's words
+    /// kept them; each is shown on the new session by its own event under its id, the late word's file copied into its folder; nothing is taken
+    /// off the old record, which says where they went.
+    /// </summary>
+    [Fact]
+    public async Task A_word_said_between_a_carry_ons_read_and_its_open_moves_with_the_open_and_reaches_the_new_session_once()
+    {
+        await using var service = SaidStandIn.Start(_repository);
+        await FailedFirstRunAsync(service);
+        service.Opens = 2;
+        service.Asks = true;
+        Assert.Equal("w1", await service.SayAsync("s1", "Also log the port."));
+        ChatFiles.Keep(_home, "s1", [new ChatUpload("trace.txt", Encoding.UTF8.GetBytes("exit 3"))]);
+        service.SayAtOpen("s1", "And use 9090.", "trace.txt");
+
+        var look = await Protocol(service, "refuses").RunOnceAsync().WaitAsync(Poll.Patience);
+
+        var seen = $"look: {string.Join(" | ", look.Events)}\nafter: {service.Record("s1")}\ntaken: {string.Join(" | ", service.Taken)}\nfaults: {string.Join(" | ", service.Faults)}";
+        Assert.True(service.SessionCount == 2, seen);
+        var (key, moves) = Assert.Single(service.Opened);
+        Assert.True(key is { Length: > 0 } && moves is not null, seen);
+        Assert.Equal(("s1", "w1"), (moves!["from"]!.GetValue<string>(), Assert.Single(moves["words"]!.AsArray())!.GetValue<string>()));
+        Assert.True(service.Taken.SequenceEqual([("s2", "w1,w2", (string?)null)]), seen);
+        Assert.Empty(service.Said("s1"));
+        Assert.Empty(service.Said("s2"));
+        Assert.Equal([("Also log the port.", "s2"), ("And use 9090.", "s2")], service.AskWords);
+
+        // What its agent was handed, its instruction and any turn after: the late word once, and the word read with it.
+        var handed = string.Join("\n", Heard()
+            .Where(line => line["session"]?.GetValue<string>() == "s2" && line["method"]!.GetValue<string>() == "session/prompt")
+            .SelectMany(line => line["blocks"]!.AsArray().Select(block => block!.GetValue<string>())));
+        Assert.True(handed.Split("And use 9090.").Length - 1 == 1, handed);
+        Assert.Contains("Also log the port.", handed, StringComparison.Ordinal);
+
+        // Shown under their ids, before the instruction its run was written with.
+        var events = Events("s2").Where(e => e.Kind == SessionEventKind.User).ToList();
+        var shown = events.Where(e => e.Id is not null).ToList();
+        Assert.Equal([("w1", "person"), ("w2", "person")], shown.Select(e => (e.Id, e.Origin)));
+        Assert.True(events.IndexOf(shown[1]) < events.FindIndex(e => e.Origin == "target"), string.Join(" | ", events.Select(e => $"{e.Origin}:{e.Id}")));
+        Assert.Equal(["trace.txt"], shown[1].Files!);
+        Assert.NotNull(ChatFiles.Find(_home, "s2", "trace.txt"));
+        var went = Assert.Single(Events("s1"), e => e.Kind == SessionEventKind.Note && e.To == "s2");
+        Assert.Equal(["w1", "w2"], went.Words!);
+    }
+
+    /// <summary>
+    /// 🔴 FOUNDATION1d-ii part 5: against a host whose keyed open moves nothing (its <c>opens</c> mark 1, a d-i host), the fallback's open sends its
+    /// key and asks no words to move, and the carry-on reads, hands and takes the old record's words as before: the word the fallback read leaves
+    /// the old record, named as taken by the new session; a word said there after that read stays where it was said.
+    /// </summary>
+    [Fact]
+    public async Task Against_a_host_whose_open_moves_nothing_a_carry_on_takes_the_old_records_words_as_before()
+    {
+        await using var service = SaidStandIn.Start(_repository);
+        await FailedFirstRunAsync(service);
+        service.Opens = 1;
+        Assert.Equal("w1", await service.SayAsync("s1", "Also log the port."));
+        service.SayAtOpen("s1", "And use 9090.");
+
+        var look = await Protocol(service, "refuses").RunOnceAsync().WaitAsync(Poll.Patience);
+
+        var seen = $"look: {string.Join(" | ", look.Events)}\nafter: {service.Record("s1")}\ntaken: {string.Join(" | ", service.Taken)}\nfaults: {string.Join(" | ", service.Faults)}";
+        Assert.True(service.SessionCount == 2, seen);
+        var (key, moves) = Assert.Single(service.Opened);
+        Assert.True(key is { Length: > 0 } && moves is null, seen);
+        Assert.True(service.Taken.SequenceEqual([("s1", "w1", (string?)"s2")]), seen);
+        Assert.Equal(["w2"], service.Said("s1"));
+    }
+
+    /// <summary>
     /// The protocol door's stand-in: it names its conversation <c>conv-&lt;session&gt;</c>, and on its first prompt takes and
     /// closes the quest. The mode is how it resumes: <c>resumes</c> honours <c>session/resume</c>, and a resumed prompt is
     /// logged with its blocks; <c>elsewhere</c> refuses it as <c>codex-acp</c> does a thread another client holds; <c>refuses</c>
@@ -915,6 +987,36 @@ public sealed class SessionMessagesTickTests : IDisposable
 
         /// <summary>Each take of words: the session, the ids joined, and the session that took them where it was another.</summary>
         public List<(string Session, string Ids, string? By)> Taken { get; } = [];
+
+        /// <summary>
+        /// The host's <c>opens</c> mark (FOUNDATION1d-ii): 0 answers no protocol door, as a host before row d-i; 1 a d-i host, whose keyed open moves
+        /// nothing; 2 a host whose keyed open also moves the words its <c>moves</c> names and the person's kept since its read, in their order, each
+        /// keeping its id, its key and its fields, its attempt left behind (row d-ii part 3).
+        /// </summary>
+        public int Opens { get; set; }
+
+        /// <summary>Each keyed open's key and the moves it was asked, in order: none for an unkeyed open.</summary>
+        public List<(string Key, JsonObject? Moves)> Opened { get; } = [];
+
+        /// <summary>
+        /// Whether the stand-in keeps the quest's ask (DRIFT1a): the person's words taken off a record that reopened it kept there as
+        /// <c>reopened</c>, said to the session that took them, as the service's take door keeps them, and answered at <c>/api/asks/a1</c>.
+        /// </summary>
+        public bool Asks { get; set; }
+
+        /// <summary>The words the ask keeps, in order, each with the session it was said to.</summary>
+        public List<(string Text, string Session)> AskWords { get; } = [];
+
+        private (string Session, string Text, string[] Files)? _atOpen;
+
+        /// <summary>
+        /// A word of the person's kept on <paramref name="id"/> the moment before the next session's open reaches the stand-in: said after the
+        /// driver read the record and before it opened the record that goes on from it.
+        /// </summary>
+        public void SayAtOpen(string id, string text, params string[] files)
+        {
+            lock (_sessions) _atOpen = (id, text, files);
+        }
 
         private SaidStandIn(HttpListener listener, string url, string root)
         {
@@ -1112,6 +1214,77 @@ public sealed class SessionMessagesTickTests : IDisposable
             return copy;
         }
 
+        /// <summary>A driven record opened as the open door asks it, under the stand-in's lock.</summary>
+        private JsonObject NewSession(JsonObject body)
+        {
+            var session = new JsonObject
+            {
+                ["id"] = $"s{_sessions.Count + 1}", ["quest"] = body["quest"]!.GetValue<string>(),
+                ["repository"] = "engine", ["state"] = "queued", ["kind"] = "drive",
+                ["adapter"] = body["adapter"]?.GetValue<string>(),
+                ["harnessVersion"] = body["harnessVersion"]?.GetValue<string>(),
+                ["tree"] = body["tree"]?.GetValue<string>(),
+                ["baseCommit"] = body["baseCommit"]?.GetValue<string>(),
+                ["profile"] = body["profile"]?.GetValue<string>(),
+                ["created"] = DateTimeOffset.UtcNow.AddMinutes(_sessions.Count).ToString("O"),
+                ["said"] = new JsonArray(),
+                // AUTONOMY1a: the setup it started under, as the service keeps it (ACCESSSWAP1b reads it back).
+                ["access"] = body["access"]?.DeepClone(),
+            };
+            _sessions.Add(session);
+            return session;
+        }
+
+        /// <summary>
+        /// A keyed open (FOUNDATION1d-ii), under the stand-in's lock: the record the words leave, the open's <c>from</c> or its moves' own, refused
+        /// while it runs; then the open, and at a mark of 2 the move: each word the moves name that still waits, and each of the person's kept there
+        /// since the read and never attempted, off that record and onto the new one in their order, each keeping its id, its key and its fields,
+        /// its attempt left behind, as the service's one step moves them.
+        /// </summary>
+        private (int, string) KeyedOpen(string key, JsonObject body)
+        {
+            Opened.Add((key, body["moves"]?.DeepClone().AsObject()));
+            var moves = Opens >= 2 ? body["moves"]?.AsObject() : null;
+            var left = body["from"]?.GetValue<string>() ?? moves?["from"]?.GetValue<string>();
+            if (left is not null && Live.Contains(Find(left)["state"]!.GetValue<string>()))
+            {
+                return (409, new JsonObject { ["error"] = $"Session `{left}` cannot be left.", ["opens"] = key, ["code"] = "superseded" }.ToJsonString());
+            }
+
+            var session = NewSession(body);
+            session["from"] = body["from"]?.GetValue<string>();
+            var transfer = new JsonArray();
+            if (moves is not null && left is not null)
+            {
+                var named = moves["words"]!.AsArray().Select(word => word!.GetValue<string>()).ToHashSet(StringComparer.Ordinal);
+                var read = moves["read"]!.AsArray().Select(word => word!.GetValue<string>()).ToHashSet(StringComparer.Ordinal);
+                var source = Find(left);
+                var moved = new List<JsonObject>();
+                var stays = new JsonArray();
+                foreach (var word in source["said"]!.AsArray().Select(each => each!.DeepClone().AsObject()))
+                {
+                    var id = word["id"]!.GetValue<string>();
+                    var persons = word["helper"] is null && word["from"] is null && word["by"] is null;
+                    if (named.Contains(id) || (persons && word["attempt"] is null && !read.Contains(id))) moved.Add(word);
+                    else stays.Add(word);
+                }
+
+                source["said"] = stays;
+                foreach (var word in moved)
+                {
+                    word.Remove("attempt");
+                    var id = word["id"]!.GetValue<string>();
+                    var element = new JsonObject { ["word"] = id, ["id"] = id, ["transfer"] = $"{key}/{id}", ["order"] = transfer.Count };
+                    if (word["key"]?.GetValue<string>() is { Length: > 0 } producer) element["key"] = producer;
+                    transfer.Add(element);
+                }
+
+                session["said"] = new JsonArray([.. moved]);
+            }
+
+            return (200, new JsonObject { ["session"] = Wire(session), ["message"] = "opened", ["opens"] = key, ["transfer"] = transfer }.ToJsonString());
+        }
+
         /// <summary>
         /// HELPERWAIT1: a helper's record that serves <paramref name="serves"/>, as the host opened it for a pass (the pass itself is the
         /// test's stand-in), so its answer can be handed to the session it serves.
@@ -1172,24 +1345,36 @@ public sealed class SessionMessagesTickTests : IDisposable
                             .Where(s => all || Live.Contains(s["state"]!.GetValue<string>()))
                             .Select(Wire)]).ToJsonString());
 
+                    // FOUNDATION1d-ii: the marks a host answers, none before row d-i.
+                    case ("GET", "/api/protocol") when Opens > 0:
+                        return (200, new JsonObject { ["run"] = "said-stand-in", ["marks"] = new JsonObject { ["opens"] = Opens } }.ToJsonString());
+
+                    // DRIFT1a: the quest's ask, its person's words as the take door kept them.
+                    case ("GET", "/api/asks/a1") when Asks:
+                        return (200, new JsonObject
+                        {
+                            ["id"] = "a1", ["workspace"] = "default", ["sentence"] = "Serve the report.", ["state"] = "answered", ["tier"] = "declarations",
+                            ["words"] = new JsonArray([.. AskWords.Select(word => (JsonNode)new JsonObject
+                            {
+                                ["kind"] = "reopened", ["text"] = word.Text, ["at"] = "2026-10-03T09:00:00Z", ["session"] = word.Session,
+                            })]),
+                        }.ToJsonString());
+
                     case ("POST", "/api/sessions"):
                     {
                         var body = Body();
-                        var session = new JsonObject
+                        if (_atOpen is { } late)
                         {
-                            ["id"] = $"s{_sessions.Count + 1}", ["quest"] = body["quest"]!.GetValue<string>(),
-                            ["repository"] = "engine", ["state"] = "queued", ["kind"] = "drive",
-                            ["adapter"] = body["adapter"]?.GetValue<string>(),
-                            ["harnessVersion"] = body["harnessVersion"]?.GetValue<string>(),
-                            ["tree"] = body["tree"]?.GetValue<string>(),
-                            ["baseCommit"] = body["baseCommit"]?.GetValue<string>(),
-                            ["profile"] = body["profile"]?.GetValue<string>(),
-                            ["created"] = DateTimeOffset.UtcNow.AddMinutes(_sessions.Count).ToString("O"),
-                            ["said"] = new JsonArray(),
-                            // AUTONOMY1a: the setup it started under, as the service keeps it (ACCESSSWAP1b reads it back).
-                            ["access"] = body["access"]?.DeepClone(),
-                        };
-                        _sessions.Add(session);
+                            _atOpen = null;
+                            Find(late.Session)["said"]!.AsArray().Add(new JsonObject
+                            {
+                                ["id"] = $"w{++_words}", ["text"] = late.Text, ["at"] = DateTimeOffset.UtcNow.ToString("O"),
+                                ["files"] = new JsonArray([.. late.Files.Select(name => (JsonNode)JsonValue.Create(name))]), ["reopens"] = true,
+                            });
+                        }
+
+                        if (Opens > 0 && body["opens"]?.GetValue<string>() is { Length: > 0 } key) return KeyedOpen(key, body);
+                        var session = NewSession(body);
                         return (200, new JsonObject { ["session"] = Wire(session), ["message"] = "opened" }.ToJsonString());
                     }
 
@@ -1340,9 +1525,22 @@ public sealed class SessionMessagesTickTests : IDisposable
                         var body = Body();
                         var ids = body["said"]!.AsArray().Select(word => word!.GetValue<string>()).ToList();
                         var session = Find(id);
+                        var by = body["by"]?.GetValue<string>();
+                        if (Asks)
+                        {
+                            // As the service's take door keeps them: each of the person's words said after the record ended, said to the one that took it.
+                            foreach (var word in session["said"]!.AsArray().Where(word => ids.Contains(word!["id"]!.GetValue<string>())))
+                            {
+                                if (word!["reopens"]?.GetValue<bool>() == true && word["from"] is null && word["helper"] is null && word["by"] is null)
+                                {
+                                    AskWords.Add((word["text"]!.GetValue<string>(), by ?? id));
+                                }
+                            }
+                        }
+
                         var left = session["said"]!.AsArray().Where(word => !ids.Contains(word!["id"]!.GetValue<string>())).Select(word => word!.DeepClone());
                         session["said"] = new JsonArray([.. left]);
-                        Taken.Add((id, string.Join(',', ids), body["by"]?.GetValue<string>()));
+                        Taken.Add((id, string.Join(',', ids), by));
                         return (200, new JsonObject { ["session"] = Wire(session), ["message"] = "taken" }.ToJsonString());
                     }
 
