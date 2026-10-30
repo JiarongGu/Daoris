@@ -176,8 +176,7 @@ public sealed record HarnessSettings(
     /// person or another writer put there: the edit from what was read made onto the file as it stands (KEEPALL1b, D173's note;
     /// <see cref="JsonKeeping.Save"/>), so a key this build has no field for stays where it is at every level, a change another writer
     /// made since the read stays, and no edit writes nothing. Each settings entry was understood as the file holds it, so a save writes
-    /// an old or retired name as the new (D165 §6). Wiring built in memory is written whole. The CLI's <c>writeHarnessSettings</c> does
-    /// the same.
+    /// an old or retired name as the new (D165 §6). Wiring built in memory is written whole.
     /// </summary>
     /// <exception cref="DriverException">
     /// The file could not be read when these settings were loaded: what they hold is the empty default,
@@ -1173,9 +1172,8 @@ public sealed record HarnessSettings(
     /// so every workspace reads this one; on a raw file it is the machine's scope.
     /// </summary>
     /// <remarks>
-    /// The per-workspace reading, <c>ResolveScope</c> (D130 §2 rule 1: a workspace's scope where it named a default or a list of its own,
-    /// else the machine's), left with its last callers, the terminal's, in POOL1b (D197); an older build's reading of a file is the
-    /// tests' own rule now (<c>AccountSetTests</c>).
+    /// This reads no per-workspace scope (D130 §2 rule 1: a workspace's scope where it named a default or a list of its own, else the
+    /// machine's); an older build's reading of a file is the tests' own rule (<c>AccountSetTests</c>).
     /// </remarks>
     public RotationScope Set(string agent)
     {

@@ -21,7 +21,7 @@ note, *After review* to *After the fourth review*):
 - **Delete, then look again** read the line's forms after the branch went and put it back where they had moved. Between the two,
   every page, look and session saw the branch absent, and a put-back can itself be refused. The second review replaced it with
   the transaction: a refused one deletes nothing, so nobody sees the branch gone.
-- **Verifying what is found afterwards** (round 3's `ProofRefsAsync`) read the holder again after the judgement and fell back to
+- **Verifying what is found afterwards** read the holder again after the judgement and fell back to
   the line where none was found. A person's branch deleted in between let a line that never held the tip authorize the delete.
 - **Verifying only some of the proof** left a content holder, a landing's holder and a squashing landing's branch unchecked,
   and a landing's own rests (the line it was proved on) were not carried to the session branches it held, so a line rewound

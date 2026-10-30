@@ -110,7 +110,7 @@ public sealed class RunningAddress : IDisposable
             }
 
             var homeId = Text(root, "home") is { } named && HomeIdentity.IsId(named) ? named : null;
-            // RPC1a: a pipe is read only where it is the pipe of the home this file names (the CLI's `isPipeOf` holds the same rows).
+            // RPC1a: a pipe is read only where it is the pipe of the home this file names.
             var pipe = Text(root, "pipe") is { } served && HomePipe.IsOf(served, homeId) ? served : null;
             return new RunningEntry(address, id, ticks, homeId, pipe);
         }

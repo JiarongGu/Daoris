@@ -22,9 +22,7 @@ public sealed record PluginPackageOrigin(string Package, string Version, string 
 /// the swap: replaced with the install, removed with it, and absent from a folder copied in by hand, so
 /// "no record" is said and never guessed. The catalogue reads nothing but the manifest.</para>
 ///
-/// <para><c>PluginSourceTests</c> holds the table: the file, its shapes, and each problem in its words. The CLI's
-/// <c>readPluginSource</c> in <c>plugins.ts</c> was its twin, held to the same rows, until it left with <c>daoris plugin</c>'s
-/// TypeScript (PUSH1f2f).</para>
+/// <para><c>PluginSourceTests</c> holds the table: the file, its shapes, and each problem in its words.</para>
 ///
 /// <para>The record and its rules are pure (STRUCT3a, FLAT1b-i); <c>Read</c>, <c>Write</c> and <c>FromFolder</c> touch the
 /// machine through <see cref="PluginFolders"/>, which does the I/O, so this file names none itself.</para>
@@ -149,7 +147,7 @@ public sealed record PluginSource(string? Folder, string? Offer, PluginPackageOr
 /// <summary>One thing an update changes (PLUG9 c): `version`, `command`, `points`, `harnesses`, `servers`, (HELPPLUG1b) `skills`, or (FABRIC-UNIT1e) `steps` and `resources`, each side as its manifest writes it; empty is none.</summary>
 public sealed record PluginChange(string What, string Was, string Now)
 {
-    /// <summary>What an update changes, from what is installed to what the source now holds, each as written — the CLI's <c>changesBetween</c>.</summary>
+    /// <summary>What an update changes, from what is installed to what the source now holds, each as written.</summary>
     public static IReadOnlyList<PluginChange> Between(PluginManifest was, PluginManifest now)
     {
         static Dictionary<string, string> Said(PluginManifest manifest) => new(StringComparer.Ordinal)
@@ -159,9 +157,9 @@ public sealed record PluginChange(string What, string Was, string Now)
             ["points"] = string.Join(", ", manifest.Hooks?.Points ?? []),
             ["harnesses"] = string.Join("; ", manifest.Harnesses.Select(harness => $"{harness.Name} ({Line(harness.Command)})")),
             ["servers"] = string.Join("; ", manifest.Servers.Select(server => $"{server.Name} ({Line(server.Command)}){ServerTo(server)}")),
-            // HELPPLUG1b: each skill and who it is handed to. Twin: the CLI's `changesBetween`.
+            // HELPPLUG1b: each skill and who it is handed to.
             ["skills"] = string.Join("; ", manifest.Skills.Select(skill => $"{skill.Name} to {string.Join(" and ", skill.To)}")),
-            // FABRIC-UNIT1e (§D9): each step and resource in PluginSteps' words. Twin: the CLI's `changesBetween`.
+            // FABRIC-UNIT1e (§D9): each step and resource in PluginSteps' words.
             ["steps"] = string.Join("; ", manifest.Steps.Select(PluginSteps.Said)),
             ["resources"] = string.Join("; ", manifest.Resources.Select(PluginSteps.Said)),
         };
