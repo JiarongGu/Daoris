@@ -32,7 +32,7 @@ public sealed record StaffingFileResult(StaffingFiled How, string? Said = null, 
 /// staffing paths (<c>actors</c>, <c>adapter</c>, <c>intakeAdapter</c>, <c>helperAdapter</c>) alone, under the file's <see cref="KeepLock"/>,
 /// only where the file shows the <b>expected baseline</b> (<c>written</c> for a press; the four paths the check observed for the check's
 /// own repair), then renamed with the lock read again just before and the rename made only while it still holds this writer's text
-/// (<see cref="DriverConfig.Save"/>'s own fence). Nothing calls it yet (parts 3 and 4 wire the writers and the check).
+/// (<see cref="DriverConfig.Save"/>'s own fence). Called by the staffing's one write and by the check's repair (<see cref="RoleStaffing"/>).
 /// </summary>
 /// <remarks>
 /// <para><b>Read as the home's file is read:</b> through <see cref="DriverConfig.Load"/>, so a file that does not read, or holds a key
