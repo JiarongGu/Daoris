@@ -167,6 +167,34 @@ public static class ChildLineage
     }
 
     /// <summary>
+    /// The part's lineage as a read finds it (COWORKVIEW1a, rule 9): no file, read up to its last full line, or unreadable with the
+    /// error's kind, never an empty fold. Each process <paramref name="tokens"/> issued reads by its token there; none, as the
+    /// terminal's verb holds, reads every generation as another Daoris process's.
+    /// </summary>
+    public static LineageReading Reading(string home, string sessionId, string? kind = null, LineageTokens? tokens = null)
+    {
+        if (!SessionShape.IsMatch(sessionId)) return LineageReading.None;
+        try
+        {
+            using var stream = new FileStream(PathOf(home, sessionId), FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+            using var buffer = new MemoryStream();
+            stream.CopyTo(buffer);
+            var bytes = buffer.GetBuffer().AsSpan(0, (int)buffer.Length);
+            var whole = bytes.LastIndexOf((byte)'\n') + 1;
+            var lines = Utf8.GetString(bytes[..whole]).Split('\n');
+            return LineageReading.Of(ChildBindings.Fold(lines, kind, tokens is null ? null : tokens.Of), whole);
+        }
+        catch (Exception error) when (error is FileNotFoundException or DirectoryNotFoundException)
+        {
+            return LineageReading.None;
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            return LineageReading.Failed(error.GetType().Name);
+        }
+    }
+
+    /// <summary>
     /// What one process's run tells its part's lineage (COWORKVIEW1a): each subagent's start and end Claude Code's stream says
     /// (<see cref="ChildBindings.StreamLine"/>), and each the protocol door announces and ends, every line naming
     /// <paramref name="proc"/> where it is a token.
