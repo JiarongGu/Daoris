@@ -5,6 +5,13 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-31 - A stop made while an intake's, helper's, reviewer's or partner's handshake was open was recorded failed (STOPRACE1)
+
+- **Symptom:** a person's stop made before the protocol handshake finished ended the record `failed`, as the driven run's did before its fix.
+- **Root cause:** those four runs kept the driven run's catch-all and told `HoldAsync` no `stopMade`, so a wire the stop broke was a failure.
+- **Fix:** each passes `stopMade` and catches a failure after a stop first, ending as the stop's conclusion through `Driver.EndStoppedAsync` (the driven run's catch uses it too).
+- **Verify:** a case per run (`IntakeTests`, `HelperProcessTests`, `ReviewTreeTests`, `PartnerProcessTests`), red before; each class green.
+
 ## 2026-10-31 - A test still pinned the first-look baseline row m-iv replaced (FOUNDATION1 m-iv)
 
 - **Symptom:** `A_wait_already_there_at_the_first_look_is_a_baseline_never_a_backlog` failed every run.

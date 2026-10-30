@@ -21860,3 +21860,9 @@ The row is quoted by its head; its whole text and proof are the foundation desig
 The row is quoted by its head; its whole text and proof are the foundation design's Part B table, row 1y-i.
 
 **Outcome** 2026-10-31: one judged door (`Roles/RoleDoor.cs`) for `SET_ROLE`, `daoris driver role` and `role_propose`'s press; Settings → AI features → Role catalogue in both languages, with the Designer suggested there (MODELROLE1g's card is unbuilt); a work no role takes holds its starts and says why, an intake's on its ask; a running session goes on; no `settings_*` grant names a role. Owed: the owner adding a role on the install. Detail in D212's FOUNDATION1y-i note.
+
+## STOPRACE1 — a stop made while a start is still opening is the person's end on every run (2026-10-31)
+
+> The asker's row (STOPRACE1) was not in this tree's backlog; the quest carried it.
+
+**Outcome** 2026-10-31: the intake, helper, reviewer and partner runs end a stop made before their handshake finished as the stop's, as the driven run does, through `Driver.EndStoppedAsync`; a case per run, red before. A resumed driven run reached no failing path and is unchanged. Detail in the FIX-LOG entry of that date.
