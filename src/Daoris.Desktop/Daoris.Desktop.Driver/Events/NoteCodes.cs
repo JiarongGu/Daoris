@@ -1005,11 +1005,14 @@ public static class BackgroundNotes
             + "repository's conventions, or to restore what it does not want and say which.",
             ("paths", paths));
 
-    /// <summary>The session was carried on as often as one run is (<see cref="TurnCarry.Bound"/>) and its tree is still not clean: it ends as it always did.</summary>
+    /// <summary>
+    /// The session was carried on as often as its run is (<see cref="TurnCarry.Limit"/>: twice at a turn's end, once for a went-on run) and its
+    /// tree is still not clean: it ends as it always did. The words name no count, since the limit is the look's own.
+    /// </summary>
     public static Noted CarryBound() =>
         Noted.Of(
             NoteCodes.BackgroundCarryBound,
-            "— its session was carried on twice for the uncommitted work in its tree and it is still not clean: the session ends, and that "
+            "— its session was carried on for the uncommitted work in its tree and it is still not clean: the session ends, and that "
             + "work waits uncommitted for your review.");
 
     /// <summary>Each work and the state it ended in, as the English and the prompt to the agent both say them.</summary>
