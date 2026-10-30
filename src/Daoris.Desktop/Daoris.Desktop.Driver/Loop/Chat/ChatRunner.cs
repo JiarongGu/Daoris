@@ -151,7 +151,19 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
         _waits = new LimitWaits(_context, _limit, _goOn);
         _limit.Stays = _waits.Wait;
         _goOn.Waits = _waits.Add;
+
+        // One holder for the moves of the home, the hand-over's among them (FOUNDATION1f-v part a): it imports the boxes an older build wrote and
+        // the come-up takes a dead shell's moves up through it, and the hand-over takes the move it leaves standing.
+        Moves = _limit.Moves;
     }
+
+    /// <summary>
+    /// The hand-overs this run holds that wait to be taken (FOUNDATION1f-v part a), at a look: a dead shell's or an older build's the come-up or
+    /// an earlier look left standing, each judged again as it is taken; one whose conversation is talking waits for its turn's end.
+    /// </summary>
+    /// <param name="onEnded">Told when a new conversation ends, as a start's is.</param>
+    public Task<IReadOnlyList<ChatStart>> TakeHandOversAsync(Func<string, string, Task> onEnded, CancellationToken ct = default) =>
+        _handOver.TakeAllAsync(onEnded, ct);
 
     /// <summary>
     /// The look's <c>limits</c> stage (LIMITRESUME1c, D206 §3.4; <see cref="LimitWaits.LookAsync"/>): each conversation that waits for an
@@ -173,7 +185,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
     internal ConversationMoves Moves
     {
         get => _limit.Moves;
-        set => _limit.Moves = _curve.Moves = value;
+        set => _limit.Moves = _curve.Moves = _handOver.Moves = value;
     }
 
     /// <summary>

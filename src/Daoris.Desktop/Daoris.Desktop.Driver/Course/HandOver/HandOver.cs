@@ -100,32 +100,39 @@ public static class HandOver
     /// <summary>The tree it ran in no longer exists, so the new conversation has nowhere to go on.</summary>
     public const string TreeGone = HandOverAskWhy.TreeGone;
 
-    /// <summary>Judge and keep the box for a conversation of this machine's.</summary>
+    /// <summary>
+    /// Judge and decide the move for a conversation of this machine's (FOUNDATION1f-v part a, §3.3, §13.4 step 1): the hand-over is kept as a
+    /// move record in the store, decided as it is asked, and no <c>&lt;s&gt;.hand-over.json</c> is written. A record a move still stands for,
+    /// whether a hand-over waiting or another move under way, takes no second ask, read from the store.
+    /// </summary>
     /// <param name="accountsOf">The accounts the roster holds for an agent, or null where it has no such agent.</param>
-    public static async Task<HandOverAnswer> AskAsync(
-        ServiceClient service, string home, Func<string, IReadOnlyList<string>?> accountsOf, string id, string agent, string? account,
+    /// <param name="moves">The conversations' move record, whose run claims the decision.</param>
+    internal static async Task<HandOverAsked> AskAsync(
+        ServiceClient service, ConversationMoves moves, Func<string, IReadOnlyList<string>?> accountsOf, string id, string agent, string? account,
         string why, string askedBy, DateTimeOffset now, CancellationToken ct = default)
     {
         var (refused, _) = await JudgeAsync(service, accountsOf, id, agent, account, ct).ConfigureAwait(false);
-        if (refused is not null) return refused;
-
-        var box = new HandOverBox(home);
-        if (box.Read(id) is { } waiting)
-        {
-            return Refused(Waiting, $"{id} is already waiting to be handed over to {waiting.Agent}.");
-        }
+        if (refused is not null) return new HandOverAsked(refused, null, null);
 
         var named = string.IsNullOrWhiteSpace(account) ? null : account.Trim();
-        try
+        var begun = await moves.BeginAsync(
+            new MoveDecision(id, MoveExecutors.Conversation, MoveHows.Brief, why, askedBy) { Agent = agent, Account = named }, ct).ConfigureAwait(false);
+        if (begun.Move is { } move)
         {
-            box.Write(id, new HandOverRequest(agent, named, why, askedBy, now));
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-        {
-            return new HandOverAnswer(false, null, $"your ask could not be kept: {error.Message}");
+            return new HandOverAsked(
+                new HandOverAnswer(true, null, $"it goes on with {agent} as soon as its turn is over, in a conversation of its own."), move,
+                new HandOverRequest(agent, named, why, askedBy, now));
         }
 
-        return new HandOverAnswer(true, null, $"it goes on with {agent} as soon as its turn is over, in a conversation of its own.");
+        if (begun.Standing is { } standing)
+        {
+            return new HandOverAsked(
+                Refused(Waiting, standing is { Agent: { } waiting } && string.Equals(standing.Left, id, StringComparison.Ordinal)
+                    ? $"{id} is already waiting to be handed over to {waiting}."
+                    : $"{id} has a move under way, which an ask waits behind."), null, null);
+        }
+
+        return new HandOverAsked(new HandOverAnswer(false, null, $"your ask could not be kept: {begun.Refused}"), null, null);
     }
 
     /// <summary>
@@ -201,23 +208,28 @@ public static class HandOver
     internal static HandOverAnswer Refused(string why, string message) => new(false, why, message);
 }
 
+/// <summary>What an ask came to (<see cref="HandOver.AskAsync"/>): the answer, and where it was kept the move decided for it with the request.</summary>
+internal sealed record HandOverAsked(HandOverAnswer Answer, ConversationMove? Move, HandOverRequest? Request);
+
 /// <summary>
-/// Taking a hand-over's box (MIXAGENT1a-i, D163 §3): judged again, then the old conversation ends, the new starts in its tree on
+/// Taking a hand-over (MIXAGENT1a-i, D163 §3): judged again, then the old conversation ends, the new starts in its tree on
 /// the agent and account asked for and is told Daoris's briefing, and both records say where it went and where it came from.
 /// Pure of the runner's own parts, which are handed in, so the sequence is held in-process.
 /// </summary>
 /// <remarks>
-/// <b>The old ends before the new starts</b>: a tree is held by one session at a time (D51). <b>The box is gone however it came
-/// out</b>, so a refused start is not tried again at every shell's come-up; the asker is told, and asks again.
+/// <b>The old ends before the new starts</b>: a tree is held by one session at a time (D51). <b>The move is ended however it came out</b>
+/// (its executor's, FOUNDATION1f-v part a), so a refused start is not tried again at every shell's come-up; the asker is told, and asks again.
 /// </remarks>
 public static class HandOverTake
 {
     /// <summary>Judge, end, start, brief and say where it went.</summary>
     /// <param name="end">Ends the old conversation by the runner's own end, and returns once its record has ended.</param>
     /// <param name="start">
-    /// Opens the new conversation in the old one's tree on the box's agent and account, its record naming the one it continues,
-    /// why and who asked (MIXAGENT1a-iii).
+    /// Opens the new conversation in the old one's tree on the ask's agent and account, its record naming the one it continues,
+    /// why and who asked (MIXAGENT1a-iii), asking the host to move the old part's waiting words under the move's key where it has one
+    /// (<paramref name="opens"/>): every word of the person's kept there meanwhile, none named, since a hand-over carries none of its own.
     /// </param>
+    /// <param name="opens">The key the move's open is sent with (FOUNDATION1f-v part a); null for an open with no move record behind it.</param>
     /// <param name="say">Hands the new conversation its first message; false where nothing took it.</param>
     /// <param name="moved">
     /// What the usage curve's decision said, where Daoris moves the conversation to another account by it (SWITCH1c-ii): the
@@ -232,66 +244,61 @@ public static class HandOverTake
     public static async Task<HandedOver> RunAsync(
         ServiceClient service, string home, SessionEvents events, SessionOutput? output, string id, HandOverRequest ask,
         Func<string, IReadOnlyList<string>?> accountsOf, Func<string, Task> end,
-        Func<PriorSession, HandOverRequest, ContinuedFrom, CancellationToken, Task<ChatStart>> start, Func<string, ChatMessage, Task<bool>> say,
-        CancellationToken ct = default, SwitchChoice.MoveTo? moved = null, ClosingNote? closing = null)
+        Func<PriorSession, HandOverRequest, ContinuedFrom, MoveWords?, CancellationToken, Task<ChatStart>> start, Func<string, ChatMessage, Task<bool>> say,
+        CancellationToken ct = default, SwitchChoice.MoveTo? moved = null, ClosingNote? closing = null, string? opens = null)
     {
-        var box = new HandOverBox(home);
-        try
+        var (refused, prior) = await HandOver.JudgeAsync(service, accountsOf, id, ask.Agent, ask.Account, ct).ConfigureAwait(false);
+        if (refused is not null) return new HandedOver(null, false, refused.Why, refused.Message);
+
+        var from = prior!.Adapter ?? "its agent";
+        // MIXAGENT1c: where its agent asked to hand over, its own note, told after Daoris's record as that agent's claim; SESSCTX1c part
+        // B: else the closing note the take asked, or that none was written.
+        var note = (ask.AskedBy == HandOverBy.Agent ? new HandOverAskFiles(home).Ask(id)?.Note : null) ?? closing?.Note;
+        // SESSCTX1b: Daoris's brief of the whole line (ContextBrief), in place of the request, the last plan and words and what
+        // is uncommitted, the note its own section (the design §3.1 item 6).
+        var brief = await ContextBriefs.ComposeAsync(
+                service, events, home, id, ask.Why, conversation: true, note: note, ct: ct, noteAsked: closing is not null, before: closing?.Before)
+            .ConfigureAwait(false);
+
+        await end(id).ConfigureAwait(false);
+
+        // FOUNDATION1f-v part a (§3.4 rule 3): the open is keyed with nothing named and nothing read, as the curve's is, so the host moves every
+        // word of the person's kept on the old part meanwhile and the new part's own go-on says it after the brief, never before.
+        var moves = opens is null ? null : MovedWords.Asked(id, [], []) with { Opens = opens };
+        var started = await start(prior, ask, new ContinuedFrom(id, ask.Why, ask.AskedBy), moves, ct).ConfigureAwait(false);
+        if (started.SessionId is not { } to)
         {
-            var (refused, prior) = await HandOver.JudgeAsync(service, accountsOf, id, ask.Agent, ask.Account, ct).ConfigureAwait(false);
-            if (refused is not null) return new HandedOver(null, false, refused.Why, refused.Message);
-
-            var from = prior!.Adapter ?? "its agent";
-            // MIXAGENT1c: where its agent asked to hand over, its own note, told after Daoris's record as that agent's claim; SESSCTX1c part
-            // B: else the closing note the take asked, or that none was written.
-            var note = (ask.AskedBy == HandOverBy.Agent ? new HandOverAskFiles(home).Ask(id)?.Note : null) ?? closing?.Note;
-            // SESSCTX1b: Daoris's brief of the whole line (ContextBrief), in place of the request, the last plan and words and what
-            // is uncommitted, the note its own section (the design §3.1 item 6).
-            var brief = await ContextBriefs.ComposeAsync(
-                    service, events, home, id, ask.Why, conversation: true, note: note, ct: ct, noteAsked: closing is not null, before: closing?.Before)
-                .ConfigureAwait(false);
-
-            await end(id).ConfigureAwait(false);
-
-            var started = await start(prior, ask, new ContinuedFrom(id, ask.Why, ask.AskedBy), ct).ConfigureAwait(false);
-            if (started.SessionId is not { } to)
-            {
-                return new HandedOver(
-                    null, false, null,
-                    $"{id} ended, but the conversation with {ask.Agent} did not start: {started.Message} Its tree is as it was.");
-            }
-
-            // A move by the usage curve names the account it left and the one it went to (SWITCH1c-ii): the record that says so stays
-            // on this machine. Only where the decision is the box's own move, on the account the record ran on.
-            var left = moved is not null && ask.Why == HandOverWhy.Curve
-                       && string.Equals(moved.Account, ask.Account, StringComparison.OrdinalIgnoreCase) && prior.Profile is { Length: > 0 } account
-                ? account
-                : null;
-            var opening = left is null ? HandOverNotes.TakenOver(from, id, ask.Why) : HandOverNotes.MovedFrom(left, moved!);
-            var taken = await say(to, new ChatMessage("", []) { Brief = brief, TakenOver = opening }).ConfigureAwait(false);
-
-            // Where it went, where the person wrote it: the old conversation's last line, after its own end.
-            var went = left is null ? HandOverNotes.HandedOver(ask.Agent, to) : HandOverNotes.Moved(left, moved!);
-            output?.Append(id, went.Note);
-            events.Keep(id, new SessionEvent { Kind = SessionEventKind.Note, Text = went.Note, Parts = went.Parts }, say: null);
-
-            // A briefing nobody took is no success: the new conversation says so, by a code, and the answer carries it.
-            if (!taken)
-            {
-                var unsaid = HandOverNotes.Unsaid();
-                output?.Append(to, unsaid.Note);
-                events.Keep(to, new SessionEvent { Kind = SessionEventKind.Note, Text = unsaid.Note, Parts = unsaid.Parts }, say: null);
-            }
-
             return new HandedOver(
-                to, true, taken ? null : HandOver.Unbriefed,
-                taken
-                    ? $"conversation `{to}` goes on from `{id}` with {ask.Agent}."
-                    : $"conversation `{to}` opened with {ask.Agent}, but what Daoris kept of `{id}` did not reach it: tell it where you were.");
+                null, false, null,
+                $"{id} ended, but the conversation with {ask.Agent} did not start: {started.Message} Its tree is as it was.");
         }
-        finally
+
+        // A move by the usage curve names the account it left and the one it went to (SWITCH1c-ii): the record that says so stays
+        // on this machine. Only where the decision is the move's own, on the account the record ran on.
+        var left = moved is not null && ask.Why == HandOverWhy.Curve
+                   && string.Equals(moved.Account, ask.Account, StringComparison.OrdinalIgnoreCase) && prior.Profile is { Length: > 0 } account
+            ? account
+            : null;
+        var opening = left is null ? HandOverNotes.TakenOver(from, id, ask.Why) : HandOverNotes.MovedFrom(left, moved!);
+        var taken = await say(to, new ChatMessage("", []) { Brief = brief, TakenOver = opening }).ConfigureAwait(false);
+
+        // Where it went, where the person wrote it: the old conversation's last line, after its own end.
+        var went = left is null ? HandOverNotes.HandedOver(ask.Agent, to) : HandOverNotes.Moved(left, moved!);
+        output?.Append(id, went.Note);
+        events.Keep(id, new SessionEvent { Kind = SessionEventKind.Note, Text = went.Note, Parts = went.Parts }, say: null);
+
+        // A briefing nobody took is no success: the new conversation says so, by a code, and the answer carries it.
+        if (!taken)
         {
-            box.Clear(id);
+            var unsaid = HandOverNotes.Unsaid();
+            output?.Append(to, unsaid.Note);
+            events.Keep(to, new SessionEvent { Kind = SessionEventKind.Note, Text = unsaid.Note, Parts = unsaid.Parts }, say: null);
         }
+
+        return new HandedOver(
+            to, true, taken ? null : HandOver.Unbriefed,
+            taken
+                ? $"conversation `{to}` goes on from `{id}` with {ask.Agent}."
+                : $"conversation `{to}` opened with {ask.Agent}, but what Daoris kept of `{id}` did not reach it: tell it where you were.");
     }
 }
