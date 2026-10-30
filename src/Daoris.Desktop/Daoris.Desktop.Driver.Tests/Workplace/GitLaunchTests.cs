@@ -198,33 +198,39 @@ public sealed class GitLaunchTests
     /// are the seams of their own, each a start a census of its own holds (<c>ProcessStartsCensusTests</c>), and the trees' two are
     /// the same as before.
     /// </summary>
+    /// <summary>The files, by name, that start a process: a git's start info (GitStart), a start handed to the gate, a child run, the runtime's start, or a git's info built by hand.</summary>
+    private static SortedSet<string> StartFiles(IEnumerable<(string File, string Source)> sources) =>
+        new(sources.Where(each => Regex.IsMatch(
+                Regex.Replace(each.Source.Replace("\r\n", "\n"), @"//[^\n]*", ""),
+                @"\bGitStart\s*\(|\bProcessStarts\.\w+\.(?:StartAsync|RunAsync)\s*\(|\bStartAsync\s*\(\s*info\b|\bChildProcess\.RunAsync\s*\(|\bProcess\.Start\b|ProcessStartInfo\s*\(\s*""git"))
+            .Select(each => each.File), StringComparer.Ordinal);
+
+    /// <summary>The files that may start a process, each for the seam it is (how many starts a listed file makes is not pinned, CENSUSRULES1).</summary>
+    private static readonly string[] StartingFiles =
+    [
+        "AgentStarts.cs", "ChatRunner.cs", "ChildProcess.cs", "CodexUsage.cs", "Driver.cs", "DriverContinuations.cs",
+        "GeneratedWriters.cs", "GitDoors.cs", "GitIdentityActs.cs", "HarnessActions.cs", "HarnessSelection.cs",
+        "HeavyStep.cs", "HookProcess.cs", "PieceLauncher.cs", "PluginToolRuns.cs", "PluginTrialProcess.cs",
+        "ProcessStarts.cs", "SetupWorld.cs", "ToolQuestions.cs", "TransportRun.cs", "WorkingTree.cs",
+    ];
+
+    private static List<string> StartProblems(IReadOnlyCollection<string> found) =>
+    [
+        .. found.Where(file => !StartingFiles.Contains(file)).Select(file => $"{file} starts a process and is not listed"),
+        .. StartingFiles.Where(file => !found.Contains(file)).Select(file => $"{file} is listed and starts none now"),
+    ];
+
     [Fact]
     public void No_git_is_started_in_the_trees_code_outside_the_seam()
     {
-        var found = new List<string>();
-        foreach (var file in SourceFiles.All(SourceFiles.DriverProject, "*.cs"))
-        {
-            var relative = Path.GetFileName(file);
-            var source = Regex.Replace(File.ReadAllText(file).Replace("\r\n", "\n"), @"//[^\n]*", "");
-            // git's start info (GitStart), a start handed to the gate, a child run, the runtime's start, or a git's info built by hand.
-            var starts = Regex.Matches(
-                source,
-                @"\bGitStart\s*\(|\bProcessStarts\.\w+\.(?:StartAsync|RunAsync)\s*\(|\bStartAsync\s*\(\s*info\b|\bChildProcess\.RunAsync\s*\(|\bProcess\.Start\b|ProcessStartInfo\s*\(\s*""git").Count;
-            if (starts > 0) found.Add($"{relative}: {starts}");
-        }
+        // The trees' two: WorkingTree (GitStart's definition, its calls, the Whole runner's ChildProcess runs and the other two runners' gate
+        // starts) and GeneratedWriters, a generator's shell (GEN1), which is no git. The rest are other seams' starts (a harness, a plugin's
+        // tool, the launcher's containment), none of them a git start of the trees'.
+        var problems = StartProblems(StartFiles(SourceFiles.All(SourceFiles.DriverProject, "*.cs")
+            .Select(file => (Path.GetFileName(file), File.ReadAllText(file)))));
+        Assert.True(problems.Count == 0, string.Join('\n', problems));
 
-        // The trees' two: WorkingTree: GitStart's definition, its three calls (one per runner), the Whole runner's two ChildProcess runs
-        // and the other two runners' gate starts; GeneratedWriters: a generator's shell (GEN1), which is no git. The rest are other
-        // seams' starts (a harness, a plugin's tool, the launcher's containment), none of them a git start of the trees'.
-        Assert.Equal(
-            [
-                "AgentStarts.cs: 1", "ChatRunner.cs: 1", "ChildProcess.cs: 1", "CodexUsage.cs: 1", "Driver.cs: 1", "DriverContinuations.cs: 2",
-                "GeneratedWriters.cs: 1", "GitDoors.cs: 3", "GitIdentityActs.cs: 1", "HarnessActions.cs: 2", "HarnessSelection.cs: 1",
-                "HeavyStep.cs: 1", "HookProcess.cs: 1", "PieceLauncher.cs: 1", "PluginToolRuns.cs: 1", "PluginTrialProcess.cs: 1",
-                "ProcessStarts.cs: 2", "SetupWorld.cs: 1", "ToolQuestions.cs: 1", "TransportRun.cs: 1", "WorkingTree.cs: 8",
-            ],
-            found.Order(StringComparer.Ordinal));
-
+        // These two are the seam's shape, a count by design: one call per runner, one launch per runner.
         var tree = File.ReadAllText(SourceFiles.Driver("WorkingTree.cs"));
         foreach (var runner in new[] { "RunLaunchedAsync", "BytesLaunchedAsync", "ReadLaunchedAsync" })
         {
@@ -233,5 +239,20 @@ public sealed class GitLaunchTests
         }
 
         Assert.Equal(3, Regex.Matches(tree, @"GitLaunch\.LaunchAsync\(").Count);
+    }
+
+    /// <summary>A new file that starts a process fails the census; one more start in a listed file passes (CENSUSRULES1).</summary>
+    [Fact]
+    public void A_start_in_a_new_file_fails_the_source_census_and_one_more_in_a_listed_file_passes()
+    {
+        var stand = StartingFiles.Select(file => (File: file, Source: "var info = GitStart(args);")).ToList();
+
+        Assert.Empty(StartProblems(StartFiles(stand)));
+        Assert.Empty(StartProblems(StartFiles(stand.Select(each => each.File == "WorkingTree.cs"
+            ? (each.File, each.Source + "\nvar again = GitStart(more); var p = Process.Start(info);") : each))));
+        Assert.Equal(["Planted.cs starts a process and is not listed"],
+            StartProblems(StartFiles(stand.Append(("Planted.cs", "var p = ChildProcess.RunAsync(info);")))));
+        Assert.Equal(["WorkingTree.cs is listed and starts none now"],
+            StartProblems(StartFiles(stand.Select(each => each.File == "WorkingTree.cs" ? (each.File, "var x = 1;") : each))));
     }
 }
