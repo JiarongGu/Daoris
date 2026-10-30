@@ -174,7 +174,7 @@ builder.Services
     // Every call judged by the session's role before its tool runs (COAGENT1b, D199 point 4): a partner's record is held to its
     // allow-list, and any record that serves another publishes, takes and closes no quest, whatever rules its agent takes. A brainstorm
     // pass, known by the turn named on this connector, is held to its result tools (D176 point 2; HANDBACK1's review).
-    .RefuseOutsideRole(new SessionRoles(composed.Ledger, intake, BrainstormScope.FromEnvironment()).ReadAsync)
+    .RefuseOutsideRole(new SessionWorks(composed.Ledger, intake, BrainstormScope.FromEnvironment()).ReadAsync)
     // Every answer ends with what waits for the session on its ask's channel, once per new message (COWORK1d, D188's note): the pull
     // an agent meets at its next call, whatever its door.
     .TellWhatWaits(new WaitingLine(composed.Channel, intake).NextAsync)

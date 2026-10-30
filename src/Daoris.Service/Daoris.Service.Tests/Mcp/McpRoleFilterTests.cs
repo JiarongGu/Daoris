@@ -40,9 +40,9 @@ public sealed class McpRoleFilterTests : McpToolsFixture
         }
     }
 
-    private static readonly SessionRole Partner = new("lead1", "pc000001");
+    private static readonly SessionWork Partner = new(ParticipantWork.Partner);
 
-    private static readonly SessionRole Helper = new("lead1", null);
+    private static readonly SessionWork Helper = new(ParticipantWork.Help);
 
     /// <summary>🔴 The census: the partner's allowed and refused lists name every advertised tool, each once, and nothing else.</summary>
     [Fact]
@@ -106,7 +106,7 @@ public sealed class McpRoleFilterTests : McpToolsFixture
         Assert.Null(ConnectorRoles.Refusal("helper_answer", Helper));
         Assert.Null(ConnectorRoles.Refusal("quest_list", Helper));
         Assert.Null(ConnectorRoles.Refusal("handback_read", Helper));
-        Assert.All(ConnectorRoles.PartnerRefused, tool => Assert.Null(ConnectorRoles.Refusal(tool, SessionRole.None)));
+        Assert.All(ConnectorRoles.PartnerRefused, tool => Assert.Null(ConnectorRoles.Refusal(tool, SessionWork.Unnamed)));
     }
 
     /// <summary>
@@ -124,43 +124,56 @@ public sealed class McpRoleFilterTests : McpToolsFixture
     [InlineData("brainstorm_synthesize", true)]
     public void A_brainstorm_pass_is_held_to_its_result_tools(string tool, bool allowed)
     {
-        var refusal = ConnectorRoles.Refusal(tool, SessionRole.Brainstorming);
+        var refusal = ConnectorRoles.Refusal(tool, SessionWork.Generating);
 
         Assert.Equal(allowed, refusal is null);
         if (!allowed) Assert.Contains("not a brainstorm pass's to call", refusal);
     }
 
     /// <summary>
-    /// A brainstorm pass's connector names a session Daoris keeps no record of: its role is read from the turn named on it, never the
-    /// ledger, so a session the ledger does not know is still held to the pass's role. A connector naming no turn is read as before.
+    /// 🔴 FOUNDATION1r: a brainstorm's scope is placed first, by the turn named on its connector and never by a record, as its generator
+    /// or its synthesizer. A connector naming no whole turn is read by its record, and a session no record keeps is unplaced.
     /// </summary>
     [Fact]
-    public async Task A_brainstorm_pass_is_read_from_its_turn_not_from_a_record()
+    public async Task A_brainstorm_pass_is_placed_by_its_turn_first_as_generator_or_synthesizer()
     {
-        var sessions = await SessionStore.OpenAsync(_connection);
-        var ledger = new SessionLedger(_quests, sessions, _service, await AskStore.OpenAsync(_connection));
-        var turn = new BrainstormScope("b1", "g1", Path.Combine(_root, "answer.json"), Path.Combine(_root, "room"));
+        var ledger = await LedgerAsync();
+        BrainstormScope Turn(string turn) => new("b1", turn, Path.Combine(_root, "answer.json"), Path.Combine(_root, "room"));
 
-        Assert.Equal(SessionRole.Brainstorming, await new SessionRoles(ledger, new IntakeScope(null, "brainstorm-b1-g1"), turn).ReadAsync(default));
-        Assert.Equal(SessionRole.None, await new SessionRoles(ledger, new IntakeScope(null, "brainstorm-b1-g1"), new BrainstormScope(null, null, null, null))
+        Assert.Equal(SessionWork.Generating, await new SessionWorks(ledger, new IntakeScope(null, "brainstorm-b1-g1"), Turn("g1")).ReadAsync(default));
+        Assert.Equal(SessionWork.Synthesizing, await new SessionWorks(ledger, new IntakeScope(null, "brainstorm-b1-s1"), Turn("s1r")).ReadAsync(default));
+        Assert.Equal(SessionWork.Unplaced, await new SessionWorks(ledger, new IntakeScope(null, "brainstorm-b1-g1"), new BrainstormScope(null, null, null, null))
             .ReadAsync(default));
     }
 
-    /// <summary>The role is the record's: a partner's, a helper's (its piece dropped without a lead is none), and nobody's.</summary>
+    /// <summary>
+    /// 🔴 FOUNDATION1r: the connector's session is its record's work, read by the one rule (<see cref="ParticipantWork.Of"/>); a session
+    /// with no record is unplaced, and a connector that names none is a person's own agent's.
+    /// </summary>
     [Fact]
-    public async Task The_role_is_read_from_the_record_the_connector_names()
+    public async Task The_work_is_read_from_the_record_the_connector_names()
     {
         var sessions = await SessionStore.OpenAsync(_connection);
         var ledger = new SessionLedger(_quests, sessions, _service, await AskStore.OpenAsync(_connection));
         var lead = await sessions.CreateAsync("q1", "Owner", "claude-code", DateTimeOffset.UtcNow, tree: Path.Combine(_root, "trees", "lead"));
         var partner = await sessions.CreateAsync(null, "Owner", "codex-acp", DateTimeOffset.UtcNow, kind: SessionKind.Chat, serves: lead.Id, piece: "pc000001");
         var helper = await sessions.CreateAsync(null, "Owner", "codex-acp", DateTimeOffset.UtcNow, kind: SessionKind.Chat, serves: lead.Id);
+        var chat = await sessions.CreateAsync(null, "Owner", "codex-acp", DateTimeOffset.UtcNow, kind: SessionKind.Chat);
 
-        Assert.Equal(new SessionRole(lead.Id, "pc000001"), await new SessionRoles(ledger, new IntakeScope(null, partner.Id)).ReadAsync(default));
-        Assert.Equal(new SessionRole(lead.Id, null), await new SessionRoles(ledger, new IntakeScope(null, helper.Id)).ReadAsync(default));
-        Assert.Equal(SessionRole.None, await new SessionRoles(ledger, new IntakeScope(null, lead.Id)).ReadAsync(default));
-        Assert.Equal(SessionRole.None, await new SessionRoles(ledger, new IntakeScope(null, "nobody")).ReadAsync(default));
-        Assert.Equal(SessionRole.None, await new SessionRoles(ledger, new IntakeScope(null, null)).ReadAsync(default));
+        Task<SessionWork> Read(string? session) => new SessionWorks(ledger, new IntakeScope(null, session)).ReadAsync(default);
+
+        Assert.Equal(new SessionWork(ParticipantWork.Partner), await Read(partner.Id));
+        Assert.Equal(new SessionWork(ParticipantWork.Help), await Read(helper.Id));
+        Assert.Equal(new SessionWork(ParticipantWork.Build), await Read(lead.Id));
+        Assert.Equal(new SessionWork(ParticipantWork.Chat), await Read(chat.Id));
+        Assert.Equal(SessionWork.Unplaced, await Read("nobody"));
+        Assert.Equal(SessionWork.Unnamed, await Read(null));
+    }
+
+    private async Task<SessionLedger> LedgerAsync()
+    {
+        var sessions = await SessionStore.OpenAsync(_connection);
+        return new SessionLedger(_quests, sessions, _service, await AskStore.OpenAsync(_connection));
     }
 
     /// <summary>🔴 Through the server: a partner's refused call is answered with its sentence and never reaches its tool.</summary>
@@ -194,10 +207,10 @@ public sealed class McpRoleFilterTests : McpToolsFixture
         while (at is not null && !File.Exists(Path.Combine(at.FullName, "daoris.json"))) at = at.Parent;
         var program = File.ReadAllText(Path.Combine(at!.FullName, "src", "Daoris.Service", "Daoris.Service.Mcp", "Program.cs"));
 
-        Assert.Contains(".RefuseOutsideRole(new SessionRoles(composed.Ledger, intake, BrainstormScope.FromEnvironment()).ReadAsync)", program);
+        Assert.Contains(".RefuseOutsideRole(new SessionWorks(composed.Ledger, intake, BrainstormScope.FromEnvironment()).ReadAsync)", program);
     }
 
-    private static async Task<List<string>> CallAsync(Func<CancellationToken, Task<SessionRole>> role, params string[] tools)
+    private static async Task<List<string>> CallAsync(Func<CancellationToken, Task<SessionWork>> role, params string[] tools)
     {
         var toServer = new Pipe();
         var fromServer = new Pipe();

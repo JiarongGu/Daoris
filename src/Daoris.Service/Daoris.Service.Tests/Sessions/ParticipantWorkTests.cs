@@ -34,8 +34,8 @@ public sealed class ParticipantWorkTests : McpToolsFixture
     }
 
     /// <summary>
-    /// Census A, the connector's half: where <see cref="ConnectorRoles"/>' reading of <c>serves</c> and <c>piece</c> (a record read from the ledger
-    /// as the connector reads it) says a partner, the work says it as well, on every row; a difference would be a listed decision.
+    /// Census A, the connector's half: the connector reads a record's work by the one rule (FOUNDATION1r), so where its reading of
+    /// <c>serves</c> and <c>piece</c> said a partner before, the work says it as well, on every row; a difference would be a listed decision.
     /// </summary>
     [Theory]
     [MemberData(nameof(Rows))]
@@ -49,9 +49,9 @@ public sealed class ParticipantWorkTests : McpToolsFixture
             kind: row.Marks.Kind == "chat" ? SessionKind.Chat : SessionKind.Driven,
             ask: row.Marks.Ask, opinion: row.Marks.Opinion, serves: row.Marks.Serves, piece: row.Marks.Piece);
 
-        var role = await new SessionRoles(ledger, new IntakeScope(null, kept.Id)).ReadAsync(default);
+        var work = await new SessionWorks(ledger, new IntakeScope(null, kept.Id)).ReadAsync(default);
 
-        Assert.Equal(row.Today.ConnectorPartner, role.Partner);
+        Assert.Equal(new SessionWork(ParticipantWork.Of(kept)!), work);
         Assert.Equal(row.ByWork.ConnectorPartner, ParticipantWork.Of(Record(row.Marks)) == ParticipantWork.Partner);
     }
 

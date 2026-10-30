@@ -498,11 +498,6 @@
     "Mcp/Program.cs": {
       "reads": "other",
       "note": "an ask's own field or a scope's ask, not a record's mark"
-    },
-    "Mcp/RoleFilter.cs": {
-      "reads": "tells",
-      "row": "1r",
-      "note": "`SessionRole` reads `serves` with `piece` for a partner and `serves` for a record that serves; it becomes the work (§2.3)"
     }
   }
 }
