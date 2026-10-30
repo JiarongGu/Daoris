@@ -23,93 +23,20 @@ public sealed class AttentionTests
         IReadOnlyList<SessionView> active, params SessionEnded[] concluded) =>
         new([], [], Progressed: false, Active: active, Concluded: concluded);
 
-    [Fact]
-    public void A_session_that_parks_is_worth_saying()
-    {
-        var watch = new AttentionWatch();
-        watch.Observe(Tick([Session("s1", "working")]));
-
-        var events = watch.Observe(Tick([Session("s1", "awaiting-person")]));
-
-        var parked = Assert.Single(events);
-        Assert.Equal(AttentionKind.Parked, parked.Kind);
-        Assert.Equal("s1", parked.Session);
-        Assert.Equal("engine", parked.Repository);
-    }
-
     /// <summary>
-    /// A parked session stays parked for as long as nobody answers it, and every tick sees it. Saying
-    /// so once is a notification; saying so every fifteen seconds is what teaches people to turn
-    /// notifications off.
+    /// FOUNDATION1 m-ii (the foundation design §4.3): the watch no longer establishes that a park happened by comparing two looks' snapshots. A
+    /// session's park, its answer and its park again are the journal's rows, told by <c>NewsTeller</c> (<c>NewsTellerTests</c>), so no sequence
+    /// of snapshots says one here.
     /// </summary>
     [Fact]
-    public void It_says_so_once_and_not_every_tick_for_as_long_as_it_sits()
+    public void No_look_s_snapshots_say_a_park()
     {
         var watch = new AttentionWatch();
         watch.Observe(Tick([Session("s1", "working")]));
-        Assert.Single(watch.Observe(Tick([Session("s1", "awaiting-person")])));
 
         Assert.Empty(watch.Observe(Tick([Session("s1", "awaiting-person")])));
-        Assert.Empty(watch.Observe(Tick([Session("s1", "awaiting-person")])));
-    }
-
-    /// <summary>
-    /// The first tick after a launch sees a world it has no previous view of. A session already
-    /// parked then is one the person has been told about on some earlier run — and a shell that
-    /// toasted every parked session on every start would be one people close.
-    /// </summary>
-    [Fact]
-    public void The_first_look_is_a_baseline_and_not_a_backlog_of_notifications()
-    {
-        var watch = new AttentionWatch();
-
-        var events = watch.Observe(Tick([Session("s1", "awaiting-person"), Session("s2", "working")]));
-
-        Assert.Empty(events);
-    }
-
-    /// <summary>A session answered and parked again is news the second time too.</summary>
-    [Fact]
-    public void A_session_that_carries_on_and_parks_again_is_worth_saying_again()
-    {
-        var watch = new AttentionWatch();
-        watch.Observe(Tick([Session("s1", "working")]));
-        Assert.Single(watch.Observe(Tick([Session("s1", "awaiting-person")])));
-
-        Assert.Empty(watch.Observe(Tick([Session("s1", "working")])));
-        Assert.Single(watch.Observe(Tick([Session("s1", "awaiting-person")])));
-    }
-
-    /// <summary>
-    /// AUTONOMY1e (D184 point 4): Daoris puts nothing between a session's question and the person but the notice that it waits,
-    /// so each question is said. An answered park stays parked with the words until the look takes it up (ANSWER1b) and waits on
-    /// nobody (ANSWER1c); its resumed turn can end on a second question before any look sees it working, and that one is said too.
-    /// </summary>
-    [Fact]
-    public void An_answered_park_that_asks_again_is_said_again_though_no_look_saw_it_working()
-    {
-        var watch = new AttentionWatch();
-        watch.Observe(Tick([Session("s1", "working")]));
-        Assert.Single(watch.Observe(Tick([Session("s1", "awaiting-person")])));
         Assert.Empty(watch.Observe(Tick([Session("s1", "awaiting-person") with { Answer = "Port 8080." }])));
-
-        var again = Assert.Single(watch.Observe(Tick([Session("s1", "awaiting-person") with { Note = "Which host should it bind?" }])));
-
-        Assert.Equal(AttentionKind.Parked, again.Kind);
-        Assert.Equal("Which host should it bind?", again.Detail);
-    }
-
-    /// <summary>
-    /// A park the person answered before any look saw it waiting waits on nobody (ANSWER1c): a notice would tell them what they
-    /// just did, which is how people learn to dismiss notices unread.
-    /// </summary>
-    [Fact]
-    public void A_park_already_answered_when_first_seen_is_not_said()
-    {
-        var watch = new AttentionWatch();
-        watch.Observe(Tick([Session("s1", "working")]));
-
-        Assert.Empty(watch.Observe(Tick([Session("s1", "awaiting-person") with { Answer = "yes, the second" }])));
+        Assert.Empty(watch.Observe(Tick([Session("s1", "awaiting-person") with { Note = "Which host should it bind?" }])));
     }
 
     [Fact]
@@ -223,7 +150,7 @@ public sealed class AttentionTests
     {
         var watch = new AttentionWatch();
         watch.Observe(Tick([Session("s1", "working")]));
-        Assert.Single(watch.Observe(Tick([Session("s1", "awaiting-person")])));
+        Assert.Empty(watch.Observe(Tick([Session("s1", "awaiting-person")])));
 
         var events = watch.Observe(Tick([], new SessionEnded("s1", "engine", "failed", ByPerson: false)));
 
@@ -244,9 +171,8 @@ public sealed class AttentionTests
             [Session("s1", "awaiting-person")],
             new SessionEnded("s2", "tools", "completed", ByPerson: false)));
 
-        Assert.Equal(2, events.Count);
-        Assert.Contains(events, e => e.Kind == AttentionKind.Parked && e.Session == "s1");
-        Assert.Contains(events, e => e.Kind == AttentionKind.Ended && e.Session == "s2");
+        Assert.Equal(AttentionKind.Ended, Assert.Single(events).Kind);
+        Assert.Equal("s2", events[0].Session);
     }
 
     /// <summary>
@@ -263,21 +189,6 @@ public sealed class AttentionTests
         Assert.Equal(["s1"], watch.Watching);
     }
 
-    /// <summary>
-    /// A conversation that parks is reported like anything else: the tick sees a state, not a way in.
-    /// Its ENDING is not, deliberately — see the remarks on <see cref="AttentionWatch"/>. Asserted so
-    /// the half that IS reported cannot be dropped along with the half that is not.
-    /// </summary>
-    [Fact]
-    public void A_conversation_that_parks_is_reported_like_any_other_session()
-    {
-        var watch = new AttentionWatch();
-        watch.Observe(Tick([Session("chat1", "working", "tools")]));
-
-        var events = watch.Observe(Tick([Session("chat1", "awaiting-person", "tools")]));
-
-        Assert.Equal(AttentionKind.Parked, Assert.Single(events).Kind);
-    }
 
     /// <summary>
     /// The sentence is composed here so both doors say the same thing — a toast on a machine with a
@@ -325,12 +236,7 @@ public sealed class AttentionTests
             NotePart.Said("\n\n", NoteBy.Before),
             NotePart.Said("Which port?", NoteBy.Agent),
         ];
-        var watch = new AttentionWatch();
-        watch.Observe(Tick([Session("s1", "working")]));
-
-        var events = watch.Observe(Tick([Session("s1", "awaiting-person") with { Note = Lead + "\n\nWhich port?", NoteParts = parts }]));
-
-        var parked = Assert.Single(events);
+        var parked = new AttentionEvent(AttentionKind.Parked, "s1", "engine", Note: Lead + "\n\nWhich port?") { NoteParts = parts };
         Assert.Equal("Which port?", parked.Detail);
         Assert.Equal("engine — a session needs you: Which port?", parked.Line);
 
@@ -482,24 +388,32 @@ public sealed class AttentionTests
     }
 
     /// <summary>
-    /// WSSETUP11: the machine log counts a park where the ledger is moved into it (<c>SessionLog</c>), and this
-    /// watch says one when it sees it from the active list. Both read <see cref="SessionStates.IsParked"/>, and
-    /// <c>SessionLogTests</c> holds the same rows, so what the log counts is what the person was told about.
+    /// WSSETUP11: the machine log counts a park where the ledger is moved into it (<c>SessionLog</c>), and the news teller says one from the
+    /// journal's row of that move. Both read <see cref="SessionStates.IsParked"/>'s state, so what the log counts is what the person was told about.
     /// </summary>
     [Theory]
-    [InlineData("awaiting-person", true)]
-    [InlineData("working", false)]
-    [InlineData("starting", false)]
-    [InlineData("completed", false)]
-    [InlineData("failed", false)]
-    public void A_park_is_the_state_the_machine_log_counts_as_one(string state, bool parked)
+    [InlineData("awaiting-person", "AwaitingPerson", true)]
+    [InlineData("working", "Working", false)]
+    [InlineData("completed", "Completed", false)]
+    [InlineData("failed", "Failed", false)]
+    public void A_park_is_the_state_the_machine_log_counts_as_one(string state, string spelled, bool parked)
     {
-        var watch = new AttentionWatch();
-        watch.Observe(Tick([Session("s1", "queued")]));
+        Assert.Equal(parked, SessionStates.IsParked(state));
+        var row = new JournalEntry(1, 0, "s1", "sessions", "state", "Queued", spelled, false, false, null, ["driven"], null, null);
+        var told = new List<NewsTold>();
+        var home = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "attention-park", Guid.NewGuid().ToString("N")[..8]);
+        Directory.CreateDirectory(home);
+        try
+        {
+            new NewsTeller(new News(home, () => StoreSettled.Yes), "lease", _ => true, () => DateTimeOffset.FromUnixTimeMilliseconds(1000), pieces => { told.AddRange(pieces); return Task.CompletedTask; })
+                .TellAsync(new JournalBatch("store-1", 1, 1, [row])).GetAwaiter().GetResult();
+        }
+        finally
+        {
+            GitSeed.Discard(home);
+        }
 
-        var events = watch.Observe(Tick([Session("s1", state)]));
-
-        Assert.Equal(parked, events.Any(e => e.Kind == AttentionKind.Parked));
+        Assert.Equal(parked, told.Any(piece => piece.Kind == AttentionKind.Parked));
     }
 
     private static readonly DateTimeOffset Ended1 = new(2026, 10, 15, 9, 0, 0, TimeSpan.Zero);

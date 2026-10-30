@@ -121,14 +121,7 @@ public sealed class AttentionWatch
         events.AddRange(waits.Select(wait => new AttentionEvent(
             AttentionKind.Waiting, "", string.Join(", ", wait.Repositories), Note: wait.Sentence)));
 
-        foreach (var session in report.Active)
-        {
-            if (!SessionStates.IsParked(Seen(session))) continue;
-            if (previous.TryGetValue(session.Id, out var was) && SessionStates.IsParked(was)) continue;
-
-            events.Add(new AttentionEvent(
-                AttentionKind.Parked, session.Id, session.Repository, Note: session.Note) { NoteParts = session.NoteParts });
-        }
+        // A session's park is told from the journal (FOUNDATION1 m-ii, `NewsTeller`), never found by comparing two looks' snapshots.
 
         events.AddRange(parked.Select(park => new AttentionEvent(
             AttentionKind.QuestParked, park.Session ?? "", park.Repository, Note: park.Note)

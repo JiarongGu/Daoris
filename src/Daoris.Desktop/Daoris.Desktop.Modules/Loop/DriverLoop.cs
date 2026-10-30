@@ -788,15 +788,21 @@ public sealed class DriverLoop(
 
         // FOUNDATION1 l-i (the foundation design §4.1): the service's journal read from this process's come-up, whoever holds the lease, so an end
         // a headless loop drove reaches this window's slices as a conversation's own does. It ends with the loop.
+        // FOUNDATION1 m-ii: and the news of the conversations, a park among them, told by this shell from a cursor it keeps, so a park made just
+        // before a restart is told once after it. The driven work's is the lease holder's, below.
+        var news = new News(homeDirectory);
         _ = Task.Run(
             () => JournalFeed.RunAsync(
                 service,
-                async batch =>
-                {
-                    await PartEndRelay.TellAsync(eventBus, batch).ConfigureAwait(false);
-                    if (sessionLog is not null) await sessionLog.TellAsync(batch).ConfigureAwait(false);
-                },
-                null, null, log, ct),
+                [
+                    new JournalTeller(async batch =>
+                    {
+                        await PartEndRelay.TellAsync(eventBus, batch).ConfigureAwait(false);
+                        if (sessionLog is not null) await sessionLog.TellAsync(batch).ConfigureAwait(false);
+                    }),
+                    NewsFeed("shell", news, service, row => row.Marks.Contains("chat", StringComparer.Ordinal), ct),
+                ],
+                log, ct),
             ct);
 
         // Every loop on the home watches the requests a terminal's `sessions stop|finish|decline` writes (SESSUX1g, D126
@@ -854,6 +860,12 @@ public sealed class DriverLoop(
         // holds it, and everything above — the host, the page, the conversations — carries on meanwhile.
         using var held = await HoldHomeAsync(ct).ConfigureAwait(false);
         if (held is null) return;
+
+        // FOUNDATION1 m-ii: the driven work's news is the lease holder's, told from its own cursor on a wait of its own.
+        _ = Task.Run(
+            () => JournalFeed.RunAsync(
+                service, [NewsFeed("lease", news, service, row => !row.Marks.Contains("chat", StringComparer.Ordinal), ct)], log, ct),
+            ct);
 
         // The terminal's pipe (RPC1a, the terminal RPC design §6.3): served once this loop holds the home, the one writer, and only
         // then named in the address, so a terminal that reads it finds it served. A name already held serves none, said in the log.
@@ -1132,6 +1144,29 @@ public sealed class DriverLoop(
         {
             return true;
         }
+    }
+
+    /// <summary>
+    /// One news teller as a journal feed's teller (FOUNDATION1 m-ii): its rows claimed from its own cursor, and each claimed piece made the
+    /// attention event the notifier reads, told while the machine's notify switch is on and never while it is off.
+    /// </summary>
+    private JournalTeller NewsFeed(string name, News news, ServiceClient service, Func<JournalEntry, bool> takes, CancellationToken ct)
+    {
+        var teller = new NewsTeller(
+            news, name, takes, () => DateTimeOffset.UtcNow,
+            async pieces =>
+            {
+                foreach (var piece in pieces)
+                {
+                    var item = await NewsAttention.OfAsync(service, piece, ct).ConfigureAwait(false);
+                    if (Notifying()) await AttendAsync(item).ConfigureAwait(false);
+                }
+            })
+        {
+            Incomplete = batch => log?.Warn("news.incomplete", ("teller", name), ("store", batch.Store), ("floor", batch.Floor)),
+            Refused = why => log?.Warn("news.refused", ("teller", name), ("why", why)),
+        };
+        return new JournalTeller(teller.TellAsync, () => news.Cursor(name), position => news.Advance(name, position));
     }
 
     /// <summary>What is worth interrupting the person for (SURF5b), in the one shape the shell's notifier and the page's toast read.</summary>

@@ -925,7 +925,28 @@ try
     var events = new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions));
     using var sessionLog = new SessionLog(log, service, events);
     // FOUNDATION1 l-iv: the service's journal read from this process's come-up, so `session.ended` is written for every end, whoever wrote it.
-    _ = Task.Run(() => JournalFeed.RunAsync(service, sessionLog.TellAsync, null, null, log, closing.Token), closing.Token);
+    // FOUNDATION1 m-ii: and this host's own teller of the driven work's news, from a cursor it keeps, so a park made just before a restart is told once after it.
+    var news = new News(home);
+    var hostNews = new NewsTeller(
+        news, "host", row => !row.Marks.Contains("chat", StringComparer.Ordinal), () => DateTimeOffset.UtcNow,
+        async pieces =>
+        {
+            foreach (var piece in pieces)
+            {
+                var item = await NewsAttention.OfAsync(service, piece, closing.Token);
+                if (NotifyOn(configPath)) Console.WriteLine($"  !  {item.Line}");
+            }
+        })
+    {
+        Incomplete = batch => log.Warn("news.incomplete", ("teller", "host"), ("store", batch.Store), ("floor", batch.Floor)),
+        Refused = why => log.Warn("news.refused", ("teller", "host"), ("why", why)),
+    };
+    _ = Task.Run(
+        () => JournalFeed.RunAsync(
+            service,
+            [new JournalTeller(sessionLog.TellAsync), new JournalTeller(hostNews.TellAsync, () => news.Cursor("host"), position => news.Advance("host", position))],
+            log, closing.Token),
+        closing.Token);
     // SESSWATCH1a (D200): no session is ended on time; --quiet-end ends one of this run unheard that long, and says so.
     if (loop.QuietEnd is { } quietEnd)
     {
@@ -1064,6 +1085,19 @@ catch (HttpRequestException error)
     Console.Error.WriteLine($"driver: could not reach the service — {error.Message}");
     log.Failed("the headless driver, reaching the service", error);
     return 2;
+}
+
+// The machine's notify switch, read from its choices now: news is told outside any look (FOUNDATION1 m-ii), and choices that do not read err toward saying it.
+static bool NotifyOn(string configPath)
+{
+    try
+    {
+        return DriverConfig.Load(configPath).Notify;
+    }
+    catch (DriverConfigUnreadableException)
+    {
+        return true;
+    }
 }
 
 static void Print(TickReport report, bool quietWhenIdle = false)
