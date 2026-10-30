@@ -109,6 +109,22 @@ public sealed class NewsTellerTests : IDisposable
         Assert.Equal(("ended.exit", "failed"), (_shown[0].Reason, _shown[0].State));
     }
 
+    /// <summary>A quest's park covers the end of its last session (FOUNDATION1 z-v gap): a park then its end tells one notice, and an end with no park its own.</summary>
+    [Fact]
+    public async Task A_quest_parked_then_ended_tells_one_notice()
+    {
+        var desk = new News(_home, Settled);
+        Assert.Empty(AttentionNews.Told(desk, [], DateTimeOffset.UtcNow.AddMinutes(-2)));
+        var park = new AttentionEvent(AttentionKind.QuestParked, "d1", "engine") { Quest = "q1" };
+        Assert.Single(AttentionNews.Told(desk, [park], DateTimeOffset.UtcNow.AddMinutes(-1)));
+
+        await Teller().TellAsync(Batch(
+            Row(10, "Working", "Failed", codes: "ended.exit", record: "d1"),
+            Row(11, "Working", "Failed", codes: "ended.exit", record: "d2")));
+
+        Assert.Equal(["d2"], _shown.Select(told => told.Session));
+    }
+
     /// <summary>An end, a reopen and an end are two positions and told as two.</summary>
     [Fact]
     public async Task An_end_a_reopen_and_an_end_are_told_as_two_positions()

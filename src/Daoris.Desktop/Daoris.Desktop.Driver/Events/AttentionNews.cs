@@ -33,7 +33,10 @@ public static class AttentionNews
         var claim = news.Claim(Branch, [.. keyed.Select(each => new NewsOccurrence(each.Key, now))], null, now);
         if (first || claim.Refused is not null) return [];
         var told = claim.Told.Select(each => each.Key).ToHashSet(StringComparer.Ordinal);
-        return [.. keyed.Where(each => told.Contains(each.Key)).Select(each => each.Item)];
+        var shown = keyed.Where(each => told.Contains(each.Key)).Select(each => each.Item).ToList();
+        // A park said covers the end of its last session, which the journal's teller then leaves unsaid.
+        news.Cover(shown.Where(item => item.Kind == AttentionKind.QuestParked && item.Session.Length > 0).Select(item => item.Session), now);
+        return shown;
     }
 
     private static string Digest(string text) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(text)))[..16].ToLowerInvariant();
