@@ -92,8 +92,11 @@ A builder runs before it hands back the checks a candidate runs that its lines r
 2026-10-30 three candidates of one batch went red on checks no member's builder had run (the mark census, `optional-locks`,
 `test-map --check`'s hand rows, the pack-safety read of the CLI package, a route answer's pinned field list, and the
 page's twins of a driver code list). Its brief names them: `node tools/optional-locks.mjs`, `node tools/test-map.mjs
---check`, the driver's `ParticipantWorkReadersTests`, `ContinuedReadersCensusTests` and `SystemWiringTests`, and for a
-new code in a list the page copies, the page's twin test. The parent, running a class with `--no-build`, builds that
+--check`, the driver's `ParticipantWorkReadersTests`, `ContinuedReadersCensusTests`, `SystemWiringTests`,
+`ProviderCensusTests` (a new file naming a door's wire), `GitLaunchTests` and `ProcessStartsCensusTests` (a new process
+start) and `LineCourseTests` (a case added to a ported suite), and for a new code in a list the page copies, the page's twin
+test. Before a batch is queued, the parent runs the driver's, the modules' and the service's fast halves whole on it: on
+2026-10-30 that found batch s's three census misses before a candidate did. The parent, running a class with `--no-build`, builds that
 class's own project first: a build of another project leaves the test assembly stale, and twice that day it read as a
 red that was not there.
 | A read of a design, a decision or a risky merge by another maker | decide-support or review |

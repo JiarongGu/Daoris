@@ -5,6 +5,13 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-30 - Batch s's members met three censuses their builders never ran (AGENTLYNTAI1s-i, AGENTPROVIDER1m-i)
+
+- **Symptom:** the driver's fast half over batch s failed `ProviderCensusTests` (`Agents/NativePrompt.cs` and `Agents/TransportRun.cs` read a door's wire as unnamed sites), `GitLaunchTests` (`TransportRun.cs` holds a start the census did not list), and `LineCourseTests` (`SessionMessagesTickTests` grew a case the port table neither ports nor leaves out). `HookStateTests`' wrong-shape case failed once (a plugin's `initialize` past 10 s, four builders beside it) and passed alone: a FLAKE1 sighting.
+- **Root cause:** each new file reads `SessionWire` or starts a process, and each census pins exactly the sites it knows; the builders ran their own classes and the censuses the brief named, which these three were not.
+- **Fix:** `NativePrompt.cs`'s two sites named for row t (the old seam's), `TransportRun.cs`'s two for row m (m-ii retires it), each in the fixture's path order; `TransportRun.cs: 1` listed among the other seams' starts (an agent's start, no git); the new case left out of the port table as an executor's effect (E), the suite's count 20. The dispatch skill's check list now names these three.
+- **Verify:** `ProviderCensusTests`, `GitLaunchTests`, `LineCourseTests` and `HookStateTests`, 81 passed.
+
 ## 2026-10-30 - The other-maker carry-on case read the last prompt, which the turn-end carry-on now writes (MAKERTRAIL2, LANDBACK1 part 2)
 
 - **Symptom:** the q-and-r candidate's driver Process half failed `MakerTrailTickTests.A_carry_on_to_another_maker_is_told_the_first_makers_trailer_for_the_work_it_left`, and it failed again alone: the prompt read began "Your quest is done, but your tree has 1 u…", not "You are carrying on quest `#q1`".
