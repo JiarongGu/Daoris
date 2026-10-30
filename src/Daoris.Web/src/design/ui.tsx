@@ -17,7 +17,7 @@ import {
   Monitor, Network,
   PanelBottom, PanelLeft, PanelLeftClose, PanelLeftOpen, PanelRight, PanelRightClose, Paperclip, Pause, Play, Plug, Plus, Redo2, Reply,
   RotateCw, Scissors, Search, Settings, Shield, Square, SquareArrowOutUpRight, SquareTerminal, Terminal, TextSelect, Trash2, TriangleAlert,
-  Undo2, Workflow, Wrench, WrapText, X, ZoomIn, ZoomOut,
+  Undo2, Users, Workflow, Wrench, WrapText, X, ZoomIn, ZoomOut,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { type Quest, SESSION_ACTIVE, type SessionState } from '../data/api';
@@ -157,6 +157,8 @@ const ICONS = {
   stepFinished: Flag,
   // Where a piece of work stands in its workflow (WORKFLOW1c, design §7): the session's side bar view and the doors into it.
   workflow: Workflow,
+  // Who is at work on a session (COWORKVIEW1a, the cowork view design §5.1): the side bar view of its parts and subagents.
+  atWork: Users,
   // Ask Daoris's history (ASKHIST1c): its list, the way back to it from a conversation, a pinned conversation's mark, and a
   // code block's long lines wrapped at its pane.
   history: History,

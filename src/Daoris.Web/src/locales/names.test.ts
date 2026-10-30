@@ -478,6 +478,8 @@ describe('the real glossary and catalogues', () => {
       'projects.workspace.machines.none:zh',
       'settings.browser.which.hintDaoris:en', 'settings.browser.which.hintEdge:en',
       'settings.home.hint:en', 'settings.home.hintOverridden:en', 'settings.home.hintThisStart:en',
+      // COWORKVIEW1a: a subagent its hook said stopped, which says no outcome, is 已结束, never done's 已完成 (the cowork view design §5.4).
+      'work.atWork.child.finished:zh',
     ]);
   });
 });

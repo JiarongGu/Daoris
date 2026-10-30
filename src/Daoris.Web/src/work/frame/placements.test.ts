@@ -8,9 +8,11 @@ describe('where the views stand', () => {
   it('starts every view where the frame always drew it', () => {
     expect(placesOf(null)).toEqual(DEFAULT_PLACES);
     // The terminal (CONSOLE4b) stands in the panel, beside the console, as VS Code's does; the workflow (WORKFLOW1c) in the side
-    // bar beside the timeline and the review; *Notifications* (NOTIFY2b, the notification design §2.1) on the right, first.
+    // bar beside the timeline and the review; *Notifications* (NOTIFY2b, the notification design §2.1) on the right, first; *At work*
+    // (COWORKVIEW1a) on the right after the workflow.
     expect(DEFAULT_PLACES).toEqual({
-      notifications: 'right', timeline: 'right', review: 'right', workflow: 'right', ask: 'right', console: 'panel', terminal: 'panel',
+      notifications: 'right', timeline: 'right', review: 'right', workflow: 'right', atWork: 'right', ask: 'right', console: 'panel',
+      terminal: 'panel',
     });
   });
 
@@ -18,7 +20,7 @@ describe('where the views stand', () => {
     expect(placesOf(JSON.stringify({ terminal: 'right' }))).toEqual({ ...DEFAULT_PLACES, terminal: 'right' });
     expect(viewsIn(DEFAULT_PLACES, 'panel')).toEqual(['console', 'terminal']);
     expect(viewsIn({ ...DEFAULT_PLACES, terminal: 'right' }, 'right'))
-      .toEqual(['notifications', 'timeline', 'review', 'workflow', 'ask', 'terminal']);
+      .toEqual(['notifications', 'timeline', 'review', 'workflow', 'atWork', 'ask', 'terminal']);
   });
 
   it('reads a workflow the viewer moved to the panel, after the panel’s own', () => {
@@ -43,12 +45,12 @@ describe('where the views stand', () => {
 
   it('lists a region\'s own views first, then what was moved into it, each in the frame\'s order', () => {
     const places = { ...DEFAULT_PLACES, console: 'right' as const, ask: 'panel' as const };
-    expect(viewsIn(places, 'right')).toEqual(['notifications', 'timeline', 'review', 'workflow', 'console']);
+    expect(viewsIn(places, 'right')).toEqual(['notifications', 'timeline', 'review', 'workflow', 'atWork', 'console']);
     expect(viewsIn(places, 'panel')).toEqual(['terminal', 'ask']);
   });
 
   it('leaves out a view that is not here, wherever it stands', () => {
-    expect(viewsIn(DEFAULT_PLACES, 'right', (view) => view !== 'ask' && view !== 'notifications')).toEqual(['timeline', 'review', 'workflow']);
+    expect(viewsIn(DEFAULT_PLACES, 'right', (view) => view !== 'ask' && view !== 'notifications')).toEqual(['timeline', 'review', 'workflow', 'atWork']);
     // No shell, no terminal: the panel holds the console alone.
     expect(viewsIn(DEFAULT_PLACES, 'panel', (view) => view !== 'terminal')).toEqual(['console']);
   });

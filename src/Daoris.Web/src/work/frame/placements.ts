@@ -6,7 +6,7 @@ import { store, stored } from '../../lib/stored';
  * bottom panel hold, as VS Code's views move between its secondary side bar and its panel. The terminal
  * (CONSOLE4b, D96) is the person's own shell, beside the console as VS Code's terminal is beside its output.
  */
-export type ViewId = 'notifications' | 'timeline' | 'review' | 'workflow' | 'ask' | 'console' | 'terminal';
+export type ViewId = 'notifications' | 'timeline' | 'review' | 'workflow' | 'atWork' | 'ask' | 'console' | 'terminal';
 
 /**
  * Every view, in the frame's order: a region's tabs read in it, whichever were moved there.
@@ -19,14 +19,15 @@ export type ViewId = 'notifications' | 'timeline' | 'review' | 'workflow' | 'ask
  */
 // The workflow (WORKFLOW1c, the workflow design §7): where the attended session's work stands, beside its timeline and review.
 // *Notifications* first (NOTIFY2b, the notification design §2.1): everything that comes to the person, the same on every view.
-export const VIEW_IDS: readonly ViewId[] = ['notifications', 'timeline', 'review', 'workflow', 'ask', 'console', 'terminal'];
+// *At work* after it (COWORKVIEW1a, the cowork view design §5.1): who is at work on the attended session, from Daoris's records.
+export const VIEW_IDS: readonly ViewId[] = ['notifications', 'timeline', 'review', 'workflow', 'atWork', 'ask', 'console', 'terminal'];
 
 /** A region a view can go: the right side bar, or the panel under the session. */
 export type Place = 'right' | 'panel';
 
 /** Where each view stands until the viewer moves it: where the frame always drew it. */
 export const DEFAULT_PLACES: Readonly<Record<ViewId, Place>> = {
-  notifications: 'right', timeline: 'right', review: 'right', workflow: 'right', ask: 'right', console: 'panel', terminal: 'panel',
+  notifications: 'right', timeline: 'right', review: 'right', workflow: 'right', atWork: 'right', ask: 'right', console: 'panel', terminal: 'panel',
 };
 
 const ORDER = VIEW_IDS;

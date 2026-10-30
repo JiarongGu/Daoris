@@ -17,6 +17,7 @@
   "work.panel.stream.state.failed": "失败",
   "work.panel.stream.state.stopped": "已停止",
   "work.panel.stream.state.cancelled": "已取消",
+  "work.panel.stream.state.disconnected": "已断开",
   "work.panel.stream.state.session-ended": "随会话结束",
   "work.panel.stream.stop": "停止「{{name}}」",
   "work.panel.stream.stopShort": "停止",

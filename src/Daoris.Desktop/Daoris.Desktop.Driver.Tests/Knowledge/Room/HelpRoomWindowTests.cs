@@ -19,7 +19,7 @@ public sealed class HelpRoomWindowTests
         Assert.Contains("## The window", agents);
         foreach (var said in new[]
         {
-            "the right side bar", "the panel", "Notifications, the timeline, the review, the workflow and the console", "Every view sits in one frame",
+            "the right side bar", "the panel", "Notifications, the timeline, the review, the workflow, At work and the console", "Every view sits in one frame",
             "tab list", "right-click", "drag", "Reset view locations",
             "`Ctrl+B`", "`Ctrl+J`", "`Ctrl+Alt+B`", "`F1`", "`Ctrl+Alt+I`", "`Ctrl+Shift+Alt+L`", "`Ctrl+K`",
             // The person's own terminal (CONSOLE4b), and that it is theirs rather than a session's.
@@ -62,10 +62,23 @@ public sealed class HelpRoomWindowTests
     {
         var window = new HelpRoomWindow().Render(HelpRoomFixture.Machine);
 
-        Assert.Contains("Seven views stand in the two regions and move between them:", window);
-        Assert.Contains("the timeline, the review, the workflow and the console of the session attended on Sessions", window);
+        Assert.Contains("Eight views stand in the two regions and move between them:", window);
+        Assert.Contains("the timeline, the review, the workflow, At work and the console of the session attended on Sessions", window);
         Assert.DoesNotContain("Five views", window);
-        Assert.DoesNotContain("Six views", window);
+        Assert.DoesNotContain("Seven views", window);
+    }
+
+    /// <summary>
+    /// COWORKVIEW1a (the cowork view design §5.1): *At work* joined the views, after the workflow; asked who works on a session, the
+    /// helper names it, and that it reads Daoris's records, never the conversation's text.
+    /// </summary>
+    [Fact]
+    public void The_room_names_at_work_among_the_views_and_what_it_reads()
+    {
+        var window = new HelpRoomWindow().Render(HelpRoomFixture.Machine);
+
+        Assert.Contains("At work lists the session's parts and its subagents", window);
+        Assert.Contains("never from the conversation's text", window);
     }
 
     /// <summary>
@@ -79,7 +92,7 @@ public sealed class HelpRoomWindowTests
     {
         var window = new HelpRoomWindow().Render(HelpRoomFixture.Machine);
 
-        Assert.Contains("Notifications, the timeline, the review, the workflow and the console", window);
+        Assert.Contains("Notifications, the timeline, the review, the workflow, At work and the console", window);
         Assert.Contains("The bell on the title bar shows it", window);
         Assert.Contains("What needs you", window);
         Assert.Contains("Overview leads with a summary", window);

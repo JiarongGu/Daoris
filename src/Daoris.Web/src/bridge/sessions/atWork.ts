@@ -2,65 +2,12 @@ import { hashKey, type QueryClient, type QueryKey, useQuery, useQueryClient } fr
 import { useShenora } from '@shenora/react';
 import { call } from '../call';
 import { heldNumbered, isPending } from '../state/held';
+import type { AtWorkA, AtWorkAt, AtWorkHeld } from '../../work/atWork/types';
 
 // Who is at work on a session (COWORKVIEW1a, the cowork view design §3.8 and §4.1): the shell's one numbered read, composed from
 // the records Daoris keeps (its parts, its lineage), never from the conversation's text.
 
-/** A child's state: its latest run's, as the driver's fold read it. */
-export type AtWorkChildState =
-  | 'working' | 'unsaid' | 'completed' | 'failed' | 'cancelled' | 'disconnected' | 'stopped' | 'finished' | 'ended' | 'lost'
-  | 'unrecorded' | 'uncertain' | 'agentEnded';
-
-export type AtWorkChild = {
-  key: string;
-  type?: string;
-  label?: { text: string; claim: true };
-  parentKey?: string;
-  depth?: number;
-  state: AtWorkChildState;
-  since?: string;
-  startSaid: boolean;
-  ended?: string;
-  lastSeen?: string;
-};
-
-export type AtWorkSubagents = {
-  read: 'read' | 'none' | 'unreadable' | 'elsewhere';
-  unreadable?: string;
-  harness?: string;
-  seenByCalls?: boolean;
-  working: number;
-  turnWaits?: boolean;
-  observed?: number;
-  unplaced?: number;
-  children: AtWorkChild[];
-  folded?: number;
-  more?: Record<string, number>;
-};
-
-export type AtWorkPart = {
-  key: string;
-  agent?: string;
-  state?: string;
-  children: { count?: number; working?: number; observed?: number; unplaced?: number; unreadable?: boolean; elsewhere?: boolean };
-};
-
-export type AtWorkA = {
-  of: { session: string };
-  attended: string;
-  parts: AtWorkPart[];
-  moreParts?: Record<string, number>;
-  subagents: AtWorkSubagents;
-};
-
-/** The delivery's number: the shell's epoch and its landing's, kept in the query's own data. */
-export type AtWorkAt = { epoch: string; n: number };
-
-/** What the query holds (§3.8): reading, failed with its words, or the answer, stale where a refresh failed over it. */
-export type AtWorkHeld =
-  | { reading: true; at?: AtWorkAt }
-  | { failed: { why: string }; at?: AtWorkAt }
-  | { answer: AtWorkA; stale?: { why: string }; at?: AtWorkAt };
+export type { AtWorkA, AtWorkAt, AtWorkChild, AtWorkHeld } from '../../work/atWork/types';
 
 export const atWorkKey = (session: string): QueryKey => ['atWork', session];
 
