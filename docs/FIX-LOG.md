@@ -12494,3 +12494,10 @@ mis-rooted instance.
 **Fix.** A stop made first decides the end in `Driver.RunAsync`'s catch, the person's never interrupted.
 
 **Verification.** `DrivenSessionInputTests` 15/15, red before.
+## An ended chat's words shown as its run closed never woke it (2026-10-31)
+
+**Root cause.** `ChatRunner.WatchAsync` concludes the record before its disposal releases `Talking`; `ChatGoOn.Heard` dropped a word shown between, so it waited for the next come-up.
+
+**Fix.** `Heard` leaves such a word owed, before reading the hold; the watch's last disposal (`ChatGoOn.LetGo`) takes it up.
+
+**Verification.** `ChatGoOnTests.A_word_shown_to_an_ended_chat_its_run_still_holds_...`: red 2 m 41 s, green; `ChatGoesOnProcessTests` 24/24 three times.
