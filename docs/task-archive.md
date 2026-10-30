@@ -21852,3 +21852,11 @@ The row is quoted by its head; its whole text and proof are the foundation desig
 The row is quoted by its head; its whole text and proof are the foundation design's Part B table, row 1x.
 
 **Outcome** 2026-10-31: built in two parts. Every start (quest, intake, chat, reviewer, helper, partner, brainstorm voice) takes its role from the catalogue through the start plan; `actor` stays the seeded role and the role and revision are kept on `binding_roles` (store migration 11); census C is a rule with its tests; a quest's `weight` travels through the service's publish, wire and door, and one marked `design` starts on the role taking design, Build's while none does. The intake marks nothing of itself, having no rule for design work. Detail in D212's two FOUNDATION1x notes.
+
+## FOUNDATION1y-i ⚖ — the person sets the catalogue up (2026-10-31, D212)
+
+> | **1y-i** ⚖ the person sets the catalogue up | adding, changing and removing a working role (name, work, staffing, scope) in Settings, with `daoris driver role` and through `role_propose` with the person's press; … ⚖ since removing a role holds its work's starts | … |
+
+The row is quoted by its head; its whole text and proof are the foundation design's Part B table, row 1y-i.
+
+**Outcome** 2026-10-31: one judged door (`Roles/RoleDoor.cs`) for `SET_ROLE`, `daoris driver role` and `role_propose`'s press; Settings → AI features → Role catalogue in both languages, with the Designer suggested there (MODELROLE1g's card is unbuilt); a work no role takes holds its starts and says why, an intake's on its ask; a running session goes on; no `settings_*` grant names a role. Owed: the owner adding a role on the install. Detail in D212's FOUNDATION1y-i note.
