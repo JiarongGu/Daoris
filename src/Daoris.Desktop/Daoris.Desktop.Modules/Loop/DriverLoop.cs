@@ -291,6 +291,9 @@ public sealed class DriverLoop(
     /// <summary>The quests the node runtime last read (FABRIC-CLOSE1q3), for the held list to judge a close against; null before one pass has read.</summary>
     public IReadOnlyDictionary<string, QuestView>? LastQuests => _watch?.LastQuests;
 
+    /// <summary>The runs held at a declined request (INTEGRATE1o part o3), for <i>What needs you</i> to judge; none before a pass has read.</summary>
+    public IReadOnlyList<RequestHold> RequestHolds => _watch?.RequestHolds ?? [];
+
     /// <summary>
     /// Ask the loop's runtime for a whole pass, and wait for it within <paramref name="bound"/> (FABRIC-CUTOVER1d, <see cref="DriverWatch.PassWholeAsync"/>):
     /// a press held by a run's graph for a judgement not made yet. False past the bound, and where no loop runs.
