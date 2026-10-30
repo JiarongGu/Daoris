@@ -188,7 +188,7 @@ public sealed class KnowledgeService(
     /// <summary>When the last refresh finished, on <see cref="_time"/>; what the reread window is measured from.</summary>
     private DateTimeOffset _refreshedAt;
 
-    private readonly KnowledgeIndex _index = new(store, disclosure);
+    private readonly KnowledgeIndex _index = new(store, disclosure, time);
 
     /// <summary>
     /// ONE detector, not one per call.
@@ -546,8 +546,13 @@ public sealed class KnowledgeService(
 
         // 🔴 Its entries go with it (REV3). "They leave on the next refresh" held only for a host that
         // refreshes — a fed deployment never does, so it served a retired repository's knowledge to
-        // every keyed caller for as long as it ran.
-        if (stored || known) await store.ReplaceRepositoryAsync(repository, [], ct).ConfigureAwait(false);
+        // every keyed caller for as long as it ran. It reads no source, so it always writes, moving the generation a
+        // refresh begun before it read (KNOWCENTRAL2a).
+        if (stored || known)
+        {
+            await store.ReplaceRepositoryAsync(repository, [], ReadingWrite.Taken(_time.GetUtcNow()), ct: ct).ConfigureAwait(false);
+        }
+
         return stored || known;
     }
 
@@ -634,31 +639,14 @@ public sealed class KnowledgeService(
     /// <remarks>
     /// An entry is stamped with the workspace it was indexed under, and a local host reads its checkouts again only
     /// into an empty store or on request: a repository moved between workspaces kept its old stamp, and the
-    /// workspace it moved to counted none of its knowledge. Re-stamped under the refresh's lock, so a reading that
-    /// took the old wiring cannot land after it; over an index a newer Daoris wrote, nothing is rewritten (KSCHEMA1).
+    /// workspace it moved to counted none of its knowledge. Re-stamped in one write of the store's, which leaves the bodies
+    /// as they are and moves the generation, so a reading that took the old wiring is refused after it, whichever
+    /// connector took it (KNOWCENTRAL2a); over an index a newer Daoris wrote, nothing is rewritten (KSCHEMA1).
     /// </remarks>
     private async Task RestampAsync(string repository, string workspace, CancellationToken ct)
     {
         if (store.Refusal is not null) return;
-
-        await _refreshLock.WaitAsync(ct).ConfigureAwait(false);
-        try
-        {
-            var held = (await store.AllAsync(ct).ConfigureAwait(false))
-                .Where(entry => string.Equals(entry.Repository, repository, StringComparison.OrdinalIgnoreCase))
-                .GroupBy(entry => entry.Repository, StringComparer.Ordinal);
-            foreach (var group in held)
-            {
-                if (group.All(entry => Workspaces.Same(entry.Workspace, workspace))) continue;
-                await store.ReplaceRepositoryAsync(
-                    group.Key, group.Select(entry => entry with { Workspace = workspace }).ToList(), ct)
-                    .ConfigureAwait(false);
-            }
-        }
-        finally
-        {
-            _refreshLock.Release();
-        }
+        await store.RestampAsync(repository, workspace, ct).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -750,12 +738,12 @@ public sealed class KnowledgeService(
             // again from that commit would be "already held" into an index that holds nothing.
             if (!(registered.Joined && registered.SharesKnowledge) && store.Refusal is null)
             {
-                await store.ReplaceRepositoryAsync(registered.Repository, [], ct).ConfigureAwait(false);
-                await held.ForgetKnowledgeAsync(registered.Repository, ct).ConfigureAwait(false);
+                await store.ReplaceRepositoryAsync(
+                    registered.Repository, [], ReadingWrite.Taken(_time.GetUtcNow()),
+                    inside => held.ForgetKnowledgeAsync(registered.Repository, inside), ct).ConfigureAwait(false);
             }
 
-            // After the row, as the knowledge feed records its commit after its entries: a store that
-            // failed between the two must never claim a declaration it does not hold.
+            // After the row: a store that failed between the two must never claim a declaration it does not hold.
             await held.RecordRegistrationProvenanceAsync(registration.Repository, arriving, ct).ConfigureAwait(false);
             return (new(
                 FeedRefusal.None,
@@ -830,6 +818,8 @@ public sealed class KnowledgeService(
         await _feedGate.WaitAsync(ct).ConfigureAwait(false);
         try
         {
+            // Read before the held commit is judged, so another connector's write between the judgement and this one refuses it.
+            var generations = await store.GenerationsAsync(ct).ConfigureAwait(false);
             var held = registrations is null
                 ? null
                 : await registrations.ProvenanceAsync(registration!.Repository, ct).ConfigureAwait(false);
@@ -845,15 +835,22 @@ public sealed class KnowledgeService(
 
             if (verdict != FeedVerdict.Take) return NotTaken(verdict, registration!.Repository, "knowledge", held!, arriving);
 
-            await store.ReplaceRepositoryAsync(registration!.Repository, normalized, ct).ConfigureAwait(false);
-
-            // Recorded AFTER the entries land, so a store that fails mid-replace never claims a commit
-            // it does not hold — the next feed from that commit would then be refused as a duplicate
-            // of work that never happened.
-            if (registrations is not null)
+            // 🔴 The provenance is recorded in the entries' own write (KNOWCENTRAL2a): a fault between the two left new bodies
+            // under the old commit, and a store that failed mid-replace claiming a commit it does not hold would refuse the
+            // next feed from that commit as a duplicate of work that never happened.
+            var named = registration!.Repository;
+            var wrote = await store.ReplaceRepositoryAsync(
+                named, normalized,
+                new ReadingWrite(generations.TryGetValue(named, out var generation) ? generation : 0, arriving.Commit, null, Fed: true, _time.GetUtcNow()),
+                registrations is null ? null : inside => registrations.RecordProvenanceAsync(named, arriving, inside),
+                ct).ConfigureAwait(false);
+            if (!wrote)
             {
-                await registrations.RecordProvenanceAsync(registration.Repository, arriving, ct)
-                    .ConfigureAwait(false);
+                return new(
+                    FeedRefusal.Moved,
+                    $"`{named}` was written here by another connector while this feed was judged, so nothing of it was "
+                    + "taken. The next pass judges it again.",
+                    Entries: 0);
             }
         }
         finally
@@ -1111,7 +1108,17 @@ public sealed class KnowledgeService(
     {
         // (The body keeps the block it had inside the lock, so the change to the lock's shape is the whole diff.)
         {
+            // 🔴 Each repository's generation, read before the registry and the source (KNOWCENTRAL2a): a write any connector
+            // makes after this, a retirement included, refuses this refresh's write of that repository.
+            var generations = await store.GenerationsAsync(ct).ConfigureAwait(false);
             await ReloadRegistryAsync(ct).ConfigureAwait(false);
+
+            // A root named before the registry was read again is read only while it is still registered.
+            if (onlyRoots is not null && readsRegisteredRoots)
+            {
+                var registered = LocalRoots().Select(r => r.Root).ToHashSet(_readings.Comparer);
+                onlyRoots = [.. onlyRoots.Where(registered.Contains)];
+            }
 
             // What each root is, taken BEFORE it is read, so a write during the read is judged moved at the next use.
             var taken = new List<(string Repository, string Root, RootSignature? Signature, string? Commit, Lazy<Task<bool?>>? Dirty)>();
@@ -1146,13 +1153,21 @@ public sealed class KnowledgeService(
             var wiring = (registry?.Read() ?? [])
                 .ToDictionary(r => r.Repository, r => r.InWorkspace, StringComparer.OrdinalIgnoreCase);
 
-            var report = await _index.RefreshAsync(
+            var readAt = taken
+                .GroupBy(t => t.Repository, StringComparer.Ordinal)
+                .ToDictionary(g => g.Key, g => (g.First().Commit, g.First().Signature), StringComparer.Ordinal);
+            var (report, refused) = await _index.RefreshReadingAsync(
                 source,
                 repository => wiring.TryGetValue(repository, out var workspace)
                     ? workspace
                     : Workspaces.Default,
                 readsRegisteredRoots && registry is not null ? wiring.ContainsKey : null,
-                ct, onlyRoots).ConfigureAwait(false);
+                onlyRoots, generations,
+                repository => readAt.TryGetValue(repository, out var read) ? read : (null, null),
+                ct).ConfigureAwait(false);
+
+            // A root whose write was refused keeps no reading here, so its next use reads it again.
+            taken.RemoveAll(t => refused.Contains(t.Repository));
 
             report = report with { Absent = AbsentCheckouts() };
 

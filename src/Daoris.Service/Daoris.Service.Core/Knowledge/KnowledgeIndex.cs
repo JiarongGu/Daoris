@@ -8,9 +8,11 @@ namespace Daoris.Knowledge;
 /// material is already in the store and one forgotten filter discloses it; withholding at ingest
 /// means it was never there to leak.
 /// </remarks>
-public sealed class KnowledgeIndex(IKnowledgeStore store, IDisclosurePolicy? disclosure = null)
+public sealed class KnowledgeIndex(IKnowledgeStore store, IDisclosurePolicy? disclosure = null, TimeProvider? time = null)
 {
     private readonly IDisclosurePolicy _disclosure = disclosure ?? DisclosurePolicy.LocalOnly;
+
+    private readonly TimeProvider _time = time ?? TimeProvider.System;
 
     /// <param name="workspaceOf">
     /// Which circle a repository is wired to (D48). Stamped HERE, on the way in, because a source reads
@@ -28,8 +30,27 @@ public sealed class KnowledgeIndex(IKnowledgeStore store, IDisclosurePolicy? dis
     public async Task<IndexReport> RefreshAsync(
         IKnowledgeSource source, Func<string, string>? workspaceOf = null,
         Func<string, bool>? stillRegistered = null, CancellationToken ct = default,
-        IReadOnlyList<string>? onlyRoots = null)
+        IReadOnlyList<string>? onlyRoots = null) =>
+        (await RefreshReadingAsync(source, workspaceOf, stillRegistered, onlyRoots, generations: null, readOf: null, ct)
+            .ConfigureAwait(false)).Report;
+
+    /// <summary>A refresh that says which repositories it did not write (KNOWCENTRAL2a).</summary>
+    /// <param name="generations">
+    /// Each repository's generation, read before anything the refresh judged by (the registry, the source); null reads them here,
+    /// before the source. A repository written since is not written again, and is named in <c>Refused</c>.
+    /// </param>
+    /// <param name="readOf">The commit and root signature a repository was read at; null names none.</param>
+    internal async Task<(IndexReport Report, IReadOnlySet<string> Refused)> RefreshReadingAsync(
+        IKnowledgeSource source, Func<string, string>? workspaceOf, Func<string, bool>? stillRegistered,
+        IReadOnlyList<string>? onlyRoots, IReadOnlyDictionary<string, long>? generations,
+        Func<string, (string? Commit, RootSignature? Signature)>? readOf, CancellationToken ct)
     {
+        generations ??= await store.GenerationsAsync(ct).ConfigureAwait(false);
+        var at = _time.GetUtcNow();
+        ReadingWrite Reading(string repository, string? commit = null, RootSignature? signature = null) =>
+            new(generations.TryGetValue(repository, out var generation) ? generation : 0, commit, signature, Fed: false, at);
+        var refused = new HashSet<string>(StringComparer.Ordinal);
+
         // Some roots alone (KNOWCURRENT1): a root that moved is replaced and the others stand. No ghost is retired from a
         // part, since what it did not read says nothing about what is gone.
         var partial = onlyRoots is not null && source is IRootReadingSource;
@@ -44,7 +65,11 @@ public sealed class KnowledgeIndex(IKnowledgeStore store, IDisclosurePolicy? dis
         var byRepository = permitted.GroupBy(e => e.Repository, StringComparer.Ordinal).ToList();
         foreach (var group in byRepository)
         {
-            await store.ReplaceRepositoryAsync(group.Key, group.ToList(), ct).ConfigureAwait(false);
+            var (commit, signature) = readOf?.Invoke(group.Key) ?? (null, null);
+            if (!await store.ReplaceRepositoryAsync(group.Key, group.ToList(), Reading(group.Key, commit, signature), ct: ct).ConfigureAwait(false))
+            {
+                refused.Add(group.Key);
+            }
         }
 
         // Retire what the source no longer has. Replace-what-you-saw covers every present repository
@@ -64,10 +89,10 @@ public sealed class KnowledgeIndex(IKnowledgeStore store, IDisclosurePolicy? dis
             foreach (var ghost in held.Where(repository => !seen.Contains(repository)
                 && (byRepository.Count > 0 || !stillRegistered!(repository))))
             {
-                await store.ReplaceRepositoryAsync(ghost, [], ct).ConfigureAwait(false);
+                await store.ReplaceRepositoryAsync(ghost, [], Reading(ghost), ct: ct).ConfigureAwait(false);
             }
         }
 
-        return new IndexReport(source.Name, byRepository.Count, permitted.Count, read.Count - permitted.Count);
+        return (new IndexReport(source.Name, byRepository.Count, permitted.Count, read.Count - permitted.Count), refused);
     }
 }

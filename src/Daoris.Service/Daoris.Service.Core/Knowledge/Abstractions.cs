@@ -31,8 +31,29 @@ public interface IKnowledgeSource
 /// </remarks>
 public interface IKnowledgeStore
 {
-    /// <summary>Replace everything held for a repository with exactly these entries.</summary>
-    Task ReplaceRepositoryAsync(string repository, IReadOnlyList<KnowledgeEntry> entries, CancellationToken ct = default);
+    /// <summary>
+    /// Replace everything held for a repository with exactly these entries, and its reading with <paramref name="reading"/>, in
+    /// one write (KNOWCENTRAL2a); <paramref name="alongside"/> runs inside it, so what it writes lands or fails with them.
+    /// </summary>
+    /// <returns>False, with nothing written, where the reading expected a generation the store no longer holds.</returns>
+    Task<bool> ReplaceRepositoryAsync(
+        string repository, IReadOnlyList<KnowledgeEntry> entries, ReadingWrite reading,
+        Func<CancellationToken, Task>? alongside = null, CancellationToken ct = default);
+
+    /// <summary>
+    /// Stamp a repository's entries (its name in any case) with another workspace in one write, their bodies untouched, moving
+    /// each one's generation on (KNOWCENTRAL2a).
+    /// </summary>
+    Task RestampAsync(string repository, string workspace, CancellationToken ct = default);
+
+    /// <summary>The generation each repository's reading stands at; a repository absent here stands at 0.</summary>
+    Task<IReadOnlyDictionary<string, long>> GenerationsAsync(CancellationToken ct = default);
+
+    /// <summary>
+    /// The entries by these ids, each with its file's entries where <paramref name="withFile"/> says so, and each repository's
+    /// reading, read together in one read (KNOWCENTRAL2a): no write lands between the three.
+    /// </summary>
+    Task<HeldTogether> HeldAsync(IReadOnlyCollection<string> ids, Func<KnowledgeEntry, bool> withFile, CancellationToken ct = default);
 
     /// <summary>Every entry currently held, in no guaranteed order.</summary>
     Task<IReadOnlyList<KnowledgeEntry>> AllAsync(CancellationToken ct = default);
@@ -58,6 +79,36 @@ public interface IKnowledgeStore
     /// </summary>
     NewerIndexException? Refusal => null;
 }
+
+/// <summary>
+/// A repository's reading as the index keeps it beside its entries (KNOWCENTRAL2a; the memory coordinator design's §5): the
+/// generation every write of the repository moves on, the commit and root signature it was read at, and whether a feed gave
+/// it. Every process over the store reads this one.
+/// </summary>
+/// <param name="Commit">The commit read or fed; null where none was named (a retirement, a folder that is no checkout).</param>
+/// <param name="Signature">The root's signature taken before it was read; null where none was taken.</param>
+public sealed record IndexReading(
+    string Repository, long Generation, string? Commit, RootSignature? Signature, bool Fed, DateTimeOffset At);
+
+/// <summary>What a write of a repository's entries says of the reading it stores (KNOWCENTRAL2a).</summary>
+/// <param name="Expected">
+/// The generation its writer read before reading the source: the write lands only while the store still holds it (none is 0).
+/// Null for a write that reads no source, which takes the generation inside its own write and always lands.
+/// </param>
+public sealed record ReadingWrite(long? Expected, string? Commit, RootSignature? Signature, bool Fed, DateTimeOffset At)
+{
+    /// <summary>A write that reads no source and names no commit: a retirement, a withdrawal, a seeded store.</summary>
+    public static ReadingWrite Taken(DateTimeOffset at) => new(null, null, null, false, at);
+}
+
+/// <summary>What <see cref="IKnowledgeStore.HeldAsync"/> read together.</summary>
+/// <param name="Entries">Each asked id that is held, by id.</param>
+/// <param name="Files">Each such entry's file's entries, by repository and path, where they were asked for.</param>
+/// <param name="Readings">Each such entry's repository's reading, where it has one.</param>
+public sealed record HeldTogether(
+    IReadOnlyDictionary<string, KnowledgeEntry> Entries,
+    IReadOnlyDictionary<(string Repository, string Path), IReadOnlyList<KnowledgeEntry>> Files,
+    IReadOnlyDictionary<string, IndexReading> Readings);
 
 /// <summary>The finished trees' records, searched and read (KEEPSIZE1c); machine-local, so only a local host is given one.</summary>
 public interface IWorkRecordSearch

@@ -54,7 +54,7 @@ public sealed class SqliteKnowledgeSearch(SqliteKnowledgeStore store) : IKnowled
         {
             // No usable terms is a browse, not a failed search.
             command.CommandText =
-                $"SELECT {SqliteKnowledgeStore.Columns} FROM entries e WHERE 1=1 {filter} " +
+                $"SELECT {SqliteKnowledgeStore.Columns} FROM {SqliteKnowledgeStore.EntriesTable} e WHERE 1=1 {filter} " +
                 "ORDER BY repository, title LIMIT $limit;";
         }
         else
@@ -64,10 +64,10 @@ public sealed class SqliteKnowledgeSearch(SqliteKnowledgeStore store) : IKnowled
             command.CommandText =
                 $"""
                  SELECT {SqliteKnowledgeStore.QualifiedColumns},
-                        bm25(entries_fts, 0.0, {Weight(TitleWeight)}, {Weight(BodyWeight)}) AS rank
-                 FROM entries_fts
-                 JOIN entries e ON e.id = entries_fts.id
-                 WHERE entries_fts MATCH $match {filter}
+                        bm25({SqliteKnowledgeStore.FtsTable}, 0.0, {Weight(TitleWeight)}, {Weight(BodyWeight)}) AS rank
+                 FROM {SqliteKnowledgeStore.FtsTable}
+                 JOIN {SqliteKnowledgeStore.EntriesTable} e ON e.id = {SqliteKnowledgeStore.FtsTable}.id
+                 WHERE {SqliteKnowledgeStore.FtsTable} MATCH $match {filter}
                  ORDER BY rank
                  LIMIT $limit;
                  """;

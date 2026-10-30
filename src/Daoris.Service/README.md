@@ -90,7 +90,7 @@ row is its cells labelled by their columns, not its file's line as written, so i
 entry whose feed named none or named lines its body cannot be. A hit names `path:first-last` and the line its excerpt
 starts on (`KnowledgeHit.ExcerptLine`, from `Text.ExcerptAt`), the frontmatter it skipped counted; `knowledge_get`
 reads a range from the entry as indexed, never from the disk, so a deployment fed by another machine reads it too. The
-store keeps them (`first_line`, `last_line`; schema 5, so an older index is rebuilt when it opens, and a newer one
+store keeps them (`first_line`, `last_line`; schema 5 on, so an older index is rebuilt when it opens, and a newer one
 is left as it is and refused, KSCHEMA1 below), `/api/search`
 answers `firstLine`, `lastLine` and `excerptLine` beside every field it had, `/api/entry` and `/api/entries` the first
 two, and `/api/feed/entries` takes them, digesting them only where an entry names them.
@@ -108,6 +108,16 @@ it read the checkout and the commit it read: `/api/repositories` answers `indexe
 `knowledge_get` carry one `standing:` line (`EntryStanding.Says`, KNOWFRESH1a-ii): the reading's commit (`+ uncommitted` from the
 one `git status` the reading takes a root, `fed at` for a feed's), and for a decision the notes after it and the mark its record
 puts on it, derived from the note entries by `DecisionNotes.Marks`; no mark is `no mark`, never "current".
+
+**Each repository's reading is kept with its entries** (KNOWCENTRAL2a; the memory coordinator design's §5). Every
+connector is its own process over the one file, so the index keeps each repository's reading (`index_readings_6`: a
+generation, the commit and root signature it was read at, fed or read), written in the transaction that replaces its
+entries, with a feed's provenance and a withdrawal's forgetting in the same transaction. A refresh reads the generations
+before the registry and the source, and its write of a repository lands only while the generation is still the one it
+read. A refused root keeps no reading in that process, so its next use reads it again. A retirement, a withdrawal and a
+restamp read no source: each takes the generation inside its own write and always lands, and a restamp rewrites no body.
+The tables are named by the schema's version (6), so a connector an older build opened before the upgrade fails at its
+next statement and never writes what this build reads.
 
 Since **D124** (WSSETUP8), until a repository adopts, the scanner reads its root `README.md`, in any case,
 as the repository's own word. Each section split at level-two headings is one local knowledge entry carrying

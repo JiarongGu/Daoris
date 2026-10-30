@@ -125,14 +125,18 @@ internal sealed class ConnectionGate
     /// keeps a rollback journal, so a read under way in another host answered that commit as busy at once, and the write
     /// threw <i>database is locked</i>. Here <c>BEGIN IMMEDIATE</c> and <c>COMMIT</c> are each a first step, and waited
     /// on.</para>
+    ///
+    /// <para><paramref name="deferred"/> begins a read's transaction (<c>BEGIN</c>): its reads see one state of the file, and
+    /// it takes no write lock a reader never needs.</para>
     /// </remarks>
-    public Task<T> InTransactionAsync<T>(Func<SqliteTransaction, CancellationToken, Task<T>> work, CancellationToken ct) =>
+    public Task<T> InTransactionAsync<T>(
+        Func<SqliteTransaction, CancellationToken, Task<T>> work, CancellationToken ct, bool deferred = false) =>
         RunAsync(async () =>
         {
             var hold = HeldHere()!;
             if (hold.Transaction is { } open) return await work(open, CancellationToken.None).ConfigureAwait(false);
 
-            await using var transaction = _connection.BeginTransaction(deferred: false);
+            await using var transaction = _connection.BeginTransaction(deferred);
             hold.Transaction = transaction;
             try
             {
