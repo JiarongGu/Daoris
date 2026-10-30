@@ -2,6 +2,7 @@ import { type ReactNode, useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '../lib/cn';
 import { Button, Card, Chip, Inline, type Notify, PathText, Prose, SectionTitle } from '../design/ui';
+import { ago } from '../locales/format';
 import { type Answered, InlineConfirm } from '../work/InlineConfirm';
 
 /**
@@ -118,7 +119,73 @@ export type LandedBranch = {
   /** Ahead of its remote: the commits the remote lacks; otherwise those the line lacks. */
   commits: number;
   removable: boolean;
+  /** When the landing recorded it (LANDRETIRE1 part 2), the age its row says; a shell older than the field answers none. */
+  landedAt?: string | null;
+  /** The quest the landing is named for, where it names one. */
+  quest?: string | null;
+  /** Whether the service says that quest is closed: false where it was not read, so a row never says a quest closed on no answer. */
+  questClosed?: boolean;
 };
+
+/** What withdrawing a landing's branch answered (LANDRETIRE1): done with the ref its commits stay on, or the driver's sentence for why not. */
+export type LandedWithdrawal = { repository: string; branch: string; done: boolean; planned?: boolean; message: string; keptRef?: string | null };
+
+/**
+ * A withdrawal's answer said once (LANDRETIRE1): the branch gone in the reader's words, naming the recovery ref its commits stay on; a branch
+ * kept in the driver's own sentence, whole, since a refusal is the contract. Pressed in an ask, a refusal is said inside it and the ask closes
+ * only once the branch went, as a discard's does (UXFIX2); with no ask, in a toast.
+ */
+export const sayWithdraw = (notify: Notify, t: (key: string, options?: Record<string, unknown>) => string, answered?: Answered) =>
+  (result: LandedWithdrawal) => {
+    if (!result.done) {
+      if (answered) answered.refused(result.message);
+      else notify(result.message, 'error');
+      return;
+    }
+    notify(t(result.keptRef ? 'settings.sweep.landed.withdrawnKept' : 'settings.sweep.landed.withdrawn', {
+      branch: result.branch, repository: result.repository, ref: result.keptRef ?? '',
+    }));
+    answered?.done();
+  };
+
+/**
+ * A landing's branch withdrawn, asked once (LANDRETIRE1, D102's note): it names the branch and its repository, that the line will never
+ * hold its work and its commits stay on a recovery ref, and asks the reason the record keeps; the move waits for one, as
+ * `daoris-driver trees remove <branch> --repository <name> --why "…"` asks `--why`. The one inline confirmation (UXFIX2).
+ */
+export function WithdrawLandedAsk({ branch, busy = false, onWithdraw, onClose, className }: {
+  branch: Pick<LandedBranch, 'repository' | 'branch'>;
+  /** A withdrawal on its way: the presses wait for it. */
+  busy?: boolean;
+  /** The second press, with the reason typed, told how the withdrawal ended. */
+  onWithdraw: (why: string, answered: Answered) => void;
+  /** Put down, or the withdrawal landed. */
+  onClose: () => void;
+  className?: string;
+}) {
+  const { t } = useTranslation();
+  const [why, setWhy] = useState('');
+  return (
+    <InlineConfirm
+      className={className}
+      label={t('settings.sweep.landed.withdrawTitle', { branch: branch.branch })}
+      says={<Inline text={t('settings.sweep.landed.withdrawSays', { branch: branch.branch, repository: branch.repository })} />}
+      meanIt={t('settings.sweep.landed.withdrawMeanIt')}
+      busy={busy}
+      ready={why.trim() !== ''}
+      onConfirm={(answered) => onWithdraw(why.trim(), answered)}
+      onClose={onClose}
+    >
+      <input
+        aria-label={t('settings.sweep.landed.withdrawWhy')}
+        placeholder={t('settings.sweep.landed.withdrawWhy')}
+        value={why}
+        onChange={(event) => setWhy(event.target.value)}
+        className="min-h-[1.9rem] min-w-0 basis-full rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body"
+      />
+    </InlineConfirm>
+  );
+}
 
 /** The key a press names a branch by — the driver's `repository:branch`. */
 export const sweepKey = (branch: { repository: string; branch: string }) => `${branch.repository}:${branch.branch}`;
@@ -196,7 +263,7 @@ export function BranchRow({ name, moving, word, children, under }: {
  * the row names the session its tree is and how it ended, and that its page offers Accept, as `daoris-driver trees land`
  * does from the terminal, whose list prints that line beside the same row. Words only: the press is the session's.
  */
-export function SweepList({ branches, landed, busy, onLook, onClean, onDiscard, discarding = null, sync }: {
+export function SweepList({ branches, landed, busy, onLook, onClean, onDiscard, discarding = null, onWithdraw, withdrawing = null, sync }: {
   /** Undefined while the driver is asked; empty when there is no session branch at all. */
   branches?: SweepBranch[];
   /** The branches landings made; the group is drawn only where there is one. */
@@ -211,12 +278,21 @@ export function SweepList({ branches, landed, busy, onLook, onClean, onDiscard, 
   onDiscard?: (branch: SweepBranch, answered: Answered) => void;
   /** The branch whose discard is on its way, by its `sweepKey`: its row's presses wait for it. */
   discarding?: string | null;
+  /**
+   * Withdraw one landing's branch the line will never hold, once the person gave the reason (LANDRETIRE1), told back to its ask. Absent, no
+   * row offers it.
+   */
+  onWithdraw?: (branch: LandedBranch, why: string, answered: Answered) => void;
+  /** The landing's branch whose withdrawal is on its way, by its `sweepKey`: its row's press waits for it. */
+  withdrawing?: string | null;
   /** Bringing repositories up to date after a pull request merged (WSR6), drawn first: it runs before a clean-up. */
   sync?: ReactNode;
 }) {
   const { t } = useTranslation();
   // Which row's discard is asking, by its key: one at a time, and the first press is not offered twice while it asks.
   const [asking, setAsking] = useState<string | null>(null);
+  // Which landed row's withdrawal is asking, by its key: the same rule.
+  const [withdrawAsking, setWithdrawAsking] = useState<string | null>(null);
   const going = [...(branches ?? []).filter((branch) => branch.removable), ...(landed ?? []).filter((branch) => branch.removable)];
   const repositories = [...new Set((branches ?? []).map((branch) => branch.repository))].sort((a, b) => a.localeCompare(b));
   const landedIn = [...new Set((landed ?? []).map((branch) => branch.repository))].sort((a, b) => a.localeCompare(b));
@@ -259,6 +335,14 @@ export function SweepList({ branches, landed, busy, onLook, onClean, onDiscard, 
   const beneath = (branch: LandedBranch) => branch.kind === 'differs'
     ? branch.files.join(', ')
     : branch.kind === 'unknown' ? branch.detail ?? null : null;
+  // LANDRETIRE1 part 2: how long a row the line does not hold has stood, and whether its quest is closed, as `trees clean` says it.
+  const standing = (branch: LandedBranch) => {
+    if (branch.removable || !branch.landedAt) return null;
+    const when = ago(branch.landedAt);
+    return branch.questClosed && branch.quest
+      ? t('settings.sweep.landed.standingClosed', { when, quest: branch.quest })
+      : t('settings.sweep.landed.standing', { when });
+  };
 
   return (
     <Card id="settings-sweep" className="scroll-mt-3">
@@ -331,19 +415,47 @@ export function SweepList({ branches, landed, busy, onLook, onClean, onDiscard, 
             <div key={repository} role="group" aria-label={repository} className="mt-2">
               <div className="text-small font-medium text-ink-soft">{repository}</div>
               <ul className={cn(BRANCH_ROWS, 'mt-1')}>
-                {landed.filter((branch) => branch.repository === repository).map((branch) => (
-                  <BranchRow
-                    key={branch.branch}
-                    name={branch.branch}
-                    moving={branch.removable}
-                    word={t(branch.removable ? 'settings.sweep.goes' : 'settings.sweep.kept')}
-                  >
-                    <Inline text={shows(branch)} />
-                    {beneath(branch) && (
-                      <span className="mt-0.5 block whitespace-pre-line break-words font-mono text-meta text-ink-faint">{beneath(branch)}</span>
-                    )}
-                  </BranchRow>
-                ))}
+                {landed.filter((branch) => branch.repository === repository).map((branch) => {
+                  const key = sweepKey(branch);
+                  // Only a row whose files still differ on the line is the person's to withdraw (the driver's own rule).
+                  const withdrawable = Boolean(onWithdraw && branch.kind === 'differs');
+                  const said = standing(branch);
+                  return (
+                    <BranchRow
+                      key={branch.branch}
+                      name={branch.branch}
+                      moving={branch.removable}
+                      word={t(branch.removable ? 'settings.sweep.goes' : 'settings.sweep.kept')}
+                      // Open until the withdrawal answers, its presses waiting for it, a refusal said inside it (UXFIX2).
+                      under={withdrawable && withdrawAsking === key && (
+                        <WithdrawLandedAsk
+                          branch={branch}
+                          busy={busy || withdrawing === key}
+                          onWithdraw={(why, answered) => onWithdraw!(branch, why, answered)}
+                          onClose={() => setWithdrawAsking((was) => (was === key ? null : was))}
+                        />
+                      )}
+                    >
+                      <Inline text={shows(branch)} />
+                      {beneath(branch) && (
+                        <span className="mt-0.5 block whitespace-pre-line break-words font-mono text-meta text-ink-faint">{beneath(branch)}</span>
+                      )}
+                      {said && <span className="mt-0.5 block">{said}</span>}
+                      {withdrawable && withdrawAsking !== key && (
+                        <span className="mt-1 block">
+                          <Button
+                            variant="danger"
+                            className="px-2 py-0.5 text-small"
+                            disabled={busy || withdrawing === key}
+                            onClick={() => setWithdrawAsking(key)}
+                          >
+                            {t('settings.sweep.landed.withdraw')}
+                          </Button>
+                        </span>
+                      )}
+                    </BranchRow>
+                  );
+                })}
               </ul>
             </div>
           ))}

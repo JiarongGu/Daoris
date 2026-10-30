@@ -1005,6 +1005,10 @@ public sealed partial class HelpCoverageTests
         ("projects", "useDiscardSessionBranch", null, new Exempt(
             "it discards a failed attempt's branch and its commits for good, a discard, which stays the person's own press "
             + "(D89), as the clean-up beside it does.")),
+        // LANDRETIRE1 (D102's note): the Branches' *Withdraw…*, `daoris-driver trees remove <landing branch> --why`'s twin.
+        ("projects", "useWithdrawLandingBranch", null, new Exempt(
+            "it deletes a landing's branch the line has not taken, on the person's own reason (its commits stay on a recovery ref), a "
+            + "discard, which stays the person's own press (D89), as the clean-up beside it does.")),
         // ENTRY1a: the registration lifecycle (D48 §3/§7), the page's own service calls, read since `queries.ts` is.
         // ENTRY1d2a: the folder stays the person's, so a go opens the drawer with the workspace filled.
         ("projects", "useRegisterRepository", null, RepositoryAddGo),

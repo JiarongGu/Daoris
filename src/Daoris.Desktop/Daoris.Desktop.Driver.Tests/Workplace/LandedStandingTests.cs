@@ -93,6 +93,25 @@ public sealed class LandedStandingTests
         Assert.Contains(said, line => line.Contains("trees remove feature/q2-fix --repository engine --why"));
     }
 
+    // ---- the review of a session whose landing was withdrawn
+
+    [Fact]
+    public void The_review_of_a_withdrawn_landing_says_when_why_and_where_its_commits_stay()
+    {
+        var withdrawn = Landing() with
+        {
+            GoneAt = At.AddDays(2), GoneAs = LandedGone.Withdrawn, GoneWhy = "the row landed another way", KeptOn = "refs/daoris/discarded/feature/q2-fix",
+        };
+
+        var said = LandedReviewWords.Describe("s1", new LandedReview(withdrawn, LandedState.Gone));
+
+        Assert.Contains("that branch is gone now.", said);
+        Assert.Contains(" It was withdrawn on 2026-10-31 09:00 UTC because the row landed another way; its commits stay on `refs/daoris/discarded/feature/q2-fix`.", said);
+        // A branch removed by the clean-up, or one that went outside Daoris, says nothing of a withdrawal.
+        Assert.DoesNotContain("withdrawn", LandedReviewWords.Describe("s1", new LandedReview(Landing() with { GoneAt = At, RemovedAs = LandedKind.OnLine, RemovedOn = "main" }, LandedState.Gone)));
+        Assert.DoesNotContain("withdrawn", LandedReviewWords.Describe("s1", new LandedReview(Landing() with { GoneAt = At, GoneAs = LandedGone.Missing }, LandedState.Gone)));
+    }
+
     // ---- which quest is closed: the service's
 
     [Fact]

@@ -12,7 +12,7 @@ import type { LandingRule } from '../../settings/repository/Landings';
 import { opinionToast } from '../../settings/repository/Opinions';
 import { reviewToast } from '../../settings/repository/Reviews';
 import { namer } from '../../settings/accounts/namer';
-import { sayDiscard, sweepKey, SweepList } from '../../settings/Sweep';
+import { sayDiscard, sayWithdraw, sweepKey, SweepList } from '../../settings/Sweep';
 import { SyncSection } from '../../settings/Sync';
 import {
   stoppedWaiting, useAccounts, useAcross, useDriver, useHarnesses, useHistoryPlan, usePlugins, useRemotes, useRuleAction, useRules,
@@ -20,7 +20,7 @@ import {
   useSetReadAcross,
   useSetReview, useStarts, useSyncNow, standingOf, useSetAppointment,
   useSweep, useSweepLook, useSweepPlan, useTreesSync, useTreesSyncPlan, useTreesSyncScope, useUnwireRemote, useWireRemote, useWorkflowCurrent,
-  useWorkState,
+  useWithdrawLandingBranch, useWorkState,
 } from '../../bridge/shell';
 import { byTool } from '../../agents/tools';
 import { failure, type Notify, useErrorNotify } from '../../design/ui';
@@ -256,6 +256,8 @@ function BranchesPart({ workspace, repositories, notify, onOpenRepository, onOpe
   const sweep = useSweep();
   // A failed or superseded attempt's branch, discarded by its own press (LAND3b): `daoris-driver trees remove … --force`.
   const discard = useDiscardSessionBranch();
+  // A landing's branch the line will never hold, withdrawn by its own press (LANDRETIRE1): `daoris-driver trees remove … --why`.
+  const withdraw = useWithdrawLandingBranch();
   // The person's delete of the recovery refs nothing holds (RECOVERYDROP1): `daoris-driver work recovery drop`'s twin.
   const dropRecoveries = useDropRecoveries();
   const syncScope = useTreesSyncScope();
@@ -308,6 +310,12 @@ function BranchesPart({ workspace, repositories, notify, onOpenRepository, onOpe
           onError: (error) => answered.refused(sentence(error)),
         })}
         discarding={discard.isPending && discard.variables ? sweepKey(discard.variables) : null}
+        // Told back to its ask like the discard (UXFIX2): the reason typed is sent, a refusal is said inside it.
+        onWithdraw={(branch, why, answered) => withdraw.mutate({ repository: branch.repository, branch: branch.branch, why }, {
+          onSuccess: sayWithdraw(notify, t, answered),
+          onError: (error) => answered.refused(sentence(error)),
+        })}
+        withdrawing={withdraw.isPending && withdraw.variables ? sweepKey(withdraw.variables) : null}
         sync={(
           <SyncSection
             plan={answered
