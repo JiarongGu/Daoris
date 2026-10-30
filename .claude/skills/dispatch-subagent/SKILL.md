@@ -88,6 +88,11 @@ days before. The worker's definition also fixes `isolation: worktree`, which a d
 gets a fresh tree; a finished worker's tree cannot be handed to the next one, and it goes with the prune once its branch
 is in main.
 
+The queue's invocation carries the Daoris home whose machine admission it shares (`DAORIS_HOME`, the install's on this
+machine): the tool reads it once at its start for the admission alone and hands it to no gate (INTEGRATE1a, F20), and
+without it the confirm run cannot hold the whole admission, so every confirm run reads inconclusive and a failure that
+would not recur hands the batch back (2026-10-30: three candidates lost so, before the home was given).
+
 A builder runs before it hands back the checks a candidate runs that its lines reach, not only its own classes: on
 2026-10-30 three candidates of one batch went red on checks no member's builder had run (the mark census, `optional-locks`,
 `test-map --check`'s hand rows, the pack-safety read of the CLI package, a route answer's pinned field list, and the
