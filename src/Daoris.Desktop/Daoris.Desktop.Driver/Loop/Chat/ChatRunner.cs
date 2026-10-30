@@ -425,6 +425,9 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
     /// <summary>The briefed move, whose <see cref="BriefedMove.Decided"/> a test hears (FOUNDATION1h branch 4): the runner names no course type.</summary>
     internal BriefedMove Briefed => _move;
 
+    /// <summary>The limit's wake, whose <see cref="LimitWaits.Decided"/> a test hears (FOUNDATION1h branch 6): the runner names no course type.</summary>
+    internal LimitWaits Waits => _waits;
+
     /// <summary>What each judged turn's end came to, by session: a test hears it; no person reads it.</summary>
     internal event Action<string, SwitchChoice>? CurveJudged
     {
