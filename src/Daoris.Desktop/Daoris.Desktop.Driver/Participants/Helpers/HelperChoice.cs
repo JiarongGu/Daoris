@@ -40,33 +40,47 @@ public static class HelperChoice
     /// (the walk's passes); the actor never widens who may be asked where the person's list or the ask names the agents.
     /// </summary>
     /// <exception cref="ActorUnreadableException">The helper actor's stored entry does not read.</exception>
-    public static IReadOnlyList<ActorEffective> Order(HelperAsk ask, HelperRule rule, AdapterSet adapters, string? askerAdapter, DriverConfig config)
+    /// <param name="catalogue">
+    /// The role catalogue (FOUNDATION1x): the role taking the helper's work at <paramref name="workspace"/> gives the entries; null, or a
+    /// catalogue of the seed alone, reads the seeded <c>helper</c>, as before.
+    /// </param>
+    /// <exception cref="DriverException">A role record that does not read, or two roles taking the work in one scope.</exception>
+    public static IReadOnlyList<ActorEffective> Order(
+        HelperAsk ask, HelperRule rule, AdapterSet adapters, string? askerAdapter, DriverConfig config, RoleCatalog? catalogue = null,
+        string? workspace = null)
     {
         var fence = Candidates(ask, rule, adapters, askerAdapter);
         var named = ask.Agent is { Length: > 0 } && fence.Count == 1;
         var persons = !rule.SetUp && rule.Agents.Count > 0;
-        return !named && !persons && config.Actors.ContainsKey("helper")
-            ? ActorChoices.Effective("helper", config)
-            : fence.Count == 0 ? [] : ActorChoices.Effective("helper", config, fence: fence);
+        var found = catalogue?.RoleFor(ParticipantWork.Help, new RolePlace(workspace));
+        if (found?.Held is { } held) throw new DriverException(held);
+        var role = found is null ? "helper" : found.Role?.Id;
+        if (role is null) return [];
+        return !named && !persons && config.Actors.ContainsKey(role)
+            ? ActorChoices.Effective(role, config)
+            : fence.Count == 0 ? [] : ActorChoices.Effective(role, config, fence: fence);
     }
 
     /// <summary>The walk over <see cref="Order"/>, as a reviewer's, with the asker's agent as the work's family.</summary>
     /// <param name="passed">The (entry, account) this ask's call already passed at an open's refusal (D205 §3.5(f)).</param>
     public static Task<ReviewerChoice> ChooseAsync(
         HarnessRoster roster, HelperAsk ask, HelperRule rule, string? askerAdapter, DriverConfig config, string? workspace,
-        CancellationToken ct = default, IReadOnlyList<ReviewerPassed>? passed = null)
+        CancellationToken ct = default, IReadOnlyList<ReviewerPassed>? passed = null, Func<RoleCatalog>? catalogue = null)
     {
         IReadOnlyList<ActorEffective> order;
+        RoleCatalog? read;
         try
         {
-            order = Order(ask, rule, roster.Adapters, askerAdapter, config);
+            read = catalogue?.Invoke();
+            order = Order(ask, rule, roster.Adapters, askerAdapter, config, read, workspace);
         }
-        catch (ActorUnreadableException error)
+        catch (Exception error) when (error is ActorUnreadableException or DriverException)
         {
             return Task.FromResult(new ReviewerChoice(null, null, ReviewerUnavailable.Refused, $"No second opinion: {error.Message}"));
         }
 
         return ReviewerChoice.ChooseAsync(
-            roster, OpinionRule.None, askerAdapter is { Length: > 0 } adapter ? [adapter] : [], config, workspace, ct, "helper", passed, order);
+            roster, OpinionRule.None, askerAdapter is { Length: > 0 } adapter ? [adapter] : [], config, workspace, ct, "helper", passed, order,
+            read is null ? null : () => read);
     }
 }

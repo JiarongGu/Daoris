@@ -246,26 +246,36 @@ public sealed record ReviewerChoice(string? Reviewer, string? Label, string? Cod
     /// The entries to walk where the caller has them already (a helper with no rule list takes its actor's entries, §4.4); else the rule's
     /// reviewers expanded by <paramref name="actor"/>.
     /// </param>
+    /// <param name="catalogue">
+    /// The role catalogue (FOUNDATION1x), read when the choice is made: a store that will not read refuses the choice, as a role that does not
+    /// read does. Null reads the seeded role of the work.
+    /// </param>
     /// <returns>The choice; an actor whose stored entry does not read (§6.4) chooses nothing, saying so, and is read again at the next ask.</returns>
     public static async Task<ReviewerChoice> ChooseAsync(
         HarnessRoster roster, OpinionRule rule, IReadOnlyCollection<string> working, DriverConfig config, string? workspace,
         CancellationToken ct = default, string actor = "opinion", IReadOnlyList<ReviewerPassed>? passed = null,
-        IReadOnlyList<ActorEffective>? order = null)
+        IReadOnlyList<ActorEffective>? order = null, Func<RoleCatalog>? catalogue = null)
     {
         StartPlan plan;
         try
         {
             // FOUNDATION1j part ii (the foundation design §2.4): the start plan of the actor's work, its order the rule's reviewers each
             // expanded into the actor's entries for it, or the entries the caller holds; its account walk the plan's, for the workspace.
+            // FOUNDATION1x: the role is the catalogue's for the work at the workspace; the seeded catalogue answers the seeded role.
             plan = new StartPlan(
                 WorkOf(actor), config, roster, roster.Adapters, new PassMemory(), fence: rule.Reviewers.Count == 0 ? null : rule.Reviewers,
-                order: order ?? (rule.Reviewers.Count == 0 ? Array.Empty<ActorEffective>() : null))
+                order: order ?? (rule.Reviewers.Count == 0 ? Array.Empty<ActorEffective>() : null), catalogue: catalogue?.Invoke(), place: new RolePlace(workspace))
             {
                 Workspace = workspace, Subject = actor,
             };
         }
         catch (ActorUnreadableException error)
         {
+            return new ReviewerChoice(null, null, ReviewerUnavailable.Refused, $"No second opinion: {error.Message}");
+        }
+        catch (DriverException error)
+        {
+            // A role record that does not read, or two roles taking the work in one scope: the start holds, saying so.
             return new ReviewerChoice(null, null, ReviewerUnavailable.Refused, $"No second opinion: {error.Message}");
         }
 
