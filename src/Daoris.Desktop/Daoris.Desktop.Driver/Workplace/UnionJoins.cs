@@ -222,7 +222,7 @@ internal static partial class UnionJoins
         var set = await StageSetApartAsync(tree, onto, session, declaredAt: onto, merging: false, ct).ConfigureAwait(false);
         if (set.Count == 0) return [];
         var (made, _, _) = await WorkingTree.GitAsync(
-            tree, ["commit", "--quiet", "-m", "Set apart what union joined in the replay"], environment: null, SyncBounds.Replay, ct).ConfigureAwait(false);
+            tree, ["commit", "--quiet", "-m", DaorisMaker.Of("Set apart what union joined in the replay")], environment: null, SyncBounds.Replay, ct).ConfigureAwait(false);
         return made == 0 ? set : [];
     }
 

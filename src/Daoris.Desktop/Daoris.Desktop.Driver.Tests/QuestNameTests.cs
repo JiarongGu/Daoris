@@ -366,7 +366,7 @@ public sealed class QuestNameTests
     {
         var message = SquashMessage.Of("Fix the gap", [new("a1", "the first step"), new("b2", "the verify step")], "s1a2b3c4");
 
-        Assert.Equal("Fix the gap\n\n- the first step\n- the verify step\n\nSquashed by Daoris from session `s1a2b3c4`", message);
+        Assert.Equal("Fix the gap\n\n- the first step\n- the verify step\n\nSquashed by Daoris from session `s1a2b3c4`\n\n" + DaorisMaker.Trailer, message);
     }
 
     /// <summary>

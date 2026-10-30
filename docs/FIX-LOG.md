@@ -31,6 +31,12 @@ repository.
 - **Root cause:** those four runs kept the driven run's catch-all and told `HoldAsync` no `stopMade`, so a wire the stop broke was a failure.
 - **Fix:** each passes `stopMade` and catches a failure after a stop first, ending as the stop's conclusion through `Driver.EndStoppedAsync` (the driven run's catch uses it too).
 - **Verify:** a case per run (`IntakeTests`, `HelperProcessTests`, `ReviewTreeTests`, `PartnerProcessTests`), red before; each class green.
+## 2026-10-31 - Daoris's own commits named no maker, so the merge queue refused a replayed branch (DAORISMAKER1)
+
+- **Symptom:** a branch whose landing replay added "Set apart what union joined in the replay" was refused: no `Co-Authored-By` line.
+- **Root cause:** the driver's own commits (set-apart, regenerated writers, squash) carried no trailer, and the check knew only the three agent makers.
+- **Fix:** `DaorisMaker.Trailer` ends each of them; the check accepts Daoris and still refuses none.
+- **Verify:** land, squash and `MAKERTRAIL1` tests green.
 
 ## 2026-10-31 - A test still pinned the first-look baseline row m-iv replaced (FOUNDATION1 m-iv)
 

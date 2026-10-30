@@ -229,6 +229,7 @@ public sealed class LandBacklogLandingTests : LandedFixture
             await GitAsync(root, "show", $"{Branch}:docs/task-archive.md"));
         Assert.Equal(line, (await GitAsync(root, "rev-parse", $"{Branch}~2")).Trim());
         Assert.Equal("Set apart what union joined in the replay", (await GitAsync(root, "log", "-1", "--format=%s", Branch)).Trim());
+        Assert.Equal(DaorisMaker.Trailer, (await GitAsync(root, "log", "-1", "--format=%(trailers:key=Co-Authored-By)", Branch)).Trim());
     }
 
     private static async Task<string> HeadAsync(string place) => (await GitAsync(place, "rev-parse", "HEAD")).Trim();
