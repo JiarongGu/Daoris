@@ -288,6 +288,35 @@ public sealed class DrivenSessionInputTests : IDisposable
     }
 
     /// <summary>
+    /// BROWSERSTART1 (Process: it runs a stand-in harness): a quest session's start hands the browser's endpoint and brings no
+    /// browser up, and the session is still named as driving it.
+    /// </summary>
+    [Fact]
+    public async Task A_driven_sessions_start_brings_no_browser_up()
+    {
+        var plugin = DaorisHome.Entry(_home, HomeEntry.Plugins,"in-app-browser");
+        Directory.CreateDirectory(plugin);
+        File.WriteAllText(Path.Combine(plugin, "plugin.json"), """
+            { "id": "in-app-browser", "servers": [
+                { "name": "browser", "command": ["npx", "-y", "@playwright/mcp@0.0.82", "--cdp-endpoint", "${browser}"] } ] }
+            """);
+        await using var service = StandInService.Start(_repository);
+        var processes = new SessionProcesses();
+        var browser = new InAppBrowserServersTests.LazyBrowser("http://127.0.0.1:4810");
+        var driver = Driver("stub", Path.Combine(_home, "heard.txt"), service, processes, browser: browser);
+
+        var tick = driver.RunOnceAsync();
+        await Until(() => processes.Running.Contains("s1"));
+
+        Assert.Equal(["s1"], processes.DrivingBrowser);
+        Assert.Equal(0, browser.BroughtUp);
+        Assert.True(browser.Handed > 0);
+
+        Assert.True(processes.Stop("s1"));
+        await tick.WaitAsync(Poll.Patience);
+    }
+
+    /// <summary>
     /// BRWHINT1b (Process: it runs a stand-in harness): a driven session's first prompt carries the line telling it the
     /// browser it was handed, by the server's own name; where the server was withheld, none says so.
     /// </summary>

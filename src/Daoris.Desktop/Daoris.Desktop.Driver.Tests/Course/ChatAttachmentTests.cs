@@ -218,6 +218,25 @@ public sealed class ChatAttachmentTests : IDisposable
         Assert.Contains(told, note.Text);
     }
 
+    /// <summary>
+    /// BROWSERSTART1: a chat taken up (the come-up after a restart starts it the same way) is handed the browser's endpoint and
+    /// brings no browser up, and its agent is still told the browser it was handed.
+    /// </summary>
+    [Fact]
+    public async Task A_chat_taken_up_brings_no_browser_up_and_is_still_told_its_browser()
+    {
+        HandBrowserPlugin();
+        var browser = new InAppBrowserServersTests.LazyBrowser("http://127.0.0.1:4810");
+        await using var session = await Chat("acp-stub", browser);
+
+        Assert.True(session.Runner.Say(session.Id, "open the board"));
+        await Until(() => Turns(session) == 1, () => HeardText());
+
+        Assert.Equal(0, browser.BroughtUp);
+        Assert.True(browser.Handed > 0);
+        Assert.Contains("Daoris has handed you its own browser as the MCP server `browser`", HeardText());
+    }
+
     /// <summary>Nothing that drives the browser handed, nothing said (BRWHINT1a).</summary>
     [Fact]
     public async Task A_chat_handed_no_browser_is_told_nothing_of_one()
