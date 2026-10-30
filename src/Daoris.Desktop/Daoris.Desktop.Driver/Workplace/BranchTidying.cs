@@ -290,6 +290,7 @@ public sealed class BranchTidying(string home)
         lines.AddRange(await KeepDownloadsAsync(service, run, left > TimeSpan.Zero ? left : TimeSpan.Zero, log, met, ct).ConfigureAwait(false));
         if (logsDue) lines.AddRange(KeepLogs(logs, run, met));
         if (historyDue) lines.AddRange(await KeepHistoryAsync(service, history, run, log, met, ct).ConfigureAwait(false));
+        if (Sizes is not null && (setAside || Downloaded())) lines.AddRange(await KeepLimitsAsync(service, run, log, ct).ConfigureAwait(false));
 
         // KEEP1c (the cleanup design §3.1 step 6, §4.3): each kind counted at most once a day, and the kinds this run wrote a `last` for at
         // its end, in the background, so the card's sizes follow the rules without a page's open walking anything.
@@ -301,6 +302,53 @@ public sealed class BranchTidying(string home)
 
         return lines;
     }
+
+    /// <summary>
+    /// Each kind's size limit, holding the home's run (KEEPSIZE1d): once a day, or at once after a limit changed, a kind over its limit
+    /// lets go of its oldest eligible units through the press's removal (<see cref="SpaceLimits"/>); what went is said in the report.
+    /// </summary>
+    private async Task<IReadOnlyList<string>> KeepLimitsAsync(ServiceClient service, KeepingRun run, MachineLog? log, CancellationToken ct)
+    {
+        var lines = new List<string>();
+        var limits = Policy(home).Limits;
+        var now = Clock();
+        bool due;
+        lock (_gate) due = _limitsDaily is not { } last || now - last >= DownloadsPace || _limits != limits;
+        if (!due) return lines;
+        var markers = DaorisHome.Entry(home, HomeEntry.SessionPids);
+        var world = new SpaceFreeWorld(home)
+        {
+            Sizes = Sizes!,
+            Judge = () => DownloadJudge.Of(
+                home, HarnessSettings.ResolvePath(home), ConfigPath ?? DriverConfig.ResolvePath(home),
+                token => Sessions is { } stand ? stand(service, token) : LiveSessions.ReadAsync(service, markers, token), Clock),
+            Caches = Caches,
+            Log = log,
+            Now = Clock,
+            Policy = Policy,
+        }.WithService(service);
+        var pass = await SpaceLimits.PassAsync(world, run.Door, run.Id, ct).ConfigureAwait(false);
+        if (!pass.Uncounted)
+        {
+            lock (_gate)
+            {
+                _limitsDaily = now;
+                _limits = limits;
+            }
+        }
+
+        foreach (var kind in pass.Kinds.Where(each => each.Removed > 0))
+        {
+            lines.Add(Look.Progress("tidy", $"tidy  {(kind.Id == "set-aside" ? "the folders moved aside" : "the downloads")} were over their size limit: removed "
+                + $"{kind.Removed} of the oldest ({Size(kind.Bytes)}); each is made again, or only a copy of what the repository holds."));
+        }
+
+        return lines;
+    }
+
+    // KEEPSIZE1d: when the size limits were last judged in this process, and under which limits, so a changed limit is judged at once.
+    private DateTimeOffset? _limitsDaily;
+    private LimitsPolicy? _limits;
 
     /// <summary>
     /// The free-space floor, at each pass (KEEP1f; the cleanup design §3.2): each volume read for its own entries, and below its floor the

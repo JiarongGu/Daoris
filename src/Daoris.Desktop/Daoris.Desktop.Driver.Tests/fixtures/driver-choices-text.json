@@ -2998,7 +2998,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `many` is no rule of `set-aside`: it keeps 1 to 90 days, `whole`, `slim` or `default`."
+        "daoris: `many` is no rule of `set-aside`: it keeps 1 to 90 days, `whole`, `slim`, a size limit of 1 to 1048576 GB (`<n>GB`) or `default`."
       ],
       "after": null
     },

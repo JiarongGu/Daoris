@@ -33,6 +33,12 @@ public static class KeepKey
     /// <summary>The oldest age finished history may be cleared at.</summary>
     public const int HistoryMaxDays = 3650;
 
+    /// <summary>The fewest GB the person may set a kind's size limit to (KEEPSIZE1d).</summary>
+    public const int PartMinGb = 1;
+
+    /// <summary>The most GB a kind's size limit may hold.</summary>
+    public const int PartMaxGb = 1 << 20;
+
     /// <summary>The fewest GB the person may set the free-space floor to.</summary>
     public const int FloorMinGb = 1;
 
@@ -74,6 +80,12 @@ public sealed record KeepChoices
     /// <summary>The downloads' <c>never</c>: none goes by its days, the press alone.</summary>
     public bool DownloadsNever { get; init; }
 
+    /// <summary>The set-aside folders' size limit in GB (KEEPSIZE1d), or null for the default.</summary>
+    public int? SetAsideGb { get; init; }
+
+    /// <summary>The downloads' size limit in GB (KEEPSIZE1d), or null for the default.</summary>
+    public int? DownloadsGb { get; init; }
+
     /// <summary>The machine log's days, or null for the default thirty.</summary>
     public int? LogsDays { get; init; }
 
@@ -95,8 +107,8 @@ public sealed record KeepChoices
     /// <summary>Whether <paramref name="kind"/>'s rule is its default: nothing of it chosen.</summary>
     public bool IsDefault(string kind) => kind switch
     {
-        "set-aside" => SetAsideDays is null && !SetAsideWhole,
-        "downloads" => DownloadsDays is null && !DownloadsNever,
+        "set-aside" => SetAsideDays is null && !SetAsideWhole && SetAsideGb is null,
+        "downloads" => DownloadsDays is null && !DownloadsNever && DownloadsGb is null,
         "logs" => LogsDays is null,
         "history" => HistoryDays is null,
         "floor" => FloorGb is null && FloorPercent is null && !FloorOff,
@@ -114,14 +126,20 @@ public sealed record KeepChoices
             {
                 SetAsideDays = Days(setAside, KeepKey.SetAsideMinDays, KeepKey.SetAsideMaxDays),
                 SetAsideWhole = setAside.TryGetProperty("whole", out var whole) && whole.ValueKind == JsonValueKind.True,
+                SetAsideGb = Whole(setAside, "gb", KeepKey.PartMinGb, KeepKey.PartMaxGb),
             };
         }
 
-        if (Kind(keep, "downloads") is { } downloads && downloads.TryGetProperty("days", out var days))
+        if (Kind(keep, "downloads") is { } downloads)
         {
-            choices = days.ValueKind == JsonValueKind.Null
-                ? choices with { DownloadsNever = true }
-                : choices with { DownloadsDays = Days(downloads, KeepKey.DownloadsMinDays, KeepKey.DownloadsMaxDays) };
+            if (downloads.TryGetProperty("days", out var days))
+            {
+                choices = days.ValueKind == JsonValueKind.Null
+                    ? choices with { DownloadsNever = true }
+                    : choices with { DownloadsDays = Days(downloads, KeepKey.DownloadsMinDays, KeepKey.DownloadsMaxDays) };
+            }
+
+            choices = choices with { DownloadsGb = Whole(downloads, "gb", KeepKey.PartMinGb, KeepKey.PartMaxGb) };
         }
 
         if (Kind(keep, "logs") is { } logs) choices = choices with { LogsDays = Days(logs, KeepKey.LogsMinDays, KeepKey.LogsMaxDays) };
@@ -148,6 +166,7 @@ public sealed record KeepChoices
             writer.WriteStartObject("setAside");
             if (SetAsideDays is { } setAside) writer.WriteNumber("days", setAside);
             if (SetAsideWhole) writer.WriteBoolean("whole", true);
+            if (SetAsideGb is { } setAsideGb) writer.WriteNumber("gb", setAsideGb);
             writer.WriteEndObject();
         }
 
@@ -155,7 +174,8 @@ public sealed record KeepChoices
         {
             writer.WriteStartObject("downloads");
             if (DownloadsNever) writer.WriteNull("days");
-            else writer.WriteNumber("days", DownloadsDays!.Value);
+            else if (DownloadsDays is { } downloadsDays) writer.WriteNumber("days", downloadsDays);
+            if (DownloadsGb is { } downloadsGb) writer.WriteNumber("gb", downloadsGb);
             writer.WriteEndObject();
         }
 
