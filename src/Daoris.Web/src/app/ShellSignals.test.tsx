@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { screen, waitFor } from '@testing-library/react';
+import { act, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 // The shell's push channel: ticks, attention and endings become toasts and refetches. Moved from
@@ -71,8 +71,9 @@ describe('the shell push channel (ShellSignals)', () => {
     for (const key of [keys.allSessions, keys.allQuests, keys.allAsks]) {
       expect(invalidate).toHaveBeenCalledWith({ queryKey: key, predicate: expect.any(Function) });
     }
+    // Not the repositories, the rules or the registry (FOUNDATION1s): a look declares what it moved of them as their own scopes.
     for (const key of [keys.allRepositories, keys.rules, keys.allRegistry]) {
-      expect(invalidate).toHaveBeenCalledWith({ queryKey: key });
+      expect(invalidate).not.toHaveBeenCalledWith(expect.objectContaining({ queryKey: key }));
     }
     // Where each circle stands, passing over the standings where the shell pushes them (PUSH1a2): each pass pushes what it moved.
     expect(invalidate).toHaveBeenCalledWith({ queryKey: keys.allSync, predicate: expect.any(Function) });
@@ -129,37 +130,27 @@ describe('the shell push channel (ShellSignals)', () => {
     await screen.findByText('Expose a streaming budget');
     expect(screen.queryByText(/sitting —/)).not.toBeInTheDocument();
 
-    eventHandlers.get('DAORIS.DRIVER_TICK')!({
-      events: [],
-      considered: [{ quest: 'abc123', repository: 'engine', verdict: 'NotDrivable', reason: 'engine is not drivable on this machine' }],
+    // What the shell pushes of its last look (FOUNDATION1s): the slice's push writes the entry, as `pushedState.test.tsx` holds.
+    act(() => {
+      client.setQueryData(keys.considerations, {
+        considered: [{ quest: 'abc123', repository: 'engine', verdict: 'NotDrivable', reason: 'engine is not drivable on this machine' }],
+        untrusted: [],
+        waits: [],
+      });
     });
     expect(await screen.findByText('sitting — engine is not drivable on this machine')).toBeTruthy();
 
-    // A later tick that would START it is not sitting, and the line goes.
+    // A tick, with whatever an older shell still put in it, writes none of it: the line stays until a push moves it.
     eventHandlers.get('DAORIS.DRIVER_TICK')!({
       events: ['engine  spawned s1a2b3c4'],
       considered: [{ quest: 'abc123', repository: 'engine', verdict: 'Start', reason: 'starting' }],
     });
+    expect(screen.getByText('sitting — engine is not drivable on this machine')).toBeTruthy();
+
+    act(() => {
+      client.setQueryData(keys.considerations, { considered: [], untrusted: [], waits: [] });
+    });
     await waitFor(() => expect(screen.queryByText(/sitting —/)).not.toBeInTheDocument());
-  });
-
-  /**
-   * UX6d (D150 §6.2): the starts the look held on cooling accounts, an ask's intake among them, land where *What needs you*
-   * reads them, replaced whole by each tick, and a tick that says none, or a shell older than them, leaves none.
-   */
-  it('keeps the starts a tick held on its accounts, replaced whole by the next', () => {
-    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    show(<ShellSignals notify={() => {}} />, client);
-    const wait = {
-      agent: 'claude-code', account: 'account-2', workspace: 'work', until: '2026-10-06T04:42:00Z', stated: true,
-      quests: [], asks: ['a1', 'a2'], signedOut: ['account-1'],
-    };
-
-    eventHandlers.get('DAORIS.DRIVER_TICK')!({ events: [], waits: [wait] });
-    expect(client.getQueryData(keys.waits)).toEqual([wait]);
-
-    eventHandlers.get('DAORIS.DRIVER_TICK')!({ events: [] });
-    expect(client.getQueryData(keys.waits)).toEqual([]);
   });
 
   it("a driver error arrives as an error toast, the driver's own sentence verbatim", () => {

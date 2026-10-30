@@ -82,7 +82,7 @@ describe('the shell in a browser, over two workspaces', () => {
         ? Response.json({ entries: 3, repositories: 1, withheld: 0 })
         : respond(String(input))));
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    client.setQueryData(keys.considered, [{ quest: 'q1', verdict: 'sitting' }]);
+    client.setQueryData(keys.considerations, { considered: [{ quest: 'q1', verdict: 'sitting' }], untrusted: [], waits: [] });
     client.setQueryData(keys.repositories(null), REPOSITORIES);
     const { result } = renderHook(() => useRefreshIndex(), {
       wrapper: ({ children }) => <QueryClientProvider client={client}>{children}</QueryClientProvider>,
@@ -90,7 +90,7 @@ describe('the shell in a browser, over two workspaces', () => {
 
     await act(async () => { await result.current.mutateAsync(); });
 
-    expect(client.getQueryState(keys.considered)?.isInvalidated).toBe(false);
+    expect(client.getQueryState(keys.considerations)?.isInvalidated).toBe(false);
     expect(client.getQueryState(keys.repositories(null))?.isInvalidated).toBe(true);
   });
 

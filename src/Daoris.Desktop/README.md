@@ -820,7 +820,10 @@ channel and every teammate's read through the service as the person reads it, `u
 change stream's `channel` or `asks` moved, a press declared to the asks, the service came up, or thirty seconds passed; an urgent
 message to everyone an agent or a teammate wrote, past a watermark per ask whose first judgement is a baseline, is said once as
 `MESSAGE` with `newest`'s fields and its ask's, while the notify switch is on, and never reaches the desktop. A keyed slice's partition
-(`StateSlice.Keyed`) pushes the keys a judgement moved as a delta {baseSeq, removed}, never coalesced.
+(`StateSlice.Keyed`) pushes the keys a judgement moved as a delta {baseSeq, removed}, never coalesced. And the fifteenth, what the last
+look said as standing facts (`ConsiderationsStateSlice`, FOUNDATION1s): `considered` (why each open quest is sitting), `untrusted` (the
+trust holds, machine paths, so this bridge only) and `waits` (the starts held on accounts), each a list pushed whole, from the loop's
+memory, woken by each look and by a verified `TRUST_FOLDER`, which takes its hold off at once; the tick carries only its `events`.
 
 | Domain | What it carries |
 |---|---|
