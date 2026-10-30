@@ -40,6 +40,9 @@ public static class MemoryOpState
 /// </summary>
 public sealed record MemoryChange(string Kind, string? Text = null, string? Target = null, long? Revision = null, string? Source = null, string? Relation = null);
 
+/// <summary>A recheck the sweep read of a cited entry (§3): it holds at <paramref name="Revision"/>, or failed for <paramref name="Reason"/>.</summary>
+public sealed record MemoryRecheck(string Repository, string Entry, long Revision, bool Holds, string? Reason = null);
+
 /// <summary>Who made an operation, from the caller's record at the call (§1), never from a tool's arguments; and the call's instant.</summary>
 public sealed record MemoryAuthor(
     string Session, string Workspace, string? Quest, string Adapter, string? Harness, string? Role, string? RoleRevision, DateTimeOffset At);
@@ -199,6 +202,84 @@ public sealed class MemoryOpStore
 
         return staged.Count;
     }
+
+    /// <summary>
+    /// An awaiting end decided through its row (§3), as a go-ahead is kept: approved, it is <c>ready</c>; refused, <c>declined</c>. Null
+    /// where no end awaits by that id.
+    /// </summary>
+    public Task<MemoryOp?> DecideAsync(string id, string approver, bool approve, DateTimeOffset now, CancellationToken ct = default) =>
+        _db.InTransactionAsync(async (_, inside) =>
+        {
+            await using (var decide = _db.Command())
+            {
+                decide.CommandText = "UPDATE memory_ops SET state = $state, approver = $approver, settled = $settled WHERE id = $id AND state = 'awaiting'";
+                decide.Parameters.AddWithValue("$id", id);
+                decide.Parameters.AddWithValue("$state", approve ? MemoryOpState.Ready : MemoryOpState.Declined);
+                decide.Parameters.AddWithValue("$approver", approver);
+                decide.Parameters.AddWithValue("$settled", approve ? DBNull.Value : Moments.Write(now));
+                if (await decide.ExecuteNonQueryAsync(inside).ConfigureAwait(false) == 0) return null;
+            }
+
+            return await FindAsync(id, inside).ConfigureAwait(false);
+        }, ct);
+
+    /// <summary>
+    /// A sweep's rechecks written as rows (§3): a Holds as a <c>ready</c> confirmation at the revision read, or, where an end of the entry
+    /// awaits its approver, kept on that end's row so the revision the approver read does not move; a Failed as an <c>awaiting</c> end.
+    /// </summary>
+    public Task SweepAsync(IReadOnlyList<MemoryRecheck> rechecks, DateTimeOffset now, CancellationToken ct = default) =>
+        _db.InTransactionAsync(async (_, inside) =>
+        {
+            foreach (var recheck in rechecks)
+            {
+                if (recheck.Holds)
+                {
+                    await using var awaiting = _db.Command();
+                    awaiting.CommandText = """
+                        UPDATE memory_ops SET holds = $now
+                        WHERE state = 'awaiting' AND kind = 'end' AND repository = $repository AND target = $entry
+                        """;
+                    awaiting.Parameters.AddWithValue("$now", Moments.Write(now));
+                    awaiting.Parameters.AddWithValue("$repository", recheck.Repository);
+                    awaiting.Parameters.AddWithValue("$entry", recheck.Entry);
+                    if (await awaiting.ExecuteNonQueryAsync(inside).ConfigureAwait(false) > 0) continue;
+                }
+
+                var change = recheck.Holds
+                    ? new MemoryChange(MemoryOpKind.Confirm, Target: recheck.Entry, Revision: recheck.Revision)
+                    : new MemoryChange(MemoryOpKind.End, Text: recheck.Reason, Target: recheck.Entry, Revision: recheck.Revision);
+                var state = recheck.Holds ? MemoryOpState.Ready : MemoryOpState.Awaiting;
+                await InsertAsync(new MemoryOp(NewId(), recheck.Repository, state, change, By: null, now), inside).ConfigureAwait(false);
+            }
+
+            return true;
+        }, ct);
+
+    /// <summary><c>ready</c> to <c>applying</c>, in its own transaction before the engine is called; false where it is no longer ready.</summary>
+    internal Task<bool> BeginAsync(string id, CancellationToken ct = default) => _db.InTransactionAsync(async (_, inside) =>
+    {
+        await using var begin = _db.Command();
+        begin.CommandText = "UPDATE memory_ops SET state = 'applying' WHERE id = $id AND state = 'ready'";
+        begin.Parameters.AddWithValue("$id", id);
+        return await begin.ExecuteNonQueryAsync(inside).ConfigureAwait(false) == 1;
+    }, ct);
+
+    /// <summary>An <c>applying</c> row's outcome, in a transaction after the engine answered or recovery read it.</summary>
+    internal Task SettleAsync(string id, MemoryOutcome outcome, DateTimeOffset now, CancellationToken ct = default) =>
+        _db.InTransactionAsync(async (_, inside) =>
+        {
+            await using var settle = _db.Command();
+            settle.CommandText = """
+                UPDATE memory_ops SET state = $state, entry = COALESCE($entry, entry), applied = $applied, settled = $now
+                WHERE id = $id AND state = 'applying'
+                """;
+            settle.Parameters.AddWithValue("$id", id);
+            settle.Parameters.AddWithValue("$state", outcome.State);
+            settle.Parameters.AddWithValue("$entry", Value(outcome.Entry));
+            settle.Parameters.AddWithValue("$applied", outcome.Revision is { } revision ? revision : DBNull.Value);
+            settle.Parameters.AddWithValue("$now", Moments.Write(now));
+            return await settle.ExecuteNonQueryAsync(inside).ConfigureAwait(false);
+        }, ct);
 
     private async Task InsertAsync(MemoryOp op, CancellationToken ct)
     {

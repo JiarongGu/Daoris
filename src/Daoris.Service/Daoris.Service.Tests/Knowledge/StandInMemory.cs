@@ -5,8 +5,8 @@ namespace Daoris.Service.Tests;
 
 /// <summary>
 /// A stand-in for Lyntai's engines, one per repository (KNOWCENTRAL2b), repeating the effects the memory coordinator design §6 C names:
-/// a same-content write advances the engine and bumps the entry's revision, a repeated relation adds weight, a confirmation bumps the
-/// revision and names no confirmation, and an end is one guarded change. A recall opened to reinforce touches, co-activates and logs what
+/// a same-content write advances the engine and bumps the entry's revision, a repeated relation adds weight, a confirmation guarded by the
+/// revision read bumps the revision and names no confirmation, and an end is one guarded change. A recall opened to reinforce touches, co-activates and logs what
 /// it returns, as Lyntai's does by default. <see cref="State"/> reads every effect, so a read that writes anything is seen.
 /// </summary>
 public sealed class StandInMemory : IMemoryEngines
@@ -133,9 +133,9 @@ public sealed class StandInMemory : IMemoryEngines
             return Task.FromResult(new MemoryLink(from, to, kind, weight));
         }
 
-        public Task<MemoryEntry?> ConfirmAsync(string id, CancellationToken ct = default)
+        public Task<MemoryEntry?> ConfirmAsync(string id, long revision, CancellationToken ct = default)
         {
-            if (engine.Rows.GetValueOrDefault(id) is not { Ended: null } row) return Task.FromResult<MemoryEntry?>(null);
+            if (engine.Rows.GetValueOrDefault(id) is not { Ended: null } row || row.Revision != revision) return Task.FromResult<MemoryEntry?>(null);
             engine.Advance++;
             row.Revision++;
             row.Stamp = engine.Advance;

@@ -57,8 +57,8 @@ public interface IMemoryEngine
     /// <summary>A relation written; a repeated one answers its link, its weight added to.</summary>
     Task<MemoryLink> RelateAsync(string from, string to, string kind, CancellationToken ct = default);
 
-    /// <summary>The entry confirmed, its revision moved; null where it is gone or ended.</summary>
-    Task<MemoryEntry?> ConfirmAsync(string id, CancellationToken ct = default);
+    /// <summary>The entry confirmed at <paramref name="revision"/>, its revision moved; null where it is gone, ended, or at another revision.</summary>
+    Task<MemoryEntry?> ConfirmAsync(string id, long revision, CancellationToken ct = default);
 
     /// <summary>The entry ended at <paramref name="revision"/>; null where it is gone, ended, or at another revision.</summary>
     Task<MemoryEntry?> EndAsync(string id, long revision, string reason, CancellationToken ct = default);
