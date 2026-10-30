@@ -16,6 +16,7 @@ import type { PermissionAnswered, PermissionChoice, PermissionWait } from '../..
 import type { AnswerAloneAnswered, AnswerWait } from '../../work/waits/AnswerAlone';
 import type { NewSessionAnswer } from '../../work/say';
 import type { SessionWhere } from '../../work/rail/SessionRow';
+import type { SessionRecord } from '../../work/sessionRecord';
 import { call } from '../call';
 import { readSlice } from '../driver';
 import { mergeKeyed, readPushed, type SliceSpec, usePushedLive } from '../state/slices';
@@ -283,6 +284,24 @@ export const useSessionWhere = (sessions: readonly Session[] | undefined): Recor
   });
   const rows = Array.isArray(answer.data?.sessions) ? answer.data.sessions : [];
   return Object.fromEntries(rows.map((row) => [row.session, { treeGone: row.treeGone === true, landed: row.landed ?? null }]));
+};
+
+/**
+ * The record of the finished tree a session ran in (KEEPSIZE1): its landing, tip, recovery ref and commits, read once its tree is gone,
+ * when only the record still says what the work was. Null while none is kept or the tree stands. Told by event, as `useSessionWhere` is.
+ */
+export const useSessionRecord = (id: string | null, treeGone: boolean): SessionRecord | null => {
+  const { isAvailable } = useShenora();
+  const client = useQueryClient();
+  const queryKey = keys.sessionRecord(id ?? '');
+  const answer = useQuery({
+    queryKey,
+    queryFn: () => askHeld<{ record?: SessionRecord | null }>('SESSION_RECORD', client, queryKey, { id }),
+    enabled: isAvailable && id !== null && treeGone,
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+  });
+  return treeGone ? answer.data?.record ?? null : null;
 };
 
 /**

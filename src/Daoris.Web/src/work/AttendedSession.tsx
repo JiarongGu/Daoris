@@ -24,6 +24,8 @@ import { PartsFold } from './head/PartsFold';
 import type { PartFacts } from './head/PartsStrip';
 import type { SessionProcess } from './head/process';
 import type { DetailRow } from './head/DetailsFold';
+import { FinishedRecord } from './head/FinishedRecord';
+import type { SessionRecord } from './sessionRecord';
 import type { Relations } from './head/relations';
 import type { LineBehind } from './review/diff';
 import type { HelperWaits } from './waits/HelperAsks';
@@ -70,7 +72,7 @@ export function AttendedSession({
   chain = [], onSession, onQuest, onReview, relations, timeline = 'dock', branch, ownBranch, onDiscardBranch, discardingBranch,
   headed = false, goAheads, onGoAhead, trace, ownSignIn = false, nameOf, lands, landing, planning, onLand, onSayRebase, onName, discards, onDiscardTree, review, behind,
   opinion, continues, helps, heavy, process, parts, entryAccept, channel, workAsk, workBusy, toEvent, rules, ruleAsk, seek, helpers, permissions,
-  answers, milestone, onOpenBranch, question, parkBox, pieces,
+  answers, milestone, record, onOpenBranch, question, parkBox, pieces,
 }: {
   /** Its pieces (COAGENT1b, D199), the frame's: handed to its head's Pieces section. Absent, none is drawn. */
   pieces?: PieceSection | null;
@@ -161,6 +163,8 @@ export function AttendedSession({
    * kept, the clean-up and the recovery. Absent where the driver names no unit for it: a browser, a teammate's, or an older shell.
    */
   milestone?: MilestoneUnit | null;
+  /** What was kept of the tree it ran in once the tree is let go (KEEPSIZE1). Absent while the tree stands or none is kept. */
+  record?: SessionRecord | null;
   /**
    * How its work's landing branch landed (FLOWCHART1c): the milestone's door to that branch's page in Repositories, named by the
    * branch the unit's landing made. Absent where nothing opens a page there.
@@ -327,6 +331,8 @@ export function AttendedSession({
       {milestone && <WorkMilestone key={`milestone:${session.id}`} unit={milestone} />}
       {/* Its door to how the branch its landing made landed (FLOWCHART1c), a line beside the milestone and none of its own. */}
       {milestone && onOpenBranch && <LandedBranchDoor unit={milestone} onOpen={onOpenBranch} />}
+      {/* What the service kept of its finished tree, shown once the tree is let go (KEEPSIZE1). */}
+      {record && <FinishedRecord record={record} />}
       {/* Folded, a line above the conversation: nothing is read until the person opens it (TRACE1b). */}
       {trace && <HowItCameToBe kind="session" id={session.id} {...trace} nameOf={nameOf} />}
       {/* The timeline lives in the right dock since SURF6 gave the dock its second occupant. It stayed

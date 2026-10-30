@@ -43,7 +43,42 @@ public static class KeepRules
     public static KeepKind Kind(string? id) =>
         Settable.FirstOrDefault(kind => string.Equals(kind.Id, id?.Trim(), StringComparison.Ordinal))
         ?? throw new DriverException($"`{id}` is no kind whose rule you set here: name {string.Join(", ", Settable.Select(kind => $"`{kind.Id}`"))} "
-            + $"or `{Floor}`.");
+            + $"`{Allowance}` or `{Floor}`.");
+
+    /// <summary>The allowance over the whole's word (KEEPSIZE1): set beside the kinds' rules, though it keeps no kind of its own.</summary>
+    public const string Allowance = "allowance";
+
+    /// <summary>Whether <paramref name="id"/> names the allowance rather than a kind.</summary>
+    public static bool IsAllowance(string? id) => string.Equals(id?.Trim(), Allowance, StringComparison.Ordinal);
+
+    /// <summary>What the allowance takes, in the words its refusal and its usage say.</summary>
+    public static string AllowanceChoices(long? volume) =>
+        $"a size from {KeepKey.AllowanceMinGb} GB to {(volume is { } total ? $"{FloorPolicy.HalfGb(total)} GB, half its volume" : "half its volume")} (`<n>GB`) or `default`";
+
+    private static KeepChoices ApplyAllowance(KeepChoices keep, KeepSet set)
+    {
+        if (set.Days is not null || set.Never || set.Whole is not null || set.Percent is not null || set.Off)
+            throw AllowanceOutOfRange(set, "days, never, whole, a share or off, which the allowance does not take");
+        if (set.Default)
+        {
+            if (set.Gb is not null) throw AllowanceOutOfRange(set, "default and a value at once");
+            return keep with { AllowanceGb = null };
+        }
+
+        if (set.Gb is not { } gb) throw new DriverException($"name the allowance: {AllowanceChoices(set.Volume)}.");
+        var most = set.Volume is { } total ? Math.Min(FloorPolicy.HalfGb(total), KeepKey.PartMaxGb) : KeepKey.PartMaxGb;
+        if (gb < KeepKey.AllowanceMinGb || gb > most) throw AllowanceOutOfRange(set, $"{gb} GB");
+        return keep with { AllowanceGb = gb };
+    }
+
+    private static ChoiceRefusal AllowanceOutOfRange(KeepSet set, string value)
+    {
+        var invariant = System.Globalization.CultureInfo.InvariantCulture;
+        var max = set.Volume is { } total ? Math.Min(FloorPolicy.HalfGb(total), KeepKey.PartMaxGb) : KeepKey.PartMaxGb;
+        return new(ChoiceRefusal.KeepOutOfRange, $"the allowance takes {AllowanceChoices(set.Volume)}; {value} is out of its bounds, so nothing was written.",
+            ("kind", Allowance), ("value", value), ("min", KeepKey.AllowanceMinGb.ToString(invariant)), ("max", max.ToString(invariant)),
+            ("unit", "gb"), ("context", "allowance"));
+    }
 
     /// <summary>The free-space floor's word (KEEP1f): set beside the kinds' rules, though it keeps no kind of its own.</summary>
     public const string Floor = "floor";
@@ -58,6 +93,7 @@ public static class KeepRules
     public static DriverConfig Apply(DriverConfig config, KeepSet set)
     {
         if (IsFloor(set.Kind)) return config with { Keep = ApplyFloor(config.Keep, set) };
+        if (IsAllowance(set.Kind)) return config with { Keep = ApplyAllowance(config.Keep, set) };
         var kind = Kind(set.Kind);
         if (set.Percent is not null || set.Off) throw OutOfRange(kind, "a share or off, which only the floor takes");
         if (set.Gb is not null && !kind.MayHavePart) throw OutOfRange(kind, "a size, which only the set-aside folders and the downloads take");
@@ -104,6 +140,16 @@ public static class KeepRules
     public static KeepSet Asked(string kindWord, string value)
     {
         if (IsFloor(kindWord)) return FloorAsked(value);
+        if (IsAllowance(kindWord))
+        {
+            var said = value.Trim();
+            if (said == "default") return new KeepSet(Allowance, Default: true);
+            return said.EndsWith("GB", StringComparison.OrdinalIgnoreCase)
+                && int.TryParse(said[..^2].TrimEnd(), System.Globalization.NumberStyles.AllowLeadingSign, System.Globalization.CultureInfo.InvariantCulture, out var allowed)
+                    ? new KeepSet(Allowance, Gb: allowed)
+                    : throw new DriverException($"`{said}` is no allowance: it takes {AllowanceChoices(null)}.");
+        }
+
         var kind = Kind(kindWord);
         var word = value.Trim();
         return word switch
@@ -128,6 +174,7 @@ public static class KeepRules
         return kind switch
         {
             Floor => policy.Floor.Said,
+            Allowance => $"Daoris may use up to {policy.Limits.AllowanceGb} GB in all; over it, it lets go of what can be made again, oldest first, only where that brings it within",
             "set-aside" => policy.SetAside.Whole
                 ? $"a tree's folder moved aside is kept {policy.SetAside.Days.TotalDays:0} days, whole"
                 : $"a tree's folder moved aside is kept {policy.SetAside.Days.TotalDays:0} days; its package folders go an hour after the move",

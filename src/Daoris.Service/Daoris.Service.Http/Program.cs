@@ -1474,6 +1474,23 @@ if (mode == ServiceMode.Local)
         }
     });
 
+    // The record of the finished tree a session ran in, for the session's own page once its tree is let go: the post's facts as kept, the
+    // landing, the tip, its ref and the commits. Machine-local, as the post is; none kept is a 404.
+    app.MapGet("/api/sessions/{id}/record", async (string id, ComposedService s, HttpContext http, CancellationToken ct) =>
+    {
+        if (!MachineLocal(http)) return Results.NotFound();
+        try
+        {
+            return await s.Records.FindBySessionAsync(id, ct) is { } record
+                ? Results.Ok(record)
+                : Results.NotFound(new ErrorResponse($"no finished tree's record names session `{id}`"));
+        }
+        catch (NewerWorkRecordsException newer)
+        {
+            return Results.Conflict(new ErrorResponse(newer.Message, "RECORDS_NEWER"));
+        }
+    });
+
     // History's age applied to the finished trees' records no session names (KEEPSIZE1b, Codex's read of the branch, finding 8): the driver's
     // daily clear of history sends its cutoff, and each such record kept at or before it goes by its own `at`. Machine-local, as the post is.
     app.MapPost("/api/trees/record/age", async (ComposedService s, HttpContext http, WorkRecordAgeRequest body, CancellationToken ct) =>

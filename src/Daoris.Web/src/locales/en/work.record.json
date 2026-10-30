@@ -1,0 +1,17 @@
+{
+  "work.record.title": "What was kept of its work",
+  "work.record.hint": "Its tree has been let go; this record, kept {{when}}, says what it did.",
+  "work.record.landed": "Landed as {{branch}} on {{line}}, {{when}}.",
+  "work.record.landedPull": "Landed as {{branch}} on {{line}}, {{when}}, as pull request {{pull}}.",
+  "work.record.notLanded": "No landing was named.",
+  "work.record.tip": "Branch {{branch}}, tip {{tip}}.",
+  "work.record.ref": "The recovery ref {{ref}} holds the tip: its tree can be made again.",
+  "work.record.noRef": "No recovery ref holds the tip.",
+  "work.record.commits": "Its commits ({{count}})",
+  "work.record.commitsUnread": "Its commits could no longer be read from the tip.",
+  "work.record.files_one": "{{count}} file",
+  "work.record.files_other": "{{count}} files",
+  "work.record.left_one": "{{count}} file held no commit: {{names}}.",
+  "work.record.left_other": "{{count}} files held no commit: {{names}}.",
+  "work.record.leftCut": "The names stop at the limit."
+}

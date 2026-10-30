@@ -22,7 +22,7 @@ import { code } from '../test/code';
 import { DRIVER_STATE, respond, show, WIRING } from '../test/shellHarness';
 import type { SystemSpace, SystemWiring } from '../bridge/system';
 import {
-  DEVELOPMENT, DOWNLOADS, MEASURING, SPACE, SPACE_COUNTING, SPACE_FLOOR_OFF, SPACE_FREED, SPACE_LOW, SPACE_PLAN, SPACE_RUNNING, SPACE_SET,
+  DEVELOPMENT, DOWNLOADS, MEASURING, SPACE, SPACE_ALLOWANCE_OVER, SPACE_COUNTING, SPACE_FLOOR_OFF, SPACE_FREED, SPACE_LOW, SPACE_PLAN, SPACE_RUNNING, SPACE_SET,
   SPACE_STOPPED, SPACE_UNCOUNTED, WIRED,
 } from './wiring/wiringFixtures';
 
@@ -1017,6 +1017,26 @@ describe('Settings → This Daoris', () => {
     await vi.waitFor(() => expect(free.getByRole('alert').textContent)
       .toBe('The floor takes a size from 1 to 512 GB, half the disk; that value is outside it, so nothing was written.'));
     expect(free.getByRole('button', { name: 'Save' })).toBeTruthy();
+  });
+
+  it('says the allowance with its use, sets it from its editor, and says it in 中文', async () => {
+    invoke.mockImplementation(keeping(() => DRIVER_STATE, SPACE_ALLOWANCE_OVER));
+    open();
+    const card = within(await screen.findByRole('region', { name: 'Disk space' }));
+    const allowance = row(card, 'Daoris may use up to');
+    expect(allowance.getByText(`${size(11.2 * GIB)} of 10 GB`).className).toContain('text-warn');
+    expect(allowance.getByText(/would not bring it within/)).toBeTruthy();
+
+    await userEvent.click(allowance.getByRole('button', { name: 'Change…' }));
+    const value = allowance.getByRole('spinbutton', { name: 'The allowance' });
+    expect((value as HTMLInputElement).value).toBe('10');
+    await userEvent.clear(value);
+    await userEvent.type(value, '60');
+    await userEvent.click(allowance.getByRole('button', { name: 'Save' }));
+    await vi.waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_KEEP', { payload: { kind: 'allowance', gb: 60 } }));
+
+    await i18n.changeLanguage('zh');
+    expect(row(card, '允许占用').getByText(`${size(11.2 * GIB)}，上限 10 GB`)).toBeTruthy();
   });
 
   it('says a floor turned off in 中文, with its editor', async () => {

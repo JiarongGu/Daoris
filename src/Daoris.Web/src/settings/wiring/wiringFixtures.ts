@@ -306,6 +306,12 @@ export const SPACE_LOW: SystemSpace = {
     : kind)),
 };
 
+/** The allowance over the whole (KEEPSIZE1): 11.2 GB of the default 48, within it. */
+export const SPACE_ALLOWANCE: SystemSpace = { ...SPACE, allowance: { gb: 48, default: true, bytes: 11.2 * GB, partial: false } };
+
+/** The allowance set to 10 GB and held over: what Daoris may let go would not bring it within. */
+export const SPACE_ALLOWANCE_OVER: SystemSpace = { ...SPACE, allowance: { gb: 10, default: false, bytes: 11.2 * GB, partial: false } };
+
 /** The floor turned off (KEEP1f): Daoris frees nothing early, and says so. */
 export const SPACE_FLOOR_OFF: SystemSpace = { ...SPACE, volume: { ...SPACE.volume!, floor: { bytes: null, from: 'off' }, below: false } };
 
