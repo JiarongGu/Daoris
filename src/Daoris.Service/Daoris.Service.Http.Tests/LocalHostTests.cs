@@ -758,6 +758,24 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
+    /// INTEGRATE1p (R5's C32): the driver publishes a workflow request's quest under its key, and the door answers the key; the same
+    /// key posted again, as after a lost answer, is the same quest, and a key that is no run, node and number is refused, 400.
+    /// </summary>
+    [Fact]
+    public async Task The_quest_door_publishes_a_request_under_its_key_once()
+    {
+        var body = new { from = "Asker", to = "Keeper", title = "Expose the keeper's cap", body = "Needed.", request = "run-7/ask-keeper/1" };
+        var first = await host.PostAsync("/api/quests", body);
+        var again = await host.PostAsync("/api/quests", body);
+
+        Assert.Equal(200, first.Status);
+        Assert.Equal("run-7/ask-keeper/1", first.Json.GetProperty("quest").GetProperty("request").GetString());
+        Assert.Equal(
+            first.Json.GetProperty("quest").GetProperty("id").GetString(), again.Json.GetProperty("quest").GetProperty("id").GetString());
+        Assert.Equal(400, (await host.PostAsync("/api/quests", body with { request = "run-7/ask-keeper" })).Status);
+    }
+
+    /// <summary>
     /// DRIFT1c: the quest door keeps working for a client that names no requirements, answering the quest
     /// with none; a repository naming some is asking on no ask, so there is nothing to quote, 400.
     /// </summary>

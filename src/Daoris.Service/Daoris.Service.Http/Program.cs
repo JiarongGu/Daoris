@@ -653,6 +653,8 @@ app.MapPost("/api/quests", async (
             Weight = body.Weight,
             // The paths the work declares (INTEGRATE1l), judged by the exchange with every other door's.
             Paths = body.Paths ?? [],
+            // A workflow request's key (INTEGRATE1p), judged by the exchange.
+            Request = body.Request,
             // The chain's review choice (REVIEWENV1b): the person's own at this door, with any words they give.
             Review = ReviewOf(body.Review),
             // An agent's publish where the host holds a person key and the call carried none (PERSONDOOR1a, design §3.2):
@@ -2793,7 +2795,9 @@ static QuestResponse ToQuest(
     // The mark on the work (FOUNDATION1x): a word, which every door may answer.
     q.Weight,
     // The declared paths (INTEGRATE1l): repository-relative globs, which travel with the quest, so every door may answer them.
-    q.Paths);
+    q.Paths,
+    // The workflow request's key (INTEGRATE1p): ids, which travel with the quest.
+    q.Request);
 
 // Requirements as a door hands them to the exchange (DRIFT1c): a half left out, or a whole one, arrives
 // blank and is refused there naming which — the same sentence every door gives. So does an evidence item

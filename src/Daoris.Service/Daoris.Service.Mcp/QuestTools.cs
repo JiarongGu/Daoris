@@ -239,6 +239,8 @@ public sealed class QuestTools(
                 if (quest.Lanes.Count > 0) text.AppendLine($"  lanes: {string.Join(" · ", quest.Lanes.Select(lane => $"`{lane}`"))}");
                 // The paths it declares (INTEGRATE1l): a start meeting them is said, and may wait.
                 if (quest.Paths.Count > 0) text.AppendLine($"  paths: {string.Join(" · ", quest.Paths.Select(path => $"`{path}`"))}");
+                // A workflow's request (INTEGRATE1p): the run that waits on it, its node and its number.
+                if (quest.Request is { } request) text.AppendLine($"  asked by a workflow's request `{request}`: its run waits on this quest's done");
                 if (quest.Links.Count > 0) text.AppendLine($"  links: {string.Join(" · ", quest.Links)}");
                 if (quest.Attachments.Count > 0)
                 {

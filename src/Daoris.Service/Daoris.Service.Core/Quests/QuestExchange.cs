@@ -61,6 +61,9 @@ public enum QuestPublishRefusal
     /// <summary>A declared path that is no repository-relative glob, or too many (INTEGRATE1l).</summary>
     BadPaths,
 
+    /// <summary>A workflow request's key that is no <c>&lt;run&gt;/&lt;node&gt;/&lt;n&gt;</c> (INTEGRATE1p).</summary>
+    BadRequest,
+
     /// <summary>
     /// The same words as a quest this machine cleared after its remote numbered it (HIST1b, D153 point 3): the remote holds
     /// it closed, and would refuse a fresh copy on every pass, so a new ask is a new title.
@@ -141,6 +144,12 @@ public sealed record QuestAsk(string From, string To, string Title, string Body)
     /// door refuses the same one. Empty is none.
     /// </summary>
     public IReadOnlyList<string> Paths { get; init; } = [];
+
+    /// <summary>
+    /// The workflow request's key (INTEGRATE1p), <see cref="QuestRequests"/>: <c>&lt;run&gt;/&lt;node&gt;/&lt;n&gt;</c>, which widens the quest's id so
+    /// the same key sent again is its own quest. Null for every other publish.
+    /// </summary>
+    public string? Request { get; init; }
 
     /// <summary>
     /// The chain's review choice (REVIEWENV1b, D154 point 3), inherited by each step: the person's, with any words they give,
@@ -651,6 +660,12 @@ public sealed class QuestExchange(
             return new(QuestPublishRefusal.BadPaths, unfitPaths, Quest: null, addressable);
         }
 
+        var (request, unfitRequest) = QuestRequests.Judge(ask.Request);
+        if (unfitRequest is not null)
+        {
+            return new(QuestPublishRefusal.BadRequest, unfitRequest, Quest: null, addressable);
+        }
+
         // A chain is judged now, while the person or the intake composing it can still act on the
         // answer — not at a close nobody is watching (D65 §4). Whether this circle shares with a team
         // is this machine's wiring; whether a receiver is shared is its registration (design §8).
@@ -690,7 +705,7 @@ public sealed class QuestExchange(
         // A cleared quest a remote numbered is forgotten here (HIST1b, D153 point 3), and its words make its id again: the
         // remote still holds it closed and would refuse a fresh copy on every pass, so this is answered as a closed quest is.
         // Where the quest simply went (no remote ever numbered it), nothing is marked and the words make it again.
-        if (await quests.ForgottenIdAsync(from, to, title, lanes, ct).ConfigureAwait(false) is { } cleared)
+        if (await quests.ForgottenIdAsync(from, to, title, lanes, ct, request).ConfigureAwait(false) is { } cleared)
         {
             return new(
                 QuestPublishRefusal.Cleared,
@@ -701,7 +716,7 @@ public sealed class QuestExchange(
         var quest = await quests.PublishAsync(
             from, to, title, body, now, home, carried.Links, carried.Attachments, ask.Then, ct: ct,
             publishedBy: ask.PublishedBy, lanes: lanes, requirements: required, shortTitle: shortTitle, review: review, weight: weight,
-            paths: paths)
+            paths: paths, request: request)
             .ConfigureAwait(false);
 
         var caution = !target.Adopted
@@ -1169,6 +1184,11 @@ public sealed class QuestExchange(
         if (QuestPaths.Judge(asked.Paths).Refusal is { } unfitPaths)
         {
             return $"Quest `#{asked.Id}`: {unfitPaths}";
+        }
+
+        if (QuestRequests.Judge(asked.Request).Refusal is { } unfitRequest)
+        {
+            return $"Quest `#{asked.Id}`: {unfitRequest}";
         }
 
         var carried = Judge(new QuestAsk(asked.From, asked.To, asked.Title, asked.Body)

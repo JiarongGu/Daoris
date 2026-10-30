@@ -175,7 +175,10 @@ public sealed record QuestResponse(
     string? Weight = null,
     // INTEGRATE1l: the repository-relative globs its publisher declared it touches, a fact of the work naming no machine's path. Empty
     // where it declared none; absent from a host before it, which a reader reads as none.
-    IReadOnlyList<string>? Paths = null);
+    IReadOnlyList<string>? Paths = null,
+    // INTEGRATE1p: the workflow request's key, `<run>/<node>/<n>`, ids naming no path; absent for a quest no request published and from a
+    // host before it.
+    string? Request = null);
 // The person's kind and workflow on a quest published with no ask, before it starts (WORKFLOW1e2): either, both, or neither to clear them.
 public sealed record QuestWorkflowRequest(string? Kind = null, string? Workflow = null, string? Words = null);
 // A quest's own reopen (FABRIC-CLOSE1c4), answered only: the reopen by its machine and sequence, the submission it reopened (`Of`),
@@ -215,7 +218,9 @@ public sealed record PublishQuestRequest(
     // FOUNDATION1x: the mark on the work, `design` or `exact`, judged by the exchange with every other door's; absent for none.
     string? Weight = null,
     // INTEGRATE1l: the paths the work declares it touches, repository-relative globs judged by the exchange; absent for none.
-    IReadOnlyList<string>? Paths = null);
+    IReadOnlyList<string>? Paths = null,
+    // INTEGRATE1p: a workflow request's key, which widens the quest's id so the same key posted again is the same quest; absent for none.
+    string? Request = null);
 // A set-up posted on a set-up step (REVIEWENV1b, design §2.6, §3.3): the commit Daoris read and the environment's kind (`local`
 // or `deployed`), with `Session`, whose said set-ups the driver posts, or the person's own `Look`, `Shows` and `Again`.
 public sealed record QuestSetUpRequest(
