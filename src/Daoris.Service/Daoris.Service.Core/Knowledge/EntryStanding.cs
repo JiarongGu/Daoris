@@ -10,7 +10,8 @@ namespace Daoris.Knowledge;
 /// <param name="Fed">Whether a feed gave the reading, and not a read of a checkout on this machine.</param>
 /// <param name="Uncommitted">Whether the checkout's record folders differed from <paramref name="Commit"/> when it was read.</param>
 /// <param name="Decision">What a decision's own record says of it; null for any other entry, or where its notes cannot be placed.</param>
-public sealed record EntryStanding(string? Commit, bool Fed, bool Uncommitted, DecisionStanding? Decision = null)
+/// <param name="UncommittedPending">Whether the checkout's uncommitted reading had not finished when this was asked, so <paramref name="Uncommitted"/> is no answer.</param>
+public sealed record EntryStanding(string? Commit, bool Fed, bool Uncommitted, DecisionStanding? Decision = null, bool UncommittedPending = false)
 {
     /// <summary>The one line a hit and a read of the entry both carry, so the two doors cannot drift on it.</summary>
     public string Says
@@ -19,7 +20,7 @@ public sealed record EntryStanding(string? Commit, bool Fed, bool Uncommitted, D
         {
             var reading = Commit is null
                 ? "unknown"
-                : $"{(Fed ? "fed" : "read")} at {Clipped.ShortCommit(Commit, 8)}{(Uncommitted ? " + uncommitted" : "")}";
+                : $"{(Fed ? "fed" : "read")} at {Clipped.ShortCommit(Commit, 8)}{(UncommittedPending ? " + uncommitted not yet read" : Uncommitted ? " + uncommitted" : "")}";
             return Decision is null ? $"standing: {reading}" : $"standing: {reading} · {Decision.Says}";
         }
     }

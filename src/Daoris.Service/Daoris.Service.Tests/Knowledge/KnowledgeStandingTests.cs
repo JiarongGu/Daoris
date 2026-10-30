@@ -259,4 +259,52 @@ public sealed class KnowledgeStandingTests : IDisposable
 
         Assert.Equal([checkout], asked);
     }
+
+    /// <summary>
+    /// A git that is slow to start never holds an answer: the registry answers while the status is pending, a hit says it was not
+    /// yet read, and once the status lands the hit says what it found.
+    /// </summary>
+    [Fact]
+    public async Task A_slow_status_holds_neither_the_registry_nor_a_hit_and_a_hit_says_not_yet_read_until_it_lands()
+    {
+        var checkout = Committed();
+        using var release = new ManualResetEventSlim(false);
+        var store = new InMemoryKnowledgeStore();
+        var service = new KnowledgeService(
+            store, new LexicalKnowledgeSearch(store),
+            new FileSystemKnowledgeSource(() => [checkout], new RepositoryScanner(documents: "docs")), DisclosurePolicy.LocalOnly,
+            registry: new Registry(), readsRegisteredRoots: true, uncommitted: root =>
+            {
+                release.Wait(TimeSpan.FromSeconds(60));
+                return true;
+            });
+        await service.RegisterAsync(RegistryImport.ProposeAt(checkout), DateTimeOffset.UtcNow);
+        var tools = new KnowledgeSearchTools(service, new WorkspaceScope(service, new AmbientWorkspace(Path.GetTempPath())));
+
+        try
+        {
+            var registry = service.RegistryAsync();
+            Assert.Same(registry, await Task.WhenAny(registry, Task.Delay(TimeSpan.FromSeconds(2))));
+            Assert.NotEmpty(await registry);
+
+            var read = Head(checkout)[..8];
+            Assert.Equal(
+                $"standing: read at {read} + uncommitted not yet read · later: 1 note · no mark",
+                StandingOf(await tools.SearchAsync("Platypus", "decision", workspace: "all"), "D60.md`"));
+        }
+        finally
+        {
+            release.Set();
+        }
+
+        var landed = Head(checkout)[..8];
+        var said = "";
+        for (var tries = 0; tries < 50 && !said.Contains(" + uncommitted ·", StringComparison.Ordinal); tries++)
+        {
+            said = StandingOf(await tools.SearchAsync("Platypus", "decision", workspace: "all"), "D60.md`");
+            await Task.Delay(100);
+        }
+
+        Assert.Equal($"standing: read at {landed} + uncommitted · later: 1 note · no mark", said);
+    }
 }
