@@ -111,7 +111,7 @@ public static class KnowledgeConnector
     /// `driver.json` sits in and need not be the account's home. An intake's ask rides too (D65 §1b).
     /// A driven session's and a conversation's alike, so it is the connector's, not the loop's (LOOPOUT1).
     /// </summary>
-    /// <param name="proc">The lineage token of the process this entry is composed for (COWORKVIEW1a); null carries none.</param>
+    /// <param name="proc">The lineage token of the process this entry is composed for; null carries none.</param>
     internal static IReadOnlyDictionary<string, string> SessionScope(
         string home, string sessionId, IReadOnlyDictionary<string, string>? scope, string? proc = null)
     {

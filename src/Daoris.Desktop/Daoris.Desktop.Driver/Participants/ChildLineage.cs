@@ -6,7 +6,8 @@ namespace Daoris.Driver;
 /// <summary>
 /// A session's lineage file, where its native children are bound to its part (FABRIC-C1a, D173): the connector writes a line
 /// per call with the lineage its harness carried, the hook this driver hands Claude Code writes what it says of each agent, and
-/// this driver writes what Claude Code's stream says of each subagent and the part's end. <see cref="ChildBindings"/> reads them.
+/// this driver writes each process's start and end (COWORKVIEW1a) and what Claude Code's stream and the protocol door say of each
+/// subagent. Every line names the process it was written for where it has a token. <see cref="ChildBindings"/> reads them.
 /// </summary>
 /// <remarks>
 /// <para><b>The file is the contract</b> (<c>.claude/knowledge/twins.md</c>): <c>&lt;home&gt;/sessions/&lt;id&gt;/lineage.jsonl</c>,

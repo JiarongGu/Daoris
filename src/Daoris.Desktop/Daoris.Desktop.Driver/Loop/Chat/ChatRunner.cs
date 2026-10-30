@@ -2814,7 +2814,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
         /// </summary>
         public string? Preamble { get; init; }
 
-        /// <summary>Its process's lineage token (COWORKVIEW1a), on every line written for it and its end.</summary>
+        /// <summary>Its process's lineage token, on every line written for it and its end.</summary>
         public string? Proc { get; init; }
     }
 
@@ -3025,7 +3025,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
     /// either between two.
     /// </summary>
     /// <param name="circle">The workspace its tools are bound to (<see cref="ChatPlace.Circle"/>, ASKSCOPE1c); null for none.</param>
-    /// <param name="proc">The lineage token of the process it is composed for, on the protocol door alone (COWORKVIEW1a).</param>
+    /// <param name="proc">The lineage token of the process it is composed for, on the protocol door alone.</param>
     private IReadOnlyList<AcpMcpServer> Servers(string sessionId, string? circle, IReadOnlyList<AcpMcpServer> plugins, string? proc = null)
     {
         var offered = new List<AcpMcpServer>();

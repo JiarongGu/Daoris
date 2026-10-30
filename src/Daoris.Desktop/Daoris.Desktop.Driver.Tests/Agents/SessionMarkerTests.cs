@@ -43,12 +43,14 @@ public sealed partial class SessionMarkerTests
         var inherited = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
             [IntakeRoom.SessionVariable] = "s1a2b3c4",
+            [ChildMarks.LineageProcVariable] = "0123456789abcdef",
             ["DAORIS_KEPT"] = "kept",
         };
 
         var block = PseudoConsole.EnvironmentBlock(new Dictionary<string, string>(), inherited).Split('\0');
 
         Assert.DoesNotContain(block, line => line.StartsWith(IntakeRoom.SessionVariable + "=", StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(block, line => line.StartsWith(ChildMarks.LineageProcVariable + "=", StringComparison.OrdinalIgnoreCase));
         Assert.Contains("DAORIS_KEPT=kept", block);
     }
 

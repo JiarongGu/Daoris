@@ -341,6 +341,7 @@ public sealed class PseudoConsole : ITerminal
         }
 
         variables.Remove(ChildMarks.SessionVariable);
+        variables.Remove(ChildMarks.LineageProcVariable);
         // SUPERVISOR1a-ii (D208 §2.2): the holder key is never inherited; the holder's own tab alone adds it back.
         variables.Remove(ChildMarks.RoleKeyVariable);
 

@@ -4986,7 +4986,7 @@ public sealed class Driver(
     /// gain the host between ticks — carrying who the session is, where its rules live, and an intake's
     /// ask when it is one.
     /// </summary>
-    /// <param name="proc">The lineage token of the process this entry is composed for, on the protocol door alone (COWORKVIEW1a).</param>
+    /// <param name="proc">The lineage token of the process this entry is composed for, on the protocol door alone.</param>
     internal AcpMcpServer? Connector(string sessionId, IReadOnlyDictionary<string, string>? scope, string? proc = null) =>
         KnowledgeConnector.Offer(Variable, AppContext.BaseDirectory, KnowledgeConnector.SessionScope(home, sessionId, scope, proc));
 
@@ -5023,7 +5023,7 @@ public sealed class Driver(
         return process;
     }
 
-    /// <summary>A process's end once its exit was read and its capture drained (COWORKVIEW1a): clean, or killed, stopped or failed.</summary>
+    /// <summary>A process's end once its exit was read and its capture drained: clean, or killed, stopped or failed.</summary>
     internal void Ended(string sessionId, string proc, int? exitCode) =>
         ChildLineage.End(home, sessionId, clean: exitCode == 0 && Context.Processes.StopMade(sessionId) is null, DateTimeOffset.UtcNow, proc);
 

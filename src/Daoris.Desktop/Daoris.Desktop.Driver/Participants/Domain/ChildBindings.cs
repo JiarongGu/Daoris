@@ -308,7 +308,7 @@ public sealed record ChildBindings
     /// <c>local_agent</c>) with its parent, depth and task's description, and the end (<c>task_notification</c>) of one whose start
     /// was seen, which <paramref name="agents"/> keeps. Every other line, a background command's included, says none.
     /// </summary>
-    /// <param name="proc">The token of the process whose stream it is, written where it is shaped as an id (COWORKVIEW1a).</param>
+    /// <param name="proc">The token of the process whose stream it is, written where it is shaped as an id.</param>
     public static string? StreamLine(string line, DateTimeOffset at, ISet<string> agents, string? proc = null)
     {
         if (!line.Contains("\"task_", StringComparison.Ordinal) || Parse(line) is not { } root || Text(root, "type") != "system") return null;
