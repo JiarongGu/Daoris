@@ -90,6 +90,7 @@
   "work.handOver.refused.sameAgent": "它已经在用这个智能体和账户：请换一个智能体。",
   "work.handOver.refused.running": "它正在本机的另一个 Daoris 进程里运行：请到那里转交，或先停止它。",
   "work.handOver.refused.waiting": "它已经在等待转交。",
+  "work.handOver.refused.awaitsYes": "智能体请求转交；正在等你同意。",
   "work.handOver.refused.treeGone": "它工作过的文件夹已不在，没有地方可以继续。",
   "work.act.retry": "重试",
   "work.act.openFolder": "打开文件夹",

@@ -188,7 +188,8 @@ public sealed class StaffingFileTests : IDisposable
     public void A_file_step_whose_lock_another_writer_took_before_its_rename_writes_nothing_and_says_so()
     {
         File.WriteAllText(_file, Found);
-        var taken = $"{{\"pid\":{Environment.ProcessId},\"since\":\"{Moment(DateTimeOffset.UtcNow)}\"}}\n";
+        // A second back, so another writer's text never equals this step's own, taken by this process in the same millisecond.
+        var taken = $"{{\"pid\":{Environment.ProcessId},\"since\":\"{Moment(DateTimeOffset.UtcNow.AddSeconds(-1))}\"}}\n";
 
         var done = StaffingFile.Project(
             _file, Baseline, Baseline with { Adapter = "\"codex-acp\"" }, wait: null,

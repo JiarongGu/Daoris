@@ -39,6 +39,9 @@ public static class RoleStaffingPort
     /// <summary>Whether <paramref name="file"/> is wired: what the census of the composition roots asks.</summary>
     public static bool IsWired(string file) => Wired.ContainsKey(Path.GetFullPath(file));
 
+    /// <summary>The port wired for <paramref name="file"/>, or null: what the staffing's writers and the loop's check ask.</summary>
+    internal static IRoleStaffing? Of(string file) => Wired.TryGetValue(Path.GetFullPath(file), out var port) ? port : null;
+
     /// <summary>Forget a wiring: a test's, at its end.</summary>
     public static void Unwire(string file) => Wired.TryRemove(Path.GetFullPath(file), out _);
 

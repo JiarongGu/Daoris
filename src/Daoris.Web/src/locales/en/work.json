@@ -81,6 +81,7 @@
   "work.handOver.refused.sameAgent": "It already runs on that agent and account: choose another agent.",
   "work.handOver.refused.running": "It runs in another Daoris process on this machine: hand it over there, or stop it first.",
   "work.handOver.refused.waiting": "It is already waiting to be handed over.",
+  "work.handOver.refused.awaitsYes": "The agent asked to hand this over; it waits for your yes.",
   "work.handOver.refused.treeGone": "The folder it worked in is gone, so there is nothing to go on in.",
   "work.handOver.offer.label": "hand-over offer",
   "work.handOver.offer.near": "This conversation’s account is near its limit.",

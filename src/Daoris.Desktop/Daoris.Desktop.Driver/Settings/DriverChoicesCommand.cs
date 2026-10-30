@@ -123,6 +123,8 @@ public static class ChoiceRoutes
         ("driver keep <kind> …", Keep, "the Disk space card's rule of that kind"),
         ("driver actor <actor> …", Actor, "an actor's order (D205 §9.4)"),
         ("driver adapter <name>", Actor, "Build's order, one choice at account default (D205 §6.4)"),
+        ("driver actor import <file>", null, "alone: no route takes a file of the terminal's; the staffing's lock serializes it with the window's presses"),
+        ("driver actor found take|dismiss <n>", null, "alone: the staffing's lock serializes it with the window's Take it and Dismiss"),
         ("driver timeout <minutes>", null, "alone: no route sets a session's timeout"),
         ("driver retry <quest> --at <n>", null, "alone: RETRY_QUEST marks at the failures its verdict counts, never at a number the person gives"),
         ("driver retry <quest> --session <id>", null, "alone: RETRY_QUEST releases the stop its verdict names, never a session the person names"),
@@ -199,6 +201,7 @@ public static class DriverChoicesCommand
                       · history <days>|never|default · floor <n>GB|<n>%|off|default]
                daoris-driver driver actor [<actor>] · actor <actor> "<agent> [<model>|-] [<effort>|-]" … · actor <actor> --clear
                       · actor intake|ask-daoris off
+               daoris-driver driver actor export [<file>] · actor import <file> · actor found [take|dismiss <n>]
         `daoris driver …` runs these.
         Each change takes --wait <minutes> (0 to 30, the default 30) or --no-wait: how long to wait on its Confirm in Daoris's window.
         """;

@@ -410,6 +410,10 @@ public sealed class DriverWatch(
         // Once, as the loop starts: how its git is wired, a coded line (GITAUTH1b, the git-auth design §11).
         Wired(home);
 
+        // FOUNDATION1w-s (the foundation design §19.15): the staffing imported once the start's confirmation is settled, and checked.
+        var staffing = RoleStaffing.Of(configPath);
+        staffing?.Check(StaffingCheckAt.Start);
+
         // Once, before the first tick: what the last run left `working` with nothing behind it — a
         // crash, a kill, a power cut — ended before this tick counts it against the cap and its
         // repository's lock (2026-09-25). Retried each tick until the service has answered it once.
@@ -756,6 +760,9 @@ public sealed class DriverWatch(
                     // and the watch died on its first tick — silently, in the shell. Now it is said, nothing
                     // ticks on choices it cannot read, and the next look after the fix ticks again.
                     config = Load(configPath);
+                    // FOUNDATION1w-s: the look's check takes both locks with no wait, leaving a held one to the next look; a turn-off it
+                    // found is applied in the store, so the look reads the choices again.
+                    if (staffing?.Check(StaffingCheckAt.Look, config.Source).How == StaffingChecks.Found) config = Load(configPath);
 
                     if (!swept)
                     {

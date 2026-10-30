@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { type QueryClient, useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenora, useShenoraEvent } from '@shenora/react';
 import type { SyncStanding } from '../data/api';
-import type { ActorRow, KeepSet } from '../data/wiring';
+import type { ActorRow, KeepSet, StaffingFound } from '../data/wiring';
 import { keys, SYNC_SLICE } from '../data/queries';
 import type { AccountWaitTick, Consideration, TrustHold } from '../data/signals';
 import type { AccessLevel } from '../settings/repository/Access';
@@ -476,7 +476,7 @@ export const useSetHelpMode = () => useDriverChange<{ mode: 'restricted' | 'full
 export const useSetHelpGrant = () => useDriverChange<{ grant: string; operation: string; chosen: boolean }>('SET_HELP_GRANT');
 
 // The actors' wire types live in `data/wiring` so the presentational Actors card reads them without reaching the bridge.
-export type { ActorEntry, ActorRow } from '../data/wiring';
+export type { ActorEntry, ActorRow, StaffingFound } from '../data/wiring';
 
 /**
  * Each actor's order, where it came from (MODELROLE1c): a read of `driver.json`'s `actors`, the same `daoris driver actor` says. Kept
@@ -503,6 +503,28 @@ export const useActors = () => {
  */
 export const useSetActor = () =>
   useDriverChange<{ actor: string; choices: { agent: string; model?: string | null; effort?: string | null }[] | null }>('SET_ACTOR');
+
+/**
+ * The changes of driver.json's actors another program made, which the driver kept for the person (FOUNDATION1w-s, §19.15): `ACTORS`'
+ * `found`, none where the home's file is not the store's. Under the driver's key, as the rows are. Empty in a browser.
+ */
+export const useStaffingFound = () => {
+  const { isAvailable } = useShenora();
+  return useQuery({
+    queryKey: [...keys.driver, 'actors', 'found'] as const,
+    queryFn: async () => {
+      const answer = await call<{ found?: StaffingFound[] } | null>('ACTORS');
+      return Array.isArray(answer?.found) ? answer.found : [];
+    },
+    enabled: isAvailable,
+  });
+};
+
+/**
+ * A found change answered (FOUNDATION1w-s): *Take it*, the actors as that file showed them, a turn-on of Intake or Ask Daoris among them
+ * by this press, or *Dismiss*. `daoris driver actor found take|dismiss <n>` is its terminal twin (D50).
+ */
+export const useAnswerStaffingFound = () => useDriverChange<{ found: number; answer: 'take' | 'dismiss' }>('STAFFING_FOUND_ANSWER');
 
 /**
  * "Look now": a quest just published, or an ask just made, is looked at on the driver's next breath

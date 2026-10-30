@@ -373,6 +373,11 @@ public sealed record HelpPlan(string? Refusal, string Describe, string Terminal,
     /// <summary>For an accept the route takes (DRIFT1d2): the quest and its departures, for the card; null for every other kind.</summary>
     public HelpAcceptPlan? Accept { get; init; }
 
+    // The setting kind's.
+
+    /// <summary>An actor's order a setting proposal sets (FOUNDATION1w-s), applied through the staffing's one write; null for every other plan.</summary>
+    public HelpStaffing? Staffing { get; init; }
+
     // The clear kind's.
 
     /// <summary>What a clear proposal's Apply sends (HIST1f-b); null where the card changes nothing, and for every other kind.</summary>

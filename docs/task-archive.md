@@ -21802,3 +21802,11 @@ machine-log design §3 say the contract.
 > | **1j** one start plan and one walk | §2.4, one start per branch; four walks into one, one pass-code set, one re-ask; the reservation at the selection, probes uncounted; §7 row 5; the role the seeded role of the work and its order `ActorChoices.Effective` over today's actor choices, no catalogue read, row x adopting `RoleCatalog.RoleFor` (round 6, *C5-3.6*) | `ActorChoicesTests`, `HelperLookTests`, `OneTurnReaskTests`, the intake's and the brainstorm's suites; a record on Build's second choice resumed by the person's words; exactly one reservation per start; a look's starts spread as today |
 
 **Outcome** 2026-10-30: every start (quest, intake, reviewer, helper, brainstorm voice, chat, Ask Daoris, handed quest) walks `StartPlan` with one pass-code set and one re-ask comparison, one reservation per start, probes uncounted; a start names its plan's agent (`StartPlan.AgentFor`). Readings: Ask Daoris's resume is an account asked by name, not an order walk, so it keeps its course call; the handed quest's re-ask keeps its own candidate order as the plan's input. Detail in D212's FOUNDATION1j notes.
+
+## FOUNDATION1w-s ⚖ — the roles' staffing in `role_staffing`, `driver.json`'s staffing its projection (2026-10-30, D212, D50)
+
+> | **1w-s** ⚖ the roles' staffing in `role_staffing`, `driver.json`'s staffing its projection (round 5, §19.15, the steward's change; …) | §19.15: `driver.json`'s staffing imported once into `role_staffing` once the start's confirmation is settled, … | §19.15's proof: … |
+
+The row is quoted by its head; its whole text and proof are the foundation design's Part B table, row 1w-s, and §19.15.
+
+**Outcome** 2026-10-30: built in five parts. The staffing lives in the store, imported once; every `driver.json` save is fenced at its rename; every writer (`SET_ACTOR`, the actor verbs, Ask Daoris's proposals) goes through Roles' one write under the staffing lock; the check at each start, look and write keeps another writer's change whole for the person's *Take it* or *Dismiss*, a turn-off applied at once; `daoris driver actor export|import|found`. Settings' port carries the staffing's five fields, not three strings (a reading: they are Settings' own types). Owed: the p95 of a load and a look on the install. Detail in D50's and D212's notes.

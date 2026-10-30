@@ -316,8 +316,34 @@ public sealed class DriverRoutes(DriverContext context)
 
     // Each actor's order, where it came from and its effective entries (MODELROLE1c, D205 §9.4): a read, the same `daoris driver actor`
     // says. An actor whose stored entry does not read says why.
+    // FOUNDATION1w-s (the design §19.15): beside them, each change of driver.json's actors another program made that the check kept, with
+    // what it changed, none where the home's file is not the store's.
     [DriverRoute("ACTORS")]
-    private object? Actors(IpcRequest request) => new { Actors = ActorView.All(DriverConfig.Load(_loop.ConfigPath)) };
+    private object? Actors(IpcRequest request) => new
+    {
+        Actors = ActorView.All(DriverConfig.Load(_loop.ConfigPath)),
+        Found = RoleStaffing.Of(_loop.ConfigPath)?.Found().Select(found => new { found.Id, found.At, found.Changes }).ToList() ?? [],
+    };
+
+    // A found change answered (FOUNDATION1w-s, §19.15): the person's *Take it*, the actors as that file showed them, a turn-on of Intake or
+    // Ask Daoris among them by this press, or *Dismiss*, the actors as they are. Through the staffing's one write, then a nudge.
+    [DriverRoute("STAFFING_FOUND_ANSWER")]
+    [Publishes("STAFFING_FOUND_ANSWER", StateScopes.Driver | StateScopes.Harnesses)]
+    private object? AnswerStaffingFound(IpcRequest request)
+    {
+        var id = Number(request, "found") ?? throw new DriverException("the press named no found change.");
+        var staffing = RoleStaffing.Of(_loop.ConfigPath)
+            ?? throw new DriverException("this home's actors are the file's own, so no found change is answered here.");
+        switch (Optional(request, "answer"))
+        {
+            case "take": staffing.Take(id); break;
+            case "dismiss": staffing.Dismiss(id); break;
+            default: throw new DriverException("a found change is taken (`take`) or dismissed (`dismiss`).");
+        }
+
+        _loop.Nudge();
+        return State(_loop);
+    }
 
     // One actor's order set, made off, or back to as before (MODELROLE1c, D205 §8.2, §9.4): the person's press, the same `actors` key
     // `daoris driver actor` edits: one truth, two doors (D50). Judged by `ActorChoices.Judge` before anything is written, and written
@@ -329,7 +355,7 @@ public sealed class DriverRoutes(DriverContext context)
     {
         var actor = Optional(request, "actor") ?? throw new DriverException("the press named no actor.");
         var choices = ActorChoices.Payload(request.Payload);
-        _context.Change(config => ActorChoices.With(config, actor, choices));
+        _context.SetActor(actor, choices);
         return State(_loop);
     }
 
