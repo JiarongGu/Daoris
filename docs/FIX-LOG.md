@@ -5,6 +5,13 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-31 - A tree held by content was walked in full at every trees read (TREELOOK2)
+
+- **Symptom:** the install's Daoris part, 7 live trees of 245, took 0.6 to 18.8 s a read against the 500 ms bound.
+- **Root cause:** `TreeReadPass` kept no read whose commits a content proof held, so each such tree ran the proof (about 19 git starts) every read.
+- **Fix:** its proof is kept while the refs stand exactly; each read asks its two statuses. `slowTrees` in `help.room.look` names each tree's step time.
+- **Verify:** `HelpTreesReadTests`, red before.
+
 ## 2026-10-31 - A merge press through the transport started 28 more git processes (INTEGRATE1g follow-up)
 
 - **Symptom:** `LandGitCountTests`' merge ceiling went from 39 to 67; a process start costs seconds on the owner's machine.
