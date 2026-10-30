@@ -39,6 +39,43 @@ public sealed class DriverModuleActorTests : DriverModuleBridge
         }
     }
 
+    /// <summary>FOUNDATION1w-s part 5: <c>ACTORS</c> answers what the check kept, and the screen's *Take it* and *Dismiss* press it.</summary>
+    [Fact]
+    public async Task Actors_answers_each_found_change_and_the_screens_take_it_and_dismiss_answer_it()
+    {
+        File.WriteAllText(DriverConfigPath, """{ "adapter": "claude-code", "intakeAdapter": "claude-code" }""");
+        var staffing = RoleStaffing.Wire(Home, () => StoreSettled.Yes);
+        try
+        {
+            staffing.ImportFile();
+            var module = Module();
+            File.WriteAllText(DriverConfigPath, """{ "adapter": "codex-acp" }""");
+            staffing.Check(StaffingCheckAt.Look);
+
+            var found = Assert.Single((await AnswerAsync(module, "ACTORS")).GetProperty("found").EnumerateArray().ToList());
+            var changes = found.GetProperty("changes").EnumerateArray().ToList();
+            Assert.Contains(changes, change => change.GetProperty("role").GetString() == "intake" && change.GetProperty("applied").GetBoolean());
+            Assert.Contains(changes, change => change.GetProperty("role").GetString() == "build"
+                && change.GetProperty("now").GetProperty("choices")[0].GetProperty("agent").GetString() == "codex-acp");
+
+            await AnswerAsync(module, "STAFFING_FOUND_ANSWER", new { found = found.GetProperty("id").GetInt64(), answer = "take" });
+
+            Assert.Equal("codex-acp", DriverConfig.Load(DriverConfigPath).Adapter);
+            Assert.Empty((await AnswerAsync(module, "ACTORS")).GetProperty("found").EnumerateArray());
+
+            File.WriteAllText(DriverConfigPath, """{ "adapter": "other-acp" }""");
+            staffing.Check(StaffingCheckAt.Look);
+            var second = staffing.Found().Single().Id;
+            await AnswerAsync(module, "STAFFING_FOUND_ANSWER", new { found = second, answer = "dismiss" });
+            Assert.Equal("codex-acp", DriverConfig.Load(DriverConfigPath).Adapter);
+            Assert.Contains("is taken (`take`) or dismissed", await RefusalAsync(module, "STAFFING_FOUND_ANSWER", new { found = second, answer = "keep" }));
+        }
+        finally
+        {
+            RoleStaffingPort.Unwire(DriverConfigPath);
+        }
+    }
+
     [Fact]
     public async Task An_order_set_is_read_back_and_written_through_with_chat_and_brainstorm_kept()
     {
