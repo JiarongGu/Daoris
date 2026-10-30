@@ -5,6 +5,13 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-31 - A candidate's failing gate read as split under load: its log was read as empty
+
+- **Symptom:** `IntegrationVerdictProcessTests`' no-runner case answered `split`, not `hand back`, in the Process half; alone it passed.
+- **Root cause:** `HeavyStep`'s log handle is inheritable during the start, so a concurrent `Process.Start` keeps a write copy; the plain read was refused and signed the failure by no line.
+- **Fix:** the integration's log reads go through `BesideReads.Text`.
+- **Verify:** a held-log case, red (`split`) before; the class three times.
+
 ## 2026-10-31 - A tree held by content was walked in full at every trees read (TREELOOK2)
 
 - **Symptom:** the install's Daoris part, 7 live trees of 245, took 0.6 to 18.8 s a read against the 500 ms bound.
