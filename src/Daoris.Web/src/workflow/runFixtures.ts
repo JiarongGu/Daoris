@@ -209,6 +209,33 @@ export const GRAPH_RUN_GO_AHEAD_KEPT: WorkflowRun = {
     : step),
 };
 
+/**
+ * INTEGRATE1o part o2 (the integration design §17.3): the work held on its requests. Its session published a quest to another repository, which
+ * was declined, and asked a helper; the work's own node draws each, and the hold, active with a decline, waits on the person, whose
+ * *Pass over…* lets the flow go on. Another quest, done, shows its close's note.
+ */
+export const GRAPH_RUN_REQUESTS = run([
+  at(nodeCell('claimed', 'work', 'agent', 'agent'), 'done', 'reached', {
+    node: 'claimed', on: 'quest', quest: 'q1',
+    requests: [
+      { kind: 'quest', id: 'q8', to: 'tools', state: 'declined', session: 's1', awaits: false, words: 'not something this repository takes', at: AT },
+      { kind: 'quest', id: 'q7', to: 'docs', state: 'done', session: 's1', awaits: false, words: 'the page is in', at: AT },
+      { kind: 'quest', id: 'q6', to: 'tools', state: 'taken', session: 's1', awaits: true, at: AT },
+      { kind: 'agent', id: 'h1', to: 'codex-acp', state: 'working', session: 's1', awaits: false, at: AT },
+    ],
+  }),
+  at(nodeCell('requests', 'work.requests', 'automatic', 'daoris'), 'waiting-on-you', 'active', { node: 'work.requests', code: 'declined', acts: ['skip', 'stop'] }),
+  at(nodeCell('handed', 'landing', 'you', 'daoris', 'accept', { form: 'merge', accept: 'you' }), 'not-reached', 'blocked', { node: 'handed' }),
+], {
+  at: 'requests',
+  workflow: { version: 'gph-0a2b4c6d8e0f1a2b', startHolds: [], limits: {}, id: 'release', boundVersion: 3 },
+  graph: {
+    run: 'q1', entries: ['claimed'], end: 'handed',
+    wires: [{ from: 'claimed', to: 'requests', kind: 'after' }, { from: 'requests', to: 'handed', kind: 'after' }],
+    quest: 'q1', branch: null, judged: true, unread: false, ended: null,
+  },
+});
+
 /** A graph run Daoris has not judged yet: every node not reached, standing at its entry; no session of it has a branch yet. */
 export const GRAPH_RUN_UNJUDGED = run([
   at(nodeCell('claimed', 'work', 'agent', 'agent'), 'not-reached', 'blocked', { node: 'claimed', on: 'quest', quest: 'q1' }),

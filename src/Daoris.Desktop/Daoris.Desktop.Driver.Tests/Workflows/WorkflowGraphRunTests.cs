@@ -52,6 +52,14 @@ public sealed class WorkflowGraphRunTests
          "wires":[{"id":"c>h","kind":"after","from":"claimed","to":"handed"}]}
         """;
 
+    /// <summary>The work held on its requests before the landing (INTEGRATE1o).</summary>
+    private const string ClaimedRequestsHanded = """
+        {"schemaVersion":2,"entries":["claimed"],"end":"handed",
+         "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},{"id":"requests","kind":"work.requests","version":1,"reach":"observed"},
+                  {"id":"handed","kind":"handed","version":1,"reach":"observed"}],
+         "wires":[{"id":"c>r","kind":"after","from":"claimed","to":"requests"},{"id":"r>h","kind":"after","from":"requests","to":"handed"}]}
+        """;
+
     private static NodeGraph Graph(string json)
     {
         var (graph, problems) = NodeGraphs.Read(json);
@@ -275,6 +283,61 @@ public sealed class WorkflowGraphRunTests
 
         Assert.All(Derive(Records(Quest("q1")), GoAheadAndADeployAfter, record with { Ended = new RunEnd("q1", T) }).Steps, step => Assert.Null(step.Acts));
         Assert.All(Derive(Records(Quest("q1")), GoAheadAndADeployAfter, null).Steps, step => Assert.Null(step.Acts));
+    }
+
+    private static WorkflowRunRequest Asked(string id, string state, string to = "tools") =>
+        new(WorkflowRunRequestKinds.Quest, id, to, state) { Session = "s1" };
+
+    /// <summary>
+    /// INTEGRATE1o part o2 (§17.3): the quests a run's sessions published are drawn inside its work node, whatever the graph holds, and a graph with
+    /// none draws none on any step. The hold itself, the <c>work.requests</c> node, says where it stands: active while one is open, and, held by a
+    /// decline, waiting on you with the code that says so and the person's pass over offered; reached when each is done.
+    /// </summary>
+    [Fact]
+    public void The_works_requests_are_drawn_inside_its_node_and_a_decline_holds_the_hold_waiting_on_you()
+    {
+        var statuses = new[]
+        {
+            Status(NodeKinds.Claimed, NodeStates.Reached, "quest:q1", "q1-moment"), Status("requests", NodeStates.Active, Self), Status("handed", NodeStates.Blocked),
+        };
+        var open = Records(Quest("q1", "Done")) with { Requests = [Asked("q9", "open"), Asked("q8", "done")] };
+
+        var waiting = Derive(open, ClaimedRequestsHanded, Record(statuses));
+
+        Assert.Equal(["q9", "q8"], Step(waiting, "claimed").Requests!.Select(request => request.Id));
+        Assert.All(waiting.Steps.Where(step => step.Step.Id != "claimed"), step => Assert.Null(step.Requests));
+        Assert.Equal((WorkflowRunStates.Working, WorkflowGraphDetails.Active, (string?)null), (Step(waiting, "requests").State, Step(waiting, "requests").Detail, Step(waiting, "requests").Code));
+
+        var held = Derive(open with { Requests = [Asked("q9", "declined"), Asked("q8", "done")] }, ClaimedRequestsHanded, Record(statuses));
+        var hold = Step(held, "requests");
+        Assert.Equal((WorkflowRunStates.WaitingOnYou, WorkflowGraphDetails.Active, WorkRequests.DeclinedCode), (hold.State, hold.Detail, hold.Code));
+        Assert.Contains(NodeWordActs.Skip, hold.Acts!);
+        Assert.Equal("requests", held.Graph!.At);
+        Assert.Contains("A quest the work's sessions published was declined: it waits on you", WorkflowRunWords.Say([held], null));
+
+        var done = Derive(open with { Requests = [Asked("q9", "done")] }, ClaimedRequestsHanded,
+            Record(statuses[0], Status("requests", NodeStates.Reached, Self), statuses[2]));
+        Assert.Equal(WorkflowRunStates.Done, Step(done, "requests").State);
+
+        // A graph without the node, and a run whose sessions published nothing, read as before: no request on any step.
+        Assert.All(Derive(Records(Quest("q1", "Done")), ClaimedThenHanded, Record(statuses[0])).Steps, step => Assert.Null(step.Requests));
+        Assert.All(Derive(Records(Quest("q1", "Done")), ClaimedRequestsHanded, Record(statuses)).Steps, step => Assert.Null(step.Requests));
+    }
+
+    /// <summary>
+    /// A declined hold's code is the one thing that makes an active <c>work.requests</c> wait on you; the same node without it, and any other kind
+    /// carrying it, read as the table always read them.
+    /// </summary>
+    [Fact]
+    public void The_declined_code_makes_only_an_active_work_requests_wait_on_you()
+    {
+        var requests = Graph(ClaimedRequestsHanded).Nodes.Single(node => node.Kind == NodeKinds.WorkRequests);
+        var claimed = Graph(ClaimedRequestsHanded).Nodes.Single(node => node.Kind == NodeKinds.Claimed);
+
+        Assert.Equal((WorkflowRunStates.WaitingOnYou, WorkflowGraphDetails.Active), WorkflowGraphRuns.StateOf(requests, NodeStates.Active, WorkRequests.DeclinedCode));
+        Assert.Equal((WorkflowRunStates.Working, WorkflowGraphDetails.Active), WorkflowGraphRuns.StateOf(requests, NodeStates.Active));
+        Assert.Equal((WorkflowRunStates.Working, WorkflowGraphDetails.Active), WorkflowGraphRuns.StateOf(claimed, NodeStates.Active, WorkRequests.DeclinedCode));
+        Assert.Equal((WorkflowRunStates.Done, WorkflowGraphDetails.Reached), WorkflowGraphRuns.StateOf(requests, NodeStates.Reached, WorkRequests.DeclinedCode));
     }
 
     /// <summary>
