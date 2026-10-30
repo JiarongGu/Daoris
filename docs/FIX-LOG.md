@@ -5,6 +5,13 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-30 - Batch t's fast half met two stale pins its builders never ran (LANDRETIRE1 part 2, FOUNDATION1f-vi part a)
+
+- **Symptom:** the driver's fast half over batch t failed `DriverCommandTests` twice (the terminal's clean-up call not found) and `SettledReadersCensusTests` (`LimitMove.cs` listed as a reader it no longer is).
+- **Root cause:** LANDRETIRE1 part 2 passed `closedQuests:` to `CleanPlanAsync`, and two cases pin that call's text; FOUNDATION1f-vi part a retired the ended move's re-say, so `LimitMove.cs` reads no settled answer. Neither builder searched the tests for the call or the file it changed.
+- **Fix:** the two cases name the call as it is; the census drops `LimitMove.cs`. Pins like these are what CENSUSRULES1 replaces with rules.
+- **Verify:** `DriverCommandTests` and `SettledReadersCensusTests`, 55 passed.
+
 ## 2026-10-30 - The shim case still expected a driven prompt refused, which now goes on the harness's input (AGENTLYNTAI1s-i)
 
 - **Symptom:** batch s's candidate failed `CommandShimTests.A_prompt_a_shim_s_shell_would_reinterpret_is_refused_rather_than_cut_short` in the driver's Process half, again alone: no `DriverException` was thrown.
