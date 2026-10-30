@@ -68,6 +68,13 @@ internal sealed class DrivenMoveHarness : IAsyncDisposable
     /// <summary>The boundary the killed loop reached, or null while it runs on.</summary>
     public string? Reached { get; private set; }
 
+    /// <summary>
+    /// Whether a part's agent leaves its quest taken when its turn ends, so the quest stays open past a write (DRIVENATTEMPT1): the line's
+    /// next carry-on then goes on from a destination that heard the word, where its own go-on could send it a second time. A case turns it
+    /// off before a loop comes up, so the parts that loop opens close their quest as the others do.
+    /// </summary>
+    public bool Stays { get; set; }
+
     public string Log => Path.Combine(Home, "agent.log");
 
     private string ConfigPath => DaorisHome.Entry(Home, HomeEntry.DriverConfig);
@@ -174,7 +181,10 @@ internal sealed class DrivenMoveHarness : IAsyncDisposable
 
         // From the write on, the dead loop's agent heard the prompt and finishes its turn, closing the quest, while its loop stands blocked:
         // waited for here so every case is killed with the quest closed, not at the moment it happens to be.
-        if (cut is Cuts.Written or Cuts.Sent or Cuts.Taken) await Poll.Until(() => Service.Status("q1") == "Done", Seen);
+        if (cut is Cuts.Written or Cuts.Sent or Cuts.Taken)
+        {
+            await Poll.Until(() => Stays ? Heard().Any(line => line["session"]!.GetValue<string>() == "s2" && line["method"]!.GetValue<string>() == "session/prompt") : Service.Status("q1") == "Done", Seen);
+        }
     }
 
     private static async Task<string> Settled(Task task)
@@ -441,6 +451,9 @@ internal sealed class DrivenMoveHarness : IAsyncDisposable
     private string Agent()
     {
         var script = Path.Combine(Home, "driven-agent.mjs");
+        var stays = Path.Combine(Home, "stays.flag");
+        if (Stays) File.WriteAllText(stays, "");
+        else File.Delete(stays);
         File.WriteAllText(script, """
             import { createInterface } from 'node:readline';
             import { appendFileSync, existsSync } from 'node:fs';
@@ -483,7 +496,7 @@ internal sealed class DrivenMoveHarness : IAsyncDisposable
                   return;
                 }
                 await respond({ action: 'take' });
-                await respond({ action: 'done', reason: 'served the report' });
+                if (!existsSync(log.replace(/agent\.log$/, 'stays.flag'))) await respond({ action: 'done', reason: 'served the report' });
                 say('Served.');
                 send({ jsonrpc: '2.0', id: frame.id, result: { stopReason: 'end_turn' } });
               } else if (frame.id !== undefined && frame.method) {

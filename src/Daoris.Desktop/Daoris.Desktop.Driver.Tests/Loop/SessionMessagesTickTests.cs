@@ -1163,6 +1163,9 @@ public sealed class SessionMessagesTickTests : IDisposable
         /// <summary>Each take of words: the session, the ids joined, and the session that took them where it was another.</summary>
         public List<(string Session, string Ids, string? By)> Taken { get; } = [];
 
+        /// <summary>The words taken back off a record by the take-back door (DRIVENATTEMPT1), as session and word.</summary>
+        public List<(string Session, string Word)> TakenBack { get; } = [];
+
         /// <summary>Called with the record as a take reaches the stand-in, before it is answered: what a case reads of the move at that moment.</summary>
         public Action<string>? BeforeTake { get; set; }
 
@@ -1705,6 +1708,25 @@ public sealed class SessionMessagesTickTests : IDisposable
                         }
 
                         return (200, new JsonObject { ["session"] = Wire(Find(id)), ["message"] = "attempted", ["unmarked"] = unmarked }.ToJsonString());
+                    }
+
+                    // The take-back door, as the come-up's uncertain settlement and a move's use it (DRIVENATTEMPT1): a waiting word leaves its record,
+                    // kept nowhere as taken by a session; one that no longer waits answers `taken` as the service's door does.
+                    case ("POST", _) when path.StartsWith("/api/sessions/", StringComparison.Ordinal) && path.EndsWith("/take-back", StringComparison.Ordinal):
+                    {
+                        var id = IdOf(path, "/take-back");
+                        var name = Body()["word"]!.GetValue<string>();
+                        var held = Find(id)["said"]!.AsArray();
+                        if (held.FirstOrDefault(word => word!["id"]!.GetValue<string>() == name) is not { } back)
+                        {
+                            return (200, new JsonObject { ["done"] = false, ["why"] = "taken", ["message"] = "no longer waits" }.ToJsonString());
+                        }
+
+                        var rest = held.Where(word => !ReferenceEquals(word, back)).Select(word => word!.DeepClone());
+                        var kept = back.DeepClone();
+                        Find(id)["said"] = new JsonArray([.. rest]);
+                        TakenBack.Add((id, name));
+                        return (200, new JsonObject { ["done"] = true, ["message"] = "taken back", ["said"] = kept }.ToJsonString());
                     }
 
                     case ("POST", _) when path.StartsWith("/api/sessions/", StringComparison.Ordinal) && path.EndsWith("/taken", StringComparison.Ordinal):

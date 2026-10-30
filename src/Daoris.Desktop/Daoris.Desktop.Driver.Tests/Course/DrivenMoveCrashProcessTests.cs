@@ -163,4 +163,49 @@ public sealed class DrivenMoveCrashProcessTests : IAsyncLifetime
         Assert.Equal(snapshot, _h.SnapshotOf());
     }
 
+    /// <summary>
+    /// 🔴 DRIVENATTEMPT1 (§13.5's <c>delivering</c> row, §19.4): a loop killed at <c>written</c> while the destination's quest is still open. The
+    /// word was marked attempted at the hand, before the door's write, so the come-up reads it attempted and settles it uncertain, taking it
+    /// back: the quest's own go-on, which carries a record's waiting words, never finds it to send to a part a second time, and no part hears it
+    /// twice. Unmarked, the word waited on the destination for that go-on, which sent it again.
+    /// </summary>
+    [Fact]
+    public async Task A_loop_killed_at_written_with_the_destinations_quest_open_marks_the_word_attempted_and_never_sends_it_again()
+    {
+        _h.Stays = true;
+        await _h.SeedAsync(word: true);
+        await _h.KillAtAsync(Cuts.Written);
+        Assert.Contains("\"attempt\"", _h.Service.Record("s2"));
+        await _h.KillAsync();
+        Assert.Equal("Taken", _h.Service.Status("q1"));
+
+        _h.Stays = false;
+        _h.ComeUp();
+        // Ready once the word waits nowhere: taken back where it was settled uncertain, or, where it was not marked, taken by the next part.
+        await _h.SettleAsync(ready: () => _h.Waiting().Count == 0 && !_h.Store("run-probe").Of("s1").Any(move => move.Stands));
+        await _h.StopAsync();
+
+        var seen = _h.Seen();
+        // The word is handed as the person's own to one part's prompt only: a later part's prompt names it in Daoris's record of the line, a
+        // past exchange it is told not to act on, and never in the person's words it is handed.
+        var handed = _h.Prompts().Where(prompt => prompt.Text.Contains("They added, after a session", StringComparison.Ordinal)).Select(prompt => prompt.Session).ToList();
+        Assert.True(handed.SequenceEqual(["s2"]), $"the word was handed to {string.Join(", ", handed)}: {seen}");
+        Assert.True(_h.Waiting().Count == 0, $"still waiting {string.Join(",", _h.Waiting())}: {seen}");
+        Assert.All(_h.Store("run-probe").Of("s1"), move => Assert.False(move.Stands, seen));
+        var move =_h.Store("run-probe").Of("s1").Single();
+        Assert.Equal((MoveRecordPhase.Closed, MoveHoldWhy.Undelivered), (move.Phase, move.HeldWhy));
+        Assert.Equal(MoveWordDispositions.Uncertain, Assert.Single(_h.Store("run-probe").WordsOf(move.Id)).Disposition);
+        Assert.Contains(("s2", "w1"), _h.Service.TakenBack);
+
+        // Said once, on the part the word was written to: the move's take-up writes the `lost` note for a moved word it settles uncertain
+        // (O7-F4; the note an older come-up leaves out is §13.5's downgrade row, not this one).
+        List<string> said = [];
+        for (var at = 1; at <= _h.Service.SessionCount; at++)
+        {
+            said.AddRange(_h.Events.After($"s{at}", 0).Events.Where(e => e.Code == SessionEventCodes.Lost).Select(e => $"s{at}:{string.Join(",", e.Words ?? [])}"));
+        }
+
+        Assert.True(said.SequenceEqual(["s2:w1"]), $"lost notes {string.Join(" | ", said)}: {seen}");
+    }
+
 }
