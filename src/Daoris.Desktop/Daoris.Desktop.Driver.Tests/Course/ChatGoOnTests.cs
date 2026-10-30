@@ -323,6 +323,64 @@ public sealed class ChatGoOnTests : IDisposable
     }
 
     /// <summary>
+    /// 🔴 FOUNDATION1o (the foundation design §3.4 rule 4, §3.1's <c>Never</c>): a word shown on an ended conversation while a conversation move
+    /// stands for it is the move's, which its open carries: nothing goes on there, its record not even read. Once the move is over, a word shown
+    /// goes on as before.
+    /// </summary>
+    [Fact]
+    public async Task A_word_shown_while_a_conversation_move_stands_for_its_record_starts_nothing()
+    {
+        var ledger = new ChatLedger().Register("engine", _root);
+        ledger.Chat("c1", "completed", "talk", _root).Say("w1", "Also log the port.");
+        new HarnessConversations(_home).Keep("c1", "talk", "conv-c1");
+        var events = Events;
+        using var runner = Runner(ledger, events);
+        var moves = new ConversationMoves(_home, ledger.Client(), events);
+        var decided = moves.Store.Decide(new MoveDecision("c1", MoveExecutors.Conversation, MoveHows.Brief, HandOverWhy.Curve, HandOverBy.Daoris));
+
+        events.Append("c1", Shown("w1", "Also log the port."));
+        await Task.Delay(300);
+
+        Assert.Equal(0, ledger.Reads);
+        Assert.Empty(ledger.Moves("c1"));
+
+        moves.Store.Close(decided.Claim!, MoveCloseWhy.Superseded);
+        Assert.False(moves.Stands("c1"));
+        events.Append("c1", Shown("w2", "And the readme."));
+        await Poll.Until(() => ledger.Moves("c1").Count > 0, () => "the word shown once the move was over never went on");
+    }
+
+    /// <summary>
+    /// 🔴 FOUNDATION1o (the foundation design §19.11's proof): an older shell's own come-up, and its take-up of a part its sweep stopped, over a
+    /// word kept for a moving record, before the move's open and after it. An older build reads no move record, and this runner is given none.
+    /// Before the open the word waits on the old part, which goes on with it once, as had the move never been decided; after it the open moved
+    /// the word to the successor, so the old part holds nothing and nothing resumes in the tree its successor holds, and the successor goes on
+    /// with the word once.
+    /// </summary>
+    [Theory]
+    [InlineData("completed", false)]
+    [InlineData("completed", true)]
+    [InlineData("stopped", false)]
+    [InlineData("stopped", true)]
+    public async Task An_older_shells_come_up_and_sweep_over_a_word_kept_for_a_moving_record_deliver_it_once(string state, bool opened)
+    {
+        var ledger = new ChatLedger().Register("engine", _root);
+        var old = ledger.Chat("c1", state, "talk", _root);
+        if (opened) ledger.Chat("c2", state, "talk", _root, from: new ContinuedFrom("c1", HandOverWhy.Curve, HandOverBy.Daoris)).Say("w1", "And add a test.");
+        else old.Say("w1", "And add a test.");
+        new HarnessConversations(_home).Keep("c1", "talk", "conv-c1");
+        new HarnessConversations(_home).Keep("c2", "talk", "conv-c2");
+        using var runner = Runner(ledger, Events);
+        var ended = new List<string>();
+        runner.TakenUpEnded += (session, _) => { lock (ended) ended.Add(session); };
+
+        await runner.TakeUpAsync();
+
+        lock (ended) Assert.Equal([opened ? "c2" : "c1"], ended);
+        if (opened) Assert.Empty(ledger.Moves("c1"));
+    }
+
+    /// <summary>
     /// MSG1c2: a chat taken up by itself announces its end, since no route that started it is there to hear it. Here its run
     /// fails at the spawn (a judgement test spawns nothing), which ends the record <c>failed</c> and is told as any end is.
     /// </summary>

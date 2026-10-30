@@ -278,6 +278,44 @@ public sealed class SessionOpensTests : IAsyncLifetime
         Assert.Equal(2, (await _sessions.ListAsync(includeClosed: true)).Count);
     }
 
+    /// <summary>
+    /// 🔴 FOUNDATION1o, the bound the design's §3.4 rule 4 states (round 6, *C5-1.11*, *C5-2.4*): a word the shell kept on A while A wound up for a
+    /// move; an older build's briefed move reads A's words before its own open, which names no key (<c>BriefedMove.cs:99</c>), and pauses there.
+    /// This build's keyed open moves the word to B, whose delivery takes it, and B ends. Resumed, the older move opens its own part unkeyed from A
+    /// and delivers the copy it read, and its take by A's ids finds nothing there. So each build delivers once, and no word waits on A, B or the
+    /// older part for any go-on to send a third time; the producer's retry to A is answered settled, keeping nothing.
+    /// </summary>
+    [Fact]
+    public async Task An_older_move_paused_between_its_read_and_its_open_delivers_its_copy_once_and_nothing_on_said_goes_a_third_time()
+    {
+        var a = await RecordAsync(SessionState.Working);
+        var kept = await _ledger.SayAsync(a.Id, "And add a test.", null, Now, key: "press/1", ending: true);
+        Assert.Equal(SessionSayRefusal.None, kept.Refusal);
+        await _sessions.SetStateAsync(a.Id, SessionState.Completed, null, null, null, Now);
+        var olderRead = (await SaidAsync(a.Id)).Select(word => word.Id).ToList();
+        Assert.Equal([kept.Word!.Id], olderRead);
+
+        var opened = await MoveAsync(a.Id, "move/o", [], []);
+        var b = opened.Session!.Id;
+        Assert.Equal([kept.Word.Id], opened.Transfer.Select(moved => moved.Id));
+        Assert.Equal([kept.Word.Id], (await SaidAsync(b)).Select(word => word.Id));
+        await _sessions.TakeSaidAsync(b, [kept.Word.Id]);
+        await _sessions.SetStateAsync(b, SessionState.Completed, null, null, null, Now);
+
+        var older = await _ledger.OpenChatAsync("Owner", "stub", Now, tree: "/trees/owner-2", from: a.Id);
+        Assert.Equal(SessionOpenRefusal.None, older.Refusal);
+        await _sessions.TakeSaidAsync(a.Id, olderRead);
+
+        Assert.Empty(await SaidAsync(a.Id));
+        Assert.Empty(await SaidAsync(b));
+        Assert.Empty(await SaidAsync(older.Session!.Id));
+        var retry = await _ledger.SayAsync(a.Id, "And add a test.", null, Now, key: "press/1", settled: true);
+        Assert.Equal((SessionSayRefusal.None, (SaidWord?)null), (retry.Refusal, retry.Word));
+        Assert.NotNull(retry.SettledOn);
+        Assert.Empty(await SaidAsync(a.Id));
+        Assert.Empty(await SaidAsync(b));
+    }
+
     /// <summary>🔴 A receipt that cannot be written rolls the whole open back, its move with it: the words wait on A and nothing settled.</summary>
     [Fact]
     public async Task A_receipt_that_cannot_be_written_rolls_back_the_open_and_its_move()

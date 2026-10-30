@@ -1551,7 +1551,7 @@ if (mode == ServiceMode.Local)
             string.IsNullOrWhiteSpace(body.Decision) ? null : body.Decision.Trim(),
             string.IsNullOrWhiteSpace(body.Question) ? null : body.Question.Trim(),
             string.IsNullOrEmpty(body.Choice) ? null : body.Choice,
-            settled: body.Settled == true);
+            settled: body.Settled == true, ending: body.Ending == true);
         // Row p: a key the line settled is answered with the record its word left and no word, nothing kept, so nothing beside the say is.
         if (outcome.SettledOn is { } settledOn) return Results.Ok(new SettledResponse(outcome.Message, settledOn));
         if (outcome.Refusal == SessionSayRefusal.None)

@@ -1342,6 +1342,66 @@ public sealed class ChatTurnsTests
         Assert.False(turns.Running);
     }
 
+    /// <summary>
+    /// 🔴 FOUNDATION1o (the foundation design §3.4 rule 4): turns held for a move whose open moves the old part's words keep a word said
+    /// meanwhile on the record and queue it, starting no turn and never following the take's closing turn; released by a take that did not end
+    /// them, they take it as their next turn under the record's id. Held for a move that moves no words, a word is neither kept nor taken.
+    /// </summary>
+    [Fact]
+    public async Task Turns_held_for_a_move_that_keeps_keep_a_word_and_queue_it_until_released()
+    {
+        var door = new Door { TakesWordsMidTurn = false };
+        var turns = door.Turns();
+        var record = new Daoris.Driver.Tests.StandInSaid();
+
+        Assert.True(turns.Hold(keeps: true));
+        var kept = await turns.KeepAsync(record, new ChatMessage("one more thing", []), default);
+
+        Assert.Equal((TurnReach.TurnEnd, "w1"), (kept!.Reach, kept.Word));
+        Assert.Equal(["w1"], record.Ids);
+        Assert.False(turns.Running);
+        var closing = turns.TakeHeld(new ChatMessage("write your closing note", []));
+        Assert.NotNull(closing);
+        await Poll.Until(() => door.Took.Count == 1, () => "the closing turn never reached the door");
+        door.EndTurn(0);
+        await closing!.WaitAsync(Poll.Patience);
+        await Task.Delay(50);
+        Assert.Equal(["write your closing note"], door.Took);
+
+        turns.Release();
+        await Poll.Until(() => door.Took.Count == 2, () => "the kept word never became its turn once released");
+        Assert.Equal("w1", door.TookIds[1]);
+
+        var plain = new Door().Turns();
+        var none = new Daoris.Driver.Tests.StandInSaid();
+        Assert.True(plain.Hold());
+        Assert.Null(await plain.KeepAsync(none, new ChatMessage("one more thing", []), default));
+        Assert.Empty(none.Ids);
+    }
+
+    /// <summary>
+    /// 🔴 FOUNDATION1o: a word kept while the turns were held for such a move stays on the record once the move ended the conversation, for the
+    /// open to move: never attempted, sent or taken off here, whatever releases the turns after.
+    /// </summary>
+    [Fact]
+    public async Task A_word_kept_while_held_for_a_move_stays_on_the_record_once_the_conversation_is_gone()
+    {
+        var door = new Door();
+        var turns = door.Turns();
+        var record = new Daoris.Driver.Tests.StandInSaid();
+        Assert.True(turns.Hold(keeps: true));
+        await turns.KeepAsync(record, new ChatMessage("one more thing", []), default);
+
+        turns.Gone();
+        turns.Release();
+        await Task.Delay(100);
+
+        Assert.Empty(door.Took);
+        Assert.Equal(["w1"], record.Ids);
+        Assert.Empty(record.Attempted);
+        Assert.Empty(record.TakenOff);
+    }
+
     // ——— COWORK1c: the conversation's queue is a view of its record's `said`.
 
     /// <summary>
