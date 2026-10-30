@@ -37,7 +37,11 @@ function literalOf(alias: string, name: string, seen: string[] = []): string {
 
 /** The `public const string` codes of one static class, one per line as the driver writes them; an alias is resolved through its target. */
 function codesOf(file: string, className: string): string[] {
-  const text = driverSource(file);
+  return codesIn(driverSource(file), className);
+}
+
+/** The codes one class declares in a source text, which a stand-in source may be (CENSUSRULES1). */
+function codesIn(text: string, className: string): string[] {
   const block = new RegExp(`static class ${className}\\b\\s*\\{([\\s\\S]*?)\\n\\}`).exec(text)?.[1] ?? '';
   return [...block.matchAll(/public const string \w+ = (?:"(?<code>[^"]+)"|(?<alias>\w+)\.(?<name>\w+));/g)].map((match) => {
     const { code, alias, name } = match.groups as { code?: string; alias?: string; name?: string };
@@ -68,29 +72,42 @@ const tables = [
 ];
 
 describe('the refusal codes the driver declares, held to the page’s tables', () => {
-  it('reads every account-rule code through its forwarding constant in declaration order', () => {
-    expect(codesOf('ContinueReason.cs', 'ContinueWhy')).toEqual([
-      'account', 'adapter', 'unkept', 'tree', 'unable', 'offered', 'gone', 'exited', 'refused', 'ended',
-      'elsewhere', 'teammate', 'intake', 'stood-down', 'started', 'resumed',
-    ]);
+  it('reads every account-rule code through its forwarding constant', () => {
+    // The scan resolves each forwarded constant to a literal; the codes are the driver's to add (the table test below holds the page to them).
+    const codes = codesOf('ContinueReason.cs', 'ContinueWhy');
+    expect(codes.length).toBeGreaterThan(0);
+    expect(codes.every((code) => /^[a-z-]+$/.test(code))).toBe(true);
+    expect(new Set(codes).size).toBe(codes.length);
   });
 
-  it('reads the driver’s declarations', () => {
-    // A scan that matched nothing would pass on a moved or renamed class: it has to see them.
-    expect(codesOf('GoOnNew.cs', 'GoOnNew').sort()).toEqual(['closed', 'conversation', 'no-words', 'not-cooling', 'running']);
-    expect(codesOf('SessionSay.cs', 'WordsNever').sort()).toEqual([
-      'continued', 'help', 'intake', 'not-found', 'stood-down', 'superseded', 'teammate',
-    ]);
-    expect(codesOf('ChatRunner.StartFrom.cs', 'StartFrom').sort()).toEqual(['carried', 'no-words', 'running']);
-    expect(codesOf('BriefedMove.cs', 'GoOnBrief')).toEqual(['agent-gone']);
-    expect(codesOf('HandOver.cs', 'HandOver').sort()).toEqual([
-      'awaits-yes', 'no-door', 'not-conversation', 'not-its-account', 'not-last-run', 'parked', 'quest-closed', 'quest-elsewhere', 'quest-reopened', 'running',
-      'same-agent', 'tree-gone', 'unbriefed', 'unknown-agent', 'waiting',
-    ]);
+  it.each(tables)('reads the driver’s $className declarations', ({ file, className }) => {
+    // A scan that matched nothing would pass on a moved or renamed class: it has to see some, each once. Which codes are the driver's to say.
+    const codes = codesOf(file, className);
+    expect(codes.length, `${className} in ${file} declares no code the scan can read`).toBeGreaterThan(0);
+    expect(new Set(codes).size).toBe(codes.length);
   });
 
-  it.each(tables)('holds $name to exactly the driver’s $className codes, bar the page’s own', ({ table, file, className, own }) => {
-    expect(Object.keys(table).sort()).toEqual([...codesOf(file, className), ...own].sort());
+  /** What differs between the codes a class declares and the page's table: a code with no entry, an entry for no code. */
+  function differences(table: Record<string, string>, codes: string[], own: string[]): string[] {
+    const wanted = new Set([...codes, ...own]);
+    return [
+      ...codes.filter((code) => !(code in table)).map((code) => `${code} has no page entry`),
+      ...Object.keys(table).filter((code) => !wanted.has(code)).map((code) => `${code} is declared by no code of the driver`),
+    ];
+  }
+
+  it.each(tables)('holds $name to the driver’s $className codes: every code has a page entry, bar the page’s own', ({ table, file, className, own }) => {
+    expect(differences(table, codesOf(file, className), own)).toEqual([]);
+  });
+
+  it('fails a code the driver adds without a page entry and passes a declaration edited around the codes', () => {
+    const table = { a: 'k.a', b: 'k.b' };
+    const declared = 'static class Said {\n    public const string A = "a";\n    public const string B = "b";\n}\n';
+    expect(differences(table, codesIn(declared, 'Said'), [])).toEqual([]);
+    expect(differences(table, codesIn(declared.replace('    public const string B', '    public const string C = "c";\n    public const string B'), 'Said'), []))
+      .toEqual(['c has no page entry']);
+    // A comment line, a moved declaration and a reordering are no change of the codes.
+    expect(differences(table, codesIn('static class Said {\n    // a note\n    public const string B = "b";\n\n    public const string A = "a";\n}\n', 'Said'), [])).toEqual([]);
   });
 
   it.each([['en', en], ['zh', zh]] as const)('has a sentence in %s for every code in each table', (_, catalogue) => {
