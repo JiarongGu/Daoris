@@ -73,14 +73,14 @@ public sealed class PartnerProcessTests : IDisposable
     /// The look's driver: the partner chosen as <c>codex-acp</c> on the stand-in's command, admitted by a stand-in's row of exactly the
     /// configuration its start hands, the lead's tree read as the repository's checkout.
     /// </summary>
-    private Daoris.Driver.Driver Driver(PartnerStandIn service)
+    private Daoris.Driver.Driver Driver(PartnerStandIn service, string? agent = null)
     {
         var config = DriverConfig.Empty with
         {
             Adapter = "claude-code-acp",
             Cap = 3,
             // `codex-acp` runs as `codex`'s accounts: both are the stand-in, so nothing here falls back to an agent on the PATH.
-            Commands = new Dictionary<string, IReadOnlyList<string>> { ["codex-acp"] = ["node", Agent()], ["codex"] = ["node", Agent()] },
+            Commands = new Dictionary<string, IReadOnlyList<string>> { ["codex-acp"] = ["node", agent ?? Agent()], ["codex"] = ["node", agent ?? Agent()] },
         };
         var adapters = AdapterSet.Built();
         var choice = new ReviewerChoice("codex-acp", "another-maker", null, "codex-acp writes it.")
@@ -187,6 +187,32 @@ public sealed class PartnerProcessTests : IDisposable
         Assert.False(File.Exists(Path.Combine(_install, "saw.json")), "the partner ran with no launcher to join its job");
         Assert.False(Directory.Exists(PartnerPass.CopyFor(_home, null, "reports", Piece)));
         Assert.Equal("", _repository.Output($"for-each-ref {PieceRefs.Prefix}"));
+    }
+
+    /// <summary>
+    /// STOPRACE1: a stop made while the partner's protocol handshake is still open is the person's end, not a failed wire. An agent
+    /// that never answers makes that moment certain.
+    /// </summary>
+    [Fact]
+    public async Task A_stop_before_the_partner_s_handshake_finishes_is_recorded_as_the_persons()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        LayOutLauncher();
+        Ask();
+        await using var service = PartnerStandIn.Start(_repository.Root);
+        var silent = Path.Combine(_install, "silent-agent.mjs");
+        File.WriteAllText(silent, """
+            import { createInterface } from 'node:readline';
+            for await (const line of createInterface({ input: process.stdin })) { void line; }
+            """);
+        var driver = Driver(service, silent);
+
+        await driver.PiecesAsync(new Snapshot([], [], []), 0, [], CancellationToken.None);
+        await Poll.Until(() => driver.Context.Processes.Running.Contains("pt1"), () => "the partner never started");
+        Assert.True(driver.Context.Processes.Stop("pt1"));
+        await driver.Running.SettledAsync().WaitAsync(Poll.Patience);
+
+        Assert.Equal("stopped", service.States("pt1")[^1]);
     }
 
     /// <summary>
