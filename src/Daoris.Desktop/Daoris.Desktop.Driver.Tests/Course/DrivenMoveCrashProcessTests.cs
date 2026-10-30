@@ -46,9 +46,9 @@ public sealed class DrivenMoveCrashProcessTests : IAsyncLifetime
     /// <param name="Second">The shapes of the moves of <c>s2</c>, the destination, which the loop that came up carried on where it was left.</param>
     /// <param name="Hears">The session whose first prompt the word reached: the dead loop's part, or the part the loop that came up opened.</param>
     /// <param name="Waits">Where the word is left waiting, none where it was taken.</param>
-    private sealed record Ends(string[] First, string[] Second, string Hears, string? Waits = null);
+    internal sealed record Ends(string[] First, string[] Second, string Hears, string? Waits = null);
 
-    private static Ends Row(string cut) => cut switch
+    internal static Ends Row(string cut) => cut switch
     {
         // Before the open: the line stays on its old part, and its next carry-on moves and delivers the word on a part of its own.
         Cuts.Decided => new(["fell-back///not-opened", Delivered], [], "s2"),
@@ -120,12 +120,12 @@ public sealed class DrivenMoveCrashProcessTests : IAsyncLifetime
         await _h.KillAsync();
 
         _h.ComeUp();
-        await _h.SettleAsync();
+        await _h.SettleAsync(ready: () => expect.First.SequenceEqual(_h.Shapes("s1")) && expect.Second.SequenceEqual(_h.Shapes("s2")));
         await _h.StopAsync();
 
         var seen = _h.Seen();
-        Assert.True(expect.First.SequenceEqual(Shapes("s1")), $"s1's moves {string.Join(" | ", Shapes("s1"))}: {seen}");
-        Assert.True(expect.Second.SequenceEqual(Shapes("s2")), $"s2's moves {string.Join(" | ", Shapes("s2"))}: {seen}");
+        Assert.True(expect.First.SequenceEqual(_h.Shapes("s1")), $"s1's moves {string.Join(" | ", _h.Shapes("s1"))}: {seen}");
+        Assert.True(expect.Second.SequenceEqual(_h.Shapes("s2")), $"s2's moves {string.Join(" | ", _h.Shapes("s2"))}: {seen}");
         // Why: `retry` where the failed turn left words to carry, and `carry-on` where it left none: the record's own link either way.
         Assert.Equal(("driven", word ? HandOverWhy.Retry : HandOverWhy.CarryOn, "daoris"), (left.Executor, left.Why, left.By));
         Assert.All(_h.Store("run-probe").Of("s1"), move => Assert.False(move.Stands, seen));
@@ -139,13 +139,13 @@ public sealed class DrivenMoveCrashProcessTests : IAsyncLifetime
         {
             var heard = Assert.Single(hearing);
             Assert.Equal(expect.Hears, heard.Session);
-            Assert.Equal(expect.Waits is null ? [] : [$"{expect.Waits}:w1"], Waiting());
+            Assert.Equal(expect.Waits is null ? [] : [$"{expect.Waits}:w1"], _h.Waiting());
             Assert.Equal(expect.Waits is null ? 1 : 0, _h.Service.Taken.Count(taken => taken.Ids == "w1"));
         }
         else
         {
             Assert.Empty(hearing);
-            Assert.Empty(Waiting());
+            Assert.Empty(_h.Waiting());
         }
 
         // The open is never asked again under the move's key, and none of the line's records is told the word was lost.
@@ -158,22 +158,9 @@ public sealed class DrivenMoveCrashProcessTests : IAsyncLifetime
         }
 
         // The killed loop, let go, finds its claim gone and changes no move and writes no prompt.
-        var snapshot = SnapshotOf();
+        var snapshot = _h.SnapshotOf();
         await _h.ReleaseAsync();
-        Assert.Equal(snapshot, SnapshotOf());
+        Assert.Equal(snapshot, _h.SnapshotOf());
     }
 
-    private IReadOnlyList<string> Shapes(string session) =>
-        [.. _h.Store("run-probe").Of(session).Select(move => $"{move.PhaseWord}/{move.HeldWhy}/{move.ClosedWhy}/{move.FellBackCode}")];
-
-    private string SnapshotOf() =>
-        string.Join(
-            "; ",
-            Enumerable.Range(1, _h.Service.SessionCount).SelectMany(at => _h.Store("run-probe").Of($"s{at}"))
-                .Select(move => $"{move.Left}:{move.PhaseWord}/{move.HeldWhy}/{move.ClosedWhy}/{move.ClaimRun}/{move.ClaimGeneration}"))
-        + $" prompts {_h.Prompts().Count} taken {_h.Service.Taken.Count} opened {_h.Service.Opened.Count}";
-
-    /// <summary>Every word still waiting, on any record, as <c>record:word</c>.</summary>
-    private IReadOnlyList<string> Waiting() =>
-        [.. Enumerable.Range(1, _h.Service.SessionCount).SelectMany(at => _h.Service.Said($"s{at}").Select(word => $"s{at}:{word}"))];
 }

@@ -171,6 +171,10 @@ internal sealed class DrivenMoveHarness : IAsyncDisposable
             () => _hit.Task.IsCompleted || _looking.IsFaulted || _looking.IsCompleted,
             () => $"the loop reached {Reached ?? "nothing"}, its look {_looking.Status}, {Seen()}");
         if (!_hit.Task.IsCompleted) throw new InvalidOperationException($"the look ended before `{cut}`: {await Settled(_looking)}; {Seen()}");
+
+        // From the write on, the dead loop's agent heard the prompt and finishes its turn, closing the quest, while its loop stands blocked:
+        // waited for here so every case is killed with the quest closed, not at the moment it happens to be.
+        if (cut is Cuts.Written or Cuts.Sent or Cuts.Taken) await Poll.Until(() => Service.Status("q1") == "Done", Seen);
     }
 
     private static async Task<string> Settled(Task task)
@@ -295,7 +299,8 @@ internal sealed class DrivenMoveHarness : IAsyncDisposable
     /// </summary>
     /// <param name="movesMayStand">The loop leaves a move standing by design (an older build's come-up takes none up), so one standing is no work left.</param>
     /// <param name="quiet">How long nothing may change.</param>
-    public async Task SettleAsync(bool movesMayStand = false, TimeSpan? quiet = null)
+    /// <param name="ready">What the case is waiting for the loop to have done, which must hold before the quiet time counts.</param>
+    public async Task SettleAsync(bool movesMayStand = false, TimeSpan? quiet = null, Func<bool>? ready = null)
     {
         var last = "";
         var since = Stopwatch.GetTimestamp();
@@ -311,7 +316,7 @@ internal sealed class DrivenMoveHarness : IAsyncDisposable
                     return false;
                 }
 
-                return Stopwatch.GetElapsedTime(since) > still && !Live(movesMayStand);
+                return Stopwatch.GetElapsedTime(since) > still && !Live(movesMayStand) && (ready?.Invoke() ?? true);
             },
             Seen);
     }
@@ -369,6 +374,22 @@ internal sealed class DrivenMoveHarness : IAsyncDisposable
         for (var at = text.IndexOf(part, StringComparison.Ordinal); at >= 0; at = text.IndexOf(part, at + part.Length, StringComparison.Ordinal)) count++;
         return count;
     }
+
+    /// <summary>The moves of a record's own, each as phase, hold, close and fall-back code.</summary>
+    public IReadOnlyList<string> Shapes(string session) =>
+        [.. Store("run-probe").Of(session).Select(move => $"{move.PhaseWord}/{move.HeldWhy}/{move.ClosedWhy}/{move.FellBackCode}")];
+
+    /// <summary>Every word still waiting, on any record, as <c>record:word</c>.</summary>
+    public IReadOnlyList<string> Waiting() =>
+        [.. Enumerable.Range(1, Service.SessionCount).SelectMany(at => Service.Said($"s{at}").Select(word => $"s{at}:{word}"))];
+
+    /// <summary>Every move's standing, the prompts written, the words taken and the opens asked: what a second act of anyone would change.</summary>
+    public string SnapshotOf() =>
+        string.Join(
+            "; ",
+            Enumerable.Range(1, Service.SessionCount).SelectMany(at => Store("run-probe").Of($"s{at}"))
+                .Select(move => $"{move.Left}:{move.PhaseWord}/{move.HeldWhy}/{move.ClosedWhy}/{move.ClaimRun}/{move.ClaimGeneration}"))
+        + $" prompts {Prompts().Count} taken {Service.Taken.Count} opened {Service.Opened.Count} waiting [{string.Join(",", Waiting())}]";
 
     /// <summary>The marks the stand-in's records carry now, for a failing case to say.</summary>
     public string Seen() =>
