@@ -12441,3 +12441,10 @@ mis-rooted instance.
 **Fix.** The status is read behind the answer, one at a time. A hit waits for its own repository at most `StandingWait`, then says `+ uncommitted not yet read`.
 
 **Verification.** `A_slow_status_holds_neither_the_registry_nor_a_hit...`: red 63 s, green.
+## A stop before the protocol handshake finished was recorded failed (2026-10-31)
+
+**Root cause.** 2ae495696 (FOUNDATION1x step 2) wrote the binding's role between the process's tracking and its handshake, widening the window for a stop to kill the process under the handshake's write. The resulting `IOException` skipped the conclusion, and the catch-all recorded `failed`.
+
+**Fix.** A stop made first decides the end in `Driver.RunAsync`'s catch, the person's never interrupted.
+
+**Verification.** `DrivenSessionInputTests` 15/15, red before.
