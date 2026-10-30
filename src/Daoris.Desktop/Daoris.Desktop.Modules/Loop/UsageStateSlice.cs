@@ -43,8 +43,8 @@ public static class UsageStateSlice
     /// <summary>What an account's share carries, as the route writes it and the page's <c>UsedAccount</c> reads it.</summary>
     public static readonly IReadOnlyList<string> AccountFields = ["harness", "profile", "sessions", "used"];
 
-    /// <summary>What wakes it on the kit's bus: a session's end and the service coming up.</summary>
-    public static readonly IReadOnlyList<SliceWake> WakesOn = [new(DriverLoop.EndedType), new("DRIVER_READY")];
+    /// <summary>What wakes it on the kit's bus: a part's end as the journal tells it, a driven one included, and the service coming up.</summary>
+    public static readonly IReadOnlyList<SliceWake> WakesOn = [new(DriverLoop.PartEndedType), new("DRIVER_READY")];
 
     /// <summary>The slice the shell's loop owns, reading <paramref name="loop"/>'s usage file; judged at once, with no service.</summary>
     public static StateSlice Of(DriverLoop loop, IEventBus bus) =>

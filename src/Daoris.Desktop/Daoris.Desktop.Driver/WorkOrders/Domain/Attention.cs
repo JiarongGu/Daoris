@@ -55,10 +55,6 @@ public sealed class AttentionWatch
 {
     private Dictionary<string, string>? _seen;
 
-    // The workspace of each session the last look saw active (NOTIFY2f): an ended session has left the report's active ones by the
-    // look that concludes it, so its notice keeps the workspace it was filed under then. Bounded by what is active.
-    private Dictionary<string, string> _workspaces = new(StringComparer.Ordinal);
-
     // Each conversation's turns as this watch judged them (NOTIFY1a), by session: whether the person spoke since its last
     // answer, and the turn's end it was last judged at. Told from the conversations' threads, so each is locked on its own.
     private readonly ConcurrentDictionary<string, Turns> _turns = new(StringComparer.OrdinalIgnoreCase);
@@ -72,7 +68,7 @@ public sealed class AttentionWatch
     // The quests' parks already said or seen at the first look, by quest, with the last session each park was for
     // (SESSUX1i). Bounded by what the planner still considers. A null session is a park seen at a first look whose records
     // were not read, taken as said when they are.
-    private Dictionary<string, string?>? _parks;
+    private readonly Dictionary<string, string?> _parks = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>The sessions whose state is being remembered — bounded by what is active.</summary>
     public IReadOnlyList<string> Watching => _seen is null ? [] : [.. _seen.Keys.Order(StringComparer.Ordinal)];
@@ -105,30 +101,18 @@ public sealed class AttentionWatch
     {
         var now = report.Active.ToDictionary(session => session.Id, Seen, StringComparer.Ordinal);
 
-        var previous = _seen;
         _seen = now;
-        var workspaces = _workspaces;
-        _workspaces = report.Active.GroupBy(session => session.Id, StringComparer.Ordinal)
-            .ToDictionary(same => same.Key, same => same.First().Workspace, StringComparer.Ordinal);
 
-        // A wait whose cool-off was not said yet (TOOL4d, D125 §4) — recorded on the first look too, which says nothing.
+        // A wait whose cool-off was not said yet (TOOL4d, D125 §4), and a quest's park not said yet (SESSUX1i): the first look's too, since a
+        // restart's baseline is the said-set's (FOUNDATION1 m-iv, `AttentionNews`).
         var waits = report.Waits.Where(Unsaid).ToList();
-        // And a quest's park not said yet (SESSUX1i), the same way.
         var parked = UnsaidParks(report, parks);
-        if (previous is null) return [];
 
         var events = new List<AttentionEvent>();
         events.AddRange(waits.Select(wait => new AttentionEvent(
             AttentionKind.Waiting, "", string.Join(", ", wait.Repositories), Note: wait.Sentence)));
 
-        foreach (var session in report.Active)
-        {
-            if (!SessionStates.IsParked(Seen(session))) continue;
-            if (previous.TryGetValue(session.Id, out var was) && SessionStates.IsParked(was)) continue;
-
-            events.Add(new AttentionEvent(
-                AttentionKind.Parked, session.Id, session.Repository, Note: session.Note) { NoteParts = session.NoteParts });
-        }
+        // A session's park is told from the journal (FOUNDATION1 m-ii, `NewsTeller`), never found by comparing two looks' snapshots.
 
         events.AddRange(parked.Select(park => new AttentionEvent(
             AttentionKind.QuestParked, park.Session ?? "", park.Repository, Note: park.Note)
@@ -137,41 +121,17 @@ public sealed class AttentionWatch
             Strikes = park.Strikes,
         }));
 
-        // The last failure is said by its quest's park, which carries its note. An end an account's limit made is no failure: its line
-        // goes on by itself and says so as its own news (LIMITRESUME1a, D206 point 1). Nor is one its agent's refusal of the choice ended
-        // at the open: the next look starts what the walk answers, and a fallback asks nothing (D205 §3.5(c), §4.6).
-        var saidByPark = parked.Select(park => park.Session).OfType<string>().ToHashSet(StringComparer.Ordinal);
-        foreach (var ended in report.Concluded)
-        {
-            if (ended.ByPerson || ended.Limit || ended.NotOffered || saidByPark.Contains(ended.Session)) continue;
-            events.Add(new AttentionEvent(
-                AttentionKind.Ended, ended.Session, ended.Repository, ended.State, ended.Note)
-            {
-                Workspace = workspaces.GetValueOrDefault(ended.Session) ?? _workspaces.GetValueOrDefault(ended.Session),
-            });
-        }
-
+        // A session's end is told from the journal (FOUNDATION1 m-iii, `NewsTeller`) by the one class table, so an account's limit, an agent's
+        // refusal of the choice and the person's own stop raise none (LIMITRESUME1a, D206 point 1; D205 §3.5(c); `EndReaders`).
         return events;
     }
 
     /// <summary>
-    /// The parks among <paramref name="parks"/> not said yet; each is marked said either way. The first look marks every
-    /// quest the planner parked and says none.
+    /// The parks among <paramref name="parks"/> not said yet by this watch; each is marked said either way. What a restart owes is the
+    /// said-set's (<see cref="AttentionNews"/>), not a first look's baseline (FOUNDATION1 m-iv).
     /// </summary>
     private List<QuestPark> UnsaidParks(TickReport report, IReadOnlyList<QuestPark>? parks)
     {
-        if (_parks is null)
-        {
-            _parks = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
-            foreach (var consideration in report.Considerations.Where(c => c.Verdict == StartVerdict.Exhausted))
-            {
-                _parks[consideration.Quest.Id] = null;
-            }
-
-            foreach (var park in parks ?? []) _parks[park.Quest] = park.Session;
-            return [];
-        }
-
         // A quest the planner no longer considers is done, declined or gone, and its park with it.
         var considered = report.Considerations.Select(c => c.Quest.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
         foreach (var quest in _parks.Keys.Where(quest => !considered.Contains(quest)).ToList()) _parks.Remove(quest);

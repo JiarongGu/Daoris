@@ -348,6 +348,40 @@ public sealed class DesktopStore : IDisposable
             );
             CREATE INDEX role_staffing_found_pending ON role_staffing_found (id) WHERE answered_at IS NULL;
             """)),
+
+        // FOUNDATION1z-v: the news (§4.5, §13.3), Events'. New tables an older store-aware build never opens, so the stamp stays where it
+        // is and the step runs at the first start. `notices` holds `data/notices.json`'s notices by id, one column for each field the page
+        // reads; `news_said` the occurrences already told, apart from the notices so a prune or a dismissal never forgets one; and
+        // `journal_cursors` one journal position for each teller, with the store identity it was read against.
+        new(9, WriterStamp, write => write.Execute(
+            """
+            CREATE TABLE notices (
+              id         TEXT NOT NULL PRIMARY KEY,
+              kind       TEXT NOT NULL,
+              at         TEXT NOT NULL,
+              read       INTEGER NOT NULL,
+              workspace  TEXT,
+              session    TEXT,
+              quest      TEXT,
+              repository TEXT,
+              state      TEXT,
+              route      TEXT,
+              act        TEXT,
+              code       TEXT,
+              count      INTEGER
+            );
+            CREATE INDEX notices_at ON notices (at);
+            CREATE TABLE news_said (
+              key TEXT NOT NULL PRIMARY KEY,
+              at  TEXT NOT NULL
+            );
+            CREATE TABLE journal_cursors (
+              teller   TEXT NOT NULL PRIMARY KEY,
+              store    TEXT NOT NULL,
+              position INTEGER NOT NULL,
+              at       TEXT NOT NULL
+            );
+            """)),
     ];
 
     /// <summary>

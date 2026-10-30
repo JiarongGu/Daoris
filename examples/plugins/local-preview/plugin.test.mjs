@@ -61,7 +61,9 @@ const POINTS = {
       "adapter": "claude-code",
       "account": "work",
       "byPerson": false,
-      "note": null
+      "note": null,
+      "reason": null,
+      "class": "completed"
     }
   },
   "work/land": {
