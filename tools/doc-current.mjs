@@ -246,11 +246,12 @@ export function auditCurrent({ manifest, files, read, ignored, diff = null }) {
 
   const counts = {
     spans: 0,
+    allowed: 0,
     paths: { present: 0, missing: 0, unchecked: { placeholder: 0, bare: 0, runtime: 0, unanchored: 0 } },
     symbols: 0,
     symbolsBy: { file: 0, product: 0, testOnly: 0, absent: 0 },
     routes: { present: 0, unknown: 0 },
-    variables: { present: 0, absent: 0 },
+    variables: { present: 0, testOnly: 0, absent: 0 },
   };
   const findings = [];
   const quoting = [];
@@ -259,9 +260,28 @@ export function auditCurrent({ manifest, files, read, ignored, diff = null }) {
   const report = (home, line, span, kind, say) => {
     if (span in allow) {
       hit.add(span);
+      counts.allowed++;
       return;
     }
     findings.push({ home, line, span, kind, say });
+  };
+
+  /** A name's parts held against product source, then test source; one the diff removed from product source is quoted. */
+  const checkName = (home, line, span, parts, quoteRemoved = true) => {
+    if (quoteRemoved && parts.some((part) => goneNames.has(part) || goneNames.has(pascal(part)))) {
+      quoting.push({ home, line, span, what: 'removed from product source' });
+    }
+    const states = parts.map((part) => (product.has(part) || product.has(pascal(part)) ? 'product'
+      : tests.has(part) || tests.has(pascal(part)) ? 'test' : 'absent'));
+    if (states.includes('absent')) {
+      counts.symbolsBy.absent++;
+      report(home, line, span, 'symbol-absent', 'no product or test source has it');
+    } else if (states.includes('test')) {
+      counts.symbolsBy.testOnly++;
+      report(home, line, span, 'symbol-test-only', 'only test source has it');
+    } else {
+      counts.symbolsBy.product++;
+    }
   };
 
   for (const home of homes) {
@@ -280,30 +300,40 @@ export function auditCurrent({ manifest, files, read, ignored, diff = null }) {
       const variable = /^(?:\$env:|\$|%)?(DAORIS_[A-Z0-9_]*[A-Z0-9])%?(?:=\S*)?$/.exec(text);
       if (variable) {
         if (product.has(variable[1])) counts.variables.present++;
-        else {
+        else if (tests.has(variable[1])) {
+          counts.variables.testOnly++;
+          report(home, line, text, 'variable-test-only', 'only test source names it');
+        } else {
           counts.variables.absent++;
-          report(home, line, text, 'variable-absent', 'no product source names it');
+          report(home, line, text, 'variable-absent', 'no source names it');
         }
         continue;
       }
-      const path = text.replace(LINE, '');
+      // `file.ext:Member` names a member of the file: the path is read, and the member as a name.
+      const member = /^(.+\.[A-Za-z]+):([A-Za-z_]\w*)$/.exec(text.replace(LINE, ''));
+      const path = member ? member[1] : text.replace(LINE, '');
       if (/\s/.test(path) || /:\/\//.test(path) || path.includes('\\')) continue;
       if (path.includes('/')) {
         const unchecked = (kind) => { counts.paths.unchecked[kind]++; };
         if (/^[~%$/]|^[A-Za-z]:/.test(path)) { unchecked('runtime'); continue; }
         if (/[<>{}*…|]|\.\.\.|YYYY/.test(path)) { unchecked('placeholder'); continue; }
-        if (runtime.some((root) => path === root.slice(0, -1) || path.startsWith(root) || path.includes(`/${root}`))) { unchecked('runtime'); continue; }
+        const wrapped = `/${path.replace(/\/$/, '')}/`;
+        if (runtime.some((root) => wrapped.includes(`/${root}`))) { unchecked('runtime'); continue; }
         const given = path.replace(/^\.\//, '');
         const candidates = [...new Set([
           posix.normalize(posix.join(posix.dirname(home), given)),
           posix.normalize(given),
-          ...(present.bases?.[home] ?? []).map((base) => posix.normalize(posix.join(base, given))),
+          ...[...(present.bases?.[home] ?? []), ...(present.bases?.['*'] ?? [])].map((base) => posix.normalize(posix.join(base, given))),
         ])].filter((candidate) => !candidate.startsWith('..')).map((candidate) => (given.endsWith('/') ? candidate.replace(/\/?$/, '/') : candidate));
         const exists = (candidate) => tracked.has(candidate) || folders.has(candidate.replace(/\/$/, ''));
         const quotes = candidates.map((candidate) => gone.get(candidate.replace(/\/$/, ''))).find(Boolean);
         if (quotes) quoting.push({ home, line, span: text, what: quotes });
-        if (candidates.some(exists)) counts.paths.present++;
-        else pending.push({ home, line, span: text, given, candidates });
+        if (candidates.some(exists)) {
+          counts.paths.present++;
+          if (member) checkName(home, line, text, [member[2]]);
+        } else {
+          pending.push({ home, line, span: text, given, candidates, member: member?.[2] });
+        }
         continue;
       }
       if (BARE.test(path)) { counts.paths.unchecked.bare++; continue; }
@@ -315,27 +345,17 @@ export function auditCurrent({ manifest, files, read, ignored, diff = null }) {
         continue;
       }
       const stemGone = goneStems.get(name.text);
-      const nameGone = name.parts.some((part) => goneNames.has(part) || goneNames.has(pascal(part)));
-      if (stemGone || nameGone) quoting.push({ home, line, span: text, what: stemGone ?? 'removed from product source' });
-      const states = name.parts.map((part) => (product.has(part) || product.has(pascal(part)) ? 'product'
-        : tests.has(part) || tests.has(pascal(part)) ? 'test' : 'absent'));
-      if (states.includes('absent')) {
-        counts.symbolsBy.absent++;
-        report(home, line, text, 'symbol-absent', 'no product or test source has it');
-      } else if (states.includes('test')) {
-        counts.symbolsBy.testOnly++;
-        report(home, line, text, 'symbol-test-only', 'only test source has it');
-      } else {
-        counts.symbolsBy.product++;
-      }
+      if (stemGone) quoting.push({ home, line, span: text, what: stemGone });
+      checkName(home, line, text, name.parts, !stemGone);
     }
   }
 
   // A path no tracked file or folder answers: asked of git once, whether it is ignored, then anchored or not.
-  const asked = [...new Set(pending.flatMap((each) => each.candidates))];
+  // A folder that is not there is ignored by a `dir/` pattern only when asked as a folder, so each is asked both ways.
+  const asked = [...new Set(pending.flatMap((each) => each.candidates.flatMap((candidate) => [candidate.replace(/\/$/, ''), candidate.replace(/\/?$/, '/')])))];
   const ignoredSet = asked.length ? ignored(asked) : new Set();
   for (const { home, line, span, given, candidates } of pending) {
-    if (candidates.some((candidate) => ignoredSet.has(candidate))) counts.paths.present++;
+    if (candidates.some((candidate) => ignoredSet.has(candidate) || ignoredSet.has(candidate.replace(/\/?$/, '/')))) counts.paths.present++;
     else if (!top.has(given.split('/')[0]) && !/^\.\.?\//.test(span)) counts.paths.unchecked.unanchored++;
     else {
       counts.paths.missing++;
@@ -404,11 +424,13 @@ function ignoredBy(root) {
 function print(result, since) {
   const { counts } = result;
   const u = counts.paths.unchecked;
-  console.log(`doc-current: ${result.homes.length} present homes, ${counts.spans} code spans`);
+  console.log(`doc-current: ${result.homes.length} present homes, ${counts.spans} code spans (${counts.allowed} let through by the allow-list, in the counts below)`);
   console.log(`  paths    ${counts.paths.present} present, ${counts.paths.missing} missing, unchecked ${u.placeholder} placeholder, ${u.bare} bare name, ${u.runtime} runtime, ${u.unanchored} unanchored`);
   console.log(`  names    ${counts.symbols}: ${counts.symbolsBy.file} file reference, ${counts.symbolsBy.product} product, ${counts.symbolsBy.testOnly} test-only, ${counts.symbolsBy.absent} absent`);
-  console.log(`  routes   ${counts.routes.present} present, ${counts.routes.unknown} unknown; variables ${counts.variables.present} present, ${counts.variables.absent} absent`);
-  const shown = since ? result.findings.filter((f) => result.since.touched.includes(f.home)) : result.findings;
+  console.log(`  routes   ${counts.routes.present} present, ${counts.routes.unknown} unknown; variables ${counts.variables.present} present, ${counts.variables.testOnly} test-only, ${counts.variables.absent} absent`);
+  const touched = since ? result.findings.filter((f) => result.since.touched.includes(f.home)) : result.findings;
+  // A name only test source has is printed after the rest: a test's name in a record is often right, so it asks for a look, not a fix.
+  const shown = [...touched.filter((f) => !f.kind.endsWith('test-only')), ...touched.filter((f) => f.kind.endsWith('test-only'))];
   if (since) {
     console.log(`since ${since}: ${result.since.touched.length} present home(s) touched, ${result.since.quoting.length} span(s) quote what the diff deleted or renamed`);
     for (const q of result.since.quoting) console.log(`${q.home}:${q.line}: quotes \`${q.span}\`, ${q.what}`);

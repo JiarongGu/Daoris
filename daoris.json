@@ -13,7 +13,50 @@
     "fixes": "docs/FIX-LOG.md",
     "changelog": "CHANGELOG.md",
     "glossary": "src/Daoris.Web/src/locales/glossary.json",
-    "gates": "daoris.gates.json"
+    "gates": "daoris.gates.json",
+    "present": {
+      "homes": [
+        "README.md",
+        "AGENTS.md",
+        "docs/README.md",
+        "docs/development.md",
+        "docs/guide/README.md",
+        "src/Daoris.Desktop/README.md",
+        "src/Daoris.Service/README.md",
+        "src/Daoris.Web/README.md",
+        "src/Daoris.Devkit/README.md",
+        "tools/dsh-probes/README.md",
+        ".claude/knowledge/"
+      ],
+      "bases": {
+        "*": [
+          "src/Daoris.Desktop/Daoris.Desktop.Driver",
+          "src/Daoris.Service/Daoris.Service.Core",
+          "src/Daoris.Web/src",
+          "src/Daoris.Cli/src"
+        ],
+        ".claude/knowledge/bridge-presses.md": ["src/Daoris.Web"],
+        "docs/development.md": ["src/Daoris.Web"]
+      },
+      "runtime": [".daoris/", "local/", "_fixtures/", ".git/", "bin/", "obj/", "node_modules/", "dist/", "wwwroot/"],
+      "allow": {
+        "Host.CreateDefaultBuilder": ".NET's generic host, the framework's own name",
+        "PhysicalFilesWatcher.OnRenamed": ".NET's file watcher, the framework's own name",
+        "reloadOnChange": ".NET's configuration option, named for the trap it sets",
+        "Source.ReloadOnChange": ".NET's configuration option, named for the trap it sets",
+        "FileConfigurationProvider": ".NET's configuration provider, the framework's own name",
+        "SQLitePCLRaw.bundle_e_sqlite3": "the NuGet package the twin pins, a name outside this code",
+        "InlineData": "xUnit's attribute, the framework's own name",
+        "ChromiumChildBrowser": "the desktop kit's browser type, outside this repository",
+        "SendKeys": "Windows Forms' input call, the framework's own name",
+        "Input.dispatchMouseEvent": "a Chrome DevTools Protocol method",
+        "tools/call": "the MCP protocol's method name, no path",
+        ".claude/rules/": "names the former layout as the reason things moved",
+        "GET /api/changes": "the route is ChangeStream.Route, a constant the routes index does not extract",
+        "GET /api/changes?since=&wait=&journal=": "the route is ChangeStream.Route, a constant the routes index does not extract",
+        "keptTrees": "a proposed design's own name for a count; nothing is built, as its router row says"
+      }
+    }
   },
   "domain": {
     "summary": "Development workflow management across domain-owning repositories: a desktop that drives agent sessions, a connector that distributes engineering doctrine, and a local-first service for knowledge, quests and shared records.",

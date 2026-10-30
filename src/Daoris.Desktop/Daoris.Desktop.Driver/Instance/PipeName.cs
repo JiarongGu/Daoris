@@ -7,8 +7,8 @@ namespace Daoris.Driver;
 /// reader takes a name only where it is the pipe of the home the file names.
 /// </summary>
 /// <remarks>
-/// A twin of the CLI's <c>PIPE_PREFIX</c> and <c>isPipeOf</c> (<c>service.ts</c>), which hold the same rule and share no code
-/// (<c>twins.md</c>). The id is never a path, so the name may travel where a path may not.
+/// <see cref="HomePipe"/> holds the rule, and only the driver's program reads a pipe's name (<c>twins.md</c>). The id is never a
+/// path, so the name may travel where a path may not.
 /// </remarks>
 public static class PipeName
 {

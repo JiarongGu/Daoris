@@ -127,7 +127,7 @@ public static class HandOverRules
         return Encoding.UTF8.GetString(stream.ToArray());
     }
 
-    /// <summary>What the terminal and the page say of a mode as it is set: <c>handOverModeSays</c>, the CLI's words.</summary>
+    /// <summary>What the terminal and the page say of a mode as it is set.</summary>
     public static string Says(string mode) => mode switch
     {
         Ask => "An agent's ask to hand its session over waits for your yes or no on the session's page.",

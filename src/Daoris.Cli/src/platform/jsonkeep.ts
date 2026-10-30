@@ -86,7 +86,7 @@ export function keepEdits(
 
 /**
  * An edit of a home file made onto the file as it stands, and written (KEEPALL1): every file a door edits keeps what its writer does not
- * own, as `driver.json` does through `writeDriverChoices`. `read` is the file as its reader understood it when it read it, and `edited`
+ * own, as `driver.json` does. `read` is the file as its reader understood it when it read it, and `edited`
  * the edited choices, both built by one writer; only the key paths that differ between them are made, under `keepEdits`' rules, onto
  * the file read again here. No edit writes nothing. `found` says a file was there at the read: where there was none then and is none
  * now, `edited` is written whole in the writer's own layout, since there is nothing to keep. The driver's twin is `JsonKeeping.Save`.

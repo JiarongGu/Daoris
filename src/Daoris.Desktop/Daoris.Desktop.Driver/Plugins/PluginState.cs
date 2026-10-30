@@ -73,7 +73,7 @@ public sealed record PluginState(IReadOnlyList<string> Disabled)
     /// <summary>
     /// Written beside and renamed over, like every file Daoris owns: the edit from what was read made onto the file as it stands
     /// (KEEPALL1, <see cref="JsonKeeping.Save"/>), so a key this build has no field for stays where it is, as written. Rebuilt from
-    /// <c>disabled</c> alone, it deleted every other key the file held. The CLI's <c>writePluginState</c> does the same.
+    /// <c>disabled</c> alone, it deleted every other key the file held.
     /// </summary>
     private static void Save(string home, PluginState read, IReadOnlyList<string> disabled) =>
         JsonKeeping.Save(PathIn(home), File.Exists(PathIn(home)), Written(read.Disabled), Written(disabled));

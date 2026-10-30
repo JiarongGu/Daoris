@@ -182,6 +182,32 @@ test('a DAORIS_ variable is checked against product source, in a string, and not
   assert.deepEqual(said(result), ['variable-absent DAORIS_GONE', 'variable-absent DAORIS_CMT']);
 });
 
+test('a variable only test source names is test-only, and one nobody names is absent', () => {
+  const result = audit({
+    ...record('`DAORIS_TESTED` and `DAORIS_NOBODY`.'),
+    'src/a.cs': 'class Live { }\n',
+    'src/Daoris.Tests/ATests.cs': 'var v = "DAORIS_TESTED";\n',
+  });
+  assert.deepEqual(said(result), ['variable-test-only DAORIS_TESTED', 'variable-absent DAORIS_NOBODY']);
+});
+
+test('path:Member checks the path, then the member as a name', () => {
+  const result = audit({
+    ...record('`tools/a.mjs:Live`, `tools/a.mjs:Gone` and `tools/gone.mjs:Live`.'),
+    'tools/a.mjs': 'export function Live() {}\n',
+  });
+  assert.deepEqual(said(result), ['symbol-absent tools/a.mjs:Gone', 'path-missing tools/gone.mjs:Live']);
+});
+
+test('a base declared for every home applies to each, and an ignored folder that is not there is asked as a folder', () => {
+  const result = audit({
+    'docs/README.md': '`Bridge/Routes/A.cs`, `host/wwwroot` and `host/gone`.\n',
+    'src/driver/Bridge/Routes/A.cs': 'x',
+    'host/a.cs': 'x',
+  }, { present: { bases: { '*': ['src/driver'] } }, ignored: ['host/wwwroot/'] });
+  assert.deepEqual(said(result), ['path-missing host/gone']);
+});
+
 test('an allow-listed span is let through, and an entry that names nothing is reported', () => {
   const result = audit({
     ...record('`tools/call` and `ExternalThing`.'),
