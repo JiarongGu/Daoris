@@ -187,6 +187,8 @@ export const HAND_OVER: Record<string, string> = {
   'not-last-run': 'work.handOver.refused.notLastRun',
   'parked': 'work.handOver.refused.parked',
   'no-door': 'work.handOver.refused.noDoor',
+  // FOUNDATION1h branch 3: an agent's ask the person's rule has not admitted waits for their yes.
+  'awaits-yes': 'work.handOver.refused.awaitsYes',
   'unbriefed': 'work.handOver.unbriefed',
 };
 

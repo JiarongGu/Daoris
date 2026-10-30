@@ -160,6 +160,15 @@ internal sealed class StartPlan
     /// <summary>Driven work or a conversation: driven work never starts on an account kept for conversations (D130 §4.6).</summary>
     public StartKind Kind { get; init; } = StartKind.Driven;
 
+    /// <summary>The account the person pinned for a conversation's start (its pick), which every entry's account walk is asked for; null for none.</summary>
+    public string? Pinned { get; init; }
+
+    /// <summary>
+    /// Walk an order of one entry as a longer order is walked, passing and saying what it cannot run (a conversation's, FOUNDATION1j part v),
+    /// not as today's one ask whose own hold or refusal stands.
+    /// </summary>
+    public bool WalksOne { get; init; }
+
     /// <summary>Whose passes are remembered between walks (<see cref="PassMemory"/>): <c>quest:&lt;id&gt;</c>, <c>ask:&lt;id&gt;</c>.</summary>
     public required string Subject { get; init; }
 
@@ -204,7 +213,7 @@ internal sealed class StartPlan
     {
         IReadOnlyCollection<string>? PassedFor(ActorEffective entry) =>
             refused is { Entry: var at, Account: { } account } && at == entry ? [account] : null;
-        if (Order.Count == 1)
+        if (Order.Count == 1 && !WalksOne)
         {
             var only = await AccountsAsync(Order[0].Agent, Order[0].Model, PassedFor(Order[0]), ct, counts, except).ConfigureAwait(false);
             return new SettledSelection(Role, only, Order[0], []);
@@ -277,7 +286,7 @@ internal sealed class StartPlan
     /// <param name="except">The start's own count, left out of the accounts' facts for a re-ask.</param>
     public Task<HarnessSelection> AccountsAsync(
         string agent, string? model, IReadOnlyCollection<string>? passed, CancellationToken ct, bool counts = true, long except = 0) =>
-        _roster.SelectAsync(agent, _config, Workspace, chosen: null, Kind, ct, model, passed, except, counts);
+        _roster.SelectAsync(agent, _config, Workspace, Pinned, Kind, ct, model, passed, except, counts);
 
     /// <summary>
     /// The plan's own try of an entry: an agent this machine lacks passed <c>unavailable</c>, and one the caller's gate refuses by the gate's

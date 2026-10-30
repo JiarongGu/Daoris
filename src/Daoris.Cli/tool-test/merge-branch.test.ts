@@ -333,6 +333,8 @@ const tool = await import(
   }) => void;
   descendants: (listing: string, pid: number) => number[];
   stoppedLines: (ran: string[], left: string[], ended?: string[]) => string[];
+  /** CISTAGEFAIL1: whether a result is the failure that ends a stage's CI run. */
+  endsStageRun: (result: GateResult) => boolean;
   stopOnInterrupt: (trees: Trees, options?: { on?: { once: (event: string, listener: () => void) => unknown; off: (event: string, listener: () => void) => unknown }; say?: (line: string) => void }) => () => void;
   /** CI1: the local CI runner, its record, its watch and the stop it is asked by. */
   CI_RECORD: string;
@@ -7443,7 +7445,49 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     }
   });
 
-  test('--ci runs a Process half by reach: the classes a change reaches, the rest kept and named; a file every class reads, every class; one read unnamed, the whole half; a sweep past its bound before a stage', async () => {
+  // CISTAGEFAIL1: a stage needs every gate green, so its first failed gate ends the run; a plain run keeps going for the whole picture.
+  test('--ci --stage ends at the first failed gate: the next never starts, the lock is let go, and it says nothing was staged; a plain --ci runs all three', async () => {
+    const repo = scratch('ci-stagefail', [
+      { name: 'universal', run: 'node ci-gate.mjs universal' },
+      { name: 'service', run: 'node ci-gate.mjs service' },
+      { name: 'tool-tests', run: 'node ci-gate.mjs tool-tests' },
+    ], { 'ci-gate.mjs': CI_GATE, 'docs/a.md': 'a\n' });
+    try {
+      const gateTree = join(repo.root, 'local', 'gate-tree');
+      const ranFile = join(gateTree, 'local', 'ran.txt');
+      const ranThere = () => (existsSync(ranFile) ? unordered(readFileSync(ranFile, 'utf8').split('\n').filter(Boolean)) : []);
+      const sha = git(repo.root, 'rev-parse', 'HEAD').slice(0, 7);
+      let result = await repo.run(['--ci', '--stage', '--one-at-a-time'], { CI_FAIL: 'service' });
+      assert.equal(result.status, 1, result.out);
+      assert.deepEqual(ranThere(), ['service', 'universal'], 'the gate after the failed one never started');
+      assert.match(result.out, /CI did NOT pass .*: service failed/);
+      assert.match(result.out, /ended at the first failed gate \(CISTAGEFAIL1\): service failed; not run: tool-tests; nothing was staged/);
+      assert.equal(existsSync(join(repo.root, 'local', 'gate-tree.lock')), false, 'the lock is let go');
+      const status = JSON.parse(readFileSync(join(repo.root, 'local', 'scratch', `ci-${sha}`, 'status.json'), 'utf8')) as CiStatus;
+      assert.equal(status.state, 'failed');
+      assert.deepEqual(status.gates.map((gate) => `${gate.name} ${gate.state}`), ['universal done', 'service done', 'tool-tests not run']);
+
+      // The same plan without --stage keeps going past the failure.
+      rmSync(ranFile, { force: true });
+      result = await repo.run(['--ci', '--one-at-a-time'], { CI_FAIL: 'service' });
+      assert.equal(result.status, 1, result.out);
+      assert.deepEqual(ranThere(), ['service', 'tool-tests'], 'a plain run runs what is owed: the failed gate and the one never run');
+      assert.doesNotMatch(result.out, /ended at the first failed gate/);
+    } finally {
+      repo.cleanup();
+    }
+  });
+
+  test('a failure ends a stage run only when it failed again alone: a sighting that passed alone, and a gate ended with the run, do not', () => {
+    const gate = { name: 'g', run: 'x' };
+    assert.equal(tool.endsStageRun({ gate, verdict: 'FAIL' } as GateResult), true);
+    assert.equal(tool.endsStageRun({ gate, verdict: 'FLAKE', flakes: ['t'] } as GateResult), false);
+    assert.equal(tool.endsStageRun({ gate, verdict: 'FAIL', again: true } as GateResult), false, 'one that died of memory runs again at the end');
+    assert.equal(tool.endsStageRun({ gate, verdict: 'ENDED' } as GateResult), false);
+    assert.equal(tool.endsStageRun({ gate, verdict: 'PASS' } as GateResult), false);
+  });
+
+  test('--ci runs a Process half by reach:the classes a change reaches, the rest kept and named; a file every class reads, every class; one read unnamed, the whole half; a sweep past its bound before a stage', async () => {
     const repo = scratch('ci-reach', [
       { name: 'universal', run: 'node ci-gate.mjs universal' },
       { name: 'desk-process', run: 'dotnet test src/Desk/Desk.Tests --settings src/Desk/process.runsettings' },

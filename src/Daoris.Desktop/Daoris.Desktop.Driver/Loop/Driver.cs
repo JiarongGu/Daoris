@@ -849,16 +849,21 @@ public sealed class Driver(
         {
             var candidates = ActorChoices.Effective("build", config, fence: [agent]).ToList();
             if (!candidates.Any(entry => entry.Model is null)) candidates.Add(new ActorEffective(agent, null, null, "rule-default"));
-            foreach (var entry in candidates)
-            {
-                if (entry.Model is { } model && refused.Contains(model)) continue;
-                var (picked, _) = await Context.Harnesses
-                    .SelectHandedAsync(agent, config, start.Workspace, selection.Profile, StartKind.Driven, ct, entry.Model, null, selection.Number, counts: false)
-                    .ConfigureAwait(false);
-                if (!picked.Allowed || !string.Equals(picked.Profile, selection.Profile, StringComparison.OrdinalIgnoreCase)) continue;
-                answer = (entry.Asked, entry.From);
-                break;
-            }
+            // The plan's one loop over today's candidates (FOUNDATION1j part v): a handed quest names its agent and its account, so the ask
+            // stays the handed one on the account the refusal named, and a model already refused is held, neither asked nor passed.
+            var walked = await StartPlan.LoopAsync(
+                candidates, entry => entry,
+                async entry =>
+                {
+                    var (picked, _) = await Context.Harnesses
+                        .SelectHandedAsync(agent, config, start.Workspace, selection.Profile, StartKind.Driven, ct, entry.Model, null, selection.Number, counts: false)
+                        .ConfigureAwait(false);
+                    return picked.Allowed && string.Equals(picked.Profile, selection.Profile, StringComparison.OrdinalIgnoreCase)
+                        ? EntryTry.Runs(picked)
+                        : EntryTry.Passed(StartPasses.Held, picked.Refusal, picked);
+                },
+                holds: (entry, _) => entry.Model is { } model && refused.Contains(model)).ConfigureAwait(false);
+            if (walked.Taken is { } taken) answer = (taken.Asked, taken.From);
         }
         catch (DriverException)
         {
