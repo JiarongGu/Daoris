@@ -160,6 +160,21 @@ public sealed class IntegrateNodeTests(ITestOutputHelper output) : IDisposable
         Assert.Empty(_port.Sent);
     }
 
+    /// <summary>
+    /// The inventory names an unproven landed branch with no revision (only a proven end carries a tip), and a graph is judged on a revision, so
+    /// the runtime reads the landing's recorded tip as the branch unit's own where its graph holds <c>integrate</c>; else the node never began.
+    /// </summary>
+    [Fact]
+    public async Task A_landed_branch_the_inventory_names_with_no_revision_is_judged_on_its_landings_tip()
+    {
+        _units = [BranchUnit(Landed()) with { Subject = new WorkSubject(Branch, null) }];
+
+        var pass = await PassAsync(Runtime(), Config());
+
+        Assert.DoesNotContain(pass.Said, line => line.Contains("not judged", StringComparison.Ordinal));
+        Assert.Equal(T1, Assert.Single(_door.Asked).Tip);
+    }
+
     /// <summary>A runtime nobody gave a door starts none and waits ready, as an install with no row g does.</summary>
     [Fact]
     public async Task A_runtime_with_no_door_leaves_the_node_ready_and_writes_no_attempt()
@@ -274,6 +289,26 @@ public sealed class IntegrateNodeTests(ITestOutputHelper output) : IDisposable
         Assert.Equal([T1, T2], _door.Asked.Select(ask => ask.Tip));
         Assert.Equal((NodeStates.Active, 2, 2), (Status().State, Status().Attempt, Status().Unreconciled));
         Assert.Equal([IntegrateNodes.Key(Unit, T1), IntegrateNodes.Key(Unit, T2)], Record().Attempts.Select(attempt => attempt.Call.IdempotencyKey));
+    }
+
+    /// <summary>
+    /// INTEGRATE1n part n3: a wake that names no unit still judges the one owing only an <c>integrate</c> start, a node held ready (here for
+    /// the owner's card), so a start the look left owing is judged at the wake, never left to the look's deadline.
+    /// </summary>
+    [Fact]
+    public async Task A_wake_judges_a_unit_owing_only_an_integrate_start_without_waiting_for_the_look()
+    {
+        _units = [BranchUnit(Landed(by: AcceptedBy.Auto, request: LandingIntegrate.Owner))];
+        var runtime = Runtime();
+        await PassAsync(runtime, Config());
+        Assert.Equal(NodeStates.Ready, Status().State);
+
+        var wake = await PassAsync(runtime, Config(), whole: false);
+        Assert.Equal([Unit], wake.Evaluated);
+
+        _units = [BranchUnit(Landed())];
+        await PassAsync(runtime, Config());
+        Assert.Equal(NodeStates.Active, Status().State);
     }
 
     /// <summary>

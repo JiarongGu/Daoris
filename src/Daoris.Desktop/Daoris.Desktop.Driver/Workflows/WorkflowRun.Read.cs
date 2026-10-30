@@ -11,7 +11,11 @@ public sealed record WorkflowRunAsk(string? Session = null, string? Quest = null
 /// </summary>
 /// <param name="WorkspaceOf">The workspace the registry holds a repository in, or null where it holds none (read as in no workspace).</param>
 public sealed record WorkflowRunSources(
-    ServiceClient Service, string Home, DriverConfig Config, IReadOnlyList<WorkflowPlugin> Plugins, Func<string, string?> WorkspaceOf);
+    ServiceClient Service, string Home, DriverConfig Config, IReadOnlyList<WorkflowPlugin> Plugins, Func<string, string?> WorkspaceOf)
+{
+    /// <summary>The door a run's <c>integrate</c> is asked whether its request promoted (INTEGRATE1n part n3); the home's own where none is handed.</summary>
+    public IIntegrationDoor? Integration { get; init; }
+}
 
 /// <summary>The runs read, in the chain's order, or the sentence that says why none could be.</summary>
 public sealed record WorkflowRunRead(IReadOnlyList<WorkflowRun> Runs, string? Problem = null)
@@ -396,7 +400,11 @@ public static class WorkflowRunReader
             AutoLandings = [.. reads.AutoLandings.Where(entry => sessionIds.Contains(entry.Session))],
         };
         var record = reads.Records.Record(RunUnits.IdOf(run));
-        return WorkflowGraphRuns.Derive(new WorkflowGraphRunFacts(facts, run, graph, record) { Branches = reads.Branches }, workspace, askId);
+        // INTEGRATE1n part n3 (F50): what the integration record says promoted, asked only where the run's graph holds an `integrate`.
+        var promoted = record is not null && graph.Nodes.Any(node => node.Kind == NodeKinds.Integrate)
+            ? await IntegrateNodes.PromotedAsync(reads.Sources.Integration ?? NodeRuntime.HomeDoor(reads.Sources.Home), record, reads.Ct).ConfigureAwait(false)
+            : new HashSet<string>(StringComparer.Ordinal);
+        return WorkflowGraphRuns.Derive(new WorkflowGraphRunFacts(facts, run, graph, record) { Branches = reads.Branches, Promoted = promoted }, workspace, askId);
     }
 
     /// <summary>

@@ -48,15 +48,20 @@ public static class WorkflowNodeCommand
     /// <param name="environment">The variables the alone path reads: the instance world's where none is handed, else the process's.</param>
     public static Task<int> RunAsync(
         WorkflowNodeAsk ask, NodeRecordFiles records, TextWriter output, InstanceWorld? instance, Func<string, string?>? environment = null,
-        Func<DateTimeOffset>? clock = null, CancellationToken ct = default)
+        Func<DateTimeOffset>? clock = null, CancellationToken ct = default, IIntegrationDoor? door = null)
     {
         var variables = environment ?? instance?.Environment ?? Environment.GetEnvironmentVariable;
         var payload = InstanceDoor.Said(("run", ask.Run), ("node", ask.Node), ("act", ask.Act), ("words", ask.Words));
-        return InstanceDoor.ThroughAsync(instance, PersonPresses.WorkflowNode, payload, () => Task.FromResult(Alone(ask, records, output, variables, clock)), output, ct);
+        return InstanceDoor.ThroughAsync(instance, PersonPresses.WorkflowNode, payload, () => AloneAsync(ask, records, output, variables, clock, door, ct), output, ct);
     }
 
-    /// <summary>The press acting in this process: refused from a session's terminal; else the door's own path, its sentence printed.</summary>
-    private static int Alone(WorkflowNodeAsk ask, NodeRecordFiles records, TextWriter output, Func<string, string?> environment, Func<DateTimeOffset>? clock)
+    /// <summary>
+    /// The press acting in this process: refused from a session's terminal; else the door's own path, its sentence printed. A stop reads the
+    /// integration record through <paramref name="door"/> (the home's where none is handed), as the page's route does (INTEGRATE1n part n3, F50).
+    /// </summary>
+    private static async Task<int> AloneAsync(
+        WorkflowNodeAsk ask, NodeRecordFiles records, TextWriter output, Func<string, string?> environment, Func<DateTimeOffset>? clock, IIntegrationDoor? door,
+        CancellationToken ct)
     {
         if (environment(DriverChoicesCommand.SessionVariable) is { Length: > 0 })
         {
@@ -64,7 +69,7 @@ public static class WorkflowNodeCommand
             return 1;
         }
 
-        var done = RunNodeWords.Word(records, ask.Run, ask.Node, ask.Act, ask.Words, clock);
+        var done = await RunNodeWords.WordAsync(records, door ?? NodeRuntime.HomeDoor(records.Home), ask.Run, ask.Node, ask.Act, ask.Words, clock, ct).ConfigureAwait(false);
         output.WriteLine(RunNodeWords.Said(done));
         return done.Done ? 0 : 1;
     }

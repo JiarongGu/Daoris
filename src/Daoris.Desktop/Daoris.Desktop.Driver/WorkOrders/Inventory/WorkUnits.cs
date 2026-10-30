@@ -86,6 +86,14 @@ public static class WorkUnits
     }
 
     /// <summary>
+    /// The branch units alone of the repositories <paramref name="only"/> holds (INTEGRATE1n part n3, F51): no quest, ask or session is asked of
+    /// the service, and no link is made. For a pass whose only work is a branch's <c>integrate</c>, which reads nothing else of any repository.
+    /// </summary>
+    public static async Task<IReadOnlyList<WorkUnit>> BranchesAsync(
+        string home, IReadOnlySet<string> inUse, Func<string, bool> only, ICollection<string> unread, CancellationToken ct = default) =>
+        WorkInventory.Units(await WorkInventories.GatherAsync(home, new Dictionary<string, string>(), inUse, unread, ct, only: only).ConfigureAwait(false));
+
+    /// <summary>
     /// The one branch unit a session's work is: the unit holding its tree, or the one on the session branch its tree's name makes in
     /// its repository; else the one unit naming it as an executor. Two candidates are none.
     /// </summary>
