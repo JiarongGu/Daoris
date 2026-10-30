@@ -131,16 +131,32 @@ public static class ChildLineage
     }
 
     /// <summary>
-    /// What reads Claude Code's stream for one run (<see cref="ChildBindings.StreamLine"/>): told every line, it appends each
-    /// subagent's start and end. Every other harness's lines say none.
+    /// What one process's run tells its part's lineage (COWORKVIEW1a): each subagent's start and end Claude Code's stream says
+    /// (<see cref="ChildBindings.StreamLine"/>), and each the protocol door announces and ends, every line naming
+    /// <paramref name="proc"/> where it is a token.
     /// </summary>
-    public static Action<string> Watch(string home, string sessionId)
+    public static ILineageWriter Writer(string home, string sessionId, string? proc = null) => new ProcessWriter(home, sessionId, proc);
+
+    private sealed class ProcessWriter(string home, string sessionId, string? proc) : ILineageWriter
     {
-        var agents = new HashSet<string>(StringComparer.Ordinal);
-        return line =>
+        private readonly HashSet<string> _agents = new(StringComparer.Ordinal);
+
+        public void Stream(string line)
         {
-            if (ChildBindings.StreamLine(line, DateTimeOffset.UtcNow, agents) is { } said) Append(home, sessionId, said);
-        };
+            string? said;
+            lock (_agents) said = ChildBindings.StreamLine(line, DateTimeOffset.UtcNow, _agents, proc);
+            if (said is not null) Append(home, sessionId, said);
+        }
+
+        public void Spawned(LineageAnnouncement said)
+        {
+            if (ChildBindings.AcpStarted(said, DateTimeOffset.UtcNow, proc) is { } line) Append(home, sessionId, line);
+        }
+
+        public void Ended(string agent, string? state)
+        {
+            if (ChildBindings.AcpEnded(agent, state, DateTimeOffset.UtcNow, proc) is { } line) Append(home, sessionId, line);
+        }
     }
 
     private static string ReadSource()

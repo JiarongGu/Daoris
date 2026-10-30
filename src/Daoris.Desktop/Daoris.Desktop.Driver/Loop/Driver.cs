@@ -4611,7 +4611,8 @@ public sealed class Driver(
             ? KeepingAsync(mapper, HarnessCapture.CaptureStructuredAsync(
                 Hearing(process.StandardOutput, sessionId), Hearing(process.StandardError, sessionId), transcript, sessionId, output,
                 Context.Events, mapper, resume is null ? prompt : null, ct, preamble, personSaid: personSaid, handed: handed,
-                opened: resume?.Opening(), append: resume is not null, said: said, account: account, own: own, lineageHome: home),
+                opened: resume?.Opening(), append: resume is not null, said: said, account: account, own: own,
+                lineage: ChildLineage.Writer(home, sessionId)),
                 sessionId, keepAs, resume)
             : null;
 
@@ -4773,6 +4774,7 @@ public sealed class Driver(
                 onConversation: keepAs is null ? null : conversation => Context.Conversations.Keep(sessionId, keepAs, conversation))
             {
                 Unoffered = unoffered,
+                Lineage = ChildLineage.Writer(home, sessionId),
                 Permissions = HeldPermissions.Of(Context.Events).For(sessionId), // AUTONOMY1b3a: held only under asking's mark
                 SetupChanged = setupChanged,
                 CarriesOn = carriesOn, // LANDBACK1 part 2: a done quest's uncommitted tree carries the session on before it ends

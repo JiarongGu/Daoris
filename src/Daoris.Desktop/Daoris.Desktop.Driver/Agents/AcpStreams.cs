@@ -22,9 +22,13 @@ namespace Daoris.Driver;
 ///
 /// <para><b>A session's end is theirs.</b> Nothing the session started outlives it (ORPHAN1's job
 /// object), so whatever is still open when it ends is ended with it, and says so.</para>
+///
+/// <para><b>The part's lineage</b> (COWORKVIEW1a) is told each child's announcement and the end its wire said, never the end a
+/// session's close gives it: that is its process's own <c>end</c> line.</para>
 /// </remarks>
 internal sealed class AcpStreams(
-    ISessionStreams streams, AcpConsole root, Action<SessionEvent> emit, TimeSpan quiet, TimeSpan? tailEvery = null)
+    ISessionStreams streams, AcpConsole root, Action<SessionEvent> emit, TimeSpan quiet, TimeSpan? tailEvery = null,
+    ILineageWriter? lineage = null)
 {
     /// <summary>
     /// How long a task's ending waits for a later word before it is said. The adapter says
@@ -47,6 +51,9 @@ internal sealed class AcpStreams(
 
         public AcpConsole Console { get; } = console;
         public bool Ended { get; set; }
+
+        /// <summary>Its lineage has the end the wire said.</summary>
+        public bool EndTold { get; set; }
     }
 
     private sealed class Background(string streamId, string name)
@@ -156,14 +163,22 @@ internal sealed class AcpStreams(
         var name = Json.Text(update, "name") is { Length: > 0 } called ? called : id;
         var streamId = $"subagent/{id}";
         var onRoot = from is null || from == rootId;
+        string? parent;
 
         lock (_gate)
         {
             // Announced once, whatever the wire repeats.
             if (_children.ContainsKey(id)) return true;
+            parent = !onRoot && _children.ContainsKey(from!) ? from : null;
             _children[id] = new Child(id, streamId, name, onRoot, new AcpConsole(text => streams.Line(streamId, text), quiet));
         }
 
+        lineage?.Spawned(new LineageAnnouncement(
+            id, LineageLabels.Name(Json.Text(update, "name")), LineageLabels.Task(Json.Text(update, "task")))
+        {
+            Parent = parent,
+            ByRoot = onRoot,
+        });
         streams.Open(new SessionStream(streamId, SessionStreamKind.Subagent, name));
         Say($"→ subagent: {AcpSession.OneLine(name)}");
         if (onRoot)
@@ -186,16 +201,23 @@ internal sealed class AcpStreams(
     private bool SubagentEnded(JsonElement update)
     {
         if (Json.Text(update, "subagentSessionId") is not { } id) return false;
-        var state = Json.Text(update, "state") ?? "ended";
+        var said = Json.Text(update, "state");
+        var state = said ?? "ended";
 
         Child? child;
+        bool tell, open;
         lock (_gate)
         {
             // A child never announced is the wire saying something this build cannot place: raw.
             if (!_children.TryGetValue(id, out child)) return false;
-            if (child.Ended) return true;
-            child.Ended = true;
+            tell = !child.EndTold;
+            open = !child.Ended;
+            child.EndTold = child.Ended = true;
         }
+
+        // The wire's own word, or none: never the console's default.
+        if (tell) lineage?.Ended(id, said);
+        if (!open) return true;
 
         child.Console.End();
         Ended(SessionStreamKind.Subagent, child.StreamId, child.Name, state);

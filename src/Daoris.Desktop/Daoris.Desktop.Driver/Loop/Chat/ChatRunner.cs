@@ -2890,7 +2890,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
                             // 🔴 Its harness opened the conversation its words went to, so they went (MSG1c): off the record by their ids.
                             if (goOn is not null && goOn.Named()) _ = _goOn.WentOnAsync(sessionId, goOn, watched.Adapter);
                         },
-                        lineageHome: _home)
+                        lineage: ChildLineage.Writer(_home, sessionId))
                     : HarnessCapture.CaptureAsync(process, transcript, sessionId, _output, CancellationToken.None, watched.Preamble));
 
             // A conversation going on is working already: the ledger moved it out of its ended state before the spawn.
@@ -3079,6 +3079,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
             onOptions: options => OptionsChanged?.Invoke(sessionId, ThePersons(options)),
             onConversation: keep)
         {
+            Lineage = ChildLineage.Writer(_home, sessionId),
             Carry = chat.Asked,
             Carried = chat.Carried,
             OffersRead = chat.OffersRead,

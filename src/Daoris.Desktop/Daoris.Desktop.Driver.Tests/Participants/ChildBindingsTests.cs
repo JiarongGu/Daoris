@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using Daoris.Driver;
 
@@ -255,7 +256,7 @@ public sealed class ChildBindingsTests
         string? Take(string line) => ChildBindings.StreamLine(line, at, agents);
 
         Assert.Equal(
-            """{"at":"1970-01-01T00:00:00.000Z","by":"stream","event":"started","agent":"aadc0410bd5fa6a1e","depth":1,"type":"general-purpose"}""",
+            """{"at":"1970-01-01T00:00:00.000Z","by":"stream","event":"started","agent":"aadc0410bd5fa6a1e","depth":1,"type":"general-purpose","description":"Sibling A"}""",
             Take("""{"type":"system","subtype":"task_started","task_id":"aadc0410bd5fa6a1e","run_id":"r","tool_use_id":"toolu_01ANoLUxP1AZ2LrqzFZdMaVH","description":"Sibling A","subagent_type":"general-purpose","is_backgrounded":false,"spawn_depth":1,"task_type":"local_agent","prompt":"call it"}"""));
         Assert.Equal(
             """{"at":"1970-01-01T00:00:00.000Z","by":"stream","event":"started","agent":"a1b84f19758fd8ef5","parent":"aadc0410bd5fa6a1e","depth":2,"type":"general-purpose"}""",
@@ -269,6 +270,60 @@ public sealed class ChildBindingsTests
         Assert.Null(Take("""{"type":"system","subtype":"task_notification","task_id":"b1","status":"completed"}"""));
         Assert.Null(Take("""{"type":"assistant","message":{"content":[]}}"""));
         Assert.Null(Take("not json"));
+    }
+
+    [Fact]
+    public void The_stream_s_start_keeps_the_task_s_description_to_its_first_line_bounded()
+    {
+        var agents = new HashSet<string>(StringComparer.Ordinal);
+        var description = new string('d', 205) + "\nthe rest";
+
+        var said = JsonNode.Parse(ChildBindings.StreamLine(
+            $$"""{"type":"system","subtype":"task_started","task_id":"a1","description":{{JsonSerializer.Serialize(description)}},"spawn_depth":1,"task_type":"local_agent"}""",
+            DateTimeOffset.UnixEpoch, agents)!)!;
+
+        Assert.Equal(new string('d', 200), (string?)said["description"]);
+        Assert.Null(JsonNode.Parse(ChildBindings.StreamLine(
+            """{"type":"system","subtype":"task_started","task_id":"a2","description":"  ","spawn_depth":1,"task_type":"local_agent"}""",
+            DateTimeOffset.UnixEpoch, agents)!)!["description"]);
+    }
+
+    [Fact]
+    public void The_protocol_door_s_lines_name_the_child_its_label_its_place_and_the_word_its_wire_said()
+    {
+        var at = DateTimeOffset.UnixEpoch;
+
+        Assert.Equal(
+            """{"at":"1970-01-01T00:00:00.000Z","by":"acp","event":"started","agent":"a1","depth":1,"name":"Reader","task":"Read the README."}""",
+            ChildBindings.AcpStarted(new LineageAnnouncement("a1", "Reader", "Read the README.") { ByRoot = true }, at));
+        Assert.Equal(
+            """{"at":"1970-01-01T00:00:00.000Z","by":"acp","event":"started","agent":"a2:generation:2","parent":"a1"}""",
+            ChildBindings.AcpStarted(new LineageAnnouncement("a2:generation:2", null, null) { Parent = "a1" }, at));
+        Assert.Equal(
+            """{"at":"1970-01-01T00:00:00.000Z","by":"acp","event":"started","agent":"a3","name":"D:/fam/x"}""",
+            ChildBindings.AcpStarted(new LineageAnnouncement("a3", "D:/fam/x", null) { Parent = "../up" }, at));
+        Assert.Null(ChildBindings.AcpStarted(new LineageAnnouncement("../a4", "Bad", null) { ByRoot = true }, at));
+
+        Assert.Equal(
+            """{"at":"1970-01-01T00:00:00.000Z","by":"acp","event":"ended","agent":"a1","state":"completed"}""",
+            ChildBindings.AcpEnded("a1", "completed", at));
+        Assert.Equal("""{"at":"1970-01-01T00:00:00.000Z","by":"acp","event":"ended","agent":"a1"}""", ChildBindings.AcpEnded("a1", null, at));
+        Assert.Equal("""{"at":"1970-01-01T00:00:00.000Z","by":"acp","event":"ended","agent":"a1"}""", ChildBindings.AcpEnded("a1", "no word/here", at));
+        Assert.Null(ChildBindings.AcpEnded("a b", "completed", at));
+    }
+
+    [Fact]
+    public void A_line_the_driver_writes_for_a_process_names_that_process_where_its_token_is_one()
+    {
+        var agents = new HashSet<string>(StringComparer.Ordinal);
+        var at = DateTimeOffset.UnixEpoch;
+        const string started = """{"type":"system","subtype":"task_started","task_id":"a1","spawn_depth":1,"task_type":"local_agent"}""";
+
+        Assert.Equal("0123456789abcdef", (string?)JsonNode.Parse(ChildBindings.StreamLine(started, at, agents, "0123456789abcdef")!)!["proc"]);
+        Assert.Equal("0123456789abcdef", (string?)JsonNode.Parse(ChildBindings.AcpStarted(new LineageAnnouncement("a1", null, null), at, "0123456789abcdef")!)!["proc"]);
+        Assert.Equal("0123456789abcdef", (string?)JsonNode.Parse(ChildBindings.AcpEnded("a1", null, at, "0123456789abcdef")!)!["proc"]);
+        Assert.Null(JsonNode.Parse(ChildBindings.StreamLine(started, at, agents, "not a token")!)!["proc"]);
+        Assert.Null(JsonNode.Parse(ChildBindings.AcpEnded("a1", null, at)!)!["proc"]);
     }
 
     [Fact]

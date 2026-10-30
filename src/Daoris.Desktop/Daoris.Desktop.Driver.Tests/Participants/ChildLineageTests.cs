@@ -75,19 +75,34 @@ public sealed class ChildLineageTests : IDisposable
     }
 
     [Fact]
-    public void The_stream_watch_writes_each_subagent_s_start_and_end_off_claude_code_s_stream()
+    public void The_writer_writes_each_subagent_s_start_and_end_off_claude_code_s_stream()
     {
-        var watch = ChildLineage.Watch(_home, "s1");
+        var writer = ChildLineage.Writer(_home, "s1");
 
-        watch("""{"type":"system","subtype":"init","session_id":"c1"}""");
-        watch("""{"type":"system","subtype":"task_started","task_id":"a1","tool_use_id":"toolu_1","subagent_type":"general-purpose","spawn_depth":1,"task_type":"local_agent"}""");
-        watch("""{"type":"system","subtype":"task_started","task_id":"a2","tool_use_id":"toolu_2","subagent_type":"general-purpose","spawn_depth":2,"parent_task_id":"a1","task_type":"local_agent"}""");
-        watch("""{"type":"system","subtype":"task_notification","task_id":"a2","status":"completed"}""");
+        writer.Stream("""{"type":"system","subtype":"init","session_id":"c1"}""");
+        writer.Stream("""{"type":"system","subtype":"task_started","task_id":"a1","tool_use_id":"toolu_1","subagent_type":"general-purpose","spawn_depth":1,"task_type":"local_agent"}""");
+        writer.Stream("""{"type":"system","subtype":"task_started","task_id":"a2","tool_use_id":"toolu_2","subagent_type":"general-purpose","spawn_depth":2,"parent_task_id":"a1","task_type":"local_agent"}""");
+        writer.Stream("""{"type":"system","subtype":"task_notification","task_id":"a2","status":"completed"}""");
 
         var bound = ChildLineage.Read(_home, "s1");
         Assert.Equal(
             [("a1", (string?)null, (int?)1, ChildBindings.Active), ("a2", "a1", 2, ChildBindings.Finished)],
             bound.Children.Select(child => (child.Native, child.Parent, child.Depth, child.State)));
+    }
+
+    [Fact]
+    public void The_writer_appends_the_protocol_door_s_announcements_and_ends_naming_its_process()
+    {
+        var writer = ChildLineage.Writer(_home, "s1", "0123456789abcdef");
+
+        writer.Spawned(new LineageAnnouncement("a1", "Reader", "Read it.") { ByRoot = true });
+        writer.Spawned(new LineageAnnouncement("../a2", "Bad", null) { ByRoot = true });
+        writer.Ended("a1", "completed");
+
+        var lines = File.ReadAllLines(ChildLineage.PathOf(_home, "s1")).Select(line => JsonDocument.Parse(line).RootElement).ToList();
+        Assert.Equal(
+            [("acp", "started", "a1", "0123456789abcdef"), ("acp", "ended", "a1", "0123456789abcdef")],
+            lines.Select(line => (line.GetProperty("by").GetString(), line.GetProperty("event").GetString(), line.GetProperty("agent").GetString(), line.GetProperty("proc").GetString())));
     }
 
     [Fact]

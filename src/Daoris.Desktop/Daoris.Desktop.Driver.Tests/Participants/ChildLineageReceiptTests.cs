@@ -8,7 +8,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// lineage hook: <c>tools/fabric-probe/launch.mjs --connector … --lineage-hook …</c>). Each fixture's lineage file is the one the
 /// connector and the hook wrote, as they wrote it; each stream file is Claude Code's <c>task_*</c> lines off its
 /// <c>stream-json</c>, cut to their ids (its other fields carry the subagents' prompts and an output path), which this driver
-/// reads as <see cref="ChildLineage.Watch"/> does at run time. Claude Code 2.1.299 on <c>claude-sonnet-5-5</c>; Codex 0.160.0
+/// reads as <see cref="ChildLineage.Writer"/> does at run time. Claude Code 2.1.299 on <c>claude-sonnet-5-5</c>; Codex 0.160.0
 /// on <c>gpt-6.1-sol</c>, effort low; D173's note has the receipts.
 /// </summary>
 /// <remarks>Files only: the suite's fast half.</remarks>

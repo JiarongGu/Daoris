@@ -320,6 +320,9 @@ public sealed class AcpSession(
     /// </summary>
     public Func<string, string, string>? Unoffered { get; init; }
 
+    /// <summary>The part's lineage, told each child the streams beside it announce and end (COWORKVIEW1a); null tells none.</summary>
+    public ILineageWriter? Lineage { get; init; }
+
     /// <summary>
     /// The mark a posture carries after <see cref="AgentPostures.Required"/> where the person answers its permission requests (AUTONOMY1b3a,
     /// D184 point 3): a driven start's asking permission prompts on the protocol door (<see cref="DrivenAccess"/>). Never set on the wire.
@@ -2175,7 +2178,7 @@ public sealed class AcpSession(
     private async Task<JsonElement> HandshakeAsync(CancellationToken ct)
     {
         if (_pump is not null) throw new DriverException("this ACP session is already open.");
-        if (streams is not null) _beside = new AcpStreams(streams, _console, Emit, quiet ?? AcpConsole.Quiet);
+        if (streams is not null) _beside = new AcpStreams(streams, _console, Emit, quiet ?? AcpConsole.Quiet, lineage: Lineage);
         _pump = PumpAsync(_pumpStop.Token);
 
         var initialized = await RequestAsync(

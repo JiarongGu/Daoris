@@ -1502,7 +1502,7 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
                 _driver.Hearing(process.StandardOutput, sessionId), _driver.Hearing(process.StandardError, sessionId), transcript, sessionId,
                 _context.Output, _context.Events, mapper,
                 prompt: null, ct, opened: opening, append: true, said: said, own: own,
-                lineageHome: _context.Home),
+                lineage: ChildLineage.Writer(_context.Home, sessionId)),
                 sessionId, adapter.Name, resume: null)
             : null;
         await NativePrompt.WriteAsync(process, adapter, prompt, ct).ConfigureAwait(false);
@@ -1539,7 +1539,7 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
             ? _driver.KeepingAsync(mapper, HarnessCapture.CaptureStructuredAsync(
                 _driver.Hearing(process.StandardOutput, sessionId), _driver.Hearing(process.StandardError, sessionId), transcript, sessionId,
                 _context.Output, _context.Events, mapper,
-                prompt: null, ct, append: true, said: said, own: own, lineageHome: _context.Home),
+                prompt: null, ct, append: true, said: said, own: own, lineage: ChildLineage.Writer(_context.Home, sessionId)),
                 sessionId, keepAs, resume)
             : null;
         await NativePrompt.WriteAsync(process, adapter, resume.Prompt, ct).ConfigureAwait(false);
