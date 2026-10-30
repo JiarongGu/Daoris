@@ -169,7 +169,13 @@ public static class EndReaders
     {
         EndReader.SessionEnded => end.Conversation,
         EndReader.Log => true,
-        EndReader.Notified => !end.Conversation && !Silent.Contains(end.Class),
+        EndReader.Notified => !end.Conversation && Notifies(end.Class),
         _ => false,
     };
+
+    /// <summary>
+    /// Whether an end of this class is news to tell the person (<i>Ended</i>): everything but their own stop, an account's limit, which goes on
+    /// by itself and says so as its own news (LIMITRESUME1a), and an agent's refusal of the choice, which a fallback answers (D205 §3.5(c)).
+    /// </summary>
+    public static bool Notifies(string endClass) => !Silent.Contains(endClass);
 }

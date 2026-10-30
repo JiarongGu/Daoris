@@ -93,6 +93,39 @@ public sealed class PartEndedTests
         Assert.Equal(reason, SessionEnded.ReasonOf([new NotePart { Code = reason }, new NotePart { Code = "account.cooling" }]));
     }
 
+    /// <summary>
+    /// FOUNDATION1 l-v: <i>Ended</i> takes the classes the watch said before (every end but the person's own stop, an account's limit and an
+    /// agent's refusal of the choice), never a conversation's end; and the table gives each of the four readers its meaning of an end.
+    /// </summary>
+    [Fact]
+    public void The_four_readers_take_each_class_as_the_watch_and_the_page_did()
+    {
+        var silent = new[] { "stopped-person", "limited", "refused-choice" };
+        foreach (var cls in PartEnds.Classes)
+        {
+            var driven = new PartEnded(1, "s", "s1", "failed", null, cls, false, null, DateTimeOffset.UnixEpoch, false);
+            var chat = driven with { Conversation = true };
+            Assert.Equal(!silent.Contains(cls), EndReaders.Takes(EndReader.Notified, driven));
+            Assert.False(EndReaders.Takes(EndReader.Notified, chat));
+            Assert.True(EndReaders.Takes(EndReader.Log, driven) && EndReaders.Takes(EndReader.Log, chat));
+            Assert.Equal([false, true], [EndReaders.Takes(EndReader.SessionEnded, driven), EndReaders.Takes(EndReader.SessionEnded, chat)]);
+        }
+    }
+
+    /// <summary>The attention watch raises <i>Ended</i> by the class table: the person's stop, a limit and a refused choice raise none, and a failure raises one.</summary>
+    [Theory]
+    [InlineData(false, false, false, "failed", true)]
+    [InlineData(true, false, false, "stopped", false)]
+    [InlineData(false, true, false, "failed", false)]
+    [InlineData(false, false, true, "failed", false)]
+    [InlineData(false, false, false, "completed", true)]
+    public void The_attention_watch_raises_ended_by_the_class_table(bool byPerson, bool limit, bool notOffered, string state, bool raised)
+    {
+        var ended = new SessionEnded("s1", "Engine", state, byPerson) { Limit = limit, NotOffered = notOffered };
+
+        Assert.Equal(raised, EndReaders.Notifies(ended.Class));
+    }
+
     /// <summary>Every <c>ended.*</c> code of <see cref="NoteCodes"/> is in the class table or says it takes its class from the state, and the table names no code that is gone.</summary>
     [Fact]
     public void The_class_table_matches_the_note_codes_both_ways()

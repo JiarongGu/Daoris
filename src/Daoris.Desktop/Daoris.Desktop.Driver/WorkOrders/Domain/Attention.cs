@@ -143,7 +143,7 @@ public sealed class AttentionWatch
         var saidByPark = parked.Select(park => park.Session).OfType<string>().ToHashSet(StringComparer.Ordinal);
         foreach (var ended in report.Concluded)
         {
-            if (ended.ByPerson || ended.Limit || ended.NotOffered || saidByPark.Contains(ended.Session)) continue;
+            if (!EndReaders.Notifies(ended.Class) || saidByPark.Contains(ended.Session)) continue;
             events.Add(new AttentionEvent(
                 AttentionKind.Ended, ended.Session, ended.Repository, ended.State, ended.Note)
             {
