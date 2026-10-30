@@ -56,7 +56,7 @@ public sealed class WorkCycleVerb : ChoiceVerb
         if (file is not null)
         {
             cycle = ChoiceCycles.File(world, file);
-            if (NodeGraphs.Read(cycle).Problems.FirstOrDefault() is { } first)
+            if (NodeGraphs.Read(cycle, onSave: true).Problems.FirstOrDefault() is { } first)
             {
                 throw new ChoiceWords($"the cycle in `{file}` does not hold: {first.Words} Nothing was written.");
             }

@@ -448,6 +448,59 @@ public sealed class WorkflowGateTests : IDisposable
         Assert.Empty(Involvement.Lowers(steps, steps));
     }
 
+    /// <summary>A graph holding a landing and an <c>integrate</c> of the given node id, its <c>request</c> as written or left out.</summary>
+    private static NodeGraph Integrating(string id, string? request)
+    {
+        var options = request is null ? "" : ",\"options\":{\"request\":\"" + request + "\"}";
+        return Graph("""[{"id":"land","kind":"handed","version":1,"reach":"observed","options":{"form":"branch"}},""" + "{\"id\":\"" + id + "\",\"kind\":\"integrate\",\"version\":1,\"reach\":\"waited\"" + options + "}]");
+    }
+
+    /// <summary>
+    /// INTEGRATE1n part n1 (§17.6 point 9; C29): a graph-only kind has no step of its own, so the comparison reads it as a part of its own,
+    /// each matched by its node's id, which a version keeps. An <c>integrate</c> whose <c>request</c> moves from <c>owner</c> (or none, the
+    /// owner's by the install's table) to <c>done</c> or <c>steward</c> lowers; the other moves, an <c>integrate</c> added or removed, and one
+    /// under another id (no node to match) lower nothing.
+    /// </summary>
+    [Fact]
+    public void A_graph_versions_integrate_lowers_where_its_request_leaves_the_owner_matched_by_its_node_id()
+    {
+        IReadOnlyList<NamedStep> Of(string id, string? request) => Involvement.StepsOf(Integrating(id, request));
+        Assert.Equal([("land", "landing"), ("merge", "integrate")], Of("merge", "done").Select(step => (step.Id, step.Kind)));
+        Assert.Null(Of("merge", null)[1].Field("request"));
+        Assert.Equal("done", Of("merge", "done")[1].Field("request"));
+
+        const string Lowers = "it requests the integration with no press of yours";
+        foreach (var (before, after) in new (string?, string)[] { ("owner", "done"), ("owner", "steward"), (null, "done"), (null, "steward") })
+        {
+            Assert.Equal([Lowers], Involvement.Lowers(Of("merge", after), Of("merge", before)));
+        }
+
+        foreach (var (before, after) in new (string?, string?)[]
+        {
+            ("done", "owner"), ("steward", "owner"), ("done", null), ("done", "steward"), ("steward", "done"), ("owner", "owner"), ("owner", null), (null, null), ("done", "done"),
+        })
+        {
+            Assert.Empty(Involvement.Lowers(Of("merge", after), Of("merge", before)));
+        }
+
+        // By the node's id: another id is another node, so a request moved off the owner there matches nothing; a node added or removed lowers nothing.
+        Assert.Empty(Involvement.Lowers(Of("elsewhere", "done"), Of("merge", "owner")));
+        var without = Involvement.StepsOf(Graph("""[{"id":"land","kind":"handed","version":1,"reach":"observed","options":{"form":"branch"}}]"""));
+        Assert.Empty(Involvement.Lowers(Of("merge", "done"), without));
+        Assert.Empty(Involvement.Lowers(without, Of("merge", "owner")));
+
+        // Beside the table's other rows: a press the landing's accept drops lowers as it did, and the integrate's row adds its own.
+        var automatic = Involvement.StepsOf(Graph("""
+            [{"id":"land","kind":"handed","version":1,"reach":"observed","options":{"form":"branch","accept":"automatic"}},
+             {"id":"merge","kind":"integrate","version":1,"reach":"waited","options":{"request":"done"}}]
+            """));
+        var owned = Involvement.StepsOf(Graph("""
+            [{"id":"land","kind":"handed","version":1,"reach":"observed","options":{"form":"branch","accept":"you"}},
+             {"id":"merge","kind":"integrate","version":1,"reach":"waited","options":{"request":"owner"}}]
+            """));
+        Assert.Equal(["it lands with no press of yours", Lowers], Involvement.Lowers(automatic, owned));
+    }
+
     private static WorkflowProcess Kind(WorkflowKept? kept = null) =>
         WorkflowProcess.Of(Config(Declared), "web-app", "work",
             Binding(WorkflowLevels.WorkspaceKind, ["docs/**", "**/*.md"]) with { Kept = kept },

@@ -125,6 +125,92 @@ public sealed class NodeGraphHomesTests
     /// The kinds that do not land (§D7): <c>workCycles</c> by repository and kind, else <c>workspaceWorkCycles</c> for that kind, else none;
     /// a branch's is the landing rule's alone, so no kind has two homes.
     /// </summary>
+    private static readonly LandingRule Integrating = new(LandingForm.Branch, "feature/{quest}-{slug}") { Integrate = new LandingIntegrate() };
+
+    /// <summary>
+    /// INTEGRATE1n part n1 (the integration design §17.4, <i>Current draws it</i>): where the effective rule carries <c>integrate</c> Current's
+    /// branch graph is <c>handed</c>, <c>integrate</c>, <c>line</c>, the step waited and entered by no wire but the landing's; a rule set nowhere,
+    /// or one that carries none, draws as it did, and a rule whose form cannot carry one (a merge, a plugin, a squash: the key's own refusals)
+    /// draws today's graph whatever its file says.
+    /// </summary>
+    [Fact]
+    public void A_rule_carrying_integrate_draws_the_step_between_the_landing_and_the_line()
+    {
+        var config = DriverConfig.Empty.WithLanding("engine", new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}"))
+            .WithLandingIntegrate("engine", new LandingIntegrate(Request: LandingIntegrate.Owner));
+
+        var home = NodeGraphHomes.Current(config, "engine", null);
+        Assert.True(home.Readable);
+        Assert.Equal(
+            ("handed:handed integrate:integrate line:line", "handed-after->integrate integrate-after->line", "handed", "line", GraphCleanup.Held),
+            Shape(home.Graph!));
+        Assert.Equal(NodeReach.Waited, home.Graph!.Nodes.Single(node => node.Kind == NodeKinds.Integrate).Reach);
+        Assert.Empty(NodeGraphs.Problems(home.Graph));
+
+        // Without it, today's graph, byte for byte.
+        var plain = NodeGraphHomes.Landing(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}"));
+        Assert.Equal(("handed:handed line:line", "handed-after->line"), (Shape(plain).Nodes, Shape(plain).Wires));
+        Assert.NotEqual(NodeGraphs.Digest(plain), NodeGraphs.Digest(home.Graph));
+        Assert.Equal(NodeGraphs.Digest(plain), NodeGraphs.Digest(NodeGraphHomes.Landing(Integrating with { Integrate = null })));
+        Assert.Equal(NodeGraphs.Digest(NodeGraphHomes.Landing(Integrating)), NodeGraphs.Digest(home.Graph));
+
+        // The forms the key refuses carry none, so a hand-written file naming one draws today's.
+        foreach (var rule in new[]
+        {
+            LandingRule.Merge with { Integrate = new LandingIntegrate() },
+            Pulled with { Integrate = new LandingIntegrate() },
+            Integrating with { Squash = true },
+        })
+        {
+            Assert.Equal(NodeGraphs.Digest(NodeGraphHomes.Landing(rule with { Integrate = null })), NodeGraphs.Digest(NodeGraphHomes.Landing(rule)));
+        }
+    }
+
+    /// <summary>
+    /// INTEGRATE1n (§17.4): the rule's <c>cycle</c> comes after the landing's nodes as today: it may wire from <c>integrate</c> and never into
+    /// it, and may not declare one, as it may not declare <c>pushed</c>.
+    /// </summary>
+    [Fact]
+    public void A_cycle_wires_from_the_integrate_and_never_into_it()
+    {
+        var after = NodeGraphHomes.OfLanding(Integrating with { Cycle = """{ "nodes": [ { "id": "qa", "kind": "human", "version": 1, "reach": "pressed" } ], "wires": [ { "id": "a", "kind": "after", "from": "integrate", "to": "qa" } ], "end": "qa" }""" }, LandingSource.Repository);
+        Assert.True(after.Readable);
+        Assert.Equal("qa", after.Graph!.End);
+        Assert.Contains("integrate-after->line", Shape(after.Graph).Wires);
+        Assert.Contains("integrate-after->qa", Shape(after.Graph).Wires);
+
+        var into = NodeGraphHomes.OfLanding(Integrating with { Cycle = """{ "nodes": [ { "id": "qa", "kind": "human", "version": 1, "reach": "pressed" } ], "wires": [ { "id": "a", "kind": "after", "from": "qa", "to": "integrate" } ], "entries": ["qa"] }""" }, LandingSource.Repository);
+        Assert.Equal((false, GraphRefusal.IntoLanding), (into.Readable, Assert.Single(into.Problems).Code));
+
+        var declared = NodeGraphHomes.OfLanding(Pulled with { Cycle = """{ "nodes": [ { "id": "i", "kind": "integrate", "version": 1, "reach": "waited" } ], "wires": [ { "id": "a", "kind": "after", "from": "handed", "to": "i" } ] }""" }, LandingSource.Repository);
+        Assert.Contains(GraphRefusal.LandingKind, declared.Problems.Select(problem => problem.Code));
+    }
+
+    /// <summary>
+    /// INTEGRATE1n (§17.6 point 7, <c>compatible-builds.md</c>): an older build reads a rule carrying <c>integrate</c> as the branch rule it is and
+    /// draws <c>handed</c> then <c>line</c>, holding no <c>integrate</c> node, and that graph arms nothing: this build's Current arms nothing
+    /// either, since nothing starts the step yet (rows n2 and n3), and a rule whose cycle names a plugin's node arms both builds alike.
+    /// </summary>
+    [Fact]
+    public void An_older_build_draws_no_integrate_for_the_same_rule_and_arms_nothing()
+    {
+        var config = DriverConfig.Empty.WithLanding("engine", new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}"))
+            .WithLandingIntegrate("engine", new LandingIntegrate());
+        var rule = config.Landings["engine"];
+        Assert.NotNull(rule.Integrate);
+
+        // The older build never reads the key: the rule without it is what it draws, and its graph has no integrate node.
+        var older = NodeGraphHomes.OfLanding(rule with { Integrate = null }, LandingSource.Repository);
+        Assert.DoesNotContain(older.Graph!.Nodes, node => node.Kind == NodeKinds.Integrate);
+        Assert.Equal("handed:handed line:line", Shape(older.Graph).Nodes);
+
+        // The file the newer build wrote keeps the key through a round trip, and reads back as the same rule.
+        Assert.Equal(rule.Integrate, DriverConfig.Parse(config.ToJson()).Landings["engine"].Integrate);
+
+        Assert.False(NodeRuntime.Armed(config));
+        Assert.False(NodeRuntime.Armed(DriverConfig.Empty.WithLanding("engine", new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}"))));
+    }
+
     [Fact]
     public void Work_cycles_are_inherited_kind_by_kind()
     {

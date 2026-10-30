@@ -291,8 +291,24 @@ public static class Involvement
             lowered.Add($"it starts `{stage.Field("stage")}` with no press of yours");
         }
 
+        // INTEGRATE1n (§17.6 point 9, C29): the graph-only kinds have no step of their own, so each is a part of its own, matched by its node's
+        // id, which a version keeps (§2.5). An `integrate` whose `request` moves off the owner (none is the owner's, the install's table) to
+        // `done` or `steward` asks you for nothing where it asked for your card; moving among those, adding and removing one lower nothing.
+        foreach (var before in otherwise.Where(step => step.Kind == NodeKinds.Integrate && RequestOf(step) == LandingIntegrate.Owner))
+        {
+            if (chosen.FirstOrDefault(step => step.Kind == NodeKinds.Integrate && step.Id == before.Id) is { } after
+                && RequestOf(after) is LandingIntegrate.Done or LandingIntegrate.Steward)
+            {
+                lowered.Add("it requests the integration with no press of yours");
+            }
+        }
+
         return lowered;
     }
+
+    /// <summary>An <c>integrate</c> step's <c>request</c>, the owner's where it names none or a value that is no choice (the install's table).</summary>
+    private static string RequestOf(NamedStep step) =>
+        step.Field("request") is string request && LandingIntegrate.Requests.Contains(request) ? request : LandingIntegrate.Owner;
 
     /// <summary>
     /// Current as steps (design §2.7's <i>Save as a workflow…</i>, the CLI's <c>stepsOfCurrent</c>): the opinion with its reviewers
@@ -329,7 +345,8 @@ public static class Involvement
     /// A graph version's person part as the steps <see cref="Lowers"/> reads (FABRIC-CUTOVER1e; D190 point 4, the cutover design §11.1): its
     /// gate and go-ahead nodes in the graph's order, each as the step of its kind, its options as that step's fields (the work's checks, the
     /// opinion's switches, the look's environment, the landing's form and press, each go-ahead's act). A plugin's node, a person's task, a
-    /// stop and every other node is no part of it, as no step stood for one. An option absent is a field absent, so a graph that leaves the
+    /// stop and every other node is no part of it, as no step stood for one; except the graph-only kinds the comparison reads by their node's
+    /// id (INTEGRATE1n: <c>integrate</c>, kept under its own kind). An option absent is a field absent, so a graph that leaves the
     /// landing's press to the repository's rule lowers nothing by it, as 1d reads that press from the rule.
     /// </summary>
     public static IReadOnlyList<NamedStep> StepsOf(NodeGraph graph) =>
@@ -344,6 +361,8 @@ public static class Involvement
                 NodeKinds.Handed => WorkflowKinds.Landing,
                 NodeKinds.PullRequest => WorkflowKinds.PullRequest,
                 NodeKinds.GoAhead => WorkflowKinds.GoAhead,
+                // INTEGRATE1n: a graph-only kind, kept by its own kind and its node's id for the comparison's graph part (<see cref="Lowers"/>).
+                NodeKinds.Integrate => NodeKinds.Integrate,
                 _ => null,
             };
             return kind is null ? null
