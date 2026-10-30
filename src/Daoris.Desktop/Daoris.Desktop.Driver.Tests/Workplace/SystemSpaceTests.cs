@@ -264,8 +264,10 @@ public sealed class SystemSpaceTests : IDisposable
         Assert.Equal(("days", "30", "true", "false"), (Rule("set-aside", "kind"), Rule("set-aside", "days"), Rule("set-aside", "whole"), Rule("set-aside", "default")));
         Assert.Equal(("never", null, "false"), (Rule("downloads", "kind"), Rule("downloads", "days"), Rule("downloads", "default")));
         Assert.Equal(("days", "14", "false"), (Rule("logs", "kind"), Rule("logs", "days"), Rule("logs", "default")));
-        Assert.Equal("{\"min\":1,\"max\":90,\"whole\":true,\"never\":false}", KindOf(space, "set-aside")["bounds"]!.ToJsonString());
-        Assert.Equal("{\"min\":0,\"max\":365,\"whole\":false,\"never\":true}", KindOf(space, "downloads")["bounds"]!.ToJsonString());
+        // KEEPSIZE1d: the set-aside folders and the downloads take a size limit beside their days, and say its bounds.
+        Assert.Equal("{\"min\":1,\"max\":90,\"whole\":true,\"never\":false,\"gb\":{\"min\":1,\"max\":1048576}}", KindOf(space, "set-aside")["bounds"]!.ToJsonString());
+        Assert.Equal("{\"min\":0,\"max\":365,\"whole\":false,\"never\":true,\"gb\":{\"min\":1,\"max\":1048576}}", KindOf(space, "downloads")["bounds"]!.ToJsonString());
+        Assert.Equal((8, 5), ((int?)KindOf(space, "set-aside")["rule"]!["gb"], (int?)KindOf(space, "downloads")["rule"]!["gb"]));
         Assert.Equal("{\"min\":7,\"max\":30,\"whole\":false,\"never\":false}", KindOf(space, "logs")["bounds"]!.ToJsonString());
         // KEEP1g: history's age, its default the press alone.
         Assert.Equal(("days", "365", "false"), (Rule("history", "kind"), Rule("history", "days"), Rule("history", "default")));

@@ -17,7 +17,10 @@ public static class KeepKinds
     public static KeepKind SetAside { get; } = new(
         "set-aside", [HomeEntry.Trees.Name],
         "its package folders, a node_modules beside a package.json git tracks; nothing else of it",
-        TimeSpan.FromDays(14), MinDays: KeepKey.SetAsideMinDays, MaxDays: KeepKey.SetAsideMaxDays, MaySetWhole: true, Remover: "the slim, then the purge");
+        TimeSpan.FromDays(14), MinDays: KeepKey.SetAsideMinDays, MaxDays: KeepKey.SetAsideMaxDays, MaySetWhole: true, Remover: "the slim, then the purge")
+    {
+        DefaultGb = 8,
+    };
 
     /// <summary>How long a folder set aside waits after its move before its package folders go: a write by then keeps it whole (§5).</summary>
     public static readonly TimeSpan SetAsideSettle = TimeSpan.FromHours(1);
@@ -34,6 +37,7 @@ public static class KeepKinds
         TimeSpan.FromDays(7), MinDays: KeepKey.DownloadsMinDays, MaxDays: KeepKey.DownloadsMaxDays, MaySetWhole: false, Remover: "CACHECLEAR1's act, which Tools' delete takes too")
     {
         MaySetNever = true,
+        DefaultGb = 5,
     };
 
     /// <summary>
@@ -84,6 +88,25 @@ public sealed record KeepKind(
 
     /// <summary>Whether its default is <c>never</c>, the press alone, so <see cref="Days"/> is not read (history's, KEEP1g).</summary>
     public bool NeverByDefault { get; init; }
+
+    /// <summary>The most it may hold, in GB, by default (KEEPSIZE1d); null where it takes no size limit.</summary>
+    public int? DefaultGb { get; init; }
+
+    /// <summary>Whether the person may set a size limit beside its days.</summary>
+    public bool MayHavePart => DefaultGb is not null;
+}
+
+/// <summary>
+/// The size limits per kind, beside the days (KEEPSIZE1d, D195's keep-size note): a kind over its limit lets go of its oldest eligible
+/// units first, whichever of its days and its limit comes first. Null is no limit, which an unreadable file gives.
+/// </summary>
+public sealed record LimitsPolicy(int? SetAsideGb, int? DownloadsGb)
+{
+    /// <summary>The table's defaults.</summary>
+    public static LimitsPolicy Default { get; } = new(KeepKinds.SetAside.DefaultGb, KeepKinds.Downloads.DefaultGb);
+
+    /// <summary>No limit: a file that does not read keeps the most.</summary>
+    public static LimitsPolicy None { get; } = new(null, null);
 }
 
 /// <summary>
@@ -109,7 +132,11 @@ public sealed record KeepPolicy(SetAsidePolicy SetAside)
         Logs = new(KeepKinds.Logs.Days),
         // KEEP1f: no floor, so nothing goes early on a rule that could not be read.
         Floor = FloorPolicy.None,
+        Limits = LimitsPolicy.None,
     };
+
+    /// <summary>The size limit of each kind that takes one (KEEPSIZE1d): beside its days, whichever comes first.</summary>
+    public LimitsPolicy Limits { get; init; } = LimitsPolicy.Default;
 
     /// <summary>The free-space floor (KEEP1f): the smaller of 10% of each volume and 20 GB by default.</summary>
     public FloorPolicy Floor { get; init; } = FloorPolicy.Default;
@@ -130,6 +157,7 @@ public sealed record KeepPolicy(SetAsidePolicy SetAside)
             Downloads = new(choices.DownloadsNever ? null : choices.DownloadsDays is { } kept ? TimeSpan.FromDays(kept) : KeepKinds.Downloads.Days),
             Logs = new(choices.LogsDays is { } logs ? TimeSpan.FromDays(logs) : KeepKinds.Logs.Days),
             History = new(choices.HistoryDays is { } age ? TimeSpan.FromDays(age) : null),
+            Limits = new(choices.SetAsideGb ?? KeepKinds.SetAside.DefaultGb, choices.DownloadsGb ?? KeepKinds.Downloads.DefaultGb),
             Floor = choices.FloorOff ? FloorPolicy.None : new FloorPolicy(choices.FloorGb, choices.FloorPercent, Off: false),
         };
 

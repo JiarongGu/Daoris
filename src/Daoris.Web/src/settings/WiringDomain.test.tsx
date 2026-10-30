@@ -802,6 +802,39 @@ describe('Settings → This Daoris', () => {
     expect((aside.getByRole('button', { name: 'The default' }) as HTMLButtonElement).disabled).toBe(true);
   });
 
+  // KEEPSIZE1d: a size limit per kind beside its days, set from the same editor and said on the row.
+  it("says each kind's size limit and when it is over, and sets the limit beside the days", async () => {
+    invoke.mockImplementation(keeping(() => DRIVER_STATE));
+    open();
+    const card = within(await screen.findByRole('region', { name: 'Disk space' }));
+    const aside = row(card, 'Set-aside trees');
+    expect(aside.getByText(/at most 8 GB; over it, the oldest folders whose record is kept go first/)).toBeTruthy();
+    expect(aside.getByText(/over its limit/)).toBeTruthy();
+    const downloads = row(card, 'Downloaded versions');
+    expect(downloads.getByText('at most 5 GB; over it, the versions unused longest go first')).toBeTruthy();
+
+    await userEvent.click(aside.getByRole('button', { name: 'Change…' }));
+    const limit = aside.getByRole('spinbutton', { name: 'Size limit' });
+    expect((limit as HTMLInputElement).value).toBe('8');
+    await userEvent.clear(limit);
+    await userEvent.type(limit, '20');
+    await userEvent.click(aside.getByRole('button', { name: 'Save' }));
+
+    await vi.waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_KEEP', { payload: { kind: 'set-aside', days: 14, whole: false, gb: 20 } }));
+  });
+
+  it("says a size limit and its editor in 中文", async () => {
+    await i18n.changeLanguage('zh');
+    invoke.mockImplementation(keeping(() => DRIVER_STATE));
+    open();
+    const card = within(await screen.findByRole('region', { name: '磁盘空间' }));
+    const downloads = row(card, '已下载的版本');
+
+    expect(downloads.getByText('最多 5 GB；超出时，先清理闲置最久的版本')).toBeTruthy();
+    await userEvent.click(downloads.getByRole('button', { name: '更改…' }));
+    expect(downloads.getByRole('spinbutton', { name: '容量上限' })).toBeTruthy();
+  });
+
   it("sets the downloads to stay until the person removes them, and a rule back to its default", async () => {
     invoke.mockImplementation(keeping(() => DRIVER_STATE, SPACE_SET));
     open();
