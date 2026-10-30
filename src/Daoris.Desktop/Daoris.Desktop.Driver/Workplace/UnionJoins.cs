@@ -30,6 +30,7 @@ internal static partial class UnionJoins
         new(@"^\*(As built|Built|Amended)\b", RegexOptions.ECMAScript),
         new(@"^\*\*?(Corrected|Measured|Landed|Proved|Proven|Probed|Reviewed|Superseded|Noted|Note|Revised|Decided|Extended|Accepted)\b.*\d{4}-\d{2}-\d{2}", RegexOptions.ECMAScript),
         new(@"^\*\*[^*]*\b(built|landed|amended)\b[^*]*\d{4}-\d{2}-\d{2}", RegexOptions.ECMAScript),
+        new(@"^\*\*?Superseded by D[1-9][0-9]*\b", RegexOptions.ECMAScript),
     ];
 
     private static readonly Regex Heading = new(@"^#{1,6} ", RegexOptions.ECMAScript);
