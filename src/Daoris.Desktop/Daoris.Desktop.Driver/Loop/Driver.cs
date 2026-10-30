@@ -4106,7 +4106,7 @@ public sealed class Driver(
 
         // What it consumed, where the door reported it (TOOL3/D57 §4). A pipe with only text reports
         // nothing, and a surface then says "not measured" rather than zero.
-        var (outcome, turnFailed, acpLeft) = acp is not null && drained ? await acp.ConfigureAwait(false) : (null, null, []);
+        var (outcome, turnFailed, acpLeft, refused) = acp is not null && drained ? await acp.ConfigureAwait(false) : (null, null, [], null);
         // DONEEND1: an agent the run ended because it lingered after its session had ended exited as its session did, cleanly: on this
         // door the agent exits 0 once its stdin closes whatever happened, and the kill was Daoris's own, never the agent's end.
         if (ending?.EndedLingering == true && exitCode is not null) exitCode = 0;
@@ -4156,6 +4156,8 @@ public sealed class Driver(
                     NotOffered = outcome?.NotOffered,
                     // AGENTERRORS1a: what its transient retry read and did, for the conclusion.
                     Transient = retry,
+                    // FOUNDATION1g part b: the refusal its turn ended on, read for a limit by a run with no transient retry.
+                    Refusal = refused,
                 })
             .ConfigureAwait(false);
 
@@ -4512,7 +4514,7 @@ public sealed class Driver(
     /// Asked at a turn's end before a held word is prompted, whether the setup the run started under changed (ACCESSSWAP1b,
     /// <see cref="AcpSession.SetupChanged"/>): yes ends the run there, the held words handed back as <c>Left</c>. Null never asks.
     /// </param>
-    private async Task<(AcpOutcome? Outcome, string? Failure, IReadOnlyList<ChatMessage> Left)> CaptureAcpAsync(
+    private async Task<(AcpOutcome? Outcome, string? Failure, IReadOnlyList<ChatMessage> Left, AcpRefusal? Refused)> CaptureAcpAsync(
         Process process, string transcript, string sessionId, string cwd, string prompt,
         string? posture, string? harnessNotice, CancellationToken ct,
         IReadOnlyDictionary<string, string>? scope = null, object? meta = null,
@@ -4703,7 +4705,7 @@ public sealed class Driver(
                  + "session record is concluded from the exit code and the quest's own state, not "
                  + "from this line (D46 §4).");
             // ACCESSSWAP1b: the words a changed setup handed back, kept on the record once it concluded, to go on under the new one.
-            return (outcome, null, session.HandedBack.Select(ChatMessage.FromAgent).ToArray());
+            return (outcome, null, session.HandedBack.Select(ChatMessage.FromAgent).ToArray(), null);
         }
         catch (AcpResumeRefused refused) when (resume is not null)
         {
@@ -4714,7 +4716,7 @@ public sealed class Driver(
             // runs on, which is the one it ran on, so that is the agent `elsewhere` names. SESSCTX1c: a record that waits for the
             // person (`elsewhere`) says no carry-on.
             SaidByCode(refused.Why.Holds ? DoorNotes.ResumeRefused(refused, keepAs) : DoorNotes.AnswerCarriedOn(refused, keepAs));
-            return (null, null, []);
+            return (null, null, [], null);
         }
         catch (DriverException error)
         {
@@ -4729,7 +4731,9 @@ public sealed class Driver(
             // 🔴 The person's words it never took (TURNFAIL1, USERSHOWN1): sent behind the failed turn, or held for its end. They
             // go back to the run, which keeps them on the record once it ended, to go again (WordsLeft); closed here, so the
             // finally below says nothing of them.
-            return (null, error.Message, [.. (session?.Unreached ?? []).Select(ChatMessage.FromAgent), .. (session?.HandedBack ?? []).Select(ChatMessage.FromAgent), .. inbox?.Close() ?? []]);
+            return (null, error.Message, [.. (session?.Unreached ?? []).Select(ChatMessage.FromAgent), .. (session?.HandedBack ?? []).Select(ChatMessage.FromAgent), .. inbox?.Close() ?? []],
+                // FOUNDATION1g part b: the refusal as the door carried it, for a conclusion that reads its code (`HarnessEnding.Refusal`).
+                error as AcpRefusal ?? (error as AcpWordTurnFailed)?.Refusal);
         }
         finally
         {
