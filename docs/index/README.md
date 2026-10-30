@@ -39,10 +39,10 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/agents/agents.test.ts` | 42 | 730 |
 | `src/Daoris.Web/src/app/App.test.tsx` | 45 | 866 |
 | `src/Daoris.Web/src/app/App.tsx` | 90 | 1566 |
-| `src/Daoris.Web/src/app/pushedState.test.tsx` | 63 | 1325 |
+| `src/Daoris.Web/src/app/pushedState.test.tsx` | 68 | 1421 |
 | `src/Daoris.Web/src/bridge/sessions/sessions.ts` | 50 | 968 |
 | `src/Daoris.Web/src/data/api.ts` | 55 | 910 |
-| `src/Daoris.Web/src/data/queries.ts` | 52 | 979 |
+| `src/Daoris.Web/src/data/queries.ts` | 51 | 979 |
 | `src/Daoris.Web/src/design/Flow.tsx` | 45 | 890 |
 | `src/Daoris.Web/src/design/tokens.test.ts` | 48 | 856 |
 | `src/Daoris.Web/src/design/ui.test.tsx` | 65 | 1295 |
@@ -237,12 +237,12 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Platform/PipeStandingTests.cs` | 46 | 857 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Platform/StandingConfirmationTests.cs` | 59 | 1078 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Platform/StatePublisherTests.cs` | 43 | 830 |
-| `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/DriverRoutes.cs` | 45 | 705 |
+| `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/DriverRoutes.cs` | 46 | 713 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/HelpRoutes.cs` | 84 | 1405 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/LinesRoutes.cs` | 66 | 1060 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/SessionsRoutes.cs` | 73 | 1152 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/TreesRoutes.cs` | 71 | 1176 |
-| `src/Daoris.Desktop/Daoris.Desktop.Modules/Loop/DriverLoop.cs` | 90 | 1548 |
+| `src/Daoris.Desktop/Daoris.Desktop.Modules/Loop/DriverLoop.cs` | 91 | 1563 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Loop/NeedsAPerson.cs` | 51 | 840 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Loop/SessionWords.cs` | 68 | 1294 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Platform/InstancePipe.cs` | 101 | 1994 |
@@ -413,4 +413,4 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/README.md` | 66 | 293 |
 | `docs/backlog-parked.md` | 184 | 956 |
 | `docs/development.md` | 53 | 591 |
-| `src/Daoris.Desktop/README.md` | 253 | 1241 |
+| `src/Daoris.Desktop/README.md` | 253 | 1244 |

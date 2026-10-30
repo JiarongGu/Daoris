@@ -421,6 +421,14 @@ public sealed class DriverRoutes(DriverContext context)
         }
 
         var grant = ClaudeTrust.Grant(hold.TrustFile, hold.Folder);
+        // The hold is off the slice the windows read now, not a look from now (FOUNDATION1s): the grant is what the person just did,
+        // and a look that still held it would put it back and push it again.
+        if (grant.Verified)
+        {
+            _loop.Trust.Record([.. _loop.Trust.Latest.Where(held => held != hold)]);
+            _loop.Slices.Find(ConsiderationsStateSlice.Name)?.Wake();
+        }
+
         _loop.Nudge();
         return new
         {

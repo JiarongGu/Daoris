@@ -22,12 +22,12 @@ import { workspaceOf, workspacesOf } from './workspaces';
 // The `all*` prefixes are what invalidation addresses: whatever the scope, a change moves them all.
 export const keys = {
   status: ['status'] as const,
-  /** The driver's last verdict per open quest — written by the tick, never fetched (its own root, so no invalidation reaches it). */
-  considered: ['considered'] as const,
-  /** The starts the last tick held for the agent's trust (D73) — written by the tick, like `considered`. */
-  untrusted: ['untrusted'] as const,
-  /** The starts the last tick held on cooling accounts, an intake's among them (UX6d) — written by the tick, like `considered`. */
-  waits: ['waits'] as const,
+  /**
+   * Why each open quest is sitting, the starts held for the agent's trust (D73) and those held on cooling accounts (UX6d), as the shell
+   * pushes them (FOUNDATION1s, `considerationsSlice` in `bridge/driver`) — written by the pushes, never fetched (its own root, so no
+   * invalidation reaches it).
+   */
+  considerations: ['considerations'] as const,
   /**
    * Who needs the person, as the shell pushes it (PUSH1d4) — written by the pushes, never pulled: no route answers it, and a plain
    * browser has none (its own root, so no broad invalidation reaches it).
