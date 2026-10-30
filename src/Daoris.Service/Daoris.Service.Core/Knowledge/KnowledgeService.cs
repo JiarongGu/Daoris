@@ -159,7 +159,10 @@ public sealed class KnowledgeService(
     // How a registered root is judged cheaply (KNOWCURRENT1): a host over the registered roots, which names no one checkout,
     // asks this of each root at use, at most once a minute, and reads again only a root whose answer moved. Null judges
     // nothing and reads once, as a fed host does.
-    Func<string, RootSignature>? rootSignature = null)
+    Func<string, RootSignature>? rootSignature = null,
+    // Whether a root's record folders differ from its commit, asked once as the root is read (KNOWFRESH1a-ii) and never per
+    // hit; null says nothing of it, as a host that cannot ask git does.
+    Func<string, bool?>? uncommitted = null)
 {
     private readonly TimeProvider _time = time ?? TimeProvider.System;
 
@@ -167,7 +170,8 @@ public sealed class KnowledgeService(
     public static readonly TimeSpan RootsJudgedEvery = TimeSpan.FromMinutes(1);
 
     /// <summary>What one registered root was when it was read: by whom it is named, when, from which commit, by which signature.</summary>
-    private sealed record RootReading(string Repository, DateTimeOffset ReadAt, string? Commit, RootSignature? Signature);
+    private sealed record RootReading(
+        string Repository, DateTimeOffset ReadAt, string? Commit, RootSignature? Signature, bool Uncommitted = false);
 
     private readonly Dictionary<string, RootReading> _readings = new(OperatingSystem.IsLinux() ? StringComparer.Ordinal : StringComparer.OrdinalIgnoreCase);
     private DateTimeOffset? _judgedAt;
@@ -268,6 +272,98 @@ public sealed class KnowledgeService(
         RefuseNewerIndex();
         await EnsureIndexedAsync(ct).ConfigureAwait(false);
         return await store.FindAsync(id, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// What each entry's reading and, for a decision, its own record say of its standing, by entry id (KNOWFRESH1a-ii).
+    /// </summary>
+    /// <remarks>
+    /// <para>The commit is the reading's, kept when the root was read, or the commit a feed named (<see cref="FeedProvenance"/>);
+    /// neither costs a git call here, and the dirty flag was taken with the reading. A decision's notes are read from its file's
+    /// entries, one read a file however many of its entries are hits, and the marks derived from them
+    /// (<see cref="DecisionNotes.Marks(IEnumerable{KnowledgeEntry})"/>), so a fed host derives what a local one does.</para>
+    ///
+    /// <para>A decision whose file has no entry of its own before its notes (a section of one decisions log) has none to
+    /// place its notes by, and says its reading alone.</para>
+    /// </remarks>
+    public async Task<IReadOnlyDictionary<string, EntryStanding>> StandingsAsync(
+        IEnumerable<KnowledgeEntry> entries, CancellationToken ct = default)
+    {
+        RefuseNewerIndex();
+        var readings = new Dictionary<string, (string? Commit, bool Fed, bool Uncommitted)>(StringComparer.Ordinal);
+        var files = new Dictionary<(string Repository, string Path), IReadOnlyList<KnowledgeEntry>>();
+        var standings = new Dictionary<string, EntryStanding>(StringComparer.Ordinal);
+        foreach (var entry in entries)
+        {
+            if (standings.ContainsKey(entry.Id)) continue;
+            if (!readings.TryGetValue(entry.Repository, out var reading))
+            {
+                reading = await ReadingOfAsync(entry.Repository, ct).ConfigureAwait(false);
+                readings[entry.Repository] = reading;
+            }
+
+            DecisionStanding? decision = null;
+            if (entry.Kind == EntryKind.Decision)
+            {
+                if (!files.TryGetValue((entry.Repository, entry.RelativePath), out var file))
+                {
+                    file = await store.OfFileAsync(entry.Repository, entry.RelativePath, ct).ConfigureAwait(false);
+                    files[(entry.Repository, entry.RelativePath)] = file;
+                }
+
+                decision = DecisionStandingOf(entry, file);
+            }
+
+            standings[entry.Id] = new EntryStanding(reading.Commit, reading.Fed, reading.Uncommitted, decision);
+        }
+
+        return standings;
+    }
+
+    /// <summary>The commit a repository's reading was taken at on this machine, else the one a feed named, else none.</summary>
+    private async Task<(string? Commit, bool Fed, bool Uncommitted)> ReadingOfAsync(string repository, CancellationToken ct)
+    {
+        RootReading? reading;
+        lock (_readings)
+        {
+            reading = _readings.Values.FirstOrDefault(r => string.Equals(r.Repository, repository, StringComparison.Ordinal) && r.Commit is not null);
+        }
+
+        if (reading is not null) return (reading.Commit, false, reading.Uncommitted);
+
+        var fed = registrations is null ? null : await registrations.ProvenanceAsync(repository, ct).ConfigureAwait(false);
+        return fed is null ? (null, false, false) : (fed.Commit, true, false);
+    }
+
+    /// <summary>A decision entry's notes after it and the marks that target it, from the entries of its file; null where they cannot be placed.</summary>
+    private static DecisionStanding? DecisionStandingOf(KnowledgeEntry entry, IReadOnlyList<KnowledgeEntry> file)
+    {
+        var decision = file.Where(held => held.Kind == EntryKind.Decision).ToList();
+        if (decision.All(held => held.Anchor is not null)) return null;
+
+        var notes = decision.Where(held => held.Anchor is not null && held.Lines is not null).ToList();
+        var marks = DecisionNotes.Marks(notes);
+        IEnumerable<NoteMark> targeted;
+        int later;
+        if (entry.Anchor is null)
+        {
+            targeted = marks.Where(mark => mark.Target is null && mark.By is not null);
+            later = notes.Count;
+        }
+        else if (entry.Lines is { } own)
+        {
+            targeted = marks.Where(mark => mark.Target == own.First);
+            later = notes.Count(note => note.Lines!.Value.First > own.First);
+        }
+        else
+        {
+            return null;
+        }
+
+        return new DecisionStanding(
+            later,
+            [.. targeted.OrderBy(mark => mark.Line).Select(mark =>
+                $"{mark.Kind} by {(mark.By is { } by ? $"D{by}" : "a later note here")}")]);
     }
 
     /// <param name="workspace">The circle to summarize (D48). Null is every one this machine holds.</param>
@@ -941,14 +1037,16 @@ public sealed class KnowledgeService(
             await ReloadRegistryAsync(ct).ConfigureAwait(false);
 
             // What each root is, taken BEFORE it is read, so a write during the read is judged moved at the next use.
-            var taken = new List<(string Repository, string Root, RootSignature? Signature, string? Commit)>();
+            var taken = new List<(string Repository, string Root, RootSignature? Signature, string? Commit, bool Uncommitted)>();
             if (readsRegisteredRoots)
             {
                 foreach (var (repository, root) in LocalRoots())
                 {
                     if (onlyRoots is not null && !onlyRoots.Contains(root, _readings.Comparer)) continue;
                     var signature = rootSignature?.Invoke(root);
-                    taken.Add((repository, root, signature, signature is null ? RootSignature.Head(root) : signature.Commit));
+                    var commit = signature is null ? RootSignature.Head(root) : signature.Commit;
+                    // One status a root a reading (KNOWFRESH1a-ii), only for a root that has a commit to differ from.
+                    taken.Add((repository, root, signature, commit, commit is not null && uncommitted?.Invoke(root) == true));
                 }
             }
 
@@ -1000,9 +1098,9 @@ public sealed class KnowledgeService(
             lock (_readings)
             {
                 if (onlyRoots is null) _readings.Clear();
-                foreach (var (repository, root, signature, commit) in taken)
+                foreach (var (repository, root, signature, commit, dirty) in taken)
                 {
-                    _readings[root] = new RootReading(repository, _refreshedAt, commit, signature);
+                    _readings[root] = new RootReading(repository, _refreshedAt, commit, signature, dirty);
                 }
             }
 

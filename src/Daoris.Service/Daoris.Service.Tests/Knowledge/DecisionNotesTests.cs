@@ -114,6 +114,25 @@ public sealed class DecisionNotesTests
                 + (mark.Quote is null ? "" : $" replacing {(mark.Target is null ? "none" : $"{id}:{mark.Target}")}")));
     }
 
+    /// <summary>
+    /// KNOWFRESH1a-ii: a host that holds a decision as entries (a fed one has no file) reads the same marks from its note
+    /// entries as the file's text gives, so a mark needs no field of its own on the wire. The entries are made as the
+    /// scanner makes them: each note's label line first in its body, its lines in the file.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(MarkedDecisions))]
+    public void The_marks_read_from_a_decision_s_note_entries_are_the_marks_of_its_text(string id)
+    {
+        var decision = MarkTable.GetProperty("decisions").EnumerateArray().Single(d => d.GetProperty("id").GetString() == id);
+        var text = Text(decision);
+        var (_, notes) = DecisionNotes.Split(text);
+        var entries = notes.Select(note => new KnowledgeEntry(
+            "r", EntryKind.Decision, Provenance.Local, $"{id} › {note.Label}", note.Body, $"docs/decisions/{id}.md",
+            note.Label, Lines: new LineSpan(note.First, note.Last))).Reverse().ToList();
+
+        Assert.Equal(DecisionNotes.Marks(text), DecisionNotes.Marks(entries));
+    }
+
     [Fact]
     public void The_mark_table_holds_each_form_of_mark_and_a_decision_with_none()
     {
