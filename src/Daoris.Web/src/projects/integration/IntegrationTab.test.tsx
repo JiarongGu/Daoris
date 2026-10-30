@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import i18n from '../../locales/i18n';
-import type { IntegrationLook } from '../../bridge/repositories/integration';
+import type { IntegrationLook } from '../../bridge/repositories/integrate';
 import { IntegrationTab } from './IntegrationTab';
 
 // INTEGRATE1h (the integration design §5.8): the Integration tab draws the queue, a candidate's fixed strip of steps with what holds it,

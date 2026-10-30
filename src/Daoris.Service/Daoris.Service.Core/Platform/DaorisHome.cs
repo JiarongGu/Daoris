@@ -332,6 +332,7 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
     public static readonly HomeEntry Landings = new("landings", HomeCategory.Data, "data/landings.json", "landings.json");
     public static readonly HomeEntry SessionBranches = new("session-branches", HomeCategory.Data, "data/session-branches.json", "session-branches.json");
     public static readonly HomeEntry LinesMoved = new("lines-moved", HomeCategory.Data, "data/lines-moved.json", "lines-moved.json");
+    public static readonly HomeEntry OverlapsTold = new("overlaps-told", HomeCategory.Data, "data/overlaps-told.json", "data/overlaps-told.json");
     public static readonly HomeEntry RegistryFollowed = new("registry-followed", HomeCategory.Data, "data/registry-followed.json", "registry-followed.json");
     public static readonly HomeEntry Abandoned = new("abandoned", HomeCategory.Data, "data/abandoned.json", "abandoned.json");
     public static readonly HomeEntry Update = new("update", HomeCategory.Data, "data/update.json", "update.json");
@@ -417,7 +418,7 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
     [
         DriverConfig, Harnesses, Accounts, Cooling, Windows, Reads, Permissions, RuleProposals, Tools, PluginState, Plugins,
         PluginApprovals, Usage,
-        Landings, SessionBranches, LinesMoved, RegistryFollowed, Abandoned, Update, Knowledge, DesktopDb, Sessions, Helpers, Partners, Handed, Setup,
+        Landings, SessionBranches, LinesMoved, OverlapsTold, RegistryFollowed, Abandoned, Update, Knowledge, DesktopDb, Sessions, Helpers, Partners, Handed, Setup,
         Workflows, HelpProposals, ConfiguredAccess, OpinionGates, OpinionDues, BrowserSettings, BrowserFavorites, HomeId, Brainstorms,
         UsageHistory, Keeping, Notices, GitIdentities, StandingConfirmation, AgentOffers, PipeWaiting,
         Keys, Remotes, AgentHomes, BrowserEngine, BrowserEdge, EdgeCookies, GitKeys, GitSshConfig, GitKnownHosts, GitConfig, Window, PipeSent,

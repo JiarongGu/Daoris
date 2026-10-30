@@ -42,7 +42,7 @@ public static class KeepRules
     /// <exception cref="DriverException">No kind the person sets has that id.</exception>
     public static KeepKind Kind(string? id) =>
         Settable.FirstOrDefault(kind => string.Equals(kind.Id, id?.Trim(), StringComparison.Ordinal))
-        ?? throw new DriverException($"`{id}` is no kind whose rule you set here: name {string.Join(", ", Settable.Select(kind => $"`{kind.Id}`"))} "
+        ?? throw new DriverException($"`{id}` is no kind whose rule you set here: name {string.Join(", ", Settable.Select(kind => $"`{kind.Id}`"))}, "
             + $"`{Allowance}` or `{Floor}`.");
 
     /// <summary>The allowance over the whole's word (KEEPSIZE1): set beside the kinds' rules, though it keeps no kind of its own.</summary>

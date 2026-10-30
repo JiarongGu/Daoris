@@ -292,6 +292,9 @@ public static class DriverCommand
               verify a branch or a commit of this checkout's repository: its declared gates run by the heavy executor as a
               verification run, holding the home's verification slot and the repository's heavy-run slot, the verdict kept
               with the run (FABRIC-PIPELINE1d).
+          integrate <repository> [--request <branch> | --drop <request> | --recheck | --decide <candidate> split|hand-back|land | --order <request> first|last]
+              a repository's integration as the window's Integration view draws it: what waits to land, in what order, and what
+              holds it. The acts (--request, --drop, --recheck, --decide, --order) are the owner's, Person routes in the window.
           heavy [<repository> [<name>=<command> [--cwd <folder>]… | --clear]]
               this machine's heavy gates for a repository whose own daoris.gates.json marks none, in the order they run:
               what run-heavy runs there, and what its sessions are told to run once, at their end. Kept here, never in
