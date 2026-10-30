@@ -17,8 +17,6 @@ namespace Daoris.Desktop.Driver.Tests;
 [Trait(Category.Name, Category.Process)]
 public sealed class CurveMoveDowngradeProcessTests : IAsyncLifetime
 {
-    private static readonly TimeSpan Wait = TimeSpan.FromSeconds(30);
-
     private readonly LiveLimitHarness _h = new("curve-move-downgrade");
 
     public Task InitializeAsync() => Task.CompletedTask;
@@ -100,7 +98,7 @@ public sealed class CurveMoveDowngradeProcessTests : IAsyncLifetime
 
         // The older build comes up: it takes no move up, and goes on as any ended record's words do.
         await _h.Runner(older: true).TakeUpAsync();
-        if (word) await Poll.Until(() => _h.Heard(LiveLimitHarness.Word) >= 1, _h.Seen, Wait);
+        if (word) await Poll.Until(() => _h.Heard(LiveLimitHarness.Word) >= 1, _h.Seen);
         await Task.Delay(1000);
         var standing = _h.MoveFrom("c1")!;
         Assert.True(standing.Stands, $"an older build's come-up leaves the move standing under its dead run: {_h.Seen()}");

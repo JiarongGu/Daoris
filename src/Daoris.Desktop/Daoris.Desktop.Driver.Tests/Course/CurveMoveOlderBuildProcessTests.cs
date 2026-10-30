@@ -18,8 +18,6 @@ namespace Daoris.Desktop.Driver.Tests;
 [Trait(Category.Name, Category.Process)]
 public sealed class CurveMoveOlderBuildProcessTests : IAsyncLifetime
 {
-    private static readonly TimeSpan Wait = TimeSpan.FromSeconds(30);
-
     private readonly LiveLimitHarness _h = new("curve-move-older");
 
     public Task InitializeAsync() => Task.CompletedTask;
@@ -46,7 +44,7 @@ public sealed class CurveMoveOlderBuildProcessTests : IAsyncLifetime
                 kept.AddRange(_h.Ledger.Said("c1"));
             },
             keep: new Dictionary<string, string>());
-        await Poll.Until(() => _h.MoveFrom("c1")?.PhaseWord == "closed", _h.Seen, Wait);
+        await Poll.Until(() => _h.MoveFrom("c1")?.PhaseWord == "closed", _h.Seen);
 
         // The open moved it: it waits on the new part never attempted, and the move's record names it; the move wrote no word.
         Assert.Equal(["k2"], kept);
@@ -64,8 +62,8 @@ public sealed class CurveMoveOlderBuildProcessTests : IAsyncLifetime
         _h.Config();
         var runner = _h.Runner();
         await runner.TakeUpAsync();
-        await Poll.Until(() => _h.Heard(After) >= 1, _h.Seen, Wait);
-        await Poll.Until(() => _h.Waiting().Count == 0, _h.Seen, Wait);
+        await Poll.Until(() => _h.Heard(After) >= 1, _h.Seen);
+        await Poll.Until(() => _h.Waiting().Count == 0, _h.Seen);
         await runner.TakeUpAsync();
         await _h.Runner().TakeUpAsync();
         await Task.Delay(1500);
@@ -125,7 +123,7 @@ public sealed class CurveMoveOlderBuildProcessTests : IAsyncLifetime
     public async Task An_older_builds_delayed_move_carries_its_copy_once_after_the_newer_move_moved_its_word_and_nothing_a_third_time()
     {
         var shell = await _h.RunCurveShellAsync(cut: null);
-        await Poll.Until(() => _h.MoveFrom("c1")?.PhaseWord == "closed", _h.Seen, Wait);
+        await Poll.Until(() => _h.MoveFrom("c1")?.PhaseWord == "closed", _h.Seen);
         Assert.Equal(1, _h.Briefed(shell));
 
         // The older move, late: its own successor of the old part, unkeyed, its copy of the word waiting there for its go-on.
@@ -136,8 +134,8 @@ public sealed class CurveMoveOlderBuildProcessTests : IAsyncLifetime
 
         var runner = _h.Runner();
         await runner.TakeUpAsync();
-        await Poll.Until(() => _h.Heard(LiveLimitHarness.Word) >= 2, _h.Seen, Wait);
-        await Poll.Until(() => _h.Waiting().Count == 0, _h.Seen, Wait);
+        await Poll.Until(() => _h.Heard(LiveLimitHarness.Word) >= 2, _h.Seen);
+        await Poll.Until(() => _h.Waiting().Count == 0, _h.Seen);
         await runner.TakeUpAsync();
         await Task.Delay(1500);
 
@@ -182,7 +180,7 @@ public sealed class CurveMoveOlderBuildProcessTests : IAsyncLifetime
     public async Task A_newer_shells_open_before_an_older_shells_resume_moves_the_word_and_the_resume_is_refused()
     {
         var shell = await _h.RunCurveShellAsync(cut: null);
-        await Poll.Until(() => _h.MoveFrom("c1")?.PhaseWord == "closed", _h.Seen, Wait);
+        await Poll.Until(() => _h.MoveFrom("c1")?.PhaseWord == "closed", _h.Seen);
 
         await Assert.ThrowsAsync<DriverException>(() => _h.Client.AdvanceAsync("c1", "working"));
 
@@ -193,7 +191,7 @@ public sealed class CurveMoveOlderBuildProcessTests : IAsyncLifetime
         _h.Kill();
         _h.Config();
         await _h.Runner().TakeUpAsync();
-        await Poll.Until(() => _h.Heard(LiveLimitHarness.Word) >= 1, _h.Seen, Wait);
+        await Poll.Until(() => _h.Heard(LiveLimitHarness.Word) >= 1, _h.Seen);
         await Task.Delay(1000);
 
         Assert.Equal((1, 1), (_h.Heard(LiveLimitHarness.Word), _h.HeardBy(LiveLimitHarness.Word, "account-2")));
