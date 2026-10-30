@@ -202,22 +202,31 @@ public sealed class AdapterTests
 
     /// <summary>
     /// The session is the harness's non-interactive mode, in the repository root, with the composed
-    /// target as its prompt. Edits auto-accept — reversible, in-repository, D37's middle — and
+    /// target as its prompt, which goes on its standard input and never in its arguments (AGENTLYNTAI1s-i: a process's arguments are
+    /// readable machine-wide). Edits auto-accept — reversible, in-repository, D37's middle — and
     /// everything else stays under the repository's own checked-in permission configuration: the
     /// adapter grants nothing an interactive session there would not have.
     /// </summary>
     [Fact]
-    public void Claude_code_spawns_headless_with_the_target_as_the_prompt()
+    public void Claude_code_spawns_headless_with_the_target_as_the_prompt_on_its_input()
     {
         var info = AdapterSet.Built().Resolve("claude-code").Prepare(Target(), command: null);
 
         Assert.Equal("claude", info.FileName);
         Assert.Equal("D:/fam/Game", info.WorkingDirectory);
-        Assert.Contains("-p", info.ArgumentList);
-        Assert.Contains(info.ArgumentList, a => a.Contains("#abc123"));
+        // Bare `-p` is print mode: the next word is a flag, never a prompt.
+        var print = info.ArgumentList.IndexOf("-p");
+        Assert.True(print >= 0 && info.ArgumentList[print + 1] == "--permission-mode", string.Join(' ', info.ArgumentList));
+        Assert.DoesNotContain(info.ArgumentList, a => a.Contains("#abc123"));
+        Assert.DoesNotContain(TargetPrompt.Compose(Target()), info.ArgumentList);
         var mode = info.ArgumentList.IndexOf("--permission-mode");
         Assert.True(mode >= 0 && info.ArgumentList[mode + 1] == "acceptEdits");
         Assert.Equal("abc123", info.Environment["DAORIS_QUEST_ID"]);
+        // Its input open, for the words to be written as BOM-less UTF-8 (a BOM would be the prompt's first character).
+        Assert.True(info.RedirectStandardInput);
+        Assert.NotNull(info.StandardInputEncoding);
+        Assert.Empty(info.StandardInputEncoding!.GetPreamble());
+        Assert.Equal(65001, info.StandardInputEncoding.CodePage);
     }
 
     /// <summary>A machine whose shim needs a path names it in the config, like any other command.</summary>
@@ -228,6 +237,22 @@ public sealed class AdapterTests
 
         Assert.Equal("C:/tools/claude.exe", info.FileName);
         Assert.Contains("-p", info.ArgumentList);
+    }
+
+    /// <summary>
+    /// AGENTLYNTAI1s-i: the resume's words are the standard input's too, so a person's answer is never an argument. The stub, which
+    /// takes its prompt where it always did, redirects nothing (<c>ProvidersBuiltTests</c> pins it); the chat is untouched.
+    /// </summary>
+    [Fact]
+    public void A_native_resume_carries_its_words_on_its_input_and_not_in_its_arguments()
+    {
+        var info = new ClaudeCodeAdapter().PrepareResume(Target(), ["claude"], "0b5e7c1a", "Port 8080. 端口 😀")!;
+
+        var print = info.ArgumentList.IndexOf("-p");
+        Assert.True(print >= 0 && info.ArgumentList[print + 1] == "--resume", string.Join(' ', info.ArgumentList));
+        Assert.DoesNotContain(info.ArgumentList, a => a.Contains("Port 8080."));
+        Assert.True(info.RedirectStandardInput);
+        Assert.Empty(info.StandardInputEncoding!.GetPreamble());
     }
 
     /// <summary>An adapter names a harness, never a model (D24) — which model answers is the

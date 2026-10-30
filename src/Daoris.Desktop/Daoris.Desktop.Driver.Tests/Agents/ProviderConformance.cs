@@ -240,7 +240,7 @@ internal static class ConformancePending
     /// <summary>The rows of the design's §11 a case can wait for: row a has landed, so none names it.</summary>
     public static IReadOnlyList<string> Rows { get; } =
     [
-        "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r",
+        "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "m-i", "m-ii", "n", "o", "p", "q", "r",
         "s-i", "s-ii", "s-iii", "s-iv", "s-v", "s-vi", "s-vii", "s-viii", "s-ix", "t", "u",
     ];
 

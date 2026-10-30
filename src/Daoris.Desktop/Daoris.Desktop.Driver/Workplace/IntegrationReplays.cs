@@ -14,6 +14,18 @@ internal sealed record IntegrationReplayAsk(string Repository, string Workspace,
     /// makes it (<c>TreeLands</c>): the request keeps no composed message yet (§5.2 step 1 freezes it, a later part writes it).
     /// </summary>
     public Func<IntegrationRequest, string>? Messages { get; init; }
+
+    /// <summary>
+    /// The say door a member's session is told through where its conflict goes to it (§5.4's <c>session</c>, INTEGRATE1e part e3b); null where
+    /// nothing here reaches a conversation, and the member is held for an act instead.
+    /// </summary>
+    public RebaseTelling.Say? Say { get; init; }
+
+    /// <summary>
+    /// The person's choices the acceptances of the generated folders' writers and the line rules are read from (as <c>BranchReplays</c> reads them);
+    /// null where they could not be read, and a resolve then writes nothing again and settles by no line rule, as with none accepted.
+    /// </summary>
+    public DriverConfig? Config { get; init; }
 }
 
 /// <summary>What a form-and-replay answered (<see cref="IntegrationReplayRuns"/>), in words, with the candidate and its members as they now stand.</summary>
@@ -68,8 +80,12 @@ internal static class IntegrationReplayRuns
 /// tip): the line holds it, whole, by ancestry or by D87 point 1's judgement (<see cref="LineHolds"/>), and it is settled at once; an earlier
 /// member's replay holds it, and it stays in the candidate, <c>contained</c> by that member and provisional. Otherwise the tip is merged
 /// <c>--no-ff</c> onto the candidate so far, as the merge tool's candidate merges it, so the merge commit's second parent is the frozen tip.
-/// A conflict is aborted, the tree is put back at the candidate so far, and the member is <c>conflict</c>, then handed back at its own step;
-/// the next member goes on (resolve and a conflict's modes are part e3b's).</para>
+/// Its conflicts are then resolved (<see cref="IntegrationResolves"/>, part e3b; §5.2 step 4) where the repository settles every conflicted
+/// path by a rule it declares, inside the same effect, so the merge commit is made once with the settled files in it. Any path left is a
+/// conflict of meaning: the merge is aborted, the tree is put back at the candidate so far, and the member is <c>conflict</c>, then goes by the
+/// request's <c>conflicts</c> at its own step (§5.4): <c>session</c> tells its session to rebase, keyed by the session and the frozen tip, and
+/// hands the member back with its request closed; <c>hold</c>, and a session that cannot be told, sets it aside as <c>held</c> with its request
+/// standing open. The next member goes on either way.</para>
 /// <para><b>Crash safety.</b> Every effect begins by putting the tree back at its recorded start (the candidate's tip so far, or its base) and
 /// ends in one store write under <see cref="IntegrationSteps.RunAsync"/>, so a step a crash cut, run again as the next attempt, leaves what
 /// the first made of the tree behind it. Nothing is written outside a step's end.</para>
@@ -82,8 +98,10 @@ internal sealed class IntegrationReplays(IntegrationStore store, string treesRoo
     private const string Reason = "Daoris's integration tree: kept warm between candidates and never removed while a run holds it";
 
     /// <summary>
-    /// A test's seam: called inside a member's replay effect once the merge is made and before its commit (<c>after-merge</c>), and once the
-    /// commit is made and before the step's end is written (<c>after-commit</c>), so a test can stop the process there. Production sets none.
+    /// A test's seam: called inside a member's replay effect once a clean merge is made (<c>after-merge</c>), once its conflicts are settled and
+    /// before its commit (<c>after-resolve</c>, passed by a clean merge too), and once the commit is made and before the step's end is written
+    /// (<c>after-commit</c>); and inside a member's conflict step once its session has been asked (<c>after-tell</c>), so a test can stop the
+    /// process there. Production sets none.
     /// </summary>
     internal Func<string, Task>? Seam { get; set; }
 
@@ -118,6 +136,12 @@ internal sealed class IntegrationReplays(IntegrationStore store, string treesRoo
 
         // The line's declaration is the rule's, which each request carries as it stood: the first request's is the line's.
         var batch = Math.Clamp(queued[0].Policy.Batch ?? 1, 1, LandingIntegrate.MaxBatch);
+        // A candidate the judge split (§5.3: its members run one at a time) is followed by one of a single member (INTEGRATE1e part e4a).
+        if (store.LastEnded(ask.Repository, ask.Line) is { } last && store.Steps(last.Id).LastOrDefault() is { Step: IntegrationStepNames.Judge, Outcome: IntegrationStepOutcomes.Split })
+        {
+            batch = 1;
+        }
+
         IntegrationFormed formed;
         try
         {
@@ -258,7 +282,7 @@ internal sealed class IntegrationReplays(IntegrationStore store, string treesRoo
     /// The tree put back at <paramref name="commit"/>, detached: a merge a crash cut aborted, what it changed reset, untracked files it made
     /// removed (ignored ones stay, as private files a gate reads do). Null where it is; else git's words.
     /// </summary>
-    private static async Task<string?> ResetAsync(string tree, string commit, CancellationToken ct)
+    internal static async Task<string?> ResetAsync(string tree, string commit, CancellationToken ct)
     {
         await WorkingTree.GitAsync(tree, ["merge", "--abort"], ct).ConfigureAwait(false);
         foreach (var arguments in new[]
@@ -316,16 +340,30 @@ internal sealed class IntegrationReplays(IntegrationStore store, string treesRoo
 
         // 3. The rest merged `--no-ff` onto the candidate so far, the second parent the frozen tip.
         var (merged, mergeOut, mergeErr) = await WorkingTree.GitAsync(tree, ["merge", "--no-ff", "--no-commit", request.Tip], ct).ConfigureAwait(false);
+        IReadOnlyList<string> paths = [];
         if (merged != 0)
         {
-            var (_, unmerged, _) = await WorkingTree.GitAsync(tree, ["--no-optional-locks", "diff", "--name-only", "--diff-filter=U"], ct).ConfigureAwait(false);
-            var paths = unmerged.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-            return await ConflictAsync(
-                tree, onto, member.Request,
-                paths.Length > 0 ? $"it conflicts in {Names(paths)}" : $"git would not merge it ({ContentHolds.Said(mergeErr.Length > 0 ? mergeErr : mergeOut)})", ct).ConfigureAwait(false);
+            paths = await UnmergedAsync(tree, ct).ConfigureAwait(false);
+            if (paths.Count == 0)
+            {
+                return await ConflictAsync(
+                    tree, onto, member.Request, $"git would not merge it ({ContentHolds.Said(mergeErr.Length > 0 ? mergeErr : mergeOut)})", ct).ConfigureAwait(false);
+            }
+        }
+        else if (Seam is { } afterMerge)
+        {
+            await afterMerge("after-merge").ConfigureAwait(false);
         }
 
-        if (Seam is { } afterMerge) await afterMerge("after-merge").ConfigureAwait(false);
+        // 4. Each conflict the repository settles by a rule it declares is settled, and the joins union left are set apart, in the same merge.
+        var resolved = await IntegrationResolves.ResolveAsync(
+            tree, ask.Root, ask.Repository, ask.Workspace, candidate.Base, onto, request.Tip, paths, ask.Config, ct).ConfigureAwait(false);
+        if (!resolved.Stands)
+        {
+            return await ConflictAsync(tree, onto, member.Request, resolved.Refused ?? $"it conflicts in {Names(resolved.Unsettled)}", ct).ConfigureAwait(false);
+        }
+
+        if (Seam is { } afterResolve) await afterResolve("after-resolve").ConfigureAwait(false);
         var message = ask.Messages?.Invoke(request) ?? $"Merge branch '{request.Branch}'";
         var (committed, _, commitErr) = await WorkingTree.GitAsync(tree, ["commit", "--quiet", "--no-verify", "-m", message], ct).ConfigureAwait(false);
         if (committed != 0)
@@ -339,7 +377,7 @@ internal sealed class IntegrationReplays(IntegrationStore store, string treesRoo
         var replayed = head.Trim();
         return new(IntegrationStepOutcomes.Done)
         {
-            Said = $"replayed {TextBounds.ShortCommit(request.Tip, 8)} onto {TextBounds.ShortCommit(onto, 8)}, as {TextBounds.ShortCommit(replayed, 8)}.",
+            Said = $"replayed {TextBounds.ShortCommit(request.Tip, 8)} onto {TextBounds.ShortCommit(onto, 8)}, as {TextBounds.ShortCommit(replayed, 8)}.{resolved.Said}",
             Tip = replayed,
             Members = [new IntegrationMemberChange(member.Request, IntegrationMemberStates.Replayed) { Replayed = replayed }],
         };
@@ -357,22 +395,101 @@ internal sealed class IntegrationReplays(IntegrationStore store, string treesRoo
     }
 
     /// <summary>
-    /// The conflict step (§5.2 step 5) as part e3a has it: the member handed back to its session with its words, its request closed, and the
-    /// next member goes on. The tree is put back again at the candidate so far, since a conflict is only ever handed back from it. Resolving
-    /// where every conflicted path is mechanical, and the conflict's modes (<c>session</c>, <c>hold</c>), are part e3b's.
+    /// The conflict step (§5.2 step 5; §5.4): a conflict of meaning goes by the member's request's <c>conflicts</c>, the word it carries as the
+    /// rule stood when it was asked, never read again. <c>session</c> tells the member's session to rebase onto the line in the landing's own
+    /// words, through the say door under the key <see cref="RebaseKeys.Of"/> gives the session and the frozen tip, so a tip is told once, and
+    /// hands the member back with its request closed, for the session's next landing to request again. <c>hold</c>, and a session that cannot be
+    /// told (no session, no door, a door that kept nothing), sets the member aside as <see cref="IntegrationMemberStates.Held"/>: its request stays
+    /// open, shown with the conflict, and nothing else waits. The landing agent is a later design's (§5.4). The tree is put back again at the
+    /// candidate so far, since a conflict is only ever handed from it.
     /// </summary>
+    /// <remarks>
+    /// The telling is <see cref="RebaseTelling.TellAsync"/>, not <see cref="LandCarry"/>: the carry-on belongs to a person's kept Accept on the
+    /// session and counts against its bound, which a candidate's member has none of; the rebase words and their per-tip key are the ones §5.4
+    /// names. A crash after the words went and before the end is written runs this step again and says them again at the same key, which the door
+    /// keeps once.
+    /// </remarks>
     private async Task<IntegrationStepEnd> HandBackEffectAsync(IntegrationClaim claim, IntegrationMember member, IntegrationReplayAsk ask, string tree, CancellationToken ct)
     {
         var candidate = store.Candidate(claim.Candidate)!;
-        if (await ResetAsync(tree, candidate.Tip ?? candidate.Base, ct).ConfigureAwait(false) is { } notReset) return Held(notReset);
-        var why = $"handed back to its session: {member.Said ?? "its merge did not go"}.";
-        return new(IntegrationStepOutcomes.HandedBack)
+        var request = store.Request(member.Request)!;
+        var onto = candidate.Tip ?? candidate.Base;
+        if (await ResetAsync(tree, onto, ct).ConfigureAwait(false) is { } notReset) return Held(notReset);
+        var members = store.Members(candidate.Id);
+        var conflict = member.Said ?? "its merge did not go";
+
+        var held = $"conflicts: {LandingIntegrate.Hold}";
+        if (request.Policy.Conflicts != LandingIntegrate.Hold)
         {
-            Said = why,
-            Members = [new IntegrationMemberChange(member.Request, IntegrationMemberStates.HandedBack) { Said = why, Ends = true }],
-            Closes = [new IntegrationRequestClose(member.Request, IntegrationRequestCloses.HandedBack)],
-            Ends = EndIfNothingLeft(store.Members(candidate.Id), member.Request),
+            held = request.Session is not { Length: > 0 } session ? "it has no session to tell"
+                : ask.Say is not { } say ? "nothing here reaches its conversation"
+                : "";
+            if (held.Length == 0)
+            {
+                var said = await TellAsync(ask, request, request.Session!, tree, candidate, member, members, ct).ConfigureAwait(false);
+                if (Seam is { } afterTell) await afterTell("after-tell").ConfigureAwait(false);
+                if (said is { Kept: true })
+                {
+                    var why = $"handed back to its session, which was asked to rebase onto `{ask.Line}`: {conflict}.";
+                    return new(IntegrationStepOutcomes.HandedBack)
+                    {
+                        Said = why,
+                        Members = [new IntegrationMemberChange(member.Request, IntegrationMemberStates.HandedBack) { Said = why, Ends = true }],
+                        Closes = [new IntegrationRequestClose(member.Request, IntegrationRequestCloses.HandedBack)],
+                        Ends = EndIfNothingLeft(members, member.Request),
+                    };
+                }
+
+                held = $"its session `{request.Session}` could not be asked to rebase ({(said is null ? "nothing here reaches its conversation" : said.Message).TrimEnd('.')})";
+            }
+        }
+
+        var setAside = $"held for the steward's or the owner's act ({held}): {conflict}.";
+        return new(IntegrationStepOutcomes.Done)
+        {
+            Said = setAside,
+            Members = [new IntegrationMemberChange(member.Request, IntegrationMemberStates.Held) { Said = setAside }],
+            Ends = EndIfNothingLeft(members, member.Request),
         };
+    }
+
+    /// <summary>
+    /// The rebase words for a member's conflict, said to its session: the files and what met them found again by merging the frozen tip onto the
+    /// candidate so far and resolving as the replay did (nothing is written, and the tree is put back after), else the conflict's own sentence.
+    /// </summary>
+    private async Task<SayAnswer?> TellAsync(
+        IntegrationReplayAsk ask, IntegrationRequest request, string session, string tree, IntegrationCandidate candidate, IntegrationMember member,
+        IReadOnlyList<IntegrationMember> members, CancellationToken ct)
+    {
+        var onto = candidate.Tip ?? candidate.Base;
+        var conflicts = member.Said ?? "its merge did not go";
+        var (merged, _, _) = await WorkingTree.GitAsync(tree, ["merge", "--no-ff", "--no-commit", request.Tip], ct).ConfigureAwait(false);
+        if (merged != 0 && await UnmergedAsync(tree, ct).ConfigureAwait(false) is { Count: > 0 } paths)
+        {
+            var resolved = await IntegrationResolves.ResolveAsync(
+                tree, ask.Root, ask.Repository, ask.Workspace, candidate.Base, onto, request.Tip, paths, ask.Config, ct).ConfigureAwait(false);
+            if (resolved.Unsettled.Count > 0)
+            {
+                var earlier = members
+                    .Where(each => each is { Stands: true, State: IntegrationMemberStates.Replayed, Replayed: not null } && each.Position < member.Position)
+                    .Select(each => (Branch: store.Request(each.Request)?.Branch ?? each.Request, Replayed: each.Replayed!))
+                    .ToList();
+                conflicts = await IntegrationConflicts.DescribeAsync(tree, candidate.Base, request.Tip, resolved.Unsettled, earlier, ct).ConfigureAwait(false);
+            }
+        }
+
+        // The tree goes back before the words go: a crash after them finds it at the candidate so far, as every step's effect begins.
+        if (await ResetAsync(tree, onto, ct).ConfigureAwait(false) is { } notReset) return new SayAnswer(false, notReset);
+        var words = new LandingConflict(conflicts, LandingSyncWords.Rebase(ask.Line, [], conflicts));
+        return await RebaseTelling.TellAsync(ask.Say!, session, request.Tip, words, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>The paths a merge in progress left unmerged, as git names them; none where it could not say.</summary>
+    private static async Task<IReadOnlyList<string>> UnmergedAsync(string tree, CancellationToken ct)
+    {
+        var (listed, unmerged, _) = await WorkingTree.GitAsync(
+            tree, ["--no-optional-locks", "-c", "core.quotePath=false", "diff", "--name-only", "--diff-filter=U"], ct).ConfigureAwait(false);
+        return listed != 0 ? [] : [.. unmerged.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)];
     }
 
     /// <summary>

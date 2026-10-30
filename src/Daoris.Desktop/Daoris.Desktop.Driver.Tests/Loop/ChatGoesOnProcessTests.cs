@@ -790,7 +790,10 @@ public sealed class ChatGoesOnProcessTests : IDisposable
                 if (text === 'hold') {
                   held.push(frame.id);
                   if (mode === 'finish-on-signal') {
+                    // PROCLEAK1: bound by Poll.Patience, so a stand-in whose test was killed ends and polls no more.
+                    const until = Date.now() + 120000;
                     const timer = setInterval(() => {
+                      if (Date.now() > until) process.exit(3);
                       if (existsSync(heard + '.finish')) { clearInterval(timer); held.shift(); answer(frame.id, 'end_turn'); }
                     }, 10);
                   }

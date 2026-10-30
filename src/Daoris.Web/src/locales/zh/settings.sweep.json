@@ -38,5 +38,14 @@
   "settings.sweep.landed.kind.aheadOfRemote": "{{count}} 个提交不在它的远程分支上。",
   "settings.sweep.landed.kind.aheadOfRemote_other": "{{count}} 个提交不在它的远程分支上。",
   "settings.sweep.landed.kind.leanedOn": "会话分支 `{{where}}` 仍依赖它。",
-  "settings.sweep.landed.kind.unknown": "git 无法判断，因此保留。"
+  "settings.sweep.landed.kind.unknown": "git 无法判断，因此保留。",
+  "settings.sweep.landed.standing": "落地于 {{when}}。",
+  "settings.sweep.landed.standingClosed": "落地于 {{when}}；它的委托 #{{quest}} 已关闭。",
+  "settings.sweep.landed.withdraw": "撤回…",
+  "settings.sweep.landed.withdrawTitle": "撤回 {{branch}}",
+  "settings.sweep.landed.withdrawSays": "撤回 {{repository}} 中的 `{{branch}}`：主线永远不会采纳它的工作。它的提交会保留在一个恢复引用上，你给出的原因会与它的记录一起保存。",
+  "settings.sweep.landed.withdrawWhy": "主线为什么永远不会采纳它",
+  "settings.sweep.landed.withdrawMeanIt": "撤回分支",
+  "settings.sweep.landed.withdrawn": "已撤回 {{repository}} 中的 `{{branch}}`。",
+  "settings.sweep.landed.withdrawnKept": "已撤回 {{repository}} 中的 `{{branch}}`。它的提交保留在 `{{ref}}` 上。"
 }

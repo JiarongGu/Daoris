@@ -57,7 +57,10 @@ public sealed class DriverWatch(
     SessionEvents? events = null,
     // Daoris's own browser (D78), where a shell carries one. Null in the headless host, where a server
     // that drives it is not handed.
-    IInAppBrowser? browser = null)
+    IInAppBrowser? browser = null,
+    // The adapters every look's driver and the default roster are built over (AGENTPROVIDER1m-i, the agent-layer design §6.3 point 1): the
+    // seam the parity oracle builds a look over for either path. Null is today's, `AdapterSet.Built()`.
+    AdapterSet? adapters = null)
 {
     private CancellationTokenSource _pause = new();
 
@@ -73,8 +76,14 @@ public sealed class DriverWatch(
     // still ends that wait (DEV3): looks are short now, and a person's control nudges the loop often.
     private int _nudges;
 
+    /// <summary>
+    /// The adapters this loop runs on (AGENTPROVIDER1m-i): the set it was handed, or the built one. Each static read on a look's path reads
+    /// names alone (<c>AdapterSet.Built().Names</c>), as <c>ChatRunner</c>'s plugin catalogue does, so a set handed in is the one that runs.
+    /// </summary>
+    private readonly AdapterSet _adapters = adapters ?? AdapterSet.Built();
+
     /// <summary>This machine's harnesses, as the loop sees them — also what a roster surface reads.</summary>
-    private readonly HarnessRoster _harnesses = harnesses ?? new HarnessRoster(AdapterSet.Built(), HarnessSettings.ResolvePath(home));
+    private readonly HarnessRoster _harnesses = harnesses ?? new HarnessRoster(adapters ?? AdapterSet.Built(), HarnessSettings.ResolvePath(home));
 
     /// <inheritdoc cref="_harnesses"/>
     public HarnessRoster Harnesses => _harnesses;
@@ -654,7 +663,7 @@ public sealed class DriverWatch(
             // FABRIC-END7's review: the wakes this look's landing judges with, put back unless it did judge with them.
             var taken = _landing.Take(whole: part == LookPart.Look);
             var driver = new Driver(
-                    service, draining ? InstallUpdate.Drained(config) : config, AdapterSet.Built(), home, processes, sync, output,
+                    service, draining ? InstallUpdate.Drained(config) : config, _adapters, home, processes, sync, output,
                     _harnesses, usage, hooks, events, browser, Running)
                 {
                     Runner = Runner, Stops = Stops, HandsOver = HandsOver, SendsBack = SendsBack, GoesOnLost = GoesOnLost, Log = Log, Noticed = Noticed, Stages = Stages, Reviews = Reviews,
@@ -750,6 +759,13 @@ public sealed class DriverWatch(
                         // A record the sweep ended concludes too (LAND2b, design §2): one whose quest its session closed done
                         // before the crash is due, and this first look lands it.
                         await OrphansDueAsync(orphans, config, ct).ConfigureAwait(false);
+                        // FOUNDATION1f-iv part b (the foundation design §3.3): a loop that died with a carry-on's move standing is taken up here, at the
+                        // slot where uncertain words are settled and before it, so the move says the `lost` note of a word it moved and never sent, and
+                        // the carry-ons the look plans are no longer held by it. Through a driver's holder, whose scope is the lease holder's.
+                        await Stages.TimeAsync(
+                            "moves",
+                            () => new Driver(service, config, _adapters, home, processes, sync, output, _harnesses, usage, hooks, events, browser, Running)
+                                { Log = Log }.TakeUpMovesAsync(ct)).ConfigureAwait(false);
                         // COWORK1c (the message-urgency design §6, trap 8): the words a shell before this one wrote to its agent and never
                         // took off leave their records, said where their conversation never showed them taken, and are never sent again.
                         carried.AddRange(await Stages.TimeAsync("uncertain", () => UncertainWords.SettleAsync(service, events, ct, Lines)).ConfigureAwait(false));

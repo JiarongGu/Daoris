@@ -88,7 +88,11 @@ public sealed partial class SweepStateSliceTests : DriverModuleBridge
     public void Every_field_the_list_writes_is_classed_and_every_field_the_page_reads_is_pushed()
     {
         var item = new SweepItem("engine", "w1", "daoris/s-1", Tree("engine"), SweepKind.Unlanded, 1, "main", "a1b2c3d the work");
-        var landed = new LandedItem("engine", "w1", "feature/x", LandedKind.Differs, "origin/main", ["a.txt"], "git said", "https://example.test/pr/7", 2);
+        // LANDRETIRE1 part 2: its age and its quest's closing are pushed, so the Branches tab names them as the terminal's list does.
+        var landed = new LandedItem("engine", "w1", "feature/x", LandedKind.Differs, "origin/main", ["a.txt"], "git said", "https://example.test/pr/7", 2)
+        {
+            LandedAt = At, Quest = "q2", QuestClosed = true,
+        };
         var session = new SessionRecord("s-1", "engine", "failed") { Tree = Tree("engine") };
 
         var route = FieldsOf(Written(LinesRoutes.SweepRow(item, session)), "branch")
@@ -99,6 +103,8 @@ public sealed partial class SweepStateSliceTests : DriverModuleBridge
 
         Assert.Contains("session.state", route);
         Assert.Contains("landed.pullRequest", route);
+        Assert.Contains("landed.landedAt", route);
+        Assert.Contains("landed.questClosed", route);
         Assert.All(route, field => Assert.True(pushed.Contains(field) || SweepStateSlice.PulledOnly.Contains(field), $"`{field}` is neither pushed nor the pull's"));
         Assert.Equal(pushed.Order(StringComparer.Ordinal), route.Distinct().Where(pushed.Contains).Order(StringComparer.Ordinal));
 

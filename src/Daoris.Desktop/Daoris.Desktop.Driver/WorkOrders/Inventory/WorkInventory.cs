@@ -370,6 +370,9 @@ public static partial class WorkInventory
                         LandedGone.Missing => $"removed outside Daoris; git said it is missing {Minute(went)} UTC",
                         LandedGone.Moved => $"went {Minute(went)} UTC outside Daoris; `{landing.MovedTo}` holds its recorded commit",
                         LandedGone.Stands => $"went {Minute(went)} UTC; a branch of its name stands that is not the landing's",
+                        // LANDRETIRE1: Daoris's own act on the person's word, with the reason it was given and where its commits stay.
+                        LandedGone.Withdrawn => $"withdrawn {Minute(went)} UTC: {landing.GoneWhy ?? "no reason kept"}"
+                            + (landing.KeptOn is { } recovery ? $"; its commits stay on `{recovery}`" : ""),
                         _ => $"went {Minute(went)} UTC",
                     };
                 entries.Add(new InventoryEntry(draft.Id, InventoryKind.LandingBranch, landing.Branch, InventoryRole.Temporary, InventoryDisposition.Removed,
@@ -379,6 +382,15 @@ public static partial class WorkInventory
             {
                 entries.Add(new InventoryEntry(draft.Id, InventoryKind.LandingBranch, landing.Branch, InventoryRole.Temporary, InventoryDisposition.Pending,
                     $"the line holds it ({ProofSaid(line.By, line.On)}); the look's tidy removes it"));
+            }
+            else if (LandedStanding.Stale(landing, facts.ClosedQuests, facts.Now))
+            {
+                // LANDRETIRE1 part 2: its quest is closed and the line has not held it for a day, which no clean-up of Daoris's ends: the
+                // person says whether the work comes yet, or withdraws it (LandedWithdrawals), so it waits on them with the code the page words.
+                entries.Add(Coded(draft.Id, InventoryKind.LandingBranch, landing.Branch, InventoryCode.LandingStale,
+                    [("branch", landing.Branch), ("quest", landing.Quest!), ("since", Moments.Write(LandedStanding.Since(landing)))],
+                    $"its quest #{landing.Quest} is closed and the line has not held it for {LandedStanding.Age(facts.Now - landing.LandedAt)}, "
+                    + "so the clean-up keeps it; the Branches page of its workspace withdraws it if the line will never take its work"));
             }
             else
             {
@@ -598,10 +610,22 @@ public static partial class WorkInventory
         if (draft.Branch is { GoneAt: null } standing)
         {
             return new MilestoneEnd(WorkEndState.NotEnded, null, null, null, null,
-                $"`{last.Branch}` was removed outside Daoris, and its session branch `{standing.Branch}` still stands, so it is kept");
+                $"`{last.Branch}` was {(last.GoneAs == LandedGone.Withdrawn ? "withdrawn" : "removed outside Daoris")}, and its session branch `{standing.Branch}` still stands, so it is kept");
         }
 
         var kept = draft.Landings.Select(landing => landing.KeptOn).OfType<string>().ToList();
+        // LANDRETIRE1: withdrawn on a word, the person's or the steward's, that the line will never hold its work: dropped, with its commits kept and
+        // its reason said; git said nothing of it, and Daoris does not claim the line holds anything.
+        if (last.GoneAs == LandedGone.Withdrawn)
+        {
+            return new MilestoneEnd(WorkEndState.Dropped, null, null, last.Tip, at,
+                $"`{last.Branch}` was withdrawn {Minute(at)} UTC on the word that the line will never hold its work: {last.GoneWhy ?? "no reason kept"}. "
+                + (kept.Count > 0
+                    ? $"Its commits stay on {string.Join(", ", kept.Select(each => $"`{each}`"))} until you delete that ref; "
+                    : "")
+                + "Daoris does not claim the line holds them");
+        }
+
         return new MilestoneEnd(WorkEndState.Dropped, null, null, last.Tip, at,
             $"`{last.Branch}` was removed outside Daoris, and git said it is missing {Minute(at)} UTC: the person's end of it. "
             + (kept.Count > 0

@@ -241,6 +241,7 @@ public static class DriverCommand
               goes to the running Daoris's window to confirm where one runs, and is made here where none does; an add
               over an installed plugin replaces it here alone; `plugin --help` says each verb's words.
           trees [list | remove <path|session|branch> [--repository <name>] [--force]
+                | remove <landing branch> [--repository <name>] --why "…" [--plan]
                 | clean [--workspace <name>] [--yes] | land <session> [--plan] [--branch <name>]
                 | land --entry <id> | --ask <id> [--leave-out <session>]... [--plan]
                 | hand <session|branch> [--repository <name>] [--plugin <id>] [--plan]
@@ -248,7 +249,9 @@ public static class DriverCommand
                 | state <session|branch> [--repository <name>]
                 | sync [--repository <name>] [--workspace <name>] [--all] [--yes]]
               this machine's session trees and the branches its landings made; remove takes a failed or
-              superseded attempt's branch, with its tree where it is still here, on --force; state asks a
+              superseded attempt's branch, with its tree where it is still here, on --force, and a branch a landing
+              made whose work the line will never hold is withdrawn with --why, its commits kept on a recovery ref
+              and its record saying why (--plan says what it would do); state asks a
               landed branch's plugin again whether its pull request completed, and says what that proves here;
               sync brings each repository up to date after a pull request merged, listed first (it fetches,
               never pushes): those holding Daoris's branches, every one with --all. For clean and sync,

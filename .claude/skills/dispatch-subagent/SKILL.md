@@ -44,8 +44,10 @@ Decision number: D<n>, reserved for this branch: write docs/decisions/D<n>.md. (
 How you work: edit files only with Edit and Write, never through python, sed, perl, cat/printf redirection or any
 shell redirect (a hook refuses them; that includes appending a decision note); write
 each failing test first and RUN it to watch it fail before writing the code (a compile failure is a red: run it),
-and say which you saw fail; commit each piece once its tests pass. A component's sources changed on a later day than
-its README asks the README to describe the change (the docs gate). New words on the page run `src/locales`' tests too:
+and say which you saw fail; commit each piece once its tests pass. Records stay short: a decision's note says what was
+decided and why in at most 150 words, each reading one sentence; the tests run, their counts and times go in the hand-back
+and the commit message, never the note. A README changes only where the component's shape changed, never a sentence per
+part: the docs gate compares by day, so a README already touched that day keeps up. New words on the page run `src/locales`' tests too:
 `names:check --strict` does not hold a sentence's glossary words, `names.test.ts` does (WORKFLOW1h-d's 这台机器).
 Run only your own tests, filtered (the ones you add or change and those covering the code you change), and the quick
 checks before hand-back; never a whole project, a fast half, the web's whole suite or `npm run verify`: the CI beside
@@ -80,6 +82,7 @@ current entry.
 | `branch-worker`, one lane, the pack names the change exactly | build-exact |
 | `branch-worker`, a row whose design is accepted: UI, more than one lane, deletion or concurrency the design decided | build-settled |
 | `branch-worker`, writing a design or a decision, answering a design's reads, a row whose design is the work | build-judgement |
+| A read of a design, a decision or a risky merge by another maker | decide-support or review |
 
 The worker's definition names the model most rows take (build-settled, Sonnet); a build-judgement dispatch passes
 `model: opus` and the role's effort. A dispatch that passes no `model` runs the definition's: on 2026-10-30 every builder of
@@ -87,7 +90,26 @@ a batch ran on Opus because the definition still named it, though the reference 
 days before. The worker's definition also fixes `isolation: worktree`, which a dispatch cannot turn off, so each worker
 gets a fresh tree; a finished worker's tree cannot be handed to the next one, and it goes with the prune once its branch
 is in main.
-| A read of a design, a decision or a risky merge by another maker | decide-support or review |
+
+The queue's invocation carries the Daoris home whose machine admission it shares (`DAORIS_HOME`, the install's on this
+machine): the tool reads it once at its start for the admission alone and hands it to no gate (INTEGRATE1a, F20), and
+without it the confirm run cannot hold the whole admission, so every confirm run reads inconclusive and a failure that
+would not recur hands the batch back (2026-10-30: three candidates lost so, before the home was given).
+
+A builder runs before it hands back the checks a candidate runs that its lines reach, not only its own classes: on
+2026-10-30 three candidates of one batch went red on checks no member's builder had run (the mark census, `optional-locks`,
+`test-map --check`'s hand rows, the pack-safety read of the CLI package, a route answer's pinned field list, and the
+page's twins of a driver code list). Its brief names them: `node tools/optional-locks.mjs`, `node tools/test-map.mjs
+--check`, the driver's `ParticipantWorkReadersTests`, `ContinuedReadersCensusTests`, `SystemWiringTests`,
+`ProviderCensusTests` (a new file naming a door's wire), `GitLaunchTests` and `ProcessStartsCensusTests` (a new process
+start) and `LineCourseTests` (a case added to a ported suite), and for a new code in a list the page copies, the page's twin
+test. A Process or Git class that calls what the builder changed is its own to run too, found by searching the test projects for the
+changed method's name, not by the class's name: batch s's candidate failed `CommandShimTests`, a Process class that prepares a
+driven start, after a member moved that start's prompt onto its input, and two more candidate failures that day were tests reading
+a path or a prompt no builder searched for. Before a batch is queued, the parent runs the driver's, the modules' and the service's fast halves whole on it: on
+2026-10-30 that found batch s's three census misses before a candidate did. The parent, running a class with `--no-build`, builds that
+class's own project first: a build of another project leaves the test assembly stale, and twice that day it read as a
+red that was not there.
 
 Measure each batch (step 8) against the reference's targets, note the numbers under D160, and move the reference when
 they say so. A trial candidate takes one or two rows of its role in a batch. Daoris's managed sessions take the same roles

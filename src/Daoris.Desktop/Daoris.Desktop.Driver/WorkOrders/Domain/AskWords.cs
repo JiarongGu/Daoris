@@ -25,6 +25,27 @@ public sealed record AskWords(string Ask, IReadOnlyList<AskWordView>? Said, Date
     /// </summary>
     private const string SenderPrefix = AskSender.Prefix;
 
+    /// <summary>
+    /// These words with the person's moved words a driven carry-on has handed its new part and not yet taken (FOUNDATION1f-iv part b), as the
+    /// service's take keeps them on the ask once made: each the person's that reopened the work, said to the new session. The take now waits
+    /// for the door's write of the prompt this instruction is, so the ask cannot yet hold them and the instruction would lose them; a twin of
+    /// the service's rule (<c>/api/sessions/{id}/taken</c>), duplicated deliberately. Unread words, and a word the ask already holds, are left as
+    /// they are.
+    /// </summary>
+    /// <param name="moved">The words the open moved onto the new part, as it holds them.</param>
+    /// <param name="session">The new part, which the take names as the one that took them.</param>
+    /// <param name="quest">The quest the new part works on.</param>
+    internal AskWords WithMoved(IEnumerable<SaidWordView> moved, string session, string quest)
+    {
+        if (Said is not { } said) return this;
+        var kept = moved
+            .Where(word => word is { Reopens: true, Persons: true })
+            .Where(word => !said.Any(held => held.Kind == AskWordView.Reopened && held.Text == word.Text && held.At == word.At))
+            .Select(word => new AskWordView(AskWordView.Reopened, word.Text, word.At, session, quest))
+            .ToList();
+        return kept.Count == 0 ? this : this with { Said = [.. said.Concat(kept).OrderBy(word => word.At)] };
+    }
+
     /// <summary>Words the service did not answer: unreachable, refused, unparsable, an ask it does not hold, or a host from before them.</summary>
     public static AskWords Unread(string ask) => new(ask, null);
 

@@ -2189,11 +2189,22 @@ public sealed class ClaudeCodeAdapter : ISessionAdapter
     {
         var resolved = Resolve(command);
         var arguments = resolved.Skip(1)
-            .Concat(["-p", TargetPrompt.Compose(target), "--permission-mode", DrivenMode(target)])
+            .Concat(["-p", "--permission-mode", DrivenMode(target)])
             .Concat(target.Asked?.NativeArguments(resolved) ?? [])
             .Concat(StreamJsonOut);
 
-        return Spawning.InRoot(target, resolved[0], arguments);
+        return PromptOnInput(Spawning.InRoot(target, resolved[0], arguments, redirectInput: true));
+    }
+
+    /// <summary>
+    /// The prompt goes on the harness's standard input under a bare <c>-p</c> (AGENTLYNTAI1s-i, <see cref="NativePrompt"/>): a process's
+    /// arguments are readable machine-wide. The input is written as BOM-less UTF-8, because a byte order mark would be the prompt's
+    /// first character, and the harness's own default for a pipe is not Daoris's to guess.
+    /// </summary>
+    private static ProcessStartInfo PromptOnInput(ProcessStartInfo info)
+    {
+        info.StandardInputEncoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
+        return info;
     }
 
     /// <summary>
@@ -2217,19 +2228,21 @@ public sealed class ClaudeCodeAdapter : ISessionAdapter
     public bool Resumes => true;
 
     /// <summary>
-    /// <c>claude -p &lt;answer&gt; --resume &lt;id&gt;</c>, with the posture and the structured output a start has. The answer is
-    /// the conversation's next turn as it is: the conversation already holds the target, so it is not sent again.
+    /// <c>claude -p --resume &lt;id&gt;</c>, with the posture and the structured output a start has. The answer is
+    /// the conversation's next turn as it is: the conversation already holds the target, so it is not sent again. It goes on the
+    /// harness's input, never in its arguments (AGENTLYNTAI1s-i): the driver writes <paramref name="prompt"/> there as it starts
+    /// the run (<see cref="NativePrompt"/>).
     /// 🔴 The flag is the maker's documented one, not yet run on this machine by a driven session (design §6).
     /// </summary>
     public ProcessStartInfo PrepareResume(SessionTarget target, IReadOnlyList<string>? command, string conversation, string prompt)
     {
         var resolved = Resolve(command);
         var arguments = resolved.Skip(1)
-            .Concat(["-p", prompt, "--resume", conversation, "--permission-mode", DrivenMode(target)])
+            .Concat(["-p", "--resume", conversation, "--permission-mode", DrivenMode(target)])
             .Concat(target.Asked?.NativeArguments(resolved) ?? [])
             .Concat(StreamJsonOut);
 
-        return Spawning.InRoot(target, resolved[0], arguments);
+        return PromptOnInput(Spawning.InRoot(target, resolved[0], arguments, redirectInput: true));
     }
 
     /// <summary>

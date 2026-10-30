@@ -201,6 +201,29 @@ public sealed class LandedBranches(string home)
             : each)];
     });
 
+    /// <summary>
+    /// The withdrawal's write (LANDRETIRE1, <see cref="LandedWithdrawals"/>, its only caller): that standing landing becomes a trace saying it was
+    /// withdrawn, why, and the recovery ref its commits stay on. Applied to that landing alone (<see cref="SameLanding"/>), so a new landing of
+    /// the same name keeps its standing, and never over a trace, which is never judged again (D113).
+    /// </summary>
+    /// <returns>Whether it was written.</returns>
+    internal bool Withdrawn(LandedBranch entry, string why, string keptOn)
+    {
+        var wrote = false;
+        Edit(all =>
+        {
+            var now = DateTimeOffset.UtcNow;
+            wrote = false;
+            return [.. all.Select(each =>
+            {
+                if (each.GoneAt is not null || !SameLanding(each, entry)) return each;
+                wrote = true;
+                return each with { GoneAt = now, GoneAs = LandedGone.Withdrawn, GoneWhy = why, KeptOn = keptOn, MovedTo = null, MovedToAt = null };
+            })];
+        });
+        return wrote;
+    }
+
     /// <summary>The same landing as <paramref name="entry"/>: its identity (<see cref="SameEntry"/>) and the tip it was observed at.</summary>
     private static bool SameLanding(LandedBranch each, LandedBranch entry) =>
         SameEntry(each, entry) && string.Equals(each.Tip, entry.Tip, StringComparison.OrdinalIgnoreCase);
@@ -327,6 +350,8 @@ public sealed class LandedBranches(string home)
             if (entry.MovedTo is not null) writer.WriteString("movedTo", entry.MovedTo);
             if (entry.MovedToAt is not null) writer.WriteString("movedToAt", entry.MovedToAt);
             if (entry.KeptOn is not null) writer.WriteString("keptOn", entry.KeptOn);
+            // LANDRETIRE1: only where a withdrawal said why, so a trace from before reads as it did.
+            if (entry.GoneWhy is not null) writer.WriteString("goneWhy", entry.GoneWhy);
             if (entry.AcceptedBy is not null) writer.WriteString("acceptedBy", entry.AcceptedBy);
             if (entry.Rule is { } rule)
             {
@@ -663,6 +688,7 @@ public sealed class LandedBranches(string home)
             MovedTo = Text(element, "movedTo"),
             MovedToAt = Text(element, "movedToAt"),
             KeptOn = Text(element, "keptOn"),
+            GoneWhy = Text(element, "goneWhy"),
             AcceptedBy = Text(element, "acceptedBy"),
             Rule = element.TryGetProperty("rule", out var rule) && rule.ValueKind == JsonValueKind.Object
                 ? new LandedRule(

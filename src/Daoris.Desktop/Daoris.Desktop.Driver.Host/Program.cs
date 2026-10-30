@@ -230,6 +230,7 @@ using Daoris.Driver;
 //                 the session worktrees this machine has grown (D51): list them, or remove one, or a session's
 //                 branch by the session or the branch (LAND3) —
 //                 refusing while it holds uncommitted changes or unmerged commits, unless forced —
+//                 or withdraw a branch a landing made whose work the line will never hold, on --why (LANDRETIRE1) —
 //                 or list every session branch and, with --yes, remove the empty and landed (D88),
 //                 or accept a session's work as the review's Accept does, by the workspace's rule (D87),
 //                 or bring each repository up to date after its pull request merged (WSR6, D109). The clean-up

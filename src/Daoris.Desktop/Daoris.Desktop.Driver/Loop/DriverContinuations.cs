@@ -1100,12 +1100,17 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
     /// (<see cref="HandedMovedAsync"/>), never taken off <paramref name="record"/> by the ids it was read with. Null for an open that moved
     /// nothing, against a host whose <c>opens</c> mark is below 2 or that keeps none, which takes them off the record as before.
     /// </param>
+    /// <param name="delivery">
+    /// The carry-on's move record (FOUNDATION1f-iv), where it keeps one and its fence was written: told the moved words it hands and the take of
+    /// them, which the door's write of the prompt carrying them makes after it writes their <c>sent</c> (part b); the move then closes
+    /// <c>delivered</c>. Null for a start that keeps none, a hand-over's among them (row f-v's), and the take is made here, before the spawn.
+    /// </param>
     /// <returns>The words the open moved and the new session was handed, as it holds them; null where they were taken off the record as before.</returns>
     internal async Task<IReadOnlyList<SaidWordView>?> HandedOnAsync(
         PriorSession record, string to, ContinueReason why, CancellationToken ct, bool resumed = false, bool switched = false,
-        DestinationOpen? opened = null)
+        DestinationOpen? opened = null, CarryOnRecord? delivery = null)
     {
-        if (MovedWords.Moving(opened)) return await HandedMovedAsync(record, to, why, opened!, ct, resumed, switched).ConfigureAwait(false);
+        if (MovedWords.Moving(opened)) return await HandedMovedAsync(record, to, why, opened!, ct, resumed, switched, delivery).ConfigureAwait(false);
         if (!record.WordsWaiting) return null;
 
         var output = _context.Output;
@@ -1170,7 +1175,8 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
     /// wait on it, for its own go-on.
     /// </summary>
     private async Task<IReadOnlyList<SaidWordView>> HandedMovedAsync(
-        PriorSession record, string to, ContinueReason why, DestinationOpen opened, CancellationToken ct, bool resumed, bool switched)
+        PriorSession record, string to, ContinueReason why, DestinationOpen opened, CancellationToken ct, bool resumed, bool switched,
+        CarryOnRecord? delivery)
     {
         var output = _context.Output;
         StaysWithPerson(record, why, Hands(resumed, switched));
@@ -1178,6 +1184,8 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
         if (moved is null)
         {
             output?.Append(to, "— the words moved to this session could not be read here, so they wait on it.");
+            // FOUNDATION1f-iv part b: the prompt carries none of them, so none is `sent`: the move ends by its phase now, as before the door's write.
+            if (delivery is not null) await delivery.EndAsync().ConfigureAwait(false);
             return [];
         }
 
@@ -1194,9 +1202,26 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
             _context.Events.Keep(record.Session, note, say: null);
         }
 
-        if (!await moved.TakeAsync(_context.Service, ct).ConfigureAwait(false))
+        if (delivery is null)
         {
-            output?.Append(to, "— the words moved to this session could not be taken off it, so they still wait on it.");
+            if (!await moved.TakeAsync(_context.Service, ct).ConfigureAwait(false))
+            {
+                output?.Append(to, "— the words moved to this session could not be taken off it, so they still wait on it.");
+            }
+        }
+        else
+        {
+            // FOUNDATION1f-iv part b: the take waits for the door's write of the prompt that carries the words, which is where each has `sent`
+            // (§19.4, O7-F5); a run that never writes it ends the record by its phase and the words wait on the new part, none taken.
+            delivery.Handed(
+                [.. opened.Moved.Where(word => moved.Ids.Contains(word.Id, StringComparer.Ordinal)).Select(word => word.Transfer)],
+                async () =>
+                {
+                    if (!await moved.TakeAsync(_context.Service, CancellationToken.None).ConfigureAwait(false))
+                    {
+                        output?.Append(to, "— the words moved to this session could not be taken off it, so they still wait on it.");
+                    }
+                });
         }
 
         return moved.Words;
@@ -1371,6 +1396,7 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
                     lineageHome: _context.Home),
                     sessionId, adapter.Name, resume: null)
                 : null;
+            await NativePrompt.WriteAsync(process, adapter, NativeWords.Prompt(words), ct).ConfigureAwait(false);
             exitCode = await _driver.WaitAsync(process, ct).ConfigureAwait(false);
             // State E (SESSWATCH1a): the capture bounded past the exit, as the first run's is.
             if (capture is not null && await _driver.CaptureWithinAsync(capture, sessionId).ConfigureAwait(false)
@@ -1411,6 +1437,7 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
                 prompt: null, ct, append: true, said: said, own: own, lineageHome: _context.Home),
                 sessionId, keepAs, resume)
             : null;
+        await NativePrompt.WriteAsync(process, adapter, resume.Prompt, ct).ConfigureAwait(false);
         var exitCode = await _driver.WaitAsync(process, ct).ConfigureAwait(false);
         // State E (SESSWATCH1a): the capture bounded past the exit, as the first run's is.
         return (exitCode, capture is null || !await _driver.CaptureWithinAsync(capture, sessionId).ConfigureAwait(false)

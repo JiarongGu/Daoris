@@ -1128,6 +1128,15 @@ public sealed class QuestStore
                 """;
             await trigger.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
         }
+
+        // FOUNDATION1 row k part 2 (D212, the foundation design §4.1): each operation kept is one `quest-op` row of the event journal, minted by
+        // a trigger in the statement that appends it, so every writer mints it. The journal's table is made here too, so a store opened alone
+        // never has a trigger writing to a table that is not there.
+        await using (var journal = _db.Command())
+        {
+            journal.CommandText = EventJournal.QuestLogSchema;
+            await journal.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+        }
     }
 
     /// <summary>

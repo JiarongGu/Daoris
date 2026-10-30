@@ -284,6 +284,29 @@ public sealed class DesktopStore : IDisposable
             CREATE UNIQUE INDEX integration_steps_open ON integration_steps (candidate) WHERE ended_at IS NULL;
             CREATE INDEX integration_steps_of ON integration_steps (candidate, id);
             """)),
+
+        // INTEGRATE1e part e4b: a superseded member's pending disposition (the integration design §5.7), Workplace's. A new table an older
+        // store-aware build never opens, so the stamp stays where it is and the step runs at the first start. One row for each superseded commit
+        // of a request, written in the settle step's own end, so the member settling and its work being kept in view are one write; it stays
+        // pending (no `answered_at`) until the session, the steward or the owner answers it. `reference` is the recovery ref under
+        // `refs/daoris/discarded/` the member's branch work is kept on, `by_commit` the line's commit that superseded it. Migration 8 is the
+        // next branch's (FOUNDATION1w-s); this one is 7.
+        new(7, WriterStamp, write => write.Execute(
+            """
+            CREATE TABLE integration_dispositions (
+              request     TEXT NOT NULL REFERENCES integration_requests (id),
+              commit_id   TEXT NOT NULL,
+              candidate   TEXT NOT NULL REFERENCES integration_candidates (id),
+              reference   TEXT NOT NULL,
+              by_commit   TEXT NOT NULL,
+              files       TEXT NOT NULL,
+              subject     TEXT NOT NULL,
+              at          TEXT NOT NULL,
+              answered_at TEXT,
+              PRIMARY KEY (request, commit_id)
+            );
+            CREATE INDEX integration_dispositions_pending ON integration_dispositions (at) WHERE answered_at IS NULL;
+            """)),
     ];
 
     /// <summary>

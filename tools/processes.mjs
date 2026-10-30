@@ -157,6 +157,36 @@ export const stopProcesses = (pids) => (pids.length === 0 ? '' : powershell(
   `Get-Process -Id ${pids.join(',')} -ErrorAction SilentlyContinue | ForEach-Object { ${CLOSE} }`));
 
 /**
+ * Process rows as `{ pid, ppid, command }`, the malformed left out: `rows` is `pid|parent|command line` per line (what
+ * {@link processList} asks of Windows), `ps` is `ps -A -o pid= -o ppid= -o args=`'s columns.
+ */
+export function parseProcessRows(text, form) {
+  return String(text ?? '').split('\n').map((line) => line.replace(/\r$/, '').trim()).filter(Boolean).flatMap((line) => {
+    const match = form === 'ps' ? /^(\d+)\s+(\d+)\s+(.*)$/.exec(line) : /^(\d+)\|(\d+)\|(.*)$/.exec(line);
+    const [pid, ppid] = match ? [Number(match[1]), Number(match[2])] : [0, 0];
+    return pid > 0 ? [{ pid, ppid, command: match[3] }] : [];
+  });
+}
+
+/**
+ * Every process on the machine as `{ pid, ppid, command }`, read and changing nothing (PROCLEAK1's census). Null where the list
+ * could not be read, so a failed read is never taken for an empty machine.
+ */
+/** The longest a read of the machine's process list may take: a loaded machine's CIM query took tens of seconds, and a census waits for it. */
+const LIST_TIMEOUT_MS = 90_000;
+
+export function processList({ platform = process.platform, run = spawnSync } = {}) {
+  if (platform === 'win32') {
+    const asked = run('powershell', ['-NoProfile', '-Command',
+      'Get-CimInstance Win32_Process -ErrorAction SilentlyContinue | ForEach-Object { "$($_.ProcessId)|$($_.ParentProcessId)|$($_.CommandLine)" }'],
+    { encoding: 'utf8', windowsHide: true, timeout: LIST_TIMEOUT_MS });
+    return asked.status === 0 && asked.stdout ? parseProcessRows(asked.stdout, 'rows') : null;
+  }
+  const asked = run('ps', ['-A', '-o', 'pid=', '-o', 'ppid=', '-o', 'args='], { encoding: 'utf8', timeout: LIST_TIMEOUT_MS });
+  return asked.status === 0 && asked.stdout ? parseProcessRows(asked.stdout, 'ps') : null;
+}
+
+/**
  * End what a killed process left running (FAMILYFAIL1): every process `parent` started, at or after `since` (epoch
  * milliseconds), each with everything it started in turn. Answers the pids it ended.
  *

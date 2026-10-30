@@ -345,6 +345,71 @@ public sealed class IntegrationStoreTests : IDisposable
         Assert.Equal(["r1", "r2"], store.Queued("engine", "main").Select(each => each.Id));
     }
 
+    /// <summary>
+    /// INTEGRATE1e part e3b (§5.4, <c>conflicts: hold</c>): a member whose conflict is held stands in its candidate in its own state, its request
+    /// open and said, and the candidate goes on without it; the request is no longer queued once it is held, even after the candidate ends, since
+    /// it waits for the steward's or the owner's act and a queue that took it up again would form it, conflict and hold it for ever.
+    /// </summary>
+    [Fact]
+    public void A_member_held_for_its_conflict_keeps_its_request_open_and_out_of_the_queue_after_its_candidate_ends()
+    {
+        var store = WithRequests("run-a", 2);
+        var formed = store.Form(Forming("r1", "r2"));
+        store.End(formed.Claim!, formed.Step!.Id, new IntegrationStepEnd(IntegrationStepOutcomes.Done)
+        {
+            Tip = Tip,
+            Members =
+            [
+                new IntegrationMemberChange("r1", IntegrationMemberStates.Held) { Said = "it conflicts in a.txt: held for an act." },
+                new IntegrationMemberChange("r2", IntegrationMemberStates.Replayed) { Replayed = Tip },
+            ],
+        });
+
+        var held = store.Members(formed.Candidate.Id).Single(each => each.Request == "r1");
+        Assert.Contains(IntegrationMemberStates.Held, IntegrationMemberStates.All);
+        Assert.Equal((IntegrationMemberStates.Held, true, "it conflicts in a.txt: held for an act."), (held.State, held.Stands, held.Said));
+        Assert.Null(store.Request("r1")!.ClosedAt);
+
+        var step = store.Begin(formed.Claim!, IntegrationStepNames.Settle);
+        store.End(formed.Claim!, step.Id, new IntegrationStepEnd(IntegrationStepOutcomes.Held) { Ends = IntegrationCandidateEnds.FormedAgain });
+
+        // The candidate's end ended the member, and the request still stands open: neither queued again nor closed.
+        Assert.False(store.Members(formed.Candidate.Id).Single(each => each.Request == "r1").Stands);
+        Assert.Null(store.Request("r1")!.ClosedAt);
+        Assert.Equal(["r2"], store.Queued("engine", "main").Select(each => each.Id));
+    }
+
+    /// <summary>
+    /// INTEGRATE1e part e4a: a step ends <c>split</c> where the judge ran the candidate's members one at a time, a word added beside the six, so
+    /// an older row is read as it was; the line's last ended candidate is read back by its end, which is how the next form knows to take one
+    /// member.
+    /// </summary>
+    [Fact]
+    public void A_split_ending_is_a_word_beside_the_six_and_the_lines_last_ended_candidate_is_read_back()
+    {
+        var store = WithRequests("run-a", 2);
+        Assert.Null(store.LastEnded("engine", "main"));
+        var formed = store.Form(Forming("r1", "r2"));
+        Assert.Null(store.LastEnded("engine", "main"));
+        store.End(formed.Claim!, formed.Step!.Id, new IntegrationStepEnd(IntegrationStepOutcomes.Done) { Tip = Tip });
+
+        var judge = store.Begin(formed.Claim!, IntegrationStepNames.Judge);
+        store.End(formed.Claim!, judge.Id, new IntegrationStepEnd(IntegrationStepOutcomes.Split) { Said = "run one at a time.", Ends = IntegrationCandidateEnds.FormedAgain });
+
+        Assert.Equal(["done", "promoted", "held", "handed-back", "stopped", "interrupted"], IntegrationStepOutcomes.All.Take(6));
+        Assert.Equal("split", IntegrationStepOutcomes.All[6]);
+        var last = store.LastEnded("engine", "main")!;
+        Assert.Equal((formed.Candidate.Id, IntegrationCandidateEnds.FormedAgain), (last.Id, last.EndedWhy));
+        Assert.Equal(IntegrationStepOutcomes.Split, store.Steps(last.Id).Last().Outcome);
+        Assert.Equal(["r1", "r2"], store.Queued("engine", "main").Select(each => each.Id));
+
+        // The next candidate ends later: it is the last ended, and another line's candidate is none of this line's.
+        var next = store.Form(Forming("r1"));
+        store.End(next.Claim!, next.Step!.Id, new IntegrationStepEnd(IntegrationStepOutcomes.Stopped) { Ends = IntegrationCandidateEnds.Stopped });
+        Assert.Equal(next.Candidate.Id, store.LastEnded("engine", "main")!.Id);
+        Assert.Null(store.LastEnded("engine", "release"));
+    }
+
     [Fact]
     public void Each_candidate_has_one_job_of_its_own_named_by_it_and_no_two_candidates_share_one()
     {
@@ -484,6 +549,101 @@ public sealed class IntegrationStoreTests : IDisposable
 
         // An ended candidate takes no step.
         Assert.Throws<IntegrationRefusedException>(() => store.Begin(claim, IntegrationStepNames.Tidy));
+    }
+
+    // ——— A superseded member's pending disposition (INTEGRATE1e part e4b; §5.7).
+
+    private static IntegrationDisposition Disposition(string request, string commit = "c1") =>
+        new(request, commit, "refs/daoris/discarded/feature/q1-fix", "b1", ["a.txt"], "work made after the request froze");
+
+    /// <summary>A candidate of r1 and r2 promoted, its settle begun.</summary>
+    private (IntegrationStore Store, IntegrationClaim Claim, IntegrationStep Settle) Promoted()
+    {
+        var store = WithRequests("run-a", 2);
+        var claim = store.Form(Forming("r1", "r2")).Claim!;
+        store.End(claim, store.OpenStep(claim.Candidate)!.Id, new IntegrationStepEnd(IntegrationStepOutcomes.Done) { Tip = Tip });
+        var promote = store.Begin(claim, IntegrationStepNames.Promote, lineCommit: Line);
+        store.End(claim, promote.Id, new IntegrationStepEnd(IntegrationStepOutcomes.Promoted) { Promoted = true });
+        return (store, claim, store.Begin(claim, IntegrationStepNames.Settle));
+    }
+
+    private static IntegrationStepEnd Settling(params IntegrationDisposition[] kept) => new(IntegrationStepOutcomes.Done)
+    {
+        Members =
+        [
+            new IntegrationMemberChange("r1", IntegrationMemberStates.Settled) { Ends = true },
+            new IntegrationMemberChange("r2", IntegrationMemberStates.Settled) { Ends = true },
+        ],
+        Closes = [new IntegrationRequestClose("r1", IntegrationRequestCloses.Settled), new IntegrationRequestClose("r2", IntegrationRequestCloses.Settled)],
+        Dispositions = kept,
+    };
+
+    [Fact]
+    public void A_settling_end_keeps_a_superseded_commit_s_pending_disposition_in_the_same_transaction_as_its_member_settling()
+    {
+        var (store, claim, settle) = Promoted();
+        var revision = Revision();
+
+        store.End(claim, settle.Id, Settling(Disposition("r1"), Disposition("r1", "c2")));
+
+        Assert.Equal(revision + 1, Revision());
+        var kept = store.Dispositions("r1");
+        Assert.Equal(["c1", "c2"], kept.Select(each => each.Commit));
+        Assert.All(kept, each => Assert.Equal(
+            (claim.Candidate, "refs/daoris/discarded/feature/q1-fix", "b1", "work made after the request froze", true, (DateTimeOffset?)null),
+            (each.Candidate, each.Reference, each.By, each.Subject, each.Pending, each.AnsweredAt)));
+        Assert.Equal(["a.txt"], kept[0].Files);
+        Assert.Empty(store.Dispositions("r2"));
+        Assert.Equal(2, store.Pending().Count);
+        // Settled, and still standing: only the close step ends the candidate.
+        Assert.True(store.Candidate(claim.Candidate)!.Stands);
+        Assert.All(store.Members(claim.Candidate), each => Assert.Equal(IntegrationMemberStates.Settled, each.State));
+    }
+
+    [Fact]
+    public void An_end_written_again_is_the_first_end_s_and_writes_no_second_disposition_and_an_answer_leaves_the_row_but_not_the_pending_list()
+    {
+        var (store, claim, settle) = Promoted();
+        store.End(claim, settle.Id, Settling(Disposition("r1")));
+        var revision = Revision();
+
+        store.End(claim, settle.Id, Settling(Disposition("r1"), Disposition("r1", "c2")));
+
+        Assert.Equal(revision, Revision());
+        Assert.Equal(["c1"], store.Dispositions("r1").Select(each => each.Commit));
+
+        Assert.True(store.Answer("r1", "c1"));
+        Assert.False(store.Answer("r1", "c1"));
+        Assert.False(store.Answer("r1", "c9"));
+        Assert.Empty(store.Pending());
+        var answered = Assert.Single(store.Dispositions("r1"));
+        Assert.False(answered.Pending);
+        Assert.NotNull(answered.AnsweredAt);
+    }
+
+    [Fact]
+    public void A_disposition_for_a_request_the_candidate_does_not_hold_refuses_the_whole_end_and_writes_nothing()
+    {
+        var (store, claim, settle) = Promoted();
+        Assert.Null(store.Add(Request("r3", "feature/q3-fix")));
+        var revision = Revision();
+
+        Assert.Throws<IntegrationRefusedException>(() => store.End(claim, settle.Id, Settling(Disposition("r1"), Disposition("r3"))));
+
+        Assert.Equal(revision, Revision());
+        Assert.True(store.OpenStep(claim.Candidate)!.Open);
+        Assert.Empty(store.Pending());
+        Assert.Null(store.Request("r1")!.ClosedAt);
+        Assert.All(store.Members(claim.Candidate), each => Assert.Equal(IntegrationMemberStates.Formed, each.State));
+    }
+
+    [Fact]
+    public void A_home_with_no_store_has_no_pending_disposition_and_the_read_makes_none()
+    {
+        Assert.Empty(Store("run-a").Pending());
+        Assert.Empty(Store("run-a").Dispositions("r1"));
+        Assert.False(File.Exists(Db));
+        Assert.False(Store("run-a").Answer("r1", "c1"));
     }
 
     [Fact]

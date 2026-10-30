@@ -58,6 +58,13 @@ public static class LandedGone
     /// Read only where the end judgement kept no end first (CLEANUP1b, <see cref="EndKeeping.KeepGoneAsync"/>): a line that holds it ends it.
     /// </summary>
     public const string Moved = "moved";
+
+    /// <summary>
+    /// The person, or the steward, withdrew it (LANDRETIRE1, <see cref="LandedWithdrawals"/>): the line will never hold its work, so Daoris
+    /// took the branch away on their word, kept its commits on a recovery ref (<see cref="LandedBranch.KeptOn"/>) and the reason beside
+    /// them (<see cref="LandedBranch.GoneWhy"/>). Daoris's own act, never the person's removal outside it, and never an end the line proved.
+    /// </summary>
+    public const string Withdrawn = "withdrawn";
 }
 
 /// <param name="Where">On the line: the form of the line it was proven on (`main`, `origin/main`). Inside: the branch it is inside. Leaned on: the session branch.</param>
@@ -91,6 +98,18 @@ public sealed record LandedItem(
     /// plugin not ready, or the occasion's bound reached first. Null where it was asked, was not due, or its work reads on the line.
     /// </summary>
     public PullRequestNotAsked? NotAsked { get; init; }
+
+    /// <summary>When the landing recorded this branch (LANDRETIRE1 part 2), the age a row says; null where a row was made from no record.</summary>
+    public DateTimeOffset? LandedAt { get; init; }
+
+    /// <summary>The quest the landing is named for, where it names one.</summary>
+    public string? Quest { get; init; }
+
+    /// <summary>
+    /// Whether the service says <see cref="Quest"/> is closed (<see cref="LandedStanding.IsClosed"/>), as the caller read it once; false where it
+    /// was not read, so a row never says a quest closed on no answer.
+    /// </summary>
+    public bool QuestClosed { get; init; }
 }
 
 /// <summary>What the clean-up did with one landed branch, in the driver's words.</summary>
@@ -123,7 +142,10 @@ public static class LandedWords
     public static string Describe(LandedItem item) => Proof(item)
         + (item.Removable ? "" : PullRequestWords.Row(item.State, item.StateCode, item.AskFailed, item.NotAsked));
 
-    private static string Proof(LandedItem item) => $"{item.Repository}  {item.Branch}  " + item.Kind switch
+    private static string Proof(LandedItem item) => $"{item.Repository}  {item.Branch}  " + Clause(item);
+
+    /// <summary>What proved a row or keeps it, with no repository or branch before it (LANDRETIRE1): a refusal says it after its own subject.</summary>
+    public static string Clause(LandedItem item) => item.Kind switch
     {
         LandedKind.OnLine => $"its pull request reached `{item.Where}`: every file it changed reads there as it left it",
         LandedKind.Merged => $"merged into `{item.Where}`",
@@ -137,6 +159,27 @@ public static class LandedWords
         LandedKind.LeanedOn => $"session branch `{item.Where}` still leans on it",
         _ => $"git could not tell: {item.Detail}",
     };
+
+    /// <summary>
+    /// How long a row the line does not hold has stood, and whether its quest is closed (LANDRETIRE1 part 2): <c>; landed 29 hours ago, and
+    /// its quest #q2 is closed</c>, to say after <see cref="Describe"/>. Nothing where the line holds it (it goes by its proof) or the
+    /// record gave no moment.
+    /// </summary>
+    public static string Standing(LandedItem item, DateTimeOffset now)
+    {
+        if (item.Removable || item.LandedAt is not { } at) return "";
+        var age = $"; landed {LandedStanding.Age(now - at)} ago";
+        return item.QuestClosed && item.Quest is { Length: > 0 } quest ? $"{age}, and its quest #{quest} is closed" : age;
+    }
+
+    /// <summary>
+    /// The door that withdraws a row whose files still differ on the line (LANDRETIRE1, <see cref="LandedWithdrawals"/>), said under it: the
+    /// one way past the clean-up, which keeps such a branch for ever. Null for a row the clean-up already takes or keeps for another reason.
+    /// </summary>
+    public static string? Door(LandedItem item) => item.Kind == LandedKind.Differs
+        ? $"if the line will never hold its work: `daoris-driver trees remove {item.Branch} --repository {item.Repository} --why \"…\" [--plan]` "
+            + "withdraws it, keeping its commits on a recovery ref"
+        : null;
 }
 
 /// <summary>
@@ -152,9 +195,10 @@ internal sealed class LandedCleanups(
     /// The clean-up's list (D88, WSR5): every session branch with what it holds, then every branch a landing
     /// made and recorded, with whether its work reached the line. Nothing is changed.
     /// </summary>
+    /// <param name="closedQuests">The quests the service says are closed, which a row's quest is read against (LANDRETIRE1 part 2); none, none is said closed.</param>
     internal async Task<SweepPlan> CleanPlanAsync(
         IEnumerable<(string Repository, string? Workspace, string? Root)> repositories, IReadOnlySet<string> inUse,
-        CancellationToken ct = default)
+        CancellationToken ct = default, IReadOnlySet<string>? closedQuests = null)
     {
         var known = repositories.ToList();
         // One look: git is asked each checkout's line once, not by each of the three readers below (UIFREEZE1).
@@ -167,7 +211,7 @@ internal sealed class LandedCleanups(
             landedMayGo: true, ct).ConfigureAwait(false);
 
         var sessions = await sweeps.SweepPlanAsync(known, inUse, ct).ConfigureAwait(false);
-        return new(sessions, await LandedPlanAsync(known, sessions, asked, ct).ConfigureAwait(false));
+        return new(sessions, await LandedPlanAsync(known, sessions, asked, ct, closedQuests).ConfigureAwait(false));
     }
 
     /// <summary>
@@ -178,15 +222,17 @@ internal sealed class LandedCleanups(
     /// Nothing is changed.
     /// </summary>
     /// <param name="inUse">The trees sessions still running or waiting name, as the service's answers the facts hold say.</param>
+    /// <param name="closedQuests">The quests the service says are closed, as the facts' part reads them (LANDRETIRE1 part 2); none, none is said closed.</param>
     internal async Task<SweepPlan> SweepPartAsync(
-        string repository, string? workspace, string root, IReadOnlySet<string> inUse, CancellationToken ct = default)
+        string repository, string? workspace, string root, IReadOnlySet<string> inUse, CancellationToken ct = default,
+        IReadOnlySet<string>? closedQuests = null)
     {
         IReadOnlyList<(string Repository, string? Workspace, string? Root)> one = [(repository, workspace, root)];
         // One look at the checkout's line for both halves (UIFREEZE1), as the person's look takes.
         using var look = context.OneLook();
         var sessions = await sweeps.SweepPlanAsync(one, inUse, ct).ConfigureAwait(false);
         // Nothing was asked, so a row says only what holds whatever the occasion: no plugin pushed it and the rule names none.
-        return new(sessions, await LandedPlanAsync(one, sessions, [], ct).ConfigureAwait(false));
+        return new(sessions, await LandedPlanAsync(one, sessions, [], ct, closedQuests).ConfigureAwait(false));
     }
 
     /// <summary>
@@ -198,7 +244,7 @@ internal sealed class LandedCleanups(
     /// <param name="asked">What the occasion asked and heard; none where nothing was asked (<see cref="SweepPartAsync"/>).</param>
     private async Task<List<LandedItem>> LandedPlanAsync(
         IReadOnlyList<(string Repository, string? Workspace, string? Root)> known, IReadOnlyList<SweepItem> sessions,
-        IReadOnlyList<StateAnswer> asked, CancellationToken ct)
+        IReadOnlyList<StateAnswer> asked, CancellationToken ct, IReadOnlySet<string>? closedQuests = null)
     {
         var record = context.Recorded.All();
         var config = context.Config();
@@ -214,7 +260,12 @@ internal sealed class LandedCleanups(
             var judged = await JudgeLandedAsync(root, repository, RemoteTarget.Workspace(workspace), entries, staying, stale: null, ct)
                 .ConfigureAwait(false);
             // Each row says why its pull request was not asked about, where it would have been (PLUGHOOK1c, design §2.1).
-            landed.AddRange(judged.Select(each => each.Item with { NotAsked = NotAskedOf(each.Item, asked, config) }));
+            // LANDRETIRE1 part 2: and whether its quest is closed, as the caller read the service once.
+            landed.AddRange(judged.Select(each => each.Item with
+            {
+                NotAsked = NotAskedOf(each.Item, asked, config),
+                QuestClosed = each.Item.Quest is { } quest && closedQuests?.Contains(quest) == true,
+            }));
         }
 
         return landed;
@@ -528,6 +579,8 @@ internal sealed class LandedCleanups(
                     State = entry.PullRequestState,
                     StateCode = verdict is { Clears: false } ? verdict.Code : null,
                     AskFailed = entry.PullRequestAskFailed,
+                    LandedAt = entry.LandedAt,
+                    Quest = entry.Quest,
                 },
                 tip)
             {
@@ -690,6 +743,8 @@ internal sealed class LandedCleanups(
         {
             State = entry.PullRequestState,
             AskFailed = entry.PullRequestAskFailed,
+            LandedAt = entry.LandedAt,
+            Quest = entry.Quest,
         }, "");
 
     /// <summary>

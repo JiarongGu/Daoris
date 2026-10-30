@@ -79,7 +79,7 @@ public static class CycleChoices
         else
         {
             var kept = CompactOrRefuse(graph);
-            if (NodeGraphs.Read(kept).Problems is [var first, ..]) throw new DriverException(first.Words);
+            if (NodeGraphs.Read(kept, onSave: true).Problems is [var first, ..]) throw new DriverException(first.Words);
             kinds[kind] = kept;
         }
 

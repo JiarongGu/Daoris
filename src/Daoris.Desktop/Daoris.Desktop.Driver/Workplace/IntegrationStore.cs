@@ -43,6 +43,9 @@ public sealed class IntegrationStore(
     /// <summary>The store's step that made the family: a store before it holds no integration.</summary>
     private const int Since = 6;
 
+    /// <summary>The store's step that made the pending dispositions' table (INTEGRATE1e part e4b): a store before it holds none.</summary>
+    private const int DispositionsSince = 7;
+
     /// <summary>SQLite's refusal of a row a unique index already holds.</summary>
     private const int UniqueRefused = 2067;
 
@@ -127,7 +130,9 @@ public sealed class IntegrationStore(
         Reading(reader => reader.Query($"SELECT {RequestColumns} FROM integration_requests WHERE closed_at IS NULL ORDER BY at, id", MapRequest), []);
 
     /// <summary>
-    /// A line's queue (§5.2 step 2's input): its repository's open requests for it that stand in no candidate, in the order admitted.
+    /// A line's queue (§5.2 step 2's input): its repository's open requests for it that stand in no candidate, in the order admitted. A request
+    /// whose member was held for its conflict (<see cref="IntegrationMemberStates.Held"/>, §5.4) is not queued: it waits for the steward's or the
+    /// owner's act, and queued again it would be formed, conflict and be held in every candidate for ever.
     /// </summary>
     public IReadOnlyList<IntegrationRequest> Queued(string repository, string line) =>
         Reading(reader => reader.Query(
@@ -135,9 +140,10 @@ public sealed class IntegrationStore(
             SELECT {RequestColumns} FROM integration_requests r
             WHERE r.repository = $repository COLLATE NOCASE AND r.line = $line AND r.closed_at IS NULL
               AND NOT EXISTS (SELECT 1 FROM integration_members m WHERE m.request = r.id AND m.ended_at IS NULL)
+              AND NOT EXISTS (SELECT 1 FROM integration_members h WHERE h.request = r.id AND h.state = $held)
             ORDER BY r.at, r.id
             """,
-            MapRequest, ("$repository", repository), ("$line", line)), []);
+            MapRequest, ("$repository", repository), ("$line", line), ("$held", IntegrationMemberStates.Held)), []);
 
     /// <summary>
     /// Close an open request that stands in no candidate (its requester's drop, before it is formed); whether it was open. A request standing
@@ -258,6 +264,17 @@ public sealed class IntegrationStore(
                 MapCandidate, ("$repository", repository), ("$line", line))
             .FirstOrDefault(), null);
 
+    /// <summary>
+    /// The candidate of a repository's line that ended last, or null where none has (INTEGRATE1e part e4a): what the next form reads to know the
+    /// last one was split, so it takes one member. Read by the end's own moment; the later formed of two that ended together.
+    /// </summary>
+    public IntegrationCandidate? LastEnded(string repository, string line) =>
+        Reading(reader => reader.Query(
+                $"SELECT {CandidateColumns} FROM integration_candidates WHERE repository = $repository COLLATE NOCASE AND line = $line AND ended_at IS NOT NULL "
+                + "ORDER BY ended_at DESC, formed_at DESC, rowid DESC LIMIT 1",
+                MapCandidate, ("$repository", repository), ("$line", line))
+            .FirstOrDefault(), null);
+
     /// <summary>Every standing candidate, oldest first: what a come-up reads to resume.</summary>
     public IReadOnlyList<IntegrationCandidate> Standing() =>
         Reading(reader => reader.Query($"SELECT {CandidateColumns} FROM integration_candidates WHERE ended_at IS NULL ORDER BY formed_at, id", MapCandidate), []);
@@ -313,6 +330,36 @@ public sealed class IntegrationStore(
         }
 
         static Unwritten Refused(IntegrationCandidate? found, string why) => new(new IntegrationTaken(found, null, why));
+    }
+
+    // ——— A superseded member's pending dispositions (§5.7).
+
+    /// <summary>Every disposition a request has, pending and answered, in the order they were kept; none where the home has no store or one from before them.</summary>
+    public IReadOnlyList<IntegrationDisposition> Dispositions(string request) =>
+        Reading(reader => reader.Query(
+            "SELECT request, commit_id, candidate, reference, by_commit, files, subject, at, answered_at FROM integration_dispositions "
+            + "WHERE request = $request ORDER BY at, rowid", MapDisposition, ("$request", request)), [], DispositionsSince);
+
+    /// <summary>
+    /// Every disposition no one has answered yet, oldest first: visible on the Integration view and the session's head until the session, the
+    /// steward or the owner answers it, even once the review row of its request has gone (§5.7).
+    /// </summary>
+    public IReadOnlyList<IntegrationDisposition> Pending() =>
+        Reading(reader => reader.Query(
+            "SELECT request, commit_id, candidate, reference, by_commit, files, subject, at, answered_at FROM integration_dispositions "
+            + "WHERE answered_at IS NULL ORDER BY at, rowid", MapDisposition), [], DispositionsSince);
+
+    /// <summary>
+    /// A disposition answered (by <i>superseded</i> or <i>rebase it</i>, which later rows make): it leaves the pending list and its row stays. False
+    /// where none is pending for that request and commit. The answerer is a person's or a session's act, not the run's, so no claim is checked.
+    /// </summary>
+    public bool Answer(string request, string commit)
+    {
+        if (Reading(reader => reader.Version, 0) < DispositionsSince) return false;
+        using var store = Writer();
+        return store.Write(Family, write => write.Execute(
+            "UPDATE integration_dispositions SET answered_at = $at WHERE request = $request AND commit_id = $commit AND answered_at IS NULL",
+            ("$at", Now()), ("$request", request), ("$commit", commit))) == 1;
     }
 
     // ——— A step's two writes (§5.6).
@@ -417,6 +464,25 @@ public sealed class IntegrationStore(
                     Fenced(write, claim,
                         "UPDATE integration_requests SET closed_at = $at, closed_why = $why WHERE id = $request AND closed_at IS NULL",
                         ("$at", at), ("$why", close.Why), ("$request", close.Request));
+                }
+
+                // A superseded commit's disposition is visible from the moment its member settles, in the same transaction (§5.7).
+                foreach (var disposition in end.Dispositions)
+                {
+                    if (MemberIn(write, claim.Candidate, disposition.Request) is null)
+                    {
+                        throw new IntegrationRefusedException(claim.Candidate, $"request {disposition.Request} is no member of it, so it has no disposition to keep");
+                    }
+
+                    write.Execute(
+                        """
+                        INSERT INTO integration_dispositions (request, commit_id, candidate, reference, by_commit, files, subject, at)
+                        VALUES ($request, $commit, $candidate, $reference, $by, $files, $subject, $at)
+                        ON CONFLICT (request, commit_id) DO NOTHING
+                        """,
+                        ("$request", Required(disposition.Request, "its request")), ("$commit", Required(disposition.Commit, "its commit")), ("$candidate", claim.Candidate),
+                        ("$reference", Required(disposition.Reference, "its recovery ref")), ("$by", Required(disposition.By, "the commit that superseded it")),
+                        ("$files", FilesText(disposition.Files)), ("$subject", disposition.Subject), ("$at", at));
                 }
 
                 if (end.Ends is { } why)
@@ -662,11 +728,33 @@ public sealed class IntegrationStore(
         }
     }
 
-    /// <summary>A read of a store that holds the family, or <paramref name="none"/> where the home has no store or one from before it.</summary>
-    private T Reading<T>(Func<DesktopStoreReader, T> read, T none)
+    /// <summary>A read of a store that holds the family (or <paramref name="since"/>, a later step's table), or <paramref name="none"/> where the home has no store or one from before it.</summary>
+    private T Reading<T>(Func<DesktopStoreReader, T> read, T none, int since = Since)
     {
         using var reader = DesktopStoreReader.Open(Location);
-        return reader is { Version: >= Since } ? read(reader) : none;
+        return reader is not null && reader.Version >= since ? read(reader) : none;
+    }
+
+    private static IntegrationDisposition MapDisposition(SqliteDataReader row) =>
+        new(Text(row, "request")!, Text(row, "commit_id")!, Text(row, "reference")!, Text(row, "by_commit")!, FilesOf(Text(row, "files")), Text(row, "subject")!)
+        {
+            Candidate = Text(row, "candidate")!,
+            At = Moment(row, "at"),
+            AnsweredAt = Moments.Read(Text(row, "answered_at")),
+        };
+
+    private static string FilesText(IReadOnlyList<string> files) => JsonSerializer.Serialize(files);
+
+    private static IReadOnlyList<string> FilesOf(string? text)
+    {
+        try
+        {
+            return text is null ? [] : JsonSerializer.Deserialize<string[]>(text) ?? [];
+        }
+        catch (JsonException)
+        {
+            return [];
+        }
     }
 
     /// <summary>The store opened for one write, made and migrated where it must be, under this store's run.</summary>

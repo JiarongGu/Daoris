@@ -229,6 +229,20 @@ internal static class IntegrationDeclaration
         return new IntegrationRead(new IntegrationFacts(by, gates, reached, commits, scratch, merge, message, pass), null);
     }
 
+    /// <summary>The names of the gates <paramref name="text"/>'s own <c>gates</c> declares, as the integration's gates read them; none where it does not read (INTEGRATE1e part e4a).</summary>
+    internal static IReadOnlyList<string> Declared(string text)
+    {
+        try
+        {
+            using var document = JsonDocument.Parse(text);
+            return document.RootElement.ValueKind == JsonValueKind.Object ? DeclaredGates(document.RootElement) : [];
+        }
+        catch (JsonException)
+        {
+            return [];
+        }
+    }
+
     /// <summary>The names of the gates the declaration's own <c>gates</c> declares: each an object whose <c>name</c> is text.</summary>
     private static IReadOnlyList<string> DeclaredGates(JsonElement root) =>
         root.TryGetProperty("gates", out var gates) && gates.ValueKind == JsonValueKind.Array
