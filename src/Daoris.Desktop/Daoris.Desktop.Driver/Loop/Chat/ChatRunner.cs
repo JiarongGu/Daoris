@@ -1436,6 +1436,8 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
         var drivesBrowser = false;
         string? modeSaid = null;
         string? helpMode = null;
+        // COWORKVIEW1a: this process's own lineage token, a go-on's retry's its own too.
+        string? proc = null;
         try
         {
             // A conversation going on is working already: the ledger moved it there before anything was spawned.
@@ -1473,6 +1475,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
 
             // KEEP1b: what this run is handed of the downloads, on its record before it is spawned, a go-on as a first start.
             await DownloadKeeping.KeepHandedAsync(_service, _home, sessionId, info, ct).ConfigureAwait(false);
+            proc = Driver.Bracketed(_home, sessionId, info);
 
             // HELP5: the helper paid a model round trip to find its own knowledge tools. Which variable
             // stops that is a fact about the harness, so the adapter names it, and nothing here does.
@@ -1529,7 +1532,9 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
             // protocol door carries them on `session/new` (`Servers`); a driven or intake session on the
             // pipe is handed a file — and a conversation on the pipe was handed nothing at all. A room
             // has no `.mcp.json` of its own, so its connector goes in the same file (HELP1a).
-            offered = resolved.Wire == SessionWire.Acp || place.ConnectorOnPipe ? Servers(sessionId, place.Circle, pluginServers) : pluginServers;
+            offered = resolved.Wire == SessionWire.Acp || place.ConnectorOnPipe
+                ? Servers(sessionId, place.Circle, pluginServers, resolved.Wire == SessionWire.Acp ? proc : null)
+                : pluginServers;
             if (resolved.Wire == SessionWire.Pipe) servers = SpawnServers.Hand(resolved, info, _home, sessionId, offered);
 
             // HELPWIRED1 (D183 point 4): what Ask Daoris's start handed, kept now its every input is composed and before its process
@@ -1570,6 +1575,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
             // (TERMTRUST1a, D201 point 4): its harness born in this process's agents' job, the launcher read as the conversation's process.
             if (_context.Closing)
             {
+                if (proc is not null) LineageTokens.Current.Unspawned(proc);
                 SpawnSettings.Remove(rules);
                 SpawnServers.Remove(servers);
                 SpawnSkills.Remove(skills);
@@ -1577,11 +1583,14 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
                 if (_processes.Close.Build is { } build) KeepRestart(sessionId, build);
                 return new(sessionId, message);
             }
-            process = await AgentStarts.StartAsync(info, ContainedKind.Agent, StartClass.Person, _home, log: null, CancellationToken.None).ConfigureAwait(false)
+            process = await Driver.Spawned(
+                    proc, () => AgentStarts.StartAsync(info, ContainedKind.Agent, StartClass.Person, _home, log: null, CancellationToken.None))
+                .ConfigureAwait(false)
                 ?? throw new DriverException($"the {resolved.Name} adapter's process did not start");
         }
         catch (Exception error)
         {
+            if (proc is not null) LineageTokens.Current.Unspawned(proc);
             // The record exists and must say what happened, or it sits at `queued` or `starting` forever
             // holding the repository — the same rule the driven path follows. EVERY failure: a client
             // timeout is an OperationCanceledException too, and filtering those out left the record
@@ -1786,7 +1795,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
 
         var watch = WatchAsync(
             sessionId, process, transcript, onEnded, Measured, rules, mapper, chat, native, servers, drivesBrowser, Said,
-            new Watched(resolved.Name, place.Keeps, goOn) { Skills = skills, Preamble = modeSaid }, actorRun, actorLog);
+            new Watched(resolved.Name, place.Keeps, goOn) { Skills = skills, Preamble = modeSaid, Proc = proc }, actorRun, actorLog);
         _context.Watching[sessionId] = watch;
         _ = watch.ContinueWith(
             _ => _context.Watching.TryRemove(new KeyValuePair<string, Task>(sessionId, watch)), TaskScheduler.Default);
@@ -2803,6 +2812,9 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
         /// (HELPMODE1a1, D183 point 3). Null says nothing.
         /// </summary>
         public string? Preamble { get; init; }
+
+        /// <summary>Its process's lineage token (COWORKVIEW1a), on every line written for it and its end.</summary>
+        public string? Proc { get; init; }
     }
 
     /// <summary>What a conversation's ending note adds where Daoris kept no id for its harness conversation (<see cref="ChatEnded.NotKept"/>).</summary>
@@ -2869,7 +2881,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
             // The conversation's messages are recorded as the person sends them (`Say`), so the
             // capture opens with no composed prompt of its own.
             var protocol = chat is not null
-                ? CaptureProtocolAsync(sessionId, process, transcript, chat, said, keep, watched.Adapter, watched.Preamble)
+                ? CaptureProtocolAsync(sessionId, process, transcript, chat, said, keep, watched.Adapter, watched.Preamble, watched.Proc)
                 : null;
             Task capture = protocol
                 ?? (mapper is not null
@@ -2890,7 +2902,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
                             // 🔴 Its harness opened the conversation its words went to, so they went (MSG1c): off the record by their ids.
                             if (goOn is not null && goOn.Named()) _ = _goOn.WentOnAsync(sessionId, goOn, watched.Adapter);
                         },
-                        lineage: ChildLineage.Writer(_home, sessionId))
+                        lineage: ChildLineage.Writer(_home, sessionId, watched.Proc))
                     : HarnessCapture.CaptureAsync(process, transcript, sessionId, _output, CancellationToken.None, watched.Preamble));
 
             // A conversation going on is working already: the ledger moved it out of its ended state before the spawn.
@@ -2978,7 +2990,8 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
             SpawnServers.Remove(servers);
             SpawnSkills.Remove(watched.Skills);
             // Its native children end with this run (FABRIC-C1a): lost where it was stopped or failed, ended where it ended clean.
-            ChildLineage.End(_home, sessionId, clean: EndedClean(process) && !_processes.WasStopRequested(sessionId), DateTimeOffset.UtcNow);
+            ChildLineage.End(
+                _home, sessionId, clean: EndedClean(process) && !_processes.WasStopRequested(sessionId), DateTimeOffset.UtcNow, watched.Proc);
         }
     }
 
@@ -3011,12 +3024,13 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
     /// either between two.
     /// </summary>
     /// <param name="circle">The workspace its tools are bound to (<see cref="ChatPlace.Circle"/>, ASKSCOPE1c); null for none.</param>
-    private IReadOnlyList<AcpMcpServer> Servers(string sessionId, string? circle, IReadOnlyList<AcpMcpServer> plugins)
+    /// <param name="proc">The lineage token of the process it is composed for, on the protocol door alone (COWORKVIEW1a).</param>
+    private IReadOnlyList<AcpMcpServer> Servers(string sessionId, string? circle, IReadOnlyList<AcpMcpServer> plugins, string? proc = null)
     {
         var offered = new List<AcpMcpServer>();
         if (KnowledgeConnector.Offer(
                 Environment.GetEnvironmentVariable(KnowledgeConnector.PathVariable), DaorisHome.Resolve(),
-                AppContext.BaseDirectory, scope: ConnectorScope(_home, sessionId, circle)) is { } connector)
+                AppContext.BaseDirectory, scope: ConnectorScope(_home, sessionId, circle, proc)) is { } connector)
         {
             offered.Add(connector);
         }
@@ -3030,8 +3044,8 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
     /// workspace it is bound to, as a driven session's circle is named for its connector (ASKSCOPE1c); none for a conversation bound
     /// to none.
     /// </summary>
-    internal static IReadOnlyDictionary<string, string> ConnectorScope(string home, string sessionId, string? circle) =>
-        KnowledgeConnector.SessionScope(home, sessionId, HelpCircle.Scope(circle));
+    internal static IReadOnlyDictionary<string, string> ConnectorScope(string home, string sessionId, string? circle, string? proc = null) =>
+        KnowledgeConnector.SessionScope(home, sessionId, HelpCircle.Scope(circle), proc);
 
     /// <summary>
     /// A conversation's capture on the protocol door (CONV3b): its session opened on the wire, what each
@@ -3048,7 +3062,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
     /// <returns>The session's high-water context, or null when it reported none.</returns>
     private async Task<AcpUsage?> CaptureProtocolAsync(
         string sessionId, Process process, string transcript, ProtocolChat chat, Action<JsonElement>? said,
-        Action<string>? keep, string ranOn, string? preamble = null)
+        Action<string>? keep, string ranOn, string? preamble = null, string? proc = null)
     {
         // A conversation going on appends to the transcript of the run before it (MSG1c).
         await using var file = TranscriptFile.Open(transcript, append: chat.GoOn is not null);
@@ -3079,7 +3093,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
             onOptions: options => OptionsChanged?.Invoke(sessionId, ThePersons(options)),
             onConversation: keep)
         {
-            Lineage = ChildLineage.Writer(_home, sessionId),
+            Lineage = ChildLineage.Writer(_home, sessionId, proc),
             Carry = chat.Asked,
             Carried = chat.Carried,
             OffersRead = chat.OffersRead,
