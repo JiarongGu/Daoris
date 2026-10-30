@@ -32,6 +32,21 @@ describe("a repository's Workflow tab", () => {
     expect(screen.getByText(code('daoris driver workflow show --repository engine'))).toBeInTheDocument();
   });
 
+  it('offers the two graph presets with their line and the terminal way to save each, in both languages', async () => {
+    render(<WorkflowTab page="repository" name="engine" current={FULL} />);
+
+    const offer = screen.getByRole('list', { name: 'Start from a preset' });
+    expect(within(offer).getAllByRole('listitem').map((item) => within(item).getByText(/^(Integrated|A pull)/).textContent))
+      .toEqual(['Integrated into the line', 'Integrated into the line, with no press', 'A pull request']);
+    expect(within(offer).getByText(code('daoris driver workflow new <id> --from integrated-no-press'))).toBeInTheDocument();
+    expect(within(offer).getByText(/refused where the line declares none/)).toBeInTheDocument();
+
+    await i18n.changeLanguage('zh');
+    const zh = screen.getByRole('list', { name: '从预设开始' });
+    expect(within(zh).getAllByRole('listitem')).toHaveLength(3);
+    expect(within(zh).getByText('拉取请求')).toBeInTheDocument();
+  });
+
   it('draws each step in order, the landing the hinge between before and after it lands', () => {
     render(<WorkflowTab page="repository" name="engine" current={FULL} />);
 

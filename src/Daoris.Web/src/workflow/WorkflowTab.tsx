@@ -101,9 +101,37 @@ export function WorkflowTab({ page, name, current, reading = false, refusal = nu
 
       <WorkflowChart workflow={current} page={page} name={name} doors={doors} />
 
+      <GraphPresets />
+
       {/* A host may leave a null out of its answer, so none answered is the registry not read. */}
       {page === 'workspace' && <Repositories repositories={current.repositories ?? null} onOpen={doors?.repository} />}
     </div>
+  );
+}
+
+/** The graph presets the driver offers (`WorkflowPresets.GraphTable`, INTEGRATE1q), each saved by `workflow new --from`. */
+export const GRAPH_PRESETS = ['integrated', 'integrated-no-press', 'pull-request'] as const;
+
+/**
+ * The two ways to start a workflow of one's own that integrate or open a pull request (INTEGRATE1q, the integration design §17.7): each with the
+ * line it says, composed by the driver from its nodes, and the terminal's way to save it, which the choice then names in Setup.
+ */
+function GraphPresets() {
+  const { t } = useTranslation();
+  const title = t('workflow.presets.title');
+  return (
+    <PageSection title={title}>
+      <Prose className="mb-2 text-small">{t('workflow.presets.body')}</Prose>
+      <ul aria-label={title} className="m-0 grid list-none gap-2 p-0">
+        {GRAPH_PRESETS.map((id) => (
+          <li key={id} className="grid min-w-0 gap-0.5">
+            <span className="text-small font-semibold text-ink">{t(`workflow.presets.${id}.name`)}</span>
+            <Prose className="text-small"><Inline text={t(`workflow.presets.${id}.line`)} /></Prose>
+            <p className="m-0 text-meta text-ink-faint"><Inline text={t('workflow.presets.twin', { preset: id })} /></p>
+          </li>
+        ))}
+      </ul>
+    </PageSection>
   );
 }
 
