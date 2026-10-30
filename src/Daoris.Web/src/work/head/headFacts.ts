@@ -63,6 +63,8 @@ export type SessionFactsOf = {
    * *Trying again at* while it is still ahead, and nothing once past or while a try runs. Absent where none waits.
    */
   retrying?: string | null;
+  /** Its unit's integration state from the integration record (INTEGRATE1h; the integration design §5.8): one line after the repository; absent where none was asked. */
+  integration?: { state: string; line: string } | null;
   /** The reader's clock for `retrying`; the moment it is read where absent. */
   now?: Date;
 };
@@ -158,6 +160,7 @@ function factsOf(t: TFunction, of: SessionFactsOf, whole: boolean): string[] {
     // SESSCTX1d: the agent the line is on now, where its parts ran on more than one.
     of.leadingAgent ? t('work.facts.leadsOn', { agent: of.leadingAgent }) : null,
     ...linkFacts(t, session, of),
+    of.integration ? t(`work.facts.integration.${of.integration.state}`, { line: of.integration.line, defaultValue: of.integration.state }) : null,
   ];
   // What the row's line says for its group (D126 §2.2): parked after its failures, what it awaits, what holds the words,
   // its stop's hold, its work to review. Said here in the row's own words.

@@ -67,6 +67,19 @@ export const useIntegration = (repository: string, enabled = true) => {
   });
 };
 
+/** A unit's one line from the same record (`INTEGRATION` with its `unit`), told by the same event; null where the unit never asked. */
+export const useIntegrationHead = (unit: string | null | undefined) => {
+  const { isAvailable } = useShenora();
+  const client = useQueryClient();
+  const queryKey = ['integration', 'unit', unit ?? ''] as const;
+  return useQuery({
+    queryKey,
+    queryFn: () => askHeld<IntegrationHead | null>('INTEGRATION', client, queryKey, { unit },
+      (answer) => (isPending(answer) ? null : ((answer as { head?: IntegrationHead | null }).head ?? null))),
+    enabled: isAvailable && Boolean(unit),
+  });
+};
+
 /** The owner's act: a request, a drop or a recheck; the state hub asks the look again in every window. */
 export const useIntegrate = () =>
   useMutation({

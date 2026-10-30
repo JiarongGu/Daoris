@@ -66,6 +66,11 @@ export interface RunStep {
    * published and the helpers they asked. None where there are none, and from a shell before it.
    */
   requests?: RunRequest[] | null;
+  /**
+   * The unit's integration state as the integration record says it (INTEGRATE1h; the integration design §17.9), on the `integrate`
+   * node only; none from a shell before it, or where nothing was asked.
+   */
+  integration?: { state: string; line: string; step?: string | null } | null;
 }
 
 /** What a request inside the work is: a quest a session published, or a helper it asked (a request to an agent). */
