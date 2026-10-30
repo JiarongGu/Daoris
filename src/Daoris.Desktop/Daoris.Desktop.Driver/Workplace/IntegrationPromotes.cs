@@ -12,6 +12,18 @@ internal sealed record IntegrationPromoteAsk(string Repository, string Workspace
 {
     /// <summary>Signalled when the candidate is dropped: it is handed to the verdict port, which ends its confirm run and answers <c>dropped</c>.</summary>
     public CancellationToken Drop { get; init; }
+
+    /// <summary>
+    /// Whether a steward act's appointment still stands, read again at promotion (§5.2 step 8, §8). The default reads none, so a steward's request
+    /// is held there: nothing in the driver reads an appointment's liveness until the role is active (STEWARDROLE1d).
+    /// </summary>
+    public IIntegrationAppointments Appointments { get; init; } = IntegrationAppointments.Unread;
+
+    /// <summary>
+    /// The landing's own clean-up, through which the tidy step removes a landed branch the line now holds (§5.2 step 10); null where none was
+    /// handed in, and the tidy then removes nothing. Never a delete of its own.
+    /// </summary>
+    public IntegrationTidy? Tidy { get; init; }
 }
 
 /// <summary>What a promote run answered (<see cref="IntegrationPromoteRuns"/>), in words, with the candidate and its members as they now stand.</summary>
@@ -28,11 +40,14 @@ internal sealed record IntegrationPromoteRun(string Kind, string Said)
 /// <summary>What a promote run answers.</summary>
 internal static class IntegrationPromoteRuns
 {
-    /// <summary>The line holds the candidate's tip and every member is settled: the candidate ended <c>settled</c>.</summary>
+    /// <summary>The line holds the candidate's tip, every member is settled, the landed branches are tidied and the close ended the candidate <c>settled</c>.</summary>
     public const string Settled = "settled";
 
-    /// <summary>The line holds the tip, and a member is left standing (a superseded commit waits for part e4b) or git could not judge it: the candidate stands.</summary>
+    /// <summary>The line holds the tip, and git could not judge a member or keep its work on a recovery ref: the member stands, the candidate stands, and the settle is asked again at the next look.</summary>
     public const string Unsettled = "unsettled";
+
+    /// <summary>A requester's authority no longer stood at promotion: its member is held, nothing was moved, and the candidate is formed again without it (INTEGRATE1e part e4b).</summary>
+    public const string Lapsed = "lapsed";
 
     /// <summary>The step could not go on and ended <c>held</c>, said why (a hold verdict, the fence, a checkout that is not clean): tried again at the next look.</summary>
     public const string Held = "held";
@@ -129,7 +144,22 @@ internal sealed class IntegrationPromotes(IntegrationStore store, string treesRo
             if (await PromoteAsync(claim, ask, candidate, members, rerun, ct).ConfigureAwait(false) is { } answer) return answer;
         }
 
-        return await SettleAsync(claim, ask, ct).ConfigureAwait(false);
+        return await FinishAsync(claim, ask, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Everything after the line holds the candidate's tip, each step once: the settle (§5.2 step 9), the tidy (step 10) and the close (step 11),
+    /// by what the candidate's steps already show done, so a come-up that finds the candidate between them goes on from the step after the last
+    /// and never promotes again. The candidate stands until its close ends it.
+    /// </summary>
+    /// <exception cref="IntegrationClaimLostException">The claim no longer holds the candidate.</exception>
+    internal async Task<IntegrationPromoteRun> FinishAsync(IntegrationClaim claim, IntegrationPromoteAsk ask, CancellationToken ct = default)
+    {
+        bool Done(string step) => store.Steps(claim.Candidate).Any(each => each.Step == step && each.Outcome == IntegrationStepOutcomes.Done);
+
+        if (!Done(IntegrationStepNames.Settle) && await SettleAsync(claim, ask, ct).ConfigureAwait(false) is { } unsettled) return unsettled;
+        if (!Done(IntegrationStepNames.Tidy)) await TidyAsync(claim, ask, ct).ConfigureAwait(false);
+        return await CloseAsync(claim, ask, ct).ConfigureAwait(false);
     }
 
     private async Task<IntegrationPromoteRun> AnswerAsync(string kind, string said, IntegrationClaim claim, string? verdict = null)
@@ -349,15 +379,19 @@ internal sealed class IntegrationPromotes(IntegrationStore store, string treesRo
             lineCommit = line;
         }
 
+        var lapsed = false;
         var ended = await new IntegrationSteps(store).RunAsync(
             claim, IntegrationStepNames.Promote,
             async (step, token) =>
             {
                 if (Seam is { } afterStart) await afterStart("after-start").ConfigureAwait(false);
-                return await EffectAsync(ask, candidate, replayed, step, verdict, token).ConfigureAwait(false);
+                var end = await EffectAsync(ask, candidate, replayed, step, verdict, token).ConfigureAwait(false);
+                lapsed = end.Members.Any(each => each.State == IntegrationMemberStates.Held);
+                return end;
             },
             lineCommit: lineCommit, ct: ct).ConfigureAwait(false);
         if (ended.Outcome == IntegrationStepOutcomes.Promoted) return null;
+        if (lapsed) return await AnswerAsync(IntegrationPromoteRuns.Lapsed, ended.Said ?? "", claim).ConfigureAwait(false);
         if (store.Candidate(claim.Candidate) is { EndedWhy: IntegrationCandidateEnds.FormedAgain }) return await AnswerAsync(IntegrationPromoteRuns.Moved, ended.Said ?? "", claim).ConfigureAwait(false);
         return await AnswerAsync(IntegrationPromoteRuns.Held, ended.Said ?? "the promotion could not go on.", claim, VerdictActions.Green).ConfigureAwait(false);
     }
@@ -378,6 +412,9 @@ internal sealed class IntegrationPromotes(IntegrationStore store, string treesRo
         }
 
         if (await FenceAsync(ask.Root, step.LineCommit!, ct).ConfigureAwait(false) is { } fenced) return Held($"{fenced}: nothing was moved, and it is tried again at the next look.");
+
+        // Each member's requester's authority, read again here for the race since the form (§5.2 step 8, §8): never trusted from the door.
+        if (await LapsedAsync(ask, replayed, ct).ConfigureAwait(false) is { Count: > 0 } lapsed) return LapsedEnd(replayed, lapsed);
 
         if (await TreeWorktrees.EntriesAsync(ask.Root, ct).ConfigureAwait(false) is not { } entries)
         {
@@ -497,25 +534,166 @@ internal sealed class IntegrationPromotes(IntegrationStore store, string treesRo
         return said;
     }
 
+    // ——— The requester's authority at promotion (§5.2 step 8, §8).
+
+    /// <summary>The replayed members whose requester's authority no longer stands, each with the words that say why; none where every one does.</summary>
+    private async Task<List<(IntegrationMember Member, string Why)>> LapsedAsync(
+        IntegrationPromoteAsk ask, IReadOnlyList<IntegrationMember> replayed, CancellationToken ct)
+    {
+        var lapsed = new List<(IntegrationMember, string)>();
+        foreach (var member in replayed)
+        {
+            var request = store.Request(member.Request)!;
+            string? why;
+            try
+            {
+                why = await IntegrationAuthority.LapsedAsync(request, ask.Config, ask.Appointments, ct).ConfigureAwait(false);
+            }
+            catch (Exception error) when (error is not OperationCanceledException)
+            {
+                // An authority that cannot be read is no authority: held, and read again at the next look.
+                why = $"its authority could not be read ({error.Message})";
+            }
+
+            if (why is not null) lapsed.Add((member, why));
+        }
+
+        return lapsed;
+    }
+
+    /// <summary>
+    /// The promote step's end where authority lapsed: nothing was moved; each lapsed member is held (its request stays open and out of the
+    /// queue, for the steward's or the owner's act) and the candidate is formed again without it, or ended <c>empty</c> where none is left.
+    /// </summary>
+    private static IntegrationStepEnd LapsedEnd(IReadOnlyList<IntegrationMember> replayed, IReadOnlyList<(IntegrationMember Member, string Why)> lapsed) =>
+        new(IntegrationStepOutcomes.Done)
+        {
+            Said = string.Join(" ", lapsed.Select(each => $"request {each.Member.Request}: held at promotion, its requester's authority no longer stands ({each.Why}); nothing was moved.")
+                .Append(lapsed.Count == replayed.Count
+                    ? "No member is left to promote."
+                    : "The candidate is formed again without it.")),
+            Members =
+            [
+                .. lapsed.Select(each => new IntegrationMemberChange(each.Member.Request, IntegrationMemberStates.Held)
+                {
+                    Said = $"held at promotion: its requester's authority no longer stands ({each.Why}); it waits for the steward's or the owner's act.",
+                }),
+            ],
+            Ends = lapsed.Count == replayed.Count ? IntegrationCandidateEnds.Empty : IntegrationCandidateEnds.FormedAgain,
+        };
+
     // ——— The settle (§5.2 step 9, §5.7).
 
-    private async Task<IntegrationPromoteRun> SettleAsync(IntegrationClaim claim, IntegrationPromoteAsk ask, CancellationToken ct)
+    /// <summary>
+    /// The settle: each member judged against the promoted line, a superseded member's work kept on its recovery ref, and everything one end
+    /// writes (<see cref="IntegrationSettles.EndAsync"/>). Null where it ended <c>done</c>; else the answer, the candidate standing.
+    /// </summary>
+    private async Task<IntegrationPromoteRun?> SettleAsync(IntegrationClaim claim, IntegrationPromoteAsk ask, CancellationToken ct)
     {
         var candidate = store.Candidate(claim.Candidate) ?? throw new IntegrationClaimLostException(claim, "the store holds no such candidate");
         var settled = await IntegrationSettles.JudgeAsync(store, ask.Root, ask.Line, candidate, [.. store.Members(candidate.Id).Where(each => each.Stands)], ct).ConfigureAwait(false);
-        if (settled.End is not { } end)
-        {
-            return await AnswerAsync(IntegrationPromoteRuns.Unsettled, settled.Unread ?? "git could not judge the settle.", claim).ConfigureAwait(false);
-        }
+        if (settled.Unread is { } unread) return await AnswerAsync(IntegrationPromoteRuns.Unsettled, unread, claim).ConfigureAwait(false);
 
+        // The ref is made in the effect, after the step's start and before its end, so a crash between them leaves the ref and an open step: the
+        // rerun finds the ref it made, and writes the disposition in the end that settles the member.
         var ended = await new IntegrationSteps(store).RunAsync(
             claim, IntegrationStepNames.Settle,
-            async (_, _) =>
+            async (_, token) =>
             {
                 if (Seam is { } inSettle) await inSettle("in-settle").ConfigureAwait(false);
-                return end;
+                return await IntegrationSettles.EndAsync(ask.Root, settled, Seam is { } afterKeep ? () => afterKeep("after-keep") : null, token).ConfigureAwait(false);
             },
             ct: ct).ConfigureAwait(false);
-        return await AnswerAsync(settled.Left ? IntegrationPromoteRuns.Unsettled : IntegrationPromoteRuns.Settled, ended.Said ?? "", claim).ConfigureAwait(false);
+        return ended.Outcome == IntegrationStepOutcomes.Done ? null : await AnswerAsync(IntegrationPromoteRuns.Unsettled, ended.Said ?? "", claim).ConfigureAwait(false);
+    }
+
+    // ——— The tidy (§5.2 step 10).
+
+    /// <summary>
+    /// The tidy: each settled member's landed branch handed to the landing's own clean-up, named alone, which removes it where the line holds its
+    /// work and keeps its recovery ref; never a delete made here, never a branch the candidate did not carry, nothing forced. The line's integration
+    /// tree is left warm for the next candidate. A look the clean-up could not make is said and is not a hold: the landing's own sweeps take it.
+    /// </summary>
+    private async Task TidyAsync(IntegrationClaim claim, IntegrationPromoteAsk ask, CancellationToken ct)
+    {
+        var settled = store.Members(claim.Candidate).Where(each => each.State == IntegrationMemberStates.Settled)
+            .Select(each => store.Request(each.Request)!).GroupBy(each => each.Branch, StringComparer.Ordinal).Select(group => group.First()).ToList();
+        await new IntegrationSteps(store).RunAsync(
+            claim, IntegrationStepNames.Tidy,
+            async (_, token) =>
+            {
+                if (Seam is { } inTidy) await inTidy("in-tidy").ConfigureAwait(false);
+                return await TidyEffectAsync(ask, settled, token).ConfigureAwait(false);
+            },
+            ct: ct).ConfigureAwait(false);
+    }
+
+    private static async Task<IntegrationStepEnd> TidyEffectAsync(IntegrationPromoteAsk ask, IReadOnlyList<IntegrationRequest> settled, CancellationToken ct)
+    {
+        const string Warm = "The line's integration tree is left warm for the next candidate.";
+        if (settled.Count == 0) return new IntegrationStepEnd(IntegrationStepOutcomes.Done) { Said = $"no member settled, so no landed branch is tidied. {Warm}" };
+        if (ask.Tidy is null)
+        {
+            return new IntegrationStepEnd(IntegrationStepOutcomes.Done)
+            {
+                Said = $"no landing clean-up was handed in, so no landed branch is tidied here: the landing's own sweeps take them. {Warm}",
+            };
+        }
+
+        var said = new List<string>();
+        foreach (var request in settled)
+        {
+            try
+            {
+                var only = new HashSet<string>(StringComparer.Ordinal) { $"{request.Repository}:{request.Branch}" };
+                var done = await ask.Tidy(request.Repository, request.Workspace, ask.Root, only, ct).ConfigureAwait(false);
+                var result = done.Landed.FirstOrDefault(each => each.Item.Branch == request.Branch);
+                said.Add(result is null
+                    ? $"`{request.Branch}` is no landing this machine recorded, so there is nothing to tidy for it."
+                    : result.Removed
+                        ? $"`{request.Branch}` removed by the landing clean-up (the line holds its work): {result.Message}."
+                        : $"`{request.Branch}` kept by the landing clean-up: {result.Message}.");
+            }
+            catch (Exception error) when (error is not OperationCanceledException)
+            {
+                said.Add($"`{request.Branch}` could not be tidied now ({error.Message}): it is kept, and the landing's own sweeps take it.");
+            }
+        }
+
+        return new IntegrationStepEnd(IntegrationStepOutcomes.Done) { Said = $"{string.Join(" ", said)} {Warm}" };
+    }
+
+    // ——— The close (§5.2 step 11).
+
+    /// <summary>
+    /// The close: the unit's integration note written from the candidate's record, which the review, the session's head, the quest's page, the CLI
+    /// and Ask Daoris read, and the candidate ended <c>settled</c>, which frees its line for the next and closes its one job. Nothing here says
+    /// <i>Accept</i> or <i>waits for you</i>: the line has moved, and what is still pending is each superseded commit's own disposition.
+    /// </summary>
+    private async Task<IntegrationPromoteRun> CloseAsync(IntegrationClaim claim, IntegrationPromoteAsk ask, CancellationToken ct)
+    {
+        var ended = await new IntegrationSteps(store).RunAsync(
+            claim, IntegrationStepNames.Close,
+            async (_, _) =>
+            {
+                if (Seam is { } inClose) await inClose("in-close").ConfigureAwait(false);
+                return new IntegrationStepEnd(IntegrationStepOutcomes.Done) { Said = NoteOf(claim.Candidate), Ends = IntegrationCandidateEnds.Settled };
+            },
+            ct: ct).ConfigureAwait(false);
+        return await AnswerAsync(IntegrationPromoteRuns.Settled, ended.Said ?? "", claim).ConfigureAwait(false);
+    }
+
+    /// <summary>The integration note, from the record alone: a code and its facts (the line's move, each member's end, the pending dispositions).</summary>
+    private string NoteOf(string candidate)
+    {
+        var found = store.Candidate(candidate)!;
+        var members = store.Members(candidate);
+        var parts = members.Select(each =>
+        {
+            var request = store.Request(each.Request)!;
+            var pending = store.Dispositions(each.Request).Count(disposition => disposition.Pending);
+            return $"request {each.Request} (`{request.Branch}`) {each.State}" + (pending > 0 ? $", {pending} superseded {(pending == 1 ? "commit" : "commits")} pending a disposition" : "");
+        });
+        return $"settled: `{found.Line}` moved from {TextBounds.ShortCommit(found.Base, 8)} to {TextBounds.ShortCommit(found.Tip ?? found.Base, 8)}; {string.Join("; ", parts)}.";
     }
 }

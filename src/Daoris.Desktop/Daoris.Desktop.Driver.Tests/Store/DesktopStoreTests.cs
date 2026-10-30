@@ -389,6 +389,100 @@ public sealed class DesktopStoreTests : IDisposable
         foreach (var table in IntegrationTables) Assert.Equal(0, Count(older, table));
     }
 
+    // ——— Step 7, a superseded member's pending disposition (INTEGRATE1e part e4b; the integration design §5.7, D215's note).
+
+    [Fact]
+    public void Step_7_makes_the_pending_dispositions_table_keyed_by_request_and_commit_and_raises_no_stamp()
+    {
+        var step = Assert.Single(DesktopStore.Steps, each => each.Version == 7);
+        Assert.Equal(1, step.Writer);
+
+        var store = Open();
+
+        Assert.Equal((Own, 1), store.Stamp);
+        Assert.True(HasTable(store, "integration_dispositions"));
+        Assert.Equal(
+            [
+                ("request", true), ("commit_id", true), ("candidate", true), ("reference", true), ("by_commit", true), ("files", true),
+                ("subject", true), ("at", true), ("answered_at", false),
+            ],
+            Columns(store, "integration_dispositions"));
+        Assert.Contains(
+            "CREATE INDEX integration_dispositions_pending ON integration_dispositions (at) WHERE answered_at IS NULL",
+            Indexes(store, "integration_dispositions"));
+    }
+
+    [Fact]
+    public void A_disposition_names_a_request_and_a_candidate_the_store_holds_and_is_one_row_for_each_request_and_commit()
+    {
+        var store = Open(new DesktopStoreOptions { Settled = () => StoreSettled.Yes });
+        const string At = "2026-10-30T00:00:00.0000000+00:00";
+        void Disposition(string request, string candidate, string commit = "c1") => store.Write("integration", write => write.Execute(
+            """
+            INSERT INTO integration_dispositions (request, commit_id, candidate, reference, by_commit, files, subject, at)
+            VALUES ($request, $commit, $candidate, 'refs/daoris/discarded/feature/a', 'b1', '["a.txt"]', 'work', $at)
+            """,
+            ("$request", request), ("$commit", commit), ("$candidate", candidate), ("$at", At)));
+
+        // 787 is SQLite's foreign-key refusal: no request, and no candidate, the store holds.
+        Assert.Equal(787, Assert.Throws<SqliteException>(() => Disposition("no-such-request", "no-such-candidate")).SqliteExtendedErrorCode);
+        Assert.Equal(0, Count(store, "integration_dispositions"));
+
+        store.Write("integration", write => write.Execute(
+            """
+            INSERT INTO integration_requests (id, repository, workspace, branch, tip, route, line, requester, door, policy_request, policy_commit, policy_batch,
+                policy_order, policy_gates, policy_unreached, policy_reached, policy_conflicts, policy_overlap, at)
+            VALUES ('r1', 'engine', 'aurora', 'feature/a', 'abc', 'recorded', 'main', 'person', 'card', 'owner', 'merge', 1, 'arrival', 'declared', 'split', 'split',
+                'session', 'hold', $at);
+            INSERT INTO integration_candidates (id, repository, workspace, line, base, job, claim_run, claim_generation, formed_at)
+            VALUES ('candidate-1', 'engine', 'aurora', 'main', 'abc', 'job-1', $run, 1, $at);
+            """,
+            ("$run", store.Run), ("$at", At)));
+        Disposition("r1", "candidate-1");
+
+        Assert.Equal(1, Count(store, "integration_dispositions"));
+        // 1555 is SQLite's primary-key refusal: a request's commit has one disposition.
+        Assert.Equal(1555, Assert.Throws<SqliteException>(() => Disposition("r1", "candidate-1")).SqliteExtendedErrorCode);
+        Disposition("r1", "candidate-1", "c2");
+        Assert.Equal(2, Count(store, "integration_dispositions"));
+    }
+
+    [Fact]
+    public void A_store_of_the_six_steps_before_is_migrated_to_7_at_the_first_start_whatever_the_confirmation_says()
+    {
+        using (var older = Open(new DesktopStoreOptions { Steps = [.. DesktopStore.Steps.Take(6)], Settled = () => StoreSettled.Yes }))
+        {
+            Assert.Equal((6, 1), older.Stamp);
+        }
+
+        var store = Open(new DesktopStoreOptions { Settled = () => StoreSettled.Not("the swap journal is at `started`") });
+
+        Assert.Null(store.Held);
+        Assert.Equal((Own, 1), store.Stamp);
+        Assert.True(HasTable(store, "integration_dispositions"));
+        foreach (var table in IntegrationTables) Assert.True(HasTable(store, table), table);
+    }
+
+    [Fact]
+    public void A_build_of_the_six_steps_before_opens_the_migrated_store_still_writes_a_move_and_never_meets_the_dispositions()
+    {
+        Open().Write("probe", _ => { });
+
+        var older = Open(new DesktopStoreOptions { Steps = [.. DesktopStore.Steps.Take(6)], Settled = () => StoreSettled.Yes });
+
+        Assert.False(older.Newer);
+        Assert.Equal((Own, 1), older.Stamp);
+        older.Write("moves", write => write.Execute(
+            """
+            INSERT INTO moves (record_left, executor, how, from_why, from_by, phase, claim_run, claim_generation, decided_at)
+            VALUES ('s1', 'conversation', 'brief', 'limit', 'daoris', 'decided', $run, 1, '2026-10-30T00:00:00.0000000+00:00')
+            """,
+            ("$run", older.Run)));
+        Assert.Equal(1, Count(older, "moves"));
+        foreach (var table in IntegrationTables) Assert.Equal(0, Count(older, table));
+        Assert.Equal(0, Count(older, "integration_dispositions"));
+    }
+
     // ——— A run entered with no family's write (FOUNDATION1f-i part 2, §19.1 point 3).
 
     [Fact]

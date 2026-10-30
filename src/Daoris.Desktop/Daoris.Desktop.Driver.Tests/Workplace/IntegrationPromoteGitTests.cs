@@ -175,7 +175,11 @@ public sealed class IntegrationPromoteGitTests : LandedFixture, IAsyncLifetime
         Assert.All(["ra", "rb"], request => Assert.Equal(IntegrationRequestCloses.Settled, candidate.Store.Request(request)!.ClosedWhy));
         var promote = Last(candidate, IntegrationStepNames.Promote);
         Assert.Equal((IntegrationStepOutcomes.Promoted, candidate.Base), (promote.Outcome, promote.LineCommit));
-        Assert.Equal([IntegrationStepNames.Form, IntegrationStepNames.Replay, IntegrationStepNames.Replay, IntegrationStepNames.Promote, IntegrationStepNames.Settle],
+        Assert.Equal(
+            [
+                IntegrationStepNames.Form, IntegrationStepNames.Replay, IntegrationStepNames.Replay, IntegrationStepNames.Promote, IntegrationStepNames.Settle,
+                IntegrationStepNames.Tidy, IntegrationStepNames.Close,
+            ],
             candidate.Store.Steps(candidate.Claim.Candidate).Select(each => each.Step));
 
         var asked = Assert.Single(verdict.Asks);
@@ -676,35 +680,7 @@ public sealed class IntegrationPromoteGitTests : LandedFixture, IAsyncLifetime
         Assert.Equal(IntegrationStepOutcomes.Done, Last(candidate, IntegrationStepNames.Settle).Outcome);
     }
 
-    /// <summary>
-    /// 🔴 A superseded commit is never dropped: its replay conflicts where the line's side was changed after the unit began by a commit outside
-    /// its work, so the member is left standing with a sentence that the next part settles it, its request open, the candidate standing, and
-    /// the step held; the other members are settled as usual.
-    /// </summary>
-    [Fact]
-    public async Task A_superseded_commit_after_the_freeze_leaves_its_member_standing_and_is_never_dropped()
-    {
-        var (candidate, x) = await LinedAsync();
-        await CommitAfterTheFreezeAsync(candidate.Root, ("lines.txt", Lines((2, "two, the unit's"), (8, "eight, the unit's")), "line 8, the unit's"));
-        Green();
-
-        var run = await Promotes(candidate).RunAsync(candidate.Claim, candidate.Ask);
-
-        Assert.Equal(IntegrationPromoteRuns.Unsettled, run.Kind);
-        Assert.Equal(candidate.Tip, await CommitOfAsync(candidate.Root, "main"));
-        Assert.True(candidate.Now.Stands);
-        Assert.NotNull(candidate.Now.PromotedAt);
-        Assert.Null(candidate.Store.Request("ra")!.ClosedAt);
-        var member = candidate.Member("ra");
-        Assert.True(member.Stands);
-        Assert.Equal(IntegrationMemberStates.Promoted, member.State);
-        Assert.Contains("superseded", member.Said, StringComparison.Ordinal);
-        var settle = Last(candidate, IntegrationStepNames.Settle);
-        Assert.Equal(IntegrationStepOutcomes.Held, settle.Outcome);
-        Assert.Contains("superseded", settle.Said, StringComparison.Ordinal);
-        Assert.Contains(x[..8], settle.Said, StringComparison.Ordinal);
-        Assert.Contains("e4b", settle.Said, StringComparison.Ordinal);
-    }
+    // A superseded commit's recovery ref and pending disposition are IntegrationSettleGitTests's (INTEGRATE1e part e4b).
 
     /// <summary>
     /// 🔴 A line whose rule runs the declared gates but whose declaration the owner has not accepted cannot run them: the verdict port is not
