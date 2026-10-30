@@ -338,6 +338,30 @@ public sealed class HandOverLookTests : IDisposable
     }
 
     /// <summary>
+    /// 🔴 FOUNDATION1i path 3 (the foundation design §10 row 1i): the link a carry-on's new part names is the course's move, its why and who
+    /// asked: a hand-over's own, a limit's onto another account, the fall-back's `retry`, the person's press, else Daoris's `carry-on`.
+    /// </summary>
+    [Fact]
+    public void A_carry_on_s_link_is_the_course_s_move_with_its_why_and_who_asked()
+    {
+        PriorSession Prior(bool limit = false, string? profile = "account-1") => new("s1", null, "stopped") { Limit = limit, Profile = profile };
+        var handed = new HandedQuest("codex-acp", null, "s1", HandOverWhy.Near, HandOverBy.Person, T0);
+        (CourseFromWhy Why, CourseFromBy By) Heard(HandedQuest? hand, PriorSession prior, string profile, bool retried = false, bool pressed = false)
+        {
+            var decided = new List<LineCourse>();
+            Assert.NotNull(Daoris.Driver.Driver.ContinuesFrom(hand, prior, profile, retried: retried, pressed: pressed, decided: decided.Add));
+            var move = Assert.IsType<LineCourse.Move>(Assert.Single(decided));
+            return (move.Why, move.By);
+        }
+
+        Assert.Equal((CourseFromWhy.Near, CourseFromBy.Person), Heard(handed, Prior(), "account-1"));
+        Assert.Equal((CourseFromWhy.Limit, CourseFromBy.Daoris), Heard(null, Prior(limit: true), "account-2"));
+        Assert.Equal((CourseFromWhy.Retry, CourseFromBy.Daoris), Heard(null, Prior(), "account-1", retried: true));
+        Assert.Equal((CourseFromWhy.CarryOn, CourseFromBy.Person), Heard(null, Prior(), "account-1", pressed: true));
+        Assert.Equal((CourseFromWhy.CarryOn, CourseFromBy.Daoris), Heard(null, Prior(limit: true), "account-1"));
+    }
+
+    /// <summary>
     /// 🔴 SESSCTX1b (D189 point 4, D131 point 3): a driven record whose resume was refused goes on in a new part named `retry`; one the
     /// person released with *Try again* or brought forward is their press, `person`; a hand-over and a move onto another account
     /// keep their own why, whichever way it went on.

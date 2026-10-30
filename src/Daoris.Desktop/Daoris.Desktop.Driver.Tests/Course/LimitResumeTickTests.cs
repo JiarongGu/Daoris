@@ -143,7 +143,11 @@ public sealed class LimitResumeTickTests : IDisposable
         Assert.Empty(service.DaorisSaid);
 
         _now = Until.AddMinutes(1);
+        // FOUNDATION1i path 1: the start's step 1 is the course's answer for the limit's end, a resume of its own conversation.
+        var decided = new List<LineCourse>();
+        driver.Decided = decided.Add;
         var look = await driver.RunOnceAsync().WaitAsync(Poll.Patience);
+        Assert.Contains(decided, course => course is LineCourse.Resume);
 
         var seen = $"look: {string.Join(" | ", look.Events)}\nafter: {service.Record("s1")}\nheard: {string.Join("\n", Heard().Select(h => h.ToJsonString()))}";
         Assert.True(service.SessionCount == 1, seen);
