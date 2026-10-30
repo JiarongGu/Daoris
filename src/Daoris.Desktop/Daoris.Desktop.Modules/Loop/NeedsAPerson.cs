@@ -304,10 +304,13 @@ public static class NeedsAPerson
         {
             var row = Row("request-declined", Text(hold, "run"), Text(hold, "since"), Text(hold, "workspace") ?? "default");
             row["where"] = Text(hold, "repository");
-            row["declined"] = new JsonObject
+            var declined = new JsonObject
             {
                 ["node"] = Text(hold, "node"), ["quest"] = Text(hold, "quest"), ["to"] = Text(hold, "to"), ["work"] = Text(hold, "work"),
             };
+            // INTEGRATE1p (C33): the run's own request, whose acts are *Ask again…* and *Go on without it…*; written only where true, so the work's stays as it was.
+            if (hold["request"] is JsonValue asked && asked.TryGetValue<bool>(out var own) && own) declined["request"] = true;
+            row["declined"] = declined;
             rows.Add(row);
         }
 

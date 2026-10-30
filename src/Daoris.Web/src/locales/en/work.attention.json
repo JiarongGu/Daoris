@@ -10,6 +10,7 @@
   "work.attention.stewardStoppedSession": "The steward stopped session `{{session}}`.",
   "work.attention.request-declined": "request declined",
   "work.attention.requestDeclinedWhy": "Quest #{{quest}} to `{{to}}` was declined, so the work holds here until you pass it over.",
+  "work.attention.requestAskedDeclinedWhy": "Quest #{{quest}} to `{{to}}` was declined, so the run holds here until you ask again or go on without it.",
   "work.attention.go-ahead": "needs your go-ahead",
   "work.attention.departure": "awaits your yes",
   "work.attention.review": "to review",

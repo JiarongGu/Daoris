@@ -36,7 +36,7 @@ public sealed class QuestsStateSliceTests : DriverModuleBridge
         ["review"] = null, ["setUpIn"] = null, ["setUps"] = null, ["verdicts"] = null, ["noteParts"] = null, ["closure"] = null,
         ["submission"] = null, ["grewFrom"] = null, ["sourceReopened"] = null,
         ["reopened"] = new JsonObject { ["machine"] = "m1", ["sequence"] = 4, ["note"] = "again" }, ["settled"] = null, ["holder"] = null,
-        ["here"] = "m1",
+        ["here"] = "m1", ["paths"] = new JsonArray("src/**"), ["request"] = "run/node/1",
         ["workflowChoices"] = new JsonArray(new JsonObject { ["kind"] = "docs", ["at"] = "2026-10-21T09:00:00Z" }),
     };
 
@@ -100,7 +100,7 @@ public sealed class QuestsStateSliceTests : DriverModuleBridge
         Assert.Equal("id", service[0]);
         Assert.Contains("evidence", service);
         Assert.Contains("workflowChoices", service);
-        Assert.Equal("weight", service[^1]);
+        Assert.Equal("request", service[^1]);
         Assert.Equal(page.Order(StringComparer.Ordinal), QuestsStateSlice.Fields.Order(StringComparer.Ordinal));
         Assert.Empty(QuestsStateSlice.Fields.Intersect(QuestsStateSlice.PulledOnly));
         var classed = QuestsStateSlice.Fields.Concat(QuestsStateSlice.PulledOnly).ToHashSet(StringComparer.Ordinal);

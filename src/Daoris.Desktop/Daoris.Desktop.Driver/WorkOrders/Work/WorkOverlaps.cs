@@ -19,7 +19,7 @@ public static class WorkOverlaps
     /// <summary>Says a word to a running session under its key.</summary>
     public delegate Task Say(string session, string text, string key, CancellationToken ct);
 
-    private const string ToldFile = "overlaps-told.json";
+    private static string ToldPath(string home) => DaorisHome.Entry(home, HomeEntry.OverlapsTold);
 
     /// <summary>The snapshot with each running unit's changed paths and the quests whose integration request is open.</summary>
     public static async Task<Snapshot> LookAsync(Snapshot snapshot, IReadOnlySet<string> integrating, Diff diff, CancellationToken ct = default)
@@ -66,7 +66,7 @@ public static class WorkOverlaps
             }
         }
 
-        if (!kept.SetEquals(told)) AtomicFile.WriteText(Path.Combine(home, ToldFile), JsonSerializer.Serialize(kept.Order(StringComparer.Ordinal)));
+        if (!kept.SetEquals(told)) AtomicFile.WriteText(ToldPath(home),JsonSerializer.Serialize(kept.Order(StringComparer.Ordinal)));
     }
 
     /// <summary>The ordinary word a running unit is told.</summary>
@@ -79,7 +79,7 @@ public static class WorkOverlaps
 
     private static HashSet<string> Told(string home)
     {
-        var path = Path.Combine(home, ToldFile);
+        var path = ToldPath(home);
         try
         {
             return File.Exists(path)

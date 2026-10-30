@@ -25,7 +25,7 @@ public static class WorkflowNodeCommand
     public const string Usage = RunNodeWords.Usage;
 
     /// <summary>Whether the words after <c>workflow</c> ask for a skip or a stop, rightly or not.</summary>
-    public static bool Asks(IReadOnlyList<string> args) => args is [NodeWordActs.Skip or NodeWordActs.Stop, ..];
+    public static bool Asks(IReadOnlyList<string> args) => args is [NodeWordActs.Skip or NodeWordActs.Stop or NodeWordActs.AskAgain or NodeWordActs.GoOn, ..];
 
     /// <summary>The words after <c>workflow</c> read, or null with what is wrong with them.</summary>
     public static WorkflowNodeAsk? Read(IReadOnlyList<string> args, out string? problem)

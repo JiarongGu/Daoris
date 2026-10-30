@@ -552,6 +552,8 @@ public sealed class DriverWatch(
         // INTEGRATE1n part n3 (§17.4): the door a unit's `integrate` asks, the home's own where a test hands none; an older build set none, and
         // its runtime started and reconciled nothing of it.
         if (nodes is not null) nodes.Integration = IntegrationDoor ?? NodeRuntime.HomeDoor(home);
+        // INTEGRATE1p (§17.5): a run's request publishes its quest through this loop's service client.
+        if (nodes is not null) nodes.Requests = service;
 
         // FABRIC-PIPELINE1d (the pipeline design §4.2): the heavy executor a check is handed to; its answer asks a pass, which reconciles it.
         HeavyExecutor? executor = null;

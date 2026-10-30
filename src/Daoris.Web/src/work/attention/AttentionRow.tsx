@@ -229,7 +229,7 @@ export type AttentionActs = {
    */
   quiet?: (item: Attention, act: 'carry-on' | 'hand-over' | 'stop' | 'leave', answered?: Answered) => void;
   /** A run's `work.requests` node passed over, with the person's words, as the run's view passes it (INTEGRATE1o part o3). */
-  passOver?: (item: Attention, words: string, answered: Answered) => void;
+  passOver?: (item: Attention, words: string, answered: Answered, act?: 'ask-again' | 'go-on') => void;
 };
 
 /** Which handler each act needs. */
@@ -275,6 +275,8 @@ const HANDLER: Record<AttentionActId, keyof AttentionActs> = {
   'quiet-stop': 'quiet',
   'quiet-leave': 'quiet',
   'pass-over': 'passOver',
+  'ask-again': 'passOver',
+  'go-on': 'passOver',
 };
 
 /** The kinds that wait in a circle rather than in a repository. */
@@ -444,6 +446,8 @@ export function AttentionRow({ item, onOpen, onRun, acts = {}, busy = false, ope
       case 'quiet-leave': return t('work.attention.act.leave');
       // INTEGRATE1o part o3: the run's own skip, as its Workflow view says it.
       case 'pass-over': return t('workflow.run.node.skip');
+      case 'ask-again': return t('workflow.run.node.askAgain');
+      case 'go-on': return t('workflow.run.node.goOn');
     }
   };
 
@@ -558,6 +562,8 @@ export function AttentionRow({ item, onOpen, onRun, acts = {}, busy = false, ope
               else if (asking === 'accept-rule') acts.acceptRule?.(item, answered);
               else if (asking === 'not-yet') acts.notYet?.(item, words.trim(), answered);
               else if (asking === 'pass-over') acts.passOver?.(item, words.trim(), answered);
+              else if (asking === 'ask-again') acts.passOver?.(item, '', answered, 'ask-again');
+              else if (asking === 'go-on') acts.passOver?.(item, words.trim(), answered, 'go-on');
               else if (asking === 'opinion-anyway') acts.opinionAnyway?.(item, words.trim() || undefined, answered);
               else if (asking === 'quiet-carry-on') acts.quiet?.(item, 'carry-on', answered);
               else if (asking === 'quiet-stop') acts.quiet?.(item, 'stop', answered);
@@ -612,6 +618,9 @@ function AskOnce({ act, item, label, busy, words, onWords, choice, onChoice, onC
   const anyway = act === 'opinion-anyway' && item.opinion ? item.opinion.opinion : null;
   // INTEGRATE1o part o3: passing a run's declined request over needs the person's words, which the run's record keeps with the skip.
   const passOver = act === 'pass-over';
+  // INTEGRATE1p (C33): a declined request of the run's own, asked again (nothing to say) or gone on without (the person's words).
+  const askAgain = act === 'ask-again';
+  const goOn = act === 'go-on';
   // SESSWATCH1a: what ending a quiet session does, and that the person's waiting words go to the next part (§5.2).
   const quietAsk = act === 'quiet-carry-on' || act === 'quiet-stop';
   const quietSays = act === 'quiet-carry-on' ? 'work.attention.ask.carryOn'
@@ -622,6 +631,10 @@ function AskOnce({ act, item, label, busy, words, onWords, choice, onChoice, onC
     ? t('opinion.ask.anyway', { unsettled: unsettledWords(t, opinionState(anyway.state), anyway) })
     : passOver
     ? t('workflow.run.node.skipSays', { node: item.declined?.node ?? '' })
+    : askAgain
+    ? t('workflow.run.node.askAgainSays', { node: item.declined?.node ?? '' })
+    : goOn
+    ? t('workflow.run.node.goOnSays', { node: item.declined?.node ?? '' })
     : notYet
     ? t(item.session ? 'review.ask.notYet' : 'review.ask.notYetOwn', { quest: item.id })
     : act === 'approve'
@@ -640,6 +653,10 @@ function AskOnce({ act, item, label, busy, words, onWords, choice, onChoice, onC
     ? t('opinion.ask.anywayMeanIt')
     : passOver
     ? t('workflow.run.node.skipMeanIt')
+    : askAgain
+    ? t('workflow.run.node.askAgainMeanIt')
+    : goOn
+    ? t('workflow.run.node.goOnMeanIt')
     : notYet
     ? t('review.ask.notYetMeanIt')
     : act === 'approve'
@@ -651,7 +668,7 @@ function AskOnce({ act, item, label, busy, words, onWords, choice, onChoice, onC
           : t('asks.record.publish');
   // The words a go-ahead's answer, a second opinion's gate or a *not yet* takes, in the one field each names.
   const wordsLabel = answering ? t('asks.goAhead.words') : anyway ? t('opinion.ask.words') : notYet ? t('review.ask.notYetWords')
-    : passOver ? t('workflow.run.node.skipWords') : null;
+    : passOver ? t('workflow.run.node.skipWords') : goOn ? t('workflow.run.node.goOnWords') : null;
   return (
     // Only a refusal ends or removes something (platform UX §4): every other ask here is outward and loses nothing.
     <InlineConfirm
@@ -661,7 +678,7 @@ function AskOnce({ act, item, label, busy, words, onWords, choice, onChoice, onC
       says={<Inline text={sentence} />}
       meanIt={move}
       busy={busy}
-      ready={!(act === 'choose' && !choice) && !((notYet || passOver) && !words.trim())}
+      ready={!(act === 'choose' && !choice) && !((notYet || passOver || goOn) && !words.trim())}
       onConfirm={onConfirm}
       onClose={onCancel}
     >
