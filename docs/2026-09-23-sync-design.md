@@ -1,5 +1,7 @@
 # The remote as a git remote — design (SYNC, D68)
 
+> Router standing, moved here when the router was cut to its size (DOCSIZE1): also governed by D153.
+
 > *"the remote share server is more like a git system, and local is the main driver and we can
 > push/sync/merge/rebase remote so to keep everything in sync, what this gives is the system works
 > with/without remote share and we can have proper merging logic when there is conflict"* — the

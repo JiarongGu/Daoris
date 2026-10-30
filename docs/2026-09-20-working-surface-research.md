@@ -1,5 +1,7 @@
 # The working surface — research, before the design
 
+> Router standing, moved here when the router was cut to its size (DOCSIZE1): used by SURF1.
+
 > Written 2026-09-20, from the owner's direction: **the desktop is becoming a user-driven
 > application, and it should hold code sessions the way a terminal agent CLI does — but across
 > different agents, repositories and concurrent sessions.** Research first, deliberately: the platform's

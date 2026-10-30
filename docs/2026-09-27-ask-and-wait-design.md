@@ -1,5 +1,7 @@
 # Ask and wait — a session that needs another repository asks it, and is resumed with the answer
 
+> Router standing, moved here when the router was cut to its size (DOCSIZE1): also governed by D131.
+
 > Written 2026-09-27 from the first real run (FG5). The development session in the front end needed
 > three facts about the backend's note API. It tried to read the backend's code, was refused, and
 > then wrote the front end on assumptions. Its own proposal named the right move, *"publish a quest

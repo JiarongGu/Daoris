@@ -1,5 +1,7 @@
 # Evidence Daoris checks — a met answer with a fact under it
 
+> Router standing, moved here when the router was cut to its size (DOCSIZE1): also governed by D146.
+
 > EVID1, decided as D144 (2026-10-03). EVID1a and EVID1b are built (their notes under D144); the rest is not. The suggestion is
 > the outside analysis's §1 (Appendix A of [`DAORIS_UNIFIED_COLLABORATION_ARCHITECTURE_AND_PLAN_2026-10-16.md`](DAORIS_UNIFIED_COLLABORATION_ARCHITECTURE_AND_PLAN_2026-10-16.md)), weighed in
 > [`2026-10-03-future-directions-review.md`](2026-10-03-future-directions-review.md) (its §1 row and the EVID1 slice).

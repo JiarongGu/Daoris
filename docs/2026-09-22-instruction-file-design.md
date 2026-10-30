@@ -1,5 +1,7 @@
 # The instruction file — where the always-loaded tier lives
 
+> Router standing, moved here when the router was cut to its size (DOCSIZE1): also governed by D117.
+
 > Written 2026-09-22 (CANON8), after the owner saw a candidate adopter's layout and said it *"made a
 > common management style for different agents, which is good to take"*. This is the contract for
 > moving the always-loaded tier out of `.claude/rules/` and into the file every harness reads. Read
