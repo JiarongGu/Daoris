@@ -44,8 +44,10 @@ Decision number: D<n>, reserved for this branch: write docs/decisions/D<n>.md. (
 How you work: edit files only with Edit and Write, never through python, sed, perl, cat/printf redirection or any
 shell redirect (a hook refuses them; that includes appending a decision note); write
 each failing test first and RUN it to watch it fail before writing the code (a compile failure is a red: run it),
-and say which you saw fail; commit each piece once its tests pass. A component's sources changed on a later day than
-its README asks the README to describe the change (the docs gate). New words on the page run `src/locales`' tests too:
+and say which you saw fail; commit each piece once its tests pass. Records stay short: a decision's note says what was
+decided and why in at most 150 words, each reading one sentence; the tests run, their counts and times go in the hand-back
+and the commit message, never the note. A README changes only where the component's shape changed, never a sentence per
+part: the docs gate compares by day, so a README already touched that day keeps up. New words on the page run `src/locales`' tests too:
 `names:check --strict` does not hold a sentence's glossary words, `names.test.ts` does (WORKFLOW1h-d's 这台机器).
 Run only your own tests, filtered (the ones you add or change and those covering the code you change), and the quick
 checks before hand-back; never a whole project, a fast half, the web's whole suite or `npm run verify`: the CI beside
