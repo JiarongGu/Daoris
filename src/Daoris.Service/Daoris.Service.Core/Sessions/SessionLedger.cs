@@ -1873,10 +1873,15 @@ public sealed class SessionLedger(
     /// where the record's waiting supervisor's words are not exactly these, and absent reads as none, so a mover that names none never
     /// carries one. Naming any needs the record parked.
     /// </param>
+    /// <param name="turns">
+    /// The turn lines of each session a completion releases memory for, by session (KNOWCENTRAL2c, the memory coordinator design §1): its
+    /// rows name the models of the turn that holds their instant, and <c>unknown</c> where none is handed.
+    /// </param>
     public async Task<SessionAdvanceOutcome> AdvanceAsync(
         string id, string state, string? note, string? evidence, string? transcript,
         DateTimeOffset now, CancellationToken ct = default, bool interrupted = false, bool limit = false, string? noteParts = null,
-        string? expected = null, bool unbindAsk = false, IReadOnlyCollection<string>? expect = null)
+        string? expected = null, bool unbindAsk = false, IReadOnlyCollection<string>? expect = null,
+        IReadOnlyDictionary<string, MemoryTurns>? turns = null)
     {
         var target = Parse(state);
         if (target is null or SessionState.Queued)
@@ -1923,6 +1928,11 @@ public sealed class SessionLedger(
                 + $"session `{id}` was asked to move to {Spell(target.Value)}.",
                 Session: null);
         }
+
+        // A completion in the main tree is its session's commit point (KNOWCENTRAL2c): the root is read before the step, as an open reads it.
+        var mainTree = target == SessionState.Completed && await sessions.FindAsync(id, ct).ConfigureAwait(false) is { } named
+            ? Trees.Normalize(await RootOfAsync(named.Repository, ct).ConfigureAwait(false))
+            : null;
 
         // Read, judged and written as one step (REV3): the driver's conclusion and a person's stop,
         // arriving from two hosts, could both read the session active, and the second moved a finished one.
@@ -1978,6 +1988,12 @@ public sealed class SessionLedger(
             if (unbindAsk && moved!.Ask is { } ask && asks is not null)
             {
                 await asks.UnbindIntakeAsync(ask, moved.Id, now, inside).ConfigureAwait(false);
+            }
+
+            // Its memory is released with the record, and carries what the sessions it continues staged; a tree's waits for its post.
+            if (target == SessionState.Completed && (session.Tree is null || Trees.Normalize(session.Tree) == mainTree))
+            {
+                await sessions.Memory.ReleaseAsync([id], predecessors: true, turns, inside).ConfigureAwait(false);
             }
 
             return new SessionAdvanceOutcome(
