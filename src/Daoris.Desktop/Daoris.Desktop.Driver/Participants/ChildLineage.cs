@@ -114,6 +114,28 @@ public static class ChildLineage
     }
 
     /// <summary>
+    /// A process's token, issued from this flow's set with its <c>start</c> written: before its spawn, or as its run's move returns
+    /// where the run is moved first (a resume, a chat's go-on). Its holder lets it go where no process is spawned under it.
+    /// </summary>
+    public static string Opened(string home, string sessionId)
+    {
+        var tokens = LineageTokens.Current;
+        var proc = tokens.Issue();
+        Start(home, sessionId, proc, tokens.Issuer, DateTimeOffset.UtcNow);
+        return proc;
+    }
+
+    /// <summary>
+    /// A process's exit its run read itself: told to the token set, and its <c>end</c> written where the run concludes nothing by it
+    /// (a refused advance, a wait thrown as the loop closes, a drain that faulted).
+    /// </summary>
+    public static void Exited(string home, string sessionId, string proc, bool clean)
+    {
+        LineageTokens.Current.Exited(proc);
+        End(home, sessionId, clean, DateTimeOffset.UtcNow, proc);
+    }
+
+    /// <summary>
     /// A process's end once its exit was read, where the session has lineage: clean, or killed, stopped or failed, naming the
     /// process where it has a token. A session with no file gets none.
     /// </summary>
@@ -123,8 +145,12 @@ public static class ChildLineage
         Append(home, sessionId, ChildBindings.EndLine(clean, at, proc));
     }
 
-    /// <summary>The part's children, as its lineage says; none where it has no file.</summary>
-    public static ChildBindings Read(string home, string sessionId)
+    /// <summary>
+    /// The part's children, as its lineage says, read in this window: each process this window issued by its token's reading in this
+    /// flow's set (COWORKVIEW1a); none where it has no file.
+    /// </summary>
+    /// <param name="kind">The record's kind, <see cref="ChildBindings.Chat"/> or driven, which null reads as.</param>
+    public static ChildBindings Read(string home, string sessionId, string? kind = null)
     {
         if (!SessionShape.IsMatch(sessionId)) return ChildBindings.Fold([]);
         var path = PathOf(home, sessionId);
@@ -132,7 +158,7 @@ public static class ChildLineage
         {
             using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
             using var reader = new StreamReader(stream, Utf8);
-            return ChildBindings.Fold(reader.ReadToEnd().Split('\n'));
+            return ChildBindings.Fold(reader.ReadToEnd().Split('\n'), kind, LineageTokens.Current.Of);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {

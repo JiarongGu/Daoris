@@ -21,9 +21,10 @@ public sealed class ParticipantPortsTests : IDisposable
         await Capture(lines, "s1", _home);
         var children = ChildLineage.Read(_home, "s1").Children;
         Assert.Equal([("a1", (string?)null), ("a2", "a1")], children.Select(child => (child.Native, child.Parent)));
-        Assert.All(children, child => Assert.Equal(ChildBindings.Active, child.State));
+        // No process bracketed them: history, its process's exit proven by nothing, and a driven record's end claims no boundary.
+        Assert.All(children, child => Assert.Equal(ChildBindings.Uncertain, child.State));
         ChildLineage.End(_home, "s1", clean: false, DateTimeOffset.UnixEpoch);
-        Assert.All(ChildLineage.Read(_home, "s1").Children, child => Assert.Equal(ChildBindings.Lost, child.State));
+        Assert.All(ChildLineage.Read(_home, "s1").Children, child => Assert.Equal(ChildBindings.Unrecorded, child.State));
         await Capture(lines, "s2", _home);
         Assert.Equal(2, ChildLineage.Read(_home, "s2").Children.Count);
         await Capture("{\"type\":\"foreign\"}", "s3", _home);

@@ -453,6 +453,38 @@ public sealed class ChatGoOnTests : IDisposable
     }
 
     /// <summary>
+    /// COWORKVIEW1a rule 4: a chat's go-on writes its process's <c>start</c> as its move returns, under a token of this Daoris
+    /// process's; put back before the runner, its words taken back, that token is told once and leaves, no line after its <c>start</c>.
+    /// </summary>
+    [Fact]
+    public async Task A_go_on_put_back_after_its_move_leaves_its_start_alone_and_tells_its_token_once()
+    {
+        var ledger = new ChatLedger().Register("engine", _root);
+        ledger.Chat("c1", "completed", "talk", _root).Say("w1", "Also log the port.");
+        ledger.WhenWorking = session => session["said"] = new JsonArray();
+        new HarnessConversations(_home).Keep("c1", "talk", "conv-c1");
+        var tokens = new LineageTokens(Environment.ProcessId, DateTime.UtcNow);
+        var told = new List<string>();
+        tokens.Moved += token =>
+        {
+            lock (told) told.Add(token);
+        };
+        using var within = LineageTokens.Within(tokens);
+        var events = Events;
+        using var runner = Runner(ledger, events);
+
+        events.Append("c1", Shown("w1", "Also log the port."));
+
+        await NoteAsync(events, "c1", e => e.Text?.Contains("taken back before it went on") == true);
+        var start = System.Text.Json.JsonDocument.Parse(Assert.Single(File.ReadAllLines(ChildLineage.PathOf(_home, "c1")))).RootElement;
+        Assert.Equal("start", start.GetProperty("by").GetString());
+        Assert.True(tokens.Issued(start.GetProperty("issuer").GetString()));
+        var proc = start.GetProperty("proc").GetString()!;
+        await Poll.Until(() => tokens.Reading(proc) == TokenReading.Gone, () => $"the token {proc} is still held", Poll.Patience);
+        lock (told) Assert.Equal([proc], told);
+    }
+
+    /// <summary>
     /// 🔴 SAIDBACK1g (D137 §2.4): a chat put back because every word was taken back keeps what ended it: its own note, and the
     /// interrupted flag the move to working cleared, not the taken-back line in place of them. The conversation says so beside.
     /// </summary>
