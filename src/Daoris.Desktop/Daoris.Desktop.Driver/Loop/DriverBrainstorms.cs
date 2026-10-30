@@ -691,6 +691,13 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
     }
 
     /// <summary>
+    /// The code a pass is <c>unavailable</c> with where its voice's walk found no ready account (BRAINSTORM1c, D176 point 7): the walk's own,
+    /// read from its facts and never its words (<see cref="StartPasses.Of"/>), the one vocabulary every walk over an entry says: <c>unavailable</c>
+    /// where nothing of the agent can run here, <c>not-offered</c>, <c>cooling</c>, <c>signed-out</c>, else <c>held</c>.
+    /// </summary>
+    internal static string PassCode(HarnessSelection selection) => StartPasses.Of(selection);
+
+    /// <summary>
     /// One real turn (BRAINSTORM1a, BRAINSTORM1a2): the agent's account by the walk, its spawn prepared as any session's, the
     /// <c>brainstorm</c> posture held to its room, one turn framed as one prompt, its connector its only one and carrying the turn so
     /// its result tool writes the answer file, and its own minutes. Its record is the brainstorm's own, under the home's data: no
@@ -725,10 +732,7 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
 
         if (!selection.Allowed)
         {
-            return new BrainstormTurnRun(
-                false, null,
-                selection.NotOffered is not null ? AgentOffers.NotOffered : selection.Cooling is not null ? "cooling" : "unavailable",
-                $"held  brainstorm turn {turn.Turn}: {selection.Refusal}");
+            return new BrainstormTurnRun(false, null, PassCode(selection), $"held  brainstorm turn {turn.Turn}: {selection.Refusal}");
         }
 
         var files = new BrainstormFiles(_context.Home);
