@@ -1082,10 +1082,19 @@ public sealed class DriverLoop(
                 // none moves anything above, and the page said *no workspace yet* over 29 repositories
                 // just registered, until it was reloaded.
                 var registered = await RegisteredAsync(service, ct).ConfigureAwait(false);
+                var registryMoved = false;
                 if (RegistryHeard(Facts, registered, lastRegistered))
                 {
                     changed = true;
+                    registryMoved = lastRegistered is not null;
                     lastRegistered = registered;
+                }
+
+                // What this look moved of the rules and the registry, told as the scopes' own changes (FOUNDATION1s): the page's tick
+                // asks neither again, since a press's change reaches it the same way.
+                if (LookScopes(report.Events, registryMoved) is var moved && moved != StateScopes.None)
+                {
+                    StatePublisher.Publish(eventBus, moved);
                 }
 
                 if (report.PlannedAnything || changed)
@@ -1391,6 +1400,15 @@ public sealed class DriverLoop(
             return null;
         }
     }
+
+    /// <summary>
+    /// What a look moved that the page reads by pull, as scopes (FOUNDATION1s, D182 point 7): the rules, where it settled an agent's
+    /// proposal (PERM2: a line classed <c>rules</c>, applied, refused or held), and the registry, where its signature moved after the
+    /// first reading. The first reading is the page's own first read.
+    /// </summary>
+    public static StateScopes LookScopes(IEnumerable<string> events, bool registryMoved) =>
+        (events.Any(line => line.StartsWith("rules  ", StringComparison.Ordinal)) ? StateScopes.Rules : StateScopes.None)
+        | (registryMoved ? StateScopes.Registry : StateScopes.None);
 
     /// <summary>
     /// Whether the registry's signature the tick read is a change. A change also wakes the machine's facts (REGWAKE1): a repository
