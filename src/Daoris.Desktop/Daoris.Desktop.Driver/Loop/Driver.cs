@@ -475,6 +475,12 @@ public sealed class Driver(
     internal Task<int> BrainstormsAsync(Snapshot snapshot, int taken, List<string> events, CancellationToken ct) =>
         Brainstorms.BrainstormsAsync(snapshot, taken, events, ct);
 
+    /// <summary>
+    /// A room measurement of an agent's pass (BRAINSTORM1c, <see cref="DriverBrainstorms.MeasureRoomAsync"/>): the walk's account alone where
+    /// <paramref name="spend"/> is false, else one probe pass on it, kept as evidence. The terminal's <c>brainstorm measure</c> is its press.
+    /// </summary>
+    public Task<RoomMeasure> MeasureRoomAsync(string agent, bool spend, CancellationToken ct) => Brainstorms.MeasureRoomAsync(agent, spend, ct);
+
     /// <summary>How a meeting's turn is run (AGENTROOM1a): refused with no stand-in, since no tool carries its message yet.</summary>
     internal Func<BrainstormTurn, CancellationToken, Task<BrainstormTurnRun>>? MeetingTurns
     {
