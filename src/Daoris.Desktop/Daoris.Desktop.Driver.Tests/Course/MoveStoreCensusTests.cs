@@ -40,6 +40,9 @@ public sealed class MoveStoreCensusTests
     /// <summary>The curve's move (FOUNDATION1f-iii part a), which decides its move through the holder as the live limit move does.</summary>
     private const string CurveMove = "Course/Chat/CurveMove.cs";
 
+    /// <summary>The conversation's hand-over's ask (FOUNDATION1f-v part a), which decides its move through the same holder.</summary>
+    private const string HandOverAsk = "Course/HandOver/HandOver.cs";
+
     /// <summary>The driven carry-on's record (FOUNDATION1f-iv part a), which decides its move through the same holder.</summary>
     private const string CarryOn = "Loop/CarryOnRecord.cs";
 
@@ -70,16 +73,16 @@ public sealed class MoveStoreCensusTests
         }
 
         Assert.Equal(
-            [CurveMove, LiveMove, Conversations, Wiring, CarryOn, DrivenLine],
+            [CurveMove, LiveMove, Conversations, HandOverAsk, Wiring, CarryOn, DrivenLine],
             readers.Select(reader => reader[..reader.IndexOf(" names ", StringComparison.Ordinal)]).Distinct().Order(StringComparer.Ordinal));
         Assert.Contains($"{Wiring} names MoveStore", readers);
         Assert.All(
             ["MoveStore", "MoveTakeUp", "MoveTakeUpScope", "MoveDelivery", "MoveResolve", "IMoveSaid", "MoveSaidDoor"],
             used => Assert.Contains($"{Conversations} names {used}", readers));
 
-        // The live moves, the limit's and the curve's, and the driven carry-on's record name the decision alone: every write of their
-        // records goes through the holder's claim.
-        foreach (var move in new[] { LiveMove, CurveMove, CarryOn })
+        // The live moves, the limit's and the curve's, the conversation's hand-over's ask and the driven carry-on's record name the decision
+        // alone: every write of their records goes through the holder's claim.
+        foreach (var move in new[] { LiveMove, CurveMove, HandOverAsk, CarryOn })
         {
             Assert.Equal(
                 [$"{move} names MoveDecision", $"{move} names MoveExecutors", $"{move} names MoveHows"],
@@ -139,13 +142,13 @@ public sealed class MoveStoreCensusTests
     }
 
     /// <summary>
-    /// FOUNDATION1f-i part 2, with FOUNDATION1f-vi part a: the one production source that names an importer is the conversations' holder, which
-    /// hands the limit box's importer to its take-up and names no other (the hand-over's is row f-v's); the box files' readers name no move
-    /// type, so today's owners of the boxes read them as before. No production source writes the limit box any more: its writer is kept for a
-    /// test to leave the box an older build would, and for nothing else.
+    /// FOUNDATION1f-i part 2, with FOUNDATION1f-vi part a and FOUNDATION1f-v part a: the one production source that names an importer is the
+    /// conversations' holder, which hands the limit box's importer and the conversation's hand-over box's to its take-up; the box files' readers
+    /// name no move type, so today's owners of the boxes read them as before (the quest's hand-over, part c's, reads its box as it did). No
+    /// production source writes the limit box any more: its writer is kept for a test to leave the box an older build would, and for nothing else.
     /// </summary>
     [Fact]
-    public void No_production_source_calls_a_box_importer_but_the_conversations_holder_for_the_limit_box_and_none_writes_it()
+    public void No_production_source_calls_a_box_importer_but_the_conversations_holder_for_the_limit_and_the_conversations_hand_over_box_and_none_writes_the_limit_box()
     {
         var callers = new List<string>();
         var writers = new List<string>();
@@ -157,9 +160,9 @@ public sealed class MoveStoreCensusTests
             if (Relative(path) != "Course/Chat/LimitBox.cs" && Regex.IsMatch(text, @"\bLimitBoxes\b[^;]*\.Write\(|\bboxes\.Write\(")) writers.Add(Relative(path));
         }
 
-        Assert.Equal([$"{Conversations} names LimitBoxImport"], callers);
+        Assert.Equal([$"{Conversations} names LimitBoxImport", $"{Conversations} names HandOverBoxImport"], callers);
         Assert.Empty(writers);
-        foreach (var reader in new[] { "Course/Chat/LimitBox.cs", "Course/HandOver/HandOverFiles.cs", "Course/HandOver/HandOver.cs" })
+        foreach (var reader in new[] { "Course/Chat/LimitBox.cs", "Course/HandOver/HandOverFiles.cs" })
         {
             Assert.DoesNotMatch(@"\bMove(Store|Record|TakeUp|BoxImport|FromBox|Imported)\b", CourseCensusTests.WithoutComments(File.ReadAllText(Path.Combine(Driver, reader))));
         }

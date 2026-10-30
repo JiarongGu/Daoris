@@ -144,13 +144,12 @@ internal sealed class ChatHandOver(ChatContext context, IChatRunning runner)
     public Task<HandedOver> TakeAsync(
         string sessionId, DriverConfig config, Func<string, string, Task>? onEnded, CancellationToken ct = default)
     {
-        if (Moves.HandOverStanding(sessionId) is not { Agent: { } agent } waiting || Moves.Claimed(waiting) is not { } record)
+        if (Moves.HandOverStanding(sessionId) is not { } waiting || ConversationMoves.AskOf(waiting) is not { } ask || Moves.Claimed(waiting) is not { } record)
         {
             return Task.FromResult(new HandedOver(null, false, null, $"nothing waits to be handed over from `{sessionId}`."));
         }
 
-        var at = waiting.Moments.TryGetValue(MoveRecordPhase.Decided, out var decided) && DateTimeOffset.TryParse(decided, out var moment) ? moment : DateTimeOffset.UtcNow;
-        return TakeCoreAsync(sessionId, new HandOverRequest(agent, waiting.Account, waiting.Why, waiting.By, at), config, onEnded, moved: null, record, keeps: true, ct);
+        return TakeCoreAsync(sessionId, ask, config, onEnded, moved: null, record, keeps: true, ct);
     }
 
     /// <summary>

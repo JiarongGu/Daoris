@@ -202,6 +202,31 @@ public sealed class ConversationMoves
     internal static bool WaitsToBeTaken(MoveRecord move) =>
         move is { Agent: not null, Executor: MoveExecutors.Conversation, Phase: MoveRecordPhase.Decided or MoveRecordPhase.Quiescing };
 
+    /// <summary>
+    /// Whether a conversation move stands for the record and has not yet put its words on the line's head (FOUNDATION1f-v part a, TAKEWAITS1):
+    /// the shell's judge of the person's words holds a word said meanwhile and says it once the move ends. A move held for the person has gone
+    /// on past its destination, so its words follow the line's head and it holds none. False for a store that will not answer.
+    /// </summary>
+    public bool Stands(string session)
+    {
+        try
+        {
+            return Store.Standing(session) is { Executor: MoveExecutors.Conversation, Phase: not MoveRecordPhase.Held };
+        }
+        catch (Exception error) when (error is DriverException or SqliteException)
+        {
+            return false;
+        }
+    }
+
+    /// <summary>A waiting hand-over as the ask its take is handed, moment included; null for a move that is none.</summary>
+    internal static HandOverRequest? AskOf(MoveRecord move) =>
+        move.Agent is { } agent
+            ? new HandOverRequest(
+                agent, move.Account, move.Why, move.By,
+                move.Moments.TryGetValue(MoveRecordPhase.Decided, out var decided) && DateTimeOffset.TryParse(decided, System.Globalization.CultureInfo.InvariantCulture, out var at) ? at : DateTimeOffset.UtcNow)
+            : null;
+
     /// <summary>The record's standing hand-over that waits to be taken, whichever run holds it; null for none, or a store that will not answer.</summary>
     internal MoveRecord? HandOverStanding(string session)
     {
