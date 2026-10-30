@@ -7,7 +7,19 @@ namespace Daoris.Knowledge;
 /// <param name="First">Its first line in the file, from 1.</param>
 /// <param name="Last">Its last line, the blank lines before the next note left out.</param>
 /// <param name="Body">Its lines, its label's line first, so the label is searched in full.</param>
-public sealed record DecisionNote(string Label, int First, int Last, string Body);
+/// <param name="Full">Its label whole, whitespace flattened, which a mark's <c>replacing</c> quote names (KNOWFRESH1a-i).</param>
+/// <param name="Emphasised">Whether an emphasised span gave the label, and not a dated heading: only a span can be a mark.</param>
+public sealed record DecisionNote(string Label, int First, int Last, string Body, string Full, bool Emphasised);
+
+/// <summary>
+/// What a note's label says of a later record (KNOWFRESH1a-i; the knowledge-freshness design's §3.1).
+/// </summary>
+/// <param name="Line">The note's first line in the file, from 1.</param>
+/// <param name="Kind"><c>amended</c> or <c>superseded</c>.</param>
+/// <param name="By">The later decision's number, or null for the same decision's own amendment.</param>
+/// <param name="Quote">The label a <c>replacing "…"</c> quote holds, or null where the note holds none.</param>
+/// <param name="Target">The first line of the earlier note whose full label the quote is, or null for none.</param>
+public sealed record NoteMark(int Line, string Kind, int? By, string? Quote, int? Target);
 
 /// <summary>
 /// A decision split at its dated notes (ORIENT1g; D134 §5 as amended): the decision's own text, then each note
@@ -30,7 +42,8 @@ public sealed record DecisionNote(string Label, int First, int Last, string Body
 ///
 /// <para>A twin of the digest's reader with no code shared: both are held to one table,
 /// <c>tools/orient-index-fixtures/decision-notes.json</c>, row for row (ORIENT1h), this one by
-/// <c>DecisionNotesTests</c> and the digest by <c>tools/orient-index.test.mjs</c>.</para>
+/// <c>DecisionNotesTests</c> and the digest by <c>tools/orient-index.test.mjs</c>. The marks a note carries
+/// (<see cref="Marks"/>, KNOWFRESH1a-i) are held to a second table, <c>note-marks.json</c>, the same way.</para>
 /// </remarks>
 public static partial class DecisionNotes
 {
@@ -51,15 +64,14 @@ public static partial class DecisionNotes
             break;
         }
 
-        var starts = new List<(int Line, string Label)>();
+        var starts = new List<(int Line, string Label, string Full, bool Emphasised)>();
         for (var i = opening + 1; opening >= 0 && i < lines.Length; i++)
         {
             if (inFence[i] || (i > 0 && lines[i - 1].Trim().Length > 0)) continue;
             var dated = DatedHeading().Match(lines[i]);
-            var label = dated.Success && IsoDate().IsMatch(dated.Groups[1].Value)
-                ? Truncate(dated.Groups[1].Value)
-                : Label(lines[i]);
-            if (label is not null) starts.Add((i, label));
+            var isHeading = dated.Success && IsoDate().IsMatch(dated.Groups[1].Value);
+            var full = isHeading ? Whitespace().Replace(dated.Groups[1].Value, " ").Trim() : Span(lines[i]);
+            if (full is not null) starts.Add((i, Truncate(full), full, !isHeading));
         }
 
         if (starts.Count == 0) return (text, []);
@@ -69,7 +81,7 @@ public static partial class DecisionNotes
         {
             var from = starts[k].Line;
             var end = Until(lines, from, k + 1 < starts.Count ? starts[k + 1].Line : lines.Length);
-            notes.Add(new DecisionNote(starts[k].Label, from + 1, end, string.Join('\n', lines[from..end])));
+            notes.Add(new DecisionNote(starts[k].Label, from + 1, end, string.Join('\n', lines[from..end]), starts[k].Full, starts[k].Emphasised));
         }
 
         var entryEnd = Until(lines, Math.Max(heading, 0), starts[0].Line);
@@ -81,6 +93,16 @@ public static partial class DecisionNotes
     /// is in one of the forms the record writes undated, cut to a row; null for any other line.
     /// </summary>
     public static string? Label(string line)
+    {
+        var span = Span(line);
+        return span is null ? null : Truncate(span);
+    }
+
+    /// <summary>
+    /// The same span whole, whitespace flattened: what a mark's <c>replacing "…"</c> quote names, where the label cut to
+    /// a row would let a long label never match (KNOWFRESH1a-i). Null for a line that is no note's.
+    /// </summary>
+    private static string? Span(string line)
     {
         string? span = null;
         if (line.StartsWith("**", StringComparison.Ordinal))
@@ -103,8 +125,62 @@ public static partial class DecisionNotes
 
         if (string.IsNullOrWhiteSpace(span)) return null;
         if (!IsoDate().IsMatch(span) && !NoteForms.Any(form => form.IsMatch(line))) return null;
-        return Truncate(span);
+        return Whitespace().Replace(span, " ").Trim();
     }
+
+    /// <summary>
+    /// The marks of one decision (KNOWFRESH1a-i): each emphasised note whose label opens <c>Amended by D&lt;n&gt;</c> or
+    /// <c>Superseded by D&lt;n&gt;</c>, or, with no decision named, holds a <c>, replacing "…"</c> quote and so amends the
+    /// decision's own earlier note. A quote is matched against each earlier note's full label, and a quote holding a
+    /// quote mark is tried at each place it could end. The tool's <c>readMarks</c> reads the same, and both are held
+    /// to <c>tools/orient-index-fixtures/note-marks.json</c>.
+    /// </summary>
+    public static IReadOnlyList<NoteMark> Marks(string text)
+    {
+        var (_, notes) = Split(text);
+        var marks = new List<NoteMark>();
+        for (var k = 0; k < notes.Count; k++)
+        {
+            var note = notes[k];
+            if (!note.Emphasised) continue;
+            var named = NamedMark().Match(note.Full);
+            var own = named.Success ? Match.Empty : OwnMark().Match(note.Full);
+            var opener = Opener().Match(note.Full);
+            if (!named.Success && !(own.Success && opener.Success)) continue;
+
+            var quotes = new List<string>();
+            if (opener.Success)
+            {
+                var from = opener.Index + opener.Length;
+                for (var at = note.Full.IndexOf('"', from); at >= 0; at = note.Full.IndexOf('"', at + 1))
+                {
+                    quotes.Add(note.Full[from..at]);
+                }
+            }
+
+            var hit = quotes
+                .Select(quote => (Quote: quote, Note: notes.Take(k).FirstOrDefault(earlier => earlier.Full == quote)))
+                .FirstOrDefault(found => found.Note is not null);
+            var kind = (named.Success ? named : own).Groups[1].Value.ToLowerInvariant();
+            marks.Add(new NoteMark(
+                note.First,
+                kind,
+                named.Success ? int.Parse(named.Groups[2].Value) : null,
+                hit.Note is not null ? hit.Quote : quotes.FirstOrDefault(),
+                hit.Note?.First));
+        }
+
+        return marks;
+    }
+
+    [GeneratedRegex(@"^(Amended|Superseded) by D([1-9][0-9]*)\b", RegexOptions.ECMAScript)]
+    private static partial Regex NamedMark();
+
+    [GeneratedRegex(@"^(Amended|Superseded)\b", RegexOptions.ECMAScript)]
+    private static partial Regex OwnMark();
+
+    [GeneratedRegex(@",\s*replacing """, RegexOptions.ECMAScript)]
+    private static partial Regex Opener();
 
     /// <summary>
     /// The forms the record writes a note's label in (D134 §3.4, <c>doc-duplicates</c>' <c>NOTE_LABEL</c>): the
@@ -116,7 +192,12 @@ public static partial class DecisionNotes
         CommonItalic(),
         RarerDated(),
         TaskFirst(),
+        SupersededBy(),
     ];
+
+    /// <summary>The mark an older record keeps of a later one that supersedes it, dated or not (KNOWFRESH1a-i).</summary>
+    [GeneratedRegex(@"^\*\*?Superseded by D[1-9][0-9]*\b", RegexOptions.ECMAScript)]
+    private static partial Regex SupersededBy();
 
     [GeneratedRegex(@"^\*\*(As built|Built|Fixed|Read|Amended)\b", RegexOptions.ECMAScript)]
     private static partial Regex CommonBold();

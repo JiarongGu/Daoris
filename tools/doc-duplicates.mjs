@@ -172,6 +172,8 @@ const NOTE_LABEL = [
   /^\*\*?(Corrected|Measured|Landed|Proved|Proven|Probed|Reviewed|Superseded|Noted|Note|Revised|Decided|Extended|Accepted)\b.*\d{4}-\d{2}-\d{2}/,
   // A note named by its task first: `**DRIFT1a, built 2026-10-02: …**`.
   /^\*\*[^*]*\b(built|landed|amended)\b[^*]*\d{4}-\d{2}-\d{2}/,
+  // The mark an older record keeps of a later one that supersedes it, dated or not (KNOWFRESH1a-i).
+  /^\*\*?Superseded by D[1-9]\d*\b/,
 ];
 
 export const isNoteLabel = (line) => NOTE_LABEL.some((form) => form.test(line));
