@@ -114,17 +114,8 @@ internal sealed class LiveLimitHarness : IAsyncDisposable
     /// <param name="cut">The boundary to stop at; none runs the move to its end.</param>
     public async Task<ShellRun> RunShellAsync(string? cut, Action<ChatMessage>? atTheWrite = null, Action<string>? atTheCut = null)
     {
-        Ledger.Chat("c1", "working", "talk", Root, profile: "account-1");
         var events = Events;
-        events.Append("c1", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = "Earlier answered exchange." });
-        events.Append("c1", new SessionEvent { Kind = SessionEventKind.Turn, StopReason = "end_turn" });
-        events.Append("c1", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = Refused });
-        events.Append("c1", new SessionEvent
-        {
-            Kind = SessionEventKind.Note, Text = "its account is cooling", Parts = [new NotePart { Code = NoteCodes.AccountCoolingWindow.Code }],
-        });
-        events.Append("c1", new SessionEvent { Kind = SessionEventKind.Turn, StopReason = "error" });
-        Ledger.For("c1").Say("k1", Word);
+        Limited(events, "working", null);
 
         var adapters = new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase) { ["talk"] = new Talk() });
         var context = new ChatContext(
@@ -187,6 +178,64 @@ internal sealed class LiveLimitHarness : IAsyncDisposable
         _moving = Task.Run(async () => (object?)await curve.MoveAsync("c1", DriverConfig.Empty, null));
         await ReachedAsync(hit, cut);
         return new ShellRun(runner, old) { Curve = curve };
+    }
+
+    /// <summary>
+    /// The ended move's twin of <see cref="RunShellAsync"/> (FOUNDATION1f-vi part b): an ended conversation <c>c1</c> on account-1, nothing of it
+    /// running, its last turn refused by its limit and its account cooling, the person's word waiting on it; the ended move
+    /// (<see cref="LimitMove.MoveEndedAsync"/>) run by a shell of run <see cref="Killed"/>, stopped for good at <paramref name="cut"/>. It passes
+    /// eight of <see cref="Cuts.All"/>, never <see cref="Cuts.OldEnded"/>, an ended record having no part to end, and at <see cref="Cuts.Decided"/>
+    /// the move already stands at <c>old-ended</c>. It writes the refused turn's word and the moved one in its one message, as the live move does.
+    /// </summary>
+    /// <param name="atTheWrite">Told the new part's message as the door writes it, before the write returns.</param>
+    /// <param name="cut">The boundary to stop at; none runs the move to its end.</param>
+    /// <param name="atTheCut">Told each boundary as it is passed.</param>
+    /// <param name="keep">Words the person kept on the record, by key; the one default is <see cref="Word"/> under <c>k1</c>.</param>
+    public async Task<ShellRun> RunEndedShellAsync(
+        string? cut, Action<ChatMessage>? atTheWrite = null, Action<string>? atTheCut = null, IReadOnlyDictionary<string, string>? keep = null)
+    {
+        var events = Events;
+        Limited(events, "stopped", keep);
+
+        var adapters = new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase) { ["talk"] = new Talk() });
+        var context = new ChatContext(
+            Client, Home, new SessionProcesses(DaorisHome.Entry(Home, HomeEntry.Sessions)), output: null,
+            new HarnessRoster(adapters, DaorisHome.Entry(Home, HomeEntry.Harnesses)), events);
+        var runner = new Opening(Client, context, atTheWrite);
+        var limit = new LimitMove(context, runner, new ChatHandOver(context, runner), new NoHelp())
+        {
+            Moves = new ConversationMoves(Home, Client, events, store: Store(Killed)),
+        };
+        var hit = Hook(limit.Moves, cut, atTheCut);
+        _moving = Task.Run(async () => (object?)await limit.MoveEndedAsync("c1", lost: null, ActorChoices.With(DriverConfig.Empty, "chat", [new ActorChoice("talk")]), null));
+        await ReachedAsync(hit, cut);
+        return new ShellRun(runner, null) { Limit = limit };
+    }
+
+    /// <summary>
+    /// An ended conversation <c>c1</c> as the ended move finds it and an older build leaves it, with no shell's move run: ended, on the protocol
+    /// stub's adapter so a go-on can resume it, its last turn refused by its limit, the words kept on it waiting.
+    /// </summary>
+    public void LeaveEnded(IReadOnlyDictionary<string, string>? keep = null)
+    {
+        Limited(Events, "stopped", keep);
+        Ledger.Edit("c1", record => record["adapter"] = "acp-stub");
+        Config();
+    }
+
+    /// <summary>A conversation <c>c1</c> on account-1 in <paramref name="state"/>, its last turn refused by its limit, the words kept on it waiting.</summary>
+    private void Limited(SessionEvents events, string state, IReadOnlyDictionary<string, string>? keep)
+    {
+        Ledger.Chat("c1", state, "talk", Root, profile: "account-1");
+        events.Append("c1", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = "Earlier answered exchange." });
+        events.Append("c1", new SessionEvent { Kind = SessionEventKind.Turn, StopReason = "end_turn" });
+        events.Append("c1", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = Refused });
+        events.Append("c1", new SessionEvent
+        {
+            Kind = SessionEventKind.Note, Text = "its account is cooling", Parts = [new NotePart { Code = NoteCodes.AccountCoolingWindow.Code }],
+        });
+        events.Append("c1", new SessionEvent { Kind = SessionEventKind.Turn, StopReason = "error" });
+        foreach (var (key, word) in keep ?? new Dictionary<string, string> { ["k1"] = Word }) Ledger.For("c1").Say(key, word);
     }
 
     /// <summary>When the curve is judged: ten minutes after the ledger's records are made, as the curve's own cases hold it.</summary>
@@ -267,9 +316,9 @@ internal sealed class LiveLimitHarness : IAsyncDisposable
     }
 
     /// <summary>The killed shell's door, for the case to read what it wrote.</summary>
-    public sealed record ShellRun(Opening Runner, Turned Old)
+    public sealed record ShellRun(Opening Runner, Turned? Old)
     {
-        /// <summary>The live limit move the shell ran, where it ran one.</summary>
+        /// <summary>The live limit move or the ended one the shell ran, where it ran one (the ended one has no live part, so no <see cref="Old"/>).</summary>
         public LimitMove? Limit { get; init; }
 
         /// <summary>The curve's move the shell ran, where it ran one (FOUNDATION1f-iii part b).</summary>
