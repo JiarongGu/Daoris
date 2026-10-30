@@ -239,8 +239,8 @@ public sealed record FloorPolicy(int? Gb, int? Percent, bool Off)
     /// <summary>The default share of a volume.</summary>
     public const int DefaultPercent = 10;
 
-    /// <summary>The default's cap: 20 GB.</summary>
-    public const long DefaultCap = 20L << 30;
+    /// <summary>The default's cap: 100 GB (KEEPSIZE1f), where the floor only warns.</summary>
+    public const long DefaultCap = 100L << 30;
 
     /// <summary>The margin above the floor at which a stretch below ends (<c>space.ok</c>): the smaller of 5 GB and 5% of the volume.</summary>
     public const long MarginCap = 5L << 30;
@@ -272,9 +272,9 @@ public sealed record FloorPolicy(int? Gb, int? Percent, bool Off)
     /// <summary>The rule in a clause: the terminal's and Ask Daoris's card's words.</summary>
     public string Said => From switch
     {
-        "off" => "no floor: Daoris frees nothing early, and says nothing of the free space",
-        "size" => $"below {Gb} GB free (at most half of a volume), Daoris frees early what it can make again and says the rest",
-        "percent" => $"below {Percent}% of a volume free, Daoris frees early what it can make again and says the rest",
-        _ => "below the smaller of 10% of a volume and 20 GB free, Daoris frees early what it can make again and says the rest",
+        "off" => "no floor: Daoris says nothing of the free space",
+        "size" => $"below {Gb} GB free (at most half of a volume), Daoris tells you",
+        "percent" => $"below {Percent}% of a volume free, Daoris tells you",
+        _ => "below the smaller of 10% of a volume and 100 GB free, Daoris tells you",
     };
 }

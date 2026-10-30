@@ -295,9 +295,7 @@ function FreedEarly({ volume }: { volume: SpaceVolume }) {
   if (!volume.below) return null;
   return (
     <p className="m-0 text-small text-ink-soft">
-      {volume.freedEarly
-        ? t('settings.daoris.space.freedEarly', { size: size(volume.freedEarly.bytes), when: clockOf(volume.freedEarly.at) })
-        : t('settings.daoris.space.belowNothing')}
+      {t('settings.daoris.space.belowNothing')}
     </p>
   );
 }

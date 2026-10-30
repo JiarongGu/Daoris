@@ -296,14 +296,14 @@ export const SPACE_LOW: SystemSpace = {
   ...SPACE,
   volume: {
     ...SPACE.volume!, free: 8 * GB, total: 1024 * GB, floor: { bytes: 20 * GB, from: 'default' }, below: true,
-    freedEarly: { bytes: 2 * GB, at: '2026-10-22T09:00:00.000+00:00' },
+    freedEarly: null,
   },
   kinds: SPACE.kinds.map((kind) => (kind.id === 'set-aside'
     ? {
-      ...kind, rule: { ...kind.rule, low: true },
+      ...kind,
       volume: { path: 'D:\\', free: 300 * GB, total: 2048 * GB, floor: { bytes: 20 * GB, from: 'default' as const }, below: false, freedEarly: null },
     }
-    : kind.id === 'downloads' || kind.id === 'browser-cache' ? { ...kind, rule: { ...kind.rule, low: true } } : kind)),
+    : kind)),
 };
 
 /** The floor turned off (KEEP1f): Daoris frees nothing early, and says so. */

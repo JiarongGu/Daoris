@@ -511,7 +511,8 @@ public static class SystemSpace
     {
         var rule = new JsonObject { ["kind"] = kind.Rule, ["days"] = null, ["whole"] = null, ["default"] = true, ["whose"] = kind.Whose };
         // KEEP1f: what the floor frees early of a kind while the floor is on, which its rule then says (*cleared when space is low*).
-        rule["low"] = !policy.Floor.Off && kind.Id is "set-aside" or "downloads" or "browser-cache";
+        // KEEPSIZE1f: the floor frees nothing, so no kind says it is cleared when space is low.
+        rule["low"] = false;
         switch (kind.Id)
         {
             case "set-aside":

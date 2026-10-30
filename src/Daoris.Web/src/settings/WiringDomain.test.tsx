@@ -978,11 +978,11 @@ describe('Settings → This Daoris', () => {
 
     const line = free.getByText(`${size(8 * GIB)} of ${size(1024 * GIB)} · keep at least ${size(20 * GIB)}`);
     expect(line.className).toContain('text-warn');
-    expect(free.getByText(`Below the floor: Daoris freed ${size(2 * GIB)} early of what it can make again, last at ${clockOf('2026-10-22T09:00:00.000+00:00')}.`))
-      .toBeTruthy();
+    // KEEPSIZE1f: the floor only warns; it frees nothing.
+    expect(free.getByText('Below the floor: Daoris tells you and frees nothing by it; its own use is held to its allowance.')).toBeTruthy();
     expect(card.getByRole('button', { name: 'Free up space…' })).toBeTruthy();
     const aside = row(card, 'Set-aside trees');
-    expect(aside.getByText("a finished session's tree goes an hour after its record is kept; others after 14 days; sooner when space is low")).toBeTruthy();
+    expect(aside.getByText("a finished session's tree goes an hour after its record is kept; others after 14 days")).toBeTruthy();
     expect(aside.getByText(`on D:\\: ${size(300 * GIB)} of ${size(2048 * GIB)} · keep at least ${size(20 * GIB)}`).className).toContain('text-ink-soft');
   });
 
@@ -1024,7 +1024,7 @@ describe('Settings → This Daoris', () => {
     invoke.mockImplementation(keeping(() => DRIVER_STATE, SPACE_FLOOR_OFF));
     open();
     const card = within(await screen.findByRole('region', { name: '磁盘空间' }));
-    expect(card.getByText(`共 ${size(1024 * GIB)}，可用 ${size(143.5 * GIB)} · 未设下限：道衍不会提前释放`)).toBeTruthy();
+    expect(card.getByText(`共 ${size(1024 * GIB)}，可用 ${size(143.5 * GIB)} · 未设下限：磁盘空间不足时道衍不会提醒`)).toBeTruthy();
     expect(row(card, '可用空间').getByRole('button', { name: '更改…' })).toBeTruthy();
   });
 
