@@ -3,6 +3,7 @@
   "rows": {
     "1e": "the course: LineCourse.Decide over the paths, one closed reason (§3.1)",
     "1h": "conversations onto the course, one path per branch (§3.1), what never goes on among them",
+    "1i": "driven lines onto the course, one path per branch (§3.1)",
     "1j": "one start plan and one walk (§2.4)",
     "1q": "one policy shape and start admission (§2.3), the judges and desks it replaces",
     "1r": "the connector by work, failing closed: `SessionRole` becomes the work (§2.3)"
@@ -31,7 +32,7 @@
       "note": "tells Ask Daoris's record or an intake for what never goes on or moves; the conversations' path onto the course (§3.1)"
     },
     "Course/Chat/ChatGoOn.cs": {
-      "lines": 2,
+      "lines": 3,
       "reads": "tells",
       "row": "1h",
       "note": "tells Ask Daoris's record or an intake for what never goes on or moves; the conversations' path onto the course (§3.1)"
@@ -65,6 +66,18 @@
       "row": "1h",
       "note": "tells Ask Daoris's record or an intake for what never goes on or moves; the conversations' path onto the course (§3.1)"
     },
+    "Course/Chat/LimitWaits.cs": {
+      "lines": 1,
+      "reads": "tells",
+      "row": "1h",
+      "note": "tells Ask Daoris's room for the wake's facts; the conversations' path onto the course (§3.1)"
+    },
+    "Course/GoOn/DrivenCourse.cs": {
+      "lines": 1,
+      "reads": "tells",
+      "row": "1i",
+      "note": "tells an intake for the driven paths' facts; the driven lines' path onto the course (§3.1)"
+    },
     "Course/Domain/AnswersAlone.cs": {
       "lines": 1,
       "reads": "other",
@@ -88,10 +101,9 @@
       "note": "judges who may ask a helper, lead a partner's piece or hand over by the asker's marks; the start layer's (§2.3)"
     },
     "Participants/Domain/HelperJudge.cs": {
-      "lines": 2,
-      "reads": "tells",
-      "row": "1q",
-      "note": "judges who may ask a helper, lead a partner's piece or hand over by the asker's marks; the start layer's (§2.3)"
+      "lines": 1,
+      "reads": "other",
+      "note": "its asker judged by the start layer's table (StartAdmission, row 1q); the line left reads the helpers rule's `ask` mode"
     },
     "Participants/Domain/PartnerInstruction.cs": {
       "lines": 1,
@@ -99,10 +111,14 @@
       "note": "a word's author, a pass's ask, a harness's rule or a repository type of the same name; no record's mark tells a work"
     },
     "Participants/Domain/PartnerJudge.cs": {
+      "lines": 1,
+      "reads": "other",
+      "note": "its lead judged by the start layer's table (StartAdmission, row 1q), handed the record's Ask Daoris mode; the ask's own piece is read beside it"
+    },
+    "Participants/Domain/StartAdmission.cs": {
       "lines": 2,
       "reads": "tells",
-      "row": "1q",
-      "note": "judges who may ask a helper, lead a partner's piece or hand over by the asker's marks; the start layer's (§2.3)"
+      "note": "the start layer's table itself (§2.3, row 1q): who may ask for a co-worker by the work, an empty `serves` or `opinion` and Ask Daoris's mode kept refused as every door refused them; no row of this design moves it"
     },
     "Course/GoOn/AnswersAloneHold.cs": {
       "lines": 1,
@@ -131,18 +147,6 @@
       "lines": 2,
       "reads": "other",
       "note": "an ask's own fields, a channel entry's, a file's lookup by ask, or a join key; no record's mark tells a work"
-    },
-    "Participants/Helpers/SessionsHelperCommand.cs": {
-      "lines": 3,
-      "reads": "tells",
-      "row": "1q",
-      "note": "judges who may ask a helper, lead a partner's piece or hand over by the asker's marks; the start layer's (§2.3)"
-    },
-    "Participants/Partners/PartnerPersonAsk.cs": {
-      "lines": 1,
-      "reads": "tells",
-      "row": "1q",
-      "note": "judges who may ask a helper, lead a partner's piece or hand over by the asker's marks; the start layer's (§2.3)"
     },
     "Events/Domain/AskDaorisRoom.cs": {
       "lines": 1,
@@ -465,9 +469,9 @@
       "note": "a workflow step's, a gate's or a landing's own opinion or ask, not a record's mark"
     },
     "Workflows/WorkflowRun.Read.cs": {
-      "lines": 7,
+      "lines": 8,
       "reads": "tells",
-      "note": "tells which kinds of record run no workflow (Ask Daoris's, a reviewer's, a partner's, a helper's); two lines read an ask; no row of this design moves it"
+      "note": "tells which kinds of record run no workflow (Ask Daoris's, a reviewer's, a partner's, a helper's) and which sessions are the work's helpers (INTEGRATE1o2); two lines read an ask; no row of this design moves it"
     },
     "Workflows/WorkflowRunFiles.cs": {
       "lines": 1,
@@ -481,12 +485,6 @@
       "reads": "tells",
       "row": "1q",
       "note": "tells Ask Daoris's own conversation by its repository; the start layer's (§2.3)"
-    },
-    "Bridge/Routes/SessionsRoutes.cs": {
-      "lines": 3,
-      "reads": "tells",
-      "row": "1q",
-      "note": "tells who may ask a helper by the asker's marks, the shell's twin of the driver's judge; the start layer's (§2.3)"
     },
     "Bridge/Routes/TreesRoutes.cs": {
       "lines": 1,
@@ -563,13 +561,13 @@
       "note": "judges who may ask, answer or lead by the asker's marks, the desk's own guard (§2.3)"
     },
     "Core/Sessions/HelperBox.cs": {
-      "lines": 3,
+      "lines": 4,
       "reads": "tells",
       "row": "1q",
       "note": "judges who may ask, answer or lead by the asker's marks, the desk's own guard (§2.3)"
     },
     "Core/Sessions/HelperDesk.cs": {
-      "lines": 6,
+      "lines": 7,
       "reads": "tells",
       "row": "1q",
       "note": "judges who may ask, answer or lead by the asker's marks, the desk's own guard (§2.3)"

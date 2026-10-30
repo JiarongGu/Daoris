@@ -104,10 +104,10 @@ describe('pausing and abandoning in the shell', () => {
     });
     const notify = vi.fn();
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    client.setQueryData(keys.considered, [{
+    client.setQueryData(keys.considerations, { considered: [{
       quest: 'abc123', repository: 'engine', verdict: 'Paused', pausedBy: { scope: 'quest', id: 'abc123' },
       reason: 'you paused `#abc123`; Resume starts it — `daoris-driver quest resume abc123`.',
-    }]);
+    }], untrusted: [], waits: [] });
     show(<QuestsView notify={notify} />, client);
 
     const page = await chooseRow('Expose a streaming budget');
@@ -121,10 +121,10 @@ describe('pausing and abandoning in the shell', () => {
   it('opens the ask whose pause holds a quest, from under its Sitting', async () => {
     answering({ WORK_PLAN: QUEST_PLAN });
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    client.setQueryData(keys.considered, [{
+    client.setQueryData(keys.considerations, { considered: [{
       quest: 'abc123', repository: 'engine', verdict: 'Paused', pausedBy: { scope: 'ask', id: 'a1b2c3' },
       reason: 'paused with ask `#a1b2c3`; Resume starts it — `daoris-driver ask --resume a1b2c3`.',
-    }]);
+    }], untrusted: [], waits: [] });
     show(<QuestsView notify={() => {}} />, client);
 
     const page = await chooseRow('Expose a streaming budget');

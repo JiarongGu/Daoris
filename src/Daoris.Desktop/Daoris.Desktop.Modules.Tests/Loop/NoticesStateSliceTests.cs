@@ -172,6 +172,26 @@ public sealed class NoticesStateSliceTests : DriverModuleBridge
         Assert.Single(Arrivals());
     }
 
+    /// <summary>
+    /// FOUNDATION1 m-iv (§4.5): the said-set replaces the first read's baseline. A notice another process wrote while this one was down is said
+    /// once after the restart, and not again by the next; only the first run on a home takes what stands as said.
+    /// </summary>
+    [Fact]
+    public async Task A_notice_written_while_the_window_was_down_is_said_once_after_the_restart()
+    {
+        var first = Notices();
+        Elsewhere(Ended("before"));
+        await first.Slice.JudgeAsync();
+        Assert.Empty(Arrivals());
+
+        Elsewhere(Ended("while-down", 1));
+        var again = Notices();
+        await again.Slice.JudgeAsync();
+        await Notices().Slice.JudgeAsync();
+
+        Assert.Equal(["ended-while-down"], Arrivals().Select(each => each["id"]!.GetValue<string>()));
+    }
+
     /// <summary>§2.5: a read that fails (a file half seen) keeps what was pushed, and sets nothing aside.</summary>
     [Fact]
     public async Task A_failed_read_keeps_the_last_snapshot_and_sets_nothing_aside()

@@ -1248,6 +1248,11 @@ export const REACH = Object.freeze([
     gates: ['service', 'driver', 'modules'],
     why: "the service's, the driver's and the modules' ParticipantWorkReadersTests read the table of every reader of the marks that tells a work (FOUNDATION1c, census B)",
   },
+  {
+    paths: ['src/Daoris.Service/Daoris.Service.Tests/fixtures/helper-askers.json'],
+    gates: ['service', 'driver', 'modules'],
+    why: "the driver's HelperAskersTests, the modules' DriverModuleSessionHelpersTests and the service's HelperAskersTests ask the five doors of who may ask for a helper one table (FOUNDATION1q)",
+  },
   { paths: ['src/Daoris.Service/Daoris.Service.Tests/**', 'src/Daoris.Service/Daoris.Service.Http.Tests/**'], gates: ['service'], why: "the service's tests" },
   { paths: ['src/Daoris.Cli/test/fixtures/name-case.json'], gates: ['driver'], why: "the driver's NameCaseTests reads the shared name-case table (CASEFOLD1d)" },
   {
@@ -4135,6 +4140,12 @@ function laneLines(schedule) {
 /** MEMGATE1: a result that stops the run: a failure, but for one that died of memory and runs again at the run's end. */
 const stops = (result) => result.verdict === 'FAIL' && !result.again;
 
+/**
+ * CISTAGEFAIL1: the failure that ends a stage's CI run. The rerun-alone has already judged by now: a sighting that passed
+ * alone is a `FLAKE`, and only one that failed again alone stays `FAIL`; a gate ended with the run gives `ENDED`.
+ */
+export const endsStageRun = stops;
+
 /** MEMGATE1: what a gate is handed beside what its lane hands it: the run's wait for memory, for its tests run alone. */
 const withWait = (beside, wait) => (wait ? { ...beside, memory: wait } : beside);
 
@@ -6671,7 +6682,7 @@ function noteBackground({ home, tree, plan, commit, kind, state, started, ended,
  * where a merge landed meanwhile, moves to the newest before any gate starts (`CI_MOVES`), so a newer tip supersedes a run not
  * yet started. Once its gates start it runs to its verdict, as a pipeline's run does (D192's pipeline design §4.3): what lands
  * meanwhile is the next run's. It runs what the tree's verdicts lack (`ciPlan`), every gate the first time, keeping going past a
- * failure, a guest on the machine as a run beside is (CIPRIO1), its light lane as wide as the measured load allows
+ * failure (but a stage's run, which ends at its first: CISTAGEFAIL1), a guest on the machine as a run beside is (CIPRIO1), its light lane as wide as the measured load allows
  * (`ciWidth`), scheduled by memory (`laneSchedule`'s `byMemory`). Each verdict goes to the main checkout's store as a merge's
  * does, the logs and the status to its `local/scratch/ci-<sha7>/`, the run to the CI's record. `stopAsked` (the watch's stop)
  * and a Ctrl+C end its gates' trees, its finished verdicts kept. 0 green, 1 failed or stopped. CIFAST1: a plain run owes the
@@ -6817,9 +6828,12 @@ async function gateCi(root, options, { stopAsked = () => false } = {}) {
     }
     if (composed.length) writeStatus();
     let results = [];
+    let stageFailed = null;
     if (gates.length) {
       console.log('a guest on the machine: below normal priority, the Process lane at normal (CIPRIO1, FAMILYFAIL1c); a Process half\'s failures are re-run alone once its lane is quiet (FLAKE1)');
       results = await runRecorded(tree, gates, dir, {
+        // A plain run keeps going past a failure: its point is the whole picture. A stage's run (CISTAGEFAIL1) needs every gate
+        // green, so its first failure ends it (below, in `onResult`): nothing more starts and the gates running are ended.
         keepGoing: true,
         oneAtATime: options.oneAtATime,
         halt: () => Boolean(trees.ended),
@@ -6832,6 +6846,10 @@ async function gateCi(root, options, { stopAsked = () => false } = {}) {
           writeStatus();
         },
         onResult: (result) => {
+          if (kind === 'stage' && !trees.ended && endsStageRun(result)) {
+            stageFailed = result.gate.name;
+            trees.end(`the stage's gate ${stageFailed} failed`);
+          }
           Object.assign(gateOf(result.gate.name) ?? {}, {
             state: 'done', verdict: verdictShown(result), ms: result.ms ?? null, log: result.log ? fromHome(home, result.log) : null, note: result.note || null,
           });
@@ -6846,7 +6864,7 @@ async function gateCi(root, options, { stopAsked = () => false } = {}) {
     const judgedAfter = ciPlan({ ...standing, owe, plan: names, verdicts: readVerdicts(home).verdicts, ageWhole: kind === 'stage' });
     // CISCOPE1d: a sweep alone is judged on the half it ran, never on the gates it was not asked to run.
     const after = kind === 'sweep' ? { ...judgedAfter, run: judgedAfter.run.filter((name) => chosen.run.includes(name)), owed: [] } : judgedAfter;
-    const state = trees.ended ? 'stopped' : after.run.length === 0 ? 'green' : 'failed';
+    const state = stageFailed ? 'failed' : trees.ended ? 'stopped' : after.run.length === 0 ? 'green' : 'failed';
     const ended = nowIso();
     const ranNames = results.filter((result) => result.verdict !== 'ENDED').map((result) => result.gate.name);
     // CIFAST1: the record says which run was the stage's path, and what a plain one left owed.
@@ -6897,6 +6915,11 @@ async function gateCi(root, options, { stopAsked = () => false } = {}) {
       const memory = memoryLine(failed);
       if (memory) console.log(memory);
       if (after.owed.length) console.log(`  owed for a stage, not run (CIFAST1): ${after.owed.join(', ')}`);
+      if (stageFailed) {
+        const notRun = gates.filter((gate) => !results.some((result) => result.gate.name === gate.name && result.verdict !== 'ENDED')).map((gate) => gate.name);
+        const endedNames = results.filter((result) => result.verdict === 'ENDED').map((result) => result.gate.name);
+        console.log(`  ended at the first failed gate (CISTAGEFAIL1): ${stageFailed} failed; not run: ${notRun.join(', ') || 'none'}${endedNames.length ? ` (${endedNames.join(', ')} ended while running)` : ''}; nothing was staged`);
+      }
     }
     console.log(`  status: ${fromHome(home, statusFile)}`);
     return state === 'green' ? 0 : 1;

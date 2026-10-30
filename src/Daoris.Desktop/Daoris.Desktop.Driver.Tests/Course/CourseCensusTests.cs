@@ -55,6 +55,18 @@ public sealed class CourseCensusTests
         var named = table.GetProperty("sites").EnumerateArray()
             .ToDictionary(site => (File: site.GetProperty("file").GetString()!, Shape: site.GetProperty("shape").GetString()!));
         var reads = new Regex(@"\b(LineCourse|CourseFacts)\b");
+        // FOUNDATION1h branch 8: a file that names no course type, whose calls each go to a reader of the course, is adapted: its shape is placed
+        // by the readers it is named through, each of which reads the course.
+        var adapted = table.GetProperty("adapted").EnumerateArray()
+            .ToDictionary(site => (File: site.GetProperty("file").GetString()!, Shape: site.GetProperty("shape").GetString()!));
+        foreach (var site in adapted.Values)
+        {
+            foreach (var through in site.GetProperty("through").EnumerateArray())
+            {
+                var reader = Path.Combine(Root, "Daoris.Desktop.Driver", through.GetString()!.Replace('/', Path.DirectorySeparatorChar));
+                Assert.True(reads.IsMatch(WithoutComments(File.ReadAllText(reader))), $"{through} is named as a reader of the course and does not read it");
+            }
+        }
 
         var found = new HashSet<(string File, string Shape)>();
         var unplaced = new List<string>();
@@ -69,7 +81,7 @@ public sealed class CourseCensusTests
                 if (count == 0) continue;
 
                 found.Add((relative, shape));
-                if (reads.IsMatch(text)) continue;
+                if (reads.IsMatch(text) || adapted.ContainsKey((relative, shape))) continue;
 
                 if (!named.TryGetValue((relative, shape), out var site)) unplaced.Add($"{relative} ({shape} x{count})");
                 else if (site.GetProperty("count").GetInt32() != count) drifted.Add($"{relative} {shape}: named {site.GetProperty("count").GetInt32()}, found {count}");
@@ -82,7 +94,7 @@ public sealed class CourseCensusTests
 
         var gone = named.Keys.Where(key => !found.Contains(key) && !File.Exists(Path.Combine(Root, key.File))).Select(key => key.File).Distinct().ToList();
         Assert.True(gone.Count == 0, "named not yet moved but not there: " + string.Join(", ", gone));
-        var stale = named.Keys.Where(key => !found.Contains(key)).Select(key => $"{key.File} ({key.Shape})").ToList();
+        var stale = named.Keys.Concat(adapted.Keys).Where(key => !found.Contains(key)).Select(key => $"{key.File} ({key.Shape})").ToList();
         Assert.True(stale.Count == 0, "named, but its shape is no longer there: " + string.Join(", ", stale));
 
         // Each site is named with its adopting row, its status and whether it hands words; the fields are closed.
@@ -97,13 +109,20 @@ public sealed class CourseCensusTests
 
         var placed = named.Values.SelectMany(site => site.GetProperty("paths").EnumerateArray().Select(path => path.GetString()!)).ToHashSet();
         var notDecisions = table.GetProperty("notDecisions").EnumerateArray().ToDictionary(item => item.GetProperty("path").GetString()!);
+        // FOUNDATION1h branch 3: a path whose every site now reads the course is named moved, with the branch that moved it, so it is neither
+        // placed (no site of it is left) nor a non-decision.
+        var moved = table.GetProperty("moved").EnumerateArray().ToDictionary(item => item.GetProperty("path").GetString()!);
         foreach (var path in "ABCDEFGHIJKLMN".Select(letter => letter.ToString()))
         {
-            Assert.True(placed.Contains(path) || notDecisions.ContainsKey(path), $"path {path} is neither placed at a site nor named a non-decision");
+            Assert.True(
+                placed.Contains(path) || notDecisions.ContainsKey(path) || moved.ContainsKey(path),
+                $"path {path} is neither placed at a site nor named a non-decision nor moved");
         }
 
         Assert.Equal(["L", "M"], notDecisions.Keys.OrderBy(key => key, StringComparer.Ordinal));
         Assert.DoesNotContain("M", placed);
+        Assert.True(!moved.Keys.Intersect(placed).Any(), "a path named moved still has a site: " + string.Join(", ", moved.Keys.Intersect(placed)));
+        Assert.True(!moved.Keys.Intersect(notDecisions.Keys).Any(), "a path is named moved and a non-decision");
     }
 
     /// <summary>
@@ -117,7 +136,8 @@ public sealed class CourseCensusTests
             .Where(site => site.GetProperty("shape").GetString() == "answers-alone-read")
             .Select(site => Path.GetFileName(site.GetProperty("file").GetString()!))
             .OrderBy(file => file, StringComparer.Ordinal);
-        Assert.Equal(["ChatGoOn.cs", "ChatHelperWords.cs", "Driver.cs", "SupervisorDoor.cs"], holds);
+        // FOUNDATION1h branch 7 and FOUNDATION1i path 1: the chat's go-on, the helper's words and the driver read the course.
+        Assert.Equal(["SupervisorDoor.cs"], holds);
     }
 
     /// <summary>

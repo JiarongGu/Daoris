@@ -64,6 +64,22 @@ export const Unreadable: Story = {
   args: { rows: [row('build', 'unreadable', [], 'choice 1 names no agent'), ...ROWS.slice(1)] },
 };
 
+/** FOUNDATION1w-s: an older Daoris moved Build and turned Intake off; the turn-off applied at once, Build's change waiting. */
+const FOUND = [{
+  id: 3,
+  at: '2026-10-30T10:00:00Z',
+  changes: [
+    { role: 'build', was: row('build', 'before', [{ agent: 'claude-code-acp', from: 'before' }]), now: row('build', 'set', [{ agent: 'codex-acp', from: '1' }]), applied: false },
+    { role: 'intake', was: row('intake', 'before', [{ agent: 'codex-acp', from: 'before' }]), now: row('intake', 'off'), applied: true },
+  ],
+}];
+
+/** Changed outside Daoris: what each change did, with *Take it* and *Dismiss*. */
+export const Found: Story = { args: { found: FOUND } };
+
+/** The same in Chinese. */
+export const FoundChinese: Story = { args: { found: FOUND }, decorators: [chinese] };
+
 const intakeStart = (extra: Partial<StartWiring>): StartWiring => ({
   job: 'intake', workspace: 'default', adapter: 'claude-code-acp', owner: 'claude-code', product: 'Claude Code',
   profile: 'account-1', profileFrom: 'machine', version: '0.9.1', versionFrom: 'unset',

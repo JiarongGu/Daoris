@@ -51,14 +51,14 @@ public static class HandOverRules
 
     /// <summary>
     /// The rule standing for a repository: its own, else its workspace's (one in no workspace being in <c>default</c>), else
-    /// <see cref="HandOverRule.Default"/> from <see cref="DefaultSource"/> — names matched in any case, as every door matches them.
+    /// <see cref="HandOverRule.Default"/> from <see cref="DefaultSource"/> — names matched in any case, as every door matches them. Read by
+    /// the policy's one reader (<see cref="WorkPolicies.HandOver"/>, FOUNDATION1q).
     /// </summary>
-    public static ResolvedHandOver Resolve(DriverConfig config, string repository, string? workspace) =>
-        config.HandOver.TryGetValue(repository.Trim(), out var own)
-            ? new ResolvedHandOver(own, CommitRules.RepositorySource)
-            : config.WorkspaceHandOver.TryGetValue(RemoteTarget.Workspace(workspace), out var shared)
-                ? new ResolvedHandOver(shared, CommitRules.WorkspaceSource)
-                : new ResolvedHandOver(HandOverRule.Default, DefaultSource);
+    public static ResolvedHandOver Resolve(DriverConfig config, string repository, string? workspace)
+    {
+        var (rule, source) = WorkPolicies.HandOver(config, repository, workspace);
+        return new ResolvedHandOver(rule, source);
+    }
 
     /// <summary>
     /// One change made to the config, or its refusal thrown in the twin's words, nothing changed — the CLI's

@@ -317,6 +317,13 @@ public sealed record HelpMachineFacts(
     /// workflow card says (design §8.2). Read only for a workflow proposal.
     /// </summary>
     public IReadOnlyList<WorkflowRunBinding> WorkflowRuns { get; init; } = [];
+
+    /// <summary>
+    /// The gates each registered repository's accepted integration declaration names (INTEGRATE1r part r2), by repository: what a workflow card
+    /// that chooses a graph asking with <c>done</c> or <c>steward</c> is judged by (<see cref="IntegrateChoice.ReadAcceptedAsync"/>). Read
+    /// only for one; a repository with no entry was not read, and the card holds on that.
+    /// </summary>
+    public IReadOnlyDictionary<string, AcceptedGates> AcceptedGates { get; init; } = new Dictionary<string, AcceptedGates>(StringComparer.OrdinalIgnoreCase);
 }
 
 /// <summary>One door as the Agents screen reads it (HELP6): what its Update does, whether it pins, whose accounts it runs as.</summary>
@@ -365,6 +372,11 @@ public sealed record HelpPlan(string? Refusal, string Describe, string Terminal,
 
     /// <summary>For an accept the route takes (DRIFT1d2): the quest and its departures, for the card; null for every other kind.</summary>
     public HelpAcceptPlan? Accept { get; init; }
+
+    // The setting kind's.
+
+    /// <summary>An actor's order a setting proposal sets (FOUNDATION1w-s), applied through the staffing's one write; null for every other plan.</summary>
+    public HelpStaffing? Staffing { get; init; }
 
     // The clear kind's.
 

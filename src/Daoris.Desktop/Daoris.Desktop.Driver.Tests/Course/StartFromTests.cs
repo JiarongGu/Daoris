@@ -45,7 +45,8 @@ public sealed class StartFromTests : IDisposable
     }
 
     private Task<StartedFrom> RunAsync(
-        ChatLedger ledger, string id, Asked asked, ChatStart? start = null, Func<IReadOnlyList<ChatUpload>, bool>? say = null)
+        ChatLedger ledger, string id, Asked asked, ChatStart? start = null, Func<IReadOnlyList<ChatUpload>, bool>? say = null,
+        Action<string, LineCourse>? decided = null)
     {
         var client = ledger.Client();
         return StartFrom.RunAsync(
@@ -61,7 +62,8 @@ public sealed class StartFromTests : IDisposable
                 asked.Said.Add((session, text, files, preface));
                 asked.Shown.Add(shown);
                 return say?.Invoke(files) ?? true;
-            });
+            },
+            decided: decided);
     }
 
     /// <summary>
@@ -319,6 +321,42 @@ public sealed class StartFromTests : IDisposable
         Assert.Empty(asked.Started);
         Assert.Empty(ledger.TakenBy);
         Assert.Empty(Events.After(id.Replace('/', '-'), 0).Events);
+    }
+
+    /// <summary>
+    /// 🔴 FOUNDATION1h branch 8 (the foundation design §3.1, §14.2): the press is the course's decision for <see cref="CourseTrigger.StartFrom"/>.
+    /// Heard from the start, its answer is each refusal by the code it has always had, or the start of a fresh conversation with the person's
+    /// words alone, keyed by the record they were said to.
+    /// </summary>
+    [Theory]
+    [InlineData("laptop/s1", "completed", "driven", "q1", "Done", "engine", true, "never:Teammate")]
+    [InlineData("s1", "completed", "chat", null, null, "daoris:help", true, "hold:Refused:help")]
+    [InlineData("s1", "stood-down", "driven", "q1", "Taken", "engine", true, "never:StoodDown")]
+    [InlineData("c1", "working", "chat", null, null, "engine", true, "hold:Refused:running")]
+    [InlineData("s1", "completed", "driven", "q1", "Done", "engine", false, "hold:Refused:no-words")]
+    [InlineData("s1", "completed", "driven", "q1", "Open", "engine", true, "hold:Refused:carried")]
+    [InlineData("c1", "completed", "chat", null, null, "engine", true, "start:w1")]
+    public async Task The_courses_answer_is_what_refuses_or_starts_the_press(
+        string id, string state, string kind, string? quest, string? status, string repository, bool words, string course)
+    {
+        var ledger = new ChatLedger().Register("engine", _root);
+        if (quest is not null && status is not null) ledger.Quest(quest, status);
+        var record = ledger.Chat(id, state, "talk", _root, kind, quest, repository);
+        if (words) record.Say("w1", "One more thing.").Helped("h1", "Another agent says five.");
+        var decided = new List<(string Session, LineCourse Answer)>();
+
+        await RunAsync(ledger, id, new Asked(), decided: (session, answer) => decided.Add((session, answer)));
+
+        var (session, heard) = Assert.Single(decided);
+        Assert.Equal(
+            (id, course),
+            (session, heard switch
+            {
+                LineCourse.Never never => $"never:{never.Why}",
+                LineCourse.Hold hold => $"hold:{hold.Why}:{hold.Code}",
+                LineCourse.Start start => $"start:{string.Join(",", start.Words.Ids)}",
+                _ => heard.GetType().Name,
+            }));
     }
 
     /// <summary>

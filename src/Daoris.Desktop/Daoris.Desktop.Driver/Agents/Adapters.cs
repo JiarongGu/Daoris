@@ -1385,6 +1385,17 @@ public interface ISessionAdapter
     string? AskingPosture => null;
 
     /// <summary>
+    /// The harness's own mode in which it changes nothing in the folder it runs in, on the protocol door, for a harness that takes no rules
+    /// Daoris composes (<see cref="TakesSettings"/>): what a brainstorm's pass asks, required, so a pass is never run in the harness's
+    /// writing mode under the posture's name (BRAINSTORM1c, D176 points 1 and 2).
+    /// </summary>
+    /// <remarks>
+    /// <b>Null means none is mapped</b>: a harness that takes rules is narrowed by them (<see cref="BrainstormPermissions.Shape"/>), and a
+    /// harness that takes neither keeps the room's contents as its floor until its posture is measured.
+    /// </remarks>
+    string? ReadingPosture => null;
+
+    /// <summary>
     /// The process that would be the session: spawned in the root, target delivered, output
     /// redirected so the driver can keep the transcript. Preparation only — the driver owns the
     /// process lifetime, because observing it is the driver's half of the contract (D46 §5).
@@ -2090,6 +2101,14 @@ public sealed class CodexAcpAdapter : ISessionAdapter
     /// Each request it sends there waits for the person (AUTONOMY1b3a); an agent that no longer offers it fails the open.
     /// </summary>
     public string? AskingPosture => "read-only";
+
+    /// <summary>
+    /// <c>read-only</c> too, for a brainstorm's pass (BRAINSTORM1c, D176 point 2): Codex takes no rules file, so the mode is the whole of its
+    /// posture, its sandbox read-only so nothing is written in any folder, required so an agent that does not offer it fails the pass's open
+    /// rather than running it in <c>agent</c>'s workspace-write sandbox. Every request it still sends is refused by the driver, as every
+    /// driven session's is. Read from codex-acp's bundle (the ACP3 probe's §2), not yet measured on a pass (D176's BRAINSTORM1c note).
+    /// </summary>
+    public string? ReadingPosture => "read-only";
 
     public ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command)
     {

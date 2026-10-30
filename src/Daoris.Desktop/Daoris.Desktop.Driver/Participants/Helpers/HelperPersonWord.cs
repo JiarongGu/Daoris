@@ -10,6 +10,10 @@ public static class HelperAskWhy
     public const string Helper = "helper";
     public const string Reviewer = "reviewer";
     public const string Intake = "intake";
+
+    /// <summary>Ask Daoris's conversation asks for no helper (FOUNDATION1q; D203 point 6).</summary>
+    public const string AskDaoris = "ask-daoris";
+
     public const string Gone = "gone";
     public const string Person = "person";
     public const string Waits = "waits";

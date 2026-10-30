@@ -21761,3 +21761,74 @@ machine-log design §3 say the contract.
 > - [ ] **KNOWFRESH1a-iii — a report of present records naming what the code lacks** (tools, records; the design §3.2, §3.4). `documents.present` declared, `doc-current` and its `--since <base>` beside the docs gate for one batch, the first run's true findings fixed (seven retired twin names and the comments still naming them). Proof: the design's §5 iii.
 
 **Outcome** 2026-10-30: `tools/doc-current.mjs` reads the homes `daoris.json`'s `documents.present` declares (27 here, `AGENTS.md` above its generated region) for paths, names, routes and variables the code lacks, by the design's resolution rule, an allow-list each with its reason, and with `--since <base>` the records quoting what a diff deleted or renamed; it reports and never fails. Its first run found twenty retired names in `twins.md` (the design had counted seven plus thirteen history sentences), each fixed with the product comments still naming it; what remains printed is test-only. Not yet in `verify`, since a CI checkout may hold no `main`. Detail in D220's note "KNOWFRESH1a-iii".
+
+## FOUNDATION1g — failures read once on every path (2026-10-30, D212)
+
+> **1g** failures read once on every path | what AGENTERRORS1's remaining rows do not already reach: a conversation's and a brainstorm's limit by the reader's code, a conversation's limited record written as the ledger's flag at its end | a chat's limit by code alone moves it; AGENTERRORS1's C4-6 case on a conversation; `AcpTransientTests`, `ChatTransientProcessTests`, `TransientRetryTickTests`, `LimitResumeTickTests` whole
+
+**Outcome** 2026-10-30: built in three parts. A conversation's limit (a) and a brainstorm pass's (b) are read by the failure reader's code as well as its sentence, as a driven run's is, so a rate limit said by a code alone cools the account and moves the line; C4-6 on a conversation is a turn's transient failure and then a code-only limit on its try. A conversation the limit ended ends `failed` with the ledger's `limited` flag (c), read as the end's class, while an older record with no flag is still read from its events. Detail in D212's three 1g notes.
+
+## INTEGRATE1r — Current and the choice know the step (2026-10-30, D215)
+
+> - **INTEGRATE1r — Current and the choice know the step** *(R4, §17.7)* (Workflows, web; after d). Contents: Current's derivation and its twin table gain the `integrate` step where the effective rule carries `integrate`, its source and its limit said, *not integrated yet* until row g; drawn from the landing's graph; `new --from current:` leaves it out of the steps and says so; the choice's `use` refuses, and the gate holds as *cannot start*, a version its repository's declarations cannot carry, each its own sentence; each door that sets a choice says, per repository it reaches, *integrates with no gates*. (The integration design's row, `docs/2026-10-28-integration-design.md` :1031-1044, with its proof.)
+
+**Outcome** 2026-10-30: built in three parts. r1: Current draws the `integrate` step after the landing, declared and *not integrated yet*, from the landing's graph, and show, the Workflow tab, a copy from Current and the person-part comparison know it. r2: a graph a repository cannot carry holds as *cannot start*, each case its own sentence naming its Setup row, the accepted declaration's gate names handed in as a fact; `workflow use` and the Ask Daoris card refuse it and say *integrates with no gates* per repository. r3: the page says the step's settings and the no-gates line in en and zh, the cannots kept as the driver's sentences. A landing under a named version already writes `source: version`. Detail in D215's three r notes.
+## SHAREMOVES1 — a `--share` loop takes up only its own lines' driven moves (2026-10-30, D212)
+
+> - [ ] **SHAREMOVES1 — a `--share` loop takes up only its own lines' driven moves** (driver; after FOUNDATION1f-iv). `Driver.Moves` is always built over the lease holder's scope, and `MoveTakeUpScope.Shared` has no production caller, so a loop run beside the lease holder takes up every dead run's driven move at its first look, not only its own lines'. The take is claimed by generation and ends each move by its phase, so nothing is sent twice, but the design scopes it to the loop's lines; proof a shared loop's first look leaves another line's dead move standing for the lease holder (D212's note "FOUNDATION1f-iv part b, sitting 1 of 2", reading 7).
+
+**Outcome** 2026-10-30: `drive --share` beside a lease holder builds its driver's holder over `MoveTakeUpScope.Shared`, the lines being the sessions its `RunningSessions` holds as the take-up reads them; the lease holder's scope is unchanged. D212's note "SHAREMOVES1" gives the reading.
+
+## DRIVENATTEMPT1 — a driven carry-on's moved word is marked attempted before its write (2026-10-30, D212)
+
+> - [ ] **DRIVENATTEMPT1 — a driven carry-on's moved word is marked attempted before its write** (driver; after FOUNDATION1f-iv). The driven path writes `sent` at the door's write return but marks no word attempted before the write, so a loop killed at `written` closes the move `unrecorded` naming no word, the word waiting on the destination with nothing to say it may have been heard; a destination whose quest is still open could send it a second time through its own go-on. The live moves mark attempts (§13.5's `delivering` row: attempted words settled as uncertain, never sent again). Proof: a kill at `written` with the destination's quest open never sends the word twice and says it as uncertain (D212's note "FOUNDATION1f-iv part b, sitting 2 of 2", finding 1).
+
+**Outcome** 2026-10-30: the driven carry-on marks each moved word attempted at its fence, after `delivering` and before the door writes, as the live moves do, so a loop killed at `written` has its word settled uncertain by the move's take-up, taken back with one `lost` note, never sent again; f-iv's boundary census now names `old-ended` passed, since f-v part c makes every carry-on write it. Detail in D212's note "DRIVENATTEMPT1".
+
+## FOUNDATION1h — conversations onto the course (2026-10-30, D212)
+
+> | **1h** conversations onto the course, one path per branch: the curve; the live and ended limit moves; the wake; the go-on; the briefed move and go-on-new; the hand-over | each path calls `LineCourse.Decide`, its old decision the adapter, the hand-over rule's consent kept on the curve's and an agent's door | the path's suite whole (`CurveMoveTests`, `LimitWaitsProcessTests`, `ChatGoOnTests`, `ChatGoesOnProcessTests`, `HandOverTests`, `HandOverLookTests`); a consent case per door; the census's *not yet moved* list shorter by one; `StructureTests` whole, no runner type crossing Course's port (round 6, *C5-1.14*); **in the live and ended limit moves' branch, a shell beside a headless lease holder, running no look: a held move on the conversation's destination, the person's words taken back, closed when that path reads the destination, and the destination's limit move then made** (round 8, *O7-F11*'s case moved here from f-i, *O8-F6*) |
+
+**Outcome** 2026-10-30: built in eight branches. Every conversation path decides through `CourseDecision.Decide`, its old judgement the adapter, with no refusal a person reads changed; the runner's calls are adapters (the census's `adapted` list), and paths C, D, E, H and J are in its `moved` list. The held-destination case is proven at the store; its shell-beside-a-headless-holder run is owed. Detail in D212's FOUNDATION1h notes.
+
+## FOUNDATION1i — driven lines onto the course (2026-10-30, D212)
+
+> | **1i** driven lines onto the course, one path per branch: the go-on and the limit resume; the quest's hand-over; the carry-on; past the transient bound; the send-back | as 1h | `ContinuationTests`, `SessionMessagesTickTests`, `LimitResumeTickTests`, `PlannerTests`, `TransientRetryTickTests`; a consent case per door; the family rehearsal; **in the go-on and limit resume's branch, a driven line's held move whose words were taken back closed when that path reads its destination, and the destination's limit move then made** (round 8, *O7-F11*'s driven half, *O8-F6*) |
+
+**Outcome** 2026-10-30: the five driven paths decide through the course (`Course/GoOn/DrivenCourse.cs`), the quest's hand-over taking its consent as a fact, and the held move on the destination closed before the limit move; paths G, I and K are moved. `LimitResume.cs` and the supervisor's door still read the bound without deciding. The family rehearsal runs at the queue. Detail in D212's FOUNDATION1i note.
+
+## FOUNDATION1j — one start plan and one walk (2026-10-30, D212)
+
+> | **1j** one start plan and one walk | §2.4, one start per branch; four walks into one, one pass-code set, one re-ask; the reservation at the selection, probes uncounted; §7 row 5; the role the seeded role of the work and its order `ActorChoices.Effective` over today's actor choices, no catalogue read, row x adopting `RoleCatalog.RoleFor` (round 6, *C5-3.6*) | `ActorChoicesTests`, `HelperLookTests`, `OneTurnReaskTests`, the intake's and the brainstorm's suites; a record on Build's second choice resumed by the person's words; exactly one reservation per start; a look's starts spread as today |
+
+**Outcome** 2026-10-30: every start (quest, intake, reviewer, helper, brainstorm voice, chat, Ask Daoris, handed quest) walks `StartPlan` with one pass-code set and one re-ask comparison, one reservation per start, probes uncounted; a start names its plan's agent (`StartPlan.AgentFor`). Readings: Ask Daoris's resume is an account asked by name, not an order walk, so it keeps its course call; the handed quest's re-ask keeps its own candidate order as the plan's input. Detail in D212's FOUNDATION1j notes.
+
+## FOUNDATION1w-s ⚖ — the roles' staffing in `role_staffing`, `driver.json`'s staffing its projection (2026-10-30, D212, D50)
+
+> | **1w-s** ⚖ the roles' staffing in `role_staffing`, `driver.json`'s staffing its projection (round 5, §19.15, the steward's change; …) | §19.15: `driver.json`'s staffing imported once into `role_staffing` once the start's confirmation is settled, … | §19.15's proof: … |
+
+The row is quoted by its head; its whole text and proof are the foundation design's Part B table, row 1w-s, and §19.15.
+
+**Outcome** 2026-10-30: built in five parts. The staffing lives in the store, imported once; every `driver.json` save is fenced at its rename; every writer (`SET_ACTOR`, the actor verbs, Ask Daoris's proposals) goes through Roles' one write under the staffing lock; the check at each start, look and write keeps another writer's change whole for the person's *Take it* or *Dismiss*, a turn-off applied at once; `daoris driver actor export|import|found`. Settings' port carries the staffing's five fields, not three strings (a reading: they are Settings' own types). Owed: the p95 of a load and a look on the install. Detail in D50's and D212's notes.
+
+## FOUNDATION1q ⚖ — one policy shape and start admission (2026-10-30, D212)
+
+> | **1q** ⚖ one policy shape and start admission | §2.3's policy over today's keys and the start layer's table, keyed by the work; §7 row 9 | `HelperLookTests`, `HelperJudgeTests`, `PartnerJudgeTests`; the five doors of survey §1.3 row 6 asked the same cases; `DriverConfigKeepsTests` (no key moved) |
+
+**Outcome** 2026-10-30: `WorkPolicies.Of` gives every work one policy over today's keys, no key moved; the opinion, hand-over and brainstorm rules resolve through it; `StartAdmission`, keyed by the work, answers the five helper doors one table of cases (`fixtures/helper-askers.json`). The one decided change is §7 row 9: Ask Daoris is refused a helper at every door (`ask-daoris`), worded on the page in both languages. The intake's and Ask Daoris's start gates still read their keys directly. Detail in D212's FOUNDATION1q note.
+
+## FOUNDATION1o — words never held outside `said` (2026-10-30, D212)
+
+> | **1o** words never held outside `said` | §3.4 rule 4, after 1h and 1i: the say door's keep for a winding-up or moving record, on `said` itself, where the host's marks keep `opens` and the head (round 5, §19.11); … |
+
+The row is quoted by its head; its whole text and proof are the foundation design's Part B table, row 1o, and §19.11.
+
+**Outcome** 2026-10-30: against a host whose marks keep `opens` 2 and the head, a word said to a record that winds up or moves is kept on `said` and goes on with the part that continues it; a chat's hold keeps and queues; `held-words.json` is read once and written only for a host without the marks, which keeps today's hold. Owed: an older shell's come-up over the new path (the test host answers no `head`), and the say-to-wire latency on the install. Detail in D212's FOUNDATION1o note.
+
+## FOUNDATION1w — the catalogue of working roles, read beside (2026-10-30, D212)
+
+> | **1w** the catalogue of working roles, read beside (round 6, *C5-2.5*, *O5-F5*) | the work vocabulary alone, its capabilities the work codes, and the working shape; … read by nothing | the seed reproduces today's every start case; … |
+
+The row is quoted by its head; its whole text and proof are the foundation design's Part B table, row 1w.
+
+**Outcome** 2026-10-30: store migration 10 adds `roles` and `role_revisions`; `RoleCatalog.Read` over the seed per id, `RoleFor` by the most specific scope, `Judge` with eight closed codes refusing an appointed record first, one write keeping revisions, and the projection narrowing Intake and Ask Daoris for an older build while the store's own keys are never narrowed; its census holds every writer. Read by nothing: row x wires the starts. Detail in D212's FOUNDATION1w note.

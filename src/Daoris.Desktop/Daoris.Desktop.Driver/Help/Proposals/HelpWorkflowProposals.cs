@@ -181,6 +181,29 @@ internal sealed class HelpWorkflowProposals : IHelpProposalKind
         List<string> needs = (unchanged && use is null) || stepsNow is null
             ? []
             : Needs(after, facts, id, version, stepsNow, [.. reached.Union(Scoped(after, facts, repository, workspace), StringComparer.OrdinalIgnoreCase)]);
+
+        // INTEGRATE1r part r2 (the integration design §17.7): a graph chosen with no save integrates its landing in each repository it reaches, so
+        // each that cannot carry it is a need, and each whose rule integrates with no gates is said (F42).
+        var integrates = new List<string>();
+        var noGates = new List<string>();
+        if (!saves && !verifies && !landed && use is not null && newest?.Graph is { } chosenGraph && IntegrateChoice.Matters(chosenGraph))
+        {
+            var asks = IntegrateChoice.NeedsAccepted(chosenGraph);
+            foreach (var touched in reached.Union(Scoped(after, facts, repository, workspace), StringComparer.OrdinalIgnoreCase))
+            {
+                var accepted = !asks ? null
+                    : facts.AcceptedGates.TryGetValue(touched, out var read) ? read
+                    : AcceptedGates.NotRead($"`{touched}`'s accepted declaration was not read here");
+                var answer = IntegrateChoice.Of(after, id, version, chosenGraph, touched, WorkspaceOf(facts, touched), accepted);
+                needs.AddRange(answer.Cannots.Select(cannot => $"`{touched}`: {cannot}"));
+                if (answer.NoGates)
+                {
+                    integrates.Add(IntegrateCarry.NoGatesSaid(touched));
+                    noGates.Add(touched);
+                }
+            }
+        }
+
         var diff = steps is not null ? WorkflowDiff.Of(before?.Steps, steps) : null;
         var nodes = graph is not null ? GraphLines(before?.Graph, graph) : [];
 
@@ -234,6 +257,8 @@ internal sealed class HelpWorkflowProposals : IHelpProposalKind
                 : "Each repository's gates wait for your *Accept the gates* on its Workflow tab, which reads `daoris.gates.json` at its line's tip.");
         }
 
+        said.AddRange(integrates);
+
         if (needs.Count > 0)
         {
             said.Add("Needs first:");
@@ -275,6 +300,7 @@ internal sealed class HelpWorkflowProposals : IHelpProposalKind
             Route = chosen,
             Verifies = verifies,
             Lowers = judged.Lowered,
+            NoGates = noGates,
         };
         return new HelpPlan(null, string.Join('\n', said), terminals.Count > 0 ? string.Join(" && ", terminals) : $"daoris driver workflow show {id}", null)
         {
@@ -635,6 +661,13 @@ public sealed record HelpWorkflowCard(
 
     /// <summary>The route the card chooses for (FABRIC-PIPELINE1i): <c>default</c>, <c>landed</c> or <c>kind:&lt;id&gt;</c>; null where none.</summary>
     public string? Route { get; init; }
+
+    /// <summary>
+    /// The repositories a chosen graph integrates its landing in with no gates (INTEGRATE1r part r3; the integration design §17.7, F42), by name,
+    /// so the page words the line in its own language; the plan's text says the same sentence for the terminal. Empty where none, or where
+    /// the card saves a version.
+    /// </summary>
+    public IReadOnlyList<string> NoGates { get; init; } = [];
 
     /// <summary>Whether the workflow is a verification pipeline, or is made one by the save (the pipeline design §2.1).</summary>
     public bool Verifies { get; init; }

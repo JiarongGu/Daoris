@@ -141,6 +141,13 @@ public sealed record WireRun(string GraphDigest, string Run)
     /// go-ahead waits, never guessed.
     /// </summary>
     public IReadOnlyDictionary<string, IReadOnlyList<GoAheadView>> GoAheads { get; init; } = ImmutableDictionary<string, IReadOnlyList<GoAheadView>>.Empty;
+
+    /// <summary>
+    /// The quests each run's sessions published here, by <see cref="WorkUnit.Id"/>, as the exchange keeps them (INTEGRATE1o part o2): the caller's read,
+    /// which a started <c>work.requests</c> node observes (<see cref="WorkRequestsNode"/>). A unit it leaves out has none read, so its node stays
+    /// active, never reached on a guess.
+    /// </summary>
+    public IReadOnlyDictionary<string, IReadOnlyList<QuestView>> Requests { get; init; } = ImmutableDictionary<string, IReadOnlyList<QuestView>>.Empty;
 }
 
 /// <summary>One trigger's firing (§E3): its wire started its target on one receipt. Its key is what the record writer keeps.</summary>
@@ -383,7 +390,7 @@ public static class WireEvaluation
         {
             var status = now[node.Id];
             if (status.State is not (NodeStates.Active or NodeStates.Unknown) || status.Binding is not { } binding
-                || !(BuiltInNodes.Observed.Contains(node.Kind) || node.Kind is NodeKinds.Opinion or NodeKinds.Look or NodeKinds.GoAhead)
+                || !(BuiltInNodes.Observed.Contains(node.Kind) || node.Kind is NodeKinds.Opinion or NodeKinds.Look or NodeKinds.GoAhead or NodeKinds.WorkRequests)
                 || subjects[node.Id] is not { Withheld: null, Subject: { } subject } || !run.Units.TryGetValue(subject, out var unit))
             {
                 continue;
@@ -394,6 +401,7 @@ public static class WireEvaluation
                 NodeKinds.Opinion => OpinionNode.Observe(unit, node, binding, run.Opinions.GetValueOrDefault(subject)),
                 NodeKinds.Look => LookNode.Observe(unit, node, binding, run.Reviews.GetValueOrDefault(subject)),
                 NodeKinds.GoAhead => GoAheadNode.Observe(unit, node, binding, run.GoAheads.GetValueOrDefault(subject)),
+                NodeKinds.WorkRequests => WorkRequestsNode.Observe(unit, node, binding, run.Requests.GetValueOrDefault(subject)),
                 _ => BuiltInNodes.Observe(unit, node, binding, run.Git),
             };
             if (observation.Move is not { } move || (status.State == NodeStates.Unknown && move.To == NodeStates.Unknown)) continue;

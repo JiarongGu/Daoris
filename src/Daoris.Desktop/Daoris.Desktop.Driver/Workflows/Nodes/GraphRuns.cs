@@ -191,6 +191,12 @@ public sealed record RunScope(GraphRun Run, WorkUnit Self)
     /// </summary>
     public IReadOnlyList<GoAheadView>? GoAheads { get; init; }
 
+    /// <summary>
+    /// The quests a session serving one of the run's work quests published (INTEGRATE1o part o2, <see cref="WorkRequestsNode.Published"/>): what its
+    /// <c>work.requests</c> observes. Every quest the runtime read is in view, so an empty list is none published.
+    /// </summary>
+    public IReadOnlyList<QuestView> Requests { get; init; } = [];
+
     /// <summary>The repository's checkout here, and its identity (§B5): where its branches are told and read.</summary>
     public string Root { get; init; } = "";
 
@@ -226,7 +232,8 @@ public static class RunSubjects
     public static RunSubject Of(NodeDeclaration node, IReadOnlySet<string> afterHanded) => node.Kind switch
     {
         NodeKinds.Claimed or NodeKinds.QuestClose => RunSubject.Quest,
-        NodeKinds.GoAhead or NodeKinds.Human or NodeKinds.WaitUnit or NodeKinds.Stop or NodeKinds.All => RunSubject.Run,
+        // INTEGRATE1o (§17.6 point 2): `work.requests` reads the quests the run's sessions published here, so its subject is the run itself.
+        NodeKinds.GoAhead or NodeKinds.Human or NodeKinds.WaitUnit or NodeKinds.Stop or NodeKinds.All or NodeKinds.WorkRequests => RunSubject.Run,
         NodeKinds.Opinion or NodeKinds.Look or NodeKinds.Handed => RunSubject.Branch,
         // INTEGRATE1n (§17.4): the landed branch at the tip `handed` recorded, wherever the graph wires it.
         NodeKinds.Pushed or NodeKinds.PullRequest or NodeKinds.Line or NodeKinds.Integrate => RunSubject.Landing,

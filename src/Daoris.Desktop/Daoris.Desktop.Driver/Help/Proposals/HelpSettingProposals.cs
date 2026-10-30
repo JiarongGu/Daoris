@@ -95,6 +95,8 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
         var scope = workspace is { Length: > 0 } ? $"--workspace {ShellWord.Of(workspace, ShellWord.Workspace)}" : target ?? "";
         var whose = workspace is { Length: > 0 } ? $"workspace `{workspace}`" : $"`{target}`";
         (string Describe, string Terminal, Func<DriverConfig, DriverConfig> Edit) planned;
+        // FOUNDATION1w-s: an actor's order is applied through the staffing's one write; Edit stays the judgement the card is made by.
+        HelpStaffing? staffing = null;
         switch (proposal.Door)
         {
             case "drive":
@@ -229,6 +231,7 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
                         : agent is null ? "Turn Ask Daoris's agent off: it offers its starters only." : $"Run Ask Daoris on `{agent}`.",
                     $"daoris driver {proposal.Door} {value}",
                     c => ActorChoices.With(c, actor, choices));
+                staffing = new HelpStaffing(actor, choices);
                 break;
             }
             case "strikes" when int.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out var strikes):
@@ -291,6 +294,7 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
                     $"Start this machine's driven sessions on `{value}`."
                     + (kept.Count > 0 ? $" {string.Join(" and ", kept.Select(actor => actor == "chat" ? "Chat" : "Brainstorm"))} keep `{config.Adapter}`, written for them." : ""),
                     $"daoris driver adapter {value}", c => ActorChoices.With(c, "build", [new ActorChoice(value)]));
+                staffing = new HelpStaffing("build", [new ActorChoice(value)]);
                 break;
             default:
                 return Refused($"`{proposal.Door} {value}` is not a change the driver makes.", "", "");
@@ -307,7 +311,7 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
             return Refused(refused.Message, planned.Describe, planned.Terminal);
         }
 
-        return new HelpPlan(null, planned.Describe, planned.Terminal, planned.Edit);
+        return new HelpPlan(null, planned.Describe, planned.Terminal, planned.Edit) { Staffing = staffing };
     }
 
     /// <summary>
@@ -958,14 +962,21 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
 
     public Task<HelpApplied> ApplyAsync(HelpApplying applying, CancellationToken ct)
     {
-        applying.Doors.Change(applying.Plan.Apply!);
+        if (applying.Plan.Staffing is { } staffing) applying.Doors.SetActor(staffing.Actor, staffing.Choices);
+        else applying.Doors.Change(applying.Plan.Apply!);
         return Task.FromResult(applying.Settled(true, $"Applied: `#{applying.Id}` — {applying.Plan.Describe} (`{applying.Plan.Terminal}`)", null));
     }
 }
+
+/// <summary>An actor's order a setting proposal sets (FOUNDATION1w-s): applied as <c>SET_ACTOR</c> applies it, through the staffing's one write.</summary>
+public sealed record HelpStaffing(string Actor, IReadOnlyList<ActorChoice>? Choices);
 
 public interface IHelpSettingDoors
 {
     /// <summary>An edit to the driver's file, as the `SET_*` routes and `RETRY_QUEST` make it.</summary>
     void Change(Func<DriverConfig, DriverConfig> edit);
+
+    /// <summary>An actor's order set, as <c>SET_ACTOR</c> sets it (FOUNDATION1w-s): the staffing's one write, then the loop's nudge.</summary>
+    void SetActor(string actor, IReadOnlyList<ActorChoice>? choices);
 }
 

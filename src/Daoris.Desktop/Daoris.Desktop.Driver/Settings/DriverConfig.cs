@@ -523,7 +523,8 @@ public sealed record DriverConfig(
 
     /// <summary>
     /// Each actor's order as the person set it (D205 §9.1, MODELROLE1c), by its id; an actor absent is <i>as before</i>, read from today's
-    /// keys (<see cref="ActorChoices.Effective"/>). Written through <see cref="ActorChoices.With(DriverConfig, string, IReadOnlyList{ActorChoice}?)"/> alone.
+    /// keys (<see cref="ActorChoices.Effective"/>). Written through <see cref="ActorChoices.With(DriverConfig, string, IReadOnlyList{ActorChoice}?)"/> alone,
+    /// by the staffing's one write (<c>RoleStaffing.SetAt</c>, FOUNDATION1w-s) where the home's file is wired.
     /// </summary>
     public IReadOnlyDictionary<string, IReadOnlyList<ActorChoice>> Actors { get; init; } =
         new Dictionary<string, IReadOnlyList<ActorChoice>>(StringComparer.Ordinal);
@@ -883,6 +884,13 @@ public sealed record DriverConfig(
     public string? SourceFile { get; init; }
 
     /// <summary>
+    /// The staffing the file held where its five fields were filled from the store (<see cref="RoleStaffingPort.Fill"/>), else null.
+    /// <see cref="Written"/> gives the staffing's four paths as this, so a save of any other key edits none of them and keeps them as found
+    /// (FOUNDATION1w-s part 3); they are written through the file step alone.
+    /// </summary>
+    internal FileStaffing? AsFile { get; init; }
+
+    /// <summary>
     /// A missing file is a machine that has opted nothing in — the empty config's choices, not an error. They carry the path and <c>{}</c>
     /// as their text (FABRIC-GRAPH1's second re-check, finding 2), so their <see cref="Save"/> is an edit like any other: read without a
     /// text, they were written whole over a file another writer made before the save, a file that did not read or held a key twice
@@ -908,7 +916,7 @@ public sealed record DriverConfig(
 
         try
         {
-            return Parse(text) with { SourceFile = Path.GetFullPath(path) };
+            return RoleStaffingPort.Fill(Parse(text) with { SourceFile = Path.GetFullPath(path) }, path);
         }
         catch (JsonException error) when (error.LineNumber is { } line && error.BytePositionInLine is { } position)
         {
@@ -955,17 +963,27 @@ public sealed record DriverConfig(
     /// from another file over that text (<see cref="ToJson"/>).
     /// <para>🔴 The re-read and the rename are made holding the file's lock (CONFIGLOCK1, D173's CONFIG1 note; <see cref="KeepLock"/>),
     /// which the CLI's writer takes too: with none, another writer's change landing between them was lost.</para>
+    /// <para>🔴 <b>The rename is fenced</b> (FOUNDATION1w-s part 2, the design §19.15 C8-1.2): the lock is read again just before it, and the
+    /// rename is made only while it still says this save's text. A lock a minute old is taken as stale by any other writer, so a save paused
+    /// past that minute had its lock taken and its rename went over that writer's; now it is refused with nothing written, for every key, and
+    /// the next read of the file finds what the other writer left. A writer that took the lock after the read and finished before the rename
+    /// is still renamed over, and an older build's save renames with no look at its lock at all: stated bounds, not closed.</para>
     /// </remarks>
     /// <exception cref="DriverConfigUnreadableException">
     /// The file there now does not read, holds a key twice, or holds no object where this edit changes something inside one; nothing was
     /// written.
     /// </exception>
-    /// <exception cref="IOException">Another writer held the file's lock for the whole of the wait; nothing was written.</exception>
-    public void Save(string path)
+    /// <exception cref="IOException">
+    /// Another writer held the file's lock for the whole of the wait, or took it from this save before its rename
+    /// (<see cref="KeepLockTakenException"/>); nothing was written.
+    /// </exception>
+    public void Save(string path) => Save(path, null);
+
+    internal void Save(string path, KeepSeams? seams)
     {
         var file = Path.GetFullPath(path);
         Directory.CreateDirectory(Path.GetDirectoryName(file)!);
-        using var held = KeepLock.Take(file);
+        using var held = KeepLock.Take(file, within: null, seams?.Clock);
         var same = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
         string text;
         try
@@ -979,7 +997,7 @@ public sealed record DriverConfig(
                 + DriverConfigUnreadableException.Remedy);
         }
 
-        AtomicFile.WriteText(path, text);
+        held.Write(path, text, seams);
     }
 
     /// <summary>The file at <paramref name="path"/> as it stands, for an edit to be written over; <c>{}</c> where it is gone.</summary>
@@ -1033,12 +1051,13 @@ public sealed record DriverConfig(
             foreach (var name in Trees) writer.WriteStringValue(name);
             writer.WriteEndArray();
             writer.WriteNumber("cap", Cap);
-            writer.WriteString("adapter", Adapter);
+            // The staffing's four paths as the file held them where the store filled the record (AsFile).
+            writer.WriteString("adapter", AsFile?.Adapter ?? Adapter);
             // Written only when named: absent IS off, and the CLI twin writes it the same way.
-            if (IntakeAdapter is not null) writer.WriteString("intakeAdapter", IntakeAdapter);
-            if (HelperAdapter is not null) writer.WriteString("helperAdapter", HelperAdapter);
+            if ((AsFile is null ? IntakeAdapter : AsFile.IntakeAdapter) is { } intakeKey) writer.WriteString("intakeAdapter", intakeKey);
+            if ((AsFile is null ? HelperAdapter : AsFile.HelperAdapter) is { } helperKey) writer.WriteString("helperAdapter", helperKey);
             // Written only when an actor is set (MODELROLE1c, D205 §9.1): absent is every actor as before.
-            ActorKey.Write(writer, Actors);
+            ActorKey.Write(writer, AsFile?.Actors ?? Actors);
             // Written only while full (HELPMODE1a1): absent is restricted, and the CLI twin writes it the same way.
             if (HelpMode == HelpModeNames.Full) writer.WriteString("helpMode", HelpMode);
             writer.WriteBoolean("notify", Notify);

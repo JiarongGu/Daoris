@@ -202,7 +202,9 @@ public sealed class HomeWatch : IAsyncDisposable
     {
         var watch = new HomeWatch(wake, every, source) { Log = log };
         var path = global::Daoris.Driver.Notices.PathOf(home);
-        watch.Topic(ChangeTopics.Notices, Path.GetFileName(path), HomePart.File(path));
+        // From the notices' import the store holds them, and every write of the store touches its wake file (FOUNDATION1 z-v).
+        var wakeFile = DesktopStore.WakeOf(DesktopStore.LocationIn(home));
+        watch.Topic(ChangeTopics.Notices, Path.GetFileName(path), HomePart.File(path), HomePart.File(wakeFile));
         return watch;
     }
 

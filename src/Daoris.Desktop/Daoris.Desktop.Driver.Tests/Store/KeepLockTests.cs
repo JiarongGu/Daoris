@@ -105,6 +105,46 @@ public sealed class KeepLockTests : IDisposable
     }
 
     /// <summary>
+    /// FOUNDATION1w-s part 2 (C8-1.2): a holder can read its lock again and find it still its own text, or not: another writer's, gone,
+    /// or the same holder's lock released.
+    /// </summary>
+    [Fact]
+    public void A_holder_reads_its_lock_again_and_finds_it_its_own_only_while_it_says_what_the_holder_wrote()
+    {
+        var file = Path.Combine(_folder, "driver.json");
+        var held = KeepLock.Take(file);
+        Assert.True(held.Holds());
+
+        File.Delete(KeepLock.PathOf(file));
+        Assert.False(held.Holds());
+
+        Plant(file, Gone);
+        Assert.False(held.Holds());
+
+        // The holder's own release is not a hold either; the gate is free for the next holder.
+        held.Dispose();
+        File.Delete(KeepLock.PathOf(file));
+        using var another = KeepLock.Take(file);
+        Assert.True(another.Holds());
+        Assert.False(held.Holds());
+    }
+
+    [Fact]
+    public void A_lock_taken_on_a_handed_clock_says_the_time_that_clock_gave()
+    {
+        var file = Path.Combine(_folder, "driver.json");
+        var then = DateTimeOffset.UtcNow - TimeSpan.FromMinutes(5);
+        using var held = KeepLock.Take(file, within: null, clock: new FixedTime(then));
+        Assert.Equal(Moment(then), JsonDocument.Parse(File.ReadAllText(KeepLock.PathOf(file))).RootElement.GetProperty("since").GetString());
+        Assert.True(KeepLock.IsStale(File.ReadAllText(KeepLock.PathOf(file)), DateTimeOffset.UtcNow, _ => true));
+    }
+
+    private sealed class FixedTime(DateTimeOffset at) : TimeProvider
+    {
+        public override DateTimeOffset GetUtcNow() => at;
+    }
+
+    /// <summary>
     /// 🔴 A writer holds the lock from its re-read to its rename, and renames what it read then with its own change; this edit, made
     /// meanwhile, waits for the lock, then reads the file again and keeps that writer's change. Without the lock it landed inside the
     /// other's window, and the other's rename dropped it.

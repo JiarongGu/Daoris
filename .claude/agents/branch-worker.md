@@ -51,8 +51,6 @@ the work, was most of what branches cost before D160 (`docs/2026-10-10-subagent-
    commit the prompt names.
 2. Read the pack's ranges, starting with the contract. `CLAUDE.md` and `AGENTS.md` are already in your
    context; do not read them again.
-3. Count the tests in the suites your lane touches before changing anything. The hand-back reports the
-   count before and after.
 
 ## While working
 
@@ -85,8 +83,10 @@ the work, was most of what branches cost before D160 (`docs/2026-10-10-subagent-
   is a red too, so run it. Say in the hand-back which tests you saw fail (D160's fifth batch: told to run it, none of
   eleven skipped the red; told only to watch it, nine had).
 - **Follow the brief's conventions** (`AGENTS.md`). Writes are atomic, BOM-less UTF-8 and LF. No machine
-  path or private repository name goes in a tracked file or a commit message. A code comment gives the
-  reason and names the task, never the owner's words. A `tools/` script whose helpers are imported guards
+  path or private repository name goes in a tracked file or a commit message. A code comment is short and
+  only where the code cannot say it: a one-line summary where a public name does not explain itself, a
+  reason where the choice is not obvious. No `<remarks>` that retell the design, no row or section ids
+  beside every member (the commit names the task), never the owner's words. A `tools/` script whose helpers are imported guards
   its runner with `isMain`.
 
 ## Gates
@@ -157,7 +157,7 @@ the work, was most of what branches cost before D160 (`docs/2026-10-10-subagent-
 2. Commit once per part: `type(scope): <ROW>, <what>`, ending with the session's `Co-Authored-By:`
    line. The merge tool's commit check refuses a commit without that line. Leave nothing uncommitted in
    the worktree: the check refuses that too. Never push, and never rewrite history.
-3. The hand-back carries:
+3. The hand-back, in at most 400 words, carries:
    - the **branch**, exactly as `git branch --show-current` prints it in your worktree (two hand-backs named a
      sibling's branch, read off another worktree's folder), and its **commits** (sha and subject)
    - the **files** changed, grouped by lane
@@ -165,7 +165,7 @@ the work, was most of what branches cost before D160 (`docs/2026-10-10-subagent-
    - the **decision number** taken, or none
    - **what the parent must look at on the window**: each surface changed and the screenshot that would
      prove it, or "nothing on the window"
-   - **test counts** before and after, per suite
+   - the **tests** you added or changed, and which you saw fail first
    - **the pack's gaps**: what you had to find that the pack did not name, and any pointer in it that was
      wrong, so the next pack is better (D160)
    - what was **left out**, and why

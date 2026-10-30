@@ -1,7 +1,7 @@
 import type { TFunction } from 'i18next';
 import { type ReactNode, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { ActorRow } from '../../data/wiring';
+import type { ActorRow, StaffingFound } from '../../data/wiring';
 import { Button, Card, CardHeader, FormField, FormGrid, FormRow, Icon, Inline, Prose, SelectField, SettingList, SettingRow } from '../../design/ui';
 import { type Answered, Refused } from '../../work/InlineConfirm';
 
@@ -61,11 +61,17 @@ export function actorSummary(t: TFunction, row: ActorRow): string {
  * Build, Intake, Ask Daoris and Chat, *Off* on the two that may be off, one choice a row of agent, model and effort, *Move up*, *Move down* and *Remove*, *Add a choice*
  * up to four, *Save* and *Clear* (back to as before). One editor is open at a time, where *Edit* was pressed (D185 R3); a refusal is
  * the driver's sentence under its *Save*, the editor still open as it was. The page judges nothing: the driver's one judge does.
+ * Under the rows, each change of driver.json's actors another program made, as the driver kept it (FOUNDATION1w-s): what it changed
+ * against what Daoris last wrote, a turn-off it applied at once said so, with *Take it* and *Dismiss*.
  *
  * A molecule: every state is reached by its props, and every press goes out.
  */
-export function ActorsCard({ rows, agents, about = {}, busy = false, onSave }: {
+export function ActorsCard({ rows, agents, about = {}, busy = false, onSave, found = [], onAnswerFound }: {
   rows: readonly ActorRow[];
+  /** The changes the driver kept for the person, oldest first. */
+  found?: readonly StaffingFound[];
+  /** A found change taken or dismissed; the answer says whether it landed or the driver's sentence. */
+  onAnswerFound?: (found: number, answer: 'take' | 'dismiss', answered: Answered) => void;
   /** What a row says beside its order, by actor: its ⓘ, and the lines under it (Intake's and Ask Daoris's, their cards folded in). */
   about?: Partial<Record<string, { why?: string; below?: ReactNode }>>;
   /** The agents this machine has, to name in a choice. */
@@ -98,6 +104,11 @@ export function ActorsCard({ rows, agents, about = {}, busy = false, onSave }: {
     onSave(actor, choices, { done: () => setEditing(null), refused: setRefused });
   };
   const name = (id: string) => t(`settings.ai.actors.name.${id}`);
+  const [foundRefused, setFoundRefused] = useState<{ id: number; sentence: string } | null>(null);
+  const answer = (id: number, said: 'take' | 'dismiss') => {
+    setFoundRefused(null);
+    onAnswerFound?.(id, said, { done: () => {}, refused: (sentence) => setFoundRefused({ id, sentence }) });
+  };
 
   return (
     <Card>
@@ -238,6 +249,30 @@ export function ActorsCard({ rows, agents, about = {}, busy = false, onSave }: {
           );
         })}
       </SettingList>
+      {found.length > 0 && (
+        <section className="mt-3">
+          <p className="m-0 text-body font-medium text-ink">{t('settings.ai.actors.found.title')}</p>
+          <Prose className="mb-2 mt-0 text-small text-ink-soft">{t('settings.ai.actors.found.body')}</Prose>
+          <ul aria-label={t('settings.ai.actors.found.title')} className="m-0 flex list-none flex-col gap-2 p-0">
+            {found.map((row) => (
+              <li key={row.id} className="rounded-control border border-line p-2">
+                {row.changes.map((change) => (
+                  <p key={change.role} className="m-0 text-small text-ink wrap-anywhere">
+                    {t(change.applied ? 'settings.ai.actors.found.changeApplied' : 'settings.ai.actors.found.change', {
+                      role: name(change.role), was: actorSummary(t, change.was), now: actorSummary(t, change.now),
+                    })}
+                  </p>
+                ))}
+                <div className="mt-2 flex gap-2">
+                  <Button disabled={busy} onClick={() => answer(row.id, 'take')}>{t('settings.ai.actors.found.take')}</Button>
+                  <Button variant="ghost" disabled={busy} onClick={() => answer(row.id, 'dismiss')}>{t('settings.ai.actors.found.dismiss')}</Button>
+                </div>
+                {foundRefused?.id === row.id && <Refused sentence={foundRefused.sentence} />}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
       <p className="m-0 mt-3 text-small text-ink-faint"><Inline text={t('settings.ai.actors.footnote')} /></p>
     </Card>
   );

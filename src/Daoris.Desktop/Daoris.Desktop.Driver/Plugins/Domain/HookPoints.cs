@@ -44,6 +44,8 @@ public static class HookFrames
         account = ended.Account,
         byPerson = ended.ByPerson,
         note = ended.Note,
+        reason = ended.Reason,
+        @class = ended.Class,
     };
 
     /// <summary>

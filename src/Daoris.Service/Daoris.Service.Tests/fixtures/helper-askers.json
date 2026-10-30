@@ -1,0 +1,18 @@
+{
+  "_why": "FOUNDATION1q (D212; the foundation design §2.3 and §7 row 9; the survey's §1.3 row 6): may this session ask for a helper, asked of the five doors that ask it, one row a case. `marks` are the asking record's: kind, repository, ask, serves, piece, opinion, absent where it carries none. `refused` is the start layer's answer (the driver's StartAdmission.HelperAsker): null where the asker's work may ask, else the mark it is named by, serves first. Each door answers in its own words: the page's SESSION_HELPER_ASK by that code as its `why`, with a sentence; the terminal's `sessions helper` and the connector's `helper_ask` by a sentence; the driver's judge `asker-unfit`; the service's desk `BadShape` with a sentence. Every sentence holds `says[refused]`. Ask Daoris is refused at all five (D203 point 6), the one answer the row changes. Whether a record is held on this machine is each door's own question, asked before this, so no row here asks it.",
+  "says": {
+    "helper": "a helper cannot ask for a helper",
+    "reviewer": "a reviewer cannot ask for a helper",
+    "intake": "an intake cannot ask for a helper",
+    "ask-daoris": "Ask Daoris cannot ask for a helper"
+  },
+  "rows": [
+    { "name": "a driven session", "marks": { "kind": "driven", "repository": "engine" }, "refused": null },
+    { "name": "a conversation", "marks": { "kind": "chat", "repository": "engine" }, "refused": null },
+    { "name": "a helper", "marks": { "kind": "chat", "repository": "engine", "serves": "s0" }, "refused": "helper" },
+    { "name": "a partner", "marks": { "kind": "chat", "repository": "engine", "serves": "s0", "piece": "p1" }, "refused": "helper" },
+    { "name": "a reviewer", "marks": { "kind": "chat", "repository": "engine", "opinion": "o1" }, "refused": "reviewer" },
+    { "name": "an intake", "marks": { "kind": "chat", "repository": "ask #a9", "ask": "a9" }, "refused": "intake" },
+    { "name": "Ask Daoris's conversation", "marks": { "kind": "chat", "repository": "daoris:help" }, "refused": "ask-daoris" }
+  ]
+}

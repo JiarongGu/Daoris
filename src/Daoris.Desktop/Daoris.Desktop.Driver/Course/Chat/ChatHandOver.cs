@@ -45,6 +45,9 @@ internal sealed class ChatHandOver(ChatContext context, IChatRunning runner)
     /// </summary>
     public event Action<string>? TakeEnded;
 
+    /// <summary>What the course answered each hand-over of a conversation, by session (FOUNDATION1h branch 3): a test hears it; no person reads it.</summary>
+    internal event Action<string, LineCourse>? Decided;
+
     /// <summary>
     /// Whether a hand-over holds the record from every go-on, sweep and take-up (FOUNDATION1f-v part a, §13.5): a box an older build left for
     /// a conversation and not yet imported, or imported and waiting behind a standing move, or a move the store carries that waits to be taken.
@@ -65,19 +68,21 @@ internal sealed class ChatHandOver(ChatContext context, IChatRunning runner)
     {
         if (_context.Closing) return new HandedOver(null, false, null, "the application is closing, so no conversation is handed over now.");
 
-        var (refused, prior) = await HandOver.JudgeAsync(_context.Service, AccountsOf, sessionId, agent, account, ct).ConfigureAwait(false);
-        if (refused is not null) return new HandedOver(null, false, refused.Why, refused.Message);
-
-        // A conversation another Daoris process runs cannot be ended from here: its own shell takes the ask, or it is stopped there.
-        if (LiveStates.Contains(prior!.State) && !_context.Talking.ContainsKey(sessionId))
-        {
-            return new HandedOver(
-                null, false, HandOver.Running,
-                $"{sessionId} is {prior.State}, running in another Daoris process on this machine: hand it over there, or stop it first.");
-        }
-
+        // FOUNDATION1h branch 3 (the foundation design §3.1): this is the course's adapter for a conversation's hand-over. The boundary is the
+        // runner's turn; the hand-over rule's consent is the door's, which calls the runner only for an ask it let go (`go`), so an agent's ask
+        // reaches the course admitted and the person's press needs none. The course decides inside the ask, and what the executor alone
+        // knows, a conversation another Daoris process runs, is refused once the course has allowed the move, before it is kept.
+        var consent = askedBy == HandOverBy.Agent ? HandOver.ConsentOf(HandOverAskVerdict.Go(agent)) : null;
         var asked = await HandOver.AskAsync(
-                _context.Service, Moves, AccountsOf, sessionId, agent, account, why, askedBy, DateTimeOffset.UtcNow, ct)
+                _context.Service, Moves, AccountsOf, sessionId, agent, account, why, askedBy, DateTimeOffset.UtcNow, ct, consent,
+                _runner.Taking(sessionId) ? CourseBoundary.TurnRunning : CourseBoundary.BetweenTurns,
+                // A conversation another Daoris process runs cannot be ended from here: its own shell takes the ask, or it is stopped there.
+                prior => LiveStates.Contains(prior.State) && !_context.Talking.ContainsKey(sessionId)
+                    ? HandOver.Refused(
+                        HandOver.Running,
+                        $"{sessionId} is {prior.State}, running in another Daoris process on this machine: hand it over there, or stop it first.")
+                    : null,
+                course => Decided?.Invoke(sessionId, course))
             .ConfigureAwait(false);
         if (asked is not { Move: { } move, Request: { } request }) return new HandedOver(null, false, asked.Answer.Why, asked.Answer.Message);
 
@@ -202,7 +207,8 @@ internal sealed class ChatHandOver(ChatContext context, IChatRunning runner)
             // begins either started its turn first, and the move waits for that turn's end (Due), or takes nothing.
             if (_context.Turned.TryGetValue(sessionId, out var chat))
             {
-                if (!chat.Turns.Hold())
+                // FOUNDATION1o: where the host's open moves the old part's words, one said while held is kept on the record for that open.
+                if (!chat.Turns.Hold(await _context.Service.Opens.KeepsAsync(ct).ConfigureAwait(false)))
                 {
                     if (keeps) waits = true;
                     else record.Superseded();
