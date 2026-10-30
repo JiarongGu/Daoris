@@ -20,8 +20,8 @@ const SLACK = 48;
 export function useFollowTail(scroller: RefObject<HTMLElement | null>, grew: unknown, opened: unknown, fromTop = false) {
   const [atTail, setAtTailState] = useState(true);
   const following = useRef(true);
-  // Set only on a change (PAGELOOP1): set again unchanged just after a drawing, React keeps the update and draws once more, and a
-  // streamed hand-back's every line left one behind its commit until React stopped the page (#185).
+  // Set only on a change (PAGELOOP1): set unchanged just after a drawing, React keeps the update, which a growth's commit then leaves
+  // waiting, and React counts such commits toward its update-depth limit (#185).
   const held = useRef(true);
   const setAtTail = useCallback((near: boolean) => {
     if (held.current === near) return;

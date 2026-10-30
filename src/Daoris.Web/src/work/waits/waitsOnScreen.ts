@@ -26,8 +26,8 @@ type Watching = { observer: IntersectionObserver; sections: readonly Element[]; 
 export function useWaitsOnScreen(scroller: RefObject<HTMLElement | null>): boolean | null {
   const [onScreen, setOnScreenState] = useState<boolean | null>(false);
   const watching = useRef<Watching | null>(null);
-  // Read after every drawing, so set only on a change (PAGELOOP1): set again unchanged, React keeps the update and draws the frame
-  // once more, and each line of a streamed hand-back left one behind its commit until React stopped the page (#185).
+  // Read after every drawing, so set only on a change (PAGELOOP1): set unchanged, React keeps the update and draws the frame again,
+  // and counts a commit that leaves one waiting toward its update-depth limit (#185).
   const held = useRef<boolean | null>(false);
   const setOnScreen = useCallback((next: boolean | null) => {
     if (held.current === next) return;

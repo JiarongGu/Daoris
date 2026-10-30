@@ -186,9 +186,9 @@ still up, and writes one `page.error` line, `where` `render` (`bridge/log.ts`'s 
 (the frame says it as it shows it, `pageShows`; a secondary window's is `window:monitor` or `window:session`) and the first five
 frames of React's component stack by name alone (`stackTop`), never a frame's location (D217). A failure outside a render is still
 `installPageErrors`'s, `where` `window` or `promise`, the message alone. **An effect sets state only on a change**: React 19.2 counts a
-commit that leaves an update waiting toward its update-depth limit, and a value set again unchanged just after its holder drew is
-such an update. Each line of a streamed message left one (the tail followed, `followTail.ts`, and the waits' standing,
-`waitsOnScreen.ts`), and fifty in a row stopped the page (#185); `app/sessionEnd.test.tsx` holds a streamed line to no nested commit.
+commit that leaves an update waiting toward its update-depth limit (#185), and a value set again unchanged just after its holder
+drew is such an update, so a stream of events that each did so stops the page (`followTail.ts` and `waitsOnScreen.ts` hold the last
+value set); `app/sessionEnd.test.tsx` holds a streamed line to no nested commit.
 
 ## Where things are in `src/` (STRUCT5c, D166)
 

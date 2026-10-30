@@ -5,6 +5,7 @@ with the version and date at release.
 
 ## Unreleased
 
+- A session's page no longer stops on an error while the agent's long last message streams in line by line: each line had left React an update to draw, and some fifty in a row stopped the window's page (PAGELOOP1).
 - Settings → Disk space has an *allowance*, the most Daoris may use in all (default 48 GB, also `daoris driver keep allowance <n>GB`): over it, Daoris lets go of what can be made again, oldest first, only where that brings it within, and never of what cannot be made again; and a finished session's page shows the record of its tree, its landing, commits and recovery ref, once the tree is let go.
 - A repository's page has an *Integration* tab (`daoris-driver integrate <repository>` in a terminal): the queue of work asked into its line, the candidate being tried with its steps and what holds it, what was handed back, superseded commits and what the line now holds, with *Drop* and *Check again* for the owner.
 - Two workflow presets integrate or open a pull request through graphs: *Integrated into the line* (with a variant with no press) and *A pull request*, saved by `daoris driver workflow new <id> --from <preset>` and offered on a Workflow tab.
