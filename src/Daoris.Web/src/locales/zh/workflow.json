@@ -42,6 +42,7 @@
   "workflow.step.check": "检查",
   "workflow.step.integrate": "集成",
   "workflow.step.workRequests": "工作的请求",
+  "workflow.step.request": "给另一个仓库的委托",
   "workflow.step.pluginNode": "`{{plugin}}` 的 {{node}}",
   "workflow.participation.agent": "智能体自行",
   "workflow.participation.agent-and-you": "智能体与你",

@@ -57,6 +57,18 @@ public sealed record Quest(
     public string? Weight { get; init; }
 
     /// <summary>
+    /// The paths its publisher declared it touches (INTEGRATE1l), <see cref="QuestPaths"/>: globs a start compares with the repository's
+    /// other open work. Empty for a quest declaring none, which is every quest from before the field.
+    /// </summary>
+    public IReadOnlyList<string> Paths { get; init; } = [];
+
+    /// <summary>
+    /// The key of the workflow request that published it (INTEGRATE1p), <see cref="QuestRequests"/>: <c>&lt;run&gt;/&lt;node&gt;/&lt;n&gt;</c>, part
+    /// of its id. Null for every quest no request node published, which is every quest from before the field.
+    /// </summary>
+    public string? Request { get; init; }
+
+    /// <summary>
     /// Its note's parts beside <see cref="Note"/> (QUESTCLOSE1b1, D142 point 2), as <see cref="Knowledge.NoteParts"/> keeps
     /// them: Daoris's lead by its code, worded in the reader's language, then someone's words as written. Set by the move that
     /// wrote the note, and cleared by one that wrote a note without them. Null for every quest from before, and for a note
@@ -1047,6 +1059,10 @@ public sealed class QuestStore
             ("quests", "short_title", "short_title TEXT NULL"),
             // The work's mark (FOUNDATION1x); a quest from before was marked none, and starts on Build's order.
             ("quests", "weight", "weight TEXT NULL"),
+            // The paths it declares (INTEGRATE1l); a quest from before declared none.
+            ("quests", "paths", "paths TEXT NULL"),
+            // The workflow request's key (INTEGRATE1p); a quest from before no request published.
+            ("quests", "request", "request TEXT NULL"),
             // What Daoris last read of a done's evidence (EVID1a); a quest from before named none, so none was read.
             ("quests", "evidence", "evidence TEXT NULL"),
             // The chain's review choice, a set-up step's environment, its set-ups and the person's verdicts (REVIEWENV1b); a
@@ -1250,15 +1266,17 @@ public sealed class QuestStore
     /// those words would quietly join somebody else's closed quest. The widening kept the hash, so an
     /// id from before it is exactly the first six characters of the same ask's id now. A quest to
     /// LANES widens the same way (D115 §2.2), only when there are some, so every quest to a whole
-    /// repository keeps its id and a lane's ask is not the repository's.
+    /// repository keeps its id and a lane's ask is not the repository's. A workflow request's key widens it the same way (INTEGRATE1p,
+    /// R5's C32), only when there is one, so distinct runs or nodes make distinct quests whatever their words.
     /// </remarks>
     internal static string MakeId(
-        string from, string to, string title, string? parent = null, IReadOnlyList<string>? lanes = null) =>
+        string from, string to, string title, string? parent = null, IReadOnlyList<string>? lanes = null, string? request = null) =>
         Convert.ToHexString(
             System.Security.Cryptography.SHA256.HashData(
                 System.Text.Encoding.UTF8.GetBytes(
                     $"{from}->{to}:{title.Trim()}" + (parent is null ? "" : $"<-{parent}")
-                    + (lanes is { Count: > 0 } ? $"@{string.Join('+', lanes.Order(StringComparer.Ordinal))}" : ""))))[..IdLength]
+                    + (lanes is { Count: > 0 } ? $"@{string.Join('+', lanes.Order(StringComparer.Ordinal))}" : "")
+                    + (request is null ? "" : $"#{request}"))))[..IdLength]
             .ToLowerInvariant();
 
     /// <summary>Publish a quest. Returns the existing one unchanged if it was already asked.</summary>
@@ -1293,15 +1311,19 @@ public sealed class QuestStore
         QuestReview? review = null,
         string? setUpIn = null,
         string? parent = null,
-        string? weight = null)
+        string? weight = null,
+        IReadOnlyList<string>? paths = null,
+        string? request = null)
     {
         var sorted = Sorted(lanes);
-        var id = MakeId(from, to, title, parent, sorted);
+        var id = MakeId(from, to, title, parent, sorted, request);
         return await InTransactionAsync(async (transaction, inside) =>
         {
-            // The same ask already held is the answer, whichever width of id it was published under.
+            // The same ask already held is the answer, whichever width of id it was published under; a request's key had one width only.
             var existing = await FindAsync(id, transaction, inside).ConfigureAwait(false)
-                           ?? (parent is null ? await FindAsync(id[..LegacyIdLength], transaction, inside).ConfigureAwait(false) : null);
+                           ?? (parent is null && request is null
+                               ? await FindAsync(id[..LegacyIdLength], transaction, inside).ConfigureAwait(false)
+                               : null);
             if (existing is not null) return existing;
 
             var asked = new Quest(
@@ -1319,6 +1341,8 @@ public sealed class QuestStore
                 SetUpIn = setUpIn,
                 Parent = parent,
                 Weight = string.IsNullOrWhiteSpace(weight) ? null : weight.Trim(),
+                Paths = paths ?? [],
+                Request = request,
             };
 
             return await PublishInAsync(asked, transaction, inside).ConfigureAwait(false);
@@ -1335,10 +1359,11 @@ public sealed class QuestStore
     /// are refused here rather than making a fresh quest the remote, which still holds the closed one, refuses for good (H5).
     /// </summary>
     internal async Task<string?> ForgottenIdAsync(
-        string from, string to, string title, IReadOnlyList<string>? lanes, CancellationToken ct)
+        string from, string to, string title, IReadOnlyList<string>? lanes, CancellationToken ct, string? request = null)
     {
-        var id = MakeId(from, to, title, lanes: Sorted(lanes));
-        foreach (var held in new[] { id, id[..LegacyIdLength] })
+        // A request's key widens the id as it did at its publish (INTEGRATE1p), and such an id never had the shorter width.
+        var id = MakeId(from, to, title, lanes: Sorted(lanes), request: request);
+        foreach (var held in request is null ? new[] { id, id[..LegacyIdLength] } : [id])
         {
             if (await ForgottenAsync(held, ct).ConfigureAwait(false)) return held;
         }
@@ -1519,8 +1544,8 @@ public sealed class QuestStore
         await using var command = _db.Command();
         command.Transaction = transaction;
         command.CommandText = """
-            INSERT INTO quests (id, sender, receiver, title, body, status, note, note_parts, filed, updated, workspace, links, attachments, then_steps, parent, conflicts, awaits, published_by, lanes, requirements, answers, accepted, held, short_title, evidence, review, set_up_in, set_ups, verdicts, closure, submission, grew_from, source_reopened, reopened, workflow_choices, weight)
-            VALUES ($id, $sender, $receiver, $title, $body, $status, $note, $noteParts, $filed, $updated, $workspace, $links, $attachments, $then, $parent, $conflicts, $awaits, $publishedBy, $lanes, $requirements, $answers, $accepted, $held, $short, $evidence, $review, $setUpIn, $setUps, $verdicts, $closure, $submission, $grewFrom, $sourceReopened, $reopened, $workflowChoices, $weight)
+            INSERT INTO quests (id, sender, receiver, title, body, status, note, note_parts, filed, updated, workspace, links, attachments, then_steps, parent, conflicts, awaits, published_by, lanes, requirements, answers, accepted, held, short_title, evidence, review, set_up_in, set_ups, verdicts, closure, submission, grew_from, source_reopened, reopened, workflow_choices, weight, paths, request)
+            VALUES ($id, $sender, $receiver, $title, $body, $status, $note, $noteParts, $filed, $updated, $workspace, $links, $attachments, $then, $parent, $conflicts, $awaits, $publishedBy, $lanes, $requirements, $answers, $accepted, $held, $short, $evidence, $review, $setUpIn, $setUps, $verdicts, $closure, $submission, $grewFrom, $sourceReopened, $reopened, $workflowChoices, $weight, $paths, $request)
             ON CONFLICT (id) DO UPDATE SET
               sender = excluded.sender, receiver = excluded.receiver, title = excluded.title, body = excluded.body,
               status = excluded.status, note = excluded.note, note_parts = excluded.note_parts, filed = excluded.filed, updated = excluded.updated,
@@ -1532,9 +1557,12 @@ public sealed class QuestStore
               review = excluded.review, set_up_in = excluded.set_up_in, set_ups = excluded.set_ups, verdicts = excluded.verdicts,
               closure = excluded.closure, submission = excluded.submission,
               grew_from = excluded.grew_from, source_reopened = excluded.source_reopened, reopened = excluded.reopened,
-              workflow_choices = excluded.workflow_choices, weight = excluded.weight
+              workflow_choices = excluded.workflow_choices, weight = excluded.weight, paths = excluded.paths,
+              request = excluded.request
             """;
+        command.Parameters.AddWithValue("$request", (object?)quest.Request ?? DBNull.Value);
         command.Parameters.AddWithValue("$weight", (object?)quest.Weight ?? DBNull.Value);
+        command.Parameters.AddWithValue("$paths", quest.Paths.Count == 0 ? DBNull.Value : LinksJson(quest.Paths));
         command.Parameters.AddWithValue("$workflowChoices", JsonFields.Written(writer =>
         {
             writer.WriteStartArray();
@@ -4079,6 +4107,8 @@ public sealed class QuestStore
             : Moments.ReadRequired(reader.GetString(reader.GetOrdinal("accepted"))),
         Short = reader.IsDBNull(reader.GetOrdinal("short_title")) ? null : reader.GetString(reader.GetOrdinal("short_title")),
         Weight = reader.IsDBNull(reader.GetOrdinal("weight")) ? null : reader.GetString(reader.GetOrdinal("weight")),
+        Paths = reader.IsDBNull(reader.GetOrdinal("paths")) ? [] : ReadLinks(reader.GetString(reader.GetOrdinal("paths"))),
+        Request = reader.IsDBNull(reader.GetOrdinal("request")) ? null : reader.GetString(reader.GetOrdinal("request")),
         NoteParts = reader.IsDBNull(reader.GetOrdinal("note_parts")) ? null : reader.GetString(reader.GetOrdinal("note_parts")),
         Evidence = reader.IsDBNull(reader.GetOrdinal("evidence")) ? null : ReadVerdict(reader.GetString(reader.GetOrdinal("evidence"))),
         Review = reader.IsDBNull(reader.GetOrdinal("review")) ? null : ReadColumn(reader.GetString(reader.GetOrdinal("review")), Reviews.JudgedReview),
@@ -4180,6 +4210,10 @@ public sealed class QuestStore
                 Short = payload.TryGetProperty("short", out var shortTitle) ? shortTitle.GetString() : null,
                 // Absent from every publish before weights, and from one that was marked none (FOUNDATION1x).
                 Weight = payload.TryGetProperty("weight", out var weight) ? weight.GetString() : null,
+                // Absent from every publish before declared paths, and from one that declared none (INTEGRATE1l).
+                Paths = payload.TryGetProperty("paths", out var paths) ? ReadLinks(paths) : [],
+                // Absent from every publish no workflow request made (INTEGRATE1p).
+                Request = payload.TryGetProperty("request", out var request) ? request.GetString() : null,
                 // Absent from every publish before reviews, and from one that chose none or is no set-up step (REVIEWENV1b).
                 Review = payload.TryGetProperty("review", out var chosen) ? Reviews.JudgedReview(chosen) : null,
                 SetUpIn = payload.TryGetProperty("setUpIn", out var setUpIn) ? setUpIn.GetString() : null,
@@ -4323,6 +4357,16 @@ public sealed class QuestStore
 
             // Only when marked (FOUNDATION1x), for the lanes' reason: an unmarked publish reads as it did, and an older build reads a marked one as unweighted.
             if (published.Weight is not null) writer.WriteString("weight", published.Weight);
+
+            // Only when it declares some (INTEGRATE1l), for the lanes' reason: a publish declaring none reads as it did.
+            if (published.Paths.Count > 0)
+            {
+                writer.WritePropertyName("paths");
+                WriteLinks(writer, published.Paths);
+            }
+
+            // Only on a workflow request's publish (INTEGRATE1p), for the lanes' reason: every other publish reads as it did.
+            if (published.Request is not null) writer.WriteString("request", published.Request);
 
             // Only when set (REVIEWENV1b), for the lanes' reason: a quest that chose nothing and is no set-up step reads as it did.
             if (published.Review is { } chosen)

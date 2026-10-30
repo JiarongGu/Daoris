@@ -1,5 +1,7 @@
 # Setting a workspace up — every repository adopted, declared and documented by its own session
 
+> Router standing, moved here when the router was cut to its size (DOCSIZE1): also governed by D129.
+
 > The owner's ask, 2026-10-01 (WSSETUP1): a driven session in the owner's work workspace stopped to ask the
 > person a question its own repository's notes and code could answer. The owner's diagnosis is that the
 > workspace lacks knowledge: *"the repo should be registered and apply the doctrine and also initialize the

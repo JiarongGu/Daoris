@@ -346,6 +346,7 @@
   "work.sitting.RepositoryBusy_treeThisLook": "Queued behind quest `#{{other}}`, which goes into the tree `#{{quest}}` goes back into at this look — one session per tree.",
   "work.sitting.RepositoryBusy_repository": "Session `{{session}}` is active in the receiver's repository — one session per repository, whose root is its one tree. Sessions there run side by side once they open trees of their own.",
   "work.sitting.RepositoryBusy_queued": "Queued behind quest `#{{other}}` in the receiver's repository — oldest first, one at a time.",
+  "work.sitting.RepositoryBusy_overlaps": "Waits for quest `#{{other}}`: both touch {{paths}}. It starts once that work is integrated.",
   "work.sitting.RepositoryBusy_repositoryOpening": "Queued behind quest `#{{other}}`, which is starting in the receiver's repository — one session per repository, whose root is its one tree.",
   "work.sitting.Waiting_asked": "Waits on `#{{other}}`, asked of `{{to}}` — it goes on, in the same tree, once that is answered.",
   "work.sitting.Waiting_unreadRunning": "Waits on `#{{other}}`, which `{{to}}` closed done: its evidence is read when session `{{session}}` ends — it goes on, in the same tree, once that evidence is found.",

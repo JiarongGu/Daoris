@@ -730,6 +730,52 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
+    /// INTEGRATE1l: a quest published with paths answers them, as the driver reads them to compare a start with the repository's
+    /// other open work; one declaring none answers an empty list, and a path outside the repository is refused, 400. The ask door
+    /// keeps and answers an asker's paths the same way.
+    /// </summary>
+    [Fact]
+    public async Task The_quest_and_ask_doors_answer_the_paths_they_were_published_with()
+    {
+        var declared = await host.PostAsync("/api/quests", new
+        {
+            from = "Asker", to = "Keeper", title = "Cap the frame's paths", body = "It stalls.", paths = new[] { "src/frame/**" },
+        });
+        Assert.Equal(200, declared.Status);
+        Assert.Equal("src/frame/**", Assert.Single(declared.Json.GetProperty("quest").GetProperty("paths").EnumerateArray()).GetString());
+
+        var plain = await host.PostAsync("/api/quests", new { from = "Asker", to = "Keeper", title = "Log the frame's paths", body = "b" });
+        Assert.Empty(plain.Json.GetProperty("quest").GetProperty("paths").EnumerateArray());
+
+        var refused = await host.PostAsync("/api/quests", new
+        {
+            from = "Asker", to = "Keeper", title = "Reach outside", body = "b", paths = new[] { "../elsewhere" },
+        });
+        Assert.Equal(400, refused.Status);
+
+        var ask = await host.PostAsync("/api/asks", new { sentence = "cap the frame's declared paths", paths = new[] { "src/frame/**" } });
+        Assert.Equal("src/frame/**", Assert.Single(ask.Json.GetProperty("ask").GetProperty("paths").EnumerateArray()).GetString());
+    }
+
+    /// <summary>
+    /// INTEGRATE1p (R5's C32): the driver publishes a workflow request's quest under its key, and the door answers the key; the same
+    /// key posted again, as after a lost answer, is the same quest, and a key that is no run, node and number is refused, 400.
+    /// </summary>
+    [Fact]
+    public async Task The_quest_door_publishes_a_request_under_its_key_once()
+    {
+        var body = new { from = "Asker", to = "Keeper", title = "Expose the keeper's cap", body = "Needed.", request = "run-7/ask-keeper/1" };
+        var first = await host.PostAsync("/api/quests", body);
+        var again = await host.PostAsync("/api/quests", body);
+
+        Assert.Equal(200, first.Status);
+        Assert.Equal("run-7/ask-keeper/1", first.Json.GetProperty("quest").GetProperty("request").GetString());
+        Assert.Equal(
+            first.Json.GetProperty("quest").GetProperty("id").GetString(), again.Json.GetProperty("quest").GetProperty("id").GetString());
+        Assert.Equal(400, (await host.PostAsync("/api/quests", body with { request = "run-7/ask-keeper" })).Status);
+    }
+
+    /// <summary>
     /// DRIFT1c: the quest door keeps working for a client that names no requirements, answering the quest
     /// with none; a repository naming some is asking on no ask, so there is nothing to quote, 400.
     /// </summary>

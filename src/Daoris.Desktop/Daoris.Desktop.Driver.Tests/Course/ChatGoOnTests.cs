@@ -351,6 +351,31 @@ public sealed class ChatGoOnTests : IDisposable
     }
 
     /// <summary>
+    /// 🔴 CHATGOONWAKE1: a run ends its record before it lets its conversation go, so a word shown in between finds the conversation
+    /// still held here. Nothing goes on while it is held, its record not even read; the run's letting go takes the word up.
+    /// </summary>
+    [Fact]
+    public async Task A_word_shown_to_an_ended_chat_its_run_still_holds_goes_on_once_the_run_lets_go()
+    {
+        var ledger = new ChatLedger().Register("engine", _root);
+        ledger.Chat("c1", "completed", "talk", _root).Say("w1", "Also log the port.");
+        new HarnessConversations(_home).Keep("c1", "talk", "conv-c1");
+        var events = Events;
+        using var runner = Runner(ledger, events);
+        // Its run has concluded the record and holds the conversation still, as its watch does until its last disposal.
+        runner.Context.Talking["c1"] = new Talk();
+
+        events.Append("c1", Shown("w1", "Also log the port."));
+        await Task.Delay(300);
+        Assert.Equal(0, ledger.Reads);
+
+        runner.Context.Talking.TryRemove("c1", out _);
+        runner.GoOn.LetGo("c1");
+
+        await Poll.Until(() => ledger.Moves("c1").Count > 0, () => "the word shown while its run held the conversation never went on");
+    }
+
+    /// <summary>
     /// 🔴 FOUNDATION1o (the foundation design §19.11's proof): an older shell's own come-up, and its take-up of a part its sweep stopped, over a
     /// word kept for a moving record, before the move's open and after it. An older build reads no move record, and this runner is given none.
     /// Before the open the word waits on the old part, which goes on with it once, as had the move never been decided; after it the open moved

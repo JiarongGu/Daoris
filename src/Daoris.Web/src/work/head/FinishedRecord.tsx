@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { moment } from '../../locales/format';
-import type { SessionRecord } from '../sessionRecord';
+import type { SessionRecord } from './sessionRecord';
 import { short } from './trace';
 
 /**

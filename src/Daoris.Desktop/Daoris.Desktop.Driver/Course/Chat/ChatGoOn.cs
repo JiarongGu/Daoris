@@ -333,25 +333,39 @@ internal sealed class ChatGoOn
 
         // FOUNDATION1o (§3.4 rule 4): a word shown while a conversation move stands is the move's, which its open carries. The come-up and the
         // sweep take up dead runs' moves first, and keep their own guards, so an older build's come-up reads as it did.
-        if (_context.Talking.ContainsKey(session) || _context.Turned.ContainsKey(session) || _context.GoingOn.ContainsKey(session)
-            || _limit.Moves.Stands(session))
-        {
-            return;
-        }
+        if (_limit.Moves.Stands(session)) return;
 
-        _ = Task.Run(async () =>
-        {
-            try
-            {
-                // No route started it, so its end is announced (MSG1c2).
-                await GoOnAsync(session, onEnded: Announce).ConfigureAwait(false);
-            }
-            catch (Exception)
-            {
-                // Said in its conversation wherever it could be; a word said later tries again.
-            }
-        });
+        // 🔴 CHATGOONWAKE1: a run ends its record before it lets the conversation go, so a word shown between is owed to the run, which takes
+        // it up as it lets go (LetGo). Owed before the hold is read, so a let-go between the two still finds it; whoever removes it wakes.
+        _owed[session] = 0;
+        if (_context.Holds(session) || !_owed.TryRemove(session, out _) || _context.GoingOn.ContainsKey(session)) return;
+        Wake(session);
     }
+
+    // CHATGOONWAKE1: the conversations a word was shown to while their run held them, each taken up as that run lets go.
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, byte> _owed = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// The run that held the conversation has let it go, its last disposal done (CHATGOONWAKE1): a word shown to its ended record meanwhile,
+    /// which <see cref="Heard"/> left owed, goes on now, as one shown a moment later would. Nothing is read where none was shown.
+    /// </summary>
+    internal void LetGo(string session)
+    {
+        if (_owed.TryRemove(session, out _) && !_context.Closing) Wake(session);
+    }
+
+    private void Wake(string session) => _ = Task.Run(async () =>
+    {
+        try
+        {
+            // No route started it, so its end is announced (MSG1c2).
+            await GoOnAsync(session, onEnded: Announce).ConfigureAwait(false);
+        }
+        catch (Exception)
+        {
+            // Said in its conversation wherever it could be; a word said later tries again.
+        }
+    });
 
     /// <summary>
     /// The person let an answer the answers-alone bound held go on (COWORK1e, §8.3; <see cref="AnswersAloneWord.GoOn"/>, which already

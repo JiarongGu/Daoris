@@ -77,6 +77,8 @@ export interface Consideration {
   said?: {
     code: string; cap?: number | null; session?: string | null; quest?: string | null; repository?: string | null;
     environment?: string | null; state?: string | null;
+    /** INTEGRATE1l: its declared paths that meet the earlier quest's work, under `overlaps`. Absent on an older shell. */
+    paths?: readonly string[] | null;
   } | null;
 }
 
@@ -253,7 +255,8 @@ export function sittingSentence(sitting: Consideration): string {
 /** The codes the page words for each verdict that names one (OVERVIEWNOISE1c), as the planner's `SittingFact` spells them. */
 const SAID: Record<string, readonly string[]> = {
   AtCapacity: ['cap'],
-  RepositoryBusy: ['serving', 'opening', 'tree', 'treeOpening', 'treeThisLook', 'repository', 'queued', 'repositoryOpening'],
+  // INTEGRATE1l: `overlaps`, a start held under `overlap: wait` until the earlier quest's work is integrated.
+  RepositoryBusy: ['serving', 'opening', 'tree', 'treeOpening', 'treeThisLook', 'repository', 'queued', 'repositoryOpening', 'overlaps'],
   Waiting: ['asked', 'unreadRunning', 'unread', 'unreadAtCommit', 'missing', 'unreviewed', 'departed'],
   NotAdopted: ['unregistered', 'noRoot', 'noConnector'],
   WaitsForOpinion: ['landing', 'steps'],
@@ -275,12 +278,14 @@ function saidSentence(sitting: Consideration): string | null {
   const said = sitting.said;
   if (!said || !SAID[sitting.verdict]?.includes(said.code)) return null;
   if (said.code === 'cap' && said.cap == null) return null;
+  if (said.code === 'overlaps' && !said.paths?.length) return null;
   const context = said.code === 'unreviewed' && said.environment ? 'unreviewedIn'
     : sitting.verdict === 'WaitsForOpinion' && !said.state ? `${said.code}Unjudged`
     : said.code;
   return i18n.t(`work.sitting.${sitting.verdict}`, {
     context, why: sitting.reason, quest: sitting.quest, cap: said.cap, session: said.session ?? '', other: said.quest ?? '',
     to: said.repository ?? '', environment: said.environment ?? '',
+    paths: (said.paths ?? []).map((path) => `\`${path}\``).join(' · '),
     state: said.state ? i18n.t(`opinion.state.${said.state}`, { defaultValue: said.state }) : '',
     defaultValue: sitting.reason,
   });

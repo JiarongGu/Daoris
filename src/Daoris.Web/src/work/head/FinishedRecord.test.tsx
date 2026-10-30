@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import i18n from '../../locales/i18n';
-import { RECORD } from '../sessionRecord.fixtures';
+import { RECORD } from './sessionRecord.fixtures';
 import { FinishedRecord } from './FinishedRecord';
 
 // KEEPSIZE1: a finished session whose tree is let go shows its record on its page, in both languages.

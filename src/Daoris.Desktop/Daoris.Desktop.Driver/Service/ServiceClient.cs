@@ -1915,6 +1915,10 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
                 Short = Text(quest, "short") is { Length: > 0 } named ? named : null,
                 // The work's mark (FOUNDATION1x). Absent is a host from before it: the quest starts on Build's order.
                 Weight = Text(quest, "weight") is { Length: > 0 } weight ? weight : null,
+                // The paths it declares (INTEGRATE1l). Absent is a host from before them: none declared.
+                Paths = quest.TryGetProperty("paths", out var paths) && paths.ValueKind == JsonValueKind.Array
+                    ? paths.EnumerateArray().Select(p => p.ValueKind == JsonValueKind.String ? p.GetString() : null).OfType<string>().ToList()
+                    : [],
                 // Absent is not waiting: a host from before D79 answers without it.
                 Awaits = Text(quest, "awaits"),
                 // Absent is a person's publish or a chain's step: a host from before SESS1 answers without it.

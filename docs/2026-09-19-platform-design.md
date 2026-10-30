@@ -1,5 +1,7 @@
 # The Daoris platform — design
 
+> Router standing, moved here when the router was cut to its size (DOCSIZE1): also governed by D55 and D66.
+
 **Standing:** D38's platform contract, read with D150/D152 for current places, settings and menus.
 `src/Daoris.Web/README.md` describes the implemented surface. The view names and baseline below
 are the original design; later decision notes govern where they differ.

@@ -1,5 +1,7 @@
 # The development documents, and fewer asks — a standard for code generation
 
+> Router standing, moved here when the router was cut to its size (DOCSIZE1): also governed by D127, D151 and D159.
+
 > The owner's ask, 2026-10-01 (DOC1 and UNBLOCK1 in `TASKS.md`, *Doctrine, plugins and tools*):
 > *"remember daoris still have role for doctrine (and we do need to research a good development doc
 > pattern for code generation and use it as standard for all repo setup so its good for sessions, and

@@ -53,8 +53,7 @@
         "tools/call": "the MCP protocol's method name, no path",
         ".claude/rules/": "names the former layout as the reason things moved",
         "GET /api/changes": "the route is ChangeStream.Route, a constant the routes index does not extract",
-        "GET /api/changes?since=&wait=&journal=": "the route is ChangeStream.Route, a constant the routes index does not extract",
-        "keptTrees": "a proposed design's own name for a count; nothing is built, as its router row says"
+        "GET /api/changes?since=&wait=&journal=": "the route is ChangeStream.Route, a constant the routes index does not extract"
       }
     }
   },

@@ -1,5 +1,7 @@
 # TREEPOOL1: Codex's sealed proposal (2026-10-26)
 
+> Router standing, moved here when the router was cut to its size (DOCSIZE1): used by D212.
+
 One of two sealed proposals written from `docs/2026-10-26-tree-pool-brief.md` and `docs/2026-10-26-tree-pool-survey.md` under D191, by
 Codex, read-only, at `a3f5be21a`, without the other. Kept verbatim, its headings set one level down; the steward ran it from outside the
 install. The other is `docs/2026-10-26-tree-pool-proposal-opus.md`.

@@ -2832,6 +2832,9 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
         Action<AcpUsage>? measured, string? rules, IStreamMapper? mapper, ProtocolChat? chat, NativeChat? native,
         string? servers, bool drivesBrowser, Action<JsonElement>? said, Watched watched, ActorRun actorRun, MachineLog actorLog)
     {
+        // 🔴 CHATGOONWAKE1: declared first, so disposed last: a word shown to its ended record while this run still held it goes on once
+        // everything of this run is let go.
+        using var letGo = new Disposer(() => _goOn.LetGo(sessionId));
         using var actorLogging = actorLog;
         await using var actorWatching = actorRun;
         using var actorUnbound = new Disposer(() => _context.ActorRuns.TryRemove(sessionId, out _));

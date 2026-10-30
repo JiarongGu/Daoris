@@ -25,7 +25,7 @@ import type { PartFacts } from './head/PartsStrip';
 import type { SessionProcess } from './head/process';
 import type { DetailRow } from './head/DetailsFold';
 import { FinishedRecord } from './head/FinishedRecord';
-import type { SessionRecord } from './sessionRecord';
+import type { SessionRecord } from './head/sessionRecord';
 import type { Relations } from './head/relations';
 import type { LineBehind } from './review/diff';
 import type { HelperWaits } from './waits/HelperAsks';

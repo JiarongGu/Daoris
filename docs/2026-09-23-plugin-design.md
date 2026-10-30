@@ -1,5 +1,7 @@
 # Plugins — a folder that declares, and may speak
 
+> Router standing, moved here when the router was cut to its size (DOCSIZE1): also governed by D140, D145 and D146.
+
 > Written 2026-09-23 at the owner's direction. The 2026-09-22 study (`2026-09-22-plugin-design-study.md`)
 > found three extension seams nobody had named and declined a plugin *runtime*; the owner read the
 > result as *"the plugin is not built at all"* and, asked what shape it should take, answered: *"you
