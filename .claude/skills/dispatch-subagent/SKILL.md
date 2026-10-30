@@ -252,6 +252,9 @@ once three batches hold the targets (MODELROLE1).
    hand-back's one-line outcome and its pointer, add the changelog entry, and update the counts in
    `TASKS.md`'s State. `doc-shapes` reports an outcome or a row over its shape.
    Then commit as `Merge <ROW>: <what>`, with a body and the `Co-Authored-By:` line.
+   The parent's own builds and runs leave no server behind while builders run: `-nodeReuse:false -p:UseSharedCompilation=false`
+   on `dotnet build`/`test`, `--disable-build-servers` on `dotnet run`, never `dotnet build-server shutdown` (it ends the compiler
+   server a builder's build is using); on 2026-10-30 one `dotnet run` of the scan left fourteen MSBuild nodes.
    **Scan what you staged first** (`daoris-devkit scan`): records written after the gates, and every records
    commit made outside a merge, are the one change no universal gate reads before it is committed. A
    backlog row quoting a window's caption put a private name into history that way (2026-10-08).

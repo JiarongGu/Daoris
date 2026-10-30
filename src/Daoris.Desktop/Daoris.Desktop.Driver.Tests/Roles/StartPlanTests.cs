@@ -364,6 +364,24 @@ public sealed class StartPlanTests : IDisposable
     }
 
     /// <summary>
+    /// 🔴 FOUNDATION1j part iv (the foundation design §2.4's second row): the agent a start is named for before its walk runs, which the look's
+    /// report of a wait names, is a hand-over's, else a continuation's record's, else its role's first entry, the machine's <c>adapter</c> key
+    /// only where that entry does not read.
+    /// </summary>
+    [Fact]
+    public void A_start_is_named_for_the_hand_over_the_record_or_its_role_s_first_entry_before_its_walk()
+    {
+        var config = ActorChoices.With(DriverConfig.Empty with { Adapter = "cool" }, "build", [new ActorChoice("fine", "opus"), new ActorChoice("cool")]);
+        config = config with { Adapter = "piped" };
+        Assert.Equal("fine", StartPlan.AgentFor("build", config));
+        Assert.Equal("handed", StartPlan.AgentFor("build", config, handed: "handed"));
+        Assert.Equal("fine", StartPlan.AgentFor("design", config));
+        var second = new PriorSession("s1", null, "failed") { Actor = "build", Choice = "2", Adapter = "cool" };
+        Assert.Equal("cool", StartPlan.AgentFor("build", config, record: second));
+        Assert.Equal("piped", StartPlan.AgentFor("build",DriverConfig.Empty with { Adapter = "piped", ActorErrors = new Dictionary<string, string> { ["build"] = "unreadable" } }));
+    }
+
+    /// <summary>
     /// An intake's plan waits in Intake's own words (D205 §4.5), each choice named and the soonest cool-off beside it, and its machine log's
     /// lines name the ask, keyed as the intake's walk always wrote them.
     /// </summary>

@@ -1183,13 +1183,14 @@ public sealed class Driver(
         {
             // The agent it runs on: a handed quest's own (MIXAGENT1a-ii), which the held-wait report names its cooling by.
             var started = new StartBegun(
-                start.Quest.Id, null, start.Quest.To, start.Workspace, new HandedQuests(home).Read(start.Quest.Id)?.Agent ?? config.Adapter, start);
+                start.Quest.Id, null, start.Quest.To, start.Workspace,
+                StartPlan.AgentFor(ParticipantWork.Build, config, start.Resumes, new HandedQuests(home).Read(start.Quest.Id)?.Agent), start);
             Begin(started, new StartReservation(start.Quest.Id, null, start.Quest.To, TreeGoneBackInto(start)), (own, opened) => ClaimedAsync(start, own, opened));
         }
 
         foreach (var ask in intakes)
         {
-            var started = new StartBegun(null, ask.Id, $"ask #{ask.Id}", ask.Workspace, config.IntakeAdapter!);
+            var started = new StartBegun(null, ask.Id, $"ask #{ask.Id}", ask.Workspace, StartPlan.AgentFor(ParticipantWork.Intake, config));
             Begin(started, new StartReservation(null, ask.Id, $"ask #{ask.Id}", null), (own, opened) => RunIntakeAsync(ask, own, opened, ct));
         }
 
@@ -2003,7 +2004,7 @@ public sealed class Driver(
         // point 1): the agent its asked choice was asked of, never the machine's `adapter` key, so a part that ran on Build's second choice
         // goes on there; a first start's is the walk's, below. A local, and a parameter wherever it is passed on: starts run side by side.
         var handedQuest = new HandedQuests(home).Read(quest.Id);
-        var agent = handedQuest?.Agent ?? config.Adapter;
+        var agent = StartPlan.AgentFor(ParticipantWork.Build, config, handed: handedQuest?.Agent);
         // Each hold names the agent the start asked, which the look's report of a wait names (the design §2.4's second row).
         StartRun Hold(string why) => new($"held  #{quest.Id} → {quest.To}: {why}", false, null, why) { Agent = agent };
         if (handedQuest is null && start.Resumes is { } goesOnFrom)

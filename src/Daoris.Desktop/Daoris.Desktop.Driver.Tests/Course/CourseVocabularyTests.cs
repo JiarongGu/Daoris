@@ -167,6 +167,12 @@ public sealed class CourseVocabularyTests
         ["Course/HandOver/HandOverQuest.cs"] = "FOUNDATION1i path 2: a quest's hand-over",
         ["WorkOrders/Domain/Planner.cs"] = "FOUNDATION1i path 4: what follows a transient bound",
         ["Loop/OpinionDeliverer.cs"] = "FOUNDATION1i path 5: the findings sent back to a driven record",
+        ["Course/Chat/LimitMove.cs"] = "FOUNDATION1h branch 5: the live and ended limit moves",
+        ["Course/Chat/LimitWaits.cs"] = "FOUNDATION1h branch 6: the limit's wake",
+        ["Course/Chat/ChatGoOn.cs"] = "FOUNDATION1h branch 7: the conversation's go-on",
+        ["Course/Chat/ChatHelperWords.cs"] = "FOUNDATION1h branch 7: the helper's go-on",
+        ["Course/Chat/ChatRunner.StartFrom.cs"] = "FOUNDATION1h branch 8: start-from",
+        ["Course/Chat/StartWith.cs"] = "FOUNDATION1h branch 8: start-with",
     };
 
     /// <summary>

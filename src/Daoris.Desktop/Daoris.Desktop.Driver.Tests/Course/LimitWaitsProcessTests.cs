@@ -101,6 +101,24 @@ public sealed class LimitWaitsProcessTests : IDisposable
         return count;
     }
 
+    /// <summary>What the course answered each wake, by session (FOUNDATION1h branch 6), heard from the runner's stage.</summary>
+    private static List<(string Session, LineCourse Answer)> Deciding(ChatRunner runner)
+    {
+        var decided = new List<(string Session, LineCourse Answer)>();
+        runner.Waits.Decided += (session, answer) =>
+        {
+            lock (decided) decided.Add((session, answer));
+        };
+        return decided;
+    }
+
+    private static string WakeSaid(LineCourse answer) => answer switch
+    {
+        LineCourse.Resume resume => $"Resume:{(resume.Words.Daoris == CourseDaorisWord.LimitReset ? "limit-reset" : "none")}",
+        LineCourse.Wait wait => $"Wait:{wait.Why}",
+        _ => answer.GetType().Name,
+    };
+
     private static bool Coded(SessionEvent e, string code) =>
         e.Kind == SessionEventKind.Note && e.Parts?.Any(part => part.Code == code) == true;
 
@@ -177,9 +195,16 @@ public sealed class LimitWaitsProcessTests : IDisposable
         Lifted("account-1");
         Lifted("account-2");
         _now = _now.AddHours(2);
+        var decided = Deciding(runner);
         var woke = await runner.WakeLimitsAsync(config);
         Assert.Equal([chat, help], woke.Select(start => start.SessionId).Order());
         Assert.Empty(await runner.WakeLimitsAsync(config));
+
+        // FOUNDATION1h branch 6: the wake of each is the course's answer for the limit's wake, its own conversation resumed, Daoris's word
+        // keyed by the wake's clock.
+        Assert.Equal(
+            [(chat, "Resume:limit-reset"), (help, "Resume:limit-reset")],
+            decided.Where(each => each.Answer is LineCourse.Resume).Select(each => (each.Session, WakeSaid(each.Answer))).OrderBy(each => each.Session == chat ? 0 : 1));
 
         await Poll.Until(() => Prompts.Any(line => line.Contains("And add a test.", StringComparison.Ordinal)), () => Seen(ledger, events, chat));
         await Poll.Until(
@@ -499,9 +524,13 @@ public sealed class LimitWaitsProcessTests : IDisposable
         using var runner = Runner(client, adapters, Roster(adapters), events);
 
         // account-2 frees first, in a day, and a record on no pick goes on there; the picked one waits for account-1's four days.
+        var decided = Deciding(runner);
         Assert.Empty(await runner.WakeLimitsAsync(config));
         _now = _now.AddDays(2);
         Assert.Empty(await runner.WakeLimitsAsync(config));
+        // FOUNDATION1h branch 6: the course holds a picked account's wake as a wait for its own reset, never a move.
+        Assert.All(decided, each => Assert.Equal(("c1", "Wait:LimitReset"), (each.Session, WakeSaid(each.Answer))));
+        Assert.NotEmpty(decided);
         Assert.Equal(1, ledger.Count);
         Assert.Empty(Prompts);
         Assert.Equal(["w1"], ledger.Said("c1"));
