@@ -27,6 +27,7 @@ internal static class WorkConsole
         var roots = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         var inUse = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         IReadOnlyList<RecordedTree> recorded = [];
+        IReadOnlySet<string> closed = new HashSet<string>();
         try
         {
             using var service = ServiceClient.FromEnvironment();
@@ -42,13 +43,15 @@ internal static class WorkConsole
 
             // OVERVIEWNOISE1b: each tree joined to the session that recorded it, as the page's work reads it.
             recorded = WorkInventories.RecordedOf(await service.SessionRecordsAsync().ConfigureAwait(false));
+            // LANDRETIRE1 part 2: which quests the landings the line does not hold name are closed, read once and only where one asks.
+            closed = await LandedStanding.ClosedAsync(new LandedBranches(home).Entries(), service.EveryQuestAsync, CancellationToken.None).ConfigureAwait(false);
         }
         catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException or IOException or TaskCanceledException)
         {
             unread.Add($"the service did not answer ({error.Message}), so recovery refs were not read and a tree a session holds may read as idle");
         }
 
-        var (units, recovery) = await WorkInventories.ReadAsync(home, roots, inUse, unread, recorded: recorded).ConfigureAwait(false);
+        var (units, recovery) = await WorkInventories.ReadAsync(home, roots, inUse, unread, recorded: recorded, closedQuests: closed).ConfigureAwait(false);
         return (units, recovery, unread);
     }
 

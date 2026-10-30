@@ -1,5 +1,5 @@
 {
-  "about": "FABRIC-GRAPH1c's shared table: a graph judged whole when it is saved (the fabric events design §E3, §E7; WIRE1a's 21 codes and GRAPH1's own, GRAPH1g's and GRAPH1i's among them), read row for row by the CLI's graphproblems.test.ts (nodegraphs.ts) and the driver's NodeWiresTests and NodeGraphsTests (NodeWires.Problems, NodeGraphs.Problems, NodeGraphHomes.OfLanding). A row's graph is written as a file holds it and read by each twin's own reader: `base` names `wireBase` or `graphBase`, changed by `remove` (ids), `replace` (by id, in place), `add` (appended) and `set` (the graph's own fields), in that order; or `graph` is written whole; or `chain` (`count` person's tasks each after the one before, `synthetic` more marked synthetic after the first) and `dense` (24 tasks wired every earlier to every later, to that many wires) are made by each twin as the driver's tests make them. `ends` sets a wire's end after reading, where a file cannot say it: a port on a wire that is not `data`, or another unit's node. `wires` rows are judged by the wires' check alone (nodes and wires, no entries or end); `graphs` rows whole; `fragments` as a landing rule's `cycle` after its `rule`'s landing; `unreadable` rows are a graph's JSON as the reader takes it. `problems` is every problem the save names, in its order: the code, the wire and the node it is about, and its words.",
+  "about": "FABRIC-GRAPH1c's shared table: a graph judged whole when it is saved (the fabric events design §E3, §E7; WIRE1a's 21 codes and GRAPH1's own, GRAPH1g's and GRAPH1i's among them), read row for row by the CLI's graphproblems.test.ts (nodegraphs.ts) and the driver's NodeWiresTests and NodeGraphsTests (NodeWires.Problems, NodeGraphs.Problems, NodeGraphHomes.OfLanding). A row's graph is written as a file holds it and read by each twin's own reader: `base` names `wireBase` or `graphBase`, changed by `remove` (ids), `replace` (by id, in place), `add` (appended) and `set` (the graph's own fields), in that order; or `graph` is written whole; or `chain` (`count` person's tasks each after the one before, `synthetic` more marked synthetic after the first) and `dense` (24 tasks wired every earlier to every later, to that many wires) are made by each twin as the driver's tests make them. `ends` sets a wire's end after reading, where a file cannot say it: a port on a wire that is not `data`, or another unit's node. `wires` rows are judged by the wires' check alone (nodes and wires, no entries or end); `graphs` rows whole; `fragments` as a landing rule's `cycle` after its `rule`'s landing (the rule's `integrate`, INTEGRATE1n, an object, as the key holds it); `unreadable` rows are a graph's JSON as the reader takes it. `problems` is every problem the save names, in its order: the code, the wire and the node it is about, and its words.",
   "wireBase": {
     "nodes": [
       { "id": "line", "kind": "line", "version": 1, "reach": "observed" },
@@ -400,6 +400,109 @@
       "problems": [{ "code": "cleanup", "wire": null, "node": null, "words": "a bound in days is for a cleanup waiting on the end; at `held` the line's proof is the wait." }] },
     { "name": "a wait for an end at the line", "graph": { "entries": ["line"], "end": "line", "cleanup": { "until": "end" }, "nodes": [{ "id": "line", "kind": "line", "version": 1, "reach": "observed" }] },
       "problems": [{ "code": "cleanup", "wire": null, "node": "line", "words": "the end `line` is at or before the line, so its cleanup goes at `held`: the wait is for an end after the line." }] },
+    { "name": "an integrate after the landing, before the line, holds (INTEGRATE1n)",
+      "graph": { "entries": ["landing"], "end": "line",
+        "nodes": [
+          { "id": "landing", "kind": "handed", "version": 1, "reach": "observed" },
+          { "id": "integrate", "kind": "integrate", "version": 1, "reach": "waited", "options": { "request": "done", "conflicts": "hold" } },
+          { "id": "line", "kind": "line", "version": 1, "reach": "observed" }
+        ],
+        "wires": [{ "id": "a", "kind": "after", "from": "landing", "to": "integrate" }, { "id": "b", "kind": "after", "from": "integrate", "to": "line" }] },
+      "problems": [] },
+    { "name": "an integrate's request that is no choice (INTEGRATE1n)",
+      "graph": { "entries": ["landing"], "end": "line",
+        "nodes": [
+          { "id": "landing", "kind": "handed", "version": 1, "reach": "observed" },
+          { "id": "integrate", "kind": "integrate", "version": 1, "reach": "waited", "options": { "request": "nobody" } },
+          { "id": "line", "kind": "line", "version": 1, "reach": "observed" }
+        ],
+        "wires": [{ "id": "a", "kind": "after", "from": "landing", "to": "integrate" }, { "id": "b", "kind": "after", "from": "integrate", "to": "line" }] },
+      "problems": [{ "code": "declaration", "wire": null, "node": "integrate", "words": "node `integrate`: its `request` does not hold for a `integrate`." }] },
+    { "name": "two integrates (INTEGRATE1n)",
+      "graph": { "entries": ["landing"], "end": "line",
+        "nodes": [
+          { "id": "landing", "kind": "handed", "version": 1, "reach": "observed" },
+          { "id": "integrate", "kind": "integrate", "version": 1, "reach": "waited" },
+          { "id": "again", "kind": "integrate", "version": 1, "reach": "waited" },
+          { "id": "line", "kind": "line", "version": 1, "reach": "observed" }
+        ],
+        "wires": [
+          { "id": "a", "kind": "after", "from": "landing", "to": "integrate" }, { "id": "b", "kind": "after", "from": "integrate", "to": "again" },
+          { "id": "c", "kind": "after", "from": "again", "to": "line" }
+        ] },
+      "problems": [{ "code": "integrate-twice", "wire": null, "node": "again", "words": "node `again`: `integrate` and `again` are both an `integrate`, and the graph's landing is integrated once." }] },
+    { "name": "an integrate with no landing before it (INTEGRATE1n)",
+      "graph": { "entries": ["integrate"], "end": "integrate", "nodes": [{ "id": "integrate", "kind": "integrate", "version": 1, "reach": "waited" }] },
+      "problems": [{ "code": "integrate-unlanded", "wire": null, "node": "integrate", "words": "node `integrate`: an `integrate` integrates the landing a `handed` makes, and the graph holds no `handed`." }] },
+    { "name": "an integrate beside a landing that names a plugin (INTEGRATE1n)",
+      "graph": { "entries": ["landing"], "end": "line",
+        "nodes": [
+          { "id": "landing", "kind": "handed", "version": 1, "reach": "observed", "options": { "form": "branch", "plugin": "acme.pr" } },
+          { "id": "integrate", "kind": "integrate", "version": 1, "reach": "waited" },
+          { "id": "line", "kind": "line", "version": 1, "reach": "observed" }
+        ],
+        "wires": [{ "id": "a", "kind": "after", "from": "landing", "to": "integrate" }, { "id": "b", "kind": "after", "from": "integrate", "to": "line" }] },
+      "problems": [{ "code": "integrate-plugin", "wire": null, "node": "integrate", "words": "node `integrate`: the landing `landing` names the plugin `acme.pr`, and an `integrate` is the step of a branch no plugin lands." }] },
+    { "name": "an integrate beside a landing by a merge (INTEGRATE1n)",
+      "graph": { "entries": ["landing"], "end": "line",
+        "nodes": [
+          { "id": "landing", "kind": "handed", "version": 1, "reach": "observed", "options": { "form": "merge" } },
+          { "id": "integrate", "kind": "integrate", "version": 1, "reach": "waited" },
+          { "id": "line", "kind": "line", "version": 1, "reach": "observed" }
+        ],
+        "wires": [{ "id": "a", "kind": "after", "from": "landing", "to": "integrate" }, { "id": "b", "kind": "after", "from": "integrate", "to": "line" }] },
+      "problems": [{ "code": "integrate-plugin", "wire": null, "node": "integrate", "words": "node `integrate`: the landing `landing` is a merge, and an `integrate` is the step of a branch's landing." }] },
+    { "name": "an integrate beside a push and a pull request (INTEGRATE1n)",
+      "graph": { "entries": ["landing"], "end": "line",
+        "nodes": [
+          { "id": "landing", "kind": "handed", "version": 1, "reach": "observed" },
+          { "id": "push", "kind": "pushed", "version": 1, "reach": "observed" },
+          { "id": "pr", "kind": "pull-request", "version": 1, "reach": "observed" },
+          { "id": "integrate", "kind": "integrate", "version": 1, "reach": "waited" },
+          { "id": "line", "kind": "line", "version": 1, "reach": "observed" }
+        ],
+        "wires": [
+          { "id": "a", "kind": "after", "from": "landing", "to": "push" }, { "id": "b", "kind": "after", "from": "push", "to": "pr" },
+          { "id": "c", "kind": "after", "from": "pr", "to": "integrate" }, { "id": "d", "kind": "after", "from": "integrate", "to": "line" }
+        ] },
+      "problems": [
+        { "code": "integrate-plugin", "wire": null, "node": "push", "words": "node `push`: a `pushed` is a plugin's landing node, and an `integrate` is the step of a branch no plugin lands." },
+        { "code": "integrate-plugin", "wire": null, "node": "pr", "words": "node `pr`: a `pull-request` is a plugin's landing node, and an `integrate` is the step of a branch no plugin lands." }
+      ] },
+    { "name": "a line beside the landing, a way to which passes no landing (INTEGRATE1n, F47)",
+      "graph": { "entries": ["landing", "line"], "end": "landing",
+        "nodes": [{ "id": "landing", "kind": "handed", "version": 1, "reach": "observed" }, { "id": "line", "kind": "line", "version": 1, "reach": "observed" }] },
+      "problems": [{ "code": "before-landing", "wire": null, "node": "line", "words": "node `line`: a `line` observes the landing, and a way to it passes no `handed` (`landing`), so it would wait for ever before one." }] },
+    { "name": "a push and a pull request beside the landing, a way to each passes no landing (INTEGRATE1n, F47)",
+      "graph": { "entries": ["landing", "push", "pr"], "end": "landing",
+        "nodes": [
+          { "id": "landing", "kind": "handed", "version": 1, "reach": "observed" }, { "id": "push", "kind": "pushed", "version": 1, "reach": "observed" },
+          { "id": "pr", "kind": "pull-request", "version": 1, "reach": "observed" }
+        ] },
+      "problems": [
+        { "code": "before-landing", "wire": null, "node": "push", "words": "node `push`: a `pushed` observes the landing, and a way to it passes no `handed` (`landing`), so it would wait for ever before one." },
+        { "code": "before-landing", "wire": null, "node": "pr", "words": "node `pr`: a `pull-request` observes the landing, and a way to it passes no `handed` (`landing`), so it would wait for ever before one." }
+      ] },
+    { "name": "an integrate beside the landing, a way to which passes no landing (INTEGRATE1n, F47)",
+      "graph": { "entries": ["landing", "integrate"], "end": "landing",
+        "nodes": [{ "id": "landing", "kind": "handed", "version": 1, "reach": "observed" }, { "id": "integrate", "kind": "integrate", "version": 1, "reach": "waited" }] },
+      "problems": [{ "code": "before-landing", "wire": null, "node": "integrate", "words": "node `integrate`: an `integrate` observes the landing, and a way to it passes no `handed` (`landing`), so it would wait for ever before one." }] },
+    { "name": "a line with a way to it past the landing (INTEGRATE1n, F47)",
+      "graph": { "entries": ["landing", "bypass"], "end": "line",
+        "nodes": [
+          { "id": "landing", "kind": "handed", "version": 1, "reach": "observed" }, { "id": "bypass", "kind": "human", "version": 1, "reach": "pressed" },
+          { "id": "line", "kind": "line", "version": 1, "reach": "observed" }
+        ],
+        "wires": [
+          { "id": "a", "kind": "after", "from": "landing", "to": "line", "group": { "id": "g", "mode": "anyOf" } },
+          { "id": "b", "kind": "after", "from": "bypass", "to": "line", "group": { "id": "g", "mode": "anyOf" } }
+        ] },
+      "problems": [{ "code": "before-landing", "wire": null, "node": "line", "words": "node `line`: a `line` observes the landing, and a way to it passes no `handed` (`landing`), so it would wait for ever before one." }] },
+    { "name": "a wait for an end at an integrate (INTEGRATE1n)",
+      "graph": { "entries": ["landing"], "end": "integrate", "cleanup": { "until": "end" },
+        "nodes": [{ "id": "landing", "kind": "handed", "version": 1, "reach": "observed" }, { "id": "integrate", "kind": "integrate", "version": 1, "reach": "waited" }],
+        "wires": [{ "id": "a", "kind": "after", "from": "landing", "to": "integrate" }] },
+      "problems": [{ "code": "cleanup", "wire": null, "node": "integrate", "words": "the end `integrate` is at or before the line, so its cleanup goes at `held`: the wait is for an end after the line." }] },
     { "name": "a cycle through the graph is said beside its other problems", "base": "graphBase",
       "add": { "wires": [{ "id": "x", "kind": "after", "from": "deploy", "to": "dependency" }] },
       "problems": [
@@ -421,6 +524,23 @@
     { "name": "a wire into the landing", "rule": { "form": "merge" },
       "cycle": { "nodes": [{ "id": "qa", "kind": "human", "version": 1, "reach": "pressed" }], "wires": [{ "id": "a", "kind": "after", "from": "qa", "to": "handed" }], "entries": ["qa"], "end": "line" },
       "problems": [{ "code": "into-landing", "wire": "a", "node": "handed", "words": "wire `a`: the cycle comes after the landing, and `handed` is the landing's; what comes before it is the rules' gates." }] },
+    { "name": "a cycle wiring from the integrate holds under a rule carrying it (INTEGRATE1n)", "rule": { "form": "branch", "pattern": "feature/{quest}-{slug}", "integrate": {} },
+      "cycle": { "nodes": [{ "id": "qa", "kind": "human", "version": 1, "reach": "pressed" }], "wires": [{ "id": "a", "kind": "after", "from": "integrate", "to": "qa" }], "end": "qa" },
+      "problems": [] },
+    { "name": "a cycle declaring an integrate where its rule has none (INTEGRATE1n)", "rule": { "form": "branch", "pattern": "feature/{quest}-{slug}" },
+      "cycle": { "nodes": [{ "id": "merge", "kind": "integrate", "version": 1, "reach": "waited" }], "wires": [{ "id": "a", "kind": "after", "from": "handed", "to": "merge" }] },
+      "problems": [{ "code": "landing-kind", "wire": null, "node": "merge", "words": "node `merge` is a `integrate`, a landing's node, which the landing rule holds already: wire from it." }] },
+    { "name": "a cycle declaring an integrate where its rule carries one (INTEGRATE1n)", "rule": { "form": "branch", "pattern": "feature/{quest}-{slug}", "integrate": {} },
+      "cycle": { "nodes": [{ "id": "merge", "kind": "integrate", "version": 1, "reach": "waited" }], "wires": [{ "id": "a", "kind": "after", "from": "integrate", "to": "merge" }] },
+      "problems": [
+        { "code": "landing-kind", "wire": null, "node": "merge", "words": "node `merge` is a `integrate`, a landing's node, which the landing rule holds already: wire from it." },
+        { "code": "integrate-twice", "wire": null, "node": "merge", "words": "node `merge`: `integrate` and `merge` are both an `integrate`, and the graph's landing is integrated once." }
+      ] },
+    { "name": "a wire into the integrate (INTEGRATE1n)", "rule": { "form": "branch", "pattern": "feature/{quest}-{slug}", "integrate": {} },
+      "cycle": { "nodes": [{ "id": "qa", "kind": "human", "version": 1, "reach": "pressed" }], "wires": [{ "id": "a", "kind": "after", "from": "qa", "to": "integrate" }], "entries": ["qa"], "end": "line" },
+      "problems": [{ "code": "into-landing", "wire": "a", "node": "integrate", "words": "wire `a`: the cycle comes after the landing, and `integrate` is the landing's; what comes before it is the rules' gates." }] },
+    { "name": "a plugin's rule carrying an integrate draws today's landing (INTEGRATE1n)", "rule": { "form": "branch", "pattern": "feature/{quest}-{slug}", "plugin": "acme.pr", "integrate": {} },
+      "cycle": { "end": "pull-request" }, "problems": [] },
     { "name": "a cycle that is not a graph's shape", "rule": { "form": "merge" }, "cycle": { "nodes": 3 },
       "problems": [{ "code": "unreadable", "wire": null, "node": null, "words": "the graph's `nodes` is not a graph's shape: it holds no list there." }] }
   ],

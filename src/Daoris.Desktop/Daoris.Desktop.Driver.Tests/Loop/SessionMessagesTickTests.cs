@@ -917,6 +917,42 @@ public sealed class SessionMessagesTickTests : IDisposable
     }
 
     /// <summary>
+    /// 🔴 FOUNDATION1f-iv part b (the foundation design §19.4, O7-F5): the protocol door's first prompt is where the moved word is <c>sent</c>, and
+    /// the take is made after it: when the take reaches the service the word already has <c>sent</c> and the prompt's outcome is recorded, the
+    /// move not yet delivered; the agent is handed the word once, in the instruction the take had not yet kept on the ask.
+    /// </summary>
+    [Fact]
+    public async Task A_moved_word_is_sent_at_the_first_prompt_s_write_and_taken_after_it()
+    {
+        await using var service = SaidStandIn.Start(_repository);
+        await FailedFirstRunAsync(service);
+        service.Opens = 2;
+        service.Asks = true;
+        Assert.Equal("w1", await service.SayAsync("s1", "Also log the port."));
+        var store = new MoveStore(_home);
+        List<string> atTake = [];
+        service.BeforeTake = _ =>
+        {
+            if (store.Of("s1").LastOrDefault() is { } move)
+            {
+                atTake.Add($"{move.PhaseWord}/{move.Effect?.Outcome}/{string.Join(",", store.WordsOf(move.Id).Select(word => word.Disposition))}");
+            }
+        };
+
+        var look = await Protocol(service, "refuses").RunOnceAsync().WaitAsync(Poll.Patience);
+
+        var seen = $"look: {string.Join(" | ", look.Events)}\nafter: {service.Record("s1")}\ntaken: {string.Join(" | ", service.Taken)}\nat take: {string.Join(" | ", atTake)}";
+        Assert.True(service.SessionCount == 2, seen);
+        Assert.Equal(["delivering/sent/sent"], atTake);
+        Assert.Equal("delivered", Assert.Single(store.Of("s1")).PhaseWord);
+        Assert.Equal([("Also log the port.", "s2")], service.AskWords);
+        var handed = string.Join("\n", Heard()
+            .Where(line => line["session"]?.GetValue<string>() == "s2" && line["method"]!.GetValue<string>() == "session/prompt")
+            .SelectMany(line => line["blocks"]!.AsArray().Select(block => block!.GetValue<string>())));
+        Assert.True(handed.Split("Also log the port.").Length - 1 >= 1, handed);
+    }
+
+    /// <summary>
     /// 🔴 FOUNDATION1f-iv part a: a carry-on that hands no word keeps its record too, its open asked under its key through the keyed door and
     /// asking no word to move; the move closes <c>delivered</c> on its prompt's outcome, a move of no word. Against a host whose open moves
     /// nothing (its <c>opens</c> mark 1) the record is the same.
@@ -1126,6 +1162,9 @@ public sealed class SessionMessagesTickTests : IDisposable
 
         /// <summary>Each take of words: the session, the ids joined, and the session that took them where it was another.</summary>
         public List<(string Session, string Ids, string? By)> Taken { get; } = [];
+
+        /// <summary>Called with the record as a take reaches the stand-in, before it is answered: what a case reads of the move at that moment.</summary>
+        public Action<string>? BeforeTake { get; set; }
 
         /// <summary>
         /// The host's <c>opens</c> mark (FOUNDATION1d-ii): 0 answers no protocol door, as a host before row d-i; 1 a d-i host, whose keyed open moves
@@ -1675,6 +1714,7 @@ public sealed class SessionMessagesTickTests : IDisposable
                         var ids = body["said"]!.AsArray().Select(word => word!.GetValue<string>()).ToList();
                         var session = Find(id);
                         var by = body["by"]?.GetValue<string>();
+                        BeforeTake?.Invoke(id);
                         if (Asks)
                         {
                             // As the service's take door keeps them: each of the person's words said after the record ended, said to the one that took it.

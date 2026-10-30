@@ -30,7 +30,9 @@ public sealed class DrivenCarryOnStoreTests : IDisposable
         GitSeed.Discard(_home);
     }
 
-    private MoveStore Store(string run) => new(_home, () => StoreSettled.Yes, _ => true, run, StoreProcess.Host);
+    private readonly HashSet<string> _dead = new(StringComparer.Ordinal);
+
+    private MoveStore Store(string run) => new(_home, () => StoreSettled.Yes, each => !_dead.Contains(each.Run), run, StoreProcess.Host);
 
     /// <summary>The driven holder of one run: the conversations' holder over the same store, handed the lease holder's scope.</summary>
     private ConversationMoves Holder(string run = "run-loop") =>
@@ -75,14 +77,148 @@ public sealed class DrivenCarryOnStoreTests : IDisposable
         var word = Assert.Single(Store("run-probe").WordsOf(delivering.Id));
         Assert.Equal(("w1", (string?)null), (word.Word, word.Disposition));
 
-        // Today's take, then the word's `sent` and the reading that closes the move.
-        await _said.TakeAsync("s2", ["w1"], default);
-        await record.DeliveredAsync(["opens-s1/w1"]);
+        // FOUNDATION1f-iv part b: the door's write return writes the word's `sent`, then the take is made, then the reading closes the move.
+        List<string?> seen = [];
+        record.Handed(["opens-s1/w1"], async () =>
+        {
+            seen.Add($"{MoveFrom("s1")!.Effect!.Outcome}/{Store("run-probe").WordsOf(delivering.Id).Single().Disposition}/{string.Join(",", _said.Of("s2"))}");
+            await _said.TakeAsync("s2", ["w1"], default);
+        });
+        Assert.Null(Store("run-probe").WordsOf(delivering.Id).Single().Disposition);
+        record.Written();
+        await record.DisposeAsync();
 
+        Assert.Equal(["sent/sent/w1"], seen);
         var delivered = MoveFrom("s1")!;
         Assert.Equal(("delivered", MoveWordDispositions.Sent), (delivered.PhaseWord, delivered.Effect!.Outcome));
         Assert.Equal(MoveWordDispositions.Sent, Assert.Single(Store("run-probe").WordsOf(delivered.Id)).Disposition);
         Assert.Empty(_said.Of("s2"));
+    }
+
+    /// <summary>
+    /// 🔴 FOUNDATION1f-iv part b: the write's return is told once however many doors tell it (the protocol door's first prompt and a transient
+    /// try's write both do): <c>sent</c> is written once and the take is made once.
+    /// </summary>
+    [Fact]
+    public async Task A_write_told_again_by_a_second_door_makes_the_take_once()
+    {
+        var holder = Holder();
+        var begun = await holder.BeginAsync(Carry(), default);
+        await using var record = new CarryOnRecord(begun.Move!);
+        Assert.Null(record.Opening(MoveWords.DrivenKey()));
+        _said.Wait("s2", "w1");
+        Assert.Null(await record.FenceAsync("s2", [Moved(1)]));
+        var takes = 0;
+        record.Handed(["opens-s1/w1"], () =>
+        {
+            Interlocked.Increment(ref takes);
+            return _said.TakeAsync("s2", ["w1"], default);
+        });
+
+        record.Written();
+        record.Written();
+        await record.DisposeAsync();
+
+        Assert.Equal(1, takes);
+        Assert.Equal("delivered", MoveFrom("s1")!.PhaseWord);
+    }
+
+    /// <summary>
+    /// 🔴 FOUNDATION1f-iv part b: a record whose prompt was never written is ended by its phase and makes no take, however the take was handed:
+    /// the word was not sent, so it waits on the new part for its own go-on.
+    /// </summary>
+    [Fact]
+    public async Task A_prompt_never_written_makes_no_take_and_leaves_the_word_unsent()
+    {
+        var holder = Holder();
+        var begun = await holder.BeginAsync(Carry(), default);
+        var takes = 0;
+        _said.Wait("s2", "w1");
+        await using (var record = new CarryOnRecord(begun.Move!))
+        {
+            Assert.Null(record.Opening(MoveWords.DrivenKey()));
+            Assert.Null(await record.FenceAsync("s2", [Moved(1)]));
+            record.Handed(["opens-s1/w1"], () =>
+            {
+                Interlocked.Increment(ref takes);
+                return Task.CompletedTask;
+            });
+        }
+
+        Assert.Equal(0, takes);
+        var move = MoveFrom("s1")!;
+        Assert.Equal(("closed", MoveHoldWhy.Undelivered, ConversationMoves.Unsent), (move.PhaseWord, move.HeldWhy, move.Effect!.Outcome));
+        Assert.Null(Store("run-probe").WordsOf(move.Id).Single().Disposition);
+        Assert.Equal(["w1"], _said.Of("s2"));
+    }
+
+    /// <summary>
+    /// 🔴 FOUNDATION1f-iv part b: a loop that died between the door's write and the take left the word <c>sent</c> and still waiting on the new
+    /// part; the next loop's first look takes the dead run's move up and reads it, taking the word off as taken and closing the move
+    /// <c>delivered</c>, so it is never sent twice and the line's next carry-on is not held.
+    /// </summary>
+    [Fact]
+    public async Task A_dead_loop_s_move_past_the_write_and_before_the_take_is_taken_up_delivered_and_frees_the_line()
+    {
+        var dying = Holder("run-dying");
+        var begun = await dying.BeginAsync(Carry(), default);
+        _said.Wait("s2", "w1");
+        var record = new CarryOnRecord(begun.Move!);
+        Assert.Null(record.Opening(MoveWords.DrivenKey()));
+        Assert.Null(await record.FenceAsync("s2", [Moved(1)]));
+        // The loop dies as the take would begin: `sent` is written, the take never made.
+        var stopped = new TaskCompletionSource();
+        record.Handed(["opens-s1/w1"], () => stopped.Task);
+        record.Written();
+        Assert.Equal("sent", Store("run-probe").WordsOf(MoveFrom("s1")!.Id).Single().Disposition);
+        Assert.Equal("delivering", MoveFrom("s1")!.PhaseWord);
+        _dead.Add("run-dying");
+
+        var next = Holder("run-next");
+        Assert.NotNull(await next.LookAsync(default));
+
+        var move = MoveFrom("s1")!;
+        Assert.Equal("delivered", move.PhaseWord);
+        Assert.Empty(_said.Of("s2"));
+        Assert.NotNull((await next.BeginAsync(Carry(), default)).Move);
+        stopped.SetResult();
+        await record.DisposeAsync();
+    }
+
+    /// <summary>
+    /// 🔴 FOUNDATION1f-iv part b: a dead loop's driven move is taken up at each phase it can stand in, and ended by it: before the open, the line
+    /// stays on its old part (<c>not-opened</c>); the open asked and no answer recorded, held <c>unrecorded</c> and closed; opened or delivering with
+    /// no word <c>sent</c>, held <c>undelivered</c> and closed, its word left waiting on the new part for its own go-on. None stands to hold the
+    /// line's next carry-on.
+    /// </summary>
+    [Theory]
+    [InlineData("old-ended")]
+    [InlineData("opening")]
+    [InlineData("opened")]
+    [InlineData("delivering")]
+    public async Task A_dead_loop_s_driven_move_is_taken_up_at_the_phase_it_stood_in_and_frees_the_line(string phase)
+    {
+        var dying = Store("run-dying");
+        var decided = dying.Decide(Carry());
+        var claim = decided.Claim!;
+        _said.Wait("s2", "w1");
+        if (phase != "old-ended") dying.Opening(claim, MoveWords.DrivenKey());
+        if (phase is "opened" or "delivering") dying.Opened(claim, "s2", [new MoveRecordWord("w1", "w1", "opens-s1/w1", 0)]);
+        if (phase == "delivering")
+        {
+            dying.Advance(claim, MoveRecordPhase.Delivering);
+            dying.MarkEffect(claim, MoveEffects.Prompt);
+        }
+
+        _dead.Add("run-dying");
+        var next = Holder("run-next");
+        Assert.NotNull(await next.LookAsync(default));
+
+        var move = MoveFrom("s1")!;
+        Assert.False(move.Stands, move.PhaseWord);
+        Assert.Equal(phase == "old-ended" ? ConversationMoves.NotOpened : null, move.FellBackCode);
+        if (phase is "opened" or "delivering") Assert.Equal(["w1"], _said.Of("s2"));
+        Assert.NotNull((await next.BeginAsync(Carry(), default)).Move);
     }
 
     /// <summary>🔴 A carry-on that hands no word closes <c>delivered</c> on its prompt's outcome: a move of no word.</summary>
@@ -95,7 +231,8 @@ public sealed class DrivenCarryOnStoreTests : IDisposable
         Assert.Null(record.Opening(MoveWords.DrivenKey()));
         Assert.Null(await record.FenceAsync("s2", []));
 
-        await record.DeliveredAsync([]);
+        record.Written();
+        await record.DisposeAsync();
 
         var move = MoveFrom("s1")!;
         Assert.Equal(("delivered", "retry", "s2", MoveWordDispositions.Sent), (move.PhaseWord, move.Why, move.Destination, move.Effect!.Outcome));
@@ -165,6 +302,29 @@ public sealed class DrivenCarryOnStoreTests : IDisposable
 
         var late = MoveFrom("s1")!;
         Assert.Equal(("closed", MoveHoldWhy.Undelivered, ConversationMoves.Unsent),(late.PhaseWord, late.HeldWhy, late.Effect!.Outcome));        Assert.Equal(["w1"], _said.Of("s2"));
+    }
+
+    /// <summary>
+    /// 🔴 FOUNDATION1f-iv part b: the take of the moved words follows the write of the prompt that carries them, and the take is what keeps the
+    /// person's that reopened the work on the ask the instruction reads. The instruction is therefore handed those words as the take will keep them:
+    /// the person's reopening words only, once each, in the ask's order; never Daoris's own or an answer, which the service's take keeps nowhere,
+    /// and nothing where the ask could not be read.
+    /// </summary>
+    [Fact]
+    public void The_instruction_is_handed_the_persons_moved_words_as_the_take_will_keep_them_on_the_ask()
+    {
+        var at = new DateTimeOffset(2026, 10, 1, 9, 0, 0, TimeSpan.Zero);
+        var ask = new AskWords("a1", [new AskWordView(AskWordView.Asked, "Build it.", at.AddHours(-1))]);
+        var person = new SaidWordView("w1", "Also log the port.", at, [], true);
+        var daoris = person with { Id = "w2", From = DaorisWords.From };
+        var answer = person with { Id = "w3", Reopens = false };
+
+        var handed = ask.WithMoved([person, daoris, answer], "s2", "q1");
+
+        Assert.Equal(["Build it.", "Also log the port."], handed.Said!.Select(word => word.Text));
+        Assert.Equal((AskWordView.Reopened, "s2", "q1"), (handed.Said![1].Kind, handed.Said[1].Session, handed.Said[1].Quest));
+        Assert.Equal(2, handed.WithMoved([person], "s2", "q1").Said!.Count);
+        Assert.Null(AskWords.Unread("a1").WithMoved([person], "s2", "q1").Said);
     }
 
     /// <summary>

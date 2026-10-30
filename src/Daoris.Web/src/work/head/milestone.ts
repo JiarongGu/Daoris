@@ -237,7 +237,7 @@ export function entryName(t: TFunction, entry: Pick<MilestoneEntry, 'kind' | 're
 }
 
 /** The codes of a blocked entry the page has words for (OVERVIEWNOISE1b); any other is said by its detail, as recorded. */
-const CODES = ['unfollowed', 'unread', 'unknown-folder', 'unknown-unread', 'unknown-branch', 'unrecorded'] as const;
+const CODES = ['unfollowed', 'unread', 'unknown-folder', 'unknown-unread', 'unknown-branch', 'unrecorded', 'landing-stale'] as const;
 
 /** The guards the look's tidy keeps a branch by that the page has words for (FABRIC-END4a's `kept`, by its `why`). */
 const KEPT = ['in-use', 'dirty', 'busy', 'hidden', 'nested', 'linked', 'refused', 'unread', 'starting', 'sessions'] as const;
@@ -253,18 +253,19 @@ export function entryDetail(t: TFunction, entry: Pick<MilestoneEntry, 'detail' |
     return why ? t(`work.milestone.code.kept.${why}`) : entry.detail;
   }
   const code = CODES.find((one) => one === entry.code);
-  return code ? t(`work.milestone.code.${code}`, { branch: facts.branch ?? '' }) : entry.detail;
+  return code ? t(`work.milestone.code.${code}`, { branch: facts.branch ?? '', quest: facts.quest ?? '' }) : entry.detail;
 }
 
 /**
  * What of a unit waits on the person (design §D0; OVERVIEWNOISE1b, *What needs you* only where they have an act), as .NET's
  * `NeedsAPerson` judges it: where no record names its owner, the entries its cleanup is blocked on, else the unit itself; where its
- * owner is known, the trees its session recorded and no branch record follows, which only the clean-up's press takes. A guard the
+ * owner is known, the trees its session recorded and no branch record follows, which only the clean-up's press takes, and a landing's
+ * branch whose quest is closed and which the line has not held for a day (LANDRETIRE1 part 2), which the person withdraws. A guard the
  * look keeps a branch by is said on the work's foot, and a wait that is pending ends by itself: neither is the person's.
  */
 export function waitsOnPerson(unit: MilestoneUnit): MilestoneEntry[] {
   const blocked = unit.cleanup.waits.filter((entry) => entry.disposition === 'blocked');
-  if (unit.end.state !== 'unknown') return blocked.filter((entry) => entry.code === 'unfollowed');
+  if (unit.end.state !== 'unknown') return blocked.filter((entry) => entry.code === 'unfollowed' || entry.code === 'landing-stale');
   return blocked.length > 0 ? blocked : unit.entries.slice(0, 1);
 }
 

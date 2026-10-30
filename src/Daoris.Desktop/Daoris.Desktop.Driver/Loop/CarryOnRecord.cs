@@ -10,17 +10,24 @@ namespace Daoris.Driver;
 /// <remarks>
 /// <para><b>From an ended record.</b> A driven carry-on goes on from a session that has ended, so its move is written at <c>old-ended</c> (§3.3:
 /// a move from an ended record has no part to end), and the old part's end is no phase of its own.</para>
-/// <para><b>Today's take is the delivery here.</b> The moved words are taken off the new part before its session is spawned, into the ask its
-/// instruction reads (<see cref="DriverContinuations.HandedOnAsync"/>), so their <c>sent</c> is written where that take returns
-/// (<see cref="DeliveredAsync"/>), then the reading that closes the move <c>delivered</c>; a carry-on that hands no word closes on its prompt's
-/// outcome at the same point. Part b of the row moves <c>sent</c> to each door's write return, the native start's and the protocol door's first
-/// prompt's, and the take after it; nothing here sends a word.</para>
+/// <para><b>The delivery is the door's write.</b> The moved words are read, and shown, into the ask the new part's instruction reads
+/// (<see cref="DriverContinuations.HandedOnAsync"/>), and handed here with the take that follows (<see cref="Handed"/>); each word's <c>sent</c>
+/// is written where the door's write of the first prompt returns (<see cref="Written"/>: the native door's stdin write, the protocol door's first
+/// prompt, or a transient try's), then the take, then the reading that closes the move <c>delivered</c>. A carry-on that hands no word closes on
+/// its prompt's outcome at the same point. Nothing here sends a word.</para>
 /// <para><b>Ended wherever it stops.</b> The record is let go (<see cref="DisposeAsync"/>) on every way out of the start, ended by its phase
-/// unless it is delivered, so a refused open, a refused write or a start that fails leaves no standing move to hold the line.</para>
+/// unless its prompt was written, so a refused open, a refused write or a start that fails leaves no standing move to hold the line, and a
+/// word whose write never returned reads unsent, its take never made.</para>
 /// </remarks>
 internal sealed class CarryOnRecord(ConversationMove move) : IAsyncDisposable
 {
     private int _settled;
+
+    private IReadOnlyCollection<string> _transfers = [];
+
+    private Func<Task>? _take;
+
+    private Task? _taking;
 
     /// <summary>
     /// The move a carry-on decides, or null for a start that keeps none: one that continues nothing, and one the quest's hand-over made, which is
@@ -56,15 +63,40 @@ internal sealed class CarryOnRecord(ConversationMove move) : IAsyncDisposable
     }
 
     /// <summary>
-    /// The words handed are taken (<see cref="DriverContinuations.HandedOnAsync"/>): their <c>sent</c> and the prompt's outcome in one transaction
-    /// (<paramref name="transfers"/>, the transfers of the words the take took, none for a carry-on that moved none), then the one reading that closes
-    /// the move <c>delivered</c> once every word it moved has <c>sent</c>. Never faults.
+    /// The words the first prompt carries (<see cref="DriverContinuations.HandedOnAsync"/>), named before the door writes it: the transfers of the
+    /// moved words it was handed, none for a carry-on that moved none, and the take that follows <c>sent</c> (null where nothing is to take). The
+    /// take is only held here; the door's write return (<see cref="Written"/>) writes <c>sent</c> and then makes it.
     /// </summary>
-    public async Task DeliveredAsync(IReadOnlyCollection<string> transfers)
+    public void Handed(IReadOnlyCollection<string> transfers, Func<Task>? take)
+    {
+        _transfers = transfers;
+        _take = take;
+    }
+
+    /// <summary>
+    /// The door's write of the first prompt has returned (FOUNDATION1f-iv part b; §19.4): <c>sent</c> for each moved word it carried and the prompt's
+    /// outcome in one transaction, then, off the door's thread, the take of those words off the new part and the one reading that closes the move
+    /// <c>delivered</c> once every word it moved has <c>sent</c>. Once: the protocol door tells it at its first prompt's write and again at a
+    /// transient try's, the native door at its stdin write's return. A carry-on already ended is left as it was. Never faults.
+    /// </summary>
+    public void Written()
     {
         if (Interlocked.Exchange(ref _settled, 1) != 0) return;
-        move.Wire(transfers);
-        await move.ReadAsync().ConfigureAwait(false);
+        move.Wire(_transfers);
+        var take = _take;
+        _taking = Task.Run(async () =>
+        {
+            try
+            {
+                if (take is not null) await take().ConfigureAwait(false);
+            }
+            catch (Exception error) when (error is not OperationCanceledException)
+            {
+                // The take did not come out: the word has `sent` and still waits, which the reading takes off as taken.
+            }
+
+            await move.ReadAsync().ConfigureAwait(false);
+        });
     }
 
     /// <summary>The carry-on goes no further: the move ended by its phase, its prompt known unwritten, unless it is delivered. Never faults.</summary>
@@ -74,6 +106,13 @@ internal sealed class CarryOnRecord(ConversationMove move) : IAsyncDisposable
         await move.EndAsync().ConfigureAwait(false);
     }
 
-    /// <summary>Let go of the record on every way out of the start: ended by its phase unless it is delivered.</summary>
-    public async ValueTask DisposeAsync() => await EndAsync().ConfigureAwait(false);
+    /// <summary>
+    /// Let go of the record on every way out of the start: ended by its phase unless its prompt was written, in which case the take that follows
+    /// is awaited, so a run never ends with a delivery in flight.
+    /// </summary>
+    public async ValueTask DisposeAsync()
+    {
+        await EndAsync().ConfigureAwait(false);
+        if (_taking is { } taking) await taking.ConfigureAwait(false);
+    }
 }

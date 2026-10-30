@@ -209,7 +209,7 @@ public enum RunSubject
     /// <summary>The gates, <c>handed</c>, and a plugin's node before it: the run's branch at the tip read in the pass.</summary>
     Branch,
 
-    /// <summary><c>pushed</c>, <c>pull-request</c>, <c>line</c> and a node after <c>handed</c>: the run's branch at its landing, at the landing's tip.</summary>
+    /// <summary><c>pushed</c>, <c>pull-request</c>, <c>line</c>, <c>integrate</c> and a node after <c>handed</c>: the run's branch at its landing, at the landing's tip.</summary>
     Landing,
 
     /// <summary>A go-ahead, a person's task, a wait, a stop and a join: the run itself, with no revision.</summary>
@@ -228,7 +228,8 @@ public static class RunSubjects
         NodeKinds.Claimed or NodeKinds.QuestClose => RunSubject.Quest,
         NodeKinds.GoAhead or NodeKinds.Human or NodeKinds.WaitUnit or NodeKinds.Stop or NodeKinds.All => RunSubject.Run,
         NodeKinds.Opinion or NodeKinds.Look or NodeKinds.Handed => RunSubject.Branch,
-        NodeKinds.Pushed or NodeKinds.PullRequest or NodeKinds.Line => RunSubject.Landing,
+        // INTEGRATE1n (§17.4): the landed branch at the tip `handed` recorded, wherever the graph wires it.
+        NodeKinds.Pushed or NodeKinds.PullRequest or NodeKinds.Line or NodeKinds.Integrate => RunSubject.Landing,
         _ => afterHanded.Contains(node.Id) ? RunSubject.Landing : RunSubject.Branch,
     };
 

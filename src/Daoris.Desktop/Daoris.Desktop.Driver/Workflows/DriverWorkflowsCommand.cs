@@ -889,7 +889,7 @@ public static class DriverWorkflowsCommand
                 WorkflowRunBindings.KeptVersions(_home, found.Id).ToList());
             if (plan.Problem is not null) throw new ChoiceWords(plan.Problem, 1);
             var versions = plan.Result!["versions"]!.AsArray();
-            var next = WorkflowNamed.ReadVersion(WorkflowNamed.ElementOf(versions[^1]!), plan.Version!.Value, [], found.Read.Pipeline ?? WorkflowPipelines.Development);
+            var next = WorkflowNamed.ReadVersion(WorkflowNamed.ElementOf(versions[^1]!), plan.Version!.Value, [], found.Read.Pipeline ?? WorkflowPipelines.Development, onSave: true);
             if (@base.Graph is not null && @base.Digest == next.Digest)
             {
                 Say($"daoris: `{found.Id}` v{@base.Version} already says this: nothing was written.");

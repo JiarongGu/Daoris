@@ -999,6 +999,46 @@ describe("a workspace's page (UX6g)", () => {
     expect(notify).not.toHaveBeenCalledWith(expect.stringContaining('so it was kept'), 'error');
   });
 
+  /**
+   * LANDRETIRE1 part 2 (D102's note): a landing's branch the line took another way is withdrawn from Branches as
+   * `daoris-driver trees remove <branch> --repository <name> --why "…"` withdraws it: offered beside the row whose files still differ, with
+   * its age and closed quest said, asked once with the person's reason, and the list read again once it landed.
+   */
+  it('withdraws a landing\'s branch from Branches after asking for the reason, and reads the list again', async () => {
+    const stale = {
+      repository: 'engine', workspace: 'aurora', branch: 'feature/q2-second', kind: 'differs', where: 'main', files: ['shared.txt'], detail: null,
+      pullRequest: null, commits: 1, removable: false, landedAt: new Date(Date.now() - 29 * 3_600_000).toISOString(), quest: 'q2', questClosed: true,
+    };
+    machine({
+      SWEEP_PLAN: { branches: SWEEP.branches, landed: [stale] },
+      WITHDRAW_LANDING_BRANCH: {
+        repository: 'engine', branch: 'feature/q2-second', done: true, planned: false, message: 'withdrew it', keptRef: 'refs/daoris/discarded/feature/q2-second',
+      },
+    });
+    const notify = vi.fn();
+    show(<><Hub /><ProjectsView notify={notify} /></>);
+    await chooseWorkspace('aurora');
+    await userEvent.click(within(repositoryMain()).getByRole('tab', { name: 'Branches' }));
+
+    const row = await within(repositoryMain()).findByRole('listitem', { name: 'feature/q2-second' });
+    expect(row).toHaveTextContent('Landed 1d ago; its quest #q2 is closed.');
+    await userEvent.click(within(row).getByRole('button', { name: 'Withdraw…' }));
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'WITHDRAW_LANDING_BRANCH', expect.anything());
+    const ask = within(repositoryMain()).getByRole('group', { name: 'withdraw feature/q2-second' });
+    const asked = invoke.mock.calls.filter(([, type]) => type === 'SWEEP_PLAN').length;
+
+    await userEvent.type(within(ask).getByRole('textbox'), 'the row landed another way');
+    await userEvent.click(within(ask).getByRole('button', { name: 'Withdraw branch' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'WITHDRAW_LANDING_BRANCH', {
+      payload: { repository: 'engine', branch: 'feature/q2-second', why: 'the row landed another way' },
+    });
+    await vi.waitFor(() => expect(notify).toHaveBeenCalledWith(
+      'Withdrew `feature/q2-second` in engine. Its commits stay on `refs/daoris/discarded/feature/q2-second`.'));
+    await vi.waitFor(() => expect(invoke.mock.calls.filter(([, type]) => type === 'SWEEP_PLAN').length).toBeGreaterThan(asked));
+    await vi.waitFor(() => expect(within(repositoryMain()).queryByRole('group', { name: 'withdraw feature/q2-second' })).toBeNull());
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'SWEEP', expect.anything());
+  });
+
   /** The clean-up's list as the shell pushes it (PUSH1c4a): a partition per repository with a checkout here. */
   const SWEEP_SNAPSHOT = {
     slice: 'sweep', epoch: 'p1', status: 'ready',

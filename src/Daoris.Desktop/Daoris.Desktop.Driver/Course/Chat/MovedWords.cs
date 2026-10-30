@@ -14,8 +14,9 @@ namespace Daoris.Driver;
 /// delivers and takes the old record's words as before (<see cref="Moving(ChatStart)"/> false).</para>
 /// <para><b>The moved words are the destination's</b> from the open on: the record they left is no longer its line's head, so its go-on refuses
 /// them, and the destination's go-on carries any that wait there still, after its first turn.</para>
-/// <para><b>Part 5's sites</b> read them the same way: the driven carry-on takes them off its new part into the ask before its instruction is
-/// composed (the driver's <c>HandedOnAsync</c>), and the replacement of a start refused at the open hands each to its turns as
+/// <para><b>Part 5's sites</b> read them the same way: the driven carry-on reads them off its new part (the driver's <c>HandedOnAsync</c>) and
+/// takes them once the door has written the prompt that carries them (FOUNDATION1f-iv part b; a carry-on that keeps no move record takes them
+/// before its instruction is composed, as it did), and the replacement of a start refused at the open hands each to its turns as
 /// that record's own word (<see cref="ChatTurns.TakeMoved"/>).</para>
 /// </remarks>
 internal sealed class MovedWords

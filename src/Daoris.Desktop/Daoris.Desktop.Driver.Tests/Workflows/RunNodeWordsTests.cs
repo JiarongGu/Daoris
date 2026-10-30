@@ -118,6 +118,25 @@ public sealed class RunNodeWordsTests : NodeRunFixture
         Assert.Equal(RunNodeWords.Ended, Word("handed", NodeWordActs.Stop, null).Refused);
     }
 
+    /// <summary>
+    /// INTEGRATE1n (§17.4, F50): the stop of a node the integration record says promoted is refused at the door before anything is kept, in its
+    /// own code and sentence; a skip of it, and the stop of a node not promoted, are the table's as before.
+    /// </summary>
+    [Fact]
+    public async Task The_stop_of_a_promoted_node_is_refused_at_the_door_and_nothing_is_kept()
+    {
+        await GoAheadWaitingAsync();
+        var promoted = new HashSet<string> { "go" };
+
+        var refused = RunNodeWords.Word(Files, RunId, "go", NodeWordActs.Stop, "too late", () => _now, promoted);
+
+        Assert.Equal(RunNodeWords.Promoted, refused.Refused);
+        Assert.Contains("has promoted onto the line, and nothing reverses the line", RunNodeWords.Said(refused), StringComparison.Ordinal);
+        Assert.Empty(Files.Read(RunUnit)!.Pending);
+        Assert.Equal(NodeRefusal.NoWords, RunNodeWords.Word(Files, RunId, "go", NodeWordActs.Skip, null, () => _now, promoted).Refused);
+        Assert.True(RunNodeWords.Word(Files, RunId, "go", NodeWordActs.Stop, "not promoted", () => _now, new HashSet<string> { "handed" }).Done);
+    }
+
     /// <summary>The lease's holder alone keeps a word: a process that does not hold it keeps nothing, and says where to say it.</summary>
     [Fact]
     public async Task A_process_without_the_lease_keeps_no_word()

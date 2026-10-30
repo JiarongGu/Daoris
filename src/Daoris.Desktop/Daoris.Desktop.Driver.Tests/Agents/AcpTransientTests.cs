@@ -202,6 +202,27 @@ public sealed class AcpTransientTests
     }
 
     /// <summary>
+    /// 🔴 FOUNDATION1f-iv part b (the foundation design §19.4, O8-F7): a driven carry-on's moved words are <c>sent</c> where the first prompt's
+    /// write returns and, where a transient failure opens an episode, where each try's write returns: the run tells its caller at the first
+    /// prompt and again at each try, which the caller reads once.
+    /// </summary>
+    [Fact]
+    public async Task The_write_return_is_told_at_the_first_prompt_and_at_each_try_of_an_episode()
+    {
+        var clock = new MovedClock();
+        var told = new Told();
+        var agent = Scripted((n, frame, self) => n <= 2 ? Failed(frame) : Answer(frame, "end_turn"));
+        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { });
+
+        var run = session.RunAsync(
+            "D:/fam/Game", "serve the report", CancellationToken.None, prompted: () => told.Add("prompted"), retry: Retry(clock, told));
+        await PassAsync(told, clock, run, 1, 2);
+        await run.WaitAsync(Poll.Patience);
+
+        Assert.Equal(3, told.Count("prompted"));
+    }
+
+    /// <summary>
     /// 🔴 RUNENDS1, second read (finding 6): the owner's check observes its caller's cut, and its cancellation is the caller's own: a check
     /// that cancels on a token of its own, linked to the cut, never surfaces that token, so the end the cut serves swallows only its own
     /// cancellation and lets every other through. A check cancelled on its own while nothing cut it is unread, and a yes, as before.

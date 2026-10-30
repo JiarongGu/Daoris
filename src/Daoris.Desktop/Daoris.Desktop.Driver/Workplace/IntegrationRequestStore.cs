@@ -32,6 +32,12 @@ public interface IIntegrationRequestStore
     IntegrationRequest? OpenFor(string repository, string branch);
 
     /// <summary>
+    /// The request made for a unit at the tip it froze, open or closed (INTEGRATE1n part n2: the <c>integrate</c> node's key), the newest
+    /// where more than one was; null where none was. Reads closed requests too, so a node finds what became of its request whenever it asks.
+    /// </summary>
+    IntegrationRequest? FindByKey(string unit, string tip);
+
+    /// <summary>
     /// Keep <paramref name="request"/> where no request is open for its repository and branch, judged with the write; else keep nothing and
     /// return the one open.
     /// </summary>

@@ -137,7 +137,7 @@ internal sealed class ChatGoOn
     {
         if (_context.Closing || !string.Equals(moved.State, "stopped", StringComparison.OrdinalIgnoreCase)) return;
         var session = moved.Session;
-        if (_context.Talking.ContainsKey(session) || _context.Turned.ContainsKey(session) || _context.GoingOn.ContainsKey(session)) return;
+        if (_context.Talking.ContainsKey(session) || _context.Turned.ContainsKey(session) || _context.GoingOn.ContainsKey(session) || Boxed(session)) return;
 
         _ = Task.Run(async () =>
         {
@@ -182,6 +182,13 @@ internal sealed class ChatGoOn
     }
 
     /// <summary>
+    /// Whether an older build's box for the record's ended limit move is still in place (FOUNDATION1f-vi part a, §3.3, §13.5): the record is the
+    /// course's <c>Never</c> until the come-up's import has set it aside. The box's presence is the reading, which holds between come-ups and
+    /// for a box held behind a standing move or for the start's confirmation alike.
+    /// </summary>
+    private bool Boxed(string session) => new LimitBoxes(_context.Home).Read(session) is not null;
+
+    /// <summary>
     /// The ended chats whose words wait on their record from while no runner heard them (MSG1c2): words kept while no shell
     /// ran, or before this runner listened, are taken up as words shown now would be, one chat at a time, each judged as
     /// MSG1c judges it and its end announced. A record whose every waiting word was already judged unable to go on (its
@@ -192,11 +199,9 @@ internal sealed class ChatGoOn
     {
         // FOUNDATION1f-ii part a (the foundation design §3.3): a dead shell's conversation moves are taken up first, before anything else that
         // could act on their records, each ended by its phase so its records go on below by their own come-up; nothing is sent there.
+        // FOUNDATION1f-vi part a (§3.3, §13.5): a box an older build wrote for an ended limit move is imported there first, once this start's
+        // confirmation is settled, and ended by its phase like a dead shell's; until it is, the box in place is its record's `Never`, below.
         await _limit.Moves.ComeUpAsync(say: null, ct).ConfigureAwait(false);
-
-        // LIMITRESUME1c (D206 §3.5, Codex 8): a limit's move a shell before this one opened and never delivered is delivered first, from
-        // its box, so the new part's words wait on its record as the records are read below; one it never opened is left for the wake.
-        await _limit.TakeUpBoxesAsync(ct).ConfigureAwait(false);
 
         string json;
         IReadOnlyList<SessionRecord> records;
@@ -230,6 +235,10 @@ internal sealed class ChatGoOn
 
             // HANDWORDS1: one handed over or moved went on in another, which holds its tree: words left on it never restart it.
             if (WordsNever.ContinuedIn(records, each.Id) is not null) continue;
+
+            // FOUNDATION1f-vi part a (§3.3, §13.5): an older build's box for an ended limit move still in place, held for the start's
+            // confirmation or behind a standing move, is the record's `Never`: no go-on, sweep or take-up acts on it meanwhile.
+            if (Boxed(each.Id)) continue;
 
             if (ServiceClient.ReadRecord(json, each.Id) is not { WordsWaiting: true } record) continue;
 
@@ -390,6 +399,7 @@ internal sealed class ChatGoOn
     {
         if (_context.Closing) return new(null, "the application is closing, so no conversation goes on now.");
         if (_context.Talking.ContainsKey(sessionId)) return new(null, $"conversation `{sessionId}` runs here: its words reach it at its door.");
+        if (Boxed(sessionId)) return new(null, $"conversation `{sessionId}` has a move an older Daoris began that is not taken up yet, so it goes on once it is.");
 
         var going = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         if (!_context.GoingOn.TryAdd(sessionId, going.Task)) return new(null, $"conversation `{sessionId}` is already going on.");
@@ -851,10 +861,6 @@ internal sealed class ChatGoOn
 
         _context.Service.AccountSaid(Continuations.Reopened(
             sessionId, adapter, goOn.Record.State, why: null, _context.Events.DoorOf(sessionId, ids), kind: "chat"));
-
-        // LIMITRESUME1c (D206 §3.5, Codex 8): a limit's move delivered again at the come-up is delivered now, so the words that waited
-        // leave the old record only here, and its box with them.
-        await _limit.DeliveredToAsync(sessionId).ConfigureAwait(false);
     }
 
     /// <summary>

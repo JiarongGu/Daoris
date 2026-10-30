@@ -167,6 +167,8 @@ Writing at the end is the same failure with extra steps. The end is where interr
   them do.
 - **Write it when it happens.** A note recorded at the moment of the decision costs a sentence; the same
   note reconstructed later costs an investigation, and is usually wrong.
+- **When a fact changes, rewrite its home.** Replace the sentence or entry that is now wrong; never add a
+  newer one beside it. Record only what the code cannot say, sized by what was decided.
 - Durable means *in the repository*, tracked and reviewable — not a scratch directory and not a
   conversation.
 

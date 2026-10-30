@@ -331,7 +331,7 @@
   "note.background.turn-left": "Its quest no longer waits, and a turn that started on its own was silent: the session ends without that turn's end.",
   "note.background.quest-closed": "Its quest no longer waits while the session waited for its agent's next turn: the session ends, and no go-on is sent.",
   "note.background.carried-on": "Its quest is done, but its tree holds uncommitted work (paths: {{paths}}): the session was carried on to commit it by its repository's conventions, or to restore what it does not want and say which.",
-  "note.background.carry-bound": "Its session was carried on twice for the uncommitted work in its tree and it is still not clean: the session ends, and that work waits uncommitted for your review.",
+  "note.background.carry-bound": "Its session was carried on for the uncommitted work in its tree and it is still not clean: the session ends, and that work waits uncommitted for your review.",
   "note.door.not-open": "The session could not open:",
   "note.door.turn-not-taken": "This turn could not be taken:",
   "note.door.failed": "The session failed:",

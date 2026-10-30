@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Microsoft.Data.Sqlite;
 using Daoris.Driver;
 
 namespace Daoris.Desktop.Driver.Tests;
@@ -21,7 +22,11 @@ public sealed class MovedWordsTests : IDisposable
         Directory.CreateDirectory(_root);
     }
 
-    public void Dispose() => GitSeed.Discard(_home);
+    public void Dispose()
+    {
+        SqliteConnection.ClearAllPools();
+        GitSeed.Discard(_home);
+    }
 
     private SessionEvents Events => new(DaorisHome.Entry(_home, HomeEntry.Sessions));
 
@@ -192,16 +197,17 @@ public sealed class MovedWordsTests : IDisposable
     private static IEnumerable<System.Text.Json.Nodes.JsonNode?> Said(ChatLedger ledger, string session) => ledger.Record(session)["said"]!.AsArray();
 
     /// <summary>
-    /// 🔴 FOUNDATION1d-ii part 4's interim recovery of the move's box (the foundation design §3.4 rules 3 and 5, O6-F13, O7-F4): a shell cut off
-    /// after the new part showed each moved word under its id and before it wrote the prompt. Its words wait there marked attempted, so the
-    /// display is no evidence that they went, and nothing says they did not reach the agent: at the come-up, and at the one after, the box is
-    /// neither delivered, which would take the words as taken, nor said again as a joined copy under the move's key; each attempted word is
-    /// taken back off the new part, never sent again, with one <c>lost</c> line naming them there whatever its record shows, and the box goes.
+    /// 🔴 FOUNDATION1d-ii part 4's recovery of the move's box (the foundation design §3.4 rules 3 and 5, O6-F13, O7-F4), read since
+    /// FOUNDATION1f-vi part a by the store's take-up of the box's import: a shell cut off after the new part showed each moved word under its
+    /// id and before it wrote the prompt. Its words wait there marked attempted, so the display is no evidence that they went, and nothing
+    /// says they did not reach the agent: at the come-up, and at the one after, nothing is delivered, which would take the words as taken, nor
+    /// said again as a joined copy under the move's key; each attempted word is taken back off the new part, never sent again, with one
+    /// <c>lost</c> line naming them there whatever its record shows, and the box is imported and set aside.
     /// </summary>
     [Fact]
     public async Task A_moved_boxs_delivery_cut_off_after_its_words_were_shown_is_neither_delivered_nor_said_again()
     {
-        var (context, runner, handOver, ledger, client) = World(opens: 2);
+        var (_, _, _, ledger, client) = World(opens: 2);
         using var c = client;
         MovedBox(ledger, ("w1", "Make it fast."), ("w2", "And add a test."));
         ledger.Edit("c2", record =>
@@ -213,9 +219,9 @@ public sealed class MovedWordsTests : IDisposable
             Events.Append("c2", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Id = id, Text = text });
         }
 
-        var limit = new LimitMove(context, runner, handOver, new NoHelp());
-        await limit.TakeUpBoxesAsync(CancellationToken.None);
-        await limit.TakeUpBoxesAsync(CancellationToken.None);
+        var moves = Shell(client);
+        await moves.ComeUpAsync(say: null, CancellationToken.None);
+        await moves.ComeUpAsync(say: null, CancellationToken.None);
 
         Assert.Empty(ledger.TakenBy);
         Assert.Equal([("c2", "w1"), ("c2", "w2")], ledger.TakenBack);
@@ -224,32 +230,34 @@ public sealed class MovedWordsTests : IDisposable
         var lost = Assert.Single(Events.After("c2", 0).Events, e => e.Code == SessionEventCodes.Lost);
         Assert.Equal(["w1", "w2"], lost.Words!);
         Assert.Null(new LimitBoxes(_home).Read("c1"));
+        Assert.True(File.Exists(new LimitBoxes(_home).PathOf("c1") + MoveBoxImport.SetAsideSuffix));
     }
+
+    /// <summary>The shell's conversation moves over the home's store, under a run of its own, its start's confirmation settled.</summary>
+    private ConversationMoves Shell(ServiceClient client) =>
+        new(_home, client, Events, store: new MoveStore(_home, () => StoreSettled.Yes, _ => true, "run-shell", StoreProcess.Shell));
 
     /// <summary>
     /// 🔴 A shell cut off after the move's open and before its hand: the moved words wait on the new part never attempted, so nothing of the
-    /// move reached the agent. The come-up makes the delivery once from the box, the brief, the refused turn's words and the moved words read on
-    /// the new part, as Daoris's word at its head under the move's key, the moved words leaving the new part into it, so its go-on hands each
-    /// once; the box goes, and the next come-up says nothing again.
+    /// move reached the agent. The come-up imports the box and ends its move by what the new part holds, saying nothing and taking nothing:
+    /// the words stay on the new part for its own go-on to hand once, and the next come-up does nothing again.
     /// </summary>
     [Fact]
-    public async Task A_moved_boxs_delivery_never_attempted_is_made_once_from_the_new_part_at_the_come_up()
+    public async Task A_moved_boxs_delivery_never_attempted_leaves_the_words_on_the_new_part_for_its_own_go_on()
     {
-        var (context, runner, handOver, ledger, client) = World(opens: 2);
+        var (_, _, _, ledger, client) = World(opens: 2);
         using var c = client;
         MovedBox(ledger, ("w1", "Make it fast."));
-        var limit = new LimitMove(context, runner, handOver, new NoHelp());
+        var moves = Shell(client);
 
-        await limit.TakeUpBoxesAsync(CancellationToken.None);
-        await limit.TakeUpBoxesAsync(CancellationToken.None);
+        await moves.ComeUpAsync(say: null, CancellationToken.None);
+        await moves.ComeUpAsync(say: null, CancellationToken.None);
 
-        var copy = Assert.Single(Said(ledger, "c2"));
-        Assert.Equal(("limit-move/c1", DaorisWords.From), (copy!["key"]!.GetValue<string>(), copy["from"]!.GetValue<string>()));
-        var text = copy["text"]!.GetValue<string>();
-        Assert.Contains("You continue session `c1`", text);
-        Assert.True(text.IndexOf("Make the port configurable.", StringComparison.Ordinal) < text.IndexOf("Make it fast.", StringComparison.Ordinal), text);
-        Assert.Equal([("c2", "w1", (string?)null)], ledger.TakenBy);
+        Assert.Equal(["w1"], ledger.Said("c2"));
+        Assert.DoesNotContain(Said(ledger, "c2"), word => word!["key"]?.GetValue<string>() == "limit-move/c1");
+        Assert.Empty(ledger.TakenBy);
         Assert.Empty(ledger.TakenBack);
         Assert.Null(new LimitBoxes(_home).Read("c1"));
+        Assert.Equal("closed", new MoveStore(_home).Of("c1").Single().PhaseWord);
     }
 }

@@ -112,6 +112,38 @@ public sealed record IntegrationStepEnd(string Outcome)
 
     /// <summary>The candidate ended with this end, with its reason (<see cref="IntegrationCandidateEnds"/>), its standing members with it; null where it goes on.</summary>
     public string? Ends { get; init; }
+
+    /// <summary>
+    /// The pending dispositions this end makes visible (INTEGRATE1e part e4b, §5.7): a superseded commit's recovery ref and what superseded it,
+    /// written in this end's transaction, so a member settling and its work being kept in view are one write. Each names a member of the candidate.
+    /// </summary>
+    public IReadOnlyList<IntegrationDisposition> Dispositions { get; init; } = [];
+}
+
+/// <summary>
+/// A commit made on a unit's branch after its request froze that its replay conflicts with the line, in every conflicted hunk, in a way a commit
+/// outside the unit made (§5.7, INTEGRATE1e part e4b): kept on a recovery ref, said as superseded by that commit, and offered as <i>superseded</i>
+/// or <i>rebase it</i>. It stays pending, visible on the Integration view and the session's head even once its request's review row has gone, until
+/// one of them answers (<see cref="AnsweredAt"/>); it is never discarded by itself, and its recovery ref goes only by D102's rules.
+/// </summary>
+/// <param name="Request">The member's request: with <paramref name="Commit"/> the disposition's key.</param>
+/// <param name="Commit">The superseded commit.</param>
+/// <param name="Reference">The recovery ref its branch's work is kept on (under <c>refs/daoris/discarded/</c>); it holds <paramref name="Commit"/>.</param>
+/// <param name="By">The line's commit, outside the unit's own work, that superseded it.</param>
+/// <param name="Files">The files its replay conflicts in.</param>
+/// <param name="Subject">The commit's subject line.</param>
+public sealed record IntegrationDisposition(string Request, string Commit, string Reference, string By, IReadOnlyList<string> Files, string Subject)
+{
+    /// <summary>The candidate whose settle made it; set by the store.</summary>
+    public string Candidate { get; init; } = "";
+
+    /// <summary>When it was recorded; set by the store.</summary>
+    public DateTimeOffset At { get; init; }
+
+    /// <summary>When the session, the steward or the owner answered it; null while it is pending.</summary>
+    public DateTimeOffset? AnsweredAt { get; init; }
+
+    public bool Pending => AnsweredAt is null;
 }
 
 /// <summary>A member's new state, with what it carries; <see cref="Ends"/> ends its membership, freeing its request to be formed again.</summary>
