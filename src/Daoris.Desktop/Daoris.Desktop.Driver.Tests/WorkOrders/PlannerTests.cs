@@ -1716,7 +1716,32 @@ public sealed class PlannerTests
         Assert.Equal("s3", released.Resumes!.Session);
     }
 
-    // ── the pause (PAUSE1b, D132 points 2–4, design §2.3) ─────────────────────────────────────────────────────
+    /// <summary>
+    /// 🔴 FOUNDATION1i path 4 (the foundation design §10 row 1i): a record ended past its transient bound is held by the course's answer for
+    /// <see cref="CourseTrigger.TransientPastBound"/>, <c>TransientBound</c> with <i>Try again</i> and a word of the person's as its doors; the
+    /// person's release of that end is the course's too, and it holds no more.
+    /// </summary>
+    [Fact]
+    public void A_record_ended_past_its_transient_bound_is_held_by_the_course_until_try_again_releases_it()
+    {
+        var ended = new DateTimeOffset(2026, 10, 2, 9, 5, 0, TimeSpan.Zero);
+        var last = new PriorSession("s1", "D:/trees/s1", "failed") { NoteParts = [new NotePart { Code = RecordNotes.EndedTransient }], Updated = ended };
+        var snapshot = new Snapshot([Quest(status: "Taken")], [Repo()], []) { LastRun = new Dictionary<string, PriorSession> { ["q1"] = last } };
+        var decided = new List<LineCourse>();
+
+        var held = Assert.Single(Planner.Plan(snapshot, Config(), decided: decided.Add));
+        Assert.Equal(StartVerdict.TransientHeld, held.Verdict);
+        var hold = Assert.IsType<LineCourse.Hold>(Assert.Single(decided));
+        Assert.Equal(CourseHoldWhy.TransientBound, hold.Why);
+        Assert.Equal([CourseDoor.TryAgain, CourseDoor.Say], hold.Doors);
+
+        decided.Clear();
+        var released = Assert.Single(Planner.Plan(snapshot, Config().WithTransientReleased("q1", "s1", ended), decided: decided.Add));
+        Assert.NotEqual(StartVerdict.TransientHeld, released.Verdict);
+        Assert.DoesNotContain(decided, course => course is LineCourse.Hold { Why: CourseHoldWhy.TransientBound });
+    }
+
+    // ── the pause (PAUSE1b, D132 points 2–4, design §2.3)─────────────────────────────────────────────────────
     //
     // A pause stops an ask's work, or one quest's, on this machine and keeps everything: the look hands the planner the quests
     // of each paused work, and the planner's `Paused` verdict is the reason each sits, before every other, the person's stop

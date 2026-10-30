@@ -196,6 +196,16 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
             _context.Marks.Clear(park.Session);
         }
 
+        // FOUNDATION1i path 1: whether the words go on in the record's own conversation is the course's answer, read over the judge's reason.
+        var kept = _context.Conversations.Read(park.Session);
+        var why = adapter is null
+            ? null
+            : Continuations.Judge(
+                tree => treeStands && ConversationTrees.Stands(tree), park, adapter.Name, adapter.Resumes, selection.Profile, kept, account);
+        var course = DrivenCourse.GoOn(
+            park, quest.Status, why?.Code ?? (adapter is not null && kept is null ? ContinueWhy.Unkept : null), agentGone: adapter is null);
+        _driver.Decided?.Invoke(course);
+
         // 🔴 SESSCTX1c (D189's amendment): an adapter no longer here proves nothing of the conversation, and only the person can choose
         // the agent it goes on with, so the record waits as it is, a park still parked, its words unmarked, saying so with the hand-over's
         // offer. Never a park ended for a carry-on that could not start on that agent either.
@@ -206,10 +216,7 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
             return (new StartRun($"held  #{quest.Id} → {quest.To}: {gone.Note}", false, null, gone.Note), null, false);
         }
 
-        var kept = _context.Conversations.Read(park.Session);
-        var why = Continuations.Judge(
-            tree => treeStands && ConversationTrees.Stands(tree), park, adapter.Name, adapter.Resumes, selection.Profile, kept, account);
-        if (why is not null || kept is null)
+        if (course is not LineCourse.Resume || kept is null)
         {
             var reason = why ?? ContinueWhy.Of(ContinueWhy.Unkept);
             if (await EndParkAsync(park, reason, agent, ct).ConfigureAwait(false) is { } refused)

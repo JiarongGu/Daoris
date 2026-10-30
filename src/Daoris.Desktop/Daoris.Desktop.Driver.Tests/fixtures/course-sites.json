@@ -15,17 +15,8 @@
     "send-back": "public async Task<SentBack> (SendBackAsync|GoOnWithFindingsAsync)\\("
   },
   "sites": [
-    { "file": "Daoris.Desktop.Driver/Loop/Driver.cs", "shape": "go-on", "count": 1, "paths": ["A", "K"], "hands": false, "row": "i", "status": "not yet moved", "what": "the driven look's go-on of a record the planner chose, which falls back to a new part" },
-    { "file": "Daoris.Desktop.Driver/Loop/Driver.cs", "shape": "resumes", "count": 2, "paths": ["A", "F"], "hands": true, "moving": "no move", "row": "i", "status": "not yet moved", "what": "the go-on's resume and the limit resume's step 1, each asking the account rule" },
-    { "file": "Daoris.Desktop.Driver/Loop/Driver.cs", "shape": "opens-from", "count": 5, "paths": ["A", "F", "G", "I", "K"], "hands": true, "moving": "moves", "row": "i", "status": "not yet moved", "what": "the new part's `from`, in order hand-over, limit, curve, retry, carry-on" },
-    { "file": "Daoris.Desktop.Driver/Loop/Driver.cs", "shape": "answers-alone-read", "count": 1, "paths": ["A"], "hands": false, "row": "i", "status": "not yet moved", "what": "the driven look's answers-alone hold before a go-on" },
-    { "file": "Daoris.Desktop.Driver/Loop/DriverContinuations.cs", "shape": "go-on", "count": 1, "paths": ["A"], "hands": true, "moving": "no move", "row": "i", "status": "not yet moved", "what": "the driven go-on: the judge, the resume and the words taken off" },
-    { "file": "Daoris.Desktop.Driver/Loop/DriverHandOvers.cs", "shape": "path-owner", "count": 1, "paths": ["I"], "hands": false, "row": "i", "status": "not yet moved", "what": "a quest's hand-over: the person's ask and the agent's, with the consent before the ask, the move taken from the store (f-v part c)" },
-    { "file": "Daoris.Desktop.Driver/Course/HandOver/HandOverQuest.cs", "shape": "path-owner", "count": 1, "paths": ["I"], "hands": false, "row": "i", "status": "not yet moved", "what": "the page's and the terminal's hand-over press on a quest's session, deciding its driven move (f-v part c)" },
     { "file": "Daoris.Desktop.Driver/Course/LimitResume.cs", "shape": "path-owner", "count": 1, "paths": ["F"], "hands": false, "row": "i", "status": "not yet moved", "what": "the driven limit resume: which record, its word keyed by the cool-off" },
     { "file": "Daoris.Desktop.Driver/Course/LimitResume.cs", "shape": "transient-bound", "count": 1, "paths": ["N"], "hands": false, "row": "i", "status": "not yet moved", "what": "a record ended past its transient bound" },
-    { "file": "Daoris.Desktop.Driver/WorkOrders/Domain/Planner.cs", "shape": "planner", "count": 4, "paths": ["A", "F", "K", "N"], "hands": false, "row": "i", "status": "not yet moved", "what": "the planner's go-on, carry-on, limited carry-on and transient hold" },
-    { "file": "Daoris.Desktop.Driver/WorkOrders/Domain/Planner.cs", "shape": "transient-bound", "count": 1, "paths": ["N"], "hands": false, "row": "i", "status": "not yet moved", "what": "the planner's reading of a record ended past its transient bound" },
     { "file": "Daoris.Desktop.Driver/Course/Chat/ChatGoOn.cs", "shape": "resumes", "count": 2, "paths": ["B"], "hands": true, "moving": "no move", "row": "h", "status": "not yet moved", "what": "a conversation's go-on and Ask Daoris's, each asking the account rule without walking" },
     { "file": "Daoris.Desktop.Driver/Course/Chat/ChatGoOn.cs", "shape": "answers-alone-read", "count": 1, "paths": ["B"], "hands": false, "row": "h", "status": "not yet moved", "what": "the answers-alone hold before a conversation's resume" },
     { "file": "Daoris.Desktop.Driver/Course/Chat/ChatGoOn.cs", "shape": "calls-a-move", "count": 3, "paths": ["B", "E", "J"], "hands": false, "row": "h", "status": "not yet moved", "what": "the go-on handing a lost or cooling conversation to the ended limit move or the briefed move" },
@@ -50,6 +41,9 @@
     { "file": "Daoris.Desktop.Driver/Loop/Driver.cs", "member": "RunAsync", "row": "f-iv", "why": "the driven carry-on: decided at old-ended before its keyed open, or, for the carry-on a quest's hand-over starts, the hand-over's own move gone on from (row f-v part c), each phase written before what it fences, each handed word's sent where the door's write of the first prompt returns, with the take after it (part b; part a wrote it where the take returned), and ended by its phase wherever the start stops" }
   ],
   "moved": [
+    { "path": "G", "branch": "FOUNDATION1i path 1", "why": "The curve's driven carry-on `from` was the last site of G: Driver.cs and DriverContinuations.cs now read the course, which a file does as a whole." },
+    { "path": "I", "branch": "FOUNDATION1i path 2", "why": "A quest's hand-over, the person's press and the agent's ask, decides through the course in HandOverQuest.cs, its consent a fact DriverHandOvers.cs hands in, so no site of it is left." },
+    { "path": "K", "branch": "FOUNDATION1i paths 3 and 4", "why": "The carry-on's `from` is the course's move in Driver.cs and the planner reads the course for what follows a transient bound, so no site of it is left." },
     { "path": "H", "branch": "FOUNDATION1h branch 3", "why": "A conversation's hand-over, the person's press and the agent's ask, decides through the course in HandOver.cs, its chat runner adapter in ChatHandOver.cs, so no site of it is left." }
   ],
   "notDecisions": [
