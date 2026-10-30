@@ -798,6 +798,34 @@ public sealed class IntakeTests : IDisposable
     }
 
     /// <summary>
+    /// STOPRACE1: a stop made while the intake's protocol handshake is still open is the person's end, not a failed wire. An agent
+    /// that never answers makes that moment certain.
+    /// </summary>
+    [Fact]
+    public async Task A_stop_before_the_intake_s_handshake_finishes_is_recorded_as_the_persons()
+    {
+        await using var service = StandInService.Start(Circle, Ask());
+        var silent = Path.Combine(_home, "silent-agent.mjs");
+        File.WriteAllText(silent, """
+            import { createInterface } from 'node:readline';
+            for await (const line of createInterface({ input: process.stdin })) { void line; }
+            """);
+        var config = Config() with
+        {
+            Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", silent] },
+        };
+        var processes = new SessionProcesses();
+        var driver = Driver(config.WithIntake("acp-stub"), service, processes);
+
+        var tick = driver.RunOnceAsync();
+        await Until(() => processes.Running.Contains("i1"));
+        Assert.True(processes.Stop("i1"));
+        await tick;
+
+        Assert.Equal("stopped", service.Session("i1")["state"]!.GetValue<string>());
+    }
+
+    /// <summary>
     /// HELPPLUG1c (D170 point 4): an intake is handed the skills plugins hand sessions, by the harness's own door on either wire,
     /// and the composed folder goes when its session does.
     /// </summary>

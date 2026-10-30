@@ -172,8 +172,8 @@ landing and commit facts through lower contracts; `Workplace/AgentWorkplaceWirin
 Tools are handed before Workplace removes inherited tokens, resolves the author and hands long paths. The installed
 tree-guard carrier and matcher belong to Agents; the actual resource, installer and guard remain Workplace's.
 
-`IntegrationReplays` forms a line's candidate and replays each member onto it in the line's own warm integration tree, called from no production
-path yet (INTEGRATE1e parts e3a and e3b; the integration design §5.2 steps 2 to 5, §5.4). Each member's merge is resolved in its replay effect
+`IntegrationReplays` forms a line's candidate and replays each member onto it in the line's own warm integration tree, run by the line's run
+(`IntegrationLines`, below; INTEGRATE1e parts e3a and e3b; the integration design §5.2 steps 2 to 5, §5.4). Each member's merge is resolved in its replay effect
 (`IntegrationResolves`), so the merge commit is made once: the conflicted paths the repository settles by a rule it declares at the candidate's
 base (the backlog and declared row tables by the merge base, generated files taking the candidate's copy and written again where the integration
 acceptance accepts their writer, accepted line rules) are settled by `BacklogMerge.Stops`, `GeneratedPaths`, `GeneratedWriters` and `LineRules`,
@@ -183,7 +183,7 @@ the files, the line's commits and the member it met named by `IntegrationConflic
 and a session that cannot be told, sets it aside as `held`, its request open and out of `IntegrationStore.Queued` until an act. The `Say` and
 `Config` of its ask are handed in by the caller. The landing agent is a later design's.
 
-`IntegrationPromotes` promotes a replayed candidate onto its line and settles its members, called from no production path yet (INTEGRATE1e part
+`IntegrationPromotes` promotes a replayed candidate onto its line and settles its members, run by the line's run (INTEGRATE1e part
 e4a; the integration design §5.2 steps 6 to 9, §5.6, §5.7). It asks the verdict port (`IntegrationVerdicts.Current`, which Review implements) for
 the integration tree put at the candidate's tip, its base, the accepted declaration's text and blob, the members' replayed tips, the declaration's
 `verification` runner and the owner's `unconfirmed` word, and acts on its answer only for that tip: `green` promotes, `land` only where the
@@ -196,7 +196,7 @@ by a fast-forward in the clean checkout that has it out (held, said why, where i
 (`IntegrationSettles`) judges each promoted member's commits after its freeze with `IntegrationAfterLanding`: contained and new are said and the
 member settled; a superseded commit is part e4b's (below). Every end of the candidate closes its one job.
 
-Part e4b finishes the run, still called from no production path (INTEGRATE1e; §5.2 steps 8 to 11, §5.6, §5.7, §8). **A superseded member** has
+Part e4b finishes the run (INTEGRATE1e; §5.2 steps 8 to 11, §5.6, §5.7, §8). **A superseded member** has
 its branch's work kept on a recovery ref (`ContentHolds.KeepDiscardedAsync`, under `refs/daoris/discarded/`) first, then the settle step's one end
 settles the member and writes each superseded commit's pending disposition (`integration_dispositions`, store migration 7: the recovery ref, the
 commit that superseded it, its files, and an `answered_at` that stays empty until the session, the steward or the owner answers): a crash between
@@ -211,6 +211,14 @@ member's requester again immediately before the line moves: a person's request s
 since; a member that fails is held, said why, with nothing moved, and the candidate is formed again without it. **The come-up sweep**
 (`IntegrationSweeps`) takes each standing candidate from its dead run, resumes it by ancestry first, goes to the settle where the line holds the
 tip (the promotion is never run again), and otherwise goes on from the step it was at.
+
+**The transport** (INTEGRATE1g; §5.1, §17.4). `IntegrationLines` runs one line to rest: candidate after candidate, a standing one gone on with
+under this process's claim or taken from a dead run, each step's end told as its `integration.*` event. `IntegrationTransport` (Workflows) runs
+it on its own task, never the pass's: a unit's `integrate` node sends the line of each open request it reads, the come-up sends every line a
+standing candidate or an open request is in, a line whose rule declares gates holds the home's verification slot and the repository's heavy-run
+slot as the heavy executor's check does, and a closed request asks a pass, which reads it onto the node. The watch composes it, only where it
+holds the home's lease and drains no update. A merge rule's press is carried by the same run (`IntegrationPresses`, route `merge`, under
+`{ owner, none, 1, merge }`): merged in the integration tree with its message and the repository's hooks, the checkout only fast-forwarded.
 
 Workplace reads and removes conversations through the supplied `IWorkplaceEventHistory` and `ISessionEventRemoval`
 facets. Context's `Context/Events/SessionEventLog.cs` answers them on the original record, retaining its numbering,

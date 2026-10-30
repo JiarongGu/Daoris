@@ -18,7 +18,8 @@ namespace Daoris.Driver;
 /// the connector appends; the hook, which node runs, tries again while it is refused. A line that cannot be written is a
 /// lineage unknown, never a failed session.</para>
 ///
-/// <para>It binds and records; it decides nothing a child may do (FABRIC-C2a's).</para>
+/// <para>It binds and records; it decides nothing a child may do. The connector does (FABRIC-C2a), reading this file's hook lines
+/// itself (<c>HookJoin</c>); an agent id the hook could not read is <c>agentUnreadable</c>, which neither reader takes for the root's.</para>
 /// </remarks>
 public static class ChildLineage
 {

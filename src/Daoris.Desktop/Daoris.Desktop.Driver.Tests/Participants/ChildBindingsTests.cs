@@ -176,6 +176,29 @@ public sealed class ChildBindingsTests
         Assert.Equal(0, child.Calls);
     }
 
+    /// <summary>
+    /// FABRIC-C2a (D173's note, point 1; the connector's <c>CallerProof</c> is the twin): an id the harness sent that could not be
+    /// read is kept as such, so a call it names is unknown, never the root's.
+    /// </summary>
+    [Fact]
+    public void A_malformed_id_reads_as_unknown_never_as_the_root_s()
+    {
+        var lines = new[]
+        {
+            Line(new JsonObject
+            {
+                ["by"] = "hook", ["event"] = "call", ["agentUnreadable"] = true, ["toolUse"] = "toolu_x", ["tool"] = Tool, ["session"] = Session,
+            }),
+            Call("toolu_x"),
+            """{"at":"2026-10-16T08:30:00.123Z","by":"call","tool":"helper_ask","harness":"codex","thread":"t2","root":"t1","malformed":"parent"}""",
+        };
+
+        var bound = ChildBindings.Fold(lines);
+
+        Assert.Equal((0, 2, 0), (bound.RootCalls, bound.UnknownCalls, bound.Unjoined));
+        Assert.Empty(bound.Children);
+    }
+
     [Fact]
     public void Nothing_written_is_nothing_known_and_a_line_that_does_not_read_is_skipped()
     {

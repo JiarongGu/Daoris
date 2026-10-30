@@ -40,10 +40,17 @@ public sealed class LineageFile
     public LineageFile(string? home, string? session)
     {
         var id = session?.Trim();
+        NamesSession = !string.IsNullOrWhiteSpace(id);
         Path = !string.IsNullOrWhiteSpace(home) && id is not null && SessionShape.IsMatch(id)
             ? DaorisHome.Entry(home.Trim(), HomeEntry.Sessions, id, FileName)
             : null;
     }
+
+    /// <summary>
+    /// Whether the connector was told a session, even one whose id or home names no file: its restricted tools are then a proven
+    /// root's alone (FABRIC-C2a, D173's note, point 1). A person's own agent names none.
+    /// </summary>
+    public bool NamesSession { get; }
 
     /// <summary>The file this connector appends to, or null when it records nothing.</summary>
     public string? Path { get; }
@@ -87,6 +94,7 @@ public sealed class LineageFile
             Put(line, "kind", lineage.Kind);
             Put(line, "source", lineage.Source);
             Put(line, "root", lineage.Root);
+            Put(line, "malformed", lineage.Malformed);
         }
 
         return line.ToJsonString();

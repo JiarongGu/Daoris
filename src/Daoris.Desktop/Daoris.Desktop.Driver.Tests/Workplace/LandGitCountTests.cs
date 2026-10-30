@@ -220,17 +220,28 @@ public sealed class LandGitCountTests : IDisposable
     // read the line's tips, the head and the named branch's tip again), the landing reads the tree's repository and branch once for
     // its readers, the content proof takes the tree's own branch its judgement read, and the line's two forms are one snapshot. 44, 46
     // and 40, each act's own read (the branch's commits, the pinned tip, the tree's move) still made right before it. The two together,
-    // each landing's `status` and its repository and branch handed down: 42, 45 and 39.
+    // each landing's `status` and its repository and branch handed down: 42, 45 and 39. INTEGRATE1g carries a merge rule's press by the
+    // integration transport, its merge made in the line's integration tree and the checkout fast-forwarded: the tree found or made and put
+    // at its start for the form and again for the replay, the promotion's reads of the line and the fence, and the settle: 67. The replay no
+    // longer finds and puts back a tree the form of the same run just did (6), the promotion no longer asks a fresh candidate's ancestry (1) or
+    // reads the line a second time before the gates' move (1), and a press's containment is ancestry alone (2, the landing judged it): 57.
+    // What the transport still starts: the tree found (`worktree list`) and made (`worktree add`) and its binding read (`rev-parse
+    // --show-toplevel`) with its four puts back at the base; the ancestry read, the merge and the head read; the line read before the move
+    // and in its effect and after it, the fence's `ls-tree`, the checkout list and clean check, and the fast-forward: each the transport's own
+    // check at its moment, or the move itself.
     private const int AutomaticCeiling = 42;
     private const int SquashCeiling = 45;
-    private const int MergeCeiling = 39;
+    private const int MergeCeiling = 57;
 
     private const string VerifyQuiet = "git rev-parse --verify --quiet ";
 
     private void Judge(List<string> starts, int ceiling)
     {
         var git = starts.Where(each => each.StartsWith("git ", StringComparison.Ordinal)).ToList();
-        var report = $"{git.Count} git starts:\n{string.Join('\n', git)}";
+        // By command and folder kind, so the step that starts the most is seen first (the integration tree's are those under `i-`).
+        var breakdown = git.GroupBy(each => each.Split("  @ ")[0].Split(' ')[1] + (each.Contains("/i-") ? " (integration tree)" : ""))
+            .OrderByDescending(group => group.Count()).Select(group => $"{group.Count(),3}  {group.Key}");
+        var report = $"{git.Count} git starts:\n{string.Join('\n', breakdown)}\n\n{string.Join('\n', git)}";
         // The run's starts in its output, so a ceiling is lowered to what was measured.
         _output.WriteLine(report);
         // A question of commits by their ids is asked once unless a git that may move a ref ran between its two askings. What names a

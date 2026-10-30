@@ -249,7 +249,7 @@ public sealed class LimitGoesElsewhereProcessTests : IDisposable
     {
         var start = new ProcessStartInfo("git") { WorkingDirectory = _root, RedirectStandardOutput = true, RedirectStandardError = true };
         foreach (var argument in arguments) start.ArgumentList.Add(argument);
-        using var git = Process.Start(start)!;
+        using var git = Process.Start(TestGit.Past(start))!;
         git.WaitForExit();
         Assert.Equal(0, git.ExitCode);
     }

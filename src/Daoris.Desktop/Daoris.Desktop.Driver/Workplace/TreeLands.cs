@@ -290,26 +290,15 @@ internal sealed class TreeLands(
                 + $"not switch a branch in a checkout it did not create — put it on `{canonical}`, then merge.");
         }
 
-        // `--no-ff` so the merge is one commit a person can read and revert as a unit, and `--no-edit`
-        // so nothing opens an editor on a machine nobody is sitting at. A replay's tip is merged under the branch's name, and so is a pinned
-        // commit (FABRIC-CUTOVER1d), so the merge is the one the branch's would have been.
-        string[] merge = replay is not null ? ["merge", "--no-ff", "-m", $"Merge branch '{branch}'", replay.Now]
-            : pinned is not null ? ["merge", "--no-ff", "-m", $"Merge branch '{branch}'", pinned]
-            : ["merge", "--no-ff", "--no-edit", branch];
-        var (mergeCode, mergeOut, mergeErr) = await WorkingTree.GitAsync(root, merge, ct).ConfigureAwait(false);
-        if (mergeCode != 0)
-        {
-            // HOOKMERGE1: a merge that stands staged with nothing unmerged was refused by the repository's own hook (`pre-merge-commit`
-            // or `commit-msg`), never by a conflict, and the hook's words are the reason. Read before the abort takes that state away.
-            var hooked = await HookRefusedAsync(root, ct).ConfigureAwait(false);
-            // Leave the root as it was found. Nothing here resolves a conflict: the person does that
-            // where the context is, and a half-merged checkout is worse than an honest refusal.
-            await WorkingTree.GitAsync(root, ["merge", "--abort"], ct).ConfigureAwait(false);
-            return new(false, hooked
-                ? HookRefused(branch, canonical, mergeErr, mergeOut)
-                : $"git would not merge `{branch}` into `{canonical}`: {FirstLine(mergeErr)} "
-                    + "The merge was aborted and the checkout is as it was.");
-        }
+        // INTEGRATE1g (§4.2's named legacy exception): the press is carried by the integration transport under `{ owner, none, 1, merge }`.
+        // The merge is made `--no-ff` in the line's integration tree, one commit a person can read and revert as a unit, under the branch's
+        // name whether a replay's tip or a pinned commit (FABRIC-CUTOVER1d) is merged, with the repository's own hooks; the checkout is then
+        // only fast-forwarded to it. A conflict or a refusing hook (HOOKMERGE1) leaves the checkout as it was, in today's words.
+        var frozen = replay?.Now ?? pinned ?? await CommitOfAsync(root, $"refs/heads/{branch}", ct).ConfigureAwait(false);
+        if (frozen is null) return new(false, $"git could not read where `{branch}` stands, so nothing was merged.");
+        var (carried, refused) = await IntegrationPresses.MergeAsync(
+            context.Home, context.Config(), root, repository, workspace, canonical, branch, frozen, ct).ConfigureAwait(false);
+        if (!carried) return new(false, refused!);
 
         var landed = ahead.Trim().Split('\n').Length;
         // The line moved: the registry follows it at the next look (WSSETUP5, D124 §3.1), whichever door pressed this.
@@ -327,20 +316,7 @@ internal sealed class TreeLands(
     private const int HookSaidLimit = 600;
 
     /// <summary>
-    /// Whether a failed merge was refused by the repository's own hook (HOOKMERGE1): git stopped with the merge staged
-    /// (<c>MERGE_HEAD</c> stands) and nothing unmerged, which a conflict never leaves. Read from git's state, not its words, which
-    /// may be in the person's language.
-    /// </summary>
-    private static async Task<bool> HookRefusedAsync(string root, CancellationToken ct)
-    {
-        var (headCode, _, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--quiet", "--verify", "MERGE_HEAD"], ct).ConfigureAwait(false);
-        if (headCode != 0) return false;
-        var (code, unmerged, _) = await WorkingTree.GitAsync(root, ["--no-optional-locks", "diff", "--name-only", "--diff-filter=U"], ct).ConfigureAwait(false);
-        return code == 0 && string.IsNullOrWhiteSpace(unmerged);
-    }
-
-    /// <summary>
-    /// What a merge its repository's hook refused says (HOOKMERGE1): that it was the hook and no conflict, the hook's own output, and
+    /// What a merge its repository's hook refused says (HOOKMERGE1), told from the merge the integration tree made for the press (INTEGRATE1g): that it was the hook and no conflict, the hook's own output, and
     /// that Daoris does not skip a repository's hooks (this merge never passes <c>--no-verify</c>, as the git writes design's §4.1
     /// proposes for the person's own acts), so the person changes what the hook refuses or merges by hand. git runs a hook with its output on stderr; its own closing line, where it is in English, is left out.
     /// </summary>

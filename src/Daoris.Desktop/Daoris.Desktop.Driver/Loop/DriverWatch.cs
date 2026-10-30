@@ -565,6 +565,32 @@ public sealed class DriverWatch(
             nodes.Checks = new CheckExecution(executor, (unit, attempt, node) => VerifyRuns.SendOf(home, unit, attempt, node));
         }
 
+        // INTEGRATE1g (the integration design §5.1, §17.4): the transport an open request's line is sent to, run off the pass beside the heavy
+        // executor; a member's conflict told to its session through the say door, each step told to the log, and its answer asking a pass.
+        IntegrationTransport? transport = null;
+        if (nodes is not null)
+        {
+            transport = new IntegrationTransport(home, new IntegrationTransportWorld
+            {
+                Config = () => DriverConfig.Load(DriverConfig.ResolvePath(Environment.GetEnvironmentVariable, home)),
+                Root = async (repository, workspace, token) => (await RefWatch.RepositoriesAsync(home, service.RegistryAsync, token).ConfigureAwait(false))
+                    .FirstOrDefault(each => string.Equals(each.Repository, repository, StringComparison.OrdinalIgnoreCase)
+                                            && string.Equals(each.Workspace, workspace, StringComparison.OrdinalIgnoreCase))?.Root,
+                Say = async (session, text, key, token) =>
+                    (await WordsHead.FollowAsync(session, at => service.SayAsync(at, text, null, token, from: SaidFrom.Daoris, key: key)).ConfigureAwait(false)).Said,
+                Tidy = IntegrationTidies.Through(new SessionTrees(home)),
+                Told = told => Log?.Info(told.Code, ("repository", told.Repository), ("line", told.Line), ("candidate", told.Candidate), ("request", told.Request),
+                    ("outcome", told.Outcome)),
+                Said = said => Log?.Info("integration.said", ("said", said)),
+                Answered = () => NodesWoken("integration"),
+                // As the pass: only where this loop holds the home's lease, and never while an update drains (DRAINHOLD1).
+                Runs = () => HomeLease.HeldHere(home) && !DrainsNow(),
+            });
+            nodes.Lines = transport;
+            nodes.Integrated = (unit, repository) => Log?.Info("work.integrated", ("unit", unit), ("repository", repository));
+            transport.Start();
+        }
+
         _nodes = nodes;
         // FABRIC-RUN1d: the runtime's own wakes run link 8 alone: its timer and a plugin's step, never the local plan.
         using var nodesDue = new System.Threading.Timer(_ => NodesWoken("due"));
@@ -933,6 +959,9 @@ public sealed class DriverWatch(
 
             // FABRIC-PIPELINE1d: a check's job ends with the loop, written no result, so the next loop's reconcile sends it again.
             if (executor is not null) await executor.DisposeAsync().ConfigureAwait(false);
+
+            // INTEGRATE1g: the line's run ends with the loop; a candidate it cut is the next come-up's to go on with.
+            if (transport is not null) await transport.DisposeAsync().ConfigureAwait(false);
 
             // The change stream's wait ends with the loop, and is waited for, so no ask outlives it.
             await listening.CancelAsync().ConfigureAwait(false);

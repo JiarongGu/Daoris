@@ -76,7 +76,7 @@ public sealed class GitLongPathsProcessTests : IDisposable
 
     private static async Task<string> StatusAsync(ProcessStartInfo info)
     {
-        using var process = Process.Start(info) ?? throw new InvalidOperationException("git did not start");
+        using var process = Process.Start(TestGit.Ceiling(info)) ?? throw new InvalidOperationException("git did not start");
         var stdout = process.StandardOutput.ReadToEndAsync();
         var stderr = process.StandardError.ReadToEndAsync();
         using var bound = new CancellationTokenSource(TimeSpan.FromSeconds(60));

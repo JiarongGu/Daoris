@@ -6,15 +6,15 @@ namespace Daoris.Driver;
 /// tool; a push is denied whatever the person's defaults say. It writes, in its copy alone, which the tree guard holds it to.
 /// </summary>
 /// <remarks>
-/// A second layer, never the only one: the connector's host refuses the same tools by the record's role before they run
-/// (<c>ConnectorRoles</c> in the service, whose lists these are), and an agent that takes no rules, as Codex does not, is held by its copy
+/// A second layer, never the only one: the connector's host refuses the same tools by the record's work before they run
+/// (the service's <c>CallTable</c>, whose partner row this is), and an agent that takes no rules, as Codex does not, is held by its copy
 /// and its measured enforcement mechanism alone (§3.3).
 /// </remarks>
 public static class PartnerPermissions
 {
     private const string Connector = $"mcp__{KnowledgeConnector.ServerName}__";
 
-    /// <summary>Its connector's tools it may call: the knowledge it reads, its lead's line, and its answer (the service's <c>PartnerAllowed</c>).</summary>
+    /// <summary>Its connector's tools it may call: the knowledge it reads, its lead's line, and its answer (the service's <c>CallTable.PartnerServed</c>).</summary>
     internal static readonly string[] Offered =
     [
         "knowledge_convergence", "knowledge_get", "knowledge_repositories", "knowledge_search", "line_read", "partner_answer", "registry",

@@ -647,7 +647,10 @@ async function hearAfter(sessionId, said) {
 
 // One tool call on the connector the protocol handed this session (ACP4), as an agent's MCP client makes it: the server spawned as
 // the driver named it, with the environment it named, the handshake, the call, and its text. A connector that is not there, or
-// answers nothing within a minute, fails the turn, and the driver records that.
+// answers nothing within a minute, fails the turn, and the driver records that. The call carries a root's lineage as Codex's
+// protocol door writes it, its thread its root's (FABRIC-C2a, D173): a call with none is refused every tool but the reads, and a
+// refusal is said as one.
+const ROOT_THREAD = 'acp-stub-root';
 function connector(tool, args) {
   const server = servers.find((each) => each.name === 'daoris-knowledge');
   if (!server) return Promise.reject(new Error('no daoris-knowledge server was handed to this session'));
@@ -669,15 +672,15 @@ function connector(tool, args) {
         try { frame = JSON.parse(line); } catch { continue; }
         if (frame.id === 1) {
           write({ jsonrpc: '2.0', method: 'notifications/initialized' });
-          write({ jsonrpc: '2.0', id: 2, method: 'tools/call', params: { name: tool, arguments: args } });
+          const _meta = { 'x-codex-turn-metadata': JSON.stringify({ session_id: ROOT_THREAD, thread_id: ROOT_THREAD }) };
+          write({ jsonrpc: '2.0', id: 2, method: 'tools/call', params: { name: tool, arguments: args, _meta } });
         } else if (frame.id === 2) {
           clearTimeout(timer);
           child.stdin.end();
           // A connector that lingers once its input closed is stopped, so it never holds this process's own ending.
           setTimeout(() => child.kill(), 3000).unref();
-          resolve(frame.error
-            ? 'refused: ' + frame.error.message
-            : (frame.result?.content ?? []).map((part) => part.text).join(' '));
+          const text = (frame.result?.content ?? []).map((part) => part.text).join(' ');
+          resolve(frame.error ? 'refused: ' + frame.error.message : frame.result?.isError ? 'refused: ' + text : text);
         }
       }
     });

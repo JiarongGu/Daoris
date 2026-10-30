@@ -57,7 +57,7 @@ public sealed class GitPromptsProcessTests : IDisposable
 
     private static async Task<(int Exit, string Out, string Err)> RunAsync(ProcessStartInfo info)
     {
-        using var process = Process.Start(info)!;
+        using var process = Process.Start(TestGit.Ceiling(info))!;
         // Both reads start before the wait (TESTGIT1).
         var stdout = process.StandardOutput.ReadToEndAsync();
         var stderr = process.StandardError.ReadToEndAsync();

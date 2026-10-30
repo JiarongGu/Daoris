@@ -5,6 +5,26 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-31 - A merge press through the transport started 28 more git processes (INTEGRATE1g follow-up)
+
+- **Symptom:** `LandGitCountTests`' merge ceiling went from 39 to 67; a process start costs seconds on the owner's machine.
+- **Root cause:** the replay found and put back the integration tree the form of the same run had just done, the promotion asked a fresh candidate's ancestry and read the line twice before its effect, and a press's containment ran the content judgement the landing had already made.
+- **Fix:** a run's warm tree is carried from form to replay, a fresh candidate skips the resume, the move begins from the line the promotion read, a press's containment is ancestry alone; the ceiling is 57, the test prints a breakdown by command.
+- **Verify:** `LandGitCountTests`, the transport's and the merge rule's git classes green.
+
+## 2026-10-31 - A branch the transport integrated was refused as a merged pull request (INTEGRATE1g follow-up)
+
+- **Symptom:** the next Accept on a kept branch said its pull request was merged and its plugin opens a new one, where neither was involved.
+- **Root cause:** `LandingAdvance.Refusal` told every branch whose work reads on the line in the pull request's words.
+- **Fix:** a record carrying `integrate` with no push or pull request is told as integrated into the line by Daoris; the pull request's sentence stays for a plugin's.
+- **Verify:** `LandingChainTests` holds both sentences.
+## 2026-10-31 - A stop made while an intake's, helper's, reviewer's or partner's handshake was open was recorded failed (STOPRACE1)
+
+- **Symptom:** a person's stop made before the protocol handshake finished ended the record `failed`, as the driven run's did before its fix.
+- **Root cause:** those four runs kept the driven run's catch-all and told `HoldAsync` no `stopMade`, so a wire the stop broke was a failure.
+- **Fix:** each passes `stopMade` and catches a failure after a stop first, ending as the stop's conclusion through `Driver.EndStoppedAsync` (the driven run's catch uses it too).
+- **Verify:** a case per run (`IntakeTests`, `HelperProcessTests`, `ReviewTreeTests`, `PartnerProcessTests`), red before; each class green.
+
 ## 2026-10-31 - A test still pinned the first-look baseline row m-iv replaced (FOUNDATION1 m-iv)
 
 - **Symptom:** `A_wait_already_there_at_the_first_look_is_a_baseline_never_a_backlog` failed every run.
@@ -18,6 +38,13 @@ repository.
 - **Root cause:** the read opened a connection of its own and made commands on it, bypassing the gate every store goes through.
 - **Fix:** `JournalRows.ReadAsync` takes the service's connection and runs inside its gate; the composed service carries the read.
 - **Verify:** gate, `JournalRowsTests` and Platform tests green.
+
+## 2026-10-31 - A test's git in a fixture that was no repository acted on the checkout's (GITISOLATE1)
+
+- **Symptom:** a filtered run left the shared repository config with `core.bare=true`.
+- **Root cause:** git climbs from its folder to the nearest repository, and fixtures sit under the checkout.
+- **Fix:** `TestGit.Ceiling` caps each start at its fixture; `GitCeilingCensusTests` fails an uncapped one.
+- **Verify:** a fixture `rev-parse` is refused and the config unchanged; census 17 passed.
 
 ## 2026-10-30 - The window's quest hand-over still called the old ask, and the modules did not build (FOUNDATION1f-v part c)
 

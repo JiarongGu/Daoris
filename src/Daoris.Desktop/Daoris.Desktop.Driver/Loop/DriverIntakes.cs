@@ -238,6 +238,8 @@ internal sealed class DriverIntakes(LoopContext context, Driver driver)
         // Where a later choice of Intake's order ran, its actor line says which and why (D205 §4.6).
         RotatedOpening.SayActor(_context.Events, sessionId, "intake", chosen, passes);
 
+        SessionStop? stoppedFirst = null;
+
         try
         {
             var scope = IntakeRoom.Scope(ask.Id, sessionId);
@@ -306,6 +308,7 @@ internal sealed class DriverIntakes(LoopContext context, Driver driver)
                 handedServers: servers,
                 drivesBrowser: drivesBrowser,
                 said: _driver.Said(adapter, selection, sessionId),
+                stopMade: stop => stoppedFirst = stop,
                 // MODELROLE1d (D205 §3.5(f)): its agent's refusal of the entry's model at the open is kept as the account's reading and
                 // re-asked within this start, the order read once: a later entry of the same agent on the same account is set on this
                 // session; anything else ends the record `choice-not-offered` below, its ask let go in the same write.
@@ -383,6 +386,15 @@ internal sealed class DriverIntakes(LoopContext context, Driver driver)
                 $"stopped  intake {sessionId} ({named}): the driver was stopped.",
                 true,
                 new SessionEnded(sessionId, $"ask #{ask.Id}", "stopped", ByPerson: true, Adapter: adapterName));
+        }
+        catch (Exception) when (stoppedFirst is not null)
+        {
+            // A wire that broke after a stop is that stop's end, not a failure (STOPRACE1), as a quest's session reads it.
+            var stopped = await _driver.EndStoppedAsync(sessionId, stoppedFirst).ConfigureAwait(false);
+            return new StartRun(
+                $"{stopped.State}  intake {sessionId} ({named}): {stopped.Note}",
+                true,
+                new SessionEnded(sessionId, $"ask #{ask.Id}", stopped.State, stoppedFirst.ByPerson, stopped.Note, Adapter: adapterName));
         }
         catch (Exception error)
         {

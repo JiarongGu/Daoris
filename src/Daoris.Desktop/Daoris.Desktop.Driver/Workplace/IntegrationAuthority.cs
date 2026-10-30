@@ -46,6 +46,15 @@ internal static class IntegrationAuthority
         var requester = request.Requester;
         if (requester.Kind == IntegrationRequester.Person) return null;
 
+        // INTEGRATE1g: a node's request is its landing's acceptance (§17.4). The person's Accept stands as their card does; a version's own step,
+        // its gate proof naming the version, stands whatever the rule says, since a bound version is never edited; an automatic landing under
+        // Current stands while the rule says `request: done`, as the sweep's does.
+        if (requester.Door == IntegrationDoors.Node && request.Proof is { } proof
+            && (proof.AcceptedBy == AcceptedBy.Person || proof.Workflow is not null))
+        {
+            return null;
+        }
+
         var landing = LandingRules.Effective(config, request.Repository, request.Workspace);
         if (landing.Rule is not { Form: LandingForm.Branch, Integrate: { } integrate })
         {

@@ -72,7 +72,7 @@ public sealed class GitDoorsProcessTests : IDisposable
 
     private static async Task<(int Exit, string Out, string Err)> RunAsync(ProcessStartInfo info)
     {
-        using var process = Process.Start(info)!;
+        using var process = Process.Start(TestGit.Ceiling(info))!;
         var stdout = process.StandardOutput.ReadToEndAsync();
         var stderr = process.StandardError.ReadToEndAsync();
         await process.WaitForExitAsync();

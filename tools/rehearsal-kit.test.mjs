@@ -398,6 +398,9 @@ test("a set-up step's stub says what it showed through its connector and closes 
     ['/api/quests/q2/respond take', '/api/quests/q2/respond done'], first.said);
   const [ready] = readCalls();
   assert.equal(ready.name, 'review_ready');
+  // FABRIC-C2a: a root's call carries the lineage Codex's protocol door writes, its thread its root's, or the connector refuses it.
+  const turn = JSON.parse(ready._meta?.['x-codex-turn-metadata'] ?? '{}');
+  assert.ok(turn.thread_id && turn.thread_id === turn.session_id, JSON.stringify(ready._meta));
   assert.equal(ready.arguments.look, 'https://dev.example.test/report');
   assert.ok(ready.arguments.shows.length > 0 && ready.arguments.shows.length <= 300, ready.arguments.shows);
   assert.ok(ready.arguments.again.includes('https://dev.example.test/report'), ready.arguments.again);

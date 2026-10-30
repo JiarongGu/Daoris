@@ -346,6 +346,35 @@ public sealed class LandRebaseLandingTests : LandedFixture
     }
 
     /// <summary>
+    /// INTEGRATE1g (§4.2's named legacy exception): the merge form's press is carried by the integration transport under
+    /// <c>{ owner, none, 1, merge }</c>. Its outcome is today's, the work replayed and merged with today's message, and the person's checkout
+    /// was only fast-forwarded to the merge its line's run made; its request is settled, and the session's tree stays, as a merge left it.
+    /// </summary>
+    [Fact]
+    public async Task The_merge_forms_press_is_carried_by_the_transport_and_the_checkout_only_fast_forwarded()
+    {
+        DriverConfig.Empty.WithLanding("engine", new LandingRule(LandingForm.Merge)).Save(DaorisHome.Entry(Home, HomeEntry.DriverConfig));
+        var root = await RepositoryAsync("engine");
+        var trees = new SessionTrees(Home);
+        var tree = await trees.OpenAsync(root, "engine", "aurora");
+        await CommitAsync(tree.Path, "work.txt", "the work\n", "the work");
+        await CommitAsync(root, "later.txt", "the line moves on\n", "the line moves on");
+        var line = await HeadAsync(root);
+
+        var landed = await trees.LandAsync(tree.Path, Subject);
+
+        Assert.True(landed.Landed, landed.Message);
+        Assert.StartsWith($"merged `{tree.Branch}` into `main` — 1 commit(s) replayed onto `main`", landed.Message);
+        Assert.Equal(line, (await GitAsync(root, "rev-parse", "main^1")).Trim());
+        Assert.Equal($"Merge branch '{tree.Branch}'", (await GitAsync(root, "log", "-1", "--format=%s", "main")).Trim());
+        Assert.Contains("Fast-forward", (await GitAsync(root, "reflog", "-1", "--format=%gs", "main")).Trim());
+        var request = Assert.Single(new IntegrationStore(Home).Of("engine", tree.Branch));
+        Assert.Equal((IntegrationRoutes.Merge, IntegrationRequester.Press, IntegrationRequestCloses.Settled), (request.Route, request.Requester, request.ClosedWhy));
+        Assert.Equal(IntegrationRequests.Legacy, request.Policy);
+        Assert.True(Directory.Exists(tree.Path));
+    }
+
+    /// <summary>
     /// A stand-in for the index's writer (GENREGEN1): it lists the tree's top <c>.txt</c> files, so the line and the work, each adding
     /// one, disagree on it, and only the replayed tree's writing holds both. Read alike by <c>cmd.exe</c> and <c>/bin/sh</c>.
     /// </summary>

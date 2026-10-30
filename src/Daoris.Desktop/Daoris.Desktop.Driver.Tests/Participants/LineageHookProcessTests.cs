@@ -90,6 +90,25 @@ public sealed class LineageHookProcessTests : IDisposable
         Assert.Equal((ChildBindings.Finished, "general-purpose"), (child.State, child.Type));
     }
 
+    /// <summary>
+    /// FABRIC-C2a (D173's note, point 1): an agent id sent that is not one is said as unreadable, never dropped to look like the
+    /// root's call; one never sent, or sent null, is the root's.
+    /// </summary>
+    [Fact]
+    public void An_agent_id_that_is_not_one_is_kept_as_unreadable()
+    {
+        var hook = ChildLineage.HookFor(_home, "s1")!;
+
+        Run(hook, """{"hook_event_name":"PreToolUse","tool_use_id":"toolu_bad","agent_id":"a b","session_id":"c1"}""");
+        Run(hook, """{"hook_event_name":"PreToolUse","tool_use_id":"toolu_null","agent_id":null,"session_id":"c1"}""");
+
+        var lines = File.ReadAllLines(hook.File).Select(line => JsonNode.Parse(line)!.AsObject()).ToList();
+        Assert.Equal(
+            [("toolu_bad", true), ("toolu_null", false)],
+            lines.Select(line => ((string)line["toolUse"]!, line["agentUnreadable"] is not null)));
+        Assert.All(lines, line => Assert.Null(line["agent"]));
+    }
+
     [Fact]
     public void A_root_s_call_names_no_agent_and_the_part_s_root_is_its_session()
     {
