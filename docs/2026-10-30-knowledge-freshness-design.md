@@ -1,120 +1,118 @@
 # Knowledge freshness: what a hit says of its standing, and how a stale record is found
 
-**Standing:** proposed, round 2 (KNOWFRESH1a under D191), after Codex's and the Opus reader's reads of round 1 (§7).
+**Standing:** proposed, round 3 (KNOWFRESH1a under D191), after two rounds of Codex's and the Opus reader's reads (§7).
 **Governing:** D220 and the canon's `current-knowledge`. Parts b (Lyntai's memory, quest `#d9c80453e46f`) and c (the
 machine's memory server) are not this design's.
 
 ## 1. The problem as the code shows it
 
-- **A hit is current but silent about its standing.** Ids are locations (`Knowledge/KnowledgeEntry.cs:165-172`) and a
-  moved checkout is read again (`Knowledge/Store/CheckoutFreshness.cs:3-42`), but only `knowledge_refresh` tells the
-  commit read (`KnowledgeSearchTools.cs:395-399`); a hit does not (`:104-117`).
-- **History and the present read alike.** Each dated note is an entry of its decision's kind
-  (`Registry/RepositoryScanner.cs:455-467`). The record already writes an amendment mark, `*Amended by D<n> (ROW, date): …*`,
-  54 times in 36 files, each naming a newer decision; nothing reads it. No note says `Superseded by`. Present documents
-  have no kind of their own: a README, a design and a proposal are all `Knowledge` (`RepositoryScanner.cs:554-572`).
+- **A hit is silent about its standing.** Ids are locations (`Knowledge/KnowledgeEntry.cs:165-172`) and a moved
+  checkout is read again (`Knowledge/Store/CheckoutFreshness.cs:3-42`), but only `knowledge_refresh` tells the commit
+  (`KnowledgeSearchTools.cs:395-399`); a hit does not (`:104-117`).
+- **History and the present read alike.** Each note is an entry of its decision's kind (`Registry/RepositoryScanner.cs:455-467`).
+  54 notes in 36 files open `Amended by D<n>`, each naming a higher decision; nothing reads them. None says `Superseded by`.
+  A README, a design and a proposal are all `Knowledge` (`RepositoryScanner.cs:554-572`).
 - **Nothing finds a record the code no longer matches.** The docs gate compares last-commit days
   (`Daoris.Devkit.Core/DocsGate.cs:43-65`): a touch passes it, an unrelated edit fails it.
-- **Nothing holds "retire in the same step"** beyond the canon and `post-feature`.
 
-## 2. What a session needs from a hit and a record
+## 2. What a session needs
 
 From a hit: the commit its text was read at, and whether a later note amends or supersedes it. From a record: one home
-per present fact, and a mark written by whoever replaced the fact, when they did.
+per present fact, and a mark written by whoever replaced it, when they did.
 
-Lyntai's `docs/DECISIONS.md` binds every choice here: D90 rules out "newest wins" (`:2430`); D109 measured a relevance
-judge endorsing the superseded fact 3.4 times as often as the current one (`:3102-3105`); D215 has the writer name what
-it replaces, since similarity never establishes contradiction (`:6165`, `:6178-6179`); D217 found a model filed a revised
-value under its predecessor's key in only a quarter of questions (`:6203-6204`). **No proposal asks a model which entry
-is current or which one a new entry replaces.**
+Lyntai's `docs/DECISIONS.md` binds this: D90 rules out "newest wins" (`:2430`); D109 measured a relevance judge endorsing
+the superseded fact 3.4 times as often as the current one (`:3102-3105`); D215 has the writer name what it replaces, since
+similarity never establishes contradiction (`:6165`, `:6178-6179`); D217 found a model filed a revised value under its
+predecessor's key in only a quarter of questions (`:6203-6204`). **No proposal asks a model which entry is current or
+which one a new entry replaces.**
 
 ## 3. Proposals
 
-### 3.1 A hit says its standing; the record's existing mark is read
+### 3.1 A hit says its standing; the record's mark is read
 
-Each hit gains one line: `read at <commit>`, with `+ uncommitted` where one `git status` of the record folders at the
-reading found changes (a signature reads disk, `Knowledge/Store/RootSignature.cs:4-10`); `fed at <commit>` where a feed
-named one (`KnowledgeService.cs:19-20`); `unknown` only without either. A decision or note adds `later: <n> notes` (a
-fact of position) and its marks. `knowledge_get` says the same.
+Each hit gains one line: `read at <commit>`, plus `+ uncommitted` where the reading's one `git --no-optional-locks status`
+of the record folders found changes (a signature reads disk, `Knowledge/Store/RootSignature.cs:4-10`); `fed at <commit>`
+where a feed named one (`KnowledgeService.cs:19-20`); `unknown` without either. A decision or note adds `later: <n> notes`
+and its marks. `knowledge_get` says the same.
 
-**The form, one home: the older record's note.**
-- `*Amended by D<n> (ROW, date): …*`, as written now, in either emphasis, ending in a colon or a period: D<n> amends
-  the opening in part.
-- `**Superseded by D<n> (ROW, date): …**`, the one form added: D<n> replaces the opening whole.
-- Either may add `, replacing "<label>"` to target a note of the same file instead of the opening. A same-decision
-  amendment is `**Amended (ROW, date), replacing "<label>": …**`, the shape `docs/decisions/D191.md:36-44` needed.
-- The reverse (D<n> amends D<m>) is derived in the reading, from the entries, so a fed reading derives the same marks.
-  Nothing is written in the newer decision.
-- Older prose stays unmarked: its hit says `no mark`, never current.
+**The mark, one home: a note of the older record whose label opens `Amended by D<n>` or `Superseded by D<n>`.** Whatever
+follows in the label is free, so all 54 read as written, among them `D107.md:123` (`D158's … note`), `D117.md:131`
+(`, §6.5:`) and `D84.md:41` (a date, no row). `Amended` is in part, `Superseded` whole. Either may add `, replacing
+"<label>"` to target an earlier note of the same file instead of the opening. A same-decision amendment is
+`**Amended (ROW, date), replacing "<label>": …**`, the shape `docs/decisions/D191.md:36-44` needed. The reverse is derived
+in the reading from the entries, so a fed reading derives the same. A parenthetical inside a paragraph (`D33.md:53`) is
+no note and reads unmarked until marked; no unmarked entry reads as current.
 
 `orient-index --check`, in GATESLIM1's `BLOCKING` set (`tools/merge-branch.mjs:1020`), gates the one-sided facts: the
-named decision exists, is numbered higher, is not itself, makes no cycle, and a quoted label exists. The 54 marks pass.
+named decision exists and is numbered higher, and a quoted label names an earlier note. A higher number rules out a cycle.
 
-**Rejected.** A two-sided form: 42 of the 54 lack a counterpart (Opus read), and a second side is a second home. The
-file's last-changed date: 0.44 to 0.96 seconds of `git log` a file (Opus read), moved by a touch. Blame, file times,
-ranking by date, a model reading old prose.
+**Rejected.** A two-sided form: 42 of the 54 lack a counterpart (Opus read), and a second side is a second home. The file's
+last-changed date: 0.44 to 0.96 seconds of `git log` a file (Opus read), moved by a touch. Blame, ranking by date, a model
+reading old prose.
 
 ### 3.2 A record the code no longer matches is reported
 
-`tools/doc-current.mjs`, a pure audit like `doc-system.mjs`, reads a declared list, `documents.present` in `daoris.json`:
-each home's path, the bases its short paths are written after, and its runtime roots. Here: the root README, `AGENTS.md`,
-`docs/development.md`, `docs/guide/README.md`, the four component READMEs and `tools/dsh-probes/README.md`. Designs,
-contracts and decisions are not on it; their baseline is history (`docs/README.md:7-8`).
+`tools/doc-current.mjs`, a pure audit like `doc-system.mjs`, reads `documents.present` in `daoris.json`: each home's path,
+the bases its short paths follow, its runtime roots. Here: the root README, `AGENTS.md`, the router, `docs/development.md`,
+`docs/guide/README.md`, the four component READMEs, `tools/dsh-probes/README.md` and the 17 knowledge files this repository
+owns (the rest are the canon's). Designs, contracts and decisions are history (`docs/README.md:7-8`).
 
-**Resolution.** A code span outside fences:
-- **Path.** `:line` is stripped and never range-checked. Resolved exactly, relative to the file, then the root, then
-  each declared base. It is present if tracked, a tracked folder, or ignored (a folder span tested as a folder). Under a
-  runtime root, excluded. Checked only where it starts at a top-level folder or a base; any other path-shaped span (a
-  protocol method, a folder named in its sentence's context) is counted unchecked. No basename rescue.
-- **Symbol** (two humps, or dotted). Each part must be a whole word of the product code, comments stripped, with tests and
-  `docs/index` left out. A name found only in tests counts as test-only. External names sit on an allow-list, each with
-  its reason.
-- **Route** (`/api/…`): checked against `docs/index/routes.md`. **Variable** (`DAORIS_*`): checked against the code.
+**The rule**, over each code span outside a fence:
+- **Path.** `:line` stripped and never range-checked; resolved exactly, against the file's folder, the root, then each base;
+  present if tracked, a tracked folder, or ignored (a folder span tested as one). A placeholder, a bare file name or a span
+  under a runtime root is unchecked, and so is a path whose first part is no top-level entry. No basename rescue.
+- **Symbol** (PascalCase, camelCase, or dotted). A span that is the stem of a tracked source file is a file reference,
+  present by that file. Otherwise each part, or its PascalCase form, must be an identifier of product source: `.cs`, `.ts`,
+  `.tsx`, `.mjs`, `.js`, `.ps1`, comments stripped, data such as JSON fixtures left out. One found only in test source is
+  test-only, printed by name. External names sit on an allow-list, each with its reason.
+- **Route** against `docs/index/routes.md`; **variable** (`DAORIS_*`) against product source.
 
-It prints findings, unchecked and test-only counts, each finding with its record and line, and exits 0.
+It prints each finding with its record and line and exits 0.
 
-**Measured** by a read-only probe of this rule at round 2's base: 9 homes, 6,017 spans.
-- **Paths.** 684 path-shaped: 391 present (216 only through a base), 50 runtime, 240 unchecked. None of the 243
-  unresolved was true by hand review: files under a project the sentence names, folder names read in context, protocol
-  names (`session/new`, `application/json`), another repository's `devtools/dev.mjs`. Anchored, 2 remain, both false:
-  `src/test/driverSource.ts` (`docs/development.md:118`, web-relative) and `tools/call` (`src/Daoris.Service/README.md:505`).
-- **Symbols.** 1,060 checked, 50 not in product code: 41 test classes or helpers, 3 external (`SendKeys`,
-  `Input.dispatchMouseEvent`, the kit's `ChromiumChildBrowser`, cited only in a comment), and **6 true**:
-  - `InstanceRoutes`, `PipeGrounds` and `SetupPorts`, each removed (`git log -S`: d89788aa6, 247003ad5, 584837457);
-  - `ChannelWords`, `WorkOrdersSetupWiring` and `CourseHelpWiring`, absent from every file.
-  
-  None is false after the allow-list.
-- **Routes and variables.** 25 routes, 1 unresolved (`/api/confirmations/waiting`), unconfirmed because a route built from
-  parts is not text; 61 variables, all present.
+**Measured** by a read-only probe of this rule at `c15dc6838`, 27 homes, 10,290 spans:
+- **Paths:** 2,065. Of these, 42 are placeholders, 995 bare names, 539 present (216 through a base), 63 runtime and 421
+  unanchored. That leaves 5 findings, all false: `src/locales` twice and `src/test/driverSource.ts` are web-relative (a base
+  for those homes), `tools/call` is a protocol method, and `.claude/rules/` in `canon-authoring.md:74` names a former
+  layout as a reason.
+- **Symbols:** 2,603. Of these, 996 are file references, 1,532 product and 49 test-only. That leaves 26 findings:
+  - 7 stale claims, all in `twins.md`: `ResolveScope`, `deviceLogin`, `commitModeSays`, `versionDigest`, `stepName`,
+    `resourceSaid`, `changesBetween`;
+  - 13 history sentences in present homes, names said to have "left with" a row, or `ProofRefsAsync` as "round 3's",
+    which D220 cuts;
+  - 5 external names for the allow-list;
+  - 1 false: `keptTrees`, a design's word in its router row.
+- **Routes:** 29, with 1 false finding. `/api/confirmations/waiting` exists (`PersonConfirmations.cs:174`), so this is an
+  index-extraction limit.
+- **Variables:** 72, with 1 finding, `DAORIS_PERSON_KEY`, written as owed work.
 
-A missing root-anchored path is a fact, and may gate as router rows do (`tools/doc-system.mjs:65-70`) once a run shows no
-false finding. This one shows two, so it reports.
+Root paths do not gate yet. Five false path findings say so; gating waits on a run with none, as router rows gate
+(`tools/doc-system.mjs:65-70`).
 
-**Rejected.** A model's review; a failing gate now; the date rule as the measure; a README's folder coverage, which would
-push READMEs to restate the tree.
+**Rejected.** A model's review; a failing gate now; the date rule as the measure; folder coverage. A retired-term registry,
+Lyntai's D42 (`retiredTerms`, `docs/DECISIONS.md:1000-1005`), is the same idea from the vocabulary side. Removed identifiers
+come from the code here, so it waits for a retired word that is no identifier: a later row at most.
 
 ### 3.3 Findings reach the writer at the change
 
 `doc-current --since <base>`, where the base is the merge base with `main`, lists findings in the homes the diff touched
-and the homes quoting a path or symbol the diff deleted or renamed; `post-feature` points at it. A hit does not carry
-the verdict: a node tool's verdict on a service hit is a twin (the cost `DecisionNotes.cs:31-33` carries). "A hit says its record has an open finding" is a later row, if the report earns it.
+and in those quoting what it deleted or renamed. `post-feature` points at it. A hit does not carry the verdict, since a node
+tool's verdict on a service hit is a twin (`DecisionNotes.cs:31-33`). A hit naming an open finding is a later row, if earned.
 
 ### 3.4 Retire in the same step
 
-The supersession mark has one home, so nothing is checked both ways; §3.1's gate holds its one-sided facts. Deletions
-reach the writer through §3.3, which reports and never fails. **Rejected:** a new review prompt, since `post-feature` is that
-prompt and lacked a list.
+The mark has one home, and §3.1's gate holds its one-sided facts. Deletions reach the writer through §3.3, which reports
+and never fails. No new prompt: `post-feature` is one, and it lacked a list.
 
 ### 3.5 Restatement within one repository: a later row
 
 Its preconditions:
-- the declared present homes read as a kind of their own; a component README is read by default nowhere
+- the declared homes are read as a kind of their own, since no component README is read by default
   (`RepositoryScanner.cs:195-201`);
-- comparison at the sentence, since the detector compares whole-entry token sets (`ConvergenceDetector.cs:159-183`)
-  against a 0.82 default (`:45`);
+- comparison is by sentence, since the detector compares whole-entry token sets (`ConvergenceDetector.cs:159-183`) at 0.82
+  (`:45`);
 - a measured candidate set.
 
-It shows pairs and never ranks or chooses (D215, D109).
+It shows pairs; it never ranks or chooses.
 
 ## 4. What it does not cover
 
@@ -123,54 +121,40 @@ record's mark is the source. Contradiction by meaning. The censuses (CENSUSRULES
 
 ## 5. Rows it would file
 
-- **KNOWFRESH1a-i, the form and its gate** (records tools). **Proof:** fixtures in `orient-index` and the twin table of
-  `DecisionNotes`, each read:
-  - italic and bold marks, colon and period;
-  - `Superseded by`;
-  - a same-decision `replacing` note;
-  - older prose, which reads unmarked;
-  - each one-sided fault, which fails;
-  - the 54 existing marks, which pass.
-- **KNOWFRESH1a-ii, a hit's standing** (service). **Proof:**
-  - a fixture decision's opening hit shows `superseded by`, a note's hit `later: 2 notes`, and an unmarked decision `no mark`;
-  - a dirty root says `+ uncommitted`;
-  - a fed reading round-trips with its commit and the same marks.
-- **KNOWFRESH1a-iii, the report and `documents.present`** (tools, records). **Proof:**
-  - negative fixtures: a symbol kept only in a comment is reported, one kept only in a test is test-only, a moved file is
-    reported and never rescued, and a shifted `path:line` reads present;
-  - this repository's run matches §3.2's counts;
-  - the six findings are fixed in the same row.
-- **KNOWFRESH1a-iv, restatement** (service), filed blocked on §3.5's preconditions. **Proof:** a sentence restated in two
-  homes is one candidate, and a decision is never paired with its own note.
+- **KNOWFRESH1a-i, the mark and its gate** (records tools). **Proof:** fixtures in `orient-index` and `DecisionNotes`' twin
+  table carry the actual text of `D107.md:123`, `D117.md:131`, `D84.md:41` and an italic mark. Each reads as a mark, as do
+  `Superseded by` and a `replacing` note. `D33.md:53` reads unmarked. An unknown or lower decision fails, as does a
+  `replacing` label naming no earlier note. The 54 marks pass.
+- **KNOWFRESH1a-ii, a hit's standing** (service). **Proof:** a fixture decision's opening shows `superseded by`, its note
+  `later: 2 notes`, an unmarked decision `no mark`; a dirty root says `+ uncommitted`; a fed reading round-trips its commit
+  and marks.
+- **KNOWFRESH1a-iii, the report and `documents.present`** (tools, records). **Proof:** negative fixtures, each reported as
+  it should be: a symbol kept only in a comment or in JSON data, one only in test source (printed), a moved file never
+  rescued, a shifted `path:line` present, a file's stem present. The landing run on this repository is reviewed by hand,
+  and its true findings are fixed in the row.
+- **KNOWFRESH1a-iv, restatement** (service), blocked on §3.5's preconditions.
 
-## 6. Questions for the owner
+## 6. Settled by the steward (D191 point 3)
 
-1. **The docs gate.** The recommendation: keep the devkit's date rule for adopters; here, run `--since` beside it for one
-   batch, then switch here to a reporting mode (`doc-system.mjs:109-113` requires each component README's declaration, so
-   the switch is a mode). Codex's alternative: retire the date comparison everywhere and keep the missing-document check
-   (`DocsGate.cs:37-40`).
-2. **Older decisions.** Both readers advise against a blanket read of the 202 unmarked files: parse the existing marks
-   and mark the rest as found. Agreed?
+1. **The docs gate.** The devkit's date rule stays for adopters. Here, `doc-current --since` runs beside it for one batch,
+   then this repository switches to a reporting mode (`doc-system.mjs:109-113` requires the declaration, so the switch is
+   a mode). Rejected for now: Codex's retiring of the date comparison everywhere, which would leave adopters only the
+   missing-document check (`DocsGate.cs:37-40`) and no staleness check.
+2. **Older decisions.** The 54 marks are parsed. The other amendments, written in prose or inline (the Opus read counted
+   105 references in 66 files, 54 of them marks), are marked as found. There is no blanket read.
 
-## 7. Round 1's findings answered
+## 7. Findings answered
 
-| Finding | Answer |
+Round 1: C1, C3, C5 to C7 and O-F1 to O-F10 taken; C2 and C4 taken in substance, as round 2 below completes; C8 moot.
+Round 2's text (commit `bda7dfafe`) holds that table line by line.
+
+| Round 2 | Answer |
 |---|---|
-| C1 | Taken: a mark targets the opening or a quoted note, part or whole (§3.1). |
-| C2 | Taken in substance: one home, legacy marks read as written, one-sided gate. |
-| C3 | Taken: measured, with samples (§3.2). |
-| C4 | Taken, but not declaration-aware parsing: six true findings and no false one need none. |
-| C5 | Taken: restatement is a later row (§3.5). |
-| C6 | Taken: fed commit shown; marks derived from entries. |
-| C7 | Taken: to the writer at the change; the hit later (§3.3). |
-| C8 | Moot: no git call at answer time. |
-| O-F1 | Taken: only `Superseded by` is added. |
-| O-F2 | Taken: reverse derived; gate in `orient-index --check`. |
-| O-F3 | Taken: declared homes, designs out, measured. |
-| O-F4 | Taken (§3.2). |
-| O-F5 | Taken: presence only. |
-| O-F6 | Taken: cut. |
-| O-F7 | Taken. |
-| O-F8 | Taken: `documents.present`. |
-| O-F9 | Taken: cut; the switch is a mode (§6). |
-| O-F10 | Taken: 0.82, the base, gating once clean, sources by path. |
+| O2-1 | Taken: JSON data left out, test-only is test source and printed, the pinned-count proof dropped; `movesMissing` resolves as `MovesMissing` (`Trace.Words.cs:212`). |
+| O2-2 | Taken: the router and the 17 knowledge files added, measured. |
+| O2-3 | Taken: a label opening the phrase; cycle check cut. |
+| O2-4 | Taken: `--no-optional-locks`. |
+| C2-1 | Taken: the forms in fixtures; `D33.md:53` classified. |
+| C2-2 | Taken: file stems are file references; round 2's six were all files, withdrawn. |
+| C2-3 | Taken: counts reconciled, base and rule stated. |
+| C2-4 | Taken: an index-extraction limit. |
