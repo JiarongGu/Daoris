@@ -104,13 +104,22 @@ public static class ChildLineage
     }
 
     /// <summary>
-    /// The part's end, where the session has lineage: clean, or killed, stopped or failed, which leaves each child its harness
-    /// said nothing more of lost. A session with no file gets none.
+    /// A process's start, before its spawn (COWORKVIEW1a): it makes the file where there is none, so every line its process can
+    /// write follows it.
     /// </summary>
-    public static void End(string home, string sessionId, bool clean, DateTimeOffset at)
+    public static void Start(string home, string sessionId, string proc, string issuer, DateTimeOffset at)
+    {
+        if (ChildBindings.StartLine(proc, issuer, at) is { } line) Append(home, sessionId, line);
+    }
+
+    /// <summary>
+    /// A process's end once its exit was read, where the session has lineage: clean, or killed, stopped or failed, naming the
+    /// process where it has a token. A session with no file gets none.
+    /// </summary>
+    public static void End(string home, string sessionId, bool clean, DateTimeOffset at, string? proc = null)
     {
         if (!SessionShape.IsMatch(sessionId) || !File.Exists(PathOf(home, sessionId))) return;
-        Append(home, sessionId, ChildBindings.EndLine(clean, at));
+        Append(home, sessionId, ChildBindings.EndLine(clean, at, proc));
     }
 
     /// <summary>The part's children, as its lineage says; none where it has no file.</summary>

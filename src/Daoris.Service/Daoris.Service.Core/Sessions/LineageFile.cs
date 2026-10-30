@@ -12,8 +12,8 @@ namespace Daoris.Knowledge;
 /// <remarks>
 /// <para><b>The file is the contract</b> (<c>.claude/knowledge/twins.md</c>): <c>&lt;home&gt;/sessions/&lt;session&gt;/lineage.jsonl</c>,
 /// one JSON object a line, LF, UTF-8 with no BOM. This connector writes <c>"by":"call"</c> lines; the hook the driver hands
-/// Claude Code (<c>lineage-hook.mjs</c>) writes <c>"by":"hook"</c> lines and the driver its own <c>"by":"stream"</c> and
-/// <c>"by":"end"</c> lines; the driver's <c>ChildLineage</c> reads them all. 🔴 Its <c>FileName</c> and folder are this
+/// Claude Code (<c>lineage-hook.mjs</c>) writes <c>"by":"hook"</c> lines and the driver its own <c>"by":"stream"</c>,
+/// <c>"acp"</c>, <c>"start"</c> and <c>"end"</c> lines; the driver's <c>ChildLineage</c> reads them all. 🔴 Its <c>FileName</c> and folder are this
 /// file's, copied there.</para>
 ///
 /// <para><b>Only for a session the driver started.</b> The session is the connector's <c>DAORIS_SESSION_ID</c> and the home
@@ -35,16 +35,27 @@ public sealed class LineageFile
 
     private static readonly UTF8Encoding Utf8 = new(encoderShouldEmitUTF8Identifier: false);
 
+    /// <summary>
+    /// The variable the driver hands the token of the process this connector serves in (COWORKVIEW1a). 🔴 The driver's
+    /// <c>ChildMarks.LineageProcVariable</c> and the lineage hook spell it as twins.
+    /// </summary>
+    public const string ProcVariable = "DAORIS_LINEAGE_PROC";
+
     /// <param name="home">The home the driver named; null for none.</param>
     /// <param name="session">The session the connector speaks for; null for none.</param>
-    public LineageFile(string? home, string? session)
+    /// <param name="proc">The token of the process it serves, written on each line where it is shaped as an id; null for none.</param>
+    public LineageFile(string? home, string? session, string? proc = null)
     {
         var id = session?.Trim();
         NamesSession = !string.IsNullOrWhiteSpace(id);
         Path = !string.IsNullOrWhiteSpace(home) && id is not null && SessionShape.IsMatch(id)
             ? DaorisHome.Entry(home.Trim(), HomeEntry.Sessions, id, FileName)
             : null;
+        Proc = CallLineage.Id(proc?.Trim());
     }
+
+    /// <summary>The token of the process this connector serves, or null where it was handed none that is an id.</summary>
+    public string? Proc { get; }
 
     /// <summary>
     /// Whether the connector was told a session, even one whose id or home names no file: its restricted tools are then a proven
@@ -55,9 +66,9 @@ public sealed class LineageFile
     /// <summary>The file this connector appends to, or null when it records nothing.</summary>
     public string? Path { get; }
 
-    /// <summary>What this process was spawned with: the rules home, else the Daoris home, and the session.</summary>
+    /// <summary>What this process was spawned with: the rules home, else the Daoris home, the session and its process's token.</summary>
     public static LineageFile FromEnvironment(Func<string, string?> environment) =>
-        new(RuleProposalBox.FromEnvironment(environment).Home, environment(IntakeScope.SessionVariable));
+        new(RuleProposalBox.FromEnvironment(environment).Home, environment(IntakeScope.SessionVariable), environment(ProcVariable));
 
     /// <summary>What this process was spawned with.</summary>
     public static LineageFile FromEnvironment() => FromEnvironment(Environment.GetEnvironmentVariable);
@@ -68,7 +79,7 @@ public sealed class LineageFile
         if (Path is null) return;
         try
         {
-            Append(Path, Line(tool, lineage, at));
+            Append(Path, Line(tool, lineage, at, Proc));
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
@@ -76,8 +87,11 @@ public sealed class LineageFile
         }
     }
 
-    /// <summary>The line for one call: its moment, its tool where that is shaped as a name, and the ids its harness wrote.</summary>
-    public static string Line(string? tool, CallLineage? lineage, DateTimeOffset at)
+    /// <summary>
+    /// The line for one call: its moment, its tool where that is shaped as a name, the ids its harness wrote, and the process it
+    /// was made under.
+    /// </summary>
+    public static string Line(string? tool, CallLineage? lineage, DateTimeOffset at, string? proc = null)
     {
         var line = new JsonObject
         {
@@ -97,6 +111,7 @@ public sealed class LineageFile
             Put(line, "malformed", lineage.Malformed);
         }
 
+        Put(line, "proc", CallLineage.Id(proc));
         return line.ToJsonString();
     }
 

@@ -53,6 +53,20 @@ public sealed class ChildLineageTests : IDisposable
     }
 
     [Fact]
+    public void A_process_s_start_makes_the_file_and_its_end_names_the_same_process()
+    {
+        ChildLineage.Start(_home, "s1", "0123456789abcdef", "4242 1", DateTimeOffset.UnixEpoch);
+        ChildLineage.End(_home, "s1", clean: true, DateTimeOffset.UnixEpoch, "0123456789abcdef");
+        ChildLineage.Start(_home, "..", "0123456789abcdef", "4242 1", DateTimeOffset.UnixEpoch);
+
+        var lines = File.ReadAllLines(ChildLineage.PathOf(_home, "s1")).Select(line => JsonDocument.Parse(line).RootElement).ToList();
+        Assert.Equal(
+            [("start", "0123456789abcdef"), ("end", "0123456789abcdef")],
+            lines.Select(line => (line.GetProperty("by").GetString(), line.GetProperty("proc").GetString())));
+        Assert.Equal("4242 1", lines[0].GetProperty("issuer").GetString());
+    }
+
+    [Fact]
     public void The_end_is_appended_where_the_session_has_lineage_and_a_killed_root_loses_its_children()
     {
         ChildLineage.Append(_home, "s1", """{"by":"hook","event":"started","agent":"a1"}""");

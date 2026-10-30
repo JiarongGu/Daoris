@@ -361,9 +361,22 @@ public sealed record ChildBindings
         return Named(line, proc);
     }
 
-    /// <summary>The part's end: clean, or killed, stopped or failed.</summary>
-    public static string EndLine(bool clean, DateTimeOffset at) =>
-        new JsonObject { ["at"] = Moment(at), ["by"] = "end", ["clean"] = clean }.ToJsonString();
+    /// <summary>
+    /// A process's start (COWORKVIEW1a), written before its spawn: its token, and the Daoris process that issued it as
+    /// <c>{pid} {ticks}</c>; null where the token is not one.
+    /// </summary>
+    public static string? StartLine(string proc, string issuer, DateTimeOffset at) => IdShape.IsMatch(proc)
+        ? new JsonObject { ["at"] = Moment(at), ["by"] = "start", ["proc"] = proc, ["issuer"] = issuer }.ToJsonString()
+        : null;
+
+    /// <summary>A process's end once its exit was read: clean, or killed, stopped or failed; naming its process where it has a token.</summary>
+    public static string EndLine(bool clean, DateTimeOffset at, string? proc = null)
+    {
+        var line = new JsonObject { ["at"] = Moment(at), ["by"] = "end" };
+        if (proc is not null && IdShape.IsMatch(proc)) line["proc"] = proc;
+        line["clean"] = clean;
+        return line.ToJsonString();
+    }
 
     private static JsonObject Stamped(DateTimeOffset at, string by, string @event, string agent) =>
         new() { ["at"] = Moment(at), ["by"] = by, ["event"] = @event, ["agent"] = agent };

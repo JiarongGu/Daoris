@@ -327,6 +327,20 @@ public sealed class ChildBindingsTests
     }
 
     [Fact]
+    public void A_process_s_start_names_it_and_the_daoris_process_that_issued_it_and_its_end_names_it()
+    {
+        var at = DateTimeOffset.UnixEpoch;
+
+        Assert.Equal(
+            """{"at":"1970-01-01T00:00:00.000Z","by":"start","proc":"0123456789abcdef","issuer":"4242 638000000000000000"}""",
+            ChildBindings.StartLine("0123456789abcdef", "4242 638000000000000000", at));
+        Assert.Null(ChildBindings.StartLine("not a token", "4242 638000000000000000", at));
+        Assert.Equal(
+            """{"at":"1970-01-01T00:00:00.000Z","by":"end","proc":"0123456789abcdef","clean":true}""",
+            ChildBindings.EndLine(true, at, "0123456789abcdef"));
+    }
+
+    [Fact]
     public void The_end_line_says_whether_the_part_ended_clean()
     {
         Assert.Equal("""{"at":"1970-01-01T00:00:00.000Z","by":"end","clean":false}""", ChildBindings.EndLine(false, DateTimeOffset.UnixEpoch));
