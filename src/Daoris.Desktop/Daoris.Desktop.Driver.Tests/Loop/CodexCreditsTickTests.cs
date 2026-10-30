@@ -62,7 +62,8 @@ public sealed class CodexCreditsTickTests : IDisposable
         PollSeconds = 1,
         // One failure would park it: the limit must hold none.
         Strikes = 1,
-        Commands = new Dictionary<string, IReadOnlyList<string>> { ["codex-acp"] = ["node", Agent(), Log] },
+        // The account agent's own reads run the stand-in too, never PATH's codex.
+        Commands = new Dictionary<string, IReadOnlyList<string>> { ["codex-acp"] = ["node", Agent(), Log], ["codex"] = ["node", Agent(), Log] },
     };
 
     /// <summary>
@@ -143,6 +144,7 @@ public sealed class CodexCreditsTickTests : IDisposable
             import { appendFileSync } from 'node:fs';
             import { basename } from 'node:path';
             const [log] = process.argv.slice(2);
+            if (process.argv.includes('login') || process.argv.includes('--version')) process.exit(0);
             const account = basename(process.env.CODEX_HOME ?? '(own)');
             const url = process.env.DAORIS_SERVICE_URL;
             const send = (frame) => process.stdout.write(JSON.stringify(frame) + '\n');
