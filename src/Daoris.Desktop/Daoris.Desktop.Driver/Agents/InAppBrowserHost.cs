@@ -12,6 +12,13 @@ public interface IInAppBrowser
     /// </summary>
     Task<string?> EnsureAsync(CancellationToken ct = default);
 
+    /// <summary>
+    /// The endpoint a session's servers are handed (BROWSERSTART1), answered without bringing the browser up where the host can
+    /// hold it: the browser then starts at the first connection to the endpoint. A host that cannot defer brings it up, as
+    /// <see cref="EnsureAsync"/> does.
+    /// </summary>
+    Task<string?> EndpointAsync(CancellationToken ct = default) => EnsureAsync(ct);
+
     /// <summary>Open it for the person, in front: the address bar, their sign-in, and what an agent does there.</summary>
     void Show();
 

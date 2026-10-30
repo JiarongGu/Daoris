@@ -5,6 +5,13 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-31 - Daoris's browser opened at every session start and restart (BROWSERSTART1)
+
+- **Symptom:** a restart that took up a chat or a quest session whose servers drive the browser brought its window up.
+- **Root cause:** the hand-over called `EnsureAsync`, which starts the browser, to learn the endpoint.
+- **Fix:** it asks `EndpointAsync`; the shell hands a held port (`LazyEndpoint`) that starts the browser at the first connection.
+- **Verify:** hand-over, quest-start and chat tests red then green; relay tests.
+
 ## 2026-10-31 - A test still pinned the first-look baseline row m-iv replaced (FOUNDATION1 m-iv)
 
 - **Symptom:** `A_wait_already_there_at_the_first_look_is_a_baseline_never_a_backlog` failed every run.
