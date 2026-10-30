@@ -225,6 +225,50 @@ public sealed class DrivenCarryOnStoreTests : IDisposable
         Assert.NotNull((await next.BeginAsync(Carry(), default)).Move);
     }
 
+    /// <summary>
+    /// 🔴 DRIVENATTEMPT1 (§13.5's <c>delivering</c> row): the carry-on marks each word it hands attempted on the new part at the fence, before the
+    /// door writes (<c>DriverContinuations.HandedMovedAsync</c>), so a loop that died with the write's outcome unkept leaves a word the take-up
+    /// reads attempted and without <c>sent</c>: uncertain, settled and never delivered again, the move held <c>undelivered</c> naming it. A word
+    /// never marked, the part's own go-on's to deliver, is no such word: the same move is only gone on with and none is settled.
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task A_dead_loop_s_move_at_delivering_settles_a_marked_word_uncertain_and_leaves_an_unmarked_one_for_the_parts_go_on(bool marked)
+    {
+        var dying = Holder("run-dying");
+        var begun = await dying.BeginAsync(Carry(), default);
+        _said.Wait("s2", "w1");
+        var record = new CarryOnRecord(begun.Move!);
+        Assert.Null(record.Opening(MoveWords.DrivenKey()));
+        Assert.Null(await record.FenceAsync("s2", [Moved(1)]));
+        if (marked) _said.Attempt("s2", "w1");
+        record.Handed(["opens-s1/w1"], () => Task.CompletedTask);
+        _dead.Add("run-dying");
+
+        var next = Holder("run-next");
+        Assert.NotNull(await next.LookAsync(default));
+
+        var move = MoveFrom("s1")!;
+        var word = Assert.Single(Store("run-probe").WordsOf(move.Id));
+        if (marked)
+        {
+            Assert.Equal(("closed", MoveHoldWhy.Undelivered, MoveWordDispositions.Uncertain), (move.PhaseWord, move.HeldWhy, word.Disposition));
+            Assert.Equal(["settle s2 w1"], _said.Calls);
+            Assert.Empty(_said.Of("s2"));
+        }
+        else
+        {
+            Assert.Null(word.Disposition);
+            Assert.DoesNotContain(_said.Calls, call => call.StartsWith("settle", StringComparison.Ordinal));
+            Assert.Equal(["w1"], _said.Of("s2"));
+        }
+
+        Assert.False(move.Stands, move.PhaseWord);
+        Assert.NotNull((await next.BeginAsync(Carry(), default)).Move);
+        await record.DisposeAsync();
+    }
+
     /// <summary>🔴 A carry-on that hands no word closes <c>delivered</c> on its prompt's outcome: a move of no word.</summary>
     [Fact]
     public async Task A_carry_on_of_no_word_closes_delivered_on_its_effects_outcome()
