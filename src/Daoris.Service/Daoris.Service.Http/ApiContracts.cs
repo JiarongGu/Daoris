@@ -491,7 +491,10 @@ public sealed record SayRequest(
     string? Level = null, bool? Running = null, string? Decision = null, string? Question = null, string? Choice = null,
     // FOUNDATION1 row p (the design §3.4 rule 5): that the caller reads a settled answer, which its keyed say may be given where the key's
     // word left a record of its line. A say without it, an older client's, is answered by the door as it was; a host before the row reads none.
-    bool? Settled = null);
+    bool? Settled = null,
+    // FOUNDATION1o (the design §3.4 rule 4): the shell's word for a record that winds up or moves, kept on it for its next part; a host before
+    // the row reads none and refuses it `running`, which the shell then holds as before.
+    bool? Ending = null);
 // The session as it stands, the ledger's sentence, and the word as kept (to this machine only).
 public sealed record SaidResponse(SessionResponse Session, string Message, SaidWordResponse? Said);
 // A keyed say or hand answered settled (row p): a success that names the record the key's word left, with no session, no `said` and no word at
