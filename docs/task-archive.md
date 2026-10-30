@@ -21719,3 +21719,9 @@ machine-log design §3 say the contract.
 > **1f-v**, **1f-vi** the boxed moves, one per branch: v the hand-over; vi the ended limit move | the move through the store, its box imported once and no longer written (§3.3) | as ii to iv, and an older build's own box written during a downgrade imported once at the return and set aside; `HandOverProcessTests`, `LimitWaitsProcessTests`
 
 **Outcome** 2026-10-30: branch vi built in two parts; v (the hand-over) stays open. Part a: the ended limit move writes its record through the store and no `<s>.limit-move.json`, an older build's box is imported once at the come-up and set aside, and a box still in place keeps the go-on, sweep and take-up off its record. Part b: a kill at each of its eight boundaries, a downgrade at each, an older build's cases and its box imported at the return, no defect found. Detail in D212's notes "FOUNDATION1f-vi part a of 2" and "part b of 2".
+
+## KNOWFRESH1a-i — the mark and its gate (2026-10-30, D220)
+
+> - [ ] **KNOWFRESH1a-i — the mark and its gate** (records tools; D220, the knowledge freshness design §3.1, accepted). A note label opening `Amended by D<n>` or `Superseded by D<n>` is the mark, kept once in the older record and read by the index and its twin; the gate refuses an unknown or lower decision and a `replacing` label naming no earlier note. Proof: the design's §5 i.
+
+**Outcome** 2026-10-30: `tools/orient-index.mjs` and the service's `DecisionNotes.Marks` read the mark alike, held to `tools/orient-index-fixtures/note-marks.json`; `orient-index --check` refuses a mark naming an unknown or not-higher decision and a `replacing` quote naming no earlier note's full label; all 54 existing marks pass. `Superseded by D<n>` joined the note forms in all three readers, the driver's union-join twin among them. Detail in D220's note "KNOWFRESH1a-i".
