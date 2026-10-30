@@ -1371,6 +1371,7 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
                     lineageHome: _context.Home),
                     sessionId, adapter.Name, resume: null)
                 : null;
+            await NativePrompt.WriteAsync(process, adapter, NativeWords.Prompt(words), ct).ConfigureAwait(false);
             exitCode = await _driver.WaitAsync(process, ct).ConfigureAwait(false);
             // State E (SESSWATCH1a): the capture bounded past the exit, as the first run's is.
             if (capture is not null && await _driver.CaptureWithinAsync(capture, sessionId).ConfigureAwait(false)
@@ -1411,6 +1412,7 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
                 prompt: null, ct, append: true, said: said, own: own, lineageHome: _context.Home),
                 sessionId, keepAs, resume)
             : null;
+        await NativePrompt.WriteAsync(process, adapter, resume.Prompt, ct).ConfigureAwait(false);
         var exitCode = await _driver.WaitAsync(process, ct).ConfigureAwait(false);
         // State E (SESSWATCH1a): the capture bounded past the exit, as the first run's is.
         return (exitCode, capture is null || !await _driver.CaptureWithinAsync(capture, sessionId).ConfigureAwait(false)
