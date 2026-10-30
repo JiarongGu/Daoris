@@ -127,6 +127,9 @@ public sealed class MoveDelivery(MoveStore store, IMoveSaid said)
                 return new MoveDelivered(move, MoveDeliveryOutcome.GoesOn);
         }
 
+        // §13.4 step 5: before anything is delivered, in every phase, the line's head is read.
+        if (await HeldPastAsync(claim, ct).ConfigureAwait(false) is { } past) return past;
+
         var words = store.WordsOf(move.Id);
         var read = await WordsAsync(move, words, ct).ConfigureAwait(false);
         if (read is null) return new MoveDelivered(move, MoveDeliveryOutcome.Unread);
@@ -162,6 +165,46 @@ public sealed class MoveDelivery(MoveStore store, IMoveSaid said)
         return found with { Move = await _resolve.ReadAsync(claim, ct).ConfigureAwait(false), Outcome = MoveDeliveryOutcome.Held, Held = held };
     }
 
+    /// <summary>
+    /// Where the line's head has moved past the move's destination before everything was delivered there (§13.4 step 5, §19.3), which only an
+    /// older build makes: nothing is delivered, and the move is held <see cref="MoveHoldWhy.Superseded"/>. It names the person's own words still
+    /// waiting never attempted there, <see cref="MoveWordDispositions.Held"/>, for the person to take back and say at the head; the words gone
+    /// without <c>sent</c>, <i>left</i>; and the attempted ones, uncertain, settled and said as before. Another author's waiting words stay on
+    /// the destination as claims and are named by nothing. A word with <c>sent</c> that still waits is taken off as taken, since its agent
+    /// was written. Null where nothing is left to deliver, the destination is the head, or the head cannot be told now.
+    /// </summary>
+    /// <exception cref="MoveClaimLostException">The claim no longer holds the move.</exception>
+    public async Task<MoveDelivered?> HeldPastAsync(MoveClaim claim, CancellationToken ct = default)
+    {
+        var move = store.Read(claim.Move) ?? throw new MoveClaimLostException(claim, "the move is gone, with its record");
+        if (move.Phase is not { } phase || !Reads.Contains(phase) || move.Destination is not { } destination) return null;
+        var words = store.WordsOf(move.Id);
+
+        // Nothing is left to deliver: every word it moved is disposed, or a move of no word has written its prompt.
+        if (words.Count > 0 ? words.All(word => word.Disposition is not null) : move.Effect is { Outcome: not null }) return null;
+        if (await MoveSaying.HeadPastAsync(said, destination, ct).ConfigureAwait(false) is null) return null;
+
+        var read = await WordsAsync(move, words, ct).ConfigureAwait(false);
+        if (read is null) return new MoveDelivered(move, MoveDeliveryOutcome.Unread);
+        if (read.StillWaiting.Count > 0)
+        {
+            await MoveSaying.TakeAsync(said, destination, [.. read.StillWaiting.Select(word => word.Word)], ct).ConfigureAwait(false);
+            read = await WordsAsync(move, words, ct).ConfigureAwait(false);
+            if (read is null) return new MoveDelivered(move, MoveDeliveryOutcome.Unread);
+        }
+
+        var named = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var word in read.Left) named[word.Transfer] = MoveWordDispositions.Left;
+        foreach (var word in read.Uncertain) named[word.Transfer] = MoveWordDispositions.Uncertain;
+        foreach (var word in read.Waiting.Except(read.Claims)) named[word.Transfer] = MoveWordDispositions.Held;
+        var held = store.Hold(claim, MoveHoldWhy.Superseded, named);
+        return new MoveDelivered(await _resolve.ReadAsync(claim, ct).ConfigureAwait(false), MoveDeliveryOutcome.Held)
+        {
+            Taken = read.Taken, Left = read.Left, Uncertain = read.Uncertain, Waiting = read.Waiting,
+            Begun = move.Effect is { Outcome: null } effect ? effect : null, Held = held,
+        };
+    }
+
     /// <summary>Each word the move moved as its destination's <c>said</c> shows it now; null where that cannot be read.</summary>
     private async Task<WordsRead?> WordsAsync(MoveRecord move, IReadOnlyList<MoveRecordWord> words, CancellationToken ct)
     {
@@ -175,13 +218,17 @@ public sealed class MoveDelivery(MoveStore store, IMoveSaid said)
         MoveWaiting? Waits(MoveRecordWord word) => waiting.FirstOrDefault(each => string.Equals(each.Word, word.Word, StringComparison.Ordinal));
         List<MoveRecordWord> taken = [.. words.Where(word => word.Disposition == MoveWordDispositions.Sent)];
         List<MoveRecordWord> open = [.. words.Where(word => word.Disposition is null)];
+        var waits = open.Where(word => Waits(word) is { Attempted: false }).ToList();
         return new WordsRead(
             taken, [.. taken.Where(word => Waits(word) is not null)], [.. open.Where(word => Waits(word) is null)],
-            [.. open.Where(word => Waits(word) is { Attempted: true })], [.. open.Where(word => Waits(word) is { Attempted: false })]);
+            [.. open.Where(word => Waits(word) is { Attempted: true })], waits, [.. waits.Where(word => Waits(word) is { Person: false })]);
     }
 
-    /// <summary>The words as the reading found them: sent (and of those, still waiting), gone without <c>sent</c>, waiting attempted, waiting never attempted.</summary>
+    /// <summary>
+    /// The words as the reading found them: sent (and of those, still waiting), gone without <c>sent</c>, waiting attempted, waiting never
+    /// attempted, and of those another author's words, a claim the person is never offered as theirs to say.
+    /// </summary>
     private sealed record WordsRead(
         IReadOnlyList<MoveRecordWord> Taken, IReadOnlyList<MoveRecordWord> StillWaiting, IReadOnlyList<MoveRecordWord> Left,
-        IReadOnlyList<MoveRecordWord> Uncertain, IReadOnlyList<MoveRecordWord> Waiting);
+        IReadOnlyList<MoveRecordWord> Uncertain, IReadOnlyList<MoveRecordWord> Waiting, IReadOnlyList<MoveRecordWord> Claims);
 }
