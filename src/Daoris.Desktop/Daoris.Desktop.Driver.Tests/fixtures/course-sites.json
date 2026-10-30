@@ -28,11 +28,11 @@
     { "file": "Daoris.Desktop.Driver/WorkOrders/Domain/Planner.cs", "shape": "transient-bound", "count": 1, "paths": ["N"], "hands": false, "row": "i", "status": "not yet moved", "what": "the planner's reading of a record ended past its transient bound" },
     { "file": "Daoris.Desktop.Modules/Bridge/SupervisorDoor.cs", "shape": "answers-alone-read", "count": 1, "paths": ["A"], "hands": false, "row": "i", "status": "not yet moved", "what": "the supervisor's door refusing a decision while the line stands at the bound" },
     { "file": "Daoris.Desktop.Driver/Loop/Chat/ChatRunner.cs", "shape": "opens-from", "count": 1, "paths": ["B"], "hands": true, "moving": "moves", "row": "h", "status": "not yet moved", "what": "the replacement of a conversation whose model the account did not offer" },
-    { "file": "Daoris.Desktop.Driver/Loop/Chat/ChatRunner.cs", "shape": "calls-a-move", "count": 3, "paths": ["D", "E", "J"], "hands": false, "row": "h", "status": "not yet moved", "what": "the runner's briefed press, lost go-on and closed quest's cooling go-on handing to a move" },
-    { "file": "Daoris.Desktop.Driver/Loop/Chat/ChatRunner.cs", "shape": "starts", "count": 4, "paths": ["B", "C", "J"], "hands": false, "row": "h", "status": "not yet moved", "what": "the runner's doors for start-from, start-with, the briefed move and the lost go-on" },
-    { "file": "Daoris.Desktop.Driver/Loop/Chat/ChatRunner.cs", "shape": "send-back", "count": 2, "paths": ["L"], "hands": false, "row": "h", "status": "not yet moved", "what": "a workflow's send-back and a go-on with findings: a word the dispatcher owns, an ended chat going on as path B" },
-    { "file": "Daoris.Desktop.Driver/Course/Chat/ChatRunner.StartFrom.cs", "shape": "starts", "count": 1, "paths": ["C"], "hands": true, "moving": "moves", "row": "h", "status": "not yet moved", "what": "start-from: a fresh conversation with no `from` and a preface, its record the moves' source" },
-    { "file": "Daoris.Desktop.Driver/Course/Chat/StartWith.cs", "shape": "starts", "count": 1, "paths": ["C"], "hands": true, "moving": "no move", "row": "h", "status": "not yet moved", "what": "start a conversation with these words" }
+    { "file": "Daoris.Desktop.Driver/Loop/Chat/ChatRunner.cs", "shape": "send-back", "count": 2, "paths": ["L"], "hands": false, "row": "h", "status": "not yet moved", "what": "a workflow's send-back and a go-on with findings: a word the dispatcher owns, an ended chat going on as path B" }
+  ],
+  "adapted": [
+    { "file": "Daoris.Desktop.Driver/Loop/Chat/ChatRunner.cs", "shape": "calls-a-move", "through": ["Course/Chat/BriefedMove.cs", "Course/Chat/LimitMove.cs"], "branch": "FOUNDATION1h branch 8", "why": "The runner's briefed press, lost go-on and closed quest's cooling go-on hand to moves that decide through the course; the runner names no course type." },
+    { "file": "Daoris.Desktop.Driver/Loop/Chat/ChatRunner.cs", "shape": "starts", "count": 4, "through": ["Course/Chat/ChatRunner.StartFrom.cs", "Course/Chat/StartWith.cs", "Course/Chat/BriefedMove.cs", "Course/Chat/ChatGoOn.cs"], "branch": "FOUNDATION1h branch 8", "why": "The runner's doors for start-from, start-with, the briefed move and the lost go-on are adapters of the course's readers; the runner names no course type." }
   ],
   "records": [
     { "file": "Daoris.Desktop.Driver/Course/Chat/LimitMove.cs", "member": "MoveAsync", "row": "f-ii", "why": "the live limit move: decided before its turns are held, each phase written before what it fences, each handed word's sent at the wire before its take, and delivered after it" },
@@ -43,7 +43,11 @@
     { "file": "Daoris.Desktop.Driver/Loop/Driver.cs", "member": "RunAsync", "row": "f-iv", "why": "the driven carry-on: decided at old-ended before its keyed open, or, for the carry-on a quest's hand-over starts, the hand-over's own move gone on from (row f-v part c), each phase written before what it fences, each handed word's sent where the door's write of the first prompt returns, with the take after it (part b; part a wrote it where the take returned), and ended by its phase wherever the start stops" }
   ],
   "moved": [
-    { "path": "H", "branch": "FOUNDATION1h branch 3", "why": "A conversation's hand-over, the person's press and the agent's ask, decides through the course in HandOver.cs, its chat runner adapter in ChatHandOver.cs, so no site of it is left." }
+    { "path": "H", "branch": "FOUNDATION1h branch 3", "why": "A conversation's hand-over, the person's press and the agent's ask, decides through the course in HandOver.cs, its chat runner adapter in ChatHandOver.cs, so no site of it is left." },
+    { "path": "D", "branch": "FOUNDATION1h branch 5", "why": "The live limit move decides through the course in LimitMove.cs; the runner's call of it is an adapter." },
+    { "path": "E", "branch": "FOUNDATION1h branch 7", "why": "The ended limit move, the wake and the conversation's go-on decide through the course in LimitMove.cs, LimitWaits.cs and ChatGoOn.cs." },
+    { "path": "J", "branch": "FOUNDATION1h branch 8", "why": "The briefed move decides through the course in BriefedMove.cs; the runner's doors to it are adapters." },
+    { "path": "C", "branch": "FOUNDATION1h branch 8", "why": "Start-from and start-with decide through the course in ChatRunner.StartFrom.cs and StartWith.cs; go-on-new moved in branch 2." }
   ],
   "notDecisions": [
     { "path": "L", "why": "A workflow's send-back is a word between turns that the dispatcher owns; an ended conversation's go-on from it is path B, with B's own-account rule." },

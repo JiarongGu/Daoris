@@ -35,6 +35,22 @@ public sealed class StartWithTests : IDisposable
         Assert.Equal([("c9", "Fix the build.", 1, (string?)null)], said);
     }
 
+    /// <summary>
+    /// 🔴 FOUNDATION1h branch 8 (the foundation design §3.1): starting on first words is the course's start for <see cref="CourseTrigger.StartFrom"/>,
+    /// read over a conversation with no record, the person's words alone, and nothing opens where it answers otherwise.
+    /// </summary>
+    [Fact]
+    public async Task The_course_starts_a_conversation_on_the_persons_first_words()
+    {
+        var decided = new List<LineCourse>();
+
+        var started = await StartWith.RunAsync(Opened, (_, _, _, _) => true, "Fix the build.", [], decided: decided.Add);
+
+        Assert.True(started.Sent);
+        var start = Assert.IsType<LineCourse.Start>(Assert.Single(decided));
+        Assert.Equal(["first"], start.Words.Ids);
+    }
+
     /// <summary>Files more than a message carries: the words go alone rather than not at all.</summary>
     [Fact]
     public async Task Files_over_a_messages_limit_go_as_the_words_alone()

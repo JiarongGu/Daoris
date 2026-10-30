@@ -164,6 +164,8 @@ public sealed class CourseVocabularyTests
         ["Course/Chat/LimitWaits.cs"] = "FOUNDATION1h branch 6: the limit's wake",
         ["Course/Chat/ChatGoOn.cs"] = "FOUNDATION1h branch 7: the conversation's go-on",
         ["Course/Chat/ChatHelperWords.cs"] = "FOUNDATION1h branch 7: the helper's go-on",
+        ["Course/Chat/ChatRunner.StartFrom.cs"] = "FOUNDATION1h branch 8: start-from",
+        ["Course/Chat/StartWith.cs"] = "FOUNDATION1h branch 8: start-with",
     };
 
     /// <summary>
