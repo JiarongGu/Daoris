@@ -262,7 +262,7 @@ public sealed class DriverModule : ModuleBase
         if (route.Held is { } held)
         {
             return _held.AskAsync(HeldKey(request), HeldOf(request), token => route.Answer(handler, request, token),
-                held.Versioned ? () => VersionsOf(held) : null);
+                held.Versioned ? () => VersionsOf(held) : null, held.Numbered);
         }
 
         if (route.Shared is { } shared) return JoinAsync(route, shared, handler, type, request, cancellationToken);
@@ -593,4 +593,7 @@ internal sealed class ByEventAttribute(string route) : Attribute
 
     /// <summary>Whether the route declares inputs, so its versions are read.</summary>
     public bool Versioned => Reads != StateScopes.None || Slices.Length > 0;
+
+    /// <summary>A numbered read (COWORKVIEW1a, <see cref="HeldAnswers.AskAsync"/>): never a refusal, each delivery numbered.</summary>
+    public bool Numbered { get; set; }
 }

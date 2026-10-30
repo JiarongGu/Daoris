@@ -28,9 +28,79 @@ public sealed class DriverModuleHeldTests : DriverModuleBridge
         ["TOOLS_LIST"] = new { },
         ["SUPERVISOR_WAITING"] = new { },
         ["INTEGRATION"] = new { repository = "engine" },
+        ["SESSION_AT_WORK"] = new { session = "a1b2c3d4" },
     };
 
     public static TheoryData<string> HeldRoutes() => [.. DriverModule.ByEventRoutes.Order(StringComparer.Ordinal)];
+
+    private List<JsonElement> Heard(out IDisposable hearing)
+    {
+        var told = new List<JsonElement>();
+        hearing = Bus.Subscribe(HeldAnswers.Module, HeldAnswers.Event, message =>
+        {
+            lock (told) told.Add(JsonSerializer.SerializeToElement(message.Payload, Wire));
+            return Task.CompletedTask;
+        });
+        return told;
+    }
+
+    private static JsonElement Of(object? answer) => JsonSerializer.SerializeToElement(answer, Wire);
+
+    /// <summary>
+    /// COWORKVIEW1a's numbered read (the design §4.1, C4-2.3, C4-3.1): a work's failure is answered, never thrown, as the failed value
+    /// with the refusal's words at every ask until a landing replaces it, told so too; every reply and event carries its epoch and number.
+    /// </summary>
+    [Fact]
+    public async Task A_numbered_read_answers_a_failure_with_its_words_at_every_ask_and_never_throws()
+    {
+        var held = new HeldAnswers(Bus) { Patience = TimeSpan.FromSeconds(5) };
+        var told = Heard(out var hearing);
+        using var _ = hearing;
+        Task<object?> Fails(CancellationToken ct) => throw new InvalidOperationException("the lineage could not be read");
+
+        var first = Of(await held.AskAsync("k", "q1", Fails, numbered: true));
+        var again = Of(await held.AskAsync("k", "q1", Fails, numbered: true));
+
+        Assert.Equal("the lineage could not be read", first.GetProperty("failed").GetProperty("why").GetString());
+        Assert.Equal(held.Epoch, first.GetProperty("at").GetProperty("epoch").GetString());
+        Assert.Equal("the lineage could not be read", again.GetProperty("failed").GetProperty("why").GetString());
+        await UntilAsync(() => { lock (told) return told.Count >= 1; });
+        lock (told) Assert.Equal("the lineage could not be read", told[0].GetProperty("answer").GetProperty("failed").GetProperty("why").GetString());
+    }
+
+    /// <summary>
+    /// The design §4.1 (O4-F3, O4-F12a): a failure over a held answer keeps it, answered and told stale with the refusal's words, and
+    /// the first landing after it is told even where it equals the held answer, which clears the stale; the numbers only grow.
+    /// </summary>
+    [Fact]
+    public async Task A_failure_over_a_held_answer_reads_it_stale_until_the_next_landing_which_is_told_even_unchanged()
+    {
+        var held = new HeldAnswers(Bus) { Patience = TimeSpan.FromSeconds(5) };
+        var told = Heard(out var hearing);
+        using var _ = hearing;
+        var fail = false;
+        Task<object?> Work(CancellationToken ct) => fail ? throw new InvalidOperationException("refused") : Task.FromResult<object?>(new { Rows = 1 });
+
+        var answered = Of(await held.AskAsync("k", "q1", Work, numbered: true));
+        fail = true;
+        await held.AskAsync("k", "q1", Work, numbered: true);
+        await held.LandedAsync("k");
+        var stale = Of(await held.AskAsync("k", "q1", Work, numbered: true));
+        await held.LandedAsync("k");
+        fail = false;
+        await held.AskAsync("k", "q1", Work, numbered: true);
+        await held.LandedAsync("k");
+        var recovered = Of(await held.AskAsync("k", "q1", Work, numbered: true));
+
+        Assert.Equal(1, stale.GetProperty("rows").GetInt32());
+        Assert.Equal("refused", stale.GetProperty("stale").GetProperty("why").GetString());
+        Assert.False(recovered.TryGetProperty("stale", out var _2));
+        Assert.True(recovered.GetProperty("at").GetProperty("n").GetInt64() > answered.GetProperty("at").GetProperty("n").GetInt64());
+        List<JsonElement> events;
+        lock (told) events = [.. told];
+        Assert.Contains(events, each => each.GetProperty("answer").TryGetProperty("stale", out var why) && why.GetProperty("why").GetString() == "refused");
+        Assert.False(events[^1].GetProperty("answer").TryGetProperty("stale", out var _3));
+    }
 
     [Theory]
     [MemberData(nameof(HeldRoutes))]

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Shenora.Core.Events;
 
 namespace Daoris.Desktop;
@@ -84,18 +85,23 @@ public sealed class HeldAnswers
     /// one under way. <paramref name="held"/> is the page's query the event names; null tells nothing. <paramref name="versions"/>
     /// reads the route's inputs' versions now: while they are the held answer's, no work begins (FOUNDATION1s); null works.
     /// </summary>
+    /// <param name="numbered">
+    /// A numbered read (COWORKVIEW1a, the design §4.1): never a refusal, every reply and event carrying <c>at</c>, its
+    /// <see cref="Epoch"/> and its landing's number, a failure answered with its words, failed or over the held answer stale.
+    /// </param>
     public async Task<object?> AskAsync(
-        string key, string? held, Func<CancellationToken, Task<object?>> work, Func<string?>? versions = null)
+        string key, string? held, Func<CancellationToken, Task<object?>> work, Func<string?>? versions = null, bool numbered = false)
     {
         Held entry;
         Task<object?> flight;
+        long begun;
         var at = versions?.Invoke();
         lock (_gate)
         {
             if (!_held.TryGetValue(key, out entry!))
             {
                 Trim();
-                _held[key] = entry = new Held();
+                _held[key] = entry = new Held { Numbered = numbered };
             }
 
             entry.Asked = ++_seq;
@@ -103,7 +109,7 @@ public sealed class HeldAnswers
             if (at is not null && entry.Answered && entry.Made == at)
             {
                 Interlocked.Increment(ref _served);
-                return entry.Answer;
+                return Reply(entry);
             }
 
             // Versions read join only a work begun at them; none read join any begun since the last press.
@@ -116,9 +122,12 @@ public sealed class HeldAnswers
             }
 
             flight = under;
-            if (entry.Answered) return entry.Answer;
+            begun = entry.Begun;
+            if (entry.Answered) return Reply(entry);
             if (entry.Fault is { } fault)
             {
+                // A numbered read's fault is its answer at every ask until a landing replaces it.
+                if (numbered) return Reply(entry);
                 entry.Fault = null;
                 System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw(fault);
             }
@@ -126,8 +135,37 @@ public sealed class HeldAnswers
 
         // Nothing held: the work's answer, if it comes within the patience, waited for off the window's thread.
         var waited = await Task.WhenAny(flight, Task.Delay(Patience)).ConfigureAwait(false);
-        return waited == flight ? await flight.ConfigureAwait(false) : Pending;
+        if (waited != flight) return Pending;
+        if (!numbered) return await flight.ConfigureAwait(false);
+        return flight.IsCompletedSuccessfully ? Numbered(flight.Result, begun) : Failure(WhyOf(flight.Exception), begun);
     }
+
+    /// <summary>This module's life (COWORKVIEW1a): a numbered read's number is within it.</summary>
+    public string Epoch { get; } = Guid.NewGuid().ToString("N")[..12];
+
+    // Under the gate: what is held, as an ask is answered it; a numbered read's with its number, stale where a failure is kept.
+    private object? Reply(Held entry)
+    {
+        if (!entry.Numbered) return entry.Answer;
+        if (!entry.Answered) return Failure(WhyOf(entry.Fault), entry.Landed);
+        var reply = Numbered(entry.Answer, entry.Landed);
+        if (entry.Kept is { } why) reply["stale"] = new JsonObject { ["why"] = why };
+        return reply;
+    }
+
+    private JsonObject Numbered(object? answer, long n)
+    {
+        var written = JsonSerializer.SerializeToNode(answer, s_wire) as JsonObject ?? new JsonObject { ["value"] = JsonSerializer.SerializeToNode(answer, s_wire) };
+        written["at"] = new JsonObject { ["epoch"] = Epoch, ["n"] = n };
+        return written;
+    }
+
+    private JsonObject Failure(string why, long n) =>
+        new() { ["failed"] = new JsonObject { ["why"] = why }, ["at"] = new JsonObject { ["epoch"] = Epoch, ["n"] = n } };
+
+    /// <summary>The refusal's words, the host's own.</summary>
+    private static string WhyOf(Exception? fault) =>
+        (fault is AggregateException { InnerException: { } inner } ? inner : fault)?.Message ?? "the read failed";
 
     /// <summary>
     /// The works under way are joined no more: the next ask of each starts afresh (a press answered, as the shared reads'
@@ -178,13 +216,24 @@ public sealed class HeldAnswers
             {
                 answer = done.Result;
                 var wire = JsonSerializer.Serialize(answer, s_wire);
-                var moved = !entry.Answered || !string.Equals(wire, entry.Wire, StringComparison.Ordinal);
+                // A numbered read's first landing after a kept failure is told even unchanged: it clears the stale.
+                var moved = !entry.Answered || !string.Equals(wire, entry.Wire, StringComparison.Ordinal) || entry.Kept is not null;
                 entry.Answer = answer;
                 entry.Wire = wire;
                 entry.Answered = true;
                 entry.Made = at;
                 entry.Fault = null;
+                entry.Kept = null;
                 if (!moved) return;
+                if (entry.Numbered) answer = Reply(entry);
+            }
+            else if (entry.Numbered)
+            {
+                // Told with its words: over the held answer as stale, else as the failed value every ask answers until a landing.
+                var fault = done.Exception?.InnerException ?? done.Exception;
+                if (entry.Answered) entry.Kept = WhyOf(fault);
+                else entry.Fault = fault;
+                answer = Reply(entry);
             }
             else
             {
@@ -231,5 +280,9 @@ public sealed class HeldAnswers
         public long Landed;
         public long Asked;
         public readonly HashSet<string> Pages = new(StringComparer.Ordinal);
+
+        // COWORKVIEW1a: a numbered read, and the words of a failure kept over its held answer.
+        public bool Numbered;
+        public string? Kept;
     }
 }
