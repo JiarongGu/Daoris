@@ -193,6 +193,8 @@ public sealed class DriverRoutes(DriverContext context)
             ? new
             {
                 session = held.Session,
+                // FABRIC-PIPELINE1d: the verification run holding it, where the heavy executor does.
+                run = held.Run,
                 gates = held.Gates,
                 since = held.Since,
                 now = held.Now is { } now ? new { gate = now.Gate, at = now.At, since = now.Since } : null,

@@ -456,6 +456,13 @@ if (args is ["run-heavy", .. var heavyArgs])
     return await Daoris.Driver.Host.HeavyConsole.RunAsync(heavyArgs);
 }
 
+// A person's verification of a branch or a commit (FABRIC-PIPELINE1d): a run of its own bound under the home's lines, which the running
+// driver verifies. Routed before the machine log opens, with its own catch: it writes only its run's binding, and holds no lease.
+if (args is ["verify", .. var verifyArgs])
+{
+    return await Daoris.Driver.Host.VerifyConsole.RunAsync(verifyArgs);
+}
+
 // The machine log (LOG1, D94): this host's watch and every exception nothing caught, in a file of its
 // own beside the desktop's. With no home it writes nothing, and the sentence below still says why.
 using var log = MachineLog.Open("driver");

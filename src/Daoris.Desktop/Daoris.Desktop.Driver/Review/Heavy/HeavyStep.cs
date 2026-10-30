@@ -12,7 +12,14 @@ namespace Daoris.Driver;
 /// (composed from the install's by <see cref="GateEnvironment"/>, with none of this process's own to leak a Daoris name into it), and its
 /// standard output and error go to the file <see cref="Log"/> names, so a runner's answer is read from its file and never from its output.
 /// </summary>
-internal sealed record StepOptions(IReadOnlyDictionary<string, string>? Environment = null, string? Log = null);
+internal sealed record StepOptions(IReadOnlyDictionary<string, string>? Environment = null, string? Log = null)
+{
+    /// <summary>
+    /// Started below normal (FABRIC-PIPELINE1d, as CIPRIO1 lowers the merge tool's): the class every process the step starts inherits,
+    /// never a job's limit, so a runner may still raise a clock-bound lane of its own.
+    /// </summary>
+    public bool BelowNormal { get; init; }
+}
 
 /// <summary>
 /// One gate of a heavy run (HEAVYRUN1a): its command line through the platform's shell, in the gate's folder, writing to this
@@ -171,6 +178,7 @@ internal sealed class HeavyStep : IDisposable
 
             var flags = Suspended | UnicodeEnvironment;
             if (GetConsoleCP() == 0) flags |= NoWindow;
+            if (options?.BelowNormal == true) flags |= BelowNormalPriority;
             if (inherited.Count > 0)
             {
                 // Only the three handles are inherited: a handle another part of this process made inheritable for a moment, for a
@@ -289,6 +297,7 @@ internal sealed class HeavyStep : IDisposable
     private const uint UnicodeEnvironment = 0x00000400;
     private const uint Suspended = 0x00000004;
     private const uint NoWindow = 0x08000000;
+    private const uint BelowNormalPriority = 0x00004000;
     private const int UseStdHandles = 0x00000100;
 
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]

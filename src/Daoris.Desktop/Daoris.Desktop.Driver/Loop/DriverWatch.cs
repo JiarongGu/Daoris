@@ -552,6 +552,19 @@ public sealed class DriverWatch(
         // INTEGRATE1n part n3 (§17.4): the door a unit's `integrate` asks, the home's own where a test hands none; an older build set none, and
         // its runtime started and reconciled nothing of it.
         if (nodes is not null) nodes.Integration = IntegrationDoor ?? NodeRuntime.HomeDoor(home);
+
+        // FABRIC-PIPELINE1d (the pipeline design §4.2): the heavy executor a check is handed to; its answer asks a pass, which reconciles it.
+        HeavyExecutor? executor = null;
+        if (nodes is not null)
+        {
+            executor = new HeavyExecutor(home, new VerifyWorld
+            {
+                Answered = (run, _) => NodesWoken(RunUnits.IdOf(run)),
+                Mapping = repository => HeavyMapping.For(DriverConfig.Load(DriverConfig.ResolvePath(Environment.GetEnvironmentVariable, home)), repository),
+            });
+            nodes.Checks = new CheckExecution(executor, (unit, attempt, node) => VerifyRuns.SendOf(home, unit, attempt, node));
+        }
+
         _nodes = nodes;
         // FABRIC-RUN1d: the runtime's own wakes run link 8 alone: its timer and a plugin's step, never the local plan.
         using var nodesDue = new System.Threading.Timer(_ => NodesWoken("due"));
@@ -917,6 +930,9 @@ public sealed class DriverWatch(
             Volatile.Write(ref _nodesWake, null);
             if (Interlocked.Exchange(ref _passAsks, null) is { } unasked) PassAsks.Done(unasked.Take(), passed: false);
             if (hooks is not null) hooks.StepArrived = null;
+
+            // FABRIC-PIPELINE1d: a check's job ends with the loop, written no result, so the next loop's reconcile sends it again.
+            if (executor is not null) await executor.DisposeAsync().ConfigureAwait(false);
 
             // The change stream's wait ends with the loop, and is waited for, so no ask outlives it.
             await listening.CancelAsync().ConfigureAwait(false);

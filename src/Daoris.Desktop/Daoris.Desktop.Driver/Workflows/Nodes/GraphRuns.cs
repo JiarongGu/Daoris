@@ -24,6 +24,9 @@ public sealed record GraphRun(WorkflowRunBinding Binding, DecodedVersion Version
     /// <summary>Whether the run has a node record here: a run governed before, whose record a version that stops reading holds whole.</summary>
     public bool Recorded { get; init; }
 
+    /// <summary>A verification run's own binding (FABRIC-PIPELINE1d), bound under <c>lines/</c>; null for a chain's run.</summary>
+    public VerifyRun? Line { get; init; }
+
     public string Run => Binding.Run;
 
     public string Unit => RunUnits.IdOf(Binding.Run);
@@ -61,14 +64,20 @@ public sealed class GraphRuns(NodeRecordFiles records)
     {
         lock (_lock)
         {
+            // FABRIC-PIPELINE1d (the pipeline design §4.3): the verification runs, bound in a folder of their own, beside the chains'.
+            var lines = VerifyRuns.All(records.Home).Select(line =>
+            {
+                var (ended, recorded) = EndOf(line.Run);
+                return new GraphRun(line.Binding, VersionOf(line.Binding), ended) { Recorded = recorded, Line = line };
+            }).ToList();
             var folder = WorkflowRunBindings.FolderOf(records.Home);
             if (!Directory.Exists(folder))
             {
                 _bindings.Clear();
-                return [];
+                return lines;
             }
 
-            var runs = new List<GraphRun>();
+            var runs = new List<GraphRun>(lines);
             var seen = new HashSet<string>(StringComparer.Ordinal);
             FileInfo[] files;
             try
@@ -77,7 +86,7 @@ public sealed class GraphRuns(NodeRecordFiles records)
             }
             catch (Exception error) when (error is IOException or UnauthorizedAccessException)
             {
-                return [];
+                return lines;
             }
 
             foreach (var file in files.OrderBy(file => file.Name, StringComparer.Ordinal))
@@ -204,6 +213,12 @@ public sealed record RunScope(GraphRun Run, WorkUnit Self)
 
     /// <summary>The unit a governed run is told an answer under, mapped back to it (§2.4.1): its branches, former subjects included.</summary>
     public IEnumerable<string> Told => Branches.Select(branch => branch.Id).Concat(Branch is { } branch ? [branch.Id] : []).Distinct(StringComparer.Ordinal);
+
+    /// <summary>
+    /// A verification run's commit (FABRIC-PIPELINE1d; the pipeline design §4.3): every node of it observes the run itself at this revision, written
+    /// once, so nothing lapses as the line moves. Null for a chain's run.
+    /// </summary>
+    public string? Tip { get; init; }
 }
 
 /// <summary>Which subject a run's node observes (the cutover design §2.2's table), by its kind and its place after <c>handed</c>.</summary>

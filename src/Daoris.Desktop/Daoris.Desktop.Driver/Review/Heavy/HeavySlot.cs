@@ -24,6 +24,9 @@ public sealed record HeavyHolder(
 
     /// <summary>The gate that failed and its exit, written before what it left is ended and the slot let go (HEAVYSLOT1).</summary>
     public HeavyGateFailed? Failed { get; init; }
+
+    /// <summary>The verification run holding it (FABRIC-PIPELINE1d), where the heavy executor does; an older reader passes over it.</summary>
+    public string? Run { get; init; }
 }
 
 /// <summary>The gate a holder runs now (HEAVYSLOT1): its name, its place in the holder's gates from 0, and when it started.</summary>
@@ -169,7 +172,16 @@ public sealed class HeavySlot : IDisposable
     /// </param>
     /// <exception cref="OperationCanceledException">Stopped while waiting; nothing is held.</exception>
     public static async Task<HeavySlot> TakeAsync(
-        string home, string key, string repository, TextWriter said, CancellationToken ct, HeavyWaiting? waiting = null, HeavyWaiter? waiter = null)
+        string home, string key, string repository, TextWriter said, CancellationToken ct, HeavyWaiting? waiting = null, HeavyWaiter? waiter = null) =>
+        (await TakeUnlessAsync(home, key, repository, said, ct, waiting, waiter, yieldTo: null).ConfigureAwait(false))!;
+
+    /// <summary>
+    /// <see cref="TakeAsync"/>, giving up without waiting once the slot's holder is one <paramref name="yieldTo"/> names (FABRIC-PIPELINE1d: a
+    /// session's run never waits behind a verification): null then, nothing held and no waiter left.
+    /// </summary>
+    public static async Task<HeavySlot?> TakeUnlessAsync(
+        string home, string key, string repository, TextWriter said, CancellationToken ct, HeavyWaiting? waiting, HeavyWaiter? waiter,
+        Func<HeavyHolder, bool>? yieldTo)
     {
         waiting ??= HeavyWaiting.Default;
         var waited = Stopwatch.StartNew();
@@ -187,8 +199,9 @@ public sealed class HeavySlot : IDisposable
                     return slot;
                 }
 
-                if (waiter is not null && waits is null) waits = KeepWaiter(home, key, waiter);
                 var holder = Holder(home, key);
+                if (holder is not null && yieldTo?.Invoke(holder) == true) return null;
+                if (waiter is not null && waits is null) waits = KeepWaiter(home, key, waiter);
                 if (saidAt is null || waited.Elapsed - saidAt >= waiting.SayEvery || !SameRun(holder, saidOf))
                 {
                     said.WriteLine(Waiting(repository, holder, waiting.Clock(), waited.Elapsed));
@@ -354,6 +367,7 @@ public sealed class HeavySlot : IDisposable
             writer.WriteString("since", Stamp(holder.Since));
             if (holder.Session is { } session) writer.WriteString("session", session);
             if (holder.Job is { } job) writer.WriteString("job", job);
+            if (holder.Run is { } run) writer.WriteString("run", run);
             if (holder.Now is { } now)
             {
                 writer.WriteStartObject("now");
@@ -451,7 +465,7 @@ public sealed class HeavySlot : IDisposable
             return new HeavyHolder(
                 id, ticks, checkout.GetString()!,
                 [.. gates.EnumerateArray().Where(gate => gate.ValueKind == JsonValueKind.String).Select(gate => gate.GetString()!)],
-                at, Text(root, "session"), Text(root, "job")) { Now = NowOf(root), Failed = FailedOf(root) };
+                at, Text(root, "session"), Text(root, "job")) { Now = NowOf(root), Failed = FailedOf(root), Run = Text(root, "run") };
         }
         catch (JsonException)
         {
@@ -466,7 +480,7 @@ public sealed class HeavySlot : IDisposable
     {
         var who = holder is null
             ? "a run that has not said what it runs yet"
-            : (holder.Session is { } session ? $"session {session} (process {holder.Pid})" : $"process {holder.Pid}")
+            : (holder.Run is { } run ? $"the verification run {run}" : holder.Session is { } session ? $"session {session} (process {holder.Pid})" : $"process {holder.Pid}")
               + $", running {(holder.Gates.Count == 0 ? "its gates" : string.Join(", ", holder.Gates))} for {Took(now - holder.Since)} in {holder.Checkout}";
         return $"run-heavy: `{repository}`'s heavy-run slot is held by {who}; this run waits for it ({Took(waited)} so far).";
     }
