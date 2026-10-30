@@ -484,6 +484,12 @@ public sealed class Driver(
     internal Task<int> BrainstormsAsync(Snapshot snapshot, int taken, List<string> events, CancellationToken ct) =>
         Brainstorms.BrainstormsAsync(snapshot, taken, events, ct);
 
+    /// <summary>
+    /// A room measurement of an agent's pass (BRAINSTORM1c, <see cref="DriverBrainstorms.MeasureRoomAsync"/>): the walk's account alone where
+    /// <paramref name="spend"/> is false, else one probe pass on it, kept as evidence. The terminal's <c>brainstorm measure</c> is its press.
+    /// </summary>
+    public Task<RoomMeasure> MeasureRoomAsync(string agent, bool spend, CancellationToken ct) => Brainstorms.MeasureRoomAsync(agent, spend, ct);
+
     /// <summary>How a meeting's turn is run (AGENTROOM1a): refused with no stand-in, since no tool carries its message yet.</summary>
     internal Func<BrainstormTurn, CancellationToken, Task<BrainstormTurnRun>>? MeetingTurns
     {
@@ -3381,6 +3387,13 @@ public sealed class Driver(
     }
 
     /// <summary>
+    /// The protocol-door posture a brainstorm's pass asks (BRAINSTORM1c, <see cref="BrainstormPermissions.Posture"/>): its harness's mode that
+    /// changes nothing where it takes no rules; null for every other session, and for a pass whose harness a rule narrows.
+    /// </summary>
+    internal static string? PassPosture(SessionTarget target, ISessionAdapter adapter) =>
+        target.Brainstorm is not null ? BrainstormPermissions.Posture(adapter) : null;
+
+    /// <summary>
     /// What a partner's start hands its agent beside the instruction (COAGENT1b, the co-agent design §3.3): the rules
     /// <see cref="HandRules"/> writes for it with <c>partner</c>, its classifier's hard denials and its tree guard, which always holds it.
     /// What its effective configuration's digest is taken over (<see cref="PartnerConfigurations"/>).
@@ -3940,6 +3953,8 @@ public sealed class Driver(
         if (target.Brainstorm is null)
             await service.TryKeepActorAsync(sessionId, Log, choice, asked, ct: ct).ConfigureAwait(false);
         UsageTurns.ActorBound(home, Context.Events, sessionId, actor);
+        // BRAINSTORM1c: a pass's turns are the brainstorm's usage, kept naming it beside the account its walk chose.
+        if (target.Brainstorm is { } brainstorm) UsageTurns.BrainstormBound(home, Context.Events, sessionId, brainstorm);
         await using var actorRun = new ActorRun(Context.Events, sessionId, actor, prior?.Ran,
             ran => target.Brainstorm is null ? service.KeepActorAsync(sessionId, ran: ran) : Task.CompletedTask, Log);
         // SESSWATCH1a (D200): a quest's session and an intake are watched while they run, never ended on time; a pass keeps minutes of
@@ -4068,9 +4083,10 @@ public sealed class Driver(
             // same D37 boundary three different ways, and one of them does not name it on the wire. A driven session's repository's
             // asking or unrestricted permission prompts name the adapter's mode for it, required (AUTONOMY1b, D184 point 3).
             ? CaptureAcpAsync(
-                process, transcript, sessionId, cwd, prompt, target.Access?.Posture ?? adapter.AcpPosture, harnessNotice, ct, scope, rules.Meta,
+                process, transcript, sessionId, cwd, prompt, target.Access?.Posture ?? PassPosture(target, adapter) ?? adapter.AcpPosture, harnessNotice, ct, scope, rules.Meta,
                 handedServers ?? Context.Servers, target.PersonSaid, inbox, said, keepAs, resume, account, waitsOnBackground, noConnector, ending,
-                unoffered: target.Access is { } access ? access.Unoffered : null, setupChanged: setupChanged, handed: target.Handed,
+                unoffered: target.Access is { } access ? access.Unoffered : PassPosture(target, adapter) is not null ? BrainstormPermissions.Unoffered : null,
+                setupChanged: setupChanged, handed: target.Handed,
                 // D205 §3.2: what its actor asked, set on the session before the first prompt; what the agent would not take is kept as
                 // asked and not carried, so the record never says a choice was taken that was not.
                 asked: asked, carried: target.Brainstorm is not null ? null

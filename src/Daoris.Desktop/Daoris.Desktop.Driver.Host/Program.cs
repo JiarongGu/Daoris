@@ -529,6 +529,13 @@ try
         return await Daoris.Driver.Host.OpinionConsole.RunAsync(opinionArgs);
     }
 
+    // A pass's room measured (BRAINSTORM1c, D176 point 2): without --run the account the walk would take, with it one probe pass on it,
+    // a spend the person presses by running it. Before the brainstorm's own verb, which only writes files.
+    if (args is ["brainstorm", "measure", .. var measureArgs])
+    {
+        return await Daoris.Driver.Host.BrainstormMeasureConsole.RunAsync(measureArgs);
+    }
+
     // A brainstorm (BRAINSTORM1a, D176 point 1): the verb writes a request the driver's look takes, and show, send and clear are
     // the person's own. Files under this home only: it spawns nothing and asks no service.
     if (args is ["brainstorm", .. var brainstormArgs])
