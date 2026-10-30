@@ -58,3 +58,68 @@ The broad sequence is buildable, **but the rows are not buildable as written**. 
 
 **4. Order and proofs:** buildable once these changes are made. 2a can start now (notes are separate anchored entries, so an amendment leaves the opening entry's digest unchanged). 2b's five tools ship before any engine exists, so until 2d they answer that memory is not on. 2c's bootstrap proof needs one read transaction tested against a writer on a second connection. 2d to 2h are gated correctly, on Lyntai's release, its answer to §6, and the install.
 
+
+## Round 3: the reads of the revision
+
+Codex asked another round (recovery, the coherent recheck and attribution not fully resolved, and one new blocking finding); the Opus maker accepted after three blocking changes. Both reads follow.
+
+### Codex's read
+
+1. **Verdict: another round.** Three original blockers remain incompletely resolved: recovery, coherent recheck, and historical attribution. The revision substantially improves the design, but its resolution table overstates those guarantees.
+
+2. **The six blocking findings**
+
+- **Recovery — not resolved.** The states are right: preserve `staged` and `awaiting`; settle only `applying`. An end’s coordinator-generated row id in its persisted reason can identify that end; unexplained movement going to `held` is safe. However, content deduplication is **not idempotent application**: Lyntai’s `src/Lyntai.Storage.Sqlite/SqliteMemoryGraphStore.cs:83` advances the engine before every upsert; duplicate writes replace supplied metadata (`:117`) and increment revision (`:130`). Repeated relations also strengthen edges (`src/Lyntai.Core/Memory/Engines/GraphMemoryEngine.cs:592`). A confirmation timestamp at or beyond the requested instant proves neither which operation ran nor which revision it confirmed (`src/Lyntai.Core/Storage/MemoryGraphSql.cs:173`). Require operation-keyed receipts for these effects, or hold ambiguous outcomes without replay. Prove concurrent same-content writes, repeated relations, and unrelated later confirmations.
+
+- **Atomic replacement — resolved by deferral.** The cited implementation really stores the successor before approval and ends predecessors separately: Lyntai’s `src/Lyntai.Core/Memory/MemoryChangeGate.cs:65` and `:110`. Refusing `supersedes` until Request A is implemented removes the unsupported guarantee from the initial implementation.
+
+- **Read effects — resolved at the design-contract level.** `ReinforceOn = None` reaches the early return before touches, co-activation and review writes (`src/Lyntai.Core/Memory/Engines/GraphMemoryEngine.cs:1942`). Applying it to every coordinator engine covers owner-local children as well as foreign readers. The counter-equality proofs in 2d are appropriate. Coordinator read bookkeeping is explicitly distinguished from changing the owner’s memory.
+
+- **Recheck evidence — not fully resolved.** The revision correctly replaces separate reads and makes failed probes inconclusive; the existing null-to-clean conversion is indeed at `src/Daoris.Service/Daoris.Service.Core/Knowledge/KnowledgeService.cs:408`. But holding `_refreshLock` and `_feedGate` (`:203`, `:206`) does not exclude every writer: `RetireAsync` replaces repository entries without either gate (`:538`, `:550`). Require all relevant mutation paths to participate in the snapshot protocol, with a fixed lock order and bounded acquisition. Add retirement and workspace-restamping races to 2a, alongside refresh.
+
+- **Historical attribution — not resolved.** Capturing role revision at the call fixes the mutable-binding problem (`src/Daoris.Desktop/Daoris.Desktop.Driver/Participants/BindingStore.cs:134`, `:160`). But “the newest model `ran` reports” is not operation-time evidence. `Roles/Domain/ActorRun.cs:147` deduplicates model names, `:148` preserves first-seen order, `:179` imports prior reports, and `:187` receives turn events. A model revisited later need not become the last item; a current call can precede its turn’s report. Bind attribution to the current run/turn, preserving `unknown` until corresponding evidence exists.
+
+- **Work without landing — resolved at the lifecycle-contract level.** The design now specifies completion, interruption, continuation, Keep and Drop, keyed by session rather than path. The named completion seam exists (`src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/Chat/ChatRunner.cs:2939`). Implementation must reconcile durable completed records after restart so a crash between completion and releasing staged rows cannot strand them.
+
+3. **New problems**
+
+- **BLOCKING — coherent reads after an interrupted feed.** Gates prevent overlapping calls; they cannot repair an already split persisted reading. `KnowledgeService.cs:848` replaces entries before provenance is recorded at `:855`. A crash between them can leave new bodies with old provenance. Require atomic persistence of entries and provenance, or a durable incomplete-feed marker that makes recheck inconclusive until repaired. Add a restart proof at that boundary.
+
+- **Nonblocking — the `Amends` fallback needs an explicit limitation.** It intentionally leaves both entries live. State that this records a partial correction or disputed claim; it does not satisfy D220’s replacement guarantee for an outright replacement. Keep supersession unavailable for that case.
+
+4. **Request A to Lyntai**
+
+It is the right ask: guarded, approved, atomic replacement with a recoverable repeat result. Add an explicit operation key and require its receipt to commit atomically with the replacement.
+
+Holding supersession off is adequate for supersession safety. It does not establish safe replay of ordinary writes, relations or confirmations; those need their own receipt contract or conservative holds.
+
+5. **The rows**
+
+The broad order is sensible, but **not buildable as written**.
+
+- **2a can start now**, incorporating complete writer coordination and interrupted-feed handling.
+- **2b follows**, with the stand-in proving observational reads and workspace enforcement.
+- **2c must wait for the corrected recovery contract**; its stand-in must reproduce actual duplicate-write and relation behavior.
+- **2d** then integrates the released engine, corrected attribution and restart reconciliation.
+- **2e–2f** follow those foundations.
+- **2g** waits on B; **2h** waits on A.
+- **2i** correctly measures two repositories on one machine; it proves no cross-machine behavior.
+
+### The Opus maker's read
+
+**1. Verdict:** accept after named changes. Three are blocking, each a sentence or two in §1, §3 or §5; no further round is needed.
+
+**2. My findings.** 1 (workspace check), 2 (the person's card), 6 (four sources), 7 (read set; say that a reference trimmed from the 256 is never told it moved) and 8 (no tree) are resolved. 3 is resolved for `applying` against Lyntai's SQL: an end is one statement guarded by `ended_reason IS NULL` and the revision (`MemoryGraphSql.cs:154-166`), a stamp never moves back (`:171-177`), an upsert is keyed by content (`SqliteMemoryGraphStore.cs:94-134`); one hole remains (new problem 3). 4 is resolved for session, role and revision at the call, and unsound for the model (new problem 2). 5 is resolved in substance; the coherence it rests on does not hold (new problem 1).
+
+**3. New problems**
+1. **BLOCKING: the writer gates belong to one process.** Each session's connector is its own process over the shared `knowledge.db` (`Daoris.Service.Mcp/Program.cs:18-20`, `:104`); `_refreshLock` and `_feedGate` (`KnowledgeService.cs:203-206`) are in-process, and the reading lives in that process's `_readings` (`:185`, `:1189`). A connector that scanned before a merge and writes after the recheck's refresh leaves rows without their `Superseded by` mark, and a superseded record Holds. Change: keep each repository's reading in the store, written in the transaction with its entries; refuse a refresh older than the reading held; read entry, marks and reading in one read transaction. 2a's proof gains a second `KnowledgeService` over the same file writing between entry and standing.
+2. **BLOCKING: the model at the call reads nothing.** `ran` is written when a turn ends (`ActorRun.cs:185-198`, emitted at the result frame, `StructuredOutput.cs:354-361`), asynchronously (`ActorRun.cs:200-207`); a one-turn driven run's calls all find none, and `Models` is deduplicated first-seen (`:142-150`). Change: session, role, revision and harness at the call; the models at the commit point, as the set `ran` reports then, `unknown` only where it reports none. 2d's proof gains a one-turn session's write naming its model.
+3. **BLOCKING: the commit point's move is outside crash settlement.** A kill after `completed` or the landing is recorded but before the rows leave `staged` strands them. Change: move the rows in the transaction that records the commit point (the record's state or `work_record_sessions`, `WorkRecords.cs:72-73`), or sweep at the service's start; only the service writes the engine and settles rows, connectors write `memory_ops` and read. 2c's proof gains a kill between the commit point and the move.
+4. A Holds confirmation and a repeated addition bump the revision (`MemoryGraphSql.cs:173`, `SqliteMemoryGraphStore.cs:130`), so an approved end awaiting at R goes stale after any sweep: while an end awaits, record the Holds on the row and do not confirm the entry.
+5. Ended under another row's receipt: settle this row `stale`, not `held`.
+6. Lyntai never calls `Recheck` (`GraphMemoryEngine.cs:463-475`, at most 2,000 characters, `MemoryRecords.cs:195`): say the coordinator's sweep calls `RecheckAsync`.
+7. A hand-over continuation in the same tree sees its predecessor's staged rows, by `From`; the reason is shown to readers (`MemoryTools.cs:74`), so the row id is a trailing token the page strips.
+
+**4. Request A** is right, with one clause too many: drop "nothing stored before the approval" (Daoris holds the successor on its own `awaiting` row and calls Lyntai only after approval; the clause would reverse `MemoryChangeGate.cs:65-68` for nothing). Add: the end's reason, or a caller's key, kept on each predecessor, so receipts settle a replacement. Holding supersession off meanwhile is adequate; prefer `Disputes` to `Amends`, which Lyntai defines as leaving the rest standing (`MemoryRelations.cs:9`).
+
+**5. Rows:** buildable once the three changes are written. 2a can start now with its coherence in the store; 2b beside it over a stand-in engine; 2c after 2b's stand-in; 2d and 2e on Lyntai's release; 2f after 2a, 2c and 2d; 2g on §6 B, 2h on §6 A, 2i on the install.
