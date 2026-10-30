@@ -327,6 +327,26 @@ public sealed class DriverModuleWorkflowRunTests : DriverModuleBridge
         Assert.False(run.GetProperty("workflow").GetProperty("limits").TryGetProperty(WorkflowLimits.NotIntegratedYet, out _));
     }
 
+    /// <summary>
+    /// INTEGRATE1o part o2, additive: the work step answers <c>requests</c>, each quest its sessions published (its repository, state, whether its
+    /// session waits on it, the close's note) and each helper they asked; every other step, and a run with none, answers null.
+    /// </summary>
+    [Fact]
+    public async Task The_work_step_answers_the_requests_its_sessions_made_and_every_other_step_none()
+    {
+        var (module, _) = await UpAsync(requests: true);
+
+        var run = Assert.Single((await AnswerAsync(module, "WORKFLOW_RUN", new { quest = "q1" })).GetProperty("runs").EnumerateArray());
+
+        var steps = run.GetProperty("steps").EnumerateArray().ToList();
+        Assert.Equal(
+            [("q5", "quest", "docs", "done", false, "the shape is in"), ("h1", "agent", "codex-acp", "working", false, null)],
+            steps[0].GetProperty("requests").EnumerateArray().Select(request => (request.GetProperty("id").GetString(), request.GetProperty("kind").GetString(),
+                request.GetProperty("to").GetString(), request.GetProperty("state").GetString(), request.GetProperty("awaits").GetBoolean(),
+                request.GetProperty("words").GetString())));
+        Assert.All(steps.Skip(1), step => Assert.Equal(JsonValueKind.Null, step.GetProperty("requests").ValueKind));
+    }
+
     /// <summary>A session's run is its quest's, and an ask's is each run of each chain it asked: the same records, read the same.</summary>
     [Fact]
     public async Task A_session_and_an_ask_read_the_same_run_as_the_quest()
@@ -493,11 +513,11 @@ public sealed class DriverModuleWorkflowRunTests : DriverModuleBridge
     }
 
     /// <summary>The module over a loop come up on the stand-in service below.</summary>
-    private async Task<(DriverModule Module, DriverLoop Loop)> UpAsync(string? tree = null, bool askUnread = false, string? chatTree = null)
+    private async Task<(DriverModule Module, DriverLoop Loop)> UpAsync(string? tree = null, bool askUnread = false, string? chatTree = null, bool requests = false)
     {
         var loop = Loop();
         var module = new DriverModule(Bus, loop);
-        await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(new StandInService(tree, askUnread, chatTree))));
+        await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(new StandInService(tree, askUnread, chatTree, requests))));
         return (module, loop);
     }
 
@@ -505,13 +525,24 @@ public sealed class DriverModuleWorkflowRunTests : DriverModuleBridge
     /// A stand-in service: `engine` in the `aurora` workspace, ask `a1`'s one quest done there by session `s1`, and a chat. Every
     /// other door answers an empty list. With <paramref name="chatTree"/>, a second chat, `c2`, works in that tree.
     /// </summary>
-    private sealed class StandInService(string? tree = null, bool askUnread = false, string? chatTree = null) : HttpMessageHandler
+    private sealed class StandInService(string? tree = null, bool askUnread = false, string? chatTree = null, bool requests = false) : HttpMessageHandler
     {
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
         {
             var body = request.RequestUri!.PathAndQuery switch
             {
                 "/api/registry" => """[{"repository":"engine","workspace":"aurora"}]""",
+                // INTEGRATE1o part o2: a quest session s1 published to another repository, done with its note, and a helper it asked.
+                "/api/quests?includeClosed=true" when requests =>
+                    """
+                    [{"id":"q1","from":"ask #a1","to":"engine","title":"Quest q1","body":"","status":"Done","updated":"2026-10-09T09:30:00Z"},
+                     {"id":"q5","from":"engine","to":"docs","title":"Quest q5","body":"","status":"Done","note":"the shape is in","publishedBy":"s1","updated":"2026-10-09T09:10:00Z"}]
+                    """,
+                "/api/sessions?includeClosed=true" when requests => """
+                    [{"id":"s1","repository":"engine","state":"completed","quest":"q1","adapter":"claude-code",
+                      "created":"2026-10-09T09:00:00Z","updated":"2026-10-09T09:20:00Z","evidence":"commits landed:\nabc1234 the change"},
+                     {"id":"h1","repository":"engine","state":"working","serves":"s1","adapter":"codex-acp","created":"2026-10-09T09:05:00Z"}]
+                    """,
                 "/api/quests?includeClosed=true" =>
                     """[{"id":"q1","from":"ask #a1","to":"engine","title":"Quest q1","body":"","status":"Done","updated":"2026-10-09T09:30:00Z"}]""",
                 "/api/sessions?includeClosed=true" => """

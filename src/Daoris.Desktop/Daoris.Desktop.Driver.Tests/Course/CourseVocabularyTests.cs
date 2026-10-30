@@ -157,6 +157,8 @@ public sealed class CourseVocabularyTests
     {
         ["Course/Chat/CurveMove.cs"] = "FOUNDATION1h branch 1: the curve",
         ["Course/GoOn/GoOnNew.cs"] = "FOUNDATION1h branch 2: go-on-new",
+        ["Course/HandOver/HandOver.cs"] = "FOUNDATION1h branch 3: a conversation's hand-over",
+        ["Course/Chat/ChatHandOver.cs"] = "FOUNDATION1h branch 3: the chat runner's adapter of it",
     };
 
     /// <summary>

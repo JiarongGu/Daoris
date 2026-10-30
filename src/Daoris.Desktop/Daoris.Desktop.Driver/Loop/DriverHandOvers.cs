@@ -229,7 +229,7 @@ internal sealed class DriverHandOvers(LoopContext context, Func<ConversationMove
                     "hand-over", $"hand-over  session `{session}`'s agent asks to hand it over to {verdict.Agent}: it waits for the person's yes or no in What needs you"));
                 break;
             case HandOverAskVerdict.GoKind:
-                await GoAsync(ask, own, record!, verdict.Agent!, files, events, ct).ConfigureAwait(false);
+                await GoAsync(ask, own, record!, verdict, files, events, ct).ConfigureAwait(false);
                 break;
         }
     }
@@ -249,8 +249,10 @@ internal sealed class DriverHandOvers(LoopContext context, Func<ConversationMove
     /// takes, and a conversation goes to the chat runner, or is decided as its move.
     /// </summary>
     private async Task GoAsync(
-        HandOverAsk ask, HandOverAskState? own, PriorSession record, string agent, HandOverAskFiles files, List<string> events, CancellationToken ct)
+        HandOverAsk ask, HandOverAskState? own, PriorSession record, HandOverAskVerdict verdict, HandOverAskFiles files, List<string> events,
+        CancellationToken ct)
     {
+        var agent = verdict.Agent!;
         var session = ask.Session;
         var service = _context.Service;
         var said = own is { State: HandOverAskStates.Approved, Agent: { } before } && before == agent;
@@ -295,8 +297,10 @@ internal sealed class DriverHandOvers(LoopContext context, Func<ConversationMove
             // further with it, so a shell receives it at its next look while this host lives (MoveStore.Receive), never held for as long as the
             // host runs. No box is written.
             var moves = new ConversationMoves(_context.Home, service, _context.Events, _context.Output);
+            // FOUNDATION1h branch 3: the rule's verdict, `go`, is the consent the course reads as a fact; the door keeps the judging.
             var asked = (await HandOver.AskAsync(
-                service, moves, AccountsOf, session, agent, null, HandOverWhy.Agent, HandOverBy.Agent, DateTimeOffset.UtcNow, ct).ConfigureAwait(false)).Answer;
+                service, moves, AccountsOf, session, agent, null, HandOverWhy.Agent, HandOverBy.Agent, DateTimeOffset.UtcNow, ct,
+                HandOver.ConsentOf(verdict)).ConfigureAwait(false)).Answer;
             (kept, message, code) = (asked.Kept, asked.Message, asked.Why);
         }
 

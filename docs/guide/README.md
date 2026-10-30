@@ -173,7 +173,9 @@ without `join` is refused. `daoris status` reports the declaration.
 - **Packs** — stack-specific sets, named in the manifest.
 - **Local** — the repository's own documents: never synced or touched, and its knowledge and skills
   are indexed as `(local)`. A knowledge document with no frontmatter is listed by its first heading, and
-  `check` says how many there are without failing on them (D128 §3).
+  `check` says how many there are without failing on them (D128 §3). The manifest's `documents` may also
+  carry `present`, the documents that state the present rather than history (D220), which `check` accepts
+  beside the roles and leaves to the repository's own report to read.
 
 The lock identifies **materialized doctrine Daoris owns**. Local knowledge and skills can be read
 and indexed, but sync does not replace them as canonical copies. Adoption also writes generated

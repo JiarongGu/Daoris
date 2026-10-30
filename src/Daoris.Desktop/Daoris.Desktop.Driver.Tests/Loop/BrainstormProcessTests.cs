@@ -248,6 +248,8 @@ public sealed class BrainstormProcessTests : IDisposable
         var passTurns = UsageHistory.ReadTurns(_home).Turns.Where(turn => turn.Session.StartsWith($"brainstorm-{id}-", StringComparison.Ordinal)).ToList();
         Assert.NotEmpty(passTurns);
         Assert.All(passTurns, turn => Assert.NotNull(turn.Agent));
+        // BRAINSTORM1c (D176 point 7): and they name the brainstorm they were spent for, as no quest's or session's.
+        Assert.All(passTurns, turn => Assert.Equal(id, turn.Brainstorm));
 
         // One packet, byte for byte, in every room; each room the packet and its instruction (and the synthesis's proposals) alone.
         var frozen = Convert.ToHexStringLower(SHA256.HashData(files.PacketBytes(id)!));

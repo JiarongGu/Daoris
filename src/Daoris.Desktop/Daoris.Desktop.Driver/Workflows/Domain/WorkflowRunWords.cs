@@ -261,6 +261,10 @@ public static class WorkflowRunWords
             {
                 NodeKinds.GoAhead => step.Words is { Length: > 0 } act ? $"Waits for your go-ahead: {act}" : "Waits for your go-ahead.",
                 NodeKinds.Human => "Waits for your task.",
+                // INTEGRATE1o part o2: the run's view reads a decline from the quests (its code); the landing gate, which reads the record alone, says both ways.
+                NodeKinds.WorkRequests => step.Code == WorkRequests.DeclinedCode
+                    ? "A quest the work's sessions published was declined: it waits on you, and passing it over lets the work go on."
+                    : "Waits on the quests the work's sessions published here: each must be done, and one declined is yours to pass over.",
                 _ => on is null ? "Under way." : $"Observed on {on}.",
             },
             WorkflowGraphDetails.Reached => on is null ? "Reached." : $"Reached on {on}.",
@@ -413,6 +417,9 @@ public static class WorkflowRunWords
 
         if (Added(step) is { } added) yield return added;
 
+        // INTEGRATE1o part o2: each request the work's sessions made, a line under the work.
+        foreach (var request in step.Requests ?? []) yield return RequestSaid(request);
+
         // The second opinion's gate holding the work on the person (XAGENT1f): its presses are this terminal's own.
         if (kind == WorkflowKinds.Opinion && step.State == WorkflowRunStates.WaitingOnYou && step.Session is { } held)
         {
@@ -421,6 +428,23 @@ public static class WorkflowRunWords
         }
 
         if (kind == WorkflowKinds.PullRequest && step.PullRequest is { Length: > 0 } address) yield return address;
+    }
+
+    /// <summary>
+    /// One request the work's sessions made, as a line under the work (INTEGRATE1o part o2): a quest by its repository and state, whether its session
+    /// waits on the answer, and the close's note as written; a helper as a request to an agent.
+    /// </summary>
+    private static string RequestSaid(WorkflowRunRequest request)
+    {
+        var note = request.Words is { Length: > 0 } words ? $": “{words}”." : ".";
+        if (request.Kind == WorkflowRunRequestKinds.Agent)
+        {
+            var agent = request.To.Length > 0 ? $"`{request.To}`" : "a helper";
+            return $"Request to an agent: {agent} is {request.State}{note}";
+        }
+
+        var waits = request.Awaits ? ", and its session waits on the answer" : "";
+        return $"Request: quest #{request.Id} to `{request.To}` is {request.State}{waits}{note}";
     }
 
     /// <summary>A commit as a person reads it: its first eight characters, as the driver says one.</summary>

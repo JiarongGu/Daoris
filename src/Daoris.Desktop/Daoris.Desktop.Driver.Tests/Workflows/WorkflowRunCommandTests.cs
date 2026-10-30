@@ -113,6 +113,22 @@ public sealed class WorkflowRunCommandTests : IDisposable
         Assert.Equal(Golden("run.txt"), said);
     }
 
+    /// <summary>
+    /// INTEGRATE1o part o2: the requests the work's sessions made are read from every quest and session the service answers and printed under the
+    /// work: the quest a session of it published, with its repository, state and the decline's reason, and the helper it asked as a request to an
+    /// agent. The same run without them prints what the golden text holds.
+    /// </summary>
+    [Fact]
+    public async Task A_quest_s_run_prints_the_requests_its_sessions_made_under_the_work()
+    {
+        var (said, exit) = await RunAsync(true, "--quest", "#q1");
+
+        Assert.Equal(0, exit);
+        Assert.Contains("Request: quest #q5 to `docs` is declined: “not ours”.\n", said);
+        Assert.Contains("Request to an agent: `codex-acp` is working.\n", said);
+        Assert.DoesNotContain("Request", Golden("run.txt"));
+    }
+
     /// <summary>A session's run is its quest's, with <i>this session</i> on the steps its record is; an ask's is each run it reaches.</summary>
     [Fact]
     public async Task A_session_s_run_is_its_quest_s_with_this_session_marked_and_an_ask_s_the_same()
@@ -300,11 +316,13 @@ public sealed class WorkflowRunCommandTests : IDisposable
     }
 
     /// <summary>The verb's run over the stand-ins, through the sources the host builds: what it printed, and its exit.</summary>
-    private async Task<(string Said, int Exit)> RunAsync(params string[] words)
+    private Task<(string Said, int Exit)> RunAsync(params string[] words) => RunAsync(false, words);
+
+    private async Task<(string Said, int Exit)> RunAsync(bool requests, params string[] words)
     {
         var path = Setup();
         var asked = WorkflowRunCommand.Read(["run", .. words], out var problem) ?? throw new InvalidOperationException(problem);
-        using var service = new ServiceClient("http://stand-in", null, new HttpClient(new StandInService()));
+        using var service = new ServiceClient("http://stand-in", null, new HttpClient(new StandInService(requests)));
         var sources = await WorkflowRunCommand.SourcesAsync(service, path);
         using var output = new StringWriter { NewLine = "\n" };
 
@@ -316,13 +334,24 @@ public sealed class WorkflowRunCommandTests : IDisposable
     /// A stand-in service: <c>engine</c> in the <c>aurora</c> workspace, ask <c>a1</c>'s one quest done there by session <c>s1</c>,
     /// and a chat. Every other door answers an empty list.
     /// </summary>
-    private sealed class StandInService : HttpMessageHandler
+    private sealed class StandInService(bool requests = false) : HttpMessageHandler
     {
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
         {
             var body = request.RequestUri!.PathAndQuery switch
             {
                 "/api/registry" => """[{"repository":"engine","workspace":"aurora"}]""",
+                // INTEGRATE1o part o2: a quest session s1 published to another repository, declined, and a helper it asked.
+                "/api/quests?includeClosed=true" when requests =>
+                    """
+                    [{"id":"q1","from":"ask #a1","to":"engine","title":"Quest q1","body":"","status":"Done","updated":"2026-10-09T09:30:00Z"},
+                     {"id":"q5","from":"engine","to":"docs","title":"Quest q5","body":"","status":"Declined","note":"not ours","publishedBy":"s1","updated":"2026-10-09T09:10:00Z"}]
+                    """,
+                "/api/sessions?includeClosed=true" when requests => """
+                    [{"id":"s1","repository":"engine","state":"completed","quest":"q1","adapter":"claude-code",
+                      "created":"2026-10-09T09:00:00Z","updated":"2026-10-09T09:20:00Z","evidence":"commits landed:\nabc1234 the change"},
+                     {"id":"h1","repository":"engine","state":"working","serves":"s1","adapter":"codex-acp","created":"2026-10-09T09:05:00Z"}]
+                    """,
                 "/api/quests?includeClosed=true" =>
                     """[{"id":"q1","from":"ask #a1","to":"engine","title":"Quest q1","body":"","status":"Done","updated":"2026-10-09T09:30:00Z"}]""",
                 "/api/sessions?includeClosed=true" => """

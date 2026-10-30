@@ -90,6 +90,9 @@ public sealed record KeptTurn(
     int Reader)
 {
     public string? Actor { get; init; }
+
+    /// <summary>The brainstorm a pass's turn was spent for (BRAINSTORM1c, D176 point 7); null for every other session.</summary>
+    public string? Brainstorm { get; init; }
 }
 
 /// <summary>What the turns' log holds, in the order it was written: its turns, its gaps, and the lines that did not read.</summary>
@@ -619,6 +622,7 @@ public static class UsageHistory
         Number(json, "epoch", epoch);
         Text(json, "door", Word(binding?.Door));
         Text(json, "actor", Word(binding?.Actor));
+        if (Word(binding?.Brainstorm) is { } brainstorm) json.WriteString("brainstorm", brainstorm);
         json.WriteString("session", turn.Session);
         json.WriteNumber("seq", turn.Seq);
         Text(json, "started", turn.Started is { } started ? Stamp(started) : null);
@@ -888,7 +892,7 @@ public static class UsageHistory
         return new KeptTurn(
             agent, agent is null ? null : Json.Text(record, "account"), Whole(record, "epoch"), Json.NonEmpty(record, "door"), session, seq,
             Moments.ReadStrict(Json.Text(record, "started")), ended, TokensOf(record), model, split, Json.NonEmpty(record, "attribution"),
-            Flag(record, "whole"), cancelled, meaning, reader) { Actor = Json.NonEmpty(record, "actor") };
+            Flag(record, "whole"), cancelled, meaning, reader) { Actor = Json.NonEmpty(record, "actor"), Brainstorm = Json.NonEmpty(record, "brainstorm") };
     }
 
     private static TurnTokens TokensOf(JsonObject record) =>
