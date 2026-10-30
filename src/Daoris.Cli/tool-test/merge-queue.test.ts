@@ -1241,6 +1241,9 @@ const PROBE_DRIVER = [
 const QUEUE_GATE = [
   "import { existsSync } from 'node:fs';",
   'const name = process.argv[2];',
+  // A case that must queue a branch while a candidate is still running holds its `check` gate on a file it writes after.
+  'const hold = process.env.QGATE_HOLD;',
+  "if (hold && name === 'check') { const end = Date.now() + 300000; while (!existsSync(hold) && Date.now() < end) await new Promise((done) => setTimeout(done, 100)); }",
   'console.log(`${name} ran`);',
   "if (existsSync(`break-${name}`)) { console.log(`error: ${name} is broken`); process.exit(1); }",
   '',
@@ -1789,13 +1792,17 @@ describe('the queue, end to end in a scratch repository', { concurrency: true },
 
   test('a member the line holds by the time its candidate forms is contained at once, and said so', async () => {
     const repo = queueScratch('contained-line');
+    const gate = join(repo.root, 'local', 'gate-go');
     try {
       nested(repo);
       // Queued behind a candidate in flight: the enqueue refuses a branch the line holds, but main lacks inner until outer promotes.
+      // Outer's `check` gate waits on `gate` until inner is queued, so outer cannot promote first on a loaded machine (FLAKE1).
       for (const name of ['outer', 'inner']) assert.equal((await repo.run([name, '--preview'])).status, 0);
-      const outer = repo.run(['outer', '--message', 'local/outer.msg']);
+      const outer = repo.run(['outer', '--message', 'local/outer.msg'], { QGATE_HOLD: gate });
       await repo.until(() => repo.queue()?.candidate !== null && repo.queue()?.candidate !== undefined);
       const inner = repo.run(['inner', '--message', 'local/inner.msg']);
+      await repo.until(() => (repo.queue()?.queued.length ?? 0) === 1);
+      writeFileSync(gate, '');
       const [outerOut, done] = await Promise.all([outer, inner]);
       assert.equal(outerOut.status, 0, `${outerOut.out}\n${repo.log()}`);
       assert.equal(done.status, 0, `${done.out}\n${repo.log()}`);
