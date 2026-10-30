@@ -3868,10 +3868,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
     /// line after its own note, so its state, flag and note's code say <i>limited</i> alike, and every reader decides by the flag. The person's
     /// stop stays theirs, as a driven one's does, and an agent's refusal of the choice at the open keeps its own end.
     /// </summary>
-    /// <remarks>
-    /// <c>failed</c> rather than the flag on another state, since every ledger built so far takes the flag on a move to failed alone, and an
-    /// older build's put-back of a record writes its flag again only there; an older build reads the end's events as it always did.
-    /// </remarks>
+    /// <remarks>Why <c>failed</c>, never the flag on another state: D212's note of FOUNDATION1g part c.</remarks>
     private (string State, Noted Note, bool Limit) LimitedEnd(string sessionId, string state, Noted note)
     {
         var personStopped = state == "stopped" && _processes.WasStopRequested(sessionId) && _processes.StopReason(sessionId) is null;
