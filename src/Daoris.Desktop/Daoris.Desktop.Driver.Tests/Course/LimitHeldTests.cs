@@ -163,4 +163,55 @@ public sealed class LimitHeldTests
         Assert.Empty(held.Words);
         Assert.Equal(3, held.Before);
     }
+
+    /// <summary>
+    /// 🔴 FOUNDATION1g part c (the foundation design §3.5): a conversation's end writes its limit as the ledger's <c>limited</c> flag, and the
+    /// flag decides: a record carrying it is limited whatever its events still hold, which give only the words and where they stand. A record
+    /// with no flag, as an older build ended it, is read from its events as before.
+    /// </summary>
+    [Fact]
+    public void The_record_s_flag_decides_the_limit_and_its_events_give_the_words()
+    {
+        IReadOnlyList<SessionEvent> refused = [Person("Earlier, answered."), Agent("Done."), Turn("end_turn"), .. Refused("Make the port configurable.")];
+        IReadOnlyList<SessionEvent> answered = [Person("Hello."), Agent("Hi."), Turn("end_turn")];
+
+        var flagged = LimitHeld.Of(refused, limited: true)!;
+        Assert.Equal(["Make the port configurable."], flagged.Words.Select(word => word.Text));
+        Assert.Equal(3, flagged.Before);
+
+        // Its events gone or holding none of it: still limited, no words held, the brief composed from all there is.
+        var bare = LimitHeld.Of(answered, limited: true)!;
+        Assert.Empty(bare.Words);
+        Assert.Equal(answered.Count, bare.Before);
+        Assert.NotNull(LimitHeld.Of([], limited: true));
+
+        // A record from before the flag: its events alone, as an older build reads every record.
+        Assert.Equal(["Make the port configurable."], LimitHeld.Of(refused, limited: false)!.Words.Select(word => word.Text));
+        Assert.Null(LimitHeld.Of(answered, limited: false));
+    }
+
+    /// <summary>The flag says the limit ended the part; the person's *Stop waiting* still leaves the wait, flag or none.</summary>
+    [Fact]
+    public void A_flagged_record_waits_until_the_person_stops_its_wait()
+    {
+        var stopped = LimitNotes.StoppedWaiting();
+        SessionEvent left = new() { Kind = SessionEventKind.Note, Text = stopped.Note, Parts = stopped.Parts };
+
+        Assert.NotNull(LimitHeld.Waiting(Refused("Make the port configurable."), limited: true));
+        Assert.NotNull(LimitHeld.Waiting([], limited: true));
+        Assert.Null(LimitHeld.Waiting([.. Refused("Make the port configurable."), left], limited: true));
+        Assert.Null(LimitHeld.Waiting([.. Refused("Make the port configurable."), left], limited: false));
+    }
+
+    /// <summary>The end's note carries the refused turn's own cooling line, its code and facts, as a driven end a limit made does.</summary>
+    [Fact]
+    public void The_last_refused_turn_s_cooling_line_is_held_for_the_end()
+    {
+        var first = Cooling(NoteCodes.AccountCooling);
+        var last = Cooling(NoteCodes.AccountCoolingNoWindow);
+
+        var held = LimitHeld.Of([Person("First."), NotTaken(), first, Turn("error"), Person("Second."), NotTaken(), last, Turn("error")])!;
+
+        Assert.Same(last, held.Cooled);
+    }
 }

@@ -1114,9 +1114,16 @@ internal sealed class ChatLedger : HttpMessageHandler
                         return (HttpStatusCode.Conflict, new JsonObject { ["error"] = busy }.ToJsonString());
                     }
 
+                    // The ledger's rule (SessionLedger.AdvanceAsync), which every host built so far keeps: only a move to failed says a limit, so
+                    // an end that writes the flag elsewhere is refused here as it would be there (FOUNDATION1g part c).
+                    var moved = JsonNode.Parse(body!)!;
+                    if (moved["limit"]?.GetValue<bool>() == true && to != "failed")
+                    {
+                        return (HttpStatusCode.Conflict, $$"""{"error":"Only a move to failed can say an account's limit — session `{{id}}` was asked to move to {{to}}."}""");
+                    }
+
                     session["state"] = to;
                     // The flags the ledger keeps with an end, cleared by a move to working (SAIDBACK1g).
-                    var moved = JsonNode.Parse(body!)!;
                     session["interrupted"] = moved["interrupted"]?.GetValue<bool>() ?? false;
                     session["limit"] = moved["limit"]?.GetValue<bool>() ?? false;
                     session["noteParts"] = moved["noteParts"]?.DeepClone();

@@ -69,6 +69,26 @@ public sealed class UsageTests : IDisposable
     }
 
     /// <summary>
+    /// BRAINSTORM1c (D176 point 7): a brainstorm pass's reading names its brainstorm and the file keeps it, so the usage is the brainstorm's
+    /// and not a quest's or a session's; every other record is written as before, with no such field.
+    /// </summary>
+    [Fact]
+    public void A_brainstorm_pass_s_reading_names_its_brainstorm_and_every_other_reading_names_none()
+    {
+        var store = Store();
+        store.Record(new UsageEntry("brainstorm-b7-g1", "", "codex-acp", "account-2", 9_000, 200_000, Now()) { Brainstorm = "b7" });
+        store.Record(new UsageEntry("s1", "engine", "claude-code", "work", 48_000, 200_000, Now()));
+
+        var read = Store();
+
+        Assert.Equal("b7", read.Of("brainstorm-b7-g1")?.Brainstorm);
+        Assert.Null(read.Of("s1")?.Brainstorm);
+        Assert.Equal(["brainstorm-b7-g1"], read.OfBrainstorm("b7").Select(entry => entry.Session));
+        var text = File.ReadAllText(DaorisHome.Entry(_home, HomeEntry.Usage));
+        Assert.Equal(1, text.Split("\"brainstorm\"").Length - 1);
+    }
+
+    /// <summary>
     /// The per-account answer is the question that matters — which account is carrying the load. It is a derivation over the sessions, so the two can never disagree.
     /// </summary>
     [Fact]

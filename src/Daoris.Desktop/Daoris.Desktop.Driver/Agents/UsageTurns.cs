@@ -19,6 +19,10 @@ namespace Daoris.Driver;
 public sealed record TurnBinding(string? Agent, string? Account, string Door, string Meaning)
 {
     public string? Actor { get; init; }
+
+    /// <summary>The brainstorm a pass's turns are spent for (BRAINSTORM1c, D176 point 7); null for every other session.</summary>
+    public string? Brainstorm { get; init; }
+
     /// <summary>A session's binding as its start chose the account: <paramref name="profile"/>, or null for the tool's own.</summary>
     public static TurnBinding Of(ISessionAdapter adapter, string? profile)
     {
@@ -102,6 +106,12 @@ public static class UsageTurns
     public static void ActorBound(string home, ISessionEvents events, string session, string actor)
     {
         if (BindingOf(home, session) is { } binding) Bound(home, events, session, binding with { Actor = actor });
+    }
+
+    /// <summary>A brainstorm pass's session is its brainstorm's (BRAINSTORM1c): its turns are kept naming it, beside the account its start chose.</summary>
+    public static void BrainstormBound(string home, ISessionEvents events, string session, string brainstorm)
+    {
+        if (BindingOf(home, session) is { } binding) Bound(home, events, session, binding with { Brainstorm = brainstorm });
     }
 
     private static TurnBinding? BindingOf(string home, string session)

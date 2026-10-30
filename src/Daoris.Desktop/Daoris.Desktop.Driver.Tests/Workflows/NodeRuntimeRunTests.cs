@@ -254,6 +254,45 @@ public sealed class NodeRuntimeRunTests : NodeRunFixture
     }
 
     /// <summary>
+    /// INTEGRATE1o part o2 (§17.3): a run's <c>work.requests</c> holds the work on the quests a session serving its work published. An open one
+    /// leaves the node active, a declined one holds it active too, never failed, and it is reached once every one is done; a quest another session
+    /// published is no part of this run's.
+    /// </summary>
+    [Fact]
+    public async Task A_run_holds_its_work_on_the_quests_its_sessions_published_until_each_is_done()
+    {
+        BoundTo("""
+            {"schemaVersion":2,"entries":["claimed"],"end":"handed",
+             "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},
+                      {"id":"requests","kind":"work.requests","version":1,"reach":"observed"},
+                      {"id":"handed","kind":"handed","version":1,"reach":"observed"}],
+             "wires":[{"id":"c>r","kind":"after","from":"claimed","to":"requests"},{"id":"r>h","kind":"after","from":"requests","to":"handed"}]}
+            """);
+        var serving = new SessionRecord("s1", "engine", "completed") { Quest = RunId };
+        WorkUnit[] Units(string published, string by = "s1") =>
+            [.. QuestUnits.Read([RunHome.Quest(RunId, "Done"), RunHome.Quest("q9", published, to: "other") with { PublishedBy = by }], [serving])];
+
+        _units = Units("Open");
+        var runtime = Runtime();
+        await RunPassAsync(runtime);
+        await RunPassAsync(runtime);
+        Assert.Equal(NodeStates.Active, RunStatus("requests").State);
+        Assert.Equal(NodeStates.Blocked, RunStatus("handed").State);
+
+        _units = Units("Declined");
+        await RunPassAsync(runtime);
+        Assert.Equal((NodeStates.Active, (string?)null), (RunStatus("requests").State, RunStatus("requests").Code));
+
+        _units = Units("Done");
+        await RunPassAsync(runtime);
+        var reached = RunStatus("requests");
+        Assert.Equal((NodeStates.Reached, NodeSource.Requests, "quests#q9"), (reached.State, reached.By, reached.Acceptance!.Evidence!.Ref));
+
+        // Another session's quest holds nothing of this run's.
+        Assert.Empty(WorkRequestsNode.Published([RunHome.Quest("q9", "Open") with { PublishedBy = "someone-else" }], ["s1"]));
+    }
+
+    /// <summary>
     /// Without the service the units read are the branches alone, with no links (§2.3): no branch of a repository holding an open graph run is
     /// governed by Current, said once a pass, and the run's own nodes keep their bindings; another repository's cycle goes on.
     /// </summary>

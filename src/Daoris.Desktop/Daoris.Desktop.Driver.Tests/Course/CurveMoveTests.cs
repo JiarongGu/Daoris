@@ -192,11 +192,20 @@ public sealed class CurveMoveTests : IDisposable
         var roster = Roster();
         using var runner = Runner(ledger, roster);
         using var client = ledger.Client();
+        var decided = Deciding(runner);
 
         var choice = await JudgeAsync(runner);
 
         var move = Assert.IsType<SwitchChoice.MoveTo>(choice);
         Assert.Equal(("account-3", "weekly", 0.75), (move.Account, move.Window, move.Used));
+
+        // FOUNDATION1h branch 1: the course admits it (G-02's facts): at the turn's end, a brief, why `curve` by `daoris`, a pick of the
+        // account the decision named, on the conversation's own role.
+        var course = Assert.IsType<LineCourse.Move>(Assert.Single(decided).Answer);
+        Assert.Equal(
+            (CourseWhen.TurnEnd, CourseHow.Brief, CourseFromWhy.Curve, CourseFromBy.Daoris),
+            (course.When, course.How, course.Why, course.By));
+        Assert.Equal(new CourseWhere(CourseAccountSource.Pick, "chat", null, "account-3"), course.Where);
         Assert.Equal(2, ledger.Count);
         var moved = (await client.RecordAsync("c2"))!;
         Assert.Equal(("talk", "account-3", _root), (moved.Adapter, moved.Profile, moved.Tree));
@@ -280,7 +289,46 @@ public sealed class CurveMoveTests : IDisposable
         Assert.Null(new HandOverBox(_home).Read("c0nv0001"));
     }
 
-    /// <summary>Under its curve by the margin it stays and reads nothing (§1.2: idle accounts are read only when a switch is near).</summary>
+    /// <summary>What the course answered each judged turn's end, by session (FOUNDATION1h branch 1), heard from the runner.</summary>
+    private static List<(string Session, LineCourse Answer)> Deciding(ChatRunner runner)
+    {
+        var decided = new List<(string Session, LineCourse Answer)>();
+        runner.Curve.Decided += (session, answer) =>
+        {
+            lock (decided) decided.Add((session, answer));
+        };
+        return decided;
+    }
+
+    /// <summary>
+    /// 🔴 FOUNDATION1h branch 1 (the foundation design §3.1, C5-1.14): the scope's switch is the course's consent, its <c>SwitchAdmits</c> rule.
+    /// With <c>switch: off</c> it is the course's <c>SwitchOff</c> hold that stops the curve, as the judged event shows it and no record
+    /// is made; the account reading (<see cref="SwitchDecision"/>) still says <c>off</c> beside it, and reads nothing.
+    /// </summary>
+    [Fact]
+    public async Task The_course_s_switch_off_hold_is_what_stops_the_curve_and_no_record_is_made()
+    {
+        new HarnessSettings().WithRotation("talk", ["account-1", "account-2", "account-3"]).WithUse("talk", new UseChange(Switch: "off")).Save(Settings);
+        Said("account-1", 0.99);
+        Said("account-2", 0.10, secondsAgo: 600);
+        var ledger = Ledger();
+        using var runner = Runner(ledger, Roster());
+        var decided = Deciding(runner);
+
+        Assert.Equal(new SwitchChoice.Stay(SwitchStay.Off), await JudgeAsync(runner));
+
+        var (session, answer) = Assert.Single(decided);
+        Assert.Equal("c0nv0001", session);
+        Assert.Equal(CourseHoldWhy.SwitchOff, Assert.IsType<LineCourse.Hold>(answer).Why);
+        Assert.Equal(1, ledger.Count);
+        Assert.Empty(new MoveStore(_home, () => StoreSettled.Yes, _ => true, "run-probe", StoreProcess.Shell).Of("c0nv0001"));
+        Assert.Null(new HandOverBox(_home).Read("c0nv0001"));
+    }
+
+    /// <summary>
+    /// Under its curve by the margin it stays and reads nothing (§1.2: idle accounts are read only when a switch is near); the decision
+    /// names no account, so the course's hold is its own <c>Stays</c>, not the switch's.
+    /// </summary>
     [Fact]
     public async Task Under_its_curve_by_the_margin_it_stays_and_reads_nothing()
     {
@@ -288,10 +336,12 @@ public sealed class CurveMoveTests : IDisposable
         Said("account-2", 0.10, secondsAgo: 600);
         var ledger = Ledger();
         using var runner = Runner(ledger, Roster());
+        var decided = Deciding(runner);
 
         Assert.Equal(new SwitchChoice.Stay(SwitchStay.Room), await JudgeAsync(runner));
         Assert.Equal(1, ledger.Count);
         Assert.Empty(Asked());
+        Assert.Equal(CourseHoldWhy.Stays, Assert.IsType<LineCourse.Hold>(Assert.Single(decided).Answer).Why);
     }
 
     /// <summary>
