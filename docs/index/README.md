@@ -414,4 +414,4 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/README.md` | 66 | 293 |
 | `docs/backlog-parked.md` | 184 | 956 |
 | `docs/development.md` | 53 | 591 |
-| `src/Daoris.Desktop/README.md` | 255 | 1254 |
+| `src/Daoris.Desktop/README.md` | 256 | 1255 |
