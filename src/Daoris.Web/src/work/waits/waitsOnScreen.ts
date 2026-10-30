@@ -1,4 +1,4 @@
-import { type RefObject, useEffect, useRef, useState } from 'react';
+import { type RefObject, useCallback, useEffect, useRef, useState } from 'react';
 
 /** The head's sections a wait stands in (WAITFOOT2a): its park's card, its go-aheads, its rules, its work. */
 export const WAIT_SECTION = '[data-wait-section]';
@@ -24,8 +24,16 @@ type Watching = { observer: IntersectionObserver; sections: readonly Element[]; 
  * one or the other changed.
  */
 export function useWaitsOnScreen(scroller: RefObject<HTMLElement | null>): boolean | null {
-  const [onScreen, setOnScreen] = useState<boolean | null>(false);
+  const [onScreen, setOnScreenState] = useState<boolean | null>(false);
   const watching = useRef<Watching | null>(null);
+  // Read after every drawing, so set only on a change (PAGELOOP1): set again unchanged, React keeps the update and draws the frame
+  // once more, and each line of a streamed hand-back left one behind its commit until React stopped the page (#185).
+  const held = useRef<boolean | null>(false);
+  const setOnScreen = useCallback((next: boolean | null) => {
+    if (held.current === next) return;
+    held.current = next;
+    setOnScreenState(next);
+  }, []);
   useEffect(() => {
     const root = scroller.current;
     // Read in the head alone: the conversation below it may be long, and this is read at every drawing.

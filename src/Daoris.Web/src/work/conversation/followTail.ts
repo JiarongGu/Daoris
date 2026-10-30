@@ -18,8 +18,16 @@ const SLACK = 48;
  * its head, which says how it ended (SESS2 H1), with *last words* and the way to the bottom beside it.
  */
 export function useFollowTail(scroller: RefObject<HTMLElement | null>, grew: unknown, opened: unknown, fromTop = false) {
-  const [atTail, setAtTail] = useState(true);
+  const [atTail, setAtTailState] = useState(true);
   const following = useRef(true);
+  // Set only on a change (PAGELOOP1): set again unchanged just after a drawing, React keeps the update and draws once more, and a
+  // streamed hand-back's every line left one behind its commit until React stopped the page (#185).
+  const held = useRef(true);
+  const setAtTail = useCallback((near: boolean) => {
+    if (held.current === near) return;
+    held.current = near;
+    setAtTailState(near);
+  }, []);
 
   const toTail = useCallback((smooth = false) => {
     const element = scroller.current;
@@ -32,7 +40,7 @@ export function useFollowTail(scroller: RefObject<HTMLElement | null>, grew: unk
     }
     following.current = true;
     setAtTail(true);
-  }, [scroller]);
+  }, [scroller, setAtTail]);
 
   useEffect(() => {
     const element = scroller.current;
@@ -44,7 +52,7 @@ export function useFollowTail(scroller: RefObject<HTMLElement | null>, grew: unk
     };
     element.addEventListener('scroll', onScroll, { passive: true });
     return () => element.removeEventListener('scroll', onScroll);
-  }, [scroller]);
+  }, [scroller, setAtTail]);
 
   // A new session opens at its tail, or an ended one at its top, not followed (SESS2 H1).
   useLayoutEffect(() => {

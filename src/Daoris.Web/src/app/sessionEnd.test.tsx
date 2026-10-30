@@ -2,17 +2,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient } from '@tanstack/react-query';
+import { Profiler } from 'react';
 
-// PAGELOOP1: on the install the page threw React's update-depth error (#185) seven seconds before a driven session ended, twice, a
-// session that closed its quest done and landed by its rule, and with no boundary the window went blank. The whole window, as
-// `main.tsx` mounts it, over a mocked shell that delivers each event to every handler the page holds, through what such an end
-// changes: the turn ends, the quest is done, the work lands, the session ends and says so, and the next look reads it all again.
-// None of these cases met the install's loop: they hold the window through such an end on Sessions and on Overview, its state
-// pulled and pushed, with jsdom's empty boxes and with a box for every element, so a loop a later change brings to these paths
-// fails here, and the error screen names the component the next time the install meets one (D217).
-// The install's log puts the failure about ten seconds after the quest closed done and four seconds into the agent's last message,
-// which streams in as some hundreds of one-line `message` events of one id: the end below streams such a message, with the quest
-// done and the session still working, before the turn ends. It met no loop either.
+// PAGELOOP1: on the install the page threw React's update-depth error (#185) four seconds into a driven session's last message,
+// streamed as hundreds of one-line `message` events of one id, twice, and with no boundary the window went blank. The whole
+// window, as `main.tsx` mounts it, over a mocked shell that delivers each event to every handler the page holds, through what such
+// an end changes: the turn ends, the quest is done, the work lands, the session ends and says so, and the next look reads it all
+// again, on Sessions and on Overview, its state pulled and pushed, with jsdom's empty boxes and with a box for every element. The
+// loop itself is the last case's: each streamed line left an update behind its commit, which React 19.2 counts as nested.
 
 const { invoke, notifyReady, shenora, handlers } = vi.hoisted(() => {
   const notifyReady = vi.fn(() => Promise.resolve());
@@ -330,4 +327,39 @@ describe("the window through a driven session's end (PAGELOOP1)", () => {
       });
     }
   }
+
+  /**
+   * React 19.2 counts a commit that leaves an update waiting as nested, and throws #185 past fifty in a row. Each streamed line left
+   * one (the tail re-set in a layout effect, the waits' standing re-set after every drawing), and in a real Chromium page the next
+   * line and its scroll came before the count could rest. The Profiler names such commits `nested-update`: a streamed line makes none.
+   */
+  it("streams the agent's last message line by line with no commit leaving an update behind", async () => {
+    pushes = true;
+    const phases: string[] = [];
+    let counting = false;
+    render(
+      <Profiler id="page" onRender={(_id, phase) => { if (counting) phases.push(phase); }}>
+        <PageRoot client={new QueryClient({ defaultOptions: { queries: { retry: false } } })} window={null} />
+      </Profiler>,
+    );
+    expect(await screen.findByText('Working on the streaming budget.')).toBeInTheDocument();
+    world.quest = 'Done';
+    await push('quests', 'default');
+    await push('work', 'engine');
+
+    counting = true;
+    let seq = world.events.length;
+    for (let line = 1; line <= 24; line += 1) {
+      const chunk = [event(seq + 1, { kind: 'message', id: 'm3', text: `- item ${line} of the hand-back\n` })];
+      if (line % 6 === 0) chunk.push(event(seq + 2, { kind: 'usage', used: 1000 + line, size: 1000000 }));
+      seq += chunk.length;
+      world.events = [...world.events, ...chunk];
+      await tell('SESSION_EVENTS', { session: SESSION, events: chunk });
+    }
+    counting = false;
+
+    expect(await screen.findByText(/item 24 of the hand-back/)).toBeInTheDocument();
+    expect(phases.filter((phase) => phase === 'nested-update')).toEqual([]);
+    expect(screen.queryByRole('heading', { level: 1, name: "This window's page stopped on an error" })).toBeNull();
+  });
 });
