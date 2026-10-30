@@ -25,8 +25,8 @@ without a service. Model-dependent capabilities state the tier that actually ran
   Shared hosts exchange permitted records, serve no UI and answer no machine paths.
 - UI chrome translates in English and Chinese; authored content stays as written. Read the
   translation and UI contracts before changing visible text or screens.
-- Keep project facts in versioned records. Preserve historical evidence, append amendments to
-  decisions, and move completed tasks from the backlog to the archive.
+- Keep project facts in versioned records. Rewrite a present fact where it lives (D220); append
+  amendments to decisions as history, and move completed tasks from the backlog to the archive.
 - Do not hand-edit versions or release headings. The release workflow owns their stamping.
   Local commits follow green gates; push, publication and history rewrites remain the owner's call.
 - Keep Codex execution defaults in `.codex/config.toml`. Authorized scratch cleanup follows
