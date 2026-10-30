@@ -85,6 +85,7 @@ function KeepEditor({ kind, onKeep, onClose }: { kind: SpaceKind; onKeep: (set: 
   const id = kind.id as Exclude<KeepSet['kind'], 'floor'>;
   const [days, setDays] = useState(kind.rule.days === null ? '' : String(kind.rule.days));
   const [whole, setWhole] = useState(kind.rule.whole === true);
+  const [gb, setGb] = useState(kind.rule.gb == null ? '' : String(kind.rule.gb));
   // History's press alone is its `never` (KEEP1g).
   const [never, setNever] = useState(kind.rule.kind === 'never' || kind.rule.kind === 'press');
   const [saving, setSaving] = useState(false);
@@ -98,13 +99,20 @@ function KeepEditor({ kind, onKeep, onClose }: { kind: SpaceKind; onKeep: (set: 
     });
   };
   const save = () => {
-    if (never) return send({ kind: id, never: true });
+    // KEEPSIZE1d: the size limit goes only where it changed, so a save of the days alone leaves it as it stands.
+    const limit = bounds.gb && gb.trim() !== '' ? Number(gb) : undefined;
+    if (limit !== undefined && !Number.isInteger(limit)) {
+      setSaid(t('settings.daoris.space.edit.notAGb'));
+      return;
+    }
+    const sized = limit !== undefined && limit !== kind.rule.gb ? { gb: limit } : {};
+    if (never) return send({ kind: id, never: true, ...sized });
     const count = Number(days);
     if (days.trim() === '' || !Number.isInteger(count)) {
       setSaid(t('settings.daoris.space.edit.notADay'));
       return;
     }
-    send(bounds.whole ? { kind: id, days: count, whole } : { kind: id, days: count });
+    send(bounds.whole ? { kind: id, days: count, whole, ...sized } : { kind: id, days: count, ...sized });
   };
   return (
     <div className="grid gap-2 rounded-control border border-line bg-page/60 px-3 py-2" role="group" aria-label={t('settings.daoris.button.change')}>
@@ -123,6 +131,22 @@ function KeepEditor({ kind, onKeep, onClose }: { kind: SpaceKind; onKeep: (set: 
           <span className="text-small text-ink-soft">{t('settings.daoris.space.edit.unit')}</span>
           <span className="text-small text-ink-faint">{t('settings.daoris.space.edit.bounds', { min: bounds.min, max: bounds.max })}</span>
         </span>
+        {bounds.gb && (
+          <span className="inline-flex items-center gap-1.5">
+            <input
+              type="number"
+              min={bounds.gb.min}
+              max={bounds.gb.max}
+              aria-label={t('settings.daoris.space.edit.gb')}
+              value={gb}
+              disabled={saving}
+              onChange={(event) => setGb(event.target.value)}
+              className="w-[4.5rem] rounded-control border border-line-strong bg-raised px-2.5 py-1 text-right text-body text-ink"
+            />
+            <span className="text-small text-ink-soft">{t('settings.daoris.space.edit.gbUnit')}</span>
+            <span className="text-small text-ink-faint">{t('settings.daoris.space.edit.gbBounds', { min: bounds.gb.min })}</span>
+          </span>
+        )}
         {bounds.whole && <CheckField checked={whole} onChange={setWhole} disabled={saving} label={t('settings.daoris.space.edit.whole')} />}
         {bounds.never && (
           <CheckField
@@ -409,6 +433,14 @@ export function WiringSpace({ space, older = false, busy = false, onCount, downl
             </p>
             {onKeep && kind.settable && kind.bounds && editing === kind.id && (
               <KeepEditor kind={kind} onKeep={onKeep} onClose={() => setEditing(null)} />
+            )}
+            {kind.rule.gb != null && (
+              <p className="m-0 text-small text-ink-soft">
+                {t(`settings.daoris.space.limit.${kind.id}`, { gb: kind.rule.gb })}
+                {kind.bytes !== null && kind.bytes > kind.rule.gb * GB && (
+                  <span className="text-warn">{' · '}{t('settings.daoris.space.limit.over', { size: size(kind.bytes) })}</span>
+                )}
+              </p>
             )}
             <NextAndLast kind={kind} />
             {kind.volume && (

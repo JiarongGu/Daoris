@@ -238,6 +238,13 @@ public sealed class NodeRuntime(
     /// </summary>
     public IReadOnlyDictionary<string, QuestView>? LastQuests { get; private set; }
 
+    /// <summary>
+    /// The runs held at a declined request (INTEGRATE1o part o3), judged from the quests the runtime last read and each run's node record read now,
+    /// so a pass over a node clears its hold before the next look. Empty before a pass has read.
+    /// </summary>
+    public IReadOnlyList<RequestHold> RequestHolds() =>
+        _governed is { } governed ? Daoris.Driver.RequestHolds.Of(governed.Values, records.Read) : [];
+
     private readonly Func<bool> _holdsLease = holdsLease ?? (() => true);
 
     private readonly SemaphoreSlim _one = new(1, 1);

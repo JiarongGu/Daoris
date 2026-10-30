@@ -360,7 +360,9 @@ tidied branch row's. The record head's budget is measured in a rendered browser 
 over `work/AttendedSession.head.stories.tsx`): how far down the main area the conversation starts, with every block of the
 head present, at the three widths and in both languages; D185's MILESTONEUX1 note says what it measured. A blocked entry is
 said by its code in the reader's language (`entryDetail` in `work/head/milestone.ts`, OVERVIEWNOISE1b), and a tree by its folder's
-name; *What needs you*'s row of a unit is named by the session that recorded its tree and opens the workspace's Branches. A landing's
+name; *What needs you*'s row of a unit is named by the session that recorded its tree and opens the workspace's Branches. A run held at a
+declined request is the `request-declined` row (INTEGRATE1o part o3), whose *Pass over…* asks once for the person's words and presses the
+run's own skip (`useRunNodeWord`). A landing's
 branch whose quest is closed and which the line has not held for a day is that row too (`landing-stale`, LANDRETIRE1 part 2), named by
 its branch; Branches' landed group says its age and closed quest and offers *Withdraw…*, which asks the reason once
 (`settings/Sweep.tsx`, `useWithdrawLandingBranch`), and a session's review says a branch withdrawn, why, and where its commits stay.

@@ -69,6 +69,9 @@ public sealed class DriverWatch(
     /// <summary>The quests the evaluation runtime last read (FABRIC-CLOSE1q3): what a door judges a held close against; null before a pass has read.</summary>
     public IReadOnlyDictionary<string, QuestView>? LastQuests => _nodes?.LastQuests;
 
+    /// <summary>The runs held at a declined request (INTEGRATE1o part o3), as the evaluation runtime last read the quests; none before a pass.</summary>
+    public IReadOnlyList<RequestHold> RequestHolds => _nodes?.RequestHolds() ?? [];
+
     /// <summary>The loop's evaluation runtime once it runs, or null: a test holds its pass with one of its own (PARALLEL1h).</summary>
     internal NodeRuntime? Nodes => _nodes;
 
