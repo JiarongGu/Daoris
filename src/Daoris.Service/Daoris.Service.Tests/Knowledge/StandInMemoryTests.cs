@@ -32,7 +32,8 @@ public sealed class StandInMemoryTests
         await writer.RelateAsync(other.Id, first.Id, "disputes");
         Assert.Equal(2, (await writer.RelateAsync(other.Id, first.Id, "disputes")).Weight);
 
-        var confirmed = await writer.ConfirmAsync(first.Id);
+        Assert.Null(await writer.ConfirmAsync(first.Id, first.Revision));
+        var confirmed = await writer.ConfirmAsync(first.Id, again.Revision);
         Assert.Equal(again.Revision + 1, confirmed!.Revision);
         Assert.Null(await writer.EndAsync(first.Id, again.Revision, "Read before the confirmation."));
         var ended = await writer.EndAsync(first.Id, confirmed.Revision, "The map is drawn in vectors now.");

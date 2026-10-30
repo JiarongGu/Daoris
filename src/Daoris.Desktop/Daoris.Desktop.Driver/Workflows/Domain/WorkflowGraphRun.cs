@@ -120,6 +120,9 @@ public sealed record WorkflowGraphRunFacts(WorkflowRunFacts Run, string RunId, N
     /// </summary>
     public IReadOnlySet<string> Promoted { get; init; } = new HashSet<string>(StringComparer.Ordinal);
 
+    /// <summary>The unit's integration state as its record says (INTEGRATE1h, §17.9), drawn on the <c>integrate</c> node; null where none was asked or read.</summary>
+    public IntegrationHead? Integration { get; init; }
+
     /// <summary>The gate each failed check named (FABRIC-PIPELINE1d), by node, read by the reader from the attempt's result; none where unread.</summary>
     public IReadOnlyDictionary<string, string> Failures { get; init; } = new Dictionary<string, string>(StringComparer.Ordinal);
 }
@@ -192,6 +195,7 @@ public static class WorkflowGraphRuns
                 Asked = asked,
                 Gate = node.Kind == NodeKinds.Check && status.State == NodeStates.Failed ? facts.Failures.GetValueOrDefault(node.Id) : null,
                 Held = checkHeld?.Held,
+                Integration = node.Kind == NodeKinds.Integrate ? facts.Integration : null,
             };
             steps.Add(Observing(step, node, Bound(status), RunSubjects.Of(node, afterHanded)));
         }

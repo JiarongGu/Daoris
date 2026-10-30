@@ -101,7 +101,14 @@ public sealed class WorkRecordStore : IWorkRecordSearch
 
     private readonly ConnectionGate _db;
 
-    private WorkRecordStore(SqliteConnection connection) => _db = ConnectionGate.For(connection);
+    /// <summary>The memory a post naming a landing releases for its sessions, in its transaction (KNOWCENTRAL2c).</summary>
+    private readonly MemoryOpStore _memory;
+
+    private WorkRecordStore(SqliteConnection connection)
+    {
+        _db = ConnectionGate.For(connection);
+        _memory = new MemoryOpStore(_db);
+    }
 
     /// <summary>The stamp a newer build left, where it did: this build then reads and writes no record.</summary>
     public int? NewerVersion { get; private set; }
@@ -115,6 +122,7 @@ public sealed class WorkRecordStore : IWorkRecordSearch
 
     private async Task EnsureSchemaAsync(CancellationToken ct)
     {
+        await _memory.EnsureAsync(ct).ConfigureAwait(false);
         await using (var command = _db.Command())
         {
             command.CommandText = VersionTable;
@@ -361,9 +369,14 @@ public sealed class WorkRecordStore : IWorkRecordSearch
     /// Keep a finished tree's record (§2.2), idempotent on <c>(workspace, repository, folder)</c>: a second post of a kept identity answers
     /// as the first did and writes nothing. The sessions are this store's rows that name the tree and were made before its move.
     /// </summary>
+    /// <param name="turns">
+    /// Each session's turn lines (KNOWCENTRAL2c): a post naming a landing is its sessions' commit point, releasing their staged memory in its
+    /// transaction with the models of the turn that holds each row's instant.
+    /// </param>
     /// <returns>The record as kept, and whether this post kept it.</returns>
     /// <exception cref="NewerWorkRecordsException">A newer build stamped the records.</exception>
-    public Task<(WorkRecord Record, bool Kept)> PostAsync(WorkRecordPost post, DateTimeOffset now, CancellationToken ct = default)
+    public Task<(WorkRecord Record, bool Kept)> PostAsync(
+        WorkRecordPost post, DateTimeOffset now, CancellationToken ct = default, IReadOnlyDictionary<string, MemoryTurns>? turns = null)
     {
         if (Refusal is { } refused) throw refused;
         return _db.InTransactionAsync<(WorkRecord, bool)>(async (_, inside) =>
@@ -412,6 +425,11 @@ public sealed class WorkRecordStore : IWorkRecordSearch
                 link.Parameters.AddWithValue("$session", session.Session);
                 link.Parameters.AddWithValue("$commits", session.Commits is null ? DBNull.Value : JsonSerializer.Serialize(session.Commits, Json));
                 await link.ExecuteNonQueryAsync(inside).ConfigureAwait(false);
+            }
+
+            if (post.Landing is not null)
+            {
+                await _memory.ReleaseAsync([.. sessions.Select(session => session.Session)], predecessors: false, turns, inside).ConfigureAwait(false);
             }
 
             var kept = new WorkRecord(post, now, RecordSchema, sessions);

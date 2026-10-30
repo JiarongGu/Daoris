@@ -424,6 +424,9 @@ public static class WorkflowRunWords
         // INTEGRATE1o part o2: each request the work's sessions made, a line under the work.
         foreach (var request in step.Requests ?? []) yield return RequestSaid(request);
 
+        // INTEGRATE1h: the integrate node's record, in one line.
+        if (step.Integration is { } integration) yield return IntegrationSaid(integration);
+
         // The second opinion's gate holding the work on the person (XAGENT1f): its presses are this terminal's own.
         if (kind == WorkflowKinds.Opinion && step.State == WorkflowRunStates.WaitingOnYou && step.Session is { } held)
         {
@@ -433,6 +436,18 @@ public static class WorkflowRunWords
 
         if (kind == WorkflowKinds.PullRequest && step.PullRequest is { Length: > 0 } address) yield return address;
     }
+
+    /// <summary>A unit's integration state as one line: queued, in a candidate and at which step, held for the owner, handed back, integrated or dropped.</summary>
+    internal static string IntegrationSaid(IntegrationHead head) => head.State switch
+    {
+        IntegrationHeads.Queued => $"queued for `{head.Line}`",
+        IntegrationHeads.InCandidate => head.Step is { Length: > 0 } step ? $"in a candidate for `{head.Line}`, at {step}" : $"in a candidate for `{head.Line}`",
+        IntegrationHeads.Held => $"held for `{head.Line}`: `daoris-driver integrate` says what releases it",
+        IntegrationHeads.HandedBack => $"handed back from `{head.Line}`",
+        IntegrationHeads.Settled => $"integrated into `{head.Line}`",
+        IntegrationHeads.Dropped => $"dropped from `{head.Line}`'s queue",
+        _ => $"{head.State} on `{head.Line}`",
+    };
 
     /// <summary>
     /// One request the work's sessions made, as a line under the work (INTEGRATE1o part o2): a quest by its repository and state, whether its session

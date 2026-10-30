@@ -227,6 +227,32 @@ internal static class EventJournal
         """;
 
     /// <summary>
+    /// The memory log's triggers (KNOWCENTRAL2c, the memory coordinator design §3): a <c>memory</c> row for each operation kept and each move
+    /// of its state, naming the operation, its kind, its target or the entry it wrote, its session and scope; never its text, reason or
+    /// repository. Waking the journal's readers wakes the applier, and the journal never travels.
+    /// </summary>
+    internal static readonly string MemorySchema = $"""
+        {Table}
+
+        CREATE TRIGGER IF NOT EXISTS event_journal_memory_op AFTER INSERT ON memory_ops
+        BEGIN
+          INSERT INTO event_journal (at, record, family, change, state_new, op, entry, from_session, workspace)
+          VALUES ({Now}, COALESCE(substr(NEW.id, 1, 64), ''), 'memory', 'memory', substr(NEW.state, 1, 32), substr(NEW.kind, 1, 32),
+                  substr(COALESCE(NEW.target, NEW.entry), 1, 64), substr(NEW.session, 1, 64), substr(NEW.workspace, 1, 64));
+          {Trim}
+        END;
+
+        CREATE TRIGGER IF NOT EXISTS event_journal_memory_state AFTER UPDATE OF state ON memory_ops
+        WHEN OLD.state IS NOT NEW.state
+        BEGIN
+          INSERT INTO event_journal (at, record, family, change, state_old, state_new, op, entry, from_session, workspace)
+          VALUES ({Now}, COALESCE(substr(NEW.id, 1, 64), ''), 'memory', 'memory', substr(OLD.state, 1, 32), substr(NEW.state, 1, 32),
+                  substr(NEW.kind, 1, 32), substr(COALESCE(NEW.target, NEW.entry), 1, 64), substr(NEW.session, 1, 64), substr(NEW.workspace, 1, 64));
+          {Trim}
+        END;
+        """;
+
+    /// <summary>
     /// The channel's trigger (row k part 2): one <c>message</c> row for each message kept, the person's, a session's and a teammate's mirrored
     /// alike (a mirror seen again, a post the cap refused and a message already kept are no insert, so journal nothing). A message is never
     /// changed once kept, and a read mark, a cursor and a channel forgotten with its ask are not moves. The row names the message, its ask, its

@@ -66,6 +66,16 @@ describe('a session’s facts line', () => {
     expect(sessionFacts(t, { session: session(), shown: 'working', retrying })[2]).toMatch(/^将于 .+ 重试$/);
   });
 
+  /** INTEGRATE1h (the integration design §5.8): its unit's integration state is one fact after the repository, in both languages, in any state. */
+  it('says its unit’s integration state after the repository, and nothing where none was asked', async () => {
+    expect(sessionFacts(t, { session: session({ state: 'failed' }), shown: 'failed', integration: { state: 'held', line: 'main' } })[1])
+      .toBe('held for main');
+    expect(sessionFacts(t, { session: session(), shown: 'working', integration: { state: 'settled', line: 'main' } })[1]).toBe('integrated into main');
+    expect(sessionFacts(t, { session: session(), shown: 'working', integration: null })).toEqual(['engine', '2m']);
+    await i18n.changeLanguage('zh');
+    expect(sessionFacts(t, { session: session(), shown: 'working', integration: { state: 'handed-back', line: 'main' } })[1]).toBe('已从 main 打回');
+  });
+
   /** WAITSAY1: a working session inside a long call names it and says for how long. */
   it('says a working session is running a call, and for how long', () => {
     const calling = { title: 'npm test', since: '2026-10-05T09:40:00Z' };

@@ -463,9 +463,13 @@ public sealed class SessionStore
     {
         _db = ConnectionGate.For(connection);
         Opens = new SessionOpens(_db);
+        Memory = new MemoryOpStore(_db);
     }
 
     public SessionOpens Opens { get; }
+
+    /// <summary>The memory coordinator's log of record, whose rows a session's commit point moves inside the ledger's step (KNOWCENTRAL2c).</summary>
+    public MemoryOpStore Memory { get; }
 
     public static async Task<SessionStore> OpenAsync(SqliteConnection connection, CancellationToken ct = default)
     {
@@ -474,6 +478,7 @@ public sealed class SessionStore
         {
             await store.EnsureSchemaAsync(ct).ConfigureAwait(false);
             await store.Opens.EnsureAsync(ct).ConfigureAwait(false);
+            await store.Memory.EnsureAsync(ct).ConfigureAwait(false);
         }, ct).ConfigureAwait(false);
         return store;
     }
