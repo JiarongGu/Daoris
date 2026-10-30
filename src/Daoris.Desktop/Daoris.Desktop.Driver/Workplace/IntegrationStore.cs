@@ -151,6 +151,19 @@ public sealed class IntegrationStore(
     public IReadOnlyList<IntegrationRequest> Open() =>
         Reading(reader => reader.Query($"SELECT {RequestColumns} FROM integration_requests WHERE closed_at IS NULL ORDER BY at, id", MapRequest), []);
 
+    /// <summary>A repository's most recent closed requests, newest first (the Integration view's history).</summary>
+    public IReadOnlyList<IntegrationRequest> Closed(string repository, int most) =>
+        Reading(reader => reader.Query(
+            $"SELECT {RequestColumns} FROM integration_requests WHERE repository = $repository COLLATE NOCASE AND closed_at IS NOT NULL "
+            + "ORDER BY closed_at DESC, id DESC LIMIT $most",
+            MapRequest, ("$repository", repository), ("$most", most)), []);
+
+    /// <summary>The newest request a unit made, open or closed; null where it made none.</summary>
+    public IntegrationRequest? OfUnit(string unit) =>
+        Reading(reader => reader.Query(
+                $"SELECT {RequestColumns} FROM integration_requests WHERE unit = $unit ORDER BY at DESC, id DESC LIMIT 1", MapRequest, ("$unit", unit))
+            .FirstOrDefault(), null);
+
     /// <summary>
     /// A line's queue (§5.2 step 2's input): its repository's open requests for it that stand in no candidate, in the order admitted. A request
     /// whose member was held for its conflict (<see cref="IntegrationMemberStates.Held"/>, §5.4) is not queued: it waits for the steward's or the
