@@ -81,6 +81,9 @@ public sealed record IntegrationRequester(string Kind, string Door)
 
     /// <summary>A unit's <c>integrate</c> node's start (INTEGRATE1n part n2): Daoris's, on the landing's own provenance.</summary>
     public static IntegrationRequester NodeStart { get; } = new(Daoris, IntegrationDoors.Node);
+
+    /// <summary>The person's press under a merge rule (INTEGRATE1g, §4.2's named legacy exception): their Accept or their merge.</summary>
+    public static IntegrationRequester Press { get; } = new(Person, IntegrationDoors.Press);
 }
 
 /// <summary>The doors a request comes through (§4.6).</summary>
@@ -97,6 +100,9 @@ public static class IntegrationDoors
 
     /// <summary>The unit's <c>integrate</c> node's start (INTEGRATE1n part n2).</summary>
     public const string Node = "node";
+
+    /// <summary>The person's press under a merge rule, carried by the transport (INTEGRATE1g).</summary>
+    public const string Press = "press";
 }
 
 /// <summary>The routes into the line (§4.6): a unit's own landing by its provenance, a recorded landing, or a records branch.</summary>
@@ -113,6 +119,12 @@ public static class IntegrationRoutes
 
     /// <summary>A records branch: no unit, no run, no workflow gate.</summary>
     public const string Records = "records";
+
+    /// <summary>
+    /// A merge rule's press, the named legacy exception (INTEGRATE1g, §4.2): the session's branch at the commit its press merges, under
+    /// <see cref="IntegrationRequests.Legacy"/>, merged with today's message and its repository's hooks, and the checkout only fast-forwarded.
+    /// </summary>
+    public const string Merge = "merge";
 }
 
 /// <summary>

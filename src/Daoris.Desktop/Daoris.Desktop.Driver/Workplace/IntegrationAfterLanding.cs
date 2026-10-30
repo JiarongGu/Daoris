@@ -38,8 +38,8 @@ public static class AfterLandingDispositions
 /// <summary>
 /// The settle's judgement of a branch's commits after its frozen tip (§5.7): judged against the promoted line by patch id and content (D87
 /// point 1, <see cref="LineHolds"/>), and by a replay over trees alone, never by the session branch's ancestry, since a replayed member's
-/// merge holds replayed commits (F27). Reads git and writes objects only, never a ref or a tree on disk. Called from no production path: row
-/// e4's settle calls it.
+/// merge holds replayed commits (F27). Reads git and writes objects only, never a ref or a tree on disk. The settle
+/// calls it.
 /// </summary>
 /// <remarks>
 /// <para><b>Superseded, hunk by hunk.</b> A conflicted file's hunks are where the commit's change and the line's change since the commit's

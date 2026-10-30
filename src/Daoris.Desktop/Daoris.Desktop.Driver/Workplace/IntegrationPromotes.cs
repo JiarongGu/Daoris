@@ -83,7 +83,7 @@ internal static class IntegrationPromoteRuns
 /// <summary>
 /// The integration run's gates verdict, promotion and settle over git (INTEGRATE1e part e4a, D215; the integration design §5.2 steps 6 to 9,
 /// §5.6, §5.7): a verified candidate promoted onto its line only on a passing verdict for its exact tip, and only if the line has not moved
-/// under it, and its members settled. Called from no production path: the unit's <c>integrate</c> node and the transport call it.
+/// under it, and its members settled. The line's run calls it (<see cref="IntegrationLines"/>).
 /// </summary>
 /// <remarks>
 /// <para><b>The verdict first.</b> The verdict port (<see cref="IntegrationVerdicts"/>) is asked for the integration tree put at the candidate's
@@ -616,8 +616,10 @@ internal sealed class IntegrationPromotes(IntegrationStore store, string treesRo
     /// </summary>
     private async Task TidyAsync(IntegrationClaim claim, IntegrationPromoteAsk ask, CancellationToken ct)
     {
+        // A merge rule's press carried no landed branch: its session's branch and tree stay the person's to discard, as a merge left them (INTEGRATE1g).
         var settled = store.Members(claim.Candidate).Where(each => each.State == IntegrationMemberStates.Settled)
-            .Select(each => store.Request(each.Request)!).GroupBy(each => each.Branch, StringComparer.Ordinal).Select(group => group.First()).ToList();
+            .Select(each => store.Request(each.Request)!).Where(each => each.Route != IntegrationRoutes.Merge)
+            .GroupBy(each => each.Branch, StringComparer.Ordinal).Select(group => group.First()).ToList();
         await new IntegrationSteps(store).RunAsync(
             claim, IntegrationStepNames.Tidy,
             async (_, token) =>

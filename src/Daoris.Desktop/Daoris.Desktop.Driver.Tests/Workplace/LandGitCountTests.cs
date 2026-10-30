@@ -220,10 +220,12 @@ public sealed class LandGitCountTests : IDisposable
     // read the line's tips, the head and the named branch's tip again), the landing reads the tree's repository and branch once for
     // its readers, the content proof takes the tree's own branch its judgement read, and the line's two forms are one snapshot. 44, 46
     // and 40, each act's own read (the branch's commits, the pinned tip, the tree's move) still made right before it. The two together,
-    // each landing's `status` and its repository and branch handed down: 42, 45 and 39.
+    // each landing's `status` and its repository and branch handed down: 42, 45 and 39. INTEGRATE1g carries a merge rule's press by the
+    // integration transport, its merge made in the line's integration tree and the checkout fast-forwarded: the tree found or made and put
+    // at its start for the form and again for the replay, the promotion's reads of the line and the fence, and the settle: 67.
     private const int AutomaticCeiling = 42;
     private const int SquashCeiling = 45;
-    private const int MergeCeiling = 39;
+    private const int MergeCeiling = 67;
 
     private const string VerifyQuiet = "git rev-parse --verify --quiet ";
 

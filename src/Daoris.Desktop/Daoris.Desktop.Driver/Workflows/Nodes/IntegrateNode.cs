@@ -112,7 +112,7 @@ public sealed class HomeIntegrationDoor(string home) : IIntegrationDoor
 /// <summary>
 /// Daoris's own <c>integrate</c> (INTEGRATE1n part n2; §17.4): a waited node whose start asks row e's one door for its landed branch, keyed by
 /// the unit and the landing's tip, and whose state is read from the integration record, never copied. Nothing here runs the integration: an
-/// admitted request waits queued until row g's transport.
+/// admitted request's line is sent to the transport (<see cref="Lines"/>, INTEGRATE1g), which runs it off the pass.
 /// </summary>
 /// <remarks>
 /// <para><b>The fence</b> mirrors the close's (<see cref="QuestCloser"/>): step 1 is one locked edit that judges the start on the record as the
@@ -128,6 +128,9 @@ public sealed class HomeIntegrationDoor(string home) : IIntegrationDoor
 public sealed class IntegrateNode(NodeRecordFiles records, Func<IIntegrationDoor?> door, Func<DateTimeOffset> clock)
 {
     private readonly List<string> _said = [];
+
+    /// <summary>The transport an open request's line is sent to, at each look that reads it open (INTEGRATE1g); none leaves it queued.</summary>
+    public Func<IIntegrationLines?> Lines { get; init; } = () => null;
 
     /// <summary>What the node said since it was last asked: each refusal and each outcome, in words.</summary>
     public IReadOnlyList<string> TakeSaid()
@@ -230,6 +233,9 @@ public sealed class IntegrateNode(NodeRecordFiles records, Func<IIntegrationDoor
             if (record.Invoked(attempt.Call.Invocation) is not { } current || !Waiting(record, current)) return (null, new WorkPerformed(unit, node.Id, PerformedWhat.NotTaken, WorkPerformer.Moved));
             return request is null ? Withdraw(record, current, node, refused, now) : Read(record, current, node, request, now);
         });
+
+        // Open, it waits in its line: the transport runs that line off the pass, and its answer asks the next.
+        if (request is { ClosedAt: null } waiting) Lines()?.Send(new IntegrationLineSend(waiting.Repository, waiting.Workspace, waiting.Line));
         return failed is null ? result! : new(unit, node.Id, PerformedWhat.Unknown, failed);
     }
 
