@@ -69,6 +69,27 @@ public sealed class WorkRecordHostTests(LocalHost host) : IClassFixture<LocalHos
         Assert.Equal(404, (await host.PostAsync("/api/trees/record/age", new { before = DateTimeOffset.UtcNow }, DaorisHost.OffMachine)).Status);
     }
 
+    /// <summary>🔴 A session's own page reads its tree's record (landing, tip, ref, commits) by the session's id; none kept is a 404, off this machine nothing.</summary>
+    [Fact]
+    public async Task A_session_reads_the_record_of_the_tree_it_ran_in()
+    {
+        var tree = host.RootOf("keeper-view");
+        var published = await host.PostAsync("/api/quests", new { from = "Asker", to = "Keeper", title = "Viewed work", body = "Go on." });
+        var quest = published.Json.GetProperty("quest").GetProperty("id").GetString()!;
+        var opened = await host.PostAsync("/api/sessions", new { quest, adapter = "stub", tree, baseCommit = "c0" });
+        var session = opened.Json.GetProperty("session").GetProperty("id").GetString()!;
+        Assert.Equal(404, (await host.GetAsync($"/api/sessions/{session}/record")).Status);
+
+        await host.PostAsync("/api/trees/record", Record("keeper-view-20261024T100000000Z", tree));
+        var read = await host.GetAsync($"/api/sessions/{session}/record");
+
+        Assert.Equal(200, read.Status);
+        var post = read.Json.GetProperty("post");
+        Assert.Equal(("daoris/s-1", "c2"), (post.GetProperty("branch").GetString(), post.GetProperty("tip").GetString()));
+        Assert.Equal(["c1", "c2"], post.GetProperty("commits").EnumerateArray().Select(each => each.GetProperty("id").GetString()));
+        Assert.Equal(404, (await host.GetAsync($"/api/sessions/{session}/record", DaorisHost.OffMachine)).Status);
+    }
+
     /// <summary>A part missing is a 400; a caller off this machine is answered nothing.</summary>
     [Fact]
     public async Task A_partial_record_is_refused_and_off_the_machine_nothing_answers()
