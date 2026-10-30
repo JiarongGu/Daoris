@@ -106,6 +106,9 @@ public sealed class ProcessStartsCensusTests
         // waits on.
         ["Daoris.Desktop.Driver/Loop/Chat/ChatRunner.cs"] = StartClass.Person,
         ["Daoris.Desktop.Driver/Loop/DriverContinuations.cs"] = StartClass.Person,
+        // The run over today's transports (AGENTPROVIDER1m-i): its first start's class is its caller's, handed in; its go-on and its
+        // retry are a person's, as the continuations' are.
+        ["Daoris.Desktop.Driver/Agents/TransportRun.cs"] = StartClass.Person,
         ["Daoris.Desktop.Driver/Agents/HarnessActions.cs"] = StartClass.Person,
         ["Daoris.Desktop.Driver/Plugins/PluginTrialProcess.cs"] = StartClass.Person,
         ["Daoris.Desktop.Modules/Loop/HostSupervisor.cs"] = StartClass.Person,
@@ -155,6 +158,9 @@ public sealed class ProcessStartsCensusTests
         ["Daoris.Desktop.Driver/Loop/Driver.cs"] = (1, "piece is null ? ContainedKind.Agent : ContainedKind.Piece"),
         // A native run going on with the person's words (MSG1b), and its one retry (SESSCTX1c).
         ["Daoris.Desktop.Driver/Loop/DriverContinuations.cs"] = (2, "ContainedKind.Agent"),
+        // The one start of the run over today's transports (AGENTPROVIDER1m-i): the executors' starts, their go-on and their retry,
+        // once each executor holds it; no executor does yet, so these sites stay beside it until m-i's later parts move them.
+        ["Daoris.Desktop.Driver/Agents/TransportRun.cs"] = (1, "piece is null ? ContainedKind.Agent : ContainedKind.Piece"),
         // A conversation, Ask Daoris's among them.
         ["Daoris.Desktop.Driver/Loop/Chat/ChatRunner.cs"] = (1, "ContainedKind.Agent"),
         // A plugin's hook program, and the kit's trial of it.
