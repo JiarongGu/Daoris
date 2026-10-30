@@ -64,6 +64,26 @@ public sealed class RoleCatalog
 
     private RoleCatalog(IReadOnlyList<RoleSlot> slots) => Slots = slots;
 
+    /// <summary>The revision of <paramref name="id"/>'s record as the catalogue reads it; 0 for the seed and for an id it does not hold.</summary>
+    public long RevisionOf(string id) => Slots.FirstOrDefault(slot => slot.Id == id)?.Revision ?? 0;
+
+    /// <summary>
+    /// The catalogue a start reads (FOUNDATION1x): the store in <paramref name="home"/>, the seed where it has none. A store that cannot be
+    /// read holds the start, never reads as the seed, since a role it holds could be one that takes the work.
+    /// </summary>
+    /// <exception cref="DriverException">The store cannot be read.</exception>
+    public static RoleCatalog ReadHome(string home)
+    {
+        try
+        {
+            return Read(DesktopStore.LocationIn(home));
+        }
+        catch (Exception error) when (error is DesktopStoreException or Microsoft.Data.Sqlite.SqliteException or IOException or UnauthorizedAccessException)
+        {
+            throw new DriverException($"the role catalogue cannot be read, so starts wait: {error.Message}");
+        }
+    }
+
     /// <summary>Every seeded id in the screen's order, then each added id by name.</summary>
     public IReadOnlyList<RoleSlot> Slots { get; }
 

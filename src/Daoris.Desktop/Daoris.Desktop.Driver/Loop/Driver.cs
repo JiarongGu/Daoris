@@ -737,7 +737,7 @@ public sealed class Driver(
         IReadOnlyList<ActorEffective> order;
         try
         {
-            order = ActorChoices.Effective("build", config);
+            order = RoleCatalog.ReadHome(home).Order(ParticipantWork.Build, new RolePlace(), config);
         }
         catch (DriverException)
         {
@@ -805,6 +805,30 @@ public sealed class Driver(
         }
     }
 
+    /// <summary>The catalogue for the look's report of a start, which never faults the look: a store that will not read says the seed's, and the start itself holds.</summary>
+    private RoleCatalog? CatalogueForReport()
+    {
+        try
+        {
+            return RoleCatalog.ReadHome(home);
+        }
+        catch (DriverException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>The work a quest's start is: design where its publisher or the intake marked its weight so (MODELROLE1l), else build.</summary>
+    internal static string StartWork(QuestView quest) =>
+        string.Equals(quest.Weight, ParticipantWork.Design, StringComparison.Ordinal) ? ParticipantWork.Design : ParticipantWork.Build;
+
+    /// <summary>Where a quest's start is, by which a scoped role is found: its circle and the repository it is asked of.</summary>
+    internal static RolePlace PlaceOf(Consideration start) => new(start.Workspace, start.Quest.To);
+
+    /// <summary>The order the role taking a quest's work walks (FOUNDATION1x), with the fence, the pick or the hand-over's agent a caller names.</summary>
+    private IReadOnlyList<ActorEffective> QuestOrder(Consideration start, IReadOnlyList<string>? fence = null, string? handed = null) =>
+        RoleCatalog.ReadHome(home).Order(StartWork(start.Quest), PlaceOf(start), config, fence, handed: handed);
+
     /// <summary>
     /// A quest's start plan (FOUNDATION1j): Build's order for its work, its passes remembered and said under the quest, its gate the quest's
     /// own: an agent whose harness has no mode for the repository's permission prompts, and a pipe door where the repository has not adopted
@@ -823,7 +847,8 @@ public sealed class Driver(
                 : null;
         }
 
-        return new StartPlan(ParticipantWork.Build, config, Context.Harnesses, Context.Adapters, Passed)
+        return new StartPlan(
+            StartWork(quest), config, Context.Harnesses, Context.Adapters, Passed, catalogue: RoleCatalog.ReadHome(home), place: PlaceOf(start))
         {
             Workspace = start.Workspace,
             Kind = StartKind.Driven,
@@ -847,7 +872,7 @@ public sealed class Driver(
         (ActorAsked Asked, string Choice)? answer = null;
         try
         {
-            var candidates = ActorChoices.Effective("build", config, fence: [agent]).ToList();
+            var candidates = QuestOrder(start, fence: [agent]).ToList();
             if (!candidates.Any(entry => entry.Model is null)) candidates.Add(new ActorEffective(agent, null, null, "rule-default"));
             // The plan's one loop over today's candidates (FOUNDATION1j part v): a handed quest names its agent and its account, so the ask
             // stays the handed one on the account the refusal named, and a model already refused is held, neither asked nor passed.
@@ -1189,13 +1214,14 @@ public sealed class Driver(
             // The agent it runs on: a handed quest's own (MIXAGENT1a-ii), which the held-wait report names its cooling by.
             var started = new StartBegun(
                 start.Quest.Id, null, start.Quest.To, start.Workspace,
-                StartPlan.AgentFor(ParticipantWork.Build, config, start.Resumes, new HandedQuests(home).Read(start.Quest.Id)?.Agent), start);
+                StartPlan.AgentFor(
+                    StartWork(start.Quest), config, start.Resumes, new HandedQuests(home).Read(start.Quest.Id)?.Agent, CatalogueForReport(), PlaceOf(start)), start);
             Begin(started, new StartReservation(start.Quest.Id, null, start.Quest.To, TreeGoneBackInto(start)), (own, opened) => ClaimedAsync(start, own, opened));
         }
 
         foreach (var ask in intakes)
         {
-            var started = new StartBegun(null, ask.Id, $"ask #{ask.Id}", ask.Workspace, StartPlan.AgentFor(ParticipantWork.Intake, config));
+            var started = new StartBegun(null, ask.Id, $"ask #{ask.Id}", ask.Workspace, StartPlan.AgentFor(ParticipantWork.Intake, config, catalogue: CatalogueForReport(), place: new RolePlace(ask.Workspace)));
             Begin(started, new StartReservation(null, ask.Id, $"ask #{ask.Id}", null), (own, opened) => RunIntakeAsync(ask, own, opened, ct));
         }
 
@@ -2009,7 +2035,7 @@ public sealed class Driver(
         // point 1): the agent its asked choice was asked of, never the machine's `adapter` key, so a part that ran on Build's second choice
         // goes on there; a first start's is the walk's, below. A local, and a parameter wherever it is passed on: starts run side by side.
         var handedQuest = new HandedQuests(home).Read(quest.Id);
-        var agent = StartPlan.AgentFor(ParticipantWork.Build, config, handed: handedQuest?.Agent);
+        var agent = StartPlan.AgentFor(StartWork(quest), config, handed: handedQuest?.Agent, catalogue: CatalogueForReport(), place: PlaceOf(start));
         // Each hold names the agent the start asked, which the look's report of a wait names (the design §2.4's second row).
         StartRun Hold(string why) => new($"held  #{quest.Id} → {quest.To}: {why}", false, null, why) { Agent = agent };
         if (handedQuest is null && start.Resumes is { } goesOnFrom)
@@ -2090,7 +2116,7 @@ public sealed class Driver(
         {
             try
             {
-                var role = ActorChoices.Effective("build", config);
+                var role = QuestOrder(start);
                 if (role.Count > 0)
                 {
                     agent = role.FirstOrDefault(entry => string.Equals(entry.Agent, cut.Adapter, StringComparison.OrdinalIgnoreCase))?.Agent
@@ -2122,7 +2148,7 @@ public sealed class Driver(
             if (handedQuest is not null && start.Resumes?.Asked is { } wasAsked
                 && !string.Equals(wasAsked.Agent, agent, StringComparison.OrdinalIgnoreCase))
             {
-                chosen = movedTo = ActorChoices.Effective("build", config, handed: agent)[0];
+                chosen = movedTo = QuestOrder(start, handed: agent)[0];
             }
 
             if (GoOns.ResumesOwn(start, agent) is { } words)
@@ -2182,7 +2208,7 @@ public sealed class Driver(
                 // handed quest asks for the account its hand-over named first, and the walk goes on within the named agent's, its model
                 // Build's entry for that agent (D205 §4.0, `handed`). A carry-on keeps its record's asked choice (§3.5(a)).
                 // Each account judged by its reading for the model: the carry-on's record's asked, a handed quest's Build entry (§3.5(a), (d)).
-                if (handedQuest is not null && start.Resumes is null) chosen = ActorChoices.Effective("build", config, handed: agent)[0];
+                if (handedQuest is not null && start.Resumes is null) chosen = QuestOrder(start, handed: agent)[0];
                 var model = chosen is not null ? chosen.Model : CarriedModel(start.Resumes);
                 (selection, passedAccount) = await Context.Harnesses
                     .SelectHandedAsync(agent, config, start.Workspace, handedQuest?.Account, StartKind.Driven, ct, model)
