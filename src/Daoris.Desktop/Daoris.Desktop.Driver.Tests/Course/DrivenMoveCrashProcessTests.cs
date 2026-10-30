@@ -10,18 +10,19 @@ namespace Daoris.Desktop.Driver.Tests;
 /// delivered once, held and carried once by the part it waits on, or left waiting with nothing sent again, and the move's key is never asked twice.
 /// </summary>
 /// <remarks>
-/// <para><b>Which boundaries the driven move passes.</b> Eight of the nine: every one of <see cref="Cuts.All"/> but <see cref="Cuts.OldEnded"/>.
-/// The session a carry-on goes on from has ended already, so the decision is written <i>at</i> <c>old-ended</c> and the old part's end is no
-/// write of its own (the census pins both: the record read at <c>decided</c> stands at <c>old-ended</c>, and the boundary named
-/// <c>old-ended</c> is never passed).</para>
+/// <para><b>Which boundaries the driven move passes.</b> All nine of <see cref="Cuts.All"/>, though the theories kill at eight. The session a
+/// carry-on goes on from has ended already, so the decision is written <i>at</i> <c>old-ended</c>; the carry-on writes that phase again before its
+/// open (FOUNDATION1f-v part c, which the quest's hand-over's move needs), so the boundary named <c>old-ended</c> is passed too, right after
+/// <c>decided</c>, and a kill there leaves the record the decision left, which is the <c>decided</c> row's.</para>
 /// <para><b>Each boundary is run with the person's word kept on the failed record and with none</b>, since a move that moved nothing is read by
 /// its prompt's outcome alone. <b>What each closes as</b>, the same with a word and without but where the word is: <c>decided</c> falls back
 /// <c>not-opened</c> and the line's next carry-on delivers; <c>opening</c> closes held <c>unrecorded</c>, the open never made, and the next
 /// carry-on delivers; <c>answered</c> and <c>marked</c> close held <c>unrecorded</c> and <c>opened</c> held <c>undelivered</c> naming nothing,
 /// the open made and the new part's own record carried on by the loop that comes up, which moves and delivers the word once; <c>written</c>
-/// closes held <c>unrecorded</c> (the write returned, its outcome unkept: the dead part's agent heard the word once, it is never taken and
-/// never sent again, and it is left waiting on that part); <c>sent</c> and <c>taken</c> close <c>delivered</c>, the take-up taking the word
-/// off at <c>sent</c> and the dead loop having taken it at <c>taken</c>.</para>
+/// closes held <c>unrecorded</c> where no word was moved, and held <c>undelivered</c> where one was (the write returned, its outcome unkept: the
+/// dead part's agent heard the word once; it was marked attempted at the hand, so the take-up reads it uncertain, settles it taken back with its
+/// <c>lost</c> note written once, and nothing sends it again, DRIVENATTEMPT1); <c>sent</c> and <c>taken</c> close <c>delivered</c>, the take-up taking
+/// the word off at <c>sent</c> and the dead loop having taken it at <c>taken</c>.</para>
 /// <para>The killed loop's agent is a real process, which finishes its turn and closes the quest while its loop stands blocked, so a part whose
 /// prompt was written is not carried on again by this proof; the records the loop left live are ended <c>stopped</c> and interrupted as the
 /// orphan sweep ends them (<see cref="DrivenMoveHarness.KillAsync"/>).</para>
@@ -46,12 +47,13 @@ public sealed class DrivenMoveCrashProcessTests : IAsyncLifetime
     /// <param name="Second">The shapes of the moves of <c>s2</c>, the destination, which the loop that came up carried on where it was left.</param>
     /// <param name="Hears">The session whose first prompt the word reached: the dead loop's part, or the part the loop that came up opened.</param>
     /// <param name="Waits">Where the word is left waiting, none where it was taken.</param>
-    internal sealed record Ends(string[] First, string[] Second, string Hears, string? Waits = null);
+    /// <param name="Settled">Whether the move's take-up settled the word uncertain (DRIVENATTEMPT1): taken back, never taken as sent, its <c>lost</c> note written once.</param>
+    internal sealed record Ends(string[] First, string[] Second, string Hears, string? Waits = null, bool Settled = false);
 
-    internal static Ends Row(string cut) => cut switch
+    internal static Ends Row(string cut, bool word = true) => cut switch
     {
         // Before the open: the line stays on its old part, and its next carry-on moves and delivers the word on a part of its own.
-        Cuts.Decided => new(["fell-back///not-opened", Delivered], [], "s2"),
+        Cuts.Decided or Cuts.OldEnded => new(["fell-back///not-opened", Delivered], [], "s2"),
         Cuts.Opening => new([Unrecorded, Delivered], [], "s2"),
 
         // The open made and the move not delivered: the destination, ended by the loop's death, is carried on, and the word moved with it.
@@ -59,8 +61,10 @@ public sealed class DrivenMoveCrashProcessTests : IAsyncLifetime
         Cuts.Opened => new([Undelivered], [Delivered], "s3"),
         Cuts.Marked => new([Unrecorded], [Delivered], "s3"),
 
-        // The prompt written and its outcome not kept: the dead part's agent heard the word once, and nothing sends it again.
-        Cuts.Written => new([Unrecorded], [], "s2", Waits: "s2"),
+        // The prompt written and its outcome not kept: the dead part's agent heard the word once, and nothing sends it again. A word was marked
+        // attempted at the hand (DRIVENATTEMPT1), so the take-up reads it uncertain, settles it and holds the move `undelivered` naming it; a
+        // move of no word has none to settle and is held `unrecorded` as before.
+        Cuts.Written => word ? new([Undelivered], [], "s2", Settled: true) : new([Unrecorded], [], "s2"),
 
         // The outcome kept: delivered, the word taken off by the take-up (sent) or by the dead loop (taken).
         Cuts.Sent or Cuts.Taken => new([Delivered], [], "s2"),
@@ -83,12 +87,12 @@ public sealed class DrivenMoveCrashProcessTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 The census of the boundaries: a driven carry-on run to its end passes every boundary of <see cref="Cuts.All"/> but <c>old-ended</c>,
-    /// once each and in the executor's order, its record standing at <c>old-ended</c> when the decision is told; so a boundary the course adds is
-    /// reached by this proof or fails here, and each boundary passed has a row.
+    /// 🔴 The census of the boundaries: a driven carry-on run to its end passes every boundary of <see cref="Cuts.All"/>, once each and in the
+    /// executor's order, its record standing at <c>old-ended</c> when the decision is told; so a boundary the course adds is reached by this proof
+    /// or fails here, and each boundary passed has a row.
     /// </summary>
     [Fact]
-    public async Task A_driven_carry_on_run_to_its_end_passes_every_boundary_but_old_ended_once_in_order_and_each_has_a_row()
+    public async Task A_driven_carry_on_run_to_its_end_passes_every_boundary_once_in_order_and_each_has_a_row()
     {
         await _h.SeedAsync(word: true);
         string? atDecision = null;
@@ -97,7 +101,7 @@ public sealed class DrivenMoveCrashProcessTests : IAsyncLifetime
             if (name == Cuts.Decided) atDecision = _h.MoveFrom("s1")?.PhaseWord;
         });
 
-        Assert.Equal(Cuts.All.Where(cut => cut != Cuts.OldEnded), _h.Passed);
+        Assert.Equal(Cuts.All, _h.Passed);
         Assert.Equal("old-ended", atDecision);
         Assert.Equal(("delivered", "driven", "retry"), (_h.MoveFrom("s1")!.PhaseWord, _h.MoveFrom("s1")!.Executor, _h.MoveFrom("s1")!.Why));
         Assert.Equal(1, _h.Carried("s2", DrivenMoveHarness.Word));
@@ -113,7 +117,7 @@ public sealed class DrivenMoveCrashProcessTests : IAsyncLifetime
     [MemberData(nameof(Boundaries))]
     public async Task A_loop_killed_at_a_boundary_comes_up_with_the_word_delivered_once_or_left_never_sent_twice(string cut, bool word)
     {
-        var expect = Row(cut);
+        var expect = Row(cut, word);
         await _h.SeedAsync(word);
         await _h.KillAtAsync(cut);
         var left = _h.MoveFrom("s1")!;
@@ -140,7 +144,8 @@ public sealed class DrivenMoveCrashProcessTests : IAsyncLifetime
             var heard = Assert.Single(hearing);
             Assert.Equal(expect.Hears, heard.Session);
             Assert.Equal(expect.Waits is null ? [] : [$"{expect.Waits}:w1"], _h.Waiting());
-            Assert.Equal(expect.Waits is null ? 1 : 0, _h.Service.Taken.Count(taken => taken.Ids == "w1"));
+            Assert.Equal(expect.Waits is null && !expect.Settled ? 1 : 0, _h.Service.Taken.Count(taken => taken.Ids == "w1"));
+            Assert.Equal(expect.Settled ? [("s2", "w1")] : [], _h.Service.TakenBack);
         }
         else
         {
@@ -148,14 +153,18 @@ public sealed class DrivenMoveCrashProcessTests : IAsyncLifetime
             Assert.Empty(_h.Waiting());
         }
 
-        // The open is never asked again under the move's key, and none of the line's records is told the word was lost.
+        // The open is never asked again under the move's key, and no record of the line is told a word was lost but the part a settled word
+        // was written to, once, by the move's own take-up.
         var keys = _h.Service.Opened.Select(opened => opened.Key).ToList();
         Assert.Equal(keys.Count, keys.Distinct().Count());
         if (left.Opens is { } key) Assert.Equal(cut == Cuts.Opening ? 0 : 1, keys.Count(each => each == key));
+        List<string> lost = [];
         for (var at = 1; at <= _h.Service.SessionCount; at++)
         {
-            Assert.DoesNotContain(_h.Events.After($"s{at}", 0).Events, e => e.Code == SessionEventCodes.Lost);
+            lost.AddRange(_h.Events.After($"s{at}", 0).Events.Where(e => e.Code == SessionEventCodes.Lost).Select(e => $"s{at}:{string.Join(",", e.Words ?? [])}"));
         }
+
+        Assert.True(lost.SequenceEqual(word && expect.Settled ? ["s2:w1"] : []), $"lost notes {string.Join(" | ", lost)}: {seen}");
 
         // The killed loop, let go, finds its claim gone and changes no move and writes no prompt.
         var snapshot = _h.SnapshotOf();
