@@ -1,9 +1,9 @@
 {
   "work.record.title": "其工作留存的记录",
   "work.record.hint": "它的工作树已清理；这份于 {{when}} 保存的记录说明了它做了什么。",
-  "work.record.landed": "已于 {{when}} 作为 {{branch}} 合入 {{line}}。",
-  "work.record.landedPull": "已于 {{when}} 作为 {{branch}} 合入 {{line}}，拉取请求 {{pull}}。",
-  "work.record.notLanded": "未记录合入。",
+  "work.record.landed": "已于 {{when}} 作为 {{branch}} 落地到 {{line}}。",
+  "work.record.landedPull": "已于 {{when}} 作为 {{branch}} 落地到 {{line}}，拉取请求 {{pull}}。",
+  "work.record.notLanded": "未指明落地。",
   "work.record.tip": "分支 {{branch}}，末端提交 {{tip}}。",
   "work.record.ref": "恢复引用 {{ref}} 保留了末端提交：可据此重建其工作树。",
   "work.record.noRef": "没有恢复引用保留末端提交。",

@@ -16,7 +16,7 @@ import type { PermissionAnswered, PermissionChoice, PermissionWait } from '../..
 import type { AnswerAloneAnswered, AnswerWait } from '../../work/waits/AnswerAlone';
 import type { NewSessionAnswer } from '../../work/say';
 import type { SessionWhere } from '../../work/rail/SessionRow';
-import type { SessionRecord } from '../../work/sessionRecord';
+import type { SessionRecord } from '../../work/head/sessionRecord';
 import { call } from '../call';
 import { readSlice } from '../driver';
 import { mergeKeyed, readPushed, type SliceSpec, usePushedLive } from '../state/slices';

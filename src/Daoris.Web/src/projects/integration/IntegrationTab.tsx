@@ -1,7 +1,36 @@
 import { useTranslation } from 'react-i18next';
 import { Button, Inline, Prose, SkeletonRows } from '../../design/ui';
 import { PageSection } from '../../work/frame/ViewMain';
-import type { IntegrationCandidateRow, IntegrationLook, IntegrationRequestRow } from '../../bridge/repositories/integration';
+// The look as the tab draws it; the bridge's `IntegrationLook` is one (D52: the molecule imports nothing of the bridge).
+type IntegrationRequestRow = {
+  request: string;
+  line: string;
+  branch: string;
+  tip: string;
+  since: string;
+  unit?: string | null;
+  said?: string | null;
+};
+type IntegrationCandidateRow = {
+  candidate: string;
+  line: string;
+  base: string;
+  since: string;
+  members: { request: string; branch: string; state: string; said?: string | null }[];
+  steps: { step: string; state: string }[];
+  at?: string | null;
+  holds?: 'conflict' | 'promotion' | null;
+  release?: string | null;
+  by?: string | null;
+};
+type IntegrationLook = {
+  repository: string;
+  queue: IntegrationRequestRow[];
+  candidates: IntegrationCandidateRow[];
+  handedBack: IntegrationRequestRow[];
+  superseded: { request: string; commit: string; subject: string; by: string; files: number }[];
+  promoted: IntegrationRequestRow[];
+};
 
 /** What a page hands its Integration tab: the look, or that it is on its way or was refused, and the owner's acts. */
 export type IntegrationTabProps = {

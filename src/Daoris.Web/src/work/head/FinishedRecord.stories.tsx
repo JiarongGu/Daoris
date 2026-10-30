@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { chinese } from '../../design/storyLanguage';
 import { storyWidths } from '../../design/storyWidths';
-import { RECORD } from '../sessionRecord.fixtures';
+import { RECORD } from './sessionRecord.fixtures';
 import { FinishedRecord } from './FinishedRecord';
 
 // KEEPSIZE1: the record of a finished session's tree, shown on its page once the tree is let go: kept whole, then with no ref and its
