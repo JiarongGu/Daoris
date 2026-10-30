@@ -5,6 +5,13 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-30 - The shim case still expected a driven prompt refused, which now goes on the harness's input (AGENTLYNTAI1s-i)
+
+- **Symptom:** batch s's candidate failed `CommandShimTests.A_prompt_a_shim_s_shell_would_reinterpret_is_refused_rather_than_cut_short` in the driver's Process half, again alone: no `DriverException` was thrown.
+- **Root cause:** the case proved that the pipe door's prompt, an argument with line breaks, is refused on a `.cmd` shim, whose `cmd.exe` parses arguments again. AGENTLYNTAI1s-i moved a driven Claude Code start's prompt onto its standard input, so its arguments hold no line break and nothing is refused; the case is a Process class the builder did not run.
+- **Fix:** the case now proves the new behaviour: a driven start on a shim resolves to the shim, redirects its input and carries no line break in its arguments. The refusal of an argument a shim would reinterpret stays, proved by `HarnessRunTests`.
+- **Verify:** `CommandShimTests`, 6 passed.
+
 ## 2026-10-30 - An integration test's fixture archive read as a read of this repository's archive (INTEGRATE1e part e3b)
 
 - **Symptom:** batch s's candidate failed the tool tests' reach census (MOD9's incident): `IntegrationFormGitTests.cs` "reads `docs/task-archive.md`, and a merge changing it does not run driver".
