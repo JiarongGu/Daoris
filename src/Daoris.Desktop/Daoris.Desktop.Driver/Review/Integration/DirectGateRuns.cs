@@ -106,11 +106,12 @@ internal sealed class DirectGateRuns(IntegrationVerdictAsk ask, CandidateJob job
 
     private static string Slug(string name) => new([.. name.Select(letter => char.IsAsciiLetterOrDigit(letter) ? letter : '-')]);
 
+    /// <summary>The step's log, read sharing its writing: a process started elsewhere in this one during the step's start keeps a copy of its handle.</summary>
     private static string ReadLog(string log)
     {
         try
         {
-            return File.Exists(log) ? File.ReadAllText(log) : "";
+            return File.Exists(log) ? BesideReads.Text(log) : "";
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {

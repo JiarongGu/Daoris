@@ -529,4 +529,27 @@ public sealed class IntegrationVerdictProcessTests : LandedFixture, IDisposable
         Assert.Contains(verdict.Runs, run => run is { Mode: "run", Gate: "lint", Verdict: "pass" });
         Assert.Empty(Look().Holds);
     }
+
+    /// <summary>
+    /// A gate's log another process still holds open to write is read whole: a process started elsewhere in this one while the gate's start
+    /// has the log's handle inheritable keeps a copy of it, and a read that shares no writing reads nothing, a failure signed by no line.
+    /// </summary>
+    [Fact]
+    public async Task A_gate_log_another_process_still_holds_is_read_and_its_failure_placed()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+
+        var (root, @base, tips) = await MembersAsync(("a.txt", "a\n"), ("bad.txt", "broken\n"));
+        var ask = Ask(root, @base, tips, runner: false, declaration: """{ "gates": [ { "name": "unit", "run": "node check.mjs" } ] }""");
+        File.Copy(At("check.mjs"), Path.Combine(root, "check.mjs"));
+        Directory.CreateDirectory(ask.Scratch);
+        // The tip's run's log, held as an inherited copy of its handle holds it: open to write, sharing everything.
+        using var inherited = new FileStream(Path.Combine(ask.Scratch, "gate-001-unit.log"), FileMode.Create, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete);
+
+        var verdict = await JudgeAsync(ask).WaitAsync(Poll.Patience);
+
+        Assert.Equal(VerdictActions.HandBack, verdict.Action);
+        var back = Assert.Single(verdict.HandedBack);
+        Assert.Equal(("feature/m2", "pinned"), (back.Branch, back.How));
+    }
 }

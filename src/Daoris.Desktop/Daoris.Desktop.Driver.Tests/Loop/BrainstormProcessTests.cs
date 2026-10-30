@@ -114,10 +114,12 @@ public sealed class BrainstormProcessTests : IDisposable
                   child.stdin.write(JSON.stringify({ jsonrpc: '2.0', id, method, params }) + '\n');
                 });
                 const text = (frame) => frame.result?.content?.map((each) => each.text).join('') ?? JSON.stringify(frame.error ?? frame);
+                // A root's lineage as Codex's door writes it, its thread its root's: the connector refuses a call with none (FABRIC-C2a, D173).
+                const _meta = { 'x-codex-turn-metadata': JSON.stringify({ session_id: 'acp-stub-' + turn, thread_id: 'acp-stub-' + turn }) };
                 await ask('initialize', { protocolVersion: '2025-06-18', capabilities: {}, clientInfo: { name: 'acp-stub', version: '0' } });
                 child.stdin.write(JSON.stringify({ jsonrpc: '2.0', method: 'notifications/initialized' }) + '\n');
-                said.refused = text(await ask('tools/call', { name: 'brainstorm_give', arguments: { proposals: [{ ...proposal(turn), effort: 'tiny' }] } }));
-                said.kept = text(await ask('tools/call', { name: 'brainstorm_give', arguments: { proposals: [proposal(turn)], needs: [] } }));
+                said.refused = text(await ask('tools/call', { name: 'brainstorm_give', arguments: { proposals: [{ ...proposal(turn), effort: 'tiny' }] }, _meta }));
+                said.kept = text(await ask('tools/call', { name: 'brainstorm_give', arguments: { proposals: [proposal(turn)], needs: [] }, _meta }));
                 child.stdin.end();
                 child.kill();
               }
