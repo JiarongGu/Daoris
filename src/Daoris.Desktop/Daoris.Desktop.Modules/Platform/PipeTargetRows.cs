@@ -157,6 +157,8 @@ internal static class PipeTargetRows
         Row("DISCARD_SESSION_BRANCH", new RepositoryGround("repository"), BranchGround.Named("repository", "branch", "named"));
         // LANDRETIRE1: the landing branch it takes away, at the tip it was judged on: a branch that moved before the Confirm is a changed ground.
         Row("WITHDRAW_LANDING_BRANCH", new RepositoryGround("repository"), BranchGround.Named("repository", "branch"));
+        // INTEGRATE1h: the repository an integration act is on; its request, drop or recheck is judged by the door, not a tip here.
+        Row("INTEGRATE", new RepositoryGround("repository"));
         Row("RECOVERY_DROP", new RepositoryGround("repository"), new BranchGround(["repository", "refs"], payload =>
             PipeGround.Text(payload, "repository") is { Length: > 0 } repository
                 ? [.. Each(Field(payload, "refs")).Select(each => Text(At(each, "ref"))).OfType<string>().Select(name => (repository, name))]
