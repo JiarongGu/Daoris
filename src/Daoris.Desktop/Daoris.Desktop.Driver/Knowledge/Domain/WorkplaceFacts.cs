@@ -340,8 +340,8 @@ public sealed record LandedRule(string? Plugin, bool AutoAccept, string Source)
 /// An acceptance's provenance (INTEGRATE1e; the integration design §17.4, F40 and C30): that <c>integrate</c> stood where a landing or an
 /// advance was accepted, with the <c>request</c> it said there and whose step it was. Written beside <c>acceptedBy</c> and the rule, as
 /// <c>integrate</c> <c>{ request, source }</c>, only where one stood; an older reader passes the key over, and a build that rewrites the
-/// file without it leaves a record that says neither. The door that admits a request reads it with <c>acceptedBy</c>; nothing judges it
-/// here.
+/// file without it leaves a record that says neither. The door's node route reads it with <c>acceptedBy</c> to judge whether the acceptance
+/// was the request; nothing judges it here.
 /// </summary>
 /// <param name="Request">The <c>request</c> that stood (<c>owner</c>, <c>done</c> or <c>steward</c>), kept as written for its reader to judge.</param>
 /// <param name="Source">Whose step it was: <see cref="Rule"/>, Current's under a rule carrying <c>integrate</c>, or <see cref="Version"/>.</param>

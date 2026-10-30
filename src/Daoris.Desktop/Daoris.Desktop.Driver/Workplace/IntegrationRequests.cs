@@ -2,16 +2,18 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// The one door a request to integrate a repository's line comes through (INTEGRATE1e part e1; the integration design §4.6, D215): who
-/// asked, under the rule and policy as they stand, for which branch at which frozen tip. Built and tested, and called from no production
-/// path yet: the owner's card (row h), the steward's act (row i) and the <c>integrate</c> node's start (row n) are its callers to come. Its
-/// requests are kept in the desktop store's integration family (part e2, <see cref="IntegrationStore"/>).
+/// asked, under the rule and policy as they stand, for which branch at which frozen tip. The <c>integrate</c> node's start is its one
+/// caller so far (<see cref="IntegrationRoutes.Node"/>); the owner's card (row h) and the steward's act (row i) are to come. Its requests
+/// are kept in the desktop store's integration family (<see cref="IntegrationStore"/>).
 /// </summary>
 /// <remarks>
 /// <para><b>A unit's request comes only from that unit's own landing.</b> So no request passes a session's stopped <c>handed</c>, a required
-/// opinion or a review. This part builds two of the door's routes. <see cref="IntegrationRoutes.Recorded"/> takes an existing recorded
+/// opinion or a review. <see cref="IntegrationRoutes.Node"/> takes the unit's own landing at the tip its node froze, by the acceptance
+/// provenance its record keeps (<see cref="LandedIntegrate"/>, §17.4), then as a recorded landing is taken.
+/// <see cref="IntegrationRoutes.Recorded"/> takes an existing recorded
 /// landing, made by the owner's press or a done, only on its record, its exact tip, its gate proof read as the record keeps it, and no
 /// double. <see cref="IntegrationRoutes.Records"/> takes a records branch, no unit's and no run's, and refuses a session's branch and a
-/// landing's there. The landing's own route, read from its record's provenance (<see cref="LandedIntegrate"/>, §17.4), is row n's.</para>
+/// landing's there.</para>
 ///
 /// <para><b>It reads, and writes nothing through a tree.</b> Each git it asks is a read of a ref or of ancestry in the repository's
 /// checkout, so a landing whose tree LAND3's tidy took needs no tree. The steps that write through a tree (the form, the replay) pass
