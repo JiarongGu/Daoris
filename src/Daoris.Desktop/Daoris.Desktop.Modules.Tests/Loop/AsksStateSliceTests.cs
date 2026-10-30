@@ -82,7 +82,7 @@ public sealed class AsksStateSliceTests : DriverModuleBridge
         Assert.Contains("workflowProposals", page);
         Assert.Equal("id", service[0]);
         Assert.Contains("words", service);
-        Assert.Equal("short", service[^1]);
+        Assert.Equal("paths", service[^1]);
         Assert.Equal(page.Order(StringComparer.Ordinal), AsksStateSlice.Fields.Order(StringComparer.Ordinal));
         Assert.Empty(AsksStateSlice.Fields.Intersect(AsksStateSlice.PulledOnly));
         var classed = AsksStateSlice.Fields.Concat(AsksStateSlice.PulledOnly).ToHashSet(StringComparer.Ordinal);
