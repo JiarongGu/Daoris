@@ -76,7 +76,7 @@ public sealed record MemoryOp(string Id, string Repository, string State, Memory
 /// the finished trees' records, so a commit point moves its session's rows in the transaction that records it, whichever process records it.
 /// A connector stages rows and reads; only the service marks <c>applying</c>, calls the engine and settles.
 /// </summary>
-public sealed class MemoryOpStore
+public sealed partial class MemoryOpStore
 {
     private const string Columns =
         "id, repository, kind, state, at, session, workspace, quest, adapter, harness, role, role_revision, models, text, target, revision, source, "
@@ -96,7 +96,7 @@ public sealed class MemoryOpStore
     internal async Task EnsureAsync(CancellationToken ct)
     {
         await using var command = _db.Command();
-        command.CommandText = """
+        command.CommandText = $"""
             CREATE TABLE IF NOT EXISTS memory_ops (
               id            TEXT PRIMARY KEY NOT NULL,
               repository    TEXT NOT NULL,
@@ -125,6 +125,7 @@ public sealed class MemoryOpStore
             CREATE INDEX IF NOT EXISTS memory_ops_session ON memory_ops (session, state);
             CREATE INDEX IF NOT EXISTS memory_ops_state ON memory_ops (state);
             CREATE INDEX IF NOT EXISTS memory_ops_target ON memory_ops (repository, target, state);
+            {EventJournal.MemorySchema}
             """;
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
     }
