@@ -1101,9 +1101,9 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
     /// nothing, against a host whose <c>opens</c> mark is below 2 or that keeps none, which takes them off the record as before.
     /// </param>
     /// <param name="delivery">
-    /// The carry-on's move record (FOUNDATION1f-iv part a), where it keeps one and its fence was written: the moved words' <c>sent</c> is written
-    /// where their take returns, today's delivery, and the move closes <c>delivered</c> after it. Null for a start that keeps none, a
-    /// hand-over's among them (row f-v's). Part b moves <c>sent</c> to the door's write return, and the take after it.
+    /// The carry-on's move record (FOUNDATION1f-iv), where it keeps one and its fence was written: told the moved words it hands and the take of
+    /// them, which the door's write of the prompt carrying them makes after it writes their <c>sent</c> (part b); the move then closes
+    /// <c>delivered</c>. Null for a start that keeps none, a hand-over's among them (row f-v's), and the take is made here, before the spawn.
     /// </param>
     /// <returns>The words the open moved and the new session was handed, as it holds them; null where they were taken off the record as before.</returns>
     internal async Task<IReadOnlyList<SaidWordView>?> HandedOnAsync(
@@ -1184,6 +1184,8 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
         if (moved is null)
         {
             output?.Append(to, "— the words moved to this session could not be read here, so they wait on it.");
+            // FOUNDATION1f-iv part b: the prompt carries none of them, so none is `sent`: the move ends by its phase now, as before the door's write.
+            if (delivery is not null) await delivery.EndAsync().ConfigureAwait(false);
             return [];
         }
 
@@ -1200,16 +1202,26 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
             _context.Events.Keep(record.Session, note, say: null);
         }
 
-        if (!await moved.TakeAsync(_context.Service, ct).ConfigureAwait(false))
+        if (delivery is null)
         {
-            output?.Append(to, "— the words moved to this session could not be taken off it, so they still wait on it.");
+            if (!await moved.TakeAsync(_context.Service, ct).ConfigureAwait(false))
+            {
+                output?.Append(to, "— the words moved to this session could not be taken off it, so they still wait on it.");
+            }
         }
-        else if (delivery is not null)
+        else
         {
-            // FOUNDATION1f-iv part a: the take returned, which is where this path delivers today: each word it took has `sent`, then the reading
-            // closes the move. A take that did not come out leaves the record to be ended by its phase, its words waiting on the new part.
-            await delivery.DeliveredAsync(
-                [.. opened.Moved.Where(word => moved.Ids.Contains(word.Id, StringComparer.Ordinal)).Select(word => word.Transfer)]).ConfigureAwait(false);
+            // FOUNDATION1f-iv part b: the take waits for the door's write of the prompt that carries the words, which is where each has `sent`
+            // (§19.4, O7-F5); a run that never writes it ends the record by its phase and the words wait on the new part, none taken.
+            delivery.Handed(
+                [.. opened.Moved.Where(word => moved.Ids.Contains(word.Id, StringComparer.Ordinal)).Select(word => word.Transfer)],
+                async () =>
+                {
+                    if (!await moved.TakeAsync(_context.Service, CancellationToken.None).ConfigureAwait(false))
+                    {
+                        output?.Append(to, "— the words moved to this session could not be taken off it, so they still wait on it.");
+                    }
+                });
         }
 
         return moved.Words;

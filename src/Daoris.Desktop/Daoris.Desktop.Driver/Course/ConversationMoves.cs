@@ -48,7 +48,7 @@ public sealed class ConversationMoves
     /// <param name="said">The destinations' <c>said</c>; null for the service's.</param>
     /// <param name="scope">
     /// Whose moves its take-up takes (FOUNDATION1f-iv part a): the conversations' by default; the driven carry-on's holder is handed the lease
-    /// holder's, over the same store and the same readings. Part a takes none up, the driven take-up being part b's.
+    /// holder's, over the same store and the same readings. The watch's first look takes a dead loop's driven moves up through it (part b).
     /// </param>
     public ConversationMoves(
         string home, ServiceClient service, SessionEvents events, SessionOutput? output = null, MoveStore? store = null, TimeProvider? clock = null,

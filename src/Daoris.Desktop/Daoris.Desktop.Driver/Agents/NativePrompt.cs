@@ -20,21 +20,28 @@ internal static class NativePrompt
     /// at <c>ChildProcess.RunAsync</c>). A harness that ended before it read it all says why in its own exit: the write's refusal is
     /// swallowed, never raised in its place. The encoding is the start's own, BOM-less UTF-8 (<see cref="ClaudeCodeAdapter"/>).
     /// </remarks>
-    internal static async Task WriteAsync(Process process, ISessionAdapter adapter, string prompt, CancellationToken ct)
+    /// <returns>
+    /// Whether the prompt's write returned (FOUNDATION1f-iv part b): what a carry-on's moved words' <c>sent</c> waits for. False for a start
+    /// that wrote nothing here and for a write the pipe refused.
+    /// </returns>
+    internal static async Task<bool> WriteAsync(Process process, ISessionAdapter adapter, string prompt, CancellationToken ct)
     {
-        if (adapter.Wire != SessionWire.Pipe || !process.StartInfo.RedirectStandardInput) return;
+        if (adapter.Wire != SessionWire.Pipe || !process.StartInfo.RedirectStandardInput) return false;
         try
         {
             await process.StandardInput.WriteAsync(prompt.AsMemory(), ct).ConfigureAwait(false);
             process.StandardInput.Close();
+            return true;
         }
         catch (IOException)
         {
             // The pipe closed under the write: the harness is ending, and its exit is the answer that counts.
+            return false;
         }
         catch (ObjectDisposedException)
         {
             // The same, where its end disposed the stream first.
+            return false;
         }
     }
 }

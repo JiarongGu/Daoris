@@ -873,6 +873,7 @@ public sealed class AcpSession(
         _asked = asked;
         _inbox = inbox;
         _retry = retry;
+        _prompted = prompted;
         try
         {
             try
@@ -1571,6 +1572,13 @@ public sealed class AcpSession(
     /// <summary>The run's transient retry (AGENTERRORS1a), or null where it was handed none and keeps today's end.</summary>
     private TransientRetry? _retry;
 
+    /// <summary>
+    /// What the run's first prompt's write return tells (<see cref="RunAsync"/>'s <c>prompted</c>), told again as each try of a transient
+    /// episode's write returns (FOUNDATION1f-iv part b): a driven carry-on's moved words' <c>sent</c> is the first write that returns, whichever
+    /// prompt it was, and the caller tells it once.
+    /// </summary>
+    private Action? _prompted;
+
     private bool _waitsOnTransient;
 
     /// <summary>
@@ -2020,6 +2028,7 @@ public sealed class AcpSession(
                         // On the wire: a word said from now goes as it did, and the go-on leaves the record by its id (R3-O5). Where the try
                         // fails, the episode holds them again before it settles (finding 2).
                         EpisodeWords?.Waited();
+                        _prompted?.Invoke();
                         foreach (var each in wrote) each();
                         if (goOn?.Id is { } id) episode.GoOnId = id;
                     }),
