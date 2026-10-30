@@ -124,7 +124,8 @@ public sealed class CourseCensusTests
             .Where(site => site.GetProperty("shape").GetString() == "answers-alone-read")
             .Select(site => Path.GetFileName(site.GetProperty("file").GetString()!))
             .OrderBy(file => file, StringComparer.Ordinal);
-        Assert.Equal(["ChatGoOn.cs", "ChatHelperWords.cs", "Driver.cs", "SupervisorDoor.cs"], holds);
+        // FOUNDATION1h branch 7: the chat's go-on and the helper's words read the course, so neither is left.
+        Assert.Equal(["Driver.cs", "SupervisorDoor.cs"], holds);
     }
 
     /// <summary>
