@@ -374,6 +374,124 @@ public sealed class DriverModuleConversationTests : DriverModuleBridge
         await UntilAsync(() => !File.Exists(SessionWords.HeldPath(Home)));
     }
 
+    /// <summary>A stand-in host whose marks keep the moving open and the head (FOUNDATION1o, the design §19.12).</summary>
+    private const string Marked = """{"run":"r1","marks":{"settled":1,"opens":2,"head":1}}""";
+
+    private const string Running = """{"error":"Session is working.","refusal":"running"}""";
+
+    /// <summary>A say door that keeps a word asked <c>ending</c> and refuses one without it <c>running</c>, as a host of row o does.</summary>
+    private static (HttpStatusCode, string) KeepsEnding(string id, bool ending) =>
+        ending ? (HttpStatusCode.OK, Kept(id, "w7", "and the readme")) : (HttpStatusCode.Conflict, Running);
+
+    /// <summary>
+    /// 🔴 FOUNDATION1o (the design §3.4 rule 4, §19.11): against a host whose marks keep the moving open and the head, a word said as a session
+    /// winds up is kept on its record at once, asked <c>ending</c>, for its next part to go on with: shown under the record's id and the loop
+    /// nudged, nothing held in this process and no file of held words written.
+    /// </summary>
+    [Fact]
+    public async Task Words_said_as_a_session_winds_up_are_kept_on_its_record_against_a_host_with_the_marks()
+    {
+        var ledger = new Ledger { Protocol = Marked, Records = Records(Record("s1", "working")), Ending = KeepsEnding };
+        var (loop, module) = await UpAsync(ledger);
+
+        var sent = await AnswerAsync(module, "SESSION_INPUT", new { id = "s1", text = "and the readme" });
+
+        Assert.Equal((true, "resume"), (sent.GetProperty("sent").GetBoolean(), sent.GetProperty("reaches").GetString()));
+        var (_, path, body) = Assert.Single(ledger.Posts);
+        Assert.Equal("/api/sessions/s1/say", path);
+        Assert.Contains("\"ending\":true", body);
+        Assert.False(File.Exists(SessionWords.HeldPath(Home)));
+        var shown = Assert.Single(loop.Events.Page("s1").Events);
+        Assert.Equal(("w7", "resume", "screen"), (shown.Id, shown.Reaches, shown.Door));
+        Assert.Equal(1, loop.Nudges);
+    }
+
+    /// <summary>
+    /// FOUNDATION1o (§19.11, §19.12): a host without both marks keeps today's hold: one whose open moves no words is never asked <c>ending</c>,
+    /// and a word said as a session winds up is held here and in the file, as before; so is one a host with the marks refuses <c>running</c>
+    /// all the same, a host before the row.
+    /// </summary>
+    [Theory]
+    [InlineData("""{"run":"r1","marks":{"settled":1,"opens":1,"head":1}}""", false)]
+    [InlineData("""{"run":"r1","marks":{"settled":1,"opens":2}}""", false)]
+    [InlineData(Marked, true)]
+    public async Task Against_a_host_that_keeps_no_word_for_a_winding_record_the_hold_is_kept(string protocol, bool asked)
+    {
+        var ledger = new Ledger { Protocol = protocol, Records = Records(Record("s1", "working")), Say = _ => (HttpStatusCode.Conflict, Running) };
+        var (loop, module) = await UpAsync(ledger);
+
+        var sent = await AnswerAsync(module, "SESSION_INPUT", new { id = "s1", text = "and the readme" });
+
+        Assert.Equal((true, "resume"), (sent.GetProperty("sent").GetBoolean(), sent.GetProperty("reaches").GetString()));
+        var (_, _, body) = Assert.Single(ledger.Posts);
+        Assert.Equal(asked, body.Contains("\"ending\":true", StringComparison.Ordinal));
+        Assert.True(File.Exists(SessionWords.HeldPath(Home)));
+        Assert.Empty(loop.Events.Page("s1").Events);
+        loop.Stop();
+    }
+
+    /// <summary>
+    /// 🔴 FOUNDATION1o, HANDWORDS1-i's case with the shell restarted mid-hand-over: against a host with the marks, a word said while the
+    /// conversation's move stands is kept on the record the move leaves, asked <c>ending</c>, where the move's open moves it; it is shown on
+    /// neither part here, the move's delivery showing it at its destination. Nothing is held, so a shell restarted before the take is over says
+    /// nothing again, and the take told over says nothing more: the word went with the open.
+    /// </summary>
+    [Fact]
+    public async Task Words_said_while_a_conversation_is_handed_over_are_kept_on_its_record_and_a_restart_says_nothing_again()
+    {
+        var ledger = new Ledger { Protocol = Marked, Records = Records(Chat("c1", "working")), Ending = KeepsEnding };
+        var (before, module) = await UpAsync(ledger);
+        var moves = new ConversationMoves(before.Home, before.Service!, before.Events);
+        before.Words.TakeStanding = moves.Stands;
+        var decided = moves.Store.Decide(new MoveDecision("c1", MoveExecutors.Conversation, MoveHows.Brief, HandOverWhy.Curve, HandOverBy.Daoris) { Agent = "talk", Account = "account-2" });
+
+        var sent = await AnswerAsync(module, "SESSION_INPUT", new { id = "c1", text = "and the readme" });
+
+        Assert.Equal((true, "resume"), (sent.GetProperty("sent").GetBoolean(), sent.GetProperty("reaches").GetString()));
+        var (_, path, body) = Assert.Single(ledger.Posts);
+        Assert.Equal("/api/sessions/c1/say", path);
+        Assert.Contains("\"ending\":true", body);
+        Assert.False(File.Exists(SessionWords.HeldPath(Home)));
+        Assert.Empty(before.Events.Page("c1").Events);
+        Assert.Equal(0, before.Nudges);
+
+        // The shell restarts mid-hand-over; the take then opens c2 under the move's key, which moved the word there, and is told over.
+        before.Stop();
+        var (after, _) = await UpAsync(ledger);
+        after.Words.TakeStanding = moves.Stands;
+        ledger.Records = Records(Chat("c1", "completed"), Chat("c2", "working", from: "c1"));
+        moves.Store.Close(decided.Claim!, MoveCloseWhy.Superseded);
+        after.Words.OnTakeEnded("c1");
+        await Task.Delay(300);
+
+        Assert.Single(ledger.Posts);
+        Assert.False(File.Exists(SessionWords.HeldPath(Home)));
+        Assert.Empty(after.Events.Page("c2").Events);
+        after.Stop();
+    }
+
+    /// <summary>
+    /// FOUNDATION1o (§3.4 rule 4): the file of words an older shell held is read once as the shell comes up, and against a host with the marks
+    /// each of its words is kept on its record asked <c>ending</c>, shown there, and the file goes; no word is held in it again.
+    /// </summary>
+    [Fact]
+    public async Task An_older_shells_held_words_are_read_once_and_kept_on_their_record_against_a_host_with_the_marks()
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(SessionWords.HeldPath(Home))!);
+        File.WriteAllText(SessionWords.HeldPath(Home), """{"held":[{"session":"s1","text":"and the readme","files":[],"door":"screen"}]}""");
+        var ledger = new Ledger { Protocol = Marked, Records = Records(Record("s1", "working")), Ending = KeepsEnding };
+
+        var (loop, _) = await UpAsync(ledger);
+
+        await UntilAsync(() => loop.Events.Page("s1").Events.Count == 1);
+        var (_, path, body) = Assert.Single(ledger.Posts);
+        Assert.Equal("/api/sessions/s1/say", path);
+        Assert.Contains("\"ending\":true", body);
+        Assert.Equal("w7", loop.Events.Page("s1").Events[0].Id);
+        await UntilAsync(() => !File.Exists(SessionWords.HeldPath(Home)));
+        loop.Stop();
+    }
+
     /// <summary>
     /// MSG1d (D137 §5.3): what a word said now would do, for the page to offer the box by: a session that ended or parked
     /// goes on with it, and a driven session's inbox answers its door's reach, which is not known until the door is.
@@ -983,6 +1101,15 @@ public sealed class DriverModuleConversationTests : DriverModuleBridge
         public Func<string, (HttpStatusCode Status, string Body)> Say { get; set; } = id => (HttpStatusCode.OK, Kept(id));
 
         /// <summary>
+        /// The host's <c>GET /api/protocol</c> (FOUNDATION1o, the design §19.12): null for a stand-in host without it, which has no marks, as
+        /// every case before the row asks.
+        /// </summary>
+        public string? Protocol { get; set; }
+
+        /// <summary>The say door by the session and whether the say asked <c>ending</c> (FOUNDATION1o), where a case answers by it; else <see cref="Say"/>.</summary>
+        public Func<string, bool, (HttpStatusCode Status, string Body)>? Ending { get; set; }
+
+        /// <summary>
         /// The take-back door (SAIDBACK1a) by the session and the body posted: a word no longer waiting, as the service answers
         /// one, unless a test answers otherwise (and moves <see cref="Records"/> on as the service would).
         /// </summary>
@@ -1011,8 +1138,11 @@ public sealed class DriverModuleConversationTests : DriverModuleBridge
             var (status, answer) = (request.Method.Method, parts) switch
             {
                 ("GET", ["api", "sessions"]) => (HttpStatusCode.OK, Records),
+                ("GET", ["api", "protocol"]) when Protocol is { } protocol => (HttpStatusCode.OK, protocol),
                 ("POST", ["api", "sessions", var id, "state"]) => Moved(Uri.UnescapeDataString(id), JsonDocument.Parse(body).RootElement.GetProperty("state").GetString()),
-                ("POST", ["api", "sessions", var id, "say"]) => Heard(path, body, Say(Uri.UnescapeDataString(id))),
+                ("POST", ["api", "sessions", var id, "say"]) => Heard(path, body, Ending is { } ending
+                    ? ending(Uri.UnescapeDataString(id), body.Contains("\"ending\":true", StringComparison.Ordinal))
+                    : Say(Uri.UnescapeDataString(id))),
                 ("POST", ["api", "sessions", var id, "take-back"]) => Heard(path, body, TakeBack(Uri.UnescapeDataString(id), body)),
                 ("POST", _) => Heard(path, body, (HttpStatusCode.OK, """{"kept":true,"message":"Kept."}""")),
                 _ => (HttpStatusCode.NotFound, ""),

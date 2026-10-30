@@ -132,12 +132,8 @@ public static class OpinionRules
     /// The second-opinion rule standing for a repository: its own (a rule or none), else its workspace's (one in no workspace
     /// being in <c>default</c>), else null, which is nothing set anywhere — names matched in any case, as every door matches them.
     /// </summary>
-    public static ResolvedOpinion? Resolve(DriverConfig config, string repository, string? workspace) =>
-        config.Opinions.TryGetValue(repository.Trim(), out var own)
-            ? new ResolvedOpinion(own, OpinionSource.Repository)
-            : config.WorkspaceOpinions.TryGetValue(RemoteTarget.Workspace(workspace), out var shared)
-                ? new ResolvedOpinion(shared, OpinionSource.Workspace)
-                : null;
+    /// <remarks>Read by the policy's one reader (<see cref="WorkPolicies.Opinion"/>, FOUNDATION1q).</remarks>
+    public static ResolvedOpinion? Resolve(DriverConfig config, string repository, string? workspace) => WorkPolicies.Opinion(config, repository, workspace);
 
     /// <summary>Names in backticks, in the order they are tried: <c>a</c>, <c>a, else b</c>, <c>a, else b, else c</c>.</summary>
     private static string Else(IEnumerable<string> names) => string.Join(", else ", names.Select(name => $"`{name}`"));

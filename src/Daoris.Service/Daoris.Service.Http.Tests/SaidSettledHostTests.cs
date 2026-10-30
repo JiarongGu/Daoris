@@ -234,6 +234,27 @@ public sealed class SaidSettledHostTests(LocalHost host) : IClassFixture<LocalHo
         Assert.NotEqual(word, older.Json.GetProperty("said").GetProperty("id").GetString());
     }
 
+    /// <summary>
+    /// FOUNDATION1o over the wire: the shell's say with <c>ending</c> to a record that winds up keeps the word on it, for its next part, with
+    /// <c>reopens</c>; the same say without it is refused <c>running</c> at the door's conflict status, as an older host refuses both.
+    /// </summary>
+    [Fact]
+    public async Task A_say_asking_ending_keeps_a_word_on_a_record_that_winds_up_and_one_without_it_is_refused_running()
+    {
+        var sessions = host.Composed.Sessions;
+        var made = await sessions.CreateAsync(null, "Ending", "stub", DateTimeOffset.UtcNow, kind: SessionKind.Chat);
+        var working = (await sessions.SetStateAsync(made.Id, SessionState.Working, null, null, null, DateTimeOffset.UtcNow))!;
+
+        var refused = await host.PostAsync($"/api/sessions/{working.Id}/say", new { text = "And the readme.", key = "wire/ending" });
+        var kept = await host.PostAsync($"/api/sessions/{working.Id}/say", new { text = "And the readme.", key = "wire/ending", ending = true });
+
+        Assert.Equal((409, "running"), (refused.Status, refused.Json.GetProperty("refusal").GetString()));
+        Assert.Equal(200, kept.Status);
+        Assert.True(kept.Json.GetProperty("said").GetProperty("reopens").GetBoolean());
+        var word = Assert.Single((await sessions.FindAsync(working.Id))!.Said);
+        Assert.Equal(("wire/ending", true), (word.Key, word.Reopens));
+    }
+
     /// <summary>A helper's hand and a partner's, retried after the take, are answered <c>settled</c> to a request that asks, with no word or record.</summary>
     [Fact]
     public async Task A_helpers_and_a_partners_hand_after_the_take_are_answered_settled_to_a_request_that_asks()

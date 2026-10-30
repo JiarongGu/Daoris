@@ -101,10 +101,9 @@
       "note": "judges who may ask a helper, lead a partner's piece or hand over by the asker's marks; the start layer's (§2.3)"
     },
     "Participants/Domain/HelperJudge.cs": {
-      "lines": 2,
-      "reads": "tells",
-      "row": "1q",
-      "note": "judges who may ask a helper, lead a partner's piece or hand over by the asker's marks; the start layer's (§2.3)"
+      "lines": 1,
+      "reads": "other",
+      "note": "its asker judged by the start layer's table (StartAdmission, row 1q); the line left reads the helpers rule's `ask` mode"
     },
     "Participants/Domain/PartnerInstruction.cs": {
       "lines": 1,
@@ -112,10 +111,14 @@
       "note": "a word's author, a pass's ask, a harness's rule or a repository type of the same name; no record's mark tells a work"
     },
     "Participants/Domain/PartnerJudge.cs": {
+      "lines": 1,
+      "reads": "other",
+      "note": "its lead judged by the start layer's table (StartAdmission, row 1q), handed the record's Ask Daoris mode; the ask's own piece is read beside it"
+    },
+    "Participants/Domain/StartAdmission.cs": {
       "lines": 2,
       "reads": "tells",
-      "row": "1q",
-      "note": "judges who may ask a helper, lead a partner's piece or hand over by the asker's marks; the start layer's (§2.3)"
+      "note": "the start layer's table itself (§2.3, row 1q): who may ask for a co-worker by the work, an empty `serves` or `opinion` and Ask Daoris's mode kept refused as every door refused them; no row of this design moves it"
     },
     "Course/GoOn/AnswersAloneHold.cs": {
       "lines": 1,
@@ -144,18 +147,6 @@
       "lines": 2,
       "reads": "other",
       "note": "an ask's own fields, a channel entry's, a file's lookup by ask, or a join key; no record's mark tells a work"
-    },
-    "Participants/Helpers/SessionsHelperCommand.cs": {
-      "lines": 3,
-      "reads": "tells",
-      "row": "1q",
-      "note": "judges who may ask a helper, lead a partner's piece or hand over by the asker's marks; the start layer's (§2.3)"
-    },
-    "Participants/Partners/PartnerPersonAsk.cs": {
-      "lines": 1,
-      "reads": "tells",
-      "row": "1q",
-      "note": "judges who may ask a helper, lead a partner's piece or hand over by the asker's marks; the start layer's (§2.3)"
     },
     "Events/Domain/AskDaorisRoom.cs": {
       "lines": 1,
@@ -495,12 +486,6 @@
       "row": "1q",
       "note": "tells Ask Daoris's own conversation by its repository; the start layer's (§2.3)"
     },
-    "Bridge/Routes/SessionsRoutes.cs": {
-      "lines": 3,
-      "reads": "tells",
-      "row": "1q",
-      "note": "tells who may ask a helper by the asker's marks, the shell's twin of the driver's judge; the start layer's (§2.3)"
-    },
     "Bridge/Routes/TreesRoutes.cs": {
       "lines": 1,
       "reads": "other",
@@ -576,13 +561,13 @@
       "note": "judges who may ask, answer or lead by the asker's marks, the desk's own guard (§2.3)"
     },
     "Core/Sessions/HelperBox.cs": {
-      "lines": 3,
+      "lines": 4,
       "reads": "tells",
       "row": "1q",
       "note": "judges who may ask, answer or lead by the asker's marks, the desk's own guard (§2.3)"
     },
     "Core/Sessions/HelperDesk.cs": {
-      "lines": 6,
+      "lines": 7,
       "reads": "tells",
       "row": "1q",
       "note": "judges who may ask, answer or lead by the asker's marks, the desk's own guard (§2.3)"

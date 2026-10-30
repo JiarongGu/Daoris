@@ -331,7 +331,14 @@ internal sealed class ChatGoOn
             return;
         }
 
-        if (_context.Talking.ContainsKey(session) || _context.Turned.ContainsKey(session) || _context.GoingOn.ContainsKey(session)) return;
+        // FOUNDATION1o (§3.4 rule 4): a word shown while a conversation move stands is the move's, which its open carries. The come-up and the
+        // sweep take up dead runs' moves first, and keep their own guards, so an older build's come-up reads as it did.
+        if (_context.Talking.ContainsKey(session) || _context.Turned.ContainsKey(session) || _context.GoingOn.ContainsKey(session)
+            || _limit.Moves.Stands(session))
+        {
+            return;
+        }
+
         _ = Task.Run(async () =>
         {
             try

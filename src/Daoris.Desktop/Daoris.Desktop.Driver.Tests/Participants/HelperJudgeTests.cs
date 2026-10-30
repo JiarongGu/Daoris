@@ -76,6 +76,15 @@ public sealed class HelperJudgeTests
         }
     }
 
+    /// <summary>FOUNDATION1q (D203 point 6; the foundation design §7 row 9): Ask Daoris asks for no helper, whoever wrote the ask.</summary>
+    [Fact]
+    public void Ask_daoris_is_refused_a_helper_as_an_asker_that_may_not_ask()
+    {
+        var help = Asker() with { Repository = "daoris:help", Kind = "chat" };
+        Assert.Equal(HelperVerdict.Refuse(HelperWhy.AskerUnfit), HelperJudge.Judge(Ask(), null, help, Rule(HelperRules.On), 0, true));
+        Assert.Equal(HelperVerdict.Refuse(HelperWhy.AskerUnfit), HelperJudge.Judge(Ask(HelperAsk.ByPerson), null, help, Rule(HelperRules.On), 0, true));
+    }
+
     [Fact]
     public void At_most_two_helpers_at_once_per_asker_a_third_is_refused_and_a_full_cap_only_waits()
     {

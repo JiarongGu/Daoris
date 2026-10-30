@@ -40,8 +40,11 @@ internal interface IChatTurns
     /// <summary>A waiting word reworded or taken back, its record written first.</summary>
     Task<QueueEdit> EditQueuedAsync(string id, string? text, MessageLevel? level = null, CancellationToken ct = default);
 
-    /// <summary>Hold the turns for a take; false where one is running.</summary>
-    bool Hold();
+    /// <summary>
+    /// Hold the turns for a take; false where one is running. With <paramref name="keeps"/>, the host's open moves the old part's words
+    /// (FOUNDATION1o), so a word said meanwhile is kept on the record and queued rather than taking nothing.
+    /// </summary>
+    bool Hold(bool keeps = false);
 
     /// <summary>Hold the turns at the driver's close.</summary>
     bool HoldForClose();
@@ -55,8 +58,8 @@ internal interface IChatTurns
     /// <summary>The limit lifted: the words that waited go as one message.</summary>
     bool WakeFromLimit(Func<IReadOnlyList<ChatMessage>, ChatMessage> compose);
 
-    /// <summary>The words that waited on a limit, held for a move; null where the turns cannot be held.</summary>
-    IReadOnlyList<ChatMessage>? HoldLimited();
+    /// <summary>The words that waited on a limit, held for a move; null where the turns cannot be held. <paramref name="keeps"/> as <see cref="Hold"/>'s.</summary>
+    IReadOnlyList<ChatMessage>? HoldLimited(bool keeps = false);
 
     /// <summary>The person's press of a second opinion's turn.</summary>
     Task<PressHold> PressAsync(CancellationToken ct = default);
