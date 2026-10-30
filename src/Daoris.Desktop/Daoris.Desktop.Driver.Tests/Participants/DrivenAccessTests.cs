@@ -48,7 +48,8 @@ public sealed class DrivenAccessTests : IDisposable
     [InlineData("claude-code-acp", AccessRules.Asking, "!?default", null)]
     [InlineData("claude-code-acp", AccessRules.Unrestricted, "!bypassPermissions", null)]
     [InlineData("codex-acp", AccessRules.Auto, null, null)]
-    [InlineData("codex-acp", AccessRules.Asking, "!?read-only", null)]
+    // CODEXPERM1: Codex's asking mode is the one whose boundary is the session's own tree, edits inside it unasked, anything past it asked.
+    [InlineData("codex-acp", AccessRules.Asking, "!?workspace-write", null)]
     [InlineData("codex-acp", AccessRules.Unrestricted, "!agent-full-access", null)]
     public void Each_harness_starts_in_the_mode_its_permission_prompts_name(string name, string permissions, string? posture, string? permissionMode)
     {

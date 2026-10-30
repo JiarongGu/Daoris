@@ -5,6 +5,13 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-31 - A refused Codex edit cut the turn and the session parked as if it had asked (CODEXPERM1)
+
+- **Symptom:** on Auto a Codex edit was refused and the session parked "to ask you", quoting its last words.
+- **Root cause:** Codex's only rejection for a file change interrupts the turn, which ended `cancelled`; a clean exit with the quest taken read as a question.
+- **Fix:** `AcpOutcome.Cut` carries a cancel nobody asked for; `Observation.Cut` parks as `ended.parked-cut`, naming the call. Asking on Codex is `workspace-write`.
+- **Verify:** the mapping tests fail on `read-only`; `AcpTests`, `ObservationTests`, `DrivenAccessTests`, `NoteCodesTests` and the note catalogues green.
+
 ## 2026-10-31 - A test still pinned the first-look baseline row m-iv replaced (FOUNDATION1 m-iv)
 
 - **Symptom:** `A_wait_already_there_at_the_first_look_is_a_baseline_never_a_backlog` failed every run.
