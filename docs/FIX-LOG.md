@@ -12527,6 +12527,14 @@ mis-rooted instance.
 **Fix.** A stop made first decides the end in `Driver.RunAsync`'s catch, the person's never interrupted.
 
 **Verification.** `DrivenSessionInputTests` 15/15, red before.
+
+## A streamed hand-back stopped the window's page with React #185 (2026-10-31)
+
+**Root cause.** React 19.2 counts a commit that leaves an update waiting as nested. `useFollowTail` set `atTail` again in a layout effect and `useWaitsOnScreen` set its answer after every drawing, unchanged, updates React keeps when their holder just drew; each streamed line left them, and fifty in a row threw.
+
+**Fix.** Both set state only on a change.
+
+**Verification.** Real Chromium: 51 nested to 2. `sessionEnd.test.tsx`: 24 `nested-update` commits, now 0; two hook tests red, green.
 ## An ended chat's words shown as its run closed never woke it (2026-10-31)
 
 **Root cause.** `ChatRunner.WatchAsync` concludes the record before its disposal releases `Talking`; `ChatGoOn.Heard` dropped a word shown between, so it waited for the next come-up.
