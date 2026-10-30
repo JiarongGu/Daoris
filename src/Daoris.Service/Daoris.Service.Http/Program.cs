@@ -475,8 +475,10 @@ app.MapGet("/api/status", (ComposedService s, string? prove) => new StatusRespon
 // start, so a host replaced under one client is told from its predecessor; `marks` are the protocol versions it keeps, each a version: `settled` 1
 // is the settlement (a key the line settled answered `Settled` to a say or hand that asks with `settled: true`), `opens` 2 row d-ii part 3's
 // keyed open, which moves the words its `moves` names in its own step (an `opens` 1 host, row d-i's, moves none), and `head` 1 row d-ii's say door,
-// which refuses a record its line left `continued` naming the head. A host before this answers none, and a client keeps no mark for it.
-app.MapGet("/api/protocol", () => new ProtocolResponse(hostRun, new Dictionary<string, int> { ["settled"] = 1, ["opens"] = 2, ["head"] = 1 }));
+// which refuses a record its line left `continued` naming the head, and `journal` 1 row k's event journal, whose family and place the change stream
+// answers to a reader that asks with `journal=1` (a reader that does not is answered as before). A host before this answers none, and a client keeps
+// no mark for it.
+app.MapGet("/api/protocol", () => new ProtocolResponse(hostRun, new Dictionary<string, int> { ["settled"] = 1, ["opens"] = 2, ["head"] = 1, ["journal"] = 1 }));
 
 // Every cross-repository answer below takes `workspace` — the unit of sharing (D48 §4). Absent spans
 // every circle this deployment holds, which for a shared host is one by construction and for a local
@@ -1916,11 +1918,17 @@ if (mode == ServiceMode.Local)
 // the same store; LOCAL mode only. The host's stop answers a held wait at once, so a long-poll never holds the shell's wait.
 if (changes is not null)
 {
-    app.MapGet(ChangeStream.Route, async (string? since, int? wait, CancellationToken ct) =>
+    // FOUNDATION1 row k part 2 (D212, the foundation design §4.1): `journal=1` (or `true`) is a reader asking for the event journal, which is then
+    // woken by it, told its family after the others and answered its place (the store, the floor and the newest position) with every read. A reader
+    // that never asks, every client from before the family, is answered what it always was and woken by nothing a journal-only append does. The
+    // host's `journal` protocol mark says a host answers it; a host without the mark ignores the parameter.
+    app.MapGet(ChangeStream.Route, async (string? since, int? wait, string? journal, CancellationToken ct) =>
     {
         using var ends = CancellationTokenSource.CreateLinkedTokenSource(ct, app.Lifetime.ApplicationStopping);
-        var answer = await changes.WaitAsync(since, TimeSpan.FromSeconds(Math.Clamp(wait ?? 0, 0, 30)), ends.Token);
-        return new ChangesResponse(answer.Since, answer.Moved);
+        var asked = journal is "1" || string.Equals(journal, "true", StringComparison.OrdinalIgnoreCase);
+        var answer = await changes.WaitAsync(since, TimeSpan.FromSeconds(Math.Clamp(wait ?? 0, 0, 30)), ends.Token, asked);
+        return new ChangesResponse(
+            answer.Since, answer.Moved, answer.Journal is { } place ? new ChangesJournalResponse(place.Store, place.Floor, place.Newest) : null);
     });
 }
 

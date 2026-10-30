@@ -836,8 +836,12 @@ public sealed record ConfirmationActionResponse(ConfirmationResponse Confirmatio
 public sealed record ConfirmationsWaitingResponse(string Since, IReadOnlyList<ConfirmationResponse> Waiting);
 // FABRIC-EVENT3b (the fabric events design §A4.2): the change stream's answer. `Since` is the cursor to ask from next
 // (`<epoch>.<n>`), and `Moved` the ledger families that moved after the one asked from, by name (`sessions`, `quests`): empty
-// at the wait's end with nothing moved. Families, never records, and no path (D169 §3).
-public sealed record ChangesResponse(string Since, IReadOnlyList<string> Moved);
+// at the wait's end with nothing moved. Families, never records, and no path (D169 §3). `Journal` (FOUNDATION1 row k part 2) is the event
+// journal's place, answered to a reader that asked for it with `journal=1` and written to none else (null is left out), so an answer to a client
+// from before it is what it always was; the family `journal` is likewise named only to a reader that asked.
+public sealed record ChangesResponse(string Since, IReadOnlyList<string> Moved, ChangesJournalResponse? Journal = null);
+// Where the event journal stands: the store's identity its positions are of, the lowest position kept (the floor) and the newest issued.
+public sealed record ChangesJournalResponse(string Store, long Floor, long Newest);
 
 [JsonSerializable(typeof(StatusResponse))]
 [JsonSerializable(typeof(ChangesResponse))]
