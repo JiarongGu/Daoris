@@ -31,7 +31,7 @@ public static class SpaceKinds
     [
         new("set-aside", "days", null, KeepKinds.SetAside),
         new("downloads", "days", null, KeepKinds.Downloads),
-        new("browser-cache", "own", "browser", null),
+        new("browser-cache", "own", "browser", KeepKinds.BrowserCache),
         new("logs", "days", null, KeepKinds.Logs),
         new("history", "press", null, KeepKinds.History),
         new("trees", "proof", null, null),
@@ -503,6 +503,7 @@ public static class SystemSpace
     {
         var bounds = new JsonObject { ["min"] = kind.MinDays, ["max"] = kind.MaxDays, ["whole"] = kind.MaySetWhole, ["never"] = kind.MaySetNever };
         if (kind.MayHavePart) bounds["gb"] = new JsonObject { ["min"] = KeepKey.PartMinGb, ["max"] = KeepKey.PartMaxGb };
+        if (kind.SizeOnly) bounds["sizeOnly"] = true;
         return bounds;
     }
 
@@ -524,6 +525,10 @@ public static class SystemSpace
                 else rule["kind"] = "never";
                 rule["gb"] = policy.Limits.DownloadsGb;
                 rule["default"] = policy.Downloads == KeepPolicy.Default.Downloads && policy.Limits.DownloadsGb == KeepPolicy.Default.Limits.DownloadsGb;
+                break;
+            case "browser-cache":
+                rule["gb"] = policy.Limits.BrowserCacheGb;
+                rule["default"] = policy.Limits.BrowserCacheGb == KeepPolicy.Default.Limits.BrowserCacheGb;
                 break;
             case "logs":
                 rule["days"] = (int)policy.Logs.Days.TotalDays;

@@ -835,6 +835,27 @@ describe('Settings → This Daoris', () => {
     expect(downloads.getByRole('spinbutton', { name: '容量上限' })).toBeTruthy();
   });
 
+  // KEEPSIZE1e: the browser's cache takes a size and no days.
+  it("sets the browser's cache by a size alone, in English and in 中文", async () => {
+    invoke.mockImplementation(keeping(() => DRIVER_STATE));
+    open();
+    const card = within(await screen.findByRole('region', { name: 'Disk space' }));
+    const browser = row(card, "The browser's cache");
+    expect(browser.getByText(/at most 2 GB; over it, the caches are cleared while the browser is not running/)).toBeTruthy();
+
+    await userEvent.click(browser.getByRole('button', { name: 'Change…' }));
+    expect(browser.queryByRole('spinbutton', { name: 'Days' })).toBeNull();
+    const limit = browser.getByRole('spinbutton', { name: 'Size limit' });
+    await userEvent.clear(limit);
+    await userEvent.type(limit, '3');
+    await userEvent.click(browser.getByRole('button', { name: 'Save' }));
+    await vi.waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_KEEP', { payload: { kind: 'browser-cache', gb: 3 } }));
+
+    await i18n.changeLanguage('zh');
+    const zh = row(within(await screen.findByRole('region', { name: '磁盘空间' })), '浏览器缓存');
+    expect(zh.getByText(/最多 2 GB；超出时，在浏览器未运行时以及浏览器启动时清理缓存/)).toBeTruthy();
+  });
+
   it("sets the downloads to stay until the person removes them, and a rule back to its default", async () => {
     invoke.mockImplementation(keeping(() => DRIVER_STATE, SPACE_SET));
     open();

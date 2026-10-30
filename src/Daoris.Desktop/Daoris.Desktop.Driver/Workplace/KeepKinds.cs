@@ -64,8 +64,20 @@ public static class KeepKinds
         NeverByDefault = true,
     };
 
+    /// <summary>
+    /// The browser's caches (KEEPSIZE1e, D195's keep-size note): made again by browsing, so only a size limit holds them, judged once a day
+    /// while the browser does not run and at the browser's start; the engine's own rule ages them, so no days are set.
+    /// </summary>
+    public static KeepKind BrowserCache { get; } = new(
+        "browser-cache", [HomeEntry.BrowserEngine.Name], "its caches, never its cookies, storage or preferences",
+        TimeSpan.Zero, MinDays: 0, MaxDays: 0, MaySetWhole: false, Remover: "the browser's cache clearing, while the browser does not run")
+    {
+        DefaultGb = 2,
+        SizeOnly = true,
+    };
+
     /// <summary>Every kind with a rule that runs, in the order the card will show them.</summary>
-    public static IReadOnlyList<KeepKind> Table { get; } = [SetAside, Downloads, Logs, History];
+    public static IReadOnlyList<KeepKind> Table { get; } = [SetAside, Downloads, BrowserCache, Logs, History];
 
     /// <summary>The kind of this id, or null where the table holds none.</summary>
     public static KeepKind? Named(string id) => Table.FirstOrDefault(kind => string.Equals(kind.Id, id, StringComparison.Ordinal));
@@ -94,19 +106,22 @@ public sealed record KeepKind(
 
     /// <summary>Whether the person may set a size limit beside its days.</summary>
     public bool MayHavePart => DefaultGb is not null;
+
+    /// <summary>Whether it keeps no days, only a size: the browser's caches (KEEPSIZE1e), which the engine itself ages.</summary>
+    public bool SizeOnly { get; init; }
 }
 
 /// <summary>
 /// The size limits per kind, beside the days (KEEPSIZE1d, D195's keep-size note): a kind over its limit lets go of its oldest eligible
 /// units first, whichever of its days and its limit comes first. Null is no limit, which an unreadable file gives.
 /// </summary>
-public sealed record LimitsPolicy(int? SetAsideGb, int? DownloadsGb)
+public sealed record LimitsPolicy(int? SetAsideGb, int? DownloadsGb, int? BrowserCacheGb = null)
 {
     /// <summary>The table's defaults.</summary>
-    public static LimitsPolicy Default { get; } = new(KeepKinds.SetAside.DefaultGb, KeepKinds.Downloads.DefaultGb);
+    public static LimitsPolicy Default { get; } = new(KeepKinds.SetAside.DefaultGb, KeepKinds.Downloads.DefaultGb, KeepKinds.BrowserCache.DefaultGb);
 
     /// <summary>No limit: a file that does not read keeps the most.</summary>
-    public static LimitsPolicy None { get; } = new(null, null);
+    public static LimitsPolicy None { get; } = new(null, null, null);
 }
 
 /// <summary>
@@ -157,7 +172,9 @@ public sealed record KeepPolicy(SetAsidePolicy SetAside)
             Downloads = new(choices.DownloadsNever ? null : choices.DownloadsDays is { } kept ? TimeSpan.FromDays(kept) : KeepKinds.Downloads.Days),
             Logs = new(choices.LogsDays is { } logs ? TimeSpan.FromDays(logs) : KeepKinds.Logs.Days),
             History = new(choices.HistoryDays is { } age ? TimeSpan.FromDays(age) : null),
-            Limits = new(choices.SetAsideGb ?? KeepKinds.SetAside.DefaultGb, choices.DownloadsGb ?? KeepKinds.Downloads.DefaultGb),
+            Limits = new(
+                choices.SetAsideGb ?? KeepKinds.SetAside.DefaultGb, choices.DownloadsGb ?? KeepKinds.Downloads.DefaultGb,
+                choices.BrowserCacheGb ?? KeepKinds.BrowserCache.DefaultGb),
             Floor = choices.FloorOff ? FloorPolicy.None : new FloorPolicy(choices.FloorGb, choices.FloorPercent, Off: false),
         };
 

@@ -96,7 +96,7 @@ public sealed class KeepRulesTests : IDisposable
     [Fact]
     public void A_kind_the_person_does_not_set_and_a_set_of_nothing_are_refused()
     {
-        Assert.IsNotType<ChoiceRefusal>(Assert.ThrowsAny<DriverException>(() => DriverConfig.Empty.WithKeep(new KeepSet("browser-cache", Days: 30))));
+        Assert.IsNotType<ChoiceRefusal>(Assert.ThrowsAny<DriverException>(() => DriverConfig.Empty.WithKeep(new KeepSet("trees", Days: 30))));
         Assert.IsNotType<ChoiceRefusal>(Assert.ThrowsAny<DriverException>(() => DriverConfig.Empty.WithKeep(new KeepSet("logs"))));
     }
 

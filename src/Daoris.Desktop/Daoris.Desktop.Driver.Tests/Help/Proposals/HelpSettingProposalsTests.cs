@@ -640,7 +640,7 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
     // KEEP1d: out of its kind's bounds, a choice its kind does not take, a kind not the person's, and words that are no rule.
     [InlineData("keep", null, null, "logs 60", "`logs` keeps 7 to 30 days or `default`; 60 days is out of its bounds")]
     [InlineData("keep", null, null, "logs never", "never is out of its bounds")]
-    [InlineData("keep", null, null, "browser-cache 30", "`browser-cache` is no kind whose rule you set here")]
+    [InlineData("keep", null, null, "trees 30", "`trees` is no kind whose rule you set here")]
     [InlineData("keep", null, null, "history 10", "`history` keeps 30 to 3650 days")]
     [InlineData("keep", null, null, "set-aside soon", "`soon` is no rule of `set-aside`")]
     [InlineData("keep", null, null, "set-aside", "`keep` takes a kind and its rule")]

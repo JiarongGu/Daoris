@@ -448,6 +448,7 @@
   "settings.daoris.space.edit.notAGb": "Name a whole number of GB.",
   "settings.daoris.space.limit.set-aside": "at most {{gb}} GB; over it, the oldest folders whose record is kept go first",
   "settings.daoris.space.limit.downloads": "at most {{gb}} GB; over it, the versions unused longest go first",
+  "settings.daoris.space.limit.browser-cache": "at most {{gb}} GB; over it, the caches are cleared while the browser is not running, and when it starts",
   "settings.daoris.space.limit.over": "{{size}} held, over its limit; the next daily clean-up, or Free up space…, brings it within",
   "settings.daoris.button.freeUp": "Free up space…",
   "settings.daoris.space.kind.updateFailed": "A failed update",

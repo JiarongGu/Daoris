@@ -339,8 +339,9 @@ public sealed class BranchTidying(string home)
 
         foreach (var kind in pass.Kinds.Where(each => each.Removed > 0))
         {
-            lines.Add(Look.Progress("tidy", $"tidy  {(kind.Id == "set-aside" ? "the folders moved aside" : "the downloads")} were over their size limit: removed "
-                + $"{kind.Removed} of the oldest ({Size(kind.Bytes)}); each is made again, or only a copy of what the repository holds."));
+            var what = kind.Id switch { "set-aside" => "the folders moved aside", "browser-cache" => "the browser's caches", _ => "the downloads" };
+            lines.Add(Look.Progress("tidy", $"tidy  {what} were over their size limit: removed "
+                + $"{kind.Removed} {(kind.Id == "browser-cache" ? "caches" : "of the oldest")} ({Size(kind.Bytes)}); each is made again, or only a copy of what the repository holds."));
         }
 
         return lines;
