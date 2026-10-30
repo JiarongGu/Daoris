@@ -261,6 +261,17 @@ public sealed class IntegrationStore(
                 MapCandidate, ("$repository", repository), ("$line", line))
             .FirstOrDefault(), null);
 
+    /// <summary>
+    /// The candidate of a repository's line that ended last, or null where none has (INTEGRATE1e part e4a): what the next form reads to know the
+    /// last one was split, so it takes one member. Read by the end's own moment; the later formed of two that ended together.
+    /// </summary>
+    public IntegrationCandidate? LastEnded(string repository, string line) =>
+        Reading(reader => reader.Query(
+                $"SELECT {CandidateColumns} FROM integration_candidates WHERE repository = $repository COLLATE NOCASE AND line = $line AND ended_at IS NOT NULL "
+                + "ORDER BY ended_at DESC, formed_at DESC, rowid DESC LIMIT 1",
+                MapCandidate, ("$repository", repository), ("$line", line))
+            .FirstOrDefault(), null);
+
     /// <summary>Every standing candidate, oldest first: what a come-up reads to resume.</summary>
     public IReadOnlyList<IntegrationCandidate> Standing() =>
         Reading(reader => reader.Query($"SELECT {CandidateColumns} FROM integration_candidates WHERE ended_at IS NULL ORDER BY formed_at, id", MapCandidate), []);

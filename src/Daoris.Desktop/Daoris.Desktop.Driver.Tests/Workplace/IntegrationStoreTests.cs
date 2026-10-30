@@ -379,6 +379,37 @@ public sealed class IntegrationStoreTests : IDisposable
         Assert.Equal(["r2"], store.Queued("engine", "main").Select(each => each.Id));
     }
 
+    /// <summary>
+    /// INTEGRATE1e part e4a: a step ends <c>split</c> where the judge ran the candidate's members one at a time, a word added beside the six, so
+    /// an older row is read as it was; the line's last ended candidate is read back by its end, which is how the next form knows to take one
+    /// member.
+    /// </summary>
+    [Fact]
+    public void A_split_ending_is_a_word_beside_the_six_and_the_lines_last_ended_candidate_is_read_back()
+    {
+        var store = WithRequests("run-a", 2);
+        Assert.Null(store.LastEnded("engine", "main"));
+        var formed = store.Form(Forming("r1", "r2"));
+        Assert.Null(store.LastEnded("engine", "main"));
+        store.End(formed.Claim!, formed.Step!.Id, new IntegrationStepEnd(IntegrationStepOutcomes.Done) { Tip = Tip });
+
+        var judge = store.Begin(formed.Claim!, IntegrationStepNames.Judge);
+        store.End(formed.Claim!, judge.Id, new IntegrationStepEnd(IntegrationStepOutcomes.Split) { Said = "run one at a time.", Ends = IntegrationCandidateEnds.FormedAgain });
+
+        Assert.Equal(["done", "promoted", "held", "handed-back", "stopped", "interrupted"], IntegrationStepOutcomes.All.Take(6));
+        Assert.Equal("split", IntegrationStepOutcomes.All[6]);
+        var last = store.LastEnded("engine", "main")!;
+        Assert.Equal((formed.Candidate.Id, IntegrationCandidateEnds.FormedAgain), (last.Id, last.EndedWhy));
+        Assert.Equal(IntegrationStepOutcomes.Split, store.Steps(last.Id).Last().Outcome);
+        Assert.Equal(["r1", "r2"], store.Queued("engine", "main").Select(each => each.Id));
+
+        // The next candidate ends later: it is the last ended, and another line's candidate is none of this line's.
+        var next = store.Form(Forming("r1"));
+        store.End(next.Claim!, next.Step!.Id, new IntegrationStepEnd(IntegrationStepOutcomes.Stopped) { Ends = IntegrationCandidateEnds.Stopped });
+        Assert.Equal(next.Candidate.Id, store.LastEnded("engine", "main")!.Id);
+        Assert.Null(store.LastEnded("engine", "release"));
+    }
+
     [Fact]
     public void Each_candidate_has_one_job_of_its_own_named_by_it_and_no_two_candidates_share_one()
     {

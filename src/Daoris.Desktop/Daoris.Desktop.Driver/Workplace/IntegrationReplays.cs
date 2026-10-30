@@ -136,6 +136,12 @@ internal sealed class IntegrationReplays(IntegrationStore store, string treesRoo
 
         // The line's declaration is the rule's, which each request carries as it stood: the first request's is the line's.
         var batch = Math.Clamp(queued[0].Policy.Batch ?? 1, 1, LandingIntegrate.MaxBatch);
+        // A candidate the judge split (§5.3: its members run one at a time) is followed by one of a single member (INTEGRATE1e part e4a).
+        if (store.LastEnded(ask.Repository, ask.Line) is { } last && store.Steps(last.Id).LastOrDefault() is { Step: IntegrationStepNames.Judge, Outcome: IntegrationStepOutcomes.Split })
+        {
+            batch = 1;
+        }
+
         IntegrationFormed formed;
         try
         {
@@ -276,7 +282,7 @@ internal sealed class IntegrationReplays(IntegrationStore store, string treesRoo
     /// The tree put back at <paramref name="commit"/>, detached: a merge a crash cut aborted, what it changed reset, untracked files it made
     /// removed (ignored ones stay, as private files a gate reads do). Null where it is; else git's words.
     /// </summary>
-    private static async Task<string?> ResetAsync(string tree, string commit, CancellationToken ct)
+    internal static async Task<string?> ResetAsync(string tree, string commit, CancellationToken ct)
     {
         await WorkingTree.GitAsync(tree, ["merge", "--abort"], ct).ConfigureAwait(false);
         foreach (var arguments in new[]
