@@ -774,7 +774,11 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
                 {
                     if (used is not null)
                     {
-                        _context.Usage?.Record(new UsageEntry(sessionId, "", adapter.Name, selection.Profile, used.Used, used.Size, DateTimeOffset.UtcNow));
+                        // The usage is the brainstorm's own (D176 point 7): the reading names it, and its account counts it.
+                        _context.Usage?.Record(new UsageEntry(sessionId, "", adapter.Name, selection.Profile, used.Used, used.Size, DateTimeOffset.UtcNow)
+                        {
+                            Brainstorm = turn.Id,
+                        });
                     }
 
                     if (ended.NotOffered is not null)

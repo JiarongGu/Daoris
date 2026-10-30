@@ -3931,6 +3931,8 @@ public sealed class Driver(
         if (target.Brainstorm is null)
             await service.TryKeepActorAsync(sessionId, Log, choice, asked, ct: ct).ConfigureAwait(false);
         UsageTurns.ActorBound(home, Context.Events, sessionId, actor);
+        // BRAINSTORM1c: a pass's turns are the brainstorm's usage, kept naming it beside the account its walk chose.
+        if (target.Brainstorm is { } brainstorm) UsageTurns.BrainstormBound(home, Context.Events, sessionId, brainstorm);
         await using var actorRun = new ActorRun(Context.Events, sessionId, actor, prior?.Ran,
             ran => target.Brainstorm is null ? service.KeepActorAsync(sessionId, ran: ran) : Task.CompletedTask, Log);
         // SESSWATCH1a (D200): a quest's session and an intake are watched while they run, never ended on time; a pass keeps minutes of
