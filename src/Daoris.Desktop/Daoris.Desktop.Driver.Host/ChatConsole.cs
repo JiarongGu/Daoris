@@ -195,16 +195,7 @@ internal static class ChatConsole
 
         // CLITURN1: this terminal owns the conversation, so it tells the home where its turns stand (a window shows them) and
         // honours a stop asked of it through the request folder, as its own Ctrl+C at rest would. Words and turn stops stay on its input.
-        var marks = new TurnMarks(home);
-        runner.QueueChanged += (session, queue) =>
-        {
-            if (string.Equals(session, id, StringComparison.OrdinalIgnoreCase)) marks.Write(id, queue);
-        };
-        marks.Write(id, runner.Queue(id));
-        using var leaving = new CancellationTokenSource();
-        await using var asked = new SessionRequestWatch(
-            home, session => string.Equals(session, id, StringComparison.OrdinalIgnoreCase), (session, note) => processes.Stop(session, note: note), () => null);
-        var honouring = HonourAsync(asked, leaving.Token);
+        await using var owner = new TerminalOwner(home, id, runner, processes);
 
         // Stdin is the person. A closed stdin is them finishing, which ENDS the conversation rather
         // than killing it: the harness gets end-of-input, says whatever it was going to say, and exits
@@ -288,9 +279,6 @@ internal static class ChatConsole
         finally
         {
             Console.CancelKeyPress -= interrupt;
-            await leaving.CancelAsync().ConfigureAwait(false);
-            await honouring.ConfigureAwait(false);
-            marks.Remove(id);
         }
 
         // Finished through the conversation, which knows its door (CONV3b).
@@ -323,33 +311,6 @@ internal static class ChatConsole
         catch (DriverException refused)
         {
             Console.Error.WriteLine($"chat: {refused.Message}");
-        }
-    }
-
-    /// <summary>How often the terminal looks for a stop asked of its conversation (CLITURN1): well inside the asking door's wait.</summary>
-    private static readonly TimeSpan Looking = TimeSpan.FromMilliseconds(500);
-
-    /// <summary>Look for requests until <paramref name="ct"/> ends; a folder held for a moment is looked at again.</summary>
-    private static async Task HonourAsync(SessionRequestWatch requests, CancellationToken ct)
-    {
-        try
-        {
-            while (!ct.IsCancellationRequested)
-            {
-                try
-                {
-                    await requests.HonourAsync(ct).ConfigureAwait(false);
-                }
-                catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-                {
-                }
-
-                await Task.Delay(Looking, ct).ConfigureAwait(false);
-            }
-        }
-        catch (OperationCanceledException)
-        {
-            // The conversation is over.
         }
     }
 

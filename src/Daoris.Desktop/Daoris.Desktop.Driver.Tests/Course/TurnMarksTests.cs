@@ -100,6 +100,16 @@ public sealed class TurnMarksTests : IDisposable
     }
 
     [Fact]
+    public async Task A_stop_nothing_takes_is_withdrawn_so_the_person_is_told_it_did_not_stop_and_none_acts_on_it_later()
+    {
+        var stopped = await SessionMoves.StopThroughOwnerAsync(
+            _home, Session, TimeSpan.FromMilliseconds(100), TimeSpan.FromMilliseconds(20), () => DateTimeOffset.UtcNow);
+
+        Assert.False(stopped);
+        Assert.False(new SessionRequests(_home).IsPending(Session));
+    }
+
+    [Fact]
     public void A_mark_never_names_a_path()
     {
         Assert.Throws<DriverException>(() => new TurnMarks(_home).Write(@"..\escape", Running()));
