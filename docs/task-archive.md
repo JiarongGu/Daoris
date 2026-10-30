@@ -21844,3 +21844,11 @@ The row is quoted by its head; its whole text and proof are the foundation desig
 > | **1s** push only | with D182's remaining rows: `DRIVER_TICK`'s data into slices; `STATE_CHANGED` for unmoved scopes and plugins alone; held answers by declared inputs and versions; §7 row 14 | `pushedState.test.tsx`, `bridge/state/*.test.ts*`, `StateSlicesTests`; bridge reads per minute on the install with two windows, before and after (D182 point 8) |
 
 **Outcome** 2026-10-31: built in two parts. The tick's considerations are a pushed slice and the tick refetches nothing; rules are a slice told only when they change; the index feed is told while it fills; a held answer is served with no work while the versions of the scopes and slices its route declares stand (only `SESSION_WHERE` declares any; the others read git, processes or files no version tracks); the chain's unbound ranks 3 and 4 are gone. Owed: bridge reads per minute on the install, from the module's `bridge.asked` log line. Detail in D182's last two notes.
+
+## FOUNDATION1x — starts take their role (2026-10-31, D212)
+
+> | **1x** starts take their role | the start plan finds each start's role by its work and place; `actor` written as the seeded role of its work, the role taken and its revision on the binding, each binding writer updating its own columns by name (O3-16); census C, … the `design` capability … taken by a quest whose `weight` its publisher or the intake marks `design` | … |
+
+The row is quoted by its head; its whole text and proof are the foundation design's Part B table, row 1x.
+
+**Outcome** 2026-10-31: built in two parts. Every start (quest, intake, chat, reviewer, helper, partner, brainstorm voice) takes its role from the catalogue through the start plan; `actor` stays the seeded role and the role and revision are kept on `binding_roles` (store migration 11); census C is a rule with its tests; a quest's `weight` travels through the service's publish, wire and door, and one marked `design` starts on the role taking design, Build's while none does. The intake marks nothing of itself, having no rule for design work. Detail in D212's two FOUNDATION1x notes.
