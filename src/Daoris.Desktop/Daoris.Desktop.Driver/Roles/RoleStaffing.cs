@@ -359,7 +359,7 @@ public sealed class RoleStaffing(string home, Func<StoreSettled>? settled = null
         }
 
         if (Shows(source) is not { } shown) return new StaffingChecked(StaffingChecks.Unread);
-        if (shown == read.Written) return new StaffingChecked(StaffingChecks.Same);
+        if (shown == read.Written && !Moved(read)) return new StaffingChecked(StaffingChecks.Same);
 
         RecordLock held;
         try
@@ -453,7 +453,7 @@ public sealed class RoleStaffing(string home, Func<StoreSettled>? settled = null
     /// </summary>
     private void Commit(StaffingRead read, DriverConfig after, IReadOnlyDictionary<string, string> asFound, Action<DesktopWrite>? also)
     {
-        var projection = StaffingProjection.Project(after, asFound, read.Written.Actors);
+        var projection = StaffingProjection.Project(after, asFound, read.Written.Actors, Narrowing(after));
         var filed = StaffingFile.Project(FileOfHome, read.Written, projection, FileWait, Seams);
         if (filed.How == StaffingFiled.Unread) throw new DriverException($"{filed.Said} Nothing was written.");
         if (filed.How is StaffingFiled.Moved or StaffingFiled.Refused)
@@ -524,11 +524,22 @@ public sealed class RoleStaffing(string home, Func<StoreSettled>? settled = null
     {
         if (Read() is not { } read) return new StaffingChecked(StaffingChecks.NotImported);
         if (Shows(null) is not { } shown) return new StaffingChecked(StaffingChecks.Unread);
-        if (shown == read.Written) return new StaffingChecked(StaffingChecks.Same);
-
         var staffing = StaffingProjection.Config(read);
+        var narrowing = Narrowing(staffing);
         using var store = DesktopStore.Open(Location, StoreProcess.Options(Settled));
-        if (shown == StaffingProjection.Project(staffing, read.AsFound, read.Written.Actors))
+        if (shown == read.Written)
+        {
+            if (!StaffingProjection.Moved(read.Written, staffing, narrowing)) return new StaffingChecked(StaffingChecks.Same);
+
+            // FOUNDATION1w: a record that stopped or began to read outside a write moved the projection; the file is written onto it.
+            var moved = StaffingProjection.Project(staffing, read.AsFound, read.Written.Actors, narrowing);
+            var carried = StaffingFile.ProjectHolding(FileOfHome, keep, shown, moved);
+            if (carried.How is not (StaffingFiled.Written or StaffingFiled.Unchanged)) return new StaffingChecked(StaffingChecks.Left, Said: carried.Said);
+            store.Write(Family, write => StaffingProjection.Written(write, moved, Now()));
+            return new StaffingChecked(StaffingChecks.Written);
+        }
+
+        if (shown == StaffingProjection.Project(staffing, read.AsFound, read.Written.Actors, narrowing))
         {
             store.Write(Family, write => StaffingProjection.Written(write, shown, Now()));
             return new StaffingChecked(StaffingChecks.Written);
@@ -545,13 +556,29 @@ public sealed class RoleStaffing(string home, Func<StoreSettled>? settled = null
         });
 
         AfterFound?.Invoke();
-        var repaired = StaffingProjection.Project(after, read.AsFound, read.Written.Actors);
+        var repaired = StaffingProjection.Project(after, read.AsFound, read.Written.Actors, Narrowing(after));
         var filed = StaffingFile.ProjectHolding(FileOfHome, keep, shown, repaired);
         if (filed.How is not (StaffingFiled.Written or StaffingFiled.Unchanged)) return new StaffingChecked(StaffingChecks.Found, id, filed.Said);
 
         AfterRepair?.Invoke();
         store.Write(Family, write => StaffingProjection.Written(write, repaired, Now()));
         return new StaffingChecked(StaffingChecks.Found, id);
+    }
+
+    /// <summary>The roles the catalogue narrows in the file for <paramref name="staffing"/> (FOUNDATION1w); none where no role is configured.</summary>
+    private IReadOnlySet<string> Narrowing(DriverConfig staffing) => RoleCatalog.Read(Location).Narrowed(staffing);
+
+    private bool Moved(StaffingRead read)
+    {
+        try
+        {
+            var staffing = StaffingProjection.Config(read);
+            return StaffingProjection.Moved(read.Written, staffing, Narrowing(staffing));
+        }
+        catch (Exception error) when (Stored(error))
+        {
+            return false;
+        }
     }
 
     /// <summary>The four paths <paramref name="source"/> shows, or the file now where none is given; a file that is gone shows none, null where it does not read.</summary>

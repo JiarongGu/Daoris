@@ -140,6 +140,27 @@ public sealed class RoleCatalog
         return work == ParticipantWork.Design ? RoleFor(ParticipantWork.Build, place) : new RoleFound(null, null);
     }
 
+    /// <summary>
+    /// The roles whose entry in <c>driver.json</c> the projection narrows for an older build (§19.15, <i>C6-1.7</i>): Intake and Ask Daoris
+    /// wherever their work is off, removed or unreadable in any scope, or an added record's work does not read, which counts as taking both.
+    /// <paramref name="staffing"/> is the store's staffing; its own keys are never narrowed, so the newer build's machine role still starts.
+    /// </summary>
+    public IReadOnlySet<string> Narrowed(DriverConfig staffing)
+    {
+        var narrowed = new SortedSet<string>(StringComparer.Ordinal);
+        var unreadableAdded = Slots.Any(slot => slot.State == RoleState.Unreadable && !ActorChoices.Ids.Contains(slot.Id, StringComparer.Ordinal));
+        foreach (var work in (string[])[ParticipantWork.Intake, ParticipantWork.AskDaoris])
+        {
+            var seeded = StartPlan.RoleOf(work);
+            var holder = RoleFor(work, new RolePlace()).Role;
+            var off = Slots.Any(slot => slot.Role is { } role && role.Id != seeded && role.Takes.Contains(work, StringComparer.Ordinal)
+                && !(staffing.Actors.TryGetValue(role.Id, out var choices) && choices.Count > 0));
+            if (unreadableAdded || off || holder?.Id != seeded || Slots.Any(slot => slot.Id == seeded && slot.State == RoleState.Unreadable)) narrowed.Add(seeded);
+        }
+
+        return narrowed;
+    }
+
     /// <summary>The judge's refusal codes, the closed set every door answers.</summary>
     public static IReadOnlyList<string> Codes { get; } =
         ["appointed-not-configurable", "mixed-shape", "unknown-work", "reserved-id", "bad-record", "may-not-be-off", "two-roles-one-work", "choices"];

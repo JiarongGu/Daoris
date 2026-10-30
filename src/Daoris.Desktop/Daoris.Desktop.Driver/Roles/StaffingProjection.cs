@@ -58,7 +58,8 @@ internal static class StaffingProjection
     /// not read written back as found, an id this build does not know kept from <paramref name="writtenActors"/>, absent where none is; the
     /// three keys as <c>DriverConfig</c>'s writer writes them, <c>adapter</c> always and the other two only when named.
     /// </summary>
-    public static StaffingPaths Project(DriverConfig staffing, IReadOnlyDictionary<string, string> asFound, string? writtenActors)
+    public static StaffingPaths Project(
+        DriverConfig staffing, IReadOnlyDictionary<string, string> asFound, string? writtenActors, IReadOnlySet<string>? narrowed = null)
     {
         var any = false;
         var actors = Text(writer =>
@@ -66,7 +67,14 @@ internal static class StaffingProjection
             writer.WriteStartObject();
             foreach (var id in ActorChoices.Ids)
             {
-                if (staffing.ActorErrors.ContainsKey(id))
+                // FOUNDATION1w: a role the catalogue narrows is written off for an older build, which reads no scope.
+                if (narrowed?.Contains(id) == true)
+                {
+                    writer.WritePropertyName(id);
+                    writer.WriteRawValue("[]");
+                    any = true;
+                }
+                else if (staffing.ActorErrors.ContainsKey(id))
                 {
                     if (!asFound.TryGetValue(id, out var raw)) continue;
                     writer.WritePropertyName(id);
@@ -92,8 +100,19 @@ internal static class StaffingProjection
         });
 
         return new StaffingPaths(
-            any ? actors : null, Quote(staffing.Adapter), staffing.IntakeAdapter is { } intake ? Quote(intake) : null,
-            staffing.HelperAdapter is { } helper ? Quote(helper) : null);
+            any ? actors : null, Quote(staffing.Adapter),
+            staffing.IntakeAdapter is { } intake && narrowed?.Contains("intake") != true ? Quote(intake) : null,
+            staffing.HelperAdapter is { } helper && narrowed?.Contains("ask-daoris") != true ? Quote(helper) : null);
+    }
+
+    /// <summary>
+    /// Whether the file <paramref name="written"/> shows Intake or Ask Daoris starting otherwise than the store and <paramref name="narrowed"/>
+    /// say it should: a record that stopped or began to read outside a write, which the next check writes (FOUNDATION1w).
+    /// </summary>
+    public static bool Moved(StaffingPaths written, DriverConfig staffing, IReadOnlySet<string> narrowed)
+    {
+        var shown = Config(written);
+        return MayBeOff.Any(actor => Starts(actor, shown) != (Starts(actor, staffing) && !narrowed.Contains(actor)));
     }
 
     /// <summary>Whether <paramref name="actor"/> starts anything under <paramref name="config"/>, read by today's reader.</summary>
@@ -163,7 +182,8 @@ internal static class StaffingProjection
     /// <summary>The staffing's rows rewritten as <paramref name="staffing"/> holds them, as the import writes them.</summary>
     public static void Rows(DesktopWrite write, DriverConfig staffing, IReadOnlyDictionary<string, string> asFound, string at)
     {
-        write.Execute("DELETE FROM role_staffing");
+        // An added role's row is the catalogue's staffing (FOUNDATION1w) and stays; only the seeded eight are rewritten.
+        write.Execute($"DELETE FROM role_staffing WHERE role IN ({string.Join(", ", ActorChoices.Ids.Select(id => $"'{id}'"))})");
         foreach (var id in ActorChoices.Ids)
         {
             var first = id switch
