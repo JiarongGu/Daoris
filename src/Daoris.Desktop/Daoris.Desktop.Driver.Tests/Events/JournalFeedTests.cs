@@ -11,7 +11,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 public sealed class JournalFeedTests
 {
-    private static readonly TimeSpan Hurry = TimeSpan.FromMilliseconds(5);
+    // No pause between asks: the stand-in answers after a moment of its own, so the feed is never a hot loop here.
+    private static readonly TimeSpan Hurry = TimeSpan.Zero;
 
     /// <summary>The service's two doors, as a scripted journal: rows by position and where it stands.</summary>
     private sealed class StandIn : HttpMessageHandler
