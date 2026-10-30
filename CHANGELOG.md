@@ -5,6 +5,7 @@ with the version and date at release.
 
 ## Unreleased
 
+- A session has an *At work* view (分工) in its side bar, after *Workflow*: its parts with their own states and, for the part you are on, each subagent its agent started, what it is and whether it works, ended with its agent, was lost when its agent ended, or is not known to still run, read from Daoris's records and never from the conversation's text. It updates as the lineage moves, without the window asking.
 - A session's lineage file (`sessions/<id>/lineage.jsonl`, kept on this machine) now records each process its agent ran, from its start to its end, which process wrote each line, and the subagents an agent on the protocol door started, with their names, tasks and how each ended: what the coming view of who is at work on a session reads, never the conversation's text.
 - A knowledge search hit's `standing:` line now reads the one reading every session's connector shares, so a session never shows one reading's commit beside another's marks, and says `+ uncommitted unknown` where git did not answer instead of looking clean. The index is rebuilt once after the update (KNOWCENTRAL2a).
 - A session's page no longer stops on an error while the agent's long last message streams in line by line: each line had left React an update to draw, and some fifty in a row stopped the window's page (PAGELOOP1).
