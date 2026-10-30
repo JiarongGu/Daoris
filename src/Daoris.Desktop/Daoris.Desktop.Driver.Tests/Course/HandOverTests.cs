@@ -511,11 +511,11 @@ public sealed class HandOverTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 MIXAGENT1a-ii (D50): on a quest's session the verb opens no conversation in the terminal: it judges, keeps the box and says
-    /// the driver's next look takes it. The host's conversation door is never asked.
+    /// 🔴 MIXAGENT1a-ii (D50): on a quest's session the verb opens no conversation in the terminal: it judges, decides the move in the store
+    /// (FOUNDATION1f-v part c) and says the driver's next look takes it. The host's conversation door is never asked.
     /// </summary>
     [Fact]
-    public async Task The_terminal_keeps_a_quest_s_session_s_box_for_the_look_and_never_opens_a_conversation()
+    public async Task The_terminal_decides_a_quest_s_session_s_move_for_the_look_and_never_opens_a_conversation()
     {
         var room = QuestRoom();
         var asked = false;
@@ -536,8 +536,11 @@ public sealed class HandOverTests : IDisposable
 
         Assert.False(asked);
         Assert.Equal("sessions: it is stopped at the driver's next look, then goes on in the same tree with codex-acp.\n", output.ToString().ReplaceLineEndings("\n"));
-        var box = new HandOverBox(_home).Read("qu3st000")!;
-        Assert.Equal(("codex-acp", "work", HandOverWhy.Press, HandOverBy.Person), (box.Agent, box.Account, box.Why, box.AskedBy));
+        // FOUNDATION1f-v part c: the verb decides the driven move in the store, claimed by its own run, and writes no box.
+        var move = QuestMove("qu3st000")!;
+        Assert.Equal((MoveExecutors.Driven, "decided", "codex-acp", "work", HandOverWhy.Press, HandOverBy.Person), (move.Executor, move.PhaseWord, move.Agent, move.Account, move.Why, move.By));
+        Assert.Equal(StoreProcess.Run, move.ClaimRun);
+        Assert.Null(new HandOverBox(_home).Read("qu3st000"));
     }
 
     /// <summary>
@@ -622,10 +625,20 @@ public sealed class HandOverTests : IDisposable
 
     private static JsonObject Repo(string name, bool adopted) => new() { ["repository"] = name, ["adopted"] = adopted, ["root"] = "root-of-" + name };
 
-    private Task<HandOverAnswer> AskQuestAsync(Room room, string id, string agent = "codex-acp", string? account = null) =>
-        QuestHandOver.AskAsync(room.Client(), _home, Drives, id, agent, account, HandOverWhy.Limit, HandOverBy.Person, T0.AddMinutes(30));
+    /// <summary>The quest's hand-over is decided through the driven holder (FOUNDATION1f-v part c): the lease holder's scope, the home's one store.</summary>
+    private Task<HandOverAnswer> AskQuestAsync(Room room, string id, string agent = "codex-acp", string? account = null)
+    {
+        var client = room.Client();
+        var moves = new ConversationMoves(_home, client, Events, store: Store(), scope: MoveTakeUpScope.LeaseHolder);
+        return QuestHandOver.AskAsync(client, moves, Drives, id, agent, account, HandOverWhy.Limit, HandOverBy.Person);
+    }
 
-    /// <summary>🔴 A quest's session handed to another agent keeps its box, as a conversation's is, and says the driver's next look takes it.</summary>
+    private MoveRecord? QuestMove(string session) => Store().Of(session).LastOrDefault();
+
+    /// <summary>
+    /// 🔴 A quest's session handed to another agent keeps its move in the store (FOUNDATION1f-v part c), decided at the ask, and says the driver's
+    /// next look takes it; no box is written.
+    /// </summary>
     /// <summary>
     /// 🔴 FABRIC-CLOSE1c20: a take lost to the person's own reopen is refused in the reopen's words and its own code, never as another
     /// machine's take.
@@ -646,14 +659,17 @@ public sealed class HandOverTests : IDisposable
     }
 
     [Fact]
-    public async Task A_quest_s_session_is_handed_over_by_keeping_its_box_for_the_drivers_look()
+    public async Task A_quest_s_session_is_handed_over_by_deciding_its_driven_move_for_the_drivers_look()
     {
         var answer = await AskQuestAsync(QuestRoom(), "qu3st000", account: "work");
 
         Assert.Equal((true, (string?)null), (answer.Kept, answer.Why));
         Assert.Equal("it is stopped at the driver's next look, then goes on in the same tree with codex-acp.", answer.Message);
-        var box = new HandOverBox(_home).Read("qu3st000");
-        Assert.Equal(("codex-acp", "work", HandOverWhy.Limit, HandOverBy.Person, T0.AddMinutes(30)), (box!.Agent, box.Account, box.Why, box.AskedBy, box.At));
+        var move = QuestMove("qu3st000")!;
+        Assert.Equal(("decided", "run-ask", MoveExecutors.Driven, MoveHows.Brief), (move.PhaseWord, move.ClaimRun, move.Executor, move.How));
+        Assert.Equal(("codex-acp", "work", HandOverWhy.Limit, HandOverBy.Person), (move.Agent, move.Account, move.Why, move.By));
+        Assert.Null(new HandOverBox(_home).Read("qu3st000"));
+        Assert.Empty(new HandOverBox(_home).Pending());
     }
 
     public static TheoryData<string, string, string?, string, string> QuestRefusals => new()
@@ -688,6 +704,7 @@ public sealed class HandOverTests : IDisposable
 
         Assert.Equal((false, why, message), (answer.Kept, answer.Why, answer.Message));
         Assert.Empty(Directory.EnumerateFiles(DaorisHome.Entry(_home, HomeEntry.Sessions), "*" + HandOverBox.Suffix));
+        Assert.Null(QuestMove(id));
     }
 
     /// <summary>
@@ -707,7 +724,7 @@ public sealed class HandOverTests : IDisposable
         var answer = await AskQuestAsync(room, "p4rk0000");
 
         Assert.Equal((true, (string?)null), (answer.Kept, answer.Why));
-        Assert.Equal("codex-acp", new HandOverBox(_home).Read("p4rk0000")!.Agent);
+        Assert.Equal("codex-acp", QuestMove("p4rk0000")!.Agent);
     }
 
     [Fact]

@@ -345,6 +345,49 @@ public sealed class HandOverMoveStoreTests : IDisposable
         Assert.Empty(Boxes());
     }
 
+    /// <summary>
+    /// 🔴 FOUNDATION1f-v part c, reading 5 of part a: a hand-over a headless host's look decided (<c>DriverHandOvers</c>, no chat runner wired) is
+    /// claimed by that process, which goes no further with it. A long-lived host would hold it for good if a shell took only a dead run's, so the
+    /// shell receives it at its next look while the host lives, by a guarded update that raises the claim's generation: the host, still alive, can
+    /// write nothing more under the claim it decided under.
+    /// </summary>
+    [Fact]
+    public async Task A_hand_over_a_headless_host_decided_is_taken_by_the_shell_at_its_next_look_while_the_host_lives()
+    {
+        var world = Live();
+        using var c = world.Client;
+        world.Ledger.Edit("c1", record => record["state"] = "stopped");
+        var host = new MoveStore(_home, () => StoreSettled.Yes, each => !_dead.Contains(each.Run), "run-host", StoreProcess.Host);
+        var decided = host.Decide(Decision("c1", HandOverWhy.Agent, HandOverBy.Agent));
+
+        var taken = await world.HandOver.TakeAllAsync((_, _) => Task.CompletedTask, CancellationToken.None);
+
+        Assert.Equal("c3", Assert.Single(taken).SessionId);
+        await Poll.Until(() => MoveFrom("c1")?.PhaseWord == "delivered", () => $"the move at {MoveFrom("c1")?.PhaseWord}");
+        var move = Store("run-probe").Read(decided.Move.Id)!;
+        Assert.Equal(("run-shell", 2L), (move.ClaimRun, move.ClaimGeneration));
+        Assert.Single(Store("run-probe").Of("c1"));
+        Assert.Throws<MoveClaimLostException>(() => host.Advance(decided.Claim!, MoveRecordPhase.Quiescing));
+        Assert.Equal(1, world.Runner.Opened!.Prompts.Count);
+    }
+
+    /// <summary>🔴 A hand-over another live shell decided is that shell's own to take: this shell's look leaves it, as it leaves any live run's move.</summary>
+    [Fact]
+    public async Task A_hand_over_another_live_shell_decided_is_left_to_it()
+    {
+        var world = Live();
+        using var c = world.Client;
+        world.Ledger.Edit("c1", record => record["state"] = "stopped");
+        var decided = Store("run-shell-2").Decide(Decision("c1"));
+
+        var taken = await world.HandOver.TakeAllAsync((_, _) => Task.CompletedTask, CancellationToken.None);
+
+        Assert.Empty(taken);
+        Assert.Equal(("decided", "run-shell-2", 1L), (MoveFrom("c1")!.PhaseWord, MoveFrom("c1")!.ClaimRun, MoveFrom("c1")!.ClaimGeneration));
+        Assert.Empty(world.Ledger.Opened);
+        Assert.NotNull(decided.Claim);
+    }
+
     /// <summary>🔴 A quest session's box is the driver's look's, and the conversations' come-up leaves it where it is, with no move for it.</summary>
     [Fact]
     public async Task A_quest_session_s_box_is_left_for_the_look()

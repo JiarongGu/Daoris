@@ -167,8 +167,8 @@ public sealed class CourseCensusTests
     /// FOUNDATION1f-ii part a (the foundation design §3.3): every move that keeps its move record is named in <c>records</c> with its member
     /// and the row that adopted it, and none that does not: a source that decides a move through the conversations' holder
     /// (<c>Moves.BeginAsync(</c>) is named, and each named member decides through it. The live limit move is the first and the curve's move
-    /// the second (f-iii part a), the conversation's hand-over's ask the next (f-v part a, through the holder it is handed); rows f-iii's other
-    /// parts to f-vi add theirs.
+    /// the second (f-iii part a), the conversation's hand-over's ask the next (f-v part a, through the holder it is handed) and the quest's
+    /// hand-over's the driven member's (f-v part c); rows f-iii's other parts to f-vi add theirs.
     /// </summary>
     [Fact]
     public void Every_move_that_keeps_its_record_is_named_with_its_member()

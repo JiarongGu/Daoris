@@ -3,21 +3,33 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A quest's session handed to another agent (MIXAGENT1a-ii, D163 point 1; the mixed-agents design §2): the look takes the boxes the
-/// terminal kept, judges each again, stops the session as the person's, and holds the quest on the named agent
+/// A quest's session handed to another agent (MIXAGENT1a-ii, D163 point 1; the mixed-agents design §2): the look takes the moves the
+/// terminal decided, in the store (FOUNDATION1f-v part c), judges each again, stops the session as the person's, and holds the quest on the named agent
 /// (<see cref="HandedQuests"/>) until it leaves this machine. The planner reads the stop as released and the next start runs on the
 /// agent named, in the same tree.
 /// </summary>
 /// <remarks>
-/// <b>An agent's ask</b> (MIXAGENT1c, D163 point 3): before the boxes, the look settles each ask a session's agent made through
+/// <b>An agent's ask</b> (MIXAGENT1c, D163 point 3): before the moves, the look settles each ask a session's agent made through
 /// <c>handover_propose</c> by the person's <c>handOver</c> rule (<see cref="HandOverAskJudge"/>): held for the person's word, refused, or
 /// let go to the next agent in the person's order. A quest's session whose turn still runs is never stopped for it: its run takes the
-/// ask at its turn's end (<see cref="AtTurnEndAsync"/>); one whose turn ended is kept as a box this look takes. A conversation's goes to
-/// the shell's chat runner where one is wired (<see cref="LoopContext.HandsOver"/>), else is kept as the box the runner takes.
+/// ask at its turn's end (<see cref="AtTurnEndAsync"/>); one whose turn ended is decided as a move this look takes. A conversation's goes to
+/// the shell's chat runner where one is wired (<see cref="LoopContext.HandsOver"/>), else is decided as a move in the store, which the shell
+/// receives at its next look while this host lives.
 /// </remarks>
-internal sealed class DriverHandOvers(LoopContext context)
+/// <param name="context">The loop's context.</param>
+/// <param name="moves">
+/// The driven holder the quest's hand-over is decided and taken in (FOUNDATION1f-v part c): <see cref="Driver.Moves"/>, whose scope is the lease
+/// holder's. Null builds one over the context's own, as a test that holds only the context does.
+/// </param>
+internal sealed class DriverHandOvers(LoopContext context, Func<ConversationMoves>? moves = null)
 {
     private readonly LoopContext _context = context;
+
+    private ConversationMoves? _moves;
+
+    /// <summary>The driven holder the quest's hand-over is decided and taken in: the lease holder's scope over the home's one move store.</summary>
+    private ConversationMoves Moves =>
+        moves?.Invoke() ?? (_moves ??= new ConversationMoves(_context.Home, _context.Service, _context.Events, _context.Output, scope: MoveTakeUpScope.LeaseHolder));
 
     /// <summary>
     /// The agents a quest may go on with, as the roster reads them for a start: the accounts it holds for an agent and the wire its
@@ -26,29 +38,33 @@ internal sealed class DriverHandOvers(LoopContext context)
     internal HandOverAgent? Drives(string agent) => QuestHandOver.Roster(_context.Adapters, _context.Harnesses.Home)(agent);
 
     /// <summary>
-    /// The quests handed to another agent, at a look: each agent's ask to hand over settled by the person's rule, each box a terminal
-    /// kept for a quest's session taken, a quest that left this machine goes back to the machine's agent, and what stands is read into
-    /// the snapshot for the planner. Nothing is read where no ask, no box and no store is on file. A conversation's box is the shell's
-    /// chat runner's, and is left to it.
+    /// The quests handed to another agent, at a look: each agent's ask to hand over settled by the person's rule, each move decided for a
+    /// quest's session taken from the store (FOUNDATION1f-v part c; an older build's box is imported into it first, and one a terminal decided
+    /// is received from that run), a quest that left this machine goes back to the machine's agent, and what stands is read into the snapshot
+    /// for the planner. Nothing is read where no ask, no move and no store is on file. A conversation's move is the shell's chat runner's, and
+    /// is left to it.
     /// </summary>
     internal async Task<Snapshot> HandOversAsync(Snapshot snapshot, List<string> events, CancellationToken ct)
     {
         await AgentAsksAsync(events, ct).ConfigureAwait(false);
 
-        var box = new HandOverBox(_context.Home);
         var handed = new HandedQuests(_context.Home);
 
-        foreach (var id in box.Pending())
+        // An older build's box a quest session's is imported by this holder's take-up, once, at each look that finds one (the watch's first look
+        // took up dead loops' moves; a box an older build writes later is found here). Never faults: a store that will not answer is read again.
+        if (new HandOverBox(_context.Home).Pending().Count > 0) await Moves.LookAsync(ct).ConfigureAwait(false);
+
+        foreach (var waiting in Moves.HandOversWaiting(MoveExecutors.Driven))
         {
             try
             {
-                await TakeHandOverAsync(id, box, handed, events, ct).ConfigureAwait(false);
+                await TakeHandOverAsync(waiting, handed, events, ct).ConfigureAwait(false);
             }
             catch (Exception error) when (error is HttpRequestException or DriverException or JsonException or IOException
                                               or UnauthorizedAccessException
                                               || (error is OperationCanceledException && !ct.IsCancellationRequested))
             {
-                events.Add(_context.Said.Retry("hand-over", $"hand-over  the hand-over of session `{id}` could not be looked at this look, and is looked at again at the next: {error.Message}"));
+                events.Add(_context.Said.Retry("hand-over", $"hand-over  the hand-over of session `{waiting.Left}` could not be looked at this look, and is looked at again at the next: {error.Message}"));
             }
         }
 
@@ -74,16 +90,24 @@ internal sealed class DriverHandOvers(LoopContext context)
         return snapshot with { Handed = handed.All() };
     }
 
-    private async Task TakeHandOverAsync(string id, HandOverBox box, HandedQuests handed, List<string> events, CancellationToken ct)
+    /// <summary>
+    /// A quest's hand-over taken from the store (FOUNDATION1f-v part c, §3.3, §13.4): judged again, then the session stopped, written
+    /// <c>quiescing</c> while it runs, the quest held on the agent named, and the move left at <c>old-ended</c> for the carry-on the next
+    /// look starts to go on from. A move this look cannot take, refused at the judge or run in another Daoris process, is ended by its phase on
+    /// the old part, so it is not judged again at every look: the asker is told, and asks again.
+    /// </summary>
+    private async Task TakeHandOverAsync(MoveRecord waiting, HandedQuests handed, List<string> events, CancellationToken ct)
     {
+        var id = waiting.Left;
         var service = _context.Service;
         var record = (await service.SessionRecordsAsync(ct).ConfigureAwait(false))
             .FirstOrDefault(each => string.Equals(each.Id, id, StringComparison.Ordinal));
-        // A conversation's box, or one for a record that is not here, is not this look's: the shell's chat runner takes the first.
-        if (record is null || !QuestHandOver.IsQuestSession(record)) return;
-        if (box.Read(id) is not { } ask)
+        // A record that is not here is read again at the next look, or its delete takes the move with it.
+        if (record is null) return;
+        if (Moves.Claimed(waiting) is not { } move || ConversationMoves.AskOf(waiting) is not { } ask) return;
+        if (!QuestHandOver.IsQuestSession(record))
         {
-            box.Clear(id);
+            await move.EndAsync().ConfigureAwait(false);
             return;
         }
 
@@ -92,7 +116,7 @@ internal sealed class DriverHandOvers(LoopContext context)
         var (refused, _) = await QuestHandOver.JudgeAsync(service, Drives, id, ask.Agent, ask.Account, ct, agentAsk).ConfigureAwait(false);
         if (refused is not null)
         {
-            box.Clear(id);
+            await move.EndAsync().ConfigureAwait(false);
             events.Add(_context.Said.News(
                 "hand-over", new LookNews(LookSaid.HandOverRefused, id, id, quest, record.Workspace), $"hand-over  session `{id}` (#{quest}): {refused.Message}"));
             NotTaken(id, ask.Agent, refused.Why, agentAsk);
@@ -102,13 +126,17 @@ internal sealed class DriverHandOvers(LoopContext context)
         // A driven session works its quest in one turn, so there is no turn's end to wait for: it is stopped at once, as the
         // person's stop, with a line of its own. One that already ended has nothing to stop; the stop it ended on is released all the same.
         // MIXAGENT1c: a park its agent ended its turn on after asking is ended as that stop too, the record moved by the ledger's door.
+        // FOUNDATION1f-v part c: the move waits on the old part's own turn while it runs (`quiescing`), and a stop an earlier look made, whose
+        // write of `old-ended` the store would not take, is not made twice.
         var note = HandOverNotes.QuestHandedOver(ask.Agent);
+        var stoppedBefore = waiting.Phase == MoveRecordPhase.Quiescing && handed.Read(quest) is { } held && string.Equals(held.From, id, StringComparison.Ordinal);
         if (agentAsk && string.Equals(record.State, "awaiting-person", StringComparison.OrdinalIgnoreCase))
         {
             await service.AdvanceAsync(id, "stopped", note, ct: ct).ConfigureAwait(false);
         }
-        else if (record.Live)
+        else if (record.Live && !stoppedBefore)
         {
+            move.Quiescing();
             bool stopped;
             if (_context.Stops is { } stand)
             {
@@ -122,7 +150,7 @@ internal sealed class DriverHandOvers(LoopContext context)
 
             if (!stopped)
             {
-                box.Clear(id);
+                await move.EndAsync().ConfigureAwait(false);
                 events.Add(_context.Said.News("hand-over", new LookNews(LookSaid.HandOverElsewhere, id, id, quest, record.Workspace),
                     $"hand-over  session `{id}` (#{quest}) runs in another Daoris process on this machine: hand it over there, or stop it first."));
                 NotTaken(id, ask.Agent, HandOverAskWhy.Running, agentAsk);
@@ -131,7 +159,9 @@ internal sealed class DriverHandOvers(LoopContext context)
         }
 
         handed.Write(quest, new HandedQuest(ask.Agent, ask.Account, id, ask.Why, ask.AskedBy, ask.At) { Note = agentAsk ? AgentNote(id) : null });
-        box.Clear(id);
+        // The part is stopped and the quest held on its new agent: the old part's end, which the carry-on goes on from. A write the store would not
+        // take leaves the move standing, taken again at the next look, which makes no second stop.
+        move.OldEnded();
         events.Add(_context.Said.Progress("hand-over", $"hand-over  session `{id}` (#{quest}): stopped, and `#{quest}` goes on with {ask.Agent}."));
     }
 
@@ -215,8 +245,8 @@ internal sealed class DriverHandOvers(LoopContext context)
     }
 
     /// <summary>
-    /// An ask let go: a quest's session whose turn runs is left to that turn's end, one whose turn ended is kept as the box this look
-    /// takes, and a conversation goes to the chat runner, or is kept as its box.
+    /// An ask let go: a quest's session whose turn runs is left to that turn's end, one whose turn ended is decided as the move this look
+    /// takes, and a conversation goes to the chat runner, or is decided as its move.
     /// </summary>
     private async Task GoAsync(
         HandOverAsk ask, HandOverAskState? own, PriorSession record, string agent, HandOverAskFiles files, List<string> events, CancellationToken ct)
@@ -235,7 +265,7 @@ internal sealed class DriverHandOvers(LoopContext context)
         }
 
         // DRAINHOLD1: the shell's chat runner opens a conversation's hand-over as a turn of its own, which the drain waits on. A quest's is
-        // only a stop and a box (its go-on is a quest's start, which the drain holds), so it goes on.
+        // only a stop and a move (its go-on is a quest's start, which the drain holds), so it goes on.
         if (!IsQuest(record) && _context.HandsOver is not null && _context.Config.Draining)
         {
             _context.DrainHolds(events, "hand-over", ask.Id, $"the ask to hand session `{session}` over");
@@ -247,8 +277,9 @@ internal sealed class DriverHandOvers(LoopContext context)
         string? code;
         if (IsQuest(record))
         {
+            // FOUNDATION1f-v part c: decided as a driven move in the store, which the take below, in this very look, takes.
             var asked = await QuestHandOver.AskAsync(
-                service, _context.Home, Drives, session, agent, null, HandOverWhy.Agent, HandOverBy.Agent, DateTimeOffset.UtcNow, ct).ConfigureAwait(false);
+                service, Moves, Drives, session, agent, null, HandOverWhy.Agent, HandOverBy.Agent, ct).ConfigureAwait(false);
             (kept, message, code) = (asked.Kept, asked.Message, asked.Why);
         }
         else if (_context.HandsOver is { } take)
@@ -260,8 +291,9 @@ internal sealed class DriverHandOvers(LoopContext context)
         }
         else
         {
-            // FOUNDATION1f-v part a: a headless look keeps the ask as a move in the store, claimed by this run, which a shell takes at its come-up
-            // or look once this run is gone, as it took the box. No box is written.
+            // FOUNDATION1f-v part a: a headless look keeps the ask as a move in the store, claimed by this run. Part c, reading 5: this run goes no
+            // further with it, so a shell receives it at its next look while this host lives (MoveStore.Receive), never held for as long as the
+            // host runs. No box is written.
             var moves = new ConversationMoves(_context.Home, service, _context.Events, _context.Output);
             var asked = (await HandOver.AskAsync(
                 service, moves, AccountsOf, session, agent, null, HandOverWhy.Agent, HandOverBy.Agent, DateTimeOffset.UtcNow, ct).ConfigureAwait(false)).Answer;

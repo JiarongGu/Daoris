@@ -397,6 +397,52 @@ public sealed class MoveStoreTests : IDisposable
         Assert.Equal("started", shell.EffectEnded(claim, "started").Effect!.Outcome);
     }
 
+    /// <summary>A store of one run of the kind the case names: a host's or a verb's run, which decides a hand-over and goes no further with it.</summary>
+    private MoveStore Kinded(string run, string kind, Func<StoreRun, bool>? alive = null) => new(_home, () => StoreSettled.Yes, alive, run, kind);
+
+    /// <summary>
+    /// 🔴 FOUNDATION1f-v part c (reading 5 of part a): a hand-over still waiting, decided and not begun, naming its agent, is received from a run
+    /// that decided it and goes no further, a headless host's or a terminal's, whether that run lives or not, and from a shell's only once it
+    /// is dead: one guarded update that raises the generation, so the run that decided it can write nothing more. Never a live shell's, which
+    /// takes its own; never the taker's own, a move past its wait, one naming no agent (a limit's or a curve's), or one another taker read first.
+    /// </summary>
+    [Fact]
+    public void A_hand_over_still_waiting_is_received_from_a_live_host_or_terminal_run_and_from_a_shell_only_once_it_is_dead()
+    {
+        MoveDecision Waiting(string left) => Decision(left, MoveExecutors.Driven) with { Agent = "codex-acp" };
+        var host = Kinded("run-host", StoreProcess.Host);
+        var verb = Kinded("run-verb", StoreProcess.Verb);
+        var shell = Kinded("run-shell", StoreProcess.Shell);
+        var taker = Store("run-taker", DeadAre("run-gone"));
+        var hosted = host.Decide(Waiting("s-host")).Claim!;
+        var verbed = verb.Decide(Waiting("s-verb")).Claim!;
+        var shelled = shell.Decide(Waiting("s-shell")).Claim!;
+
+        var received = taker.Receive(hosted.Move, hosted.Generation);
+        Assert.Null(received.Refused);
+        Assert.Equal((hosted.Move, "run-taker", 2L), (received.Claim!.Move, received.Claim.Run, received.Claim.Generation));
+        Assert.Equal((MoveRecordPhase?)MoveRecordPhase.Decided, received.Move!.Phase);
+        Assert.Throws<MoveClaimLostException>(() => host.Advance(hosted, MoveRecordPhase.Quiescing));
+        Assert.Equal(MoveRecordPhase.Quiescing, taker.Advance(received.Claim, MoveRecordPhase.Quiescing).Phase);
+
+        Assert.Null(taker.Receive(verbed.Move, verbed.Generation).Refused);
+        Assert.Equal(MoveTakeRefusals.Live, taker.Receive(shelled.Move, shelled.Generation).Refused);
+        Assert.Null(Store("run-taker", DeadAre("run-shell")).Receive(shelled.Move, shelled.Generation).Refused);
+
+        // Not the taker's own, not a stale read, not one that is gone or ended.
+        Assert.Equal(MoveTakeRefusals.Own, taker.Receive(hosted.Move, 2).Refused);
+        Assert.Equal(MoveTakeRefusals.Moved, Store("run-other").Receive(hosted.Move, hosted.Generation).Refused);
+        Assert.Equal(MoveTakeRefusals.Gone, taker.Receive(hosted.Move + 99, 1).Refused);
+
+        // Past its wait, or naming no agent, it is not a hand-over waiting: the live executor's own.
+        var begun = host.Decide(Waiting("s-begun")).Claim!;
+        host.Advance(begun, MoveRecordPhase.OldEnded);
+        Assert.Equal(MoveTakeRefusals.NotWaiting, taker.Receive(begun.Move, begun.Generation).Refused);
+        var curve = host.Decide(Decision("s-curve", MoveExecutors.Conversation)).Claim!;
+        Assert.Equal(MoveTakeRefusals.NotWaiting, taker.Receive(curve.Move, curve.Generation).Refused);
+        Assert.Equal("run-host", taker.Read(begun.Move)!.ClaimRun);
+    }
+
     [Fact]
     public void By_the_lease_s_own_test_a_run_whose_process_is_gone_or_another_is_taken_and_one_whose_start_cannot_be_read_never_is()
     {

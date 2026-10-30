@@ -155,24 +155,34 @@ public sealed class MoveBoxImportsTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 Only a conversation's hand-over box is imported (FOUNDATION1f-v part a): the same file name holds a quest session's, which the driver's
-    /// look takes, so a box whose record the filter does not name a conversation is left in place, listed by nobody and imported by nobody.
+    /// 🔴 Each hand-over box is imported by exactly one holder (FOUNDATION1f-v parts a and c): the same file name holds a conversation's, the
+    /// shell's, and a quest session's, the driven holder's, so each importer owns the sessions its filter names and the other's box is left in
+    /// place, listed by it and imported by it never, and the quest's lands as a driven move.
     /// </summary>
     [Fact]
-    public void A_box_whose_record_is_not_a_conversation_is_left_for_the_look_that_takes_it()
+    public void Each_hand_over_box_is_imported_by_exactly_one_holder_by_its_record_s_kind()
     {
         new HandOverBox(_home).Write("s1", new HandOverRequest("codex", null, HandOverWhy.Press, HandOverBy.Person, DateTimeOffset.UtcNow));
-        new HandOverBox(_home).Write("q1s", new HandOverRequest("codex", null, HandOverWhy.Press, HandOverBy.Person, DateTimeOffset.UtcNow));
+        new HandOverBox(_home).Write("q1s", new HandOverRequest("codex", "work", HandOverWhy.Press, HandOverBy.Person, DateTimeOffset.UtcNow));
         var store = Store();
-        var importer = HandOvers(store, session => session == "s1");
+        var conversations = HandOvers(store, session => session == "s1");
+        var quests = new HandOverBoxImport(_home, store, session => session == "q1s", MoveExecutors.Driven);
 
-        var pass = importer.Import();
+        var pass = conversations.Import();
 
         Assert.Equal(["s1"], pass.Imported.Select(move => move.Left));
         Assert.Empty(pass.Never);
-        Assert.Empty(importer.Pending());
+        Assert.Empty(conversations.Pending());
+        Assert.Equal(["q1s"], quests.Pending());
         Assert.True(File.Exists(HandOverPath("q1s")));
         Assert.Empty(store.Of("q1s"));
+
+        var quest = Assert.Single(quests.Import().Imported);
+        Assert.Equal(("q1s", MoveExecutors.Driven, (MoveRecordPhase?)MoveRecordPhase.Decided, (string?)"codex", (string?)"work"), (quest.Left, quest.Executor, quest.Phase, quest.Agent, quest.Account));
+        Assert.False(File.Exists(HandOverPath("q1s")));
+        Assert.True(File.Exists(HandOverPath("q1s") + ".imported"));
+        Assert.Empty(quests.Pending());
+        Assert.Equal(MoveExecutors.Conversation, Assert.Single(store.Of("s1")).Executor);
     }
 
     // ——— When, and how often.

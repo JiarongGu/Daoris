@@ -26,7 +26,7 @@ public sealed record MoveBoxPass(IReadOnlyList<MoveRecord> Imported, IReadOnlyLi
 /// <summary>
 /// The import of one kind of box an older build writes, into the move record (FOUNDATION1f-i part 2; §3.3, §13.5). Called by the take-up
 /// (<see cref="MoveTakeUp"/>) before anything else at each come-up and look; the limit box's is handed it by the conversations' holder since
-/// FOUNDATION1f-vi part a, and the hand-over's, a conversation's box, since FOUNDATION1f-v part a.
+/// FOUNDATION1f-vi part a, and the hand-over's since FOUNDATION1f-v parts a and c.
 /// </summary>
 public interface IMoveBoxImport
 {
@@ -54,8 +54,8 @@ public interface IMoveBoxImport
 /// set-aside is left to do. A box whose record has a standing move waits behind it, left in place, and is imported once that move ends; there
 /// are never two records of one move (§3.3).</para>
 /// <para><b>Called by one production site per box, in the row that retires its reader</b>: importing a box sets it aside from today's readers,
-/// so the limit box is imported since FOUNDATION1f-vi part a and a conversation's hand-over box since FOUNDATION1f-v part a, each move read
-/// from the store; a quest session's hand-over box waits for part c (<c>MoveStoreCensusTests</c>).</para>
+/// so the limit box is imported since FOUNDATION1f-vi part a and the hand-over box since FOUNDATION1f-v parts a (a conversation's) and c (a
+/// quest session's, by the driven holder), each move read from the store (<c>MoveStoreCensusTests</c>).</para>
 /// </remarks>
 public abstract class MoveBoxImport(string home, MoveStore store) : IMoveBoxImport
 {
@@ -83,8 +83,8 @@ public abstract class MoveBoxImport(string home, MoveStore store) : IMoveBoxImpo
     protected abstract MoveFromBox? Read(string session, string text);
 
     /// <summary>
-    /// Whether this importer owns the session's box. A kind of box another reader owns, the quest session's hand-over box (the driver's look
-    /// takes it), is left where it is, imported by nobody and read as nobody's <c>Never</c>.
+    /// Whether this importer owns the session's box. A box another holder owns, a conversation's hand-over box for the driven holder and a
+    /// quest session's for the shell's, is left where it is for that holder, imported by this one never and read as nobody's <c>Never</c> here.
     /// </summary>
     protected virtual bool Owns(string session) => true;
 
@@ -270,17 +270,19 @@ public sealed class LimitBoxImport(string home, MoveStore store, Func<string, in
 }
 
 /// <summary>
-/// The conversation's hand-over box, <c>&lt;s&gt;.hand-over.json</c> (MIXAGENT1a-i, <see cref="HandOverBox"/>), imported as the move it keeps
+/// The hand-over box, <c>&lt;s&gt;.hand-over.json</c> (MIXAGENT1a-i, <see cref="HandOverBox"/>), imported as the move it keeps
 /// (FOUNDATION1f-i part 2): a hand-over decided and not yet taken, to the agent and account it names, by its why and its asker, at the moment
-/// it was asked.
+/// it was asked. The same file name holds a conversation's box and a quest session's, each imported by exactly one holder.
 /// </summary>
 /// <param name="home">The home whose boxes these are.</param>
 /// <param name="store">The move record the boxes are imported into, under its run.</param>
-/// <param name="conversation">
-/// Whether a session is a conversation, read from its record's kind (FOUNDATION1f-v part a): the same file name holds a quest session's box,
-/// which the driver's look takes until part c, so only a conversation's is imported. False for a record the ledger could not be asked about.
+/// <param name="owns">
+/// Whether this importer owns a session's box, read from its record's kind (FOUNDATION1f-v parts a and c): the shell's holder owns a conversation's,
+/// the driven holder a quest session's, so the other's box is left where it is. False for a record the ledger could not be asked about.
 /// </param>
-public sealed class HandOverBoxImport(string home, MoveStore store, Func<string, bool> conversation) : MoveBoxImport(home, store)
+/// <param name="executor">The executor whose move the box is: a conversation's by default, <see cref="MoveExecutors.Driven"/> for a quest session's.</param>
+public sealed class HandOverBoxImport(string home, MoveStore store, Func<string, bool> owns, string executor = MoveExecutors.Conversation)
+    : MoveBoxImport(home, store)
 {
     /// <inheritdoc />
     public override string Box => "hand-over";
@@ -289,13 +291,13 @@ public sealed class HandOverBoxImport(string home, MoveStore store, Func<string,
     protected override string Suffix => HandOverBox.Suffix;
 
     /// <inheritdoc />
-    protected override bool Owns(string session) => conversation(session);
+    protected override bool Owns(string session) => owns(session);
 
     /// <inheritdoc />
     protected override MoveFromBox? Read(string session, string text) =>
         HandOverFiles.ParseBox(text) is { } ask
             ? new MoveFromBox(
-                new MoveDecision(session, MoveExecutors.Conversation, MoveHows.Brief, ask.Why, ask.AskedBy) { Agent = ask.Agent, Account = ask.Account },
+                new MoveDecision(session, executor, MoveHows.Brief, ask.Why, ask.AskedBy) { Agent = ask.Agent, Account = ask.Account },
                 MoveRecordPhase.Decided)
             {
                 DecidedAt = ask.At.ToUniversalTime().ToString("O", System.Globalization.CultureInfo.InvariantCulture),
