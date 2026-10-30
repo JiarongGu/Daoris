@@ -127,6 +127,47 @@ public sealed class News(string home, Func<StoreSettled>? settled = null)
         }
     }
 
+    private static string CoverKey(string session) => "parkcovers:" + session;
+
+    /// <summary>A quest's park said, its last session's end is one piece of news with it: marked in the said-set, so the end is not told again (FOUNDATION1 z-v).</summary>
+    public void Cover(IEnumerable<string> sessions, DateTimeOffset now)
+    {
+        try
+        {
+            using var store = Open();
+            store.Write(
+                Family,
+                write =>
+                {
+                    foreach (var session in sessions)
+                    {
+                        write.Execute(
+                            "INSERT OR IGNORE INTO news_said (key, at) VALUES ($key, $at)",
+                            ("$key", CoverKey(session)), ("$at", now.UtcDateTime.ToString(Moment, CultureInfo.InvariantCulture)));
+                    }
+                });
+        }
+        catch (Exception error) when (error is DesktopStoreException or SqliteException or IOException or UnauthorizedAccessException)
+        {
+            // A cover not kept tells the end beside the park: a repeat, never a loss.
+        }
+    }
+
+    /// <summary>Whether a said park covers <paramref name="session"/>'s end.</summary>
+    public bool Covered(string session)
+    {
+        try
+        {
+            using var store = DesktopStoreReader.Open(DesktopStore.LocationIn(home));
+            return store is { Version: >= 9 }
+                && store.Query("SELECT 1 FROM news_said WHERE key = $key", row => row.GetInt32(0), ("$key", CoverKey(session))).Any();
+        }
+        catch (Exception error) when (error is SqliteException or IOException or UnauthorizedAccessException)
+        {
+            return false;
+        }
+    }
+
     /// <summary>The place a teller read to, or null where it has told nothing on this home yet; the store's failure reads as none.</summary>
     public JournalPosition? Cursor(string teller)
     {
