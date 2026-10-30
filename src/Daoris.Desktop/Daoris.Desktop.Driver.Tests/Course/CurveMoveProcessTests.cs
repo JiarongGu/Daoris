@@ -112,8 +112,14 @@ public sealed class CurveMoveProcessTests : IDisposable
         var next = (await client.RecordAsync("c2"))!;
         Assert.Equal(("acp-stub", "account-2", _root), (next.Adapter, next.Profile, next.Tree));
         Assert.Equal((old, "curve", "daoris"), (next.From, next.FromWhy, next.FromBy));
-        // The take clears the box last, after the new one is briefed: its record can stand before then.
-        await Poll.Until(() => new HandOverBox(_home).Read(old) is null, () => $"the box still holds {old}'s move; {Seen(ledger, events, old)}");
+        // FOUNDATION1f-iii part a: the move is the store's record, closed delivered once the new one is briefed (its record can stand before
+        // then); no box is kept for it.
+        MoveRecord? kept = null;
+        await Poll.Until(
+            () => (kept = new MoveStore(_home).Of(old).LastOrDefault())?.PhaseWord == "delivered",
+            () => $"the move at {kept?.PhaseWord}; {Seen(ledger, events, old)}");
+        Assert.Equal(("curve", "daoris", "c2", "account-2"), (kept!.Why, kept.By, kept.Destination, kept.Account));
+        Assert.Null(new HandOverBox(_home).Read(old));
 
         // Said where it happened, as SWITCH1c-i's pair: the old one's last line, the new one's first.
         await Poll.Until(() => events.After(next.Session, 0).Events.Any(e => Coded(e)?.Code == "chat.moved-from"), () => Seen(ledger, events, next.Session));

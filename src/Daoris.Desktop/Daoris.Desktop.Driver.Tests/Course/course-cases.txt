@@ -175,7 +175,7 @@ N-08 TransientRetryTickTests.A_resume_whose_open_fails_past_the_bound_holds_its_
 
 ## G the curve
 G-01 CurveMoveTests.A_turn_s_end_is_judged_once_and_only_with_nothing_running_opening_or_queued => Hold why=Stays doors=- repair=None code=-
-G-02 CurveMoveTests.Over_its_curve_with_another_account_with_room_it_moves_there_by_the_box => Move when=TurnEnd where=Pick:account-2(chat/-) how=Brief why=Curve by=Daoris words=-
+G-02 CurveMoveTests.Over_its_curve_with_another_account_with_room_it_moves_there_by_the_record => Move when=TurnEnd where=Pick:account-2(chat/-) how=Brief why=Curve by=Daoris words=-
 G-03 CurveMoveTests.A_candidate_whose_reading_refuses_the_conversation_s_model_is_not_moved_to => Hold why=Stays doors=- repair=None code=-
 G-04 CurveMoveTests.Switch_off_moves_nothing => Hold why=SwitchOff doors=- repair=None code=-
 G-05 CurveMoveTests.Under_its_curve_by_the_margin_it_stays_and_reads_nothing => Hold why=Stays doors=- repair=None code=-
