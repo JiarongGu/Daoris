@@ -24,7 +24,7 @@ Listed first, because nothing below restates their rows: open one of these for w
 | `decisions.md` | each decision's title with its entry's lines, then each dated note with its lines |
 | `outlines/<path>.md` | the declarations or headings of a file over 40 KB, each with its line range |
 
-## Files over 40 KB (347)
+## Files over 40 KB (348)
 
 Each has its outline at `outlines/<its path>.md`: open the outline, then read the range you need, not the file.
 
@@ -89,7 +89,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 
 | File | KB | Lines |
 |---|---|---|
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Host/Program.cs` | 73 | 1111 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Host/Program.cs` | 74 | 1118 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Host/TreesConsole.cs` | 48 | 706 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/AccountRotationGoalTests.cs` | 41 | 793 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/AccountRotationWalkTests.cs` | 42 | 633 |
@@ -187,10 +187,11 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/DriverContinuations.cs` | 104 | 1615 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/DriverHelpers.cs` | 69 | 1124 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/DriverPartners.cs` | 45 | 747 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/DriverWatch.cs` | 72 | 1190 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/DriverWatch.cs` | 73 | 1206 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/SystemWiring.cs` | 50 | 1063 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Plugins/Hooks.cs` | 62 | 1216 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Review/Domain/OpinionGate.cs` | 41 | 707 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Review/Heavy/HeavyExecutor.cs` | 42 | 856 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Roles/QuestionSupervisorDecisions.cs` | 48 | 861 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Service/ServiceClient.cs` | 178 | 3113 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Settings/DriverChoicesCommand.cs` | 50 | 853 |
@@ -205,10 +206,10 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/Domain/WorkflowRun.cs` | 61 | 1063 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/DriverWorkflowsCommand.cs` | 66 | 1138 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/Nodes/NodeGraphs.cs` | 61 | 1031 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/Nodes/NodeRuntime.cs` | 127 | 1910 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/Nodes/NodeRuntime.cs` | 130 | 1958 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/Nodes/QuestCloser.cs` | 61 | 955 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/Nodes/WireEvaluation.cs` | 50 | 781 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/Nodes/WorkPerformer.cs` | 64 | 1055 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/Nodes/WorkPerformer.cs` | 69 | 1118 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Workplace/AutoLander.cs` | 57 | 827 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Workplace/BranchTidying.cs` | 56 | 1027 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Workplace/ContentHolds.cs` | 43 | 651 |
@@ -237,7 +238,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Platform/PipeStandingTests.cs` | 46 | 857 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Platform/StandingConfirmationTests.cs` | 59 | 1078 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Platform/StatePublisherTests.cs` | 43 | 831 |
-| `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/DriverRoutes.cs` | 48 | 748 |
+| `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/DriverRoutes.cs` | 48 | 750 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/HelpRoutes.cs` | 84 | 1405 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/LinesRoutes.cs` | 66 | 1060 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/SessionsRoutes.cs` | 73 | 1152 |

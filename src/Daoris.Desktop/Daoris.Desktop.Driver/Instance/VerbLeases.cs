@@ -89,6 +89,8 @@ public static class VerbLeases
             "chat" or "answer" => false,
             "drive" or "--once" or "--until-idle" => false,
             "run-heavy" => false,
+            // FABRIC-PIPELINE1d: writes only its run's binding, once; the running driver governs it.
+            "verify" => false,
             "ask" => args.Skip(1).Any(AskWork.Contains),
             "quest" => next is not null && !ServiceQuests.Contains(next),
             "sessions" => next is not null && !next.StartsWith('-') && next is not ("start-from" or "hand-over"),
