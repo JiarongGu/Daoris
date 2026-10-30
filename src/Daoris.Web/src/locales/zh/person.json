@@ -95,6 +95,7 @@
   "person.route.OPINION_ANYWAY": "越过第二意见中有争议的发现继续",
   "person.route.OPINION_MYSELF": "由你自己回答第二意见中有争议的发现",
   "person.route.DISCARD_SESSION_BRANCH": "删除一个会话分支",
+  "person.route.INTEGRATE": "请求、撤销或重新检查仓库的集成",
   "person.route.WITHDRAW_LANDING_BRANCH": "撤回一个主线不会采纳的落地分支",
   "person.route.RECOVERY_DROP": "丢弃为恢复而保留的提交",
   "person.route.HISTORY_CLEAR": "从本机清除已完成工作的记录",

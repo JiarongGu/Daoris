@@ -22,6 +22,8 @@ export const DECLARED: Readonly<Record<string, { scopes: readonly string[]; sess
   DISCARD_SESSION_BRANCH: { scopes: ['sessions', 'landing', 'diff', 'handOff', 'sweep', 'treesSync'] },
   // LANDRETIRE1: a landing's branch the line will never hold, withdrawn; it moves what the clean-up lists and the work state reads.
   WITHDRAW_LANDING_BRANCH: { scopes: ['sessions', 'landing', 'diff', 'handOff', 'sweep', 'treesSync'] },
+  // INTEGRATE1h: the owner's act on a repository's integration.
+  INTEGRATE: { scopes: ['sessions', 'landing', 'integration'] },
   // RECOVERYDROP1: the person's delete of the recovery refs nothing holds; the work state asks again with the landings and the sweep.
   RECOVERY_DROP: { scopes: ['sessions', 'landing', 'diff', 'handOff', 'sweep', 'treesSync'] },
   TREES_SYNC: { scopes: ['sessions', 'landing', 'diff', 'handOff', 'sweep', 'treesSync'] },

@@ -67,6 +67,7 @@ internal static class OwnerTargetRows
         Row("SHOW_REVIEW_AGAIN", Quest());
 
         // A repository's lines and branches, and its standing choices, at its scope or its workspace's.
+        Row("INTEGRATE", Repository());
         Row("DISCARD_SESSION_BRANCH", Repository());
         Row("RECOVERY_DROP", Repository());
         Row("WITHDRAW_LANDING_BRANCH", Repository());

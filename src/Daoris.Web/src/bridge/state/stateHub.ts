@@ -64,6 +64,8 @@ const scopes = new Map<string, (sessions: string[] | null) => QueryKey[]>([
   ['notices', () => []],
   // FOUNDATION1s part B: the knowledge index fed further, told by a look while it feeds, so the status bar's size is read again.
   ['repositories', () => [keys.allRepositories]],
+  // INTEGRATE1h: a repository's integration, the Integration view's look.
+  ['integration', () => [['integration']]],
 ]);
 
 const words = (value: unknown): string[] =>

@@ -52,7 +52,7 @@ function Fact({ label, children }: { label: string; children: ReactNode }) {
  * - **A page never prints a machine path it was answered** (D47 §4): a checkout here is a mark, never its folder.
  */
 export function ProjectPage({
-  registration, counts, line, unlanded = 0, here, drivable, held, setup, setUp, workflow, branches, history, tab = 'details', onTab,
+  registration, counts, line, unlanded = 0, here, drivable, held, setup, setUp, workflow, branches, history, integration, tab = 'details', onTab,
   onManage, onOpenCode, heavy,
 }: {
   /**
@@ -92,6 +92,8 @@ export function ProjectPage({
   branches?: ReactNode;
   /** Its History tab's body, its line's graph (UX6h1): a shell's, read only while it shows. Absent, there is no History tab. */
   history?: ReactNode;
+  /** Its Integration tab's body (INTEGRATE1h): a shell's, read only while it shows. Absent, there is no Integration tab. */
+  integration?: ReactNode;
   /** The tab shown, its holder's to remember; Details where it is not handed. */
   tab?: ProjectTab;
   onTab?: (tab: ProjectTab) => void;
@@ -255,7 +257,8 @@ export function ProjectPage({
 
   // A remembered tab on a page handed no body for it (a Workflow an older shell has none of, Branches or History where no
   // shell answers) shows Details, never a tab with no panel.
-  const bodiless = (tab === 'workflow' && !workflow) || (tab === 'branches' && !branches) || (tab === 'history' && !history);
+  const bodiless = (tab === 'workflow' && !workflow) || (tab === 'branches' && !branches) || (tab === 'history' && !history)
+    || (tab === 'integration' && !integration);
   const shown: ProjectTab = bodiless ? 'details' : tab;
   // A step's door into its own Setup opens the section that sets it, as the line's door opens Line and landing.
   const toSection = (section: 'work' | 'sessions' | 'defaults') => {
@@ -274,6 +277,7 @@ export function ProjectPage({
               { id: 'details', label: t('projects.tab.details') },
               ...(branches ? [{ id: 'branches' as const, label: t('projects.tab.branches') }] : []),
               ...(history ? [{ id: 'history' as const, label: t('projects.tab.history') }] : []),
+              ...(integration ? [{ id: 'integration' as const, label: t('projects.tab.integration') }] : []),
               ...(workflow ? [{ id: 'workflow' as const, label: t('projects.tab.workflow') }] : []),
               { id: 'setup', label: t('projects.tab.setup') },
             ]}
@@ -289,7 +293,9 @@ export function ProjectPage({
                   ? branches
                   : shown === 'history'
                     ? history
-                    : details}
+                    : shown === 'integration'
+                      ? integration
+                      : details}
           </PageTabs>
         )
         : details}

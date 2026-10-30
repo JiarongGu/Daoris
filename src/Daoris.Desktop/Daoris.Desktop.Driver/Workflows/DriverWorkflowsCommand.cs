@@ -169,6 +169,11 @@ public static class DriverWorkflowsCommand
                 Say($"  `{preset.Id}` — {preset.Name}. {WorkflowPresets.Line(StepsOf(preset.Steps(), 1)!)}");
             }
 
+            foreach (var preset in WorkflowPresets.GraphTable)
+            {
+                Say($"  `{preset.Id}` — {preset.Name}, a graph. {WorkflowPresets.GraphLine(preset.Graph())}");
+            }
+
             Say(WorkflowWords.WhatChooses);
             return 0;
         }
@@ -801,6 +806,19 @@ public static class DriverWorkflowsCommand
                 return saved;
             }
 
+            if (!from.Contains('@', StringComparison.Ordinal) && WorkflowPresets.GraphOf(from) is { } graphPreset)
+            {
+                var name = $"{graphPreset.Name}{(opinion ? " + second opinion" : "")}{(look ? " + your look" : "")}";
+                var graph = WorkflowPresets.WithGraphGates(graphPreset.Graph(), opinion, look);
+                var add = new WorkflowVersionAdded(id, FlagValue("--name") ?? name, "terminal", Moment(), null, graph);
+                var plan = WorkflowNamed.PlanAdd(null, add, []);
+                if (plan.Problem is not null) throw new ChoiceWords(plan.Problem, 1);
+                Say($"daoris: `{id}` v1, a new workflow — {(string?)plan.Result!["name"]}, from the preset `{graphPreset.Id}`{(gated.Length > 0 ? $", {gated}" : "")}, a graph:");
+                Say($"  {WorkflowPresets.GraphLine(graph)}");
+                if (graphPreset.NoPress) Say("  With no press: choosing it is refused for a repository whose line does not declare its gates and have them accepted.");
+                return Saved(id, plan.Result);
+            }
+
             if (!from.Contains('@', StringComparison.Ordinal) && WorkflowPresets.Of(from) is { } preset)
             {
                 // Short enough that every preset's name with both stays within a name's 60 characters.
@@ -810,7 +828,7 @@ public static class DriverWorkflowsCommand
 
             var (sourceId, wanted) = Named(from);
             var found = Load(sourceId) ?? throw new ChoiceWords($"`{from}` is no preset, no saved workflow and no `current:<repository>` — the presets are "
-                + $"{string.Join(", ", WorkflowPresets.Table.Select(each => $"`{each.Id}`"))}.");
+                + $"{string.Join(", ", WorkflowPresets.Table.Select(each => $"`{each.Id}`").Concat(WorkflowPresets.GraphTable.Select(each => $"`{each.Id}`")))}.");
             var (shown, raw) = VersionOf(found, wanted);
             return Save(raw, $"`{sourceId}` v{shown.Version}", found.Read.Name!);
         }
