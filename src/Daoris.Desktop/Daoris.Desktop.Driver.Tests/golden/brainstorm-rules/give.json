@@ -51,6 +51,7 @@
     "mcp__daoris-knowledge__repository_propose",
     "mcp__daoris-knowledge__review_ready",
     "mcp__daoris-knowledge__review_serve",
+    "mcp__daoris-knowledge__role_propose",
     "mcp__daoris-knowledge__session_propose",
     "mcp__daoris-knowledge__setting_propose",
     "mcp__daoris-knowledge__settings_cap",

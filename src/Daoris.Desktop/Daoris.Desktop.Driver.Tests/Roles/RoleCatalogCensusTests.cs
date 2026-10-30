@@ -35,6 +35,7 @@ public sealed partial class RoleCatalogCensusTests : IDisposable
         ("the role door", ["Daoris.Desktop.Driver/Roles/RoleDoor.cs"]),
         ("SET_ROLE", ["Daoris.Desktop.Modules/Bridge/Routes/DriverRoutes.cs"]),
         ("daoris driver role", ["Daoris.Desktop.Driver/Roles/RoleVerbs.cs"]),
+        ("role_propose", ["Daoris.Desktop.Driver/Help/Proposals/HelpRoleProposals.cs"]),
     ];
 
     [GeneratedRegex(@"ActorChoices\.(Judge|Judged|With)\(|RoleStaffing\.SetAt\(|\.WithIntake\(|\.WithHelper\(|RoleCatalog\.Write\(|RoleDoor\.Apply\(|public static DriverConfig With(Intake|Helper)\(")]
@@ -58,7 +59,7 @@ public sealed partial class RoleCatalogCensusTests : IDisposable
 
         Assert.Equal(named, Reaching().Order(StringComparer.Ordinal).ToList());
         Assert.Equal(
-            ["SET_ACTOR", "daoris driver actor", "Ask Daoris's proposals", "the import and the check", "the judges themselves", "the role door", "SET_ROLE", "daoris driver role"],
+            ["SET_ACTOR", "daoris driver actor", "Ask Daoris's proposals", "the import and the check", "the judges themselves", "the role door", "SET_ROLE", "daoris driver role", "role_propose"],
             Census.Select(each => each.Writer));
     }
 

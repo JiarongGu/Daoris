@@ -321,7 +321,7 @@ public sealed class RoleStaffingTests : IDisposable
             [
                 "../Daoris.Desktop.App/Program.cs", "../Daoris.Desktop.Driver.Host/Program.cs", "../Daoris.Desktop.Modules/Bridge/DriverContext.cs",
                 "../Daoris.Desktop.Modules/Bridge/Routes/DriverRoutes.cs",
-                "Loop/DriverWatch.cs", "Roles/ActorVerbs.cs", "Roles/RoleDoor.cs", "Roles/RoleVerbs.cs", "Roles/StaffingVerbs.cs",
+                "Help/Proposals/HelpRoleProposals.cs", "Loop/DriverWatch.cs", "Roles/ActorVerbs.cs", "Roles/RoleDoor.cs", "Roles/RoleVerbs.cs", "Roles/StaffingVerbs.cs",
             ],
             naming);
     }
