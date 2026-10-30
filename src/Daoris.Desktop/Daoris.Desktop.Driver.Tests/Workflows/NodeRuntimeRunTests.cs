@@ -293,6 +293,41 @@ public sealed class NodeRuntimeRunTests : NodeRunFixture
     }
 
     /// <summary>
+    /// INTEGRATE1o part o3 (§17.3): a run whose <c>work.requests</c> is active on a declined quest is held for the person, read from the quests the
+    /// last look read; a run with an open quest, or none, holds nothing; and the person's pass over the node, kept before the next look applies it,
+    /// clears the hold at once.
+    /// </summary>
+    [Fact]
+    public async Task A_run_is_held_at_a_declined_request_until_the_person_passes_over_its_node()
+    {
+        BoundTo("""
+            {"schemaVersion":2,"entries":["claimed"],"end":"handed",
+             "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},
+                      {"id":"requests","kind":"work.requests","version":1,"reach":"observed"},
+                      {"id":"handed","kind":"handed","version":1,"reach":"observed"}],
+             "wires":[{"id":"c>r","kind":"after","from":"claimed","to":"requests"},{"id":"r>h","kind":"after","from":"requests","to":"handed"}]}
+            """);
+        var serving = new SessionRecord("s1", "engine", "completed") { Quest = RunId };
+        WorkUnit[] Units(string published) =>
+            [.. QuestUnits.Read([RunHome.Quest(RunId, "Done"), RunHome.Quest("q9", published, to: "other") with { PublishedBy = "s1" }], [serving])];
+        var runtime = Runtime();
+        Assert.Empty(runtime.RequestHolds());
+
+        _units = Units("Open");
+        await RunPassAsync(runtime);
+        await RunPassAsync(runtime);
+        Assert.Empty(runtime.RequestHolds());
+
+        _units = Units("Declined");
+        await RunPassAsync(runtime);
+        var hold = Assert.Single(runtime.RequestHolds());
+        Assert.Equal((RunId, "requests", "q9", "other", RunId), (hold.Run, hold.Node, hold.Quest, hold.To, hold.Work));
+
+        Assert.True(RunNodeWords.Word(Files, RunId, "requests", NodeWordActs.Skip, "the other side will not take it").Done);
+        Assert.Empty(runtime.RequestHolds());
+    }
+
+    /// <summary>
     /// Without the service the units read are the branches alone, with no links (§2.3): no branch of a repository holding an open graph run is
     /// governed by Current, said once a pass, and the run's own nodes keep their bindings; another repository's cycle goes on.
     /// </summary>

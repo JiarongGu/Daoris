@@ -33,10 +33,11 @@ const ACTS: Required<AttentionActs> = {
   handOver: () => {},
   gitTryAgain: () => {},
   quiet: () => {},
+  passOver: () => {},
 };
 /** Every door, as a shell's Overview hands them. */
 const DOORS: AttentionDoors = {
-  parked: () => {}, 'parked-quest': () => {}, 'steward-stopped': () => {}, 'go-ahead': () => {}, trust: () => {}, proposal: () => {}, intake: () => {},
+  parked: () => {}, 'parked-quest': () => {}, 'steward-stopped': () => {}, 'request-declined': () => {}, 'go-ahead': () => {}, trust: () => {}, proposal: () => {}, intake: () => {},
   departure: () => {}, rule: () => {}, unanswerable: () => {}, review: () => {}, 'account-wait': () => {}, 'signed-out': () => {},
   'set-up': () => {}, opinion: () => {}, helper: () => {}, answer: () => {}, 'hand-over': () => {}, quiet: () => {},
 };
@@ -146,6 +147,20 @@ const STEWARD_STOPPED: Attention = {
   detail: 'The steward stopped session `s1a2b3c4`; Try again, by the steward or the owner, carries it on.',
 };
 
+/**
+ * A run held at a request the receiver declined (INTEGRATE1o part o3): its work's quest as the title, the declined quest said, its one act
+ * *Pass over…* (the run's own skip, asked once with the person's words), its door the work quest's page.
+ */
+const REQUEST_DECLINED: Attention = {
+  id: 'r7',
+  kind: 'request-declined',
+  title: 'Cap hydration per frame',
+  where: 'engine',
+  since: at(9),
+  detail: 'Quest #q9 to `web` was declined, so the work holds here until you pass it over.',
+  declined: { node: 'requests', quest: 'q9', to: 'web', work: '7a82cd' },
+};
+
 /** An ask waiting on a person (INT4d): its place is its circle, named as one; its declarations named two receivers. */
 const PROPOSAL: Attention = {
   id: '7c1e9a04b2d5',
@@ -242,7 +257,7 @@ export default meta;
  * two counted.
  */
 const BAND: Attention[] = [
-  TRUST_ROW, UNREAD, PARKED_QUEST, STEWARD_STOPPED, GO_AHEAD, PARKED, ACCOUNT_WAIT, SIGNED_OUT,
+  TRUST_ROW, UNREAD, PARKED_QUEST, STEWARD_STOPPED, REQUEST_DECLINED, GO_AHEAD, PARKED, ACCOUNT_WAIT, SIGNED_OUT,
   PROPOSAL, { ...PROPOSAL, id: '1b2c3d4e5f6a', title: 'Fix the pipeline’s knowledge check', since: at(170), publishTo: ['engine'], detail: 'The declarations propose engine. Nothing is published until you choose.' },
   DEPARTURE, SET_UP_ROW, OPINION_ROW, OPINION_NONE, RULE,
   ...REVIEWS,
@@ -307,7 +322,7 @@ export const BandStaleGoAheadsNarrowChinese: StoryObj = {
  * Each row that is a step waiting on the person with its door into the run (WORKFLOW1c, the workflow design §7): *Workflow*,
  * quieter than the row's own, on a parked quest, a go-ahead, a parked session, a departure, a set-up and the reviews.
  */
-const IN_A_RUN: ReadonlySet<Attention['kind']> = new Set(['parked-quest', 'steward-stopped', 'go-ahead', 'parked', 'departure', 'set-up', 'review']);
+const IN_A_RUN: ReadonlySet<Attention['kind']> = new Set(['parked-quest', 'steward-stopped', 'request-declined', 'go-ahead', 'parked', 'departure', 'set-up', 'review']);
 export const BandWithRuns: StoryObj = {
   render: () => (
     <Main width={1180}>

@@ -131,6 +131,10 @@ function start(rows: PushedAttention[], props: {
     if (type === 'SESSION_HAND_OVER_DECLINE') return { declined: false, why: 'approved', message: 'x' };
     if (type === 'ASK_OPINION') return { session: request?.payload?.id, done: true, message: 'A second opinion is asked.' };
     if (type === 'OPINION_ANYWAY') return { session: request?.payload?.id, done: true, message: 'You went on without a settled second opinion.' };
+    if (type === 'WORKFLOW_NODE') {
+      const asked = request?.payload ?? {};
+      return asked.words === 'again' ? { ...asked, done: false, refused: 'worded' } : { ...asked, done: true };
+    }
     if (type === 'HARNESSES') return roster;
     if (type === 'HARNESS_ACTION' && request?.payload?.action === 'login') return { harness: 'claude-code', action: 'login', started: true };
     if (type === 'HARNESS_ACTION' && request?.payload?.action === 'login-new') return { harness: 'claude-code', action: 'login-new', started: true };
@@ -302,6 +306,30 @@ describe('What needs you on a machine', () => {
     invoke.mockRejectedValueOnce(new Error('no unit keeps a node record here now, so there is no folder to open.'));
     await userEvent.click(within(item).getByRole('button', { name: 'Open its folder' }));
     await waitFor(() => expect(notify).toHaveBeenCalledWith(expect.stringContaining('no unit keeps a node record here now'), 'error'));
+  });
+
+  /**
+   * INTEGRATE1o part o3 (§17.3): a run held at a declined request is listed with the run's own *Pass over…*, which asks once for the person's
+   * words and then keeps the skip on the run's node through the run's door; a word already kept is said inside the ask, by its code.
+   */
+  it('lists a run held at a declined request and passes its node over with the person’s words, saying a refusal inside the ask', async () => {
+    const declined = { node: 'requests', quest: 'q9', to: 'web', work: 'q1' };
+    start([row('request-declined', 'r7', '2026-10-30T11:00:00Z', { where: 'engine', declined })]);
+
+    const item = await screen.findByRole('listitem', { name: 'Expose a streaming budget' });
+    await userEvent.click(within(item).getByRole('button', { name: 'Pass over…' }));
+    const asking = within(item).getByRole('group', { name: 'Pass over…' });
+    await userEvent.type(within(asking).getByRole('textbox'), 'again');
+    await userEvent.click(within(asking).getByRole('button', { name: 'Pass over' }));
+
+    expect(await within(item).findByRole('alert')).toHaveTextContent("requests already has your word, which Daoris's next look applies.");
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'WORKFLOW_NODE', { payload: { run: 'r7', node: 'requests', act: 'skip', words: 'again' } });
+
+    await userEvent.clear(within(asking).getByRole('textbox'));
+    await userEvent.type(within(asking).getByRole('textbox'), 'web will not take it');
+    await userEvent.click(within(asking).getByRole('button', { name: 'Pass over' }));
+    await waitFor(() => expect(within(item).queryByRole('group', { name: 'Pass over…' })).toBeNull());
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'WORKFLOW_NODE', { payload: { run: 'r7', node: 'requests', act: 'skip', words: 'web will not take it' } });
   });
 
   /**

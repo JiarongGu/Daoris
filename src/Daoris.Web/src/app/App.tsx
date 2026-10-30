@@ -1012,6 +1012,8 @@ export function App() {
     'parked-quest': (item) => openQuest(item.id),
     // The steward's stop (STEWARDROLE1b) opens its quest's page, as a parked quest does.
     'steward-stopped': (item) => openQuest(item.id),
+    // A run held at a declined request (INTEGRATE1o part o3) opens its work quest's page, where the run and the request are read.
+    'request-declined': (item) => { if (item.declined?.work) openQuest(item.declined.work); },
     // A go-ahead opens the ask it was asked on, where every go-ahead of it is listed (KNOWUSE1a).
     'go-ahead': (item) => { if (item.ask) openAsk(item.ask); },
     // A departure opens its quest's page, where what was required and how its done answered are quoted (DRIFT1d2).
