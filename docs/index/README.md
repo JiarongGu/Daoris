@@ -94,7 +94,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/AcpBackgroundTests.cs` | 140 | 2797 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/AcpSteerTests.cs` | 60 | 1185 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/AcpTests.cs` | 170 | 3062 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/AcpTransientTests.cs` | 56 | 1104 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/AcpTransientTests.cs` | 57 | 1125 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/AgentsCommandTests.cs` | 44 | 821 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/HarnessTests.cs` | 54 | 1165 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/LineAccountTests.cs` | 40 | 756 |
@@ -126,7 +126,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/ChatTurnsTests.cs` | 75 | 1528 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/DriverCommandTests.cs` | 49 | 773 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/HelperLookTests.cs` | 79 | 1638 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/SessionMessagesTickTests.cs` | 103 | 1738 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/SessionMessagesTickTests.cs` | 105 | 1778 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/SessionsOutliveTheirLookTests.cs` | 43 | 957 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Plugins/PluginCatalogTests.cs` | 40 | 796 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Plugins/PluginKitTests.cs` | 64 | 1269 |
@@ -157,7 +157,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workplace/LandingTests.cs` | 45 | 801 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workplace/ReviewGraphCensusTests.cs` | 47 | 1045 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/AccountRotation.cs` | 74 | 1200 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Acp.cs` | 218 | 4227 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Acp.cs` | 219 | 4236 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Adapters.cs` | 150 | 2577 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/AgentAccountsCommand.cs` | 48 | 907 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/AgentsCommand.cs` | 53 | 982 |
@@ -178,12 +178,12 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Knowledge/HelpFacts.cs` | 57 | 947 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/Chat/ChatRunner.cs` | 220 | 3834 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/Chat/ChatTurns.cs` | 68 | 1454 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/Driver.cs` | 316 | 4882 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/Driver.cs` | 318 | 4908 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/DriverBrainstorms.cs` | 46 | 821 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/DriverContinuations.cs` | 97 | 1494 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/DriverContinuations.cs` | 98 | 1506 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/DriverHelpers.cs` | 69 | 1124 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/DriverPartners.cs` | 45 | 747 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/DriverWatch.cs` | 69 | 1147 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/DriverWatch.cs` | 69 | 1154 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/SystemWiring.cs` | 50 | 1063 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Plugins/Hooks.cs` | 62 | 1216 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Review/Domain/OpinionGate.cs` | 41 | 707 |
@@ -407,4 +407,4 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/DAORIS_UNIFIED_COLLABORATION_ARCHITECTURE_AND_PLAN_2026-10-16.md` | 164 | 5380 |
 | `docs/README.md` | 65 | 289 |
 | `docs/development.md` | 53 | 584 |
-| `src/Daoris.Desktop/README.md` | 248 | 1223 |
+| `src/Daoris.Desktop/README.md` | 249 | 1223 |
