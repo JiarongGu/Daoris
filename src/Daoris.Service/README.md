@@ -125,6 +125,20 @@ did not answer says `+ uncommitted unknown`. `KnowledgeService.CiteAsync` cites 
 `RecheckAsync` answers a `CitationStanding` from the same three, read after a moved root is read again, with the cited
 file alone asked against that commit (`UncommittedRecords.OfFile`) and the root's signature asked again.
 
+**A repository's memory changes through a log of record** (KNOWCENTRAL2c; the memory coordinator design §1, §3).
+`memory_ops` keeps each operation a session asks (write, relate, end, confirm, propose) with who made it at the call, staged
+under its session. The transaction that records the session's commit point releases its rows: the ledger's advance to
+`completed` for a session whose tree is the registered root, carrying a stopped predecessor's, and the post of a finished
+tree's record naming a landing. A write is then `ready`, an end `awaiting` its approver, and each names the models of the
+turn whose start and end hold its instant, `unknown` where no handed line does.
+
+Only the service applies (`MemoryApplier`): it marks a row `applying` in its own transaction, calls the engine, and settles
+after. At its start it settles what a kill left `applying`: an end by its reason's trailing token and the revision read, a
+confirmation by its guard, an addition or relation `held` for the person. Triggers journal every move into `event_journal` as
+the `memory` family, ids and codes only. A reader's cursor (`MemoryCursor`: store, position, scope) re-validates on another store, below the floor or on a changed
+scope, and `BootstrapAsync` reads the unsettled rows and the newest position in one transaction. `memory_reads` keeps who read
+which reference at which revision, 256 a session and 65,536 in all, and tells a session once that an entry it read moved.
+
 Since **D124** (WSSETUP8), until a repository adopts, the scanner reads its root `README.md`, in any case,
 as the repository's own word. Each section split at level-two headings is one local knowledge entry carrying
 the file's path, and the part before the first heading is titled *README*. It claims no role, and is never
