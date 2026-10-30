@@ -4,6 +4,26 @@ using System.Text.Json;
 
 namespace Daoris.Driver;
 
+/// <summary>
+/// The work vocabulary a role takes (§2.7), spelled as the participant's work codes spell them, since Roles sits below Participants (as
+/// <c>StartPlan.RoleOf</c> does); <c>RoleCatalogTests</c> holds the two alike.
+/// </summary>
+public static class RoleWork
+{
+    public const string Build = "build";
+    public const string Design = "design";
+    public const string Chat = "chat";
+    public const string AskDaoris = "ask-daoris";
+    public const string Intake = "intake";
+    public const string Help = "help";
+    public const string Partner = "partner";
+    public const string Review = "review";
+    public const string Brainstorm = "brainstorm";
+
+    /// <summary>Every work, the closed set, in the participant's order.</summary>
+    public static IReadOnlyList<string> Codes { get; } = [Build, Design, Chat, AskDaoris, Intake, Help, Partner, Review, Brainstorm];
+}
+
 /// <summary>Where a role works (§2.7): the machine, a workspace or a repository, the most specific scope's role taking a work there.</summary>
 /// <param name="Kind"><c>machine</c>, <c>workspace</c> or <c>repository</c>.</param>
 /// <param name="Id">The workspace's or repository's id; none for the machine.</param>
@@ -116,7 +136,7 @@ public sealed record RoleRecord(
 
             var takes = Strings(hasTakes ? takesElement : default);
             if (takes is null || takes.Count == 0) return (null, "`takes` is not a list of work");
-            if (takes.FirstOrDefault(work => !ParticipantWork.Codes.Contains(work, StringComparer.Ordinal)) is { } unknown)
+            if (takes.FirstOrDefault(work => !RoleWork.Codes.Contains(work, StringComparer.Ordinal)) is { } unknown)
             {
                 return (null, $"takes `{unknown}`, a work this build does not know");
             }

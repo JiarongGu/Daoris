@@ -31,6 +31,12 @@ public sealed class RoleCatalogTests : IDisposable
         ActorChoices.With(DriverConfig.Empty with { Adapter = "claude" }, actor, choices);
 
     [Fact]
+    public void The_catalogue_s_work_vocabulary_is_the_participant_s_work_codes()
+    {
+        Assert.Equal(ParticipantWork.Codes, RoleWork.Codes);
+    }
+
+    [Fact]
     public void The_seed_is_the_eight_working_roles_on_the_machine_one_per_work_and_no_role_takes_design()
     {
         var catalog = RoleCatalog.Of([]);

@@ -28,7 +28,7 @@ public sealed record RoleFound(RoleRecord? Role, string? Held);
 
 /// <summary>
 /// The catalogue of working roles (FOUNDATION1 w, the foundation design §2.7): the store's <c>roles</c> and the seed per id, read beside
-/// and by nothing yet (row x's start plan adopts <see cref="RoleFor"/>). Its capabilities are the work codes (<see cref="ParticipantWork"/>);
+/// and by nothing yet (row x's start plan adopts <see cref="RoleFor"/>). Its capabilities are the work codes (<see cref="RoleWork"/>);
 /// no act vocabulary and no appointed seed: the supervisor and the steward stay the shell's.
 /// </summary>
 /// <remarks>
@@ -45,14 +45,14 @@ public sealed class RoleCatalog
     /// <summary>The roles' English and Chinese names, as the AI screen says them (<c>settings.ai.actors.name.*</c>).</summary>
     private static readonly Dictionary<string, (string Zh, string Work)> Seeded = new(StringComparer.Ordinal)
     {
-        ["build"] = ("开发", ParticipantWork.Build),
-        ["intake"] = ("受理", ParticipantWork.Intake),
-        ["opinion"] = ("第二意见", ParticipantWork.Review),
-        ["helper"] = ("助手", ParticipantWork.Help),
-        ["partner"] = ("搭档", ParticipantWork.Partner),
-        ["brainstorm"] = ("头脑风暴", ParticipantWork.Brainstorm),
-        ["ask-daoris"] = ("问道衍", ParticipantWork.AskDaoris),
-        ["chat"] = ("聊天", ParticipantWork.Chat),
+        ["build"] = ("开发", RoleWork.Build),
+        ["intake"] = ("受理", RoleWork.Intake),
+        ["opinion"] = ("第二意见", RoleWork.Review),
+        ["helper"] = ("助手", RoleWork.Help),
+        ["partner"] = ("搭档", RoleWork.Partner),
+        ["brainstorm"] = ("头脑风暴", RoleWork.Brainstorm),
+        ["ask-daoris"] = ("问道衍", RoleWork.AskDaoris),
+        ["chat"] = ("聊天", RoleWork.Chat),
     };
 
     /// <summary>The ids no added role may take, which stay the shell's: the supervisor and the steward.</summary>
@@ -137,7 +137,7 @@ public sealed class RoleCatalog
                 : new RoleFound(null, $"Two roles take `{work}` in one scope ({string.Join(", ", best.Select(role => $"`{role.Id}`"))}), so its starts hold until one is removed.");
         }
 
-        return work == ParticipantWork.Design ? RoleFor(ParticipantWork.Build, place) : new RoleFound(null, null);
+        return work == RoleWork.Design ? RoleFor(RoleWork.Build, place) : new RoleFound(null, null);
     }
 
     /// <summary>
@@ -149,7 +149,7 @@ public sealed class RoleCatalog
     {
         var narrowed = new SortedSet<string>(StringComparer.Ordinal);
         var unreadableAdded = Slots.Any(slot => slot.State == RoleState.Unreadable && !ActorChoices.Ids.Contains(slot.Id, StringComparer.Ordinal));
-        foreach (var work in (string[])[ParticipantWork.Intake, ParticipantWork.AskDaoris])
+        foreach (var work in (string[])[RoleWork.Intake, RoleWork.AskDaoris])
         {
             var seeded = StartPlan.RoleOf(work);
             var holder = RoleFor(work, new RolePlace()).Role;
@@ -171,7 +171,7 @@ public sealed class RoleCatalog
     /// </summary>
     public static RoleRefusal? Judge(string work, IReadOnlyList<ActorChoice>? choices)
     {
-        if (!ParticipantWork.Codes.Contains(work, StringComparer.Ordinal)) return Refused("unknown-work", $"`{work}` is not a work — one of {string.Join(", ", ParticipantWork.Codes)}.");
+        if (!RoleWork.Codes.Contains(work, StringComparer.Ordinal)) return Refused("unknown-work", $"`{work}` is not a work — one of {string.Join(", ", RoleWork.Codes)}.");
         return ActorChoices.Judge(StartPlan.RoleOf(work), choices) is { } said ? Refused(choices is { Count: 0 } ? "may-not-be-off" : "choices", said) : null;
     }
 
@@ -200,9 +200,9 @@ public sealed class RoleCatalog
             }
 
             if (role.Takes.Count == 0) return Refused("bad-record", $"`{role.Id}` takes no work.");
-            if (role.Takes.FirstOrDefault(work => !ParticipantWork.Codes.Contains(work, StringComparer.Ordinal)) is { } unknown)
+            if (role.Takes.FirstOrDefault(work => !RoleWork.Codes.Contains(work, StringComparer.Ordinal)) is { } unknown)
             {
-                return Refused("unknown-work", $"`{unknown}` is not a work — one of {string.Join(", ", ParticipantWork.Codes)}.");
+                return Refused("unknown-work", $"`{unknown}` is not a work — one of {string.Join(", ", RoleWork.Codes)}.");
             }
         }
         else if (Reserved.Contains(change.Id, StringComparer.Ordinal)) return Refused("reserved-id", $"`{change.Id}` is the shell's: the supervisor and the steward are not configured here.");
@@ -219,7 +219,7 @@ public sealed class RoleCatalog
         }
 
         // An unreadable seeded id is left to the person's next edit of it, so it is not counted as uncovered here.
-        foreach (var work in ParticipantWork.Codes.Where(work => work != ParticipantWork.Design && !ActorChoices.MayBeOff(StartPlan.RoleOf(work))))
+        foreach (var work in RoleWork.Codes.Where(work => work != RoleWork.Design && !ActorChoices.MayBeOff(StartPlan.RoleOf(work))))
         {
             if (after.Any(slot => slot.State == RoleState.Unreadable && slot.Id == StartPlan.RoleOf(work))) continue;
             if (!after.Any(slot => slot.Role is { } role && role.Scope.Rank == 0 && role.Takes.Contains(work, StringComparer.Ordinal)))
