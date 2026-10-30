@@ -44,10 +44,10 @@ Decision number: D<n>, reserved for this branch: write docs/decisions/D<n>.md. (
 How you work: edit files only with Edit and Write, never through python, sed, perl, cat/printf redirection or any
 shell redirect (a hook refuses them; that includes appending a decision note); write
 each failing test first and RUN it to watch it fail before writing the code (a compile failure is a red: run it),
-and say which you saw fail; commit each piece once its tests pass. Records stay short: a decision's note says what was
-decided and why in at most 150 words, each reading one sentence; the tests run, their counts and times go in the hand-back
-and the commit message, never the note. A README changes only where the component's shape changed, never a sentence per
-part: the docs gate compares by day, so a README already touched that day keeps up. New words on the page run `src/locales`' tests too:
+and say which you saw fail; commit each piece once its tests pass. Tests prove the row's proof and nothing beside it: one
+test per point the proof names; add no count pin, census entry or wording twin the change does not force. Records are the
+commit message and the hand-back's outcome line; a decision's note only for a reading the code and tests cannot show, at
+most 100 words. A README changes only where a command or a shape its reader uses changed. New words on the page run `src/locales`' tests too:
 `names:check --strict` does not hold a sentence's glossary words, `names.test.ts` does (WORKFLOW1h-d's 这台机器).
 Run only your own tests, filtered (the ones you add or change and those covering the code you change), and the quick
 checks before hand-back; never a whole project, a fast half, the web's whole suite or `npm run verify`: the CI beside
@@ -132,7 +132,8 @@ once three batches hold the targets (MODELROLE1).
    in `docs/decisions/` and every number already reserved for a branch in flight. Name it in the prompt.
 3. **Dispatch a feature, end to end** (D187). One builder takes one feature a person can see working, across every
    lane it needs, driver to page, and hands it back working; its rows become one block row in the backlog, with one
-   decision note where something is decided and one archive entry. Never split a feature into a host half and a page
+   decision note where something is decided and one archive entry. A part of a row writes no archive entry and no
+   note of its own: its commit message is its record, and the row's entry is written once, when its last part lands. Never split a feature into a host half and a page
    half: each slice's scout, brief, merge, records and CI pass were round trips, and the person saw nothing until the
    last landed. Split only a feature too large for one builder's context, into parts that each work and are each
    seen working. The longer branch's cost per turn (D160: branches of 100 to 200 turns cost three times those under

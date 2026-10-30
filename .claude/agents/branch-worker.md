@@ -51,8 +51,6 @@ the work, was most of what branches cost before D160 (`docs/2026-10-10-subagent-
    commit the prompt names.
 2. Read the pack's ranges, starting with the contract. `CLAUDE.md` and `AGENTS.md` are already in your
    context; do not read them again.
-3. Count the tests in the suites your lane touches before changing anything. The hand-back reports the
-   count before and after.
 
 ## While working
 
@@ -165,7 +163,7 @@ the work, was most of what branches cost before D160 (`docs/2026-10-10-subagent-
    - the **decision number** taken, or none
    - **what the parent must look at on the window**: each surface changed and the screenshot that would
      prove it, or "nothing on the window"
-   - **test counts** before and after, per suite
+   - the **tests** you added or changed, and which you saw fail first
    - **the pack's gaps**: what you had to find that the pack did not name, and any pointer in it that was
      wrong, so the next pack is better (D160)
    - what was **left out**, and why
