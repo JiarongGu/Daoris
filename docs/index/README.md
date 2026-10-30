@@ -213,11 +213,11 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Workplace/AutoLander.cs` | 57 | 827 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Workplace/BranchTidying.cs` | 57 | 1028 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Workplace/ContentHolds.cs` | 43 | 651 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Workplace/IntegrationPromotes.cs` | 45 | 701 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Workplace/IntegrationPromotes.cs` | 45 | 698 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Workplace/IntegrationStore.cs` | 47 | 800 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Workplace/LandedBranches.cs` | 43 | 757 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Workplace/LandedCleanups.cs` | 50 | 808 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Workplace/Landing.cs` | 50 | 862 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Workplace/Landing.cs` | 51 | 873 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Workplace/SessionTrees.cs` | 61 | 968 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Workplace/SpaceFree.cs` | 50 | 1007 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Workplace/TreeLands.cs` | 87 | 1307 |
