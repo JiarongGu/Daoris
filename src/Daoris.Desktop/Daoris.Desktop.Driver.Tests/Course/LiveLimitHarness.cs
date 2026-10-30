@@ -212,6 +212,17 @@ internal sealed class LiveLimitHarness : IAsyncDisposable
         return new ShellRun(runner, null) { Limit = limit };
     }
 
+    /// <summary>
+    /// An ended conversation <c>c1</c> as the ended move finds it and an older build leaves it, with no shell's move run: ended, on the protocol
+    /// stub's adapter so a go-on can resume it, its last turn refused by its limit, the words kept on it waiting.
+    /// </summary>
+    public void LeaveEnded(IReadOnlyDictionary<string, string>? keep = null)
+    {
+        Limited(Events, "stopped", keep);
+        Ledger.Edit("c1", record => record["adapter"] = "acp-stub");
+        Config();
+    }
+
     /// <summary>A conversation <c>c1</c> on account-1 in <paramref name="state"/>, its last turn refused by its limit, the words kept on it waiting.</summary>
     private void Limited(SessionEvents events, string state, IReadOnlyDictionary<string, string>? keep)
     {
