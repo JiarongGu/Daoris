@@ -52,6 +52,9 @@ public sealed class MoveStoreCensusTests
     /// <summary>The terminal's hand-over verb (FOUNDATION1f-v part c), which builds the driven holder for a quest session's ask and names its scope alone.</summary>
     private const string Terminal = "WorkOrders/SessionsCommand.cs";
 
+    /// <summary>The window's hand-over press of a quest session (FOUNDATION1f-v part c), which builds the driven holder as the terminal does.</summary>
+    private const string Window = "../Daoris.Desktop.Modules/Bridge/Routes/ConversationRoutes.cs";
+
     /// <summary>The driven carry-on's record (FOUNDATION1f-iv part a), which decides its move through the same holder.</summary>
     private const string CarryOn = "Loop/CarryOnRecord.cs";
 
@@ -82,7 +85,7 @@ public sealed class MoveStoreCensusTests
         }
 
         Assert.Equal(
-            [CurveMove, LiveMove, Conversations, HandOverAsk, QuestAsk, Wiring, CarryOn, DrivenLine, QuestTake, Terminal],
+            [Window, CurveMove, LiveMove, Conversations, HandOverAsk, QuestAsk, Wiring, CarryOn, DrivenLine, QuestTake, Terminal],
             readers.Select(reader => reader[..reader.IndexOf(" names ", StringComparison.Ordinal)]).Distinct().Order(StringComparer.Ordinal));
         Assert.Contains($"{Wiring} names MoveStore", readers);
         Assert.All(
@@ -111,6 +114,7 @@ public sealed class MoveStoreCensusTests
             [$"{QuestTake} names MoveExecutors", $"{QuestTake} names MoveRecord", $"{QuestTake} names MoveRecordPhase", $"{QuestTake} names MoveTakeUpScope"],
             readers.Where(reader => reader.StartsWith(QuestTake + " ", StringComparison.Ordinal)).Order(StringComparer.Ordinal));
         Assert.Equal([$"{Terminal} names MoveTakeUpScope"], readers.Where(reader => reader.StartsWith(Terminal + " ", StringComparison.Ordinal)));
+        Assert.Equal([$"{Window} names MoveTakeUpScope"], readers.Where(reader => reader.StartsWith(Window + " ", StringComparison.Ordinal)));
         Assert.Contains("MoveTakeUp", names);
         Assert.All(Importers, importer => Assert.Contains(importer, names));
         Assert.All(["MoveDelivery", "MoveResolve", "IMoveSaid", "MoveSaidDoor", "MoveWordDispositions"], part3 => Assert.Contains(part3, names));
