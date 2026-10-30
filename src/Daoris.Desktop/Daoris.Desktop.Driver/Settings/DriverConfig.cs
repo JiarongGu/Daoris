@@ -883,6 +883,13 @@ public sealed record DriverConfig(
     public string? SourceFile { get; init; }
 
     /// <summary>
+    /// The staffing the file held where its five fields were filled from the store (<see cref="RoleStaffingPort.Fill"/>), else null.
+    /// <see cref="Written"/> gives the staffing's four paths as this, so a save of any other key edits none of them and keeps them as found
+    /// (FOUNDATION1w-s part 3); they are written through the file step alone.
+    /// </summary>
+    internal FileStaffing? AsFile { get; init; }
+
+    /// <summary>
     /// A missing file is a machine that has opted nothing in — the empty config's choices, not an error. They carry the path and <c>{}</c>
     /// as their text (FABRIC-GRAPH1's second re-check, finding 2), so their <see cref="Save"/> is an edit like any other: read without a
     /// text, they were written whole over a file another writer made before the save, a file that did not read or held a key twice
@@ -908,7 +915,7 @@ public sealed record DriverConfig(
 
         try
         {
-            return Parse(text) with { SourceFile = Path.GetFullPath(path) };
+            return RoleStaffingPort.Fill(Parse(text) with { SourceFile = Path.GetFullPath(path) }, path);
         }
         catch (JsonException error) when (error.LineNumber is { } line && error.BytePositionInLine is { } position)
         {
@@ -1043,12 +1050,13 @@ public sealed record DriverConfig(
             foreach (var name in Trees) writer.WriteStringValue(name);
             writer.WriteEndArray();
             writer.WriteNumber("cap", Cap);
-            writer.WriteString("adapter", Adapter);
+            // The staffing's four paths as the file held them where the store filled the record (AsFile).
+            writer.WriteString("adapter", AsFile?.Adapter ?? Adapter);
             // Written only when named: absent IS off, and the CLI twin writes it the same way.
-            if (IntakeAdapter is not null) writer.WriteString("intakeAdapter", IntakeAdapter);
-            if (HelperAdapter is not null) writer.WriteString("helperAdapter", HelperAdapter);
+            if ((AsFile is null ? IntakeAdapter : AsFile.IntakeAdapter) is { } intakeKey) writer.WriteString("intakeAdapter", intakeKey);
+            if ((AsFile is null ? HelperAdapter : AsFile.HelperAdapter) is { } helperKey) writer.WriteString("helperAdapter", helperKey);
             // Written only when an actor is set (MODELROLE1c, D205 §9.1): absent is every actor as before.
-            ActorKey.Write(writer, Actors);
+            ActorKey.Write(writer, AsFile?.Actors ?? Actors);
             // Written only while full (HELPMODE1a1): absent is restricted, and the CLI twin writes it the same way.
             if (HelpMode == HelpModeNames.Full) writer.WriteString("helpMode", HelpMode);
             writer.WriteBoolean("notify", Notify);

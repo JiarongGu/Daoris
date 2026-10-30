@@ -303,7 +303,8 @@ public sealed class RoleStaffingTests : IDisposable
     public void The_staffing_family_is_read_by_no_production_source_but_its_own()
     {
         // The file step (part 2) is the family's own and names it; its callers are parts 3 and 4's.
-        var own = new[] { "RoleStaffing.cs", "StaffingFile.cs" };
+        // Settings' port (part 3) reads it through the interface; no root wires it yet.
+        var own = new[] { "RoleStaffing.cs", "StaffingFile.cs", "RoleStaffingPort.cs", "DriverConfig.cs" };
         var readers = new[] { SourceFiles.DriverProject, "Daoris.Desktop.Driver.Host", "Daoris.Desktop.Modules", "Daoris.Desktop.App" }
             .SelectMany(project => SourceFiles.All(project, "*.cs"))
             .Where(path => !own.Contains(Path.GetFileName(path)))
@@ -311,7 +312,7 @@ public sealed class RoleStaffingTests : IDisposable
             .Select(path => Path.GetRelativePath(SourceFiles.Project(SourceFiles.DriverProject), path).Replace(Path.DirectorySeparatorChar, '/'))
             .ToList();
 
-        // Part 3 of FOUNDATION1w-s lands the port's reader; until then no production source names the unit.
+        // The roots' wiring and the import at start are the rest of FOUNDATION1w-s part 3; until then no production source names the unit.
         Assert.Empty(readers);
     }
 
