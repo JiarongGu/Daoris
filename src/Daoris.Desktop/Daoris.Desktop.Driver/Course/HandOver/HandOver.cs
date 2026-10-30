@@ -100,23 +100,46 @@ public static class HandOver
     /// <summary>The tree it ran in no longer exists, so the new conversation has nowhere to go on.</summary>
     public const string TreeGone = HandOverAskWhy.TreeGone;
 
+    /// <summary>The ask is an agent's, which the person's rule has not admitted: it waits for the person's yes, which the look keeps, and nothing is kept here.</summary>
+    public const string AwaitsYes = "awaits-yes";
+
+    /// <summary>
+    /// The hand-over rule's consent for an agent's ask as the door that judged it says it (FOUNDATION1h branch 3, the foundation design §3.1): the
+    /// verdict stays in <c>DriverHandOvers</c> and reaches the course as a fact, so the course admits an agent's ask only where <c>on</c> let
+    /// it go, puts it to the person under <c>ask</c> and refuses it under <c>off</c>.
+    /// </summary>
+    internal static CourseRules ConsentOf(HandOverAskVerdict verdict) =>
+        new(HandOverAdmits: verdict.Kind == HandOverAskVerdict.GoKind, HandOverAsks: verdict.Kind == HandOverAskVerdict.WaitKind);
+
     /// <summary>
     /// Judge and decide the move for a conversation of this machine's (FOUNDATION1f-v part a, §3.3, §13.4 step 1): the hand-over is kept as a
     /// move record in the store, decided as it is asked, and no <c>&lt;s&gt;.hand-over.json</c> is written. A record a move still stands for,
-    /// whether a hand-over waiting or another move under way, takes no second ask, read from the store.
+    /// whether a hand-over waiting or another move under way, takes no second ask, read from the store. Whether and where it goes is the
+    /// course's (FOUNDATION1h branch 3, <see cref="JudgedAsync"/>); this keeps what it decided.
     /// </summary>
     /// <param name="accountsOf">The accounts the roster holds for an agent, or null where it has no such agent.</param>
     /// <param name="moves">The conversations' move record, whose run claims the decision.</param>
+    /// <param name="consent">The hand-over rule's consent, where the ask is an agent's: null is none, which the course never admits.</param>
+    /// <param name="boundary">Where the conversation stands: a turn running or between turns.</param>
+    /// <param name="before">
+    /// What the executor refuses itself once the course allows the move, before it is kept: a conversation another process runs (the chat
+    /// runner's). Null where it refuses nothing.
+    /// </param>
+    /// <param name="decided">What the course answered: a test's, no person's.</param>
     internal static async Task<HandOverAsked> AskAsync(
         ServiceClient service, ConversationMoves moves, Func<string, IReadOnlyList<string>?> accountsOf, string id, string agent, string? account,
-        string why, string askedBy, DateTimeOffset now, CancellationToken ct = default)
+        string why, string askedBy, DateTimeOffset now, CancellationToken ct = default, CourseRules? consent = null,
+        CourseBoundary boundary = CourseBoundary.BetweenTurns, Func<PriorSession, HandOverAnswer?>? before = null, Action<LineCourse>? decided = null)
     {
-        var (refused, _) = await JudgeAsync(service, accountsOf, id, agent, account, ct).ConfigureAwait(false);
-        if (refused is not null) return new HandOverAsked(refused, null, null);
+        var judged = await JudgedAsync(service, accountsOf, id, agent, account, ct, askedBy, why, consent, boundary, decided).ConfigureAwait(false);
+        if (judged.Refused is not null) return new HandOverAsked(judged.Refused, null, null);
+        if (before?.Invoke(judged.Prior!) is { } held) return new HandOverAsked(held, null, null);
 
-        var named = string.IsNullOrWhiteSpace(account) ? null : account.Trim();
+        // The course's move names where it goes: the account as a pick the person's press keeps, the agent the ask named.
+        var where = ((LineCourse.Move)judged.Course!).Where;
+        var named = where.Account;
         var begun = await moves.BeginAsync(
-            new MoveDecision(id, MoveExecutors.Conversation, MoveHows.Brief, why, askedBy) { Agent = agent, Account = named }, ct).ConfigureAwait(false);
+            new MoveDecision(id, MoveExecutors.Conversation, MoveHows.Brief, why, askedBy) { Agent = where.Agent ?? agent, Account = named }, ct).ConfigureAwait(false);
         if (begun.Move is { } move)
         {
             return new HandOverAsked(
@@ -143,42 +166,94 @@ public static class HandOver
         ServiceClient service, Func<string, IReadOnlyList<string>?> accountsOf, string id, string agent, string? account,
         CancellationToken ct = default)
     {
+        var judged = await JudgedAsync(service, accountsOf, id, agent, account, ct).ConfigureAwait(false);
+        return (judged.Refused, judged.Prior);
+    }
+
+    /// <summary>
+    /// <see cref="JudgeAsync"/> with the course's answer (FOUNDATION1h branch 3, the foundation design §3.1, §14.2): the record is read into the
+    /// facts <see cref="CourseDecision.Decide"/> decides a hand-over over, its nevers by <see cref="WordsNever"/>'s one table, and whatever the
+    /// course refuses is said by the code and sentence the ask has always had. What only the executor knows stays its own and is judged beside
+    /// the course, in the order of today's refusals: no such session, a quest's session (<see cref="QuestHandOver"/>'s), an agent or an account
+    /// the roster does not hold.
+    /// </summary>
+    /// <param name="askedBy">Who asks, one of <see cref="HandOverBy"/>: an agent's ask is admitted only by the consent handed in.</param>
+    /// <param name="why">The ask's reason, one of <see cref="HandOverWhy"/>.</param>
+    /// <param name="consent">The hand-over rule's consent for an agent's ask; null is none (<see cref="ConsentOf"/>).</param>
+    /// <param name="decided">Told the course's answer for a conversation or what never goes on: a test's, no person's.</param>
+    internal static async Task<HandOverJudged> JudgedAsync(
+        ServiceClient service, Func<string, IReadOnlyList<string>?> accountsOf, string id, string agent, string? account,
+        CancellationToken ct = default, string askedBy = HandOverBy.Person, string why = HandOverWhy.Press, CourseRules? consent = null,
+        CourseBoundary boundary = CourseBoundary.BetweenTurns, Action<LineCourse>? decided = null)
+    {
         var json = await service.SessionRecordsJsonAsync(ct).ConfigureAwait(false);
         var record = SessionRecords.Parse(json).FirstOrDefault(each => string.Equals(each.Id, id, StringComparison.Ordinal));
-        if (record is null) return (Refused(WordsNever.NotFound, $"no session here is {id}."), null);
+        if (record is null) return new HandOverJudged(Refused(WordsNever.NotFound, $"no session here is {id}."), null, null);
 
-        if (Never(record, id, WordsNever.LastHere(json, record.Quest), WordsNever.ContinuedIn(json, id)) is { } never) return (never, null);
+        var last = WordsNever.LastHere(json, record.Quest);
+        var next = WordsNever.ContinuedIn(json, id);
+        var never = NeverCode(record, last, next);
+        var prior = ServiceClient.ReadRecord(json, id);
+        var named = string.IsNullOrWhiteSpace(account) ? null : account.Trim();
+        var conversation = record.Kind == "chat" && record.Quest is null;
 
-        if (record.Kind != "chat" || record.Quest is not null)
+        // The tree is a fact only where it stands; a session that never goes on is refused first, so its tree is not looked for.
+        var tree = conversation && never is null && prior?.Tree is { Length: > 0 } held && ConversationTrees.Stands(held) ? held : null;
+        var facts = new CourseFacts(
+            new CourseHead(
+                record.State, Adapter: prior?.Adapter, Profile: prior?.Profile, Tree: tree, Conversation: conversation,
+                Teammate: never == WordsNever.Teammate, Intake: never == WordsNever.Intake,
+                SupersededBy: never == WordsNever.Continued ? next ?? "" : null, AskDaoris: never == WordsNever.Help, Session: id),
+            boundary, Press: new CoursePress(CoursePressKind.HandOver, agent, named, Why: CourseFrom.WhyOf(why), By: CourseFrom.ByOf(askedBy)),
+            Rules: consent);
+        var course = CourseDecision.Decide(facts, CourseTrigger.HandOver);
+        if (conversation || course is LineCourse.Never) decided?.Invoke(course);
+
+        // What never goes on, whichever kind of session asks (the course's nevers and Ask Daoris's own conversation).
+        if ((course is LineCourse.Never or LineCourse.Hold { Why: CourseHoldWhy.Refused, Code: WordsNever.Help }) && Said(never, record, id, next) is { } stays)
         {
-            return (Refused(NotConversation, record.Kind == "chat"
+            return new HandOverJudged(stays, null, course);
+        }
+
+        if (!conversation)
+        {
+            return new HandOverJudged(Refused(NotConversation, record.Kind == "chat"
                 ? $"{id} is a conversation about a quest, not its session: hand over the quest's own session instead."
-                : $"{id} is a quest's session: it is handed over from a terminal, `daoris-driver sessions hand-over {id} --agent <adapter>`; its page's press comes later."), null);
+                : $"{id} is a quest's session: it is handed over from a terminal, `daoris-driver sessions hand-over {id} --agent <adapter>`; its page's press comes later."), null, course);
         }
 
         var accounts = accountsOf(agent);
-        if (accounts is null) return (Refused(UnknownAgent, $"no agent here is called {agent}."), null);
+        if (accounts is null) return new HandOverJudged(Refused(UnknownAgent, $"no agent here is called {agent}."), null, course);
 
-        var named = string.IsNullOrWhiteSpace(account) ? null : account.Trim();
         if (named is not null && !accounts.Contains(named, StringComparer.OrdinalIgnoreCase))
         {
-            return (Refused(NotItsAccount, $"{named} is not an account of {agent}."), null);
+            return new HandOverJudged(Refused(NotItsAccount, $"{named} is not an account of {agent}."), null, course);
         }
 
-        var prior = ServiceClient.ReadRecord(json, id);
-        if (prior is not null && string.Equals(prior.Adapter, agent, StringComparison.OrdinalIgnoreCase)
-            && string.Equals(prior.Profile ?? "", named ?? "", StringComparison.OrdinalIgnoreCase))
+        // The course's own refusals, by their codes; a move is the one answer that goes on, and the executor keeps it.
+        return course switch
         {
-            return (Refused(SameAgent, named is null ? $"{id} already runs on {agent}." : $"{id} already runs on {agent} as {named}."), null);
-        }
-
-        if (prior?.Tree is not { Length: > 0 } tree || !ConversationTrees.Stands(tree))
-        {
-            return (Refused(TreeGone, $"the tree {id} ran in is gone, so there is nothing to go on in."), null);
-        }
-
-        return (null, prior);
+            LineCourse.Move => new HandOverJudged(null, prior, course),
+            LineCourse.Hold { Why: CourseHoldWhy.Refused, Code: SameAgent } => new HandOverJudged(
+                Refused(SameAgent, named is null ? $"{id} already runs on {agent}." : $"{id} already runs on {agent} as {named}."), null, course),
+            LineCourse.Hold { Why: CourseHoldWhy.Refused, Code: TreeGone } => new HandOverJudged(
+                Refused(TreeGone, $"the tree {id} ran in is gone, so there is nothing to go on in."), null, course),
+            // An agent's ask the rule has not admitted: put to the person first under `ask`, refused under `off`, or where none was said.
+            LineCourse.Hold { Why: CourseHoldWhy.ConsentRefused, Doors.Count: > 0 } => new HandOverJudged(
+                Refused(AwaitsYes, "its agent's ask waits for the person's yes first: the look keeps it, and nothing is kept here."), null, course),
+            LineCourse.Hold { Why: CourseHoldWhy.ConsentRefused } => new HandOverJudged(
+                Refused(HandOverAskWhy.Off, HandOverAskWhy.Said(HandOverAskWhy.Off)), null, course),
+            LineCourse.Hold { Code: { } code } => new HandOverJudged(Refused(code, $"{id} cannot be handed over."), null, course),
+            _ => new HandOverJudged(Refused(HandOverAskWhy.Cannot, $"{id} cannot be handed over."), null, course),
+        };
     }
+
+    /// <summary>
+    /// The code of what never goes on elsewhere, whichever kind of session asks (<see cref="WordsNever"/>'s one table, then Ask Daoris's own
+    /// conversation): the course's facts and <see cref="Never"/>'s sentences are both read from it.
+    /// </summary>
+    internal static string? NeverCode(SessionRecord record, string? last, string? next) =>
+        WordsNever.Judge(record, last, next) ?? (WordsNever.IsHelp(record) ? WordsNever.Help : null);
 
     /// <summary>
     /// What never goes on elsewhere, whichever kind of session asks: a teammate's record, Ask Daoris's own conversation, an intake,
@@ -186,9 +261,13 @@ public static class HandOver
     /// conversation in it, and a box left from before the shell closed is refused as it is taken.
     /// </summary>
     /// <param name="next">The conversation it went on in (<see cref="WordsNever.ContinuedIn(string, string)"/>), or null.</param>
-    internal static HandOverAnswer? Never(SessionRecord record, string id, string? last, string? next = null)
+    internal static HandOverAnswer? Never(SessionRecord record, string id, string? last, string? next = null) =>
+        Said(NeverCode(record, last, next), record, id, next);
+
+    /// <summary>The sentence of a never's code, or null for a code that is no refusal of a hand-over (a quest's later session, a stand-down).</summary>
+    private static HandOverAnswer? Said(string? never, SessionRecord record, string id, string? next)
     {
-        switch (WordsNever.Judge(record, last, next) ?? (WordsNever.IsHelp(record) ? WordsNever.Help : null))
+        switch (never)
         {
             case WordsNever.Continued:
                 return Refused(WordsNever.Continued, $"{id} went on in conversation {next}; hand that one over instead.");
@@ -207,6 +286,9 @@ public static class HandOver
 
     internal static HandOverAnswer Refused(string why, string message) => new(false, why, message);
 }
+
+/// <summary>What a hand-over was judged to be (<see cref="HandOver.JudgedAsync"/>): its refusal, or the record as the ledger holds it, with the course's answer where one was decided.</summary>
+internal sealed record HandOverJudged(HandOverAnswer? Refused, PriorSession? Prior, LineCourse? Course);
 
 /// <summary>What an ask came to (<see cref="HandOver.AskAsync"/>): the answer, and where it was kept the move decided for it with the request.</summary>
 internal sealed record HandOverAsked(HandOverAnswer Answer, ConversationMove? Move, HandOverRequest? Request);
