@@ -51,7 +51,7 @@ public sealed class DrivenMoveTakeUpWatchTests : IDisposable
     public async Task A_dead_loop_s_driven_move_is_taken_up_at_the_watch_s_first_look()
     {
         var dying = new MoveStore(_home, () => StoreSettled.Yes, run: "run-gone", kind: StoreProcess.Host);
-        var decision = CarryOnRecord.Decision(new ContinuedFrom("s1", HandOverWhy.Retry, HandOverBy.Daoris), handedFrom: false, "stub", null)!;
+        var decision = CarryOnRecord.Decision(new ContinuedFrom("s1", HandOverWhy.Retry, HandOverBy.Daoris), "stub", null)!;
         Assert.NotNull(dying.Decide(decision).Claim);
         Die("run-gone");
         Assert.Equal("old-ended", MoveFrom("s1")!.PhaseWord);

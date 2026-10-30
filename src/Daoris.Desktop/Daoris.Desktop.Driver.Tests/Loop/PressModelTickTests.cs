@@ -121,9 +121,13 @@ public sealed class PressModelTickTests : IDisposable
         return driver;
     }
 
-    /// <summary>The person's press in the wait: go on now with the second agent, which the next look takes as a hand-over.</summary>
-    private void Press(string agent = "acp-other") =>
-        new HandOverBox(_home).Write("s1", new HandOverRequest(agent, null, HandOverWhy.Press, HandOverBy.Person, _now));
+    /// <summary>The person's press in the wait: go on now with the second agent, which the next look takes as a hand-over (FOUNDATION1f-v part c: its driven move, decided in the store).</summary>
+    private async Task Press(Daoris.Driver.Driver driver, AskAndWaitTickTests.StandIn service, string agent = "acp-other")
+    {
+        var asked = await QuestHandOver.AskAsync(
+            new ServiceClient(service.Url, null), driver.Moves, QuestHandOver.Roster(Adapters(), _home), "s1", agent, null, HandOverWhy.Press, HandOverBy.Person);
+        Assert.True(asked.Kept, asked.Message);
+    }
 
     private static JsonObject Record(AskAndWaitTickTests.StandIn service, string id) => service.Session(id);
 
@@ -143,7 +147,7 @@ public sealed class PressModelTickTests : IDisposable
         await using var service = AskAndWaitTickTests.StandIn.Start(_repository);
         var driver = await LimitedAsync(service, Config([Sonnet]));
 
-        Press();
+        await Press(driver, service);
         var seen = "";
         for (var look = 0; look < 3 && service.Status("q1") != "Done"; look++)
         {
@@ -171,7 +175,7 @@ public sealed class PressModelTickTests : IDisposable
         await using var service = AskAndWaitTickTests.StandIn.Start(_repository);
         var driver = await LimitedAsync(service, Config([Sonnet, new ActorChoice("acp-other", "codex-mini", "high")]));
 
-        Press();
+        await Press(driver, service);
         var seen = "";
         for (var look = 0; look < 3 && service.Status("q1") != "Done"; look++)
         {
@@ -199,7 +203,7 @@ public sealed class PressModelTickTests : IDisposable
         var driver = await LimitedAsync(service, Config(
             [Sonnet, new ActorChoice("acp-other", "gone", "high"), new ActorChoice("acp-other", "codex-mini", "low")]));
 
-        Press();
+        await Press(driver, service);
         var seen = "";
         for (var look = 0; look < 3 && service.Status("q1") != "Done"; look++)
         {
@@ -224,7 +228,7 @@ public sealed class PressModelTickTests : IDisposable
         await using var service = AskAndWaitTickTests.StandIn.Start(_repository);
         var driver = await LimitedAsync(service, Config([Sonnet, new ActorChoice("acp-other", "gone", "high")]));
 
-        Press();
+        await Press(driver, service);
         var seen = "";
         for (var look = 0; look < 3 && service.Status("q1") != "Done"; look++)
         {

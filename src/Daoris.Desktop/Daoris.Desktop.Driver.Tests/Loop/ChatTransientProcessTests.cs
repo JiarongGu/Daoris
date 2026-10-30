@@ -95,6 +95,9 @@ public sealed class ChatTransientProcessTests : IDisposable
 
     private void Lifted(string account) => File.Delete(Path.Combine(Gate, "limited-" + account));
 
+    /// <summary>An account the stand-in refuses with a limit by its code alone, <c>rate_limit</c> and no sentence the table reads (FOUNDATION1g part a).</summary>
+    private void LimitedByCode(string account) => File.WriteAllText(Path.Combine(Gate, "limited-code-" + account), "");
+
     private IReadOnlyList<string> Prompts => [.. StubFile.Lines(Heard).Where(line => line.StartsWith("prompt[", StringComparison.Ordinal))];
 
     private static IEnumerable<string> Carrying(IEnumerable<string> prompts, string part) => prompts.Where(line => line.Contains(part, StringComparison.Ordinal));
@@ -366,6 +369,77 @@ public sealed class ChatTransientProcessTests : IDisposable
         // Said once on each part, and the old turn ended as a limit's does.
         Assert.Single(events.After(old, 0).Events, e => Coded(e, NoteCodes.MovedOn.Code));
         Assert.Single(events.After(old, 0).Events, e => e is { Kind: SessionEventKind.Turn, StopReason: "error" });
+        Assert.Equal(2, ledger.Count);
+    }
+
+    /// <summary>
+    /// 🔴 FOUNDATION1g part a (the agent-errors design §3.2): a chat's first failure is a limit the agent answered by its code alone
+    /// (<c>rate_limit</c>, no sentence the table reads), so no episode opens. The reader's code cools the account, as a driven run's does, and
+    /// the turn's end moves the conversation to the next account. Red before: the sentence alone was read, the account never cooled, and the
+    /// turn ended as a refusal with the person's words stranded on the limited account.
+    /// </summary>
+    [Fact]
+    public async Task A_chats_limit_by_code_alone_moves_it()
+    {
+        var ledger = new ChatLedger().Register("engine", _root);
+        var config = Config();
+        var events = Events;
+        var clock = new MovedClock();
+        using var client = ledger.Client();
+        var adapters = AdapterSet.Built();
+        var roster = Roster(adapters);
+        using var runner = Runner(client, adapters, roster, events, clock);
+
+        var old = await WarmAsync(runner, ledger, events, config, help: false, profile: "account-1");
+        LimitedByCode("account-1");
+        Assert.True(runner.Say(old, "Make the port configurable."));
+
+        await Poll.Until(() => ledger.Count == 2 && ledger.State(old) is "completed" or "stopped" or "failed", () => Seen(ledger, events, old, clock));
+        var next = (await client.RecordAsync("c2"))!;
+        Assert.Equal(("acp-stub", "account-2", _root), (next.Adapter, next.Profile, next.Tree));
+        Assert.Equal((old, HandOverWhy.Limit, HandOverBy.Daoris), (next.From, next.FromWhy, next.FromBy));
+        Assert.NotNull(roster.CoolingOf("acp-stub", "account-1"));
+
+        // No episode opened: the limit is no outage, so no wait, try or retry line is in the record, and the turn ended as a limit's does.
+        await Poll.Until(() => events.After(old, 0).Events.Any(e => Coded(e, NoteCodes.MovedOn.Code)), () => Seen(ledger, events, old, clock));
+        var record = events.After(old, 0).Events;
+        Assert.DoesNotContain(record, e => e.Kind == SessionEventKind.Transient);
+        Assert.DoesNotContain(record, e => Coded(e, NoteCodes.AgentTransientRetrying.Code));
+        Assert.Single(record, e => Coded(e, NoteCodes.MovedOn.Code));
+        Assert.Single(record, e => e is { Kind: SessionEventKind.Turn, StopReason: "error" });
+        Assert.Equal(2, ledger.Count);
+    }
+
+    /// <summary>
+    /// 🔴 AGENTERRORS1's C4-6 on a conversation (the agent-errors design §5.6; a conversation's open keeps today's end, so the case is a turn's
+    /// own): the turn fails transient and its try meets a limit by its code alone. The reader's last reading is the limit, so the limited
+    /// account cools and the conversation moves, once, as a limit on a try with a sentence does.
+    /// </summary>
+    [Fact]
+    public async Task A_limit_by_code_alone_on_a_try_after_a_transient_failure_cools_the_account_and_moves_the_chat()
+    {
+        var ledger = new ChatLedger().Register("engine", _root);
+        var config = Config();
+        var events = Events;
+        var clock = new MovedClock();
+        using var client = ledger.Client();
+        var adapters = AdapterSet.Built();
+        var roster = Roster(adapters);
+        using var runner = Runner(client, adapters, roster, events, clock);
+
+        var old = await WarmAsync(runner, ledger, events, config, help: false, profile: "account-1");
+        Overloaded(1);
+        LimitedByCode("account-1");
+        Assert.True(runner.Say(old, "Make the port configurable."));
+        await PassAsync(clock, ledger, events, old, 1);
+
+        await Poll.Until(() => ledger.Count == 2 && ledger.State(old) is "completed" or "stopped" or "failed", () => Seen(ledger, events, old, clock));
+        var next = (await client.RecordAsync("c2"))!;
+        Assert.Equal(("acp-stub", "account-2", _root), (next.Adapter, next.Profile, next.Tree));
+        Assert.Equal((old, HandOverWhy.Limit, HandOverBy.Daoris), (next.From, next.FromWhy, next.FromBy));
+        Assert.NotNull(roster.CoolingOf("acp-stub", "account-1"));
+        await Poll.Until(() => events.After(old, 0).Events.Any(e => Coded(e, NoteCodes.MovedOn.Code)), () => Seen(ledger, events, old, clock));
+        Assert.Single(events.After(old, 0).Events, e => Coded(e, NoteCodes.MovedOn.Code));
         Assert.Equal(2, ledger.Count);
     }
 
@@ -688,6 +762,11 @@ public sealed class ChatTransientProcessTests : IDisposable
                   }
                   if (existsSync(join(gate, 'limited-' + account))) {
                     send({ jsonrpc: '2.0', id: frame.id, error: { code: -32603, message: "Internal error: You've hit your weekly limit" } });
+                    return;
+                  }
+                  // A limit by its code alone (FOUNDATION1g part a): the kind the door carries, and a sentence the adapter's table reads none of.
+                  if (existsSync(join(gate, 'limited-code-' + account))) {
+                    send({ jsonrpc: '2.0', id: frame.id, error: { code: -32603, message: 'Internal error: Rate limited.', data: { errorKind: 'rate_limit' } } });
                     return;
                   }
                 }

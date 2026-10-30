@@ -6,9 +6,10 @@ namespace Daoris.Driver;
 /// <summary>
 /// The conversations' move record (FOUNDATION1f-ii part a, D212; the foundation design §3.3, §13.4, §19.4): the store a shell's conversation
 /// moves are written in, the door to their destinations' <c>said</c>, and the take-up of a dead shell's conversation moves, at the shell's
-/// come-up and at each look. The live limit move writes its move here (<see cref="BeginAsync"/>); the curve and the hand-over are rows f-iii
-/// and f-v's. Since FOUNDATION1f-iv part a the driver's carry-on writes its own through the same holder, handed the lease holder's scope
-/// (executor <c>driven</c>): the one store, the one decision, the one reading of a delivery, whichever executor writes the move.
+/// come-up and at each look. The live limit move writes its move here (<see cref="BeginAsync"/>), the curve (f-iii) and the conversation's
+/// hand-over (f-v part a) alike. Since FOUNDATION1f-iv part a the driver's carry-on writes its own through the same holder, handed the lease
+/// holder's scope (executor <c>driven</c>), and since f-v part c the quest's hand-over decides its move there, which the carry-on it starts goes on
+/// from: the one store, the one decision, the one reading of a delivery, whichever executor writes the move.
 /// </summary>
 /// <remarks>
 /// <para><b>Nothing here sends a word.</b> A move this holder ends on its executor's failure, or takes up from a dead run, is read by its
@@ -39,6 +40,9 @@ public sealed class ConversationMoves
 
     private readonly MoveTakeUp _takeUp;
 
+    /// <summary>The quests' own sessions as the ledger listed them at this holder's last look, which the hand-over box's import reads a record's kind by; null until the ledger answered.</summary>
+    private volatile HashSet<string>? _quests;
+
     /// <param name="home">The home whose move record this is.</param>
     /// <param name="service">The service whose ledger holds the records.</param>
     /// <param name="events">Where a record's notes are kept: a quiet move's, and a settled word's <c>lost</c> note.</param>
@@ -64,10 +68,16 @@ public sealed class ConversationMoves
         scope ??= MoveTakeUpScope.Conversations;
 
         // FOUNDATION1f-vi part a (§3.3, §13.5): the conversations' scope imports the ended limit move's box an older build writes, at its
-        // come-up and look; the lease holder's scope has no box of its own to import, the driven carry-on never having written one.
+        // come-up and look, and the hand-over's box of a conversation (FOUNDATION1f-v part a). The lease holder's scope has no limit box of its own
+        // to import, the driven carry-on never having written one; it imports the hand-over box of a quest session (part c), so each box is
+        // imported by exactly one holder, by its record's kind. A shared loop's scope imports only the sessions of the lines it runs.
         IMoveBoxImport[] imports = string.Equals(scope.Executor, MoveExecutors.Conversation, StringComparison.Ordinal)
-            ? [new LimitBoxImport(home, Store, (session, through) => LimitHeld.Of([.. events.After(session, 0).Events.Take(through)]) is not null)]
-            : [];
+            ?
+            [
+                new LimitBoxImport(home, Store, (session, through) => LimitHeld.Of([.. events.After(session, 0).Events.Take(through)]) is not null),
+                new HandOverBoxImport(home, Store, session => _quests is { } quests && !quests.Contains(session)),
+            ]
+            : [new HandOverBoxImport(home, Store, session => _quests is { } quests && quests.Contains(session) && (scope.Lines?.Invoke(session) ?? true), MoveExecutors.Driven)];
         _takeUp = new MoveTakeUp(home, Store, scope, imports, note: Note, clock: clock, said: Said);
     }
 
@@ -171,18 +181,108 @@ public sealed class ConversationMoves
         }
 
         // A dead run's move: whether its prompt was written is not known here, so its delivery is read by its evidence alone.
+        // A hand-over found decided or quiescing goes on from its phase (§13.5's first row), not fallen back: it stays standing under this run,
+        // which the shell's hand-over take takes (FOUNDATION1f-v part a), as a box left on disk was taken at the next come-up.
         foreach (var taken in look.Taken)
         {
-            if (taken is { Claim: { } claim, Move: { } move }) await Settle(() => EndAsync(claim, move.Phase, unwritten: false, ct)).ConfigureAwait(false);
+            if (taken is { Claim: { } claim, Move: { } move } && !WaitsToBeTaken(move)) await Settle(() => EndAsync(claim, move.Phase, unwritten: false, ct)).ConfigureAwait(false);
         }
 
         // A box an older build wrote, imported this look (FOUNDATION1f-vi part a): the importing run claims the move, so the take-up never
         // takes it, and it goes on from its phase here as a taken move does, its prompt's write unknown.
         foreach (var imported in look.Imported)
         {
-            if (imported.Stands) await Settle(() => EndAsync(new MoveClaim(imported.Id, imported.ClaimRun, imported.ClaimGeneration), imported.Phase, unwritten: false, ct)).ConfigureAwait(false);
+            if (imported.Stands && !WaitsToBeTaken(imported)) await Settle(() => EndAsync(new MoveClaim(imported.Id, imported.ClaimRun, imported.ClaimGeneration), imported.Phase, unwritten: false, ct)).ConfigureAwait(false);
         }
     }
+
+    /// <summary>
+    /// Whether a move is a hand-over decided and not yet begun (FOUNDATION1f-v parts a and c): the person's press or the agent's ask, a conversation's
+    /// or a quest session's, which names its agent (the live limit move and the curve name none, and a driven carry-on is decided at
+    /// <c>old-ended</c>), standing at <c>decided</c> or <c>quiescing</c>, the phases that have ended and opened nothing. A take-up or an import
+    /// leaves it standing for the hand-over's own take.
+    /// </summary>
+    internal static bool WaitsToBeTaken(MoveRecord move) =>
+        move is { Agent: not null, Executor: MoveExecutors.Conversation or MoveExecutors.Driven, Phase: MoveRecordPhase.Decided or MoveRecordPhase.Quiescing };
+
+    /// <summary>
+    /// Whether a move is a driven line's that names its agent and has not asked its open (FOUNDATION1f-v part c): a quest's hand-over, taken or
+    /// not yet, or a carry-on decided at <c>old-ended</c>. The carry-on a hand-over starts goes on from such a move, where it is its own.
+    /// </summary>
+    internal static bool DrivenBeforeOpen(MoveRecord move) =>
+        move is { Agent: not null, Executor: MoveExecutors.Driven, Phase: MoveRecordPhase.Decided or MoveRecordPhase.Quiescing or MoveRecordPhase.OldEnded };
+
+    /// <summary>
+    /// Whether a conversation move stands for the record and has not yet put its words on the line's head (FOUNDATION1f-v part a, TAKEWAITS1):
+    /// the shell's judge of the person's words holds a word said meanwhile and says it once the move ends. A move held for the person has gone
+    /// on past its destination, so its words follow the line's head and it holds none. False for a store that will not answer.
+    /// </summary>
+    public bool Stands(string session)
+    {
+        try
+        {
+            return Store.Standing(session) is { Executor: MoveExecutors.Conversation, Phase: not MoveRecordPhase.Held };
+        }
+        catch (Exception error) when (error is DriverException or SqliteException)
+        {
+            return false;
+        }
+    }
+
+    /// <summary>A waiting hand-over as the ask its take is handed, moment included; null for a move that is none.</summary>
+    internal static HandOverRequest? AskOf(MoveRecord move) =>
+        move.Agent is { } agent
+            ? new HandOverRequest(
+                agent, move.Account, move.Why, move.By,
+                move.Moments.TryGetValue(MoveRecordPhase.Decided, out var decided) && DateTimeOffset.TryParse(decided, System.Globalization.CultureInfo.InvariantCulture, out var at) ? at : DateTimeOffset.UtcNow)
+            : null;
+
+    /// <summary>The conversation's standing hand-over that waits to be taken, whichever run holds it; null for none, or a store that will not answer.</summary>
+    internal MoveRecord? HandOverStanding(string session)
+    {
+        try
+        {
+            return Store.Standing(session) is { Executor: MoveExecutors.Conversation } move && WaitsToBeTaken(move) ? move : null;
+        }
+        catch (Exception error) when (error is DriverException or SqliteException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Every hand-over of <paramref name="executor"/>'s that waits to be taken and this run holds, oldest first (FOUNDATION1f-v parts a and c); none
+    /// for a store that will not answer. One a headless host's look or a terminal decided is received first (<see cref="MoveStore.Receive"/>): that
+    /// run goes no further with it, so it is claimed here at each look rather than held for as long as the run lives (reading 5 of part a).
+    /// </summary>
+    internal IReadOnlyList<MoveRecord> HandOversWaiting(string executor = MoveExecutors.Conversation)
+    {
+        try
+        {
+            var mine = new List<MoveRecord>();
+            foreach (var move in Store.StandingOf(executor).Where(WaitsToBeTaken))
+            {
+                if (string.Equals(move.ClaimRun, Store.Run, StringComparison.Ordinal))
+                {
+                    mine.Add(move);
+                }
+                else if (Store.Receive(move.Id, move.ClaimGeneration) is { Move: { } received, Refused: null })
+                {
+                    mine.Add(received);
+                }
+            }
+
+            return mine;
+        }
+        catch (Exception error) when (error is DriverException or SqliteException)
+        {
+            return [];
+        }
+    }
+
+    /// <summary>The move as this run's executor of it, for a move this run holds; null where another run's claim holds it.</summary>
+    internal ConversationMove? Claimed(MoveRecord move) =>
+        string.Equals(move.ClaimRun, Store.Run, StringComparison.Ordinal) ? new ConversationMove(this, new MoveClaim(move.Id, move.ClaimRun, move.ClaimGeneration)) : null;
 
     /// <summary>
     /// A move its executor goes no further with, or a dead run's the take-up left to its caller, ended by its phase (the remarks).
@@ -263,12 +363,14 @@ public sealed class ConversationMoves
     {
         try
         {
-            var ids = SessionRecords.Parse(await _service.SessionRecordsJsonAsync(ct).ConfigureAwait(false))
-                .Select(record => record.Id).ToHashSet(StringComparer.Ordinal);
+            var records = SessionRecords.Parse(await _service.SessionRecordsJsonAsync(ct).ConfigureAwait(false));
+            var ids = records.Select(record => record.Id).ToHashSet(StringComparer.Ordinal);
+            _quests = records.Where(QuestHandOver.IsQuestSession).Select(record => record.Id).ToHashSet(StringComparer.Ordinal);
             return record => ids.Contains(record);
         }
         catch (Exception error) when (Unanswered(error, ct))
         {
+            _quests = null;
             return _ => null;
         }
     }
@@ -302,6 +404,9 @@ internal sealed class ConversationMove(ConversationMoves moves, MoveClaim claim)
 
     /// <summary>The executor's claim.</summary>
     public MoveClaim Claim => claim;
+
+    /// <summary>The hand-over waits on the old part's own turn (§3.3): nothing is ended or opened until it is over. A write the store refuses leaves the move at <c>decided</c>, which waits alike.</summary>
+    public string? Quiescing() => Write(() => moves.Store.Advance(claim, MoveRecordPhase.Quiescing));
 
     /// <summary>The old part ended, or there was none to end.</summary>
     public string? OldEnded() => Write(() => moves.Store.Advance(claim, MoveRecordPhase.OldEnded), Cuts.OldEnded);

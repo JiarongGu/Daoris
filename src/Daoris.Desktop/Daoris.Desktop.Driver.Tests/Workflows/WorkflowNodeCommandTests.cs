@@ -64,6 +64,44 @@ public sealed class WorkflowNodeCommandTests : IDisposable
         Assert.StartsWith("workflow: `go` on run q7 already has your word", output.ToString(), StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// INTEGRATE1n part n3 (F50): the terminal's stop reads the integration record as the page's does, so a node whose request promoted is refused
+    /// in its sentence with exit 1 and nothing kept.
+    /// </summary>
+    [Fact]
+    public async Task Alone_the_stop_of_a_promoted_node_is_refused_in_its_sentence()
+    {
+        RunHome.Bind(_home, "q7", RunHome.SaveGraph(_home, GoAheadBeforeHanded), Now);
+        var unit = RunUnits.IdOf("q7");
+        var tip = "1111111111111111111111111111111111111111";
+        var call = new WorkPerformCall(unit, "integrate", 1, "i-1", IntegrateNodes.Key(unit, tip), tip, [], Now);
+        Files.Write(new NodeRecord(unit)
+        {
+            Statuses = new Dictionary<string, NodeStatus> { ["go"] = NodeLifecycle.Start(unit, "go") with { State = NodeStates.Active, Attempt = 1 } },
+            Attempts = [new NodeAttempt("go", 1, IntegrateNodes.Sender, call, AttemptStates.Recorded) { RecordedAt = Now }],
+        });
+        var output = new StringWriter();
+
+        var exit = await WorkflowNodeCommand.RunAsync(new(NodeWordActs.Stop, "q7", "go", null), Files, output, instance: null, NoVariables, () => Now, door: new Promoted(Now));
+
+        Assert.Equal(1, exit);
+        Assert.Contains("`go` on run q7 has promoted onto the line", output.ToString(), StringComparison.Ordinal);
+        Assert.Empty(Files.Read(unit)!.Pending);
+    }
+
+    private sealed class Promoted(DateTimeOffset at) : IIntegrationDoor
+    {
+        public Task<IntegrationRequest?> FindAsync(string unit, string tip, CancellationToken ct) =>
+            Task.FromResult<IntegrationRequest?>(new IntegrationRequest("request-1", "engine", "default", "feature/q7", tip, IntegrationRoutes.Node, "main",
+                IntegrationRequester.NodeStart, new LandingIntegrate().Resolved(), at) { Unit = unit });
+
+        public Task<IntegrationAdmission> AskAsync(IntegrationAsk ask, DriverConfig config, CancellationToken ct) => throw new InvalidOperationException();
+
+        public Task<bool> PromotedAsync(IntegrationRequest request, CancellationToken ct) => Task.FromResult(true);
+
+        public Task<bool> DropAsync(IntegrationRequest request, CancellationToken ct) => Task.FromResult(false);
+    }
+
     /// <summary>D194 point 5: a person's press acting alone from a session's terminal is refused before anything is read or kept.</summary>
     [Fact]
     public async Task Alone_from_a_sessions_terminal_it_is_refused_and_nothing_is_kept()

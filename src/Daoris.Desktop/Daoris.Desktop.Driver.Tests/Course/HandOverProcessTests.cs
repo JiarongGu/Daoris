@@ -3,16 +3,18 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// MIXAGENT1a-i (D163 §3) with real conversations: a conversation handed to another agent ends, and a new one starts in the same
-/// tree on that agent, told Daoris's briefing and none of the person's words; both records say where it went and where it came
-/// from. Idle it is taken at once; while a turn runs the box waits and is taken as the turn ends; a box left on disk is taken as
-/// a new runner comes up.
+/// MIXAGENT1a-i (D163 §3) with real conversations, over the hand-over's move record (FOUNDATION1f-v part a, D212): a conversation handed to
+/// another agent ends, and a new one starts in the same tree on that agent, told Daoris's briefing and none of the person's words; both records
+/// say where it went and where it came from. The move is decided at the ask and kept in the store, never in a box: idle it is taken at once;
+/// while a turn runs it waits at <c>quiescing</c> and is taken as the turn ends; an older build's box left on disk is imported as a move at the
+/// next runner's come-up, set aside, and taken. The proofs through a kill at each boundary, a downgrade and an older build's cases are
+/// <see cref="HandOverMoveCrashProcessTests"/>, <see cref="HandOverMoveDowngradeProcessTests"/> and <see cref="HandOverMoveOlderBuildProcessTests"/>.
 /// </summary>
 /// <remarks>
 /// The first conversation runs on the <c>acp-stub</c> adapter (a node stand-in on the protocol door) and is handed to the
 /// built-in <c>stub</c> adapter (a text-only node stand-in that echoes each line it reads): the two agents the fixtures can
 /// register as different ones. The echo is what the new conversation's transcript shows it was told. The in-process ledger of
-/// <see cref="ChatGoOnTests"/>; a real process each. Written without a run: the merge's Process half runs them.
+/// <see cref="ChatGoOnTests"/>; a real process each.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
 public sealed class HandOverProcessTests : IDisposable
@@ -120,8 +122,11 @@ public sealed class HandOverProcessTests : IDisposable
         Assert.DoesNotContain("This start runs on", StubFile.Text(DaorisHome.Entry(_home, HomeEntry.Sessions,$"{old}.log")));
         Assert.Equal("chat.handed-over", events.After(old, 0).Events.Select(CodeOf).Last(code => code is not null));
         Assert.Equal(next, NewSessionOf(ledger, old));
-        // The take clears the box last, after the old one's last line: poll, as CurveMoveProcessTests does.
-        await Poll.Until(() => new HandOverBox(_home).Read(old) is null, () => $"the box still holds {old}'s hand-over; {Seen(ledger, events, old)}");
+        // The move ends last, after the old one's last line, and no box was ever written (FOUNDATION1f-v part a): poll, as CurveMoveProcessTests does.
+        await Poll.Until(() => new MoveStore(_home).Standing(old) is null, () => $"the store still holds {old}'s hand-over; {Seen(ledger, events, old)}");
+        var move = Assert.Single(new MoveStore(_home).Of(old));
+        Assert.Equal(("delivered", next, "stub", HandOverWhy.Press, HandOverBy.Person), (move.PhaseWord, move.Destination, move.Agent, move.Why, move.By));
+        Assert.Null(new HandOverBox(_home).Read(old));
     }
 
     /// <summary>
@@ -167,8 +172,8 @@ public sealed class HandOverProcessTests : IDisposable
     }
 
     /// <summary>
-    /// While a turn runs the box waits, the conversation untouched; as the turn ends (here stopped, which the stub answers
-    /// cancelled) the box is taken: the first record ends and the second starts.
+    /// While a turn runs the move waits at <c>quiescing</c>, the conversation untouched; as the turn ends (here stopped, which the stub answers
+    /// cancelled) it is taken: the first record ends and the second starts.
     /// </summary>
     [Fact]
     public async Task A_hand_over_asked_during_a_turn_waits_and_is_taken_as_the_turn_ends()
@@ -186,19 +191,24 @@ public sealed class HandOverProcessTests : IDisposable
         var asked = await runner.HandOverAsync(old, "stub", null, HandOverWhy.Press, HandOverBy.Person, config);
 
         Assert.Equal((null, true, null), (asked.SessionId, asked.Kept, asked.Why));
-        Assert.NotNull(new HandOverBox(_home).Read(old));
+        // The move waits for the turn's end at quiescing, in the store; no box is kept.
+        Assert.Equal("quiescing", new MoveStore(_home).Standing(old)!.PhaseWord);
+        Assert.Null(new HandOverBox(_home).Read(old));
         Assert.Equal("working", ledger.State(old));
         Assert.Equal(1, ledger.Count);
 
         await runner.CancelTurnAsync(old);
 
-        await Poll.Until(() => ledger.Count == 2 && Ended(ledger.State(old)) && new HandOverBox(_home).Read(old) is null, () => Seen(ledger, events, old));
+        await Poll.Until(() => ledger.Count == 2 && Ended(ledger.State(old)) && new MoveStore(_home).Standing(old) is null, () => Seen(ledger, events, old));
         Assert.Equal("chat.handed-over", events.After(old, 0).Events.Select(CodeOf).Last(code => code is not null));
     }
 
-    /// <summary>A box left on disk for an idle conversation (asked while no runner heard it) is taken as a new runner comes up.</summary>
+    /// <summary>
+    /// A box an older build left on disk for an idle conversation (asked while no runner heard it) is imported as a move, set aside as
+    /// <c>.imported</c>, and taken, as a new runner comes up.
+    /// </summary>
     [Fact]
-    public async Task A_box_left_on_disk_is_taken_when_a_new_runner_comes_up()
+    public async Task An_older_builds_box_left_on_disk_is_imported_and_taken_when_a_new_runner_comes_up()
     {
         var ledger = new ChatLedger().Register("engine", _root);
         var config = Config();
@@ -221,7 +231,9 @@ public sealed class HandOverProcessTests : IDisposable
         var started = Assert.Single(taken);
         Assert.NotNull(started.SessionId);
         Assert.Equal(2, ledger.Count);
+        // Imported at the come-up and set aside, then taken as a move (FOUNDATION1f-v part a).
         Assert.Null(new HandOverBox(_home).Read(old));
+        Assert.True(File.Exists(new HandOverBox(_home).PathOf(old) + ".imported"));
         await Poll.Until(() => events.After(started.SessionId!, 0).Events.Any(e => CodeOf(e) == "chat.taken-over"), () => Seen(ledger, events, started.SessionId!));
         var opening = events.After(started.SessionId!, 0).Events.First(e => CodeOf(e) == "chat.taken-over").Parts![0];
         Assert.Equal("near", opening.Value("why"));

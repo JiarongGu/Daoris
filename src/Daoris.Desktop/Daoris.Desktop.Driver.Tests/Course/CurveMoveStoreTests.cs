@@ -414,23 +414,25 @@ public sealed class CurveMoveStoreTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 A box an older build left is taken by the hand-over's take with no move record (<c>TakeAllAsync</c>), as before: the person's hand-over
-    /// (row f-v) is untouched by the curve's move, so the new part opens unkeyed and its record names no move.
+    /// <summary>
+    /// 🔴 A box an older build left is no longer taken as a file (FOUNDATION1f-v part a): the hand-over's take reads the store, so with the box
+    /// not yet imported nothing waits to be taken and the box stays for the come-up's import.
     /// </summary>
     [Fact]
-    public async Task The_hand_over_s_own_take_of_a_box_still_writes_no_move_record()
+    public async Task The_hand_over_s_take_reads_the_store_so_a_box_not_yet_imported_is_not_taken()
     {
         var world = Live(opens: 2);
         using var c = world.Client;
-        new HandOverBox(_home).Write("c1", new HandOverRequest("talk", "account-2", HandOverWhy.Curve, HandOverBy.Daoris, Now));
+        var asked = new HandOverRequest("talk", "account-2", HandOverWhy.Curve, HandOverBy.Daoris, Now);
+        new HandOverBox(_home).Write("c1", asked);
         var handOver = new ChatHandOver(world.Context, world.Runner);
 
         var taken = await handOver.TakeAsync("c1", Config(), null);
 
-        Assert.Equal("c2", taken.SessionId);
+        Assert.Equal((null, false), (taken.SessionId, taken.Kept));
         Assert.Empty(Store("run-probe").Of("c1"));
-        Assert.Null(Assert.Single(world.Runner.Asked));
-        Assert.Null(new HandOverBox(_home).Read("c1"));
+        Assert.Empty(world.Runner.Asked);
+        Assert.Equal(asked, new HandOverBox(_home).Read("c1"));
     }
 
     // ——— The conversations' take-up (§3.3, §13.4, §19.1).

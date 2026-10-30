@@ -556,6 +556,24 @@ describe("the person's skip and stop of a graph run's node", () => {
     expect(await within(ask).findByRole('alert')).toHaveTextContent('workflow: a newer refusal.');
   });
 
+  it('says a stop refused because the line already holds the work in the reader\'s language, in English and in 中文 (INTEGRATE1n)', async () => {
+    const promoted = { run: 'q1', node: 'release', act: 'stop', done: false, refused: 'promoted', message: 'workflow: promoted.' };
+    const onNodeWord = vi.fn().mockResolvedValue(promoted);
+    const { unmount } = render(<WorkflowRunView answer={answerOf(GRAPH_RUN_GO_AHEAD)} onNodeWord={onNodeWord} />);
+    await userEvent.click(within(row('release')).getByRole('button', { name: 'Stop…' }));
+    const ask = screen.getByRole('group', { name: 'Stop release for this run' });
+    await userEvent.click(within(ask).getByRole('button', { name: 'Stop' }));
+    expect(await within(ask).findByRole('alert')).toHaveTextContent('release has promoted onto the line, and nothing reverses the line, so there is nothing to stop.');
+    unmount();
+
+    await i18n.changeLanguage('zh');
+    render(<WorkflowRunView answer={answerOf(GRAPH_RUN_GO_AHEAD)} onNodeWord={onNodeWord} />);
+    await userEvent.click(within(row('release')).getByRole('button', { name: '停止…' }));
+    const zh = screen.getByRole('group', { name: /release/ });
+    await userEvent.click(within(zh).getAllByRole('button', { name: '停止' })[0]);
+    expect(await within(zh).findByRole('alert')).toHaveTextContent('release 已并入主线，主线无法撤回，所以没有可停止的。');
+  });
+
   it('draws a word kept on its node, with its words, until it is applied, and offers nothing more there', () => {
     render(<WorkflowRunView answer={answerOf(GRAPH_RUN_GO_AHEAD_KEPT)} onNodeWord={vi.fn()} />);
     expect(row('release')).toHaveTextContent("Your skip is kept, and Daoris's next look applies it.");

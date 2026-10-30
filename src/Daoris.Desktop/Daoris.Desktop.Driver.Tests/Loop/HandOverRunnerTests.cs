@@ -87,21 +87,22 @@ public sealed class HandOverRunnerTests : IDisposable
     }
 
     /// <summary>
-    /// HANDWORDS1: a take's end is told, however it came out, with its box gone by then, so the words the shell held while it was
-    /// taken go on to the conversation that continues it. Here the new one's adapter refuses to prepare, so it ends failed.
+    /// HANDWORDS1, TAKEWAITS1: a take's end is told, however it came out, with its move ended in the store by then, so the words the shell held
+    /// while it was taken go on to the conversation that continues it. Here the new one's adapter refuses to prepare, so it ends failed.
     /// </summary>
     [Fact]
-    public async Task A_takes_end_is_told_once_its_box_is_gone()
+    public async Task A_takes_end_is_told_once_its_move_has_ended()
     {
         var ledger = new ChatLedger().Register("engine", _root);
         ledger.Chat("c0nv0001", "completed", "talk", _root);
         using var runner = Runner(ledger);
-        var ended = new List<(string Session, bool Box)>();
-        runner.TakeEnded += id => { lock (ended) ended.Add((id, new HandOverBox(_home).Read(id) is not null)); };
+        var ended = new List<(string Session, bool Standing)>();
+        runner.TakeEnded += id => { lock (ended) ended.Add((id, new MoveStore(_home).Standing(id) is not null)); };
 
         await HandAsync(runner, "c0nv0001", "other");
 
         lock (ended) Assert.Equal([("c0nv0001", false)], ended);
+        Assert.Empty(new HandOverBox(_home).Pending());
     }
 
     /// <summary>

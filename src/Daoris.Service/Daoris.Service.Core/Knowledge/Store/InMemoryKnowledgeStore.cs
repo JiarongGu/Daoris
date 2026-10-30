@@ -33,6 +33,11 @@ public sealed class InMemoryKnowledgeStore : IKnowledgeStore
     public Task<IReadOnlyList<KnowledgeEntry>> AllAsync(CancellationToken ct = default) =>
         Task.FromResult<IReadOnlyList<KnowledgeEntry>>(_byRepository.Values.SelectMany(e => e).ToList());
 
+    public Task<IReadOnlyList<KnowledgeEntry>> OfFileAsync(string repository, string relativePath, CancellationToken ct = default) =>
+        Task.FromResult<IReadOnlyList<KnowledgeEntry>>(_byRepository.TryGetValue(repository, out var held)
+            ? held.Where(entry => entry.RelativePath == relativePath).ToList()
+            : []);
+
     public Task<IReadOnlyDictionary<string, int>> CountByRepositoryAsync(CancellationToken ct = default) =>
         Task.FromResult<IReadOnlyDictionary<string, int>>(_byRepository
             .Where(pair => pair.Value.Count > 0)

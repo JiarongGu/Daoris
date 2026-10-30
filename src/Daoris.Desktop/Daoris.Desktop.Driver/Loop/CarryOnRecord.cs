@@ -30,21 +30,47 @@ internal sealed class CarryOnRecord(ConversationMove move) : IAsyncDisposable
     private Task? _taking;
 
     /// <summary>
-    /// The move a carry-on decides, or null for a start that keeps none: one that continues nothing, and one the quest's hand-over made, which is
-    /// row f-v's (<paramref name="handedFrom"/>). Executor <c>driven</c>, its brief the new part's, its why and asker the record's own link, and
-    /// written at <c>old-ended</c>, the part it goes on from having ended.
+    /// The move a carry-on decides, or null for a start that keeps none: one that continues nothing. Executor <c>driven</c>, its brief the new
+    /// part's, its why and asker the record's own link, and written at <c>old-ended</c>, the part it goes on from having ended. A carry-on the
+    /// quest's hand-over starts (FOUNDATION1f-v part c) goes on from the hand-over's own move where the ask decided one (<see cref="Of"/>); this is
+    /// its decision where none stands, an agent's ask taken at its turn's end or an older build's take having left none.
     /// </summary>
     /// <param name="continues">The session this start continues, why and who asked (<c>Driver.ContinuesFrom</c>).</param>
-    /// <param name="handedFrom">The start carries on from the very session the quest was handed over from.</param>
     /// <param name="agent">The agent the new part opens on.</param>
     /// <param name="account">The settled selection's account, by profile name, where it is settled.</param>
-    public static MoveDecision? Decision(ContinuedFrom? continues, bool handedFrom, string agent, string? account) =>
-        continues is null || handedFrom
+    public static MoveDecision? Decision(ContinuedFrom? continues, string agent, string? account) =>
+        continues is null
             ? null
             : new MoveDecision(continues.Session, MoveExecutors.Driven, MoveHows.Brief, continues.Why, continues.By)
             {
                 FromEnded = true, Account = account, RecipeWhy = continues.Why, Agent = agent,
             };
+
+    /// <summary>
+    /// The record a start keeps, from what its decision came to (FOUNDATION1f-v part c; §3.3: a hand-over is one move from ask to delivery): the
+    /// move the carry-on decided, or, for the carry-on the quest's hand-over starts, the hand-over's own move that stands for the session it goes
+    /// on from, decided at the ask and left at <c>old-ended</c> by the look's take (or at <c>decided</c> or <c>quiescing</c> where that take was
+    /// cut short, which <see cref="OldEnded"/> then writes), claimed by this run and naming the agent the start opens on. Null where the move
+    /// standing is another's: a start that did not come of the hand-over, another run's claim, another agent's, or one past its open.
+    /// </summary>
+    /// <param name="moves">The driven holder, which answers a move as this run's executor of it.</param>
+    /// <param name="begun">What the decision came to.</param>
+    /// <param name="handedFrom">The start carries on from the very session the quest was handed over from.</param>
+    /// <param name="agent">The agent the new part opens on.</param>
+    internal static CarryOnRecord? Of(ConversationMoves moves, ConversationMoveBegun begun, bool handedFrom, string agent)
+    {
+        if (begun.Move is { } decided) return new CarryOnRecord(decided);
+        return handedFrom
+               && begun.Standing is { Agent: { } named } standing
+               && ConversationMoves.DrivenBeforeOpen(standing)
+               && string.Equals(named, agent, StringComparison.OrdinalIgnoreCase)
+               && moves.Claimed(standing) is { } mine
+            ? new CarryOnRecord(mine)
+            : null;
+    }
+
+    /// <summary>The part the start goes on from has ended (§13.4 step 1): written again where the decision wrote it, and for a hand-over's move the first time; the store's refusal where it would not take it.</summary>
+    public string? OldEnded() => move.OldEnded();
 
     /// <summary>The open asked under <paramref name="key"/>, the key its keyed open is sent with; the store's refusal where it would not take it.</summary>
     public string? Opening(string key) => move.Opening(key);

@@ -151,7 +151,19 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
         _waits = new LimitWaits(_context, _limit, _goOn);
         _limit.Stays = _waits.Wait;
         _goOn.Waits = _waits.Add;
+
+        // One holder for the moves of the home, the hand-over's among them (FOUNDATION1f-v part a): it imports the boxes an older build wrote and
+        // the come-up takes a dead shell's moves up through it, and the hand-over takes the move it leaves standing.
+        Moves = _limit.Moves;
     }
+
+    /// <summary>
+    /// The hand-overs this run holds that wait to be taken (FOUNDATION1f-v part a), at a look: a dead shell's or an older build's the come-up or
+    /// an earlier look left standing, each judged again as it is taken; one whose conversation is talking waits for its turn's end.
+    /// </summary>
+    /// <param name="onEnded">Told when a new conversation ends, as a start's is.</param>
+    public Task<IReadOnlyList<ChatStart>> TakeHandOversAsync(Func<string, string, Task> onEnded, CancellationToken ct = default) =>
+        _handOver.TakeAllAsync(onEnded, ct);
 
     /// <summary>
     /// The look's <c>limits</c> stage (LIMITRESUME1c, D206 §3.4; <see cref="LimitWaits.LookAsync"/>): each conversation that waits for an
@@ -173,7 +185,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
     internal ConversationMoves Moves
     {
         get => _limit.Moves;
-        set => _limit.Moves = _curve.Moves = value;
+        set => _limit.Moves = _curve.Moves = _handOver.Moves = value;
     }
 
     /// <summary>
@@ -1629,9 +1641,9 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
             chat = new ProtocolChat(
                 place.Posture ?? resolved.AcpPosture, meta, workTree, offered, Changed,
                 stopped: () => _processes.WasStopRequested(sessionId),
-                limited: failure =>
+                limited: (failure, byCode) =>
                 {
-                    var cooling = Limited(sessionId, resolved, selection.Profile, failure, config.CoolOff);
+                    var cooling = Limited(sessionId, resolved, selection.Profile, failure, config.CoolOff, byCode);
                     if (cooling is not null) Interlocked.Exchange(ref limitedTurn, 1);
                     return cooling;
                 },
@@ -2704,12 +2716,16 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
     /// conversation goes on: the process is still there, and so is the person.
     /// </summary>
     /// <param name="coolOff">The machine's <c>cooloff</c> (TOOL4e), for a limit that names no time; the default when null.</param>
-    internal Noted? Limited(string sessionId, ISessionAdapter adapter, string? profile, string failure, TimeSpan? coolOff = null)
+    /// <param name="byCode">
+    /// The reader's reading of the same failure where it read a limit by its code or kind with no sentence (FOUNDATION1g part a, the
+    /// agent-errors design §3.2), as a driven run passes it: cooled for D125's unstated default. Null reads the sentence alone.
+    /// </param>
+    internal Noted? Limited(string sessionId, ISessionAdapter adapter, string? profile, string failure, TimeSpan? coolOff = null, LimitSeen? byCode = null)
     {
         (CoolingEntry Entry, LimitSeen Seen)? limited;
         try
         {
-            limited = _harnesses.Limited(adapter.Name, profile, failure, sessionId, coolOff);
+            limited = _harnesses.Limited(adapter.Name, profile, failure, sessionId, coolOff, byCode);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
@@ -3160,8 +3176,10 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
 
         private readonly TaskCompletionSource<AcpSession?> _open = new(TaskCreationOptions.RunContinuationsAsynchronously);
         private readonly Func<bool> _stopped;
-        private readonly Func<string, Noted?>? _limited;
+        private readonly Func<string, LimitSeen?, Noted?>? _limited;
         private readonly Func<string, Noted?>? _signedOut;
+        // The retry its session was handed, whose last reading says the failure's code (FOUNDATION1g part a); null before the open or with none.
+        private volatile TransientRetry? _retried;
         private readonly Action? _wentOn;
         private Action<string> _line = _ => { };
         private Action<SessionEvent> _record = _ => { };
@@ -3180,8 +3198,8 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
         private volatile bool _unwanted;
 
         /// <param name="limited">
-        /// A refused turn's failure, read for an account's limit (TOOL4d): the line its record takes, with its code
-        /// (CONVNOTE1b), or null.
+        /// A refused turn's failure, read for an account's limit (TOOL4d), with the reader's limit by its code where it read one
+        /// (FOUNDATION1g part a): the line its record takes, with its code (CONVNOTE1b), or null.
         /// </param>
         /// <param name="signedOut">
         /// A refused call's failure, read for the account's sign-in (SIGNIN1b): the line its record takes, or null.
@@ -3190,7 +3208,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
         /// <param name="wentOn">Told once the words it goes on with are on the wire (MSG1c).</param>
         public ProtocolChat(
             string? posture, object? meta, string cwd, IReadOnlyList<AcpMcpServer> servers,
-            Action<ChatQueue> changed, Func<bool> stopped, Func<string, Noted?>? limited = null,
+            Action<ChatQueue> changed, Func<bool> stopped, Func<string, LimitSeen?, Noted?>? limited = null,
             Func<string, Noted?>? signedOut = null, ResumeAsk? goOn = null, Action? wentOn = null)
         {
             _stopped = stopped;
@@ -3267,7 +3285,12 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
         {
             _line = line;
             _record = record;
-            if (session is not null && Retry is { } retry) session.Retries(Retried(retry), this);
+            if (session is not null && Retry is { } retry)
+            {
+                _retried = Retried(retry);
+                session.Retries(_retried, this);
+            }
+
             _open.TrySetResult(session);
         }
 
@@ -3610,7 +3633,11 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
             // A refusal the door carried, read for an account's limit (TOOL4d) before the turn's end is recorded, so
             // the refused turn is counted after the turns that ended. Never the transcript's words (D125 §1.4). Its English
             // beside the line's parts (CONVNOTE1b), as a refused sign-in's is, so the page words it in either language.
-            if (error is DriverException && _limited?.Invoke(error.Message) is { } cooling)
+            // The reader's own reading of this failure, which reads a limit by its code where the sentence says none (§3.2), as a driven
+            // run's conclusion passes it (FOUNDATION1g part a): the last one the session's retry kept, `Acp.ReadFailure` running before a
+            // prompt's failure is thrown.
+            var byCode = _retried?.Last is { Kind: AgentErrorKind.Limit, Limit: { } coded } ? coded : null;
+            if (error is DriverException && _limited?.Invoke(error.Message, byCode) is { } cooling)
             {
                 _line($"— {cooling.Note}");
                 _record(new SessionEvent { Kind = SessionEventKind.Note, Text = cooling.Note, Parts = cooling.Parts });

@@ -18,6 +18,9 @@ public static class WorkflowWords
     public const string GateReads = "  Every gate reads the version a run bound at its first start: how it lands, your look and its second "
         + "opinion follow that version.";
 
+    /// <summary>Said by <c>new --from current:&lt;repository&gt;</c> where Current drew the <c>integrate</c> step (INTEGRATE1r, F43): a version's steps hold none.</summary>
+    public const string IntegrateLeftOut = "  Current's `integrate` step is not one of the steps saved: the rule's graph integrates the steps run's branch.";
+
     /// <summary>Said by <c>use … --landed</c> (FABRIC-PIPELINE1a): what reads the landed route.</summary>
     public const string LandedReads = "  A verification binds the newest version of its pipeline when it starts, and keeps it; this build keeps the "
         + "route and does not run its checks yet.";
@@ -94,6 +97,22 @@ public static class WorkflowWords
                         + (Set("plugin") is null ? ", for you to push" : $", pushed by `{Set("plugin")}`");
                 set += $"{(Set("tidy") is true ? "; its tree and branch go once it lands" : "")}.";
                 break;
+            // INTEGRATE1r: a graph-only kind, drawn by its node's kind (F43), said by what the rule asks.
+            case NodeKinds.Integrate:
+            {
+                title = "The integration";
+                var who = Set("request") switch
+                {
+                    LandingIntegrate.Done => "the quest's done",
+                    LandingIntegrate.Steward => "the steward",
+                    _ => "you",
+                };
+                var gates = (string?)Set("gates") == LandingIntegrate.Declared ? "with its declared gates" : "with no gates";
+                var conflict = (string?)Set("conflicts") == LandingIntegrate.Hold ? "a conflict is held" : "a conflict goes back to its session";
+                set = $"Integrates the landed branch into its line, requested by {who}, {gates}; {conflict}.";
+                break;
+            }
+
             default:
                 title = "The pull request";
                 set = "Opened by its plugin at the landing; you merge it on the platform.";
@@ -215,13 +234,17 @@ public static class WorkflowWords
     /// <summary>
     /// Current copied into steps (design §2.7's <i>Save as a workflow…</i>), each as Current draws it so the two read the same: the
     /// opinion with its reviewers and switches, the look in its environment, the landing with its form, its press, and on a branch its
-    /// pattern and plugin, <c>none</c> where it names none. The standing answer and the landing's <c>tidy</c> stay declarations (§2.3).
+    /// pattern and plugin, <c>none</c> where it names none. The standing answer and the landing's <c>tidy</c> stay declarations (§2.3),
+    /// and so does the <c>integrate</c> step (INTEGRATE1r): the rule's graph holds it, so it is left out and said
+    /// (<see cref="IntegrateLeftOut"/>).
     /// </summary>
     public static JsonArray StepsOfCurrent(CurrentWorkflow current)
     {
         var steps = new JsonArray();
         foreach (var step in current.Steps)
         {
+            // INTEGRATE1r (F43): the rule's graph holds the `integrate` step, never a version's steps, which refuse the kind.
+            if (step.Kind == NodeKinds.Integrate) continue;
             object? Set(string name) => step.Settings.FirstOrDefault(setting => setting.Name == name)?.Value;
             JsonObject saved = step.Kind switch
             {

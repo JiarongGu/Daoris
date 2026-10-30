@@ -71,7 +71,8 @@ internal sealed class CurveMove(ChatContext context, ChatHandOver handOver)
     public async Task<SwitchChoice?> MoveAsync(
         string sessionId, DriverConfig config, Func<string, string, Task>? onEnded, CancellationToken ct = default)
     {
-        if (_context.Closing || _context.GoingOn.ContainsKey(sessionId) || new HandOverBox(_context.Home).Read(sessionId) is not null)
+        // A hand-over's box an older build left, or its move the store carries and has not begun (FOUNDATION1f-v part a), holds the record from a move.
+        if (_context.Closing || _context.GoingOn.ContainsKey(sessionId) || _handOver.Holds(sessionId))
         {
             return null;
         }

@@ -209,6 +209,16 @@ public sealed class SqliteKnowledgeStore : IKnowledgeStore, IAsyncDisposable
         return await ReadAllAsync(command, ct).ConfigureAwait(false);
     }, ct);
 
+    public Task<IReadOnlyList<KnowledgeEntry>> OfFileAsync(string repository, string relativePath, CancellationToken ct = default) =>
+        Refused<IReadOnlyList<KnowledgeEntry>>() ?? _db.RunAsync(async () =>
+        {
+            await using var command = _db.Command();
+            command.CommandText = $"SELECT {Columns} FROM entries WHERE repository = $r AND relative_path = $p;";
+            command.Parameters.AddWithValue("$r", repository);
+            command.Parameters.AddWithValue("$p", relativePath);
+            return await ReadAllAsync(command, ct).ConfigureAwait(false);
+        }, ct);
+
     public Task<IReadOnlyDictionary<string, int>> CountByRepositoryAsync(CancellationToken ct = default) => Refused<IReadOnlyDictionary<string, int>>() ?? _db.RunAsync<IReadOnlyDictionary<string, int>>(async () =>
     {
         await using var command = _db.Command();

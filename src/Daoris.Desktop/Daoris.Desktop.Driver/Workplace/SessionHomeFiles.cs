@@ -158,6 +158,8 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
         // FOUNDATION1f-vi part a: that box once the come-up imports it into the move record, set aside beside it (MoveBoxImport), which goes
         // with its record's delete as the box did, under the same name.
         new(HandOver, Place.Sessions, LimitMoveSuffix + HarnessSetAsideSuffix, false, Beside),
+        // FOUNDATION1f-v part a: a conversation's hand-over box once the come-up imports it, set aside beside it the same way.
+        new(HandOver, Place.Sessions, HandOverBoxSuffix + HarnessSetAsideSuffix, false, Beside),
         new(Spawn, Place.Spawn, ".mcp.json", false, Beside),
         new(Spawn, Place.Spawn, ".settings.json", false, Beside),
         // FABRIC-PIPELINE1b: the checks its run took, which `run-heavy` reads by the session its tree's lock names.

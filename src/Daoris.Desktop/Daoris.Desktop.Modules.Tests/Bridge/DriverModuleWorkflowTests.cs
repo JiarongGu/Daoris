@@ -48,6 +48,23 @@ public sealed class DriverModuleWorkflowTests : DriverModuleBridge
         Assert.Equal(2, limits.EnumerateObject().Count());
     }
 
+    /// <summary>INTEGRATE1r (F43): a rule carrying <c>integrate</c> draws the step after the landing, declared, with its limit said in the driver's words.</summary>
+    [Fact]
+    public async Task A_rule_carrying_integrate_is_answered_with_the_integrate_step_and_its_limit()
+    {
+        File.WriteAllText(DriverConfigPath, """{"landings":{"engine":{"form":"branch","pattern":"work/{session}","integrate":{"request":"owner"}}}}""");
+        var (module, _) = await UpAsync();
+
+        var answer = await AnswerAsync(module, "WORKFLOW_CURRENT", new { repository = "engine" });
+
+        var steps = answer.GetProperty("steps").EnumerateArray().ToList();
+        Assert.Equal(["work", "landing", "integrate"], steps.Select(each => each.GetProperty("kind").GetString()));
+        Assert.Equal("declared", steps[2].GetProperty("runtime").GetString());
+        Assert.Equal("owner", steps[2].GetProperty("settings").GetProperty("request").GetString());
+        Assert.Equal(WorkflowLimits.NotIntegratedYet, steps[2].GetProperty("limit").GetString());
+        Assert.Equal(WorkflowLimits.Says(WorkflowLimits.NotIntegratedYet), answer.GetProperty("limits").GetProperty(WorkflowLimits.NotIntegratedYet).GetString());
+    }
+
     /// <summary>A repository the registry does not hold is read as in no workspace, the `default` one's rules reaching it, and said so.</summary>
     [Fact]
     public async Task A_repository_the_registry_does_not_hold_is_read_as_in_no_workspace()

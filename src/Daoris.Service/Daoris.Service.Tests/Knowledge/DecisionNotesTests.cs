@@ -16,7 +16,8 @@ namespace Daoris.Service.Tests;
 /// </remarks>
 public sealed class DecisionNotesTests
 {
-    private static readonly JsonElement Table = ReadTable();
+    private static readonly JsonElement Table = ReadTable("decision-notes.json");
+    private static readonly JsonElement MarkTable = ReadTable("note-marks.json");
 
     /// <summary>
     /// The table's first decision, D7: every form a note takes, a fence, a glued label and a label twice. The
@@ -92,6 +93,65 @@ public sealed class DecisionNotesTests
         Assert.Contains(Labels(), row => row[2] is null);
     }
 
+    /// <summary>
+    /// A decision's marks (KNOWFRESH1a-i; the knowledge-freshness design's §3.1) as the second table gives them,
+    /// <c>tools/orient-index-fixtures/note-marks.json</c>, which <c>tools/orient-index.test.mjs</c> holds the
+    /// digest's reader to row for row: the actual text of D107.md:123, D117.md:131, D84.md:41, a <c>Superseded by</c>
+    /// and a <c>replacing</c> note read as marks, D33.md:53's parenthetical as none, and a quote matched against the
+    /// note's full label, never the 80 characters the digest keeps.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(MarkedDecisions))]
+    public void A_mark_is_read_as_the_digest_s_tool_reads_it(string id)
+    {
+        var decision = MarkTable.GetProperty("decisions").EnumerateArray().Single(d => d.GetProperty("id").GetString() == id);
+
+        var marks = DecisionNotes.Marks(Text(decision));
+
+        Assert.Equal(
+            Rows(decision, "marks"),
+            marks.Select(mark => $"{id}:{mark.Line} {mark.Kind} by {(mark.By is null ? "self" : $"D{mark.By}")}"
+                + (mark.Quote is null ? "" : $" replacing {(mark.Target is null ? "none" : $"{id}:{mark.Target}")}")));
+    }
+
+    /// <summary>
+    /// KNOWFRESH1a-ii: a host that holds a decision as entries (a fed one has no file) reads the same marks from its note
+    /// entries as the file's text gives, so a mark needs no field of its own on the wire. The entries are made as the
+    /// scanner makes them: each note's label line first in its body, its lines in the file.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(MarkedDecisions))]
+    public void The_marks_read_from_a_decision_s_note_entries_are_the_marks_of_its_text(string id)
+    {
+        var decision = MarkTable.GetProperty("decisions").EnumerateArray().Single(d => d.GetProperty("id").GetString() == id);
+        var text = Text(decision);
+        var (_, notes) = DecisionNotes.Split(text);
+        var entries = notes.Select(note => new KnowledgeEntry(
+            "r", EntryKind.Decision, Provenance.Local, $"{id} › {note.Label}", note.Body, $"docs/decisions/{id}.md",
+            note.Label, Lines: new LineSpan(note.First, note.Last))).Reverse().ToList();
+
+        Assert.Equal(DecisionNotes.Marks(text), DecisionNotes.Marks(entries));
+    }
+
+    [Fact]
+    public void The_mark_table_holds_each_form_of_mark_and_a_decision_with_none()
+    {
+        var decisions = MarkTable.GetProperty("decisions").EnumerateArray().ToList();
+        Assert.Contains(decisions, decision => decision.GetProperty("marks").GetArrayLength() == 0);
+        var rows = decisions.SelectMany(decision => Rows(decision, "marks")).ToList();
+        foreach (var form in new[] { "amended by D", "superseded by D", "by self", "replacing none", "replacing D10:" })
+        {
+            Assert.Contains(rows, row => row.Contains(form));
+        }
+    }
+
+    public static TheoryData<string> MarkedDecisions()
+    {
+        var data = new TheoryData<string>();
+        foreach (var decision in MarkTable.GetProperty("decisions").EnumerateArray()) data.Add(decision.GetProperty("id").GetString()!);
+        return data;
+    }
+
     public static TheoryData<string> Decisions()
     {
         var data = new TheoryData<string>();
@@ -129,9 +189,9 @@ public sealed class DecisionNotesTests
         return last;
     }
 
-    private static JsonElement ReadTable()
+    private static JsonElement ReadTable(string name)
     {
-        using var table = JsonDocument.Parse(File.ReadAllText(Path.Combine(Root(), "tools", "orient-index-fixtures", "decision-notes.json")));
+        using var table = JsonDocument.Parse(File.ReadAllText(Path.Combine(Root(), "tools", "orient-index-fixtures", name)));
         return table.RootElement.Clone();
     }
 

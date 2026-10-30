@@ -72,7 +72,8 @@ internal sealed class LimitMove(ChatContext context, IChatRunning runner, ChatHa
     public async Task<StartedFrom?> MoveAsync(
         string sessionId, DriverConfig config, Func<string, string, Task>? onEnded, CancellationToken ct = default)
     {
-        if (context.Closing || context.GoingOn.ContainsKey(sessionId) || new HandOverBox(context.Home).Read(sessionId) is not null) return null;
+        // A hand-over's box an older build left, or its move the store carries and has not begun (FOUNDATION1f-v part a), holds the record from a move.
+        if (context.Closing || context.GoingOn.ContainsKey(sessionId) || handOver.Holds(sessionId)) return null;
         if (!context.Turned.TryGetValue(sessionId, out var chat)) return null;
         var seen = context.Events.After(sessionId, 0).Events;
         if (LimitHeld.Of(seen) is not { } held) return null;
@@ -153,6 +154,9 @@ internal sealed class LimitMove(ChatContext context, IChatRunning runner, ChatHa
         // FOUNDATION1f-ii part a: the move's record, ended by its phase where the move goes no further before its hand.
         ConversationMove? record = null;
         var toWire = false;
+        // TAKEWAITS1: the move's reading, started as its prompt's write returns, which ends it in the store before the take is told over.
+        var read = new TaskCompletionSource<Task>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var decided = false;
         // LIMITRESUME1c: the words said while it waited for its limit, kept on its record, which the move carries after the refused turns'.
         IReadOnlyList<ChatMessage> waited = [];
         try
@@ -170,6 +174,7 @@ internal sealed class LimitMove(ChatContext context, IChatRunning runner, ChatHa
 
             if (begun.Move is not { } move) return null;
             record = move;
+            decided = true;
 
             // Never mid-turn: a word said meanwhile started its turn first, and that turn's end judges again; the old part went on before
             // anything began, so the move closes superseded.
@@ -279,11 +284,11 @@ internal sealed class LimitMove(ChatContext context, IChatRunning runner, ChatHa
                     Delivered = () =>
                     {
                         move.Wire(transfers);
-                        _ = Task.Run(async () =>
+                        read.TrySetResult(Task.Run(async () =>
                         {
                             if (moved is { Words.Count: > 0 } taking) await taking.TakeAsync(context.Service).ConfigureAwait(false);
                             await move.ReadAsync().ConfigureAwait(false);
-                        });
+                        }));
                     },
                 };
                 shown = Shown(words, handed, unkept);
@@ -299,11 +304,11 @@ internal sealed class LimitMove(ChatContext context, IChatRunning runner, ChatHa
                     Delivered = () =>
                     {
                         move.Wire([]);
-                        _ = Task.Run(async () =>
+                        read.TrySetResult(Task.Run(async () =>
                         {
                             if (waitedIds.Count > 0) await TakenOffAsync(sessionId, waitedIds, to).ConfigureAwait(false);
                             await move.ReadAsync().ConfigureAwait(false);
-                        });
+                        }));
                     },
                 };
             }
@@ -315,7 +320,7 @@ internal sealed class LimitMove(ChatContext context, IChatRunning runner, ChatHa
             if (taken && !turned && !move.Wired)
             {
                 move.Wire([]);
-                _ = move.ReadAsync();
+                read.TrySetResult(move.ReadAsync());
             }
 
             // Said once where the person wrote, naming the agent it moved to, and in the machine log, accounts by profile name (D125 point 7).
@@ -340,7 +345,22 @@ internal sealed class LimitMove(ChatContext context, IChatRunning runner, ChatHa
             if (record is not null && !toWire) await record.EndAsync().ConfigureAwait(false);
             context.GoingOn.TryRemove(sessionId, out _);
             going.TrySetResult();
+            if (decided) await TellEndedAsync(sessionId, toWire, read).ConfigureAwait(false);
         }
+    }
+
+    /// <summary>
+    /// The move is over, its record ended in the store (TAKEWAITS1): once its reading has finished, which a door that never says it wrote
+    /// bounds, the take is told over, so the words the person said while it stood and the shell held go on to the line's head.
+    /// </summary>
+    private async Task TellEndedAsync(string sessionId, bool wired, TaskCompletionSource<Task> read)
+    {
+        if (wired && await Task.WhenAny(read.Task, Task.Delay(ChatHandOver.WireBound)).ConfigureAwait(false) == read.Task)
+        {
+            await (await read.Task.ConfigureAwait(false)).ConfigureAwait(false);
+        }
+
+        handOver.Ended(sessionId);
     }
 
     /// <summary>
@@ -465,6 +485,8 @@ internal sealed class LimitMove(ChatContext context, IChatRunning runner, ChatHa
         // FOUNDATION1f-vi part a: the move's record, ended by its phase where the move goes no further before its hand.
         ConversationMove? record = null;
         var toWire = false;
+        var read = new TaskCompletionSource<Task>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var decided = false;
         try
         {
             // FOUNDATION1f-vi part a (§3.3, §13.4 step 1): decided at `old-ended` before anything is asked, so a record a move still stands for
@@ -481,6 +503,7 @@ internal sealed class LimitMove(ChatContext context, IChatRunning runner, ChatHa
 
             if (begun.Move is not { } move) return null;
             record = move;
+            decided = true;
 
             // The words said while it waited, the person's: Daoris's limit word never goes on, and was taken off before a refusal. Where its own
             // account cools and the part opens for that (LIMITSWITCH3), Daoris's own words that state a fact go too, said as Daoris's.
@@ -542,11 +565,11 @@ internal sealed class LimitMove(ChatContext context, IChatRunning runner, ChatHa
                     Delivered = () =>
                     {
                         move.Wire(transfers);
-                        _ = Task.Run(async () =>
+                        read.TrySetResult(Task.Run(async () =>
                         {
                             if (moved is { Words.Count: > 0 } taking) await taking.TakeAsync(context.Service).ConfigureAwait(false);
                             await move.ReadAsync().ConfigureAwait(false);
-                        });
+                        }));
                     },
                 };
                 shown = Shown(refused, moved?.Words ?? [], []);
@@ -563,11 +586,11 @@ internal sealed class LimitMove(ChatContext context, IChatRunning runner, ChatHa
                     Delivered = () =>
                     {
                         move.Wire([]);
-                        _ = Task.Run(async () =>
+                        read.TrySetResult(Task.Run(async () =>
                         {
                             if (waitedIds.Count > 0) await TakenOffAsync(sessionId, waitedIds, to).ConfigureAwait(false);
                             await move.ReadAsync().ConfigureAwait(false);
-                        });
+                        }));
                     },
                 };
             }
@@ -588,7 +611,7 @@ internal sealed class LimitMove(ChatContext context, IChatRunning runner, ChatHa
             if (taken && !turned && !move.Wired)
             {
                 move.Wire([]);
-                _ = move.ReadAsync();
+                read.TrySetResult(move.ReadAsync());
             }
 
             if (!taken)
@@ -608,6 +631,7 @@ internal sealed class LimitMove(ChatContext context, IChatRunning runner, ChatHa
             if (record is not null && !toWire) await record.EndAsync().ConfigureAwait(false);
             if (!holding) context.GoingOn.TryRemove(sessionId, out _);
             going.TrySetResult();
+            if (decided) await TellEndedAsync(sessionId, toWire, read).ConfigureAwait(false);
         }
     }
 

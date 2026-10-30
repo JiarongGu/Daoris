@@ -234,16 +234,18 @@ public sealed class ConversationRoutes(DriverContext context)
 
         var why = Optional(request, "why") ?? HandOverWhy.Press;
         // SESSWATCH1a (the session-watch design §2.3, §5.2): a quest's own session is handed over from its page too, through the judge
-        // `sessions hand-over` answers it by (QuestHandOver): judged and kept as a box the driver's next look takes, which stops it and
-        // carries its quest on in the same tree with the agent named. `sessionId` is null: no conversation opens here.
+        // `sessions hand-over` answers it by (QuestHandOver): judged and decided as a driven move in the store (FOUNDATION1f-v part c),
+        // which the driver's next look takes, stops it and carries its quest on in the same tree with the agent named. `sessionId` is
+        // null: no conversation opens here.
         if (_loop.Service is { } service
             && (await service.SessionRecordsAsync(cancellationToken).ConfigureAwait(false))
                 .FirstOrDefault(each => string.Equals(each.Id, id, StringComparison.Ordinal)) is { } record
             && QuestHandOver.IsQuestSession(record))
         {
+            var moves = new ConversationMoves(_loop.Home, service, _loop.Events, _loop.Output, scope: MoveTakeUpScope.LeaseHolder);
             var answer = await QuestHandOver.AskAsync(
-                    service, _loop.Home, SessionsCommand.DrivesBy(_loop.Home), id, agent, Optional(request, "account"), why, HandOverBy.Person,
-                    DateTimeOffset.UtcNow, cancellationToken)
+                    service, moves, SessionsCommand.DrivesBy(_loop.Home), id, agent, Optional(request, "account"), why, HandOverBy.Person,
+                    cancellationToken)
                 .ConfigureAwait(false);
             if (answer.Kept)
             {

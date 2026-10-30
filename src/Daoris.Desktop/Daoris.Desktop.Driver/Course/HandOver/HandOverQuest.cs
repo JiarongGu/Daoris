@@ -59,12 +59,12 @@ public sealed class HandedQuests(string home) : IWorkplaceHandedQuests
 /// <summary>
 /// *Hand a quest's session over* (MIXAGENT1a-ii, D163 point 1; the mixed-agents design §2): the quest's own session goes on with
 /// another agent when its account's allowance runs low. This is the ask's judge for a driven session with a quest, beside
-/// <see cref="HandOver"/>'s for a conversation: it refuses what cannot be handed over by a code before anything is kept, and keeps the
-/// same <see cref="HandOverBox"/> the driver's next look takes.
+/// <see cref="HandOver"/>'s for a conversation: it refuses what cannot be handed over by a code before anything is kept, and decides the
+/// driven move the driver's next look takes (FOUNDATION1f-v part c).
 /// </summary>
 /// <remarks>
 /// <b>A driven session works its quest in one turn</b>, so there is no turn's end to wait for: the look stops it, as the person's stop,
-/// and the quest is carried on in the same tree on the named agent. The judge is the look's too, run again as the box is taken.
+/// and the quest is carried on in the same tree on the named agent. The judge is the look's too, run again as the move is taken.
 /// </remarks>
 public static class QuestHandOver
 {
@@ -92,35 +92,42 @@ public static class QuestHandOver
     public static bool IsQuestSession(SessionRecord record) =>
         record is { Kind: not "chat", Quest: not null, Ask: null, Teammate: false };
 
-    /// <summary>Judge and keep the box for a quest's session of this machine's.</summary>
+    /// <summary>
+    /// Judge and decide the move for a quest's session of this machine's (FOUNDATION1f-v part c, §3.3, §13.4 step 1): the hand-over is kept as a
+    /// driven move record in the store, decided as it is asked and claimed by the run that asks, and no <c>&lt;s&gt;.hand-over.json</c> is written.
+    /// The driver's look takes it, stops the session and holds the quest on the agent named, and the carry-on it starts goes on from the same move.
+    /// A record a move still stands for, a hand-over waiting or another move under way, takes no second ask, read from the store.
+    /// </summary>
+    /// <param name="moves">The driven holder, its scope the lease holder's, whose store the move is decided in.</param>
     public static async Task<HandOverAnswer> AskAsync(
-        ServiceClient service, string home, Func<string, HandOverAgent?> drives, string id, string agent, string? account,
-        string why, string askedBy, DateTimeOffset now, CancellationToken ct = default)
+        ServiceClient service, ConversationMoves moves, Func<string, HandOverAgent?> drives, string id, string agent, string? account,
+        string why, string askedBy, CancellationToken ct = default)
     {
         var (refused, _) = await JudgeAsync(service, drives, id, agent, account, ct, agentAsk: askedBy == HandOverBy.Agent).ConfigureAwait(false);
         if (refused is not null) return refused;
 
-        var box = new HandOverBox(home);
-        if (box.Read(id) is { } waiting)
+        var named = string.IsNullOrWhiteSpace(account) ? null : account.Trim();
+        var begun = await moves.BeginAsync(
+            new MoveDecision(id, MoveExecutors.Driven, MoveHows.Brief, why, askedBy) { Agent = agent, Account = named }, ct).ConfigureAwait(false);
+        if (begun.Move is not null)
         {
-            return HandOver.Refused(HandOver.Waiting, $"{id} is already waiting to be handed over to {waiting.Agent}.");
+            return new HandOverAnswer(true, null, $"it is stopped at the driver's next look, then goes on in the same tree with {agent}.");
         }
 
-        try
+        if (begun.Standing is { } standing)
         {
-            box.Write(id, new HandOverRequest(agent, string.IsNullOrWhiteSpace(account) ? null : account.Trim(), why, askedBy, now));
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-        {
-            return new HandOverAnswer(false, null, $"your ask could not be kept: {error.Message}");
+            return HandOver.Refused(
+                HandOver.Waiting, standing is { Agent: { } waiting } && ConversationMoves.WaitsToBeTaken(standing)
+                    ? $"{id} is already waiting to be handed over to {waiting}."
+                    : $"{id} has a move under way, which an ask waits behind.");
         }
 
-        return new HandOverAnswer(true, null, $"it is stopped at the driver's next look, then goes on in the same tree with {agent}.");
+        return new HandOverAnswer(false, null, $"your ask could not be kept: {begun.Refused}");
     }
 
     /// <summary>
     /// What can be known of a quest's hand-over before anything is kept or taken: the refusal by its code, or the record as the
-    /// ledger holds it. Judged again as the look takes the box, since the quest, its take or the roster may have changed meanwhile.
+    /// ledger holds it. Judged again as the look takes the move, since the quest, its take or the roster may have changed meanwhile.
     /// </summary>
     /// <param name="agentAsk">
     /// The session's own agent asked (MIXAGENT1c): a park it ended its turn on is that ask's, not a question for the person, so it is

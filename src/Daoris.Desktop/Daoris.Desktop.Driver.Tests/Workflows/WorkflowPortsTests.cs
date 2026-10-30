@@ -237,6 +237,73 @@ public sealed class WorkflowPortsTests
     }
 
     /// <summary>
+    /// INTEGRATE1n part n3 (F50): the run's view asks the integration door which of its nodes promoted, and offers a promoted <c>integrate</c> no
+    /// stop; one still queued is offered it, and a run whose graph holds no <c>integrate</c> asks the door nothing.
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task A_run_view_offers_a_promoted_integrate_no_stop(bool promoted)
+    {
+        var home = Path.Combine(Path.GetTempPath(), "daoris-graph-run-" + Guid.NewGuid().ToString("N")[..8]);
+        try
+        {
+            RunHome.Bind(home, "q1", RunHome.SaveGraph(home, """
+                {"schemaVersion":2,"entries":["claimed"],"end":"integrate",
+                 "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},{"id":"handed","kind":"handed","version":1,"reach":"observed"},
+                          {"id":"integrate","kind":"integrate","version":1,"reach":"waited"}],
+                 "wires":[{"id":"c>h","kind":"after","from":"claimed","to":"handed"},{"id":"h>i","kind":"after","from":"handed","to":"integrate"}]}
+                """), At);
+            using var service = new ServiceClient("http://stand-in", null, new HttpClient(new StandInService()));
+            var door = new PromotingDoor(promoted, At);
+            var sources = new WorkflowRunSources(service, home, DriverConfig.Empty, [], _ => "aurora") { Integration = door };
+            var unit = RunUnits.IdOf("q1");
+            var tip = "abcdef0123456789abcdef0123456789abcdef01";
+            var records = new MemoryRecords();
+            records.Records[unit] = new NodeRecord(unit)
+            {
+                Statuses = new Dictionary<string, NodeStatus>
+                {
+                    ["integrate"] = NodeLifecycle.Start(unit, "integrate") with { State = NodeStates.Active, Attempt = 1, Unreconciled = 1 },
+                },
+                Attempts =
+                [
+                    new NodeAttempt("integrate", 1, IntegrateNodes.Sender,
+                        new WorkPerformCall(unit, "integrate", 1, "i-1", IntegrateNodes.Key(unit, tip), tip, [], At), AttemptStates.Settled) { RecordedAt = At },
+                ],
+            };
+
+            var read = await WorkflowRunReader.ReadAsync(new WorkflowRunAsk(Quest: "q1"), sources, records);
+
+            var step = Assert.Single(Assert.Single(read.Runs).Steps, each => each.Step.Id == "integrate");
+            Assert.Equal(promoted ? null : [NodeWordActs.Stop], step.Acts);
+            Assert.Equal(1, door.Asked);
+        }
+        finally
+        {
+            try { Directory.Delete(home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        }
+    }
+
+    private sealed class PromotingDoor(bool promoted, DateTimeOffset at) : IIntegrationDoor
+    {
+        public int Asked { get; private set; }
+
+        public Task<IntegrationRequest?> FindAsync(string unit, string tip, CancellationToken ct)
+        {
+            Asked++;
+            return Task.FromResult<IntegrationRequest?>(new IntegrationRequest("request-1", "engine", "default", "feature/q1", tip, IntegrationRoutes.Node, "main",
+                IntegrationRequester.NodeStart, new LandingIntegrate().Resolved(), at) { Unit = unit });
+        }
+
+        public Task<IntegrationAdmission> AskAsync(IntegrationAsk ask, DriverConfig config, CancellationToken ct) => throw new InvalidOperationException();
+
+        public Task<bool> PromotedAsync(IntegrationRequest request, CancellationToken ct) => Task.FromResult(promoted);
+
+        public Task<bool> DropAsync(IntegrationRequest request, CancellationToken ct) => Task.FromResult(false);
+    }
+
+    /// <summary>
     /// A run is bound at its first start through the ports: the chain's first quest names it, a named workflow's newest version is
     /// kept and said, a later quest of the same run binds nothing, and a service that does not answer binds nothing and says why.
     /// </summary>

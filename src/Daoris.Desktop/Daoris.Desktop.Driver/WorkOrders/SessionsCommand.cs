@@ -1741,16 +1741,18 @@ public static class SessionsCommand
     /// </summary>
     private static async Task<int> HandOverAsync(SessionsWorld world, SessionsAsk ask, TextWriter output, CancellationToken ct)
     {
-        // A quest's own session (MIXAGENT1a-ii, D163 point 1) is no conversation: it opens none here. Judged and kept as a box the
-        // driver's next look takes, which stops it and carries its quest on in the same tree with the agent named.
+        // A quest's own session (MIXAGENT1a-ii, D163 point 1) is no conversation: it opens none here. Judged and decided as a driven move in
+        // the store (FOUNDATION1f-v part c), which the driver's next look takes: it stops the session and carries its quest on in the same tree
+        // with the agent named. This run decides it and goes no further, so the loop's look receives it from this run, alive or not.
         var record = (await world.Service.SessionRecordsAsync(ct).ConfigureAwait(false))
             .FirstOrDefault(each => string.Equals(each.Id, ask.Ids[0], StringComparison.Ordinal));
         if (record is not null && QuestHandOver.IsQuestSession(record))
         {
             var roster = world.Drives ?? DrivesBy(world.Home);
+            var moves = new ConversationMoves(
+                world.Home, world.Service, new SessionEvents(DaorisHome.Entry(world.Home, HomeEntry.Sessions)), scope: MoveTakeUpScope.LeaseHolder);
             var answer = await QuestHandOver.AskAsync(
-                world.Service, world.Home, roster, ask.Ids[0], ask.Agent!, ask.Account, HandOverWhy.Press, HandOverBy.Person,
-                DateTimeOffset.UtcNow, ct).ConfigureAwait(false);
+                world.Service, moves, roster, ask.Ids[0], ask.Agent!, ask.Account, HandOverWhy.Press, HandOverBy.Person, ct).ConfigureAwait(false);
             output.WriteLine($"sessions: {answer.Message}");
             if (answer.Kept)
             {

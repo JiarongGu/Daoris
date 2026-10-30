@@ -106,7 +106,8 @@ start) and `LineCourseTests` (a case added to a ported suite), and for a new cod
 test. A Process or Git class that calls what the builder changed is its own to run too, found by searching the test projects for the
 changed method's name, not by the class's name: batch s's candidate failed `CommandShimTests`, a Process class that prepares a
 driven start, after a member moved that start's prompt onto its input, and two more candidate failures that day were tests reading
-a path or a prompt no builder searched for. Before a batch is queued, the parent runs the driver's, the modules' and the service's fast halves whole on it: on
+a path or a prompt no builder searched for. A builder that changes a public signature in the driver builds the modules' and the
+app's projects too, which call it: batch u's modules did not compile after one did. Before a batch is queued, the parent runs the driver's, the modules' and the service's fast halves whole on it: on
 2026-10-30 that found batch s's three census misses before a candidate did. The parent, running a class with `--no-build`, builds that
 class's own project first: a build of another project leaves the test assembly stale, and twice that day it read as a
 red that was not there.

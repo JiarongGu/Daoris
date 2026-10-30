@@ -1,0 +1,72 @@
+{
+  "_why": "KNOWFRESH1a-i (D220's KNOWFRESH1a note; docs/2026-10-30-knowledge-freshness-design.md §3.1; .claude/knowledge/twins.md): the mark a decision's note carries, one table its two readers are held to row for row. tools/orient-index.mjs (readMarks) reads it for the gate in `--check`, tools/orient-index.test.mjs holds it here; the service's DecisionNotes.Marks reads it for the knowledge index, and DecisionNotesTests holds it here. A mark is a note whose label, the emphasised span that opens its line, opens `Amended by D<n>` or `Superseded by D<n>`, the rest free; a `, replacing \"<label>\"` quote, which must be the full text of an earlier note's label and never the digest's cut one, targets that note, and a note with such a quote and no `by D<n>` is the same decision's own amendment (`by self`). Each decision: its file's lines, its heading first and a last empty line for the newline a file ends with; and its marks, one row each, `<id>:<line> <amended|superseded> by <D<n>|self>` with ` replacing <id>:<line>` for the earlier note the quote names or ` replacing none` for a quote that names no note. A parenthetical inside a paragraph, and a label that holds the words later than its opening, read unmarked. The lines are the actual text of D107.md:123, D117.md:131, D84.md:41 and D33.md:53, and the long note is one whose label the digest cuts.",
+
+  "decisions": [
+    {
+      "id": "D10",
+      "why": "each form a mark takes: bold and italic, a colon and a period, a row or a date or a section after the decision, a label of a task's note, Superseded, undated, a quote of a full label, of a cut one and of an earlier mark, a same-decision amendment, and four notes that are no mark",
+      "lines": [
+        "## D10 — Older (2026-09-01)",
+        "",
+        "**Decision (OLD1, 2026-09-01).** The first rule.",
+        "",
+        "**Built 2026-09-02 (OLD1a): the table.** It reads.",
+        "",
+        "**Built 2026-09-03 (OLD1c): a note whose label runs past the eighty characters the digest keeps, to the very end of its span.** Text.",
+        "",
+        "**Amended by D158's ASKSCOPE1c note, 2026-10-19:** Ask Daoris in a workspace's room reads that workspace's readable checkouts",
+        "",
+        "*Amended by D124 (WSSETUP5, 2026-10-01), §6.5: the driver registers a repository from what its line declares, after Daoris",
+        "reads it.*",
+        "",
+        "**Amended by D85 (2026-09-28).** *Which form* is answered: embedded. *Daoris's own UI stays on",
+        "the page.",
+        "",
+        "*Superseded by D40.* The whole of it goes, and an undated label is a note.",
+        "",
+        "**Amended by D121 (TOOLS5, 2026-10-01), replacing \"Built 2026-09-02 (OLD1a): the table.\":** the read changes.",
+        "",
+        "**Superseded by D30 (OLD2, 2026-10-05), replacing \"Built 2026-09-03 (OLD1c): a note whose label runs past the eighty characters the digest keeps, to the very end of its span.\":** the long note goes.",
+        "",
+        "**Amended by D30 (OLD2b, 2026-10-05), replacing \"Built 2026-09-03 (OLD1c): a note whose label runs past the eighty characters…\":** the digest's cut label names no note.",
+        "",
+        "**Amended (OLD3, 2026-10-06), replacing \"Amended by D85 (2026-09-28).\": the same decision amends its own earlier note.**",
+        "",
+        "**Amended (OLD4, 2026-10-07): no quote and no decision, so no mark.**",
+        "",
+        "**Built 2026-10-08 (OLD1d): a label that does not open with the words, Amended by D90.** The words later in a label mark nothing.",
+        "",
+        "**Built 2026-10-09 (OLD1e): an inline remark.** A sentence that was read and ignored.",
+        "*(Amended by D70, 2026-09-24: registered is addressable; adopted is not.)* It sits inside a paragraph, so it is no note.",
+        ""
+      ],
+      "marks": [
+        "D10:9 amended by D158",
+        "D10:11 amended by D124",
+        "D10:14 amended by D85",
+        "D10:17 superseded by D40",
+        "D10:19 amended by D121 replacing D10:5",
+        "D10:21 superseded by D30 replacing D10:7",
+        "D10:23 amended by D30 replacing none",
+        "D10:25 amended by self replacing D10:14"
+      ]
+    },
+    {
+      "id": "D11",
+      "why": "a decision with a note and no mark reads none, and a heading's words are no emphasised span",
+      "lines": [
+        "## D11 — Plain (2026-09-02)",
+        "",
+        "**Decision (PLAIN1, 2026-09-02).** The rule.",
+        "",
+        "### Amended by D99, 2026-09-03",
+        "",
+        "A dated heading is a note, and a heading is no emphasised span, so it marks nothing.",
+        "",
+        "**Built 2026-09-04 (PLAIN1a): the part.** Done.",
+        ""
+      ],
+      "marks": []
+    }
+  ]
+}

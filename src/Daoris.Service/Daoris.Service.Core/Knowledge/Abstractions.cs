@@ -40,6 +40,15 @@ public interface IKnowledgeStore
     /// <summary>One entry by its <see cref="KnowledgeEntry.Id"/>, or null.</summary>
     Task<KnowledgeEntry?> FindAsync(string id, CancellationToken ct = default);
 
+    /// <summary>
+    /// The entries of one file of one repository, so a hit's standing reads the notes of its own decision and no other
+    /// (KNOWFRESH1a-ii). A store that answers it without reading every entry overrides this.
+    /// </summary>
+    async Task<IReadOnlyList<KnowledgeEntry>> OfFileAsync(string repository, string relativePath, CancellationToken ct = default) =>
+        (await AllAsync(ct).ConfigureAwait(false))
+            .Where(entry => entry.Repository == repository && entry.RelativePath == relativePath)
+            .ToList();
+
     /// <summary>How many entries each repository holds — a count, never a read of every body (REV3 C1).</summary>
     Task<IReadOnlyDictionary<string, int>> CountByRepositoryAsync(CancellationToken ct = default);
 

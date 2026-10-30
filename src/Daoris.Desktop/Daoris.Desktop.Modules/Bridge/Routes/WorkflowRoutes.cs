@@ -370,7 +370,9 @@ public sealed class WorkflowRoutes(DriverContext context)
             return said;
         }
 
-        var done = await Task.Run(() => RunNodeWords.Word(records, run, node, act, words), cancellationToken).ConfigureAwait(false);
+        // INTEGRATE1n part n3 (F50): a stop reads the integration record first, so one whose member promoted is refused here, as at the terminal.
+        var done = await Task.Run(() => RunNodeWords.WordAsync(records, NodeRuntime.HomeDoor(_loop.Home), run, node, act, words, ct: cancellationToken), cancellationToken)
+            .ConfigureAwait(false);
         if (done.Done) _loop.Nudge();
         return new { done.Run, done.Node, done.Act, done.Done, done.Refused, Message = RunNodeWords.Said(done) };
     }
