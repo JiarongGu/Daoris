@@ -18,6 +18,7 @@ import { HeldDiscardAsk, HeldDiscardButton, heldDiscardable } from './HeldDiscar
 import { type Answered, InlineConfirm } from '../InlineConfirm';
 import { LandedNote } from './LandedNote';
 import { landsOnBranch } from './Lands';
+import { EntryAccept, type EntryPress } from './EntryAccept';
 import { LeftOutLines, RebaseAsk } from './LandingSync';
 import type { DiffLayout } from './PatchView';
 import { opinionHolds, opinionState } from '../gates/opinion';
@@ -93,8 +94,10 @@ const LANDING_WORDS: Record<string, string> = {
  * Desktop-only, structurally: the hook is gated on the bridge, so in a browser this never asks.
  */
 export function DiffPane({
-  session, record, title = null, hasTree = false, onSendBack, onPreview, discards = null, onDiscardTree, entry = null, ask = null,
+  session, record, title = null, hasTree = false, onSendBack, onPreview, discards = null, onDiscardTree, entry = null, ask = null, entryPress = null,
 }: {
+  /** The session's one *Accept…* (REVIEWFLOW1a, D168): drawn in the place of this part's own, the frame's, its ask open in one place. */
+  entryPress?: EntryPress | null;
   session: string | null;
   /** The line of work the session is a part of (its entry's key), whose one Accept holds this one's while it lands (ACCEPTALL1h). */
   entry?: string | null;
@@ -458,7 +461,8 @@ export function DiffPane({
 
       <div className="flex flex-wrap items-center gap-2">
         {leftOutOf && discardTree}
-        {canAccept && !conflict && (
+        {entryPress && <EntryAccept {...entryPress} draw="press" />}
+        {!entryPress && canAccept && !conflict && (
           <Button
             variant={leftOutOf ? 'default' : 'primary'}
             // A press that could only be refused is not offered (UX5 U66): the sentence above says why (STANDSREFUSE1).
@@ -504,6 +508,7 @@ export function DiffPane({
 
         {!leftOutOf && discardTree}
       </div>
+      {entryPress && <EntryAccept {...entryPress} draw="ask" />}
       {treeHere && !heldPress && confirmingDiscard && (
         /* The unforced press's refusal named what would go and armed this (above): it is the ask's own sentence, so the foot
            does not say it twice. The forced press stays open until the driver answers, and a refusal is said inside the ask

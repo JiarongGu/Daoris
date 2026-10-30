@@ -4,7 +4,9 @@ import { useTranslation } from 'react-i18next';
 import { cn } from '../../lib/cn';
 import { InTheme } from '../../plugins/storyIcons';
 import { chinese } from '../../design/storyLanguage';
+import { storyWidths } from '../../design/storyWidths';
 import { Button, EmptyState } from '../../design/ui';
+import { EntryAccept } from './EntryAccept';
 import type { DiffFile, LineBehind, ReviewKnown } from './diff';
 import type { DiffLayout } from './PatchView';
 import { NothingToLand, ReviewFailed, ReviewFiles, ReviewHead, ReviewReading } from './ReviewFrame';
@@ -269,6 +271,32 @@ function NothingBeyond() {
     </Pane>
   );
 }
+
+/**
+ * REVIEWFLOW1a (D168's table): the review's foot, where the person's reading stops, draws the session's *Accept all* in the part's
+ * own *Accept*'s place, with *Discard tree* beside it, at the width the view is given.
+ */
+function SessionAcceptAtTheFoot({ asking = false }: { asking?: boolean }) {
+  const { t } = useTranslation();
+  const [open, setOpen] = useState(asking);
+  return (
+    <footer className="grid w-full shrink-0 gap-2 border border-line bg-page px-3 py-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <EntryAccept scope="entry" offered={3} open={open} onOpen={setOpen} draw="press" onLand={() => {}} />
+        <Button>{t('work.review.discard')}</Button>
+      </div>
+      <EntryAccept scope="entry" offered={3} open={open} onOpen={setOpen} draw="ask" onLand={() => {}} />
+    </footer>
+  );
+}
+
+export const SessionAcceptAtTheFootWide: Story = { render: () => <SessionAcceptAtTheFoot />, decorators: [storyWidths.wide] };
+export const SessionAcceptAtTheFootHalf: Story = { render: () => <SessionAcceptAtTheFoot />, decorators: [storyWidths.half] };
+export const SessionAcceptAtTheFootNarrow: Story = { render: () => <SessionAcceptAtTheFoot />, decorators: [storyWidths.narrow] };
+export const SessionAcceptAtTheFootChinese: Story = { render: () => <SessionAcceptAtTheFoot />, decorators: [storyWidths.half, chinese] };
+export const SessionAcceptAtTheFootNarrowChinese: Story = { render: () => <SessionAcceptAtTheFoot />, decorators: [storyWidths.narrow, chinese] };
+export const SessionAcceptAtTheFootDark: Story = { render: () => <SessionAcceptAtTheFoot />, decorators: [storyWidths.half, dark] };
+export const SessionAcceptAtTheFootAskingNarrowDark: Story = { render: () => <SessionAcceptAtTheFoot asking />, decorators: [storyWidths.narrow, dark] };
 
 /** Nothing beyond the line (REVIEWBASE1), where "Nothing landed" would be false, and nothing to land (REVIEWBASE4). */
 export const NothingBeyondTheLine: Story = { render: () => <NothingBeyond /> };

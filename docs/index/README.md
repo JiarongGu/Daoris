@@ -57,9 +57,9 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/quests/QuestPage.tsx` | 59 | 1069 |
 | `src/Daoris.Web/src/quests/QuestsView.test.tsx` | 75 | 1464 |
 | `src/Daoris.Web/src/work/WorkFrame.conversation.test.tsx` | 61 | 1192 |
-| `src/Daoris.Web/src/work/WorkFrame.landed.test.tsx` | 113 | 1974 |
+| `src/Daoris.Web/src/work/WorkFrame.landed.test.tsx` | 118 | 2053 |
 | `src/Daoris.Web/src/work/WorkFrame.test.tsx` | 97 | 1802 |
-| `src/Daoris.Web/src/work/WorkFrame.tsx` | 162 | 2794 |
+| `src/Daoris.Web/src/work/WorkFrame.tsx` | 163 | 2812 |
 | `src/Daoris.Web/src/work/WorkFrame.words.test.tsx` | 52 | 953 |
 | `src/Daoris.Web/src/work/attention/AttentionBand.test.tsx` | 54 | 879 |
 | `src/Daoris.Web/src/work/attention/AttentionRow.test.tsx` | 43 | 828 |
@@ -73,7 +73,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/work/conversation/conversation.ts` | 52 | 1021 |
 | `src/Daoris.Web/src/work/frame/frame.tsx` | 44 | 932 |
 | `src/Daoris.Web/src/work/head/SessionHead.test.tsx` | 72 | 1358 |
-| `src/Daoris.Web/src/work/head/SessionHead.tsx` | 40 | 709 |
+| `src/Daoris.Web/src/work/head/SessionHead.tsx` | 41 | 716 |
 | `src/Daoris.Web/src/work/noteLines.test.ts` | 103 | 1494 |
 | `src/Daoris.Web/src/work/noteLines.ts` | 57 | 968 |
 | `src/Daoris.Web/src/work/rail/SessionRail.test.tsx` | 56 | 1103 |
