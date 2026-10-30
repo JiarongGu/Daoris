@@ -377,7 +377,8 @@ internal sealed class OpinionDeliverer(LoopContext context, DriverOpinions opini
             : null;
         Task<ReviewerChoice> Walk(IReadOnlyList<ReviewerPassed>? passed) =>
             ReviewerChoice.ChooseAsync(
-                _context.Harnesses, asked.Rule with { Reviewers = reviewers }, wrote, _context.Config, asked.Workspace, ct, passed: passed, order: order);
+                _context.Harnesses, asked.Rule with { Reviewers = reviewers }, wrote, _context.Config, asked.Workspace, ct, passed: passed, order: order,
+                catalogue: () => RoleCatalog.ReadHome(_context.Harnesses.Home));
         var choice = await Walk(null).ConfigureAwait(false);
         var ask = asked with
         {

@@ -55,6 +55,9 @@ public enum QuestPublishRefusal
     /// <summary>A short title past <see cref="QuestTitles.MaxShort"/> characters, or over a line break (SESSUX1j).</summary>
     BadShortTitle,
 
+    /// <summary>A weight that is neither <c>design</c> nor <c>exact</c> (FOUNDATION1x).</summary>
+    BadWeight,
+
     /// <summary>
     /// The same words as a quest this machine cleared after its remote numbered it (HIST1b, D153 point 3): the remote holds
     /// it closed, and would refuse a fresh copy on every pass, so a new ask is a new title.
@@ -123,6 +126,12 @@ public sealed record QuestAsk(string From, string To, string Title, string Body)
     /// door refuses the same one. Null or blank is none, and the quest is then named from its words.
     /// </summary>
     public string? Short { get; init; }
+
+    /// <summary>
+    /// The mark on the work (FOUNDATION1x), <see cref="QuestWeights"/>: <c>design</c> where the publisher or the intake reads the quest
+    /// as design or decision work. Judged here, so every door refuses the same one. Null or blank is none.
+    /// </summary>
+    public string? Weight { get; init; }
 
     /// <summary>
     /// The chain's review choice (REVIEWENV1b, D154 point 3), inherited by each step: the person's, with any words they give,
@@ -621,6 +630,12 @@ public sealed class QuestExchange(
             return new(QuestPublishRefusal.BadShortTitle, unfitShort, Quest: null, addressable);
         }
 
+        var (weight, unfitWeight) = QuestWeights.Judge(ask.Weight);
+        if (unfitWeight is not null)
+        {
+            return new(QuestPublishRefusal.BadWeight, unfitWeight, Quest: null, addressable);
+        }
+
         // A chain is judged now, while the person or the intake composing it can still act on the
         // answer — not at a close nobody is watching (D65 §4). Whether this circle shares with a team
         // is this machine's wiring; whether a receiver is shared is its registration (design §8).
@@ -670,7 +685,7 @@ public sealed class QuestExchange(
 
         var quest = await quests.PublishAsync(
             from, to, title, body, now, home, carried.Links, carried.Attachments, ask.Then, ct: ct,
-            publishedBy: ask.PublishedBy, lanes: lanes, requirements: required, shortTitle: shortTitle, review: review)
+            publishedBy: ask.PublishedBy, lanes: lanes, requirements: required, shortTitle: shortTitle, review: review, weight: weight)
             .ConfigureAwait(false);
 
         var caution = !target.Adopted
@@ -1128,6 +1143,11 @@ public sealed class QuestExchange(
         if (QuestTitles.Judge(asked.Short).Refusal is { } unfitShort)
         {
             return $"Quest `#{asked.Id}`: {unfitShort}";
+        }
+
+        if (QuestWeights.Judge(asked.Weight).Refusal is { } unfitWeight)
+        {
+            return $"Quest `#{asked.Id}`: {unfitWeight}";
         }
 
         var carried = Judge(new QuestAsk(asked.From, asked.To, asked.Title, asked.Body)

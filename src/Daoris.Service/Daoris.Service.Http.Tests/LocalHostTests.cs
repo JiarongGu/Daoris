@@ -705,6 +705,31 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
+    /// FOUNDATION1x: a quest published marked design answers its weight, as the driver reads it to start the work on the role taking
+    /// design; an unmarked one answers none, and a weight that is neither design nor exact is refused, 400.
+    /// </summary>
+    [Fact]
+    public async Task The_quest_door_answers_the_weight_it_was_published_with()
+    {
+        var marked = await host.PostAsync("/api/quests", new
+        {
+            from = "Asker", to = "Keeper", title = "Decide how the frame is capped", body = "Two ways.", weight = "design",
+        });
+        Assert.Equal(200, marked.Status);
+        Assert.Equal("design", marked.Json.GetProperty("quest").GetProperty("weight").GetString());
+
+        var plain = await host.PostAsync("/api/quests", new { from = "Asker", to = "Keeper", title = "Cap the frame's work", body = "It stalls." });
+        Assert.Equal(200, plain.Status);
+        Assert.False(plain.Json.GetProperty("quest").TryGetProperty("weight", out var none) && none.ValueKind != System.Text.Json.JsonValueKind.Null);
+
+        var refused = await host.PostAsync("/api/quests", new
+        {
+            from = "Asker", to = "Keeper", title = "Heavy work", body = "b", weight = "heavy",
+        });
+        Assert.Equal(400, refused.Status);
+    }
+
+    /// <summary>
     /// DRIFT1c: the quest door keeps working for a client that names no requirements, answering the quest
     /// with none; a repository naming some is asking on no ask, so there is nothing to quote, 400.
     /// </summary>

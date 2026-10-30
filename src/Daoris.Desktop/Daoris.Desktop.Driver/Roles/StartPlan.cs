@@ -348,11 +348,19 @@ internal sealed class StartPlan
         if (record?.Asked?.Agent is { Length: > 0 } asked) return asked;
         if (record?.Adapter is { Length: > 0 } opened) return opened;
         var role = bound is { Length: > 0 } && catalogue is not null
-            ? catalogue.Slots.Any(slot => slot.Id == bound && slot.Role is not null) ? bound : catalogue.RoleFor(work, place).Role?.Id ?? RoleOf(work)
+            ? BoundRole(bound, work, catalogue, place)
             : record?.Actor is { } actor && ActorChoices.Ids.Contains(actor, StringComparer.Ordinal) ? actor : RoleOf(work);
         return ActorChoices.FirstAgent(role, config)
             ?? throw new DriverException($"{ActorWords.Name(role)} is off on this machine, so a record of its work does not go on until it is given a choice.");
     }
+
+    /// <summary>
+    /// The role a continuation goes on with when its binding names <paramref name="bound"/> (FOUNDATION1x): that role while the catalogue
+    /// still holds it, else the role that takes <paramref name="work"/> now, as a removed role's record continues. The quest path and the
+    /// chat path read it alike.
+    /// </summary>
+    public static string BoundRole(string bound, string work, RoleCatalog catalogue, RolePlace place) =>
+        catalogue.Slots.Any(slot => slot.Id == bound && slot.Role is not null) ? bound : catalogue.RoleFor(work, place).Role?.Id ?? RoleOf(work);
 
     /// <summary>
     /// The agent a start of <paramref name="work"/> is named for before its walk runs, for the look's report of a wait and a hold the walk
