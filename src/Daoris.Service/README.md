@@ -188,7 +188,9 @@ network, and nothing in the CLI may open a socket. So the CLI has no quest comma
 list (`KnowledgeServer.ToolTypes`, held by `McpToolRegistrationTests`), the driver's `BrainstormPermissions.ConnectorTools` and its
 two `golden/brainstorm-rules` files (a pass is denied every tool but its own), and, as its contract decides, the default allow list
 (`Permissions.cs` with the CLI's twin `permissions.ts`, each held by the other's test) and a reviewer's and a helper's
-(`OpinionPermissions`). `McpToolDescriptionTests` refuses a name that says `history`, `clear` (bar Ask Daoris's `clear_propose`)
+(`OpinionPermissions`). The call layer's table (`CallTable`, FOUNDATION1r) places it for every work in
+`fixtures/call-table.json` and classes it in `ToolClasses`: until then every session the driver names is refused it.
+`McpToolDescriptionTests` refuses a name that says `history`, `clear` (bar Ask Daoris's `clear_propose`)
 or `forget`, since no tool clears a record, and one that says `evidence` or `verdict`.
 
 **A quest carries links and files** (D65 §2). A link is an absolute http or https address, refused
