@@ -21824,3 +21824,11 @@ The row is quoted by its head; its whole text and proof are the foundation desig
 The row is quoted by its head; its whole text and proof are the foundation design's Part B table, row 1o, and §19.11.
 
 **Outcome** 2026-10-30: against a host whose marks keep `opens` 2 and the head, a word said to a record that winds up or moves is kept on `said` and goes on with the part that continues it; a chat's hold keeps and queues; `held-words.json` is read once and written only for a host without the marks, which keeps today's hold. Owed: an older shell's come-up over the new path (the test host answers no `head`), and the say-to-wire latency on the install. Detail in D212's FOUNDATION1o note.
+
+## FOUNDATION1w — the catalogue of working roles, read beside (2026-10-30, D212)
+
+> | **1w** the catalogue of working roles, read beside (round 6, *C5-2.5*, *O5-F5*) | the work vocabulary alone, its capabilities the work codes, and the working shape; … read by nothing | the seed reproduces today's every start case; … |
+
+The row is quoted by its head; its whole text and proof are the foundation design's Part B table, row 1w.
+
+**Outcome** 2026-10-30: store migration 10 adds `roles` and `role_revisions`; `RoleCatalog.Read` over the seed per id, `RoleFor` by the most specific scope, `Judge` with eight closed codes refusing an appointed record first, one write keeping revisions, and the projection narrowing Intake and Ask Daoris for an older build while the store's own keys are never narrowed; its census holds every writer. Read by nothing: row x wires the starts. Detail in D212's FOUNDATION1w note.
