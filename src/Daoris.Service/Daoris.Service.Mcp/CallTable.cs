@@ -9,11 +9,10 @@ public sealed record CallRefusal(string Code, string Text);
 /// the table does not know, refuse.
 /// </summary>
 /// <remarks>
-/// <c>McpRoleFilterTests</c> holds every cell to <c>fixtures/call-table.json</c> over the host's registration. Each work keeps what it
-/// was served before the table, at the filter and at the boxes that judged by the work alone, which keep their checks as their store's
-/// guard: the channel's, Ask Daoris's checkouts, housekeeping and settings, and a brainstorm's turn. The foundation design §7 changes
-/// two answers: a named session the connector cannot place is served the reads alone (row 10), and a reviewer and a brainstorm's voice
-/// only what their handed rules allow (row 11).
+/// <c>McpRoleFilterTests</c> holds every cell to <c>fixtures/call-table.json</c> over the host's registration. A box that judges by the
+/// work alone keeps its check as its store's guard, and the table refuses the same cells first in its words: the channel's, Ask Daoris's
+/// checkouts, housekeeping and settings, and a brainstorm's turn. A named session the connector cannot place is served the reads alone
+/// (the foundation design §7 row 10), and a reviewer and a brainstorm's voice only what their handed rules allow (row 11).
 /// </remarks>
 public static class CallTable
 {

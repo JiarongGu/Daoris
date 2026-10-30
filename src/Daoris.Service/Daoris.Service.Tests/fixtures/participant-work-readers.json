@@ -422,8 +422,7 @@
   "service": {
     "Core/Asks/Channel.cs": {
       "reads": "tells",
-      "row": "1r",
-      "note": "refuses a channel post to a record that serves or reads an opinion; the call layer's (§2.3)"
+      "note": "refuses a channel post to a record that serves or reads an opinion, its store's own guard; the call layer's table (row 1r, §2.3) refuses the same cells first"
     },
     "Core/Asks/History.cs": {
       "reads": "other",
@@ -431,18 +430,15 @@
     },
     "Core/Help/CheckoutBox.cs": {
       "reads": "tells",
-      "row": "1r",
-      "note": "lets only Ask Daoris's record call its box; the call layer's (§2.3)"
+      "note": "lets only Ask Daoris's record call its box, its store's own guard; the call layer's table (row 1r, §2.3) refuses the same cells first"
     },
     "Core/Help/HousekeepingBox.cs": {
       "reads": "tells",
-      "row": "1r",
-      "note": "lets only Ask Daoris's record call its box; the call layer's (§2.3)"
+      "note": "lets only Ask Daoris's record call its box, its store's own guard; the call layer's table (row 1r, §2.3) refuses the same cells first"
     },
     "Core/Help/SettingsBox.cs": {
       "reads": "tells",
-      "row": "1r",
-      "note": "lets only Ask Daoris's record call its box; the call layer's (§2.3)"
+      "note": "lets only Ask Daoris's record call its box, its store's own guard; the call layer's table (row 1r, §2.3) refuses the same cells first"
     },
     "Core/Remote/SessionSync.cs": {
       "reads": "tells",
