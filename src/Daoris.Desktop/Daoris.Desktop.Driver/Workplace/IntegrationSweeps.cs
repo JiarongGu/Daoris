@@ -77,7 +77,8 @@ internal sealed class IntegrationSweeps(IntegrationStore store, string treesRoot
         return swept;
     }
 
-    private async Task<IntegrationSwept> GoOnAsync(IntegrationClaim claim, IntegrationSweepAsks ask, CancellationToken ct)
+    /// <summary>Go on with a candidate <paramref name="claim"/> holds, from the step its resume names; the line's run calls it too (INTEGRATE1g).</summary>
+    internal async Task<IntegrationSwept> GoOnAsync(IntegrationClaim claim, IntegrationSweepAsks ask, CancellationToken ct)
     {
         var resumed = await new IntegrationSteps(store).ResumeAsync(claim, ask.Promote.Root, ct).ConfigureAwait(false);
         switch (resumed.Kind)

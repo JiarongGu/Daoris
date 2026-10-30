@@ -207,10 +207,18 @@ public sealed class NodeRuntime(
 
     /// <summary>
     /// The one door a unit's <c>integrate</c> asks for its landed branch (INTEGRATE1n part n2; the integration design §17.4): none by default, so
-    /// a runtime nobody wired starts none and reconciles none, and its node waits ready. The watch sets it (<see cref="HomeDoor"/>), and nothing
-    /// in this part runs an integration: an admitted request waits queued for row g.
+    /// a runtime nobody wired starts none and reconciles none, and its node waits ready. The watch sets it (<see cref="HomeDoor"/>).
     /// </summary>
     public IIntegrationDoor? Integration { get; set; }
+
+    /// <summary>
+    /// The transport an open request's line is sent to (INTEGRATE1g): none by default, and an admitted request then waits queued. The watch sets
+    /// it, so the line's run goes on off the pass and its answer asks the next.
+    /// </summary>
+    public IIntegrationLines? Lines { get; set; }
+
+    /// <summary>A unit whose <c>line</c> was reached after its <c>integrate</c> (<c>work.integrated</c>, §5.1): told once, with its repository.</summary>
+    public Action<string, string>? Integrated { get; set; }
 
     /// <summary>
     /// The heavy executor's port (FABRIC-PIPELINE1d): none by default, so a runtime nobody wired starts no check and its node waits ready. The
@@ -222,7 +230,7 @@ public sealed class NodeRuntime(
     public static IIntegrationDoor HomeDoor(string home) => new HomeIntegrationDoor(home);
 
     /// <summary>A unit's <c>integrate</c>, over the door set when it asks (INTEGRATE1n part n2).</summary>
-    private IntegrateNode Integrate => _integrateNode ??= new IntegrateNode(records, () => Integration, clock);
+    private IntegrateNode Integrate => _integrateNode ??= new IntegrateNode(records, () => Integration, clock) { Lines = () => Lines };
 
     private IntegrateNode? _integrateNode;
 
@@ -879,7 +887,12 @@ public sealed class NodeRuntime(
                 break;
             }
 
-            if (!evaluated.Settled) done.AddRange(_performer.Keep(before, evaluated));
+            if (!evaluated.Settled)
+            {
+                done.AddRange(_performer.Keep(before, evaluated));
+                IntegratedNow(governed, before, evaluated.Statuses, said);
+            }
+
             var started = false;
             foreach (var start in evaluated.Starts)
             {
@@ -997,6 +1010,23 @@ public sealed class NodeRuntime(
         var sent = await Integrate.StartAsync(node, start, statuses[start.Node], ask, settings, ct).ConfigureAwait(false);
         said.AddRange(Integrate.TakeSaid());
         return sent;
+    }
+
+    /// <summary>
+    /// <c>work.integrated</c> (INTEGRATE1g; §5.1, FOUNDATION1 §4.2): a <c>line</c> this round moved to reached, in a graph whose <c>integrate</c> is
+    /// reached, is the line holding work the unit's integration promoted. Told once, as the move is kept once.
+    /// </summary>
+    private void IntegratedNow(GovernedUnit governed, IReadOnlyDictionary<string, NodeStatus> before, IReadOnlyDictionary<string, NodeStatus> after, List<string> said)
+    {
+        var nodes = governed.Declared.Values;
+        if (!nodes.Any(node => node.Kind == NodeKinds.Integrate && after.GetValueOrDefault(node.Id)?.State == NodeStates.Reached)) return;
+        foreach (var line in nodes.Where(node => node.Kind == NodeKinds.Line))
+        {
+            if (after.GetValueOrDefault(line.Id)?.State != NodeStates.Reached || before.GetValueOrDefault(line.Id)?.State == NodeStates.Reached) continue;
+            said.Add($"work  {governed.Unit.Id}: integrated into its line.");
+            Integrated?.Invoke(governed.Unit.Id, governed.Watched.Repository);
+            return;
+        }
     }
 
     /// <summary>
