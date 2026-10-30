@@ -97,6 +97,7 @@ import { type SessionDoors, useSessionActs } from './sessionActs';
 import { ListMore } from './frame/ListPane';
 import { AddProjectDrawer, ImportFolderDrawer } from '../projects/ProjectManage';
 import { useCheckoutBranch } from '../bridge/repositories/git';
+import { useIntegrationHead } from '../bridge/repositories/integrate';
 import { type CheckoutReader, NewConversation, type NewStart } from './start/NewConversation';
 import { keepChosen, keepRecent, mergeRecent, readChosen, readRecent } from './start/startRecent';
 import { type Carry, NO_CARRY } from '../compose/carry';
@@ -1508,6 +1509,8 @@ export function WorkFrame({
   const milestones = useWorkState(attended && here ? attended.id : null, Boolean(attended && here));
   const milestoneUnits = milestones.data?.units ?? [];
   const milestone = (attended && milestoneUnits.length === 1 ? milestoneUnits[0] : milestoneUnits.find((unit) => unit.session === attended?.id)) ?? null;
+  // INTEGRATE1h: its unit's integration state, one line in the head's facts, from the integration record.
+  const integration = useIntegrationHead(milestone?.unit);
   // Words a cooling account holds (MSG1g2, D137 §2.2): a driven record of this machine's between runs, parked or ended, whose
   // own account cools. A running one hears words at its door, and a chat's go on with the next word said to it.
   const between = attended && here && attended.kind !== 'chat'
@@ -2122,6 +2125,7 @@ export function WorkFrame({
     retrying: waiting?.session === attended.id ? waiting.retrying : undefined,
     // HEAVYSLOT1: its heavy run said in place of the call, by its gate or whom it waits behind.
     heavy: heavyPart ? heavyLine(t, heavyPart, heavyTitleOf) : null,
+    integration: integration.data ?? null,
   } : null;
   const pageHead = attended && attendedFacts && attendedShown && headFactsOf && (
     <SessionPageHead

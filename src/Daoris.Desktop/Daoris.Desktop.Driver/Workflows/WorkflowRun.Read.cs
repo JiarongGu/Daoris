@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Microsoft.Data.Sqlite;
 
 namespace Daoris.Driver;
 
@@ -410,8 +411,26 @@ public static class WorkflowRunReader
             ? await IntegrateNodes.PromotedAsync(reads.Sources.Integration ?? NodeRuntime.HomeDoor(reads.Sources.Home), record, reads.Ct).ConfigureAwait(false)
             : new HashSet<string>(StringComparer.Ordinal);
         return WorkflowGraphRuns.Derive(
-            new WorkflowGraphRunFacts(facts, run, graph, record) { Branches = reads.Branches, Promoted = promoted, Failures = FailedGates(reads.Sources.Home, run, graph, record) },
+            new WorkflowGraphRunFacts(facts, run, graph, record)
+            {
+                Branches = reads.Branches, Promoted = promoted, Failures = FailedGates(reads.Sources.Home, run, graph, record),
+                Integration = IntegrationOf(reads.Sources.Home, graph, record),
+            },
             workspace, askId);
+    }
+
+    /// <summary>The unit's integration state (INTEGRATE1h), read from the integration record where the graph holds an <c>integrate</c> node; null where unread.</summary>
+    private static IntegrationHead? IntegrationOf(string home, NodeGraph graph, NodeRecord? record)
+    {
+        if (record is null || !graph.Nodes.Any(node => node.Kind == NodeKinds.Integrate)) return null;
+        try
+        {
+            return IntegrationLooks.HeadOf(new IntegrationStore(home), record.Unit);
+        }
+        catch (Exception error) when (error is IOException or SqliteException or DriverException)
+        {
+            return null;
+        }
     }
 
     /// <summary>The gate each failed check named (FABRIC-PIPELINE1d), from its newest attempt's result in the run's folder; a result that is not there or does not read names none.</summary>

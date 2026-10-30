@@ -7,7 +7,7 @@ import i18n from '../locales/i18n';
 import { code } from '../test/code';
 import type { RunStep, WorkflowRun } from './run';
 import {
-  answerOf, CHAT_RUN, CHECK_UNKNOWN_HELD, checkRun, FAILED, GRAPH_RUN, GRAPH_RUN_ADDED_LOOK, GRAPH_RUN_GO_AHEAD, GRAPH_RUN_GO_AHEAD_KEPT, GRAPH_RUN_REQUESTS, GRAPH_RUN_UNJUDGED, HELD_FOR_OPINION, IN_REVIEW, LANDED, MERGED, OPINION_DISPUTED,
+  answerOf, CHAT_RUN, CHECK_UNKNOWN_HELD, checkRun, FAILED, GRAPH_RUN, GRAPH_RUN_ADDED_LOOK, GRAPH_RUN_GO_AHEAD, GRAPH_RUN_GO_AHEAD_KEPT, GRAPH_RUN_INTEGRATE, GRAPH_RUN_REQUESTS, GRAPH_RUN_UNJUDGED, HELD_FOR_OPINION, IN_REVIEW, LANDED, MERGED, OPINION_DISPUTED,
   OPINION_SETTLED, PULL_REQUEST_OPEN, SEVERAL, WAITING_ON_YOU, WORKING,
 } from './runFixtures';
 import { WorkflowLine } from './WorkflowLine';
@@ -589,6 +589,21 @@ describe("the person's skip and stop of a graph run's node", () => {
     unmount();
     render(<WorkflowRunView answer={answerOf(GRAPH_RUN_GO_AHEAD_KEPT)} />);
     expect(row('release')).toHaveTextContent('你的跳过已保存，Daoris 下次查看时会应用它。');
+  });
+});
+
+// INTEGRATE1h (the integration design §17.9): the run's view draws the integrate node with its record's head, in both languages.
+describe('the integrate node', () => {
+  afterEach(async () => { await i18n.changeLanguage('en'); });
+
+  it('says where the unit stands in the integration, on that node alone', async () => {
+    const { unmount } = render(<WorkflowRunView answer={answerOf(GRAPH_RUN_INTEGRATE)} />);
+    expect(row('integrate')).toHaveTextContent('Being tried for main, at replay');
+    expect(row('line')).not.toHaveTextContent('Being tried');
+    unmount();
+    await i18n.changeLanguage('zh');
+    render(<WorkflowRunView answer={answerOf(GRAPH_RUN_INTEGRATE)} />);
+    expect(row('integrate')).toHaveTextContent('正在为 main 尝试，进行到 replay');
   });
 });
 

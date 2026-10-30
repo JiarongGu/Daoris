@@ -236,6 +236,21 @@ export const GRAPH_RUN_REQUESTS = run([
   },
 });
 
+/** INTEGRATE1h (§17.9): the unit's `integrate` node under way, in a candidate at its replay, with its record's head drawn on it. */
+export const GRAPH_RUN_INTEGRATE = run([
+  at(nodeCell('integrate', 'integrate', 'automatic', 'daoris'), 'working', 'active', {
+    node: 'integrate', integration: { state: 'in-candidate', line: 'main', step: 'replay' },
+  }),
+  at(nodeCell('line', 'line', 'automatic', 'daoris'), 'not-reached', 'blocked', { node: 'line' }),
+], {
+  at: 'integrate',
+  workflow: { version: 'gph-0a2b4c6d8e0f1a2b', startHolds: [], limits: {}, id: 'release', boundVersion: 3 },
+  graph: {
+    run: 'q1', entries: ['integrate'], end: 'line', wires: [{ from: 'integrate', to: 'line', kind: 'after' }],
+    quest: 'q1', branch: null, judged: true, unread: false, ended: null,
+  },
+});
+
 /**
  * A graph run whose check stands as `state` and `detail` say, with the facts the driver reads of it (FABRIC-PIPELINE1d, the pipeline design §4.4):
  * its gate where it failed, its held attempt where it is unknown for the person.

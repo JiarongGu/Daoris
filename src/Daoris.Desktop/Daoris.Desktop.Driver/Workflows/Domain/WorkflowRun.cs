@@ -388,6 +388,9 @@ public sealed record WorkflowRunStep(WorkflowStep Step, string State, string Det
     /// asked. Null where there are none, so a run without any reads and answers as it did before.
     /// </summary>
     public IReadOnlyList<WorkflowRunRequest>? Requests { get; init; }
+
+    /// <summary>The unit's integration state, on a graph run's <c>integrate</c> node only (INTEGRATE1h; §17.9), as its record says it.</summary>
+    public IntegrationHead? Integration { get; init; }
 }
 
 /// <summary>A chain's work in one repository, read as steps (WORKFLOW1c; D157 point 11, design §5.1).</summary>
