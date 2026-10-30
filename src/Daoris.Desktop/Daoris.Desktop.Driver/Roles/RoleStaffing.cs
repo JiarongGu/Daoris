@@ -73,8 +73,23 @@ public sealed record StaffingImport(StaffingImported How, string? Said = null);
 /// </remarks>
 /// <param name="home">The home whose store and <c>driver.json</c> these are.</param>
 /// <param name="settled">The reading of the start's confirmation; null reads this install's swap journal.</param>
-public sealed class RoleStaffing(string home, Func<StoreSettled>? settled = null)
+public sealed class RoleStaffing(string home, Func<StoreSettled>? settled = null) : IRoleStaffing
 {
+    /// <summary>
+    /// Wire the staffing of <paramref name="home"/>'s own <c>driver.json</c> to Settings' port (FOUNDATION1w-s part 3), once before the root's
+    /// first load: from then on a load of that file fills its five staffing fields from the store where it holds an import. A file
+    /// <c>DAORIS_DRIVER_CONFIG</c> names is another path and is never wired.
+    /// </summary>
+    public static RoleStaffing Wire(string home, Func<StoreSettled>? settled = null)
+    {
+        var staffing = new RoleStaffing(home, settled);
+        RoleStaffingPort.Wire(staffing.FileOfHome, staffing);
+        return staffing;
+    }
+
+    /// <summary>The port's read: the store's staffing as a loaded record holds it, or null before the import.</summary>
+    StaffingHeld? IRoleStaffing.Held() => Read() is { } read ? new StaffingHeld(read.Adapter, read.IntakeAdapter, read.HelperAdapter, read.Actors, read.Errors) : null;
+
     /// <summary>The family's name in <c>imports</c> and <c>store_revisions</c>.</summary>
     public const string Family = "role_staffing";
 
