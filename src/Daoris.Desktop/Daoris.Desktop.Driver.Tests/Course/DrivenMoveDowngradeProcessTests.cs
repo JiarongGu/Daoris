@@ -67,12 +67,14 @@ public sealed class DrivenMoveDowngradeProcessTests : IAsyncLifetime
 
         // The older build comes up: it takes no move up.
         _h.ComeUp();
-        await _h.SettleAsync(
-            movesMayStand: true,
-            ready: () => cut != Cuts.Answered || (_h.Service.SessionCount == 3 && _h.Service.State("s3") == "completed"));
+        // Its look, run a fixed while: where the line is held by the standing move it asks its resume again at every look and changes nothing
+        // (an absence the time states); where the destination is not yet named it carries it on, and the part it opens completes.
+        if (cut == Cuts.Answered) await Poll.Until(() => _h.Service.SessionCount == 3 && _h.Service.State("s3") == "completed", _h.Seen);
+        await Task.Delay(TimeSpan.FromSeconds(8));
         await _h.StopAsync();
         var standing = _h.MoveFrom("s1")!;
         var seen = _h.Seen();
+        _h.Trail.Add($"after the older come-up: {seen}");
         Assert.True(standing.Stands, $"an older build's come-up leaves the move standing under its dead run: {seen}");
         Assert.Equal((left.PhaseWord, left.ClaimRun, left.ClaimGeneration), (standing.PhaseWord, standing.ClaimRun, standing.ClaimGeneration));
         if (cut != Cuts.Answered) Assert.Equal(before, _h.SnapshotOf());
@@ -81,7 +83,7 @@ public sealed class DrivenMoveDowngradeProcessTests : IAsyncLifetime
         // This build returns: its take-up reads what the older one left, and acts once.
         _h.Die(DrivenMoveHarness.Killed);
         _h.ComeUp();
-        await _h.SettleAsync(ready: () => expect.First.SequenceEqual(_h.Shapes("s1")) && expect.Second.SequenceEqual(_h.Shapes("s2")));
+        await _h.SettleAsync(ready: () => expect.First.SequenceEqual(_h.Shapes("s1")) && expect.Second.SequenceEqual(_h.Shapes("s2")), idle: false);
         await _h.StopAsync();
 
         seen = _h.Seen();
@@ -112,7 +114,7 @@ public sealed class DrivenMoveDowngradeProcessTests : IAsyncLifetime
         // A second come-up of this build finds nothing to do: the return acted once.
         var shape = _h.SnapshotOf();
         _h.ComeUp();
-        await _h.SettleAsync();
+        await _h.SettleAsync(idle: false);
         await _h.StopAsync();
         Assert.Equal(shape, _h.SnapshotOf());
         await _h.ReleaseAsync();

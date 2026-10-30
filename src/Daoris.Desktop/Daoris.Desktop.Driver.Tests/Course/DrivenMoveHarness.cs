@@ -300,25 +300,33 @@ internal sealed class DrivenMoveHarness : IAsyncDisposable
     /// <param name="movesMayStand">The loop leaves a move standing by design (an older build's come-up takes none up), so one standing is no work left.</param>
     /// <param name="quiet">How long nothing may change.</param>
     /// <param name="ready">What the case is waiting for the loop to have done, which must hold before the quiet time counts.</param>
-    public async Task SettleAsync(bool movesMayStand = false, TimeSpan? quiet = null, Func<bool>? ready = null)
+    /// <param name="idle">
+    /// Whether no record may be live: a case whose destination a go-on left <c>working</c> (its agent never reached, the dead loop's tree hold
+    /// standing in this one process) waits on <paramref name="ready"/> and the quiet time alone.
+    /// </param>
+    public async Task SettleAsync(bool movesMayStand = false, TimeSpan? quiet = null, Func<bool>? ready = null, bool idle = true)
     {
         var last = "";
+        var changes = 0;
         var since = Stopwatch.GetTimestamp();
         var still = quiet ?? TimeSpan.FromSeconds(8);
         await Poll.Until(
             () =>
             {
-                var now = Seen();
+                // What the quiet time watches: the records, the moves and the prompts, never the stub's refused resumes, which a held line
+                // asks again at every look and which send nothing.
+                var now = $"{Fingerprint()} {Prompts().Count}";
                 if (now != last)
                 {
                     last = now;
+                    changes++;
                     since = Stopwatch.GetTimestamp();
                     return false;
                 }
 
-                return Stopwatch.GetElapsedTime(since) > still && !Live(movesMayStand) && (ready?.Invoke() ?? true);
+                return Stopwatch.GetElapsedTime(since) > still && (!idle || !Live(movesMayStand)) && (ready?.Invoke() ?? true);
             },
-            Seen);
+            () => $"{Seen()} | changed {changes} times, quiet {Stopwatch.GetElapsedTime(since).TotalSeconds:0}s, live {Live(movesMayStand)}, ready {ready?.Invoke()}");
     }
 
     private bool Live(bool movesMayStand)
@@ -391,10 +399,14 @@ internal sealed class DrivenMoveHarness : IAsyncDisposable
                 .Select(move => $"{move.Left}:{move.PhaseWord}/{move.HeldWhy}/{move.ClosedWhy}/{move.ClaimRun}/{move.ClaimGeneration}"))
         + $" prompts {Prompts().Count} taken {Service.Taken.Count} opened {Service.Opened.Count} waiting [{string.Join(",", Waiting())}]";
 
+    /// <summary>What a case says to explain a failure: the stages it passed, then the records now.</summary>
+    public List<string> Trail { get; } = [];
+
     /// <summary>The marks the stand-in's records carry now, for a failing case to say.</summary>
-    public string Seen() =>
-        $"heard [{string.Join(" | ", Heard().Select(line => $"{line["session"]}:{line["method"]}:{line["blocks"]?.ToJsonString().Length}"))}], "
-        + $"sessions {Service.SessionCount} [{string.Join(", ", Enumerable.Range(1, Service.SessionCount).Select(at => $"s{at}={Service.State($"s{at}")} said {string.Join("+", Service.Said($"s{at}"))}"))}], "
+    public string Seen() => $"trail [{string.Join(" // ", Trail)}] heard [{string.Join(" | ", Heard().GroupBy(line => $"{line["session"]}:{line["method"]}").Select(group => $"{group.Key} x{group.Count()}"))}], " + Fingerprint();
+
+    private string Fingerprint() =>
+        $"sessions {Service.SessionCount} [{string.Join(", ", Enumerable.Range(1, Service.SessionCount).Select(at => $"s{at}={Service.State($"s{at}")} said {string.Join("+", Service.Said($"s{at}"))}"))}], "
         + $"taken [{string.Join(" | ", Service.Taken)}], ask [{string.Join(" | ", Service.AskWords)}], "
         + $"moves [{string.Join(" ; ", Enumerable.Range(1, Service.SessionCount).Select(at => $"s{at}: " + string.Join(" | ", Store("run-probe").Of($"s{at}").Select(move => $"{move.PhaseWord}/{move.HeldWhy}/{move.ClosedWhy}/{move.FellBackCode}"))))}], "
         + $"faults [{string.Join(" | ", Service.Faults)}]";
