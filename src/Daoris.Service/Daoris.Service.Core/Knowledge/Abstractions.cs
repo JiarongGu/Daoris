@@ -42,7 +42,7 @@ public interface IKnowledgeStore
 
     /// <summary>
     /// Stamp a repository's entries (its name in any case) with another workspace in one write, their bodies untouched, moving
-    /// each one's generation on (KNOWCENTRAL2a).
+    /// each one's generation on.
     /// </summary>
     Task RestampAsync(string repository, string workspace, CancellationToken ct = default);
 
@@ -54,7 +54,7 @@ public interface IKnowledgeStore
 
     /// <summary>
     /// The entries by these ids, each with its file's entries where <paramref name="withFile"/> says so, and each repository's
-    /// reading, read together in one read (KNOWCENTRAL2a): no write lands between the three.
+    /// reading, read together in one read: no write lands between the three.
     /// </summary>
     Task<HeldTogether> HeldAsync(IReadOnlyCollection<string> ids, Func<KnowledgeEntry, bool> withFile, CancellationToken ct = default);
 
@@ -93,7 +93,7 @@ public interface IKnowledgeStore
 public sealed record IndexReading(
     string Repository, long Generation, string? Commit, RootSignature? Signature, bool Fed, DateTimeOffset At);
 
-/// <summary>What a write of a repository's entries says of the reading it stores (KNOWCENTRAL2a).</summary>
+/// <summary>What a write of a repository's entries says of the reading it stores.</summary>
 /// <param name="Expected">
 /// The generation its writer read before reading the source: the write lands only while the store still holds it (none is 0).
 /// Null for a write that reads no source, which takes the generation inside its own write and always lands.
