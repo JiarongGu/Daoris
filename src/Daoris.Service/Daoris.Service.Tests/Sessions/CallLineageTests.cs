@@ -85,11 +85,33 @@ public sealed class CallLineageTests
         turn["parent_thread_id"] = value;
 
         var lineage = CallLineage.Read(CodexMeta(turn, asText: false))!;
-        var claude = CallLineage.Read(new JsonObject { ["claudecode/toolUseId"] = value });
+        var claude = CallLineage.Read(new JsonObject { ["claudecode/toolUseId"] = value })!;
 
         Assert.Null(lineage.Thread);
         Assert.Null(lineage.Parent);
-        Assert.Null(claude);
+        Assert.Null(claude.ToolUse);
+    }
+
+    /// <summary>
+    /// FABRIC-C2a (D173's note, point 1): a value the harness sent that is not an id is kept as malformed, never dropped to look
+    /// absent, since an absent parent is what a root has.
+    /// </summary>
+    [Fact]
+    public void A_value_sent_that_is_not_an_id_is_kept_as_malformed_never_as_absent()
+    {
+        var turn = Turn("019a-child", "019a-root");
+        turn["parent_thread_id"] = "a b";
+        turn["subagent_kind"] = 42;
+
+        Assert.Equal("parent,kind", CallLineage.Read(CodexMeta(turn, asText: true))!.Malformed);
+        Assert.Equal(new CallLineage(CallLineage.Claude) { Malformed = "toolUse" }, CallLineage.Read(Meta("""{"claudecode/toolUseId":"a b"}""")));
+        Assert.Equal(new CallLineage(CallLineage.Codex) { Malformed = "turn" }, CallLineage.Read(Meta("""{"x-codex-turn-metadata":"not json"}""")));
+        Assert.Equal(new CallLineage(CallLineage.Codex) { Malformed = "turn" }, CallLineage.Read(Meta("""{"x-codex-turn-metadata":42}""")));
+        // A null, like a key left out, sent nothing: the root's own metadata carries `parent_thread_id: null`.
+        Assert.Null(CallLineage.Read(CodexMeta(Turn("019a-root", null), asText: false))!.Malformed);
+        Assert.Equal(
+            """{"at":"1970-01-01T00:00:00.000Z","by":"call","tool":"helper_ask","harness":"codex","thread":"t2","malformed":"parent"}""",
+            LineageFile.Line("helper_ask", new CallLineage(CallLineage.Codex) { Thread = "t2", Malformed = "parent" }, DateTimeOffset.UnixEpoch));
     }
 
     [Fact]
@@ -98,8 +120,7 @@ public sealed class CallLineageTests
         Assert.Null(CallLineage.Read(null));
         Assert.Null(CallLineage.Read(new JsonObject()));
         Assert.Null(CallLineage.Read(Meta("""{"progressToken":1}""")));
-        Assert.Null(CallLineage.Read(Meta("""{"x-codex-turn-metadata":"not json"}""")));
-        Assert.Null(CallLineage.Read(Meta("""{"x-codex-turn-metadata":42}""")));
+        Assert.Null(CallLineage.Read(Meta("""{"x-codex-turn-metadata":null,"claudecode/toolUseId":null}""")));
     }
 
     [Fact]
