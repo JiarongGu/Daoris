@@ -341,7 +341,9 @@ The adapters are the stub, `acp-stub` (the protocol door with no model in it), `
 protocol door's configurations `claude-code-acp`, `codex-acp` and `dsh`. A session's record is
 concluded from its exit code and its quest, never from what it said. A driven turn that ends on its own background work waits
 for that work and then for the turn its harness wakes by itself, whose autonomous `usage_update` is its end; Daoris's go-on
-goes only where none woke (`Agents/AcpWake.cs`, D83's BGWAIT2 note). A turn that ends after its work ended unseen, after
+goes only where none woke (`Agents/AcpWake.cs`, D83's BGWAIT2 note). An adapter that is not Claude Code's says no end for that
+turn (`codex-acp`): its quiet, with no call open and no request held, is the end, and what it streams of a backgrounded command
+after its prompt was answered begins no turn (CODEXWAKE1). A turn that ends after its work ended unseen, after
 its agent's last step, waits for that wake too (D83's BGWAIT3 note). While it waits its quest is read again every fourth
 tick, and once the quest no longer waits on that work and no turn runs, the session ends and the work ends with it; an agent
 that does not exit within ten seconds with that work still running has its tree ended (D83's DONEEND1 note). The quest is read

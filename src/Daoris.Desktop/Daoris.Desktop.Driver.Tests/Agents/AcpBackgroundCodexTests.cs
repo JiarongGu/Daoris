@@ -1,5 +1,7 @@
 using System.Text.Json;
 using Daoris.Driver;
+using static Daoris.Desktop.Driver.Tests.AcpBackgroundTests;
+using Record = Daoris.Desktop.Driver.Tests.AcpBackgroundTests.Record;
 
 namespace Daoris.Desktop.Driver.Tests;
 
@@ -9,7 +11,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// goes on streaming the command's output, says <c>async_task_state_update</c>, and completes the call with a <c>tool_call_update</c>.
 /// Its <c>usage_update</c> carries no origin and <c>turn/completed</c> sends nothing, so a turn it starts says no end.
 /// </summary>
-public sealed partial class AcpBackgroundTests
+public sealed class AcpBackgroundCodexTests
 {
     /// <summary>What <c>codex-acp</c> answers at <c>initialize</c>: no Claude Code extension, so no origin on any turn's end.</summary>
     private const string CodexInitialized = """{"protocolVersion":1,"agentCapabilities":{"loadSession":true}}""";
