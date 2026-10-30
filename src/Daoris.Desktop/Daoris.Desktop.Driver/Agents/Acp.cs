@@ -144,13 +144,6 @@ public sealed record AcpOutcome(
         : $"the turn ended: {StopReason}, after {Updates} update(s)";
 }
 
-/// <summary>
-/// A turn its agent ended <c>cancelled</c> though nobody stopped it (CODEXPERM1): Codex ends a turn when the only rejection it offers for a
-/// file change is chosen, so a refused edit cuts the turn rather than only the edit. The edits made before it stand.
-/// </summary>
-/// <param name="Call">The call whose permission was refused as the turn was cut, as the agent titled it; null where none was.</param>
-public sealed record TurnCut(string? Call);
-
 /// <summary>A choice refused at the open with nothing else to set on the same session (D205 §3.3): the open ends before its prompt.</summary>
 public sealed class AcpChoiceNotOffered(ModelRefusal refusal)
     : DriverException($"the agent did not offer the {refusal.Category} `{refusal.Value}` asked ({refusal.Code}): nothing was prompted.")

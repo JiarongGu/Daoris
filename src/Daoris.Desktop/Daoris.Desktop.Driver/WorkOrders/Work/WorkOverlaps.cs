@@ -66,7 +66,10 @@ public static class WorkOverlaps
             }
         }
 
-        if (!kept.SetEquals(told)) AtomicFile.WriteText(ToldPath(home),JsonSerializer.Serialize(kept.Order(StringComparer.Ordinal)));
+        if (kept.SetEquals(told)) return;
+        var path = ToldPath(home);
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        AtomicFile.WriteText(path, JsonSerializer.Serialize(kept.Order(StringComparer.Ordinal)));
     }
 
     /// <summary>The ordinary word a running unit is told.</summary>

@@ -162,7 +162,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workplace/LandingTests.cs` | 45 | 801 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workplace/ReviewGraphCensusTests.cs` | 47 | 1045 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/AccountRotation.cs` | 74 | 1200 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Acp.cs` | 224 | 4316 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Acp.cs` | 223 | 4309 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Adapters.cs` | 152 | 2599 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/AgentAccountsCommand.cs` | 48 | 907 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/AgentsCommand.cs` | 53 | 982 |
