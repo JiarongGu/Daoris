@@ -45,7 +45,7 @@ public sealed class ToolsRoutes(DriverContext context)
     // locations and the list built in. Reads files only; `ask` asks each resolved file its version, which starts it. Told by
     // event (NOBLOCK1): its files and the system's path held the window up to 1.4 s, so an ask is answered from what is held.
     [DriverRoute("TOOLS_LIST")]
-    [ByEvent("TOOLS_LIST")]
+    [ByEvent("TOOLS_LIST", Untold = "the system's path and an action's end, which TOOLS_ENDED tells")]
     private async Task<object?> ToolsListAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var home = _loop.Home;

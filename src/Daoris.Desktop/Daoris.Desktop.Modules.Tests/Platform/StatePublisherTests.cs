@@ -672,7 +672,7 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
     public void Every_scope_has_its_word_on_the_wire_in_its_declared_order() =>
         Assert.Equal(
             "sessions,landing,diff,handOff,sweep,treesSync,lines,quests,asks,driver,rules,history,sync,registry,plugins,harnesses,"
-            + "tools,help,browser,wiring,notices",
+            + "tools,help,browser,wiring,notices,repositories",
             string.Join(",", StatePublisher.Names((StateScopes)~0)));
 
     /// <summary>

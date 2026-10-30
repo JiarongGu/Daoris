@@ -164,7 +164,7 @@ public sealed class DriverRoutes(DriverContext context)
     /// (NOBLOCK1): it held the window up to 2.9 s, so an ask is answered from what is held and this runs on a task of its own.
     /// </summary>
     [DriverRoute("HEAVY_SLOT")]
-    [ByEvent("HEAVY_SLOT")]
+    [ByEvent("HEAVY_SLOT", Untold = "a run's records beside the slot and whether its process lives")]
     private async Task<object?> HeavySlotAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var repository = (Optional(request, "repository") ?? "").Trim();

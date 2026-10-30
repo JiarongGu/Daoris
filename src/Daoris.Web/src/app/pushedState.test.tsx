@@ -52,7 +52,9 @@ import { useLines, useSweepLook, useSweepPlan, useWorkState } from '../bridge/re
 import { useSessionEntries, useSessionGroups } from '../bridge/sessions/sessions';
 import { type UsageAnswer, useUsage } from '../bridge/agents/agents';
 import { useAccounts } from '../bridge/agents/accounts';
+import { useRules } from '../bridge/agents/rules';
 import type { AccountsAnswer } from '../settings/accounts/accounts';
+import type { AgentRulesState } from '../settings/repository/AgentRules';
 
 const CHOICES = { drivable: ['engine'], holds: [], trees: [], notify: false, strikes: 3, forgiven: {} };
 
@@ -71,6 +73,14 @@ const CONSIDERATIONS_SNAPSHOT = {
     { partition: 'untrusted', seq: 1, status: 'ready', data: [HOLD] },
     { partition: 'waits', seq: 1, status: 'ready', data: [WAIT] },
   ],
+};
+
+/** What an agent Daoris starts may do, as the rules' owner pushes `RULES`'s answer whole (FOUNDATION1s part B). */
+const RULES: AgentRulesState = {
+  path: 'permissions.json', defaults: [], scopes: [{ scope: 'machine', allow: [], ask: [], deny: ['Bash(rm:*)'] }], proposals: [],
+};
+const RULES_SNAPSHOT = {
+  slice: 'rules', epoch: 'r1', status: 'ready', partitions: [{ partition: 'rules', seq: 1, status: 'ready', data: RULES }],
 };
 
 /** A session parked to ask, as the attention slice's owner pushes its row and what the Sessions badge counts (PUSH1d4). */
@@ -289,7 +299,8 @@ function host(pushes: boolean) {
           : slice === 'work' ? WORK_SNAPSHOT : slice === 'groups' ? GROUPS_SNAPSHOT : slice === 'sync' ? SYNC_SNAPSHOT
             : slice === 'sweep' ? SWEEP_SNAPSHOT : slice === 'quests' ? QUESTS_SNAPSHOT : slice === 'asks' ? ASKS_SNAPSHOT
               : slice === 'usage' ? USAGE_SNAPSHOT : slice === 'accounts' ? ACCOUNTS_SNAPSHOT
-                : slice === 'attention' ? ATTENTION_SNAPSHOT : slice === 'considerations' ? CONSIDERATIONS_SNAPSHOT : SNAPSHOT;
+                : slice === 'attention' ? ATTENTION_SNAPSHOT : slice === 'considerations' ? CONSIDERATIONS_SNAPSHOT
+                  : slice === 'rules' ? RULES_SNAPSHOT : SNAPSHOT;
       }
       throw Object.assign(new Error('NO_ROUTE'), { code: 'NO_ROUTE' });
     }
@@ -609,6 +620,37 @@ describe("the driver's state, pushed (PUSH1a)", () => {
       await vi.advanceTimersByTimeAsync(2_000);
     });
     expect(registryReads()).toBeGreaterThan(registry);
+  });
+
+  it('holds the rules from their snapshot, a push moving them, and a tick, their scope or a focus reads no RULES (FOUNDATION1s part B)', async () => {
+    host(true);
+    const client = await open();
+    let read: AgentRulesState | undefined;
+    function Reader() {
+      read = useRules().data;
+      return null;
+    }
+    render(<QueryClientProvider client={client}><Reader /></QueryClientProvider>);
+    await later(1_000);
+    expect(read).toEqual(RULES);
+    expect(asked().get('DAORIS.DRIVER.RULES')).toBeUndefined();
+
+    const before = asked();
+    await act(async () => {
+      heard.get('DRIVER_TICK')?.({ events: ['rules  the proposals could not be settled this tick: busy'] });
+      heard.get('STATE_CHANGED')?.({ scopes: ['rules'] });
+      await vi.advanceTimersByTimeAsync(2_000);
+    });
+    hidden(true);
+    hidden(false);
+    await later(1_000);
+    expect(since(before, asked())['DAORIS.DRIVER.RULES']).toBeUndefined();
+
+    await act(async () => {
+      heard.get('STATE_PUSH')?.({ slice: 'rules', epoch: 'r1', partition: 'rules', seq: 2, status: 'ready', data: { ...RULES, scopes: [] } });
+      await vi.advanceTimersByTimeAsync(100);
+    });
+    expect(client.getQueryData(keys.rules)).toEqual({ ...RULES, scopes: [] });
   });
 
   it('carries an ask a connector wrote to two windows by one push, with no read in either (PUSH1d3)', async () => {
