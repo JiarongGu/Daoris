@@ -822,6 +822,8 @@ public sealed class LinesRoutes(DriverContext context)
     {
         item.Repository, item.Workspace, item.Branch, item.Kind, item.Where, item.Files, item.Detail,
         item.PullRequest, item.Commits, item.Removable,
+        // LANDRETIRE1 part 2: when the landing recorded it, and its quest with whether the service says it is closed.
+        item.LandedAt, item.Quest, item.QuestClosed,
     };
 
     /// <summary>
