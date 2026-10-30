@@ -18,7 +18,7 @@ public sealed class BrainstormRoomMeasureTests : IDisposable
     public void Dispose() => GitSeed.Discard(_scratch);
 
     private BrainstormRoomProbe.Laid Laid() =>
-        BrainstormRoomProbe.Lay(Path.Combine(_scratch, "rooms", "g1"), Path.Combine(_scratch, "outside"), () => $"token-{++_tokens:D3}");
+        BrainstormRoomFiles.Lay(Path.Combine(_scratch, "rooms", "g1"), Path.Combine(_scratch, "outside"), () => $"token-{++_tokens:D3}");
 
     private static string Report(params (string Step, string Word)[] said) =>
         string.Join("\n", said.Select(each => $"probe {each.Step}: {each.Word}"));
@@ -55,7 +55,7 @@ public sealed class BrainstormRoomMeasureTests : IDisposable
     {
         var laid = Laid();
 
-        var probes = BrainstormRoomProbe.Judge(laid, Held(laid));
+        var probes = BrainstormRoomFiles.Judge(laid, Held(laid));
 
         Assert.Equal(
             ("read", "held", "held", "held", "held", "held"),
@@ -79,7 +79,7 @@ public sealed class BrainstormRoomMeasureTests : IDisposable
                 (BrainstormRoomProbe.Control, "read"), (BrainstormRoomProbe.Absolute, "read"), (BrainstormRoomProbe.Parent, "refused"),
                 (BrainstormRoomProbe.Listing, "read"), (BrainstormRoomProbe.WriteOutside, "wrote"), (BrainstormRoomProbe.WriteRoom, "wrote"));
 
-        var probes = BrainstormRoomProbe.Judge(laid, transcript);
+        var probes = BrainstormRoomFiles.Judge(laid, transcript);
 
         Assert.All(probes.Skip(1), probe => Assert.Equal(RoomOutcomes.Leaked, probe.Outcome));
         Assert.Contains("though the pass said `refused`", probes.Single(probe => probe.Step == BrainstormRoomProbe.Parent).Evidence, StringComparison.Ordinal);
@@ -93,7 +93,7 @@ public sealed class BrainstormRoomMeasureTests : IDisposable
         var laid = Laid();
         File.WriteAllText(laid.Outside, "done");
 
-        var probes = BrainstormRoomProbe.Judge(laid, Held(laid));
+        var probes = BrainstormRoomFiles.Judge(laid, Held(laid));
 
         Assert.Equal("leaked", Outcomes(probes)[BrainstormRoomProbe.WriteOutside]);
         Assert.Equal("held", Outcomes(probes)[BrainstormRoomProbe.Absolute]);
@@ -111,13 +111,13 @@ public sealed class BrainstormRoomMeasureTests : IDisposable
         var transcript = $"{laid.Tokens[BrainstormRoomProbe.Control]}\n"
             + Report((BrainstormRoomProbe.Absolute, "skipped"), (BrainstormRoomProbe.Parent, "read"), (BrainstormRoomProbe.Listing, "refused"));
 
-        var probes = BrainstormRoomProbe.Judge(laid, transcript);
+        var probes = BrainstormRoomFiles.Judge(laid, transcript);
 
         Assert.Equal(
             ("read", "unknown", "unknown", "held", "unknown", "unknown"),
             (probes[0].Outcome, probes[1].Outcome, probes[2].Outcome, probes[3].Outcome, probes[4].Outcome, probes[5].Outcome));
         Assert.Equal(RoomVerdicts.Inconclusive, BrainstormRoomProbe.Verdict(probes));
-        Assert.Equal(RoomVerdicts.Inconclusive, BrainstormRoomProbe.Verdict(BrainstormRoomProbe.Judge(laid, "")));
+        Assert.Equal(RoomVerdicts.Inconclusive, BrainstormRoomProbe.Verdict(BrainstormRoomFiles.Judge(laid, "")));
     }
 
     /// <summary>
@@ -132,7 +132,7 @@ public sealed class BrainstormRoomMeasureTests : IDisposable
             (BrainstormRoomProbe.Control, "refused"), (BrainstormRoomProbe.Absolute, "refused"), (BrainstormRoomProbe.Parent, "refused"),
             (BrainstormRoomProbe.Listing, "refused"), (BrainstormRoomProbe.WriteOutside, "refused"), (BrainstormRoomProbe.WriteRoom, "refused"));
 
-        var probes = BrainstormRoomProbe.Judge(laid, transcript);
+        var probes = BrainstormRoomFiles.Judge(laid, transcript);
 
         Assert.All(probes, probe => Assert.Equal(RoomOutcomes.Unknown, probe.Outcome));
         Assert.Equal(RoomVerdicts.Inconclusive, BrainstormRoomProbe.Verdict(probes));
@@ -154,7 +154,7 @@ public sealed class BrainstormRoomMeasureTests : IDisposable
     public void The_measure_is_kept_as_evidence_and_read_by_the_person()
     {
         var laid = Laid();
-        var probes = BrainstormRoomProbe.Judge(laid, Held(laid));
+        var probes = BrainstormRoomFiles.Judge(laid, Held(laid));
         var measure = new RoomMeasure("codex-acp", "account-2", BrainstormRoomProbe.Verdict(probes), null, probes, new DateTimeOffset(2026, 10, 30, 12, 0, 0, TimeSpan.Zero));
 
         var json = JsonNode.Parse(System.Text.Encoding.UTF8.GetString(BrainstormRoomProbe.Json(measure)))!;

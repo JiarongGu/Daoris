@@ -724,7 +724,7 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
         if (!spend) return new RoomMeasure(agent, selection.Profile, RoomVerdicts.NotRun, "dry-run", [], DateTimeOffset.UtcNow);
 
         files.Clear(id);
-        var laid = BrainstormRoomProbe.Lay(
+        var laid = BrainstormRoomFiles.Lay(
             Path.Combine(files.Rooms(id), "g1"), files.PathOf(id, "probe"), () => "probe-" + Guid.NewGuid().ToString("N")[..12]);
         var instruction = BrainstormRoomProbe.Instruction(laid);
         File.WriteAllText(Path.Combine(laid.Room, BrainstormInstruction.InstructionFile), instruction);
@@ -745,7 +745,7 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
 
             // What the turn did not start is not a verdict: nothing ran, and nothing is said of the posture.
             var transcript = BrainstormFiles.ReadText(files.PathOf(id, "passes", "g1.log")) ?? "";
-            var probes = ran.Ran ? BrainstormRoomProbe.Judge(laid, transcript) : [];
+            var probes = ran.Ran ? BrainstormRoomFiles.Judge(laid, transcript) : [];
             var measure = new RoomMeasure(
                 agent, ran.Account ?? selection.Profile, ran.Ran ? BrainstormRoomProbe.Verdict(probes) : RoomVerdicts.NotRun, ran.Code, probes, DateTimeOffset.UtcNow);
             files.WriteMeasure(id, measure);
