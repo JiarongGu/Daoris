@@ -64,6 +64,26 @@ public sealed class RoleCatalog
 
     private RoleCatalog(IReadOnlyList<RoleSlot> slots) => Slots = slots;
 
+    /// <summary>The revision of <paramref name="id"/>'s record as the catalogue reads it; 0 for the seed and for an id it does not hold.</summary>
+    public long RevisionOf(string id) => Slots.FirstOrDefault(slot => slot.Id == id)?.Revision ?? 0;
+
+    /// <summary>
+    /// The catalogue a start reads (FOUNDATION1x): the store in <paramref name="home"/>, the seed where it has none. A store that cannot be
+    /// read holds the start, never reads as the seed, since a role it holds could be one that takes the work.
+    /// </summary>
+    /// <exception cref="DriverException">The store cannot be read.</exception>
+    public static RoleCatalog ReadHome(string home)
+    {
+        try
+        {
+            return Read(DesktopStore.LocationIn(home));
+        }
+        catch (Exception error) when (error is DesktopStoreException or Microsoft.Data.Sqlite.SqliteException or IOException or UnauthorizedAccessException)
+        {
+            throw new DriverException($"the role catalogue cannot be read, so starts wait: {error.Message}");
+        }
+    }
+
     /// <summary>Every seeded id in the screen's order, then each added id by name.</summary>
     public IReadOnlyList<RoleSlot> Slots { get; }
 
@@ -90,6 +110,21 @@ public sealed class RoleCatalog
         using var store = DesktopStoreReader.Open(location);
         if (store is null || store.Version < Step) return Of([]);
         return Of(store.Query("SELECT id, state, record, revision FROM roles", row => new StoredRole(row.GetString(0), row.GetString(1), row.GetString(2), row.GetInt64(3))));
+    }
+
+    /// <summary>
+    /// The record of <paramref name="id"/> as it stood at <paramref name="revision"/> (census C): the seed at 0 for a seeded id, else the revision
+    /// the store kept when its state was <c>set</c>; null where none is kept or it does not read. Never writes the store.
+    /// </summary>
+    public static RoleRecord? RecordAt(string location, string id, long revision)
+    {
+        if (revision == 0) return Seed.FirstOrDefault(role => role.Id == id);
+        using var store = DesktopStoreReader.Open(location);
+        if (store is null || store.Version < Step) return null;
+        var json = store.Query(
+            "SELECT record FROM role_revisions WHERE id = $id AND revision = $revision AND state = 'set'",
+            row => row.GetString(0), ("$id", id), ("$revision", revision)).FirstOrDefault();
+        return json is null ? null : RoleRecord.Parse(id, json).Record;
     }
 
     private static RoleSlot Slot(StoredRole row)

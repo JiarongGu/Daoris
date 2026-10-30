@@ -186,6 +186,12 @@ describe('noteLines', () => {
      * MODELROLE1c2 (D205 §4.6 item 1, §7.1): where a later choice ran, the actor line beside the opening, the actor by the screen's
      * name, the choice's number, the entry that ran and each choice passed in the walk's words, which stay as written.
      */
+    it('words where a quest marked design ran, the role by its name as written', () => {
+      const design = [coded('opening.design', 'Design work: it ran on Designer’s order.', { role: 'Designer' })];
+      expect(noteLines(t, { parts: design }, 'en')).toEqual([{ kind: 'said', text: "Design work: it ran on Designer's order." }]);
+      expect(noteLines(zh, { parts: design }, 'zh')).toEqual([{ kind: 'said', text: '设计工作：按Designer的顺序运行。' }]);
+    });
+
     it('words the actor line where a later choice ran', () => {
       const actor = [
         coded('opening.actor', 'Ran as Build’s choice 2, …', {

@@ -1901,6 +1901,8 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
                 Here = Text(quest, "here") is { Length: > 0 } here ? here : null,
                 // What a list calls it (SESSUX1j). Absent is a host from before the field: the title names it.
                 Short = Text(quest, "short") is { Length: > 0 } named ? named : null,
+                // The work's mark (FOUNDATION1x). Absent is a host from before it: the quest starts on Build's order.
+                Weight = Text(quest, "weight") is { Length: > 0 } weight ? weight : null,
                 // Absent is not waiting: a host from before D79 answers without it.
                 Awaits = Text(quest, "awaits"),
                 // Absent is a person's publish or a chain's step: a host from before SESS1 answers without it.
