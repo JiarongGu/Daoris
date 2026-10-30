@@ -80,6 +80,7 @@ current entry.
 | `branch-worker`, one lane, the pack names the change exactly | build-exact |
 | `branch-worker`, a row whose design is accepted: UI, more than one lane, deletion or concurrency the design decided | build-settled |
 | `branch-worker`, writing a design or a decision, answering a design's reads, a row whose design is the work | build-judgement |
+| A read of a design, a decision or a risky merge by another maker | decide-support or review |
 
 The worker's definition names the model most rows take (build-settled, Sonnet); a build-judgement dispatch passes
 `model: opus` and the role's effort. A dispatch that passes no `model` runs the definition's: on 2026-10-30 every builder of
@@ -104,7 +105,6 @@ test. Before a batch is queued, the parent runs the driver's, the modules' and t
 2026-10-30 that found batch s's three census misses before a candidate did. The parent, running a class with `--no-build`, builds that
 class's own project first: a build of another project leaves the test assembly stale, and twice that day it read as a
 red that was not there.
-| A read of a design, a decision or a risky merge by another maker | decide-support or review |
 
 Measure each batch (step 8) against the reference's targets, note the numbers under D160, and move the reference when
 they say so. A trial candidate takes one or two rows of its role in a batch. Daoris's managed sessions take the same roles
