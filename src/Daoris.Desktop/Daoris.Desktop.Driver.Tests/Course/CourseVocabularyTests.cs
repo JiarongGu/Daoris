@@ -156,6 +156,7 @@ public sealed class CourseVocabularyTests
     private static readonly Dictionary<string, string> Readers = new(StringComparer.Ordinal)
     {
         ["Course/Chat/CurveMove.cs"] = "FOUNDATION1h branch 1: the curve",
+        ["Course/GoOn/GoOnNew.cs"] = "FOUNDATION1h branch 2: go-on-new",
     };
 
     /// <summary>

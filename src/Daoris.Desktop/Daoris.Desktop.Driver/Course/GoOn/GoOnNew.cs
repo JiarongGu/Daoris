@@ -83,9 +83,19 @@ public static class GoOnNew
 
     /// <summary>Judge and keep the choice for a session of this machine's.</summary>
     /// <param name="coolingOf">The cool-off a start on an adapter would read for an account, or null where it is ready.</param>
-    public static async Task<GoOnNewAnswer> AskAsync(
+    public static Task<GoOnNewAnswer> AskAsync(
         ServiceClient service, string home, Func<string?, string?, CoolingEntry?> coolingOf, string id, DateTimeOffset now,
-        CancellationToken ct = default)
+        CancellationToken ct = default) =>
+        AskAsync(service, home, coolingOf, id, now, null, ct);
+
+    /// <summary>
+    /// FOUNDATION1h branch 2 (the foundation design §3.1): the course's one decision for <see cref="CourseTrigger.GoOnNew"/> says whether the
+    /// words may go on in a new session; this reads the facts it decides over and says its answer in the door's own codes and words, so
+    /// nothing a person reads changes. <paramref name="decided"/> hears what the course answered: a test's, no person's.
+    /// </summary>
+    internal static async Task<GoOnNewAnswer> AskAsync(
+        ServiceClient service, string home, Func<string?, string?, CoolingEntry?> coolingOf, string id, DateTimeOffset now,
+        Action<LineCourse>? decided, CancellationToken ct = default)
     {
         var json = await service.SessionRecordsJsonAsync(ct).ConfigureAwait(false);
         var record = SessionRecords.Parse(json).FirstOrDefault(each => string.Equals(each.Id, id, StringComparison.Ordinal));
@@ -93,71 +103,45 @@ public static class GoOnNew
 
         var last = WordsNever.LastHere(json, record.Quest);
         var next = WordsNever.ContinuedIn(json, id);
-        // Ask Daoris's own conversation has no quest a new session would serve (ASKHIST1): its words go on in itself, or its
-        // history starts a new conversation from it.
-        switch (WordsNever.Judge(record, last, next) ?? (WordsNever.IsHelp(record) ? WordsNever.Help : null))
+        var prior = ServiceClient.ReadRecord(json, id);
+
+        // The facts, read lazily as the door's refusals were: a driven record's quest is read only where nothing before it refused, and the
+        // account only where its quest is open or taken. The first pass assumes an open quest and no cooling, so its answer says whether a
+        // later fact could change it (the not-cooling refusal is the one that reached them).
+        var facts = FactsOf(record, prior, last, next, record.Quest is null || record.Kind == "chat" ? null : "Open", null);
+        var course = CourseDecision.Decide(facts, CourseTrigger.GoOnNew);
+        if (course is LineCourse.Hold { Code: NotCooling } && facts.Head.QuestStatus is not null)
         {
-            // HANDWORDS1: a conversation handed over or moved went on in another, which takes its words.
-            case WordsNever.Continued:
-                return Refused(WordsNever.Continued, WordsNever.WentOn(id, next!));
-            case WordsNever.Teammate:
-                return Refused(WordsNever.Teammate, $"{id} ran on {id[..id.IndexOf('/')]}, where its conversation is; nothing said here reaches it.");
-            case WordsNever.Help:
-                return Refused(WordsNever.Help,
-                    $"{id} is Ask Daoris's own conversation, which has no quest a new session would serve: its words go on in it, or "
-                    + "Ask Daoris's history starts a new conversation from it.");
-            case WordsNever.Intake:
-                return Refused(WordsNever.Intake, $"{id} is an intake; answer its ask #{record.Ask} instead: publish it or close it.");
-            case WordsNever.StoodDown:
-                return Refused(WordsNever.StoodDown, $"it stood down: #{record.Quest} is someone else's, so it has nothing to go on with.");
-            case WordsNever.Superseded:
-                return Refused(WordsNever.Superseded, $"#{record.Quest} went on in a later session here, {last}, and its words go there.");
+            // Words the course would hold only for an account's cool-off: whether the quest has closed, and whether the account cools.
+            var quest = await service.FindQuestAsync(record.Quest!, ct).ConfigureAwait(false);
+            var status = quest?.Status ?? "missing";
+            facts = FactsOf(record, prior, last, next, status, status is "Open" or "Taken" ? CoolingFact(coolingOf, prior!) : null);
+            course = CourseDecision.Decide(facts, CourseTrigger.GoOnNew);
         }
 
-        if (record.Live && record.State != "awaiting-person")
-        {
-            return Refused(Running, $"{id} is {record.State}: words reach it there, so it needs no new session.");
-        }
+        decided?.Invoke(course);
 
-        if (ServiceClient.ReadRecord(json, id) is not { WordsWaiting: true } prior)
+        // Only a refusal says why; whatever else the course answers (a wait for the cooling account, or a move to another) keeps the choice.
+        switch (course)
         {
-            return Refused(NoWords, $"no words wait on {id} to go on with: `daoris-driver sessions say {id} \"…\"` says some.");
-        }
-
-        if (record.Kind == "chat" || record.Quest is null)
-        {
-            // MSG1f3: the terminal's *Start a conversation with these words*, which takes them off this session.
-            return Refused(Conversation,
-                $"{id} is a conversation, which nothing carries on by itself: start a conversation with these words instead: "
-                + $"`daoris-driver sessions start-from {id}`.");
-        }
-
-        if (await service.FindQuestAsync(record.Quest, ct).ConfigureAwait(false) is not { Status: "Open" or "Taken" })
-        {
-            return Refused(Closed,
-                $"#{record.Quest} has closed, so nothing carries its session's words on by itself: start a conversation with them "
-                + $"instead: `daoris-driver sessions start-from {id}`.");
-        }
-
-        CoolingEntry? cooling;
-        try
-        {
-            cooling = coolingOf(prior.Adapter, prior.Profile);
-        }
-        catch (DriverException)
-        {
-            // An adapter this build no longer has: nothing cools on it, and its own judgement says why it cannot go on.
-            cooling = null;
-        }
-
-        if (cooling is null)
-        {
-            return Refused(NotCooling, $"the account {id} ran on is not cooling, so the same session goes on with your words at the driver's next look.");
+            case LineCourse.Never never:
+                return never.Why switch
+                {
+                    CourseNeverWhy.Teammate => Refused(WordsNever.Teammate, $"{id} ran on {id[..id.IndexOf('/')]}, where its conversation is; nothing said here reaches it."),
+                    CourseNeverWhy.Intake => Refused(WordsNever.Intake, $"{id} is an intake; answer its ask #{record.Ask} instead: publish it or close it."),
+                    CourseNeverWhy.StoodDown => Refused(WordsNever.StoodDown, $"it stood down: #{record.Quest} is someone else's, so it has nothing to go on with."),
+                    // A later session of its quest is a quest's; none is a conversation that went on in another (HANDWORDS1).
+                    _ when IsSupersededByQuest(record, last) =>
+                        Refused(WordsNever.Superseded, $"#{record.Quest} went on in a later session here, {last}, and its words go there."),
+                    _ => Refused(WordsNever.Continued, WordsNever.WentOn(id, next!)),
+                };
+            case LineCourse.Hold { Why: CourseHoldWhy.Refused, Code: { } code }:
+                return RefusedBy(code, id, record);
         }
 
         try
         {
-            new NewSessionChoices(home).Choose(id, prior.Waiting.Select(word => word.Id).OfType<string>(), now);
+            new NewSessionChoices(home).Choose(id, prior!.Waiting.Select(word => word.Id).OfType<string>(), now);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
@@ -167,6 +151,60 @@ public static class GoOnNew
         return new GoOnNewAnswer(
             true, null,
             "it goes on in a new session at the driver's next look, handed your words; that session starts without this one's conversation.");
+    }
+
+    // The door's sentences, by the codes its refusals carry (the course's holds by `Refused`, and the nevers apart): what the person read
+    // before the course decided is what they read still.
+    private static GoOnNewAnswer RefusedBy(string code, string id, SessionRecord record) => code switch
+    {
+        WordsNever.Help => Refused(WordsNever.Help,
+            $"{id} is Ask Daoris's own conversation, which has no quest a new session would serve: its words go on in it, or "
+            + "Ask Daoris's history starts a new conversation from it."),
+        Running => Refused(Running, $"{id} is {record.State}: words reach it there, so it needs no new session."),
+        NoWords => Refused(NoWords, $"no words wait on {id} to go on with: `daoris-driver sessions say {id} \"…\"` says some."),
+        // MSG1f3: the terminal's *Start a conversation with these words*, which takes them off this session.
+        Conversation => Refused(Conversation,
+            $"{id} is a conversation, which nothing carries on by itself: start a conversation with these words instead: "
+            + $"`daoris-driver sessions start-from {id}`."),
+        Closed => Refused(Closed,
+            $"#{record.Quest} has closed, so nothing carries its session's words on by itself: start a conversation with them "
+            + $"instead: `daoris-driver sessions start-from {id}`."),
+        NotCooling => Refused(NotCooling, $"the account {id} ran on is not cooling, so the same session goes on with your words at the driver's next look."),
+        _ => Refused(code, $"{id} cannot go on in a new session."),
+    };
+
+    // WordsNever.Judge's order for a later part: a quest's later session here first, then the conversation it went on in (HANDWORDS1).
+    private static bool IsSupersededByQuest(SessionRecord record, string? last) =>
+        record.Quest is not null && last is not null && !string.Equals(last, record.Id, StringComparison.Ordinal);
+
+    // What the course reads of the record: the nevers, whether it runs, the words waiting and the quest's status. Ask Daoris's own
+    // conversation has no quest a new session would serve (ASKHIST1). A park is live, but the course reads it as no running turn.
+    private static CourseFacts FactsOf(
+        SessionRecord record, PriorSession? prior, string? last, string? next, string? questStatus, CourseAccount? account)
+    {
+        var words = prior is { WordsWaiting: true } ? [.. prior.Waiting.Select(word => new CourseWord(word.Id ?? "", CourseAuthor.Person))] : new List<CourseWord>();
+        var head = new CourseHead(
+            record.State, Adapter: prior?.Adapter, Profile: prior?.Profile, Conversation: record.Kind == "chat", Teammate: record.Teammate,
+            Intake: record.Ask is not null, StoodDown: record.State == "stood-down",
+            SupersededBy: IsSupersededByQuest(record, last) ? last : next, Waiting: words, Session: record.Id, QuestStatus: questStatus,
+            AskDaoris: WordsNever.IsHelp(record));
+        return new CourseFacts(head, record.Live ? CourseBoundary.TurnRunning : CourseBoundary.ProcessExited, account);
+    }
+
+    // The cool-off a start on the record's adapter would read for its account: its wait, where there is one. An adapter this build no
+    // longer has: nothing cools on it, and its own judgement says why it cannot go on.
+    private static CourseAccount? CoolingFact(Func<string?, string?, CoolingEntry?> coolingOf, PriorSession prior)
+    {
+        try
+        {
+            return coolingOf(prior.Adapter, prior.Profile) is { } cooling
+                ? new CourseAccount(new LineAnswer.Wait(cooling, [cooling], ResetSet.Switch, NextHold.Cooling, OwnFirst: true))
+                : null;
+        }
+        catch (DriverException)
+        {
+            return null;
+        }
     }
 
     private static GoOnNewAnswer Refused(string why, string message) => new(false, why, message);

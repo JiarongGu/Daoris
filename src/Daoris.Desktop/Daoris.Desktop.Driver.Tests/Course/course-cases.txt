@@ -458,6 +458,7 @@ out HandOverAskLookTests.An_approved_hand_over_of_a_closed_quests_session_is_sai
 out HandOverAskLookTests.An_ask_whose_session_is_gone_is_cleared E
 out HandOverAtTurnEndTests.A_session_a_hand_over_started_is_not_handed_over_again_at_its_first_turns_end R
 out GoOnNewTests.The_choice_covers_the_record_while_a_word_it_named_still_waits E
+out GoOnNewTests.The_course_s_answer_is_what_keeps_the_choice_or_refuses_it R
 out GoOnNewTests.A_choice_that_does_not_read_is_none E
 out GoOnNewTests.The_terminal_reads_one_session_s_id_and_its_usage_says_the_verb V
 out GoOnNewTests.The_terminal_says_what_comes_of_it_in_one_line E
@@ -516,7 +517,7 @@ suite HandOverAskLookTests 11
 suite HandOverAtTurnEndTests 6
 suite HandOverAskTickTests 1
 suite HandOverQuestTickTests 1
-suite GoOnNewTests 8
+suite GoOnNewTests 9
 suite StartFromTests 14
 suite StartWithTests 11
 suite AnswersAloneHoldTests 9
