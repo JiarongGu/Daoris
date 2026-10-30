@@ -8,7 +8,7 @@ import { SESSIONS_SLICE, useAnswerSession, useAsks, usePersonDone, useQuests, us
 import { usePushedResyncing } from '../bridge/state/slices';
 import {
   type TurnStop, useCancelTurn, useEditQueued, useEndChat, useHarnesses, useResolveSession, useSendMessage,
-  NO_TURNS, useChatTurns, useSessionEntries, useSessionGroups, useSessionOpenings, useSessionOptions, useSessionSpent, useSessionStreams, useSessionWhere,
+  NO_TURNS, useChatTurns, useSessionEntries, useSessionGroups, useSessionOpenings, useSessionOptions, useSessionRecord, useSessionSpent, useSessionStreams, useSessionWhere,
   useSetSessionOption, useStartChat, useStopTask, useSweepPlan, useTreeFiles, useTreeFile, useReviewedPatch,
   logEvent, useTerminals, useRemotes, useWorkPlan, useSay, useSessionReach, useStartFrom, useGoOnBrief, type WordsAnswer,
   useParkGoAhead, useAccounts, useGoOnNew, useTrace, useDiscardSessionBranch, useLanding, useLandSessionTree, useLandWithoutLook, useSessionDiff,
@@ -461,6 +461,8 @@ export function WorkFrame({
   const channelAsk = attendedEntry && !isIntakeEntry(attendedEntry) ? askOfEntry(attendedEntry) : null;
   // What each of its parts spent (SESSCTX1d), on each part's own row of the strip, from this machine's record.
   const spent = useSessionSpent(attendedEntry?.parts.map((part) => part.session));
+  // What the service kept of the attended session's finished tree, once the tree is let go (KEEPSIZE1).
+  const sessionRecord = useSessionRecord(attended?.id ?? null, attended ? where[attended.id]?.treeGone === true : false);
   const channel = useChannel(channelAsk);
   const postChannel = usePostChannel();
   const forwardChannel = useForwardChannel();
@@ -2496,6 +2498,7 @@ export function WorkFrame({
               : undefined}
             discardingBranch={discardBranch.isPending}
             milestone={milestone}
+            record={sessionRecord}
             onOpenBranch={onOpenBranch}
             trace={attended && trace.available ? {
               open: tracing === attended.id,
