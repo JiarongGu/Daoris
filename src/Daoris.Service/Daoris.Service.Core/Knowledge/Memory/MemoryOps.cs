@@ -125,6 +125,7 @@ public sealed partial class MemoryOpStore
             CREATE INDEX IF NOT EXISTS memory_ops_session ON memory_ops (session, state);
             CREATE INDEX IF NOT EXISTS memory_ops_state ON memory_ops (state);
             CREATE INDEX IF NOT EXISTS memory_ops_target ON memory_ops (repository, target, state);
+            {ReadSetSchema}
             {EventJournal.MemorySchema}
             """;
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
@@ -279,7 +280,13 @@ public sealed partial class MemoryOpStore
             settle.Parameters.AddWithValue("$entry", Value(outcome.Entry));
             settle.Parameters.AddWithValue("$applied", outcome.Revision is { } revision ? revision : DBNull.Value);
             settle.Parameters.AddWithValue("$now", Moments.Write(now));
-            return await settle.ExecuteNonQueryAsync(inside).ConfigureAwait(false);
+            var settled = await settle.ExecuteNonQueryAsync(inside).ConfigureAwait(false);
+            if (settled == 1 && outcome is { State: MemoryOpState.Applied, Revision: { } moved })
+            {
+                await MovedAsync(id, outcome.Entry, moved, inside).ConfigureAwait(false);
+            }
+
+            return settled;
         }, ct);
 
     private async Task InsertAsync(MemoryOp op, CancellationToken ct)

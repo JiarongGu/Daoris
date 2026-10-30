@@ -64,6 +64,26 @@ public sealed class MemoryChangesTests : IAsyncLifetime
     }
 
     /// <summary>
+    /// 🔴 The read set: a session is told once that an entry it read moved, and a reference trimmed from its bounded set is never told.
+    /// </summary>
+    [Fact]
+    public async Task A_trimmed_reference_is_never_told()
+    {
+        var entry = _memory.Engine("Owner").Keep("The map is drawn in tiles.");
+        var read = new MemoryRead(new("Owner", entry.Id), entry.Revision);
+        await _machine.Memory.KeepReadsAsync("reader", [read]);
+        await _machine.Memory.KeepReadsAsync("trimmed", [read]);
+        await _machine.Memory.KeepReadsAsync("trimmed", [.. Enumerable.Range(0, MemoryOpStore.ReadsPerSession).Select(i => new MemoryRead(new("Owner", $"x{i}"), 1))]);
+
+        await _machine.Memory.SweepAsync([Holds(entry.Id, entry.Revision)], Now);
+        await new MemoryApplier(_machine.Memory, _memory).ApplyReadyAsync();
+
+        Assert.Equal([new MemoryReference("Owner", entry.Id)], await _machine.Memory.TellAsync("reader"));
+        Assert.Empty(await _machine.Memory.TellAsync("reader"));
+        Assert.Empty(await _machine.Memory.TellAsync("trimmed"));
+    }
+
+    /// <summary>
     /// 🔴 A bootstrap misses no row another connection commits: its rows and its newest position are read in one transaction, so a row
     /// committed between the two reads would be in neither, and a second connection cannot commit inside it.
     /// </summary>
