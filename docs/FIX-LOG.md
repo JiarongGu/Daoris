@@ -12753,3 +12753,11 @@ mis-rooted instance.
 **Fix.** `WorkInventory.AttachTrees` passes over a detached tree whose folder carries the integration prefix: no unit, so nothing waits on the person. An `i-` folder with a branch checked out is still judged as before.
 
 **Verified.** `WorkInventoryTests.A_lines_integration_tree_is_no_unit_and_one_on_a_branch_is_still_unknown`.
+
+## 2026-11-01 — FOUNDATION1l-i: against a host with no journal, a conversation's end reached the usage slice only at its period
+
+**Root cause.** FOUNDATION1l-i moved the usage slice's wake from the route's `SESSION_ENDED` to `PART_ENDED`, which only the journal's reader tells. A host from before the journal tells none, so the slice judged a conversation's end only at its 15 s reconciliation; the foundation design's §19.12 keeps each reader's old surface as its adapter against such a host. Its wake test waited for the push and passed by the period too.
+
+**Fix.** `JournalFeed.RunAsync` says after each ask whether the host answered with the journal's place (`heard`), the shell's loop keeps it (`DriverLoop.HearsJournal`), and `UsageStateSlice.WakesOn` wakes on `SESSION_ENDED` while it is false. The wake tests time the push under half the period (`WokenAsync`).
+
+**Verified.** `UsageStateSliceTests.A_conversation_s_end_reaches_the_windows_by_its_route_while_the_host_keeps_no_journal` failed first (pushed after 15.03 s), then passed; `JournalFeedTests.Each_ask_says_whether_the_host_keeps_a_journal` failed with the answer withheld, then passed.
