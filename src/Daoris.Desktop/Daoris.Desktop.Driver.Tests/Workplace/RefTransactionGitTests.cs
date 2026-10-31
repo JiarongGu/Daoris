@@ -88,8 +88,11 @@ public sealed class RefTransactionGitTests : IDisposable
             if (!args.Contains("update-ref")) return null;
             if (moveFirst)
             {
-                using var git = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("git", ["-C", root, .. args])
-                    { RedirectStandardOutput = true, RedirectStandardError = true, RedirectStandardInput = args.Contains("--stdin"), UseShellExecute = false })!;
+                using var git = System.Diagnostics.Process.Start(TestGit.Past(new System.Diagnostics.ProcessStartInfo("git", args)
+                {
+                    WorkingDirectory = root, RedirectStandardOutput = true, RedirectStandardError = true,
+                    RedirectStandardInput = args.Contains("--stdin"), UseShellExecute = false,
+                }))!;
                 if (args.Contains("--stdin")) { git.StandardInput.Write("delete refs/heads/a\n"); git.StandardInput.Close(); }
                 git.WaitForExit();
             }

@@ -92,7 +92,7 @@ public sealed class StartTreeCloseTests : IDisposable
         var tree = _opened ?? throw new Xunit.Sdk.XunitException("the start opened no tree: " + said);
         Assert.False(Directory.Exists(tree), "the tree was left: " + said);
         Assert.Contains($"(no token) worktree remove {Path.GetFullPath(tree)}", _asked);
-        Assert.Contains("(no token) update-ref --stdin", _asked);
+        Assert.True(_asked.Contains("(no token) update-ref --stdin"), "the branch's delete was not asked on no token: " + said);
         Assert.True(_branch is null, "the branch was left: " + said);
         Assert.Empty(_ledger.Sessions);
         Assert.DoesNotContain(Path.GetFileName(_agent), _seen);
@@ -128,6 +128,10 @@ public sealed class StartTreeCloseTests : IDisposable
                 Directory.Delete(gone, recursive: true);
                 _tree = null;
                 return Said("");
+            case ["for-each-ref", "--format=%(refname)%09%(symref)", "--", ..]:
+                // The delete's transaction asks first whether a name it moves is a symbolic ref: each that stands, none symbolic.
+                return Said(string.Join('\n', arguments.Skip(3).Where(name => name == "refs/heads/main" || (_branch is not null && name == $"refs/heads/{_branch}"))
+                    .Select(name => name + "\t")));
             case ["update-ref", "--stdin"]:
                 // The branch's delete, verified against the line's tip: the model's one transaction.
                 _branch = null;

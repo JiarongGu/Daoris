@@ -1237,6 +1237,12 @@ export const REACH = Object.freeze([
     gates: ['service', 'driver'],
     why: "the service's and the driver's HistoryWordsTwinTests read the history words' table (HIST1m)",
   },
+  // COMPANYVIEW1i: the call layer's table sits among the service's tests, and the page's read-only copy is held to it cell for cell.
+  {
+    paths: ['src/Daoris.Service/Daoris.Service.Tests/fixtures/call-table.json'],
+    gates: ['service', 'web-unit'],
+    why: "the service's McpRoleFilterTests and the page's callTable.test.ts read the call layer's table (FOUNDATION1r, COMPANYVIEW1i)",
+  },
   // FOUNDATION1c: the participant's work table sits among the service's tests, and the driver's twin and the page's identity read it too.
   {
     paths: ['src/Daoris.Service/Daoris.Service.Tests/fixtures/participant-work.json'],

@@ -5,6 +5,27 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-01 - Each landing started one git more than its ceiling: the symbolic-ref ask before a delete (batch 1031f)
+
+- **Symptom:** `LandGitCountTests` failed all three: the automatic landing 43 starts against 42, the squash press one over 45, the merge press 58 against 57.
+- **Root cause:** GITTXN1's `RefTransaction.RunAsync` asks `for-each-ref --format=%(refname)%09%(symref)` over every name it holds before a delete. Diffing the starts of each landing on main and on the batch showed that one start and no other; nothing repeated a fact (`rev-parse --git-common-dir`, `symbolic-ref`, `merge-base` are as many as before). The ask is a new fact: the proof's holders listing leaves the branch being deleted out, and `update-ref -d` on a symbolic ref deletes its target.
+- **Fix:** no read removed; the three ceilings rise by that one start (43, 46, 58), the reason in a comment beside them.
+- **Verify:** the three red first (43 > 42, 46 > 45, 58 > 57), green after; `CheckoutLockProcessTests`, `CheckoutBesideGitTests`, `RefTransactionGitTests` green under the git settings.
+
+## 2026-11-01 - A checkout's holder was read without sharing its writer's rename (batch 1031f)
+
+- **Symptom:** `read-shares` in `npm run verify` refused `TreeLock.cs` once batch 1031f merged GITLOCK1 and 2; the earlier run had stopped at the CLI's tests before reaching it.
+- **Root cause:** `TreeLock.HolderOf` read the `.by` file, which `TryAlone` writes through `AtomicFile`, with a plain `File.ReadAllText`; a read that does not share deletion is refused while the landing move holds the file (BINDRACE1), and the refused start then named "another of Daoris's writes" instead of its holder. The two reads of git's own `.git` and `commondir` files were unmarked.
+- **Fix:** the holder is read through `AtomicFile.ReadText`; git's files are marked as plain reads.
+- **Verify:** `node tools/read-shares.mjs` clean; `TreeLockTests` (the holder read, a gone holder read as none). Not run: the Process half's `CheckoutBesideGitTests` (the parent's).
+
+## 2026-11-01 - The woken-turn retry test answered the check before its session read the wake (batch 1031f)
+
+- **Symptom:** under the queue's load, `AcpTransientTests.A_turn_woken_during_the_owner_s_check_holds_the_try_until_it_ends` found the go-on sent into the woken turn: two prompts for one.
+- **Root cause:** the test pushed the wake, paused a fixed 200 ms, then answered the owner's check; a loaded reader had not yet read the wake, so the try's admission rightly found no turn running. The product cannot hold for a frame it has not read.
+- **Fix:** the test answers the check once the session has emitted the wake's words, which it does after the wake is read.
+- **Verify:** red 5 of 5 with the pause removed (the interleaving forced); green 10 of 10 the same way with the wait.
+
 ## 2026-10-31 - A pull waited for a session that had ended, its quest still open (GITLOCK2)
 
 - **Symptom:** `daoris-driver trees sync --yes` said a session worked in the checkout and its pull waited, though that session had ended and its quest was merely still open (the family rehearsal's newcomer sync).
@@ -12715,3 +12736,10 @@ mis-rooted instance.
 **Fix.** Each reads the ledger's holders of the checkout inside its hold (`BranchTidying.HoldersAsync`, `CheckoutBeside`) and waits, naming the session, while one is running, waiting or held to go on, or while the ledger cannot be read; every pull door and the integration transport hand it the ledger.
 
 **Verification.** `CheckoutBesideGitTests` (a pull and a promotion beside a driven session in the checkout, each going on once its quest is done; an unreadable ledger), written with the fix and run green; `CheckoutWritersCensusTests` holds the doors.
+## A live stop under the standing confirmation gave up under load (2026-11-01)
+
+**Root cause.** `SessionsCommandTests.A_live_stop_under_the_standing_confirmation_hands_its_loop_the_note_part` waited 5 s (the test world's `Wait`) for the loop's own turn to honour the stop; batch 1031e's candidate ran it beside every other gate, the honouring task's turn came late, and the command answered exit 2.
+
+**Fix.** The test's request waits `Poll.Patience`, as a wait on a signal does (the short-waits census's rule); it returns as soon as the loop honours it.
+
+**Verification.** `SessionsCommandTests`, 70 of 70; the failure was the candidate's alone, the test passing three times in a row run by itself.

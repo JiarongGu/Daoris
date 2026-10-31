@@ -38,7 +38,7 @@ public sealed class TreeLockTests : IDisposable
         var admin = Path.Combine(root, ".git", "worktrees", name);
         Directory.CreateDirectory(admin);
         File.WriteAllText(Path.Combine(admin, "commondir"), "../..\n");
-        var tree = Path.Combine(_home, "trees", name);
+        var tree = DaorisHome.Entry(_home, HomeEntry.Trees, name);
         Directory.CreateDirectory(tree);
         File.WriteAllText(Path.Combine(tree, ".git"), $"gitdir: {admin}\n");
         return tree;
@@ -195,7 +195,7 @@ public sealed class TreeLockTests : IDisposable
     {
         const string left = ", so its branches were left as they were for another look";
         Assert.Equal("`engine`'s branches were being brought up to date" + left, TreeLock.Starting("engine", TreeLock.Updating));
-        Assert.Equal("`engine`'s session trees were being tidied" + left, TreeLock.Starting("engine", TreeLock.Tidying));
+        Assert.Equal("`engine`'s session trees were being cleaned up" + left, TreeLock.Starting("engine", TreeLock.Tidying));
         Assert.Equal("`engine`'s line was being moved to what its integration promoted" + left, TreeLock.Starting("engine", TreeLock.Promoting));
         Assert.Equal("a session was starting in one of `engine`'s trees" + left, TreeLock.Starting("engine", null));
     }
@@ -237,7 +237,7 @@ public sealed class TreeLockTests : IDisposable
         using (TreeLock.TryWriting(_home, _engine, "engine", TreeLock.Updating))
         {
             RecordLock.Take(record).Dispose();
-            (await LandingHolds.TakeAsync(_home, Path.Combine(_home, "trees", "s-1"), CancellationToken.None))!.Dispose();
+            (await LandingHolds.TakeAsync(_home, DaorisHome.Entry(_home, HomeEntry.Trees, "s-1"), CancellationToken.None))!.Dispose();
         }
 
         RecordLock.Take(record).Dispose();

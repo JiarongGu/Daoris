@@ -92,11 +92,11 @@ public sealed class TreeLock : IDisposable
             {
                 dir = dotGit;
             }
-            else if (File.Exists(dotGit) && File.ReadAllText(dotGit).Trim() is var text && text.StartsWith("gitdir:", StringComparison.Ordinal))
+            else if (File.Exists(dotGit) && File.ReadAllText(dotGit).Trim() is var text && text.StartsWith("gitdir:", StringComparison.Ordinal)) // read-shares: git's own .git file, which git writes
             {
                 dir = Path.GetFullPath(Path.Combine(full, text["gitdir:".Length..].Trim()));
                 var common = Path.Combine(dir, "commondir");
-                if (File.Exists(common) && File.ReadAllText(common).Trim() is { Length: > 0 } relative) dir = Path.GetFullPath(Path.Combine(dir, relative));
+                if (File.Exists(common) && File.ReadAllText(common).Trim() is { Length: > 0 } relative) dir = Path.GetFullPath(Path.Combine(dir, relative)); // read-shares: git's own commondir
             }
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
@@ -156,7 +156,7 @@ public sealed class TreeLock : IDisposable
     {
         try
         {
-            var lines = File.ReadAllText(ByOf(PathOf(home, checkout))).Split('\n', StringSplitOptions.TrimEntries);
+            var lines = AtomicFile.ReadText(ByOf(PathOf(home, checkout))).Split('\n', StringSplitOptions.TrimEntries);
             if (lines.Length < 3 || !int.TryParse(lines[1], out var id) || !long.TryParse(lines[2], out var started)) return null;
             using var holder = Process.GetProcessById(id);
             return holder.HasExited || holder.StartTime.ToUniversalTime().Ticks != started ? null : lines[0];
@@ -187,7 +187,7 @@ public sealed class TreeLock : IDisposable
     public static string Held(string repository, string? by) => by switch
     {
         Updating => $"`{repository}`'s branches were being brought up to date",
-        Tidying => $"`{repository}`'s session trees were being tidied",
+        Tidying => $"`{repository}`'s session trees were being cleaned up",
         Promoting => $"`{repository}`'s line was being moved to what its integration promoted",
         Acting => $"a git act was changing `{repository}`'s checkout, or its record being reconciled (see the repository's page)",
         _ => $"a session was starting in `{repository}`, or another of Daoris's writes held it",
