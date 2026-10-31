@@ -369,6 +369,21 @@ export const GIT_HUNKS_BUDGET = {
 };
 
 /**
+ * What a commit of the engine's staged changes rests on, as `GIT_COMMIT_PLAN` answers it (GITAPP2i): the tip and the index as a tree,
+ * HEAD's message for an amend, the hooks its git runs and who commits.
+ */
+export const GIT_COMMIT_PLAN_ENGINE = {
+  head: id('c4f1a2') as string | null,
+  branch: 'refs/heads/main' as string | null,
+  tree: id('7e3b90') as string | null,
+  why: null as string | null,
+  empty: false,
+  message: 'Round the budget total\n' as string | null,
+  hooks: ['pre-commit', 'commit-msg'],
+  identity: 'Aurora Dev <aurora@example.com>' as string | null,
+};
+
+/**
  * The physics session's branch beside the engine's line since they parted, as `GIT_GRAPH` answers `sinceParted` with the two
  * tips, the branch then the line (UX6h3b): its two commits (`left`) and the line's two since it grew from `77a0e1` (`right`),
  * the asset cache's merge among them, in date order.

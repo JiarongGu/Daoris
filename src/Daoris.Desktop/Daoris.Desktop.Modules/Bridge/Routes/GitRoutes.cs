@@ -195,6 +195,46 @@ public sealed class GitRoutes(DriverLoop loop)
         Said = WithoutRoots(run.Said, [root], repository),
     };
 
+    // GITAPP2i (D204, the git-writes design §8): what a commit or an amend would rest on (the tip, the index as a tree, the hooks it runs, who
+    // commits), read fresh. A read, told by event: it starts git.
+    [DriverRoute("GIT_COMMIT_PLAN")]
+    [ByEvent("GIT_COMMIT_PLAN", Untold = "the checkout's index, HEAD and hooks, which no scope tells")]
+    private async Task<object?> GitCommitPlanAsync(IpcRequest request, CancellationToken cancellationToken) =>
+        await GitAnsweredAsync(request, cancellationToken, (root, token) =>
+            new CommitActs(new ActJournal(_loop.Home)).PlanAsync(root, Optional(request, "verb") == CommitVerbs.Amend ? CommitVerbs.Amend : CommitVerbs.Commit, token));
+
+    // GITAPP2i: *Commit* and *Amend* of the staged changes, one commit step of the journal under the checkout's lock; the repository's hooks run
+    // and are never skipped. Answered as the stage's acts are: a refusal, or a hook's refusal, is data with the driver's sentence.
+    [DriverRoute("GIT_MAKE_COMMIT")]
+    [DriverRoute("GIT_AMEND")]
+    [Publishes("GIT_MAKE_COMMIT", StateScopes.Checkouts | StateScopes.Driver)]
+    [Publishes("GIT_AMEND", StateScopes.Checkouts | StateScopes.Driver)]
+    private async Task<object?> GitMakeCommitAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var repository = Optional(request, "repository") ?? throw new DriverException("a commit names its repository.");
+        var service = _loop.Service ?? throw NotReady();
+        var rows = LinesRoutes.Checkouts(await service.RegistryAsync(cancellationToken).ConfigureAwait(false), repository, Optional(request, "workspace"));
+        if (rows.FirstOrDefault(row => Directory.Exists(row.Root)).Root is not { } root)
+        {
+            return Staged(new ActRun(null, null, $"{repository} has no checkout on this machine: nothing was changed.", Refused: true), repository, null);
+        }
+
+        var context = new StageContext(
+            repository, root, () => DriverConfig.Load(_loop.ConfigPath).MayChangeCheckout(repository), token => BranchTidying.BesideAsync(service, token));
+        var press = new CommitPress(
+            request.Type == "GIT_AMEND" ? CommitVerbs.Amend : CommitVerbs.Commit, Optional(request, "message") ?? "", Optional(request, "head"), Optional(request, "tree") ?? "");
+        var run = await new CommitActs(new ActJournal(_loop.Home)).RunAsync(context, press, cancellationToken).ConfigureAwait(false);
+        return new
+        {
+            Done = !run.Refused && run.Outcome == ActOutcomes.Done,
+            run.Refused,
+            run.Act,
+            run.Outcome,
+            Said = WithoutRoots(run.Said, [root], repository),
+            Notes = run.Notes is null ? null : WithoutRoots(run.Notes, [root], repository),
+        };
+    }
+
     // GITAPP2c (D204, the git-writes design §6, §9): *New branch* and *New tag* at a commit, one `create` run as an act of the journal
     // (GitRefActs). A ref act writes no working tree, so it asks no switch. The page presses it after its own confirmation; a terminal's
     // `git branch|tag <repository> <name> --yes` is the same route asked for its words (`said`), run on the window's Confirm. A refusal

@@ -39,7 +39,11 @@ public sealed record ActPlan(string Kind, string Press, string Repository, strin
 }
 
 /// <summary>What an act's run answered: the act and its outcome (<see cref="ActOutcomes"/>), or that it was refused before anything was written, in words.</summary>
-public sealed record ActRun(string? Act, string? Outcome, string Said, bool Refused);
+public sealed record ActRun(string? Act, string? Outcome, string Said, bool Refused)
+{
+    /// <summary>What the act's door adds in plain words beside the record's sentence (a commit's hook's rewrite, a hook's refusal); null where it has none.</summary>
+    public string? Notes { get; init; }
+}
 
 /// <summary>The boundaries a test's seam is called at, by the step's ordinal (none for <see cref="Prepared"/>).</summary>
 public static class ActSeams
@@ -221,10 +225,19 @@ public sealed class ActRuns(ActJournal journal)
     }
 
     /// <summary>The refs a step moves, whose lock files are read before it.</summary>
-    private static IEnumerable<string> RefsOf(ActStepPlan step) =>
-        step.Kind != ActStepKinds.Ref || JsonNode.Parse(step.Postconditions)?["refs"] is not JsonArray refs
+    private static IEnumerable<string> RefsOf(ActStepPlan step)
+    {
+        // A commit moves the branch HEAD names (none when detached).
+        if (step.Kind == ActStepKinds.Commit)
+        {
+            return JsonNode.Parse(step.Postconditions) is JsonObject read && read.TryGetPropertyValue("branch", out var named) && named is JsonValue value
+                && value.TryGetValue<string>(out var full) ? [full] : [];
+        }
+
+        return step.Kind != ActStepKinds.Ref || JsonNode.Parse(step.Postconditions)?["refs"] is not JsonArray refs
             ? []
             : refs.Select(each => each?["ref"]?.GetValue<string>()).OfType<string>();
+    }
 
     /// <summary>
     /// A commit, objects only, whose tree holds <paramref name="entries"/>' blobs, each by its place, for the act's own ref to hold; null where

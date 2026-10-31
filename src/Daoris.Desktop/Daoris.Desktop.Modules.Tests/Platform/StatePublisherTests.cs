@@ -529,6 +529,10 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
     [InlineData("GIT_STAGE", "checkouts", null)]
     [InlineData("GIT_UNSTAGE", "checkouts", null)]
     [InlineData("GIT_UNDO", "checkouts", null)]
+    [InlineData("GIT_COMMIT_PLAN", "", null)]
+    // GITAPP2i: a commit moves the checkout's index and the branch it has out, which the Changes tab and the branch list read.
+    [InlineData("GIT_MAKE_COMMIT", "driver,checkouts", null)]
+    [InlineData("GIT_AMEND", "driver,checkouts", null)]
     // HELPMODE1c3: and the driver's, whose helpGrants draws the browser's grant from the plugin's approval.
     [InlineData("PLUGIN_ACTION", "driver,plugins,harnesses", null)]
     [InlineData("PLUGIN_UPDATE", "driver,plugins,harnesses", null)]

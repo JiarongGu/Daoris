@@ -199,7 +199,16 @@ const blobOf = (file: ChangedFile) => (NONE.test(file.newBlob) ? file.oldBlob : 
 export type ChangeSide = 'unstaged' | 'staged';
 
 /** The last act's answer, said under the tab's head with *Undo* where it is done and kept a way back. */
-export type ChangesLast = { verb: 'stage' | 'unstage' | 'undo'; path: string | null; act: string | null; done: boolean; said: string | null; stale?: boolean };
+export type ChangesLast = {
+  verb: 'stage' | 'unstage' | 'undo' | 'commit' | 'amend';
+  path: string | null;
+  act: string | null;
+  done: boolean;
+  said: string | null;
+  stale?: boolean;
+  /** A commit's own words beside the record's sentence: what a hook changed in it, or why git refused it. */
+  notes?: string | null;
+};
 
 /**
  * The presses of the Changes tab (GITAPP2h): stage and unstage a file whole or by hunk and line, and *Undo*. Absent, the tab only reads
@@ -214,6 +223,8 @@ export type ChangesActs = {
   undo: (act: string) => void;
   /** A file's hunks on a side, read by its holder. */
   Hunks: ComponentType<{ path: string; side: ChangeSide; busy: boolean; onPress: (press: HunkPress) => void }>;
+  /** The commit box (GITAPP2i), read and pressed by its holder; absent, the tab draws none. */
+  Commit?: ComponentType<{ busy: boolean }>;
 };
 
 /**
@@ -254,6 +265,7 @@ export function ChangesTab({ repository, read, refreshing = false, onRefresh, ac
         {onRefresh && <Button variant="ghost" disabled={refreshing} onClick={onRefresh}>{t('projects.git.changes.refresh')}</Button>}
       </div>
       {acts?.last && <ActSaid last={acts.last} busy={acts.busy} onUndo={acts.undo} />}
+      {acts?.Commit && <acts.Commit busy={acts.busy} />}
       {none && <Nothing headline={t('projects.git.changes.none.headline')} body={t('projects.git.changes.none.body', { repository })} />}
       {staged.length > 0 && (
         <ChangeKind kind="staged" count={staged.length}>
@@ -341,12 +353,12 @@ function ChangeRow({ file, side, acts }: { file: ChangedFile; side: ChangeSide; 
 function ActSaid({ last, busy, onUndo }: { last: ChangesLast; busy: boolean; onUndo: (act: string) => void }) {
   const { t } = useTranslation();
   const words = last.done
-    ? t(`projects.git.changes.acted.${last.verb}`, { path: last.path ?? '' })
-    : last.stale ? t('projects.git.changes.acted.stale') : last.said ?? t('projects.git.changes.acted.unknown');
+    ? [t(`projects.git.changes.acted.${last.verb}`, { path: last.path ?? '' }), last.notes].filter(Boolean).join(' ')
+    : last.stale ? t('projects.git.changes.acted.stale') : last.notes ?? last.said ?? t('projects.git.changes.acted.unknown');
   return (
     <div role="status" className="flex flex-wrap items-center justify-between gap-2 rounded-control border border-line p-2">
       <Prose className="min-w-0 text-small"><Inline text={words} /></Prose>
-      {last.done && last.act && last.verb !== 'undo' && (
+      {last.done && last.act && (last.verb === 'stage' || last.verb === 'unstage') && (
         <Button variant="ghost" disabled={busy} onClick={() => onUndo(last.act!)}>{t('projects.git.changes.undo')}</Button>
       )}
     </div>

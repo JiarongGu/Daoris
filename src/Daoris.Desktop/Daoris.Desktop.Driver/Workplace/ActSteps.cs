@@ -60,7 +60,8 @@ internal static class ActSteps
     }
 
     /// <summary>The bound a step of <paramref name="kind"/> runs under, by the git it is or starts (<see cref="GitBounds"/>).</summary>
-    public static TimeSpan BoundOf(string kind) => GitBounds.Of([kind == ActStepKinds.Index ? "update-index" : "update-ref"]);
+    public static TimeSpan BoundOf(string kind) =>
+        GitBounds.Of([kind == ActStepKinds.Index ? "update-index" : kind == ActStepKinds.Commit ? "commit" : "update-ref"]);
 
     // ——— The effects, under the checkout's hold.
 
@@ -69,6 +70,7 @@ internal static class ActSteps
     {
         ActStepKinds.Ref => RefAsync(held, launch, step),
         ActStepKinds.Config => ConfigAsync(held, launch, step),
+        ActStepKinds.Commit => ActCommits.EffectAsync(held, launch, step),
         _ => IndexAsync(held, launch, step),
     };
 
@@ -288,6 +290,9 @@ internal static class ActSteps
                 if (to is null && source is not null) return ActOutcomes.NotDone;
                 return source?.Text == text && target is null ? ActOutcomes.NotDone : ActOutcomes.Unknown;
             }
+
+            case ActStepKinds.Commit:
+                return await ActCommits.ReadAsync(root, plan, ct).ConfigureAwait(false);
 
             default:
             {

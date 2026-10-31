@@ -55,8 +55,11 @@ public static class ActStepKinds
     /// <summary>Index entries replaced under git's own <c>index.lock</c>, the replacement built on a copy.</summary>
     public const string Index = "index";
 
+    /// <summary>One <c>git commit</c>, its hooks and their children in the act's job (GITAPP2i).</summary>
+    public const string Commit = "commit";
+
     /// <summary>Every kind this build runs and reads.</summary>
-    public static IReadOnlyList<string> All { get; } = [Ref, Config, Index];
+    public static IReadOnlyList<string> All { get; } = [Ref, Config, Index, Commit];
 }
 
 /// <summary>One step of an act's plan, as the journal keeps it: its kind, and its arguments, postconditions and rollback as JSON.</summary>
