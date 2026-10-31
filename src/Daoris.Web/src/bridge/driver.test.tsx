@@ -23,7 +23,7 @@ vi.mock('@shenora/react', () => ({
 
 import { keys } from '../data/queries';
 import { refusedNoRoute } from './call';
-import { useDriverReady, useNudge, useRoleStructure, useSyncNow } from './driver';
+import { useDriverReady, useNudge, usePlaces, useRoleStructure, useRoleStructureChain, useSyncNow } from './driver';
 import { useLines } from './repositories/lines';
 
 describe('the driver domain', () => {
@@ -140,8 +140,42 @@ describe('the driver domain', () => {
     expect(result.current.data?.agents).toEqual([]);
     expect(client.getQueryCache().findAll({ queryKey: [...keys.driver, 'roles', 'structure'] })).toHaveLength(1);
 
+    invoke.mockImplementation(async () => ({ works: ['build'], places: [{ workspace: 'aurora', repository: 'engine', works: [] }, { workspace: 'aurora', works: [] }, { works: [] }], agents: [] }));
+    const chained = renderHook(() => useRoleStructureChain({ workspace: 'aurora', repository: 'engine' }, ['build']), { wrapper: wrapper(client) });
+    await waitFor(() => expect(chained.result.current.data?.places).toHaveLength(3));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'ROLE_STRUCTURE', {
+      payload: { chain: { workspace: 'aurora', repository: 'engine' }, works: ['build'], held: expect.any(String) },
+    });
+
     invoke.mockImplementation(async () => { throw Object.assign(new Error('NO_ROUTE'), { code: 'NO_ROUTE' }); });
     const older = renderHook(() => useRoleStructure([]), { wrapper: wrapper(new QueryClient({ defaultOptions: { queries: { retry: false } } })) });
+    await waitFor(() => expect(older.result.current.isError).toBe(true));
+    expect(refusedNoRoute(older.result.current.error)).toBe(true);
+  });
+
+  /** AGENTSPLACE1a: the places by event, a part the shell left out read as none, and an older shell the query error. */
+  it('the places are asked by event with their page and fold, and an older shell is the query error', async () => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const wrapper = ({ children }: { children: ReactNode }) => <QueryClientProvider client={client}>{children}</QueryClientProvider>;
+    invoke.mockImplementation(async () => ({
+      machine: { driven: false, held: false, trees: false, checkout: false, adopted: false },
+      workspaces: [{ place: { workspace: 'aurora', driven: false }, driven: 1, notDriven: 41 }],
+      repositories: [{ workspace: 'aurora', repository: 'engine', driven: true, values: { line: { value: 'release', source: 'here' } } }],
+      matching: 1,
+    }));
+    const { result } = renderHook(() => usePlaces({ limit: 20, fold: 'aurora' }), { wrapper });
+
+    await waitFor(() => expect(result.current.data?.repositories).toHaveLength(1));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'PLACES', { payload: { limit: 20, fold: 'aurora', held: expect.any(String) } });
+    expect(result.current.data?.machine.works).toEqual([]);
+    expect(result.current.data?.workspaces[0]).toMatchObject({ driven: 1, notDriven: 41 });
+    expect(result.current.data?.repositories[0].needs).toEqual([]);
+    expect(result.current.data?.undriven).toBeNull();
+
+    invoke.mockImplementation(async () => { throw Object.assign(new Error('NO_ROUTE'), { code: 'NO_ROUTE' }); });
+    const older = renderHook(() => usePlaces(), { wrapper: ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>{children}</QueryClientProvider>
+    ) });
     await waitFor(() => expect(older.result.current.isError).toBe(true));
     expect(refusedNoRoute(older.result.current.error)).toBe(true);
   });

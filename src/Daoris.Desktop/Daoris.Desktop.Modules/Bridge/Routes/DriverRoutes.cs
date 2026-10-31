@@ -420,6 +420,15 @@ public sealed class DriverRoutes(DriverContext context)
                 }
             }
 
+            // AGENTSPLACE1a: the chosen place's chain alone (the place, its workspace, this machine), where the page reads one place.
+            if (payload.TryGetProperty("chain", out var chosen) && chosen.ValueKind == JsonValueKind.Object)
+            {
+                foreach (var each in PlaceProjection.ChainOf(new RolePlace(Named(chosen, "workspace"), Named(chosen, "repository"))).Where(each => !places.Contains(each)))
+                {
+                    places.Add(each);
+                }
+            }
+
             if (payload.TryGetProperty("works", out var named) && named.ValueKind == JsonValueKind.Array)
             {
                 works.AddRange(named.EnumerateArray().Where(work => work.ValueKind == JsonValueKind.String).Select(work => work.GetString()!)
@@ -469,6 +478,29 @@ public sealed class DriverRoutes(DriverContext context)
             place.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String && value.GetString()!.Trim() is { Length: > 0 } trimmed
                 ? trimmed
                 : null;
+    }
+
+    // The places (AGENTSPLACE1a, the Agents-place design §2 and §3): this machine, each workspace and a page of the driven repositories,
+    // each with its driving, its works' roles and rules, the values of its head's line with where each was set, and why it needs a look,
+    // by the readers a start uses. The not-driven repositories are counts, and a page of one workspace's when its fold is asked. A read of
+    // driver.json, the role store and the service's registry: it asks no git, process or account, so opening a place probes nothing (D150 point 5).
+    [DriverRoute("PLACES")]
+    [ByEvent("PLACES", Untold = "the service's registry, driver.json and the role store")]
+    private async Task<object?> PlacesAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var service = _loop.Service ?? throw NotReady();
+        var registry = await service.RegistryAsync(cancellationToken).ConfigureAwait(false);
+        var ask = new PlacesAsk();
+        if (request.Payload is { ValueKind: JsonValueKind.Object } payload)
+        {
+            string? Text(string name) => payload.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String && value.GetString()!.Trim() is { Length: > 0 } trimmed ? trimmed : null;
+            ask = new PlacesAsk(
+                payload.TryGetProperty("limit", out var limit) && limit.TryGetInt32(out var count) ? count : PlacesAsk.DefaultLimit, Text("after"), Text("search"),
+                payload.TryGetProperty("needsLook", out var look) && look.ValueKind == JsonValueKind.True, Text("fold"), Text("foldAfter"), Text("foldSearch"));
+        }
+
+        return await Task.Run<object?>(
+            () => PlaceProjection.Of(DriverConfig.Load(_loop.ConfigPath), registry, () => RoleCatalog.ReadHome(_loop.Home), ask), cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>A work's typed requirement on the wire, its kind beside its fields; none where the work has none.</summary>

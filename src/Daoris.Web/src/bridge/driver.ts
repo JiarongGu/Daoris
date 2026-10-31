@@ -2,7 +2,9 @@ import { useCallback } from 'react';
 import { type QueryClient, useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenora, useShenoraEvent } from '@shenora/react';
 import type { SyncStanding } from '../data/api';
-import type { ActorRow, KeepSet, RoleCatalogue, RoleChangePress, RoleStructure, StaffingFound, StructurePlaceAsk } from '../data/wiring';
+import type {
+  ActorRow, KeepSet, PlaceRow, PlacesAsk, PlacesRead, RoleCatalogue, RoleChangePress, RoleStructure, StaffingFound, StructurePlaceAsk,
+} from '../data/wiring';
 import { keys, SYNC_SLICE } from '../data/queries';
 import type { AccountWaitTick, Consideration, TrustHold } from '../data/signals';
 import type { AccessLevel } from '../settings/repository/Access';
@@ -602,6 +604,51 @@ export const useRoleStructure = (places: StructurePlaceAsk[], works?: string[], 
   return useQuery({
     queryKey,
     queryFn: () => askHeld('ROLE_STRUCTURE', client, queryKey, works ? { places, works } : { places }, readRoleStructure),
+    enabled: isAvailable && enabled,
+  });
+};
+
+/**
+ * The structure for one chosen place's chain alone (AGENTSPLACE1a): the place, its workspace and this machine, in place of every place.
+ * Told by event under the same key as {@link useRoleStructure}, so a press that changes the roles asks it again.
+ */
+export const useRoleStructureChain = (chain: StructurePlaceAsk, works?: string[], { enabled = true }: { enabled?: boolean } = {}) => {
+  const { isAvailable } = useShenora();
+  const client = useQueryClient();
+  const queryKey = [...keys.driver, 'roles', 'structure', 'chain', chain, works ?? null] as const;
+  return useQuery({
+    queryKey,
+    queryFn: () => askHeld('ROLE_STRUCTURE', client, queryKey, works ? { chain, works } : { chain }, readRoleStructure),
+    enabled: isAvailable && enabled,
+  });
+};
+
+const readPlaces = (raw: unknown): PlacesRead | null => {
+  const answer = raw as Partial<PlacesRead> | null;
+  if (!answer || !answer.machine || !Array.isArray(answer.repositories)) return null;
+  const place = (row: PlaceRow): PlaceRow => ({ ...row, works: row.works ?? [], needs: row.needs ?? [] });
+  return {
+    machine: place(answer.machine),
+    workspaces: (answer.workspaces ?? []).map((each) => ({ ...each, place: place(each.place) })),
+    repositories: answer.repositories.map(place),
+    next: answer.next ?? null,
+    matching: answer.matching ?? answer.repositories.length,
+    undriven: answer.undriven ?? null,
+  };
+};
+
+/**
+ * The places (AGENTSPLACE1a, the Agents-place design §3): this machine, each workspace and a page of the driven repositories with the
+ * values of each head's line and where each was set, the not-driven ones as counts and, when `fold` names a workspace, a page of its
+ * own. Told by event: the driver reads its configuration and the registry alone, so opening asks no git, process or account.
+ */
+export const usePlaces = (ask: PlacesAsk = {}, { enabled = true }: { enabled?: boolean } = {}) => {
+  const { isAvailable } = useShenora();
+  const client = useQueryClient();
+  const queryKey = [...keys.driver, 'places', ask] as const;
+  return useQuery({
+    queryKey,
+    queryFn: () => askHeld('PLACES', client, queryKey, ask, readPlaces),
     enabled: isAvailable && enabled,
   });
 };

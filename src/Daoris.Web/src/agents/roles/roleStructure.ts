@@ -32,10 +32,16 @@ export const roleId = (role: string): string => `role:${role}`;
 export const agentId = (agent: string): string => `agent:${agent}`;
 export const workId = (work: string): string => `work:${work}`;
 
-/** The places to ask: this machine, each workspace and each repository (with its workspace), once each. */
-export function placesToAsk(registry: readonly { repository: string; workspace?: string | null }[]): StructurePlace[] {
+/**
+ * The places to ask: this machine, each workspace and each *driven* repository (with its workspace), once each. A repository the
+ * machine does not drive is left out (AGENTSPLACE1a): it takes no work, and the driver counts it for its workspace's fold.
+ */
+export function placesToAsk(
+  registry: readonly { repository: string; workspace?: string | null }[], drivable: readonly string[],
+): StructurePlace[] {
   const workspaces = [...new Set(registry.map((row) => row.workspace ?? 'default'))].sort();
-  const repositories = [...registry].sort((a, b) => a.repository.localeCompare(b.repository));
+  const driven = new Set(drivable.map((name) => name.toLowerCase()));
+  const repositories = registry.filter((row) => driven.has(row.repository.toLowerCase())).sort((a, b) => a.repository.localeCompare(b.repository));
   return [
     {},
     ...workspaces.map((workspace) => ({ workspace })),
