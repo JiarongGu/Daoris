@@ -263,7 +263,7 @@ public sealed class CommitActsGitTests : TreeSyncFixture
         Assert.True(File.Exists(held), "Daoris never removes git's lock");
     }
 
-    private static void KillRun(string home, string run)
+    internal static void KillRun(string home, string run)
     {
         using var connection = new SqliteConnection($"Data Source={DesktopStore.LocationIn(home)};Pooling=false");
         connection.Open();

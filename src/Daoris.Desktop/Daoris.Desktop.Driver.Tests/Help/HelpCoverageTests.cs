@@ -1007,6 +1007,14 @@ public sealed partial class HelpCoverageTests
             "it writes a commit into the person's own checkout, with the message the person typed and the hooks the repository runs, each press "
             + "judged against the HEAD and the index the page read (D204 point 3); a go could not stand for a message the person has not written, "
             + "so Ask Daoris proposes none and the person presses it in the Changes tab.")),
+        // GITAPP2k (D204, the git-writes design §8): switch and stash Save in the Changes tab.
+        ("projects", "useGitSwitchAct", null, new Exempt(
+            "it moves the person's own checkout to another branch and runs the repository's post-checkout hook, each press judged against the HEAD "
+            + "the page read and refused where tracked files are changed; Ask Daoris's git kind proposes cards for git acts, never applies them, so "
+            + "the person presses it in the Changes tab.")),
+        ("projects", "useGitStashAct", null, new Exempt(
+            "it saves the person's changed files into the stash every linked tree shares, judged against the HEAD and the stash tip the page read; "
+            + "a go could not stand for the files it would take away from the working tree, so the person presses it in the Changes tab.")),
         ("projects", "useSetLine", null, new Door("setting", "line")),
         ("projects", "useSetLanding", null, new Door("setting", "landing")),
         ("projects", "useSetLanguage", null, new Door("setting", "language")),

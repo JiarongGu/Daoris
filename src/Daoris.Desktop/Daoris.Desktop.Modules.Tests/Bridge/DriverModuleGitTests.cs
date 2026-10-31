@@ -169,6 +169,36 @@ public sealed class DriverModuleGitTests : DriverModuleBridge
         Assert.Equal(before, (await GitAsync(root, "rev-parse", "HEAD")).Trim());
     }
 
+    /// <summary>GITAPP2k: the switch's and the stash's plans read, and with the switch off each press is refused as data, with no path, and nothing moves.</summary>
+    [Fact]
+    [Trait(Category.Name, Category.Process)]
+    public async Task The_switch_and_stash_plans_read_and_a_press_with_the_switch_off_is_refused_in_words()
+    {
+        var root = await InitAsync();
+        await GitAsync(root, "branch", "other");
+        await File.WriteAllTextAsync(Path.Combine(root, "README.md"), "changed\n");
+        var before = (await GitAsync(root, "rev-parse", "HEAD")).Trim();
+        var module = await UpAsync(root);
+
+        var switchPlan = (await AnswerAsync(module, "GIT_SWITCH_PLAN", new { repository = "engine", workspace = "aurora", branch = "other" })).GetProperty("value");
+        var stashPlan = (await AnswerAsync(module, "GIT_STASH_PLAN", new { repository = "engine", workspace = "aurora" })).GetProperty("value");
+        var switched = await AnswerAsync(module, "GIT_SWITCH", new { repository = "engine", workspace = "aurora", branch = "other", from = "main", head = before });
+        var stashed = await AnswerAsync(module, "GIT_STASH", new { repository = "engine", workspace = "aurora", head = before, untracked = true });
+
+        Assert.Equal("other", switchPlan.GetProperty("to").GetString());
+        Assert.True(switchPlan.GetProperty("dirty").GetBoolean());
+        Assert.Equal(1, stashPlan.GetProperty("tracked").GetInt32());
+        foreach (var refused in new[] { switched, stashed })
+        {
+            Assert.True(refused.GetProperty("refused").GetBoolean());
+            Assert.Contains("may not change", refused.GetProperty("said").GetString());
+            Assert.DoesNotContain(root, refused.GetRawText().Replace("\\\\", "\\"));
+        }
+
+        Assert.Equal(before, (await GitAsync(root, "rev-parse", "HEAD")).Trim());
+        Assert.Empty((await GitAsync(root, "stash", "list")).Trim());
+    }
+
     [Fact]
     public async Task The_changes_read_of_a_repository_with_no_checkout_is_answered_with_its_code()
     {

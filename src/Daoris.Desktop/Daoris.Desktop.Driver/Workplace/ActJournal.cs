@@ -58,8 +58,14 @@ public static class ActStepKinds
     /// <summary>One <c>git commit</c>, its hooks and their children in the act's job (GITAPP2i).</summary>
     public const string Commit = "commit";
 
+    /// <summary>One <c>git switch</c> of the checkout to a local branch, its <c>post-checkout</c> hook in the act's job (GITAPP2k).</summary>
+    public const string Switch = "switch";
+
+    /// <summary>One <c>git stash push</c>, which writes the stash shared by every linked tree (GITAPP2k).</summary>
+    public const string Stash = "stash";
+
     /// <summary>Every kind this build runs and reads.</summary>
-    public static IReadOnlyList<string> All { get; } = [Ref, Config, Index, Commit];
+    public static IReadOnlyList<string> All { get; } = [Ref, Config, Index, Commit, Switch, Stash];
 }
 
 /// <summary>One step of an act's plan, as the journal keeps it: its kind, and its arguments, postconditions and rollback as JSON.</summary>
