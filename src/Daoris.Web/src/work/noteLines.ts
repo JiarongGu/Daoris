@@ -675,6 +675,8 @@ export const NOTE_VALUES: Readonly<
   // The level whose access setup landed work by its rule (ACCESSWORDS1).
   access: 'accessAt',
   awaits: 'id', answered: 'id', ask: 'id', quest: 'id', session: 'id', opinion: 'id',
+  // The operation a combined Accept brought a member in by (LINESTOGETHER1d2), by its id.
+  operation: 'id',
   quests: 'ids',
   servers: 'names', works: 'names',
   option: 'text', chosen: 'text', work: 'text', state: 'bgstate', repository: 'text',
