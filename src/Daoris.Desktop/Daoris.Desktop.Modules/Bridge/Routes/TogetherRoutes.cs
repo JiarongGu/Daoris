@@ -52,7 +52,7 @@ public sealed class TogetherRoutes(DriverContext context)
         var sources = new WorkflowRunSources(service, _loop.Home, config, plugins, WorkspaceOf);
         async Task<bool> StepsOnAsync(string member, CancellationToken token) =>
             await WorkflowRunReader.ReadAsync(new WorkflowRunAsk(Session: member), sources, token).ConfigureAwait(false) is { Problem: null } read
-            && read.Runs.Any(run => TogetherPress.StepsOn(run.Steps));
+            && read.Runs.Any(run => WorkflowRuns.StepsOnPastLanding(run.Steps));
         var (head, candidates, refused) = await TogetherPress.CandidatesAsync(records, session, members, cancellationToken, StepsOnAsync).ConfigureAwait(false);
         if (head is null) return new { Operation = (string?)null, Refused = refused };
         var pressed = await Press(service).PressAsync(head, candidates, cancellationToken).ConfigureAwait(false);

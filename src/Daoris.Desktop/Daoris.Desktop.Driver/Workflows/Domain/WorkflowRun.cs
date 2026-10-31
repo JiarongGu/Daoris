@@ -1094,6 +1094,13 @@ public static class WorkflowRuns
         _ => null,
     };
 
+    /// <summary>
+    /// Whether a run's steps hold an <c>integrate</c> not yet settled: the workflow steps on past the landing, the only maker of its unit's
+    /// integration request, so bringing its session into another's (LINESTOGETHER1d2) is refused.
+    /// </summary>
+    public static bool StepsOnPastLanding(IEnumerable<WorkflowRunStep> steps) =>
+        steps.Any(each => each.Step.Kind == NodeKinds.Integrate && !WorkflowRunStates.Settled(each.State));
+
     private static string? TextOf(WorkflowStep step, string name) =>
         step.Settings.FirstOrDefault(setting => setting.Name == name)?.Value as string;
 

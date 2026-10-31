@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { refusedNoRoute } from '../../bridge/call';
+import { refusedNoRoute } from '../../bridge/shell';
 import { type RoleStructure, useRoleStructure } from '../../bridge/driver';
 import { useRegistry } from '../../data/queries';
 import { heldMarks, placesToAsk } from './structure';
