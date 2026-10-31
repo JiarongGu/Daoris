@@ -66,6 +66,30 @@ public sealed class MemoryHostTests(LocalHost host) : IClassFixture<LocalHost>
         Assert.Equal(404, again.Status);
     }
 
+    /// <summary>
+    /// 🔴 KNOWCENTRAL2f: what a line read, as the driver reads it for a hand-over's brief, is answered as it stands now: an entry ended since
+    /// its session read it is answered ended, with its reason; nothing is answered off this machine.
+    /// </summary>
+    [Fact]
+    public async Task A_line_s_reads_are_answered_as_they_stand_for_its_brief()
+    {
+        var engine = host.Composed.Memory!.Open("Keeper", MemoryReinforcement.None)!;
+        var tiles = await engine.RememberAsync("Keeper draws its map in tiles.");
+        var opened = await host.PostAsync("/api/sessions/chat", new { repository = "Keeper", adapter = "stub" });
+        var session = opened.Json.GetProperty("session").GetProperty("id").GetString()!;
+        foreach (var state in new[] { "starting", "working", "stopped" }) Assert.Equal(200, (await host.PostAsync($"/api/sessions/{session}/state", new { state })).Status);
+        await host.Composed.Sessions.Memory.KeepReadsAsync(session, [new MemoryRead(new("Keeper", tiles.Id), tiles.Revision)]);
+        Assert.NotNull(await engine.EndAsync(tiles.Id, tiles.Revision, "Keeper draws in vectors now."));
+
+        Assert.Equal(404, (await host.PostAsync($"/api/sessions/{session}/memory/read", new { }, DaorisHost.OffMachine)).Status);
+        var read = await host.PostAsync($"/api/sessions/{session}/memory/read", new { });
+
+        Assert.Equal(200, read.Status);
+        var shown = Assert.Single(read.Json.GetProperty("shown").EnumerateArray());
+        Assert.Equal(($"Keeper:{tiles.Id}", MemoryStanding.Ended), (shown.GetProperty("reference").GetString(), shown.GetProperty("standing").GetString()));
+        Assert.Contains("Keeper draws in vectors now.", shown.GetProperty("line").GetString());
+    }
+
     /// <summary>🔴 A stopped chat's staged change is dropped by the person's word through its session's door, and a running one's refused.</summary>
     [Fact]
     public async Task The_person_drops_a_stopped_session_s_staged_change()

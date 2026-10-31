@@ -752,6 +752,9 @@ public sealed record MemoryKeepRequest(bool? Keep);
 public sealed record MemoryDecisionResponse(string Message, MemoryOp? Op, int Moved);
 // A session's memory changes as its record's page shows them, an end's reason as its proposer wrote it.
 public sealed record SessionMemoryResponse(IReadOnlyList<MemoryOp> Ops);
+// KNOWCENTRAL2f: what a line read, each entry as it stands now, for the brief a part continuing it is handed.
+public sealed record MemoryReadResponse(IReadOnlyList<MemoryShownResponse> Shown);
+public sealed record MemoryShownResponse(string Reference, long Read, string Standing, long? Revision, long? Checked, string? Why, string Line);
 // SUPERVISOR1a-i (D208): a park the driver took up put back, less the supervisor's words it admitted and never handed.
 public sealed record RestoreParkRequest(IReadOnlyList<string>? TakeBack, string? Note, JsonElement? NoteParts = null);
 public sealed record SessionActionResponse(SessionResponse Session, string Message);

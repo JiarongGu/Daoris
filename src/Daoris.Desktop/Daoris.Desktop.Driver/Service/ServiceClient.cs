@@ -977,6 +977,21 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
         throw new DriverException($"the service refused reading session `{session}`'s record: {answer.Payload}");
     }
 
+    /// <summary>
+    /// What the line ending at <paramref name="session"/> read of memory, each entry in one line as the service rechecked it now
+    /// (<c>POST /api/sessions/{id}/memory/read</c>, KNOWCENTRAL2f); none where the service has no such door or answers none.
+    /// </summary>
+    public async Task<IReadOnlyList<string>> LineMemoryAsync(string session, CancellationToken ct = default)
+    {
+        var answer = await SendAsync(ServiceVerb.Post, $"/api/sessions/{Uri.EscapeDataString(session)}/memory/read", "{}", ct).ConfigureAwait(false);
+        if (answer.Status == 404) return [];
+        if (!answer.Ok) throw new DriverException($"the service refused reading the memory session `{session}`'s line read: {answer.Payload}");
+        using var document = JsonDocument.Parse(answer.Payload);
+        return document.RootElement.ValueKind == JsonValueKind.Object
+            ? [.. Items(document.RootElement, "shown").Select(item => Text(item, "line")).OfType<string>().Where(line => line.Trim().Length > 0)]
+            : [];
+    }
+
     /// <summary>This machine's asks that are not closed, newest first — what the loop finds intakes in.</summary>
     public async Task<IReadOnlyList<AskView>> AsksAsync(CancellationToken ct = default)
     {

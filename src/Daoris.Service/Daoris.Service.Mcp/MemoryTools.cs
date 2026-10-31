@@ -11,6 +11,8 @@ namespace Daoris.Knowledge.Mcp;
 /// an entry's owner. Every door answers from the repositories the registry places in the caller's workspace (<see cref="MemoryScope"/>),
 /// and every engine is opened with no reinforcement, so a read changes nothing. A change is kept <c>staged</c> under its session, seen by
 /// that session and a session continuing it alone, until the session's commit point releases it; no tool here calls an engine's write.
+/// What a named session reads is kept in its read set, and its next search or get opens with the entries its line read that moved since,
+/// each told once (KNOWCENTRAL2f).
 /// </summary>
 /// <param name="service">The registry each call reads its workspace's repositories from.</param>
 /// <param name="ambient">An unnamed caller's workspace, from where it runs.</param>
@@ -56,6 +58,7 @@ public sealed class MemoryTools(
         if (caller.Refused is { } refused) return refused;
         if (engines is null) return NotOn;
 
+        var told = await ToldAsync(caller, ct).ConfigureAwait(false);
         var found = new List<(MemoryReference Reference, MemoryEntry Entry)>();
         foreach (var repository in caller.Members)
         {
@@ -64,14 +67,16 @@ public sealed class MemoryTools(
             found.AddRange(entries.Select(entry => (new MemoryReference(repository, entry.Id), entry)));
         }
 
+        await KeepReadsAsync(caller, found.Take(Limit).Select(each => new MemoryRead(each.Reference, each.Entry.Revision)), ct).ConfigureAwait(false);
+
         // This session's own additions, and those of the sessions it continues, before their commit point: no other session sees them.
         var staged = caller.Record is { } record && ledger is not null
             ? (await ledger.Memory.StagedForAsync(record.Id, ct).ConfigureAwait(false))
                 .Where(op => op.Change is { Kind: MemoryOpKind.Write or MemoryOpKind.Supersede, Text: { } written } && Matches(written, query))
                 .ToList()
             : [];
-        if (found.Count == 0 && staged.Count == 0) return $"No memory entry in workspace `{caller.Workspace}` matches `{query}`.";
-        var text = new StringBuilder($"Memory in workspace `{caller.Workspace}`:").AppendLine().AppendLine();
+        if (found.Count == 0 && staged.Count == 0) return $"{told}No memory entry in workspace `{caller.Workspace}` matches `{query}`.";
+        var text = new StringBuilder(told).Append($"Memory in workspace `{caller.Workspace}`:").AppendLine().AppendLine();
         foreach (var (reference, entry) in found.Take(Limit)) text.AppendLine($"- `{reference}` (revision {entry.Revision}): {entry.Text}");
         foreach (var op in staged.Take(Limit))
         {
@@ -84,6 +89,26 @@ public sealed class MemoryTools(
     private static bool Matches(string text, string query) =>
         query.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .Any(word => text.Contains(word, StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>What a named session's answer opens with: the entries its line read that moved since, each told once (the design §3).</summary>
+    private async Task<string> ToldAsync(MemoryCaller caller, CancellationToken ct)
+    {
+        if (caller.Record is not { } record || ledger is null) return "";
+        var moved = await ledger.Memory.TellAsync(record.Id, ct).ConfigureAwait(false);
+        return moved.Count == 0
+            ? ""
+            : $"Since this session read them, these memory entries moved: {string.Join(", ", moved.Select(each => $"`{each}`"))}. Read each again "
+              + "with memory_get before relying on it." + Environment.NewLine + Environment.NewLine;
+    }
+
+    /// <summary>What a named session read, kept in its read set so it is told once when an entry moves.</summary>
+    private async Task KeepReadsAsync(MemoryCaller caller, IEnumerable<MemoryRead> reads, CancellationToken ct)
+    {
+        if (caller.Record is { } record && ledger is not null && reads.ToList() is { Count: > 0 } kept)
+        {
+            await ledger.Memory.KeepReadsAsync(record.Id, kept, ct).ConfigureAwait(false);
+        }
+    }
 
     [McpServerTool(Name = "memory_get")]
     [Description(
@@ -100,18 +125,26 @@ public sealed class MemoryTools(
         if (engines is null) return NotOn;
 
         var at = caller.Placed(named);
+        var told = await ToldAsync(caller, ct).ConfigureAwait(false);
         if (engines.Open(at.Repository, MemoryReinforcement.None) is not { } engine
             || await engine.GetAsync(at.Entry, ct).ConfigureAwait(false) is not { } entry)
         {
-            return $"No memory entry `{at}`. References come from memory_search.";
+            return $"{told}No memory entry `{at}`. References come from memory_search.";
         }
 
-        var text = new StringBuilder($"`{at}`, revision {entry.Revision}");
+        var text = new StringBuilder(told).Append($"`{at}`, revision {entry.Revision}");
         if (entry.Ended is { } why) text.Append($", ended: {MemoryEndToken.Strip(why)}");
         text.AppendLine().AppendLine().AppendLine(entry.Text);
-        if (!expand) return text.ToString();
+        if (!expand)
+        {
+            await KeepReadsAsync(caller, [new MemoryRead(at, entry.Revision)], ct).ConfigureAwait(false);
+            return text.ToString();
+        }
 
         var related = await engine.ExpandAsync(at.Entry, ct).ConfigureAwait(false);
+        await KeepReadsAsync(
+            caller, [new MemoryRead(at, entry.Revision), .. related.Select(each => new MemoryRead(at with { Entry = each.Entry.Id }, each.Entry.Revision))], ct)
+            .ConfigureAwait(false);
         text.AppendLine().AppendLine(related.Count == 0 ? "It relates to no other entry." : "It relates to:");
         foreach (var each in related)
         {
