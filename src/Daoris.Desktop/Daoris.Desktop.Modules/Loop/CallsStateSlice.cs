@@ -45,10 +45,10 @@ public static class CallsStateSlice
     {
         var calls = RunningCalls.Of(loop.Events);
         var watch = SessionWatch.Of(loop.Events);
-        return new(Name, bus, _ => Task.FromResult<IReadOnlyList<SliceJudged>?>([.. Judge(calls.Now()), Quiet(watch.QuietNow())]))
+        return new(Name, bus, _ => Task.FromResult<IReadOnlyList<SliceJudged>?>([.. Judge(calls.Now()), Quiet(watch.QuietNow()), Heard(loop.Output.HeardNow())]))
         {
             Keyed = true,
-            Hears = [wake => HearCalls(calls, wake), wake => HearQuiet(watch, wake)],
+            Hears = [wake => HearCalls(calls, wake), wake => HearQuiet(watch, wake), wake => HearHeard(loop.Output, wake)],
             Failed = error => loop.Log?.Warn("state.slice", ("slice", Name), ("message", error.Message)),
         };
     }
@@ -79,6 +79,49 @@ public static class CallsStateSlice
         }
 
         return new SliceJudged(QuietPartition, part);
+    }
+
+    /// <summary>
+    /// COWORKVIEW1a's partition (the cowork view design §3.7): each session whose console is live and has said something, keyed by
+    /// session, with the moment of its newest line or its streams' (<i>last heard</i>). Memory alone; the held answer carries none.
+    /// </summary>
+    public const string HeardPartition = "heard";
+
+    /// <summary>How often one session's lines may wake the slice, since the page draws <i>1 min ago</i> by its own clock.</summary>
+    public static readonly TimeSpan HeardEvery = TimeSpan.FromSeconds(10);
+
+    /// <summary>What the window heard (<see cref="HeardPartition"/>): each session under its id as <c>{at}</c>.</summary>
+    public static SliceJudged Heard(IReadOnlyDictionary<string, DateTimeOffset> heard)
+    {
+        var part = new JsonObject();
+        foreach (var (session, at) in heard.OrderBy(each => each.Key, StringComparer.Ordinal))
+        {
+            part[session] = JsonSerializer.SerializeToNode(new { At = at }, IpcJson.Options);
+        }
+
+        return new SliceJudged(HeardPartition, part);
+    }
+
+    /// <summary>Wake the slice at a session's line, at most once per session per <see cref="HeardEvery"/>.</summary>
+    public static IDisposable HearHeard(SessionOutput output, Action wake)
+    {
+        var last = new Dictionary<string, DateTimeOffset>(StringComparer.OrdinalIgnoreCase);
+
+        void Lined(string key, ConsoleLine _)
+        {
+            var session = key.Split('/', 2)[0];
+            var now = output.Clock();
+            lock (last)
+            {
+                if (last.TryGetValue(session, out var was) && now - was < HeardEvery) return;
+                last[session] = now;
+            }
+
+            wake();
+        }
+
+        output.Lined += Lined;
+        return new Hearing(() => output.Lined -= Lined);
     }
 
     /// <summary>Wake the slice where the watcher's mark moved (<see cref="SessionWatch.Changed"/>).</summary>

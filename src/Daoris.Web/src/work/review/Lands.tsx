@@ -6,6 +6,7 @@ import { Button, Inline, PathText } from '../../design/ui';
 import { WorkflowHold } from '../../workflow/WorkflowHold';
 import type { LineBehind } from './diff';
 import type { DiscardOffer, LandOffer } from '../groups';
+import { EntryAccept, type EntryPress } from './EntryAccept';
 import { HeldDiscardAsk, HeldDiscardButton, heldDiscardable } from './HeldDiscard';
 import { type Answered, InlineConfirm } from '../InlineConfirm';
 import { type LandingConflict, type LandsCommit, type LeftOutCommit, LeftOutLines, RebaseAsk, type SayRebase } from './LandingSync';
@@ -103,7 +104,9 @@ function useAsking(ask?: WorkAsk): [boolean, (open: boolean) => void] {
  * foot, from the same props, so a press in either is the same press. The frame holds where its ask is open (`ask`), and
  * whether a landing is on its way (`busy`), which holds *Accept…* in both.
  */
-export function Lands({ session, lands, landing, planning, onReview, onLand, onSayRebase, onName, review, behind, opinion, ask, busy = false, toEvent }: {
+export function Lands({ session, lands, landing, planning, onReview, onLand, onSayRebase, onName, review, behind, opinion, ask, busy = false, toEvent, entry }: {
+  /** The session's own press, where its parts offer work: it replaces this part's *Accept…* wherever it is drawn (REVIEWFLOW1a). */
+  entry?: EntryPress | null;
   /**
    * The way to the event in the conversation that raised the work's wait and the second opinion's, where it holds them
    * (WAITFOOT1c, D168 point 4): *In the conversation* on the work's line and under the gate.
@@ -169,7 +172,8 @@ export function Lands({ session, lands, landing, planning, onReview, onLand, onS
         <span className="text-ink-open">{t('work.head.landed.not', { count: lands.commits })}</span>
         <PathText path={lands.branch} className="min-w-0 text-meta text-ink-faint" />
         <span className="text-ink-faint">{t('work.head.inTree', { tree: lands.tree })}</span>
-        {onLand && !asking && acceptable && !conflict && (
+        {entry && <EntryAccept {...entry} draw="press" />}
+        {!entry && onLand && !asking && acceptable && !conflict && (
           <Button variant="primary" className="px-2 py-0.5 text-small" disabled={busy} onClick={() => setAsking(true)}>
             {t('work.head.accept')}
           </Button>
@@ -210,7 +214,8 @@ export function Lands({ session, lands, landing, planning, onReview, onLand, onS
           busy={review?.busy}
         />
       )}
-      {onLand && asking && acceptable && (
+      {entry && <EntryAccept {...entry} draw="ask" />}
+      {!entry && onLand && asking && acceptable && (
         <InlineConfirm
           tone="primary"
           block
@@ -260,6 +265,20 @@ export function Lands({ session, lands, landing, planning, onReview, onLand, onS
           )}
         </InlineConfirm>
       )}
+    </>
+  );
+}
+
+/** The session's work to land where the attended part has none of its own, beside a part that has (REVIEWFLOW1a): its one press. */
+export function EntryWork({ entry }: { entry: EntryPress }) {
+  const { t } = useTranslation();
+  return (
+    <>
+      <p className="m-0 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-small">
+        <span className="text-ink-faint">{t('work.head.itsWork')}</span>
+        <EntryAccept {...entry} draw="press" />
+      </p>
+      <EntryAccept {...entry} draw="ask" />
     </>
   );
 }

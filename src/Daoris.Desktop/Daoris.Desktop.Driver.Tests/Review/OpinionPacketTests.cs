@@ -174,11 +174,14 @@ public sealed class OpinionPacketTests : IDisposable
         Assert.True(PermissionRules.AllowsConnector(handed, "quest_list"));
         // HANDBACK1: a quest's handback is read as its quests are.
         Assert.True(PermissionRules.AllowsConnector(handed, "handback_read"));
+        // KNOWCENTRAL2b: a repository's memory is read as its knowledge is, and changed or corrected by no reviewer.
+        Assert.True(PermissionRules.AllowsConnector(handed, "memory_search"));
+        Assert.True(PermissionRules.AllowsConnector(handed, "memory_get"));
         foreach (var tool in new[]
                  {
                      "quest_respond", "quest_publish", "go_ahead_ask", "permission_propose", "review_serve", "review_ready",
                      "opinion_answer", "helper_ask", "helper_answer", "partner_answer", "channel_post", "channel_read", "handover_propose", "line_read",
-                     "question_ask",
+                     "question_ask", "memory_write", "memory_end", "memory_propose",
                  })
         {
             Assert.False(PermissionRules.AllowsConnector(handed, tool), tool);
@@ -198,10 +201,11 @@ public sealed class OpinionPacketTests : IDisposable
         Assert.True(PermissionRules.AllowsConnector(handed, "helper_answer"));
         Assert.True(PermissionRules.AllowsConnector(handed, "knowledge_search"));
         Assert.True(PermissionRules.AllowsConnector(handed, "handback_read"));
+        Assert.True(PermissionRules.AllowsConnector(handed, "memory_search"));
         foreach (var tool in new[]
                  {
                      "helper_ask", "opinion_give", "opinion_answer", "quest_respond", "quest_publish", "permission_propose", "channel_post",
-                     "channel_read", "handover_propose", "line_read",
+                     "channel_read", "handover_propose", "line_read", "memory_write", "memory_end", "memory_propose",
                  })
         {
             Assert.False(PermissionRules.AllowsConnector(handed, tool), tool);

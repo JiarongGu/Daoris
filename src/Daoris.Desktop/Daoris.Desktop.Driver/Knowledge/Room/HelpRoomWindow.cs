@@ -29,11 +29,13 @@ internal sealed class HelpRoomWindow : IHelpRoomSection
         // review and moves as they do; the doors say what it draws.
         // NOTIFY2b (D196 point 3, the notification design §2.1, §4): Notifications joined the views, on the right by default, shown
         // by the title bar's bell; it holds the presses waiting for the person's confirmation and What needs you.
-        text.Append("attended session. Seven views stand in the two regions and move between them:\n");
-        text.Append("Notifications, the timeline, the review, the workflow and the console of the session attended on Sessions, Ask Daoris, and the\n");
+        // COWORKVIEW1a: At work, after the workflow, says who works on the attended session from Daoris's records.
+        text.Append("attended session. Eight views stand in the two regions and move between them:\n");
+        text.Append("Notifications, the timeline, the review, the workflow, At work and the console of the session attended on Sessions, Ask Daoris, and the\n");
         text.Append("terminal: the person's own shell (PowerShell unless they choose another), in the panel beside the\n");
         text.Append("console, which starts where the attended session works. A session's console takes no typing; the\n");
-        text.Append("terminal is the person's, never a session's.\n");
+        text.Append("terminal is the person's, never a session's. At work lists the session's parts and its subagents, each with\n");
+        text.Append("its state and its end, read from Daoris's records and never from the conversation's text.\n");
         text.Append("Notifications, in the right side bar unless the person moved it, is everything that came to the person: first\n");
         text.Append("each press a terminal sent that waits for their confirmation, as its whole card, then What needs you, every\n");
         text.Append("row with its acts. The bell on the title bar shows it (View → Notifications too) and counts what needs them,\n");

@@ -31,12 +31,31 @@ import type { HeadLink } from '../head/SessionHead';
  *   that one's title with *Open session* where the frame holds it (HANDWORDS1-ii).
  * - **Words on their way** (SENDLOST1b): above every box, as sending, and kept where the page stopped waiting on their send.
  *
+ * - **Where a word goes** (LINESTOGETHER1b): the first line above any box that takes words, handed in as `goes`, and on the
+ *   words waiting on a part beside the head one press, *Say it to the head instead*, by `onMove`.
+ *
  * A molecule: the box it is handed, the words in and a press out.
  */
-export function SessionBox({
+export function SessionBox({ goes, ...props }: ComponentProps<typeof Boxed> & {
+  /** The sentence saying where a word goes and when; absent, none is drawn. */
+  goes?: string;
+}) {
+  return (
+    <>
+      {goes && (props.box.kind === 'steer' || props.box.kind === 'say') && (
+        <p className="m-0 border-t border-line px-4 pt-2 text-small text-ink-soft">{goes}</p>
+      )}
+      <Boxed {...props} />
+    </>
+  );
+}
+
+function Boxed({
   box, quest, draft, onDraft, sending = false, refusal, held, ending = [], waiting = [], stopping = false, focus = 0, accepts, onSend,
-  levels, onLevel, onKeepingStop, onRemove, onEdit, going, continued, onOpenSession, park,
+  levels, onLevel, onKeepingStop, onRemove, onEdit, onMove, going, continued, onOpenSession, park,
 }: {
+  /** Say a word waiting on the record to the head instead, by its id (LINESTOGETHER1b); absent, none offers the press. */
+  onMove?: (id: string) => void;
   /**
    * What a park asks, drawn in its answer's box above the words (PARKVIEW1, the park's ask design §3): its question with each answer
    * a press, the go-aheads it waits on, by when and what it holds. Absent, the box is the answer alone, as before.
@@ -139,7 +158,7 @@ export function SessionBox({
   }
 
   // What waits on the record, each with its controls (SAIDBACK1b); a reword goes as the edit, never as more words.
-  const resting = { queued: waiting, queuedLabel: t('work.say.waiting'), onRemove, onEdit };
+  const resting = { queued: waiting, queuedLabel: t('work.say.waiting'), onRemove, onEdit, onMove };
 
   if (box.mode === 'answer') {
     return (

@@ -53,6 +53,11 @@ public sealed class PermissionRulesTests : IDisposable
         "mcp__daoris-knowledge__line_read",
         "mcp__daoris-knowledge__handback_read",
         "mcp__daoris-knowledge__question_ask",
+        "mcp__daoris-knowledge__memory_search",
+        "mcp__daoris-knowledge__memory_get",
+        "mcp__daoris-knowledge__memory_write",
+        "mcp__daoris-knowledge__memory_end",
+        "mcp__daoris-knowledge__memory_propose",
     ];
 
     /// <summary>What the `commit` default allows (PERM4), a rename among it (UNBLOCK4, D122 §3.6).</summary>
@@ -193,6 +198,12 @@ public sealed class PermissionRulesTests : IDisposable
     [InlineData("line_read")]
     // HANDBACK1: a session reads one quest's handback of its own workspace, read-only, as it reads the quest list.
     [InlineData("handback_read")]
+    // KNOWCENTRAL2b: a repository's memory, read changing nothing; a write staged, an end waiting for its approver, a proposal a quest.
+    [InlineData("memory_search")]
+    [InlineData("memory_get")]
+    [InlineData("memory_write")]
+    [InlineData("memory_end")]
+    [InlineData("memory_propose")]
     public void The_opinion_tools_reach_a_session_by_default(string tool)
     {
         var rules = PermissionRules.Compose(PermissionRules.Load(_home), "default", "engine");

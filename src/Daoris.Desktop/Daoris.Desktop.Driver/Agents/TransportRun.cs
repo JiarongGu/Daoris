@@ -225,7 +225,7 @@ internal sealed class TransportRun(ITransportHost host, ISessionAdapter adapter,
                 HarnessCapture.CaptureStructuredAsync(
                     host.Hearing(process.StandardOutput, id), host.Hearing(process.StandardError, id), records.Transcript, id, records.Output,
                     records.Events, mapper, prompt: null, ct, preamble, opened: opening, append: append, said: records.Said, own: _own,
-                    lineageHome: records.LineageHome),
+                    lineage: records.LineageHome is { } home ? LineageStreams.Current.Writer(home, id) : null),
                 id, records.KeepAs);
             _captures.Add(structured);
             return new Leg(process, structured) { Mapper = mapper, Structured = structured };
@@ -294,6 +294,7 @@ internal sealed class TransportRun(ITransportHost host, ISessionAdapter adapter,
             streams: records.Output?.ForSession(id),
             onConversation: records.KeepAs is not { } keepAs ? null : named => host.KeepConversation(id, keepAs, named))
         {
+            Lineage = records.LineageHome is { } home ? LineageStreams.Current.Writer(home, id) : null,
             TypedFailures = protocol.TypedFailures,
         };
         Session = session;

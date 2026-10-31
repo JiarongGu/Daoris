@@ -1,5 +1,6 @@
 {
-  "work.accept.entry": "采纳全部 {{count}} 段…",
+  "work.accept.entry": "采纳…",
+  "work.accept.entry_other": "采纳全部 {{count}} 段…",
   "work.accept.ask": "采纳此需求的全部 {{count}} 段…",
   "work.accept.title.entry": "采纳这条工作线的每一段",
   "work.accept.title.ask": "采纳此需求的工作",

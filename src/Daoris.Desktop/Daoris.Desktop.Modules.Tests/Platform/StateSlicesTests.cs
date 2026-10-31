@@ -298,6 +298,52 @@ public sealed class StateSlicesTests
     }
 
     /// <summary>
+    /// COWORKVIEW1a (the design §4.1, <i>an input's health</i>): a slice's health is read from memory beside its snapshot, and its move
+    /// is told as a failure begins and ends, never at a second failure with the same words, once at one whose words changed.
+    /// </summary>
+    [Fact]
+    public async Task A_slice_s_health_is_told_as_a_failure_begins_and_ends_and_again_only_where_its_words_changed()
+    {
+        string? why = null;
+        var slice = new StateSlice("test", _bus, _ => why is { } words ? throw new InvalidOperationException(words) : Task.FromResult(Judged()), "e1");
+        var told = new List<SliceHealthReading>();
+        slice.HealthMoved += () => told.Add(slice.Health);
+
+        why = "unreadable";
+        await slice.JudgeAsync();
+        await slice.JudgeAsync();
+        why = "refused";
+        await slice.JudgeAsync();
+        why = null;
+        await slice.JudgeAsync();
+        await slice.JudgeAsync();
+
+        Assert.Equal(
+            [new(false, true, "unreadable"), new(false, true, "refused"), new(true, false, null)],
+            told);
+    }
+
+    /// <summary>
+    /// COWORKVIEW1a (C5-1.2): a first judgement of no partition sets the slice judged and pushes nothing, so its health is told once to
+    /// wake a read that waits on it; a second empty judgement tells neither.
+    /// </summary>
+    [Fact]
+    public async Task A_first_judgement_of_no_partition_tells_its_health_once_and_no_push()
+    {
+        var slice = new StateSlice("test", _bus, _ => Task.FromResult<IReadOnlyList<SliceJudged>?>([]), "e1");
+        var moved = 0;
+        var pushed = 0;
+        slice.HealthMoved += () => moved++;
+        slice.Pushed += () => pushed++;
+
+        await slice.JudgeAsync();
+        await slice.JudgeAsync();
+
+        Assert.Equal((1, 0), (moved, pushed));
+        Assert.Equal(new SliceHealthReading(true, false, null), slice.Health);
+    }
+
+    /// <summary>
     /// SLICESTALL1: the service client's read times out by cancelling, and the worker took that for its own stop, so one slow answer
     /// ended the slice for the window's life and every view kept what it last held. A read's timeout is a failure like any other.
     /// </summary>

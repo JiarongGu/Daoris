@@ -7,8 +7,8 @@ import type { Compose, OpenGroup } from '../app/opener';
 import { SESSIONS_SLICE, useAnswerSession, useAsks, usePersonDone, useQuests, useRegistry, useSessions } from '../data/queries';
 import { usePushedResyncing } from '../bridge/state/slices';
 import {
-  type TurnStop, useCancelTurn, useEditQueued, useEndChat, useHarnesses, useResolveSession, useSendMessage,
-  NO_TURNS, useChatTurns, useSessionEntries, useSessionGroups, useSessionOpenings, useSessionOptions, useSessionRecord, useSessionSpent, useSessionStreams, useSessionWhere,
+  type TurnStop, useCancelTurn, useEditQueued, useMoveQueued, useEndChat, useHarnesses, useResolveSession, useSendMessage,
+  NO_TURNS, useChatTurns, useSessionEntries, useSessionGroups, useSessionOpenings, useSessionOptions, useSessionRecord, useSessionRelated, useSessionSpent, useSessionStreams, useSessionWhere,
   useSetSessionOption, useStartChat, useStopTask, useSweepPlan, useTreeFiles, useTreeFile, useReviewedPatch,
   logEvent, useTerminals, useRemotes, useWorkPlan, useSay, useSessionReach, useStartFrom, useGoOnBrief, type WordsAnswer,
   useParkGoAhead, useAccounts, useGoOnNew, useTrace, useDiscardSessionBranch, useLanding, useLandSessionTree, useLandWithoutLook, useSessionDiff,
@@ -22,6 +22,8 @@ import { permissionSaid, type PermissionWaits } from './waits/PermissionAsks';
 import { answerAloneSaid, type AnswerWaits } from './waits/AnswerAlone';
 import { type Sent, useSending, useSettled } from './conversation/sending';
 import { WorkflowRunView } from '../workflow/WorkflowRunView';
+import { AtWorkView } from './atWork/AtWorkView';
+import { useSessionAtWork } from '../bridge/sessions/atWork';
 import { opinionAsked, opinionHolds } from './gates/opinion';
 import { useOpinionActs } from './gates/opinionActs';
 import { OpinionGate } from './gates/OpinionGate';
@@ -47,7 +49,7 @@ import { accountNames } from './accountNames';
 import { type ChatLimitHeld, chatLimitWaitSaid, limitedLine, limitWaitOf, limitWaitSaid } from './waits/limitWait';
 import { LimitWaitLine } from './waits/LimitWaitLine';
 import {
-  boxOf, coolingFor, goOnBriefRefusal, levelsOf, NATIVE_WORDS_LIMIT, neverSentence, type NewSessionAnswer, startFromRefusal, takesWords, tooLong,
+  boxOf, coolingFor, goesLine, goOnBriefRefusal, levelsOf, moveSaid, NATIVE_WORDS_LIMIT, neverSentence, type NewSessionAnswer, startFromRefusal, takesWords, tooLong,
 } from './say';
 import { SessionBox } from './conversation/SessionBox';
 import { askOf, pauseAsk, wiredFor, type WorkTarget } from './pausing/pausing';
@@ -80,10 +82,10 @@ import { dockOpensOn, type DockTab, followed, NothingFollowed, RightDock } from 
 import { SessionTimeline } from './head/SessionTimeline';
 import { SessionRail } from './rail/SessionRail';
 import { type ActFacts, actMenu, headerActs, offeredActs, primaryAct, stopAsk } from './acts';
-import { askOfEntry, entryOfSession, isIntakeEntry, nameOfEntry } from './entries';
+import { askOfEntry, entryOfSession, isIntakeEntry, nameOfEntry, placeOf } from './entries';
 import { useAccountUse, useChannel, useForwardChannel, usePostChannel } from '../bridge/shell';
 import { keptSessionFilters, sessionFilters, shownOf } from './groups';
-import { leadingAgentOf, type SessionFactsOf, sessionFacts, sessionFactsTip } from './head/headFacts';
+import { leadingAgentOf, nextPress, type SessionFactsOf, sessionFacts, sessionFactsTip } from './head/headFacts';
 import type { Answered } from './InlineConfirm';
 import type { AgentChoice } from './start/AgentChip';
 import { HandOverAsk, type HandOverRoster } from './start/HandOverAsk';
@@ -97,6 +99,7 @@ import { type SessionDoors, useSessionActs } from './sessionActs';
 import { ListMore } from './frame/ListPane';
 import { AddProjectDrawer, ImportFolderDrawer } from '../projects/ProjectManage';
 import { useCheckoutBranch } from '../bridge/repositories/git';
+import { useIntegrationHead } from '../bridge/repositories/integrate';
 import { type CheckoutReader, NewConversation, type NewStart } from './start/NewConversation';
 import { keepChosen, keepRecent, mergeRecent, readChosen, readRecent } from './start/startRecent';
 import { type Carry, NO_CARRY } from '../compose/carry';
@@ -462,6 +465,7 @@ export function WorkFrame({
   // What each of its parts spent (SESSCTX1d), on each part's own row of the strip, from this machine's record.
   const spent = useSessionSpent(attendedEntry?.parts.map((part) => part.session));
   // What the service kept of the attended session's finished tree, once the tree is let go (KEEPSIZE1).
+  const related = useSessionRelated(attended?.id);
   const sessionRecord = useSessionRecord(attended?.id ?? null, attended ? where[attended.id]?.treeGone === true : false);
   const channel = useChannel(channelAsk);
   const postChannel = usePostChannel();
@@ -560,6 +564,24 @@ export function WorkFrame({
   // (D137 §2.4), so the box stays.
   const reach = useSessionReach(attended && here && !oneTurn ? attended : null, steering);
   const box = boxOf({ session: attended, here, intake, listening: steering, reach });
+  // LINESTOGETHER1b: where a word goes in a line with a head, and the press moving a word held beside the head to it.
+  const stands = attended ? placeOf(attendedEntry, attended.id) : null;
+  const goes = stands && (box.kind === 'steer' || box.kind === 'say') ? goesLine(t, {
+    ...stands, reaches: reach?.reaches ?? null,
+    holdsWhy: (groups.data ?? []).find((row) => row.session === attended?.id)?.holds?.why,
+  }) : undefined;
+  const moveQueued = useMoveQueued();
+  const onMoveWord = stands?.place === 'beside' && attendedEntry?.head && attended && box.kind === 'say' && box.mode === 'goOn'
+    ? (word: string) => {
+      const session = attended.id;
+      moveQueued.mutate({ session, id: word, to: attendedEntry.head! }, {
+        onSuccess: (moved) => {
+          if (moved.moved) { setRefusal(null); notify(t('work.say.moved')); return; }
+          setRefusal({ session, text: moveSaid(t, moved) });
+        },
+      });
+    }
+    : undefined;
   // What the attended session's door does with a word while a turn runs (COWORK1a, D188): the levels its box offers, and the
   // keeping stop where its door can stop a turn keeping the session. Nothing known, none: the box queues as it did.
   const levels = levelsOf(reach);
@@ -1128,6 +1150,16 @@ export function WorkFrame({
     ? !collapsed && panelView === 'workflow'
     : !dockClosed && dock === 'workflow');
   const workflowRun = useWorkflowRun(following ? { session: following.id } : null, { enabled: workflowShown });
+  // Who is at work on the followed session (COWORKVIEW1a): asked only while *At work* shows, and again at each `atWork` wake.
+  const atWorkShown = following !== null && (placed.places.atWork === 'panel'
+    ? !collapsed && panelView === 'atWork'
+    : !dockClosed && dock === 'atWork');
+  // Also asked while the followed session works, for the head's *working with it* (§3.7), at its mount and each wake.
+  const atWork = useSessionAtWork(atWorkShown || (following !== null && following.state === 'working') ? following?.id : null);
+  const atWorkHeld = atWork.data;
+  const withIt = atWorkHeld && 'answer' in atWorkHeld
+    ? atWorkHeld.answer.subagents.working + atWorkHeld.answer.parts.filter((part) => part.key !== atWorkHeld.answer.attended && part.state === 'working').length
+    : 0;
   // FABRIC-CUTOVER1f: the person's skip or stop of a graph run's node, pressed under the node in the view, kept for the driver's next look.
   const runNodeWord = useRunNodeWord();
   // FABRIC-PIPELINE1d: *Run again* and *Not now* under a check held unknown, the person's word on the held attempt.
@@ -1337,6 +1369,8 @@ export function WorkFrame({
       const followingEntry = following ? entryOfSession(entries, following.id) : null;
       return withWhose(
         <DiffPane
+          // The session's one press, where the part reviewed is the attended one (REVIEWFLOW1a, D168).
+          entryPress={following && following.id === attended?.id ? entryAt('review') ?? null : null}
           entry={followingEntry?.entry ?? null}
           ask={followingEntry && !isIntakeEntry(followingEntry) ? askOfEntry(followingEntry) : null}
           // The followed session's (UX6b): off Sessions an ended one is reviewed on Sessions, where it is attended.
@@ -1415,6 +1449,25 @@ export function WorkFrame({
               onHeld={resolveHeld.mutateAsync}
             />
           </div>,
+        )
+        : elsewhere
+          ? <NothingFollowed ended={attended !== null} onOpenSessions={onOpenSessions} />
+          : <p className="m-0 p-3 text-small text-ink-faint">{t('work.attended.none.body')}</p>;
+    }
+    if (view === 'atWork') {
+      // Who is at work on the followed session (COWORKVIEW1a, the cowork view design §5): its parts and its subagents, from Daoris's
+      // records; each part opens its page.
+      return following
+        ? withWhose(
+          <AtWorkView
+            held={atWork.data}
+            error={atWork.error ? sentence(atWork.error) : null}
+            onOpen={(id) => { attend(id); if (elsewhere) onOpenSessions?.(); }}
+            onRetry={() => { void atWork.refetch(); }}
+            // A child's console tab, while the window holds its stream (the harness's agent id ends the stream's key).
+            streamOf={(child) => streams.find((row) => row.key.endsWith(`/${child}`))?.key}
+            onOpenStream={(key) => { pickStream(key); openView('console'); }}
+          />,
         )
         : elsewhere
           ? <NothingFollowed ended={attended !== null} onOpenSessions={onOpenSessions} />
@@ -1508,6 +1561,8 @@ export function WorkFrame({
   const milestones = useWorkState(attended && here ? attended.id : null, Boolean(attended && here));
   const milestoneUnits = milestones.data?.units ?? [];
   const milestone = (attended && milestoneUnits.length === 1 ? milestoneUnits[0] : milestoneUnits.find((unit) => unit.session === attended?.id)) ?? null;
+  // INTEGRATE1h: its unit's integration state, one line in the head's facts, from the integration record.
+  const integration = useIntegrationHead(milestone?.unit);
   // Words a cooling account holds (MSG1g2, D137 §2.2): a driven record of this machine's between runs, parked or ended, whose
   // own account cools. A running one hears words at its door, and a chat's go on with the next word said to it.
   const between = attended && here && attended.kind !== 'chat'
@@ -1896,22 +1951,31 @@ export function WorkFrame({
     // Under way for this session from either place or another window (STATEHUB1c, D169 point 7), never another session's press.
     workBusy: landsNow || discardsNow,
   } : null;
-  // ACCEPTALL1 (D167's 2026-10-15 amendment): its line of work's one Accept, where more than one of its parts offers work to land
-  // here; the plan reads git for every part, so it is asked only once the ask is open.
+  // Where the work's ask (*Accept…*, *Discard branch…*) is open: in the head or at the foot, never both (D168 point 3). The session's
+  // own press (REVIEWFLOW1a) is that ask in the place of a part's.
+  const [workAsk, setWorkAsk] = useState<{ session: string; at: 'head' | 'foot' | 'review' } | null>(null);
+  const workAskAt = (at: 'head' | 'foot'): WorkAsk | undefined => (attended ? {
+    open: workAsk?.session === attended.id && workAsk.at === at,
+    onOpen: (open) => setWorkAsk((was) => (open
+      ? { session: attended.id, at }
+      : was?.session === attended.id && was.at === at ? null : was)),
+  } : undefined);
+  // ACCEPTALL1 (D167's 2026-10-15 amendment), REVIEWFLOW1a: its line of work's one Accept, where its parts offer work to land and
+  // more than one does or the attended part has none of its own; the plan reads git for every part, so it is asked only once the ask
+  // is open.
   const entryOffered = attendedEntry && here
     ? attendedEntry.parts.filter((part) => (groups.data ?? []).some((row) => row.session === part.session && row.lands)).length
     : 0;
-  const entryAccepts = attendedEntry && entryOffered > 1 ? attendedEntry.entry : null;
-  const [entryAsking, setEntryAsking] = useState<string | null>(null);
-  const entryPlan = useEntryLanding(entryAccepts, entryAccepts !== null && entryAsking === entryAccepts);
+  const entryAccepts = attendedEntry && (entryOffered > 1 || (entryOffered === 1 && !lands)) ? attendedEntry.entry : null;
+  const entryPlan = useEntryLanding(entryAccepts, entryAccepts !== null && Boolean(attended && workAsk?.session === attended.id));
   const landEntry = useLandEntry();
   // Under way in any window (ACCEPTALL1e): this one's press from its send, another's from the driver's telling.
   const entryLandsNow = useUnderWaySubject('LAND_ENTRY', entryAccepts);
-  const entryAccept: ComponentProps<typeof EntryAccept> | undefined = entryAccepts && attendedEntry ? {
+  const entryBase: ComponentProps<typeof EntryAccept> | undefined = entryAccepts && attendedEntry ? {
     scope: 'entry',
     offered: entryOffered,
-    open: entryAsking === entryAccepts,
-    onOpen: (open) => setEntryAsking(open ? entryAccepts : null),
+    open: false,
+    onOpen: () => {},
     plans: entryPlan.data ? [entryPlan.data] : null,
     reading: entryPlan.isFetching && !entryPlan.data,
     busy: entryLandsNow,
@@ -1929,11 +1993,25 @@ export function WorkFrame({
       onError: (error) => answered.refused(sentence(error)),
     }),
   } : undefined;
+  // The press where it is drawn: its ask open there, and held where the ask is open in another place (D168 point 3).
+  const entryAt = (at: 'head' | 'foot' | 'review'): ComponentProps<typeof EntryAccept> | undefined => {
+    if (!entryBase || !attended) return undefined;
+    const mine = workAsk?.session === attended.id ? workAsk.at : null;
+    return {
+      ...entryBase,
+      open: mine === at,
+      held: mine !== null && mine !== at,
+      onOpen: (open) => setWorkAsk((was) => (open
+        ? { session: attended.id, at }
+        : was?.session === attended.id && was.at === at ? null : was)),
+    };
+  };
+  const entryAccept = entryAt('head');
   // WAITFOOT1c (D168 point 4): the waits that stand where the strip draws them, and the events that raised them, which the
   // conversation finds and tells; the way to each is handed to the head and the strip alike, and a raising block's *To the wait*
   // leads to its line where it is on screen (WAITFOOT2b).
   const answerBelow = answering || (talking && box.kind === 'chat');
-  const standing = attended && here && waits ? waitsOf({ ...waits, answerBelow }) : [];
+  const standing = attended && here && waits ? waitsOf({ ...waits, entry: entryAccept, answerBelow }) : [];
   // PARKVIEW1: where the box answers the park, its question and its go-aheads stand in the box, so *To the wait* leads there.
   const inTheBox = (wait: AnchorWait) => answering && (wait === 'question' || wait.startsWith('goAhead:'));
   const [anchored, setAnchored] = useState<(AnchorState & { session: string }) | null>(null);
@@ -1944,15 +2022,14 @@ export function WorkFrame({
   const [toWait, setToWait] = useState<{ session: string; wait: AnchorWait; n: number; at: 'head' | 'foot' | 'box' } | null>(null);
   // Spent once the person attends another: the strip drawn again on coming back takes no focus from it.
   useEffect(() => { setToWait(null); }, [attended?.id]);
+  // To the head's line while it is on screen, where the strip stands aside (WAITFOOT2b), else the strip's; a park's question and
+  // go-aheads to the box that answers them (PARKVIEW1), which is always drawn. The head's *next* leads the same way (REVIEWFLOW1b).
+  const goToWait = (anchor: AnchorWait) => {
+    if (!attended) return;
+    const at = inTheBox(anchor) ? 'box' : waitsOnScreen === true ? 'head' : 'foot';
+    setToWait((was) => ({ session: attended.id, wait: anchor, n: (was?.n ?? 0) + 1, at }));
+  };
   const seekAt = (at: 'head' | 'foot' | 'box') => (attended && toWait?.session === attended.id && toWait.at === at ? toWait : null);
-  // Where the work's ask (*Accept…*, *Discard branch…*) is open: in the head or at the foot, never both (D168 point 3).
-  const [workAsk, setWorkAsk] = useState<{ session: string; at: 'head' | 'foot' } | null>(null);
-  const workAskAt = (at: 'head' | 'foot'): WorkAsk | undefined => (attended ? {
-    open: workAsk?.session === attended.id && workAsk.at === at,
-    onOpen: (open) => setWorkAsk((was) => (open
-      ? { session: attended.id, at }
-      : was?.session === attended.id && was.at === at ? null : was)),
-  } : undefined);
   // And a rule's *Allow…* (PROPOSEHERE1b), by the proposal it asks about: open in the head or at the foot, never both.
   const [ruleAsk, setRuleAsk] = useState<{ session: string; id: string; at: 'head' | 'foot' } | null>(null);
   const ruleAskAt = (at: 'head' | 'foot'): RuleAsk | undefined => (attended ? {
@@ -2118,11 +2195,17 @@ export function WorkFrame({
     partners: partnersOf(partnerPieces.data ?? [], (agent) => agentRoster.names?.[agent] ?? agent),
     waitingSince: waiting?.session === attended.id ? waiting.since : undefined,
     calling: waiting?.session === attended.id ? waiting.calling : undefined,
+    withIt: following?.id === attended.id ? withIt : 0,
     // AGENTERRORS1a2 (D210 §5.1, §8): *Trying again at* while a transient episode waits.
     retrying: waiting?.session === attended.id ? waiting.retrying : undefined,
     // HEAVYSLOT1: its heavy run said in place of the call, by its gate or whom it waits behind.
     heavy: heavyPart ? heavyLine(t, heavyPart, heavyTitleOf) : null,
+    integration: integration.data ?? null,
+    // REVIEWFLOW1b: where the work stands, from the same facts the head's waits are drawn from.
+    flow: { parts: entryOffered, landing: landsNow },
   } : null;
+  const nextWait = nextPress(standing);
+  const nextAnchor = standing[0] ? anchorOf(standing[0]) : null;
   const pageHead = attended && attendedFacts && attendedShown && headFactsOf && (
     <SessionPageHead
       session={attended}
@@ -2131,6 +2214,7 @@ export function WorkFrame({
       facts={sessionFacts(t, headFactsOf)}
       // RAILLINE1: the line is one line, its running call said short; the whole line, the call's whole title in it, is its tip.
       factsTip={sessionFactsTip(t, headFactsOf)}
+      next={nextWait && nextAnchor ? { press: nextWait, onPress: () => goToWait(nextAnchor) } : null}
       acts={headActs}
       primary={headPrimary}
       busy={actions.busy}
@@ -2480,6 +2564,8 @@ export function WorkFrame({
             } : undefined}
             chain={quest ? buildChain(quest.id, quests.data ?? [], sessions.data ?? []) : []}
             relations={attended ? relationsOf(attended, quest, quests.data ?? [], sessions.data ?? []) : undefined}
+            related={related}
+            onRelated={attend}
             continues={continues}
             helps={helps}
             heavy={attended && heavyPart ? heavyRow(t, heavySlot.data, attended.id, heavyTitleOf, attend) : null}
@@ -2552,11 +2638,7 @@ export function WorkFrame({
                     onAnchors={(session, state) => setAnchored({ session, ...state })}
                     onToWait={(wait) => {
                       const anchor = anchorOf(wait);
-                      if (!anchor) return;
-                      // To the head's line while it is on screen, where the strip stands aside (WAITFOOT2b), else the strip's; a park's
-                      // question and go-aheads to the box that answers them (PARKVIEW1), which is always drawn.
-                      const at = inTheBox(anchor) ? 'box' : waitsOnScreen === true ? 'head' : 'foot';
-                      setToWait((was) => ({ session: attended.id, wait: anchor, n: (was?.n ?? 0) + 1, at }));
+                      if (anchor) goToWait(anchor);
                     }}
                     // Where the person's words went, a door to that session; and words that cannot go on here, one press
                     // that starts a conversation with them, where a chat can start here (MSG1f, D137 §3.1, §2.2).
@@ -2613,6 +2695,7 @@ export function WorkFrame({
               // The box below takes the park's answer: a driven park's answer box, or a parked chat's composer.
               answerBelow={answerBelow}
               workAsk={workAskAt('foot')}
+              entry={entryAt('foot')}
               ruleAsk={ruleAskAt('foot')}
               toEvent={toEvent}
               seek={seekAt('foot')}
@@ -2702,6 +2785,8 @@ export function WorkFrame({
               onKeepingStop={box.kind === 'steer' && keepingStop ? onKeepingStop : undefined}
               onRemove={editQueued.remove}
               onEdit={editQueued.reword}
+              goes={goes}
+              onMove={onMoveWord}
               // The conversation it went on in, by its record's title (HANDWORDS1-ii); one the frame does not hold is said by its id.
               continued={box.kind === 'line' && box.why === 'continued' && box.to
                 ? headLink((sessions.data ?? []).find((row) => row.id === box.to))

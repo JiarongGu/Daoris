@@ -17,6 +17,7 @@
   "work.panel.stream.state.failed": "failed",
   "work.panel.stream.state.stopped": "stopped",
   "work.panel.stream.state.cancelled": "cancelled",
+  "work.panel.stream.state.disconnected": "disconnected",
   "work.panel.stream.state.session-ended": "ended with its session",
   "work.panel.stream.stop": "Stop {{name}}",
   "work.panel.stream.stopShort": "Stop",

@@ -97,7 +97,8 @@ public sealed class NewerIndexHostTests : IDisposable
         try
         {
             store.ReplaceRepositoryAsync("alpha", [new KnowledgeEntry(
-                "alpha", EntryKind.Decision, Provenance.Local, "A lesson", "What was learned.", "docs/DECISIONS.md", "A lesson")])
+                "alpha", EntryKind.Decision, Provenance.Local, "A lesson", "What was learned.", "docs/DECISIONS.md", "A lesson")],
+                ReadingWrite.Taken(DateTimeOffset.UnixEpoch))
                 .GetAwaiter().GetResult();
         }
         finally

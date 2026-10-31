@@ -14,6 +14,7 @@ public sealed class SessionsRoutes(DriverContext context)
 {
     private readonly DriverContext _context = context;
     private readonly DriverLoop _loop = context.Loop;
+    private readonly RelatedSessions _related = new(RelatedSessions.GitReads, () => DateTimeOffset.UtcNow);
     private readonly OpenFolder? _openFolder = context.OpenFolder;
 
     // What a session's own presses change (STATEHUB1d, D169): its record among the sessions, and the driver's state its loop,
@@ -37,6 +38,14 @@ public sealed class SessionsRoutes(DriverContext context)
         // host can neither stop it nor call it ended: the record still says working (REV3).
         // The one implementation the terminal's request is honoured by too (SESSUX1g).
         var answer = await SessionMoves.StopAsync(_loop.Processes, _loop.Service, id, cancellationToken).ConfigureAwait(false);
+        // CLITURN1: the process that runs it takes the stop, as its own; none that does not is claimed to have stopped.
+        if (answer.Elsewhere
+            && await SessionMoves.StopThroughOwnerAsync(
+                _loop.Home, id, SessionMoves.OwnerWait, TimeSpan.FromMilliseconds(100), () => DateTimeOffset.UtcNow, cancellationToken).ConfigureAwait(false))
+        {
+            answer = answer with { Stopped = true, Elsewhere = false };
+        }
+
         _loop.Nudge();
         return new { answer.Stopped, answer.Orphan, answer.Elsewhere };
     }
@@ -702,6 +711,21 @@ public sealed class SessionsRoutes(DriverContext context)
     }
 
     /// <summary>
+    /// The sessions beside one (LINESTOGETHER1c, the review-flow design §3): every other session of its repository with a tree here,
+    /// chats included, with the declared and the changed paths that meet, or <c>not-read</c> where git cannot say (D137). Read-only;
+    /// git's reads make it, and a tree's read is kept only for an ended clean one, so it is read again at each ask.
+    /// </summary>
+    [DriverRoute("SESSION_RELATED")]
+    [ByEvent("SESSION_RELATED", Untold = "the sessions' working trees, which git reads at each ask (an uncommitted edit counts)")]
+    private async Task<object?> SessionRelatedAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var session = PayloadHelper.GetRequiredValue<string>(request.Payload, "session");
+        var service = _loop.Service ?? throw NotReady();
+        if (await service.RelatedCandidatesAsync(session, cancellationToken) is not var (mine, others)) return new { Session = session, Related = Array.Empty<object>() };
+        return new { Session = session, Related = await _related.LookAsync(mine, others, cancellationToken) };
+    }
+
+    /// <summary>
     /// What each of these sessions spent (SESSCTX1d; the session-context design §7): the *Parts* strip's cost on each part's own
     /// row, read from this machine's own record as the openings are, so a moved session reads as one. Each id that names a record
     /// answers its turns, those whose door said what they consumed, and the four counts summed, a count none said null; an id
@@ -859,7 +883,9 @@ public sealed class SessionsRoutes(DriverContext context)
         entry.Repository,
         entry.Group,
         entry.Leading,
-        Parts = entry.Parts.Select(part => new { part.Session, part.Quest, part.Shown, part.Group, part.Began, part.After, part.AskedBy }).ToArray(),
+        entry.Head,
+        entry.Opens,
+        Parts = entry.Parts.Select(part => new { part.Session, part.Quest, part.Shown, part.Group, part.Began, part.After, part.AskedBy, part.Head }).ToArray(),
     };
 
     /// <summary>

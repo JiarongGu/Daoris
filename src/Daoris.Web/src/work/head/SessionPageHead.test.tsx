@@ -49,6 +49,26 @@ describe('a session’s page header', () => {
     expect(within(header).queryByText('s1a2b3c4')).toBeNull();
   });
 
+  /** REVIEWFLOW1b: *next* names the press and is a door to its step, last on the facts line, in both languages. */
+  it('ends its facts on a door to the next press, and presses it', async () => {
+    const onNext = vi.fn();
+    head({ facts: ['engine', '3 parts to land'], next: { press: 'accept', onPress: onNext } });
+    const door = within(screen.getByRole('banner')).getByRole('button', { name: 'next: Accept…' });
+    await userEvent.click(door);
+    expect(onNext).toHaveBeenCalledOnce();
+  });
+
+  it('names its door in 中文, and draws none where there is no next', async () => {
+    await i18n.changeLanguage('zh');
+    head({ facts: ['engine'], next: { press: 'answer', onPress: () => {} } });
+    expect(screen.getByRole('button', { name: /下一步/ })).toHaveTextContent('下一步：回答');
+  });
+
+  it('draws no door where it is handed no next', () => {
+    head({ facts: ['engine'] });
+    expect(screen.queryByRole('button', { name: /next/ })).toBeNull();
+  });
+
   it('draws no facts line where it is handed none', () => {
     head();
     expect(screen.getByRole('banner').querySelectorAll('p')).toHaveLength(0);

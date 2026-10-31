@@ -32,6 +32,45 @@ public sealed class InAppBrowserServersTests
         public void Open(string address) { }
     }
 
+    /// <summary>A host that holds its browser down until a first connection (BROWSERSTART1): it counts what brought it up.</summary>
+    internal sealed class LazyBrowser(string endpoint) : IInAppBrowser
+    {
+        public int BroughtUp;
+
+        public int Handed;
+
+        public Task<string?> EnsureAsync(CancellationToken ct = default)
+        {
+            BroughtUp++;
+            return Task.FromResult<string?>(endpoint);
+        }
+
+        public Task<string?> EndpointAsync(CancellationToken ct = default)
+        {
+            Handed++;
+            return Task.FromResult<string?>(endpoint);
+        }
+
+        public void Show() { }
+
+        public void Open(string address) { }
+    }
+
+    /// <summary>The endpoint is handed at the start and the browser stays down; who is driving is still drawn from the handing (BRW8).</summary>
+    [Fact]
+    public async Task A_deferring_host_is_handed_from_without_the_browser_coming_up()
+    {
+        var browser = new LazyBrowser("http://127.0.0.1:4810");
+
+        var (handed, notice, drives) = await InAppBrowserServers.HandAsync([Knowledge, Attached], browser, CancellationToken.None);
+
+        Assert.Equal(0, browser.BroughtUp);
+        Assert.Equal(1, browser.Handed);
+        Assert.Null(notice);
+        Assert.Contains("http://127.0.0.1:4810", Assert.Single(handed, server => server.Name == "browser").Arguments);
+        Assert.True(drives);
+    }
+
     [Fact]
     public void A_server_that_attaches_is_handed_the_endpoint_in_its_arguments_and_environment()
     {

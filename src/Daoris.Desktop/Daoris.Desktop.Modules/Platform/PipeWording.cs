@@ -124,6 +124,7 @@ public static class PipeWording
         Row("SESSION_INPUT", W("id", PipeRole.Session), W("text", PipeRole.Words), W("level", PipeRole.Level), W("paths", PipeRole.Files),
             W("said", PipeRole.Form));
         Row("SESSION_QUEUE_EDIT", W("session", PipeRole.Session), W("text", PipeRole.Words), W("level", PipeRole.Level));
+        Row("SESSION_QUEUE_MOVE", W("session", PipeRole.Session), W("to", PipeRole.Session));
         Row("SESSION_ARCHIVE", W("ids", PipeRole.Sessions));
         Row("SESSION_DELETE", W("id", PipeRole.Session), W("ids", PipeRole.Sessions));
         Row("STOP_SESSION", W("id", PipeRole.Session));

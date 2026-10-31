@@ -83,6 +83,18 @@ repository.
 - **Root cause:** Codex's only rejection for a file change interrupts the turn, which ended `cancelled`; a clean exit with the quest taken read as a question.
 - **Fix:** `AcpOutcome.Cut` carries a cancel nobody asked for; `Observation.Cut` parks as `ended.parked-cut`, naming the call. Asking on Codex is `workspace-write`.
 - **Verify:** the mapping tests fail on `read-only`; `AcpTests`, `ObservationTests`, `DrivenAccessTests`, `NoteCodesTests` and the note catalogues green.
+## 2026-10-31 - Daoris's browser opened at every session start and restart (BROWSERSTART1)
+
+- **Symptom:** a restart that took up a chat or a quest session whose servers drive the browser brought its window up.
+- **Root cause:** the hand-over called `EnsureAsync`, which starts the browser, to learn the endpoint.
+- **Fix:** it asks `EndpointAsync`; the shell hands a held port (`LazyEndpoint`) that starts the browser at the first connection.
+- **Verify:** hand-over, quest-start and chat tests red then green; relay tests.
+## 2026-10-31 - A terminal chat's running turn read idle in the window (CLITURN1)
+
+- **Symptom:** a capture showed idle during a terminal's turn; the window's stop was refused as "no door".
+- **Root cause:** the terminal owns its runner; the window's queue read fell back to idle for a chat it does not hold.
+- **Fix:** the owner tells its turns in `<id>.turn`; none told is unknown, never idle; the terminal honours a stop for its own session.
+- **Verify:** `DriverModuleTerminalTurnTests`, `TurnMarksTests`, `TerminalOwnerProcessTests`.
 
 ## 2026-10-31 - A test still pinned the first-look baseline row m-iv replaced (FOUNDATION1 m-iv)
 
@@ -12557,3 +12569,19 @@ mis-rooted instance.
 **Fix.** The packaged host ranks first; a flat one is the legacy fallback. A named path still wins.
 
 **Verification.** `ServiceHostLocatorTests`: republish over a flat install, red before.
+
+## A meeting's next voice read cap-full after a stalled turn (2026-10-31)
+
+**Root cause.** `DriverMeetings.RoundAsync` read the round's deadline off the machine's clock, each turn's cut and slot deadline off `BrainstormClock`. Under load the stalled turn's cut ran late, the round's window passed first, and the next voice read `cap-full`.
+
+**Fix.** The deadline is read on `BrainstormClock` (MEETCLOCK1); the test holds that clock and keeps the cut late.
+
+**Verification.** `MeetingTests.A_stalled_turn_…`: red (`cap-full`; then the deadline's timer missing), green; 20 of 20 beside 22 CPU burners.
+
+## A drop said its runner had not yet ended the run (2026-10-31)
+
+**Root cause.** `saidDrained` bounded the runner's whole report by thirty seconds from the ask; a loaded runner still ending a three-deep tree outran it. "Every 0 s" was the test's 200 ms rounded to seconds.
+
+**Fix.** The runner marks its take (`draining`) before ending anything; only the take is on the clock, then the record while the runner lives (DROPWAIT1). Below a second the interval is said in ms.
+
+**Verification.** The INTEGRATE1b drop case, its report held past the thirty seconds: red, green; 20 of 20 beside 11 CPU burners.

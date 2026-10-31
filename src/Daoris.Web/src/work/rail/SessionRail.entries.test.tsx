@@ -125,6 +125,17 @@ describe('the session rail over entries (SESSONE1c)', () => {
     expect(select).toHaveBeenCalledWith('ap000003');
   });
 
+  it('presses to the head of an ended session, not its newest part (LINESTOGETHER1a)', async () => {
+    ENTRIES = EVIDENCE_ENTRIES.map((entry) => (entry.leading === 'ap000013' ? { ...entry, head: 'ap000012', opens: 'ap000012' } : entry));
+    const select = vi.fn();
+    show({ onSelect: select });
+
+    const ended = (await screen.findByRole('heading', { level: 3, name: 'Ended (1)' })).closest('section')!;
+    await userEvent.click(rowsOf(ended)[0]!);
+
+    expect(select).toHaveBeenCalledWith('ap000012');
+  });
+
   it('lists the records as it always did where the host answers no entries', async () => {
     ENTRIES = undefined;
     show();

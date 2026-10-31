@@ -6,8 +6,10 @@ namespace Daoris.Driver;
 /// manifest is read, because the endpoint exists only while the shell runs.
 /// </summary>
 /// <remarks>
-/// <para><b>Asked only when needed.</b> The shell is asked to bring the browser up only for a session
-/// whose servers name it, so a machine with no such plugin never opens a window it did not ask for.</para>
+/// <para><b>Asked only when needed.</b> The shell is asked for the endpoint only for a session whose servers name
+/// it, and the browser itself comes up at the person's press or the first connection to the endpoint
+/// (BROWSERSTART1), never at a session's start, so a machine with no such plugin, and a restart that takes
+/// sessions up, never open a window nobody asked for.</para>
 ///
 /// <para><b>Withheld, and said.</b> Where no shell answers (the headless driver, a gate) or the browser
 /// would not come up, the server is not handed. A server handed with a placeholder instead of an address
@@ -59,7 +61,7 @@ public static class InAppBrowserServers
     }
 
     /// <summary>
-    /// Resolve against the shell's browser, bringing it up first when a server needs it — and the
+    /// Resolve against the shell's browser endpoint, asked for when a server needs it — and the
     /// sentence the transcript carries when one could not be handed, or null when nothing was withheld.
     /// </summary>
     /// <returns>
@@ -99,7 +101,8 @@ public static class InAppBrowserServers
         {
             try
             {
-                endpoint = await browser.EnsureAsync(ct).ConfigureAwait(false);
+                // The endpoint only: the browser comes up at a press or the first connection, never at a start (BROWSERSTART1).
+                endpoint = await browser.EndpointAsync(ct).ConfigureAwait(false);
                 if (endpoint is null) why = Noted.Of(NoteCodes.BrowserNoneUp, "the shell answered that it has no browser to bring up");
             }
             catch (OperationCanceledException) when (ct.IsCancellationRequested)

@@ -35,6 +35,31 @@ public sealed class KnowledgeStoreContractTests : IAsyncLifetime
     public Task The_sqlite_store_refuses_a_repeated_id_and_keeps_what_it_held() =>
         A_repeated_id_is_refused_and_changes_nothing(_sqlite);
 
+    [Fact]
+    public Task The_memory_store_refuses_a_write_whose_generation_moved_and_writes_nothing_beside_it() =>
+        A_write_whose_generation_moved_is_refused_and_writes_nothing(new InMemoryKnowledgeStore());
+
+    [Fact]
+    public Task The_sqlite_store_refuses_a_write_whose_generation_moved_and_writes_nothing_beside_it() =>
+        A_write_whose_generation_moved_is_refused_and_writes_nothing(_sqlite);
+
+    /// <summary>KNOWCENTRAL2a: a write lands only on the generation its writer read, and what rides with it lands with it.</summary>
+    private static async Task A_write_whose_generation_moved_is_refused_and_writes_nothing(IKnowledgeStore store)
+    {
+        var at = DateTimeOffset.Parse("2026-10-31T09:00:00Z");
+        var read = (await store.GenerationsAsync()).GetValueOrDefault("alpha");
+        Assert.True(await store.ReplaceRepositoryAsync("alpha", [Entry("alpha", "One")], new ReadingWrite(read, "c1", null, false, at)));
+        var alongside = false;
+
+        Assert.False(await store.ReplaceRepositoryAsync(
+            "alpha", [Entry("alpha", "Two")], new ReadingWrite(read, "c2", null, false, at), _ => Task.FromResult(alongside = true)));
+
+        Assert.Equal(["One"], (await store.AllAsync()).Select(entry => entry.Title));
+        Assert.False(alongside);
+        var held = await store.HeldAsync(["alpha:docs/One.md#One"], _ => false);
+        Assert.Equal(("c1", read + 1), (held.Readings["alpha"].Commit, held.Readings["alpha"].Generation));
+    }
+
     private static async Task A_repeated_id_is_refused_and_changes_nothing(IKnowledgeStore store)
     {
         await store.ReplaceRepositoryAsync("alpha", [Entry("alpha", "One")]);

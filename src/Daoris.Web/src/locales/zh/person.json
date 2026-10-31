@@ -75,6 +75,7 @@
   "person.route.RESOLVE_SESSION": "完成或谢绝一个已挂起的会话",
   "person.route.SESSION_INPUT": "以你的名义对会话说话",
   "person.route.SESSION_QUEUE_EDIT": "收回或改写一个会话中等待的话",
+  "person.route.SESSION_QUEUE_MOVE": "把会话某一部分中等待的话移到它的续段",
   "person.route.SESSION_GO_ON_NEW": "在新会话中继续一个会话等待的话",
   "person.route.SESSION_START_FROM": "用一个会话无法继续的话开始一段对话",
   "person.route.SESSION_STOP_WAITING": "让因账户额度而等待的对话停止等待，它只在你写给它时才继续",

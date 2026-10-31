@@ -23,7 +23,8 @@ import type { LineBehind } from '../review/diff';
 import type { DiscardOffer, LandOffer } from '../groups';
 import { isIntake, sessionOrigin, sessionTitle } from '../identity';
 import type { SayRebase } from '../review/LandingSync';
-import { Discards, type HeadOpinion, type HeadReview, type LandingPlan, Lands, type WorkAsk } from '../review/Lands';
+import { Discards, EntryWork, type HeadOpinion, type HeadReview, type LandingPlan, Lands, type WorkAsk } from '../review/Lands';
+import type { EntryPress } from '../review/EntryAccept';
 import { Note } from '../Note';
 import { HelperAsks, type HelperWaits, openAsks, waitsOnWord } from '../waits/HelperAsks';
 import { type PieceSection, Pieces } from '../pieces/Pieces';
@@ -107,8 +108,10 @@ export function SessionHead({
   onAnswerSession, onAnswerChoice, answerPick, branch, ownBranch, onReview, onDiscardBranch, discardingBranch = false, headed = false, goAheads = [], onGoAhead,
   ownSignIn = false, nameOf, lands, landing, planning, onLand, onSayRebase, onName, discards, onDiscardTree, review, behind, opinion, onOpenQuest,
   continues, helps, onOpenSession, heavy, process, workAsk, workBusy = false, toEvent, rules, ruleAsk, seek, helpers, permissions, answers,
-  question = null, parkBox = false, pieces,
+  question = null, parkBox = false, pieces, entry,
 }: {
+  /** The session's one *Accept…* where its parts offer work to land, in the place of a part's own (REVIEWFLOW1a, D168). */
+  entry?: EntryPress | null;
   /**
    * Its pieces (COAGENT1b, D199; the co-agent design §6.1), the frame's: what it asked other agents to write, where each stands, the
    * ask's press and each piece's door and stop. Absent, a browser, a teammate's record or a session that cannot lead one, none is drawn.
@@ -491,8 +494,12 @@ export function SessionHead({
         <div data-wait-section data-wait="work" tabIndex={-1} className={cn('grid gap-2.5', sought === 'work' || sought === 'opinion' ? SOUGHT : 'outline-none')}>
           <Lands
             key={session.id} session={session} lands={lands} landing={landing} planning={planning} onReview={onReview} onLand={onLand} onSayRebase={onSayRebase} onName={onName} review={review} behind={behind}
-            opinion={opinion} ask={workAsk} busy={workBusy} toEvent={toEvent}
+            opinion={opinion} ask={workAsk} busy={workBusy} toEvent={toEvent} entry={entry}
           />
+        </div>
+      ) : entry ? (
+        <div data-wait-section data-wait="work" tabIndex={-1} className={cn('grid gap-2.5', sought === 'work' ? SOUGHT : 'outline-none')}>
+          <EntryWork entry={entry} />
         </div>
       ) : discards ? (
         <div data-wait-section className="grid gap-2.5">

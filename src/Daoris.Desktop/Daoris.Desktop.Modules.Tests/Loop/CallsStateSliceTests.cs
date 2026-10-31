@@ -83,9 +83,10 @@ public sealed class CallsStateSliceTests : DriverModuleBridge
         Assert.Null(loop.Service);
         Assert.Equal((CallsStateSlice.Name, StateSlice.Ready), (snapshot.Slice, snapshot.Status));
         // SESSWATCH1a: the watcher's marks beside the calls, judged empty and pushed so.
-        Assert.Equal([CallsStateSlice.Partition, CallsStateSlice.QuietPartition], snapshot.Partitions.Select(each => each.Partition));
-        Assert.Empty(Written(snapshot.Partitions[0].Data));
-        Assert.Empty(Written(snapshot.Partitions[1].Data));
+        Assert.Equal(
+            [CallsStateSlice.Partition, CallsStateSlice.HeardPartition, CallsStateSlice.QuietPartition],
+            snapshot.Partitions.Select(each => each.Partition));
+        Assert.All(snapshot.Partitions, each => Assert.Empty(Written(each.Data)));
         // The snapshot route finds it in the loop's slices.
         Assert.Equal(CallsStateSlice.Partition, answered.GetProperty("partitions")[0].GetProperty("partition").GetString());
     }
@@ -209,6 +210,61 @@ public sealed class CallsStateSliceTests : DriverModuleBridge
 
         var answered = Written(Pushes()[^1].Data)["s1"]!;
         Assert.Equal(("2026-10-19T12:00:00+00:00", false), (answered["since"]!.GetValue<string>(), answered["waiting"]!.GetValue<bool>()));
+    }
+
+    /// <summary>
+    /// COWORKVIEW1a rule 18 (the cowork view design §3.7): <i>last heard</i> is the newest line of a session's console and its streams,
+    /// pushed as the <c>heard</c> partition from memory; a session that said nothing is no row, and one whose console closed is gone.
+    /// </summary>
+    [Fact]
+    public async Task Last_heard_is_pushed_as_the_newest_line_of_a_session_and_its_streams_and_gone_once_its_console_closes()
+    {
+        var (loop, slice) = Up();
+        var now = T0;
+        loop.Output.Clock = () => now;
+        loop.Output.Append("s1", "first");
+        now = T0.AddMinutes(3);
+        loop.Output.Open("s1", new SessionStream("a1", SessionStreamKind.Subagent, "reader"));
+        loop.Output.Append(SessionOutput.Key("s1", "a1"), "child words");
+        loop.Output.Append("s2", "elsewhere");
+
+        await slice.JudgeAsync();
+        var heard = Written(slice.Snapshot().Partitions.Single(each => each.Partition == CallsStateSlice.HeardPartition).Data);
+        Assert.Equal(["s1", "s2"], heard.Select(each => each.Key));
+        Assert.Equal(T0.AddMinutes(3), DateTimeOffset.Parse(heard["s1"]!["at"]!.GetValue<string>()));
+
+        loop.Output.Close("s2");
+        await slice.JudgeAsync();
+        Assert.Equal(["s1"], Written(slice.Snapshot().Partitions.Single(each => each.Partition == CallsStateSlice.HeardPartition).Data).Select(each => each.Key));
+    }
+
+    /// <summary>
+    /// A stream's new line wakes the slice, at most once per session per ten seconds, and the telling is the slice's push alone: no
+    /// <c>STATE_CHANGED</c>, which would forget every read under way.
+    /// </summary>
+    [Fact]
+    public async Task A_stream_s_line_wakes_the_slice_once_per_session_per_ten_seconds_and_tells_no_state_changed()
+    {
+        var (loop, slice) = Up();
+        var now = T0;
+        loop.Output.Clock = () => now;
+        var woken = 0;
+        using var hearing = CallsStateSlice.HearHeard(loop.Output, () => woken++);
+
+        loop.Output.Append("s1", "a");
+        loop.Output.Append("s1", "b");
+        loop.Output.Append("s2", "c");
+        Assert.Equal(2, woken);
+
+        now = T0.AddSeconds(9);
+        loop.Output.Append("s1", "d");
+        Assert.Equal(2, woken);
+
+        now = T0.AddSeconds(10);
+        loop.Output.Append("s1", "e");
+        Assert.Equal(3, woken);
+        await slice.JudgeAsync();
+        Assert.DoesNotContain(Raised, each => each.Type == StatePublisher.Type);
     }
 
     /// <summary>Run as the loop runs it: a call's start reaches the windows with no bus event of its own, and a disposed hearing hears no more.</summary>

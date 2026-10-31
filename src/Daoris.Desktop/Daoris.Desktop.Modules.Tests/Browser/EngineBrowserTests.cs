@@ -134,6 +134,21 @@ public sealed class EngineBrowserTests : Bridge
         Assert.DoesNotContain("EngineBrowser.Locate", host);
     }
 
+    /// <summary>
+    /// BROWSERSTART1, held on the host's source because only the shell can run it: what a session is handed is the lazy
+    /// endpoint, and the engine keeps a port of its own behind it, so a session's start brings up no window.
+    /// </summary>
+    [Fact]
+    public void The_host_hands_the_lazy_endpoint_and_brings_the_browser_up_at_a_connection()
+    {
+        var host = File.ReadAllText(Path.Combine(RepositoryRoot(), "src", "Daoris.Desktop", "Daoris.Desktop.App", "EngineBrowserHost.cs"));
+        var handed = host[host.IndexOf("Task<string?> EndpointAsync(", StringComparison.Ordinal)..];
+        handed = handed[..handed.IndexOf("BringUpForConnectionAsync(CancellationToken", StringComparison.Ordinal)];
+
+        Assert.Contains("new LazyEndpoint(BringUpForConnectionAsync)", handed);
+        Assert.DoesNotContain("BringUp", handed.Replace("BringUpForConnectionAsync", "", StringComparison.Ordinal));
+    }
+
     /// <summary>The retired executable's project is gone with it: one engine in the install (CHR8).</summary>
     [Fact]
     public void There_is_no_second_engine_to_build()

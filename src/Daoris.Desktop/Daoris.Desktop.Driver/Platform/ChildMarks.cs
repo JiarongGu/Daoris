@@ -11,4 +11,10 @@ public static class ChildMarks
 
     /// <summary>The variable the holder's terminal carries its key in (<see cref="HolderKey.Variable"/>, which reads it from here).</summary>
     public const string RoleKeyVariable = "DAORIS_ROLE_KEY";
+
+    /// <summary>
+    /// The variable a session's process carries its lineage token in (COWORKVIEW1a), set anew at each spawn. 🔴 The lineage hook and
+    /// the connector's <c>LineageFile.ProcVariable</c> spell it as twins.
+    /// </summary>
+    public const string LineageProcVariable = "DAORIS_LINEAGE_PROC";
 }

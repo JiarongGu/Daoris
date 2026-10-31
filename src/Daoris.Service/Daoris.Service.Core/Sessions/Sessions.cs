@@ -463,9 +463,13 @@ public sealed class SessionStore
     {
         _db = ConnectionGate.For(connection);
         Opens = new SessionOpens(_db);
+        Memory = new MemoryOpStore(_db);
     }
 
     public SessionOpens Opens { get; }
+
+    /// <summary>The memory coordinator's log of record, whose rows a session's commit point moves inside the ledger's step (KNOWCENTRAL2c).</summary>
+    public MemoryOpStore Memory { get; }
 
     public static async Task<SessionStore> OpenAsync(SqliteConnection connection, CancellationToken ct = default)
     {
@@ -474,6 +478,7 @@ public sealed class SessionStore
         {
             await store.EnsureSchemaAsync(ct).ConfigureAwait(false);
             await store.Opens.EnsureAsync(ct).ConfigureAwait(false);
+            await store.Memory.EnsureAsync(ct).ConfigureAwait(false);
         }, ct).ConfigureAwait(false);
         return store;
     }
@@ -1802,6 +1807,22 @@ public sealed class SessionStore
         command.Parameters.AddWithValue("$key", key);
         command.Parameters.AddWithValue("$since", since);
         for (var at = 0; at < records.Count; at++) command.Parameters.AddWithValue(names[at], records[at]);
+        await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
+        return await reader.ReadAsync(ct).ConfigureAwait(false)
+            ? new SettledWord(reader.GetString(0), reader.GetString(1), reader.GetString(2), DateTimeOffset.FromUnixTimeSeconds(reader.GetInt64(3)))
+            : null;
+    }, ct);
+
+    /// <summary>
+    /// The newest settlement of <paramref name="key"/> on any record, within the horizon: for a key that names its own source, a move's
+    /// (LINESTOGETHER1b), which no other producer can write. One probe on the table's key.
+    /// </summary>
+    internal Task<SettledWord?> SettledUnderAsync(string key, long since, CancellationToken ct = default) => _db.RunAsync<SettledWord?>(async () =>
+    {
+        await using var command = _db.Command();
+        command.CommandText = "SELECT session, word, key, at FROM said_settled WHERE key = $key AND at >= $since ORDER BY at DESC, session LIMIT 1";
+        command.Parameters.AddWithValue("$key", key);
+        command.Parameters.AddWithValue("$since", since);
         await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
         return await reader.ReadAsync(ct).ConfigureAwait(false)
             ? new SettledWord(reader.GetString(0), reader.GetString(1), reader.GetString(2), DateTimeOffset.FromUnixTimeSeconds(reader.GetInt64(3)))

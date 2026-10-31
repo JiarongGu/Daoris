@@ -674,6 +674,7 @@
     "Service/Domain/NoteShapes.cs": "Service",
     "Service/Domain/PressedWords.cs": "Service",
     "Service/Domain/QuestClosePort.cs": "Service",
+    "Service/Domain/RelatedCandidate.cs": "Service",
     "Service/Domain/QuestViews.cs": "Service",
     "Service/Domain/RecordNotes.cs": "Service",
     "Service/Domain/RegistrationRecords.cs": "Service",

@@ -52,6 +52,28 @@ public sealed class WorkflowGraphRunTests
          "wires":[{"id":"c>h","kind":"after","from":"claimed","to":"handed"}]}
         """;
 
+    /// <summary>
+    /// INTEGRATE1h (§17.9): the run's view draws the <c>integrate</c> node with its record's head, on that node alone, and the terminal says it.
+    /// </summary>
+    [Fact]
+    public void The_integrate_node_is_drawn_with_its_records_head_and_no_other_step_carries_one()
+    {
+        var graph = WorkflowPresets.GraphTable.Single(preset => preset.Id == "integrated").GraphJson;
+        var record = Record(Status("work", NodeStates.Reached, "quest:q1", "q1-moment"), Status("integrate", NodeStates.Active, Self));
+        var facts = new WorkflowGraphRunFacts(Records(Quest("q1", "Done")), Run, Graph(graph), record)
+        {
+            Integration = new IntegrationHead(IntegrationHeads.InCandidate, "main") { Step = "replay" },
+        };
+
+        var run = WorkflowGraphRuns.Derive(facts, "default", "a1");
+
+        var head = Step(run, "integrate").Integration!;
+        Assert.Equal((IntegrationHeads.InCandidate, "main", "replay"), (head.State, head.Line, head.Step));
+        Assert.All(run.Steps.Where(step => step.Step.Id != "integrate"), step => Assert.Null(step.Integration));
+        Assert.Contains("in a candidate for `main`, at replay", WorkflowRunWords.Say([run], null));
+        Assert.All(WorkflowGraphRuns.Derive(facts with { Integration = null }, "default", "a1").Steps, step => Assert.Null(step.Integration));
+    }
+
     /// <summary>The work held on its requests before the landing (INTEGRATE1o).</summary>
     private const string ClaimedRequestsHanded = """
         {"schemaVersion":2,"entries":["claimed"],"end":"handed",

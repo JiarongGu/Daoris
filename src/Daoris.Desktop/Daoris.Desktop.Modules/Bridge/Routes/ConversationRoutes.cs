@@ -340,6 +340,12 @@ public sealed class ConversationRoutes(DriverContext context)
         }
 
         if (_loop.Processes.RefusesInput(id) is { } why) throw new DriverException(why);
+        // CLITURN1: a turn another Daoris process runs is stopped there; "no turn was running" would be untrue of it.
+        if (RunsElsewhere(_loop, id))
+        {
+            throw new DriverException($"session {id} is run by another Daoris process on this machine, a terminal's: stop its turn there with Ctrl+C.");
+        }
+
         var stop = _loop.Chat is { } chat ? await chat.CancelTurnAsync(id, keep: Flag(request, "keep")).ConfigureAwait(false) : TurnStop.Nothing;
         return new { stop.Cancelled, Withdrawn = stop.Withdrawn.Select(Said).ToArray() };
     }
@@ -405,6 +411,21 @@ public sealed class ConversationRoutes(DriverContext context)
         return edit == QueueEdit.Done ? new { Done = true } : new { Done = false, Why = "taken" };
     }
 
+    // Moving one word held on a part's record to the head the page shows as `to` (LINESTOGETHER1b, the review-flow design §2), through the
+    // service's move door; its answers are the desktop README's. A refusal is data, never thrown, so the page words its code and asks again
+    // after `not-known`.
+    [DriverRoute("SESSION_QUEUE_MOVE")]
+    [Publishes("SESSION_QUEUE_MOVE", StateScopes.Sessions, Session = "session")]
+    private async Task<object?> SessionQueueMoveAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var session = PayloadHelper.GetRequiredValue<string>(request.Payload, "session");
+        var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
+        var to = PayloadHelper.GetRequiredValue<string>(request.Payload, "to");
+        var moved = await _loop.Words.MoveAsync(session, id, to, cancellationToken).ConfigureAwait(false);
+        if (!moved.Moved) return new { Moved = false, moved.Why, moved.Message, moved.To };
+        return moved.Again ? new { Moved = true, Again = true, moved.To } : (object)new { Moved = true, moved.To, Word = moved.Word?.Id };
+    }
+
     // A conversation's model and effort, as its agent offers them on the protocol door (AGT6b, D98):
     // the page asks once, and takes every change after that as `SESSION_OPTIONS_CHANGED`. Nothing here
     // holding it, or a door that carries none, is an empty list — never a refusal, since a composer
@@ -461,14 +482,20 @@ public sealed class ConversationRoutes(DriverContext context)
     internal static object QueueAnswer(DriverLoop loop, string id, WordsAnswer reach)
     {
         var inbox = loop.Processes.InboxOf(id);
+        // CLITURN1: a conversation another Daoris process runs (a terminal's) is that process's to tell: what it told, or nothing
+        // known, which the answer leaves without a `taking` so the page keeps the record's word instead of reading idle.
+        var elsewhere = inbox is null && loop.HelpStarting.Queue(id) is null && RunsElsewhere(loop, id);
+        var told = elsewhere ? new TurnMarks(loop.Home).Read(id) : null;
         // Ask Daoris's conversation still starting holds its words itself, opening (HELPSTART1).
-        var queue = loop.HelpStarting.Queue(id) ?? inbox?.State ?? loop.Chat?.Queue(id) ?? ChatQueue.Idle;
+        var queue = loop.HelpStarting.Queue(id) ?? inbox?.State
+            ?? (elsewhere ? new ChatQueue(told?.Taking ?? false, [], told?.LastTurnEnded, told?.Opening ?? false) : loop.Chat?.Queue(id))
+            ?? ChatQueue.Idle;
         var queued = inbox is null && queue.Queued.Count == 0 && reach.Waiting is { } waiting
             ? waiting.Select(Said).ToArray()
             : queue.Queued.Select(Said).ToArray();
         return new
         {
-            Session = id, Queued = queued, queue.Taking, queue.Opening,
+            Session = id, Queued = queued, Taking = elsewhere && told is null ? (bool?)null : queue.Taking, queue.Opening,
             Listening = inbox is { State.Taking: true },
             // When its last turn ended here (RAIL2), the page's "moved" for a live chat.
             LastTurn = queue.LastTurnEnded,
@@ -479,6 +506,13 @@ public sealed class ConversationRoutes(DriverContext context)
             Reach = ReachOf(reach),
         };
     }
+
+    /// <summary>
+    /// Whether another Daoris process of this machine runs the session and this one holds nothing of it (CLITURN1): a terminal's chat,
+    /// whose runner is that process's. This process then knows nothing of its turns, and is no door to them.
+    /// </summary>
+    internal static bool RunsElsewhere(DriverLoop loop, string id) =>
+        !loop.Processes.RunsHere(id) && loop.Chat?.Holds(id) != true && loop.Processes.AliveOnThisMachine(id);
 
     /// <summary>
     /// What a word said now would do, as <c>SESSION_QUEUED</c> carries it (MSG1f2): <c>{ reaches, why }</c>, an object even

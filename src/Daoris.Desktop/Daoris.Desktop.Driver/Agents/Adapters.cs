@@ -1672,7 +1672,7 @@ internal static class Spawning
     internal static readonly IReadOnlyList<string> Roles =
     [
         "DAORIS_QUEST_ID", "DAORIS_QUEST_TITLE", "DAORIS_QUEST_BODY", "DAORIS_QUEST_ASKER", "DAORIS_QUEST_ATTACHMENTS",
-        "DAORIS_TARGET", AgentWorkVariables.Ask, ChildMarks.SessionVariable,
+        "DAORIS_TARGET", AgentWorkVariables.Ask, ChildMarks.SessionVariable, ChildMarks.LineageProcVariable,
         AgentWorkVariables.Brainstorm, AgentWorkVariables.Turn, AgentWorkVariables.Answer, AgentWorkVariables.Room,
         "DAORIS_REPOSITORY", "DAORIS_SERVICE_URL",
     ];

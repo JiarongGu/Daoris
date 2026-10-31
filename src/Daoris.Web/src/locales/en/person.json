@@ -75,6 +75,7 @@
   "person.route.RESOLVE_SESSION": "finish or decline a parked session",
   "person.route.SESSION_INPUT": "say words to a session as yours",
   "person.route.SESSION_QUEUE_EDIT": "take back or reword words waiting on a session",
+  "person.route.SESSION_QUEUE_MOVE": "move words waiting on a part of a session to the part it goes on in",
   "person.route.SESSION_GO_ON_NEW": "carry a session's waiting words on in a new session",
   "person.route.SESSION_START_FROM": "start a conversation with the words a session could not go on with",
   "person.route.SESSION_STOP_WAITING": "let a conversation held by its account's limit stop waiting, so it goes on only when you write to it",

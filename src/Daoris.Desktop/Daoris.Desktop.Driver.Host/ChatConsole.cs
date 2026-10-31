@@ -193,6 +193,10 @@ internal static class ChatConsole
         };
         Console.CancelKeyPress += interrupt;
 
+        // CLITURN1: this terminal owns the conversation, so it tells the home where its turns stand (a window shows them) and
+        // honours a stop asked of it through the request folder, as its own Ctrl+C at rest would. Words and turn stops stay on its input.
+        await using var owner = new TerminalOwner(home, id, runner, processes);
+
         // Stdin is the person. A closed stdin is them finishing, which ENDS the conversation rather
         // than killing it: the harness gets end-of-input, says whatever it was going to say, and exits
         // on its own — a `completed` record, not a `stopped` one.

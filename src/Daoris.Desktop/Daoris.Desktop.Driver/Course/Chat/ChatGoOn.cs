@@ -21,6 +21,12 @@ internal sealed class GoingOn(PriorSession record, ResumeAsk ask)
     /// </summary>
     public Func<bool, Task>? Answering { get; init; }
 
+    /// <summary>
+    /// Its process's lineage token, issued as its move returned with its <c>start</c> (COWORKVIEW1a), which the runner carries to the
+    /// spawn; null for its one retry, which the runner brackets anew.
+    /// </summary>
+    public string? Proc { get; init; }
+
     /// <summary>The words are on the wire. True once, where they went now: at once, or where the harness already named it.</summary>
     /// <param name="named">Whether they went only once the harness has named its conversation too (the native door).</param>
     public bool Sent(bool named)
@@ -757,6 +763,13 @@ internal sealed class ChatGoOn
         }
 
         starting?.Dispose();
+        // COWORKVIEW1a: its process's token and `start` as its move returns, let go wherever it never reaches the runner.
+        var proc = ChildLineage.Opened(_context.Home, sessionId);
+        var handed = false;
+        using var unhanded = new Disposer(() =>
+        {
+            if (!handed) LineageTokens.Current.Unspawned(proc);
+        });
 
         // Every word waiting once it moved: none can be kept on a record that works (the say door answers `running`), so the
         // list read now is whole, a word said while it was judged included.
@@ -785,6 +798,10 @@ internal sealed class ChatGoOn
             answering = steered => answers(steered || persons);
         }
 
+        var placed = _runner.RepositoryPlace(
+            config, registry, known, record.Repository!, record.Tree!, continued,
+            answers: await _runner.AnswersFindingsAsync(sessionId, record.Tree!, config).ConfigureAwait(false));
+        handed = true;
         return await _runner.RunAsync(
             record.Actor ?? "chat", sessionId,
             words.Any(word => word.Persons)
@@ -793,11 +810,7 @@ internal sealed class ChatGoOn
                     // COWORK1b: Daoris's own words alone are no agent's answer.
                     ? $"conversation `{sessionId}` goes on with Daoris's words in its own conversation."
                     : $"conversation `{sessionId}` goes on with another agent's answer in its own conversation.",
-            adapter, selection, config,
-            _runner.RepositoryPlace(
-                config, registry, known, record.Repository!, record.Tree!, continued,
-                answers: await _runner.AnswersFindingsAsync(sessionId, record.Tree!, config).ConfigureAwait(false)), onEnded, ct,
-            new GoingOn(record, ask) { Answering = answering }).ConfigureAwait(false);
+            adapter, selection, config, placed, onEnded, ct, new GoingOn(record, ask) { Answering = answering, Proc = proc }).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -846,6 +859,14 @@ internal sealed class ChatGoOn
             return Held(sessionId, HeldWords.Program(refused.Message));
         }
 
+        // COWORKVIEW1a: its process's token and `start` as its move returns, let go wherever it never reaches the runner.
+        var proc = ChildLineage.Opened(_context.Home, sessionId);
+        var handed = false;
+        using var unhanded = new Disposer(() =>
+        {
+            if (!handed) LineageTokens.Current.Unspawned(proc);
+        });
+
         var now = await _context.ReadAgainAsync(sessionId, ct).ConfigureAwait(false);
         var words = Continuations.HandedAfterMove(record.Waiting, now);
         if (words.Count == 0) return await TakenBackAsync(record, ct).ConfigureAwait(false);
@@ -863,9 +884,10 @@ internal sealed class ChatGoOn
         // ASKSCOPE1b: the room it ran in, its workspace's, or the machine's where it started there before each workspace had its own.
         var (room, reads) = await _help.HelpRoomNowAsync(sessionId, KnowledgeRoomPaths.GoesOnIn(_context.Home, record.Workspace, record.Tree), ct)
             .ConfigureAwait(false);
+        handed = true;
         return await _runner.RunAsync(
             record.Actor ?? "ask-daoris", sessionId, $"Ask Daoris `{sessionId}` goes on with your words in its own conversation.", adapter, selection, config,
-            _runner.HelpPlace(room, reads, record.Workspace), onEnded, ct, new GoingOn(record, ask)).ConfigureAwait(false);
+            _runner.HelpPlace(room, reads, record.Workspace), onEnded, ct, new GoingOn(record, ask) { Proc = proc }).ConfigureAwait(false);
     }
 
     /// <summary>

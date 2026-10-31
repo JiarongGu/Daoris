@@ -65,6 +65,27 @@ public sealed record AttemptAnswer(bool Ok, string Message, IReadOnlyList<string
 public sealed record TakeBackAnswer(bool Done, string Message, string? Why = null, SaidWordView? Word = null);
 
 /// <summary>
+/// What the service said of a word held on a part that the person moved to the head (LINESTOGETHER1b's move door, the review-flow design §2).
+/// </summary>
+/// <param name="Moved">The word waits at the head now, or a retry found it moved already.</param>
+/// <param name="Message">The service's sentence, verbatim.</param>
+/// <param name="Why">
+/// Why not, as the service's word: <c>taken</c>, the say door's refusals, and the move's own (<c>not-held</c>, <c>files</c>, <c>at-head</c>,
+/// <c>not-yours</c>). Null when moved, and for a host with no door.
+/// </param>
+public sealed record MoveAnswer(bool Moved, string Message, string? Why = null)
+{
+    /// <summary>The head the word was kept on; a retry's record where it waits or that it left; a running head that refused it.</summary>
+    public string? To { get; init; }
+
+    /// <summary>A retry the service answered moved already: nothing was kept now.</summary>
+    public bool Again { get; init; }
+
+    /// <summary>The word as kept at the head, with its new id. Null otherwise.</summary>
+    public SaidWordView? Word { get; init; }
+}
+
+/// <summary>
 /// What the ledger said of deleting a session's record (SESSUX1f, D126 §5.4): whether it did, or would; and if not its
 /// sentence, its word (<c>not-found</c>, <c>not-ours</c>, <c>live</c>, <c>served-quest</c>, <c>named</c>,
 /// <c>on-remote</c>), which a reader acts on instead of the sentence, and the facts the word names.

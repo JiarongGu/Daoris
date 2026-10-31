@@ -62,6 +62,45 @@ public static class Lines
         }
     }
 
+    /// <summary>
+    /// The head of the line <paramref name="named"/> is on, with the hop <see cref="WalkAsync"/> lacks (LINESTOGETHER1a): a chain step
+    /// continues its parent quest's line, so the walk goes on from the newest step that has a run here. Null where a walk ended on a
+    /// cycle or the bound.
+    /// </summary>
+    public static async Task<Session?> HeadOfLineAsync(SessionStore sessions, QuestStore quests, Session named, CancellationToken ct = default) =>
+        (await LineOfAsync(sessions, quests, named, ct).ConfigureAwait(false)).Head;
+
+    /// <summary>
+    /// The walk <see cref="HeadOfLineAsync"/> takes, chain hops included, with every record it visited, the one named first (LINESTOGETHER1b:
+    /// a moved word is looked for on each of them).
+    /// </summary>
+    public static async Task<LineWalk> LineOfAsync(SessionStore sessions, QuestStore quests, Session named, CancellationToken ct = default)
+    {
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        var walk = await WalkAsync(sessions, named, ct).ConfigureAwait(false);
+        var records = new List<Session>(walk.Records);
+        while (walk.Head is { Quest: { } quest } head && seen.Add(head.Id) && head.Origin is null)
+        {
+            var chain = await quests.ChainAsync(quest, ct).ConfigureAwait(false);
+            var below = new HashSet<string>(StringComparer.Ordinal) { quest };
+            // ChainAsync lists a quest after its parent, so one pass finds every descendant.
+            var steps = chain.Where(step => step.Parent is { } parent && below.Contains(parent) && below.Add(step.Id)).OrderByDescending(step => step.Filed).ToList();
+            Session? next = null;
+            foreach (var step in steps)
+            {
+                if (await sessions.LastOwnIdForQuestAsync(step.Id, ct).ConfigureAwait(false) is not { } id) continue;
+                next = await sessions.FindAsync(id, ct).ConfigureAwait(false);
+                break;
+            }
+
+            if (next is null) break;
+            walk = await WalkAsync(sessions, next, ct).ConfigureAwait(false);
+            records.AddRange(walk.Records.Where(record => !records.Any(each => each.Id == record.Id)));
+        }
+
+        return walk with { Records = records };
+    }
+
     /// <summary>The head of <paramref name="named"/>'s line, as <see cref="WalkAsync"/> reaches it; null where the walk ended on a cycle or the bound.</summary>
     public static async Task<Session?> HeadOf(SessionStore sessions, Session named, CancellationToken ct = default) =>
         (await WalkAsync(sessions, named, ct).ConfigureAwait(false)).Head;

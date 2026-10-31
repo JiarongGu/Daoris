@@ -27,6 +27,9 @@ export type EntryAcceptPart = {
   clash?: { by: string; says: string } | null;
 };
 
+/** The session's press as its hosts are handed it: the props of `EntryAccept`, the frame's. */
+export type EntryPress = Parameters<typeof EntryAccept>[0];
+
 /** Where an entry's parts would land (D167's amendment point 1): its one branch, or the line a merge goes into, and each part. */
 export type EntryAcceptPlan = { entry: string; repository: string; form: string; target: string; parts: EntryAcceptPart[] };
 
@@ -42,7 +45,11 @@ export type EntryAcceptPlan = { entry: string; repository: string; form: string;
  * - **A gate holding any part of a line of work holds its landing** (point 4): the ask says which and offers no move. Under an
  *   ask, the gate holds only its own repository's entry, and the move lands the others.
  */
-export function EntryAccept({ scope, offered, open, onOpen, plans, reading = false, busy = false, numberOf, onLand }: {
+export function EntryAccept({ scope, offered, open, onOpen, plans, reading = false, busy = false, held = false, draw, numberOf, onLand }: {
+  /** Its ask is open in another place (the head or the foot), so this press waits: one place at a time (D168 point 3). */
+  held?: boolean;
+  /** Only the press, or only its ask, where the line of a host cannot hold the ask beside it; both where absent. */
+  draw?: 'press' | 'ask';
   /** The entry's head, or the ask's heading in the list by ask. */
   scope: 'entry' | 'ask';
   /** How many parts offer work to land: what the press says it accepts. */
@@ -67,12 +74,14 @@ export function EntryAccept({ scope, offered, open, onOpen, plans, reading = fal
     return n ? t('work.parts.number', { n }) : session;
   };
   if (!open) {
+    if (draw === 'ask') return null;
     return (
-      <Button variant="primary" className="px-2 py-0.5 text-small" disabled={busy} onClick={() => onOpen(true)}>
+      <Button variant="primary" className="px-2 py-0.5 text-small" disabled={busy || held} onClick={() => onOpen(true)}>
         {t(scope === 'ask' ? 'work.accept.ask' : 'work.accept.entry', { count: offered })}
       </Button>
     );
   }
+  if (draw === 'press') return null;
 
   const read = !reading && plans ? plans : null;
   // A gate on a kept part of a line of work holds all of it (point 4); under an ask, only its own repository's.
@@ -135,6 +144,7 @@ function PlanLines({ t, plan, named, name, leaving, onLeave, held, refused }: {
   /** Under an ask, a part would be refused (and none is gated), so its repository's work stays. */
   refused: boolean;
 }) {
+  const { i18n } = useTranslation();
   const count = plan.parts.filter((part) => !part.sameTreeAs && !leaving.has(part.session)).length;
   return (
     <div className="grid gap-1 text-small text-ink-soft">
@@ -176,7 +186,10 @@ function PlanLines({ t, plan, named, name, leaving, onLeave, held, refused }: {
                   <CheckField
                     checked={leaving.has(part.session)}
                     onChange={() => onLeave(part.session)}
-                    label={t('work.accept.leaveOut', { part: part_ })}
+                    label={t('work.accept.leaveOut', {
+                      part: new Intl.ListFormat(i18n.language, { type: 'conjunction' }).format(
+                        [part.session, ...plan.parts.filter((each) => each.sameTreeAs === part.session).map((each) => each.session)].map(name)),
+                    })}
                   />
                 </>
               )}

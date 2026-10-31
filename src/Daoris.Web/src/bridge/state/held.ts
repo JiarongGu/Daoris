@@ -33,6 +33,14 @@ export async function askHeld<T>(
   return kept === undefined ? read(answer) : kept;
 }
 
+// A numbered read's own handling of its events (COWORKVIEW1a), by the query's hash: every other held read keeps the handling below.
+const numbered = new Map<string, (answer: unknown) => void>();
+
+/** Hand a numbered read's events for the query hashed `held` to `handle`, which applies its number rule. */
+export function heldNumbered(held: string, handle: (answer: unknown) => void) {
+  numbered.set(held, handle);
+}
+
 /**
  * One `ANSWERED` heard: its answer, read as its query reads it, written into the query it names, in every window holding that
  * query; a failure asks that query again, so the shell's refusal is read as the route's. A query this window does not hold is
@@ -42,6 +50,11 @@ export function answered(client: QueryClient, told: Answered | null | undefined)
   if (typeof told?.held !== 'string') return;
   const query = client.getQueryCache().get(told.held);
   if (!query) return;
+  const own = numbered.get(told.held);
+  if (own) {
+    if (told.answer !== undefined) own(told.answer);
+    return;
+  }
   if (told.failed === true) {
     void client.invalidateQueries({ queryKey: query.queryKey, exact: true });
     return;

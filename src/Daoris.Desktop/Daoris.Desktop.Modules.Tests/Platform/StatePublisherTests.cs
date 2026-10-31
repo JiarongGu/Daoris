@@ -480,6 +480,9 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
     // SESSCTX1d: what each part spent, the *Parts* strip's read.
     [InlineData("SESSION_SPENT", "", null)]
     [InlineData("SESSION_WHERE", "", null)]
+    // COWORKVIEW1a: who is at work on a session, told by its own judge.
+    [InlineData("SESSION_AT_WORK", "", null)]
+    [InlineData("SESSION_RELATED", "", null)]
     [InlineData("SESSION_GROUPS", "", null)]
     [InlineData("SESSION_SEARCH", "", null)]
     [InlineData("SESSION_OPEN_FOLDER", "", null)]
@@ -581,6 +584,7 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
     [InlineData("SESSION_GO_AHEAD", "sessions,asks", "id")]
     [InlineData("CANCEL_TURN", "sessions", "id")]
     [InlineData("SESSION_QUEUE_EDIT", "sessions", "session")]
+    [InlineData("SESSION_QUEUE_MOVE", "sessions", "session")]
     [InlineData("SET_SESSION_OPTION", "", null)]
     [InlineData("SESSION_OPTIONS", "", null)]
     [InlineData("ACCOUNT_USE", "harnesses", null)]
@@ -675,7 +679,7 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
     public void Every_scope_has_its_word_on_the_wire_in_its_declared_order() =>
         Assert.Equal(
             "sessions,landing,diff,handOff,sweep,treesSync,lines,quests,asks,driver,rules,history,sync,registry,plugins,harnesses,"
-            + "tools,help,browser,wiring,notices,repositories,integration",
+            + "tools,help,browser,wiring,notices,repositories,integration,atWork",
             string.Join(",", StatePublisher.Names((StateScopes)~0)));
 
     /// <summary>

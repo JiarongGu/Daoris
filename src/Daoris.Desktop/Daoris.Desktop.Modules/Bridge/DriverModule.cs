@@ -97,7 +97,7 @@ public sealed class DriverModule : ModuleBase
         : base(events: events)
     {
         _context = new DriverContext(events, loop, openFolder, pickFile);
-        _held = new HeldAnswers(events);
+        _held = Registering(new HeldAnswers(events));
         _handlers = [.. Domains.Select(domain => domain.Build(_context))];
         // Ask Daoris's room as START_HELP writes it, for a conversation going on in it (ASKHIST1). Since PARALLEL1a from the facts the
         // judges keep on the loop: their judges registered here, and the room written again as the facts it said not read yet land.
@@ -130,7 +130,17 @@ public sealed class DriverModule : ModuleBase
     public TimeSpan Patience
     {
         get => _held.Patience;
-        init => _held = new HeldAnswers(_context.Events) { Patience = value };
+        init => _held = Registering(new HeldAnswers(_context.Events) { Patience = value });
+    }
+
+    /// <summary>Each landed composition of who is at work registered with its judge (COWORKVIEW1a), which wakes it once it moved.</summary>
+    private HeldAnswers Registering(HeldAnswers held)
+    {
+        held.Landed += (key, answer) =>
+        {
+            if (answer is AtWorkHeld { Dependencies: AtWorkDependencies read }) _context.Loop.AtWork.Register(key, read);
+        };
+        return held;
     }
 
     /// <summary>The reads a page may stop (GITAPP1a-iii), and who waits on them: the tests' window on a shared read's callers.</summary>
@@ -262,7 +272,7 @@ public sealed class DriverModule : ModuleBase
         if (route.Held is { } held)
         {
             return _held.AskAsync(HeldKey(request), HeldOf(request), token => route.Answer(handler, request, token),
-                held.Versioned ? () => VersionsOf(held) : null);
+                held.Versioned ? () => VersionsOf(held) : null, held.Numbered);
         }
 
         if (route.Shared is { } shared) return JoinAsync(route, shared, handler, type, request, cancellationToken);
@@ -384,6 +394,7 @@ public sealed class DriverModule : ModuleBase
         Domain.Of(context => new AcrossRoutes(context)),
         Domain.Of(context => new AgentsRoutes(context)),
         Domain.Of(context => new AsksRoutes(context.Loop)),
+        Domain.Of(context => new AtWorkRoutes(context)),
         Domain.Of(context => new ConsoleRoutes(context.Loop, context.Actions)),
         Domain.Of(context => new ConversationRoutes(context)),
         Domain.Of(context => new DriverRoutes(context)),
@@ -593,4 +604,7 @@ internal sealed class ByEventAttribute(string route) : Attribute
 
     /// <summary>Whether the route declares inputs, so its versions are read.</summary>
     public bool Versioned => Reads != StateScopes.None || Slices.Length > 0;
+
+    /// <summary>A numbered read (COWORKVIEW1a, <see cref="HeldAnswers.AskAsync"/>): never a refusal, each delivery numbered.</summary>
+    public bool Numbered { get; set; }
 }

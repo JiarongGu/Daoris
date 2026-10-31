@@ -267,6 +267,62 @@ public sealed class KnowledgeStandingTests : IDisposable
         Assert.Equal([checkout], asked);
     }
 
+    /// <summary>A status that fails says the root's uncommitted state is unknown, never that it is clean (KNOWCENTRAL2a).</summary>
+    [Fact]
+    public async Task A_failed_status_says_uncommitted_unknown()
+    {
+        var checkout = Committed();
+        var store = new InMemoryKnowledgeStore();
+        var service = new KnowledgeService(
+            store, new LexicalKnowledgeSearch(store),
+            new FileSystemKnowledgeSource(() => [checkout], new RepositoryScanner(documents: "docs")), DisclosurePolicy.LocalOnly,
+            registry: new Registry(), readsRegisteredRoots: true, uncommitted: _ => throw new IOException("git did not start"));
+        await service.RegisterAsync(RegistryImport.ProposeAt(checkout), DateTimeOffset.UtcNow);
+        var tools = new KnowledgeSearchTools(service, new WorkspaceScope(service, new AmbientWorkspace(Path.GetTempPath())));
+
+        Assert.Equal(
+            $"standing: read at {Head(checkout)[..8]} + uncommitted unknown · later: 1 note · no mark",
+            StandingOf(await tools.SearchAsync("Platypus", "decision", workspace: "all"), "D60.md`"));
+    }
+
+    /// <summary>
+    /// KNOWCENTRAL2a: a hit's standing reads the entry, its file's marks and the reading together, from the index every connector
+    /// writes. Another connector writing, restamping or retiring the repository between the hit and its standing never leaves
+    /// one reading's commit beside another's marks.
+    /// </summary>
+    [Fact]
+    public async Task A_second_connector_writing_restamping_or_retiring_between_hit_and_standing_never_mixes_readings()
+    {
+        var checkout = Committed();
+        var (found, _) = await Serve();
+        await using var _ = found;
+        var (other, _) = await Serve();
+        await using var __ = other;
+        var first = Head(checkout)[..8];
+        async Task<KnowledgeEntry> HitAsync() =>
+            Assert.Single(await found.Service.SearchAsync(new KnowledgeQuery("Platypus")), hit => hit.Entry.Anchor is null).Entry;
+
+        var hit = await HitAsync();
+        Write("family/served/docs/decisions/D60.md", Unmarked + "\n**Superseded by D70, 2026-10-31.** Gannet note.\n");
+        Git(checkout, "commit", "-q", "-am", "superseded");
+        var second = Head(checkout)[..8];
+        await other.Service.RefreshAsync();
+        var written = (await found.Service.StandingsAsync([hit]))[hit.Id].Says;
+        Assert.StartsWith($"standing: read at {second}", written);
+        Assert.EndsWith("later: 2 notes · superseded by D70", written);
+
+        hit = await HitAsync();
+        await other.Service.RegisterAsync(RegistryImport.ProposeAt(checkout) with { Workspace = "elsewhere" }, DateTimeOffset.UtcNow);
+        var restamped = (await found.Service.StandingsAsync([hit]))[hit.Id].Says;
+        Assert.StartsWith($"standing: read at {second}", restamped);
+        Assert.EndsWith("superseded by D70", restamped);
+
+        hit = await HitAsync();
+        Assert.True(await other.Service.RetireAsync("served"));
+        Assert.Equal("standing: unknown", (await found.Service.StandingsAsync([hit]))[hit.Id].Says);
+        Assert.DoesNotContain(first, written + restamped);
+    }
+
     /// <summary>
     /// A git that is slow to start never holds an answer: the registry answers while the status is pending, a hit says it was not
     /// yet read, and once the status lands the hit says what it found.

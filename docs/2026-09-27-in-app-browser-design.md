@@ -122,10 +122,14 @@ machine. That sets the first rule below.
    never when the manifest is read, because the endpoint exists only while the shell runs. The
    example plugin declares Playwright MCP with `--cdp-endpoint ${browser}`. A machine may declare
    Chrome DevTools MCP with `--browserUrl ${browser}` instead.
-6. **The driver asks for the browser before it hands the server.** Where a session's servers carry
-   `${browser}`, the driver asks the shell to bring the browser up, without taking the person's focus,
-   and hands the server the endpoint the shell answers. Where there is no shell (the headless
-   `daoris-driver`, a gate), the answer is none. That server is then not handed, and the session's
+6. **The driver asks for the endpoint before it hands the server, and the browser comes up later
+   (BROWSERSTART1).** Where a session's servers carry `${browser}`, the driver asks the shell for the
+   endpoint (`IInAppBrowser.EndpointAsync`) and hands the server what it answers. The shell answers a
+   loopback port it holds for its life (`LazyEndpoint`) and brings no browser up: the chosen browser,
+   Daoris's own or Edge, comes up in the background at the first connection to that port, or at the
+   person's press, and the connection is relayed to it. So a session's start and the come-up after a
+   restart open no window. Where there is no shell (the headless `daoris-driver`, a gate), or Edge is
+   chosen and not installed, the answer is none. That server is then not handed, and the session's
    transcript says why.
 7. **Nothing loads into a host** (D64 §7 stands). The browser is Daoris's own code in the shell. The
    plugin declares a process that speaks CDP to it, and a plugin still cannot add a view.

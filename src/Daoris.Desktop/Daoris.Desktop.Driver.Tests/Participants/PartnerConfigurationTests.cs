@@ -38,6 +38,11 @@ public sealed class PartnerConfigurationTests
         // HANDBACK1: a quest's handback is a quest's record, refused a partner as the quest list is, in both layers.
         Assert.DoesNotContain(Connector + "handback_read", shaped.Allow);
         Assert.Contains(Connector + "handback_read", shaped.Deny);
+        // KNOWCENTRAL2b: it reads a repository's memory, and changes or proposes nothing of it.
+        Assert.Contains(Connector + "memory_search", shaped.Allow);
+        Assert.Contains(Connector + "memory_get", shaped.Allow);
+        Assert.Contains(Connector + "memory_write", shaped.Deny);
+        Assert.Contains(Connector + "memory_propose", shaped.Deny);
         Assert.Contains("Bash(npm test:*)", shaped.Allow);
         Assert.Contains("Bash(rm -rf:*)", shaped.Deny);
         Assert.Contains("Bash(git push:*)", shaped.Deny);

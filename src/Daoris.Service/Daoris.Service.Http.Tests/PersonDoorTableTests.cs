@@ -126,6 +126,8 @@ public sealed class PersonDoorTableTests
         ("POST", "/api/sessions/{id}/added", Person),
         ("POST", "/api/sessions/{id}/say", Person),
         ("POST", "/api/sessions/{id}/take-back", Person),
+        // LINESTOGETHER1b: the person's held word moved to the head; a local host's alone.
+        ("POST", "/api/sessions/{id}/move", Person),
         ("POST", "/api/sessions/{id}/answer", Person),
         ("POST", "/api/asks/{id}/close", Person),
         ("DELETE", "/api/asks/{id}", Person),
@@ -183,11 +185,12 @@ public sealed class PersonDoorTableTests
         // versions a start of a record was handed, the driver's (KEEP1b), and what waits for confirmation held until it moves, a read
         // (NOTIFY2j), and a machine's retirement at a workspace's remote, the person's (FABRIC-CLOSE1i2), and a park the driver could
         // not hand put back, the driver's (SUPERVISOR1a-i), and a finished tree's record and its age, the driver's (KEEPSIZE1b), and the host's protocol, a read (FOUNDATION1 row p),
-        // and one quest's handback, a read (HANDBACK1), and the event journal's rows after a position, a read (FOUNDATION1 l-i), and a session's finished tree's record, a read (KEEPSIZE1).
+        // and one quest's handback, a read (HANDBACK1), and the event journal's rows after a position, a read (FOUNDATION1 l-i), and a session's finished tree's record, a read (KEEPSIZE1),
+        // and the person's move of a held word to the head (LINESTOGETHER1b).
         Assert.Equal(33, Routes.Count(route => route.Class == Open));
         Assert.Equal(4, Routes.Count(route => route.Class == Agent));
         Assert.Equal(30, Routes.Count(route => route.Class == Driver));
-        Assert.Equal(33, Routes.Count(route => route.Class == Person));
+        Assert.Equal(34, Routes.Count(route => route.Class == Person));
         // And a shared host's two channel doors, a feed and a page (SESSONE2d), and its retirement of a machine (FABRIC-CLOSE1i2).
         Assert.Equal(10, Routes.Count(route => route.Class == Shared));
     }

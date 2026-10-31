@@ -373,9 +373,8 @@ public sealed class NewerIndexTests : IDisposable
     private static KnowledgeEntry Entry(string title, string body) =>
         new("alpha", EntryKind.Decision, Provenance.Canonical, title, body, "docs/DECISIONS.md", title);
 
-    /// <summary>The index's own tables, the full-text index's shadow tables and its indexes among them.</summary>
-    private static bool IndexTable(string name) => name.StartsWith("entries", StringComparison.Ordinal)
-        || name.StartsWith("ix_entries", StringComparison.Ordinal);
+    /// <summary>The index's own tables, the full-text index's shadow tables, its readings and its indexes among them.</summary>
+    private static bool IndexTable(string name) => name.StartsWith("index_", StringComparison.Ordinal);
 
     private static IReadOnlyList<string> McpLogLines(string home)
     {

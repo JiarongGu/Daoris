@@ -83,9 +83,51 @@ public static class IntegrateCommand
         return said;
     }
 
-    /// <summary>What a terminal says to an act: the owner's acts are cards in the window.</summary>
+    /// <summary>The owner's acts, one Person route of the driver's module: a card in Daoris's window (D156) the terminal waits on.</summary>
+    public static InstanceRoute Route { get; } = new(InstanceRoute.DriverModule, "INTEGRATE", RouteClass.Person);
+
+    /// <summary>The acts the route answers; <c>decide</c> and <c>order</c> it refuses until their steps are built.</summary>
+    public static IReadOnlyList<string> Pressed { get; } = ["request", "drop", "recheck"];
+
+    /// <summary>The route's payload for <paramref name="ask"/>, as the window's own press sends it.</summary>
+    public static object Payload(IntegrateAsk ask) => ask.Act switch
+    {
+        "request" => new { repository = ask.Repository, act = ask.Act, branch = ask.Target },
+        "drop" => new { repository = ask.Repository, act = ask.Act, request = ask.Target },
+        _ => new { repository = ask.Repository, act = ask.Act },
+    };
+
+    /// <summary>
+    /// An act pressed through the running Daoris, said in the route's answer: exit 0 where done, 1 where refused as data. With no Daoris
+    /// running nothing is done: the owner's act is a card in its window (<see cref="ActSaid"/>).
+    /// </summary>
+    public static async Task<int> PressAsync(IntegrateAsk ask, InstanceWorld world, CancellationToken ct = default)
+    {
+        if (!Pressed.Contains(ask.Act ?? ""))
+        {
+            await world.Error.WriteLineAsync($"integrate: `--{ask.Act}` is not built yet; nothing was changed.").ConfigureAwait(false);
+            return 1;
+        }
+
+        async Task<int> Alone()
+        {
+            await world.Error.WriteLineAsync(ActSaid(ask)).ConfigureAwait(false);
+            return 1;
+        }
+
+        int Words(System.Text.Json.JsonElement answer)
+        {
+            var message = answer.ValueKind == System.Text.Json.JsonValueKind.Object && answer.TryGetProperty("message", out var said) ? said.GetString() : null;
+            world.Out.WriteLine($"integrate: {message}");
+            return answer.ValueKind == System.Text.Json.JsonValueKind.Object && answer.TryGetProperty("done", out var done) && done.ValueKind == System.Text.Json.JsonValueKind.True ? 0 : 1;
+        }
+
+        return await world.PressAsync(Route, Payload(ask), Alone, Words, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>What a terminal says where no Daoris runs to take an act: the owner's acts are cards in the window.</summary>
     public static string ActSaid(IntegrateAsk ask) =>
-        $"integrate: `--{ask.Act}` is the owner's act, a card in Daoris's window (D156): open `{ask.Repository}`'s Integration tab there.";
+        $"integrate: `--{ask.Act}` is the owner's act, a card in Daoris's window (D156), and no Daoris answers here: open `{ask.Repository}`'s Integration tab there.";
 
     private static string Short(string commit) => commit.Length > 7 ? commit[..7] : commit;
 }

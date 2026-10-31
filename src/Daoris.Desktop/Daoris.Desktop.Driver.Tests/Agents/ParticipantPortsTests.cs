@@ -21,9 +21,10 @@ public sealed class ParticipantPortsTests : IDisposable
         await Capture(lines, "s1", _home);
         var children = ChildLineage.Read(_home, "s1").Children;
         Assert.Equal([("a1", (string?)null), ("a2", "a1")], children.Select(child => (child.Native, child.Parent)));
-        Assert.All(children, child => Assert.Equal(ChildBindings.Active, child.State));
+        // No process bracketed them: history, its process's exit proven by nothing, and a driven record's end claims no boundary.
+        Assert.All(children, child => Assert.Equal(ChildBindings.Uncertain, child.State));
         ChildLineage.End(_home, "s1", clean: false, DateTimeOffset.UnixEpoch);
-        Assert.All(ChildLineage.Read(_home, "s1").Children, child => Assert.Equal(ChildBindings.Lost, child.State));
+        Assert.All(ChildLineage.Read(_home, "s1").Children, child => Assert.Equal(ChildBindings.Unrecorded, child.State));
         await Capture(lines, "s2", _home);
         Assert.Equal(2, ChildLineage.Read(_home, "s2").Children.Count);
         await Capture("{\"type\":\"foreign\"}", "s3", _home);
@@ -32,7 +33,7 @@ public sealed class ParticipantPortsTests : IDisposable
     }
 
     [Fact]
-    public async Task An_unrelated_watcher_gets_each_line_before_mapping_and_none_after_capture()
+    public async Task An_unrelated_writer_gets_each_line_before_mapping_and_none_after_capture()
     {
         var actual = LineageStreams.Current;
         var stand = new Streams();
@@ -40,15 +41,14 @@ public sealed class ParticipantPortsTests : IDisposable
         {
             LineageStreams.Current = stand;
             await Capture("first\nsecond", "s1", _home);
-            Assert.Equal(["watch:s1", "first", "second"], stand.Calls);
+            Assert.Equal(["writer:s1:", "first", "second"], stand.Calls);
             await Capture("unwatched", "s2", null);
             Assert.Equal(3, stand.Calls.Count);
+            LineageStreams.Current.Writer(_home, "s3", "0123456789abcdef");
+            Assert.Equal("writer:s3:0123456789abcdef", stand.Calls[^1]);
             LineageStreams.Current = null!;
             await Assert.ThrowsAsync<InvalidOperationException>(() => Capture("never", "s3", _home));
             await Capture("no lineage requested", "s4", null);
-            LineageStreams.Current = new RefusedStreams();
-            var refused = await Assert.ThrowsAsync<IOException>(() => Capture("never", "s5", _home));
-            Assert.Equal("watch refused", refused.Message);
         }
         finally { LineageStreams.Current = actual; }
         Assert.Same(actual, LineageStreams.Current);
@@ -69,16 +69,21 @@ public sealed class ParticipantPortsTests : IDisposable
 
     private Task Capture(string lines, string session, string? home) => HarnessCapture.CaptureStructuredAsync(
         new StringReader(lines), new StringReader(""), Path.Combine(_home, session + ".log"), session,
-        output: null, events: null, new ClaudeStreamJson(), prompt: null, CancellationToken.None, lineageHome: home);
+        output: null, events: null, new ClaudeStreamJson(), prompt: null, CancellationToken.None,
+        lineage: home is null ? null : LineageStreams.Current.Writer(home, session));
 
-    private sealed class Streams : ILineageStreams
+    private sealed class Streams : ILineageStreams, ILineageWriter
     {
         public List<string> Calls { get; } = [];
-        public Action<string> Watch(string home, string sessionId)
+        public ILineageWriter Writer(string home, string sessionId, string? proc = null)
         {
-            Calls.Add("watch:" + sessionId);
-            return Calls.Add;
+            Calls.Add($"writer:{sessionId}:{proc}");
+            return this;
         }
+
+        public void Stream(string line) => Calls.Add(line);
+        public void Spawned(LineageAnnouncement said) => Calls.Add("spawned:" + said.Agent);
+        public void Ended(string agent, string? state) => Calls.Add("ended:" + agent);
     }
 
     private sealed class Access : IAgentAccess
@@ -89,10 +94,5 @@ public sealed class ParticipantPortsTests : IDisposable
         public string? PermissionMode => "stand-mode";
         public string? Posture => null;
         public string Unoffered(string named, string offers) => "stand refused";
-    }
-
-    private sealed class RefusedStreams : ILineageStreams
-    {
-        public Action<string> Watch(string home, string sessionId) => throw new IOException("watch refused");
     }
 }

@@ -1,11 +1,41 @@
 import { describe, expect, it } from 'vitest';
 import {
-  askLines, askOfEntry, entryFacts, entryOfSession, listedSessions, nameOfEntry, partIds, sessionsByAsk, type SessionEntry,
+  askLines, askOfEntry, entryFacts, entryOfSession, listedSessions, nameOfEntry, opensOf, partIds, placeOf, sessionsByAsk, type SessionEntry,
 } from './entries';
 import { EVIDENCE_ASKS, EVIDENCE_ENTRIES, EVIDENCE_SESSIONS } from './entries.fixtures';
 
 // SESSONE1c (D167 point 5): the list's entries as the driver's reader answers them, drawn without a rule of the page's own.
 // The owner's evidence: two asks, one of them over two repositories, eleven records, three lines of work.
+
+// LINESTOGETHER1a: a row opens on the driver's `opens`: the head, or the part that waits on the person or works.
+describe('where a row opens', () => {
+  const [APP] = EVIDENCE_ENTRIES as [SessionEntry];
+  const ended = { ...APP, group: 'ended' as const, head: 'ap000002', opens: 'ap000002' };
+
+  it('opens on the head of an ended session, not its newest part', () => {
+    expect(opensOf([ended], 'ap000003')).toBe('ap000002');
+  });
+
+  it('opens on a part that waits on the person', () => {
+    const waiting = { ...APP, group: 'you' as const, head: 'ap000002', opens: 'ap000001' };
+    expect(opensOf([waiting], 'ap000003')).toBe('ap000001');
+  });
+
+  it('opens on a part that is working', () => {
+    expect(opensOf(EVIDENCE_ENTRIES, 'ap000003')).toBe('ap000003');
+  });
+
+  it('opens on the leading part of an ask\'s siblings, which have no head', () => {
+    const siblings = { ...APP, head: null, opens: 'ap000003' };
+    expect(opensOf([siblings], 'ap000003')).toBe('ap000003');
+  });
+
+  it('opens on the leading part where the host is older and says no `opens`', () => {
+    const { opens: _o, head: _h, ...older } = APP;
+    expect(opensOf([older as SessionEntry], 'ap000003')).toBe('ap000003');
+    expect(opensOf(undefined, 'x')).toBe('x');
+  });
+});
 
 describe('the session list by entry', () => {
   it('lists the owner\'s two asks as three sessions, not eleven records', () => {
@@ -77,11 +107,34 @@ describe('the session list by entry', () => {
   describe('on the ask\'s page', () => {
     it('lists the repositories\' lines of work the ask began, with the leading part\'s word', () => {
       expect(askLines(EVIDENCE_ENTRIES, 'c98a7e')).toEqual([
-        { entry: 'ask:c98a7e/app', repository: 'app', parts: 3, leading: 'ap000003', shown: 'working' },
-        { entry: 'ask:c98a7e/db', repository: 'db', parts: 3, leading: 'db000003', shown: 'working' },
+        { entry: 'ask:c98a7e/app', repository: 'app', parts: 3, leading: 'ap000003', opens: 'ap000003', shown: 'working' },
+        { entry: 'ask:c98a7e/db', repository: 'db', parts: 3, leading: 'db000003', opens: 'db000003', shown: 'working' },
       ]);
       expect(askLines(EVIDENCE_ENTRIES, '841c38').map((line) => line.leading)).toEqual(['ap000013']);
       expect(askLines(undefined, 'c98a7e')).toEqual([]);
     });
+  });
+});
+
+// LINESTOGETHER1b: where a part stands against its line's head, for the box's first line.
+describe('where a part stands by the head', () => {
+  const part = (session: string, began: string) =>
+    ({ session, quest: 'q', shown: 'completed', group: 'review', began, after: null, askedBy: null }) as SessionEntry['parts'][number];
+  const entry = (head: string | null | undefined): SessionEntry => ({
+    entry: 'e', origin: 'quest:q', repository: 'engine', group: 'review', leading: 'p3', head,
+    parts: [part('p1', 'opened'), part('p2', 'resumed'), part('p3', 'asked')],
+  });
+
+  it('numbers a part, and says whether it is the head, beside it, or earlier in its line', () => {
+    expect(placeOf(entry('p2'), 'p2')).toEqual({ part: 2, place: 'head' });
+    expect(placeOf(entry('p2'), 'p3')).toEqual({ part: 3, place: 'beside' });
+    expect(placeOf(entry('p2'), 'p1')).toEqual({ part: 1, place: 'line' });
+  });
+
+  it('says nothing where the entry names no head, or does not hold the part', () => {
+    expect(placeOf(entry(null), 'p1')).toBeNull();
+    expect(placeOf(entry(undefined), 'p1')).toBeNull();
+    expect(placeOf(entry('p2'), 'zz')).toBeNull();
+    expect(placeOf(null, 'p1')).toBeNull();
   });
 });

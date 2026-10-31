@@ -28,9 +28,131 @@ public sealed class DriverModuleHeldTests : DriverModuleBridge
         ["TOOLS_LIST"] = new { },
         ["SUPERVISOR_WAITING"] = new { },
         ["INTEGRATION"] = new { repository = "engine" },
+        ["SESSION_AT_WORK"] = new { session = "a1b2c3d4" },
+        ["SESSION_RELATED"] = new { session = "a1b2c3d4" },
     };
 
     public static TheoryData<string> HeldRoutes() => [.. DriverModule.ByEventRoutes.Order(StringComparer.Ordinal)];
+
+    private List<JsonElement> Heard(out IDisposable hearing)
+    {
+        var told = new List<JsonElement>();
+        hearing = Bus.Subscribe(HeldAnswers.Module, HeldAnswers.Event, message =>
+        {
+            lock (told) told.Add(JsonSerializer.SerializeToElement(message.Payload, Wire));
+            return Task.CompletedTask;
+        });
+        return told;
+    }
+
+    private static JsonElement Of(object? answer) => JsonSerializer.SerializeToElement(answer, Wire);
+
+    /// <summary>
+    /// An answer less a numbered read's number (COWORKVIEW1a): a reply carries the newest landing's, which a work landing unchanged
+    /// after the event still moves, so the two are compared by what they say.
+    /// </summary>
+    private static string Unnumbered(string json)
+    {
+        if (System.Text.Json.Nodes.JsonNode.Parse(json) is not System.Text.Json.Nodes.JsonObject answer) return json;
+        answer.Remove("at");
+        return answer.ToJsonString();
+    }
+
+    /// <summary>
+    /// COWORKVIEW1a's numbered read (the design §4.1, C4-2.3, C4-3.1): a work's failure is answered, never thrown, as the failed value
+    /// with the refusal's words at every ask until a landing replaces it, told so too; every reply and event carries its epoch and number.
+    /// </summary>
+    [Fact]
+    public async Task A_numbered_read_answers_a_failure_with_its_words_at_every_ask_and_never_throws()
+    {
+        var held = new HeldAnswers(Bus) { Patience = TimeSpan.FromSeconds(5) };
+        var told = Heard(out var hearing);
+        using var _ = hearing;
+        Task<object?> Fails(CancellationToken ct) => throw new InvalidOperationException("the lineage could not be read");
+
+        var first = Of(await held.AskAsync("k", "q1", Fails, numbered: true));
+        var again = Of(await held.AskAsync("k", "q1", Fails, numbered: true));
+
+        Assert.Equal("the lineage could not be read", first.GetProperty("failed").GetProperty("why").GetString());
+        Assert.Equal(held.Epoch, first.GetProperty("at").GetProperty("epoch").GetString());
+        Assert.Equal("the lineage could not be read", again.GetProperty("failed").GetProperty("why").GetString());
+        await UntilAsync(() => { lock (told) return told.Count >= 1; });
+        lock (told) Assert.Equal("the lineage could not be read", told[0].GetProperty("answer").GetProperty("failed").GetProperty("why").GetString());
+    }
+
+    /// <summary>
+    /// The design §4.1 (O4-F3, O4-F12a): a failure over a held answer keeps it, answered and told stale with the refusal's words, and
+    /// the first landing after it is told even where it equals the held answer, which clears the stale; the numbers only grow.
+    /// </summary>
+    [Fact]
+    public async Task A_failure_over_a_held_answer_reads_it_stale_until_the_next_landing_which_is_told_even_unchanged()
+    {
+        var held = new HeldAnswers(Bus) { Patience = TimeSpan.FromSeconds(5) };
+        var told = Heard(out var hearing);
+        using var _ = hearing;
+        var fail = false;
+        Task<object?> Work(CancellationToken ct) => fail ? throw new InvalidOperationException("refused") : Task.FromResult<object?>(new { Rows = 1 });
+
+        var answered = Of(await held.AskAsync("k", "q1", Work, numbered: true));
+        fail = true;
+        await held.AskAsync("k", "q1", Work, numbered: true);
+        await held.LandedAsync("k");
+        var stale = Of(await held.AskAsync("k", "q1", Work, numbered: true));
+        await held.LandedAsync("k");
+        fail = false;
+        await held.AskAsync("k", "q1", Work, numbered: true);
+        await held.LandedAsync("k");
+        var recovered = Of(await held.AskAsync("k", "q1", Work, numbered: true));
+
+        Assert.Equal(1, stale.GetProperty("rows").GetInt32());
+        Assert.Equal("refused", stale.GetProperty("stale").GetProperty("why").GetString());
+        Assert.False(recovered.TryGetProperty("stale", out var _2));
+        Assert.True(recovered.GetProperty("at").GetProperty("n").GetInt64() > answered.GetProperty("at").GetProperty("n").GetInt64());
+        List<JsonElement> events;
+        lock (told) events = [.. told];
+        Assert.Contains(events, each => each.GetProperty("answer").TryGetProperty("stale", out var why) && why.GetProperty("why").GetString() == "refused");
+        Assert.False(events[^1].GetProperty("answer").TryGetProperty("stale", out var _3));
+    }
+
+    /// <summary>
+    /// COWORKVIEW1a rule 14: an ask is answered within the window's bound while a 40-member answer is composed beside three other held
+    /// reads, the 40 rows are told once when they land, and the same composition again tells nothing.
+    /// </summary>
+    [Fact]
+    public async Task An_ask_is_answered_within_the_bound_while_a_forty_member_answer_lands_beside_three_other_held_reads()
+    {
+        var held = new HeldAnswers(Bus) { Patience = TimeSpan.FromMilliseconds(50) };
+        var told = Heard(out var hearing);
+        using var _ = hearing;
+        var rows = Enumerable.Range(0, 40).Select(i => new { Key = $"a{i:00}", State = "working" }).ToArray();
+        async Task<object?> Forty(CancellationToken ct)
+        {
+            await Task.Delay(400, ct);
+            return new { Rows = rows };
+        }
+
+        async Task<object?> Other(CancellationToken ct)
+        {
+            await Task.Delay(400, ct);
+            return new { Other = 1 };
+        }
+
+        var clock = Stopwatch.StartNew();
+        var others = new[] { "o1", "o2", "o3" }.Select(key => held.AskAsync(key, key, Other)).ToArray();
+        var first = await held.AskAsync("k", "q1", Forty, numbered: true);
+        await Task.WhenAll(others);
+        Assert.True(clock.Elapsed < UiStallWatch.Bound, $"the asks answered after {clock.Elapsed.TotalMilliseconds} ms");
+        Assert.True(HeldAnswers.IsPending(first));
+
+        await UntilAsync(() => { lock (told) return told.Count(each => each.GetProperty("held").GetString() == "q1") >= 1; });
+        JsonElement landed;
+        lock (told) landed = told.First(each => each.GetProperty("held").GetString() == "q1");
+        Assert.Equal(40, landed.GetProperty("answer").GetProperty("rows").GetArrayLength());
+
+        await held.LandedAsync("k");
+        await Task.Delay(100);
+        lock (told) Assert.Single(told, each => each.GetProperty("held").GetString() == "q1");
+    }
 
     [Theory]
     [MemberData(nameof(HeldRoutes))]
@@ -70,7 +192,7 @@ public sealed class DriverModuleHeldTests : DriverModuleBridge
         }
 
         var held = await module.HandleMessageAsync(Request(route, payload, "q1"), CancellationToken.None);
-        Assert.Equal(answered.GetProperty("answer").GetRawText(), JsonSerializer.Serialize(held.Data, Wire));
+        Assert.Equal(Unnumbered(answered.GetProperty("answer").GetRawText()), Unnumbered(JsonSerializer.Serialize(held.Data, Wire)));
 
         // Asked again with the work slow again: what was held, at once; the same answer landing tells nothing more.
         var again = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -78,7 +200,7 @@ public sealed class DriverModuleHeldTests : DriverModuleBridge
         clock.Restart();
         var second = await module.HandleMessageAsync(Request(route, payload, "q1"), CancellationToken.None);
         Assert.True(clock.Elapsed < UiStallWatch.Bound, $"{route} answered after {clock.Elapsed.TotalMilliseconds} ms");
-        Assert.Equal(answered.GetProperty("answer").GetRawText(), JsonSerializer.Serialize(second.Data, Wire));
+        Assert.Equal(Unnumbered(answered.GetProperty("answer").GetRawText()), Unnumbered(JsonSerializer.Serialize(second.Data, Wire)));
         again.SetResult();
         await module.Held.LandedAsync(DriverModule.HeldKey(Request(route, payload, "q1")));
         await Task.Delay(50);

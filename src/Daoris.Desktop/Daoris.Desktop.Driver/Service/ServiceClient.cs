@@ -243,6 +243,30 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
         ReadSessions(await GetAsync("/api/sessions?includeClosed=true", ct).ConfigureAwait(false))
             .FirstOrDefault(session => string.Equals(session.Id, id, StringComparison.OrdinalIgnoreCase));
 
+    /// <summary>
+    /// The asking session and every other session of its repository with a tree and a base here, chats included (LINESTOGETHER1c); an
+    /// active session is taken as running. Null where the service has no such session or it holds no tree.
+    /// </summary>
+    public async Task<(RelatedCandidate Mine, IReadOnlyList<RelatedCandidate> Others)?> RelatedCandidatesAsync(string id, CancellationToken ct = default)
+    {
+        var all = ReadSessions(await GetAsync("/api/sessions?includeClosed=true", ct).ConfigureAwait(false));
+        var running = ReadSessions(await GetAsync("/api/sessions", ct).ConfigureAwait(false)).Select(s => s.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var quests = ReadQuests(await GetAsync("/api/quests?includeClosed=true", ct).ConfigureAwait(false))
+            .ToDictionary(quest => quest.Id, quest => quest.Paths, StringComparer.OrdinalIgnoreCase);
+        var asking = all.FirstOrDefault(session => string.Equals(session.Id, id, StringComparison.OrdinalIgnoreCase));
+        if (asking is null) return null;
+
+        RelatedCandidate? Candidate(SessionView session) => session is { Tree.Length: > 0, BaseCommit.Length: > 0 }
+            ? new(session.Id, session.Kind, session.Tree, session.BaseCommit, running.Contains(session.Id),
+                session.Quest is { Length: > 0 } quest && quests.TryGetValue(quest, out var paths) ? paths : [], session.Quest)
+            : null;
+
+        if (Candidate(asking) is not { } mine) return null;
+        var others = all.Where(session => !session.Id.Contains('/') && string.Equals(session.Repository, asking.Repository, StringComparison.OrdinalIgnoreCase))
+            .Select(Candidate).OfType<RelatedCandidate>().ToList();
+        return (mine, others);
+    }
+
     /// <summary>This machine's active sessions — the one read an orphan sweep needs, without a whole snapshot.</summary>
     public async Task<IReadOnlyList<SessionView>> ActiveSessionsAsync(CancellationToken ct = default) =>
         ReadSessions(await GetAsync("/api/sessions", ct).ConfigureAwait(false));
@@ -469,6 +493,35 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
         return new TakeBackAnswer(
             Flag(answered, "done"), Text(answered, "message") ?? "", Text(answered, "why"),
             answered.ValueKind == JsonValueKind.Object && answered.TryGetProperty("said", out var said) ? ReadWord(said) : null);
+    }
+
+    /// <summary>
+    /// Move one of the person's words held on a part's record to the head of the line <paramref name="to"/> is on (LINESTOGETHER1b's move
+    /// door): taken off and kept there in one step, a retry answered moved again. Whether it moved is an answer, never an exception, as the
+    /// take-back's is; a host without the door says so with no word. A request whose answer never came throws, for the caller to say so.
+    /// </summary>
+    public async Task<MoveAnswer> MoveSaidAsync(string id, string word, string? to = null, CancellationToken ct = default)
+    {
+        var body = WriteJson(writer =>
+        {
+            writer.WriteStartObject();
+            writer.WriteString("word", word);
+            if (to is { Length: > 0 }) writer.WriteString("to", to);
+            writer.WriteEndObject();
+        });
+        var (ok, status, payload, root) = await PostJsonAsync($"/api/sessions/{Uri.EscapeDataString(id)}/move", body, ct).ConfigureAwait(false);
+        if (root is not { ValueKind: JsonValueKind.Object } answered)
+        {
+            return new MoveAnswer(false, $"the service at {_base} has no door for moving words to a session's head ({status}) — is it older than this driver?");
+        }
+
+        if (!ok) return new MoveAnswer(false, Text(answered, "error") ?? payload, Text(answered, "refusal")) { To = Text(answered, "head") };
+        return new MoveAnswer(Flag(answered, "moved"), Text(answered, "message") ?? "", Text(answered, "why"))
+        {
+            To = Text(answered, "to"),
+            Again = Flag(answered, "again"),
+            Word = answered.TryGetProperty("said", out var said) ? ReadWord(said) : null,
+        };
     }
 
     /// <summary>

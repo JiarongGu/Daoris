@@ -22015,3 +22015,81 @@ The row is quoted by its head; its whole text and proof are the foundation desig
 > **INTEGRATE1p — the `request` node** *(R4, §17.5)* (Workflows, service; after n). The kind, its options (`to`, `title`, `body`, `start`, `until`, `declined`), its reach and authority, its subject; the request's key `<run>/<node>/<n>` written on the run's record before anything is sent and carried as the quest's field; its wait read from this machine's projection; after a decline, the person's *Ask again…* and *Go on without it…*; the wait in every place `person-waits.md` names (`docs/2026-10-28-integration-design.md` §11 holds the row whole).
 
 **Outcome** 2026-10-31: built in five parts. The key widens the quest's id and the forgotten-id check (p1); the node kind with `wait.unit`'s authority (p2); `RequestNode` publishes once by its key, found again after a restart, reached on done or on taking, a decline held with the run open (p3); *Ask again…* and *Go on without it…* on the node door and the terminal (p4); the `request-declined` attention row and the run's words in en and zh (p5). Left: a *Send* for `start: you` (only `start: automatic` publishes). An older build cannot refuse a push carrying the key. Detail in D215's p note.
+
+## KNOWCENTRAL2b — the memory tools, their grants and the workspace check (2026-10-31, D220)
+
+> **2b** (the design's §8): over a stand-in repeating the write effects §6 C names and a confirmation's revision bump: the census over `fixtures/call-table.json`, its `_why` naming the four sources; `ConnectorTools` held to the registration; the driver's lists; `Defaults` naming the five; a child served reads alone; another workspace's reference refused at each door; a repository moved out refused at its next call; Intake, Ask Daoris and an unnamed caller refused write and end; no write from a Read tool.
+
+**Outcome** 2026-10-31: the five memory tools exist with their grants and a workspace check at every call, over an engine seam (`Core/Knowledge/Memory/MemoryEngine.cs`) and a stand-in that repeats Lyntai's write effects; until 2d registers an engine, each answers that memory is not on and keeps nothing. Readings against the design: the reviewer's and helper's `Acting` list (`OpinionPermissions.cs:44`) gained write, end and propose beside the two `Offered` lists; §3's `MemoryTools.cs:74` is Lyntai's file; Ask Daoris's record names `daoris:help`, never registered, so its write and end are refused twice.
+
+## KNOWCENTRAL2a — the stored reading, citation and recheck (2026-10-31, D220)
+
+> **2a** (the design's §5 and §8): `index_readings` written in the transaction replacing the entries, a feed's provenance with it, only where the generation is still the one its writer read; retirement, withdrawal and restamping taking the generation in their own transaction and always writing; every replacing path through it; versioned tables an older open connector cannot reach; `RecheckAsync` and `StandingsAsync` reading entry, marks and reading in one read transaction.
+
+**Outcome** 2026-10-31: built. Schema 6 keeps the entries, the search table and `index_readings_6` in tables named by the version; every replace writes its reading in its transaction and is refused where the generation moved; restamping updates in place; standing, citation and recheck read in one transaction. Readings against the design: the generation is read before the registry reloads, not only before the source; a hit whose entry was replaced between search and standing reads `unknown`; a refused feed answers `FeedRefusal.Moved`; a connector opened before the upgrade cannot write the new tables, and its searches fail until its session restarts. Detail in the service README and D220's note.
+
+## QUESTIONUI1a2 — the head's card shares the frame's selection (2026-10-31, found landed)
+
+> **QUESTIONUI1a2 — the head's card shares the frame's selection** (web; depends on nothing else here). The head's card's rows are the frame's one selection, as §8.4 stands, in place of its own (`AwaitingPerson.tsx:105-107`); `f17e2301d`, on a session's tree and not merged, builds it. Proof: §11.
+
+**Outcome** 2026-10-31: found already on main. `f17e2301d` (2026-10-24), the session tree's build this row waited on, had landed with QUESTIONUI1a's commits; the row was left open by mistake.
+
+## KNOWCENTRAL2c — the operation record, commit points, recovery, journal and read set (2026-10-31, D220)
+
+> **2c** (the design's §3 and §8): each move journalled once, in order, no text; `staged` and `awaiting` unchanged by a kill; a fault inside the advance's or `PostAsync`'s transaction leaving neither record nor move, a kill after it leaving `ready` rows the next start applies; models from the usage history's turn lines; after a kill in `applying`, an end settled by its token, `stale` under another's; ambiguous writes and relations `held`; cursors, bootstrap and the read set.
+
+**Outcome** 2026-10-31: built in four parts: the memory log of record in `knowledge.db` with its commit points (rows move inside the ledger's `completed` advance and the finished-tree post), the applier and its recovery by token and guard or hold, the journal with cursors and bootstrap, and the read set. Readings against the design: a main-tree session's `Session.Tree` is the registered root, not null (`SessionLedger.cs:728`, `:1813`); 2b's seam took a revision guard on `ConfirmAsync`. Left to 2d: the service's start of the applier, the driver's turn lines, the person's Keep or Drop, clearing a deleted session's rows. Detail in the service README and D220's note.
+
+## REVIEWFLOW1a — Accept all where the person reviews the changes (2026-10-31, D168)
+
+> **REVIEWFLOW1a** (`docs/2026-10-31-review-flow-design.md`; accepted alone by the steward on both makers' reads, web only): *Accept all* joins D168's table as the session's work to land, one owner in the frame, drawn at the foot strip and the Review view's foot, replacing a part's own press where drawn; the block under *Parts* goes; the work wait stands on the session's offer.
+
+**Outcome** 2026-10-31: built. One ask state shared by head, foot and review, held where open elsewhere; the `accept` wait stands on the session's offer, so a head with no work beside a part with work shows *Accept…*; the press shows when more than one part offers work, or one does and the attended part has none (a lone attended part keeps its own press, which carries the branch-name field). Owed: the installed window.
+
+## BROWSERSTART1 — Daoris's browser opens at every restart of the application (2026-10-31)
+
+> **BROWSERSTART1 — Daoris's browser opens at every restart of the application** (driver, app; the owner's report, 2026-10-25; after FOUNDATION1's build, which comes first). A session whose handed servers drive Daoris's browser brings it up at the session's start (`Agents/Adapters/InAppBrowserServers.cs:102`, `App/EngineBrowserHost.cs:93-104`, in the background but with its window), and the come-up after a restart starts or takes up such sessions, so the browser appears though nobody asked for a page; confirm this on a scratch home before changing anything. The browser comes up at the person's press or when an agent first drives a page, never at a session's start or the come-up, its endpoint still handed at the start (the shape is the builder's, e.g. the fixed port handed and the browser started at the first connection, Edge's case included). Proof, seen failing first: a come-up taking up a chat whose servers drive the browser, and a quest session's start, bring up no browser; the first connection to the endpoint brings it up and the page is driven; BRW8's *who is driving* still drawn from the handing.
+
+**Outcome** 2026-10-31: built by the install's driven session. A session's start and the come-up after a restart bring up no browser; it comes up at the person's press or when an agent first drives a page, its endpoint still handed at the start. Owed: the installed window across a restart. Detail in the FIX-LOG entry.
+
+## CLITURN1 — a terminal chat's live turn is visible in the desktop (2026-10-31)
+
+> **CLITURN1 — a terminal chat's live turn is visible in the desktop** (installed, 2026-10-27; after FOUNDATION1). A native window capture shows the chat as idle during an actual CLI turn whose MCP events and completion bracket the capture; the terminal creates its own runner, while the window's queue reader falls back to Idle for a conversation it does not hold. Preserve unknown ownership instead of asserting idle, define how the owning process supplies turn/queue state, and prove actual terminal-to-window start/end and owned control routing without widening authority; `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/ConversationRoutes.cs:465`, with reproduction evidence in the branch recovery record. Sighting 2026-10-27: the window's stop of a terminal chat whose record had said `working` for eight hours was withdrawn as "it runs in another Daoris process on this machine that takes no requests (a terminal's chat stops with its own Ctrl+C)", so no door could end it.
+
+**Outcome** 2026-10-31: built by the install's driven session. The owning terminal writes a turn mark in the request folder at each change (`TurnMarks`, `TerminalOwner`), believed only while its owner lives; `SESSION_QUEUE` reads it for a chat another Daoris process runs and leaves `taking` out where none is told, so the page no longer says idle; `CANCEL_TURN` refuses such a chat in words, and `STOP_SESSION` asks the owner through the request folder. Owed: a real terminal turn seen in the installed window. Detail in the FIX-LOG entry.
+
+## BRANCHRECOVER1 — finish and settle every outstanding Daoris branch (2026-10-31)
+
+> **BRANCHRECOVER1 — finish and settle every outstanding Daoris branch** (owner direction, 2026-10-27; FOUNDATION1 first). Audit and recover all eight branches and nine worktrees, preserving authored edits and the unfinished fixture merge. Complete coherent changes, validate through the merge queue, then clean up through each owning lifecycle; inventory and receipts: `docs/2026-10-27-branch-recovery.md`.
+
+**Outcome** 2026-10-31: settled. None of the inventory's eight branches and nine worktrees remains (`docs/2026-10-27-branch-recovery.md` keeps the inventory and its receipts); on 2026-10-31 the repository holds only the two open batches, two install session trees whose commits are merged (kept for their scratch until the install's own clean takes them), and the tools' trees. The cleanup goes on as the dispatch skill's standing rule: a merged worker's tree goes at once, and each landing prunes, cleans the install's trees and looks at the machine's processes.
+
+## REVIEWFLOW1d — leave-out offered per tree (2026-10-31, D167)
+
+> **REVIEWFLOW1d** (the review-flow design; the Opus maker's B1): leave-out offered per tree, on its first part, naming every part it takes; none on a part a kept later part carries; `Sequence` marks a left-out shared tree's parts `left-out`; a D167 note.
+
+**Outcome** 2026-10-31: built. `Sequence` marks every part of a left-out shared tree `left-out` (never `same-tree` in `Outcome`); `EntryLandings.Carries` keeps a part a kept later part carries from being judged superseded, so its leave-out is never offered; the page's checkbox stands on the tree's first part and names its parts (`Intl.ListFormat`, en and zh). Owed: the driver refusing a carried part's leave-out in words, and the carried case through `PlanAsync` on real git. Detail in D167's note.
+
+## REVIEWFLOW1b — now · next in the head's facts (2026-10-31)
+
+> **REVIEWFLOW1b** (the review-flow design §1): *now · next* folded into the head's facts line: *now* from the driver's facts (working, waits on you, n parts to land, landing, integrating by INTEGRATE1h's fact, landed); *next* names the press and is a door to its step.
+
+**Outcome** 2026-10-31: built. `sessionFacts` takes the page's flow and leads with *now* after the repository (landing, n parts to land, waits on you with its time, working; integrating left to its existing fact; landed the session's own); `nextPress` names the first standing wait's press, drawn on the head as *next: Accept…* and pressing to the wait (`goToWait`, the route `WaitMark` takes). Left: the ask's and quest's pages. Owed: the installed window.
+
+## LINESTOGETHER1a — a session's head (2026-10-31)
+
+> **1a** (the review-flow design §2): the head is where `Lines.HeadOf`'s walk ends from the first part; a chain's head its newest step; an ask's siblings none; the reader answers `head` beside `leading`; the row opens on the head unless a part waits on the person or is working; the glossary's *head*.
+
+**Outcome** 2026-10-31: built in two halves. The service's `Lines.HeadOfLineAsync` follows the walk and a chain's hop; `GET /api/sessions` answers `head`; the driver's entry carries `head` and `opens`. The page opens a row on `opens`, the parts heading says *Part 2 of 3 is the head · 1 beside it*, a part beside the head is marked, and no head says so (D137); *head* is 续段. Reading: *beside* is derived on the page from parts that began `asked` and are not the head. Owed: the installed window, an ended multi-part session opening on its head.
+
+## LINESTOGETHER1c — related sessions of one repository (2026-10-31)
+
+> **1c** (the review-flow design §3): the driver compares every session of a repository with a tree here, chats included, and the Session step names the overlap, each a door to its head, declared paths told apart from changed ones, *not read here* where git cannot say; the Integration tab lists the same read, read-only.
+
+**Outcome** 2026-10-31: built in two halves. `WorkOrders/Work/RelatedSessions.cs` reads every session of the repository with a tree and base here, declared and changed paths apart, a running or dirty tree read at each ask and a clean ended one cached by base and HEAD, a failed read `not-read` with its last good time; the modules serve it as `SESSION_RELATED` (by event). The page draws *N sessions change `path`* under the relations fold, each a door to that session's head, and the Integration tab lists it read-only, en and zh. Left: sessions whose work already landed are not yet dropped (the driver cannot tell). Owed: the installed window.
+
+## LINESTOGETHER1b — where a word goes, and a held word moved to the head (2026-10-31)
+
+> **1b** (the review-flow design §2): before the person speaks, the box's first line says where a word goes and when; a word given to a held part stays with it, and one press, *Say it to the head instead*, moves it through `SESSION_QUEUE_MOVE`, one transaction, keyed, a lost answer *not known*.
+
+**Outcome** 2026-10-31: built in two halves. The service's `SessionLedger.MoveSaidAsync` takes the word and keeps it on the head in one `ExclusiveAsync` under `move:<part>:<word>`, the retry looked up first (`POST /api/sessions/{id}/move`; refusals `not-held`, `files`, `at-head`, `not-yours`); the modules serve `SESSION_QUEUE_MOVE`, a lost answer `not-known`. The page's box says *To part 6, the head · at its turn's end* or *To this part, beside the head · …*, and a held word on a part beside the head offers the press, *not known* said as such. Left: *To the head* carrying a draft; a head winding up refuses the move `running` rather than keeping the word for its next part.

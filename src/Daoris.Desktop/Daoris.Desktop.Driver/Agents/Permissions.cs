@@ -118,7 +118,7 @@ public static class PermissionRules
                 "knowledge_convergence", "quest_list", "quest_respond", "quest_publish", "permission_propose", "go_ahead_ask",
                 "review_serve", "review_ready", "opinion_give", "opinion_answer",
                 "helper_ask", "helper_answer", "partner_answer", "channel_post", "channel_read", "handover_propose", "line_read", "handback_read",
-                "question_ask",
+                "question_ask", "memory_search", "memory_get", "memory_write", "memory_end", "memory_propose",
             }.Select(tool => ConnectorPrefix + tool)],
             // Not `knowledge_refresh`: rebuilding the index is the machine's job, never a session's. And
             // `permission_propose` (PERM2, D74) only PROPOSES — a widening still waits for the person. `go_ahead_ask`
@@ -140,7 +140,9 @@ public static class PermissionRules
             // what its brief's bound left out, and the service refuses every other record. `handback_read` (HANDBACK1, D219) changes
             // nothing: it reads one quest's handback of the session's own workspace, as `quest_list` reads its quests. `question_ask`
             // (PARKVIEW1) writes one file under the home: the question its park waits on, the agent's words, which the person answers; it
-            // decides nothing.
+            // decides nothing. The memory tools (KNOWCENTRAL2b) answer within the session's own workspace: `memory_search` and `memory_get`
+            // change nothing, `memory_write` is held to the session's commit point, `memory_end` waits for its approver, and `memory_propose`
+            // is a quest to an entry's owner; the service refuses each to a session whose work may not call it.
             "A session takes and closes its own quest, publishes what it finds for others and proposes a "
             + "change to these rules, through Daoris's connector — and anything it would have to ask for is "
             + "refused."),

@@ -153,6 +153,17 @@ public sealed class PipeCensusTests
         Assert.Equal(Daoris.Driver.RouteClass.Open, Daoris.Driver.ToolRoutes.Look.Class);
     }
 
+    /// <summary>The route <c>daoris-driver integrate</c>'s acts press (INTEGRATE1h) is a driver route the census classes as the person's.</summary>
+    [Fact]
+    public void The_integrate_verbs_route_is_the_persons_in_the_census()
+    {
+        var route = Daoris.Driver.IntegrateCommand.Route;
+        Assert.Equal(DriverModule.Name, route.Module);
+        Assert.Contains(route.Route, DriverModule.Routes);
+        Assert.Equal(PipeClass.Person, PipeCensus.Daoris.Of(route.Module, route.Route));
+        Assert.Equal(Daoris.Driver.RouteClass.Person, route.Class);
+    }
+
     /// <summary>
     /// The agents' presses <c>daoris-driver agent</c> sends (PUSH1f2d, D194 point 5): each a route of the driver's module the census
     /// classes as the person's, and each verb no route takes says why it acts alone.
@@ -475,6 +486,8 @@ public sealed class PipeCensusTests
     [InlineData("SET_HELPERS", PipeDrain.Waits)]
     [InlineData("SESSION_ANSWER_ALONE", PipeDrain.Waits)]
     [InlineData("SESSION_INPUT", PipeDrain.Waits)]
+    // LINESTOGETHER1b: a word moved to an ended head goes on with it at once, as one said there does.
+    [InlineData("SESSION_QUEUE_MOVE", PipeDrain.Waits)]
     [InlineData("START_CHAT", PipeDrain.Waits)]
     [InlineData("SESSION_HELPER_ASK", PipeDrain.Waits)]
     [InlineData("SESSION_PARTNER_ASK", PipeDrain.Waits)]

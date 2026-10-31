@@ -90,7 +90,7 @@ row is its cells labelled by their columns, not its file's line as written, so i
 entry whose feed named none or named lines its body cannot be. A hit names `path:first-last` and the line its excerpt
 starts on (`KnowledgeHit.ExcerptLine`, from `Text.ExcerptAt`), the frontmatter it skipped counted; `knowledge_get`
 reads a range from the entry as indexed, never from the disk, so a deployment fed by another machine reads it too. The
-store keeps them (`first_line`, `last_line`; schema 5, so an older index is rebuilt when it opens, and a newer one
+store keeps them (`first_line`, `last_line`; schema 5 on, so an older index is rebuilt when it opens, and a newer one
 is left as it is and refused, KSCHEMA1 below), `/api/search`
 answers `firstLine`, `lastLine` and `excerptLine` beside every field it had, `/api/entry` and `/api/entries` the first
 two, and `/api/feed/entries` takes them, digesting them only where an entry names them.
@@ -108,6 +108,36 @@ it read the checkout and the commit it read: `/api/repositories` answers `indexe
 `knowledge_get` carry one `standing:` line (`EntryStanding.Says`, KNOWFRESH1a-ii): the reading's commit (`+ uncommitted` from the
 one `git status` the reading takes a root, `fed at` for a feed's), and for a decision the notes after it and the mark its record
 puts on it, derived from the note entries by `DecisionNotes.Marks`; no mark is `no mark`, never "current".
+
+**Each repository's reading is kept with its entries** (KNOWCENTRAL2a; the memory coordinator design's §5). Every
+connector is its own process over the one file, so the index keeps each repository's reading (`index_readings_6`: a
+generation, the commit and root signature it was read at, fed or read), written in the transaction that replaces its
+entries, with a feed's provenance and a withdrawal's forgetting in the same transaction. A refresh reads the generations
+before the registry and the source, and its write of a repository lands only while the generation is still the one it
+read. A refused root keeps no reading in that process, so its next use reads it again. A retirement, a withdrawal and a
+restamp read no source: each takes the generation inside its own write and always lands, and a restamp rewrites no body.
+The tables are named by the schema's version (6), so a connector an older build opened before the upgrade fails at its
+next statement and never writes what this build reads.
+
+A hit's `standing:` reads the entry, its file's notes and its repository's stored reading in one read transaction
+(`IKnowledgeStore.HeldAsync`): an entry another write replaced since the search found it says `unknown`, and a status git
+did not answer says `+ uncommitted unknown`. `KnowledgeService.CiteAsync` cites an entry at that reading (`Citation`), and
+`RecheckAsync` answers a `CitationStanding` from the same three, read after a moved root is read again, with the cited
+file alone asked against that commit (`UncommittedRecords.OfFile`) and the root's signature asked again.
+
+**A repository's memory changes through a log of record** (KNOWCENTRAL2c; the memory coordinator design §1, §3).
+`memory_ops` keeps each operation a session asks (write, relate, end, confirm, propose) with who made it at the call, staged
+under its session. The transaction that records the session's commit point releases its rows: the ledger's advance to
+`completed` for a session whose tree is the registered root, carrying a stopped predecessor's, and the post of a finished
+tree's record naming a landing. A write is then `ready`, an end `awaiting` its approver, and each names the models of the
+turn whose start and end hold its instant, `unknown` where no handed line does.
+
+Only the service applies (`MemoryApplier`): it marks a row `applying` in its own transaction, calls the engine, and settles
+after. At its start it settles what a kill left `applying`: an end by its reason's trailing token and the revision read, a
+confirmation by its guard, an addition or relation `held` for the person. Triggers journal every move into `event_journal` as
+the `memory` family, ids and codes only. A reader's cursor (`MemoryCursor`: store, position, scope) re-validates on another store, below the floor or on a changed
+scope, and `BootstrapAsync` reads the unsettled rows and the newest position in one transaction. `memory_reads` keeps who read
+which reference at which revision, 256 a session and 65,536 in all, and tells a session once that an entry it read moved.
 
 Since **D124** (WSSETUP8), until a repository adopts, the scanner reads its root `README.md`, in any case,
 as the repository's own word. Each section split at level-two headings is one local knowledge entry carrying
@@ -175,6 +205,7 @@ network, and nothing in the CLI may open a socket. So the CLI has no quest comma
 | `partner_answer` | The partner the driver started for a piece says its `summary` (at most 20,000 characters) and what it `left` undone (at most 4,000), once, written as `<piece>.answer.json` under the home's `partners` folder (`PartnerBox`) while the driver's state names it the piece's partner and `started`; any other session is refused. Its files are its piece, which the driver reads itself (COAGENT1b) |
 | `handover_propose` | A working session's agent asks to hand its session over to another agent, with its `note` for the next one (at most 4000 characters), kept as its claim: written as `<session>.hand-over-ask.json` under the home's sessions folder (`HandOverAskBox`), one ask at a time, and answered at once with what each of the person's `handOver` rules does with it. A helper, a reviewer, an intake and Ask Daoris's own conversation are refused; the rule, the next agent in the person's order and whether the session had a turn since it was itself handed over are the driver's, written in its `<session>.hand-over-state.json` (MIXAGENT1c). Not Ask Daoris's `hand_propose` |
 | `line_read` | A session that continues another (a hand-over, an account move, a carry-on, a fallback) reads its line's history: the parts its record's `from` chain names, oldest first, and itself, each part's `<id>.events.jsonl` under the home's sessions folder (`LineEvents`), read on this machine and never served over HTTP (D76 §2). `part` (left out, the part it continues, else itself), `before`, a number an answer named, and `limit`, 1 to 200 (50): a page of entries oldest first (the person's and Daoris's words by their marks, the agent's messages joined, tool calls with their updates, plans, turns' ends, notes; never a thought), at most 40,000 characters with a Han character as three, one entry heavier than that cut and the cut said, and where to read on. A part off the line, an id that is no local id, no session, no record and no home are refused, nothing read (SESSCTX1f, D189's note) |
+| `memory_search`, `memory_get`, `memory_write`, `memory_end`, `memory_propose` | A repository's memory (KNOWCENTRAL2b; the memory coordinator design §2): a search of the memory the repositories of the caller's workspace keep, an entry read by its `repository:entry` reference (with `expand`, the entries it relates to), a `text` written into the caller's own repository's memory (a `relation`, `disputes` or `amends`, to a `target`), an end of one of its entries at the `revision` read with a `reason`, and a proposal to an entry's owner (`change`: `disputes`, `amends` or `end`). The workspace is the caller's record's, or an unnamed caller's ambient one, read again at every call; another workspace's reference is refused at every door, and none resolved refuses all five. Every engine is opened with no reinforcement, so a read changes nothing. An intake and Ask Daoris are refused the write and the end, a helper those and the proposal, a reviewer and a partner served the reads alone, and an unnamed caller refused the write and the end by the tools. Until the engine and the record holding a change to its commit point land, each answers that memory is not on, and keeps nothing |
 | `housekeeping_inspect`, `housekeeping_clean_up`, `housekeeping_discard_branch` | Ask Daoris's housekeeping (HELPMODE1c2a): a look at Daoris's own branches (optionally one `repository`), a clean-up of the `branches` named in one `repository`, a discard of one session `branch`. Each is a keyed request in the home's session requests for the conversation's own session, which the driver's loop running it takes, judges (the person's grant now and at this start, the conversation's workspace) and answers beside it; the tool waits ten seconds for the take, withdraws one nobody took, then waits 45 for the answer. A session that is not an Ask Daoris conversation is refused here; targets are names, never a path |
 | `settings_notify`, `settings_language`, `settings_timeout`, `settings_cap`, `settings_cooloff` | Ask Daoris's chosen settings (HELPMODE1c3): notify on or off, a repository's or a workspace's session `language` (`en`, `zh` or `clear`, exactly one of `repository` and `workspace`), a session's `minutes`, the sessions at once, the cool-off's `minutes`. Each a keyed `set` request through the same exchange as housekeeping's (`HelpRequestExchange`), which the driver's loop judges (the person's grant now and at this start, the conversation's workspace, the setting's own checks) and applies with no Apply; a session that is not an Ask Daoris conversation is refused here |
 | `checkout_read` | Ask Daoris's reading of the checkouts (HELPMODE1c4), for every agent: one checkout of the conversation's workspace by its `repository` and a `path` relative to its checkout, a file's text (at most 200 KB, said when cut) or a folder's entries, or `what` is `status` or `branches` for `git status` and `git branch --list`, which name no path. A keyed `read` request through the same exchange as the settings' (`CheckoutBox`), which the driver's loop judges (the checkout readable under D107, not turned off now and handed at this start; the path walked inside the checkout, out of git's own folder and of what git ignores) and answers with its words and the `text` read, cut here again past 200 KB; a session that is not an Ask Daoris conversation is refused here |

@@ -35,6 +35,34 @@ describe('the parts strip', () => {
     expect(within(strip).getByText('Part 3 of 3')).toBeInTheDocument();
   });
 
+  describe('the head (LINESTOGETHER1a)', () => {
+    // Part 3 asked by db began a line of its own: beside the head, part 2.
+    it('names the head and the part beside it', () => {
+      render(<PartsStrip entry={APP} attended="ap000003" rows={rows} onShow={() => {}} />);
+      expect(screen.getByText('Part 2 of 3 is the head · 1 beside it')).toBeInTheDocument();
+      expect(within(screen.getByRole('navigation', { name: 'Parts' })).getAllByRole('button')[2]).toHaveTextContent('beside the head');
+    });
+
+    it('says none where the driver answers no head, as an ask\'s siblings', () => {
+      render(<PartsStrip entry={{ ...APP, head: null }} attended="ap000003" rows={rows} onShow={() => {}} />);
+      expect(screen.getByText('No part is the head')).toBeInTheDocument();
+      expect(screen.queryByText(/beside the head/)).toBeNull();
+    });
+
+    it('says nothing of a head where the host is older and answers none', () => {
+      const { head: _h, ...older } = APP;
+      render(<PartsStrip entry={older} attended="ap000003" rows={rows} onShow={() => {}} />);
+      expect(screen.queryByText(/the head/)).toBeNull();
+    });
+
+    it('says it in Chinese', async () => {
+      await i18n.changeLanguage('zh');
+      render(<PartsStrip entry={APP} attended="ap000003" rows={rows} onShow={() => {}} />);
+      expect(screen.getByText('共 3 段，第 2 段是续段 · 旁边 1 段')).toBeInTheDocument();
+      expect(within(screen.getByRole('navigation', { name: '各段' })).getAllByRole('button')[2]).toHaveTextContent('在续段旁');
+    });
+  });
+
   it('marks the part shown, and shows another on a press', async () => {
     const onShow = vi.fn();
     render(<PartsStrip entry={APP} attended="ap000002" rows={rows} onShow={onShow} />);

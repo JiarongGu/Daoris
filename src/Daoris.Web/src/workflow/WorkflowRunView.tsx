@@ -91,6 +91,13 @@ function StepMark({ run, step, here, doors, control, pill = true, onNodeWord, on
           {step.requests.map((request) => <RequestRow key={`${request.kind}:${request.id}`} request={request} doors={doors} />)}
         </ul>
       )}
+      {/* INTEGRATE1h: the integrate node's record, in one line; a state this page has no words for is said as recorded. */}
+      {step.integration && (
+        <p className="m-0 text-small text-ink-soft">
+          {t(`workflow.run.integration.${step.integration.step && step.integration.state === 'in-candidate' ? 'in-candidate.at' : step.integration.state}`,
+            { line: step.integration.line, step: step.integration.step ?? '', defaultValue: `${step.integration.state} · ${step.integration.line}` })}
+        </p>
+      )}
       {quoted && <p className="m-0 text-small text-ink">{t('workflow.run.quoted', { words: quoted })}</p>}
       {added && <p className="m-0 text-meta text-ink-faint">{added}</p>}
       {/* FABRIC-CUTOVER1f: the person's skip and stop of a graph run's node, wherever the driver's table takes them, and a word kept. */}

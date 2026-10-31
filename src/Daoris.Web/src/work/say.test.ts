@@ -5,7 +5,7 @@ import type { AccountsAnswer, AgentAccounts } from '../settings/accounts/account
 import type { ToolDoor } from '../agents/tools';
 import {
   boxOf, coolingFor, NATIVE_WORDS_LIMIT, NEVER, neverSentence, NEW_SESSION_REFUSED, newSessionSaid, reasonOf, startFromRefusal,
-  takesWords, tooLong,
+  goesLine, moveSaid, takesWords, tooLong,
 } from './say';
 
 // The box on a session's page (MSG1f, D137 §5.1), as one pure answer: which box a session is offered, by what its record
@@ -288,5 +288,40 @@ describe('newSessionSaid', () => {
   it('passes the driver’s own sentence through for a choice it could not keep, or a code this page does not know', () => {
     expect(said(null)).toEqual({ sentence: 'the driver’s own sentence', startChat: false });
     expect(said('something-newer')).toEqual({ sentence: 'the driver’s own sentence', startChat: false });
+  });
+});
+
+// LINESTOGETHER1b (the review-flow design §2): the box's first line says where a word goes and when, before the person speaks.
+describe('where a word goes', () => {
+  it('says the head and when the turn reaches it, in both languages', () => {
+    expect(goesLine(t, { part: 6, place: 'head', reaches: 'turn-end' })).toBe('To part 6, the head · at its turn’s end');
+    expect(goesLine(zh, { part: 6, place: 'head', reaches: 'turn-end' })).toBe('发往第 6 部分，头部 · 在它这一轮结束时');
+  });
+
+  it('says a part beside the head, and what holds its words', () => {
+    expect(goesLine(t, { part: 7, place: 'beside', reaches: 'resume', holdsWhy: 'busy' })).toBe('To this part, beside the head · after a running session here ends');
+    expect(goesLine(t, { part: 7, place: 'beside', reaches: 'resume', holdsWhy: 'cap' })).toBe('To this part, beside the head · when the cap frees a seat');
+    expect(goesLine(zh, { part: 7, place: 'beside', reaches: 'resume', holdsWhy: 'busy' })).toBe('发往本部分，在头部旁 · 本机上运行中的会话结束之后');
+  });
+
+  it('says a part earlier in its line by its number, and a word taken at once without a time', () => {
+    expect(goesLine(t, { part: 2, place: 'line', reaches: 'next-step' })).toBe('To part 2 · at its next step');
+    expect(goesLine(t, { part: 2, place: 'line', reaches: null })).toBe('To part 2');
+  });
+});
+
+describe('what a move came to', () => {
+  it('words each code, and passes the host’s sentence for one it does not know', () => {
+    expect(moveSaid(t, { moved: false, why: 'taken' })).toMatch(/no longer waits/);
+    expect(moveSaid(t, { moved: false, why: 'not-held' })).toMatch(/does not hold/);
+    expect(moveSaid(t, { moved: false, why: 'files' })).toMatch(/files/);
+    expect(moveSaid(t, { moved: false, why: 'at-head' })).toMatch(/already/);
+    expect(moveSaid(t, { moved: false, why: 'not-yours' })).toMatch(/another machine/);
+    expect(moveSaid(t, { moved: false, why: 'newer-code', message: 'the host’s own sentence' })).toBe('the host’s own sentence');
+  });
+
+  it('never says a lost answer moved: it is not known', () => {
+    expect(moveSaid(t, { moved: false, why: 'not-known' })).toBe('It is not known whether it moved. Look again, then press again.');
+    expect(moveSaid(zh, { moved: false, why: 'not-known' })).toBe('不知道它是否已经移过去。请再看一下，然后再按一次。');
   });
 });

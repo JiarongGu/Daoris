@@ -107,6 +107,7 @@ public static class WiringVariables
         ["DAORIS_BRAINSTORM_ROOM"] = "handed to a brainstorm pass's connector by the driver: the room its answer is judged against",
         ["DAORIS_QUEST_ATTACHMENTS"] = "handed to a session by the driver: its quest's kept files",
         ["DAORIS_SESSION_ID"] = "handed to a session or its connector by the driver",
+        ["DAORIS_LINEAGE_PROC"] = "handed to a session's process, its hook and its connector by the driver: the token its lineage lines name it by",
         ["DAORIS_QUEST_ID"] = "handed to a session or its connector by the driver",
         ["DAORIS_QUEST_TITLE"] = "handed to a plugin's hook by the driver",
         ["DAORIS_QUEST_BODY"] = "handed to a plugin's hook by the driver",

@@ -46,7 +46,7 @@ describe("a repository's Integration tab", () => {
     expect(screen.getByRole('heading', { name: '集成' })).toBeInTheDocument();
     expect(screen.getByText('main 的候选')).toBeInTheDocument();
     expect(screen.getByText('等待处置的已被取代的提交')).toBeInTheDocument();
-    expect(screen.getByText('已退回')).toBeInTheDocument();
+    expect(screen.getByText('已打回')).toBeInTheDocument();
   });
 
   it('offers a drop on a queued request and a recheck, and nothing where no act is handed', async () => {

@@ -55,7 +55,7 @@ public static class SessionEntries
             var parts = Began(placed.Select(part => part.Record).ToList(), placed.Select(part => part.Row).ToList(), quests);
             var key = line.Key;
             var read = EntryKey.Parse(key);
-            entries.Add((new SessionEntry(key, read.Origin, read.Repository, group, lead.Record.Id, parts), position[lead.Record.Id]));
+            entries.Add((new SessionEntry(key, read.Origin, read.Repository, group, lead.Record.Id, parts) { Head = HeadOf(read.Origin, parts) }, position[lead.Record.Id]));
         }
 
         return [.. entries.OrderBy(each => each.At).Select(each => each.Entry)];
@@ -82,6 +82,21 @@ public static class SessionEntries
     private static bool Intake(SessionRecord record) =>
         (record.Ask is not null && record.Quest is null) || record.Entry?.EndsWith("/intake", StringComparison.Ordinal) == true;
 
+    /// <summary>
+    /// Where the first part's line ends. An ask's entry whose parts (those no part published) end on more than one line is a set of
+    /// sibling quests: none continues another, so it has no head.
+    /// </summary>
+    private static string? HeadOf(string origin, IReadOnlyList<EntryPart> parts)
+    {
+        if (origin.StartsWith("ask:", StringComparison.Ordinal)
+            && parts.Where(part => part.Began != PartBegan.Asked && part.Head is not null).Select(part => part.Head).Distinct(StringComparer.Ordinal).Count() > 1)
+        {
+            return null;
+        }
+
+        return parts[0].Head;
+    }
+
     private static List<EntryPart> Began(
         IReadOnlyList<SessionRecord> records, IReadOnlyList<SessionGrouping> rows, IReadOnlyDictionary<string, QuestView> quests)
     {
@@ -91,7 +106,7 @@ public static class SessionEntries
             var record = records[at];
             var prior = record.Quest is null ? null : records.Take(at).LastOrDefault(earlier => earlier.Quest == record.Quest);
             quests.TryGetValue(record.Quest ?? "", out var quest);
-            var part = new EntryPart(record.Id, record.Quest, rows[at].Shown, rows[at].Group, PartBegan.Opened);
+            var part = new EntryPart(record.Id, record.Quest, rows[at].Shown, rows[at].Group, PartBegan.Opened) { Head = record.Head };
             parts.Add(record switch
             {
                 // SESSCTX1b: every continuation names its link, so the link's why says how the part began; a why this build has no

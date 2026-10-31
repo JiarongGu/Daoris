@@ -50,6 +50,9 @@ public sealed record EntryPart(string Session, string? Quest, string Shown, stri
 
     /// <summary>For <see cref="PartBegan.Asked"/>: the repository that asked.</summary>
     public string? AskedBy { get; init; }
+
+    /// <summary>The part its own line ends at (LINESTOGETHER1a), or null where the service named none.</summary>
+    public string? Head { get; init; }
 }
 
 /// <summary>
@@ -62,4 +65,14 @@ public sealed record EntryPart(string Session, string? Quest, string Shown, stri
 /// <param name="Group">The first of D126's groups any part qualifies for.</param>
 /// <param name="Leading">The part whose state put it there: the newest of that group's.</param>
 /// <param name="Parts">Its parts, oldest first, so the newest is last.</param>
-public sealed record SessionEntry(string Key, string Origin, string Repository, string Group, string Leading, IReadOnlyList<EntryPart> Parts);
+public sealed record SessionEntry(string Key, string Origin, string Repository, string Group, string Leading, IReadOnlyList<EntryPart> Parts)
+{
+    /// <summary>
+    /// Where the first part's line ends (LINESTOGETHER1a, the review-flow design §2): the part the session goes on in. Null for an ask's
+    /// sibling quests, whose lines none continues, and where the service named none.
+    /// </summary>
+    public string? Head { get; init; }
+
+    /// <summary>The part a row opens on: the leading one where a part waits on the person or is working, else the head.</summary>
+    public string Opens => Group is SessionGroup.You or SessionGroup.Working ? Leading : Head ?? Leading;
+}

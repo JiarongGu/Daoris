@@ -485,7 +485,10 @@ public sealed record SessionResponse(
     // FOUNDATION1c (D212; the foundation design §2.2): the work the record was opened for, read from its marks and never stored
     // (`ParticipantWork.Of`): `build`, `chat`, `ask-daoris`, `intake`, `help`, `partner` or `review`. This machine's own, like the opinion:
     // answered to it only, absent for a mirror, which is another machine's, and never on the sync wire.
-    string? Work = null);
+    string? Work = null,
+    // LINESTOGETHER1a (the review-flow design §2): the id of the part its line ends at (`Lines.HeadOfLineAsync`), the list's answer only; absent
+    // for a mirror, and where the walk ended on a cycle or the bound. This machine's own, like the opinion: answered to it only.
+    string? Head = null);
 // MSG1a: one word waiting on a record — its id, which the record's events say again where the session took it; the
 // words; when; its files' names, never where they are; and whether it was said after the record ended. XAGENT1c: `by`, the
 // second opinion whose findings these are, another agent's claims; absent, the person's words, as every word before it was.
@@ -609,6 +612,14 @@ public sealed record TakeBackRequest(string? Word, string? Text = null);
 // machine only). Not done, `why` is `taken`: the word no longer waits, or the record runs again and may have read it; an
 // answer, never an error, as `SESSION_QUEUE_EDIT`'s is (QUEUEEDIT1a). What never goes on is refused as the say door refuses.
 public sealed record TakeBackResponse(bool Done, string Message, string? Why = null, SessionResponse? Session = null, SaidWordResponse? Said = null);
+// LINESTOGETHER1b (the review-flow design §2): one word waiting on a part, by its id, moved to the head of the line `To` is on (the head the
+// page showed; absent, the part's own line).
+public sealed record MoveSaidRequest(string? Word, string? To = null);
+// A move's answer: `moved`, the ledger's sentence, and `to`, the head it was kept on, with the session as it stands and the word kept there (to
+// this machine only); a retry `again`, `to` naming where the word waits or that it left, nothing kept. Not moved, `why` is `taken`: the word no
+// longer waits, or was handed to its agent already. Every other refusal is the say door's shape, a running head named as `head`.
+public sealed record MoveSaidResponse(
+    bool Moved, string Message, string? Why = null, string? To = null, bool? Again = null, SessionResponse? Session = null, SaidWordResponse? Said = null);
 // SESSUX1f (D126 §5.4): a session delete refused, or its judgement alone. `error` is the ledger's sentence, the field every
 // reader already knows; `refusal` its word, which a reader acts on instead of the sentence; and the facts the word names.
 public sealed record SessionDeletionResponse(

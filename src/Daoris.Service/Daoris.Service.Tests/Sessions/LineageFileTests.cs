@@ -94,6 +94,27 @@ public sealed class LineageFileTests : IDisposable
         Assert.Null(none.Path);
     }
 
+    /// <summary>
+    /// COWORKVIEW1a: each call's line names the process the connector serves, the token its entry was handed in
+    /// <c>DAORIS_LINEAGE_PROC</c> (the driver's <c>ChildMarks.LineageProcVariable</c>), where that is shaped as an id.
+    /// </summary>
+    [Fact]
+    public void A_call_s_line_names_the_process_whose_entry_handed_its_token()
+    {
+        Assert.Equal("DAORIS_LINEAGE_PROC", LineageFile.ProcVariable);
+        LineageFile Handed(string? proc) => LineageFile.FromEnvironment(name => name switch
+        {
+            "DAORIS_HOME" => _home, "DAORIS_SESSION_ID" => "s1", "DAORIS_LINEAGE_PROC" => proc, _ => null,
+        });
+
+        Handed("0123456789abcdef").Call("knowledge_search", null, DateTimeOffset.UnixEpoch);
+        Handed("not a token").Call("knowledge_get", null, DateTimeOffset.UnixEpoch);
+        Handed(null).Call("knowledge_get", null, DateTimeOffset.UnixEpoch);
+
+        var lines = File.ReadAllLines(Written("s1")).Select(line => JsonNode.Parse(line)!).ToList();
+        Assert.Equal(["0123456789abcdef", null, null], lines.Select(line => (string?)line["proc"]));
+    }
+
     [Fact]
     public void Writers_at_once_lose_no_line()
     {

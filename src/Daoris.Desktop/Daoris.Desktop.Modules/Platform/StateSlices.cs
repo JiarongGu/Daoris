@@ -46,6 +46,9 @@ public sealed record SlicePartition(string Partition, long Seq, string Status, o
 /// </summary>
 public sealed record SliceSnapshot(string Slice, string Epoch, string Status, IReadOnlyList<SlicePartition> Partitions);
 
+/// <summary>A slice's health (COWORKVIEW1a): whether it has judged, whether its last judgement failed, and with what words.</summary>
+public sealed record SliceHealthReading(bool Judged, bool Failing, string? Why);
+
 /// <summary>A partition's number in a manifest.</summary>
 public sealed record SliceVersion(string Partition, long Seq);
 
@@ -108,6 +111,9 @@ public sealed class StateSlice
 
     /// <summary>Whether the worker's last turn threw past its judgement; read and written only by the worker.</summary>
     private bool _turnFailing;
+
+    /// <summary>The last judgement's failure's words while it fails; written within a judgement's turn, under the gate.</summary>
+    private string? _why;
 
     /// <param name="Keys">A keyed partition's keys, each as the wire writes it, which the next judgement's delta is read against.</param>
     private sealed record Held(long Seq, string Status, object? Data, string Json, IReadOnlyDictionary<string, string>? Keys = null);
@@ -209,6 +215,7 @@ public sealed class StateSlice
     public async Task JudgeAsync(CancellationToken ct = default)
     {
         await _telling.WaitAsync(ct).ConfigureAwait(false);
+        var before = Health;
         try
         {
             IReadOnlyList<SliceJudged>? judged;
@@ -222,6 +229,7 @@ public sealed class StateSlice
                 // timeout is a cancellation too (the service client's, SLICESTALL1), and only the worker's stop is not a failure.
                 if (!_failing) Failed?.Invoke(error);
                 _failing = true;
+                lock (_gate) _why = error.Message;
                 return;
             }
             finally
@@ -230,6 +238,7 @@ public sealed class StateSlice
             }
 
             _failing = false;
+            lock (_gate) _why = null;
             // Nothing to judge from yet: what is held stands, and a slice never judged stays not judged.
             if (judged is null) return;
 
@@ -261,9 +270,29 @@ public sealed class StateSlice
         }
         finally
         {
+            // Outside the gate, once the snapshot holds what the judgement left, and within its turn.
+            if (Health != before) Tell(HealthMoved);
             _telling.Release();
         }
     }
+
+    /// <summary>
+    /// The slice's health (COWORKVIEW1a, the design §4.1), from memory: whether it has judged, whether its last judgement failed, and
+    /// that failure's words.
+    /// </summary>
+    public SliceHealthReading Health
+    {
+        get
+        {
+            lock (_gate) return new SliceHealthReading(_judged, _why is not null, _why);
+        }
+    }
+
+    /// <summary>
+    /// Told whenever the slice's health moves: its first judgement, pushed or not, a failure beginning or ending, and a failure whose
+    /// words changed; never a second failure with the same words.
+    /// </summary>
+    public event Action? HealthMoved;
 
     /// <summary>Tell the manifest now, after every push already numbered.</summary>
     public async Task TellManifestAsync(CancellationToken ct = default)
@@ -389,9 +418,11 @@ public sealed class StateSlice
     /// </summary>
     public event Action? Pushed;
 
-    private void Told()
+    private void Told() => Tell(Pushed);
+
+    private void Tell(Action? hearers)
     {
-        foreach (var hearer in Pushed?.GetInvocationList() ?? [])
+        foreach (var hearer in hearers?.GetInvocationList() ?? [])
         {
             try
             {

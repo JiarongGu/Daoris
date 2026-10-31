@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Text.Json;
 using Daoris.Driver;
 
 namespace Daoris.Desktop.Driver.Tests;
@@ -126,8 +127,41 @@ public sealed class QueuedStartCloseTests : IDisposable
         Assert.Contains(UnreachedWhy.English(UnreachedWhy.EndedFirst), note.Text, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// COWORKVIEW1a rule 4: a resume, moved first, writes its process's <c>start</c> as its move returns, before the start gate, under a
+    /// token of this Daoris process's. Put back before its spawn, that token is told so once and leaves, no line after its <c>start</c>.
+    /// </summary>
+    [Fact]
+    public async Task A_resume_writes_its_start_at_its_move_and_its_token_is_told_once_it_was_put_back_before_its_spawn()
+    {
+        var tree = Tree("s-1");
+        _ledger.Driven("s1", "q1", tree, state: "completed", adapter: "acp-stub");
+        Assert.True((await _ledger.Client().SayAsync("s1", "Port 8080.")).Kept);
+        var tokens = new LineageTokens(Environment.ProcessId, DateTime.UtcNow);
+        var told = new List<string>();
+        tokens.Moved += token =>
+        {
+            lock (told) told.Add(token);
+        };
+        string[]? atOpen = null;
+        using (LineageTokens.Within(tokens))
+        {
+            await ContinueClosingAsync(
+                Record("s1", tree, "completed", "It reached done.", reopens: true),
+                () => atOpen = File.ReadAllLines(ChildLineage.PathOf(_home, "s1")));
+        }
+
+        var start = JsonDocument.Parse(Assert.Single(atOpen!)).RootElement;
+        Assert.Equal("start", start.GetProperty("by").GetString());
+        Assert.True(tokens.Issued(start.GetProperty("issuer").GetString()));
+        var proc = start.GetProperty("proc").GetString()!;
+        Assert.Equal(atOpen, File.ReadAllLines(ChildLineage.PathOf(_home, "s1")));
+        Assert.Equal(TokenReading.Gone, tokens.Reading(proc));
+        Assert.Equal([proc], told);
+    }
+
     /// <summary>The record's continuation, whose loop closes as its run is told it opened, just before its start.</summary>
-    private async Task<(StartRun? Run, ContinueReason? FellBack, bool AnswerKept)> ContinueClosingAsync(PriorSession record)
+    private async Task<(StartRun? Run, ContinueReason? FellBack, bool AnswerKept)> ContinueClosingAsync(PriorSession record, Action? opened = null)
     {
         var driver = Driver();
         new HarnessConversations(_home).Keep(record.Session, "acp-stub", "conv-1");
@@ -140,7 +174,13 @@ public sealed class QueuedStartCloseTests : IDisposable
         using (Refusing())
         {
             return await new DriverContinuations(driver.Context, driver).ContinueAsync(
-                    start, record, new HarnessSelection(null), [], starting: null, onOpened: closing.Cancel, closing.Token, "acp-stub")
+                    start, record, new HarnessSelection(null), [], starting: null,
+                    onOpened: () =>
+                    {
+                        opened?.Invoke();
+                        closing.Cancel();
+                    },
+                    closing.Token, "acp-stub")
                 .WaitAsync(Poll.Patience);
         }
     }

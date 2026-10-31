@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import i18n from '../../locales/i18n';
 import type { Quest, Session } from '../../data/api';
 import type { SessionGrouping } from '../groups';
-import { leadingAgentOf, questFacts, sessionFacts, sessionFactsTip } from './headFacts';
+import { leadingAgentOf, nextPress, questFacts, sessionFacts, sessionFactsTip } from './headFacts';
 
 // The facts line under a head's title (UX7c, D152 §7; the UX7 design §5.2, §5.3): the facts a record's state makes
 // matter, each said once. The clock is held, so every span reads the same on every run.
@@ -66,6 +66,45 @@ describe('a session’s facts line', () => {
     expect(sessionFacts(t, { session: session(), shown: 'working', retrying })[2]).toMatch(/^将于 .+ 重试$/);
   });
 
+  /** INTEGRATE1h (the integration design §5.8): its unit's integration state is one fact after the repository, in both languages, in any state. */
+  it('says its unit’s integration state after the repository, and nothing where none was asked', async () => {
+    expect(sessionFacts(t, { session: session({ state: 'failed' }), shown: 'failed', integration: { state: 'held', line: 'main' } })[1])
+      .toBe('held for main');
+    expect(sessionFacts(t, { session: session(), shown: 'working', integration: { state: 'settled', line: 'main' } })[1]).toBe('integrated into main');
+    expect(sessionFacts(t, { session: session(), shown: 'working', integration: null })).toEqual(['engine', '2m']);
+    await i18n.changeLanguage('zh');
+    expect(sessionFacts(t, { session: session(), shown: 'working', integration: { state: 'handed-back', line: 'main' } })[1]).toBe('已从 main 打回');
+  });
+
+  /** REVIEWFLOW1b (the review-flow design §1): *now* leads the facts after the repository, one word for the phase the driver's facts show. */
+  it('says where the work stands, once, by the phase the driver’s facts show', async () => {
+    const flow = { parts: 0, landing: false };
+    expect(sessionFacts(t, { session: session(), shown: 'working', flow })).toEqual(['engine', 'working', '2m']);
+    expect(sessionFacts(t, { session: session({ state: 'awaiting-person' }), shown: 'awaiting-person', flow })).toEqual(['engine', 'waits on you 1m']);
+    expect(sessionFacts(t, { session: session(), shown: 'working', flow: { parts: 3, landing: false } })[1]).toBe('3 parts to land');
+    expect(sessionFacts(t, { session: session(), shown: 'working', flow: { parts: 1, landing: false } })[1]).toBe('1 part to land');
+    expect(sessionFacts(t, { session: session(), shown: 'working', flow: { parts: 3, landing: true } })[1]).toBe('landing');
+    // Integrating is the integration fact, read and not said twice; landed is the ended session's own landing fact.
+    expect(sessionFacts(t, { session: session(), shown: 'working', flow, integration: { state: 'in-candidate', line: 'main' } }))
+      .toEqual(['engine', 'being integrated into main', '2m']);
+    expect(sessionFacts(t, { session: session({ state: 'completed' }), shown: 'completed', flow, branch: { kind: 'landed', where: 'main' } as never })
+      .filter((fact) => /land/.test(fact))).toEqual(['landed on main']);
+    // Without the flow the line is what it was.
+    expect(sessionFacts(t, { session: session(), shown: 'working' })).toEqual(['engine', '2m']);
+    await i18n.changeLanguage('zh');
+    expect(sessionFacts(t, { session: session(), shown: 'working', flow })[1]).toBe('进行中');
+    expect(sessionFacts(t, { session: session(), shown: 'working', flow: { parts: 3, landing: false } })[1]).toBe('3 个部分待落地');
+    expect(sessionFacts(t, { session: session(), shown: 'working', flow: { parts: 3, landing: true } })[1]).toBe('落地中');
+    expect(sessionFacts(t, { session: session({ state: 'awaiting-person' }), shown: 'awaiting-person', flow })[1]).toBe('等你 1 分钟');
+  });
+
+  it('names the press of the first wait, and none where there is none or it has no door', () => {
+    expect(nextPress([])).toBeNull();
+    expect(nextPress([{ kind: 'accept' }, { kind: 'question', below: false }])).toBe('accept');
+    expect(nextPress([{ kind: 'goAhead', number: 2 }])).toBe('answer');
+    expect(nextPress([{ kind: 'discard' }])).toBeNull();
+  });
+
   /** WAITSAY1: a working session inside a long call names it and says for how long. */
   it('says a working session is running a call, and for how long', () => {
     const calling = { title: 'npm test', since: '2026-10-05T09:40:00Z' };
@@ -73,6 +112,26 @@ describe('a session’s facts line', () => {
     expect(facts.at(-1)).toBe('running npm test for 20m');
     expect(sessionFacts(t, { session: session(), shown: 'working' }).join()).not.toMatch(/running npm/);
     expect(sessionFacts(t, { session: session({ state: 'completed' }), shown: 'completed', calling }).join()).not.toMatch(/running npm/);
+  });
+
+  /** COWORKVIEW1a rule 18 (the cowork view design §3.7): who works with a session and when it was last heard, giving way to *quiet*. */
+  it('says how many work with a working session and when it was last heard, and quiet in its place once the watcher marks it', async () => {
+    const heard = '2026-10-05T09:59:00Z';
+    const calling = { title: '', since: heard, heard };
+    const facts = sessionFacts(t, { session: session(), shown: 'working', grouping: grouping({ calling }), withIt: 3 });
+    expect(facts.at(-1)).toBe('3 working with it · last heard 1m ago');
+    expect(sessionFacts(t, { session: session(), shown: 'working', withIt: 0 }).join()).not.toMatch(/working with it/);
+    expect(sessionFacts(t, { session: session({ state: 'completed' }), shown: 'completed', withIt: 3 }).join()).not.toMatch(/working with it/);
+    expect(sessionFacts(t, { session: session(), shown: 'working', withIt: 2 }).at(-1)).toBe('2 working with it');
+
+    const quiet = { ...calling, quiet: '2026-10-05T09:40:00Z' };
+    const hushed = sessionFacts(t, { session: session(), shown: 'working', grouping: grouping({ calling: quiet }), withIt: 3 });
+    expect(hushed.join()).not.toMatch(/last heard/);
+    expect(hushed.at(-1)).toBe('quiet · 20m');
+
+    await i18n.changeLanguage('zh');
+    expect(sessionFacts(t, { session: session(), shown: 'working', grouping: grouping({ calling }), withIt: 3 }).at(-1)).toBe('3 个在一起工作 · 1 分钟前有动静');
+    await i18n.changeLanguage('en');
   });
 
   /**

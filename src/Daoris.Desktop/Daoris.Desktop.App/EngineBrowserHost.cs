@@ -26,9 +26,13 @@ namespace Daoris.Desktop;
 /// closes its windows when this process ends, as the shell's own window did. One port for the shell's
 /// life, so a browser the person closed and a session reopens answers where the last one did.</para>
 ///
-/// <para><b>Focus is Windows' decision.</b> A session asks for the first window in the background,
-/// and the person's press asks for it in front. Measured both ways: Windows' own foreground rules
-/// decided, not the ask (CHR3, 2026-09-28).</para>
+/// <para><b>Focus is Windows' decision.</b> An agent's first connection asks for the first window in the
+/// background, and the person's press asks for it in front. Measured both ways: Windows' own foreground
+/// rules decided, not the ask (CHR3, 2026-09-28).</para>
+///
+/// <para><b>Handed at a start, brought up at a connection (BROWSERSTART1).</b> A session is handed
+/// <see cref="EndpointAsync"/>'s port, held by the shell for its life, and the browser comes up when something
+/// first connects to it; a session's start and the come-up after a restart bring up no window.</para>
 /// </remarks>
 public sealed class EngineBrowserHost(string home) : IInAppBrowser, IBrowserCaches
 {
@@ -37,7 +41,14 @@ public sealed class EngineBrowserHost(string home) : IInAppBrowser, IBrowserCach
     /// <summary>How long a browser whose last window just closed is given to finish going.</summary>
     private static readonly TimeSpan Going = TimeSpan.FromSeconds(10);
 
+    /// <summary>The port Daoris's own engine listens on. Not the one a session is handed: that is <see cref="_front"/>'s.</summary>
     private readonly int _port = InAppBrowser.FreePort();
+
+    /// <summary>The endpoint sessions are handed (BROWSERSTART1), made when the first is: it brings the chosen browser up at its first connection.</summary>
+    private LazyEndpoint? _front;
+
+    private readonly object _frontMade = new();
+
     private readonly SemaphoreSlim _gate = new(1, 1);
     private Process? _process;
 
@@ -102,6 +113,29 @@ public sealed class EngineBrowserHost(string home) : IInAppBrowser, IBrowserCach
         // Every build carries Daoris's own, being this executable (CHR8).
         await BringUpAsync(background: true, activate: false, ct).ConfigureAwait(false);
         return InAppBrowser.Endpoint(_port);
+    }
+
+    /// <summary>
+    /// What a session's servers are handed (BROWSERSTART1): the front's endpoint, one port for the shell's life, with no browser
+    /// brought up. The browser the settings choose comes up, in the background, at the first connection to it.
+    /// </summary>
+    public Task<string?> EndpointAsync(CancellationToken ct = default)
+    {
+        // Edge chosen and none installed is no browser to hand, as before.
+        if (EdgeChosen && EdgeBrowser.Locate() is null) return Task.FromResult<string?>(null);
+        lock (_frontMade)
+        {
+            _front ??= new LazyEndpoint(BringUpForConnectionAsync);
+            return Task.FromResult<string?>(InAppBrowser.Endpoint(_front.Port));
+        }
+    }
+
+    /// <summary>The port the chosen browser listens on, once it is up: what the front relays a connection to.</summary>
+    private async Task<int> BringUpForConnectionAsync(CancellationToken ct)
+    {
+        if (EdgeChosen) return await BringUpEdgeAsync(activate: false, ct).ConfigureAwait(false);
+        await BringUpAsync(background: true, activate: false, ct).ConfigureAwait(false);
+        return _port;
     }
 
     /// <summary>

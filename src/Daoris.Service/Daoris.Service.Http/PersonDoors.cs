@@ -309,6 +309,8 @@ public static class PersonDoors
         new("POST", "/api/sessions/{id}/say", DoorClass.Person, "words to a session") { Marks = OwnerMark.Of(OwnerMarkKinds.SessionWord, "said:person") },
         // SAIDBACK1a: the person's words, taken back or reworded before a session took them, are theirs to move as saying them is.
         new("POST", "/api/sessions/{id}/take-back", DoorClass.Person, "words taken back from a session") { Marks = OwnerMark.Of(OwnerMarkKinds.SessionWord, "said:person") },
+        // LINESTOGETHER1b: the person's held word moved to the head, theirs to move as saying it is.
+        new("POST", "/api/sessions/{id}/move", DoorClass.Person, "words moved to a session's head") { Marks = OwnerMark.Of(OwnerMarkKinds.SessionWord, "said:person") },
         new("POST", "/api/sessions/{id}/answer", DoorClass.Person, "an answer to a parked session") { Marks = OwnerMark.Of(OwnerMarkKinds.SessionMove, "session-note:ledger.answered") },
         new("POST", "/api/asks/{id}/close", DoorClass.Person, "an ask's close") { Marks = OwnerMark.None("an ask's close, which leaves its quests as they are") },
         new("DELETE", "/api/asks/{id}", DoorClass.Person, "an ask's delete") { Marks = OwnerMark.Of(OwnerMarkKinds.Status, "move:deleted") },

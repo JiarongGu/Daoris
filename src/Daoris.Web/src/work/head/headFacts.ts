@@ -10,6 +10,7 @@ import { callHead, type SessionGrouping } from '../groups';
 import { isIntake } from '../identity';
 import { HANDED_REASONS } from '../noteLines';
 import { placedFact } from '../rail/SessionRow';
+import type { Wait } from '../waits/waits';
 
 // The facts line under a head's title (UX7c, D152 §7, the UX7 design §5.2 and §5.3): the two or three facts a record's
 // state makes matter, said once, faint, beside the state's pill and the title on the line above. Pure, so a head is
@@ -52,7 +53,9 @@ export type SessionFactsOf = {
    * The call its agent is inside, and since when, as its conversation reads it (`runningCall`, WAITSAY1); absent where none is
    * open. Said only where the reader's `grouping` carries no call of its own (RAILLINE1).
    */
-  calling?: { title: string; since: string; quiet?: string } | null;
+  calling?: { title: string; since: string; quiet?: string; heard?: string } | null;
+  /** How many others work with it, subagents and other parts (COWORKVIEW1a, the *At work* read); absent where unknown or none. */
+  withIt?: number;
   /**
    * Its heavy run's line (HEAVYSLOT1, the UI/UX design §3.5): the gate it runs, the gate it failed at, or whom it waits behind, as
    * the rail's line says it (`heavyLine`), in place of the call, which is that run. Absent where it holds and waits for no slot.
@@ -63,9 +66,42 @@ export type SessionFactsOf = {
    * *Trying again at* while it is still ahead, and nothing once past or while a try runs. Absent where none waits.
    */
   retrying?: string | null;
+  /** Its unit's integration state from the integration record (INTEGRATE1h; the integration design §5.8): one line after the repository; absent where none was asked. */
+  integration?: { state: string; line: string } | null;
   /** The reader's clock for `retrying`; the moment it is read where absent. */
   now?: Date;
+  /**
+   * Where the work stands (REVIEWFLOW1b; the review-flow design §1): how many of its parts offer work to land, and whether a landing
+   * is on its way. Present, the line is led by *now*; absent (a row, a browser), it is as it was.
+   */
+  flow?: { parts: number; landing: boolean } | null;
 };
+
+/**
+ * *Now*, one word for the phase (REVIEWFLOW1b). Integrating is its integration fact, which is read and never said twice, and landed
+ * is an ended session's own landing fact; so neither is said here.
+ */
+function nowFact(t: TFunction, { session, shown, flow, integration }: SessionFactsOf): string | null {
+  if (!flow || integration) return null;
+  if (flow.landing) return t('work.facts.now.landing');
+  if (flow.parts > 0) return t('work.facts.now.parts', { count: flow.parts });
+  if (session.state === 'awaiting-person') return t('work.facts.now.waits', { time: elapsed(session.updated) });
+  return shown === 'working' && SESSION_ACTIVE.has(session.state) ? t('work.facts.now.working') : null;
+}
+
+/** The press *next* names: the first wait's, in the words of its button; none for a wait with no door to its line. */
+export function nextPress(waits: readonly Wait[]): 'answer' | 'accept' | 'rebase' | 'opinion' | 'review' | null {
+  const first = waits[0];
+  switch (first?.kind) {
+    case undefined:
+    case 'discard': return null;
+    case 'accept': return 'accept';
+    case 'rebase': return 'rebase';
+    case 'opinion': return 'opinion';
+    case 'review': return 'review';
+    default: return 'answer';
+  }
+}
 
 /**
  * The agent a line of work's leading part runs on (SESSCTX1d; the session-context design §7), by the roster's name for it, where
@@ -127,7 +163,7 @@ function callFact(t: TFunction, calling: { title: string; since: string; waiting
  * the two never disagree; the conversation's open call only where no reader answered (a browser) or its host is older than the
  * fact.
  */
-function headCall(of: SessionFactsOf): { title: string; since: string; waiting?: boolean; quiet?: string } | null {
+function headCall(of: SessionFactsOf): { title: string; since: string; waiting?: boolean; quiet?: string; heard?: string } | null {
   const heard = of.grouping?.calling;
   return heard !== undefined ? heard : of.calling ?? null;
 }
@@ -155,9 +191,11 @@ function factsOf(t: TFunction, of: SessionFactsOf, whole: boolean): string[] {
 
   const facts: (string | null)[] = [
     session.repository,
+    nowFact(t, of),
     // SESSCTX1d: the agent the line is on now, where its parts ran on more than one.
     of.leadingAgent ? t('work.facts.leadsOn', { agent: of.leadingAgent }) : null,
     ...linkFacts(t, session, of),
+    of.integration ? t(`work.facts.integration.${of.integration.state}`, { line: of.integration.line, defaultValue: of.integration.state }) : null,
   ];
   // What the row's line says for its group (D126 §2.2): parked after its failures, what it awaits, what holds the words,
   // its stop's hold, its work to review. Said here in the row's own words.
@@ -172,7 +210,7 @@ function factsOf(t: TFunction, of: SessionFactsOf, whole: boolean): string[] {
 
   if (session.state === 'awaiting-person') {
     // Waiting on the person: how long it has waited, from when its record last moved; the card below says what it asks.
-    facts.push(t('work.facts.waiting', { time: elapsed(session.updated) }));
+    if (!of.flow || of.integration) facts.push(t('work.facts.waiting', { time: elapsed(session.updated) }));
     return facts.filter((fact): fact is string => Boolean(fact));
   }
 
@@ -195,6 +233,12 @@ function factsOf(t: TFunction, of: SessionFactsOf, whole: boolean): string[] {
     const calling = headCall(of);
     if (of.heavy && !calling?.waiting) facts.push(of.heavy);
     else if (calling && (calling.title || calling.waiting) && session.state === 'working') facts.push(callFact(t, calling, whole));
+    // COWORKVIEW1a (§3.7): who works with it and when it was last heard; the hearing gives way to *quiet* where the watcher marks it.
+    if (of.withIt && of.withIt > 0 && session.state === 'working') {
+      facts.push(calling?.heard && !calling.quiet
+        ? t('work.facts.withItHeard', { count: of.withIt, ago: ago(calling.heard) })
+        : t('work.facts.withIt', { count: of.withIt }));
+    }
     // SESSWATCH1a (the session-watch design §5.1): quiet since it was last heard, neutral, after a heavy run's line where both hold.
     if (calling?.quiet && session.state === 'working') facts.push(t('work.rail.quiet', { time: elapsed(calling.quiet) }));
     return facts.filter((fact): fact is string => Boolean(fact));

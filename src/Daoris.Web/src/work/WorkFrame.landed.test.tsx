@@ -611,7 +611,7 @@ describe('a session’s page header and its acts', () => {
     const { onSelect } = show('c0ffee11');
 
     const header = (await screen.findByRole('heading', { level: 1, name: 'Chat' })).closest('header')!;
-    expect(await within(header).findByText(/^engine · continues from Codex · its account was near its limit · /)).toBeInTheDocument();
+    expect(await within(header).findByText(/^engine · working · continues from Codex · its account was near its limit · /)).toBeInTheDocument();
     const head = screen.getByRole('button', { name: /^Details/ }).closest('header')!;
     fireEvent.click(within(head).getByRole('button', { name: /^Details/ }));
     fireEvent.click(within(within(head).getByText('Continues').nextElementSibling as HTMLElement).getByRole('button', { name: 'Open session' }));
@@ -624,7 +624,7 @@ describe('a session’s page header and its acts', () => {
     show('h3lp3r00');
 
     const header = (await screen.findByRole('heading', { level: 1, name: 'Helper' })).closest('header')!;
-    expect(await within(header).findByText(/^engine · helping Expose a streaming budget · /)).toBeInTheDocument();
+    expect(await within(header).findByText(/^engine · working · helping Expose a streaming budget · /)).toBeInTheDocument();
     expect(screen.queryByLabelText('Message')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Send' })).toBeNull();
   });
@@ -1253,10 +1253,89 @@ describe('acting on what a session landed', () => {
   });
 
   /**
-   * ACCEPTALL1h (D169's ACCEPTALL1e note): while a line of work's one Accept lands it, its part's own *Accept…* in the head and its
-   * review's *Accept* wait, read by the entry the press names, and come back once it answered.
+   * REVIEWFLOW1a (D168's table, point 3): the session's *Accept all* is one owner drawn in the head and at the foot, its ask open in
+   * one of them at a time; where the foot's ask is open, the head's press is held, so words begun in the ask are not put down.
    */
-  it('holds a part’s own Accept in the head and in its review while its line of work lands', async () => {
+  it('holds the head’s Accept all while its ask is open at the foot', async () => {
+    const tree = (name: string) => `C:\\somewhere\\.daoris\\trees\\default\\engine\\${name}`;
+    SESSIONS = [
+      { ...IN_A_TREE, state: 'completed', tree: tree('s-1a2b3c4') },
+      { ...IN_A_TREE, id: 's5e6f7a8', quest: 'abc124', state: 'completed', tree: tree('s-5e6f7a8'), created: '2026-09-02T02:00:00Z', updated: '2026-09-02T03:00:00Z' },
+    ];
+    const lands = (name: string) => ({ branch: `daoris/${name}`, tree: name, commits: 1, uncommitted: 0 });
+    const part = (session: string, quest: string) => ({ session, quest, shown: 'completed', group: 'review', began: 'opened', after: null, askedBy: null });
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'SESSION_GROUPS') {
+        return {
+          sessions: [
+            { session: 's1a2b3c4', group: 'review', shown: 'completed', archived: false, teammate: false, lands: lands('s-1a2b3c4') },
+            { session: 's5e6f7a8', group: 'review', shown: 'completed', archived: false, teammate: false, lands: lands('s-5e6f7a8') },
+          ],
+          entries: [{ entry: 'ask:a3/engine', origin: 'ask:a3', repository: 'engine', group: 'review', leading: 's5e6f7a8',
+            parts: [part('s1a2b3c4', 'abc123'), part('s5e6f7a8', 'abc124')] }],
+        };
+      }
+      if (type === 'LANDING') return { session: 's1a2b3c4', form: 'branch', target: 'feature/a3', source: 'workspace' };
+      if (type === 'ENTRY_LANDING') {
+        return { entry: 'ask:a3/engine', repository: 'engine', form: 'branch', target: 'feature/a3',
+          parts: [{ session: 's1a2b3c4', target: 'feature/a3' }, { session: 's5e6f7a8', target: 'feature/a3' }] };
+      }
+      if (type === 'SESSION_DIFF') return DIFF;
+      return DRIVER_STATE;
+    });
+
+    show('s1a2b3c4', vi.fn());
+    const strip = await screen.findByRole('region', { name: 'Waiting on you' });
+    const presses = await screen.findAllByRole('button', { name: 'Accept all 2 parts…' });
+    expect(presses).toHaveLength(2);
+    const head = presses.find((press) => !strip.contains(press))!;
+
+    await userEvent.click(within(strip).getByRole('button', { name: 'Accept all 2 parts…' }));
+    const ask = screen.getByRole('group', { name: 'accept every part of this line of work' });
+    expect(strip.contains(ask)).toBe(true);
+    expect(head).toBeDisabled();
+    // The part's own press is the session's now: none stands beside it.
+    expect(screen.queryByRole('button', { name: 'Accept…' })).toBeNull();
+  });
+
+  /**
+   * REVIEWFLOW1a (D168's table, the Opus maker's N2): the work wait stands on the session's offer, one or more parts: a head with no
+   * work of its own beside a part that has some shows the session's *Accept…*.
+   */
+  it('offers the session’s Accept where the head has no work beside a part that has', async () => {
+    const tree = (name: string) => `C:\\somewhere\\.daoris\\trees\\default\\engine\\${name}`;
+    SESSIONS = [
+      { ...IN_A_TREE, state: 'completed', tree: tree('s-1a2b3c4') },
+      { ...IN_A_TREE, id: 's5e6f7a8', quest: 'abc124', state: 'completed', tree: tree('s-5e6f7a8'), created: '2026-09-02T02:00:00Z', updated: '2026-09-02T03:00:00Z' },
+    ];
+    const part = (session: string, quest: string) => ({ session, quest, shown: 'completed', group: 'review', began: 'opened', after: null, askedBy: null });
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'SESSION_GROUPS') {
+        return {
+          sessions: [
+            { session: 's1a2b3c4', group: 'review', shown: 'completed', archived: false, teammate: false },
+            { session: 's5e6f7a8', group: 'review', shown: 'completed', archived: false, teammate: false,
+              lands: { branch: 'daoris/s-5e6f7a8', tree: 's-5e6f7a8', commits: 1, uncommitted: 0 } },
+          ],
+          entries: [{ entry: 'ask:a3/engine', origin: 'ask:a3', repository: 'engine', group: 'review', leading: 's5e6f7a8',
+            parts: [part('s1a2b3c4', 'abc123'), part('s5e6f7a8', 'abc124')] }],
+        };
+      }
+      if (type === 'SESSION_DIFF') return DIFF;
+      return DRIVER_STATE;
+    });
+
+    show('s1a2b3c4', vi.fn());
+    const main = within(screen.getByRole('main'));
+    expect(await main.findByRole('button', { name: 'Accept…' })).toBeEnabled();
+    expect(await screen.findByRole('region', { name: 'Waiting on you' })).toBeInTheDocument();
+  });
+
+  /**
+   * ACCEPTALL1h (D169's ACCEPTALL1e note), REVIEWFLOW1a: while a line of work's one Accept lands it, the session's press in the head
+   * and in its review's foot waits, read by the entry the press names, and comes back once it answered.
+   */
+  it('holds the session’s Accept in the head and in its review while its line of work lands', async () => {
     const tree = (name: string) => `C:\\somewhere\\.daoris\\trees\\default\\engine\\${name}`;
     SESSIONS = [
       { ...IN_A_TREE, state: 'completed', tree: tree('s-1a2b3c4') },
@@ -1288,20 +1367,20 @@ describe('acting on what a session landed', () => {
 
     show('s1a2b3c4', vi.fn());
     const main = within(screen.getByRole('main'));
-    expect(await main.findByRole('button', { name: 'Accept…' })).toBeEnabled();
+    expect(await main.findByRole('button', { name: 'Accept all 2 parts…' })).toBeEnabled();
     await userEvent.click(await main.findByRole('button', { name: 'Accept all 2 parts…' }));
     const ask = screen.getByRole('group', { name: 'accept every part of this line of work' });
     await within(ask).findByText('Lands 2 parts on feature/a3, one after another, in the order they ran.');
     await userEvent.click(within(ask).getByRole('button', { name: 'Accept all' }));
 
-    await vi.waitFor(() => expect(main.getByRole('button', { name: 'Accept…' })).toBeDisabled());
     await userEvent.click(await screen.findByRole('tab', { name: 'Review' }));
     const review = within(await screen.findByRole('tabpanel'));
     await review.findByText('src/chunk.ts');
-    expect(await review.findByRole('button', { name: 'Landing…' })).toBeDisabled();
+    // The review's foot draws the session's press in the part's place, held while it lands.
+    expect(await review.findByRole('button', { name: 'Accept all 2 parts…' })).toBeDisabled();
 
     await act(async () => landed({ entry: 'ask:a3/engine', repository: 'engine', done: true, message: 'Landed 2 part(s) on `feature/a3`.', parts: [] }));
-    await vi.waitFor(() => expect(review.queryByRole('button', { name: 'Landing…' })).toBeNull());
+    await vi.waitFor(() => expect(review.getByRole('button', { name: 'Accept all 2 parts…' })).toBeEnabled());
   });
 
   /**

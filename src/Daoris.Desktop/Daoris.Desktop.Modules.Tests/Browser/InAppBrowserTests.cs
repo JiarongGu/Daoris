@@ -27,6 +27,98 @@ public sealed class InAppBrowserTests : Bridge
         Assert.InRange(port, 1024, 65535);
     }
 
+    /// <summary>A stand-in browser: it answers each line it is sent with the line upper-cased, on a port of its own.</summary>
+    private static (TcpListener Listener, Task Serving) StandInEngine()
+    {
+        var listener = new TcpListener(IPAddress.Loopback, 0);
+        listener.Start();
+        var serving = Task.Run(async () =>
+        {
+            try
+            {
+                while (true)
+                {
+                    var client = await listener.AcceptTcpClientAsync();
+                    _ = Task.Run(async () =>
+                    {
+                        using var peer = client;
+                        using var reader = new StreamReader(peer.GetStream());
+                        await using var writer = new StreamWriter(peer.GetStream()) { AutoFlush = true };
+                        while (await reader.ReadLineAsync() is { } line) await writer.WriteLineAsync(line.ToUpperInvariant());
+                    });
+                }
+            }
+            catch (Exception error) when (error is ObjectDisposedException or SocketException or OperationCanceledException)
+            {
+            }
+        });
+        return (listener, serving);
+    }
+
+    /// <summary>
+    /// BROWSERSTART1: the endpoint is held without the browser. Holding it, and connecting nothing, brings nothing up; the first
+    /// connection brings it up and what the client sends reaches the browser and comes back, so a CDP client's first call is
+    /// served by a browser that was not running when the endpoint was handed.
+    /// </summary>
+    [Fact]
+    public async Task The_endpoint_brings_the_browser_up_at_its_first_connection_and_relays_it()
+    {
+        var (engine, serving) = StandInEngine();
+        var enginePort = ((IPEndPoint)engine.LocalEndpoint).Port;
+        var broughtUp = 0;
+        await using var endpoint = new LazyEndpoint(_ =>
+        {
+            Interlocked.Increment(ref broughtUp);
+            return Task.FromResult(enginePort);
+        });
+
+        await Task.Delay(200);
+        Assert.Equal(0, broughtUp);
+
+        using var client = new TcpClient();
+        await client.ConnectAsync(IPAddress.Loopback, endpoint.Port);
+        using var reader = new StreamReader(client.GetStream());
+        await using var writer = new StreamWriter(client.GetStream()) { AutoFlush = true };
+        await writer.WriteLineAsync("json/version");
+
+        Assert.Equal("JSON/VERSION", await reader.ReadLineAsync().WaitAsync(Poll.Patience));
+        Assert.Equal(1, broughtUp);
+
+        engine.Stop();
+        await serving;
+    }
+
+    /// <summary>A browser that would not come up ends that connection, and the next connection asks again.</summary>
+    [Fact]
+    public async Task A_browser_that_would_not_come_up_ends_the_connection_and_the_next_one_asks_again()
+    {
+        var (engine, serving) = StandInEngine();
+        var enginePort = ((IPEndPoint)engine.LocalEndpoint).Port;
+        var asked = 0;
+        await using var endpoint = new LazyEndpoint(_ =>
+            Interlocked.Increment(ref asked) == 1
+                ? throw new InvalidOperationException("Daoris's browser did not start.")
+                : Task.FromResult(enginePort));
+
+        using (var first = new TcpClient())
+        {
+            await first.ConnectAsync(IPAddress.Loopback, endpoint.Port);
+            Assert.Equal(0, await first.GetStream().ReadAsync(new byte[1]).AsTask().WaitAsync(Poll.Patience));
+        }
+
+        using var second = new TcpClient();
+        await second.ConnectAsync(IPAddress.Loopback, endpoint.Port);
+        using var reader = new StreamReader(second.GetStream());
+        await using var writer = new StreamWriter(second.GetStream()) { AutoFlush = true };
+        await writer.WriteLineAsync("again");
+
+        Assert.Equal("AGAIN", await reader.ReadLineAsync().WaitAsync(Poll.Patience));
+        Assert.Equal(2, asked);
+
+        engine.Stop();
+        await serving;
+    }
+
     /// <summary>
     /// What the person types. A host with no scheme is a site, over HTTPS unless it is this machine;
     /// anything that is not a web page — a file, a script, a credential in the address — goes nowhere.

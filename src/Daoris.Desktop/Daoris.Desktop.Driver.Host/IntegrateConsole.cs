@@ -2,11 +2,11 @@ namespace Daoris.Driver.Host;
 
 /// <summary>
 /// A repository's integration from a terminal (INTEGRATE1h): <c>daoris-driver integrate &lt;repository&gt;</c> reads the record. The words are the
-/// library's (<see cref="IntegrateCommand"/>); an act is the owner's card in the window, which this terminal does not answer.
+/// library's (<see cref="IntegrateCommand"/>); an act is the owner's card in the running window, pressed over the pipe and waited on.
 /// </summary>
 internal static class IntegrateConsole
 {
-    public static int Run(string[] args)
+    public static async Task<int> RunAsync(string[] args, CancellationToken closing)
     {
         if (IntegrateCommand.Read(args, out var problem) is not { } ask)
         {
@@ -17,8 +17,15 @@ internal static class IntegrateConsole
 
         if (ask.Act is not null)
         {
-            Console.Out.WriteLine(IntegrateCommand.ActSaid(ask));
-            return 1;
+            try
+            {
+                return await IntegrateCommand.PressAsync(ask, InstanceHost.World(DaorisHome.Resolve(), "integrate"), closing).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) when (closing.IsCancellationRequested)
+            {
+                await Console.Error.WriteLineAsync(InstanceDoor.StoppedAtCtrlC).ConfigureAwait(false);
+                return 2;
+            }
         }
 
         if (DaorisHome.Resolve() is not { } home)

@@ -7135,7 +7135,7 @@ const QUEUE_POLL_MS = Number(process.env.MERGE_BRANCH_QUEUE_POLL_MS) || 5_000;
 const QUEUE_TICK_MS = Number(process.env.MERGE_BRANCH_QUEUE_TICK_MS) || 60_000;
 /** QUEUEDRAIN1: how often the runner asks whether the candidate it runs is still the queue's, and how long a drop waits to hear. */
 const DROP_POLL_MS = Number(process.env.MERGE_BRANCH_DROP_POLL_MS) || 2_000;
-const DRAIN_WAIT_MS = Number(process.env.MERGE_BRANCH_DRAIN_WAIT_MS) || 30_000;
+export const DRAIN_WAIT_MS = Number(process.env.MERGE_BRANCH_DRAIN_WAIT_MS) || 30_000;
 const sleepMs = (ms) => new Promise((done) => { setTimeout(done, ms); });
 
 /**
@@ -7231,9 +7231,9 @@ function withQueue(home, change) {
  * queue's lock (a read made beside a writer must never mistake a record it could not read for a drop); once it is no longer this
  * frozen candidate (dropped, or replaced), `trees.end` ends every step the run owns, each with what it started, through the
  * same cancellation a superseded run uses (CIPRIO1c), and the run starts nothing more. It is asked at each tick and before each
- * probe; the timer keeps no process alive.
+ * probe; the timer keeps no process alive. `taken()` says the drop was taken before anything is ended (DROPWAIT1).
  */
-export function watchCandidate(candidate, current, trees, { ms = DROP_POLL_MS, superseded = () => null } = {}) {
+export function watchCandidate(candidate, current, trees, { ms = DROP_POLL_MS, superseded = () => null, taken = () => {} } = {}) {
   const watch = {
     trees,
     check() {
@@ -7244,7 +7244,14 @@ export function watchCandidate(candidate, current, trees, { ms = DROP_POLL_MS, s
       } catch {
         return false;
       }
-      if (!sameCandidate(now, candidate)) trees.end(DROPPED);
+      if (!sameCandidate(now, candidate)) {
+        try {
+          taken();
+        } catch {
+          // The drop then waits on its clock alone.
+        }
+        trees.end(DROPPED);
+      }
       // PROCLEAK1: a runner the queue no longer names (or whose owner ended) ends its steps as a dropped candidate's are ended; a
       // read that fails is never taken for it.
       if (!trees.ended) {
@@ -7587,7 +7594,11 @@ function scopedGates(home, tree, plan, choice, dir) {
 async function runCandidate(home, candidate) {
   // QUEUEDRAIN1: every step this run starts, its gates and its failure probes, is held in one set of step trees, which the
   // candidate's own drop or replacement ends.
-  const watch = watchCandidate(candidate, () => withQueue(home, (queue) => ({ candidate: queue.candidate })).candidate, stepTrees(), { superseded: () => runnerLost(home) }).start();
+  const watch = watchCandidate(candidate, () => withQueue(home, (queue) => ({ candidate: queue.candidate })).candidate, stepTrees(), {
+    superseded: () => runnerLost(home),
+    // DROPWAIT1: a runner that took a drop always says what it ended (`drained`), so the drop waits on the clock only for this.
+    taken: () => withQueue(home, (queue) => ({ queue: { ...queue, draining: { tip: candidate.tip, at: nowIso() } } })),
+  }).start();
   try {
     return await runCandidateWatched(home, candidate, watch);
   } finally {
@@ -7595,8 +7606,18 @@ async function runCandidate(home, candidate) {
   }
 }
 
+/**
+ * DROPWAIT1: the tool's own tests hold a runner's report of a drop until this file exists, so the drop meets a runner late to say what
+ * it ended, as a loaded one is. A runner whose owner has ended holds no longer (PROCLEAK1).
+ */
+async function drainHeld() {
+  const hold = process.env.MERGE_BRANCH_DRAIN_HOLD;
+  while (hold && !existsSync(hold) && !ownerEnded(START_ENVIRONMENT)) await sleepMs(25);
+}
+
 /** QUEUEDRAIN1: what the runner does once the drop has ended the candidate's steps: say what was ended, tell the drop, take the next work. */
-function drained(home, candidate, run, { ended = [], left = [], probe = null, why = null } = {}) {
+async function drained(home, candidate, run, { ended = [], left = [], probe = null, why = null } = {}) {
+  await drainHeld();
   const record = drainedRecord(candidate, { ended, left, probe });
   // PROCLEAK1: a run ended because its runner is no longer the queue's (or its owner went) says that, and the runner's loop ends it.
   const dropped = !why || why === DROPPED;
@@ -8302,7 +8323,9 @@ async function dropQueuedVerb(root, options) {
 
 /**
  * QUEUEDRAIN1: what the drop of a candidate ended. The runner owns the run's processes, so it ends them (within `DROP_POLL_MS`) and
- * records what it ended; this waits, bounded, for that record, and says it. A candidate with no run in progress had none to end.
+ * records what it ended; this waits for that record, and says it. A candidate with no run in progress had none to end.
+ * DROPWAIT1: only the runner's take of the drop (`draining`, at its next ask) is waited for on the clock, `DRAIN_WAIT_MS`: one that took
+ * it always records what it ended, however long ending its trees takes, so that is waited for while the runner runs.
  */
 async function saidDrained(home, candidate, asked) {
   const runner = candidate.run?.pid;
@@ -8313,15 +8336,17 @@ async function saidDrained(home, candidate, asked) {
   }
   const until = Date.now() + DRAIN_WAIT_MS;
   for (;;) {
-    const drained = readQueue(home).drained;
+    const { drained, draining } = readQueue(home);
     if (drained?.tip === candidate.tip && drained.at >= asked) {
       console.log(`  the runner (pid ${runner}) ${drainedLine(drained)}, and takes the next queued work`);
       return;
     }
-    if (!pidAlive(runner) || Date.now() >= until) break;
+    const took = draining?.tip === candidate.tip && draining.at >= asked;
+    if (!pidAlive(runner) || (!took && Date.now() >= until)) break;
     await sleepMs(100);
   }
-  console.log(`  the runner (pid ${runner}) has not yet said it ended ${candidate.tip.slice(0, 7)}'s run; it asks every ${Math.round(DROP_POLL_MS / 1000)} s, and ${MERGE_QUEUE_LOG} says when it has`);
+  const every = DROP_POLL_MS < 1000 ? `${DROP_POLL_MS} ms` : span(DROP_POLL_MS);
+  console.log(`  the runner (pid ${runner}) has not yet said it ended ${candidate.tip.slice(0, 7)}'s run; it asks every ${every}, and ${MERGE_QUEUE_LOG} says when it has`);
 }
 
 export async function main(argv) {
