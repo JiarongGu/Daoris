@@ -572,10 +572,14 @@ export type MemoryWait = { ends: number; replacements: number; staged: number };
 /**
  * An integration's wait on the owner (INTEGRATE1h; the integration design §5.8, §17.4): a candidate the line's rule held for their decide,
  * with its members' branches and the judge's words; a superseded commit awaiting their answer, by its request and commit; or a landed branch
- * whose integration waits for their card. Branches, subjects and words are content, shown as written.
+ * whose integration waits for their card; or a repository whose committed declaration waits for their acceptance (§5.8), where `tip` is the
+ * declaration's blob and `state` says whether none was accepted yet or the accepted one changed. Branches, subjects and words are content,
+ * shown as written.
  */
 export type IntegrationWait = {
-  wait: 'decide' | 'superseded' | 'card';
+  wait: 'decide' | 'superseded' | 'card' | 'declaration';
+  /** A declaration's state against the accepted blob: `unaccepted`, or `changed`, where integration goes on under the last accepted blob. */
+  state?: 'unaccepted' | 'changed' | null;
   repository: string;
   line?: string | null;
   branch?: string | null;
@@ -920,12 +924,18 @@ export function attentionWorded(row: PushedAttention, names: AttentionNames = {}
       const short = (commit?: string | null) => (commit ?? '').slice(0, 7);
       const title = wait?.wait === 'decide'
         ? i18n.t('integration.view.candidate', { line: wait.line ?? '' })
-        : wait?.branch ?? row.title ?? row.id;
+        : wait?.wait === 'declaration' ? wait.repository : wait?.branch ?? row.title ?? row.id;
       const detail = wait?.wait === 'decide'
         ? i18n.t('work.attention.integrationDecideWhy', { branches: (wait.branches ?? []).join(', '), why: wait.why ?? '' }).trim()
         : wait?.wait === 'superseded'
           ? i18n.t('work.attention.integrationSupersededWhy', { commit: short(wait.commit), subject: wait.subject ?? '', line: wait.line ?? '' })
-          : wait?.wait === 'card' ? i18n.t('work.attention.integrationCardWhy', { tip: short(wait.tip) }) : null;
+          : wait?.wait === 'card'
+            ? i18n.t('work.attention.integrationCardWhy', { tip: short(wait.tip) })
+            // §5.8: a declaration never accepted runs nothing; one changed since goes on under the last accepted blob.
+            : wait?.wait === 'declaration'
+              ? i18n.t(wait.state === 'changed' ? 'work.attention.integrationDeclarationChangedWhy' : 'work.attention.integrationDeclarationUnacceptedWhy',
+                { line: wait.line ?? '', tip: short(wait.tip) })
+              : null;
       return { ...base, title, detail, stands: row.stands === true, ...(wait ? { integration: wait } : {}) };
     }
     // NOTIFY2e: its note's first line as the agent wrote it, the session as Sessions names it, and the agent as the roster names it.

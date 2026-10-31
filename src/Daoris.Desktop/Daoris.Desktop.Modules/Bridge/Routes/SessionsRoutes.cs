@@ -722,7 +722,8 @@ public sealed class SessionsRoutes(DriverContext context)
         var session = PayloadHelper.GetRequiredValue<string>(request.Payload, "session");
         var service = _loop.Service ?? throw NotReady();
         if (await service.RelatedCandidatesAsync(session, cancellationToken) is not var (mine, others)) return new { Session = session, Related = Array.Empty<object>() };
-        return new { Session = session, Related = await _related.LookAsync(mine, others, cancellationToken) };
+        var look = await _related.AskAsync(mine, others, cancellationToken);
+        return new { Session = session, Related = look.Related, Own = look.Own is { } own ? new { Read = "not-read", own.ReadAt } : null };
     }
 
     /// <summary>

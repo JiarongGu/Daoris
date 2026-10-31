@@ -17,7 +17,7 @@ import type { AnswerAloneAnswered, AnswerWait } from '../../work/waits/AnswerAlo
 import type { NewSessionAnswer } from '../../work/say';
 import type { SessionWhere } from '../../work/rail/SessionRow';
 import type { SessionRecord } from '../../work/head/sessionRecord';
-import type { RelatedRow } from '../../work/head/RelatedSessions';
+import type { RelatedOwn, RelatedRow } from '../../work/head/RelatedSessions';
 import type { MemoryRow } from '../../work/head/SessionMemory';
 import { call } from '../call';
 import { readSlice } from '../driver';
@@ -350,17 +350,21 @@ export const useDecideSessionMemory = () => useMutation({
  * The sessions beside one in its repository whose work meets its own (LINESTOGETHER1c), told by event; the driver reads the trees at
  * each ask, so a stale answer is read again on focus. Empty while none is read.
  */
-export const useSessionRelated = (session: string | null | undefined, enabled = true): RelatedRow[] => {
+export const useSessionRelatedRead = (session: string | null | undefined, enabled = true): { rows: RelatedRow[]; own: RelatedOwn | null } => {
   const { isAvailable } = useShenora();
   const client = useQueryClient();
   const queryKey = ['sessions', 'related', session ?? ''] as const;
   const answer = useQuery({
     queryKey,
-    queryFn: () => askHeld<{ related?: RelatedRow[] }>('SESSION_RELATED', client, queryKey, { session }),
+    queryFn: () => askHeld<{ related?: RelatedRow[]; own?: { readAt?: string | null } | null }>('SESSION_RELATED', client, queryKey, { session }),
     enabled: isAvailable && enabled && Boolean(session),
     staleTime: 30_000,
   });
-  return Array.isArray(answer.data?.related) ? answer.data.related : [];
+  const own = answer.data?.own;
+  return {
+    rows: Array.isArray(answer.data?.related) ? answer.data.related : [],
+    own: own ? { readAt: typeof own.readAt === 'string' ? own.readAt : null } : null,
+  };
 };
 
 /**

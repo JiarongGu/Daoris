@@ -686,6 +686,40 @@ describe('an integration’s wait on the owner, worded', () => {
   });
 });
 
+/** INTEGRATE1h (§5.8): a declaration owed the owner's acceptance is one row per repository, which holds no work. */
+describe('a declaration owed acceptance, worded', () => {
+  const unaccepted = row('integration', 'declaration:engine', '2026-10-31T09:20:00Z', {
+    where: 'engine', integration: { wait: 'declaration', repository: 'engine', line: 'main', tip: '0123456789abcdef0123456789abcdef01234567', state: 'unaccepted' },
+  });
+  const changed = row('integration', 'declaration:web', '2026-10-31T09:25:00Z', {
+    where: 'web', integration: { wait: 'declaration', repository: 'web', line: 'trunk', tip: '89abcdef0123456789abcdef0123456789abcdef', state: 'changed' },
+  });
+
+  it('is titled by its repository, says what the blob is and whether integration goes on, offers no press and holds no work', () => {
+    expect(words(unaccepted)).toMatchObject({
+      kind: 'integration', title: 'engine', where: 'engine', stands: false,
+      detail: '`daoris.gates.json` on main (`0123456`) declares an integration you have not accepted, so none of it runs. Read it on Setup and accept it.',
+    });
+    expect(words(changed)).toMatchObject({
+      title: 'web',
+      detail: '`daoris.gates.json` on trunk (`89abcde`) changed since you accepted it; integration goes on under the last accepted one. Read the change on Setup and accept it.',
+    });
+    for (const each of [unaccepted, changed]) expect(attentionActs(words(each))).toEqual([]);
+    expect([unaccepted, changed].map((each) => attentionGroup(each))).toEqual(['word', 'word']);
+    expect(placeCounts([unaccepted, changed])).toEqual({ projects: 2 });
+  });
+
+  it('says it in 中文', async () => {
+    await i18n.changeLanguage('zh');
+    try {
+      expect(words(unaccepted).detail).toBe('main 上的 `daoris.gates.json`（`0123456`）声明了你还没采纳的集成，所以其中的内容都不会被使用。请在配置里读一读并采纳它。');
+      expect(words(changed).detail).toBe('trunk 上的 `daoris.gates.json`（`89abcde`）自你采纳后已改动；集成仍按上次采纳的那份进行。请在配置里读一读改动并采纳它。');
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+  });
+});
+
 /** UX6c (design §6.2): the three groups, in the order a person acts on them, and none shown empty. */
 describe('the groups', () => {
   it('puts each kind in its group', () => {

@@ -198,6 +198,11 @@ Paths below are relative to this file. Historical documents have their own [arch
 | `2026-11-01-agents-place-proposal-codex.md` | Proposal: AGENTSPLACE1, Codex, sealed
 | `2026-11-01-agents-place-design.md` | Design: AGENTSPLACE1, the Agents place: place pages, one plan and one Apply, presets as recipes; accepted 2026-11-01
 | `2026-11-01-agents-place-reads.md` | Reads: AGENTSPLACE1, both makers' reads and the steward's settlement
+| `2026-11-01-land-node-brief.md` | Brief: LANDNODE1, landing a performed, configurable node of the workflow
+| `2026-11-01-land-node-proposal-opus.md` | Proposal: LANDNODE1, Opus, sealed
+| `2026-11-01-land-node-proposal-codex.md` | Proposal: LANDNODE1, Codex, sealed
+| `2026-11-01-land-node-design.md` | Design: LANDNODE1, a performed `land` node, the rule as Current's options, the line's epoch; accepted 2026-11-01
+| `2026-11-01-land-node-reads.md` | Reads: LANDNODE1, both makers' reads and the steward's settlement
 
 ## UI, browser, tools and plugin contracts
 

@@ -47,7 +47,7 @@ is the row's, not its kind's: `attentionGroup` reads it, and the band, its order
   machine's carries none, with a comment saying why. The page keeps a row without one in every window, so a row that forgets it is
   counted and listed in a window on another workspace (NEEDSSCOPE1).
 - **Several waits of one record can be one kind.** INTEGRATE1h's `integration` row names its wait in a field (`decide`, `superseded`,
-  `card`): its label is picked by that field in `AttentionRow`, its words in `attentionWorded`, and its group by the row's `stands`, which
+  `card`, `declaration`): its label is picked by that field in `AttentionRow`, its words in `attentionWorded`, and its group by the row's `stands`, which
   `attentionGroup` and its twin `NoticesRead.Group` both read, so every place but the label and the words stays the kind's one entry.
 - **"waiting on you" is taken.** `work.head.waiting` and `sessionState.awaiting-person` say it of a parked session, and the
   page's end-to-end spec reads the phrase in an intake's region (`e2e/platform.spec.ts`): word a new wait differently.

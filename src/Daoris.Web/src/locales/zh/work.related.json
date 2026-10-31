@@ -6,5 +6,11 @@
   "work.related.declares_other": "{{count}} 个会话声明涉及",
   "work.related.notRead": "此处未读取",
   "work.related.notReadSince": "此处未读取（上次读取于 {{at}}）",
+  "work.related.notReadMany": "{{count}} 个会话此处未读取",
+  "work.related.notReadMany_other": "{{count}} 个会话此处未读取",
+  "work.related.notReadManySince": "{{count}} 个会话此处未读取（最早上次读取于 {{at}}）",
+  "work.related.notReadManySince_other": "{{count}} 个会话此处未读取（最早上次读取于 {{at}}）",
+  "work.related.ownNotRead": "它自己的工作树此处未读取",
+  "work.related.ownNotReadSince": "它自己的工作树此处未读取（上次读取于 {{at}}）",
   "work.related.door": "打开会话 {{id}}"
 }

@@ -125,8 +125,9 @@ public static class AttentionStateSlice
         ["declined"] = ["node", "quest", "to", "work", "request"],
         // KNOWCENTRAL2e: what memory waits on the person for one session: ends and replacements to approve, a stopped session's staged rows.
         ["memory"] = ["ends", "replacements", "staged"],
-        // INTEGRATE1h: an integration's wait on the owner: which (decide, superseded, card), its line and what it names.
-        ["integration"] = ["wait", "repository", "line", "branch", "branches", "candidate", "request", "commit", "subject", "unit", "tip", "why"],
+        // INTEGRATE1h: an integration's wait on the owner: which (decide, superseded, card, declaration), its line and what it names; a
+        // declaration's `tip` is its blob and its `state` unaccepted or changed.
+        ["integration"] = ["wait", "repository", "line", "branch", "branches", "candidate", "request", "commit", "subject", "unit", "tip", "why", "state"],
     };
 
     /// <summary>Which shape a field holds, as <c>shape.field</c>, an object of it or a list of them; every other field is a value.</summary>
@@ -310,7 +311,7 @@ public static class AttentionStateSlice
                 hold.Run, hold.Node, hold.Repository, hold.Workspace, hold.Quest, hold.To, hold.Work, hold.Request, Since = Moments.Write(hold.Since),
             })),
             // INTEGRATE1h: the integration's waits on the owner, from the home's integration record and the node runtime's last look.
-            Integration = Written(IntegrationWaits(loop.Home, loop.CardWaits)),
+            Integration = Written(IntegrationWaits(loop.Home, loop.CardWaits, loop.DeclarationsOwed)),
             // SESSWATCH1a: each session the watcher brings to the person, from its memory.
             Quiet = Written(QuietWaits(SessionWatch.Of(loop.Events), loop.Processes)),
             // SUPERVISOR1a-i: the parks a supervisor's held or released decision answers for, from the decisions' memory.
@@ -573,10 +574,11 @@ public static class AttentionStateSlice
     /// <summary>
     /// The integration's waits on the owner (INTEGRATE1h; the integration design §5.8, §17.4), oldest first by kind: each standing candidate
     /// whose judge the policy held for a decide no one has recorded yet, with its members' branches and the judge's words; each superseded
-    /// commit no one has answered; and each landing the runtime last found waiting for the owner's card. A read of the home's integration
-    /// record, which a store from before the family answers with none.
+    /// commit no one has answered; each landing the runtime last found waiting for the owner's card; and each repository whose committed
+    /// declaration the look found waiting for the owner's acceptance (§5.8), <c>unaccepted</c> or <c>changed</c>. A read of the home's
+    /// integration record, which a store from before the family answers with none.
     /// </summary>
-    public static IReadOnlyList<object> IntegrationWaits(string home, IReadOnlyList<IntegrationCardWait> cards)
+    public static IReadOnlyList<object> IntegrationWaits(string home, IReadOnlyList<IntegrationCardWait> cards, IReadOnlyList<DeclarationOwed>? declarations = null)
     {
         var store = new IntegrationStore(home);
         var waits = new List<object>();
@@ -608,6 +610,15 @@ public static class AttentionStateSlice
             {
                 Wait = "card", Id = $"card:{card.Unit}", card.Repository, card.Workspace, card.Branch, card.Unit, card.Tip, Why = card.Said,
                 Since = Moments.Write(card.Since),
+            });
+        }
+
+        foreach (var owed in declarations ?? [])
+        {
+            waits.Add(new
+            {
+                Wait = "declaration", Id = $"declaration:{owed.Repository}", owed.Repository, owed.Workspace, owed.Line, Tip = owed.Blob, State = owed.State,
+                Since = Moments.Write(owed.Since),
             });
         }
 
