@@ -130,33 +130,32 @@ describe('The Agents place, Roles mode', () => {
     expect(await screen.findByRole('radio', { name: 'Roles' })).toBeChecked();
   });
 
-  it('lists the five sections, Working roles and Appointed roles built and the other three saying they come later', async () => {
+  it('lists the five sections, every one built', async () => {
     show(<Place />);
     await openRoles();
     const list = await screen.findByRole('list', { name: 'Roles' });
     const names = within(list).getAllByRole('button').map((button) => button.querySelector('span')?.textContent);
     expect(names).toEqual(['Working roles', 'Appointed roles', 'Work', 'Accounts', 'By repository']);
-    expect(within(list).getAllByText('Comes later.')).toHaveLength(3);
+    expect(within(list).queryAllByText('Comes later.')).toHaveLength(0);
     // It opens on Working roles: the card of its roles stands in the main area.
     expect(await screen.findByRole('heading', { name: 'Working roles' })).toBeTruthy();
     expect(await screen.findByRole('button', { name: 'Edit Build' })).toBeTruthy();
   });
 
-  it('shows a section not built as its name and one quiet line, and remembers the section last left', async () => {
+  it('opens another section in place of Working roles, and remembers the section last left', async () => {
     show(<Place />);
     const user = userEvent.setup();
     await openRoles();
-    await user.click(await screen.findByRole('button', { name: /^Accounts/ }));
-    expect(await screen.findByRole('heading', { name: 'Accounts' })).toBeTruthy();
-    expect(screen.getByText('This section is not built yet.')).toBeTruthy();
+    await user.click(await screen.findByRole('button', { name: /^Appointed roles/ }));
+    expect(await screen.findByRole('heading', { name: 'Appointed roles' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Edit Build' })).toBeNull();
-    expect(window.localStorage.getItem('daoris.list.roles.chosen')).toBe('accounts');
+    expect(window.localStorage.getItem('daoris.list.roles.chosen')).toBe('appointed');
 
     cleanup();
     show(<Place />);
     // A new window opens on the section left.
-    expect(await screen.findByRole('heading', { name: 'Accounts' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: /^Accounts/ })).toHaveAttribute('aria-current', 'true');
+    expect(await screen.findByRole('heading', { name: 'Appointed roles' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /^Appointed roles/ })).toHaveAttribute('aria-current', 'true');
   });
 
   it('folds each role to one line, as before where it reads today\'s settings', async () => {

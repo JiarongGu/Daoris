@@ -428,6 +428,14 @@ export function App() {
     part: agentPart,
     onAnchored: () => setAgentPart(null),
     onOpenPlugin: (plugin) => open('plugins', plugin),
+    // The Roles mode's doors (COMPANYVIEW1d): each thing's home, the Agents mode at an agent's accounts among them.
+    roleDoors: {
+      agent: (agent) => open('agents', agent, { agentPart: 'accounts', agentsMode: 'agents' }),
+      repository: (repository, projectTab) => open('projects', repository, { tab: projectTab }),
+      workspace: (workspace) => open('projects', workspaceItem(workspace), { workspaceTab: 'setup', workspaceSection: 'defaults' }),
+      repositories: () => open('projects'),
+      plugin: (plugin) => open('plugins', plugin),
+    },
   });
 
   // Whether the view in front has a list pane (D118 §3a), whose four doors — the strip's toggle, the View

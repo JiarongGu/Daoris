@@ -24,7 +24,7 @@ Listed first, because nothing below restates their rows: open one of these for w
 | `decisions.md` | each decision's title with its entry's lines, then each dated note with its lines |
 | `outlines/<path>.md` | the declarations or headings of a file over 40 KB, each with its line range |
 
-## Files over 40 KB (354)
+## Files over 40 KB (353)
 
 Each has its outline at `outlines/<its path>.md`: open the outline, then read the range you need, not the file.
 
@@ -34,13 +34,12 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 |---|---|---|
 | `src/Daoris.Web/README.md` | 49 | 442 |
 | `src/Daoris.Web/e2e/platform.spec.ts` | 56 | 967 |
-| `src/Daoris.Web/src/agents/AgentPage.tsx` | 49 | 896 |
+| `src/Daoris.Web/src/agents/AgentPage.tsx` | 51 | 925 |
 | `src/Daoris.Web/src/agents/AgentsView.test.tsx` | 117 | 2251 |
 | `src/Daoris.Web/src/agents/agents.test.ts` | 42 | 730 |
 | `src/Daoris.Web/src/app/App.test.tsx` | 45 | 866 |
-| `src/Daoris.Web/src/app/App.tsx` | 92 | 1580 |
+| `src/Daoris.Web/src/app/App.tsx` | 92 | 1588 |
 | `src/Daoris.Web/src/app/pushedState.test.tsx` | 69 | 1463 |
-| `src/Daoris.Web/src/bridge/driver.ts` | 42 | 767 |
 | `src/Daoris.Web/src/bridge/sessions/sessions.ts` | 54 | 1046 |
 | `src/Daoris.Web/src/data/api.ts` | 55 | 914 |
 | `src/Daoris.Web/src/data/queries.ts` | 52 | 981 |

@@ -88,6 +88,8 @@ const ORGANISMS = new Set<string>([
   './agents/roles/RolesView.tsx',
   // The Appointed roles section (COMPANYVIEW1e): the standing confirmation and every appointment press, so its list below holds none.
   './agents/roles/AppointedRoles.tsx',
+  // And the one read behind Work, Accounts, By repository and an agent's *Used by* (COMPANYVIEW1d): a hook, held by the organisms.
+  './agents/roles/structureRead.ts',
   // A workspace's page's organism (UX6g, D150 §4.3): it holds the driver's answers and every act on a workspace, so the
   // page, its Details and its Setup below it hold none.
   './projects/workspace/WorkspaceView.tsx',
