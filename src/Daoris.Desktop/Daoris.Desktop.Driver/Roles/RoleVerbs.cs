@@ -14,8 +14,60 @@ public sealed class RoleVerb : ChoiceVerb
     public override string Word => "role";
 
     private const string Grammar =
-        "`driver role set <id> [--name \"…\"] [--zh \"…\"] [--takes <work,…>] [--scope machine|workspace:<id>|repository:<id>] "
+        "`driver role suggested [--use]`, `driver role set <id> [--name \"…\"] [--zh \"…\"] [--takes <work,…>] [--scope machine|workspace:<id>|repository:<id>] "
         + "[\"<agent> [<model>|-] [<effort>|-]\" …]`, `driver role remove <id>` or `driver role default <id>`";
+
+    /// <summary><c>role suggested [--use]</c> (MODELROLE1g): the choices Daoris suggests for the seeded roles, said, or with <c>--use</c> set through the role door; null for the rest.</summary>
+    public override Task<int>? RunAsync(IReadOnlyList<string> args, DriverConfig before, DriverChoicesWorld world, CancellationToken ct) =>
+        args.Count > 1 && args[1] == "suggested" ? Task.FromResult(Suggested(args, world)) : null;
+
+    private static int Suggested(IReadOnlyList<string> args, DriverChoicesWorld world)
+    {
+        var said = world.Instance.Out;
+        if (args.Skip(2).Any(word => word != "--use"))
+        {
+            world.Instance.Error.WriteLine($"{DriverChoicesCommand.Prefix}: `driver role suggested` takes `--use` alone.");
+            return 2;
+        }
+
+        var use = args.Contains("--use");
+        var table = ActorSuggestion.For(null);
+        said.WriteLine($"daoris: the choices Daoris suggests (the reference of {ActorSuggestion.Dated}); a suggestion is never applied by itself");
+        foreach (var each in table) said.WriteLine($"  {each.Role,-12}{Choices(each.Choices)}");
+        if (!use)
+        {
+            said.WriteLine("  This can spend more than the order it replaces. Use them for new work on this machine: `daoris driver role suggested --use`.");
+            said.WriteLine("  The window leaves out an agent this machine has not set up; here the choices are set as listed.");
+            return 0;
+        }
+
+        try
+        {
+            var staffing = RoleStaffing.Of(world.ConfigPath) ?? throw new ChoiceWords(Unkept(world));
+            var catalogue = RoleCatalog.Read(staffing.Location);
+            var set = new List<string>();
+            foreach (var each in table)
+            {
+                var slot = catalogue.Slots.FirstOrDefault(found => found.Id == each.Role);
+                if (slot?.Role is null || slot.State is RoleState.Removed or RoleState.Unreadable)
+                {
+                    said.WriteLine($"  {each.Role} is left out: its role is not in the catalogue as a record to set.");
+                    continue;
+                }
+
+                RoleDoor.Apply(staffing, RoleChange.Set(slot.Role), each.Choices);
+                set.Add(each.Role);
+            }
+
+            said.WriteLine($"daoris: set {string.Join(", ", set)}. New work takes them; work already running keeps its choices.");
+            return 0;
+        }
+        catch (Exception refused) when (refused is ChoiceWords or DriverException)
+        {
+            world.Instance.Error.WriteLine($"{DriverChoicesCommand.Prefix}: {refused.Message}");
+            return 2;
+        }
+    }
 
     public override ChoicePress Plan(IReadOnlyList<string> args, DriverConfig before, DriverChoicesWorld world)
     {
