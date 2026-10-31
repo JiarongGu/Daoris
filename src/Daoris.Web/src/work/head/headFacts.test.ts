@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import i18n from '../../locales/i18n';
 import type { Quest, Session } from '../../data/api';
 import type { SessionGrouping } from '../groups';
-import { leadingAgentOf, questFacts, sessionFacts, sessionFactsTip } from './headFacts';
+import { leadingAgentOf, nextPress, questFacts, sessionFacts, sessionFactsTip } from './headFacts';
 
 // The facts line under a head's title (UX7c, D152 §7; the UX7 design §5.2, §5.3): the facts a record's state makes
 // matter, each said once. The clock is held, so every span reads the same on every run.
@@ -96,6 +96,13 @@ describe('a session’s facts line', () => {
     expect(sessionFacts(t, { session: session(), shown: 'working', flow: { parts: 3, landing: false } })[1]).toBe('3 个部分待落地');
     expect(sessionFacts(t, { session: session(), shown: 'working', flow: { parts: 3, landing: true } })[1]).toBe('落地中');
     expect(sessionFacts(t, { session: session({ state: 'awaiting-person' }), shown: 'awaiting-person', flow })[1]).toBe('等你 1 分钟');
+  });
+
+  it('names the press of the first wait, and none where there is none or it has no door', () => {
+    expect(nextPress([])).toBeNull();
+    expect(nextPress([{ kind: 'accept' }, { kind: 'question', below: false }])).toBe('accept');
+    expect(nextPress([{ kind: 'goAhead', number: 2 }])).toBe('answer');
+    expect(nextPress([{ kind: 'discard' }])).toBeNull();
   });
 
   /** WAITSAY1: a working session inside a long call names it and says for how long. */
