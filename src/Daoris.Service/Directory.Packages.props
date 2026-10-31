@@ -12,16 +12,27 @@
   -->
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <!-- The released pin; the gates restore exactly this (D22). -->
+    <DaorisLyntaiReleased>3.5.3</DaorisLyntaiReleased>
+  </PropertyGroup>
+
+  <!-- LYNTAILOCAL1: until Lyntai's next release a local build of its line is consumed (D22's note). The ignored file
+       tools/lyntai-local.mjs writes sets the version and the feed; without it the released pin stands. -->
+  <Import Project="$(MSBuildThisFileDirectory)../../local/lyntai-local.props"
+          Condition="Exists('$(MSBuildThisFileDirectory)../../local/lyntai-local.props')" />
+
+  <PropertyGroup>
+    <DaorisLyntaiVersion Condition="'$(DaorisLyntaiVersion)' == ''">$(DaorisLyntaiReleased)</DaorisLyntaiVersion>
   </PropertyGroup>
 
   <ItemGroup>
     <!-- The cognition sibling, consumed as a LIBRARY and at a RELEASED version (D22): IVectorProvider
          and IVectorStore are the seams semantic search needs, and rebuilding either would be the
          second worse copy D1 was written to prevent. Its serving surfaces are deliberately NOT used. -->
-    <PackageVersion Include="Lyntai.Core" Version="3.5.3" />
+    <PackageVersion Include="Lyntai.Core" Version="$(DaorisLyntaiVersion)" />
     <!-- HttpModelProvider / OllamaProvider: the HTTP vector backends, wired only in the hosts so the
          domain stays on the abstractions. -->
-    <PackageVersion Include="Lyntai.Providers.Basic" Version="3.5.3" />
+    <PackageVersion Include="Lyntai.Providers.Basic" Version="$(DaorisLyntaiVersion)" />
   </ItemGroup>
 
   <ItemGroup>
