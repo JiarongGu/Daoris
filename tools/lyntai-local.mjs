@@ -45,15 +45,22 @@ const dotnetPack = (sibling, version, feed) =>
   spawnSync('dotnet', ['pack', sibling, '-c', 'Release', `-p:Version=${version}`, '-o', feed, '-nodeReuse:false'],
     { cwd: sibling, stdio: 'inherit', windowsHide: true }).status === 0;
 
-/** `Lyntai` beside the main checkout, which a worktree finds through git's common directory. */
-export function defaultSibling(repo = root) {
+/** The main checkout, which a worktree finds through git's common directory. */
+export function mainCheckout(repo = root) {
   const run = spawnGit(['rev-parse', '--path-format=absolute', '--git-common-dir'], { cwd: repo, encoding: 'utf8' });
-  const main = run.status === 0 ? dirname(run.stdout.trim()) : repo;
-  return resolve(main, '..', 'Lyntai');
+  return run.status === 0 ? dirname(run.stdout.trim()) : repo;
 }
 
-/** Packs the sibling and writes the props. `pack(sibling, version, feed)` returns true on success. */
-export function buildLocal({ repo = root, sibling, pack = dotnetPack, head = gitHead, say = console.log } = {}) {
+/** `Lyntai` beside the main checkout. */
+export function defaultSibling(repo = root) {
+  return resolve(mainCheckout(repo), '..', 'Lyntai');
+}
+
+/**
+ * Packs the sibling into the main checkout's feed, one feed every worktree shares, and writes the props both there (the merge
+ * tool hands the main checkout's to its gate trees) and in this worktree. `pack(sibling, version, feed)` returns true on success.
+ */
+export function buildLocal({ repo = root, main = mainCheckout(repo), sibling, pack = dotnetPack, head = gitHead, say = console.log } = {}) {
   const props = join(repo, 'src', 'Daoris.Service', 'Directory.Packages.props');
   const released = existsSync(props) ? releasedVersion(readFileSync(props, 'utf8')) : null;
   if (!released) { say('No DaorisLyntaiReleased in Directory.Packages.props.'); return 2; }
@@ -62,15 +69,19 @@ export function buildLocal({ repo = root, sibling, pack = dotnetPack, head = git
   if (!sha) { say(`${sibling} is not a git checkout with a master or main branch.`); return 1; }
   if (current !== sha) { say(`The Lyntai checkout holds ${current}, not its main line's tip ${sha}; check out its main line first.`); return 1; }
   const version = `${released}-local.${sha}`;
-  const feed = join(repo, 'local', 'lyntai-feed');
-  const propsFile = join(repo, 'local', 'lyntai-local.props');
-  if (existsSync(propsFile) && readFileSync(propsFile, 'utf8').includes(`<DaorisLyntaiVersion>${version}<`) && existsSync(join(feed, `Lyntai.Core.${version}.nupkg`))) {
+  const feed = join(main, 'local', 'lyntai-feed');
+  const propsFiles = [...new Set([join(main, 'local', 'lyntai-local.props'), join(repo, 'local', 'lyntai-local.props')])];
+  const written = (file) => existsSync(file) && readFileSync(file, 'utf8').includes(`<DaorisLyntaiVersion>${version}<`);
+  const packed = existsSync(join(feed, `Lyntai.Core.${version}.nupkg`));
+  if (packed && propsFiles.every(written)) {
     say(`Lyntai ${version} (commit ${sha}) is already packed and in use.`);
     return 0;
   }
-  mkdirSync(feed, { recursive: true });
-  if (!pack(sibling, version, feed)) { say('dotnet pack failed.'); return 2; }
-  writeAtomic(join(repo, 'local', 'lyntai-local.props'), localProps({ version, feed }));
+  if (!packed) {
+    mkdirSync(feed, { recursive: true });
+    if (!pack(sibling, version, feed)) { say('dotnet pack failed.'); return 2; }
+  }
+  for (const file of propsFiles) writeAtomic(file, localProps({ version, feed }));
   say(`Lyntai commit ${sha}: ${version} is in ${feed}. The next restore uses it.`);
   return 0;
 }

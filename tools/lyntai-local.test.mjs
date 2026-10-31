@@ -31,6 +31,7 @@ test('the tool packs at the released version and the commit, and writes the prop
   const packed = [];
   const code = buildLocal({
     repo: fake,
+    main: fake,
     sibling,
     head: () => ({ tip: 'abc1234', current: 'abc1234' }),
     pack: (from, version, feed) => { packed.push({ from, version, feed }); return true; },
@@ -42,7 +43,7 @@ test('the tool packs at the released version and the commit, and writes the prop
 
   let code2;
   withProps(null, () => {
-    const stub = { repo, sibling, head: () => ({ tip: 'abc1234', current: 'abc1234' }), say: () => {} };
+    const stub = { repo, main: repo, sibling, head: () => ({ tip: 'abc1234', current: 'abc1234' }), say: () => {} };
     code2 = buildLocal({ ...stub, pack: (from, version, feed) => { packed.push({ from, version, feed }); return true; } });
     const props = readFileSync(localFile, 'utf8');
     assert.match(props, new RegExp(`<DaorisLyntaiVersion>${released}-local\\.abc1234</DaorisLyntaiVersion>`));
@@ -60,9 +61,28 @@ test('the tool packs at the released version and the commit, and writes the prop
   assert.equal(packed[0].feed, join(repo, 'local', 'lyntai-feed'));
 });
 
+test("a worktree's run packs into the main checkout's one feed and writes the props in both", () => {
+  const main = join(scratch, 'main');
+  const tree = join(scratch, 'tree');
+  const sibling = join(scratch, 'Lyntai-shared');
+  for (const at of [main, tree]) mkdirSync(join(at, 'src', 'Daoris.Service'), { recursive: true });
+  mkdirSync(sibling, { recursive: true });
+  writeFileSync(join(tree, 'src', 'Daoris.Service', 'Directory.Packages.props'), readFileSync(propsFile, 'utf8'));
+  const feeds = [];
+  const code = buildLocal({
+    repo: tree, main, sibling, head: () => ({ tip: 'abc1234', current: 'abc1234' }), say: () => {},
+    pack: (_from, _version, feed) => { feeds.push(feed); return true; },
+  });
+  assert.equal(code, 0);
+  assert.deepEqual(feeds, [join(main, 'local', 'lyntai-feed')]);
+  for (const at of [main, tree]) {
+    assert.ok(readFileSync(join(at, 'local', 'lyntai-local.props'), 'utf8').includes(join(main, 'local', 'lyntai-feed').replaceAll('\\', '/')));
+  }
+});
+
 test('a missing sibling is refused with 1 and nothing is packed', () => {
   let packed = false;
-  const code = buildLocal({ repo, sibling: join(scratch, 'absent'), pack: () => { packed = true; return true; }, say: () => {} });
+  const code = buildLocal({ repo, main: repo, sibling: join(scratch, 'absent'), pack: () => { packed = true; return true; }, say: () => {} });
   assert.equal(code, 1);
   assert.equal(packed, false);
 });
