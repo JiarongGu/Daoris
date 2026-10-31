@@ -119,7 +119,7 @@ Paths below are relative to this file. Historical documents have their own [arch
 | `2026-10-23-git-app-brief.md` | Brief: GITAPP1 git app and fast Review
 | `2026-10-23-git-app-proposals.md` | Proposals: GITAPP1, sealed
 | `2026-10-23-git-app-design.md` | Proposed design: Review as a parallel git graph (D202)
-| `2026-10-23-git-writes-design.md` | Proposed design: the person's git writes (D204)
+| `2026-10-23-git-writes-design.md` | Proposed design: the person's git writes (D204), round 2 after Codex's read
 | `2026-10-31-git-writes-read-codex.md` | Read: GITAPP2, Codex's read of the git writes design; another round
 | `2026-10-23-git-app-reads.md` | Reads: GITAPP1 rounds 1-4
 | `2026-10-23-actors-brief.md` | Brief: MODELROLE1 actors
