@@ -164,6 +164,22 @@ public sealed record TogetherOperation(
             StringComparison.OrdinalIgnoreCase);
 }
 
+/// <summary>An operation on the wire for one session's page (<c>TOGETHER</c>): no tree, no path, no account of its own.</summary>
+public static class TogetherWire
+{
+    public static object Of(TogetherOperation operation, string session) => new
+    {
+        operation.Id,
+        operation.Phase,
+        Role = operation.Members.Any(each => string.Equals(each.Session, session, StringComparison.OrdinalIgnoreCase)) ? "member" : "head",
+        Head = operation.Head.Record,
+        Members = operation.Members.Select(each => new { each.Session, each.Branch, each.Tip }),
+        operation.Why,
+        Into = operation.Phase == TogetherPhase.Landed ? operation.Attempt?.Target : null,
+        Line = operation.Attempt?.Form == TogetherForms.Merge,
+    };
+}
+
 /// <summary>
 /// The operations bringing sessions together (<see cref="TogetherOperation"/>): <c>&lt;home&gt;/sessions/together.json</c>, machine-local,
 /// edited under its record lock, the third of the door's lock order. Each change is a compare of the phase it expects, so two doors
@@ -341,6 +357,19 @@ public sealed class TogetherOperations(string home)
                     : each with { Phase = TogetherPhase.Uncertain, Attempt = attempt, Since = at },
             };
         });
+
+    /// <summary>Forget an operation whose sessions were deleted: nothing reads it again, and it binds nothing.</summary>
+    public bool Drop(string id)
+    {
+        var dropped = false;
+        Edit(all =>
+        {
+            if (!all.Any(each => each.Id == id)) return null;
+            dropped = true;
+            return [.. all.Where(each => each.Id != id)];
+        });
+        return dropped;
+    }
 
     private static string NewId() => "tg" + Guid.NewGuid().ToString("N")[..10];
 

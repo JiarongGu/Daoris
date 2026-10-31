@@ -128,6 +128,10 @@ export const DECLARED: Readonly<Record<string, { scopes: readonly string[]; sess
   SESSION_QUEUE_EDIT: { scopes: ['sessions'], session: 'session' },
   SESSION_QUEUE_MOVE: { scopes: ['sessions'], session: 'session' },
   SESSION_MEMORY_DECIDE: { scopes: ['sessions'], session: 'session' },
+  // LINESTOGETHER1d: the head's presses on an operation bringing sessions together.
+  TOGETHER_PRESS: { scopes: ['sessions'], session: 'session' },
+  TOGETHER_ASK_AGAIN: { scopes: ['sessions'], session: 'session' },
+  TOGETHER_LET_GO: { scopes: ['sessions'], session: 'session' },
   ACCOUNT_USE: { scopes: ['harnesses'] },
   // The accounts' *Read now* and the read as Agents opens (SWITCH1d): each account's use read into its windows.
   ACCOUNTS_READ: { scopes: ['harnesses'] },

@@ -445,7 +445,7 @@ describe('the real glossary and catalogues', () => {
    * in Chinese, and a sentence that says *role* must not call it 职责 (the words *role*'s entry avoids), under `--all`.
    */
   it('hold the role to 角色: its labels say it and no sentence about a role says 职责', () => {
-    const labels = ['work.actor.title', 'settings.ai.actors.title', 'settings.daoris.label.roles'];
+    const labels = ['work.actor.title', 'settings.ai.roles.title', 'settings.daoris.label.roles'];
     const sentence = 'projects.supervisor.refused.window-only';
     const wrong = { ...zh, ...Object.fromEntries(labels.map((key) => [key, '职责'])), [sentence]: '只有 Daoris 的窗口可以任命或停用一个职责。' };
     const found = check(glossary, en, wrong, { all: true })

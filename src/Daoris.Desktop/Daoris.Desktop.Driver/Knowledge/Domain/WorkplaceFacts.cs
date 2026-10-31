@@ -159,19 +159,28 @@ public sealed record LandedBranch(
     public QuestSubmissionRef? Submission { get; init; }
 
     /// <summary>
+    /// The sessions a combined Accept brought into this landing (LINESTOGETHER1d), each at the tip it was bound at: carried by its work
+    /// and its push, never named as landed. None in a record from before.
+    /// </summary>
+    public IReadOnlyList<LandedWork> Brought { get; init; } = [];
+
+    /// <summary>
     /// The work of each session it carries, oldest first (FABRIC-UNITLINK1, FABRIC-CLOSE1h11): its own session's, then each advance's,
     /// each with the commit the branch stood at once that work was on it, and the quest, the unit and the submission the record keeps for
-    /// it, null where it keeps none.
+    /// it, null where it keeps none. The sessions brought into a landing or an advance follow its own, at its commit.
     /// </summary>
     public IReadOnlyList<LandedWork> Work()
     {
+        var first = Advances.Count > 0 ? Advances[0].From : Tip;
         var work = new List<LandedWork>(Advances.Count + 1)
         {
-            new(Session, Advances.Count > 0 ? Advances[0].From : Tip) { Quest = Served, Unit = OwnUnit(), Submission = Submission },
+            new(Session, first) { Quest = Served, Unit = OwnUnit(), Submission = Submission },
         };
+        work.AddRange(Brought.Select(each => each with { Tip = first }));
         foreach (var advance in Advances)
         {
             work.Add(new(advance.Session, advance.To) { Quest = advance.Quest, Unit = advance.Unit, Submission = advance.Submission });
+            work.AddRange(advance.Brought.Select(each => each with { Tip = advance.To }));
         }
 
         return work;
@@ -291,6 +300,9 @@ public sealed record LandedAdvance(string From, string To, DateTimeOffset At, st
     /// hand-off of its work back. Null for a done, and in a record from before, whose session is judged only on its result being in.
     /// </summary>
     public QuestSubmissionRef? Submission { get; init; }
+
+    /// <summary>The sessions a combined Accept brought into this advance (LINESTOGETHER1d), each at its bound tip; none from before.</summary>
+    public IReadOnlyList<LandedWork> Brought { get; init; } = [];
 }
 
 

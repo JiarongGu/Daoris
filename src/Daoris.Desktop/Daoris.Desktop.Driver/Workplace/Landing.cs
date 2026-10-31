@@ -34,6 +34,9 @@ public sealed record LandingSubject(string Session, string? Quest, string? Title
     /// </summary>
     public QuestSubmissionRef? Submission { get; init; }
 
+    /// <summary>The sessions a combined Accept brings into this landing (LINESTOGETHER1d), which its record or advance lists beside it.</summary>
+    public IReadOnlyList<LandedWork> Brought { get; init; } = [];
+
     /// <summary>
     /// The branch an entry's Accept lands this part on (ACCEPTALL1, D167's 2026-10-15 amendment point 1): the entry's one branch,
     /// named once for its first part, so its parts land together. Null names it by the rule for this subject, as before; a name the

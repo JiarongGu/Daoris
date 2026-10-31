@@ -43,7 +43,7 @@ public static class WorkflowRunWords
         [
             WorkflowRunDetails.Accept, WorkflowRunDetails.Automatic, WorkflowRunDetails.Branch, WorkflowRunDetails.Merge,
             WorkflowRunDetails.Already, WorkflowRunDetails.Nothing, WorkflowRunDetails.Refused, WorkflowRunDetails.Gone,
-            WorkflowRunDetails.Elsewhere,
+            WorkflowRunDetails.Elsewhere, WorkflowRunDetails.BroughtInto,
         ],
         [WorkflowKinds.PullRequest] =
         [
@@ -230,6 +230,9 @@ public static class WorkflowRunWords
             (WorkflowKinds.Landing, WorkflowRunDetails.Refused) => $"Cannot land automatically: {Refused(step.Code)}.",
             (WorkflowKinds.Landing, WorkflowRunDetails.Gone) => "Its tree was discarded before it landed.",
             (WorkflowKinds.Landing, WorkflowRunDetails.Elsewhere) => "It ran on another machine, which keeps its landing.",
+            (WorkflowKinds.Landing, WorkflowRunDetails.BroughtInto) => step.Code == "line"
+                ? $"Brought into the line `{step.Branch}` by another session's Accept."
+                : $"Brought into `{step.Branch}` by another session's Accept.",
 
             (WorkflowKinds.PullRequest, WorkflowRunDetails.Merging) => step.Code switch
             {

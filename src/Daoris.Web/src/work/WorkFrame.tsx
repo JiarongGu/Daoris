@@ -17,6 +17,7 @@ import {
   useEntryLanding, useLandEntry, useSessionHelpers, useSessionPartners, useUnderWaySubject, useSessionProcess, useWorkState, usePushedCalls, withCall,
   useAnswerPermission, usePermissionWaits, useSessionHandOverAsk, useApproveHandOver, useDeclineHandOver, type HandOverWord,
   useAnswerWaits, useAnswerAlone, useRunNodeWord, useResolveHeld, useSessionQuestion, useStopWaiting,
+  useBringTogether, useTogether, useTogetherAct,
 } from '../bridge/shell';
 import { handOverRefused, type HandOverAskWait } from './waits/HandOverAgentAsk';
 import { permissionSaid, type PermissionWaits } from './waits/PermissionAsks';
@@ -467,6 +468,10 @@ export function WorkFrame({
   const spent = useSessionSpent(attendedEntry?.parts.map((part) => part.session));
   // What the service kept of the attended session's finished tree, once the tree is let go (KEEPSIZE1).
   const related = useSessionRelated(attended?.id);
+  // LINESTOGETHER1d: the operation bringing sessions together it is in, and the head's presses on it.
+  const together = useTogether(attended?.id);
+  const bringTogether = useBringTogether();
+  const togetherAct = useTogetherAct();
   // Its memory changes and the person's decision on them (KNOWCENTRAL2e): an end awaiting them, or what an ended session left staged.
   const memoryRows = useSessionMemory(attended?.id);
   const decideMemory = useDecideSessionMemory();
@@ -2580,6 +2585,20 @@ export function WorkFrame({
             relations={attended ? relationsOf(attended, quest, quests.data ?? [], sessions.data ?? []) : undefined}
             related={related}
             onRelated={attend}
+            together={attended ? {
+              candidates: related.filter((row) => row.read !== 'not-read').map((row) => row.id),
+              operation: together,
+              busy: bringTogether.isPending || togetherAct.isPending || landEntry.isPending,
+              said: bringTogether.data?.refused ?? togetherAct.data?.refused
+                ?? (landEntry.variables?.entry === attendedEntry?.entry ? landEntry.data?.message ?? null : null),
+              onBring: here ? (members) => bringTogether.mutate({ session: attended.id, members }) : undefined,
+              onLetGo: () => togetherAct.mutate({ session: attended.id, act: 'let-go' }),
+              onAskAgain: () => togetherAct.mutate({ session: attended.id, act: 'ask-again' }),
+              onAccept: attendedEntry
+                ? () => landEntry.mutate({ entry: attendedEntry.entry, parts: Math.max(1, entryOffered), leaveOut: [] })
+                : undefined,
+              onSession: attend,
+            } : undefined}
             memory={attended ? {
               rows: memoryRows,
               ended: !live,

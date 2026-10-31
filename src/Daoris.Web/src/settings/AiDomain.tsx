@@ -12,8 +12,8 @@ import { workspacesOf } from '../data/workspaces';
 import { useModeChoice } from '../help/access/HelpModePicker';
 import { fullAdds } from '../help/access/modes';
 import { AiJobs, type SearchTier } from './AiJobs';
-import { ActorsCard, type ActorChoice } from './ai/Actors';
-import { RolesCard, roleName } from './ai/Roles';
+import { RolesCard, roleName, type ActorChoice } from './ai/Roles';
+import { refusedNoRoute } from '../bridge/call';
 import { AskDaorisAbout, IntakeAbout } from './ai/ActorAbout';
 import { namer } from './accounts/namer';
 import type { StarterDoor } from '../help/starters';
@@ -122,6 +122,8 @@ function MachineAi({ search, notify, onGo }: { search?: SearchTier; notify: Noti
 
   // FOUNDATION1y-i: the role catalogue, each change the person's press over SET_ROLE, judged by the driver's role door.
   const roles = useRoles();
+  // Why there is no catalogue: a shell older than the route says so by NO_ROUTE or by answering nothing; any other refusal is a failed read.
+  const rolesRead = roles.data ? 'ok' : roles.isError ? (refusedNoRoute(roles.error) ? 'notOffered' : 'failed') : roles.isSuccess ? 'notOffered' : 'loading';
   const setRole = useSetRole();
   const pressRole = (press: RoleChangePress, answered: { done: () => void; refused: (sentence: string) => void }) => {
     const row = roles.data?.roles.find((each) => each.id === press.id);
@@ -190,15 +192,14 @@ function MachineAi({ search, notify, onGo }: { search?: SearchTier; notify: Noti
         }
         : undefined}
     />
-    {/* An older shell answers no actors, and gets no card. */}
-    {actorRows.length > 0 && (
-      <ActorsCard
-        rows={actorRows} agents={agents} about={about} busy={setActor.isPending || answerFound.isPending} onSave={saveActor}
-        found={found.data ?? []} onAnswerFound={answerStaffingFound}
+    {/* One row for each role (COMPANYVIEW1a). A shell that answers neither the roles nor the staffing gets no card. */}
+    {(roles.data || actorRows.length > 0 || rolesRead === 'failed') && (
+      <RolesCard
+        catalogue={roles.data ?? null} read={rolesRead} staffing={actorRows} agents={agents} about={about}
+        busy={setRole.isPending || setActor.isPending || answerFound.isPending}
+        onSet={pressRole} onSetActor={saveActor} found={found.data ?? []} onAnswerFound={answerStaffingFound}
       />
     )}
-    {/* An older shell answers no roles, and gets no card. */}
-    {roles.data && <RolesCard catalogue={roles.data} agents={agents} busy={setRole.isPending} onSet={pressRole} />}
     </CardStack>
   );
 }

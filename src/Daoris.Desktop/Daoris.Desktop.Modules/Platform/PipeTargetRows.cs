@@ -85,6 +85,8 @@ internal static class PipeTargetRows
         Row("SESSION_GO_AHEAD", LoopGround.Wait("go-ahead", "ask", "number"));
         // KNOWCENTRAL2e: the session whose memory is decided; the service refuses an end no longer awaiting or a session running again.
         Row("SESSION_MEMORY_DECIDE", new SessionGround("session"));
+        // LINESTOGETHER1d: the head the sessions are brought into; the press judges every member again under its locks.
+        foreach (var route in new[] { "TOGETHER_PRESS", "TOGETHER_ASK_AGAIN", "TOGETHER_LET_GO" }) Row(route, new SessionGround("session"));
         foreach (var route in new[] { "SESSION_HELPER_APPROVE", "SESSION_HELPER_DECLINE" })
         {
             Row(route, Wait("HELPER_WAITS", ["ask", "session"], _ => null,

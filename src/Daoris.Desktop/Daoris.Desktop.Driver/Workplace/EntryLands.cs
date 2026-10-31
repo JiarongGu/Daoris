@@ -83,6 +83,9 @@ public static class EntryPartOutcome
 
     /// <summary>An earlier part was refused, so it was not tried: the order is the ledger's, and a later part may build on it.</summary>
     public const string NotTried = "not-tried";
+
+    /// <summary>Its work was replayed onto the head bringing it in (LINESTOGETHER1d): the head's landing carries it, and it lands nothing itself.</summary>
+    public const string BroughtInto = "brought-into";
 }
 
 /// <summary>One part's outcome at an entry's Accept, with its landing's answer where it was tried.</summary>
@@ -99,8 +102,11 @@ public sealed record EntryLanding(bool Landed, string Message, string? Branch, I
 /// <param name="LeftOut">The person chose to leave it out.</param>
 public sealed record EntryStep(string Session, string? SameTreeAs, bool LeftOut)
 {
+    /// <summary>A member of the operation bringing sessions together into the entry's head (LINESTOGETHER1d): it lands with the head.</summary>
+    public bool BroughtInto { get; init; }
+
     /// <summary>Whether the press lands it: a tree of its own the person kept.</summary>
-    public bool Lands => SameTreeAs is null && !LeftOut;
+    public bool Lands => SameTreeAs is null && !LeftOut && !BroughtInto;
 }
 
 /// <summary>
@@ -116,7 +122,8 @@ public static class EntryLandings
     /// Each part's step, in the order handed (the ledger's): a part whose tree an earlier part already has lands with it, once; a
     /// part the person chose to leave out does not land. Nothing else leaves a part out: a superseded part the person kept lands.
     /// </summary>
-    public static IReadOnlyList<EntryStep> Sequence(IReadOnlyList<EntryLandingPart> parts, IReadOnlySet<string> leaveOut)
+    /// <param name="brought">The members an operation brings into the entry's head (LINESTOGETHER1d): each marked brought into, landing nothing.</param>
+    public static IReadOnlyList<EntryStep> Sequence(IReadOnlyList<EntryLandingPart> parts, IReadOnlySet<string> leaveOut, IReadOnlySet<string>? brought = null)
     {
         var trees = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         var steps = new List<EntryStep>(parts.Count);
@@ -127,7 +134,7 @@ public static class EntryLandings
             if (same is null) trees[tree] = part.Session;
             // A tree is left out whole (REVIEWFLOW1d): its later parts are left out with its first, not said to share it.
             var gone = leaveOut.Contains(same ?? part.Session);
-            steps.Add(new EntryStep(part.Session, gone ? null : same, gone));
+            steps.Add(new EntryStep(part.Session, gone ? null : same, gone) { BroughtInto = !gone && brought?.Contains(part.Session) == true });
         }
 
         return steps;
@@ -274,17 +281,25 @@ internal sealed class EntryLands(TreeContext context, TreeLands lands, TreeLandS
     /// </summary>
     /// <param name="leaveOut">The parts the person chose to leave out (point 3); a superseded part not in it lands.</param>
     /// <param name="inUse">The trees sessions still running or waiting hold, asked by each part's follow and tidy.</param>
+    /// <param name="together">The operation bound to the entry's head (LINESTOGETHER1d): the head lands by its combined Accept.</param>
     internal async Task<EntryLanding> LandAsync(
         IReadOnlyList<EntryLandingPart> parts, LandingSubject subject, IReadOnlySet<string> leaveOut, CancellationToken ct = default,
-        Func<CancellationToken, Task<IReadOnlySet<string>>>? inUse = null)
+        Func<CancellationToken, Task<IReadOnlySet<string>>>? inUse = null, EntryTogether? together = null)
     {
-        var steps = EntryLandings.Sequence(parts, leaveOut);
+        var steps = EntryLandings.Sequence(parts, leaveOut, together?.Members);
         for (var at = 0; at < parts.Count; at++)
         {
             if (!steps[at].Lands || parts[at].Gate?.Refusal is not { } held) continue;
             return new EntryLanding(false, EntryLandWords.Held(parts[at].Session, held.Message), null,
                 [.. parts.Select((part, each) => each == at ? new EntryPartLanding(part.Session, EntryPartOutcome.Refused, held)
                     : new EntryPartLanding(part.Session, steps[each].Lands ? EntryPartOutcome.NotTried : Outcome(steps[each])))]);
+        }
+
+        // The preflight reads the members too: one held by its review, opinion or workflow lands nothing.
+        if (together?.Gates.FirstOrDefault(each => each.Value?.Refusal is not null) is { Key: { } member, Value.Refusal: { } memberHeld })
+        {
+            return new EntryLanding(false, EntryLandWords.Held(member, memberHeld.Message), null,
+                [.. parts.Select((part, each) => new EntryPartLanding(part.Session, steps[each].Lands ? EntryPartOutcome.NotTried : Outcome(steps[each])))]);
         }
 
         var (form, target) = await TargetAsync(parts, subject, ct).ConfigureAwait(false);
@@ -314,10 +329,13 @@ internal sealed class EntryLands(TreeContext context, TreeLands lands, TreeLandS
                 with { Served = part.Own?.Served, Submission = part.Own?.Submission };
             // FABRIC-CLOSE1h3: each part held to its own quest's result, judged again under its own tree's hold and before its push, so
             // a part whose result moved while an earlier one landed or waited makes nothing (D173's note).
-            var landed = await lands.LandAsync(part.Tree, named,
-                ct, inUse, AcceptedBy.Person, part.Gate,
-                joins: form == LandingForm.Branch, fetched: true,
-                judged: part.Pressed?.Judged, beforePush: part.Pressed?.BeforePush).ConfigureAwait(false);
+            var landed = together is not null && string.Equals(part.Session, together.Head, StringComparison.Ordinal)
+                ? await new TogetherAccepts(context, lands).LandAsync(together.Operation, named, together.Gates, ct, inUse, part.Gate,
+                    part.Pressed?.Judged, part.Pressed?.BeforePush).ConfigureAwait(false)
+                : await lands.LandAsync(part.Tree, named,
+                    ct, inUse, AcceptedBy.Person, part.Gate,
+                    joins: form == LandingForm.Branch, fetched: true,
+                    judged: part.Pressed?.Judged, beforePush: part.Pressed?.BeforePush).ConfigureAwait(false);
             if (landed.Landed)
             {
                 landedOn.Add(part.Session);
@@ -432,7 +450,8 @@ internal sealed class EntryLands(TreeContext context, TreeLands lands, TreeLandS
     private static LandingSubject Joining(LandingSubject subject, string session, string form, string target) =>
         subject with { Session = session, EntryBranch = form == LandingForm.Branch ? target : null, Entered = null };
 
-    private static string Outcome(EntryStep step) => step.SameTreeAs is not null ? EntryPartOutcome.SameTree : EntryPartOutcome.LeftOut;
+    private static string Outcome(EntryStep step) =>
+        step.BroughtInto ? EntryPartOutcome.BroughtInto : step.SameTreeAs is not null ? EntryPartOutcome.SameTree : EntryPartOutcome.LeftOut;
 }
 
 /// <summary>An entry's Accept in words (ACCEPTALL1): a part joining the entry's branch, a conflict with its earlier work, and the answer.</summary>
@@ -491,6 +510,10 @@ public static class EntryLandWords
                 : $"Landed {landed} part(s) on `{branch}`, in the order they ran.",
         };
         if (outcomes.Any(each => each.Outcome == EntryPartOutcome.LeftOut)) said.Add($"Left out {Count(EntryPartOutcome.LeftOut)}, as you chose.");
+        if (landed > 0 && outcomes.Any(each => each.Outcome == EntryPartOutcome.BroughtInto))
+        {
+            said.Add($"Brought {Count(EntryPartOutcome.BroughtInto)} part(s) in with the head, which landed none of them again.");
+        }
         if (outcomes.FirstOrDefault(each => each.Outcome == EntryPartOutcome.Refused) is { Landing: { } refused } at)
         {
             said.Add($"`{at.Session}` was refused: {refused.Message}");
