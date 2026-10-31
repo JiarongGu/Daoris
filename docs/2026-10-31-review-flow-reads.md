@@ -93,3 +93,32 @@ Read only; nothing changed. No `local/` directory was read.
 ### The steward's settlement
 
 Both makers accept every row but the door. The Opus maker's round-1 blocking findings are answered in the revision (B1 by REVIEWFLOW1d, B2 and B3 in LINESTOGETHER1d), and Codex now asks another round on LINESTOGETHER1d alone. So the design is accepted for REVIEWFLOW1a (built), REVIEWFLOW1d, REVIEWFLOW1b, LINESTOGETHER1a, 1b and 1c, built in that order where they share files; LINESTOGETHER1d (and 1e and REVIEWFLOW1c after it) is revised once more on Codex's three blocking changes and read again by both makers.
+
+## Round 3: the reads of the door's revision
+
+### Codex's read
+
+**1. Verdict: another round**, limited to LINESTOGETHER1d’s recovery contract. Keep 1e and REVIEWFLOW1c dependent on that correction.
+
+Below, **Driver** means `src/Daoris.Desktop/Daoris.Desktop.Driver`.
+
+**2. The three blocking changes**
+
+- **Containment by complete accounting — resolved as a design contract.** Section 4 now examines every remaining commit independently and accounts for every changed path; a conflict cannot hide later clean changes. This addresses `Driver/Workplace/LineHolds.cs:191`, where the existing sequential trial stops at its first conflict. Explicit supersession, shown with both diffs, replaces the file-touch shortcut. Rejecting merges throughout the landing’s replay range also addresses `LineHolds.cs:296` and `Driver/Workplace/BranchReplays.cs:517`. Row 1d includes the omitted-later-commit regression.
+
+- **Admission serialized with landing and discard — resolved as a design contract.** Taking all tree landing holds before binding closes the gap around `Driver/Workplace/TreeLands.cs:404–415`. The specified primitives support cross-process exclusion: `Driver/Workplace/LandingHolds.cs:79`, `Driver/Workplace/TreeLock.cs:50,58`, and `Driver/Store/RecordLock.cs:42`. Admission’s shared repository lock excludes discard’s exclusive lock (`Driver/Workplace/TreeRemovals.cs:52`). The revision explicitly prohibits acquiring landing holds while holding the later locks and includes both race directions in its proofs.
+
+- **Durable inclusion, gate provenance and workflow settlement — not fully resolved.** Making the operation authoritative answers merge’s missing landing record (`Driver/Workplace/TreeLands.cs:771`) and the member workflow’s reliance on `facts.Accepted` (`Driver/Workflows/Domain/WorkflowRun.cs:995`). However, “none … *ready to accept*” is unsafe recovery. Git creates the branch at `TreeLands.cs:1119`, before its landing record at `:650`; `:859–870` explicitly allows the branch to survive a failed record write. A crash in that interval therefore leaves an actual landing with no recovery record. Merge recovery also needs an exact request identity: `Driver/Workplace/IntegrationPresses.cs:22–34` checks a particular request ID, whereas the proposed operation records neither that ID nor the replayed tip passed at `TreeLands.cs:297–300`.
+
+  **Concrete change:** durably correlate each landing attempt with its operation, target ref, expected/resulting tip, and exact integration request. Reconcile missing records against that attempt’s git effects; retain an uncertain state until proved, rather than returning directly to *ready*. Test interruption after ref creation but before record persistence, and after merge admission before saving its correlation.
+
+**3. New blocking findings**
+
+None separate from the remaining recovery gap above. Nothing changed; no `local/` directory was read.
+### The Opus maker's read
+
+**Verdict:** accept after named changes; one new finding is blocking, local to §4. B2 resolved (no merge commits in the replayed range; containment by content or patch id, `LineHolds.cs:73-117`); B3 resolved, with a wording fix: `said_settled` records the record the word left (`SaidKeys.cs:8`), so the successor is the record opened `from` the one that took the word. Complete accounting resolved. Lock order resolved for binding against landing and discard: the landing hold is a file-handle lock (`LandingHolds.cs:27-30`) taken before `judged` (`TreeLands.cs:405-416`); `TreeLock` never waits (`:50`, `:58`); `RecordLock` gives up after 10 s (`:23`, `:42`); the only `TakeAsync` caller is `TreeLands.cs:405`. Merge inclusion resolved in design.
+
+**BLOCKING: Daoris's own replays move bound branches.** The repository's sync press (`TreeSync.cs:220-242`, reached from `LinesRoutes.cs:554`, `TreesConsole.cs:278` and the helper's sync proposal) and a tree's update (`TreeUpdates.cs:101`) take only the tree lock and read no binding; both rebase ended session branches onto a moved line, row 1d's own fixture. After *checked* that moves the head's pinned tip, so the Accept lands nothing and the operation sits at *ready to accept* with its members bound. Change: every holder of the tree lock alone that rewrites a branch reads the bindings under the record lock and leaves a bound tree as it stands, naming its operation; a head moved after *checked* goes back to *checking*. Proof: a sync press and a tree update on a moved line while an operation is bound.
+
+**Named, not blocking:** say how a path the line's rules settle is accounted (generated files, the declared backlog, row tables, `LineHolds.cs:150-188`), or §3's own example, two sessions changing `TASKS.md`, reads *missing*; name the look's integration run as a second settler of a merge waiting on the line's run (`IntegrationPresses.cs:33`); a discard with no service takes no tree lock (`TreeRemovals.cs:52`), so its read of the bindings must not depend on it.
