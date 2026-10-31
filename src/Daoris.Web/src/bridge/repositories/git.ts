@@ -1,7 +1,8 @@
-import { useMutation, useQueries, useQuery } from '@tanstack/react-query';
+import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenora } from '@shenora/react';
 import { keys } from '../../data/queries';
 import { call } from '../call';
+import { askHeld } from '../state/held';
 
 // Git's reads (GIT1d-b, D147 §2, D150): the screen's door to `daoris-driver git`, the same reads over the same checkouts, for
 // Repositories' Branches and History tabs. Shell-only: a checkout is this machine's, and no machine path leaves it (D47 §4).
@@ -292,6 +293,60 @@ export const useGitBlame = (repository: string | null, commit: string | null, pa
     queryFn: () => call<GitAnswer<GitBlame>>('GIT_BLAME', { repository, commit, path, ...(workspace ? { workspace } : {}) }),
     enabled: isAvailable && Boolean(repository) && Boolean(commit) && Boolean(path),
     staleTime: Infinity,
+  });
+  return { available: isAvailable, query };
+};
+
+/** One file as a diff names it (GITAPP2b): `A` · `M` · `D` · `T`, with the mode and blob id of each side (all zeros where a side holds none). */
+export type ChangeEntry = { path: string; status: string; oldMode: string; newMode: string; oldBlob: string; newBlob: string };
+
+/** A file the index holds in conflict: status's two letters, and the mode and blob id of stages 1, 2 and 3. */
+export type UnmergedEntry = { path: string; code: string; modes: string[]; blobs: string[] };
+
+/**
+ * What a checkout's changes are (GITAPP2b), three observations made at `readAt`: HEAD → index, index → worktree (the index not
+ * refreshed), and status's untracked and unmerged entries. A staged addition whose file was then removed is in both lists.
+ */
+export type CheckoutChanges = {
+  head: string | null;
+  staged: ChangeEntry[];
+  unstaged: ChangeEntry[];
+  untracked: string[];
+  unmerged: UnmergedEntry[];
+  readAt: string;
+};
+
+// Told by event (NOBLOCK1): a pending answer is none yet, which the query holds as null and the tab says as reading.
+const readChanges = (raw: unknown): GitAnswer<CheckoutChanges> | null => {
+  const answer = raw as Partial<GitAnswer<CheckoutChanges>> | null;
+  if (!answer || typeof answer !== 'object' || !('value' in answer)) return null;
+  const value = answer.value;
+  return {
+    value: value && Array.isArray(value.staged) && Array.isArray(value.unstaged)
+      ? { ...value, untracked: value.untracked ?? [], unmerged: value.unmerged ?? [] }
+      : null,
+    refusal: answer.refusal ?? null,
+    problem: answer.problem ?? null,
+    commands: answer.commands ?? [],
+    remembered: answer.remembered === true,
+  };
+};
+
+/**
+ * A checkout's changes, read again at every open, window focus and *Refresh* (GITAPP2b, the git-writes design §1): never fresh
+ * enough to keep, so a mount asks again whatever it held, and what the shell holds until its fresh read lands carries its own `readAt`.
+ */
+export const useGitChanges = (repository: string | null, workspace = '', enabled = true) => {
+  const { isAvailable } = useShenora();
+  const client = useQueryClient();
+  const queryKey = keys.gitChanges(repository ?? '', workspace);
+  const query = useQuery({
+    queryKey,
+    queryFn: () => askHeld('GIT_CHANGES', client, queryKey, { repository, ...(workspace ? { workspace } : {}) }, readChanges),
+    enabled: isAvailable && Boolean(repository) && enabled,
+    staleTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: 'always',
   });
   return { available: isAvailable, query };
 };

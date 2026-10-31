@@ -41,6 +41,11 @@ export type DriverState = {
   holds: string[];
   /** Repositories whose sessions open their own worktree instead of the registered root (D51). */
   trees: string[];
+  /**
+   * Repositories whose checkout the person let Daoris change the files of (GITAPP2b, the git-writes design §2): off where absent.
+   * Absent on a shell older than it, which offers no switch.
+   */
+  checkoutWrites?: string[];
   /** Session ids with a live process right now — what "stop" can actually reach. */
   running: string[];
   /**
@@ -656,6 +661,8 @@ export const useSetDrivable = () => useDriverChange<{ repository: string; drivab
 export const useSetHold = () => useDriverChange<{ repository: string; held: boolean }>('SET_HOLD');
 /** Session trees (D51): the same file `daoris driver trees <repo> on|off` edits — two editors, one truth. */
 export const useSetTrees = () => useDriverChange<{ repository: string; ownTree: boolean }>('SET_TREES');
+/** The switch *Daoris may change this checkout's files* (GITAPP2b): off by default, writes nothing to the repository itself. */
+export const useSetCheckoutWrites = () => useDriverChange<{ repository: string; allow: boolean }>('SET_CHECKOUT_WRITES');
 /**
  * A repository's standing answer (KNOWUSE1b): the person's words, or none to clear it — the same `standing` `daoris driver
  * standing <repo> "…"|--clear` edits. Blank words or words past the bound are the driver's refusal, its sentence verbatim.

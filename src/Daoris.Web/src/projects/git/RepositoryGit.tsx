@@ -1,6 +1,7 @@
-import { useCallback, useRef } from 'react';
+import { type ReactNode, useCallback, useId, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Inline, Prose, SkeletonRows } from '../../design/ui';
+import { Button, Inline, Pill, Prose, SkeletonRows } from '../../design/ui';
+import { clockOf } from '../../locales/format';
 import { BranchList, type BranchListValue } from './BranchList';
 import { CommitGraph, type GraphCommitRow } from './CommitGraph';
 import { ListMore } from '../../work/frame/ListPane';
@@ -169,4 +170,119 @@ export function HistoryTab({ repository, read, onMore, all }: {
       {more && onMore && <GraphFoot shown={commits.length} loadingMore={Boolean(loadingMore)} error={moreError} paging={paging} />}
     </div>
   );
+}
+
+/** One file as a diff names it: the bridge's `ChangeEntry`, handed as it came (the molecule imports nothing of the bridge). */
+export type ChangedFile = { path: string; status: string; oldMode: string; newMode: string; oldBlob: string; newBlob: string };
+
+/** What the Changes tab shows: the three observations of the checkout and when they were made. */
+export type ChangesValue = {
+  staged: readonly ChangedFile[];
+  unstaged: readonly ChangedFile[];
+  untracked: readonly string[];
+  unmerged: readonly { path: string; code: string; modes: readonly string[]; blobs: readonly string[] }[];
+  readAt: string;
+};
+
+const NONE = /^0+$/;
+const short = (blob: string) => blob.slice(0, 7);
+
+/** The side of an entry that exists: the worktree's blob is never hashed, so an unstaged entry names the staged one. */
+const mode = (file: ChangedFile) => (NONE.test(file.newMode) ? file.oldMode : file.newMode);
+const blobOf = (file: ChangedFile) => (NONE.test(file.newBlob) ? file.oldBlob : file.newBlob);
+
+/**
+ * **A repository's Changes tab** (GITAPP2b, D204, the git-writes design §1 and §4): where the person lets Daoris change the
+ * checkout's files, what is staged against the last commit, what the files hold beyond it, what is untracked and what a merge
+ * left in conflict. It is read when the tab opens, on focus and on *Refresh*, never watched, and says when. This row only reads:
+ * no row of it presses a git act.
+ *
+ * @remarks
+ * **A molecule**: the read arrives as a prop and `refreshing` says it is being read again while the last stays on show, with its
+ * own time. A staged addition whose file was removed since is in Staged and in Not staged: two observations, both true.
+ */
+export function ChangesTab({ repository, read, refreshing = false, onRefresh }: {
+  repository: string;
+  read: GitRead<ChangesValue>;
+  /** The holder is reading it again. */
+  refreshing?: boolean;
+  /** *Refresh*: read again now. Absent, the tab draws no press. */
+  onRefresh?: () => void;
+}) {
+  const { t, i18n } = useTranslation();
+  if (read.state === 'reading') return <Waiting reading sentence={t('projects.git.reading.changes', { repository })} />;
+  if (read.state === 'refused') return <Waiting reading={false} sentence={read.sentence} />;
+  if (read.state === 'noCheckout') {
+    return <Nothing headline={t('projects.git.noCheckout.headline')} body={t('projects.git.noCheckout.changes', { repository })} />;
+  }
+
+  const { staged, unstaged, untracked, unmerged, readAt } = read.value;
+  const none = staged.length + unstaged.length + untracked.length + unmerged.length === 0;
+  return (
+    <section aria-label={t('projects.git.changes.list', { repository })} aria-busy={refreshing || undefined} className="grid min-w-0 gap-4">
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <Prose className="min-w-0 text-small text-ink-soft">
+          <Inline text={t('projects.git.changes.readAt', { time: clockOf(readAt, undefined, i18n.language) })} />
+          {refreshing && <> <span>{t('projects.git.changes.readingAgain')}</span></>}
+        </Prose>
+        {onRefresh && <Button variant="ghost" disabled={refreshing} onClick={onRefresh}>{t('projects.git.changes.refresh')}</Button>}
+      </div>
+      {none && <Nothing headline={t('projects.git.changes.none.headline')} body={t('projects.git.changes.none.body', { repository })} />}
+      {staged.length > 0 && <ChangeKind kind="staged" count={staged.length}>{staged.map((file) => <ChangeRow key={file.path} file={file} />)}</ChangeKind>}
+      {unstaged.length > 0 && <ChangeKind kind="unstaged" count={unstaged.length}>{unstaged.map((file) => <ChangeRow key={file.path} file={file} />)}</ChangeKind>}
+      {untracked.length > 0 && (
+        <ChangeKind kind="untracked" count={untracked.length}>
+          {untracked.map((path) => <li key={path} className="min-w-0 border-b border-line py-1.5 last:border-b-0"><Path path={path} /></li>)}
+        </ChangeKind>
+      )}
+      {unmerged.length > 0 && (
+        <ChangeKind kind="unmerged" count={unmerged.length}>
+          {unmerged.map((entry) => (
+            <li key={entry.path} className="grid min-w-0 gap-0.5 border-b border-line py-1.5 last:border-b-0">
+              <Path path={entry.path} code={entry.code} />
+              <Detail parts={[t('projects.git.changes.mode', { mode: entry.modes.join(' ') }), t('projects.git.changes.stages', { ids: entry.blobs.map(short).join(', ') })]} />
+            </li>
+          ))}
+        </ChangeKind>
+      )}
+    </section>
+  );
+}
+
+function ChangeKind({ kind, count, children }: { kind: 'staged' | 'unstaged' | 'untracked' | 'unmerged'; count: number; children: ReactNode }) {
+  const { t } = useTranslation();
+  const named = useId();
+  return (
+    <div className="grid gap-1">
+      <h3 id={named} className="m-0 text-small font-semibold text-ink-faint">{t(`projects.git.changes.kind.${kind}`, { count })}</h3>
+      <Prose className="text-small text-ink-soft"><Inline text={t(`projects.git.changes.note.${kind}`)} /></Prose>
+      <ul aria-labelledby={named} className="m-0 grid list-none p-0">{children}</ul>
+    </div>
+  );
+}
+
+function ChangeRow({ file }: { file: ChangedFile }) {
+  const { t } = useTranslation();
+  return (
+    <li className="grid min-w-0 gap-0.5 border-b border-line py-1.5 last:border-b-0">
+      <Path path={file.path} status={file.status} />
+      <Detail parts={[t('projects.git.changes.mode', { mode: mode(file) }), t('projects.git.changes.blob', { id: short(blobOf(file)) })]} />
+    </li>
+  );
+}
+
+/** A path, whole, wrapping anywhere rather than widening the tab, beside its status. */
+function Path({ path, status, code }: { path: string; status?: string; code?: string }) {
+  const { t } = useTranslation();
+  return (
+    <div className="flex min-w-0 items-baseline gap-2">
+      {status && <Pill tone={status === 'D' ? 'declined' : status === 'A' ? 'done' : 'neutral'}>{t(`projects.git.changes.status.${status}`, { defaultValue: status })}</Pill>}
+      {code && <Pill tone="declined">{code}</Pill>}
+      <code className="min-w-0 font-mono text-small text-ink [overflow-wrap:anywhere]">{path}</code>
+    </div>
+  );
+}
+
+function Detail({ parts }: { parts: string[] }) {
+  return <p className="m-0 flex flex-wrap gap-x-2 text-meta text-ink-faint">{parts.map((part) => <span key={part}>{part}</span>)}</p>;
 }

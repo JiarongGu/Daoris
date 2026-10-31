@@ -287,7 +287,7 @@ public sealed class PipeCensus
         Add(PipeClass.Open,
             // Reads (D156 §3's reads stay open): they change nothing and declare nothing (D169 point 2).
             "ACCOUNTS", "ACROSS", "ACTORS", "ANSWER_WAITS", "ASKS_ELSEWHERE", "ASK_LANDING", "CHANNEL_READ", "CHECKOUT_BRANCH", "ENTRY_LANDING",
-            "GIT_BLAME", "GIT_BRANCHES", "GIT_COMMIT", "GIT_COMPARE", "GIT_GRAPH", "GIT_HISTORY", "HANDOFF_PLAN", "HARNESSES",
+            "GIT_BLAME", "GIT_BRANCHES", "GIT_CHANGES", "GIT_COMMIT", "GIT_COMPARE", "GIT_GRAPH", "GIT_HISTORY", "HANDOFF_PLAN", "HARNESSES",
             "HELPER_WAITS", "HELP_CONVERSATIONS", "HELP_PROPOSALS", "HELP_PUBLISHED", "HELP_WIRED", "HEAVY_MARKS", "INTEGRATION", "HEAVY_SLOT", "HISTORY_PLAN", "LANDING", "LINES", "OPINION_GATE",
             "OPINION_WAITS", "PERMISSION_WAITS", "PLUGIN", "PLUGINS", "PLUGIN_ACTIVITY", "PLUGIN_READ", "ROLES", "RULES", "SESSION_DIFF", "SESSION_FILE",
             "SESSION_FILES", "SESSION_GROUPS", "SESSION_HAND_OVER_ASK", "SESSION_HELPERS", "SESSION_PARTNERS", "SESSION_HISTORY", "SESSION_OPENINGS", "SESSION_OPTIONS",
@@ -381,6 +381,8 @@ public sealed class PipeCensus
             "SET_REVIEW", "SET_SESSION_OPTION",
             // FABRIC-PIPELINE1b: which checks a repository's sessions run, the person's standing choice; light lowers their part.
             "SET_SESSION_CHECKS", "SET_STANDING", "SET_STRIKES", "SET_TREES", "SET_WRITE_ACROSS", "TRUST_FOLDER",
+            // GITAPP2b: the person lets Daoris change a checkout's files; the switch itself writes nothing to a repository.
+            "SET_CHECKOUT_WRITES",
             // KEEP1d: how long each kind Daoris keeps is kept, the person's standing choice.
             "SET_KEEP",
             "RULE_ACTION", "RULE_PROPOSAL", "ACCOUNT_USE", "HARNESS_ACTION",
@@ -492,7 +494,7 @@ public sealed class PipeCensus
             // A standing choice that changes only how later sessions run, what they reach or say, or what the person is told; a hold or a
             // drivable repository the drain's look holds whatever it says; a session's own option; Ask Daoris's access, which ends its
             // conversation at its turn's end and starts none.
-            "SET_ACCESS", "SET_AGENT_SETTINGS", "SET_COMMITS", "SET_DRIVABLE", "SET_HELP_MODE", "SET_HELP_GRANT", "SET_HEAVY_GATES", "SET_HOLD",
+            "SET_ACCESS", "SET_AGENT_SETTINGS", "SET_CHECKOUT_WRITES", "SET_COMMITS", "SET_DRIVABLE", "SET_HELP_MODE", "SET_HELP_GRANT", "SET_HEAVY_GATES", "SET_HOLD",
             "SET_LANGUAGE", "SET_NOTIFY", "SET_READ_ACROSS", "SET_SESSION_OPTION", "SET_SESSION_CHECKS", "SET_STANDING", "SET_STRIKES", "SET_TREES",
             "SET_WRITE_ACROSS", "RULE_ACTION", "RULE_PROPOSAL",
             // INTEGRATE1d: an integration declaration's acceptance, which starts nothing: what it accepts runs only in a landing or a tidy,

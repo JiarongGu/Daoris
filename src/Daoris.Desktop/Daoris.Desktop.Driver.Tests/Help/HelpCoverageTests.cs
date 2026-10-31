@@ -987,6 +987,11 @@ public sealed partial class HelpCoverageTests
         ("projects", "useSetDrivable", null, new Door("setting", "drive")),
         ("projects", "useSetHold", null, new Door("setting", "hold")),
         ("projects", "useSetTrees", null, new Door("setting", "trees")),
+        // GITAPP2b (D204, the git-writes design §2): the person's consent to the acts of GITAPP2's later rows in their own checkout.
+        ("projects", "useSetCheckoutWrites", null, new Exempt(
+            "it is the person's own consent to Daoris changing the files of their checkout, and writes nothing to the repository itself; "
+            + "an agent that could propose it would be one card from the consent every later git act rests on (D204 point 3), so a go "
+            + "reaches Setup → Reach and the person presses it there.")),
         ("projects", "useSetLine", null, new Door("setting", "line")),
         ("projects", "useSetLanding", null, new Door("setting", "landing")),
         ("projects", "useSetLanguage", null, new Door("setting", "language")),

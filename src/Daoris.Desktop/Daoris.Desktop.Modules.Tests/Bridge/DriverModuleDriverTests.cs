@@ -126,6 +126,27 @@ public sealed class DriverModuleDriverTests : DriverModuleBridge
     }
 
     /// <summary>
+    /// GITAPP2b (D204, the git-writes design §2): the switch <c>Daoris may change this checkout's files</c>, off by default, kept by
+    /// repository in <c>driver.json</c> and answered in <c>STATE</c> as the repositories it is on for.
+    /// </summary>
+    [Fact]
+    public async Task The_checkout_switch_is_off_until_pressed_and_is_kept_by_repository()
+    {
+        var module = Module();
+        Assert.Equal(0, (await AnswerAsync(module, "STATE", new { })).GetProperty("checkoutWrites").GetArrayLength());
+
+        var on = await AnswerAsync(module, "SET_CHECKOUT_WRITES", new { repository = "engine", allow = true });
+
+        Assert.Equal("engine", on.GetProperty("checkoutWrites")[0].GetString());
+        Assert.True(DriverConfig.Load(DriverConfigPath).MayChangeCheckout("engine"));
+        Assert.False(DriverConfig.Load(DriverConfigPath).MayChangeCheckout("shop-api"));
+
+        var off = await AnswerAsync(module, "SET_CHECKOUT_WRITES", new { repository = "ENGINE", allow = false });
+        Assert.Equal(0, off.GetProperty("checkoutWrites").GetArrayLength());
+        Assert.False(DriverConfig.Load(DriverConfigPath).MayChangeCheckout("engine"));
+    }
+
+    /// <summary>
     /// Notifications (SURF5b): the desktop half of a machine-local switch whose other door is
     /// `daoris driver notify on|off`. One file, two editors (D50) — and it is ON until somebody
     /// says otherwise, because a driver nobody has to watch is the whole point of one.

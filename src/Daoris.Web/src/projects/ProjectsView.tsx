@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { canBeAsked, type Registration } from '../data/api';
+import { canBeAsked, type Registration, SESSION_ACTIVE } from '../data/api';
 import { sentence } from '../locales/format';
 import { stewardSetAt } from '../person/standing';
 import { AddProjectDrawer, ImportFolderDrawer, ManageProjectDrawer } from './ProjectManage';
@@ -8,7 +8,7 @@ import { projectsItem, workspaceItem } from '../app/opener';
 import type { WorkflowTabProps } from '../workflow/WorkflowTab';
 import { ProjectList, type RepositoryRowFacts, type WorkspaceGroup } from './ProjectList';
 import { ProjectPage, ProjectsMainNotice } from './ProjectPage';
-import { RepositoryBranch, RepositoryBranches, RepositoryHistory } from './git/RepositoryGitView';
+import { RepositoryBranch, RepositoryBranches, RepositoryChanges, RepositoryHistory } from './git/RepositoryGitView';
 import { RepositoryIntegration } from './integration/RepositoryIntegration';
 import type { Driving, RepositorySetupProps } from './setup/RepositorySetup';
 import type { ProjectTab, WorkspaceSection, WorkspaceTab } from './tabs';
@@ -27,7 +27,7 @@ import { type ReviewEdit, reviewToast } from '../settings/repository/Reviews';
 import { sessionChecksToast, type SessionChecksValue } from '../settings/repository/SessionChecks';
 import {
   useAcross, useDriver, useHarnesses, useLines, usePlugins, useRuleAction, useRules, useSetAccess, useSetCommits, useHeavyMarks, useHeavySlot, useSetDrivable, useSetHeavyGates, useSetHelpers,
-  useSetHandOver, useSetHold, useSetLanding, useSetLanguage, useSetLine, useSetOpinion, useSetReadAcross, useSetReview, useSetSessionChecks, useSetStanding, useSetTrees,
+  useSetHandOver, useSetHold, useSetLanding, useSetLanguage, useSetLine, useSetOpinion, useSetReadAcross, useSetReview, useSetSessionChecks, useSetStanding, useSetTrees, useSetCheckoutWrites,
   useSetupPlan, useSetupPress, useSetWriteAcross, useSweepPlan, useWorkflowCurrent, useSetLanded, useAcceptIntegration, useVerify, standingOf,
 } from '../bridge/shell';
 import type { SetUpForAgentsProps } from './setup/SetUpForAgents';
@@ -146,6 +146,7 @@ export function useProjectsView({
   const setDrivable = useSetDrivable();
   const setHold = useSetHold();
   const setTrees = useSetTrees();
+  const setCheckoutWrites = useSetCheckoutWrites();
   const setStanding = useSetStanding();
   const setLanguage = useSetLanguage();
   const setLine = useSetLine();
@@ -196,6 +197,10 @@ export function useProjectsView({
   // are the application's on every view already.
   const setupShown = active && driver.data !== undefined && tab === 'setup' && chosenRepository !== null;
   const across = useAcross({ enabled: setupShown });
+  // GITAPP2b: the sessions the service lists, asked only while Setup shows a repository whose switch is on, to say which already run
+  // in its checkout (a session with no tree of its own runs in the registered root).
+  const checkoutOn = chosenRepository !== null && (driver.data?.checkoutWrites ?? []).some((name) => name.toLowerCase() === chosenRepository.toLowerCase());
+  const checkoutSessions = useSessions(chosenRepository, false, setupShown && checkoutOn);
   const rules = useRules();
   // Whether its own daoris.gates.json marks heavy gates, so wins over this machine's list (HEAVYRUN1b2c): the driver's reading, asked
   // for the chosen repository only while its Setup shows.
@@ -530,6 +535,15 @@ export function useProjectsView({
       : undefined;
     const where = t('settings.rules.where.repository', { name: repository });
     const reach: RepositorySetupProps['reach'] = across.data === undefined && !across.error ? null : {
+      // GITAPP2b: the switch, where the shell answers it; on, it says which sessions already run in the checkout.
+      checkout: driver.data.checkoutWrites === undefined ? undefined : {
+        on: named(driver.data.checkoutWrites, repository),
+        running: checkoutSessions.error ? null
+          : checkoutSessions.data === undefined ? undefined
+          : checkoutSessions.data.filter((one) =>
+            !one.tree && SESSION_ACTIVE.has(one.state) && !one.id.includes('/') && one.repository.toLowerCase() === repository.toLowerCase()).length,
+        onChange: (allow) => setCheckoutWrites.mutate({ repository, allow }, { onError: onDriverError }),
+      },
       across: mine,
       candidates: mine && acrossRows
         ? acrossRows
@@ -767,6 +781,10 @@ export function useProjectsView({
             : undefined}
           history={attached
             ? <RepositoryHistory repository={shown.repository} workspace={workspaceOf(shown)} here={Boolean(shown.root)} />
+            : undefined}
+          // GITAPP2b: its checkout's changes, where the person let Daoris change its files (Setup's Reach), read while its tab shows.
+          changes={attached && named(driver.data?.checkoutWrites, shown.repository)
+            ? <RepositoryChanges repository={shown.repository} workspace={workspaceOf(shown)} here={Boolean(shown.root)} />
             : undefined}
           // INTEGRATE1h: its queue, candidates and history, read while its tab shows.
           integration={attached ? <RepositoryIntegration repository={shown.repository} notify={notify} /> : undefined}

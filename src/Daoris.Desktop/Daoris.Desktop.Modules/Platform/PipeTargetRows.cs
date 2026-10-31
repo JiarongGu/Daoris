@@ -223,6 +223,7 @@ internal static class PipeTargetRows
         Row("SET_DRIVABLE", new RepositoryGround("repository"), Listed("drivable", "drivable"));
         Row("SET_HOLD", new RepositoryGround("repository"), Listed("holds", "held"));
         Row("SET_TREES", new RepositoryGround("repository"), Listed("trees", "ownTree"));
+        Row("SET_CHECKOUT_WRITES", new RepositoryGround("repository"), Listed("checkoutWrites", "allow"));
         Row("SET_STANDING", new RepositoryGround("repository"), State(["repository", "says"],
             (a, p) => Text(At(Named(At(a, "standing"), "repository", Text(p, "repository")), "says")) ?? "", p => Text(p, "says")?.Trim() ?? ""));
         Row("SET_SESSION_CHECKS", new RepositoryGround("repository"), State(["repository", "checks"],
