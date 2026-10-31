@@ -611,7 +611,7 @@ describe('a session’s page header and its acts', () => {
     const { onSelect } = show('c0ffee11');
 
     const header = (await screen.findByRole('heading', { level: 1, name: 'Chat' })).closest('header')!;
-    expect(await within(header).findByText(/^engine · continues from Codex · its account was near its limit · /)).toBeInTheDocument();
+    expect(await within(header).findByText(/^engine · working · continues from Codex · its account was near its limit · /)).toBeInTheDocument();
     const head = screen.getByRole('button', { name: /^Details/ }).closest('header')!;
     fireEvent.click(within(head).getByRole('button', { name: /^Details/ }));
     fireEvent.click(within(within(head).getByText('Continues').nextElementSibling as HTMLElement).getByRole('button', { name: 'Open session' }));
@@ -624,7 +624,7 @@ describe('a session’s page header and its acts', () => {
     show('h3lp3r00');
 
     const header = (await screen.findByRole('heading', { level: 1, name: 'Helper' })).closest('header')!;
-    expect(await within(header).findByText(/^engine · helping Expose a streaming budget · /)).toBeInTheDocument();
+    expect(await within(header).findByText(/^engine · working · helping Expose a streaming budget · /)).toBeInTheDocument();
     expect(screen.queryByLabelText('Message')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Send' })).toBeNull();
   });

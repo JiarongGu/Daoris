@@ -1,0 +1,10 @@
+{
+  "work.related.title": "在 {{repository}} 中，与它并行：",
+  "work.related.changes": "{{count}} 个会话改动",
+  "work.related.changes_other": "{{count}} 个会话改动",
+  "work.related.declares": "{{count}} 个会话声明涉及",
+  "work.related.declares_other": "{{count}} 个会话声明涉及",
+  "work.related.notRead": "此处未读取",
+  "work.related.notReadSince": "此处未读取（上次读取于 {{at}}）",
+  "work.related.door": "打开会话 {{id}}"
+}

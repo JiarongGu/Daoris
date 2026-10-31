@@ -12569,3 +12569,19 @@ mis-rooted instance.
 **Fix.** The packaged host ranks first; a flat one is the legacy fallback. A named path still wins.
 
 **Verification.** `ServiceHostLocatorTests`: republish over a flat install, red before.
+
+## A meeting's next voice read cap-full after a stalled turn (2026-10-31)
+
+**Root cause.** `DriverMeetings.RoundAsync` read the round's deadline off the machine's clock, each turn's cut and slot deadline off `BrainstormClock`. Under load the stalled turn's cut ran late, the round's window passed first, and the next voice read `cap-full`.
+
+**Fix.** The deadline is read on `BrainstormClock` (MEETCLOCK1); the test holds that clock and keeps the cut late.
+
+**Verification.** `MeetingTests.A_stalled_turn_…`: red (`cap-full`; then the deadline's timer missing), green; 20 of 20 beside 22 CPU burners.
+
+## A drop said its runner had not yet ended the run (2026-10-31)
+
+**Root cause.** `saidDrained` bounded the runner's whole report by thirty seconds from the ask; a loaded runner still ending a three-deep tree outran it. "Every 0 s" was the test's 200 ms rounded to seconds.
+
+**Fix.** The runner marks its take (`draining`) before ending anything; only the take is on the clock, then the record while the runner lives (DROPWAIT1). Below a second the interval is said in ms.
+
+**Verification.** The INTEGRATE1b drop case, its report held past the thirty seconds: red, green; 20 of 20 beside 11 CPU burners.

@@ -17,6 +17,7 @@ import type { AnswerAloneAnswered, AnswerWait } from '../../work/waits/AnswerAlo
 import type { NewSessionAnswer } from '../../work/say';
 import type { SessionWhere } from '../../work/rail/SessionRow';
 import type { SessionRecord } from '../../work/head/sessionRecord';
+import type { RelatedRow } from '../../work/head/RelatedSessions';
 import { call } from '../call';
 import { readSlice } from '../driver';
 import { mergeKeyed, readPushed, type SliceSpec, usePushedLive } from '../state/slices';
@@ -60,7 +61,7 @@ export const sessionsSlice: SliceSpec = {
  * the person's answer to its permission request (AUTONOMY1b3b), and whether Daoris told the session it ran past its pipeline's bound
  * (FABRIC-PIPELINE1c), each absent from a host older than the mark.
  */
-export type PushedCall = { title: string; since: string; waiting?: boolean; told?: boolean; quiet?: string };
+export type PushedCall = { title: string; since: string; waiting?: boolean; told?: boolean; quiet?: string; heard?: string };
 
 const isCall = (value: unknown): value is PushedCall =>
   typeof value === 'object' && value !== null
@@ -79,7 +80,7 @@ export const callsSlice: SliceSpec = {
     if (!judged) return undefined;
     const calls: Record<string, PushedCall> = {};
     for (const [name, part] of partitions) {
-      if (name === 'quiet' || typeof part !== 'object' || part === null || Array.isArray(part)) continue;
+      if (name === 'quiet' || name === 'heard' || typeof part !== 'object' || part === null || Array.isArray(part)) continue;
       for (const [session, call] of Object.entries(part)) if (isCall(call)) calls[session] = call;
     }
     // SESSWATCH1a: the watcher's mark laid over each quiet session's call, or a call of no title where it makes none (§5.1).
@@ -88,6 +89,14 @@ export const callsSlice: SliceSpec = {
       for (const [session, mark] of Object.entries(quiet)) {
         const since = (mark as { since?: unknown } | null)?.since;
         if (typeof since === 'string') calls[session] = { ...(calls[session] ?? { title: '', since }), quiet: since };
+      }
+    }
+    // COWORKVIEW1a: when the window last heard a session (§3.7), beside its call, or a call of no title where it makes none.
+    const heard = partitions.get('heard');
+    if (typeof heard === 'object' && heard !== null && !Array.isArray(heard)) {
+      for (const [session, mark] of Object.entries(heard)) {
+        const at = (mark as { at?: unknown } | null)?.at;
+        if (typeof at === 'string') calls[session] = { ...(calls[session] ?? { title: '', since: at }), heard: at };
       }
     }
     return calls;
@@ -302,6 +311,23 @@ export const useSessionRecord = (id: string | null, treeGone: boolean): SessionR
     refetchOnWindowFocus: false,
   });
   return treeGone ? answer.data?.record ?? null : null;
+};
+
+/**
+ * The sessions beside one in its repository whose work meets its own (LINESTOGETHER1c), told by event; the driver reads the trees at
+ * each ask, so a stale answer is read again on focus. Empty while none is read.
+ */
+export const useSessionRelated = (session: string | null | undefined, enabled = true): RelatedRow[] => {
+  const { isAvailable } = useShenora();
+  const client = useQueryClient();
+  const queryKey = ['sessions', 'related', session ?? ''] as const;
+  const answer = useQuery({
+    queryKey,
+    queryFn: () => askHeld<{ related?: RelatedRow[] }>('SESSION_RELATED', client, queryKey, { session }),
+    enabled: isAvailable && enabled && Boolean(session),
+    staleTime: 30_000,
+  });
+  return Array.isArray(answer.data?.related) ? answer.data.related : [];
 };
 
 /**

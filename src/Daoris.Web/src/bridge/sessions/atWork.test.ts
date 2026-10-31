@@ -101,6 +101,38 @@ describe('who is at work, a numbered read (COWORKVIEW1a)', () => {
     expect(client.getQueryData(key)).toEqual({ reading: true, at: { epoch: 'e1', n: 3 } });
   });
 
+  it('takes the held answer’s reply of the same n on a remount past gcTime, and draws it, never failed', async () => {
+    const client = new QueryClient({ defaultOptions: { queries: { gcTime: 0 } } });
+    invoke.mockResolvedValue(answer(4, 5));
+    const mount = () => new QueryObserver(client, { queryKey: key, queryFn: () => askAtWork(client, key, 's1'), retry: false, gcTime: 0 });
+    const first = mount();
+    const stopFirst = first.subscribe(() => {});
+    await vi.waitFor(() => expect(working(client)).toBe(4));
+    stopFirst();
+    await vi.waitFor(() => expect(client.getQueryData(key)).toBeUndefined());
+
+    const second = mount();
+    const stop = second.subscribe(() => {});
+    await vi.waitFor(() => expect(working(client)).toBe(4));
+    expect(client.getQueryData<AtWorkHeld>(key)).not.toHaveProperty('failed');
+    stop();
+  });
+
+  it('writes an event held beside a fetch the bridge refused, by the number rule, and the query still fails', async () => {
+    const client = new QueryClient();
+    let refuse: (why: unknown) => void = () => {};
+    invoke.mockReturnValueOnce(new Promise((_, reject) => { refuse = reject; }));
+
+    const first = fetch(client).catch((error: unknown) => error);
+    await Promise.resolve();
+    answered(client, { held, answer: answer(6, 6) });
+    expect(client.getQueryData(key)).toBeUndefined();
+    refuse(new Error('refused'));
+
+    expect(await first).toBeInstanceOf(Error);
+    expect(working(client)).toBe(6);
+  });
+
   it('keeps what it holds when the shell has nothing held yet, which carries no number', async () => {
     const client = new QueryClient();
     invoke.mockResolvedValue(answer(1, 5));

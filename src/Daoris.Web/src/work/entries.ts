@@ -47,8 +47,23 @@ export type SessionEntry = {
   group: SessionGroupName;
   /** The id of the newest part in the group the entry sits in: the row's record. */
   leading: string;
+  /** Where the first part's line ends; null where there is none (an ask's siblings). Absent from a host older than the head. */
+  head?: string | null;
+  /** The part a row opens on: `leading` when the group is you or working, otherwise `head ?? leading`. Absent from an older host. */
+  opens?: string;
   parts: EntryPart[];
 };
+
+/** The part a list row opens on, given the row's own (leading) record: the driver's `opens`, else the leading record as before. */
+export function opensOf(entries: readonly SessionEntry[] | undefined, id: string): string {
+  const entry = entries?.find((each) => each.leading === id);
+  return entry?.opens ?? id;
+}
+
+/** The parts beside the head: those that began a line of their own by asking, other than the head itself. */
+export function besideHead(entry: Pick<SessionEntry, 'head' | 'parts'>): string[] {
+  return entry.head ? entry.parts.filter((part) => part.began === 'asked' && part.session !== entry.head).map((part) => part.session) : [];
+}
 
 /** The ask an entry belongs to, or null for a conversation and a line rooted in a quest alone. */
 export function askOfEntry(entry: Pick<SessionEntry, 'origin'>): string | null {
@@ -103,7 +118,7 @@ export function entryFacts(entries: readonly SessionEntry[] | undefined): Map<st
 }
 
 /** One line of an ask's page (design §1.6): a repository's line of work for the ask, its parts counted, its leading part's word. */
-export type AskLine = { entry: string; repository: string; parts: number; leading: string; shown: string };
+export type AskLine = { entry: string; repository: string; parts: number; leading: string; opens: string; shown: string };
 
 /**
  * An ask's work by entry, in the reader's order: each repository's line of work that began with this ask, each a door to its
@@ -118,6 +133,7 @@ export function askLines(entries: readonly SessionEntry[] | undefined, ask: stri
       repository: entry.repository,
       parts: entry.parts.length,
       leading: entry.leading,
+      opens: entry.opens ?? entry.leading,
       shown: entry.parts.find((part) => part.session === entry.leading)?.shown ?? entry.parts.at(-1)!.shown,
     }));
 }

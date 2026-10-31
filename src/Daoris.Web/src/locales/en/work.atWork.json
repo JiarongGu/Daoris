@@ -38,5 +38,6 @@
   "work.atWork.reading": "Reading who is at work…",
   "work.atWork.failed": "Who is at work could not be read: {{why}}",
   "work.atWork.stale": "Could not read again: {{why}}",
-  "work.atWork.retry": "Try again"
+  "work.atWork.retry": "Try again",
+  "work.atWork.child.console": "Console"
 }

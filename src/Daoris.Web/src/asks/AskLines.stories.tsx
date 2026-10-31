@@ -14,15 +14,15 @@ const nothing = () => {};
 const dark: Decorator = (Story) => <InTheme theme="dark"><Story /></InTheme>;
 
 const LINES: AskLine[] = [
-  { entry: 'ask:7c1e9a/engine', repository: 'engine', parts: 3, leading: 's-engine-3', shown: 'working' },
-  { entry: 'ask:7c1e9a/game', repository: 'game', parts: 1, leading: 's-game-1', shown: 'awaiting-person' },
-  { entry: 'ask:7c1e9a/lantern', repository: 'lantern', parts: 2, leading: 's-lantern-2', shown: 'completed' },
+  { entry: 'ask:7c1e9a/engine', repository: 'engine', parts: 3, leading: 's-engine-3', opens: 's-engine-3', shown: 'working' },
+  { entry: 'ask:7c1e9a/game', repository: 'game', parts: 1, leading: 's-game-1', opens: 's-game-1', shown: 'awaiting-person' },
+  { entry: 'ask:7c1e9a/lantern', repository: 'lantern', parts: 2, leading: 's-lantern-2', opens: 's-lantern-1', shown: 'completed' },
 ];
 
 /** A repository's name long enough to wrap at the floor, and a word this page has none for. */
 const LONG: AskLine[] = [
   ...LINES,
-  { entry: 'ask:7c1e9a/telemetry', repository: 'telemetry-ingest-and-retention-service', parts: 12, leading: 's-tel-12', shown: 'rehearsing' },
+  { entry: 'ask:7c1e9a/telemetry', repository: 'telemetry-ingest-and-retention-service', parts: 12, leading: 's-tel-12', opens: 's-tel-12', shown: 'rehearsing' },
 ];
 
 const meta = {

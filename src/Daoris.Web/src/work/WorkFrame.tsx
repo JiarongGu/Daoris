@@ -8,7 +8,7 @@ import { SESSIONS_SLICE, useAnswerSession, useAsks, usePersonDone, useQuests, us
 import { usePushedResyncing } from '../bridge/state/slices';
 import {
   type TurnStop, useCancelTurn, useEditQueued, useEndChat, useHarnesses, useResolveSession, useSendMessage,
-  NO_TURNS, useChatTurns, useSessionEntries, useSessionGroups, useSessionOpenings, useSessionOptions, useSessionRecord, useSessionSpent, useSessionStreams, useSessionWhere,
+  NO_TURNS, useChatTurns, useSessionEntries, useSessionGroups, useSessionOpenings, useSessionOptions, useSessionRecord, useSessionRelated, useSessionSpent, useSessionStreams, useSessionWhere,
   useSetSessionOption, useStartChat, useStopTask, useSweepPlan, useTreeFiles, useTreeFile, useReviewedPatch,
   logEvent, useTerminals, useRemotes, useWorkPlan, useSay, useSessionReach, useStartFrom, useGoOnBrief, type WordsAnswer,
   useParkGoAhead, useAccounts, useGoOnNew, useTrace, useDiscardSessionBranch, useLanding, useLandSessionTree, useLandWithoutLook, useSessionDiff,
@@ -465,6 +465,7 @@ export function WorkFrame({
   // What each of its parts spent (SESSCTX1d), on each part's own row of the strip, from this machine's record.
   const spent = useSessionSpent(attendedEntry?.parts.map((part) => part.session));
   // What the service kept of the attended session's finished tree, once the tree is let go (KEEPSIZE1).
+  const related = useSessionRelated(attended?.id);
   const sessionRecord = useSessionRecord(attended?.id ?? null, attended ? where[attended.id]?.treeGone === true : false);
   const channel = useChannel(channelAsk);
   const postChannel = usePostChannel();
@@ -1135,7 +1136,12 @@ export function WorkFrame({
   const atWorkShown = following !== null && (placed.places.atWork === 'panel'
     ? !collapsed && panelView === 'atWork'
     : !dockClosed && dock === 'atWork');
-  const atWork = useSessionAtWork(atWorkShown ? following?.id : null);
+  // Also asked while the followed session works, for the head's *working with it* (§3.7), at its mount and each wake.
+  const atWork = useSessionAtWork(atWorkShown || (following !== null && following.state === 'working') ? following?.id : null);
+  const atWorkHeld = atWork.data;
+  const withIt = atWorkHeld && 'answer' in atWorkHeld
+    ? atWorkHeld.answer.subagents.working + atWorkHeld.answer.parts.filter((part) => part.key !== atWorkHeld.answer.attended && part.state === 'working').length
+    : 0;
   // FABRIC-CUTOVER1f: the person's skip or stop of a graph run's node, pressed under the node in the view, kept for the driver's next look.
   const runNodeWord = useRunNodeWord();
   // FABRIC-PIPELINE1d: *Run again* and *Not now* under a check held unknown, the person's word on the held attempt.
@@ -1440,6 +1446,9 @@ export function WorkFrame({
             error={atWork.error ? sentence(atWork.error) : null}
             onOpen={(id) => { attend(id); if (elsewhere) onOpenSessions?.(); }}
             onRetry={() => { void atWork.refetch(); }}
+            // A child's console tab, while the window holds its stream (the harness's agent id ends the stream's key).
+            streamOf={(child) => streams.find((row) => row.key.endsWith(`/${child}`))?.key}
+            onOpenStream={(key) => { pickStream(key); openView('console'); }}
           />,
         )
         : elsewhere
@@ -2168,6 +2177,7 @@ export function WorkFrame({
     partners: partnersOf(partnerPieces.data ?? [], (agent) => agentRoster.names?.[agent] ?? agent),
     waitingSince: waiting?.session === attended.id ? waiting.since : undefined,
     calling: waiting?.session === attended.id ? waiting.calling : undefined,
+    withIt: following?.id === attended.id ? withIt : 0,
     // AGENTERRORS1a2 (D210 §5.1, §8): *Trying again at* while a transient episode waits.
     retrying: waiting?.session === attended.id ? waiting.retrying : undefined,
     // HEAVYSLOT1: its heavy run said in place of the call, by its gate or whom it waits behind.
@@ -2536,6 +2546,8 @@ export function WorkFrame({
             } : undefined}
             chain={quest ? buildChain(quest.id, quests.data ?? [], sessions.data ?? []) : []}
             relations={attended ? relationsOf(attended, quest, quests.data ?? [], sessions.data ?? []) : undefined}
+            related={related}
+            onRelated={attend}
             continues={continues}
             helps={helps}
             heavy={attended && heavyPart ? heavyRow(t, heavySlot.data, attended.id, heavyTitleOf, attend) : null}

@@ -114,6 +114,26 @@ describe('a session’s facts line', () => {
     expect(sessionFacts(t, { session: session({ state: 'completed' }), shown: 'completed', calling }).join()).not.toMatch(/running npm/);
   });
 
+  /** COWORKVIEW1a rule 18 (the cowork view design §3.7): who works with a session and when it was last heard, giving way to *quiet*. */
+  it('says how many work with a working session and when it was last heard, and quiet in its place once the watcher marks it', async () => {
+    const heard = '2026-10-05T09:59:00Z';
+    const calling = { title: '', since: heard, heard };
+    const facts = sessionFacts(t, { session: session(), shown: 'working', grouping: grouping({ calling }), withIt: 3 });
+    expect(facts.at(-1)).toBe('3 working with it · last heard 1m ago');
+    expect(sessionFacts(t, { session: session(), shown: 'working', withIt: 0 }).join()).not.toMatch(/working with it/);
+    expect(sessionFacts(t, { session: session({ state: 'completed' }), shown: 'completed', withIt: 3 }).join()).not.toMatch(/working with it/);
+    expect(sessionFacts(t, { session: session(), shown: 'working', withIt: 2 }).at(-1)).toBe('2 working with it');
+
+    const quiet = { ...calling, quiet: '2026-10-05T09:40:00Z' };
+    const hushed = sessionFacts(t, { session: session(), shown: 'working', grouping: grouping({ calling: quiet }), withIt: 3 });
+    expect(hushed.join()).not.toMatch(/last heard/);
+    expect(hushed.at(-1)).toBe('quiet · 20m');
+
+    await i18n.changeLanguage('zh');
+    expect(sessionFacts(t, { session: session(), shown: 'working', grouping: grouping({ calling }), withIt: 3 }).at(-1)).toBe('3 个在一起工作 · 1 分钟前有动静');
+    await i18n.changeLanguage('en');
+  });
+
   /**
    * WAITSAY1b: where the page holds none of the call's events (begun before the window opened, or past the history's page), the
    * head says the call the driver heard, from the row's reader. RAILLINE1: the head and the row read that one source wherever the

@@ -1,6 +1,10 @@
 {
   "work.parts.title": "Parts",
   "work.parts.of": "Part {{n}} of {{total}}",
+  "work.parts.headIs": "Part {{n}} of {{total}} is the head",
+  "work.parts.headBeside": "{{count}} beside it",
+  "work.parts.headNone": "No part is the head",
+  "work.parts.besideHead": "beside the head",
   "work.parts.number": "part {{n}}",
   "work.parts.earlier_one": "Show the part before",
   "work.parts.earlier_other": "Show {{count}} earlier parts",

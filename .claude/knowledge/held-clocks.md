@@ -41,7 +41,8 @@ product being flaky. A wider window only moves the load at which it fails, and m
   load's shape, so the test is red on the machine's clock before the fix, and stays meaningful on a quiet machine.
 - **Wait on an answer the other side always writes, where it writes one** (FLAKE3): a loop that took a say always answers
   it, so the verb waits on that answer, bounded by the loop's own bound on a say, and on the clock only for whether it took
-  the words at all.
+  the words at all. Across processes the taker says so first (DROPWAIT1: the queue's runner marks `draining` before it ends a
+  dropped run's trees, and `--drop-batch` waits on its clock only for that mark).
 - **Two clocks, two jobs.** One that *runs from the condition* (the driver tests' `HeldClock` in `SessionsSayCommandTests`)
   where the code's wait should pass in real time once the thing it waits on has started. One that *moves only when the test
   moves it* (the modules tests' `HeldClock` in `Platform/PipeTestKit.cs`, `Advance`, RPC1c) where the test spends the wait

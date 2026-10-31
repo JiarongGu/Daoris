@@ -381,6 +381,8 @@
   "work.facts.integration.settled": "integrated into {{line}}",
   "work.facts.integration.dropped": "dropped from {{line}}",
   "work.facts.calling": "running {{title}} for {{elapsed}}",
+  "work.facts.withIt": "{{count}} working with it",
+  "work.facts.withItHeard": "{{count}} working with it · last heard {{ago}}",
   "work.facts.callWaits": "waiting for your answer to {{title}} for {{elapsed}}",
   "work.facts.callWaitsUnnamed": "waiting for your answer to a tool call for {{elapsed}}",
   "work.facts.started": "started {{ago}}",

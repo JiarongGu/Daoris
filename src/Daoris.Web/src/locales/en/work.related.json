@@ -1,0 +1,10 @@
+{
+  "work.related.title": "Beside it in {{repository}}:",
+  "work.related.changes": "{{count}} session changes",
+  "work.related.changes_other": "{{count}} sessions change",
+  "work.related.declares": "{{count}} session declares",
+  "work.related.declares_other": "{{count}} sessions declare",
+  "work.related.notRead": "not read here",
+  "work.related.notReadSince": "not read here (last read {{at}})",
+  "work.related.door": "Open session {{id}}"
+}
