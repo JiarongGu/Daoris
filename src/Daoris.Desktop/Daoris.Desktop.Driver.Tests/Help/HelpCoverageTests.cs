@@ -1020,6 +1020,11 @@ public sealed partial class HelpCoverageTests
         ("projects", "useGitStashAct", null, new Exempt(
             "it saves the person's changed files into the stash every linked tree shares, judged against the HEAD and the stash tip the page read; "
             + "a go could not stand for the files it would take away from the working tree, so the person presses it in the Changes tab.")),
+        // GITAPP2l: stash Apply, by the stash commit's id.
+        ("projects", "useGitStashApplyAct", null, new Exempt(
+            "it puts a saved stash back onto the person's clean checkout by the stash commit's id, judged against the HEAD the page read, and may leave "
+            + "files in conflict for the person to resolve; Ask Daoris's git kind proposes cards for git acts, never applies them, so the person "
+            + "presses it in the Changes tab.")),
         ("projects", "useSetLine", null, new Door("setting", "line")),
         ("projects", "useSetLanding", null, new Door("setting", "landing")),
         ("projects", "useSetLanguage", null, new Door("setting", "language")),

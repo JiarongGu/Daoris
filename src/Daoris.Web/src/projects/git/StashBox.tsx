@@ -12,7 +12,14 @@ export type StashPlanValue = {
   sharedWith: number;
   why: string | null;
   hooks: readonly string[];
+  /** The shared stash newest first, each by its commit id; `collides` counts its untracked paths already standing here. */
+  entries: readonly { id: string; message: string; untracked: boolean; collides: number }[];
+  /** Why no stash could be applied now; null where one could. */
+  applyWhy: string | null;
 };
+
+/** An Apply as pressed: the stash's commit id, never its place on the list, and the commit the plan shown stood on. */
+export type StashApplyBoxPress = { id: string; head: string | null };
 
 /** The press: untracked files too or not, the message typed, and the tip and stash of the plan shown, which the driver finds unchanged or refuses. */
 export type StashBoxPress = { untracked: boolean; message: string; head: string | null; stash: string | null };
@@ -20,13 +27,15 @@ export type StashBoxPress = { untracked: boolean; message: string; head: string 
 /**
  * **The stash box of the Changes tab** (GITAPP2k, D204, the git-writes design §8): *Save to the stash*, tracked files only unless *Include
  * untracked files* is ticked, and the plan's plain words that the stash is shared by every linked tree, sessions' included, so a Save here is
- * seen there. Applying a stash and dropping one are not offered.
+ * seen there. Beneath it the saved stashes, each with *Apply* by its commit id (GITAPP2l), which keeps the stash and leaves a conflict to
+ * Resolve. Dropping one is not offered.
  *
  * @remarks **A molecule**: the plan arrives as a prop. `busy` holds the press while an act runs.
  */
-export function StashBox({ read, busy, onPress }: {
+export function StashBox({ read, busy, onPress, onApply }: {
   read: GitRead<StashPlanValue>;
   busy: boolean;
+  onApply: (press: StashApplyBoxPress) => void;
   /** `done` is called once the act is done, so the box clears its message. */
   onPress: (press: StashBoxPress, done: () => void) => void;
 }) {
@@ -64,6 +73,33 @@ export function StashBox({ read, busy, onPress }: {
           {t('projects.git.stash.press')}
         </Button>
       </div>
+      <h4 className="m-0 mt-1 text-small font-semibold text-ink-faint">{t('projects.git.stash.saved')}</h4>
+      {plan.entries.length === 0 ? (
+        <Prose className="min-w-0 text-small text-ink-soft">{t('projects.git.stash.none')}</Prose>
+      ) : (
+        <>
+          <Prose className="min-w-0 text-small text-ink-soft"><Inline text={plan.applyWhy ?? t('projects.git.stash.applyNote')} /></Prose>
+          <ul className="m-0 grid min-w-0 list-none gap-2 p-0">
+            {plan.entries.map((entry) => (
+              <li key={entry.id} className="grid min-w-0 gap-1 rounded-control border border-line p-2">
+                <span className="min-w-0 break-words text-small text-ink">{entry.message || t('projects.git.stash.noMessage')}</span>
+                <code className="min-w-0 break-all text-small text-ink-faint">{entry.id.slice(0, 12)}</code>
+                {entry.untracked && <span className="text-small text-ink-soft">{t('projects.git.stash.holdsUntracked')}</span>}
+                {entry.collides > 0 && <span className="text-small text-ink-soft">{t('projects.git.stash.collides', { count: entry.collides })}</span>}
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    aria-label={t('projects.git.stash.applyOne', { id: entry.id.slice(0, 12) })}
+                    disabled={busy || plan.applyWhy !== null || entry.collides > 0}
+                    onClick={() => onApply({ id: entry.id, head: plan.head })}
+                  >
+                    {t('projects.git.stash.apply')}
+                  </Button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
     </section>
   );
 }

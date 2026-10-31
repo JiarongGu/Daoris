@@ -310,7 +310,7 @@ public sealed class GitRoutes(DriverLoop loop)
             new StashActs(new ActJournal(_loop.Home)).PlanAsync(root, token));
 
     // GITAPP2k: stash *Save*, tracked files only unless `untracked`; `refs/stash` is shared with every linked tree, so a stash that moved since the plan
-    // refuses the press. Apply is a later act and Drop is deferred.
+    // refuses the press. Apply is its own route and Drop is deferred.
     [DriverRoute("GIT_STASH")]
     [Publishes("GIT_STASH", StateScopes.Checkouts | StateScopes.Driver)]
     private async Task<object?> GitStashAsync(IpcRequest request, CancellationToken cancellationToken)
@@ -319,6 +319,17 @@ public sealed class GitRoutes(DriverLoop loop)
         if (context is null) return refused;
         var press = new StashPress(Flag(request, "untracked"), Optional(request, "message"), Optional(request, "head") ?? "", Optional(request, "stash"));
         return Acted(await new StashActs(new ActJournal(_loop.Home)).RunAsync(context, press, cancellationToken).ConfigureAwait(false), context);
+    }
+
+    // GITAPP2l: stash *Apply* by the stash commit's id, never its ordinal and never `pop`; a conflict stays for Resolve and the stash is kept. Drop is deferred.
+    [DriverRoute("GIT_STASH_APPLY")]
+    [Publishes("GIT_STASH_APPLY", StateScopes.Checkouts | StateScopes.Driver)]
+    private async Task<object?> GitStashApplyAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var (context, refused) = await WorkContextAsync(request, cancellationToken).ConfigureAwait(false);
+        if (context is null) return refused;
+        var press = new StashApplyPress(Optional(request, "id") ?? "", Optional(request, "head") ?? "");
+        return Acted(await new StashActs(new ActJournal(_loop.Home)).ApplyAsync(context, press, cancellationToken).ConfigureAwait(false), context);
     }
 
     /// <summary>The context of a working-tree act on the repository's registered checkout, or the answer that there is none.</summary>

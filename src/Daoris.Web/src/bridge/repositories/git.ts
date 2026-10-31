@@ -623,6 +623,10 @@ export type GitStashPlan = {
   why: string | null;
   hooks: string[];
   identity: string | null;
+  /** The shared stash newest first, each by its commit id (GITAPP2l); `collides` counts its paths already standing untracked here. */
+  entries: { id: string; message: string; untracked: boolean; collides: number }[];
+  /** Why no stash could be applied now, in the driver's sentence; null where one could. */
+  applyWhy: string | null;
 };
 
 const readPlanOf = <T>(fill: (value: Partial<T>) => T) => (raw: unknown): GitAnswer<T> | null => {
@@ -645,6 +649,7 @@ const readSwitchPlan = readPlanOf<GitSwitchPlan>((value) => ({
 const readStashPlan = readPlanOf<GitStashPlan>((value) => ({
   head: value.head ?? null, branch: value.branch ?? null, stash: value.stash ?? null, tracked: value.tracked ?? 0, untracked: value.untracked ?? 0,
   sharedWith: value.sharedWith ?? 0, why: value.why ?? null, hooks: value.hooks ?? [], identity: value.identity ?? null,
+  entries: value.entries ?? [], applyWhy: value.applyWhy ?? null,
 }));
 
 /** The switch's plan for a branch, read again with the Changes tab and whenever the page asks; not asked while no branch is chosen. */
@@ -695,6 +700,16 @@ export const useGitStashAct = (repository: string | null, workspace: string) =>
       readAct(await call('GIT_STASH', {
         repository, ...(workspace ? { workspace } : {}), untracked: press.untracked, message: press.message, head: press.head, stash: press.stash,
       })),
+  });
+
+/** A stash Apply as pressed: the stash's commit id (never its place on the list) and the commit HEAD stood on in the plan the page showed. */
+export type GitStashApplyPress = { id: string; head: string | null };
+
+/** *Apply a stash* (GITAPP2l): by commit id, never `pop`; the stash is kept and a conflict stays in the index for Resolve. */
+export const useGitStashApplyAct = (repository: string | null, workspace: string) =>
+  useMutation({
+    mutationFn: async (press: GitStashApplyPress): Promise<GitActAnswer> =>
+      readAct(await call('GIT_STASH_APPLY', { repository, ...(workspace ? { workspace } : {}), id: press.id, head: press.head })),
   });
 
 /**
