@@ -31,10 +31,11 @@ public sealed class TogetherReadsTests
     [Fact]
     public void A_workflow_steps_on_past_its_landing_while_an_integrate_step_is_not_done()
     {
-        Assert.True(TogetherPress.StepsOn([Step(WorkflowKinds.Landing, WorkflowRunStates.Done), Step(NodeKinds.Integrate, WorkflowRunStates.NotReached)]));
-        Assert.True(TogetherPress.StepsOn([Step(NodeKinds.Integrate, WorkflowRunStates.Working)]));
-        Assert.False(TogetherPress.StepsOn([Step(NodeKinds.Integrate, WorkflowRunStates.Done)]));
-        Assert.False(TogetherPress.StepsOn([Step(WorkflowKinds.Landing, WorkflowRunStates.NotReached)]));
+        Assert.True(WorkflowRuns.StepsOnPastLanding([Step(WorkflowKinds.Landing, WorkflowRunStates.Done), Step(NodeKinds.Integrate, WorkflowRunStates.NotReached)]));
+        Assert.True(WorkflowRuns.StepsOnPastLanding([Step(NodeKinds.Integrate, WorkflowRunStates.Working)]));
+        Assert.False(WorkflowRuns.StepsOnPastLanding([Step(NodeKinds.Integrate, WorkflowRunStates.Done)]));
+        Assert.False(WorkflowRuns.StepsOnPastLanding([Step(NodeKinds.Integrate, WorkflowRunStates.Skipped)]));
+        Assert.False(WorkflowRuns.StepsOnPastLanding([Step(WorkflowKinds.Landing, WorkflowRunStates.NotReached)]));
     }
 
     [Fact]

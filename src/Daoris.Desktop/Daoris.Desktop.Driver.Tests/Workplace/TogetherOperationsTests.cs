@@ -14,7 +14,7 @@ public sealed class TogetherOperationsTests : IDisposable
 
     public void Dispose() => GitSeed.Discard(_home);
 
-    private string Tree(string name) => Path.Combine(_home, "trees", name);
+    private string Tree(string name) => DaorisHome.Entry(_home, HomeEntry.Trees, "default", "engine", name);
 
     private TogetherHead Head(string record = "s-head") => new("s-line", record, Tree("head"), "daoris/head", "a1");
 

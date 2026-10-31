@@ -107,10 +107,6 @@ public sealed class TogetherPress(string home, RebaseTelling.Say say, Func<DateT
         return (line.Values.Any(each => each.Live && each.State != "queued"), waiting);
     }
 
-    /// <summary>Whether a run's steps hold an <c>integrate</c> not yet done: the workflow steps on past the landing, the only maker of its unit's request.</summary>
-    public static bool StepsOn(IEnumerable<WorkflowRunStep> steps) =>
-        steps.Any(each => each.Step.Kind == NodeKinds.Integrate && each.State is not (WorkflowRunStates.Done or WorkflowRunStates.Skipped));
-
     /// <summary><i>Ask again</i> after a failed check: the words said once more under a key of their own; the sentence where it cannot be.</summary>
     public async Task<string?> AskHeadAgainAsync(string session, CancellationToken ct)
     {
