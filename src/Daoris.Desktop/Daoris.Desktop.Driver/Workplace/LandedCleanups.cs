@@ -699,8 +699,10 @@ internal sealed class LandedCleanups(
             return has == 1 && WorkingTree.IsCommitId(entry.Tip) ? (LandedGone.Missing, null, null, null) : null;
         }
 
+        // GITAPP2a: an act's own ref holds an index's blobs until its record expires, never a landing's work.
         var holders = ContentHolds.Unaliased(listed)
-            .Where(pair => !(pair.Ref.StartsWith("refs/remotes/", StringComparison.Ordinal) && pair.Ref.EndsWith("/HEAD", StringComparison.Ordinal))).ToList();
+            .Where(pair => !(pair.Ref.StartsWith("refs/remotes/", StringComparison.Ordinal) && pair.Ref.EndsWith("/HEAD", StringComparison.Ordinal)))
+            .Where(pair => !ActRefs.IsAct(pair.Ref)).ToList();
         var local = holders.Where(pair => pair.Ref.StartsWith("refs/heads/", StringComparison.Ordinal)).ToList();
         if (local.Count > 0)
         {

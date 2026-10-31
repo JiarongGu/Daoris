@@ -370,12 +370,13 @@ internal sealed class ContentHolds(TreeContext context)
         || (reference.StartsWith("refs/remotes/", StringComparison.Ordinal) && !reference.Contains($"/{TreeFollows.SessionPrefix}", StringComparison.Ordinal));
 
     /// <summary>
-    /// Any ref but Daoris's own recovery refs, which a delete makes for itself, and a piece's frozen ref (COAGENT1b, the co-agent
+    /// Any ref but Daoris's own recovery refs, which a delete makes for itself, a piece's frozen ref (COAGENT1b, the co-agent
     /// design §2.4), classed beside them: a piece's commit holds its lead's history up to its base, so counting it as a holder would
-    /// let a lead's branch be forgotten as held.
+    /// let a lead's branch be forgotten as held; and an act's own ref (GITAPP2a, <see cref="ActRefs"/>), which holds an index's
+    /// blobs only until its record expires.
     /// </summary>
     internal static bool AnyRef(string reference) =>
-        !reference.StartsWith(DiscardedPrefix, StringComparison.Ordinal) && !PieceRefs.IsPiece(reference);
+        !reference.StartsWith(DiscardedPrefix, StringComparison.Ordinal) && !PieceRefs.IsPiece(reference) && !ActRefs.IsAct(reference);
 
     /// <summary>
     /// Delete a branch a judgement cleared, only while it is still the commit judged (SQUASHTIDY1c): <c>git update-ref -d</c>

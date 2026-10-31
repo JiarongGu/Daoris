@@ -275,6 +275,34 @@ public sealed class ProcessJob : IDisposable
         return true;
     }
 
+    /// <summary>
+    /// The job by that name, opened to count and to end what it holds (GITAPP2a: an act's job, which a reconciler finds without the step's pid);
+    /// null where no job answers to the name, which is a job whose last handle closed and ended what it held.
+    /// </summary>
+    /// <exception cref="System.ComponentModel.Win32Exception">It is there and would not open: held live, never "ended".</exception>
+    internal static ProcessJob? OpenToEnd(string name)
+    {
+        if (!OperatingSystem.IsWindows()) return null;
+        var handle = OpenJobObject(JobQuery | JobTerminate, false, name);
+        if (handle != IntPtr.Zero) return new ProcessJob(handle);
+        var error = Marshal.GetLastWin32Error();
+        if (error is FileNotFound or InvalidName) return null;
+        throw new System.ComponentModel.Win32Exception(error);
+    }
+
+    /// <summary>Until the job holds no live process or <paramref name="bound"/> passes: true where it emptied, false where something still runs.</summary>
+    internal async Task<bool> WaitEmptyAsync(TimeSpan bound)
+    {
+        var until = DateTimeOffset.UtcNow + bound;
+        while (Active is > 0)
+        {
+            if (DateTimeOffset.UtcNow >= until) return false;
+            await Task.Delay(EmptyPoll).ConfigureAwait(false);
+        }
+
+        return true;
+    }
+
     /// <summary>End every process still in the job.</summary>
     public void Dispose()
     {

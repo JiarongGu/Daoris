@@ -545,6 +545,23 @@ public sealed class DriverWatch(
                 Log?.Failed("the start's reconciliation of the tidy", error);
             }
         }, CancellationToken.None);
+        // GITAPP2a: the act journal's reconciliation at the start, beside the first looks so it never holds the come-up (D181 point 1): one
+        // checkout at a time, each under its own lock alone, one it cannot take left to the next look's writer, which reconciles it too.
+        var reconciling = Task.Run(async () =>
+        {
+            try
+            {
+                foreach (var line in await new ActReconciler(new ActJournal(home)).StartAsync(ct).ConfigureAwait(false)) Log?.Info("acts.held", ("said", line));
+            }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            {
+                // The loop closed first: every writer's lock reconciles what is still open.
+            }
+            catch (Exception error) when (error is not OperationCanceledException)
+            {
+                Log?.Failed("the start's reconciliation of the act journal", error);
+            }
+        }, CancellationToken.None);
         // FABRIC-RUN1, link 8: the evaluation runtime, begun after the plan on every wake it hears and at the look's deadline, and run beside
         // the look (PARALLEL1h); only where this loop
         // holds a hook set, and its passes write only where it holds the home's lease. It reads nothing unless a graph naming a plugin's
@@ -979,6 +996,7 @@ public sealed class DriverWatch(
             if (tidying is not null) await tidying.ContinueWith(_ => { }, TaskScheduler.Default).ConfigureAwait(false);
             if (limiting is not null) await limiting.ContinueWith(_ => { }, TaskScheduler.Default).ConfigureAwait(false);
             await recovering.ContinueWith(_ => { }, TaskScheduler.Default).ConfigureAwait(false);
+            await reconciling.ContinueWith(_ => { }, TaskScheduler.Default).ConfigureAwait(false);
         }
     }
 

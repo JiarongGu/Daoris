@@ -41,6 +41,8 @@ public sealed class ProcessStartsCensusTests
         ["Daoris.Desktop.Driver/Review/Heavy/HeavyStep.cs"] = "a heavy run's gate (HEAVYRUN1a), in the verb's own process, "
             + "not the desktop's: CreateProcessW, declared and called once, so the gate starts suspended and joins the run's "
             + "kill-on-close job before it can start a child of its own; and /bin/sh off Windows, where no job holds it",
+        ["Daoris.Desktop.Driver/Platform/HeldChild.cs"] = "a git act's effect step (GITAPP2a): CreateProcessW, declared and called once, so its git starts "
+            + "suspended, joins the act's named kill-on-close job, and runs only once its id is journaled; none off Windows",
     };
 
     /// <summary>The files, with how many direct starts each makes, of the sources that make one.</summary>

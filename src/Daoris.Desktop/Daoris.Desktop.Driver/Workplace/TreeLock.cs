@@ -52,6 +52,9 @@ public sealed class TreeLock : IDisposable
     /// <inheritdoc cref="HeldBy.Promoting"/>
     public const string Promoting = HeldBy.Promoting;
 
+    /// <inheritdoc cref="HeldBy.Acting"/>
+    public const string Acting = HeldBy.Acting;
+
     private readonly FileStream _file;
     private readonly string? _by;
     private readonly object? _outer;
@@ -182,6 +185,7 @@ public sealed class TreeLock : IDisposable
         Updating => $"`{repository}`'s branches were being brought up to date",
         Tidying => $"`{repository}`'s session trees were being tidied",
         Promoting => $"`{repository}`'s line was being moved to what its integration promoted",
+        Acting => $"a git act was changing `{repository}`'s checkout, or its record being reconciled (see the repository's page)",
         _ => $"a session was starting in `{repository}`, or another of Daoris's writes held it",
     };
 
