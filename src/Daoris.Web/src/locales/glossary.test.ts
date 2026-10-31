@@ -133,9 +133,9 @@ describe('the glossary', () => {
 
     it('matches the Actor, Actors and Roles labels', () => {
       const pattern = new RegExp(role.match!, 'i');
-      const labels = ['work.actor.title', 'settings.ai.actors.title', 'settings.daoris.label.roles'];
+      const labels = ['work.actor.title', 'settings.ai.roles.title', 'settings.daoris.label.roles'];
       expect(labels.map((key) => [en[key], pattern.test(en[key]!)])).toEqual([
-        ['Actor', true], ['Actors', true], ['Roles', true],
+        ['Actor', true], ['Roles', true], ['Roles', true],
       ]);
       expect(labels.map((key) => zh[key])).toEqual(['角色', '角色', '角色']);
     });

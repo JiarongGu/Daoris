@@ -121,7 +121,7 @@ describe('AI features on Settings', () => {
     show(<SettingsView notify={notify} section="ai" />);
     const user = userEvent.setup();
 
-    await user.click(within(await rowOf('Intake')).getByRole('button', { name: 'Edit' }));
+    await user.click(within(await rowOf('Intake')).getByRole('button', { name: 'Edit Intake' }));
     const editor = screen.getByRole('form', { name: 'Intake: your order' });
     expect(within(editor).getByText('Running work never moves to another choice.')).toBeTruthy();
     await user.click(within(editor).getByRole('button', { name: 'Save' }));
@@ -150,7 +150,7 @@ describe('AI features on Settings', () => {
     show(<SettingsView notify={() => {}} section="ai" />);
     const user = userEvent.setup();
 
-    await user.click(within(await rowOf('Intake')).getByRole('button', { name: 'Edit' }));
+    await user.click(within(await rowOf('Intake')).getByRole('button', { name: 'Edit Intake' }));
     await user.click(within(screen.getByRole('form', { name: 'Intake: your order' })).getByRole('button', { name: 'Off' }));
 
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_ACTOR', { payload: { actor: 'intake', choices: [] } });
@@ -518,12 +518,16 @@ describe('Actors on AI features', () => {
   it('folds each actor to one line, as before where it reads today\'s settings', async () => {
     show(<SettingsView notify={() => {}} section="ai" />);
 
-    expect(await screen.findByText('Actors')).toBeTruthy();
+    expect(await screen.findByText('Roles')).toBeTruthy();
+    // One card for the roles: the word Actors is on no card, and the older shell here has no catalogue to draw beside it (COMPANYVIEW1a).
+    expect(screen.queryByText('Actors')).toBeNull();
+    expect(screen.queryByText('Role catalogue')).toBeNull();
+    expect(screen.getByText(/Not offered by this shell/)).toBeTruthy();
     expect(screen.getAllByText('claude-code · account default · account default · as before').length).toBe(2);
     expect(screen.getByText('all at once: claude-code · account default · account default · as before')).toBeTruthy();
     expect(screen.getByText('models for the agents a rule names: as before')).toBeTruthy();
     // Build's, Intake's, Ask Daoris's and Chat's editors (MODELROLE1c, MODELROLE1d): the others' come with row e.
-    expect(screen.getAllByRole('button', { name: 'Edit' })).toHaveLength(4);
+    expect(screen.getAllByRole('button', { name: /^Edit / })).toHaveLength(4);
     // Intake and Ask Daoris off in their own words (D205 §2.1).
     expect(screen.getByText('Off — declarations only')).toBeTruthy();
     expect(screen.getByText('Off — starters only')).toBeTruthy();
@@ -534,7 +538,7 @@ describe('Actors on AI features', () => {
     show(<SettingsView notify={notify} section="ai" />);
     const user = userEvent.setup();
 
-    await user.click((await screen.findAllByRole('button', { name: 'Edit' }))[0]!);
+    await user.click(await screen.findByRole('button', { name: 'Edit Build' }));
     const editor = screen.getByRole('form', { name: 'Build: your order' });
     expect(within(editor).getByText('Running work never moves to another choice.')).toBeTruthy();
     await user.type(within(editor).getByRole('textbox', { name: "choice 1's model" }), 'opus');
@@ -553,7 +557,7 @@ describe('Actors on AI features', () => {
     show(<SettingsView notify={notify} section="ai" />);
     const user = userEvent.setup();
 
-    await user.click((await screen.findAllByRole('button', { name: 'Edit' }))[0]!);
+    await user.click(await screen.findByRole('button', { name: 'Edit Build' }));
     const editor = screen.getByRole('form', { name: 'Build: your order' });
     await user.type(within(editor).getByRole('textbox', { name: "choice 1's model" }), 'opus');
     await user.click(within(editor).getByRole('button', { name: 'Save' }));
@@ -568,10 +572,10 @@ describe('Actors on AI features', () => {
     await i18n.changeLanguage(language);
     show(<SettingsView notify={() => {}} section="ai" />);
     const user = userEvent.setup();
-    const edits = await screen.findAllByRole('button', { name: i18n.t('settings.ai.actors.edit') });
+    await screen.findAllByRole('button', { name: i18n.t('settings.ai.roles.editOf', { role: i18n.t('settings.ai.actors.name.build') }) });
 
-    for (const [at, id, words] of [[2, 'ask-daoris', 'goesOn'], [3, 'chat', 'goesOn'], [1, 'intake', 'neverMoves']] as const) {
-      await user.click(edits[at]!);
+    for (const [id, words] of [['ask-daoris', 'goesOn'], ['chat', 'goesOn'], ['intake', 'neverMoves']] as const) {
+      await user.click(screen.getByRole('button', { name: i18n.t('settings.ai.roles.editOf', { role: i18n.t(`settings.ai.actors.name.${id}`) }) }));
       const editor = screen.getByRole('form', {
         name: i18n.t('settings.ai.actors.editorTitle', { actor: i18n.t(`settings.ai.actors.name.${id}`) }),
       });
@@ -618,7 +622,7 @@ describe('The role catalogue on AI features', () => {
     show(<SettingsView notify={notify} section="ai" />);
     const user = userEvent.setup();
 
-    expect(await screen.findByText('Role catalogue')).toBeTruthy();
+    expect(await screen.findByText('Roles')).toBeTruthy();
     await user.click(screen.getByRole('button', { name: 'Add the Designer' }));
 
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_ROLE', {
@@ -629,6 +633,18 @@ describe('The role catalogue on AI features', () => {
       },
     });
     await waitFor(() => expect(notify).toHaveBeenCalledWith('Designer is saved; new work takes it.'));
+  });
+
+  it('tells a failed read of the roles from a shell that offers none', async () => {
+    const answer = invoke.getMockImplementation()!;
+    invoke.mockImplementation(async (module: string, type: string, request?: unknown) => {
+      if (type === 'ROLES') throw new Error('the store did not read');
+      return answer(module, type, request);
+    });
+    show(<SettingsView notify={() => {}} section="ai" />);
+
+    expect(await screen.findByText(/could not be read/)).toBeTruthy();
+    expect(screen.queryByText(/Not offered by this shell/)).toBeNull();
   });
 
   it("says the driver's refusal of a removal under the role's row", async () => {

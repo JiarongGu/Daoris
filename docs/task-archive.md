@@ -22082,6 +22082,12 @@ The row is quoted by its head; its whole text and proof are the foundation desig
 
 **Outcome** 2026-10-31: built in two halves. The service's `Lines.HeadOfLineAsync` follows the walk and a chain's hop; `GET /api/sessions` answers `head`; the driver's entry carries `head` and `opens`. The page opens a row on `opens`, the parts heading says *Part 2 of 3 is the head · 1 beside it*, a part beside the head is marked, and no head says so (D137); *head* is 续段. Reading: *beside* is derived on the page from parts that began `asked` and are not the head. Owed: the installed window, an ended multi-part session opening on its head.
 
+## COMPANYVIEW1a — one role, one row (2026-10-31)
+
+> **1a** (the company-view design §3.1, §7 row 1): `settings/ai/Roles.tsx` takes over the Actors card's *Off*, *Clear*, order (*Move up*, *Move down*), ⓘ and found changes, so each seeded role is drawn once and *Actors* leaves the window; the doors per press, the unkept home and the older shell.
+
+**Outcome** 2026-10-31: built. `RolesCard` is the one card: *Save* and *Off* (intake and Ask Daoris work, seeded or added) go by `SET_ROLE`, *Clear order* (a seeded role's staffing back to as before) by `SET_ACTOR` alone and worded apart from *Back to the default*; a home whose `driver.json` is its own keeps each seeded row's order editor over `SET_ACTOR` and holds *Add a role*, *Remove* and the place; a shell answering `ACTORS` and not `ROLES` keeps one order editor per role and tells *not offered by this shell*, a failed read and an empty catalogue apart (`AiDomain.tsx` reads `NO_ROUTE` from any other refusal). `Actors.tsx` and its test and stories are gone; `Roles.test.tsx` holds the doors, and `Roles.stories.tsx` the shapes at 80, 39 and 25rem in both languages.
+
 ## LINESTOGETHER1c — related sessions of one repository (2026-10-31)
 
 > **1c** (the review-flow design §3): the driver compares every session of a repository with a tree here, chats included, and the Session step names the overlap, each a door to its head, declared paths told apart from changed ones, *not read here* where git cannot say; the Integration tab lists the same read, read-only.
