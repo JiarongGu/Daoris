@@ -242,7 +242,10 @@ it on once more where it is still not clean, and at the next such end says so (`
 --entry` and `--ask` do not carry on. A tree bound into an operation bringing sessions together (LINESTOGETHER1d, the review-flow design
 §4; `TogetherOperations`, `sessions/together.json`) lands only by that operation's combined Accept: `TreeLands.LandAsync` reads the
 bindings under the record's lock while it holds the tree, a discard takes the tree's landing hold before it reads them, and the sync press
-and a tree's update leave a bound tree as it stands, each naming the operation (`TogetherGuard`). A driven turn on the protocol door that ends with its quest done (or submitted) and its tree
+and a tree's update leave a bound tree as it stands, each naming the operation (`TogetherGuard`). The look steps each operation by the
+records (`TogetherWatch`), settles one at *landing* after a restart and drops one whose sessions were deleted; the head entry's Accept
+lands it (`TogetherAccepts`), its record listing the members as `brought`, and a member's own landing of that work is refused as
+*brought into*. A driven turn on the protocol door that ends with its quest done (or submitted) and its tree
 uncommitted is not the session's end either (LANDBACK1 part 2): `AcpSession.CarriesOn`, built by `Driver.CarriesOn` for a start and a resumed
 run, reads the quest and the tree (`TurnCarries`, `AutoLander.ReadTreeAsync`), the run waits for the session's own background work as a park
 would, and then sends Daoris's own prompt (`TurnCarries.WordsOf`, no key, no say door, no card, and no `CarriedAccepts` entry) to commit by the

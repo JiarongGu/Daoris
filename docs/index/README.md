@@ -419,4 +419,4 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/DAORIS_UNIFIED_COLLABORATION_ARCHITECTURE_AND_PLAN_2026-10-16.md` | 164 | 5380 |
 | `docs/backlog-parked.md` | 179 | 946 |
 | `docs/development.md` | 54 | 596 |
-| `src/Daoris.Desktop/README.md` | 261 | 1270 |
+| `src/Daoris.Desktop/README.md` | 261 | 1273 |
