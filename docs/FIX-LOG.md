@@ -12680,3 +12680,11 @@ mis-rooted instance.
 **Fix.** Keyed by the checkout's common git directory, read from `.git` and its `commondir` as git resolves them, so a session tree names its checkout's lock too.
 
 **Verification.** `TreeLockTests`' one-checkout case; the key changed the lock's signature, so it ran green only.
+
+## The line's pull and a promotion moved a checkout a session was working in (2026-10-31)
+
+**Root cause.** `LinePulls.PullAsync` and the promotion's effect judged the checkout by git alone (clean, on the line), so with trees off they fast-forwarded the checkout a driven session or a conversation was working in, between two of its agent's reads (GITAPP2's §3 *Beside a session*).
+
+**Fix.** Each reads the ledger's holders of the checkout inside its hold (`BranchTidying.HoldersAsync`, `CheckoutBeside`) and waits, naming the session, while one is running, waiting or held to go on, or while the ledger cannot be read; every pull door and the integration transport hand it the ledger.
+
+**Verification.** `CheckoutBesideGitTests` (a pull and a promotion beside a driven session in the checkout, each going on once its quest is done; an unreadable ledger), written with the fix and run green; `CheckoutWritersCensusTests` holds the doors.

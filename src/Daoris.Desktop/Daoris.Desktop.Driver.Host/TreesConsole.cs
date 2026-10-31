@@ -275,7 +275,8 @@ internal static class TreesConsole
                 var done = await trees.SyncAsync(repositories, inUse, only: null, fetch: true,
                     inUseNow: async token => (await service.ActiveSessionsAsync(token).ConfigureAwait(false))
                         .Select(session => session.Tree).OfType<string>().Where(tree => tree.Length > 0)
-                        .ToHashSet(StringComparer.OrdinalIgnoreCase), scope: scope).ConfigureAwait(false);
+                        .ToHashSet(StringComparer.OrdinalIgnoreCase), scope: scope,
+                    beside: token => BranchTidying.HoldersAsync(service, token)).ConfigureAwait(false);
                 Told(home, PressesTold.TreesSync);
                 // The words are the route's too (RPC1b3): what was not fetched, each row, what was left apart, the registry's
                 // following of the lines moved, and the count, 1 where something the proofs cleared did not happen.

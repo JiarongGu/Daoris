@@ -584,6 +584,7 @@ public sealed class DriverWatch(
                 Say = async (session, text, key, token) =>
                     (await WordsHead.FollowAsync(session, at => service.SayAsync(at, text, null, token, from: SaidFrom.Daoris, key: key)).ConfigureAwait(false)).Said,
                 Tidy = IntegrationTidies.Through(new SessionTrees(home)),
+                Beside = token => BranchTidying.HoldersAsync(service, token),
                 Told = told => Log?.Info(told.Code, ("repository", told.Repository), ("line", told.Line), ("candidate", told.Candidate), ("request", told.Request),
                     ("outcome", told.Outcome)),
                 Said = said => Log?.Info("integration.said", ("said", said)),

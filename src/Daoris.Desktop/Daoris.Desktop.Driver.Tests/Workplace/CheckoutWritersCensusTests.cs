@@ -69,9 +69,22 @@ public sealed partial class CheckoutWritersCensusTests
     /// <summary>Writers of a checkout that start no git of Daoris's and so take no lock: how each is fenced instead.</summary>
     private static readonly Dictionary<string, string> Fenced = new(StringComparer.Ordinal)
     {
-        ["ChatRunner.cs"] = "a conversation's agent in the checkout writes its files itself: its start holds the repository shared until its record is open and the ledger names the checkout, so no writer moves the checkout under the commit it begins from; after that each writer reads the checkout clean under its own hold, immediately before, and moves it only by `merge --ff-only`, which git refuses over the agent's change, and a clean checkout is still moved under a running agent",
+        ["ChatRunner.cs"] = "a conversation's agent in the checkout writes its files itself: its start holds the repository shared until its record is open and the ledger names the checkout, so no writer moves the checkout under the commit it begins from; after that each writer reads the checkout clean under its own hold, immediately before, and moves it only by `merge --ff-only`, which git refuses over the agent's change, and the pull and the transport's promotion wait while the ledger holds the session there",
         ["ChatGoOn.cs"] = "a conversation going on in the checkout: its start holds the repository shared until its record holds the checkout again, then as a new conversation's",
         ["Driver.cs"] = "a driven session in the checkout: its start holds the repository shared until its record is open, then as a conversation's",
+    };
+
+    /// <summary>
+    /// The doors that start a checkout's writer with a service to ask, each handing it the ledger's sessions (GITAPP2's §3 <i>Beside a
+    /// session</i>), so the write waits for a session working in the checkout. A merge rule's own press is not among them: it reaches the
+    /// promotion through the landing's doors, which carry no such port, and moves as before.
+    /// </summary>
+    private static readonly Dictionary<string, string> Beside = new(StringComparer.Ordinal)
+    {
+        ["TreesConsole.cs"] = "`daoris-driver trees sync --yes`'s pull",
+        ["LinesRoutes.cs"] = "the window's Bring up to date",
+        ["HelpRoutes.cs"] = "Ask Daoris's Bring up to date",
+        ["DriverWatch.cs"] = "the integration transport's promotions",
     };
 
     /// <summary>
@@ -179,6 +192,14 @@ public sealed partial class CheckoutWritersCensusTests
             Assert.Contains("TreeLock.TryStarting(", sources[start], StringComparison.Ordinal);
             Assert.DoesNotMatch(@"\b(isolated|own)\b[^;?]*\?\s*TreeLock\.TryStarting\(", sources[start]);
         }
+
+        foreach (var (door, what) in Beside)
+        {
+            Assert.True(sources[door].Contains("BranchTidying.HoldersAsync(", StringComparison.Ordinal), $"{door} ({what}) hands the writer no ledger");
+        }
+
+        var pressing = sources.Where(each => Regex.IsMatch(each.Value, @"\.SyncAsync\([^;]*inUseNow:")).Select(each => each.Key);
+        Assert.Empty(pressing.Except(Beside.Keys));
 
         foreach (var (writer, (source, how)) in Outside)
         {

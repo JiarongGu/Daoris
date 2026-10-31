@@ -865,8 +865,9 @@ public sealed class SessionTrees(string home, IWorkplacePluginWire? plugins = nu
     public Task<SyncDone> SyncAsync(
         IEnumerable<(string Repository, string? Workspace, string? Root)> repositories, IReadOnlySet<string> inUse,
         IReadOnlySet<string>? only = null, bool fetch = false, CancellationToken ct = default,
-        Func<CancellationToken, Task<IReadOnlySet<string>>>? inUseNow = null, SyncScope? scope = null) =>
-        Sync.SyncAsync(repositories, inUse, only, fetch, ct, inUseNow, scope);
+        Func<CancellationToken, Task<IReadOnlySet<string>>>? inUseNow = null, SyncScope? scope = null,
+        Func<CancellationToken, Task<IReadOnlyList<TreeHolder>>>? beside = null) =>
+        Sync.SyncAsync(repositories, inUse, only, fetch, ct, inUseNow, scope, beside);
 
     /// <inheritdoc cref="ReviewRanges.ReviewBaseAsync"/>
     public Task<string> ReviewBaseAsync(string tree, string recorded, CancellationToken ct = default) =>

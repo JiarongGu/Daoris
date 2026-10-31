@@ -24,6 +24,12 @@ internal sealed record IntegrationPromoteAsk(string Repository, string Workspace
     /// handed in, and the tidy then removes nothing. Never a delete of its own.
     /// </summary>
     public IntegrationTidy? Tidy { get; init; }
+
+    /// <summary>
+    /// The ledger's sessions and their trees (<see cref="BranchTidying.HoldersAsync"/>), asked inside the checkout's hold, so the move waits
+    /// for a session working in the checkout that has the line out (GITLOCK1); null asks nothing and moves as before.
+    /// </summary>
+    public Func<CancellationToken, Task<IReadOnlyList<TreeHolder>>>? Beside { get; init; }
 }
 
 /// <summary>What a promote run answered (<see cref="IntegrationPromoteRuns"/>), in words, with the candidate and its members as they now stand.</summary>
@@ -500,6 +506,12 @@ internal sealed class IntegrationPromotes(IntegrationStore store, string treesRo
         if (Seam is { } beforeMove) await beforeMove("before-move").ConfigureAwait(false);
         if (checkout is not null)
         {
+            // GITLOCK1: never under a session the ledger holds in that checkout, read inside the hold.
+            if (await CheckoutBeside.WaitsAsync(ask.Beside, checkout.Path, ask.Repository, $"the promotion onto `{ask.Line}`", ct).ConfigureAwait(false) is { } waits)
+            {
+                return Held($"{char.ToUpperInvariant(waits[0])}{waits[1..]}: nothing was moved.");
+            }
+
             // A checkout that has the line out is moved by a fast-forward in it, where it is clean; never by a ref moved under it.
             var (clean, detail) = await WorkingTree.CleanAsync(checkout.Path, ct).ConfigureAwait(false);
             if (!clean) return Held($"the checkout that has `{ask.Line}` out is not clean ({detail}): nothing was moved, and it is tried again at the next look.");

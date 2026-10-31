@@ -24,6 +24,9 @@ public sealed record IntegrationTransportWorld
     /// <summary>The landing's own clean-up the tidy step hands a settled landed branch to; null removes nothing.</summary>
     internal IntegrationTidy? Tidy { get; init; }
 
+    /// <summary>The ledger's sessions and their trees, so a promotion waits for a session working in the checkout (GITLOCK1); null asks nothing.</summary>
+    public Func<CancellationToken, Task<IReadOnlyList<TreeHolder>>>? Beside { get; init; }
+
     /// <summary>The reading of the start's confirmation the store is opened with; null reads this install's.</summary>
     public Func<StoreSettled>? Settled { get; init; }
 
@@ -188,7 +191,7 @@ public sealed class IntegrationTransport(string home, IntegrationTransportWorld?
         var config = _world.Config();
         var asks = new IntegrationSweepAsks(
             new IntegrationReplayAsk(send.Repository, send.Workspace, root, send.Line) { Say = _world.Say, Config = config },
-            new IntegrationPromoteAsk(send.Repository, send.Workspace, root, send.Line, config, home) { Tidy = _world.Tidy });
+            new IntegrationPromoteAsk(send.Repository, send.Workspace, root, send.Line, config, home) { Tidy = _world.Tidy, Beside = _world.Beside });
 
         VerifySlot? verifying = null;
         HeavySlot? heavy = null;

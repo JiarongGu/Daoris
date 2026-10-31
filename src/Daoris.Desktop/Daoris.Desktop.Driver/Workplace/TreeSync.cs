@@ -180,10 +180,15 @@ internal sealed class TreeSync(
     /// Which repositories to take (WSR7, D112); null for the default, those holding a branch of Daoris's. Each repository
     /// a row in <paramref name="only"/> names is taken too: the press acts on what the person was shown.
     /// </param>
+    /// <param name="beside">
+    /// The ledger's sessions and their trees (<see cref="BranchTidying.HoldersAsync"/>), asked inside the checkout's hold, so a pull waits for
+    /// a session working in the checkout (GITLOCK1). Every door with a service hands it; null asks nothing and pulls as before.
+    /// </param>
     internal async Task<SyncDone> SyncAsync(
         IEnumerable<(string Repository, string? Workspace, string? Root)> repositories, IReadOnlySet<string> inUse,
         IReadOnlySet<string>? only = null, bool fetch = false, CancellationToken ct = default,
-        Func<CancellationToken, Task<IReadOnlySet<string>>>? inUseNow = null, SyncScope? scope = null)
+        Func<CancellationToken, Task<IReadOnlySet<string>>>? inUseNow = null, SyncScope? scope = null,
+        Func<CancellationToken, Task<IReadOnlyList<TreeHolder>>>? beside = null)
     {
         // One look (UIFREEZE1, PROC1d-i): only git's guess is kept; each judgement is still re-read right before it acts (D88).
         using var look = context.OneLook();
@@ -211,11 +216,17 @@ internal sealed class TreeSync(
             var pull = fetched.Onto(asJudged);
             if (Listed($"{repository}:{line}"))
             {
+                // GITLOCK1: a pull that would move the checkout waits for a session the ledger holds in it, read inside the hold.
+                var waits = held is not null && pull.Moves && inRoot
+                    ? await CheckoutBeside.WaitsAsync(beside, root, repository, $"`{line}`'s pull", ct).ConfigureAwait(false)
+                    : null;
                 pulls.Add(!pull.Moves
                     ? new PullResult(pull, false, only is null ? SyncWords.Describe(pull) : $"{SyncWords.Describe(pull)} — {LeftSince}")
                     : held is null
                         ? new PullResult(pull, false, $"{holder}, so `{line}` was left for another look.")
-                        : await LinePulls.PullAsync(root, pull, inRoot, held, ct).ConfigureAwait(false));
+                        : waits is not null
+                            ? new PullResult(pull, false, $"{char.ToUpperInvariant(waits[0])}{waits[1..]}.")
+                            : await LinePulls.PullAsync(root, pull, inRoot, held, ct).ConfigureAwait(false));
                 // A line Daoris moved is followed by the registry at the next look (WSSETUP5, D124 §3.1): under the `branch`
                 // rule this fast-forward is when a merged set-up first reaches this machine.
                 if (pulls[^1].Moved) RegistryFollowing.Moved(context.Home, repository, DateTimeOffset.UtcNow);
