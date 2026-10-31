@@ -339,7 +339,7 @@ public sealed class LimitResumeTickTests : IDisposable
         await LimitedAsync(service, driver);
 
         _now = Until.AddMinutes(1);
-        using (TreeLock.TryReplaying(_home, null, "engine"))
+        using (TreeLock.TryReplaying(_home, _repository, "engine", TreeLock.Updating))
         {
             await driver.RunOnceAsync().WaitAsync(Poll.Patience);
         }

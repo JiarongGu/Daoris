@@ -58,6 +58,13 @@ public sealed class AmbientWorkspace(string workingDirectory, string? circle = n
     }
 
     /// <summary>
+    /// The registered repository the working directory sits in, whatever workspace the session is bound to or named for; null when it
+    /// sits in none (KNOWCENTRAL2e2: the repository a person's own agent proposes as).
+    /// </summary>
+    public async Task<Registration?> ResolveRepositoryAsync(KnowledgeService service, CancellationToken ct = default) =>
+        Containing(await service.RegistryAsync(ct: ct).ConfigureAwait(false), workingDirectory);
+
+    /// <summary>
     /// The registered repository this path is inside, longest root first.
     /// </summary>
     /// <remarks>

@@ -328,7 +328,7 @@ public sealed class QuestTools(
                     foreach (var (op, number) in carried.Select((op, i) => (op, i + 1)))
                     {
                         text.AppendLine($"  {number}. `{op.Id}` {op.Change.Relation} `{op.Repository}:{op.Change.Target}` at revision {op.Change.Revision}, "
-                            + $"from session `{op.By?.Session}`: {op.Change.Text} ({Standing(op)})");
+                            + $"from {(op.By is { } by ? MemoryProposer.Words(quest.From, by) : "its proposer")}: {op.Change.Text} ({Standing(op)})");
                     }
                 }
 

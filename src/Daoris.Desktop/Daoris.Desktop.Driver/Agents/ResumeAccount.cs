@@ -144,6 +144,24 @@ public static class HeldWords
         $"`{repository}`'s branches are being brought up to date right now, so a session does not start in one of its "
         + "trees until that is done; it starts at the next look.";
 
+    /// <summary>
+    /// What holds the repository alone while a start waits for it (GITLOCK1), by what its holder said beside the checkout's lock (<see cref="HeldBy"/>):
+    /// bringing its branches up to date, tidying its trees, moving its line to a promotion, or a write that said nothing.
+    /// </summary>
+    public static (string Why, Noted Line) Holding(string repository, string? by) => by switch
+    {
+        HeldBy.Updating => Replaying(repository),
+        HeldBy.Tidying => Held(NoteCodes.HeldTidying, $"`{repository}`'s session trees are being cleaned up right now", repository),
+        HeldBy.Promoting => Held(NoteCodes.HeldPromoting, $"`{repository}`'s line is being moved to what its integration promoted right now", repository),
+        _ => Held(NoteCodes.HeldWriting, $"another of Daoris's writes holds `{repository}` right now", repository),
+    };
+
+    private static (string Why, Noted Line) Held(NoteCode code, string holder, string repository)
+    {
+        var why = $"{holder}, so a session does not start in one of its trees until that is done; it starts at the next look.";
+        return (why, Whole(code, why, ("repository", repository)));
+    }
+
     /// <summary>Ask Daoris is answering in another conversation of its room.</summary>
     public static (string Why, Noted Line) Answering(string session)
     {

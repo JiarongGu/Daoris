@@ -151,27 +151,60 @@ public sealed class BranchTidying(string home)
     /// its line goes on in that tree (a retry waiting on a limit among them). A tree is judged by every session of its quest, never only by
     /// the run that opened it.
     /// </summary>
-    public static async Task<HashSet<string>> HeldTreesAsync(ServiceClient service, CancellationToken ct)
+    public static async Task<HashSet<string>> HeldTreesAsync(ServiceClient service, CancellationToken ct) =>
+        (await HoldersAsync(service, ct).ConfigureAwait(false)).Select(each => each.Tree).ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// The trees sessions hold, as <see cref="HeldTreesAsync"/> reads them, each with a session that holds it (GITLOCK1): what a writer of
+    /// a checkout names when it waits for the session working there. Thrown where the service does not answer, which a writer reads as held.
+    /// </summary>
+    public static Task<IReadOnlyList<TreeHolder>> HoldersAsync(ServiceClient service, CancellationToken ct) => ReadHoldersAsync(service, writing: false, ct);
+
+    /// <summary>
+    /// The sessions a writer of a checkout waits for (GITLOCK2): <see cref="HoldersAsync"/>'s, except that a quest's newest part counts only
+    /// while it will go on (never one completed, declined, or failed with no limit to wait out), since deferring a write to the person's
+    /// checkout is not keeping a tree from deletion.
+    /// </summary>
+    public static Task<IReadOnlyList<TreeHolder>> BesideAsync(ServiceClient service, CancellationToken ct) => ReadHoldersAsync(service, writing: true, ct);
+
+    private static async Task<IReadOnlyList<TreeHolder>> ReadHoldersAsync(ServiceClient service, bool writing, CancellationToken ct)
     {
         var held = (await service.ActiveSessionsAsync(ct).ConfigureAwait(false))
-            .Select(session => session.Tree).OfType<string>().Where(tree => tree.Length > 0)
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
-        held.UnionWith(await service.WaitingTreesAsync(ct).ConfigureAwait(false));
-        held.UnionWith(await WaitingOnHelpersAsync(service, ct).ConfigureAwait(false));
-        held.UnionWith(LineTrees(
-            await service.RecordsAsync(ct).ConfigureAwait(false), await service.EveryQuestAsync(ct).ConfigureAwait(false)));
+            .Where(session => session.Tree is { Length: > 0 }).Select(session => new TreeHolder(session.Tree!, session.Id)).ToList();
+        var records = await service.RecordsAsync(ct).ConfigureAwait(false);
+        held.AddRange(records.Where(record => !record.Teammate && record.WordsWaiting && record.Tree is { Length: > 0 })
+            .Select(record => new TreeHolder(record.Tree!, record.Session)));
+        var waiting = records.Where(record => HelperWaitTrees.HoldsTree(record) && record.Tree is { Length: > 0 } && record.Quest is { Length: > 0 }).ToList();
+        var quests = await service.EveryQuestAsync(ct).ConfigureAwait(false);
+        var taken = quests.Where(quest => quest.Status == "Taken").Select(quest => quest.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        held.AddRange(waiting.Where(record => taken.Contains(record.Quest!)).Select(record => new TreeHolder(record.Tree!, record.Session)));
+        held.AddRange(LineHolders(records, quests, goingOn: writing));
         return held;
     }
 
+    /// <summary>Whether a part that is not running will still go on: a limit it waits out, words it waits for, or a stop held for the person.</summary>
+    private static bool GoesOn(PriorSession record) =>
+        record.WordsWaiting || record.Limit
+        || !(record.State.Equals("completed", StringComparison.OrdinalIgnoreCase) || record.State.Equals("declined", StringComparison.OrdinalIgnoreCase)
+             || record.State.Equals("failed", StringComparison.OrdinalIgnoreCase));
+
     /// <summary>The tree of the newest part of each quest still open or taken (TREEKEEPRETRY1); a teammate's record is none here.</summary>
-    public static IEnumerable<string> LineTrees(IEnumerable<PriorSession> records, IEnumerable<QuestView> quests)
+    public static IEnumerable<string> LineTrees(IEnumerable<PriorSession> records, IEnumerable<QuestView> quests) =>
+        LineHolders(records, quests).Select(each => each.Tree);
+
+    /// <summary>The trees of the newest part of each open or taken quest that will still go on (GITLOCK2): what <see cref="BesideAsync"/> adds to the running sessions.</summary>
+    public static IEnumerable<string> LineWaiters(IEnumerable<PriorSession> records, IEnumerable<QuestView> quests) =>
+        LineHolders(records, quests, goingOn: true).Select(each => each.Tree);
+
+    private static IEnumerable<TreeHolder> LineHolders(IEnumerable<PriorSession> records, IEnumerable<QuestView> quests, bool goingOn = false)
     {
         var open = quests.Where(quest => quest.Status is "Open" or "Taken").Select(quest => quest.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
         return records
             .Where(record => !record.Teammate && record.Quest is { Length: > 0 } quest && open.Contains(quest))
             .GroupBy(record => record.Quest!, StringComparer.OrdinalIgnoreCase)
-            .Select(line => line.MaxBy(record => record.Created ?? DateTimeOffset.MinValue)!.Tree)
-            .OfType<string>().Where(tree => tree.Length > 0);
+            .Select(line => line.MaxBy(record => record.Created ?? DateTimeOffset.MinValue)!)
+            .Where(record => record.Tree is { Length: > 0 } && (!goingOn || GoesOn(record)))
+            .Select(record => new TreeHolder(record.Tree!, record.Session));
     }
 
     /// <summary>
@@ -1025,7 +1058,7 @@ public sealed class BranchTidying(string home)
     /// <summary>What held a whole repository this look, in a sentence after its name.</summary>
     private static string Held(TidyPass pass) => pass.Held switch
     {
-        TidyKept.Starting => $"{pass.Repository}: {TreeLock.Starting(pass.Repository)}.",
+        TidyKept.Starting => $"{pass.Repository}: {TreeLock.Starting(pass.Repository, pass.Detail)}.",
         TidyKept.Sessions when pass.Repository.Length == 0 =>
             $"the session branches were not looked at, since the service did not answer for its registry: {Clause(pass.Detail ?? "")}.",
         TidyKept.Sessions => $"{pass.Repository}: its session branches stay this look, since the service did not say which "

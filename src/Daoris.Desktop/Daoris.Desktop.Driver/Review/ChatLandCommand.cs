@@ -63,7 +63,8 @@ public static class ChatLandCommand
                     gate.Process, token).ConfigureAwait(false) with { Entered = entered };
                 return await landing.LandAsync(tree, subject, token, inUse: async held => (await service.ActiveSessionsAsync(held).ConfigureAwait(false))
                     .Select(each => each.Tree).OfType<string>().Where(each => each.Length > 0)
-                    .ToHashSet(StringComparer.OrdinalIgnoreCase), gate: gate, joins: subject.Joins).ConfigureAwait(false);
+                    .ToHashSet(StringComparer.OrdinalIgnoreCase), gate: gate, joins: subject.Joins,
+                    beside: held => BranchTidying.BesideAsync(service, held)).ConfigureAwait(false);
             },
             () => ChatPresses.TurnsOf(events, line), ct).ConfigureAwait(false);
 

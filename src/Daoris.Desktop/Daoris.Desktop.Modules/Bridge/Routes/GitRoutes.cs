@@ -122,6 +122,13 @@ public sealed class GitRoutes(DriverLoop loop)
         await GitAnsweredAsync(request, cancellationToken, (root, token) =>
             _gitReads.CompareAsync(root, Optional(request, "left") ?? "", Optional(request, "right") ?? "", Flag(request, "everything"), token));
 
+    // GITAPP2b (D204, the git-writes design §1 and §4): the Changes tab's read, three fresh observations of the checkout through
+    // the counting seam, asked again at every ask (kept nowhere across opens, `readAt` saying when). Told by event: it starts git.
+    [DriverRoute("GIT_CHANGES")]
+    [ByEvent("GIT_CHANGES", Untold = "the checkout's index, tree and untracked files, which no scope tells")]
+    private async Task<object?> GitChangesAsync(IpcRequest request, CancellationToken cancellationToken) =>
+        await GitAnsweredAsync(request, cancellationToken, (root, token) => GitChanges.ReadAsync(root, token));
+
     /// <summary>
     /// A read of the repository the payload names, answered as the driver answered it: its value, or a code the page words and
     /// the sentence beside it, and the git commands that give the same answer. A repository with no checkout here is an answer

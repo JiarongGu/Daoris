@@ -67,6 +67,21 @@ const PARKS: PushedAttention[] = SESSIONS.filter((one) => one.state === 'awaitin
 }));
 const PARKED_QUEST: PushedAttention = { kind: 'parked-quest', id: 'q1', since: PARKED.since!, where: 'engine', sitting: PARKED };
 const COUNTED = { 'session:c4a7c4a7': { kind: 'parked', workspace: 'default' } };
+/** INTEGRATE1h: an integration's waits on the owner, as .NET pushes them, each counted at Repositories, whose Integration tab its door opens. */
+const INTEGRATION_WAITS: PushedAttention[] = [
+  {
+    kind: 'integration', id: 'decide:c1', since: '2026-10-01T10:00:00Z', workspace: 'default', where: 'engine', stands: true,
+    integration: { wait: 'decide', repository: 'engine', line: 'main', candidate: 'c1', branches: ['feature/a'], why: 'an unconfirmed failure' },
+  },
+  {
+    kind: 'integration', id: 'superseded:r1:abc1234', since: '2026-10-01T10:05:00Z', workspace: 'default', where: 'engine',
+    integration: { wait: 'superseded', repository: 'engine', line: 'main', branch: 'feature/b', request: 'r1', commit: 'abc1234', subject: 'later work' },
+  },
+  {
+    kind: 'integration', id: 'card:u1', since: '2026-10-01T10:10:00Z', workspace: 'default', where: 'engine', stands: true,
+    integration: { wait: 'card', repository: 'engine', branch: 'feature/c', unit: 'u1', tip: 'def5678' },
+  },
+];
 /** INTEGRATE1o part o3: a run held at a quest the receiver declined, as .NET pushes it; its work is the quest below. */
 const DECLINED: PushedAttention = {
   kind: 'request-declined', id: 'r7', since: '2026-10-01T10:00:00Z', workspace: 'default', where: 'engine',
@@ -185,7 +200,7 @@ describe("A place's number", () => {
     ['Repositories', [{
       kind: 'work', id: 'u-orphan', since: '2026-10-01T10:00:00Z', workspace: 'default', where: 'engine', title: 'daoris/s-orphan',
       blocked: { unknown: true, entries: [] },
-    }]],
+    }, ...INTEGRATION_WAITS]],
     ['Agents', [{ kind: 'rule', id: proposal.id, since: proposal.proposed, detail: proposal.why, proposal }]],
     ['Settings', [{ kind: 'space', id: 'D:', since: '2026-10-01T10:00:00Z' }]],
   ];
@@ -455,6 +470,20 @@ describe("The taskbar's count", () => {
     const row = await screen.findByRole('listitem', { name: 'Expose a streaming budget' });
     expect(within(row).getByText('request declined')).toBeInTheDocument();
     expect(within(row).getByRole('button', { name: 'Pass over…' })).toBeInTheDocument();
+  });
+
+  /** INTEGRATE1h: an integration's three waits on the owner are three waits, in the bell, the taskbar and the band, each with its door. */
+  it('counts an integration’s waits on the owner and lists each with its door to the Integration tab', async () => {
+    start(INTEGRATION_WAITS, {}, {});
+
+    await waitFor(() => expect(within(bell()).getByText('3')).toBeInTheDocument());
+    await waitFor(() => expect(badges().at(-1)).toEqual(
+      ['DAORIS.WINDOWS', 'SET_BADGE', { payload: { count: 3, description: '3 waiting on you', order: expect.any(Number) } }]));
+    expect(figure('Repositories')).toBe('3');
+    await openNotifications();
+    const held = await screen.findByRole('listitem', { name: 'Candidate for main' });
+    expect(within(held).getByText('held for your decide')).toBeInTheDocument();
+    expect(within(held).getByRole('button', { name: 'Open integration' })).toBeInTheDocument();
   });
 
   it('counts no run when none is pushed held', async () => {

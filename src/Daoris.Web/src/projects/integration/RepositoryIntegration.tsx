@@ -20,6 +20,10 @@ export function RepositoryIntegration({ repository, notify }: { repository: stri
       refusal={look.error ? String(look.error.message) : null}
       onDrop={(request) => act.mutate({ repository, act: 'drop', request }, { onSuccess: (answer) => say(answer.message) })}
       onRecheck={() => act.mutate({ repository, act: 'recheck' }, { onSuccess: (answer) => say(answer.message) })}
+      onDecide={(candidate, decide) => act.mutate({ repository, act: 'decide', candidate, decide }, { onSuccess: (answer) => say(answer.message) })}
+      onOrder={(request, place) => act.mutate({ repository, act: 'order', request, place }, { onSuccess: (answer) => say(answer.message) })}
+      onAnswer={(request, commit, answer) => act.mutate({ repository, act: 'answer', request, commit, answer }, { onSuccess: (said) => say(said.message) })}
+      onRequest={(branch) => act.mutate({ repository, act: 'request', branch, landed: true }, { onSuccess: (answer) => say(answer.message) })}
       related={live.length > 0 ? <>{live.map((one) => <RelatedOf key={one.id} session={one.id} repository={repository} />)}</> : undefined}
     />
   );

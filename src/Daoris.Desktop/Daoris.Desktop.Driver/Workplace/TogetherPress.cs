@@ -133,7 +133,7 @@ public sealed class TogetherPress(string home, RebaseTelling.Say say, Func<DateT
     {
         var store = new TogetherOperations(home);
         if (HeadOf(store, session) is not { } operation) return "Nothing was let go: nothing is being brought into this session.";
-        var (locks, held) = await TogetherLocks.TakeAsync(home, null, operation.Repository,
+        var (locks, held) = await TogetherLocks.TakeAsync(home, operation.Repository,
             [operation.Head.Tree, .. operation.Members.Select(each => each.Tree)], Wait, ct).ConfigureAwait(false);
         if (locks is null) return $"Nothing was let go: {held}.";
         using (locks)
@@ -167,7 +167,7 @@ public sealed class TogetherPress(string home, RebaseTelling.Say say, Func<DateT
         if (RecordsRefusal(head, members) is { } refused) return new(null, refused);
 
         TogetherOperation operation;
-        var (locks, held) = await TogetherLocks.TakeAsync(home, head.Workspace, head.Repository, [head.Tree, .. members.Select(each => each.Tree)], Wait, ct)
+        var (locks, held) = await TogetherLocks.TakeAsync(home, head.Repository, [head.Tree, .. members.Select(each => each.Tree)], Wait, ct)
             .ConfigureAwait(false);
         if (locks is null) return new(null, $"Nothing was brought together: {held}.");
         using (locks)

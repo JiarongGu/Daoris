@@ -824,6 +824,10 @@ public static class NoteCodes
     // rides as its words between `lead` (or the reason `config-unread`) and `tail`, never a value, since it may hold a path.
     public static readonly NoteCode HeldNoCheckout = new("held.no-checkout", ["repository"]);
     public static readonly NoteCode HeldReplaying = new("held.replaying", ["repository"]);
+    // GITLOCK1: what else holds the repository alone while a start waits for it; its branches brought up to date stay `replaying`.
+    public static readonly NoteCode HeldTidying = new("held.tidying", ["repository"]);
+    public static readonly NoteCode HeldPromoting = new("held.promoting", ["repository"]);
+    public static readonly NoteCode HeldWriting = new("held.writing", ["repository"]);
     public static readonly NoteCode HeldAnswering = new("held.answering", ["session"]);
     public static readonly NoteCode HeldConfigUnread = new("held.config-unread", []);
     public static readonly NoteCode HeldLead = new("held.lead", []);

@@ -525,6 +525,21 @@ describe('settling one where it stands', () => {
    * HELPERWAIT1c (the co-worker design §5 point 4): a refused move back to the person says what happened, the refusal as the service
    * said it, and its one control, the door to its session, in each language.
    */
+  /** INTEGRATE1h: an integration's wait on the owner is a row with one door to its repository's Integration tab, where it is pressed. */
+  it('says an integration’s wait and opens its Integration tab', async () => {
+    const held: Attention = {
+      id: 'decide:c1', kind: 'integration', title: 'Candidate for main', where: 'engine', since: '2026-10-31T09:00:00Z',
+      detail: 'feature/a held for your decide: split, hand back or land.',
+      integration: { wait: 'decide', repository: 'engine', line: 'main', candidate: 'c1', branches: ['feature/a'] },
+    };
+    const open = vi.fn();
+    render(<AttentionRow item={held} acts={everyAct()} onOpen={open} />);
+    expect(screen.getByText('held for your decide')).toBeInTheDocument();
+    expect(screen.getAllByRole('button').map((button) => button.textContent)).toEqual(['Open integration']);
+    await userEvent.click(screen.getByRole('button', { name: 'Open integration' }));
+    expect(open).toHaveBeenCalledWith(held);
+  });
+
   /** KNOWCENTRAL2e: a session whose memory waits is a row with one door to its page, where its Memory section decides. */
   it('says memory waits on the person and opens the session', async () => {
     const waits: Attention = {

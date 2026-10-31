@@ -26,6 +26,9 @@ public interface IWorkplaceLandingWorld : IReviewWorld
     /// <summary>The trees sessions still running or waiting name, which the rule's tidy keeps (LAND3).</summary>
     Task<IReadOnlySet<string>> InUseAsync(CancellationToken ct);
 
+    /// <summary>The sessions a writer of a checkout waits for, each with its tree (GITLOCK2); a world with no ledger holds none.</summary>
+    Task<IReadOnlyList<TreeHolder>> BesideAsync(CancellationToken ct) => Task.FromResult<IReadOnlyList<TreeHolder>>([]);
+
     /// <summary>
     /// A world that reads the service afresh (FABRIC-END7's review): each chosen entry is judged again from it just before its own
     /// landing. A world that keeps nothing between reads answers itself.

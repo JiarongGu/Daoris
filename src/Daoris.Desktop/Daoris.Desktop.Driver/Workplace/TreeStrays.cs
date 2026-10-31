@@ -112,7 +112,7 @@ internal sealed class TreeStrays(TreeContext context, TreeSetAside setAside, Con
         var found = first.Where(each => !before.Contains(Normal(each.Folder))).ToList();
         if (found.Count == 0) return unread;
 
-        using var hold = TreeLock.TryReplaying(context.Home, space, repository);
+        using var hold = TreeLock.TryReplaying(context.Home, root, repository, TreeLock.Tidying);
         if (hold is null) return unread;
         if (await BusyAsync(inUse, ct).ConfigureAwait(false) is not { } busy) return unread;
         var (again, _) = await FindAsync(root, trees, busy, now, ct).ConfigureAwait(false);

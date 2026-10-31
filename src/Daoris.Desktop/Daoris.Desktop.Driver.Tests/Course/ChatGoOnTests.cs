@@ -170,6 +170,32 @@ public sealed class ChatGoOnTests : IDisposable
     }
 
     /// <summary>
+    /// 🔴 GITLOCK1 (D51's note): a conversation going on in the repository's checkout holds the repository shared until its record holds the
+    /// checkout again, as one in a tree of its own does. While a writer of the checkout holds it alone, the go-on is held before the ledger
+    /// moves its record: the words wait unmarked, the record is as it ended, and its conversation says what held it.
+    /// </summary>
+    [Fact]
+    public async Task A_chat_going_on_in_the_checkout_is_held_while_a_writer_holds_its_repository()
+    {
+        var ledger = new ChatLedger().Register("engine", _root);
+        ledger.Chat("c1", "completed", "talk", _root).Say("w1", "Also log the port.");
+        new HarnessConversations(_home).Keep("c1", "talk", "conv-c1");
+        var events = Events;
+        using var writing = TreeLock.TryWriting(_home, _root, "engine", TreeLock.Promoting);
+        Assert.NotNull(writing);
+        using var runner = Runner(ledger, events);
+
+        events.Append("c1", Shown("w1", "Also log the port."));
+
+        var held = await NoteAsync(events, "c1", e => e.Text?.Contains("does not go on yet") == true);
+        Assert.Contains("`engine`'s line is being moved to what its integration promoted right now", held.Text);
+        Assert.Equal("completed", ledger.State("c1"));
+        Assert.Empty(ledger.Moves("c1"));
+        Assert.Equal(["w1"], ledger.Said("c1"));
+        Assert.Null(new GoOnMarks(_home).Read("c1"));
+    }
+
+    /// <summary>
     /// MSG1g (D137 §2.2): a chat's own account cooling holds its words for the reset, said in its conversation with the door
     /// out of the wait, a conversation with these words, since nothing carries a chat on by itself. The words wait unmarked and
     /// the record does not move, so the reset lets them go on.

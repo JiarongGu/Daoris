@@ -748,8 +748,9 @@ internal sealed class ChatGoOn
         // start's own hold below, since bringing a tree up to date holds the repository's trees alone. The person's checkout is never
         // moved: a conversation in it asks nothing.
         var inSync = own ? await StartInSyncAsync(record.Tree!, ct).ConfigureAwait(false) : null;
-        using var starting = own ? TreeLock.TryStarting(_context.Home, known.Workspace, known.Repository) : null;
-        if (own && starting is null) return Held(sessionId, HeldWords.Replaying(known.Repository));
+        // GITLOCK1: one in the checkout itself holds it too, until the ledger holds it again below.
+        using var starting = TreeLock.TryStarting(_context.Home, known.Root!);
+        if (starting is null) return Held(sessionId, HeldWords.Holding(known.Repository, TreeLock.HolderOf(_context.Home, known.Root!)));
 
         // 🔴 The ledger's one move out of an ended state, with the person's words waiting (MSG1a, D137 §2.3), before anything
         // is spawned: it holds the tree again, and refuses where another session holds it (D51).

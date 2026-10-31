@@ -24,6 +24,9 @@ public sealed record SessionRecord(string Id, string Repository, string State)
     /// <summary><c>driven</c> or <c>chat</c>, as the record says.</summary>
     public string Kind { get; init; } = "driven";
 
+    /// <summary>The adapter it ran on, as the record says; what marks a Codex child as seen by its calls.</summary>
+    public string? Adapter { get; init; }
+
     /// <summary>The tree it held (D51), or null: a teammate's record names none over loopback that is ours to look at.</summary>
     public string? Tree { get; init; }
 

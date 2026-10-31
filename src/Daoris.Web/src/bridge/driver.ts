@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { type QueryClient, useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenora, useShenoraEvent } from '@shenora/react';
 import type { SyncStanding } from '../data/api';
-import type { ActorRow, KeepSet, RoleCatalogue, RoleChangePress, StaffingFound } from '../data/wiring';
+import type { ActorRow, KeepSet, RoleCatalogue, RoleChangePress, RoleStructure, StaffingFound, StructurePlaceAsk } from '../data/wiring';
 import { keys, SYNC_SLICE } from '../data/queries';
 import type { AccountWaitTick, Consideration, TrustHold } from '../data/signals';
 import type { AccessLevel } from '../settings/repository/Access';
@@ -41,6 +41,11 @@ export type DriverState = {
   holds: string[];
   /** Repositories whose sessions open their own worktree instead of the registered root (D51). */
   trees: string[];
+  /**
+   * Repositories whose checkout the person let Daoris change the files of (GITAPP2b, the git-writes design §2): off where absent.
+   * Absent on a shell older than it, which offers no switch.
+   */
+  checkoutWrites?: string[];
   /** Session ids with a live process right now — what "stop" can actually reach. */
   running: string[];
   /**
@@ -547,7 +552,10 @@ export type { RoleCatalogue, RoleChangePress, RoleRow, SuggestedRole } from '../
 const readRoles = (raw: unknown): RoleCatalogue | null => {
   const answer = raw as Partial<RoleCatalogue> | null;
   if (!answer || !Array.isArray(answer.roles)) return null;
-  return { roles: answer.roles, works: answer.works ?? [], kept: answer.kept === true, suggested: answer.suggested ?? [] };
+  return {
+    roles: answer.roles, works: answer.works ?? [], kept: answer.kept === true, suggested: answer.suggested ?? [],
+    ...(answer.use && Array.isArray(answer.use.roles) ? { use: answer.use } : {}),
+  };
 };
 
 export const useRoles = () => {
@@ -562,51 +570,8 @@ export const useRoles = () => {
   });
 };
 
-/** A place the roles' structure is asked for: a workspace, a repository in it, or neither for this machine. */
-export type StructurePlaceAsk = { workspace?: string; repository?: string };
-
-/** What a choice's last readings say (COMPANYVIEW1c): one that may run by the account it would run on, else the start's pass code. */
-export type ChoiceStateCode = 'ready' | 'unknown' | 'not-read' | 'unavailable' | 'not-offered' | 'cooling' | 'signed-out' | 'held';
-
-/** One choice of a work's order at a place, and its state with the reading's time it rests on. */
-export type StructureChoice = {
-  agent: string;
-  model?: string;
-  effort?: string;
-  /** `1` to `4`, `before`, or `rule-default` for a rule's agent no choice names. */
-  from: string;
-  state: { code: ChoiceStateCode | string; at?: string; account?: string; until?: string };
-};
-
-/** One work at one place: its role or why its starts hold, its choices, its rule and where it was set, each part's failure. */
-export type StructureWork = {
-  work: string;
-  role?: { id: string; nameEn: string; nameZh: string; scope: { kind: string; id?: string }; revision: number };
-  held?: string;
-  choices: StructureChoice[];
-  choicesFailed?: string;
-  policy?: {
-    consent: string;
-    agents: string[];
-    concurrency?: number;
-    minutes?: number;
-    /** `repository`, `workspace`, `machine` or `default`. */
-    source: string;
-    requirement?: { kind: string } & Record<string, unknown>;
-  };
-  policyFailed?: string;
-};
-
-/** The roles' structure as `ROLE_STRUCTURE` answers it (COMPANYVIEW1c, the company-view design §4). */
-export type RoleStructure = {
-  works: string[];
-  roles: RoleCatalogue['roles'];
-  /** Where the store's roles do not read: every work then holds, said. */
-  catalogue?: { why: string };
-  places: { workspace?: string; repository?: string; works: StructureWork[] }[];
-  /** Each agent a choice names; `installed` absent where its binary was not asked yet. */
-  agents: { agent: string; known: boolean; installed?: boolean; version?: string }[];
-};
+// The structure's wire types live in `data/wiring` so the presentational sections read them without reaching the bridge.
+export type { ChoiceStateCode, RoleStructure, StructureChoice, StructurePlaceAsk, StructureWork } from '../data/wiring';
 
 const readRoleStructure = (raw: unknown): RoleStructure | null => {
   const answer = raw as Partial<RoleStructure> | null;
@@ -630,14 +595,14 @@ const readRoleStructure = (raw: unknown): RoleStructure | null => {
  * the shell's first reading lands; a shell that does not know the route is the query's error, `refusedNoRoute`'s, so a view tells *not
  * offered by this shell* from a failed read and from an empty one.
  */
-export const useRoleStructure = (places: StructurePlaceAsk[], works?: string[]) => {
+export const useRoleStructure = (places: StructurePlaceAsk[], works?: string[], { enabled = true }: { enabled?: boolean } = {}) => {
   const { isAvailable } = useShenora();
   const client = useQueryClient();
   const queryKey = [...keys.driver, 'roles', 'structure', places, works ?? null] as const;
   return useQuery({
     queryKey,
     queryFn: () => askHeld('ROLE_STRUCTURE', client, queryKey, works ? { places, works } : { places }, readRoleStructure),
-    enabled: isAvailable,
+    enabled: isAvailable && enabled,
   });
 };
 
@@ -696,6 +661,8 @@ export const useSetDrivable = () => useDriverChange<{ repository: string; drivab
 export const useSetHold = () => useDriverChange<{ repository: string; held: boolean }>('SET_HOLD');
 /** Session trees (D51): the same file `daoris driver trees <repo> on|off` edits — two editors, one truth. */
 export const useSetTrees = () => useDriverChange<{ repository: string; ownTree: boolean }>('SET_TREES');
+/** The switch *Daoris may change this checkout's files* (GITAPP2b): off by default, writes nothing to the repository itself. */
+export const useSetCheckoutWrites = () => useDriverChange<{ repository: string; allow: boolean }>('SET_CHECKOUT_WRITES');
 /**
  * A repository's standing answer (KNOWUSE1b): the person's words, or none to clear it — the same `standing` `daoris driver
  * standing <repo> "…"|--clear` edits. Blank words or words past the bound are the driver's refusal, its sentence verbatim.

@@ -73,7 +73,7 @@ internal sealed class TogetherLocks : IDisposable
 
     /// <summary>Take (1) for every tree, then (2); null with the words where one was held past <paramref name="within"/>.</summary>
     public static async Task<(TogetherLocks? Held, string? Refused)> TakeAsync(
-        string home, string? workspace, string repository, IReadOnlyList<string> trees, TimeSpan within, CancellationToken ct)
+        string home, string repository, IReadOnlyList<string> trees, TimeSpan within, CancellationToken ct)
     {
         var holds = new List<LandingHold>();
         try
@@ -89,7 +89,9 @@ internal sealed class TogetherLocks : IDisposable
                 holds.Add(hold);
             }
 
-            if (TreeLock.TryStarting(home, workspace, repository) is not { } shared) return (null, TreeLock.Replaying(repository));
+            // The checkout's lock, named by any of its trees (GITLOCK1).
+            var checkout = trees[0];
+            if (TreeLock.TryStarting(home, checkout) is not { } shared) return (null, HeldWords.Holding(repository, TreeLock.HolderOf(home, checkout)).Why);
             var held = new TogetherLocks([.. holds], shared);
             holds.Clear();
             return (held, null);

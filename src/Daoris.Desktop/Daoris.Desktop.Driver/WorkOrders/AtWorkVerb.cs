@@ -42,10 +42,15 @@ public static class AtWorkVerb
             }
         }
 
-        var records = await world.Service.SessionRecordsAsync(ct).ConfigureAwait(false);
+        // The look the listing reads, so the entry's parts stand in the strip's order as the window's groups slice holds them.
+        var look = await SessionGroups.LookAsync(world.Service, world.Config, world.Door, lastLook: null, world.Home, ct: ct, coolingOf: world.CoolingOf)
+            .ConfigureAwait(false);
+        var records = look.Records.GroupBy(each => each.Id, StringComparer.Ordinal).ToDictionary(group => group.Key, group => group.First(), StringComparer.Ordinal);
+        var entry = SessionGroups.ReadEntries(look).FirstOrDefault(each => each.Parts.Any(part => part.Session == session))
+            ?.Parts.Select(part => part.Session).ToList();
         var held = AtWork.Compose(
-            session, null,
-            id => records.FirstOrDefault(each => each.Id == id) is { } record ? new AtWorkRecord(record.Id, record.State) { Kind = record.Kind } : null,
+            session, entry,
+            id => records.GetValueOrDefault(id) is { } record ? new AtWorkRecord(record.Id, record.State) { Adapter = record.Adapter, Kind = record.Kind } : null,
             record => ChildLineage.Reading(world.Home, record.Id, record.Kind, new LineageTokens(Environment.ProcessId, DateTime.UtcNow)),
             new SliceHealth(true), new SliceHealth(true));
         return Say(held, session, ask.Json, output, Console.Error);

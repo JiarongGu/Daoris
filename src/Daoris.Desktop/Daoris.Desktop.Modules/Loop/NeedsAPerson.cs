@@ -65,6 +65,13 @@ public sealed record AttentionFacts
     /// <summary>The runs held at a declined request (INTEGRATE1o part o3), as the runtime last read them: each run, its node, the declined quest and where it went.</summary>
     public IReadOnlyList<JsonObject> Requests { get; init; } = [];
 
+    /// <summary>
+    /// The integration's waits on the owner (INTEGRATE1h), as <see cref="AttentionStateSlice.IntegrationWaits"/> reads them: a candidate held for
+    /// a decide, a superseded commit awaiting its answer, a landing whose integration waits for the owner's card; each with its repository,
+    /// workspace and since when.
+    /// </summary>
+    public IReadOnlyList<JsonObject> Integration { get; init; } = [];
+
     /// <summary>Every plugin step's attempt held for the person, as the work slice holds them.</summary>
     public IReadOnlyList<JsonObject> Held { get; init; } = [];
 
@@ -139,6 +146,10 @@ public static class NeedsAPerson
 
     /// <summary>How the work inventory names a session's unit before a branch record follows it.</summary>
     private const string SessionUnit = "session:";
+
+    /// <summary>What an integration's wait names on its row (INTEGRATE1h): which wait, its line, and the candidate, request, commit or unit it is of.</summary>
+    private static readonly string[] IntegrationFields =
+        ["wait", "repository", "line", "branch", "branches", "candidate", "request", "commit", "subject", "unit", "tip", "why"];
 
     /// <summary>Every row that waits on the person, each one in no order: the band orders by group and wait.</summary>
     public static IReadOnlyList<JsonObject> Rows(AttentionFacts facts)
@@ -317,6 +328,24 @@ public static class NeedsAPerson
             // INTEGRATE1p (C33): the run's own request, whose acts are *Ask again…* and *Go on without it…*; written only where true, so the work's stays as it was.
             if (hold["request"] is JsonValue asked && asked.TryGetValue<bool>(out var own) && own) declined["request"] = true;
             row["declined"] = declined;
+            rows.Add(row);
+        }
+
+        // INTEGRATE1h (the integration design §5.8, §17.4): a candidate the policy held for the owner's decide, a superseded commit awaiting
+        // its answer, and a landing whose integration waits for the owner's card, one row each in its repository's workspace, its door the
+        // repository's Integration tab, where each is pressed. A held candidate holds its line's next, and a card's landing its unit's flow.
+        foreach (var wait in facts.Integration)
+        {
+            var row = Row("integration", Text(wait, "id"), Text(wait, "since"), Text(wait, "workspace") ?? "default");
+            row["where"] = Text(wait, "repository");
+            if (Text(wait, "wait") is "decide" or "card") row["stands"] = true;
+            var named = new JsonObject();
+            foreach (var field in IntegrationFields)
+            {
+                if (wait[field] is { } value) named[field] = value.DeepClone();
+            }
+
+            row["integration"] = named;
             rows.Add(row);
         }
 

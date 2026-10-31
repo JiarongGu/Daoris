@@ -109,13 +109,13 @@ internal sealed class TreeTidies(
         {
             // A list git could not give is never "no tree here" (AUTOTIDY1): each branch is kept, saying why.
             var worktrees = await context.Worktrees.ReadAsync(root, ct).ConfigureAwait(false);
-            using var hold = TreeLock.TryReplaying(context.Home, workspace, repository);
+            using var hold = TreeLock.TryReplaying(context.Home, root, repository, TreeLock.Tidying);
             var busy = hold is not null && inUse is not null
                 ? new HashSet<string>((await inUse(ct).ConfigureAwait(false)).Select(Normal), StringComparer.OrdinalIgnoreCase)
                 : null;
             var unasked = inUse is null
                 ? "whether a session still holds its tree was not asked here"
-                : "a session was starting in one of the repository's trees";
+                : TreeLock.HolderOf(context.Home, root) is { } by ? TreeLock.Held(repository, by) : "a session was starting in one of the repository's trees";
             // INTEGRATE1d: the output the accepted declaration names, read once for the repository's trees.
             var declared = await context.ScratchAsync(root, repository, workspace, ct).ConfigureAwait(false);
             foreach (var (branch, tip) in held)
@@ -191,13 +191,13 @@ internal sealed class TreeTidies(
         var results = new List<TidiedBranch>();
         // A list git could not give is never "no tree here" (AUTOTIDY1): each branch is kept, saying why.
         var worktrees = await context.Worktrees.ReadAsync(root, ct).ConfigureAwait(false);
-        using var hold = TreeLock.TryReplaying(context.Home, workspace, repository);
+        using var hold = TreeLock.TryReplaying(context.Home, root, repository, TreeLock.Tidying);
         var busy = hold is not null && inUse is not null
             ? new HashSet<string>((await inUse(ct).ConfigureAwait(false)).Select(Normal), StringComparer.OrdinalIgnoreCase)
             : null;
         var unasked = inUse is null
             ? "whether a session still holds its tree was not asked here"
-            : "a session was starting in one of the repository's trees";
+            : TreeLock.HolderOf(context.Home, root) is { } by ? TreeLock.Held(repository, by) : "a session was starting in one of the repository's trees";
         // INTEGRATE1d: the output the accepted declaration names, read once for the repository's trees.
         var declared = await context.ScratchAsync(root, repository, workspace, ct, line).ConfigureAwait(false);
         foreach (var (branch, tip, carrier) in carried)

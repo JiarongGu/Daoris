@@ -77,7 +77,7 @@ internal static class OwnerTargetRows
         Row("SWEEP", Workspace());
         Row("TREES_SYNC", Repository(), Workspace());
         Row("SETUP_PRESS", Repository());
-        foreach (var route in new[] { "SET_DRIVABLE", "SET_HOLD", "SET_TREES", "SET_STANDING", "SET_SESSION_CHECKS", "SET_HEAVY_GATES", "SET_WRITE_ACROSS" })
+        foreach (var route in new[] { "SET_DRIVABLE", "SET_HOLD", "SET_TREES", "SET_STANDING", "SET_SESSION_CHECKS", "SET_HEAVY_GATES", "SET_WRITE_ACROSS", "SET_CHECKOUT_WRITES" })
         {
             Row(route, Repository());
         }

@@ -83,6 +83,39 @@ export const CatalogueChinese: Story = { decorators: [chinese] };
 /** The same in 中文 at the floor. */
 export const CatalogueChineseNarrow: Story = { decorators: [storyWidths.narrow, chinese] };
 
+// MODELROLE1f: each role's last seven days under its row; Build fell to later choices, Intake kept to its first, the rest have no line.
+const WEEK: RoleCatalogue = {
+  ...CATALOGUE,
+  use: {
+    days: 7,
+    roles: [
+      { role: 'build', starts: 12, choices: [{ choice: '1', starts: 9 }, { choice: '2', starts: 3 }], fell: 3, why: [{ code: 'cooling', starts: 2 }, { code: 'signed-out', starts: 1 }] },
+      { role: 'ask-daoris', starts: 1, choices: [{ choice: 'before', starts: 1 }], fell: 0, why: [] },
+    ],
+  },
+};
+
+/** The week's line under Build and Ask Daoris, at the wide width. */
+export const WeekShown: Story = { args: { catalogue: WEEK } };
+
+/** The same at the half width. */
+export const WeekShownHalf: Story = { args: { catalogue: WEEK }, decorators: [storyWidths.half] };
+
+/** The same at the 400 px floor. */
+export const WeekShownNarrow: Story = { args: { catalogue: WEEK }, decorators: [storyWidths.narrow] };
+
+/** The same in 中文. */
+export const WeekShownChinese: Story = { args: { catalogue: WEEK }, decorators: [chinese] };
+
+/** The same in 中文 at the half width. */
+export const WeekShownChineseHalf: Story = { args: { catalogue: WEEK }, decorators: [storyWidths.half, chinese] };
+
+/** The same in 中文 at the floor. */
+export const WeekShownChineseNarrow: Story = { args: { catalogue: WEEK }, decorators: [storyWidths.narrow, chinese] };
+
+/** A log of three days says its span instead of seven. */
+export const WeekOfAYoungLog: Story = { args: { catalogue: { ...WEEK, use: { ...WEEK.use!, days: 3 } } }, decorators: [storyWidths.narrow] };
+
 /** A home whose driver.json is the file's own: each seeded row keeps its order editor, and Add a role and Remove are held. */
 export const NotKept: Story = { args: { catalogue: { ...CATALOGUE, kept: false, suggested: [] } } };
 

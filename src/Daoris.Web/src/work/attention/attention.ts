@@ -97,6 +97,9 @@ export const ATTENTION_GROUP: Readonly<Record<AttentionKind, AttentionGroup>> = 
   'helper-ended': 'holding',
   // An end, a replacement or a stopped session's rows that memory keeps for the person (KNOWCENTRAL2e): nothing running is held by it.
   memory: 'word',
+  // An integration's wait on the owner (INTEGRATE1h): a superseded commit's answer holds nothing running; a candidate held for their decide
+  // holds its line's next, and a landing waiting for their card its unit's flow, which hold work (`attentionGroup`).
+  integration: 'word',
   unanswerable: 'word',
   review: 'ready',
 };
@@ -108,7 +111,7 @@ export const ATTENTION_GROUP: Readonly<Record<AttentionKind, AttentionGroup>> = 
  * row is counted in the group it is listed in.
  */
 export function attentionGroup(row: { kind: AttentionKind; stands?: boolean; stale?: StaleSince | null }): AttentionGroup {
-  if (row.kind === 'hand-over' && row.stands) return 'holding';
+  if ((row.kind === 'hand-over' || row.kind === 'integration') && row.stands) return 'holding';
   if (row.kind === 'go-ahead' && row.stale) return 'word';
   return ATTENTION_GROUP[row.kind] ?? 'word';
 }
@@ -161,6 +164,8 @@ export const ATTENTION_PLACE: Readonly<Record<AttentionKind, AttentionPlace | nu
   // The workspace's Branches, where the clean-up's press is. Its row's door is the row's own (`placeOf`): a branch cut for a session
   // the page holds opens that session, and a held attempt's presses are on its row alone.
   work: 'projects',
+  // INTEGRATE1h: the repository's Integration tab, where the decide, the answer and the request are pressed.
+  integration: 'projects',
   // What agents may do, and an agent's accounts.
   rule: 'agents',
   'account-wait': 'agents',
@@ -557,10 +562,32 @@ export type PushedAttention = {
   declined?: DeclinedRequest;
   /** What memory waits on the person for a session (KNOWCENTRAL2e): ends and replacements to approve, a stopped session's staged rows. */
   memory?: MemoryWait;
+  /** An integration's wait on the owner (INTEGRATE1h): which, its line, and the candidate, commit or landing it is of. */
+  integration?: IntegrationWait;
 };
 
 /** What a session's memory waits on the person for: ends and replacements awaiting their approval, and staged rows to keep or drop. */
 export type MemoryWait = { ends: number; replacements: number; staged: number };
+
+/**
+ * An integration's wait on the owner (INTEGRATE1h; the integration design §5.8, §17.4): a candidate the line's rule held for their decide,
+ * with its members' branches and the judge's words; a superseded commit awaiting their answer, by its request and commit; or a landed branch
+ * whose integration waits for their card. Branches, subjects and words are content, shown as written.
+ */
+export type IntegrationWait = {
+  wait: 'decide' | 'superseded' | 'card';
+  repository: string;
+  line?: string | null;
+  branch?: string | null;
+  branches?: string[];
+  candidate?: string | null;
+  request?: string | null;
+  commit?: string | null;
+  subject?: string | null;
+  unit?: string | null;
+  tip?: string | null;
+  why?: string | null;
+};
 
 /**
  * A run held at a request the receiver declined (INTEGRATE1o part o3): the `work.requests` node the person's *Pass over…* is said on, the
@@ -628,7 +655,7 @@ export type AttentionPushed = {
  */
 const KIND_ORDER: readonly AttentionKind[] = [
   'account-wait', 'signed-out', 'parked', 'helper-ended', 'parked-quest', 'steward-stopped', 'request-declined', 'go-ahead', 'permission', 'answer', 'confirmation', 'trust',
-  'quiet', 'proposal', 'departure', 'set-up', 'opinion', 'rule', 'helper', 'hand-over', 'memory', 'work', 'space', 'git-held', 'unanswerable',
+  'quiet', 'proposal', 'departure', 'set-up', 'opinion', 'rule', 'helper', 'hand-over', 'memory', 'integration', 'work', 'space', 'git-held', 'unanswerable',
   'review',
 ];
 
@@ -886,6 +913,20 @@ export function attentionWorded(row: PushedAttention, names: AttentionNames = {}
         session: row.session ?? row.id,
         ...(row.memory ? { memory: row.memory } : {}),
       };
+    }
+    // INTEGRATE1h: a held candidate by its line, a superseded commit and a waiting landing by their branch, each said by its wait.
+    case 'integration': {
+      const wait = row.integration;
+      const short = (commit?: string | null) => (commit ?? '').slice(0, 7);
+      const title = wait?.wait === 'decide'
+        ? i18n.t('integration.view.candidate', { line: wait.line ?? '' })
+        : wait?.branch ?? row.title ?? row.id;
+      const detail = wait?.wait === 'decide'
+        ? i18n.t('work.attention.integrationDecideWhy', { branches: (wait.branches ?? []).join(', '), why: wait.why ?? '' }).trim()
+        : wait?.wait === 'superseded'
+          ? i18n.t('work.attention.integrationSupersededWhy', { commit: short(wait.commit), subject: wait.subject ?? '', line: wait.line ?? '' })
+          : wait?.wait === 'card' ? i18n.t('work.attention.integrationCardWhy', { tip: short(wait.tip) }) : null;
+      return { ...base, title, detail, stands: row.stands === true, ...(wait ? { integration: wait } : {}) };
     }
     // NOTIFY2e: its note's first line as the agent wrote it, the session as Sessions names it, and the agent as the roster names it.
     case 'hand-over': {

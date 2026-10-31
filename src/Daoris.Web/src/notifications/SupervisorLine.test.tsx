@@ -48,7 +48,7 @@ describe("Notifications' supervisor line", () => {
 
   it('says one found as Daoris started dormant, and is drawn only where one is appointed', async () => {
     const { rerender } = render(<SupervisorLine appointments={[{ ...LIVE, dormant: true }]} onTurnOff={vi.fn()} />);
-    expect(screen.getByText('Supervisor appointment for engine found as Daoris started: press Appoint again in its Setup to use it.'))
+    expect(screen.getByText('Supervisor appointment for engine found as Daoris started: press Appoint again under Agents → Roles → Appointed roles to use it.'))
       .toBeInTheDocument();
     rerender(<SupervisorLine appointments={[]} onTurnOff={vi.fn()} />);
     expect(screen.queryByRole('region')).toBeNull();

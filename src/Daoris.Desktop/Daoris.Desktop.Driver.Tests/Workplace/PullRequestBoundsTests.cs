@@ -87,7 +87,7 @@ public sealed class PullRequestBoundsTests : IDisposable
     public void The_replays_lock_holds_the_repository_for_the_moments_until_the_last_hold_is_let_go()
     {
         Assert.False(RepositoryHolds.Held(_home, "engine"));
-        using (var replay = TreeLock.TryReplaying(_home, "aurora", "engine"))
+        using (var replay = TreeLock.TryReplaying(_home, Path.Combine(_home, "engine"), "engine", TreeLock.Updating))
         {
             Assert.NotNull(replay);
             Assert.True(RepositoryHolds.Held(_home, "Engine"));

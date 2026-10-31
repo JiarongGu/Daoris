@@ -428,6 +428,14 @@ export function App() {
     part: agentPart,
     onAnchored: () => setAgentPart(null),
     onOpenPlugin: (plugin) => open('plugins', plugin),
+    // The Roles mode's doors (COMPANYVIEW1d): each thing's home, the Agents mode at an agent's accounts among them.
+    roleDoors: {
+      agent: (agent) => open('agents', agent, { agentPart: 'accounts', agentsMode: 'agents' }),
+      repository: (repository, projectTab) => open('projects', repository, { tab: projectTab }),
+      workspace: (workspace) => open('projects', workspaceItem(workspace), { workspaceTab: 'setup', workspaceSection: 'defaults' }),
+      repositories: () => open('projects'),
+      plugin: (plugin) => open('plugins', plugin),
+    },
   });
 
   // Whether the view in front has a list pane (D118 §3a), whose four doors — the strip's toggle, the View
@@ -631,6 +639,7 @@ export function App() {
     // is then chosen now, never a remembered choice.
     if (plan.knowledge) chooseKnowledgeMode(plan.knowledge);
     if (plan.agentsMode) agentsModes.onMode(plan.agentsMode);
+    if (plan.roleSection) agentsModes.onSection(plan.roleSection);
     if (plan.chosen) lists.choose(plan.chosen.view, plan.chosen.item);
     // A view opened by a door that names nothing reopens what its list chose only while it still waits (UX6b, D150 §8):
     // the list reads it again, and lets go of one that closed or went. A door that names an item has it chosen above.
@@ -956,6 +965,8 @@ export function App() {
     onOpenCode: (repository) => open('map', null, { code: repository }),
     // A workspace's Details names each agent's accounts there, set on the agent's page (UX6e).
     onOpenAgent: (agent) => open('agents', agent),
+    // Setup's supervisor line opens Agents → Roles → Appointed roles, where it is appointed (COMPANYVIEW1e).
+    onOpenAppointed: () => open('agents', null, { roleSection: 'appointed' }),
     // A landing rule's plugin opens its page (PLUGUI1c2c).
     onOpenPlugin: (plugin) => open('plugins', plugin),
     onSyncNow,
@@ -1063,6 +1074,9 @@ export function App() {
     // A session whose memory waits on the person (KNOWCENTRAL2e) opens that session, whose Memory section carries the decisions. A shell's
     // alone: the service's rows are read by this machine's driver.
     ...(attached ? { memory: (item: Attention) => open('sessions', item.session ?? item.id) } : {}),
+    // An integration's wait on the owner (INTEGRATE1h) opens its repository's Integration tab, where its decide, its answer or its request
+    // is pressed beside the candidate and its steps. A shell's alone: the integration record is this machine's driver's.
+    ...(attached ? { integration: (item: Attention) => open('projects', item.integration?.repository ?? item.where, { tab: 'integration' }) } : {}),
     // A terminal's press waiting for the window (CONFIRMSEEN1) opens its card in *Notifications* (NOTIFY2b), where every value it
     // carries is read beside its Confirm. Brought into view, never pressed: the card's default stays no. A shell's alone.
     ...(attached ? { confirmation: (item: Attention) => showNotifications({ press: item.id }) } : {}),

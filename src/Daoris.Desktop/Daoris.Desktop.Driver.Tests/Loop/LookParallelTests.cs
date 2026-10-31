@@ -265,7 +265,9 @@ public sealed class LookParallelTests : IDisposable
         _ledger.Publish("q1", "engine");
         _ledger.Publish("q2", "tools");
         using var sync = new RemoteSyncSet([]);
-        var service = _ledger.Client(TimeSpan.FromSeconds(5));
+        // The client waits as long as a test may: the checks' order is told by the hook below, not by a client giving up, so a pool
+        // that starts the second check late under load does not cost the first its answer.
+        var service = _ledger.Client(Poll.Patience);
         var runs = new StandInRuns(service, _ledger);
         var adapters = AdapterSet.Built();
         var config = DriverConfig.Empty with { Drivable = ["engine", "tools"], Adapter = "stub", Cap = 3, PollSeconds = 1, Trees = ["engine", "tools"] };

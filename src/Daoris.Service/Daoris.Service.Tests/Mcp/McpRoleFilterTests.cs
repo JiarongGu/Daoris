@@ -84,6 +84,16 @@ public sealed class McpRoleFilterTests : McpToolsFixture
         Assert.True(differences.Count == 0, string.Join('\n', differences));
     }
 
+    /// <summary>COMPANYVIEW1i: the file's <c>registered</c> list is every tool the host registers, which the window shows each work's calls against.</summary>
+    [Fact]
+    public void The_tables_file_lists_every_registered_tool()
+    {
+        using var table = JsonDocument.Parse(File.ReadAllText(CallTableFile()));
+        var registered = table.RootElement.GetProperty("registered").EnumerateArray().Select(name => name.GetString()!);
+
+        Assert.Equal(ToolClassesTests.Advertised(), registered.Order(StringComparer.Ordinal));
+    }
+
     /// <summary>
     /// 🔴 FOUNDATION1r, failing closed: a tool the table does not class is refused to every column, and a work it does not know (a
     /// brainstorm with no turn, a work added later) is served the reads alone. A connector naming no session keeps its scope.

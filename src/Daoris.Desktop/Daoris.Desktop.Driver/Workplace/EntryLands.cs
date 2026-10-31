@@ -284,7 +284,8 @@ internal sealed class EntryLands(TreeContext context, TreeLands lands, TreeLandS
     /// <param name="together">The operation bound to the entry's head (LINESTOGETHER1d): the head lands by its combined Accept.</param>
     internal async Task<EntryLanding> LandAsync(
         IReadOnlyList<EntryLandingPart> parts, LandingSubject subject, IReadOnlySet<string> leaveOut, CancellationToken ct = default,
-        Func<CancellationToken, Task<IReadOnlySet<string>>>? inUse = null, EntryTogether? together = null)
+        Func<CancellationToken, Task<IReadOnlySet<string>>>? inUse = null, EntryTogether? together = null,
+        Func<CancellationToken, Task<IReadOnlyList<TreeHolder>>>? beside = null)
     {
         var steps = EntryLandings.Sequence(parts, leaveOut, together?.Members);
         for (var at = 0; at < parts.Count; at++)
@@ -331,11 +332,11 @@ internal sealed class EntryLands(TreeContext context, TreeLands lands, TreeLandS
             // a part whose result moved while an earlier one landed or waited makes nothing (D173's note).
             var landed = together is not null && string.Equals(part.Session, together.Head, StringComparison.Ordinal)
                 ? await new TogetherAccepts(context, lands).LandAsync(together.Operation, named, together.Gates, ct, inUse, part.Gate,
-                    part.Pressed?.Judged, part.Pressed?.BeforePush).ConfigureAwait(false)
+                    part.Pressed?.Judged, part.Pressed?.BeforePush, beside).ConfigureAwait(false)
                 : await lands.LandAsync(part.Tree, named,
                     ct, inUse, AcceptedBy.Person, part.Gate,
                     joins: form == LandingForm.Branch, fetched: true,
-                    judged: part.Pressed?.Judged, beforePush: part.Pressed?.BeforePush).ConfigureAwait(false);
+                    judged: part.Pressed?.Judged, beforePush: part.Pressed?.BeforePush, beside: beside).ConfigureAwait(false);
             if (landed.Landed)
             {
                 landedOn.Add(part.Session);

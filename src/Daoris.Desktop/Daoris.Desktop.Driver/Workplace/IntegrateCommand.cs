@@ -8,17 +8,22 @@ public sealed record IntegrateAsk(string Repository)
 
     /// <summary>The branch, request or candidate the act names.</summary>
     public string? Target { get; init; }
+
+    /// <summary>The branch <c>--plan</c> previews in git's objects alone; null where none is asked.</summary>
+    public string? Plan { get; init; }
 }
 
 /// <summary>
 /// <c>daoris-driver integrate &lt;repository&gt;</c> (INTEGRATE1h; the integration design §5.8): shows a repository's integration, read from the
-/// record. <c>--request</c>, <c>--drop</c>, <c>--recheck</c>, <c>--decide</c> and <c>--order</c> are the owner's acts, Person routes: a card in
-/// Daoris's window (D156), which this terminal asks and never answers.
+/// record; <c>--plan &lt;branch&gt;</c> previews a branch onto the line in git's objects alone (<see cref="IntegrationPlans"/>). <c>--request</c>,
+/// <c>--drop</c>, <c>--recheck</c>, <c>--decide</c> and <c>--order</c> are the owner's acts, Person routes: a card in Daoris's window (D156),
+/// which this terminal asks and never answers.
 /// </summary>
 public static class IntegrateCommand
 {
     public const string Usage =
-        "usage: daoris-driver integrate <repository> [--request <branch> | --drop <request> | --recheck | --decide <candidate> split|hand-back|land | --order <request> first|last]";
+        "usage: daoris-driver integrate <repository> [--plan <branch> | --request <branch> | --drop <request> | --recheck | --decide <candidate> split|hand-back|land | "
+        + "--order <request> first|last]";
 
     /// <summary>The acts, as their flags spell them; the verb is <c>hand-back</c> on every door.</summary>
     public static IReadOnlyList<string> Acts { get; } = ["--request", "--drop", "--recheck", "--decide", "--order"];
@@ -34,6 +39,17 @@ public static class IntegrateCommand
         }
 
         if (args.Count == 1) return new IntegrateAsk(args[0].Trim());
+        if (args[1] == "--plan")
+        {
+            if (args.Count != 3 || args[2].StartsWith('-'))
+            {
+                problem = "`--plan` takes one word after it: the branch to preview.";
+                return null;
+            }
+
+            return new IntegrateAsk(args[0].Trim()) { Plan = args[2].Trim() };
+        }
+
         if (!Acts.Contains(args[1]))
         {
             problem = $"`{args[1]}` is not a word `integrate` takes.";
@@ -44,6 +60,18 @@ public static class IntegrateCommand
         if (args.Count - 2 != wanted || args.Skip(2).Any(word => word.StartsWith('-')))
         {
             problem = $"`{args[1]}` takes {(wanted == 0 ? "no word" : wanted == 1 ? "one word" : "two words")} after it.";
+            return null;
+        }
+
+        if (args[1] == "--decide" && !IntegrationDecides.All.Contains(args[3]))
+        {
+            problem = $"`--decide` takes the candidate, then one of {string.Join(", ", IntegrationDecides.All)}.";
+            return null;
+        }
+
+        if (args[1] == "--order" && !IntegrationOrders.All.Contains(args[3]))
+        {
+            problem = $"`--order` takes the request, then one of {string.Join(", ", IntegrationOrders.All)}.";
             return null;
         }
 
@@ -58,17 +86,28 @@ public static class IntegrateCommand
         {
             if (rows.Count == 0) return;
             said.Add($"{title}:");
-            said.AddRange(rows.Select(row => $"  {row.Request}  {row.Branch} @ {Short(row.Tip)} into `{row.Line}`{(row.Said is { Length: > 0 } words ? $" — {words}" : "")}"));
+            said.AddRange(rows.Select(row =>
+                $"  {row.Request}  {row.Branch} @ {Short(row.Tip)} into `{row.Line}`{(row.Ordered is { } ordered ? $" (moved {ordered})" : "")}"
+                + (row.Said is { Length: > 0 } words ? $" — {words}" : "")));
         }
 
         said.Add($"integrate: `{look.Repository}`");
-        Requests("queued", look.Queue);
+        Requests("queued, in order", look.Queue);
         foreach (var candidate in look.Candidates)
         {
             said.Add($"candidate {candidate.Candidate} for `{candidate.Line}` on {Short(candidate.Base)}: at {candidate.At ?? "its start"}");
             said.Add($"  steps: {string.Join(" > ", candidate.Steps.Select(step => $"{step.Step} ({step.State})"))}");
             said.AddRange(candidate.Members.Select(member => $"  {member.Request}  {member.Branch}: {member.State}{(member.Said is { Length: > 0 } words ? $" — {words}" : "")}"));
-            if (candidate.Holds is { } holds) said.Add($"  held: {holds}; `--{candidate.Release}` by the {candidate.By} releases it.");
+            said.Add(candidate switch
+            {
+                { Holds: "decide", Decided: { } decided } => $"  decided `{decided}` by the {candidate.By}: the line's run acts on it at its next look.",
+                { Holds: "decide" } =>
+                    $"  held for a decide{(candidate.Why is { Length: > 0 } why ? $" ({why})" : "")}; `--decide {candidate.Candidate} split|hand-back|land` by the {candidate.By} releases it.",
+                { Holds: "conflict" } => "  held: a member's conflict, which waits for the steward's or the owner's act.",
+                { Holds: { } holds } => $"  held: {holds}; it is tried again at each look.",
+                _ => "",
+            });
+            if (said[^1].Length == 0) said.RemoveAt(said.Count - 1);
         }
 
         Requests("handed back", look.HandedBack);
@@ -86,16 +125,22 @@ public static class IntegrateCommand
     /// <summary>The owner's acts, one Person route of the driver's module: a card in Daoris's window (D156) the terminal waits on.</summary>
     public static InstanceRoute Route { get; } = new(InstanceRoute.DriverModule, "INTEGRATE", RouteClass.Person);
 
-    /// <summary>The acts the route answers; <c>decide</c> and <c>order</c> it refuses until their steps are built.</summary>
-    public static IReadOnlyList<string> Pressed { get; } = ["request", "drop", "recheck"];
+    /// <summary>The acts the route answers.</summary>
+    public static IReadOnlyList<string> Pressed { get; } = ["request", "drop", "recheck", "decide", "order"];
 
     /// <summary>The route's payload for <paramref name="ask"/>, as the window's own press sends it.</summary>
-    public static object Payload(IntegrateAsk ask) => ask.Act switch
+    public static object Payload(IntegrateAsk ask)
     {
-        "request" => new { repository = ask.Repository, act = ask.Act, branch = ask.Target },
-        "drop" => new { repository = ask.Repository, act = ask.Act, request = ask.Target },
-        _ => new { repository = ask.Repository, act = ask.Act },
-    };
+        var words = (ask.Target ?? "").Split(' ', 2);
+        return ask.Act switch
+        {
+            "request" => new { repository = ask.Repository, act = ask.Act, branch = ask.Target },
+            "drop" => new { repository = ask.Repository, act = ask.Act, request = ask.Target },
+            "decide" => new { repository = ask.Repository, act = ask.Act, candidate = words[0], decide = words.ElementAtOrDefault(1) },
+            "order" => new { repository = ask.Repository, act = ask.Act, request = words[0], place = words.ElementAtOrDefault(1) },
+            _ => (object)new { repository = ask.Repository, act = ask.Act },
+        };
+    }
 
     /// <summary>
     /// An act pressed through the running Daoris, said in the route's answer: exit 0 where done, 1 where refused as data. With no Daoris

@@ -98,7 +98,7 @@
   "notifications.supervisor.line_other": "The supervisor answers questions in {{repository}} on your behalf, appointed {{since}}: each answer is said here and held {{held}} for your overrule. {{count}} answers this run.",
   "notifications.supervisor.lineUndated": "The supervisor answers questions in {{repository}} on your behalf: each answer is said here and held {{held}} for your overrule. {{count}} answer this run.",
   "notifications.supervisor.lineUndated_other": "The supervisor answers questions in {{repository}} on your behalf: each answer is said here and held {{held}} for your overrule. {{count}} answers this run.",
-  "notifications.supervisor.dormant": "Supervisor appointment for {{repository}} found as Daoris started: press Appoint again in its Setup to use it.",
+  "notifications.supervisor.dormant": "Supervisor appointment for {{repository}} found as Daoris started: press Appoint again under Agents → Roles → Appointed roles to use it.",
   "notifications.supervisor.ofWorkspace": "every repository of {{workspace}}",
   "notifications.supervisor.minutes": "{{count}} minute",
   "notifications.supervisor.minutes_other": "{{count}} minutes",
