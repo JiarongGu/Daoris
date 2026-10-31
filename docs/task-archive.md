@@ -5,6 +5,14 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## AGENTSPLACE1c — workflow writes as routes (2026-11-01)
+
+> **AGENTSPLACE1c — workflow writes as routes** (driver, modules; `docs/2026-11-01-agents-place-design.md` §3, §4 step 4, §7 row 2). Three Person routes, `WORKFLOW_SAVE`, `WORKFLOW_USE` and `WORKFLOW_KIND`, sharing the terminal verb's handlers as D194 point 4's typed operations: a save makes a new version under a fresh id, or appends against the version read and first says, and needs authorized, every scope that appending reaches (`WorkflowRunBindings.cs:124`: a new start binds the newest); choosing a workflow for a place is one change; `WORKFLOW_KIND` sets a kind of task and its paths. Each answer says §17.7's reach for the place. Classed Person, grounded by the place they write, with their publishing declarations.
+
+**Outcome** 2026-11-01: `WorkflowOperations` holds the operations (`UseAsync`, `KindSet`, `SaveAsync`, `SourceAsync`, the plans and the reach), which `daoris-driver workflow new|edit|apply|use|kind` and the three routes both run; the verb's text cases pass unchanged. The routes, their censuses and the stale-write, scope and reach proofs are in `DriverModuleWorkflowWritesTests`; the decision is D194's 2026-11-01 note. Owed: the installed window, which no row draws yet (1h).
+
+---
+
 ## SESSRELATED1 — a session's head names only the sessions it can meet, and says an unread tree once (2026-11-01)
 
 > **SESSRELATED1 — a session's head names only the sessions it can meet, and says an unread tree once** (driver, modules, web; the owner's report, 2026-11-01). The head's "Beside it in Daoris:" showed fifteen identical "not read here (last read 09:24)" lines. Causes: the candidates took every session with a recorded tree, closed ones whose trees are gone included; an unreadable own tree marked every other session `not-read`; the page drew a line each. Contract: a candidate is a session whose tree folder exists here; an unreadable own tree is one top-level `own: not-read`, never a mark on the others; a present tree git cannot read stays `not-read` per session, and two or more fold into one line. Proof: `RelatedSessionsTests`, a candidates-filter test, `RelatedSessions.test.tsx`.
