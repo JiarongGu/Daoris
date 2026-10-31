@@ -51,6 +51,30 @@ public sealed class DriverModuleRoleTests : DriverModuleBridge
         }
     }
 
+    /// <summary>MODELROLE1f: <c>ROLES</c> carries each role's last seven days beside its rows; a home with no start lists none.</summary>
+    [Fact]
+    public async Task The_roles_answer_carries_each_role_s_week_of_starts_and_none_with_no_history()
+    {
+        File.WriteAllText(DriverConfigPath, """{ "adapter": "claude-code" }""");
+        var module = Module();
+        var none = (await AnswerAsync(module, "ROLES")).GetProperty("use");
+        Assert.Empty(none.GetProperty("roles").EnumerateArray());
+
+        var logs = DaorisHome.Entry(Home, HomeEntry.Logs);
+        Directory.CreateDirectory(logs);
+        var now = DateTimeOffset.UtcNow;
+        File.WriteAllText(
+            Path.Combine(logs, now.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture) + ".driver.jsonl"),
+            "{\"time\":\"" + now.ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'", System.Globalization.CultureInfo.InvariantCulture)
+            + "\",\"source\":\"driver\",\"level\":\"info\",\"event\":\"actor.chose\",\"data\":{\"actor\":\"build\",\"choice\":\"2\",\"agent\":\"codex\",\"model\":null,\"passed\":[\"1:claude:cooling\"]}}\n");
+
+        var use = (await AnswerAsync(module, "ROLES")).GetProperty("use");
+        var build = Assert.Single(use.GetProperty("roles").EnumerateArray().ToList());
+        Assert.Equal(("build", 1, 1), (build.GetProperty("role").GetString(), build.GetProperty("starts").GetInt32(), build.GetProperty("fell").GetInt32()));
+        Assert.Equal("cooling", build.GetProperty("why")[0].GetProperty("code").GetString());
+        Assert.Equal(1, use.GetProperty("days").GetInt32());
+    }
+
     [Fact]
     public async Task A_home_whose_actors_are_the_file_s_own_sets_no_role()
     {

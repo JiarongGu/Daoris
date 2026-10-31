@@ -365,12 +365,15 @@ public sealed class DriverRoutes(DriverContext context)
     // stored choices, and the work codes a role may take; a read, the same `daoris driver role` says. Beside them, the roles Daoris
     // suggests adding (the Designer while no role takes design), each the person's press alone.
     [DriverRoute("ROLES")]
-    [ByEvent("ROLES", Untold = "the store's roles and driver.json's staffing")]
+    [ByEvent("ROLES", Untold = "the store's roles and driver.json's staffing, and the machine log's starts that Use sums")]
     private Task<object?> RolesAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var catalogue = RoleCatalog.ReadHome(_loop.Home);
+        // Each role's last seven days (MODELROLE1f): names and counts from the machine log's actor.chose lines; a role with no start is not listed.
+        var use = RoleUse.Of(_loop.Home, DateTimeOffset.UtcNow);
         return Task.FromResult<object?>(new
         {
+            Use = new { use.Days, use.Roles },
             Roles = RoleDoor.Rows(catalogue, DriverConfig.Load(_loop.ConfigPath)),
             Works = RoleWork.Codes,
             Kept = RoleStaffing.Of(_loop.ConfigPath) is not null,
