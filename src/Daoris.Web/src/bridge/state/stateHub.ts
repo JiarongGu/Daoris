@@ -69,6 +69,8 @@ const scopes = new Map<string, (sessions: string[] | null) => QueryKey[]>([
   ['integration', () => [['integration']]],
   // COWORKVIEW1a: who is at work, told by its read's own judge naming no session, so every mounted read is asked again.
   ['atWork', () => [AT_WORK]],
+  // GITAPP2h: a checkout's index moved by a person's stage, unstage or Undo, which the Changes tab reads again.
+  ['checkouts', () => [['git', 'changes']]],
 ]);
 
 const words = (value: unknown): string[] =>

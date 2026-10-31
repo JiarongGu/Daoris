@@ -287,7 +287,7 @@ public sealed class PipeCensus
         Add(PipeClass.Open,
             // Reads (D156 §3's reads stay open): they change nothing and declare nothing (D169 point 2).
             "ACCOUNTS", "ACROSS", "ACTORS", "ANSWER_WAITS", "ASKS_ELSEWHERE", "ASK_LANDING", "CHANNEL_READ", "CHECKOUT_BRANCH", "ENTRY_LANDING",
-            "GIT_BLAME", "GIT_BRANCHES", "GIT_CHANGES", "GIT_COMMIT", "GIT_COMPARE", "GIT_GRAPH", "GIT_HISTORY", "HANDOFF_PLAN", "HARNESSES",
+            "GIT_BLAME", "GIT_BRANCHES", "GIT_CHANGES", "GIT_COMMIT", "GIT_COMPARE", "GIT_GRAPH", "GIT_HISTORY", "GIT_HUNKS", "HANDOFF_PLAN", "HARNESSES",
             "HELPER_WAITS", "HELP_CONVERSATIONS", "HELP_PROPOSALS", "HELP_PUBLISHED", "HELP_WIRED", "HEAVY_MARKS", "INTEGRATION", "HEAVY_SLOT", "HISTORY_PLAN", "LANDING", "LINES", "OPINION_GATE",
             "OPINION_WAITS", "PERMISSION_WAITS", "PLUGIN", "PLUGINS", "PLUGIN_ACTIVITY", "PLUGIN_READ", "ROLES", "RULES", "SESSION_DIFF", "SESSION_FILE",
             "SESSION_FILES", "SESSION_GROUPS", "SESSION_HAND_OVER_ASK", "SESSION_HELPERS", "SESSION_PARTNERS", "SESSION_HISTORY", "SESSION_OPENINGS", "SESSION_OPTIONS",
@@ -396,6 +396,8 @@ public sealed class PipeCensus
         Add(PipeClass.Window,
             // The file manager, the file picker and Daoris's browser are the window's; so is what is typed into an action a
             // window runs, and that action's stop.
+            // GITAPP2h: the Changes tab's hunks are pressed there, hunk by hunk and line by line, which no terminal verb names.
+            "GIT_STAGE", "GIT_UNSTAGE", "GIT_UNDO",
             "SESSION_OPEN_FOLDER", "PLUGIN_OPEN_FOLDER", "WORK_RECORDS_FOLDER", "TOOLS_PICK", "SHOW_REVIEW_AGAIN", "HARNESS_INPUT", "HARNESS_CANCEL",
             // RPC1c, PERSONDOOR1f: what waits for the person's Confirm is the window's to read and answer, so a terminal can ask and never
             // answer; and the person key is the window's, which the pipe never answers (D156 point 2, the terminal RPC design §4.3).

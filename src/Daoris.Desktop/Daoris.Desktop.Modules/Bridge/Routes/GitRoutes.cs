@@ -129,6 +129,69 @@ public sealed class GitRoutes(DriverLoop loop)
     private async Task<object?> GitChangesAsync(IpcRequest request, CancellationToken cancellationToken) =>
         await GitAnsweredAsync(request, cancellationToken, (root, token) => GitChanges.ReadAsync(root, token));
 
+    // GITAPP2h (D204, the git-writes design §4): one file's hunks on a side, with the ids a press must still find equal. A read.
+    [DriverRoute("GIT_HUNKS")]
+    [ByEvent("GIT_HUNKS", Untold = "the checkout's index and the file's bytes, which no scope tells")]
+    private async Task<object?> GitHunksAsync(IpcRequest request, CancellationToken cancellationToken) =>
+        await GitAnsweredAsync(request, cancellationToken, (root, token) =>
+            GitHunks.ReadAsync(root, Optional(request, "path") ?? "", Optional(request, "side") ?? "", token));
+
+    // GITAPP2h (D204, the git-writes design §8): stage and unstage a file, hunks or lines of it, and Undo of such an act. Each is one act
+    // of the journal under the checkout's lock; a refusal is answered as data (`done: false`, the driver's sentence), never thrown.
+    // The checkout is the registered one the repository's page reads, never a session's tree.
+    [DriverRoute("GIT_STAGE")]
+    [DriverRoute("GIT_UNSTAGE")]
+    [DriverRoute("GIT_UNDO")]
+    [Publishes("GIT_STAGE", StateScopes.Checkouts)]
+    [Publishes("GIT_UNSTAGE", StateScopes.Checkouts)]
+    [Publishes("GIT_UNDO", StateScopes.Checkouts)]
+    private async Task<object?> GitStageAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var repository = Optional(request, "repository") ?? throw new DriverException("a stage names its repository.");
+        var service = _loop.Service ?? throw NotReady();
+        var rows = LinesRoutes.Checkouts(await service.RegistryAsync(cancellationToken).ConfigureAwait(false), repository, Optional(request, "workspace"));
+        if (rows.FirstOrDefault(row => Directory.Exists(row.Root)).Root is not { } root)
+        {
+            return Staged(new ActRun(null, null, $"{repository} has no checkout on this machine: nothing was changed.", Refused: true), repository, null);
+        }
+
+        var context = new StageContext(
+            repository, root, () => DriverConfig.Load(_loop.ConfigPath).MayChangeCheckout(repository), token => BranchTidying.BesideAsync(service, token));
+        var acts = new StageActs(new ActJournal(_loop.Home));
+        // The act is not the window's to cancel once its first effect begins; the watch ends only a wait before it.
+        if (request.Type == "GIT_UNDO")
+        {
+            return Staged(await acts.UndoAsync(context, Optional(request, "act") ?? "", cancellationToken).ConfigureAwait(false), repository, root);
+        }
+
+        var picks = new List<HunkPick>();
+        if (request.Payload is { } payload && payload.TryGetProperty("picks", out var chosen) && chosen.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var pick in chosen.EnumerateArray())
+            {
+                var lines = pick.TryGetProperty("lines", out var each) && each.ValueKind == JsonValueKind.Array
+                    ? each.EnumerateArray().Where(line => line.ValueKind == JsonValueKind.Number).Select(line => line.GetInt32()).ToList()
+                    : null;
+                picks.Add(new HunkPick(pick.TryGetProperty("id", out var id) ? id.GetString() ?? "" : "", lines));
+            }
+        }
+
+        var press = new StagePress(
+            request.Type == "GIT_STAGE" ? StageVerbs.Stage : StageVerbs.Unstage, Optional(request, "path") ?? "", Optional(request, "head"),
+            Optional(request, "index") ?? "", Optional(request, "source") ?? "", picks);
+        return Staged(await acts.RunAsync(context, press, cancellationToken).ConfigureAwait(false), repository, root);
+    }
+
+    /// <summary>An act's answer as the page reads it: whether it is done, its act (the id Undo takes) and the driver's sentence, with no machine path.</summary>
+    private static object Staged(ActRun run, string repository, string? root) => new
+    {
+        Done = !run.Refused && run.Outcome == ActOutcomes.Done,
+        run.Refused,
+        run.Act,
+        run.Outcome,
+        Said = WithoutRoots(run.Said, [root], repository),
+    };
+
     /// <summary>
     /// A read of the repository the payload names, answered as the driver answered it: its value, or a code the page words and
     /// the sentence beside it, and the git commands that give the same answer. A repository with no checkout here is an answer

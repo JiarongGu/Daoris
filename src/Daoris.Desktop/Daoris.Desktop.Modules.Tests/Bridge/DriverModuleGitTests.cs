@@ -118,6 +118,31 @@ public sealed class DriverModuleGitTests : DriverModuleBridge
         Assert.DoesNotContain("checkouts", answer.GetRawText());
     }
 
+    /// <summary>GITAPP2h: a file's hunks come with the ids a press sends back, and a stage with the switch off is refused as data, with no path.</summary>
+    [Fact]
+    [Trait(Category.Name, Category.Process)]
+    public async Task The_hunks_read_names_the_ids_and_a_stage_with_the_switch_off_is_refused_in_words()
+    {
+        var root = await InitAsync();
+        await File.WriteAllTextAsync(Path.Combine(root, "README.md"), "changed\n");
+        var module = await UpAsync(root);
+
+        var hunks = await AnswerAsync(module, "GIT_HUNKS", new { repository = "engine", workspace = "aurora", path = "README.md", side = "unstaged" });
+        var value = hunks.GetProperty("value");
+        var press = new { repository = "engine", workspace = "aurora", path = "README.md", head = value.GetProperty("head").GetString(), index = value.GetProperty("index").GetString(), source = value.GetProperty("source").GetString() };
+        var refused = await AnswerAsync(module, "GIT_STAGE", press);
+        var undo = await AnswerAsync(module, "GIT_UNDO", new { repository = "engine", workspace = "aurora", act = "none" });
+
+        Assert.Equal(1, value.GetProperty("hunks").GetArrayLength());
+        Assert.Matches("^[0-9a-f]{12}$", value.GetProperty("hunks")[0].GetProperty("id").GetString());
+        Assert.False(refused.GetProperty("done").GetBoolean());
+        Assert.True(refused.GetProperty("refused").GetBoolean());
+        Assert.Contains("may not change", refused.GetProperty("said").GetString());
+        Assert.DoesNotContain(root, refused.GetRawText().Replace("\\\\", "\\"));
+        Assert.True(undo.GetProperty("refused").GetBoolean());
+        Assert.Equal("changed\n", await File.ReadAllTextAsync(Path.Combine(root, "README.md")));
+    }
+
     [Fact]
     public async Task The_changes_read_of_a_repository_with_no_checkout_is_answered_with_its_code()
     {

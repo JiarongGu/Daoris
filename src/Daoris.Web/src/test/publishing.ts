@@ -91,6 +91,10 @@ export const DECLARED: Readonly<Record<string, { scopes: readonly string[]; sess
   SET_HOLD: { scopes: ['driver'] },
   SET_TREES: { scopes: ['driver'] },
   SET_CHECKOUT_WRITES: { scopes: ['driver'] },
+  // GITAPP2h: the Changes tab's acts on the checkout's index.
+  GIT_STAGE: { scopes: ['checkouts'] },
+  GIT_UNSTAGE: { scopes: ['checkouts'] },
+  GIT_UNDO: { scopes: ['checkouts'] },
   SET_STANDING: { scopes: ['driver'] },
   SET_HEAVY_GATES: { scopes: ['driver'] },
   SET_SESSION_CHECKS: { scopes: ['driver'] },
