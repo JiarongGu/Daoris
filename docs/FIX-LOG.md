@@ -12715,3 +12715,10 @@ mis-rooted instance.
 **Fix.** Each reads the ledger's holders of the checkout inside its hold (`BranchTidying.HoldersAsync`, `CheckoutBeside`) and waits, naming the session, while one is running, waiting or held to go on, or while the ledger cannot be read; every pull door and the integration transport hand it the ledger.
 
 **Verification.** `CheckoutBesideGitTests` (a pull and a promotion beside a driven session in the checkout, each going on once its quest is done; an unreadable ledger), written with the fix and run green; `CheckoutWritersCensusTests` holds the doors.
+## A live stop under the standing confirmation gave up under load (2026-11-01)
+
+**Root cause.** `SessionsCommandTests.A_live_stop_under_the_standing_confirmation_hands_its_loop_the_note_part` waited 5 s (the test world's `Wait`) for the loop's own turn to honour the stop; batch 1031e's candidate ran it beside every other gate, the honouring task's turn came late, and the command answered exit 2.
+
+**Fix.** The test's request waits `Poll.Patience`, as a wait on a signal does (the short-waits census's rule); it returns as soon as the loop honours it.
+
+**Verification.** `SessionsCommandTests`, 70 of 70; the failure was the candidate's alone, the test passing three times in a row run by itself.
