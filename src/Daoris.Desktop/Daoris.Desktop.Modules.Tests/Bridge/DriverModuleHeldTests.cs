@@ -47,6 +47,17 @@ public sealed class DriverModuleHeldTests : DriverModuleBridge
     private static JsonElement Of(object? answer) => JsonSerializer.SerializeToElement(answer, Wire);
 
     /// <summary>
+    /// An answer less a numbered read's number (COWORKVIEW1a): a reply carries the newest landing's, which a work landing unchanged
+    /// after the event still moves, so the two are compared by what they say.
+    /// </summary>
+    private static string Unnumbered(string json)
+    {
+        if (System.Text.Json.Nodes.JsonNode.Parse(json) is not System.Text.Json.Nodes.JsonObject answer) return json;
+        answer.Remove("at");
+        return answer.ToJsonString();
+    }
+
+    /// <summary>
     /// COWORKVIEW1a's numbered read (the design §4.1, C4-2.3, C4-3.1): a work's failure is answered, never thrown, as the failed value
     /// with the refusal's words at every ask until a landing replaces it, told so too; every reply and event carries its epoch and number.
     /// </summary>
@@ -140,7 +151,7 @@ public sealed class DriverModuleHeldTests : DriverModuleBridge
         }
 
         var held = await module.HandleMessageAsync(Request(route, payload, "q1"), CancellationToken.None);
-        Assert.Equal(answered.GetProperty("answer").GetRawText(), JsonSerializer.Serialize(held.Data, Wire));
+        Assert.Equal(Unnumbered(answered.GetProperty("answer").GetRawText()), Unnumbered(JsonSerializer.Serialize(held.Data, Wire)));
 
         // Asked again with the work slow again: what was held, at once; the same answer landing tells nothing more.
         var again = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -148,7 +159,7 @@ public sealed class DriverModuleHeldTests : DriverModuleBridge
         clock.Restart();
         var second = await module.HandleMessageAsync(Request(route, payload, "q1"), CancellationToken.None);
         Assert.True(clock.Elapsed < UiStallWatch.Bound, $"{route} answered after {clock.Elapsed.TotalMilliseconds} ms");
-        Assert.Equal(answered.GetProperty("answer").GetRawText(), JsonSerializer.Serialize(second.Data, Wire));
+        Assert.Equal(Unnumbered(answered.GetProperty("answer").GetRawText()), Unnumbered(JsonSerializer.Serialize(second.Data, Wire)));
         again.SetResult();
         await module.Held.LandedAsync(DriverModule.HeldKey(Request(route, payload, "q1")));
         await Task.Delay(50);
