@@ -131,9 +131,10 @@ for (const [story, { width, language, ceiling }] of Object.entries(TABLE)) {
   test(`${story} at ${width}: every block of the head is drawn, the milestone, the parts and the relations folded to one line (two where it wraps), the head no taller than today`, async ({ page }) => {
     const measured = await open(page, story);
     expect(measured.width, `the main area is ${WIDTH_PX[width]} px, not ${measured.width}`).toBe(WIDTH_PX[width]);
-    // The page head, the head's own line, the parts, Accept, the chain's line, the relations, the channel, the milestone and the
-    // trace: a head that lost one would pass its ceiling by losing what it measures.
-    expect(measured.blocks.length, `the blocks: ${said(measured)}`).toBe(9);
+    // The page head (its *Accept all* the session's work to land since REVIEWFLOW1a, no block of its own), the head's own line, the
+    // parts, the chain's line, the relations, the channel, the milestone and the trace: a head that lost one would pass its ceiling
+    // by losing what it measures.
+    expect(measured.blocks.length, `the blocks: ${said(measured)}`).toBe(8);
     const milestone = measured.blocks.find((block) => block.name.includes(`[${MILESTONE[language]}]`));
     expect(milestone, `the milestone is among the blocks: ${said(measured)}`).toBeDefined();
     console.log(`[measured] ${story} (${measured.width}px): the conversation ${measured.down} px down, budget ${BUDGET}; ${said(measured)}`);
