@@ -22069,3 +22069,9 @@ The row is quoted by its head; its whole text and proof are the foundation desig
 > **REVIEWFLOW1d** (the review-flow design; the Opus maker's B1): leave-out offered per tree, on its first part, naming every part it takes; none on a part a kept later part carries; `Sequence` marks a left-out shared tree's parts `left-out`; a D167 note.
 
 **Outcome** 2026-10-31: built. `Sequence` marks every part of a left-out shared tree `left-out` (never `same-tree` in `Outcome`); `EntryLandings.Carries` keeps a part a kept later part carries from being judged superseded, so its leave-out is never offered; the page's checkbox stands on the tree's first part and names its parts (`Intl.ListFormat`, en and zh). Owed: the driver refusing a carried part's leave-out in words, and the carried case through `PlanAsync` on real git. Detail in D167's note.
+
+## REVIEWFLOW1b — now · next in the head's facts (2026-10-31)
+
+> **REVIEWFLOW1b** (the review-flow design §1): *now · next* folded into the head's facts line: *now* from the driver's facts (working, waits on you, n parts to land, landing, integrating by INTEGRATE1h's fact, landed); *next* names the press and is a door to its step.
+
+**Outcome** 2026-10-31: built. `sessionFacts` takes the page's flow and leads with *now* after the repository (landing, n parts to land, waits on you with its time, working; integrating left to its existing fact; landed the session's own); `nextPress` names the first standing wait's press, drawn on the head as *next: Accept…* and pressing to the wait (`goToWait`, the route `WaitMark` takes). Left: the ask's and quest's pages. Owed: the installed window.
