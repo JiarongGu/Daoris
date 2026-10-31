@@ -3,8 +3,11 @@ using System.Text.RegularExpressions;
 
 namespace Daoris.Driver;
 
-/// <summary>What a ref transaction did: <see cref="Done"/>, or why git never moved a ref, in a sentence.</summary>
-internal readonly record struct RefRun(bool Done, string Said);
+/// <summary>
+/// What a ref transaction did: <see cref="Done"/>; or, git having refused with a real exit, why nothing moved; or, <see cref="Unanswered"/>
+/// (git never started, or ended without an exit), the refs as they stand after a read of each, said in a sentence.
+/// </summary>
+internal readonly record struct RefRun(bool Done, string Said, bool Unanswered = false);
 
 /// <summary>
 /// One typed transaction for a set of ref acts (GITTXN1): exactly one <c>git update-ref --stdin</c> operation per ref, each with its
@@ -124,7 +127,8 @@ internal sealed class RefTransaction
 
     /// <summary>
     /// Runs the transaction: refused before git where it contradicts itself, refused where a name is a symbolic ref (git would follow it to
-    /// another name), else one <c>update-ref --stdin</c>. Not <see cref="RefRun.Done"/> means nothing moved.
+    /// another name, or, on a case-blind disk, a create beside its case-alias), else one <c>update-ref --stdin</c>. Not <see cref="RefRun.Done"/>
+    /// means nothing moved where git refused; where it did not answer (<see cref="RefRun.Unanswered"/>) the refs are read and said as they stand.
     /// </summary>
     public async Task<RefRun> RunAsync(string root, CancellationToken ct)
     {
@@ -143,11 +147,60 @@ internal sealed class RefTransaction
             }
         }
 
+        if (await AliasStandingAsync(root, ct).ConfigureAwait(false) is { } alias) return new(false, alias);
+
         // One act and nothing to verify is one command line, the same operation without a stdin.
         var (code, _, err) = _verifies.Count == 0 && _steps.Count == 1 && Single() is { } line
             ? await WorkingTree.GitAsync(root, line, ct).ConfigureAwait(false)
             : await WorkingTree.GitAsync(root, ["update-ref", "--stdin"], input!, ct).ConfigureAwait(false);
-        return code == 0 ? new(true, "") : new(false, ContentHolds.Said(err));
+        if (code == 0) return new(true, "");
+        // -1 is no answer: the bound reached or git never started. Only the refs themselves say whether anything moved.
+        return code == -1 ? await UnansweredAsync(root, err, ct).ConfigureAwait(false) : new(false, ContentHolds.Said(err));
+    }
+
+    /// <summary>
+    /// Where the disk is case-blind, a create of a name whose case-alias already stands (loose or packed) is refused before git runs:
+    /// the file system would make the two one file. Null where no create is aliased.
+    /// </summary>
+    private async Task<string?> AliasStandingAsync(string root, CancellationToken ct)
+    {
+        var creates = _steps.Where(step => step.Act == Act.Create).ToList();
+        if (creates.Count == 0) return null;
+        var (blind, said, configErr) = await WorkingTree.GitAsync(root, ["config", "--type=bool", "--get", "core.ignorecase"], ct).ConfigureAwait(false);
+        if (blind == -1) return $"whether the disk tells names apart by case is unread ({ContentHolds.Said(configErr)})";
+        if (blind != 0 || said.Trim() != "true") return null;
+
+        foreach (var prefix in creates.Select(step => step.Ref[..(step.Ref.LastIndexOf('/') + 1)]).Distinct(StringComparer.OrdinalIgnoreCase))
+        {
+            var (code, rows, err) = await WorkingTree.GitAsync(root, ["for-each-ref", "--format=%(refname)", "--", prefix], ct).ConfigureAwait(false);
+            if (code != 0) return $"which refs stand under `{prefix}` is unread ({ContentHolds.Said(err)})";
+            var standing = rows.Split('\n', StringSplitOptions.RemoveEmptyEntries).Select(row => row.TrimEnd('\r')).ToList();
+            foreach (var step in creates)
+            {
+                var other = standing.FirstOrDefault(each =>
+                    string.Equals(each, step.Ref, StringComparison.OrdinalIgnoreCase) && !string.Equals(each, step.Ref, StringComparison.Ordinal));
+                if (other is not null) return $"`{step.Ref}` would be one ref with `{other}`, which stands, on a disk that reads names without case";
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>Reads each ref the transaction moves and says how it stands: moved (at the new value), not moved (at the old), or unknown.</summary>
+    private async Task<RefRun> UnansweredAsync(string root, string err, CancellationToken ct)
+    {
+        var told = new List<string>();
+        foreach (var step in _steps)
+        {
+            var (code, at, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", step.Ref], ct).ConfigureAwait(false);
+            var stands = code == 0 ? at.Trim() : code == 1 ? null : "?";
+            told.Add(stands == "?" ? $"`{step.Ref}` unknown (unread)"
+                : stands == step.New ? $"`{step.Ref}` moved"
+                : stands == step.Old ? $"`{step.Ref}` not moved"
+                : $"`{step.Ref}` unknown (stands at {Show(stands is { Length: > 12 } ? stands[..12] : stands)}, neither as it was nor as it was to be)");
+        }
+
+        return new(false, $"git did not answer ({ContentHolds.Said(err)}); as the refs stand: {string.Join(", ", told)}", Unanswered: true);
     }
 
     private string[]? Single() => _steps[0] switch
@@ -164,6 +217,7 @@ internal sealed class RefTransaction
     public async Task<RefRun> RollBackAsync(string root, string what, CancellationToken ct)
     {
         var run = await RunAsync(root, ct).ConfigureAwait(false);
-        return run.Done ? run : new(false, $"{what} was not undone because a condition no longer held ({run.Said}); nothing was moved, so what stands is as the other side left it");
+        if (run.Done || run.Unanswered) return run.Unanswered ? run with { Said = $"{what} was not confirmed undone: {run.Said}" } : run;
+        return new(false, $"{what} was not undone because a condition no longer held ({run.Said}); nothing was moved, so what stands is as the other side left it");
     }
 }
