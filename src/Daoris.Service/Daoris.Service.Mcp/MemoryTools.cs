@@ -72,8 +72,12 @@ public sealed class MemoryTools(
                 .ToList()
             : [];
         if (found.Count == 0 && staged.Count == 0) return await ToldAsync(caller, $"No memory entry in workspace `{caller.Workspace}` matches `{query}`.", ct).ConfigureAwait(false);
+        var awaiting = await AwaitingEndsAsync(ct).ConfigureAwait(false);
         var text = new StringBuilder($"Memory in workspace `{caller.Workspace}`:").AppendLine().AppendLine();
-        foreach (var (reference, entry) in found.Take(Limit)) text.AppendLine($"- `{reference}` (revision {entry.Revision}): {entry.Text}");
+        foreach (var (reference, entry) in found.Take(Limit))
+        {
+            text.AppendLine($"- `{reference}` (revision {entry.Revision}{Awaits(awaiting, reference)}): {entry.Text}");
+        }
         foreach (var op in staged.Take(Limit))
         {
             text.AppendLine($"- staged for `{op.Repository}` by this session's work (operation `{op.Id}`), applied when it is accepted: {op.Change.Text}");
@@ -81,6 +85,20 @@ public sealed class MemoryTools(
 
         return await ToldAsync(caller, text.AppendLine().Append("Call `memory_get` with a reference to read it whole.").ToString(), ct).ConfigureAwait(false);
     }
+
+    /// <summary>The ends awaiting their approver, by the entry they would end (§4).</summary>
+    private async Task<ILookup<MemoryReference, MemoryOp>> AwaitingEndsAsync(CancellationToken ct) =>
+        ledger is null
+            ? Array.Empty<MemoryOp>().ToLookup(op => new MemoryReference(op.Repository, ""))
+            : (await ledger.Memory.ListAsync(MemoryOpState.Awaiting, ct).ConfigureAwait(false))
+                .Where(op => op.Change is { Kind: MemoryOpKind.End, Target: not null })
+                .ToLookup(op => new MemoryReference(op.Repository, op.Change.Target!));
+
+    /// <summary>What a hit on <paramref name="reference"/> says of an end awaiting its approver, the person until MC8; nothing where none awaits.</summary>
+    private static string Awaits(ILookup<MemoryReference, MemoryOp> awaiting, MemoryReference reference) =>
+        string.Concat(awaiting[reference].Select(op => op.By is { } by
+            ? $", end proposed by session `{by.Session}`, awaiting the person"
+            : ", end proposed by Daoris's recheck of a cited record, awaiting the person"));
 
     private static bool Matches(string text, string query) =>
         query.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
@@ -109,6 +127,7 @@ public sealed class MemoryTools(
 
         var text = new StringBuilder($"`{at}`, revision {entry.Revision}");
         if (entry.Ended is { } why) text.Append($", ended: {MemoryEndToken.Strip(why)}");
+        else text.Append(Awaits(await AwaitingEndsAsync(ct).ConfigureAwait(false), at));
         text.AppendLine().AppendLine().AppendLine(entry.Text);
         if (!expand) return await ToldAsync(caller, text.ToString(), ct).ConfigureAwait(false);
 
