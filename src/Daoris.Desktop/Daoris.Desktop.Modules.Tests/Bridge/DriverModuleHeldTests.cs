@@ -24,6 +24,7 @@ public sealed class DriverModuleHeldTests : DriverModuleBridge
         ["SESSION_RECORD"] = new { id = "a1b2c3d4" },
         ["HEAVY_SLOT"] = new { repository = "engine" },
         ["ROLES"] = new { },
+        ["ROLE_STRUCTURE"] = new { places = new[] { new { workspace = "aurora", repository = "engine" } } },
         ["HELP_PROPOSALS"] = new { session = "a1b2c3d4" },
         ["TOOLS_LIST"] = new { },
         ["SUPERVISOR_WAITING"] = new { },
