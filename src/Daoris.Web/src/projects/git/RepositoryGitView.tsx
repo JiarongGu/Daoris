@@ -1,6 +1,7 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
-  type GitAnswer, type GitBranch, type GitGraphPage, type GitLogCommit, type GitRepositoryBranches, gitRefusal, useGitBranches, useGitGraphPages,
+  type GitAnswer, type GitBranch, type GitGraphPage, type GitLogCommit, type GitRepositoryBranches, gitRefusal, useGitBranches, useGitChanges,
+  useGitGraphPages,
 } from '../../bridge/repositories/git';
 import { useWorkState } from '../../bridge/repositories/lines';
 import { useSessionOpenings } from '../../bridge/sessions/sessions';
@@ -11,7 +12,7 @@ import { questName, sessionTitle } from '../../work/identity';
 import { BranchPage, type BranchRead } from './BranchPage';
 import type { LandingDoor } from './LandingFlow';
 import { landingOf } from './landingLife';
-import { BranchesTab, type GitRead, HistoryTab, type HistoryRead } from './RepositoryGit';
+import { BranchesTab, ChangesTab, type ChangesValue, type GitRead, HistoryTab, type HistoryRead } from './RepositoryGit';
 import { WorkspaceBranches, type WorkspaceGroups } from '../workspace/WorkspaceBranches';
 
 /** Matched without case, as the driver matches a repository's name and a workspace's. */
@@ -70,6 +71,38 @@ export function RepositoryHistory({ repository, workspace, here }: { repository:
   return here
     ? <HistoryRead repository={repository} workspace={workspace} />
     : <HistoryTab repository={repository} read={{ state: 'noCheckout' }} />;
+}
+
+/**
+ * **A repository's Changes tab, with its data** (GITAPP2b, D204, the git-writes design §1, §11): drawn where the person let Daoris
+ * change the checkout's files, read when the tab opens, on window focus and on *Refresh*, and not at all with no checkout here.
+ * What the shell holds until its fresh read lands is shown with its own time and marked as read again.
+ */
+export function RepositoryChanges({ repository, workspace, here }: { repository: string; workspace: string; here: boolean }) {
+  return here
+    ? <ChangesRead repository={repository} workspace={workspace} />
+    : <ChangesTab repository={repository} read={{ state: 'noCheckout' }} />;
+}
+
+function ChangesRead({ repository, workspace }: { repository: string; workspace: string }) {
+  const { query } = useGitChanges(repository, workspace);
+  // When this window last asked: a read made before it is the shell's held one, shown until the fresh read comes.
+  const [askedAt, setAskedAt] = useState(() => Date.now());
+  useEffect(() => {
+    if (query.isFetching) setAskedAt(Date.now());
+  }, [query.isFetching]);
+
+  const answer = query.data;
+  const refusal = gitRefusal(answer);
+  const value = answer?.value ?? null;
+  const read: GitRead<ChangesValue> = query.error ? { state: 'refused', sentence: sentence(query.error) }
+    : !answer ? { state: 'reading' }
+    : refusal?.code === 'GIT_NO_CHECKOUT' ? { state: 'noCheckout' }
+    : refusal ? { state: 'refused', sentence: sentence(refusal) }
+    : !value ? { state: 'refused', sentence: sentence({ code: 'UNKNOWN' }) }
+    : { state: 'read', value };
+  const refreshing = query.isFetching || (value !== null && new Date(value.readAt).getTime() < askedAt);
+  return <ChangesTab repository={repository} read={read} refreshing={refreshing} onRefresh={() => { void query.refetch(); }} />;
 }
 
 const NO_BRANCHES: GitBranch[] = [];

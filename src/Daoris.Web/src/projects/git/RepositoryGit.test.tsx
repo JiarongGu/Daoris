@@ -4,8 +4,8 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 import type { ReactElement, ReactNode } from 'react';
 import userEvent from '@testing-library/user-event';
 import i18n from '../../locales/i18n';
-import { GIT_BRANCHES_ENGINE, GIT_HISTORY_ENGINE, GIT_HISTORY_PAGES } from '../fixtures';
-import { BranchesTab, HistoryTab, type HistoryRead } from './RepositoryGit';
+import { GIT_BRANCHES_ENGINE, GIT_CHANGES_ENGINE, GIT_HISTORY_ENGINE, GIT_HISTORY_PAGES } from '../fixtures';
+import { BranchesTab, ChangesTab, HistoryTab, type HistoryRead } from './RepositoryGit';
 
 // A repository's Branches and History tabs (UX6h1, D150 §4.2, §4.4): molecules, each state reached by its props. The reads
 // are this machine's (D147 §6): a tab says its answer is on its way, that this machine has no checkout, or why Git did not
@@ -442,5 +442,70 @@ describe("a repository's History tab, over all its branches", () => {
     expect(screen.getByText(/300 个分支中的前 256 个/)).toBeInTheDocument();
     await opened(screen.getByRole('button', { name: '历史选项' }));
     expect(screen.getByRole('menuitemcheckbox', { name: '所有分支' })).toBeInTheDocument();
+  });
+});
+
+// The Changes tab (GITAPP2b, the git-writes design §1 and §4, §11): three observations of the checkout, each a list, read when it
+// opens, on focus and on *Refresh*, and saying when. A molecule: its read arrives as a prop.
+describe("a repository's Changes tab", () => {
+  afterEach(async () => { await i18n.changeLanguage('en'); });
+
+  const changes = { state: 'read', value: GIT_CHANGES_ENGINE } as const;
+  const list = (name: string) => within(screen.getByRole('list', { name })).getAllByRole('listitem');
+
+  it('says its changes are on their way, that this machine has no checkout, or why Git did not answer', () => {
+    const { rerender } = render(<ChangesTab repository="engine" read={{ state: 'reading' }} />);
+    expect(screen.getByText("Reading engine's changes…")).toBeInTheDocument();
+    rerender(<ChangesTab repository="engine" read={{ state: 'noCheckout' }} />);
+    expect(screen.getByText("engine's changes are read from its checkout, and this machine has none.")).toBeInTheDocument();
+    rerender(<ChangesTab repository="engine" read={{ state: 'refused', sentence: 'git could not read this checkout.' }} />);
+    expect(screen.getByText('git could not read this checkout.')).toBeInTheDocument();
+  });
+
+  it('lists what is staged, what is not, what is untracked and what is in conflict, each with its count', () => {
+    render(<ChangesTab repository="engine" read={changes} />);
+    expect(within(screen.getByRole('region', { name: "engine's changes" })).getAllByRole('heading').map((heading) => heading.textContent))
+      .toEqual(['Staged (2)', 'Not staged (2)', 'Untracked (1)', 'Conflicted (1)']);
+    expect(list('Staged (2)').map((each) => each.querySelector('code')?.textContent)).toEqual(['src/budget.cs', 'notes.txt']);
+    expect(list('Untracked (1)')[0]).toHaveTextContent('scratch/trace.log');
+    expect(list('Conflicted (1)')[0]).toHaveTextContent('src/cache.cs');
+  });
+
+  it('shows a file staged and then removed in both lists, with its status, its mode and its blob', () => {
+    render(<ChangesTab repository="engine" read={changes} />);
+    const staged = list('Staged (2)').find((each) => each.querySelector('code')?.textContent === 'notes.txt')!;
+    const unstaged = list('Not staged (2)').find((each) => each.querySelector('code')?.textContent === 'notes.txt')!;
+    expect(staged).toHaveTextContent('added');
+    expect(staged).toHaveTextContent('mode 100644');
+    expect(staged).toHaveTextContent('blob 5e02f1a');
+    expect(unstaged).toHaveTextContent('deleted');
+    // The worktree side holds no blob of its own to name: the staged one is the entry's.
+    expect(unstaged).toHaveTextContent('blob 5e02f1a');
+  });
+
+  it('says when it was read and asks its holder to read again on Refresh, saying it reads again meanwhile', async () => {
+    const onRefresh = vi.fn();
+    const { rerender } = render(<ChangesTab repository="engine" read={changes} onRefresh={onRefresh} />);
+    expect(screen.getByText(/^Read at .+, when this tab opened/)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Refresh' }));
+    expect(onRefresh).toHaveBeenCalledTimes(1);
+
+    rerender(<ChangesTab repository="engine" read={changes} onRefresh={onRefresh} refreshing />);
+    expect(screen.getByText('Reading again…')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Refresh' })).toBeDisabled();
+  });
+
+  it('says there are none where the three observations agree', () => {
+    render(<ChangesTab repository="engine" read={{ state: 'read', value: { ...GIT_CHANGES_ENGINE, staged: [], unstaged: [], untracked: [], unmerged: [] } }} />);
+    expect(screen.getByText('No changes')).toBeInTheDocument();
+    expect(screen.queryByRole('heading')).toBeNull();
+  });
+
+  it('says it in 中文', async () => {
+    await i18n.changeLanguage('zh');
+    render(<ChangesTab repository="engine" read={changes} onRefresh={() => {}} />);
+    expect(screen.getByRole('heading', { name: '已暂存（2）' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '刷新' })).toBeInTheDocument();
+    expect(list('已暂存（2）')[1]).toHaveTextContent('新增');
   });
 });

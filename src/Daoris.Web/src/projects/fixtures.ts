@@ -318,6 +318,30 @@ export const GIT_HISTORY_ENGINE: LoggedCommit[] = [
 /** The same history as two pages of `GIT_GRAPH`: the first answers `more`, and its tail's parents are the second's (UX6h3a). */
 export const GIT_HISTORY_PAGES: [LoggedCommit[], LoggedCommit[]] = [GIT_HISTORY_ENGINE.slice(0, 3), GIT_HISTORY_ENGINE.slice(3)];
 
+const ZEROS = '0000000000000000000000000000000000000000';
+const blob = (short: string) => `${short}${'a'.repeat(40 - short.length)}`;
+
+/**
+ * The engine's checkout as `GIT_CHANGES` reads it (GITAPP2b): a modified file staged, `notes.txt` staged as an addition and then
+ * removed from disk (in both lists), a file changed since it was staged, one untracked, and one in conflict after a merge.
+ */
+export const GIT_CHANGES_ENGINE = {
+  head: id('c4f1a2') as string | null,
+  staged: [
+    { path: 'src/budget.cs', status: 'M', oldMode: '100644', newMode: '100644', oldBlob: blob('3b9d10'), newBlob: blob('9c41e7') },
+    { path: 'notes.txt', status: 'A', oldMode: '000000', newMode: '100644', oldBlob: ZEROS, newBlob: blob('5e02f1') },
+  ],
+  unstaged: [
+    { path: 'notes.txt', status: 'D', oldMode: '100644', newMode: '000000', oldBlob: blob('5e02f1'), newBlob: ZEROS },
+    { path: 'src/budget.cs', status: 'M', oldMode: '100644', newMode: '100644', oldBlob: blob('9c41e7'), newBlob: ZEROS },
+  ],
+  untracked: ['scratch/trace.log'],
+  unmerged: [
+    { path: 'src/cache.cs', code: 'UU', modes: ['100644', '100644', '100644'], blobs: [blob('1a2b3c'), blob('4d5e6f'), blob('7a8b9c')] },
+  ],
+  readAt: hoursAgo(0.05),
+};
+
 /**
  * The physics session's branch beside the engine's line since they parted, as `GIT_GRAPH` answers `sinceParted` with the two
  * tips, the branch then the line (UX6h3b): its two commits (`left`) and the line's two since it grew from `77a0e1` (`right`),
