@@ -206,7 +206,7 @@ public static class DriverChoicesCommand
                daoris-driver driver actor export [<file>] · actor import <file> · actor found [take|dismiss <n>]
                daoris-driver driver role [<id>] · role set <id> [--name "…"] [--zh "…"] [--takes <work,…>]
                       [--scope machine|workspace:<id>|repository:<id>] ["<agent> [<model>|-] [<effort>|-]" …]
-                      · role remove|default <id>
+                      · role remove|default <id> · role suggested [--use]
         `daoris driver …` runs these.
         Each change takes --wait <minutes> (0 to 30, the default 30) or --no-wait: how long to wait on its Confirm in Daoris's window.
         """;
