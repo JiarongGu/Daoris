@@ -142,6 +142,7 @@ public sealed class LineageRaceProcessTests : IDisposable
         Assert.Equal("completed", await first.WaitAsync(Poll.Patience));
         await Poll.Until(() => _window.Reading(c.Proc) == TokenReading.Gone, Seen, Poll.Patience);
         Assert.Equal("completed", State());
+        Assert.True(processes.RunsHere("s1"), "the first's and its continuation's ends took the second's entry, tracked from its spawn");
         Holds(
             "the record concluded",
             ("x1", a, ChildBindings.Ended), ("y1", b, ChildBindings.Working), ("z1", c, ChildBindings.Ended));
