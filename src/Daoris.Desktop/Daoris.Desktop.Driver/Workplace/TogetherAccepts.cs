@@ -50,13 +50,16 @@ public static class TogetherInclusion
 
         foreach (var operation in all.Where(each => each.Phase == TogetherPhase.Landed && each.Attempt is not null).OrderBy(each => each.Since))
         {
-            foreach (var member in operation.Members)
-            {
-                yield return new TogetherBrought(operation.Id, member.Session, member.Tree, member.Tip, operation.Attempt!.Target,
-                    operation.Attempt.Form == TogetherForms.Merge, operation.Since);
-            }
+            foreach (var brought in Of(operation)) yield return brought;
         }
     }
+
+    /// <summary>What a landed operation brought each member into.</summary>
+    public static IEnumerable<TogetherBrought> Of(TogetherOperation operation) =>
+        operation.Attempt is not { } attempt
+            ? []
+            : operation.Members.Select(member => new TogetherBrought(
+                operation.Id, member.Session, member.Tree, member.Tip, attempt.Target, attempt.Form == TogetherForms.Merge, operation.Since));
 }
 
 /// <summary>
@@ -102,25 +105,25 @@ internal sealed class TogetherAccepts(TreeContext context, TreeLands lands)
             gate?.WithTip(checkedTip) ?? gate, joins: false, judged: async (waited, token) =>
             {
                 if (judged is not null && await judged(waited, token).ConfigureAwait(false) is { } refused) return refused;
-                if (await RecheckAsync(root, operation, checkedTip, line, token).ConfigureAwait(false) is { } why) return Refused(why);
-                var expected = (await TogetherSettle.RefAsync(root, plan.Target, token).ConfigureAwait(false)).Tip;
+                if (await RecheckAsync(context.Config(), root, operation, checkedTip, line, token).ConfigureAwait(false) is { } why) return Refused(why);                var expected = (await TogetherSettle.RefAsync(root, plan.Target, token).ConfigureAwait(false)).Tip;
                 return store.Landing(operation.Id, new TogetherAttempt(form, plan.Target, expected, checkedTip, context.Clock())) is null
                     ? Refused("it is no longer ready to accept")
                     : null;
             },
             beforePush: async (landing, waited, token) =>
                 (beforePush is null ? null : await beforePush(landing, waited, token).ConfigureAwait(false))
-                ?? await RecheckAsync(root, operation, checkedTip, line, token).ConfigureAwait(false),
+                ?? await RecheckAsync(context.Config(), root, operation, checkedTip, line, token).ConfigureAwait(false),
             together: operation.Id).ConfigureAwait(false);
 
-        await SettleAsync(store, root, operation.Id, landed, plan.Target, ct).ConfigureAwait(false);
+        await SettleAsync(store, root, operation.Id, landed, plan.Target, (workspace, line), ct).ConfigureAwait(false);
         return landed.Landed
             ? landed with { Message = $"{landed.Message} Brought in with it: {string.Join(", ", operation.Members.Select(each => $"`{each.Session}`"))}." }
             : landed;
     }
 
     /// <summary>What came of the attempt: landed where the landing says so, else settled by its git effects as a restart settles it.</summary>
-    private async Task SettleAsync(TogetherOperations store, string root, string id, TreeLanding landed, string target, CancellationToken ct)
+    private async Task SettleAsync(
+        TogetherOperations store, string root, string id, TreeLanding landed, string target, (string Workspace, string Line) place, CancellationToken ct)
     {
         if (store.Of(id) is not { Phase: TogetherPhase.Landing, Attempt: { } attempt } operation) return;
         if (landed.Landed)
@@ -134,14 +137,17 @@ internal sealed class TogetherAccepts(TreeContext context, TreeLands lands)
         var integration = new IntegrationStore(context.Home);
         var evidence = await TogetherSettle.ReadAsync(root, operation, each => TogetherWatch.Recorded(context.Home, operation.Repository, each),
             integration.Request, integration.Of, ct).ConfigureAwait(false);
-        store.Settle(id, TogetherSettle.Decide(attempt, evidence), context.Clock(), evidence.Request?.Id);
+        var decided = TogetherSettle.Decide(attempt, evidence);
+        if (decided == TogetherSettled.Landed) TogetherSettle.WriteMissed(context.Home, operation, evidence, place.Workspace, place.Line, context.Clock());
+        store.Settle(id, decided, context.Clock(), evidence.Request?.Id);
     }
 
     /// <summary>
     /// The head at its checked tip, every member at its bound tip, and every member change accounted again from the head's tip; the
     /// words of what failed, or null.
     /// </summary>
-    private static async Task<string?> RecheckAsync(string root, TogetherOperation operation, string checkedTip, string line, CancellationToken ct)
+    private static async Task<string?> RecheckAsync(
+        DriverConfig config, string root, TogetherOperation operation, string checkedTip, string line, CancellationToken ct)
     {
         if (!string.Equals(await TipAsync(operation.Head.Tree, ct).ConfigureAwait(false), checkedTip, StringComparison.OrdinalIgnoreCase))
         {
@@ -156,7 +162,8 @@ internal sealed class TogetherAccepts(TreeContext context, TreeLands lands)
             }
         }
 
-        var check = await TogetherChecks.AccountAsync(root, operation, checkedTip, line, null, ct).ConfigureAwait(false);
+        var rules = await LineRules.AcceptedAsync(config, root, operation.Repository, line, ct).ConfigureAwait(false);
+        var check = await TogetherChecks.AccountAsync(root, operation, checkedTip, line, rules, ct).ConfigureAwait(false);
         return check.Failed is { } failed ? $"its sessions' work is no longer all accounted for at the head ({failed})" : null;
     }
 

@@ -46,8 +46,10 @@ public sealed class TogetherPress(string home, RebaseTelling.Say say, Func<DateT
     /// The head and the ticked members as their records and their trees say: the head is the line's head of <paramref name="session"/>,
     /// bound to the line's first record; each member's base is where its work leaves the head's. The sentence where one is not here.
     /// </summary>
+    /// <param name="stepsOn">Whether a member's workflow steps on past its landing; none asked reads as not.</param>
     public static async Task<(TogetherHeadCandidate? Head, IReadOnlyList<TogetherCandidate> Members, string? Refused)> CandidatesAsync(
-        IReadOnlyList<SessionRecord> records, string session, IReadOnlyCollection<string> members, CancellationToken ct)
+        IReadOnlyList<SessionRecord> records, string session, IReadOnlyCollection<string> members, CancellationToken ct,
+        Func<string, CancellationToken, Task<bool>>? stepsOn = null)
     {
         var byId = records.GroupBy(each => each.Id, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(group => group.Key, group => group.Last(), StringComparer.OrdinalIgnoreCase);
@@ -71,15 +73,43 @@ public sealed class TogetherPress(string home, RebaseTelling.Say say, Func<DateT
             if (!byId.TryGetValue(id, out var member)) return (null, [], $"Nothing was brought together: `{id}` has no record here.");
             var memberTree = member.Tree ?? "";
             var @base = headTip is not null && Directory.Exists(memberTree) ? await MergeBaseAsync(memberTree, headTip, ct).ConfigureAwait(false) : null;
+            var (live, waiting) = MemberReads(records, member);
             list.Add(new TogetherCandidate(member.Id, member.Repository, memberTree,
                 Directory.Exists(memberTree) ? await BranchAsync(memberTree, ct).ConfigureAwait(false) ?? "" : "", @base ?? member.BaseCommit ?? "")
             {
-                Quest = member.Quest, Teammate = member.Teammate, Live = member.Live,
+                Quest = member.Quest, Teammate = member.Teammate, Live = live, StartWaiting = waiting,
+                StepsOn = stepsOn is not null && await stepsOn(member.Id, ct).ConfigureAwait(false),
             });
         }
 
         return (head, list, null);
     }
+
+    /// <summary>
+    /// Whether a part is running anywhere on the member's line of work (the member's record, the ones it continues and the ones that
+    /// continue it), and whether a start of it is queued: read from every record of the line, never the ticked one alone.
+    /// </summary>
+    public static (bool Live, bool StartWaiting) MemberReads(IReadOnlyList<SessionRecord> records, SessionRecord member)
+    {
+        var line = new Dictionary<string, SessionRecord>(StringComparer.OrdinalIgnoreCase) { [member.Id] = member };
+        var byId = records.GroupBy(each => each.Id, StringComparer.OrdinalIgnoreCase).ToDictionary(group => group.Key, group => group.Last(), StringComparer.OrdinalIgnoreCase);
+        for (var before = member; before.From is { } from && byId.TryGetValue(from, out var earlier) && line.TryAdd(earlier.Id, earlier); before = earlier) { }
+        for (var grew = true; grew;)
+        {
+            grew = false;
+            foreach (var each in records)
+            {
+                if (each.From is { } from && line.ContainsKey(from) && line.TryAdd(each.Id, each)) grew = true;
+            }
+        }
+
+        var waiting = line.Values.Any(each => each.State == "queued");
+        return (line.Values.Any(each => each.Live && each.State != "queued"), waiting);
+    }
+
+    /// <summary>Whether a run's steps hold an <c>integrate</c> not yet done: the workflow steps on past the landing, the only maker of its unit's request.</summary>
+    public static bool StepsOn(IEnumerable<WorkflowRunStep> steps) =>
+        steps.Any(each => each.Step.Kind == NodeKinds.Integrate && each.State is not (WorkflowRunStates.Done or WorkflowRunStates.Skipped));
 
     /// <summary><i>Ask again</i> after a failed check: the words said once more under a key of their own; the sentence where it cannot be.</summary>
     public async Task<string?> AskAgainAsync(string session, CancellationToken ct)

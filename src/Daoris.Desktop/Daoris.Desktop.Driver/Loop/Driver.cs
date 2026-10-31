@@ -1738,7 +1738,8 @@ public sealed class Driver(
             if (new TogetherOperations(home).All().Count == 0) return;
             var records = await service.SessionRecordsAsync(ct).ConfigureAwait(false);
             var trees = new SessionTrees(home);
-            await new TogetherWatch(home, () => DateTimeOffset.UtcNow)
+            await new TogetherWatch(home, () => DateTimeOffset.UtcNow, () => DriverConfig.Load(DriverConfig.ResolvePath(home)),
+                    (session, note) => Context.Events.Keep(session, note, say: null))
                 .LookAsync(records, (root, repository, token) => trees.LineOfAsync(root, repository, null, token), ct).ConfigureAwait(false);
         }
         catch (Exception error) when (error is DriverException or HttpRequestException or JsonException or IOException

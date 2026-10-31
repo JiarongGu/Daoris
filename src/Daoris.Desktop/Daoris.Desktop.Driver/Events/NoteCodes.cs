@@ -723,6 +723,10 @@ public static class NoteCodes
     // A part the person left out of its entry's Accept (ACCEPTALL1c, D167's amendment point 3): the branch its line of work landed on,
     // or the line it merged into, a fact. Its review reads it back (LandingRules.LeftOutOf) and leads with Discard.
     public static readonly NoteCode LandingLeftOut = new("landing.left-out", ["branch"]);
+    // A member whose work a combined Accept brought into its head's landing (LINESTOGETHER1d2): the branch it went onto, or the line it
+    // merged into, and the operation, a fact. The conversation's own landing then reads it as brought in, never landed.
+    public static readonly NoteCode LandingBroughtInto = new("landing.brought-into", ["branch", "operation"]);
+    public static readonly NoteCode LandingBroughtIntoLine = new("landing.brought-into-line", ["branch", "operation"]);
     public static readonly NoteCode ChatOptionSet = new("chat.option-set", ["option", "chosen"]);
     public static readonly NoteCode ChatToldWhere = new("chat.told-where", []);
 
