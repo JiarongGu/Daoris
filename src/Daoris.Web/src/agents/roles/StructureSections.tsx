@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import type { StructureChoice } from '../../data/wiring';
 import { Button, CheckField, Chip, Icon, SelectField } from '../../design/ui';
 import { clockOf, list, moment } from '../../locales/format';
+import { callsOf } from './callTable';
 import { entryText, roleName } from './Roles';
 import { RowMore } from './RowMore';
 import type {
@@ -27,6 +28,8 @@ export type RoleDoors = {
   repository?: (repository: string, tab: 'setup' | 'workflow' | 'integration') => void;
   /** A plugin in the Plugins place. */
   plugin?: (plugin: string) => void;
+  /** Working roles' editor for a new role in this workspace or repository (*Add a role here*). */
+  addRole?: (place: { kind: 'workspace' | 'repository'; id: string }) => void;
   /** The diagram, its row's node chosen (COMPANYVIEW1f): a row's ⋯ *On the diagram*, offered where the row is drawn. */
   diagram?: (row: string) => void;
 };
@@ -223,6 +226,7 @@ type RowProps = { open: boolean; onToggle: (id: string) => void; doors: RoleDoor
 function WorkRowView({ row, open, onToggle, doors, onDiagram }: RowProps & { row: WorkRow }) {
   const { t, i18n } = useTranslation();
   const title = workName(t, row.work);
+  const calls = callsOf(row.work);
   const role = row.role
     ? row.takesBuilding ? t('agents.roles.work.takesBuilding', { role: nameOf(t, i18n.language, row.role) }) : nameOf(t, i18n.language, row.role)
     : row.held ?? t('agents.roles.work.noRole');
@@ -252,6 +256,11 @@ function WorkRowView({ row, open, onToggle, doors, onDiagram }: RowProps & { row
           {entryText(t, choice)} · {stateText(t, choice.state)}
         </Line>
       ))}
+      {calls.served.length > 0 && (
+        <Line label={t('agents.roles.work.callsIs')}>
+          {calls.allBut ? t('agents.roles.work.callsAllBut', { tools: calls.refused.join(', ') }) : calls.served.join(', ')}
+        </Line>
+      )}
       {doors.setting && !NO_SETTING.has(row.work) && (
         <div className="mt-2">
           <Button variant="ghost" aria-label={t('agents.roles.door.settingOf', { work: title })} onClick={() => doors.setting!(row.work)}>
@@ -435,8 +444,14 @@ function RepositoryRowView({ row, open, onToggle, doors, onDiagram }: RowProps &
             ))}
         </Line>
       </div>
-      {doors.repository && (
+      {(doors.repository || doors.addRole) && (
         <div className="mt-2 flex flex-wrap gap-2">
+          {doors.addRole && (
+            <Button variant="ghost" aria-label={`${t('agents.roles.door.addHere')} · ${row.repository}`} onClick={() => doors.addRole!({ kind: 'repository', id: row.repository })}>
+              {t('agents.roles.door.addHere')}
+            </Button>
+          )}
+          {doors.repository && <>
           <Button variant="ghost" aria-label={`${t('agents.roles.door.setup')} · ${row.repository}`} onClick={() => doors.repository!(row.repository, 'setup')}>
             {t('agents.roles.door.setup')}
           </Button>
@@ -448,6 +463,7 @@ function RepositoryRowView({ row, open, onToggle, doors, onDiagram }: RowProps &
               {t('agents.roles.door.integration')}
             </Button>
           )}
+          </>}
         </div>
       )}
     </FoldRow>
@@ -478,6 +494,13 @@ function GroupView({ structure, group, open, onToggle, doors }: {
         </button>
         {onDiagram && <RowMore name={group.workspace} onDiagram={onDiagram} />}
       </div>
+      {!folded && doors.addRole && (
+        <div className="py-1 pl-4">
+          <Button variant="ghost" aria-label={`${t('agents.roles.door.addHere')} · ${group.workspace}`} onClick={() => doors.addRole!({ kind: 'workspace', id: group.workspace })}>
+            {t('agents.roles.door.addHere')}
+          </Button>
+        </div>
+      )}
       {!folded && (
         <ul className="m-0 list-none p-0 pl-4">
           {group.repositories.map((row) => (

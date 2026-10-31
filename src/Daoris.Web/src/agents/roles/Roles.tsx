@@ -38,6 +38,16 @@ export type Editing = {
   place: string; placeId: string; drafts: Draft[];
 };
 
+/** A new role's editor, its place filled where one is given (*Add a role here*); its one empty choice starts on the first agent. */
+export function newRoleEditing(
+  works: readonly string[], agents: readonly { value: string }[], place: { kind: 'workspace' | 'repository'; id: string } | null = null, key = 0,
+): Editing {
+  return {
+    id: '', mode: 'role', isNew: true, revision: null, nameEn: '', nameZh: '', takes: [], work: works[0] ?? 'build',
+    place: place?.kind ?? 'machine', placeId: place?.id ?? '', drafts: [{ key, agent: agents[0]?.value ?? '', model: '', effort: '' }],
+  };
+}
+
 /** One row: the catalogue's role where there is one, and the staffing `ACTORS` answers for the same id. */
 type Line = { id: string; row: RoleRow | null; actor: ActorRow | null };
 
@@ -189,10 +199,7 @@ export function RolesCard({
   const open = (line: Line | null) => {
     setRefused(null);
     if (!line) {
-      setEditing({
-        id: '', mode: 'role', isNew: true, revision: null, nameEn: '', nameZh: '', takes: [], work: catalogue?.works[0] ?? 'build',
-        place: 'machine', placeId: '', drafts: [draftOf()],
-      });
+      setEditing(newRoleEditing(catalogue?.works ?? [], agents, null, next.current++));
       return;
     }
     const row = line.row;

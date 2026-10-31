@@ -16,6 +16,7 @@ const TONE: Record<Exclude<SetupState, 'desktop'>, 'done' | 'open' | 'neutral'> 
  * UX6e), else the view.
  */
 const doorKey = (door: StarterDoor) => door.drawer ?? door.section ?? (door.agentPart === 'rules' ? 'agentRules'
+  : door.agentsMode === 'roles' ? 'agentRoles'
   // A workspace's page at its defaults (UX6g) says it opens the workspace's setup.
   : door.workspaceSection || door.workspaceTab ? 'workspace' : door.view);
 

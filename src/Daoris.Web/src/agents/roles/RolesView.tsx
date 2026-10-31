@@ -1,9 +1,8 @@
 import { type ComponentType, type Dispatch, type SetStateAction, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { refusedNoRoute } from '../../bridge/call';
 import {
-  helpModeOf, standingOf, useAccounts, useActors, useAnswerStaffingFound, useDriver, useHarnesses, useLines, usePlugins, useRoles, useSetActor,
-  useSetRole, useStaffingFound, useStarts, useWorkflowCurrents, type RoleChangePress,
+  helpModeOf, refusedNoRoute, standingOf, useAccounts, useActors, useAnswerStaffingFound, useDriver, useHarnesses, useLines, usePlugins, useRoles,
+  useSetActor, useSetRole, useStaffingFound, useStarts, useWorkflowCurrents, type RoleChangePress,
 } from '../../bridge/shell';
 import { useRegistry } from '../../data/queries';
 import { workspacesOf } from '../../data/workspaces';
@@ -14,7 +13,7 @@ import { namer } from '../../settings/accounts/namer';
 import { AskDaorisAbout, IntakeAbout } from '../../settings/ai/ActorAbout';
 import { byTool, doorLabel } from '../tools';
 import type { RoleSection } from '../modes';
-import { type ActorChoice, type Editing, RolesCard, roleName } from './Roles';
+import { type ActorChoice, type Editing, newRoleEditing, RolesCard, roleName } from './Roles';
 import { AppointedRoles } from './AppointedRoles';
 import { DiagramSection } from './RoleDiagram';
 import { RoleSectionMain, type RolesView } from './RoleSections';
@@ -206,6 +205,13 @@ export function useRolesMode({ notify, section = 'working', doors = {}, page: gi
     ...(doors.agent ? { agent: doors.agent } : {}),
     ...(doors.repository ? { repository: doors.repository } : {}),
     ...(doors.plugin ? { plugin: doors.plugin } : {}),
+    // *Add a role here*: Working roles' editor for a new role, the place filled; it saves over SET_ROLE as any role does.
+    addRole: (place) => {
+      setEditing(newRoleEditing(roles.data?.works ?? [], agents, place, -1));
+      doors.section?.('working');
+      // The new role's editor is the catalogue's, which the list holds: from a node's detail, the list.
+      page.onView('list');
+    },
     setting: (work) => {
       if (work === 'intake' || work === 'ask-daoris') doors.section?.('working');
       else if (filters.workspace && doors.workspace) doors.workspace(filters.workspace);
