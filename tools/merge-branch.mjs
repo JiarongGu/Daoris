@@ -1314,6 +1314,7 @@ export const REACH = Object.freeze([
     paths: [
       'src/Daoris.Desktop/Daoris.Desktop.Driver/**/BrainstormPermissions.cs',
       'src/Daoris.Desktop/Daoris.Desktop.Driver/**/PartnerPermissions.cs',
+      'src/Daoris.Desktop/Daoris.Desktop.Driver/**/OpinionPermissions.cs',
     ],
     gates: [...DRIVER_READERS, 'service'],
     why: "the driver's own, and the service's McpToolRegistrationTests and McpRoleFilterTests read the brainstorm posture's and the partner's lists of the connector's tools (BRAINSTORM1a2, COAGENT1b)",

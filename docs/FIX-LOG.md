@@ -5,6 +5,13 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-31 - A carry-on's turn end was kept before its note (ACPRACE)
+
+- **Symptom:** under the merge queue's load, `turn:end_turn` twice, then both carry-on notes.
+- **Root cause:** `AcpSession.RequestAsync` told `sent` on the write's return; the reader could handle the answer first, with no order between them.
+- **Fix:** whichever comes first tells `sent`, once, under a lock; the reader before `answered`.
+- **Verify:** a flush held until the turn is recorded, red before; the failing case 20 times beside its class twice.
+
 ## 2026-10-31 - A folder's plugin trial started outside the agents' job (PLUGINTRYJOB1)
 
 - **Symptom:** `plugins try <folder>` started `node` and its children uncontained; `contained: false` went to a log then deleted.

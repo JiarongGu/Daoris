@@ -15,8 +15,11 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 public sealed class AcpBackgroundTests
 {
-    /// <summary>A scripted agent: each frame the client sends is answered by the handler, which may push frames first.</summary>
-    internal sealed class Agent(Func<JsonElement, Agent, string?> handle)
+    /// <summary>
+    /// A scripted agent: each frame the client sends is answered by the handler, which may push frames first. The client's flush after
+    /// each write returns when <paramref name="flushing"/> does, where given: its answer may be read first.
+    /// </summary>
+    internal sealed class Agent(Func<JsonElement, Agent, string?> handle, Func<Agent, Task>? flushing = null)
     {
         private readonly Channel<string> _toClient = Channel.CreateUnbounded<string>();
 
@@ -29,7 +32,7 @@ public sealed class AcpBackgroundTests
             lock (Sent) Sent.Add(line);
             var reply = handle(JsonDocument.Parse(line).RootElement, this);
             if (reply is not null) Push(reply);
-        });
+        }, flushing is null ? null : () => flushing(this));
 
         public void Push(string json) => _toClient.Writer.TryWrite(json);
 
@@ -82,7 +85,7 @@ public sealed class AcpBackgroundTests
                 await channel.Reader.WaitToReadAsync(ct).ConfigureAwait(false) && channel.Reader.TryRead(out var line) ? line : null;
         }
 
-        private sealed class Writer(Action<string> onLine) : TextWriter
+        private sealed class Writer(Action<string> onLine, Func<Task>? flushing) : TextWriter
         {
             public override Encoding Encoding => Encoding.UTF8;
 
@@ -91,6 +94,8 @@ public sealed class AcpBackgroundTests
                 if (value is not null) onLine(value);
                 return Task.CompletedTask;
             }
+
+            public override Task FlushAsync() => flushing?.Invoke() ?? base.FlushAsync();
         }
     }
 
@@ -2631,7 +2636,7 @@ public sealed class AcpBackgroundTests
     }
 
     /// <summary>An agent whose first prompt ends at once, or after <paramref name="first"/>, and whose later ones commit where it does.</summary>
-    private static Agent Commits(DoneTree tree, bool commits, Action<Agent>? first = null) => new((frame, self) =>
+    private static Agent Commits(DoneTree tree, bool commits, Action<Agent>? first = null, Func<Agent, Task>? flushing = null) => new((frame, self) =>
     {
         switch (frame.TryGetProperty("method", out var method) ? method.GetString() : null)
         {
@@ -2650,7 +2655,7 @@ public sealed class AcpBackgroundTests
             default:
                 return frame.TryGetProperty("id", out _) ? Ok(frame, "{}") : null;
         }
-    });
+    }, flushing);
 
     /// <summary>
     /// 🔴 TURNWAIT1's case: the session closed its quest done with its fix uncommitted and ended its turn, and the run ended with it, the fix
@@ -2689,6 +2694,30 @@ public sealed class AcpBackgroundTests
             ["turn:end_turn", $"note:{CarriedNote}", "turn:end_turn", $"note:{CarriedNote}", "turn:end_turn", $"note:{BoundNote}"],
             record.Lines);
         Assert.Equal("session/close", agent.Methods[^1]);
+    }
+
+    /// <summary>
+    /// 🔴 The merge queue's load (2026-10-31): each carry-on's answer was read before its write returned, and its turn's end was kept before
+    /// the note that said it went. Here every carry-on's write returns only once its answer's turn is in the record: the notes still lead.
+    /// </summary>
+    [Fact]
+    public async Task A_carry_on_answered_before_its_write_returns_is_said_before_its_turn_ends()
+    {
+        var tree = new DoneTree();
+        var record = new Record();
+        var agent = Commits(tree, commits: false, flushing: self => self.Prompts.Count < 2
+            ? Task.CompletedTask
+            : Poll.Until(
+                () => record.Lines.Count(line => line.StartsWith("turn:", StringComparison.Ordinal)) >= self.Prompts.Count,
+                () => string.Join(" | ", record.Lines), Poll.Patience));
+
+        var run = Clocked(agent, record, new MovedClock(), carries: tree.Look).RunAsync(
+            "X:/daoris/game", "close quest #12", CancellationToken.None, waitsOnBackground: _ => Task.FromResult(false));
+        await run.WaitAsync(Poll.Patience);
+
+        Assert.Equal(
+            ["turn:end_turn", $"note:{CarriedNote}", "turn:end_turn", $"note:{CarriedNote}", "turn:end_turn", $"note:{BoundNote}"],
+            record.Lines);
     }
 
     /// <summary>A tree already clean, and a quest that is not one a carry-on is owed for (parked, asking, stood down, stopped): no prompt.</summary>

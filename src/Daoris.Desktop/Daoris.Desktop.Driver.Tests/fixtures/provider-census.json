@@ -395,6 +395,7 @@
       ["tools/proof-kit.mjs", "id in a sentence", "-", "words", "the proof kit's refusals name the door a proof ran on"],
       ["tools/rehearsal-kit.mjs", "\"acp-stub\"", "-", "measurement", "the kit's protocol stand-in, which the stub phases and the deployment gate run as Claude Code's path, kept as it stands (row b part 3)"],
       ["tools/rehearsal-kit.mjs", "id in a sentence", "-", "words", "the kit's text names the stand-in"],
+      ["tools/rehearsal-kit.mjs", "x-codex-turn-metadata", "-", "measurement", "the protocol stand-in's connector calls carry a root's lineage in Codex's turn header, which the connector reads (FABRIC-C2a)"],
       ["tools/service-publish.mjs", ".mcp.json", "-", "words", "the publisher's printed instruction names a repository's own connector file"],
       ["tools/testbed.mjs", ".mcp.json", "-", "measurement", "the test bed writes the connector file into its scratch repository"]
     ]

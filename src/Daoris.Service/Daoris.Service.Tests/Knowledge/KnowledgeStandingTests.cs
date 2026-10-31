@@ -173,7 +173,14 @@ public sealed class KnowledgeStandingTests : IDisposable
         Git(checkout, "commit", "-q", "-m", "first");
         var (composed, tools) = await Serve();
         await using var _ = composed;
-        Assert.Equal($"standing: read at {Head(checkout)[..8]}", StandingOf(await tools.SearchAsync("Pelican", workspace: "all"), "pelican.md"));
+        // The uncommitted probe answers in the background; until it does, a hit says so, so the reading is awaited.
+        var standing = StandingOf(await tools.SearchAsync("Pelican", workspace: "all"), "pelican.md");
+        for (var until = DateTime.UtcNow + Poll.Patience; standing.Contains("not yet read") && DateTime.UtcNow < until;)
+        {
+            await Task.Delay(50);
+            standing = StandingOf(await tools.SearchAsync("Pelican", workspace: "all"), "pelican.md");
+        }
+        Assert.Equal($"standing: read at {Head(checkout)[..8]}", standing);
 
         // A service composed over a folder it was never told is a registered root names no reading at all.
         var store = new InMemoryKnowledgeStore();

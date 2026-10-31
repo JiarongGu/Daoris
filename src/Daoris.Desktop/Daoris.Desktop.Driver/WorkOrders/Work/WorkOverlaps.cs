@@ -38,7 +38,7 @@ public static class WorkOverlaps
     public static async Task<IReadOnlyList<string>?> DiffAsync(string tree, string before, CancellationToken ct)
     {
         if (!WorkingTree.IsCommitId(before) || !await WorkingTree.IsTopLevelAsync(tree, ct).ConfigureAwait(false)) return null;
-        var (code, stdout, _) = await WorkingTree.GitAsync(tree, ["diff", "--name-only", before], ct).ConfigureAwait(false);
+        var (code, stdout, _) = await WorkingTree.GitAsync(tree, ["--no-optional-locks", "diff", "--name-only", before], ct).ConfigureAwait(false);
         return code == 0
             ? [.. stdout.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Order(StringComparer.Ordinal)]
             : null;
