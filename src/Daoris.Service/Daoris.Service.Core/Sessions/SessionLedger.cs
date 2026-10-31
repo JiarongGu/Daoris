@@ -1559,17 +1559,12 @@ public sealed class SessionLedger(
     /// (D137), the head judged as the say door judges a record. Its key is <c>move:&lt;part&gt;:&lt;word&gt;</c>.
     /// </summary>
     /// <remarks>
-    /// <para><b>A retry is answered moved</b>, never kept again: asked first, before the word's absence or any refusal of either record as it
-    /// stands, as the say door's settlement is. The key settled on any record (it names its source, so no other producer writes it), or a
-    /// word under it waiting on a record of <paramref name="to"/>'s line, back along <c>from</c> or forward to its head.</para>
+    /// <para>A retry is looked up first, before the word's absence or any refusal of either record as it stands, as the say door's settlement
+    /// is: the key settled on any record (it names its source, so no other producer writes it), or waiting on a record of
+    /// <paramref name="to"/>'s line.</para>
     ///
-    /// <para><b>Otherwise <see cref="SessionSayRefusal.Taken"/> or a refusal, the word unmoved</b>: a word no longer waiting or already
-    /// attempted; another author's; a part that runs (<see cref="SessionSayRefusal.NotHeld"/>) or never goes on; a word with files; one at the
-    /// head already; a head that never goes on, or runs (<see cref="SessionSayRefusal.Running"/>, named by
-    /// <see cref="SessionSayOutcome.MovedTo"/>).</para>
-    ///
-    /// <para><b>Kept on the ask once</b>: a word that answered its part's park was kept there then, so the moved word reopens nothing and its
-    /// door keeps nothing again; a word said to an ended part goes to the ask as the say door's would at the head.</para>
+    /// <para>A word that answered its part's park was kept on the ask then, so the moved word reopens nothing and answers nothing there
+    /// again.</para>
     /// </remarks>
     /// <param name="to">The record the page showed as the head, from which the walk goes on to the head now; none is the part's own line.</param>
     public async Task<SessionSayOutcome> MoveSaidAsync(string id, string? word, string? to, DateTimeOffset now, CancellationToken ct = default)

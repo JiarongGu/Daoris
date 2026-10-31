@@ -411,12 +411,9 @@ public sealed class ConversationRoutes(DriverContext context)
         return edit == QueueEdit.Done ? new { Done = true } : new { Done = false, Why = "taken" };
     }
 
-    // Moving one word held on a part's record to the head (LINESTOGETHER1b, the review-flow design §2): `{ session, id, to }`, where `id` is the
-    // word as SESSION_QUEUE names it and `to` the head the page shows, from which the service walks on to the head now. Taken off and kept there
-    // in one step under the key `move:<session>:<id>`, so asked again after a lost answer it answers moved and says nothing twice. Answers
-    // `{ moved: true, to, word }`, a retry's `{ moved: true, again: true, to }`, and `{ moved: false, why, message, to? }`: `taken`, the service's
-    // refusal by its code (a running head named as `to`), or `not-known` where the service's answer never came. It moves the words of two
-    // sessions, so it publishes as a word said does, naming the part by its `session` field.
+    // Moving one word held on a part's record to the head the page shows as `to` (LINESTOGETHER1b, the review-flow design §2), through the
+    // service's move door; its answers are the desktop README's. A refusal is data, never thrown, so the page words its code and asks again
+    // after `not-known`.
     [DriverRoute("SESSION_QUEUE_MOVE")]
     [Publishes("SESSION_QUEUE_MOVE", StateScopes.Sessions, Session = "session")]
     private async Task<object?> SessionQueueMoveAsync(IpcRequest request, CancellationToken cancellationToken)
