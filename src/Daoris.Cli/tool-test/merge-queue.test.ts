@@ -3010,13 +3010,14 @@ describe('the queue, end to end in a scratch repository', { concurrency: true },
       const dropping = repo.run(['--drop-batch', 'bad']);
       // DROPWAIT1: the runner has ended the tree, and its report is kept late past the drop's thirty seconds on the machine's clock, as
       // a loaded runner's was: the drop waits on the clock only for the runner to take it, then on what it says.
+      // The tree is looked at before the pause, whose half minute lets Windows give its pids to other processes.
       await repo.until(() => pids.every((pid) => !alive(pid)));
+      assert.deepEqual(pids.filter(alive), [], 'the confirm run, its child and its grandchild are gone');
       await pause(Math.max(0, asked + tool.DRAIN_WAIT_MS + 5_000 - Date.now()));
       writeFileSync(report, '');
       const dropped = await dropping;
       assert.equal(dropped.status, 0, dropped.out);
       assert.match(dropped.out, /the probe check\.confirm/);
-      assert.deepEqual(pids.filter(alive), [], 'the confirm run, its child and its grandchild are gone');
       assert.equal((await waiting).status, 1);
       await repo.until(() => !repo.queue()?.runner);
       assert.equal(repo.queue()?.runner, null, repo.log());
