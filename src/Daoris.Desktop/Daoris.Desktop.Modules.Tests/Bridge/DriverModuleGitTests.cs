@@ -205,6 +205,78 @@ public sealed class DriverModuleGitTests : DriverModuleBridge
         Assert.NotEmpty(second.GetProperty("commands").EnumerateArray());
     }
 
+    /// <summary>GITAPP2c: before the driver is up, and for a repository with no checkout here, each ref act is the cold start or a coded answer.</summary>
+    [Theory]
+    [InlineData("GIT_REF_CREATE")]
+    [InlineData("GIT_REF_UNDO")]
+    public async Task A_ref_act_before_the_driver_is_up_is_the_cold_start_sentence(string route) =>
+        Assert.Contains(Refusals.DriverNotReady, await RefusalAsync(Module(), route, new { repository = "engine", kind = "branch", name = "x", act = "a" }));
+
+    [Fact]
+    public async Task A_ref_act_of_a_repository_with_no_checkout_is_refused_as_data_with_its_code()
+    {
+        var module = await UpAsync(null);
+
+        var answer = await AnswerAsync(module, "GIT_REF_CREATE", new { repository = "engine", kind = "branch", name = "topic" });
+
+        Assert.True(answer.GetProperty("refused").GetBoolean());
+        Assert.Equal(Refusals.GitNoCheckout, answer.GetProperty("code").GetString());
+    }
+
+    [Fact]
+    public async Task A_create_names_its_kind_and_its_name()
+    {
+        var module = await UpAsync(Checkout("engine", git: true));
+
+        Assert.Contains(Refusals.DriverRefused, await RefusalAsync(module, "GIT_REF_CREATE", new { repository = "engine", name = "topic" }));
+        Assert.Contains(Refusals.DriverRefused, await RefusalAsync(module, "GIT_REF_CREATE", new { repository = "engine", kind = "branch" }));
+    }
+
+    /// <summary>
+    /// The page's create runs the act in the journal and answers it: done, its act, no machine path; a name that stands is refused as data and
+    /// nothing is written; the undo deletes at the id the act made.
+    /// </summary>
+    [Fact]
+    [Trait(Category.Name, Category.Process)]
+    public async Task A_create_is_journaled_and_answered_and_its_undo_deletes_at_the_id_it_made()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var root = await InitAsync();
+        var module = await UpAsync(root);
+
+        var made = await AnswerAsync(module, "GIT_REF_CREATE", new { repository = "engine", kind = "branch", name = "topic" });
+        var again = await AnswerAsync(module, "GIT_REF_CREATE", new { repository = "engine", kind = "branch", name = "topic" });
+
+        Assert.Equal("done", made.GetProperty("outcome").GetString());
+        Assert.False(made.GetProperty("refused").GetBoolean());
+        Assert.Equal((await GitAsync(root, "rev-parse", "HEAD")).Trim(), (await GitAsync(root, "rev-parse", "refs/heads/topic")).Trim());
+        Assert.DoesNotContain("checkouts", made.GetRawText());
+        Assert.True(again.GetProperty("refused").GetBoolean());
+        Assert.Contains("already", again.GetProperty("said").GetString());
+
+        var undone = await AnswerAsync(module, "GIT_REF_UNDO", new { repository = "engine", act = made.GetProperty("act").GetString() });
+
+        Assert.Equal("done", undone.GetProperty("outcome").GetString());
+        Assert.Equal("", (await GitAsync(root, "branch", "--list", "topic")).Trim());
+    }
+
+    /// <summary>A terminal's press, asked for its words (<c>said</c>), is the verb's own lines and exit code, the act run as the terminal's.</summary>
+    [Fact]
+    [Trait(Category.Name, Category.Process)]
+    public async Task A_terminals_create_answers_the_verbs_lines_and_exit_code()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var root = await InitAsync();
+        var module = await UpAsync(root);
+
+        var made = await AnswerAsync(module, "GIT_REF_CREATE", new { repository = "engine", kind = "tag", name = "v1", said = true });
+        var refused = await AnswerAsync(module, "GIT_REF_CREATE", new { repository = "engine", kind = "tag", name = "v1", said = true });
+
+        Assert.Equal(0, made.GetProperty("said").GetProperty("code").GetInt32());
+        Assert.Contains("created the tag `v1`", made.GetProperty("said").GetProperty("out")[0].GetString());
+        Assert.Equal(1, refused.GetProperty("said").GetProperty("code").GetInt32());
+    }
+
     private async Task<string> InitAsync()
     {
         var root = Checkout("engine");

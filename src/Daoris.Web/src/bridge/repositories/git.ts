@@ -230,6 +230,29 @@ export const useGitTryAgain = () =>
       call<{ lifted: number }>('GIT_TRY_AGAIN', { repositories: [...repositories], ...(workspace ? { workspace } : {}) }),
   });
 
+/** What `GIT_REF_CREATE` and `GIT_REF_UNDO` answer (GITAPP2c): the journal's act and its outcome, or a refusal as data with the driver's sentence. */
+export type GitRefAnswer = { act?: string | null; outcome?: string | null; refused: boolean; said: string; code?: string | null };
+
+/**
+ * The person's *New branch* and *New tag* on a repository, and the undo of the ref one made (GITAPP2c, D204): the driver runs each
+ * as an act of its journal and answers it as data. The Git reads sit under no state scope, so a made or undone ref asks the branch
+ * list and the graph again here.
+ */
+export const useGitRefActs = (repository: string, workspace: string) => {
+  const client = useQueryClient();
+  const base = { repository, ...(workspace ? { workspace } : {}) };
+  const refresh = () => client.invalidateQueries({ queryKey: ['git'] });
+  const make = useMutation({
+    mutationFn: (ask: { kind: 'branch' | 'tag'; name: string; at: string }) => call<GitRefAnswer>('GIT_REF_CREATE', { ...base, ...ask }),
+    onSuccess: refresh,
+  });
+  const undo = useMutation({
+    mutationFn: (act: string) => call<GitRefAnswer>('GIT_REF_UNDO', { ...base, act }),
+    onSuccess: refresh,
+  });
+  return { make: make.mutateAsync, undo: undo.mutateAsync };
+};
+
 /** A page of the graph from tips named by their whole ids (the list's `commit`); asks nothing with no tip. */
 export const useGitGraph = (repository: string | null, tips: readonly string[], options: { page?: number; sinceParted?: boolean; workspace?: string } = {}) => {
   const { isAvailable } = useShenora();

@@ -992,6 +992,11 @@ public sealed partial class HelpCoverageTests
             "it is the person's own consent to Daoris changing the files of their checkout, and writes nothing to the repository itself; "
             + "an agent that could propose it would be one card from the consent every later git act rests on (D204 point 3), so a go "
             + "reaches Setup → Reach and the person presses it there.")),
+        // GITAPP2c (D204, the git-writes design §9): New branch and New tag on a repository's Branches, and the undo of the ref one made.
+        ("projects", "useGitRefActs", null, new Exempt(
+            "it is the person's own act on their repository, named and confirmed on the page before it is pressed and run as an act of the "
+            + "journal; Ask Daoris's git kind proposes cards for git acts, never applies them (design §9), and no card kind carries a ref "
+            + "act yet, so a go reaches the repository's Branches and the person makes the ref there.")),
         ("projects", "useSetLine", null, new Door("setting", "line")),
         ("projects", "useSetLanding", null, new Door("setting", "landing")),
         ("projects", "useSetLanguage", null, new Door("setting", "language")),

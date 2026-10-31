@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Button, Inline, Pill, Prose, SkeletonRows } from '../../design/ui';
 import { clockOf } from '../../locales/format';
 import { BranchList, type BranchListValue } from './BranchList';
+import type { RefActs } from './NewRef';
 import { CommitGraph, type GraphCommitRow } from './CommitGraph';
 import { ListMore } from '../../work/frame/ListPane';
 import { GraphFoot, useGraphPaging } from './GraphFoot';
@@ -63,9 +64,11 @@ export function Waiting({ sentence, reading }: { sentence: string; reading: bool
  * title its holder joined. A branch's name opens its page, and the line's opens History, where its holder hands the presses
  * (UX6h3b).
  */
-export function BranchesTab({ repository, read, titles, onOpen, onOpenHistory }: {
+export function BranchesTab({ repository, read, titles, onOpen, onOpenHistory, acts }: {
   repository: string;
   read: GitRead<BranchListValue>;
+  /** *New branch or tag* (GITAPP2c), made at the line's commit; absent, the tab offers none. */
+  acts?: RefActs;
   /** Each session branch's session's title, by the branch's name. */
   titles?: Readonly<Record<string, string>>;
   /** Open a branch's page, by its name. */
@@ -83,7 +86,7 @@ export function BranchesTab({ repository, read, titles, onOpen, onOpenHistory }:
   if (read.value.branches.length === 0) {
     return <Nothing headline={t('projects.git.branches.none.headline')} body={t('projects.git.branches.none.body', { repository })} />;
   }
-  return <BranchList repository={repository} list={read.value} titles={titles} onOpen={onOpen} onOpenHistory={onOpenHistory} />;
+  return <BranchList repository={repository} list={read.value} titles={titles} onOpen={onOpen} onOpenHistory={onOpenHistory} acts={acts} />;
 }
 
 /**

@@ -18,6 +18,9 @@ public sealed class GitRoutes(DriverLoop loop)
     // same commit twice starts no second git.
     private readonly GitReads _gitReads = new();
 
+    // The acts this module runs, journaled in the home's store; one object, so a run's reconciler knows its own acts.
+    private readonly ActRuns _acts = new(new ActJournal(loop.Home));
+
     // The list, read as the terminal's `git branches` reads it: every checkout here, the session records naming each session's
     // branch (read without them where the service will not give them), D112's scope by `all` or `repository`. 🔴 No machine
     // path leaves (D47 §4): a branch's tree by its folder's name, and a sentence that named a root names the repository.
@@ -128,6 +131,67 @@ public sealed class GitRoutes(DriverLoop loop)
     [ByEvent("GIT_CHANGES", Untold = "the checkout's index, tree and untracked files, which no scope tells")]
     private async Task<object?> GitChangesAsync(IpcRequest request, CancellationToken cancellationToken) =>
         await GitAnsweredAsync(request, cancellationToken, (root, token) => GitChanges.ReadAsync(root, token));
+
+    // GITAPP2c (D204, the git-writes design §6, §9): *New branch* and *New tag* at a commit, one `create` run as an act of the journal
+    // (GitRefActs). A ref act writes no working tree, so it asks no switch. The page presses it after its own confirmation; a terminal's
+    // `git branch|tag <repository> <name> --yes` is the same route asked for its words (`said`), run on the window's Confirm. A refusal
+    // is data, `{ refused, said }`, never thrown; `act` names the journal's record, which `GIT_REF_UNDO` deletes the ref at.
+    [DriverRoute("GIT_REF_CREATE")]
+    [Publishes("GIT_REF_CREATE", StateScopes.Driver)]
+    private async Task<object?> GitRefCreateAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var repository = Optional(request, "repository") ?? throw new DriverException("a ref act names its repository.");
+        var kind = Optional(request, "kind");
+        var name = Optional(request, "name");
+        if (kind is not ("branch" or "tag") || string.IsNullOrWhiteSpace(name)) throw new DriverException("a create names its kind, `branch` or `tag`, and its name.");
+        _ = _loop.Service ?? throw NotReady();
+
+        var verb = new GitRefVerb(kind, repository, name, Optional(request, "at"), Yes: true);
+        var world = new GitRefWorld(async (_, token) => await CheckoutOfAsync(repository, Optional(request, "workspace"), token).ConfigureAwait(false), () => _acts);
+        if (Flag(request, "said"))
+        {
+            var writer = new StringWriter { NewLine = "\n" };
+            var code = await GitRefCommand.ExecuteAsync(verb, world, "terminal", "window", writer, writer, cancellationToken).ConfigureAwait(false);
+            var lines = writer.ToString().Split('\n');
+            return new { Said = new TreesSaid(lines[^1].Length == 0 ? lines[..^1] : lines, [], code).ToWire() };
+        }
+
+        if (await world.CheckoutOf(repository, cancellationToken).ConfigureAwait(false) is not { } checkout) return NoCheckout(repository);
+        var run = await GitRefActs.CreateAsync(_acts, new RefAsk(repository, checkout, kind, name, verb.At), "window", "window", cancellationToken).ConfigureAwait(false);
+        return Answered(run, checkout, repository);
+    }
+
+    // GITAPP2c: the Undo beside a create's answer, the act's ref deleted only at the id the act made it at; refused as data where it moved.
+    [DriverRoute("GIT_REF_UNDO")]
+    [Publishes("GIT_REF_UNDO", StateScopes.Driver)]
+    private async Task<object?> GitRefUndoAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var repository = Optional(request, "repository") ?? throw new DriverException("a ref act names its repository.");
+        var act = Optional(request, "act") ?? throw new DriverException("an undo names the act it undoes.");
+        _ = _loop.Service ?? throw NotReady();
+        if (await CheckoutOfAsync(repository, Optional(request, "workspace"), cancellationToken).ConfigureAwait(false) is not { } checkout) return NoCheckout(repository);
+        var run = await GitRefActs.UndoAsync(_acts, repository, checkout, act, "window", "window", cancellationToken).ConfigureAwait(false);
+        return Answered(run, checkout, repository);
+    }
+
+    private static object NoCheckout(string repository) => new
+    {
+        Refused = true, Code = Refusals.GitNoCheckout, Said = $"{repository} has no checkout on this machine, so nothing was changed.",
+    };
+
+    /// <summary>An act's run as the page reads it: the record, its outcome, and the words with the checkout's path said as the repository (D47 §4).</summary>
+    private static object Answered(ActRun run, string checkout, string repository) => new
+    {
+        run.Act, run.Outcome, run.Refused, Said = WithoutRoots(run.Said, [checkout], repository) ?? "",
+    };
+
+    /// <summary>The first checkout of the repository that exists on this machine, or null.</summary>
+    private async Task<string?> CheckoutOfAsync(string repository, string? workspace, CancellationToken cancellationToken)
+    {
+        var service = _loop.Service ?? throw NotReady();
+        var rows = LinesRoutes.Checkouts(await service.RegistryAsync(cancellationToken).ConfigureAwait(false), repository, workspace);
+        return rows.FirstOrDefault(row => Directory.Exists(row.Root)).Root;
+    }
 
     /// <summary>
     /// A read of the repository the payload names, answered as the driver answered it: its value, or a code the page words and
