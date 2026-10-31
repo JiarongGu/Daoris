@@ -611,6 +611,42 @@ public sealed class BranchTidyingTests : IDisposable
         Assert.Equal(2, LogLines().Count(line => line.Contains("\"why\":\"starting\"", StringComparison.Ordinal)));
     }
 
+    /// <summary>
+    /// 🔴 GITLOCK2: a writer of the checkout waits for the newest part of an open quest only while it will go on, never for one completed,
+    /// declined or failed with no limit; the tree-keeping set (<see cref="BranchTidying.LineTrees"/>) counts them all.
+    /// </summary>
+    [Theory]
+    [InlineData("completed", false, false)]
+    [InlineData("declined", false, false)]
+    [InlineData("failed", false, false)]
+    [InlineData("failed", true, true)]
+    [InlineData("stopped", false, true)]
+    [InlineData("awaiting-person", false, true)]
+    public void A_writer_waits_for_the_newest_part_of_an_open_quest_only_while_it_will_go_on(string state, bool limit, bool waits)
+    {
+        QuestView[] quests = [new("q1", "game", "engine", "Cap", "Cap the work", "Open")];
+        PriorSession[] records =
+        [
+            new("s0", "/trees/s0", "failed") { Quest = "q1", Created = _now.AddMinutes(-9) },
+            new("s1", "/trees/s1", state) { Quest = "q1", Limit = limit, Created = _now },
+        ];
+
+        Assert.Equal(["/trees/s1"], BranchTidying.LineTrees(records, quests));
+        Assert.Equal(waits ? new[] { "/trees/s1" } : [], BranchTidying.LineWaiters(records, quests));
+    }
+
+    /// <summary>🔴 GITLOCK2: a repository held by a writer of its checkout is said as that writer, never as a session starting.</summary>
+    [Fact]
+    public void A_repository_held_by_a_writer_is_said_as_that_writer()
+    {
+        using var log = new MachineLog(_home, "driver", () => _now);
+        var held = new TidyPass([], TidyKept.Starting, TreeLock.Promoting) { Repository = "engine", Workspace = "default" };
+
+        Assert.Equal(
+            ["tidy  engine: `engine`'s line was being moved to what its integration promoted, so its branches were left as they were for another look."],
+            new BranchTidying(_home).Said([held], log));
+    }
+
     /// <summary>The look tidies once each pace, at its first look, whatever the loop's own pace.</summary>
     [Fact]
     public void A_pass_is_due_at_the_first_look_and_then_once_each_pace()

@@ -169,9 +169,13 @@ public sealed class TreeLock : IDisposable
     public static string Replaying(string repository) =>
         HeldWords.ReplayingWhy(repository);
 
-    /// <summary>What a replay says of each branch it left because a session was starting in the repository.</summary>
-    public static string Starting(string repository) =>
-        $"a session was starting in one of `{repository}`'s trees, so its branches were left as they were for another look";
+    /// <summary>
+    /// What a replay says of each branch it left because the repository was held: a session starting in it, or, where <paramref name="by"/>
+    /// names the writer that held it alone (<see cref="HolderOf"/>), that writer.
+    /// </summary>
+    public static string Starting(string repository, string? by = null) => by is null
+        ? $"a session was starting in one of `{repository}`'s trees, so its branches were left as they were for another look"
+        : $"{Held(repository, by)}, so its branches were left as they were for another look";
 
     /// <summary>
     /// What a writer of the checkout says of what held the repository when it was refused: its holder alone, by what it said, or else a
@@ -194,6 +198,7 @@ public sealed class TreeLock : IDisposable
     private static TreeLock? TryOpen(string path, FileAccess access, FileShare share, string? by)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        RemoveOldKeys(Path.GetDirectoryName(path)!);
         try
         {
             return new TreeLock(new FileStream(path, FileMode.OpenOrCreate, access, share), by, by is null ? null : LockWaits.Holding);
@@ -201,6 +206,40 @@ public sealed class TreeLock : IDisposable
         catch (IOException)
         {
             return null;
+        }
+    }
+
+    private static readonly HashSet<string> Cleared = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Removes, once for this folder in this process, the lock files of the key before the checkout's (<c>trees/&lt;workspace&gt;/&lt;repository&gt;.lock</c>),
+    /// which nothing opens any more; one a live process still holds cannot be opened alone and stays.
+    /// </summary>
+    private static void RemoveOldKeys(string folder)
+    {
+        lock (Cleared)
+        {
+            if (!Cleared.Add(folder)) return;
+        }
+
+        try
+        {
+            foreach (var old in Directory.EnumerateDirectories(folder).SelectMany(each => Directory.EnumerateFiles(each, "*.lock")))
+            {
+                try
+                {
+                    using (new FileStream(old, FileMode.Open, FileAccess.ReadWrite, FileShare.None)) { }
+                    File.Delete(old);
+                }
+                catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+                {
+                    // Held by a live process, or not ours to remove: it stays.
+                }
+            }
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            // A folder that cannot be listed has nothing removed.
         }
     }
 

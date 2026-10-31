@@ -5,6 +5,20 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-31 - A pull waited for a session that had ended, its quest still open (GITLOCK2)
+
+- **Symptom:** `daoris-driver trees sync --yes` said a session worked in the checkout and its pull waited, though that session had ended and its quest was merely still open (the family rehearsal's newcomer sync).
+- **Root cause:** the checkout's writers read `BranchTidying.HoldersAsync`, the set that keeps a tree from deletion, which counts the newest part of every open or taken quest whatever its state.
+- **Fix:** the writers (the pull, the promotion, every landing door) read `BranchTidying.BesideAsync`: the running and waiting sessions, and a quest's newest part only while it will go on (words waiting, a limit to wait out, a stop held for the person), never one completed, declined or failed. The tree-deletion doors keep the wide set.
+- **Verify:** `CheckoutBesideGitTests.A_pull_beside_an_ended_session_whose_quest_is_still_open_goes_through`; `BranchTidyingTests.A_writer_waits_for_the_newest_part_of_an_open_quest_only_while_it_will_go_on` (a limit-waiting retry still waits). Not run: the family rehearsal (the parent's).
+
+## 2026-10-31 - A merge rule's Accept moved a clean checkout under a working session (GITLOCK2)
+
+- **Symptom:** with trees off, a merge rule's Accept fast-forwarded the person's checkout while a driven session worked in it; the pull and the promotion waited, the Accept did not.
+- **Root cause:** GITLOCK1 handed the ledger to the pull and the transport's promotion, not to the landing doors, which reach the same promotion through `IntegrationPresses` with no ledger.
+- **Fix:** each landing door hands the landing the ledger read; `TreeLands.MergeAsync` passes it to the promotion's effect, which reads it inside the checkout's hold. A landing out of a session's own tree is unaffected. A tidy left by a held repository names the writer, and the old key's lock files are removed once.
+- **Verify:** `CheckoutBesideGitTests` (a merge rule's Accept deferred then landed once the session ends; a landing out of a session's own tree), `TreeLockTests`, `BranchTidyingTests`; the census names the doors.
+
 ## 2026-10-31 - A ref transaction git never answered was said as nothing moved (GITTXN2)
 
 - **Symptom:** none seen; found at the foundation read. A bound reached or a git that never started leaves exit -1, and `RefTransaction.RunAsync` and `RollBackAsync` said the transaction was refused and nothing moved, though git may have moved the refs before it was cut off.
