@@ -12654,3 +12654,11 @@ mis-rooted instance.
 **Fix.** The props were copied into the scope tree by hand once and the batch queued again; with LYNTAILOCAL1 on main, every later runner copies them itself. A tool change that a gate needs in order to run its own candidate meets this once: run it by hand in the runner's tree before queuing.
 
 **Verification.** Batch 1031c's second run built the service against `3.5.3-local.c8dde4b` and landed (`1b8c3b2`).
+
+## A live stop under the standing confirmation gave up under load (2026-11-01)
+
+**Root cause.** `SessionsCommandTests.A_live_stop_under_the_standing_confirmation_hands_its_loop_the_note_part` waited 5 s (the test world's `Wait`) for the loop's own turn to honour the stop; batch 1031e's candidate ran it beside every other gate, the honouring task's turn came late, and the command answered exit 2.
+
+**Fix.** The test's request waits `Poll.Patience`, as a wait on a signal does (the short-waits census's rule); it returns as soon as the loop honours it.
+
+**Verification.** `SessionsCommandTests`, 70 of 70; the failure was the candidate's alone, the test passing three times in a row run by itself.
