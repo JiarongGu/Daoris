@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## GITAPP2b — the Changes read and the switch (2026-10-31)
+
+> **GITAPP2 b** (driver, modules, web; D204, accepted 2026-10-31; `docs/2026-10-23-git-writes-design.md` round 3 §1, §2, §4, §10, §11, §12 row b). The Changes read through the counting seam and the switch *Daoris may change this checkout's files*, off by default in Setup's Reach; writes nothing to any repository.
+
+Completed 2026-10-31: `Workplace/GitChanges.cs` reads a checkout's changes as three fresh questions (HEAD to index, index to worktree with the index unrefreshed, status's untracked and unmerged entries in `--porcelain=v2`), each with its mode and blob id, outside the landing and judgement memos, so a staged addition whose file was removed is in both lists; `GIT_CHANGES` (told by event, `readAt` saying when) answers it, and `SET_CHECKOUT_WRITES` keeps the switch in `driver.json`'s `checkoutWrites` map, answered in `STATE`. The repository page gains a Changes tab beside Branches and History where the switch is on, read on open, on focus and on *Refresh* (刷新); Reach gains the switch, naming the sessions with no tree of their own that already run in the checkout. Left to later rows: every act (stage and on), the lock, the journal, a terminal verb for the switch, and Ask Daoris's door to it. Proof: `GitChangesTests`, `DriverModuleGitTests`, `DriverModuleDriverTests`, the census rows, `RepositoryGit.test.tsx`, `ProjectsView.git.test.tsx`, `RepositorySetup.test.tsx`, and stories at 80, 39 and 25rem.
+
 ## GITTXN1 — one typed transaction per ref act (2026-10-31)
 
 > **GITTXN1 — one typed transaction per ref act** (driver; found at GITAPP2's Codex read, 2026-10-31, R2-12, R2-13, round-1 22). A builder producing exactly one `update-ref --stdin` operation per ref, with its expectation on create, update and delete, untouched dependencies verified, identical expectations deduplicated, contradictions and aliases refused; and each operation's conditional rollback (a delete restored only where absent, a rewrite only from its produced tip, a rename reversed checking both names), uncertainty reported when a condition fails. Today's specialized delete (`Workplace/ContentHolds.cs:430`, `:495`) moves onto it unchanged in behaviour. Proof: success, self-rest, alias, contradiction, each expectation independently refusing movement; the rollbacks' conditions; the content holds' tests unchanged.
