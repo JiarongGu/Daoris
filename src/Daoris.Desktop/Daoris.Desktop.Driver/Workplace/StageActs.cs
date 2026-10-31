@@ -81,11 +81,18 @@ public sealed class StageActs(ActJournal journal)
     /// Put an act's index entries back, under the checkout lock, only where each still equals what the act left. An entry that changed is named
     /// and nothing is restored.
     /// </summary>
-    public async Task<ActRun> UndoAsync(StageContext context, string act, CancellationToken ct)
+    public Task<ActRun> UndoAsync(StageContext context, string act, CancellationToken ct) =>
+        UndoIndexAsync(context, act, [StageVerbs.Stage, StageVerbs.Unstage, StageVerbs.Undo], duringOperation: false, ct);
+
+    /// <summary>
+    /// <see cref="UndoAsync"/> for the acts of <paramref name="kinds"/>, which may stand in a merge or a rebase (Resolve's <i>Mark resolved</i>
+    /// is made there) where <paramref name="duringOperation"/>.
+    /// </summary>
+    internal async Task<ActRun> UndoIndexAsync(StageContext context, string act, IReadOnlyList<string> kinds, bool duringOperation, CancellationToken ct)
     {
-        if (await GuardAsync(context, "undoing it", ct).ConfigureAwait(false) is { } guarded) return Refused(guarded);
+        if (await GuardAsync(context, "undoing it", ct, duringOperation).ConfigureAwait(false) is { } guarded) return Refused(guarded);
         if (journal.Act(act) is not { } record) return Refused($"Daoris holds no act {act}");
-        if (record.Kind is not (StageVerbs.Stage or StageVerbs.Unstage or StageVerbs.Undo)) return Refused($"act {act} is no stage or unstage, so it is not undone here");
+        if (!kinds.Contains(record.Kind)) return Refused($"act {act} is no {(duringOperation ? "resolve" : "stage or unstage")}, so it is not undone here");
         if (TreeLock.CommonDirOf(record.Checkout) != TreeLock.CommonDirOf(context.Checkout)) return Refused($"act {act} was made in another checkout");
         if (record.Open || record.Outcome != ActOutcomes.Done) return Refused($"act {act} did not finish as done ({record.Outcome ?? "still open"}), so it is not undone here");
         if (record.ExpiredAt is not null) return Refused($"act {act}'s record expired, with the blobs it kept");
@@ -97,7 +104,7 @@ public sealed class StageActs(ActJournal journal)
         var path = result.Concat(original).Select(entry => entry.Path).Distinct(StringComparer.Ordinal).ToList();
         async Task<string?> JudgeAsync(CancellationToken token)
         {
-            if (await GuardAsync(context, "undoing it", token).ConfigureAwait(false) is { } guard) return guard;
+            if (await GuardAsync(context, "undoing it", token, duringOperation).ConfigureAwait(false) is { } guard) return guard;
             if (await ActIndex.EntriesAsync(context.Checkout, path, null).ConfigureAwait(false) is not { } now) return Said("git could not list the index's entries");
             var changed = path.Where(each => !ActIndex.Same([.. now.Where(entry => entry.Path == each)], [.. result.Where(entry => entry.Path == each)])).ToList();
             return changed.Count == 0
@@ -119,7 +126,7 @@ public sealed class StageActs(ActJournal journal)
     // ——— The reads an act rests on.
 
     /// <summary>The switch, the checkout's identity, the ledger and an operation in progress: why the act is refused now, or null.</summary>
-    internal static async Task<string?> GuardAsync(StageContext context, string what, CancellationToken ct)
+    internal static async Task<string?> GuardAsync(StageContext context, string what, CancellationToken ct, bool duringOperation = false)
     {
         if (!context.Allowed())
         {
@@ -142,6 +149,8 @@ public sealed class StageActs(ActJournal journal)
             return Said(beside);
         }
 
+        // Resolve's acts are made in a merge, a pick or a rebase, where the file is in conflict: they leave the operation to the person.
+        if (duringOperation) return null;
         return Operations.FirstOrDefault(name => File.Exists(Path.Combine(layout.GitDir, name)) || Directory.Exists(Path.Combine(layout.GitDir, name))) is { } running
             ? Said($"a merge, rebase, pick, revert or bisect is in progress in `{context.Repository}`'s checkout (git's `{running}` stands), which this act does not meet")
             : null;
