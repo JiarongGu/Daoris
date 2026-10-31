@@ -93,7 +93,8 @@ public static class MemoryViews
             if (await view.RevisionOfAsync(cited.Entry, ct).ConfigureAwait(false) == read) return new(CitationStanding.Holds, $"holds at revision {read}");
             return await view.GetAsync(cited.Entry, ct).ConfigureAwait(false) switch
             {
-                null => Inconclusive("it is gone, or outside the workspace", citeAgain: true),
+                null when check is MemoryWorkspaceCheck scope && scope.Refused.Contains(cited) => Inconclusive("its repository is outside the workspace"),
+                null => Inconclusive("it is gone", citeAgain: true),
                 { Ended: { } why } => new(CitationStanding.Failed, $"has ended: {MemoryEndToken.Strip(why).TrimEnd('.')}", cited.ToString()),
                 var entry => new(CitationStanding.Holds, $"holds at revision {entry.Revision}"),
             };
