@@ -17,6 +17,7 @@ import type { AnswerAloneAnswered, AnswerWait } from '../../work/waits/AnswerAlo
 import type { NewSessionAnswer } from '../../work/say';
 import type { SessionWhere } from '../../work/rail/SessionRow';
 import type { SessionRecord } from '../../work/head/sessionRecord';
+import type { RelatedRow } from '../../work/head/RelatedSessions';
 import { call } from '../call';
 import { readSlice } from '../driver';
 import { mergeKeyed, readPushed, type SliceSpec, usePushedLive } from '../state/slices';
@@ -310,6 +311,23 @@ export const useSessionRecord = (id: string | null, treeGone: boolean): SessionR
     refetchOnWindowFocus: false,
   });
   return treeGone ? answer.data?.record ?? null : null;
+};
+
+/**
+ * The sessions beside one in its repository whose work meets its own (LINESTOGETHER1c), told by event; the driver reads the trees at
+ * each ask, so a stale answer is read again on focus. Empty while none is read.
+ */
+export const useSessionRelated = (session: string | null | undefined, enabled = true): RelatedRow[] => {
+  const { isAvailable } = useShenora();
+  const client = useQueryClient();
+  const queryKey = ['sessions', 'related', session ?? ''] as const;
+  const answer = useQuery({
+    queryKey,
+    queryFn: () => askHeld<{ related?: RelatedRow[] }>('SESSION_RELATED', client, queryKey, { session }),
+    enabled: isAvailable && enabled && Boolean(session),
+    staleTime: 30_000,
+  });
+  return Array.isArray(answer.data?.related) ? answer.data.related : [];
 };
 
 /**
