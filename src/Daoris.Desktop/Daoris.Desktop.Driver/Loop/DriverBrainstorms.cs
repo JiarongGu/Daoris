@@ -199,7 +199,7 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
     /// </summary>
     private async Task<string> FreezeAsync(BrainstormRequest request, Snapshot snapshot, BrainstormFiles files, CancellationToken ct)
     {
-        var packet = await AssembleAsync(request.Question, request.Repository, snapshot, ct).ConfigureAwait(false);
+        var packet = await AssembleAsync(request.Question, request.Repository, snapshot, ct, request.Sources).ConfigureAwait(false);
         files.WritePacket(request.Id, BrainstormPackets.Bytes(packet));
         files.WriteState(new BrainstormState(request.Id, BrainstormStates.Frozen, packet.Digest, null, DateTimeOffset.UtcNow));
         var from = request.Repository is null ? "the question alone" : $"{packet.Sources.Count} sources of `{request.Repository}` by {packet.Tier}";
@@ -211,21 +211,25 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
     /// The packet's assembly (D176 point 2): the question, and for a repository its sources from the knowledge search in more than
     /// one wording, else from its declared index's files. A meeting's first packet is this assembly (AGENTROOM1a, D177 point 2).
     /// </summary>
-    internal async Task<BrainstormPacket> AssembleAsync(string question, string? asked, Snapshot snapshot, CancellationToken ct)
+    internal async Task<BrainstormPacket> AssembleAsync(
+        string question, string? asked, Snapshot snapshot, CancellationToken ct, IReadOnlyList<string>? named = null)
     {
         var found = new List<BrainstormFound>();
+        var left = new List<BrainstormLeftOut>();
         string? tier = null;
         string? revision = null;
         if (asked is { } repository)
         {
             var (root, commit) = await CheckoutAsync(repository, snapshot, ct).ConfigureAwait(false);
             revision = commit;
+            if (root is not null) found.AddRange(NamedSources(root, named ?? [], left));
+            var searched = new List<BrainstormFound>();
             try
             {
                 foreach (var words in BrainstormWordings.Of(question))
                 {
                     var search = await SearchAsync(words, repository, ct).ConfigureAwait(false);
-                    found.AddRange(search.Found);
+                    searched.AddRange(search.Found);
                     tier = tier is null or BrainstormPackets.Meaning ? search.Tier : tier;
                 }
             }
@@ -233,13 +237,42 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
                                               || (error is OperationCanceledException && !ct.IsCancellationRequested))
             {
                 // No service: the declared index's files answer (D151 §6).
-                found.Clear();
+                searched.Clear();
                 tier = BrainstormPackets.Files;
-                if (root is not null) found.AddRange(IndexFiles(root, question));
+                if (root is not null) searched.AddRange(IndexFiles(root, question));
             }
+
+            found.AddRange(BrainstormPackets.Prefer(searched));
         }
 
-        return BrainstormPackets.Freeze(question, asked, tier, revision, found, BrainstormBounds.First);
+        var packet = BrainstormPackets.Freeze(question, asked, tier, revision, found, BrainstormBounds.First);
+        return left.Count == 0 ? packet : packet with { LeftOut = [.. left, .. packet.LeftOut] };
+    }
+
+    /// <summary>
+    /// The paths the asker named, each read whole from the checkout and taken before any search's find (BRAINSTORMPACKET1); one that
+    /// is not a file there is left out as removed.
+    /// </summary>
+    private static IEnumerable<BrainstormFound> NamedSources(string root, IReadOnlyList<string> named, List<BrainstormLeftOut> left)
+    {
+        foreach (var path in named)
+        {
+            var full = Path.GetFullPath(Path.Combine(root, path));
+            string text;
+            try
+            {
+                if (!full.StartsWith(Path.GetFullPath(root), StringComparison.OrdinalIgnoreCase) || !File.Exists(full)) throw new FileNotFoundException();
+                text = File.ReadAllText(full);
+            }
+            catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+            {
+                left.Add(new BrainstormLeftOut(path, "removed"));
+                continue;
+            }
+
+            var kind = path.EndsWith(".md", StringComparison.OrdinalIgnoreCase) || path.EndsWith(".txt", StringComparison.OrdinalIgnoreCase) ? "document" : "code";
+            yield return new BrainstormFound(kind, path, null, null, text, path, BrainstormPackets.NamedTier, "a source the asker named with --source");
+        }
     }
 
     private async Task<(string? Root, string? Revision)> CheckoutAsync(string repository, Snapshot snapshot, CancellationToken ct)
