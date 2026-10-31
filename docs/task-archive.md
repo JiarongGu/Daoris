@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## COMPANYVIEW1d — Work, Accounts and By repository (2026-10-31)
+
+> **1d: Work, Accounts and By repository** (web). `buildStructure`, the filters, *Needs a look* (its one owner), and the states of §3.3 to §3.5 over a shared fixture, the integration declaration's and the plugins' lines included. An agent's page gains *Used by*. After 1b and 1c. (`docs/2026-10-31-company-view-design.md` §7 row 4; the COMPANYVIEW1 row stays open.)
+
+Completed 2026-10-31: three sections of the Roles mode, over one read asked once whatever the filters say (`agents/roles/structureRead.ts`, `ROLE_STRUCTURE` for this machine, each workspace and each repository). `agents/roles/structure.ts`'s pure `buildStructure` makes the rows with one id each (`work:`, `agent:`, `place:`), shaped for the diagram of 1f, and resolves nothing: the role, the rule and each choice's state are the driver's. `StructureSections.tsx` draws them, `useRolesMode` owns the filters (workspace, work, agent, a name, *Needs a look*), the rows open and each opened repository's workflow (asked for those only, for the integration declaration's none, proposed or accepted); the doors lead to Setup, Workflow, the Integration tab, Plugins and the Agents mode at an agent's accounts through `useAgentsView`'s `roleDoors`. A held start marks its section's row in the list; an agent's page gains *Used by*. A read not landed, a shell without it and a failed read are each said. Proof: `structure.test.ts` over `structureFixtures.ts`, `RolesStructure.test.tsx`, stories at 80, 39 and 25rem. Left to 1g: *Add a role here*; to 1i: what a work may call.
+
 ## COMPANYVIEW1c — the read, `ROLE_STRUCTURE` (2026-10-31)
 
 > **1c: the read** (driver, modules). `ROLE_STRUCTURE` as §4 states it, in every place `.claude/knowledge/bridge-presses.md` names; the test holding its role answers to `StartPlan`; tests for a signed-out account overdue for rereading, a later choice, a scoped role and an inherited rule with no local override; the test that opening runs no probe and takes no reservation. Waits on nothing. (`docs/2026-10-31-company-view-design.md` §7 row 3; the COMPANYVIEW1 row stays open.)
