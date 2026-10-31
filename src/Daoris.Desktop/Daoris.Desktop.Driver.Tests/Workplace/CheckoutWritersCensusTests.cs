@@ -58,7 +58,8 @@ public sealed partial class CheckoutWritersCensusTests
         ["TreeStrays.cs"] = (Refs, "a stray tree's git lock let go and taken again", ["worktree@root"]),
         ["SessionLocks.cs"] = (Refs, "a session's tree locked and unlocked in git's record of the trees", ["worktree@root", "worktree@tree"]),
         ["SessionTrees.cs"] = (Refs, "a session's tree opened on a new branch, through git's record of the trees", ["worktree@root"]),
-        ["PassLeftovers.cs"] = (Refs, "a pass's tree's git lock let go and taken again", ["worktree@root"]),
+        ["StageActs.cs"] = (Refs, "stage and unstage (GITAPP2h, D204): what an act leaves is found by `add`, `reset`, `rm --cached` or `apply --cached` on a private copy of the index (GIT_INDEX_FILE), never the index, which only the act's index step replaces, in `ActRuns`' hold under git's own `index.lock`", ["add@?", "apply@?", "reset@?", "rm@?"]),
+        ["PassLeftovers.cs"] = (Refs,"a pass's tree's git lock let go and taken again", ["worktree@root"]),
     };
 
     /// <summary>Each writer of a checkout, and the file whose code takes the repository's lock alone around it.</summary>
@@ -92,6 +93,7 @@ public sealed partial class CheckoutWritersCensusTests
         ["LinesRoutes.cs"] = "the window's Bring up to date",
         ["HelpRoutes.cs"] = "Ask Daoris's Bring up to date",
         ["DriverWatch.cs"] = "the integration transport's promotions",
+        ["GitRoutes.cs"] = "the Changes tab's stage, unstage and Undo",
     };
 
     /// <summary>
