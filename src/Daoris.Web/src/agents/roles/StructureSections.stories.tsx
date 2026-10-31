@@ -5,7 +5,7 @@ import { storyWidths } from '../../design/storyWidths';
 import { InTheme } from '../../plugins/storyIcons';
 import { CLAUDE_USE, CODEX_USE } from '../agentsFixtures';
 import { AccountsSection, RepositorySection, type RoleDoors, type StructureRead, WorkSection } from './StructureSections';
-import { buildStructure, NO_FILTERS, type StructureFilters } from './structure';
+import { buildStructure, NO_FILTERS, type StructureFilters } from './roleStructure';
 import { DRIVER, LINES, PLUGINS, REGISTRY, STRUCTURE, TOOLS, WORKFLOWS } from './structureFixtures';
 
 // Work, Accounts and By repository (COMPANYVIEW1d, the company-view design §3.3 to §3.5) at the widths the frame gives the main area,

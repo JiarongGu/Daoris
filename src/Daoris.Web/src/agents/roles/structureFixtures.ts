@@ -2,7 +2,7 @@ import type { RoleStructure, StructureChoice, StructureWork } from '../../data/w
 import type { RepositoryLanding } from '../../settings/repository/Landings';
 import type { RepositoryLine } from '../../settings/repository/Lines';
 import { TOOLS } from '../agentsFixtures';
-import type { PluginRef, WorkflowRead } from './structure';
+import type { PluginRef, WorkflowRead } from './roleStructure';
 
 // The roles' structure as the stories and tests hand it (COMPANYVIEW1d): this machine with its nine works, a workspace taking them, a
 // repository with a role of its own whose first choice is signed out, one taking this machine's, and a repository in no workspace whose

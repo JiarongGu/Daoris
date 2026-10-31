@@ -1,6 +1,6 @@
 import { type EdgeStyle, type FlowLayout, layoutFlow, placementFor, type Slot } from '../../design/flowLayout';
 import { foldGroups, type GroupFold, groupFolds } from '../../design/groupFolds';
-import { type Diagram, placeId } from './structure';
+import { type Diagram, placeId } from './roleStructure';
 
 /**
  * **The roles' diagram, laid out** (COMPANYVIEW1f; the company-view design §4): ranked by `design/flowLayout.ts`, whose ranks are here

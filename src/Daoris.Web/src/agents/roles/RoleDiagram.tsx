@@ -12,7 +12,7 @@ import { cn } from '../../lib/cn';
 import { isComposing } from '../../lib/composing';
 import { entryText } from './Roles';
 import { type DiagramShape, diagramPlacement, diagramShape, diagramTrack, layoutDiagram } from './diagram';
-import { type Diagram, type DiagramEdge, type DiagramNode, litOf, placeId } from './structure';
+import { type Diagram, type DiagramEdge, type DiagramNode, litOf, placeId } from './roleStructure';
 import { nameOf, positionOf, type SectionProps, stateText, StructureShell, workList } from './StructureSections';
 
 /** The drawn geometry: its paths and labels, the drawing's size, and how many times it was drawn. */

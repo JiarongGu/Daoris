@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { refusedNoRoute } from '../../bridge/call';
 import { type RoleStructure, useRoleStructure } from '../../bridge/driver';
 import { useRegistry } from '../../data/queries';
-import { heldMarks, placesToAsk } from './structure';
+import { heldMarks, placesToAsk } from './roleStructure';
 import type { StructureRead } from './StructureSections';
 
 /**

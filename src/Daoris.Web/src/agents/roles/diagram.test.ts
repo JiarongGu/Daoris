@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { CLAUDE_USE, CODEX_USE } from '../agentsFixtures';
 import { DIAGRAM_REM, diagramPlacement, diagramShape, diagramTrack, layoutDiagram } from './diagram';
-import { buildStructure, NO_FILTERS } from './structure';
+import { buildStructure, NO_FILTERS } from './roleStructure';
 import { DRIVER, LINES, PLUGINS, REGISTRY, STRUCTURE, TOOLS, WORKFLOWS, largeStructure } from './structureFixtures';
 
 // COMPANYVIEW1f (the company-view design §4, *Ranked by design/flowLayout.ts, placed by its own rule*): the diagram's ranks are its three

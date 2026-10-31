@@ -184,7 +184,7 @@ An agent the roster lacks is drawn as written, never invented (Codex).
   
   It carries names only. It is a projection of the configuration, apart from a start's selection; a test holds its role answers to `StartPlan`'s over a shared fixture, and another holds that opening it runs no probe and takes no reservation.
 - **Appointments** stay `STATE`'s (`bridge/person.ts:233-259`).
-- **The function.** `buildStructure` (`agents/roles/structure.ts`) makes the rows, nodes and edges with one id each, as `map/topology.ts` does.
+- **The function.** `buildStructure` (`agents/roles/roleStructure.ts`) makes the rows, nodes and edges with one id each, as `map/topology.ts` does.
 - **The owner.** The mode's hook owns the section, the selection, the filters, the open editor and every pending press, for both views (D168 point 3). The molecules import nothing of the bridge.
 
 **Moving between them.** The toggle keeps the selection and the filters. Choosing a node of another kind moves the section, so *Show as list* lands on that node's row. A node's detail is its row's molecule, and its *Edit* is the same editor; a row's ⋯ offers *On the diagram*. The list is for setting, scanning and reading aloud. The diagram shows which roles lean on one agent, and a place's lit path.

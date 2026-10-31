@@ -21,7 +21,7 @@ import { RoleSectionMain, type RolesView } from './RoleSections';
 import { type RoleDoors, AccountsSection, DiagramDetail, RepositorySection, WorkSection } from './StructureSections';
 import {
   buildStructure, NO_FILTERS, nodeOfRow, placeId, roleId, sectionOf, type StructureFilters, type WorkflowRead, workflowReadOf,
-} from './structure';
+} from './roleStructure';
 import { useStructureRead } from './structureRead';
 
 /** Where the application leads a press of these sections: the Agents mode at an agent, a repository's tab, a workspace's Setup, a plugin. */

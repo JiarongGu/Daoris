@@ -8,8 +8,8 @@ import { entryText, roleName } from './Roles';
 import { RowMore } from './RowMore';
 import type {
   AccountRow, IntegrationRead, RepositoryRow, RepositoryWork, RoleRef, RuleRead, Structure, StructureFilters, UsedBy, WorkRow, WorkspaceGroup,
-} from './structure';
-import { NO_FILTERS, nodeOfRow, placeId } from './structure';
+} from './roleStructure';
+import { NO_FILTERS, nodeOfRow, placeId } from './roleStructure';
 
 /** Why there are no rows: not asked yet, not offered by this shell, a read that failed, or the rows. */
 export type StructureRead = 'ok' | 'loading' | 'notOffered' | 'failed';

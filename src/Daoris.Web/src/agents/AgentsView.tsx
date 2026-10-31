@@ -23,7 +23,7 @@ import { AgentsModes, AgentsStrip, RoleSectionStrip } from './AgentsModes';
 import { type AgentsMode, isRoleSection, readAgentsMode, type RoleSection, storeAgentsMode } from './modes';
 import { RoleSectionList } from './roles/RoleSections';
 import { type RoleOpeners, RolesMode } from './roles/RolesView';
-import { usedByAgent } from './roles/structure';
+import { usedByAgent } from './roles/roleStructure';
 import { useStructureMarks, useStructureRead } from './roles/structureRead';
 import type { ListPanes } from '../work/frame/listPanes';
 
