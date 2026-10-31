@@ -5,6 +5,13 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-31 - Opening a view asked a signed-out account and the agent's binary (STARTSPROBE1)
+
+- **Symptom:** the Map's `STARTS` read, on an account last read signed out over an hour ago, asked that account's status; on an agent the cached report called absent, it ran the binary again. D150 point 5 has a view probe nothing as it opens.
+- **Root cause:** `WiringAsync` reads `ChooseAsync(..., counts: false)`, and `counts` only stopped the count: `Pass` still handed back `Ask` for a signed-out account with an old reading (spending TOOL6h's owed fresh reading), and the walk asked `BinaryChangedAsync` before refusing an absent agent.
+- **Fix:** a walk's `asks` is false for `WiringAsync`: no account's status and no binary again; the reading stands and says signed out in the start's own sentence, the owed reading stays for the next start.
+- **Verify:** `RosterReadTests`' two view cases (a stand-in that fails on any ask; a binary put in place after the report), red before, with `SelectAsync` the control that does ask; `StartWiringTests` and `StartWiringRouteTests` green.
+
 ## 2026-10-31 - A carry-on's turn end was kept before its note (ACPRACE)
 
 - **Symptom:** under the merge queue's load, `turn:end_turn` twice, then both carry-on notes.
