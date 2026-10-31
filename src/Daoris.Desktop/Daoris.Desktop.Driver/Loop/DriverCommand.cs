@@ -324,7 +324,9 @@ public static class DriverCommand
           git branch|tag <repository> <name> [<commit>] [--plan | --yes]
               make a branch or a lightweight tag at a commit (HEAD without one), as the Branches tab's New branch and
               New tag do. --plan says what it would make; --yes makes it, after your yes in Daoris's window where
-              Daoris runs. Refused from a session's terminal.
+              Daoris runs. Refused from a session's terminal. --delete takes the branch or tag away instead (the
+              commit, if given, is the one it must stand at), keeping its commits on a recovery ref; annotated
+              tags, daoris/ branches, a landing's, the line and an occupied branch are refused.
           git pick|revert <repository> <branch> <commit|A..B> [--plan | --yes]
           git rebase <repository> <branch> <onto> [--plan | --yes]
               edit a branch no tree has out without a working tree, as a branch page's Edit history does: pick or

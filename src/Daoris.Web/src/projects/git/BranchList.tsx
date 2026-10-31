@@ -6,6 +6,8 @@ import { ExternalLink } from '../../design/links';
 import { ListMore } from '../../work/frame/ListPane';
 import { Button, Inline, Pill, Prose, SESSION_TONE, type ShownState } from '../../design/ui';
 import { kindOf, landedStanding, pullRequestSaid, standing } from './branchStanding';
+import { Deleted } from './Deleted';
+import { DeleteRef } from './DeleteRef';
 import { NewRef, type RefActs } from './NewRef';
 
 /** Yours are folded after five (the built-in Git design §2.2): the rest are one press away. */
@@ -93,6 +95,8 @@ export function BranchList({ repository, list, titles = NO_TITLES, onOpen, onOpe
   const origins = of('origin');
   // Hidden each time the tab opens: page state, not remembered (UX6h2b1).
   const [showOrigin, setShowOrigin] = useState(false);
+  // The branch just deleted, kept here because its row is gone once the list is read again (GITAPP2d).
+  const [gone, setGone] = useState<{ act: string; name: string } | null>(null);
   const line = list.line.branch;
   // A branch is drawn beside its line from both commits (`sinceParted`'s two tips): with either missing, it opens nothing.
   const opens = onOpen && list.line.commit ? (branch: ListedBranch) => (branch.commit ? () => onOpen(branch.name) : undefined) : NO_PRESS;
@@ -107,6 +111,8 @@ export function BranchList({ repository, list, titles = NO_TITLES, onOpen, onOpe
       ])} />
 
       {acts && list.line.commit && <NewRef at={{ label: line ?? 'HEAD', commit: list.line.commit }} acts={acts} />}
+
+      {acts && gone && <Deleted name={gone.name} act={gone.act} acts={acts} onClose={() => setGone(null)} />}
 
       {sessions.length > 0 && (
         <Kind
@@ -146,7 +152,12 @@ export function BranchList({ repository, list, titles = NO_TITLES, onOpen, onOpe
           branches={yours}
           opens={opens}
           fold={YOURS_SHOWN}
-          row={(branch) => line && <Facts><Said text={standing(t, line, branch.ahead, branch.behind)} /></Facts>}
+          row={(branch) => (
+            <>
+              {line && <Facts><Said text={standing(t, line, branch.ahead, branch.behind)} /></Facts>}
+              {acts && branch.commit && <DeleteRef name={branch.name} commit={branch.commit} acts={acts} onDeleted={setGone} />}
+            </>
+          )}
         />
       )}
 

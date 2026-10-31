@@ -524,6 +524,11 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
     [InlineData("GIT_BLAME", "", null)]
     [InlineData("GIT_COMPARE", "", null)]
     [InlineData("GIT_CHANGES", "", null)]
+    [InlineData("GIT_HUNKS", "", null)]
+    // GITAPP2h: a person's stage, unstage and Undo move the checkout's index, which the Changes tab reads.
+    [InlineData("GIT_STAGE", "checkouts", null)]
+    [InlineData("GIT_UNSTAGE", "checkouts", null)]
+    [InlineData("GIT_UNDO", "checkouts", null)]
     // HELPMODE1c3: and the driver's, whose helpGrants draws the browser's grant from the plugin's approval.
     [InlineData("PLUGIN_ACTION", "driver,plugins,harnesses", null)]
     [InlineData("PLUGIN_UPDATE", "driver,plugins,harnesses", null)]
@@ -560,6 +565,7 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
     [InlineData("SET_CHECKOUT_WRITES", "driver", null)]
     [InlineData("GIT_REF_CREATE", "driver", null)]
     [InlineData("GIT_REF_UNDO", "driver", null)]
+    [InlineData("GIT_REF_DELETE", "driver", null)]
     [InlineData("GIT_HISTORY_EDIT", "driver", null)]
     [InlineData("SET_STANDING", "driver", null)]
     [InlineData("SET_HEAVY_GATES", "driver", null)]
@@ -693,7 +699,7 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
     public void Every_scope_has_its_word_on_the_wire_in_its_declared_order() =>
         Assert.Equal(
             "sessions,landing,diff,handOff,sweep,treesSync,lines,quests,asks,driver,rules,history,sync,registry,plugins,harnesses,"
-            + "tools,help,browser,wiring,notices,repositories,integration,atWork",
+            + "tools,help,browser,wiring,notices,repositories,integration,atWork,checkouts",
             string.Join(",", StatePublisher.Names((StateScopes)~0)));
 
     /// <summary>

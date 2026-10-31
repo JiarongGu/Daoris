@@ -132,6 +132,69 @@ public sealed class GitRoutes(DriverLoop loop)
     private async Task<object?> GitChangesAsync(IpcRequest request, CancellationToken cancellationToken) =>
         await GitAnsweredAsync(request, cancellationToken, (root, token) => GitChanges.ReadAsync(root, token));
 
+    // GITAPP2h (D204, the git-writes design §4): one file's hunks on a side, with the ids a press must still find equal. A read.
+    [DriverRoute("GIT_HUNKS")]
+    [ByEvent("GIT_HUNKS", Untold = "the checkout's index and the file's bytes, which no scope tells")]
+    private async Task<object?> GitHunksAsync(IpcRequest request, CancellationToken cancellationToken) =>
+        await GitAnsweredAsync(request, cancellationToken, (root, token) =>
+            GitHunks.ReadAsync(root, Optional(request, "path") ?? "", Optional(request, "side") ?? "", token));
+
+    // GITAPP2h (D204, the git-writes design §8): stage and unstage a file, hunks or lines of it, and Undo of such an act. Each is one act
+    // of the journal under the checkout's lock; a refusal is answered as data (`done: false`, the driver's sentence), never thrown.
+    // The checkout is the registered one the repository's page reads, never a session's tree.
+    [DriverRoute("GIT_STAGE")]
+    [DriverRoute("GIT_UNSTAGE")]
+    [DriverRoute("GIT_UNDO")]
+    [Publishes("GIT_STAGE", StateScopes.Checkouts)]
+    [Publishes("GIT_UNSTAGE", StateScopes.Checkouts)]
+    [Publishes("GIT_UNDO", StateScopes.Checkouts)]
+    private async Task<object?> GitStageAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var repository = Optional(request, "repository") ?? throw new DriverException("a stage names its repository.");
+        var service = _loop.Service ?? throw NotReady();
+        var rows = LinesRoutes.Checkouts(await service.RegistryAsync(cancellationToken).ConfigureAwait(false), repository, Optional(request, "workspace"));
+        if (rows.FirstOrDefault(row => Directory.Exists(row.Root)).Root is not { } root)
+        {
+            return Staged(new ActRun(null, null, $"{repository} has no checkout on this machine: nothing was changed.", Refused: true), repository, null);
+        }
+
+        var context = new StageContext(
+            repository, root, () => DriverConfig.Load(_loop.ConfigPath).MayChangeCheckout(repository), token => BranchTidying.BesideAsync(service, token));
+        var acts = new StageActs(new ActJournal(_loop.Home));
+        // The act is not the window's to cancel once its first effect begins; the watch ends only a wait before it.
+        if (request.Type == "GIT_UNDO")
+        {
+            return Staged(await acts.UndoAsync(context, Optional(request, "act") ?? "", cancellationToken).ConfigureAwait(false), repository, root);
+        }
+
+        var picks = new List<HunkPick>();
+        if (request.Payload is { } payload && payload.TryGetProperty("picks", out var chosen) && chosen.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var pick in chosen.EnumerateArray())
+            {
+                var lines = pick.TryGetProperty("lines", out var each) && each.ValueKind == JsonValueKind.Array
+                    ? each.EnumerateArray().Where(line => line.ValueKind == JsonValueKind.Number).Select(line => line.GetInt32()).ToList()
+                    : null;
+                picks.Add(new HunkPick(pick.TryGetProperty("id", out var id) ? id.GetString() ?? "" : "", lines));
+            }
+        }
+
+        var press = new StagePress(
+            request.Type == "GIT_STAGE" ? StageVerbs.Stage : StageVerbs.Unstage, Optional(request, "path") ?? "", Optional(request, "head"),
+            Optional(request, "index") ?? "", Optional(request, "source") ?? "", picks);
+        return Staged(await acts.RunAsync(context, press, cancellationToken).ConfigureAwait(false), repository, root);
+    }
+
+    /// <summary>An act's answer as the page reads it: whether it is done, its act (the id Undo takes) and the driver's sentence, with no machine path.</summary>
+    private static object Staged(ActRun run, string repository, string? root) => new
+    {
+        Done = !run.Refused && run.Outcome == ActOutcomes.Done,
+        run.Refused,
+        run.Act,
+        run.Outcome,
+        Said = WithoutRoots(run.Said, [root], repository),
+    };
+
     // GITAPP2c (D204, the git-writes design §6, §9): *New branch* and *New tag* at a commit, one `create` run as an act of the journal
     // (GitRefActs). A ref act writes no working tree, so it asks no switch. The page presses it after its own confirmation; a terminal's
     // `git branch|tag <repository> <name> --yes` is the same route asked for its words (`said`), run on the window's Confirm. A refusal
@@ -161,7 +224,39 @@ public sealed class GitRoutes(DriverLoop loop)
         return Answered(run, checkout, repository);
     }
 
+    // GITAPP2d (D204, the git-writes design §6): *Delete* on a branch or a lightweight tag, one transaction of the delete, the recovery ref and each
+    // holder's verify, then the branch's section. `at` is the commit the page showed; the act refuses where the ref stands elsewhere, and the held
+    // branches (daoris/*, a landing's, the line, a together-bound one), an annotated tag and an occupied branch. Refusals are data, as the create's are.
+    [DriverRoute("GIT_REF_DELETE")]
+    [Publishes("GIT_REF_DELETE", StateScopes.Driver)]
+    private async Task<object?> GitRefDeleteAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var repository = Optional(request, "repository") ?? throw new DriverException("a ref act names its repository.");
+        var kind = Optional(request, "kind");
+        var name = Optional(request, "name");
+        if (kind is not ("branch" or "tag") || string.IsNullOrWhiteSpace(name)) throw new DriverException("a delete names its kind, `branch` or `tag`, and its name.");
+        _ = _loop.Service ?? throw NotReady();
+
+        var verb = new GitRefVerb(kind, repository, name, Optional(request, "at"), Yes: true, Delete: true);
+        var world = new GitRefWorld(
+            async (_, token) => await CheckoutOfAsync(repository, Optional(request, "workspace"), token).ConfigureAwait(false), () => _acts,
+            async (_, checkout, token) => (await CanonicalLine.ResolveAsync(checkout, repository, Optional(request, "workspace"), DriverConfig.Load(_loop.ConfigPath), token).ConfigureAwait(false)).Branch);
+        if (Flag(request, "said"))
+        {
+            var writer = new StringWriter { NewLine = "\n" };
+            var code = await GitRefCommand.ExecuteAsync(verb, world, "terminal", "window", writer, writer, cancellationToken).ConfigureAwait(false);
+            var lines = writer.ToString().Split('\n');
+            return new { Said = new TreesSaid(lines[^1].Length == 0 ? lines[..^1] : lines, [], code).ToWire() };
+        }
+
+        if (await world.CheckoutOf(repository, cancellationToken).ConfigureAwait(false) is not { } checkout) return NoCheckout(repository);
+        var line = await world.LineOf!(repository, checkout, cancellationToken).ConfigureAwait(false);
+        var run = await GitRefActs.DeleteAsync(_acts, new RefDeleteAsk(repository, checkout, kind, name, verb.At, line), "window", "window", cancellationToken).ConfigureAwait(false);
+        return Answered(run, checkout, repository);
+    }
+
     // GITAPP2c: the Undo beside a create's answer, the act's ref deleted only at the id the act made it at; refused as data where it moved.
+    // GITAPP2d: and beside a delete's, the ref made again where the name is free and its section put back.
     [DriverRoute("GIT_REF_UNDO")]
     [Publishes("GIT_REF_UNDO", StateScopes.Driver)]
     private async Task<object?> GitRefUndoAsync(IpcRequest request, CancellationToken cancellationToken)

@@ -79,6 +79,7 @@ internal static class OwnerTargetRows
         // GITAPP2c: a ref made or taken away in one repository's checkout.
         Row("GIT_REF_CREATE", Repository(), Workspace());
         Row("GIT_REF_UNDO", Repository(), Workspace());
+        Row("GIT_REF_DELETE", Repository(), Workspace());
         // GITAPP2m: a branch's history edited in one repository's checkout.
         Row("GIT_HISTORY_EDIT", Repository(), Workspace());
         Row("SETUP_PRESS", Repository());

@@ -15,7 +15,7 @@ const AT = { label: 'main', commit: 'c4f1a2e0b7d94c3a8f56e1d20b9a7c4e3f8d1a65' }
 const meta: Meta<typeof NewRef> = {
   title: 'Repositories/NewRef',
   component: NewRef,
-  args: { at: AT, acts: { make: nothing, undo: nothing } },
+  args: { at: AT, acts: { make: nothing, remove: nothing, undo: nothing } },
   decorators: [storyWidths.wide],
 };
 export default meta;

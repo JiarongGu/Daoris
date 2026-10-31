@@ -19,6 +19,7 @@ vi.mock('@shenora/react', () => ({
 import type { GitBranchList, GitGraphPage } from '../bridge/repositories/git';
 import {
   GIT_BRANCH_PARTED, GIT_BRANCH_PARTED_PAGES, GIT_BRANCHES_ENGINE, GIT_BRANCHES_GAME, GIT_CHANGES_ENGINE, GIT_HISTORY_ENGINE, GIT_HISTORY_PAGES,
+  GIT_HUNKS_BUDGET,
 } from './fixtures';
 import { SHARED_BRANCH, SHARED_DUE, SHARED_UNITS, traceAnswerOf } from './git/landingFixtures';
 import { DRIVER_STATE, respond, show, WIRING } from '../test/shellHarness';
@@ -580,11 +581,15 @@ describe("a repository's Changes tab and the switch behind it (GITAPP2b)", () =>
 
   const switchOff = { ...DRIVER_STATE, checkoutWrites: [] as string[] };
   const switchOn = { ...DRIVER_STATE, checkoutWrites: ['engine'] };
-  const answering = (state: Record<string, unknown> = switchOff, changes: () => unknown = () => answer({ ...GIT_CHANGES_ENGINE, readAt: new Date().toISOString() })) =>
+  const answering = (
+    state: Record<string, unknown> = switchOff, changes: () => unknown = () => answer({ ...GIT_CHANGES_ENGINE, readAt: new Date().toISOString() }),
+    acts: Record<string, () => unknown> = {},
+  ) =>
     invoke.mockImplementation(async (module: string, type: string) => {
       if (module === 'DAORIS.REMOTES') return WIRING;
       if (module === 'DAORIS.LOG') return { lines: [] };
       if (type === 'GIT_CHANGES') return changes();
+      if (type in acts) return acts[type]!();
       if (type === 'LINES') return { lines: [], landings: [], reviews: [], opinions: [] };
       if (type === 'HARNESSES') return { harnesses: [] };
       if (type === 'PLUGINS') return { plugins: [] };
@@ -651,6 +656,71 @@ describe("a repository's Changes tab and the switch behind it (GITAPP2b)", () =>
     await waitFor(() => expect(asked('GIT_CHANGES').length).toBeGreaterThan(before));
     // It only reads: no route that changes a repository is pressed.
     expect(invoke.mock.calls.map(([, called]) => called).filter((called) => /^(STAGE|UNSTAGE|COMMIT)/.test(String(called)))).toEqual([]);
+  });
+
+  // GITAPP2h: the presses of the tab reach the driver as one act each, with what the hunks were read against, and Undo takes the act.
+  it('stages a file whole: reads its hunks for what to send back, presses GIT_STAGE, says it done and undoes it by its act', async () => {
+    const budget = { ...GIT_HUNKS_BUDGET, hunks: [] };
+    answering(switchOn, undefined, {
+      GIT_HUNKS: () => answer(budget),
+      GIT_STAGE: () => ({ done: true, refused: false, act: 'act-9', outcome: 'done', said: 'x' }),
+      GIT_UNDO: () => ({ done: true, refused: false, act: 'act-10', outcome: 'done', said: 'x' }),
+    });
+    show(<ProjectsView notify={() => {}} />);
+    const page = await chooseRepository('engine');
+    await userEvent.click(within(page).getByRole('tab', { name: 'Changes' }));
+    const region = await within(repositoryMain()).findByRole('region', { name: "engine's changes" });
+    const row = within(within(region).getByRole('list', { name: 'Not staged (2)' })).getAllByRole('listitem')[1]!;
+
+    await userEvent.click(within(row).getByRole('button', { name: 'Stage' }));
+
+    await waitFor(() => expect(asked('GIT_STAGE')).toHaveLength(1));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'GIT_STAGE', {
+      payload: expect.objectContaining({
+        repository: 'engine', workspace: 'aurora', path: 'src/budget.cs', head: budget.head, index: budget.index, source: budget.source, picks: [],
+      }),
+    });
+    expect(await within(region).findByRole('status')).toHaveTextContent('Staged src/budget.cs.');
+
+    await userEvent.click(within(region).getByRole('button', { name: 'Undo' }));
+
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'GIT_UNDO', { payload: expect.objectContaining({ repository: 'engine', act: 'act-9' }) }));
+    expect(await within(region).findByText('The index is put back as it was before that act.')).toBeInTheDocument();
+  });
+
+  it('stages a hunk from the file\'s changes, and says the driver\'s sentence where it refused', async () => {
+    answering(switchOn, undefined, {
+      GIT_HUNKS: () => answer(GIT_HUNKS_BUDGET),
+      GIT_STAGE: () => ({ done: false, refused: true, said: '`src/budget.cs`\'s bytes changed since its hunks were read: nothing was changed.' }),
+    });
+    show(<ProjectsView notify={() => {}} />);
+    const page = await chooseRepository('engine');
+    await userEvent.click(within(page).getByRole('tab', { name: 'Changes' }));
+    const region = await within(repositoryMain()).findByRole('region', { name: "engine's changes" });
+    const row = within(within(region).getByRole('list', { name: 'Not staged (2)' })).getAllByRole('listitem')[1]!;
+
+    await userEvent.click(within(row).getByRole('button', { name: 'Show changes' }));
+    await userEvent.click(await within(row).findByRole('button', { name: 'Stage this hunk' }));
+
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'GIT_STAGE', {
+      payload: expect.objectContaining({ path: 'src/budget.cs', index: GIT_HUNKS_BUDGET.index, picks: [{ id: 'a1b2c3d4e5f6' }] }),
+    }));
+    expect(await within(region).findByRole('status')).toHaveTextContent('bytes changed since its hunks were read: nothing was changed.');
+    expect(within(region).queryByRole('button', { name: 'Undo' })).toBeNull();
+  });
+
+  it('refuses a file whose index entry moved since the list was read, and presses nothing', async () => {
+    answering(switchOn, undefined, { GIT_HUNKS: () => answer({ ...GIT_HUNKS_BUDGET, hunks: [], index: '100644 ' + '1'.repeat(40) }) });
+    show(<ProjectsView notify={() => {}} />);
+    const page = await chooseRepository('engine');
+    await userEvent.click(within(page).getByRole('tab', { name: 'Changes' }));
+    const region = await within(repositoryMain()).findByRole('region', { name: "engine's changes" });
+    const row = within(within(region).getByRole('list', { name: 'Not staged (2)' })).getAllByRole('listitem')[1]!;
+
+    await userEvent.click(within(row).getByRole('button', { name: 'Stage' }));
+
+    expect(await within(region).findByRole('status')).toHaveTextContent('The file changed since this list was read: nothing was changed.');
+    expect(asked('GIT_STAGE')).toEqual([]);
   });
 
   it("shows the read the shell held as read again until a fresh one lands, and does not offer Refresh meanwhile", async () => {
@@ -816,6 +886,76 @@ describe("a repository's New branch and New tag (GITAPP2c)", () => {
     await userEvent.click(within(game).getByRole('tab', { name: 'Branches' }));
     await within(repositoryMain()).findByText(/this machine has none/);
     expect(within(repositoryMain()).queryByRole('button', { name: 'New branch or tag…' })).toBeNull();
+  });
+
+  describe('Delete (GITAPP2d)', () => {
+    const SPIKE = GIT_BRANCHES_ENGINE.branches.find((branch) => branch.name === 'spike/renderer')!.commit;
+
+    const openBranches = async () => {
+      const page = await chooseRepository('engine');
+      await userEvent.click(within(page).getByRole('tab', { name: 'Branches' }));
+      return within(repositoryMain()).findByRole('region', { name: "engine's branches" });
+    };
+
+    it('names what goes and where its commits stay, sends nothing until Delete, then presses the delete at the commit the row showed', async () => {
+      answering({ GIT_REF_DELETE: () => ({ act: 'd1', outcome: 'done', refused: false, said: 'deleted' }) });
+      show(<ProjectsView notify={() => {}} />);
+      const list = await openBranches();
+
+      await userEvent.click(within(list).getByRole('button', { name: 'Delete the branch spike/renderer' }));
+      const group = within(list).getByRole('group', { name: 'Delete the branch spike/renderer' });
+
+      expect(within(group).getByText(/Delete the branch spike\/renderer \(5d2e770\)\? Its commits stay on a recovery ref/)).toBeInTheDocument();
+      expect(asked('GIT_REF_DELETE')).toEqual([]);
+      await userEvent.click(within(group).getByRole('button', { name: 'Delete' }));
+
+      expect(await within(list).findByText('Deleted the branch spike/renderer. Its commits are kept for recovery.')).toBeInTheDocument();
+      expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'GIT_REF_DELETE', {
+        payload: { repository: 'engine', workspace: 'aurora', kind: 'branch', name: 'spike/renderer', at: SPIKE },
+      });
+    });
+
+    it('keeps its Undo after the row is gone and undoes at the act the delete made', async () => {
+      answering({
+        GIT_REF_DELETE: () => ({ act: 'd1', outcome: 'done', refused: false, said: 'deleted' }),
+        GIT_REF_UNDO: () => ({ act: 'u1', outcome: 'done', refused: false, said: 'made again' }),
+      });
+      show(<ProjectsView notify={() => {}} />);
+      const list = await openBranches();
+      await userEvent.click(within(list).getByRole('button', { name: 'Delete the branch fix/readme' }));
+      await userEvent.click(within(within(list).getByRole('group', { name: 'Delete the branch fix/readme' })).getByRole('button', { name: 'Delete' }));
+
+      await userEvent.click(await within(list).findByRole('button', { name: 'Undo' }));
+
+      expect(await within(list).findByText('Undone: the branch fix/readme is back.')).toBeInTheDocument();
+      expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'GIT_REF_UNDO', { payload: { repository: 'engine', workspace: 'aurora', act: 'd1' } });
+    });
+
+    it("says a refusal in the driver's sentence and sends nothing more", async () => {
+      answering({ GIT_REF_DELETE: () => ({ refused: true, outcome: null, said: '`spike/renderer` is checked out in `engine-tree`, so nothing was deleted' }) });
+      show(<ProjectsView notify={() => {}} />);
+      const list = await openBranches();
+      await userEvent.click(within(list).getByRole('button', { name: 'Delete the branch spike/renderer' }));
+      await userEvent.click(within(within(list).getByRole('group', { name: 'Delete the branch spike/renderer' })).getByRole('button', { name: 'Delete' }));
+
+      expect(await within(list).findByText(/is checked out in .engine-tree., so nothing was deleted/)).toBeInTheDocument();
+      expect(within(list).queryByRole('button', { name: 'Undo' })).toBeNull();
+    });
+
+    it('goes back without sending, and is drawn on no line, session or landed row', async () => {
+      answering();
+      show(<ProjectsView notify={() => {}} />);
+      const list = await openBranches();
+
+      await userEvent.click(within(list).getByRole('button', { name: 'Delete the branch spike/renderer' }));
+      await userEvent.click(within(within(list).getByRole('group', { name: 'Delete the branch spike/renderer' })).getByRole('button', { name: 'Cancel' }));
+
+      expect(asked('GIT_REF_DELETE')).toEqual([]);
+      expect(within(list).getByRole('button', { name: 'Delete the branch spike/renderer' })).toBeInTheDocument();
+      for (const held of ['main', 'daoris/engine-physics-step', 'review/q6-asset-cache']) {
+        expect(within(list).queryByRole('button', { name: `Delete the branch ${held}` })).toBeNull();
+      }
+    });
   });
 });
 

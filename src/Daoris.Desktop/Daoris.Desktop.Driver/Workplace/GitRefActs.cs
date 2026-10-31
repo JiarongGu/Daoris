@@ -6,16 +6,29 @@ namespace Daoris.Driver;
 public sealed record RefAsk(string Repository, string Checkout, string Kind, string Name, string? At);
 
 /// <summary>
-/// **Create a branch or a lightweight tag, and undo it** (GITAPP2c, D204; the git-writes design §6, §12 row c). One <c>create</c> through
+/// A branch or a lightweight tag to delete (GITAPP2d): <paramref name="At"/> the commit the page showed it at (refused where it stands elsewhere),
+/// <paramref name="Line"/> the repository's line, which is never deleted.
+/// </summary>
+public sealed record RefDeleteAsk(string Repository, string Checkout, string Kind, string Name, string? At = null, string? Line = null);
+
+/// <summary>
+/// **Create or delete a branch or a lightweight tag, and undo either** (GITAPP2c and d, D204; the git-writes design §6, §12 rows c and d). One
+/// <c>create</c>, or one transaction of the <c>delete</c>, the recovery ref's <c>create</c> and each proof ref's <c>verify</c>, through
 /// <see cref="RefTransaction"/> run as an act of the journal (<see cref="ActRuns"/>), so it holds the checkout alone, is journaled, and is
-/// reconciled by its postconditions where its run died. The undo is an act of its own: a <c>delete</c> at the id the create made, refused
-/// where the ref stands anywhere else. A ref act writes no working tree, so it needs no checkout switch.
+/// reconciled by its postconditions where its run died. The undo is an act of its own: a create's <c>delete</c> at the id the create made,
+/// refused where the ref stands anywhere else; a delete's ref made again where the name is free, its section put back under git's
+/// <c>config.lock</c>. A ref act writes no working tree, so it needs no checkout switch.
 /// </summary>
 public static class GitRefActs
 {
     public const string CreateKind = "ref.create";
 
     public const string UndoKind = "ref.undo";
+
+    public const string DeleteKind = "ref.delete";
+
+    /// <summary>How many holders of the deleted ref's commit are verified with it: the ones the page would name.</summary>
+    private const int HoldersVerified = 20;
 
     /// <summary>The commands a person types in the checkout for the same act.</summary>
     public static IReadOnlyList<string> Commands(RefAsk ask) =>
@@ -53,9 +66,10 @@ public static class GitRefActs
     {
         var journal = runs.Journal;
         if (journal.Act(act) is not { } record) return Refused($"no act `{act}` is recorded, so nothing was undone");
-        if (record.Kind != CreateKind) return Refused($"act `{act}` is not a create, so nothing was undone");
+        if (record.Kind is not (CreateKind or DeleteKind)) return Refused($"act `{act}` is not a create or a delete, so nothing was undone");
         if (!string.Equals(record.Repository, repository, StringComparison.OrdinalIgnoreCase)) return Refused($"act `{act}` was made in another repository, so nothing was undone");
         if (record.Open || record.Outcome != ActOutcomes.Done) return Refused($"act `{act}` did not finish as done ({record.Outcome ?? "still open"}), so there is nothing to undo");
+        if (record.Kind == DeleteKind) return await UndoDeleteAsync(runs, record, checkout, press, confirmed, ct).ConfigureAwait(false);
         var moved = JsonNode.Parse(journal.Steps(act).Single().Postconditions)!["refs"]![0]!;
         var (reference, id) = (moved["ref"]!.GetValue<string>(), moved["after"]!.GetValue<string>());
 
@@ -70,6 +84,252 @@ public static class GitRefActs
                 return code == 0 && stands.Trim() == id
                     ? null
                     : $"`{ShortName(reference)}` no longer stands at the commit act `{act}` made it at ({(code == 0 ? "it was moved" : "it is gone")}), so it was not deleted";
+            },
+        }, ct).ConfigureAwait(false);
+    }
+
+    // ——— Delete (GITAPP2d).
+
+    /// <summary>The commands a person types in the checkout for the same act.</summary>
+    public static IReadOnlyList<string> Commands(RefDeleteAsk ask) => [ask.Kind == "tag" ? $"git tag -d {ask.Name}" : $"git branch -D {ask.Name}"];
+
+    /// <summary>What the delete would do now, read without the lock and written nowhere: the whole commit id it deletes, or why it is refused.</summary>
+    public static async Task<(string? Id, string? Refusal)> PlanDeleteAsync(string home, RefDeleteAsk ask, CancellationToken ct)
+    {
+        var (read, refusal) = await ReadDeleteAsync(home, ask, null, ct).ConfigureAwait(false);
+        return (read?.Id, refusal);
+    }
+
+    /// <summary>
+    /// Delete the ref: refused before anything is written where it is a held branch, an annotated tag, occupied, or not at the commit shown;
+    /// else the delete, the recovery ref and each holder's <c>verify</c> in one transaction, then the branch's section removed under
+    /// <c>config.lock</c>. A branch a tree checked out meanwhile is made again, and the recovery ref taken back with it.
+    /// </summary>
+    public static async Task<ActRun> DeleteAsync(ActRuns runs, RefDeleteAsk ask, string press, string? confirmed, CancellationToken ct)
+    {
+        var home = runs.Journal.Home;
+        var (read, refusal) = await ReadDeleteAsync(home, ask, null, ct).ConfigureAwait(false);
+        if (read is null) return Refused(refusal!);
+
+        var (recovery, made, taken) = await RecoveryNameAsync(ask.Checkout, ask.Name, read.Id, ct).ConfigureAwait(false);
+        if (recovery is null) return Refused(taken!);
+
+        var transaction = new RefTransaction().Verify(read.Holders).Delete(read.Full, read.Id);
+        var moves = new List<(string Ref, string? Before, string? After)> { (read.Full, read.Id, null) };
+        if (made)
+        {
+            transaction.Create(recovery, read.Id);
+            moves.Add((recovery, null, read.Id));
+        }
+        else
+        {
+            transaction.Verify(recovery, read.Id);
+        }
+
+        var steps = new List<ActStepPlan>();
+        try
+        {
+            steps.Add(ActSteps.Ref(transaction, moves));
+        }
+        catch (ArgumentException error)
+        {
+            return Refused($"{error.Message}, so nothing was deleted");
+        }
+
+        JsonObject? section = null;
+        if (ask.Kind == "branch" && await SectionAsync(ask.Checkout, ask.Name).ConfigureAwait(false) is { } kept)
+        {
+            section = kept;
+            steps.Add(ActSteps.Config(kept["file"]!.GetValue<string>(), "local", kept["section"]!.GetValue<string>(), null, kept["text"]!.GetValue<string>()));
+        }
+
+        var plan = new JsonObject
+        {
+            ["kind"] = ask.Kind, ["name"] = ask.Name, ["ref"] = read.Full, ["at"] = read.Id, ["recovery"] = recovery, ["recoveryMade"] = made,
+            ["holders"] = new JsonArray([.. read.Holders.Select(each => (JsonNode)each.Ref)]), ["section"] = section,
+            ["commands"] = new JsonArray([.. Commands(ask).Select(each => (JsonNode)each)]),
+        };
+        return await runs.RunAsync(new ActPlan(DeleteKind, press, ask.Repository, ask.Checkout, steps)
+        {
+            Plan = plan.ToJsonString(), Confirmed = confirmed,
+            Judge = async token => (await ReadDeleteAsync(home, ask, read.Id, token).ConfigureAwait(false)).Refusal,
+            After = ordinal => ordinal == 0 && ask.Kind == "branch" ? OccupiedLateAsync(ask, read, recovery, made) : Task.FromResult<string?>(null),
+        }, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// The occupancy read again once the branch went: a tree on it, or a list git could not give, puts it back where nothing stands at its name
+    /// (the delete's rule), and the recovery ref it made goes in the same transaction. Null where the branch is clear or never went.
+    /// </summary>
+    private static async Task<string?> OccupiedLateAsync(RefDeleteAsk ask, DeleteRead read, string recovery, bool recoveryMade)
+    {
+        var none = CancellationToken.None;
+        var (code, _, _) = await WorkingTree.GitAsync(ask.Checkout, ["rev-parse", "--verify", "--quiet", read.Full], none).ConfigureAwait(false);
+        if (code == 0) return null;
+        var trees = await TreeWorktrees.EntriesAsync(ask.Checkout, none).ConfigureAwait(false);
+        string? why = null;
+        if (trees is null) why = $"{TreeWorktrees.ListUnread} once it went, so whether a tree checked it out as it went is not known";
+        else if (TreeWorktrees.ByBranch(trees).TryGetValue(ask.Name, out var tree)) why = $"it was checked out in `{Path.GetFileName(tree.TrimEnd('/', '\\'))}` as it went";
+        if (why is null) return null;
+
+        var back = RefTransaction.RestoreDeleted(read.Full, read.Id);
+        if (recoveryMade) back.Delete(recovery, read.Id);
+        var run = await back.RunAsync(ask.Checkout, none).ConfigureAwait(false);
+        if (run.Done) return $"{why}, so it was put back where it was";
+        var (now, at, _) = await WorkingTree.GitAsync(ask.Checkout, ["rev-parse", "--verify", "--quiet", read.Full], none).ConfigureAwait(false);
+        return now == 0 && at.Trim() == read.Id
+            ? $"{why}, so it was put back where it was"
+            : $"{why}, and Daoris could not put it back at {read.Id[..12]} ({ContentHolds.Said(run.Said)}); its recovery ref `{ShortName(recovery)}` keeps the commits";
+    }
+
+    /// <summary>What a delete rests on, read fresh: the ref, the commit it stands at, and the refs that hold that commit too.</summary>
+    private sealed record DeleteRead(string Full, string Id, IReadOnlyList<(string Ref, string Commit)> Holders);
+
+    private static async Task<(DeleteRead? Read, string? Refusal)> ReadDeleteAsync(string home, RefDeleteAsk ask, string? planned, CancellationToken ct)
+    {
+        if (FullName(ask.Kind, ask.Name) is not { } full) return (null, $"`{ask.Kind}` is neither a branch nor a tag, so nothing was deleted");
+        var noun = ask.Kind == "tag" ? "tag" : "branch";
+        if (ask.Name.Length == 0 || ask.Name.StartsWith('-') || ask.Name.Any(char.IsWhiteSpace)) return (null, $"`{ask.Name}` is not a name git takes for a {noun}, so nothing was deleted");
+        if (ask.Kind == "branch")
+        {
+            if (ask.Name == "daoris" || ask.Name.StartsWith("daoris/", StringComparison.Ordinal))
+            {
+                return (null, $"`{ask.Name}` is under `daoris/`, which is Daoris's own for its sessions' branches, so nothing was deleted");
+            }
+
+            if (RecoveryRetention.Made(new LandedBranches(home).Entries(), ask.Repository).Contains(ask.Name))
+            {
+                return (null, $"`{ask.Name}` is a branch a landing made, which Daoris keeps for its pull request, so nothing was deleted");
+            }
+
+            if (string.Equals(ask.Name, ask.Line, StringComparison.Ordinal)) return (null, $"`{ask.Name}` is the repository's line, so nothing was deleted");
+            if (TogetherGuard.BranchRefusal(home, ask.Repository, ask.Name) is { } together) return (null, $"`{ask.Name}`: {together}, so nothing was deleted");
+        }
+
+        var (code, listed, err) = await WorkingTree.GitAsync(
+            ask.Checkout, ["for-each-ref", "--format=%(refname)%09%(objectname)%09%(objecttype)%09%(symref)", "--", full], ct).ConfigureAwait(false);
+        if (code != 0) return (null, $"git could not read `{ask.Name}` ({ContentHolds.Said(err)}), so nothing was deleted");
+        var row = listed.Split('\n', StringSplitOptions.RemoveEmptyEntries).Select(each => each.TrimEnd('\r').Split('\t')).FirstOrDefault(parts => parts.Length >= 3 && parts[0] == full);
+        if (row is null) return (null, $"no {noun} named `{ask.Name}` stands, so nothing was deleted");
+        if (row.Length > 3 && row[3].Length > 0) return (null, $"`{ask.Name}` is a symbolic ref, so nothing was deleted");
+        if (ask.Kind == "tag" && row[2] == "tag") return (null, $"`{ask.Name}` is an annotated or signed tag, which is listed and not deleted here, so nothing was deleted");
+        if (row[2] != "commit" || !WorkingTree.IsCommitId(row[1])) return (null, $"`{ask.Name}` names no commit, so nothing was deleted");
+        var id = row[1];
+        if (ask.At is not null && await CommitAsync(ask.Checkout, ask.At, ct).ConfigureAwait(false) != id) return (null, $"`{ask.Name}` no longer stands at the commit shown, so nothing was deleted");
+        if (planned is not null && id != planned) return (null, $"`{ask.Name}` no longer stands at the commit shown, so nothing was deleted");
+
+        if (ask.Kind == "branch")
+        {
+            if (await TreeWorktrees.EntriesAsync(ask.Checkout, ct).ConfigureAwait(false) is not { } trees)
+            {
+                return (null, $"{TreeWorktrees.ListUnread}, so whether a tree has `{ask.Name}` checked out is not known and nothing was deleted");
+            }
+
+            if (TreeWorktrees.ByBranch(trees).TryGetValue(ask.Name, out var tree))
+            {
+                return (null, $"`{ask.Name}` is checked out in `{Path.GetFileName(tree.TrimEnd('/', '\\'))}`, so nothing was deleted");
+            }
+        }
+
+        var (held, holding, heldErr) = await WorkingTree.GitAsync(
+            ask.Checkout, ["for-each-ref", "--contains", id, $"--format={ContentHolds.UnaliasedFormat}", "refs/heads/", "refs/tags/", "refs/remotes/"], ct).ConfigureAwait(false);
+        if (held != 0) return (null, $"git could not say which refs hold `{ask.Name}`'s commit ({ContentHolds.Said(heldErr)}), so nothing was deleted");
+        var holders = ContentHolds.Unaliased(holding)
+            .Where(each => each.Ref != full && (ContentHolds.PersonsRef(each.Ref) || each.Ref.StartsWith("refs/tags/", StringComparison.Ordinal)) && WorkingTree.IsCommitId(each.Commit))
+            .Take(HoldersVerified).ToList();
+        return (new DeleteRead(full, id, holders), null);
+    }
+
+    /// <summary>The recovery ref's name under <see cref="ContentHolds.DiscardedPrefix"/>: a free one to make, or one that already stands at the commit (verified, not made).</summary>
+    private static async Task<(string? Ref, bool Made, string? Refusal)> RecoveryNameAsync(string checkout, string name, string id, CancellationToken ct)
+    {
+        for (var n = 1; n <= ContentHolds.DiscardedNames; n++)
+        {
+            var reference = ContentHolds.DiscardedPrefix + name + (n == 1 ? "" : $"-{n}");
+            var (code, at, err) = await WorkingTree.GitAsync(checkout, ["rev-parse", "--verify", "--quiet", reference], ct).ConfigureAwait(false);
+            if (code == 1)
+            {
+                var (missing, _) = await ContentHolds.MissingAsync(checkout, reference, ct).ConfigureAwait(false);
+                if (missing) return (reference, true, null);
+                return (null, false, $"git could not read whether `{ShortName(reference)}` stands, so nothing was deleted");
+            }
+
+            if (code != 0) return (null, false, $"git could not read the recovery ref ({ContentHolds.Said(err)}), so nothing was deleted");
+            if (at.Trim() == id) return (reference, false, null);
+        }
+
+        return (null, false, "every name for its recovery ref is taken, so nothing was deleted");
+    }
+
+    /// <summary>The branch's section of the local configuration as the plan keeps it (file, scope, section, text), or null where it has none or the file does not read.</summary>
+    private static async Task<JsonObject?> SectionAsync(string checkout, string name)
+    {
+        var file = Path.Combine(TreeLock.CommonDirOf(checkout), "config");
+        var section = $"branch.{name}";
+        try
+        {
+            return await ActConfig.SectionAsync(file, section).ConfigureAwait(false) is { } text
+                ? new JsonObject { ["file"] = file, ["scope"] = "local", ["section"] = section, ["text"] = text }
+                : null;
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Undo the delete <paramref name="record"/> made: the ref made again at its id only where the name is free, the recovery ref it made let go
+    /// where it still stands at that id, the branch's section put back under <c>config.lock</c> where none stands.
+    /// </summary>
+    private static async Task<ActRun> UndoDeleteAsync(ActRuns runs, ActRecord record, string checkout, string press, string? confirmed, CancellationToken ct)
+    {
+        var plan = JsonNode.Parse(record.Plan)!;
+        var (full, id, recovery) = (plan["ref"]!.GetValue<string>(), plan["at"]!.GetValue<string>(), plan["recovery"]!.GetValue<string>());
+        var name = ShortName(full);
+        var noun = full.StartsWith("refs/tags/", StringComparison.Ordinal) ? "tag" : "branch";
+        var section = plan["section"] as JsonObject;
+
+        var transaction = RefTransaction.RestoreDeleted(full, id);
+        var moves = new List<(string Ref, string? Before, string? After)> { (full, null, id) };
+        var (code, at, _) = await WorkingTree.GitAsync(checkout, ["rev-parse", "--verify", "--quiet", recovery], ct).ConfigureAwait(false);
+        if (plan["recoveryMade"]?.GetValue<bool>() == true && code == 0 && at.Trim() == id)
+        {
+            transaction.Delete(recovery, id);
+            moves.Add((recovery, id, null));
+        }
+
+        var steps = new List<ActStepPlan>();
+        try
+        {
+            steps.Add(ActSteps.Ref(transaction, moves));
+        }
+        catch (ArgumentException error)
+        {
+            return Refused($"{error.Message}, so nothing was undone");
+        }
+
+        if (section is not null)
+        {
+            steps.Add(ActSteps.Restore(section["file"]!.GetValue<string>(), section["scope"]!.GetValue<string>(), section["section"]!.GetValue<string>(), section["text"]!.GetValue<string>()));
+        }
+
+        var shown = new JsonObject { ["undo"] = record.Id, ["ref"] = full, ["at"] = id };
+        return await runs.RunAsync(new ActPlan(UndoKind, press, record.Repository, checkout, steps)
+        {
+            Plan = shown.ToJsonString(), Confirmed = confirmed,
+            Judge = async token =>
+            {
+                var (stands, _, _) = await WorkingTree.GitAsync(checkout, ["rev-parse", "--verify", "--quiet", full], token).ConfigureAwait(false);
+                if (stands == 0) return $"a {noun} named `{name}` already exists, so act `{record.Id}` was not undone";
+                var (known, _, _) = await WorkingTree.GitAsync(checkout, ["cat-file", "-e", id + "^{commit}"], token).ConfigureAwait(false);
+                if (known != 0) return $"the commit act `{record.Id}` deleted `{name}` at is no longer in the repository, so it was not undone";
+                if (section is not null && await SectionAsync(checkout, name).ConfigureAwait(false) is not null)
+                {
+                    return $"a `branch.{name}` section stands already, so act `{record.Id}` was not undone";
+                }
+
+                return null;
             },
         }, ct).ConfigureAwait(false);
     }

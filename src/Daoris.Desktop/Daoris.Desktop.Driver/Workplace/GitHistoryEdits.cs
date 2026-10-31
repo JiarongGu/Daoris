@@ -77,8 +77,9 @@ internal sealed record HistoryEditRead(string Id, IReadOnlyList<string> Parents,
 /// configuration's programs, the branch, the trees, the commits; the act reads all of it again under the checkout lock and refuses where any
 /// pinned id moved. The commits are made there, objects only, before the record; a conflict, an empty result or git's no refuses with
 /// nothing journaled and no ref moved.</para>
-/// <para><b>Occupancy, before and after.</b> A branch checked out between the reads and the update is put back by the rewrite's rule, an
-/// act of its own: the branch set back to its old tip only from the tip the edit produced, the recovery ref dropped at that tip.</para>
+/// <para><b>Occupancy, before and after.</b> A branch checked out between the reads and the update is put back by the rewrite's rule, under
+/// the same lock (<see cref="ActPlan.After"/>): the branch set back to its old tip only from the tip the edit produced, the recovery ref
+/// dropped at that tip.</para>
 /// </remarks>
 public static class GitHistoryEdits
 {
@@ -93,9 +94,6 @@ public static class GitHistoryEdits
     public const string RevertKind = "history.revert";
 
     public const string RebaseKind = "history.rebase";
-
-    /// <summary>The act that puts a branch back after a tree checked it out as the edit moved it.</summary>
-    public const string PutBackKind = "history.put-back";
 
     /// <summary>The most commits one edit takes (provisional, the design §7); past it the command to copy is said.</summary>
     public const int MostCommits = 50;
@@ -245,37 +243,32 @@ public static class GitHistoryEdits
                     return (null, $"{error.Message}, so `{ask.Branch}` was not moved; only objects were written");
                 }
             },
+            After = ordinal => ordinal == 0 && made is not null && kept is not null ? OccupiedLateAsync(ask, plan, made, kept) : Task.FromResult<string?>(null),
         }, ct).ConfigureAwait(false);
-        if (run.Refused || run.Outcome != ActOutcomes.Done || made is null || kept is null) return new(run);
-
-        var (tree, unread) = await OccupantAsync(ask.Checkout, ask.Branch, CancellationToken.None).ConfigureAwait(false);
-        if (tree is null && !unread) return new(run, made, kept);
-        var late = unread
-            ? $"{TreeWorktrees.ListUnread} once it moved, so whether a tree checked it out as it moved is not known"
-            : $"it was checked out in the tree `{Path.GetFileName(tree)}` as it moved";
-        return await PutBackAsync(runs, ask, plan, run, made, kept, late, press, confirmed).ConfigureAwait(false);
+        return run.Outcome == ActOutcomes.Done ? new(run, made, kept) : new(run);
     }
 
-    /// <summary>The branch set back to its old tip only from the tip the edit produced, and the recovery ref dropped at that tip: an act of its own.</summary>
-    private static async Task<HistoryEditRun> PutBackAsync(
-        ActRuns runs, HistoryEditAsk ask, HistoryEditPlan plan, ActRun run, string made, string kept, string late, string press, string? confirmed)
+    /// <summary>
+    /// The occupancy read again under the lock once the branch moved: a tree on it, or a list git could not give, puts it back by the rewrite's
+    /// rule, the branch set to its old tip only from the tip the edit produced and the recovery ref dropped at that tip, in one transaction.
+    /// Null where no tree has it out.
+    /// </summary>
+    private static async Task<string?> OccupiedLateAsync(HistoryEditAsk ask, HistoryEditPlan plan, string made, string kept)
     {
-        var full = Heads + ask.Branch;
-        var back = new RefTransaction().Update(full, made, plan.Tip).Delete(kept, plan.Tip);
-        var undone = await runs.RunAsync(new ActPlan(PutBackKind, press, ask.Repository, ask.Checkout, [ActSteps.Ref(back, [(full, made, plan.Tip), (kept, plan.Tip, null)])])
-        {
-            Plan = new JsonObject { ["putBack"] = run.Act, ["why"] = late }.ToJsonString(), Confirmed = confirmed,
-        }, CancellationToken.None).ConfigureAwait(false);
-        if (!undone.Refused && undone.Outcome == ActOutcomes.Done)
-        {
-            return new(run with { Outcome = ActOutcomes.NotDone, Said = $"`{ask.Branch}` moved, but {late}, so it was put back where it was; nothing was changed" });
-        }
+        var none = CancellationToken.None;
+        var (tree, unread) = await OccupantAsync(ask.Checkout, ask.Branch, none).ConfigureAwait(false);
+        if (tree is null && !unread) return null;
+        var why = unread
+            ? $"{TreeWorktrees.ListUnread} once it moved, so whether a tree checked it out as it moved is not known"
+            : $"it was checked out in the tree `{Path.GetFileName(tree!.TrimEnd('/', '\\'))}` as it moved";
 
-        return new(run with
-        {
-            Outcome = ActOutcomes.Unknown,
-            Said = $"`{ask.Branch}` moved, but {late}, and Daoris could not put it back ({undone.Said}); its old tip is kept at `{kept}`",
-        }, made, kept);
+        var full = Heads + ask.Branch;
+        var run = await RefTransaction.RestoreRewritten(full, made, plan.Tip).Delete(kept, plan.Tip).RunAsync(ask.Checkout, none).ConfigureAwait(false);
+        if (run.Done) return $"{why}, so it was put back where it was";
+        var (code, at, _) = await WorkingTree.GitAsync(ask.Checkout, ["rev-parse", "--verify", "--quiet", full], none).ConfigureAwait(false);
+        return code == 0 && at.Trim() == plan.Tip
+            ? $"{why}, so it was put back where it was"
+            : $"{why}, and Daoris could not put it back at {Short(plan.Tip)} ({ContentHolds.Said(run.Said)}); its old commit is kept at `{kept}`";
     }
 
     /// <summary>Each commit made in order, objects only: the new tip, or why none is, a conflict's files named.</summary>

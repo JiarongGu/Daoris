@@ -30,6 +30,12 @@ public sealed record ActPlan(string Kind, string Press, string Repository, strin
     /// <see cref="Judge"/> holds: the steps to journal in place of <see cref="Steps"/>, or why the act is refused with only objects written.
     /// </summary>
     public Func<CancellationToken, Task<(IReadOnlyList<ActStepPlan>? Steps, string? Refusal)>>? Make { get; init; }
+
+    /// <summary>
+    /// Read under the lock after each effect step ended, with its ordinal: the words that stop the act there, or null to go on. It has put right
+    /// by its own rule whatever it stops for (a deleted branch a tree checked out meanwhile is made again), and runs under no cancellation.
+    /// </summary>
+    public Func<int, Task<string?>>? After { get; init; }
 }
 
 /// <summary>What an act's run answered: the act and its outcome (<see cref="ActOutcomes"/>), or that it was refused before anything was written, in words.</summary>
@@ -162,6 +168,7 @@ public sealed class ActRuns(ActJournal journal)
 
             var limits = new ActRunsLimits(Seam, Ending, ExitBound);
             var launch = new ActLaunch(journal, claim, job, plan.Checkout, plan.Repository, limits);
+            string? stoppedWhy = null;
             foreach (var step in journal.Steps(id))
             {
                 var bound = Bound?.Invoke(step.Kind) ?? ActSteps.BoundOf(step.Kind);
@@ -177,9 +184,14 @@ public sealed class ActRuns(ActJournal journal)
                 }
 
                 if (end.Stops) break;
+                if (plan.After is { } after && await after(step.Ordinal).ConfigureAwait(false) is { } stopped)
+                {
+                    stoppedWhy = stopped;
+                    break;
+                }
             }
 
-            return await CloseAsync(reconciler, claim, plan, null).ConfigureAwait(false);
+            return await CloseAsync(reconciler, claim, plan, stoppedWhy).ConfigureAwait(false);
         }
         finally
         {
