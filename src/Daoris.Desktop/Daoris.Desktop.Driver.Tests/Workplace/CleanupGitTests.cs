@@ -641,4 +641,36 @@ public sealed class CleanupGitTests : LandedFixture
         Assert.Equal("refs/daoris/discarded/daoris/s-old", Assert.Single(pass.Recovered).Ref);
         Assert.Contains(new BranchTidying(Home).Said([pass], null, whole: false), line => line.Contains("refs/daoris/discarded/daoris/s-old", StringComparison.Ordinal));
     }
+
+    /// <summary>
+    /// CLEANUPADVICE1 over real git: a tree its session recorded that no branch record follows, holding an ignored file only it has, is
+    /// said as kept with that file and the remove that takes it; one holding nothing the checkout lacks says what it said before.
+    /// </summary>
+    [Fact]
+    public async Task An_unfollowed_tree_holding_its_own_ignored_file_names_it_and_the_remove_and_a_clean_one_does_not()
+    {
+        var root = await RepositoryAsync("engine");
+        await File.WriteAllTextAsync(Path.Combine(root, ".gitignore"), "*.db\n");
+        await GitAsync(root, "add", ".gitignore");
+        await GitAsync(root, "commit", "--quiet", "-m", "ignore the databases");
+        var trees = DaorisHome.Entry(Home, HomeEntry.Trees);
+        var own = Path.Combine(trees, "default", "engine", "s-own");
+        var clean = Path.Combine(trees, "default", "engine", "s-clean");
+        Directory.CreateDirectory(Path.GetDirectoryName(own)!);
+        await GitAsync(root, "worktree", "add", "--quiet", "-b", "daoris/s-own", own);
+        await GitAsync(root, "worktree", "add", "--quiet", "-b", "daoris/s-clean", clean);
+        await File.WriteAllTextAsync(Path.Combine(own, "session.db"), "the session's own\n");
+        RecordedTree[] recorded = [new("c0ffee01", own), new("c0ffee02", clean)];
+
+        var (units, _) = await WorkInventories.ReadAsync(
+            Home, new Dictionary<string, string> { ["engine"] = root }, new HashSet<string>(), new List<string>(), recorded: recorded);
+
+        InventoryEntry WaitOf(string session) => Assert.Single(units.Single(unit => unit.Session == session).Cleanup.Waits);
+        var kept = WaitOf("c0ffee01");
+        Assert.Contains("session.db", kept.Facts!["keeps"]);
+        Assert.Contains($"trees remove {own} --force", kept.Detail);
+        var taken = WaitOf("c0ffee02");
+        Assert.False(taken.Facts!.ContainsKey("keeps"));
+        Assert.DoesNotContain("trees remove", taken.Detail);
+    }
 }
