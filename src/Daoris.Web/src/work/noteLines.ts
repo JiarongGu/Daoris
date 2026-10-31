@@ -268,6 +268,8 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'opening.design': { values: ['role'] },
   // LIMITPICK2: the account a start was refused for its sign-in and moved off, as named.
   'opening.moved-off': { values: ['account'] },
+  // MODELREFUSE1: the agent and the model a start was refused and moved off; the account is not named.
+  'opening.moved-off-model': { values: ['agent', 'model'] },
   // CHATFLOW1c (the chat-flow design §4.3): a chat run's binding, said once in the conversation that grew its tree: the named workflow and
   // the repository or workspace that chose it (`owner`, set as code), the one bound with why it cannot land, or a bind the home did not keep.
   'chat.workflow': { values: ['workflow', 'version', 'owner'] },

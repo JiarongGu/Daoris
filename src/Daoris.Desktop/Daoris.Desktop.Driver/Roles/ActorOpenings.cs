@@ -36,6 +36,18 @@ public static class ActorOpenings
             events.Keep(sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = line.Note, Parts = line.Parts }, say: null);
         }
 
+        /// <summary>
+        /// Where a start moved to its walk's next answer because its agent refused the model its choice named (MODELREFUSE1): kept beside
+        /// <i>Opened on</i> in the local record, naming the agent and the model but no account, since the account was not at fault.
+        /// </summary>
+        internal static void SayMovedOffModel(ISessionEvents events, string sessionId, string agent, string model)
+        {
+            var line = Noted.Of(
+                NoteCodes.OpeningMovedOffModel, $"The same start moved here: `{agent}` refused `{model}` on the account it ran on.",
+                ("agent", agent), ("model", model));
+            events.Keep(sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = line.Note, Parts = line.Parts }, say: null);
+        }
+
         internal static Noted DesignLine(string role) => Noted.Of(NoteCodes.OpeningDesign, $"Design work: it ran on {role}'s order.", ("role", role));
 
         /// <summary>
