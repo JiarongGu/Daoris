@@ -284,8 +284,7 @@ internal sealed class ContentHolds(TreeContext context)
         var tip = at.Trim();
         var (held, _, _) = await WorkingTree.GitAsync(root, ["merge-base", "--is-ancestor", judged, tip], ct).ConfigureAwait(false);
         if (held != 0) return;
-        await WorkingTree.GitAsync(root, ["update-ref", "--stdin"], $"verify refs/heads/{branch} {tip}\ndelete {reference} {judged}\n", ct)
-            .ConfigureAwait(false);
+        await new RefTransaction().Verify($"refs/heads/{branch}", tip).Delete(reference, judged).RunAsync(root, ct).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -298,17 +297,8 @@ internal sealed class ContentHolds(TreeContext context)
         string root, string reference, string judged, IReadOnlyList<(string Ref, string Commit)> held, CancellationToken ct)
     {
         if (held.Count == 0) return false;
-        var (code, _, _) = await WorkingTree.GitAsync(root, ["update-ref", "--stdin"], Verified(held, $"delete {reference} {judged}\n"), ct)
-            .ConfigureAwait(false);
-        return code == 0;
+        return (await new RefTransaction().Verify(held).Delete(reference, judged).RunAsync(root, ct).ConfigureAwait(false)).Done;
     }
-
-    /// <summary>
-    /// A ref transaction's input (FABRIC-END4a, second review): a <c>verify</c> for each ref and commit the proof rested on, named once
-    /// where two parts of a proof rest on the same ref at the same commit, then <paramref name="change"/>.
-    /// </summary>
-    private static string Verified(IReadOnlyList<(string Ref, string Commit)> held, string change) =>
-        string.Concat(held.Distinct().Select(each => $"verify {each.Ref} {each.Commit}\n")) + change;
 
     /// <summary>
     /// Whether git says <paramref name="reference"/> is missing (RECORDUNREAD1, FABRIC-END4a's fourth review): asked where a read of it
@@ -427,13 +417,9 @@ internal sealed class ContentHolds(TreeContext context)
 
         if (context.BeforeRefDeleted is { } late) await late(branch).ConfigureAwait(false);
         var none = CancellationToken.None;
-        // LANDRETIRE1: a proof that rests on the branch itself at the commit judged (a withdrawal, which no other ref holds) is the delete's own
-        // old value: git refuses one transaction naming a ref twice ("multiple updates"), so it is not verified beside the delete.
-        var self = $"refs/heads/{branch}";
-        var verified = held.Where(each => each.Ref != self || each.Commit != judged).ToList();
-        var (code, _, err) = await WorkingTree.GitAsync(root, ["update-ref", "--stdin"], Verified(verified, $"delete refs/heads/{branch} {judged}\n"), none)
-            .ConfigureAwait(false);
-        if (code != 0) return await RefusedAsync(root, branch, judged, held, err).ConfigureAwait(false);
+        // LANDRETIRE1: a proof resting on the branch itself at the commit judged is the delete's own old value; the transaction names it once.
+        var run = await new RefTransaction().Verify(held).Delete($"refs/heads/{branch}", judged).RunAsync(root, none).ConfigureAwait(false);
+        if (!run.Done) return await RefusedAsync(root, branch, judged, held, run.Said).ConfigureAwait(false);
 
         // The late checkout, which no ref says: a tree on the branch, or a list git could not give, is not clear.
         var trees = await context.Worktrees.ReadAsync(root, none).ConfigureAwait(false);
@@ -495,8 +481,9 @@ internal sealed class ContentHolds(TreeContext context)
     private static async Task<string> PutBackAsync(string root, string branch, string judged, string why)
     {
         var none = CancellationToken.None;
-        var (code, _, err) = await WorkingTree.GitAsync(root, ["update-ref", $"refs/heads/{branch}", judged, ""], none).ConfigureAwait(false);
-        if (code == 0) return $"{why}, so it was put back where it was";
+        var run = await RefTransaction.RestoreDeleted($"refs/heads/{branch}", judged).RunAsync(root, none).ConfigureAwait(false);
+        var err = run.Said;
+        if (run.Done) return $"{why}, so it was put back where it was";
         var (exists, now, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{branch}"], none).ConfigureAwait(false);
         // Another restorer made it at the same commit: it stands where it was.
         if (exists == 0 && now.Trim() == judged) return $"{why}, so it was put back where it was";
