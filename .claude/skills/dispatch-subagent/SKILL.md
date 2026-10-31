@@ -113,7 +113,9 @@ app's projects too, which call it: batch u's modules did not compile after one d
 batch s's three census misses before a candidate did, and batch w's three candidates failed on a web census, a record's
 link and a glued note, each of which those two would have caught. When the batch changes the driver, the parent also runs the
 driver's Process half whole, alone on the machine: batch z's candidate lost an hour to three Process classes that half finds in
-twenty minutes. The parent, running a class with `--no-build`, builds that
+twenty minutes. While a candidate runs, the machine is its own, with read-only work (a design's reads, Codex) beside it: batch
+1031a's second and third candidates each lost their run to a class that passes alone (`MeetingTests`, INTEGRATE1b's drop) while
+builders ran their own classes beside them. The parent, running a class with `--no-build`, builds that
 class's own project first: a build of another project leaves the test assembly stale, and twice that day it read as a
 red that was not there.
 
