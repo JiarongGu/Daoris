@@ -735,6 +735,12 @@ internal sealed class StandInLedger : HttpMessageHandler
     /// </summary>
     public Func<HttpRequestMessage, CancellationToken, Task>? Before { get; set; }
 
+    /// <summary>
+    /// Whether a finished record with no words waiting refuses a move to working, as the ledger's go-on does: a second start's advance
+    /// that lands after the record concluded (COWORKVIEW1a rule 5). Off, a finished record moves to working as before.
+    /// </summary>
+    public bool FinishedStays { get; set; }
+
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
     {
         var path = request.RequestUri!.AbsolutePath;
@@ -835,6 +841,15 @@ internal sealed class StandInLedger : HttpMessageHandler
                         return Answer(HttpStatusCode.Conflict, new JsonObject
                         {
                             ["error"] = $"Session `{id}` cannot move {from} → {to}. From {from}: {onward}.",
+                        });
+                    }
+
+                    if (FinishedStays && to == "working" && !From.ContainsKey(from) && session["said"] is not JsonArray { Count: > 0 })
+                    {
+                        // In the ledger's own words (SessionLedger.GoOnAsync).
+                        return Answer(HttpStatusCode.Conflict, new JsonObject
+                        {
+                            ["error"] = $"Session `{id}` is {from} — a finished session goes on only with the person's words, and none wait for it.",
                         });
                     }
 
