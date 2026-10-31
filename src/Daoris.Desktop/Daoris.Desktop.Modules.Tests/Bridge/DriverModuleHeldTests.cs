@@ -35,6 +35,7 @@ public sealed class DriverModuleHeldTests : DriverModuleBridge
         ["TOGETHER"] = new { session = "a1b2c3d4" },
         ["GIT_CHANGES"] = new { repository = "engine" },
         ["GIT_HUNKS"] = new { repository = "engine", path = "a.txt", side = "unstaged" },
+        ["GIT_COMMIT_PLAN"] = new { repository = "engine", verb = "commit" },
     };
 
     public static TheoryData<string> HeldRoutes() => [.. DriverModule.ByEventRoutes.Order(StringComparer.Ordinal)];

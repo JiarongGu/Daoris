@@ -143,6 +143,32 @@ public sealed class DriverModuleGitTests : DriverModuleBridge
         Assert.Equal("changed\n", await File.ReadAllTextAsync(Path.Combine(root, "README.md")));
     }
 
+    /// <summary>GITAPP2i: the commit's plan names the tip, the tree and who commits; a commit with the switch off is refused as data, with no path, and HEAD stays.</summary>
+    [Fact]
+    [Trait(Category.Name, Category.Process)]
+    public async Task The_commit_plan_names_the_tree_and_a_commit_with_the_switch_off_is_refused_in_words()
+    {
+        var root = await InitAsync();
+        await File.WriteAllTextAsync(Path.Combine(root, "README.md"), "changed\n");
+        await GitAsync(root, "add", "README.md");
+        var before = (await GitAsync(root, "rev-parse", "HEAD")).Trim();
+        var module = await UpAsync(root);
+
+        var plan = (await AnswerAsync(module, "GIT_COMMIT_PLAN", new { repository = "engine", workspace = "aurora", verb = "commit" })).GetProperty("value");
+        var press = new { repository = "engine", workspace = "aurora", message = "changed", head = plan.GetProperty("head").GetString(), tree = plan.GetProperty("tree").GetString() };
+        var refused = await AnswerAsync(module, "GIT_MAKE_COMMIT", press);
+        var amend = await AnswerAsync(module, "GIT_AMEND", press);
+
+        Assert.Equal(before, plan.GetProperty("head").GetString());
+        Assert.Matches("^[0-9a-f]{40,64}$", plan.GetProperty("tree").GetString());
+        Assert.False(plan.GetProperty("empty").GetBoolean());
+        Assert.True(refused.GetProperty("refused").GetBoolean());
+        Assert.Contains("may not change", refused.GetProperty("said").GetString());
+        Assert.DoesNotContain(root, refused.GetRawText().Replace("\\\\", "\\"));
+        Assert.True(amend.GetProperty("refused").GetBoolean());
+        Assert.Equal(before, (await GitAsync(root, "rev-parse", "HEAD")).Trim());
+    }
+
     [Fact]
     public async Task The_changes_read_of_a_repository_with_no_checkout_is_answered_with_its_code()
     {
