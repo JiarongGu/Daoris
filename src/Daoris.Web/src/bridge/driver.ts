@@ -547,7 +547,10 @@ export type { RoleCatalogue, RoleChangePress, RoleRow, SuggestedRole } from '../
 const readRoles = (raw: unknown): RoleCatalogue | null => {
   const answer = raw as Partial<RoleCatalogue> | null;
   if (!answer || !Array.isArray(answer.roles)) return null;
-  return { roles: answer.roles, works: answer.works ?? [], kept: answer.kept === true, suggested: answer.suggested ?? [] };
+  return {
+    roles: answer.roles, works: answer.works ?? [], kept: answer.kept === true, suggested: answer.suggested ?? [],
+    ...(answer.use && Array.isArray(answer.use.roles) ? { use: answer.use } : {}),
+  };
 };
 
 export const useRoles = () => {

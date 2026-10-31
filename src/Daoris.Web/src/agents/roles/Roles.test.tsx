@@ -278,6 +278,42 @@ describe('The roles', () => {
     });
   });
 
+  // MODELROLE1f: each role's last seven days from the machine log, one quiet line; a role with no start has none.
+  const USE = {
+    days: 7,
+    roles: [{
+      role: 'build', starts: 12, choices: [{ choice: '1', starts: 9 }, { choice: '2', starts: 3 }], fell: 3,
+      why: [{ code: 'cooling', starts: 2 }, { code: 'signed-out', starts: 1 }],
+    }, { role: 'intake', starts: 1, choices: [{ choice: 'before', starts: 1 }], fell: 0, why: [] }],
+  };
+
+  it("says a role's week: starts, the choices they landed on, and those that fell to a later one with why", () => {
+    card({ catalogue: { ...CATALOGUE, use: USE } });
+
+    expect(screen.getByText('Last 7 days: 12 starts · choice 1 ×9, choice 2 ×3 · 3 fell to a later choice (cooling ×2, signed out ×1)')).toBeTruthy();
+    expect(screen.getByText('Last 7 days: 1 start · as before ×1')).toBeTruthy();
+    expect(screen.getAllByText(/^Last 7 days/)).toHaveLength(2);
+  });
+
+  it('says the span a young log holds, and says nothing of a role without a start or of no history', () => {
+    const { unmount } = render(
+      <RolesCard catalogue={{ ...CATALOGUE, use: { days: 3, roles: [USE.roles[1]!] } }} staffing={STAFFING} agents={AGENTS} onSet={vi.fn()} onSetActor={vi.fn()} />,
+    );
+    expect(screen.getByText('Over the 3 days the log holds: 1 start · as before ×1')).toBeTruthy();
+    unmount();
+
+    card({ catalogue: { ...CATALOGUE, use: { days: 0, roles: [] } } });
+    expect(screen.queryByText(/Last 7 days|days the log holds/)).toBeNull();
+    expect(screen.queryByText(/ ×0/)).toBeNull();
+  });
+
+  it('says the week in 中文', async () => {
+    await i18n.changeLanguage('zh');
+    card({ catalogue: { ...CATALOGUE, use: USE } });
+
+    expect(screen.getByText('最近 7 天: 12 次启动 · 第 1 个选择 ×9, 第 2 个选择 ×3 · 3 次落到后面的选择 (冷却中 ×2, 已退出登录 ×1)')).toBeTruthy();
+  });
+
   it('speaks 中文, a role named in Chinese as it was written', async () => {
     await i18n.changeLanguage('zh');
     card();

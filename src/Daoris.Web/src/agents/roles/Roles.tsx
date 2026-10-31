@@ -1,7 +1,7 @@
 import type { TFunction } from 'i18next';
 import { type ReactNode, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { ActorRow, RoleCatalogue, RoleChangePress, RoleChoice, RoleRow, StaffingFound, SuggestedRole } from '../../data/wiring';
+import type { ActorRow, RoleCatalogue, RoleChangePress, RoleChoice, RoleRow, RoleUse, StaffingFound, SuggestedRole } from '../../data/wiring';
 import { Button, Card, CardHeader, FormField, FormGrid, FormRow, Icon, Inline, Prose, SelectField, SettingList, SettingRow } from '../../design/ui';
 import { type Answered, Refused } from '../../work/InlineConfirm';
 import { RowMore } from './RowMore';
@@ -101,6 +101,28 @@ export function roleSummary(t: TFunction, row: RoleRow, actor?: ActorRow | null)
       ? row.choices ? ` · ${t('settings.ai.actors.off')}` : ''
       : ` · ${entryText(t, choices[0]!)}${choices.length > 1 ? ` ${t('settings.ai.actors.more', { count: choices.length - 1 })}` : ''}`;
   return `${works} · ${placeText(t, row.scopeKind, row.scopeId)}${order}`;
+}
+
+/**
+ * A role's last days as one quiet line (MODELROLE1f): starts, where they landed, and how many fell to a later choice with the walk's codes.
+ * A log that holds fewer than seven days says its span; names and counts only, never a price.
+ */
+export function useLine(t: TFunction, use: RoleUse, days: number): string {
+  const choiceName = (choice: string) => t(
+    choice === 'before' ? 'settings.ai.roles.use.choiceBefore' : choice === 'rule-default' ? 'settings.ai.roles.use.choiceRuleDefault' : 'settings.ai.roles.use.choice',
+    { choice },
+  );
+  const span = t(days >= 7 ? 'settings.ai.roles.use.week' : 'settings.ai.roles.use.kept', { count: Math.max(1, days) });
+  const parts = [
+    t('settings.ai.roles.use.starts', { count: use.starts }),
+    use.choices.map((each) => `${choiceName(each.choice)} ×${each.starts}`).join(', '),
+  ].filter((part) => part !== '');
+  if (use.fell > 0) {
+    const why = use.why.map((each) => `${t(`settings.ai.roles.use.why.${each.code}`, { defaultValue: each.code })} ×${each.starts}`).join(', ');
+    parts.push(`${t('settings.ai.roles.use.fell', { count: use.fell })}${why ? ` (${why})` : ''}`);
+  }
+
+  return `${span}: ${parts.join(' · ')}`;
 }
 
 /** A suggestion's press: its record and choices set, as `SET_ROLE` takes them, against the revision 0 of an id the catalogue lacks. */
@@ -402,6 +424,7 @@ export function RolesCard({
         {lines.map((line) => {
           const { row, actor } = line;
           const named = nameOfLine(line);
+          const used = catalogue?.use?.roles.find((each) => each.role === line.id);
           const open_ = editing?.id === line.id && !editing.isNew;
           const mayEdit = row
             ? (row.state === 'seed' || row.state === 'set') && (staffingOnly(line) ? !!actor && EDITABLE.has(line.id) : kept)
@@ -443,6 +466,7 @@ export function RolesCard({
                 </>
               )}
             >
+              {!open_ && used && <p className="m-0 text-small text-ink-faint wrap-anywhere">{useLine(t, used, catalogue!.use!.days)}</p>}
               {!open_ && about[line.id]?.below}
               {open_ && editing && editor(editing)}
               {!open_ && refused?.at === line.id && <Refused sentence={refused.sentence} />}
