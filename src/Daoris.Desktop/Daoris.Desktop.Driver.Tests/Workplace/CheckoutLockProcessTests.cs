@@ -101,19 +101,19 @@ public sealed class CheckoutLockProcessTests : TreeSyncFixture
         return probed;
     }
 
-    /// <summary>Each wait on a lock this flow makes while it holds a checkout alone (<see cref="TreeLock.Waits"/>).</summary>
+    /// <summary>Each wait on a lock this flow makes while it holds a checkout alone (<see cref="LockWaits.Waits"/>).</summary>
     private static ConcurrentQueue<string> WaitsUnderTheHold()
     {
         var waits = new ConcurrentQueue<string>();
-        TreeLock.WaitedUnder.Value = waits.Enqueue;
+        LockWaits.Seen.Value = waits.Enqueue;
         return waits;
     }
 
     /// <summary>🔴 Under its hold a writer waits only for locks whose holders wait for nothing, and it was seen waiting for one.</summary>
     private static void OnlyLeavesWaited(ConcurrentQueue<string> waits)
     {
-        Assert.Contains(TreeLock.StartsWait, waits);
-        Assert.All(waits, what => Assert.Contains(what, new[] { TreeLock.StartsWait, TreeLock.RecordsWait }));
+        Assert.Contains(LockWaits.Starts, waits);
+        Assert.All(waits, what => Assert.Contains(what, new[] { LockWaits.Starts, LockWaits.Records }));
     }
 
     /// <summary>The checkout as a person sees it: where HEAD and the line stand, the branch it has out, and what git says is changed.</summary>
@@ -314,7 +314,7 @@ public sealed class CheckoutLockProcessTests : TreeSyncFixture
             Seam = async at =>
             {
                 if (at != "before-move") return;
-                var done = await trees.SyncAsync(Repositories(root), Nobody, scope: SyncScope.Everything).WaitAsync(TimeSpan.FromSeconds(60));
+                var done = await trees.SyncAsync(Repositories(root), Nobody, scope: SyncScope.Everything).WaitAsync(Poll.Patience);
                 inside = done.Lines.Single();
             },
         };

@@ -35,7 +35,7 @@ namespace Daoris.Driver;
 /// and carried on at the next, as every other hold before a record is; a replay or a writer that finds it held leaves its work
 /// and says so. A flow holding it alone waits only for a process start's place (<see cref="ProcessStarts"/>) and a record's lock
 /// (<see cref="RecordLock"/>), neither of whose holders waits for anything; the other locks a flow may wait for (a tree's landing
-/// hold, a line's one run, the look's tidy, the end's keeping) are taken before it or not at all, which <see cref="Waits"/> lets a
+/// hold, a line's one run, the look's tidy, the end's keeping) are taken before it or not at all, which <see cref="LockWaits"/> lets a
 /// test see. So no cycle of waits passes through it. It is taken once in a call: a door that reaches a writer through another
 /// (the legacy merge, through the promotion's effect) takes none itself, since a second open in one process is refused too.</para>
 ///
@@ -43,46 +43,28 @@ namespace Daoris.Driver;
 /// </remarks>
 public sealed class TreeLock : IDisposable
 {
-    /// <summary>Bringing its branches up to date: a line's pull and the replays (WSR6), or a tree's own update.</summary>
-    public const string Updating = "updating";
+    /// <inheritdoc cref="HeldBy.Updating"/>
+    public const string Updating = HeldBy.Updating;
 
-    /// <summary>Tidying or removing its session trees, or letting go of their locks.</summary>
-    public const string Tidying = "tidying";
+    /// <inheritdoc cref="HeldBy.Tidying"/>
+    public const string Tidying = HeldBy.Tidying;
 
-    /// <summary>Moving its line to what its integration promoted.</summary>
-    public const string Promoting = "promoting";
-
-    // The flow's innermost hold alone, for Waits.
-    private static readonly AsyncLocal<TreeLock?> s_alone = new();
+    /// <inheritdoc cref="HeldBy.Promoting"/>
+    public const string Promoting = HeldBy.Promoting;
 
     private readonly FileStream _file;
     private readonly string? _by;
-    private readonly TreeLock? _outer;
+    private readonly object? _outer;
 
     // A replay alone holds the repository for the due moments too (FABRIC-END6c), in this process: a removing press or bringing it up
     // to date, which a moment skips rather than run beside.
     private IDisposable? _held;
     private int _gone;
 
-    private TreeLock(FileStream file, string? by, TreeLock? outer) => (_file, _by, _outer) = (file, by, outer);
+    private TreeLock(FileStream file, string? by, object? outer) => (_file, _by, _outer) = (file, by, outer);
 
     /// <summary>Whether this holds the repository alone, as a replay or a writer of its checkout does.</summary>
     internal bool Alone => _by is not null;
-
-    /// <summary>
-    /// The test seam: told what each wait on another lock is that a flow makes while it holds a repository alone (<see cref="Waits"/>).
-    /// Null in production; an async local, so classes running in parallel never see each other's.
-    /// </summary>
-    internal static readonly AsyncLocal<Action<string>?> WaitedUnder = new();
-
-    /// <summary>The waits a flow holding a repository alone may make: on locks whose holders wait for nothing.</summary>
-    internal const string StartsWait = "a process start's place", RecordsWait = "a record's lock";
-
-    /// <summary>Said by every wait on a lock before it waits: told to <see cref="WaitedUnder"/> where this flow holds a repository alone.</summary>
-    internal static void Waits(string what)
-    {
-        if (s_alone.Value is not null) WaitedUnder.Value?.Invoke(what);
-    }
 
     /// <summary>
     /// Where a checkout's lock is: one file per common git directory, named by its digest, whatever name or workspace the checkout is
@@ -159,7 +141,7 @@ public sealed class TreeLock : IDisposable
             // What holds it is a courtesy to whoever it refuses: they say "another of Daoris's writes" instead.
         }
 
-        s_alone.Value = alone;
+        LockWaits.Holding = alone;
         return alone;
     }
 
@@ -214,7 +196,7 @@ public sealed class TreeLock : IDisposable
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         try
         {
-            return new TreeLock(new FileStream(path, FileMode.OpenOrCreate, access, share), by, by is null ? null : s_alone.Value);
+            return new TreeLock(new FileStream(path, FileMode.OpenOrCreate, access, share), by, by is null ? null : LockWaits.Holding);
         }
         catch (IOException)
         {
@@ -237,7 +219,7 @@ public sealed class TreeLock : IDisposable
                 // A holder's words left behind name a process that has ended, which HolderOf reads as nothing.
             }
 
-            if (s_alone.Value == this) s_alone.Value = _outer;
+            if (ReferenceEquals(LockWaits.Holding, this)) LockWaits.Holding = _outer;
         }
 
         _file.Dispose();

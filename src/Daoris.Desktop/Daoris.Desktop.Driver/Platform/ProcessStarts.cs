@@ -175,7 +175,7 @@ public sealed class ProcessStarts
     private async Task EnterAsync(StartClass whose, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
-        TreeLock.Waits(TreeLock.StartsWait);
+        LockWaits.Waits(LockWaits.Starts);
         var waiter = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         LinkedListNode<TaskCompletionSource> waiting;
         lock (_gate)

@@ -147,7 +147,7 @@ internal sealed class AutoTidies(
         // FABRIC-END4a: the pace's pass and link 2's tries tidy one repository at a time in a process, so neither meets the other's
         // hold and says a start held it.
         var alone = Tidying.GetOrAdd($"{Path.GetFullPath(context.Home)}|{repository}", _ => new SemaphoreSlim(1, 1));
-        TreeLock.Waits("the look's tidy of a repository");
+        LockWaits.Waits("the look's tidy of a repository");
         await alone.WaitAsync(ct).ConfigureAwait(false);
         try
         {

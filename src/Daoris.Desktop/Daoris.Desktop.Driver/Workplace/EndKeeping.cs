@@ -39,7 +39,7 @@ internal sealed class EndKeeping(TreeContext context, PullRequestAsks asks)
     {
         if (!HomeLease.HeldHere(context.Home)) return 0;
         var alone = Judging.GetOrAdd($"{Path.GetFullPath(context.Home)}|{repository}", _ => new SemaphoreSlim(1, 1));
-        TreeLock.Waits("the end's keeping of a repository");
+        LockWaits.Waits("the end's keeping of a repository");
         await alone.WaitAsync(ct).ConfigureAwait(false);
         try
         {
@@ -200,7 +200,7 @@ internal sealed class EndKeeping(TreeContext context, PullRequestAsks asks)
     {
         if (entry.Held is not null || entry.RemovedAs is not null || !HomeLease.HeldHere(context.Home)) return false;
         var alone = Judging.GetOrAdd($"{Path.GetFullPath(context.Home)}|{repository}", _ => new SemaphoreSlim(1, 1));
-        TreeLock.Waits("the end's keeping of a repository");
+        LockWaits.Waits("the end's keeping of a repository");
         await alone.WaitAsync(ct).ConfigureAwait(false);
         try
         {

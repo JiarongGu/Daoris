@@ -197,7 +197,7 @@ public sealed class TreeLockTests : IDisposable
     public async Task Each_wait_a_flow_makes_on_a_lock_while_it_holds_a_checkout_alone_is_seen()
     {
         var seen = new List<string>();
-        TreeLock.WaitedUnder.Value = what => { lock (seen) seen.Add(what); };
+        LockWaits.Seen.Value = what => { lock (seen) seen.Add(what); };
         var record = RecordLock.PathOf(_home, "probe.json");
 
         using (TreeLock.TryStarting(_home, _engine))
@@ -213,6 +213,6 @@ public sealed class TreeLockTests : IDisposable
         }
 
         RecordLock.Take(record).Dispose();
-        Assert.Equal([TreeLock.RecordsWait, "a tree's landing hold"], seen);
+        Assert.Equal([LockWaits.Records, "a tree's landing hold"], seen);
     }
 }

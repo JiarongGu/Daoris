@@ -145,14 +145,14 @@ public static class HeldWords
         + "trees until that is done; it starts at the next look.";
 
     /// <summary>
-    /// What holds the repository alone while a start waits for it (GITLOCK1), by what its holder said (<see cref="TreeLock.HolderOf"/>):
+    /// What holds the repository alone while a start waits for it (GITLOCK1), by what its holder said beside the checkout's lock (<see cref="HeldBy"/>):
     /// bringing its branches up to date, tidying its trees, moving its line to a promotion, or a write that said nothing.
     /// </summary>
     public static (string Why, Noted Line) Holding(string repository, string? by) => by switch
     {
-        TreeLock.Updating => Replaying(repository),
-        TreeLock.Tidying => Held(NoteCodes.HeldTidying, $"`{repository}`'s session trees are being tidied right now", repository),
-        TreeLock.Promoting => Held(NoteCodes.HeldPromoting, $"`{repository}`'s line is being moved to what its integration promoted right now", repository),
+        HeldBy.Updating => Replaying(repository),
+        HeldBy.Tidying => Held(NoteCodes.HeldTidying, $"`{repository}`'s session trees are being tidied right now", repository),
+        HeldBy.Promoting => Held(NoteCodes.HeldPromoting, $"`{repository}`'s line is being moved to what its integration promoted right now", repository),
         _ => Held(NoteCodes.HeldWriting, $"another of Daoris's writes holds `{repository}` right now", repository),
     };
 
