@@ -82,6 +82,30 @@ public sealed class MemoryViewTests : IAsyncLifetime
         Assert.Equal(1, memory.Engine("Asker").Reads);
     }
 
+    /// <summary>
+    /// 🔴 A hand-over's brief reads another repository's entry through its view, asking the line's workspace first: one whose repository left
+    /// the workspace is shown as read and never looked up, while the line's own entry is read through its engine.
+    /// </summary>
+    [Fact]
+    public async Task A_presented_foreign_entry_outside_the_lines_workspace_is_shown_as_read()
+    {
+        var memory = new StandInMemory();
+        var own = memory.Engine("Owner").Keep("Owner draws the map in tiles.");
+        var foreign = memory.Engine("Asker").Keep("Asker draws the map in tiles.");
+        var asker = (await _machine.Registry.RegistryAsync()).Single(row => row.Repository == "Asker");
+        await _machine.Registry.RegisterAsync(asker with { Workspace = "elsewhere" }, Now);
+        var presenter = new MemoryPresenter(_machine.Memory, memory) { Own = "Owner", Check = new MemoryWorkspaceCheck(_machine.Registry, Workspaces.Default) };
+
+        var shown = await presenter.PresentAsync(
+            [("reader", new MemoryRead(new("Owner", own.Id), own.Revision)), ("reader", new MemoryRead(new("Asker", foreign.Id), foreign.Revision))]);
+
+        Assert.Equal([MemoryStanding.Current, MemoryStanding.Historical], shown.Select(each => each.Standing));
+        Assert.Contains("no longer in this line's workspace", shown[1].Line);
+        Assert.DoesNotContain("Asker draws", shown[1].Line);
+        Assert.Equal([(new MemoryReference("Asker", foreign.Id), false)], memory.Checks);
+        Assert.Equal(0, memory.Engine("Asker").Reads);
+    }
+
     /// <summary>🔴 Lyntai's view, as the coordinator opens it, asks the check about the named entry first, and reads nothing it refuses.</summary>
     [Fact]
     public async Task Lyntais_view_asks_the_check_before_it_reads()
