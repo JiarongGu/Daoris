@@ -15,6 +15,11 @@ the per-task record. Entries preserve their original wording so the archive stay
 > **AGENTSPLACE1c — workflow writes as routes** (driver, modules; `docs/2026-11-01-agents-place-design.md` §3, §4 step 4, §7 row 2). Three Person routes, `WORKFLOW_SAVE`, `WORKFLOW_USE` and `WORKFLOW_KIND`, sharing the terminal verb's handlers as D194 point 4's typed operations: a save makes a new version under a fresh id, or appends against the version read and first says, and needs authorized, every scope that appending reaches (`WorkflowRunBindings.cs:124`: a new start binds the newest); choosing a workflow for a place is one change; `WORKFLOW_KIND` sets a kind of task and its paths. Each answer says §17.7's reach for the place. Classed Person, grounded by the place they write, with their publishing declarations.
 
 **Outcome** 2026-11-01: `WorkflowOperations` holds the operations (`UseAsync`, `KindSet`, `SaveAsync`, `SourceAsync`, the plans and the reach), which `daoris-driver workflow new|edit|apply|use|kind` and the three routes both run; the verb's text cases pass unchanged. The routes, their censuses and the stale-write, scope and reach proofs are in `DriverModuleWorkflowWritesTests`; the decision is D194's 2026-11-01 note. Owed: the installed window, which no row draws yet (1h).
+## LANDNODE1g — the line's epoch (2026-11-01)
+
+> **LANDNODE1g — the line's epoch** (driver; a fix waiting on nothing, `docs/2026-11-01-land-node-design.md` §5 and §8 row 2). A candidate took its batching from its first request's policy alone, and promotion took its acceptance from the current configuration. The epoch (the resolved shared policy plus the accepted declaration's blob) kept on requests and candidates, formation enforcing equality, gates run from the frozen declaration; one policy per target.
+
+**Outcome** 2026-11-01: `IntegrationEpoch` kept in `integration_epochs` (store step 14); formation takes one epoch in the replay and in `Form`'s transaction; the verdict runs the candidate's frozen blob; an older record reads as its own epoch. The cause and proof are in `docs/FIX-LOG.md`, the rule in D215's note of 2026-11-01.
 
 ---
 

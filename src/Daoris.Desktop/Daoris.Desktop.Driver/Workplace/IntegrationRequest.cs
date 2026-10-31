@@ -40,6 +40,12 @@ public sealed record IntegrationRequest(
     /// <summary>One of <see cref="IntegrationRequestCloses"/>, or a newer build's word, kept as written; null while it is open.</summary>
     public string? ClosedWhy { get; init; }
 
+    /// <summary>
+    /// The epoch it is admitted under (<see cref="IntegrationEpoch"/>); the store keeps it beside the request and reads it back as
+    /// <see cref="IntegrationStore.RequestEpoch"/>, so a request read from the store carries none here. Null on a write keeps the policy alone.
+    /// </summary>
+    public string? Epoch { get; init; }
+
     /// <summary>Its place in its line's queue as an <c>order</c> set it (INTEGRATE1h): below zero before the arrivals, above after; null by arrival.</summary>
     public long? Order { get; init; }
 

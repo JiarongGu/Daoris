@@ -271,8 +271,11 @@ internal sealed class IntegrationPromotes(IntegrationStore store, string treesRo
             return (new IntegrationVerdict(VerdictActions.Green) { Said = "the line's rule integrates with no gates." }, null);
         }
 
-        var accepted = IntegrationAcceptance.Of(ask.Config, ask.Repository);
-        var text = await IntegrationAcceptance.AcceptedTextAsync(ask.Config, ask.Root, ask.Repository, candidate.Base, ct).ConfigureAwait(false);
+        // The declaration of the candidate's epoch, as the owner had accepted it when its requests were admitted (LANDNODE1g); an epoch that
+        // froze none, and a candidate of no epoch, run under the acceptance as it stands.
+        var frozen = IntegrationEpoch.BlobOf(store.CandidateEpoch(candidate.Id));
+        var accepted = frozen ?? IntegrationAcceptance.Of(ask.Config, ask.Repository);
+        var text = await IntegrationAcceptance.AcceptedTextAsync(ask.Config, ask.Root, ask.Repository, candidate.Base, ct, frozen).ConfigureAwait(false);
         if (accepted is null || text is null)
         {
             return (null, await AnswerAsync(

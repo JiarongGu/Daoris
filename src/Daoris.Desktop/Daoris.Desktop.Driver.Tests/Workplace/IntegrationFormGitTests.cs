@@ -95,6 +95,59 @@ public sealed class IntegrationFormGitTests : LandedFixture
             id, "engine", "aurora", branch, tip, IntegrationRoutes.Recorded, "main", IntegrationRequester.Card,
             new LandingIntegrate(Batch: 8, Conflicts: conflicts).Resolved(), new DateTimeOffset(2026, 10, 30, 9, 0, order, TimeSpan.Zero)) { Session = session }));
 
+    /// <summary>The request of a branch admitted under <paramref name="policy"/>, as a line's rule stood when it came.</summary>
+    private static void QueueUnder(IntegrationStore store, string id, string branch, string tip, int order, LandingIntegrate policy) =>
+        Assert.Null(store.Add(new IntegrationRequest(
+            id, "engine", "aurora", branch, tip, IntegrationRoutes.Recorded, "main", IntegrationRequester.Card, policy.Resolved(),
+            new DateTimeOffset(2026, 10, 30, 9, 0, order, TimeSpan.Zero))));
+
+    /// <summary>
+    /// 🔴 LANDNODE1g: two requests admitted under different policies are not one candidate. The rule changed between them (here the overlap), so
+    /// the first request's batching must not govern the second: the candidate holds the first alone, the second waits for the next.
+    /// </summary>
+    [Fact]
+    public async Task Requests_admitted_under_different_policies_are_not_formed_into_one_candidate()
+    {
+        var root = await RepositoryAsync("engine");
+        var a = await BranchAsync(root, "feature/a", ("a.txt", "a\n"));
+        var b = await BranchAsync(root, "feature/b", ("b.txt", "b\n"));
+        var store = Store("run-a");
+        QueueUnder(store, "ra", "feature/a", a, 1, new LandingIntegrate(Batch: 8));
+        QueueUnder(store, "rb", "feature/b", b, 2, new LandingIntegrate(Batch: 8, Overlap: LandingIntegrate.Wait));
+
+        var run = await Replays(store).RunAsync(Ask(root));
+
+        Assert.Equal(["ra"], store.Members(run.Candidate!.Id).Select(each => each.Request));
+        Assert.Null(store.Request("rb")!.ClosedAt);
+    }
+
+    /// <summary>
+    /// The owner accepting another declaration mid-queue starts a new epoch even when the rule is the same: requests admitted before and after
+    /// do not batch, and those admitted under the same acceptance still do.
+    /// </summary>
+    [Fact]
+    public async Task A_change_of_the_accepted_declaration_mid_queue_starts_a_new_epoch()
+    {
+        var root = await RepositoryAsync("engine");
+        var a = await BranchAsync(root, "feature/a", ("a.txt", "a\n"));
+        var b = await BranchAsync(root, "feature/b", ("b.txt", "b\n"));
+        var c = await BranchAsync(root, "feature/c", ("c.txt", "c\n"));
+        var store = Store("run-a");
+        var policy = new LandingIntegrate(Batch: 8).Resolved();
+        void Admit(string id, string branch, string tip, int order, string blob) =>
+            Assert.Null(store.Add(new IntegrationRequest(
+                id, "engine", "aurora", branch, tip, IntegrationRoutes.Recorded, "main", IntegrationRequester.Card, policy,
+                new DateTimeOffset(2026, 10, 30, 9, 0, order, TimeSpan.Zero)) { Epoch = IntegrationEpoch.Of(policy, blob) }));
+        Admit("ra", "feature/a", a, 1, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+        Admit("rb", "feature/b", b, 2, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+        Admit("rc", "feature/c", c, 3, "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb");
+
+        var run = await Replays(store).RunAsync(Ask(root));
+
+        Assert.Equal(["ra", "rb"], store.Members(run.Candidate!.Id).Select(each => each.Request));
+        Assert.Equal(IntegrationEpoch.Of(policy, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"), store.CandidateEpoch(run.Candidate.Id));
+    }
+
     private static async Task<string[]> ParentsOfAsync(string cwd, string commit) =>
         (await GitAsync(cwd, "rev-list", "--parents", "-n", "1", commit)).Trim().Split(' ').Skip(1).ToArray();
 
