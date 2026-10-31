@@ -20,6 +20,11 @@ runs `node tools/merge-rows.mjs --install`; ROUTERMERGE1). A clone whose depende
 once; worktrees share it. Without it git merges `docs/README.md` as plain text, which conflicts on two neighbouring rows
 rather than merging them.
 
+Until Lyntai's next release the service builds against a local build of its main line (D22's note). With the Lyntai
+checkout beside this one, check out its `master` and run `node tools/lyntai-local.mjs [path]`: it packs the tip into the
+ignored `local/lyntai-feed/` and writes `local/lyntai-local.props`, and reruns do nothing while the tip is packed. Delete
+the props to restore the released pin. The merge tool copies the props into its gate trees.
+
 The web package has its own lockfile and is not an npm workspace of the root. Windows is needed
 for the desktop application and deployment rehearsal; native AOT publishing needs the target
 platform's native toolchain. The individual [component guides](README.md#guides) explain their loops.

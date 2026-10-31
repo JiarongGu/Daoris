@@ -5350,7 +5350,9 @@ export function privateGateFiles(home) {
     // No readable declaration: the plan's own reading refuses it, with its reason.
   }
   const path = declared.replace(/\\/g, '/');
-  return path.startsWith('local/') && !path.split('/').includes('..') ? [path] : [];
+  // LYNTAILOCAL1: the local Lyntai build's props (its feed path is absolute, the main checkout's), so a tree restores the same version.
+  const lyntai = 'local/lyntai-local.props';
+  return path.startsWith('local/') && !path.split('/').includes('..') ? [path, lyntai] : [lyntai];
 }
 
 /** Copies each of `files` from `home` into `tree`, refreshed on every run; returns the lines to say (GATEWT1b). */
