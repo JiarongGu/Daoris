@@ -156,6 +156,33 @@ describe("a line of work's one Accept", () => {
     expect(screen.getByText("part 3 shares part 1's tree, and lands with it.")).toBeInTheDocument();
   });
 
+  const SHARED: EntryAcceptPlan = {
+    ...PLAN,
+    parts: [
+      { session: 's1', target: 'feature/a3-fix-the-gap', superseded: { by: 's4', says: 'app.cs', conflicts: true } },
+      { session: 's2', sameTreeAs: 's1' },
+      { session: 's3', sameTreeAs: 's1' },
+      { session: 's4', target: 'feature/a3-fix-the-gap' },
+    ],
+  };
+
+  it('offers the leave-out per tree, naming every part the tree takes, and sends its first part', async () => {
+    const { onLand } = ask({ plans: [SHARED] });
+
+    await userEvent.click(screen.getByRole('checkbox', { name: 'Leave part 1, part 2, and part 3 out' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Accept all' }));
+
+    expect(screen.queryByRole('checkbox', { name: 'Leave part 2 out' })).toBeNull();
+    expect(onLand).toHaveBeenCalledWith(['s1'], expect.anything());
+  });
+
+  it('names the tree’s parts in Chinese', async () => {
+    await i18n.changeLanguage('zh');
+    ask({ plans: [SHARED] });
+
+    expect(screen.getByRole('checkbox', { name: '不采纳第 1 段、第 2 段和第 3 段' })).toBeInTheDocument();
+  });
+
   it("names each repository in an ask's, whose press lands every entry and leaves a held one to itself", () => {
     ask({
       scope: 'ask',
