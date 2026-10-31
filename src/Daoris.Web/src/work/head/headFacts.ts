@@ -1,6 +1,6 @@
 import type { TFunction } from 'i18next';
 import type { Quest, Session } from '../../data/api';
-import { ago, elapsed, list, moment } from '../../locales/format';
+import { ago, clockOf, elapsed, list, moment } from '../../locales/format';
 import type { Consideration } from '../../data/signals';
 import type { SweepBranch } from '../../settings/Sweep';
 import type { AccountNamer } from '../../agents/tools';
@@ -56,6 +56,8 @@ export type SessionFactsOf = {
   calling?: { title: string; since: string; quiet?: string; heard?: string } | null;
   /** How many others work with it, subagents and other parts (COWORKVIEW1a, the *At work* read); absent where unknown or none. */
   withIt?: number;
+  /** When the window opened, said by the At work read: the moment *nothing heard* counts from. */
+  windowOpened?: string;
   /**
    * Its heavy run's line (HEAVYSLOT1, the UI/UX design §3.5): the gate it runs, the gate it failed at, or whom it waits behind, as
    * the rail's line says it (`heavyLine`), in place of the call, which is that run. Absent where it holds and waits for no slot.
@@ -237,7 +239,9 @@ function factsOf(t: TFunction, of: SessionFactsOf, whole: boolean): string[] {
     if (of.withIt && of.withIt > 0 && session.state === 'working') {
       facts.push(calling?.heard && !calling.quiet
         ? t('work.facts.withItHeard', { count: of.withIt, ago: ago(calling.heard) })
-        : t('work.facts.withIt', { count: of.withIt }));
+        : of.windowOpened && !calling?.quiet
+          ? t('work.facts.withItUnheard', { count: of.withIt, time: clockOf(of.windowOpened) })
+          : t('work.facts.withIt', { count: of.withIt }));
     }
     // SESSWATCH1a (the session-watch design §5.1): quiet since it was last heard, neutral, after a heavy run's line where both hold.
     if (calling?.quiet && session.state === 'working') facts.push(t('work.rail.quiet', { time: elapsed(calling.quiet) }));
