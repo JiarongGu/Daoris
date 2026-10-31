@@ -33,6 +33,17 @@ public sealed partial class UsageStateSliceTests : DriverModuleBridge
     private void Measured(string session, string? profile, long used, int minutes, string harness = "claude-code") =>
         new SessionUsage(Home).Record(new UsageEntry(session, "engine", harness, profile, used, 200_000, T0.AddMinutes(minutes)));
 
+    /// <summary>
+    /// The end of <paramref name="session"/> pushed by a wake, well before the slice's period would judge it again: the period reconciles
+    /// whatever no wake told, so a push that came only with it proves no wake.
+    /// </summary>
+    private async Task WokenAsync(StateSlice slice, string session)
+    {
+        var waited = System.Diagnostics.Stopwatch.StartNew();
+        await UntilAsync(() => Pushes().Any(push => push.Partition == UsageStateSlice.Sessions && Written(push.Data).ContainsKey(session)));
+        Assert.True(waited.Elapsed < slice.ManifestEvery / 2, $"pushed after {waited.Elapsed}, by the period rather than a wake");
+    }
+
     [Fact]
     public async Task Each_session_and_each_account_is_pushed_as_the_route_answers_it_with_no_service()
     {
@@ -139,14 +150,17 @@ public sealed partial class UsageStateSliceTests : DriverModuleBridge
         Assert.Equal(4, Written(accounts.Data)["claude-code/work"]!["sessions"]!.GetValue<int>());
     }
 
+    /// <summary>A conversation's route wakes it only where the host answers no journal, which then tells it no <c>part.ended</c>.</summary>
     [Theory]
-    [InlineData("PART_ENDED", true)]
-    [InlineData("SESSION_ENDED", false)]
-    [InlineData("DRIVER_READY", true)]
-    [InlineData("DRIVER_TICK", false)]
-    [InlineData("STATE_CHANGED", false)]
-    public void What_wakes_the_usage_slice(string type, bool wakes) =>
-        Assert.Equal(wakes, UsageStateSlice.WakesOn.Any(each => each.Type == type && each.When is null));
+    [InlineData("PART_ENDED", true, true)]
+    [InlineData("PART_ENDED", false, true)]
+    [InlineData("SESSION_ENDED", true, false)]
+    [InlineData("SESSION_ENDED", false, true)]
+    [InlineData("DRIVER_READY", true, true)]
+    [InlineData("DRIVER_TICK", false, false)]
+    [InlineData("STATE_CHANGED", false, false)]
+    public void What_wakes_the_usage_slice(string type, bool journal, bool wakes) =>
+        Assert.Equal(wakes, UsageStateSlice.WakesOn(() => journal).Any(each => each.Type == type && (each.When is null || each.When(new { Session = "c1" }))));
 
     /// <summary>
     /// Run as the loop runs it: a driven end, one no conversation's route announced, wakes it as the journal tells it, and what the end
@@ -164,8 +178,28 @@ public sealed partial class UsageStateSliceTests : DriverModuleBridge
         var driven = new JournalBatch("store-1", 1, 9, [new JournalEntry(9, 1_761_800_000_000, "s1", "sessions", "state", "Working", "Completed", false, false, ["ended.done"], ["driven"], "team", null)]);
         await PartEndRelay.TellAsync(Bus, driven);
 
-        await UntilAsync(() => Pushes().Count >= 4);
-        Assert.Contains(Pushes(), push => push.Partition == UsageStateSlice.Sessions && Written(push.Data).ContainsKey("s1"));
+        await WokenAsync(slice, "s1");
+        await stop.CancelAsync();
+        await running;
+        Assert.NotNull(loop);
+    }
+
+    /// <summary>
+    /// 🔴 Against a host that keeps no journal no <c>part.ended</c> is ever told, so a conversation's end wakes it by the route's
+    /// <c>SESSION_ENDED</c>, its old surface kept as its adapter (the foundation design §19.12's journal row).
+    /// </summary>
+    [Fact]
+    public async Task A_conversation_s_end_reaches_the_windows_by_its_route_while_the_host_keeps_no_journal()
+    {
+        var (loop, slice) = Up();
+        using var stop = new CancellationTokenSource();
+        var running = slice.RunAsync(stop.Token);
+        await UntilAsync(() => Pushes().Count == 2);
+
+        Measured("c1", "work", 5_000, 0);
+        await DriverLoop.Ended(Bus, "c1", "completed");
+
+        await WokenAsync(slice, "c1");
         await stop.CancelAsync();
         await running;
         Assert.NotNull(loop);
