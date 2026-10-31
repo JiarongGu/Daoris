@@ -314,6 +314,8 @@ public sealed class DriverModuleGitTests : DriverModuleBridge
     [InlineData("GIT_REF_DELETE")]
     [InlineData("GIT_REF_RENAME")]
     [InlineData("GIT_REF_FINISH")]
+    [InlineData("GIT_FETCH")]
+    [InlineData("GIT_FETCH_PLAN")]
     public async Task A_ref_act_before_the_driver_is_up_is_the_cold_start_sentence(string route) =>
         Assert.Contains(Refusals.DriverNotReady, await RefusalAsync(Module(), route, new { repository = "engine", kind = "branch", name = "x", to = "y", act = "a" }));
 
@@ -428,6 +430,25 @@ public sealed class DriverModuleGitTests : DriverModuleBridge
         Assert.Equal("done", undone.GetProperty("outcome").GetString());
         Assert.Equal(tip, (await GitAsync(root, "rev-parse", "refs/heads/topic")).Trim());
         Assert.Equal("", (await GitAsync(root, "branch", "--list", "work")).Trim());
+    }
+
+    /// <summary>GITAPP2f: where Daoris's git doors are not installed the fetch is not offered, its plan says so in a word, and its press is refused as data, no act made.</summary>
+    [Fact]
+    [Trait(Category.Name, Category.Process)]
+    public async Task A_fetch_is_not_offered_without_the_git_doors_and_its_press_is_refused_as_data()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var root = await InitAsync();
+        var module = await UpAsync(root);
+
+        var plan = await AnswerAsync(module, "GIT_FETCH_PLAN", new { repository = "engine" });
+        var press = await AnswerAsync(module, "GIT_FETCH", new { repository = "engine" });
+
+        Assert.False(plan.GetProperty("value").GetProperty("offered").GetBoolean());
+        Assert.Equal("doors", plan.GetProperty("value").GetProperty("reason").GetString());
+        Assert.True(press.GetProperty("refused").GetBoolean());
+        Assert.Contains("doors", press.GetProperty("said").GetString());
+        Assert.Equal(JsonValueKind.Null, press.GetProperty("act").ValueKind);
     }
 
     /// <summary>A terminal's press, asked for its words (<c>said</c>), is the verb's own lines and exit code, the act run as the terminal's.</summary>

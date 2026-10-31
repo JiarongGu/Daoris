@@ -328,6 +328,11 @@ public static class DriverCommand
               commit, if given, is the one it must stand at), keeping its commits on a recovery ref; annotated
               tags, daoris/ branches, a landing's, the line and an occupied branch are refused. --rename <new-name>
               moves it instead, keeping its old tip on a recovery ref; the new name starts a new reflog.
+          git fetch <repository> [--plan | --yes]
+              fetch origin's branches into refs/remotes/origin/* alone (nothing else moves, no tags, FETCH_HEAD kept),
+              removing those origin no longer has and naming them, as the Branches tab's Fetch does. --plan says what
+              it would do; --yes does it, after your yes in Daoris's window where Daoris runs. Only where Daoris's git
+              doors are installed and origin is not set to run another program; refused from a session's terminal.
           git pick|revert <repository> <branch> <commit|A..B> [--plan | --yes]
           git rebase <repository> <branch> <onto> [--plan | --yes]
               edit a branch no tree has out without a working tree, as a branch page's Edit history does: pick or

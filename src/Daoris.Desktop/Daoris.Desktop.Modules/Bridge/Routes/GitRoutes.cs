@@ -438,6 +438,42 @@ public sealed class GitRoutes(DriverLoop loop)
         return Answered(run, checkout, repository);
     }
 
+    // GITAPP2f (D204, D198, the git-writes design §9): whether *Fetch* is offered on a repository's Branches (the doors installed, an origin, none of its
+    // settings that run another program or mirror) and the command a person types. A read, told by event: it starts git and asks no network.
+    [DriverRoute("GIT_FETCH_PLAN")]
+    [ByEvent("GIT_FETCH_PLAN", Untold = "the checkout's origin settings and the install's doors, which no scope tells")]
+    private async Task<object?> GitFetchPlanAsync(IpcRequest request, CancellationToken cancellationToken) =>
+        await GitAnsweredAsync(request, cancellationToken, (root, token) => GitFetchActs.PlanReadAsync(_loop.Home, root, token));
+
+    // GITAPP2f: *Fetch* of origin's branches, one `fetch` step of the act journal that moves refs/remotes/origin/* alone (prune included, its removals
+    // named in the answer's words) and leaves FETCH_HEAD. A refusal is data, as the ref acts' are; a terminal's `git fetch <repository> --yes` is the
+    // same route asked for its words (`said`), run on the window's Confirm.
+    [DriverRoute("GIT_FETCH")]
+    [Publishes("GIT_FETCH", StateScopes.Driver)]
+    private async Task<object?> GitFetchAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var repository = Optional(request, "repository") ?? throw new DriverException("a fetch names its repository.");
+        _ = _loop.Service ?? throw NotReady();
+
+        var verb = new GitFetchVerb(repository, Yes: true);
+        var world = new GitRefWorld(async (_, token) => await CheckoutOfAsync(repository, Optional(request, "workspace"), token).ConfigureAwait(false), () => _acts);
+        if (Flag(request, "said"))
+        {
+            var writer = new StringWriter { NewLine = "\n" };
+            var code = await GitFetchCommand.ExecuteAsync(verb, world, "terminal", "window", writer, writer, cancellationToken).ConfigureAwait(false);
+            var lines = writer.ToString().Split('\n');
+            return new { Said = new TreesSaid(lines[^1].Length == 0 ? lines[..^1] : lines, [], code).ToWire() };
+        }
+
+        if (await world.CheckoutOf(repository, cancellationToken).ConfigureAwait(false) is not { } checkout) return NoCheckout(repository);
+        var run = await GitFetchActs.FetchAsync(_acts, new FetchAsk(repository, checkout, Optional(request, "workspace")), "window", "window", cancellationToken).ConfigureAwait(false);
+        return new
+        {
+            run.Act, run.Outcome, run.Refused, Said = WithoutRoots(run.Said, [checkout], repository) ?? "",
+            Notes = run.Notes is null ? null : WithoutRoots(run.Notes, [checkout], repository),
+        };
+    }
+
     // GITAPP2e: the Finish beside a stopped rename's answer, the section moved alone where the ref and the section stand as the act journaled them.
     [DriverRoute("GIT_REF_FINISH")]
     [Publishes("GIT_REF_FINISH", StateScopes.Driver)]

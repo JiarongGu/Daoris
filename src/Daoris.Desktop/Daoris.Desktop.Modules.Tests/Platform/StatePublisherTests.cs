@@ -581,6 +581,7 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
     [InlineData("GIT_REF_DELETE", "driver", null)]
     [InlineData("GIT_REF_RENAME", "driver", null)]
     [InlineData("GIT_REF_FINISH", "driver", null)]
+    [InlineData("GIT_FETCH", "driver", null)]
     [InlineData("GIT_HISTORY_EDIT", "driver", null)]
     [InlineData("SET_STANDING", "driver", null)]
     [InlineData("SET_HEAVY_GATES", "driver", null)]
