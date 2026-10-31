@@ -9,6 +9,7 @@ import { treesSyncScopeKey } from '../repositories/lines';
 import { notPushed } from './slices';
 import { type Answered, answered } from './held';
 import { ALL_TOOLS } from '../agents/tools';
+import { AT_WORK } from '../sessions/atWork';
 
 /**
  * What the driver says moved (STATEHUB1b, D169 point 3): the scopes, in its words, and the sessions the change was about where
@@ -66,6 +67,8 @@ const scopes = new Map<string, (sessions: string[] | null) => QueryKey[]>([
   ['repositories', () => [keys.allRepositories]],
   // INTEGRATE1h: a repository's integration, the Integration view's look.
   ['integration', () => [['integration']]],
+  // COWORKVIEW1a: who is at work, told by its read's own judge naming no session, so every mounted read is asked again.
+  ['atWork', () => [AT_WORK]],
 ]);
 
 const words = (value: unknown): string[] =>

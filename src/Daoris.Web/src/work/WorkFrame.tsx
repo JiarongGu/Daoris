@@ -22,6 +22,8 @@ import { permissionSaid, type PermissionWaits } from './waits/PermissionAsks';
 import { answerAloneSaid, type AnswerWaits } from './waits/AnswerAlone';
 import { type Sent, useSending, useSettled } from './conversation/sending';
 import { WorkflowRunView } from '../workflow/WorkflowRunView';
+import { AtWorkView } from './atWork/AtWorkView';
+import { useSessionAtWork } from '../bridge/sessions/atWork';
 import { opinionAsked, opinionHolds } from './gates/opinion';
 import { useOpinionActs } from './gates/opinionActs';
 import { OpinionGate } from './gates/OpinionGate';
@@ -1129,6 +1131,11 @@ export function WorkFrame({
     ? !collapsed && panelView === 'workflow'
     : !dockClosed && dock === 'workflow');
   const workflowRun = useWorkflowRun(following ? { session: following.id } : null, { enabled: workflowShown });
+  // Who is at work on the followed session (COWORKVIEW1a): asked only while *At work* shows, and again at each `atWork` wake.
+  const atWorkShown = following !== null && (placed.places.atWork === 'panel'
+    ? !collapsed && panelView === 'atWork'
+    : !dockClosed && dock === 'atWork');
+  const atWork = useSessionAtWork(atWorkShown ? following?.id : null);
   // FABRIC-CUTOVER1f: the person's skip or stop of a graph run's node, pressed under the node in the view, kept for the driver's next look.
   const runNodeWord = useRunNodeWord();
   // FABRIC-PIPELINE1d: *Run again* and *Not now* under a check held unknown, the person's word on the held attempt.
@@ -1418,6 +1425,22 @@ export function WorkFrame({
               onHeld={resolveHeld.mutateAsync}
             />
           </div>,
+        )
+        : elsewhere
+          ? <NothingFollowed ended={attended !== null} onOpenSessions={onOpenSessions} />
+          : <p className="m-0 p-3 text-small text-ink-faint">{t('work.attended.none.body')}</p>;
+    }
+    if (view === 'atWork') {
+      // Who is at work on the followed session (COWORKVIEW1a, the cowork view design §5): its parts and its subagents, from Daoris's
+      // records; each part opens its page.
+      return following
+        ? withWhose(
+          <AtWorkView
+            held={atWork.data}
+            error={atWork.error ? sentence(atWork.error) : null}
+            onOpen={(id) => { attend(id); if (elsewhere) onOpenSessions?.(); }}
+            onRetry={() => { void atWork.refetch(); }}
+          />,
         )
         : elsewhere
           ? <NothingFollowed ended={attended !== null} onOpenSessions={onOpenSessions} />

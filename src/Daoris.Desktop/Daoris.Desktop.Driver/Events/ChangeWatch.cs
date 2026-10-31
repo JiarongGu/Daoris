@@ -103,6 +103,12 @@ public static class ChangeTopics
     public const string Update = "update";
 
     /// <summary>
+    /// The sessions' lineage files (COWORKVIEW1a, the design §4.1): heard by the window's own process, whoever holds the home's lease,
+    /// and judged by the held read that registered them, which compares with what each composition read.
+    /// </summary>
+    public const string Lineage = "lineage";
+
+    /// <summary>
     /// A timer the units' node records persist came due (FABRIC-RUN1: a retry's delay, a running answer's wait, an attempt's deadline): a
     /// wake of the evaluation runtime, link 8, at the moment the record names rather than at the look's deadline.
     /// </summary>

@@ -77,6 +77,29 @@ public sealed class ChildLineageTests : IDisposable
         Assert.Equal(ChildBindings.Lost, Assert.Single(ChildLineage.Read(_home, "s1").Children).State);
     }
 
+    /// <summary>COWORKVIEW1a's rule 9: no file, read, or unreadable with its kind; the length read is up to the last full line.</summary>
+    [Fact]
+    public void A_read_finds_no_file_reads_it_or_cannot_and_an_unreadable_file_is_never_an_empty_fold()
+    {
+        Assert.Equal(LineageReading.Absent, ChildLineage.Reading(_home, "s1").Outcome);
+
+        ChildLineage.Start(_home, "s1", "0123456789abcdef", "4242 1", DateTimeOffset.UnixEpoch);
+        ChildLineage.Append(_home, "s1", """{"by":"hook","event":"started","agent":"a1","proc":"0123456789abcdef"}""");
+        var path = ChildLineage.PathOf(_home, "s1");
+        var whole = new FileInfo(path).Length;
+        File.AppendAllText(path, """{"by":"hook","event":"sto""");
+
+        var read = ChildLineage.Reading(_home, "s1");
+        Assert.Equal((LineageReading.Found, whole), (read.Outcome, read.Length));
+        Assert.Single(read.Bindings.Children);
+
+        using (new FileStream(path, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+        {
+            var unreadable = ChildLineage.Reading(_home, "s1");
+            Assert.Equal((LineageReading.Unreadable, "IOException"), (unreadable.Outcome, unreadable.Error));
+        }
+    }
+
     [Fact]
     public void An_id_that_is_not_a_session_s_writes_nothing_and_reads_nothing()
     {

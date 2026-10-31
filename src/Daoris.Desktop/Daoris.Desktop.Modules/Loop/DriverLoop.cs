@@ -130,6 +130,16 @@ public sealed class DriverLoop(
 
     private StateSlices? _slices;
 
+    /// <summary>
+    /// The one judge of who is at work (COWORKVIEW1a): each landed composition registered, woken by the two slices, this process's
+    /// lineage tokens and the lineage files' topic, telling <see cref="StateScopes.AtWork"/> naming no session.
+    /// </summary>
+    public AtWorkWatch AtWork => LazyInitializer.EnsureInitialized(ref _atWork, () => new AtWorkWatch(
+        () => StatePublisher.Publish(eventBus, StateScopes.AtWork), Slices.Find(GroupsStateSlice.Name), Slices.Find(SessionsStateSlice.Name),
+        LineageTokens.Shared));
+
+    private AtWorkWatch? _atWork;
+
     /// <summary>The rules' reading, shared by their slice and each look, which tells their scope only where it moved (FOUNDATION1s part B).</summary>
     public RulesReading RulesRead { get; } = new();
 
@@ -865,6 +875,11 @@ public sealed class DriverLoop(
         await using var notices = HomeWatch.ForNotices(homeDirectory, (_, _) => Notices.Slice.Wake(), log: log);
         notices.Start();
         using var noticesResumed = Power?.Hear(notices.Resumed);
+
+        // COWORKVIEW1a: the lineage files, heard by this window's process whoever holds the lease, judged by the read's own judge.
+        await using var lineage = HomeWatch.ForWork(homeDirectory, ChildLineage.FileName, AtWork.JudgeFiles, log: log);
+        lineage.Start();
+        using var lineageResumed = Power?.Hear(lineage.Resumed);
 
         // A plugin's word goes to the console under `plugin:<id>` (D49 §2, D64 §4) — the same buffer
         // a session's lines and a harness action's lines land in, readable only over this bridge.

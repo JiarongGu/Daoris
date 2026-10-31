@@ -96,6 +96,11 @@ public enum StateScopes
 
     /// <summary>A repository's integration: its queue, candidates, hand-backs and history, which the Integration view reads.</summary>
     Integration = 1 << 22,
+
+    // COWORKVIEW1a: after INTEGRATE1h's, which keep their numbers.
+
+    /// <summary>Who is at work on a session: told by the read's own judge, naming no session. Declared by no route.</summary>
+    AtWork = 1 << 23,
 }
 
 /// <summary>

@@ -8,10 +8,11 @@ export type ViewEntry = { id: ViewId; label: string; icon: IconName };
 
 const VIEW_NAME: Record<ViewId, string> = {
   notifications: 'notifications.title', timeline: 'work.review.timelineTab', review: 'work.review.tab', workflow: 'work.views.workflow',
-  ask: 'help.title', console: 'work.views.console', terminal: 'work.views.terminal',
+  atWork: 'work.atWork.view', ask: 'help.title', console: 'work.views.console', terminal: 'work.views.terminal',
 };
 const VIEW_ICON: Record<ViewId, IconName> = {
-  notifications: 'bell', timeline: 'quests', review: 'diff', workflow: 'workflow', ask: 'help', console: 'frameWork', terminal: 'terminal',
+  notifications: 'bell', timeline: 'quests', review: 'diff', workflow: 'workflow', atWork: 'atWork', ask: 'help', console: 'frameWork',
+  terminal: 'terminal',
 };
 
 /** Where a dragged view would land, lit as VS Code lights a container a tab is over (DOCK1e). */

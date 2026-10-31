@@ -208,6 +208,33 @@ public sealed class HomeWatch : IAsyncDisposable
         return watch;
     }
 
+    /// <summary>
+    /// Each session's file named <paramref name="file"/> alone (<see cref="ChangeTopics.Lineage"/>, COWORKVIEW1a: the lineage): the
+    /// window's own process watches them, whoever holds the home's lease, and a move or the deadline asks <paramref name="judge"/>, which
+    /// reads by name only the files its reads registered and compares with what each read. Not started: the caller starts it.
+    /// </summary>
+    public static HomeWatch ForWork(
+        string home, string file, Func<bool> judge, TimeSpan? every = null, IChangeSource? source = null, MachineLog? log = null)
+    {
+        var watch = new HomeWatch((_, _) => { }, every, source) { Log = log };
+        var sessions = DaorisHome.Entry(home, HomeEntry.Sessions);
+        var part = new HomePart(sessions, Subfolders: true,
+            (moved, _) => moved.EndsWith("/" + file, StringComparison.OrdinalIgnoreCase), () => []);
+        watch.Topic(ChangeTopics.Lineage, ChangeTopics.Lineage, judge, part);
+        return watch;
+    }
+
+    /// <summary>
+    /// A topic whose judge is its own (COWORKVIEW1a): handed nothing of what moved, it answers whether it woke anything, and the watch keeps
+    /// no stamps of its own for it. Before <see cref="Start"/>.
+    /// </summary>
+    public void Topic(string topic, string subject, Func<bool> judge, params HomePart[] parts)
+    {
+        lock (_gate) _heard[topic] = new Heard(subject, parts, new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)) { Judge = judge };
+        _chain.Topic(topic, ChainEvents.Home, _every);
+        foreach (var part in parts) _changes.Watch(topic, topic, part.Folder, part.Hears, part.Subfolders);
+    }
+
     /// <summary>Where each look a hint or a deadline woke is written (<c>change.judged</c>), and each loss; none by default.</summary>
     public MachineLog? Log
     {
@@ -276,6 +303,7 @@ public sealed class HomeWatch : IAsyncDisposable
             if (!_heard.TryGetValue(topic, out known!)) return 0;
         }
 
+        if (known.Judge is { } own) return own() ? 1 : 0;
         var (now, named) = Read(known.Parts);
         var moved = false;
         lock (_gate)
@@ -310,5 +338,8 @@ public sealed class HomeWatch : IAsyncDisposable
 
         /// <summary>Which of <see cref="Last"/> were read by name (FABRIC-END7b).</summary>
         public HashSet<string> Named { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+
+        /// <summary>The topic's own judge, where it has one (COWORKVIEW1a): the watch compares nothing for it.</summary>
+        public Func<bool>? Judge { get; init; }
     }
 }

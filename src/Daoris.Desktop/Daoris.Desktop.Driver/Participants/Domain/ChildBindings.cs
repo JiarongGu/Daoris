@@ -170,6 +170,50 @@ public sealed record ChildBindings
     /// <summary>The agent ids named only by lines tied to no process: never children, rows or states.</summary>
     public int Unplaced { get; init; }
 
+    /// <summary>The tokens this window read its generations by, each with the reading the fold took (COWORKVIEW1a, rule 12).</summary>
+    public IReadOnlyDictionary<string, TokenReading> Readings { get; private init; } = new Dictionary<string, TokenReading>();
+
+    private IReadOnlySet<string> UnmatchedIds { get; init; } = new HashSet<string>();
+    private IReadOnlySet<string> UnplacedIds { get; init; } = new HashSet<string>();
+    private IReadOnlySet<string> RootIds { get; init; } = new HashSet<string>();
+    private IReadOnlySet<string> Processes { get; init; } = new HashSet<string>();
+    private IReadOnlyDictionary<string, string> Announced { get; init; } = new Dictionary<string, string>();
+
+    /// <summary>
+    /// Whether a line appended after this reading moves what it holds (COWORKVIEW1a, rule 13): any line but a call does; a call only
+    /// where it names an id held neither as a child, among the unmatched or as the part's root, nor, tied to no process, among the
+    /// unplaced; or a child read not known or whose agent ended, whose last seen it moves; or, on Codex, a held child named with no
+    /// parent, which becomes a root. A Claude Code connector call names its agent by the hook's line beside it, so it moves nothing.
+    /// </summary>
+    public bool Wakes(string line)
+    {
+        if (Parse(line) is not { } read) return false;
+        string id;
+        switch (Text(read, "by"))
+        {
+            case "hook" when Text(read, "event") == "call":
+                if (read["agentUnreadable"] is not null || Id(read, "agent") is not { } agent) return false;
+                id = agent;
+                break;
+            case "call" when Text(read, "harness") == Codex:
+                if (Malformed(read) || Id(read, "thread") is not { } thread) return false;
+                if (Id(read, "parent") is null) return Children.Any(child => child.Native == thread);
+                id = thread;
+                break;
+            case "call":
+                return false;
+            default:
+                return true;
+        }
+
+        var placed = Id(read, "proc") is { } proc ? Processes.Contains(proc) : Processes.Count == 0;
+        if (!placed) return !UnplacedIds.Contains(id);
+        if (RootIds.Contains(id)) return false;
+        var key = Announced.Count == 0 ? id : Announced.GetValueOrDefault(ReRun.Replace(id, ""));
+        if (key is null || Children.FirstOrDefault(child => child.Native == key) is not { } held) return !UnmatchedIds.Contains(id);
+        return held.State is Uncertain or AgentEnded;
+    }
+
     /// <summary>One process's lines: a <c>start</c>'s, or history's between the ends an older build wrote.</summary>
     private sealed class Generation(int order, string? proc)
     {
@@ -380,6 +424,9 @@ public sealed record ChildBindings
             Moved(child, generation, i, act, word, AtOf(line));
         }
 
+        HashSet<string> rootIds = [.. roots];
+        if (claudeRoot is not null) rootIds.Add(claudeRoot);
+        if (codexRoot is not null) rootIds.Add(codexRoot);
         return new ChildBindings
         {
             Harness = harness,
@@ -389,6 +436,12 @@ public sealed record ChildBindings
             Unjoined = unjoined,
             Unmatched = unmatched.Count,
             Unplaced = unplaced.Count,
+            UnmatchedIds = unmatched,
+            UnplacedIds = unplaced,
+            RootIds = rootIds,
+            Announced = announced,
+            Processes = starts.Keys.ToHashSet(StringComparer.Ordinal),
+            Readings = starts.Values.Where(each => each.Reading is not null).ToDictionary(each => each.Proc!, each => each.Reading!.Value, StringComparer.Ordinal),
             Children = [.. children.Select(child => Bound(child, byId, (child.Harness ?? harness) == Codex ? codexRoot : claudeRoot, harness, kind))],
         };
 
