@@ -1044,6 +1044,9 @@ public sealed class Driver(
         // git, or asked of the service, unless a line moved.
         await Stages.TimeAsync("lines", () => FollowMovedLinesAsync(events, ct)).ConfigureAwait(false);
 
+        // LINESTOGETHER1d: the operations bringing sessions together, stepped before this look's starts take a head's word.
+        await Stages.TimeAsync("together", () => TogetherAsync(events, ct)).ConfigureAwait(false);
+
         // The workspace plans (WSSETUP6, D124 §4.1), worked before this look reads the quests, so a set-up a plan publishes now
         // is planned, and started, in this same look. Nothing is read unless a plan works and is not paused.
         await Stages.TimeAsync("setup", () => WorkSetupPlansAsync(events, ct)).ConfigureAwait(false);
@@ -1699,6 +1702,29 @@ public sealed class Driver(
         {
             events.Add(Lines.Retry(
                 "registry", $"registry  the lines Daoris moved could not be followed this look, and are tried again at the next: {error.Message}"));
+        }
+    }
+
+    /// <summary>
+    /// The operations bringing sessions together (LINESTOGETHER1d), looked at by the process holding the home's lease: each stepped by
+    /// the records, a landing settled, one whose sessions were deleted dropped. Nothing is asked of the service while none is kept.
+    /// </summary>
+    private async Task TogetherAsync(List<string> events, CancellationToken ct)
+    {
+        if (!HomeLease.HeldHere(home)) return;
+        try
+        {
+            if (new TogetherOperations(home).All().Count == 0) return;
+            var records = await service.SessionRecordsAsync(ct).ConfigureAwait(false);
+            var trees = new SessionTrees(home);
+            await new TogetherWatch(home, () => DateTimeOffset.UtcNow)
+                .LookAsync(records, (root, repository, token) => trees.LineOfAsync(root, repository, null, token), ct).ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is DriverException or HttpRequestException or JsonException or IOException
+                                          or UnauthorizedAccessException)
+        {
+            events.Add(Lines.Retry(
+                "together", $"together  the sessions being brought together could not be looked at this look, and are tried again at the next: {error.Message}"));
         }
     }
 

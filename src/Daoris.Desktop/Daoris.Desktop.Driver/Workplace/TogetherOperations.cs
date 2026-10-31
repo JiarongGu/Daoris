@@ -342,6 +342,19 @@ public sealed class TogetherOperations(string home)
             };
         });
 
+    /// <summary>Forget an operation whose sessions were deleted: nothing reads it again, and it binds nothing.</summary>
+    public bool Drop(string id)
+    {
+        var dropped = false;
+        Edit(all =>
+        {
+            if (!all.Any(each => each.Id == id)) return null;
+            dropped = true;
+            return [.. all.Where(each => each.Id != id)];
+        });
+        return dropped;
+    }
+
     private static string NewId() => "tg" + Guid.NewGuid().ToString("N")[..10];
 
     private TogetherOperation? Move(string id, string[] from, Func<TogetherOperation, TogetherOperation?> change)
