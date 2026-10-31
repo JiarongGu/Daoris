@@ -21,8 +21,9 @@ namespace Daoris.Desktop;
 /// is no field: the page orders the sessions newest first by <c>when</c>, a tie by id, and the accounts by door then account, as the
 /// route orders them.</para>
 ///
-/// <para><b>Its wakes.</b> A session's end, which is when a driven session, an intake or a conversation records what it used, and the
-/// service coming up; a terminal's driver sharing the home records into the same file, read at the period.</para>
+/// <para><b>Its wakes.</b> A session's end, which is when a driven session, an intake or a conversation records what it used, as the
+/// journal tells it (FOUNDATION1 l-i), or as a conversation's route tells it where the host keeps no journal; and the service coming up.
+/// A terminal's driver sharing the home records into the same file, read at the period.</para>
 ///
 /// <para><b>Desktop-only.</b> A record names the account it ran as, which only this machine's windows read (TOOL3, D47 §4).</para>
 /// </remarks>
@@ -43,15 +44,20 @@ public static class UsageStateSlice
     /// <summary>What an account's share carries, as the route writes it and the page's <c>UsedAccount</c> reads it.</summary>
     public static readonly IReadOnlyList<string> AccountFields = ["harness", "profile", "sessions", "used"];
 
-    /// <summary>What wakes it on the kit's bus: a part's end as the journal tells it, a driven one included, and the service coming up.</summary>
-    public static readonly IReadOnlyList<SliceWake> WakesOn = [new(DriverLoop.PartEndedType), new("DRIVER_READY")];
+    /// <summary>
+    /// What wakes it on the kit's bus: a part's end as the journal tells it, a driven one included, and the service coming up; and while
+    /// <paramref name="journal"/> says the host answers no journal, a conversation's end as its route tells it, the old surface kept as the
+    /// adapter (the foundation design §19.12), since such a host tells no <c>part.ended</c>.
+    /// </summary>
+    public static IReadOnlyList<SliceWake> WakesOn(Func<bool> journal) =>
+        [new(DriverLoop.PartEndedType), new(DriverLoop.EndedType, _ => !journal()), new("DRIVER_READY")];
 
     /// <summary>The slice the shell's loop owns, reading <paramref name="loop"/>'s usage file; judged at once, with no service.</summary>
     public static StateSlice Of(DriverLoop loop, IEventBus bus) =>
         new(Name, bus, _ => Task.FromResult<IReadOnlyList<SliceJudged>?>(Judge(loop.Usage.Sessions)))
         {
             Keyed = true,
-            WakesOn = WakesOn,
+            WakesOn = WakesOn(() => loop.HearsJournal),
             Failed = error => loop.Log?.Warn("state.slice", ("slice", Name), ("message", error.Message)),
         };
 

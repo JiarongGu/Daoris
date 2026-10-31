@@ -844,7 +844,7 @@ public sealed class DriverLoop(
                     }),
                     NewsFeed("shell", news, service, row => row.Marks.Contains("chat", StringComparer.Ordinal), ct),
                 ],
-                log, ct),
+                log, ct, heard: present => HearsJournal = present),
             ct);
 
         // Every loop on the home watches the requests a terminal's `sessions stop|finish|decline` writes (SESSUX1g, D126
@@ -1357,6 +1357,18 @@ public sealed class DriverLoop(
     /// slice that follows ends wakes on it rather than on the conversation's route alone.
     /// </summary>
     public const string PartEndedType = "PART_ENDED";
+
+    /// <summary>
+    /// Whether this process's journal reader was last answered by a host that keeps the journal: false before its first answer, against a
+    /// host from before it, and while the host refuses or drops the ask, when a reader of <see cref="PartEndedType"/> keeps its old surface.
+    /// </summary>
+    public bool HearsJournal
+    {
+        get => Volatile.Read(ref _hearsJournal);
+        private set => Volatile.Write(ref _hearsJournal, value);
+    }
+
+    private bool _hearsJournal;
 
     /// <summary>
     /// A conversation's start refused at its open went on in its replacement (MODELROLE1d2, D205 §3.5(b)): <c>{ from, to }</c>, the refused

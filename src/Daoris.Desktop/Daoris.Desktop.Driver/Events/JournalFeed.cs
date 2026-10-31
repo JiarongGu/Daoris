@@ -61,7 +61,12 @@ public static class JournalFeed
     /// Read the journal for several tellers over one wait on the change stream, each from its own cursor (the lease's loop's and the shell's
     /// news tellers keep theirs; a reader from its come-up keeps none), so a process holds one wait however many tellers it has.
     /// </summary>
-    public static async Task RunAsync(ServiceClient service, IReadOnlyList<JournalTeller> tellers, MachineLog? log, CancellationToken ct, TimeSpan? floor = null)
+    /// <param name="heard">
+    /// Told after each ask whether the host answered it with the journal's place: false for a host that keeps none, a refusal and a drop, so a
+    /// reader that keeps its old surface as its adapter (the foundation design §19.12) uses it whenever the journal may tell it nothing.
+    /// </param>
+    public static async Task RunAsync(
+        ServiceClient service, IReadOnlyList<JournalTeller> tellers, MachineLog? log, CancellationToken ct, TimeSpan? floor = null, Action<bool>? heard = null)
     {
         var cursors = tellers.Select(teller => teller.Load?.Invoke()).ToArray();
         string? since = null;
@@ -77,11 +82,13 @@ public static class JournalFeed
                 var reply = await service.SendAsync(ServiceVerb.Get, path, null, ct).ConfigureAwait(false);
                 if (reply.Status == 404)
                 {
+                    heard?.Invoke(false);
                     if (!said) log?.Info("journal.absent");
                     (said, since, pause) = (true, null, Absent);
                 }
                 else if (reply.Status != 200)
                 {
+                    heard?.Invoke(false);
                     pause = backOff = Next(backOff);
                     if (backOff == FirstBackOff) log?.Warn("journal.refused", ("status", reply.Status));
                 }
@@ -89,6 +96,7 @@ public static class JournalFeed
                 {
                     var (next, place) = Read(reply.Payload);
                     since = next;
+                    heard?.Invoke(place is not null);
                     if (place is null)
                     {
                         // A host from before the journal, or one that did not read the parameter: asked again after a while.
@@ -121,6 +129,7 @@ public static class JournalFeed
             }
             catch (Exception failed)
             {
+                heard?.Invoke(false);
                 pause = backOff = Next(backOff);
                 if (backOff == FirstBackOff) log?.Warn("journal.dropped", ("error", failed.GetType().Name));
             }
