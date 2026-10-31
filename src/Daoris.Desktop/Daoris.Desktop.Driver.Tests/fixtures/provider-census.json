@@ -12,6 +12,7 @@
   ],
   "otherSense": [
     ["Daoris.Desktop.Driver/Workflows/Nodes/WireEvaluation.cs", ".Wire", "a workflow wire's id on an evaluated node, no door"],
+    ["Daoris.Desktop.Driver/Participants/Domain/ChildBindings.cs", "\"acp\"", "a lineage line's kind, the signal a child's door sent, no provider"],
     ["Daoris.Desktop.Modules/Bridge/HeldAnswers.cs", ".Wire", "a held answer's serialized JSON, compared to see whether it moved"]
   ],
   "exceptions": [
@@ -176,6 +177,9 @@
     ["Daoris.Desktop.Driver/Loop/DriverPartners.cs", "SessionWire.Pipe", "g", "behaviour", "a partner's native door test"],
     ["Daoris.Desktop.Driver/Participants/AccessCommand.cs", "id in a sentence", "-", "words", "the question key's example in the access verb's usage"],
     ["Daoris.Desktop.Driver/Participants/Domain/AccessRules.cs", "AccessKey.ClaudeCode", "o", "behaviour", "the rule table names Claude Code's key"],
+    ["Daoris.Desktop.Driver/Participants/Domain/AtWork.cs", "\"claude-code-acp\"", "l", "behaviour", "the door whose turn waits for its children, chosen by id"],
+    ["Daoris.Desktop.Driver/Participants/Domain/AtWork.cs", "\"codex\"", "l", "behaviour", "the agent whose calls a child's line is seen by"],
+    ["Daoris.Desktop.Driver/Participants/Domain/AtWork.cs", "StartsWith(agent)", "l", "behaviour", "the agent whose calls a child's line is seen by"],
     ["Daoris.Desktop.Driver/Participants/Domain/ChildBindings.cs", "\"claude-code\"", "l", "behaviour", "the lineage reads which agent a child ran as"],
     ["Daoris.Desktop.Driver/Participants/Domain/ChildBindings.cs", "\"codex\"", "l", "behaviour", "the lineage reads which agent a child ran as"],
     ["Daoris.Desktop.Driver/Participants/Domain/DrivenAccess.cs", ".Wire", "o", "behaviour", "the driven access's door reads"],
@@ -314,6 +318,8 @@
       ["src/Daoris.Web/src/work/AttendedSession.stories.tsx", "\"claude-code-acp\"", "-", "measurement", "a story's sample data names the doors it shows"],
       ["src/Daoris.Web/src/work/HeavySlotLine.stories.tsx", "\"claude-code\"", "-", "measurement", "a story's sample data names the agents it shows"],
       ["src/Daoris.Web/src/work/Note.stories.tsx", "\"claude-code\"", "-", "measurement", "a story's sample data names the agents it shows"],
+      ["src/Daoris.Web/src/work/atWork/atWork.fixtures.ts", "\"claude-code\"", "-", "measurement", "fixture data for the stories names the agents it stands for"],
+      ["src/Daoris.Web/src/work/atWork/atWork.fixtures.ts", "\"codex\"", "-", "measurement", "fixture data for the stories names the agents it stands for"],
       ["src/Daoris.Web/src/work/attention/attention.stories.tsx", "\"claude-code\"", "-", "measurement", "a story's sample data names the agents it shows"],
       ["src/Daoris.Web/src/work/attention/attention.stories.tsx", "\"codex-acp\"", "-", "measurement", "a story's sample data names the doors it shows"],
       ["src/Daoris.Web/src/work/attention/attention.stories.tsx", ".claude.json", "-", "measurement", "a story's sample text quotes Claude Code's trust file"],
