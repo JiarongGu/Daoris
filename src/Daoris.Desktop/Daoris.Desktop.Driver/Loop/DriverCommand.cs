@@ -326,7 +326,8 @@ public static class DriverCommand
               New tag do. --plan says what it would make; --yes makes it, after your yes in Daoris's window where
               Daoris runs. Refused from a session's terminal. --delete takes the branch or tag away instead (the
               commit, if given, is the one it must stand at), keeping its commits on a recovery ref; annotated
-              tags, daoris/ branches, a landing's, the line and an occupied branch are refused.
+              tags, daoris/ branches, a landing's, the line and an occupied branch are refused. --rename <new-name>
+              moves it instead, keeping its old tip on a recovery ref; the new name starts a new reflog.
           git review <session> [--json] [--time]
               a session's review as its Review page reads it: the files and their base, the uncommitted ones, the line
               and the branch; --time each git it started, its node and budget, the gate's wait, the creation and the run,

@@ -11,6 +11,9 @@ public sealed record RefAsk(string Repository, string Checkout, string Kind, str
 /// </summary>
 public sealed record RefDeleteAsk(string Repository, string Checkout, string Kind, string Name, string? At = null, string? Line = null);
 
+/// <summary>A branch or a lightweight tag to rename to <paramref name="To"/> (GITAPP2e); <paramref name="At"/> and <paramref name="Line"/> as a delete's.</summary>
+public sealed record RefRenameAsk(string Repository, string Checkout, string Kind, string Name, string To, string? At = null, string? Line = null);
+
 /// <summary>
 /// **Create or delete a branch or a lightweight tag, and undo either** (GITAPP2c and d, D204; the git-writes design §6, §12 rows c and d). One
 /// <c>create</c>, or one transaction of the <c>delete</c>, the recovery ref's <c>create</c> and each proof ref's <c>verify</c>, through
@@ -26,6 +29,10 @@ public static class GitRefActs
     public const string UndoKind = "ref.undo";
 
     public const string DeleteKind = "ref.delete";
+
+    public const string RenameKind = "ref.rename";
+
+    public const string FinishKind = "ref.finish";
 
     /// <summary>How many holders of the deleted ref's commit are verified with it: the ones the page would name.</summary>
     private const int HoldersVerified = 20;
@@ -66,10 +73,13 @@ public static class GitRefActs
     {
         var journal = runs.Journal;
         if (journal.Act(act) is not { } record) return Refused($"no act `{act}` is recorded, so nothing was undone");
-        if (record.Kind is not (CreateKind or DeleteKind)) return Refused($"act `{act}` is not a create or a delete, so nothing was undone");
+        if (record.Kind is not (CreateKind or DeleteKind or RenameKind or FinishKind)) return Refused($"act `{act}` is not a create, a delete or a rename, so nothing was undone");
         if (!string.Equals(record.Repository, repository, StringComparison.OrdinalIgnoreCase)) return Refused($"act `{act}` was made in another repository, so nothing was undone");
-        if (record.Open || record.Outcome != ActOutcomes.Done) return Refused($"act `{act}` did not finish as done ({record.Outcome ?? "still open"}), so there is nothing to undo");
+        // A rename stopped between its ref and its section steps is undone too: its ref moves back alone (design §5).
+        var partial = record.Kind == RenameKind && record.Outcome == ActOutcomes.Partial;
+        if (record.Open || (record.Outcome != ActOutcomes.Done && !partial)) return Refused($"act `{act}` did not finish as done ({record.Outcome ?? "still open"}), so there is nothing to undo");
         if (record.Kind == DeleteKind) return await UndoDeleteAsync(runs, record, checkout, press, confirmed, ct).ConfigureAwait(false);
+        if (record.Kind is RenameKind or FinishKind) return await UndoRenameAsync(runs, record, checkout, press, confirmed, ct).ConfigureAwait(false);
         var moved = JsonNode.Parse(journal.Steps(act).Single().Postconditions)!["refs"]![0]!;
         var (reference, id) = (moved["ref"]!.GetValue<string>(), moved["after"]!.GetValue<string>());
 
@@ -330,6 +340,218 @@ public static class GitRefActs
                 }
 
                 return null;
+            },
+        }, ct).ConfigureAwait(false);
+    }
+
+    // ——— Rename (GITAPP2e).
+
+    /// <summary>The commands a person types in the checkout for the same act.</summary>
+    public static IReadOnlyList<string> Commands(RefRenameAsk ask) =>
+        ask.Kind == "tag" ? [$"git tag {ask.To} {ask.Name}", $"git tag -d {ask.Name}"] : [$"git branch -m {ask.Name} {ask.To}"];
+
+    private static RefDeleteAsk Source(RefRenameAsk ask) => new(ask.Repository, ask.Checkout, ask.Kind, ask.Name, ask.At, ask.Line);
+
+    /// <summary>The delete's and the create's refusals say what they would have left undone; here that is the rename.</summary>
+    private static string? Renamed(string? refusal) => refusal?.Replace("so nothing was deleted", "so nothing was renamed").Replace("so nothing was created", "so nothing was renamed");
+
+    /// <summary>What a rename rests on, read fresh: the source as a delete reads it (held branches, annotated tags, occupancy, the commit shown) and a target that is free.</summary>
+    private static async Task<(DeleteRead? Read, string? Refusal)> ReadRenameAsync(string home, RefRenameAsk ask, string? planned, CancellationToken ct)
+    {
+        var (read, refusal) = await ReadDeleteAsync(home, Source(ask), planned, ct).ConfigureAwait(false);
+        if (read is null) return (null, Renamed(refusal));
+        if (await JudgeAsync(new RefAsk(ask.Repository, ask.Checkout, ask.Kind, ask.To, read.Id), read.Id, ct).ConfigureAwait(false) is { } target) return (null, Renamed(target));
+        return ask.Kind == "branch" && await SectionAsync(ask.Checkout, ask.To).ConfigureAwait(false) is not null
+            ? (null, $"a `branch.{ask.To}` section stands already, so nothing was renamed")
+            : (read, null);
+    }
+
+    /// <summary>What the rename would do now, read without the lock and written nowhere: the whole commit id it moves, or why it is refused.</summary>
+    public static async Task<(string? Id, string? Refusal)> PlanRenameAsync(string home, RefRenameAsk ask, CancellationToken ct)
+    {
+        var (read, refusal) = await ReadRenameAsync(home, ask, null, ct).ConfigureAwait(false);
+        return (read?.Id, refusal);
+    }
+
+    /// <summary>
+    /// Rename the ref: refused before anything is written where it is a held branch, an annotated tag, occupied, not at the commit shown, or
+    /// the new name is taken; else one transaction (the old name deleted and the new one made at the tip, the old tip kept on a recovery ref),
+    /// then the branch's section renamed under <c>config.lock</c>. A branch a tree checked out meanwhile is moved back, the recovery ref with it.
+    /// </summary>
+    public static async Task<ActRun> RenameAsync(ActRuns runs, RefRenameAsk ask, string press, string? confirmed, CancellationToken ct)
+    {
+        var home = runs.Journal.Home;
+        var (read, refusal) = await ReadRenameAsync(home, ask, null, ct).ConfigureAwait(false);
+        if (read is null) return Refused(refusal!);
+
+        var (recovery, made, taken) = await RecoveryNameAsync(ask.Checkout, ask.Name, read.Id, ct).ConfigureAwait(false);
+        if (recovery is null) return Refused(Renamed(taken)!);
+
+        var target = FullName(ask.Kind, ask.To)!;
+        var transaction = RefTransaction.Rename(read.Full, target, read.Id);
+        var moves = new List<(string Ref, string? Before, string? After)> { (read.Full, read.Id, null), (target, null, read.Id) };
+        if (made)
+        {
+            transaction.Create(recovery, read.Id);
+            moves.Add((recovery, null, read.Id));
+        }
+        else
+        {
+            transaction.Verify(recovery, read.Id);
+        }
+
+        var steps = new List<ActStepPlan>();
+        try
+        {
+            steps.Add(ActSteps.Ref(transaction, moves));
+        }
+        catch (ArgumentException error)
+        {
+            return Refused($"{error.Message}, so nothing was renamed");
+        }
+
+        JsonObject? section = null;
+        if (ask.Kind == "branch" && await SectionAsync(ask.Checkout, ask.Name).ConfigureAwait(false) is { } kept)
+        {
+            section = kept;
+            steps.Add(ActSteps.Config(kept["file"]!.GetValue<string>(), "local", kept["section"]!.GetValue<string>(), $"branch.{ask.To}", kept["text"]!.GetValue<string>()));
+        }
+
+        var plan = new JsonObject
+        {
+            ["kind"] = ask.Kind, ["name"] = ask.Name, ["to"] = ask.To, ["ref"] = read.Full, ["toRef"] = target, ["at"] = read.Id,
+            ["recovery"] = recovery, ["recoveryMade"] = made, ["section"] = section,
+            ["commands"] = new JsonArray([.. Commands(ask).Select(each => (JsonNode)each)]),
+        };
+        return await runs.RunAsync(new ActPlan(RenameKind, press, ask.Repository, ask.Checkout, steps)
+        {
+            Plan = plan.ToJsonString(), Confirmed = confirmed,
+            Judge = async token => (await ReadRenameAsync(home, ask, read.Id, token).ConfigureAwait(false)).Refusal,
+            After = ordinal => ordinal == 0 && ask.Kind == "branch" ? OccupiedLateRenamedAsync(ask, read, target, recovery, made) : Task.FromResult<string?>(null),
+        }, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// The occupancy read again once the branch moved: a tree on the old name, or a list git could not give, moves it back by the rename's
+    /// reversal, which checks both names, and the recovery ref it made goes in the same transaction. Null where the branch is clear or never moved.
+    /// </summary>
+    private static async Task<string?> OccupiedLateRenamedAsync(RefRenameAsk ask, DeleteRead read, string target, string recovery, bool recoveryMade)
+    {
+        var none = CancellationToken.None;
+        var (code, at, _) = await WorkingTree.GitAsync(ask.Checkout, ["rev-parse", "--verify", "--quiet", target], none).ConfigureAwait(false);
+        if (code != 0 || at.Trim() != read.Id) return null;
+        var trees = await TreeWorktrees.EntriesAsync(ask.Checkout, none).ConfigureAwait(false);
+        string? why = null;
+        if (trees is null) why = $"{TreeWorktrees.ListUnread} once it moved, so whether a tree checked it out as it moved is not known";
+        else if (TreeWorktrees.ByBranch(trees).TryGetValue(ask.Name, out var tree)) why = $"it was checked out in `{Path.GetFileName(tree.TrimEnd('/', '\\'))}` as it moved";
+        if (why is null) return null;
+
+        var back = RefTransaction.ReverseRename(read.Full, target, read.Id);
+        if (recoveryMade) back.Delete(recovery, read.Id);
+        var run = await back.RunAsync(ask.Checkout, none).ConfigureAwait(false);
+        return run.Done
+            ? $"{why}, so it was moved back to `{ask.Name}`"
+            : $"{why}, and Daoris could not move it back to `{ask.Name}` ({ContentHolds.Said(run.Said)}); its recovery ref `{ShortName(recovery)}` keeps the commits";
+    }
+
+    /// <summary>
+    /// Finish a rename stopped between its ref and its section steps: the section moved alone, only where the new name stands at the journaled
+    /// commit, the old is gone, and the section still reads as journaled with none at the new name. Refused otherwise, nothing written.
+    /// </summary>
+    public static async Task<ActRun> FinishAsync(ActRuns runs, string repository, string checkout, string act, string press, string? confirmed, CancellationToken ct)
+    {
+        var journal = runs.Journal;
+        if (journal.Act(act) is not { } record) return Refused($"no act `{act}` is recorded, so nothing was finished");
+        if (record.Kind != RenameKind) return Refused($"act `{act}` is not a rename, so nothing was finished");
+        if (!string.Equals(record.Repository, repository, StringComparison.OrdinalIgnoreCase)) return Refused($"act `{act}` was made in another repository, so nothing was finished");
+        if (record.Open || record.Outcome != ActOutcomes.Partial) return Refused($"act `{act}` did not stop between its ref and its section ({record.Outcome ?? "still open"}), so there is nothing to finish");
+        var plan = JsonNode.Parse(record.Plan)!.AsObject();
+        if (plan["section"] is not JsonObject section) return Refused($"act `{act}` moved no section, so there is nothing to finish");
+        var (full, target, id) = (plan["ref"]!.GetValue<string>(), plan["toRef"]!.GetValue<string>(), plan["at"]!.GetValue<string>());
+        var (name, to) = (ShortName(full), ShortName(target));
+        var text = section["text"]!.GetValue<string>();
+
+        var step = ActSteps.Config(section["file"]!.GetValue<string>(), "local", section["section"]!.GetValue<string>(), $"branch.{to}", text);
+        plan["finishes"] = act;
+        return await runs.RunAsync(new ActPlan(FinishKind, press, repository, checkout, [step])
+        {
+            Plan = plan.ToJsonString(), Confirmed = confirmed,
+            Judge = async token =>
+            {
+                if (await RenamedStandsAsync(checkout, full, target, id, token).ConfigureAwait(false) is { } moved) return $"{moved}, so act `{act}` was not finished";
+                if (await SectionAsync(checkout, name).ConfigureAwait(false) is not { } old || old["text"]!.GetValue<string>() != text)
+                {
+                    return $"the `branch.{name}` section is gone or changed since act `{act}` read it, so it was not moved";
+                }
+
+                return await SectionAsync(checkout, to).ConfigureAwait(false) is not null ? $"a `branch.{to}` section stands already, so act `{act}` was not finished" : null;
+            },
+        }, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>Why a rename's ref step does not stand as journaled (the new name at the commit, the old one absent), else null; reads both names.</summary>
+    private static async Task<string?> RenamedStandsAsync(string checkout, string full, string target, string id, CancellationToken ct)
+    {
+        var (code, at, _) = await WorkingTree.GitAsync(checkout, ["rev-parse", "--verify", "--quiet", target], ct).ConfigureAwait(false);
+        if (code != 0 || at.Trim() != id) return $"`{ShortName(target)}` no longer stands at the commit the rename moved it to ({(code == 0 ? "it was moved" : "it is gone")})";
+        var (old, _, _) = await WorkingTree.GitAsync(checkout, ["rev-parse", "--verify", "--quiet", full], ct).ConfigureAwait(false);
+        return old == 0 ? $"`{ShortName(full)}` stands again" : null;
+    }
+
+    /// <summary>
+    /// Undo the rename (or its Finish) <paramref name="record"/> made: the new name deleted and the old made at the tip in one transaction that
+    /// checks both, the recovery ref it made let go, and the section moved back where it had moved. A stopped rename moves only its ref.
+    /// </summary>
+    private static async Task<ActRun> UndoRenameAsync(ActRuns runs, ActRecord record, string checkout, string press, string? confirmed, CancellationToken ct)
+    {
+        var plan = JsonNode.Parse(record.Plan)!;
+        var (full, target, id, recovery) = (plan["ref"]!.GetValue<string>(), plan["toRef"]!.GetValue<string>(), plan["at"]!.GetValue<string>(), plan["recovery"]!.GetValue<string>());
+        var (name, to) = (ShortName(full), ShortName(target));
+        var section = plan["section"] as JsonObject;
+        var text = section?["text"]!.GetValue<string>();
+        var moved = section is not null
+            && (record.Kind == FinishKind || runs.Journal.Steps(record.Id).Any(step => step.Kind == ActStepKinds.Config && step.Outcome == ActOutcomes.Done));
+        var renamedText = moved ? ActConfig.Renamed(text!, $"branch.{to}") : null;
+
+        var transaction = RefTransaction.ReverseRename(full, target, id);
+        var moves = new List<(string Ref, string? Before, string? After)> { (target, id, null), (full, null, id) };
+        var (code, at, _) = await WorkingTree.GitAsync(checkout, ["rev-parse", "--verify", "--quiet", recovery], ct).ConfigureAwait(false);
+        if (plan["recoveryMade"]?.GetValue<bool>() == true && code == 0 && at.Trim() == id)
+        {
+            transaction.Delete(recovery, id);
+            moves.Add((recovery, id, null));
+        }
+
+        var steps = new List<ActStepPlan>();
+        try
+        {
+            steps.Add(ActSteps.Ref(transaction, moves));
+        }
+        catch (ArgumentException error)
+        {
+            return Refused($"{error.Message}, so nothing was undone");
+        }
+
+        if (moved) steps.Add(ActSteps.Config(section!["file"]!.GetValue<string>(), "local", $"branch.{to}", $"branch.{name}", renamedText!));
+        var shown = new JsonObject { ["undo"] = record.Id, ["ref"] = full, ["toRef"] = target, ["at"] = id };
+        return await runs.RunAsync(new ActPlan(UndoKind, press, record.Repository, checkout, steps)
+        {
+            Plan = shown.ToJsonString(), Confirmed = confirmed,
+            Judge = async token =>
+            {
+                if (await RenamedStandsAsync(checkout, full, target, id, token).ConfigureAwait(false) is { } gone) return $"{gone}, so act `{record.Id}` was not undone";
+                if (section is null) return null;
+                var (newer, older) = (await SectionAsync(checkout, to).ConfigureAwait(false), await SectionAsync(checkout, name).ConfigureAwait(false));
+                if (moved)
+                {
+                    return newer?["text"]!.GetValue<string>() == renamedText && older is null
+                        ? null
+                        : $"the `branch.{to}` section changed, or a `branch.{name}` section stands, since act `{record.Id}`, so it was not undone";
+                }
+
+                return newer is null && older?["text"]!.GetValue<string>() == text
+                    ? null
+                    : $"the `branch.{name}` section is not as act `{record.Id}` left it (it was moved or changed since; undo that act instead), so it was not undone";
             },
         }, ct).ConfigureAwait(false);
     }

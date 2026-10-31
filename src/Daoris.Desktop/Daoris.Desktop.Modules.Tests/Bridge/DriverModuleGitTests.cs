@@ -235,8 +235,10 @@ public sealed class DriverModuleGitTests : DriverModuleBridge
     [InlineData("GIT_REF_CREATE")]
     [InlineData("GIT_REF_UNDO")]
     [InlineData("GIT_REF_DELETE")]
+    [InlineData("GIT_REF_RENAME")]
+    [InlineData("GIT_REF_FINISH")]
     public async Task A_ref_act_before_the_driver_is_up_is_the_cold_start_sentence(string route) =>
-        Assert.Contains(Refusals.DriverNotReady, await RefusalAsync(Module(), route, new { repository = "engine", kind = "branch", name = "x", act = "a" }));
+        Assert.Contains(Refusals.DriverNotReady, await RefusalAsync(Module(), route, new { repository = "engine", kind = "branch", name = "x", to = "y", act = "a" }));
 
     [Fact]
     public async Task A_ref_act_of_a_repository_with_no_checkout_is_refused_as_data_with_its_code()
@@ -315,6 +317,40 @@ public sealed class DriverModuleGitTests : DriverModuleBridge
 
         Assert.Equal("done", undone.GetProperty("outcome").GetString());
         Assert.Equal(tip, (await GitAsync(root, "rev-parse", "refs/heads/topic")).Trim());
+    }
+
+    /// <summary>
+    /// GITAPP2e: the page's rename runs the act in the journal and answers it, refusing the line and a taken name as data; the undo moves the branch
+    /// back, and Finish is refused for an act that did not stop partway.
+    /// </summary>
+    [Fact]
+    [Trait(Category.Name, Category.Process)]
+    public async Task A_rename_is_journaled_and_answered_and_its_undo_moves_the_branch_back()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var root = await InitAsync();
+        await GitAsync(root, "branch", "topic");
+        await GitAsync(root, "branch", "taken");
+        var tip = (await GitAsync(root, "rev-parse", "topic")).Trim();
+        var module = await UpAsync(root);
+
+        var line = await AnswerAsync(module, "GIT_REF_RENAME", new { repository = "engine", kind = "branch", name = "main", to = "trunk", at = tip });
+        var taken = await AnswerAsync(module, "GIT_REF_RENAME", new { repository = "engine", kind = "branch", name = "topic", to = "taken", at = tip });
+        var renamed = await AnswerAsync(module, "GIT_REF_RENAME", new { repository = "engine", kind = "branch", name = "topic", to = "work", at = tip });
+
+        Assert.True(line.GetProperty("refused").GetBoolean());
+        Assert.True(taken.GetProperty("refused").GetBoolean());
+        Assert.Equal("done", renamed.GetProperty("outcome").GetString());
+        Assert.Equal(tip, (await GitAsync(root, "rev-parse", "refs/heads/work")).Trim());
+        Assert.Equal("", (await GitAsync(root, "branch", "--list", "topic")).Trim());
+
+        var finish = await AnswerAsync(module, "GIT_REF_FINISH", new { repository = "engine", act = renamed.GetProperty("act").GetString() });
+        var undone = await AnswerAsync(module, "GIT_REF_UNDO", new { repository = "engine", act = renamed.GetProperty("act").GetString() });
+
+        Assert.True(finish.GetProperty("refused").GetBoolean());
+        Assert.Equal("done", undone.GetProperty("outcome").GetString());
+        Assert.Equal(tip, (await GitAsync(root, "rev-parse", "refs/heads/topic")).Trim());
+        Assert.Equal("", (await GitAsync(root, "branch", "--list", "work")).Trim());
     }
 
     /// <summary>A terminal's press, asked for its words (<c>said</c>), is the verb's own lines and exit code, the act run as the terminal's.</summary>
