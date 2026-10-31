@@ -5,6 +5,14 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## AGENTSPLACE1a0 — the landed acceptance pinned (2026-11-01)
+
+> **AGENTSPLACE1a0 — the landed acceptance pinned** (modules, web; row 1 of AGENTSPLACE1, `docs/2026-11-01-agents-place-design.md` §7). `WORKFLOW_LANDED` accepted whatever declaration the line's tip held while applying, where `INTEGRATION_GATES` already refused `moved` a blob that was no longer the tip's. Contract: `WORKFLOW_LANDED` takes the same optional expected blob, and today's *Accept the gates* sends the one it showed. Proof: a modules test where a moved blob is refused with nothing written and an older caller naming none is unchanged; a web test where the press sends the blob.
+
+**Outcome** 2026-11-01: `WORKFLOW_LANDED` takes an optional `gates`; a blob that is not the tip's is refused `moved`, and an unreadable tip `unread`, as the driver's sentence (a refusal, as the route's others are, so its answer's shape is unchanged) with `driver.json` untouched. A caller naming none accepts the tip as it stands. `acceptGatesPress` builds the web's press from the route and the tip it showed, and `ProjectsView` sends it. `PipeTargetRows` lists `gates` among the route's fields. Proof: `DriverModuleWorkflowTests.The_landed_route_refuses_a_blob_the_tip_no_longer_holds_and_an_older_caller_naming_none_is_unchanged` (a Process test), `workflow.test.tsx`. No decision note: the behaviour is the one D215 point 10 gave `INTEGRATION_GATES`.
+
+---
+
 ## CLEANUPADVICE1 — a blocked clean-up row names the press that takes it (2026-11-01)
 
 > **CLEANUPADVICE1 — a blocked clean-up row names the press that takes it** (driver, modules, web; OVERVIEWNOISE1b, TIDYOUTPUT1). The install's row for a finished tree its session recorded (code `unfollowed`) told the owner the workspace's clean-up removes it, and that press keeps it: the tree holds ignored files only it has (a gate's log, a `local/` folder). Contract: where the clean-up would keep the tree, the row says what keeps it (`TreeHolds.OwnSaid`) and the remove that takes it, never a press that refuses. Proof: a unit test of the row's words over a kept tree; the install's row read again.

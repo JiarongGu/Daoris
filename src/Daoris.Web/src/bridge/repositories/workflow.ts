@@ -49,6 +49,14 @@ export const useWorkflowCurrents = (repositories: readonly string[]) => {
 export type LandedAnswer = { start: WorkflowStart; lowered: string[] };
 
 /**
+ * What *Accept the gates* sends (AGENTSPLACE1a0): the route's own workflow again, and the blob of the declaration the page showed at
+ * the line's tip, so the driver refuses `moved` a tip the person did not read. A tip not read sends no blob, as before.
+ */
+export const acceptGatesPress = (repository: string, landed: { workflow: string; tip?: { gates: string } | null }) => ({
+  repository, workflow: landed.workflow, ...(landed.tip?.gates ? { gates: landed.tip.gates } : {}),
+});
+
+/**
  * The person's press on the landed route (FABRIC-PIPELINE1a; the pipeline design §1.3, §4.2): Setup's route row and the Workflow tab's
  * *Accept the gates*. `workflow` is a verification workflow's id, `current` for no verification, or null for the workspace's again;
  * for a repository naming one, the driver reads the `daoris.gates.json` at its line's tip and accepts it by its blob. Every workflow
@@ -57,7 +65,7 @@ export type LandedAnswer = { start: WorkflowStart; lowered: string[] };
 export const useSetLanded = () => {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (variables: ({ repository: string } | { workspace: string }) & { workflow: string | null }) =>
+    mutationFn: (variables: ({ repository: string } | { workspace: string }) & { workflow: string | null; gates?: string }) =>
       call<LandedAnswer>('WORKFLOW_LANDED', variables),
     onSuccess: () => client.invalidateQueries({ queryKey: keys.workflow('repository', '').slice(0, 3) }),
   });

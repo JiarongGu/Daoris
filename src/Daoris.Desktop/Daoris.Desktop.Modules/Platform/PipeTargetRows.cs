@@ -258,7 +258,7 @@ internal static class PipeTargetRows
             (a, p) => Each(At(Named(At(a, "writeAcross"), "repository", Text(p, "repository")), "to")).Any(each => Same(Text(each), Text(p, "to")))
                 ? "true" : "false",
             p => Raw(Field(p, "allow"))));
-        Row("WORKFLOW_LANDED", new RepositoryGround("repository", "workspace"), Setting("WORKFLOW_CURRENT", ["repository", "workspace", "workflow"],
+        Row("WORKFLOW_LANDED", new RepositoryGround("repository", "workspace"), Setting("WORKFLOW_CURRENT", ["repository", "workspace", "workflow", "gates"],
             p => Text(p, "repository") is { } repository ? new { repository } : new { workspace = Text(p, "workspace") },
             (a, _) => Fp(Pick(At(a, "start", "landed"), "workflow", "level"))));
         // INTEGRATE1d: the blob accepted and the one at the line's tip, so a declaration the line changed between the ask and the Confirm

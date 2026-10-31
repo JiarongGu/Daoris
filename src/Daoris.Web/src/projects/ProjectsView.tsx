@@ -28,7 +28,7 @@ import { sessionChecksToast, type SessionChecksValue } from '../settings/reposit
 import {
   useAcross, useDriver, useHarnesses, useLines, usePlugins, useRuleAction, useRules, useSetAccess, useSetCommits, useHeavyMarks, useHeavySlot, useSetDrivable, useSetHeavyGates, useSetHelpers,
   useSetHandOver, useSetHold, useSetLanding, useSetLanguage, useSetLine, useSetOpinion, useSetReadAcross, useSetReview, useSetSessionChecks, useSetStanding, useSetTrees, useSetCheckoutWrites,
-  useSetupPlan, useSetupPress, useSetWriteAcross, useSweepPlan, useWorkflowCurrent, useSetLanded, useAcceptIntegration, useVerify, standingOf,
+  useSetupPlan, useSetupPress, useSetWriteAcross, useSweepPlan, useWorkflowCurrent, useSetLanded, acceptGatesPress, useAcceptIntegration, useVerify, standingOf,
 } from '../bridge/shell';
 import type { SetUpForAgentsProps } from './setup/SetUpForAgents';
 import { doorOf } from '../agents/tools';
@@ -669,7 +669,7 @@ export function useProjectsView({
         },
       },
       // FABRIC-PIPELINE1a: the person's *Accept the gates*, the route's own pipeline again, which accepts the tip's declaration by its blob.
-      onAcceptGates: landed && landed.workflow !== 'current' ? (answered) => setLanded.mutate({ repository: registration.repository, workflow: landed.workflow }, {
+      onAcceptGates: landed && landed.workflow !== 'current' ? (answered) => setLanded.mutate(acceptGatesPress(registration.repository, landed), {
         onSuccess: () => {
           notify(t('projects.landed.accepted', { repository: registration.repository }));
           answered.done();
