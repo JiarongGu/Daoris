@@ -5,6 +5,14 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## MODELROLE1f — each working role's use shown (2026-10-31)
+
+> **MODELROLE1f — each working role's use shown** (driver, web; the actors design `docs/2026-10-23-actors-design.md` row f, in FOUNDATION1's words: an actor is a working role, D212; found unfiled 2026-10-31). Working roles' row says each role's last seven days from the usage history and `actor.chose`: how many starts, on which choice, how many fell to a later choice and why; absent stays absent. Proof: the sum's table over a fixture of the usage history; stories at 80, 39 and 25rem in en and zh, both themes; the install's line against `tools/usage-report.mjs` for a day.
+
+Completed 2026-10-31: `RoleUse.Of` (driver, `Roles/RoleUse.cs`) sums the machine log's `actor.chose` lines of the last seven days per role (starts, starts per choice, starts with a pass and the pass codes that moved them) and the days the log holds; `ROLES` carries it as `use` (told by nothing: read at each ask, named in the route's `Untold`). Working roles' row (`useLine` in `Roles.tsx`) says it under the role, `Last 7 days: 12 starts · choice 1 ×9, choice 2 ×3 · 3 fell to a later choice (cooling ×2, signed out ×1)`, or `Over the N days the log holds` for a younger log; a role with no start, or no log, has no line. The usage history's turns are not read: starts and their choices live only in `actor.chose`, and the row names no tokens. Proof: `RoleUseTests`, `DriverModuleRoleTests`, `Roles.test.tsx` (en, zh), stories `WeekShown*` at 80, 39 and 25rem. Owed: the install's day against `tools/usage-report.mjs`.
+
+---
+
 ## COMPANYVIEW1f — the diagram (2026-10-31)
 
 > **1f: the diagram** (web). Placement with the column bound, the workspace fold (new), lit paths, the detail and the flowchart's keys (§3.7); an appointed node selects its section. Playwright reads every edge clear of nodes at 80rem, and the rail at 39 and 25rem; one Narrator pass. After 1d and 1e. (`docs/2026-10-31-company-view-design.md` §4 and §7 row 6; the COMPANYVIEW1 row stays open.)

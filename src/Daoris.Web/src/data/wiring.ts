@@ -256,8 +256,19 @@ export type RoleRow = {
 /** A role Daoris suggests adding (FOUNDATION1y-i): the Designer while no role takes design, applied only by the person's press. */
 export type SuggestedRole = { id: string; nameEn: string; nameZh: string; takes: string[]; scopeKind: string; choices: RoleChoice[] };
 
+/**
+ * One role's last seven days as `ROLES` answers it (MODELROLE1f): starts, those on each choice (`1` to `4`, `before`, `rule-default`), how many
+ * fell to a later choice and the walk's codes that moved them. A role with no start is not listed.
+ */
+export type RoleUse = {
+  role: string; starts: number; choices: { choice: string; starts: number }[]; fell: number; why: { code: string; starts: number }[];
+};
+
+/** The use over `days` of the machine log (at most seven; none with no log); a driver before it leaves the field out. */
+export type RoleUseRead = { days: number; roles: RoleUse[] };
+
 /** The catalogue as `ROLES` answers it: its roles, the work a role may take, whether this home keeps it, and what is suggested. */
-export type RoleCatalogue = { roles: RoleRow[]; works: string[]; kept: boolean; suggested: SuggestedRole[] };
+export type RoleCatalogue = { roles: RoleRow[]; works: string[]; kept: boolean; suggested: SuggestedRole[]; use?: RoleUseRead };
 
 /** A role's change as `SET_ROLE` takes it: set with its record and choices, removed, or given back its seed. */
 export type RoleChangePress = {
