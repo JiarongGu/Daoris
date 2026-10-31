@@ -2159,6 +2159,12 @@ public sealed class SessionLedger(
                 await asks.UnbindIntakeAsync(ask, moved.Id, now, inside).ConfigureAwait(false);
             }
 
+            // The models of what it staged are named from the turn lines handed as it ends (KNOWCENTRAL2d), whatever releases the rows later.
+            if (turns is not null && target is not (SessionState.Starting or SessionState.Working or SessionState.AwaitingPerson))
+            {
+                await sessions.Memory.StampAsync(id, turns, inside).ConfigureAwait(false);
+            }
+
             // Its memory is released with the record, and carries what the sessions it continues staged; a tree's waits for its post.
             if (target == SessionState.Completed && (session.Tree is null || Trees.Normalize(session.Tree) == mainTree))
             {

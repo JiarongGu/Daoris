@@ -205,6 +205,7 @@ public static class PersonDoors
         new("GET", "/api/sessions", DoorClass.Open),
         new("GET", "/api/sessions/{id}/deletable", DoorClass.Open),
         new("GET", "/api/sessions/{id}/record", DoorClass.Open),
+        new("GET", "/api/sessions/{id}/memory", DoorClass.Open),
         // One quest's handback whole, by the quest's id or its session's (HANDBACK1): a read, as the connector's `handback_read` is.
         new("GET", "/api/handbacks/{id}", DoorClass.Open),
         // A plan, which deletes nothing.
@@ -312,6 +313,10 @@ public static class PersonDoors
         // LINESTOGETHER1b: the person's held word moved to the head, theirs to move as saying it is.
         new("POST", "/api/sessions/{id}/move", DoorClass.Person, "words moved to a session's head") { Marks = OwnerMark.Of(OwnerMarkKinds.SessionWord, "said:person") },
         new("POST", "/api/sessions/{id}/answer", DoorClass.Person, "an answer to a parked session") { Marks = OwnerMark.Of(OwnerMarkKinds.SessionMove, "session-note:ledger.answered") },
+        // KNOWCENTRAL2d (the memory coordinator design §4): until a second opinion may approve, the person is every memory end's approver,
+        // and only they keep or drop what an ended session staged.
+        new("POST", "/api/memory/{id}/decide", DoorClass.Person, "a memory end's approval") { Marks = OwnerMark.None("a memory row, no quest") },
+        new("POST", "/api/sessions/{id}/memory", DoorClass.Person, "an ended session's memory changes kept or dropped") { Marks = OwnerMark.None("a memory row, no quest") },
         new("POST", "/api/asks/{id}/close", DoorClass.Person, "an ask's close") { Marks = OwnerMark.None("an ask's close, which leaves its quests as they are") },
         new("DELETE", "/api/asks/{id}", DoorClass.Person, "an ask's delete") { Marks = OwnerMark.Of(OwnerMarkKinds.Status, "move:deleted") },
         new("DELETE", "/api/quests/{id}", DoorClass.Person, "a quest's delete") { Marks = OwnerMark.Of(OwnerMarkKinds.Status, "move:deleted") },

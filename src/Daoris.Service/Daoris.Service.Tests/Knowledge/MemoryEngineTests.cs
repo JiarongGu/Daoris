@@ -104,6 +104,56 @@ public sealed class MemoryEngineTests : IAsyncLifetime
     }
 
     /// <summary>
+    /// 🔴 A one-turn driven session in a tree: the driver hands its usage history's turn line as the session completes, the row names that
+    /// turn's model there, and the tree's post keeps it as it releases the row.
+    /// </summary>
+    [Fact]
+    public async Task A_one_turn_driven_sessions_write_names_its_model()
+    {
+        var session = await _machine.InTreeAsync(Now);
+        var started = DateTimeOffset.UtcNow.AddSeconds(-1);
+        await Tools(session).WriteAsync("The legend sits under the map.");
+        var turns = new Dictionary<string, MemoryTurns>
+        {
+            [session.Id] = new([new MemoryTurn(1, started, DateTimeOffset.UtcNow.AddSeconds(1), "model-one")], []),
+        };
+
+        var completed = await _machine.Ledger.AdvanceAsync(session.Id, "completed", null, null, null, DateTimeOffset.UtcNow, turns: turns);
+        Assert.Equal(SessionAdvanceRefusal.None, completed.Refusal);
+        var staged = Assert.Single(await _machine.Memory.OfSessionAsync(session.Id));
+        await _machine.Records.PostAsync(MemoryMachine.Post(landing: true), Now.AddHours(1));
+
+        var released = (await _machine.Memory.FindAsync(staged.Id))!;
+        Assert.Equal((MemoryOpState.Staged, "model-one"), (staged.State, staged.Models));
+        Assert.Equal((MemoryOpState.Ready, "model-one"), (released.State, released.Models));
+    }
+
+    /// <summary>
+    /// 🔴 A run killed mid-turn left no line for that turn, so its write names <c>unknown</c>, though a later turn's line is handed; the person
+    /// keeps it so.
+    /// </summary>
+    [Fact]
+    public async Task A_run_killed_mid_turn_names_unknown()
+    {
+        var session = await _machine.InTreeAsync(Now);
+        await Tools(session).WriteAsync("The legend sits under the map.");
+        var later = DateTimeOffset.UtcNow.AddMinutes(1);
+        var turns = new Dictionary<string, MemoryTurns>
+        {
+            [session.Id] = new([new MemoryTurn(2, later, later.AddMinutes(1), "model-two")], []),
+        };
+
+        Assert.Equal(
+            SessionAdvanceRefusal.None,
+            (await _machine.Ledger.AdvanceAsync(session.Id, "failed", null, null, null, later.AddMinutes(2), turns: turns)).Refusal);
+        Assert.Equal(MemoryModels.Unknown, Assert.Single(await _machine.Memory.OfSessionAsync(session.Id)).Models);
+        await new MemoryDesk(_machine.Memory).KeepAsync(session.Id, keep: true, later.AddMinutes(3));
+
+        var kept = Assert.Single(await _machine.Memory.OfSessionAsync(session.Id));
+        Assert.Equal((MemoryOpState.Ready, MemoryModels.Unknown), (kept.State, kept.Models));
+    }
+
+    /// <summary>
     /// 🔴 Who made a row is read at the call (§1): a session's and its continuation's rows each keep the role its own start took, the
     /// predecessor's carried to the commit point by the continuation, with nothing joined later from the driver's bindings.
     /// </summary>

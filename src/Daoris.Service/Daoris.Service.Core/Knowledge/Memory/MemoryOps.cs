@@ -181,6 +181,57 @@ public sealed partial class MemoryOpStore
         return await ReadAllAsync(command, ct).ConfigureAwait(false);
     }, ct);
 
+    /// <summary>
+    /// Whether <paramref name="session"/> is <paramref name="proposer"/> or of its lineage (§4): a session it continues or serves, as a
+    /// helper or a partner serves, followed up to the root. A subagent calls as its session, so it is the proposer here.
+    /// </summary>
+    public Task<bool> InLineageAsync(string session, string proposer, CancellationToken ct = default) => _db.RunAsync(async () =>
+    {
+        await using var command = _db.Command();
+        command.CommandText = """
+            WITH RECURSIVE up(id) AS (
+              SELECT $session
+              UNION SELECT s.from_session FROM sessions s JOIN up ON s.id = up.id WHERE s.from_session IS NOT NULL
+              UNION SELECT s.serves FROM sessions s JOIN up ON s.id = up.id WHERE s.serves IS NOT NULL)
+            SELECT EXISTS (SELECT 1 FROM up WHERE id = $proposer)
+            """;
+        command.Parameters.AddWithValue("$session", session);
+        command.Parameters.AddWithValue("$proposer", proposer);
+        return Convert.ToInt64(await command.ExecuteScalarAsync(ct).ConfigureAwait(false), CultureInfo.InvariantCulture) == 1;
+    }, ct);
+
+    /// <summary>
+    /// The person's Keep or Drop of an ended session's staged rows and those of the sessions it continues (§1): kept, they move as its
+    /// commit point would have moved them, with no turn lines, so their models read <c>unknown</c>; dropped, they never apply. Null where
+    /// the session is still running or no record names it.
+    /// </summary>
+    public Task<int?> KeepStagedAsync(string session, bool keep, DateTimeOffset now, CancellationToken ct = default) =>
+        _db.InTransactionAsync<int?>(async (_, inside) =>
+        {
+            await using (var state = _db.Command())
+            {
+                state.CommandText = "SELECT state FROM sessions WHERE id = $session";
+                state.Parameters.AddWithValue("$session", session);
+                if (await state.ExecuteScalarAsync(inside).ConfigureAwait(false) is not string held || Running.Contains(held)) return null;
+            }
+
+            if (keep) return await ReleaseAsync([session], predecessors: true, turns: null, inside).ConfigureAwait(false);
+            await using var drop = _db.Command();
+            drop.CommandText = """
+                WITH RECURSIVE chain(id) AS (
+                  SELECT $session
+                  UNION SELECT s.from_session FROM sessions s JOIN chain c ON s.id = c.id WHERE s.from_session IS NOT NULL)
+                UPDATE memory_ops SET state = 'dropped', settled = $now WHERE state = 'staged' AND session IN (SELECT id FROM chain)
+                """;
+            drop.Parameters.AddWithValue("$session", session);
+            drop.Parameters.AddWithValue("$now", Moments.Write(now));
+            return await drop.ExecuteNonQueryAsync(inside).ConfigureAwait(false);
+        }, ct);
+
+    /// <summary>The states of a session whose own commit point is still to come.</summary>
+    private static readonly string[] Running =
+        [nameof(SessionState.Queued), nameof(SessionState.Starting), nameof(SessionState.Working), nameof(SessionState.AwaitingPerson)];
+
     /// <summary>Every row <paramref name="session"/> made, in the order they were kept.</summary>
     public Task<IReadOnlyList<MemoryOp>> OfSessionAsync(string session, CancellationToken ct = default) => _db.RunAsync<IReadOnlyList<MemoryOp>>(async () =>
     {
@@ -220,8 +271,9 @@ public sealed partial class MemoryOpStore
 
         foreach (var (id, session, kind, at) in staged)
         {
+            // A model named where the session ended (StampAsync) stands: the post that releases a tree's rows hands no turn lines.
             await using var move = _db.Command();
-            move.CommandText = "UPDATE memory_ops SET state = $state, models = $models WHERE id = $id AND state = 'staged'";
+            move.CommandText = "UPDATE memory_ops SET state = $state, models = COALESCE(models, $models) WHERE id = $id AND state = 'staged'";
             move.Parameters.AddWithValue("$id", id);
             move.Parameters.AddWithValue("$state", kind == MemoryOpKind.End ? MemoryOpState.Awaiting : MemoryOpState.Ready);
             move.Parameters.AddWithValue("$models", MemoryModels.Of(turns?.GetValueOrDefault(session), at));
@@ -229,6 +281,22 @@ public sealed partial class MemoryOpStore
         }
 
         return staged.Count;
+    }
+
+    /// <summary>
+    /// The models of <paramref name="session"/>'s staged rows, and those of the sessions it continues, named from the turn lines the driver
+    /// handed as it ended (§1), inside the transaction that ends it; the rows stay staged for the commit point that releases them.
+    /// </summary>
+    internal async Task StampAsync(string session, IReadOnlyDictionary<string, MemoryTurns> turns, CancellationToken inside)
+    {
+        foreach (var op in await StagedForAsync(session, inside).ConfigureAwait(false))
+        {
+            await using var stamp = _db.Command();
+            stamp.CommandText = "UPDATE memory_ops SET models = $models WHERE id = $id AND state = 'staged' AND models IS NULL";
+            stamp.Parameters.AddWithValue("$id", op.Id);
+            stamp.Parameters.AddWithValue("$models", MemoryModels.Of(turns.GetValueOrDefault(op.By?.Session ?? ""), op.At));
+            await stamp.ExecuteNonQueryAsync(inside).ConfigureAwait(false);
+        }
     }
 
     /// <summary>

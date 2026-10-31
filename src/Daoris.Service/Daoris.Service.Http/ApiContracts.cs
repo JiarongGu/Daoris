@@ -694,7 +694,8 @@ public sealed record ResolvedKeepRequest(List<string>? Resolved);
 public sealed record WorkRecordPostRequest(
     string? Workspace, string? Repository, string? Folder, string? Tree, DateTimeOffset? Moved, string? Unit, string? Branch, string? Line,
     WorkRecordHold? Hold, string? Tip, string? GrewFrom, string? Ref, List<WorkRecordCommit>? Commits, string? CommitsUnread,
-    WorkRecordLeft? Left, bool Whole = false, WorkRecordLanding? Landing = null, string? LandingWhy = null)
+    WorkRecordLeft? Left, bool Whole = false, WorkRecordLanding? Landing = null, string? LandingWhy = null,
+    Dictionary<string, MemoryTurnsRequest>? Turns = null)
 {
     /// <summary>The post, where every part the record is keyed or read by is here; null otherwise.</summary>
     public WorkRecordPost? ToPost() =>
@@ -722,9 +723,35 @@ public sealed record WorkRecordResponse(bool Kept, DateTimeOffset At, IReadOnlyL
 // state the record must be in, compared in the ledger's step; none moves from any state the move allows, as before. `UnbindAsk`
 // (LIMITRESUME1h, D206): an intake's end lets its ask go in the same step, for the next intake; none keeps the binding, as before.
 // `Expect` (SUPERVISOR1a-i, D208): the supervisor's words a move to working admits, exactly; none admits none.
+// `Turns` (KNOWCENTRAL2d): the usage history's turn lines of each session a commit point releases memory for, by session; none names
+// every model `unknown`, as before.
 public sealed record AdvanceSessionRequest(
     string? State, string? Note, string? Evidence, string? Transcript, bool? Interrupted = null, bool? Limit = null,
-    JsonElement? NoteParts = null, string? Expected = null, bool? UnbindAsk = null, IReadOnlyList<string>? Expect = null);
+    JsonElement? NoteParts = null, string? Expected = null, bool? UnbindAsk = null, IReadOnlyList<string>? Expect = null,
+    Dictionary<string, MemoryTurnsRequest>? Turns = null);
+// One session's turn lines as the driver's usage history keeps them (the memory coordinator design §1), and the instants the person asked.
+public sealed record MemoryTurnsRequest(List<MemoryTurnLine>? Turns, List<DateTimeOffset>? Asked)
+{
+    /// <summary>The lines by session, each line with an end; null for none.</summary>
+    public static IReadOnlyDictionary<string, MemoryTurns>? Of(Dictionary<string, MemoryTurnsRequest>? turns) =>
+        turns is null
+            ? null
+            : turns.ToDictionary(
+                pair => pair.Key,
+                pair => new MemoryTurns(
+                    [.. (pair.Value.Turns ?? []).Where(line => line.Ended is not null)
+                        .Select(line => new MemoryTurn(line.Seq, line.Started, line.Ended!.Value, line.Model ?? ""))],
+                    pair.Value.Asked ?? []),
+                StringComparer.Ordinal);
+}
+// One turn line: its sequence, its start where the line says, its end and its model, or the split's models joined.
+public sealed record MemoryTurnLine(long Seq, DateTimeOffset? Started, DateTimeOffset? Ended, string? Model);
+// KNOWCENTRAL2d: the person's decision through an awaiting end's row, and their Keep or Drop of an ended session's staged changes.
+public sealed record MemoryDecideRequest(bool? Approve);
+public sealed record MemoryKeepRequest(bool? Keep);
+public sealed record MemoryDecisionResponse(string Message, MemoryOp? Op, int Moved);
+// A session's memory changes as its record's page shows them, an end's reason as its proposer wrote it.
+public sealed record SessionMemoryResponse(IReadOnlyList<MemoryOp> Ops);
 // SUPERVISOR1a-i (D208): a park the driver took up put back, less the supervisor's words it admitted and never handed.
 public sealed record RestoreParkRequest(IReadOnlyList<string>? TakeBack, string? Note, JsonElement? NoteParts = null);
 public sealed record SessionActionResponse(SessionResponse Session, string Message);

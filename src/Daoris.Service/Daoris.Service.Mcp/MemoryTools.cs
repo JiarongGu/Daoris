@@ -103,7 +103,7 @@ public sealed class MemoryTools(
         }
 
         var text = new StringBuilder($"`{at}`, revision {entry.Revision}");
-        if (entry.Ended is { } why) text.Append($", ended: {why}");
+        if (entry.Ended is { } why) text.Append($", ended: {MemoryEndToken.Strip(why)}");
         text.AppendLine().AppendLine().AppendLine(entry.Text);
         if (!expand) return text.ToString();
 
