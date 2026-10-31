@@ -18,6 +18,12 @@ repository.
 - **Fix:** `endStrandedUnder` (`tools/processes.mjs`), called when the runner has seen every step of the ended run through (`gone()` in `runCandidateWatched`): on Windows, each process created since the run began whose parent is in no row, and which or whose descendant names the scope tree's folder, ends with its tree; the runner and any root holding it are left out. `drained.strays` and the drop's answer name the pids.
 - **Verify:** `merge-queue.test.ts`, QUEUEDROPLEAK1: `strandedRoots` on synthetic rows (sibling folder, older process, live parent, a root of another folder, a reused-id cycle), the listing's rows, the platform seam, and a scratch queue dropped mid-gate with three orphans (one by absolute path, one by relative path named only by its child, the child) ended while an orphan outside the scope tree stands; the end-to-end case seen failing first with the call switched off. The QUEUEDRAIN1, DROPWAIT1 and PROCLEAK1 cases pass; `tsc --noEmit` clean.
 - **Not covered:** elsewhere than Windows nothing is ended (`ps` walks what is under each step; an orphan there is the census's to say). A process started during the run, whose parent is gone and which names the scope tree, is ended whoever started it: nothing but the run's own tests and gates is expected there. The command lines are read once; a stray started after that read is the census's.
+## 2026-10-31 - Opening a view asked a signed-out account and the agent's binary (STARTSPROBE1)
+
+- **Symptom:** the Map's `STARTS` read, on an account last read signed out over an hour ago, asked that account's status; on an agent the cached report called absent, it ran the binary again. D150 point 5 has a view probe nothing as it opens.
+- **Root cause:** `WiringAsync` reads `ChooseAsync(..., counts: false)`, and `counts` only stopped the count: `Pass` still handed back `Ask` for a signed-out account with an old reading (spending TOOL6h's owed fresh reading), and the walk asked `BinaryChangedAsync` before refusing an absent agent.
+- **Fix:** a walk's `asks` is false for `WiringAsync`: no account's status and no binary again; the reading stands and says signed out in the start's own sentence, the owed reading stays for the next start.
+- **Verify:** `RosterReadTests`' two view cases (a stand-in that fails on any ask; a binary put in place after the report), red before, with `SelectAsync` the control that does ask; `StartWiringTests` and `StartWiringRouteTests` green.
 
 ## 2026-10-31 - A carry-on's turn end was kept before its note (ACPRACE)
 
