@@ -84,6 +84,9 @@ public sealed class ActRuns(ActJournal journal)
     /// <summary>The test seam for ending a job past a step's bound; null ends it (<see cref="ProcessJob.Terminate"/>).</summary>
     internal Action<ProcessJob>? Ending { get; set; }
 
+    /// <summary>The journal this run writes.</summary>
+    internal ActJournal Journal => journal;
+
     /// <summary>The act this run holds now, while it runs.</summary>
     internal string? Running { get; private set; }
 
