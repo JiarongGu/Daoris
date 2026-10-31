@@ -5,6 +5,13 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-01 - A reconciler that read the act after another took it said its process still ran (LOADFLAKE4)
+
+- **Symptom:** beside other git classes, `ActRunGitTests.An_act_of_a_live_run_refuses_the_writer_and_two_reconcilers_at_once_close_a_dead_ones_once` found a hold without "another reconciler took it first"; it passed on the rerun.
+- **Root cause:** the race is on the store's claim, read twice. The reconciler lists the checkout's open acts, then hands `ActJournal.Take` the generation it listed. When the loser's listing came after the winner's take and before its close (the winner's git read of the postconditions), the listed generation was the winner's, so it matched, and the winner's live run refused the take as "the Daoris process that runs it still runs". The words depended on which side of the take the listing fell. Under the checkout lock the at-once order is the test's alone, but the same read is reachable in order: a later writer looking at an act a live reconciler still holds was told the act's own process ran.
+- **Fix:** a claim above the opening's generation (1) is a reconciler's, so a live holder of one is refused as "another reconciler took it first", as a moved generation is. No wait changed.
+- **Verify:** red first: `ActJournalTests.A_take_that_read_the_act_after_a_live_reconciler_took_it_is_refused_as_taken_first` and `ActRunGitTests.A_reconciler_that_reads_the_act_after_another_took_it_is_held_as_taken_first_and_the_taker_closes_it` (the take landed by hand, then the loser's look, then the winner's) failed with the old words, the git one in the reported shape; both green after. `ActRunGitTests` 20 of 20 runs (20 tests each) under the git settings beside a load on every core.
+
 ## 2026-11-01 - Each landing started one git more than its ceiling: the symbolic-ref ask before a delete (batch 1031f)
 
 - **Symptom:** `LandGitCountTests` failed all three: the automatic landing 43 starts against 42, the squash press one over 45, the merge press 58 against 57.
