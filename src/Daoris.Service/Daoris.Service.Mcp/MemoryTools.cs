@@ -8,7 +8,8 @@ namespace Daoris.Knowledge.Mcp;
 /// <summary>
 /// A repository's memory as a session meets it (KNOWCENTRAL2b, 2d; the memory coordinator design §1, §2): <c>memory_search</c> and
 /// <c>memory_get</c> read, <c>memory_write</c> and <c>memory_end</c> change the caller's own repository's, and <c>memory_propose</c> asks
-/// an entry's owner. Every door answers from the repositories the registry places in the caller's workspace (<see cref="MemoryScope"/>),
+/// an entry's owner, as a repository's session, an intake (as its ask), Ask Daoris or a person's own agent in a repository (KNOWCENTRAL2e2;
+/// <see cref="MemoryCaller.Proposer"/>), the last three changing no memory. Every door answers from the repositories the registry places in the caller's workspace (<see cref="MemoryScope"/>),
 /// and every engine is opened with no reinforcement, so a read changes nothing. A change is kept <c>staged</c> under its session, seen by
 /// that session and a session continuing it alone, until the session's commit point releases it; no tool here calls an engine's write.
 /// What a named session reads is kept in its read set, and its next search or get opens with the entries its line read that moved since,

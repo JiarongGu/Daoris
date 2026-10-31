@@ -5,6 +5,7 @@ with the version and date at release.
 
 ## Unreleased
 
+- A memory proposal from an intake, Ask Daoris or an agent you run yourself in a registered repository now reaches the entry's owner as a quest that says who proposed it (the intake's ask, *Ask Daoris*, or that repository); one placed in no repository is told so, and none of them can change another repository's memory (KNOWCENTRAL2e2).
 - A session's correction of another repository's memory travels as a quest to its owner (`memory_propose`), joined by its repository's further proposals until taken; a decline reaches the proposer, and a session's page shows its memory changes, where you approve an end or keep or drop what a stopped session left (KNOWCENTRAL2e).
 
 - Sessions now keep each repository's memory (Lyntai's engine, `memory.db` beside the index): `memory_write` and `memory_end` hold a change with the session's work until it is accepted, a read changes nothing, an end waits for your approval (`POST /api/memory/<id>/decide`), a stopped session's changes wait for your Keep or Drop, and an entry's cited records are rechecked hourly (KNOWCENTRAL2d).
