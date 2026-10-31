@@ -80,6 +80,87 @@ public sealed class RefTransactionGitTests : IDisposable
         Assert.Equal(one, await TipAsync("refs/heads/main"));
     }
 
+    // GITTXN2: git that never answers (-1), having moved the ref first or not.
+    private static async Task<T> UnansweredAsync<T>(string root, bool moveFirst, Func<Task<T>> act)
+    {
+        WorkingTree.Answered.Value = args =>
+        {
+            if (!args.Contains("update-ref")) return null;
+            if (moveFirst)
+            {
+                using var git = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("git", ["-C", root, .. args])
+                    { RedirectStandardOutput = true, RedirectStandardError = true, RedirectStandardInput = args.Contains("--stdin"), UseShellExecute = false })!;
+                if (args.Contains("--stdin")) { git.StandardInput.Write("delete refs/heads/a\n"); git.StandardInput.Close(); }
+                git.WaitForExit();
+            }
+
+            return (-1, "", "the bound was reached");
+        };
+        try { return await act(); }
+        finally { WorkingTree.Answered.Value = null; }
+    }
+
+    [Fact]
+    public async Task An_unanswered_transaction_is_read_ref_by_ref_and_said_as_the_refs_stand()
+    {
+        var one = (await GitAsync(_root, "rev-parse", "HEAD")).Trim();
+        var two = await CommitAsync("two");
+        await GitAsync(_root, "update-ref", "refs/heads/a", one);
+        var update = () => new RefTransaction().Update("refs/heads/a", one, two).RunAsync(_root, default);
+
+        var moved = await UnansweredAsync(_root, true, update);
+        Assert.False(moved.Done);
+        Assert.True(moved.Unanswered);
+        Assert.Contains("`refs/heads/a` moved", moved.Said);
+        Assert.DoesNotContain("nothing moved", moved.Said);
+
+        await GitAsync(_root, "update-ref", "refs/heads/a", one);
+        var kept = await UnansweredAsync(_root, false, update);
+        Assert.True(kept.Unanswered);
+        Assert.Contains("`refs/heads/a` not moved", kept.Said);
+
+        var three = await CommitAsync("three");
+        var elsewhere = await UnansweredAsync(_root, false, () => new RefTransaction().Update("refs/heads/a", two, three).RunAsync(_root, default));
+        Assert.Contains("unknown", elsewhere.Said);
+    }
+
+    [Fact]
+    public async Task An_unanswered_rollback_is_said_as_the_refs_stand_never_as_nothing_moved()
+    {
+        var one = (await GitAsync(_root, "rev-parse", "HEAD")).Trim();
+        await GitAsync(_root, "update-ref", "refs/heads/a", one);
+        var back = () => RefTransaction.RestoreDeleted("refs/heads/a", one).RollBackAsync(_root, "the delete", default);
+
+        // The ref stands, so the restore (a create) is not moved; a deleted one reads as absent, and so as not moved too.
+        var kept = await UnansweredAsync(_root, false, () => new RefTransaction().Delete("refs/heads/a", one).RollBackAsync(_root, "the delete", default));
+        Assert.True(kept.Unanswered);
+        Assert.Contains("`refs/heads/a` not moved", kept.Said);
+        Assert.DoesNotContain("nothing was moved", kept.Said);
+
+        await GitAsync(_root, "update-ref", "-d", "refs/heads/a");
+        var made = await UnansweredAsync(_root, false, back);
+        Assert.Contains("not moved", made.Said);
+        Assert.DoesNotContain("nothing was moved", made.Said);
+    }
+
+    [Fact]
+    public async Task A_create_beside_a_packed_case_alias_is_refused_on_a_case_blind_disk()
+    {
+        var one = (await GitAsync(_root, "rev-parse", "HEAD")).Trim();
+        await GitAsync(_root, "update-ref", "refs/heads/feature", one);
+        await GitAsync(_root, "pack-refs", "--all");
+        await GitAsync(_root, "config", "core.ignorecase", "true");
+
+        var run = await new RefTransaction().Create("refs/heads/Feature", one).RunAsync(_root, default);
+        Assert.False(run.Done);
+        Assert.Contains("`refs/heads/feature`", run.Said);
+        Assert.Equal("", await TipAsync("refs/heads/Feature"));
+
+        // A disk that tells the two apart makes both.
+        await GitAsync(_root, "config", "core.ignorecase", "false");
+        Assert.True((await new RefTransaction().Create("refs/heads/Feature", one).RunAsync(_root, default)).Done);
+    }
+
     [Fact]
     public async Task The_rollbacks_each_hold_only_while_their_condition_does()
     {

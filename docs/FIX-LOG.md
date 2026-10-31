@@ -5,6 +5,13 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-31 - A ref transaction git never answered was said as nothing moved (GITTXN2)
+
+- **Symptom:** none seen; found at the foundation read. A bound reached or a git that never started leaves exit -1, and `RefTransaction.RunAsync` and `RollBackAsync` said the transaction was refused and nothing moved, though git may have moved the refs before it was cut off.
+- **Root cause:** any non-zero exit was read as git's refusal; only a real exit with git's message proves nothing moved.
+- **Fix:** `RefRun.Unanswered` marks exit -1; each ref the transaction moves is read back and said moved, not moved or unknown. A create beside a case-alias that stands is refused first where `core.ignorecase` is true.
+- **Verify:** `RefTransactionGitTests` (an unanswered transaction after moving and after not moving, an unanswered rollback, `Feature` beside a packed `feature`).
+
 ## 2026-10-31 - A subject's rest counted from an ending the pool ran late (LOADFLAKE3)
 
 - **Symptom:** `SweepStateSliceTests.A_ref_moved_in_one_repository_pushes_that_partition_alone` gave up at its two minutes under load; `WorkStateSliceTests` holds the same shape.

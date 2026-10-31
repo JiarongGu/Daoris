@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## GITTXN2 — a ref transaction git did not answer is read, never said as nothing moved (2026-10-31)
+
+> **GITTXN2 — a ref transaction git did not answer is read, never said as nothing moved** (driver; GITAPP2's foundation read F5, 2026-10-31, `docs/2026-10-31-git-writes-read-codex.md`). `RefTransaction.RunAsync` treated exit -1 (the bound reached, the process unended, never started) as git's refusal and said *nothing moved*, as `RollBackAsync` did; only postconditions prove an effect. `RefRun` tells *git refused* from *git did not answer*, the second read before anything is said; and an alias is refused against the refs that stand, not only within one transaction. Proof: an unanswered transaction and rollback each read and said as their refs stand; `Feature` refused beside a packed `feature` on a case-blind disk.
+
+**Outcome** 2026-10-31: `RefRun` gains `Unanswered`; on exit -1 each moved ref is read back and said moved, not moved or unknown, and a rollback says the same rather than *nothing was moved*. On a disk where `core.ignorecase` is true a create beside an existing case-alias (loose or packed) is refused before git runs. Callers unchanged. Tests in `RefTransactionGitTests`; fix entry in `docs/FIX-LOG.md`.
+
 ## GITTXN1 — one typed transaction per ref act (2026-10-31)
 
 > **GITTXN1 — one typed transaction per ref act** (driver; found at GITAPP2's Codex read, 2026-10-31, R2-12, R2-13, round-1 22). A builder producing exactly one `update-ref --stdin` operation per ref, with its expectation on create, update and delete, untouched dependencies verified, identical expectations deduplicated, contradictions and aliases refused; and each operation's conditional rollback (a delete restored only where absent, a rewrite only from its produced tip, a rename reversed checking both names), uncertainty reported when a condition fails. Today's specialized delete (`Workplace/ContentHolds.cs:430`, `:495`) moves onto it unchanged in behaviour. Proof: success, self-rest, alias, contradiction, each expectation independently refusing movement; the rollbacks' conditions; the content holds' tests unchanged.
