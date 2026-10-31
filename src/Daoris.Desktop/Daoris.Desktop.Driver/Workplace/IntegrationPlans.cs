@@ -63,7 +63,8 @@ public static class IntegrationPlans
         plan = plan with { LineTip = lineTip, BranchTip = branchTip };
 
         var (logged, log, _) = await WorkingTree.GitAsync(root, ["log", $"--max-count={Most}", "--format=%h %s", $"{lineTip}..{branchTip}"], ct).ConfigureAwait(false);
-        var (diffed, diff, _) = await WorkingTree.GitAsync(root, ["-c", "core.quotePath=false", "diff", "--name-only", $"{lineTip}...{branchTip}"], ct).ConfigureAwait(false);
+        var (diffed, diff, _) = await WorkingTree.GitAsync(
+            root, ["--no-optional-locks", "-c", "core.quotePath=false", "diff", "--name-only", $"{lineTip}...{branchTip}"], ct).ConfigureAwait(false);
         plan = plan with { Commits = logged == 0 ? Lines(log) : [], Changed = diffed == 0 ? Lines(diff) : [] };
 
         var (common, commonOut, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--path-format=absolute", "--git-common-dir"], ct).ConfigureAwait(false);
