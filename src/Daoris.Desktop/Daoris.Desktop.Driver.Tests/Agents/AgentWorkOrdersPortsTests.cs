@@ -108,8 +108,8 @@ public sealed class AgentWorkOrdersPortsTests
         Assert.Equal(new[]
         {
             "DAORIS_QUEST_ID", "DAORIS_QUEST_TITLE", "DAORIS_QUEST_BODY", "DAORIS_QUEST_ASKER", "DAORIS_QUEST_ATTACHMENTS",
-            "DAORIS_TARGET", "DAORIS_ASK_ID", "DAORIS_SESSION_ID", "DAORIS_BRAINSTORM_ID", "DAORIS_BRAINSTORM_TURN",
-            "DAORIS_BRAINSTORM_ANSWER", "DAORIS_BRAINSTORM_ROOM", "DAORIS_REPOSITORY", "DAORIS_SERVICE_URL",
+            "DAORIS_TARGET", "DAORIS_ASK_ID", "DAORIS_SESSION_ID", "DAORIS_LINEAGE_PROC", "DAORIS_BRAINSTORM_ID",
+            "DAORIS_BRAINSTORM_TURN", "DAORIS_BRAINSTORM_ANSWER", "DAORIS_BRAINSTORM_ROOM", "DAORIS_REPOSITORY", "DAORIS_SERVICE_URL",
         }, Spawning.Roles);
         Assert.Equal(IntakeRoom.AskVariable, AgentWorkVariables.Ask);
         Assert.Equal(IntakeRoom.SessionVariable, ChildMarks.SessionVariable);

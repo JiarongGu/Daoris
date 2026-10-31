@@ -85,8 +85,8 @@ public sealed class SessionOutput : ISessionOutput
     private readonly Dictionary<string, Buffer> _sessions = new(StringComparer.OrdinalIgnoreCase);
     private long _clock;
 
-    /// <summary>The moment a line is stamped with; a test sets it.</summary>
-    public Func<DateTimeOffset> Clock { get; set; } = () => DateTimeOffset.UtcNow;
+    /// <summary>The moment a line is stamped with: the loop sets the world's, a test its own; unset, none.</summary>
+    public Func<DateTimeOffset> Clock { get; set; } = () => default;
 
     /// <summary>
     /// Each live session's newest line, its own or any of its streams' (COWORKVIEW1a, <i>last heard</i>), held in memory alone. A

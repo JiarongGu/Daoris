@@ -125,7 +125,7 @@ public sealed class LineageTokensProcessTests
 
         tokens.Hand(token, process);
         Assert.Equal(TokenReading.Watched, tokens.Reading(token));
-        await gone.Task.WaitAsync(TimeSpan.FromSeconds(30));
+        await gone.Task.WaitAsync(Poll.Patience);
 
         Assert.True(process.HasExited);
         Assert.Equal(TokenReading.Gone, tokens.Reading(token));

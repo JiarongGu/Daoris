@@ -87,6 +87,7 @@ public sealed class DriverLoop(
     /// </summary>
     private static SessionOutput Announcing(SessionOutput output, IEventBus bus)
     {
+        output.Clock = () => DateTimeOffset.UtcNow;
         output.Streamed += session => _ = bus.EmitAsync("DAORIS", "SESSION_STREAMS", new { Session = session });
         return output;
     }
