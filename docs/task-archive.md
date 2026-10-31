@@ -22111,3 +22111,15 @@ The row is quoted by its head; its whole text and proof are the foundation desig
 > **2f** (the memory coordinator design §3, §5, §8): an entry ended between a read and a hand-over's brief shown ended; an invalidation before delivery discarding the answer; a reader told once; an inconclusive recheck never stamped.
 
 **Outcome** 2026-10-31: built. Memory is rechecked when it is presented; a reader is told once, at its line's next memory search or get, of an entry it read that moved (a replaced entry named by the journal); an invalidation before delivery discards the answer; a hand-over's brief shows the memory its line read as it stands now (at most five entries; the driver reads it through the service's new door). Left: a session that never calls memory again is never told; the brief's state text says nothing of memory yet. Detail in D220's note.
+
+## KNOWCENTRAL2e — a proposal as a quest, and the page's memory decisions (2026-10-31, D220)
+
+> **2e** (the memory coordinator design §4, §8): two proposals from one repository one quest; a decline reaching the proposer; a moved target stale; closing applying nothing; no proposer's door ending the entry; `Disputes` and a proposed end shown as two decisions; both languages.
+
+**Outcome** 2026-10-31: built. A reader's proposal travels as a quest to the entry's owner (proposals from one repository joined, a decline reaching the proposer, a moved target stale, closing applying nothing); a hit says an end awaits its approver; a session's page shows its memory changes (`SESSION_MEMORY`, by event) and the person approves or declines an end or a replacement and keeps or drops a stopped session's rows (`SESSION_MEMORY_DECIDE`), en and zh. Left: *What needs you* rows and the badge count for memory waits; proposals from an intake, Ask Daoris or a person's own agent (a quest needs a registered sender); two proposals at the same moment may publish two quests.
+
+## LOADFLAKE2 — two driver fast-half tests that fail under load (2026-10-31)
+
+> **LOADFLAKE2 — two driver fast-half tests that fail under load** (driver tests; 2026-10-31). Batch 1031b's candidate landed past them under the integration policy's `unconfirmed: land` while builders ran beside it; both pass alone. `ClaudeUsageTests.The_measured_lines_are_written_in_order_and_the_answer_is_read_past_other_frames_and_other_ids` (the written lines out of order, pos 1) and `SessionsSayCommandTests.The_drivers_own_walk_stands_aside_only_for_a_host_with_the_head_mark(marked: True)` (an exit code 0 expected). Find each race, red first under a forced interleaving, fixed with no larger wait; 20 runs beside load.
+
+**Outcome** 2026-10-31: both were patience on the machine's clock. The Claude usage test's 10 s read gave up while a starved thread pool ran the fake CLI's flush late, so `AskWithinAsync` takes an optional clock (the machine's by default) the tests move; the say verb's 300 ms wait now counts from the loop's take. Each red first, 20 of 20 beside a load on every core. Detail in the FIX-LOG entry.

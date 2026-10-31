@@ -18,6 +18,7 @@ import type { NewSessionAnswer } from '../../work/say';
 import type { SessionWhere } from '../../work/rail/SessionRow';
 import type { SessionRecord } from '../../work/head/sessionRecord';
 import type { RelatedRow } from '../../work/head/RelatedSessions';
+import type { MemoryRow } from '../../work/head/SessionMemory';
 import { call } from '../call';
 import { readSlice } from '../driver';
 import { mergeKeyed, readPushed, type SliceSpec, usePushedLive } from '../state/slices';
@@ -312,6 +313,38 @@ export const useSessionRecord = (id: string | null, treeGone: boolean): SessionR
   });
   return treeGone ? answer.data?.record ?? null : null;
 };
+
+/**
+ * A session's memory changes (KNOWCENTRAL2e), its writes, ends and proposals as the service keeps them, told by event. Under the sessions'
+ * key, so the person's decision on them and each tick ask it again. Empty while none is read.
+ */
+export const useSessionMemory = (session: string | null | undefined): MemoryRow[] => {
+  const { isAvailable } = useShenora();
+  const client = useQueryClient();
+  const queryKey = ['sessions', 'memory', session ?? ''] as const;
+  const answer = useQuery({
+    queryKey,
+    queryFn: () => askHeld<{ ops?: MemoryRow[] }>('SESSION_MEMORY', client, queryKey, { session }),
+    enabled: isAvailable && Boolean(session),
+    staleTime: 30_000,
+  });
+  return Array.isArray(answer.data?.ops) ? answer.data.ops : [];
+};
+
+/** What the person's decision on a session's memory answered: whether it stood, and the service's words. */
+export type MemoryDecided = { decided: boolean; why: string | null; message: string };
+
+/**
+ * The person's decision on a session's memory (KNOWCENTRAL2e; the memory coordinator design §1, §4): an end awaiting them approved or
+ * declined by its row, or the ended session's staged changes kept or dropped. A refusal is the answer, in the service's words; the
+ * sessions are asked again by the state hub (D169).
+ */
+export const useDecideSessionMemory = () => useMutation({
+  mutationFn: async (decision: { session: string; op: string; approve: boolean } | { session: string; keep: boolean }): Promise<MemoryDecided> => {
+    const answer = await call<{ decided?: unknown; why?: unknown; message?: unknown } | null>('SESSION_MEMORY_DECIDE', decision);
+    return { decided: answer?.decided === true, why: word(answer?.why), message: typeof answer?.message === 'string' ? answer.message : '' };
+  },
+});
 
 /**
  * The sessions beside one in its repository whose work meets its own (LINESTOGETHER1c), told by event; the driver reads the trees at

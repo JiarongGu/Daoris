@@ -18,10 +18,11 @@ namespace Daoris.Knowledge.Mcp;
 /// it — what a quest records as its publisher (SESS1) and a take as its taker (STANDDOWN2).
 /// </param>
 /// <param name="ledger">The ledger, for the one write a session's connector makes on its own record: that it took its quest.</param>
+/// <param name="engines">Each repository's memory, which a listed quest's memory proposals are settled against (KNOWCENTRAL2e).</param>
 [McpServerToolType]
 public sealed class QuestTools(
     QuestStore quests, QuestExchange exchange, WorkspaceScope circle,
-    AskDesk? asks = null, IntakeScope? intake = null, SessionLedger? ledger = null)
+    AskDesk? asks = null, IntakeScope? intake = null, SessionLedger? ledger = null, IMemoryEngines? engines = null)
 {
     [McpServerTool(Name = "quest_publish")]
     [Description(
@@ -203,6 +204,23 @@ public sealed class QuestTools(
         return said.Count == 0 ? "" : "\n\n" + string.Join(" ", said);
     }
 
+    /// <summary>The memory proposals each listed quest carries, settled first against its quest and its target; none without a ledger.</summary>
+    private async Task<ILookup<string, MemoryOp>> ProposalsAsync(IReadOnlyList<Quest> listed, CancellationToken ct)
+    {
+        if (ledger is null) return Array.Empty<MemoryOp>().ToLookup(op => op.Carried!);
+        await new MemoryProposals(ledger.Memory, quests, engines: engines).SettleAsync(DateTimeOffset.UtcNow, ct).ConfigureAwait(false);
+        return (await ledger.Memory.CarriedAsync([.. listed.Select(quest => quest.Id)], ct).ConfigureAwait(false)).ToLookup(op => op.Carried!);
+    }
+
+    private static string Standing(MemoryOp op) => op.State switch
+    {
+        MemoryOpState.Awaiting => "open: decide it through your own memory operations",
+        MemoryOpState.Stale => "stale: the entry moved past the revision it read before it was decided",
+        MemoryOpState.Declined => "declined",
+        MemoryOpState.Answered => "answered by the quest's close, which applied nothing",
+        _ => op.State,
+    };
+
     [McpServerTool(Name = "quest_list")]
     [Description(
         "Quests across the family: what has been asked of whom, and what is still outstanding. Give a "
@@ -225,6 +243,7 @@ public sealed class QuestTools(
                 : $"Nothing asked of `{repository}`{Scoped(scope)}.";
         }
 
+        var proposals = await ProposalsAsync(found, ct).ConfigureAwait(false);
         var text = new StringBuilder($"{found.Count} quest(s){Scoped(scope)}:\n\n");
         foreach (var group in found.GroupBy(q => q.To).OrderBy(g => g.Key, StringComparer.Ordinal))
         {
@@ -301,6 +320,17 @@ public sealed class QuestTools(
                 }
 
                 if (quest.Note is { Length: > 0 }) text.AppendLine($"  _{quest.Note}_");
+
+                // KNOWCENTRAL2e: the memory proposals it carries, each its own decision, with its standing.
+                if (proposals[quest.Id].ToList() is { Count: > 0 } carried)
+                {
+                    text.AppendLine("  memory proposals it carries, each its own decision:");
+                    foreach (var (op, number) in carried.Select((op, i) => (op, i + 1)))
+                    {
+                        text.AppendLine($"  {number}. `{op.Id}` {op.Change.Relation} `{op.Repository}:{op.Change.Target}` at revision {op.Change.Revision}, "
+                            + $"from session `{op.By?.Session}`: {op.Change.Text} ({Standing(op)})");
+                    }
+                }
 
                 // FABRIC-CLOSE1a (§E5): a quest its graph closes, and its taker's result while it stays taken.
                 if (quest is { Closure: not null, Status: QuestStatus.Taken })

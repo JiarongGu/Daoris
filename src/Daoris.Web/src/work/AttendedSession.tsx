@@ -36,6 +36,7 @@ import type { Seek } from './waits/WaitAnchor';
 import { type HeadLink, type HeadOpinion, type HeadReview, type LandingPlan, SessionHead, type WorkAsk } from './head/SessionHead';
 import { SessionRelations } from './head/SessionRelations';
 import { RelatedSessions, type RelatedRow } from './head/RelatedSessions';
+import { SessionMemory } from './head/SessionMemory';
 import { SessionTimeline } from './head/SessionTimeline';
 import type { PieceSection } from './pieces/Pieces';
 
@@ -70,7 +71,7 @@ export const noteIsInTheHead = (session: Session, answerableHere: boolean) =>
 
 export function AttendedSession({
   session, quest, opening, taking, lastTurn, resolving, onResolve, onAnswerAsk, onAnswerSession, onAnswerChoice, answerPick,
-  chain = [], onSession, onQuest, onReview, relations, related, onRelated, timeline = 'dock', branch, ownBranch, onDiscardBranch, discardingBranch,
+  chain = [], onSession, onQuest, onReview, relations, related, onRelated, memory, timeline = 'dock', branch, ownBranch, onDiscardBranch, discardingBranch,
   headed = false, goAheads, onGoAhead, trace, ownSignIn = false, nameOf, lands, landing, planning, onLand, onSayRebase, onName, discards, onDiscardTree, review, behind,
   opinion, continues, helps, heavy, process, parts, entryAccept, channel, workAsk, workBusy, toEvent, rules, ruleAsk, seek, helpers, permissions,
   answers, milestone, record, onOpenBranch, question, parkBox, pieces,
@@ -187,6 +188,8 @@ export function AttendedSession({
   /** The sessions beside it in its repository whose work meets its own (LINESTOGETHER1c), each a door to its head through `onSession`'s id. */
   related?: RelatedRow[];
   onRelated?: (id: string) => void;
+  /** Its memory changes and the person's decision on them (KNOWCENTRAL2e). */
+  memory?: ComponentProps<typeof SessionMemory>;
   /**
    * Its ask's channel kept to its line of work (SESSONE2c, D167 points 6 to 8): as the shell answers it, the person's post and the
    * doors a line and the whole channel open. Absent for a conversation, an intake, a line rooted in a quest alone and a browser.
@@ -328,6 +331,7 @@ export function AttendedSession({
           milestone's took each other's fibers, and each draw of a running session left a copy of this line in the page. */}
       {relations && <SessionRelations key={`relations:${session.id}`} relations={relations} onQuest={onQuest} onSession={onSession} />}
       {related && related.length > 0 && <RelatedSessions repository={session.repository} related={related} onSession={onRelated} />}
+      {memory && <SessionMemory {...memory} />}
       {/* Its ask's channel kept to this line of work, folded to a line (SESSONE2c, D167 points 6 to 8). */}
       {channel && <ChannelPanel {...channel} />}
       {/* Where its work stands (FABRIC-MILESTONE1b): the end, the result, the clean-up and the recovery, read from the driver, folded

@@ -197,9 +197,12 @@ public sealed class ClaudeUsageTests
 
         public List<string> Sent { get; } = [];
 
+        /// <summary>How late each flush ends, as a starved pool runs the writer's default flush (LOADFLAKE2).</summary>
+        public TimeSpan Late { get; init; }
+
         public TextReader Incoming => new ChannelReader(_toClient);
 
-        public TextWriter Outgoing => new HandlerWriter(line =>
+        public TextWriter Outgoing => new HandlerWriter(Late, line =>
         {
             Sent.Add(line);
             foreach (var reply in handle(JsonDocument.Parse(line).RootElement.Clone(), this)) _toClient.Writer.TryWrite(reply);
@@ -213,7 +216,7 @@ public sealed class ClaudeUsageTests
                 await channel.Reader.WaitToReadAsync(ct).ConfigureAwait(false) && channel.Reader.TryRead(out var line) ? line : null;
         }
 
-        private sealed class HandlerWriter(Action<string> onLine) : TextWriter
+        private sealed class HandlerWriter(TimeSpan late, Action<string> onLine) : TextWriter
         {
             public override Encoding Encoding => Encoding.UTF8;
 
@@ -222,6 +225,8 @@ public sealed class ClaudeUsageTests
                 if (value is not null) onLine(value);
                 return Task.CompletedTask;
             }
+
+            public override Task FlushAsync() => late > TimeSpan.Zero ? Task.Delay(late) : base.FlushAsync();
         }
     }
 
@@ -243,15 +248,23 @@ public sealed class ClaudeUsageTests
         _ => [],
     };
 
-    private static Task<IReadOnlyList<WindowReading>?> Ask(FakeCli cli, TimeSpan? patience = null, CancellationToken ct = default) =>
-        ClaudeUsage.AskWithinAsync(cli.Incoming, cli.Outgoing, patience ?? TimeSpan.FromSeconds(10), Now, ct);
+    /// <summary>
+    /// The read, its patience on a clock that moves only when a test moves it (LOADFLAKE2), so a case that expects an answer is
+    /// never answered by a starved pool's lateness; a case about the patience hands the machine's.
+    /// </summary>
+    private static Task<IReadOnlyList<WindowReading>?> Ask(
+        FakeCli cli, TimeSpan? patience = null, CancellationToken ct = default, TimeProvider? clock = null) =>
+        ClaudeUsage.AskWithinAsync(cli.Incoming, cli.Outgoing, patience ?? ClaudeUsage.Patience, Now, ct, clock ?? new MovedClock())
+            .WaitAsync(Poll.Patience);
 
     [Fact]
     public async Task The_measured_lines_are_written_in_order_and_the_answer_is_read_past_other_frames_and_other_ids()
     {
-        var cli = new FakeCli(AsMeasured);
+        // Its lines land past its patience on the machine's clock, as a starved pool once ran the writer's flush (LOADFLAKE2): read
+        // all the same, the patience on a clock that does not move.
+        var cli = new FakeCli(AsMeasured) { Late = TimeSpan.FromMilliseconds(300) };
 
-        var readings = await Ask(cli);
+        var readings = await Ask(cli, TimeSpan.FromMilliseconds(100));
 
         Assert.Equal(
             [
@@ -305,7 +318,7 @@ public sealed class ClaudeUsageTests
         var cli = new FakeCli((_, _) => []);
         var timer = System.Diagnostics.Stopwatch.StartNew();
 
-        Assert.Null(await Ask(cli, TimeSpan.FromMilliseconds(200)));
+        Assert.Null(await Ask(cli, TimeSpan.FromMilliseconds(200), clock: TimeProvider.System));
         Assert.InRange(timer.Elapsed, TimeSpan.Zero, Poll.Patience);
     }
 

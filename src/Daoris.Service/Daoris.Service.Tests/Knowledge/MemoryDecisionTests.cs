@@ -119,6 +119,25 @@ public sealed class MemoryDecisionTests : IAsyncLifetime
         Assert.Equal(2, await _lyntai.CountAsync("Owner"));
     }
 
+    /// <summary>
+    /// 🔴 KNOWCENTRAL2e: while an end awaits, a hit on its entry says who proposed it and that it awaits the person, in a search and a read;
+    /// once decided, the hit says nothing of it.
+    /// </summary>
+    [Fact]
+    public async Task A_hit_says_an_end_awaits_its_approver()
+    {
+        var map = await Owner.RememberAsync("The map is drawn in tiles.");
+        var (chat, end) = await AwaitingAsync(map);
+        var reader = Tools(await _machine.ChatAsync(Now.AddMinutes(3)));
+        var says = $"end proposed by session `{chat.Id}`, awaiting the person";
+
+        Assert.Contains(says, await reader.SearchAsync("map"));
+        Assert.Contains(says, await reader.GetAsync($"Owner:{map.Id}"));
+
+        await Desk.DecideAsync(end.Id, session: null, approve: false, Now.AddMinutes(4));
+        Assert.DoesNotContain("end proposed", await reader.SearchAsync("map"));
+    }
+
     /// <summary>🔴 Keep or Drop waits for the session to end: a running session's staged rows are its own still.</summary>
     [Fact]
     public async Task Keep_or_drop_of_a_running_session_is_refused()

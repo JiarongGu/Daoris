@@ -741,6 +741,11 @@ public sealed partial class HelpCoverageTests
         // MIXAGENT1c (D163 point 3): the person's yes and no to a session's agent's own ask to hand it over, at the foot of its page.
         ("work", "useApproveHandOver", null, HandOverAnswerDoor),
         ("work", "useDeclineHandOver", null, HandOverAnswerDoor),
+        // KNOWCENTRAL2e (the memory coordinator design §1, §4): the person's approval of a memory end and their Keep or Drop.
+        ("work", "useDecideSessionMemory", null, new Exempt(
+            "it decides a memory end awaiting the person, or keeps or drops what an ended session left staged: until a second opinion "
+            + "may approve (MC8) the person is every end's approver, and an end's proposer or its lineage may not approve it, so no agent "
+            + "proposes this press.")),
         // SESSWATCH1a (D200, the session-watch design §2.3): the person's presses on a quiet session's row in What needs you.
         ("work", "useQuietCarryOn", null, new Exempt(
             "it ends a quiet session's run as the person's stop and releases it in the same press, so its work goes on in a new part: "

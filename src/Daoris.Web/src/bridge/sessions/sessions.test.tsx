@@ -18,7 +18,7 @@ import { sentence } from '../../locales/format';
 import i18n from '../../locales/i18n';
 import {
   PERMISSION_WAITS_KEY, permissionsAgainIn, useAnswerPermission, useArchiveSessions, useDeleteSession, useGoOnNew, useOpenSessionFolder,
-  usePermissionWaits, useSessionGroups, type SessionGrouping,
+  usePermissionWaits, useSessionGroups, type SessionGrouping, useDecideSessionMemory, useSessionMemory,
 } from './sessions';
 
 const wrapper = (client: QueryClient) => ({ children }: { children: ReactNode }) => (
@@ -278,5 +278,25 @@ describe('the permissions held for the person', () => {
       .toEqual({ answered: false, why: 'unheld', message: 'Nothing was answered.' });
     invoke.mockImplementation(async () => null);
     expect(await result.current.mutateAsync({ session: 'd1', request: '900', option: 'no' })).toEqual({ answered: false, why: null, message: '' });
+  });
+
+  /** KNOWCENTRAL2e: a session's memory rows are read by the session, and the person's decision on them sends its row or its Keep. */
+  it("reads a session's memory and sends the person's decision on it, a refusal by its words", async () => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const op = { id: 'e1', repository: 'Owner', state: 'awaiting', at: '2026-10-31T09:00:00Z', change: { kind: 'end', target: 'm1', revision: 1 } };
+    invoke.mockImplementation(async (_module: string, route: string) => (route === 'SESSION_MEMORY'
+      ? { ops: [op] }
+      : { decided: false, why: 'refused', message: 'Refused: session `s1` is running.' }));
+
+    const rows = renderHook(() => useSessionMemory('s1'), { wrapper: wrapper(client) });
+    await waitFor(() => expect(rows.result.current).toEqual([op]));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_MEMORY', { payload: expect.objectContaining({ session: 's1' }) });
+
+    const { result } = renderHook(() => useDecideSessionMemory(), { wrapper: wrapper(client) });
+    expect(await result.current.mutateAsync({ session: 's1', keep: true }))
+      .toEqual({ decided: false, why: 'refused', message: 'Refused: session `s1` is running.' });
+    await result.current.mutateAsync({ session: 's1', op: 'e1', approve: true });
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_MEMORY_DECIDE', { payload: { session: 's1', keep: true } });
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_MEMORY_DECIDE', { payload: { session: 's1', op: 'e1', approve: true } });
   });
 });

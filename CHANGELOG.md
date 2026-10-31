@@ -5,6 +5,8 @@ with the version and date at release.
 
 ## Unreleased
 
+- A session's correction of another repository's memory travels as a quest to its owner (`memory_propose`), joined by its repository's further proposals until taken; a decline reaches the proposer, and a session's page shows its memory changes, where you approve an end or keep or drop what a stopped session left (KNOWCENTRAL2e).
+
 - Sessions now keep each repository's memory (Lyntai's engine, `memory.db` beside the index): `memory_write` and `memory_end` hold a change with the session's work until it is accepted, a read changes nothing, an end waits for your approval (`POST /api/memory/<id>/decide`), a stopped session's changes wait for your Keep or Drop, and an entry's cited records are rechecked hourly (KNOWCENTRAL2d).
 - A session's box now says where a word goes and when before you speak (*To part 6, the head · at its turn's end*, *To this part, beside the head · after a running session here ends*), and a word held on a part beside the head has *Say it to the head instead*, which moves it in one step and says *not known whether it moved* where the answer was lost.
 - A session's page now names the other sessions of its repository whose work meets its own (*Beside it in Lyntai: 2 sessions change `TASKS.md`*), each a door to that session's head, paths a quest declares told apart from paths changed, and a session whose tree could not be read said *not read here*; the repository's Integration tab lists the same read, read-only (LINESTOGETHER1c).

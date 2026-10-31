@@ -121,24 +121,25 @@ test('without the props the restored Lyntai version is the released pin, with th
     + `<RestoreAdditionalProjectSources>$(RestoreAdditionalProjectSources);${feed}</RestoreAdditionalProjectSources></PropertyGroup></Project>`;
   withProps(null, () => {
     const off = evaluate();
-    assert.deepEqual(off.versions, { 'Lyntai.Core': released, 'Lyntai.Providers.Basic': released });
+    assert.deepEqual(off.versions, { 'Lyntai.Core': released, 'Lyntai.Providers.Basic': released, 'Lyntai.Storage.Sqlite': released });
     assert.ok(!String(off.sources).includes('lyntai-feed'));
   });
   withProps(written, () => {
     const on = evaluate();
-    assert.deepEqual(on.versions, { 'Lyntai.Core': `${released}-local.abc1234`, 'Lyntai.Providers.Basic': `${released}-local.abc1234` });
+    const local = `${released}-local.abc1234`;
+    assert.deepEqual(on.versions, { 'Lyntai.Core': local, 'Lyntai.Providers.Basic': local, 'Lyntai.Storage.Sqlite': local });
     assert.ok(String(on.sources).includes('lyntai-feed'));
   });
 });
 
 test('the gate trees are handed the same props from the main checkout', () => {
-  const home = join(scratch, 'home');
+  const checkout = join(scratch, 'checkout');
   const tree = join(scratch, 'tree');
-  mkdirSync(join(home, 'local'), { recursive: true });
-  writeFileSync(join(home, 'daoris.gates.json'), '{"gates":[]}');
-  writeFileSync(join(home, 'local', 'lyntai-local.props'), '<Project />');
-  const files = privateGateFiles(home);
+  mkdirSync(join(checkout, 'local'), { recursive: true });
+  writeFileSync(join(checkout, 'daoris.gates.json'), '{"gates":[]}');
+  writeFileSync(join(checkout, 'local', 'lyntai-local.props'), '<Project />');
+  const files = privateGateFiles(checkout);
   assert.ok(files.includes('local/lyntai-local.props'));
-  copyPrivateFiles(home, tree, files);
+  copyPrivateFiles(checkout, tree, files);
   assert.equal(readFileSync(join(tree, 'local', 'lyntai-local.props'), 'utf8'), '<Project />');
 });
