@@ -485,7 +485,10 @@ public sealed record SessionResponse(
     // FOUNDATION1c (D212; the foundation design §2.2): the work the record was opened for, read from its marks and never stored
     // (`ParticipantWork.Of`): `build`, `chat`, `ask-daoris`, `intake`, `help`, `partner` or `review`. This machine's own, like the opinion:
     // answered to it only, absent for a mirror, which is another machine's, and never on the sync wire.
-    string? Work = null);
+    string? Work = null,
+    // LINESTOGETHER1a (the review-flow design §2): the id of the part its line ends at (`Lines.HeadOfLineAsync`), the list's answer only; absent
+    // for a mirror, and where the walk ended on a cycle or the bound. This machine's own, like the opinion: answered to it only.
+    string? Head = null);
 // MSG1a: one word waiting on a record — its id, which the record's events say again where the session took it; the
 // words; when; its files' names, never where they are; and whether it was said after the record ended. XAGENT1c: `by`, the
 // second opinion whose findings these are, another agent's claims; absent, the person's words, as every word before it was.

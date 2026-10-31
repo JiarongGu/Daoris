@@ -888,7 +888,8 @@ public sealed class SessionsRoutes(DriverContext context)
         entry.Repository,
         entry.Group,
         entry.Leading,
-        Parts = entry.Parts.Select(part => new { part.Session, part.Quest, part.Shown, part.Group, part.Began, part.After, part.AskedBy }).ToArray(),
+        entry.Head,
+        Parts = entry.Parts.Select(part => new { part.Session, part.Quest, part.Shown, part.Group, part.Began, part.After, part.AskedBy, part.Head }).ToArray(),
     };
 
     /// <summary>

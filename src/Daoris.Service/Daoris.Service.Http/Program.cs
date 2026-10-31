@@ -1979,7 +1979,15 @@ app.MapGet("/api/sessions", async (
     // Which records the ledger would delete (SESSUX1f), D95's way; none at a shared deployment, which has no delete door.
     var deletable = mode == ServiceMode.Local ? await s.Ledger.DeletableAsync(sessions, ct) : new HashSet<string>();
     var answered = await s.Ledger.WithEntriesAsync(sessions, ct);
-    return answered.Select(session => ToSession(session, MachineLocal(http)) with { Deletable = deletable.Contains(session.Id) });
+    var local = MachineLocal(http);
+    var views = new List<SessionResponse>();
+    foreach (var session in answered)
+    {
+        var head = local && session.Origin is null ? (await Lines.HeadOfLineAsync(s.Sessions, s.Quests, session, ct))?.Id : null;
+        views.Add(ToSession(session, local) with { Deletable = deletable.Contains(session.Id), Head = head });
+    }
+
+    return views;
 });
 
 app.MapPost("/api/sessions", async (
