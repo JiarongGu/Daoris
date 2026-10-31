@@ -10,6 +10,7 @@ import { callHead, type SessionGrouping } from '../groups';
 import { isIntake } from '../identity';
 import { HANDED_REASONS } from '../noteLines';
 import { placedFact } from '../rail/SessionRow';
+import type { Wait } from '../waits/waits';
 
 // The facts line under a head's title (UX7c, D152 §7, the UX7 design §5.2 and §5.3): the two or three facts a record's
 // state makes matter, said once, faint, beside the state's pill and the title on the line above. Pure, so a head is
@@ -67,7 +68,38 @@ export type SessionFactsOf = {
   integration?: { state: string; line: string } | null;
   /** The reader's clock for `retrying`; the moment it is read where absent. */
   now?: Date;
+  /**
+   * Where the work stands (REVIEWFLOW1b; the review-flow design §1): how many of its parts offer work to land, and whether a landing
+   * is on its way. Present, the line is led by *now*; absent (a row, a browser), it is as it was.
+   */
+  flow?: { parts: number; landing: boolean } | null;
 };
+
+/**
+ * *Now*, one word for the phase (REVIEWFLOW1b). Integrating is its integration fact, which is read and never said twice, and landed
+ * is an ended session's own landing fact; so neither is said here.
+ */
+function nowFact(t: TFunction, { session, shown, flow, integration }: SessionFactsOf): string | null {
+  if (!flow || integration) return null;
+  if (flow.landing) return t('work.facts.now.landing');
+  if (flow.parts > 0) return t('work.facts.now.parts', { count: flow.parts });
+  if (session.state === 'awaiting-person') return t('work.facts.now.waits', { time: elapsed(session.updated) });
+  return shown === 'working' && SESSION_ACTIVE.has(session.state) ? t('work.facts.now.working') : null;
+}
+
+/** The press *next* names: the first wait's, in the words of its button; none for a wait with no door to its line. */
+export function nextPress(waits: readonly Wait[]): 'answer' | 'accept' | 'rebase' | 'opinion' | 'review' | null {
+  const first = waits[0];
+  switch (first?.kind) {
+    case undefined:
+    case 'discard': return null;
+    case 'accept': return 'accept';
+    case 'rebase': return 'rebase';
+    case 'opinion': return 'opinion';
+    case 'review': return 'review';
+    default: return 'answer';
+  }
+}
 
 /**
  * The agent a line of work's leading part runs on (SESSCTX1d; the session-context design §7), by the roster's name for it, where
@@ -157,6 +189,7 @@ function factsOf(t: TFunction, of: SessionFactsOf, whole: boolean): string[] {
 
   const facts: (string | null)[] = [
     session.repository,
+    nowFact(t, of),
     // SESSCTX1d: the agent the line is on now, where its parts ran on more than one.
     of.leadingAgent ? t('work.facts.leadsOn', { agent: of.leadingAgent }) : null,
     ...linkFacts(t, session, of),
@@ -175,7 +208,7 @@ function factsOf(t: TFunction, of: SessionFactsOf, whole: boolean): string[] {
 
   if (session.state === 'awaiting-person') {
     // Waiting on the person: how long it has waited, from when its record last moved; the card below says what it asks.
-    facts.push(t('work.facts.waiting', { time: elapsed(session.updated) }));
+    if (!of.flow || of.integration) facts.push(t('work.facts.waiting', { time: elapsed(session.updated) }));
     return facts.filter((fact): fact is string => Boolean(fact));
   }
 
