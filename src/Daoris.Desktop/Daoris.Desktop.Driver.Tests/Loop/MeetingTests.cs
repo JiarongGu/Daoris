@@ -116,7 +116,7 @@ public sealed class MeetingTests : IDisposable
         new(BrainstormRules.Ask, [], new BrainstormMinutes(pass, 10, 10, request));
 
     private (Daoris.Driver.Driver Driver, Script Script) Start(
-        TimeSpan minute, int cap = 3, BrainstormRule? rule = null, bool scripted = true, bool drained = false)
+        TimeSpan minute, int cap = 3, BrainstormRule? rule = null, bool scripted = true, bool drained = false, TimeProvider? clock = null)
     {
         var script = new Script();
         var config = DriverConfig.Empty with { Adapter = "stub", Cap = cap, Brainstorms = rule };
@@ -126,6 +126,7 @@ public sealed class MeetingTests : IDisposable
         {
             MeetingTurns = scripted ? script.RunAsync : null,
             BrainstormMinute = minute,
+            BrainstormClock = clock ?? TimeProvider.System,
             BrainstormSearches = (words, repository, _) => Task.FromResult(new BrainstormSearch(
                 [new BrainstormFound("decision", "docs/decisions/D7.md", 3, 9, $"The window of `{repository}` is exclusive of its end.", words)], "words")),
             BrainstormCheckouts = (_, _) => Task.FromResult<(string?, string?)>((null, "0123456789abcdef")),
@@ -390,14 +391,40 @@ public sealed class MeetingTests : IDisposable
     [Fact]
     public async Task A_stalled_turn_is_cut_at_its_minutes_and_the_round_goes_on_with_the_gap_said()
     {
-        // A tenth of a second's minute: the stalled turn's ten minutes are a second, and the round's sixty leave the next turn five.
-        var (driver, script) = Start(Tenth, rule: Rule(pass: 10, request: 60));
+        // The stalled turn's ten minutes and the round's fifteen are the held clock's, so the next turn has five left however late the
+        // cut runs on the machine's clock: under load the round's deadline, read on that clock, passed first, and it read `cap-full`.
+        var clock = new MovedClock();
+        var start = clock.GetUtcNow();
+        var (driver, script) = Start(Tenth, rule: Rule(pass: 10, request: 15), clock: clock);
         var id = await SentAsync(driver);
-        script.Behaviours["r1-a1"] = Hang;
+        var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        script.Behaviours["r1-a1"] = async (turn, ct) =>
+        {
+            entered.TrySetResult();
+            try
+            {
+                return await Hang(turn, ct);
+            }
+            finally
+            {
+                // The cut's end kept late past the round's window on the machine's clock, as a loaded pool runs it.
+                await Task.Delay(30 * Tenth, CancellationToken.None);
+            }
+        };
+        IReadOnlyList<DateTimeOffset> due = [];
+        script.Behaviours["r1-a2"] = (turn, _) =>
+        {
+            due = clock.Pending;
+            return Task.FromResult(script.Answer(turn));
+        };
         script.Answers["r1-a2"] = Say("Cache the report.");
 
-        var lines = await LookAsync(driver);
+        var look = LookAsync(driver);
+        await entered.Task.WaitAsync(Poll.Patience);
+        clock.Advance(10 * Tenth);
+        var lines = await look;
 
+        Assert.Contains(start + 15 * Tenth, due);
         Assert.Equal(("failed", "timed-out", 1), Pass(id, "r1-a1"));
         Assert.Contains("r1-a1", script.Cancelled);
         Assert.DoesNotContain("r1-a1r", script.Started);
