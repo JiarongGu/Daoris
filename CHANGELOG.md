@@ -5,6 +5,7 @@ with the version and date at release.
 
 ## Unreleased
 
+- A session in the list now opens on its head (续段), the part its line goes on in, unless a part waits on you or works; its parts strip says *Part 6 of 7 is the head · 1 beside it*, marks a part beside the head, and says no part is the head for an ask's sibling quests (LINESTOGETHER1a).
 - A session's head now says where the work stands and what comes next on its facts line: *working*, *waits on you*, *n parts to land* or *landing* (integrating and landed stay the integration and landing facts), and *next: Accept…* (or *Answer*) is a door to that step (REVIEWFLOW1b).
 - *Accept all* on a session now offers *Leave … out* per tree: a chat's parts that share one tree are left out together, the ask names every part it takes, and no part a kept later part grew from is offered it (REVIEWFLOW1d, D167).
 - A session has an *At work* view (分工) in its side bar, after *Workflow*: its parts with their own states and, for the part you are on, each subagent its agent started, what it is and whether it works, ended with its agent, was lost when its agent ended, or is not known to still run, read from Daoris's records and never from the conversation's text. It updates as the lineage moves, without the window asking.

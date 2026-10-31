@@ -1,6 +1,10 @@
 {
   "work.parts.title": "各段",
   "work.parts.of": "第 {{n}} 段，共 {{total}} 段",
+  "work.parts.headIs": "共 {{total}} 段，第 {{n}} 段是续段",
+  "work.parts.headBeside": "旁边 {{count}} 段",
+  "work.parts.headNone": "没有续段",
+  "work.parts.besideHead": "在续段旁",
   "work.parts.number": "第 {{n}} 段",
   "work.parts.earlier_one": "显示前一段",
   "work.parts.earlier_other": "显示更早的 {{count}} 段",

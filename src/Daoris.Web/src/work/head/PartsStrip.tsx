@@ -3,7 +3,8 @@ import type { Session } from '../../data/api';
 import { ago } from '../../locales/format';
 import { cn } from '../../lib/cn';
 import { Dot, SectionTitle, SESSION_DOT, shownKey } from '../../design/ui';
-import type { PartSpent, SessionEntry } from '../entries';
+import type { TFunction } from 'i18next';
+import { besideHead, type PartSpent, type SessionEntry } from '../entries';
 import { shownOf } from '../groups';
 import type { SessionWhere } from '../rail/SessionRow';
 import { beganLine, partPlace, spentLine } from './partsLife';
@@ -30,14 +31,31 @@ export type PartsProps = {
   onShow: (session: string) => void;
 };
 
-/** The strip's heading: its name, and which part the page is on, *Part 2 of 3*. */
+/**
+ * Which part is the head, *Part 6 of 7 is the head · 1 beside it*; *none* where the driver answers null (an ask's siblings),
+ * and nothing where the host is too old to say.
+ */
+export function headLine(t: TFunction, entry: Pick<SessionEntry, 'head' | 'parts'>): string | null {
+  if (entry.head === undefined) return null;
+  const at = entry.head === null ? -1 : entry.parts.findIndex((part) => part.session === entry.head);
+  if (at < 0) return t('work.parts.headNone');
+  const beside = besideHead(entry).length;
+  const head = t('work.parts.headIs', { n: at + 1, total: entry.parts.length });
+  return beside > 0 ? `${head} · ${t('work.parts.headBeside', { count: beside })}` : head;
+}
+
+/** The strip's heading: its name, and which part the page is on, *Part 2 of 3*, then which is the head. */
 export function PartsHeading({ entry, attended }: Pick<PartsProps, 'entry' | 'attended'>) {
   const { t } = useTranslation();
   const shown = Math.max(0, entry.parts.findIndex((part) => part.session === attended));
+  const head = headLine(t, entry);
   return (
-    <div className="flex items-baseline justify-between gap-2">
-      <SectionTitle level={3}>{t('work.parts.title')}</SectionTitle>
-      <span className="text-meta text-ink-faint">{t('work.parts.of', { n: shown + 1, total: entry.parts.length })}</span>
+    <div className="grid gap-0.5">
+      <div className="flex items-baseline justify-between gap-2">
+        <SectionTitle level={3}>{t('work.parts.title')}</SectionTitle>
+        <span className="text-meta text-ink-faint">{t('work.parts.of', { n: shown + 1, total: entry.parts.length })}</span>
+      </div>
+      {head && <span className="text-meta text-ink-faint">{head}</span>}
     </div>
   );
 }
@@ -49,6 +67,7 @@ export function PartsHeading({ entry, attended }: Pick<PartsProps, 'entry' | 'at
 export function PartsList({ entry, attended, rows, onShow }: PartsProps) {
   const { t } = useTranslation();
   const { parts } = entry;
+  const beside = new Set(besideHead(entry));
   return (
     <ol className="m-0 grid list-none gap-1 p-0">
       {parts.map((part, index) => {
@@ -76,6 +95,7 @@ export function PartsList({ entry, attended, rows, onShow }: PartsProps) {
               <span>{beganLine(t, part, parts, rows)}</span>
               <span className="text-meta text-ink-faint">{ranLine(t, facts?.session)}</span>
               {part.quest && <span className="font-mono text-meta text-ink-faint">#{part.quest}</span>}
+              {beside.has(part.session) && <span className="text-meta text-ink-faint">{t('work.parts.besideHead')}</span>}
               {place && <span className="text-meta text-ink-faint">{place}</span>}
               {spent && <span className="text-meta text-ink-faint">{spent}</span>}
               {facts && <span className="ml-auto shrink-0 text-meta text-ink-faint">{ago(facts.session.updated)}</span>}
