@@ -132,13 +132,13 @@ test('without the props the restored Lyntai version is the released pin, with th
 });
 
 test('the gate trees are handed the same props from the main checkout', () => {
-  const home = join(scratch, 'home');
+  const checkout = join(scratch, 'checkout');
   const tree = join(scratch, 'tree');
-  mkdirSync(join(home, 'local'), { recursive: true });
-  writeFileSync(join(home, 'daoris.gates.json'), '{"gates":[]}');
-  writeFileSync(join(home, 'local', 'lyntai-local.props'), '<Project />');
-  const files = privateGateFiles(home);
+  mkdirSync(join(checkout, 'local'), { recursive: true });
+  writeFileSync(join(checkout, 'daoris.gates.json'), '{"gates":[]}');
+  writeFileSync(join(checkout, 'local', 'lyntai-local.props'), '<Project />');
+  const files = privateGateFiles(checkout);
   assert.ok(files.includes('local/lyntai-local.props'));
-  copyPrivateFiles(home, tree, files);
+  copyPrivateFiles(checkout, tree, files);
   assert.equal(readFileSync(join(tree, 'local', 'lyntai-local.props'), 'utf8'), '<Project />');
 });

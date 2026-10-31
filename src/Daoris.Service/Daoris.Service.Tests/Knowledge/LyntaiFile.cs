@@ -13,11 +13,11 @@ internal sealed class LyntaiFile : IAsyncDisposable
 {
     private readonly string _root;
 
-    private LyntaiFile(string root, TimeProvider? time)
+    private LyntaiFile(string folder, TimeProvider? time)
     {
-        _root = root;
-        Directory.CreateDirectory(root);
-        Memory = new LyntaiMemory(System.IO.Path.Combine(root, LyntaiMemory.FileName), time);
+        _root = folder;
+        Directory.CreateDirectory(folder);
+        Memory = new LyntaiMemory(System.IO.Path.Combine(folder, LyntaiMemory.FileName), time);
     }
 
     public LyntaiMemory Memory { get; }
