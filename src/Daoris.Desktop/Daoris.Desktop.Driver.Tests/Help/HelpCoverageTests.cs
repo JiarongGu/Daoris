@@ -997,6 +997,11 @@ public sealed partial class HelpCoverageTests
             "it changes the files of the person's own checkout, hunk by hunk and line by line, from hunks the person is looking at, each "
             + "press judged against the bytes and the index entry the page read (D204 point 3); a go could not name a hunk the person has not "
             + "seen, so Ask Daoris proposes none and the person presses it in the Changes tab.")),
+        // GITAPP2c (D204, the git-writes design §9): New branch and New tag on a repository's Branches, and the undo of the ref one made.
+        ("projects", "useGitRefActs", null, new Exempt(
+            "it is the person's own act on their repository, named and confirmed on the page before it is pressed and run as an act of the "
+            + "journal; Ask Daoris's git kind proposes cards for git acts, never applies them (design §9), and no card kind carries a ref "
+            + "act yet, so a go reaches the repository's Branches and the person makes the ref there.")),
         ("projects", "useSetLine", null, new Door("setting", "line")),
         ("projects", "useSetLanding", null, new Door("setting", "landing")),
         ("projects", "useSetLanguage", null, new Door("setting", "language")),

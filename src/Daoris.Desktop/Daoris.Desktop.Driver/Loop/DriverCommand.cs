@@ -321,6 +321,10 @@ public static class DriverCommand
               each repository's line and branches: the sessions', the landed (on origin or not, their pull
               request), yours, and how many only origin holds, each against the line; and the git each read
               ran. Those holding Daoris's branches, every one with --all. Reads only.
+          git branch|tag <repository> <name> [<commit>] [--plan | --yes]
+              make a branch or a lightweight tag at a commit (HEAD without one), as the Branches tab's New branch and
+              New tag do. --plan says what it would make; --yes makes it, after your yes in Daoris's window where
+              Daoris runs. Refused from a session's terminal.
           git review <session> [--json] [--time]
               a session's review as its Review page reads it: the files and their base, the uncommitted ones, the line
               and the branch; --time each git it started, its node and budget, the gate's wait, the creation and the run,

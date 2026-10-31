@@ -563,6 +563,8 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
     [InlineData("SET_STANDING_CONFIRMATION", "driver", null)]
     [InlineData("SET_TREES", "driver", null)]
     [InlineData("SET_CHECKOUT_WRITES", "driver", null)]
+    [InlineData("GIT_REF_CREATE", "driver", null)]
+    [InlineData("GIT_REF_UNDO", "driver", null)]
     [InlineData("SET_STANDING", "driver", null)]
     [InlineData("SET_HEAVY_GATES", "driver", null)]
     [InlineData("SET_KEEP", "driver,wiring", null)]

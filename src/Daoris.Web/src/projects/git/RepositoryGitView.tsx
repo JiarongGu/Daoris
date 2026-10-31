@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   type GitActAnswer, type GitAnswer, type GitBranch, type GitGraphPage, type GitLogCommit, type GitRepositoryBranches, gitRefusal, useGitActs,
-  useGitBranches, useGitChanges, useGitGraphPages, useGitHunks,
+  useGitBranches, useGitChanges, useGitGraphPages, useGitHunks, useGitRefActs,
 } from '../../bridge/repositories/git';
 import { useWorkState } from '../../bridge/repositories/lines';
 import { useSessionOpenings } from '../../bridge/sessions/sessions';
@@ -193,7 +193,8 @@ function HeldGroup({ entry, sessionsUnread, ...presses }: { entry: GitRepository
 function BranchesRead({ repository, workspace, ...presses }: { repository: string; workspace: string } & Presses) {
   const read = useRepositoryBranches(repository, workspace);
   const titles = useSessionTitles(repository, read.state === 'read' ? read.value.branches : NO_BRANCHES);
-  return <BranchesTab repository={repository} read={read} titles={titles} {...presses} />;
+  const acts = useGitRefActs(repository, workspace);
+  return <BranchesTab repository={repository} read={read} titles={titles} acts={acts} {...presses} />;
 }
 
 /**

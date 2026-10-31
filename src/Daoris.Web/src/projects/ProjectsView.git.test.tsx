@@ -752,3 +752,139 @@ describe("a repository's Changes tab and the switch behind it (GITAPP2b)", () =>
     expect(await within(repositoryMain()).findByText(/Git could not|git could not read this checkout/i)).toBeInTheDocument();
   });
 });
+
+// GITAPP2c (D204, the git-writes design §6, §9): New branch and New tag on a repository's Branches. The person names it, sees what will
+// be made, and confirms; only then does the press go to the driver, which answers it as data. The undo deletes the ref at the id it made.
+describe("a repository's New branch and New tag (GITAPP2c)", () => {
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      return url.startsWith('/api/registry') ? Response.json(REGISTRY) : respond(url);
+    }));
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    invoke.mockReset();
+    window.localStorage.clear();
+  });
+
+  const answering = (acts: Record<string, () => unknown> = {}) =>
+    invoke.mockImplementation(async (module: string, type: string) => {
+      if (module === 'DAORIS.REMOTES') return WIRING;
+      if (module === 'DAORIS.LOG') return { lines: [] };
+      if (type === 'GIT_BRANCHES') return ENGINE_LIST;
+      if (acts[type]) return acts[type]!();
+      if (type === 'LINES') return { lines: [], landings: [], reviews: [], opinions: [] };
+      if (type === 'HARNESSES') return { harnesses: [] };
+      if (type === 'PLUGINS') return { plugins: [] };
+      if (type === 'RULES') return { defaults: [], scopes: [] };
+      if (type === 'ACROSS') return { repositories: [] };
+      return DRIVER_STATE;
+    });
+
+  const openForm = async () => {
+    const page = await chooseRepository('engine');
+    await userEvent.click(within(page).getByRole('tab', { name: 'Branches' }));
+    await within(repositoryMain()).findByRole('region', { name: "engine's branches" });
+    await userEvent.click(within(repositoryMain()).getByRole('button', { name: 'New branch or tag…' }));
+    return within(repositoryMain()).getByRole('group', { name: 'New branch or tag' });
+  };
+
+  it('names what it will make and sends nothing until Confirm, then presses the create at the line commit', async () => {
+    answering({ GIT_REF_CREATE: () => ({ act: 'a1', outcome: 'done', refused: false, said: 'created' }) });
+    show(<ProjectsView notify={() => {}} />);
+    const form = await openForm();
+
+    await userEvent.type(within(form).getByRole('textbox', { name: 'Name' }), 'topic');
+    await userEvent.click(within(form).getByRole('button', { name: 'Create…' }));
+
+    expect(within(form).getByText(/Make the branch topic at main/)).toBeInTheDocument();
+    expect(asked('GIT_REF_CREATE')).toEqual([]);
+    await userEvent.click(within(form).getByRole('button', { name: 'Confirm' }));
+
+    expect(await within(form).findByText('Made the branch topic.')).toBeInTheDocument();
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'GIT_REF_CREATE', {
+      payload: { repository: 'engine', workspace: 'aurora', kind: 'branch', name: 'topic', at: LINE_COMMIT },
+    });
+  });
+
+  it('makes a lightweight tag when asked for one, and says so in the confirmation', async () => {
+    answering({ GIT_REF_CREATE: () => ({ act: 'a2', outcome: 'done', refused: false, said: 'created' }) });
+    show(<ProjectsView notify={() => {}} />);
+    const form = await openForm();
+
+    await userEvent.click(within(form).getByRole('radio', { name: 'Tag' }));
+    await userEvent.type(within(form).getByRole('textbox', { name: 'Name' }), 'v1');
+    await userEvent.click(within(form).getByRole('button', { name: 'Create…' }));
+    expect(within(form).getByText(/Make the lightweight tag v1 at main/)).toBeInTheDocument();
+    await userEvent.click(within(form).getByRole('button', { name: 'Confirm' }));
+
+    await within(form).findByText('Made the tag v1.');
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'GIT_REF_CREATE', expect.objectContaining({ payload: expect.objectContaining({ kind: 'tag', name: 'v1' }) }));
+  });
+
+  it('goes back from the confirmation without sending, and asks no name that is empty', async () => {
+    answering();
+    show(<ProjectsView notify={() => {}} />);
+    const form = await openForm();
+
+    expect(within(form).getByRole('button', { name: 'Create…' })).toBeDisabled();
+    await userEvent.type(within(form).getByRole('textbox', { name: 'Name' }), 'topic');
+    await userEvent.click(within(form).getByRole('button', { name: 'Create…' }));
+    await userEvent.click(within(form).getByRole('button', { name: 'Back' }));
+
+    expect(within(form).getByRole('textbox', { name: 'Name' })).toHaveValue('topic');
+    expect(asked('GIT_REF_CREATE')).toEqual([]);
+  });
+
+  it("says a refusal in the driver's sentence and keeps the name to change", async () => {
+    answering({ GIT_REF_CREATE: () => ({ refused: true, outcome: null, said: 'a branch named `topic` already exists, so nothing was created' }) });
+    show(<ProjectsView notify={() => {}} />);
+    const form = await openForm();
+
+    await userEvent.type(within(form).getByRole('textbox', { name: 'Name' }), 'topic');
+    await userEvent.click(within(form).getByRole('button', { name: 'Create…' }));
+    await userEvent.click(within(form).getByRole('button', { name: 'Confirm' }));
+
+    expect(await within(form).findByText(/a branch named .topic. already exists/)).toBeInTheDocument();
+    expect(within(form).getByRole('textbox', { name: 'Name' })).toHaveValue('topic');
+  });
+
+  it('undoes a create at the act it made, and says the ref is gone', async () => {
+    answering({
+      GIT_REF_CREATE: () => ({ act: 'a1', outcome: 'done', refused: false, said: 'created' }),
+      GIT_REF_UNDO: () => ({ act: 'a3', outcome: 'done', refused: false, said: 'deleted' }),
+    });
+    show(<ProjectsView notify={() => {}} />);
+    const form = await openForm();
+    await userEvent.type(within(form).getByRole('textbox', { name: 'Name' }), 'topic');
+    await userEvent.click(within(form).getByRole('button', { name: 'Create…' }));
+    await userEvent.click(within(form).getByRole('button', { name: 'Confirm' }));
+
+    await userEvent.click(await within(form).findByRole('button', { name: 'Undo' }));
+
+    expect(await within(form).findByText('Undone: the branch topic is gone.')).toBeInTheDocument();
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'GIT_REF_UNDO', { payload: { repository: 'engine', workspace: 'aurora', act: 'a1' } });
+  });
+
+  it('says what it could not tell where the outcome is unknown, and offers no undo', async () => {
+    answering({ GIT_REF_CREATE: () => ({ act: 'a4', outcome: 'unknown', refused: false, said: 'its processes did not end' }) });
+    show(<ProjectsView notify={() => {}} />);
+    const form = await openForm();
+    await userEvent.type(within(form).getByRole('textbox', { name: 'Name' }), 'topic');
+    await userEvent.click(within(form).getByRole('button', { name: 'Create…' }));
+    await userEvent.click(within(form).getByRole('button', { name: 'Confirm' }));
+
+    expect(await within(form).findByText(/Daoris could not tell whether this finished; nothing was retried/)).toBeInTheDocument();
+    expect(within(form).queryByRole('button', { name: 'Undo' })).toBeNull();
+  });
+
+  it('draws no New branch or tag for a repository with no checkout here', async () => {
+    answering();
+    show(<ProjectsView notify={() => {}} />);
+    const game = await chooseRepository('game');
+    await userEvent.click(within(game).getByRole('tab', { name: 'Branches' }));
+    await within(repositoryMain()).findByText(/this machine has none/);
+    expect(within(repositoryMain()).queryByRole('button', { name: 'New branch or tag…' })).toBeNull();
+  });
+});

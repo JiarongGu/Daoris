@@ -6,6 +6,7 @@ import { ExternalLink } from '../../design/links';
 import { ListMore } from '../../work/frame/ListPane';
 import { Button, Inline, Pill, Prose, SESSION_TONE, type ShownState } from '../../design/ui';
 import { kindOf, landedStanding, pullRequestSaid, standing } from './branchStanding';
+import { NewRef, type RefActs } from './NewRef';
 
 /** Yours are folded after five (the built-in Git design §2.2): the rest are one press away. */
 export const YOURS_SHOWN = 5;
@@ -71,9 +72,11 @@ const SOURCES = new Set(['repository', 'workspace', 'checkout']);
  * parted, so a row opens only where both it and its line have a commit here; and the line's own row opens History, since the
  * line's page is the repository's history. A row with no press says nothing of one: it is absent, never disabled.
  */
-export function BranchList({ repository, list, titles = NO_TITLES, onOpen, onOpenHistory }: {
+export function BranchList({ repository, list, titles = NO_TITLES, onOpen, onOpenHistory, acts }: {
   repository: string;
   list: BranchListValue;
+  /** New branch or tag (GITAPP2c), made at the line's commit; absent, the list offers none. */
+  acts?: RefActs;
   /** Each session branch's session's title, by the branch's name. */
   titles?: Readonly<Record<string, string>>;
   /** Open a branch's page, by its name; absent, no name is a press. */
@@ -102,6 +105,8 @@ export function BranchList({ repository, list, titles = NO_TITLES, onOpen, onOpe
         lineStanding(t, list.line),
         fetched(t, list.fetch),
       ])} />
+
+      {acts && list.line.commit && <NewRef at={{ label: line ?? 'HEAD', commit: list.line.commit }} acts={acts} />}
 
       {sessions.length > 0 && (
         <Kind

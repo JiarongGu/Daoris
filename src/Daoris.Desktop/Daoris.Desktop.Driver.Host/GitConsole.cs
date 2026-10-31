@@ -39,6 +39,31 @@ internal static class GitConsole
             }
         }
 
+        // A branch or a lightweight tag made (GITAPP2c): planned alone, pressed through the running Daoris's window or, with none, run here as the journal's act.
+        if (GitRefCommand.Answers(args))
+        {
+            try
+            {
+                var configPath = DriverConfig.ResolvePath();
+                var home = DriverConfig.HomeOf(configPath);
+                using var service = ServiceClient.FromEnvironment();
+                using var closing = new CancellationTokenSource();
+                Console.CancelKeyPress += (_, press) => { press.Cancel = true; closing.Cancel(); };
+                var runs = new ActRuns(new ActJournal(home));
+                var world = new GitRefWorld(
+                    async (repository, ct) => (await service.RegistryAsync(ct).ConfigureAwait(false))
+                        .Where(row => string.Equals(row.Repository, repository, StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(row.Root))
+                        .Select(row => row.Root).FirstOrDefault(root => Directory.Exists(root)),
+                    () => runs);
+                return await GitRefCommand.RunAsync(args, world, InstanceHost.World(home, "git"), closing.Token).ConfigureAwait(false);
+            }
+            catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException or IOException)
+            {
+                Console.Error.WriteLine($"git: {error.Message}");
+                return 2;
+            }
+        }
+
         // Review's read from a terminal and the bench's verb (GITAPP1a-i): the route's own code, each start counted and timed.
         if (GitReviewCommand.Answers(args))
         {
