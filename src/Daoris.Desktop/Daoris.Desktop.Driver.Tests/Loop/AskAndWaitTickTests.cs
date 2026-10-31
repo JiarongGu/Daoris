@@ -283,6 +283,9 @@ public sealed class AskAndWaitTickTests : IDisposable
         /// </summary>
         public bool Took { get; set; }
 
+        /// <summary>What a session's actor keep waits on before it is answered, where a test holds the run there; null holds none.</summary>
+        public Task? ActorKeptAfter { get; set; }
+
         public int SessionCount { get { lock (_sessions) return _sessions.Count; } }
 
         public JsonObject Session(string id)
@@ -331,6 +334,12 @@ public sealed class AskAndWaitTickTests : IDisposable
                 HttpListenerContext context;
                 try { context = await _listener.GetContextAsync(); }
                 catch (Exception error) when (error is HttpListenerException or ObjectDisposedException or InvalidOperationException) { return; }
+
+                if (ActorKeptAfter is { } held && context.Request.HttpMethod == "POST"
+                    && context.Request.Url!.AbsolutePath.EndsWith("/actor", StringComparison.Ordinal))
+                {
+                    await held;
+                }
 
                 var (status, body) = Answer(context.Request);
                 var bytes = Encoding.UTF8.GetBytes(body);

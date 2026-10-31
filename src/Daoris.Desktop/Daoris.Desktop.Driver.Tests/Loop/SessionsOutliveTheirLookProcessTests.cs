@@ -42,10 +42,23 @@ public sealed class SessionsOutliveTheirLookProcessTests : IDisposable
     {
         var processes = new SessionProcesses();
         var driver = Driver(processes);
+        // Kept late in every run, as load makes it: the first session's move to working lands only once its process runs.
+        var running = new TaskCompletionSource();
+        _ledger.Before = async (request, ct) =>
+        {
+            if (request.RequestUri!.AbsolutePath == "/api/sessions/s1/state"
+                && (await request.Content!.ReadAsStringAsync(ct)).Contains("\"working\"", StringComparison.Ordinal))
+            {
+                await running.Task.WaitAsync(ct);
+            }
+        };
         _ledger.Publish("q1", "engine");
 
         await driver.TickAsync().WaitAsync(Poll.Patience);
         await Poll.Until(() => processes.Running.Contains("s1"), () => "the first session never started");
+        // Published once the first session works: a process running is not yet its record working.
+        running.SetResult();
+        await Poll.Until(() => _ledger.Session("s1")["state"]!.GetValue<string>() == "working", () => "the first session never worked");
 
         _ledger.Publish("q2", "tools");
         var next = await driver.TickAsync().WaitAsync(Poll.Patience);
