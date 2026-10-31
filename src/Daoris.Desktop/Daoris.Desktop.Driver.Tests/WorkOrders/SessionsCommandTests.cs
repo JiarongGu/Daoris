@@ -821,13 +821,14 @@ public sealed class SessionsCommandTests : IDisposable
         Assert.Equal(("completed", "Merged by hand."), (ledger.State("p4rk3d00"), ledger.Note("p4rk3d00")));
     }
 
-    private async Task<(int Exit, string Said)> StandingAsync(Ledger ledger, string[] args)
+    private async Task<(int Exit, string Said)> StandingAsync(Ledger ledger, string[] args, TimeSpan? wait = null)
     {
         using var service = ledger.Client();
         var output = new StringWriter();
         var ask = SessionsCommand.Read(args, out var problem);
         Assert.True(problem is null, problem);
-        var exit = await SessionsCommand.RunAsync(ask! with { Standing = true }, World(ledger, service), output);
+        var world = wait is { } bound ? World(ledger, service) with { Wait = bound } : World(ledger, service);
+        var exit = await SessionsCommand.RunAsync(ask! with { Standing = true }, world, output);
         return (exit, output.ToString().ReplaceLineEndings("\n"));
     }
 
@@ -880,7 +881,8 @@ public sealed class SessionsCommandTests : IDisposable
             }
         });
 
-        var (exit, _) = await StandingAsync(ledger, ["stop", "w0rk1ng0"]);
+        // The loop honours it on its own turn, which a loaded machine reaches late: the request waits on that signal, never a few seconds.
+        var (exit, _) = await StandingAsync(ledger, ["stop", "w0rk1ng0"], Poll.Patience);
         honouring.Cancel();
         await honour;
 
