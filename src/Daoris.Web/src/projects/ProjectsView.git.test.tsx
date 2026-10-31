@@ -19,7 +19,7 @@ vi.mock('@shenora/react', () => ({
 import type { GitBranchList, GitGraphPage } from '../bridge/repositories/git';
 import {
   GIT_BRANCH_PARTED, GIT_BRANCH_PARTED_PAGES, GIT_BRANCHES_ENGINE, GIT_BRANCHES_GAME, GIT_CHANGES_ENGINE, GIT_HISTORY_ENGINE, GIT_HISTORY_PAGES,
-  GIT_HUNKS_BUDGET,
+  GIT_HUNKS_BUDGET, GIT_COMMIT_PLAN_ENGINE,
 } from './fixtures';
 import { SHARED_BRANCH, SHARED_DUE, SHARED_UNITS, traceAnswerOf } from './git/landingFixtures';
 import { DRIVER_STATE, respond, show, WIRING } from '../test/shellHarness';
@@ -721,6 +721,47 @@ describe("a repository's Changes tab and the switch behind it (GITAPP2b)", () =>
 
     expect(await within(region).findByRole('status')).toHaveTextContent('The file changed since this list was read: nothing was changed.');
     expect(asked('GIT_STAGE')).toEqual([]);
+  });
+
+  // GITAPP2i: the commit box reads the plan, presses with the tip and tree it showed, and says a hook's rewrite from the answer.
+  it('commits the staged changes: reads the plan, presses GIT_MAKE_COMMIT with its tip and tree, and says what a hook changed', async () => {
+    answering(switchOn, undefined, {
+      GIT_COMMIT_PLAN: () => answer(GIT_COMMIT_PLAN_ENGINE),
+      GIT_MAKE_COMMIT: () => ({ done: true, refused: false, act: 'act-11', outcome: 'done', said: 'x', notes: 'A hook changed what was committed: `a.txt` differ from what was staged.' }),
+    });
+    show(<ProjectsView notify={() => {}} />);
+    const page = await chooseRepository('engine');
+    await userEvent.click(within(page).getByRole('tab', { name: 'Changes' }));
+    const region = await within(repositoryMain()).findByRole('region', { name: "engine's changes" });
+
+    await userEvent.type(await within(region).findByRole('textbox', { name: 'Message' }), 'Round the total');
+    await userEvent.click(within(region).getByRole('button', { name: 'Commit' }));
+
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'GIT_MAKE_COMMIT', {
+      payload: expect.objectContaining({ repository: 'engine', workspace: 'aurora', message: 'Round the total', head: GIT_COMMIT_PLAN_ENGINE.head, tree: GIT_COMMIT_PLAN_ENGINE.tree }),
+    }));
+    expect(await within(region).findByRole('status')).toHaveTextContent('Committed. A hook changed what was committed');
+    expect(within(region).queryByRole('button', { name: 'Undo' })).toBeNull();
+    expect(within(region).getByRole('textbox', { name: 'Message' })).toHaveValue('');
+  });
+
+  it('amends through GIT_AMEND after asking for the amend\'s own plan, and says a refusal in the driver\'s sentence', async () => {
+    answering(switchOn, undefined, {
+      GIT_COMMIT_PLAN: () => answer(GIT_COMMIT_PLAN_ENGINE),
+      GIT_AMEND: () => ({ done: false, refused: true, said: 'HEAD moved since the staged changes were read: nothing was changed.' }),
+    });
+    show(<ProjectsView notify={() => {}} />);
+    const page = await chooseRepository('engine');
+    await userEvent.click(within(page).getByRole('tab', { name: 'Changes' }));
+    const region = await within(repositoryMain()).findByRole('region', { name: "engine's changes" });
+
+    await userEvent.click(await within(region).findByRole('checkbox', { name: 'Amend the last commit' }));
+    await userEvent.click(within(region).getByRole('button', { name: 'Amend' }));
+
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'GIT_COMMIT_PLAN', { payload: expect.objectContaining({ verb: 'amend' }) }));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'GIT_AMEND', { payload: expect.objectContaining({ message: 'Round the budget total', head: GIT_COMMIT_PLAN_ENGINE.head }) }));
+    expect(await within(region).findByRole('status')).toHaveTextContent('HEAD moved since the staged changes were read');
+    expect(asked('GIT_MAKE_COMMIT')).toEqual([]);
   });
 
   it("shows the read the shell held as read again until a fresh one lands, and does not offer Refresh meanwhile", async () => {

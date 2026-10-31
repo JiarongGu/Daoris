@@ -95,6 +95,9 @@ export const DECLARED: Readonly<Record<string, { scopes: readonly string[]; sess
   GIT_STAGE: { scopes: ['checkouts'] },
   GIT_UNSTAGE: { scopes: ['checkouts'] },
   GIT_UNDO: { scopes: ['checkouts'] },
+  // GITAPP2i: a commit moves the checkout's index and the branch it has out.
+  GIT_MAKE_COMMIT: { scopes: ['driver', 'checkouts'] },
+  GIT_AMEND: { scopes: ['driver', 'checkouts'] },
   GIT_REF_CREATE: { scopes: ['driver'] },
   GIT_REF_UNDO: { scopes: ['driver'] },
   GIT_REF_DELETE: { scopes: ['driver'] },
