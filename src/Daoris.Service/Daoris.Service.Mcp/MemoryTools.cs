@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Globalization;
 using System.Text;
 using ModelContextProtocol.Server;
 
@@ -25,11 +26,11 @@ public sealed class MemoryTools(
     /// <summary>What every tool answers where memory is off, after its checks.</summary>
     public const string NotOn = "Memory is not on in this Daoris yet, so nothing was read or kept.";
 
-    /// <summary>What <c>memory_write</c> answers to a replacement, until Lyntai applies one as one change (the design §4, §6 A).</summary>
+    /// <summary>What <c>memory_write</c> answers to a replacement where the memory's engine cannot apply one as one change (the design §4, §6 A).</summary>
     public const string SupersedesWaits =
-        "Refused: replacing an entry in one change waits on Lyntai's atomic supersession, requested as §6 A of the memory coordinator "
-        + "design. Write the new fact with `relation` `disputes` and `target` the old entry, then end the old one with memory_end: two "
-        + "decisions, both current until the end is approved. Nothing was kept.";
+        "Refused: this memory's engine cannot replace an entry in one change (Lyntai's atomic supersession, requested as §6 A of the memory "
+        + "coordinator design). Write the new fact with `relation` `disputes` and `target` the old entry, then end the old one with "
+        + "memory_end: two decisions, both current until the end is approved. Nothing was kept.";
 
     private const int Limit = 10;
 
@@ -66,7 +67,7 @@ public sealed class MemoryTools(
         // This session's own additions, and those of the sessions it continues, before their commit point: no other session sees them.
         var staged = caller.Record is { } record && ledger is not null
             ? (await ledger.Memory.StagedForAsync(record.Id, ct).ConfigureAwait(false))
-                .Where(op => op.Change is { Kind: MemoryOpKind.Write, Text: { } written } && Matches(written, query))
+                .Where(op => op.Change is { Kind: MemoryOpKind.Write or MemoryOpKind.Supersede, Text: { } written } && Matches(written, query))
                 .ToList()
             : [];
         if (found.Count == 0 && staged.Count == 0) return $"No memory entry in workspace `{caller.Workspace}` matches `{query}`.";
@@ -124,19 +125,32 @@ public sealed class MemoryTools(
     [Description(
         "Write one entry into the memory of the repository this session works in, for later sessions to find: a fact you confirmed, in "
         + "a sentence or two. Cite a record by its knowledge id rather than copying it. With `relation` and `target`, the entry disputes "
-        + "or amends another entry of this repository's memory, which stays as it is. The write is kept with this session's work and "
-        + "applies when that work is accepted.")]
+        + "or amends another entry of this repository's memory, which stays as it is. With `supersedes`, it replaces entries of this "
+        + "repository's memory: once its approver agrees, it is written and they end in one change. The write is kept with this session's "
+        + "work and applies when that work is accepted.")]
     public async Task<string> WriteAsync(
         [Description("The fact, as later sessions should read it.")] string text,
         [Description("`disputes` or `amends`, given with `target`; omit for an entry that relates to none.")] string? relation = null,
         [Description("The reference of the entry this one disputes or amends.")] string? target = null,
-        [Description("Not taken yet: a replacement waits on Lyntai. Dispute the old entry and end it instead.")] string? supersedes = null,
+        [Description("The entries this one replaces, each `repository:entry@revision` with the revision memory_get answered.")]
+        string[]? supersedes = null,
         [Description("The knowledge ids of the records that show the fact, as knowledge_search names them; each is rechecked later.")]
         string[]? cites = null,
         CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(text)) return "Write the entry's text: one fact, in a sentence or two.";
-        if (!string.IsNullOrWhiteSpace(supersedes)) return SupersedesWaits;
+        var replaced = new List<(MemoryReference Reference, long Revision)>();
+        foreach (var named in (supersedes ?? []).Where(each => !string.IsNullOrWhiteSpace(each)))
+        {
+            if (Predecessor(named) is not { } predecessor) return Words.Unread(named);
+            replaced.Add(predecessor);
+        }
+
+        if (replaced.Count > 0 && (relation ?? target) is not null)
+        {
+            return "Refused: a replacement relates to no other entry; write it with `supersedes` alone. Nothing was kept.";
+        }
+
         if (cites is { Length: > MaxCites }) return $"Cite at most {MaxCites} records: the ones that show this fact.";
         MemoryReference? related = null;
         if ((relation ?? target) is not null
@@ -147,12 +161,15 @@ public sealed class MemoryTools(
 
         var caller = await _scope.ReadAsync(ct).ConfigureAwait(false);
         if ((caller.Refused ?? (related is null ? null : caller.Outside(related)) ?? caller.Unchanging("memory_write")
-                ?? (related is null ? null : caller.NotOwnRelation(related))) is { } refused)
+                ?? (related is null ? null : caller.NotOwnRelation(related))
+                ?? replaced.Select(each => caller.Outside(each.Reference) ?? caller.NotOwn(each.Reference)).FirstOrDefault(each => each is not null))
+            is { } refused)
         {
             return refused;
         }
 
         if (engines is null || ledger is null || caller.Record is not { } record) return NotOn;
+        if (replaced.Count > 0 && engines.Open(caller.OwnPlaced!, MemoryReinforcement.None) is not { HoldsSupersession: true }) return SupersedesWaits;
         var citations = new List<Citation>();
         foreach (var id in (cites ?? []).Where(id => !string.IsNullOrWhiteSpace(id)).Select(id => id.Trim()).Distinct(StringComparer.Ordinal))
         {
@@ -163,13 +180,32 @@ public sealed class MemoryTools(
             citations.Add(cited);
         }
 
+        var predecessors = replaced
+            .Select(each => new MemoryPredecessor(caller.Placed(each.Reference).Entry, each.Revision))
+            .DistinctBy(each => each.Entry)
+            .ToList();
         var op = await ledger.Memory.StageAsync(
             caller.OwnPlaced!,
-            new MemoryChange(MemoryOpKind.Write, Text: text.Trim(), Target: related is null ? null : caller.Placed(related).Entry,
-                Relation: relation?.Trim().ToLowerInvariant(), Recheck: MemoryCitations.Of(citations)),
+            new MemoryChange(predecessors.Count > 0 ? MemoryOpKind.Supersede : MemoryOpKind.Write, Text: text.Trim(),
+                Target: related is null ? null : caller.Placed(related).Entry, Relation: relation?.Trim().ToLowerInvariant(),
+                Recheck: MemoryCitations.Of(citations), Predecessors: predecessors.Count > 0 ? predecessors : null),
             Author(record), ct).ConfigureAwait(false);
-        return $"Kept as operation `{op.Id}`, staged: `{op.Repository}`'s memory takes this entry when this session's work is accepted. "
-            + "Until then only this session, and a session continuing it, finds it with memory_search.";
+        var until = "Until then only this session, and a session continuing it, finds it with memory_search.";
+        return predecessors.Count == 0
+            ? $"Kept as operation `{op.Id}`, staged: `{op.Repository}`'s memory takes this entry when this session's work is accepted. {until}"
+            : $"Kept as operation `{op.Id}`, staged: once this session's work is accepted it waits for its approver, then `{op.Repository}`'s "
+              + $"memory takes this entry and ends {string.Join(", ", predecessors.Select(each => $"`{op.Repository}:{each.Entry}` (revision {each.Revision})"))} "
+              + $"in one change. Nothing changes before. {until}";
+    }
+
+    /// <summary>The entry a replacement names, written <c>repository:entry@revision</c>, or null where it names no revision.</summary>
+    private static (MemoryReference Reference, long Revision)? Predecessor(string text)
+    {
+        var at = text.LastIndexOf('@');
+        return at > 0 && MemoryReference.Parse(text[..at]) is { } reference
+            && long.TryParse(text[(at + 1)..].Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var revision)
+                ? (reference, revision)
+                : null;
     }
 
     [McpServerTool(Name = "memory_end")]
@@ -223,6 +259,10 @@ public sealed class MemoryTools(
     {
         public static string Malformed(string? text) =>
             $"`{text}` is no memory reference: write `repository:entry`, as memory_search names one.";
+
+        public static string Unread(string text) =>
+            $"`{text}` names no revision: name each entry a replacement ends as `repository:entry@revision`, with the revision memory_get "
+            + "answered. Nothing was kept.";
     }
 }
 
