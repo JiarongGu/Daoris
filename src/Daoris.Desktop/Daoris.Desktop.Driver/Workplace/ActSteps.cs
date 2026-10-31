@@ -286,7 +286,7 @@ internal static class ActSteps
     private static JsonArray Entries(IEnumerable<ActEntry> entries) =>
         new([.. entries.Select(entry => (JsonNode)new JsonObject { ["mode"] = entry.Mode, ["id"] = entry.Id, ["stage"] = entry.Stage, ["path"] = entry.Path })]);
 
-    private static IReadOnlyList<ActEntry> EntriesOf(JsonNode? node) =>
+    internal static IReadOnlyList<ActEntry> EntriesOf(JsonNode? node) =>
         node is JsonArray array
             ? [.. array.Select(each => new ActEntry(Text(each!, "mode")!, Text(each!, "id")!, each!["stage"]!.GetValue<int>(), Text(each!, "path")!))]
             : [];

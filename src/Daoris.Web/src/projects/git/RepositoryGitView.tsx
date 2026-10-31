@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
-  type GitAnswer, type GitBranch, type GitGraphPage, type GitLogCommit, type GitRepositoryBranches, gitRefusal, useGitBranches, useGitChanges,
-  useGitGraphPages, useGitRefActs,
+  type GitActAnswer, type GitAnswer, type GitBranch, type GitGraphPage, type GitLogCommit, type GitRepositoryBranches, gitRefusal, useGitActs,
+  useGitBranches, useGitChanges, useGitGraphPages, useGitHunks, useGitRefActs,
 } from '../../bridge/repositories/git';
 import { useWorkState } from '../../bridge/repositories/lines';
 import { useSessionOpenings } from '../../bridge/sessions/sessions';
@@ -12,7 +12,8 @@ import { questName, sessionTitle } from '../../work/identity';
 import { BranchPage, type BranchRead } from './BranchPage';
 import type { LandingDoor } from './LandingFlow';
 import { landingOf } from './landingLife';
-import { BranchesTab, ChangesTab, type ChangesValue, type GitRead, HistoryTab, type HistoryRead } from './RepositoryGit';
+import { BranchesTab, type ChangeSide, type ChangesActs, type ChangesLast, ChangesTab, type ChangesValue, type GitRead, HistoryTab, type HistoryRead } from './RepositoryGit';
+import { ChangeHunks, type HunkPress, type HunksValue } from './ChangeHunks';
 import { WorkspaceBranches, type WorkspaceGroups } from '../workspace/WorkspaceBranches';
 
 /** Matched without case, as the driver matches a repository's name and a workspace's. */
@@ -102,7 +103,31 @@ function ChangesRead({ repository, workspace }: { repository: string; workspace:
     : !value ? { state: 'refused', sentence: sentence({ code: 'UNKNOWN' }) }
     : { state: 'read', value };
   const refreshing = query.isFetching || (value !== null && new Date(value.readAt).getTime() < askedAt);
-  return <ChangesTab repository={repository} read={read} refreshing={refreshing} onRefresh={() => { void query.refetch(); }} />;
+
+  // GITAPP2h: the presses of the tab. The hunks a row opens are read by `Hunks`, under the tab's own key.
+  const { press, undo } = useGitActs(repository, workspace);
+  const [last, setLast] = useState<ChangesLast | null>(null);
+  const say = (verb: ChangesLast['verb'], path: string | null) => (answer: GitActAnswer & { stale?: boolean }) =>
+    setLast({ verb, path, act: answer.act, done: answer.done, said: answer.said, stale: answer.stale });
+  const Hunks = useMemo(() => function Hunks({ path, side, busy, onPress }: { path: string; side: ChangeSide; busy: boolean; onPress: (press: HunkPress) => void }) {
+    const hunks = useGitHunks(repository, workspace, path, side);
+    const answered = hunks.data;
+    const refusal = gitRefusal(answered);
+    const hunksRead: GitRead<HunksValue> = hunks.error ? { state: 'refused', sentence: sentence(hunks.error) }
+      : !answered ? { state: 'reading' }
+      : refusal ? { state: 'refused', sentence: sentence(refusal) }
+      : !answered.value ? { state: 'refused', sentence: sentence({ code: 'UNKNOWN' }) }
+      : { state: 'read', value: answered.value };
+    return <ChangeHunks read={hunksRead} verb={side === 'unstaged' ? 'stage' : 'unstage'} busy={busy} onPress={onPress} />;
+  }, [repository, workspace]);
+  const acts: ChangesActs = {
+    busy: press.isPending || undo.isPending,
+    last,
+    press: (act) => press.mutate({ ...act, picks: act.picks ?? [] }, { onSuccess: say(act.verb, act.path), onError: (error) => setLast({ verb: act.verb, path: act.path, act: null, done: false, said: sentence(error) }) }),
+    undo: (act) => undo.mutate(act, { onSuccess: say('undo', null), onError: (error) => setLast({ verb: 'undo', path: null, act: null, done: false, said: sentence(error) }) }),
+    Hunks,
+  };
+  return <ChangesTab repository={repository} read={read} refreshing={refreshing} onRefresh={() => { void query.refetch(); }} acts={acts} />;
 }
 
 const NO_BRANCHES: GitBranch[] = [];

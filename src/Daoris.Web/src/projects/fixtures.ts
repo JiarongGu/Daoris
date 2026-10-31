@@ -343,6 +343,32 @@ export const GIT_CHANGES_ENGINE = {
 };
 
 /**
+ * `src/budget.cs`'s hunks on the index → worktree side, as `GIT_HUNKS` answers them (GITAPP2h): one hunk of a changed line and an
+ * added one, with the ids a press sends back (`index` is the entry the list shows for it).
+ */
+export const GIT_HUNKS_BUDGET = {
+  path: 'src/budget.cs',
+  side: 'unstaged' as 'unstaged' | 'staged',
+  head: id('c4f1a2') as string | null,
+  index: `100644 ${blob('9c41e7')}`,
+  source: blob('d70a41'),
+  binary: false,
+  hunks: [
+    {
+      id: 'a1b2c3d4e5f6',
+      header: '@@ -10,4 +10,5 @@ class Budget',
+      lines: [
+        { kind: ' ', text: '    var total = 0;' },
+        { kind: '-', text: '    total += cost;' },
+        { kind: '+', text: '    total += cost * rate;' },
+        { kind: '+', text: '    total = Math.Round(total);' },
+        { kind: ' ', text: '    return total;' },
+      ],
+    },
+  ],
+};
+
+/**
  * The physics session's branch beside the engine's line since they parted, as `GIT_GRAPH` answers `sinceParted` with the two
  * tips, the branch then the line (UX6h3b): its two commits (`left`) and the line's two since it grew from `77a0e1` (`right`),
  * the asset cache's merge among them, in date order.

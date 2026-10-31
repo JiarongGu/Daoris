@@ -374,6 +374,99 @@ export const useGitChanges = (repository: string | null, workspace = '', enabled
   return { available: isAvailable, query };
 };
 
+/** One line of a hunk: `' '` context, `'+'` added, `'-'` removed, `'\\'` git's no-newline marker. */
+export type GitHunkLine = { kind: string; text: string };
+
+/** A hunk as git prints it; its `id` names its text, so a press can say which hunk it meant. */
+export type GitHunk = { id: string; header: string; lines: GitHunkLine[] };
+
+/**
+ * One file's hunks on a side (GITAPP2h): `unstaged` is the index → worktree, `staged` HEAD → index. `head`, `index` (`mode blob`, or
+ * empty) and `source` are what a press must find unchanged; the page sends them back unread.
+ */
+export type GitFileHunks = { path: string; side: 'unstaged' | 'staged'; head: string | null; index: string; source: string; binary: boolean; hunks: GitHunk[] };
+
+const readHunks = (raw: unknown): GitAnswer<GitFileHunks> | null => {
+  const answer = raw as Partial<GitAnswer<GitFileHunks>> | null;
+  if (!answer || typeof answer !== 'object' || !('value' in answer)) return null;
+  const value = answer.value;
+  return {
+    value: value && Array.isArray(value.hunks) ? { ...value, head: value.head ?? null, index: value.index ?? '', source: value.source ?? '' } : null,
+    refusal: answer.refusal ?? null,
+    problem: answer.problem ?? null,
+    commands: answer.commands ?? [],
+    remembered: answer.remembered === true,
+  };
+};
+
+const hunksKey = (repository: string, workspace: string, path: string, side: string) => [...keys.gitChanges(repository, workspace), 'hunks', path, side] as const;
+
+/** A file's hunks on a side, read when asked for and read again with the Changes tab (they sit under its key). */
+export const useGitHunks = (repository: string | null, workspace: string, path: string, side: 'unstaged' | 'staged', enabled = true) => {
+  const { isAvailable } = useShenora();
+  const client = useQueryClient();
+  const queryKey = hunksKey(repository ?? '', workspace, path, side);
+  return useQuery({
+    queryKey,
+    queryFn: () => askHeld('GIT_HUNKS', client, queryKey, { repository, path, side, ...(workspace ? { workspace } : {}) }, readHunks),
+    enabled: isAvailable && Boolean(repository) && enabled,
+    staleTime: 0,
+    refetchOnMount: 'always',
+  });
+};
+
+/** What a hunk or a file pressed: whole file with no pick, else the hunks (and lines of them, by index) chosen. */
+export type GitActPick = { id: string; lines?: number[] };
+
+/** What the driver answered an act (GITAPP2h): done, or refused in its sentence; `act` is what Undo takes. */
+export type GitActAnswer = { done: boolean; refused: boolean; act: string | null; outcome: string | null; said: string | null };
+
+export type GitActPress = {
+  verb: 'stage' | 'unstage';
+  path: string;
+  /** The index entry as the list showed it (`mode blob`, empty where none): a file pressed whole is refused where it no longer is. */
+  shown: string;
+  picks: GitActPick[];
+  /** What the hunks were read against; absent, the file's are read at the press. */
+  faces?: Pick<GitFileHunks, 'head' | 'index' | 'source'>;
+};
+
+const readAct = (raw: unknown): GitActAnswer => {
+  const answer = (raw ?? {}) as Partial<GitActAnswer>;
+  return {
+    done: answer.done === true, refused: answer.refused === true, act: answer.act ?? null, outcome: answer.outcome ?? null, said: answer.said ?? null,
+  };
+};
+
+/**
+ * Stage and unstage by file, hunk or line, and Undo (GITAPP2h, the git-writes design §8). One act at a time: the driver's lock refuses a
+ * second, and says so. A refusal is data in the answer, never an error; the state hub reads the Changes tab again.
+ */
+export const useGitActs = (repository: string | null, workspace: string) => {
+  const client = useQueryClient();
+  const scope = { repository, ...(workspace ? { workspace } : {}) };
+  const press = useMutation({
+    mutationFn: async (act: GitActPress): Promise<GitActAnswer & { stale?: boolean }> => {
+      const side = act.verb === 'stage' ? 'unstaged' : 'staged';
+      let faces = act.faces;
+      if (!faces) {
+        const key = hunksKey(repository ?? '', workspace, act.path, side);
+        const read = await client.fetchQuery({
+          queryKey: key, staleTime: 0,
+          queryFn: () => askHeld('GIT_HUNKS', client, key, { ...scope, path: act.path, side }, readHunks),
+        });
+        faces = read?.value ?? undefined;
+        if (!faces) return { done: false, refused: true, act: null, outcome: null, said: read?.problem ?? null };
+        if (faces.index !== act.shown) return { done: false, refused: true, act: null, outcome: null, said: null, stale: true };
+      }
+      const payload = { ...scope, path: act.path, head: faces.head, index: faces.index, source: faces.source, picks: act.picks };
+      return readAct(act.verb === 'stage' ? await call('GIT_STAGE', payload) : await call('GIT_UNSTAGE', payload));
+    },
+  });
+  const undo = useMutation({ mutationFn: async (act: string) => readAct(await call('GIT_UNDO', { ...scope, act })) });
+  return { press, undo };
+};
+
 /** Two commits compared: the commits only one side holds, and the changes (`everything` reads A..B, not A...B). */
 export const useGitCompare = (repository: string | null, left: string | null, right: string | null, everything = false, workspace = '') => {
   const { isAvailable } = useShenora();

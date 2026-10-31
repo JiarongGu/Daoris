@@ -2,8 +2,9 @@ import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import { InTheme } from '../../plugins/storyIcons';
 import { chinese } from '../../design/storyLanguage';
 import { storyWidths } from '../../design/storyWidths';
-import { GIT_CHANGES_ENGINE } from '../fixtures';
-import { ChangesTab } from './RepositoryGit';
+import { GIT_CHANGES_ENGINE, GIT_HUNKS_BUDGET } from '../fixtures';
+import { ChangeHunks } from './ChangeHunks';
+import { type ChangesActs, ChangesTab } from './RepositoryGit';
 
 // A repository's Changes tab (GITAPP2b, D204, the git-writes design §1, §4, §11), drawn where the person let Daoris change the
 // checkout's files: what is staged against the last commit, what the files hold beyond it (a file staged and then removed is in
@@ -14,10 +15,22 @@ import { ChangesTab } from './RepositoryGit';
 const nothing = () => {};
 const dark: Decorator = (Story) => <InTheme theme="dark"><Story /></InTheme>;
 
+// GITAPP2h: every story below carries the presses (Stage, Unstage, Show changes) a tab has where the switch is on.
+const acts = (over: Partial<ChangesActs> = {}): ChangesActs => ({
+  busy: false,
+  last: null,
+  press: nothing,
+  undo: nothing,
+  Hunks: ({ side, busy, onPress }) => (
+    <ChangeHunks read={{ state: 'read', value: GIT_HUNKS_BUDGET }} verb={side === 'unstaged' ? 'stage' : 'unstage'} busy={busy} onPress={onPress} />
+  ),
+  ...over,
+});
+
 const meta: Meta<typeof ChangesTab> = {
   title: 'Repositories/ChangesTab',
   component: ChangesTab,
-  args: { repository: 'engine', read: { state: 'read', value: GIT_CHANGES_ENGINE }, onRefresh: nothing },
+  args: { repository: 'engine', read: { state: 'read', value: GIT_CHANGES_ENGINE }, onRefresh: nothing, acts: acts() },
   decorators: [storyWidths.wide],
 };
 export default meta;
@@ -41,6 +54,41 @@ export const Narrow: Story = { decorators: [storyWidths.narrow] };
 export const NarrowChinese: Story = { decorators: [storyWidths.narrow, chinese] };
 export const NarrowDark: Story = { decorators: [storyWidths.narrow, dark] };
 export const NarrowChineseDark: Story = { decorators: [storyWidths.narrow, chinese, dark] };
+
+/** Opens the first row's changes, as a person would. */
+const openChanges: Story['play'] = async ({ canvasElement }) => {
+  canvasElement.querySelector<HTMLButtonElement>('li button[aria-expanded]')?.click();
+};
+
+/** A file's hunks open under its row, each line of change with its box, a hunk and the lines chosen pressed apart. */
+export const HunksOpen: Story = { play: openChanges };
+export const HunksOpenChinese: Story = { decorators: [chinese], play: openChanges };
+export const HunksOpenDark: Story = { decorators: [dark], play: openChanges };
+export const HunksOpenHalf: Story = { decorators: [storyWidths.half], play: openChanges };
+export const HunksOpenHalfChinese: Story = { decorators: [storyWidths.half, chinese], play: openChanges };
+export const HunksOpenNarrow: Story = { decorators: [storyWidths.narrow], play: openChanges };
+export const HunksOpenNarrowChineseDark: Story = { decorators: [storyWidths.narrow, chinese, dark], play: openChanges };
+
+/** The last act done: said, with *Undo* beside it. */
+export const Staged: Story = { args: { acts: acts({ last: { verb: 'stage', path: 'src/budget.cs', act: 'a1', done: true, said: null } }) } };
+export const StagedChinese: Story = { ...Staged, decorators: [chinese] };
+export const StagedNarrowDark: Story = { ...Staged, decorators: [storyWidths.narrow, dark] };
+
+/** A refusal, in the driver's sentence. */
+export const Refusal: Story = {
+  args: {
+    acts: acts({
+      last: {
+        verb: 'stage', path: 'src/budget.cs', act: null, done: false,
+        said: 'Session `s-3f2a` works in `engine`\'s checkout (Repositories → the repository\'s page), so this act is refused; try again once it ends: nothing was changed.',
+      },
+    }),
+  },
+};
+export const RefusalNarrowChinese: Story = { ...Refusal, decorators: [storyWidths.narrow, chinese] };
+
+/** An act running: every press waits. */
+export const Working: Story = { args: { acts: acts({ busy: true }) } };
 
 /** The held read shown while a fresh one is on its way: the time of the read stays, it says it reads again, and Refresh waits. */
 export const ReadingAgain: Story = { args: { refreshing: true } };
