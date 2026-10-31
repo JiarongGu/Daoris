@@ -74,7 +74,7 @@ public static class AttentionStateSlice
             "kind", "id", "since", "workspace", "where", "note", "detail", "publishTo", "choices", "ask", "number", "goAhead", "session",
             "departed", "setUp", "local", "environment", "shows", "opinion", "placed", "sitting", "trust", "quest", "proposal", "title",
             "permission", "blocked", "held", "unreadable", "wholeWorkspace", "holding", "read", "account", "answer", "ended",
-            "confirmation", "agent", "stands", "stale", "space", "git", "quiet", "declined",
+            "confirmation", "agent", "stands", "stale", "space", "git", "quiet", "declined", "memory",
         ],
         ["waiting"] = ["kind", "workspace"],
         ["working"] = ["workspace"],
@@ -123,6 +123,8 @@ public static class AttentionStateSlice
         ["quiet"] = ["minutes", "busy", "intake", "words", "heavy"],
         // INTEGRATE1o part o3: a run held at a declined request, its node and the quest declined.
         ["declined"] = ["node", "quest", "to", "work", "request"],
+        // KNOWCENTRAL2e: what memory waits on the person for one session: ends and replacements to approve, a stopped session's staged rows.
+        ["memory"] = ["ends", "replacements", "staged"],
     };
 
     /// <summary>Which shape a field holds, as <c>shape.field</c>, an object of it or a list of them; every other field is a value.</summary>
@@ -159,6 +161,7 @@ public static class AttentionStateSlice
         ["row.space"] = "space",
         ["row.git"] = "git",
         ["row.declined"] = "declined",
+        ["row.memory"] = "memory",
     };
 
     /// <summary>
@@ -174,6 +177,8 @@ public static class AttentionStateSlice
         new("DRIVER_READY"),
         // CONFIRMSEEN1: a terminal's press asked, shown or ended, as every window is told it.
         new(PipeConfirmations.Event),
+        // KNOWCENTRAL2e: what memory waits on the person, as the service was last read.
+        new(MemoryWaits.Event),
     ];
 
     /// <summary>
@@ -285,6 +290,8 @@ public static class AttentionStateSlice
             Backs = Written(BackWaits(loop.Home)),
             Permissions = Written(PermissionWaits(HeldPermissions.Of(loop.Events))),
             Answers = Written(AnswerWaits(loop.Home)),
+            // KNOWCENTRAL2e: each session whose memory changes wait on the person, as the service was last read.
+            Memory = [.. loop.MemoryWaits.Now().Select(each => JsonNode.Parse(each.GetRawText())!.AsObject())],
             Doors = Written(AgentsRoutes.Doors(loop.Harnesses, roster)),
             Use = Use(loop.Slices),
             Waits = Written(loop.Look.Waits.Select(DriverLoop.TickWait)),

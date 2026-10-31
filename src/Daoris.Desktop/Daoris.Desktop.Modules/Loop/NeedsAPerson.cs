@@ -80,6 +80,12 @@ public sealed record AttentionFacts
     /// <summary>The answers the answers-alone bound holds for the person (COWORK1e), as <c>ANSWER_WAITS</c> answers them.</summary>
     public IReadOnlyList<JsonObject> Answers { get; init; } = [];
 
+    /// <summary>
+    /// The sessions whose memory changes wait on the person (KNOWCENTRAL2e), as the service reads them: each session, the ends and replacements
+    /// awaiting its approver, a stopped session's staged rows, and since when.
+    /// </summary>
+    public IReadOnlyList<JsonObject> Memory { get; init; } = [];
+
     /// <summary>The roster's doors, each as <c>HARNESSES</c> answers it: each account's last reading with its time (ROSTER1).</summary>
     public IReadOnlyList<JsonObject> Doors { get; init; } = [];
 
@@ -434,6 +440,22 @@ public static class NeedsAPerson
             row["where"] = Text(record, "repository") ?? "";
             row["session"] = Text(wait, "session");
             row["answer"] = wait.DeepClone();
+            rows.Add(row);
+        }
+
+        // A session whose memory changes wait on the person (KNOWCENTRAL2e; the memory coordinator design §4): an end or a replacement for its
+        // approver, or a stopped session's staged rows for Keep or Drop. One row by the session, a door to its page's Memory section.
+        foreach (var wait in facts.Memory)
+        {
+            var record = sessions.GetValueOrDefault(Text(wait, "session") ?? "");
+            var row = Row("memory", Text(wait, "session"), Truthy(wait, "since"), SessionScope(Text(wait, "session")));
+            row["where"] = Text(record, "repository") ?? "";
+            row["session"] = Text(wait, "session");
+            row["memory"] = new JsonObject
+            {
+                ["ends"] = wait["ends"]?.DeepClone() ?? 0, ["replacements"] = wait["replacements"]?.DeepClone() ?? 0,
+                ["staged"] = wait["staged"]?.DeepClone() ?? 0,
+            };
             rows.Add(row);
         }
 

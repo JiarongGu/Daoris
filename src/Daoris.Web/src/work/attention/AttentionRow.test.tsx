@@ -525,6 +525,20 @@ describe('settling one where it stands', () => {
    * HELPERWAIT1c (the co-worker design §5 point 4): a refused move back to the person says what happened, the refusal as the service
    * said it, and its one control, the door to its session, in each language.
    */
+  /** KNOWCENTRAL2e: a session whose memory waits is a row with one door to its page, where its Memory section decides. */
+  it('says memory waits on the person and opens the session', async () => {
+    const waits: Attention = {
+      id: 's1a2b3c4', kind: 'memory', title: 'Expose a streaming budget on the chunk API', where: 'engine', since: '2026-10-31T09:00:00Z',
+      session: 's1a2b3c4', detail: '2 ends to approve', memory: { ends: 2, replacements: 0, staged: 0 },
+    };
+    const open = vi.fn();
+    render(<AttentionRow item={waits} acts={everyAct()} onOpen={open} />);
+    expect(screen.getByText('memory waits on you')).toBeInTheDocument();
+    expect(screen.getAllByRole('button').map((button) => button.textContent)).toEqual(['Open']);
+    await userEvent.click(screen.getByRole('button', { name: 'Open' }));
+    expect(open).toHaveBeenCalledWith(waits);
+  });
+
   it('says a refused move back to the person with its refusal, and opens its session, in each language', async () => {
     const back: Attention = {
       id: 's1a2b3c4', kind: 'helper-ended', title: 'Expose a streaming budget on the chunk API', where: 'engine', since: '2026-10-23T09:00:00Z',

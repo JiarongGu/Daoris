@@ -1054,6 +1054,9 @@ export function App() {
     // A session whose move back to the person the service refused (HELPERWAIT1c) opens that session, as its park would. A shell's
     // alone: the record is this machine's driver's.
     ...(attached ? { 'helper-ended': (item: Attention) => open('sessions', item.session ?? item.id) } : {}),
+    // A session whose memory waits on the person (KNOWCENTRAL2e) opens that session, whose Memory section carries the decisions. A shell's
+    // alone: the service's rows are read by this machine's driver.
+    ...(attached ? { memory: (item: Attention) => open('sessions', item.session ?? item.id) } : {}),
     // A terminal's press waiting for the window (CONFIRMSEEN1) opens its card in *Notifications* (NOTIFY2b), where every value it
     // carries is read beside its Confirm. Brought into view, never pressed: the card's default stays no. A shell's alone.
     ...(attached ? { confirmation: (item: Attention) => showNotifications({ press: item.id }) } : {}),
