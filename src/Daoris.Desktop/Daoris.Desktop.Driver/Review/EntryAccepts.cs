@@ -18,9 +18,11 @@ namespace Daoris.Driver;
 /// <param name="inUse">The trees a session still running or waiting holds, which the rule's tidy leaves.</param>
 /// <param name="log">The machine log a held gate writes to; none where the surface keeps none.</param>
 /// <param name="door">The door a held gate is logged at (<see cref="ReviewDoors"/>).</param>
+/// <param name="beside">The ledger's sessions and their trees (GITLOCK2), which a merge rule's move reads inside the checkout's hold.</param>
 public sealed class EntryAccepts(
     ServiceClient service, string home, SessionTrees trees, IWorkplaceEventHistory events, Action<string, string> say,
-    Func<CancellationToken, Task<IReadOnlySet<string>>> inUse, MachineLog? log, string door)
+    Func<CancellationToken, Task<IReadOnlySet<string>>> inUse, MachineLog? log, string door,
+    Func<CancellationToken, Task<IReadOnlyList<TreeHolder>>>? beside = null)
 {
     /// <summary>The parts of <paramref name="entry"/> whose tree offers work to land, in the entry's order: what its Accept lands.</summary>
     public static IReadOnlyList<EntryPart> PartsOf(SessionEntry entry, IReadOnlyList<IWorkplaceSessionRow> rows)
@@ -75,7 +77,7 @@ public sealed class EntryAccepts(
         }
 
         var together = await TogetherAsync(pressed, presses, cancellationToken).ConfigureAwait(false);
-        var landed = await trees.LandEntryAsync(pressed, subject, leaveOut, cancellationToken, inUse, together).ConfigureAwait(false);
+        var landed = await trees.LandEntryAsync(pressed, subject, leaveOut, cancellationToken, inUse, together, beside).ConfigureAwait(false);
         // ACCEPTALL1c (D167's amendment point 3): a part the person left out is recorded with the landing, on its conversation, so its
         // review says so and leads with Discard; only where the entry's work landed somewhere.
         var landedAny = landed.Parts.Any(part => part.Outcome == EntryPartOutcome.Landed);

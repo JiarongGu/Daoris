@@ -189,6 +189,34 @@ public sealed class TreeLockTests : IDisposable
         Assert.Equal(["held.replaying"], NoteAssert.Codes(HeldWords.Holding("engine", TreeLock.Updating).Line.Parts));
     }
 
+    /// <summary>🔴 GITLOCK2: what a tidy says of a repository it left names the writer that held it, and a start (no holder) as before.</summary>
+    [Fact]
+    public void A_tidy_left_by_a_held_repository_names_the_writer_that_held_it()
+    {
+        const string left = ", so its branches were left as they were for another look";
+        Assert.Equal("`engine`'s branches were being brought up to date" + left, TreeLock.Starting("engine", TreeLock.Updating));
+        Assert.Equal("`engine`'s session trees were being tidied" + left, TreeLock.Starting("engine", TreeLock.Tidying));
+        Assert.Equal("`engine`'s line was being moved to what its integration promoted" + left, TreeLock.Starting("engine", TreeLock.Promoting));
+        Assert.Equal("a session was starting in one of `engine`'s trees" + left, TreeLock.Starting("engine", null));
+    }
+
+    /// <summary>🔴 GITLOCK2: the old key's lock files, one per workspace and repository, are removed once, and one a live process holds is kept.</summary>
+    [Fact]
+    public void The_old_keys_lock_files_are_removed_once_and_one_held_is_kept()
+    {
+        var old = Path.Combine(DaorisHome.Entry(_home, HomeEntry.Locks, "trees"), "default");
+        Directory.CreateDirectory(old);
+        File.WriteAllText(Path.Combine(old, "engine.lock"), "");
+        File.WriteAllText(Path.Combine(old, "game.lock"), "");
+        using var live = new FileStream(Path.Combine(old, "game.lock"), FileMode.Open, FileAccess.ReadWrite, FileShare.None);
+
+        using (TreeLock.TryStarting(_home, _engine)) { }
+
+        Assert.False(File.Exists(Path.Combine(old, "engine.lock")));
+        Assert.True(File.Exists(Path.Combine(old, "game.lock")));
+        Assert.True(File.Exists(TreeLock.PathOf(_home, _engine)));
+    }
+
     /// <summary>
     /// 🔴 GITLOCK1's order: a flow holding a checkout alone is seen making each wait on another lock, and a flow holding it shared or not at
     /// all is not; a record's lock is one such wait, a tree's landing hold another, which no writer may make under it.

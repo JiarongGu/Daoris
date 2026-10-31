@@ -76,12 +76,16 @@ public sealed partial class CheckoutWritersCensusTests
 
     /// <summary>
     /// The doors that start a checkout's writer with a service to ask, each handing it the ledger's sessions (GITAPP2's §3 <i>Beside a
-    /// session</i>), so the write waits for a session working in the checkout. A merge rule's own press is not among them: it reaches the
-    /// promotion through the landing's doors, which carry no such port, and moves as before.
+    /// session</i>), so the write waits for a session working in the checkout. A merge rule's own press reaches the promotion through the
+    /// landing's doors (GITLOCK2), each of which hands it the same.
     /// </summary>
     private static readonly Dictionary<string, string> Beside = new(StringComparer.Ordinal)
     {
-        ["TreesConsole.cs"] = "`daoris-driver trees sync --yes`'s pull",
+        ["TreesConsole.cs"] = "`daoris-driver trees sync --yes`'s pull, and the terminal's Accept and Accept all",
+        ["TreesRoutes.cs"] = "the window's Accept, a merge rule's move",
+        ["EntriesRoutes.cs"] = "the window's Accept on an entry, a merge rule's move",
+        ["ChatLandCommand.cs"] = "a conversation's Accept in the terminal, a merge rule's move",
+        ["AutoLandingWorld.cs"] = "the look's landing at done, a merge rule's move",
         ["LinesRoutes.cs"] = "the window's Bring up to date",
         ["HelpRoutes.cs"] = "Ask Daoris's Bring up to date",
         ["DriverWatch.cs"] = "the integration transport's promotions",
@@ -195,7 +199,7 @@ public sealed partial class CheckoutWritersCensusTests
 
         foreach (var (door, what) in Beside)
         {
-            Assert.True(sources[door].Contains("BranchTidying.HoldersAsync(", StringComparison.Ordinal), $"{door} ({what}) hands the writer no ledger");
+            Assert.True(sources[door].Contains("BranchTidying.BesideAsync(", StringComparison.Ordinal), $"{door} ({what}) hands the writer no ledger");
         }
 
         var pressing = sources.Where(each => Regex.IsMatch(each.Value, @"\.SyncAsync\([^;]*inUseNow:")).Select(each => each.Key);

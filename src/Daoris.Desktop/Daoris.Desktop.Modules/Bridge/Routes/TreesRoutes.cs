@@ -619,7 +619,7 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
         // LANDHOLD2: a landing of this tree still under way holds the press for up to five minutes; the page is told it waits.
         using var waiting = PressSteps.WhileWaiting(PressSteps.Landing);
         var landed = await trees.LandAsync(tree, subject, cancellationToken, async token => await LinesRoutes.InUseAsync(service, token), gate: gate,
-            joins: subject.Joins, judged: pressed?.Judged, beforePush: pressed?.BeforePush);
+            joins: subject.Joins, judged: pressed?.Judged, beforePush: pressed?.BeforePush, beside: token => BranchTidying.BesideAsync(service, token));
         // Kept where the conversation is kept, so the landing and the plugin's word outlast the press (D100).
         if (landed.Landed) _loop.Events.Keep(id, LandingRules.Note(landed), line => _loop.Output.Append(id, line));
         if (_loop.Log is { } log && LandingGateWords.Held(id, trees.Owner(tree), gate, landed, ReviewDoors.Screen) is { } held)
@@ -675,7 +675,8 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
                 PressSteps.Reach(PressSteps.Landing);
                 // LANDHOLD2: a landing of this tree still under way holds the press for up to five minutes, and the conversation with it.
                 using var waiting = PressSteps.WhileWaiting(PressSteps.Landing);
-                return await trees.LandAsync(tree, subject, token, async held => await LinesRoutes.InUseAsync(service, held), gate: gate, joins: subject.Joins);
+                return await trees.LandAsync(tree, subject, token, async held => await LinesRoutes.InUseAsync(service, held), gate: gate, joins: subject.Joins,
+                    beside: held => BranchTidying.BesideAsync(service, held));
             },
             () => ChatPresses.TurnsOf(_loop.Events, line), cancellationToken);
 
