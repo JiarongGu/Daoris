@@ -486,6 +486,11 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
     // KNOWCENTRAL2e: a session's memory rows, and the person's decision on them.
     [InlineData("SESSION_MEMORY", "", null)]
     [InlineData("SESSION_MEMORY_DECIDE", "sessions", "session")]
+    // LINESTOGETHER1d: the operation bringing sessions together, and the head's presses on it.
+    [InlineData("TOGETHER", "", null)]
+    [InlineData("TOGETHER_PRESS", "sessions", "session")]
+    [InlineData("TOGETHER_ASK_AGAIN", "sessions", "session")]
+    [InlineData("TOGETHER_LET_GO", "sessions", "session")]
     [InlineData("SESSION_GROUPS", "", null)]
     [InlineData("SESSION_SEARCH", "", null)]
     [InlineData("SESSION_OPEN_FOLDER", "", null)]
