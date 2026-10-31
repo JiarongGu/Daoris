@@ -24,6 +24,13 @@ public static class GitRefActs
     /// <summary>The ref's full name, or null where the kind is neither.</summary>
     public static string? FullName(string kind, string name) => kind switch { "branch" => "refs/heads/" + name, "tag" => "refs/tags/" + name, _ => null };
 
+    /// <summary>What the create would do now, read without the lock and written nowhere: the whole commit id it names, or why it is refused.</summary>
+    public static async Task<(string? Id, string? Refusal)> PlanAsync(RefAsk ask, CancellationToken ct)
+    {
+        if (await JudgeAsync(ask, null, ct).ConfigureAwait(false) is { } refusal) return (null, refusal);
+        return (await CommitAsync(ask.Checkout, ask.At ?? "HEAD", ct).ConfigureAwait(false), null);
+    }
+
     /// <summary>Create the ref: refused before anything is written where the name or the commit is not as asked, else run to its close.</summary>
     public static async Task<ActRun> CreateAsync(ActRuns runs, RefAsk ask, string press, string? confirmed, CancellationToken ct)
     {
