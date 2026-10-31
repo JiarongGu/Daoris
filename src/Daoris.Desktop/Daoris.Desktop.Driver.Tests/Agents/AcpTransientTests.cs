@@ -1103,14 +1103,18 @@ public sealed class AcpTransientTests
             await answer.Task.WaitAsync(ct);
             return true;
         });
-        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { });
+        var events = new List<SessionEvent>();
+        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, onEvent: e => { lock (events) events.Add(e); });
 
         var run = session.RunAsync("D:/fam/Game", "serve the report", CancellationToken.None, retry: retry);
         await PassAsync(told, clock, run, 1);
         await asked.Task.WaitAsync(Poll.Patience);
-        // The harness wakes its agent while the check is read: its turn runs with no prompt open.
-        agent.Push(Said("The build you started has finished."));
-        await Task.Delay(200);
+        // The harness wakes its agent while the check is read: its turn runs with no prompt open. The check answers once the
+        // session has read the wake (its words are emitted after it), never after a fixed pause a loaded reader outlasts.
+        const string Woke = "The build you started has finished.";
+        agent.Push(Said(Woke));
+        await Poll.Until(() => { lock (events) return events.Any(e => e.Kind == SessionEventKind.Message && e.Text == Woke); },
+            () => "the session never read the wake", Poll.Patience);
         answer.SetResult();
         await Task.Delay(200);
         Assert.Single(agent.Prompts);

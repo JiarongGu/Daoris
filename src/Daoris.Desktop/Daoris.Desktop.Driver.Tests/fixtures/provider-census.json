@@ -275,6 +275,8 @@
       ["src/Daoris.Web/src/agents/roles/Roles.stories.tsx", "id in a sentence", "-", "measurement", "a story's sample text names the agents it shows"],
       ["src/Daoris.Web/src/agents/roles/RolesPlace.stories.tsx", "\"claude-code\"", "-", "measurement", "a story's sample data names the agents it shows"],
       ["src/Daoris.Web/src/agents/roles/RolesPlace.stories.tsx", "\"codex-acp\"", "-", "measurement", "a story's sample data names the doors it shows"],
+      ["src/Daoris.Web/src/agents/roles/SuggestedChoicesCard.stories.tsx", "\"claude-code\"", "-", "measurement", "a story's sample data names the agents it shows"],
+      ["src/Daoris.Web/src/agents/roles/SuggestedChoicesCard.stories.tsx", "\"codex-acp\"", "-", "measurement", "a story's sample data names the agents it shows"],
       ["src/Daoris.Web/src/agents/roles/structureFixtures.ts", "\"claude-code\"", "-", "measurement", "fixture data for the stories and the page's tests names the agents it stands for"],
       ["src/Daoris.Web/src/agents/roles/structureFixtures.ts", "\"codex-acp\"", "-", "measurement", "fixture data for the stories and the page's tests names the doors it stands for"],
       ["src/Daoris.Web/src/agents/roles/structureFixtures.ts", "\"dsh\"", "-", "measurement", "fixture data for the stories and the page's tests names the agents it stands for"],

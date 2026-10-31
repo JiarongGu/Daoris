@@ -4832,7 +4832,7 @@
     },
     {
       "name": "a verb the family does not have",
-      "changed": "The family's words are Daoris's driver program's whole (PUSH1f2b): a verb it does not have is said in its own words and its usage on the error stream, as every host verb says one (D194 point 1); the dispatcher's golden row moved here. The family's usage gains `driver keep`, each rule the person sets (KEEP1d).",
+      "changed": "The family's words are Daoris's driver program's whole (PUSH1f2b): a verb it does not have is said in its own words and its usage on the error stream, as every host verb says one (D194 point 1); the dispatcher's golden row moved here. The family's usage gains `driver keep`, each rule the person sets (KEEP1d), and `driver role suggested`, the choices Daoris suggests for each role (MODELROLE1g).",
       "argv": [
         "frobnicate"
       ],
@@ -4881,7 +4881,7 @@
         "       daoris-driver driver actor export [<file>] · actor import <file> · actor found [take|dismiss <n>]",
         "       daoris-driver driver role [<id>] · role set <id> [--name \"…\"] [--zh \"…\"] [--takes <work,…>]",
         "              [--scope machine|workspace:<id>|repository:<id>] [\"<agent> [<model>|-] [<effort>|-]\" …]",
-        "              · role remove|default <id>",
+        "              · role remove|default <id> · role suggested [--use]",
         "`daoris driver …` runs these.",
         "Each change takes --wait <minutes> (0 to 30, the default 30) or --no-wait: how long to wait on its Confirm in Daoris's window."
       ],

@@ -151,7 +151,7 @@ public static class HeldWords
     public static (string Why, Noted Line) Holding(string repository, string? by) => by switch
     {
         HeldBy.Updating => Replaying(repository),
-        HeldBy.Tidying => Held(NoteCodes.HeldTidying, $"`{repository}`'s session trees are being tidied right now", repository),
+        HeldBy.Tidying => Held(NoteCodes.HeldTidying, $"`{repository}`'s session trees are being cleaned up right now", repository),
         HeldBy.Promoting => Held(NoteCodes.HeldPromoting, $"`{repository}`'s line is being moved to what its integration promoted right now", repository),
         _ => Held(NoteCodes.HeldWriting, $"another of Daoris's writes holds `{repository}` right now", repository),
     };
