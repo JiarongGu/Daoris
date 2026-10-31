@@ -9,6 +9,7 @@ import { usePushedResyncing } from '../bridge/state/slices';
 import {
   type TurnStop, useCancelTurn, useEditQueued, useMoveQueued, useEndChat, useHarnesses, useResolveSession, useSendMessage,
   NO_TURNS, useChatTurns, useSessionEntries, useSessionGroups, useSessionOpenings, useSessionOptions, useSessionRecord, useSessionRelated, useSessionSpent, useSessionStreams, useSessionWhere,
+  useDecideSessionMemory, useSessionMemory,
   useSetSessionOption, useStartChat, useStopTask, useSweepPlan, useTreeFiles, useTreeFile, useReviewedPatch,
   logEvent, useTerminals, useRemotes, useWorkPlan, useSay, useSessionReach, useStartFrom, useGoOnBrief, type WordsAnswer,
   useParkGoAhead, useAccounts, useGoOnNew, useTrace, useDiscardSessionBranch, useLanding, useLandSessionTree, useLandWithoutLook, useSessionDiff,
@@ -466,6 +467,9 @@ export function WorkFrame({
   const spent = useSessionSpent(attendedEntry?.parts.map((part) => part.session));
   // What the service kept of the attended session's finished tree, once the tree is let go (KEEPSIZE1).
   const related = useSessionRelated(attended?.id);
+  // Its memory changes and the person's decision on them (KNOWCENTRAL2e): an end awaiting them, or what an ended session left staged.
+  const memoryRows = useSessionMemory(attended?.id);
+  const decideMemory = useDecideSessionMemory();
   const sessionRecord = useSessionRecord(attended?.id ?? null, attended ? where[attended.id]?.treeGone === true : false);
   const channel = useChannel(channelAsk);
   const postChannel = usePostChannel();
@@ -2566,6 +2570,14 @@ export function WorkFrame({
             relations={attended ? relationsOf(attended, quest, quests.data ?? [], sessions.data ?? []) : undefined}
             related={related}
             onRelated={attend}
+            memory={attended ? {
+              rows: memoryRows,
+              ended: !live,
+              busy: decideMemory.isPending,
+              said: decideMemory.variables?.session === attended.id ? decideMemory.data?.message ?? null : null,
+              onDecide: (op, approve) => decideMemory.mutate({ session: attended.id, op, approve }),
+              onKeep: (keep) => decideMemory.mutate({ session: attended.id, keep }),
+            } : undefined}
             continues={continues}
             helps={helps}
             heavy={attended && heavyPart ? heavyRow(t, heavySlot.data, attended.id, heavyTitleOf, attend) : null}

@@ -754,7 +754,8 @@ public sealed class DriverLoop(
 
         var homeDirectory = Home;
         var key = Environment.GetEnvironmentVariable(ServiceClient.KeyVariable);
-        using var service = new ServiceClient(serviceUrl, key);
+        // KNOWCENTRAL2d: a session's end hands the service its usage history's turn lines, which its memory rows' models are read from.
+        using var service = new ServiceClient(serviceUrl, key) { TurnLines = sessions => ServiceClient.LinesOf(UsageHistory.TurnLinesOf(homeDirectory, sessions), turn => new ServiceClient.TurnLine(turn.Seq, turn.Started, turn.Ended, turn.Model)) };
         // The service's doors for the one read the client does not carry: the repositories' index sizes (FOUNDATION1s part B).
         using var doors = new ServiceHttp(service.BaseUrl, key);
 

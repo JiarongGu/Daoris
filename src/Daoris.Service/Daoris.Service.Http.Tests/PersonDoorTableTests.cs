@@ -43,6 +43,8 @@ public sealed class PersonDoorTableTests
         ("GET", "/api/sessions", Open),
         ("GET", "/api/sessions/{id}/deletable", Open),
         ("GET", "/api/sessions/{id}/record", Open),
+        // KNOWCENTRAL2d: a session's memory changes for its record's page; a local host's read.
+        ("GET", "/api/sessions/{id}/memory", Open),
         // HANDBACK1: one quest's handback whole, by the quest's id or its session's; a local host's read.
         ("GET", "/api/handbacks/{id}", Open),
         ("GET", "/api/history", Open),
@@ -80,6 +82,8 @@ public sealed class PersonDoorTableTests
         ("POST", "/api/sessions/help", Driver),
         ("POST", "/api/sessions/{id}/state", Driver),
         ("POST", "/api/sessions/{id}/taken", Driver),
+        // KNOWCENTRAL2f: what a line read, rechecked for its brief and kept as read at the revision answered.
+        ("POST", "/api/sessions/{id}/memory/read", Driver),
         // COWORK1c: a word's attempt, marked by the dispatcher that writes it to the harness, before the wire.
         ("POST", "/api/sessions/{id}/attempt", Driver),
         // HELPMODE1a2: the mode an Ask Daoris conversation going on runs under, which the driver that spawns it knows.
@@ -129,6 +133,9 @@ public sealed class PersonDoorTableTests
         // LINESTOGETHER1b: the person's held word moved to the head; a local host's alone.
         ("POST", "/api/sessions/{id}/move", Person),
         ("POST", "/api/sessions/{id}/answer", Person),
+        // KNOWCENTRAL2d: a memory end's approval, and an ended session's staged changes kept or dropped; a local host's alone.
+        ("POST", "/api/memory/{id}/decide", Person),
+        ("POST", "/api/sessions/{id}/memory", Person),
         ("POST", "/api/asks/{id}/close", Person),
         ("DELETE", "/api/asks/{id}", Person),
         ("DELETE", "/api/quests/{id}", Person),
@@ -186,11 +193,12 @@ public sealed class PersonDoorTableTests
         // (NOTIFY2j), and a machine's retirement at a workspace's remote, the person's (FABRIC-CLOSE1i2), and a park the driver could
         // not hand put back, the driver's (SUPERVISOR1a-i), and a finished tree's record and its age, the driver's (KEEPSIZE1b), and the host's protocol, a read (FOUNDATION1 row p),
         // and one quest's handback, a read (HANDBACK1), and the event journal's rows after a position, a read (FOUNDATION1 l-i), and a session's finished tree's record, a read (KEEPSIZE1),
-        // and the person's move of a held word to the head (LINESTOGETHER1b).
-        Assert.Equal(33, Routes.Count(route => route.Class == Open));
+        // and the person's move of a held word to the head (LINESTOGETHER1b), and a session's memory changes, a read, and the person's
+        // decision of a memory end and Keep or Drop of an ended session's staged changes (KNOWCENTRAL2d).
+        Assert.Equal(34, Routes.Count(route => route.Class == Open));
         Assert.Equal(4, Routes.Count(route => route.Class == Agent));
-        Assert.Equal(30, Routes.Count(route => route.Class == Driver));
-        Assert.Equal(34, Routes.Count(route => route.Class == Person));
+        Assert.Equal(31, Routes.Count(route => route.Class == Driver));
+        Assert.Equal(36, Routes.Count(route => route.Class == Person));
         // And a shared host's two channel doors, a feed and a page (SESSONE2d), and its retirement of a machine (FABRIC-CLOSE1i2).
         Assert.Equal(10, Routes.Count(route => route.Class == Shared));
     }

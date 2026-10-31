@@ -119,6 +119,8 @@ builder.Services.AddSingleton(composed.Asks);
 // The ledger, for the one write a session's connector makes on its own record: that it took its quest
 // (STANDDOWN2).
 builder.Services.AddSingleton(composed.Ledger);
+// Each repository's memory (KNOWCENTRAL2d): the connector reads Lyntai's engines and stages its session's changes; the service applies them.
+if (composed.Memory is { } memory) builder.Services.AddSingleton<IMemoryEngines>(memory);
 // Second opinions (XAGENT1c): a reviewer's connector says its opinion, and a working session's answers what it was handed.
 builder.Services.AddSingleton(composed.Opinions);
 // The ask's channel (SESSONE2a): a session posts and reads for the ask its entry names.

@@ -97,10 +97,12 @@ test('every machine-local override the desktop reads is redirected, cleared, or 
   // ENVSEAM1 asks the home there) writes the rest of its target the same way: the target, the quest's words, the service it
   // answers (the scratch run's own, `scratchEnvironment` sets it) and the stub's configuration home, which is an account's.
   // A session's lineage token (COWORKVIEW1a) is the same: written into its process, its hook and its connector by the driver.
+  // So are a session's role and its revision (KNOWCENTRAL2d), written into its connector's entry for memory's attribution.
   const handled = new Set([
     ...REDIRECTED, ...CLEARED, 'DAORIS_HTTP_HOST', 'DAORIS_MCP_HOST',
     'DAORIS_PLUGIN_ID', 'DAORIS_PLUGIN_FOLDER', 'DAORIS_PLUGIN_DATA',
-    'DAORIS_QUEST_ATTACHMENTS', 'DAORIS_ASK_ID', 'DAORIS_SESSION_ID', 'DAORIS_LINEAGE_PROC', 'DAORIS_REPOSITORY',
+    'DAORIS_QUEST_ATTACHMENTS', 'DAORIS_ASK_ID', 'DAORIS_SESSION_ID', 'DAORIS_LINEAGE_PROC', 'DAORIS_SESSION_ROLE',
+    'DAORIS_SESSION_ROLE_REVISION', 'DAORIS_REPOSITORY',
     'DAORIS_TARGET', 'DAORIS_QUEST_ID', 'DAORIS_QUEST_TITLE', 'DAORIS_QUEST_BODY', 'DAORIS_QUEST_ASKER',
     'DAORIS_SERVICE_URL', 'DAORIS_STUB_CONFIG_DIR',
   ]);

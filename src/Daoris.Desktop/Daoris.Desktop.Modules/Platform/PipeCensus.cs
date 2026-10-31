@@ -296,6 +296,8 @@ public sealed class PipeCensus
             "SESSION_AT_WORK",
             // LINESTOGETHER1c: the sessions beside one, a read of git in their trees.
             "SESSION_RELATED",
+            // KNOWCENTRAL2e: a session's memory rows, read from the service.
+            "SESSION_MEMORY",
             "STATE", "STATE_SLICE", "SWEEP_PLAN", "SYSTEM_DOWNLOADS", "SYSTEM_SPACE", "SYSTEM_WIRING", "TAIL_SESSION", "TOOLS_LIST", "TRACE", "TREES_SYNC_PLAN", "TREES_SYNC_SCOPE",
             "UNDER_WAY", "USAGE", "WORKFLOW_CURRENT", "WORKFLOW_RUN", "WORK_PLAN", "WORK_STATE",
             // NOTIFY2i: what came to the person, a press by its act and session alone, never a value, so a terminal answers none of it.
@@ -345,6 +347,8 @@ public sealed class PipeCensus
             "SESSION_ANSWER_ALONE",
             // SUPERVISOR1a-i: the owner's overrule of a supervisor's decision, which only they may make.
             "SUPERVISOR_OVERRULE",
+            // KNOWCENTRAL2e: the person's approval of a memory end, or their Keep or Drop of a session's staged memory, theirs alone until MC8.
+            "SESSION_MEMORY_DECIDE",
             "RETRY_QUEST", "HELP_APPLY",
             // The person's words, and a conversation begun or carried on with them.
             "SESSION_INPUT", "SESSION_QUEUE_EDIT", "SESSION_QUEUE_MOVE", "CHANNEL_POST", "CHANNEL_FORWARD", "START_CHAT", "START_HELP", "HELP_START_FROM",
@@ -470,8 +474,9 @@ public sealed class PipeCensus
             // quest retried, a set-up's ask, a helper or hand-over declined, the supervisor's.
             "SESSION_GO_AHEAD", "RETRY_QUEST", "SETUP_PRESS", "SESSION_HELPER_DECLINE", "SESSION_HAND_OVER_DECLINE", "SUPERVISOR_OVERRULE",
             "SUPERVISOR_ANSWER", "SUPERVISOR_DEFER",
-            // A record, a mark or a list cleared: no tree, no branch and no process (a history's clear never takes a tree).
-            "HISTORY_CLEAR", "SYSTEM_DOWNLOADS_CLEAR", "SESSION_ARCHIVE", "HELP_RENAME", "HELP_PIN", "CHANNEL_POST", "CHANNEL_MARK",
+            // A record, a mark or a list cleared: no tree, no branch and no process (a history's clear never takes a tree). A memory row
+            // decided, which the service's applier settles and no session runs.
+            "SESSION_MEMORY_DECIDE", "HISTORY_CLEAR", "SYSTEM_DOWNLOADS_CLEAR", "SESSION_ARCHIVE", "HELP_RENAME", "HELP_PIN", "CHANNEL_POST", "CHANNEL_MARK",
             "NOTICES_READ", "NOTICE_DISMISS",
             // A standing choice that changes only how later sessions run, what they reach or say, or what the person is told; a hold or a
             // drivable repository the drain's look holds whatever it says; a session's own option; Ask Daoris's access, which ends its

@@ -5,6 +5,13 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-31 - Two driver tests read the machine's load, not the code (LOADFLAKE2)
+
+- **Symptom:** under builders' load, the usage read wrote one line of two; the head-mark say exited 2.
+- **Root cause:** the read's ten-second patience raced a stand-in whose flush the pool ran late; the say's 300 ms raced a watcher's look.
+- **Fix:** `ClaudeUsage.AskWithinAsync` reads its patience off a handed clock, `MovedClock` in the tests; the say reads `HeldClock`, run at the take.
+- **Verify:** red with a late flush and a late look; 20 of 20 each beside every core loaded.
+
 ## 2026-10-31 - A carry-on's turn end was kept before its note (ACPRACE)
 
 - **Symptom:** under the merge queue's load, `turn:end_turn` twice, then both carry-on notes.

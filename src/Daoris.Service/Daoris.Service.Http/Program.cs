@@ -1474,7 +1474,7 @@ if (mode == ServiceMode.Local)
 
         try
         {
-            var (record, kept) = await s.Records.PostAsync(post, DateTimeOffset.UtcNow, ct);
+            var (record, kept) = await s.Records.PostAsync(post, DateTimeOffset.UtcNow, ct, MemoryTurnsRequest.Of(body.Turns));
             return Results.Ok(new WorkRecordResponse(kept, record.At, record.Sessions));
         }
         catch (NewerWorkRecordsException newer)
@@ -1499,6 +1499,49 @@ if (mode == ServiceMode.Local)
             return Results.Conflict(new ErrorResponse(newer.Message, "RECORDS_NEWER"));
         }
     });
+
+    // KNOWCENTRAL2d (the memory coordinator design §1, §3, §4): a session's memory changes for its record's page, an end's reason without the
+    // row's token; the person's approval or decline of an awaiting end, kept on its row; and their Keep or Drop of an ended session's staged
+    // changes. Machine-local, as the rows are.
+    // KNOWCENTRAL2e: a proposal is read as its quest and target left it, settled first.
+    app.MapGet("/api/sessions/{id}/memory", async (string id, ComposedService s, HttpContext http, CancellationToken ct) =>
+    {
+        if (!MachineLocal(http)) return Results.NotFound();
+        await new MemoryProposals(s.Sessions.Memory, s.Quests, engines: s.Memory).SettleAsync(DateTimeOffset.UtcNow, ct);
+        return Results.Ok(new SessionMemoryResponse(await new MemoryDesk(s.Sessions.Memory).PageAsync(id, ct)));
+    });
+
+    // KNOWCENTRAL2f (the memory coordinator design §3, §6): what the line ending at a session read, each entry read again and its cited records
+    // rechecked, for the brief of the part that continues it; what is answered is kept as the line's read. Machine-local, as the read set is.
+    app.MapPost("/api/sessions/{id}/memory/read", async (string id, ComposedService s, HttpContext http, CancellationToken ct) =>
+    {
+        if (!MachineLocal(http)) return Results.NotFound();
+        var reads = await s.Sessions.Memory.ReadsOfLineAsync(id, ct);
+        var shown = await new MemoryPresenter(s.Sessions.Memory, s.Memory, s.Service).PresentAsync(reads, ct);
+        return Results.Ok(new MemoryReadResponse([.. shown.Select(each => new MemoryShownResponse(
+            each.Reference.ToString(), each.Read, each.Standing, each.Entry?.Revision, each.Checked, each.Why, each.Line))]));
+    });
+
+    app.MapPost("/api/memory/{id}/decide", async (string id, ComposedService s, HttpContext http, MemoryDecideRequest body, CancellationToken ct) =>
+    {
+        if (!MachineLocal(http)) return Results.NotFound();
+        if (body.Approve is not { } approve) return Results.BadRequest(new ErrorResponse("approve is required: true approves the end, false declines it"));
+        return MemoryAnswer(await new MemoryDesk(s.Sessions.Memory).DecideAsync(id, session: null, approve, DateTimeOffset.UtcNow, ct));
+    });
+
+    app.MapPost("/api/sessions/{id}/memory", async (string id, ComposedService s, HttpContext http, MemoryKeepRequest body, CancellationToken ct) =>
+    {
+        if (!MachineLocal(http)) return Results.NotFound();
+        if (body.Keep is not { } keep) return Results.BadRequest(new ErrorResponse("keep is required: true keeps the staged changes, false drops them"));
+        return MemoryAnswer(await new MemoryDesk(s.Sessions.Memory).KeepAsync(id, keep, DateTimeOffset.UtcNow, ct));
+    });
+
+    static IResult MemoryAnswer(MemoryDecisionOutcome outcome) => outcome.Refusal switch
+    {
+        MemoryDecisionRefusal.None => Results.Ok(new MemoryDecisionResponse(outcome.Message, outcome.Op, outcome.Moved)),
+        MemoryDecisionRefusal.NotFound => Results.NotFound(new ErrorResponse(outcome.Message)),
+        _ => Results.Conflict(new ErrorResponse(outcome.Message)),
+    };
 
     // History's age applied to the finished trees' records no session names (KEEPSIZE1b, Codex's read of the branch, finding 8): the driver's
     // daily clear of history sends its cutoff, and each such record kept at or before it goes by its own `at`. Machine-local, as the post is.
@@ -2134,7 +2177,7 @@ app.MapPost("/api/sessions/{id}/state", async (
         interrupted: body.Interrupted == true, limit: body.Limit == true,
         // The note's lines by code (LANG1a), kept only as what a part is; none with no note.
         noteParts: body.Note is null ? null : NoteParts.Normalize(body.NoteParts), expected: body.Expected,
-        unbindAsk: body.UnbindAsk == true, expect: body.Expect?.OfType<string>().ToList());
+        unbindAsk: body.UnbindAsk == true, expect: body.Expect?.OfType<string>().ToList(), turns: MemoryTurnsRequest.Of(body.Turns));
 
     return outcome.Refusal switch
     {
@@ -2688,6 +2731,15 @@ log.Info("app.started",
         .OfType<System.Reflection.AssemblyInformationalVersionAttribute>().FirstOrDefault()?.InformationalVersion),
     ("mode", mode.ToString().ToLowerInvariant()));
 app.Lifetime.ApplicationStarted.Register(entryPoint.Running);
+// KNOWCENTRAL2d: the memory coordinator applies what a session's commit point released, from the start until the stop.
+if (composed.Memory is { } memory)
+{
+    app.Lifetime.ApplicationStarted.Register(() => _ = new MemoryCoordinator(
+            composed.Sessions.Memory, memory, composed.Service,
+            failed: error => log.Warn("memory.failed", ("error", error.GetType().Name), ("why", error.Message)))
+        .RunAsync(app.Lifetime.ApplicationStopping));
+}
+
 app.Lifetime.ApplicationStopping.Register(() =>
     log.Info("app.stopped", ("uptimeSeconds", (long)(DateTimeOffset.UtcNow - started).TotalSeconds)));
 // LOG2a: the shell stops a host it started by closing its standard input, so the stop is the lifetime's

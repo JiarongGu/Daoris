@@ -483,6 +483,9 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
     // COWORKVIEW1a: who is at work on a session, told by its own judge.
     [InlineData("SESSION_AT_WORK", "", null)]
     [InlineData("SESSION_RELATED", "", null)]
+    // KNOWCENTRAL2e: a session's memory rows, and the person's decision on them.
+    [InlineData("SESSION_MEMORY", "", null)]
+    [InlineData("SESSION_MEMORY_DECIDE", "sessions", "session")]
     [InlineData("SESSION_GROUPS", "", null)]
     [InlineData("SESSION_SEARCH", "", null)]
     [InlineData("SESSION_OPEN_FOLDER", "", null)]

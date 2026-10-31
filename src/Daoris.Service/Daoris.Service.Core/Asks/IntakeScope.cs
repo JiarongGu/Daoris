@@ -27,10 +27,26 @@ public sealed record IntakeScope(string? Ask, string? Session)
     /// <summary>Which session — the intake's own record.</summary>
     public const string SessionVariable = "DAORIS_SESSION_ID";
 
+    /// <summary>The role the session started in, as the driver names it on the connector at each start (the memory coordinator design §1).</summary>
+    public const string RoleVariable = "DAORIS_SESSION_ROLE";
+
+    /// <summary>That role's revision.</summary>
+    public const string RoleRevisionVariable = "DAORIS_SESSION_ROLE_REVISION";
+
+    /// <summary>The role this start took; null where the driver named none.</summary>
+    public string? Role { get; init; }
+
+    /// <summary>Its revision; null with it.</summary>
+    public string? RoleRevision { get; init; }
+
     /// <summary>What this process was spawned with. Blank is nothing said.</summary>
     public static IntakeScope FromEnvironment() => new(
         Blank(Environment.GetEnvironmentVariable(AskVariable)),
-        Blank(Environment.GetEnvironmentVariable(SessionVariable)));
+        Blank(Environment.GetEnvironmentVariable(SessionVariable)))
+    {
+        Role = Blank(Environment.GetEnvironmentVariable(RoleVariable)),
+        RoleRevision = Blank(Environment.GetEnvironmentVariable(RoleRevisionVariable)),
+    };
 
     /// <summary>Whether this connector speaks for an ask.</summary>
     public bool Active => Ask is { Length: > 0 };

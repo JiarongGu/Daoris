@@ -238,4 +238,35 @@ public sealed class CitationRecheckTests : IAsyncLifetime
         Assert.Null(answer.Cited);
         Assert.Equal("D50", answer.Successor);
     }
+
+    /// <summary>
+    /// 🔴 KNOWCENTRAL2d (the memory coordinator design §3): the sweep reads Lyntai's entries due a recheck and rechecks each one's citations
+    /// through <c>RecheckAsync</c>: one whose record holds is written as a <c>ready</c> confirmation at the revision read, one whose record
+    /// was superseded as an <c>awaiting</c> end naming its successor, and a second sweep before either settles writes neither again.
+    /// </summary>
+    [Fact]
+    public async Task The_sweep_rechecks_due_entries_through_RecheckAsync()
+    {
+        Write("family/served/docs/decisions/D61.md", "# D61: A choice later replaced\n\nNumbat opening.\n");
+        Commit("D61");
+        var service = await ServeAsync(GitProbe);
+        await using var machine = await MemoryMachine.OpenAsync("memory-sweep");
+        await using var lyntai = LyntaiFile.Open("memory-sweep");
+        var engine = lyntai.Engine("served");
+        var holds = await engine.RememberAsync("The pick stands.", recheck: MemoryCitations.Of([Cited(await service.CiteAsync(Opening))]));
+        var fails = await engine.RememberAsync(
+            "The later choice stands.", recheck: MemoryCitations.Of([Cited(await service.CiteAsync("served:docs/decisions/D61.md"))]));
+        Write("family/served/docs/decisions/D61.md", "# D61: A choice later replaced\n\nNumbat opening.\n\n**Superseded by D70, 2026-10-31.** Gannet note.\n");
+        Commit("superseded");
+        var sweep = new MemorySweep(machine.Memory, lyntai.Memory, service);
+
+        await sweep.RunAsync(DateTimeOffset.UtcNow);
+        await sweep.RunAsync(DateTimeOffset.UtcNow);
+
+        var confirm = Assert.Single(await machine.Memory.ListAsync(MemoryOpState.Ready));
+        Assert.Equal((MemoryOpKind.Confirm, "served", holds.Id, holds.Revision), (confirm.Change.Kind, confirm.Repository, confirm.Change.Target, confirm.Change.Revision));
+        var end = Assert.Single(await machine.Memory.ListAsync(MemoryOpState.Awaiting));
+        Assert.Equal((MemoryOpKind.End, fails.Id, fails.Revision), (end.Change.Kind, end.Change.Target, end.Change.Revision));
+        Assert.Contains("D70", end.Change.Text);
+    }
 }

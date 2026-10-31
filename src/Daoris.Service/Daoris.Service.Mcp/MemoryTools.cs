@@ -1,29 +1,45 @@
 using System.ComponentModel;
+using System.Globalization;
 using System.Text;
 using ModelContextProtocol.Server;
 
 namespace Daoris.Knowledge.Mcp;
 
 /// <summary>
-/// A repository's memory as a session meets it (KNOWCENTRAL2b; the memory coordinator design §2): <c>memory_search</c> and
+/// A repository's memory as a session meets it (KNOWCENTRAL2b, 2d; the memory coordinator design §1, §2): <c>memory_search</c> and
 /// <c>memory_get</c> read, <c>memory_write</c> and <c>memory_end</c> change the caller's own repository's, and <c>memory_propose</c> asks
 /// an entry's owner. Every door answers from the repositories the registry places in the caller's workspace (<see cref="MemoryScope"/>),
-/// and every engine is opened with no reinforcement, so a read changes nothing. A change answers <see cref="NotOn"/> until the record
-/// that holds it to its session's commit point lands, and a read does where no engine is open.
+/// and every engine is opened with no reinforcement, so a read changes nothing. A change is kept <c>staged</c> under its session, seen by
+/// that session and a session continuing it alone, until the session's commit point releases it; no tool here calls an engine's write.
+/// What a named session reads is kept in its read set, and its next search or get opens with the entries its line read that moved since,
+/// each told once (KNOWCENTRAL2f).
 /// </summary>
 /// <param name="service">The registry each call reads its workspace's repositories from.</param>
 /// <param name="ambient">An unnamed caller's workspace, from where it runs.</param>
-/// <param name="intake">The session this connector names; none names none, a person's own agent's.</param>
-/// <param name="ledger">Where the named session's record is read.</param>
-/// <param name="engines">Each repository's memory; none until the engine lands.</param>
+/// <param name="intake">The session this connector names, and the role it started in; none names none, a person's own agent's.</param>
+/// <param name="ledger">Where the named session's record is read and its changes staged.</param>
+/// <param name="engines">Each repository's memory; none where memory is off.</param>
+/// <param name="time">The clock a change's instant is read from.</param>
+/// <param name="exchange">Where a proposal is published as a quest to its entry's owner (2e).</param>
+/// <param name="quests">Where a proposal's quest is read, to join it or to settle the proposal.</param>
 [McpServerToolType]
 public sealed class MemoryTools(
-    KnowledgeService service, AmbientWorkspace ambient, IntakeScope? intake = null, SessionLedger? ledger = null, IMemoryEngines? engines = null)
+    KnowledgeService service, AmbientWorkspace ambient, IntakeScope? intake = null, SessionLedger? ledger = null, IMemoryEngines? engines = null,
+    TimeProvider? time = null, QuestExchange? exchange = null, QuestStore? quests = null)
 {
-    /// <summary>What every tool answers until memory is on, after its checks.</summary>
+    /// <summary>What every tool answers where memory is off, after its checks.</summary>
     public const string NotOn = "Memory is not on in this Daoris yet, so nothing was read or kept.";
 
+    /// <summary>What <c>memory_write</c> answers to a replacement where the memory's engine cannot apply one as one change (the design §4, §6 A).</summary>
+    public const string SupersedesWaits =
+        "Refused: this memory's engine cannot replace an entry in one change (Lyntai's atomic supersession, requested as §6 A of the memory "
+        + "coordinator design). Write the new fact with `relation` `disputes` and `target` the old entry, then end the old one with "
+        + "memory_end: two decisions, both current until the end is approved. Nothing was kept.";
+
     private const int Limit = 10;
+
+    /// <summary>The most records a write cites, so their citations fit the re-check text Lyntai keeps.</summary>
+    private const int MaxCites = 5;
 
     private static readonly string[] Relations = ["disputes", "amends"];
 
@@ -44,6 +60,7 @@ public sealed class MemoryTools(
         if (caller.Refused is { } refused) return refused;
         if (engines is null) return NotOn;
 
+        var told = await ToldAsync(caller, ct).ConfigureAwait(false);
         var found = new List<(MemoryReference Reference, MemoryEntry Entry)>();
         foreach (var repository in caller.Members)
         {
@@ -52,10 +69,65 @@ public sealed class MemoryTools(
             found.AddRange(entries.Select(entry => (new MemoryReference(repository, entry.Id), entry)));
         }
 
-        if (found.Count == 0) return $"No memory entry in workspace `{caller.Workspace}` matches `{query}`.";
-        var text = new StringBuilder($"Memory in workspace `{caller.Workspace}`:").AppendLine().AppendLine();
-        foreach (var (reference, entry) in found.Take(Limit)) text.AppendLine($"- `{reference}` (revision {entry.Revision}): {entry.Text}");
-        return text.AppendLine().Append("Call `memory_get` with a reference to read it whole.").ToString();
+        await KeepReadsAsync(caller, found.Take(Limit).Select(each => new MemoryRead(each.Reference, each.Entry.Revision)), ct).ConfigureAwait(false);
+
+        // This session's own additions, and those of the sessions it continues, before their commit point: no other session sees them.
+        var staged = caller.Record is { } record && ledger is not null
+            ? (await ledger.Memory.StagedForAsync(record.Id, ct).ConfigureAwait(false))
+                .Where(op => op.Change is { Kind: MemoryOpKind.Write or MemoryOpKind.Supersede, Text: { } written } && Matches(written, query))
+                .ToList()
+            : [];
+        if (found.Count == 0 && staged.Count == 0) return await ToldAsync(caller, $"{told}No memory entry in workspace `{caller.Workspace}` matches `{query}`.", ct).ConfigureAwait(false);
+        var awaiting = await AwaitingEndsAsync(ct).ConfigureAwait(false);
+        var text = new StringBuilder(told).Append($"Memory in workspace `{caller.Workspace}`:").AppendLine().AppendLine();
+        foreach (var (reference, entry) in found.Take(Limit))
+        {
+            text.AppendLine($"- `{reference}` (revision {entry.Revision}{Awaits(awaiting, reference)}): {entry.Text}");
+        }
+        foreach (var op in staged.Take(Limit))
+        {
+            text.AppendLine($"- staged for `{op.Repository}` by this session's work (operation `{op.Id}`), applied when it is accepted: {op.Change.Text}");
+        }
+
+        return await ToldAsync(caller, text.AppendLine().Append("Call `memory_get` with a reference to read it whole.").ToString(), ct).ConfigureAwait(false);
+    }
+
+    /// <summary>The ends awaiting their approver, by the entry they would end (§4).</summary>
+    private async Task<ILookup<MemoryReference, MemoryOp>> AwaitingEndsAsync(CancellationToken ct) =>
+        ledger is null
+            ? Array.Empty<MemoryOp>().ToLookup(op => new MemoryReference(op.Repository, ""))
+            : (await ledger.Memory.ListAsync(MemoryOpState.Awaiting, ct).ConfigureAwait(false))
+                .Where(op => op.Change is { Kind: MemoryOpKind.End, Target: not null })
+                .ToLookup(op => new MemoryReference(op.Repository, op.Change.Target!));
+
+    /// <summary>What a hit on <paramref name="reference"/> says of an end awaiting its approver, the person until MC8; nothing where none awaits.</summary>
+    private static string Awaits(ILookup<MemoryReference, MemoryOp> awaiting, MemoryReference reference) =>
+        string.Concat(awaiting[reference].Select(op => op.By is { } by
+            ? $", end proposed by session `{by.Session}`, awaiting the person"
+            : ", end proposed by Daoris's recheck of a cited record, awaiting the person"));
+
+    private static bool Matches(string text, string query) =>
+        query.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Any(word => text.Contains(word, StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>What a named session's answer opens with: the entries its line read that moved since, each told once (the design §3).</summary>
+    private async Task<string> ToldAsync(MemoryCaller caller, CancellationToken ct)
+    {
+        if (caller.Record is not { } record || ledger is null) return "";
+        var moved = await ledger.Memory.TellAsync(record.Id, ct).ConfigureAwait(false);
+        return moved.Count == 0
+            ? ""
+            : $"Since this session read them, these memory entries moved: {string.Join(", ", moved.Select(each => $"`{each}`"))}. Read each again "
+              + "with memory_get before relying on it." + Environment.NewLine + Environment.NewLine;
+    }
+
+    /// <summary>What a named session read, kept in its read set so it is told once when an entry moves.</summary>
+    private async Task KeepReadsAsync(MemoryCaller caller, IEnumerable<MemoryRead> reads, CancellationToken ct)
+    {
+        if (caller.Record is { } record && ledger is not null && reads.ToList() is { Count: > 0 } kept)
+        {
+            await ledger.Memory.KeepReadsAsync(record.Id, kept, ct).ConfigureAwait(false);
+        }
     }
 
     [McpServerTool(Name = "memory_get")]
@@ -73,40 +145,67 @@ public sealed class MemoryTools(
         if (engines is null) return NotOn;
 
         var at = caller.Placed(named);
+        var told = await ToldAsync(caller, ct).ConfigureAwait(false);
         if (engines.Open(at.Repository, MemoryReinforcement.None) is not { } engine
             || await engine.GetAsync(at.Entry, ct).ConfigureAwait(false) is not { } entry)
         {
-            return $"No memory entry `{at}`. References come from memory_search.";
+            return $"{told}No memory entry `{at}`. References come from memory_search.";
         }
 
-        var text = new StringBuilder($"`{at}`, revision {entry.Revision}");
-        if (entry.Ended is { } why) text.Append($", ended: {why}");
+        var text = new StringBuilder(told).Append($"`{at}`, revision {entry.Revision}");
+        if (entry.Ended is { } why) text.Append($", ended: {MemoryEndToken.Strip(why)}");
+        else text.Append(Awaits(await AwaitingEndsAsync(ct).ConfigureAwait(false), at));
         text.AppendLine().AppendLine().AppendLine(entry.Text);
-        if (!expand) return text.ToString();
+        if (!expand)
+        {
+            await KeepReadsAsync(caller, [new MemoryRead(at, entry.Revision)], ct).ConfigureAwait(false);
+            return await ToldAsync(caller, text.ToString(), ct).ConfigureAwait(false);
+        }
 
         var related = await engine.ExpandAsync(at.Entry, ct).ConfigureAwait(false);
+        await KeepReadsAsync(
+            caller, [new MemoryRead(at, entry.Revision), .. related.Select(each => new MemoryRead(at with { Entry = each.Entry.Id }, each.Entry.Revision))], ct)
+            .ConfigureAwait(false);
         text.AppendLine().AppendLine(related.Count == 0 ? "It relates to no other entry." : "It relates to:");
         foreach (var each in related)
         {
             text.AppendLine($"- {each.Link.Kind} `{at with { Entry = each.Entry.Id }}` (revision {each.Entry.Revision}): {each.Entry.Text}");
         }
 
-        return text.ToString();
+        return await ToldAsync(caller, text.ToString(), ct).ConfigureAwait(false);
     }
 
     [McpServerTool(Name = "memory_write")]
     [Description(
         "Write one entry into the memory of the repository this session works in, for later sessions to find: a fact you confirmed, in "
         + "a sentence or two. Cite a record by its knowledge id rather than copying it. With `relation` and `target`, the entry disputes "
-        + "or amends another entry of this workspace, which stays as it is. The write is kept with this session's work and applies when "
-        + "that work is accepted.")]
+        + "or amends another entry of this repository's memory, which stays as it is. With `supersedes`, it replaces entries of this "
+        + "repository's memory: once its approver agrees, it is written and they end in one change. The write is kept with this session's "
+        + "work and applies when that work is accepted.")]
     public async Task<string> WriteAsync(
         [Description("The fact, as later sessions should read it.")] string text,
         [Description("`disputes` or `amends`, given with `target`; omit for an entry that relates to none.")] string? relation = null,
         [Description("The reference of the entry this one disputes or amends.")] string? target = null,
+        [Description("The entries this one replaces, each `repository:entry@revision` with the revision memory_get answered.")]
+        string[]? supersedes = null,
+        [Description("The knowledge ids of the records that show the fact, as knowledge_search names them; each is rechecked later.")]
+        string[]? cites = null,
         CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(text)) return "Write the entry's text: one fact, in a sentence or two.";
+        var replaced = new List<(MemoryReference Reference, long Revision)>();
+        foreach (var named in (supersedes ?? []).Where(each => !string.IsNullOrWhiteSpace(each)))
+        {
+            if (Predecessor(named) is not { } predecessor) return Words.Unread(named);
+            replaced.Add(predecessor);
+        }
+
+        if (replaced.Count > 0 && (relation ?? target) is not null)
+        {
+            return "Refused: a replacement relates to no other entry; write it with `supersedes` alone. Nothing was kept.";
+        }
+
+        if (cites is { Length: > MaxCites }) return $"Cite at most {MaxCites} records: the ones that show this fact.";
         MemoryReference? related = null;
         if ((relation ?? target) is not null
             && (relation is not { } kind || !Relations.Contains(kind.Trim().ToLowerInvariant()) || (related = MemoryReference.Parse(target)) is null))
@@ -115,8 +214,45 @@ public sealed class MemoryTools(
         }
 
         var caller = await _scope.ReadAsync(ct).ConfigureAwait(false);
-        if ((caller.Refused ?? (related is null ? null : caller.Outside(related)) ?? caller.Unchanging("memory_write")) is { } refused) return refused;
-        return NotOn;
+        if ((caller.Refused ?? (related is null ? null : caller.Outside(related)) ?? caller.Unchanging("memory_write")
+                ?? (related is null ? null : caller.NotOwnRelation(related))
+                ?? replaced.Select(each => caller.Outside(each.Reference) ?? caller.NotOwn(each.Reference)).FirstOrDefault(each => each is not null))
+            is { } refused)
+        {
+            return refused;
+        }
+
+        if (engines is null || ledger is null || caller.Record is not { } record) return NotOn;
+        if (replaced.Count > 0 && engines.Open(caller.OwnPlaced!, MemoryReinforcement.None) is not { HoldsSupersession: true }) return SupersedesWaits;
+        var (citations, uncited) = await CiteAsync(caller, cites, ct).ConfigureAwait(false);
+        if (uncited is not null) return uncited;
+
+        var predecessors = replaced
+            .Select(each => new MemoryPredecessor(caller.Placed(each.Reference).Entry, each.Revision))
+            .DistinctBy(each => each.Entry)
+            .ToList();
+        var op = await ledger.Memory.StageAsync(
+            caller.OwnPlaced!,
+            new MemoryChange(predecessors.Count > 0 ? MemoryOpKind.Supersede : MemoryOpKind.Write, Text: text.Trim(),
+                Target: related is null ? null : caller.Placed(related).Entry, Relation: relation?.Trim().ToLowerInvariant(),
+                Recheck: MemoryCitations.Of(citations), Predecessors: predecessors.Count > 0 ? predecessors : null),
+            Author(record), ct).ConfigureAwait(false);
+        var until = "Until then only this session, and a session continuing it, finds it with memory_search.";
+        return predecessors.Count == 0
+            ? $"Kept as operation `{op.Id}`, staged: `{op.Repository}`'s memory takes this entry when this session's work is accepted. {until}"
+            : $"Kept as operation `{op.Id}`, staged: once this session's work is accepted it waits for its approver, then `{op.Repository}`'s "
+              + $"memory takes this entry and ends {string.Join(", ", predecessors.Select(each => $"`{op.Repository}:{each.Entry}` (revision {each.Revision})"))} "
+              + $"in one change. Nothing changes before. {until}";
+    }
+
+    /// <summary>The entry a replacement names, written <c>repository:entry@revision</c>, or null where it names no revision.</summary>
+    private static (MemoryReference Reference, long Revision)? Predecessor(string text)
+    {
+        var at = text.LastIndexOf('@');
+        return at > 0 && MemoryReference.Parse(text[..at]) is { } reference
+            && long.TryParse(text[(at + 1)..].Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var revision)
+                ? (reference, revision)
+                : null;
     }
 
     [McpServerTool(Name = "memory_end")]
@@ -133,8 +269,19 @@ public sealed class MemoryTools(
         if (string.IsNullOrWhiteSpace(reason)) return "Say why the entry is no longer true, citing what shows it.";
         var caller = await _scope.ReadAsync(ct).ConfigureAwait(false);
         if ((caller.Refused ?? caller.Outside(named) ?? caller.Unchanging("memory_end") ?? caller.NotOwn(named)) is { } refused) return refused;
-        return NotOn;
+        if (engines is null || ledger is null || caller.Record is not { } record) return NotOn;
+        var at = caller.Placed(named);
+        var op = await ledger.Memory.StageAsync(
+            at.Repository, new MemoryChange(MemoryOpKind.End, Text: reason.Trim(), Target: at.Entry, Revision: revision), Author(record), ct)
+            .ConfigureAwait(false);
+        return $"Kept as operation `{op.Id}`, staged: the end of `{at}` at revision {revision} waits for its approver once this session's "
+            + "work is accepted. Nothing changes before.";
     }
+
+    /// <summary>Who makes a change, from the caller's record and the role its connector was started in (§1), at this instant.</summary>
+    private MemoryAuthor Author(Session record) => new(
+        record.Id, record.Workspace, record.Quest, record.Adapter, record.HarnessVersion, intake?.Role, intake?.RoleRevision,
+        (time ?? TimeProvider.System).GetUtcNow());
 
     [McpServerTool(Name = "memory_propose")]
     [Description(
@@ -145,20 +292,107 @@ public sealed class MemoryTools(
         [Description("`disputes`, `amends` or `end`.")] string change,
         [Description("What you found, citing what shows it.")] string reason,
         [Description("The revision you read, as memory_get answered it.")] long revision,
+        [Description("The knowledge ids of the records that show what you found, as knowledge_search names them.")] string[]? cites = null,
         CancellationToken ct = default)
     {
         if (MemoryReference.Parse(reference) is not { } named) return Words.Malformed(reference);
         if (change is not { } kind || !Changes.Contains(kind.Trim().ToLowerInvariant())) return "`change` is `disputes`, `amends` or `end`.";
         if (string.IsNullOrWhiteSpace(reason)) return "Say what you found, citing what shows it.";
+        if (cites is { Length: > MaxCites }) return $"Cite at most {MaxCites} records: the ones that show what you found.";
         var caller = await _scope.ReadAsync(ct).ConfigureAwait(false);
         if ((caller.Refused ?? caller.Outside(named)) is { } refused) return refused;
-        return NotOn;
+        if (engines is null || ledger is null || quests is null) return NotOn;
+        if (caller is not { Record: { } record, OwnPlaced: { } own } || caller.Unchanging("memory_propose") is not null)
+        {
+            return "Refused: a proposal travels as a quest from the repository a session Daoris started works in, and this connector names "
+                   + "none in this workspace. Say what you found to the person instead. Nothing was published.";
+        }
+
+        var at = caller.Placed(named);
+        if (string.Equals(at.Repository, own, StringComparison.Ordinal))
+        {
+            return $"Refused: `{at}` is this repository's own entry, so it is not proposed: dispute or amend it with memory_write, or end it "
+                   + "with memory_end. Nothing was published.";
+        }
+
+        var entry = engines.Open(at.Repository, MemoryReinforcement.None) is { } engine ? await engine.GetAsync(at.Entry, ct).ConfigureAwait(false) : null;
+        if (entry is null) return $"No memory entry `{at}`. References come from memory_search.";
+        if (entry.Ended is { } ended) return $"Refused: `{at}` already ended: {MemoryEndToken.Strip(ended)}. Nothing was published.";
+        if (entry.Revision != revision)
+        {
+            return $"Refused: `{at}` moved since you read it: it is at revision {entry.Revision}, and you read revision {revision}. Read it "
+                   + "again with memory_get and propose on what it says now. Nothing was published.";
+        }
+
+        var (citations, uncited) = await CiteAsync(caller, cites, ct).ConfigureAwait(false);
+        if (uncited is not null) return uncited.Replace("Nothing was kept.", "Nothing was published.", StringComparison.Ordinal);
+        var proposed = await new MemoryProposals(ledger.Memory, quests, exchange, engines).ProposeAsync(
+            own, at, new MemoryChange(MemoryOpKind.Propose, Text: reason.Trim(), Target: at.Entry, Revision: revision,
+                Relation: kind.Trim().ToLowerInvariant(), Recheck: MemoryCitations.Of(citations)),
+            Author(record), Now(), ct).ConfigureAwait(false);
+        if (proposed is not { Op: { } op, Quest: { } quest }) return $"Refused: {proposed.Refused} Nothing was proposed.";
+        return await ToldAsync(caller, (proposed.Joined
+                   ? $"Kept as proposal `{op.Id}`, joined to quest `#{quest.Id}`, which carries `{own}`'s proposals to `{at.Repository}` until it is taken. "
+                   : $"Kept as proposal `{op.Id}` and published to `{at.Repository}` as quest `#{quest.Id}`. ")
+               + $"`{at.Repository}`'s session decides it through its own operations, or declines it; nothing changes in its memory before, "
+               + "and closing the quest applies nothing. You are told how it settles at your next memory call.", ct).ConfigureAwait(false);
+    }
+
+    /// <summary>The records <paramref name="cites"/> names, cited; or why one was refused.</summary>
+    private async Task<(List<Citation> Citations, string? Refused)> CiteAsync(MemoryCaller caller, string[]? cites, CancellationToken ct)
+    {
+        var citations = new List<Citation>();
+        foreach (var id in (cites ?? []).Where(id => !string.IsNullOrWhiteSpace(id)).Select(id => id.Trim()).Distinct(StringComparer.Ordinal))
+        {
+            var repository = id.IndexOf(':') is var colon and > 0 ? id[..colon] : id;
+            if (caller.Outside(new MemoryReference(repository, id)) is { } outside) return ([], outside);
+            var answer = await service.CiteAsync(id, ct: ct).ConfigureAwait(false);
+            if (answer.Cited is not { } cited) return ([], $"Refused: {answer.Refused} Nothing was kept.");
+            citations.Add(cited);
+        }
+
+        return (citations, null);
+    }
+
+    private DateTimeOffset Now() => (time ?? TimeProvider.System).GetUtcNow();
+
+    /// <summary>
+    /// <paramref name="answer"/>, with how the named caller's proposals settled since it was last told (§4): a decline and its reason, a
+    /// done's handback, a target moved first, or a quest gone; each told once.
+    /// </summary>
+    private async Task<string> ToldAsync(MemoryCaller caller, string answer, CancellationToken ct)
+    {
+        if (caller.Record is not { } record || ledger is null || quests is null) return answer;
+        await new MemoryProposals(ledger.Memory, quests, engines: engines).SettleAsync(Now(), ct).ConfigureAwait(false);
+        var settled = await ledger.Memory.TellProposalsAsync(record.Id, Now(), ct).ConfigureAwait(false);
+        if (settled.Count == 0) return answer;
+        var text = new StringBuilder(answer).AppendLine().AppendLine().AppendLine("Your proposals settled since you were last told:");
+        foreach (var op in settled)
+        {
+            var on = $"`{op.Id}` ({op.Change.Relation} `{op.Repository}:{op.Change.Target}`)";
+            text.AppendLine(op.State switch
+            {
+                MemoryOpState.Declined => $"- {on} was declined by `{op.Repository}` on quest `#{op.Carried}`: {op.Answer}",
+                MemoryOpState.Answered =>
+                    $"- {on} was answered: `{op.Repository}` closed quest `#{op.Carried}` done, applying nothing itself. Its handback: {op.Answer}",
+                MemoryOpState.Stale =>
+                    $"- {on} is stale: the entry moved past revision {op.Change.Revision} before `{op.Repository}` decided. Read it again, "
+                    + "and propose anew where your finding still stands.",
+                _ => $"- {on} was dropped: its quest `#{op.Carried}` is gone.",
+            });
+        }
+
+        return text.ToString().TrimEnd();
     }
 
     private static class Words
     {
         public static string Malformed(string? text) =>
             $"`{text}` is no memory reference: write `repository:entry`, as memory_search names one.";
+
+        public static string Unread(string text) =>
+            $"`{text}` names no revision: name each entry a replacement ends as `repository:entry@revision`, with the revision memory_get "
+            + "answered. Nothing was kept.";
     }
 }
 
@@ -173,6 +407,19 @@ public sealed class MemoryTools(
 /// <param name="Own">The repository the named session works in.</param>
 public sealed record MemoryCaller(string? Workspace, IReadOnlyList<string> Members, bool Named, string? Own)
 {
+    /// <summary>The named session's record, as read at this call; null for an unnamed caller.</summary>
+    public Session? Record { get; init; }
+
+    /// <summary>The caller's own repository as the registry spells it.</summary>
+    public string? OwnPlaced => Own is null ? null : Member(Own) ?? Own;
+
+    /// <summary>The refusal of a relation to another repository's entry: a relation joins entries of one memory.</summary>
+    public string? NotOwnRelation(MemoryReference reference) =>
+        Own is not null && string.Equals(Member(reference.Repository), Member(Own), StringComparison.Ordinal)
+            ? null
+            : $"Refused: a relation joins entries of one memory, and `{reference}` is repository `{reference.Repository}`'s. To dispute or "
+              + "amend it, ask its owner with memory_propose. Nothing was kept.";
+
     /// <summary>The refusal of a caller no workspace places; null where one does.</summary>
     public string? Refused => Workspace is null
         ? "Refused: Daoris cannot say which workspace this session is in, so its memory tools answer nothing here. Nothing was done."
@@ -215,20 +462,23 @@ public sealed class MemoryScope(KnowledgeService service, AmbientWorkspace ambie
     {
         var named = intake?.Session is { Length: > 0 };
         string? workspace;
-        string? own = null;
+        Session? record = null;
         if (named)
         {
-            var record = await RecordAsync(intake!.Session!, ct).ConfigureAwait(false);
-            (workspace, own) = (record?.Workspace, record?.Repository);
+            record = await RecordAsync(intake!.Session!, ct).ConfigureAwait(false);
+            workspace = record?.Workspace;
         }
         else
         {
             workspace = await ambient.ResolveAsync(service, ct).ConfigureAwait(false);
         }
 
-        if (workspace is null) return new(null, [], named, own);
+        if (workspace is null) return new(null, [], named, record?.Repository) { Record = record };
         var members = await service.RegistryAsync(workspace, ct).ConfigureAwait(false);
-        return new(workspace, [.. members.Select(member => member.Repository).Order(StringComparer.Ordinal)], named, own);
+        return new(workspace, [.. members.Select(member => member.Repository).Order(StringComparer.Ordinal)], named, record?.Repository)
+        {
+            Record = record,
+        };
     }
 
     /// <summary>This machine's record of <paramref name="session"/>; null where none is kept or it cannot be read.</summary>

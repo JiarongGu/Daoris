@@ -581,7 +581,7 @@ export function useAskConversation(
     const circle = here;
     const answer = readying.mutateAsync(startIn(circle)).then(
       // One the driver hands back as running is carried on, not opened ahead: the list shows it as it is.
-      (started) => (started.sessionId && !started.running ? started.sessionId : null),
+      (started) => (started?.sessionId && !started.running ? started.sessionId : null),
       () => null,
     );
     ahead.current = answer;

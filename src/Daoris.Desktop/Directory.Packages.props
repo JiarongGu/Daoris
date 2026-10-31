@@ -37,7 +37,7 @@
 
   <ItemGroup>
     <!-- The desktop store's (FOUNDATION1 z-i): the service's versions, as its own Directory.Packages.props pins them. -->
-    <PackageVersion Include="Microsoft.Data.Sqlite" Version="10.0.12" />
+    <PackageVersion Include="Microsoft.Data.Sqlite" Version="10.0.14" />
     <PackageVersion Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.5" />
   </ItemGroup>
 
