@@ -31,6 +31,10 @@ export const DECLARED: Readonly<Record<string, { scopes: readonly string[]; sess
   WORK_HELD: { scopes: ['sessions'] },
   // FABRIC-CUTOVER1f: the person's skip or stop of a run's node; the run's view, read under the driver's key, asks again.
   WORKFLOW_NODE: { scopes: ['driver'] },
+  // AGENTSPLACE1c: a workflow saved, a place's choice and a workspace's kinds; the workflow page's reads, under the driver's key, ask again.
+  WORKFLOW_SAVE: { scopes: ['driver'] },
+  WORKFLOW_USE: { scopes: ['driver'] },
+  WORKFLOW_KIND: { scopes: ['driver'] },
   // FABRIC-PIPELINE1d: a person's verification bound for the running driver; the run's and the tab's reads, under the driver's key, ask again.
   WORKFLOW_VERIFY: { scopes: ['driver'] },
   // INTEGRATE1d: the person's acceptance of a repository's integration declaration; the start node, read under the driver's key, asks again.

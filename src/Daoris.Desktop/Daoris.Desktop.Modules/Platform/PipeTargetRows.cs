@@ -41,6 +41,9 @@ internal static class PipeTargetRows
         ["STAFFING_FOUND_ANSWER"] = "answers a found change, which then leaves the list",
         ["SET_ROLE"] = "edits a role's row of the catalogue in place, its revision moving",
         ["WORKFLOW_LANDED"] = "reads the gates at the line's tip and accepts them by their blob",
+        ["WORKFLOW_USE"] = "merges into the place's choice, which keeps its other kinds and its landed route",
+        ["WORKFLOW_KIND"] = "merges into the workspace's kinds, keeping the others",
+        ["WORKFLOW_SAVE"] = "adds a version beside the ones kept, or makes a workflow",
         ["WORKFLOW_VERIFY"] = "starts a run of the accepted gates beside the route, and sets no value",
         ["INTEGRATION_GATES"] = "reads the declaration at the line's tip and accepts it by its blob",
         ["TOOLS_USE"] = "checks a file's version or downloads a managed one",
@@ -261,6 +264,13 @@ internal static class PipeTargetRows
         Row("WORKFLOW_LANDED", new RepositoryGround("repository", "workspace"), Setting("WORKFLOW_CURRENT", ["repository", "workspace", "workflow"],
             p => Text(p, "repository") is { } repository ? new { repository } : new { workspace = Text(p, "workspace") },
             (a, _) => Fp(Pick(At(a, "start", "landed"), "workflow", "level"))));
+        // AGENTSPLACE1c: a place's routes as they stand, so a choice or a kind changed between the ask and the Confirm is never overwritten unseen.
+        Row("WORKFLOW_USE", new RepositoryGround("repository", "workspace"), Setting("WORKFLOW_CURRENT", ["repository", "workspace", "workflow", "kind", "version"],
+            p => Text(p, "repository") is { } repository ? new { repository } : new { workspace = Text(p, "workspace") },
+            (a, _) => Fp(Rows(At(a, "start", "routes"), "kind", "workflow", "level", "label"))));
+        Row("WORKFLOW_KIND", new RepositoryGround("workspace"), Setting("WORKFLOW_CURRENT", ["workspace", "kind", "label", "paths", "drop"],
+            p => new { workspace = Text(p, "workspace") },
+            (a, _) => Fp(Rows(At(a, "start", "routes"), "kind", "workflow", "label", "paths"))));
         // INTEGRATE1d: the blob accepted and the one at the line's tip, so a declaration the line changed between the ask and the Confirm
         // is never accepted unseen.
         // FABRIC-PIPELINE1d: a verification of a branch or a commit, asked under the landed route and the gates accepted at the tip.
@@ -323,6 +333,7 @@ internal static class PipeTargetRows
         rows.Add(PipeTargets.Key("DAORIS.REGISTRY", "WRITE_DECLARATION"),
             new PipeGroundRow([LoopGround.Plan("declaration", PipeGround.StateBound, "path")]));
 
+        Timeless("WORKFLOW_SAVE", "a version of the machine's own workflow store, refused as stale against the base it names");
         Timeless("CHANNEL_MARK", "a read mark, which never moves back");
         Timeless("NOTICES_READ", "marks news read");
         Timeless("HELP_RENAME", "a conversation's name");
