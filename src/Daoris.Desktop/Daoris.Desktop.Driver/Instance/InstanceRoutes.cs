@@ -195,6 +195,13 @@ public static class PersonPresses
     /// <summary><c>git branch|tag &lt;repository&gt; &lt;name&gt; --yes</c> (GITAPP2c, D204): a branch or a lightweight tag created, the person's yes.</summary>
     public static InstanceRoute GitRefCreate { get; } = Person("GIT_REF_CREATE");
 
+    /// <summary>
+    /// <c>git pick|revert|rebase &lt;repository&gt; &lt;branch&gt; … --yes</c> (GITAPP2m, D204): a branch's history edited from objects, the person's
+    /// yes, carrying the ids its plan pinned. The plan is the same route's <c>plan</c> form, open (a <c>PipeRule</c> in the census), which the
+    /// verb reads alone.
+    /// </summary>
+    public static InstanceRoute GitHistoryEdit { get; } = Person("GIT_HISTORY_EDIT");
+
     /// <summary><c>ask --pause &lt;id&gt;</c> and <c>quest pause &lt;id&gt;</c> (RPC1e): a work paused on this machine, what of it runs stopped.</summary>
     public static InstanceRoute WorkPause { get; } = Person("WORK_PAUSE");
 
@@ -249,6 +256,9 @@ public static class PersonPresses
         ("space free --yes", SpaceFree),
         ("git branch <repository> <name> [<commit>] --yes", GitRefCreate),
         ("git tag <repository> <name> [<commit>] --yes", GitRefCreate),
+        ("git pick <repository> <branch> <commit|A..B> --yes", GitHistoryEdit),
+        ("git revert <repository> <branch> <commit|A..B> --yes", GitHistoryEdit),
+        ("git rebase <repository> <branch> <onto> --yes", GitHistoryEdit),
         ("ask --pause <id>", WorkPause),
         ("quest pause <id>", WorkPause),
         ("ask --resume <id>", WorkResume),

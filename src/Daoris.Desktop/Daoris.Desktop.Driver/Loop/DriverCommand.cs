@@ -325,6 +325,12 @@ public static class DriverCommand
               make a branch or a lightweight tag at a commit (HEAD without one), as the Branches tab's New branch and
               New tag do. --plan says what it would make; --yes makes it, after your yes in Daoris's window where
               Daoris runs. Refused from a session's terminal.
+          git pick|revert <repository> <branch> <commit|A..B> [--plan | --yes]
+          git rebase <repository> <branch> <onto> [--plan | --yes]
+              edit a branch no tree has out without a working tree, as a branch page's Edit history does: pick or
+              revert commits onto it, or rebase its own commits onto another. Each says its plan; --yes makes it
+              after your yes in Daoris's window where Daoris runs, keeping the old tip under refs/daoris/discarded/.
+              Refused from a session's terminal.
           git review <session> [--json] [--time]
               a session's review as its Review page reads it: the files and their base, the uncommitted ones, the line
               and the branch; --time each git it started, its node and budget, the gate's wait, the creation and the run,
