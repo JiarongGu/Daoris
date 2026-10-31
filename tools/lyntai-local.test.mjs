@@ -121,12 +121,13 @@ test('without the props the restored Lyntai version is the released pin, with th
     + `<RestoreAdditionalProjectSources>$(RestoreAdditionalProjectSources);${feed}</RestoreAdditionalProjectSources></PropertyGroup></Project>`;
   withProps(null, () => {
     const off = evaluate();
-    assert.deepEqual(off.versions, { 'Lyntai.Core': released, 'Lyntai.Providers.Basic': released });
+    assert.deepEqual(off.versions, { 'Lyntai.Core': released, 'Lyntai.Providers.Basic': released, 'Lyntai.Storage.Sqlite': released });
     assert.ok(!String(off.sources).includes('lyntai-feed'));
   });
   withProps(written, () => {
     const on = evaluate();
-    assert.deepEqual(on.versions, { 'Lyntai.Core': `${released}-local.abc1234`, 'Lyntai.Providers.Basic': `${released}-local.abc1234` });
+    const local = `${released}-local.abc1234`;
+    assert.deepEqual(on.versions, { 'Lyntai.Core': local, 'Lyntai.Providers.Basic': local, 'Lyntai.Storage.Sqlite': local });
     assert.ok(String(on.sources).includes('lyntai-feed'));
   });
 });
