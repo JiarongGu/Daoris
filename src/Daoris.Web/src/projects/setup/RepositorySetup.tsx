@@ -254,6 +254,8 @@ export function RepositorySetup({ repository, driving, work, access, heavy, land
   const commitRule = commits?.rule ?? COMMIT_DEFAULT;
   const commitsOwn = commits?.source === 'repository';
   const landedOwn = landed?.start.landed.level === 'repository-landed';
+  // The integration declaration at the line's tip waits for the person's acceptance (D215): never accepted, or changed since.
+  const integrationOwed = Boolean(landed?.onAcceptIntegration) && (landed?.start.integration?.state === 'unaccepted' || landed?.start.integration?.state === 'changed');
   const workParts = work && [
     ...(line
       ? [marked(
@@ -325,7 +327,8 @@ export function RepositorySetup({ repository, driving, work, access, heavy, land
   const opensItself: Record<SetupSectionId, boolean> = {
     driving: false,
     // An unread landing rule opens it too (FABRIC-GRAPH1d): the person wrote something nothing reads.
-    work: lineOwn || landingOwn || Boolean(work?.landingUnread) || commitsOwn || reviewOwn || opinionOwn || landedOwn,
+    // A declaration owed acceptance opens it too (INTEGRATE1h): *What needs you*'s door brings the person here to read it and accept.
+    work: lineOwn || landingOwn || Boolean(work?.landingUnread) || commitsOwn || reviewOwn || opinionOwn || landedOwn || integrationOwed,
     access: accessOwn,
     // This machine's heavy gates are set for this repository alone, so a list set is its own; and so are its sessions' checks.
     heavy: (heavy?.gates.length ?? 0) > 0 || Boolean(heavy?.checks?.set),

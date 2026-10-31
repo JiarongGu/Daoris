@@ -5,7 +5,7 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 import i18n from '../../locales/i18n';
 import { clockOf } from '../../locales/format';
 import { code } from '../../test/code';
-import { START } from '../../workflow/fixtures';
+import { INTEGRATION_ACCEPTED, INTEGRATION_CHANGED, INTEGRATION_UNACCEPTED, NO_VERIFICATION, START } from '../../workflow/fixtures';
 import { SETUP_DEFAULTS, SETUP_OWN } from '../fixtures';
 import { RepositorySetup, type RepositorySetupProps } from './RepositorySetup';
 
@@ -799,6 +799,25 @@ describe("a repository's landed route", () => {
       .toBeInTheDocument();
     await userEvent.click(within(work).getByRole('button', { name: 'No verification here' }));
     expect(onChoose).toHaveBeenLastCalledWith('current', expect.anything());
+  });
+
+  /** INTEGRATE1h (§5.8): *What needs you*'s door brings the person to Setup, where the declaration owed acceptance is open to read and accept. */
+  it('opens Line and landing on an integration declaration owed acceptance, and stays folded once it is accepted', () => {
+    const none = { ...NO_VERIFICATION, integration: INTEGRATION_UNACCEPTED };
+    const owed = draw({ ...SETUP_DEFAULTS, landed: { start: none, workspace: 'aurora', onChoose: vi.fn(), onAcceptIntegration: vi.fn() } });
+    expect(head('Line and landing')).toHaveAttribute('aria-expanded', 'true');
+    owed.unmount();
+
+    const changed = draw({
+      ...SETUP_DEFAULTS, landed: { start: { ...none, integration: INTEGRATION_CHANGED }, workspace: 'aurora', onChoose: vi.fn(), onAcceptIntegration: vi.fn() },
+    });
+    expect(head('Line and landing')).toHaveAttribute('aria-expanded', 'true');
+    changed.unmount();
+
+    draw({
+      ...SETUP_DEFAULTS, landed: { start: { ...none, integration: INTEGRATION_ACCEPTED }, workspace: 'aurora', onChoose: vi.fn(), onAcceptIntegration: vi.fn() },
+    });
+    expect(head('Line and landing')).toHaveAttribute('aria-expanded', 'false');
   });
 
   it("folds to its workspace's route, marked as such, and stays folded", () => {
