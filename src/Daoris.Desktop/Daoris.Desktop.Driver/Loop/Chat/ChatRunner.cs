@@ -3053,7 +3053,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
         var offered = new List<AcpMcpServer>();
         if (KnowledgeConnector.Offer(
                 Environment.GetEnvironmentVariable(KnowledgeConnector.PathVariable), DaorisHome.Resolve(),
-                AppContext.BaseDirectory, scope: ConnectorScope(_home, sessionId, circle, proc, KnowledgeConnector.KeptRole(_context.Conversations, sessionId))) is { } connector)
+                AppContext.BaseDirectory, scope: ConnectorScope(_home, sessionId, circle, proc, KnowledgeConnector.KeptRole(_context.Conversations.RoleOf, sessionId))) is { } connector)
         {
             offered.Add(connector);
         }
