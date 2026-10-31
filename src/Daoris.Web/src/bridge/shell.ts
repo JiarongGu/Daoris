@@ -29,6 +29,7 @@ export * from './sessions/quests';
 export * from './repositories/remotes';
 export * from './agents/rules';
 export * from './sessions/sessions';
+export * from './sessions/together';
 export * from './repositories/setup';
 export * from './state/held';
 export * from './state/published';

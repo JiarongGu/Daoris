@@ -100,6 +100,8 @@
   "workflow.run.said.landing.refused": "无法自动落地：{{why}}。",
   "workflow.run.said.landing.gone": "它的工作树在落地之前被丢弃了。",
   "workflow.run.said.landing.elsewhere": "它在另一台机器上运行，那台机器保存它的落地。",
+  "workflow.run.said.landing.brought-into": "已由另一个会话的采纳并入 `{{branch}}`。",
+  "workflow.run.said.landing.brought-intoLine": "已由另一个会话的采纳并入主线 `{{branch}}`。",
   "workflow.run.said.pull-request.merge.open": "已开启：等你在平台上合并它。",
   "workflow.run.said.pull-request.merge.unknown": "等你在平台上合并它；`{{plugin}}` 上次没有回答它的状态。",
   "workflow.run.said.pull-request.merge.unread": "由 `{{plugin}}` 开启：等你在平台上合并它。",
