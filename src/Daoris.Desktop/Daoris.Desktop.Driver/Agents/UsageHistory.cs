@@ -315,6 +315,19 @@ public static class UsageHistory
         return new(turns, gaps, unread);
     }
 
+    /// <summary>
+    /// The turn lines of <paramref name="sessions"/>, by session, in the order written (KNOWCENTRAL2d): what a commit point hands the service,
+    /// so a memory row names the model of the turn its instant falls in. A session with no line is left out. Never throws.
+    /// </summary>
+    public static IReadOnlyDictionary<string, IReadOnlyList<KeptTurn>> TurnLinesOf(string home, IReadOnlyCollection<string> sessions)
+    {
+        var wanted = sessions.ToHashSet(StringComparer.Ordinal);
+        return ReadTurns(home).Turns
+            .Where(turn => wanted.Contains(turn.Session))
+            .GroupBy(turn => turn.Session, StringComparer.Ordinal)
+            .ToDictionary(group => group.Key, group => (IReadOnlyList<KeptTurn>)[.. group], StringComparer.Ordinal);
+    }
+
     /// <summary>One month's file of a log as it stands (USAGEPROBE1): where <see cref="UsageLedger"/> reads on from.</summary>
     internal sealed record HistoryMonth(string Name, DateTimeOffset Month, long Length);
 

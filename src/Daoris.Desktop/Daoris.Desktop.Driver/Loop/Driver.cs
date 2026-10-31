@@ -5004,7 +5004,9 @@ public sealed class Driver(
     /// </summary>
     /// <param name="proc">The lineage token of the process this entry is composed for, on the protocol door alone.</param>
     internal AcpMcpServer? Connector(string sessionId, IReadOnlyDictionary<string, string>? scope, string? proc = null) =>
-        KnowledgeConnector.Offer(Variable, AppContext.BaseDirectory, KnowledgeConnector.SessionScope(home, sessionId, scope, proc));
+        KnowledgeConnector.Offer(
+            Variable, AppContext.BaseDirectory,
+            KnowledgeConnector.SessionScope(home, sessionId, scope, proc, KnowledgeConnector.KeptRole(Context.Conversations, sessionId)));
 
     /// <summary>
     /// A process's lineage token (COWORKVIEW1a): issued, its <c>start</c> written to the session's lineage, and set anew on the

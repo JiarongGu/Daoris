@@ -1836,6 +1836,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
         CancellationToken ct = default, bool interrupted = false, bool limit = false, IReadOnlyList<NotePart>? parts = null,
         string? expected = null, bool unbindAsk = false, IReadOnlyList<string>? expect = null)
     {
+        var turns = Ending.Contains(state) ? await TurnLinesForAsync(id, ct).ConfigureAwait(false) : null;
         var body = WriteJson(writer =>
         {
             writer.WriteStartObject();
@@ -1860,6 +1861,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
                 writer.WriteEndArray();
             }
 
+            if (turns is not null) WriteTurns(writer, turns);
             writer.WriteEndObject();
         });
 
@@ -1882,6 +1884,67 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
             await SessionEnds.Ended(Prior(record)).ConfigureAwait(false);
         Raise(Moved, new SessionMoved(id, (root is { } moved ? StateOf(moved) : null) ?? state));
         return root is { } answer ? Text(answer, "message") ?? "" : "";
+    }
+
+    /// <summary>
+    /// The usage history's turn lines, by session, for the sessions named (KNOWCENTRAL2d): set where this client's home is known, so a
+    /// session's end hands the service the lines its memory rows' models are read from. Null hands none, and the rows name <c>unknown</c>.
+    /// </summary>
+    public Func<IReadOnlyCollection<string>, IReadOnlyDictionary<string, IReadOnlyList<KeptTurn>>>? TurnLines { get; init; }
+
+    /// <summary>The states a session's record ends in: where its staged memory's models are named (the memory coordinator design §1).</summary>
+    private static readonly string[] Ending = ["completed", "stopped", "failed", "declined", "stood-down"];
+
+    /// <summary>
+    /// The turn lines of <paramref name="id"/> and of each session it continues, as its record names them; null where none is known or the
+    /// records did not read, which costs the rows their models and never the move.
+    /// </summary>
+    private async Task<IReadOnlyDictionary<string, IReadOnlyList<KeptTurn>>?> TurnLinesForAsync(string id, CancellationToken ct)
+    {
+        if (TurnLines is null) return null;
+        var chain = new List<string> { id };
+        try
+        {
+            var records = ReadRecords(await GetAsync(SessionRecords.Door, ct).ConfigureAwait(false));
+            // A chain longer than any hand-over makes is cut: the lines are evidence, never a reason to fail.
+            while (chain.Count < 16 && records.GetValueOrDefault(chain[^1])?.From is { Length: > 0 } from && !chain.Contains(from, StringComparer.OrdinalIgnoreCase))
+            {
+                chain.Add(from);
+            }
+        }
+        catch (Exception error) when (error is not OperationCanceledException)
+        {
+            // The session's own lines still go.
+        }
+
+        var lines = TurnLines(chain);
+        return lines.Count == 0 ? null : lines;
+    }
+
+    private static void WriteTurns(Utf8JsonWriter writer, IReadOnlyDictionary<string, IReadOnlyList<KeptTurn>> turns)
+    {
+        writer.WriteStartObject("turns");
+        foreach (var (session, lines) in turns)
+        {
+            writer.WriteStartObject(session);
+            writer.WriteStartArray("turns");
+            foreach (var line in lines)
+            {
+                writer.WriteStartObject();
+                writer.WriteNumber("seq", line.Seq);
+                if (line.Started is { } started) writer.WriteString("started", started.UtcDateTime.ToString("O", System.Globalization.CultureInfo.InvariantCulture));
+                writer.WriteString("ended", line.Ended.UtcDateTime.ToString("O", System.Globalization.CultureInfo.InvariantCulture));
+                writer.WriteString("model", line.Model);
+                writer.WriteEndObject();
+            }
+
+            writer.WriteEndArray();
+            writer.WriteStartArray("asked");
+            writer.WriteEndArray();
+            writer.WriteEndObject();
+        }
+
+        writer.WriteEndObject();
     }
 
     /// <summary>Move a session's record with a composed note: its English and its parts together (LANG1a).</summary>

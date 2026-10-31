@@ -37,6 +37,12 @@ public static class KnowledgeConnector
     /// </summary>
     public const string RulesHomeVariable = "DAORIS_RULES_HOME";
 
+    /// <summary>The role the session's start took, which its memory rows name at each call (KNOWCENTRAL2d; the service's IntakeScope reads it).</summary>
+    public const string RoleVariable = "DAORIS_SESSION_ROLE";
+
+    /// <summary>That role's revision.</summary>
+    public const string RoleRevisionVariable = "DAORIS_SESSION_ROLE_REVISION";
+
     public static string ExecutableName =>
         OperatingSystem.IsWindows() ? "daoris-knowledge.exe" : "daoris-knowledge";
 
@@ -105,15 +111,30 @@ public static class KnowledgeConnector
         return new AcpMcpServer(ServerName, located, [], carried);
     }
 
+    /// <summary>The role a session's start took, as its binding keeps it, for its connector to name; none where the store does not read.</summary>
+    internal static (string Role, long Revision)? KeptRole(HarnessConversations conversations, string sessionId)
+    {
+        try
+        {
+            return conversations.RoleOf(sessionId);
+        }
+        catch (Exception error) when (error is not OperationCanceledException)
+        {
+            return null;
+        }
+    }
+
     /// <summary>
     /// What a connector carries beyond the store (PERM2): the session, so a rule proposal says who made
     /// it, and this driver's home, so it lands beside the rules it would change — which is the folder
     /// `driver.json` sits in and need not be the account's home. An intake's ask rides too (D65 §1b).
     /// A driven session's and a conversation's alike, so it is the connector's, not the loop's (LOOPOUT1).
+    /// The role its start took rides too, which its memory rows name (KNOWCENTRAL2d).
     /// </summary>
     /// <param name="proc">The lineage token of the process this entry is composed for; null carries none.</param>
+    /// <param name="role">The role and revision the session's start took, as its binding keeps them; null carries none.</param>
     internal static IReadOnlyDictionary<string, string> SessionScope(
-        string home, string sessionId, IReadOnlyDictionary<string, string>? scope, string? proc = null)
+        string home, string sessionId, IReadOnlyDictionary<string, string>? scope, string? proc = null, (string Role, long Revision)? role = null)
     {
         var carried = new Dictionary<string, string>(StringComparer.Ordinal)
         {
@@ -121,6 +142,12 @@ public static class KnowledgeConnector
             [ChildMarks.SessionVariable] = sessionId,
         };
         if (proc is not null) carried[ChildMarks.LineageProcVariable] = proc;
+        if (role is { } taken)
+        {
+            carried[RoleVariable] = taken.Role;
+            carried[RoleRevisionVariable] = taken.Revision.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        }
+
         foreach (var (name, value) in scope ?? new Dictionary<string, string>()) carried[name] = value;
         return carried;
     }
