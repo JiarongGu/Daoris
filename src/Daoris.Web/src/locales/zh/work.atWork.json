@@ -38,5 +38,6 @@
   "work.atWork.reading": "正在读取谁在工作…",
   "work.atWork.failed": "读不到谁在工作：{{why}}",
   "work.atWork.stale": "无法重新读取：{{why}}",
-  "work.atWork.retry": "重试"
+  "work.atWork.retry": "重试",
+  "work.atWork.child.console": "控制台"
 }

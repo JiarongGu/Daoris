@@ -1445,6 +1445,9 @@ export function WorkFrame({
             error={atWork.error ? sentence(atWork.error) : null}
             onOpen={(id) => { attend(id); if (elsewhere) onOpenSessions?.(); }}
             onRetry={() => { void atWork.refetch(); }}
+            // A child's console tab, while the window holds its stream (the harness's agent id ends the stream's key).
+            streamOf={(child) => streams.find((row) => row.key.endsWith(`/${child}`))?.key}
+            onOpenStream={(key) => { pickStream(key); openView('console'); }}
           />,
         )
         : elsewhere

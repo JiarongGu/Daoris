@@ -14,6 +14,10 @@ export type AtWorkViewProps = {
   /** Open a part's page. */
   onOpen?: (session: string) => void;
   onRetry?: () => void;
+  /** The console stream the window holds for a child, by its native id; a child with none offers no console. */
+  streamOf?: (child: string) => string | undefined;
+  /** Open a stream's tab in the console. */
+  onOpenStream?: (stream: string) => void;
   /** The clock a time is read against; the window's now by default. */
   now?: Date;
 };
@@ -23,7 +27,7 @@ export type AtWorkViewProps = {
  * attended one first, and its subagents, each with its state and its end, read from Daoris's records and never from the
  * conversation's text. Reading is never *nobody*, a failure says its words, and a stale answer keeps its rows dimmed.
  */
-export function AtWorkView({ held, error, onOpen, onRetry, now }: AtWorkViewProps) {
+export function AtWorkView({ held, error, onOpen, onRetry, streamOf, onOpenStream, now }: AtWorkViewProps) {
   const { t } = useTranslation();
   if (!held || 'reading' in held) {
     if (!held && error) return <Failed why={error} onRetry={onRetry} />;
@@ -49,7 +53,7 @@ export function AtWorkView({ held, error, onOpen, onRetry, now }: AtWorkViewProp
       )}
       <div className={cn('grid min-w-0 gap-3', stale !== null && 'opacity-60')}>
         <Parts answer={answer} onOpen={onOpen} />
-        <Subagents answer={answer} quiet={stale !== null} now={now} />
+        <Subagents answer={answer} quiet={stale !== null} now={now} streamOf={streamOf} onOpenStream={onOpenStream} />
       </div>
     </div>
   );
@@ -120,7 +124,9 @@ export function nobody(answer: AtWorkA): boolean {
 }
 
 /** The attended part's subagents as a tree, the bound's counts under them. */
-function Subagents({ answer, quiet, now }: { answer: AtWorkA; quiet: boolean; now?: Date }) {
+function Subagents({ answer, quiet, now, streamOf, onOpenStream }: {
+  answer: AtWorkA; quiet: boolean; now?: Date; streamOf?: AtWorkViewProps['streamOf']; onOpenStream?: AtWorkViewProps['onOpenStream'];
+}) {
   const { t } = useTranslation();
   const subagents: AtWorkSubagents = answer.subagents;
   if (subagents.read === 'elsewhere') return <p className="m-0 text-small text-ink-faint">{t('work.atWork.elsewhere')}</p>;
@@ -142,7 +148,9 @@ function Subagents({ answer, quiet, now }: { answer: AtWorkA; quiet: boolean; no
       {(subagents.unplaced ?? 0) > 0 && <p className="m-0 text-meta text-ink-faint">{t('work.atWork.unplaced', { count: subagents.unplaced })}</p>}
       {subagents.children.length > 0 && (
         <ol className="m-0 grid list-none gap-0.5 p-0">
-          {subagents.children.map((child) => <ChildRow key={child.key} child={child} now={now} />)}
+          {subagents.children.map((child) => (
+            <ChildRow key={child.key} child={child} now={now} stream={streamOf?.(child.key)} onOpenStream={onOpenStream} />
+          ))}
         </ol>
       )}
       {(subagents.folded ?? 0) > 0 && <p className="m-0 text-meta text-ink-faint">{t('work.atWork.child.folded', { count: subagents.folded })}</p>}
@@ -158,7 +166,9 @@ function Subagents({ answer, quiet, now }: { answer: AtWorkA; quiet: boolean; no
 /** How far a row is set in: at most two steps, a deeper child saying its depth. */
 const STEPS = 2;
 
-function ChildRow({ child, now }: { child: AtWorkChild; now?: Date }) {
+function ChildRow({ child, now, stream, onOpenStream }: {
+  child: AtWorkChild; now?: Date; stream?: string; onOpenStream?: AtWorkViewProps['onOpenStream'];
+}) {
   const { t, i18n } = useTranslation();
   const time = (iso: string | undefined) => (iso ? clockOf(iso, now, i18n.language) : '');
   const depth = child.depth ?? 1;
@@ -181,6 +191,11 @@ function ChildRow({ child, now }: { child: AtWorkChild; now?: Date }) {
       {tone === 'live'
         ? <Dot tone="live" label={said} />
         : <span className={cn('text-meta', tone === 'warn' ? 'text-warn' : tone === 'failed' ? 'text-ink-danger' : 'text-ink-soft')}>{said}</span>}
+      {stream !== undefined && onOpenStream && (
+        <button type="button" className="text-meta text-accent underline" onClick={() => onOpenStream(stream)}>
+          {t('work.atWork.child.console')}
+        </button>
+      )}
       {child.parentKey === undefined && child.depth === undefined && (
         <span className="text-meta text-ink-faint">{t('work.atWork.child.noParent')}</span>
       )}
