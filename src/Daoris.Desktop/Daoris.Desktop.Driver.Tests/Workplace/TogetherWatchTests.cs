@@ -129,21 +129,21 @@ public sealed class TogetherWatchTests : IDisposable
         new TogetherWatch(Home, () => At, config, (session, note) => _kept.Add((session, note)))
             .LookAsync(records, (_, _, _) => Task.FromResult<string?>("main"), CancellationToken.None);
 
-    private async Task<(TogetherOperation Operation, string Head, string Tip)> LandingAsync(string form, string target, string? expected)
+    private async Task<(TogetherOperation Operation, string Head, string Tip)> LandingAsync(string form, string target, bool expectsBase)
     {
         var (operation, head) = await BoundAsync();
         var store = new TogetherOperations(Home);
         var tip = await TipAsync(head);
         store.TurnEnded(operation.Id, At);
         store.Checked(operation.Id, tip, [], null, At);
-        Assert.NotNull(store.Landing(operation.Id, new TogetherAttempt(form, target, expected, tip, At)));
+        Assert.NotNull(store.Landing(operation.Id, new TogetherAttempt(form, target, expectsBase ? _base : null, tip, At)));
         return (operation, head, tip);
     }
 
     [Fact]
     public async Task A_branch_made_before_its_record_gets_the_record_written_with_its_members_and_each_member_is_noted_once()
     {
-        var (_, _, tip) = await LandingAsync(TogetherForms.Branch, "daoris/landed", null);
+        var (_, _, tip) = await LandingAsync(TogetherForms.Branch, "daoris/landed", false);
         await GitFixture.GitAsync(Root, "branch", "daoris/landed", tip);
 
         Assert.Equal(TogetherPhase.Landed, Assert.Single(await LookKeepingAsync(null, Record("s-head"), Record("s-member"))).Phase);
@@ -163,7 +163,7 @@ public sealed class TogetherWatchTests : IDisposable
     [Fact]
     public async Task A_branch_moved_on_before_its_advance_gets_the_advance_written_listing_the_members()
     {
-        var (_, _, tip) = await LandingAsync(TogetherForms.Branch, "daoris/landed", _base);
+        var (_, _, tip) = await LandingAsync(TogetherForms.Branch, "daoris/landed", true);
         await GitFixture.GitAsync(Root, "branch", "daoris/landed", tip);
         new LandedBranches(Home).Record(new LandedBranch("engine", RemoteTarget.DefaultWorkspace, "daoris/landed", "main", _base, "s-old", null, null, At.AddHours(-1)));
 
@@ -177,10 +177,11 @@ public sealed class TogetherWatchTests : IDisposable
     [Fact]
     public async Task A_merge_waits_on_its_lines_run_and_is_landed_once_the_integration_run_settles_its_request()
     {
-        var (operation, _, tip) = await LandingAsync(TogetherForms.Merge, "main", _base);
+        var (operation, _, tip) = await LandingAsync(TogetherForms.Merge, "main", true);
         var integration = new IntegrationStore(Home);
-        var request = integration.Add(new IntegrationRequest("rq1", "engine", RemoteTarget.DefaultWorkspace, "head", tip, "merge", "main",
-            new IntegrationRequester("person", "accept"), new LandingIntegrate(), At))!;
+        var request = new IntegrationRequest("rq1", "engine", RemoteTarget.DefaultWorkspace, "head", tip, "merge", "main",
+            new IntegrationRequester("person", "accept"), new LandingIntegrate().Resolved(), At);
+        Assert.Null(integration.Add(request));
 
         Assert.Equal(TogetherPhase.Landing, Assert.Single(await LookKeepingAsync(null, Record("s-head"), Record("s-member"))).Phase);
         Assert.Empty(_kept);
@@ -198,14 +199,16 @@ public sealed class TogetherWatchTests : IDisposable
     /// <summary>The line declares a count file its rule settles; the member changed it after the line did, and the head replayed nothing of it.</summary>
     private async Task<string> RuleOperationAsync()
     {
-        var head = await TreeAsync("head");
-        await CommitAsync(head, "c.txt", "head\n");
-        var press = await TipAsync(head);
+        await TreeAsync("seed");
         File.WriteAllText(Path.Combine(Root, "count.txt"), "n: 1\n");
         File.WriteAllText(Path.Combine(Root, "daoris.gates.json"), """{"integration":{"merge":[{"paths":"count.txt","line":"^n:","run":"echo recount"}]}}""");
         await GitFixture.GitAsync(Root, "add", "-A");
         await GitFixture.GitAsync(Root, "commit", "-q", "-m", "the line declares a count");
         var lineTip = await TipAsync(Root);
+        var head = Path.Combine(_scratch, "head");
+        await GitFixture.GitAsync(Root, "worktree", "add", "-q", "-b", "head", head, lineTip);
+        await CommitAsync(head, "c.txt", "head\n");
+        var press = await TipAsync(head);
         var member = Path.Combine(_scratch, "member");
         await GitFixture.GitAsync(Root, "worktree", "add", "-q", "-b", "member", member, lineTip);
         var memberTip = await CommitAsync(member, "count.txt", "n: 2\n");
@@ -221,10 +224,11 @@ public sealed class TogetherWatchTests : IDisposable
     {
         var blob = await RuleOperationAsync();
         var accepted = DriverConfig.Empty.WithIntegrationGates("engine", blob);
+        Assert.Equal(["count.txt"], (await LineRules.AcceptedAsync(accepted, Root, "engine", "main", CancellationToken.None)).Select(each => each.Paths));
 
         var looked = Assert.Single(await LookKeepingAsync(() => accepted, Record("s-head"), Record("s-member")));
 
-        Assert.True(looked.Phase == TogetherPhase.Ready, $"{looked.Phase}: {looked.Why}");
+        Assert.True(looked.Phase == TogetherPhase.Ready, $"{looked.Phase}: {looked.Why} {string.Join(";", looked.Account.Select(each => each.Path + "=" + each.How))}");
         Assert.Contains(looked.Account, each => each.Path == "count.txt" && each.How == TogetherAccounts.Settled);
     }
 
