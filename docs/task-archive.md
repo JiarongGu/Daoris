@@ -5,6 +5,14 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## MODELROLE1g — Daoris suggests a role's choices (2026-10-31)
+
+> **MODELROLE1g — Daoris suggests a role's choices** (driver, web; the actors design row g and §6.2, D205 point 7 and its 2026-10-25 note; found unfiled 2026-10-31; FOUNDATION1y-i's outcome names its card unbuilt). `ActorSuggestion` (named for its role in the code's present words) and its census held to `docs/model-roles.md`'s **build-settled** row: Build led by Claude Code · `sonnet` · high, then `opus` · high; Second opinion, Helper, Partner and Brainstorm keep `opus` · high where they name Claude Code; agents not set up left out. The card in Working roles' first-run head, one press whose words say it can spend more, applying through `SET_ROLE`; `daoris driver role suggested [--use]`. Proof: the census both ways; the card's tests and stories; on the install, the owner's press.
+
+Completed 2026-10-31 (the owner's press on the install is owed): `ActorSuggestion` (`Roles/ActorSuggestion.cs`) is the dated table, and `Census` holds it to the reference's rows, failing when a row changes. `ROLES` answers it (`suggestedChoices`, `suggestedChoicesDated`); the page card (`agents/roles/SuggestedChoicesCard.tsx`) shows while no role it would change holds an order, leaves out an agent the machine has not set up, sets each role over `SET_ROLE` in turn, and *Not now* keeps the table's day in the browser. `daoris driver role suggested [--use]` says or sets the table through the role door. Detail: D205's 2026-10-31 note.
+
+---
+
 ## COMPANYVIEW1f — the diagram (2026-10-31)
 
 > **1f: the diagram** (web). Placement with the column bound, the workspace fold (new), lit paths, the detail and the flowchart's keys (§3.7); an appointed node selects its section. Playwright reads every edge clear of nodes at 80rem, and the rail at 39 and 25rem; one Narrator pass. After 1d and 1e. (`docs/2026-10-31-company-view-design.md` §4 and §7 row 6; the COMPANYVIEW1 row stays open.)

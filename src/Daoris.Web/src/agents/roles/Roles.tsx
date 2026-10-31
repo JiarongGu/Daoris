@@ -5,6 +5,7 @@ import type { ActorRow, RoleCatalogue, RoleChangePress, RoleChoice, RoleRow, Sta
 import { Button, Card, CardHeader, FormField, FormGrid, FormRow, Icon, Inline, Prose, SelectField, SettingList, SettingRow } from '../../design/ui';
 import { type Answered, Refused } from '../../work/InlineConfirm';
 import { RowMore } from './RowMore';
+import { SuggestedChoicesCard } from './SuggestedChoicesCard';
 
 /** An entry as `SET_ACTOR` takes it: an agent, and its model and effort in the tool's own words, absent for account default. */
 export type ActorChoice = { agent: string; model?: string | null; effort?: string | null };
@@ -457,6 +458,12 @@ export function RolesCard({
     <Card>
       <CardHeader title={t('settings.ai.roles.title')} />
       <Prose className="mb-3 mt-0 text-small text-ink-soft">{t('settings.ai.roles.body')}</Prose>
+      {catalogue && (
+        <SuggestedChoicesCard
+          catalogue={catalogue} staffing={staffing} agents={agents.map((agent) => agent.value)} busy={busy}
+          name={(row) => name(row)} entry={(choice) => entryText(t, choice)} onSet={(press, done) => { setRefused(null); onSet(press, done); }}
+        />
+      )}
       {said}
       {catalogue && catalogue.roles.length === 0 && <p className="m-0 mb-2 text-small text-ink-soft">{t('settings.ai.roles.none')}</p>}
       {rows}
