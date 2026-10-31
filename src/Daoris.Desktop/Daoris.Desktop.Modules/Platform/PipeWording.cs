@@ -146,6 +146,7 @@ public static class PipeWording
         Row("SESSION_HELPER_DECLINE", W("session", PipeRole.Session));
         Row("SESSION_HAND_OVER_APPROVE", W("session", PipeRole.Session));
         Row("SESSION_HAND_OVER_DECLINE", W("session", PipeRole.Session));
+        Row("SESSION_MEMORY_DECIDE", W("session", PipeRole.Session));
         Row("SESSION_QUIET_CARRY_ON", W("id", PipeRole.Session));
         Row("SESSION_QUIET_LEAVE", W("id", PipeRole.Session));
         Row("SESSION_PERMISSION_ANSWER", W("session", PipeRole.Session));

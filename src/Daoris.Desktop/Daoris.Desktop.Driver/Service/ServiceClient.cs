@@ -992,6 +992,38 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
             : [];
     }
 
+    /// <summary>
+    /// A session's memory rows as the service answers them for its page (KNOWCENTRAL2e; the memory coordinator design §1, §4): its writes,
+    /// ends and proposals, an end's reason without the row's token. Null from a host with no door.
+    /// </summary>
+    public async Task<string?> SessionMemoryAsync(string session, CancellationToken ct = default)
+    {
+        var answer = await SendAsync(ServiceVerb.Get, $"/api/sessions/{Uri.EscapeDataString(session)}/memory", null, ct).ConfigureAwait(false);
+        if (answer.Ok) return answer.Payload;
+        if (answer.Status == 404) return null;
+        throw new DriverException($"the service refused reading session `{session}`'s memory: {answer.Payload}");
+    }
+
+    /// <summary>
+    /// The person's decision on a session's memory (KNOWCENTRAL2e): an awaiting end approved or declined by its row where
+    /// <paramref name="op"/> names one, else the ended session's staged changes kept or dropped. A refusal is an answer, in the service's words.
+    /// </summary>
+    public async Task<(bool Ok, string Message)> DecideMemoryAsync(string session, string? op, bool yes, CancellationToken ct = default)
+    {
+        var (path, field) = op is { Length: > 0 }
+            ? ($"/api/memory/{Uri.EscapeDataString(op)}/decide", "approve")
+            : ($"/api/sessions/{Uri.EscapeDataString(session)}/memory", "keep");
+        var body = WriteJson(writer =>
+        {
+            writer.WriteStartObject();
+            writer.WriteBoolean(field, yes);
+            writer.WriteEndObject();
+        });
+        var (ok, _, payload, root) = await PostJsonAsync(path, body, ct).ConfigureAwait(false);
+        var said = root is { ValueKind: JsonValueKind.Object } answered ? Text(answered, ok ? "message" : "error") : null;
+        return (ok, said ?? payload);
+    }
+
     /// <summary>This machine's asks that are not closed, newest first — what the loop finds intakes in.</summary>
     public async Task<IReadOnlyList<AskView>> AsksAsync(CancellationToken ct = default)
     {

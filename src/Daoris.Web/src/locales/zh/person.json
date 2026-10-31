@@ -84,6 +84,7 @@
   "person.route.SESSION_HELPER_ASK": "请另一个智能体协助一个会话",
   "person.route.SESSION_HELPER_APPROVE": "同意某个智能体请求协助者的请求",
   "person.route.SESSION_HELPER_DECLINE": "拒绝某个智能体请求协助者的请求",
+  "person.route.SESSION_MEMORY_DECIDE": "决定会话的记忆变更：批准或谢绝一项结束，或保留或丢弃它暂存的内容",
   "person.route.SESSION_PARTNER_ASK": "请另一个智能体为一个会话做一个分项",
   "person.route.LAND_SESSION_TREE": "采纳一个会话的工作并将其落地",
   "person.route.LAND_WITHOUT_LOOK": "不经审阅采纳一段对话的工作并将其落地",

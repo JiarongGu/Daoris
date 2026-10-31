@@ -1503,10 +1503,13 @@ if (mode == ServiceMode.Local)
     // KNOWCENTRAL2d (the memory coordinator design §1, §3, §4): a session's memory changes for its record's page, an end's reason without the
     // row's token; the person's approval or decline of an awaiting end, kept on its row; and their Keep or Drop of an ended session's staged
     // changes. Machine-local, as the rows are.
+    // KNOWCENTRAL2e: a proposal is read as its quest and target left it, settled first.
     app.MapGet("/api/sessions/{id}/memory", async (string id, ComposedService s, HttpContext http, CancellationToken ct) =>
-        MachineLocal(http)
-            ? Results.Ok(new SessionMemoryResponse(await new MemoryDesk(s.Sessions.Memory).PageAsync(id, ct)))
-            : Results.NotFound());
+    {
+        if (!MachineLocal(http)) return Results.NotFound();
+        await new MemoryProposals(s.Sessions.Memory, s.Quests, engines: s.Memory).SettleAsync(DateTimeOffset.UtcNow, ct);
+        return Results.Ok(new SessionMemoryResponse(await new MemoryDesk(s.Sessions.Memory).PageAsync(id, ct)));
+    });
 
     // KNOWCENTRAL2f (the memory coordinator design §3, §6): what the line ending at a session read, each entry read again and its cited records
     // rechecked, for the brief of the part that continues it; what is answered is kept as the line's read. Machine-local, as the read set is.
