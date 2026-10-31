@@ -366,7 +366,7 @@ public sealed class ActJournal(
     /// <summary>
     /// Take up an act whose claim's run is dead by the lease's test, in one guarded update that writes this run and raises the generation:
     /// refused, nothing written, where the act is gone or closed, its claim is this run's own, the generation moved since
-    /// <paramref name="generation"/> was read, or its run lives or cannot be told dead.
+    /// <paramref name="generation"/> was read, or its run lives or cannot be told dead (said taken first where that run is a reconciler's).
     /// </summary>
     public ActTaken Take(string act, long generation)
     {
@@ -379,7 +379,12 @@ public sealed class ActJournal(
                 if (!found.Open) throw Refused(found, "it is closed");
                 if (string.Equals(found.ClaimRun, Run, StringComparison.Ordinal)) throw Refused(found, "it is this run's own");
                 if (found.ClaimGeneration != generation) throw Refused(found, "another reconciler took it first");
-                if (RunIn(write, found.ClaimRun) is not { } holder || _alive(holder)) throw Refused(found, "the Daoris process that runs it still runs");
+
+                // Above the opening's generation the claim is a reconciler's: a read made after its take refuses as one made before it.
+                if (RunIn(write, found.ClaimRun) is not { } holder || _alive(holder))
+                {
+                    throw Refused(found, found.ClaimGeneration > 1 ? "another reconciler took it first" : "the Daoris process that runs it still runs");
+                }
                 var taken = write.Execute(
                     """
                     UPDATE git_acts SET claim_run = $mine, claim_generation = claim_generation + 1
