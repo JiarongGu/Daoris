@@ -71,7 +71,11 @@ public sealed class TreeSyncStepTests : TreeSyncFixture
             Assert.False(held.Lines.Single().Moved, held.Lines.Single().Message);
             Assert.Contains("a session was starting in `engine`", held.Lines.Single().Message);
             Assert.Equal(line, await RevAsync(root, "main"));
-            var left = held.Rebases.Single(result => result.Item.Branch == step.Branch);
+
+            // The person pulls the line themselves: the press then has a replay to make, and leaves it too.
+            await GitAsync(root, "merge", "--ff-only", "--quiet", "origin/main");
+            var replaying = await trees.SyncAsync(Repositories(root), Nobody);
+            var left = replaying.Rebases.Single(result => result.Item.Branch == step.Branch);
             Assert.False(left.Replayed);
             Assert.Contains("a session was starting in `engine`", left.Message);
             Assert.Equal(stepTip, await RevAsync(root, step.Branch));
