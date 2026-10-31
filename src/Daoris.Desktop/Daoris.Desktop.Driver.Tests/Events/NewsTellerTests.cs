@@ -19,6 +19,9 @@ public sealed class NewsTellerTests : IDisposable
 
     public void Dispose() => GitSeed.Discard(_home);
 
+    /// <summary>One moment for every row: the claim tells the newest first, so rows made a millisecond apart under load would reorder.</summary>
+    private static readonly DateTimeOffset Stamp = DateTimeOffset.UtcNow.AddSeconds(-5);
+
     private static long Ms(DateTimeOffset at) => at.ToUnixTimeMilliseconds();
 
     private NewsTeller Teller(string name = "lease", Func<JournalEntry, bool>? takes = null, List<JournalBatch>? incomplete = null) =>
@@ -28,7 +31,7 @@ public sealed class NewsTellerTests : IDisposable
         };
 
     private static JournalEntry Row(long position, string old, string state, string marks = "driven", string? codes = null, string record = "s1", bool limited = false) =>
-        new(position, Ms(DateTimeOffset.UtcNow.AddSeconds(-5)), record, "sessions", "state", old, state, false, limited, codes?.Split(','), marks.Split(','), "team", "q1");
+        new(position, Ms(Stamp), record, "sessions", "state", old, state, false, limited, codes?.Split(','), marks.Split(','), "team", "q1");
 
     private static JournalBatch Batch(params JournalEntry[] rows) => new("store-1", 1, rows.Max(row => row.Position), rows);
 

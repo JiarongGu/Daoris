@@ -5,6 +5,25 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-31 - A subject's rest counted from an ending the pool ran late (LOADFLAKE3)
+
+- **Symptom:** `SweepStateSliceTests.A_ref_moved_in_one_repository_pushes_that_partition_alone` gave up at its two minutes under load; `WorkStateSliceTests` holds the same shape.
+- **Root cause:** `MachineFacts` landed a fact, then stamped `Ended` in `Ended()`, run later. A test (or any reader) moving its clock at the landing could have the stamp taken after the move; the rest then never ended against the frozen clock, and each rest wait re-armed.
+- **Fix:** the answer's moment is taken before the fact lands (`SubjectState.Answered`) and is what `Ended` records.
+- **Verify:** `MachineFactsTests.A_rest_counts_from_the_judgement_s_answer_not_from_its_ending_run_late`, red before; the lines twin has no rest and is unaffected.
+
+## 2026-10-31 - Park rows stamped a millisecond apart reordered the told parks (LOADFLAKE3)
+
+- **Symptom:** `NewsTellerTests.A_park_its_answer_and_a_park_again_are_two_parks` read [8, 5] for [5, 8].
+- **Root cause:** `News.Claim` tells the newest first (so its cap keeps the newest); the test stamped each row from the clock, tied only when made in one millisecond.
+- **Fix:** the test's rows share one stamp. Red with a 3 ms pause per row.
+
+## 2026-10-31 - A client's five seconds were the lost-claim test's patience (LOADFLAKE3)
+
+- **Symptom:** `LookParallelTests.The_lost_claim_checks_are_asked_at_once` ran 12 s and lacked its stop line.
+- **Root cause:** the first check waits for the second to be asked, inside a client that gives up at five seconds; a starved pool starting the second later cost the first its answer.
+- **Fix:** the test's client waits `Poll.Patience`. Red with the second ask held 6 s, green with the same hold.
+
 ## 2026-10-31 - Two driver tests read the machine's load, not the code (LOADFLAKE2)
 
 - **Symptom:** under builders' load, the usage read wrote one line of two; the head-mark say exited 2.
