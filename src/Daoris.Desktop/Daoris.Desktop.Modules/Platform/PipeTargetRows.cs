@@ -322,6 +322,8 @@ internal static class PipeTargetRows
                 Rows(At(Named(At(a, "plugins"), "id", Text(p, "id")), "helpServers"), ["name"], "state", "accepted", "allow", "writes"))));
         Row("PLUGIN_ADD", LoopGround.Plan("plugin-folder", Page, "folder"));
         Row("PLUGIN_NEW", LoopGround.Plan("plugin-new", Page, "folder", "id"));
+        // AGENTSPLACE1c: the workflow's versions as they stand, so a save confirmed after another one moved the file is refused as moved.
+        Row("WORKFLOW_SAVE", LoopGround.Plan("workflow-file", Page, "id"));
         Row("PLUGIN_TRY", LoopGround.Plan("plugin-try", Page, "id", "folder"));
         Row("PLUGIN_INSTALL", LoopGround.Plan("plugin-offer", Page, "offer"));
         Row("PLUGIN_UPDATE", LoopGround.Plan("plugin-update", Page, "id", "shipped"));
@@ -333,7 +335,6 @@ internal static class PipeTargetRows
         rows.Add(PipeTargets.Key("DAORIS.REGISTRY", "WRITE_DECLARATION"),
             new PipeGroundRow([LoopGround.Plan("declaration", PipeGround.StateBound, "path")]));
 
-        Timeless("WORKFLOW_SAVE", "a version of the machine's own workflow store, refused as stale against the base it names");
         Timeless("CHANNEL_MARK", "a read mark, which never moves back");
         Timeless("NOTICES_READ", "marks news read");
         Timeless("HELP_RENAME", "a conversation's name");

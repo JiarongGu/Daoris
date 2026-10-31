@@ -226,6 +226,20 @@ public sealed class DriverModuleWorkflowWritesTests : DriverModuleBridge
         Assert.Equal(1, NewestOnDisk("line"));
     }
 
+    /// <summary>The three routes are the person's: the census classes them so, no standing press is one of them and no role's act names one.</summary>
+    [Theory]
+    [InlineData("WORKFLOW_SAVE")]
+    [InlineData("WORKFLOW_USE")]
+    [InlineData("WORKFLOW_KIND")]
+    public void The_workflow_writes_are_the_persons_alone_with_no_standing_cover_and_no_role_act(string route)
+    {
+        Assert.Equal(PipeClass.Person, PipeCensus.Daoris.Of(DriverModule.Name, route));
+        Assert.DoesNotContain(route, StandingPresses.Built, StringComparer.OrdinalIgnoreCase);
+        Assert.DoesNotContain(route, StewardActs.Offered, StringComparer.OrdinalIgnoreCase);
+        Assert.NotNull(PipeTargets.Daoris.Mark(DriverModule.Name, route));
+        Assert.Contains(route, DriverModule.Routes);
+    }
+
     /// <summary>A stand-in service holding three repositories, two in one workspace and one in none.</summary>
     private sealed class StandInService : HttpMessageHandler
     {
