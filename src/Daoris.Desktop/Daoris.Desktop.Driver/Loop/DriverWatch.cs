@@ -72,6 +72,9 @@ public sealed class DriverWatch(
     /// <summary>The runs held at a declined request (INTEGRATE1o part o3), as the evaluation runtime last read the quests; none before a pass.</summary>
     public IReadOnlyList<RequestHold> RequestHolds => _nodes?.RequestHolds() ?? [];
 
+    /// <summary>The landed branches whose integration waits for the owner's card (INTEGRATE1h), as the evaluation runtime last judged them; none before a pass.</summary>
+    public IReadOnlyList<IntegrationCardWait> CardWaits => _nodes?.CardWaits() ?? [];
+
     /// <summary>The loop's evaluation runtime once it runs, or null: a test holds its pass with one of its own (PARALLEL1h).</summary>
     internal NodeRuntime? Nodes => _nodes;
 

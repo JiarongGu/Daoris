@@ -56,6 +56,10 @@ public sealed partial class ContinuedReadersCensusTests
         [
             (How.Follows, "the integration transport's word to a session about its line's conflict (INTEGRATE1g): said at the head under the integration's key"),
         ],
+        ["IntegrateRoutes.cs"] =
+        [
+            (How.Follows, "the owner's *rebase it* of a superseded commit (INTEGRATE1h): said at the head under the request's and the commit's key"),
+        ],
         ["AutoLandingWorld.cs"] =
         [
             (How.Follows, "the landing's word to a session, said through the lander's world: said at its head under the landing's key"),

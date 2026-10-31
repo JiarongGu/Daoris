@@ -165,6 +165,8 @@ public sealed partial class NotificationsReadTests : DriverModuleBridge
         Assert.Equal("holding", NoticesRead.Group("hand-over", stands: true, stale: false));
         Assert.Equal("word", NoticesRead.Group("hand-over", stands: false, stale: false));
         Assert.Equal("word", NoticesRead.Group("go-ahead", stands: false, stale: true));
+        // INTEGRATE1h: an integration's wait that holds its line or its unit's flow.
+        Assert.Equal(("holding", "word"), (NoticesRead.Group("integration", stands: true, stale: false), NoticesRead.Group("integration", stands: false, stale: false)));
         Assert.Equal("word", NoticesRead.Group("a-later-kind", stands: false, stale: false));
     }
 

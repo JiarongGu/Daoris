@@ -456,6 +456,105 @@ public sealed class IntegrationPromoteGitTests : LandedFixture, IAsyncLifetime
         Assert.Single(verdict.Asks);
     }
 
+    private static Verdict Holding() =>
+        Judging(_ => new IntegrationVerdict(VerdictActions.Hold) { On = "decide", Why = "an unconfirmed failure holds the candidate for a decide: unit" });
+
+    /// <summary>
+    /// 🔴 INTEGRATE1h: the owner's decide <c>land</c>, recorded on a candidate held for one, is consumed at the next look: the candidate is promoted
+    /// and settled with no gates run again, the promotion's words naming the decide and the hold it released.
+    /// </summary>
+    [Fact]
+    public async Task A_decide_land_recorded_on_a_held_candidate_is_consumed_at_promotion_with_no_gates_run_again()
+    {
+        var candidate = await FormedAsync([Member("feature/a", ("a.txt", "a\n")), Member("feature/b", ("b.txt", "b\n"))]);
+        var verdict = Holding();
+        var promotes = Promotes(candidate);
+        Assert.Equal(IntegrationPromoteRuns.Held, (await promotes.RunAsync(candidate.Claim, candidate.Ask)).Kind);
+
+        Assert.Null(candidate.Store.Decide(candidate.Claim.Candidate, IntegrationDecides.Land, IntegrationRequester.Person).Refused);
+        var run = await promotes.RunAsync(candidate.Claim, candidate.Ask);
+
+        Assert.Equal(IntegrationPromoteRuns.Settled, run.Kind);
+        Assert.Equal(candidate.Tip, await CommitOfAsync(candidate.Root, "main"));
+        Assert.Single(verdict.Asks);
+        var promote = Last(candidate, IntegrationStepNames.Promote);
+        Assert.Equal(IntegrationStepOutcomes.Promoted, promote.Outcome);
+        Assert.Contains("the owner's decide `land`", promote.Said, StringComparison.Ordinal);
+        Assert.Contains("an unconfirmed failure", promote.Said, StringComparison.Ordinal);
+        Assert.All(["ra", "rb"], request => Assert.Equal(IntegrationRequestCloses.Settled, candidate.Store.Request(request)!.ClosedWhy));
+    }
+
+    /// <summary>
+    /// 🔴 INTEGRATE1h: a decide <c>split</c> forms a held candidate of several again to run one at a time, every request open and the next form
+    /// taking one; of one member, it hands that member back as unresolved with the hold's words. Nothing moves the line, no gates run again.
+    /// </summary>
+    [Theory]
+    [InlineData(2)]
+    [InlineData(1)]
+    public async Task A_decide_split_runs_the_held_members_one_at_a_time_and_hands_one_of_one_back_as_unresolved(int count)
+    {
+        var candidate = await FormedAsync([.. new[] { Member("feature/a", ("a.txt", "a\n")), Member("feature/b", ("b.txt", "b\n")) }.Take(count)]);
+        var verdict = Holding();
+        var promotes = Promotes(candidate);
+        await promotes.RunAsync(candidate.Claim, candidate.Ask);
+        candidate.Store.Decide(candidate.Claim.Candidate, IntegrationDecides.Split, IntegrationRequester.Person);
+
+        var run = await promotes.RunAsync(candidate.Claim, candidate.Ask);
+
+        Assert.Equal(candidate.Base, await CommitOfAsync(candidate.Root, "main"));
+        Assert.Single(verdict.Asks);
+        if (count == 2)
+        {
+            Assert.Equal((IntegrationPromoteRuns.Split, IntegrationCandidateEnds.FormedAgain), (run.Kind, candidate.Now.EndedWhy));
+            Assert.Equal(IntegrationStepOutcomes.Split, Last(candidate, IntegrationStepNames.Judge).Outcome);
+            Assert.Equal(["ra", "rb"], candidate.Store.Queued("engine", "main").Select(each => each.Id));
+            var next = await new IntegrationReplays(candidate.Store, TreesHome).RunAsync(new IntegrationReplayAsk("engine", "aurora", candidate.Root, "main") { Config = candidate.Ask.Config });
+            Assert.Equal(["ra"], candidate.Store.Members(next.Candidate!.Id).Select(each => each.Request));
+        }
+        else
+        {
+            Assert.Equal((IntegrationPromoteRuns.HandedBack, IntegrationCandidateEnds.Empty), (run.Kind, candidate.Now.EndedWhy));
+            Assert.Equal(IntegrationRequestCloses.HandedBack, candidate.Store.Request("ra")!.ClosedWhy);
+            Assert.Contains("unresolved", candidate.Member("ra").Said, StringComparison.Ordinal);
+            Assert.Contains("an unconfirmed failure", candidate.Member("ra").Said, StringComparison.Ordinal);
+        }
+    }
+
+    /// <summary>🔴 INTEGRATE1h: a decide <c>hand-back</c> hands every member back with the hold's words and ends the candidate <c>empty</c>.</summary>
+    [Fact]
+    public async Task A_decide_hand_back_hands_every_held_member_back_with_the_hold_s_words()
+    {
+        var candidate = await FormedAsync([Member("feature/a", ("a.txt", "a\n")), Member("feature/b", ("b.txt", "b\n"))]);
+        Holding();
+        var promotes = Promotes(candidate);
+        await promotes.RunAsync(candidate.Claim, candidate.Ask);
+        candidate.Store.Decide(candidate.Claim.Candidate, IntegrationDecides.HandBack, IntegrationRequester.Person);
+
+        var run = await promotes.RunAsync(candidate.Claim, candidate.Ask);
+
+        Assert.Equal((IntegrationPromoteRuns.HandedBack, IntegrationCandidateEnds.Empty), (run.Kind, candidate.Now.EndedWhy));
+        Assert.All(["ra", "rb"], request => Assert.Equal(IntegrationRequestCloses.HandedBack, candidate.Store.Request(request)!.ClosedWhy));
+        Assert.Contains("the owner's decide", candidate.Member("rb").Said, StringComparison.Ordinal);
+        Assert.Equal(candidate.Base, await CommitOfAsync(candidate.Root, "main"));
+    }
+
+    /// <summary>🔴 INTEGRATE1h: a decide <c>land</c> over a line that moved under the held candidate forms it again and moves nothing.</summary>
+    [Fact]
+    public async Task A_decide_land_over_a_line_that_moved_forms_the_held_candidate_again_and_moves_nothing()
+    {
+        var candidate = await FormedAsync([Member("feature/a", ("a.txt", "a\n"))]);
+        Holding();
+        var promotes = Promotes(candidate);
+        await promotes.RunAsync(candidate.Claim, candidate.Ask);
+        candidate.Store.Decide(candidate.Claim.Candidate, IntegrationDecides.Land, IntegrationRequester.Person);
+        var moved = await CommitOfAsync(candidate.Root, "feature/a");
+        await GitAsync(candidate.Root, "update-ref", "refs/heads/main", moved);
+
+        Assert.Equal(IntegrationPromoteRuns.Moved, (await promotes.RunAsync(candidate.Claim, candidate.Ask)).Kind);
+        Assert.Equal(IntegrationCandidateEnds.FormedAgain, candidate.Now.EndedWhy);
+        Assert.Equal(moved, await CommitOfAsync(candidate.Root, "main"));
+    }
+
     /// <summary>
     /// 🔴 A split keeps the members it retains, run one at a time: the failing member is handed back (its request closed), the candidate is
     /// formed again, and the next candidate the line forms takes one member though the rule allows eight.

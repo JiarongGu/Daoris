@@ -88,13 +88,20 @@ public sealed class IntegratePressTests : IAsyncLifetime
         Assert.Contains("a card in Daoris's window", _error.ToString());
     }
 
+    /// <summary>INTEGRATE1h: a decide is pressed as the route with its candidate and its word, as the window's press sends it.</summary>
     [Fact]
-    public async Task Decide_and_order_are_refused_here_until_their_steps_are_built()
+    public async Task A_decide_is_pressed_as_the_integrate_route_with_its_candidate_and_word()
     {
+        if (!OperatingSystem.IsWindows()) return;
+        _standIn = new InstanceStandIn(_pipe, _id) { Confirming = true, Data = new { done = true, message = "Candidate c1 is decided: land." } };
+        using var running = RunningAddress.Write(_home, "http://localhost:5177", _pipe);
+
         var exit = await IntegrateCommand.PressAsync(new IntegrateAsk("engine") { Act = "decide", Target = "c1 land" }, World());
 
-        Assert.Equal(1, exit);
-        Assert.Contains("is not built yet; nothing was changed", _error.ToString());
+        Assert.Equal(0, exit);
+        var payload = Assert.Single(_standIn.Presses).GetProperty("payload");
+        Assert.Equal(("decide", "c1", "land"), (payload.GetProperty("act").GetString(), payload.GetProperty("candidate").GetString(), payload.GetProperty("decide").GetString()));
+        Assert.Contains("integrate: Candidate c1 is decided: land.", _out.ToString());
     }
 
     [Fact]

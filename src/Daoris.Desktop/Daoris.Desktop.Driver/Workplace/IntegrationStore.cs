@@ -46,6 +46,9 @@ public sealed class IntegrationStore(
     /// <summary>The store's step that made the pending dispositions' table (INTEGRATE1e part e4b): a store before it holds none.</summary>
     private const int DispositionsSince = 7;
 
+    /// <summary>The store's step that made the decides, the queue's order and a disposition's answer (INTEGRATE1h): a store before it holds none.</summary>
+    private const int ActsSince = 12;
+
     /// <summary>SQLite's refusal of a row a unique index already holds.</summary>
     private const int UniqueRefused = 2067;
 
@@ -165,20 +168,63 @@ public sealed class IntegrationStore(
             .FirstOrDefault(), null);
 
     /// <summary>
-    /// A line's queue (§5.2 step 2's input): its repository's open requests for it that stand in no candidate, in the order admitted. A request
-    /// whose member was held for its conflict (<see cref="IntegrationMemberStates.Held"/>, §5.4) is not queued: it waits for the steward's or the
-    /// owner's act, and queued again it would be formed, conflict and be held in every candidate for ever.
+    /// A line's queue (§5.2 step 2's input): its repository's open requests for it that stand in no candidate, in their order (INTEGRATE1h:
+    /// those an <c>order</c> moved first, then the rest as admitted, then those it moved last). A request whose member was held for its conflict
+    /// (<see cref="IntegrationMemberStates.Held"/>, §5.4) is not queued: it waits for the steward's or the owner's act, and queued again it would
+    /// be formed, conflict and be held in every candidate for ever.
     /// </summary>
     public IReadOnlyList<IntegrationRequest> Queued(string repository, string line) =>
-        Reading(reader => reader.Query(
-            $"""
-            SELECT {RequestColumns} FROM integration_requests r
-            WHERE r.repository = $repository COLLATE NOCASE AND r.line = $line AND r.closed_at IS NULL
-              AND NOT EXISTS (SELECT 1 FROM integration_members m WHERE m.request = r.id AND m.ended_at IS NULL)
-              AND NOT EXISTS (SELECT 1 FROM integration_members h WHERE h.request = r.id AND h.state = $held)
-            ORDER BY r.at, r.id
-            """,
-            MapRequest, ("$repository", repository), ("$line", line), ("$held", IntegrationMemberStates.Held)), []);
+        Reading(reader =>
+        {
+            // A store before the order's column is read by arrival, as the build that wrote it ordered it.
+            var ordered = reader.Version >= ActsSince;
+            return reader.Query(
+                $"""
+                SELECT {RequestColumns}{(ordered ? ", queue_order" : "")} FROM integration_requests r
+                WHERE r.repository = $repository COLLATE NOCASE AND r.line = $line AND r.closed_at IS NULL
+                  AND NOT EXISTS (SELECT 1 FROM integration_members m WHERE m.request = r.id AND m.ended_at IS NULL)
+                  AND NOT EXISTS (SELECT 1 FROM integration_members h WHERE h.request = r.id AND h.state = $held)
+                ORDER BY {(ordered ? "COALESCE(r.queue_order, 0), " : "")}r.at, r.id
+                """,
+                MapRequest, ("$repository", repository), ("$line", line), ("$held", IntegrationMemberStates.Held));
+        }, []);
+
+    /// <summary>
+    /// Move a queued request first or last in its line's queue (§8's <c>order</c>, INTEGRATE1h): before, or after, every other open request of
+    /// the line, in one write. Null where it moved; else why not (<see cref="IntegrationOrderRefusals"/>), nothing written.
+    /// </summary>
+    /// <exception cref="ArgumentException">A place that is neither first nor last.</exception>
+    public string? Order(string request, string where)
+    {
+        Known(where, IntegrationOrders.All, "order");
+        if (Request(request) is not { ClosedAt: null }) return IntegrationOrderRefusals.Gone;
+        try
+        {
+            using var store = Writer();
+            return store.Write(Family, write =>
+            {
+                if (RequestIn(write, request) is not { ClosedAt: null } open) throw new Unwritten(IntegrationOrderRefusals.Gone);
+                if (write.Scalar<long>("SELECT COUNT(*) FROM integration_members WHERE request = $id AND (ended_at IS NULL OR state = $held)",
+                        ("$id", request), ("$held", IntegrationMemberStates.Held)) > 0)
+                {
+                    throw new Unwritten(IntegrationOrderRefusals.Stands);
+                }
+
+                var bound = write.Scalar<long>(
+                    $"SELECT {(where == IntegrationOrders.First ? "MIN" : "MAX")}(COALESCE(queue_order, 0)) FROM integration_requests "
+                    + "WHERE repository = $repository COLLATE NOCASE AND line = $line AND closed_at IS NULL",
+                    ("$repository", open.Repository), ("$line", open.Line));
+                write.Execute(
+                    "UPDATE integration_requests SET queue_order = $order WHERE id = $id AND closed_at IS NULL",
+                    ("$order", where == IntegrationOrders.First ? Math.Min(bound, 0) - 1 : Math.Max(bound, 0) + 1), ("$id", request));
+                return (string?)null;
+            });
+        }
+        catch (Unwritten unwritten)
+        {
+            return (string?)unwritten.Answer;
+        }
+    }
 
     /// <summary>
     /// Close an open request that stands in no candidate (its requester's drop, before it is formed); whether it was open. A request standing
@@ -372,8 +418,8 @@ public sealed class IntegrationStore(
     /// <summary>Every disposition a request has, pending and answered, in the order they were kept; none where the home has no store or one from before them.</summary>
     public IReadOnlyList<IntegrationDisposition> Dispositions(string request) =>
         Reading(reader => reader.Query(
-            "SELECT request, commit_id, candidate, reference, by_commit, files, subject, at, answered_at FROM integration_dispositions "
-            + "WHERE request = $request ORDER BY at, rowid", MapDisposition, ("$request", request)), [], DispositionsSince);
+            $"SELECT request, commit_id, candidate, reference, by_commit, files, subject, at, answered_at{(reader.Version >= ActsSince ? ", answer" : "")} "
+            + "FROM integration_dispositions WHERE request = $request ORDER BY at, rowid", MapDisposition, ("$request", request)), [], DispositionsSince);
 
     /// <summary>
     /// Every disposition no one has answered yet, oldest first: visible on the Integration view and the session's head until the session, the
@@ -385,17 +431,73 @@ public sealed class IntegrationStore(
             + "WHERE answered_at IS NULL ORDER BY at, rowid", MapDisposition), [], DispositionsSince);
 
     /// <summary>
-    /// A disposition answered (by <i>superseded</i> or <i>rebase it</i>, which later rows make): it leaves the pending list and its row stays. False
+    /// A disposition answered, by its word where one is given (<see cref="IntegrationAnswers"/>): it leaves the pending list and its row stays. False
     /// where none is pending for that request and commit. The answerer is a person's or a session's act, not the run's, so no claim is checked.
     /// </summary>
-    public bool Answer(string request, string commit)
+    /// <exception cref="ArgumentException">A word that is no answer.</exception>
+    public bool Answer(string request, string commit, string? answer = null)
     {
+        if (answer is not null) Known(answer, IntegrationAnswers.All, "answer");
         if (Reading(reader => reader.Version, 0) < DispositionsSince) return false;
         using var store = Writer();
         return store.Write(Family, write => write.Execute(
-            "UPDATE integration_dispositions SET answered_at = $at WHERE request = $request AND commit_id = $commit AND answered_at IS NULL",
-            ("$at", Now()), ("$request", request), ("$commit", commit))) == 1;
+            "UPDATE integration_dispositions SET answered_at = $at, answer = $answer WHERE request = $request AND commit_id = $commit AND answered_at IS NULL",
+            ("$at", Now()), ("$answer", answer), ("$request", request), ("$commit", commit))) == 1;
     }
+
+    // ——— A held candidate's decide (INTEGRATE1h; §4.5, §8).
+
+    /// <summary>The decide recorded on a candidate; null where none is, or the store is from before the decides.</summary>
+    public IntegrationDecide? DecideOf(string candidate) =>
+        Reading(reader => reader.Query(
+                "SELECT candidate, decide, requester, at FROM integration_decides WHERE candidate = $candidate",
+                row => new IntegrationDecide(row.GetString(0), row.GetString(1), row.GetString(2), Moment(row, "at")), ("$candidate", candidate))
+            .FirstOrDefault(), null, ActsSince);
+
+    /// <summary>
+    /// Record a decide on a candidate held for one (§4.5's <c>hold</c>: its last step a judge ended <c>held</c>), once, in one write that judges
+    /// it under the lock. The person's or the steward's act, not the run's, so no claim is checked: the run consumes it at its next look. Refused,
+    /// nothing written, for a candidate that does not stand, one not held for a decide, one decided already (whose decide is answered), and a
+    /// <c>land</c> by anyone but the person.
+    /// </summary>
+    /// <exception cref="ArgumentException">A word that is no decide, or no requester.</exception>
+    public IntegrationDecided Decide(string candidate, string decide, string requester)
+    {
+        Known(decide, IntegrationDecides.All, "decide");
+        Known(requester, [IntegrationRequester.Person, IntegrationRequester.Steward], "decider");
+        if (decide == IntegrationDecides.Land && requester != IntegrationRequester.Person) return new IntegrationDecided(null, IntegrationDecideRefusals.Land);
+        if (Candidate(candidate) is not { Stands: true }) return new IntegrationDecided(null, IntegrationDecideRefusals.Gone);
+        try
+        {
+            using var store = Writer();
+            return store.Write(Family, write =>
+            {
+                if (CandidateIn(write, candidate) is not { Stands: true }) throw new Unwritten(new IntegrationDecided(null, IntegrationDecideRefusals.Gone));
+                if (DecideIn(write, candidate) is { } first) throw new Unwritten(new IntegrationDecided(first, IntegrationDecideRefusals.Decided));
+                var last = write.Query($"SELECT {StepColumns} FROM integration_steps WHERE candidate = $candidate ORDER BY id DESC LIMIT 1", MapStep, ("$candidate", candidate))
+                    .FirstOrDefault();
+                if (last is not { Step: IntegrationStepNames.Judge, Outcome: IntegrationStepOutcomes.Held })
+                {
+                    throw new Unwritten(new IntegrationDecided(null, IntegrationDecideRefusals.NotHeld));
+                }
+
+                write.Execute(
+                    "INSERT INTO integration_decides (candidate, decide, requester, at) VALUES ($candidate, $decide, $requester, $at)",
+                    ("$candidate", candidate), ("$decide", decide), ("$requester", requester), ("$at", Now()));
+                return new IntegrationDecided(DecideIn(write, candidate), null);
+            });
+        }
+        catch (Unwritten unwritten)
+        {
+            return (IntegrationDecided)unwritten.Answer!;
+        }
+    }
+
+    private static IntegrationDecide? DecideIn(DesktopWrite write, string candidate) =>
+        write.Query(
+                "SELECT candidate, decide, requester, at FROM integration_decides WHERE candidate = $candidate",
+                row => new IntegrationDecide(row.GetString(0), row.GetString(1), row.GetString(2), Moment(row, "at")), ("$candidate", candidate))
+            .FirstOrDefault();
 
     // ——— A step's two writes (§5.6).
 
@@ -687,6 +789,7 @@ public sealed class IntegrationStore(
             Proof = ProofOf(Text(row, "proof")),
             ClosedAt = Moments.Read(Text(row, "closed_at")),
             ClosedWhy = Text(row, "closed_why"),
+            Order = Has(row, "queue_order") ? Number(row, "queue_order") : null,
         };
     }
 
@@ -776,7 +879,19 @@ public sealed class IntegrationStore(
             Candidate = Text(row, "candidate")!,
             At = Moment(row, "at"),
             AnsweredAt = Moments.Read(Text(row, "answered_at")),
+            Answer = Has(row, "answer") ? Text(row, "answer") : null,
         };
+
+    /// <summary>Whether the row's query named <paramref name="column"/>: a later step's column is named only of a store that holds it.</summary>
+    private static bool Has(SqliteDataReader row, string column)
+    {
+        for (var at = 0; at < row.FieldCount; at++)
+        {
+            if (string.Equals(row.GetName(at), column, StringComparison.Ordinal)) return true;
+        }
+
+        return false;
+    }
 
     private static string FilesText(IReadOnlyList<string> files) => JsonSerializer.Serialize(files);
 
