@@ -163,6 +163,8 @@
   "agents.roles.work.roleIs": "角色",
   "agents.roles.work.ruleIs": "规则",
   "agents.roles.work.choicesIs": "选择",
+  "agents.roles.work.callsIs": "可调用",
+  "agents.roles.work.callsAllBut": "除 {{tools}} 外的所有工具",
   "agents.roles.rule.on": "开",
   "agents.roles.rule.ask": "询问",
   "agents.roles.rule.off": "关",

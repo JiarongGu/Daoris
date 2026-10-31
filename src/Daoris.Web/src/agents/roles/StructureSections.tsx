@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import type { StructureChoice } from '../../data/wiring';
 import { Button, CheckField, Chip, Icon, SelectField } from '../../design/ui';
 import { clockOf, list, moment } from '../../locales/format';
+import { callsOf } from './callTable';
 import { entryText, roleName } from './Roles';
 import type {
   AccountRow, IntegrationRead, RepositoryRow, RepositoryWork, RoleRef, RuleRead, Structure, StructureFilters, UsedBy, WorkRow, WorkspaceGroup,
@@ -210,6 +211,7 @@ const Line = ({ label, children }: { label: string; children: ReactNode }) => (
 function WorkRowView({ row, open, onToggle, doors }: { row: WorkRow; open: boolean; onToggle: (id: string) => void; doors: RoleDoors }) {
   const { t, i18n } = useTranslation();
   const title = workName(t, row.work);
+  const calls = callsOf(row.work);
   const role = row.role
     ? row.takesBuilding ? t('agents.roles.work.takesBuilding', { role: nameOf(t, i18n.language, row.role) }) : nameOf(t, i18n.language, row.role)
     : row.held ?? t('agents.roles.work.noRole');
@@ -239,6 +241,11 @@ function WorkRowView({ row, open, onToggle, doors }: { row: WorkRow; open: boole
           {entryText(t, choice)} · {stateText(t, choice.state)}
         </Line>
       ))}
+      {calls.served.length > 0 && (
+        <Line label={t('agents.roles.work.callsIs')}>
+          {calls.allBut ? t('agents.roles.work.callsAllBut', { tools: calls.refused.join(', ') }) : calls.served.join(', ')}
+        </Line>
+      )}
       {doors.setting && !NO_SETTING.has(row.work) && (
         <div className="mt-2">
           <Button variant="ghost" aria-label={t('agents.roles.door.settingOf', { work: title })} onClick={() => doors.setting!(row.work)}>
