@@ -1135,7 +1135,12 @@ export function WorkFrame({
   const atWorkShown = following !== null && (placed.places.atWork === 'panel'
     ? !collapsed && panelView === 'atWork'
     : !dockClosed && dock === 'atWork');
-  const atWork = useSessionAtWork(atWorkShown ? following?.id : null);
+  // Also asked while the followed session works, for the head's *working with it* (§3.7), at its mount and each wake.
+  const atWork = useSessionAtWork(atWorkShown || (following !== null && following.state === 'working') ? following?.id : null);
+  const atWorkHeld = atWork.data;
+  const withIt = atWorkHeld && 'answer' in atWorkHeld
+    ? atWorkHeld.answer.subagents.working + atWorkHeld.answer.parts.filter((part) => part.key !== atWorkHeld.answer.attended && part.state === 'working').length
+    : 0;
   // FABRIC-CUTOVER1f: the person's skip or stop of a graph run's node, pressed under the node in the view, kept for the driver's next look.
   const runNodeWord = useRunNodeWord();
   // FABRIC-PIPELINE1d: *Run again* and *Not now* under a check held unknown, the person's word on the held attempt.
@@ -2168,6 +2173,7 @@ export function WorkFrame({
     partners: partnersOf(partnerPieces.data ?? [], (agent) => agentRoster.names?.[agent] ?? agent),
     waitingSince: waiting?.session === attended.id ? waiting.since : undefined,
     calling: waiting?.session === attended.id ? waiting.calling : undefined,
+    withIt: following?.id === attended.id ? withIt : 0,
     // AGENTERRORS1a2 (D210 §5.1, §8): *Trying again at* while a transient episode waits.
     retrying: waiting?.session === attended.id ? waiting.retrying : undefined,
     // HEAVYSLOT1: its heavy run said in place of the call, by its gate or whom it waits behind.

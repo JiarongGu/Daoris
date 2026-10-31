@@ -53,7 +53,9 @@ export type SessionFactsOf = {
    * The call its agent is inside, and since when, as its conversation reads it (`runningCall`, WAITSAY1); absent where none is
    * open. Said only where the reader's `grouping` carries no call of its own (RAILLINE1).
    */
-  calling?: { title: string; since: string; quiet?: string } | null;
+  calling?: { title: string; since: string; quiet?: string; heard?: string } | null;
+  /** How many others work with it, subagents and other parts (COWORKVIEW1a, the *At work* read); absent where unknown or none. */
+  withIt?: number;
   /**
    * Its heavy run's line (HEAVYSLOT1, the UI/UX design §3.5): the gate it runs, the gate it failed at, or whom it waits behind, as
    * the rail's line says it (`heavyLine`), in place of the call, which is that run. Absent where it holds and waits for no slot.
@@ -161,7 +163,7 @@ function callFact(t: TFunction, calling: { title: string; since: string; waiting
  * the two never disagree; the conversation's open call only where no reader answered (a browser) or its host is older than the
  * fact.
  */
-function headCall(of: SessionFactsOf): { title: string; since: string; waiting?: boolean; quiet?: string } | null {
+function headCall(of: SessionFactsOf): { title: string; since: string; waiting?: boolean; quiet?: string; heard?: string } | null {
   const heard = of.grouping?.calling;
   return heard !== undefined ? heard : of.calling ?? null;
 }
@@ -231,6 +233,12 @@ function factsOf(t: TFunction, of: SessionFactsOf, whole: boolean): string[] {
     const calling = headCall(of);
     if (of.heavy && !calling?.waiting) facts.push(of.heavy);
     else if (calling && (calling.title || calling.waiting) && session.state === 'working') facts.push(callFact(t, calling, whole));
+    // COWORKVIEW1a (§3.7): who works with it and when it was last heard; the hearing gives way to *quiet* where the watcher marks it.
+    if (of.withIt && of.withIt > 0 && session.state === 'working') {
+      facts.push(calling?.heard && !calling.quiet
+        ? t('work.facts.withItHeard', { count: of.withIt, ago: ago(calling.heard) })
+        : t('work.facts.withIt', { count: of.withIt }));
+    }
     // SESSWATCH1a (the session-watch design §5.1): quiet since it was last heard, neutral, after a heavy run's line where both hold.
     if (calling?.quiet && session.state === 'working') facts.push(t('work.rail.quiet', { time: elapsed(calling.quiet) }));
     return facts.filter((fact): fact is string => Boolean(fact));
