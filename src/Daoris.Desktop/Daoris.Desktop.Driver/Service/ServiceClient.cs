@@ -253,18 +253,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
         var running = ReadSessions(await GetAsync("/api/sessions", ct).ConfigureAwait(false)).Select(s => s.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
         var quests = ReadQuests(await GetAsync("/api/quests?includeClosed=true", ct).ConfigureAwait(false))
             .ToDictionary(quest => quest.Id, quest => quest.Paths, StringComparer.OrdinalIgnoreCase);
-        var asking = all.FirstOrDefault(session => string.Equals(session.Id, id, StringComparison.OrdinalIgnoreCase));
-        if (asking is null) return null;
-
-        RelatedCandidate? Candidate(SessionView session) => session is { Tree.Length: > 0, BaseCommit.Length: > 0 }
-            ? new(session.Id, session.Kind, session.Tree, session.BaseCommit, running.Contains(session.Id),
-                session.Quest is { Length: > 0 } quest && quests.TryGetValue(quest, out var paths) ? paths : [], session.Quest)
-            : null;
-
-        if (Candidate(asking) is not { } mine) return null;
-        var others = all.Where(session => !session.Id.Contains('/') && string.Equals(session.Repository, asking.Repository, StringComparison.OrdinalIgnoreCase))
-            .Select(Candidate).OfType<RelatedCandidate>().ToList();
-        return (mine, others);
+        return RelatedCandidates.Pick(all, running, quest => quests.TryGetValue(quest, out var paths) ? paths : [], id, Directory.Exists);
     }
 
     /// <summary>This machine's active sessions — the one read an orphan sweep needs, without a whole snapshot.</summary>

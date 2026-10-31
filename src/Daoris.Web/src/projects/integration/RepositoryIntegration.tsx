@@ -1,5 +1,5 @@
 import { useIntegrate, useIntegration } from '../../bridge/repositories/integrate';
-import { useSessionRelated } from '../../bridge/sessions/sessions';
+import { useSessionRelatedRead } from '../../bridge/sessions/sessions';
 import { SESSION_ACTIVE } from '../../data/api';
 import { useSessions } from '../../data/queries';
 import { RelatedSessions } from '../../work/head/RelatedSessions';
@@ -31,5 +31,6 @@ export function RepositoryIntegration({ repository, notify }: { repository: stri
 
 /** One session's related read, read-only (no door): the Integration tab lists it, the session's own page opens it. */
 function RelatedOf({ session, repository }: { session: string; repository: string }) {
-  return <RelatedSessions repository={repository} related={useSessionRelated(session)} />;
+  const { rows, own } = useSessionRelatedRead(session);
+  return <RelatedSessions repository={repository} related={rows} own={own} />;
 }

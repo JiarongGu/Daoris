@@ -13,6 +13,9 @@ export type RelatedRow = {
   changedOverlap: string[];
 };
 
+/** The asking session's own tree could not be read here; when it last was, or null. */
+export type RelatedOwn = { readAt: string | null };
+
 const DOOR = 'min-w-0 cursor-pointer border-0 bg-transparent p-0 font-mono text-meta underline decoration-line-strong underline-offset-2 hover:text-accent hover:decoration-accent';
 
 /** Each path with the sessions that meet on it, in the order the read gave them. */
@@ -30,16 +33,21 @@ const byPath = (rows: readonly RelatedRow[], paths: (row: RelatedRow) => readonl
  * session a door to its head where `onSession` is given and plain where it is not (the Integration tab's list is read-only), and a
  * session git could not read said *not read here* (D137). Nothing to say, and nothing is drawn.
  */
-export function RelatedSessions({ repository, related, onSession }: {
+export function RelatedSessions({ repository, related, own = null, onSession }: {
   repository: string;
   related: readonly RelatedRow[];
+  /** Set where the asking session's own tree could not be read: said once, and no other session is marked for it. */
+  own?: RelatedOwn | null;
   onSession?: (id: string) => void;
 }) {
   const { t } = useTranslation();
   const changed = byPath(related, (row) => row.changedOverlap);
   const declared = byPath(related, (row) => row.declaredOverlap);
   const unread = related.filter((row) => row.read === 'not-read');
-  if (changed.length + declared.length + unread.length === 0) return null;
+  // The earliest last read, said only where every unread session has one.
+  const times = unread.map((row) => row.readAt).filter((at): at is string => Boolean(at));
+  const earliest = times.length === unread.length && times.length > 0 ? [...times].sort()[0] : null;
+  if (changed.length + declared.length + unread.length === 0 && !own) return null;
 
   const door = (id: string) => (onSession
     ? <button type="button" aria-label={t('work.related.door', { id })} onClick={() => onSession(id)} className={DOOR}>{id}</button>
@@ -58,7 +66,12 @@ export function RelatedSessions({ repository, related, onSession }: {
       <ul className="m-0 grid list-none gap-0.5 p-0">
         {line('changes', changed)}
         {line('declares', declared)}
-        {unread.map((row) => (
+        {own && (
+          <li className="m-0 text-ink-faint">
+            {own.readAt ? t('work.related.ownNotReadSince', { at: clockOf(own.readAt) }) : t('work.related.ownNotRead')}
+          </li>
+        )}
+        {unread.length === 1 && unread.map((row) => (
           <li key={`unread:${row.id}`} className="m-0 flex min-w-0 flex-wrap items-baseline gap-x-1.5">
             {door(row.id)}
             <span className="text-ink-faint">
@@ -66,6 +79,16 @@ export function RelatedSessions({ repository, related, onSession }: {
             </span>
           </li>
         ))}
+        {unread.length > 1 && (
+          <li className="m-0 flex min-w-0 flex-wrap items-baseline gap-x-1.5">
+            <span className="text-ink-faint">
+              {earliest
+                ? t('work.related.notReadManySince', { count: unread.length, at: clockOf(earliest) })
+                : t('work.related.notReadMany', { count: unread.length })}
+            </span>
+            <span className="flex flex-wrap gap-x-1.5">{unread.map((row) => <Fragment key={row.id}>{door(row.id)}</Fragment>)}</span>
+          </li>
+        )}
       </ul>
     </section>
   );

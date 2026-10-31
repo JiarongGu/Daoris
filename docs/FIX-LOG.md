@@ -5,6 +5,13 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-01 - A session's head listed fifteen identical "not read here" lines (SESSRELATED1)
+
+- **Symptom:** "Beside it in Daoris:" followed by fifteen lines, each "not read here (last read 09:24)".
+- **Root cause:** three together. `ServiceClient.RelatedCandidatesAsync` took every session with a recorded tree from the closed list too (over 600 on the install), so a removed tree's failed `rev-parse` read as `not-read`; `RelatedSessions.LookAsync` marked every other candidate `not-read`, stamped with the asker's own last good read, whenever the asker's own tree could not be read (all fifteen said 09:24); the page drew one line per unread session.
+- **Fix:** `RelatedCandidates.Pick` keeps a session only if its tree folder exists, checked before any git, and answers none where the asker's own tree is gone; `RelatedSessions.AskAsync` answers a top-level `own` once for an unreadable own tree and no per-session marks, a per-session `not-read` staying for a present tree git could not read; the page folds two or more of those into one line with doors and the earliest last read, and words `own` once (en, zh).
+- **Verify:** `RelatedCandidatesTests` (3) and `RelatedSessionsTests` (6, two new) written first and failing to compile against the old code, green after; `RelatedSessions.test.tsx` (10, four new); the census classes green. Not run: the installed window.
+
 ## 2026-11-01 - Each landing started one git more than its ceiling: the symbolic-ref ask before a delete (batch 1031f)
 
 - **Symptom:** `LandGitCountTests` failed all three: the automatic landing 43 starts against 42, the squash press one over 45, the merge press 58 against 57.

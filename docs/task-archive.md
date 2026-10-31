@@ -5,6 +5,14 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## SESSRELATED1 — a session's head names only the sessions it can meet, and says an unread tree once (2026-11-01)
+
+> **SESSRELATED1 — a session's head names only the sessions it can meet, and says an unread tree once** (driver, modules, web; the owner's report, 2026-11-01). The head's "Beside it in Daoris:" showed fifteen identical "not read here (last read 09:24)" lines. Causes: the candidates took every session with a recorded tree, closed ones whose trees are gone included; an unreadable own tree marked every other session `not-read`; the page drew a line each. Contract: a candidate is a session whose tree folder exists here; an unreadable own tree is one top-level `own: not-read`, never a mark on the others; a present tree git cannot read stays `not-read` per session, and two or more fold into one line. Proof: `RelatedSessionsTests`, a candidates-filter test, `RelatedSessions.test.tsx`.
+
+**Outcome** 2026-11-01: `RelatedCandidates.Pick` leaves out a session whose tree folder is gone before any git; `RelatedSessions.AskAsync` answers `own` once for an unreadable own tree and no `not-read` for the others; the page folds two or more unread sessions into one line with their doors and the earliest last read. The cause and proof are in `docs/FIX-LOG.md`. Owed: the installed window.
+
+---
+
 ## CLEANUPADVICE1 — a blocked clean-up row names the press that takes it (2026-11-01)
 
 > **CLEANUPADVICE1 — a blocked clean-up row names the press that takes it** (driver, modules, web; OVERVIEWNOISE1b, TIDYOUTPUT1). The install's row for a finished tree its session recorded (code `unfollowed`) told the owner the workspace's clean-up removes it, and that press keeps it: the tree holds ignored files only it has (a gate's log, a `local/` folder). Contract: where the clean-up would keep the tree, the row says what keeps it (`TreeHolds.OwnSaid`) and the remove that takes it, never a press that refuses. Proof: a unit test of the row's words over a kept tree; the install's row read again.
