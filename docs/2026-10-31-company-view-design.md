@@ -1,10 +1,10 @@
 # COMPANYVIEW1: the agents' structure, the design (2026-10-31)
 
-**Standing:** the steward's synthesis under D191; both makers read it next. Read against the code on `parent/batch-1031d`. It serves D193's staff (point 4) and management (point 18). Two corrections to the inputs: D137 is MSG1, so *no edge it cannot prove* is held as the map design §1 states it; and `GO_PLACES` is not a route.
+**Standing:** accepted 2026-10-31 after the steward's named changes. It is the steward's synthesis under D191; both makers read it and accepted after named changes (`2026-10-31-company-view-reads.md`), and the changes are written in below. Read against the code on `parent/batch-1031d`. It serves D193's staff (point 4) and management (point 18). Two corrections to the inputs: D137 is MSG1, so *no edge it cannot prove* is held as the map design §1 states it; and `GO_PLACES` is not a route.
 
 ## 1. Where it lives and what it is called
 
-**Choice: a second mode of the Agents place, *Roles* / *角色*, beside today's *Agents* / *智能体*, switched by the list's head the way Knowledge switches Search and Convergence** (`knowledge/KnowledgeView.tsx`: a `Segmented` head, a strip, `chosenIn`). The Agents mode is unchanged. The Roles mode's list pane holds five sections and opens on the one last left. Its main area shows the chosen section as a list or as a diagram. The mode is desktop only, as AI features' machine half is (`settings/AiDomain.tsx:37`).
+**Choice: a second mode of the Agents place, *Roles* / *角色*, beside today's *Agents* / *智能体*, switched by the list's head the way Knowledge switches Search and Convergence** (`knowledge/KnowledgeModes.tsx`'s `Segmented` head, with `knowledge/KnowledgeView.tsx`'s strip and `chosenIn`). The Agents mode is unchanged. The Roles mode's list pane holds five sections and opens on the one last left. Its main area shows the chosen section as a list or as a diagram. The mode is desktop only, as AI features' machine half is (`settings/AiDomain.tsx:37`).
 
 **Why:** agents run, and roles are what they fill. The glossary already names the configured position *role* 角色 in both shapes (`glossary.json:476`), and D212 point 14 names its subdomain *Roles*. **Rejected:**
 - A tenth place *Roles* (Opus). D150 point 2 and the UI/UX design's R5 make a tenth place a decision with its own counts, and it would split agents from the roles they staff.
@@ -26,7 +26,7 @@ The section is *By repository* because *Repositories* already names a place. The
 
 **Glossary rows.**
 - Add *diagram* / 角色图: the roles drawn in three columns, the list beside it. 提交图, 地图 and 流程图 are taken. Avoid *graph*, *org chart* and 组织架构图.
-- Add *work* / 工作: one of `RoleWork.Codes`. Avoid 任务, and 工作类型, which is *kind of task*'s word.
+- Add *work* / 工作: one of `RoleWork.Codes`. Avoid 任务, and 工作类型, which is *kind of task*'s word. Its `match` is narrow: *work* in English is everywhere, and 工作 begins 工作区, 工作流 and 工作记录 (`glossary.json:504`, `:522`, `:572`), so the row matches the section's and a row's own keys only.
 - Amend *role* with 工作角色 where the working shape must be said, as 任命的角色 is said for the appointed shape.
 - Amend *AI features*, whose choices move here.
 - The mode and section keys join the `nav` kind; the two *Show as* keys join `button`.
@@ -42,9 +42,11 @@ The section is *By repository* because *Repositories* already names a place. The
 | Appointed role | `appointments`, `data/standing-confirmation.json` | `STATE`; `SET_APPOINTMENT` (`Window`) | configured, moved (row e) |
 | A work's role at a place | `RoleCatalog.RoleFor` | new `ROLE_STRUCTURE` | read |
 | A work's rule | `WorkPolicies.Of` over `driver.json` | `SET_HELPERS`, `SET_HAND_OVER`, `SET_OPINION`; Setup | read, door |
+| What a work may call | `CallTable` (`src/Daoris.Service/Daoris.Service.Mcp/CallTable.cs:95`), code | none | read only (row i) |
 | Agent, accounts | roster; `profiles/` | `HARNESSES`, `ACCOUNTS`; Agents mode | read, door |
 | Place, line, landing | registry; `driver.json` | `LINES`; Setup | read, door |
-| Workflow, plugin | current workflow; manifest | `WORKFLOW_CURRENT`, `PLUGINS` | a line, door |
+| Workflow, integration declaration | current workflow; its declaration (`workflow/current.ts:109`) | `WORKFLOW_CURRENT`; the Workflow and Integration tabs, where acceptance stays (`settings/repository/IntegrationDeclaration.tsx:18`) | a line each, door |
+| Plugin | manifest | `PLUGINS`; Plugins | a line (the agents it declares, a landing it names), door |
 
 **Relations, each a read:**
 - A role takes a work and is placed in a scope (its record's fields), and is staffed choice by choice.
@@ -58,7 +60,7 @@ The section is *By repository* because *Repositories* already names a place. The
 - Accounts assigned to roles (D197).
 - A page-side resolution (a second truth).
 - A working role holding authority (D212 point 5).
-- Codex's call table per work, which is code nobody sets.
+- An editor for the call table, which is code nobody sets; what each work may call is shown read-only instead (row i), since the works differ in it.
 
 ## 3. The sections
 
@@ -83,14 +85,21 @@ A held start marks its section's row; the bar counts nothing new (D205 point 4).
 - *Remove*, *Back to the default* and *Add a role*.
 - The Designer's suggestion, and the found changes.
 
-Each press keeps its door (`SET_ROLE`; `SET_ACTOR` for *Off* and *Clear*) until MODELROLE1h folds them.
+**Doors, per press.**
+- *Save* goes by `SET_ROLE`, which writes a seeded role's first agent through to the old keys as `SET_ACTOR` does (`Roles/RoleDoor.cs:60-64`, `Roles/RoleStaffing.cs:325-337`).
+- *Off*, where the work allows it, is `SET_ROLE` with `choices: []` for a seeded or an added role (`RoleDoor.cs:86-87`).
+- *Clear* (a seeded role's staffing back to *as before*, `choices` null) has no `SET_ROLE` form and stays `SET_ACTOR`'s (`DriverRoutes.cs:350-353`); an added role has no *as before* and offers no *Clear* (`Settings/ActorKey.cs:58` refuses its id).
+- *Clear* is the staffing's; *Back to the default* is the catalogue's (a seeded role's names, work and place restored). The two are worded apart.
+- A home whose `driver.json` is its own: `SET_ROLE` refuses there (`DriverRoutes.cs:390-391`) while `SET_ACTOR` writes the file (`Modules/Bridge/DriverContext.cs:156-162`), so the seeded rows keep `SET_ACTOR`'s editor and only *Add a role*, *Remove* and the place are held (`settings.ai.roles.unkept`).
+- An older shell answering `ACTORS` but not `ROLES` (`bridge/driver.ts:544`) keeps one staffing editor over `SET_ACTOR`, and the section tells *not offered by this shell*, a failed read and an empty catalogue apart.
+
+These fold into one door when MODELROLE1h does.
 
 **Unset and invalid:**
-- *as before*; *Off*; *Removed*, its work waiting.
+- *as before* (a seeded role only); *Off*; *Removed*, its work waiting.
 - Unreadable, in the driver's sentence.
 - Two roles in one scope, refused at *Save*.
 - A choice naming an agent this machine lacks, said.
-- A home whose `driver.json` is its own: every editor held (`settings.ai.roles.unkept`).
 
 ### 3.2 Appointed roles
 
@@ -106,7 +115,7 @@ Each press keeps its door (`SET_ROLE`; `SET_ACTOR` for *Off* and *Clear*) until 
 
 **Shows:** the nine works.
 
-**A row says:** the role taking the work here, and *n places have their own*. At the filtered scope it says *on*, *ask* or *off*; the agents permitted, or *its role's choices decide*; its bound; and where it was set.
+**A row says:** the role taking the work here, and *n places have their own*. At the filtered scope it says the effective rule, inherited or default where the place sets none: *on*, *ask* or *off*; the agents permitted, or *its role's choices decide*; its bound; and where it was set (the repository, its workspace, this machine or the default). Opened, it names what the work may call (row i).
 
 **Door:** *Open its setting*. Helpers and Hand-over are under Setup's Sessions; Second opinion is under Line and landing; Intake's and Ask Daoris's *Off* are in Working roles.
 
@@ -115,7 +124,7 @@ Each press keeps its door (`SET_ROLE`; `SET_ACTOR` for *Off* and *Clear*) until 
 - Partnering is *not a rule yet*.
 - A work no role takes, in `RoleCatalog.NoRole`'s sentence.
 - A held start, in its sentence.
-- A fenced agent no choice names runs at *account default* (D205 point 6).
+- A fenced agent no choice names runs at *account default* (D205 point 6; `rule-default` in `Roles/ActorChoices.cs:7`, `:55`, `:83`, `Participants/Domain/ReviewerChoice.cs:172`, `Participants/Helpers/HelperChoice.cs:38`).
 
 ### 3.4 Accounts
 
@@ -125,7 +134,7 @@ Each press keeps its door (`SET_ROLE`; `SET_ACTOR` for *Off* and *Clear*) until 
 
 **Door:** *Open*, which goes to the Agents mode at that agent's accounts.
 
-**Unset and invalid:** a named agent not installed; a first choice that cannot run by its last reading, with its pass code (`StartPasses.Codes`). Never a probe.
+**Unset and invalid:** a named agent not installed; a choice that cannot run by its last reading, with its code and the reading's time; a choice *not read yet* where no reading exists. Never a probe.
 
 ### 3.5 By repository
 
@@ -133,7 +142,7 @@ Each press keeps its door (`SET_ROLE`; `SET_ACTOR` for *Off* and *Clear*) until 
 
 **A row says:**
 - Folded: *takes this machine's roles*, or *n works differ*.
-- Opened: each work's role, its first choice and where that role is placed; then line, landing, driving and workflow; then the steward's marks (§5).
+- Opened: each work's role, its first choice and where that role is placed; then line, landing, driving and workflow; its integration declaration's state (none, proposed or accepted, with a door to the Integration tab, where acceptance stays); the plugins whose agents or landing it uses (a door to Plugins); then the steward's marks (§5).
 
 **Doors:** Setup, Workflow, and *Add a role here*, which opens the editor with the place filled.
 
@@ -163,12 +172,17 @@ An agent the roster lacks is drawn as written, never invented (Codex).
 - accounts, rules, lines and plugins;
 - a running session's bound role (Codex).
 
-**Legible at size.** A place setting nothing of its own is counted in its workspace's node (*17 take this machine's roles*), as the Map does. Past 24 nodes, each workspace folds to one node (the flowchart design §3.6). Nothing is drawn smaller, and there is no pan, zoom or drag.
+**Legible at size.** A place setting nothing of its own is counted in its workspace's node (*17 take this machine's roles*), as the Map does. Past 24 nodes, each workspace folds to one node: new code beside `design/flowFolds.ts`, which folds a process's stacks and stretches, not places. Nothing is drawn smaller, and there is no pan, zoom or drag.
 
-**Ranked by `design/flowLayout.ts`, placed by its own rule.** Opus's proposal to reuse `placementFor` would make the diagram a list at almost every width. Across allows only three nodes a rank (`flowLayout.ts:104`), and down needs about 90rem for the eight seeded roles in one row. Here the ranks are columns. The diagram is placed across where three 10rem tracks and two 3rem gaps fit (36rem); otherwise it is its rail, the section's list with its edges said in words. `PlacementBounds` gains a caller's column bound.
+**Ranked by `design/flowLayout.ts`, placed by its own rule.** Opus's proposal to reuse `placementFor` would make the diagram a list at almost every width. Across allows only three nodes a rank (`flowLayout.ts:104`, hard-coded in `placementFor` at `:286`), and down needs about 90rem for the eight seeded roles in one row. Here the ranks are columns. A node's floor is 12rem, since a role node names *Claude Code · sonnet · high*; across then needs three tracks and two 3rem gaps, 42rem of the main area (`work/frame/ViewMain.tsx`'s inner width). It is placed across where that fits, which is 80rem and not 39rem (576px inner, `design/storyWidths.tsx:13`, `:18`); otherwise it is its rail, the section's list with its edges said in words. `PlacementBounds` (`:273`) gains a caller's column bound, a signature change.
 
 **One read, one function, one owner.**
-- **The read.** `ROLE_STRUCTURE` is `Open` and told by event, as `ROLES` is (`DriverRoutes.cs:367-382`). It composes the catalogue, `RoleFor` per place and work, `WorkPolicies.Of` where a place sets its own rule, and each choice's pass from the walk `STARTS` reads (`AgentsRoutes.cs:261-266`). It carries names only and probes nothing. A test holds it to `StartPlan`'s answer, as `StartWiringRouteTests` holds `STARTS`.
+- **The read.** `ROLE_STRUCTURE` is `Open` and told by event, as `ROLES` is (`DriverRoutes.cs:367-382`). It composes, in .NET:
+  - the catalogue, and `RoleFor` per requested place and work;
+  - `WorkPolicies.Of` for every requested work and place, inherited and default answers included, each with its provenance and a per-item failure (`Participants/Domain/WorkPolicy.cs:94`, `:110`);
+  - each choice's state from the last readings alone: `AccountReads.Of`, the cool-off states, `AgentOffers.Judge` and `ReportAsync(refresh: false)`, each with its reading's time, and *not read yet* where none exists. It never calls `ChooseAsync` or `Pass`, and is not `STARTS`: that walk reads only a workspace's Build and Intake adapters (`AgentsRoutes.cs:278-291`), stops at the first runnable choice (`Roles/StartPlan.cs:309`), and can ask a signed-out account or the binary even with `counts: false` (`Agents/HarnessRoster.cs:1283-1288`, `:1359-1370`, `:1556-1562`).
+  
+  It carries names only. It is a projection of the configuration, apart from a start's selection; a test holds its role answers to `StartPlan`'s over a shared fixture, and another holds that opening it runs no probe and takes no reservation.
 - **Appointments** stay `STATE`'s (`bridge/person.ts:233-259`).
 - **The function.** `buildStructure` (`agents/roles/structure.ts`) makes the rows, nodes and edges with one id each, as `map/topology.ts` does.
 - **The owner.** The mode's hook owns the section, the selection, the filters, the open editor and every pending press, for both views (D168 point 3). The molecules import nothing of the bridge.
@@ -177,7 +191,7 @@ An agent the roster lacks is drawn as written, never invented (Codex).
 
 **By width:**
 - **80rem:** the sections stand beside the page; the diagram is across, with its detail beside it.
-- **39rem:** the list may close to its strip (two modes, five sections); the detail goes below the diagram.
+- **39rem:** the list may close to its strip (two modes, five sections); the diagram is its rail, with the detail below.
 - **25rem:** the list is a strip or lies over the page; values go under their words (R1); the diagram is its rail, and the head says so.
 
 ## 5. Setup
@@ -215,8 +229,8 @@ An agent the roster lacks is drawn as written, never invented (Codex).
 
 **Set aside:**
 - both placements (§1);
-- Opus's tree by place, which would be a second list of 29 repositories (the shape D150 rejected for Git);
-- Codex's work, line, workflow and plugin nodes, its pan and zoom, and its Plugins section;
+- Opus's roles under their places: By repository keeps the places' tree, but the roles stay one flat catalogue in Working roles, so one role has one row and one editor in one section;
+- Codex's work, line, workflow and plugin nodes, its pan and zoom, and its Plugins section (plugins and integration declarations are lines in By repository and Accounts instead);
 - the name `COMPANY_STRUCTURE`;
 - placement by `placementFor` (§4);
 - a steward pressing a row.
@@ -225,20 +239,21 @@ An agent the roster lacks is drawn as written, never invented (Codex).
 
 Every row's proof includes page tests; stories at 80, 39 and 25rem (`design/storyWidths.tsx`) in en and zh and both themes; and the installed window wherever the row changes it.
 
-1. **COMPANYVIEW1a: one role, one row** (web, still in AI features). `settings/ai/Roles.tsx` takes over `Actors.tsx`'s *Off*, *Clear*, order, ⓘ and found changes. Each seeded role is drawn once, and *Actors* leaves the window; `names:check --strict` passes. Waits on nothing.
+1. **COMPANYVIEW1a: one role, one row** (web, still in AI features). `settings/ai/Roles.tsx` takes over `Actors.tsx`'s *Off*, *Clear*, order (*Move up*, *Move down*, `Actors.tsx:195`), ⓘ and found changes, with §3.1's doors per press, the unkept home and the older shell. Each seeded role is drawn once, and *Actors* leaves the window; `names:check --strict` passes. Waits on nothing.
 2. **1b: the Roles mode and Working roles** (web). The place's hook over both modes, its head, strip and `chosenIn`. 1a's molecule moves here, and AI features keeps a door. It also covers:
    - `PLACE_PARTS` and `HelpPlaces`;
-   - `RoleCatalog.NoRole` naming Agents → Roles;
+   - `RoleCatalog.NoRole`'s sentence (`RoleCatalog.cs:183`) naming Agents → Roles;
    - `HelpCoverageTests` and the help room's goldens;
    - D150 point 9's counts;
-   - a note amending D205 point 8.
+   - notes amending D150 point 4 (the Agents place now holds the roles its agents fill) and D205 point 8.
 
    After 1a.
-3. **1c: the read** (driver, modules). `ROLE_STRUCTURE` in every place `.claude/knowledge/bridge-presses.md` names; the test holding it to `StartPlan`; a test that opening probes nothing. Waits on nothing.
-4. **1d: Work, Accounts and By repository** (web). `buildStructure`, the filters, *Needs a look*, and the states of §3.3 to §3.5 over a shared fixture. An agent's page gains *Used by*. After 1b and 1c.
-5. **1e: Appointed roles at home** (web). Both molecules move into the section; Setup and This Daoris keep a door. Notes amend the supervisor design §5 and D209 point 1. Dark until SUPERVISOR1a-iii and STEWARDROLE1d. After 1b.
-6. **1f: the diagram** (web). Placement, folds, lit paths, the detail and the flowchart's keys (§3.7). Playwright reads every edge clear of nodes at 80 and 39rem, and the rail at 25rem; one Narrator pass. After 1d.
-7. **1g: setup** (web). *Needs a look*, *Add a role here* on rows and workspace groups, the suggestion, and Get started's door. After 1d.
-8. **1h: the steward's marks** (web, over `STATE`). After STEWARDROLE1d; the set-up mark after STEWARDROLE1g.
+3. **1c: the read** (driver, modules). `ROLE_STRUCTURE` as §4 states it, in every place `.claude/knowledge/bridge-presses.md` names; the test holding its role answers to `StartPlan`; tests for a signed-out account overdue for rereading, a later choice, a scoped role and an inherited rule with no local override; the test that opening runs no probe and takes no reservation. Waits on nothing.
+4. **1d: Work, Accounts and By repository** (web). `buildStructure`, the filters, *Needs a look* (its one owner), and the states of §3.3 to §3.5 over a shared fixture, the integration declaration's and the plugins' lines included. An agent's page gains *Used by*. After 1b and 1c.
+5. **1e: Appointed roles at home** (web). Both molecules move into the section; Setup and This Daoris keep a door. Notes amend the supervisor design §5 and D209 point 1. Built dark; active as SUPERVISOR1a-iii and STEWARDROLE1d activate each. After 1b.
+6. **1f: the diagram** (web). Placement with the column bound, the workspace fold (new), lit paths, the detail and the flowchart's keys (§3.7); an appointed node selects its section. Playwright reads every edge clear of nodes at 80rem, and the rail at 39 and 25rem; one Narrator pass. After 1d and 1e.
+7. **1g: setup** (web). *Add a role here* on rows and workspace groups, the suggestion, and Get started's door; *Needs a look* stays 1d's. After 1d.
+8. **1h: the steward's marks** (web, over `STATE`). After 1d and STEWARDROLE1d; the set-up mark after STEWARDROLE1g.
+9. **1i: what a work may call** (service, driver, web). The call table's answer per work, read-only, in Work's opened row; its read is named by the row (the call table lives in the service). After 1d.
 
-**Not yet verified at synthesis:** whether `SET_ROLE` writes a seeded role's first agent through to `adapter`, `intakeAdapter` and `helperAdapter` as `SET_ACTOR` does (why §3.1 keeps both doors); whether the `STARTS` walk can give a pass code per choice for every role and place without probing an account; the width fits, which are arithmetic from `FLOW_REM`, not a measured story; D205 point 6's *account default* for a fenced agent no choice names, not traced in code.
+**Settled at reading:** `SET_ROLE` writes a seeded role's first agent through (§3.1); `STARTS` cannot give a choice's state without probing, so the read composes from the last readings (§4); the widths are arithmetic, held by 1f's measured stories; *account default* is `rule-default` in the code (§3.3). Whether `STARTS` asks a signed-out account when a view opens is STARTSPROBE1's to check.

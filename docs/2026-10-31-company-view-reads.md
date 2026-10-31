@@ -36,3 +36,36 @@ The sequence is broadly sound, but not fully buildable as written:
 - **h also needs d**, plus the stated steward activation/setup dependencies.
 
 Read-only source review completed; no files changed, no tests run, and no `local/` directory read.
+
+## Round 1, the Opus maker's read
+
+1. **Verdict: accept after named changes.** Two findings block, each touching one row; the rest holds against the code. §4's arithmetic was checked and the synthesis's four unverified points settled.
+
+2. **Findings**
+
+- **F1, BLOCKING (row 1c).** "Each choice's pass from the walk `STARTS` reads" while "probing nothing" cannot hold. `STARTS` walks only `config.Adapter` and `IntakeAdapter` per workspace (`Modules/Bridge/Routes/AgentsRoutes.cs:278-291`). `WiringAsync` calls `ChooseAsync(..., counts: false)` (`Driver/Agents/HarnessRoster.cs:2050`); `Pass` still returns `Ask` for a signed-out account with an old reading (`:1558-1562`), the walk then asks it (`AskOneAsync`, `:1359-1370`), and asks the binary again where the cached report says the agent is absent (`:1283-1288`); the model's offer reading enters only through an `OfferAsk` (`:1341`). **Change:** compose each choice's state from the last readings alone (`AccountReads.Of`, the cool-off states, `AgentOffers.Judge`, `ReportAsync(refresh: false)`), never `ChooseAsync` or `Pass`; keep the "opening probes nothing" test. Whether `STARTS` itself asks a signed-out account when a view opens, against D150 point 5, deserves its own check.
+- **F2, BLOCKING (row 1a).** "A home whose `driver.json` is its own: every editor held" removes a door that works: `SET_ROLE` refuses there (`DriverRoutes.cs:390-391`) but `SET_ACTOR` writes the file (`Modules/Bridge/DriverContext.cs:156-162`). **Change:** on an unkept home the seeded rows keep `SET_ACTOR`'s editor; only add, remove and scope are held.
+- **F3 (settles point 1).** `SET_ROLE` writes a seeded role's first agent through (`Roles/RoleDoor.cs:60-64` → `staffing.Set` → `ActorChoices.With`, `Roles/RoleStaffing.cs:325-337`, `:454-464`). *Off* works over `SET_ROLE` with `choices: []` (`RoleDoor.cs:86-87`); only *Clear* (`choices` null, `DriverRoutes.cs:350-353`) has no `SET_ROLE` form. **Change:** keep `SET_ACTOR` for *Clear* and the unkept home only.
+- **F4 (settles point 3).** `ACROSS_MOST = 3` (`design/flowLayout.ts:104`); down needs 90.5rem; across 36rem (`:256-258`). The half-width story's inner width is exactly 576px = 36rem (`design/storyWidths.tsx:13`, `:18`; `work/frame/ViewMain.tsx:263`), so across fits only at a 10rem node with no padding; a role node naming *Claude Code · sonnet · high* wants more (FLOWCHART1d took 19rem, `flowLayout.ts:253-254`), and at 12rem across needs 42rem. `placementFor` hard-codes `ACROSS_MOST` (`:286`), so the column bound changes `PlacementBounds` (`:273`). **Change:** state the node floor and container; 39rem is the rail; 1f proves across at 80rem only.
+- **F5 (settles point 4).** `rule-default` is in the code: `Roles/ActorChoices.cs:7`, `:55`, `Participants/Domain/ReviewerChoice.cs:172`, `Participants/Helpers/HelperChoice.cs:38`, `Loop/Driver.cs:905`.
+- **F6.** `design/flowFolds.ts` folds a process (stacks, settled stretches, focus); a workspace fold is new code. Name it in 1f.
+- **F7.** The placement changes D150 point 4's Agents place ("its list holds each agent once"); add a D150 point 4 note to 1b.
+- **F8.** *work* / 工作 needs a narrow `match` (工作区, 工作流, 工作记录: `glossary.json:504`, `:522`, `:572`); `Segmented` is in `knowledge/KnowledgeModes.tsx`.
+
+Checked and held: `RoleCatalog.cs:151-176`, `:62-63`; `StandingConfirmation.cs:330`, `:336`; `DriverRoutes.cs:367-382`; `bridge/person.ts:233-259`; `settings/AiDomain.tsx:37`; `locales/en/flow.json:2-3`; the nav budget (`glossary.json:22-25`, *任命的角色* exactly 5); every route §2 names, `StartWiringRouteTests`, `.claude/knowledge/bridge-presses.md`, `PLACE_PARTS`, `HelpPlaces`; Setup's sections (`projects/setup/RepositorySetup.tsx:34`).
+
+3. **The rejections.** The tenth place: adequate, the placement being settled. `placementFor`: adequate and correct. The tree by place: the stated reason ("a second list of 29 repositories") describes §3.5 as well; the real reason, a flat catalogue keeping one editor in one section, is good, so reword §6.
+
+4. **The rows.** Buildable in this order with F1 and F2 applied: 1a and 1c now, in parallel; 1b after 1a (with the D150 point 4 note and `RoleCatalog.cs:183`'s sentence); 1e after 1b, dark; 1d after 1b and 1c; 1f after 1d, F4 and F6 settled; 1g after 1d; 1h after STEWARDROLE1d.
+
+## The steward's settlement (2026-10-31)
+
+Both makers accepted after named changes, and every change is written into the design:
+- **The read (Codex's first and second, F1).** `ROLE_STRUCTURE` composes each choice's state from the last readings alone, with each reading's time and *not read yet*, never through `ChooseAsync`, `Pass` or `STARTS`; it resolves every requested work and place's rule, inherited and default answers included, with provenance and per-item failures; opening it runs no probe and takes no reservation (§4, row 1c). Whether `STARTS` asks a signed-out account when a view opens is filed as STARTSPROBE1.
+- **The doors per press (Codex's third, F2, F3, the older shell).** *Save* and *Off* by `SET_ROLE`; *Clear* by `SET_ACTOR`, a seeded role's only; *Clear* and *Back to the default* worded apart; the unkept home keeps the seeded rows' editor; an older shell keeps one staffing editor and tells unsupported, failed and empty apart (§3.1, row 1a).
+- **Plugins, integration declarations, the call table (Codex's fourth and its rejection).** Lines in By repository and Accounts, acceptance staying at the Integration tab (§2, §3.5, row 1d); what a work may call shown read-only (row 1i).
+- **The widths (F4, F6).** A 12rem node floor, across at 42rem of the main area, so across at 80rem and the rail at 39 and 25rem; the workspace fold named as new code (§4, row 1f).
+- **The records (F5, F7, F8, §6).** `rule-default` cited; D150 point 4's note joins 1b; the *work* row's narrow match; `KnowledgeModes.tsx`; §6's reason for keeping the roles in one catalogue reworded.
+- **The order (Codex's rows).** 1f after 1d and 1e; *Needs a look* owned by 1d alone; 1h after 1d too.
+
+Accepted. 1a and 1c start now.
