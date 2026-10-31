@@ -271,7 +271,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Service/Daoris.Service.Http.Tests/LocalHostTests.cs` | 170 | 2786 |
 | `src/Daoris.Service/Daoris.Service.Http/ApiContracts.cs` | 88 | 1012 |
 | `src/Daoris.Service/Daoris.Service.Http/PersonDoors.cs` | 43 | 656 |
-| `src/Daoris.Service/Daoris.Service.Http/Program.cs` | 191 | 3193 |
+| `src/Daoris.Service/Daoris.Service.Http/Program.cs` | 192 | 3196 |
 | `src/Daoris.Service/Daoris.Service.Tests/Asks/HistoryDeskTests.cs` | 46 | 864 |
 | `src/Daoris.Service/Daoris.Service.Tests/Knowledge/IndexEntriesTests.cs` | 50 | 983 |
 | `src/Daoris.Service/Daoris.Service.Tests/Mcp/McpToolsTests.cs` | 53 | 915 |

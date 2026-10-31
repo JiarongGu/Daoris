@@ -497,7 +497,7 @@ public sealed partial class MemoryOpStore
     /// A proposal published or joined on <paramref name="quest"/> (§4), kept <c>awaiting</c> its owner under <paramref name="id"/>, the id its
     /// quest's packet names. No commit point moves it and the applier never applies it.
     /// </summary>
-    internal Task<MemoryOp> ProposeAsync(string id, string repository, MemoryChange change, MemoryAuthor by, string quest, CancellationToken ct = default)
+    public Task<MemoryOp> ProposeAsync(string id, string repository, MemoryChange change, MemoryAuthor by, string quest, CancellationToken ct = default)
     {
         var op = new MemoryOp(id, repository, MemoryOpState.Awaiting, change, by, by.At) { Carried = quest };
         return _db.RunAsync(async () =>

@@ -66,6 +66,27 @@ public sealed class MemoryHostTests(LocalHost host) : IClassFixture<LocalHost>
         Assert.Equal(404, again.Status);
     }
 
+    /// <summary>
+    /// 🔴 KNOWCENTRAL2e: the page reads a proposal as its quest left it, a decline settled before the rows are answered, so a proposer's
+    /// page never shows open what the owner declined.
+    /// </summary>
+    [Fact]
+    public async Task The_page_reads_a_proposal_as_its_quest_left_it()
+    {
+        var (session, _) = await StagedAsync(new MemoryChange(MemoryOpKind.Write, Text: "Keeper keeps a pond."), DateTimeOffset.UtcNow);
+        Assert.Equal(200, (await host.PostAsync($"/api/sessions/{session}/state", new { state = "stopped" })).Status);
+        var quest = await host.Composed.Quests.PublishAsync("Keeper", "Other", $"Memory proposals ({session})", "A proposal.", DateTimeOffset.UtcNow);
+        var by = new MemoryAuthor(session, "default", null, "stub", null, null, null, DateTimeOffset.UtcNow);
+        await host.Composed.Sessions.Memory.ProposeAsync(
+            Guid.NewGuid().ToString("N")[..16], "Other", new MemoryChange(MemoryOpKind.Propose, Text: "Its pond is gone.", Target: "1", Revision: 1, Relation: "end"), by, quest.Id);
+        await host.Composed.Quests.MoveAsync(quest.Id, QuestStatus.Declined, "The pond stays.", DateTimeOffset.UtcNow);
+
+        var page = await host.GetAsync($"/api/sessions/{session}/memory");
+
+        var proposal = page.Json.GetProperty("ops").EnumerateArray().Single(op => op.GetProperty("change").GetProperty("kind").GetString() == "propose");
+        Assert.Equal((MemoryOpState.Declined, "The pond stays."), (proposal.GetProperty("state").GetString(), proposal.GetProperty("answer").GetString()));
+    }
+
     /// <summary>🔴 A stopped chat's staged change is dropped by the person's word through its session's door, and a running one's refused.</summary>
     [Fact]
     public async Task The_person_drops_a_stopped_session_s_staged_change()
