@@ -85,7 +85,7 @@ import { type ActFacts, actMenu, headerActs, offeredActs, primaryAct, stopAsk } 
 import { askOfEntry, entryOfSession, isIntakeEntry, nameOfEntry } from './entries';
 import { useAccountUse, useChannel, useForwardChannel, usePostChannel } from '../bridge/shell';
 import { keptSessionFilters, sessionFilters, shownOf } from './groups';
-import { leadingAgentOf, type SessionFactsOf, sessionFacts, sessionFactsTip } from './head/headFacts';
+import { leadingAgentOf, nextPress, type SessionFactsOf, sessionFacts, sessionFactsTip } from './head/headFacts';
 import type { Answered } from './InlineConfirm';
 import type { AgentChoice } from './start/AgentChip';
 import { HandOverAsk, type HandOverRoster } from './start/HandOverAsk';
@@ -1995,6 +1995,13 @@ export function WorkFrame({
   const [toWait, setToWait] = useState<{ session: string; wait: AnchorWait; n: number; at: 'head' | 'foot' | 'box' } | null>(null);
   // Spent once the person attends another: the strip drawn again on coming back takes no focus from it.
   useEffect(() => { setToWait(null); }, [attended?.id]);
+  // To the head's line while it is on screen, where the strip stands aside (WAITFOOT2b), else the strip's; a park's question and
+  // go-aheads to the box that answers them (PARKVIEW1), which is always drawn. The head's *next* leads the same way (REVIEWFLOW1b).
+  const goToWait = (anchor: AnchorWait) => {
+    if (!attended) return;
+    const at = inTheBox(anchor) ? 'box' : waitsOnScreen === true ? 'head' : 'foot';
+    setToWait((was) => ({ session: attended.id, wait: anchor, n: (was?.n ?? 0) + 1, at }));
+  };
   const seekAt = (at: 'head' | 'foot' | 'box') => (attended && toWait?.session === attended.id && toWait.at === at ? toWait : null);
   // And a rule's *Allow…* (PROPOSEHERE1b), by the proposal it asks about: open in the head or at the foot, never both.
   const [ruleAsk, setRuleAsk] = useState<{ session: string; id: string; at: 'head' | 'foot' } | null>(null);
@@ -2166,7 +2173,11 @@ export function WorkFrame({
     // HEAVYSLOT1: its heavy run said in place of the call, by its gate or whom it waits behind.
     heavy: heavyPart ? heavyLine(t, heavyPart, heavyTitleOf) : null,
     integration: integration.data ?? null,
+    // REVIEWFLOW1b: where the work stands, from the same facts the head's waits are drawn from.
+    flow: { parts: entryOffered, landing: landsNow },
   } : null;
+  const nextWait = nextPress(standing);
+  const nextAnchor = standing[0] ? anchorOf(standing[0]) : null;
   const pageHead = attended && attendedFacts && attendedShown && headFactsOf && (
     <SessionPageHead
       session={attended}
@@ -2175,6 +2186,7 @@ export function WorkFrame({
       facts={sessionFacts(t, headFactsOf)}
       // RAILLINE1: the line is one line, its running call said short; the whole line, the call's whole title in it, is its tip.
       factsTip={sessionFactsTip(t, headFactsOf)}
+      next={nextWait && nextAnchor ? { press: nextWait, onPress: () => goToWait(nextAnchor) } : null}
       acts={headActs}
       primary={headPrimary}
       busy={actions.busy}
@@ -2596,11 +2608,7 @@ export function WorkFrame({
                     onAnchors={(session, state) => setAnchored({ session, ...state })}
                     onToWait={(wait) => {
                       const anchor = anchorOf(wait);
-                      if (!anchor) return;
-                      // To the head's line while it is on screen, where the strip stands aside (WAITFOOT2b), else the strip's; a park's
-                      // question and go-aheads to the box that answers them (PARKVIEW1), which is always drawn.
-                      const at = inTheBox(anchor) ? 'box' : waitsOnScreen === true ? 'head' : 'foot';
-                      setToWait((was) => ({ session: attended.id, wait: anchor, n: (was?.n ?? 0) + 1, at }));
+                      if (anchor) goToWait(anchor);
                     }}
                     // Where the person's words went, a door to that session; and words that cannot go on here, one press
                     // that starts a conversation with them, where a chat can start here (MSG1f, D137 §3.1, §2.2).

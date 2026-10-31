@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import i18n from '../../locales/i18n';
 import type { Quest, Session } from '../../data/api';
 import type { SessionGrouping } from '../groups';
-import { leadingAgentOf, questFacts, sessionFacts, sessionFactsTip } from './headFacts';
+import { leadingAgentOf, nextPress, questFacts, sessionFacts, sessionFactsTip } from './headFacts';
 
 // The facts line under a head's title (UX7c, D152 §7; the UX7 design §5.2, §5.3): the facts a record's state makes
 // matter, each said once. The clock is held, so every span reads the same on every run.
@@ -74,6 +74,35 @@ describe('a session’s facts line', () => {
     expect(sessionFacts(t, { session: session(), shown: 'working', integration: null })).toEqual(['engine', '2m']);
     await i18n.changeLanguage('zh');
     expect(sessionFacts(t, { session: session(), shown: 'working', integration: { state: 'handed-back', line: 'main' } })[1]).toBe('已从 main 打回');
+  });
+
+  /** REVIEWFLOW1b (the review-flow design §1): *now* leads the facts after the repository, one word for the phase the driver's facts show. */
+  it('says where the work stands, once, by the phase the driver’s facts show', async () => {
+    const flow = { parts: 0, landing: false };
+    expect(sessionFacts(t, { session: session(), shown: 'working', flow })).toEqual(['engine', 'working', '2m']);
+    expect(sessionFacts(t, { session: session({ state: 'awaiting-person' }), shown: 'awaiting-person', flow })).toEqual(['engine', 'waits on you 1m']);
+    expect(sessionFacts(t, { session: session(), shown: 'working', flow: { parts: 3, landing: false } })[1]).toBe('3 parts to land');
+    expect(sessionFacts(t, { session: session(), shown: 'working', flow: { parts: 1, landing: false } })[1]).toBe('1 part to land');
+    expect(sessionFacts(t, { session: session(), shown: 'working', flow: { parts: 3, landing: true } })[1]).toBe('landing');
+    // Integrating is the integration fact, read and not said twice; landed is the ended session's own landing fact.
+    expect(sessionFacts(t, { session: session(), shown: 'working', flow, integration: { state: 'in-candidate', line: 'main' } }))
+      .toEqual(['engine', 'being integrated into main', '2m']);
+    expect(sessionFacts(t, { session: session({ state: 'completed' }), shown: 'completed', flow, branch: { kind: 'landed', where: 'main' } as never })
+      .filter((fact) => /land/.test(fact))).toEqual(['landed on main']);
+    // Without the flow the line is what it was.
+    expect(sessionFacts(t, { session: session(), shown: 'working' })).toEqual(['engine', '2m']);
+    await i18n.changeLanguage('zh');
+    expect(sessionFacts(t, { session: session(), shown: 'working', flow })[1]).toBe('进行中');
+    expect(sessionFacts(t, { session: session(), shown: 'working', flow: { parts: 3, landing: false } })[1]).toBe('3 个部分待落地');
+    expect(sessionFacts(t, { session: session(), shown: 'working', flow: { parts: 3, landing: true } })[1]).toBe('落地中');
+    expect(sessionFacts(t, { session: session({ state: 'awaiting-person' }), shown: 'awaiting-person', flow })[1]).toBe('等你 1 分钟');
+  });
+
+  it('names the press of the first wait, and none where there is none or it has no door', () => {
+    expect(nextPress([])).toBeNull();
+    expect(nextPress([{ kind: 'accept' }, { kind: 'question', below: false }])).toBe('accept');
+    expect(nextPress([{ kind: 'goAhead', number: 2 }])).toBe('answer');
+    expect(nextPress([{ kind: 'discard' }])).toBeNull();
   });
 
   /** WAITSAY1: a working session inside a long call names it and says for how long. */

@@ -592,3 +592,76 @@ export const YourPickChineseNarrow: Story = {
   args: { session: PICKED, title: '修复同步外观中的流式水合预算', facts: CHOICE_FACTS_ZH },
   decorators: [sessionWidths.narrow, chinese],
 };
+
+// REVIEWFLOW1b: the facts led by *now · next*, a story per phase, each wide, narrow in 中文, and wide in the dark theme.
+type Phase = {
+  session: Partial<Session>; shown: ComponentProps<typeof SessionPageHead>['shown']; flow: { parts: number; landing: boolean };
+  integration?: { state: string; line: string }; next?: ComponentProps<typeof SessionPageHead>['next']; branch?: SessionFactsOf['branch'];
+};
+
+function PhaseHead({ phase, ...args }: ComponentProps<typeof SessionPageHead> & { phase: Phase }) {
+  const { t } = useTranslation();
+  const session = { ...SESSION, ...phase.session };
+  const of: SessionFactsOf = { session, shown: phase.shown, flow: phase.flow, integration: phase.integration, branch: phase.branch };
+  return <Page><SessionPageHead {...args} session={session} shown={phase.shown} facts={sessionFacts(t, of)} next={phase.next} /></Page>;
+}
+
+const PHASES: Record<string, Phase> = {
+  Working: { session: {}, shown: 'working', flow: { parts: 0, landing: false } },
+  WaitsOnYou: {
+    session: { state: 'awaiting-person' }, shown: 'awaiting-person', flow: { parts: 0, landing: false },
+    next: { press: 'answer', onPress: () => {} },
+  },
+  PartsToLand: {
+    session: { state: 'completed' }, shown: 'completed', flow: { parts: 3, landing: false }, next: { press: 'accept', onPress: () => {} },
+  },
+  Landing: { session: { state: 'completed' }, shown: 'completed', flow: { parts: 3, landing: true } },
+  Integrating: {
+    session: { state: 'completed' }, shown: 'completed', flow: { parts: 0, landing: false }, integration: { state: 'in-candidate', line: 'main' },
+  },
+  Landed: {
+    session: { state: 'completed' }, shown: 'completed', flow: { parts: 0, landing: false },
+    branch: { kind: 'landed', where: 'main' } as SessionFactsOf['branch'],
+  },
+};
+
+const phaseStories = (phase: Phase): { wide: Story; narrowChinese: Story; dark: Story } => ({
+  wide: { render: (args) => <PhaseHead {...args} phase={phase} />, decorators: [sessionWidths.wide] },
+  narrowChinese: { render: (args) => <PhaseHead {...args} phase={phase} />, decorators: [sessionWidths.narrow, chinese] },
+  dark: {
+    render: (args) => <PhaseHead {...args} phase={phase} />,
+    decorators: [sessionWidths.wide, (Story) => <InTheme theme="dark"><Story /></InTheme>],
+  },
+});
+
+const working = phaseStories(PHASES.Working!);
+const waits = phaseStories(PHASES.WaitsOnYou!);
+const parts = phaseStories(PHASES.PartsToLand!);
+const landing = phaseStories(PHASES.Landing!);
+const integrating = phaseStories(PHASES.Integrating!);
+const landed = phaseStories(PHASES.Landed!);
+
+/** *Now* for a working session. */
+export const NowWorking: Story = working.wide;
+export const NowWorkingNarrowChinese: Story = working.narrowChinese;
+export const NowWorkingDark: Story = working.dark;
+/** *Waits on you*, *next* a door to the answer. */
+export const NowWaitsOnYou: Story = waits.wide;
+export const NowWaitsOnYouNarrowChinese: Story = waits.narrowChinese;
+export const NowWaitsOnYouDark: Story = waits.dark;
+/** *3 parts to land*, *next* a door to the Accept…. */
+export const NowPartsToLand: Story = parts.wide;
+export const NowPartsToLandNarrowChinese: Story = parts.narrowChinese;
+export const NowPartsToLandDark: Story = parts.dark;
+/** *Landing*: the press is on its way. */
+export const NowLanding: Story = landing.wide;
+export const NowLandingNarrowChinese: Story = landing.narrowChinese;
+export const NowLandingDark: Story = landing.dark;
+/** *Integrating*: the integration record's own fact, said once. */
+export const NowIntegrating: Story = integrating.wide;
+export const NowIntegratingNarrowChinese: Story = integrating.narrowChinese;
+export const NowIntegratingDark: Story = integrating.dark;
+/** *Landed*: the ended session's own landing fact. */
+export const NowLanded: Story = landed.wide;
+export const NowLandedNarrowChinese: Story = landed.narrowChinese;
+export const NowLandedDark: Story = landed.dark;
