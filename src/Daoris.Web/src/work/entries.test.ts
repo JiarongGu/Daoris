@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  askLines, askOfEntry, entryFacts, entryOfSession, listedSessions, nameOfEntry, opensOf, partIds, sessionsByAsk, type SessionEntry,
+  askLines, askOfEntry, entryFacts, entryOfSession, listedSessions, nameOfEntry, opensOf, partIds, placeOf, sessionsByAsk, type SessionEntry,
 } from './entries';
 import { EVIDENCE_ASKS, EVIDENCE_ENTRIES, EVIDENCE_SESSIONS } from './entries.fixtures';
 
@@ -113,5 +113,28 @@ describe('the session list by entry', () => {
       expect(askLines(EVIDENCE_ENTRIES, '841c38').map((line) => line.leading)).toEqual(['ap000013']);
       expect(askLines(undefined, 'c98a7e')).toEqual([]);
     });
+  });
+});
+
+// LINESTOGETHER1b: where a part stands against its line's head, for the box's first line.
+describe('where a part stands by the head', () => {
+  const part = (session: string, began: string) =>
+    ({ session, quest: 'q', shown: 'completed', group: 'review', began, after: null, askedBy: null }) as SessionEntry['parts'][number];
+  const entry = (head: string | null | undefined): SessionEntry => ({
+    entry: 'e', origin: 'quest:q', repository: 'engine', group: 'review', leading: 'p3', head,
+    parts: [part('p1', 'opened'), part('p2', 'resumed'), part('p3', 'asked')],
+  });
+
+  it('numbers a part, and says whether it is the head, beside it, or earlier in its line', () => {
+    expect(placeOf(entry('p2'), 'p2')).toEqual({ part: 2, place: 'head' });
+    expect(placeOf(entry('p2'), 'p3')).toEqual({ part: 3, place: 'beside' });
+    expect(placeOf(entry('p2'), 'p1')).toEqual({ part: 1, place: 'line' });
+  });
+
+  it('says nothing where the entry names no head, or does not hold the part', () => {
+    expect(placeOf(entry(null), 'p1')).toBeNull();
+    expect(placeOf(entry(undefined), 'p1')).toBeNull();
+    expect(placeOf(entry('p2'), 'zz')).toBeNull();
+    expect(placeOf(null, 'p1')).toBeNull();
   });
 });

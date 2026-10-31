@@ -128,6 +128,38 @@ export function neverSentence(
   return key ? t(key, { quest: quest ?? '', to: to ?? '' }) : t('work.say.takesNone', { code });
 }
 
+/**
+ * The box's first line (LINESTOGETHER1b): where a word goes, by the part's place against its line's head, and when, from
+ * `SESSION_QUEUE`'s reach and, where a resume waits, what holds it. A word taken at once names no time.
+ */
+export function goesLine(
+  t: Translate,
+  { part, place, reaches, holdsWhy }: { part: number; place: 'head' | 'beside' | 'line'; reaches: string | null; holdsWhy?: string | null },
+): string {
+  const where = t(`work.say.goes.${place}`, { n: part });
+  const key = reaches === 'next-step' ? 'nextStep'
+    : reaches === 'turn-end' ? 'turnEnd'
+      : reaches === 'resume' ? (holdsWhy === 'busy' ? 'busy' : holdsWhy === 'cap' ? 'cap' : 'resume')
+        : null;
+  return key ? `${where} · ${t(`work.say.goes.when.${key}`)}` : where;
+}
+
+/** The sentence for each code a move is refused by (`SESSION_QUEUE_MOVE`), by its key; `not-known` is the page's own for a lost answer. */
+export const MOVE_REFUSED: Record<string, string> = {
+  'taken': 'work.say.move.taken',
+  'not-held': 'work.say.move.notHeld',
+  'files': 'work.say.move.files',
+  'at-head': 'work.say.move.atHead',
+  'not-yours': 'work.say.move.notYours',
+  'not-known': 'work.say.move.notKnown',
+};
+
+/** What a move came to, in the page's own words by its code; the host's sentence for a code this page has none for. */
+export function moveSaid(t: Translate, { why, message }: { moved: boolean; why: string | null; message?: string }): string {
+  const key = why ? MOVE_REFUSED[why] : undefined;
+  return key ? t(key) : message || t('work.say.takesNone', { code: why ?? '' });
+}
+
 /** The sentence for each code *Start a conversation with these words* is refused by that is not a never (MSG1f2), by its key. */
 export const START_FROM: Record<string, string> = {
   'running': 'work.say.startFrom.running',

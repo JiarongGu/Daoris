@@ -65,6 +65,18 @@ export function besideHead(entry: Pick<SessionEntry, 'head' | 'parts'>): string[
   return entry.head ? entry.parts.filter((part) => part.began === 'asked' && part.session !== entry.head).map((part) => part.session) : [];
 }
 
+/**
+ * Where a part stands against its line's head (LINESTOGETHER1b): its number in the entry, and whether it is the head, beside
+ * it, or earlier in its line. Null where the entry names no head or does not hold the part.
+ */
+export function placeOf(
+  entry: Pick<SessionEntry, 'head' | 'parts'> | null, id: string,
+): { part: number; place: 'head' | 'beside' | 'line' } | null {
+  const at = entry?.parts.findIndex((part) => part.session === id) ?? -1;
+  if (!entry?.head || at < 0) return null;
+  return { part: at + 1, place: id === entry.head ? 'head' : besideHead(entry).includes(id) ? 'beside' : 'line' };
+}
+
 /** The ask an entry belongs to, or null for a conversation and a line rooted in a quest alone. */
 export function askOfEntry(entry: Pick<SessionEntry, 'origin'>): string | null {
   return entry.origin.startsWith('ask:') ? entry.origin.slice('ask:'.length) : null;
