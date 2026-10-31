@@ -283,16 +283,19 @@ export function censusLine(orphans, { limit = 3, width = 140 } = {}) {
 
 /**
  * QUEUEDRAIN1: what the runner records once it has ended a dropped candidate's run, for the drop's answer to read: the candidate's
- * tip, the gates it ended running and the ones it never started, and the probe it ended (a failure probe's name), else null.
+ * tip, the gates it ended running and the ones it never started, the probe it ended (a failure probe's name), else null, and the pids of
+ * what a test of an ended step had left running under the scope tree, which it ended too (QUEUEDROPLEAK1).
  */
-export const drainedRecord = (candidate, { ended = [], left = [], probe = null }, at = new Date().toISOString()) => ({ tip: candidate.tip, at, ended, left, probe });
+export const drainedRecord = (candidate, { ended = [], left = [], probe = null, strays = [] }, at = new Date().toISOString()) => ({ tip: candidate.tip, at, ended, left, probe, strays });
 
 /** The sentence that says what a drain ended, for the queue log and the drop's answer. */
 export function drainedLine(drained) {
   const gates = drained.ended.length ? `gates ${drained.ended.join(', ')}` : 'no gate running';
   const probe = drained.probe ? `, the probe ${drained.probe}` : '';
   const left = drained.left.length ? `; never started: ${drained.left.join(', ')}` : '';
-  return `ended ${gates}${probe}, each with everything it started${left}`;
+  // QUEUEDROPLEAK1: a record written before strays were kept has none.
+  const strays = drained.strays?.length ? `, and ${drained.strays.length === 1 ? '1 process' : `${drained.strays.length} processes`} their tests had left running under the scope tree (pid ${drained.strays.join(', ')})` : '';
+  return `ended ${gates}${probe}, each with everything it started${strays}${left}`;
 }
 
 /** Whether an awaited result still belongs to this frozen candidate, including each enqueue occurrence (QUEUEDROP1). */

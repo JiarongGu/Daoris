@@ -1,5 +1,6 @@
 import type { Session } from '../data/api';
 import type { View } from '../menus/commands';
+import type { AgentsMode } from '../agents/modes';
 import type { KnowledgeMode } from '../knowledge/modes';
 import type { SettingsSection } from '../settings/SettingsView';
 import { projectsItem, questsItem } from '../app/opener';
@@ -19,6 +20,8 @@ export type HelpWhere = {
   settings?: SettingsSection | null;
   /** Knowledge's mode on Knowledge (UX6i): which of its two lists the person is looking at. */
   knowledge?: KnowledgeMode | null;
+  /** The Agents place's mode (COMPANYVIEW1b): the agents, or the roles they fill. */
+  agents?: AgentsMode | null;
   /**
    * `answered` is a park the person answered (ANSWER1f), read by `answeredPark`: the same session goes on with the answer
    * at the driver's next look, so nothing about it waits on the person.
@@ -111,7 +114,9 @@ export function prefaceOf(where: HelpWhere): string {
     ? `Settings → ${DOMAINS[where.settings]}`
     : where.view === 'knowledge' && where.knowledge
       ? `the ${VIEWS.knowledge} view, showing ${MODES[where.knowledge]}`
-      : `the ${VIEWS[where.view]} view`;
+      : where.view === 'agents' && where.agents === 'roles'
+        ? `the ${VIEWS.agents} view, showing Roles`
+        : `the ${VIEWS[where.view]} view`;
   const parts = [place, where.workspace ? `workspace \`${where.workspace}\`` : 'every workspace'];
 
   if (where.item) {

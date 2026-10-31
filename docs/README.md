@@ -184,6 +184,11 @@ Paths below are relative to this file. Historical documents have their own [arch
 | `2026-10-31-review-flow-proposal-opus.md` | Proposal: REVIEWFLOW1 and LINESTOGETHER1, Opus, sealed
 | `2026-10-31-review-flow-proposal-codex.md` | Proposal: REVIEWFLOW1 and LINESTOGETHER1, Codex, sealed
 | `2026-10-31-review-flow-reads.md` | Reads: REVIEWFLOW1 and LINESTOGETHER1's synthesis
+| `2026-10-31-company-view-brief.md` | Brief: COMPANYVIEW1, the company's structure as a list and a graph
+| `2026-10-31-company-view-proposal-opus.md` | Proposal: COMPANYVIEW1, Opus, sealed
+| `2026-10-31-company-view-proposal-codex.md` | Proposal: COMPANYVIEW1, Codex, sealed
+| `2026-10-31-company-view-design.md` | Design: COMPANYVIEW1, the agents' structure as the Agents place's Roles mode; accepted 2026-10-31
+| `2026-10-31-company-view-reads.md` | Reads: COMPANYVIEW1, the makers' reads and the steward's settlement
 | `2026-10-31-review-flow-design.md` | Accepted design: REVIEWFLOW1 and LINESTOGETHER1, the review page as one flow
 
 ## UI, browser, tools and plugin contracts

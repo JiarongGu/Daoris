@@ -8,6 +8,8 @@
   "agents.list.waiting":"{{count}} account needs you",
   "agents.list.waiting_other": "{{count}} accounts need you",
   "agents.list.absent": "Not installed",
+  "agents.roles.later": "Comes later.",
+  "agents.roles.laterOf": "This section is not built yet.",
   "agents.empty.headline": "No agent is known here",
   "agents.empty.body": "Daoris drives the agents this build carries and those a plugin declares, and this machine answered with none.",
   "agents.none.headline": "Choose an agent",

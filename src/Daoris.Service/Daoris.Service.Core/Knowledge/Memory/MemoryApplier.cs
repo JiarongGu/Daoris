@@ -79,7 +79,8 @@ public sealed class MemoryApplier(MemoryOpStore ops, IMemoryEngines engines, Tim
         foreach (var op in await ops.ListAsync(MemoryOpState.Ready, ct).ConfigureAwait(false))
         {
             if (op.Change.Kind == MemoryOpKind.Propose || Engine(op) is not { } engine) continue;
-            if (!await ops.BeginAsync(op.Id, ct).ConfigureAwait(false)) continue;
+            var began = _time.GetUtcNow();
+            if (!await ops.BeginAsync(op.Id, began, ct).ConfigureAwait(false)) continue;
 
             MemoryOutcome outcome;
             try
@@ -89,7 +90,7 @@ public sealed class MemoryApplier(MemoryOpStore ops, IMemoryEngines engines, Tim
             catch (Exception error) when (error is not OperationCanceledException)
             {
                 // The call's effect is unknown, as after a kill.
-                outcome = await RecoverAsync(engine, op, ct).ConfigureAwait(false);
+                outcome = await RecoverAsync(engine, op with { Began = began }, ct).ConfigureAwait(false);
             }
 
             await ops.SettleAsync(op.Id, outcome, _time.GetUtcNow(), ct).ConfigureAwait(false);
@@ -149,15 +150,19 @@ public sealed class MemoryApplier(MemoryOpStore ops, IMemoryEngines engines, Tim
     /// <summary>The key a write's relation is made under, a call of its own (Lyntai's keyed write states no relation).</summary>
     private static string RelationKey(string op) => $"{op}-relation";
 
-    private static async Task<MemoryOutcome> RecoverAsync(IMemoryEngine engine, MemoryOp op, CancellationToken ct)
+    /// <summary>How long an engine's receipt answers (Lyntai's default): past it, no receipt no longer means no effect.</summary>
+    public static readonly TimeSpan ReceiptRetention = TimeSpan.FromDays(30);
+
+    private async Task<MemoryOutcome> RecoverAsync(IMemoryEngine engine, MemoryOp op, CancellationToken ct)
     {
         try
         {
             if (!engine.HoldsReceipts) return await ByReadingAsync(engine, op, ct).ConfigureAwait(false);
-            return await engine.ReceiptAsync(op.Id, ct).ConfigureAwait(false) is { } receipt
-                ? await ByReceiptAsync(engine, op, receipt, ct).ConfigureAwait(false)
-                // The effect and its receipt commit together, so no receipt is no effect: applied again under the same key.
-                : await ApplyAsync(engine, op, ct).ConfigureAwait(false);
+            if (await engine.ReceiptAsync(op.Id, ct).ConfigureAwait(false) is { } receipt) return await ByReceiptAsync(engine, op, receipt, ct).ConfigureAwait(false);
+            // The effect and its receipt commit together, so no receipt is no effect, until the receipt could have expired: then the
+            // person decides, as for an outcome nothing explains.
+            if (_time.GetUtcNow() - (op.Began ?? op.At) >= ReceiptRetention) return MemoryOutcome.Held;
+            return await ApplyAsync(engine, op, ct).ConfigureAwait(false);
         }
         catch (Exception error) when (error is not OperationCanceledException)
         {

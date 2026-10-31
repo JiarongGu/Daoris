@@ -58,15 +58,25 @@ public sealed class RosterReadTests : IDisposable
         public HarnessToolchain? Toolchain => toolchain;
     }
 
-    private HarnessRoster Roster() => new(new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
-    {
-        ["agent"] = new Adapter("agent", new HarnessToolchain(
-            Binary: ["node", Script],
-            VersionArguments: ["--version"],
-            ProfileVariable: "READ_HOME",
-            LoginCheck: new LoginQuestion(["--login-state"], "logged-in", "logged-out", @"logged-in as (\S+)"),
-            ProbeByPresence: true)),
-    }), Settings) { Clock = () => Ten };
+    private string Gone => Path.Combine(_home, "gone-agent");
+
+    private HarnessRoster Roster(Func<string, string, CancellationToken, Task<LoginState>>? asking = null) =>
+        new(new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["agent"] = new Adapter("agent", new HarnessToolchain(
+                Binary: ["node", Script],
+                VersionArguments: ["--version"],
+                ProfileVariable: "READ_HOME",
+                LoginCheck: new LoginQuestion(["--login-state"], "logged-in", "logged-out", @"logged-in as (\S+)"),
+                ProbeByPresence: true)),
+            // An agent whose binary is a file that is not there until a test puts it there.
+            ["gone"] = new Adapter("gone", new HarnessToolchain(
+                Binary: [Gone], VersionArguments: ["--version"], ProfileVariable: "READ_HOME", ProbeByPresence: true)),
+        }), Settings) { Clock = () => Ten, Asking = asking };
+
+    /// <summary>A stand-in that fails on any ask of an account's status, where the agent's script would only log it.</summary>
+    private static Task<LoginState> NoAsk(string owner, string account, CancellationToken ct) =>
+        throw new InvalidOperationException($"`{owner}` account `{account}` was asked its status.");
 
     private static DriverConfig Config => DriverConfig.Empty with { Adapter = "agent" };
 
@@ -98,6 +108,50 @@ public sealed class RosterReadTests : IDisposable
         Assert.True(selection.Allowed, selection.Refusal);
         Assert.Equal("account-1", selection.Profile);
         Assert.Empty(Asked);
+    }
+
+    /// <summary>
+    /// STARTSPROBE1 (D150 point 5): a view's read of a start (the Map's `STARTS`, through <see cref="HarnessRoster.WiringAsync"/>) asks no
+    /// account. An account last read signed out longer ago than a start waits to ask it again (<see cref="HarnessRoster.SignedOutAskedAgain"/>)
+    /// is a start's question, which the next start asks; the view says it signed out, in the start's own sentence, and asks nothing. The
+    /// start beside it is the control: it does ask, so the stand-in that fails on an ask is live.
+    /// </summary>
+    [Fact]
+    public async Task A_view_s_read_of_a_start_asks_no_account_read_signed_out_long_ago_where_a_start_does()
+    {
+        OneAccount();
+        new HarnessSettings().WithDefault("agent", "account-1").Save(Settings);
+        AccountReads.Keep(_home, "agent", "account-1", LoginState.Out, Ten - HarnessRoster.SignedOutAskedAgain - TimeSpan.FromHours(2));
+        var roster = Roster(NoAsk);
+
+        var wiring = await roster.WiringAsync("agent", Config, "aurora");
+
+        Assert.Equal("account-1", wiring.Profile);
+        Assert.Contains("daoris agent login agent --profile account-1", wiring.Refusal);
+        Assert.Empty(Asked);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => roster.SelectAsync("agent", Config, "aurora", null));
+    }
+
+    /// <summary>
+    /// STARTSPROBE1: nor does a view's read ask the agent's binary again where the cached report says the agent is absent. It refuses
+    /// as the report says, though the binary is there now; a start asks again, finds it and goes on.
+    /// </summary>
+    [Fact]
+    public async Task A_view_s_read_of_a_start_asks_no_binary_again_where_the_report_says_the_agent_is_absent()
+    {
+        Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "gone", "account-1"));
+        new HarnessSettings().WithDefault("gone", "account-1").Save(Settings);
+        var roster = Roster(NoAsk);
+        Assert.False((await roster.ReportAsync("gone", Config with { Adapter = "gone" }))!.Present);
+        File.WriteAllText(Gone, "");
+
+        var wiring = await roster.WiringAsync("gone", Config with { Adapter = "gone" }, "aurora");
+
+        Assert.Contains("is not installed on this machine", wiring.Refusal);
+
+        var selection = await roster.SelectAsync("gone", Config with { Adapter = "gone" }, "aurora", null);
+
+        Assert.True(selection.Allowed, selection.Refusal);
     }
 
     /// <summary>What a press read before a restart is what the start meets: an account read signed out is walked past.</summary>

@@ -11,6 +11,19 @@ repository.
 - **Root cause:** the read's ten-second patience raced a stand-in whose flush the pool ran late; the say's 300 ms raced a watcher's look.
 - **Fix:** `ClaudeUsage.AskWithinAsync` reads its patience off a handed clock, `MovedClock` in the tests; the say reads `HeldClock`, run at the take.
 - **Verify:** red with a late flush and a late look; 20 of 20 each beside every core loaded.
+## 2026-10-31 - A dropped candidate left its tests' orphans running (QUEUEDROPLEAK1)
+
+- **Symptom:** `--drop-batch` said it ended the run "with everything it started", yet four minutes later the tool-tests gate's processes ran on under `local/scope-tree/src/Daoris.Cli/_fixtures/` with their parents gone: the `merge-branch-killed-run` fixture's `tree.mjs` and a `node qgate.mjs check` with two node children.
+- **Root cause:** the drop ends each step by its tree of parent ids (`endTree`, `taskkill /T`). That reaches a detached child whose parent still runs (tried: a three-deep detached chain under a killed shell ends whole). It cannot reach a process a test had already orphaned (CIPRIO1d's test kills its run and leaves the child until its own takeover) or one the killed test never got to end in a `finally`: its parent id names nothing. `qgate.mjs check` has no folder in its command line, only its children do.
+- **Fix:** `endStrandedUnder` (`tools/processes.mjs`), called when the runner has seen every step of the ended run through (`gone()` in `runCandidateWatched`): on Windows, each process created since the run began whose parent is in no row, and which or whose descendant names the scope tree's folder, ends with its tree; the runner and any root holding it are left out. `drained.strays` and the drop's answer name the pids.
+- **Verify:** `merge-queue.test.ts`, QUEUEDROPLEAK1: `strandedRoots` on synthetic rows (sibling folder, older process, live parent, a root of another folder, a reused-id cycle), the listing's rows, the platform seam, and a scratch queue dropped mid-gate with three orphans (one by absolute path, one by relative path named only by its child, the child) ended while an orphan outside the scope tree stands; the end-to-end case seen failing first with the call switched off. The QUEUEDRAIN1, DROPWAIT1 and PROCLEAK1 cases pass; `tsc --noEmit` clean.
+- **Not covered:** elsewhere than Windows nothing is ended (`ps` walks what is under each step; an orphan there is the census's to say). A process started during the run, whose parent is gone and which names the scope tree, is ended whoever started it: nothing but the run's own tests and gates is expected there. The command lines are read once; a stray started after that read is the census's.
+## 2026-10-31 - Opening a view asked a signed-out account and the agent's binary (STARTSPROBE1)
+
+- **Symptom:** the Map's `STARTS` read, on an account last read signed out over an hour ago, asked that account's status; on an agent the cached report called absent, it ran the binary again. D150 point 5 has a view probe nothing as it opens.
+- **Root cause:** `WiringAsync` reads `ChooseAsync(..., counts: false)`, and `counts` only stopped the count: `Pass` still handed back `Ask` for a signed-out account with an old reading (spending TOOL6h's owed fresh reading), and the walk asked `BinaryChangedAsync` before refusing an absent agent.
+- **Fix:** a walk's `asks` is false for `WiringAsync`: no account's status and no binary again; the reading stands and says signed out in the start's own sentence, the owed reading stays for the next start.
+- **Verify:** `RosterReadTests`' two view cases (a stand-in that fails on any ask; a binary put in place after the report), red before, with `SelectAsync` the control that does ask; `StartWiringTests` and `StartWiringRouteTests` green.
 
 ## 2026-10-31 - A carry-on's turn end was kept before its note (ACPRACE)
 
@@ -12592,3 +12605,27 @@ mis-rooted instance.
 **Fix.** The runner marks its take (`draining`) before ending anything; only the take is on the clock, then the record while the runner lives (DROPWAIT1). Below a second the interval is said in ms.
 
 **Verification.** The INTEGRATE1b drop case, its report held past the thirty seconds: red, green; 20 of 20 beside 11 CPU burners.
+
+## A quest ran on an account at its weekly limit, and its wait called signed-out accounts limited (2026-10-31)
+
+**Root cause.** The walk read an account at 100% of a window as near, last but still picked (`HarnessRoster.Before`); the sign-in reading read words alone, never the door's own `-32000` (`Driver.AccountSignedOut`); `held.limit-waits` named no signed-out account.
+
+**Fix.** A full reading cools its account until that reset (`AccountRotation.Spent`); access by the door's code marks the sign-in; `held.limit-waits-sign-in` names them (LIMITPICK1).
+
+**Verification.** Four tests, each red first, then green.
+
+## The trees' clean took a tree a waiting retry held (2026-10-31)
+
+**Root cause.** `trees clean` and the window's sweep judged a tree by running sessions alone (`TreesConsole.cs:195`, `LinesRoutes.InUseAsync`), so a retry waiting on a limit lost its tree, and its start then held for good on `tree.gone`.
+
+**Fix.** Every door reads `BranchTidying.HeldTreesAsync`, which adds the newest part of each open quest; a part gone with nothing beyond the line opens a fresh tree (`tree.fresh`, TREEKEEPRETRY1).
+
+**Verification.** `BranchTidyingTests`, `TreeGoneFreshTests`: red, then green.
+
+## The first batch carrying LYNTAILOCAL1 built against the published Lyntai in the queue's tree (2026-10-31)
+
+**Root cause.** The merge queue's runner copies the private files a gate reads into its scope tree by its own list (`privateGateFiles`), and the runner that gated batch 1031c ran main's merge tool, whose list gained `local/lyntai-local.props` only with LYNTAILOCAL1, the batch it was gating. The scope tree so restored the published Lyntai package, and the service, built against the local build's newer memory API, failed to compile; the driver's Process tests that start the service failed with it.
+
+**Fix.** The props were copied into the scope tree by hand once and the batch queued again; with LYNTAILOCAL1 on main, every later runner copies them itself. A tool change that a gate needs in order to run its own candidate meets this once: run it by hand in the runner's tree before queuing.
+
+**Verification.** Batch 1031c's second run built the service against `3.5.3-local.c8dde4b` and landed (`1b8c3b2`).

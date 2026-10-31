@@ -44,6 +44,19 @@ public sealed class AtWorkTests
 
     private static AtWorkAnswer Answered(AtWorkHeld held) => Assert.IsType<AtWorkAnswer>(held.Answer);
 
+    /// <summary>Rule 18: the answer says when this process began, the moment <i>nothing heard</i> counts from, and it never changes.</summary>
+    [Fact]
+    public void The_answer_says_when_the_window_opened_and_it_is_the_same_at_every_read()
+    {
+        var record = new AtWorkRecord("s1", "working");
+        var first = Answered(Compose("s1", null, [record], _ => LineageReading.None));
+        var second = Answered(Compose("s1", null, [record], _ => LineageReading.None));
+
+        Assert.NotNull(first.WindowOpened);
+        Assert.True(first.WindowOpened <= DateTimeOffset.UtcNow);
+        Assert.Equal(first.WindowOpened, second.WindowOpened);
+    }
+
     [Fact]
     public void A_part_s_subagents_are_read_from_its_lineage_with_its_record_s_kind_and_this_window_s_token_readings()
     {

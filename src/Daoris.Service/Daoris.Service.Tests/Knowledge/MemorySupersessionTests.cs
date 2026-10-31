@@ -56,6 +56,20 @@ public sealed class MemorySupersessionTests : IAsyncLifetime
         return op;
     }
 
+    /// <summary>The decide answer says a replacement, never an end, whether approved or declined.</summary>
+    [Fact]
+    public async Task The_decide_answer_for_a_replacement_says_replacement()
+    {
+        var tiles = await Owner.RememberAsync("The map is drawn in tiles.");
+        var approved = await AwaitingAsync(Vectors, tiles);
+        var declined = await AwaitingAsync("The map is drawn in hexes.", tiles);
+
+        var yes = await new MemoryDesk(_machine.Memory).DecideAsync(approved.Id, null, approve: true, Now.AddMinutes(3));
+        var no = await new MemoryDesk(_machine.Memory).DecideAsync(declined.Id, null, approve: false, Now.AddMinutes(3));
+
+        Assert.Equal(($"The replacement `{approved.Id}` is approved and applies next.", $"The replacement `{declined.Id}` is declined."), (yes.Message, no.Message));
+    }
+
     /// <summary>The successor <paramref name="id"/> names as it ended, read from the store.</summary>
     private async Task<long?> SuccessorOfAsync(string id) => (await _lyntai.Memory.Store.GetAsync("Owner", long.Parse(id)))!.SupersededBy;
 

@@ -11,7 +11,8 @@ namespace Daoris.Knowledge;
 /// <summary>
 /// Each repository's memory as Lyntai's graph engine keeps it (KNOWCENTRAL2d; the memory coordinator design §1, §2): one engine per
 /// repository, named by its registry name, over one SQLite file of this machine's beside <c>knowledge.db</c>. Every engine is opened with
-/// <c>ReinforceOn = None</c>, so a recall or an expansion touches, links and logs nothing of the owner's.
+/// <c>ReinforceOn = None</c>, so a recall or an expansion touches, links and logs nothing of the owner's. Another repository reads one
+/// through Lyntai's view (MC7, KNOWCENTRAL2g), taken from a reader's engine over the same store and name, never the owner's instance.
 /// </summary>
 public sealed class LyntaiMemory : IMemoryEngines
 {
@@ -23,9 +24,12 @@ public sealed class LyntaiMemory : IMemoryEngines
 
     private const string Scope = "entries";
 
+    private static readonly string[] Relations = ["disputes", "amends"];
+
     private readonly string _path;
     private readonly Lock _opening = new();
     private readonly ConcurrentDictionary<(string, MemoryReinforcement), LyntaiEngine> _engines = new();
+    private readonly ConcurrentDictionary<string, GraphMemoryEngine> _readers = new(StringComparer.Ordinal);
     private readonly TimeProvider _time;
     private SqliteMemoryGraphStore? _store;
 
@@ -74,18 +78,58 @@ public sealed class LyntaiMemory : IMemoryEngines
                     new GraphMemoryOptions
                     {
                         ReinforceOn = key.Item2 == MemoryReinforcement.None ? MemoryReinforcementActs.None : MemoryReinforcementActs.All,
+                        ReceiptRetention = MemoryApplier.ReceiptRetention,
                     },
                     new GraphMemorySeams { Clock = _time.GetUtcNow }),
-                Store));
+                Store,
+                () => Reader(key.Item1)));
+
+    /// <summary>The engine another repository's view of <paramref name="repository"/> reads through: Lyntai's own reads with write-back off.</summary>
+    private GraphMemoryEngine Reader(string repository) => _readers.GetOrAdd(repository, name => new GraphMemoryEngine(
+        name, Store, new GraphMemoryOptions { ReinforceOn = MemoryReinforcementActs.None }, new GraphMemorySeams { Clock = _time.GetUtcNow }));
+
+    /// <summary>The entries <paramref name="id"/>'s expansion reached, each with the relation joining them.</summary>
+    /// <remarks>Lyntai's expansion carries no relations, so their kinds are read from the store once the expansion has answered.</remarks>
+    private static async Task<IReadOnlyList<MemoryRelated>> RelatedAsync(
+        string engine, IMemoryGraphStore store, string id, IReadOnlyList<MemoryItem> neighbours, CancellationToken ct)
+    {
+        if (neighbours.Count == 0 || !long.TryParse(id, NumberStyles.Integer, CultureInfo.InvariantCulture, out var self)) return [];
+        var typed = store is ITypedLinkMemoryGraphStore links
+            ? await links.LinksAmongAsync(engine, TaskKey, [self, .. neighbours.Select(item => Number(item.Reference.Id))], Relations, ct)
+                .ConfigureAwait(false)
+            : [];
+        return [.. neighbours.Select(item =>
+        {
+            var other = Number(item.Reference.Id);
+            var kind = typed.FirstOrDefault(link => link.From == self && link.To == other).Kind
+                ?? (typed.FirstOrDefault(link => link.From == other && link.To == self).Kind is { } back ? $"{back} by" : "related");
+            return new MemoryRelated(new MemoryLink(id, item.Reference.Id, kind, 1), Entry(item));
+        })];
+    }
+
+    // A replaced entry names its successor before the reason it ended with, whose token stays last.
+    private static MemoryEntry Entry(MemoryItem item) => new(
+        item.Reference.Id, item.Content ?? item.Headline, Revision(item.Revision),
+        item.Validity?.SupersededBy is { } by
+            ? $"superseded by {by.Id}" + (item.Validity.EndedReason is { } why ? $": {why}" : "")
+            : item.Validity?.EndedReason);
+
+    private static long Revision(string? revision) =>
+        long.TryParse(revision, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsed) ? parsed : 0;
+
+    private static long Number(string id) => long.TryParse(id, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsed) ? parsed : -1;
 
     /// <summary>One repository's engine behind the coordinator's seam.</summary>
-    private sealed class LyntaiEngine(GraphMemoryEngine engine, IMemoryGraphStore store) : IMemoryEngine
+    private sealed class LyntaiEngine(GraphMemoryEngine engine, IMemoryGraphStore store, Func<GraphMemoryEngine> reader) : IMemoryEngine
     {
-        private static readonly string[] Relations = ["disputes", "amends"];
-
         public bool HoldsReceipts => engine.HoldsReceipts;
 
         public bool HoldsSupersession => engine.HoldsSupersession;
+
+        public bool HoldsView => engine.HoldsView;
+
+        public IMemoryView ViewOf(IMemoryViewCheck? check) =>
+            new LyntaiView(reader().ViewOf(TaskKey, check is null ? null : new Asking(check)), engine.Name, store);
 
         public async Task<IReadOnlyList<MemoryEntry>> SearchAsync(string query, int limit, CancellationToken ct = default)
         {
@@ -104,20 +148,7 @@ public sealed class LyntaiMemory : IMemoryEngines
         public async Task<IReadOnlyList<MemoryRelated>> ExpandAsync(string id, CancellationToken ct = default)
         {
             var read = await engine.ExpandAsync(Ref(id), 1, null, MemoryDetail.Full, MemoryValidityReading.Current, ct).ConfigureAwait(false);
-            var neighbours = read.Items.Skip(1).ToList();
-            if (neighbours.Count == 0 || !long.TryParse(id, NumberStyles.Integer, CultureInfo.InvariantCulture, out var self)) return [];
-
-            var typed = store is ITypedLinkMemoryGraphStore links
-                ? await links.LinksAmongAsync(engine.Name, TaskKey, [self, .. neighbours.Select(item => Number(item.Reference.Id))], Relations, ct)
-                    .ConfigureAwait(false)
-                : [];
-            return [.. neighbours.Select(item =>
-            {
-                var other = Number(item.Reference.Id);
-                var kind = typed.FirstOrDefault(link => link.From == self && link.To == other).Kind
-                    ?? (typed.FirstOrDefault(link => link.From == other && link.To == self).Kind is { } back ? $"{back} by" : "related");
-                return new MemoryRelated(new MemoryLink(id, item.Reference.Id, kind, 1), Entry(item));
-            })];
+            return await RelatedAsync(engine.Name, store, id, [.. read.Items.Skip(1)], ct).ConfigureAwait(false);
         }
 
         public async Task<MemoryEntry> RememberAsync(string text, CancellationToken ct = default, string? key = null, string? recheck = null)
@@ -214,17 +245,37 @@ public sealed class LyntaiMemory : IMemoryEngines
                 .Select(item => new MemoryDue(item.Reference.Id, Revision(item.Revision), item.Recheck!))];
 
         private MemoryRef Ref(string id) => new(engine.Name, id);
+    }
 
-        // A replaced entry names its successor before the reason it ended with, whose token stays last.
-        private static MemoryEntry Entry(MemoryItem item) => new(
-            item.Reference.Id, item.Content ?? item.Headline, Revision(item.Revision),
-            item.Validity?.SupersededBy is { } by
-                ? $"superseded by {by.Id}" + (item.Validity.EndedReason is { } why ? $": {why}" : "")
-                : item.Validity?.EndedReason);
+    /// <summary>Another repository's reader's view of one memory: Lyntai's, whose type has no write and whose reads move nothing.</summary>
+    private sealed class LyntaiView(Lyntai.Memory.IMemoryView view, string name, IMemoryGraphStore store) : IMemoryView
+    {
+        public async Task<IReadOnlyList<MemoryEntry>> SearchAsync(string query, int limit, CancellationToken ct = default) =>
+            [.. (await view.RecallAsync(new MemoryViewQuery(query, Limit: limit, Detail: MemoryDetail.Full), ct).ConfigureAwait(false))
+                .Items.Select(each => Entry(each.Item))];
 
-        private static long Revision(string? revision) =>
-            long.TryParse(revision, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsed) ? parsed : 0;
+        public async Task<MemoryEntry?> GetAsync(string id, CancellationToken ct = default)
+        {
+            var read = await view.ExpandAsync(Ref(id), 0, null, MemoryDetail.Full, MemoryValidityReading.History, ct).ConfigureAwait(false);
+            return read.Items.Count == 0 ? null : Entry(read.Items[0].Item);
+        }
 
-        private static long Number(string id) => long.TryParse(id, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsed) ? parsed : -1;
+        public async Task<IReadOnlyList<MemoryRelated>> ExpandAsync(string id, CancellationToken ct = default)
+        {
+            var read = await view.ExpandAsync(Ref(id), 1, null, MemoryDetail.Full, MemoryValidityReading.Current, ct).ConfigureAwait(false);
+            return await RelatedAsync(name, store, id, [.. read.Items.Skip(1).Select(each => each.Item)], ct).ConfigureAwait(false);
+        }
+
+        public async Task<long?> RevisionOfAsync(string id, CancellationToken ct = default) =>
+            await view.RevisionOfAsync(Ref(id), ct).ConfigureAwait(false) is { } revision ? Revision(revision) : null;
+
+        private MemoryRef Ref(string id) => new(name, id);
+    }
+
+    /// <summary>The coordinator's check as Lyntai's view asks it, by the repository its engine is named for.</summary>
+    private sealed class Asking(IMemoryViewCheck check) : Lyntai.Memory.IMemoryViewCheck
+    {
+        public Task<bool> PermitsAsync(MemoryRef reference, CancellationToken ct = default) =>
+            check.PermitsAsync(new MemoryReference(reference.Engine, reference.Id), ct);
     }
 }

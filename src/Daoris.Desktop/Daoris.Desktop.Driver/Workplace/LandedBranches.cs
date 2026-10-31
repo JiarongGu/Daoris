@@ -389,6 +389,7 @@ public sealed class LandedBranches(string home)
                     if (advance.Quest is not null) writer.WriteString("quest", advance.Quest);
                     if (advance.Unit is not null) writer.WriteString("unit", advance.Unit);
                     if (advance.Submission is { } made) WriteSubmission(writer, made);
+                    WriteBrought(writer, advance.Brought);
                     writer.WriteEndObject();
                 }
 
@@ -433,6 +434,7 @@ public sealed class LandedBranches(string home)
             // FABRIC-CLOSE1h11, FABRIC-CLOSE1h13: each only where it is known, so a landing from before reads as it did.
             if (entry.Served is not null) writer.WriteString("served", entry.Served);
             if (entry.Submission is { } submission) WriteSubmission(writer, submission);
+            WriteBrought(writer, entry.Brought);
             writer.WriteEndObject();
         }
 
@@ -710,7 +712,38 @@ public sealed class LandedBranches(string home)
             Units = UnitsOf(element),
             Served = Text(element, "served"),
             Submission = SubmissionOf(element),
+            Brought = BroughtOf(element),
         };
+    }
+
+    /// <summary>The sessions a combined Accept brought into a landing or an advance (LINESTOGETHER1d); none in a record from before.</summary>
+    private static IReadOnlyList<LandedWork> BroughtOf(JsonElement element)
+    {
+        if (!element.TryGetProperty("brought", out var brought) || brought.ValueKind != JsonValueKind.Array) return [];
+        return [.. brought.EnumerateArray()
+            .Where(each => each.ValueKind == JsonValueKind.Object && Text(each, "session") is { Length: > 0 } && Text(each, "tip") is { Length: > 0 })
+            .Select(each => new LandedWork(Text(each, "session")!, Text(each, "tip")!)
+            {
+                Quest = Text(each, "quest"), Unit = Text(each, "unit"), Submission = SubmissionOf(each),
+            })];
+    }
+
+    private static void WriteBrought(Utf8JsonWriter writer, IReadOnlyList<LandedWork> brought)
+    {
+        if (brought.Count == 0) return;
+        writer.WriteStartArray("brought");
+        foreach (var work in brought)
+        {
+            writer.WriteStartObject();
+            writer.WriteString("session", work.Session);
+            writer.WriteString("tip", work.Tip);
+            if (work.Quest is not null) writer.WriteString("quest", work.Quest);
+            if (work.Unit is not null) writer.WriteString("unit", work.Unit);
+            if (work.Submission is { } made) WriteSubmission(writer, made);
+            writer.WriteEndObject();
+        }
+
+        writer.WriteEndArray();
     }
 
     /// <summary>The units an entry carries (FABRIC-END2), each a non-empty string. Absent is none, which is every landing from before.</summary>
@@ -747,6 +780,7 @@ public sealed class LandedBranches(string home)
             {
                 AcceptedBy = Text(each, "acceptedBy"), Integrate = IntegrateOf(each), Review = ReviewOf(each), Opinion = OpinionOf(each), Workflow = WorkflowOf(each),
                 Squashed = Text(each, "squashed"), Quest = Text(each, "quest"), Unit = Text(each, "unit"), Submission = SubmissionOf(each),
+                Brought = BroughtOf(each),
             });
         }
 

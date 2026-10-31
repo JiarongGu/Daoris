@@ -121,7 +121,14 @@ public static class CallsStateSlice
         }
 
         output.Lined += Lined;
-        return new Hearing(() => output.Lined -= Lined);
+        output.Closed += wakeAtClose;
+        return new Hearing(() =>
+        {
+            output.Lined -= Lined;
+            output.Closed -= wakeAtClose;
+        });
+
+        void wakeAtClose(string _) => wake();
     }
 
     /// <summary>Wake the slice where the watcher's mark moved (<see cref="SessionWatch.Changed"/>).</summary>

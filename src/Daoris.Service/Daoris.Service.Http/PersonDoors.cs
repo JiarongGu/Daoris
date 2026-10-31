@@ -206,6 +206,8 @@ public static class PersonDoors
         new("GET", "/api/sessions/{id}/deletable", DoorClass.Open),
         new("GET", "/api/sessions/{id}/record", DoorClass.Open),
         new("GET", "/api/sessions/{id}/memory", DoorClass.Open),
+        // Every memory wait on the person (KNOWCENTRAL2e), for the desktop's *What needs you*: a read.
+        new("GET", "/api/memory/waits", DoorClass.Open),
         // One quest's handback whole, by the quest's id or its session's (HANDBACK1): a read, as the connector's `handback_read` is.
         new("GET", "/api/handbacks/{id}", DoorClass.Open),
         // A plan, which deletes nothing.

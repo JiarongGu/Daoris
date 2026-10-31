@@ -232,11 +232,26 @@ public static class ResumeWords
     /// and by its id in the values. The loop's <c>LimitResume.Waits</c> is its name there.
     /// </summary>
     /// <param name="lead">What leads the English, part of its text: a record's words waiting lead with <see cref="NotYet"/>.</param>
-    public static Noted LimitWaits(CoolingEntry earliest, TimeZoneInfo zone, IReadOnlyDictionary<string, string>? names = null, string lead = "")
+    /// <param name="signedOut">The accounts the walk passed for the person's sign-in (LIMITPICK1): named apart from those cooling, with their sign-in.</param>
+    public static Noted LimitWaits(
+        CoolingEntry earliest, TimeZoneInfo zone, IReadOnlyDictionary<string, string>? names = null, string lead = "",
+        IReadOnlyList<string>? signedOut = null)
     {
-        var said = $"{lead}Every account it may run on is at its limit: it goes on by itself once {CoolingWords.Who(earliest, names)} is ready again "
-                   + $"at {CoolingWords.When(earliest.Until, zone)}.";
+        var ready = $"{CoolingWords.Who(earliest, names)} is ready again at {CoolingWords.When(earliest.Until, zone)}.";
         (string Name, object? Value)[] facts = [("owner", earliest.Agent), ("until", NoteCodes.Moment(earliest.Until))];
+        if (earliest.Account is { } waited && signedOut is { Count: > 0 } passed)
+        {
+            var one = passed.Count == 1;
+            var who = string.Join(", ", passed.Select(account => $"`{AccountNames.Said(names, account)}`"));
+            var waits = Noted.Of(
+                NoteCodes.HeldLimitWaitsSignIn,
+                $"{lead}No account it may run on is ready: {who} {(one ? "needs" : "need")} a sign-in, and the rest are at their limit. "
+                + $"It goes on by itself once {ready}",
+                [("account", waited), .. facts, ("accounts", passed)]);
+            return RotationWords.SignInOf(waits, earliest.Agent, passed, "A sign-in starts it sooner", NoteCodes.HeldSignInSooner);
+        }
+
+        var said = $"{lead}Every account it may run on is at its limit: it goes on by itself once {ready}";
         return earliest.Account is { } account
             ? Noted.Of(NoteCodes.HeldLimitWaits, said, [("account", account), .. facts])
             : Noted.Of(NoteCodes.HeldLimitWaitsOwn, said, facts);

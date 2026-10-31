@@ -131,11 +131,11 @@ describe('the glossary', () => {
       expect(role.avoid.zh).toEqual(['职务', '岗位', '演员', '人设', '执行者', '职责']);
     });
 
-    it('matches the Actor, Actors and Roles labels', () => {
+    it('matches the Role and Roles labels', () => {
       const pattern = new RegExp(role.match!, 'i');
-      const labels = ['work.actor.title', 'settings.ai.actors.title', 'settings.daoris.label.roles'];
+      const labels = ['work.actor.title', 'settings.ai.roles.title', 'settings.daoris.label.roles'];
       expect(labels.map((key) => [en[key], pattern.test(en[key]!)])).toEqual([
-        ['Actor', true], ['Actors', true], ['Roles', true],
+        ['Role', true], ['Roles', true], ['Roles', true],
       ]);
       expect(labels.map((key) => zh[key])).toEqual(['角色', '角色', '角色']);
     });

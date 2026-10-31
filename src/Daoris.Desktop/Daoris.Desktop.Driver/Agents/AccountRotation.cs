@@ -282,6 +282,17 @@ public sealed record StepSaid(string Text, string? Why, IReadOnlyList<(string Na
 public static class AccountRotation
 {
     /// <summary>
+    /// An account its own reading puts at 100% of a window still ahead of its reset (LIMITPICK1): cooling until the latest such reset, as
+    /// its agent said, so no walk picks it while another can run, and a start with none waits for it. Held in memory: the reading is the record.
+    /// </summary>
+    public static CoolingEntry? Spent(string owner, string? account, AccountFacts? fact, DateTimeOffset now) =>
+        account is not null
+        && fact?.Said?.Windows.Where(window => window.Used is { } used && RotationWords.Whole(used) >= 100 && window.Reset > now)
+            .MaxBy(window => window.Reset) is { } full
+            ? new CoolingEntry(owner, account, full.Reset, Stated: true, full.Window, full.Seen, full.Session)
+            : null;
+
+    /// <summary>
     /// How near a week's reset must be for what would lapse there to rank its account first (D130 §16.3 step 4):
     /// <see cref="UsageCurves.LastDay"/>, which measures it.
     /// </summary>
@@ -791,7 +802,7 @@ public static class RotationWords
     }
 
     /// <summary><see cref="SignIn"/> as a line after <paramref name="wait"/>: each command is a value of its list.</summary>
-    private static Noted SignInOf(Noted wait, string agent, IReadOnlyList<string> accounts, string lead, NoteCode code) => accounts.Count == 0
+    internal static Noted SignInOf(Noted wait, string agent, IReadOnlyList<string> accounts, string lead, NoteCode code) => accounts.Count == 0
         ? wait
         : wait.Then(" ", Noted.Of(
             code, SignIn(agent, accounts, lead)[1..],

@@ -746,6 +746,13 @@ public sealed partial class HelpCoverageTests
             "it decides a memory end awaiting the person, or keeps or drops what an ended session left staged: until a second opinion "
             + "may approve (MC8) the person is every end's approver, and an end's proposer or its lineage may not approve it, so no agent "
             + "proposes this press.")),
+        // LINESTOGETHER1d (the review-flow design §4, §5): Bring them together…, Ask again and Let them go on a head's Session step.
+        ("work", "useBringTogether", null, new Exempt(
+            "it asks a session to replay other sessions' work onto its branch and binds their trees until one Accept lands them: a "
+            + "steward's fixed form is LINESTOGETHER1e's, and until then the press is the person's alone, never a proposal.")),
+        ("work", "useTogetherAct", null, new Exempt(
+            "it asks a head again after its check failed, or lets the sessions being brought into it go before it lands: the person's "
+            + "word on their own operation, which LINESTOGETHER1e's steward forms take later, never a proposal.")),
         // SESSWATCH1a (D200, the session-watch design §2.3): the person's presses on a quiet session's row in What needs you.
         ("work", "useQuietCarryOn", null, new Exempt(
             "it ends a quiet session's run as the person's stop and releases it in the same press, so its work goes on in a new part: "
@@ -884,13 +891,13 @@ public sealed partial class HelpCoverageTests
     /// </summary>
     private static readonly (string Domain, string Hook, string? Action, Answer Answer)[] Controls =
     [
-        // MODELROLE1c: Build's order on *Actors*, owed to MODELROLE1h's `actor_propose` (D205 §8.1); since MODELROLE1d, Intake's and Ask
-        // Daoris's rows too, the two cards folded into them (their `setting` doors write the same one-choice order until row h).
-        ("ai", "useSetActor", null, new Owed(HelpRoomOwed.Actor)),
+        // COMPANYVIEW1b: the working roles moved from AI features to the Agents place's Roles mode, so these three are the Agents place's
+        // (`agents/roles/RolesView.tsx`, imported by its view) and are listed with its controls below.
+        ("agents", "useSetActor", null, new Owed(HelpRoomOwed.Actor)),
         // FOUNDATION1y-i: the role catalogue's Add, Edit, Remove, Back to the default and the suggested Designer's Add, over SET_ROLE.
-        ("ai", "useSetRole", null, new Door("role", "set")),
+        ("agents", "useSetRole", null, new Door("role", "set")),
         // FOUNDATION1w-s: *Take it* and *Dismiss* of a change of the actors another program made.
-        ("ai", "useAnswerStaffingFound", null, new Exempt(
+        ("agents", "useAnswerStaffingFound", null, new Exempt(
             "A change of driver.json's actors another program made is the person's to take or dismiss (the foundation design §19.15): "
             + "a take may turn Intake or Ask Daoris on, so no proposal names it, and a helper never answers what another program wrote.")),
         // HELPMODE1b: Ask Daoris's access, pressed from Settings → AI features and from the panel's own chip.

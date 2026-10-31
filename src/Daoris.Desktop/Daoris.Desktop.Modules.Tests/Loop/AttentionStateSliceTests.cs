@@ -1141,6 +1141,33 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
             rows.Single(row => row["id"]!.GetValue<string>() == "g0n3"));
     }
 
+    /// <summary>
+    /// 🔴 KNOWCENTRAL2e (the memory coordinator design §4): a session whose memory changes wait on the person, an end or a replacement for its
+    /// approver or a stopped session's staged rows for Keep or Drop, is one row by the session, since the oldest, with what waits; a
+    /// session the page does not hold guesses no repository.
+    /// </summary>
+    [Fact]
+    public void A_session_with_memory_changes_waiting_is_a_row_by_its_session()
+    {
+        var rows = Rows(new()
+        {
+            Sessions = [Session("""{"id":"c0nv0001","quest":"7a82cc","state":"completed"}""")],
+            Quests = [Quest()],
+            Registry = [Registration("engine")],
+            Memory =
+            [
+                JsonNode.Parse("""{"session":"c0nv0001","ends":1,"replacements":2,"staged":0,"since":"2026-10-31T09:00:00+00:00"}""")!.AsObject(),
+                JsonNode.Parse("""{"session":"g0n3","ends":0,"replacements":0,"staged":3,"since":"2026-10-31T08:00:00+00:00"}""")!.AsObject(),
+            ],
+        });
+
+        Assert.Equal(["memory:c0nv0001", "memory:g0n3"], Keys(rows));
+        Is("""{"kind":"memory","id":"c0nv0001","since":"2026-10-31T09:00:00+00:00","workspace":"default","where":"engine","session":"c0nv0001","memory":{"ends":1,"replacements":2,"staged":0}}""",
+            rows.Single(row => row["id"]!.GetValue<string>() == "c0nv0001"));
+        Is("""{"kind":"memory","id":"g0n3","since":"2026-10-31T08:00:00+00:00","where":"","session":"g0n3","memory":{"ends":0,"replacements":0,"staged":3}}""",
+            rows.Single(row => row["id"]!.GetValue<string>() == "g0n3"));
+    }
+
     /// <summary>HELPERWAIT1c: the refused moves back are read off the home's helpers folder, oldest first, as the driver's look kept them.</summary>
     [Fact]
     public void The_refused_moves_back_are_the_records_the_look_kept()
@@ -1940,6 +1967,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
     [InlineData("STATE_CHANGED", """{"scopes":["harnesses"]}""", true)]
     [InlineData("HARNESS_ENDED", "{}", true)]
     [InlineData("DRIVER_READY", "{}", true)]
+    [InlineData("MEMORY_WAITS", "{}", true)]
     [InlineData("DRIVER_TICK", "{}", false)]
     public void What_wakes_the_attention_slice_on_the_bus(string type, string payload, bool wakes)
     {

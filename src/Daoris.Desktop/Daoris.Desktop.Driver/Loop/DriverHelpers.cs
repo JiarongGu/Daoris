@@ -1069,7 +1069,7 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
                             ? ReadHelper(ask.Ask.Asker, code, turnFailed)
                             : SessionConclusion.Of("failed", Observation.TimedOut(bound));
                     conclusion = _driver.AccountRefused(conclusion, adapter, selection, ended);
-                    conclusion = _driver.AccountSignedOut(conclusion, adapter, selection, turnFailed);
+                    conclusion = _driver.AccountSignedOut(conclusion, adapter, selection, turnFailed, ended);
                     (conclusion, var limited) = _driver.AccountLimited(conclusion, adapter, selection, turnFailed, sessionId, used);
 
                     await service.AdvanceAsync(

@@ -381,6 +381,89 @@ public sealed class DriverRoutes(DriverContext context)
         });
     }
 
+    // The roles' structure (COMPANYVIEW1c, the company-view design §4): for each place asked (none is this machine) and each work asked
+    // (none is every work, one this build does not know left out), the role a start finds there, the work's rule with where it was set,
+    // and each choice's state by the last readings alone. A read: it walks no account and asks no account or binary, so a view opening
+    // probes nothing (D150 point 5); names only.
+    [DriverRoute("ROLE_STRUCTURE")]
+    [ByEvent("ROLE_STRUCTURE", Untold = "the store's roles, driver.json, and the accounts' readings, cool-offs and offers under the home")]
+    private Task<object?> RoleStructureAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var places = new List<RolePlace>();
+        var works = new List<string>();
+        if (request.Payload is { ValueKind: JsonValueKind.Object } payload)
+        {
+            if (payload.TryGetProperty("places", out var asked) && asked.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var place in asked.EnumerateArray().Where(place => place.ValueKind == JsonValueKind.Object))
+                {
+                    var each = new RolePlace(Named(place, "workspace"), Named(place, "repository"));
+                    if (!places.Contains(each)) places.Add(each);
+                }
+            }
+
+            if (payload.TryGetProperty("works", out var named) && named.ValueKind == JsonValueKind.Array)
+            {
+                works.AddRange(named.EnumerateArray().Where(work => work.ValueKind == JsonValueKind.String).Select(work => work.GetString()!)
+                    .Where(work => RoleWork.Codes.Contains(work, StringComparer.Ordinal)).Distinct(StringComparer.Ordinal));
+            }
+        }
+
+        if (places.Count == 0) places.Add(new RolePlace());
+        if (works.Count == 0) works.AddRange(RoleWork.Codes);
+        return Task.Run<object?>(() =>
+        {
+            var config = DriverConfig.Load(_loop.ConfigPath);
+            var structure = RoleStructure.Of(() => RoleCatalog.ReadHome(_loop.Home), config, _loop.Harnesses, places, works);
+            return new
+            {
+                Works = RoleWork.Codes,
+                Roles = structure.Catalogue is { } catalogue ? RoleDoor.Rows(catalogue, config) : [],
+                Catalogue = structure.CatalogueFailed is { } why ? new { Why = why } : null,
+                Places = structure.Places.Select(place => new
+                {
+                    place.Place.Workspace,
+                    place.Place.Repository,
+                    Works = place.Works.Select(work => new
+                    {
+                        work.Work,
+                        Role = work.Role is { } role
+                            ? new { role.Id, role.NameEn, role.NameZh, Scope = new { role.Scope.Kind, role.Scope.Id }, work.Revision }
+                            : null,
+                        work.Held,
+                        Choices = work.Choices.Select(each => new
+                        {
+                            each.Choice.Agent, each.Choice.Model, each.Choice.Effort, each.Choice.From,
+                            State = new { each.State.Code, each.State.At, each.State.Account, each.State.Until },
+                        }),
+                        work.ChoicesFailed,
+                        Policy = work.Policy is { } policy
+                            ? new { policy.Consent, policy.Agents, policy.Concurrency, policy.Minutes, policy.Source, Requirement = Requirement(policy.Requirement) }
+                            : null,
+                        work.PolicyFailed,
+                    }),
+                }),
+                Agents = structure.Agents.Select(agent => new { agent.Agent, agent.Known, agent.Installed, agent.Version }),
+            };
+        }, cancellationToken);
+
+        static string? Named(JsonElement place, string name) =>
+            place.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String && value.GetString()!.Trim() is { Length: > 0 } trimmed
+                ? trimmed
+                : null;
+    }
+
+    /// <summary>A work's typed requirement on the wire, its kind beside its fields; none where the work has none.</summary>
+    private static object? Requirement(WorkRequirement? requirement) => requirement switch
+    {
+        HelpRequirement help => new { Kind = "help", help.SetUp },
+        ReviewRequirement review => new { Kind = "review", review.Required, review.Verify, review.Recheck, review.MakerPasses },
+        PartnerRequirement partner => new { Kind = "partner", partner.Measured },
+        BrainstormRequirement brainstorm => new { Kind = "brainstorm", brainstorm.FanOut, brainstorm.ModeRead },
+        HandOverRequirement handOver => new { Kind = "hand-over", handOver.Consent, handOver.Source },
+        _ => null,
+    };
+
     // A working role added, changed, removed or given back its seed (FOUNDATION1y-i): the person's press, the same change `daoris driver
     // role` makes and Ask Daoris's `role_propose` asks for: one door, `RoleDoor.Apply`, whose judge refuses with nothing written. A
     // removed role's work holds its starts, said; a running session goes on.

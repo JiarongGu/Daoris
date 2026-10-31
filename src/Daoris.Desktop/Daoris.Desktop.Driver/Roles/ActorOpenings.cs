@@ -26,6 +26,16 @@ public static class ActorOpenings
             events.Keep(sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = line.Note, Parts = line.Parts }, say: null);
         }
 
+        /// <summary>
+        /// Where a start moved to this account because the one before refused it for its sign-in (LIMITPICK2): kept beside <i>Opened on</i> in the
+        /// local record, which never syncs, so it may name the account.
+        /// </summary>
+        internal static void SayMovedOff(ISessionEvents events, string sessionId, string account)
+        {
+            var line = Noted.Of(NoteCodes.OpeningMovedOff, $"The same start moved here: `{account}` refused it for its sign-in.", ("account", account));
+            events.Keep(sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = line.Note, Parts = line.Parts }, say: null);
+        }
+
         internal static Noted DesignLine(string role) => Noted.Of(NoteCodes.OpeningDesign, $"Design work: it ran on {role}'s order.", ("role", role));
 
         /// <summary>

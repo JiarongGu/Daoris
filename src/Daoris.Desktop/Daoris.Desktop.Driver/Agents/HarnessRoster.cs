@@ -1134,9 +1134,9 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     /// <param name="own">A resume of a record that began in the tool's own home, which goes on there (D175 point 3).</param>
     private Task<HarnessSelection> ChooseAsync(
         string adapter, DriverConfig config, string? workspace, string? chosen, StartKind kind, bool counts, CancellationToken ct,
-        bool own = false, string? model = null) =>
+        bool own = false, string? model = null, bool asks = true) =>
         // No gate here (PARALLEL1c): the walk takes its own only to read again and count, never across a question.
-        WalkAsync(adapter, config, workspace, chosen, kind, counts, own, ct, new OfferAsk(model, null, 0));
+        WalkAsync(adapter, config, workspace, chosen, kind, counts, own, ct, new OfferAsk(model, null, 0), asks);
 
     /// <summary>
     /// What a walk judges each account's offer reading for (D205 §4.1, round 4, Opus N12; MODELROLE1c2): the model the start asks, the
@@ -1186,9 +1186,16 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
         return new HarnessSelection(note.Note) { SignedOut = SignedOutAccounts.Of(owner, signedOut, names) with { NoAccount = true }, RefusalNote = note };
     }
 
+    /// <summary>The walk behind <see cref="SelectAsync"/> and a view's read of it (<see cref="WiringAsync"/>).</summary>
+    /// <param name="asks">
+    /// False for a view's read (ROSTER1, D150 point 5: nothing is probed as a view opens): the walk composes from the last readings, the
+    /// account's, the cool-offs', the offer judgement and the agent's report, and asks no account's status nor its binary again. An
+    /// account read signed out stays signed out for it however old the reading, and an agent the report says is absent is refused as such;
+    /// the next start, which asks, or a press, is what reads them again.
+    /// </param>
     private async Task<HarnessSelection> WalkAsync(
         string adapter, DriverConfig config, string? workspace, string? chosen, StartKind kind, bool counts, bool ownHome,
-        CancellationToken ct, OfferAsk? offer = null)
+        CancellationToken ct, OfferAsk? offer = null, bool asks = true)
     {
         offer ??= OfferAsk.None;
         var resolved = adapters.Resolve(adapter);
@@ -1223,7 +1230,7 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
 
         // The first look, before any question: read again under the gate once the questions are asked (PARALLEL1c).
         var now = Clock();
-        var (order, _) = OrderOf(owner, scope, kind, picked, ownHome, now, offer.Except);
+        var (order, known) = OrderOf(owner, scope, kind, picked, ownHome, now, offer.Except);
 
         // What a hold says names each account by the person's name, read now, as it is said (ACCT2b); the selection's facts
         // and the record's opening line keep the ids.
@@ -1232,7 +1239,7 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
         // 🔴 No Daoris account to run on (OWNSPACE1a, D175 point 2): the start waits for the person's sign-in, before anything is
         // probed or spawned, and never runs in the person's own tool home, which a scope naming nothing once meant (D125 point 5).
         if (ours && order is [null]) return NoAccount(owner, [], names);
-        var states = order.Select(account => Before(owner, account, now, names)).ToList();
+        var states = order.Select(account => Before(owner, account, now, names, FactOf(known, account))).ToList();
 
         // 🔴 A cooling account is held FIRST, by a file read, before any probe (TOOL4d, D125 §3.3, §4): a start on a
         // spent account is refused at once and spends nothing, and three of them parked a quest on 1 October whose only
@@ -1280,10 +1287,11 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
         // install and pin, never a workspace's, so an agent only a workspace pins was refused as absent. The managed install
         // the pin names is its presence, found above; another workspace's start resolves no such pin and still asks the machine.
         var pinPresent = managed is not null;
-        if (!pinPresent && report is { Present: false })
+        if (asks && !pinPresent && report is { Present: false })
         {
             // Asked again before refusing: the cached answer may predate the install the last refusal
-            // asked for. Its binary alone, since an install is no question of an account (ROSTER1).
+            // asked for. Its binary alone, since an install is no question of an account (ROSTER1). A view's read refuses on the
+            // cached answer, as it asks nothing.
             await BinaryChangedAsync(resolved.Name, config, ct).ConfigureAwait(false);
             report = await ReportAsync(resolved.Name, config, refresh: false, ct).ConfigureAwait(false);
         }
@@ -1348,11 +1356,11 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
         {
             if (counts)
             {
-                lock (_walking) pass = Pass(owner, scope, kind, picked, ours, counts, names, walk, Offers, offer.Except);
+                lock (_walking) pass = Pass(owner, scope, kind, picked, ours, counts, names, walk, Offers, offer.Except, asks);
             }
             else
             {
-                pass = Pass(owner, scope, kind, picked, ours, counts, names, walk, Offers, offer.Except);
+                pass = Pass(owner, scope, kind, picked, ours, counts, names, walk, Offers, offer.Except, asks);
             }
 
             if (pass.Held is { } hold) return hold;
@@ -1441,6 +1449,55 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     }
 
     /// <summary>
+    /// What is known of one agent, asking it nothing (COMPANYVIEW1c, D150 point 5): its binary as its last answer this process said, none
+    /// where none was asked, or a pin's install; and each account a start of <paramref name="kind"/> walks, in the walk's order, as the
+    /// walk finds it before any question (a cool-off, a refusal its provider gave) beside its last sign-in reading. No account, binary or
+    /// server is asked, and no start is counted. Null for an adapter that declares no toolchain.
+    /// </summary>
+    /// <exception cref="DriverException">No agent of that name on this machine.</exception>
+    public AgentLastRead? LastRead(string adapter, DriverConfig config, string? workspace = null, StartKind kind = StartKind.Driven)
+    {
+        var resolved = adapters.Resolve(adapter);
+        if (resolved.Toolchain is not { } toolchain) return null;
+        var owner = toolchain.Owner(resolved.Name);
+        var settings = Settings;
+        var named = settings.Set(owner);
+        // As the walk reads its scope: where the person named no account, the agent's Daoris accounts on this machine (OWNSPACE1a).
+        var ours = named.List.Count == 0 && named.Begins is null && !toolchain.StartsInOwnHome;
+        var scope = ours ? Walked(named, owner, toolchain) : named;
+        var now = Clock();
+        var (order, facts) = OrderOf(owner, scope, kind, picked: null, ownHome: false, now);
+        IReadOnlyList<string> present;
+        try
+        {
+            present = HarnessSettings.Profiles(Home, owner);
+        }
+        catch (DriverException)
+        {
+            present = [];
+        }
+
+        var reads = AccountReads.Of(Home, owner);
+        AccountRead? ReadOf(string? account) =>
+            account is null ? reads.Own
+            : present.FirstOrDefault(name => string.Equals(name, account, StringComparison.OrdinalIgnoreCase)) is { } listed ? reads.Accounts.GetValueOrDefault(listed)
+            : null;
+        IReadOnlyList<AccountLastRead> accounts = ours && order is [null]
+            ? []
+            : [.. order.Select(account => new AccountLastRead(account, Before(owner, account, now, fact: FactOf(facts, account)), ReadOf(account)))];
+
+        var known = _binaries.TryGetValue(resolved.Name, out var binary) ? binary : null;
+        // The binary a start would run (TOOL2/D57): an explicit command, then a pin's managed install, which is its presence.
+        if (config.Commands.GetValueOrDefault(resolved.Name) is not { Count: > 0 } && settings.ResolveVersion(resolved.Name, workspace, chosen: null) is { } pinned)
+        {
+            var managed = HarnessSettings.ManagedBinary(Home, resolved.Name, pinned, toolchain.Binary) is not null;
+            return new AgentLastRead(resolved.Name, owner, managed, managed ? (known is { Present: true } ? known.Version : pinned) : null, accounts) { Pinned = pinned };
+        }
+
+        return new AgentLastRead(resolved.Name, owner, known?.Present, known is { Present: true } ? known.Version : null, accounts);
+    }
+
+    /// <summary>
     /// The accounts a start may use, in the order it tries them (TOOL6b, D130 §16.3; D125 §3.3 under `order`), and what the walk
     /// knows of each. A pick, a scope that names one account, and the tool's own sign-in are the one account, and nothing more
     /// is read.
@@ -1518,11 +1575,11 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     /// </remarks>
     private WalkPass Pass(
         string owner, RotationScope scope, StartKind kind, string? picked, bool ours, bool counts,
-        IReadOnlyDictionary<string, string> names, WalkMemory walk, Func<string, string?>? offers = null, long except = 0)
+        IReadOnlyDictionary<string, string> names, WalkMemory walk, Func<string, string?>? offers = null, long except = 0, bool asks = true)
     {
         var now = Clock();
         var (order, facts) = OrderOf(owner, scope, kind, picked, ownHome: false, now, except);
-        var states = order.Select(account => Before(owner, account, now, names)).ToList();
+        var states = order.Select(account => Before(owner, account, now, names, FactOf(facts, account))).ToList();
         // What the agent last said of each account (ROSTER1), as a report says it: an account not on this machine said nothing.
         var present = HarnessSettings.Profiles(Home, owner);
         var reads = AccountReads.Of(Home, owner);
@@ -1555,7 +1612,9 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
             var asked = walk.Said.TryGetValue(account, out var answered);
             var login = asked ? answered : read?.Login ?? LoginState.Unknown;
             var key = AccountKey(owner, account);
-            if (login == LoginState.Out && !asked && _asking.TryAdd(key, true))
+            // A view's read asks nothing (`asks` false): the reading stands, and the one fresh reading a refusal owes (TOOL6h) stays
+            // owed to the next start that asks.
+            if (asks && login == LoginState.Out && !asked && _asking.TryAdd(key, true))
             {
                 // The one fresh reading a refusal of a signed-in reading owes it (TOOL6h), spent here whatever it answers.
                 var owed = _owed.TryRemove(key, out _);
@@ -1691,7 +1750,7 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
         var facts = scope.List.Count == 0 ? NoFacts : Facts(agent, scope.List, now);
         IReadOnlyList<string?> order = scope.List.Count == 0 ? [scope.Begins] : [.. AccountRotation.Order(scope, kind, present, facts, now)];
         var reads = AccountReads.Of(Home, agent);
-        var tried = order.Select(account => Before(agent, account, now) switch
+        var tried = order.Select(account => Before(agent, account, now, fact: FactOf(facts, account)) switch
         {
             { IsReady: true, Account: { } named } ready when SaidOut(reads, named) => ready with { Readiness = AccountReadiness.SignedOut },
             var state => state,
@@ -1768,6 +1827,9 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
         return setUp;
     }
 
+    private static AccountFacts? FactOf(IReadOnlyDictionary<string, AccountFacts> facts, string? account) =>
+        account is not null && facts.TryGetValue(account, out var fact) ? fact : null;
+
     /// <summary>Whether the last reading of an owner's account said it is signed out (ROSTER1): kept under the home, never asked.</summary>
     private static bool SaidOut(AgentReads reads, string account) =>
         reads.Accounts.GetValueOrDefault(account)?.Login == LoginState.Out;
@@ -1777,9 +1839,11 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     /// refusal its provider gave (AGT3b), held in memory; otherwise ready, until the agent says it is signed out.
     /// </summary>
     /// <param name="names">The owner's names by id, which a cooling account's hold names it by (ACCT2b); null says the id.</param>
-    private AccountState Before(string owner, string? account, DateTimeOffset now, IReadOnlyDictionary<string, string>? names = null)
+    /// <param name="fact">What the walk knows of the account: a reading at its limit cools it until that window's reset (LIMITPICK1).</param>
+    private AccountState Before(
+        string owner, string? account, DateTimeOffset now, IReadOnlyDictionary<string, string>? names = null, AccountFacts? fact = null)
     {
-        if (AccountCooling.Of(Home, owner, account, now) is { } cooling)
+        if ((AccountCooling.Of(Home, owner, account, now) ?? AccountRotation.Spent(owner, account, fact, now)) is { } cooling)
         {
             var hold = CoolingWords.HoldOf(cooling, Zone, names);
             return new AccountState(account, AccountReadiness.Cooling, cooling, hold.Note) { RefusalNote = hold };
@@ -2042,7 +2106,8 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
             : settings.ResolveVersionFrom(resolved.Name, workspace, chosen: null);
 
         // Asked as a start would ask, and counted as none: a panel starts nothing.
-        var selection = await ChooseAsync(adapter, config, workspace, chosen: null, StartKind.Driven, counts: false, ct).ConfigureAwait(false);
+        // And asking no account nor binary (ROSTER1, D150 point 5): read from the last readings, as a view opens.
+        var selection = await ChooseAsync(adapter, config, workspace, chosen: null, StartKind.Driven, counts: false, ct, asks: false).ConfigureAwait(false);
 
         // The account a start would take (TOOL4f, TOOL6b): the walk's, with where the scope begins beside it when that is
         // another, so the panel never shows an account a start would not take; where begins, when the start is held.

@@ -20,6 +20,9 @@ public sealed class MemoryProposals(MemoryOpStore ops, QuestStore quests, QuestE
 
     public const int PacketVersion = 1;
 
+    /// <summary>A test's seam: awaited after the look found no open quest, before the publish.</summary>
+    internal Func<Task>? Looked { get; init; }
+
     /// <summary>
     /// <paramref name="change"/> on <paramref name="target"/>, proposed from <paramref name="from"/>: joined to the open quest from that
     /// repository carrying proposals to the owner, or published as a new one.
@@ -28,11 +31,14 @@ public sealed class MemoryProposals(MemoryOpStore ops, QuestStore quests, QuestE
         string from, MemoryReference target, MemoryChange change, MemoryAuthor by, DateTimeOffset now, CancellationToken ct = default)
     {
         var id = MemoryOpStore.NewId();
+        // The look for an open quest and the publish or join are one step per pair, so two at one moment cannot both publish.
+        using var turn = await ops.ProposingAsync(from, target.Repository, ct).ConfigureAwait(false);
         if (await OpenAsync(from, target.Repository, ct).ConfigureAwait(false) is { } open)
         {
             return new(await ops.ProposeAsync(id, target.Repository, change, by, open.Id, ct).ConfigureAwait(false), open, Joined: true);
         }
 
+        if (Looked is { } looked) await looked().ConfigureAwait(false);
         if (exchange is null) return new(null, null, false, "No quest can be published from here, so nothing was proposed.");
         // A quest's id is read from its sender, receiver and title, so the title names its first proposal: a later quest is its own.
         var outcome = await exchange.PublishAsync(
@@ -88,14 +94,16 @@ public sealed class MemoryProposals(MemoryOpStore ops, QuestStore quests, QuestE
         }
     }
 
-    /// <summary>Whether the proposal's target is gone, ended or at another revision than the one its proposer read.</summary>
+    /// <summary>
+    /// Whether the proposal's target is gone, ended or at another revision than the one its proposer read, read through its owner's view
+    /// (an end moves the revision); not told where the owner's memory gives none.
+    /// </summary>
     private async Task<bool> MovedAsync(MemoryOp op, CancellationToken ct)
     {
-        if (engines?.Open(op.Repository, MemoryReinforcement.None) is not { } engine) return false;
+        if (MemoryViews.Of(engines, op.Repository, null).View is not { } view) return false;
         try
         {
-            return await engine.GetAsync(op.Change.Target ?? "", ct).ConfigureAwait(false) is not { Ended: null } entry
-                   || entry.Revision != op.Change.Revision;
+            return await view.RevisionOfAsync(op.Change.Target ?? "", ct).ConfigureAwait(false) != op.Change.Revision;
         }
         catch (Exception error) when (error is not OperationCanceledException)
         {

@@ -9,8 +9,8 @@ public sealed class HelpRoleTool(IntakeScope? intake = null, HelpProposalBox? he
 {
     [McpServerTool(Name = "role_propose")]
     [Description(
-        "Ask Daoris only: propose a change of this machine's role catalogue, for the person to apply — Settings → AI features → "
-        + "Role catalogue, or `daoris driver role`. A role takes one kind of work (build, design, chat, ask-daoris, intake, help, "
+        "Ask Daoris only: propose a change of this machine's role catalogue, for the person to apply — Agents → Roles → "
+        + "Working roles, or `daoris driver role`. A role takes one kind of work (build, design, chat, ask-daoris, intake, help, "
         + "partner, review, brainstorm) on this machine, in a workspace or in a repository, and runs on its ordered choices of agent, "
         + "model and effort. `set` adds a role or changes one (a field left out keeps the role's own), `remove` takes one out (its "
         + "work then waits until a role takes it; running work goes on), `default` gives a seeded role back its seed. Nothing changes "

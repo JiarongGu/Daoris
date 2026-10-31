@@ -1005,6 +1005,21 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     }
 
     /// <summary>
+    /// Every session with a memory change waiting on the person (KNOWCENTRAL2e), as the service reads them: ends and replacements awaiting,
+    /// a stopped session's staged rows. None from a host with no door.
+    /// </summary>
+    public async Task<IReadOnlyList<JsonElement>> MemoryWaitsAsync(CancellationToken ct = default)
+    {
+        var answer = await SendAsync(ServiceVerb.Get, "/api/memory/waits", null, ct).ConfigureAwait(false);
+        if (answer.Status == 404) return [];
+        if (!answer.Ok) throw new DriverException($"the service refused reading the memory waits: {answer.Payload}");
+        using var document = JsonDocument.Parse(answer.Payload);
+        return document.RootElement.TryGetProperty("waits", out var waits) && waits.ValueKind == JsonValueKind.Array
+            ? [.. waits.EnumerateArray().Select(each => each.Clone())]
+            : [];
+    }
+
+    /// <summary>
     /// The person's decision on a session's memory (KNOWCENTRAL2e): an awaiting end approved or declined by its row where
     /// <paramref name="op"/> names one, else the ended session's staged changes kept or dropped. A refusal is an answer, in the service's words.
     /// </summary>

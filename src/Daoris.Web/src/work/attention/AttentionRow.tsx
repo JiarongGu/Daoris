@@ -9,7 +9,7 @@ import type { AccountRowFacts } from './accountWords';
 import type { RuleProposal } from '../../settings/repository/AgentRules';
 import type { GraphEnd, HeldAttempt, HeldResolution, UnreadableRecord } from '../head/milestone';
 import {
-  ASKS_ONCE, type AttentionActId, type AttentionOffer, attentionOffers, type DeclinedRequest, type GitHeld, type QuietWait, type StaleSince,
+  ASKS_ONCE, type AttentionActId, type AttentionOffer, attentionOffers, type DeclinedRequest, type GitHeld, type MemoryWait, type QuietWait, type StaleSince,
 } from './attention';
 import { Note } from '../Note';
 import { type Answered, InlineConfirm } from '../InlineConfirm';
@@ -25,7 +25,7 @@ export type AttentionKind =
   | 'parked' | 'parked-quest' | 'steward-stopped' | 'go-ahead' | 'trust' | 'account-wait' | 'signed-out'
   | 'proposal' | 'intake' | 'departure' | 'set-up' | 'rule' | 'unanswerable'
   | 'review' | 'opinion' | 'helper' | 'hand-over' | 'work' | 'permission' | 'answer' | 'confirmation' | 'space' | 'git-held'
-  | 'quiet' | 'helper-ended' | 'request-declined';
+  | 'quiet' | 'helper-ended' | 'request-declined' | 'memory';
 
 /**
  * One thing that is waiting on a person, as Overview's band shows it.
@@ -162,6 +162,8 @@ export type Attention = {
   detail?: string | null;
   /** A `quiet` row's watch (SESSWATCH1a): its minutes, whether it is busy (offered no end), an intake, and whether the person's words wait. */
   quiet?: QuietWait;
+  /** A `memory` row's counts (KNOWCENTRAL2e): ends and replacements to approve, staged rows to keep or drop. */
+  memory?: MemoryWait;
   /** A `git-held` row's held group (GITAUTH1a): the repositories its *Try again* lifts, and why, which its mark's ink says. */
   git?: GitHeld;
   /** The workspace a `git-held` row was judged in, which its *Try again* names; absent where .NET scoped it to none. */
@@ -295,6 +297,8 @@ const DOOR_ONLY: Partial<Record<Attention['kind'], (item: Attention) => [string,
   review: () => ['work.attention.door.review'],
   // HELPERWAIT1c: a refused move back to the person is looked at on its session's page, where its tree and its helper's card are.
   'helper-ended': () => ['work.attention.door.open'],
+  // KNOWCENTRAL2e: the decisions are made on the session's page, in its Memory section, where each row's words are read first.
+  memory: () => ['work.attention.door.open'],
   // CONFIRMSEEN1: a terminal's press is answered on its card, which shows every value it carries; the row never answers it.
   confirmation: () => ['work.attention.door.confirmation'],
   // KEEP1f: what else goes below the floor is chosen on the *Disk space* card's press, where every unit is listed first.

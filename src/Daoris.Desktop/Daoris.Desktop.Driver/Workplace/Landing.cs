@@ -34,6 +34,9 @@ public sealed record LandingSubject(string Session, string? Quest, string? Title
     /// </summary>
     public QuestSubmissionRef? Submission { get; init; }
 
+    /// <summary>The sessions a combined Accept brings into this landing (LINESTOGETHER1d), which its record or advance lists beside it.</summary>
+    public IReadOnlyList<LandedWork> Brought { get; init; } = [];
+
     /// <summary>
     /// The branch an entry's Accept lands this part on (ACCEPTALL1, D167's 2026-10-15 amendment point 1): the entry's one branch,
     /// named once for its first part, so its parts land together. Null names it by the rule for this subject, as before; a name the
@@ -666,6 +669,18 @@ public static class LandingRules
     {
         var said = Noted.Of(NoteCodes.LandingLeftOut,
             $"the person left this part out when its line of work landed on `{branch}`: its work did not land there.", ("branch", branch));
+        return new SessionEvent { Kind = SessionEventKind.Note, Text = said.Note, Parts = said.Parts };
+    }
+
+    /// <summary>
+    /// What a member's conversation keeps where a combined Accept brought its work into the head's landing (LINESTOGETHER1d2): where it
+    /// went and which operation did it, so the conversation says it is not landed itself.
+    /// </summary>
+    public static SessionEvent BroughtIntoNote(TogetherBrought brought)
+    {
+        var (code, where) = brought.Line ? (NoteCodes.LandingBroughtIntoLine, $"the line `{brought.Into}`") : (NoteCodes.LandingBroughtInto, $"`{brought.Into}`");
+        var said = Noted.Of(code, $"its work was brought into {where} by another session's Accept (operation {brought.Operation}), so it lands no second time.",
+            ("branch", brought.Into), ("operation", brought.Operation));
         return new SessionEvent { Kind = SessionEventKind.Note, Text = said.Note, Parts = said.Parts };
     }
 

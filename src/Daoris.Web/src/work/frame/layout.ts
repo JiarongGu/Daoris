@@ -27,6 +27,8 @@ export const LIST_BOUNDS = {
   search: LIST_WIDE,
   convergence: LIST_WIDE,
   agents: LIST_WIDE,
+  // The Agents place's Roles mode (COMPANYVIEW1b): its sections are a list's memory under this key, the pane's bounds, closing and width the place's.
+  roles: LIST_WIDE,
   plugins: LIST_WIDE,
   settings: { min: 176, max: 320, initial: 176 },
   monitor: LIST_WIDE,

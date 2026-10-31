@@ -147,6 +147,12 @@ public static class WorkflowRunDetails
     /// <summary>Landed into its line, as the session's record keeps the acceptance (D100).</summary>
     public const string Merge = "merge";
 
+    /// <summary>
+    /// Brought into another session's landing by its combined Accept (LINESTOGETHER1d): its branch, or the line where the code says
+    /// <c>line</c>; never an acceptance of its own.
+    /// </summary>
+    public const string BroughtInto = "brought-into";
+
     /// <summary>Its work reached the line or a branch of the person's another way (LAND2b's <c>already</c> and <c>carried</c>).</summary>
     public const string Already = "already";
 
@@ -224,6 +230,9 @@ public sealed record WorkflowRunFacts(string Repository, CurrentWorkflow Current
 
     /// <summary>When each session's work was accepted into its line, as its conversation's record keeps the acceptance (D100).</summary>
     public IReadOnlyDictionary<string, DateTimeOffset> Accepted { get; init; } = new Dictionary<string, DateTimeOffset>();
+
+    /// <summary>What a combined Accept brought each session into (LINESTOGETHER1d), read from its operation before any acceptance.</summary>
+    public IReadOnlyDictionary<string, TogetherBrought> Brought { get; init; } = new Dictionary<string, TogetherBrought>();
 
     /// <summary>The due list's entries for the run's sessions (LAND2b).</summary>
     public IReadOnlyList<AutoLanding> AutoLandings { get; init; } = [];
@@ -992,6 +1001,16 @@ public static class WorkflowRuns
             };
         }
 
+        // LINESTOGETHER1d: brought into another session's landing, read from its operation, as a left-out part's note is.
+        if (facts.Brought.TryGetValue(newest.Id, out var brought))
+        {
+            return on with
+            {
+                State = WorkflowRunStates.Done, Detail = WorkflowRunDetails.BroughtInto, Branch = brought.Into, At = brought.At,
+                Code = brought.Line ? "line" : null,
+            };
+        }
+
         if (facts.Accepted.TryGetValue(newest.Id, out var accepted))
         {
             return on with { State = WorkflowRunStates.Done, Detail = WorkflowRunDetails.Merge, At = accepted };
@@ -1074,6 +1093,13 @@ public static class WorkflowRuns
         var evidence when evidence.StartsWith("commits landed:", StringComparison.Ordinal) => session.Commits.Count,
         _ => null,
     };
+
+    /// <summary>
+    /// Whether a run's steps hold an <c>integrate</c> not yet settled: the workflow steps on past the landing, the only maker of its unit's
+    /// integration request, so bringing its session into another's (LINESTOGETHER1d2) is refused.
+    /// </summary>
+    public static bool StepsOnPastLanding(IEnumerable<WorkflowRunStep> steps) =>
+        steps.Any(each => each.Step.Kind == NodeKinds.Integrate && !WorkflowRunStates.Settled(each.State));
 
     private static string? TextOf(WorkflowStep step, string name) =>
         step.Settings.FirstOrDefault(setting => setting.Name == name)?.Value as string;

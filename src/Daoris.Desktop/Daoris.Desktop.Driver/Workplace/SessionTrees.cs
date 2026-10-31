@@ -653,8 +653,9 @@ public sealed class SessionTrees(string home, IWorkplacePluginWire? plugins = nu
         string path, LandingSubject subject, CancellationToken ct = default, Func<CancellationToken, Task<IReadOnlySet<string>>>? inUse = null,
         string acceptedBy = AcceptedBy.Person, IWorkplaceGate? gate = null, bool joins = false,
         Func<bool, CancellationToken, Task<TreeLanding?>>? judged = null, Func<LandedBranch?, bool, CancellationToken, Task<string?>>? beforePush = null,
-        int? uncommitted = null) =>
-        Lands.LandAsync(path, subject, ct, inUse, acceptedBy, gate, joins, judged: judged, beforePush: beforePush, uncommitted: uncommitted);
+        int? uncommitted = null, string? together = null) =>
+        Lands.LandAsync(path, subject, ct, inUse, acceptedBy, gate, joins, judged: judged, beforePush: beforePush, uncommitted: uncommitted,
+            together: together);
 
     /// <inheritdoc cref="EntryLands.JoinAsync"/>
     public Task<LandingSubject> JoinEntryAsync(
@@ -705,11 +706,18 @@ public sealed class SessionTrees(string home, IWorkplacePluginWire? plugins = nu
     public Task<EntryPlan> PlanEntryAsync(IReadOnlyList<EntryLandingPart> parts, LandingSubject subject, CancellationToken ct = default) =>
         Entries.PlanAsync(parts, subject, ct);
 
+    /// <inheritdoc cref="TogetherAccepts.LandAsync"/>
+    public Task<TreeLanding> LandTogetherAsync(
+        string operation, LandingSubject subject, IReadOnlyDictionary<string, IWorkplaceGate?> memberGates, CancellationToken ct = default,
+        Func<CancellationToken, Task<IReadOnlySet<string>>>? inUse = null, IWorkplaceGate? gate = null,
+        Func<bool, CancellationToken, Task<TreeLanding?>>? judged = null, Func<LandedBranch?, bool, CancellationToken, Task<string?>>? beforePush = null) =>
+        new TogetherAccepts(_context, Lands).LandAsync(operation, subject, memberGates, ct, inUse, gate, judged, beforePush);
+
     /// <inheritdoc cref="EntryLands.LandAsync"/>
     public Task<EntryLanding> LandEntryAsync(
         IReadOnlyList<EntryLandingPart> parts, LandingSubject subject, IReadOnlySet<string> leaveOut, CancellationToken ct = default,
-        Func<CancellationToken, Task<IReadOnlySet<string>>>? inUse = null) =>
-        Entries.LandAsync(parts, subject, leaveOut, ct, inUse);
+        Func<CancellationToken, Task<IReadOnlySet<string>>>? inUse = null, EntryTogether? together = null) =>
+        Entries.LandAsync(parts, subject, leaveOut, ct, inUse, together);
 
     /// <inheritdoc cref="TreeReturns.EnsureAsync"/>
     public Task<TreeStanding> EnsureAsync(string root, string tree, CancellationToken ct = default) => Returns.EnsureAsync(root, tree, ct);

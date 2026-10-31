@@ -95,6 +95,8 @@ export const ATTENTION_GROUP: Readonly<Record<AttentionKind, AttentionGroup>> = 
   // A session whose helper ended unanswered and whose move back to the person the service refused (HELPERWAIT1c, the co-worker
   // design §5 point 4): the park row it would have had, holding its tree until they look.
   'helper-ended': 'holding',
+  // An end, a replacement or a stopped session's rows that memory keeps for the person (KNOWCENTRAL2e): nothing running is held by it.
+  memory: 'word',
   unanswerable: 'word',
   review: 'ready',
 };
@@ -141,6 +143,8 @@ export const ATTENTION_PLACE: Readonly<Record<AttentionKind, AttentionPlace | nu
   quiet: 'sessions',
   // HELPERWAIT1c: a refused move back to the person opens its session, as its park would.
   'helper-ended': 'sessions',
+  // KNOWCENTRAL2e: the session's page holds its Memory section, where the person approves, declines, keeps or drops.
+  memory: 'sessions',
   // An ask's page or a quest's: publishing, an intake's question, a quest nobody can take, *Try again*, a go-ahead on its ask, a
   // departure's yes, a set-up's review, a folder's trust for what it holds.
   proposal: 'quests',
@@ -238,6 +242,8 @@ export function rowRun(item: Attention): { session?: string | null; quest?: stri
     case 'review': return { session: item.id };
     // HELPERWAIT1c: the session that would have parked, its move back to the person refused.
     case 'helper-ended': return { session: item.session ?? item.id };
+    // KNOWCENTRAL2e: the session whose memory waits.
+    case 'memory': return { session: item.session ?? item.id };
     // The work's act waits on the person's go-ahead, asked by the session the row names.
     case 'go-ahead': return item.session ? { session: item.session } : null;
     // The look waits on the person: the set-up step's session, else the step's newest here.
@@ -549,7 +555,12 @@ export type PushedAttention = {
   quiet?: QuietWait;
   /** A run held at a declined request (INTEGRATE1o part o3): its `work.requests` node, the quest declined and where it went. */
   declined?: DeclinedRequest;
+  /** What memory waits on the person for a session (KNOWCENTRAL2e): ends and replacements to approve, a stopped session's staged rows. */
+  memory?: MemoryWait;
 };
+
+/** What a session's memory waits on the person for: ends and replacements awaiting their approval, and staged rows to keep or drop. */
+export type MemoryWait = { ends: number; replacements: number; staged: number };
 
 /**
  * A run held at a request the receiver declined (INTEGRATE1o part o3): the `work.requests` node the person's *Pass over…* is said on, the
@@ -617,7 +628,7 @@ export type AttentionPushed = {
  */
 const KIND_ORDER: readonly AttentionKind[] = [
   'account-wait', 'signed-out', 'parked', 'helper-ended', 'parked-quest', 'steward-stopped', 'request-declined', 'go-ahead', 'permission', 'answer', 'confirmation', 'trust',
-  'quiet', 'proposal', 'departure', 'set-up', 'opinion', 'rule', 'helper', 'hand-over', 'work', 'space', 'git-held', 'unanswerable',
+  'quiet', 'proposal', 'departure', 'set-up', 'opinion', 'rule', 'helper', 'hand-over', 'memory', 'work', 'space', 'git-held', 'unanswerable',
   'review',
 ];
 
@@ -861,6 +872,21 @@ export function attentionWorded(row: PushedAttention, names: AttentionNames = {}
         session: row.session ?? row.id,
         ...(row.quest ? { quest: row.quest } : {}),
       };
+    // KNOWCENTRAL2e: the session as Sessions names it, and what waits, counted by the kind of wait.
+    case 'memory': {
+      const wait = row.memory ?? { ends: 0, replacements: 0, staged: 0 };
+      return {
+        ...base,
+        title: named(row.session ?? row.id),
+        detail: [
+          wait.ends > 0 ? i18n.t('work.attention.memoryEnds', { count: wait.ends }) : '',
+          wait.replacements > 0 ? i18n.t('work.attention.memoryReplacements', { count: wait.replacements }) : '',
+          wait.staged > 0 ? i18n.t('work.attention.memoryStaged', { count: wait.staged }) : '',
+        ].filter(Boolean).join(' · '),
+        session: row.session ?? row.id,
+        ...(row.memory ? { memory: row.memory } : {}),
+      };
+    }
     // NOTIFY2e: its note's first line as the agent wrote it, the session as Sessions names it, and the agent as the roster names it.
     case 'hand-over': {
       const agent = row.agent ? agentNamed(row.agent, names.tools) : null;

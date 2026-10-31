@@ -112,6 +112,8 @@
     { "kind": "landing", "detail": "refused", "code": "another-code", "said": "Cannot land automatically: the landing was refused." },
     { "kind": "landing", "detail": "gone", "said": "Its tree was discarded before it landed." },
     { "kind": "landing", "detail": "elsewhere", "said": "It ran on another machine, which keeps its landing." },
+    { "kind": "landing", "detail": "brought-into", "state": "done", "branch": "feature/q1-work", "said": "Brought into `feature/q1-work` by another session's Accept." },
+    { "kind": "landing", "detail": "brought-into", "state": "done", "branch": "main", "code": "line", "said": "Brought into the line `main` by another session's Accept." },
 
     { "kind": "pull-request", "detail": "merge", "code": "open", "plugin": "example.pull-request", "said": "Open: waits for you to merge it on the platform." },
     { "kind": "pull-request", "detail": "merge", "plugin": "example.pull-request", "said": "Opened by `example.pull-request`: waits for you to merge it on the platform." },

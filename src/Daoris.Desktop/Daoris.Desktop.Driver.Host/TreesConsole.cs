@@ -192,9 +192,8 @@ internal static class TreesConsole
                 }
 
                 var repositories = taken.Repositories;
-                var inUse = (await service.ActiveSessionsAsync().ConfigureAwait(false))
-                    .Select(session => session.Tree).OfType<string>().Where(tree => tree.Length > 0)
-                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
+                // TREEKEEPRETRY1: every session of a quest judges its tree, a retry waiting on a limit among them.
+                var inUse = await BranchTidying.HeldTreesAsync(service, CancellationToken.None).ConfigureAwait(false);
 
                 if (!ask.Yes)
                 {
@@ -251,9 +250,7 @@ internal static class TreesConsole
                     return 1;
                 }
 
-                var inUse = (await service.ActiveSessionsAsync().ConfigureAwait(false))
-                    .Select(session => session.Tree).OfType<string>().Where(tree => tree.Length > 0)
-                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
+                var inUse = await BranchTidying.HeldTreesAsync(service, CancellationToken.None).ConfigureAwait(false);
 
                 if (!ask.Yes)
                 {

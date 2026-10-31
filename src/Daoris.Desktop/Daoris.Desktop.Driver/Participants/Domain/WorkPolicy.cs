@@ -56,14 +56,19 @@ public static class WorkPolicies
     public const string DefaultSource = "default";
     public const string MachineSource = "machine";
 
-    /// <summary>The policy standing for <paramref name="work"/> in a repository and its workspace (a brainstorm's, its workspace alone).</summary>
+    /// <summary>
+    /// The policy standing for <paramref name="work"/> in a repository and its workspace (a brainstorm's, its workspace alone); with no
+    /// repository, the workspace's own (COMPANYVIEW1c), and with neither, the default.
+    /// </summary>
     /// <exception cref="ActorUnreadableException">Intake's actor does not read: its start holds with that sentence, as today.</exception>
     public static WorkPolicy Of(DriverConfig config, string work, string? repository, string? workspace)
     {
         switch (work)
         {
             case ParticipantWork.Help:
-                var helpers = repository is { Length: > 0 } ? HelperRules.Resolve(config, repository, workspace) : new(HelperRule.Default, HelperRules.DefaultSource);
+                var helpers = repository is { Length: > 0 } || workspace is { Length: > 0 }
+                    ? HelperRules.Resolve(config, repository ?? "", workspace)
+                    : new(HelperRule.Default, HelperRules.DefaultSource);
                 return new(work, helpers.Rule.Mode, helpers.Rule.Agents, HelperJudge.PerAsker, HelperInstruction.DefaultMinutes, helpers.Source,
                     new HelpRequirement(helpers.Rule.SetUp));
             case ParticipantWork.Partner:

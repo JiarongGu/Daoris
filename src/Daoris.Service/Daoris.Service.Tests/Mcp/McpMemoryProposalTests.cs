@@ -88,6 +88,33 @@ public sealed class McpMemoryProposalTests : McpToolsFixture
         Assert.Equal(before, _memory.State());
     }
 
+    /// <summary>🔴 Proposals made at the same moment from one repository join one quest: the join is made under the store's lock, not in turns.</summary>
+    [Fact]
+    public async Task Proposals_made_at_the_same_moment_publish_one_quest()
+    {
+        var (_, record) = await SessionInAsync("Asker");
+        // Each look waits a moment for the other to have looked: only a join under one lock keeps it from finding the other not yet there.
+        var arrived = 0;
+        var both = new TaskCompletionSource();
+        Task Meet()
+        {
+            if (Interlocked.Increment(ref arrived) == 2) both.TrySetResult();
+            return Task.WhenAny(both.Task, Task.Delay(TimeSpan.FromSeconds(1)));
+        }
+
+        var proposals = new MemoryProposals(_ledger.Memory, _quests, _exchange) { Looked = Meet };
+        var by = new MemoryAuthor(record.Id, "work", null, "claude-code", null, null, null, Now);
+        var change = new MemoryChange(MemoryOpKind.Propose, Text: "A note on the map.", Target: "m1", Revision: 1, Relation: "amends");
+
+        var made = await Task.WhenAll(
+            proposals.ProposeAsync("Asker", new MemoryReference("Owner", "m1"), change, by, Now),
+            proposals.ProposeAsync("Asker", new MemoryReference("Owner", "m1"), change, by, Now));
+
+        var quest = Assert.Single(await AskedOfOwnerAsync());
+        Assert.Equal([false, true], made.Select(each => each.Joined).Order());
+        Assert.All(await ProposalsAsync(), op => Assert.Equal(quest.Id, op.Carried));
+    }
+
     /// <summary>
     /// 🔴 A dispute and a proposed end of one entry are two decisions on the quest: each its own row and its own numbered line in the
     /// owner's list, never folded into one.

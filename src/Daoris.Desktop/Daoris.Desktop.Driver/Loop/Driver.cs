@@ -1044,6 +1044,9 @@ public sealed class Driver(
         // git, or asked of the service, unless a line moved.
         await Stages.TimeAsync("lines", () => FollowMovedLinesAsync(events, ct)).ConfigureAwait(false);
 
+        // LINESTOGETHER1d: the operations bringing sessions together, stepped before this look's starts take a head's word.
+        await Stages.TimeAsync("together", () => TogetherAsync(events, ct)).ConfigureAwait(false);
+
         // The workspace plans (WSSETUP6, D124 §4.1), worked before this look reads the quests, so a set-up a plan publishes now
         // is planned, and started, in this same look. Nothing is read unless a plan works and is not paused.
         await Stages.TimeAsync("setup", () => WorkSetupPlansAsync(events, ct)).ConfigureAwait(false);
@@ -1441,9 +1444,30 @@ public sealed class Driver(
 
                 // QUEUEDTREE1: the tree the start opens goes on the driver's close before its record's open is asked, on no token.
                 var fresh = new FreshTree(path => Context.Trees.RemoveAsync(path));
-                return await fresh.UntilOpenAsync(
+                var run = await fresh.UntilOpenAsync(
                         () => Runner is { } runner ? runner(start, opened, ct) : RunAsync(start, snapshot.Repositories, own, opened, fresh, ct), ct)
                     .ConfigureAwait(false);
+
+                // LIMITPICK2: a start refused for its account's sign-in goes on under the next account the walk gives, once, in this start;
+                // where the walk gives none (or the same), the first run's end stands as it was.
+                if (run.SignedOutOn is { } signedOut)
+                {
+                    var holding = MovingReservation(start);
+                    try
+                    {
+                        var again = new FreshTree(path => Context.Trees.RemoveAsync(path));
+                        var moved = await again.UntilOpenAsync(
+                                () => RunAsync(start, snapshot.Repositories, own, () => Context.Runs.Release(holding), again, ct, movedOff: signedOut), ct)
+                            .ConfigureAwait(false);
+                        if (moved.Opened) return moved;
+                    }
+                    finally
+                    {
+                        Context.Runs.Release(holding);
+                    }
+                }
+
+                return run;
             }
             finally
             {
@@ -1699,6 +1723,30 @@ public sealed class Driver(
         {
             events.Add(Lines.Retry(
                 "registry", $"registry  the lines Daoris moved could not be followed this look, and are tried again at the next: {error.Message}"));
+        }
+    }
+
+    /// <summary>
+    /// The operations bringing sessions together (LINESTOGETHER1d), looked at by the process holding the home's lease: each stepped by
+    /// the records, a landing settled, one whose sessions were deleted dropped. Nothing is asked of the service while none is kept.
+    /// </summary>
+    private async Task TogetherAsync(List<string> events, CancellationToken ct)
+    {
+        if (!HomeLease.HeldHere(home)) return;
+        try
+        {
+            if (new TogetherOperations(home).All().Count == 0) return;
+            var records = await service.SessionRecordsAsync(ct).ConfigureAwait(false);
+            var trees = new SessionTrees(home);
+            await new TogetherWatch(home, () => DateTimeOffset.UtcNow, () => DriverConfig.Load(DriverConfig.ResolvePath(home)),
+                    (session, note) => Context.Events.Keep(session, note, say: null))
+                .LookAsync(records, (root, repository, token) => trees.LineOfAsync(root, repository, null, token), ct).ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is DriverException or HttpRequestException or JsonException or IOException
+                                          or UnauthorizedAccessException)
+        {
+            events.Add(Lines.Retry(
+                "together", $"together  the sessions being brought together could not be looked at this look, and are tried again at the next: {error.Message}"));
         }
     }
 
@@ -2052,6 +2100,10 @@ public sealed class Driver(
         return new TickReport([], events, Progressed: false, Concluded: concluded);
     }
 
+    /// <summary>The reservation that keeps a look from planning a quest again between a start's refused end and its move to another account (LIMITPICK2).</summary>
+    private StartReservation MovingReservation(Consideration start) =>
+        new(start.Quest.Id, null, start.Quest.To, config.OpensOwnTree(start.Quest.To) ? start.Entry?.Into?.Tree : null);
+
     /// <returns>
     /// The console line, whether a session actually opened, — when one ended here — what it ended
     /// as and whose decision that was (SURF5b), and — when the start was HELD at spawn — the hold's
@@ -2062,8 +2114,10 @@ public sealed class Driver(
     /// <param name="registry">The registry as this tick's snapshot answered it: what the session may reach across (D107).</param>
     /// <param name="onOpened">Called once the session's record is open, and never for a start that held or was refused (DEV3).</param>
     /// <param name="fresh">The tree this start opens, let go on each way out that starts nothing, on no token (QUEUEDTREE1).</param>
+    /// <param name="movedOff">The account the first run of this start was refused for its sign-in (LIMITPICK2); a walk that gives it again holds.</param>
     private async Task<StartRun> RunAsync(
-        Consideration start, IReadOnlyList<RepoView> registry, List<TrustHold> untrusted, Action onOpened, FreshTree fresh, CancellationToken ct)
+        Consideration start, IReadOnlyList<RepoView> registry, List<TrustHold> untrusted, Action onOpened, FreshTree fresh, CancellationToken ct,
+        string? movedOff = null)
     {
         var quest = start.Quest;
         var root = start.Root!;
@@ -2276,7 +2330,8 @@ public sealed class Driver(
             // of its own naming the earliest reset and whose account, said on its record once per wait; the next look past it takes it.
             if (limitedLine is not null && selection.Cooling is { } earliest)
             {
-                var waits = LimitResume.Waits(earliest, Context.Harnesses.Zone, AccountNames.Of(home, earliest.Agent));
+                var waits = LimitResume.Waits(
+                    earliest, Context.Harnesses.Zone, AccountNames.Of(home, earliest.Agent), signedOut: selection.SignedOut?.Accounts);
                 GoOns.HeldSaying(limitedLine, waits);
                 return Hold(waits.Note) with { Cooling = earliest, SignedOut = selection.SignedOut };
             }
@@ -2284,6 +2339,12 @@ public sealed class Driver(
             // A cooling account's hold carries its cool-off (TOOL4d), so the look says the wait once and a screen shows
             // the quest waiting for an account; and the accounts it passed not signed in (TOOL6g), so both say the sign-in.
             return Hold(selection.Refusal!) with { Cooling = selection.Cooling, SignedOut = selection.SignedOut };
+        }
+
+        if (movedOff is not null && string.Equals(selection.Profile, movedOff, StringComparison.OrdinalIgnoreCase))
+        {
+            Context.Harnesses.Release(selection.Number);
+            return Hold("the walk gave the account that was refused for its sign-in, and no other is free");
         }
 
         // The access setup this start runs under (AUTONOMY1a, D184 point 1), resolved once here from the file this look read, so its
@@ -2333,7 +2394,12 @@ public sealed class Driver(
         if (priorStands is { Said: { } priorSaid } && start.Resumes is { } goneFrom)
         {
             var landedAway = priorStands.Stand == TreeStand.Gone && Context.Trees.Recorded.Landing(goneFrom.Session) is not null;
+            // TREEKEEPRETRY1: gone with nothing beyond the line, the part goes on in a fresh tree rather than holding for good.
+            var leftNothing = priorStands.Stand == TreeStand.Gone && !landedAway && goneFrom.BaseCommit is { Length: > 0 } stoodAt
+                && TreeReturns.LeftNothing(
+                    goneFrom, await Context.Trees.LineHoldsAsync(root, quest.To, RemoteTarget.Workspace(start.Workspace), stoodAt, ct).ConfigureAwait(false));
             if (priorStands.Stand == TreeStand.Remade) TreeSaid(goneFrom.Session, priorSaid);
+            else if (leftNothing) TreeSaid(goneFrom.Session, TreeReturns.Fresh(priorStands.Branch ?? Path.GetFileName(priorTree!)));
             else if (!landedAway)
             {
                 GoOns.HeldSaying(goneFrom, priorSaid);
@@ -2810,6 +2876,7 @@ public sealed class Driver(
                     prior.Limit ? Context.Events.TurnsEnded(prior.Session) + 1 : null,
                     prior.Limit ? RotatedOpening.ContextOf(usage, Context.Events, prior.Session) : null));
         // Where a later choice of Build's ran, its actor line beside it, naming each choice passed (D205 §4.6 item 1, MODELROLE1c2).
+        if (movedOff is not null) RotatedOpening.SayMovedOff(Context.Events, sessionId, AccountNames.Said(AccountNames.Of(home, agent), movedOff));
         if (chosen is not null) RotatedOpening.SayActor(Context.Events, sessionId, "build", chosen, buildPasses);
         // A quest marked design says whose order it ran on: the role taking design, Build's while none does (FOUNDATION1x, MODELROLE1l).
         if (start.Resumes is null && StartWork(quest) == ParticipantWork.Design && DesignRoleName(start) is { } designer)
@@ -3186,7 +3253,14 @@ public sealed class Driver(
                     if (ended.Transient?.Opened == true) await TransientRetries.GoOnOffAsync(service, sessionId, ct).ConfigureAwait(false);
 
                     conclusion = AccountRefused(conclusion, adapter, selection, ended);
-                    conclusion = AccountSignedOut(conclusion, adapter, selection, turnFailed);
+                    var beforeSignIn = conclusion;
+                    conclusion = AccountSignedOut(conclusion, adapter, selection, turnFailed, ended);
+                    // LIMITPICK2: the account this start was refused for, where it has a profile another can stand in for.
+                    var signedOutOn = !ReferenceEquals(beforeSignIn, conclusion) && stop is null && movedOff is null && start.Resumes is null
+                        ? selection.Profile : null;
+                    // The quest is reserved again before this record fails, so a look between this end and the next run's open plans nothing
+                    // for it; the caller lets it go when that run has opened or come to nothing. Not reserved, it is not moved.
+                    if (signedOutOn is not null && !Context.Runs.TryReserve(MovingReservation(start))) signedOutOn = null;
                     // MODELROLE1c3 (D205 §3.3's pipe exception): the pipe door refused the model its choice named on a silent turn, so the
                     // account's reading is kept and the part ends with its line, no strike; the next look starts what the walk then answers.
                     var refusedModel = ModelRefused(conclusion, adapter.Name, selection, target.Asked?.NamedModel, ended, sessionId);
@@ -3259,7 +3333,10 @@ public sealed class Driver(
                                 Limit = limited,
                                 NotOffered = notOffered || modelRefused,
                                 Reason = SessionEnded.ReasonOf(conclusion.Parts),
-                            });
+                            })
+                    {
+                        SignedOutOn = signedOutOn,
+                    };
                 }).ConfigureAwait(false);
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
@@ -3769,11 +3846,23 @@ public sealed class Driver(
             ("agent", agent), ("model", model)));
     }
 
+    /// <param name="ended">The run's ending: a refusal its door's own code reads as access is the account's sign-in, whatever its words (LIMITPICK1).</param>
     internal SessionConclusion AccountSignedOut(
-        SessionConclusion conclusion, ISessionAdapter adapter, HarnessSelection selection, string? turnFailed) =>
-        conclusion.State == "failed" && RefusedAccounts.SignInRefused(Context.Harnesses, adapter, selection.Profile, turnFailed) is { } line
+        SessionConclusion conclusion, ISessionAdapter adapter, HarnessSelection selection, string? turnFailed, HarnessEnding? ended = null) =>
+        conclusion.State == "failed"
+        && RefusedAccounts.SignInRefused(Context.Harnesses, adapter, selection.Profile, turnFailed, AccessByCode(adapter, ended)) is { } line
             ? conclusion.Then(" ", line)
             : conclusion;
+
+    /// <summary>
+    /// Whether the refusal a run ended on reads access by a code or kind its door declares (D210 point 5): the one reader's, its words read
+    /// apart, since a credential its provider refused by its words is AGT3b's (<see cref="AccountRefused"/>).
+    /// </summary>
+    private bool AccessByCode(ISessionAdapter adapter, HarnessEnding? ended) =>
+        ended?.Refusal is { } refused
+        && AgentErrors.Read(Context.Adapters, adapter, DoorFailure.OfPrompt(refused), Context.Harnesses.Clock(), Context.Harnesses.Zone)
+            is { Kind: AgentErrorKind.Access } read
+        && !read.By.Contains(":words:", StringComparison.Ordinal);
 
     /// <summary>
     /// What a start's landing is named for, as its session is told it (WSR5, LAND2c): a chain's step lands on its chain's branch,

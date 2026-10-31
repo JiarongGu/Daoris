@@ -17,6 +17,7 @@ import {
   useEntryLanding, useLandEntry, useSessionHelpers, useSessionPartners, useUnderWaySubject, useSessionProcess, useWorkState, usePushedCalls, withCall,
   useAnswerPermission, usePermissionWaits, useSessionHandOverAsk, useApproveHandOver, useDeclineHandOver, type HandOverWord,
   useAnswerWaits, useAnswerAlone, useRunNodeWord, useResolveHeld, useSessionQuestion, useStopWaiting,
+  useBringTogether, useTogether, useTogetherAct,
 } from '../bridge/shell';
 import { handOverRefused, type HandOverAskWait } from './waits/HandOverAgentAsk';
 import { permissionSaid, type PermissionWaits } from './waits/PermissionAsks';
@@ -78,7 +79,7 @@ import { doorLabel } from '../agents/tools';
 import type { QuestClose, Resolution } from './waits/AwaitingPerson';
 import { Composer } from './conversation/Composer';
 import { DiffPane } from './review/DiffPane';
-import { keepDraft, useDraft } from './conversation/drafts';
+import { forgetDraft, keepDraft, useDraft } from './conversation/drafts';
 import { dockOpensOn, type DockTab, followed, NothingFollowed, RightDock } from './frame/RightDock';
 import { SessionTimeline } from './head/SessionTimeline';
 import { SessionRail } from './rail/SessionRail';
@@ -467,6 +468,10 @@ export function WorkFrame({
   const spent = useSessionSpent(attendedEntry?.parts.map((part) => part.session));
   // What the service kept of the attended session's finished tree, once the tree is let go (KEEPSIZE1).
   const related = useSessionRelated(attended?.id);
+  // LINESTOGETHER1d: the operation bringing sessions together it is in, and the head's presses on it.
+  const together = useTogether(attended?.id);
+  const bringTogether = useBringTogether();
+  const togetherAct = useTogetherAct();
   // Its memory changes and the person's decision on them (KNOWCENTRAL2e): an end awaiting them, or what an ended session left staged.
   const memoryRows = useSessionMemory(attended?.id);
   const decideMemory = useDecideSessionMemory();
@@ -584,6 +589,15 @@ export function WorkFrame({
           setRefusal({ session, text: moveSaid(t, moved) });
         },
       });
+    }
+    : undefined;
+  // *To the head*: the unsent draft moves to the head's own draft and its page opens; nothing is sent.
+  const onDraftToHead = stands?.place === 'beside' && attendedEntry?.head && attended && draft.trim()
+    ? () => {
+      // Through the store: the draft hook re-reads it as the head is attended.
+      forgetDraft(attended.id);
+      keepDraft(attendedEntry.head!, draft);
+      attend(attendedEntry.head!);
     }
     : undefined;
   // What the attended session's door does with a word while a turn runs (COWORK1a, D188): the levels its box offers, and the
@@ -2200,6 +2214,7 @@ export function WorkFrame({
     waitingSince: waiting?.session === attended.id ? waiting.since : undefined,
     calling: waiting?.session === attended.id ? waiting.calling : undefined,
     withIt: following?.id === attended.id ? withIt : 0,
+    windowOpened: atWorkHeld && 'answer' in atWorkHeld ? atWorkHeld.answer.windowOpened : undefined,
     // AGENTERRORS1a2 (D210 §5.1, §8): *Trying again at* while a transient episode waits.
     retrying: waiting?.session === attended.id ? waiting.retrying : undefined,
     // HEAVYSLOT1: its heavy run said in place of the call, by its gate or whom it waits behind.
@@ -2570,6 +2585,20 @@ export function WorkFrame({
             relations={attended ? relationsOf(attended, quest, quests.data ?? [], sessions.data ?? []) : undefined}
             related={related}
             onRelated={attend}
+            together={attended ? {
+              candidates: related.filter((row) => row.read !== 'not-read').map((row) => row.id),
+              operation: together,
+              busy: bringTogether.isPending || togetherAct.isPending || landEntry.isPending,
+              said: bringTogether.data?.refused ?? togetherAct.data?.refused
+                ?? (landEntry.variables?.entry === attendedEntry?.entry ? landEntry.data?.message ?? null : null),
+              onBring: here ? (members) => bringTogether.mutate({ session: attended.id, members }) : undefined,
+              onLetGo: () => togetherAct.mutate({ session: attended.id, act: 'let-go' }),
+              onAskAgain: () => togetherAct.mutate({ session: attended.id, act: 'ask-again' }),
+              onAccept: attendedEntry
+                ? () => landEntry.mutate({ entry: attendedEntry.entry, parts: Math.max(1, entryOffered), leaveOut: [] })
+                : undefined,
+              onSession: attend,
+            } : undefined}
             memory={attended ? {
               rows: memoryRows,
               ended: !live,
@@ -2799,6 +2828,7 @@ export function WorkFrame({
               onEdit={editQueued.reword}
               goes={goes}
               onMove={onMoveWord}
+              toHead={onDraftToHead}
               // The conversation it went on in, by its record's title (HANDWORDS1-ii); one the frame does not hold is said by its id.
               continued={box.kind === 'line' && box.why === 'continued' && box.to
                 ? headLink((sessions.data ?? []).find((row) => row.id === box.to))

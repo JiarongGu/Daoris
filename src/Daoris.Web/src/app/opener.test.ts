@@ -5,6 +5,18 @@ import { askItem, doorOpening, opening, planOpening, projectsItem, questsItem, w
 // Pure, so what each door does is an assertion, and `App` only applies it.
 
 describe('the opener', () => {
+  /** COMPANYVIEW1b: a door into Roles names the mode; a door naming an agent or a part of its page names Agents; the place alone names none. */
+  it("names the Agents place's mode only where the door needs one", () => {
+    expect(opening('agents')).toEqual({ view: 'agents' });
+    expect(opening('agents', null, { agentsMode: 'roles' })).toEqual({ view: 'agents', agentsMode: 'roles' });
+    expect(opening('agents', 'claude-code')).toEqual({
+      view: 'agents', agentsMode: 'agents', chosen: { view: 'agents', item: 'claude-code' },
+    });
+    expect(opening('agents', null, { agentPart: 'accounts' })).toEqual({ view: 'agents', agentPart: 'accounts', agentsMode: 'agents' });
+    expect(doorOpening({ view: 'agents', agentsMode: 'roles' })).toEqual({ view: 'agents', agentsMode: 'roles' });
+    expect(opening('quests', null, { agentsMode: 'roles' })).toEqual({ view: 'quests' });
+  });
+
   it('goes to a view, and opens nothing in it where the door named nothing', () => {
     expect(opening('overview')).toEqual({ view: 'overview' });
     expect(opening('quests')).toEqual({ view: 'quests' });

@@ -353,6 +353,8 @@ public static class NoteCodes
     // A session's tree asked for before it goes on (TREEGONE1): made again on its branch, gone with its branch, or not made.
     public static readonly NoteCode TreeRemade = new("tree.remade", ["branch"]);
     public static readonly NoteCode TreeGone = new("tree.gone", ["branch"]);
+    // TREEKEEPRETRY1: its tree and branch gone with nothing beyond the line, its part goes on in a fresh tree.
+    public static readonly NoteCode TreeFresh = new("tree.fresh", ["branch"]);
     public static readonly NoteCode TreeUnmade = new("tree.unmade", []);
     public static readonly NoteCode StartedJoined = new("started.joined", ["session"]);
     public static readonly NoteCode StartedResumesAnswered = new("started.resumes-answered", ["quest", "answered"]);
@@ -680,6 +682,9 @@ public static class NoteCodes
     // its name as written, since an added role has no id the page knows.
     public static readonly NoteCode OpeningDesign = new("opening.design", ["role"]);
 
+    // LIMITPICK2: a start refused for its account's sign-in went on under another, which says the account it moved off.
+    public static readonly NoteCode OpeningMovedOff = new("opening.moved-off", ["account"]);
+
     // ——— A chat run's binding (CHATFLOW1c, the chat-flow design §4.3), said once in the conversation that grew its tree: the named workflow
     // and the repository or workspace that chose it, the one bound with why it cannot land the work, or a bind the home could not keep.
     // Under Current nothing is said, as a start's binding says nothing.
@@ -718,6 +723,10 @@ public static class NoteCodes
     // A part the person left out of its entry's Accept (ACCEPTALL1c, D167's amendment point 3): the branch its line of work landed on,
     // or the line it merged into, a fact. Its review reads it back (LandingRules.LeftOutOf) and leads with Discard.
     public static readonly NoteCode LandingLeftOut = new("landing.left-out", ["branch"]);
+    // A member whose work a combined Accept brought into its head's landing (LINESTOGETHER1d2): the branch it went onto, or the line it
+    // merged into, and the operation, a fact. The conversation's own landing then reads it as brought in, never landed.
+    public static readonly NoteCode LandingBroughtInto = new("landing.brought-into", ["branch", "operation"]);
+    public static readonly NoteCode LandingBroughtIntoLine = new("landing.brought-into-line", ["branch", "operation"]);
     public static readonly NoteCode ChatOptionSet = new("chat.option-set", ["option", "chosen"]);
     public static readonly NoteCode ChatToldWhere = new("chat.told-where", []);
 
@@ -830,6 +839,8 @@ public static class NoteCodes
     // LIMITRESUME1b (D206): a line a limit cut off, every account it may run on at its limit, goes on by itself once the earliest is ready.
     public static readonly NoteCode HeldLimitWaits = new("held.limit-waits", ["owner", "account", "until"]) { Why = Cooling };
     public static readonly NoteCode HeldLimitWaitsOwn = new("held.limit-waits-own", ["owner", "until"]) { Why = Cooling };
+    // LIMITPICK1: the same wait where some accounts need the person's sign-in, named apart from those cooling; `accounts` a list.
+    public static readonly NoteCode HeldLimitWaitsSignIn = new("held.limit-waits-sign-in", ["owner", "account", "until", "accounts"]) { Why = Cooling };
     public static readonly NoteCode HeldSignedOut = new("held.signed-out", ["owner", "account", "profile"]);
     // LOCKPASSED1 (D125's PARALLEL1c note): every account the start could run on was locked past its patience; the accounts by id, a list.
     public static readonly NoteCode HeldLocked = new("held.locked", ["owner", "accounts"]);

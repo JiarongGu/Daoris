@@ -296,8 +296,12 @@ public sealed class PipeCensus
             "SESSION_AT_WORK",
             // LINESTOGETHER1c: the sessions beside one, a read of git in their trees.
             "SESSION_RELATED",
+            // LINESTOGETHER1d: the operation bringing sessions together that a session is in, read from this machine's record.
+            "TOGETHER",
             // KNOWCENTRAL2e: a session's memory rows, read from the service.
             "SESSION_MEMORY",
+            // COMPANYVIEW1c: the roles' structure, each choice's state from the last readings alone, asking nothing.
+            "ROLE_STRUCTURE",
             "STATE", "STATE_SLICE", "SWEEP_PLAN", "SYSTEM_DOWNLOADS", "SYSTEM_SPACE", "SYSTEM_WIRING", "TAIL_SESSION", "TOOLS_LIST", "TRACE", "TREES_SYNC_PLAN", "TREES_SYNC_SCOPE",
             "UNDER_WAY", "USAGE", "WORKFLOW_CURRENT", "WORKFLOW_RUN", "WORK_PLAN", "WORK_STATE",
             // NOTIFY2i: what came to the person, a press by its act and session alone, never a value, so a terminal answers none of it.
@@ -349,6 +353,8 @@ public sealed class PipeCensus
             "SUPERVISOR_OVERRULE",
             // KNOWCENTRAL2e: the person's approval of a memory end, or their Keep or Drop of a session's staged memory, theirs alone until MC8.
             "SESSION_MEMORY_DECIDE",
+            // LINESTOGETHER1d: Bring them together…, Ask again and Let them go, the person's until LINESTOGETHER1e's steward forms.
+            "TOGETHER_PRESS", "TOGETHER_ASK_AGAIN", "TOGETHER_LET_GO",
             "RETRY_QUEST", "HELP_APPLY",
             // The person's words, and a conversation begun or carried on with them.
             "SESSION_INPUT", "SESSION_QUEUE_EDIT", "SESSION_QUEUE_MOVE", "CHANNEL_POST", "CHANNEL_FORWARD", "START_CHAT", "START_HELP", "HELP_START_FROM",
@@ -444,6 +450,8 @@ public sealed class PipeCensus
             "SESSION_HAND_OVER_APPROVE", "SESSION_INPUT", "SESSION_QUEUE_MOVE", "CHANNEL_FORWARD", "SESSION_ANSWER_ALONE", "HELP_APPLY", "HELP_DISMISS",
             // Work begun at the next look that the drain's holds of quests do not reach: a helper, a partner, a second opinion.
             "SESSION_HELPER_ASK", "SESSION_HELPER_APPROVE", "SESSION_PARTNER_ASK", "ASK_OPINION",
+            // LINESTOGETHER1d: the words that ask a head to bring sessions in, and again after a failed check, which its next turn takes.
+            "TOGETHER_PRESS", "TOGETHER_ASK_AGAIN",
             // What lets the look start such work, or land, since every setting asks the look at once (`DriverContext.Change`). Helpers,
             // whose admission no repository's hold reaches: their rule, the cap's slot, the actor they run on, an account ready again (a
             // cooling helper starts again on it). A hand-over's rule, an opinion's, a landing's rule, review and line, and the opinion's
@@ -478,6 +486,8 @@ public sealed class PipeCensus
             // decided, which the service's applier settles and no session runs.
             "SESSION_MEMORY_DECIDE", "HISTORY_CLEAR", "SYSTEM_DOWNLOADS_CLEAR", "SESSION_ARCHIVE", "HELP_RENAME", "HELP_PIN", "CHANNEL_POST", "CHANNEL_MARK",
             "NOTICES_READ", "NOTICE_DISMISS",
+            // LINESTOGETHER1d: the sessions being brought together let go, a record's phase and nothing more.
+            "TOGETHER_LET_GO",
             // A standing choice that changes only how later sessions run, what they reach or say, or what the person is told; a hold or a
             // drivable repository the drain's look holds whatever it says; a session's own option; Ask Daoris's access, which ends its
             // conversation at its turn's end and starts none.

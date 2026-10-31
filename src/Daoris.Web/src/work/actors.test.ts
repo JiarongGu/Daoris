@@ -13,7 +13,7 @@ beforeEach(async () => { await i18n.changeLanguage('en'); });
 describe('D205 actor provenance', () => {
   it('keeps asked, acknowledged and ran apart, with first-use order and overflow', () => {
     const rows = actorRows(i18n.t, record);
-    expect(rows.find((row) => row.label === 'Actor')?.value).toBe('Build');
+    expect(rows.find((row) => row.label === 'Role')?.value).toBe('Build');
     expect(rows.find((row) => row.label === 'Choice')?.value).toBe('as before');
     expect(rows.find((row) => row.label === 'Asked model · effort')?.value).toBe('default · high · not carried');
     expect(rows.find((row) => row.label === 'Acknowledged model')?.value).toBe('alias');

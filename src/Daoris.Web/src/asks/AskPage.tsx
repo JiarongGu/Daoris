@@ -20,7 +20,8 @@ import { PageHead, PageSection, ViewMain } from '../work/frame/ViewMain';
 import { AbandonAsk, AbandonedWork, PauseAsk } from '../work/pausing/WorkAsks';
 import type { RunLineDoor } from '../workflow/run';
 import { WorkflowLine } from '../workflow/WorkflowLine';
-import { askFacts, LONG_TITLE } from './askFacts';
+import { askFacts, askWaits, LONG_TITLE } from './askFacts';
+import { NextDoor } from '../work/head/NextDoor';
 import { ASK_TONE, firstLine, tierWords } from './AskRow';
 import { AskReview } from './AskReview';
 import { AskWorkflowKind } from './AskWorkflowKind';
@@ -276,6 +277,7 @@ export function AskPage({
   const titled = title !== firstLine(ask.sentence);
   const long = !titled && title.length > LONG_TITLE;
   const request = useRef<HTMLParagraphElement>(null);
+  const goAheads = useRef<HTMLDivElement>(null);
   const head = (
     <PageHead
       lead={(
@@ -288,10 +290,16 @@ export function AskPage({
       title={title}
       clamp={2}
       wholeElsewhere={long}
-      facts={askFacts(t, ask)}
+      facts={askFacts(t, ask, { working: lines.some((line) => line.shown === 'working') })}
       acts={acts}
       fact={(
         <>
+          {askWaits(ask) && onAnswerGoAhead && (
+            <NextDoor
+              press={t('work.facts.press.answer')}
+              onPress={() => { goAheads.current?.scrollIntoView?.({ block: 'start' }); goAheads.current?.focus(); }}
+            />
+          )}
           {workflow && workflow.runs.length > 0 && <WorkflowLine runs={workflow.runs} onOpen={workflow.onOpen} />}
           {long && (
             <Button variant="ghost" className="ml-1 px-0 py-0 text-small" onClick={() => request.current?.focus()}>
@@ -439,7 +447,9 @@ export function AskPage({
         /* What its sessions asked the person for, each once (KNOWUSE1a): first among the sections, since one waiting
            holds a session until the person answers it. */
         <PageSection title={t('asks.record.goAheads')}>
-          <GoAheadList goAheads={ask.goAheads} busy={busy} onAnswer={onAnswerGoAhead} stale={staleGoAheads} />
+          <div ref={goAheads} tabIndex={-1} className="outline-none">
+            <GoAheadList goAheads={ask.goAheads} busy={busy} onAnswer={onAnswerGoAhead} stale={staleGoAheads} />
+          </div>
         </PageSection>
       )}
 

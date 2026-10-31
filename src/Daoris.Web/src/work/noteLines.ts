@@ -132,6 +132,7 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'started.local-failed': { values: ['input'] },
   'tree.remade': { values: ['branch'] },
   'tree.gone': { values: ['branch'] },
+  'tree.fresh': { values: ['branch'] },
   'tree.unmade': { values: [] },
   'started.joined': { values: ['session'] },
   'started.resumes-answered': { values: ['quest', 'answered'] },
@@ -265,6 +266,8 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'opening.actor': { values: ['actor', 'n', 'entry', 'passed'] },
   // FOUNDATION1x: a quest marked design ran on the order of the role taking design, Build's while none does; the role's name as written.
   'opening.design': { values: ['role'] },
+  // LIMITPICK2: the account a start was refused for its sign-in and moved off, as named.
+  'opening.moved-off': { values: ['account'] },
   // CHATFLOW1c (the chat-flow design §4.3): a chat run's binding, said once in the conversation that grew its tree: the named workflow and
   // the repository or workspace that chose it (`owner`, set as code), the one bound with why it cannot land, or a bind the home did not keep.
   'chat.workflow': { values: ['workflow', 'version', 'owner'] },
@@ -292,6 +295,9 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'landing.person-handed': { values: [] },
   // A part the person left out of its entry's Accept (ACCEPTALL1c): the branch its line of work landed on, or the line.
   'landing.left-out': { values: ['branch'] },
+  // A member a combined Accept brought into its head's landing (LINESTOGETHER1d2): where its work went and the operation.
+  'landing.brought-into': { values: ['branch', 'operation'] },
+  'landing.brought-into-line': { values: ['branch', 'operation'] },
   'chat.option-set': { values: ['option', 'chosen'] },
   'chat.told-where': { values: [] },
   // Words that did not reach an agent or were not taken (CONVNOTE2d1): the agent's or the service's words follow a lead.
@@ -436,6 +442,8 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'held.cooling-own': { values: ['owner', 'until', 'why'], why: 'cooling' },
   'held.limit-waits': { values: ['owner', 'account', 'until'], why: 'cooling' },
   'held.limit-waits-own': { values: ['owner', 'until'], why: 'cooling' },
+  // LIMITPICK1: the same wait where some accounts need the person's sign-in, named apart from those cooling.
+  'held.limit-waits-sign-in': { values: ['owner', 'account', 'until', 'accounts'], why: 'cooling' },
   'held.signed-out': { values: ['owner', 'account', 'profile'] },
   // OWNSPACE1a: no Daoris account of the agent's is signed in, and its own home is never a start's.
   'held.no-account': { values: ['owner'] },
@@ -667,6 +675,8 @@ export const NOTE_VALUES: Readonly<
   // The level whose access setup landed work by its rule (ACCESSWORDS1).
   access: 'accessAt',
   awaits: 'id', answered: 'id', ask: 'id', quest: 'id', session: 'id', opinion: 'id',
+  // The operation a combined Accept brought a member in by (LINESTOGETHER1d2), by its id.
+  operation: 'id',
   quests: 'ids',
   servers: 'names', works: 'names',
   option: 'text', chosen: 'text', work: 'text', state: 'bgstate', repository: 'text',

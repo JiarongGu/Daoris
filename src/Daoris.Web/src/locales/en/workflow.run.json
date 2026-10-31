@@ -100,6 +100,8 @@
   "workflow.run.said.landing.refused": "Cannot land automatically: {{why}}.",
   "workflow.run.said.landing.gone": "Its tree was discarded before it landed.",
   "workflow.run.said.landing.elsewhere": "It ran on another machine, which keeps its landing.",
+  "workflow.run.said.landing.brought-into": "Brought into `{{branch}}` by another session's Accept.",
+  "workflow.run.said.landing.brought-intoLine": "Brought into the line `{{branch}}` by another session's Accept.",
   "workflow.run.said.pull-request.merge.open": "Open: waits for you to merge it on the platform.",
   "workflow.run.said.pull-request.merge.unknown": "Waits for you to merge it on the platform; `{{plugin}}` last answered no state for it.",
   "workflow.run.said.pull-request.merge.unread": "Opened by `{{plugin}}`: waits for you to merge it on the platform.",
