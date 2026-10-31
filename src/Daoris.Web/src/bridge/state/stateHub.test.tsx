@@ -29,6 +29,7 @@ import { historyKey, useHistoryPlan } from '../sessions/history';
 import { treesSyncScopeKey } from '../repositories/lines';
 import { usePlugins } from '../plugins';
 import { useRules } from '../agents/rules';
+import { useSessionAtWork } from '../sessions/atWork';
 import { useSessionGroups } from '../sessions/sessions';
 import { useLandEntry } from '../sessions/entries';
 import { useStateHub, useUnderWay, useUnderWayStep, useUnderWaySubject } from './stateHub';
@@ -229,6 +230,40 @@ describe('the state hub (STATE_CHANGED)', () => {
 
     await waitFor(() => expect(reads).toBe(2));
     await waitFor(() => expect(client.getQueryData(keys.rules)).toEqual({ reads: 2 }));
+  });
+});
+
+describe('the state hub (who is at work, COWORKVIEW1a)', () => {
+  afterEach(() => {
+    eventHandlers.clear();
+    invoke.mockReset();
+  });
+
+  it('a change naming atWork during the first fetch joins it and asks once more after it', async () => {
+    let first: (answer: unknown) => void = () => undefined;
+    let reads = 0;
+    const reply = (n: number) => ({ answer: { of: { session: 's1' }, attended: 's1', parts: [], subagents: { read: 'read', working: n, children: [] } }, at: { epoch: 'e', n } });
+    invoke.mockReset();
+    invoke.mockImplementation(async (_module: string, route: string) => {
+      if (route !== 'SESSION_AT_WORK') return {};
+      reads += 1;
+      if (reads === 1) return new Promise((resolve) => { first = resolve; });
+      return reply(2);
+    });
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    function View() {
+      useStateHub();
+      useSessionAtWork('s1');
+      return null;
+    }
+    render(<QueryClientProvider client={client}><View /></QueryClientProvider>);
+    await waitFor(() => expect(reads).toBe(1));
+
+    act(() => changed({ scopes: ['atWork'] }));
+    await act(async () => first(reply(1)));
+
+    await waitFor(() => expect(reads).toBe(2));
+    await waitFor(() => expect(client.getQueryData<{ answer: { subagents: { working: number } } }>(['atWork', 's1'])?.answer.subagents.working).toBe(2));
   });
 });
 
