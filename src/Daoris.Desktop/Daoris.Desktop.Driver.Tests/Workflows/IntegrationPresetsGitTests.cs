@@ -16,29 +16,16 @@ public sealed class IntegrationPresetsGitTests : LandedFixture, IAsyncLifetime
 
     private readonly ObservedPort _port = new();
     private readonly List<string> _said = [];
-    private IIntegrationVerdicts? _installed;
     private IntegrationTransport? _transport;
     private int _answered;
 
-    public Task InitializeAsync()
-    {
-        try
-        {
-            _installed = IntegrationVerdicts.Current;
-        }
-        catch (InvalidOperationException)
-        {
-            _installed = null;
-        }
+    public IntegrationPresetsGitTests() => IntegrationVerdicts.Within = new Green();
 
-        IntegrationVerdicts.Current = new Green();
-        return Task.CompletedTask;
-    }
+    public Task InitializeAsync() => Task.CompletedTask;
 
     public async Task DisposeAsync()
     {
         if (_transport is not null) await _transport.DisposeAsync();
-        if (_installed is not null) IntegrationVerdicts.Current = _installed;
     }
 
     private sealed class Green : IIntegrationVerdicts
