@@ -395,6 +395,25 @@ public sealed class ActRunGitTests : TreeSyncFixture
     }
 
     [Fact]
+    public async Task A_reconciler_that_reads_the_act_after_another_took_it_is_held_as_taken_first_and_the_taker_closes_it()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var (root, tip, _, _) = await CheckoutAsync();
+        var (act, _, _) = Orphan(root, tip, "run-a", DateTimeOffset.UtcNow.AddMinutes(5), sleeper: false);
+        KillRun("run-a");
+        var dead = DeadAre("run-a");
+
+        // The at-once race forced: run-b's take lands, then run-c reads the act, before run-b reads its steps and closes it.
+        Assert.NotNull(Journal("run-b", dead).Take(act.Id, act.ClaimGeneration).Claim);
+        var late = await Reconciler("run-c", dead).UnderLockAsync(root, CancellationToken.None);
+        Assert.Contains("another reconciler took it first", late!.Said);
+
+        Assert.Null(await Reconciler("run-b", dead).UnderLockAsync(root, CancellationToken.None));
+        var closed = Journal("run-b").Act(act.Id)!;
+        Assert.Equal((ActPhases.Closed, "run-b", 2L), (closed.Phase, closed.ClaimRun, closed.ClaimGeneration));
+    }
+
+    [Fact]
     public async Task The_driver_s_start_leaves_a_checkout_while_the_store_is_busy_and_reconciles_it_at_the_next_look()
     {
         if (!OperatingSystem.IsWindows()) return;
