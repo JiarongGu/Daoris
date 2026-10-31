@@ -17,7 +17,8 @@ import { ClearAsk } from '../work/history/ClearAsk';
 import { DetailsFold } from '../work/head/DetailsFold';
 import { endOffersStop, endSentences, type GraphEnd } from '../work/head/milestone';
 import { clearOffered, type HistoryDoor, type HistoryTarget } from '../work/history/history';
-import { questFacts } from '../work/head/headFacts';
+import { questFacts, questNext } from '../work/head/headFacts';
+import { NextDoor } from '../work/head/NextDoor';
 import { HowItCameToBe, type TraceDoor } from '../work/head/HowItCameToBe';
 import { questName, sessionOrigin } from '../work/identity';
 import { type Answered, InlineConfirm } from '../work/InlineConfirm';
@@ -475,17 +476,20 @@ export function QuestPage({
   // it); where the head said a short title, the body opens on the whole title, once.
   const body = bodyUnderHead(quest.title, quest.body, named !== quest.title);
   const request = useRef<HTMLParagraphElement>(null);
+  // REVIEWFLOW1b: *next* is the first body act that moves it on, or its session where that waits on the person.
+  const next = questNext(bodyActs, session?.state === 'awaiting-person');
   const head = (
     <PageHead
       title={named}
       lead={<Pill tone={QUEST_TONE[quest.status]} title={t(`statusHint.${reads}`)}>{t(`status.${reads}`)}</Pill>}
       clamp={2}
       wholeElsewhere={!!body && named.length > LONG_TITLE}
-      facts={questFacts(t, { quest, session, sitting })}
+      facts={questFacts(t, { quest, session, sitting, flow: true })}
       // *View full request* (HEAD2b, as the ask's HEAD2d): a long title is read whole, as written, in the request below, where
       // the focus goes; on the facts line, since the head has no door slot. Where the body holds nothing more, nothing to go to.
-      fact={!(workflow && workflow.runs.length > 0) && !(body && named.length > LONG_TITLE) ? undefined : (
+      fact={!next && !(workflow && workflow.runs.length > 0) && !(body && named.length > LONG_TITLE) ? undefined : (
         <>
+          {next && <NextDoor press={t(QUEST_ACT[next].label)} onPress={() => press(next)} />}
           {workflow && workflow.runs.length > 0 && <WorkflowLine runs={workflow.runs} onOpen={workflow.onOpen} />}
           {body && named.length > LONG_TITLE && (
             <Button variant="ghost" className="ml-1 px-0 py-0 text-small" onClick={() => request.current?.focus()}>

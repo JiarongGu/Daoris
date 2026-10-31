@@ -11,6 +11,7 @@ import i18n from '../locales/i18n';
 import { eventHandlers, invoke } from '../test/workFrameBridge';
 import { DRIVEN, DRIVER_STATE, Hub, QUESTS, REGISTRY, ROSTER, userEvent } from '../test/workFrameKit';
 import { WorkFrame } from './WorkFrame';
+import { draftOf, keepDraft, readDrafts } from './conversation/drafts';
 
 let SESSIONS: unknown[] = [];
 
@@ -109,6 +110,32 @@ describe('where a word goes, and the move to the head', () => {
 
     expect(await screen.findByText('It is not known whether it moved. Look again, then press again.')).toBeInTheDocument();
     expect(notify).not.toHaveBeenCalledWith('Said to the head instead.');
+  });
+
+  it('carries an unsent draft to the head’s box by To the head, sending nothing', async () => {
+    keepDraft(BESIDE, 'also cap it');
+    driver(HEAD);
+    const onSelect = vi.fn();
+    render(
+      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+        <Hub />
+        <Tooltip.Provider><WorkFrame selected={BESIDE} onSelect={onSelect} notify={() => {}} /></Tooltip.Provider>
+      </QueryClientProvider>,
+    );
+
+    await userEvent.click(await screen.findByRole('button', { name: 'To the head' }));
+
+    expect(onSelect).toHaveBeenCalledWith(HEAD);
+    expect(draftOf(readDrafts(), HEAD)).toBe('also cap it');
+    expect(draftOf(readDrafts(), BESIDE)).toBe('');
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_SAY', expect.anything());
+  });
+
+  it('offers no To the head with nothing typed, or on a part whose line names no head', async () => {
+    driver(HEAD);
+    show();
+    await screen.findByText('use the blue one');
+    expect(screen.queryByRole('button', { name: 'To the head' })).toBeNull();
   });
 
   it('offers no press, and no line, on a part whose line names no head', async () => {

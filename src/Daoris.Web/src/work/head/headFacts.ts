@@ -259,7 +259,18 @@ export type QuestFactsOf = {
   session?: Session | null;
   /** Why this machine's driver leaves it waiting (D46 §3), where it does. */
   sitting?: Consideration | null;
+  /** Lead with *now* (REVIEWFLOW1b): its session waiting on the person is said as the session head says it, timed. */
+  flow?: boolean;
 };
+
+/**
+ * The press *next* names on a quest's page, from the body acts the page already offers (REVIEWFLOW1b): the first that moves it on,
+ * and its session's door only where that session waits on the person. None where nothing waits.
+ */
+export function questNext<Act extends string>(acts: readonly Act[], awaiting: boolean): Act | null {
+  const moves = ['accept', 'goOn', 'resume', 'retry', 'trust'];
+  return acts.find((act) => moves.includes(act)) ?? (awaiting ? acts.find((act) => act === 'session') ?? null : null);
+}
 
 /**
  * A quest's facts line (HEAD2b, D162; the entry-and-heads design §2, amending the UX7 design §5.3): a hold the person lifts
@@ -267,7 +278,7 @@ export type QuestFactsOf = {
  * and its age, then the one live fact where there is one: a session starting or working on it here, its park after its
  * failed sessions, or when it closed. The requester, the id, the full times and the lanes are its *Details*.
  */
-export function questFacts(t: TFunction, { quest, session, sitting }: QuestFactsOf): string[] {
+export function questFacts(t: TFunction, { quest, session, sitting, flow }: QuestFactsOf): string[] {
   const unreviewed = quest.held === true && quest.hold === 'unreviewed';
   // FABRIC-CLOSE1c3: a step its source's reopen holds waits on the person's go-on or abandon, which no yes lifts.
   const reopened = quest.held === true && quest.hold === 'source-reopened';
@@ -282,7 +293,9 @@ export function questFacts(t: TFunction, { quest, session, sitting }: QuestFacts
 
   if (session && SESSION_ACTIVE.has(session.state)) {
     if (session.state === 'working') return [...facts, t('quests.facts.working', { time: elapsed(session.created) })];
-    if (session.state === 'awaiting-person') return [...facts, t('quests.facts.waiting')];
+    if (session.state === 'awaiting-person') {
+      return [...facts, flow ? t('work.facts.now.waits', { time: elapsed(session.updated) }) : t('quests.facts.waiting')];
+    }
     return [...facts, t('quests.facts.starting')];
   }
 

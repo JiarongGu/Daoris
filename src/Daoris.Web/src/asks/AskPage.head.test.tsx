@@ -81,6 +81,32 @@ describe('an ask’s head (HEAD2d)', () => {
     expect(page(waiting)).toHaveTextContent('waiting on you');
   });
 
+  // REVIEWFLOW1b: now · next on the ask's page, from what the page reads; *next* is a door to the go-aheads.
+  for (const [language, now, next] of [['en', 'waiting on you', 'next: Answer'], ['zh', '等你', '下一步：回答']] as const) {
+    it(`names the go-ahead to answer as next, and moves the focus to it, in ${language}`, async () => {
+      await i18n.changeLanguage(language);
+      const waiting: Ask = {
+        ...WITH_GO_AHEADS,
+        goAheads: [{ ...WITH_GO_AHEADS.goAheads![0]!, state: 'asked', answer: null }],
+      };
+      render(<AskPage ask={waiting} receivers={['engine']} questTitles={{}} onPublish={vi.fn()} onClose={vi.fn()} onOpenQuest={vi.fn()} onAnswerGoAhead={vi.fn()} />);
+      const head = screen.getByRole('main').querySelector('header')!;
+
+      expect(head).toHaveTextContent(now);
+      await userEvent.click(within(head).getByRole('button', { name: next }));
+      expect(document.activeElement?.closest('section')).toHaveAccessibleName(i18n.t('asks.record.goAheads'));
+    });
+  }
+
+  it('says working among its facts where a line of its work is, and names no next', () => {
+    render(<AskPage ask={PUBLISHED} receivers={['engine']} questTitles={{}} onPublish={vi.fn()} onClose={vi.fn()} onOpenQuest={vi.fn()}
+      lines={[{ entry: 'e', repository: 'engine', parts: 1, leading: 's1', opens: 's1', shown: 'working' }]} />);
+    const head = screen.getByRole('main').querySelector('header')!;
+
+    expect(head).toHaveTextContent('workspace aurora · working · asked 3h ago');
+    expect(head).not.toHaveTextContent('next:');
+  });
+
   it('draws only its primary act, Resume where paused, and folds the rest into its ⋯', async () => {
     const head = page(undefined, door({ plan: PAUSED_ASK }));
     expect(within(head).getAllByRole('button').map((button) => button.textContent || button.getAttribute('aria-label')))

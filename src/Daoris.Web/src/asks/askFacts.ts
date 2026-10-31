@@ -14,12 +14,21 @@ export const LONG_TITLE = 90;
  * go-ahead its sessions asked is unanswered, else the quests it became. Nothing it has nothing to say: an absent fact is
  * left out, never a dash.
  */
-export function askFacts(t: TFunction, ask: Ask): string[] {
-  const waiting = (ask.goAheads ?? []).some((goAhead) => goAhead.state === 'asked');
+export function askFacts(t: TFunction, ask: Ask, flow?: { working: boolean }): string[] {
+  const waiting = askWaits(ask);
   const became = ask.quests.length;
+  // REVIEWFLOW1b: with the page's flow, *now* follows the workspace, from what the page reads: a go-ahead unanswered, or a line working.
+  const now = flow ? (waiting ? t('asks.goAhead.state.asked') : flow.working ? t('work.facts.now.working') : null) : null;
   return [
     t('asks.card.workspace', { workspace: ask.workspace }),
+    ...(now ? [now] : []),
     t('asks.card.asked', { ago: ago(ask.asked) }),
-    ...(waiting ? [t('asks.goAhead.state.asked')] : became > 0 ? [t('asks.head.quests', { count: became })] : []),
+    ...(flow ? (became > 0 ? [t('asks.head.quests', { count: became })] : [])
+      : waiting ? [t('asks.goAhead.state.asked')] : became > 0 ? [t('asks.head.quests', { count: became })] : []),
   ];
+}
+
+/** Whether a go-ahead its sessions asked is unanswered: what *next* answers. */
+export function askWaits(ask: Ask): boolean {
+  return (ask.goAheads ?? []).some((goAhead) => goAhead.state === 'asked');
 }
