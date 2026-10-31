@@ -2,7 +2,7 @@ import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { clockOf, figure } from '../locales/format';
 import type { Account, AccountSettingsChange, Tool } from './tools';
-import type { UsedBy } from './roles/structure';
+import type { UsedBy } from './roles/roleStructure';
 import { UsedLine } from './roles/StructureSections';
 import {
   Button, Chip, Icon, Inline, Menu, type MenuAct, Pill, Prose, SectionTitle, SkeletonRows, Tip,

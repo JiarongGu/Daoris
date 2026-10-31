@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import type { ActorRow, RoleCatalogue, RoleChangePress, RoleChoice, RoleRow, StaffingFound, SuggestedRole } from '../../data/wiring';
 import { Button, Card, CardHeader, FormField, FormGrid, FormRow, Icon, Inline, Prose, SelectField, SettingList, SettingRow } from '../../design/ui';
 import { type Answered, Refused } from '../../work/InlineConfirm';
+import { RowMore } from './RowMore';
 
 /** An entry as `SET_ACTOR` takes it: an agent, and its model and effort in the tool's own words, absent for account default. */
 export type ActorChoice = { agent: string; model?: string | null; effort?: string | null };
@@ -126,8 +127,12 @@ function suggestionPress(role: SuggestedRole): RoleChangePress {
  */
 export function RolesCard({
   catalogue, read = catalogue ? 'ok' : 'notOffered', staffing = [], agents, about = {}, busy = false, onSet, onSetActor, found = [], onAnswerFound,
-  editor: held, onEditor,
+  editor: held, onEditor, only, onDiagram,
 }: {
+  /** One role's row alone, as the diagram's detail draws it (COMPANYVIEW1f): no card, no adding, no suggestion. */
+  only?: string;
+  /** A row's ⋯ *On the diagram*, its role chosen there. */
+  onDiagram?: (role: string) => void;
   /** The open editor, where the place that owns the section holds it (D168 point 3); with none given the card holds its own. */
   editor?: Editing | null;
   onEditor?: (next: Editing | null) => void;
@@ -168,10 +173,11 @@ export function RolesCard({
   const [foundRefused, setFoundRefused] = useState<{ id: number; sentence: string } | null>(null);
   const name = (row: Pick<RoleRow, 'id' | 'seeded' | 'nameEn' | 'nameZh'>) => roleName(t, i18n.language, row);
   const kept = catalogue?.kept === true;
-  const lines: Line[] = catalogue
+  const all: Line[] = catalogue
     ? catalogue.roles.map((row) => ({ id: row.id, row, actor: staffing.find((each) => each.id === row.id) ?? null }))
     : staffing.map((actor) => ({ id: actor.id, row: null, actor }));
-  const lineOf = (id: string) => lines.find((line) => line.id === id);
+  const lines = only === undefined ? all : all.filter((line) => line.id === only);
+  const lineOf = (id: string) => all.find((line) => line.id === id);
   const nameOfLine = (line: Line) => name(line.row ?? { id: line.id, seeded: true });
   const draftOf = (entry?: RoleChoice): Draft => ({
     key: next.current++, agent: entry?.agent ?? agents[0]?.value ?? '', model: entry?.model ?? '', effort: entry?.effort ?? '',
@@ -384,15 +390,15 @@ export function RolesCard({
     );
   };
 
-  return (
-    <Card>
-      <CardHeader title={t('settings.ai.roles.title')} />
-      <Prose className="mb-3 mt-0 text-small text-ink-soft">{t('settings.ai.roles.body')}</Prose>
+  const said = (
+    <>
       {catalogue && !kept && <p className="m-0 mb-2 text-small text-ink-soft">{t('settings.ai.roles.unkept')}</p>}
       {read === 'notOffered' && <p className="m-0 mb-2 text-small text-ink-soft">{t('settings.ai.roles.notOffered')}</p>}
       {read === 'failed' && <p role="alert" className="m-0 mb-2 text-small text-ink-soft">{t('settings.ai.roles.readFailed')}</p>}
-      {catalogue && catalogue.roles.length === 0 && <p className="m-0 mb-2 text-small text-ink-soft">{t('settings.ai.roles.none')}</p>}
-      <SettingList>
+    </>
+  );
+  const rows = (
+    <SettingList>
         {lines.map((line) => {
           const { row, actor } = line;
           const named = nameOfLine(line);
@@ -433,6 +439,7 @@ export function RolesCard({
                       {t('settings.ai.roles.default')}
                     </Button>
                   )}
+                  {onDiagram && row && row.state !== 'removed' && <RowMore name={named} onDiagram={() => onDiagram(line.id)} />}
                 </>
               )}
             >
@@ -442,7 +449,17 @@ export function RolesCard({
             </SettingRow>
           );
         })}
-      </SettingList>
+    </SettingList>
+  );
+  if (only !== undefined) return <div className="min-w-0">{said}{rows}</div>;
+
+  return (
+    <Card>
+      <CardHeader title={t('settings.ai.roles.title')} />
+      <Prose className="mb-3 mt-0 text-small text-ink-soft">{t('settings.ai.roles.body')}</Prose>
+      {said}
+      {catalogue && catalogue.roles.length === 0 && <p className="m-0 mb-2 text-small text-ink-soft">{t('settings.ai.roles.none')}</p>}
+      {rows}
       {catalogue && (editing?.isNew ? <div className="mt-3">{editor(editing)}</div> : (
         <div className="mt-3">
           <Button variant="ghost" disabled={locked || editing !== null} onClick={() => open(null)}>

@@ -5,6 +5,14 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## COMPANYVIEW1f — the diagram (2026-10-31)
+
+> **1f: the diagram** (web). Placement with the column bound, the workspace fold (new), lit paths, the detail and the flowchart's keys (§3.7); an appointed node selects its section. Playwright reads every edge clear of nodes at 80rem, and the rail at 39 and 25rem; one Narrator pass. After 1d and 1e. (`docs/2026-10-31-company-view-design.md` §4 and §7 row 6; the COMPANYVIEW1 row stays open.)
+
+Completed 2026-10-31: `buildStructure` (now `agents/roles/roleStructure.ts`, renamed so the page's tree test's mirror rule holds) also makes the diagram's nodes and edges under the same filters, a node with its row's id; `litOf`, `nodeOfRow` and `sectionOf` beside it. `agents/roles/diagram.ts` ranks by `layoutFlow` (an edgeless offered role set in the roles column, the places in declared order) and places by its own rule, across at 42rem through `PlacementBounds`' new `column` bound, else its list; `design/groupFolds.ts` folds each workspace past 24 nodes. `RoleDiagram.tsx` draws it (§3.7's list, roving stop and keys; edges from measured boxes); `RolesMode` holds the view (remembered), the chosen node, the filters and the rows open across both views, a node of another kind moves the section, its detail is its row's molecule (`DiagramDetail`; a role's `RolesCard only`, the same editor), and each row's ⋯ offers *On the diagram*. Proof: `roleStructure.test.ts`, `diagram.test.ts`, `groupFolds.test.ts`, `flowLayout.test.ts`, `RolesDiagram.test.tsx`, `RoleDiagram.stories.tsx` at 80, 39 and 25rem in en and zh and both themes, `measured/roles.spec.ts`. Left to the window: the Narrator pass.
+
+---
+
 ## COMPANYVIEW1i — what a work may call (2026-10-31)
 
 > **1i: what a work may call** (service, driver, web). The call table's answer per work, read-only, in Work's opened row; its read is named by the row (the call table lives in the service). After 1d. (`docs/2026-10-31-company-view-design.md` §2 and §7 row 9; the COMPANYVIEW1 row stays open.)

@@ -2,7 +2,9 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import i18n from '../../locales/i18n';
 import { CLAUDE_USE, CODEX_USE } from '../agentsFixtures';
 import { DRIVER, LINES, PLUGINS, REGISTRY, STRUCTURE, TOOLS, WORKFLOWS } from './structureFixtures';
-import { buildStructure, heldMarks, NO_FILTERS, placesToAsk, type StructureFilters, usedByAgent, workflowReadOf } from './structure';
+import {
+  buildStructure, heldMarks, litOf, NO_FILTERS, nodeOfRow, placesToAsk, sectionOf, type StructureFilters, usedByAgent, workflowReadOf,
+} from './roleStructure';
 
 // COMPANYVIEW1d (the company-view design §3.3 to §3.5, §4): the rows of Work, Accounts and By repository, built once over the driver's
 // answer, with one id each. A row says the driver's answer; it resolves nothing itself.
@@ -214,6 +216,125 @@ describe('buildStructure', () => {
     const { options } = build();
     expect(options.workspaces).toEqual(['aurora', 'default']);
     expect(options.works).toEqual(STRUCTURE.works);
+  });
+});
+
+// COMPANYVIEW1f (the company-view design §4): the diagram's nodes and edges, built by the same function over the same answer, each with
+// the id its row has. Three columns: places, roles and agents; an edge only from a record.
+describe('the diagram', () => {
+  const APPOINTED = {
+    stewardOffered: true, supervisorOffered: false,
+    appointments: [{ role: 'supervisor', scope: 'workspace:aurora', workspace: 'aurora', repository: '', dormant: true }],
+  };
+  const diagramOf = (filters: Partial<StructureFilters> = {}, patch: Partial<Parameters<typeof buildStructure>[0]> = {}) => buildStructure({
+    structure: STRUCTURE, registry: REGISTRY, tools: TOOLS, accounts: { agents: [CLAUDE_USE, CODEX_USE] }, plugins: PLUGINS, lines: LINES,
+    driver: DRIVER, workflows: WORKFLOWS, filters: { ...NO_FILTERS, ...filters }, ...patch,
+  }).diagram;
+  const ids = (kind: string, diagram = diagramOf()) => diagram.nodes.filter((node) => node.kind === kind).map((node) => node.id);
+  const staffed = (role: string, diagram = diagramOf()) => diagram.edges
+    .flatMap((edge) => (edge.kind === 'staffed' && edge.from === role ? [[edge.to, edge.position, edge.dashed]] : []));
+
+  it("draws This Daoris and each place that sets something of its own, and counts the rest in its workspace's node", () => {
+    expect(ids('place')).toEqual(['place:machine', 'place:aurora', 'place:aurora/engine', 'place:default/tools']);
+    const node = (id: string) => diagramOf().nodes.find((each) => each.id === id);
+    // Aurora sets nothing of its own and holds site, which takes this machine's roles; default's one repository is drawn itself.
+    expect(node('place:aurora')).toMatchObject({ own: false, counted: 1, group: 'aurora' });
+    expect(node('place:aurora/engine')).toMatchObject({ own: true, ownRoles: true, counted: 0, group: 'aurora' });
+    // A start held is the place's own answer.
+    expect(node('place:default/tools')).toMatchObject({ own: true, group: 'default' });
+    expect(node('place:machine')).toMatchObject({ group: null });
+  });
+
+  it('draws each working role once, placed from the scope its record names', () => {
+    expect(ids('role')).toEqual(['role:build', 'role:engine-build', 'role:chat', 'role:ask-daoris', 'role:intake', 'role:help', 'role:partner', 'role:review', 'role:brainstorm']);
+    const placed = diagramOf().edges.filter((edge) => edge.kind === 'placed').map((edge) => `${edge.from} > ${edge.to}`);
+    expect(placed).toContain('place:machine > role:build');
+    expect(placed).toContain('place:aurora/engine > role:engine-build');
+    expect(placed).not.toContain('place:machine > role:engine-build');
+    expect(placed).toHaveLength(9);
+  });
+
+  it('draws the appointed roles where offered or appointed, each appointment an edge, dashed while dormant', () => {
+    expect(ids('appointed')).toEqual([]);
+    const diagram = diagramOf({}, { appointed: APPOINTED });
+    expect(ids('appointed', diagram)).toEqual(['appointed:steward', 'appointed:supervisor']);
+    expect(diagram.edges.filter((edge) => edge.kind === 'appointed')).toEqual([
+      { id: 'appointed:place:aurora>appointed:supervisor', kind: 'appointed', from: 'place:aurora', to: 'appointed:supervisor', dashed: true },
+    ]);
+    // An appointment is a place's own, though its roles are still this machine's.
+    expect(diagram.nodes.find((node) => node.id === 'place:aurora')).toMatchObject({ own: true, ownRoles: false });
+  });
+
+  it('staffs a role choice by choice, numbered, dashed where the last reading says that choice cannot run; a rule is never drawn', () => {
+    expect(staffed('role:build')).toEqual([['agent:claude-code', '1', false], ['agent:codex', '2', true]]);
+    expect(staffed('role:engine-build')).toEqual([['agent:claude-code', '1', true]]);
+    expect(staffed('role:review')).toEqual([['agent:codex', '1', true]]);
+    expect(staffed('role:chat')).toEqual([['agent:claude-code', 'before', false]]);
+    // dsh runs brainstorms at account default by its rule; no choice names it.
+    expect(staffed('role:brainstorm')).toEqual([['agent:claude-code', '1', false]]);
+  });
+
+  it('draws each agent a choice names with its accounts, and one the roster lacks as written, never invented', () => {
+    expect(ids('agent')).toEqual(['agent:claude-code', 'agent:codex']);
+    const claude = diagramOf().nodes.find((node) => node.id === 'agent:claude-code');
+    expect(claude).toMatchObject({ kind: 'agent', product: 'Claude Code', known: true });
+    const ghostly = {
+      ...STRUCTURE,
+      places: STRUCTURE.places.map((place) => ({
+        ...place, works: place.works.map((work) => (work.work === 'help' ? { ...work, choices: [{ ...work.choices[0]!, agent: 'ghost-agent' }] } : work)),
+      })),
+    };
+    const ghost = diagramOf({}, { structure: ghostly }).nodes.find((node) => node.id === 'agent:ghost-agent');
+    expect(ghost).toMatchObject({ kind: 'agent', product: 'ghost-agent', known: false, phrase: null });
+  });
+
+  it("lights a place's path: per work the role the driver answered there, where that role is placed, and its staffing", () => {
+    const diagram = diagramOf();
+    const lit = litOf(diagram, 'place:aurora/engine');
+    expect([...lit.nodes]).toEqual(expect.arrayContaining(['place:aurora/engine', 'role:engine-build', 'role:chat', 'place:machine', 'agent:claude-code']));
+    expect([...lit.edges]).toContain('placed:place:machine>role:chat');
+    expect([...lit.edges]).toContain('staffed:role:engine-build>agent:claude-code:1');
+    // Its design still takes this machine's Build, so Build is lit too; site's node is not.
+    expect(lit.nodes.has('role:build')).toBe(true);
+    expect(lit.nodes.has('place:aurora')).toBe(false);
+  });
+
+  it('lights every role leaning on an agent, and what a role is placed in and staffed by', () => {
+    const diagram = diagramOf();
+    const codex = litOf(diagram, 'agent:codex');
+    expect([...codex.nodes].sort()).toEqual(['agent:codex', 'role:build', 'role:review']);
+    expect([...codex.edges].sort()).toEqual(['staffed:role:build>agent:codex:2', 'staffed:role:review>agent:codex:1']);
+    const engine = litOf(diagram, 'role:engine-build');
+    expect([...engine.nodes].sort()).toEqual(['agent:claude-code', 'place:aurora/engine', 'role:engine-build']);
+    expect(litOf(diagram, null).nodes.size).toBe(0);
+  });
+
+  it('keeps to the filters: a workspace, a work, an agent, a name, and what needs a look', () => {
+    expect(ids('place', diagramOf({ workspace: 'aurora' }))).toEqual(['place:machine', 'place:aurora', 'place:aurora/engine']);
+    const codex = diagramOf({ agent: 'codex' });
+    expect(ids('role', codex)).toEqual(['role:build', 'role:review']);
+    expect(ids('agent', codex)).toEqual(['agent:codex']);
+    expect(ids('role', diagramOf({ work: 'build' }))).toEqual(['role:build', 'role:engine-build']);
+    expect(ids('place', diagramOf({ work: 'build' }))).toEqual(['place:machine', 'place:aurora/engine']);
+    expect(ids('role', diagramOf({ name: 'engine' }))).toEqual(['role:engine-build']);
+    expect(ids('role', diagramOf({ needsLook: true }))).toEqual(['role:engine-build', 'role:review']);
+    // Every edge kept has both its ends kept.
+    for (const diagram of [codex, diagramOf({ workspace: 'aurora' }), diagramOf({ needsLook: true })]) {
+      const kept = new Set(diagram.nodes.map((node) => node.id));
+      expect(diagram.edges.every((edge) => kept.has(edge.from) && kept.has(edge.to))).toBe(true);
+    }
+  });
+
+  it("finds a row's node, a place that sets nothing of its own in its workspace's, and the section a node's row is in", () => {
+    const structure = build();
+    expect(nodeOfRow(structure, 'work:build')).toBe('role:build');
+    expect(nodeOfRow(structure, 'agent:codex')).toBe('agent:codex');
+    expect(nodeOfRow(structure, 'place:aurora/site')).toBe('place:aurora');
+    expect(nodeOfRow(structure, 'place:aurora/engine')).toBe('place:aurora/engine');
+    expect(nodeOfRow(structure, 'role:chat')).toBe('role:chat');
+    expect(nodeOfRow(structure, 'place:default')).toBeNull();
+    expect(['place:machine', 'place:aurora', 'place:aurora/engine', 'role:build', 'appointed:steward', 'agent:codex'].map(sectionOf))
+      .toEqual(['work', 'repository', 'repository', 'working', 'appointed', 'accounts']);
   });
 });
 
