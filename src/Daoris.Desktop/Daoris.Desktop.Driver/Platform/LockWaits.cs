@@ -2,13 +2,16 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// The waits on a lock a flow makes while it holds a checkout alone (GITLOCK1's order, the checkout's <c>TreeLock</c>): each lock says so
-/// before it waits, and a test sees them. Only a process start's place and a record's lock may be waited for there, since neither's holder
-/// waits.
+/// before it waits, and a test sees them. Only a process start's place, a record's lock and the desktop store's write lock may be waited for
+/// there, since none's holder waits.
 /// </summary>
 public static class LockWaits
 {
     /// <summary>The waits a flow holding a checkout alone may make.</summary>
     public const string Starts = "a process start's place", Records = "a record's lock";
+
+    /// <summary>The desktop store's write lock, as the act journal waits on it under the checkout's (GITAPP2a): one short transaction holds it.</summary>
+    public const string Store = "the desktop store's write lock";
 
     private static readonly AsyncLocal<object?> s_holding = new();
 
