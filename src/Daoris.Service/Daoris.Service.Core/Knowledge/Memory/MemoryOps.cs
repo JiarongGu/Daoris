@@ -36,9 +36,12 @@ public static class MemoryOpState
 
 /// <summary>
 /// What an operation asks: a write's text, or an end's reason; the entry it targets and the revision its session read; a relation's
-/// source and kind. A write naming a relation and a target relates the entry it writes.
+/// source and kind. A write naming a relation and a target relates the entry it writes; its <see cref="Recheck"/> is the records it cites
+/// (<see cref="MemoryCitations"/>), kept on the entry for the sweep.
 /// </summary>
-public sealed record MemoryChange(string Kind, string? Text = null, string? Target = null, long? Revision = null, string? Source = null, string? Relation = null);
+public sealed record MemoryChange(
+    string Kind, string? Text = null, string? Target = null, long? Revision = null, string? Source = null, string? Relation = null,
+    string? Recheck = null);
 
 /// <summary>A recheck the sweep read of a cited entry (§3): it holds at <paramref name="Revision"/>, or failed for <paramref name="Reason"/>.</summary>
 public sealed record MemoryRecheck(string Repository, string Entry, long Revision, bool Holds, string? Reason = null);
@@ -80,7 +83,7 @@ public sealed partial class MemoryOpStore
 {
     private const string Columns =
         "id, repository, kind, state, at, session, workspace, quest, adapter, harness, role, role_revision, models, text, target, revision, source, "
-        + "relation, approver, holds, entry, applied, settled";
+        + "relation, approver, holds, entry, applied, settled, recheck";
 
     private readonly ConnectionGate _db;
 
@@ -129,6 +132,8 @@ public sealed partial class MemoryOpStore
             {EventJournal.MemorySchema}
             """;
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+        // KNOWCENTRAL2d: the records a write cites; a row from before reads none.
+        await SchemaColumns.EnsureAsync(_db, "memory_ops", "recheck", "recheck TEXT NULL", ct).ConfigureAwait(false);
     }
 
     /// <summary>An operation its session made, kept <c>staged</c> until the session's commit point; nothing staged applies by itself.</summary>
@@ -319,6 +324,21 @@ public sealed partial class MemoryOpStore
             return await FindAsync(id, inside).ConfigureAwait(false);
         }, ct);
 
+    /// <summary>The targets of rows not yet settled (awaiting, ready, applying, held), by repository and kind: what a sweep does not write again.</summary>
+    public Task<IReadOnlySet<(string Repository, string Target, string Kind)>> PendingAsync(CancellationToken ct = default) =>
+        _db.RunAsync<IReadOnlySet<(string, string, string)>>(async () =>
+        {
+            await using var command = _db.Command();
+            command.CommandText = """
+                SELECT repository, target, kind FROM memory_ops
+                WHERE state IN ('awaiting', 'ready', 'applying', 'held') AND target IS NOT NULL
+                """;
+            await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
+            var pending = new HashSet<(string, string, string)>();
+            while (await reader.ReadAsync(ct).ConfigureAwait(false)) pending.Add((reader.GetString(0), reader.GetString(1), reader.GetString(2)));
+            return pending;
+        }, ct);
+
     /// <summary>
     /// A sweep's rechecks written as rows (§3): a Holds as a <c>ready</c> confirmation at the revision read, or, where an end of the entry
     /// awaits its approver, kept on that end's row so the revision the approver read does not move; a Failed as an <c>awaiting</c> end.
@@ -393,8 +413,9 @@ public sealed partial class MemoryOpStore
         insert.CommandText = $"""
             INSERT INTO memory_ops ({Columns})
             VALUES ($id, $repository, $kind, $state, $at, $session, $workspace, $quest, $adapter, $harness, $role, $roleRevision, $models, $text,
-                    $target, $revision, $source, $relation, NULL, NULL, NULL, NULL, NULL)
+                    $target, $revision, $source, $relation, NULL, NULL, NULL, NULL, NULL, $recheck)
             """;
+        insert.Parameters.AddWithValue("$recheck", Value(op.Change.Recheck));
         insert.Parameters.AddWithValue("$id", op.Id);
         insert.Parameters.AddWithValue("$repository", op.Repository);
         insert.Parameters.AddWithValue("$kind", op.Change.Kind);
@@ -434,7 +455,7 @@ public sealed partial class MemoryOpStore
             : null;
         return new MemoryOp(
             reader.GetString(0), reader.GetString(1), reader.GetString(3),
-            new MemoryChange(reader.GetString(2), Text(13), Text(14), Number(15), Text(16), Text(17)), by, at)
+            new MemoryChange(reader.GetString(2), Text(13), Text(14), Number(15), Text(16), Text(17), Text(23)), by, at)
         {
             Models = Text(12),
             Approver = Text(18),

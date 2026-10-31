@@ -103,6 +103,18 @@ public sealed class MemoryEngineTests : IAsyncLifetime
         Assert.DoesNotContain(values, value => value.Contains(MemoryMachine.Tree, StringComparison.OrdinalIgnoreCase) || value.Contains("trees/"));
     }
 
+    /// <summary>🔴 A write's citations are taken through the index at the call: a record the index does not hold is refused, and nothing is kept.</summary>
+    [Fact]
+    public async Task A_write_citing_a_record_the_index_does_not_hold_is_refused()
+    {
+        var chat = await _machine.ChatAsync(Now);
+
+        var answer = await Tools(chat).WriteAsync("The pick stands.", cites: ["Owner:docs/decisions/D99.md"]);
+
+        Assert.StartsWith("Refused: No entry with id `Owner:docs/decisions/D99.md`", answer);
+        Assert.Empty(await _machine.Memory.OfSessionAsync(chat.Id));
+    }
+
     /// <summary>
     /// 🔴 A one-turn driven session in a tree: the driver hands its usage history's turn line as the session completes, the row names that
     /// turn's model there, and the tree's post keeps it as it releases the row.

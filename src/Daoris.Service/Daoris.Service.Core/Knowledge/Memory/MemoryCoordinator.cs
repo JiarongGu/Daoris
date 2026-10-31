@@ -2,8 +2,8 @@ namespace Daoris.Knowledge;
 
 /// <summary>
 /// The service's memory work, run from its start (KNOWCENTRAL2d; the memory coordinator design §3): the applier's recovery and every
-/// <c>ready</c> row at the start, then whatever a commit point releases, read at <see cref="Pace"/> since any process may record one.
-/// A failed pass is told to <paramref name="failed"/> and the next pass tries again.
+/// <c>ready</c> row at the start, then whatever a commit point releases, read at <see cref="Pace"/> since any process may record one;
+/// and, with the index, the sweep at <see cref="SweepPace"/>. A failed pass is told to <paramref name="failed"/> and the next tries again.
 /// </summary>
 public sealed class MemoryCoordinator(
     MemoryOpStore ops, IMemoryEngines engines, KnowledgeService? knowledge, TimeProvider? time = null, Action<Exception>? failed = null)
@@ -11,14 +11,20 @@ public sealed class MemoryCoordinator(
     /// <summary>How often the log is read for rows released since.</summary>
     public TimeSpan Pace { get; init; } = TimeSpan.FromSeconds(2);
 
+    /// <summary>How often the sweep rechecks the entries due.</summary>
+    public TimeSpan SweepPace { get; init; } = TimeSpan.FromHours(1);
+
     /// <summary>Runs until <paramref name="ct"/> stops it.</summary>
     public async Task RunAsync(CancellationToken ct)
     {
+        var clock = time ?? TimeProvider.System;
         var applier = new MemoryApplier(ops, engines, time);
+        var sweep = knowledge is null ? null : new MemorySweep(ops, engines, knowledge);
         var started = false;
+        DateTimeOffset? swept = null;
         try
         {
-            using var timer = new PeriodicTimer(Pace, time ?? TimeProvider.System);
+            using var timer = new PeriodicTimer(Pace, clock);
             do
             {
                 try
@@ -26,6 +32,11 @@ public sealed class MemoryCoordinator(
                     if (!started) await applier.StartAsync(ct).ConfigureAwait(false);
                     else await applier.ApplyReadyAsync(ct).ConfigureAwait(false);
                     started = true;
+                    if (sweep is not null && (swept is not { } last || clock.GetUtcNow() - last >= SweepPace))
+                    {
+                        swept = clock.GetUtcNow();
+                        await sweep.RunAsync(swept.Value, ct).ConfigureAwait(false);
+                    }
                 }
                 catch (Exception error) when (error is not OperationCanceledException)
                 {

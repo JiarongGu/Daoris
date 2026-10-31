@@ -33,6 +33,9 @@ public sealed class MemoryTools(
 
     private const int Limit = 10;
 
+    /// <summary>The most records a write cites, so their citations fit the re-check text Lyntai keeps.</summary>
+    private const int MaxCites = 5;
+
     private static readonly string[] Relations = ["disputes", "amends"];
 
     private static readonly string[] Changes = ["disputes", "amends", "end"];
@@ -128,10 +131,13 @@ public sealed class MemoryTools(
         [Description("`disputes` or `amends`, given with `target`; omit for an entry that relates to none.")] string? relation = null,
         [Description("The reference of the entry this one disputes or amends.")] string? target = null,
         [Description("Not taken yet: a replacement waits on Lyntai. Dispute the old entry and end it instead.")] string? supersedes = null,
+        [Description("The knowledge ids of the records that show the fact, as knowledge_search names them; each is rechecked later.")]
+        string[]? cites = null,
         CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(text)) return "Write the entry's text: one fact, in a sentence or two.";
         if (!string.IsNullOrWhiteSpace(supersedes)) return SupersedesWaits;
+        if (cites is { Length: > MaxCites }) return $"Cite at most {MaxCites} records: the ones that show this fact.";
         MemoryReference? related = null;
         if ((relation ?? target) is not null
             && (relation is not { } kind || !Relations.Contains(kind.Trim().ToLowerInvariant()) || (related = MemoryReference.Parse(target)) is null))
@@ -147,10 +153,20 @@ public sealed class MemoryTools(
         }
 
         if (engines is null || ledger is null || caller.Record is not { } record) return NotOn;
+        var citations = new List<Citation>();
+        foreach (var id in (cites ?? []).Where(id => !string.IsNullOrWhiteSpace(id)).Select(id => id.Trim()).Distinct(StringComparer.Ordinal))
+        {
+            var repository = id.IndexOf(':') is var colon and > 0 ? id[..colon] : id;
+            if (caller.Outside(new MemoryReference(repository, id)) is { } outside) return outside;
+            var answer = await service.CiteAsync(id, ct: ct).ConfigureAwait(false);
+            if (answer.Cited is not { } cited) return $"Refused: {answer.Refused} Nothing was kept.";
+            citations.Add(cited);
+        }
+
         var op = await ledger.Memory.StageAsync(
             caller.OwnPlaced!,
             new MemoryChange(MemoryOpKind.Write, Text: text.Trim(), Target: related is null ? null : caller.Placed(related).Entry,
-                Relation: relation?.Trim().ToLowerInvariant()),
+                Relation: relation?.Trim().ToLowerInvariant(), Recheck: MemoryCitations.Of(citations)),
             Author(record), ct).ConfigureAwait(false);
         return $"Kept as operation `{op.Id}`, staged: `{op.Repository}`'s memory takes this entry when this session's work is accepted. "
             + "Until then only this session, and a session continuing it, finds it with memory_search.";

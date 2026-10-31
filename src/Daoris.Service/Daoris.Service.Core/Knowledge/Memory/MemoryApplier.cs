@@ -117,7 +117,7 @@ public sealed class MemoryApplier(MemoryOpStore ops, IMemoryEngines engines, Tim
         switch (change.Kind)
         {
             case MemoryOpKind.Write:
-                var written = await engine.RememberAsync(change.Text ?? "", ct, key).ConfigureAwait(false);
+                var written = await engine.RememberAsync(change.Text ?? "", ct, key, change.Recheck).ConfigureAwait(false);
                 if (change is { Relation: { } kind, Target: { } target })
                 {
                     await engine.RelateAsync(written.Id, target, kind, ct, key is null ? null : RelationKey(op.Id)).ConfigureAwait(false);
