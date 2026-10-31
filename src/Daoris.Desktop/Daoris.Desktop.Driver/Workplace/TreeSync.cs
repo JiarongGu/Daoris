@@ -210,7 +210,7 @@ internal sealed class TreeSync(
             // of it holds it; let go before the deletions. What held it otherwise is named on the line and on each replay it leaves.
             using var taken = TreeLock.TryWriting(context.Home, root, repository, TreeLock.Updating);
             // GITAPP2a: the checkout's open acts reconciled under the hold, before the pull's judgement and outside the look's memos; one that
-            // still runs holds the pull, the replays and the deletions for the next look, named.
+            // still runs holds the pull and the replays for the next look, named.
             var acting = taken is null ? null : await ActReconciler.ForWriterAsync(context.Home, root, ct).ConfigureAwait(false);
             var held = acting is null ? taken : null;
             var holder = taken is null ? TreeLock.Held(repository, TreeLock.HolderOf(context.Home, root)) : acting?.Said;
