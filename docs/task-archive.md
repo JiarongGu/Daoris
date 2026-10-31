@@ -5,6 +5,14 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## COMPANYVIEW1i — what a work may call (2026-10-31)
+
+> **1i: what a work may call** (service, driver, web). The call table's answer per work, read-only, in Work's opened row; its read is named by the row (the call table lives in the service). After 1d. (`docs/2026-10-31-company-view-design.md` §2 and §7 row 9; the COMPANYVIEW1 row stays open.)
+
+Completed 2026-10-31: no route. The call table is static code with no machine state, so the window carries it as `agents/roles/callTable.ts` (every registered tool and each work's column) and Work's opened row names it (*May call*: the tools a restricted work is served, or *every tool but* those a broad work is refused; names only). Held in two links: `callTable.test.ts` reads each work's cells from the service's `fixtures/call-table.json`, which `McpRoleFilterTests` holds to `CallTable`; the fixture gained a `registered` list, held to the host's registration by `The_tables_file_lists_every_registered_tool`, so a tool added later fails one test until placed in both. Page test in `RolesStructure.test.tsx` (en and zh); story `WorkOpenedCalls`.
+
+---
+
 ## COMPANYVIEW1g — setup (2026-10-31)
 
 > **1g: setup** (web). *Add a role here* on rows and workspace groups, the suggestion, and Get started's door; *Needs a look* stays 1d's. After 1d. (`docs/2026-10-31-company-view-design.md` §5 and §7 row 7; the COMPANYVIEW1 row stays open.)

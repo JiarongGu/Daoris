@@ -58,6 +58,9 @@ export const WorkFoldedDark: Story = { render: (args) => <InTheme theme="dark"><
 
 /** Work, opened: the choices at their positions with each state by the last readings. */
 export const WorkOpened: Story = { args: { which: 'work', opened: ['work:build', 'work:review', 'work:brainstorm'] } };
+/** Work, opened for what it may call (COMPANYVIEW1i): partnering's named tools, and building's every tool but those refused. */
+export const WorkOpenedCalls: Story = { args: { which: 'work', opened: ['work:partner', 'work:build'] } };
+export const WorkOpenedCallsChinese: Story = { args: { which: 'work', opened: ['work:partner', 'work:build'] }, decorators: [chinese] };
 export const WorkOpenedHalf: Story = { args: { which: 'work', opened: ['work:build', 'work:review'] }, decorators: [storyWidths.half] };
 export const WorkOpenedNarrow: Story = { args: { which: 'work', opened: ['work:build', 'work:review'] }, decorators: [storyWidths.narrow] };
 export const WorkOpenedChinese: Story = { args: { which: 'work', opened: ['work:build', 'work:review'] }, decorators: [chinese] };

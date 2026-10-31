@@ -163,6 +163,8 @@
   "agents.roles.work.roleIs": "Role",
   "agents.roles.work.ruleIs": "Rule",
   "agents.roles.work.choicesIs": "Choices",
+  "agents.roles.work.callsIs": "May call",
+  "agents.roles.work.callsAllBut": "every tool but {{tools}}",
   "agents.roles.rule.on": "on",
   "agents.roles.rule.ask": "ask",
   "agents.roles.rule.off": "off",

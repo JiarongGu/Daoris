@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 // COMPANYVIEW1d (the company-view design §3.3 to §3.5): Work, Accounts and By repository in the Agents place's Roles mode, over the
@@ -137,6 +137,22 @@ describe('The Roles mode, Work, Accounts and By repository', () => {
       expect(within(row).getByText(/choice 1/)).toBeTruthy();
       expect(within(row).getByText(/codex-acp · account default · account default · cannot run: signed out · read/)).toBeTruthy();
       expect(row.textContent).toMatch(/claude-code · opus · high · can run · read/);
+    });
+
+    it.each([
+      ['en', 'May call', /^every tool but .*brainstorm_give.*settings_timeout$/],
+      ['zh', '可调用', /^除 .*brainstorm_give.*settings_timeout 外的所有工具$/],
+    ])('names, read only, what each work may call when opened, in %s', async (language, label, buildCalls) => {
+      const user = await open();
+      await act(() => i18n.changeLanguage(language));
+      const row = (work: string) => document.querySelector(`[data-structure-row="work:${work}"]`) as HTMLElement;
+      await waitFor(() => expect(row('build')).toBeTruthy());
+      for (const work of ['partner', 'build']) await user.click(within(row(work)).getAllByRole('button')[0]!);
+      const calls = (work: string) => [...row(work).querySelectorAll('p')].find((p) => p.textContent?.startsWith(label))?.lastElementChild?.textContent;
+      expect(calls('partner')).toMatch(/^knowledge_convergence, knowledge_get, .*, partner_answer, registry$/);
+      expect(calls('build')).toMatch(buildCalls);
+      expect(calls('build')).not.toContain('quest_publish');
+      expect(within(row('partner')).queryByRole('textbox')).toBeNull();
     });
 
     it("presses 'Open its setting' to its home, Working roles for Intake's Off, and none for partnering", async () => {
