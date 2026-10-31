@@ -13,7 +13,11 @@ namespace Daoris.Driver;
 /// <param name="Work">The run's newest work quest here: what the row's door reads the run by; null where it has none.</param>
 /// <param name="Since">When the declined quest last moved: its decline.</param>
 public sealed record RequestHold(
-    string Run, string Node, string Repository, string Workspace, string Quest, string To, string? Work, DateTimeOffset? Since);
+    string Run, string Node, string Repository, string Workspace, string Quest, string To, string? Work, DateTimeOffset? Since)
+{
+    /// <summary>Whether the held node is the run's own <c>request</c> (INTEGRATE1p), asked again or gone on without, not the work's requests, passed over.</summary>
+    public bool Request { get; init; }
+}
 
 /// <summary>
 /// The runs held at a declined request, judged from what the runtime last read and each run's node record (INTEGRATE1o part o3). **Read, never
@@ -28,13 +32,24 @@ public static class RequestHolds
     /// </summary>
     /// <param name="governed">The runs the last look governed (the graph runs carry a scope; a unit Current's graphs govern carries none).</param>
     /// <param name="record">A unit's node record, or null where it does not read.</param>
-    public static IReadOnlyList<RequestHold> Of(IEnumerable<GovernedUnit> governed, Func<string, NodeRecord?> record)
+    public static IReadOnlyList<RequestHold> Of(IEnumerable<GovernedUnit> governed, Func<string, NodeRecord?> record, IReadOnlyDictionary<string, QuestView>? quests = null)
     {
         var holds = new List<RequestHold>();
         foreach (var each in governed)
         {
-            if (each.Scope is not { } scope || WorkRequestsNode.Declined(scope.Requests) is not { } declined) continue;
-            if (record(each.Unit.Id) is not { } kept) continue;
+            if (each.Scope is not { } scope || record(each.Unit.Id) is not { } kept) continue;
+            // INTEGRATE1p (C33): a run's own request failed by a decline, under `declined: wait`, waits on the person's two acts.
+            foreach (var node in each.Graph.Nodes.Where(node => node.Kind == NodeKinds.Request && NodeOptions.Text(node, "declined") != RequestOptions.Stop))
+            {
+                if (WorkPerformer.StatusOf(kept, node.Id) is not { State: NodeStates.Failed, Code: RequestOptions.DeclinedCode } || kept.Pending.Any(word => word.Node == node.Id)) continue;
+                var key = kept.Attempts.LastOrDefault(attempt => attempt.Node == node.Id)?.Call.IdempotencyKey;
+                var asked = key is null ? null : quests?.Values.FirstOrDefault(quest => quest.Request == key);
+                holds.Add(new RequestHold(
+                    each.Run, node.Id, each.Unit.Owner.Repository ?? "", each.Unit.Owner.Workspace, asked?.Id ?? "", asked?.To ?? RequestOptions.Repository(NodeOptions.Text(node, "to") ?? ""),
+                    scope.Quests.LastOrDefault()?.Id, asked?.Updated) { Request = true });
+            }
+
+            if (WorkRequestsNode.Declined(scope.Requests) is not { } declined) continue;
             foreach (var node in each.Graph.Nodes.Where(node => node.Kind == NodeKinds.WorkRequests))
             {
                 if (WorkPerformer.StatusOf(kept, node.Id).State != NodeStates.Active || kept.Pending.Any(word => word.Node == node.Id)) continue;

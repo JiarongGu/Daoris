@@ -67,6 +67,15 @@ public sealed record SittingFact(string Code)
     /// <summary>The second opinion's state (<see cref="OpinionGateStates"/>); null where it is not judged yet.</summary>
     public string? State { get; init; }
 
+    /// <summary>The quest's declared paths that meet the earlier quest's work (<see cref="Overlaps"/>); null where the code names none.</summary>
+    public IReadOnlyList<string>? Paths { get; init; }
+
+    /// <summary>
+    /// <see cref="StartVerdict.RepositoryBusy"/>: its declared paths meet an earlier unit's of the repository under the rule's
+    /// <c>overlap: wait</c>, so it waits until that unit's integration is settled (INTEGRATE1l).
+    /// </summary>
+    public const string Overlaps = "overlaps";
+
     /// <summary><see cref="StartVerdict.AtCapacity"/>: the cap is spent.</summary>
     public const string CapSpent = "cap";
 
@@ -301,6 +310,19 @@ public sealed record Snapshot(
         new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
+    /// The paths each running unit's tree changed since it opened, by quest id (INTEGRATE1l, <see cref="WorkOverlaps"/>): one git read per
+    /// running session, so a start's comparison sees what an earlier unit already changed as well as what it declared. Absent is unread.
+    /// </summary>
+    public IReadOnlyDictionary<string, IReadOnlyList<string>> Changed { get; init; } =
+        new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// The quests whose integration request is open in the integration record (INTEGRATE1l): a done unit holds an overlapping start
+    /// until its request is settled. Absent is none.
+    /// </summary>
+    public IReadOnlySet<string> Integrating { get; init; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
     /// The sessions a supervisor's decision holds (SUPERVISOR1a-i, D208; the supervisor design §6.3), read from the decisions' memory at
     /// each look (<see cref="SupervisorQuarantine.DecideAsync"/>): while one is <c>held</c> and no word of the owner's waits, the record is
     /// held whatever else waits, so a helper's answer or Daoris's own words cannot cut the overrule window. Absent is none.
@@ -522,6 +544,12 @@ public sealed record Consideration(
     /// parked. Null for every other verdict.
     /// </summary>
     public int? Failures { get; init; }
+
+    /// <summary>
+    /// For a start under <c>overlap: warn</c> whose declared paths meet an earlier unit's (INTEGRATE1l): the overlap, which its reason says.
+    /// Null for every other consideration.
+    /// </summary>
+    public OverlapFact? Overlaps { get; init; }
 }
 
 public static class Considerations
@@ -613,6 +641,8 @@ public static class Planner
         // The trees a start planned at this look goes into, each with its quest (SESSONE1d): a tree takes one session (D51), and a
         // further part of a session may now go into a tree a resume or a carry-on goes back into, so each holds it for the other.
         var treesThisTick = new List<(string Tree, string Quest)>();
+        // INTEGRATE1l: the quests started at this look, each an earlier unit to a later start whose declared paths meet its own.
+        var startsThisLook = new List<QuestView>();
         // PARALLEL1b: a start of this machine's still opening takes its place as a live session does, counted once where its record
         // has opened since and an active session already stands for its quest.
         var opening = Opening(snapshot);
@@ -1310,6 +1340,19 @@ public static class Planner
                 };
             }
 
+            // INTEGRATE1l (the integration design §9): a first start whose declared paths meet an earlier unit's of the repository,
+            // declared or changed on its branch, waits under `overlap: wait` until that unit's integration is settled; under `warn` it
+            // starts saying so. A unit is earlier while it is taken, running, started at this look or still integrating.
+            var overlap = continuing || quest.Status != "Open" ? null : OverlapOf(quest);
+            if (overlap is not null
+                && LandingRules.Choose(config, quest.To, repo.Workspace).Rule.Integrate?.Overlap == LandingIntegrate.Wait)
+            {
+                return new(quest, StartVerdict.RepositoryBusy, $"{overlap.Said} — it starts once that work is integrated.")
+                {
+                    Said = new(SittingFact.Overlaps) { Quest = overlap.Quest, Paths = overlap.Paths },
+                };
+            }
+
             // 🔴 The TREE is the lock (D51), and where every session here opens its own there is no
             // reason to run one at a time (PAR1). What still holds is the one tree a resume or a carry-on goes back into.
             if (config.OpensOwnTree(quest.To))
@@ -1405,8 +1448,32 @@ public static class Planner
             }
 
             startedThisTick[quest.To] = quest.Id;
+            startsThisLook.Add(quest);
             if (config.OpensOwnTree(quest.To) && into is { Tree: { Length: > 0 } back }) treesThisTick.Add((back, quest.Id));
-            return new(quest, StartVerdict.Start, $"starting in `{quest.To}`.", repo.Root, repo.Workspace);
+            return new(quest, StartVerdict.Start,
+                overlap is null ? $"starting in `{quest.To}`." : $"starting in `{quest.To}`; it {overlap.Said}.", repo.Root, repo.Workspace)
+            {
+                Overlaps = overlap,
+            };
+        }
+
+        // The first earlier unit of the quest's repository whose declared or changed paths meet the quest's declared ones; null for none.
+        OverlapFact? OverlapOf(QuestView quest)
+        {
+            if (quest.Paths.Count == 0) return null;
+            var earlier = snapshot.Quests
+                .Where(other => !string.Equals(other.Id, quest.Id, StringComparison.OrdinalIgnoreCase)
+                                && string.Equals(other.To, quest.To, StringComparison.OrdinalIgnoreCase)
+                                && (other.Status == "Taken" || snapshot.Integrating.Contains(other.Id)
+                                    || snapshot.Active.Any(s => string.Equals(s.Quest, other.Id, StringComparison.OrdinalIgnoreCase))))
+                .Concat(startsThisLook.Where(other => string.Equals(other.To, quest.To, StringComparison.OrdinalIgnoreCase)));
+            foreach (var other in earlier)
+            {
+                var met = PathOverlap.Meet(quest.Paths, other.Paths, snapshot.Changed.GetValueOrDefault(other.Id) ?? []);
+                if (met.Count > 0) return new OverlapFact(other.Id, met);
+            }
+
+            return null;
         }
     }
 

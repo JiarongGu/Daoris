@@ -2732,6 +2732,7 @@
         "  browser-cache the browser's caches are cleared when over 2 GB, while the browser does not run and at its start  (the default — `daoris driver keep browser-cache …` changes it)",
         "  logs       each day's file of the machine log is kept 30 days  (the default — `daoris driver keep logs …` changes it)",
         "  history    finished work's records stay until you clear them  (the default — `daoris driver keep history …` changes it)",
+        "  allowance  Daoris may use up to 48 GB in all; over it, it lets go of what can be made again, oldest first, only where that brings it within  (the default — `daoris driver keep allowance …` changes it)",
         "  floor      below the smaller of 10% of a volume and 100 GB free, Daoris tells you  (the default — `daoris driver keep floor …` changes it)"
       ],
       "err": [],
@@ -2751,6 +2752,7 @@
         "  browser-cache the browser's caches are cleared when over 2 GB, while the browser does not run and at its start  (the default — `daoris driver keep browser-cache …` changes it)",
         "  logs       each day's file of the machine log is kept 14 days  (set — `daoris driver keep logs default` takes the default again)",
         "  history    finished work's records go 365 days after their last move, through the clear, each refusal holding  (set — `daoris driver keep history default` takes the default again)",
+        "  allowance  Daoris may use up to 48 GB in all; over it, it lets go of what can be made again, oldest first, only where that brings it within  (the default — `daoris driver keep allowance …` changes it)",
         "  floor      below 15% of a volume free, Daoris tells you  (set — `daoris driver keep floor default` takes the default again)"
       ],
       "err": [],
@@ -2923,7 +2925,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `driver keep` needs a kind and its rule — `set-aside <days>|whole|slim|default`, `downloads <days>|never|default`, `logs <days>|default`, `history <days>|never|default` or `floor <n>GB|<n>%|off|default`; e.g. `daoris driver keep set-aside 30`."
+        "daoris: `driver keep` needs a kind and its rule — `set-aside <days>|whole|slim|default`, `downloads <days>|never|default`, `logs <days>|default`, `history <days>|never|default`, `allowance <n>GB|default` or `floor <n>GB|<n>%|off|default`; e.g. `daoris driver keep set-aside 30`."
       ],
       "after": null
     },
@@ -2985,7 +2987,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `trees` is no kind whose rule you set here: name `set-aside`, `downloads`, `browser-cache`, `logs`, `history` or `floor`. `driver keep` needs a kind and its rule — `set-aside <days>|whole|slim|default`, `downloads <days>|never|default`, `logs <days>|default`, `history <days>|never|default` or `floor <n>GB|<n>%|off|default`; e.g. `daoris driver keep set-aside 30`."
+        "daoris: `trees` is no kind whose rule you set here: name `set-aside`, `downloads`, `browser-cache`, `logs`, `history`, `allowance` or `floor`. `driver keep` needs a kind and its rule — `set-aside <days>|whole|slim|default`, `downloads <days>|never|default`, `logs <days>|default`, `history <days>|never|default`, `allowance <n>GB|default` or `floor <n>GB|<n>%|off|default`; e.g. `daoris driver keep set-aside 30`."
       ],
       "after": null
     },

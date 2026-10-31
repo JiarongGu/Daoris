@@ -39,6 +39,9 @@ public static class KeepKey
     /// <summary>The most GB a kind's size limit may hold.</summary>
     public const int PartMaxGb = 1 << 20;
 
+    /// <summary>The fewest GB the person may set the allowance over the whole to.</summary>
+    public const int AllowanceMinGb = 8;
+
     /// <summary>The fewest GB the person may set the free-space floor to.</summary>
     public const int FloorMinGb = 1;
 
@@ -89,6 +92,9 @@ public sealed record KeepChoices
     /// <summary>The browser's caches' size limit in GB (KEEPSIZE1e), or null for the default.</summary>
     public int? BrowserCacheGb { get; init; }
 
+    /// <summary>The allowance over the whole in GB (KEEPSIZE1), or null for the default.</summary>
+    public int? AllowanceGb { get; init; }
+
     /// <summary>The machine log's days, or null for the default thirty.</summary>
     public int? LogsDays { get; init; }
 
@@ -116,6 +122,7 @@ public sealed record KeepChoices
         "logs" => LogsDays is null,
         "history" => HistoryDays is null,
         "floor" => FloorGb is null && FloorPercent is null && !FloorOff,
+        "allowance" => AllowanceGb is null,
         _ => true,
     };
 
@@ -124,6 +131,7 @@ public sealed record KeepChoices
     {
         if (!root.TryGetProperty(Key, out var keep) || keep.ValueKind != JsonValueKind.Object) return None;
         var choices = None;
+        if (Kind(keep, "allowance") is { } allowance) choices = choices with { AllowanceGb = Whole(allowance, "gb", KeepKey.AllowanceMinGb, KeepKey.PartMaxGb) };
         if (Kind(keep, "setAside") is { } setAside)
         {
             choices = choices with
@@ -166,6 +174,13 @@ public sealed record KeepChoices
     {
         if (this == None) return;
         writer.WriteStartObject(Key);
+        if (AllowanceGb is { } allowance)
+        {
+            writer.WriteStartObject("allowance");
+            writer.WriteNumber("gb", allowance);
+            writer.WriteEndObject();
+        }
+
         if (!IsDefault("set-aside"))
         {
             writer.WriteStartObject("setAside");

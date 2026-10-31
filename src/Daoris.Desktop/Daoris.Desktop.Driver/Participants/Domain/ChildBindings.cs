@@ -84,7 +84,13 @@ public sealed record ChildBindings
     /// <summary>🔴 The connector's <c>CallLineage</c> id shape, copied (twins).</summary>
     private static readonly Regex IdShape = new("^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$", RegexOptions.CultureInvariant);
 
+    /// <summary>An agent id the hook was sent and could not read; no id's shape, so no real id equals it.</summary>
+    private const string UnreadableAgent = "\0unreadable";
+
     private static readonly string[] Signals = ["hook", "call", "stream"];
+
+    /// <summary>Whether the connector named a field its harness sent that is not an id (FABRIC-C2a): the call is unknown, never the root's.</summary>
+    private static bool Malformed(JsonObject line) => line["malformed"] is not null;
 
     /// <summary>The harness the lines are from, or null where none said.</summary>
     public string? Harness { get; init; }
@@ -143,7 +149,13 @@ public sealed record ChildBindings
                 case "hook":
                     harness ??= Claude;
                     claudeRoot ??= Id(line, "session");
-                    if (Text(line, "event") == "call" && Id(line, "toolUse") is { } use) agentOf[use] = Id(line, "agent");
+                    if (Text(line, "event") == "call" && Id(line, "toolUse") is { } use)
+                    {
+                        agentOf[use] = line["agentUnreadable"] is JsonValue bad && bad.TryGetValue<bool>(out var unread) && unread
+                            ? UnreadableAgent
+                            : Id(line, "agent");
+                    }
+
                     break;
                 case "stream":
                     harness ??= Claude;
@@ -153,7 +165,7 @@ public sealed record ChildBindings
                     break;
                 case "call" when Text(line, "harness") == Codex:
                     harness ??= Codex;
-                    if (Id(line, "thread") is { } thread && Id(line, "parent") is null) roots.Add(thread);
+                    if (Id(line, "thread") is { } thread && Id(line, "parent") is null && !Malformed(line)) roots.Add(thread);
                     codexNamed ??= Id(line, "root");
                     break;
             }
@@ -216,11 +228,12 @@ public sealed record ChildBindings
 
                 case "call" when Text(line, "harness") == Claude && Id(line, "toolUse") is { } use:
                     if (!agentOf.TryGetValue(use, out var by_)) unjoined++;
+                    else if (by_ == UnreadableAgent) unknown++;
                     else if (by_ is null) rootCalls++;
                     else Called(Of(Claude, by_));
                     break;
 
-                case "call" when Text(line, "harness") == Codex && Id(line, "thread") is { } thread:
+                case "call" when Text(line, "harness") == Codex && Id(line, "thread") is { } thread && !Malformed(line):
                     if (roots.Contains(thread) || thread == codexRoot)
                     {
                         rootCalls++;

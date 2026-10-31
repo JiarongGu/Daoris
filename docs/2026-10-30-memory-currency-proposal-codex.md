@@ -1,5 +1,7 @@
 # KNOWCENTRAL1: Codex's sealed proposal
 
+> Router standing, moved here when the router was cut to its size (DOCSIZE1): used by D220.
+
 One of two sealed proposals written from `docs/2026-10-30-memory-currency-brief.md` under D191, before its author read the other (Lyntai's
 session writes the second in its own repository). Added verbatim on 2026-10-30 and never edited; read read-only in Lyntai.
 

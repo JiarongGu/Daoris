@@ -223,6 +223,30 @@ public sealed class LandingChainTests : IDisposable
         Assert.Contains("a fresh `feature/q1-fix-the-gap`", refused.Message);
     }
 
+    /// <summary>
+    /// A branch the transport integrated into the line is told as that, with no pull request or plugin in the words; the same facts
+    /// without the integrate provenance keep the pull request's sentence.
+    /// </summary>
+    [Fact]
+    public void An_integrated_branch_is_refused_in_the_words_of_the_transport_and_a_merged_one_in_a_pull_requests()
+    {
+        var integrated = Entry() with { Integrate = new LandedIntegrate(LandingIntegrate.Done, LandedIntegrate.Rule) };
+        var told = LandingAdvance.Refusal("feature/q1-fix-the-gap", "engine", "daoris/s-2",
+            new AdvanceFacts(integrated, Tip, null, Descends: true, Ahead: 2, Completed: "main"))!;
+
+        Assert.Contains("integrated into `main`", told.Message);
+        Assert.Contains("daoris-driver trees sync", told.Message);
+        Assert.Contains("a fresh `feature/q1-fix-the-gap`", told.Message);
+        Assert.DoesNotContain("pull request", told.Message);
+        Assert.DoesNotContain("plugin", told.Message);
+        Assert.Equal(AutoLandingCode.Completed, told.Refusal);
+
+        var merged = LandingAdvance.Refusal("feature/q1-fix-the-gap", "engine", "daoris/s-2",
+            new AdvanceFacts(Entry(), Tip, null, Descends: true, Ahead: 2, Completed: "main"))!;
+        Assert.Contains("its pull request was merged", merged.Message);
+        Assert.Contains("its plugin opens a new pull request", merged.Message);
+    }
+
     // ——— the codes
 
     [Fact]

@@ -180,6 +180,55 @@ public sealed class HelpTreesReadTests : IDisposable
     }
 
     /// <summary>
+    /// TREELOOK2: a tree whose commits the line holds by content (a content proof holds them) was never kept, so every read walked it in
+    /// full. A second read of it asks its two <c>status</c>es alone, says what it holds as the walk does, and still sees an edit made since.
+    /// </summary>
+    [Fact]
+    public async Task A_tree_whose_commits_the_line_holds_by_content_is_not_walked_again_on_the_second_read()
+    {
+        var root = await RepositoryAsync("engine");
+        var sessionTrees = new SessionTrees(_home);
+        var opened = await sessionTrees.OpenAsync(root, "engine", "default");
+        var tree = opened.Path;
+        await CommitAsync(tree, "work.txt", "work");
+        // The line gets the commit by a cherry-pick, which holds it by content: the tree's commit is no ancestor.
+        await GitAsync(root, "-c", "user.email=fixture@example.test", "-c", "user.name=Fixture", "cherry-pick", "-x", $"main..{opened.Branch}");
+        var part = Part([tree]);
+        var walked = (await sessionTrees.WorkAsync(tree))!;
+        Assert.NotNull(walked.Held);
+        await HelpFacts.ReadTreesAsync(_home, part, CancellationToken.None);
+
+        var starts = new List<string>();
+        WorkingTree.Started.Value = arguments =>
+        {
+            lock (starts) starts.Add(string.Join(' ', arguments));
+        };
+        HelpTrees second;
+        try
+        {
+            second = await HelpFacts.ReadTreesAsync(_home, part, CancellationToken.None);
+        }
+        finally
+        {
+            WorkingTree.Started.Value = null;
+        }
+
+        Assert.All(starts, start => Assert.Contains(" status ", " " + start + " "));
+        Assert.True(starts.Count <= 2, string.Join(" | ", starts));
+        var read = second.Trees[N(tree)];
+        Assert.Equal(walked.Held, read.Held);
+        Assert.Equal((walked.Commits, walked.Uncommitted), (read.Commits, read.Uncommitted));
+
+        // An edit made since is still said: the tree stays for it, as the walk says.
+        await File.WriteAllTextAsync(Path.Combine(tree, "draft.txt"), "half done\n");
+        var edited = (await HelpFacts.ReadTreesAsync(_home, part, CancellationToken.None)).Trees[N(tree)];
+        var truth = (await new SessionTrees(_home).WorkAsync(tree))!;
+        Assert.Equal(truth.Held, edited.Held);
+        Assert.Equal(1, edited.Uncommitted);
+        Assert.NotNull(edited.Held!.Stays);
+    }
+
+    /// <summary>
     /// READSHARE1: the home's stamp reads the landings while the move that landed them still holds them, so a tree nothing moved in
     /// is still asked its status alone; a stamp that could not read them is a stamp of its own, and walked every tree again.
     /// </summary>

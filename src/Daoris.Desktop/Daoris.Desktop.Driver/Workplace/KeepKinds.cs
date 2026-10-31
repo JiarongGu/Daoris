@@ -76,6 +76,9 @@ public static class KeepKinds
         SizeOnly = true,
     };
 
+    /// <summary>The most Daoris may use, in GB, by default: what it holds in all (the allowance over the whole, KEEPSIZE1).</summary>
+    public const int DefaultAllowanceGb = 48;
+
     /// <summary>Every kind with a rule that runs, in the order the card will show them.</summary>
     public static IReadOnlyList<KeepKind> Table { get; } = [SetAside, Downloads, BrowserCache, Logs, History];
 
@@ -115,13 +118,14 @@ public sealed record KeepKind(
 /// The size limits per kind, beside the days (KEEPSIZE1d, D195's keep-size note): a kind over its limit lets go of its oldest eligible
 /// units first, whichever of its days and its limit comes first. Null is no limit, which an unreadable file gives.
 /// </summary>
-public sealed record LimitsPolicy(int? SetAsideGb, int? DownloadsGb, int? BrowserCacheGb = null)
+public sealed record LimitsPolicy(int? SetAsideGb, int? DownloadsGb, int? BrowserCacheGb = null, int? AllowanceGb = null)
 {
     /// <summary>The table's defaults.</summary>
-    public static LimitsPolicy Default { get; } = new(KeepKinds.SetAside.DefaultGb, KeepKinds.Downloads.DefaultGb, KeepKinds.BrowserCache.DefaultGb);
+    public static LimitsPolicy Default { get; } =
+        new(KeepKinds.SetAside.DefaultGb, KeepKinds.Downloads.DefaultGb, KeepKinds.BrowserCache.DefaultGb, KeepKinds.DefaultAllowanceGb);
 
     /// <summary>No limit: a file that does not read keeps the most.</summary>
-    public static LimitsPolicy None { get; } = new(null, null, null);
+    public static LimitsPolicy None { get; } = new(null, null, null, null);
 }
 
 /// <summary>
@@ -174,7 +178,7 @@ public sealed record KeepPolicy(SetAsidePolicy SetAside)
             History = new(choices.HistoryDays is { } age ? TimeSpan.FromDays(age) : null),
             Limits = new(
                 choices.SetAsideGb ?? KeepKinds.SetAside.DefaultGb, choices.DownloadsGb ?? KeepKinds.Downloads.DefaultGb,
-                choices.BrowserCacheGb ?? KeepKinds.BrowserCache.DefaultGb),
+                choices.BrowserCacheGb ?? KeepKinds.BrowserCache.DefaultGb, choices.AllowanceGb ?? KeepKinds.DefaultAllowanceGb),
             Floor = choices.FloorOff ? FloorPolicy.None : new FloorPolicy(choices.FloorGb, choices.FloorPercent, Off: false),
         };
 

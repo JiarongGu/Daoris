@@ -52,6 +52,10 @@ public sealed partial class ContinuedReadersCensusTests
         [
             (How.Follows, "Daoris's reopen and go-on words through the reopen's doors: said at the head under the fact's key, the mark kept by the session the reopen names"),
         ],
+        ["DriverWatch.cs"] =
+        [
+            (How.Follows, "the integration transport's word to a session about its line's conflict (INTEGRATE1g): said at the head under the integration's key"),
+        ],
         ["AutoLandingWorld.cs"] =
         [
             (How.Follows, "the landing's word to a session, said through the lander's world: said at its head under the landing's key"),
@@ -88,6 +92,7 @@ public sealed partial class ContinuedReadersCensusTests
         ["Driver.cs"] =
         [
             (How.NotOn, "the supervisor's release, whose door stays today's (O7-F12): it answers the park this record holds, and reads the refusal's word as it reads any, held for the owner"),
+            (How.NotOn, "the overlap word to a running unit (INTEGRATE1l), kept for the run this process holds (`running`): it goes into that run's own turn in this process alone, and the pair is marked told only once the say returned"),
         ],
         ["ChannelReach.cs"] =
         [

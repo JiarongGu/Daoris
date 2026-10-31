@@ -15,8 +15,11 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 public sealed class AcpBackgroundTests
 {
-    /// <summary>A scripted agent: each frame the client sends is answered by the handler, which may push frames first.</summary>
-    private sealed class Agent(Func<JsonElement, Agent, string?> handle)
+    /// <summary>
+    /// A scripted agent: each frame the client sends is answered by the handler, which may push frames first. The client's flush after
+    /// each write returns when <paramref name="flushing"/> does, where given: its answer may be read first.
+    /// </summary>
+    internal sealed class Agent(Func<JsonElement, Agent, string?> handle, Func<Agent, Task>? flushing = null)
     {
         private readonly Channel<string> _toClient = Channel.CreateUnbounded<string>();
 
@@ -29,7 +32,7 @@ public sealed class AcpBackgroundTests
             lock (Sent) Sent.Add(line);
             var reply = handle(JsonDocument.Parse(line).RootElement, this);
             if (reply is not null) Push(reply);
-        });
+        }, flushing is null ? null : () => flushing(this));
 
         public void Push(string json) => _toClient.Writer.TryWrite(json);
 
@@ -82,7 +85,7 @@ public sealed class AcpBackgroundTests
                 await channel.Reader.WaitToReadAsync(ct).ConfigureAwait(false) && channel.Reader.TryRead(out var line) ? line : null;
         }
 
-        private sealed class Writer(Action<string> onLine) : TextWriter
+        private sealed class Writer(Action<string> onLine, Func<Task>? flushing) : TextWriter
         {
             public override Encoding Encoding => Encoding.UTF8;
 
@@ -91,16 +94,18 @@ public sealed class AcpBackgroundTests
                 if (value is not null) onLine(value);
                 return Task.CompletedTask;
             }
+
+            public override Task FlushAsync() => flushing?.Invoke() ?? base.FlushAsync();
         }
     }
 
-    private static string Ok(JsonElement request, string result) =>
+    internal static string Ok(JsonElement request, string result) =>
         $$"""{"jsonrpc":"2.0","id":{{request.GetProperty("id").GetRawText()}},"result":{{result}}}""";
 
-    private static string Answer(int id, string stopReason) =>
+    internal static string Answer(int id, string stopReason) =>
         $$$"""{"jsonrpc":"2.0","id":{{{id}}},"result":{"stopReason":"{{{stopReason}}}"}}""";
 
-    private static string Update(string update) => UpdateOf("s-1", update);
+    internal static string Update(string update) => UpdateOf("s-1", update);
 
     private static string UpdateOf(string session, string update) =>
         """{"jsonrpc":"2.0","method":"session/update","params":{"sessionId":""" + JsonSerializer.Serialize(session) + ""","update":"""
@@ -126,13 +131,13 @@ public sealed class AcpBackgroundTests
     private static readonly TimeSpan Never = TimeSpan.FromHours(1);
 
     /// <summary>A bound a test of the go-on waits past.</summary>
-    private static readonly TimeSpan Soon = TimeSpan.FromMilliseconds(300);
+    internal static readonly TimeSpan Soon = TimeSpan.FromMilliseconds(300);
 
     /// <summary>The session as these tests run it: the go-on goes only after <paramref name="wake"/> with no wake.</summary>
-    private static AcpSession Session(Agent agent, Record record, TimeSpan wake, TimeSpan? close = null) =>
+    internal static AcpSession Session(Agent agent, Record record, TimeSpan wake, TimeSpan? close = null) =>
         new(agent.Incoming, agent.Outgoing, _ => { }, closeTimeout: close, onEvent: record.Event, wakeQuiet: wake);
 
-    private static string Said(string text) =>
+    internal static string Said(string text) =>
         Update("""{"sessionUpdate":"agent_message_chunk","content":{"type":"text","text":""" + JsonSerializer.Serialize(text) + "}}");
 
     /// <summary>What <c>claude-agent-acp</c> answers at <c>initialize</c> (CONSOLE2a; docs/2026-10-03-steer-evidence.md §1).</summary>
@@ -199,7 +204,7 @@ public sealed class AcpBackgroundTests
     }
 
     /// <summary>The run's record: the turns, the agent's words and the driver's notes, in order.</summary>
-    private sealed class Record
+    internal sealed class Record
     {
         private readonly List<string> _lines = [];
         private readonly List<string?> _kinds = [];
@@ -233,14 +238,14 @@ public sealed class AcpBackgroundTests
     /// A prompt after the first, which the install's adapter never answered (BGWAIT2): its echo took the woken turn, whose
     /// result is autonomous and settles nothing. Told to <paramref name="goOn"/>, and never answered here either.
     /// </summary>
-    private static string? Unanswered(JsonElement frame, TaskCompletionSource<int> goOn)
+    internal static string? Unanswered(JsonElement frame, TaskCompletionSource<int> goOn)
     {
         goOn.TrySetResult(frame.GetProperty("id").GetInt32());
         return null;
     }
 
     /// <summary>Waits for the run, or for a prompt it should never have sent: the latter fails at once rather than at the patience.</summary>
-    private static async Task<AcpOutcome> EndsWithoutGoOn(Task<AcpOutcome> run, Task<int> goOn)
+    internal static async Task<AcpOutcome> EndsWithoutGoOn(Task<AcpOutcome> run, Task<int> goOn)
     {
         await Task.WhenAny(run, goOn).WaitAsync(Poll.Patience);
         Assert.False(goOn.IsCompleted, "Daoris's own go-on went into the turn its harness woke");
@@ -2631,7 +2636,7 @@ public sealed class AcpBackgroundTests
     }
 
     /// <summary>An agent whose first prompt ends at once, or after <paramref name="first"/>, and whose later ones commit where it does.</summary>
-    private static Agent Commits(DoneTree tree, bool commits, Action<Agent>? first = null) => new((frame, self) =>
+    private static Agent Commits(DoneTree tree, bool commits, Action<Agent>? first = null, Func<Agent, Task>? flushing = null) => new((frame, self) =>
     {
         switch (frame.TryGetProperty("method", out var method) ? method.GetString() : null)
         {
@@ -2650,7 +2655,7 @@ public sealed class AcpBackgroundTests
             default:
                 return frame.TryGetProperty("id", out _) ? Ok(frame, "{}") : null;
         }
-    });
+    }, flushing);
 
     /// <summary>
     /// 🔴 TURNWAIT1's case: the session closed its quest done with its fix uncommitted and ended its turn, and the run ended with it, the fix
@@ -2689,6 +2694,30 @@ public sealed class AcpBackgroundTests
             ["turn:end_turn", $"note:{CarriedNote}", "turn:end_turn", $"note:{CarriedNote}", "turn:end_turn", $"note:{BoundNote}"],
             record.Lines);
         Assert.Equal("session/close", agent.Methods[^1]);
+    }
+
+    /// <summary>
+    /// 🔴 The merge queue's load (2026-10-31): each carry-on's answer was read before its write returned, and its turn's end was kept before
+    /// the note that said it went. Here every carry-on's write returns only once its answer's turn is in the record: the notes still lead.
+    /// </summary>
+    [Fact]
+    public async Task A_carry_on_answered_before_its_write_returns_is_said_before_its_turn_ends()
+    {
+        var tree = new DoneTree();
+        var record = new Record();
+        var agent = Commits(tree, commits: false, flushing: self => self.Prompts.Count < 2
+            ? Task.CompletedTask
+            : Poll.Until(
+                () => record.Lines.Count(line => line.StartsWith("turn:", StringComparison.Ordinal)) >= self.Prompts.Count,
+                () => string.Join(" | ", record.Lines), Poll.Patience));
+
+        var run = Clocked(agent, record, new MovedClock(), carries: tree.Look).RunAsync(
+            "X:/daoris/game", "close quest #12", CancellationToken.None, waitsOnBackground: _ => Task.FromResult(false));
+        await run.WaitAsync(Poll.Patience);
+
+        Assert.Equal(
+            ["turn:end_turn", $"note:{CarriedNote}", "turn:end_turn", $"note:{CarriedNote}", "turn:end_turn", $"note:{BoundNote}"],
+            record.Lines);
     }
 
     /// <summary>A tree already clean, and a quest that is not one a carry-on is owed for (parked, asking, stood down, stopped): no prompt.</summary>

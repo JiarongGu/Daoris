@@ -435,6 +435,18 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
         Assert.Empty(Rows(new() { Requests = [] }));
     }
 
+    /// <summary>INTEGRATE1p (C33): a run's own declined request is the same row, its `declined` saying it is a request, so its acts are the page's two.</summary>
+    [Fact]
+    public void A_run_held_at_its_own_declined_request_says_so_in_its_declined()
+    {
+        var item = Assert.Single(Rows(new() { Requests = [Declined("""{"node":"ask","request":true}""")] }), row => row["id"]!.GetValue<string>() == "r7");
+
+        Is("""
+            {"kind":"request-declined","id":"r7","since":"2026-10-30T11:00:00.0000000+00:00","workspace":"aurora","where":"engine",
+             "declined":{"node":"ask","quest":"q9","to":"web","work":"7a82cc","request":true}}
+            """, item);
+    }
+
     [Fact]
     public void A_parked_quest_holds_work_beside_a_parked_session_and_a_folder() =>
         Assert.Equal(

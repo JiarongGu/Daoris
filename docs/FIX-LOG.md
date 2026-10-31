@@ -5,6 +5,85 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-31 - A carry-on's turn end was kept before its note (ACPRACE)
+
+- **Symptom:** under the merge queue's load, `turn:end_turn` twice, then both carry-on notes.
+- **Root cause:** `AcpSession.RequestAsync` told `sent` on the write's return; the reader could handle the answer first, with no order between them.
+- **Fix:** whichever comes first tells `sent`, once, under a lock; the reader before `answered`.
+- **Verify:** a flush held until the turn is recorded, red before; the failing case 20 times beside its class twice.
+
+## 2026-10-31 - A folder's plugin trial started outside the agents' job (PLUGINTRYJOB1)
+
+- **Symptom:** `plugins try <folder>` started `node` and its children uncontained; `contained: false` went to a log then deleted.
+- **Root cause:** `PluginTrialProcess.StartAsync` gave `AgentStarts` the plugin's scratch home, so `PieceStarts.LauncherPath` found no `app/bin` and the log was the scratch's.
+- **Fix:** a `machineHome` (the trial's `toolsHome`) names the launcher and the log; the plugin is still told the scratch home.
+- **Verify:** `AgentStartsProcessTests`' folder trial, red before.
+
+## 2026-10-31 - A candidate's failing gate read as split under load: its log was read as empty
+
+- **Symptom:** `IntegrationVerdictProcessTests`' no-runner case answered `split`, not `hand back`, in the Process half; alone it passed.
+- **Root cause:** `HeavyStep`'s log handle is inheritable during the start, so a concurrent `Process.Start` keeps a write copy; the plain read was refused and signed the failure by no line.
+- **Fix:** the integration's log reads go through `BesideReads.Text`.
+- **Verify:** a held-log case, red (`split`) before; the class three times.
+
+## 2026-10-31 - A tree held by content was walked in full at every trees read (TREELOOK2)
+
+- **Symptom:** the install's Daoris part, 7 live trees of 245, took 0.6 to 18.8 s a read against the 500 ms bound.
+- **Root cause:** `TreeReadPass` kept no read whose commits a content proof held, so each such tree ran the proof (about 19 git starts) every read.
+- **Fix:** its proof is kept while the refs stand exactly; each read asks its two statuses. `slowTrees` in `help.room.look` names each tree's step time.
+- **Verify:** `HelpTreesReadTests`, red before.
+
+## 2026-10-31 - A merge press through the transport started 28 more git processes (INTEGRATE1g follow-up)
+
+- **Symptom:** `LandGitCountTests`' merge ceiling went from 39 to 67; a process start costs seconds on the owner's machine.
+- **Root cause:** the replay found and put back the integration tree the form of the same run had just done, the promotion asked a fresh candidate's ancestry and read the line twice before its effect, and a press's containment ran the content judgement the landing had already made.
+- **Fix:** a run's warm tree is carried from form to replay, a fresh candidate skips the resume, the move begins from the line the promotion read, a press's containment is ancestry alone; the ceiling is 57, the test prints a breakdown by command.
+- **Verify:** `LandGitCountTests`, the transport's and the merge rule's git classes green.
+
+## 2026-10-31 - A branch the transport integrated was refused as a merged pull request (INTEGRATE1g follow-up)
+
+- **Symptom:** the next Accept on a kept branch said its pull request was merged and its plugin opens a new one, where neither was involved.
+- **Root cause:** `LandingAdvance.Refusal` told every branch whose work reads on the line in the pull request's words.
+- **Fix:** a record carrying `integrate` with no push or pull request is told as integrated into the line by Daoris; the pull request's sentence stays for a plugin's.
+- **Verify:** `LandingChainTests` holds both sentences.
+## 2026-10-31 - A stop made while an intake's, helper's, reviewer's or partner's handshake was open was recorded failed (STOPRACE1)
+
+- **Symptom:** a person's stop made before the protocol handshake finished ended the record `failed`, as the driven run's did before its fix.
+- **Root cause:** those four runs kept the driven run's catch-all and told `HoldAsync` no `stopMade`, so a wire the stop broke was a failure.
+- **Fix:** each passes `stopMade` and catches a failure after a stop first, ending as the stop's conclusion through `Driver.EndStoppedAsync` (the driven run's catch uses it too).
+- **Verify:** a case per run (`IntakeTests`, `HelperProcessTests`, `ReviewTreeTests`, `PartnerProcessTests`), red before; each class green.
+## 2026-10-31 - Daoris's own commits named no maker, so the merge queue refused a replayed branch (DAORISMAKER1)
+
+- **Symptom:** a branch whose landing replay added "Set apart what union joined in the replay" was refused: no `Co-Authored-By` line.
+- **Root cause:** the driver's own commits (set-apart, regenerated writers, squash) carried no trailer, and the check knew only the three agent makers.
+- **Fix:** `DaorisMaker.Trailer` ends each of them; the check accepts Daoris and still refuses none.
+- **Verify:** land, squash and `MAKERTRAIL1` tests green.
+## 2026-10-31 - A Codex background completion left the continuation waiting (CODEXWAKE1)
+
+- **Symptom:** after a backgrounded measurement completed, the driven turn produced nothing more.
+- **Root cause:** `codex-acp` streams the command's output and completes its call after the prompt is answered; `AcpWake` took that as a turn begun, and a Codex turn says no end (no origin on `usage_update`).
+- **Fix:** such updates begin no turn; where the adapter is not Claude Code's, a turn's quiet, with no call open, ends it.
+- **Verify:** `AcpBackgroundCodexTests`, the wake case red first.
+## 2026-10-31 - Codex's workspace-credit refusal was an ordinary failed turn (CODEXCREDITS1)
+
+- **Symptom:** three driven sessions ended on `Your workspace is out of credits…` as a strike.
+- **Root cause:** `CodexLimits` recorded only the usage-limit sentence, so the reader called this one fatal.
+- **Fix:** the sentence is recorded as a limit with no stated reset (D125's default). The account cools, the next allowed account takes the work, and with none the quest waits.
+- **Verify:** `AccountLimitsTests`, `AgentErrorsTests`, `CodexCreditsTickTests` (red without the marker).
+
+## 2026-10-31 - Codex's capacity failure bypassed the error policy (CODEXSTATUS1)
+
+- **Symptom:** a turn ended on `Selected model is at capacity…` as agent text, read as a clean turn.
+- **Root cause:** `codex-acp` 2.1.1 marks a terminal failure only for a client that negotiates AIR `sessionFailure`; the initialize never did.
+- **Fix:** the Codex door's toolchain declares it, the initialize asks, and an `error`-severity marker fails the prompt as an error: `service` and `connection` retry transient with the words kept. Agent text is never read.
+- **Verify:** `AcpTypedFailureTests`, `AgentErrorsTests`.
+## 2026-10-31 - A refused Codex edit cut the turn and the session parked as if it had asked (CODEXPERM1)
+
+- **Symptom:** on Auto a Codex edit was refused and the session parked "to ask you", quoting its last words.
+- **Root cause:** Codex's only rejection for a file change interrupts the turn, which ended `cancelled`; a clean exit with the quest taken read as a question.
+- **Fix:** `AcpOutcome.Cut` carries a cancel nobody asked for; `Observation.Cut` parks as `ended.parked-cut`, naming the call. Asking on Codex is `workspace-write`.
+- **Verify:** the mapping tests fail on `read-only`; `AcpTests`, `ObservationTests`, `DrivenAccessTests`, `NoteCodesTests` and the note catalogues green.
+
 ## 2026-10-31 - A test still pinned the first-look baseline row m-iv replaced (FOUNDATION1 m-iv)
 
 - **Symptom:** `A_wait_already_there_at_the_first_look_is_a_baseline_never_a_backlog` failed every run.
@@ -18,6 +97,13 @@ repository.
 - **Root cause:** the read opened a connection of its own and made commands on it, bypassing the gate every store goes through.
 - **Fix:** `JournalRows.ReadAsync` takes the service's connection and runs inside its gate; the composed service carries the read.
 - **Verify:** gate, `JournalRowsTests` and Platform tests green.
+
+## 2026-10-31 - A test's git in a fixture that was no repository acted on the checkout's (GITISOLATE1)
+
+- **Symptom:** a filtered run left the shared repository config with `core.bare=true`.
+- **Root cause:** git climbs from its folder to the nearest repository, and fixtures sit under the checkout.
+- **Fix:** `TestGit.Ceiling` caps each start at its fixture; `GitCeilingCensusTests` fails an uncapped one.
+- **Verify:** a fixture `rev-parse` is refused and the config unchanged; census 17 passed.
 
 ## 2026-10-30 - The window's quest hand-over still called the old ask, and the modules did not build (FOUNDATION1f-v part c)
 
@@ -12448,3 +12534,26 @@ mis-rooted instance.
 **Fix.** A stop made first decides the end in `Driver.RunAsync`'s catch, the person's never interrupted.
 
 **Verification.** `DrivenSessionInputTests` 15/15, red before.
+
+## A streamed hand-back stopped the window's page with React #185 (2026-10-31)
+
+**Root cause.** React 19.2 counts a commit that leaves an update waiting as nested. `useFollowTail` set `atTail` again in a layout effect and `useWaitsOnScreen` set its answer after every drawing, unchanged, updates React keeps when their holder just drew; each streamed line left them, and fifty in a row threw.
+
+**Fix.** Both set state only on a change.
+
+**Verification.** Real Chromium: 51 nested to 2. `sessionEnd.test.tsx`: 24 `nested-update` commits, now 0; two hook tests red, green.
+## An ended chat's words shown as its run closed never woke it (2026-10-31)
+
+**Root cause.** `ChatRunner.WatchAsync` concludes the record before its disposal releases `Talking`; `ChatGoOn.Heard` dropped a word shown between, so it waited for the next come-up.
+
+**Fix.** `Heard` leaves such a word owed, before reading the hold; the watch's last disposal (`ChatGoOn.LetGo`) takes it up.
+
+**Verification.** `ChatGoOnTests.A_word_shown_to_an_ended_chat_its_run_still_holds_...`: red 2 m 41 s, green; `ChatGoesOnProcessTests` 24/24 three times.
+
+## A refreshed service install still ran the old flat host (2026-10-31)
+
+**Root cause.** `ServiceHostLocator` ranked a flat `bin/` executable above the packaged `bin/daoris-knowledge-http/`; `service-publish --install` replaces only the packaged folder, so an older flat host and its bundle kept running.
+
+**Fix.** The packaged host ranks first; a flat one is the legacy fallback. A named path still wins.
+
+**Verification.** `ServiceHostLocatorTests`: republish over a flat install, red before.

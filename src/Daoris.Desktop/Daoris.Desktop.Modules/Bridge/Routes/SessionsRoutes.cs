@@ -720,6 +720,20 @@ public sealed class SessionsRoutes(DriverContext context)
     }
 
     /// <summary>
+    /// The record of the finished tree a session ran in (KEEPSIZE1), for its page once its tree is let go: what the service kept of its
+    /// landing, tip, recovery ref and commits, passed through as it answers. Null where none is kept.
+    /// </summary>
+    [DriverRoute("SESSION_RECORD")]
+    [ByEvent("SESSION_RECORD", Untold = "the service's record of the finished tree, kept when the driver posts it")]
+    private async Task<object?> SessionRecordAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
+        var service = _loop.Service ?? throw NotReady();
+        var json = await service.SessionRecordAsync(id, cancellationToken).ConfigureAwait(false);
+        return new { Record = json is null ? (JsonElement?)null : JsonDocument.Parse(json).RootElement.Clone() };
+    }
+
+    /// <summary>
     /// Where each of these sessions' work is now (LOOK2b), for the rail in one ask: whether the tree it opened is still
     /// here, and its landing, standing or a trace (D113), so a row says where the work landed rather than naming a tree a
     /// landing tidied away.

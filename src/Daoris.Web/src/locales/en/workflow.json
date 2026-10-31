@@ -42,6 +42,7 @@
   "workflow.step.check": "The checks",
   "workflow.step.integrate": "The integration",
   "workflow.step.workRequests": "The work's requests",
+  "workflow.step.request": "The quest to another repository",
   "workflow.step.pluginNode": "{{node}} by `{{plugin}}`",
   "workflow.participation.agent": "agent alone",
   "workflow.participation.agent-and-you": "agent + you",
@@ -172,5 +173,14 @@
   "workflow.start.verify.title": "Verify a branch or a commit of {{repository}}",
   "workflow.start.verify.says": "Its checks run under the gates you accepted, after any verification ahead of it; the verdict shows on the run's Workflow view.",
   "workflow.start.verify.meanIt": "Verify",
-  "workflow.start.verify.name": "a branch or a commit"
+  "workflow.start.verify.name": "a branch or a commit",
+  "workflow.presets.title": "Start from a preset",
+  "workflow.presets.body": "Two ways to move work that integrate it into the line or open a pull request. Each is saved as a workflow of its own, which a choice then names; neither closes the quest, which its agent's done does.",
+  "workflow.presets.integrated.name": "Integrated into the line",
+  "workflow.presets.integrated.line": "You accept each piece of work onto a branch, and you ask for it to be integrated into the line.",
+  "workflow.presets.integrated-no-press.name": "Integrated into the line, with no press",
+  "workflow.presets.integrated-no-press.line": "Each piece of work is integrated once its agent is done, on gates the repository accepted; refused where the line declares none.",
+  "workflow.presets.pull-request.name": "A pull request",
+  "workflow.presets.pull-request.line": "You accept; the plugin pushes and opens a pull request; you merge it.",
+  "workflow.presets.twin": "In a terminal: `daoris driver workflow new <id> --from {{preset}}`"
 }

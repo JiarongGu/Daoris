@@ -22,7 +22,7 @@ public static class SquashMessage
     public static string Of(string? title, IReadOnlyList<LandingCommit> commits, string session)
     {
         var body = Body(commits);
-        return Subject(title, commits, session) + "\n\n" + (body.Length > 0 ? body + "\n\n" : "") + Ending(session);
+        return DaorisMaker.Of(Subject(title, commits, session) + "\n\n" + (body.Length > 0 ? body + "\n\n" : "") + Ending(session));
     }
 
     /// <summary>The last line, naming the session the commit was squashed from.</summary>

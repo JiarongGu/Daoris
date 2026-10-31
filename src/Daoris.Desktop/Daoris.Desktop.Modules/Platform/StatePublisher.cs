@@ -91,6 +91,11 @@ public enum StateScopes
 
     /// <summary>The repositories the service lists with each one's knowledge index: told by a look while the index feeds. Declared by no route.</summary>
     Repositories = 1 << 21,
+
+    // INTEGRATE1h: after FOUNDATION1s's, which keep their numbers.
+
+    /// <summary>A repository's integration: its queue, candidates, hand-backs and history, which the Integration view reads.</summary>
+    Integration = 1 << 22,
 }
 
 /// <summary>

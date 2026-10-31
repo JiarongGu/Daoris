@@ -110,6 +110,90 @@ public sealed class SpaceLimitsTests : IDisposable
         Assert.Equal(new KeepSet("downloads", Gb: 6), KeepRules.Asked("downloads", "6GB"));
     }
 
+    private static KeepPolicy Whole(int allowanceGb) =>
+        KeepPolicy.Default with { Limits = new LimitsPolicy(null, null, null, allowanceGb) };
+
+    private SpaceFreeWorld Counted(DateTimeOffset now, KeepPolicy policy)
+    {
+        var sizes = new SpaceSizes();
+        foreach (var kind in SpaceKinds.Table) sizes.MeasureNow(Home, kind.Id, WiringBudget.Default, CancellationToken.None);
+        return World(now, policy) with { Sizes = sizes };
+    }
+
+    /// <summary>🔴 The allowance over the whole stops a pass at its bound: the oldest eligible first, and only as many as bring the whole within it.</summary>
+    [Fact]
+    public async Task The_allowance_stops_at_its_bound_oldest_first()
+    {
+        var oldest = Agent("2.0.1", 5000);
+        await PassAsync(T0);
+        var middle = Agent("2.0.2", 5000);
+        await PassAsync(T0.AddDays(1));
+        var newest = Agent("2.0.3", 5000);
+        await PassAsync(T0.AddDays(2));
+
+        var pass = await SpaceLimits.PassAsync(Counted(T0.AddDays(3), Whole(11)), KeepingRun.Look, "run-1", CancellationToken.None, unit: 1000);
+
+        Assert.Equal(("downloads", 1), (Assert.Single(pass.Kinds).Id, pass.Kinds[0].Removed));
+        Assert.False(Directory.Exists(oldest));
+        Assert.True(Directory.Exists(middle));
+        Assert.True(Directory.Exists(newest));
+    }
+
+    /// <summary>🔴 Where what may go could not bring the whole within its bound, nothing goes: what cannot be made again holds the rest.</summary>
+    [Fact]
+    public async Task What_cannot_go_keeps_the_allowance_from_taking_what_can()
+    {
+        var versions = new[] { Agent("2.0.1", 5000), Agent("2.0.2", 5000) };
+        await PassAsync(T0);
+        var blob = Path.Combine(Home, "kept", "blob");
+        Directory.CreateDirectory(Path.GetDirectoryName(blob)!);
+        File.WriteAllBytes(blob, new byte[30000]);
+
+        var pass = await SpaceLimits.PassAsync(Counted(T0.AddDays(3), Whole(20)), KeepingRun.Look, "run-1", CancellationToken.None, unit: 1000);
+
+        Assert.Empty(pass.Kinds);
+        Assert.All(versions, version => Assert.True(Directory.Exists(version)));
+        Assert.True(File.Exists(blob));
+    }
+
+    /// <summary>🔴 A kind not counted takes nothing by the whole, and asks to be counted.</summary>
+    [Fact]
+    public async Task A_whole_not_counted_takes_nothing_and_asks_for_the_count()
+    {
+        var version = Agent("2.0.1", 5000);
+        await PassAsync(T0);
+
+        var pass = await SpaceLimits.PassAsync(World(T0.AddDays(3), Whole(8)) with { Sizes = new SpaceSizes() }, KeepingRun.Look, "run-1", CancellationToken.None, unit: 1);
+
+        Assert.Empty(pass.Kinds);
+        Assert.True(pass.Uncounted);
+        Assert.True(Directory.Exists(version));
+    }
+
+    /// <summary>🔴 The allowance is a stored shape beside the parts: set, bounded, read back, the default again, and out of range not read.</summary>
+    [Fact]
+    public void The_allowance_is_set_by_the_one_door_and_read_back()
+    {
+        Assert.Equal(48, KeepPolicy.Default.Limits.AllowanceGb);
+        var config = DriverConfig.Empty.WithKeep(new KeepSet("allowance", Gb: 60));
+        Assert.Equal(60, KeepPolicy.From(config.Keep).Limits.AllowanceGb);
+        Assert.Equal(48, KeepPolicy.From(config.WithKeep(new KeepSet("allowance", Default: true)).Keep).Limits.AllowanceGb);
+        Assert.Equal(new KeepSet("allowance", Gb: 60), KeepRules.Asked("allowance", "60GB"));
+
+        var low = Assert.Throws<ChoiceRefusal>(() => DriverConfig.Empty.WithKeep(new KeepSet("allowance", Gb: 7)));
+        Assert.Equal(ChoiceRefusal.KeepOutOfRange, low.Check);
+        var half = Assert.Throws<ChoiceRefusal>(() => DriverConfig.Empty.WithKeep(new KeepSet("allowance", Gb: 20) { Volume = 30L << 30 }));
+        Assert.Equal(ChoiceRefusal.KeepOutOfRange, half.Check);
+        Assert.Throws<ChoiceRefusal>(() => DriverConfig.Empty.WithKeep(new KeepSet("allowance", Days: 3)));
+
+        var path = DaorisHome.Entry(Home, HomeEntry.DriverConfig);
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        File.WriteAllText(path, """{ "keep": { "allowance": { "gb": 2 } } }""");
+        Assert.Equal(48, KeepPolicy.Of(Home).Limits.AllowanceGb);
+        File.WriteAllText(path, """{ "keep": { "allowance": { "gb": 90 } } }""");
+        Assert.Equal(90, KeepPolicy.Of(Home).Limits.AllowanceGb);
+    }
+
     /// <summary>🔴 A file whose limit is out of range reads as the default, and one that does not read as no limit at all.</summary>
     [Fact]
     public void A_stored_limit_out_of_range_reads_as_the_default_and_an_unread_file_as_none()
@@ -118,7 +202,7 @@ public sealed class SpaceLimitsTests : IDisposable
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         File.WriteAllText(path, """{ "keep": { "setAside": { "gb": 0 }, "downloads": { "gb": 3 } } }""");
 
-        Assert.Equal(new LimitsPolicy(KeepKinds.SetAside.DefaultGb, 3, KeepKinds.BrowserCache.DefaultGb), KeepPolicy.Of(Home).Limits);
+        Assert.Equal(new LimitsPolicy(KeepKinds.SetAside.DefaultGb, 3, KeepKinds.BrowserCache.DefaultGb, KeepKinds.DefaultAllowanceGb), KeepPolicy.Of(Home).Limits);
         File.WriteAllText(path, "{ not json");
         Assert.Equal(LimitsPolicy.None, KeepPolicy.Of(Home).Limits);
     }

@@ -100,8 +100,8 @@ public sealed class WholeAdmissionTests : IDisposable
         Assert.Contains("session s-1's a session's heavy run", said.Text);
         Assert.Contains("the merge queue's a confirm run (place 1 of 2)", said.Text);
 
-        var (holds, waits) = MachineAdmission.Read(MachineAdmission.PathOf(_fixture.Home));
-        Write([.. holds.Where(entry => entry.Id != "h-1")], waits);
+        // Under the record's lock and whole: the take reads it every poll, and a write in place shows it an empty record.
+        MachineAdmission.Change(MachineAdmission.PathOf(_fixture.Home), Quick(), (holds, waits) => ([.. holds.Where(entry => entry.Id != "h-1")], waits));
         var taken = await taking.WaitAsync(Poll.Patience);
 
         Assert.True(taken.Held, taken.Why);
@@ -116,9 +116,7 @@ public sealed class WholeAdmissionTests : IDisposable
     {
         var taken = await Take(2).WaitAsync(Poll.Patience);
         Assert.True(taken.Held, taken.Why);
-        var file = MachineAdmission.PathOf(_fixture.Home);
-        var (holds, waits) = MachineAdmission.Read(file);
-        Write([.. holds, Other("n-1", "queue")], waits);
+        MachineAdmission.Change(MachineAdmission.PathOf(_fixture.Home), Quick(), (holds, waits) => ([.. holds, Other("n-1", "queue")], waits));
 
         var evidence = taken.End!();
 
@@ -135,8 +133,7 @@ public sealed class WholeAdmissionTests : IDisposable
     {
         var taken = await Take(2).WaitAsync(Poll.Patience);
         Assert.True(taken.Held, taken.Why);
-        var (holds, waits) = MachineAdmission.Read(MachineAdmission.PathOf(_fixture.Home));
-        Write([holds[0]], waits);
+        MachineAdmission.Change(MachineAdmission.PathOf(_fixture.Home), Quick(), (holds, waits) => ([holds[0]], waits));
 
         var first = taken.End!();
         var second = taken.End!();

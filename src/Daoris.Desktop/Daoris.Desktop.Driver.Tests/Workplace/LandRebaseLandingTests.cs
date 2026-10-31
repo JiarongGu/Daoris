@@ -163,6 +163,7 @@ public sealed class LandRebaseLandingTests : LandedFixture
             landed.Message);
         Assert.Equal("shared.txt\nwork.txt\nzline.txt\n", await GitAsync(root, "show", $"{Branch}:index/map.md"));
         Assert.Equal("Write index again from the replayed tree", (await GitAsync(root, "log", "-1", "--format=%s", Branch)).Trim());
+        Assert.Equal(DaorisMaker.Trailer, (await GitAsync(root, "log", "-1", "--format=%(trailers:key=Co-Authored-By)", Branch)).Trim());
         Assert.Equal("the work", (await GitAsync(root, "log", "-1", "--format=%s", $"{Branch}~1")).Trim());
         Assert.Equal(line, (await GitAsync(root, "rev-parse", $"{Branch}~2")).Trim());
         Assert.Equal("the work\n", await GitAsync(root, "show", $"{Branch}:work.txt"));
@@ -343,6 +344,35 @@ public sealed class LandRebaseLandingTests : LandedFixture
         Assert.Contains("1 commit(s) replayed onto `main`, which moved since the work began", landed.Message);
         Assert.Equal(line, (await GitAsync(root, "rev-parse", "main^2~1")).Trim());
         Assert.Equal((await GitAsync(root, "rev-parse", "main^2")).Trim(), await HeadAsync(tree.Path));
+    }
+
+    /// <summary>
+    /// INTEGRATE1g (§4.2's named legacy exception): the merge form's press is carried by the integration transport under
+    /// <c>{ owner, none, 1, merge }</c>. Its outcome is today's, the work replayed and merged with today's message, and the person's checkout
+    /// was only fast-forwarded to the merge its line's run made; its request is settled, and the session's tree stays, as a merge left it.
+    /// </summary>
+    [Fact]
+    public async Task The_merge_forms_press_is_carried_by_the_transport_and_the_checkout_only_fast_forwarded()
+    {
+        DriverConfig.Empty.WithLanding("engine", new LandingRule(LandingForm.Merge)).Save(DaorisHome.Entry(Home, HomeEntry.DriverConfig));
+        var root = await RepositoryAsync("engine");
+        var trees = new SessionTrees(Home);
+        var tree = await trees.OpenAsync(root, "engine", "aurora");
+        await CommitAsync(tree.Path, "work.txt", "the work\n", "the work");
+        await CommitAsync(root, "later.txt", "the line moves on\n", "the line moves on");
+        var line = await HeadAsync(root);
+
+        var landed = await trees.LandAsync(tree.Path, Subject);
+
+        Assert.True(landed.Landed, landed.Message);
+        Assert.StartsWith($"merged `{tree.Branch}` into `main` — 1 commit(s) replayed onto `main`", landed.Message);
+        Assert.Equal(line, (await GitAsync(root, "rev-parse", "main^1")).Trim());
+        Assert.Equal($"Merge branch '{tree.Branch}'", (await GitAsync(root, "log", "-1", "--format=%s", "main")).Trim());
+        Assert.Contains("Fast-forward", (await GitAsync(root, "reflog", "-1", "--format=%gs", "main")).Trim());
+        var request = Assert.Single(new IntegrationStore(Home).Of("engine", tree.Branch));
+        Assert.Equal((IntegrationRoutes.Merge, IntegrationRequester.Press, IntegrationRequestCloses.Settled), (request.Route, request.Requester, request.ClosedWhy));
+        Assert.Equal(IntegrationRequests.Legacy, request.Policy);
+        Assert.True(Directory.Exists(tree.Path));
     }
 
     /// <summary>

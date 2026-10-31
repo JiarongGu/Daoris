@@ -43,6 +43,12 @@ public sealed record HarnessEnding(int? Exit, string? Failure, IReadOnlyList<str
     public bool ProviderRefused { get; init; }
 
     /// <summary>
+    /// How its last turn was cut (CODEXPERM1, <see cref="AcpOutcome.Cut"/>): the protocol door's own word that its agent ended the turn
+    /// <c>cancelled</c> though nobody stopped it, so a clean end with the quest taken asked the person nothing. Null on every other run.
+    /// </summary>
+    public TurnCut? Cut { get; init; }
+
+    /// <summary>
     /// The transient retry the run was handed (AGENTERRORS1a, D210 §5.1), whose episode, dispositions and last reading the conclusion
     /// reads; null for a run handed none, which keeps today's end.
     /// </summary>

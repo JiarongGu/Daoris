@@ -139,6 +139,7 @@
   "projects.tab.branches": "Branches",
   "projects.tab.history": "History",
   "projects.tab.setup": "Setup",
+  "projects.tab.integration": "Integration",
   "projects.tab.workflow": "Workflow",
   "projects.git.reading.branches": "Reading {{repository}}'s branches…",
   "projects.git.reading.history": "Reading {{repository}}'s history…",

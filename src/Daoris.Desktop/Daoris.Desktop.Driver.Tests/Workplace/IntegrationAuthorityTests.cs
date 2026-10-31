@@ -47,6 +47,24 @@ public sealed class IntegrationAuthorityTests
         Assert.Equal(0, seam.Asked);
     }
 
+    /// <summary>
+    /// INTEGRATE1g: a unit's <c>integrate</c> node asks on its landing's acceptance, which the door judged. The person's Accept stands on its own,
+    /// as their card does; an automatic landing under Current stands while the rule still says <c>request: done</c>; a version's own step,
+    /// whose landing kept the version as its gate proof, stands whatever the rule says, since a bound version is never edited.
+    /// </summary>
+    [Fact]
+    public async Task A_nodes_request_stands_on_the_acceptance_its_landing_recorded()
+    {
+        IntegrationRequest Node(string acceptedBy, LandingWorkflow? workflow = null) =>
+            Request(IntegrationRequester.NodeStart) with { Route = IntegrationRoutes.Node, Proof = new IntegrationProof(acceptedBy) { Workflow = workflow } };
+        var owner = Rule(new LandingIntegrate(Request: LandingIntegrate.Owner));
+
+        Assert.Null(await IntegrationAuthority.LapsedAsync(Node(AcceptedBy.Person), owner, new Seam("revoked"), default));
+        Assert.Null(await IntegrationAuthority.LapsedAsync(Node(AcceptedBy.Auto), Rule(new LandingIntegrate(Request: LandingIntegrate.Done, Batch: 8, Gates: LandingIntegrate.Declared)), new Seam(null), default));
+        Assert.Contains("request: owner", await IntegrationAuthority.LapsedAsync(Node(AcceptedBy.Auto), owner, new Seam(null), default), StringComparison.Ordinal);
+        Assert.Null(await IntegrationAuthority.LapsedAsync(Node(AcceptedBy.Auto, new LandingWorkflow("integrated", 1, WorkflowLevels.Repository)), Rule(null), new Seam(null), default));
+    }
+
     [Fact]
     public async Task Daoris_s_sweep_stands_only_while_the_rule_still_integrates_under_request_done()
     {

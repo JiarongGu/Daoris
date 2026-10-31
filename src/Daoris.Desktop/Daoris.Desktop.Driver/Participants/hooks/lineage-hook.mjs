@@ -36,6 +36,8 @@ export function lineageLine(input, at = new Date()) {
     if (value !== undefined) line[name] = value;
   };
   put('agent', id(input.agent_id));
+  // Sent but not an id: kept as such, since a dropped agent reads as the root's call (FABRIC-C2a, D173's note, point 1).
+  if (input.agent_id !== undefined && input.agent_id !== null && id(input.agent_id) === undefined) line.agentUnreadable = true;
   put('type', id(input.agent_type));
   if (event === 'call') {
     put('toolUse', id(input.tool_use_id));

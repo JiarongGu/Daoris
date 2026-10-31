@@ -1,5 +1,7 @@
 # The desktop's own frame — the design
 
+> Router standing, moved here when the router was cut to its size (DOCSIZE1): also governed by D152.
+
 **Status: the contract for SURF10, confirmed with the owner 2026-09-21 before any code.** The brief
 is `docs/archive/2026-09-21-desktop-design-brief.md` ("I still dont see good design for the desktop app
 itself"); this is the answer, in the shape SURF1 took — a reference pass on the **window**, a

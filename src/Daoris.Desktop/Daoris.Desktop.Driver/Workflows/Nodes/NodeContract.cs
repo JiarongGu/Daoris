@@ -66,7 +66,13 @@ public static class NodeKinds
     /// </summary>
     public const string WorkRequests = "work.requests";
 
-    public static readonly IReadOnlyList<string> BuiltIn = [Claimed, Handed, Pushed, PullRequest, Line, Human, Look, GoAhead, WaitUnit, QuestClose, All, Opinion, Stop, Check, Integrate, WorkRequests];
+    /// <summary>
+    /// Another repository asked, as a step (INTEGRATE1p; the integration design §17.5): a quest published to <c>to</c> under the request's key
+    /// and waited on, reached and failed by that commitment as a <c>wait.unit</c> is.
+    /// </summary>
+    public const string Request = "request";
+
+    public static readonly IReadOnlyList<string> BuiltIn = [Claimed, Handed, Pushed, PullRequest, Line, Human, Look, GoAhead, WaitUnit, QuestClose, All, Opinion, Stop, Check, Integrate, WorkRequests, Request];
 
     /// <summary>Whether a kind is a plugin's own node: <c>&lt;plugin&gt;/&lt;node&gt;</c>, both parts named.</summary>
     public static bool IsPlugin(string kind)
@@ -297,6 +303,9 @@ public static class NodeAuthorities
         // INTEGRATE1o (§17.3, C28): reached by the quests' records, each the run's sessions published here done. A decline holds it active and
         // waiting on the person, so nothing fails it; the person's pass with words is the run's existing skip, and no record passes it over.
         [NodeKinds.WorkRequests] = new(NodeKinds.WorkRequests, NodeReach.Observed, NodeSource.Requests, null, false, PersonSkips: true, true, true),
+        // INTEGRATE1p (§17.5): the commitment's, as `wait.unit`'s: the quest's done, or its taking under `until: taken`, and its decline. No
+        // skip of an active node: after a decline the person's *Go on without it…* is the failed node's own move.
+        [NodeKinds.Request] = new(NodeKinds.Request, NodeReach.Waited, NodeSource.Commitment, NodeSource.Commitment, false, PersonSkips: false, true, true),
     };
 
     /// <summary>
@@ -352,6 +361,7 @@ public static class NodeDeclarations
         if (builtIn && node.Rejectable) return "rejectable";
         if (builtIn && !node.Skippable) return "skippable";
         if (node.Kind == NodeKinds.Integrate && IntegrateOptionProblem(node) is { } option) return option;
+        if (node.Kind == NodeKinds.Request && RequestOptions.Problem(node) is { } asked) return asked;
         // INTEGRATE1o (§17.6 point 8, C28): the hold on the work's requests is the kind `work.requests`. Written as an option of `claimed`, a build
         // that knows `claimed` would read it and run the work with the hold dropped, so no file may say it there.
         if (node.Kind == NodeKinds.Claimed && node.Options.ContainsKey(WorkRequestsOption)) return WorkRequestsOption;

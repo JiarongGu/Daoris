@@ -100,6 +100,10 @@ export type Quest = {
    * repository. Absent or empty is a quest to the whole repository, which every older quest is.
    */
   lanes?: string[];
+  /** INTEGRATE1l: the repository-relative globs its publisher declared it touches. Absent or empty is none, as from an older host. */
+  paths?: string[];
+  /** INTEGRATE1p: the key of the workflow request that published it, `<run>/<node>/<n>`. Absent for every other quest. */
+  request?: string | null;
   /**
    * What the person requires of it (DRIFT1c, D133 §3), in the service's order, the numbers its done answers by: each their
    * own words and the check that proves them. Absent or empty is a quest that names none, and a host older than the field.

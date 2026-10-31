@@ -46,6 +46,22 @@ public sealed class DriverModuleChannelTests : DriverModuleBridge
         Assert.Equal("2026-10-14T08:00:00", read.GetProperty("mark").GetString()![..19]);
     }
 
+    /// <summary>KEEPSIZE1: <c>SESSION_RECORD</c> passes the service's record of a session's finished tree through, and answers none where the service keeps none.</summary>
+    [Fact]
+    public async Task SESSION_RECORD_passes_the_record_through_and_answers_none_where_none_is_kept()
+    {
+        var (module, service) = await UpAsync(new StandIn(_ => (HttpStatusCode.OK,
+            """{"post":{"branch":"daoris/s-1","tip":"c2","commits":[{"id":"c1","subject":"One","files":[]}]},"at":"2026-10-24T10:00:00Z","schema":1,"sessions":[]}""")));
+
+        var read = await AnswerAsync(module, "SESSION_RECORD", new { id = "s1" });
+
+        Assert.Equal(["GET /api/sessions/s1/record"], service.Requests.Distinct());
+        Assert.Equal("c2", read.GetProperty("record").GetProperty("post").GetProperty("tip").GetString());
+
+        var (none, _) = await UpAsync(new StandIn(_ => (HttpStatusCode.NotFound, """{"error":"none"}""")));
+        Assert.Equal(JsonValueKind.Null, (await AnswerAsync(none, "SESSION_RECORD", new { id = "s2" })).GetProperty("record").ValueKind);
+    }
+
     /// <summary>
     /// SESSONE2h: <c>ASKS_ELSEWHERE</c> answers the asks the mirrored messages name that this machine does not hold, as the service lists
     /// them (circle, origins, latest, count, unread), and an empty list from a host from before the door.

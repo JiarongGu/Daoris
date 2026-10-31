@@ -158,8 +158,17 @@ public sealed record QuestView(string Id, string From, string To, string Title, 
     /// </summary>
     public string? Weight { get; init; }
 
+    /// <summary>
+    /// The paths its publisher declared it touches (INTEGRATE1l): repository-relative globs a start compares with the repository's other
+    /// open work (<see cref="PathOverlap"/>). Empty for none, and from a host before the field.
+    /// </summary>
+    public IReadOnlyList<string> Paths { get; init; } = [];
+
     /// <summary>The quest's name where one is shown (SESSUX1j): its short title, else its title.</summary>
     public string Name => Short is { Length: > 0 } named ? named : Title;
+
+    /// <summary>The key a workflow's <c>request</c> node published it under, <c>&lt;run&gt;/&lt;node&gt;/&lt;n&gt;</c> (INTEGRATE1p); null for any other quest and from a host before it.</summary>
+    public string? Request { get; init; }
 
     /// <summary>Addresses the quest carries — a ticket, a page — handed to the session as given.</summary>
     public IReadOnlyList<string> Links { get; init; } = [];

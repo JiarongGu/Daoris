@@ -160,7 +160,7 @@ network, and nothing in the CLI may open a socket. So the CLI has no quest comma
 
 | Tool | What it does |
 |---|---|
-| `quest_publish` | Ask another repository for something, with `links` and `attachments` (paths on this machine) if the ask needs them, `then`, the steps to ask next once it is done (a step's `setUpIn` makes it a set-up step), and, for a quest an ask asks, `requirements`, each the person's own words quoted with the check that proves it (DRIFT1c) and, optionally, its `evidence`, paths the done's commit must hold (EVID1a), `shortTitle`, at most 40 characters (SESSUX1j), and the chain's `review` on the person's quoted words, or an intake's `reviewProposal` with its reason (REVIEWENV1b). Refuses a repository nothing here could answer: unregistered, or unadopted with no root (D70). `to` may be `repository:lane` or `repository:lane+lane` for lanes the registry lists, your own repository's included; a lane nobody declared is refused, naming the lanes there are (D115). Your own repository whole is refused, naming its lanes and how to address one, or, where it declares none, that a `daoris.lanes.json` with a steward lane is what lets it dispatch its own work (SELFASK1) |
+| `quest_publish` | Ask another repository for something, with `links` and `attachments` (paths on this machine) if the ask needs them, `then`, the steps to ask next once it is done (a step's `setUpIn` makes it a set-up step), and, for a quest an ask asks, `requirements`, each the person's own words quoted with the check that proves it (DRIFT1c) and, optionally, its `evidence`, paths the done's commit must hold (EVID1a), `shortTitle`, at most 40 characters (SESSUX1j), `paths`, the repository-relative globs the work will change, which on an ask add to the person's own (INTEGRATE1l), and the chain's `review` on the person's quoted words, or an intake's `reviewProposal` with its reason (REVIEWENV1b). Refuses a repository nothing here could answer: unregistered, or unadopted with no root (D70). `to` may be `repository:lane` or `repository:lane+lane` for lanes the registry lists, your own repository's included; a lane nobody declared is refused, naming the lanes there are (D115). Your own repository whole is refused, naming its lanes and how to address one, or, where it declares none, that a `daoris.lanes.json` with a steward lane is what lets it dispatch its own work (SELFASK1) |
 | `quest_list` | What has been asked of whom, and what is still outstanding: links, file names, what each follows and what follows it, each requirement's evidence, what was last read of it, and why a held done waits |
 | `quest_respond` | `take`, `done` or `decline` — declining needs a reason. A `done` on a quest with requirements gives `answers`, one per requirement by its number: `met` with how its check was met, or `departed` with the reason and the person's words it turns on (`quote`), which must be theirs. One left unanswered is refused, naming it; a departure holds what follows the quest for the person's yes (DRIFT1d). A `met` answer on a requirement naming evidence holds it until Daoris reads that evidence, and the answer names what is read in the session's last commit (EVID1a). The note a `done`, a `ready` or a `decline` gives is the session's **handback** (HANDBACK1, D219): a note that only points elsewhere, every part of it a pointer to another message, a commit, a file or a place (`Details are in my last message`, `See the commit`) or a bare word (`Done`), is refused before anything moves, quoting the pointer (`HandbackNotes`); the respond door's other callers, the person's abandon among them, keep their words. A done or a decline through the connector keeps the session on its operation, as a ready's submission does (`QuestStore.KeepsSession`) |
 | `handback_read` | One quest's handback whole (HANDBACK1, D219), by a quest's `id` or the id of a session for the quest it served, in any state, from the session's own workspace as `quest_list` scopes it (`workspace`): the act it was written at, the note, how it answered each requirement, when, and the session that wrote it, said as that session's claim. Read from the quest's history, never from an event log: its latest done, ready or decline (`QuestHandbacks.LastClose`, the graph's copy of a submission passed over), a session's handback where it names its session, else the quest's own note, said as such (a close from before, or through another door: the person's decline after a session's ready); an open quest has none yet, and a session that served no quest has none. A session's id answers only a quest of the workspace asked, as the quest's own id does. The words are `HandbackReader`'s, which the local host's door answers too. A partner is refused it, and a brainstorm pass is refused every tool but its result tools, known by the turn named on its connector (D176 point 2) |
@@ -188,7 +188,9 @@ network, and nothing in the CLI may open a socket. So the CLI has no quest comma
 list (`KnowledgeServer.ToolTypes`, held by `McpToolRegistrationTests`), the driver's `BrainstormPermissions.ConnectorTools` and its
 two `golden/brainstorm-rules` files (a pass is denied every tool but its own), and, as its contract decides, the default allow list
 (`Permissions.cs` with the CLI's twin `permissions.ts`, each held by the other's test) and a reviewer's and a helper's
-(`OpinionPermissions`). `McpToolDescriptionTests` refuses a name that says `history`, `clear` (bar Ask Daoris's `clear_propose`)
+(`OpinionPermissions`). The call layer's table (`CallTable`, FOUNDATION1r) places it for every work in
+`fixtures/call-table.json` and classes it in `ToolClasses`: until then every session the driver names is refused it.
+`McpToolDescriptionTests` refuses a name that says `history`, `clear` (bar Ask Daoris's `clear_propose`)
 or `forget`, since no tool clears a record, and one that says `evidence` or `verdict`.
 
 **A quest carries links and files** (D65 §2). A link is an absolute http or https address, refused
@@ -504,13 +506,21 @@ Indexing the whole family takes **~500 ms for 408 entries** into a 7 MB database
 
 ## A call's lineage
 
-**What a call's harness says of it is written down, and nothing is decided by it yet** (FABRIC-C1a, D173). A native
-subagent calls through the connector its root was handed, with the root's `DAORIS_SESSION_ID`. So the connector reads
-each `tools/call`'s `_meta` before the tool runs and appends what the harness wrote there to the session's lineage file,
-`<home>/sessions/<session>/lineage.jsonl`, the home as for a proposal: Claude Code's id of the call, or Codex's thread,
-its parent and the spawn kind. It keeps ids only. Codex's workspace path beside them is never read, a value not shaped as
-an id is dropped, and the arguments, which the model writes, are not read for it. A connector that names no session
-writes nothing. The driver binds each child to the session's part from these lines and its own (`ChildBindings`).
+**What a call's harness says of it is written down, and decides what the call may change** (FABRIC-C1a, FABRIC-C2a,
+D173). A native subagent calls through the connector its root was handed, with the root's `DAORIS_SESSION_ID`. So the
+connector reads each `tools/call`'s `_meta` before the tool runs and appends what the harness wrote there to the session's
+lineage file, `<home>/sessions/<session>/lineage.jsonl`, the home as for a proposal: Claude Code's id of the call, or
+Codex's thread, its parent, the spawn kind, the source and the root. It keeps ids only. Codex's workspace path beside them
+is never read, a value sent that is not an id is named `malformed` and not kept, and the arguments, which the model
+writes, are not read for it. The driver binds each child to the session's part from these lines and its own
+(`ChildBindings`).
+
+For a connector that names a session, the reads (`ToolClasses`) answer every caller, and every other tool runs only for a
+caller proven the root (`CallerProof`): a Claude Code call whose id joins a hook line naming no agent (`HookJoin`, read
+from the file's end, two seconds at most), or a Codex call whose thread is its session's root with no child signal. A
+child, or a call whose lineage is missing, malformed, conflicting or unjoined, gets an error result before the tool runs,
+saying nothing was done, why, and that the reads remain. A plain `quest_publish` alone passes it. A connector that names no
+session, a person's own agent's, writes nothing and is not guarded.
 
 ## Running it
 

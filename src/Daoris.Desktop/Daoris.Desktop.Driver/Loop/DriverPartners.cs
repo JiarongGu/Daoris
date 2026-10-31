@@ -620,6 +620,8 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
         PartnerPassRun Ended(string state, string end, string note, string? lastWords = null) =>
             new(sessionId, $"{state}  partner {sessionId} (piece `{piece}`): {note}") { End = end, LastWords = lastWords };
 
+        SessionStop? stoppedFirst = null;
+
         try
         {
             var packet = new PartnerPacket(ask.Ask.Asker, repository, ask.Ask.Base, ask.Ask.Piece, ask.Ask.Paths, ask.Ask.Uncommitted, bound);
@@ -670,6 +672,7 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
                 said: _driver.Said(adapter, selection, sessionId),
                 minutes: bound,
                 noConnector: PartnerPass.NoConnector,
+                stopMade: stop => stoppedFirst = stop,
                 // D205 §3.5(f): its agent's refusal of the entry's model at the open is kept as the account's reading and asked again in
                 // this call: a later entry of the same agent on the same account is set on this session, anything else ends the record.
                 offers: new OpenOffers(selection.Version, selection.Profile, reask is null ? null : _ => reask.SameAccountAsync()),
@@ -718,6 +721,12 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
             }
 
             return Ended("stopped", PartnerEnds.Stopped, "the driver was stopped.");
+        }
+        catch (Exception) when (stoppedFirst is not null)
+        {
+            // A wire that broke after a stop is that stop's end, not a failure (STOPRACE1), as a quest's session reads it.
+            var stopped = await _driver.EndStoppedAsync(sessionId, stoppedFirst).ConfigureAwait(false);
+            return Ended(stopped.State, PartnerEnds.Stopped, stopped.Note);
         }
         catch (Exception error)
         {

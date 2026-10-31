@@ -9,6 +9,7 @@ import type { WorkflowTabProps } from '../workflow/WorkflowTab';
 import { ProjectList, type RepositoryRowFacts, type WorkspaceGroup } from './ProjectList';
 import { ProjectPage, ProjectsMainNotice } from './ProjectPage';
 import { RepositoryBranch, RepositoryBranches, RepositoryHistory } from './git/RepositoryGitView';
+import { RepositoryIntegration } from './integration/RepositoryIntegration';
 import type { Driving, RepositorySetupProps } from './setup/RepositorySetup';
 import type { ProjectTab, WorkspaceSection, WorkspaceTab } from './tabs';
 import { WorkspaceView } from './workspace/WorkspaceView';
@@ -795,6 +796,8 @@ export function useProjectsView({
           history={attached
             ? <RepositoryHistory repository={shown.repository} workspace={workspaceOf(shown)} here={Boolean(shown.root)} />
             : undefined}
+          // INTEGRATE1h: its queue, candidates and history, read while its tab shows.
+          integration={attached ? <RepositoryIntegration repository={shown.repository} notify={notify} /> : undefined}
           tab={tab}
           onTab={onTab}
           // Adoption's own acts are an adopter's (INT3c): managing writes its declaration into it.

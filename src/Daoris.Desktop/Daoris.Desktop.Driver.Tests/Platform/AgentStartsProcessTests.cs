@@ -141,6 +141,45 @@ public sealed class AgentStartsProcessTests : IDisposable
         Assert.True(said.GetProperty("contained").GetBoolean());
     }
 
+    /// <summary>PLUGINTRYJOB1: a folder trial is told a scratch home, and is still launched and logged by the machine's.</summary>
+    [Fact]
+    public async Task A_folder_trial_and_its_grandchild_are_in_the_agents_job_and_its_line_is_in_the_machines_log()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var machine = Installed();
+        var scratch = Path.Combine(_root, "scratch", "home");
+        Directory.CreateDirectory(scratch);
+        var folder = Path.Combine(_root, "plugin");
+        Directory.CreateDirectory(folder);
+        File.WriteAllText(Path.Combine(folder, "hooks.mjs"),
+            "import { spawn } from 'node:child_process';\n"
+            + "spawn(process.execPath, ['-e', 'setTimeout(() => {}, 60000)'], { stdio: 'ignore' });\n"
+            + "console.log('up');\nsetTimeout(() => {}, 60000);\n");
+        var entry = new PluginEntry(new PluginManifest("trial", 1, "trial", "1.0.0", "", [], new PluginHooks(["node", "hooks.mjs"], ["quest/consider"]), []),
+            folder, Path.Combine(_root, "data"), Enabled: true, Problem: null);
+        using var jobs = new AgentJobs(StandInId());
+
+        PluginTrialProcess trial;
+        using (AgentJobs.Within(jobs))
+        {
+            trial = await PluginTrialProcess.StartAsync(entry, scratch, noRepositoryAt: null, CancellationToken.None, machineHome: machine);
+        }
+
+        using (trial)
+        {
+            Assert.Equal("up", await trial.Output.ReadLineAsync().WaitAsync(Poll.Patience));
+            // The launcher, the plugin's node and the node it started.
+            await Until(() => ProcessJob.ActiveOf(jobs.Name) == 3, "the launcher, the plugin and its grandchild are in the agents' job");
+            Assert.Equal(0, jobs.Uncontained);
+            trial.Kill();
+        }
+
+        var said = Assert.Single(Said(machine));
+        Assert.Equal("plugin", said.GetProperty("kind").GetString());
+        Assert.True(said.GetProperty("contained").GetBoolean());
+        Assert.Empty(Said(scratch));
+    }
+
     [Fact]
     public async Task A_kill_of_the_launcher_alone_ends_the_harness_and_its_child()
     {

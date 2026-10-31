@@ -288,10 +288,10 @@ public sealed class PipeCensus
             // Reads (D156 §3's reads stay open): they change nothing and declare nothing (D169 point 2).
             "ACCOUNTS", "ACROSS", "ACTORS", "ANSWER_WAITS", "ASKS_ELSEWHERE", "ASK_LANDING", "CHANNEL_READ", "CHECKOUT_BRANCH", "ENTRY_LANDING",
             "GIT_BLAME", "GIT_BRANCHES", "GIT_COMMIT", "GIT_COMPARE", "GIT_GRAPH", "GIT_HISTORY", "HANDOFF_PLAN", "HARNESSES",
-            "HELPER_WAITS", "HELP_CONVERSATIONS", "HELP_PROPOSALS", "HELP_PUBLISHED", "HELP_WIRED", "HEAVY_MARKS", "HEAVY_SLOT", "HISTORY_PLAN", "LANDING", "LINES", "OPINION_GATE",
+            "HELPER_WAITS", "HELP_CONVERSATIONS", "HELP_PROPOSALS", "HELP_PUBLISHED", "HELP_WIRED", "HEAVY_MARKS", "INTEGRATION", "HEAVY_SLOT", "HISTORY_PLAN", "LANDING", "LINES", "OPINION_GATE",
             "OPINION_WAITS", "PERMISSION_WAITS", "PLUGIN", "PLUGINS", "PLUGIN_ACTIVITY", "PLUGIN_READ", "ROLES", "RULES", "SESSION_DIFF", "SESSION_FILE",
             "SESSION_FILES", "SESSION_GROUPS", "SESSION_HAND_OVER_ASK", "SESSION_HELPERS", "SESSION_PARTNERS", "SESSION_HISTORY", "SESSION_OPENINGS", "SESSION_OPTIONS",
-            "SESSION_PROCESS", "SESSION_QUESTION", "SESSION_SUPERVISOR", "SESSION_QUEUE", "SESSION_SEARCH", "SESSION_SPENT", "SESSION_STREAMS", "SESSION_WHERE", "SETUP_PLAN", "STARTS",
+            "SESSION_PROCESS", "SESSION_QUESTION", "SESSION_SUPERVISOR", "SESSION_QUEUE", "SESSION_RECORD", "SESSION_SEARCH", "SESSION_SPENT", "SESSION_STREAMS", "SESSION_WHERE", "SETUP_PLAN", "STARTS",
             "STATE", "STATE_SLICE", "SWEEP_PLAN", "SYSTEM_DOWNLOADS", "SYSTEM_SPACE", "SYSTEM_WIRING", "TAIL_SESSION", "TOOLS_LIST", "TRACE", "TREES_SYNC_PLAN", "TREES_SYNC_SCOPE",
             "UNDER_WAY", "USAGE", "WORKFLOW_CURRENT", "WORKFLOW_RUN", "WORK_PLAN", "WORK_STATE",
             // NOTIFY2i: what came to the person, a press by its act and session alone, never a value, so a terminal answers none of it.
@@ -323,6 +323,8 @@ public sealed class PipeCensus
             "WORKFLOW_NODE",
             // FABRIC-PIPELINE1d: a verification of a branch or a commit, the person's press, which runs the repository's accepted gates.
             "WORKFLOW_VERIFY",
+            // INTEGRATE1h: the owner's acts on a repository's integration (a request, a drop, a recheck), a card in the window.
+            "INTEGRATE",
             "HELP_DISMISS", "CHANNEL_MARK",
             // NOTIFY2f: the person's news read or dismissed, which a terminal marking would hide from them.
             "NOTICES_READ", "NOTICE_DISMISS",
@@ -476,6 +478,8 @@ public sealed class PipeCensus
             // INTEGRATE1d: an integration declaration's acceptance, which starts nothing: what it accepts runs only in a landing or a tidy,
             // each a press or a look of its own the drain already holds.
             "INTEGRATION_GATES",
+            // INTEGRATE1h: an integration act admits or drops a request, and the transport's pass runs the line, which the drain holds.
+            "INTEGRATE",
             // A plugin made in a folder, which installs nothing, and a tool's files and location.
             "PLUGIN_NEW", "TOOLS_DELETE", "TOOLS_LOCATION", "TOOLS_GIT");
         return table;

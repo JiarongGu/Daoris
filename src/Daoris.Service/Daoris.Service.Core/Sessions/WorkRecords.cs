@@ -432,6 +432,31 @@ public sealed class WorkRecordStore : IWorkRecordSearch
         }, ct);
     }
 
+    /// <summary>The record of the finished tree a session ran in, newest where it ran in several; null where no record names it.</summary>
+    /// <exception cref="NewerWorkRecordsException">A newer build stamped the records.</exception>
+    public Task<WorkRecord?> FindBySessionAsync(string session, CancellationToken ct = default)
+    {
+        if (Refusal is { } refused) throw refused;
+        return _db.RunAsync(async () =>
+        {
+            await RefuseNewerAsync(ct).ConfigureAwait(false);
+            (string Workspace, string Repository, string Folder)? key = null;
+            await using (var find = _db.Command())
+            {
+                find.CommandText = """
+                    SELECT s.workspace, s.repository, s.folder FROM work_record_sessions s
+                    JOIN work_records r ON r.workspace = s.workspace AND r.repository = s.repository AND r.folder = s.folder
+                    WHERE s.session = $session ORDER BY r.at DESC LIMIT 1
+                    """;
+                find.Parameters.AddWithValue("$session", session);
+                await using var rows = await find.ExecuteReaderAsync(ct).ConfigureAwait(false);
+                if (await rows.ReadAsync(ct).ConfigureAwait(false)) key = (rows.GetString(0), rows.GetString(1), rows.GetString(2));
+            }
+
+            return key is { } found ? await FindInsideAsync(found.Workspace, found.Repository, found.Folder, ct).ConfigureAwait(false) : null;
+        }, ct);
+    }
+
     /// <inheritdoc />
     public Task<IReadOnlyList<KnowledgeHit>> SearchRecordsAsync(KnowledgeQuery query, CancellationToken ct = default)
     {

@@ -117,7 +117,7 @@ export interface CheckHeldAnswer {
 }
 
 /** What the person may say of a graph run's node (FABRIC-CUTOVER1f): pass it over for the run, or stop it. */
-export type NodeAct = 'skip' | 'stop';
+export type NodeAct = 'skip' | 'stop' | 'ask-again' | 'go-on';
 
 /** A word kept on a run's node, as the driver answers it: the act, the person's words where given, and when. */
 export interface NodeWordKept {

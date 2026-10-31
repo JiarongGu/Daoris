@@ -102,7 +102,7 @@
         "workflow.step.look", "workflow.step.lookAnywhere", "workflow.step.landingMerge", "workflow.step.landingBranch",
         "workflow.step.pullRequest", "workflow.step.goAhead", "workflow.step.task", "workflow.step.pushed", "workflow.step.line",
         "workflow.step.questClose", "workflow.step.join", "workflow.step.stop", "workflow.step.waitUnit", "workflow.step.check",
-        "workflow.step.integrate", "workflow.step.workRequests", "workflow.step.pluginNode", "workflow.repositories.title", "settings.daoris.card.*", "quests.flow.title"
+        "workflow.step.integrate", "workflow.step.workRequests", "workflow.step.request", "workflow.step.pluginNode", "workflow.repositories.title", "settings.daoris.card.*", "quests.flow.title"
       ]
     },
     "field": {
@@ -290,7 +290,8 @@
         "opinion.findingsShow", "opinion.findingsHide",
         "asks.record.reviewApply", "asks.record.reviewSet", "asks.record.kindApply",
         "workflow.door.setup", "workflow.door.workspaceSetup", "workflow.run.door.*",
-        "workflow.run.node.skip", "workflow.run.node.stop", "workflow.run.node.skipMeanIt", "workflow.run.node.stopMeanIt"
+        "workflow.run.node.skip", "workflow.run.node.stop", "workflow.run.node.skipMeanIt", "workflow.run.node.stopMeanIt",
+        "workflow.run.node.askAgain", "workflow.run.node.goOn", "workflow.run.node.askAgainMeanIt", "workflow.run.node.goOnMeanIt"
       ]
     },
     "status": {
@@ -529,6 +530,10 @@
     { "term": "session branch", "en": "session branch", "zh": "会话分支", "means": "A `daoris/` branch, a session's own (D88), named by its session's title where a record names it; a repository's Branches lists them as *Sessions'* (the built-in Git design §2.2).", "match": "\\bsession branch(es)?\\b|^sessions'\\s*(\\(|$)", "avoid": { "en": [], "zh": [] } },
     { "term": "yours", "en": "yours", "zh": "你的", "means": "A local branch that is neither the line, a session's nor one a landing made and still records: the person's own, a branch a record no longer matches among them (D113); a repository's Branches lists them as *Yours*, folded after five (the built-in Git design §2.2).", "match": "^yours\\b", "avoid": { "en": [], "zh": [] } },
     { "term": "lane", "en": "lane", "zh": "泳道", "means": "A part of a repository it declares for work, with paths of its own, which a quest addresses as repository:lane so that lane's sessions take it.", "why": "泳道 is a swimlane, the word a Chinese process board gives one lane of work beside others; 车道 is a road's, and 通道 a channel's. DEV4 named it before the glossary had a term (NAME2).", "match": "\\blanes?\\b", "avoid": { "en": [], "zh": ["车道", "通道"] } },
+    { "term": "integration", "en": "integration", "zh": "集成", "means": "Work asked into a repository's line and tried with others in a candidate before the line moves (the integration design §5.8).", "match": "\\bintegrat(ion|ions|ed)\\b", "avoid": { "en": [], "zh": [] } },
+    { "term": "candidate", "en": "candidate", "zh": "候选", "means": "The line's commit made of the queued work replayed together, tried through its steps before the line takes it.", "match": "\\bcandidates?\\b", "avoid": { "en": [], "zh": [] } },
+    { "term": "contained", "en": "contained", "zh": "已包含", "means": "A member whose work the line or an earlier member already holds.", "match": "\\bcontained\\b", "avoid": { "en": [], "zh": [] } },
+    { "term": "superseded", "en": "superseded", "zh": "已被取代", "means": "A commit a newer revision of its request replaced, awaiting a disposition.", "match": "\\bsuperseded\\b", "avoid": { "en": [], "zh": [] } },
     { "term": "line", "en": "line", "zh": "主线", "means": "The branch a repository's work grows from and lands on.", "match": "\\b(the|its|a|each|no) line\\b|^lines?$|\\bline for\\b", "avoid": { "en": [], "zh": ["主干"] } },
     { "term": "landing", "en": "landing", "zh": "落地", "means": "Accepting a session's work: merged into the line, or put on a branch of its own.", "match": "\\b(land|lands|landed|landing|landings|unlanded)\\b", "avoid": { "en": [], "zh": ["合入"] } },
     { "term": "accept", "en": "accept", "zh": "采纳", "means": "The move that takes what was offered: a session's work in its review, which lands it, or a rule proposal on the Agents page. A waiting rule proposal's widening in What needs you is allow (允许), never accept.", "why": "采纳 is taking what was proposed; 接受 is the declaration's accepts. The band's rule act says 允许 so it is never mistaken for the work's 采纳… (PROPOSEHERE1a).", "match": "\\b(accept|accepted|accepting)\\b", "avoid": { "en": [], "zh": ["接受"] } },

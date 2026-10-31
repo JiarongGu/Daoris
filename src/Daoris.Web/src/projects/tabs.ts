@@ -6,7 +6,7 @@ import { store, stored } from '../lib/stored';
  * setting the repository holds on this machine. The workflow comes before Setup, since its doors open the rows there that
  * set each step.
  */
-export const PROJECT_TABS = ['details', 'branches', 'history', 'workflow', 'setup'] as const;
+export const PROJECT_TABS = ['details', 'branches', 'history', 'integration', 'workflow', 'setup'] as const;
 
 export type ProjectTab = (typeof PROJECT_TABS)[number];
 

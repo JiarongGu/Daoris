@@ -1,6 +1,4 @@
 using System.Globalization;
-using System.Text;
-using System.Text.RegularExpressions;
 
 namespace Daoris.Driver;
 
@@ -316,8 +314,24 @@ public static class Involvement
             lowered.Add("it no longer holds the work on its requests, nor asks you about one declined");
         }
 
+        // INTEGRATE1p (§17.6 point 9, C29): a `request` that sends with no press of yours where, under its node id, it waited for your Send or
+        // was not there. Each is named, so of two requests only the one moved is said; one removed, or added with `start: you`, lowers nothing.
+        foreach (var after in chosen.Where(step => step.Kind == NodeKinds.Request && StartOf(step) == RequestOptions.Automatic))
+        {
+            if (otherwise.FirstOrDefault(step => step.Kind == NodeKinds.Request && step.Id == after.Id) is { } before
+                && StartOf(before) == RequestOptions.Automatic)
+            {
+                continue;
+            }
+
+            lowered.Add($"it sends `{after.Field("title")}` to `{after.Field("to")}` with no press of yours");
+        }
+
         return lowered;
     }
+
+    /// <summary>A <c>request</c> step's <c>start</c>, the person's <c>you</c> where it names none.</summary>
+    private static string StartOf(NamedStep step) => step.Field("start") as string ?? RequestOptions.You;
 
     /// <summary>An <c>integrate</c> step's <c>request</c>, the owner's where it names none or a value that is no choice (the install's table).</summary>
     private static string RequestOf(NamedStep step) =>
@@ -379,6 +393,7 @@ public static class Involvement
                 // INTEGRATE1n: a graph-only kind, kept by its own kind and its node's id for the comparison's graph part (<see cref="Lowers"/>).
                 NodeKinds.Integrate => NodeKinds.Integrate,
                 NodeKinds.WorkRequests => NodeKinds.WorkRequests,
+                NodeKinds.Request => NodeKinds.Request,
                 _ => null,
             };
             return kind is null ? null
@@ -387,73 +402,6 @@ public static class Involvement
     ];
 
     private static IEnumerable<NamedStep> All(IReadOnlyList<NamedStep> steps) => steps.Concat(steps.SelectMany(step => step.Members));
-}
-
-/// <summary>
-/// A kind's paths (WORKFLOW1f, the workflow design §4.2, §4.4): the globs work of that kind keeps to, matched against the paths a
-/// chain changed. <c>*</c> stays inside one folder, <c>**</c> crosses folders (<c>**/</c> matching none too), <c>?</c> is one
-/// character of a name, <c>{a,b}</c> is either; the rest is itself, compared exactly, as git names a path.
-/// </summary>
-public static class KindPaths
-{
-    /// <summary>Whether <paramref name="path"/>, as git names it with <c>/</c> between its parts, keeps to <paramref name="glob"/>.</summary>
-    public static bool Matches(string glob, string path) =>
-        Regex.IsMatch(path, Pattern(glob), RegexOptions.CultureInvariant, TimeSpan.FromSeconds(1));
-
-    /// <summary>The paths that keep to none of <paramref name="globs"/>, in the order given.</summary>
-    public static IReadOnlyList<string> Outside(IReadOnlyList<string> globs, IReadOnlyList<string> paths) =>
-        [.. paths.Where(path => !globs.Any(glob => Matches(glob, path)))];
-
-    /// <summary>A glob as a pattern a whole path is held to.</summary>
-    internal static string Pattern(string glob)
-    {
-        var pattern = new StringBuilder("^");
-        var braces = 0;
-        for (var at = 0; at < glob.Length; at++)
-        {
-            var c = glob[at];
-            switch (c)
-            {
-                case '*' when at + 1 < glob.Length && glob[at + 1] == '*':
-                    // `**/` is any folders, none among them; `**` elsewhere is anything at all.
-                    if (at + 2 < glob.Length && glob[at + 2] == '/')
-                    {
-                        pattern.Append("(?:.*/)?");
-                        at += 2;
-                    }
-                    else
-                    {
-                        pattern.Append(".*");
-                        at += 1;
-                    }
-
-                    break;
-                case '*':
-                    pattern.Append("[^/]*");
-                    break;
-                case '?':
-                    pattern.Append("[^/]");
-                    break;
-                case '{':
-                    braces++;
-                    pattern.Append("(?:");
-                    break;
-                case '}' when braces > 0:
-                    braces--;
-                    pattern.Append(')');
-                    break;
-                case ',' when braces > 0:
-                    pattern.Append('|');
-                    break;
-                default:
-                    pattern.Append(Regex.Escape(c.ToString()));
-                    break;
-            }
-        }
-
-        // An unclosed brace is the glob's own words, not a group: its text is taken as written.
-        return braces > 0 ? "^" + Regex.Escape(glob) + "$" : pattern.Append('$').ToString();
-    }
 }
 
 /// <summary>

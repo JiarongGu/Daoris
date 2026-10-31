@@ -463,6 +463,12 @@ if (args is ["verify", .. var verifyArgs])
     return await Daoris.Driver.Host.VerifyConsole.RunAsync(verifyArgs);
 }
 
+// A repository's integration shown (INTEGRATE1h): read from the record, no lease; its acts are the owner's cards in the window.
+if (args is ["integrate", .. var integrateArgs])
+{
+    return Daoris.Driver.Host.IntegrateConsole.Run(integrateArgs);
+}
+
 // The machine log (LOG1, D94): this host's watch and every exception nothing caught, in a file of its
 // own beside the desktop's. With no home it writes nothing, and the sentence below still says why.
 using var log = MachineLog.Open("driver");

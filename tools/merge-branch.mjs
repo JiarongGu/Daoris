@@ -1314,6 +1314,7 @@ export const REACH = Object.freeze([
     paths: [
       'src/Daoris.Desktop/Daoris.Desktop.Driver/**/BrainstormPermissions.cs',
       'src/Daoris.Desktop/Daoris.Desktop.Driver/**/PartnerPermissions.cs',
+      'src/Daoris.Desktop/Daoris.Desktop.Driver/**/OpinionPermissions.cs',
     ],
     gates: [...DRIVER_READERS, 'service'],
     why: "the driver's own, and the service's McpToolRegistrationTests and McpRoleFilterTests read the brainstorm posture's and the partner's lists of the connector's tools (BRAINSTORM1a2, COAGENT1b)",
@@ -3084,10 +3085,11 @@ export function worktreeFor(porcelain, branch) {
  * into it carries none, and needs none), and work left uncommitted in its worktree.
  */
 export function commitAttributionProblems(commits) {
-  // Makers of this repository's built-in agents (Adapters.cs). Claude's harness has historically
-  // written its model name alone, so accept Claude and Codex names as well as explicit makers.
-  const maker = /\b(?:Anthropic|Claude|OpenAI|Codex|DeepSeek)\b/i;
-  const expected = 'expected its own maker and running model: Anthropic (Claude), OpenAI (Codex), or DeepSeek';
+  // Makers of this repository's built-in agents (Adapters.cs), and Daoris itself for the commits its
+  // driver writes (DaorisMaker.cs). Claude's harness has historically written its model name alone,
+  // so accept Claude and Codex names as well as explicit makers.
+  const maker = /\b(?:Anthropic|Claude|OpenAI|Codex|DeepSeek|Daoris)\b/i;
+  const expected = 'expected its own maker and running model: Anthropic (Claude), OpenAI (Codex), DeepSeek, or Daoris';
   return commits.filter((commit) => !commit.merge && !commit.trailer.split('\n').some((line) => {
     const name = /^\s*(.+?)\s+<[^<>\s]+@[^<>\s]+>\s*$/.exec(line)?.[1];
     return name && maker.test(name);

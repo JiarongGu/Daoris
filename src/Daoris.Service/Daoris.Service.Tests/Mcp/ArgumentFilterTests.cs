@@ -155,7 +155,7 @@ public sealed class ArgumentFilterTests : IDisposable
     [Fact]
     public async Task A_partners_call_to_a_refused_tool_missing_an_argument_gets_the_roles_denial()
     {
-        var answers = await CallAsync(new SessionRole("lead1", "pc000001"), ("quest_respond", new JsonObject()), ("quest_publish", new JsonObject { ["not_a_parameter"] = 1 }));
+        var answers = await CallAsync(new SessionWork(ParticipantWork.Partner), ("quest_respond", new JsonObject()), ("quest_publish", new JsonObject { ["not_a_parameter"] = 1 }));
 
         Assert.All(answers, answer =>
         {
@@ -172,7 +172,7 @@ public sealed class ArgumentFilterTests : IDisposable
     [Fact]
     public async Task A_helpers_call_to_a_quest_tool_missing_an_argument_gets_the_roles_denial()
     {
-        var answers = await CallAsync(new SessionRole("lead1", null), ("quest_respond", new JsonObject()));
+        var answers = await CallAsync(new SessionWork(ParticipantWork.Help), ("quest_respond", new JsonObject()));
 
         var answer = Assert.Single(answers);
         Assert.Contains("is refused to a session that serves another", answer.Text);
@@ -185,7 +185,7 @@ public sealed class ArgumentFilterTests : IDisposable
     [Fact]
     public async Task A_partners_call_to_an_allowed_tool_missing_an_argument_still_gets_the_argument_refusal()
     {
-        var answers = await CallAsync(new SessionRole("lead1", "pc000001"), ("knowledge_search", new JsonObject { ["not_a_parameter"] = 1 }));
+        var answers = await CallAsync(new SessionWork(ParticipantWork.Partner), ("knowledge_search", new JsonObject { ["not_a_parameter"] = 1 }));
 
         var answer = Assert.Single(answers);
         Assert.True(answer.IsError);
@@ -213,7 +213,7 @@ public sealed class ArgumentFilterTests : IDisposable
 
     private Task<List<Answer>> CallAsync(params (string Tool, JsonObject Arguments)[] calls) => CallAsync(null, calls);
 
-    private async Task<List<Answer>> CallAsync(SessionRole? role, params (string Tool, JsonObject Arguments)[] calls)
+    private async Task<List<Answer>> CallAsync(SessionWork? role, params (string Tool, JsonObject Arguments)[] calls)
     {
         List<Answer> answers = [];
         await RunAsync(async session =>
@@ -270,7 +270,7 @@ public sealed class ArgumentFilterTests : IDisposable
     }
 
     /// <summary>The host's own tools, logging and filter over in-memory streams, the stand-ins beside them.</summary>
-    private async Task RunAsync(Func<Session, Task> calls, SessionRole? role = null)
+    private async Task RunAsync(Func<Session, Task> calls, SessionWork? role = null)
     {
         var toServer = new Pipe();
         var fromServer = new Pipe();
@@ -280,7 +280,7 @@ public sealed class ArgumentFilterTests : IDisposable
         builder.Services
             .AddMcpServer(options => options.ServerInfo = new() { Name = "example-knowledge", Version = "0.0.1" })
             .WithStreamServerTransport(toServer.Reader.AsStream(), fromServer.Writer.AsStream())
-            .RefuseOutsideRole(_ => Task.FromResult(role ?? SessionRole.None))
+            .RefuseOutsideRole(_ => Task.FromResult(role ?? SessionWork.Unnamed))
             .RefuseMissingArguments(log)
             .WithKnowledgeTools()
             .WithTools(toolTypes: [typeof(StandInTools)]);

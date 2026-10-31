@@ -20,7 +20,7 @@ import { WiringToolHome } from './WiringToolHome';
 import { WiringVariablesCard } from './WiringVariables';
 import { WiringVersions } from './WiringVersions';
 import {
-  DEVELOPMENT, DOWNLOADS, MEASURING, SPACE, SPACE_COUNTING, SPACE_FLOOR_OFF, SPACE_FREED, SPACE_LOW, SPACE_PLAN, SPACE_RUNNING, SPACE_SET,
+  DEVELOPMENT, DOWNLOADS, MEASURING, SPACE, SPACE_ALLOWANCE, SPACE_ALLOWANCE_OVER, SPACE_COUNTING, SPACE_FLOOR_OFF, SPACE_FREED, SPACE_LOW, SPACE_PLAN, SPACE_RUNNING, SPACE_SET,
   SPACE_STOPPED, SPACE_UNCOUNTED, WIRED,
 } from './wiringFixtures';
 
@@ -394,6 +394,13 @@ export const SpaceEditingFloor: Story = { render: () => low({ editing: 'floor' }
 
 /** The floor's editor in 中文 at the 400 px floor. */
 export const SpaceEditingFloorChineseNarrow: Story = { render: () => low({ editing: 'floor' }), decorators: [...narrow, chinese] };
+
+/** The allowance over the whole (KEEPSIZE1): its use of the bound, its rule, and its editor open. */
+export const SpaceAllowance: Story = { render: () => space({ space: SPACE_ALLOWANCE, onKeep: keep }) };
+export const SpaceAllowanceEditing: Story = { render: () => space({ space: SPACE_ALLOWANCE_OVER, onKeep: keep, editing: 'allowance' }) };
+export const SpaceAllowanceOverChineseNarrow: Story = {
+  render: () => space({ space: SPACE_ALLOWANCE_OVER, onKeep: keep, editing: 'allowance' }), decorators: [...narrow, chinese],
+};
 
 /** The floor turned off: Daoris frees nothing early, and says so. */
 export const SpaceFloorOff: Story = { render: () => space({ space: SPACE_FLOOR_OFF, onKeep: keep }) };

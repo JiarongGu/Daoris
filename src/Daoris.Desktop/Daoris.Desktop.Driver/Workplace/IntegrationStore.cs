@@ -7,8 +7,8 @@ namespace Daoris.Driver;
 /// <summary>
 /// The integration's family in the desktop store (INTEGRATE1e part e2, D215; the integration design §5.2, §5.6, D212 §13): Workplace's
 /// requests, candidates, members and steps, in <c>integration_requests</c>, <c>integration_candidates</c>, <c>integration_members</c> and
-/// <c>integration_steps</c>. Read by the one door (<see cref="IntegrationRequests"/>) and by nothing else yet; no production path makes
-/// one, so Daoris works as before. Rows e3 and e4 run the steps over it.
+/// <c>integration_steps</c>. Written by the one door (<see cref="IntegrationRequests"/>) and by the line's run (<see cref="IntegrationLines"/>),
+/// whose steps run over it.
 /// </summary>
 /// <remarks>
 /// <para><b>One open request per repository and branch, one standing candidate per line, one standing membership per request, one open step
@@ -141,9 +141,28 @@ public sealed class IntegrationStore(
     public IntegrationRequest? Request(string id) =>
         Reading(reader => reader.Query($"SELECT {RequestColumns} FROM integration_requests WHERE id = $id", MapRequest, ("$id", id)).FirstOrDefault(), null);
 
+    /// <summary>Every request of a repository's branch, open or closed, in the order admitted.</summary>
+    public IReadOnlyList<IntegrationRequest> Of(string repository, string branch) =>
+        Reading(reader => reader.Query(
+            $"SELECT {RequestColumns} FROM integration_requests WHERE repository = $repository COLLATE NOCASE AND branch = $branch ORDER BY at, id",
+            MapRequest, ("$repository", repository), ("$branch", branch)), []);
+
     /// <summary>Every open request, in the order admitted.</summary>
     public IReadOnlyList<IntegrationRequest> Open() =>
         Reading(reader => reader.Query($"SELECT {RequestColumns} FROM integration_requests WHERE closed_at IS NULL ORDER BY at, id", MapRequest), []);
+
+    /// <summary>A repository's most recent closed requests, newest first (the Integration view's history).</summary>
+    public IReadOnlyList<IntegrationRequest> Closed(string repository, int most) =>
+        Reading(reader => reader.Query(
+            $"SELECT {RequestColumns} FROM integration_requests WHERE repository = $repository COLLATE NOCASE AND closed_at IS NOT NULL "
+            + "ORDER BY closed_at DESC, id DESC LIMIT $most",
+            MapRequest, ("$repository", repository), ("$most", most)), []);
+
+    /// <summary>The newest request a unit made, open or closed; null where it made none.</summary>
+    public IntegrationRequest? OfUnit(string unit) =>
+        Reading(reader => reader.Query(
+                $"SELECT {RequestColumns} FROM integration_requests WHERE unit = $unit ORDER BY at DESC, id DESC LIMIT 1", MapRequest, ("$unit", unit))
+            .FirstOrDefault(), null);
 
     /// <summary>
     /// A line's queue (§5.2 step 2's input): its repository's open requests for it that stand in no candidate, in the order admitted. A request

@@ -21,11 +21,13 @@ public sealed class DriverModuleHeldTests : DriverModuleBridge
     {
         ["SESSION_WHERE"] = new { sessions = Array.Empty<object>() },
         ["SESSION_OPENINGS"] = new { ids = new[] { "a1b2c3d4" } },
+        ["SESSION_RECORD"] = new { id = "a1b2c3d4" },
         ["HEAVY_SLOT"] = new { repository = "engine" },
         ["ROLES"] = new { },
         ["HELP_PROPOSALS"] = new { session = "a1b2c3d4" },
         ["TOOLS_LIST"] = new { },
         ["SUPERVISOR_WAITING"] = new { },
+        ["INTEGRATION"] = new { repository = "engine" },
     };
 
     public static TheoryData<string> HeldRoutes() => [.. DriverModule.ByEventRoutes.Order(StringComparer.Ordinal)];

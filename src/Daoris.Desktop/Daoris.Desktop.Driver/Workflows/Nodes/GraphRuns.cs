@@ -248,7 +248,9 @@ public static class RunSubjects
     {
         NodeKinds.Claimed or NodeKinds.QuestClose => RunSubject.Quest,
         // INTEGRATE1o (§17.6 point 2): `work.requests` reads the quests the run's sessions published here, so its subject is the run itself.
-        NodeKinds.GoAhead or NodeKinds.Human or NodeKinds.WaitUnit or NodeKinds.Stop or NodeKinds.All or NodeKinds.WorkRequests => RunSubject.Run,
+        // INTEGRATE1p (§17.5): a `request` binds the run, as `wait.unit` does; the quest it published is named by its attempt's key.
+        NodeKinds.GoAhead or NodeKinds.Human or NodeKinds.WaitUnit or NodeKinds.Stop or NodeKinds.All or NodeKinds.WorkRequests
+            or NodeKinds.Request => RunSubject.Run,
         NodeKinds.Opinion or NodeKinds.Look or NodeKinds.Handed => RunSubject.Branch,
         // INTEGRATE1n (§17.4): the landed branch at the tip `handed` recorded, wherever the graph wires it.
         NodeKinds.Pushed or NodeKinds.PullRequest or NodeKinds.Line or NodeKinds.Integrate => RunSubject.Landing,

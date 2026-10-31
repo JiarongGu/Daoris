@@ -651,6 +651,10 @@ app.MapPost("/api/quests", async (
             Short = body.Short,
             // The mark on the work (FOUNDATION1x), judged by the exchange with every other door's.
             Weight = body.Weight,
+            // The paths the work declares (INTEGRATE1l), judged by the exchange with every other door's.
+            Paths = body.Paths ?? [],
+            // A workflow request's key (INTEGRATE1p), judged by the exchange.
+            Request = body.Request,
             // The chain's review choice (REVIEWENV1b): the person's own at this door, with any words they give.
             Review = ReviewOf(body.Review),
             // An agent's publish where the host holds a person key and the call carried none (PERSONDOOR1a, design §3.2):
@@ -1110,6 +1114,8 @@ if (mode == ServiceMode.Local)
                 WorkflowWords = body.WorkflowWords,
                 // The asker's short title (HEAD2e), judged by the desk with the quest's rule.
                 Short = body.Short,
+                // The asker's declared paths (INTEGRATE1l), judged by the desk with the quest's rule.
+                Paths = body.Paths ?? [],
             },
             DateTimeOffset.UtcNow, ct);
         return AskAnswer(outcome, s, http);
@@ -1224,7 +1230,8 @@ if (mode == ServiceMode.Local)
         // §1b). Anything beyond `to` makes a draft — words, links, files or a chain alone included.
         var drafted = body.Title is not null || body.Body is not null || body.Links is { Count: > 0 }
             || uploads.Count > 0 || body.Then is { Count: > 0 } || body.Requirements is { Count: > 0 } || body.Short is not null
-            || body.Review is not null || body.ReviewProposal is not null || body.WorkflowProposal is not null;
+            || body.Review is not null || body.ReviewProposal is not null || body.WorkflowProposal is not null
+            || body.Paths is { Count: > 0 };
         var draft = drafted
             ? new AskDraft(body.Title, body.Body)
             {
@@ -1239,6 +1246,8 @@ if (mode == ServiceMode.Local)
                 ReviewProposal = body.ReviewProposal is { } proposal ? new ReviewProposed(proposal.Choice, proposal.Reason) : null,
                 // An intake's kind proposal (WORKFLOW1i): the exchange checks its reason quotes the ask; the desk keeps it.
                 WorkflowProposal = body.WorkflowProposal is { } kind ? new WorkflowProposed(kind.Kind, kind.Reason) : null,
+                // An intake's declared paths (INTEGRATE1l), added to the ask's own by the desk.
+                Paths = body.Paths ?? [],
             }
             : null;
 
@@ -1467,6 +1476,23 @@ if (mode == ServiceMode.Local)
         {
             var (record, kept) = await s.Records.PostAsync(post, DateTimeOffset.UtcNow, ct);
             return Results.Ok(new WorkRecordResponse(kept, record.At, record.Sessions));
+        }
+        catch (NewerWorkRecordsException newer)
+        {
+            return Results.Conflict(new ErrorResponse(newer.Message, "RECORDS_NEWER"));
+        }
+    });
+
+    // The record of the finished tree a session ran in, for the session's own page once its tree is let go: the post's facts as kept, the
+    // landing, the tip, its ref and the commits. Machine-local, as the post is; none kept is a 404.
+    app.MapGet("/api/sessions/{id}/record", async (string id, ComposedService s, HttpContext http, CancellationToken ct) =>
+    {
+        if (!MachineLocal(http)) return Results.NotFound();
+        try
+        {
+            return await s.Records.FindBySessionAsync(id, ct) is { } record
+                ? Results.Ok(record)
+                : Results.NotFound(new ErrorResponse($"no finished tree's record names session `{id}`"));
         }
         catch (NewerWorkRecordsException newer)
         {
@@ -2784,7 +2810,11 @@ static QuestResponse ToQuest(
         ? null
         : q.WorkflowChoices.Select(c => new AskWorkflowChoiceResponse(c.Kind, c.Workflow, c.At ?? q.Updated, c.Words)).ToList(),
     // The mark on the work (FOUNDATION1x): a word, which every door may answer.
-    q.Weight);
+    q.Weight,
+    // The declared paths (INTEGRATE1l): repository-relative globs, which travel with the quest, so every door may answer them.
+    q.Paths,
+    // The workflow request's key (INTEGRATE1p): ids, which travel with the quest.
+    q.Request);
 
 // Requirements as a door hands them to the exchange (DRIFT1c): a half left out, or a whole one, arrives
 // blank and is refused there naming which — the same sentence every door gives. So does an evidence item
@@ -2867,7 +2897,8 @@ static AskResponse ToAsk(Ask a, QuestFiles? files, bool machineLocal)
         WorkflowProposals: a.WorkflowProposals.Count == 0
             ? null
             : a.WorkflowProposals.Select(p => new AskWorkflowProposalResponse(p.Kind, p.Reason, p.At, p.Session, p.Quest)).ToList(),
-        Short: a.Short);
+        Short: a.Short,
+        Paths: a.Paths);
 }
 
 // A chain's steps as a door hands them to the exchange (D65 §4, REVIEWENV1b): a set-up step's environment rides with its words.

@@ -1,6 +1,6 @@
 import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { KeepSet, SpaceKind, SpaceVolume, SystemSpace } from '../../data/wiring';
+import type { KeepSet, SpaceAllowance, SpaceKind, SpaceVolume, SystemSpace } from '../../data/wiring';
 import { Button, Card, CheckField, SelectField, SettingRow, SkeletonRows } from '../../design/ui';
 import { cn } from '../../lib/cn';
 import { clockOf, dayOf, size } from '../../locales/format';
@@ -82,7 +82,7 @@ function Sized({ kind, onCount }: { kind: SpaceKind; onCount: () => void }) {
 function KeepEditor({ kind, onKeep, onClose }: { kind: SpaceKind; onKeep: (set: KeepSet, answered: KeepAnswered) => void; onClose: () => void }) {
   const { t } = useTranslation();
   const bounds = kind.bounds!;
-  const id = kind.id as Exclude<KeepSet['kind'], 'floor'>;
+  const id = kind.id as Exclude<KeepSet['kind'], 'floor' | 'allowance'>;
   const [days, setDays] = useState(kind.rule.days === null ? '' : String(kind.rule.days));
   const [whole, setWhole] = useState(kind.rule.whole === true);
   const [gb, setGb] = useState(kind.rule.gb == null ? '' : String(kind.rule.gb));
@@ -270,6 +270,64 @@ function FloorEditor({ volume, onKeep, onClose }: { volume: SpaceVolume; onKeep:
   );
 }
 
+/** The allowance's editor, by the id `editing` holds beside the floor's and the kinds'. */
+const ALLOWANCE = 'allowance';
+
+/**
+ * The allowance's *Change…* editor (KEEPSIZE1): the most Daoris may use in all, in whole GB from 8 to half the volume; *Save*, *The
+ * default* and *Never mind*. A value out of its bounds is the driver's refusal, said under the editor, which stays open.
+ */
+function AllowanceEditor({ allowance, volume, onKeep, onClose }: {
+  allowance: SpaceAllowance; volume: SpaceVolume | null; onKeep: (set: KeepSet, answered: KeepAnswered) => void; onClose: () => void;
+}) {
+  const { t } = useTranslation();
+  const [value, setValue] = useState(allowance.gb == null ? '' : String(allowance.gb));
+  const [saving, setSaving] = useState(false);
+  const [said, setSaid] = useState<string | null>(null);
+  const max = volume ? Math.max(8, halfGb(volume.total)) : undefined;
+  const send = (set: KeepSet) => {
+    setSaving(true);
+    setSaid(null);
+    onKeep(set, {
+      done: () => { setSaving(false); onClose(); },
+      refused: (words) => { setSaving(false); setSaid(words); },
+    });
+  };
+  const save = () => {
+    const count = Number(value);
+    if (value.trim() === '' || !Number.isInteger(count)) {
+      setSaid(t('settings.daoris.space.edit.notANumber'));
+      return;
+    }
+    send({ kind: 'allowance', gb: count });
+  };
+  return (
+    <div className="grid gap-2 rounded-control border border-line bg-page/60 px-3 py-2" role="group" aria-label={t('settings.daoris.space.edit.allowance')}>
+      <span className="inline-flex flex-wrap items-center gap-1.5">
+        <input
+          type="number"
+          min={8}
+          max={max}
+          aria-label={t('settings.daoris.space.edit.allowance')}
+          value={value}
+          disabled={saving}
+          onChange={(event) => setValue(event.target.value)}
+          className="w-[5.5rem] rounded-control border border-line-strong bg-raised px-2.5 py-1 text-right text-body text-ink"
+        />
+        <span className="text-small text-ink-faint">{t('settings.daoris.space.edit.allowanceBounds', { min: 8, max: max ?? '…' })}</span>
+      </span>
+      <div className="flex flex-wrap items-center gap-2">
+        <Button variant="primary" disabled={saving} onClick={save}>
+          {saving ? t('settings.daoris.space.edit.saving') : t('settings.daoris.space.edit.save')}
+        </Button>
+        <Button disabled={saving || allowance.default} onClick={() => send({ kind: 'allowance', default: true })}>{t('settings.daoris.space.edit.default')}</Button>
+        <Button variant="ghost" disabled={saving} onClick={onClose}>{t('common.cancel')}</Button>
+      </div>
+      {said && <p className="m-0 text-small text-ink-danger" role="alert">{said}</p>}
+    </div>
+  );
+}
+
 /**
  * A volume's free space as the card says it (KEEP1f): its free space of its size and the floor it keeps, or that no floor is set, in
  * the warn ink while it is below; `path` said where it is a kind's own volume, not the Daoris folder's.
@@ -381,6 +439,7 @@ export function WiringSpace({ space, older = false, busy = false, onCount, downl
   const counting = space.kinds.some((kind) => kind.counting);
   // KEEP1f: the floor is set here where the shell says it (one before KEEP1f answers none).
   const floorSettable = onKeep !== undefined && space.volume?.floor != null;
+  const allowanceOver = space.allowance?.gb != null && space.allowance.bytes != null && space.allowance.bytes > space.allowance.gb * GB;
   const door = (named: string) => t(`settings.daoris.space.door.${named}`, { defaultValue: named });
   // A run of this window's process under way is said by its own line; the lock's holder then is that run.
   const running = space.run != null && !space.run.outcome;
@@ -425,6 +484,34 @@ export function WiringSpace({ space, older = false, busy = false, onCount, downl
           </div>
         )}
       </SettingRow>
+      {space.allowance && space.allowance.gb != null && (
+        <SettingRow
+          label={t('settings.daoris.space.allowance.label')}
+          hint={onKeep ? t('settings.daoris.space.keepTerminal', { kind: 'allowance' }) : undefined}
+          control={
+            <span className={cn('text-small', allowanceOver ? 'text-warn' : 'text-ink-soft')}>
+              {space.allowance.bytes == null
+                ? t('settings.daoris.space.allowance.uncounted', { gb: space.allowance.gb })
+                : t(space.allowance.partial ? 'settings.daoris.space.allowance.ofAtLeast' : 'settings.daoris.space.allowance.of', {
+                  used: size(space.allowance.bytes), gb: space.allowance.gb,
+                })}
+            </span>
+          }
+        >
+          <div className="grid gap-1">
+            <p className="m-0 flex flex-wrap items-baseline gap-x-2 text-small text-ink-soft">
+              {t('settings.daoris.space.allowance.rule')}
+              {onKeep && editing !== ALLOWANCE && (
+                <Button variant="ghost" onClick={() => setEditing(ALLOWANCE)}>{t('settings.daoris.button.change')}</Button>
+              )}
+            </p>
+            {allowanceOver && <p className="m-0 text-small text-warn">{t('settings.daoris.space.allowance.over')}</p>}
+            {onKeep && editing === ALLOWANCE && (
+              <AllowanceEditor allowance={space.allowance} volume={space.volume} onKeep={onKeep} onClose={() => setEditing(null)} />
+            )}
+          </div>
+        </SettingRow>
+      )}
       {space.kinds.map((kind) => (
         <SettingRow
           key={kind.id}

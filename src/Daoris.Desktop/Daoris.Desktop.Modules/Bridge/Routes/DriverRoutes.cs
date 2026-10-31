@@ -299,7 +299,7 @@ public sealed class DriverRoutes(DriverContext context)
             Number(request, "gb") is { } gb ? (int)Math.Clamp(gb, int.MinValue, int.MaxValue) : null,
             Number(request, "percent") is { } percent ? (int)Math.Clamp(percent, int.MinValue, int.MaxValue) : null,
             Flag(request, "off"));
-        if (KeepRules.IsFloor(set.Kind) && set.Gb is not null) set = set with { Volume = SpaceVolumes.Read(DaorisHome.FolderOf(_loop.Home).Folder)?.Total };
+        if ((KeepRules.IsFloor(set.Kind) || KeepRules.IsAllowance(set.Kind)) && set.Gb is not null) set = set with { Volume = SpaceVolumes.Read(DaorisHome.FolderOf(_loop.Home).Folder)?.Total };
         _context.Change(config => KeepRules.Apply(config, set));
         return State(_loop);
     }

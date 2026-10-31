@@ -1095,6 +1095,16 @@ public sealed class Driver(
         // carries the quest on in that tree rather than building its work again in a new one. No git starts where no such quest is.
         var handed = snapshot;
         snapshot = await Stages.TimeAsync("committed", () => CommittedWork.LookAsync(handed, CommittedWork.CountAsync, ct)).ConfigureAwait(false);
+        // INTEGRATE1l (the integration design §9): what each running unit changed, one git read per running session, and the quests whose
+        // integration request is open, for the planner's comparison at a start; two running units changing one path are each told once.
+        var committedLook = snapshot;
+        var integrating = config.Landings.Values.Concat(config.WorkspaceLandings.Values).Any(rule => rule.Integrate is not null)
+            ? new IntegrationStore(home).Open().Select(request => request.Quest).OfType<string>().ToHashSet(StringComparer.OrdinalIgnoreCase)
+            : new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        snapshot = await Stages.TimeAsync("overlaps", () => WorkOverlaps.LookAsync(committedLook, integrating, WorkOverlaps.DiffAsync, ct)).ConfigureAwait(false);
+        var overlapLook = snapshot;
+        await Stages.TimeAsync("overlaps-told", () => WorkOverlaps.TellAsync(home, overlapLook, async (session, text, key, token) =>
+            await service.SayAsync(session, text, ct: token, from: DaorisWords.From, key: key, running: true).ConfigureAwait(false), ct)).ConfigureAwait(false);
         Context.Harnesses.Look(snapshot.Started, mark);
 
         // The ask's channel (SESSONE2b, D167 point 7; the co-working design §2.3): what is new for each line of work on an ask reaches
@@ -3145,6 +3155,9 @@ public sealed class Driver(
                             : Watch.EndedMinutes(sessionId) is { } quietMinutes
                                 ? Observation.AfterQuiet(quietMinutes, quest.Status, status)
                                 : Observation.AfterTimeout(config.TestBound ?? 0, quest.Status, status);
+                    // CODEXPERM1: a park whose turn its agent cut asked the person nothing, and says so.
+                    if (stop is null) conclusion = Observation.Cut(conclusion, ended.Cut);
+
                     // ACCESSSWAP1b: a run Daoris ended at its turn's end for a changed setup is neither a park nor a failure, and goes on.
                     var swappedOn = stop is null && ended.SetupChanged is not null;
                     if (swappedOn) conclusion = Observation.SetupChanged(conclusion, ended.SetupChanged!);
@@ -3291,15 +3304,7 @@ public sealed class Driver(
         {
             // A wire that broke after a stop (the process killed under a handshake's write) is that stop's end, not a failure: the
             // stop decided it, as its conclusion would have, and the person's is never interrupted (D104, FLAKE3).
-            var (stopped, _) = Observation.Closed(stoppedFirst);
-            try
-            {
-                await service.AdvanceAsync(sessionId, stopped.State, stopped.AsNoted(), ct: CancellationToken.None).ConfigureAwait(false);
-            }
-            catch (Exception)
-            {
-                // Best-effort, as the failure's own write below.
-            }
+            var stopped = await EndStoppedAsync(sessionId, stoppedFirst).ConfigureAwait(false);
 
             return new StartRun(
                 $"{stopped.State}  session {sessionId} (#{quest.Id} → {quest.To}): {stopped.Note}",
@@ -3341,6 +3346,26 @@ public sealed class Driver(
             // since a close is one of the ways. A record that still holds it keeps the lock.
             if (locksTree && !holdsTree) await SessionLocks.LetGoAsync(workTree, sessionId, CancellationToken.None).ConfigureAwait(false);
         }
+    }
+
+    /// <summary>
+    /// The record of a run whose wire broke after a stop made first (STOPRACE1, FLAKE3): ended as that stop's conclusion would
+    /// have ended it, never interrupted, and shared by every run that catches a failure after <c>HoldAsync</c>. Best-effort, as
+    /// the failure's own write is.
+    /// </summary>
+    internal async Task<SessionConclusion> EndStoppedAsync(string sessionId, SessionStop stop)
+    {
+        var (stopped, _) = Observation.Closed(stop);
+        try
+        {
+            await service.AdvanceAsync(sessionId, stopped.State, stopped.AsNoted(), ct: CancellationToken.None).ConfigureAwait(false);
+        }
+        catch (Exception)
+        {
+            // The first failure is the report; a host that is gone here must not turn the stop into a second throw.
+        }
+
+        return stopped;
     }
 
     /// <summary>
@@ -4216,7 +4241,8 @@ public sealed class Driver(
                 // asked and not carried, so the record never says a choice was taken that was not.
                 asked: asked, carried: target.Brainstorm is not null ? null
                     : notCarried => _ = service.TryKeepActorAsync(sessionId, Log, choice, notCarried, ct: CancellationToken.None),
-                modelRefused: refusedAt, offerRead: offered, retry: retry, carriesOn: carriesOn, written: written)
+                modelRefused: refusedAt, offerRead: offered, retry: retry, carriesOn: carriesOn, written: written,
+                typedFailures: adapter.Toolchain?.ErrorWords?.TypedFailures == true)
             : null;
         // What the native door's harness says in its own words, apart from its agent's, for its ending (AGT3c).
         var own = new HarnessWords();
@@ -4302,6 +4328,8 @@ public sealed class Driver(
                     SetupChanged = left.Count > 0 ? swapped : null,
                     // APIREFUSAL1: the door's own word that its provider refused the turn it ended on.
                     ProviderRefused = outcome?.ProviderRefused == true,
+                    // CODEXPERM1: its agent cut the turn it ended on.
+                    Cut = outcome?.Cut,
                     // MODELROLE1c2: its agent refused its choice at the open, before any prompt.
                     NotOffered = outcome?.NotOffered,
                     // AGENTERRORS1a: what its transient retry read and did, for the conclusion.
@@ -4674,7 +4702,7 @@ public sealed class Driver(
         Func<string, string, string>? unoffered = null, Func<bool>? setupChanged = null, IReadOnlyList<SaidWordView>? handed = null,
         ActorAsked? asked = null, Action<ActorAsked>? carried = null, Func<ModelRefusal, Task<ActorAsked?>>? modelRefused = null,
         Action<IReadOnlyList<AcpConfigOption>>? offerRead = null, TransientRetry? retry = null,
-        Func<CancellationToken, Task<TurnCarry>>? carriesOn = null, Action? written = null)
+        Func<CancellationToken, Task<TurnCarry>>? carriesOn = null, Action? written = null, bool typedFailures = false)
     {
         await using var file = TranscriptFile.Open(transcript, append: resume is not null);
 
@@ -4751,6 +4779,7 @@ public sealed class Driver(
                 onConversation: keepAs is null ? null : conversation => Context.Conversations.Keep(sessionId, keepAs, conversation))
             {
                 Unoffered = unoffered,
+                TypedFailures = typedFailures, // CODEXSTATUS1: asked for only by a door declared to need it
                 Permissions = HeldPermissions.Of(Context.Events).For(sessionId), // AUTONOMY1b3a: held only under asking's mark
                 SetupChanged = setupChanged,
                 CarriesOn = carriesOn, // LANDBACK1 part 2: a done quest's uncommitted tree carries the session on before it ends
@@ -4851,7 +4880,7 @@ public sealed class Driver(
                     retry: retry)
                 .ConfigureAwait(false);
 
-            Line($"— the turn ended: {outcome.StopReason}, after {outcome.Updates} update(s). The "
+            Line($"— {outcome.TurnEnd}. The "
                  + "session record is concluded from the exit code and the quest's own state, not "
                  + "from this line (D46 §4).");
             // ACCESSSWAP1b: the words a changed setup handed back, kept on the record once it concluded, to go on under the new one.

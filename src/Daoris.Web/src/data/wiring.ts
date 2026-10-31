@@ -153,7 +153,11 @@ export type SpaceKind = {
  */
 export type KeepSet =
   | { kind: 'set-aside' | 'downloads' | 'browser-cache' | 'logs' | 'history'; days?: number; never?: true; whole?: boolean; gb?: number; default?: true }
-  | { kind: 'floor'; gb?: number; percent?: number; off?: true; default?: true };
+  | { kind: 'floor'; gb?: number; percent?: number; off?: true; default?: true }
+  | { kind: 'allowance'; gb?: number; default?: true };
+
+/** The allowance over the whole (KEEPSIZE1): its GB, whether it is the default, and the kinds' counts summed (null until each is counted). */
+export type SpaceAllowance = { gb: number | null; default: boolean; bytes: number | null; partial: boolean };
 
 /**
  * A volume as `SYSTEM_SPACE` says it (KEEP1f, the cleanup design §3.2): where it is, its free space and size, the floor it is held to
@@ -186,6 +190,8 @@ export type SystemSpace = {
   volume: SpaceVolume | null;
   volumeWhy: Why;
   kinds: SpaceKind[];
+  /** KEEPSIZE1; absent from a shell older than the allowance. */
+  allowance?: SpaceAllowance;
   run: SpaceRun | null;
   held: { pid: number; since: string; door: string; gone: boolean } | null;
 };

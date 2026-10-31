@@ -91,6 +91,8 @@ public static class VerbLeases
             "run-heavy" => false,
             // FABRIC-PIPELINE1d: writes only its run's binding, once; the running driver governs it.
             "verify" => false,
+            // INTEGRATE1h: reads the integration record; its acts are the window's cards.
+            "integrate" => false,
             "ask" => args.Skip(1).Any(AskWork.Contains),
             "quest" => next is not null && !ServiceQuests.Contains(next),
             "sessions" => next is not null && !next.StartsWith('-') && next is not ("start-from" or "hand-over"),

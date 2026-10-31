@@ -1,5 +1,7 @@
 # The platform's front-end architecture
 
+> Router standing, moved here when the router was cut to its size (DOCSIZE1): also governed by D142.
+
 **Status: approved direction from the owner, 2026-09-19 — "this is a long-term project, so a good use
 of UI tooling and library is a must; use a design tool; support i18n; use the example project for
 testing, with test-in-loop development." Written before the build; D42 records the decision.** This

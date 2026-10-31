@@ -83,6 +83,8 @@ public sealed class NodeLifecycleTests
     /// <summary>What a kind's authority forbids of a row, and nothing else: a person's judgement, a failure, a skip.</summary>
     private static string? Forbidden(NodeTransition row, NodeAuthority authority) => row.To switch
     {
+        // INTEGRATE1p (C33): a failed node is gone on without, by the person, for a request alone.
+        NodeStates.Skipped when row is { From: NodeStates.Failed, By: NodeCause.Person } => authority.Kind == NodeKinds.Request ? null : NodeRefusal.NotSkippable,
         NodeStates.Reached or NodeStates.Failed when row.By == NodeCause.Person && !authority.PersonSettles => NodeRefusal.NotSettled,
         NodeStates.Rejected when !authority.PersonJudges => NodeRefusal.NotJudged,
         NodeStates.Failed when authority.FailureBy is null => NodeRefusal.NoFailureAuthority,
@@ -109,6 +111,8 @@ public sealed class NodeLifecycleTests
             "unknown>reached:person", "unknown>failed:person",
             "failed>ready:daoris", "failed>ready:person", "rejected>ready:person", "stopped>ready:person",
             "ready>skipped:person", "blocked>skipped:person", "active>skipped:person",
+            // INTEGRATE1p (C33): a declined request is gone on without, a request node alone.
+            "failed>skipped:person",
             // FABRIC-WIRE1g: an opinion's gate passes it over where nothing is asked of it, as D157's run reads it.
             "active>skipped:authority",
             "skipped>blocked:person", "skipped>invalidated:daoris",

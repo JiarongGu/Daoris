@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -21,8 +22,8 @@ namespace Daoris.Driver;
 ///
 /// <para>🔴 <b>Never unchanged where it changed.</b> What the working tree holds is in no file of git's, so <c>git status</c> is
 /// asked of every tree every time, and a tree whose status git cannot give is walked. A read is kept only where git counted its
-/// commits and nothing holds them by content (no <see cref="TreeWork.Held"/>), since that judgement reads the working tree's
-/// ignored paths too. A tree's stamp is taken before its walk, so a change during it is a different stamp the next time.</para>
+/// commits. A tree whose commits the line holds by content (<see cref="TreeWork.Held"/>) keeps its proof, which rests on the same
+/// refs exactly, and asks again what it holds beyond its commits, which reads the working tree's ignored paths (TREELOOK2). A tree's stamp is taken before its walk, so a change during it is a different stamp the next time.</para>
 ///
 /// <para><b>The line moving on.</b> A landing moves the line, which would walk every tree of the repository again. A tree whose
 /// walk counted no commit stays at none where its own stamp is the same and its repository's refs only moved forward since:
@@ -43,7 +44,7 @@ internal sealed class TreeReadMemo
     internal static TreeReadMemo Of(string home) => Homes.GetOrAdd(Path.GetFullPath(home), _ => new TreeReadMemo());
 
     /// <summary>One read of some trees through <paramref name="trees"/>: each repository's refs and the home's records read once.</summary>
-    internal TreeReadPass Begin(SessionTrees trees)
+    internal TreeReadPass Begin(SessionTrees trees, LookTimes? times = null)
     {
         // What no kept read rests on any more is let go: a gone tree's read, then a version no read was taken at.
         foreach (var tree in _trees.Keys)
@@ -57,7 +58,7 @@ internal sealed class TreeReadMemo
             if (!used.Contains(version)) _versions.TryRemove(version, out _);
         }
 
-        return new TreeReadPass(this, trees);
+        return new TreeReadPass(this, trees, times);
     }
 
     internal bool TryLast(string tree, out Kept kept) => _trees.TryGetValue(tree, out kept!);
@@ -73,7 +74,11 @@ internal sealed class TreeReadMemo
     internal CountedRefs? Version(string version) => _versions.GetValueOrDefault(version);
 
     /// <summary>A tree's kept read: its own stamp, its repository's refs version and the home's stamp it was taken at, and its work.</summary>
-    internal sealed record Kept(string Tree, string Refs, string Home, TreeWork Work);
+    internal sealed record Kept(string Tree, string Refs, string Home, TreeWork Work)
+    {
+        /// <summary>A held tree's repository's declared output, once read (TREELOOK2); it rests on what <see cref="Refs"/> and <see cref="Home"/> hold.</summary>
+        internal IReadOnlyList<System.Text.RegularExpressions.Regex>? Declared { get; init; }
+    }
 }
 
 /// <summary>
@@ -140,7 +145,7 @@ internal sealed record CountedRefs(string CommonDir, string Version, IReadOnlyDi
 /// One read of some trees (TREELOOK1, <see cref="TreeReadMemo"/>): each tree's kept read where nothing it rests on moved, its
 /// <c>git status</c> asked again; a walk where anything did. Safe to use from several trees at once.
 /// </summary>
-internal sealed class TreeReadPass(TreeReadMemo memo, SessionTrees trees)
+internal sealed class TreeReadPass(TreeReadMemo memo, SessionTrees trees, LookTimes? times = null)
 {
     private readonly object _gate = new();
     private readonly Dictionary<string, CountedRefs?> _repositories = new(StringComparer.OrdinalIgnoreCase);
@@ -170,20 +175,55 @@ internal sealed class TreeReadPass(TreeReadMemo memo, SessionTrees trees)
         }
 
         var home = Home();
+        var watch = Stopwatch.StartNew();
         if (memo.TryLast(full, out var kept) && kept.Tree == stamp.Tree && kept.Home == home
             && (kept.Refs == stamp.Refs.Version || kept.Work.Commits == 0 && await ForwardAsync(kept.Refs, stamp.Refs, full, ct).ConfigureAwait(false))
             // The same link to a linked tree still there is the repository's top, as the walk that kept it proved: one start.
             && await trees.StatusCountAsync(full, ct).ConfigureAwait(false) is { } uncommitted)
         {
-            var work = kept.Work with { Uncommitted = uncommitted };
-            memo.Keep(full, kept with { Refs = stamp.Refs.Version, Work = work }, stamp.Refs);
-            return work;
+            times?.AddTree(full, "status", watch.ElapsedMilliseconds);
+            TreeWork? work = kept.Work with { Uncommitted = uncommitted };
+            var declared = kept.Declared;
+            // TREELOOK2: a tree held by content keeps its proof (its refs are the same, exactly), and asks what it holds beyond its commits.
+            if (kept.Work.Held is { } held)
+            {
+                watch.Restart();
+                var (again, found) = await trees.HeldAgainAsync(full, stamp.Refs.CommonDir, held, declared, ct).ConfigureAwait(false);
+                work = again is null ? null : work with { Held = again };
+                declared = found;
+                times?.AddTree(full, "holds", watch.ElapsedMilliseconds);
+            }
+
+            if (work is not null)
+            {
+                memo.Keep(full, kept with { Refs = stamp.Refs.Version, Work = work, Declared = declared }, stamp.Refs);
+                return work;
+            }
         }
 
+        watch.Restart();
         var walked = await trees.WorkAsync(tree, ct).ConfigureAwait(false);
-        if (walked is { Commits: not null, Held: null }) memo.Keep(full, new TreeReadMemo.Kept(stamp.Tree, stamp.Refs.Version, home, walked), stamp.Refs);
+        times?.AddTree(full, "walk", watch.ElapsedMilliseconds);
+        if (walked is { Commits: not null })
+        {
+            // A held tree's declared output is read with its walk, so its next read starts no more than its two statuses.
+            var declared = walked.Held is null ? null : await DeclaredOrNullAsync(full, stamp.Refs.CommonDir, ct).ConfigureAwait(false);
+            memo.Keep(full, new TreeReadMemo.Kept(stamp.Tree, stamp.Refs.Version, home, walked) { Declared = declared }, stamp.Refs);
+        }
         else memo.Forget(full);
         return walked;
+    }
+
+    private async Task<IReadOnlyList<System.Text.RegularExpressions.Regex>?> DeclaredOrNullAsync(string tree, string common, CancellationToken ct)
+    {
+        try
+        {
+            return await trees.DeclaredAsync(tree, common, ct).ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is DriverException or IOException or UnauthorizedAccessException)
+        {
+            return null;
+        }
     }
 
     /// <summary>

@@ -201,6 +201,8 @@ export const keys = {
    * files. Under the sessions' key, so whatever asks the listing again (a landing, a clean-up, a tick) asks this too.
    */
   sessionsWhere: (ids: string[]) => ['sessions', 'where', ...ids] as const,
+  /** The record of the finished tree a session ran in (KEEPSIZE1), read once its tree is let go. */
+  sessionRecord: (id: string) => ['sessions', 'record', id] as const,
   /**
    * What a word said now to one session would do (MSG1d, D137 §5.3) — shell-only, the driver's answer. By its state and
    * whether its inbox listens, so it is asked again as the session moves; under the sessions' key, so a word kept or a

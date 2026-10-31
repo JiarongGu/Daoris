@@ -629,6 +629,27 @@ describe("the work's requests", () => {
     expect(onNodeWord).toHaveBeenCalledWith({ run: 'q1', node: 'requests', act: 'skip', words: 'tools will not take it; I do it myself' });
   });
 
+  // INTEGRATE1p (C33): a declined request of the run's own offers the driver's two words, asked again with nothing to say, gone on without with words.
+  it('offers a declined request Ask again… and Go on without it…, each sent as the run’s node word', async () => {
+    const asked = answerOf(GRAPH_RUN_REQUESTS);
+    const [only] = asked.runs;
+    const steps = only.steps.map((step) => (step.node === 'work.requests' ? { ...step, acts: ['ask-again', 'go-on'] } : step));
+    const onNodeWord = vi.fn().mockResolvedValue({ run: 'q1', node: 'requests', act: 'ask-again', done: true });
+    render(<WorkflowRunView answer={{ ...asked, runs: [{ ...only, steps }] }} onNodeWord={onNodeWord} />);
+    expect(within(row('requests')).queryByRole('button', { name: 'Pass over…' })).toBeNull();
+
+    await userEvent.click(within(row('requests')).getByRole('button', { name: 'Ask again…' }));
+    await userEvent.click(within(screen.getByRole('group', { name: 'Ask again for requests' })).getByRole('button', { name: 'Ask again' }));
+    expect(onNodeWord).toHaveBeenCalledWith({ run: 'q1', node: 'requests', act: 'ask-again', words: null });
+
+    await userEvent.click(within(row('requests')).getByRole('button', { name: 'Go on without it…' }));
+    const ask = screen.getByRole('group', { name: 'Go on without requests' });
+    expect(within(ask).getByRole('button', { name: 'Go on' })).toBeDisabled();
+    await userEvent.type(within(ask).getByRole('textbox', { name: 'why you go on without it' }), 'tools has no time');
+    await userEvent.click(within(ask).getByRole('button', { name: 'Go on' }));
+    expect(onNodeWord).toHaveBeenCalledWith({ run: 'q1', node: 'requests', act: 'go-on', words: 'tools has no time' });
+  });
+
   it('opens a quest request where a door is handed in, and draws no list for a run with none', async () => {
     const quest = vi.fn();
     const { unmount } = render(<WorkflowRunView answer={answerOf(GRAPH_RUN_REQUESTS)} doors={{ quest }} />);

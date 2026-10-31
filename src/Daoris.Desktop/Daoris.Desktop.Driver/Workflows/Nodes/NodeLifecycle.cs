@@ -276,6 +276,8 @@ public static class NodeLifecycle
 
         // FABRIC-NODE1c: a skip is the person's word for one graph and run, so they may take it back, and another graph or run lapses it.
         // FABRIC-WIRE1g: a record's skip is its judgement of its binding, so a changed binding lapses it too.
+        // INTEGRATE1p (C33): a declined request is gone on without, a move of that kind alone (judged in Apply).
+        rows.Add(new(NodeStates.Failed, NodeStates.Skipped, person, "the person goes on without a failed request, with their words, for this graph and run: a request node alone"));
         rows.Add(new(NodeStates.Skipped, NodeStates.Blocked, person, "the person withdraws their skip: it is judged again"));
         rows.Add(new(NodeStates.Skipped, NodeStates.Invalidated, daoris,
             "its graph or run is another: a skip holds for its own alone; or a record's skip, its binding changed"));
@@ -392,7 +394,7 @@ public static class NodeLifecycle
                 return To(next with { By = move.Source, Words = null, Code = null, Transient = false, Scope = skipScope });
 
             case NodeStates.Skipped:
-                if (!authority.PersonSkips) return Refuse(NodeRefusal.NotSkippable);
+                if (status.State == NodeStates.Failed ? node.Kind != NodeKinds.Request : !authority.PersonSkips) return Refuse(NodeRefusal.NotSkippable);
                 if (string.IsNullOrWhiteSpace(move.Words)) return Refuse(NodeRefusal.NoWords);
                 if (move.Scope is null) return Refuse(NodeRefusal.NoScope);
                 return To(next with { By = NodeSource.Person, Words = move.Words, Scope = move.Scope });
