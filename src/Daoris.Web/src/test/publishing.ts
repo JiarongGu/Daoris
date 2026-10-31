@@ -93,6 +93,7 @@ export const DECLARED: Readonly<Record<string, { scopes: readonly string[]; sess
   SET_CHECKOUT_WRITES: { scopes: ['driver'] },
   GIT_REF_CREATE: { scopes: ['driver'] },
   GIT_REF_UNDO: { scopes: ['driver'] },
+  GIT_REF_DELETE: { scopes: ['driver'] },
   SET_STANDING: { scopes: ['driver'] },
   SET_HEAVY_GATES: { scopes: ['driver'] },
   SET_SESSION_CHECKS: { scopes: ['driver'] },

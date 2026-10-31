@@ -161,7 +161,39 @@ public sealed class GitRoutes(DriverLoop loop)
         return Answered(run, checkout, repository);
     }
 
+    // GITAPP2d (D204, the git-writes design §6): *Delete* on a branch or a lightweight tag, one transaction of the delete, the recovery ref and each
+    // holder's verify, then the branch's section. `at` is the commit the page showed; the act refuses where the ref stands elsewhere, and the held
+    // branches (daoris/*, a landing's, the line, a together-bound one), an annotated tag and an occupied branch. Refusals are data, as the create's are.
+    [DriverRoute("GIT_REF_DELETE")]
+    [Publishes("GIT_REF_DELETE", StateScopes.Driver)]
+    private async Task<object?> GitRefDeleteAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var repository = Optional(request, "repository") ?? throw new DriverException("a ref act names its repository.");
+        var kind = Optional(request, "kind");
+        var name = Optional(request, "name");
+        if (kind is not ("branch" or "tag") || string.IsNullOrWhiteSpace(name)) throw new DriverException("a delete names its kind, `branch` or `tag`, and its name.");
+        _ = _loop.Service ?? throw NotReady();
+
+        var verb = new GitRefVerb(kind, repository, name, Optional(request, "at"), Yes: true, Delete: true);
+        var world = new GitRefWorld(
+            async (_, token) => await CheckoutOfAsync(repository, Optional(request, "workspace"), token).ConfigureAwait(false), () => _acts,
+            async (_, checkout, token) => (await CanonicalLine.ResolveAsync(checkout, repository, Optional(request, "workspace"), DriverConfig.Load(_loop.ConfigPath), token).ConfigureAwait(false)).Branch);
+        if (Flag(request, "said"))
+        {
+            var writer = new StringWriter { NewLine = "\n" };
+            var code = await GitRefCommand.ExecuteAsync(verb, world, "terminal", "window", writer, writer, cancellationToken).ConfigureAwait(false);
+            var lines = writer.ToString().Split('\n');
+            return new { Said = new TreesSaid(lines[^1].Length == 0 ? lines[..^1] : lines, [], code).ToWire() };
+        }
+
+        if (await world.CheckoutOf(repository, cancellationToken).ConfigureAwait(false) is not { } checkout) return NoCheckout(repository);
+        var line = await world.LineOf!(repository, checkout, cancellationToken).ConfigureAwait(false);
+        var run = await GitRefActs.DeleteAsync(_acts, new RefDeleteAsk(repository, checkout, kind, name, verb.At, line), "window", "window", cancellationToken).ConfigureAwait(false);
+        return Answered(run, checkout, repository);
+    }
+
     // GITAPP2c: the Undo beside a create's answer, the act's ref deleted only at the id the act made it at; refused as data where it moved.
+    // GITAPP2d: and beside a delete's, the ref made again where the name is free and its section put back.
     [DriverRoute("GIT_REF_UNDO")]
     [Publishes("GIT_REF_UNDO", StateScopes.Driver)]
     private async Task<object?> GitRefUndoAsync(IpcRequest request, CancellationToken cancellationToken)

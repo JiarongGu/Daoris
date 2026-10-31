@@ -195,6 +195,9 @@ public static class PersonPresses
     /// <summary><c>git branch|tag &lt;repository&gt; &lt;name&gt; --yes</c> (GITAPP2c, D204): a branch or a lightweight tag created, the person's yes.</summary>
     public static InstanceRoute GitRefCreate { get; } = Person("GIT_REF_CREATE");
 
+    /// <summary><c>git branch|tag &lt;repository&gt; &lt;name&gt; --delete --yes</c> (GITAPP2d, D204): a branch or a lightweight tag deleted, the person's yes.</summary>
+    public static InstanceRoute GitRefDelete { get; } = Person("GIT_REF_DELETE");
+
     /// <summary><c>ask --pause &lt;id&gt;</c> and <c>quest pause &lt;id&gt;</c> (RPC1e): a work paused on this machine, what of it runs stopped.</summary>
     public static InstanceRoute WorkPause { get; } = Person("WORK_PAUSE");
 
@@ -249,6 +252,8 @@ public static class PersonPresses
         ("space free --yes", SpaceFree),
         ("git branch <repository> <name> [<commit>] --yes", GitRefCreate),
         ("git tag <repository> <name> [<commit>] --yes", GitRefCreate),
+        ("git branch <repository> <name> [<commit>] --delete --yes", GitRefDelete),
+        ("git tag <repository> <name> [<commit>] --delete --yes", GitRefDelete),
         ("ask --pause <id>", WorkPause),
         ("quest pause <id>", WorkPause),
         ("ask --resume <id>", WorkResume),
