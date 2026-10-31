@@ -2,8 +2,10 @@ import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import { InTheme } from '../../plugins/storyIcons';
 import { chinese } from '../../design/storyLanguage';
 import { storyWidths } from '../../design/storyWidths';
-import { GIT_CHANGES_ENGINE, GIT_HUNKS_BUDGET } from '../fixtures';
+import { useState } from 'react';
+import { GIT_CHANGES_ENGINE, GIT_COMMIT_PLAN_ENGINE, GIT_HUNKS_BUDGET } from '../fixtures';
 import { ChangeHunks } from './ChangeHunks';
+import { CommitBox, type CommitPlanValue } from './CommitBox';
 import { type ChangesActs, ChangesTab } from './RepositoryGit';
 
 // A repository's Changes tab (GITAPP2b, D204, the git-writes design §1, §4, §11), drawn where the person let Daoris change the
@@ -15,6 +17,12 @@ import { type ChangesActs, ChangesTab } from './RepositoryGit';
 const nothing = () => {};
 const dark: Decorator = (Story) => <InTheme theme="dark"><Story /></InTheme>;
 
+// GITAPP2i: and the commit box (the message, Amend the last commit, the hooks it runs, who commits), whose plan a story may change.
+const commitBox = (over: Partial<CommitPlanValue> = {}, amended = false): NonNullable<ChangesActs['Commit']> => function Commit({ busy }) {
+  const [amend, setAmend] = useState(amended);
+  return <CommitBox read={{ state: 'read', value: { ...GIT_COMMIT_PLAN_ENGINE, ...over } }} amend={amend} onAmend={setAmend} busy={busy} onPress={nothing} />;
+};
+
 // GITAPP2h: every story below carries the presses (Stage, Unstage, Show changes) a tab has where the switch is on.
 const acts = (over: Partial<ChangesActs> = {}): ChangesActs => ({
   busy: false,
@@ -24,6 +32,7 @@ const acts = (over: Partial<ChangesActs> = {}): ChangesActs => ({
   Hunks: ({ side, busy, onPress }) => (
     <ChangeHunks read={{ state: 'read', value: GIT_HUNKS_BUDGET }} verb={side === 'unstaged' ? 'stage' : 'unstage'} busy={busy} onPress={onPress} />
   ),
+  Commit: commitBox(),
   ...over,
 });
 
@@ -86,6 +95,33 @@ export const Refusal: Story = {
   },
 };
 export const RefusalNarrowChinese: Story = { ...Refusal, decorators: [storyWidths.narrow, chinese] };
+
+/** A commit done, with what a pre-commit hook changed in it said beside it. */
+export const Committed: Story = {
+  args: {
+    acts: acts({
+      last: { verb: 'commit', path: null, act: 'a2', done: true, said: null, notes: 'A hook changed what was committed: `src/budget.cs` differ from what was staged.' },
+    }),
+  },
+};
+export const CommittedChinese: Story = { ...Committed, decorators: [chinese] };
+export const CommittedNarrowDark: Story = { ...Committed, decorators: [storyWidths.narrow, dark] };
+
+/** A hook refused: git's words and the hook's, and nothing committed. */
+export const HookRefused: Story = {
+  args: { acts: acts({ last: { verb: 'commit', path: null, act: 'a3', done: false, said: null, notes: 'Git refused the commit (lint failed: src/budget.cs line 12).' } }) },
+};
+export const HookRefusedNarrowChinese: Story = { ...HookRefused, decorators: [storyWidths.narrow, chinese] };
+
+/** Nothing staged: Commit is held and says why; an amend of the last commit starts from its message. */
+export const NothingStaged: Story = { args: { acts: acts({ Commit: commitBox({ empty: true }) }) } };
+export const NothingStagedNarrowChinese: Story = { ...NothingStaged, decorators: [storyWidths.narrow, chinese] };
+export const Amending: Story = { args: { acts: acts({ Commit: commitBox({}, true) }) } };
+export const AmendingHalfDark: Story = { ...Amending, decorators: [storyWidths.half, dark] };
+export const NoHooksNoIdentity: Story = { args: { acts: acts({ Commit: commitBox({ hooks: [], identity: null }) }) } };
+export const ConflictHeld: Story = {
+  args: { acts: acts({ Commit: commitBox({ tree: null, why: 'a file in conflict stands in the index, so it cannot be committed' }) }) },
+};
 
 /** An act running: every press waits. */
 export const Working: Story = { args: { acts: acts({ busy: true }) } };

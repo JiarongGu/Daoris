@@ -433,7 +433,7 @@ export const useGitHunks = (repository: string | null, workspace: string, path: 
 export type GitActPick = { id: string; lines?: number[] };
 
 /** What the driver answered an act (GITAPP2h): done, or refused in its sentence; `act` is what Undo takes. */
-export type GitActAnswer = { done: boolean; refused: boolean; act: string | null; outcome: string | null; said: string | null };
+export type GitActAnswer = { done: boolean; refused: boolean; act: string | null; outcome: string | null; said: string | null; notes?: string | null };
 
 export type GitActPress = {
   verb: 'stage' | 'unstage';
@@ -449,8 +449,68 @@ const readAct = (raw: unknown): GitActAnswer => {
   const answer = (raw ?? {}) as Partial<GitActAnswer>;
   return {
     done: answer.done === true, refused: answer.refused === true, act: answer.act ?? null, outcome: answer.outcome ?? null, said: answer.said ?? null,
+    notes: answer.notes ?? null,
   };
 };
+
+/**
+ * What a commit or an amend would rest on (GITAPP2i): the tip and the index as a tree, which a press sends back, and what the page says
+ * beside the box: the hooks the git runs, never skipped, and who commits. `tree` is null, with `why`, where a file in conflict stands in the index.
+ */
+export type GitCommitPlan = {
+  head: string | null;
+  branch: string | null;
+  tree: string | null;
+  why: string | null;
+  empty: boolean;
+  /** HEAD's message, which an amend starts from; null on a branch with no commit. */
+  message: string | null;
+  hooks: string[];
+  identity: string | null;
+};
+
+const readPlan = (raw: unknown): GitAnswer<GitCommitPlan> | null => {
+  const answer = raw as Partial<GitAnswer<GitCommitPlan>> | null;
+  if (!answer || typeof answer !== 'object' || !('value' in answer)) return null;
+  const value = answer.value;
+  return {
+    value: value && typeof value === 'object'
+      ? { ...value, head: value.head ?? null, branch: value.branch ?? null, tree: value.tree ?? null, why: value.why ?? null, message: value.message ?? null, hooks: value.hooks ?? [], identity: value.identity ?? null }
+      : null,
+    refusal: answer.refusal ?? null,
+    problem: answer.problem ?? null,
+    commands: answer.commands ?? [],
+    remembered: answer.remembered === true,
+  };
+};
+
+const planKey = (repository: string, workspace: string, verb: string) => [...keys.gitChanges(repository, workspace), 'commit-plan', verb] as const;
+
+/** The commit's plan for a verb, read again with the Changes tab (it sits under its key) and whenever the page asks. */
+export const useGitCommitPlan = (repository: string | null, workspace: string, verb: 'commit' | 'amend') => {
+  const { isAvailable } = useShenora();
+  const client = useQueryClient();
+  const queryKey = planKey(repository ?? '', workspace, verb);
+  return useQuery({
+    queryKey,
+    queryFn: () => askHeld('GIT_COMMIT_PLAN', client, queryKey, { repository, verb, ...(workspace ? { workspace } : {}) }, readPlan),
+    enabled: isAvailable && Boolean(repository),
+    staleTime: 0,
+    refetchOnMount: 'always',
+  });
+};
+
+/** A commit or an amend as pressed: the message, and the tip and tree of the plan the page showed. */
+export type GitCommitPress = { verb: 'commit' | 'amend'; message: string; head: string | null; tree: string };
+
+/** Commit and amend (GITAPP2i, the git-writes design §8): one act at a time, refusals and a hook's refusal as data in the answer. */
+export const useGitCommitAct = (repository: string | null, workspace: string) =>
+  useMutation({
+    mutationFn: async (press: GitCommitPress): Promise<GitActAnswer> =>
+      readAct(await call(press.verb === 'commit' ? 'GIT_MAKE_COMMIT' : 'GIT_AMEND', {
+        repository, ...(workspace ? { workspace } : {}), message: press.message, head: press.head, tree: press.tree,
+      })),
+  });
 
 /**
  * Stage and unstage by file, hunk or line, and Undo (GITAPP2h, the git-writes design §8). One act at a time: the driver's lock refuses a
