@@ -72,6 +72,7 @@ public sealed class IntegrationRequests(IIntegrationRecords records, IIntegratio
             IntegrationRequester.Press, Legacy, DateTimeOffset.UtcNow)
         {
             RuleSource = landing.Source,
+            Epoch = IntegrationEpoch.Of(Legacy, null),
         };
         // An earlier press of the same commit still open (its run held) is this press's request: the press goes on with it.
         return store.Add(request) switch
@@ -265,6 +266,7 @@ public sealed class IntegrationRequests(IIntegrationRecords records, IIntegratio
             LandedAt = entry.LandedAt,
             Proof = proof,
             RuleSource = landing.Source,
+            Epoch = IntegrationEpoch.Of(policy, IntegrationAcceptance.Of(settings, ask.Repository)),
         };
         return Kept(request, $"`{ask.Branch}` at {Short(tip)} is requested for `{line}` from its landing's record, {By(ask.Requester)}.");
     }
@@ -316,6 +318,7 @@ public sealed class IntegrationRequests(IIntegrationRecords records, IIntegratio
             IntegrationRoutes.Records, line!, ask.Requester, policy, DateTimeOffset.UtcNow)
         {
             RuleSource = landing.Source,
+            Epoch = IntegrationEpoch.Of(policy, IntegrationAcceptance.Of(settings, ask.Repository)),
         };
         return Kept(request,
             $"`{ask.Branch}` at {Short(stands!)} is requested for `{line}` as a records branch, {By(ask.Requester)}: it carries no workflow gate.");

@@ -107,11 +107,14 @@ internal static class OwnerTargetRows
         foreach (var route in new[]
                  {
                      "SET_LINE", "SET_LANGUAGE", "SET_LANDING", "SET_REVIEW", "SET_OPINION", "SET_HELPERS", "SET_HAND_OVER", "SET_COMMITS", "SET_ACCESS",
-                     "SET_READ_ACROSS", "WORKFLOW_LANDED",
+                     "SET_READ_ACROSS", "WORKFLOW_LANDED", "WORKFLOW_USE",
                  })
         {
             Row(route, Repository(), Workspace());
         }
+
+        // AGENTSPLACE1c: a workspace's kinds of task.
+        Row("WORKFLOW_KIND", Workspace());
 
         // Ask Daoris's Apply marks by the plan it applies, each proposal door declaring its target (HelpProposals.Owned).
         rows.Add("HELP_APPLY", new OwnerTarget([], ByPlan: true));
@@ -133,7 +136,7 @@ internal static class OwnerTargetRows
             "SET_ACTOR", "STAFFING_FOUND_ANSWER", "SET_ROLE", "SET_AGENT_SETTINGS", "SET_CAP", "SET_COOLOFF", "SET_HELP_MODE", "SET_HELP_GRANT", "SET_KEEP", "SET_NOTIFY", "SET_STRIKES",
             "TRUST_FOLDER", "ACCOUNT_USE", "HARNESS_ACTION", "HARNESSES_REFRESH", "TOOLS_DELETE", "TOOLS_DOWNLOAD", "TOOLS_LOCATION", "TOOLS_STOP",
             "TOOLS_USE", "TOOLS_GIT", "SYSTEM_DOWNLOADS_CLEAR", "SYSTEM_SPACE_FREE", "SET_STANDING_CONFIRMATION", "PLUGIN_ACTION", "PLUGIN_UPDATE",
-            "PLUGIN_NEW", "PLUGIN_TRY", "PLUGIN_ADD", "PLUGIN_INSTALL",
+            "PLUGIN_NEW", "PLUGIN_TRY", "PLUGIN_ADD", "PLUGIN_INSTALL", "WORKFLOW_SAVE",
             PipeTargets.Key("DAORIS.REMOTES", "SET"), PipeTargets.Key("DAORIS.REMOTES", "REMOVE"));
 
         // A window's own, naming nothing a role acts on.

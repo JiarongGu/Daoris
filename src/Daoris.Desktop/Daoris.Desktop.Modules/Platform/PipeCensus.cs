@@ -374,6 +374,8 @@ public sealed class PipeCensus
             "SET_HELP_GRANT",
             // FABRIC-PIPELINE1a: the landed route and the gates it runs unasked, accepted by their blob (D156).
             "WORKFLOW_LANDED",
+            // AGENTSPLACE1c: a workflow saved, a place's choice of one, and a workspace's kinds, which decide the process every new start binds.
+            "WORKFLOW_SAVE", "WORKFLOW_USE", "WORKFLOW_KIND",
             // INTEGRATE1d: a repository's integration declaration, what integration runs and a tidy removes, accepted by its blob (D215 point 10).
             "INTEGRATION_GATES",
             // HEAVYRUN1b2b: the commands this machine runs for a repository's heavy gates, which the person writes.
@@ -478,7 +480,7 @@ public sealed class PipeCensus
             // hold a start.
             "SET_HELPERS", "SET_CAP", "SET_ACTOR", "STAFFING_FOUND_ANSWER", "SET_ROLE", "SET_COOLOFF", "ACCOUNT_USE", "HARNESSES_REFRESH", "SET_HAND_OVER", "SET_OPINION",
             "SET_LANDING", "SET_REVIEW", "SET_LINE", "OPINION_ANYWAY", "OPINION_MYSELF", "WORK_HELD", "WORKFLOW_NODE", "WORK_RESUME",
-            "WORKFLOW_LANDED", "WORKFLOW_VERIFY", "SET_KEEP", "TRUST_FOLDER", "PLUGIN_ACTION", "PLUGIN_ADD", "PLUGIN_INSTALL", "PLUGIN_UPDATE",
+            "WORKFLOW_LANDED", "WORKFLOW_SAVE", "WORKFLOW_USE", "WORKFLOW_KIND", "WORKFLOW_VERIFY", "SET_KEEP", "TRUST_FOLDER", "PLUGIN_ACTION", "PLUGIN_ADD", "PLUGIN_INSTALL", "PLUGIN_UPDATE",
             // A process of its own that runs on past its answer, which the drain counts not and the close would cut: a plugin's try, a
             // harness's installer, updater or sign-in, and a tool's download (a managed use downloads first).
             "PLUGIN_TRY", "HARNESS_ACTION", "TOOLS_DOWNLOAD", "TOOLS_USE",

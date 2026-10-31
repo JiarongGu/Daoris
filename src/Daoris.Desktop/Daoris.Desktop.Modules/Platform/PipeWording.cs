@@ -184,6 +184,9 @@ public static class PipeWording
         Row("GIT_HISTORY_EDIT", W("repository", PipeRole.Repository), W("branch", PipeRole.Words));
         Row("SETUP_PRESS", W("repository", PipeRole.Repository));
         Row("WORKFLOW_LANDED", W("repository", PipeRole.Repository));
+        Row("WORKFLOW_USE", W("repository", PipeRole.Repository), W("workflow", PipeRole.Form), W("kind", PipeRole.Form));
+        Row("WORKFLOW_KIND", W("kind", PipeRole.Form), W("label", PipeRole.Words));
+        Row("WORKFLOW_SAVE", W("id", PipeRole.Form), W("from", PipeRole.Form), W("name", PipeRole.Words));
         Row("INTEGRATION_GATES", W("repository", PipeRole.Repository));
         Row("WORKFLOW_VERIFY", W("repository", PipeRole.Repository));
         Row("SET_DRIVABLE", W("repository", PipeRole.Repository));
