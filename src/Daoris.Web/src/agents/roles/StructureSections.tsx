@@ -26,6 +26,8 @@ export type RoleDoors = {
   repository?: (repository: string, tab: 'setup' | 'workflow' | 'integration') => void;
   /** A plugin in the Plugins place. */
   plugin?: (plugin: string) => void;
+  /** Working roles' editor for a new role in this workspace or repository (*Add a role here*). */
+  addRole?: (place: { kind: 'workspace' | 'repository'; id: string }) => void;
 };
 
 /** The works whose rule no setting holds: partnering is not a rule yet, and the others' `Off` is in Working roles. */
@@ -420,8 +422,14 @@ function RepositoryRowView({ row, open, onToggle, doors }: { row: RepositoryRow;
             ))}
         </Line>
       </div>
-      {doors.repository && (
+      {(doors.repository || doors.addRole) && (
         <div className="mt-2 flex flex-wrap gap-2">
+          {doors.addRole && (
+            <Button variant="ghost" aria-label={`${t('agents.roles.door.addHere')} · ${row.repository}`} onClick={() => doors.addRole!({ kind: 'repository', id: row.repository })}>
+              {t('agents.roles.door.addHere')}
+            </Button>
+          )}
+          {doors.repository && <>
           <Button variant="ghost" aria-label={`${t('agents.roles.door.setup')} · ${row.repository}`} onClick={() => doors.repository!(row.repository, 'setup')}>
             {t('agents.roles.door.setup')}
           </Button>
@@ -433,6 +441,7 @@ function RepositoryRowView({ row, open, onToggle, doors }: { row: RepositoryRow;
               {t('agents.roles.door.integration')}
             </Button>
           )}
+          </>}
         </div>
       )}
     </FoldRow>
@@ -457,6 +466,13 @@ function GroupView({ group, open, onToggle, doors }: { group: WorkspaceGroup; op
           {[t('agents.roles.repo.group', { count: group.repositories.length }), ...(group.differs > 0 ? [t('agents.roles.repo.groupDiffer', { count: group.differs })] : [])].join(' · ')}
         </span>
       </button>
+      {!folded && doors.addRole && (
+        <div className="py-1 pl-4">
+          <Button variant="ghost" aria-label={`${t('agents.roles.door.addHere')} · ${group.workspace}`} onClick={() => doors.addRole!({ kind: 'workspace', id: group.workspace })}>
+            {t('agents.roles.door.addHere')}
+          </Button>
+        </div>
+      )}
       {!folded && (
         <ul className="m-0 list-none p-0 pl-4">
           {group.repositories.map((row) => (

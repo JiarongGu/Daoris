@@ -196,6 +196,7 @@
   "agents.roles.door.open": "打开 {{agent}}",
   "agents.roles.door.openLabel": "打开",
   "agents.roles.door.plugin": "打开插件 {{plugin}}",
+  "agents.roles.door.addHere": "在此添加角色",
   "agents.roles.door.setup": "打开设置",
   "agents.roles.door.workflow": "打开工作流",
   "agents.roles.door.integration": "打开集成",

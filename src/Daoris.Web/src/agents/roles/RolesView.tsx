@@ -13,7 +13,7 @@ import { namer } from '../../settings/accounts/namer';
 import { AskDaorisAbout, IntakeAbout } from '../../settings/ai/ActorAbout';
 import { byTool, doorLabel } from '../tools';
 import type { RoleSection } from '../modes';
-import { type ActorChoice, type Editing, RolesCard, roleName } from './Roles';
+import { type ActorChoice, type Editing, newRoleEditing, RolesCard, roleName } from './Roles';
 import { AppointedRoles } from './AppointedRoles';
 import { RoleSectionMain } from './RoleSections';
 import { type RoleDoors, AccountsSection, RepositorySection, WorkSection } from './StructureSections';
@@ -171,6 +171,11 @@ export function useRolesMode({ notify, section = 'working', doors = {} }: { noti
     ...(doors.agent ? { agent: doors.agent } : {}),
     ...(doors.repository ? { repository: doors.repository } : {}),
     ...(doors.plugin ? { plugin: doors.plugin } : {}),
+    // *Add a role here*: Working roles' editor for a new role, the place filled; it saves over SET_ROLE as any role does.
+    addRole: (place) => {
+      setEditing(newRoleEditing(roles.data?.works ?? [], agents, place, -1));
+      doors.section?.('working');
+    },
     setting: (work) => {
       if (work === 'intake' || work === 'ask-daoris') doors.section?.('working');
       else if (filters.workspace && doors.workspace) doors.workspace(filters.workspace);

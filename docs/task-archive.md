@@ -5,6 +5,14 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## COMPANYVIEW1g — setup (2026-10-31)
+
+> **1g: setup** (web). *Add a role here* on rows and workspace groups, the suggestion, and Get started's door; *Needs a look* stays 1d's. After 1d. (`docs/2026-10-31-company-view-design.md` §5 and §7 row 7; the COMPANYVIEW1 row stays open.)
+
+Completed 2026-10-31: By repository's repository rows and opened workspace groups carry *Add a role here*, which (through `useRolesMode`'s `addRole` door and `newRoleEditing` in `Roles.tsx`) opens Working roles' editor for a new role with the place filled; *Save* goes over the existing `SET_ROLE` with that scope. A new place needs no press: the seed's roles are machine-wide, so it already reads *taking this machine's roles*. Get started's Ask Daoris's agent step gains *Open Roles* (`help/setup.ts`). The Designer suggestion, with the words that say it can spend more and one press, was already Working roles' (1a); nothing applies itself. Proof: `RolesStructure.test.tsx`, `GetStarted.test.tsx`, `setup.test.ts`; stories of By repository now show the door at 80, 39 and 25rem.
+
+---
+
 ## COMPANYVIEW1d — Work, Accounts and By repository (2026-10-31)
 
 > **1d: Work, Accounts and By repository** (web). `buildStructure`, the filters, *Needs a look* (its one owner), and the states of §3.3 to §3.5 over a shared fixture, the integration declaration's and the plugins' lines included. An agent's page gains *Used by*. After 1b and 1c. (`docs/2026-10-31-company-view-design.md` §7 row 4; the COMPANYVIEW1 row stays open.)
