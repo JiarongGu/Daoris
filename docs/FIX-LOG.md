@@ -5,6 +5,13 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-01 - The woken-turn retry test answered the check before its session read the wake (batch 1031f)
+
+- **Symptom:** under the queue's load, `AcpTransientTests.A_turn_woken_during_the_owner_s_check_holds_the_try_until_it_ends` found the go-on sent into the woken turn: two prompts for one.
+- **Root cause:** the test pushed the wake, paused a fixed 200 ms, then answered the owner's check; a loaded reader had not yet read the wake, so the try's admission rightly found no turn running. The product cannot hold for a frame it has not read.
+- **Fix:** the test answers the check once the session has emitted the wake's words, which it does after the wake is read.
+- **Verify:** red 5 of 5 with the pause removed (the interleaving forced); green 10 of 10 the same way with the wait.
+
 ## 2026-10-31 - A pull waited for a session that had ended, its quest still open (GITLOCK2)
 
 - **Symptom:** `daoris-driver trees sync --yes` said a session worked in the checkout and its pull waited, though that session had ended and its quest was merely still open (the family rehearsal's newcomer sync).
