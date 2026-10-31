@@ -1441,6 +1441,55 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     }
 
     /// <summary>
+    /// What is known of one agent, asking it nothing (COMPANYVIEW1c, D150 point 5): its binary as its last answer this process said, none
+    /// where none was asked, or a pin's install; and each account a start of <paramref name="kind"/> walks, in the walk's order, as the
+    /// walk finds it before any question (a cool-off, a refusal its provider gave) beside its last sign-in reading. No account, binary or
+    /// server is asked, and no start is counted. Null for an adapter that declares no toolchain.
+    /// </summary>
+    /// <exception cref="DriverException">No agent of that name on this machine.</exception>
+    public AgentLastRead? LastRead(string adapter, DriverConfig config, string? workspace = null, StartKind kind = StartKind.Driven)
+    {
+        var resolved = adapters.Resolve(adapter);
+        if (resolved.Toolchain is not { } toolchain) return null;
+        var owner = toolchain.Owner(resolved.Name);
+        var settings = Settings;
+        var named = settings.Set(owner);
+        // As the walk reads its scope: where the person named no account, the agent's Daoris accounts on this machine (OWNSPACE1a).
+        var ours = named.List.Count == 0 && named.Begins is null && !toolchain.StartsInOwnHome;
+        var scope = ours ? Walked(named, owner, toolchain) : named;
+        var now = Clock();
+        var (order, facts) = OrderOf(owner, scope, kind, picked: null, ownHome: false, now);
+        IReadOnlyList<string> present;
+        try
+        {
+            present = HarnessSettings.Profiles(Home, owner);
+        }
+        catch (DriverException)
+        {
+            present = [];
+        }
+
+        var reads = AccountReads.Of(Home, owner);
+        AccountRead? ReadOf(string? account) =>
+            account is null ? reads.Own
+            : present.FirstOrDefault(name => string.Equals(name, account, StringComparison.OrdinalIgnoreCase)) is { } listed ? reads.Accounts.GetValueOrDefault(listed)
+            : null;
+        IReadOnlyList<AccountLastRead> accounts = ours && order is [null]
+            ? []
+            : [.. order.Select(account => new AccountLastRead(account, Before(owner, account, now, fact: FactOf(facts, account)), ReadOf(account)))];
+
+        var known = _binaries.TryGetValue(resolved.Name, out var binary) ? binary : null;
+        // The binary a start would run (TOOL2/D57): an explicit command, then a pin's managed install, which is its presence.
+        if (config.Commands.GetValueOrDefault(resolved.Name) is not { Count: > 0 } && settings.ResolveVersion(resolved.Name, workspace, chosen: null) is { } pinned)
+        {
+            var managed = HarnessSettings.ManagedBinary(Home, resolved.Name, pinned, toolchain.Binary) is not null;
+            return new AgentLastRead(resolved.Name, owner, managed, managed ? (known is { Present: true } ? known.Version : pinned) : null, accounts) { Pinned = pinned };
+        }
+
+        return new AgentLastRead(resolved.Name, owner, known?.Present, known is { Present: true } ? known.Version : null, accounts);
+    }
+
+    /// <summary>
     /// The accounts a start may use, in the order it tries them (TOOL6b, D130 §16.3; D125 §3.3 under `order`), and what the walk
     /// knows of each. A pick, a scope that names one account, and the tool's own sign-in are the one account, and nothing more
     /// is read.
