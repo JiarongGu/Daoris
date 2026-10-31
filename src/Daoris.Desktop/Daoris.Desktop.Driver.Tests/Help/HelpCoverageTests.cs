@@ -677,6 +677,8 @@ public sealed partial class HelpCoverageTests
             "stopping a conversation's turn keeps the conversation and hands back what was waiting (CONV4a)")),
         ("work", "useEditQueued", null, Own("sessions",
             "removing or editing the person's own queued words is theirs, as sending them is (D133 §1)")),
+        ("work", "useMoveQueued", null, Own("sessions",
+            "moving the person's own held word to the line's head is theirs, as saying it was (LINESTOGETHER1b)")),
         ("work", "useEndChat", null, Own("sessions",
             "ending a conversation is the person's, from the conversation itself")),
         ("work", "useSetSessionOption", null, Own("sessions",
