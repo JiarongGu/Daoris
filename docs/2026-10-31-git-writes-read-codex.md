@@ -51,3 +51,44 @@ None is fully answered as written.
 | Resolve | Saved bytes survive restart; stale conflict refused | After lock/read/journal |
 | Switch; stash Save/Apply separately | Dirty switch refusal; Apply conflict retained and resolvable | Apply after Resolve; Drop deferred |
 | Object history edits | Conflict leaves refs unmoved; every excluded range refused; occupancy rollback | After observation/effect-policy contract and journal; tag push separately waits for GITAUTH1g |
+
+## Round 2, Codex's read of the revision (2026-10-31)
+
+1. **Verdict: another round.** Most placements now hold as design contracts. R2-15 still leaves a process-ownership gap, and conditional recovery needs an atomic comparison rule. The required independent Opus foundation read also remains before acceptance.
+
+Read-only review: no files changed, no tests run, no `local/` directory read. Below, `W/` means `src/Daoris.Desktop/Daoris.Desktop.Driver/Workplace/`; `P/` means the adjacent `Platform/`.
+
+2. **Round-1 findings**
+
+“Closed” means resolved in the proposed contract, not already implemented.
+
+| Finding | Disposition |
+|---|---|
+| **R2-11** | **Closed:** §3 covers line pull from fresh judgement through reconciliation. Confirmed the present gap at `W/LinePulls.cs:58,75`, before `W/TreeSync.cs:220`. |
+| **R2-12** | **Closed:** §6 specifies one operation per ref, embedded expectations, deduplication, contradiction and alias refusal. The specialized self-rest exception exists at `W/ContentHolds.cs:432`. |
+| **R2-13** | **Closed:** §6 distinguishes deletion, rewrite, rename and creation rollback. Today’s `W/ContentHolds.cs:495` remains deletion-only recovery. |
+| **R2-14** | **Closed:** §8 defers Drop rather than claiming a checkout lock owns the shared stash reflog. |
+| **R2-15** | **Still needed:** close the launch/identity gap, preserve a bound after terminal death, and specify atomic configuration recovery; see below. Design locations: `docs/2026-10-23-git-writes-design.md:44,48,52`. |
+| **R2-16** | **Closed:** Resolve precedes Apply through rows j → l. |
+| **Round-1 20** | **Closed:** shared checkout starts plus exclusive writers. Confirmed current checkout starts skip the lock at `Loop/Chat/ChatRunner.cs:671` and `Course/Chat/ChatGoOn.cs:751`. |
+| **Round-1 22** | **Closed:** transaction builder plus operation-specific rollback replaces generalization of create-only put-back. |
+| **Round-1 24** | **Closed:** Drop deferred. |
+| **Unbuilt reader foundation** | **Closed:** §1 explicitly uses fresh starts outside both memos. `W/WorkingTree.cs:1071` otherwise consults `GitFacts` and `RefSnapshot`; `W/ReviewGraphReads.cs:18` confirms no retained observation/watch exists. |
+| **Integration promotion** | **Closed:** §3 places acquisition at `W/IntegrationPromotes.cs:466`, before fresh checks and the write at `:495`. This covers the legacy delegation at `W/TreeLands.cs:299` and background promotion without nesting acquisition in the legacy press. |
+| **Opposite-press index recovery** | **Recovery data closed; atomic Undo still needed.** §8 retains entries and blobs rather than assuming Stage recreates lost staging. The existing staged observation is `W/WorkingTree.cs:234`. |
+| **Annotated-tag retention** | **Closed:** deletion deferred. `W/RecoveryRetention.cs:93,151` judges commit ancestry, which cannot preserve an annotation object merely through its peeled commit. |
+| **Remote configuration** | **Closed for effect expansion:** §9 confines mappings, disables followed tags/recursion, rejects multiple push addresses and retains D198’s prerequisites. Confirmed `W/GitRemotes.cs:19` currently reads one address and `W/GitDoors.cs:449` judges class, not updates. |
+
+The steward’s **published-source change is sound**: pick/revert append commits; only rebase rewrites the source range. The journaled branch section is necessary, but its conditional mutation needs the correction below. The standalone Ctrl-C policy requires explicit wiring: today `git` routes at `Driver.Host/Program.cs:440`, before the handlers at `:724` and `:893`.
+
+3. **Remaining and new findings**
+
+- **BLOCKING — launch ownership and terminal death (R2-15).** §5 writes *started* before launch and the PID afterwards. A crash between those events leaves a running child without its recorded identity. `P/ChildProcess.cs:62` starts first; its bound is then maintained by the owner at `:73`. Closing that owner removes the timer. **Concrete change:** specify an act worker that survives terminal closure, with a journaled containment identity and deadline before any effect can run. Start children suspended, join them before release, and treat unread containment as held/unknown. Existing primitives are `P/ProcessJob.cs:77,105`. Prove cuts before launch, after launch before PID persistence, and during a descendant hook.
+
+- **BLOCKING — conditional recovery must compare under Git’s file lock.** A read followed by `update-index --index-info` or `config --rename-section` permits another writer between comparison and replacement. Today’s branch-section removal is unconditional at `W/ContentHolds.cs:449`. **Concrete change:** compare expected entries/sections after acquiring the corresponding index/config lock, then replace atomically; journal configuration file and scope. Refuse mismatches and retain recovery.
+
+- **Required before row f; non-blocking for earlier rows — preserve `FETCH_HEAD`.** §9’s fetch omits `--no-write-fetch-head`, already present at `W/TreeRefs.cs:123` under D109. Add it and prove failed and successful fetches preserve that file.
+
+4. **§12 rows**
+
+The dependency order is buildable **after those corrections**. Once GITLOCK1 and GITTXN1 land and D191 settlement is complete, **a and b can start independently**; b already needs neither foundation. After a: **c, f** (installed doors), and **m** can start independently; **h** also needs b. Then **d → e**, **h → i/j/k**, **j+k → l**. **g** additionally waits for GITAUTH1f; **n** waits for g and GITAUTH1g. Drop remains excluded.
