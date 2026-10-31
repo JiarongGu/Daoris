@@ -171,6 +171,7 @@
   "person.route.SET_CHECKOUT_WRITES": "更改 Daoris 是否可以改动一个仓库检出中的文件",
   "person.route.GIT_REF_CREATE": "在一个仓库中创建分支或标签",
   "person.route.GIT_REF_UNDO": "撤销 Daoris 在一个仓库中创建的分支或标签",
+  "person.route.GIT_HISTORY_EDIT": "在一个仓库的分支上拣选、还原或变基提交",
   "person.route.SET_WRITE_ACROSS": "更改一个仓库的会话可以在别处写入什么",
   "person.route.TRUST_FOLDER": "为智能体的工作信任一个文件夹",
   "person.route.RULE_ACTION": "更改智能体可以做什么",

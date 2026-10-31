@@ -331,6 +331,8 @@ public sealed class PipeCensusTests
     // GITAPP2c: a ref made in a repository and its undo write the person's repository through git.
     [InlineData("DAORIS.DRIVER", "GIT_REF_CREATE", PipeClass.Person)]
     [InlineData("DAORIS.DRIVER", "GIT_REF_UNDO", PipeClass.Person)]
+    // GITAPP2m: a branch's history edited moves the person's branch; its plan form is open (a rule on `plan`).
+    [InlineData("DAORIS.DRIVER", "GIT_HISTORY_EDIT", PipeClass.Person)]
     [InlineData("DAORIS.DRIVER", "SWEEP", PipeClass.Person)]
     [InlineData("DAORIS.DRIVER", "RECOVERY_DROP", PipeClass.Person)]
     [InlineData("DAORIS.DRIVER", "WORK_HELD", PipeClass.Person)]
@@ -393,6 +395,10 @@ public sealed class PipeCensusTests
     [InlineData("SYSTEM_SPACE_FREE", """{"plan":false,"units":[]}""", PipeClass.Person)]
     [InlineData("SYSTEM_SPACE_FREE", """{"units":[{"kind":"logs","id":"2026-09-01.driver.jsonl"}]}""", PipeClass.Person)]
     [InlineData("SYSTEM_SPACE_FREE", """{"plan":true,"Plan":"yes"}""", PipeClass.Person)]
+    // GITAPP2m: a history edit's plan is a look; its press, pinned or not, moves the branch.
+    [InlineData("GIT_HISTORY_EDIT", """{"repository":"engine","edit":"rebase","branch":"topic","target":"main","plan":true}""", PipeClass.Open)]
+    [InlineData("GIT_HISTORY_EDIT", """{"repository":"engine","edit":"rebase","branch":"topic","target":"main"}""", PipeClass.Person)]
+    [InlineData("GIT_HISTORY_EDIT", """{"edit":"pick","plan":false,"said":true}""", PipeClass.Person)]
     public void A_route_that_is_a_look_and_a_press_is_classed_by_its_payload(string route, string payload, PipeClass expected)
     {
         using var document = JsonDocument.Parse(payload);
@@ -503,6 +509,7 @@ public sealed class PipeCensusTests
     [InlineData("SYSTEM_SPACE_FREE", PipeDrain.Waits)]
     [InlineData("GIT_REF_CREATE", PipeDrain.Waits)]
     [InlineData("GIT_REF_UNDO", PipeDrain.Waits)]
+    [InlineData("GIT_HISTORY_EDIT", PipeDrain.Waits)]
     [InlineData("ROLE_ACT", PipeDrain.Waits)]
     public void A_drain_holds_what_starts_work_or_changes_a_repository_and_lets_the_rest_through(string route, PipeDrain expected)
     {

@@ -171,6 +171,7 @@
   "person.route.SET_CHECKOUT_WRITES": "change whether Daoris may change a repository's checkout files",
   "person.route.GIT_REF_CREATE": "make a branch or a tag in a repository",
   "person.route.GIT_REF_UNDO": "undo a branch or tag Daoris made in a repository",
+  "person.route.GIT_HISTORY_EDIT": "pick, revert or rebase commits on a branch in a repository",
   "person.route.SET_WRITE_ACROSS": "change what a repository's sessions may write elsewhere",
   "person.route.TRUST_FOLDER": "trust a folder for an agent's work",
   "person.route.RULE_ACTION": "change what agents may do",
