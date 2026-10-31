@@ -23,20 +23,18 @@ public sealed class LyntaiMemory : IMemoryEngines
 
     private const string Scope = "entries";
 
-    private readonly Lazy<SqliteMemoryGraphStore> _store;
+    private readonly string _path;
+    private readonly Lock _opening = new();
     private readonly ConcurrentDictionary<(string, MemoryReinforcement), LyntaiEngine> _engines = new();
     private readonly TimeProvider _time;
+    private SqliteMemoryGraphStore? _store;
 
     /// <param name="path">The engine's file, created and migrated at the first open.</param>
     /// <param name="time">The engines' clock; the system's unless a test moves one.</param>
     public LyntaiMemory(string path, TimeProvider? time = null)
     {
+        _path = path;
         _time = time ?? TimeProvider.System;
-        _store = new(() =>
-        {
-            MigrationRunnerService.MigrateUp(path, StorageFeature.Memory);
-            return new SqliteMemoryGraphStore(new SqliteConnectionFactory(path), clock: _time.GetUtcNow);
-        }, LazyThreadSafetyMode.ExecutionAndPublication);
     }
 
     /// <summary>The memory beside the index at <paramref name="databasePath"/>; null for an index held in memory, which keeps no file.</summary>
@@ -45,7 +43,27 @@ public sealed class LyntaiMemory : IMemoryEngines
             ? null
             : new(Path.Combine(Path.GetDirectoryName(Path.GetFullPath(databasePath))!, FileName));
 
-    internal IMemoryGraphStore Store => _store.Value;
+    /// <summary>
+    /// The store, its file migrated at the first use. A migration that fails, as one racing another process's first open can, is tried again
+    /// at the next use rather than kept.
+    /// </summary>
+    internal IMemoryGraphStore Store
+    {
+        get
+        {
+            if (_store is { } opened) return opened;
+            lock (_opening)
+            {
+                if (_store is null)
+                {
+                    MigrationRunnerService.MigrateUp(_path, StorageFeature.Memory);
+                    _store = new SqliteMemoryGraphStore(new SqliteConnectionFactory(_path), clock: _time.GetUtcNow);
+                }
+
+                return _store;
+            }
+        }
+    }
 
     public IMemoryEngine? Open(string repository, MemoryReinforcement reinforceOn) =>
         string.IsNullOrWhiteSpace(repository)

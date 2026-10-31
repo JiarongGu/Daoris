@@ -21,7 +21,8 @@ public sealed class MemoryCoordinator(
         var applier = new MemoryApplier(ops, engines, time);
         var sweep = knowledge is null ? null : new MemorySweep(ops, engines, knowledge);
         var started = false;
-        DateTimeOffset? swept = null;
+        // The first sweep waits a pace too: a host started for a moment opens no engine it has nothing to apply to.
+        var swept = clock.GetUtcNow();
         try
         {
             using var timer = new PeriodicTimer(Pace, clock);
@@ -32,10 +33,10 @@ public sealed class MemoryCoordinator(
                     if (!started) await applier.StartAsync(ct).ConfigureAwait(false);
                     else await applier.ApplyReadyAsync(ct).ConfigureAwait(false);
                     started = true;
-                    if (sweep is not null && (swept is not { } last || clock.GetUtcNow() - last >= SweepPace))
+                    if (sweep is not null && clock.GetUtcNow() - swept >= SweepPace)
                     {
                         swept = clock.GetUtcNow();
-                        await sweep.RunAsync(swept.Value, ct).ConfigureAwait(false);
+                        await sweep.RunAsync(swept, ct).ConfigureAwait(false);
                     }
                 }
                 catch (Exception error) when (error is not OperationCanceledException)
