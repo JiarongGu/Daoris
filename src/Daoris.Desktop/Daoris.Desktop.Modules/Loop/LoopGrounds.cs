@@ -139,6 +139,11 @@ public sealed class LoopGrounds(DriverLoop loop, InstancePipe pipe) : IPipeGroun
                 return Rooted(PipeGround.Text(payload, "folder")) is { } parent && PipeGround.Text(payload, "id") is { Length: > 0 } made
                     ? Files(Path.Combine(parent, made), cancellationToken)
                     : "none";
+            case "workflow-file":
+                // A saved workflow's versions (WORKFLOW_SAVE): their numbers and digests, or none where it is not saved.
+                return PipeGround.Text(payload, "id") is { } workflow && WorkflowNamed.IsId(workflow) && WorkflowStore.Load(loop.Home, workflow) is { } saved
+                    ? PipeGround.Fingerprint(saved.Read.Versions.Select(each => $"{each.Version}={each.Digest}").Prepend(saved.Read.Problem ?? ""))
+                    : "none";
             case "plugin-try":
             {
                 var installed = PipeGround.Text(payload, "id") is { Length: > 0 } plugin

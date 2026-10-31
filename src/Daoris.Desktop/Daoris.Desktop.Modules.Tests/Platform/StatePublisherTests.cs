@@ -665,6 +665,10 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
     [InlineData("INTEGRATION_GATES", "driver", null)]
     // FABRIC-CUTOVER1f: the person's skip or stop of a run's node, kept on its record, which the run's view reads again under the driver's key.
     [InlineData("WORKFLOW_NODE", "driver", null)]
+    // AGENTSPLACE1c: a workflow saved, a place's choice and a workspace's kinds, which the workflow page's reads ask again under the driver's key.
+    [InlineData("WORKFLOW_SAVE", "driver", null)]
+    [InlineData("WORKFLOW_USE", "driver", null)]
+    [InlineData("WORKFLOW_KIND", "driver", null)]
     // FABRIC-PIPELINE1d: a verification bound for the running driver, which the Workflow tab's and the run's reads ask again under the driver's key.
     [InlineData("WORKFLOW_VERIFY", "driver", null)]
     [InlineData("START_HELP", "sessions", null)]
