@@ -685,6 +685,10 @@ public static class NoteCodes
     // LIMITPICK2: a start refused for its account's sign-in went on under another, which says the account it moved off.
     public static readonly NoteCode OpeningMovedOff = new("opening.moved-off", ["account"]);
 
+    // MODELREFUSE1: a start whose model its agent refused (or answered with another) went on under the walk's next answer, which says the
+    // agent and the model; the account is never named, since the account was not at fault.
+    public static readonly NoteCode OpeningMovedOffModel = new("opening.moved-off-model", ["agent", "model"]);
+
     // ——— A chat run's binding (CHATFLOW1c, the chat-flow design §4.3), said once in the conversation that grew its tree: the named workflow
     // and the repository or workspace that chose it, the one bound with why it cannot land the work, or a bind the home could not keep.
     // Under Current nothing is said, as a start's binding says nothing.
