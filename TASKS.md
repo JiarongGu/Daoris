@@ -110,6 +110,8 @@ steward under D191; Codex's read of the final text owed when its credits return)
 
 ## Sessions
 
+- [ ] **SESSRELATED1 — a session's head names only the sessions it can meet, and says an unread tree once** (driver, modules, web; the owner's report, 2026-11-01). The head's "Beside it in Daoris:" showed fifteen identical "not read here (last read 09:24)" lines. Causes: the candidates took every session with a recorded tree, closed ones whose trees are gone included; an unreadable own tree marked every other session `not-read`; the page drew a line each. Contract: a candidate is a session whose tree folder exists here; an unreadable own tree is one top-level `own: not-read`, never a mark on the others; a present tree git cannot read stays `not-read` per session, and two or more fold into one line. Proof: `RelatedSessionsTests`, a candidates-filter test, `RelatedSessions.test.tsx`.
+
 - [ ] **SERVICEPROBE1 — the terminal waits for a slow service whose process runs, rather than refusing** (driver; 2026-11-01). On a machine at full CPU (the merge queue's rehearsals and builders), the install's service answered in 1.3 to 5 s and `/api/sessions` in more than 15, and `daoris-driver trees land` refused with "nothing answered as its service … within 2 seconds, asked twice" (`RunningService.Within`, `Service/RunningService.cs:32`) though Daoris's pid was alive. Contract: where the home's lease names a live process, the probe waits longer, bounded, and says it is waiting; a dead or absent one still refuses at once. Proof: a unit test with a stand-in that answers after 4 s and one whose pid is gone.
 
 pause-and-clean-up (D132), D133/D136. Installed canaries follow completed build rows.
