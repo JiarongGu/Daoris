@@ -394,6 +394,7 @@ public sealed class PipeCensus
             // review on one of their accounts; Read again lets a refused account through and ends the tool's own cool-off.
             "TREES_SYNC", "ASK_OPINION", "HARNESSES_REFRESH",
             // GITAPP2c: a branch or a lightweight tag made in a repository, and the undo that deletes it at the id it was made at.
+            // GITAPP2m's history edit is classed by its payload below.
             "GIT_REF_CREATE", "GIT_REF_UNDO", "GIT_REF_DELETE", "GIT_REF_RENAME", "GIT_REF_FINISH");
         Add(PipeClass.Window,
             // The file manager, the file picker and Daoris's browser are the window's; so is what is typed into an action a
@@ -430,6 +431,8 @@ public sealed class PipeCensus
         table.Add("PLUGIN_UPDATE", PipeRule.Of("apply", PipeClass.Person, PipeClass.Open, "true"));
         // KEEP1e: Free up space's list (`plan: true`) changes nothing; every other form starts a run removing what it names, their delete.
         table.Add("SYSTEM_SPACE_FREE", PipeRule.Of("plan", PipeClass.Open, PipeClass.Person, "true"));
+        // GITAPP2m: a history edit's plan (`plan: true`) changes nothing; every other form moves the person's branch, pinned to what it showed.
+        table.Add("GIT_HISTORY_EDIT", PipeRule.Of("plan", PipeClass.Open, PipeClass.Person, "true"));
         return table;
 
         void Add(PipeClass @class, params string[] routes)
@@ -479,8 +482,8 @@ public sealed class PipeCensus
             // and a delete, each of which removes a tree or a branch, and Free up space's run, which takes finished trees too.
             "LAND_SESSION_TREE", "LAND_WITHOUT_LOOK", "LAND_ENTRY", "LAND_ASK", "HANDOFF", "DISCARD_SESSION_TREE", "DISCARD_SESSION_BRANCH",
             "WITHDRAW_LANDING_BRANCH", "RECOVERY_DROP", "SWEEP", "TREES_SYNC", "WORK_ABANDON", "SESSION_DELETE", "SYSTEM_SPACE_FREE",
-            // GITAPP2c: a ref act moves the person's repository's refs through git.
-            "GIT_REF_CREATE", "GIT_REF_UNDO", "GIT_REF_DELETE", "GIT_REF_RENAME", "GIT_REF_FINISH",
+            // GITAPP2c: a ref act moves the person's repository's refs through git; GITAPP2m: so does a history edit, its plan's git included.
+            "GIT_REF_CREATE", "GIT_REF_UNDO", "GIT_REF_DELETE", "GIT_REF_RENAME", "GIT_REF_FINISH", "GIT_HISTORY_EDIT",
             // A role's act is a row of its role's table, which no act fills yet: the strictest until each is classed.
             "ROLE_ACT");
         Add(PipeDrain.Passes,

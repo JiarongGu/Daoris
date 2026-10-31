@@ -426,6 +426,99 @@ public sealed class DriverModuleGitTests : DriverModuleBridge
         Assert.Equal(1, refused.GetProperty("said").GetProperty("code").GetInt32());
     }
 
+    /// <summary>GITAPP2m: before the driver is up a history edit is the cold start; with no checkout here it is refused as data with its code.</summary>
+    [Fact]
+    public async Task A_history_edit_before_the_driver_is_up_or_with_no_checkout_is_the_cold_start_or_a_coded_answer()
+    {
+        var edit = new { repository = "engine", edit = "rebase", branch = "topic", target = "main" };
+        Assert.Contains(Refusals.DriverNotReady, await RefusalAsync(Module(), "GIT_HISTORY_EDIT", edit));
+
+        var answer = await AnswerAsync(await UpAsync(null), "GIT_HISTORY_EDIT", edit);
+
+        Assert.True(answer.GetProperty("refused").GetBoolean());
+        Assert.Equal(Refusals.GitNoCheckout, answer.GetProperty("code").GetString());
+    }
+
+    [Fact]
+    public async Task A_history_edit_names_its_edit_its_branch_and_its_target()
+    {
+        var module = await UpAsync(Checkout("engine", git: true));
+
+        Assert.Contains(Refusals.DriverRefused, await RefusalAsync(module, "GIT_HISTORY_EDIT", new { repository = "engine", edit = "squash", branch = "topic", target = "main" }));
+        Assert.Contains(Refusals.DriverRefused, await RefusalAsync(module, "GIT_HISTORY_EDIT", new { repository = "engine", edit = "rebase", target = "main" }));
+        Assert.Contains(Refusals.DriverRefused, await RefusalAsync(module, "GIT_HISTORY_EDIT", new { repository = "engine", edit = "pick", branch = "topic" }));
+    }
+
+    /// <summary>
+    /// GITAPP2m: the plan form answers what the edit would take and writes nothing; the press with the plan's ids runs the act and answers it
+    /// done, the branch's new tip and its old one's recovery ref, no machine path; the line is refused as data.
+    /// </summary>
+    [Fact]
+    [Trait(Category.Name, Category.Process)]
+    public async Task A_history_edits_plan_is_answered_and_its_press_with_the_plans_ids_moves_the_branch()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var root = await InitAsync();
+        await GitAsync(root, "branch", "topic", "main");
+        var topic = await CommitOnBranchAsync(root, "topic", "t.txt", "topic one");
+        await CommitOnBranchAsync(root, "main", "m.txt", "main one");
+        var module = await UpAsync(root);
+
+        var plan = await AnswerAsync(module, "GIT_HISTORY_EDIT", new { repository = "engine", edit = "rebase", branch = "topic", target = "main", plan = true });
+        var shown = plan.GetProperty("plan");
+
+        Assert.False(plan.GetProperty("refused").GetBoolean());
+        Assert.Equal(topic, shown.GetProperty("tip").GetString());
+        Assert.Equal("topic one", shown.GetProperty("commits")[0].GetProperty("subject").GetString());
+        Assert.Equal(topic, (await GitAsync(root, "rev-parse", "topic")).Trim());
+
+        var pins = new { tip = shown.GetProperty("tip").GetString(), onto = shown.GetProperty("onto").GetString(), commits = new[] { shown.GetProperty("commits")[0].GetProperty("id").GetString() } };
+        var made = await AnswerAsync(module, "GIT_HISTORY_EDIT", new { repository = "engine", edit = "rebase", branch = "topic", target = "main", pins });
+
+        Assert.Equal("done", made.GetProperty("outcome").GetString());
+        Assert.Equal((await GitAsync(root, "rev-parse", "topic")).Trim(), made.GetProperty("tip").GetString());
+        Assert.Equal((await GitAsync(root, "rev-parse", "main")).Trim(), (await GitAsync(root, "rev-parse", "topic^")).Trim());
+        Assert.Equal("refs/daoris/discarded/topic", made.GetProperty("kept").GetString());
+        Assert.DoesNotContain("checkouts", made.GetRawText());
+
+        var line = await AnswerAsync(module, "GIT_HISTORY_EDIT", new { repository = "engine", edit = "rebase", branch = "main", target = "topic", plan = true });
+        Assert.True(line.GetProperty("refused").GetBoolean());
+        Assert.Contains("line", line.GetProperty("said").GetString());
+    }
+
+    /// <summary>A terminal's press, asked for its words (<c>said</c>), is the verb's own lines and exit code, the act run as the terminal's.</summary>
+    [Fact]
+    [Trait(Category.Name, Category.Process)]
+    public async Task A_terminals_history_edit_answers_the_verbs_lines_and_exit_code()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var root = await InitAsync();
+        await GitAsync(root, "branch", "topic", "main");
+        await CommitOnBranchAsync(root, "main", "m.txt", "main one");
+        var picked = (await GitAsync(root, "rev-parse", "main")).Trim();
+        var module = await UpAsync(root);
+
+        var made = await AnswerAsync(module, "GIT_HISTORY_EDIT", new { repository = "engine", edit = "pick", branch = "topic", target = picked, said = true });
+        var refused = await AnswerAsync(module, "GIT_HISTORY_EDIT", new { repository = "engine", edit = "pick", branch = "topic", target = picked, said = true });
+
+        Assert.Equal(0, made.GetProperty("said").GetProperty("code").GetInt32());
+        Assert.Contains("picked onto `topic`", string.Join("\n", made.GetProperty("said").GetProperty("out").EnumerateArray().Select(each => each.GetString())));
+        Assert.Equal(1, refused.GetProperty("said").GetProperty("code").GetInt32());
+    }
+
+    /// <summary>A commit on <paramref name="branch"/>, the checkout back on main after it, so no tree has the branch out; the checkout names its committer.</summary>
+    private static async Task<string> CommitOnBranchAsync(string root, string branch, string file, string subject)
+    {
+        await GitAsync(root, "config", "user.name", "Fixture");
+        await GitAsync(root, "config", "user.email", "fixture@example.test");
+        await GitAsync(root, "switch", "--quiet", branch);
+        await File.WriteAllTextAsync(Path.Combine(root, file), subject + "\n");
+        await GitAsync(root, "add", file);
+        await GitAsync(root, "-c", "user.name=Fixture", "-c", "user.email=fixture@example.test", "commit", "--quiet", "-m", subject);
+        await GitAsync(root, "switch", "--quiet", "main");
+        return (await GitAsync(root, "rev-parse", branch)).Trim();
+    }
+
     private async Task<string> InitAsync()
     {
         var root = Checkout("engine");

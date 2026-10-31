@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   type GitActAnswer, type GitAnswer, type GitBranch, type GitGraphPage, type GitLogCommit, type GitRepositoryBranches, gitRefusal, useGitActs,
-  useGitBranches, useGitChanges, useGitCommitAct, useGitCommitPlan, useGitGraphPages, useGitHunks, useGitRefActs,
+  useGitBranches, useGitChanges, useGitCommitAct, useGitCommitPlan, useGitGraphPages, useGitHistoryEdits, useGitHunks, useGitRefActs,
   useGitStashAct, useGitStashPlan, useGitSwitchAct, useGitSwitchPlan,
 } from '../../bridge/repositories/git';
 import { useWorkState } from '../../bridge/repositories/lines';
@@ -415,6 +415,7 @@ function BranchPageRead({ repository, workspace, name, onBack, landingOpen }: {
   const drawn = useMemo(() => [...asked].reverse(), [asked]);
   const { graph, onMore } = usePagedGraph(repository, asked, { sinceParted: true, workspace });
   const titles = useSessionTitles(repository, branch ? [branch] : NO_BRANCHES);
+  const edits = useGitHistoryEdits(repository, workspace);
 
   const read = ((): BranchRead => {
     if (list.state !== 'read') return list;
@@ -424,7 +425,7 @@ function BranchPageRead({ repository, workspace, name, onBack, landingOpen }: {
     if (!lineTip) return { state: 'read', value, graph: { state: 'noLine' } };
     return { state: 'read', value, graph: graph.state === 'read' ? { state: 'read', value: { tips: drawn, ...graph.value } } : graph };
   })();
-  return <BranchPage repository={repository} name={name} read={read} onBack={onBack} onMore={onMore} landing={landing} />;
+  return <BranchPage repository={repository} name={name} read={read} onBack={onBack} onMore={onMore} landing={landing} edits={edits} />;
 }
 
 /**

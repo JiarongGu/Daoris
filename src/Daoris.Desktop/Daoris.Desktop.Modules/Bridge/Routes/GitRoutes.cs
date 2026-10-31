@@ -418,6 +418,66 @@ public sealed class GitRoutes(DriverLoop loop)
         return Answered(run, checkout, repository);
     }
 
+    // GITAPP2m (D204, the git-writes design §7, §9): a branch's history edited from objects, through the journal. `plan: true` answers what
+    // the edit would take and changes nothing (a look: a rule on `plan` in the pipe's census); the press carries the ids its plan pinned
+    // (`pins`) and is refused as data where any moved. A terminal's `git pick|revert|rebase … --yes` is the press asked for its words (`said`).
+    [DriverRoute("GIT_HISTORY_EDIT")]
+    [Publishes("GIT_HISTORY_EDIT", StateScopes.Driver)]
+    private async Task<object?> GitHistoryEditAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var repository = Optional(request, "repository") ?? throw new DriverException("a history edit names its repository.");
+        var (edit, branch, target) = (Optional(request, "edit"), Optional(request, "branch"), Optional(request, "target"));
+        if (edit is not (GitHistoryEdits.Pick or GitHistoryEdits.Revert or GitHistoryEdits.Rebase) || string.IsNullOrWhiteSpace(branch) || string.IsNullOrWhiteSpace(target))
+        {
+            throw new DriverException("a history edit names its edit (`pick`, `revert` or `rebase`), its branch and its target.");
+        }
+
+        _ = _loop.Service ?? throw NotReady();
+        var workspace = Optional(request, "workspace");
+        var world = new GitHistoryWorld(
+            async (_, token) => await CheckoutOfAsync(repository, workspace, token).ConfigureAwait(false),
+            async (_, root, token) => (await CanonicalLine.ResolveAsync(root, repository, workspace, DriverConfig.Load(_loop.ConfigPath), token).ConfigureAwait(false)).Branch,
+            () => _acts, _loop.Home);
+        var pins = Pins(request);
+        if (Flag(request, "said"))
+        {
+            var writer = new StringWriter { NewLine = "\n" };
+            var code = await GitHistoryCommand.ExecuteAsync(new GitHistoryVerb(edit, repository, branch, target, Yes: true), pins, world, "terminal", "window", writer, writer, cancellationToken)
+                .ConfigureAwait(false);
+            var lines = writer.ToString().Split('\n');
+            return new { Said = new TreesSaid(lines[^1].Length == 0 ? lines[..^1] : lines, [], code).ToWire() };
+        }
+
+        if (await world.CheckoutOf(repository, cancellationToken).ConfigureAwait(false) is not { } checkout) return NoCheckout(repository);
+        var ask = new HistoryEditAsk(_loop.Home, repository, checkout, edit, branch, target)
+        {
+            Line = await world.LineOf(repository, checkout, cancellationToken).ConfigureAwait(false), Pins = pins,
+        };
+        if (Flag(request, "plan"))
+        {
+            var (plan, refusal) = await GitHistoryEdits.PlanAsync(ask, cancellationToken).ConfigureAwait(false);
+            return plan is null
+                ? new { Refused = true, Said = WithoutRoots(refusal, [checkout], repository) ?? "" }
+                : new
+                {
+                    Refused = false, Said = "",
+                    Plan = new { plan.Edit, plan.Branch, plan.Tip, plan.Onto, Commits = plan.Commits.Select(each => new { each.Id, each.Subject }), plan.Commands },
+                };
+        }
+
+        var run = await GitHistoryEdits.EditAsync(_acts, ask, "window", "window", cancellationToken).ConfigureAwait(false);
+        return new { run.Run.Act, run.Run.Outcome, run.Run.Refused, Said = WithoutRoots(run.Run.Said, [checkout], repository) ?? "", run.Tip, run.Kept };
+    }
+
+    /// <summary>The ids a shown plan pinned, as the page or the verb sends them back; null where none was sent.</summary>
+    private static HistoryEditPins? Pins(IpcRequest request) =>
+        request.Payload is { } payload && payload.TryGetProperty("pins", out var pins) && pins.ValueKind == JsonValueKind.Object
+        && pins.TryGetProperty("tip", out var tip) && tip.ValueKind == JsonValueKind.String
+        && pins.TryGetProperty("onto", out var onto) && onto.ValueKind == JsonValueKind.String
+        && pins.TryGetProperty("commits", out var commits) && commits.ValueKind == JsonValueKind.Array
+            ? new HistoryEditPins(tip.GetString()!, onto.GetString()!, [.. commits.EnumerateArray().Where(each => each.ValueKind == JsonValueKind.String).Select(each => each.GetString()!)])
+            : null;
+
     private static object NoCheckout(string repository) => new
     {
         Refused = true, Code = Refusals.GitNoCheckout, Said = $"{repository} has no checkout on this machine, so nothing was changed.",

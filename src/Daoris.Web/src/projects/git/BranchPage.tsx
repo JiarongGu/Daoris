@@ -8,6 +8,7 @@ import { type ListedBranch, When } from './BranchList';
 import { kindOf, landedStanding, pullRequestSaid, standing } from './branchStanding';
 import { CommitGraph, type GraphCommitRow } from './CommitGraph';
 import { GraphFoot, useGraphPaging } from './GraphFoot';
+import { HistoryEdit, type HistoryEdits } from './HistoryEdit';
 import { LandingFlow, type LandingDoor } from './LandingFlow';
 import { type GitRead, Nothing, Waiting } from './RepositoryGit';
 
@@ -50,9 +51,10 @@ export type BranchRead =
  * @remarks
  * **A molecule**: the read arrives as a prop, and its holder (`RepositoryBranch`) reads the list and the graph. The header and
  * its way back are there in every state, so a branch the list no longer holds says so beside the press that leaves. Commit
- * rows keep no press (GIT1f's) and the branch carries no act of git's (GIT1g's); the walk's sides are not marked.
+ * rows keep no press (GIT1f's); a branch of the person's own carries *Edit history* (GITAPP2m) where its holder hands the
+ * presses, and no other act of git's; the walk's sides are not marked.
  */
-export function BranchPage({ repository, name, read, onBack, onMore, landing }: {
+export function BranchPage({ repository, name, read, onBack, onMore, landing, edits }: {
   repository: string;
   /** The branch's name, as the press that opened it named it. */
   name: string;
@@ -66,6 +68,8 @@ export function BranchPage({ repository, name, read, onBack, onMore, landing }: 
    * and where nothing can read the trace (a browser).
    */
   landing?: LandingDoor;
+  /** *Edit history*'s presses (GITAPP2m), drawn only on a branch of the person's own; absent, the page offers none. */
+  edits?: HistoryEdits;
 }) {
   const { t } = useTranslation();
   const body = useRef<HTMLDivElement>(null);
@@ -124,12 +128,16 @@ export function BranchPage({ repository, name, read, onBack, onMore, landing }: 
     );
   })();
 
-  // How a landed branch landed stands above its commits, once the list has read it (FLOWCHART1c).
+  // How a landed branch landed stands above its commits, once the list has read it (FLOWCHART1c); so does a branch of the person's own
+  // *Edit history* (GITAPP2m).
+  const editing = edits && facts && kindOf(facts.branch) === 'yours' ? <HistoryEdit branch={name} line={facts.line} edits={edits} /> : null;
   return (
     <ViewMain header={head}>
       {landing && read.state === 'read'
         ? <div className="grid min-w-0 gap-4"><LandingFlow name={name} door={landing} />{shown}</div>
-        : shown}
+        : editing
+          ? <div className="grid min-w-0 gap-4">{editing}{shown}</div>
+          : shown}
     </ViewMain>
   );
 }

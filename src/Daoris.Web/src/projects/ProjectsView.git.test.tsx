@@ -1140,3 +1140,118 @@ describe("a repository's New branch and New tag (GITAPP2c)", () => {
     });
   });
 });
+
+// GITAPP2m (D204, the git-writes design §7, §9): Edit history on a branch of the person's own. The page asks the driver's plan first
+// (`plan: true`, which changes nothing) and shows the commits it takes; only Confirm sends the edit, carrying the ids the plan pinned.
+// A refusal stays in the form in the driver's sentence; an unknown outcome is said and never retried.
+describe("a branch's Edit history (GITAPP2m)", () => {
+  const MINE = 'spike/renderer';
+  const MINE_COMMIT = GIT_BRANCHES_ENGINE.branches.find((branch) => branch.name === MINE)!.commit!;
+  const PLAN = {
+    edit: 'rebase', branch: MINE, tip: MINE_COMMIT, onto: LINE_COMMIT, commands: [`git rebase main ${MINE}`],
+    commits: [{ id: 'aa11bb22cc33dd44ee55ff6677889900aabbccdd', subject: 'Try a forward renderer' }],
+  };
+
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      return url.startsWith('/api/registry') ? Response.json(REGISTRY) : respond(url);
+    }));
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    invoke.mockReset();
+    window.localStorage.clear();
+  });
+
+  const answering = (edit?: (payload: Record<string, unknown>) => unknown) =>
+    invoke.mockImplementation(async (module: string, type: string, request?: { payload?: Record<string, unknown> }) => {
+      if (module === 'DAORIS.REMOTES') return WIRING;
+      if (module === 'DAORIS.LOG') return { lines: [] };
+      if (type === 'GIT_BRANCHES') return ENGINE_LIST;
+      if (type === 'GIT_GRAPH') return answer(PAGE);
+      if (type === 'GIT_HISTORY_EDIT' && edit) return edit(request?.payload ?? {});
+      if (type === 'LINES') return { lines: [], landings: [], reviews: [], opinions: [] };
+      if (type === 'HARNESSES') return { harnesses: [] };
+      if (type === 'PLUGINS') return { plugins: [] };
+      if (type === 'RULES') return { defaults: [], scopes: [] };
+      if (type === 'ACROSS') return { repositories: [] };
+      return DRIVER_STATE;
+    });
+
+  const openForm = async (branch = MINE) => {
+    const page = await chooseRepository('engine');
+    await userEvent.click(within(page).getByRole('tab', { name: 'Branches' }));
+    await userEvent.click(await within(repositoryMain()).findByRole('button', { name: `Open ${branch}` }));
+    await within(repositoryMain()).findByRole('heading', { level: 1, name: branch });
+    await userEvent.click(await within(repositoryMain()).findByRole('button', { name: 'Edit history…' }));
+    return within(repositoryMain()).getByRole('group', { name: 'Edit history' });
+  };
+
+  it('asks the plan first, shows the commits it takes, and sends the edit only on Confirm with the plan pinned', async () => {
+    answering((payload) => (payload.plan
+      ? { refused: false, said: '', plan: PLAN }
+      : { act: 'h1', outcome: 'done', refused: false, said: '', tip: 'bb22cc33dd44ee55ff6677889900aabbccddeeff', kept: `refs/daoris/discarded/${MINE}` }));
+    show(<ProjectsView notify={() => {}} />);
+    const form = await openForm();
+
+    expect(within(form).getByRole('textbox', { name: 'Commit or branch to rebase onto' })).toHaveValue('main');
+    await userEvent.click(within(form).getByRole('button', { name: 'Show the plan…' }));
+
+    expect(await within(form).findByText(/Rebase spike\/renderer onto main/)).toBeInTheDocument();
+    expect(within(form).getByText('Try a forward renderer')).toBeInTheDocument();
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'GIT_HISTORY_EDIT', {
+      payload: { repository: 'engine', workspace: 'aurora', edit: 'rebase', branch: MINE, target: 'main', plan: true },
+    });
+    expect(asked('GIT_HISTORY_EDIT')).toHaveLength(1);
+
+    await userEvent.click(within(form).getByRole('button', { name: 'Confirm' }));
+
+    expect(await within(form).findByText(/spike\/renderer now stands at bb22cc3/)).toBeInTheDocument();
+    expect(within(form).getByText(/refs\/daoris\/discarded\/spike\/renderer/)).toBeInTheDocument();
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'GIT_HISTORY_EDIT', {
+      payload: {
+        repository: 'engine', workspace: 'aurora', edit: 'rebase', branch: MINE, target: 'main',
+        pins: { tip: PLAN.tip, onto: PLAN.onto, commits: [PLAN.commits[0]!.id] },
+      },
+    });
+  });
+
+  it('picks the commit typed, and says a plan the driver refuses in its sentence with the words kept', async () => {
+    answering(() => ({ refused: true, said: 'aa11bb22cc33 (Fix) is a merge, and a history edit takes one line of non-merge commits, so nothing was changed' }));
+    show(<ProjectsView notify={() => {}} />);
+    const form = await openForm();
+
+    await userEvent.click(within(form).getByRole('radio', { name: 'Pick' }));
+    await userEvent.type(within(form).getByRole('textbox', { name: 'Commit or A..B range to pick' }), 'aa11bb2');
+    await userEvent.click(within(form).getByRole('button', { name: 'Show the plan…' }));
+
+    expect(await within(form).findByText(/is a merge, and a history edit takes one line/)).toBeInTheDocument();
+    expect(within(form).getByRole('textbox', { name: 'Commit or A..B range to pick' })).toHaveValue('aa11bb2');
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'GIT_HISTORY_EDIT', expect.objectContaining({
+      payload: expect.objectContaining({ edit: 'pick', target: 'aa11bb2', plan: true }),
+    }));
+    expect(within(form).queryByRole('button', { name: 'Confirm' })).toBeNull();
+  });
+
+  it('says what it could not tell where the outcome is unknown', async () => {
+    answering((payload) => (payload.plan ? { refused: false, said: '', plan: PLAN } : { act: 'h2', outcome: 'unknown', refused: false, said: 'its processes did not end' }));
+    show(<ProjectsView notify={() => {}} />);
+    const form = await openForm();
+    await userEvent.click(within(form).getByRole('button', { name: 'Show the plan…' }));
+    await userEvent.click(await within(form).findByRole('button', { name: 'Confirm' }));
+
+    expect(await within(form).findByText(/Daoris could not tell whether this finished; nothing was retried/)).toBeInTheDocument();
+  });
+
+  it("offers no Edit history on a session's branch", async () => {
+    answering();
+    show(<ProjectsView notify={() => {}} />);
+    const page = await chooseRepository('engine');
+    await userEvent.click(within(page).getByRole('tab', { name: 'Branches' }));
+    await userEvent.click(await within(repositoryMain()).findByRole('button', { name: 'Open daoris/engine-physics-step' }));
+    await within(repositoryMain()).findByRole('heading', { level: 1, name: 'daoris/engine-physics-step' });
+
+    expect(within(repositoryMain()).queryByRole('button', { name: 'Edit history…' })).toBeNull();
+  });
+});

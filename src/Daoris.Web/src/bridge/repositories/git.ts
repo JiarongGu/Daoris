@@ -267,6 +267,43 @@ export const useGitRefActs = (repository: string, workspace: string) => {
   return { make: make.mutateAsync, undo: undo.mutateAsync, remove: remove.mutateAsync, rename: rename.mutateAsync, finish: finish.mutateAsync };
 };
 
+/** A history edit asked of a branch (GITAPP2m): the commit or `A..B` range to pick or revert onto it, or the commit to rebase it onto. */
+export type GitHistoryAsk = { edit: 'pick' | 'revert' | 'rebase'; branch: string; target: string };
+
+/** The ids a shown plan pinned, which the edit's press carries back. */
+export type GitHistoryPins = { tip: string; onto: string; commits: string[] };
+
+/** What `GIT_HISTORY_EDIT`'s plan form answers: the branch's tip, the commit it builds on and the commits it takes, or a refusal in words. */
+export type GitHistoryPlanAnswer = {
+  refused: boolean;
+  said: string;
+  plan?: { edit: string; branch: string; tip: string; onto: string; commits: { id: string; subject: string }[]; commands: string[] } | null;
+  code?: string | null;
+};
+
+/** What `GIT_HISTORY_EDIT`'s press answers: the journal's act and its outcome, the branch's new tip and its old one's recovery ref, or a refusal. */
+export type GitHistoryAnswer = {
+  act?: string | null; outcome?: string | null; refused: boolean; said: string; tip?: string | null; kept?: string | null; code?: string | null;
+};
+
+/**
+ * A branch's *Edit history* (GITAPP2m, D204): the plan asked first (`plan: true`, which changes nothing, through a mutation since the
+ * route declares the press's change), then the edit carrying the ids the plan pinned, which the driver runs as an act of its journal.
+ * The Git reads sit under no state scope, so an edit asks the branch list and the graph again here.
+ */
+export const useGitHistoryEdits = (repository: string, workspace: string) => {
+  const client = useQueryClient();
+  const base = { repository, ...(workspace ? { workspace } : {}) };
+  const plan = useMutation({
+    mutationFn: (ask: GitHistoryAsk) => call<GitHistoryPlanAnswer>('GIT_HISTORY_EDIT', { ...base, ...ask, plan: true }),
+  });
+  const edit = useMutation({
+    mutationFn: ({ pins, ...ask }: GitHistoryAsk & { pins: GitHistoryPins }) => call<GitHistoryAnswer>('GIT_HISTORY_EDIT', { ...base, ...ask, pins }),
+    onSuccess: () => client.invalidateQueries({ queryKey: ['git'] }),
+  });
+  return { plan: plan.mutateAsync, edit: edit.mutateAsync };
+};
+
 /** A page of the graph from tips named by their whole ids (the list's `commit`); asks nothing with no tip. */
 export const useGitGraph = (repository: string | null, tips: readonly string[], options: { page?: number; sinceParted?: boolean; workspace?: string } = {}) => {
   const { isAvailable } = useShenora();

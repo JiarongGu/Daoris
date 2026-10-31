@@ -328,6 +328,12 @@ public static class DriverCommand
               commit, if given, is the one it must stand at), keeping its commits on a recovery ref; annotated
               tags, daoris/ branches, a landing's, the line and an occupied branch are refused. --rename <new-name>
               moves it instead, keeping its old tip on a recovery ref; the new name starts a new reflog.
+          git pick|revert <repository> <branch> <commit|A..B> [--plan | --yes]
+          git rebase <repository> <branch> <onto> [--plan | --yes]
+              edit a branch no tree has out without a working tree, as a branch page's Edit history does: pick or
+              revert commits onto it, or rebase its own commits onto another. Each says its plan; --yes makes it
+              after your yes in Daoris's window where Daoris runs, keeping the old tip under refs/daoris/discarded/.
+              Refused from a session's terminal.
           git review <session> [--json] [--time]
               a session's review as its Review page reads it: the files and their base, the uncommitted ones, the line
               and the branch; --time each git it started, its node and budget, the gate's wait, the creation and the run,
