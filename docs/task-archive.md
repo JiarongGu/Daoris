@@ -5,6 +5,14 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## CLEANUPADVICE1 — a blocked clean-up row names the press that takes it (2026-11-01)
+
+> **CLEANUPADVICE1 — a blocked clean-up row names the press that takes it** (driver, modules, web; OVERVIEWNOISE1b, TIDYOUTPUT1). The install's row for a finished tree its session recorded (code `unfollowed`) told the owner the workspace's clean-up removes it, and that press keeps it: the tree holds ignored files only it has (a gate's log, a `local/` folder). Contract: where the clean-up would keep the tree, the row says what keeps it (`TreeHolds.OwnSaid`) and the remove that takes it, never a press that refuses. Proof: a unit test of the row's words over a kept tree; the install's row read again.
+
+**Outcome** 2026-11-01: the inventory's gather asks git, for unfollowed trees alone, what the clean-up's own judgement (`ContentHolds.HoldsAsync` under the repository's declared output) would keep (`InventoryFacts.TreeKeeps`, `WorkInventories.KeepsAsync`). The `unfollowed` entry then carries `tree`, `keeps`, `uncommitted`, `own` and `paths`, and the page words them (`unfollowedKept`, in both languages) with `daoris-driver trees remove <path> --force`; where git cannot say it names no remove, and a tree the clean-up would take reads as before. Proofs: `WorkInventoryTests`, `CleanupGitTests` (real git), `attention.test.ts`. The install's row is to be read again on the next build.
+
+---
+
 ## GITAPP2f — fetch origin's branches (2026-11-01)
 
 > **GITAPP2 f** (driver, modules, web; D204, accepted 2026-10-31, D198; `docs/2026-10-23-git-writes-design.md` round 3 §5, §9 *Fetch*, §12 row f). Fetch as an act of the journal whose one command moves `refs/remotes/origin/*` alone whatever the repository's configuration says of origin, offered only where D198's git doors are installed.

@@ -750,6 +750,40 @@ describe('the groups', () => {
   });
 
   /**
+   * CLEANUPADVICE1: where the clean-up would keep an unfollowed tree, its row says what keeps it and the remove that takes it, in each
+   * language; where git could not say, it names no remove; where the clean-up would take it, the row is as OVERVIEWNOISE1b worded it.
+   */
+  it('words an unfollowed tree the clean-up would keep by what keeps it and the remove that takes it, and names no remove it cannot advise', async () => {
+    const tree = 'X:/daoris/trees/default/engine/s-e0a8e0fd';
+    const unfollowed = (facts: Record<string, string>) => row('work', 'c0nv0001', null, {
+      where: 'engine', session: 'c0nv0001', title: 's-e0a8e0fd',
+      blocked: { unknown: false, entries: [{ kind: 'tree', resource: tree, code: 'unfollowed', facts: { branch: 'daoris/s-e0a8e0fd', ...facts }, detail: 'as recorded' }] },
+    });
+    const kept = unfollowed({ tree, keeps: '2 ignored path(s) your checkout does not have: gate.log, local/notes.md', uncommitted: '0', own: '2', paths: 'gate.log, local/notes.md' });
+
+    expect(words(kept).detail).toBe(
+      'Blocked: tree s-e0a8e0fd, its session recorded it, but no branch record follows daoris/s-e0a8e0fd, so the look never cleans it up, and the clean-up on '
+      + 'its workspace’s Branches keeps it too, since its tree holds 2 path(s) only it has, such as gate.log, local/notes.md; '
+      + `\`daoris-driver trees remove ${tree} --force\` removes it, and what it holds with it`);
+    expect(words(unfollowed({ tree, keeps: 'x', uncommitted: '3', own: '1', paths: 'gate.log' })).detail)
+      .toContain('since its tree holds 3 uncommitted path(s), and 1 path(s) only it has, such as gate.log;');
+    const unread = words(unfollowed({ unread: 'true', tree })).detail ?? '';
+    expect(unread).toContain('could not tell what its tree holds');
+    expect(unread).not.toContain('trees remove');
+    expect(words(unfollowed({})).detail).toContain('the session branches on its workspace’s Branches remove it');
+
+    await i18n.changeLanguage('zh');
+    try {
+      expect(words(kept).detail).toBe(
+        '受阻：工作树 s-e0a8e0fd，它的会话记录了它，但没有分支记录跟随 daoris/s-e0a8e0fd，所以查看时不会清理它；它所在工作区“分支”里的清理也会保留它，因为它的工作树里有'
+        + `2 个只有它才有的文件，例如 gate.log, local/notes.md；运行 \`daoris-driver trees remove ${tree} --force\` 可以移除它，连同其中的内容`);
+      expect(words(unfollowed({ unread: 'true', tree })).detail).not.toContain('trees remove');
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+  });
+
+  /**
    * LANDRETIRE1 part 2: a landing's branch whose quest is closed and which the line has not held for a day is a row named by its branch,
    * its block worded by its code in each language with the quest, and the door the row opens is the workspace's Branches, where the
    * landed branches' action withdraws it.

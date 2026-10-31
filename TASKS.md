@@ -109,8 +109,6 @@ steward under D191; Codex's read of the final text owed when its credits return)
 
 ## Sessions
 
-- [ ] **CLEANUPADVICE1 — a blocked clean-up row names the press that takes it** (driver, modules, web; OVERVIEWNOISE1b, TIDYOUTPUT1). The install's row for a finished Lyntai tree its session recorded (code `unfollowed`) told the owner the workspace's clean-up removes it, and that press keeps it: the tree holds ignored files only it has (a gate's log, a `local/` folder). Contract: where the clean-up would keep the tree, the row says what keeps it (`TreeHolds.OwnSaid`) and the remove that takes it, never a press that refuses. Proof: a unit test of the row's words over a kept tree; the install's row read again.
-
 pause-and-clean-up (D132), D133/D136. Installed canaries follow completed build rows.
 
 - [ ] **TERMTRUST1a — a terminal's standing confirmation for stop, finish, hold and resume** (driver, modules, service, web; D201, accepted 2026-10-23; the terminal-trust design §9 row 1). Parts (i) and (ii) are built; the grant remains unoffered pending part (i)'s installed proof, §8 case 4, every door checked against D201's note, then activation and case 14. The owner renewed the request for management without repeated clicks on 2026-10-27 after confirming the stuck Codex session's stop; finish the existing containment proof and activation rather than adding another grant mechanism.
