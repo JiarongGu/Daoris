@@ -533,6 +533,11 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
     // GITAPP2i: a commit moves the checkout's index and the branch it has out, which the Changes tab and the branch list read.
     [InlineData("GIT_MAKE_COMMIT", "driver,checkouts", null)]
     [InlineData("GIT_AMEND", "driver,checkouts", null)]
+    [InlineData("GIT_SWITCH_PLAN", "", null)]
+    [InlineData("GIT_STASH_PLAN", "", null)]
+    // GITAPP2k: a switch moves HEAD and the checkout's files, a Save the shared stash and the tracked files; the branch list and the Changes tab read both.
+    [InlineData("GIT_SWITCH", "driver,checkouts", null)]
+    [InlineData("GIT_STASH", "driver,checkouts", null)]
     // HELPMODE1c3: and the driver's, whose helpGrants draws the browser's grant from the plugin's approval.
     [InlineData("PLUGIN_ACTION", "driver,plugins,harnesses", null)]
     [InlineData("PLUGIN_UPDATE", "driver,plugins,harnesses", null)]

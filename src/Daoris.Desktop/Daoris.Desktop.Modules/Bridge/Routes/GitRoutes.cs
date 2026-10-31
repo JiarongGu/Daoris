@@ -235,6 +235,70 @@ public sealed class GitRoutes(DriverLoop loop)
         };
     }
 
+    // GITAPP2k (D204, the git-writes design §8): what a switch to a branch would rest on (where HEAD is, whether tracked files are changed, the tree that
+    // has the branch out, the hooks it runs), read fresh. A read, told by event: it starts git.
+    [DriverRoute("GIT_SWITCH_PLAN")]
+    [ByEvent("GIT_SWITCH_PLAN", Untold = "the checkout's HEAD, branches, index and the other trees, which no scope tells")]
+    private async Task<object?> GitSwitchPlanAsync(IpcRequest request, CancellationToken cancellationToken) =>
+        await GitAnsweredAsync(request, cancellationToken, (root, token) =>
+            new SwitchActs(new ActJournal(_loop.Home)).PlanAsync(root, Optional(request, "branch") ?? "", token));
+
+    // GITAPP2k: *Switch* of the registered checkout to a local branch, never forced; refused as data where tracked files are changed, an
+    // operation is in progress or the branch is out in another tree. It is undone by pressing Switch again on the branch it left.
+    [DriverRoute("GIT_SWITCH")]
+    [Publishes("GIT_SWITCH", StateScopes.Checkouts | StateScopes.Driver)]
+    private async Task<object?> GitSwitchAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var (context, refused) = await WorkContextAsync(request, cancellationToken).ConfigureAwait(false);
+        if (context is null) return refused;
+        var press = new SwitchPress(Optional(request, "branch") ?? "", Optional(request, "from"), Optional(request, "head") ?? "");
+        return Acted(await new SwitchActs(new ActJournal(_loop.Home)).RunAsync(context, press, cancellationToken).ConfigureAwait(false), context);
+    }
+
+    // GITAPP2k: what a stash Save would rest on: the changes, the shared stash's tip and the trees that share it. A read, told by event.
+    [DriverRoute("GIT_STASH_PLAN")]
+    [ByEvent("GIT_STASH_PLAN", Untold = "the checkout's index, tree, untracked files and the shared stash, which no scope tells")]
+    private async Task<object?> GitStashPlanAsync(IpcRequest request, CancellationToken cancellationToken) =>
+        await GitAnsweredAsync(request, cancellationToken, (root, token) =>
+            new StashActs(new ActJournal(_loop.Home)).PlanAsync(root, token));
+
+    // GITAPP2k: stash *Save*, tracked files only unless `untracked`; `refs/stash` is shared with every linked tree, so a stash that moved since the plan
+    // refuses the press. Apply is a later act and Drop is deferred.
+    [DriverRoute("GIT_STASH")]
+    [Publishes("GIT_STASH", StateScopes.Checkouts | StateScopes.Driver)]
+    private async Task<object?> GitStashAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var (context, refused) = await WorkContextAsync(request, cancellationToken).ConfigureAwait(false);
+        if (context is null) return refused;
+        var press = new StashPress(Flag(request, "untracked"), Optional(request, "message"), Optional(request, "head") ?? "", Optional(request, "stash"));
+        return Acted(await new StashActs(new ActJournal(_loop.Home)).RunAsync(context, press, cancellationToken).ConfigureAwait(false), context);
+    }
+
+    /// <summary>The context of a working-tree act on the repository's registered checkout, or the answer that there is none.</summary>
+    private async Task<(StageContext? Context, object? Refused)> WorkContextAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var repository = Optional(request, "repository") ?? throw new DriverException("an act names its repository.");
+        var service = _loop.Service ?? throw NotReady();
+        var rows = LinesRoutes.Checkouts(await service.RegistryAsync(cancellationToken).ConfigureAwait(false), repository, Optional(request, "workspace"));
+        if (rows.FirstOrDefault(row => Directory.Exists(row.Root)).Root is not { } root)
+        {
+            return (null, Staged(new ActRun(null, null, $"{repository} has no checkout on this machine: nothing was changed.", Refused: true), repository, null));
+        }
+
+        return (new StageContext(repository, root, () => DriverConfig.Load(_loop.ConfigPath).MayChangeCheckout(repository), token => BranchTidying.BesideAsync(service, token)), null);
+    }
+
+    /// <summary>An act's answer as the page reads it, with the sentence's notes and no machine path.</summary>
+    private static object Acted(ActRun run, StageContext context) => new
+    {
+        Done = !run.Refused && run.Outcome == ActOutcomes.Done,
+        run.Refused,
+        run.Act,
+        run.Outcome,
+        Said = WithoutRoots(run.Said, [context.Checkout], context.Repository),
+        Notes = run.Notes is null ? null : WithoutRoots(run.Notes, [context.Checkout], context.Repository),
+    };
+
     // GITAPP2c (D204, the git-writes design §6, §9): *New branch* and *New tag* at a commit, one `create` run as an act of the journal
     // (GitRefActs). A ref act writes no working tree, so it asks no switch. The page presses it after its own confirmation; a terminal's
     // `git branch|tag <repository> <name> --yes` is the same route asked for its words (`said`), run on the window's Confirm. A refusal

@@ -234,6 +234,8 @@ public sealed class ActRuns(ActJournal journal)
                 && value.TryGetValue<string>(out var full) ? [full] : [];
         }
 
+        // A stash moves the stash ref every linked tree shares.
+        if (step.Kind == ActStepKinds.Stash) return ["refs/stash"];
         return step.Kind != ActStepKinds.Ref || JsonNode.Parse(step.Postconditions)?["refs"] is not JsonArray refs
             ? []
             : refs.Select(each => each?["ref"]?.GetValue<string>()).OfType<string>();

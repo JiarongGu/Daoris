@@ -86,7 +86,7 @@ internal static class OwnerTargetRows
         Row("GIT_HISTORY_EDIT", Repository(), Workspace());
         Row("SETUP_PRESS", Repository());
         // GITAPP2h, GITAPP2i: the Changes tab's acts on one repository's checkout.
-        foreach (var route in new[] { "GIT_STAGE", "GIT_UNSTAGE", "GIT_UNDO", "GIT_MAKE_COMMIT", "GIT_AMEND" })
+        foreach (var route in new[] { "GIT_STAGE", "GIT_UNSTAGE", "GIT_UNDO", "GIT_MAKE_COMMIT", "GIT_AMEND", "GIT_SWITCH", "GIT_STASH" })
         {
             Row(route, Repository(), Workspace());
         }
