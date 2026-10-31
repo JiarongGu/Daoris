@@ -7,6 +7,9 @@ public sealed record IntegrationLookRequest(string Request, string Line, string 
 
     /// <summary>The words a member was handed back or held with; null where none were said.</summary>
     public string? Said { get; init; }
+
+    /// <summary>Where an <c>order</c> moved a queued request (<see cref="IntegrationOrders"/>); null where it stands by arrival.</summary>
+    public string? Ordered { get; init; }
 }
 
 /// <summary>A member of the standing candidate and what the steps have made of it.</summary>
@@ -30,18 +33,36 @@ public sealed record IntegrationLookCandidate(string Candidate, string Line, str
     /// <summary>The step it is at; null once nothing is open or ended yet.</summary>
     public string? At { get; init; }
 
-    /// <summary>What holds it: <c>conflict</c> (a member held for its conflict) or <c>promotion</c> (the line could not take it now); null where nothing does.</summary>
+    /// <summary>
+    /// What holds it: <c>decide</c> (the policy held it for a decide, §4.5), <c>conflict</c> (a member held for its conflict) or <c>promotion</c>
+    /// (the line could not take it now); null where nothing does.
+    /// </summary>
     public string? Holds { get; init; }
 
-    /// <summary>The act that releases what holds it (<c>decide</c>); null where nothing does.</summary>
+    /// <summary>The act that releases what holds it (<c>decide</c>); null where no built act does.</summary>
     public string? Release { get; init; }
 
     /// <summary>Who may press it: <c>owner</c>, <c>steward</c> (§8); null where nothing does.</summary>
     public string? By { get; init; }
+
+    /// <summary>The words it was held with: the judge's for a decide; null where none were said.</summary>
+    public string? Why { get; init; }
+
+    /// <summary>The decide recorded on it that the line's run has still to act on (<see cref="IntegrationDecides"/>); null where none is.</summary>
+    public string? Decided { get; init; }
 }
 
 /// <summary>A superseded commit awaiting its disposition (§5.7).</summary>
 public sealed record IntegrationLookSuperseded(string Request, string Commit, string Subject, string By, int Files);
+
+/// <summary>A landed branch whose integration waits for the owner's card (INTEGRATE1h, §17.4): its unit, branch, tip, why, and since its landing.</summary>
+public sealed record IntegrationLookWaiting(string Unit, string Branch, string Tip, string Code, string Said)
+{
+    public DateTimeOffset? Since { get; init; }
+
+    /// <summary>The row the runtime's card wait is drawn as.</summary>
+    public static IntegrationLookWaiting Of(IntegrationCardWait wait) => new(wait.Unit, wait.Branch, wait.Tip, wait.Code, wait.Said) { Since = wait.Since };
+}
 
 /// <summary>A repository's integration as its view draws it: the queue, the standing candidates, what went back, what awaits a disposition, and the promoted history.</summary>
 public sealed record IntegrationLook(string Repository)
@@ -55,6 +76,9 @@ public sealed record IntegrationLook(string Repository)
     public IReadOnlyList<IntegrationLookSuperseded> Superseded { get; init; } = [];
 
     public IReadOnlyList<IntegrationLookRequest> Promoted { get; init; } = [];
+
+    /// <summary>The landed branches waiting for the owner's card, as the running Daoris's runtime last judged them; none where it is not asked.</summary>
+    public IReadOnlyList<IntegrationLookWaiting> Waiting { get; init; } = [];
 }
 
 /// <summary>The one line a session's head says of its unit's integration, from the same record (§5.8).</summary>
@@ -88,7 +112,7 @@ public static class IntegrationLooks
         var candidates = store.Standing().Where(candidate => string.Equals(candidate.Repository, repository, StringComparison.OrdinalIgnoreCase)).ToList();
         lines.AddRange(candidates.Select(candidate => candidate.Line).Where(line => !lines.Contains(line)));
 
-        var queue = lines.SelectMany(line => store.Queued(repository, line)).Select(request => Row(request)).ToList();
+        var queue = lines.SelectMany(line => store.Queued(repository, line)).Select(request => Row(request) with { Ordered = request.Ordered }).ToList();
         var closed = store.Closed(repository, History * 3);
         return new IntegrationLook(repository)
         {
@@ -120,15 +144,26 @@ public static class IntegrationLooks
 
         if (store.MemberOf(request.Id) is not { Stands: true } member) return new IntegrationHead(IntegrationHeads.Queued, request.Line);
         if (member.State == IntegrationMemberStates.Held) return new IntegrationHead(IntegrationHeads.Held, request.Line);
-        return new IntegrationHead(IntegrationHeads.InCandidate, request.Line) { Step = AtOf(store, member.Candidate) };
+        var step = AtOf(store, member.Candidate);
+        // INTEGRATE1h: a candidate the policy held for a decide holds each of its members with it.
+        if (step == IntegrationStepNames.Judge && store.Steps(member.Candidate).LastOrDefault() is { Outcome: IntegrationStepOutcomes.Held })
+        {
+            return new IntegrationHead(IntegrationHeads.Held, request.Line) { Step = step };
+        }
+
+        return new IntegrationHead(IntegrationHeads.InCandidate, request.Line) { Step = step };
     }
 
     private static IntegrationLookCandidate Candidate(IntegrationStore store, IntegrationCandidate candidate)
     {
         var members = store.Members(candidate.Id);
         var steps = store.Steps(candidate.Id);
-        var held = members.Any(member => member.Stands && member.State == IntegrationMemberStates.Held);
-        var stuck = !held && steps.LastOrDefault() is { Step: IntegrationStepNames.Promote, Outcome: IntegrationStepOutcomes.Held };
+        // A judge held for a decide waits on the owner's act until the run consumes the decide recorded on it (INTEGRATE1h).
+        var decide = steps.LastOrDefault(step => step is { Step: IntegrationStepNames.Judge, Outcome: IntegrationStepOutcomes.Held });
+        var waiting = decide is not null && candidate.PromotedAt is null && steps.LastOrDefault()?.Step is IntegrationStepNames.Judge or IntegrationStepNames.Promote;
+        var decided = waiting ? store.DecideOf(candidate.Id)?.Decide : null;
+        var held = !waiting && members.Any(member => member.Stands && member.State == IntegrationMemberStates.Held);
+        var stuck = !waiting && !held && steps.LastOrDefault() is { Step: IntegrationStepNames.Promote, Outcome: IntegrationStepOutcomes.Held };
         return new IntegrationLookCandidate(candidate.Id, candidate.Line, candidate.Base, candidate.FormedAt)
         {
             Members =
@@ -140,9 +175,12 @@ public static class IntegrationLooks
                 .. IntegrationStepNames.All.Select(name => new IntegrationLookStep(name, steps.LastOrDefault(step => step.Step == name) is { } last ? last.Outcome ?? "open" : "waiting")),
             ],
             At = AtOf(store, candidate.Id),
-            Holds = held ? "conflict" : stuck ? "promotion" : null,
-            Release = held ? "decide" : null,
-            By = held ? "owner" : null,
+            Holds = waiting ? "decide" : held ? "conflict" : stuck ? "promotion" : null,
+            // A member held for its conflict waits for an act no row has built yet (§5.4): none is named that would refuse it.
+            Release = waiting && decided is null ? "decide" : null,
+            By = waiting || held ? "owner" : null,
+            Why = waiting ? decide!.Said : null,
+            Decided = decided,
         };
     }
 

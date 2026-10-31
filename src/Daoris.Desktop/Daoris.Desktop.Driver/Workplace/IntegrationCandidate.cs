@@ -143,7 +143,83 @@ public sealed record IntegrationDisposition(string Request, string Commit, strin
     /// <summary>When the session, the steward or the owner answered it; null while it is pending.</summary>
     public DateTimeOffset? AnsweredAt { get; init; }
 
+    /// <summary>The answer given (<see cref="IntegrationAnswers"/>); null while pending, and for one an older build answered.</summary>
+    public string? Answer { get; init; }
+
     public bool Pending => AnsweredAt is null;
+}
+
+/// <summary>A superseded commit's answers (§5.7).</summary>
+public static class IntegrationAnswers
+{
+    /// <summary>It is superseded: its work stays on its recovery ref, which goes only by D102's rules.</summary>
+    public const string Superseded = "superseded";
+
+    /// <summary>Rebase it: the member's session is told to rebase it onto the line.</summary>
+    public const string Rebase = "rebase";
+
+    public static IReadOnlyList<string> All { get; } = [Superseded, Rebase];
+}
+
+/// <summary>
+/// A decide recorded on a candidate held for one (INTEGRATE1h; the integration design §4.5, §8): the word, who pressed it, and when. The line's
+/// run consumes it at its next look in place of the verdict it held on.
+/// </summary>
+/// <param name="Decide">One of <see cref="IntegrationDecides"/>.</param>
+/// <param name="Requester">Who decided: <see cref="IntegrationRequester.Person"/> or <see cref="IntegrationRequester.Steward"/>.</param>
+public sealed record IntegrationDecide(string Candidate, string Decide, string Requester, DateTimeOffset At);
+
+/// <summary>What a decide answered: the decide that stands (this one, or the first), and why it was refused; null where it was recorded.</summary>
+public sealed record IntegrationDecided(IntegrationDecide? Decide, string? Refused);
+
+/// <summary>A held candidate's decides (§4.5, §8): <c>land</c> is the person's alone.</summary>
+public static class IntegrationDecides
+{
+    /// <summary>Its members run one at a time; one of one is handed back as unresolved.</summary>
+    public const string Split = "split";
+
+    /// <summary>Every member handed back to its session with the hold's words.</summary>
+    public const string HandBack = "hand-back";
+
+    /// <summary>The confirm run's pass is the gates' verdict, and the candidate goes on to its promotion: the owner's press alone.</summary>
+    public const string Land = "land";
+
+    public static IReadOnlyList<string> All { get; } = [Split, HandBack, Land];
+}
+
+/// <summary>Why a decide was refused, nothing written.</summary>
+public static class IntegrationDecideRefusals
+{
+    /// <summary>No such candidate stands.</summary>
+    public const string Gone = "gone";
+
+    /// <summary>It stands, but its last step is no judge held for a decide.</summary>
+    public const string NotHeld = "not-held";
+
+    /// <summary>A decide is recorded on it already, which stands.</summary>
+    public const string Decided = "decided";
+
+    /// <summary>A <c>land</c> by anyone but the person (§8, F9).</summary>
+    public const string Land = "land";
+}
+
+/// <summary>Where a queued request is moved in its line's queue (§8's <c>order</c>).</summary>
+public static class IntegrationOrders
+{
+    public const string First = "first";
+    public const string Last = "last";
+
+    public static IReadOnlyList<string> All { get; } = [First, Last];
+}
+
+/// <summary>Why an order was refused, nothing written.</summary>
+public static class IntegrationOrderRefusals
+{
+    /// <summary>No such request is open.</summary>
+    public const string Gone = "gone";
+
+    /// <summary>It stands in a candidate, or is held for its conflict: only a queued request moves.</summary>
+    public const string Stands = "stands";
 }
 
 /// <summary>A member's new state, with what it carries; <see cref="Ends"/> ends its membership, freeing its request to be formed again.</summary>

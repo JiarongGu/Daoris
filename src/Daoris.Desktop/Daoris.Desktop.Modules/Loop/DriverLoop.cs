@@ -311,6 +311,9 @@ public sealed class DriverLoop(
     /// <summary>The runs held at a declined request (INTEGRATE1o part o3), for <i>What needs you</i> to judge; none before a pass has read.</summary>
     public IReadOnlyList<RequestHold> RequestHolds => _watch?.RequestHolds ?? [];
 
+    /// <summary>The landed branches whose integration waits for the owner's card (INTEGRATE1h), for <i>What needs you</i> and the Integration tab; none before a pass.</summary>
+    public IReadOnlyList<IntegrationCardWait> CardWaits => _watch?.CardWaits ?? [];
+
     /// <summary>
     /// Ask the loop's runtime for a whole pass, and wait for it within <paramref name="bound"/> (FABRIC-CUTOVER1d, <see cref="DriverWatch.PassWholeAsync"/>):
     /// a press held by a run's graph for a judgement not made yet. False past the bound, and where no loop runs.

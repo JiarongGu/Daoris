@@ -167,10 +167,10 @@ public sealed class AtWorkVerbTests : IDisposable
         var output = new StringWriter();
         var run = SessionsCommand.RunAsync(Read("at-work", "s1"), World() with { Instance = home.World("sessions"), Clock = clock }, output);
 
-        await clock.Timed.WaitAsync(TimeSpan.FromSeconds(20));
+        await clock.Timed.WaitAsync(Poll.Patience);
         clock.Advance(TimeSpan.FromSeconds(1));
 
-        Assert.Equal(0, await run.WaitAsync(TimeSpan.FromSeconds(20)));
+        Assert.Equal(0, await run.WaitAsync(Poll.Patience));
         Assert.Contains("s1 (attended) · working", output.ToString(), StringComparison.Ordinal);
         Assert.Contains("subagents: 0 working", output.ToString(), StringComparison.Ordinal);
         Assert.Equal(2, Asked(standIn));

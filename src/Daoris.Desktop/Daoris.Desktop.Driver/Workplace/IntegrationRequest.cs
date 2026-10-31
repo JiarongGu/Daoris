@@ -39,6 +39,12 @@ public sealed record IntegrationRequest(
 
     /// <summary>One of <see cref="IntegrationRequestCloses"/>, or a newer build's word, kept as written; null while it is open.</summary>
     public string? ClosedWhy { get; init; }
+
+    /// <summary>Its place in its line's queue as an <c>order</c> set it (INTEGRATE1h): below zero before the arrivals, above after; null by arrival.</summary>
+    public long? Order { get; init; }
+
+    /// <summary>Where an <c>order</c> moved it (<see cref="IntegrationOrders"/>); null where it stands by arrival.</summary>
+    public string? Ordered => Order switch { < 0 => IntegrationOrders.First, > 0 => IntegrationOrders.Last, _ => null };
 }
 
 /// <summary>
