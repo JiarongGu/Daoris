@@ -44,7 +44,7 @@ internal static class OwnerTargetRows
         foreach (var route in new[]
                  {
                      "SESSION_QUEUE_EDIT", "SESSION_HELPER_APPROVE", "SESSION_HELPER_DECLINE", "SESSION_PERMISSION_ANSWER", "SESSION_HAND_OVER_APPROVE",
-                     "SESSION_HAND_OVER_DECLINE", "SESSION_ANSWER_ALONE",
+                     "SESSION_HAND_OVER_DECLINE", "SESSION_ANSWER_ALONE", "SESSION_MEMORY_DECIDE",
                  })
         {
             Row(route, Session("session"));

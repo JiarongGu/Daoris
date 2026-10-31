@@ -83,6 +83,8 @@ internal static class PipeTargetRows
             (a, p) => Each(At(a, "streams")).Any(each => Text(At(each, "key")) == Text(p, "key") && True(At(each, "live")) && True(At(each, "canStop")))
                 ? "open" : ""));
         Row("SESSION_GO_AHEAD", LoopGround.Wait("go-ahead", "ask", "number"));
+        // KNOWCENTRAL2e: the session whose memory is decided; the service refuses an end no longer awaiting or a session running again.
+        Row("SESSION_MEMORY_DECIDE", new SessionGround("session"));
         foreach (var route in new[] { "SESSION_HELPER_APPROVE", "SESSION_HELPER_DECLINE" })
         {
             Row(route, Wait("HELPER_WAITS", ["ask", "session"], _ => null,

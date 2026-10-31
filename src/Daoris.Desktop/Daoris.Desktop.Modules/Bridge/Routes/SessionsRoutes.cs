@@ -758,6 +758,35 @@ public sealed class SessionsRoutes(DriverContext context)
     }
 
     /// <summary>
+    /// A session's memory rows for its page (KNOWCENTRAL2e; the memory coordinator design §1, §4), passed through as the service answers
+    /// them: its writes, ends and proposals with their states. None from a host with no door.
+    /// </summary>
+    [DriverRoute("SESSION_MEMORY")]
+    [ByEvent("SESSION_MEMORY", Untold = "the service's memory rows, which its applier and a quest's close move")]
+    private async Task<object?> SessionMemoryAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var session = PayloadHelper.GetRequiredValue<string>(request.Payload, "session");
+        var service = _loop.Service ?? throw NotReady();
+        var json = await service.SessionMemoryAsync(session, cancellationToken).ConfigureAwait(false);
+        return json is null ? new { Ops = Array.Empty<object>() } : JsonDocument.Parse(json).RootElement.Clone();
+    }
+
+    // KNOWCENTRAL2e (the design §1, §3, §4): the person's decision on a session's memory, an awaiting end approved or declined by its row
+    // (`op`, `approve`), or the ended session's staged changes kept or dropped (`keep`). The service judges; a refusal is answered as data,
+    // `refused` with its words.
+    [DriverRoute("SESSION_MEMORY_DECIDE")]
+    [Publishes("SESSION_MEMORY_DECIDE", StateScopes.Sessions, Session = "session")]
+    private async Task<object?> SessionMemoryDecideAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var session = PayloadHelper.GetRequiredValue<string>(request.Payload, "session");
+        var op = Optional(request, "op");
+        var yes = op is { Length: > 0 } ? Flag(request, "approve") : Flag(request, "keep");
+        var service = _loop.Service ?? throw NotReady();
+        var (decided, message) = await service.DecideMemoryAsync(session, op, yes, cancellationToken).ConfigureAwait(false);
+        return new { Decided = decided, Why = decided ? null : "refused", Message = message };
+    }
+
+    /// <summary>
     /// Where each of these sessions' work is now (LOOK2b), for the rail in one ask: whether the tree it opened is still
     /// here, and its landing, standing or a trace (D113), so a row says where the work landed rather than naming a tree a
     /// landing tidied away.

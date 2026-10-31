@@ -167,7 +167,7 @@ public sealed class McpMemoryToolsTests : McpToolsFixture
 
     /// <summary>
     /// 🔴 Where memory is off every tool says so and keeps nothing; where it is on, a write and an end are kept staged under the session
-    /// (KNOWCENTRAL2d) and the engine is left as it was, and a proposal still waits for its quest (2e).
+    /// (KNOWCENTRAL2d) and the engine is left as it was.
     /// </summary>
     [Fact]
     public async Task Where_memory_is_off_each_tool_says_so_and_where_on_a_change_is_only_staged()
@@ -183,7 +183,6 @@ public sealed class McpMemoryToolsTests : McpToolsFixture
             await off.WriteAsync("The map needs a legend."),
             await off.EndAsync("Owner:m1", 1, "The map is drawn in vectors now."),
             await off.ProposeAsync("Asker:m1", "end", "The map is drawn in vectors now.", 1),
-            await on.ProposeAsync("Asker:m1", "amends", "The legend sits under the map.", 1),
         };
         var wrote = await on.WriteAsync("The map needs a legend.", "amends", "Owner:m1");
         var ended = await on.EndAsync("Owner:m1", 1, "The map is drawn in vectors now.");

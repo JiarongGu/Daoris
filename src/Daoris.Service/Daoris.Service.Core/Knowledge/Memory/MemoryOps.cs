@@ -25,10 +25,13 @@ public static class MemoryOpKind
 /// <summary>
 /// Where an operation stands (§3): <c>staged</c> by its session; released at the session's commit point to <c>ready</c>, an end or a
 /// replacement to <c>awaiting</c> its approver; <c>applying</c> while the service calls the engine; then <c>applied</c>, <c>stale</c> where its guard no
-/// longer held, or <c>held</c> where nothing says whether it ran. <c>dropped</c> and <c>declined</c> never apply.
+/// longer held, or <c>held</c> where nothing says whether it ran. <c>dropped</c> and <c>declined</c> never apply. A proposal (2e) is
+/// <c>awaiting</c> its owner while its quest is open, then <c>declined</c>, <c>answered</c> where the quest closed done, <c>stale</c> where
+/// its target moved first, or <c>dropped</c> where its quest is gone; none applies.
 /// </summary>
 public static class MemoryOpState
 {
+    public const string Answered = "answered";
     public const string Staged = "staged";
     public const string Awaiting = "awaiting";
     public const string Ready = "ready";
@@ -79,6 +82,15 @@ public sealed record MemoryOp(string Id, string Repository, string State, Memory
 
     /// <summary>When the service settled it.</summary>
     public DateTimeOffset? Settled { get; init; }
+
+    /// <summary>The quest a proposal travels on (2e); null on every other row.</summary>
+    public string? Carried { get; init; }
+
+    /// <summary>The owner's note on the quest that settled a proposal: its decline's reason or its handback.</summary>
+    public string? Answer { get; init; }
+
+    /// <summary>When the proposer was told how its proposal settled.</summary>
+    public DateTimeOffset? Told { get; init; }
 }
 
 /// <summary>
@@ -90,7 +102,7 @@ public sealed partial class MemoryOpStore
 {
     private const string Columns =
         "id, repository, kind, state, at, session, workspace, quest, adapter, harness, role, role_revision, models, text, target, revision, source, "
-        + "relation, approver, holds, entry, applied, settled, recheck, predecessors";
+        + "relation, approver, holds, entry, applied, settled, recheck, predecessors, carried, answer, told";
 
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
@@ -145,6 +157,10 @@ public sealed partial class MemoryOpStore
         await SchemaColumns.EnsureAsync(_db, "memory_ops", "recheck", "recheck TEXT NULL", ct).ConfigureAwait(false);
         // KNOWCENTRAL2h: a replacement's predecessors as JSON; a row from before replaces none.
         await SchemaColumns.EnsureAsync(_db, "memory_ops", "predecessors", "predecessors TEXT NULL", ct).ConfigureAwait(false);
+        // KNOWCENTRAL2e: a proposal's quest, the owner's answer and when its proposer was told; a row from before reads none.
+        await SchemaColumns.EnsureAsync(_db, "memory_ops", "carried", "carried TEXT NULL", ct).ConfigureAwait(false);
+        await SchemaColumns.EnsureAsync(_db, "memory_ops", "answer", "answer TEXT NULL", ct).ConfigureAwait(false);
+        await SchemaColumns.EnsureAsync(_db, "memory_ops", "told", "told TEXT NULL", ct).ConfigureAwait(false);
     }
 
     /// <summary>An operation its session made, kept <c>staged</c> until the session's commit point; nothing staged applies by itself.</summary>
@@ -324,7 +340,11 @@ public sealed partial class MemoryOpStore
         {
             await using (var decide = _db.Command())
             {
-                decide.CommandText = "UPDATE memory_ops SET state = $state, approver = $approver, settled = $settled WHERE id = $id AND state = 'awaiting'";
+                // An awaiting proposal is its owner's to decide through its own operations, never an approver's (§4).
+                decide.CommandText = """
+                    UPDATE memory_ops SET state = $state, approver = $approver, settled = $settled
+                    WHERE id = $id AND state = 'awaiting' AND kind IN ('end', 'supersede')
+                    """;
                 decide.Parameters.AddWithValue("$id", id);
                 decide.Parameters.AddWithValue("$state", approve ? MemoryOpState.Ready : MemoryOpState.Declined);
                 decide.Parameters.AddWithValue("$approver", approver);
@@ -434,11 +454,12 @@ public sealed partial class MemoryOpStore
         insert.CommandText = $"""
             INSERT INTO memory_ops ({Columns})
             VALUES ($id, $repository, $kind, $state, $at, $session, $workspace, $quest, $adapter, $harness, $role, $roleRevision, $models, $text,
-                    $target, $revision, $source, $relation, NULL, NULL, NULL, NULL, NULL, $recheck, $predecessors)
+                    $target, $revision, $source, $relation, NULL, NULL, NULL, NULL, NULL, $recheck, $predecessors, $carried, NULL, NULL)
             """;
         insert.Parameters.AddWithValue("$recheck", Value(op.Change.Recheck));
         insert.Parameters.AddWithValue(
             "$predecessors", Value(op.Change.Predecessors is { Count: > 0 } replaced ? JsonSerializer.Serialize(replaced, Json) : null));
+        insert.Parameters.AddWithValue("$carried", Value(op.Carried));
         insert.Parameters.AddWithValue("$id", op.Id);
         insert.Parameters.AddWithValue("$repository", op.Repository);
         insert.Parameters.AddWithValue("$kind", op.Change.Kind);
@@ -488,12 +509,102 @@ public sealed partial class MemoryOpStore
             Entry = Text(20),
             Applied = Number(21),
             Settled = Moments.Read(Text(22)),
+            Carried = Text(25),
+            Answer = Text(26),
+            Told = Moments.Read(Text(27)),
         };
     }
 
     private static object Value(string? text) => (object?)text ?? DBNull.Value;
 
-    private static string NewId() => Guid.NewGuid().ToString("N")[..16].ToLower(CultureInfo.InvariantCulture);
+    internal static string NewId() => Guid.NewGuid().ToString("N")[..16].ToLower(CultureInfo.InvariantCulture);
+
+    /// <summary>
+    /// A proposal published or joined on <paramref name="quest"/> (§4), kept <c>awaiting</c> its owner under <paramref name="id"/>, the id its
+    /// quest's packet names. No commit point moves it and the applier never applies it.
+    /// </summary>
+    public Task<MemoryOp> ProposeAsync(string id, string repository, MemoryChange change, MemoryAuthor by, string quest, CancellationToken ct = default)
+    {
+        var op = new MemoryOp(id, repository, MemoryOpState.Awaiting, change, by, by.At) { Carried = quest };
+        return _db.RunAsync(async () =>
+        {
+            await InsertAsync(op, ct).ConfigureAwait(false);
+            return op;
+        }, ct);
+    }
+
+    /// <summary>Every proposal, or those in <paramref name="state"/>, in the order they were kept.</summary>
+    public Task<IReadOnlyList<MemoryOp>> ProposalsAsync(string? state = null, CancellationToken ct = default) =>
+        _db.RunAsync<IReadOnlyList<MemoryOp>>(async () =>
+        {
+            await using var command = _db.Command();
+            command.CommandText = $"SELECT {Columns} FROM memory_ops WHERE kind = 'propose' AND ($state IS NULL OR state = $state) ORDER BY rowid";
+            command.Parameters.AddWithValue("$state", Value(state));
+            return await ReadAllAsync(command, ct).ConfigureAwait(false);
+        }, ct);
+
+    /// <summary>The proposals <paramref name="quests"/> carry, in the order they were kept.</summary>
+    public Task<IReadOnlyList<MemoryOp>> CarriedAsync(IReadOnlyCollection<string> quests, CancellationToken ct = default) =>
+        _db.RunAsync<IReadOnlyList<MemoryOp>>(async () =>
+        {
+            await using var command = _db.Command();
+            command.CommandText = $"""
+                SELECT {Columns} FROM memory_ops WHERE kind = 'propose' AND carried IN (SELECT value FROM json_each($quests)) ORDER BY rowid
+                """;
+            command.Parameters.AddWithValue("$quests", JsonSerializer.Serialize(quests));
+            return await ReadAllAsync(command, ct).ConfigureAwait(false);
+        }, ct);
+
+    /// <summary>An awaiting proposal settled by its quest or its target (§4); false where it had already settled.</summary>
+    internal Task<bool> SettleProposalAsync(string id, string state, string? answer, DateTimeOffset now, CancellationToken ct = default) =>
+        _db.InTransactionAsync(async (_, inside) =>
+        {
+            await using var settle = _db.Command();
+            settle.CommandText = """
+                UPDATE memory_ops SET state = $state, answer = $answer, settled = $now WHERE id = $id AND kind = 'propose' AND state = 'awaiting'
+                """;
+            settle.Parameters.AddWithValue("$id", id);
+            settle.Parameters.AddWithValue("$state", state);
+            settle.Parameters.AddWithValue("$answer", Value(answer));
+            settle.Parameters.AddWithValue("$now", Moments.Write(now));
+            return await settle.ExecuteNonQueryAsync(inside).ConfigureAwait(false) == 1;
+        }, ct);
+
+    /// <summary>
+    /// The proposals of <paramref name="session"/>, and of the sessions it continues, that settled since its proposer was last told, each
+    /// told once.
+    /// </summary>
+    public Task<IReadOnlyList<MemoryOp>> TellProposalsAsync(string session, DateTimeOffset now, CancellationToken ct = default) =>
+        _db.InTransactionAsync<IReadOnlyList<MemoryOp>>(async (_, inside) =>
+        {
+            const string Chain = """
+                WITH RECURSIVE chain(id) AS (
+                  SELECT $session
+                  UNION SELECT s.from_session FROM sessions s JOIN chain c ON s.id = c.id WHERE s.from_session IS NOT NULL)
+                """;
+            IReadOnlyList<MemoryOp> settled;
+            await using (var read = _db.Command())
+            {
+                read.CommandText = $"""
+                    {Chain}
+                    SELECT {Columns} FROM memory_ops
+                    WHERE kind = 'propose' AND state <> 'awaiting' AND told IS NULL AND session IN (SELECT id FROM chain) ORDER BY rowid
+                    """;
+                read.Parameters.AddWithValue("$session", session);
+                settled = await ReadAllAsync(read, inside).ConfigureAwait(false);
+            }
+
+            foreach (var op in settled)
+            {
+                await using var told = _db.Command();
+                told.CommandText = "UPDATE memory_ops SET told = $now WHERE id = $id AND told IS NULL";
+                told.Parameters.AddWithValue("$id", op.Id);
+                told.Parameters.AddWithValue("$now", Moments.Write(now));
+                await told.ExecuteNonQueryAsync(inside).ConfigureAwait(false);
+            }
+
+            return settled;
+        }, ct);
 
     /// <summary>Run between a bootstrap's two reads; a test's, to commit from another connection there.</summary>
     internal Func<Task>? BetweenReads { get; set; }
