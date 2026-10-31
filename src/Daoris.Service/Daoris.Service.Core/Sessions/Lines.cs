@@ -67,11 +67,19 @@ public static class Lines
     /// continues its parent quest's line, so the walk goes on from the newest step that has a run here. Null where a walk ended on a
     /// cycle or the bound.
     /// </summary>
-    public static async Task<Session?> HeadOfLineAsync(SessionStore sessions, QuestStore quests, Session named, CancellationToken ct = default)
+    public static async Task<Session?> HeadOfLineAsync(SessionStore sessions, QuestStore quests, Session named, CancellationToken ct = default) =>
+        (await LineOfAsync(sessions, quests, named, ct).ConfigureAwait(false)).Head;
+
+    /// <summary>
+    /// The walk <see cref="HeadOfLineAsync"/> takes, chain hops included, with every record it visited, the one named first (LINESTOGETHER1b:
+    /// a moved word is looked for on each of them).
+    /// </summary>
+    public static async Task<LineWalk> LineOfAsync(SessionStore sessions, QuestStore quests, Session named, CancellationToken ct = default)
     {
         var seen = new HashSet<string>(StringComparer.Ordinal);
-        var head = await HeadOf(sessions, named, ct).ConfigureAwait(false);
-        while (head?.Quest is { } quest && seen.Add(head.Id) && head.Origin is null)
+        var walk = await WalkAsync(sessions, named, ct).ConfigureAwait(false);
+        var records = new List<Session>(walk.Records);
+        while (walk.Head is { Quest: { } quest } head && seen.Add(head.Id) && head.Origin is null)
         {
             var chain = await quests.ChainAsync(quest, ct).ConfigureAwait(false);
             var below = new HashSet<string>(StringComparer.Ordinal) { quest };
@@ -85,11 +93,12 @@ public static class Lines
                 break;
             }
 
-            if (next is null) return head;
-            head = await HeadOf(sessions, next, ct).ConfigureAwait(false);
+            if (next is null) break;
+            walk = await WalkAsync(sessions, next, ct).ConfigureAwait(false);
+            records.AddRange(walk.Records.Where(record => !records.Any(each => each.Id == record.Id)));
         }
 
-        return head;
+        return walk with { Records = records };
     }
 
     /// <summary>The head of <paramref name="named"/>'s line, as <see cref="WalkAsync"/> reaches it; null where the walk ended on a cycle or the bound.</summary>
