@@ -1002,6 +1002,11 @@ public sealed partial class HelpCoverageTests
             "it is the person's own act on their repository, named and confirmed on the page before it is pressed and run as an act of the "
             + "journal; Ask Daoris's git kind proposes cards for git acts, never applies them (design §9), and no card kind carries a ref "
             + "act yet, so a go reaches the repository's Branches and the person makes the ref there.")),
+        // GITAPP2m (D204, the git-writes design §7, §9): Edit history on a branch's page, its plan asked and shown before its Confirm.
+        ("projects", "useGitHistoryEdits", null, new Exempt(
+            "it is the person's own act on their branch, its plan read from the driver and shown with every commit it takes before the edit "
+            + "is pressed and run as an act of the journal; Ask Daoris's git kind proposes cards for git acts, never applies them (design §9), "
+            + "and no card kind carries a history edit yet, so a go reaches the branch's page and the person edits it there.")),
         // GITAPP2i (D204, the git-writes design §8): commit and amend in the Changes tab.
         ("projects", "useGitCommitAct", null, new Exempt(
             "it writes a commit into the person's own checkout, with the message the person typed and the hooks the repository runs, each press "
