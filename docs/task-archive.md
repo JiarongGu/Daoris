@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## INTEGRATEISO1 — two integration test classes share the process's verdicts (2026-10-31)
+
+> **INTEGRATEISO1 — two integration test classes share the process's verdicts** (driver tests; seen by GITLOCK1's builder, 2026-10-31). `IntegrationPromoteGitTests` and `IntegrationSettleGitTests` fail run side by side and pass alone: both set the process-wide `IntegrationVerdicts.Current`. Each test owns its verdicts (an instance handed in, or a scope restored), so the two run in one process in any order. Proof: both classes run together 20 times.
+
+**Outcome** 2026-10-31: `IntegrationVerdicts.Within` sets verdicts for the calling async flow only (an `AsyncLocal` read ahead of the installed ones); the two classes use it and no longer save or restore the process's port. Product behaviour unchanged (the installed port is still `Current`'s fallback). Red first: together they failed 3 of 53; the runs after are in the commit.
+
 ## GITTXN2 — a ref transaction git did not answer is read, never said as nothing moved (2026-10-31)
 
 > **GITTXN2 — a ref transaction git did not answer is read, never said as nothing moved** (driver; GITAPP2's foundation read F5, 2026-10-31, `docs/2026-10-31-git-writes-read-codex.md`). `RefTransaction.RunAsync` treated exit -1 (the bound reached, the process unended, never started) as git's refusal and said *nothing moved*, as `RollBackAsync` did; only postconditions prove an effect. `RefRun` tells *git refused* from *git did not answer*, the second read before anything is said; and an alias is refused against the refs that stand, not only within one transaction. Proof: an unanswered transaction and rollback each read and said as their refs stand; `Feature` refused beside a packed `feature` on a case-blind disk.

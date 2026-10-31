@@ -12,32 +12,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 [Trait(Category.Name, Category.Process)]
 [Trait(Category.Parallel, Category.Git)]
-public sealed class IntegrationPromoteGitTests : LandedFixture, IAsyncLifetime
+public sealed class IntegrationPromoteGitTests : LandedFixture
 {
     private sealed class Killed() : Exception("the process died here");
-
-    private IIntegrationVerdicts? _installed;
-
-    public Task InitializeAsync()
-    {
-        try
-        {
-            _installed = IntegrationVerdicts.Current;
-        }
-        catch (InvalidOperationException)
-        {
-            _installed = null;
-        }
-
-        return Task.CompletedTask;
-    }
-
-    /// <summary>The port Review installed is put back: the stub is this class's alone.</summary>
-    public Task DisposeAsync()
-    {
-        if (_installed is not null) IntegrationVerdicts.Current = _installed;
-        return Task.CompletedTask;
-    }
 
     private IntegrationStore Store(string run, Func<StoreRun, bool>? alive = null) => new(Home, () => StoreSettled.Yes, alive, run, StoreProcess.Shell);
 
@@ -141,7 +118,7 @@ public sealed class IntegrationPromoteGitTests : LandedFixture, IAsyncLifetime
     private static Verdict Judging(Func<IntegrationVerdictAsk, Task<IntegrationVerdict>> answer)
     {
         var verdict = new Verdict(answer);
-        IntegrationVerdicts.Current = verdict;
+        IntegrationVerdicts.Within = verdict;
         return verdict;
     }
 
