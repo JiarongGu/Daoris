@@ -67,8 +67,8 @@ public sealed record AttentionFacts
 
     /// <summary>
     /// The integration's waits on the owner (INTEGRATE1h), as <see cref="AttentionStateSlice.IntegrationWaits"/> reads them: a candidate held for
-    /// a decide, a superseded commit awaiting its answer, a landing whose integration waits for the owner's card; each with its repository,
-    /// workspace and since when.
+    /// a decide, a superseded commit awaiting its answer, a landing whose integration waits for the owner's card, a declaration owed the
+    /// owner's acceptance; each with its repository, workspace and since when.
     /// </summary>
     public IReadOnlyList<JsonObject> Integration { get; init; } = [];
 
@@ -149,7 +149,7 @@ public static class NeedsAPerson
 
     /// <summary>What an integration's wait names on its row (INTEGRATE1h): which wait, its line, and the candidate, request, commit or unit it is of.</summary>
     private static readonly string[] IntegrationFields =
-        ["wait", "repository", "line", "branch", "branches", "candidate", "request", "commit", "subject", "unit", "tip", "why"];
+        ["wait", "repository", "line", "branch", "branches", "candidate", "request", "commit", "subject", "unit", "tip", "why", "state"];
 
     /// <summary>Every row that waits on the person, each one in no order: the band orders by group and wait.</summary>
     public static IReadOnlyList<JsonObject> Rows(AttentionFacts facts)
@@ -334,6 +334,8 @@ public static class NeedsAPerson
         // INTEGRATE1h (the integration design §5.8, §17.4): a candidate the policy held for the owner's decide, a superseded commit awaiting
         // its answer, and a landing whose integration waits for the owner's card, one row each in its repository's workspace, its door the
         // repository's Integration tab, where each is pressed. A held candidate holds its line's next, and a card's landing its unit's flow.
+        // A declaration owed acceptance is the fourth: its door opens the repository's set-up page, where the person reads it and accepts;
+        // nothing it holds runs, so it stands for nothing.
         foreach (var wait in facts.Integration)
         {
             var row = Row("integration", Text(wait, "id"), Text(wait, "since"), Text(wait, "workspace") ?? "default");

@@ -19,7 +19,9 @@ public static class BrainstormTier
 /// entry's kind, its path from the repository's root, its lines, its text, and the words that found it.
 /// </summary>
 /// <param name="Words">The wording of the question the search was asked in.</param>
-public sealed record BrainstormFound(string Kind, string Path, int? First, int? Last, string Text, string Words);
+/// <param name="Tier">The tier of a source no search found (an asker's named one); null for a search's, which the search's tier names.</param>
+/// <param name="Reason">Why the packet takes it, where already known.</param>
+public sealed record BrainstormFound(string Kind, string Path, int? First, int? Last, string Text, string Words, string? Tier = null, string? Reason = null);
 
 /// <summary>What one wording's search found, and the tier that answered: <c>meaning</c>, <c>words</c> or <c>files</c>.</summary>
 public sealed record BrainstormSearch(IReadOnlyList<BrainstormFound> Found, string Tier);

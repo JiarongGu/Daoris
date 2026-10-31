@@ -193,6 +193,11 @@ Paths below are relative to this file. Historical documents have their own [arch
 | `2026-10-31-review-flow-design.md` | Accepted design: REVIEWFLOW1 and LINESTOGETHER1, the review page as one flow
 | `2026-11-01-profile-fixture-proposal.md` | Proposal: PROFILEFIX1, a repository's facts as a Lyntai profile, Opus; recommends no
 | `2026-11-01-profile-fixture-reads.md` | Reads: PROFILEFIX1, Codex's read and the steward's settlement; no, today
+| `2026-11-01-agents-place-brief.md` | Brief: AGENTSPLACE1, the Agents place made usable: Roles, a repository's set-up at once, the workflow's configuration
+| `2026-11-01-agents-place-proposal-opus.md` | Proposal: AGENTSPLACE1, Opus, sealed
+| `2026-11-01-agents-place-proposal-codex.md` | Proposal: AGENTSPLACE1, Codex, sealed
+| `2026-11-01-agents-place-design.md` | Design: AGENTSPLACE1, the Agents place: place pages, one plan and one Apply, presets as recipes; accepted 2026-11-01
+| `2026-11-01-agents-place-reads.md` | Reads: AGENTSPLACE1, both makers' reads and the steward's settlement
 
 ## UI, browser, tools and plugin contracts
 

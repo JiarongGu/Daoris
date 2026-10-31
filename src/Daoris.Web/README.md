@@ -366,8 +366,9 @@ said by its code in the reader's language (`entryDetail` in `work/head/milestone
 name; *What needs you*'s row of a unit is named by the session that recorded its tree and opens the workspace's Branches. A run held at a
 declined request is the `request-declined` row (INTEGRATE1o part o3), whose *Pass over…* asks once for the person's words and presses the
 run's own skip (`useRunNodeWord`). An integration's wait on the owner is the `integration` row (INTEGRATE1h), worded by its wait (a
-candidate held for a decide, a superseded commit, a landing waiting for the card), whose one door opens the repository's Integration tab,
-where `useIntegrate` presses the decide, the answer and the request. A landing's
+candidate held for a decide, a superseded commit, a landing waiting for the card, a declaration owed acceptance), whose one door opens the
+repository's Integration tab, where `useIntegrate` presses the decide, the answer and the request; a declaration's door opens its Setup instead
+(*Line and landing* opens itself on it), where *Integration declaration* is read and accepted, never from the row. A landing's
 branch whose quest is closed and which the line has not held for a day is that row too (`landing-stale`, LANDRETIRE1 part 2), named by
 its branch; Branches' landed group says its age and closed quest and offers *Withdraw…*, which asks the reason once
 (`settings/Sweep.tsx`, `useWithdrawLandingBranch`), and a session's review says a branch withdrawn, why, and where its commits stay.

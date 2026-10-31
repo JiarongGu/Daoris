@@ -686,6 +686,40 @@ describe('an integration’s wait on the owner, worded', () => {
   });
 });
 
+/** INTEGRATE1h (§5.8): a declaration owed the owner's acceptance is one row per repository, which holds no work. */
+describe('a declaration owed acceptance, worded', () => {
+  const unaccepted = row('integration', 'declaration:engine', '2026-10-31T09:20:00Z', {
+    where: 'engine', integration: { wait: 'declaration', repository: 'engine', line: 'main', tip: '0123456789abcdef0123456789abcdef01234567', state: 'unaccepted' },
+  });
+  const changed = row('integration', 'declaration:web', '2026-10-31T09:25:00Z', {
+    where: 'web', integration: { wait: 'declaration', repository: 'web', line: 'trunk', tip: '89abcdef0123456789abcdef0123456789abcdef', state: 'changed' },
+  });
+
+  it('is titled by its repository, says what the blob is and whether integration goes on, offers no press and holds no work', () => {
+    expect(words(unaccepted)).toMatchObject({
+      kind: 'integration', title: 'engine', where: 'engine', stands: false,
+      detail: '`daoris.gates.json` on main (`0123456`) declares an integration you have not accepted, so none of it runs. Read it on Setup and accept it.',
+    });
+    expect(words(changed)).toMatchObject({
+      title: 'web',
+      detail: '`daoris.gates.json` on trunk (`89abcde`) changed since you accepted it; integration goes on under the last accepted one. Read the change on Setup and accept it.',
+    });
+    for (const each of [unaccepted, changed]) expect(attentionActs(words(each))).toEqual([]);
+    expect([unaccepted, changed].map((each) => attentionGroup(each))).toEqual(['word', 'word']);
+    expect(placeCounts([unaccepted, changed])).toEqual({ projects: 2 });
+  });
+
+  it('says it in 中文', async () => {
+    await i18n.changeLanguage('zh');
+    try {
+      expect(words(unaccepted).detail).toBe('main 上的 `daoris.gates.json`（`0123456`）声明了你还没采纳的集成，所以其中的内容都不会被使用。请在配置里读一读并采纳它。');
+      expect(words(changed).detail).toBe('trunk 上的 `daoris.gates.json`（`89abcde`）自你采纳后已改动；集成仍按上次采纳的那份进行。请在配置里读一读改动并采纳它。');
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+  });
+});
+
 /** UX6c (design §6.2): the three groups, in the order a person acts on them, and none shown empty. */
 describe('the groups', () => {
   it('puts each kind in its group', () => {
@@ -744,6 +778,40 @@ describe('the groups', () => {
       const said = words(reopened, names).detail ?? '';
       expect(said).toBe('受阻：工作树 s-e0a8e0fd，它的会话记录了它，但没有分支记录跟随 daoris/s-e0a8e0fd，所以查看时不会清理它：在它所在工作区的“分支”中，会话分支列表可以移除它');
       expect(said).not.toMatch(/[a-z]{3,} [a-z]{3,}/);
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+  });
+
+  /**
+   * CLEANUPADVICE1: where the clean-up would keep an unfollowed tree, its row says what keeps it and the remove that takes it, in each
+   * language; where git could not say, it names no remove; where the clean-up would take it, the row is as OVERVIEWNOISE1b worded it.
+   */
+  it('words an unfollowed tree the clean-up would keep by what keeps it and the remove that takes it, and names no remove it cannot advise', async () => {
+    const tree = 'X:/daoris/trees/default/engine/s-e0a8e0fd';
+    const unfollowed = (facts: Record<string, string>) => row('work', 'c0nv0001', null, {
+      where: 'engine', session: 'c0nv0001', title: 's-e0a8e0fd',
+      blocked: { unknown: false, entries: [{ kind: 'tree', resource: tree, code: 'unfollowed', facts: { branch: 'daoris/s-e0a8e0fd', ...facts }, detail: 'as recorded' }] },
+    });
+    const kept = unfollowed({ tree, keeps: '2 ignored path(s) your checkout does not have: gate.log, local/notes.md', uncommitted: '0', own: '2', paths: 'gate.log, local/notes.md' });
+
+    expect(words(kept).detail).toBe(
+      'Blocked: tree s-e0a8e0fd, its session recorded it, but no branch record follows daoris/s-e0a8e0fd, so the look never cleans it up, and the clean-up on '
+      + 'its workspace’s Branches keeps it too, since its tree holds 2 path(s) only it has, such as gate.log, local/notes.md; '
+      + `\`daoris-driver trees remove ${tree} --force\` removes it, and what it holds with it`);
+    expect(words(unfollowed({ tree, keeps: 'x', uncommitted: '3', own: '1', paths: 'gate.log' })).detail)
+      .toContain('since its tree holds 3 uncommitted path(s), and 1 path(s) only it has, such as gate.log;');
+    const unread = words(unfollowed({ unread: 'true', tree })).detail ?? '';
+    expect(unread).toContain('could not tell what its tree holds');
+    expect(unread).not.toContain('trees remove');
+    expect(words(unfollowed({})).detail).toContain('the session branches on its workspace’s Branches remove it');
+
+    await i18n.changeLanguage('zh');
+    try {
+      expect(words(kept).detail).toBe(
+        '受阻：工作树 s-e0a8e0fd，它的会话记录了它，但没有分支记录跟随 daoris/s-e0a8e0fd，所以查看时不会清理它；它所在工作区“分支”里的清理也会保留它，因为它的工作树里有'
+        + `2 个只有它才有的文件，例如 gate.log, local/notes.md；运行 \`daoris-driver trees remove ${tree} --force\` 可以移除它，连同其中的内容`);
+      expect(words(unfollowed({ unread: 'true', tree })).detail).not.toContain('trees remove');
     } finally {
       await i18n.changeLanguage('en');
     }

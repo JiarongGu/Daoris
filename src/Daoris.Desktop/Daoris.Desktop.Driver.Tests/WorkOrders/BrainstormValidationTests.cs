@@ -65,7 +65,8 @@ public sealed class BrainstormValidationTests
         var packet = BrainstormPackets.Freeze("Why?", null, "words", null, [new("decision", "docs/D1.md", 1, 2, "x", "x")], BrainstormBounds.First);
         Assert.Null(packet.Tier);
 
-        Assert.Equal(["Why does the daily report drop its last day?", "daily report"], BrainstormWordings.Of("Why does the daily report drop its last day?"));
+        // BRAINSTORMPACKET1: the question's terms, never the question as one phrase.
+        Assert.Equal(["daily report"], BrainstormWordings.Of("Why does the daily report drop its last day?"));
         Assert.Equal(["Why?"], BrainstormWordings.Of("Why?"));
     }
 

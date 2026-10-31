@@ -837,7 +837,11 @@ and each blocked entry carries a `code` and its `facts`, which the page words. A
 (`request-declined`, INTEGRATE1o part o3), read from the node runtime's last look at the quests and the run's node record (`RequestHolds`),
 so the person's pass over its `work.requests` node clears it. An integration's wait on the owner is a row of kind `integration` (INTEGRATE1h):
 a candidate the policy held for their decide, a superseded commit awaiting its answer, and a landing whose `integrate` waits for their card
-(the runtime's `CardWaits`), read off the home's integration record (`IntegrationWaits`), its door the repository's Integration tab. And *Done and failed* the fourteenth
+(the runtime's `CardWaits`), read off the home's integration record (`IntegrationWaits`), its door the repository's Integration tab; and a declaration
+owed acceptance (`wait: declaration`, `state` `unaccepted` or `changed`, `tip` the blob), one per repository whose line commits an `integration`
+its `integrationGates` does not name. The look reads it (`IntegrationOwed`, run before each report): the line's tip is read from git's files with no
+process, and `ls-tree` is asked only where it moved; the acceptance is judged afresh from the choices at every look, so an acceptance ends the row at the
+next. Its door opens the repository's Setup. And *Done and failed* the fourteenth
 (`NoticesStateSlice`, NOTIFY2f, D196 point 6), its partition `news` keyed by notice, `{id, kind, at, read, workspace?, session?,
 quest?, repository?, state?, route?, act?, code?, count?}` (`code` a look's news, NOTIFY2h; `count` how many presses a `lost` notice names, CONFIRMWAIT1a-ii), read from the machine's record `data/notices.json` (`Notices`, written by any process on
 the home under its keep lock) at the start, at each change this process's own watch of the file hears (`HomeWatch.ForNotices`) and at
