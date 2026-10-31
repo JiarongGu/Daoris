@@ -107,6 +107,41 @@ public sealed class RelatedSessionsTests : IDisposable
     }
 
     [Fact]
+    public async Task An_unreadable_own_tree_is_said_once_and_marks_no_other_session_not_read()
+    {
+        var quest = await TreeAsync("one", "shared.txt", "1\n");
+        var chat = await TreeAsync("two", "shared.txt", "2\n");
+        var reads = RelatedSessions.GitReads with
+        {
+            Head = (tree, ct) => tree == quest ? Task.FromResult<string?>(null) : RelatedSessions.GitReads.Head(tree, ct),
+        };
+        var related = new RelatedSessions(reads, () => DateTimeOffset.UtcNow);
+
+        Assert.Empty(await related.LookAsync(Quest("one", quest), [Chat("two", chat)]));
+        var look = await related.AskAsync(Quest("one", quest), [Chat("two", chat)]);
+
+        Assert.NotNull(look.Own);
+        Assert.Empty(look.Related);
+    }
+
+    [Fact]
+    public async Task A_readable_own_tree_says_no_own_not_read_and_an_unreadable_present_other_is_still_not_read()
+    {
+        var quest = await TreeAsync("one", "shared.txt", "1\n");
+        var chat = await TreeAsync("two", "shared.txt", "2\n");
+        var reads = RelatedSessions.GitReads with
+        {
+            Head = (tree, ct) => tree == chat ? Task.FromResult<string?>(null) : RelatedSessions.GitReads.Head(tree, ct),
+        };
+        var related = new RelatedSessions(reads, () => DateTimeOffset.UtcNow);
+
+        var look = await related.AskAsync(Quest("one", quest), [Chat("two", chat)]);
+
+        Assert.Null(look.Own);
+        Assert.Equal("not-read", Assert.Single(look.Related).Read);
+    }
+
+    [Fact]
     public async Task A_failed_read_after_a_good_one_says_not_read_and_not_the_old_answer()
     {
         var quest = await TreeAsync("one", "shared.txt", "1\n");

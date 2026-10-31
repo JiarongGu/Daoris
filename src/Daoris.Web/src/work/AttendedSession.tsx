@@ -35,7 +35,7 @@ import type { RuleAsk, RuleWaits } from './waits/ProposedRules';
 import type { Seek } from './waits/WaitAnchor';
 import { type HeadLink, type HeadOpinion, type HeadReview, type LandingPlan, SessionHead, type WorkAsk } from './head/SessionHead';
 import { SessionRelations } from './head/SessionRelations';
-import { RelatedSessions, type RelatedRow } from './head/RelatedSessions';
+import { RelatedSessions, type RelatedOwn, type RelatedRow } from './head/RelatedSessions';
 import { TogetherDoor } from './head/TogetherDoor';
 import { SessionMemory } from './head/SessionMemory';
 import { SessionTimeline } from './head/SessionTimeline';
@@ -72,7 +72,7 @@ export const noteIsInTheHead = (session: Session, answerableHere: boolean) =>
 
 export function AttendedSession({
   session, quest, opening, taking, lastTurn, resolving, onResolve, onAnswerAsk, onAnswerSession, onAnswerChoice, answerPick,
-  chain = [], onSession, onQuest, onReview, relations, related, onRelated, together, memory, timeline = 'dock', branch, ownBranch, onDiscardBranch, discardingBranch,
+  chain = [], onSession, onQuest, onReview, relations, related, relatedOwn, onRelated, together, memory, timeline = 'dock', branch, ownBranch, onDiscardBranch, discardingBranch,
   headed = false, goAheads, onGoAhead, trace, ownSignIn = false, nameOf, lands, landing, planning, onLand, onSayRebase, onName, discards, onDiscardTree, review, behind,
   opinion, continues, helps, heavy, process, parts, entryAccept, channel, workAsk, workBusy, toEvent, rules, ruleAsk, seek, helpers, permissions,
   answers, milestone, record, onOpenBranch, question, parkBox, pieces,
@@ -188,6 +188,8 @@ export function AttendedSession({
   relations?: Relations;
   /** The sessions beside it in its repository whose work meets its own (LINESTOGETHER1c), each a door to its head through `onSession`'s id. */
   related?: RelatedRow[];
+  /** Set where the session's own tree was not read here: said once by the related line. */
+  relatedOwn?: RelatedOwn | null;
   onRelated?: (id: string) => void;
   /** *Bring them together…* and the operation it is in, head or member (LINESTOGETHER1d). */
   together?: ComponentProps<typeof TogetherDoor>;
@@ -333,7 +335,7 @@ export function AttendedSession({
           🔴 Each fold keyed here names its kind beside the record's id (RELSPAM1): keyed by the id alone, this one and the
           milestone's took each other's fibers, and each draw of a running session left a copy of this line in the page. */}
       {relations && <SessionRelations key={`relations:${session.id}`} relations={relations} onQuest={onQuest} onSession={onSession} />}
-      {related && related.length > 0 && <RelatedSessions repository={session.repository} related={related} onSession={onRelated} />}
+      {((related && related.length > 0) || relatedOwn) && <RelatedSessions repository={session.repository} related={related ?? []} own={relatedOwn} onSession={onRelated} />}
       {together && <TogetherDoor {...together} />}
       {memory && <SessionMemory {...memory} />}
       {/* Its ask's channel kept to this line of work, folded to a line (SESSONE2c, D167 points 6 to 8). */}

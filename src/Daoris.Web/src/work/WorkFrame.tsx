@@ -8,7 +8,7 @@ import { SESSIONS_SLICE, useAnswerSession, useAsks, usePersonDone, useQuests, us
 import { usePushedResyncing } from '../bridge/state/slices';
 import {
   type TurnStop, useCancelTurn, useEditQueued, useMoveQueued, useEndChat, useHarnesses, useResolveSession, useSendMessage,
-  NO_TURNS, useChatTurns, useSessionEntries, useSessionGroups, useSessionOpenings, useSessionOptions, useSessionRecord, useSessionRelated, useSessionSpent, useSessionStreams, useSessionWhere,
+  NO_TURNS, useChatTurns, useSessionEntries, useSessionGroups, useSessionOpenings, useSessionOptions, useSessionRecord, useSessionRelatedRead, useSessionSpent, useSessionStreams, useSessionWhere,
   useDecideSessionMemory, useSessionMemory,
   useSetSessionOption, useStartChat, useStopTask, useSweepPlan, useTreeFiles, useTreeFile, useReviewedPatch,
   logEvent, useTerminals, useRemotes, useWorkPlan, useSay, useSessionReach, useStartFrom, useGoOnBrief, type WordsAnswer,
@@ -467,7 +467,7 @@ export function WorkFrame({
   // What each of its parts spent (SESSCTX1d), on each part's own row of the strip, from this machine's record.
   const spent = useSessionSpent(attendedEntry?.parts.map((part) => part.session));
   // What the service kept of the attended session's finished tree, once the tree is let go (KEEPSIZE1).
-  const related = useSessionRelated(attended?.id);
+  const { rows: related, own: relatedOwn } = useSessionRelatedRead(attended?.id);
   // LINESTOGETHER1d: the operation bringing sessions together it is in, and the head's presses on it.
   const together = useTogether(attended?.id);
   const bringTogether = useBringTogether();
@@ -2584,6 +2584,7 @@ export function WorkFrame({
             chain={quest ? buildChain(quest.id, quests.data ?? [], sessions.data ?? []) : []}
             relations={attended ? relationsOf(attended, quest, quests.data ?? [], sessions.data ?? []) : undefined}
             related={related}
+            relatedOwn={relatedOwn}
             onRelated={attend}
             together={attended ? {
               candidates: related.filter((row) => row.read !== 'not-read').map((row) => row.id),
