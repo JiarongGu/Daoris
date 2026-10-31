@@ -190,9 +190,81 @@ public sealed class WorkplaceWorkOrdersBoundaryTests : IDisposable
         Assert.Equal(["quest:q1/engine", "session:c1/engine"], entries.Select(entry => entry.Key).Order(StringComparer.Ordinal));
     }
 
-    private static JsonObject Record(string id, string? quest, string state, int minute, string? entry = null, string? from = null, string? fromWhy = null) =>
+    [Fact]
+    public void An_entrys_head_is_where_its_first_parts_line_ends_across_carried_on_asked_and_alongside_parts()
+    {
+        var records = new JsonArray(
+            Record("c1", null, "completed", 1, entry: "session:c1/engine", head: "c3"),
+            Record("c2", null, "completed", 2, entry: "session:c1/engine", from: "c1", fromWhy: HandOverWhy.CarryOn, head: "c3"),
+            Record("c3", null, "completed", 3, entry: "session:c1/engine", from: "c2", fromWhy: HandOverWhy.CarryOn, head: "c3"),
+            Record("a1", "q9", "completed", 4, entry: "session:c1/engine", head: "a1"));
+        var quests = new[] { new QuestView("q9", "game", "engine", "Asked", "A body.", "Taken") { PublishedBy = "c1" } };
+
+        var entry = Assert.Single(SessionEntries.Read(SessionLook.From(records.ToJsonString(), quests, [], _ => 0)));
+
+        Assert.Equal("c3", entry.Head);
+        Assert.Equal(["c3", "c3", "c3", "a1"], entry.Parts.Select(part => part.Head));
+    }
+
+    [Fact]
+    public void A_chains_head_is_its_newest_step()
+    {
+        var records = new JsonArray(
+            Record("s1", "q1", "completed", 1, head: "s3"),
+            Record("s2", "q2", "completed", 2, entry: "quest:q1/engine", head: "s3"),
+            Record("s3", "q3", "completed", 3, entry: "quest:q1/engine", head: "s3"));
+        var quests = new[]
+        {
+            new QuestView("q1", "game", "engine", "One", "A body.", "Done"),
+            new QuestView("q2", "game", "engine", "Two", "A body.", "Done") { Parent = "q1" },
+            new QuestView("q3", "game", "engine", "Three", "A body.", "Done") { Parent = "q2" },
+        };
+
+        var entry = Assert.Single(SessionEntries.Read(SessionLook.From(records.ToJsonString(), quests, [], _ => 0)));
+
+        Assert.Equal("s3", entry.Head);
+    }
+
+    [Fact]
+    public void An_asks_sibling_quests_have_no_head_each_part_marked_with_its_own_lines()
+    {
+        var records = new JsonArray(
+            Record("s1", "q1", "completed", 1, entry: "ask:a1/engine", head: "s1"),
+            Record("s2", "q2", "completed", 2, entry: "ask:a1/engine", head: "s2"));
+        var quests = new[]
+        {
+            new QuestView("q1", "ask #a1", "engine", "One", "A body.", "Done"),
+            new QuestView("q2", "ask #a1", "engine", "Two", "A body.", "Done"),
+        };
+
+        var entry = Assert.Single(SessionEntries.Read(SessionLook.From(records.ToJsonString(), quests, [], _ => 0)));
+
+        Assert.Null(entry.Head);
+        Assert.Equal(["s1", "s2"], entry.Parts.Select(part => part.Head));
+    }
+
+    [Fact]
+    public void A_row_opens_on_the_head_unless_a_part_waits_on_the_person_or_is_working()
+    {
+        JsonArray Parts(string last) => new(
+            Record("c1", null, "completed", 1, entry: "session:c1/engine", head: "c3"),
+            Record("c2", null, last, 2, entry: "session:c1/engine", from: "c1", fromWhy: HandOverWhy.CarryOn, head: "c3"),
+            Record("c3", null, "completed", 3, entry: "session:c1/engine", from: "c2", fromWhy: HandOverWhy.CarryOn, head: "c3"));
+        SessionEntry Read(string last) => Assert.Single(SessionEntries.Read(SessionLook.From(Parts(last).ToJsonString(), [], [], _ => 0)));
+
+        var ended = Read("completed");
+        Assert.Equal("c3", ended.Opens);
+        var working = Read("working");
+        Assert.Equal(working.Leading, working.Opens);
+        Assert.Equal("c2", working.Opens);
+        var waiting = Read("awaiting-person");
+        Assert.Equal("c2", waiting.Opens);
+    }
+
+    private static JsonObject Record(string id, string? quest, string state, int minute, string? entry = null, string? from = null, string? fromWhy = null, string? head = null) =>
         new()
         {
+            ["head"] = head,
             ["id"] = id,
             ["repository"] = "engine",
             ["adapter"] = "claude-code",

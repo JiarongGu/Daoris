@@ -5,6 +5,8 @@ with the version and date at release.
 
 ## Unreleased
 
+- A session's head now says where the work stands and what comes next on its facts line: *working*, *waits on you*, *n parts to land* or *landing* (integrating and landed stay the integration and landing facts), and *next: Accept…* (or *Answer*) is a door to that step (REVIEWFLOW1b).
+- *Accept all* on a session now offers *Leave … out* per tree: a chat's parts that share one tree are left out together, the ask names every part it takes, and no part a kept later part grew from is offered it (REVIEWFLOW1d, D167).
 - A session has an *At work* view (分工) in its side bar, after *Workflow*: its parts with their own states and, for the part you are on, each subagent its agent started, what it is and whether it works, ended with its agent, was lost when its agent ended, or is not known to still run, read from Daoris's records and never from the conversation's text. It updates as the lineage moves, without the window asking.
 - A session's *Accept all* now stands where you read the changes, in the strip at the foot and at the Review view's foot as well as the head, in place of a part's own *Accept…*, and it appears even when the part you are on has no work beside a part that does (REVIEWFLOW1a).
 - A session's lineage file (`sessions/<id>/lineage.jsonl`, kept on this machine) now records each process its agent ran, from its start to its end, which process wrote each line, and the subagents an agent on the protocol door started, with their names, tasks and how each ended: what the coming view of who is at work on a session reads, never the conversation's text.

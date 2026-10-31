@@ -125,11 +125,16 @@ public static class EntryLandings
             var tree = Normal(part.Tree);
             var same = trees.GetValueOrDefault(tree);
             if (same is null) trees[tree] = part.Session;
-            steps.Add(new EntryStep(part.Session, same, same is null && leaveOut.Contains(part.Session)));
+            // A tree is left out whole (REVIEWFLOW1d): its later parts are left out with its first, not said to share it.
+            var gone = leaveOut.Contains(same ?? part.Session);
+            steps.Add(new EntryStep(part.Session, gone ? null : same, gone));
         }
 
         return steps;
     }
+
+    /// <summary>Whether a later part's commits include any of <paramref name="own"/>: it grew from them and carries them on.</summary>
+    public static bool Carries(IReadOnlySet<string> own, IEnumerable<string> later) => later.Any(own.Contains);
 
     /// <summary>
     /// The name tried <paramref name="n"/>th for an entry's branch: the rule's own first, then <c>&lt;name&gt;-2</c> and on, since a
@@ -240,11 +245,11 @@ internal sealed class EntryLands(TreeContext context, TreeLands lands, TreeLandS
             var (at, earlier) = judged[i];
             if (earlier.Held.Kept.Count == 0) continue;
             var own = earlier.Held.Kept.Select(commit => commit.Sha).ToHashSet(StringComparer.Ordinal);
+            // A later part grown from this one's commits carries them on: it is superseded by none, and offered no leave-out.
+            if (judged.Skip(i + 1).Any(each => EntryLandings.Carries(own, each.Sync.Held.Commits.Select(commit => commit.Sha)))) continue;
             for (var j = i + 1; j < judged.Count; j++)
             {
                 var later = judged[j].Sync;
-                // A later part grown from this one's commits carries them on, which supersedes nothing.
-                if (later.Held.Commits.Any(commit => own.Contains(commit.Sha))) continue;
                 var laterKept = later.Held.Kept;
                 if (laterKept.Count == 0) continue;
                 var (laterTree, _) = await LineHolds.TrialTreeAsync(later.Root, later.Onto, laterKept, ct).ConfigureAwait(false);

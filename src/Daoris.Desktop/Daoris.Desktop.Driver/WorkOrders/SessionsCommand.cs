@@ -256,10 +256,10 @@ public static class SessionsCommand
             "lands", "discards", "calling"];
 
     /// <summary>The fields of an entry in <c>--json</c>'s <c>entries</c>, in order: <c>SESSION_GROUPS</c>' entry, field for field (SESSONE1b).</summary>
-    public static IReadOnlyList<string> JsonEntryFields { get; } = ["entry", "origin", "repository", "group", "leading", "parts"];
+    public static IReadOnlyList<string> JsonEntryFields { get; } = ["entry", "origin", "repository", "group", "leading", "head", "parts"];
 
     /// <summary>The fields of one of an entry's parts, in order.</summary>
-    public static IReadOnlyList<string> JsonPartFields { get; } = ["session", "quest", "shown", "group", "began", "after", "askedBy"];
+    public static IReadOnlyList<string> JsonPartFields { get; } = ["session", "quest", "shown", "group", "began", "after", "askedBy", "head"];
 
     /// <summary>The ask a helper's or a partner's verb read of the words, which those verbs hand on as the facet they read.</summary>
     private static SessionsAsk MadeAsk(string verb, IReadOnlyList<string> ids, string? text, string? agent, IReadOnlyList<string> paths) =>
@@ -682,6 +682,7 @@ public static class SessionsCommand
                     writer.WriteString("repository", entry.Repository);
                     writer.WriteString("group", entry.Group);
                     writer.WriteString("leading", entry.Leading);
+                    writer.WriteString("head", entry.Head);
                     writer.WriteStartArray("parts");
                     foreach (var part in entry.Parts)
                     {
@@ -693,6 +694,7 @@ public static class SessionsCommand
                         writer.WriteString("began", part.Began);
                         writer.WriteString("after", part.After);
                         writer.WriteString("askedBy", part.AskedBy);
+                        writer.WriteString("head", part.Head);
                         writer.WriteEndObject();
                     }
 

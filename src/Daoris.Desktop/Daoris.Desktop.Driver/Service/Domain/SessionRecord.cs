@@ -89,6 +89,9 @@ public sealed record SessionRecord(string Id, string Repository, string State)
     /// </summary>
     public string? FromWhy { get; init; }
 
+    /// <summary>The part its line ends at, as the service walks it (LINESTOGETHER1a); null from a host before it or where the walk found none.</summary>
+    public string? Head { get; init; }
+
     /// <summary>
     /// The access mode an Ask Daoris record ran under (HELPMODE1a2, D183 point 3), as the service answers it to this machine; null for
     /// every other record and from a host before the field, which <see cref="HelpModes.Recorded"/> reads as restricted.

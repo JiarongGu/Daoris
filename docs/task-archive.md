@@ -22063,3 +22063,15 @@ The row is quoted by its head; its whole text and proof are the foundation desig
 > **BRANCHRECOVER1 — finish and settle every outstanding Daoris branch** (owner direction, 2026-10-27; FOUNDATION1 first). Audit and recover all eight branches and nine worktrees, preserving authored edits and the unfinished fixture merge. Complete coherent changes, validate through the merge queue, then clean up through each owning lifecycle; inventory and receipts: `docs/2026-10-27-branch-recovery.md`.
 
 **Outcome** 2026-10-31: settled. None of the inventory's eight branches and nine worktrees remains (`docs/2026-10-27-branch-recovery.md` keeps the inventory and its receipts); on 2026-10-31 the repository holds only the two open batches, two install session trees whose commits are merged (kept for their scratch until the install's own clean takes them), and the tools' trees. The cleanup goes on as the dispatch skill's standing rule: a merged worker's tree goes at once, and each landing prunes, cleans the install's trees and looks at the machine's processes.
+
+## REVIEWFLOW1d — leave-out offered per tree (2026-10-31, D167)
+
+> **REVIEWFLOW1d** (the review-flow design; the Opus maker's B1): leave-out offered per tree, on its first part, naming every part it takes; none on a part a kept later part carries; `Sequence` marks a left-out shared tree's parts `left-out`; a D167 note.
+
+**Outcome** 2026-10-31: built. `Sequence` marks every part of a left-out shared tree `left-out` (never `same-tree` in `Outcome`); `EntryLandings.Carries` keeps a part a kept later part carries from being judged superseded, so its leave-out is never offered; the page's checkbox stands on the tree's first part and names its parts (`Intl.ListFormat`, en and zh). Owed: the driver refusing a carried part's leave-out in words, and the carried case through `PlanAsync` on real git. Detail in D167's note.
+
+## REVIEWFLOW1b — now · next in the head's facts (2026-10-31)
+
+> **REVIEWFLOW1b** (the review-flow design §1): *now · next* folded into the head's facts line: *now* from the driver's facts (working, waits on you, n parts to land, landing, integrating by INTEGRATE1h's fact, landed); *next* names the press and is a door to its step.
+
+**Outcome** 2026-10-31: built. `sessionFacts` takes the page's flow and leads with *now* after the repository (landing, n parts to land, waits on you with its time, working; integrating left to its existing fact; landed the session's own); `nextPress` names the first standing wait's press, drawn on the head as *next: Accept…* and pressing to the wait (`goToWait`, the route `WaitMark` takes). Left: the ask's and quest's pages. Owed: the installed window.
