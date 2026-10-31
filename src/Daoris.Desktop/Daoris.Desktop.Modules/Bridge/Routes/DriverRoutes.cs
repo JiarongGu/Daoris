@@ -381,6 +381,9 @@ public sealed class DriverRoutes(DriverContext context)
             {
                 each.Role.Id, each.Role.NameEn, each.Role.NameZh, each.Role.Takes, ScopeKind = each.Role.Scope.Kind, each.Choices,
             }),
+            // MODELROLE1g: the choices suggested for the seeded roles, whole; the page leaves out an agent this machine has not set up.
+            SuggestedChoices = ActorSuggestion.Table.Select(each => new { each.Role, each.Choices }),
+            SuggestedChoicesDated = ActorSuggestion.Dated,
         });
     }
 

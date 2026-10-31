@@ -268,7 +268,11 @@ export type RoleUse = {
 export type RoleUseRead = { days: number; roles: RoleUse[] };
 
 /** The catalogue as `ROLES` answers it: its roles, the work a role may take, whether this home keeps it, and what is suggested. */
-export type RoleCatalogue = { roles: RoleRow[]; works: string[]; kept: boolean; suggested: SuggestedRole[]; use?: RoleUseRead };
+export type RoleCatalogue = {
+  roles: RoleRow[]; works: string[]; kept: boolean; suggested: SuggestedRole[]; use?: RoleUseRead;
+  /** The choices Daoris suggests for the seeded roles (MODELROLE1g) and the day of the reference they were read from; absent from a driver before them. */
+  suggestedChoices?: { role: string; choices: RoleChoice[] }[]; suggestedChoicesDated?: string;
+};
 
 /** A role's change as `SET_ROLE` takes it: set with its record and choices, removed, or given back its seed. */
 export type RoleChangePress = {

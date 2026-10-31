@@ -21,6 +21,9 @@ public sealed class DriverModuleRoleTests : DriverModuleBridge
             var module = Module();
             var suggested = Assert.Single((await AnswerAsync(module, "ROLES")).GetProperty("suggested").EnumerateArray().ToList());
             Assert.Equal(("designer", "opus"), (suggested.GetProperty("id").GetString(), suggested.GetProperty("choices")[0].GetProperty("model").GetString()));
+            var table = (await AnswerAsync(module, "ROLES")).GetProperty("suggestedChoices").EnumerateArray().ToList();
+            Assert.Equal(ActorSuggestion.Table.Select(each => each.Role), table.Select(each => each.GetProperty("role").GetString()));
+            Assert.Equal("sonnet", table[0].GetProperty("choices")[0].GetProperty("model").GetString());
 
             await AnswerAsync(module, "SET_ROLE", new
             {

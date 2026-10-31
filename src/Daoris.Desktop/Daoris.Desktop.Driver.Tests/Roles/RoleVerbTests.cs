@@ -84,4 +84,23 @@ public sealed class RoleVerbTests : IDisposable
         Assert.Equal(0, await Run("default", "intake"));
         Assert.Equal(RoleState.Seed, Catalogue().Slots.Single(slot => slot.Id == "intake").State);
     }
+
+    [Fact]
+    public async Task Suggested_says_the_table_and_changes_nothing_until_use_sets_each_role_through_the_door()
+    {
+        Assert.Equal(0, await Run("suggested"));
+
+        var said = _out.ToString();
+        Assert.Contains("1 claude-code · sonnet · high, 2 claude-code · opus · high", said);
+        Assert.Contains("can spend more", said);
+        Assert.Empty(DriverConfig.Load(File_).Actors);
+
+        _out.GetStringBuilder().Clear();
+        Assert.Equal(0, await Run("suggested", "--use"));
+
+        var actors = DriverConfig.Load(File_).Actors;
+        foreach (var each in ActorSuggestion.Table) Assert.Equal(each.Choices, actors[each.Role]);
+        Assert.DoesNotContain("intake", actors.Keys);
+        Assert.Equal(2, await Run("suggested", "--now"));
+    }
 }
