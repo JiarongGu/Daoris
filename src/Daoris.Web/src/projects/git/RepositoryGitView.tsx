@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   type GitActAnswer, type GitAnswer, type GitBranch, type GitGraphPage, type GitLogCommit, type GitRepositoryBranches, gitRefusal, useGitActs,
-  useGitBranches, useGitChanges, useGitCommitAct, useGitCommitPlan, useGitGraphPages, useGitHunks, useGitRefActs,
+  useGitBranches, useGitChanges, useGitCommitAct, useGitCommitPlan, useGitConflict, useGitGraphPages, useGitHunks, useGitRefActs,
 } from '../../bridge/repositories/git';
 import { useWorkState } from '../../bridge/repositories/lines';
 import { useSessionOpenings } from '../../bridge/sessions/sessions';
@@ -14,6 +14,7 @@ import type { LandingDoor } from './LandingFlow';
 import { landingOf } from './landingLife';
 import { BranchesTab, type ChangeSide, type ChangesActs, type ChangesLast, ChangesTab, type ChangesValue, type GitRead, HistoryTab, type HistoryRead } from './RepositoryGit';
 import { ChangeHunks, type HunkPress, type HunksValue } from './ChangeHunks';
+import { type ConflictPress, type ConflictValue, ConflictHunks } from './ConflictHunks';
 import { CommitBox, type CommitBoxPress, type CommitPlanValue } from './CommitBox';
 import { WorkspaceBranches, type WorkspaceGroups } from '../workspace/WorkspaceBranches';
 
@@ -106,7 +107,7 @@ function ChangesRead({ repository, workspace }: { repository: string; workspace:
   const refreshing = query.isFetching || (value !== null && new Date(value.readAt).getTime() < askedAt);
 
   // GITAPP2h: the presses of the tab. The hunks a row opens are read by `Hunks`, under the tab's own key.
-  const { press, undo } = useGitActs(repository, workspace);
+  const { press, undo, resolve } = useGitActs(repository, workspace);
   const [last, setLast] = useState<ChangesLast | null>(null);
   const say = (verb: ChangesLast['verb'], path: string | null) => (answer: GitActAnswer & { stale?: boolean }) =>
     setLast({ verb, path, act: answer.act, done: answer.done, said: answer.said, stale: answer.stale });
@@ -120,6 +121,19 @@ function ChangesRead({ repository, workspace }: { repository: string; workspace:
       : !answered.value ? { state: 'refused', sentence: sentence({ code: 'UNKNOWN' }) }
       : { state: 'read', value: answered.value };
     return <ChangeHunks read={hunksRead} verb={side === 'unstaged' ? 'stage' : 'unstage'} busy={busy} onPress={onPress} />;
+  }, [repository, workspace]);
+
+  // GITAPP2j: a conflicted file's conflicts, read by the row that opens them under the tab's own key.
+  const Conflict = useMemo(() => function Conflict({ path, busy, onPress }: { path: string; busy: boolean; onPress: (press: ConflictPress) => void }) {
+    const conflict = useGitConflict(repository, workspace, path);
+    const answered = conflict.data;
+    const refusal = gitRefusal(answered);
+    const conflictRead: GitRead<ConflictValue> = conflict.error ? { state: 'refused', sentence: sentence(conflict.error) }
+      : !answered ? { state: 'reading' }
+      : refusal ? { state: 'refused', sentence: sentence(refusal) }
+      : !answered.value ? { state: 'refused', sentence: sentence({ code: 'UNKNOWN' }) }
+      : { state: 'read', value: answered.value };
+    return <ConflictHunks read={conflictRead} busy={busy} onPress={onPress} />;
   }, [repository, workspace]);
 
   // GITAPP2i: the commit box. It reads the plan for its verb itself (an amend's git runs one more hook) and presses through the tab's one
@@ -147,12 +161,24 @@ function ChangesRead({ repository, workspace }: { repository: string; workspace:
     return <CommitBox read={planRead} amend={amend} onAmend={setAmend} busy={busy} onPress={(box, done) => pressCommit.current(box, done)} />;
   }, [repository, workspace]);
   const acts: ChangesActs = {
-    busy: press.isPending || undo.isPending || commit.isPending,
+    busy: press.isPending || undo.isPending || commit.isPending || resolve.isPending,
     last,
     press: (act) => press.mutate({ ...act, picks: act.picks ?? [] }, { onSuccess: say(act.verb, act.path), onError: (error) => setLast({ verb: act.verb, path: act.path, act: null, done: false, said: sentence(error) }) }),
-    undo: (act) => undo.mutate(act, { onSuccess: say('undo', null), onError: (error) => setLast({ verb: 'undo', path: null, act: null, done: false, said: sentence(error) }) }),
+    undo: (act) => {
+      const verb = last?.act === act && (last.verb === 'resolve') ? 'undoResolve' : 'undo';
+      undo.mutate(act, { onSuccess: say(verb, null), onError: (error) => setLast({ verb, path: null, act: null, done: false, said: sentence(error) }) });
+    },
     Hunks,
     Commit,
+    Conflict,
+    resolve: (act) => resolve.mutate({ verb: 'resolve', path: act.path, faces: act.faces, picks: act.picks }, {
+      onSuccess: say('resolve', act.path),
+      onError: (error) => setLast({ verb: 'resolve', path: act.path, act: null, done: false, said: sentence(error) }),
+    }),
+    mark: (path) => resolve.mutate({ verb: 'mark', path }, {
+      onSuccess: say('mark', path),
+      onError: (error) => setLast({ verb: 'mark', path, act: null, done: false, said: sentence(error) }),
+    }),
   };
   return <ChangesTab repository={repository} read={read} refreshing={refreshing} onRefresh={() => { void query.refetch(); }} acts={acts} />;
 }

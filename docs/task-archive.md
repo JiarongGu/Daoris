@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## GITAPP2j — resolve a conflicted file (2026-11-01)
+
+> **GITAPP2 j** (driver, modules, web; D204, accepted 2026-10-31; `docs/2026-10-23-git-writes-design.md` round 3 §3, §5, §8 *Resolve*, §12 row j). Resolve a conflicted file from the Changes tab: per hunk ours, theirs or both, from the index's stages by `merge-file` with no merge driver, the bytes at the press equal to those shown; *Mark resolved* runs `add`; the replaced bytes and the stage entries are journaled, the stages kept at `refs/daoris/acts/<act>`, surviving a restart; Undo restores them where still the act's, the index under `index.lock`. Proof: saved bytes and stages surviving a restart; a stale or a non-conflicted file refused; ours, theirs and both per hunk; Undo restoring the stages where still the act's; the act journaled and reconciled; page tests and stories at 80, 39 and 25rem in en and zh, both themes.
+
+**Outcome** 2026-11-01: a fifth step kind, `file` (`Workplace/ActFiles.cs`): a worktree file's bytes replaced atomically where they still hold the digest the plan was judged on, the bytes it replaces and writes kept as files beside the record (`<home>/act-files/<act>/`, let go with the record's expiry), its postcondition the file's digest. `Workplace/GitConflicts.cs` reads a file's three stages through `merge-file --object-id` into conflicts (`GIT_CONFLICT`); `Workplace/ResolveActs.cs` runs *Resolve* (`GIT_RESOLVE`, a take for every conflict) and *Mark resolved* (`GIT_MARK_RESOLVED`, one index step whose `after` is found by `add` on a copy of the index) and Undo of each through `GIT_UNDO`. The Changes tab's Conflicted rows gain *Show conflicts* and *Mark resolved*. Detail in D204's GITAPP2j note.
+
 ## GITAPP2i — commit and amend (2026-11-01)
 
 > **GITAPP2 i** (driver, modules, web; D204, accepted 2026-10-31; `docs/2026-10-23-git-writes-design.md` round 3 §2, §3, §5, §8 *Commit, amend*, §12 row i). Commit and amend from the Changes tab, after staging, each an act of the journal under the checkout lock, its hooks named in the plan and never skipped. Proof: a formatting `pre-commit` hook's rewrite said; amend's recovery ref at the old tip; an interrupted commit reconciled, its hook's children ended within the bound after the owner dies; the switch off, a session in the checkout and an unread ledger each refusing; page tests and stories at 80, 39 and 25rem in en and zh, both themes.

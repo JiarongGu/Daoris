@@ -3,8 +3,9 @@ import { InTheme } from '../../plugins/storyIcons';
 import { chinese } from '../../design/storyLanguage';
 import { storyWidths } from '../../design/storyWidths';
 import { useState } from 'react';
-import { GIT_CHANGES_ENGINE, GIT_COMMIT_PLAN_ENGINE, GIT_HUNKS_BUDGET } from '../fixtures';
+import { GIT_CHANGES_ENGINE, GIT_COMMIT_PLAN_ENGINE, GIT_CONFLICT_CACHE, GIT_HUNKS_BUDGET } from '../fixtures';
 import { ChangeHunks } from './ChangeHunks';
+import { ConflictHunks } from './ConflictHunks';
 import { CommitBox, type CommitPlanValue } from './CommitBox';
 import { type ChangesActs, ChangesTab } from './RepositoryGit';
 
@@ -33,6 +34,10 @@ const acts = (over: Partial<ChangesActs> = {}): ChangesActs => ({
     <ChangeHunks read={{ state: 'read', value: GIT_HUNKS_BUDGET }} verb={side === 'unstaged' ? 'stage' : 'unstage'} busy={busy} onPress={onPress} />
   ),
   Commit: commitBox(),
+  // GITAPP2j: and the conflicted file's conflicts, with Mark resolved beside them.
+  resolve: nothing,
+  mark: nothing,
+  Conflict: ({ busy, onPress }) => <ConflictHunks read={{ state: 'read', value: GIT_CONFLICT_CACHE }} busy={busy} onPress={onPress} />,
   ...over,
 });
 
@@ -77,6 +82,56 @@ export const HunksOpenHalf: Story = { decorators: [storyWidths.half], play: open
 export const HunksOpenHalfChinese: Story = { decorators: [storyWidths.half, chinese], play: openChanges };
 export const HunksOpenNarrow: Story = { decorators: [storyWidths.narrow], play: openChanges };
 export const HunksOpenNarrowChineseDark: Story = { decorators: [storyWidths.narrow, chinese, dark], play: openChanges };
+
+/** Opens the conflicted file's conflicts and takes ours for all, as a person would (GITAPP2j). */
+const openConflicts: Story['play'] = async ({ canvasElement }) => {
+  const rows = [...canvasElement.querySelectorAll<HTMLButtonElement>('li button[aria-expanded]')];
+  rows[rows.length - 1]?.click();
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  const everywhere = [...canvasElement.querySelectorAll<HTMLButtonElement>('button')].find((button) => /Ours everywhere|全部取我方/.test(button.textContent ?? ''));
+  everywhere?.click();
+};
+
+/** The conflicted file's conflicts under its row: ours and theirs for each, a take chosen, the write held until every one has a take. */
+export const ConflictsOpen: Story = { play: openConflicts };
+export const ConflictsOpenChinese: Story = { decorators: [chinese], play: openConflicts };
+export const ConflictsOpenDark: Story = { decorators: [dark], play: openConflicts };
+export const ConflictsOpenChineseDark: Story = { decorators: [chinese, dark], play: openConflicts };
+export const ConflictsOpenHalf: Story = { decorators: [storyWidths.half], play: openConflicts };
+export const ConflictsOpenHalfChinese: Story = { decorators: [storyWidths.half, chinese], play: openConflicts };
+export const ConflictsOpenHalfDark: Story = { decorators: [storyWidths.half, dark], play: openConflicts };
+export const ConflictsOpenHalfChineseDark: Story = { decorators: [storyWidths.half, chinese, dark], play: openConflicts };
+export const ConflictsOpenNarrow: Story = { decorators: [storyWidths.narrow], play: openConflicts };
+export const ConflictsOpenNarrowChinese: Story = { decorators: [storyWidths.narrow, chinese], play: openConflicts };
+export const ConflictsOpenNarrowDark: Story = { decorators: [storyWidths.narrow, dark], play: openConflicts };
+export const ConflictsOpenNarrowChineseDark: Story = { decorators: [storyWidths.narrow, chinese, dark], play: openConflicts };
+
+/** A file the driver cannot take by hunk says why where its conflicts would be. */
+const noHunks = (why: string): ChangesActs['Conflict'] => ({ busy, onPress }) => (
+  <ConflictHunks read={{ state: 'read', value: { ...GIT_CONFLICT_CACHE, why, hunks: [] } }} busy={busy} onPress={onPress} />
+);
+const openRow: Story['play'] = async ({ canvasElement }) => {
+  const rows = [...canvasElement.querySelectorAll<HTMLButtonElement>('li button[aria-expanded]')];
+  rows[rows.length - 1]?.click();
+};
+export const ConflictNotByHunk: Story = {
+  args: { acts: acts({ Conflict: noHunks('`src/cache.cs` is in conflict with a side that has no file or no common ancestor, which is resolved by keeping or removing it, not hunk by hunk.') }) },
+  play: openRow,
+};
+export const ConflictNotByHunkNarrowChinese: Story = { ...ConflictNotByHunk, decorators: [storyWidths.narrow, chinese] };
+
+/** A resolve written, with *Undo* beside it; and a mark. */
+export const Resolved: Story = { args: { acts: acts({ last: { verb: 'resolve', path: 'src/cache.cs', act: 'a4', done: true, said: null } }) } };
+export const ResolvedChinese: Story = { ...Resolved, decorators: [chinese] };
+export const ResolvedNarrowDark: Story = { ...Resolved, decorators: [storyWidths.narrow, dark] };
+export const Marked: Story = { args: { acts: acts({ last: { verb: 'mark', path: 'src/cache.cs', act: 'a5', done: true, said: null } }) } };
+export const MarkedNarrowChinese: Story = { ...Marked, decorators: [storyWidths.narrow, chinese] };
+
+/** A resolve refused because the file's bytes moved since they were shown. */
+export const ResolveRefused: Story = {
+  args: { acts: acts({ last: { verb: 'resolve', path: 'src/cache.cs', act: null, done: false, said: '`src/cache.cs`\'s bytes changed since they were read: nothing was changed.' } }) },
+};
+export const ResolveRefusedNarrowChinese: Story = { ...ResolveRefused, decorators: [storyWidths.narrow, chinese] };
 
 /** The last act done: said, with *Undo* beside it. */
 export const Staged: Story = { args: { acts: acts({ last: { verb: 'stage', path: 'src/budget.cs', act: 'a1', done: true, said: null } }) } };

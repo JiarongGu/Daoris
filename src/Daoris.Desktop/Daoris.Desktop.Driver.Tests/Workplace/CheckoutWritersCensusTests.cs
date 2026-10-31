@@ -60,6 +60,7 @@ public sealed partial class CheckoutWritersCensusTests
         ["SessionLocks.cs"] = (Refs, "a session's tree locked and unlocked in git's record of the trees", ["worktree@root", "worktree@tree"]),
         ["SessionTrees.cs"] = (Refs, "a session's tree opened on a new branch, through git's record of the trees", ["worktree@root"]),
         ["StageActs.cs"] = (Refs, "stage and unstage (GITAPP2h, D204): what an act leaves is found by `add`, `reset`, `rm --cached` or `apply --cached` on a private copy of the index (GIT_INDEX_FILE), never the index, which only the act's index step replaces, in `ActRuns`' hold under git's own `index.lock`", ["add@?", "apply@?", "reset@?", "rm@?"]),
+        ["ResolveActs.cs"] = (Refs, "mark resolved (GITAPP2j, D204): what the index would hold once the file is added is found by `add` on a private copy of the index (GIT_INDEX_FILE), never the index, which only the act's index step replaces, in `ActRuns`' hold under git's own `index.lock`; a resolve's file step is `ActFiles`, in the same hold", ["add@root"]),
         ["PassLeftovers.cs"] = (Refs,"a pass's tree's git lock let go and taken again", ["worktree@root"]),
     };
 
