@@ -22,7 +22,9 @@ import { type AgentPart, accountLabel, agentRows } from './agents';
 import { AgentsModes, AgentsStrip, RoleSectionStrip } from './AgentsModes';
 import { type AgentsMode, isRoleSection, readAgentsMode, type RoleSection, storeAgentsMode } from './modes';
 import { RoleSectionList } from './roles/RoleSections';
-import { RolesMode } from './roles/RolesView';
+import { type RoleOpeners, RolesMode } from './roles/RolesView';
+import { usedByAgent } from './roles/structure';
+import { useStructureMarks, useStructureRead } from './roles/structureRead';
 import type { ListPanes } from '../work/frame/listPanes';
 
 /** What a door runs, and so what streams under it in *Ways in* (D49 §2). */
@@ -70,7 +72,7 @@ export function useAgentsMode(lists: ListPanes) {
  *
  * **Every act has its terminal twin** (D50): `daoris agent …`, named at the page's foot.
  */
-export function useAgentsView({ active, chosen, onChoose, notify, part = null, onAnchored, onOpenPlugin, say, modes }: {
+export function useAgentsView({ active, chosen, onChoose, notify, part = null, onAnchored, onOpenPlugin, say, modes, roleDoors }: {
   /** The view is in front. */
   active: boolean;
   /**
@@ -93,9 +95,13 @@ export function useAgentsView({ active, chosen, onChoose, notify, part = null, o
    * proposed it. The bridge's say hook is pressed there, not here, so this place answers for no control it did not have.
    */
   say?: (session: string, text: string) => Promise<{ sent: boolean }>;
+  /** Where the Roles mode's doors lead (COMPANYVIEW1d), handed in by the application, which holds every view's opening. */
+  roleDoors?: RoleOpeners;
 }): ViewLayout {
   const { t } = useTranslation();
   const roster = useHarnesses();
+  // A start held marks its section's row in the Roles list (COMPANYVIEW1d); read only while the Roles mode is in front.
+  const marks = useStructureMarks(active && modes?.mode === 'roles');
   const accounts = useAccounts();
   useErrorNotify(active ? roster.error : null, notify);
 
@@ -143,9 +149,9 @@ export function useAgentsView({ active, chosen, onChoose, notify, part = null, o
           </AgentsStrip>
         ),
         chosen: modes.section,
-        body: <RoleSectionList section={modes.section} onSection={modes.onSection} />,
+        body: <RoleSectionList section={modes.section} onSection={modes.onSection} held={{ work: marks.work, repository: marks.repository }} />,
       },
-      main: <RolesMode section={modes.section} notify={notify} />,
+      main: <RolesMode section={modes.section} notify={notify} doors={{ ...roleDoors, section: modes.onSection }} />,
     };
   }
   return {
@@ -179,6 +185,7 @@ export function useAgentsView({ active, chosen, onChoose, notify, part = null, o
                 onAnchored={onAnchored}
                 onOpenPlugin={onOpenPlugin}
                 say={say}
+                usedBy={modes !== undefined}
                 install={installing === chosenTool.name}
                 onInstallTaken={() => setInstalling(null)}
               />
@@ -193,8 +200,10 @@ export function useAgentsView({ active, chosen, onChoose, notify, part = null, o
  * The chosen agent's page and every act on it (UX6e): the organism under the page, inside the application's running
  * action (SIGNIN1), so a sign-in started here outlives leaving the place and its end is said wherever the person is.
  */
-function AgentsMain({ tool, adapter, notify, part, onAnchored, onOpenPlugin, say, install = false, onInstallTaken }: {
+function AgentsMain({ tool, adapter, notify, part, onAnchored, onOpenPlugin, say, usedBy: asksUsedBy = false, install = false, onInstallTaken }: {
   tool: Tool;
+  /** Whether the page says the roles that lean on the agent (COMPANYVIEW1d): on a desktop, where the Roles mode is. */
+  usedBy?: boolean;
   say?: (session: string, text: string) => Promise<{ sent: boolean }>;
   adapter?: string;
   notify: Notify;
@@ -228,6 +237,11 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, onOpenPlugin, say
   const product = tool.product ?? tool.name;
   const use = agentOf(accounts.data, tool.name);
   const busy = acting || act.isPending || accountUse.isPending || ruleAct.isPending || ruleAnswer.busy;
+  // *Used by*: from the structure's last readings, which probe nothing; a shell that does not offer it draws no section.
+  const structure = useStructureRead(asksUsedBy);
+  const usedBy = !asksUsedBy || structure.read === 'notOffered'
+    ? null
+    : { read: structure.read === 'ok' ? 'ok' as const : structure.read === 'failed' ? 'failed' as const : 'loading' as const, rows: structure.answer ? usedByAgent(structure.answer, tool) : [] };
 
   // Each account's use read as its page opens (SWITCH1d; the switch design §1.2), once a page, where its agent is asked it and
   // a reading is older than a minute or none was had: a read asks no sign-in and spends nothing (D165 point 1), and the driver
@@ -390,6 +404,7 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, onOpenPlugin, say
       tool={tool}
       use={use}
       rules={rulesAnswer}
+      usedBy={usedBy}
       usage={used && used.filter((account) => tool.doors.some((each) => each.harness === account.harness))}
       adapter={adapter}
       part={part}

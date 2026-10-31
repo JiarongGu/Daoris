@@ -171,7 +171,20 @@ export type StructureInput = {
   filters: StructureFilters;
 };
 
-const sameAnswer = (a: StructureWork | undefined, b: StructureWork | undefined): boolean =>
+/**
+ * A repository's Current workflow as the one line By repository says: its steps, and its integration declaration as none, proposed
+ * (waiting for acceptance, which stays at the Integration tab) or accepted. A driver before the declaration leaves it out.
+ */
+export function workflowReadOf(current: CurrentWorkflow): WorkflowRead {
+  const integration = current.start?.integration;
+  const state: IntegrationRead | null = integration === undefined ? null
+    : integration === null ? 'none'
+      : integration.state === 'accepted' ? (integration.gates === 'none' ? 'none' : 'accepted')
+        : integration.state === 'changed' || integration.state === 'unaccepted' ? 'proposed' : integration.state;
+  return { read: 'ok', steps: current.steps.length, integration: state };
+}
+
+const sameAnswer =(a: StructureWork | undefined, b: StructureWork | undefined): boolean =>
   (a?.role?.id ?? null) === (b?.role?.id ?? null) && (a?.role?.revision ?? 0) === (b?.role?.revision ?? 0) && (a?.held ?? null) === (b?.held ?? null);
 
 const toRef = (role: NonNullable<StructureWork['role']>): RoleRef => ({ ...role, scope: { ...role.scope } });

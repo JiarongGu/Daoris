@@ -206,7 +206,8 @@ describe('buildStructure', () => {
       expect(look.works.map((row) => row.work)).toEqual(['review']);
       expect(look.accounts.map((row) => row.agent).sort()).toEqual(['codex', 'dsh', 'ghost-agent']);
       expect(look.repositories.flatMap((group) => group.repositories).map((row) => row.repository)).toEqual(['engine', 'site', 'tools']);
-      // The second opinion cools at every place that takes this machine's roles; the proposed integration is engine's alone.    });
+      // The second opinion cools at every place that takes this machine's roles, so each place needs a look.
+    });
   });
 
   it('reads the options of the filters from the registry and the answer', () => {

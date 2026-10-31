@@ -630,14 +630,14 @@ const readRoleStructure = (raw: unknown): RoleStructure | null => {
  * the shell's first reading lands; a shell that does not know the route is the query's error, `refusedNoRoute`'s, so a view tells *not
  * offered by this shell* from a failed read and from an empty one.
  */
-export const useRoleStructure = (places: StructurePlaceAsk[], works?: string[]) => {
+export const useRoleStructure = (places: StructurePlaceAsk[], works?: string[], { enabled = true }: { enabled?: boolean } = {}) => {
   const { isAvailable } = useShenora();
   const client = useQueryClient();
   const queryKey = [...keys.driver, 'roles', 'structure', places, works ?? null] as const;
   return useQuery({
     queryKey,
     queryFn: () => askHeld('ROLE_STRUCTURE', client, queryKey, works ? { places, works } : { places }, readRoleStructure),
-    enabled: isAvailable,
+    enabled: isAvailable && enabled,
   });
 };
 
