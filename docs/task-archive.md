@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## COMPANYVIEW1c — the read, `ROLE_STRUCTURE` (2026-10-31)
+
+> **1c: the read** (driver, modules). `ROLE_STRUCTURE` as §4 states it, in every place `.claude/knowledge/bridge-presses.md` names; the test holding its role answers to `StartPlan`; tests for a signed-out account overdue for rereading, a later choice, a scoped role and an inherited rule with no local override; the test that opening runs no probe and takes no reservation. Waits on nothing. (`docs/2026-10-31-company-view-design.md` §7 row 3; the COMPANYVIEW1 row stays open.)
+
+Completed 2026-10-31: `ROLE_STRUCTURE`, an `Open` read told by event, composed by the driver's `RoleStructure` from the roster's new `LastRead`, which asks nothing and counts nothing; the page asks it through `useRoleStructure`. A workspace place's helper rule now reads its workspace's. Proof: `RoleStructureTests` over `fixtures/role-structure.json`, held to `StartPlan`, and `DriverModuleRoleTests`. Its shape is the desktop README's `driver` row; the Build gate's posture and connector passes are not judged.
+
 ## WEBPATIENCE1 — the web unit tests' hang detector gives a slow test two minutes (2026-10-28)
 
 > **WEBPATIENCE1:** the web unit tests' timeout is a hang detector, so a slow and correct test on a loaded machine must not fail as a hang. Evidence: the merge queue's candidates `28cc101` and `0c416d3` failed their web unit gates on vitest's 20-second timeout in WorkFrame tests none of their members touched, one of them its own share of the run about 8 s. (The parent's fix; it had no backlog row.)

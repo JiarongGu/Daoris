@@ -562,6 +562,85 @@ export const useRoles = () => {
   });
 };
 
+/** A place the roles' structure is asked for: a workspace, a repository in it, or neither for this machine. */
+export type StructurePlaceAsk = { workspace?: string; repository?: string };
+
+/** What a choice's last readings say (COMPANYVIEW1c): one that may run by the account it would run on, else the start's pass code. */
+export type ChoiceStateCode = 'ready' | 'unknown' | 'not-read' | 'unavailable' | 'not-offered' | 'cooling' | 'signed-out' | 'held';
+
+/** One choice of a work's order at a place, and its state with the reading's time it rests on. */
+export type StructureChoice = {
+  agent: string;
+  model?: string;
+  effort?: string;
+  /** `1` to `4`, `before`, or `rule-default` for a rule's agent no choice names. */
+  from: string;
+  state: { code: ChoiceStateCode | string; at?: string; account?: string; until?: string };
+};
+
+/** One work at one place: its role or why its starts hold, its choices, its rule and where it was set, each part's failure. */
+export type StructureWork = {
+  work: string;
+  role?: { id: string; nameEn: string; nameZh: string; scope: { kind: string; id?: string }; revision: number };
+  held?: string;
+  choices: StructureChoice[];
+  choicesFailed?: string;
+  policy?: {
+    consent: string;
+    agents: string[];
+    concurrency?: number;
+    minutes?: number;
+    /** `repository`, `workspace`, `machine` or `default`. */
+    source: string;
+    requirement?: { kind: string } & Record<string, unknown>;
+  };
+  policyFailed?: string;
+};
+
+/** The roles' structure as `ROLE_STRUCTURE` answers it (COMPANYVIEW1c, the company-view design §4). */
+export type RoleStructure = {
+  works: string[];
+  roles: RoleCatalogue['roles'];
+  /** Where the store's roles do not read: every work then holds, said. */
+  catalogue?: { why: string };
+  places: { workspace?: string; repository?: string; works: StructureWork[] }[];
+  /** Each agent a choice names; `installed` absent where its binary was not asked yet. */
+  agents: { agent: string; known: boolean; installed?: boolean; version?: string }[];
+};
+
+const readRoleStructure = (raw: unknown): RoleStructure | null => {
+  const answer = raw as Partial<RoleStructure> | null;
+  if (!answer || !Array.isArray(answer.places)) return null;
+  return {
+    works: answer.works ?? [],
+    roles: answer.roles ?? [],
+    ...(answer.catalogue ? { catalogue: answer.catalogue } : {}),
+    places: answer.places.map((place) => ({
+      ...place,
+      works: (place.works ?? []).map((work) => ({ ...work, choices: work.choices ?? [] })),
+    })),
+    agents: answer.agents ?? [],
+  };
+};
+
+/**
+ * The roles' structure for the places and works asked (COMPANYVIEW1c): each place's role per work as a start finds it, each work's rule
+ * with where it was set, and each choice's state from the last readings alone, so opening a view asks no account (D150 point 5). Told by
+ * event (NOBLOCK1), under the driver's key with the catalogue, so every press that changes the driver's state asks it again. Null until
+ * the shell's first reading lands; a shell that does not know the route is the query's error, `refusedNoRoute`'s, so a view tells *not
+ * offered by this shell* from a failed read and from an empty one.
+ */
+export const useRoleStructure = (places: StructurePlaceAsk[], works?: string[]) => {
+  const { isAvailable } = useShenora();
+  const client = useQueryClient();
+  const queryKey = [...keys.driver, 'roles', 'structure', places, works ?? null] as const;
+  return useQuery({
+    queryKey,
+    queryFn: () => askHeld('ROLE_STRUCTURE', client, queryKey, works ? { places, works } : { places }, readRoleStructure),
+    enabled: isAvailable,
+  });
+};
+
 /**
  * A working role added, changed, removed or given back its seed (FOUNDATION1y-i): the person's press through the driver's role door,
  * whose judge refuses with nothing written. `daoris driver role` is its terminal twin (D50), and Ask Daoris's `role_propose` is applied

@@ -1,0 +1,45 @@
+{
+  "about": "COMPANYVIEW1c (the company-view design §4, row 3): ROLE_STRUCTURE's role answers held to the start plan's over one catalogue and one driver.json. `stored`: the store's `roles` rows, each its id, state, record as JSON text and revision. `config`: driver.json's text. `staffing`: an added role's choices, which the store's staffing gives the loaded configuration. `places`: the places asked, a workspace and a repository each, absent for none. `roles`: for a place (by its index) and a work, the role that takes it there, or `held` where its starts hold; every place and work, these and the rest, is held to `StartPlan` too.",
+  "stored": [
+    ["engine-build", "set", "{\"id\":\"engine-build\",\"name\":{\"en\":\"Engine builder\",\"zh\":\"引擎开发\"},\"filled\":\"always\",\"takes\":[\"build\"],\"scope\":{\"kind\":\"repository\",\"id\":\"engine\"}}", 1],
+    ["aurora-chat", "set", "{\"id\":\"aurora-chat\",\"name\":{\"en\":\"Aurora's chat\",\"zh\":\"极光聊天\"},\"filled\":\"always\",\"takes\":[\"chat\"],\"scope\":{\"kind\":\"workspace\",\"id\":\"aurora\"}}", 2],
+    ["partner", "removed", "{}", 1],
+    ["aurora-review-a", "set", "{\"id\":\"aurora-review-a\",\"name\":{\"en\":\"Reviewer A\",\"zh\":\"审阅甲\"},\"filled\":\"always\",\"takes\":[\"review\"],\"scope\":{\"kind\":\"workspace\",\"id\":\"aurora\"}}", 1],
+    ["aurora-review-b", "set", "{\"id\":\"aurora-review-b\",\"name\":{\"en\":\"Reviewer B\",\"zh\":\"审阅乙\"},\"filled\":\"always\",\"takes\":[\"review\"],\"scope\":{\"kind\":\"workspace\",\"id\":\"aurora\"}}", 1],
+    ["zeta-broken", "set", "{\"id\":\"zeta-broken\",\"name\":{\"en\":\"Broken\"},\"filled\":\"always\",\"takes\":[\"build\"],\"scope\":{\"kind\":\"workspace\",\"id\":\"zeta\"}}", 3]
+  ],
+  "config": "{\"adapter\":\"fake\",\"intakeAdapter\":\"fake\",\"helperAdapter\":\"fake\",\"actors\":{\"build\":[{\"agent\":\"gone\"},{\"agent\":\"fake\",\"model\":\"m1\",\"effort\":\"high\"},{\"agent\":\"fake\",\"model\":\"m2\"}],\"chat\":[{\"agent\":\"fake\"}]},\"helpers\":{\"engine\":{\"mode\":\"ask\",\"agents\":[\"fake\"]}},\"workspaceHelpers\":{\"aurora\":{\"mode\":\"off\"}},\"workspaceHandOver\":{\"aurora\":{\"mode\":\"off\"}}}",
+  "staffing": {
+    "engine-build": [{ "agent": "fake", "model": "m3" }],
+    "aurora-chat": [{ "agent": "fake", "model": "m4" }]
+  },
+  "places": [
+    {},
+    { "workspace": "aurora" },
+    { "workspace": "aurora", "repository": "engine" },
+    { "workspace": "zeta", "repository": "lab" },
+    { "workspace": "other", "repository": "engine" }
+  ],
+  "roles": [
+    [0, "build", "build"],
+    [0, "design", "build"],
+    [0, "chat", "chat"],
+    [0, "review", "opinion"],
+    [0, "intake", "intake"],
+    [0, "help", "helper"],
+    [0, "ask-daoris", "ask-daoris"],
+    [0, "brainstorm", "brainstorm"],
+    [0, "partner", "held"],
+    [1, "build", "build"],
+    [1, "chat", "aurora-chat"],
+    [1, "review", "held"],
+    [2, "build", "engine-build"],
+    [2, "design", "engine-build"],
+    [2, "chat", "aurora-chat"],
+    [2, "review", "held"],
+    [3, "build", "held"],
+    [3, "chat", "held"],
+    [4, "build", "engine-build"],
+    [4, "chat", "chat"]
+  ]
+}
