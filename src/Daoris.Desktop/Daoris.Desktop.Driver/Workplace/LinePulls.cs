@@ -48,8 +48,10 @@ internal static class LinePulls
     /// line, both read immediately before; where the line is checked out nowhere, the ref moved only from the commit
     /// it was judged at. Never a merge commit, never a force.
     /// </summary>
-    internal static async Task<PullResult> PullAsync(string root, LinePull pull, bool inRoot, CancellationToken ct)
+    /// <param name="writing">The checkout held alone (GITLOCK1) since the pull was judged, until its move is read back.</param>
+    internal static async Task<PullResult> PullAsync(string root, LinePull pull, bool inRoot, TreeLock writing, CancellationToken ct)
     {
+        if (!writing.Alone) throw new InvalidOperationException("a line's pull writes the checkout only with its repository held alone");
         var line = pull.Line!;
         var took = $"fast-forwarded `{line}` by {pull.Commits} commit(s) to `origin/{line}`.";
         if (inRoot)

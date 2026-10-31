@@ -552,7 +552,7 @@ public sealed class LinesRoutes(DriverContext context)
         // The verb fetches as it presses (`fetch`); the page's press acts on what its list fetched, and sends none. The lines the press
         // moved are followed by the registry at once where the verb asks (`follow`), as the page's next look would (WSSETUP5).
         var done = await trees.SyncAsync(repositories, inUse, only, fetch: Flag(request, "fetch"), cancellationToken,
-            inUseNow: async token => await InUseAsync(service, token), scope: scope);
+            inUseNow: async token => await InUseAsync(service, token), scope: scope, beside: token => BranchTidying.HoldersAsync(service, token));
         _loop.Nudge();
         var followed = Flag(request, "follow")
             ? await TreesWords.FollowMovedAsync(service, _loop.Home, () => DriverConfig.Load(_loop.ConfigPath), _loop.Log, cancellationToken)

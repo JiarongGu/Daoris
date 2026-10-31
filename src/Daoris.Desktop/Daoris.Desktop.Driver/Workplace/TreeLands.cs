@@ -296,6 +296,8 @@ internal sealed class TreeLands(
         // only fast-forwarded to it. A conflict or a refusing hook (HOOKMERGE1) leaves the checkout as it was, in today's words.
         var frozen = replay?.Now ?? pinned ?? await CommitOfAsync(root, $"refs/heads/{branch}", ct).ConfigureAwait(false);
         if (frozen is null) return new(false, $"git could not read where `{branch}` stands, so nothing was merged.");
+        // GITLOCK1: no hold here. The checkout's checks above are this press's early words; the promotion's effect holds the checkout alone
+        // and reads them again before it moves it, and a hold taken here would refuse that one in this very process.
         var (carried, refused) = await IntegrationPresses.MergeAsync(
             context.Home, context.Config(), root, repository, workspace, canonical, branch, frozen, ct).ConfigureAwait(false);
         if (!carried) return new(false, refused!);

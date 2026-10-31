@@ -311,6 +311,7 @@ T which executor takes a record, not how its line goes on
 
 ## Left out, by suite, each with its reason
 out ChatGoOnTests.The_ledger_refusing_the_move_holds_the_words_and_says_what_held_them E
+out ChatGoOnTests.A_chat_going_on_in_the_checkout_is_held_while_a_writer_holds_its_repository X
 out ChatGoOnTests.A_torn_driver_json_holds_the_words_and_says_so E
 out ChatGoOnTests.Only_words_kept_waiting_on_a_record_are_taken_up R
 out ChatGoOnTests.A_chat_taken_up_by_itself_announces_its_end E

@@ -40,6 +40,7 @@ public static class RemoteFetches
             var flight = InFlight.GetOrAdd(key, mine.Task);
             if (flight != mine.Task)
             {
+                LockWaits.Waits("a fetch another flow has in flight");
                 try
                 {
                     return await flight.WaitAsync(ct).ConfigureAwait(false);
@@ -346,6 +347,7 @@ public sealed class PullRequestMoments : IAsyncDisposable
         string[] moved = [.. heard.Where(each => each.Type == ChainEvents.Refs).Select(each => each.Subject).Distinct(StringComparer.OrdinalIgnoreCase)];
         if (!focus && moved.Length == 0) return ChainFired.Nothing;
 
+        LockWaits.Waits("the pull request moments");
         await _one.WaitAsync(ct).ConfigureAwait(false);
         try
         {

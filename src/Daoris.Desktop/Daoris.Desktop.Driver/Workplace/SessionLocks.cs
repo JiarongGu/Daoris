@@ -108,7 +108,7 @@ internal static class SessionLocks
         if (await LockedAsync(context, root, workspace, repository, ct).ConfigureAwait(false) is not { Count: > 0 } first) return [];
         if (await BusyAsync(inUse, ct).ConfigureAwait(false) is not { } before || first.All(entry => before.Contains(Normal(entry.Path)))) return [];
 
-        using var hold = TreeLock.TryReplaying(context.Home, workspace, repository);
+        using var hold = TreeLock.TryReplaying(context.Home, root, repository, TreeLock.Tidying);
         if (hold is null) return [];
         if (await BusyAsync(inUse, ct).ConfigureAwait(false) is not { } busy) return [];
         var let = new List<string>();

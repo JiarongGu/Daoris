@@ -109,7 +109,7 @@ internal sealed class TreeTidies(
         {
             // A list git could not give is never "no tree here" (AUTOTIDY1): each branch is kept, saying why.
             var worktrees = await context.Worktrees.ReadAsync(root, ct).ConfigureAwait(false);
-            using var hold = TreeLock.TryReplaying(context.Home, workspace, repository);
+            using var hold = TreeLock.TryReplaying(context.Home, root, repository, TreeLock.Tidying);
             var busy = hold is not null && inUse is not null
                 ? new HashSet<string>((await inUse(ct).ConfigureAwait(false)).Select(Normal), StringComparer.OrdinalIgnoreCase)
                 : null;
@@ -191,7 +191,7 @@ internal sealed class TreeTidies(
         var results = new List<TidiedBranch>();
         // A list git could not give is never "no tree here" (AUTOTIDY1): each branch is kept, saying why.
         var worktrees = await context.Worktrees.ReadAsync(root, ct).ConfigureAwait(false);
-        using var hold = TreeLock.TryReplaying(context.Home, workspace, repository);
+        using var hold = TreeLock.TryReplaying(context.Home, root, repository, TreeLock.Tidying);
         var busy = hold is not null && inUse is not null
             ? new HashSet<string>((await inUse(ct).ConfigureAwait(false)).Select(Normal), StringComparer.OrdinalIgnoreCase)
             : null;
