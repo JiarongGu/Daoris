@@ -215,7 +215,7 @@ public sealed class RoleStructureTests : IDisposable
         var both = Work(RoleStructure.Of(() => RoleCatalog.Of([]), config, Roster(), [new RolePlace()], [RoleWork.Build]), 0, RoleWork.Build);
         Assert.Equal(new ChoiceState(StartPasses.Cooling, seen, "spare", Now.AddHours(1)), Assert.Single(both.Choices).State);
 
-        foreach (var name in new[] { "work", "spare" }) Directory.Delete(HarnessSettings.ProfileHome(_home, "fake", name), recursive: true);
+        foreach (var name in new[] { "work", "spare" }) GitSeed.Remove(HarnessSettings.ProfileHome(_home, "fake", name));
         var none = Work(RoleStructure.Of(() => RoleCatalog.Of([]), config, Roster(), [new RolePlace()], [RoleWork.Build]), 0, RoleWork.Build);
         Assert.Equal(new ChoiceState(StartPasses.SignedOut), Assert.Single(none.Choices).State);
         Assert.Empty(_asked);
