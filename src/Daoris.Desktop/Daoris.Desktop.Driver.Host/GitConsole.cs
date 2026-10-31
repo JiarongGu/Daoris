@@ -54,7 +54,8 @@ internal static class GitConsole
                     async (repository, ct) => (await service.RegistryAsync(ct).ConfigureAwait(false))
                         .Where(row => string.Equals(row.Repository, repository, StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(row.Root))
                         .Select(row => row.Root).FirstOrDefault(root => Directory.Exists(root)),
-                    () => runs);
+                    () => runs,
+                    async (repository, checkout, ct) => (await CanonicalLine.ResolveAsync(checkout, repository, null, DriverConfig.Load(configPath), ct).ConfigureAwait(false)).Branch);
                 return await GitRefCommand.RunAsync(args, world, InstanceHost.World(home, "git"), closing.Token).ConfigureAwait(false);
             }
             catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException or IOException)

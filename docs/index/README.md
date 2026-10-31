@@ -52,7 +52,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/help/AskDaoris.test.tsx` | 106 | 2099 |
 | `src/Daoris.Web/src/help/ProposalCard.test.tsx` | 41 | 752 |
 | `src/Daoris.Web/src/menus/commands.ts` | 43 | 824 |
-| `src/Daoris.Web/src/projects/ProjectsView.git.test.tsx` | 53 | 890 |
+| `src/Daoris.Web/src/projects/ProjectsView.git.test.tsx` | 58 | 960 |
 | `src/Daoris.Web/src/projects/ProjectsView.test.tsx` | 109 | 1901 |
 | `src/Daoris.Web/src/projects/ProjectsView.tsx` | 50 | 858 |
 | `src/Daoris.Web/src/projects/setup/RepositorySetup.test.tsx` | 50 | 878 |
@@ -243,7 +243,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Platform/PipeConfirmTests.cs` | 81 | 1492 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Platform/PipeStandingTests.cs` | 46 | 857 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Platform/StandingConfirmationTests.cs` | 59 | 1078 |
-| `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Platform/StatePublisherTests.cs` | 45 | 855 |
+| `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Platform/StatePublisherTests.cs` | 45 | 856 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/ConversationRoutes.cs` | 41 | 628 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/DriverRoutes.cs` | 54 | 853 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/HelpRoutes.cs` | 84 | 1406 |

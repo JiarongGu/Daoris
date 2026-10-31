@@ -887,4 +887,74 @@ describe("a repository's New branch and New tag (GITAPP2c)", () => {
     await within(repositoryMain()).findByText(/this machine has none/);
     expect(within(repositoryMain()).queryByRole('button', { name: 'New branch or tag…' })).toBeNull();
   });
+
+  describe('Delete (GITAPP2d)', () => {
+    const SPIKE = GIT_BRANCHES_ENGINE.branches.find((branch) => branch.name === 'spike/renderer')!.commit;
+
+    const openBranches = async () => {
+      const page = await chooseRepository('engine');
+      await userEvent.click(within(page).getByRole('tab', { name: 'Branches' }));
+      return within(repositoryMain()).findByRole('region', { name: "engine's branches" });
+    };
+
+    it('names what goes and where its commits stay, sends nothing until Delete, then presses the delete at the commit the row showed', async () => {
+      answering({ GIT_REF_DELETE: () => ({ act: 'd1', outcome: 'done', refused: false, said: 'deleted' }) });
+      show(<ProjectsView notify={() => {}} />);
+      const list = await openBranches();
+
+      await userEvent.click(within(list).getByRole('button', { name: 'Delete the branch spike/renderer' }));
+      const group = within(list).getByRole('group', { name: 'Delete the branch spike/renderer' });
+
+      expect(within(group).getByText(/Delete the branch spike\/renderer \(5d2e770\)\? Its commits stay on a recovery ref/)).toBeInTheDocument();
+      expect(asked('GIT_REF_DELETE')).toEqual([]);
+      await userEvent.click(within(group).getByRole('button', { name: 'Delete' }));
+
+      expect(await within(list).findByText('Deleted the branch spike/renderer. Its commits are kept for recovery.')).toBeInTheDocument();
+      expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'GIT_REF_DELETE', {
+        payload: { repository: 'engine', workspace: 'aurora', kind: 'branch', name: 'spike/renderer', at: SPIKE },
+      });
+    });
+
+    it('keeps its Undo after the row is gone and undoes at the act the delete made', async () => {
+      answering({
+        GIT_REF_DELETE: () => ({ act: 'd1', outcome: 'done', refused: false, said: 'deleted' }),
+        GIT_REF_UNDO: () => ({ act: 'u1', outcome: 'done', refused: false, said: 'made again' }),
+      });
+      show(<ProjectsView notify={() => {}} />);
+      const list = await openBranches();
+      await userEvent.click(within(list).getByRole('button', { name: 'Delete the branch fix/readme' }));
+      await userEvent.click(within(within(list).getByRole('group', { name: 'Delete the branch fix/readme' })).getByRole('button', { name: 'Delete' }));
+
+      await userEvent.click(await within(list).findByRole('button', { name: 'Undo' }));
+
+      expect(await within(list).findByText('Undone: the branch fix/readme is back.')).toBeInTheDocument();
+      expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'GIT_REF_UNDO', { payload: { repository: 'engine', workspace: 'aurora', act: 'd1' } });
+    });
+
+    it("says a refusal in the driver's sentence and sends nothing more", async () => {
+      answering({ GIT_REF_DELETE: () => ({ refused: true, outcome: null, said: '`spike/renderer` is checked out in `engine-tree`, so nothing was deleted' }) });
+      show(<ProjectsView notify={() => {}} />);
+      const list = await openBranches();
+      await userEvent.click(within(list).getByRole('button', { name: 'Delete the branch spike/renderer' }));
+      await userEvent.click(within(within(list).getByRole('group', { name: 'Delete the branch spike/renderer' })).getByRole('button', { name: 'Delete' }));
+
+      expect(await within(list).findByText(/is checked out in .engine-tree., so nothing was deleted/)).toBeInTheDocument();
+      expect(within(list).queryByRole('button', { name: 'Undo' })).toBeNull();
+    });
+
+    it('goes back without sending, and is drawn on no line, session or landed row', async () => {
+      answering();
+      show(<ProjectsView notify={() => {}} />);
+      const list = await openBranches();
+
+      await userEvent.click(within(list).getByRole('button', { name: 'Delete the branch spike/renderer' }));
+      await userEvent.click(within(within(list).getByRole('group', { name: 'Delete the branch spike/renderer' })).getByRole('button', { name: 'Cancel' }));
+
+      expect(asked('GIT_REF_DELETE')).toEqual([]);
+      expect(within(list).getByRole('button', { name: 'Delete the branch spike/renderer' })).toBeInTheDocument();
+      for (const held of ['main', 'daoris/engine-physics-step', 'review/q6-asset-cache']) {
+        expect(within(list).queryByRole('button', { name: `Delete the branch ${held}` })).toBeNull();
+      }
+    });
+  });
 });

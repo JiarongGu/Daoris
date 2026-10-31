@@ -44,6 +44,39 @@ public sealed class GitRefCommandTests : TreeSyncFixture
     }
 
     [Fact]
+    public void A_delete_is_read_from_its_word_and_holds_the_lease_only_with_a_yes()
+    {
+        Assert.Equal(new GitRefVerb("branch", "repo", "topic", "abc", true, true), GitRefCommand.Read(["branch", "repo", "topic", "abc", "--delete", "--yes"], out var problem));
+        Assert.Null(problem);
+        Assert.Equal(PersonPresses.GitRefDelete, GitRefCommand.RouteOf(new GitRefVerb("tag", "repo", "v1", null, true, true)));
+        Assert.True(VerbLeases.Holds(["git", "branch", "repo", "n", "--delete", "--yes"]));
+        Assert.False(VerbLeases.Holds(["git", "branch", "repo", "n", "--delete"]));
+    }
+
+    [Fact]
+    public async Task A_delete_plan_says_what_it_would_delete_and_a_yes_deletes_it_through_the_journal_refusing_the_line()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var root = await RepositoryAsync("engine");
+        await GitAsync(root, "branch", "topic", "main");
+        var world = World(root) with { LineOf = (_, _, _) => Task.FromResult<string?>("main") };
+        var planned = new StringWriter();
+        var refused = new StringWriter();
+        var done = new StringWriter();
+
+        var plan = await GitRefCommand.RunAsync(["branch", "engine", "topic", "--delete"], world, Alone(planned, new StringWriter()), CancellationToken.None);
+        var line = await GitRefCommand.RunAsync(["branch", "engine", "main", "--delete", "--yes"], world, Alone(new StringWriter(), refused), CancellationToken.None);
+        var yes = await GitRefCommand.RunAsync(["branch", "engine", "topic", "--delete", "--yes"], world, Alone(done, new StringWriter()), CancellationToken.None);
+
+        Assert.Equal((0, 1, 0), (plan, line, yes));
+        Assert.Contains("would delete the branch `topic`", planned.ToString());
+        Assert.Contains("line", refused.ToString());
+        Assert.Contains("deleted the branch `topic`", done.ToString());
+        Assert.Equal(await RevAsync(root, "main"), await RevAsync(root, "refs/daoris/discarded/topic"));
+        Assert.Empty(new ActJournal(Home).Unclosed());
+    }
+
+    [Fact]
     public void Only_a_yes_changes_the_home_and_so_holds_its_lease()
     {
         Assert.True(GitRefCommand.Changes(["branch", "repo", "n", "--yes"]));

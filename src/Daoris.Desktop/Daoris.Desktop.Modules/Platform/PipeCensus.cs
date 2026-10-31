@@ -394,7 +394,7 @@ public sealed class PipeCensus
             // review on one of their accounts; Read again lets a refused account through and ends the tool's own cool-off.
             "TREES_SYNC", "ASK_OPINION", "HARNESSES_REFRESH",
             // GITAPP2c: a branch or a lightweight tag made in a repository, and the undo that deletes it at the id it was made at.
-            "GIT_REF_CREATE", "GIT_REF_UNDO");
+            "GIT_REF_CREATE", "GIT_REF_UNDO", "GIT_REF_DELETE");
         Add(PipeClass.Window,
             // The file manager, the file picker and Daoris's browser are the window's; so is what is typed into an action a
             // window runs, and that action's stop.
@@ -476,7 +476,7 @@ public sealed class PipeCensus
             "LAND_SESSION_TREE", "LAND_WITHOUT_LOOK", "LAND_ENTRY", "LAND_ASK", "HANDOFF", "DISCARD_SESSION_TREE", "DISCARD_SESSION_BRANCH",
             "WITHDRAW_LANDING_BRANCH", "RECOVERY_DROP", "SWEEP", "TREES_SYNC", "WORK_ABANDON", "SESSION_DELETE", "SYSTEM_SPACE_FREE",
             // GITAPP2c: a ref act moves the person's repository's refs through git.
-            "GIT_REF_CREATE", "GIT_REF_UNDO",
+            "GIT_REF_CREATE", "GIT_REF_UNDO", "GIT_REF_DELETE",
             // A role's act is a row of its role's table, which no act fills yet: the strictest until each is classed.
             "ROLE_ACT");
         Add(PipeDrain.Passes,

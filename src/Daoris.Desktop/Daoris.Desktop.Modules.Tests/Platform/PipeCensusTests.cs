@@ -331,6 +331,7 @@ public sealed class PipeCensusTests
     // GITAPP2c: a ref made in a repository and its undo write the person's repository through git.
     [InlineData("DAORIS.DRIVER", "GIT_REF_CREATE", PipeClass.Person)]
     [InlineData("DAORIS.DRIVER", "GIT_REF_UNDO", PipeClass.Person)]
+    [InlineData("DAORIS.DRIVER", "GIT_REF_DELETE", PipeClass.Person)]
     [InlineData("DAORIS.DRIVER", "SWEEP", PipeClass.Person)]
     [InlineData("DAORIS.DRIVER", "RECOVERY_DROP", PipeClass.Person)]
     [InlineData("DAORIS.DRIVER", "WORK_HELD", PipeClass.Person)]
@@ -503,6 +504,7 @@ public sealed class PipeCensusTests
     [InlineData("SYSTEM_SPACE_FREE", PipeDrain.Waits)]
     [InlineData("GIT_REF_CREATE", PipeDrain.Waits)]
     [InlineData("GIT_REF_UNDO", PipeDrain.Waits)]
+    [InlineData("GIT_REF_DELETE", PipeDrain.Waits)]
     [InlineData("ROLE_ACT", PipeDrain.Waits)]
     public void A_drain_holds_what_starts_work_or_changes_a_repository_and_lets_the_rest_through(string route, PipeDrain expected)
     {

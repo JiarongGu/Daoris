@@ -234,6 +234,7 @@ public sealed class DriverModuleGitTests : DriverModuleBridge
     [Theory]
     [InlineData("GIT_REF_CREATE")]
     [InlineData("GIT_REF_UNDO")]
+    [InlineData("GIT_REF_DELETE")]
     public async Task A_ref_act_before_the_driver_is_up_is_the_cold_start_sentence(string route) =>
         Assert.Contains(Refusals.DriverNotReady, await RefusalAsync(Module(), route, new { repository = "engine", kind = "branch", name = "x", act = "a" }));
 
@@ -283,6 +284,37 @@ public sealed class DriverModuleGitTests : DriverModuleBridge
 
         Assert.Equal("done", undone.GetProperty("outcome").GetString());
         Assert.Equal("", (await GitAsync(root, "branch", "--list", "topic")).Trim());
+    }
+
+    /// <summary>
+    /// GITAPP2d: the page's delete runs the act in the journal and answers it, the line it reads refusing the line itself and a commit that is
+    /// not the one shown; the undo makes the branch again.
+    /// </summary>
+    [Fact]
+    [Trait(Category.Name, Category.Process)]
+    public async Task A_delete_is_journaled_and_answered_and_its_undo_makes_the_branch_again()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var root = await InitAsync();
+        await GitAsync(root, "branch", "topic");
+        var tip = (await GitAsync(root, "rev-parse", "topic")).Trim();
+        var module = await UpAsync(root);
+
+        var stale = await AnswerAsync(module, "GIT_REF_DELETE", new { repository = "engine", kind = "branch", name = "topic", at = new string('0', 40) });
+        var line = await AnswerAsync(module, "GIT_REF_DELETE", new { repository = "engine", kind = "branch", name = "main", at = tip });
+        var deleted = await AnswerAsync(module, "GIT_REF_DELETE", new { repository = "engine", kind = "branch", name = "topic", at = tip });
+
+        Assert.True(stale.GetProperty("refused").GetBoolean());
+        Assert.True(line.GetProperty("refused").GetBoolean());
+        Assert.Equal("done", deleted.GetProperty("outcome").GetString());
+        Assert.DoesNotContain("checkouts", deleted.GetRawText());
+        Assert.Equal("", (await GitAsync(root, "branch", "--list", "topic")).Trim());
+        Assert.Equal(tip, (await GitAsync(root, "rev-parse", "refs/daoris/discarded/topic")).Trim());
+
+        var undone = await AnswerAsync(module, "GIT_REF_UNDO", new { repository = "engine", act = deleted.GetProperty("act").GetString() });
+
+        Assert.Equal("done", undone.GetProperty("outcome").GetString());
+        Assert.Equal(tip, (await GitAsync(root, "rev-parse", "refs/heads/topic")).Trim());
     }
 
     /// <summary>A terminal's press, asked for its words (<c>said</c>), is the verb's own lines and exit code, the act run as the terminal's.</summary>

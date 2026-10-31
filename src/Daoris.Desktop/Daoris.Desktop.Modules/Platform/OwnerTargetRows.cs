@@ -79,6 +79,7 @@ internal static class OwnerTargetRows
         // GITAPP2c: a ref made or taken away in one repository's checkout.
         Row("GIT_REF_CREATE", Repository(), Workspace());
         Row("GIT_REF_UNDO", Repository(), Workspace());
+        Row("GIT_REF_DELETE", Repository(), Workspace());
         Row("SETUP_PRESS", Repository());
         foreach (var route in new[] { "SET_DRIVABLE", "SET_HOLD", "SET_TREES", "SET_STANDING", "SET_SESSION_CHECKS", "SET_HEAVY_GATES", "SET_WRITE_ACROSS", "SET_CHECKOUT_WRITES" })
         {

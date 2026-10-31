@@ -169,6 +169,8 @@ internal static class PipeTargetRows
         // GITAPP2c: the repository a ref is made in or taken from; the act judges the name, the commit and the ref's id fresh under the checkout's lock.
         Row("GIT_REF_CREATE", new RepositoryGround("repository", "workspace"));
         Row("GIT_REF_UNDO", new RepositoryGround("repository", "workspace"));
+        // GITAPP2d: a branch is deleted only at the commit the page showed (`at`), judged fresh under the lock like the rest.
+        Row("GIT_REF_DELETE", new RepositoryGround("repository", "workspace"));
         Row("RECOVERY_DROP", new RepositoryGround("repository"), new BranchGround(["repository", "refs"], payload =>
             PipeGround.Text(payload, "repository") is { Length: > 0 } repository
                 ? [.. Each(Field(payload, "refs")).Select(each => Text(At(each, "ref"))).OfType<string>().Select(name => (repository, name))]
