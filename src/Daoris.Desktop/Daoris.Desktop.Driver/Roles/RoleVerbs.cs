@@ -14,7 +14,7 @@ public sealed class RoleVerb : ChoiceVerb
     public override string Word => "role";
 
     private const string Grammar =
-        "`driver role suggested [--use]`, `driver role set <id> [--name \"…\"] [--zh \"…\"] [--takes <work,…>] [--scope machine|workspace:<id>|repository:<id>] "
+        "`driver role set <id> [--name \"…\"] [--zh \"…\"] [--takes <work,…>] [--scope machine|workspace:<id>|repository:<id>] "
         + "[\"<agent> [<model>|-] [<effort>|-]\" …]`, `driver role remove <id>` or `driver role default <id>`";
 
     /// <summary><c>role suggested [--use]</c> (MODELROLE1g): the choices Daoris suggests for the seeded roles, said, or with <c>--use</c> set through the role door; null for the rest.</summary>
