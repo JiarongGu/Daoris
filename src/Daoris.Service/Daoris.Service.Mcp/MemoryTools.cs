@@ -302,17 +302,21 @@ public sealed class MemoryTools(
         var caller = await _scope.ReadAsync(ct).ConfigureAwait(false);
         if ((caller.Refused ?? caller.Outside(named)) is { } refused) return refused;
         if (engines is null || ledger is null || quests is null) return NotOn;
-        if (caller is not { Record: { } record, OwnPlaced: { } own } || caller.Unchanging("memory_propose") is not null)
+        if (caller.Proposer is not { } proposer)
         {
-            return "Refused: a proposal travels as a quest from the repository a session Daoris started works in, and this connector names "
-                   + "none in this workspace. Say what you found to the person instead. Nothing was published.";
+            return "Refused: a proposal travels as a quest from a repository of this workspace, from the ask an intake answers or from Ask "
+                   + "Daoris, and this connector has no repository at all in this workspace. Say what you found to the person instead. "
+                   + "Nothing was published.";
         }
 
         var at = caller.Placed(named);
-        if (string.Equals(at.Repository, own, StringComparison.Ordinal))
+        if (string.Equals(at.Repository, proposer.Sender, StringComparison.Ordinal))
         {
-            return $"Refused: `{at}` is this repository's own entry, so it is not proposed: dispute or amend it with memory_write, or end it "
-                   + "with memory_end. Nothing was published.";
+            return caller.Named
+                ? $"Refused: `{at}` is this repository's own entry, so it is not proposed: dispute or amend it with memory_write, or end it "
+                  + "with memory_end. Nothing was published."
+                : $"Refused: `{at}` is the entry of the repository this agent runs in, and no connector naming no session changes memory: say "
+                  + "what you found to the person, or to a session Daoris started there. Nothing was published.";
         }
 
         var entry = engines.Open(at.Repository, MemoryReinforcement.None) is { } engine ? await engine.GetAsync(at.Entry, ct).ConfigureAwait(false) : null;
@@ -326,16 +330,23 @@ public sealed class MemoryTools(
 
         var (citations, uncited) = await CiteAsync(caller, cites, ct).ConfigureAwait(false);
         if (uncited is not null) return uncited.Replace("Nothing was kept.", "Nothing was published.", StringComparison.Ordinal);
+        // A connector naming no session, a person's own agent, has no record to author from: its row names no session.
+        var by = caller.Record is { } record
+            ? Author(record)
+            : new MemoryAuthor("", proposer.Workspace, null, "", null, intake?.Role, intake?.RoleRevision, Now());
         var proposed = await new MemoryProposals(ledger.Memory, quests, exchange, engines).ProposeAsync(
-            own, at, new MemoryChange(MemoryOpKind.Propose, Text: reason.Trim(), Target: at.Entry, Revision: revision,
+            proposer, at, new MemoryChange(MemoryOpKind.Propose, Text: reason.Trim(), Target: at.Entry, Revision: revision,
                 Relation: kind.Trim().ToLowerInvariant(), Recheck: MemoryCitations.Of(citations)),
-            Author(record), Now(), ct).ConfigureAwait(false);
+            by, Now(), ct).ConfigureAwait(false);
         if (proposed is not { Op: { } op, Quest: { } quest }) return $"Refused: {proposed.Refused} Nothing was proposed.";
         return await ToldAsync(caller, (proposed.Joined
-                   ? $"Kept as proposal `{op.Id}`, joined to quest `#{quest.Id}`, which carries `{own}`'s proposals to `{at.Repository}` until it is taken. "
+                   ? $"Kept as proposal `{op.Id}`, joined to quest `#{quest.Id}`, which carries `{proposer.Sender}`'s proposals to `{at.Repository}` until it is taken. "
                    : $"Kept as proposal `{op.Id}` and published to `{at.Repository}` as quest `#{quest.Id}`. ")
                + $"`{at.Repository}`'s session decides it through its own operations, or declines it; nothing changes in its memory before, "
-               + "and closing the quest applies nothing. You are told how it settles at your next memory call.", ct).ConfigureAwait(false);
+               + "and closing the quest applies nothing. "
+               + (caller.Record is null
+                   ? "This connector names no session, so you are not told how it settles: read quest_list for the quest's standing."
+                   : "You are told how it settles at your next memory call."), ct).ConfigureAwait(false);
     }
 
     /// <summary>The records <paramref name="cites"/> names, cited; or why one was refused.</summary>
@@ -410,6 +421,12 @@ public sealed record MemoryCaller(string? Workspace, IReadOnlyList<string> Membe
     /// <summary>The named session's record, as read at this call; null for an unnamed caller.</summary>
     public Session? Record { get; init; }
 
+    /// <summary>
+    /// Who a proposal of this caller's travels as; null where it has no repository at all. It is the only door the caller has to
+    /// another repository's memory, and it asks: the changes (<see cref="Unchanging"/>) stay a registered repository's session's alone.
+    /// </summary>
+    public MemoryProposer? Proposer { get; init; }
+
     /// <summary>The caller's own repository as the registry spells it.</summary>
     public string? OwnPlaced => Own is null ? null : Member(Own) ?? Own;
 
@@ -478,7 +495,34 @@ public sealed class MemoryScope(KnowledgeService service, AmbientWorkspace ambie
         return new(workspace, [.. members.Select(member => member.Repository).Order(StringComparer.Ordinal)], named, record?.Repository)
         {
             Record = record,
+            Proposer = await ProposerAsync(named, record, workspace, members, ct).ConfigureAwait(false),
         };
+    }
+
+    /// <summary>
+    /// Who this caller's proposal travels as (KNOWCENTRAL2e2; D220), or null where it has no repository at all. A named session proposes
+    /// as the repository its record names when the registry places it in the workspace, as its ask where it is an intake's, and as
+    /// Daoris's own sender where it is Ask Daoris's; a connector naming no session, a person's own agent, as the registered repository
+    /// its directory sits in, when that repository is in the workspace it answers from.
+    /// </summary>
+    private async Task<MemoryProposer?> ProposerAsync(
+        bool named, Session? record, string workspace, IReadOnlyList<Registration> members, CancellationToken ct)
+    {
+        if (!named)
+        {
+            return await ambient.ResolveRepositoryAsync(service, ct).ConfigureAwait(false) is { } containing
+                   && members.FirstOrDefault(member => string.Equals(member.Repository, containing.Repository, StringComparison.Ordinal)) is { } own
+                ? new MemoryProposer(own.Repository, workspace)
+                : null;
+        }
+
+        if (record?.Repository is not { } repository) return null;
+        if (members.FirstOrDefault(member => string.Equals(member.Repository, repository, StringComparison.OrdinalIgnoreCase)) is { } placed)
+        {
+            return new MemoryProposer(placed.Repository, workspace);
+        }
+
+        return AskDesk.AskOf(repository) is not null || SessionLedger.IsHelp(record) ? new MemoryProposer(repository, workspace) : null;
     }
 
     /// <summary>This machine's record of <paramref name="session"/>; null where none is kept or it cannot be read.</summary>

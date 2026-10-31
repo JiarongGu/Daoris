@@ -8,6 +8,45 @@ namespace Daoris.Knowledge;
 public sealed record MemoryProposed(MemoryOp? Op, Quest? Quest, bool Joined, string? Refused = null);
 
 /// <summary>
+/// Who a proposal travels as (KNOWCENTRAL2e2; D220): the sender its quest is published by, in <paramref name="Workspace"/>. A session
+/// Daoris started in a registered repository, and a person's own agent running in one, propose as that repository; an intake as its
+/// ask, the sender every quest it publishes has; Ask Daoris as <see cref="SessionLedger.HelpRepository"/>, Daoris's own sender, since it
+/// serves no repository. The quest says which of the four it is, and a proposal is only ever a request its owner's session decides.
+/// </summary>
+/// <param name="Sender">The sender's name: a registered repository, <c>ask #id</c> or <c>daoris:help</c>.</param>
+/// <param name="Workspace">The workspace the quest is published in; a registered sender's own row decides it, and the others name it.</param>
+public sealed record MemoryProposer(string Sender, string Workspace)
+{
+    /// <summary>A session Daoris started in a registered repository.</summary>
+    public const string Session = "session";
+
+    /// <summary>The intake of an ask.</summary>
+    public const string Intake = "intake";
+
+    /// <summary>An Ask Daoris conversation.</summary>
+    public const string AskDaoris = "ask-daoris";
+
+    /// <summary>A person's own agent: a connector naming no session, running in a registered repository.</summary>
+    public const string Agent = "agent";
+
+    /// <summary>Which kind of proposer <paramref name="by"/> is when it proposed as <paramref name="sender"/>, read from the row alone.</summary>
+    public static string KindOf(string sender, MemoryAuthor by) =>
+        by.Session.Length == 0 ? Agent
+        : AskDesk.AskOf(sender) is not null ? Intake
+        : string.Equals(sender, SessionLedger.HelpRepository, StringComparison.Ordinal) ? AskDaoris
+        : Session;
+
+    /// <summary>The proposer in words, as a quest's list and body say it, naming the session where there is one.</summary>
+    public static string Words(string sender, MemoryAuthor by) => KindOf(sender, by) switch
+    {
+        Intake => $"the intake session `{by.Session}` of `{sender}`",
+        AskDaoris => $"Ask Daoris's session `{by.Session}`, in workspace `{by.Workspace}`",
+        Agent => $"a person's own agent working in `{sender}`",
+        _ => $"session `{by.Session}` of `{sender}`",
+    };
+}
+
+/// <summary>
 /// A reader's proposal (KNOWCENTRAL2e; the memory coordinator design §4): a quest to the entry's owner, joined while nobody has taken it by
 /// every further proposal from the same repository, each its own row and its own decision. The owner's session decides through its own
 /// operations or declines; how the quest closes settles each proposal, which applies nothing. Settling is read from the quest and the
@@ -21,14 +60,14 @@ public sealed class MemoryProposals(MemoryOpStore ops, QuestStore quests, QuestE
     public const int PacketVersion = 1;
 
     /// <summary>
-    /// <paramref name="change"/> on <paramref name="target"/>, proposed from <paramref name="from"/>: joined to the open quest from that
-    /// repository carrying proposals to the owner, or published as a new one.
+    /// <paramref name="change"/> on <paramref name="target"/>, proposed as <paramref name="from"/>: joined to the open quest from that
+    /// sender carrying proposals to the owner, or published as a new one that says who proposed.
     /// </summary>
     public async Task<MemoryProposed> ProposeAsync(
-        string from, MemoryReference target, MemoryChange change, MemoryAuthor by, DateTimeOffset now, CancellationToken ct = default)
+        MemoryProposer from, MemoryReference target, MemoryChange change, MemoryAuthor by, DateTimeOffset now, CancellationToken ct = default)
     {
         var id = MemoryOpStore.NewId();
-        if (await OpenAsync(from, target.Repository, ct).ConfigureAwait(false) is { } open)
+        if (await OpenAsync(from.Sender, target.Repository, ct).ConfigureAwait(false) is { } open)
         {
             return new(await ops.ProposeAsync(id, target.Repository, change, by, open.Id, ct).ConfigureAwait(false), open, Joined: true);
         }
@@ -36,10 +75,12 @@ public sealed class MemoryProposals(MemoryOpStore ops, QuestStore quests, QuestE
         if (exchange is null) return new(null, null, false, "No quest can be published from here, so nothing was proposed.");
         // A quest's id is read from its sender, receiver and title, so the title names its first proposal: a later quest is its own.
         var outcome = await exchange.PublishAsync(
-            new QuestAsk(from, target.Repository, $"Memory proposals for `{target.Repository}` from `{from}` ({id})", Body(from, target, id, change, by))
+            new QuestAsk(from.Sender, target.Repository, $"Memory proposals for `{target.Repository}` from `{from.Sender}` ({id})", Body(from, target, id, change, by))
             {
                 Short = "Memory proposals",
-                PublishedBy = by.Session,
+                // A sender that is no registered repository (an ask, Ask Daoris) names its own circle; a registered one's row decides.
+                Workspace = from.Workspace,
+                PublishedBy = by.Session.Length == 0 ? null : by.Session,
                 ByAgent = true,
             },
             now, ct).ConfigureAwait(false);
@@ -104,7 +145,7 @@ public sealed class MemoryProposals(MemoryOpStore ops, QuestStore quests, QuestE
     }
 
     /// <summary>The quest's body: what the owner's session does with it, then the first proposal's versioned packet.</summary>
-    private static string Body(string from, MemoryReference target, string id, MemoryChange change, MemoryAuthor by)
+    private static string Body(MemoryProposer from, MemoryReference target, string id, MemoryChange change, MemoryAuthor by)
     {
         var packet = new JsonObject
         {
@@ -112,19 +153,22 @@ public sealed class MemoryProposals(MemoryOpStore ops, QuestStore quests, QuestE
             ["version"] = PacketVersion,
             ["proposals"] = new JsonArray(Packet(id, target, change, by, from)),
         };
+        // A session of a repository is the repository, as every quest it publishes is; the others say what they are.
+        var said = MemoryProposer.Words(from.Sender, by);
+        var who = MemoryProposer.KindOf(from.Sender, by) == MemoryProposer.Session ? $"`{from.Sender}`" : char.ToUpperInvariant(said[0]) + said[1..];
         return new StringBuilder()
-            .Append($"`{from}` proposes changes to entries of `{target.Repository}`'s memory. Each proposal is its own decision, made by ")
+            .Append($"{who} proposes changes to entries of `{target.Repository}`'s memory. Each proposal is its own decision, made by ")
             .Append("this repository's session through its own memory operations: a dispute or an amendment with memory_write, naming ")
             .Append("`relation` and `target`; an end with memory_end, which waits for its approver. Or decline this quest with your reason, ")
             .Append("which reaches each proposer. Closing it applies nothing itself; its handback names what you decided. Further proposals ")
-            .Append($"from `{from}` join it until it is taken, and quest_list names every proposal it carries with its standing.")
+            .Append($"from `{from.Sender}` join it until it is taken, and quest_list names every proposal it carries with its standing.")
             .AppendLine().AppendLine().AppendLine("```json")
             .AppendLine(packet.ToJsonString(new JsonSerializerOptions { WriteIndented = true }))
             .Append("```")
             .ToString();
     }
 
-    private static JsonObject Packet(string id, MemoryReference target, MemoryChange change, MemoryAuthor by, string from) => new()
+    private static JsonObject Packet(string id, MemoryReference target, MemoryChange change, MemoryAuthor by, MemoryProposer from) => new()
     {
         ["operation"] = id,
         ["target"] = target.ToString(),
@@ -134,7 +178,12 @@ public sealed class MemoryProposals(MemoryOpStore ops, QuestStore quests, QuestE
         ["citations"] = change.Recheck is { } cited ? JsonNode.Parse(cited) : new JsonArray(),
         ["proposer"] = new JsonObject
         {
-            ["repository"] = from, ["session"] = by.Session, ["adapter"] = by.Adapter, ["role"] = by.Role,
+            ["repository"] = from.Sender,
+            ["as"] = MemoryProposer.KindOf(from.Sender, by),
+            ["workspace"] = from.Workspace,
+            ["session"] = by.Session.Length == 0 ? null : by.Session,
+            ["adapter"] = by.Adapter.Length == 0 ? null : by.Adapter,
+            ["role"] = by.Role,
         },
     };
 }
