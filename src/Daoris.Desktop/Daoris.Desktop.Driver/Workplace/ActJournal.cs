@@ -67,8 +67,11 @@ public static class ActStepKinds
     /// <summary>One <c>git stash push</c>, which writes the stash shared by every linked tree (GITAPP2k).</summary>
     public const string Stash = "stash";
 
+    /// <summary>One <c>git fetch</c> of origin's branches into <c>refs/remotes/origin/*</c> alone, in the act's job (GITAPP2f).</summary>
+    public const string Fetch = "fetch";
+
     /// <summary>Every kind this build runs and reads.</summary>
-    public static IReadOnlyList<string> All { get; } = [Ref, Config, Index, Commit, Bytes, Switch, Stash];
+    public static IReadOnlyList<string> All { get; } = [Ref, Config, Index, Commit, Bytes, Switch, Stash, Fetch];
 }
 
 /// <summary>One step of an act's plan, as the journal keeps it: its kind, and its arguments, postconditions and rollback as JSON.</summary>

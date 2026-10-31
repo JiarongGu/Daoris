@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   type GitActAnswer, type GitAnswer, type GitBranch, type GitGraphPage, type GitLogCommit, type GitRepositoryBranches, gitRefusal, useGitActs,
   useGitBranches, useGitChanges, useGitCommitAct, useGitCommitPlan, useGitConflict, useGitGraphPages, useGitHistoryEdits, useGitHunks, useGitRefActs,
-  useGitStashAct, useGitStashApplyAct, useGitStashPlan, useGitSwitchAct, useGitSwitchPlan,
+  useGitFetchPlan, useGitStashAct, useGitStashApplyAct, useGitStashPlan, useGitSwitchAct, useGitSwitchPlan,
 } from '../../bridge/repositories/git';
 import { useWorkState } from '../../bridge/repositories/lines';
 import { useSessionOpenings } from '../../bridge/sessions/sessions';
@@ -11,6 +11,7 @@ import { sentence } from '../../locales/format';
 import { useQuests, useSessions } from '../../data/queries';
 import { questName, sessionTitle } from '../../work/identity';
 import { BranchPage, type BranchRead } from './BranchPage';
+import type { RefActs } from './NewRef';
 import type { LandingDoor } from './LandingFlow';
 import { landingOf } from './landingLife';
 import { BranchesTab, type ChangeSide, type ChangesActs, type ChangesLast, ChangesTab, type ChangesValue, type GitRead, HistoryTab, type HistoryRead } from './RepositoryGit';
@@ -305,7 +306,10 @@ function HeldGroup({ entry, sessionsUnread, ...presses }: { entry: GitRepository
 function BranchesRead({ repository, workspace, ...presses }: { repository: string; workspace: string } & Presses) {
   const read = useRepositoryBranches(repository, workspace);
   const titles = useSessionTitles(repository, read.state === 'read' ? read.value.branches : NO_BRANCHES);
-  const acts = useGitRefActs(repository, workspace);
+  const { fetchOrigin, ...refActs } = useGitRefActs(repository, workspace);
+  const plan = useGitFetchPlan(repository, workspace).data?.value;
+  // GITAPP2f: Fetch is drawn only once the driver's plan is read; before it, or where it did not answer, the tab offers none.
+  const acts: RefActs = { ...refActs, fetch: plan ? { ...plan, press: fetchOrigin } : undefined };
   return <BranchesTab repository={repository} read={read} titles={titles} acts={acts} {...presses} />;
 }
 

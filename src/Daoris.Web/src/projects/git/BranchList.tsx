@@ -11,6 +11,7 @@ import { DeleteRef } from './DeleteRef';
 import { NewRef, type RefActs } from './NewRef';
 import { RenameRef, type RenamedRef } from './RenameRef';
 import { Renamed } from './Renamed';
+import { FetchOrigin } from './FetchOrigin';
 
 /** Yours are folded after five (the built-in Git design §2.2): the rest are one press away. */
 export const YOURS_SHOWN = 5;
@@ -115,6 +116,8 @@ export function BranchList({ repository, list, titles = NO_TITLES, onOpen, onOpe
       ])} />
 
       {acts && list.line.commit && <NewRef at={{ label: line ?? 'HEAD', commit: list.line.commit }} acts={acts} />}
+
+      {acts?.fetch && <FetchOrigin fetch={acts.fetch} />}
 
       {acts && gone && <Deleted name={gone.name} act={gone.act} acts={acts} onClose={() => setGone(null)} />}
 

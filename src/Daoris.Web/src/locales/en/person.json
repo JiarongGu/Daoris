@@ -174,6 +174,7 @@
   "person.route.GIT_REF_DELETE": "delete a branch or a tag in a repository",
   "person.route.GIT_REF_RENAME": "rename a branch or a tag in a repository",
   "person.route.GIT_REF_FINISH": "finish a branch rename that stopped before its settings moved",
+  "person.route.GIT_FETCH": "fetch origin's branches into a repository",
   "person.route.GIT_HISTORY_EDIT": "pick, revert or rebase commits on a branch in a repository",
   "person.route.SET_WRITE_ACROSS": "change what a repository's sessions may write elsewhere",
   "person.route.TRUST_FOLDER": "trust a folder for an agent's work",
