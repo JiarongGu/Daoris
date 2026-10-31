@@ -188,6 +188,7 @@ Paths below are relative to this file. Historical documents have their own [arch
 | `2026-10-31-company-view-proposal-opus.md` | Proposal: COMPANYVIEW1, Opus, sealed
 | `2026-10-31-company-view-proposal-codex.md` | Proposal: COMPANYVIEW1, Codex, sealed
 | `2026-10-31-company-view-design.md` | Design: COMPANYVIEW1, the agents' structure as the Agents place's Roles mode, the steward's synthesis; the makers' reads next
+| `2026-10-31-company-view-reads.md` | Reads: COMPANYVIEW1, the makers' reads of the synthesis
 | `2026-10-31-review-flow-design.md` | Accepted design: REVIEWFLOW1 and LINESTOGETHER1, the review page as one flow
 
 ## UI, browser, tools and plugin contracts
