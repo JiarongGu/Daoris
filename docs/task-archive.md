@@ -22075,3 +22075,9 @@ The row is quoted by its head; its whole text and proof are the foundation desig
 > **REVIEWFLOW1b** (the review-flow design §1): *now · next* folded into the head's facts line: *now* from the driver's facts (working, waits on you, n parts to land, landing, integrating by INTEGRATE1h's fact, landed); *next* names the press and is a door to its step.
 
 **Outcome** 2026-10-31: built. `sessionFacts` takes the page's flow and leads with *now* after the repository (landing, n parts to land, waits on you with its time, working; integrating left to its existing fact; landed the session's own); `nextPress` names the first standing wait's press, drawn on the head as *next: Accept…* and pressing to the wait (`goToWait`, the route `WaitMark` takes). Left: the ask's and quest's pages. Owed: the installed window.
+
+## LINESTOGETHER1a — a session's head (2026-10-31)
+
+> **1a** (the review-flow design §2): the head is where `Lines.HeadOf`'s walk ends from the first part; a chain's head its newest step; an ask's siblings none; the reader answers `head` beside `leading`; the row opens on the head unless a part waits on the person or is working; the glossary's *head*.
+
+**Outcome** 2026-10-31: built in two halves. The service's `Lines.HeadOfLineAsync` follows the walk and a chain's hop; `GET /api/sessions` answers `head`; the driver's entry carries `head` and `opens`. The page opens a row on `opens`, the parts heading says *Part 2 of 3 is the head · 1 beside it*, a part beside the head is marked, and no head says so (D137); *head* is 续段. Reading: *beside* is derived on the page from parts that began `asked` and are not the head. Owed: the installed window, an ended multi-part session opening on its head.
