@@ -163,10 +163,11 @@ internal sealed class TreeSync(
     /// the same commit replayed once, and one inside another is replayed onto the other's new commits, so the
     /// clean-up's proof reads them together afterwards as it did before.</para>
     ///
-    /// <para>🔴 <b>No session starts in a tree while it is replayed</b> (LEFT2). A repository's replays run with its
-    /// trees held alone (<see cref="TreeLock"/>), which a driver or a conversation takes, shared, from choosing its
-    /// tree until its record is open; the sessions in use are asked again inside the hold. A repository a session is
-    /// starting in has its replays left, each said, for another press.</para>
+    /// <para>🔴 <b>No session starts in a tree while it is replayed</b> (LEFT2), <b>and nothing else writes the checkout while
+    /// its line is pulled</b> (GITLOCK1). A repository's pull and replays run with its checkout held alone (<see cref="TreeLock"/>),
+    /// which a driver or a conversation takes, shared, from choosing its tree until its record is open, and every other writer of
+    /// the checkout alone; the sessions in use are asked again inside the hold. A repository held so has its pull and its replays
+    /// left, each said with what held it, for another press.</para>
     /// </remarks>
     /// <param name="only">The rows the person saw listed, as <c>repository:branch</c> (the line's by its branch); null for everything the proofs clear now.</param>
     /// <param name="fetch">Whether to fetch first — the terminal's one command does; the screen's press acts on what its list fetched.</param>
@@ -200,24 +201,29 @@ internal sealed class TreeSync(
             var workspace = RemoteTarget.Workspace(space);
             var line = fetched.Line;
 
+            // GITLOCK1: the checkout held alone from the pull's own judgement through its move and the replays (LEFT2), as every writer
+            // of it holds it; let go before the deletions. What held it otherwise is named on the line and on each replay it leaves.
+            using var held = TreeLock.TryWriting(context.Home, root, repository, TreeLock.Updating);
+            var holder = held is null ? TreeLock.Held(repository, TreeLock.HolderOf(context.Home, root)) : null;
+
             // (a) Pull the line.
             var (asJudged, inRoot) = await LinePulls.JudgePullAsync(root, repository, workspace, line, fetched.Failed, ct).ConfigureAwait(false);
             var pull = fetched.Onto(asJudged);
             if (Listed($"{repository}:{line}"))
             {
-                pulls.Add(pull.Moves
-                    ? await LinePulls.PullAsync(root, pull, inRoot, ct).ConfigureAwait(false)
-                    : new PullResult(pull, false, only is null ? SyncWords.Describe(pull) : $"{SyncWords.Describe(pull)} — {LeftSince}"));
+                pulls.Add(!pull.Moves
+                    ? new PullResult(pull, false, only is null ? SyncWords.Describe(pull) : $"{SyncWords.Describe(pull)} — {LeftSince}")
+                    : held is null
+                        ? new PullResult(pull, false, $"{holder}, so `{line}` was left for another look.")
+                        : await LinePulls.PullAsync(root, pull, inRoot, held, ct).ConfigureAwait(false));
                 // A line Daoris moved is followed by the registry at the next look (WSSETUP5, D124 §3.1): under the `branch`
                 // rule this fast-forward is when a merged set-up first reaches this machine.
                 if (pulls[^1].Moved) RegistryFollowing.Moved(context.Home, repository, DateTimeOffset.UtcNow);
             }
 
-            // (c) Replay what still works on it, onto the line as it now stands — with the repository's trees held
-            // alone (LEFT2), so no session starts in one while it is rebased, and the sessions in use asked again
-            // inside that hold, since one may have opened since the look `inUse` came from.
+            // (c) Replay what still works on it, onto the line as it now stands, the sessions in use asked again inside the hold,
+            // since one may have opened since the look `inUse` came from.
             var onto = await OntoAsync(root, line, ct).ConfigureAwait(false);
-            using var held = TreeLock.TryReplaying(context.Home, workspace, repository);
             var busyNow = held is not null && inUseNow is not null
                 ? new HashSet<string>((await inUseNow(ct).ConfigureAwait(false)).Select(Normal), StringComparer.OrdinalIgnoreCase)
                 : busy;
@@ -235,7 +241,7 @@ internal sealed class TreeSync(
 
                 if (held is null)
                 {
-                    rebases.Add(new(each.Item, false, $"`{each.Item.Branch}`: {TreeLock.Starting(repository)}."));
+                    rebases.Add(new(each.Item, false, $"`{each.Item.Branch}`: {holder}, so it was left as it was for another look."));
                     continue;
                 }
 

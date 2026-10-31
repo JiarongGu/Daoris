@@ -47,9 +47,10 @@ public sealed class TreeSyncStepTests : TreeSyncFixture
 
     /// <summary>
     /// WSR6's open window, closed (LEFT2): while a session is starting in the repository, which holds its trees from
-    /// choosing one until its record is open, the press leaves every replay as it was and says why; and a session a
-    /// driver opened after the list is seen by the press's own look inside the hold, so its branch is left in use.
-    /// Only then, with nothing starting and nothing in use, does the branch move.
+    /// choosing one until its record is open, the press leaves the line's pull and every replay as they were and says why
+    /// (GITLOCK1: the pull writes the checkout, under the same hold); and a session a driver opened after the list is seen
+    /// by the press's own look inside the hold, so its branch is left in use. Only then, with nothing starting and nothing
+    /// in use, does the branch move.
     /// </summary>
     [Fact]
     public async Task A_replay_leaves_a_repository_a_session_is_starting_in_and_sees_one_opened_since_the_list()
@@ -60,17 +61,19 @@ public sealed class TreeSyncStepTests : TreeSyncFixture
         await GitAsync(root, "push", "--quiet", "origin", b);
         await SquashOnPlatformAsync(origin, b);
         var stepTip = await RevAsync(root, step.Branch);
+        var line = await RevAsync(root, "main");
 
-        using (var starting = TreeLock.TryStarting(Home, "aurora", "engine"))
+        using (var starting = TreeLock.TryStarting(Home, root))
         {
             Assert.NotNull(starting);
             var held = await trees.SyncAsync(Repositories(root), Nobody, fetch: true);
 
-            // The line is the person's and no session's tree: it still moves.
-            Assert.True(held.Lines.Single().Moved, held.Lines.Single().Message);
+            Assert.False(held.Lines.Single().Moved, held.Lines.Single().Message);
+            Assert.Contains("a session was starting in `engine`", held.Lines.Single().Message);
+            Assert.Equal(line, await RevAsync(root, "main"));
             var left = held.Rebases.Single(result => result.Item.Branch == step.Branch);
             Assert.False(left.Replayed);
-            Assert.Contains("a session was starting", left.Message);
+            Assert.Contains("a session was starting in `engine`", left.Message);
             Assert.Equal(stepTip, await RevAsync(root, step.Branch));
         }
 

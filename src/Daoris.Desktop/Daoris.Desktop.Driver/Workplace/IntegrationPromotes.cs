@@ -397,9 +397,20 @@ internal sealed class IntegrationPromotes(IntegrationStore store, string treesRo
     /// The promotion's effect, under the claim and immediately before the line moves: the line read again, the fence read from the committed
     /// declaration at the commit being moved, then the move, by the path its checkout allows.
     /// </summary>
+    /// <remarks>
+    /// GITLOCK1: the checkout held alone (<see cref="TreeLock.TryWriting"/>) from the line's first read through the move and its read back, so
+    /// no pull, replay or start meets it between; whatever holds it holds the step, said, for the next look. Taken here alone: the line's run and
+    /// the legacy merge's press reach this through it and take none, and its claim and the line's one run are taken before it.
+    /// </remarks>
     private async Task<IntegrationStepEnd> EffectAsync(
         IntegrationPromoteAsk ask, IntegrationCandidate candidate, IReadOnlyList<IntegrationMember> replayed, IntegrationStep step, string verdict, CancellationToken ct)
     {
+        using var writing = TreeLock.TryWriting(ask.Home, ask.Root, ask.Repository, TreeLock.Promoting);
+        if (writing is null)
+        {
+            return Held($"{TreeLock.Held(ask.Repository, TreeLock.HolderOf(ask.Home, ask.Root))}: nothing was moved, and it is tried again at the next look.");
+        }
+
         var tip = candidate.Tip!;
         var (now, why) = await LineAsync(ask.Root, ask.Line, ct).ConfigureAwait(false);
         if (now is null) return Held($"git could not read where `{ask.Line}` stands ({why}): nothing was moved, and it is tried again at the next look.");

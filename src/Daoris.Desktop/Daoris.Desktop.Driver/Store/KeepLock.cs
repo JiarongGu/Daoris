@@ -66,6 +66,7 @@ internal sealed class KeepLock : IDisposable
         var path = PathOf(file);
         var until = DateTime.UtcNow + (within ?? Wait);
         var gate = Gates.GetOrAdd(path, _ => new SemaphoreSlim(1, 1));
+        TreeLock.Waits("a kept file's edit lock");
         if (!gate.Wait(within ?? Wait))
         {
             throw new IOException($"the edit lock {path} was held by another edit in this process for the whole of the wait, so this edit was not written. Try again.");

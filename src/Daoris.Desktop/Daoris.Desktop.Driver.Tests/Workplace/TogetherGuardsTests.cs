@@ -56,17 +56,18 @@ public sealed class TogetherGuardsTests : TreeSyncFixture
 
         using (await LandingHolds.TakeAsync(Home, member.Path))
         {
-            var (held, refused) = await TogetherLocks.TakeAsync(Home, "aurora", "engine", [member.Path], TimeSpan.FromMilliseconds(200), CancellationToken.None);
+            var (held, refused) = await TogetherLocks.TakeAsync(Home, "engine", [member.Path], TimeSpan.FromMilliseconds(200), CancellationToken.None);
             Assert.Null(held);
             Assert.NotNull(refused);
         }
 
-        var (taken, none) = await TogetherLocks.TakeAsync(Home, "aurora", "engine", [member.Path], TimeSpan.FromSeconds(5), CancellationToken.None);
+        var (taken, none) = await TogetherLocks.TakeAsync(Home, "engine", [member.Path], TimeSpan.FromSeconds(5), CancellationToken.None);
         using (taken)
         {
             Assert.Null(none);
             Assert.NotNull(taken);
-            Assert.Null(TreeLock.TryReplaying(Home, "aurora", "engine"));
+            // Taken through the member's tree, it is its checkout's one lock (GITLOCK1).
+            Assert.Null(TreeLock.TryReplaying(Home, root, "engine", TreeLock.Updating));
         }
     }
 

@@ -59,7 +59,7 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
         // TREELOCK2: keep the repository's starts out from the ledger read through the removal. A stale lock can name an ended
         // session while a later one holds the same tree, so the live-tree check precedes the lock owner's record.
         var owner = context.OwnerOf(full);
-        using var removing = service is null ? null : TreeLock.TryReplaying(context.Home, owner.Workspace, owner.Repository);
+        using var removing = service is null ? null : TreeLock.TryReplaying(context.Home, full, owner.Repository, TreeLock.Tidying);
         // Then the bindings under the record lock, with no service too, where no tree lock is taken.
         if ((service is null || removing is not null) && TogetherGuard.Refusal(context.Home, full) is { } together)
         {
