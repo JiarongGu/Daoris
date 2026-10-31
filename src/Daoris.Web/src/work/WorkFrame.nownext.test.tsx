@@ -65,7 +65,7 @@ describe('a session’s head says where the work stands and what comes next', ()
     await i18n.changeLanguage('en');
   });
 
-  for (const [language, now, next] of [['en', '1 part to land', 'next: Accept…'], ['zh', '1 个部分待落地', '下一步：接受…']] as const) {
+  for (const [language, now, next] of [['en', '1 part to land', 'next: Accept…'], ['zh', '1 个部分待落地', '下一步：采纳…']] as const) {
     it(`reads ${now} and a door to the Accept… in ${language}`, async () => {
       await i18n.changeLanguage(language);
       SESSIONS = [ENDED];
