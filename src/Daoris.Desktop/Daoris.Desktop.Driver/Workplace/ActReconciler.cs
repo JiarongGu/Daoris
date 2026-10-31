@@ -110,13 +110,18 @@ public sealed class ActReconciler(ActJournal journal)
             var kept = act.Recovery is null ? null : JsonNode.Parse(act.Recovery)?["actRef"]?["id"]?.GetValue<string>();
             if (kept is null)
             {
+                ActFiles.Remove(journal.Home, act.Id);
                 journal.Expired(act.Id);
                 continue;
             }
 
             var gone = await ActRefs.ExpireAsync(act.Checkout, act.Id, kept, ct).ConfigureAwait(false);
             var stands = await StandsAsync(act.Checkout, ActRefs.Of(act.Id), ct).ConfigureAwait(false);
-            if (gone.Done || stands is { Length: 0 }) journal.Expired(act.Id);
+            if (gone.Done || stands is { Length: 0 })
+            {
+                ActFiles.Remove(journal.Home, act.Id);
+                journal.Expired(act.Id);
+            }
             else said.Add($"act {act.Id}'s own ref `{ActRefs.Of(act.Id)}` no longer stands at {TextBounds.ShortCommit(kept, 8)}, so it was kept ({gone.Said})");
         }
 

@@ -58,6 +58,9 @@ public static class ActStepKinds
     /// <summary>One <c>git commit</c>, its hooks and their children in the act's job (GITAPP2i).</summary>
     public const string Commit = "commit";
 
+    /// <summary>A worktree file's bytes replaced where they still equal the plan's, the bytes it replaced kept as a file beside the record (GITAPP2j).</summary>
+    public const string Bytes = "file";
+
     /// <summary>One <c>git switch</c> of the checkout to a local branch, its <c>post-checkout</c> hook in the act's job (GITAPP2k).</summary>
     public const string Switch = "switch";
 
@@ -65,7 +68,7 @@ public static class ActStepKinds
     public const string Stash = "stash";
 
     /// <summary>Every kind this build runs and reads.</summary>
-    public static IReadOnlyList<string> All { get; } = [Ref, Config, Index, Commit, Switch, Stash];
+    public static IReadOnlyList<string> All { get; } = [Ref, Config, Index, Commit, Bytes, Switch, Stash];
 }
 
 /// <summary>One step of an act's plan, as the journal keeps it: its kind, and its arguments, postconditions and rollback as JSON.</summary>

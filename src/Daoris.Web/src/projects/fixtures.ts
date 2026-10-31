@@ -369,6 +369,36 @@ export const GIT_HUNKS_BUDGET = {
 };
 
 /**
+ * `src/cache.cs`'s conflicts, as `GIT_CONFLICT` answers them (GITAPP2j): two, the first with a line each side changed and the second where
+ * ours holds a line theirs removed, with the stages and the worktree id a press sends back.
+ */
+export const GIT_CONFLICT_CACHE = {
+  path: 'src/cache.cs',
+  head: id('c4f1a2') as string | null,
+  base: `100644 ${blob('1a2b3c')}`,
+  ours: `100644 ${blob('4d5e6f')}`,
+  theirs: `100644 ${blob('7a8b9c')}`,
+  worktree: blob('e2d4a8'),
+  why: null as string | null,
+  hunks: [
+    {
+      id: '3f9a1c7b2d40',
+      before: ['class Cache', '{'],
+      ours: ['    private const int Size = 64;'],
+      theirs: ['    private const int Size = 128;'],
+      after: ['    private readonly Dictionary<string, Entry> _items = new();'],
+    },
+    {
+      id: '8c2e5d9a4b17',
+      before: ['    public void Clear()'],
+      ours: ['    {', '        _items.Clear();', '        Hits = 0;'],
+      theirs: [],
+      after: ['    }'],
+    },
+  ],
+};
+
+/**
  * What a commit of the engine's staged changes rests on, as `GIT_COMMIT_PLAN` answers it (GITAPP2i): the tip and the index as a tree,
  * HEAD's message for an amend, the hooks its git runs and who commits.
  */

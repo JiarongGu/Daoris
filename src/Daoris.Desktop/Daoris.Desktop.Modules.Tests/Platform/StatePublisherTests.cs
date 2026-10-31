@@ -529,6 +529,10 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
     [InlineData("GIT_STAGE", "checkouts", null)]
     [InlineData("GIT_UNSTAGE", "checkouts", null)]
     [InlineData("GIT_UNDO", "checkouts", null)]
+    // GITAPP2j: a conflict is read, and a resolve and a mark move the file and the index the tab reads.
+    [InlineData("GIT_CONFLICT", "", null)]
+    [InlineData("GIT_RESOLVE", "checkouts", null)]
+    [InlineData("GIT_MARK_RESOLVED", "checkouts", null)]
     [InlineData("GIT_COMMIT_PLAN", "", null)]
     // GITAPP2i: a commit moves the checkout's index and the branch it has out, which the Changes tab and the branch list read.
     [InlineData("GIT_MAKE_COMMIT", "driver,checkouts", null)]

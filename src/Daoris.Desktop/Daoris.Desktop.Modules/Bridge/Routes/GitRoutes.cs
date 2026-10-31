@@ -160,11 +160,18 @@ public sealed class GitRoutes(DriverLoop loop)
 
         var context = new StageContext(
             repository, root, () => DriverConfig.Load(_loop.ConfigPath).MayChangeCheckout(repository), token => BranchTidying.BesideAsync(service, token));
-        var acts = new StageActs(new ActJournal(_loop.Home));
+        var journal = new ActJournal(_loop.Home);
+        var acts = new StageActs(journal);
         // The act is not the window's to cancel once its first effect begins; the watch ends only a wait before it.
         if (request.Type == "GIT_UNDO")
         {
-            return Staged(await acts.UndoAsync(context, Optional(request, "act") ?? "", cancellationToken).ConfigureAwait(false), repository, root);
+            var undone = Optional(request, "act") ?? "";
+            // GITAPP2j: a resolve and a mark are undone by Resolve's own rules, which stand in a merge or a rebase.
+            return Staged(
+                journal.Act(undone)?.Kind is ResolveVerbs.Resolve or ResolveVerbs.Mark
+                    ? await new ResolveActs(journal).UndoAsync(context, undone, cancellationToken).ConfigureAwait(false)
+                    : await acts.UndoAsync(context, undone, cancellationToken).ConfigureAwait(false),
+                repository, root);
         }
 
         var picks = new List<HunkPick>();
@@ -183,6 +190,46 @@ public sealed class GitRoutes(DriverLoop loop)
             request.Type == "GIT_STAGE" ? StageVerbs.Stage : StageVerbs.Unstage, Optional(request, "path") ?? "", Optional(request, "head"),
             Optional(request, "index") ?? "", Optional(request, "source") ?? "", picks);
         return Staged(await acts.RunAsync(context, press, cancellationToken).ConfigureAwait(false), repository, root);
+    }
+
+    // GITAPP2j (D204, the git-writes design §8 Resolve): a file in conflict read by its stages, one conflict at a time. A read, told by event: it starts git.
+    [DriverRoute("GIT_CONFLICT")]
+    [ByEvent("GIT_CONFLICT", Untold = "the checkout's index stages and the file's bytes, which no scope tells")]
+    private async Task<object?> GitConflictAsync(IpcRequest request, CancellationToken cancellationToken) =>
+        await GitAnsweredAsync(request, cancellationToken, (root, token) => GitConflicts.ReadAsync(root, Optional(request, "path") ?? "", token));
+
+    // GITAPP2j: *Resolve* (ours, theirs or both for each conflict, replacing the file's bytes) and *Mark resolved* (the file added). Each is one act of
+    // the journal under the checkout's lock, answered as the stage's are; Undo of either is `GIT_UNDO`.
+    [DriverRoute("GIT_RESOLVE")]
+    [DriverRoute("GIT_MARK_RESOLVED")]
+    [Publishes("GIT_RESOLVE", StateScopes.Checkouts)]
+    [Publishes("GIT_MARK_RESOLVED", StateScopes.Checkouts)]
+    private async Task<object?> GitResolveAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var repository = Optional(request, "repository") ?? throw new DriverException("a resolve names its repository.");
+        var service = _loop.Service ?? throw NotReady();
+        var rows = LinesRoutes.Checkouts(await service.RegistryAsync(cancellationToken).ConfigureAwait(false), repository, Optional(request, "workspace"));
+        if (rows.FirstOrDefault(row => Directory.Exists(row.Root)).Root is not { } root)
+        {
+            return Staged(new ActRun(null, null, $"{repository} has no checkout on this machine: nothing was changed.", Refused: true), repository, null);
+        }
+
+        var context = new StageContext(
+            repository, root, () => DriverConfig.Load(_loop.ConfigPath).MayChangeCheckout(repository), token => BranchTidying.BesideAsync(service, token));
+        var picks = new List<ResolvePick>();
+        if (request.Payload is { } payload && payload.TryGetProperty("picks", out var chosen) && chosen.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var pick in chosen.EnumerateArray())
+            {
+                picks.Add(new ResolvePick(
+                    pick.TryGetProperty("id", out var id) ? id.GetString() ?? "" : "", pick.TryGetProperty("take", out var take) ? take.GetString() ?? "" : ""));
+            }
+        }
+
+        var press = new ResolvePress(
+            request.Type == "GIT_RESOLVE" ? ResolveVerbs.Resolve : ResolveVerbs.Mark, Optional(request, "path") ?? "", Optional(request, "head"),
+            Optional(request, "base") ?? "", Optional(request, "ours") ?? "", Optional(request, "theirs") ?? "", Optional(request, "worktree") ?? "", picks);
+        return Staged(await new ResolveActs(new ActJournal(_loop.Home)).RunAsync(context, press, cancellationToken).ConfigureAwait(false), repository, root);
     }
 
     /// <summary>An act's answer as the page reads it: whether it is done, its act (the id Undo takes) and the driver's sentence, with no machine path.</summary>

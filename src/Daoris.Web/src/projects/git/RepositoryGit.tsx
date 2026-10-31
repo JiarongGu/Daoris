@@ -8,6 +8,7 @@ import { CommitGraph, type GraphCommitRow } from './CommitGraph';
 import { ListMore } from '../../work/frame/ListPane';
 import { GraphFoot, useGraphPaging } from './GraphFoot';
 import type { HunkPress } from './ChangeHunks';
+import type { ConflictPress } from './ConflictHunks';
 
 const noop = () => {};
 
@@ -200,7 +201,7 @@ export type ChangeSide = 'unstaged' | 'staged';
 
 /** The last act's answer, said under the tab's head with *Undo* where it is done and kept a way back. */
 export type ChangesLast = {
-  verb: 'stage' | 'unstage' | 'undo' | 'commit' | 'amend' | 'switch' | 'stash';
+  verb: 'stage' | 'unstage' | 'undo' | 'undoResolve' | 'commit' | 'amend' | 'resolve' | 'mark' | 'switch' | 'stash';
   path: string | null;
   act: string | null;
   done: boolean;
@@ -225,6 +226,12 @@ export type ChangesActs = {
   Hunks: ComponentType<{ path: string; side: ChangeSide; busy: boolean; onPress: (press: HunkPress) => void }>;
   /** The commit box (GITAPP2i), read and pressed by its holder; absent, the tab draws none. */
   Commit?: ComponentType<{ busy: boolean }>;
+  /** A conflicted file's conflicts (GITAPP2j), read by its holder; with `resolve` and `mark`, the row draws *Resolve* and *Mark resolved*. */
+  Conflict?: ComponentType<{ path: string; busy: boolean; onPress: (press: ConflictPress) => void }>;
+  /** The choices made for a file's conflicts, with the faces they were read against. */
+  resolve?: (press: { path: string } & ConflictPress) => void;
+  /** *Mark resolved*: the file added, its stages gone from the index. */
+  mark?: (path: string) => void;
   /** The switch box (GITAPP2k) and the stash box, each read and pressed by its holder; absent, the tab draws none. */
   Switch?: ComponentType<{ busy: boolean }>;
   Stash?: ComponentType<{ busy: boolean }>;
@@ -294,12 +301,7 @@ export function ChangesTab({ repository, read, refreshing = false, onRefresh, ac
       )}
       {unmerged.length > 0 && (
         <ChangeKind kind="unmerged" count={unmerged.length}>
-          {unmerged.map((entry) => (
-            <li key={entry.path} className="grid min-w-0 gap-0.5 border-b border-line py-1.5 last:border-b-0">
-              <Path path={entry.path} code={entry.code} />
-              <Detail parts={[t('projects.git.changes.mode', { mode: entry.modes.join(' ') }), t('projects.git.changes.stages', { ids: entry.blobs.map(short).join(', ') })]} />
-            </li>
-          ))}
+          {unmerged.map((entry) => <ConflictRow key={entry.path} entry={entry} acts={acts} />)}
         </ChangeKind>
       )}
     </section>
@@ -354,6 +356,32 @@ function ChangeRow({ file, side, acts }: { file: ChangedFile; side: ChangeSide; 
   );
 }
 
+/** A file the index holds in conflict: its stages, and where the tab can resolve it, *Resolve* beside *Mark resolved*. */
+function ConflictRow({ entry, acts }: { entry: ChangesValue['unmerged'][number]; acts?: ChangesActs }) {
+  const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
+  const { Conflict, resolve, mark } = acts ?? {};
+  return (
+    <li className="grid min-w-0 gap-1 border-b border-line py-1.5 last:border-b-0">
+      <div className="flex min-w-0 flex-wrap items-start justify-between gap-2">
+        <div className="grid min-w-0 gap-0.5">
+          <Path path={entry.path} code={entry.code} />
+          <Detail parts={[t('projects.git.changes.mode', { mode: entry.modes.join(' ') }), t('projects.git.changes.stages', { ids: entry.blobs.map(short).join(', ') })]} />
+        </div>
+        {acts && Conflict && resolve && mark && (
+          <div className="flex flex-wrap gap-1">
+            <Button variant="ghost" aria-expanded={open} onClick={() => setOpen(!open)}>{t(open ? 'projects.git.changes.conflict.hide' : 'projects.git.changes.conflict.show')}</Button>
+            <Button variant="ghost" disabled={acts.busy} onClick={() => mark(entry.path)}>{t('projects.git.changes.conflict.mark')}</Button>
+          </div>
+        )}
+      </div>
+      {acts && Conflict && resolve && open && (
+        <Conflict path={entry.path} busy={acts.busy} onPress={(press) => resolve({ path: entry.path, ...press })} />
+      )}
+    </li>
+  );
+}
+
 /** The last act in words, a refusal in the driver's sentence, and *Undo* beside a done one that kept a way back. */
 function ActSaid({ last, busy, onUndo }: { last: ChangesLast; busy: boolean; onUndo: (act: string) => void }) {
   const { t } = useTranslation();
@@ -363,7 +391,7 @@ function ActSaid({ last, busy, onUndo }: { last: ChangesLast; busy: boolean; onU
   return (
     <div role="status" className="flex flex-wrap items-center justify-between gap-2 rounded-control border border-line p-2">
       <Prose className="min-w-0 text-small"><Inline text={words} /></Prose>
-      {last.done && last.act && (last.verb === 'stage' || last.verb === 'unstage') && (
+      {last.done && last.act && (last.verb === 'stage' || last.verb === 'unstage' || last.verb === 'resolve' || last.verb === 'mark') && (
         <Button variant="ghost" disabled={busy} onClick={() => onUndo(last.act!)}>{t('projects.git.changes.undo')}</Button>
       )}
     </div>

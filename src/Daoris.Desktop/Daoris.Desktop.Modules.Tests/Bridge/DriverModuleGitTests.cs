@@ -169,6 +169,27 @@ public sealed class DriverModuleGitTests : DriverModuleBridge
         Assert.Equal(before, (await GitAsync(root, "rev-parse", "HEAD")).Trim());
     }
 
+    /// <summary>GITAPP2j: a file not in conflict is read with its reason, and a resolve and a mark with the switch off are refused as data, with no path.</summary>
+    [Fact]
+    [Trait(Category.Name, Category.Process)]
+    public async Task The_conflict_read_says_why_a_file_has_none_and_a_resolve_with_the_switch_off_is_refused_in_words()
+    {
+        var root = await InitAsync();
+        var module = await UpAsync(root);
+
+        var read = (await AnswerAsync(module, "GIT_CONFLICT", new { repository = "engine", workspace = "aurora", path = "README.md" })).GetProperty("value");
+        var press = new { repository = "engine", workspace = "aurora", path = "README.md", head = read.GetProperty("head").GetString(), picks = Array.Empty<object>() };
+        var resolve = await AnswerAsync(module, "GIT_RESOLVE", press);
+        var mark = await AnswerAsync(module, "GIT_MARK_RESOLVED", press);
+
+        Assert.Contains("not in conflict", read.GetProperty("why").GetString());
+        Assert.Equal(0, read.GetProperty("hunks").GetArrayLength());
+        Assert.True(resolve.GetProperty("refused").GetBoolean());
+        Assert.Contains("may not change", resolve.GetProperty("said").GetString());
+        Assert.True(mark.GetProperty("refused").GetBoolean());
+        Assert.DoesNotContain(root, resolve.GetRawText().Replace("\\\\", "\\"));
+    }
+
     /// <summary>GITAPP2k: the switch's and the stash's plans read, and with the switch off each press is refused as data, with no path, and nothing moves.</summary>
     [Fact]
     [Trait(Category.Name, Category.Process)]

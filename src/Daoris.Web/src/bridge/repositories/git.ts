@@ -466,6 +466,54 @@ export const useGitHunks = (repository: string | null, workspace: string, path: 
   });
 };
 
+/** One conflict of a file in conflict (GITAPP2j): what ours and theirs hold there, and a line or two around it; `id` names it for a press. */
+export type GitConflictHunk = { id: string; before: string[]; ours: string[]; theirs: string[]; after: string[] };
+
+/**
+ * A file the index holds in conflict, read by its stages (GITAPP2j): `base`, `ours` and `theirs` are `mode blob` (empty where a stage is
+ * missing) and `worktree` the file's id, which a press sends back unread. `why` is set, with no hunks, where it cannot be taken by hunk.
+ */
+export type GitFileConflict = {
+  path: string; head: string | null; base: string; ours: string; theirs: string; worktree: string; why: string | null; hunks: GitConflictHunk[];
+};
+
+const readConflict = (raw: unknown): GitAnswer<GitFileConflict> | null => {
+  const answer = raw as Partial<GitAnswer<GitFileConflict>> | null;
+  if (!answer || typeof answer !== 'object' || !('value' in answer)) return null;
+  const value = answer.value;
+  return {
+    value: value && Array.isArray(value.hunks) ? { ...value, head: value.head ?? null, why: value.why ?? null } : null,
+    refusal: answer.refusal ?? null,
+    problem: answer.problem ?? null,
+    commands: answer.commands ?? [],
+    remembered: answer.remembered === true,
+  };
+};
+
+const conflictKey = (repository: string, workspace: string, path: string) => [...keys.gitChanges(repository, workspace), 'conflict', path] as const;
+
+/** A conflicted file's conflicts, read when asked for and read again with the Changes tab (they sit under its key). */
+export const useGitConflict = (repository: string | null, workspace: string, path: string, enabled = true) => {
+  const { isAvailable } = useShenora();
+  const client = useQueryClient();
+  const queryKey = conflictKey(repository ?? '', workspace, path);
+  return useQuery({
+    queryKey,
+    queryFn: () => askHeld('GIT_CONFLICT', client, queryKey, { repository, path, ...(workspace ? { workspace } : {}) }, readConflict),
+    enabled: isAvailable && Boolean(repository) && enabled,
+    staleTime: 0,
+    refetchOnMount: 'always',
+  });
+};
+
+/** A resolve or a mark as pressed: the file, the stages and worktree id it was read against, and (for a resolve) a take for every conflict. */
+export type GitResolvePress = {
+  verb: 'resolve' | 'mark';
+  path: string;
+  faces?: Pick<GitFileConflict, 'head' | 'base' | 'ours' | 'theirs' | 'worktree'>;
+  picks?: { id: string; take: 'ours' | 'theirs' | 'both' }[];
+};
+
 /** What a hunk or a file pressed: whole file with no pick, else the hunks (and lines of them, by index) chosen. */
 export type GitActPick = { id: string; lines?: number[] };
 
@@ -675,7 +723,25 @@ export const useGitActs = (repository: string | null, workspace: string) => {
     },
   });
   const undo = useMutation({ mutationFn: async (act: string) => readAct(await call('GIT_UNDO', { ...scope, act })) });
-  return { press, undo };
+  // GITAPP2j: Resolve and Mark resolved of a file in conflict. A mark reads the file's stages and id when it is pressed, as the person marks it
+  // once it stands as they want it; a resolve sends the faces its conflicts were read against.
+  const resolve = useMutation({
+    mutationFn: async (act: GitResolvePress): Promise<GitActAnswer> => {
+      let faces = act.faces;
+      if (!faces) {
+        const key = conflictKey(repository ?? '', workspace, act.path);
+        const read = await client.fetchQuery({
+          queryKey: key, staleTime: 0,
+          queryFn: () => askHeld('GIT_CONFLICT', client, key, { ...scope, path: act.path }, readConflict),
+        });
+        faces = read?.value ?? undefined;
+        if (!faces) return { done: false, refused: true, act: null, outcome: null, said: read?.problem ?? null };
+      }
+      const payload = { ...scope, path: act.path, head: faces.head, base: faces.base, ours: faces.ours, theirs: faces.theirs, worktree: faces.worktree };
+      return readAct(act.verb === 'resolve' ? await call('GIT_RESOLVE', { ...payload, picks: act.picks ?? [] }) : await call('GIT_MARK_RESOLVED', payload));
+    },
+  });
+  return { press, undo, resolve };
 };
 
 /** Two commits compared: the commits only one side holds, and the changes (`everything` reads A..B, not A...B). */

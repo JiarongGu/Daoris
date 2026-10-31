@@ -61,7 +61,16 @@ internal static class ActSteps
 
     /// <summary>The bound a step of <paramref name="kind"/> runs under, by the git it is or starts (<see cref="GitBounds"/>).</summary>
     public static TimeSpan BoundOf(string kind) =>
-        GitBounds.Of([kind switch { ActStepKinds.Index => "update-index", ActStepKinds.Commit => "commit", ActStepKinds.Switch => "switch", ActStepKinds.Stash => "stash", _ => "update-ref" }]);
+        kind == ActStepKinds.Bytes ? GitBounds.Question
+        : GitBounds.Of([kind switch { ActStepKinds.Index => "update-index", ActStepKinds.Commit => "commit", ActStepKinds.Switch => "switch", ActStepKinds.Stash => "stash", _ => "update-ref" }]);
+
+    /// <summary>A file step: <paramref name="path"/>'s bytes (digest <paramref name="before"/>) replaced by <paramref name="written"/>'s (digest <paramref name="after"/>), <paramref name="replaced"/> holding the old ones.</summary>
+    public static ActStepPlan Bytes(string path, string relative, string before, string after, string replaced, string written)
+    {
+        var said = new JsonObject { ["path"] = path, ["relative"] = relative, ["before"] = before, ["after"] = after, ["replaced"] = replaced, ["written"] = written }.ToJsonString();
+        var undo = new JsonObject { ["path"] = path, ["relative"] = relative, ["before"] = after, ["after"] = before, ["replaced"] = written, ["written"] = replaced }.ToJsonString();
+        return new ActStepPlan(ActStepKinds.Bytes, said, said, undo);
+    }
 
     // ——— The effects, under the checkout's hold.
 
@@ -71,6 +80,7 @@ internal static class ActSteps
         ActStepKinds.Ref => RefAsync(held, launch, step),
         ActStepKinds.Config => ConfigAsync(held, launch, step),
         ActStepKinds.Commit => ActCommits.EffectAsync(held, launch, step),
+        ActStepKinds.Bytes => ActFiles.EffectAsync(step),
         ActStepKinds.Switch => ActWorkSteps.SwitchAsync(held, launch, step),
         ActStepKinds.Stash => ActWorkSteps.StashAsync(held, launch, step),
         _ => IndexAsync(held, launch, step),
@@ -153,11 +163,13 @@ internal static class ActSteps
 
             File.Copy(index, copy, overwrite: true);
             var input = new StringBuilder();
-            foreach (var entry in after) input.Append($"{entry.Mode} {entry.Id} {entry.Stage}\t{entry.Path}\n");
-            foreach (var gone in before.Where(entry => !after.Any(each => each.Path == entry.Path && each.Stage == entry.Stage)))
+            // A removal takes every stage of its path, so removals come first and the entries after them are added.
+            foreach (var gone in before.Where(entry => !after.Any(each => each.Path == entry.Path && each.Stage == entry.Stage)).DistinctBy(entry => entry.Path))
             {
                 input.Append($"0 {new string('0', gone.Id.Length)} {gone.Stage}\t{gone.Path}\n");
             }
+
+            foreach (var entry in after) input.Append($"{entry.Mode} {entry.Id} {entry.Stage}\t{entry.Path}\n");
 
             var environment = new Dictionary<string, string>(StringComparer.Ordinal) { ["GIT_INDEX_FILE"] = copy };
             var run = await launch.HeldGitAsync(launch.Root, step.Ordinal, ["update-index", "--index-info"], input.ToString(), environment).ConfigureAwait(false);
@@ -295,6 +307,9 @@ internal static class ActSteps
 
             case ActStepKinds.Commit:
                 return await ActCommits.ReadAsync(root, plan, ct).ConfigureAwait(false);
+
+            case ActStepKinds.Bytes:
+                return await ActFiles.ReadAsync(plan, ct).ConfigureAwait(false);
 
             case ActStepKinds.Switch:
                 return await ActWorkSteps.ReadSwitchAsync(root, plan, ct).ConfigureAwait(false);
