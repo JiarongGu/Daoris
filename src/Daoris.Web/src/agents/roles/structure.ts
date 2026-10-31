@@ -146,9 +146,6 @@ export type RepositoryRow = {
 
 export type WorkspaceGroup = { id: string; workspace: string; repositories: RepositoryRow[]; differs: number };
 
-/** What a place answered for one work: the role's node, or none where no role takes it or its start holds. */
-export type PlaceAnswer = { work: string; role: string | null; held: boolean };
-
 /** A node of the diagram (§4): a place, a working role, an appointed role or an agent, each with the id its row has. */
 export type DiagramNode =
   | {
@@ -161,7 +158,8 @@ export type DiagramNode =
     own: boolean;
     /** The repositories in this workspace that set nothing of their own, counted here rather than drawn. */
     counted: number;
-    answers: PlaceAnswer[];
+    /** Per work, what the driver answered here, which choosing the place lights and its detail says. */
+    works: RepositoryWork[];
     reasons: Reason[];
   }
   | { id: string; kind: 'role'; role: RoleRef; takes: string[]; first: StructureChoice | null; more: number; reasons: Reason[] }
@@ -249,6 +247,17 @@ const lower = (value: string | undefined | null) => (value ?? '').toLowerCase();
 
 /** Whether every choice of a work cannot run by its last reading: one that can, or may, is a start that goes. */
 const allCannot = (choices: readonly StructureChoice[]) => choices.length > 0 && choices.every((choice) => CANNOT_RUN.has(choice.state.code));
+
+type AnsweredPlace = RoleStructure['places'][number] | undefined;
+
+/** A place's answer per work as a row says it: the role, why it holds, its first choice, and whether it differs from this machine's. */
+function placeWorks(place: AnsweredPlace, machine: AnsweredPlace): RepositoryWork[] {
+  return (place?.works ?? []).map((each) => ({
+    work: each.work, role: each.role ? toRef(each.role) : null, held: each.held, first: each.choices[0] ?? null,
+    more: Math.max(0, each.choices.length - 1), choicesFailed: each.choicesFailed, policyFailed: each.policyFailed,
+    differs: !sameAnswer(each, machine?.works.find((other) => other.work === each.work)), cannotRun: allCannot(each.choices),
+  }));
+}
 
 export function buildStructure(input: StructureInput): Structure {
   const { structure, filters } = input;
@@ -352,14 +361,7 @@ export function buildStructure(input: StructureInput): Structure {
         const landing = input.lines?.landings?.find((each) => each.repository === row.repository);
         const driven = input.driver ? (input.driver.holds.includes(row.repository) ? 'held' : input.driver.drivable.includes(row.repository) ? 'driven' : 'not-driven') : null;
         const flow = input.workflows[row.repository] ?? null;
-        const rowWorks: RepositoryWork[] = (place?.works ?? []).map((each) => {
-          const base = workAt(machine, each.work);
-          return {
-            work: each.work, role: each.role ? toRef(each.role) : null, held: each.held, first: each.choices[0] ?? null,
-            more: Math.max(0, each.choices.length - 1), choicesFailed: each.choicesFailed, policyFailed: each.policyFailed,
-            differs: !sameAnswer(each, base), cannotRun: allCannot(each.choices),
-          };
-        });
+        const rowWorks = placeWorks(place, machine);
         const agents = new Set((place?.works ?? []).flatMap((each) => each.choices.map((choice) => choice.agent)));
         const via = new Map<string, Set<'agent' | 'landing'>>();
         for (const agent of agents) {
@@ -473,8 +475,6 @@ function diagramOf(input: StructureInput, accounts: readonly AccountRow[], needl
   const appointments = input.appointed?.appointments ?? [];
   const placedAt = (kind: string, id: string) => [...roles.values()].some((seed) => seed.ref.scope.kind === kind && seed.ref.scope.id === id);
   const appointedAt = (scope: string) => appointments.some((each) => each.scope.toLowerCase() === scope.toLowerCase());
-  const answersOf = (place: typeof machine): PlaceAnswer[] =>
-    (place?.works ?? []).map((each) => ({ work: each.work, role: each.role ? roleId(each.role.id) : null, held: Boolean(each.held) }));
   const reasonsOf = (place: typeof machine): Reason[] => {
     const reasons: Reason[] = [];
     if ((place?.works ?? []).some((each) => each.held || each.choicesFailed || each.policyFailed)) reasons.push('held');
@@ -484,7 +484,7 @@ function diagramOf(input: StructureInput, accounts: readonly AccountRow[], needl
   type PlaceNode = Extract<DiagramNode, { kind: 'place' }>;
   const places: PlaceNode[] = [{
     id: placeId({}), kind: 'place', workspace: null, repository: null, group: null, known: true, own: true, counted: 0,
-    answers: answersOf(machine), reasons: reasonsOf(machine),
+    works: placeWorks(machine, machine), reasons: reasonsOf(machine),
   }];
   for (const workspace of registryWorkspaces) {
     const here = placeAt({ workspace });
@@ -498,13 +498,13 @@ function diagramOf(input: StructureInput, accounts: readonly AccountRow[], needl
     if (own || counted > 0) {
       places.push({
         id: placeId({ workspace }), kind: 'place', workspace, repository: null, group: workspace, known: true, own, counted,
-        answers: answersOf(here), reasons: reasonsOf(here),
+        works: placeWorks(here, machine), reasons: reasonsOf(here),
       });
     }
     for (const each of inside.filter((one) => one.own)) {
       places.push({
         id: placeId({ workspace, repository: each.repository }), kind: 'place', workspace, repository: each.repository, group: workspace,
-        known: true, own: true, counted: 0, answers: answersOf(each.place), reasons: reasonsOf(each.place),
+        known: true, own: true, counted: 0, works: placeWorks(each.place, machine), reasons: reasonsOf(each.place),
       });
     }
   }
@@ -519,7 +519,7 @@ function diagramOf(input: StructureInput, accounts: readonly AccountRow[], needl
     const workspace = kind === 'workspace' ? id! : workspaceOfRepository(id!);
     places.push({
       id: at, kind: 'place', workspace, repository: kind === 'repository' ? id! : null, group: workspace, known: false, own: true, counted: 0,
-      answers: [], reasons: [],
+      works: [], reasons: [],
     });
   };
   for (const seed of roles.values()) if (seed.ref.scope.kind === 'workspace' || seed.ref.scope.kind === 'repository') asWritten(seed.ref.scope.kind, seed.ref.scope.id);
@@ -530,7 +530,8 @@ function diagramOf(input: StructureInput, accounts: readonly AccountRow[], needl
   const agentKeys: string[] = [];
   for (const [id, seed] of roles) {
     const node = roleId(id);
-    edges.push({ id: `placed:${placeOfScope(seed.ref.scope.kind, seed.ref.scope.id)}>${node}`, kind: 'placed', from: placeOfScope(seed.ref.scope.kind, seed.ref.scope.id), to: node });
+    const from = placeOfScope(seed.ref.scope.kind, seed.ref.scope.id);
+    edges.push({ id: `placed:${from}>${node}`, kind: 'placed', from, to: node });
     const choices = (answered.get(id) ?? seed.stored).filter((choice) => choice.from !== 'rule-default');
     for (const choice of choices) {
       const key = toolOf(input.tools, choice.agent)?.name ?? choice.agent;
@@ -619,7 +620,7 @@ export function litOf(diagram: Diagram, id: string | null): { nodes: Set<string>
   nodes.add(node.id);
   if (node.kind === 'place') {
     // Per work, the role the driver answered here, where that role is placed and its staffing; and this place's appointments.
-    for (const answer of node.answers) if (answer.role && diagram.nodes.some((each) => each.id === answer.role)) around(answer.role);
+    for (const work of node.works) if (work.role && diagram.nodes.some((each) => each.id === roleId(work.role!.id))) around(roleId(work.role.id));
     for (const edge of diagram.edges) if (edge.kind === 'appointed' && edge.from === node.id) light(edge);
   } else if (node.kind === 'agent') {
     for (const edge of diagram.edges) if (edge.kind === 'staffed' && edge.to === node.id) light(edge);
