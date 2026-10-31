@@ -3,7 +3,7 @@ import { chinese } from '../../design/storyLanguage';
 import { storyWidths } from '../../design/storyWidths';
 import type { ActorRow, RoleCatalogue, RoleRow } from '../../data/wiring';
 import type { StartWiring } from '../../map/wiring';
-import { AskDaorisAbout, IntakeAbout } from './ActorAbout';
+import { AskDaorisAbout, IntakeAbout } from '../../settings/ai/ActorAbout';
 import { RolesCard } from './Roles';
 
 // The roles on AI features (FOUNDATION1y-i, MODELROLE1c, COMPANYVIEW1a), one row for each, in the shapes `ROLES` and `ACTORS` answer
@@ -48,7 +48,7 @@ const STAFFING: ActorRow[] = [
 ];
 
 const meta: Meta<typeof RolesCard> = {
-  title: 'Settings/Roles',
+  title: 'Agents/Roles',
   component: RolesCard,
   args: {
     catalogue: CATALOGUE,

@@ -74,6 +74,8 @@
   "settings.ai.actors.kept": "{{actors}} keep {{agent}}, written for them.",
   "settings.ai.actors.and": " and ",
   "settings.ai.roles.title": "Roles",
+  "settings.ai.roles.moved": "Working roles are set in Agents, under Roles.",
+  "settings.ai.roles.open": "Open Roles",
   "settings.ai.roles.body": "Each role takes one kind of work in one place: this machine, a workspace or a repository. A start takes the role of its most specific place and runs on the first of its choices that can run, in your order, saying so when it took a later one; Brainstorm runs all its choices at once. A work no role takes waits until you give it one; running work goes on.",
   "settings.ai.roles.unkept": "This home's driver.json is the file's own, so a role cannot be added, removed or moved to another place here; each role's order is still set.",
   "settings.ai.roles.notOffered": "Not offered by this shell: it keeps one order of choices for each role, set below, and no catalogue.",

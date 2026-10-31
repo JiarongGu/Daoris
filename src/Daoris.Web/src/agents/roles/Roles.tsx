@@ -32,7 +32,7 @@ const FIELD = 'w-full min-w-0 rounded-control border border-line-strong bg-raise
 type Draft = { key: number; agent: string; model: string; effort: string };
 
 /** `role` is the catalogue's editor over `SET_ROLE`; `staffing` holds a role's order alone, over `SET_ACTOR`. */
-type Editing = {
+export type Editing = {
   id: string; mode: 'role' | 'staffing'; isNew: boolean; revision: number | null; nameEn: string; nameZh: string; takes: string[]; work: string;
   place: string; placeId: string; drafts: Draft[];
 };
@@ -116,7 +116,11 @@ function suggestionPress(role: SuggestedRole): RoleChangePress {
  */
 export function RolesCard({
   catalogue, read = catalogue ? 'ok' : 'notOffered', staffing = [], agents, about = {}, busy = false, onSet, onSetActor, found = [], onAnswerFound,
+  editor: held, onEditor,
 }: {
+  /** The open editor, where the place that owns the section holds it (D168 point 3); with none given the card holds its own. */
+  editor?: Editing | null;
+  onEditor?: (next: Editing | null) => void;
   /** The catalogue as `ROLES` answers it; null where the shell offers none or the read failed. */
   catalogue: RoleCatalogue | null;
   /** Why there is no catalogue: not offered by this shell, or a read that failed; `loading` says nothing. */
@@ -139,7 +143,17 @@ export function RolesCard({
 }) {
   const { t, i18n } = useTranslation();
   const next = useRef(0);
-  const [editing, setEditing] = useState<Editing | null>(null);
+  const [own, setOwn] = useState<Editing | null>(null);
+  const controlled = onEditor !== undefined;
+  const editing = controlled ? held ?? null : own;
+  const latest = useRef(editing);
+  latest.current = editing;
+  const setEditing = (change: Editing | null | ((now: Editing | null) => Editing | null)) => {
+    const next = typeof change === 'function' ? change(latest.current) : change;
+    latest.current = next;
+    if (controlled) onEditor(next);
+    else setOwn(next);
+  };
   const [refused, setRefused] = useState<{ at: string; sentence: string } | null>(null);
   const [foundRefused, setFoundRefused] = useState<{ id: number; sentence: string } | null>(null);
   const name = (row: Pick<RoleRow, 'id' | 'seeded' | 'nameEn' | 'nameZh'>) => roleName(t, i18n.language, row);
