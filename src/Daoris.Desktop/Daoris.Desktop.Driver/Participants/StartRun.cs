@@ -14,6 +14,9 @@ internal sealed record StartRun(string Line, bool Opened, SessionEnded? Ended = 
     /// <summary>The account this start was refused for its sign-in and marked, whose quest the same start tries once more on another (LIMITPICK2), or null.</summary>
     public string? SignedOutOn { get; init; }
 
+    /// <summary>The agent and the model this start was refused for and marked, whose quest the same start tries once more on the walk's next answer (MODELREFUSE1), or null.</summary>
+    public (string Agent, string Model)? ModelRefusedOn { get; init; }
+
     /// <summary>The accounts a held start passed because they are not signed in (TOOL6g), or null.</summary>
     public SignedOutAccounts? SignedOut { get; init; }
 

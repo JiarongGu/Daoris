@@ -1467,6 +1467,24 @@ public sealed class Driver(
                     }
                 }
 
+                // MODELREFUSE1: the same, for a model its agent refused; a walk that gives nothing runnable leaves the first run's end as it was.
+                if (run.ModelRefusedOn is { } refusedOn)
+                {
+                    var holding = MovingReservation(start);
+                    try
+                    {
+                        var again = new FreshTree(path => Context.Trees.RemoveAsync(path));
+                        var moved = await again.UntilOpenAsync(
+                                () => RunAsync(start, snapshot.Repositories, own, () => Context.Runs.Release(holding), again, ct, movedOffModel: refusedOn), ct)
+                            .ConfigureAwait(false);
+                        if (moved.Opened) return moved;
+                    }
+                    finally
+                    {
+                        Context.Runs.Release(holding);
+                    }
+                }
+
                 return run;
             }
             finally
@@ -2117,7 +2135,7 @@ public sealed class Driver(
     /// <param name="movedOff">The account the first run of this start was refused for its sign-in (LIMITPICK2); a walk that gives it again holds.</param>
     private async Task<StartRun> RunAsync(
         Consideration start, IReadOnlyList<RepoView> registry, List<TrustHold> untrusted, Action onOpened, FreshTree fresh, CancellationToken ct,
-        string? movedOff = null)
+        string? movedOff = null, (string Agent, string Model)? movedOffModel = null)
     {
         var quest = start.Quest;
         var root = start.Root!;
@@ -2878,6 +2896,7 @@ public sealed class Driver(
                     prior.Limit ? RotatedOpening.ContextOf(usage, Context.Events, prior.Session) : null));
         // Where a later choice of Build's ran, its actor line beside it, naming each choice passed (D205 §4.6 item 1, MODELROLE1c2).
         if (movedOff is not null) RotatedOpening.SayMovedOff(Context.Events, sessionId, AccountNames.Said(AccountNames.Of(home, agent), movedOff));
+        if (movedOffModel is { } refusedModel) RotatedOpening.SayMovedOffModel(Context.Events, sessionId, refusedModel.Agent, refusedModel.Model);
         if (chosen is not null) RotatedOpening.SayActor(Context.Events, sessionId, "build", chosen, buildPasses);
         // A quest marked design says whose order it ran on: the role taking design, Build's while none does (FOUNDATION1x, MODELROLE1l).
         if (start.Resumes is null && StartWork(quest) == ParticipantWork.Design && DesignRoleName(start) is { } designer)
@@ -3267,6 +3286,16 @@ public sealed class Driver(
                     var refusedModel = ModelRefused(conclusion, adapter.Name, selection, target.Asked?.NamedModel, ended, sessionId);
                     var modelRefused = !ReferenceEquals(refusedModel, conclusion);
                     conclusion = refusedModel;
+                    // MODELREFUSE1: a model its agent refused, at the open or on a silent pipe turn, moves the same start to the walk's next
+                    // answer as an account's sign-in does, under the same reservation; the reading it kept makes the walk pass it.
+                    (string Agent, string Model)? modelRefusedOn = null;
+                    if ((notOffered || modelRefused) && stop is null && movedOff is null && movedOffModel is null && start.Resumes is null
+                        && (ended.NotOffered?.Value ?? target.Asked?.NamedModel) is { Length: > 0 } refusedValue
+                        && Context.Runs.TryReserve(MovingReservation(start)))
+                    {
+                        modelRefusedOn = (adapter.Name, refusedValue);
+                    }
+
                     (conclusion, var limited) = AccountLimited(
                         conclusion, adapter, selection, turnFailed, sessionId, used,
                         // A limit read by its code on the door, with no sentence (§3.1): cooled for D125's unstated hour.
@@ -3337,6 +3366,7 @@ public sealed class Driver(
                             })
                     {
                         SignedOutOn = signedOutOn,
+                        ModelRefusedOn = modelRefusedOn,
                     };
                 }).ConfigureAwait(false);
         }
