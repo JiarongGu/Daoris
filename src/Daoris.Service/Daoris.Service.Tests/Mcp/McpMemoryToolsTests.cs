@@ -194,17 +194,41 @@ public sealed class McpMemoryToolsTests : McpToolsFixture
         Assert.Equal(before, _memory.State());
     }
 
-    /// <summary>🔴 A write naming an entry it supersedes is refused, naming Lyntai's request for one change (the design §4, §6 A), and keeps nothing.</summary>
+    /// <summary>
+    /// 🔴 A write naming an entry it supersedes, over an engine that cannot replace one in one change, is refused naming Lyntai's request
+    /// (the design §4, §6 A), and keeps nothing.
+    /// </summary>
     [Fact]
     public async Task A_write_that_supersedes_is_refused_naming_the_request()
     {
         var tools = await AsAsync("chat");
         var before = _memory.State();
 
-        var answer = await tools.WriteAsync("The map is drawn in vectors.", supersedes: "Owner:m1");
+        var answer = await tools.WriteAsync("The map is drawn in vectors.", supersedes: ["Owner:m1@1"]);
 
         Assert.Equal(MemoryTools.SupersedesWaits, answer);
         Assert.Contains("§6 A", answer);
+        Assert.Equal(before, _memory.State());
+        Assert.DoesNotContain(await _ledger.Memory.ListAsync(MemoryOpState.Staged), op => op.Change.Text == "The map is drawn in vectors.");
+    }
+
+    /// <summary>
+    /// 🔴 A replacement names each entry it ends with the revision read, of the caller's own repository, and relates to nothing else; a
+    /// door that refuses keeps nothing.
+    /// </summary>
+    [Fact]
+    public async Task A_replacement_names_its_own_entries_each_at_a_revision()
+    {
+        var tools = await AsAsync("chat");
+        var before = _memory.State();
+
+        var unread = await tools.WriteAsync("The map is drawn in vectors.", supersedes: ["Owner:m1"]);
+        var foreign = await tools.WriteAsync("The map is drawn in vectors.", supersedes: ["Asker:m1@1"]);
+        var related = await tools.WriteAsync("The map is drawn in vectors.", "disputes", "Owner:m1", supersedes: ["Owner:m1@1"]);
+
+        Assert.Contains("`repository:entry@revision`", unread);
+        Assert.Contains("ends entries of `Owner` alone", foreign);
+        Assert.Contains("relates to no other entry", related);
         Assert.Equal(before, _memory.State());
         Assert.DoesNotContain(await _ledger.Memory.ListAsync(MemoryOpState.Staged), op => op.Change.Text == "The map is drawn in vectors.");
     }
