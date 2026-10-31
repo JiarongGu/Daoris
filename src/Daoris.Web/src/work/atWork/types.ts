@@ -60,6 +60,8 @@ export type AtWorkA = {
   parts: AtWorkPart[];
   moreParts?: Record<string, number>;
   subagents: AtWorkSubagents;
+  /** When the shell's process began; absent from an older host. */
+  windowOpened?: string;
 };
 
 /** The delivery's number: the shell's epoch and its landing's, kept in the query's own data. */

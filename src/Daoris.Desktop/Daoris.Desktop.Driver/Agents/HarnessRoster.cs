@@ -1223,7 +1223,7 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
 
         // The first look, before any question: read again under the gate once the questions are asked (PARALLEL1c).
         var now = Clock();
-        var (order, _) = OrderOf(owner, scope, kind, picked, ownHome, now, offer.Except);
+        var (order, known) = OrderOf(owner, scope, kind, picked, ownHome, now, offer.Except);
 
         // What a hold says names each account by the person's name, read now, as it is said (ACCT2b); the selection's facts
         // and the record's opening line keep the ids.
@@ -1232,7 +1232,7 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
         // 🔴 No Daoris account to run on (OWNSPACE1a, D175 point 2): the start waits for the person's sign-in, before anything is
         // probed or spawned, and never runs in the person's own tool home, which a scope naming nothing once meant (D125 point 5).
         if (ours && order is [null]) return NoAccount(owner, [], names);
-        var states = order.Select(account => Before(owner, account, now, names)).ToList();
+        var states = order.Select(account => Before(owner, account, now, names, FactOf(known, account))).ToList();
 
         // 🔴 A cooling account is held FIRST, by a file read, before any probe (TOOL4d, D125 §3.3, §4): a start on a
         // spent account is refused at once and spends nothing, and three of them parked a quest on 1 October whose only
@@ -1522,7 +1522,7 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     {
         var now = Clock();
         var (order, facts) = OrderOf(owner, scope, kind, picked, ownHome: false, now, except);
-        var states = order.Select(account => Before(owner, account, now, names)).ToList();
+        var states = order.Select(account => Before(owner, account, now, names, FactOf(facts, account))).ToList();
         // What the agent last said of each account (ROSTER1), as a report says it: an account not on this machine said nothing.
         var present = HarnessSettings.Profiles(Home, owner);
         var reads = AccountReads.Of(Home, owner);
@@ -1691,7 +1691,7 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
         var facts = scope.List.Count == 0 ? NoFacts : Facts(agent, scope.List, now);
         IReadOnlyList<string?> order = scope.List.Count == 0 ? [scope.Begins] : [.. AccountRotation.Order(scope, kind, present, facts, now)];
         var reads = AccountReads.Of(Home, agent);
-        var tried = order.Select(account => Before(agent, account, now) switch
+        var tried = order.Select(account => Before(agent, account, now, fact: FactOf(facts, account)) switch
         {
             { IsReady: true, Account: { } named } ready when SaidOut(reads, named) => ready with { Readiness = AccountReadiness.SignedOut },
             var state => state,
@@ -1768,6 +1768,9 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
         return setUp;
     }
 
+    private static AccountFacts? FactOf(IReadOnlyDictionary<string, AccountFacts> facts, string? account) =>
+        account is not null && facts.TryGetValue(account, out var fact) ? fact : null;
+
     /// <summary>Whether the last reading of an owner's account said it is signed out (ROSTER1): kept under the home, never asked.</summary>
     private static bool SaidOut(AgentReads reads, string account) =>
         reads.Accounts.GetValueOrDefault(account)?.Login == LoginState.Out;
@@ -1777,9 +1780,11 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     /// refusal its provider gave (AGT3b), held in memory; otherwise ready, until the agent says it is signed out.
     /// </summary>
     /// <param name="names">The owner's names by id, which a cooling account's hold names it by (ACCT2b); null says the id.</param>
-    private AccountState Before(string owner, string? account, DateTimeOffset now, IReadOnlyDictionary<string, string>? names = null)
+    /// <param name="fact">What the walk knows of the account: a reading at its limit cools it until that window's reset (LIMITPICK1).</param>
+    private AccountState Before(
+        string owner, string? account, DateTimeOffset now, IReadOnlyDictionary<string, string>? names = null, AccountFacts? fact = null)
     {
-        if (AccountCooling.Of(Home, owner, account, now) is { } cooling)
+        if ((AccountCooling.Of(Home, owner, account, now) ?? AccountRotation.Spent(owner, account, fact, now)) is { } cooling)
         {
             var hold = CoolingWords.HoldOf(cooling, Zone, names);
             return new AccountState(account, AccountReadiness.Cooling, cooling, hold.Note) { RefusalNote = hold };

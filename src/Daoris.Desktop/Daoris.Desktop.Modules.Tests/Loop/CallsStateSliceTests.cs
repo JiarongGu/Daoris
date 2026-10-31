@@ -267,6 +267,24 @@ public sealed class CallsStateSliceTests : DriverModuleBridge
         Assert.DoesNotContain(Raised, each => each.Type == StatePublisher.Type);
     }
 
+    /// <summary>Rule 18: a console that closes wakes the slice at once, throttle or none, since a session not live has no moment heard.</summary>
+    [Fact]
+    public void A_console_that_closes_wakes_the_heard_partition_at_once_and_its_session_leaves_it()
+    {
+        var (loop, _) = Up();
+        loop.Output.Clock = () => T0;
+        var woken = 0;
+        using var hearing = CallsStateSlice.HearHeard(loop.Output, () => woken++);
+        loop.Output.Append("s1", "a");
+        Assert.Equal(1, woken);
+        Assert.Contains("s1", loop.Output.HeardNow().Keys);
+
+        loop.Output.Close("s1");
+
+        Assert.Equal(2, woken);
+        Assert.DoesNotContain("s1", loop.Output.HeardNow().Keys);
+    }
+
     /// <summary>Run as the loop runs it: a call's start reaches the windows with no bus event of its own, and a disposed hearing hears no more.</summary>
     [Fact]
     public async Task Running_a_call_s_start_is_pushed_from_the_record_alone_and_a_hearing_disposed_hears_no_more()

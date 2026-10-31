@@ -20,7 +20,7 @@ public sealed class MemoryCommitPointTests : IDisposable
 
     public void Dispose()
     {
-        try { Directory.Delete(_home, recursive: true); } catch (IOException) { }
+        GitSeed.Discard(_home);
     }
 
     private void Turned(string session, long seq, DateTimeOffset started, string model) =>
@@ -43,7 +43,7 @@ public sealed class MemoryCommitPointTests : IDisposable
             _posted.Add((path, request.Content!.ReadAsStringAsync().Result));
             return (HttpStatusCode.OK, """{"session":{"id":"3f9c2a71","repository":"Owner","state":"completed"},"message":"ok"}""");
         });
-        return new ServiceClient("http://stand-in", null, new HttpClient(standIn)) { TurnLines = sessions => UsageHistory.TurnLinesOf(_home, sessions) };
+        return new ServiceClient("http://stand-in", null, new HttpClient(standIn)) { TurnLines = sessions => ServiceClient.LinesOf(UsageHistory.TurnLinesOf(_home, sessions), turn => new ServiceClient.TurnLine(turn.Seq, turn.Started, turn.Ended, turn.Model)) };
     }
 
     /// <summary>🔴 A completion hands the turn lines of the session and of the session it continues, and no other session's.</summary>

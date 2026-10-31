@@ -271,7 +271,11 @@ public sealed class SessionOutput : ISessionOutput
         }
 
         if (ended) Heard(sessionId);
+        Closed?.Invoke(sessionId);
     }
+
+    /// <summary>Raised with a session's id as its console closes, so what the window heard of it can be dropped.</summary>
+    public event Action<string>? Closed;
 
     /// <summary>Sessions with a buffer here — what "there is a console to show" means. Their streams are not listed.</summary>
     public IReadOnlyList<string> Buffered

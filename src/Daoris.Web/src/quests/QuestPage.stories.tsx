@@ -409,3 +409,9 @@ export const SetUpReviewed: Story = { args: { quest: STEP_REVIEWED, review: { ac
 
 /** In a browser: no shell to reach a session or a tab, so *Reviewed* and *Skip…* alone. */
 export const SetUpInABrowser: Story = { args: { quest: STEP_SHOWN, review: { acts: { reviewed: nothing, skip: nothing } } } };
+
+/** REVIEWFLOW1b: its session waits on the person, timed in the facts, and *next* is the door to that session. */
+const SESSION_WAITS = { quest: TAKEN, session: { ...WORKING, state: 'awaiting-person' as const }, onAttend: nothing };
+export const NextSessionWide: Story = { args: SESSION_WAITS };
+export const NextSessionNarrow: Story = { args: SESSION_WAITS, decorators: [storyWidths.narrow] };
+export const NextSessionChineseNarrow: Story = { args: SESSION_WAITS, decorators: [storyWidths.narrow, chinese] };

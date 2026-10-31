@@ -353,6 +353,8 @@ public static class NoteCodes
     // A session's tree asked for before it goes on (TREEGONE1): made again on its branch, gone with its branch, or not made.
     public static readonly NoteCode TreeRemade = new("tree.remade", ["branch"]);
     public static readonly NoteCode TreeGone = new("tree.gone", ["branch"]);
+    // TREEKEEPRETRY1: its tree and branch gone with nothing beyond the line, its part goes on in a fresh tree.
+    public static readonly NoteCode TreeFresh = new("tree.fresh", ["branch"]);
     public static readonly NoteCode TreeUnmade = new("tree.unmade", []);
     public static readonly NoteCode StartedJoined = new("started.joined", ["session"]);
     public static readonly NoteCode StartedResumesAnswered = new("started.resumes-answered", ["quest", "answered"]);
@@ -830,6 +832,8 @@ public static class NoteCodes
     // LIMITRESUME1b (D206): a line a limit cut off, every account it may run on at its limit, goes on by itself once the earliest is ready.
     public static readonly NoteCode HeldLimitWaits = new("held.limit-waits", ["owner", "account", "until"]) { Why = Cooling };
     public static readonly NoteCode HeldLimitWaitsOwn = new("held.limit-waits-own", ["owner", "until"]) { Why = Cooling };
+    // LIMITPICK1: the same wait where some accounts need the person's sign-in, named apart from those cooling; `accounts` a list.
+    public static readonly NoteCode HeldLimitWaitsSignIn = new("held.limit-waits-sign-in", ["owner", "account", "until", "accounts"]) { Why = Cooling };
     public static readonly NoteCode HeldSignedOut = new("held.signed-out", ["owner", "account", "profile"]);
     // LOCKPASSED1 (D125's PARALLEL1c note): every account the start could run on was locked past its patience; the accounts by id, a list.
     public static readonly NoteCode HeldLocked = new("held.locked", ["owner", "accounts"]);

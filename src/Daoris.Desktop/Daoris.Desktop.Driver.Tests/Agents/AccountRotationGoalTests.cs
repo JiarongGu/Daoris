@@ -640,6 +640,30 @@ public sealed class AccountRotationGoalTests : IDisposable
             (off.Profile, off.Choice?.Clause));
     }
 
+    /// <summary>
+    /// LIMITPICK1 (the owner's report, 2026-10-31): an account its own reading puts at 100% of a window is never picked, whatever else
+    /// is ready; it cools until that window's reset, so the start waits for the earliest of every reset when nothing else can run.
+    /// </summary>
+    [Fact]
+    public async Task An_account_its_own_reading_puts_at_its_limit_is_never_picked_and_the_start_waits_for_the_earliest_reset()
+    {
+        Accounts("account-1", "account-2", "account-3");
+        Wire(s => s.WithRotation("fake", ["account-1", "account-2", "account-3"]));
+        Said("account-2", 0.97, weekly: 0.97, weekHours: 30);
+        Said("account-3", 0.10, weekly: 1.0, weekHours: 20);
+        Cool("account-1");
+
+        var most = await Present().SelectAsync("fake", Config, null, null);
+        Assert.Equal("account-2", most.Profile);
+
+        Cool("account-2");
+        var held = await Present().SelectAsync("fake", Config, null, null);
+
+        Assert.False(held.Allowed, held.Profile);
+        Assert.Equal(("account-3", _now.AddHours(20)), (held.Cooling!.Account, held.Cooling.Until));
+        Assert.StartsWith("every `fake` account this start may use is cooling; the first ready, `account-3`, at", held.Refusal);
+    }
+
     [Fact]
     public async Task Under_order_a_near_default_is_passed_and_says_so_with_what_each_account_said()
     {

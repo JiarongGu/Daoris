@@ -118,6 +118,31 @@ describe('what needs a person, worded', () => {
     }
   });
 
+  /** KNOWCENTRAL2e: a session whose memory waits on the person is a row of waiting for their word, counted at Sessions, a door and no act. */
+  it('words a session whose memory waits on the person, by what waits, in each language', async () => {
+    const pushed = row('memory', 's1a2b3c4', '2026-10-31T09:00:00Z', {
+      workspace: 'default', where: 'engine', session: 's1a2b3c4', memory: { ends: 2, replacements: 1, staged: 0 },
+    });
+    const names = { sessions: [session({ quest: '7a82cc', state: 'completed' })], quests: [quest({ status: 'Taken' })] };
+    const title = 'Expose a streaming budget on the chunk API';
+
+    expect(words(pushed, names)).toMatchObject({
+      id: 's1a2b3c4', kind: 'memory', since: '2026-10-31T09:00:00Z', where: 'engine', title, session: 's1a2b3c4',
+      detail: '2 ends to approve · 1 replacement to approve',
+    });
+    expect(attentionActs(words(pushed, names))).toEqual([]);
+    expect(attentionGroup(pushed)).toBe('word');
+    expect(words(row('memory', 's2', null, { session: 's2', memory: { ends: 0, replacements: 0, staged: 1 } })).detail)
+      .toBe('1 change kept back to keep or drop');
+    await i18n.changeLanguage('zh');
+    try {
+      expect(words(pushed, names).detail).toBe('2 项终止待批准 · 1 项替换待批准');
+      expect(i18n.t('work.attention.memory')).toBe('记忆待你处理');
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+  });
+
   it('names a parked session by its derived identity, with the analysis it is waiting on', () => {
     const pushed = row('parked', 's1a2b3c4', '2026-09-21T10:00:00Z', { workspace: 'default', where: 'engine', note: { note: 'two ways forward.' } });
 
@@ -633,7 +658,7 @@ describe('the groups', () => {
       confirmation: 'holding', trust: 'holding', quiet: 'holding', 'helper-ended': 'holding',
       'account-wait': 'holding', 'signed-out': 'holding',
       proposal: 'word', intake: 'word', departure: 'word', 'set-up': 'word', opinion: 'word', rule: 'word', helper: 'word',
-      'hand-over': 'word', unanswerable: 'word', review: 'ready', work: 'word', space: 'word', 'git-held': 'word',
+      'hand-over': 'word', unanswerable: 'word', review: 'ready', work: 'word', space: 'word', 'git-held': 'word', memory: 'word',
     });
   });
 
@@ -986,7 +1011,7 @@ describe('the place each wait is counted at', () => {
   it('is the place its door opens, for every kind', () => {
     expect(ATTENTION_PLACE).toEqual({
       parked: 'sessions', review: 'sessions', opinion: 'sessions', helper: 'sessions', 'hand-over': 'sessions',
-      permission: 'sessions', answer: 'sessions', quiet: 'sessions', 'helper-ended': 'sessions',
+      permission: 'sessions', answer: 'sessions', quiet: 'sessions', 'helper-ended': 'sessions', memory: 'sessions',
       proposal: 'quests', intake: 'quests', unanswerable: 'quests', 'parked-quest': 'quests', 'steward-stopped': 'quests', 'request-declined': 'quests', 'go-ahead': 'quests',
       departure: 'quests', 'set-up': 'quests', trust: 'quests',
       work: 'projects',

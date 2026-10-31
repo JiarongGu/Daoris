@@ -855,10 +855,9 @@ public sealed class LinesRoutes(DriverContext context)
             .Select(row => (row.Repository, (string?)row.Workspace, row.Root))
             .ToList();
 
-    /// <summary>The trees sessions still running or waiting name, as the service's ledger says now.</summary>
-    internal static async Task<HashSet<string>> InUseAsync(ServiceClient service, CancellationToken cancellationToken) =>
-        (await service.ActiveSessionsAsync(cancellationToken))
-            .Select(session => session.Tree).OfType<string>().Where(tree => tree.Length > 0).ToHashSet(StringComparer.OrdinalIgnoreCase);
+    /// <summary>The trees sessions still hold, as the service's ledger says now: the driver's one reading (TREEKEEPRETRY1).</summary>
+    internal static Task<HashSet<string>> InUseAsync(ServiceClient service, CancellationToken cancellationToken) =>
+        BranchTidying.HeldTreesAsync(service, cancellationToken);
 
     // REVIEWENV1a (D154 point 2, design §1.7): where each repository's work is reviewed before it lands, the screens' half of
     // `daoris driver review`, sent by `bridge/lines.ts`. Declared only: nothing here composes a step, gates or serves.

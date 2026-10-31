@@ -1005,6 +1005,21 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     }
 
     /// <summary>
+    /// Every session with a memory change waiting on the person (KNOWCENTRAL2e), as the service reads them: ends and replacements awaiting,
+    /// a stopped session's staged rows. None from a host with no door.
+    /// </summary>
+    public async Task<IReadOnlyList<JsonElement>> MemoryWaitsAsync(CancellationToken ct = default)
+    {
+        var answer = await SendAsync(ServiceVerb.Get, "/api/memory/waits", null, ct).ConfigureAwait(false);
+        if (answer.Status == 404) return [];
+        if (!answer.Ok) throw new DriverException($"the service refused reading the memory waits: {answer.Payload}");
+        using var document = JsonDocument.Parse(answer.Payload);
+        return document.RootElement.TryGetProperty("waits", out var waits) && waits.ValueKind == JsonValueKind.Array
+            ? [.. waits.EnumerateArray().Select(each => each.Clone())]
+            : [];
+    }
+
+    /// <summary>
     /// The person's decision on a session's memory (KNOWCENTRAL2e): an awaiting end approved or declined by its row where
     /// <paramref name="op"/> names one, else the ended session's staged changes kept or dropped. A refusal is an answer, in the service's words.
     /// </summary>
@@ -1937,7 +1952,15 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// The usage history's turn lines, by session, for the sessions named (KNOWCENTRAL2d): set where this client's home is known, so a
     /// session's end hands the service the lines its memory rows' models are read from. Null hands none, and the rows name <c>unknown</c>.
     /// </summary>
-    public Func<IReadOnlyCollection<string>, IReadOnlyDictionary<string, IReadOnlyList<KeptTurn>>>? TurnLines { get; init; }
+    public Func<IReadOnlyCollection<string>, IReadOnlyDictionary<string, IReadOnlyList<TurnLine>>>? TurnLines { get; init; }
+
+    /// <summary>One turn line as the service is handed it: the fields its memory rows' models are read from.</summary>
+    public sealed record TurnLine(long Seq, DateTimeOffset? Started, DateTimeOffset Ended, string Model);
+
+    /// <summary>Maps the usage history's kept turns onto the lines this client hands the service.</summary>
+    public static IReadOnlyDictionary<string, IReadOnlyList<TurnLine>> LinesOf<T>(
+        IReadOnlyDictionary<string, IReadOnlyList<T>> kept, Func<T, TurnLine> line) =>
+        kept.ToDictionary(pair => pair.Key, pair => (IReadOnlyList<TurnLine>)[.. pair.Value.Select(line)], StringComparer.Ordinal);
 
     /// <summary>The states a session's record ends in: where its staged memory's models are named (the memory coordinator design §1).</summary>
     private static readonly string[] Ending = ["completed", "stopped", "failed", "declined", "stood-down"];
@@ -1946,7 +1969,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// The turn lines of <paramref name="id"/> and of each session it continues, as its record names them; null where none is known or the
     /// records did not read, which costs the rows their models and never the move.
     /// </summary>
-    private async Task<IReadOnlyDictionary<string, IReadOnlyList<KeptTurn>>?> TurnLinesForAsync(string id, CancellationToken ct)
+    private async Task<IReadOnlyDictionary<string, IReadOnlyList<TurnLine>>?> TurnLinesForAsync(string id, CancellationToken ct)
     {
         if (TurnLines is null) return null;
         var chain = new List<string> { id };
@@ -1968,7 +1991,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
         return lines.Count == 0 ? null : lines;
     }
 
-    private static void WriteTurns(Utf8JsonWriter writer, IReadOnlyDictionary<string, IReadOnlyList<KeptTurn>> turns)
+    private static void WriteTurns(Utf8JsonWriter writer, IReadOnlyDictionary<string, IReadOnlyList<TurnLine>> turns)
     {
         writer.WriteStartObject("turns");
         foreach (var (session, lines) in turns)

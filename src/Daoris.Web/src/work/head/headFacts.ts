@@ -1,6 +1,6 @@
 import type { TFunction } from 'i18next';
 import type { Quest, Session } from '../../data/api';
-import { ago, elapsed, list, moment } from '../../locales/format';
+import { ago, clockOf, elapsed, list, moment } from '../../locales/format';
 import type { Consideration } from '../../data/signals';
 import type { SweepBranch } from '../../settings/Sweep';
 import type { AccountNamer } from '../../agents/tools';
@@ -56,6 +56,8 @@ export type SessionFactsOf = {
   calling?: { title: string; since: string; quiet?: string; heard?: string } | null;
   /** How many others work with it, subagents and other parts (COWORKVIEW1a, the *At work* read); absent where unknown or none. */
   withIt?: number;
+  /** When the window opened, said by the At work read: the moment *nothing heard* counts from. */
+  windowOpened?: string;
   /**
    * Its heavy run's line (HEAVYSLOT1, the UI/UX design §3.5): the gate it runs, the gate it failed at, or whom it waits behind, as
    * the rail's line says it (`heavyLine`), in place of the call, which is that run. Absent where it holds and waits for no slot.
@@ -237,7 +239,9 @@ function factsOf(t: TFunction, of: SessionFactsOf, whole: boolean): string[] {
     if (of.withIt && of.withIt > 0 && session.state === 'working') {
       facts.push(calling?.heard && !calling.quiet
         ? t('work.facts.withItHeard', { count: of.withIt, ago: ago(calling.heard) })
-        : t('work.facts.withIt', { count: of.withIt }));
+        : of.windowOpened && !calling?.quiet
+          ? t('work.facts.withItUnheard', { count: of.withIt, time: clockOf(of.windowOpened) })
+          : t('work.facts.withIt', { count: of.withIt }));
     }
     // SESSWATCH1a (the session-watch design §5.1): quiet since it was last heard, neutral, after a heavy run's line where both hold.
     if (calling?.quiet && session.state === 'working') facts.push(t('work.rail.quiet', { time: elapsed(calling.quiet) }));
@@ -259,7 +263,18 @@ export type QuestFactsOf = {
   session?: Session | null;
   /** Why this machine's driver leaves it waiting (D46 §3), where it does. */
   sitting?: Consideration | null;
+  /** Lead with *now* (REVIEWFLOW1b): its session waiting on the person is said as the session head says it, timed. */
+  flow?: boolean;
 };
+
+/**
+ * The press *next* names on a quest's page, from the body acts the page already offers (REVIEWFLOW1b): the first that moves it on,
+ * and its session's door only where that session waits on the person. None where nothing waits.
+ */
+export function questNext<Act extends string>(acts: readonly Act[], awaiting: boolean): Act | null {
+  const moves = ['accept', 'goOn', 'resume', 'retry', 'trust'];
+  return acts.find((act) => moves.includes(act)) ?? (awaiting ? acts.find((act) => act === 'session') ?? null : null);
+}
 
 /**
  * A quest's facts line (HEAD2b, D162; the entry-and-heads design §2, amending the UX7 design §5.3): a hold the person lifts
@@ -267,7 +282,7 @@ export type QuestFactsOf = {
  * and its age, then the one live fact where there is one: a session starting or working on it here, its park after its
  * failed sessions, or when it closed. The requester, the id, the full times and the lanes are its *Details*.
  */
-export function questFacts(t: TFunction, { quest, session, sitting }: QuestFactsOf): string[] {
+export function questFacts(t: TFunction, { quest, session, sitting, flow }: QuestFactsOf): string[] {
   const unreviewed = quest.held === true && quest.hold === 'unreviewed';
   // FABRIC-CLOSE1c3: a step its source's reopen holds waits on the person's go-on or abandon, which no yes lifts.
   const reopened = quest.held === true && quest.hold === 'source-reopened';
@@ -282,7 +297,9 @@ export function questFacts(t: TFunction, { quest, session, sitting }: QuestFacts
 
   if (session && SESSION_ACTIVE.has(session.state)) {
     if (session.state === 'working') return [...facts, t('quests.facts.working', { time: elapsed(session.created) })];
-    if (session.state === 'awaiting-person') return [...facts, t('quests.facts.waiting')];
+    if (session.state === 'awaiting-person') {
+      return [...facts, flow ? t('work.facts.now.waits', { time: elapsed(session.updated) }) : t('quests.facts.waiting')];
+    }
     return [...facts, t('quests.facts.starting')];
   }
 

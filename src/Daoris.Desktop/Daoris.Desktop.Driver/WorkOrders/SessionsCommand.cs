@@ -353,6 +353,13 @@ public static class SessionsCommand
                 return SessionsSuperviseCommand.Read(args, out problem, (verb, ids, draft) => new SessionsAsk(verb) { Ids = ids, Supervised = draft });
             case ["partner", ..]:
                 return SessionsPartnerCommand.Read(args, out problem, MadeAsk);
+            case ["at-work", var id] when Id(id):
+                return new SessionsAsk("at-work") { Ids = [id] };
+            case ["at-work", var id, "--json"] when Id(id):
+                return new SessionsAsk("at-work") { Ids = [id], Json = true };
+            case ["at-work", ..]:
+                problem = "`at-work` takes one session's id, and `--json` for the answer whole.";
+                return null;
             // HANDBACK1: one quest's handback, by the quest's id or its session's.
             case ["handback", var id] when Id(id):
                 return new SessionsAsk("handback") { Ids = [id.Trim().TrimStart('#')] };
@@ -475,6 +482,7 @@ public static class SessionsCommand
                 world, PersonPresses.SessionPartnerAsk,
                 Body(("id", ask.Ids[0]), ("piece", ask.Text), ("agent", ask.Agent), ("paths", ask.Paths.Count > 0 ? ask.Paths : null)),
                 () => SessionsPartnerCommand.RunAsync(world, ask, output, ct), output, ct).ConfigureAwait(false),
+            "at-work" => await AtWorkVerb.RunAsync(world, ask, output, ct).ConfigureAwait(false),
             "partner-list" => await SessionsPartnerCommand.ListAsync(world, ask.Ids[0], output).ConfigureAwait(false),
             // HANDBACK1: a read, so no press and never through the running Daoris.
             "handback" => await HandbackAsync(world, ask, output, ct).ConfigureAwait(false),

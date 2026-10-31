@@ -220,3 +220,9 @@ export const WorkListedPaused: Story = {
 export const WorkListedWithNoDoors: Story = {
   args: { ask: LISTED, questTitles: { '9a8b7c': LISTED_TITLES['9a8b7c'] }, work: work({ plan: LISTED_ASK }), considered: LISTED_CONSIDERED },
 };
+
+/** REVIEWFLOW1b: a go-ahead unanswered, so the facts lead with *waiting on you* and *next: Answer* moves to it. */
+const WAITS_ON_YOU = { ...WITH_GO_AHEADS, goAheads: [{ ...WITH_GO_AHEADS.goAheads![0]!, state: 'asked' as const, answer: null }] };
+export const NextAnswerWide: Story = { args: { ask: WAITS_ON_YOU, onAnswerGoAhead: nothing } };
+export const NextAnswerNarrow: Story = { ...NextAnswerWide, decorators: [storyWidths.narrow] };
+export const NextAnswerChineseNarrow: Story = { ...NextAnswerWide, decorators: [storyWidths.narrow, chinese] };

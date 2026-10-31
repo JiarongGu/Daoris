@@ -36,14 +36,28 @@ import type { HeadLink } from '../head/SessionHead';
  *
  * A molecule: the box it is handed, the words in and a press out.
  */
-export function SessionBox({ goes, ...props }: ComponentProps<typeof Boxed> & {
+export function SessionBox({ goes, toHead, ...props }: ComponentProps<typeof Boxed> & {
   /** The sentence saying where a word goes and when; absent, none is drawn. */
   goes?: string;
+  /** Carry the unsent draft to the head's box (it sends nothing); absent where this part is not beside a head. */
+  toHead?: () => void;
 }) {
+  const { t } = useTranslation();
   return (
     <>
       {goes && (props.box.kind === 'steer' || props.box.kind === 'say') && (
-        <p className="m-0 border-t border-line px-4 pt-2 text-small text-ink-soft">{goes}</p>
+        <p className="m-0 flex flex-wrap items-baseline gap-x-3 border-t border-line px-4 pt-2 text-small text-ink-soft">
+          <span className="min-w-0 [overflow-wrap:anywhere]">{goes}</span>
+          {toHead && props.draft?.trim() && (
+            <button
+              type="button"
+              onClick={toHead}
+              className="cursor-pointer border-0 bg-transparent p-0 font-sans text-small text-accent hover:underline"
+            >
+              {t('work.say.toHead')}
+            </button>
+          )}
+        </p>
       )}
       <Boxed {...props} />
     </>
