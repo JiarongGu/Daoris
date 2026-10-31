@@ -65,7 +65,8 @@ describe('the switch box', () => {
 describe('the stash box', () => {
   afterEach(async () => { await i18n.changeLanguage('en'); });
 
-  const box = (value: StashPlanValue, onPress = vi.fn(), busy = false) => render(<StashBox read={{ state: 'read', value }} busy={busy} onPress={onPress} />);
+  const box = (value: StashPlanValue, onPress = vi.fn(), busy = false, onApply = vi.fn()) =>
+    render(<StashBox read={{ state: 'read', value }} busy={busy} onPress={onPress} onApply={onApply} />);
 
   it('says the stash is shared with every linked tree and counts what a Save would take', () => {
     box(stashPlan());
@@ -115,10 +116,46 @@ describe('the stash box', () => {
     expect(screen.getByRole('textbox', { name: 'Message (optional)' })).toBeDisabled();
   });
 
+  it('lists the saved stashes by commit id and applies the one pressed, with the tip it was read at', async () => {
+    const onApply = vi.fn();
+    box(stashPlan(), vi.fn(), false, onApply);
+
+    expect(screen.getByText('On release: before the switch')).toBeInTheDocument();
+    expect(screen.getByText('(no message)')).toBeInTheDocument();
+    expect(screen.getByText('Holds untracked files.')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Apply stash 3fa91c0e2b7d' }));
+
+    expect(onApply).toHaveBeenCalledWith({ id: GIT_STASH_PLAN_ENGINE.entries[0]!.id, head: GIT_STASH_PLAN_ENGINE.head });
+  });
+
+  it('holds Apply where an untracked file is in the way, where the checkout is not clean and while an act runs', () => {
+    const { unmount } = box(stashPlan());
+    expect(screen.getByText('Untracked files in the way: 2.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Apply stash 9bd20e51a7c3' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Apply stash 3fa91c0e2b7d' })).toBeEnabled();
+    unmount();
+
+    const dirty = box(stashPlan({ applyWhy: 'tracked files are changed here, so save or discard them first' }));
+    expect(screen.getByText('tracked files are changed here, so save or discard them first')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Apply stash 3fa91c0e2b7d' })).toBeDisabled();
+    dirty.unmount();
+
+    box(stashPlan(), vi.fn(), true);
+    expect(screen.getByRole('button', { name: 'Apply stash 3fa91c0e2b7d' })).toBeDisabled();
+  });
+
+  it('says there is no stash to apply where none is saved', () => {
+    box(stashPlan({ entries: [] }));
+
+    expect(screen.getByText('No stash is saved.')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^Apply stash/ })).toBeNull();
+  });
+
   it('says it in 中文', async () => {
     await i18n.changeLanguage('zh');
     box(stashPlan());
 
+    expect(screen.getByRole('button', { name: '应用贮藏 3fa91c0e2b7d' })).toBeInTheDocument();
     expect(screen.getByRole('region', { name: '贮藏' })).toBeInTheDocument();
     expect(screen.getByRole('checkbox', { name: '包含未跟踪文件' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '保存到贮藏' })).toBeInTheDocument();
@@ -131,7 +168,7 @@ describe('the last switch and stash in the Changes tab', () => {
   const acts = (last: ChangesActs['last']): ChangesActs => ({
     busy: false, last, press: vi.fn(), undo: vi.fn(), Hunks: () => null,
     Switch: ({ busy }) => <SwitchBox branches={['main', 'release']} chosen="" onChoose={vi.fn()} read={null} busy={busy} onPress={vi.fn()} />,
-    Stash: ({ busy }) => <StashBox read={{ state: 'read', value: stashPlan() }} busy={busy} onPress={vi.fn()} />,
+    Stash: ({ busy }) => <StashBox read={{ state: 'read', value: stashPlan() }} busy={busy} onPress={vi.fn()} onApply={vi.fn()} />,
   });
   const tab = (given: ChangesActs) => render(<ChangesTab repository="engine" read={{ state: 'read', value: GIT_CHANGES_ENGINE }} acts={given} />);
 

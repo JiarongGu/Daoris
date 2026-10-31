@@ -104,6 +104,7 @@ export const DECLARED: Readonly<Record<string, { scopes: readonly string[]; sess
   // GITAPP2k: a switch moves HEAD and the checkout's files; a stash Save moves the shared stash and the tracked files.
   GIT_SWITCH: { scopes: ['driver', 'checkouts'] },
   GIT_STASH: { scopes: ['driver', 'checkouts'] },
+  GIT_STASH_APPLY: { scopes: ['driver', 'checkouts'] },
   GIT_REF_CREATE: { scopes: ['driver'] },
   GIT_REF_UNDO: { scopes: ['driver'] },
   GIT_REF_DELETE: { scopes: ['driver'] },

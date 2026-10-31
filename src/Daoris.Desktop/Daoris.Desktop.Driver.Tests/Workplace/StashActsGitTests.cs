@@ -211,5 +211,171 @@ public sealed class StashActsGitTests : TreeSyncFixture
         Assert.Equal("changed\n", await File.ReadAllTextAsync(Path.Combine(root, "a.txt")));
     }
 
+    // ——— GITAPP2l: Apply by commit id.
+
+    private static async Task<string> TextAsync(string root, string file) => (await File.ReadAllTextAsync(Path.Combine(root, file))).Replace("\r\n", "\n");
+
+    private async Task<string> SaveAsync(string root, string message)
+    {
+        var run = await Acts().RunAsync(Context(root), await PressAsync(root, untracked: true, message: message), CancellationToken.None);
+        Assert.False(run.Refused, run.Said);
+        return (await GitAsync(root, "rev-parse", "refs/stash")).Trim();
+    }
+
+    private async Task<StashApplyPress> ApplyPressAsync(string root, string id)
+    {
+        var plan = (await Acts().PlanAsync(root, CancellationToken.None)).Value!;
+        return new StashApplyPress(id, plan.Head!);
+    }
+
+    /// <summary>🔴 Apply is by commit id: another save in between moves the ordinals, and the stash asked for is still the one applied.</summary>
+    [Fact]
+    public async Task Apply_by_id_after_the_ordinals_moved_puts_back_that_stash()
+    {
+        var root = await DirtyAsync();
+        var first = await SaveAsync(root, "first work");
+        await File.WriteAllTextAsync(Path.Combine(root, "a.txt"), "second\n");
+        await SaveAsync(root, "second work");
+        var plan = (await Acts().PlanAsync(root, CancellationToken.None)).Value!;
+        var press = await ApplyPressAsync(root, first);
+
+        var run = await Acts().ApplyAsync(Context(root), press, CancellationToken.None);
+
+        Assert.False(run.Refused, run.Said);
+        Assert.Equal(ActOutcomes.Done, run.Outcome);
+        Assert.Equal(2, plan.Entries.Count);
+        Assert.Equal(first, plan.Entries[1].Id);
+        Assert.Equal("changed\n", await TextAsync(root, "a.txt"));
+        Assert.Equal("mine\n", await TextAsync(root, "notes.txt"));
+        Assert.Equal(2, (await StashesAsync(root)).Split('\n').Length);
+        Assert.Contains("stash is kept", run.Said);
+    }
+
+    [Fact]
+    public async Task A_dirty_checkout_refuses_an_apply()
+    {
+        var root = await DirtyAsync();
+        var id = await SaveAsync(root, "work");
+        await File.WriteAllTextAsync(Path.Combine(root, "a.txt"), "typing\n");
+
+        var run = await Acts().ApplyAsync(Context(root), await ApplyPressAsync(root, id), CancellationToken.None);
+
+        Assert.True(run.Refused);
+        Assert.Contains("tracked", run.Said);
+        Assert.Equal("typing\n", await File.ReadAllTextAsync(Path.Combine(root, "a.txt")));
+    }
+
+    [Fact]
+    public async Task An_untracked_file_in_the_way_refuses_an_apply_and_the_plan_counts_it()
+    {
+        var root = await DirtyAsync();
+        var id = await SaveAsync(root, "work");
+        await File.WriteAllTextAsync(Path.Combine(root, "notes.txt"), "a different one\n");
+
+        var plan = (await Acts().PlanAsync(root, CancellationToken.None)).Value!;
+        var run = await Acts().ApplyAsync(Context(root), await ApplyPressAsync(root, id), CancellationToken.None);
+
+        Assert.Equal(1, plan.Entries[0].Collides);
+        Assert.True(run.Refused);
+        Assert.Contains("notes.txt", run.Said);
+        Assert.Equal("a different one\n", await File.ReadAllTextAsync(Path.Combine(root, "notes.txt")));
+    }
+
+    [Fact]
+    public async Task A_commit_that_is_not_in_the_stash_refuses()
+    {
+        var root = await DirtyAsync();
+        await SaveAsync(root, "work");
+        var head = (await GitAsync(root, "rev-parse", "HEAD")).Trim();
+
+        var run = await Acts().ApplyAsync(Context(root), new StashApplyPress(head, head), CancellationToken.None);
+
+        Assert.True(run.Refused);
+        Assert.Contains("not in the stash", run.Said);
+    }
+
+    /// <summary>🔴 A conflict stays: the stash is kept and the file is in conflict for Resolve, which settles it.</summary>
+    [Fact]
+    public async Task A_conflict_is_retained_resolvable_and_the_stash_kept()
+    {
+        var root = await RepositoryAsync("engine");
+        await CommitAsync(root, "a.txt", "one\n", "first");
+        await File.WriteAllTextAsync(Path.Combine(root, "a.txt"), "stash side\n");
+        var id = await SaveAsync(root, "work");
+        await CommitAsync(root, "a.txt", "head side\n", "second");
+
+        var run = await Acts().ApplyAsync(Context(root), await ApplyPressAsync(root, id), CancellationToken.None);
+
+        Assert.False(run.Refused, run.Said);
+        Assert.Equal(ActOutcomes.Done, run.Outcome);
+        Assert.Contains("conflict", run.Said);
+        Assert.NotEqual("", (await GitAsync(root, "ls-files", "-u")).Trim());
+        Assert.Equal(id, (await GitAsync(root, "rev-parse", "refs/stash")).Trim());
+
+        var read = (await GitConflicts.ReadAsync(root, "a.txt")).Value!;
+        Assert.Null(read.Why);
+        var picks = read.Hunks.Select(hunk => new ResolvePick(hunk.Id, "theirs")).ToList();
+        var resolved = await new ResolveActs(Journal()).RunAsync(Context(root), new ResolvePress(ResolveVerbs.Resolve, "a.txt", read.Head, read.Base, read.Ours, read.Theirs, read.Worktree, picks), CancellationToken.None);
+
+        Assert.False(resolved.Refused, resolved.Said);
+        Assert.Equal("stash side\n", await File.ReadAllTextAsync(Path.Combine(root, "a.txt")));
+        Assert.Equal(id, (await GitAsync(root, "rev-parse", "refs/stash")).Trim());
+    }
+
+    [Fact]
+    public async Task An_apply_is_refused_with_the_switch_off_a_session_in_the_checkout_and_an_unread_ledger()
+    {
+        var root = await DirtyAsync();
+        var id = await SaveAsync(root, "work");
+        var press = await ApplyPressAsync(root, id);
+
+        var off = await Acts().ApplyAsync(Context(root, allowed: false), press, CancellationToken.None);
+        var session = await Acts().ApplyAsync(Context(root, beside: _ => Task.FromResult<IReadOnlyList<TreeHolder>>([new TreeHolder(root, "s-running")])), press, CancellationToken.None);
+        var unread = await Acts().ApplyAsync(Context(root, beside: _ => throw new IOException("the service did not answer")), press, CancellationToken.None);
+
+        Assert.Contains("Daoris may change this checkout's files", off.Said);
+        Assert.Contains("`s-running`", session.Said);
+        Assert.Contains("ledger could not be read", unread.Said);
+        Assert.All(new[] { off, session, unread }, run => Assert.True(run.Refused));
+        Assert.Equal("one\n", await TextAsync(root, "a.txt"));
+    }
+
+    [Fact]
+    public async Task An_apply_is_journaled_and_closes_done()
+    {
+        var root = await DirtyAsync();
+        var id = await SaveAsync(root, "work");
+
+        var run = await Acts().ApplyAsync(Context(root), await ApplyPressAsync(root, id), CancellationToken.None);
+
+        var record = Journal().Act(run.Act!)!;
+        Assert.Equal((ActPhases.Closed, ActOutcomes.Done, StashVerbs.Apply), (record.Phase, record.Outcome, record.Kind));
+        Assert.Equal(ActOutcomes.Done, Assert.Single(Journal().Steps(run.Act!)).Outcome);
+        Assert.Empty(Journal().Unclosed());
+    }
+
+    /// <summary>An Apply cut off before git ran reads as not done, from the checkout alone, and git is not run again.</summary>
+    [Fact]
+    public async Task An_apply_cut_off_before_git_ran_is_reconciled_as_not_done()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var root = await DirtyAsync();
+        var id = await SaveAsync(root, "work");
+        var press = await ApplyPressAsync(root, id);
+        var acts = Acts();
+        acts.Runs.Seam = (point, _) => point == ActSeams.BeforePid ? throw new KilledException() : Task.CompletedTask;
+
+        await Assert.ThrowsAsync<KilledException>(() => acts.ApplyAsync(Context(root), press, CancellationToken.None));
+        var act = Journal("run-b").Unclosed().Single();
+        var reconciler = new ActReconciler(new ActJournal(Home, () => StoreSettled.Yes, run => run.Run != "run-a", "run-b", StoreProcess.Shell)) { ExitBound = TimeSpan.FromSeconds(2) };
+        CommitActsGitTests.KillRun(Home, "run-a");
+
+        var hold = await reconciler.UnderLockAsync(root, CancellationToken.None);
+
+        Assert.Null(hold);
+        Assert.Equal(ActOutcomes.NotDone, Journal("run-b").Act(act.Id)!.Outcome);
+        Assert.Equal("one\n", await TextAsync(root, "a.txt"));
+    }
+
     private sealed class KilledException : Exception;
 }
