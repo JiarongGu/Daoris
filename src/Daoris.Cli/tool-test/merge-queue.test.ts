@@ -123,7 +123,7 @@ const tool = await import(
   readLanes: (root: string) => { lanes: unknown[] } | null;
   endTree: (pid: number) => void;
   stepTrees: (options?: { end?: (pid: number) => void }) => Trees;
-  watchCandidate: (candidate: Candidate, current: () => Candidate | null, trees: Trees, options?: { ms?: number; superseded?: () => string | null }) => Watch;
+  watchCandidate: (candidate: Candidate, current: () => Candidate | null, trees: Trees, options?: { ms?: number; superseded?: () => string | null; taken?: () => void }) => Watch;
   ownerEnded: (environment?: Record<string, string | undefined>, alive?: (pid: number) => boolean) => string | null;
   prefixRunner: (tree: string, candidate: { base: string; members: Member[] }, plan: { name: string; run: string }[], dir: string, watch?: Watch | null) => (failure: Failure, k: number) => Promise<Outcome>;
   queueHomeRefusal: (facts: { root: string; home: string; tool?: string | null; sameRepository?: boolean; run?: boolean }) => string | null;
@@ -132,6 +132,7 @@ const tool = await import(
   GATE_REMOVED: readonly (string | RegExp)[];
   waitSaid: (standing: Standing, facts: { branch: string; request?: string; holder?: string | boolean | null }) => { code: number; lines: string[] } | null;
   BESIDE_ENVIRONMENT: Record<string, string>;
+  DRAIN_WAIT_MS: number;
 };
 
 const procs = await import(
@@ -317,14 +318,16 @@ describe('the queue: a frozen request, read before it is queued', () => {
     trees.hold(102);
     let current: Candidate | null = { ...candidate, state: 'bisecting' };
     let unreadable = false;
+    // DROPWAIT1: the take is said before anything is ended, and once.
+    const taken: number[] = [];
     const watch = tool.watchCandidate(candidate, () => {
       if (unreadable) throw new Error('the queue is locked');
       return current;
-    }, trees);
+    }, trees, { taken: () => { taken.push(ended.length); } });
     assert.equal(watch.check(), false, 'a state change is not a drop');
     unreadable = true;
     assert.equal(watch.check(), false, 'a record that cannot be read ends nothing');
-    assert.deepEqual(ended, []);
+    assert.deepEqual([ended, taken], [[], []]);
     unreadable = false;
     current = null;
     assert.equal(watch.check(), true);
@@ -332,7 +335,9 @@ describe('the queue: a frozen request, read before it is queued', () => {
     assert.equal(trees.ended, 'the candidate was dropped or replaced');
     current = candidate;
     assert.equal(watch.check(), true, 'once ended it stays ended');
-    assert.deepEqual(ended, [101, 102], 'ended once');
+    assert.deepEqual([ended, taken], [[101, 102], [0]], 'ended once, taken once before');
+    const failing = tool.watchCandidate(candidate, () => null, tool.stepTrees({ end: () => {} }), { taken: () => { throw new Error('the queue is locked'); } });
+    assert.equal(failing.check(), true, 'a take that cannot be said still ends the run');
     const replaced = tool.watchCandidate(candidate, () => ({ ...candidate, members: [{ ...candidate.members[0]!, request: 'second' }] }), tool.stepTrees({ end: () => {} }));
     assert.equal(replaced.check(), true, 'the same tip queued again is another request');
   });
@@ -2993,14 +2998,22 @@ describe('the queue, end to end in a scratch repository', { concurrency: true },
       repo.git('commit', '--quiet', '-am', `a gate that holds its confirm run${TRAILER}`);
       repo.branch('bad', { 'break-check': 'x\n' });
       assert.equal((await repo.run(['bad', '--preview'])).status, 0);
-      const waiting = repo.run(['bad', '--message', 'local/bad.msg']);
+      const report = join(dir, 'report');
+      const waiting = repo.run(['bad', '--message', 'local/bad.msg'], { MERGE_BRANCH_DRAIN_HOLD: report });
       await repo.until(() => TREE.every((role) => existsSync(join(dir, `${role}.pid`))));
       const pids = pidsIn(dir);
       assert.equal(pids.length, 3, repo.log());
       assert.equal(runsOf(dir), 2, 'the candidate ran once, and its confirm run is the one held');
       const holds = () => (JSON.parse(readFileSync(machine.admissionFile(repo.home), 'utf8')) as { holds: { what: string }[] }).holds;
       assert.equal(holds().length, 2, 'the confirm run holds every place');
-      const dropped = await repo.run(['--drop-batch', 'bad']);
+      const asked = Date.now();
+      const dropping = repo.run(['--drop-batch', 'bad']);
+      // DROPWAIT1: the runner has ended the tree, and its report is kept late past the drop's thirty seconds on the machine's clock, as
+      // a loaded runner's was: the drop waits on the clock only for the runner to take it, then on what it says.
+      await repo.until(() => pids.every((pid) => !alive(pid)));
+      await pause(Math.max(0, asked + tool.DRAIN_WAIT_MS + 5_000 - Date.now()));
+      writeFileSync(report, '');
+      const dropped = await dropping;
       assert.equal(dropped.status, 0, dropped.out);
       assert.match(dropped.out, /the probe check\.confirm/);
       assert.deepEqual(pids.filter(alive), [], 'the confirm run, its child and its grandchild are gone');
@@ -3015,6 +3028,7 @@ describe('the queue, end to end in a scratch repository', { concurrency: true },
       assert.deepEqual(q.readSightings(repo.root), []);
     } finally {
       writeFileSync(join(dir, 'release'), '');
+      writeFileSync(join(dir, 'report'), '');
       await repo.cleanup();
     }
   });
