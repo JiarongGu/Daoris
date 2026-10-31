@@ -11,6 +11,13 @@ repository.
 - **Root cause:** the read's ten-second patience raced a stand-in whose flush the pool ran late; the say's 300 ms raced a watcher's look.
 - **Fix:** `ClaudeUsage.AskWithinAsync` reads its patience off a handed clock, `MovedClock` in the tests; the say reads `HeldClock`, run at the take.
 - **Verify:** red with a late flush and a late look; 20 of 20 each beside every core loaded.
+## 2026-10-31 - A dropped candidate left its tests' orphans running (QUEUEDROPLEAK1)
+
+- **Symptom:** `--drop-batch` said it ended the run "with everything it started", yet four minutes later the tool-tests gate's processes ran on under `local/scope-tree/src/Daoris.Cli/_fixtures/` with their parents gone: the `merge-branch-killed-run` fixture's `tree.mjs` and a `node qgate.mjs check` with two node children.
+- **Root cause:** the drop ends each step by its tree of parent ids (`endTree`, `taskkill /T`). That reaches a detached child whose parent still runs (tried: a three-deep detached chain under a killed shell ends whole). It cannot reach a process a test had already orphaned (CIPRIO1d's test kills its run and leaves the child until its own takeover) or one the killed test never got to end in a `finally`: its parent id names nothing. `qgate.mjs check` has no folder in its command line, only its children do.
+- **Fix:** `endStrandedUnder` (`tools/processes.mjs`), called when the runner has seen every step of the ended run through (`gone()` in `runCandidateWatched`): on Windows, each process created since the run began whose parent is in no row, and which or whose descendant names the scope tree's folder, ends with its tree; the runner and any root holding it are left out. `drained.strays` and the drop's answer name the pids.
+- **Verify:** `merge-queue.test.ts`, QUEUEDROPLEAK1: `strandedRoots` on synthetic rows (sibling folder, older process, live parent, a root of another folder, a reused-id cycle), the listing's rows, the platform seam, and a scratch queue dropped mid-gate with three orphans (one by absolute path, one by relative path named only by its child, the child) ended while an orphan outside the scope tree stands; the end-to-end case seen failing first with the call switched off. The QUEUEDRAIN1, DROPWAIT1 and PROCLEAK1 cases pass; `tsc --noEmit` clean.
+- **Not covered:** elsewhere than Windows nothing is ended (`ps` walks what is under each step; an orphan there is the census's to say). A process started during the run, whose parent is gone and which names the scope tree, is ended whoever started it: nothing but the run's own tests and gates is expected there. The command lines are read once; a stray started after that read is the census's.
 
 ## 2026-10-31 - A carry-on's turn end was kept before its note (ACPRACE)
 

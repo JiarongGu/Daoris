@@ -297,7 +297,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Cli/test/usage-report.test.ts` | 87 | 1455 |
 | `src/Daoris.Cli/tool-test/desktop-publish.test.ts` | 82 | 1391 |
 | `src/Daoris.Cli/tool-test/merge-branch.test.ts` | 528 | 7742 |
-| `src/Daoris.Cli/tool-test/merge-queue.test.ts` | 224 | 3308 |
+| `src/Daoris.Cli/tool-test/merge-queue.test.ts` | 234 | 3449 |
 | `src/Daoris.Cli/tool-test/setup-kit.test.ts` | 56 | 1039 |
 
 ### Tools (`tools`)
@@ -309,8 +309,8 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `tools/desktop.mjs` | 54 | 1097 |
 | `tools/family-rehearsal.mjs` | 371 | 6428 |
 | `tools/knowledge-bench.mjs` | 46 | 900 |
-| `tools/merge-branch.mjs` | 498 | 8394 |
-| `tools/merge-queue.mjs` | 65 | 1030 |
+| `tools/merge-branch.mjs` | 498 | 8398 |
+| `tools/merge-queue.mjs` | 65 | 1033 |
 | `tools/orient-index.mjs` | 70 | 1505 |
 | `tools/process-reach.mjs` | 43 | 906 |
 | `tools/rehearsal-kit.mjs` | 55 | 1076 |
@@ -419,5 +419,5 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-30-agent-lyntai-survey.md` | 44 | 374 |
 | `docs/DAORIS_UNIFIED_COLLABORATION_ARCHITECTURE_AND_PLAN_2026-10-16.md` | 164 | 5380 |
 | `docs/backlog-parked.md` | 179 | 946 |
-| `docs/development.md` | 54 | 596 |
+| `docs/development.md` | 54 | 599 |
 | `src/Daoris.Desktop/README.md` | 263 | 1274 |
