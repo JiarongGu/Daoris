@@ -9,8 +9,8 @@ export const AGENTS_MODES = ['agents', 'roles'] as const;
 export type AgentsMode = (typeof AGENTS_MODES)[number];
 
 /**
- * The Roles mode's five sections (§1), in the order its list draws them. Only the first is built; the other four are listed and say they
- * come later, and each is built by its own row.
+ * The Roles mode's five sections (§1), in the order its list draws them. Working roles, Work, Accounts and By repository are built; Appointed
+ * roles is listed and says it comes later, built by its own row.
  */
 export const ROLE_SECTIONS = ['working', 'appointed', 'work', 'accounts', 'repository'] as const;
 

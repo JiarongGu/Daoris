@@ -175,6 +175,8 @@ export const keys = {
     ['git', 'blame', repository, commit, path, workspace] as const,
   gitCompare: (repository: string, left: string, right: string, everything: boolean, workspace: string) =>
     ['git', 'compare', repository, left, right, everything, workspace] as const,
+  // The Changes tab's read (GITAPP2b): the checkout's index and tree move with any act anywhere, so it is read again at every open.
+  gitChanges: (repository: string, workspace: string) => ['git', 'changes', repository, workspace] as const,
   /** The files in one session's tree, for `@` (CONV4d) — shell-only for the same reason. */
   treeFiles: (session: string) => ['tree-files', session] as const,
   /** One file in a session's tree, read for its preview (PREVIEW1) — shell-only for the same reason. */

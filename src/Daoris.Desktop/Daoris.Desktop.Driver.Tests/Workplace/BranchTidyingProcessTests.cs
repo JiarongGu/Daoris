@@ -167,7 +167,7 @@ public sealed class BranchTidyingProcessTests : BranchTidyingFixture
         var tidying = new BranchTidying(_home) { Pace = TimeSpan.Zero };
 
         IReadOnlyList<string> held;
-        using (TreeLock.TryStarting(_home, "default", "engine"))
+        using (TreeLock.TryStarting(_home, root))
         {
             held = await tidying.LookAsync(_ledger.Client(), log, _closing.Token).WaitAsync(Bound);
         }
@@ -467,7 +467,7 @@ public sealed class BranchTidyingProcessTests : BranchTidyingFixture
         _ledger.Register("engine", root);
 
         IReadOnlyList<string> said;
-        using (TreeLock.TryStarting(_home, "default", "engine"))
+        using (TreeLock.TryStarting(_home, root))
         {
             said = await new BranchTidying(_home).LookAsync(_ledger.Client(), null, _closing.Token).WaitAsync(Bound);
         }

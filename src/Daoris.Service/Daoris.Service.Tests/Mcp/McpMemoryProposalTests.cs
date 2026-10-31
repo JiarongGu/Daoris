@@ -107,8 +107,8 @@ public sealed class McpMemoryProposalTests : McpToolsFixture
         var change = new MemoryChange(MemoryOpKind.Propose, Text: "A note on the map.", Target: "m1", Revision: 1, Relation: "amends");
 
         var made = await Task.WhenAll(
-            proposals.ProposeAsync("Asker", new MemoryReference("Owner", "m1"), change, by, Now),
-            proposals.ProposeAsync("Asker", new MemoryReference("Owner", "m1"), change, by, Now));
+            proposals.ProposeAsync(new MemoryProposer("Asker", "work"), new MemoryReference("Owner", "m1"), change, by, Now),
+            proposals.ProposeAsync(new MemoryProposer("Asker", "work"), new MemoryReference("Owner", "m1"), change, by, Now));
 
         var quest = Assert.Single(await AskedOfOwnerAsync());
         Assert.Equal([false, true], made.Select(each => each.Joined).Order());

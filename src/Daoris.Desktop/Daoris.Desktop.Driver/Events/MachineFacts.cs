@@ -419,7 +419,10 @@ public sealed class MachineFacts : IDisposable
                 }
             }
 
-            Land(topic.Name, state.Name, await judging.ConfigureAwait(false), began);
+            var answered = await judging.ConfigureAwait(false);
+            // The rest counts from the answer, not from the ending a busy pool may run late.
+            lock (_gate) state.Answered = _clock();
+            Land(topic.Name, state.Name, answered, began);
         }
         catch (OperationCanceledException) when (_stopping.IsCancellationRequested)
         {
@@ -455,7 +458,8 @@ public sealed class MachineFacts : IDisposable
         {
             state.Running = false;
             state.Run = null;
-            state.Ended = _clock();
+            state.Ended = state.Answered ?? _clock();
+            state.Answered = null;
             state.Done++;
             foreach (var waiting in state.Waiting.Where(waiting => waiting.Target <= state.Done).ToList())
             {
@@ -570,6 +574,9 @@ public sealed class MachineFacts : IDisposable
         public DateTimeOffset? Began { get; set; }
 
         public DateTimeOffset? Ended { get; set; }
+
+        /// <summary>When the judgement under way answered, before its ending is run.</summary>
+        public DateTimeOffset? Answered { get; set; }
 
         public long Begun { get; set; }
 

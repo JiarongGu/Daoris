@@ -109,6 +109,7 @@ internal static class LandingHolds
         var patience = within ?? Wait;
         var waiting = Stopwatch.StartNew();
         var named = Gate(home, key);
+        LockWaits.Waits("a tree's landing hold");
         var gate = Enter(named);
         var waited = false;
         var held = false;

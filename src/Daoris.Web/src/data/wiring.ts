@@ -256,8 +256,23 @@ export type RoleRow = {
 /** A role Daoris suggests adding (FOUNDATION1y-i): the Designer while no role takes design, applied only by the person's press. */
 export type SuggestedRole = { id: string; nameEn: string; nameZh: string; takes: string[]; scopeKind: string; choices: RoleChoice[] };
 
+/**
+ * One role's last seven days as `ROLES` answers it (MODELROLE1f): starts, those on each choice (`1` to `4`, `before`, `rule-default`), how many
+ * fell to a later choice and the walk's codes that moved them. A role with no start is not listed.
+ */
+export type RoleUse = {
+  role: string; starts: number; choices: { choice: string; starts: number }[]; fell: number; why: { code: string; starts: number }[];
+};
+
+/** The use over `days` of the machine log (at most seven; none with no log); a driver before it leaves the field out. */
+export type RoleUseRead = { days: number; roles: RoleUse[] };
+
 /** The catalogue as `ROLES` answers it: its roles, the work a role may take, whether this home keeps it, and what is suggested. */
-export type RoleCatalogue = { roles: RoleRow[]; works: string[]; kept: boolean; suggested: SuggestedRole[] };
+export type RoleCatalogue = {
+  roles: RoleRow[]; works: string[]; kept: boolean; suggested: SuggestedRole[]; use?: RoleUseRead;
+  /** The choices Daoris suggests for the seeded roles (MODELROLE1g) and the day of the reference they were read from; absent from a driver before them. */
+  suggestedChoices?: { role: string; choices: RoleChoice[] }[]; suggestedChoicesDated?: string;
+};
 
 /** A role's change as `SET_ROLE` takes it: set with its record and choices, removed, or given back its seed. */
 export type RoleChangePress = {
@@ -274,4 +289,50 @@ export type RoleChangePress = {
  */
 export type SetAsideClasses = {
   recorded: number; awaiting: number; stands: number; stopped?: number; unheld?: number; unread?: number; unmarked: number;
+};
+
+/** A place the roles' structure is asked for: a workspace, a repository in it, or neither for this machine. */
+export type StructurePlaceAsk = { workspace?: string; repository?: string };
+
+/** What a choice's last readings say (COMPANYVIEW1c): one that may run by the account it would run on, else the start's pass code. */
+export type ChoiceStateCode = 'ready' | 'unknown' | 'not-read' | 'unavailable' | 'not-offered' | 'cooling' | 'signed-out' | 'held';
+
+/** One choice of a work's order at a place, and its state with the reading's time it rests on. */
+export type StructureChoice = {
+  agent: string;
+  model?: string;
+  effort?: string;
+  /** `1` to `4`, `before`, or `rule-default` for a rule's agent no choice names. */
+  from: string;
+  state: { code: ChoiceStateCode | string; at?: string; account?: string; until?: string };
+};
+
+/** One work at one place: its role or why its starts hold, its choices, its rule and where it was set, each part's failure. */
+export type StructureWork = {
+  work: string;
+  role?: { id: string; nameEn: string; nameZh: string; scope: { kind: string; id?: string }; revision: number };
+  held?: string;
+  choices: StructureChoice[];
+  choicesFailed?: string;
+  policy?: {
+    consent: string;
+    agents: string[];
+    concurrency?: number;
+    minutes?: number;
+    /** `repository`, `workspace`, `machine` or `default`. */
+    source: string;
+    requirement?: { kind: string } & Record<string, unknown>;
+  };
+  policyFailed?: string;
+};
+
+/** The roles' structure as `ROLE_STRUCTURE` answers it (COMPANYVIEW1c, the company-view design §4). */
+export type RoleStructure = {
+  works: string[];
+  roles: RoleCatalogue['roles'];
+  /** Where the store's roles do not read: every work then holds, said. */
+  catalogue?: { why: string };
+  places: { workspace?: string; repository?: string; works: StructureWork[] }[];
+  /** Each agent a choice names; `installed` absent where its binary was not asked yet. */
+  agents: { agent: string; known: boolean; installed?: boolean; version?: string }[];
 };

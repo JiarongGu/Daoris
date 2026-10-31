@@ -189,6 +189,7 @@ public static class PipeWording
         Row("SET_SESSION_CHECKS", W("repository", PipeRole.Repository));
         Row("SET_STANDING", W("repository", PipeRole.Repository));
         Row("SET_TREES", W("repository", PipeRole.Repository));
+        Row("SET_CHECKOUT_WRITES", W("repository", PipeRole.Repository));
         Row("SET_WRITE_ACROSS", W("repository", PipeRole.Repository));
 
         // An agent's: its settings, its accounts, its actions, and the agents the driver starts.

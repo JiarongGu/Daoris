@@ -14,7 +14,8 @@ internal static class IntegrationPresses
     /// else the sentence the press is refused with (the conflict or the hook in today's words, or what holds it).
     /// </summary>
     public static async Task<(bool Merged, string? Refused)> MergeAsync(
-        string home, DriverConfig config, string root, string repository, string? workspace, string line, string branch, string tip, CancellationToken ct)
+        string home, DriverConfig config, string root, string repository, string? workspace, string line, string branch, string tip, CancellationToken ct,
+        Func<CancellationToken, Task<IReadOnlyList<TreeHolder>>>? beside = null)
     {
         try
         {
@@ -24,7 +25,7 @@ internal static class IntegrationPresses
 
             var asks = new IntegrationSweepAsks(
                 new IntegrationReplayAsk(repository, request.Workspace, root, line) { Config = config },
-                new IntegrationPromoteAsk(repository, request.Workspace, root, line, config, home));
+                new IntegrationPromoteAsk(repository, request.Workspace, root, line, config, home) { Beside = beside });
             var run = await new IntegrationLines(store, DaorisHome.Entry(home, HomeEntry.Trees)).RunAsync(asks, ct).ConfigureAwait(false);
             return store.Request(request.Id) switch
             {

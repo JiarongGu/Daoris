@@ -153,6 +153,22 @@ internal sealed class RefSnapshot
         lock (_gate) (_refs, _trees, _facts) = (null, null, new(StringComparer.Ordinal));
     }
 
+    /// <summary>
+    /// Until disposed, this flow holds no snapshot (GITAPP2a: the act journal's reconciler, run inside a writer's judgement): every question
+    /// is git's. The judgement's snapshots are this flow's again after, untouched.
+    /// </summary>
+    internal static IDisposable Outside()
+    {
+        var before = Held.Value;
+        Held.Value = null;
+        return new Back(() => Held.Value = before);
+    }
+
+    private sealed class Back(Action back) : IDisposable
+    {
+        public void Dispose() => back();
+    }
+
     /// <summary>A ref may have moved: every snapshot this flow holds is dropped.</summary>
     internal static void Wrote()
     {

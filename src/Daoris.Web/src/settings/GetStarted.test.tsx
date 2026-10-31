@@ -70,6 +70,9 @@ describe('Get started', () => {
     expect(onGo).toHaveBeenLastCalledWith({ view: 'agents', agentPart: 'accounts' });
     await userEvent.click(within(step(/Ask Daoris's agent/)).getByRole('button', { name: "Open AI features" }));
     expect(onGo).toHaveBeenLastCalledWith({ view: 'settings', section: 'ai' });
+    // COMPANYVIEW1g: and which role takes which work is Agents → Roles.
+    await userEvent.click(within(step(/Ask Daoris's agent/)).getByRole('button', { name: 'Open Roles' }));
+    expect(onGo).toHaveBeenLastCalledWith({ view: 'agents', agentsMode: 'roles' });
     await userEvent.click(within(step(/repositories/)).getByRole('button', { name: 'Add repository…' }));
     expect(onGo).toHaveBeenLastCalledWith({ view: 'projects', drawer: 'add' });
     await userEvent.click(within(step(/repositories/)).getByRole('button', { name: 'Import a folder…' }));

@@ -430,6 +430,10 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   // conversation a value; a program's message is words between `held.lead` (or `config-unread`) and `held.tail`.
   'held.no-checkout': { values: ['repository'] },
   'held.replaying': { values: ['repository'] },
+  // GITLOCK1: what else holds the repository alone while a start waits for it.
+  'held.tidying': { values: ['repository'] },
+  'held.promoting': { values: ['repository'] },
+  'held.writing': { values: ['repository'] },
   'held.answering': { values: ['session'] },
   'held.config-unread': { values: [] },
   'held.lead': { values: [] },

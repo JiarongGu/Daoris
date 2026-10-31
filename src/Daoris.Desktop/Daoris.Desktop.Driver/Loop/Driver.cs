@@ -2382,8 +2382,8 @@ public sealed class Driver(
         TreeStanding? priorStands = null, entryStands = null;
         if (priorTree is not null || (entryTree is not null && Context.Trees.Holds(entryTree)))
         {
-            using var returning = TreeLock.TryStarting(home, start.Workspace, quest.To);
-            if (returning is null) return Hold(TreeLock.Replaying(quest.To));
+            using var returning = TreeLock.TryStarting(home, root);
+            if (returning is null) return Hold(HeldWords.Holding(quest.To, TreeLock.HolderOf(home, root)).Why);
             if (priorTree is not null) priorStands = await Context.Trees.EnsureAsync(root, priorTree, ct).ConfigureAwait(false);
             if (entryTree is not null && Context.Trees.Holds(entryTree))
             {
@@ -2460,9 +2460,10 @@ public sealed class Driver(
         // 🔴 WSR6's open window (LEFT2): bringing the repository up to date must not rebase a tree a session is
         // starting in. Its trees are held, beside any other start, from choosing the tree until the record is open,
         // when the ledger holds it; a replay holding them holds this start for one look. Let go right after the
-        // open below; the `using` lets go on every hold and throw between.
-        using var starting = isolated ? TreeLock.TryStarting(home, start.Workspace, quest.To) : null;
-        if (isolated && starting is null) return Hold(TreeLock.Replaying(quest.To));
+        // open below; the `using` lets go on every hold and throw between. GITLOCK1: a start in the checkout itself
+        // holds it too, so no writer moves it between the commit this start reads and the record that holds it.
+        using var starting = TreeLock.TryStarting(home, root);
+        if (starting is null) return Hold(HeldWords.Holding(quest.To, TreeLock.HolderOf(home, root)).Why);
 
         // STARTGIT1: git's guess at the checkout's line is asked once for this start, by the tree's opening and by the landing it
         // tells the session of, which each asked it afresh (three `symbolic-ref origin/HEAD`, up to four `rev-parse --verify`).
@@ -2744,8 +2745,8 @@ public sealed class Driver(
 
         // A resume that was tried let go of the starting hold (LEFT2) when the park held the tree; the carry-on's open below
         // needs it again, until its own record holds the tree.
-        using var restarting = isolated && answerKept ? TreeLock.TryStarting(home, start.Workspace, quest.To) : null;
-        if (isolated && answerKept && restarting is null) return Hold(TreeLock.Replaying(quest.To));
+        using var restarting = answerKept ? TreeLock.TryStarting(home, root) : null;
+        if (answerKept && restarting is null) return Hold(HeldWords.Holding(quest.To, TreeLock.HolderOf(home, root)).Why);
 
         // Where the tree stands BEFORE anything runs in it (SURF6). Read here rather than after the
         // spawn so it is genuinely the base: between this line and the process starting, the only

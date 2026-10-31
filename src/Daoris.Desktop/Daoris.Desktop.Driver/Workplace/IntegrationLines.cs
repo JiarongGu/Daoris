@@ -87,6 +87,7 @@ internal sealed class IntegrationLines(IntegrationStore store, string treesRoot)
         var repository = asks.Replay.Repository;
         var line = asks.Replay.Line;
         var one = Running.GetOrAdd($"{store.Location}\n{repository}\n{line}", _ => new SemaphoreSlim(1, 1));
+        LockWaits.Waits("a line's one run");
         await one.WaitAsync(ct).ConfigureAwait(false);
         try
         {

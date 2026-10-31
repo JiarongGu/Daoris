@@ -24,6 +24,12 @@ internal sealed record IntegrationPromoteAsk(string Repository, string Workspace
     /// handed in, and the tidy then removes nothing. Never a delete of its own.
     /// </summary>
     public IntegrationTidy? Tidy { get; init; }
+
+    /// <summary>
+    /// The ledger's sessions and their trees (<see cref="BranchTidying.HoldersAsync"/>), asked inside the checkout's hold, so the move waits
+    /// for a session working in the checkout that has the line out (GITLOCK1); null asks nothing and moves as before.
+    /// </summary>
+    public Func<CancellationToken, Task<IReadOnlyList<TreeHolder>>>? Beside { get; init; }
 }
 
 /// <summary>What a promote run answered (<see cref="IntegrationPromoteRuns"/>), in words, with the candidate and its members as they now stand.</summary>
@@ -140,12 +146,21 @@ internal sealed class IntegrationPromotes(IntegrationStore store, string treesRo
 
         if (candidate.PromotedAt is null)
         {
-            if (store.Steps(candidate.Id).LastOrDefault() is { Step: IntegrationStepNames.Judge, Outcome: IntegrationStepOutcomes.Held } waiting)
+            // INTEGRATE1h: a decide recorded on a candidate held for one is its verdict from then on, in place of the gates it held on: a held
+            // promotion after a `land` is tried again on that decide, never on the gates run again.
+            var steps = store.Steps(candidate.Id);
+            if (steps.Any(each => each is { Step: IntegrationStepNames.Judge, Outcome: IntegrationStepOutcomes.Held }) && store.DecideOf(candidate.Id) is { } decided)
+            {
+                if (await DecidedAsync(claim, ask, candidate, members, decided, rerun, ct).ConfigureAwait(false) is { } answer) return answer;
+            }
+            else if (steps.LastOrDefault() is { Step: IntegrationStepNames.Judge, Outcome: IntegrationStepOutcomes.Held } waiting)
             {
                 return await AnswerAsync(IntegrationPromoteRuns.Held, $"candidate {candidate.Id} waits for a decide: {waiting.Said}", claim, VerdictActions.Hold).ConfigureAwait(false);
             }
-
-            if (await PromoteAsync(claim, ask, candidate, members, rerun, ct).ConfigureAwait(false) is { } answer) return answer;
+            else if (await PromoteAsync(claim, ask, candidate, members, rerun, ct).ConfigureAwait(false) is { } answer)
+            {
+                return answer;
+            }
         }
 
         return await FinishAsync(claim, ask, ct).ConfigureAwait(false);
@@ -315,6 +330,63 @@ internal sealed class IntegrationPromotes(IntegrationStore store, string treesRo
         return (verdict, null);
     }
 
+    /// <summary>
+    /// The decide recorded on a candidate held for one, consumed (INTEGRATE1h; §4.5, §8): <c>land</c> promotes it where the line has not moved
+    /// under it, the person's press standing for the gates' verdict; <c>split</c> forms it again to run one member at a time, and one of one is
+    /// handed back as unresolved; <c>hand-back</c> hands every replayed member back with the hold's words. A word this build does not know is no
+    /// decide: nothing is written. Null where the line now holds the candidate's tip and the settle goes on.
+    /// </summary>
+    private async Task<IntegrationPromoteRun?> DecidedAsync(
+        IntegrationClaim claim, IntegrationPromoteAsk ask, IntegrationCandidate candidate, IReadOnlyList<IntegrationMember> members, IntegrationDecide decided,
+        string? rerun, CancellationToken ct)
+    {
+        var replayed = members.Where(each => each is { Stands: true, State: IntegrationMemberStates.Replayed, Replayed: not null }).ToList();
+        if (replayed.Count == 0)
+        {
+            return await AnswerAsync(IntegrationPromoteRuns.Replaying, $"candidate {candidate.Id} has no replayed member to promote.", claim).ConfigureAwait(false);
+        }
+
+        var hold = store.Steps(candidate.Id).Last(each => each is { Step: IntegrationStepNames.Judge, Outcome: IntegrationStepOutcomes.Held }).Said
+                   ?? "it was held for a decide.";
+        var by = decided.Requester == IntegrationRequester.Person ? "the owner" : "the steward";
+        switch (decided.Decide)
+        {
+            case IntegrationDecides.Land:
+            {
+                var (line, why) = await LineAsync(ask.Root, ask.Line, ct).ConfigureAwait(false);
+                if (line is null) return await AnswerAsync(IntegrationPromoteRuns.Unread, $"git could not read where `{ask.Line}` stands ({why}): nothing was written, and it is asked again at the next look.", claim).ConfigureAwait(false);
+                if (line != candidate.Base) return await FormAgainAsync(claim, candidate, line, ct).ConfigureAwait(false);
+                return await MoveAsync(
+                    claim, ask, candidate, replayed, $"landed by {by}'s decide `land`, which stands for the gates' verdict on a candidate held for a decide ({hold})",
+                    rerun ?? line, ct).ConfigureAwait(false);
+            }
+            case IntegrationDecides.Split when replayed.Count > 1:
+                return await JudgedAsync(claim, IntegrationPromoteRuns.Split, VerdictActions.Split, new IntegrationStepEnd(IntegrationStepOutcomes.Split)
+                {
+                    Said = $"split by {by}'s decide: the members run one at a time, and are formed again. {hold}",
+                    Ends = IntegrationCandidateEnds.FormedAgain,
+                }, ct).ConfigureAwait(false);
+            case IntegrationDecides.Split or IntegrationDecides.HandBack:
+            {
+                var words = decided.Decide == IntegrationDecides.Split
+                    ? $"handed back as unresolved by {by}'s decide `split`, the one member of its candidate: {hold}"
+                    : $"handed back by {by}'s decide: {hold}";
+                return await JudgedAsync(claim, IntegrationPromoteRuns.HandedBack, VerdictActions.HandBack, new IntegrationStepEnd(IntegrationStepOutcomes.HandedBack)
+                {
+                    Said = words,
+                    Members = [.. replayed.Select(each => new IntegrationMemberChange(each.Request, IntegrationMemberStates.HandedBack) { Said = words, Ends = true })],
+                    Closes = [.. replayed.Select(each => new IntegrationRequestClose(each.Request, IntegrationRequestCloses.HandedBack))],
+                    Ends = IntegrationCandidateEnds.Empty,
+                }, ct).ConfigureAwait(false);
+            }
+            default:
+                return await AnswerAsync(
+                    IntegrationPromoteRuns.Held,
+                    $"candidate {candidate.Id}'s decide `{decided.Decide}` is no word this build knows: nothing was written, and it waits for a decide it does.",
+                    claim, VerdictActions.Hold).ConfigureAwait(false);
+        }
+    }
+
     /// <summary>One <c>judge</c> step for a verdict that ends a look in a record (a hold, a hand back, a split, a stop, a drop).</summary>
     private async Task<IntegrationPromoteRun> JudgedAsync(IntegrationClaim claim, string kind, string action, IntegrationStepEnd end, CancellationToken ct)
     {
@@ -397,9 +469,26 @@ internal sealed class IntegrationPromotes(IntegrationStore store, string treesRo
     /// The promotion's effect, under the claim and immediately before the line moves: the line read again, the fence read from the committed
     /// declaration at the commit being moved, then the move, by the path its checkout allows.
     /// </summary>
+    /// <remarks>
+    /// GITLOCK1: the checkout held alone (<see cref="TreeLock.TryWriting"/>) from the line's first read through the move and its read back, so
+    /// no pull, replay or start meets it between; whatever holds it holds the step, said, for the next look. Taken here alone: the line's run and
+    /// the legacy merge's press reach this through it and take none, and its claim and the line's one run are taken before it.
+    /// </remarks>
     private async Task<IntegrationStepEnd> EffectAsync(
         IntegrationPromoteAsk ask, IntegrationCandidate candidate, IReadOnlyList<IntegrationMember> replayed, IntegrationStep step, string verdict, CancellationToken ct)
     {
+        using var writing = TreeLock.TryWriting(ask.Home, ask.Root, ask.Repository, TreeLock.Promoting);
+        if (writing is null)
+        {
+            return Held($"{TreeLock.Held(ask.Repository, TreeLock.HolderOf(ask.Home, ask.Root))}: nothing was moved, and it is tried again at the next look.");
+        }
+
+        // GITAPP2a: the checkout's open acts reconciled under the hold, before the line's first read; one that still runs holds the promotion.
+        if (await ActReconciler.ForWriterAsync(ask.Home, ask.Root, ct).ConfigureAwait(false) is { } acting)
+        {
+            return Held($"{acting.Said}: nothing was moved, and it is tried again at the next look.");
+        }
+
         var tip = candidate.Tip!;
         var (now, why) = await LineAsync(ask.Root, ask.Line, ct).ConfigureAwait(false);
         if (now is null) return Held($"git could not read where `{ask.Line}` stands ({why}): nothing was moved, and it is tried again at the next look.");
@@ -423,6 +512,12 @@ internal sealed class IntegrationPromotes(IntegrationStore store, string treesRo
         if (Seam is { } beforeMove) await beforeMove("before-move").ConfigureAwait(false);
         if (checkout is not null)
         {
+            // GITLOCK1: never under a session the ledger holds in that checkout, read inside the hold.
+            if (await CheckoutBeside.WaitsAsync(ask.Beside, checkout.Path, ask.Repository, $"the promotion onto `{ask.Line}`", ct).ConfigureAwait(false) is { } waits)
+            {
+                return Held($"{char.ToUpperInvariant(waits[0])}{waits[1..]}: nothing was moved.");
+            }
+
             // A checkout that has the line out is moved by a fast-forward in it, where it is clean; never by a ref moved under it.
             var (clean, detail) = await WorkingTree.CleanAsync(checkout.Path, ct).ConfigureAwait(false);
             if (!clean) return Held($"the checkout that has `{ask.Line}` out is not clean ({detail}): nothing was moved, and it is tried again at the next look.");

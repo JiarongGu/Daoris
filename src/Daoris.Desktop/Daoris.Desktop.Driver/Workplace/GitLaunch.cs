@@ -14,6 +14,9 @@ public enum GitRunner
 
     /// <summary>Its first bytes, as bytes: <c>GitBytesAsync</c>, a blob's preview (REVIEW2).</summary>
     Bytes,
+
+    /// <summary>An act's effect step, started suspended in its act's job and read whole: <c>ActLaunch.HeldGitAsync</c> (GITAPP2a).</summary>
+    Held,
 }
 
 /// <summary>

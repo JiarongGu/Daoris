@@ -62,7 +62,8 @@ export function setupSteps(machine: Machine): SetupStep[] {
     {
       id: 'helper',
       state: machineState(machine.helper !== null),
-      doors: doors({ view: 'settings', section: 'ai' }),
+      // And Agents → Roles, where each work's role and its choices are set (COMPANYVIEW1g).
+      doors: doors({ view: 'settings', section: 'ai' }, { view: 'agents', agentsMode: 'roles' }),
       commands: ['daoris driver helper <agent>', 'daoris driver intake <agent>'],
     },
     {

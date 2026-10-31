@@ -147,6 +147,7 @@ internal sealed class AutoTidies(
         // FABRIC-END4a: the pace's pass and link 2's tries tidy one repository at a time in a process, so neither meets the other's
         // hold and says a start held it.
         var alone = Tidying.GetOrAdd($"{Path.GetFullPath(context.Home)}|{repository}", _ => new SemaphoreSlim(1, 1));
+        LockWaits.Waits("the look's tidy of a repository");
         await alone.WaitAsync(ct).ConfigureAwait(false);
         try
         {
@@ -291,8 +292,8 @@ internal sealed class AutoTidies(
 
         if (candidates.Count == 0 && landings.Count == 0) return Pass(stays);
 
-        using var hold = TreeLock.TryReplaying(context.Home, space, repository);
-        if (hold is null) return Pass([], TidyKept.Starting);
+        using var hold = TreeLock.TryReplaying(context.Home, root, repository, TreeLock.Tidying);
+        if (hold is null) return Pass([], TidyKept.Starting, TreeLock.HolderOf(context.Home, root));
         var (busy, unsaidNow) = await BusyAsync().ConfigureAwait(false);
         if (busy is null) return Pass([], TidyKept.Sessions, unsaidNow);
 

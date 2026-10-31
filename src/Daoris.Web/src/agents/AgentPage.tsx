@@ -2,6 +2,8 @@ import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { clockOf, figure } from '../locales/format';
 import type { Account, AccountSettingsChange, Tool } from './tools';
+import type { UsedBy } from './roles/roleStructure';
+import { UsedLine } from './roles/StructureSections';
 import {
   Button, Chip, Icon, Inline, Menu, type MenuAct, Pill, Prose, SectionTitle, SkeletonRows, Tip,
 } from '../design/ui';
@@ -20,7 +22,7 @@ import {
 } from './agents';
 
 /** The sections that fold (D150 §1 rule 4): the accounts never do. */
-export type AgentSection = 'use' | 'doors' | 'rules' | 'settings' | 'usage';
+export type AgentSection = 'use' | 'doors' | 'rules' | 'settings' | 'usage' | 'used';
 
 /** A door's acts that run its own mechanism (D49 §4): its installer, its updater, its pin. */
 export type DoorAction = 'install' | 'update' | 'unpin';
@@ -111,9 +113,14 @@ export type AgentActs = {
  */
 export function AgentPage({
   tool, use, rules, usage, adapter, part, reading = false, readingNow = false, busy = false, settingsBusy = false, signingIn = null,
-  signInPanel, signInNewPanel, added = null, doorRunning = null, doorConsole, acts, onOpenPlugin, onAnchored, now,
+  signInPanel, signInNewPanel, added = null, doorRunning = null, doorConsole, acts, onOpenPlugin, onAnchored, now, usedBy = null,
 }: {
   tool: Tool;
+  /**
+   * The roles that lean on this agent on this machine, each at its place in the order (COMPANYVIEW1d, *Used by*); null on a browser or a
+   * shell older than the structure's read, and the section is absent. A read that failed is said, never an empty list.
+   */
+  usedBy?: { read: 'ok' | 'loading' | 'failed'; rows: UsedBy[] } | null;
   /** How its accounts are used (TOOL4g): null from a shell older than that, and the sections it feeds are absent. */
   use: AgentAccounts | null;
   /** The rules file's answer (PERM1): null where it is not read, and *What it may do* is absent. */
@@ -834,6 +841,28 @@ export function AgentPage({
             </ul>
           )}
           <p className="m-0 mt-2 text-meta text-ink-faint">{t('usage.note')}</p>
+        </Fold>
+      )}
+
+      {/* The roles that lean on it (COMPANYVIEW1d): read from the structure's last readings, so opening the page asks no account. */}
+      {usedBy && (
+        <Fold
+          section="used" title={t('agents.roles.used.title')} open={open.has('used')} onToggle={toggle}
+          summary={usedBy.read === 'failed' ? t('agents.roles.used.failed') : usedBy.read === 'loading' ? t('agents.roles.used.reading')
+            : usedBy.rows.length === 0 ? t('agents.roles.used.none') : t('agents.roles.used.summary', { count: usedBy.rows.length })}
+        >
+          <Prose className="text-small">{t('agents.roles.used.body')}</Prose>
+          {usedBy.read === 'failed' && <p role="alert" className="m-0 mt-2 text-small text-ink-soft">{t('agents.roles.used.failed')}</p>}
+          {usedBy.read === 'ok' && usedBy.rows.length === 0 && <p className="m-0 mt-2 text-small text-ink-soft">{t('agents.roles.used.none')}</p>}
+          {usedBy.read === 'ok' && usedBy.rows.length > 0 && (
+            <ul aria-label={t('agents.roles.used.title')} className="m-0 mt-2 list-none p-0">
+              {usedBy.rows.map((used) => (
+                <li key={`${used.role.id}:${used.from}:${used.model ?? ''}`} className="border-t border-line py-1.5 text-small first:border-t-0">
+                  <UsedLine used={used} product={product} />
+                </li>
+              ))}
+            </ul>
+          )}
         </Fold>
       )}
 

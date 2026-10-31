@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { canBeAsked, type Registration } from '../data/api';
+import { canBeAsked, type Registration, SESSION_ACTIVE } from '../data/api';
 import { sentence } from '../locales/format';
-import { appointmentSaid, stewardSetAt } from '../person/standing';
+import { stewardSetAt } from '../person/standing';
 import { AddProjectDrawer, ImportFolderDrawer, ManageProjectDrawer } from './ProjectManage';
 import { projectsItem, workspaceItem } from '../app/opener';
 import type { WorkflowTabProps } from '../workflow/WorkflowTab';
 import { ProjectList, type RepositoryRowFacts, type WorkspaceGroup } from './ProjectList';
 import { ProjectPage, ProjectsMainNotice } from './ProjectPage';
-import { RepositoryBranch, RepositoryBranches, RepositoryHistory } from './git/RepositoryGitView';
+import { RepositoryBranch, RepositoryBranches, RepositoryChanges, RepositoryHistory } from './git/RepositoryGitView';
 import { RepositoryIntegration } from './integration/RepositoryIntegration';
 import type { Driving, RepositorySetupProps } from './setup/RepositorySetup';
 import type { ProjectTab, WorkspaceSection, WorkspaceTab } from './tabs';
@@ -27,8 +27,8 @@ import { type ReviewEdit, reviewToast } from '../settings/repository/Reviews';
 import { sessionChecksToast, type SessionChecksValue } from '../settings/repository/SessionChecks';
 import {
   useAcross, useDriver, useHarnesses, useLines, usePlugins, useRuleAction, useRules, useSetAccess, useSetCommits, useHeavyMarks, useHeavySlot, useSetDrivable, useSetHeavyGates, useSetHelpers,
-  useSetHandOver, useSetHold, useSetLanding, useSetLanguage, useSetLine, useSetOpinion, useSetReadAcross, useSetReview, useSetSessionChecks, useSetStanding, useSetTrees,
-  useSetupPlan, useSetupPress, useSetWriteAcross, useSweepPlan, useWorkflowCurrent, useSetLanded, useAcceptIntegration, useVerify, standingOf, useSetAppointment,
+  useSetHandOver, useSetHold, useSetLanding, useSetLanguage, useSetLine, useSetOpinion, useSetReadAcross, useSetReview, useSetSessionChecks, useSetStanding, useSetTrees, useSetCheckoutWrites,
+  useSetupPlan, useSetupPress, useSetWriteAcross, useSweepPlan, useWorkflowCurrent, useSetLanded, useAcceptIntegration, useVerify, standingOf,
 } from '../bridge/shell';
 import type { SetUpForAgentsProps } from './setup/SetUpForAgents';
 import { doorOf } from '../agents/tools';
@@ -72,7 +72,7 @@ const list = <T,>(value: unknown): T[] => (Array.isArray(value) ? value as T[] :
  */
 export function useProjectsView({
   active, chosen, onChoose, tab = 'details', onTab, workspaceTab = 'details', onWorkspaceTab, workspaceSection = null, notify,
-  onOpenCode, onOpenAgent, onOpenPlugin, onSyncNow, syncing = false, addRequested = false, onAddOpened, importRequested = false, onImportOpened,
+  onOpenCode, onOpenAgent, onOpenAppointed, onOpenPlugin, onSyncNow, syncing = false, addRequested = false, onAddOpened, importRequested = false, onImportOpened,
   drawerWorkspace = null, onOpenQuest, onOpenAsk, onAttend, branchAsked = null, onBranchOpened,
 }: {
   /** The view is in front: only then are its errors said. */
@@ -95,6 +95,8 @@ export function useProjectsView({
   notify: Notify;
   /** Open an agent's page, where a workspace's accounts are set (UX6e): a workspace's Details names each agent's. */
   onOpenAgent?: (agent: string) => void;
+  /** Open Agents → Roles → Appointed roles, where a Setup's supervisor is appointed (COMPANYVIEW1e). */
+  onOpenAppointed?: () => void;
   /** Open a plugin's page, from the plugin a landing rule names in a Setup (PLUGUI1c2c). */
   onOpenPlugin?: (plugin: string) => void;
   /** Sync a workspace with its remote, the status bar's pass (SYNC6b), which the application says. */
@@ -144,9 +146,7 @@ export function useProjectsView({
   const setDrivable = useSetDrivable();
   const setHold = useSetHold();
   const setTrees = useSetTrees();
-  // SUPERVISOR1a-ii: the owner's appointment of the supervisor, and what its last press here came to, by repository.
-  const setAppointment = useSetAppointment();
-  const [appointed, setAppointed] = useState<{ repository: string; started: boolean; refused: string | null } | null>(null);
+  const setCheckoutWrites = useSetCheckoutWrites();
   const setStanding = useSetStanding();
   const setLanguage = useSetLanguage();
   const setLine = useSetLine();
@@ -197,6 +197,10 @@ export function useProjectsView({
   // are the application's on every view already.
   const setupShown = active && driver.data !== undefined && tab === 'setup' && chosenRepository !== null;
   const across = useAcross({ enabled: setupShown });
+  // GITAPP2b: the sessions the service lists, asked only while Setup shows a repository whose switch is on, to say which already run
+  // in its checkout (a session with no tree of its own runs in the registered root).
+  const checkoutOn = chosenRepository !== null && (driver.data?.checkoutWrites ?? []).some((name) => name.toLowerCase() === chosenRepository.toLowerCase());
+  const checkoutSessions = useSessions(chosenRepository, false, setupShown && checkoutOn);
   const rules = useRules();
   // Whether its own daoris.gates.json marks heavy gates, so wins over this machine's list (HEAVYRUN1b2c): the driver's reading, asked
   // for the chosen repository only while its Setup shows.
@@ -321,6 +325,7 @@ export function useProjectsView({
       // TERMTRUST1a: a hold a terminal made under the person's standing confirmation, as this run remembers it.
       heldStanding: named(standingOf(driver.data.standingConfirmation)?.held, repository),
       supervisor: supervisorOf(repository, workspaceOf(registration)),
+      onOpenAppointed,
       // STEWARDROLE1b (D209 §5.1): what the steward set here, from this run's memory, where the build offers the steward.
       stewardSet: stewardSetOf(repository),
     };
@@ -333,49 +338,20 @@ export function useProjectsView({
   };
 
   /**
-   * The supervisor's appointment here (SUPERVISOR1a-ii, D208 §5): the record's, live or dormant, and its presses. *Appoint* in the
-   * ask is the owner's own press: the window starts the holder's terminal, and the answer, which never carries a key, says how it
-   * ended in the ask itself; *Turn off* asks nothing, a refusal said under the row. SUPERVISOR1e: with none of its own, the row says
-   * its workspace's appointment that covers it; its own, once made, wins over it.
+   * The supervisor's appointment here (SUPERVISOR1a-ii, D208 §5): the record's, live or dormant, which Setup says in a line. It is
+   * appointed under Agents → Roles → Appointed roles (COMPANYVIEW1e). SUPERVISOR1e: with none of its own, the line says its
+   * workspace's appointment that covers it; its own, once made, wins over it.
    */
   const supervisorOf = (repository: string, workspace: string): Driving['supervisor'] => {
     const standing = standingOf(driver.data?.standingConfirmation);
     if (!standing) return undefined;
     const lower = repository.toLowerCase();
-    const mine = appointed?.repository.toLowerCase() === lower ? appointed : null;
     const supervising = standing.appointments.filter((each) => each.role === 'supervisor');
     return {
       // STEWARDROLE1a-i (D209 §2.4): the supervisor's own flag, never the steward's nor D201's.
       offered: standing.supervisorOffered,
       appointment: supervising.find((each) => each.repository.toLowerCase() === lower) ?? null,
       covering: supervising.find((each) => each.workspace !== '' && each.workspace.toLowerCase() === workspace.toLowerCase()) ?? null,
-      holders: standing.holders,
-      started: mine?.started,
-      refused: mine?.refused ?? null,
-      busy: setAppointment.isPending,
-      onAppoint: (answered, share, window) => {
-        setAppointed(null);
-        setAppointment.mutate({ role: 'supervisor', repository, on: true, share, window }, {
-          onSuccess: (answer) => {
-            if (answer.done) {
-              setAppointed({ repository, started: true, refused: null });
-              answered.done();
-            } else {
-              answered.refused(appointmentSaid(t, answer.why, answer.message));
-            }
-          },
-          onError: (error) => answered.refused(error instanceof Error ? error.message : String(error)),
-        });
-      },
-      onTurnOff: () => {
-        setAppointed(null);
-        setAppointment.mutate({ role: 'supervisor', repository, on: false }, {
-          onSuccess: (answer) => {
-            if (!answer.done) setAppointed({ repository, started: false, refused: appointmentSaid(t, answer.why, answer.message) });
-          },
-          onError: onDriverError,
-        });
-      },
     };
   };
 
@@ -559,6 +535,15 @@ export function useProjectsView({
       : undefined;
     const where = t('settings.rules.where.repository', { name: repository });
     const reach: RepositorySetupProps['reach'] = across.data === undefined && !across.error ? null : {
+      // GITAPP2b: the switch, where the shell answers it; on, it says which sessions already run in the checkout.
+      checkout: driver.data.checkoutWrites === undefined ? undefined : {
+        on: named(driver.data.checkoutWrites, repository),
+        running: checkoutSessions.error ? null
+          : checkoutSessions.data === undefined ? undefined
+          : checkoutSessions.data.filter((one) =>
+            !one.tree && SESSION_ACTIVE.has(one.state) && !one.id.includes('/') && one.repository.toLowerCase() === repository.toLowerCase()).length,
+        onChange: (allow) => setCheckoutWrites.mutate({ repository, allow }, { onError: onDriverError }),
+      },
       across: mine,
       candidates: mine && acrossRows
         ? acrossRows
@@ -731,6 +716,7 @@ export function useProjectsView({
           onOpenBranch={(repository, branch) => { setBranchOpen({ repository, branch }); onChoose(repository); onTab?.('branches'); }}
           onOpenRepositoryHistory={(repository) => { onChoose(repository); onTab?.('history'); }}
           onOpenAgent={onOpenAgent}
+          onOpenAppointed={onOpenAppointed}
           onOpenPlugin={onOpenPlugin}
           onSyncNow={onSyncNow}
           syncing={syncing}
@@ -795,6 +781,10 @@ export function useProjectsView({
             : undefined}
           history={attached
             ? <RepositoryHistory repository={shown.repository} workspace={workspaceOf(shown)} here={Boolean(shown.root)} />
+            : undefined}
+          // GITAPP2b: its checkout's changes, where the person let Daoris change its files (Setup's Reach), read while its tab shows.
+          changes={attached && named(driver.data?.checkoutWrites, shown.repository)
+            ? <RepositoryChanges repository={shown.repository} workspace={workspaceOf(shown)} here={Boolean(shown.root)} />
             : undefined}
           // INTEGRATE1h: its queue, candidates and history, read while its tab shows.
           integration={attached ? <RepositoryIntegration repository={shown.repository} notify={notify} /> : undefined}

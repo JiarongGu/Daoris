@@ -9,7 +9,8 @@ import type { AccountRowFacts } from './accountWords';
 import type { RuleProposal } from '../../settings/repository/AgentRules';
 import type { GraphEnd, HeldAttempt, HeldResolution, UnreadableRecord } from '../head/milestone';
 import {
-  ASKS_ONCE, type AttentionActId, type AttentionOffer, attentionOffers, type DeclinedRequest, type GitHeld, type MemoryWait, type QuietWait, type StaleSince,
+  ASKS_ONCE, type AttentionActId, type AttentionOffer, attentionOffers, type DeclinedRequest, type GitHeld, type IntegrationWait, type MemoryWait, type QuietWait,
+  type StaleSince,
 } from './attention';
 import { Note } from '../Note';
 import { type Answered, InlineConfirm } from '../InlineConfirm';
@@ -25,7 +26,7 @@ export type AttentionKind =
   | 'parked' | 'parked-quest' | 'steward-stopped' | 'go-ahead' | 'trust' | 'account-wait' | 'signed-out'
   | 'proposal' | 'intake' | 'departure' | 'set-up' | 'rule' | 'unanswerable'
   | 'review' | 'opinion' | 'helper' | 'hand-over' | 'work' | 'permission' | 'answer' | 'confirmation' | 'space' | 'git-held'
-  | 'quiet' | 'helper-ended' | 'request-declined' | 'memory';
+  | 'quiet' | 'helper-ended' | 'request-declined' | 'memory' | 'integration';
 
 /**
  * One thing that is waiting on a person, as Overview's band shows it.
@@ -164,6 +165,8 @@ export type Attention = {
   quiet?: QuietWait;
   /** A `memory` row's counts (KNOWCENTRAL2e): ends and replacements to approve, staged rows to keep or drop. */
   memory?: MemoryWait;
+  /** An `integration` row's wait (INTEGRATE1h): which, its repository and line, and what it is of; its door opens the repository's Integration tab. */
+  integration?: IntegrationWait;
   /** A `git-held` row's held group (GITAUTH1a): the repositories its *Try again* lifts, and why, which its mark's ink says. */
   git?: GitHeld;
   /** The workspace a `git-held` row was judged in, which its *Try again* names; absent where .NET scoped it to none. */
@@ -284,6 +287,13 @@ const HANDLER: Record<AttentionActId, keyof AttentionActs> = {
 /** The kinds that wait in a circle rather than in a repository. */
 const IN_A_CIRCLE: ReadonlySet<Attention['kind']> = new Set(['proposal', 'intake']);
 
+/** An integration row's kind, said by its wait (INTEGRATE1h). */
+const INTEGRATION_LABEL: Readonly<Record<IntegrationWait['wait'], string>> = {
+  decide: 'work.attention.integrationDecide',
+  superseded: 'work.attention.integrationSuperseded',
+  card: 'work.attention.integrationCard',
+};
+
 /** The kinds whose door is an agent's page, named by the agent rather than *Open* (UX6d): the door says where it goes. */
 const AT_AN_AGENT: ReadonlySet<Attention['kind']> = new Set(['account-wait', 'signed-out']);
 
@@ -299,6 +309,8 @@ const DOOR_ONLY: Partial<Record<Attention['kind'], (item: Attention) => [string,
   'helper-ended': () => ['work.attention.door.open'],
   // KNOWCENTRAL2e: the decisions are made on the session's page, in its Memory section, where each row's words are read first.
   memory: () => ['work.attention.door.open'],
+  // INTEGRATE1h: a decide, an answer and a request are pressed on the repository's Integration tab, beside the candidate and its steps.
+  integration: () => ['work.attention.door.integration'],
   // CONFIRMSEEN1: a terminal's press is answered on its card, which shows every value it carries; the row never answers it.
   confirmation: () => ['work.attention.door.confirmation'],
   // KEEP1f: what else goes below the floor is chosen on the *Disk space* card's press, where every unit is listed first.
@@ -476,7 +488,8 @@ export function AttentionRow({ item, onOpen, onRun, acts = {}, busy = false, ope
             label={t(
               item.kind === 'go-ahead' && item.stale ? 'work.attention.goAheadStale'
                 : item.kind === 'quiet' && item.quiet?.busy ? 'work.attention.quietBusy'
-                  : `work.attention.${item.kind}`,
+                  : item.kind === 'integration' && item.integration ? INTEGRATION_LABEL[item.integration.wait]
+                    : `work.attention.${item.kind}`,
             )}
           />
           <span

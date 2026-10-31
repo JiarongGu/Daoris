@@ -41,6 +41,22 @@ internal sealed class GitFacts
     }
 
     /// <summary>
+    /// Until disposed, this flow holds no facts (GITAPP2a: the act journal's reconciler, run inside a writer's scopes): every ask is git's.
+    /// The scope it stepped out of is this flow's again after, untouched.
+    /// </summary>
+    internal static IDisposable Outside()
+    {
+        var before = Current.Value;
+        Current.Value = null;
+        return new Back(() => Current.Value = before);
+    }
+
+    private sealed class Back(Action back) : IDisposable
+    {
+        public void Dispose() => back();
+    }
+
+    /// <summary>
     /// End the planning's table now, whoever opened it (a landing the look opened the table for ends it too): what follows asks git
     /// as it stands. The opener's own dispose is then no more than the end of its scope.
     /// </summary>

@@ -306,7 +306,7 @@ public sealed class DesktopStoreTests : IDisposable
                 ("policy_request", true), ("policy_commit", true), ("policy_batch", true), ("policy_order", true), ("policy_gates", true),
                 ("policy_unreached", true), ("policy_reached", true), ("policy_conflicts", true), ("policy_overlap", true), ("policy_line", false),
                 ("rule_source", false), ("unit", false), ("session", false), ("quest", false), ("landed_at", false), ("proof", false),
-                ("at", true), ("closed_at", false), ("closed_why", false),
+                ("at", true), ("closed_at", false), ("closed_why", false), ("queue_order", false),
             ],
             Columns(store, "integration_requests"));
         Assert.Equal(
@@ -404,7 +404,7 @@ public sealed class DesktopStoreTests : IDisposable
         Assert.Equal(
             [
                 ("request", true), ("commit_id", true), ("candidate", true), ("reference", true), ("by_commit", true), ("files", true),
-                ("subject", true), ("at", true), ("answered_at", false),
+                ("subject", true), ("at", true), ("answered_at", false), ("answer", false),
             ],
             Columns(store, "integration_dispositions"));
         Assert.Contains(
@@ -481,6 +481,84 @@ public sealed class DesktopStoreTests : IDisposable
         Assert.Equal(1, Count(older, "moves"));
         foreach (var table in IntegrationTables) Assert.Equal(0, Count(older, table));
         Assert.Equal(0, Count(older, "integration_dispositions"));
+    }
+
+    // ——— Step 12, the owner's decide, a request's queue order and a disposition's answer (INTEGRATE1h; the integration design §5.7, §5.8, §8).
+
+    [Fact]
+    public void Step_12_makes_the_decides_one_for_each_candidate_and_adds_the_queue_order_and_the_answer_nullable_and_raises_no_stamp()
+    {
+        var step = Assert.Single(DesktopStore.Steps, each => each.Version == 12);
+        Assert.Equal(1, step.Writer);
+
+        var store = Open(new DesktopStoreOptions { Settled = () => StoreSettled.Yes });
+
+        Assert.Equal((Own, 1), store.Stamp);
+        Assert.Equal([("candidate", true), ("decide", true), ("requester", true), ("at", true)], Columns(store, "integration_decides"));
+        const string At = "2026-10-31T00:00:00.0000000+00:00";
+        void Decide(string candidate) => store.Write("integration", write => write.Execute(
+            "INSERT INTO integration_decides (candidate, decide, requester, at) VALUES ($candidate, 'split', 'person', $at)", ("$candidate", candidate), ("$at", At)));
+
+        // 787 is SQLite's foreign-key refusal, 1555 its primary key's: a decide names a candidate the store holds, once.
+        Assert.Equal(787, Assert.Throws<SqliteException>(() => Decide("no-such-candidate")).SqliteExtendedErrorCode);
+        store.Write("integration", write => write.Execute(
+            """
+            INSERT INTO integration_candidates (id, repository, workspace, line, base, job, claim_run, claim_generation, formed_at)
+            VALUES ('candidate-1', 'engine', 'aurora', 'main', 'abc', 'job-1', $run, 1, $at);
+            """,
+            ("$run", store.Run), ("$at", At)));
+        Decide("candidate-1");
+        Assert.Equal(1555, Assert.Throws<SqliteException>(() => Decide("candidate-1")).SqliteExtendedErrorCode);
+    }
+
+    [Fact]
+    public void A_build_of_the_eleven_steps_before_opens_the_migrated_store_and_still_writes_a_request_naming_its_own_columns()
+    {
+        using (var older = Open(new DesktopStoreOptions { Steps = [.. DesktopStore.Steps.Take(11)], Settled = () => StoreSettled.Yes }))
+        {
+            Assert.Equal((11, 1), older.Stamp);
+        }
+
+        Open(new DesktopStoreOptions { Settled = () => StoreSettled.Not("the swap journal is at `started`") }).Write("probe", _ => { });
+        var again = Open(new DesktopStoreOptions { Steps = [.. DesktopStore.Steps.Take(11)], Settled = () => StoreSettled.Yes });
+
+        Assert.False(again.Newer);
+        Assert.Equal((Own, 1), again.Stamp);
+        again.Write("integration", write => write.Execute(
+            """
+            INSERT INTO integration_requests (id, repository, workspace, branch, tip, route, line, requester, door, policy_request, policy_commit, policy_batch,
+                policy_order, policy_gates, policy_unreached, policy_reached, policy_conflicts, policy_overlap, at)
+            VALUES ('r1', 'engine', 'aurora', 'feature/a', 'abc', 'recorded', 'main', 'person', 'card', 'owner', 'merge', 1, 'arrival', 'declared', 'split', 'split',
+                'session', 'hold', '2026-10-31T00:00:00.0000000+00:00')
+            """));
+        Assert.Equal(1, Count(again, "integration_requests"));
+        Assert.Equal(0, Count(again, "integration_decides"));
+    }
+
+    // ——— Step 13, the act journal (GITAPP2a; the git-writes design §5).
+
+    [Fact]
+    public void Step_13_makes_the_act_journal_one_open_act_for_each_checkout_and_raises_no_stamp()
+    {
+        var step = Assert.Single(DesktopStore.Steps, each => each.Version == 13);
+        Assert.Equal(1, step.Writer);
+
+        var store = Open(new DesktopStoreOptions { Settled = () => StoreSettled.Yes });
+
+        Assert.Equal((Own, 1), store.Stamp);
+        Assert.True(HasTable(store, "git_acts"));
+        Assert.True(HasTable(store, "git_act_steps"));
+        void Act(string id, string? closed = null) => store.Write("acts", write => write.Execute(
+            """
+            INSERT INTO git_acts (id, format, kind, press, repository, checkout, common_dir, plan, job, claim_run, claim_generation, phase, at, closed_at)
+            VALUES ($id, 1, 'fixture', 'test', 'engine', 'c:/engine', 'c:/engine/.git', '{}', $job, $run, 1, 'judged', '2026-11-01T00:00:00.0000000+00:00', $closed)
+            """,
+            ("$id", id), ("$job", $"job-{id}"), ("$run", store.Run), ("$closed", closed)));
+
+        // 2067 is SQLite's unique refusal: a second act open in one checkout is refused; a closed one beside it is not.
+        Act("a1", closed: "2026-11-01T00:00:00.0000000+00:00");
+        Act("a2");
+        Assert.Equal(2067, Assert.Throws<SqliteException>(() => Act("a3")).SqliteExtendedErrorCode);
     }
 
     // ——— Step 10, the role catalogue (FOUNDATION1w; the foundation design §2.7, §13.3).

@@ -800,6 +800,12 @@ Words (SUPERVISOR1f) widen what a holder can steer, and wait for their own read 
   replacing its workspace's (1e) sweeps the workspace's decisions for that repository the same way.
 - **Not offered** until both flags are (§2.3); until then the row says it is not offered yet and the route refuses `not-offered`.
 
+> **Note, 2026-10-31 (COMPANYVIEW1e): where the appointment is turned on now.** *Turned on* above no longer happens in a repository's or a
+> workspace's Setup: the *Supervisor* row there keeps one line, where the appointment stands, and a door to **Agents → Roles → Appointed
+> roles** (company-view design §3.2), where the same row, ask and *Turn off* are drawn, per workspace and per repository, unchanged and
+> over `SET_APPOINTMENT`. Nothing else here changes: the ask's sentences, the window, the covering rule, the owner's press alone and the
+> flags.
+
 ## 6. Recorded as the supervisor's, said, and overruled
 
 ### 6.1 On the record

@@ -174,10 +174,17 @@ internal interface IIntegrationVerdicts
 internal static class IntegrationVerdicts
 {
     private static IIntegrationVerdicts? _current;
+    private static readonly AsyncLocal<IIntegrationVerdicts?> s_within = new();
 
     internal static IIntegrationVerdicts Current
     {
-        get => _current ?? throw new InvalidOperationException("no integration verdicts are installed: Review installs them when the driver loads");
+        get => s_within.Value ?? _current ?? throw new InvalidOperationException("no integration verdicts are installed: Review installs them when the driver loads");
         set => _current = value;
+    }
+
+    /// <summary>Verdicts for the calling async flow only, ahead of the installed ones; a test's own, so tests running side by side never meet.</summary>
+    internal static IIntegrationVerdicts Within
+    {
+        set => s_within.Value = value;
     }
 }
