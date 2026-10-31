@@ -266,6 +266,20 @@ export const BesideTheHeadWithAWordHeld: Story = {
   },
 };
 
+/** LINESTOGETHER1b: a draft typed on a part beside the head, *To the head* beside the first line. */
+export const BesideTheHeadWithADraft: Story = {
+  args: {
+    box: { kind: 'say', mode: 'goOn' }, goes: 'To this part, beside the head · after a running session here ends',
+    draft: 'also say so in the release notes', onDraft: () => {}, toHead: () => {},
+  },
+};
+export const BesideTheHeadWithADraftWide: Story = { args: BesideTheHeadWithADraft.args, decorators: [sessionWidths.wide] };
+export const BesideTheHeadWithADraftNarrow: Story = { args: BesideTheHeadWithADraft.args, decorators: [sessionWidths.narrow] };
+export const BesideTheHeadWithADraftChineseNarrow: Story = {
+  args: { ...BesideTheHeadWithADraft.args, goes: '发往本部分，在头部旁 · 本机上运行中的会话结束之后', draft: '也写进发布说明' },
+  decorators: [sessionWidths.narrow, chinese],
+};
+
 /** The head itself, its turn running: the line only, no press. */
 export const TheHeadRunning: Story = {
   args: { box: { kind: 'steer' }, held: { queued: [], taking: true }, goes: 'To part 6, the head · at its turn’s end' },

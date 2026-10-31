@@ -194,6 +194,20 @@ describe('SessionBox', () => {
     expect(screen.queryByText(/To this part/)).toBeNull();
   });
 
+  /** LINESTOGETHER1b: beside the head, an unsent draft is carried to the head's box by *To the head*; with nothing typed, no press. */
+  it('offers an unsent draft the press to the head, beside the first line', async () => {
+    const toHead = vi.fn();
+    const goes = 'To this part, beside the head · after a running session here ends';
+    const { unmount } = show({ box: { kind: 'say', mode: 'goOn' }, goes, draft: 'also cap it', onDraft: () => {}, toHead });
+
+    await userEvent.click(screen.getByRole('button', { name: 'To the head' }));
+    expect(toHead).toHaveBeenCalledTimes(1);
+    unmount();
+
+    show({ box: { kind: 'say', mode: 'goOn' }, goes, draft: '  ', onDraft: () => {}, toHead });
+    expect(screen.queryByRole('button', { name: 'To the head' })).toBeNull();
+  });
+
   /** A word with files stays with its part: the press is not offered on it. */
   it('offers no move on a word with files', () => {
     show({ box: { kind: 'say', mode: 'goOn' }, waiting: [{ id: 'w1', text: 'see the shot', files: ['shot.png'] }], onMove: () => {} });

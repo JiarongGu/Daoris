@@ -78,7 +78,7 @@ import { doorLabel } from '../agents/tools';
 import type { QuestClose, Resolution } from './waits/AwaitingPerson';
 import { Composer } from './conversation/Composer';
 import { DiffPane } from './review/DiffPane';
-import { keepDraft, useDraft } from './conversation/drafts';
+import { forgetDraft, keepDraft, useDraft } from './conversation/drafts';
 import { dockOpensOn, type DockTab, followed, NothingFollowed, RightDock } from './frame/RightDock';
 import { SessionTimeline } from './head/SessionTimeline';
 import { SessionRail } from './rail/SessionRail';
@@ -584,6 +584,15 @@ export function WorkFrame({
           setRefusal({ session, text: moveSaid(t, moved) });
         },
       });
+    }
+    : undefined;
+  // *To the head*: the unsent draft moves to the head's own draft and its page opens; nothing is sent.
+  const onDraftToHead = stands?.place === 'beside' && attendedEntry?.head && attended && draft.trim()
+    ? () => {
+      // Through the store: the draft hook re-reads it as the head is attended.
+      forgetDraft(attended.id);
+      keepDraft(attendedEntry.head!, draft);
+      attend(attendedEntry.head!);
     }
     : undefined;
   // What the attended session's door does with a word while a turn runs (COWORK1a, D188): the levels its box offers, and the
@@ -2799,6 +2808,7 @@ export function WorkFrame({
               onEdit={editQueued.reword}
               goes={goes}
               onMove={onMoveWord}
+              toHead={onDraftToHead}
               // The conversation it went on in, by its record's title (HANDWORDS1-ii); one the frame does not hold is said by its id.
               continued={box.kind === 'line' && box.why === 'continued' && box.to
                 ? headLink((sessions.data ?? []).find((row) => row.id === box.to))
