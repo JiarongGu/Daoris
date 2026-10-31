@@ -31,6 +31,9 @@ public static class OpenRoutes
     /// <summary><c>sessions</c>' list.</summary>
     public static InstanceRoute SessionGroups { get; } = Open("SESSION_GROUPS");
 
+    /// <summary><c>sessions at-work</c>: who is at work on a session.</summary>
+    public static InstanceRoute AtWork { get; } = Open("SESSION_AT_WORK");
+
     /// <summary><c>notices</c>: what came to the person, as the windows hold it (NOTIFY2i).</summary>
     public static InstanceRoute Notifications { get; } = Open("NOTIFICATIONS");
 
@@ -72,6 +75,7 @@ public static class OpenRoutes
         ("trees land --ask <id> --plan", AskLanding, "the plan; the press is the person's and acts alone until its client path is built"),
         ("trees hand <session|branch> --plan", HandoffPlan, "the plan; the press is the person's and acts alone until its client path is built"),
         ("sessions", SessionGroups, "the list"),
+        ("sessions at-work <session>", AtWork, "the read, asked again once a second while it is pending"),
         ("notices", Notifications, "the read; alone, the notices' record, the live groups said not read"),
         ("sync", SyncNow, "an open press (D156 §3: sync)"),
         ("register", RegistryRefresh, "an open press (D156 §3: refresh)"),

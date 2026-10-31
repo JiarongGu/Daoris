@@ -2209,6 +2209,7 @@ export function WorkFrame({
     waitingSince: waiting?.session === attended.id ? waiting.since : undefined,
     calling: waiting?.session === attended.id ? waiting.calling : undefined,
     withIt: following?.id === attended.id ? withIt : 0,
+    windowOpened: atWorkHeld && 'answer' in atWorkHeld ? atWorkHeld.answer.windowOpened : undefined,
     // AGENTERRORS1a2 (D210 §5.1, §8): *Trying again at* while a transient episode waits.
     retrying: waiting?.session === attended.id ? waiting.retrying : undefined,
     // HEAVYSLOT1: its heavy run said in place of the call, by its gate or whom it waits behind.

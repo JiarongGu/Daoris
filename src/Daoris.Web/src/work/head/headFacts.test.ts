@@ -134,6 +134,25 @@ describe('a session’s facts line', () => {
     await i18n.changeLanguage('en');
   });
 
+  /** Rule 18: where the window heard nothing, the fragment says since when it has been listening, never a moment it did not hear. */
+  it('says nothing was heard since the window opened where it heard none, and keeps quiet and a hearing as they are', async () => {
+    const opened = '2026-10-05T09:30:00Z';
+    const none = sessionFacts(t, { session: session(), shown: 'working', withIt: 3, windowOpened: opened }).at(-1)!;
+    expect(none).toMatch(/^3 working with it · nothing heard since the window opened at /);
+    expect(sessionFacts(t, { session: session(), shown: 'working', withIt: 3 }).at(-1)).toBe('3 working with it');
+    const heard = '2026-10-05T09:59:00Z';
+    const calling = { title: '', since: heard, heard };
+    expect(sessionFacts(t, { session: session(), shown: 'working', grouping: grouping({ calling }), withIt: 3, windowOpened: opened }).at(-1))
+      .toBe('3 working with it · last heard 1m ago');
+    const quiet = { ...calling, heard: undefined, quiet: '2026-10-05T09:40:00Z' };
+    expect(sessionFacts(t, { session: session(), shown: 'working', grouping: grouping({ calling: quiet }), withIt: 3, windowOpened: opened }).join())
+      .not.toMatch(/nothing heard/);
+
+    await i18n.changeLanguage('zh');
+    expect(sessionFacts(t, { session: session(), shown: 'working', withIt: 3, windowOpened: opened }).at(-1)).toMatch(/^3 个在一起工作 · 窗口 .+ 打开以来没有动静$/);
+    await i18n.changeLanguage('en');
+  });
+
   /**
    * WAITSAY1b: where the page holds none of the call's events (begun before the window opened, or past the history's page), the
    * head says the call the driver heard, from the row's reader. RAILLINE1: the head and the row read that one source wherever the

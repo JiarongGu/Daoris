@@ -72,6 +72,11 @@ public sealed record AtWorkAnswer(AtWorkOf Of, string Attended, IReadOnlyList<At
     /// <summary>The parts past the bound, counted by their record's state.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public IReadOnlyDictionary<string, int>? MoreParts { get; init; }
+
+    /// <summary>When this process began: the window's memory of what it heard starts here (rule 18).</summary>
+    public DateTimeOffset WindowOpened { get; init; } = Opened;
+
+    private static readonly DateTimeOffset Opened = System.Diagnostics.Process.GetCurrentProcess().StartTime.ToUniversalTime();
 }
 
 /// <summary>One of the strip's parts: its record's own state, never the strip's shown word, and its subagents' count.</summary>
