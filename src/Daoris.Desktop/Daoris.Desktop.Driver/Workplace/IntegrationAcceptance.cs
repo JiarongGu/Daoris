@@ -84,12 +84,14 @@ public static class IntegrationAcceptance
 
     /// <summary>
     /// The text of the declaration <paramref name="repository"/>'s integration acceptance names, read only where that blob is the one at
-    /// <paramref name="commit"/> (the design §4.3: the accepted blob alone, at the commit it acts on); null where nothing is accepted,
+    /// <paramref name="commit"/> (the design §4.3: the accepted blob alone, at the commit it acts on); <paramref name="frozen"/> is the blob an
+    /// epoch froze (LANDNODE1g), which stands in for the configuration's current acceptance; null where nothing is accepted,
     /// the declaration there is another (it waits for the owner), git cannot say, or the line held none.
     /// </summary>
-    internal static async Task<string?> AcceptedTextAsync(DriverConfig config, string root, string repository, string commit, CancellationToken ct)
+    internal static async Task<string?> AcceptedTextAsync(
+        DriverConfig config, string root, string repository, string commit, CancellationToken ct, string? frozen = null)
     {
-        if (Of(config, repository) is not { } accepted || accepted == None) return null;
+        if ((frozen ?? Of(config, repository)) is not { } accepted || accepted == None) return null;
         if (StateOf(accepted, await BlobAtAsync(root, commit, ct).ConfigureAwait(false)) != Accepted) return null;
         return await TextAsync(root, accepted, ct).ConfigureAwait(false);
     }

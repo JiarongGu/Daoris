@@ -5,6 +5,13 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-01 - One request's policy governed members queued under another (LANDNODE1g)
+
+- **Symptom:** after a change of the line's rule, requests admitted under different `integrate` keys formed one candidate, and the first request's batch and gates governed all of them.
+- **Root cause:** `IntegrationReplays.RunAsync` read `queued[0].Policy.Batch` and took that many requests, and `IntegrationStore.Form` checked repository and line alone. Promotion took its acceptance from the current configuration (`IntegrationPromotes.VerdictAsync`), not from what the requests were admitted under.
+- **Fix:** an epoch (`IntegrationEpoch`: the resolved shared policy plus the accepted declaration's blob) is kept on each request at admission and on each candidate (`integration_epochs`, store step 14). The replay takes only the leading arrivals of the first's epoch, `Form` enforces equality inside its transaction, and the verdict runs the gates from the candidate's frozen blob. A record with no epoch reads as its own: it forms alone and promotes under the acceptance as it stands.
+- **Verify:** the tests were written before the code and did not compile against the old one (the epoch's members were missing); `IntegrationFormGitTests`, `IntegrationPromoteGitTests` and `IntegrationStoreTests` green under the git settings.
+
 ## 2026-11-01 - A session's head listed fifteen identical "not read here" lines (SESSRELATED1)
 
 - **Symptom:** "Beside it in Daoris:" followed by fifteen lines, each "not read here (last read 09:24)".

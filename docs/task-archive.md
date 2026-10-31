@@ -5,6 +5,14 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## LANDNODE1g — the line's epoch (2026-11-01)
+
+> **LANDNODE1g — the line's epoch** (driver; a fix waiting on nothing, `docs/2026-11-01-land-node-design.md` §5 and §8 row 2). A candidate took its batching from its first request's policy alone, and promotion took its acceptance from the current configuration. The epoch (the resolved shared policy plus the accepted declaration's blob) kept on requests and candidates, formation enforcing equality, gates run from the frozen declaration; one policy per target.
+
+**Outcome** 2026-11-01: `IntegrationEpoch` kept in `integration_epochs` (store step 14); formation takes one epoch in the replay and in `Form`'s transaction; the verdict runs the candidate's frozen blob; an older record reads as its own epoch. The cause and proof are in `docs/FIX-LOG.md`, the rule in D215's note of 2026-11-01.
+
+---
+
 ## SESSRELATED1 — a session's head names only the sessions it can meet, and says an unread tree once (2026-11-01)
 
 > **SESSRELATED1 — a session's head names only the sessions it can meet, and says an unread tree once** (driver, modules, web; the owner's report, 2026-11-01). The head's "Beside it in Daoris:" showed fifteen identical "not read here (last read 09:24)" lines. Causes: the candidates took every session with a recorded tree, closed ones whose trees are gone included; an unreadable own tree marked every other session `not-read`; the page drew a line each. Contract: a candidate is a session whose tree folder exists here; an unreadable own tree is one top-level `own: not-read`, never a mark on the others; a present tree git cannot read stays `not-read` per session, and two or more fold into one line. Proof: `RelatedSessionsTests`, a candidates-filter test, `RelatedSessions.test.tsx`.

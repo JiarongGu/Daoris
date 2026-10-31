@@ -484,6 +484,19 @@ public sealed class DesktopStore : IDisposable
               PRIMARY KEY (act, ordinal)
             );
             """)),
+
+        // LANDNODE1g: the line's epoch (the land node design §5), Workplace's. A new table an older build never opens, so the stamp stays where
+        // it is; a request or candidate with no row reads as its own epoch. An older build still forms candidates by its first request's
+        // policy alone, which this build cannot stop: the remainder D215's note keeps.
+        new(14, WriterStamp, write => write.Execute(
+            """
+            CREATE TABLE integration_epochs (
+              subject TEXT NOT NULL,
+              id      TEXT NOT NULL,
+              epoch   TEXT NOT NULL,
+              PRIMARY KEY (subject, id)
+            );
+            """)),
     ];
 
     /// <summary>

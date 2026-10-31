@@ -49,6 +49,13 @@ public sealed class IntegrationStore(
     /// <summary>The store's step that made the decides, the queue's order and a disposition's answer (INTEGRATE1h): a store before it holds none.</summary>
     private const int ActsSince = 12;
 
+    /// <summary>The store's step that made the epochs' table (LANDNODE1g): a store before it holds none, and every record reads as its own epoch.</summary>
+    private const int EpochsSince = 14;
+
+    private const string RequestSubject = "request";
+
+    private const string CandidateSubject = "candidate";
+
     /// <summary>SQLite's refusal of a row a unique index already holds.</summary>
     private const int UniqueRefused = 2067;
 
@@ -107,6 +114,7 @@ public sealed class IntegrationStore(
                 try
                 {
                     InsertRequest(write, request);
+                    KeepEpoch(write, RequestSubject, request.Id, request.Epoch ?? IntegrationEpoch.Of(request.Policy, null));
                 }
                 catch (SqliteException error) when (error.SqliteExtendedErrorCode == UniqueRefused)
                 {
@@ -123,6 +131,24 @@ public sealed class IntegrationStore(
             return (IntegrationRequest)unwritten.Answer!;
         }
     }
+
+    /// <summary>The epoch a request was admitted under; null for one admitted before epochs, which reads as its own.</summary>
+    public string? RequestEpoch(string request) => EpochOf(RequestSubject, request);
+
+    /// <summary>The epoch a candidate was formed under, its first member's; null for one formed before epochs.</summary>
+    public string? CandidateEpoch(string candidate) => EpochOf(CandidateSubject, candidate);
+
+    private string? EpochOf(string subject, string id) =>
+        Reading(reader => reader.Query(
+            "SELECT epoch FROM integration_epochs WHERE subject = $subject AND id = $id", row => row.GetString(0), ("$subject", subject), ("$id", id))
+            .FirstOrDefault(), null, EpochsSince);
+
+    private static string? EpochIn(DesktopWrite write, string subject, string id) =>
+        write.Query("SELECT epoch FROM integration_epochs WHERE subject = $subject AND id = $id", row => row.GetString(0), ("$subject", subject), ("$id", id))
+            .FirstOrDefault();
+
+    private static void KeepEpoch(DesktopWrite write, string subject, string id, string epoch) =>
+        write.Execute("INSERT INTO integration_epochs (subject, id, epoch) VALUES ($subject, $id, $epoch)", ("$subject", subject), ("$id", id), ("$epoch", epoch));
 
     /// <inheritdoc/>
     public IntegrationRequest? FindByKey(string unit, string tip) =>
@@ -301,9 +327,17 @@ public sealed class IntegrationStore(
                     throw new Unwritten(new IntegrationFormed(standing, null, null));
                 }
 
+                // The epoch is the first member's; a member of another epoch, or any member of an older record's (its own epoch), is refused.
+                var epoch = EpochIn(write, RequestSubject, forming.Requests[0]);
+                if (epoch is not null) KeepEpoch(write, CandidateSubject, id, epoch);
                 for (var position = 0; position < forming.Requests.Count; position++)
                 {
                     var request = forming.Requests[position];
+                    if (forming.Requests.Count > 1 && !IntegrationEpoch.Shared(epoch, EpochIn(write, RequestSubject, request)))
+                    {
+                        throw new IntegrationRefusedException(id, $"request {request} was not admitted under the epoch of request {forming.Requests[0]}");
+                    }
+
                     var held = RequestIn(write, request) ?? throw new IntegrationRefusedException(id, $"the store holds no request {request}");
                     if (held.ClosedAt is not null) throw new IntegrationRefusedException(id, $"request {request} is closed ({held.ClosedWhy})");
                     if (!string.Equals(held.Repository, forming.Repository, StringComparison.OrdinalIgnoreCase)

@@ -157,6 +157,39 @@ public sealed class IntegrationStoreTests : IDisposable
         Assert.Equal(26L, Rows("integration_requests"));
     }
 
+    /// <summary>
+    /// 🔴 LANDNODE1g: the store itself holds formation to one epoch. A request keeps the epoch it was admitted under and a candidate its first
+    /// member's; members of two epochs are refused in the formation's transaction and nothing is written; a request with no epoch (older)
+    /// is its own, so it forms alone and no other joins it.
+    /// </summary>
+    [Fact]
+    public void A_candidate_is_formed_of_one_epoch_and_a_request_with_none_is_its_own()
+    {
+        var store = Store("run-a");
+        var policy = new LandingIntegrate(Batch: 8).Resolved();
+        string Epoch(string blob) => IntegrationEpoch.Of(policy, blob);
+        Assert.Null(store.Add(Request("r1", "feature/a") with { Epoch = Epoch("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa") }));
+        Assert.Null(store.Add(Request("r2", "feature/b") with { Epoch = Epoch("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb") }));
+        Assert.Null(store.Add(Request("r3", "feature/c") with { Epoch = Epoch("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa") }));
+        Assert.Equal(Epoch("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"), store.RequestEpoch("r1"));
+        var revision = Revision();
+
+        Assert.Throws<IntegrationRefusedException>(() => store.Form(Forming("r1", "r2")));
+        Assert.Equal((0L, revision), (Rows("integration_candidates"), Revision()));
+
+        // An older request: written before epochs, it has no row. It reads as its own epoch and forms alone, whoever is behind it.
+        using (var raw = DesktopStore.Open(Db, new DesktopStoreOptions { Settled = () => StoreSettled.Yes }))
+        {
+            raw.Write("probe", write => write.Execute("DELETE FROM integration_epochs WHERE id IN ('r1', 'r3')"));
+        }
+
+        Assert.Null(store.RequestEpoch("r1"));
+        Assert.Throws<IntegrationRefusedException>(() => store.Form(Forming("r1", "r3")));
+        Assert.Throws<IntegrationRefusedException>(() => store.Form(Forming("r3", "r1")));
+        var alone = store.Form(Forming("r1"));
+        Assert.Null(store.CandidateEpoch(alone.Candidate.Id));
+    }
+
     [Fact]
     public void A_request_whose_policy_is_not_resolved_or_that_names_nothing_is_refused_and_no_store_is_made()
     {
