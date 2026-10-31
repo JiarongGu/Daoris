@@ -36,7 +36,7 @@ Routed in `src/Daoris.Desktop/Daoris.Desktop.Driver.Host/Program.cs`, its usage 
 |---|---|---|---|
 | `roles` | `Program.cs:383` | `Program.cs:383` (inline) | brief `Program.cs:383` |
 | `trace` | `Program.cs:434` | `Daoris.Desktop.Driver.Host/TraceConsole.cs:8` TraceConsole | commit `TraceCommand.cs:6` · session `TraceCommand.cs:7` · quest `TraceCommand.cs:8` |
-| `git` | `Program.cs:440` | `Daoris.Desktop.Driver.Host/GitConsole.cs:10` GitConsole | branches · branch · tag · pick · revert · rebase · review |
+| `git` | `Program.cs:440` | `Daoris.Desktop.Driver.Host/GitConsole.cs:10` GitConsole | branches · branch · tag · fetch · pick · revert · rebase · review |
 | `workflow` | `Program.cs:447` | `Daoris.Desktop.Driver.Host/WorkflowConsole.cs:10` WorkflowConsole | run · keep `WorkflowConsole.cs:14` · skip · stop |
 | `run-heavy` | `Program.cs:454` | `Daoris.Desktop.Driver.Host/HeavyConsole.cs:8` HeavyConsole | — |
 | `verify` | `Program.cs:461` | `Daoris.Desktop.Driver.Host/VerifyConsole.cs:8` VerifyConsole | — |
@@ -73,7 +73,7 @@ Routed in `src/Daoris.Desktop/Daoris.Desktop.Driver.Host/Program.cs`, its usage 
 | `space` | `Program.cs:850` | `Daoris.Desktop.Driver/Workplace/SpaceCommand.cs:17` SpaceCommand | free `SpaceCommand.cs:54` |
 | `logs` | `Program.cs:859` | `Daoris.Desktop.Driver.Host/LogsConsole.cs:18` LogsConsole | — |
 | `plugins` | `Program.cs:866` | `Daoris.Desktop.Driver/Plugins/PluginsCommand.cs:25` PluginsCommand | install `Program.cs:807` · new `PluginsCommand.cs:90` · try `PluginsCommand.cs:90` · show `PluginsCommand.cs:92` · activity `PluginsCommand.cs:94` · approve `PluginsCommand.cs:62` · withdraw `PluginsCommand.cs:67` |
-| `drive` | `Program.cs:482` | `Daoris.Desktop.Driver/Loop/DriverCommand.cs:387` DriverCommand.Read | — |
+| `drive` | `Program.cs:482` | `Daoris.Desktop.Driver/Loop/DriverCommand.cs:392` DriverCommand.Read | — |
 
 ## `daoris-devkit`
 

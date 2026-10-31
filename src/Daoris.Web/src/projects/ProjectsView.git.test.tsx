@@ -1139,6 +1139,75 @@ describe("a repository's New branch and New tag (GITAPP2c)", () => {
       }
     });
   });
+
+  describe('Fetch origin (GITAPP2f)', () => {
+    const offered = () => answer({ offered: true, reason: null, why: null, address: 'https://example.test/engine.git', command: 'git fetch' });
+    const refused = (reason: string, why: string) => () => answer({ offered: false, reason, why, address: null, command: 'git fetch' });
+
+    const openBranches = async () => {
+      const page = await chooseRepository('engine');
+      await userEvent.click(within(page).getByRole('tab', { name: 'Branches' }));
+      return within(repositoryMain()).findByRole('region', { name: "engine's branches" });
+    };
+
+    it('offers Fetch once the driver says so, names what moves, sends nothing until Fetch, then says what was made, moved and removed', async () => {
+      answering({
+        GIT_FETCH_PLAN: offered,
+        GIT_FETCH: () => ({ act: 'f1', outcome: 'done', refused: false, said: 'act f1', notes: 'Moved `origin/main`. Removed `origin/old`, which origin no longer has.' }),
+      });
+      show(<ProjectsView notify={() => {}} />);
+      const list = await openBranches();
+
+      await userEvent.click(await within(repositoryMain()).findByRole('button', { name: 'Fetch origin…' }));
+      const group = within(repositoryMain()).getByRole('group', { name: 'Fetch origin' });
+      expect(within(group).getByText(/Fetch origin’s branches from https:\/\/example.test\/engine.git\? Only the origin\/… branches here move/)).toBeInTheDocument();
+      expect(asked('GIT_FETCH')).toEqual([]);
+      await userEvent.click(within(group).getByRole('button', { name: 'Fetch' }));
+
+      expect(await within(group).findByText(/Fetched origin’s branches\. Moved .origin\/main.\. Removed .origin\/old./)).toBeInTheDocument();
+      expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'GIT_FETCH', { payload: { repository: 'engine', workspace: 'aurora' } });
+      expect(list).toBeInTheDocument();
+    });
+
+    it("says a refusal in the driver's sentence, and a fetch that did nothing as nothing fetched", async () => {
+      answering({ GIT_FETCH_PLAN: offered, GIT_FETCH: () => ({ refused: true, outcome: null, said: 'A hold on origin, so nothing was fetched.' }) });
+      show(<ProjectsView notify={() => {}} />);
+      await openBranches();
+      await userEvent.click(await within(repositoryMain()).findByRole('button', { name: 'Fetch origin…' }));
+      await userEvent.click(within(within(repositoryMain()).getByRole('group', { name: 'Fetch origin' })).getByRole('button', { name: 'Fetch' }));
+
+      expect(await within(repositoryMain()).findByText('A hold on origin, so nothing was fetched.')).toBeInTheDocument();
+    });
+
+    it('goes back without sending', async () => {
+      answering({ GIT_FETCH_PLAN: offered });
+      show(<ProjectsView notify={() => {}} />);
+      await openBranches();
+      await userEvent.click(await within(repositoryMain()).findByRole('button', { name: 'Fetch origin…' }));
+      await userEvent.click(within(within(repositoryMain()).getByRole('group', { name: 'Fetch origin' })).getByRole('button', { name: 'Cancel' }));
+
+      expect(asked('GIT_FETCH')).toEqual([]);
+      expect(within(repositoryMain()).getByRole('button', { name: 'Fetch origin…' })).toBeInTheDocument();
+    });
+
+    it('draws nothing where the git doors are not installed, and says why only where origin is set to run another program', async () => {
+      answering({ GIT_FETCH_PLAN: refused('doors', "Daoris's git doors are not installed in this Daoris") });
+      show(<ProjectsView notify={() => {}} />);
+      await openBranches();
+      await waitFor(() => expect(asked('GIT_FETCH_PLAN')).not.toEqual([]));
+      expect(within(repositoryMain()).queryByRole('button', { name: 'Fetch origin…' })).toBeNull();
+      expect(within(repositoryMain()).queryByText(/Fetch is not offered here/)).toBeNull();
+    });
+
+    it('says a setting of origin that runs another program refuses it', async () => {
+      answering({ GIT_FETCH_PLAN: refused('widened', '`remote.origin.uploadpack` is set, which would run another program') });
+      show(<ProjectsView notify={() => {}} />);
+      await openBranches();
+
+      expect(await within(repositoryMain()).findByText(/Fetch is not offered here: .remote\.origin\.uploadpack. is set/)).toBeInTheDocument();
+      expect(within(repositoryMain()).queryByRole('button', { name: 'Fetch origin…' })).toBeNull();
+    });
+  });
 });
 
 // GITAPP2m (D204, the git-writes design §7, §9): Edit history on a branch of the person's own. The page asks the driver's plan first

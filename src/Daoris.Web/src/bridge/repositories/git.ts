@@ -264,8 +264,27 @@ export const useGitRefActs = (repository: string, workspace: string) => {
     mutationFn: (act: string) => call<GitRefAnswer>('GIT_REF_FINISH', { ...base, act }),
     onSuccess: refresh,
   });
-  return { make: make.mutateAsync, undo: undo.mutateAsync, remove: remove.mutateAsync, rename: rename.mutateAsync, finish: finish.mutateAsync };
+  // GITAPP2f: origin's branches fetched into the tracking refs alone; the answer's `notes` name what was made, moved and removed.
+  const fetchOrigin = useMutation({
+    mutationFn: () => call<GitFetchAnswer>('GIT_FETCH', base),
+    onSuccess: refresh,
+  });
+  return {
+    make: make.mutateAsync, undo: undo.mutateAsync, remove: remove.mutateAsync, rename: rename.mutateAsync, finish: finish.mutateAsync,
+    fetchOrigin: fetchOrigin.mutateAsync,
+  };
 };
+
+/** What `GIT_FETCH` answers (GITAPP2f): a ref act's answer, and in `notes` the refs the fetch made, moved and removed. */
+export type GitFetchAnswer = GitRefAnswer & { notes?: string | null };
+
+/**
+ * Whether *Fetch origin* is offered on a repository's Branches (GITAPP2f, D204, D198): the driver's git doors installed, an origin, none of its
+ * settings that run another program. `reason` says why not in a word (`doors`, `no-origin`, `widened`, `unread`); `address` is origin's as the
+ * driver redacts it; `command` is what a person types.
+ */
+export type GitFetchPlan = { offered: boolean; reason: string | null; why: string | null; address: string | null; command: string };
+
 
 /** A history edit asked of a branch (GITAPP2m): the commit or `A..B` range to pick or revert onto it, or the commit to rebase it onto. */
 export type GitHistoryAsk = { edit: 'pick' | 'revert' | 'rebase'; branch: string; target: string };
@@ -669,6 +688,24 @@ export const useGitStashPlan = (repository: string | null, workspace: string) =>
   return useQuery({
     queryKey,
     queryFn: () => askHeld('GIT_STASH_PLAN', client, queryKey, { repository, ...(workspace ? { workspace } : {}) }, readStashPlan),
+    enabled: isAvailable && Boolean(repository),
+    staleTime: 0,
+    refetchOnMount: 'always',
+  });
+};
+
+const readFetchPlan = readPlanOf<GitFetchPlan>((value) => ({
+  offered: value.offered === true, reason: value.reason ?? null, why: value.why ?? null, address: value.address ?? null, command: value.command ?? '',
+}));
+
+/** The fetch's plan, read when the Branches tab opens and again after a fetch (GITAPP2f). */
+export const useGitFetchPlan = (repository: string | null, workspace: string) => {
+  const { isAvailable } = useShenora();
+  const client = useQueryClient();
+  const queryKey = [...keys.gitChanges(repository ?? '', workspace), 'fetch-plan'] as const;
+  return useQuery({
+    queryKey,
+    queryFn: () => askHeld('GIT_FETCH_PLAN', client, queryKey, { repository, ...(workspace ? { workspace } : {}) }, readFetchPlan),
     enabled: isAvailable && Boolean(repository),
     staleTime: 0,
     refetchOnMount: 'always',

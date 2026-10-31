@@ -15,6 +15,23 @@ export type RefActs = {
   rename: (ask: { kind: RefKind; name: string; to: string; at: string }) => Promise<RefOutcome>;
   finish: (act: string) => Promise<RefOutcome>;
   undo: (act: string) => Promise<RefOutcome>;
+  /** *Fetch origin* (GITAPP2f); absent, the tab offers none. */
+  fetch?: FetchActs;
+};
+
+/** What a fetch answers: the ref act's outcome, and in `notes` the refs it made, moved and removed. */
+export type FetchOutcome = RefOutcome & { notes?: string | null };
+
+/**
+ * The fetch the holder hands: whether the driver offers it (its git doors installed, an origin, no setting of origin's that runs another
+ * program), why not in a word and a sentence, origin's address as the driver redacts it, and the press.
+ */
+export type FetchActs = {
+  offered: boolean;
+  reason?: string | null;
+  why?: string | null;
+  address?: string | null;
+  press: () => Promise<FetchOutcome>;
 };
 
 export type RefKind = 'branch' | 'tag';
