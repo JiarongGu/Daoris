@@ -1705,6 +1705,48 @@ if (mode == ServiceMode.Local)
             _ => Results.Conflict(refused),
         };
     });
+
+    // The person moving one word held on a part to its line's head (LINESTOGETHER1b, the review-flow design §2): taken off and kept there in
+    // one step under the key `move:<part>:<word>`, so a retry after a lost answer is answered moved and nothing is said twice. `taken` is an
+    // answer, as the take-back's is. LOCAL mode only, as the say door: the words wait only here.
+    app.MapPost("/api/sessions/{id}/move", async (
+        ComposedService s, HttpContext http, string id, MoveSaidRequest body, CancellationToken ct) =>
+    {
+        var now = DateTimeOffset.UtcNow;
+        var outcome = await s.Ledger.MoveSaidAsync(id, body.Word, body.To, now, ct);
+        if (outcome.Refusal == SessionSayRefusal.None && outcome.Again)
+        {
+            return Results.Ok(new MoveSaidResponse(true, outcome.Message, To: outcome.MovedTo, Again: true));
+        }
+
+        if (outcome.Refusal == SessionSayRefusal.None)
+        {
+            // A word said to an ended part answers the park it now waits on, kept on its ask at once as the say door keeps one (DRIFT1a).
+            if (outcome.Answers && outcome.Word!.Channel is null && outcome.Word.Persons)
+            {
+                await s.Ledger.KeepOnAskAsync(outcome.MovedTo!, AskWordKind.Answered, outcome.Word.Text, now, ct);
+            }
+
+            var local = MachineLocal(http);
+            return Results.Ok(new MoveSaidResponse(
+                true, outcome.Message, To: outcome.MovedTo, Session: await ToSessionAsync(s, outcome.Session!, local),
+                Said: local ? ToSaid(outcome.Word) : null));
+        }
+
+        if (outcome.Refusal == SessionSayRefusal.Taken)
+        {
+            return Results.Ok(new MoveSaidResponse(false, outcome.Message, SayRefusal(outcome.Refusal)));
+        }
+
+        var refused = new SessionSayRefusalResponse(
+            outcome.Message, SayRefusal(outcome.Refusal), outcome.Quest, outcome.Ask, outcome.Origin, outcome.Opinion, outcome.MovedTo);
+        return outcome.Refusal switch
+        {
+            SessionSayRefusal.NotFound => Results.NotFound(refused),
+            SessionSayRefusal.Empty => Results.BadRequest(refused),
+            _ => Results.Conflict(refused),
+        };
+    });
 }
 
 // Second opinions (XAGENT1c, D155 point 11; the second agent design §6.2–§6.3): the driver asks a pass, which opens its
@@ -3102,6 +3144,11 @@ public partial class Program
         // and a line that loops or runs past the walk's bound, so nothing is kept.
         SessionSayRefusal.Continued => "continued",
         SessionSayRefusal.Unplaced => "unplaced",
+        // LINESTOGETHER1b (the review-flow design §2): a move's own refusals of the word or its part.
+        SessionSayRefusal.NotHeld => "not-held",
+        SessionSayRefusal.Files => "files",
+        SessionSayRefusal.AtHead => "at-head",
+        SessionSayRefusal.NotYours => "not-yours",
         // Reached by no value the ledger declares, which the table's test holds; the word it always sent is kept for a value cast from outside.
         _ => "running",
     };
