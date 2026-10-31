@@ -12648,3 +12648,35 @@ mis-rooted instance.
 **Fix.** The props were copied into the scope tree by hand once and the batch queued again; with LYNTAILOCAL1 on main, every later runner copies them itself. A tool change that a gate needs in order to run its own candidate meets this once: run it by hand in the runner's tree before queuing.
 
 **Verification.** Batch 1031c's second run built the service against `3.5.3-local.c8dde4b` and landed (`1b8c3b2`).
+
+## Bring up to date pulled the line before taking the lock its replays held (2026-10-31)
+
+**Root cause.** `TreeSync.SyncAsync` judged the line's pull and ran `LinePulls.PullAsync`'s `merge --ff-only` in the checkout before it took `TreeLock` for the replays, so a promotion, another press or a start could meet the checkout between the pull's fresh read and its move (Codex's read of GITAPP2, R2-11).
+
+**Fix.** One hold alone (`TreeLock.TryWriting`) from the pull's judgement through its move, its registry follow and the replays; `PullAsync` needs it (GITLOCK1, D51's note).
+
+**Verification.** `CheckoutLockProcessTests`' pull case and `TreeSyncStepTests`' held case: red (the line moved under another's hold), then green.
+
+## A promotion fast-forwarded the checkout under no lock (2026-10-31)
+
+**Root cause.** `IntegrationPromotes.EffectAsync` read the line, the checkout's worktree and its cleanliness and ran `merge --ff-only` in it under the integration's claim alone, which fences other integrators and no pull, replay or start; the legacy merge (`TreeLands.MergeAsync`) reached it the same way (GITAPP2's second blocking finding).
+
+**Fix.** The effect holds the checkout alone from its first read through its read back, naming what refuses it; the legacy merge takes no hold, so it is taken once.
+
+**Verification.** `CheckoutLockProcessTests`' promotion, landing and order cases: red, then green.
+
+## A session starting in the checkout itself took no lock (2026-10-31)
+
+**Root cause.** `ChatRunner`, `ChatGoOn` and the driven start (`Driver.cs`) took `TreeLock` only for a tree of their own (`isolated ?`, `own ?`), so a start in the checkout read the commit it begins from and opened its record with nothing holding a writer off; held, they said a replay held them whatever did.
+
+**Fix.** Every start holds the checkout shared until its record is open; a held start names its holder (`held.tidying`, `held.promoting`, `held.writing`, or `held.replaying`).
+
+**Verification.** `ChatGoOnTests`' checkout go-on case: red (it went on under a writer's hold), then green; `CheckoutWritersCensusTests` holds the starts.
+
+## One checkout registered twice had two locks (2026-10-31)
+
+**Root cause.** `TreeLock` was keyed by workspace and repository name, so the same checkout under two names or in two workspaces had two locks, and their writers excluded nothing.
+
+**Fix.** Keyed by the checkout's common git directory, read from `.git` and its `commondir` as git resolves them, so a session tree names its checkout's lock too.
+
+**Verification.** `TreeLockTests`' one-checkout case; the key changed the lock's signature, so it ran green only.
