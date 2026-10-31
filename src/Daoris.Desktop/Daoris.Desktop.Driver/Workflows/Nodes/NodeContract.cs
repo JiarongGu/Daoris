@@ -72,7 +72,14 @@ public static class NodeKinds
     /// </summary>
     public const string Request = "request";
 
-    public static readonly IReadOnlyList<string> BuiltIn = [Claimed, Handed, Pushed, PullRequest, Line, Human, Look, GoAhead, WaitUnit, QuestClose, All, Opinion, Stop, Check, Integrate, WorkRequests, Request];
+    /// <summary>
+    /// The unit's landing as a step Daoris performs (LANDNODE1a; the land node design §2), 落地: reached when the landing record holds the bound
+    /// tip and failed by the landing's own refusal. A kind of its own, since making <c>handed</c> performed would change what a stored version
+    /// means; an older build reads it as no kind and holds the run whole. Declared and judged here, performed by a later row.
+    /// </summary>
+    public const string Land = "land";
+
+    public static readonly IReadOnlyList<string> BuiltIn = [Claimed, Handed, Pushed, PullRequest, Line, Human, Look, GoAhead, WaitUnit, QuestClose, All, Opinion, Stop, Check, Integrate, WorkRequests, Request, Land];
 
     /// <summary>Whether a kind is a plugin's own node: <c>&lt;plugin&gt;/&lt;node&gt;</c>, both parts named.</summary>
     public static bool IsPlugin(string kind)
@@ -306,6 +313,9 @@ public static class NodeAuthorities
         // INTEGRATE1p (§17.5): the commitment's, as `wait.unit`'s: the quest's done, or its taking under `until: taken`, and its decline. No
         // skip of an active node: after a decline the person's *Go on without it…* is the failed node's own move.
         [NodeKinds.Request] = new(NodeKinds.Request, NodeReach.Waited, NodeSource.Commitment, NodeSource.Commitment, false, PersonSkips: false, true, true),
+        // LANDNODE1a (land node design §2): reached when the landing record holds the bound tip, failed by the landing's own refusal. Never
+        // skipped, since a skip would read as landed; the person's doors are Accept, stop and Try again.
+        [NodeKinds.Land] = new(NodeKinds.Land, NodeReach.Performed, NodeSource.Landing, NodeSource.Landing, false, PersonSkips: false, true, true),
     };
 
     /// <summary>
@@ -362,6 +372,7 @@ public static class NodeDeclarations
         if (builtIn && !node.Skippable) return "skippable";
         if (node.Kind == NodeKinds.Integrate && IntegrateOptionProblem(node) is { } option) return option;
         if (node.Kind == NodeKinds.Request && RequestOptions.Problem(node) is { } asked) return asked;
+        if (node.Kind == NodeKinds.Land && LandNodes.Problem(node) is { } landed) return landed;
         // INTEGRATE1o (§17.6 point 8, C28): the hold on the work's requests is the kind `work.requests`. Written as an option of `claimed`, a build
         // that knows `claimed` would read it and run the work with the hold dropped, so no file may say it there.
         if (node.Kind == NodeKinds.Claimed && node.Options.ContainsKey(WorkRequestsOption)) return WorkRequestsOption;
