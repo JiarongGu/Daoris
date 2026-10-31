@@ -5,6 +5,7 @@ with the version and date at release.
 
 ## Unreleased
 
+- A branch landing rule, on a repository's or a workspace's Setup, has *Integrate into the line*: tick it to choose who asks, how each member lands, the batch, the order, the gates, what an unconfirmed failure does, where a conflict goes, an overlap and the line. Nothing is judged on the page: the driver's sentence for a policy it refuses stands under *Save*, and unticking withdraws it.
 - A repository's *Accept the gates* now sends the declaration it showed you, and is refused (nothing accepted) if the line's tip no longer holds that one: read it again, then accept it, as an integration's acceptance already did.
 - `daoris-driver brainstorm` takes `--source <path>`, repeated: each named repository document or code file goes into the packet whole (bounded as other sources are) ahead of the search's finds. The packet's search now asks by the question's terms, ranks designs, decisions and the code index above session records, and `brainstorm show` says why each source is in
 - A start whose agent refuses the model a role's first choice names now goes on at once under the role's next choice, in the same start, instead of waiting for the next look; the account is not struck or cooled, and the new session's record says which model was refused.

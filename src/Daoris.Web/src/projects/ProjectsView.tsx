@@ -426,8 +426,10 @@ export function useProjectsView({
               ? t('settings.landing.savedBranchPlugin', { name: repository, pattern: rule.pattern, plugin: rule.plugin })
               : t('settings.landing.savedBranch', { name: repository, pattern: rule.pattern })
             : t('settings.landing.savedMerge', { name: repository })),
-        onError: onDriverError,
+        // A rule the driver refuses is said under *Save*, in LandingKey's sentence (AGENTSPLACE1d); a clear has no such place.
+        onError: rule ? undefined : onDriverError,
       }),
+      landingRefusal: setLanding.error ? sentence(setLanding.error) : null,
       // Where its work is reviewed before it lands (REVIEWENV1a); a shell older than it answers no reviews, and no row is offered.
       review: Array.isArray(lines.data?.reviews) ? reviewOf(repository) ?? { repository, workspace } : undefined,
       onReview: Array.isArray(lines.data?.reviews)

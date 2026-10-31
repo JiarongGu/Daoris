@@ -430,7 +430,7 @@ public static class LandingKey
     /// is absent, and one this build does not know is passed over, as every key a rule does not know is. Its values are judged by
     /// <see cref="Problem(LandingRule, bool)"/>.
     /// </summary>
-    internal static LandingIntegrate? IntegrateOf(JsonElement value, out string? problem)
+    public static LandingIntegrate? IntegrateOf(JsonElement value, out string? problem)
     {
         problem = null;
         if (value.ValueKind != JsonValueKind.Object)

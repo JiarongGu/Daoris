@@ -107,6 +107,8 @@ export type WorkSetup = {
   /** The plugins here that land work, which a branch rule may hand its branch to (D100). */
   landers?: string[];
   onLanding?: (rule: LandingRule | undefined) => void;
+  /** The driver's sentence for the landing rule it last refused, shown under *Save* (AGENTSPLACE1d). */
+  landingRefusal?: string | null;
   /**
    * A landing rule `driver.json` keeps that reads as no rule (FABRIC-GRAPH1d): its own, or its workspace's where it lands by
    * Daoris's merge, with the name it is written under; absent where none, and on a shell older than it.
@@ -419,6 +421,7 @@ export function RepositorySetup({ repository, driving, work, access, heavy, land
               unread={work.landingUnread ?? null}
               busy={busy}
               onLanding={work.onLanding}
+              refusal={work.landingRefusal ?? null}
               onOpenPlugin={onOpenPlugin}
             />
           )}
@@ -724,8 +727,9 @@ function CheckoutSwitch({ checkout, busy }: { checkout: NonNullable<ReachSetup['
 }
 
 /** How its work lands: an `Inheritable` whose control is the rule's own, and what accepting automatically gives. */
-function LandingSetting({ repository, landing, above, landers, unread, busy, onLanding, onOpenPlugin }: {
+function LandingSetting({ repository, landing, above, landers, unread, busy, onLanding, onOpenPlugin, refusal }: {
   repository: string;
+  refusal: string | null;
   unread: (UnreadLanding & { name: string }) | null;
   onOpenPlugin?: (plugin: string) => void;
   landing: RepositoryLanding;
@@ -761,6 +765,7 @@ function LandingSetting({ repository, landing, above, landers, unread, busy, onL
           clearable={false}
           onSave={(rule) => onLanding(rule)}
           onAccepting={setAccepting}
+          refusal={refusal}
         />
       )}
     >

@@ -750,13 +750,13 @@ public sealed class DriverRoutes(DriverContext context)
                 .Select(p => new
                 {
                     Repository = p.Key, p.Value.Form, p.Value.Pattern, p.Value.Tidy, p.Value.Plugin, p.Value.AutoAccept, p.Value.Key,
-                    p.Value.Squash,
+                    p.Value.Squash, Integrate = LinesRoutes.IntegrateWire(p.Value.Integrate),
                 }).ToArray(),
             WorkspaceLandings = config.WorkspaceLandings.OrderBy(p => p.Key, StringComparer.Ordinal)
                 .Select(p => new
                 {
                     Workspace = p.Key, p.Value.Form, p.Value.Pattern, p.Value.Tidy, p.Value.Plugin, p.Value.AutoAccept, p.Value.Key,
-                    p.Value.Squash,
+                    p.Value.Squash, Integrate = LinesRoutes.IntegrateWire(p.Value.Integrate),
                 }).ToArray(),
             // FABRIC-GRAPH1d: the rules the file keeps that read as no rule, which the rows above skip, so Setup names them: why
             // (`object`, `form`, `refused`) and the driver's sentence.

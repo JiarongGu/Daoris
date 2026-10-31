@@ -5,6 +5,14 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## AGENTSPLACE1d — `integrate` in the landing rule (2026-11-01)
+
+> **AGENTSPLACE1d — `integrate` in the landing rule** (modules, web; row 3 of AGENTSPLACE1, `docs/2026-11-01-agents-place-design.md` §3 and §7). A landing rule's `integrate` was judged by `LandingKey` and read by the integration, but `SET_LANDING` and the landing editor offered no control for it. Contract: `SET_LANDING` carries the key and the editor has its form, the judgement staying `LandingKey`'s alone, with its refusals shown under *Save*. Proof: a modules test of `SET_LANDING` carrying `integrate` and each of `LandingKey`'s refusals answered; a web test of the form and a refusal under *Save*; stories.
+
+**Outcome** 2026-11-01: `SET_LANDING` sets `integrate` from an object in the file's own shape (read by the now-public `LandingKey.IntegrateOf`), withdraws it on `null`, and keeps it when the press names none; the landing rows of `LINES` and the driver state answer it. `LandingField` shows *Integrate into the line* on a branch rule with every choice `LandingKey` judges, and the driver's sentence under *Save* (`refusal`, plumbed from Setup's repository and workspace rows); the row says "batch 4, oldest first, gates declared". Words in en and zh (`settings.landing.integrate.*`). Proof: `DriverModuleLinesTests` (the carry, keep and withdraw; twelve refusals), `Landings.test.tsx`, four `ProjectPage` stories. No decision note: it changes no decided behaviour.
+
+---
+
 ## AGENTSPLACE1a0 — the landed acceptance pinned (2026-11-01)
 
 > **AGENTSPLACE1a0 — the landed acceptance pinned** (modules, web; row 1 of AGENTSPLACE1, `docs/2026-11-01-agents-place-design.md` §7). `WORKFLOW_LANDED` accepted whatever declaration the line's tip held while applying, where `INTEGRATION_GATES` already refused `moved` a blob that was no longer the tip's. Contract: `WORKFLOW_LANDED` takes the same optional expected blob, and today's *Accept the gates* sends the one it showed. Proof: a modules test where a moved blob is refused with nothing written and an older caller naming none is unchanged; a web test where the press sends the blob.

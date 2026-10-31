@@ -7,7 +7,7 @@ import { storyWidths } from '../design/storyWidths';
 import { FULL, NOTHING_SET, PLUGIN_UNREADY } from '../workflow/fixtures';
 import {
   CJK, COUNTS, ELSEWHERE, ENGINE, GAME, GIT_BRANCHES_ENGINE, GIT_HISTORY_ENGINE, GIT_HISTORY_PAGES, LINE, MIRRORED, NEWBIE, NEWBIE_SETUP,
-  SETUP_DEFAULTS, SETUP_OWN, SETUP_PROCESS, SETUP_PROCESS_OWN, UNDECLARED,
+  SETUP_DEFAULTS, SETUP_INTEGRATING, SETUP_INTEGRATING_REFUSED, SETUP_OWN, SETUP_PROCESS, SETUP_PROCESS_OWN, UNDECLARED,
 } from './fixtures';
 import { ProjectPage, ProjectsMainNotice } from './ProjectPage';
 import type { SetUpForAgentsProps } from './setup/SetUpForAgents';
@@ -647,6 +647,18 @@ export const SetupProcessOwnNarrow: Story = { ...SetupNarrow, args: { start: 'se
 
 /** Its process in 中文: 提交方式 and 助手, the convention as written. */
 export const SetupProcessChinese: Story = { args: { start: 'setup', setup: SETUP_PROCESS_OWN }, decorators: [chinese] };
+
+/** Its branch rule integrating into the line (AGENTSPLACE1d): the choices under the row, its words "batch 4, oldest first, gates declared". */
+export const SetupIntegrating: Story = { args: { start: 'setup', setup: opened('work', SETUP_INTEGRATING) } };
+
+/** The integrate form, narrow: the choices wrap under the row. */
+export const SetupIntegratingNarrow: Story = { ...SetupNarrow, args: { start: 'setup', setup: opened('work', SETUP_INTEGRATING) } };
+
+/** The integrate form in 中文. */
+export const SetupIntegratingChinese: Story = { args: { start: 'setup', setup: opened('work', SETUP_INTEGRATING) }, decorators: [chinese] };
+
+/** The driver refused the save: LandingKey's sentence stands under *Save*, the page having judged nothing. */
+export const SetupIntegratingRefused: Story = { args: { start: 'setup', setup: opened('work', SETUP_INTEGRATING_REFUSED) } };
 
 /** Nothing chosen: how to choose, and the list's ＋ on a shell. */
 export const NothingChosen: Story = {
