@@ -191,6 +191,7 @@ Paths below are relative to this file. Historical documents have their own [arch
 | `2026-10-31-company-view-design.md` | Design: COMPANYVIEW1, the agents' structure as the Agents place's Roles mode; accepted 2026-10-31
 | `2026-10-31-company-view-reads.md` | Reads: COMPANYVIEW1, the makers' reads and the steward's settlement
 | `2026-10-31-review-flow-design.md` | Accepted design: REVIEWFLOW1 and LINESTOGETHER1, the review page as one flow
+| `2026-11-01-profile-fixture-proposal.md` | Proposal: PROFILEFIX1, a repository's facts as a Lyntai profile, Opus; recommends no
 
 ## UI, browser, tools and plugin contracts
 
