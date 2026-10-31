@@ -210,6 +210,8 @@
   "note.landing.person-accepted": "你已采纳这项工作：",
   "note.landing.person-handed": "你已将这项工作移交出去：",
   "note.landing.left-out": "这条工作线落在 `{{branch}}` 上时，你没有采纳这一段：它的工作没有落在那里。",
+  "note.landing.brought-into": "它的工作已由另一会话的采纳并入 `{{branch}}`（操作 {{operation}}），不会再落地一次。",
+  "note.landing.brought-into-line": "它的工作已由另一会话的采纳并入主线 `{{branch}}`（操作 {{operation}}），不会再落地一次。",
   "note.chat.option-set": "你已将这次对话的 {{option}} 设为 {{chosen}}。",
   "note.chat.told-where": "已告知智能体你所在的位置：",
   "note.chat.told-browser": "已告知智能体它拥有 Daoris 的浏览器：",

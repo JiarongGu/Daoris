@@ -84,6 +84,15 @@ public sealed class EntryAccepts(
             events.Keep(part.Session, LandingRules.LeftOutNote(landed.Branch!), line => say(part.Session, line));
         }
 
+        // LINESTOGETHER1d2: each member the operation brought into the head's landing keeps a note of where its work went.
+        if (together is not null && landed.Parts.Any(part => part.Outcome == EntryPartOutcome.Landed))
+        {
+            foreach (var brought in TogetherInclusion.All(home).Values.Where(each => each.Operation == together.Operation))
+            {
+                events.Keep(brought.Session, LandingRules.BroughtIntoNote(brought), line => say(brought.Session, line));
+            }
+        }
+
         foreach (var part in landed.Parts)
         {
             if (part.Landing is not { } its) continue;

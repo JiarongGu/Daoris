@@ -300,6 +300,8 @@ public sealed class PipeCensus
             "TOGETHER",
             // KNOWCENTRAL2e: a session's memory rows, read from the service.
             "SESSION_MEMORY",
+            // COMPANYVIEW1c: the roles' structure, each choice's state from the last readings alone, asking nothing.
+            "ROLE_STRUCTURE",
             "STATE", "STATE_SLICE", "SWEEP_PLAN", "SYSTEM_DOWNLOADS", "SYSTEM_SPACE", "SYSTEM_WIRING", "TAIL_SESSION", "TOOLS_LIST", "TRACE", "TREES_SYNC_PLAN", "TREES_SYNC_SCOPE",
             "UNDER_WAY", "USAGE", "WORKFLOW_CURRENT", "WORKFLOW_RUN", "WORK_PLAN", "WORK_STATE",
             // NOTIFY2i: what came to the person, a press by its act and session alone, never a value, so a terminal answers none of it.

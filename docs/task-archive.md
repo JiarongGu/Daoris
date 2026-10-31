@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## COMPANYVIEW1c — the read, `ROLE_STRUCTURE` (2026-10-31)
+
+> **1c: the read** (driver, modules). `ROLE_STRUCTURE` as §4 states it, in every place `.claude/knowledge/bridge-presses.md` names; the test holding its role answers to `StartPlan`; tests for a signed-out account overdue for rereading, a later choice, a scoped role and an inherited rule with no local override; the test that opening runs no probe and takes no reservation. Waits on nothing. (`docs/2026-10-31-company-view-design.md` §7 row 3; the COMPANYVIEW1 row stays open.)
+
+Completed 2026-10-31: `ROLE_STRUCTURE`, an `Open` read told by event, composed by the driver's `RoleStructure` from the roster's new `LastRead`, which asks nothing and counts nothing; the page asks it through `useRoleStructure`. A workspace place's helper rule now reads its workspace's. Proof: `RoleStructureTests` over `fixtures/role-structure.json`, held to `StartPlan`, and `DriverModuleRoleTests`. Its shape is the desktop README's `driver` row; the Build gate's posture and connector passes are not judged.
+
 ## WEBPATIENCE1 — the web unit tests' hang detector gives a slow test two minutes (2026-10-28)
 
 > **WEBPATIENCE1:** the web unit tests' timeout is a hang detector, so a slow and correct test on a loaded machine must not fail as a hang. Evidence: the merge queue's candidates `28cc101` and `0c416d3` failed their web unit gates on vitest's 20-second timeout in WorkFrame tests none of their members touched, one of them its own share of the run about 8 s. (The parent's fix; it had no backlog row.)
@@ -22166,3 +22172,8 @@ The row is quoted by its head; its whole text and proof are the foundation desig
 > **2g** (the memory coordinator design §6 B, §8): the owner's counters equal across a foreign read; a foreign expansion outside the scope refused before lookup; a foreign citation rechecked through the view; an engine without it saying so.
 
 **Outcome** 2026-10-31: built on Lyntai's MC7 (the local build `3.5.3-local.c8dde4b`). Every read of another repository's memory (the tools, the brief's presentation, a proposal's settling, the sweep) goes through its view, taken from a reader's engine over the same store, which asks the workspace again before it reads an entry; a write may cite another repository's entry at the revision read, rechecked through the view; an engine without a view says that memory cannot be read without moving it. Left: a foreign citation is never read as amended or disputed; Daoris takes one view per engine rather than Lyntai's composite views. Detail in D220's 2g note and the service README.
+## LINESTOGETHER1d2 — what *Bring them together…* still owed (2026-10-31, D167)
+
+> **1d2** (driver, web; after LINESTOGETHER1d, 2026-10-31). A *brought into* note on the member's conversation (a new note code); a missed record written after a restart; the line's settled rules (`lineRules`, passed as null to the check today); live, start-waiting and steps-on read from their records rather than coarsely. Proof: the entry's Accept path end to end on a git fixture; another window, the terminal or an automatic landing refused a bound member; a merge settled by the look's integration run.
+
+**Outcome** 2026-10-31: built. A member keeps the coded note `landing.brought-into` (or `-line`) when its operation lands, from the entry's Accept (`EntryAccepts`) and from the look's restart settlement (`TogetherWatch`), en and zh; a landing whose record the crash lost has it written at the restart (`TogetherSettle.WriteMissed`: the record, or the advance of the standing one, listing the members); the look and the combined Accept's recheck read the line's rules the person accepted for integration (`LineRules.AcceptedAsync`); the press reads a member's live part and queued start across its whole line of work and its workflow's undone `integrate` step (`TogetherPress.MemberReads`, `StepsOn`). Proved by the entry's Accept end to end and a bound member refused at the entry door, and a merge settled by the integration run's closing its request. Not driven by a test: the terminal's and the automatic landing's doors (one guard, `TreeLands.LandAsync`, covered at the tree door).

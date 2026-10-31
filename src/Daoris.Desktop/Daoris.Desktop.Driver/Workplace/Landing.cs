@@ -673,6 +673,18 @@ public static class LandingRules
     }
 
     /// <summary>
+    /// What a member's conversation keeps where a combined Accept brought its work into the head's landing (LINESTOGETHER1d2): where it
+    /// went and which operation did it, so the conversation says it is not landed itself.
+    /// </summary>
+    public static SessionEvent BroughtIntoNote(TogetherBrought brought)
+    {
+        var (code, where) = brought.Line ? (NoteCodes.LandingBroughtIntoLine, $"the line `{brought.Into}`") : (NoteCodes.LandingBroughtInto, $"`{brought.Into}`");
+        var said = Noted.Of(code, $"its work was brought into {where} by another session's Accept (operation {brought.Operation}), so it lands no second time.",
+            ("branch", brought.Into), ("operation", brought.Operation));
+        return new SessionEvent { Kind = SessionEventKind.Note, Text = said.Note, Parts = said.Parts };
+    }
+
+    /// <summary>
     /// Where a part's review reads it left out (ACCEPTALL1c): the branch the newest <see cref="LeftOutNote"/> names, while no acceptance
     /// (<see cref="IsAcceptance"/>, a press of its own or a landing at done) came after it; null where none says it.
     /// </summary>
