@@ -39,7 +39,9 @@ export function diagramShape(diagram: Diagram, opened: ReadonlySet<string> = new
 
 /**
  * The layout: `layoutFlow` ranks by the longest path, which puts every node an edge reaches in its column; a role offered that nobody
- * holds has no edge, and is set in its column rather than among the places.
+ * holds has no edge, and is set in its column rather than among the places. The places keep their declared order (This Daoris, then each
+ * workspace before its repositories), which a reader follows; each later column is ordered once by where its nodes' edges come from, a
+ * tie in declared order and a node no edge reaches last.
  */
 export function layoutDiagram(shape: DiagramShape): FlowLayout {
   const layout = layoutFlow({
@@ -47,16 +49,27 @@ export function layoutDiagram(shape: DiagramShape): FlowLayout {
     entries: shape.nodes.filter((node) => node.column === COLUMN.place).map((node) => node.id),
   });
   const touched = new Set(shape.edges.flatMap((edge) => [edge.from, edge.to]));
-  const misplaced = shape.nodes.filter((node) => !touched.has(node.id) && layout.rank[node.id] !== node.column);
-  if (misplaced.length === 0) return layout;
-  const moved = new Set(misplaced.map((node) => node.id));
-  const count = Math.max(layout.ranks.length, ...misplaced.map((node) => node.column + 1));
+  const misplaced = new Set(shape.nodes.filter((node) => !touched.has(node.id) && layout.rank[node.id] !== node.column).map((node) => node.id));
+  const count = Math.max(layout.ranks.length, ...shape.nodes.filter((node) => misplaced.has(node.id)).map((node) => node.column + 1));
   const ranks: Slot[][] = Array.from({ length: count }, (_, index) =>
-    (layout.ranks[index] ?? []).filter((slot) => slot.kind !== 'node' || !moved.has(slot.id)));
+    (layout.ranks[index] ?? []).filter((slot) => slot.kind !== 'node' || !misplaced.has(slot.id)));
   const rank = { ...layout.rank };
-  for (const node of misplaced) {
+  for (const node of shape.nodes.filter((each) => misplaced.has(each.id))) {
     ranks[node.column]!.push({ kind: 'node', id: node.id });
     rank[node.id] = node.column;
+  }
+  const declared = new Map(shape.nodes.map((node, index) => [node.id, index]));
+  const key = (slot: Slot) => (slot.kind === 'node' ? slot.id : slot.key);
+  ranks[0] = [...ranks[0]!].sort((a, b) => (declared.get(key(a)) ?? 0) - (declared.get(key(b)) ?? 0));
+  for (let index = 1; index < ranks.length; index += 1) {
+    const before = new Map(ranks[index - 1]!.map((slot, at) => [key(slot), at]));
+    const weighed = ranks[index]!.map((slot) => {
+      const from = shape.edges.filter((edge) => edge.to === key(slot) && before.has(edge.from)).map((edge) => before.get(edge.from)!);
+      return { slot, weight: from.length > 0 ? from.reduce((sum, value) => sum + value, 0) / from.length : Infinity };
+    });
+    ranks[index] = weighed
+      .sort((a, b) => (a.weight === b.weight ? 0 : a.weight - b.weight) || (declared.get(key(a.slot)) ?? 0) - (declared.get(key(b.slot)) ?? 0))
+      .map(({ slot }) => slot);
   }
   const order = ranks.flatMap((slots) => slots.flatMap((slot) => (slot.kind === 'node' ? [slot.id] : [])));
   return { ...layout, ranks, rank, order };

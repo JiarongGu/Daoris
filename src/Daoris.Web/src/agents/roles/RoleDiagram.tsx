@@ -28,8 +28,8 @@ function drawnOf(t: TFunction, language: string, node: DiagramNode): Omit<Drawn,
       if (node.repository !== null && node.workspace !== null) lines.push(t('agents.roles.diagram.inWorkspace', { workspace: node.workspace }));
       if (!node.known) lines.push(t('agents.roles.diagram.unknownPlace'));
       else if (node.repository === null && node.workspace !== null) {
-        if (node.own) lines.push(t('agents.roles.diagram.own'));
-        if (node.counted > 0) lines.push(t(node.own ? 'agents.roles.diagram.countedHere' : 'agents.roles.diagram.counted', { count: node.counted }));
+        if (node.ownRoles) lines.push(t('agents.roles.diagram.own'));
+        if (node.counted > 0) lines.push(t(node.ownRoles ? 'agents.roles.diagram.countedHere' : 'agents.roles.diagram.counted', { count: node.counted }));
       }
       if (node.reasons.includes('held')) lines.push(t('agents.roles.held'));
       return { id: node.id, kind: 'place', title: node.repository ?? node.workspace ?? t('agents.roles.appointed.machine'), lines, dashed: !node.known };

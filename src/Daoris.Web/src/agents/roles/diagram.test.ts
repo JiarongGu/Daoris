@@ -28,6 +28,18 @@ describe('the diagram, laid out', () => {
     expect(layout.ranks.flat().every((slot) => slot.kind === 'node')).toBe(true);
   });
 
+  it('reads its places in their order, This Daoris first and each workspace before its repositories, the roles after where they are placed', () => {
+    const layout = layoutDiagram(diagramShape(diagramOf({
+      stewardOffered: false, supervisorOffered: true,
+      appointments: [{ role: 'supervisor', scope: 'workspace:aurora', workspace: 'aurora', repository: '', dormant: true }],
+    })));
+    expect(layout.order.filter((id) => id.startsWith('place:'))).toEqual(['place:machine', 'place:aurora', 'place:aurora/engine', 'place:default/tools']);
+    // Engine build is placed in engine, below every role placed in This Daoris.
+    const roles = layout.order.filter((id) => id.startsWith('role:'));
+    expect(roles[roles.length - 1]).toBe('role:engine-build');
+    expect(roles[0]).toBe('role:build');
+  });
+
   it('keeps an offered role nobody holds in the roles column, though no edge reaches it', () => {
     const layout = layoutDiagram(diagramShape(diagramOf({ stewardOffered: true, supervisorOffered: false, appointments: [] })));
     expect(layout.rank['appointed:steward']).toBe(1);

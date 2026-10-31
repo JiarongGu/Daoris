@@ -151,7 +151,8 @@ function FoldRow({ id, title, summary, below, open, onToggle, mark, onDiagram, c
           className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-3 gap-y-0.5 rounded-control py-2 text-left hover:bg-accent-soft/40"
         >
           <span className="min-w-40 text-body font-medium text-ink">{title}</span>
-          <span className="min-w-0 flex-1 text-body text-ink-soft [overflow-wrap:anywhere]">{summary}</span>
+          {/* At least 8rem, so in a narrow detail the values go under the words rather than a letter a line (R1). */}
+          <span className="min-w-32 flex-1 text-body text-ink-soft [overflow-wrap:anywhere]">{summary}</span>
           {mark}
           <Icon name={open ? 'chevronDown' : 'chevronRight'} size={13} className="ml-auto shrink-0 self-center text-ink-faint" />
         </button>

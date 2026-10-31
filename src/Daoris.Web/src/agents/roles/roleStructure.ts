@@ -156,6 +156,8 @@ export type DiagramNode =
     known: boolean;
     /** Whether it sets something of its own: a role placed here, an answer that differs from the one it would take, an appointment. */
     own: boolean;
+    /** Whether its roles are its own: a role placed here, or an answer that differs. */
+    ownRoles: boolean;
     /** The repositories in this workspace that set nothing of their own, counted here rather than drawn. */
     counted: number;
     /** Per work, what the driver answered here, which choosing the place lights and its detail says. */
@@ -483,28 +485,29 @@ function diagramOf(input: StructureInput, accounts: readonly AccountRow[], needl
   };
   type PlaceNode = Extract<DiagramNode, { kind: 'place' }>;
   const places: PlaceNode[] = [{
-    id: placeId({}), kind: 'place', workspace: null, repository: null, group: null, known: true, own: true, counted: 0,
+    id: placeId({}), kind: 'place', workspace: null, repository: null, group: null, known: true, own: true, ownRoles: true, counted: 0,
     works: placeWorks(machine, machine), reasons: reasonsOf(machine),
   }];
   for (const workspace of registryWorkspaces) {
     const here = placeAt({ workspace });
     const inside = repositories.filter((row) => (row.workspace ?? 'default') === workspace).map((row) => {
       const place = placeAt({ workspace, repository: row.repository });
-      const own = placedAt('repository', row.repository) || differs(place, here ?? machine) || appointedAt(`repository:${row.repository}`);
-      return { repository: row.repository, place, own };
+      const ownRoles = placedAt('repository', row.repository) || differs(place, here ?? machine);
+      return { repository: row.repository, place, ownRoles, own: ownRoles || appointedAt(`repository:${row.repository}`) };
     });
-    const own = placedAt('workspace', workspace) || differs(here, machine) || appointedAt(`workspace:${workspace}`);
+    const ownRoles = placedAt('workspace', workspace) || differs(here, machine);
+    const own = ownRoles || appointedAt(`workspace:${workspace}`);
     const counted = inside.filter((each) => !each.own).length;
     if (own || counted > 0) {
       places.push({
-        id: placeId({ workspace }), kind: 'place', workspace, repository: null, group: workspace, known: true, own, counted,
+        id: placeId({ workspace }), kind: 'place', workspace, repository: null, group: workspace, known: true, own, ownRoles, counted,
         works: placeWorks(here, machine), reasons: reasonsOf(here),
       });
     }
     for (const each of inside.filter((one) => one.own)) {
       places.push({
         id: placeId({ workspace, repository: each.repository }), kind: 'place', workspace, repository: each.repository, group: workspace,
-        known: true, own: true, counted: 0, works: placeWorks(each.place, machine), reasons: reasonsOf(each.place),
+        known: true, own: true, ownRoles: each.ownRoles, counted: 0, works: placeWorks(each.place, machine), reasons: reasonsOf(each.place),
       });
     }
   }
@@ -513,16 +516,18 @@ function diagramOf(input: StructureInput, accounts: readonly AccountRow[], needl
     if (kind === 'repository' && id) return placeId({ workspace: workspaceOfRepository(id), repository: id });
     return placeId({});
   };
-  const asWritten = (kind: string, id: string | undefined) => {
+  const asWritten = (kind: string, id: string | undefined, ownRoles: boolean) => {
     const at = placeOfScope(kind, id);
     if (places.some((place) => place.id === at)) return;
     const workspace = kind === 'workspace' ? id! : workspaceOfRepository(id!);
     places.push({
-      id: at, kind: 'place', workspace, repository: kind === 'repository' ? id! : null, group: workspace, known: false, own: true, counted: 0,
-      works: [], reasons: [],
+      id: at, kind: 'place', workspace, repository: kind === 'repository' ? id! : null, group: workspace, known: false, own: true, ownRoles,
+      counted: 0, works: [], reasons: [],
     });
   };
-  for (const seed of roles.values()) if (seed.ref.scope.kind === 'workspace' || seed.ref.scope.kind === 'repository') asWritten(seed.ref.scope.kind, seed.ref.scope.id);
+  for (const seed of roles.values()) {
+    if (seed.ref.scope.kind === 'workspace' || seed.ref.scope.kind === 'repository') asWritten(seed.ref.scope.kind, seed.ref.scope.id, true);
+  }
 
   // ---- The edges: each role placed in its scope, staffed choice by choice; each appointment.
   const edges: DiagramEdge[] = [];
@@ -557,7 +562,7 @@ function diagramOf(input: StructureInput, accounts: readonly AccountRow[], needl
     appointedNodes.push({ id: node, kind: 'appointed', role, offered });
     for (const each of these) {
       const [kind, id] = each.scope === 'machine' ? ['machine', undefined] : [each.scope.slice(0, each.scope.indexOf(':')), each.scope.slice(each.scope.indexOf(':') + 1)];
-      if (kind === 'workspace' || kind === 'repository') asWritten(kind, id);
+      if (kind === 'workspace' || kind === 'repository') asWritten(kind, id, false);
       const from = placeOfScope(kind!, id);
       edges.push({ id: `appointed:${from}>${node}`, kind: 'appointed', from, to: node, dashed: each.dormant });
     }

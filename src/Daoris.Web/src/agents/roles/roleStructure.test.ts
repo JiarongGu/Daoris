@@ -239,7 +239,7 @@ describe('the diagram', () => {
     const node = (id: string) => diagramOf().nodes.find((each) => each.id === id);
     // Aurora sets nothing of its own and holds site, which takes this machine's roles; default's one repository is drawn itself.
     expect(node('place:aurora')).toMatchObject({ own: false, counted: 1, group: 'aurora' });
-    expect(node('place:aurora/engine')).toMatchObject({ own: true, counted: 0, group: 'aurora' });
+    expect(node('place:aurora/engine')).toMatchObject({ own: true, ownRoles: true, counted: 0, group: 'aurora' });
     // A start held is the place's own answer.
     expect(node('place:default/tools')).toMatchObject({ own: true, group: 'default' });
     expect(node('place:machine')).toMatchObject({ group: null });
@@ -261,8 +261,8 @@ describe('the diagram', () => {
     expect(diagram.edges.filter((edge) => edge.kind === 'appointed')).toEqual([
       { id: 'appointed:place:aurora>appointed:supervisor', kind: 'appointed', from: 'place:aurora', to: 'appointed:supervisor', dashed: true },
     ]);
-    // An appointment is a place's own.
-    expect(diagram.nodes.find((node) => node.id === 'place:aurora')).toMatchObject({ own: true });
+    // An appointment is a place's own, though its roles are still this machine's.
+    expect(diagram.nodes.find((node) => node.id === 'place:aurora')).toMatchObject({ own: true, ownRoles: false });
   });
 
   it('staffs a role choice by choice, numbered, dashed where the last reading says that choice cannot run; a rule is never drawn', () => {
