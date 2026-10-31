@@ -82,6 +82,8 @@ public sealed class PersonDoorTableTests
         ("POST", "/api/sessions/help", Driver),
         ("POST", "/api/sessions/{id}/state", Driver),
         ("POST", "/api/sessions/{id}/taken", Driver),
+        // KNOWCENTRAL2f: what a line read, rechecked for its brief and kept as read at the revision answered.
+        ("POST", "/api/sessions/{id}/memory/read", Driver),
         // COWORK1c: a word's attempt, marked by the dispatcher that writes it to the harness, before the wire.
         ("POST", "/api/sessions/{id}/attempt", Driver),
         // HELPMODE1a2: the mode an Ask Daoris conversation going on runs under, which the driver that spawns it knows.
@@ -195,7 +197,7 @@ public sealed class PersonDoorTableTests
         // decision of a memory end and Keep or Drop of an ended session's staged changes (KNOWCENTRAL2d).
         Assert.Equal(34, Routes.Count(route => route.Class == Open));
         Assert.Equal(4, Routes.Count(route => route.Class == Agent));
-        Assert.Equal(30, Routes.Count(route => route.Class == Driver));
+        Assert.Equal(31, Routes.Count(route => route.Class == Driver));
         Assert.Equal(36, Routes.Count(route => route.Class == Person));
         // And a shared host's two channel doors, a feed and a page (SESSONE2d), and its retirement of a machine (FABRIC-CLOSE1i2).
         Assert.Equal(10, Routes.Count(route => route.Class == Shared));

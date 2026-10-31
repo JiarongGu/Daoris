@@ -145,7 +145,12 @@ keeps or drops an ended session's staged changes through `MemoryDesk`'s doors; t
 due entry cites. Triggers journal every move into `event_journal` as
 the `memory` family, ids and codes only. A reader's cursor (`MemoryCursor`: store, position, scope) re-validates on another store, below the floor or on a changed
 scope, and `BootstrapAsync` reads the unsettled rows and the newest position in one transaction. `memory_reads` keeps who read
-which reference at which revision, 256 a session and 65,536 in all, and tells a session once that an entry it read moved.
+which reference at which revision, filled by `memory_search` and `memory_get`, 256 a session and 65,536 in all. A session's next
+search or get opens with the entries its line read that moved since, a replacement's predecessors among them, each told once; a
+reference trimmed from the bound is never told (KNOWCENTRAL2f). For a hand-over's brief the driver asks
+`POST /api/sessions/{id}/memory/read` what the line read (`MemoryPresenter`): each entry read again and its cited records
+rechecked, stamped `checked at` its revision only where every check holds and shown as read where none answers; an entry that
+moved before the answer left discards it, and it is read again. What it answers is kept as the line's read.
 
 Since **D124** (WSSETUP8), until a repository adopts, the scanner reads its root `README.md`, in any case,
 as the repository's own word. Each section split at level-two headings is one local knowledge entry carrying
