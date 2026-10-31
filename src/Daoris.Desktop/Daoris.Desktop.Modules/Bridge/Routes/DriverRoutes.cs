@@ -76,6 +76,18 @@ public sealed class DriverRoutes(DriverContext context)
         return State(_loop);
     }
 
+    // GITAPP2b (D204, the git-writes design §2): the switch *Daoris may change this checkout's files*, off by default, in
+    // `driver.json` by repository. It writes nothing to a repository: it lets the acts of later rows be offered.
+    [DriverRoute("SET_CHECKOUT_WRITES")]
+    [Publishes("SET_CHECKOUT_WRITES", StateScopes.Driver)]
+    private object? SetCheckoutWrites(IpcRequest request)
+    {
+        var repository = PayloadHelper.GetRequiredValue<string>(request.Payload, "repository");
+        var allow = PayloadHelper.GetRequiredValue<bool>(request.Payload, "allow");
+        _context.Change(config => config.WithCheckoutWrites(repository, allow));
+        return State(_loop);
+    }
+
     // A repository's standing answer (KNOWUSE1b, D135 §3): the person's words, handed to every session there, over the same
     // file `daoris driver standing <repo> "…"|--clear` edits — one truth, two doors (D50). No words clears it; blank words or
     // words past the bound are the driver's refusal.
@@ -759,6 +771,8 @@ public sealed class DriverRoutes(DriverContext context)
                 .Select(p => new { Workspace = p.Key, Read = p.Value }).ToArray(),
             WriteAcross = config.WriteAcross.OrderBy(p => p.Key, StringComparer.Ordinal)
                 .Select(p => new { Repository = p.Key, To = p.Value }).ToArray(),
+            // GITAPP2b: the repositories whose checkout the person let Daoris change the files of (off where absent), as names.
+            CheckoutWrites = config.CheckoutWrites.Where(p => p.Value).Select(p => p.Key).Order(StringComparer.Ordinal).ToArray(),
             // Each repository's standing answer (KNOWUSE1b), as rows for the same reason; `at` in UTC, or null where unknown.
             Standing = config.Standing.OrderBy(p => p.Key, StringComparer.Ordinal)
                 .Select(p => new { Repository = p.Key, p.Value.Says, p.Value.At }).ToArray(),

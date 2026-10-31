@@ -715,6 +715,21 @@ public sealed record DriverConfig(
     public IReadOnlyDictionary<string, IReadOnlyList<string>> WriteAcross { get; init; } =
         new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>
+    /// The repositories whose registered checkout Daoris may change the files of (GITAPP2b, D204, the git-writes design §2): the
+    /// person's switch, by repository, off where absent. Only <c>true</c> is ever written.
+    /// </summary>
+    public IReadOnlyDictionary<string, bool> CheckoutWrites { get; init; } =
+        new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Turn the switch for a repository on, or off by taking its entry out.</summary>
+    public DriverConfig WithCheckoutWrites(string repository, bool allow) =>
+        this with { CheckoutWrites = SetFlag(CheckoutWrites, repository, allow ? true : null) };
+
+    /// <summary>The read side of <see cref="WithCheckoutWrites"/>.</summary>
+    public bool MayChangeCheckout(string repository) =>
+        CheckoutWrites.TryGetValue(repository.Trim(), out var on) && on;
+
     /// <summary>Set whether a repository's checkout is read across, or clear it with null to take its workspace's.</summary>
     public DriverConfig WithReadAcross(string repository, bool? read) =>
         this with { ReadAcross = SetFlag(ReadAcross, repository, read) };
@@ -1130,6 +1145,8 @@ public sealed record DriverConfig(
             // Written only when set (D107), for the same reason: absent is reading on and no relationship.
             WriteFlags(writer, "readAcross", ReadAcross);
             WriteFlags(writer, "workspaceReadAcross", WorkspaceReadAcross);
+            // Written only when on (GITAPP2b): absent is the switch off.
+            WriteFlags(writer, "checkoutWrites", CheckoutWrites);
             if (WriteAcross.Count > 0)
             {
                 writer.WriteStartObject("writeAcross");
@@ -1584,6 +1601,7 @@ public sealed record DriverConfig(
             Keep = KeepChoices.Read(root),
             ReadAcross = FlagMap(root, "readAcross"),
             WorkspaceReadAcross = FlagMap(root, "workspaceReadAcross"),
+            CheckoutWrites = FlagMap(root, "checkoutWrites"),
             WriteAcross = TargetMap(root, "writeAcross"),
         };
     }
