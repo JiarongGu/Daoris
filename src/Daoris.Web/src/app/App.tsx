@@ -631,6 +631,7 @@ export function App() {
     // is then chosen now, never a remembered choice.
     if (plan.knowledge) chooseKnowledgeMode(plan.knowledge);
     if (plan.agentsMode) agentsModes.onMode(plan.agentsMode);
+    if (plan.roleSection) agentsModes.onSection(plan.roleSection);
     if (plan.chosen) lists.choose(plan.chosen.view, plan.chosen.item);
     // A view opened by a door that names nothing reopens what its list chose only while it still waits (UX6b, D150 §8):
     // the list reads it again, and lets go of one that closed or went. A door that names an item has it chosen above.
@@ -956,6 +957,8 @@ export function App() {
     onOpenCode: (repository) => open('map', null, { code: repository }),
     // A workspace's Details names each agent's accounts there, set on the agent's page (UX6e).
     onOpenAgent: (agent) => open('agents', agent),
+    // Setup's supervisor line opens Agents → Roles → Appointed roles, where it is appointed (COMPANYVIEW1e).
+    onOpenAppointed: () => open('agents', null, { roleSection: 'appointed' }),
     // A landing rule's plugin opens its page (PLUGUI1c2c).
     onOpenPlugin: (plugin) => open('plugins', plugin),
     onSyncNow,

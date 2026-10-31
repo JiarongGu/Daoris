@@ -86,6 +86,8 @@ const ORGANISMS = new Set<string>([
   // The Agents place's Roles mode (COMPANYVIEW1b): the role catalogue, the staffing and every press on them, so the card, the
   // section list and the strip below it hold none.
   './agents/roles/RolesView.tsx',
+  // The Appointed roles section (COMPANYVIEW1e): the standing confirmation and every appointment press, so its list below holds none.
+  './agents/roles/AppointedRoles.tsx',
   // A workspace's page's organism (UX6g, D150 §4.3): it holds the driver's answers and every act on a workspace, so the
   // page, its Details and its Setup below it hold none.
   './projects/workspace/WorkspaceView.tsx',

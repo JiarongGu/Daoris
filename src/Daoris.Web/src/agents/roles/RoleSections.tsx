@@ -5,7 +5,7 @@ import { PageHead, ViewMain } from '../../work/frame/ViewMain';
 import { ROLE_SECTIONS, type RoleSection } from '../modes';
 
 /** The sections that are built; the others are listed and say they come later (COMPANYVIEW1b). */
-export const BUILT_SECTIONS: readonly RoleSection[] = ['working'];
+export const BUILT_SECTIONS: readonly RoleSection[] = ['working', 'appointed'];
 
 /**
  * **The Roles mode's list** (COMPANYVIEW1b, the company-view design §1): the five sections, each a row of the list

@@ -98,7 +98,7 @@
   "notifications.supervisor.line_other": "主管代你回答 {{repository}} 中的问题，自 {{since}} 起任命：每个回答都在这里说明，并保留 {{held}}供你否决。本次运行回答 {{count}} 次。",
   "notifications.supervisor.lineUndated": "主管代你回答 {{repository}} 中的问题：每个回答都在这里说明，并保留 {{held}}供你否决。本次运行回答 {{count}} 次。",
   "notifications.supervisor.lineUndated_other": "主管代你回答 {{repository}} 中的问题：每个回答都在这里说明，并保留 {{held}}供你否决。本次运行回答 {{count}} 次。",
-  "notifications.supervisor.dormant": "Daoris 启动时发现 {{repository}} 的主管任命：在它的配置中按“再次任命”才能使用。",
+  "notifications.supervisor.dormant": "Daoris 启动时发现 {{repository}} 的主管任命：在“智能体 → 角色 → 任命的角色”中按“再次任命”才能使用。",
   "notifications.supervisor.ofWorkspace": "{{workspace}} 的每个仓库",
   "notifications.supervisor.minutes": "{{count}} 分钟",
   "notifications.supervisor.minutes_other": "{{count}} 分钟",
