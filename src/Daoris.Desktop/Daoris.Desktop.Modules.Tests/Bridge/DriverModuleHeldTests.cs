@@ -36,6 +36,7 @@ public sealed class DriverModuleHeldTests : DriverModuleBridge
         ["GIT_CHANGES"] = new { repository = "engine" },
         ["GIT_HUNKS"] = new { repository = "engine", path = "a.txt", side = "unstaged" },
         ["GIT_COMMIT_PLAN"] = new { repository = "engine", verb = "commit" },
+        ["GIT_CONFLICT"] = new { repository = "engine", path = "a.txt" },
         ["GIT_SWITCH_PLAN"] = new { repository = "engine", branch = "main" },
         ["GIT_STASH_PLAN"] = new { repository = "engine" },
     };
