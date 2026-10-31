@@ -43,7 +43,8 @@ public static class MemoryCitations
 /// The service's sweep (KNOWCENTRAL2d; the memory coordinator design §3): each registered repository's entries Lyntai answers as due a
 /// recheck, their citations rechecked through <see cref="KnowledgeService.RecheckAsync"/>. Every citation holding is written as a
 /// <c>ready</c> confirmation at the revision read, one failing as an <c>awaiting</c> end for the person; an amended or inconclusive one
-/// writes nothing and is read again at the next sweep. An entry whose row from an earlier sweep has not settled is not written again.
+/// writes nothing and is read again at the next sweep. An entry whose row from an earlier sweep has not settled is not written again. A
+/// citation of another repository's entry is rechecked through that memory's view, within the citing repository's workspace (KNOWCENTRAL2g).
 /// </summary>
 public sealed class MemorySweep(MemoryOpStore ops, IMemoryEngines engines, KnowledgeService knowledge)
 {
@@ -59,12 +60,14 @@ public sealed class MemorySweep(MemoryOpStore ops, IMemoryEngines engines, Knowl
     {
         var pending = await ops.PendingAsync(ct).ConfigureAwait(false);
         var rechecks = new List<MemoryRecheck>();
-        foreach (var repository in (await knowledge.RegistryAsync(ct: ct).ConfigureAwait(false)).Select(row => row.Repository).Distinct(StringComparer.Ordinal))
+        foreach (var row in (await knowledge.RegistryAsync(ct: ct).ConfigureAwait(false)).DistinctBy(row => row.Repository, StringComparer.Ordinal))
         {
+            var repository = row.Repository;
             if (engines.Open(repository, MemoryReinforcement.None) is not { } engine) continue;
+            var scope = new MemoryWorkspaceCheck(knowledge, row.InWorkspace);
             foreach (var due in await engine.DueAsync(now - RecheckAfter, Limit, ct).ConfigureAwait(false))
             {
-                if (await RecheckAsync(repository, due, ct).ConfigureAwait(false) is not { } recheck) continue;
+                if (await RecheckAsync(repository, due, scope, ct).ConfigureAwait(false) is not { } recheck) continue;
                 var kind = recheck.Holds ? MemoryOpKind.Confirm : MemoryOpKind.End;
                 if (!pending.Contains((repository, due.Id, kind))) rechecks.Add(recheck);
             }
@@ -74,19 +77,22 @@ public sealed class MemorySweep(MemoryOpStore ops, IMemoryEngines engines, Knowl
         return rechecks.Count;
     }
 
-    private async Task<MemoryRecheck?> RecheckAsync(string repository, MemoryDue due, CancellationToken ct)
+    private async Task<MemoryRecheck?> RecheckAsync(string repository, MemoryDue due, IMemoryViewCheck scope, CancellationToken ct)
     {
         var citations = MemoryCitations.Read(due.Recheck);
         if (citations.Count == 0) return null;
         var holds = true;
         foreach (var citation in citations)
         {
-            var check = await knowledge.RecheckAsync(citation, ct: ct).ConfigureAwait(false);
+            var check = citation.Revision is null
+                ? await knowledge.RecheckAsync(citation, ct: ct).ConfigureAwait(false)
+                : await MemoryViews.RecheckAsync(engines, citation, scope, ct).ConfigureAwait(false);
             if (check.Standing == CitationStanding.Failed)
             {
                 return new MemoryRecheck(
-                    repository, due.Id, due.Revision, Holds: false,
-                    $"Its cited record `{citation.Id}` is superseded by {check.By ?? "a later record"}: {check.Says}");
+                    repository, due.Id, due.Revision, Holds: false, citation.Revision is null
+                        ? $"Its cited record `{citation.Id}` is superseded by {check.By ?? "a later record"}: {check.Says}"
+                        : $"Its cited entry `{citation.Id}` of another repository's memory {check.Says}.");
             }
 
             holds &= check.Standing == CitationStanding.Holds;
