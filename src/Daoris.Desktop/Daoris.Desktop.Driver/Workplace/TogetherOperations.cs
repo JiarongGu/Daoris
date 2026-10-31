@@ -129,6 +129,9 @@ public sealed record TogetherOperation(
     /// <summary>The head's tip the last proved check accounted every member change at.</summary>
     public string? Checked { get; init; }
 
+    /// <summary>The head's tip the last check was tried at, proved or not: a failed check is not tried again there.</summary>
+    public string? Tried { get; init; }
+
     /// <summary>The last check's accounting, every member path; empty before one ran.</summary>
     public IReadOnlyList<TogetherPath> Account { get; init; } = [];
 
@@ -268,8 +271,8 @@ public sealed class TogetherOperations(string home)
     /// </summary>
     public TogetherOperation? Checked(string id, string tip, IReadOnlyList<TogetherPath> account, string? failed, DateTimeOffset at) =>
         Move(id, [TogetherPhase.Checking], each => failed is null
-            ? each with { Phase = TogetherPhase.Ready, Checked = tip, Account = account, Why = null, Since = at }
-            : each with { Checked = null, Account = account, Why = failed, Since = at });
+            ? each with { Phase = TogetherPhase.Ready, Checked = tip, Tried = tip, Account = account, Why = null, Since = at }
+            : each with { Checked = null, Tried = tip, Account = account, Why = failed, Since = at });
 
     /// <summary><i>Ask again</i> after a failed check: back to <i>asked</i>, its words said again under a fresh key.</summary>
     public TogetherOperation? AskedAgain(string id, DateTimeOffset at) =>
