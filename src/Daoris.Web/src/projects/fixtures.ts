@@ -208,6 +208,27 @@ export const SETUP_PROCESS_OWN: RepositorySetupProps = {
   },
 };
 
+/** The engine's branch rule integrating into its line (AGENTSPLACE1d): batch 4, oldest first, gates declared. */
+export const SETUP_INTEGRATING: RepositorySetupProps = {
+  ...SETUP_PROCESS,
+  work: {
+    ...SETUP_PROCESS.work,
+    landing: {
+      repository: 'engine', workspace: 'default', form: 'branch', pattern: 'work/{quest}', source: 'repository',
+      integrate: { batch: 4, order: 'arrival', gates: 'declared' },
+    },
+  },
+};
+
+/** The same rule after a save the driver refused, its sentence under *Save*. */
+export const SETUP_INTEGRATING_REFUSED: RepositorySetupProps = {
+  ...SETUP_INTEGRATING,
+  work: {
+    ...SETUP_INTEGRATING.work,
+    landingRefusal: '`request: steward` needs `gates: declared` — a role\'s act never lands ungated work on the line.',
+  },
+};
+
 /** A whole commit id from a short one, as git answers them: forty hex digits. */
 const id = (short: string) => short.padEnd(40, '0');
 const hoursAgo = (hours: number) => new Date(Date.now() - hours * 3_600_000).toISOString();

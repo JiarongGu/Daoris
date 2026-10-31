@@ -190,6 +190,67 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
         Assert.True(shared.GetProperty("workspaceLandings")[0].GetProperty("squash").GetBoolean());
     }
 
+    private static JsonElement Body(string json) => JsonDocument.Parse(json).RootElement.Clone();
+
+    /// <summary>
+    /// AGENTSPLACE1d: <c>SET_LANDING</c> carries a branch rule's <c>integrate</c> as <c>LandingKey</c> reads it, answers it back in the
+    /// landing row, keeps it when a press names none, and withdraws it on <c>integrate: null</c>.
+    /// </summary>
+    [Fact]
+    public async Task A_landing_press_carries_integrate_keeps_it_when_none_is_named_and_withdraws_it_on_null()
+    {
+        var state = await AnswerAsync(Module(), "SET_LANDING", new
+        {
+            repository = "engine", form = "branch", pattern = "work/{quest}",
+            integrate = Body("""{"batch":4,"order":"arrival","gates":"declared","request":"owner","unconfirmed":{"reached":"hold"}}"""),
+        });
+
+        var held = DriverConfig.Load(DriverConfigPath).Landings["engine"].Integrate;
+        Assert.Equal(new LandingIntegrate(Request: LandingIntegrate.Owner, Batch: 4, Order: LandingIntegrate.Arrival, Gates: LandingIntegrate.Declared, Reached: LandingIntegrate.Hold), held);
+        var row = state.GetProperty("landings")[0].GetProperty("integrate");
+        Assert.Equal(4, row.GetProperty("batch").GetInt32());
+        Assert.Equal("declared", row.GetProperty("gates").GetString());
+        Assert.Equal("hold", row.GetProperty("unconfirmed").GetProperty("reached").GetString());
+
+        await AnswerAsync(Module(), "SET_LANDING", new { repository = "engine", form = "branch", pattern = "work/{quest}-{slug}" });
+        Assert.Equal(held, DriverConfig.Load(DriverConfigPath).Landings["engine"].Integrate);
+
+        var withdrawn = await AnswerAsync(Module(), "SET_LANDING", new { repository = "engine", form = "branch", pattern = "work/{quest}", integrate = (string?)null });
+        Assert.Null(DriverConfig.Load(DriverConfigPath).Landings["engine"].Integrate);
+        Assert.Equal(JsonValueKind.Null, withdrawn.GetProperty("landings")[0].GetProperty("integrate").ValueKind);
+
+        // A merge rule can be set again with integrate withdrawn in the same press.
+        await AnswerAsync(Module(), "SET_LANDING", new { repository = "engine", form = "branch", pattern = "work/{quest}", integrate = Body("{}") });
+        await AnswerAsync(Module(), "SET_LANDING", new { repository = "engine", form = "merge", integrate = (string?)null });
+        Assert.Equal(LandingRule.Merge, DriverConfig.Load(DriverConfigPath).Landings["engine"]);
+    }
+
+    /// <summary>AGENTSPLACE1d: each refusal <c>LandingKey</c> makes of an <c>integrate</c> comes back in its sentence, with nothing written.</summary>
+    [Theory]
+    [InlineData("""{"form":"merge"}""", "never a merge rule")]
+    [InlineData("""{"form":"branch","pattern":"w/{quest}","plugin":"example.github-pull-request"}""", "beside a plugin")]
+    [InlineData("""{"form":"branch","pattern":"w/{quest}","squash":true}""", "`squash`")]
+    [InlineData("""{"form":"branch","pattern":"w/{quest}","integrate":{"request":"done","gates":"declared"}}""", "`autoAccept`")]
+    [InlineData("""{"form":"branch","pattern":"w/{quest}","autoAccept":true,"integrate":{"request":"done"}}""", "needs `gates: declared`")]
+    [InlineData("""{"form":"branch","pattern":"w/{quest}","integrate":{"request":"steward"}}""", "`request: steward` needs")]
+    [InlineData("""{"form":"branch","pattern":"w/{quest}","integrate":{"gates":"declared","unconfirmed":{"reached":"land"}}}""", "no whole-set verification")]
+    [InlineData("""{"form":"branch","pattern":"w/{quest}","integrate":{"order":"newest"}}""", "`integrate.order`")]
+    [InlineData("""{"form":"branch","pattern":"w/{quest}","integrate":{"batch":9}}""", "`integrate.batch`")]
+    [InlineData("""{"form":"branch","pattern":"w/{quest}","integrate":{"batch":"4"}}""", "`integrate.batch`")]
+    [InlineData("""{"form":"branch","pattern":"w/{quest}","integrate":{"line":"a..b"}}""", "`integrate.line`")]
+    [InlineData("""{"form":"branch","pattern":"w/{quest}","integrate":true}""", "`integrate` is an object")]
+    public async Task A_landing_press_with_an_integrate_the_rule_refuses_is_refused_in_the_landing_keys_sentence(string rule, string says)
+    {
+        var body = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(rule)!;
+        body["repository"] = Body("\"engine\"");
+        if (!body.ContainsKey("integrate")) body["integrate"] = Body("{}");
+
+        var refused = await RefusalAsync(Module(), "SET_LANDING", body);
+
+        Assert.Contains(says, refused);
+        Assert.False(File.Exists(DriverConfigPath) && DriverConfig.Load(DriverConfigPath).Landings.ContainsKey("engine"));
+    }
+
     /// <summary>
     /// DOORS1b: the press sets the key and the squash as the terminal's `--key <shape>|--no-key` and `--squash|--no-squash` do, an
     /// empty key taking it away, each refused in the driver's words, nothing written.

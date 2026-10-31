@@ -191,7 +191,9 @@ public sealed class WorkflowRoutes(DriverContext context)
     /// line's tip and accepts it by its blob, as <c>daoris driver workflow use … --landed</c> does; where the tip cannot be read it keeps
     /// what was accepted for the same pipeline. Judged by the twins' edit first (<see cref="WorkflowSelection.Apply"/>), so a development
     /// pipeline is refused in its words before anything is written. Answers the start node as it now stands, and what the change lowers
-    /// (<see cref="InvolvementRoutes.LowersRoute"/>), said: the person's press applies it (D157 point 10).
+    /// (<see cref="InvolvementRoutes.LowersRoute"/>), said: the person's press applies it (D157 point 10). An optional <c>gates</c> names the
+    /// blob the person read: one that is no longer the tip's is refused <c>moved</c>, and a tip that cannot be read <c>unread</c>, each as the
+    /// driver's sentence with nothing written, as <c>INTEGRATION_GATES</c> does; a caller naming none accepts the tip as it stands.
     /// </summary>
     [DriverRoute("WORKFLOW_LANDED")]
     private async Task<object?> WorkflowLandedAsync(IpcRequest request, CancellationToken cancellationToken)
@@ -204,6 +206,8 @@ public sealed class WorkflowRoutes(DriverContext context)
         }
 
         var workflow = Optional(request, "workflow");
+        var expected = Optional(request, "gates");
+        if (expected is not null && !IntegrationGatesKey.IsAcceptance(expected)) throw new DriverException(IntegrationGatesKey.Problem);
         var config = DriverConfig.Load(_loop.ConfigPath);
         var inWorkspace = workspace;
         if (repository is not null)
@@ -220,7 +224,17 @@ public sealed class WorkflowRoutes(DriverContext context)
         string? gates = null;
         if (repository is not null && found?.Read.Verifies == true)
         {
-            var (_, tip, _) = await TipAsync(config, repository, inWorkspace, cancellationToken).ConfigureAwait(false);
+            var (_, tip, problem) = await TipAsync(config, repository, inWorkspace, cancellationToken).ConfigureAwait(false);
+            if (expected is not null)
+            {
+                if (tip is null) throw new DriverException($"{problem ?? $"`{repository}`'s line could not be read here."} Nothing was accepted (unread).");
+                if (expected != tip.Gates)
+                {
+                    throw new DriverException($"moved: `{repository}`'s line holds another declaration than the one you read, so nothing was accepted: "
+                        + "read it again, then accept it.");
+                }
+            }
+
             var own = config.Workflows.TryGetValue(repository.Trim(), out var held) ? held.Landed : null;
             gates = tip?.Gates ?? (own?.Workflow == named ? own.Gates : null);
         }
