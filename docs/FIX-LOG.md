@@ -5,6 +5,13 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-01 - Each landing started one git more than its ceiling: the symbolic-ref ask before a delete (batch 1031f)
+
+- **Symptom:** `LandGitCountTests` failed all three: the automatic landing 43 starts against 42, the squash press one over 45, the merge press 58 against 57.
+- **Root cause:** GITTXN1's `RefTransaction.RunAsync` asks `for-each-ref --format=%(refname)%09%(symref)` over every name it holds before a delete. Diffing the starts of each landing on main and on the batch showed that one start and no other; nothing repeated a fact (`rev-parse --git-common-dir`, `symbolic-ref`, `merge-base` are as many as before). The ask is a new fact: the proof's holders listing leaves the branch being deleted out, and `update-ref -d` on a symbolic ref deletes its target.
+- **Fix:** no read removed; the three ceilings rise by that one start (43, 46, 58), the reason in a comment beside them.
+- **Verify:** the three red first (43 > 42, 46 > 45, 58 > 57), green after; `CheckoutLockProcessTests`, `CheckoutBesideGitTests`, `RefTransactionGitTests` green under the git settings.
+
 ## 2026-11-01 - A checkout's holder was read without sharing its writer's rename (batch 1031f)
 
 - **Symptom:** `read-shares` in `npm run verify` refused `TreeLock.cs` once batch 1031f merged GITLOCK1 and 2; the earlier run had stopped at the CLI's tests before reaching it.

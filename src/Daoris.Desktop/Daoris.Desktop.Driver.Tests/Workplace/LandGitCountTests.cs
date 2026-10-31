@@ -229,9 +229,12 @@ public sealed class LandGitCountTests : IDisposable
     // --show-toplevel`) with its four puts back at the base; the ancestry read, the merge and the head read; the line read before the move
     // and in its effect and after it, the fence's `ls-tree`, the checkout list and clean check, and the fast-forward: each the transport's own
     // check at its moment, or the move itself.
-    private const int AutomaticCeiling = 42;
-    private const int SquashCeiling = 45;
-    private const int MergeCeiling = 57;
+    // GITTXN1: a delete of the landing's branch asks first whether any name the ref transaction holds is a symbolic ref (`for-each-ref
+    // --format=%(refname)%09%(symref)`), one start in each of the three, the ceilings 43, 46 and 58. The branch about to go is a fact the
+    // proof's holders listing never read (it leaves the branch itself out), and `update-ref -d` on a symbolic ref would delete its target.
+    private const int AutomaticCeiling = 43;
+    private const int SquashCeiling = 46;
+    private const int MergeCeiling = 58;
 
     private const string VerifyQuiet = "git rev-parse --verify --quiet ";
 
