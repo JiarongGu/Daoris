@@ -1447,13 +1447,21 @@ public sealed class Driver(
 
                 // LIMITPICK2: a start refused for its account's sign-in goes on under the next account the walk gives, once, in this start;
                 // where the walk gives none (or the same), the first run's end stands as it was.
-                if (run.SignedOutOn is { } signedOut && Runner is null && start.Resumes is null)
+                if (run.SignedOutOn is { } signedOut)
                 {
-                    var again = new FreshTree(path => Context.Trees.RemoveAsync(path));
-                    var moved = await again.UntilOpenAsync(
-                            () => RunAsync(start, snapshot.Repositories, own, () => { }, again, ct, movedOff: signedOut), ct)
-                        .ConfigureAwait(false);
-                    if (moved.Opened) return moved;
+                    var holding = MovingReservation(start);
+                    try
+                    {
+                        var again = new FreshTree(path => Context.Trees.RemoveAsync(path));
+                        var moved = await again.UntilOpenAsync(
+                                () => RunAsync(start, snapshot.Repositories, own, () => Context.Runs.Release(holding), again, ct, movedOff: signedOut), ct)
+                            .ConfigureAwait(false);
+                        if (moved.Opened) return moved;
+                    }
+                    finally
+                    {
+                        Context.Runs.Release(holding);
+                    }
                 }
 
                 return run;
@@ -2064,6 +2072,10 @@ public sealed class Driver(
         Say(concluded);
         return new TickReport([], events, Progressed: false, Concluded: concluded);
     }
+
+    /// <summary>The reservation that keeps a look from planning a quest again between a start's refused end and its move to another account (LIMITPICK2).</summary>
+    private StartReservation MovingReservation(Consideration start) =>
+        new(start.Quest.Id, null, start.Quest.To, config.OpensOwnTree(start.Quest.To) ? start.Entry?.Into?.Tree : null);
 
     /// <returns>
     /// The console line, whether a session actually opened, — when one ended here — what it ended
@@ -3217,7 +3229,11 @@ public sealed class Driver(
                     var beforeSignIn = conclusion;
                     conclusion = AccountSignedOut(conclusion, adapter, selection, turnFailed, ended);
                     // LIMITPICK2: the account this start was refused for, where it has a profile another can stand in for.
-                    var signedOutOn = !ReferenceEquals(beforeSignIn, conclusion) && stop is null ? selection.Profile : null;
+                    var signedOutOn = !ReferenceEquals(beforeSignIn, conclusion) && stop is null && movedOff is null && start.Resumes is null
+                        ? selection.Profile : null;
+                    // The quest is reserved again before this record fails, so a look between this end and the next run's open plans nothing
+                    // for it; the caller lets it go when that run has opened or come to nothing. Not reserved, it is not moved.
+                    if (signedOutOn is not null && !Context.Runs.TryReserve(MovingReservation(start))) signedOutOn = null;
                     // MODELROLE1c3 (D205 §3.3's pipe exception): the pipe door refused the model its choice named on a silent turn, so the
                     // account's reading is kept and the part ends with its line, no strike; the next look starts what the walk then answers.
                     var refusedModel = ModelRefused(conclusion, adapter.Name, selection, target.Asked?.NamedModel, ended, sessionId);

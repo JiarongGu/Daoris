@@ -113,6 +113,55 @@ public sealed class SignInRefusalTickTests : IDisposable
         Assert.Contains(opening, line => line.Text == "The same start moved here: `account-1` refused it for its sign-in.");
     }
 
+    /// <summary>
+    /// LIMITPICK2: from the moment the refused record is failed until the next run's record is open, the quest stays reserved, so a look
+    /// between the two runs plans nothing for it. Watched from beside the look: any instant with the first record failed, no second record
+    /// yet and no reservation of q1 is the window a look could have taken the quest in.
+    /// </summary>
+    [Fact]
+    public async Task A_look_between_the_refused_end_and_the_next_run_finds_the_quest_reserved()
+    {
+        await using var service = AskAndWaitTickTests.StandIn.Start(_repository);
+        var adapters = AdapterSet.Built();
+        var roster = new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => Seen, Zone = Zone };
+        using var client = new ServiceClient(service.Url, null);
+        var config = DriverConfig.Empty with
+        {
+            Drivable = ["engine"],
+            Trees = ["engine"],
+            Adapter = "acp-stub",
+            TestBound = 1,
+            PollSeconds = 1,
+            Strikes = 1,
+            Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", AcpAgent(), Log] },
+        };
+        var driver = new Daoris.Driver.Driver(client, config, adapters, _home, processes: new SessionProcesses(), harnesses: roster);
+
+        var finished = false;
+        var open = false;
+        var watcher = Task.Run(() =>
+        {
+            var failedSeen = false;
+            while (!Volatile.Read(ref finished))
+            {
+                if (service.SessionCount == 0 || service.Session("s1")["state"]!.GetValue<string>() != "failed") continue;
+                failedSeen = true;
+                var held = driver.Context.Runs.Reserved.Any(each => each.Quest == "q1");
+                if (!held && service.SessionCount == 1) open = true;
+            }
+
+            return failedSeen;
+        });
+
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
+        Volatile.Write(ref finished, true);
+
+        Assert.True(await watcher, "the watcher never saw the refused record failed");
+        Assert.False(open, "a look could have planned the quest between the refused end and the next run's record");
+        Assert.Equal("completed", service.Session("s2")["state"]!.GetValue<string>());
+        Assert.Empty(driver.Context.Runs.Reserved);
+    }
+
     /// <summary>LIMITPICK2: with no other account in the list the start ends as it did, failed with no strike, its quest open.</summary>
     [Fact]
     public async Task A_start_refused_for_its_sign_in_with_no_other_account_free_ends_failed_and_waits()
