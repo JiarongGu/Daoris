@@ -347,7 +347,7 @@ public sealed class PipeCensus
             "SUPERVISOR_OVERRULE",
             "RETRY_QUEST", "HELP_APPLY",
             // The person's words, and a conversation begun or carried on with them.
-            "SESSION_INPUT", "SESSION_QUEUE_EDIT", "CHANNEL_POST", "CHANNEL_FORWARD", "START_CHAT", "START_HELP", "HELP_START_FROM",
+            "SESSION_INPUT", "SESSION_QUEUE_EDIT", "SESSION_QUEUE_MOVE", "CHANNEL_POST", "CHANNEL_FORWARD", "START_CHAT", "START_HELP", "HELP_START_FROM",
             "SESSION_GO_ON_NEW", "SESSION_START_FROM", "SESSION_HAND_OVER", "HELP_RENAME", "HELP_PIN",
             // SESSCTX1c part B: *Go on with Daoris's brief*, the person's words carried into a new part of their session.
             "SESSION_GO_ON_BRIEF",
@@ -433,11 +433,11 @@ public sealed class PipeCensus
         var table = new Dictionary<string, PipeDrain>(StringComparer.Ordinal);
         Add(PipeDrain.Waits,
             // Work the drain counts, begun at once by the chat runner: a conversation started, carried on in a new part, handed to another
-            // agent, given words (between turns they open its next one, ended they go on with it), sent a channel's message it may reopen
-            // on, or going on with an answer alone; an applied proposal, which acts through these doors; and a proposal's dismissal, which
-            // Ask Daoris is told as a turn.
+            // agent, given words (between turns they open its next one, ended they go on with it) or a held word moved to it, sent a channel's
+            // message it may reopen on, or going on with an answer alone; an applied proposal, which acts through these doors; and a proposal's
+            // dismissal, which Ask Daoris is told as a turn.
             "START_CHAT", "START_HELP", "HELP_START_FROM", "SESSION_GO_ON_NEW", "SESSION_START_FROM", "SESSION_GO_ON_BRIEF", "SESSION_HAND_OVER",
-            "SESSION_HAND_OVER_APPROVE", "SESSION_INPUT", "CHANNEL_FORWARD", "SESSION_ANSWER_ALONE", "HELP_APPLY", "HELP_DISMISS",
+            "SESSION_HAND_OVER_APPROVE", "SESSION_INPUT", "SESSION_QUEUE_MOVE", "CHANNEL_FORWARD", "SESSION_ANSWER_ALONE", "HELP_APPLY", "HELP_DISMISS",
             // Work begun at the next look that the drain's holds of quests do not reach: a helper, a partner, a second opinion.
             "SESSION_HELPER_ASK", "SESSION_HELPER_APPROVE", "SESSION_PARTNER_ASK", "ASK_OPINION",
             // What lets the look start such work, or land, since every setting asks the look at once (`DriverContext.Change`). Helpers,

@@ -199,6 +199,10 @@ public sealed class SaidSettledHostTests(LocalHost host) : IClassFixture<LocalHo
             [SessionSayRefusal.NoHome] = "no-home",
             [SessionSayRefusal.Continued] = "continued",
             [SessionSayRefusal.Unplaced] = "unplaced",
+            [SessionSayRefusal.NotHeld] = "not-held",
+            [SessionSayRefusal.Files] = "files",
+            [SessionSayRefusal.AtHead] = "at-head",
+            [SessionSayRefusal.NotYours] = "not-yours",
         };
 
         Assert.Equal(Enum.GetValues<SessionSayRefusal>().Order(), table.Keys.Order());

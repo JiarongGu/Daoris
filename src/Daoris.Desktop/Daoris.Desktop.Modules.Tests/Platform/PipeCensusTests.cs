@@ -486,6 +486,8 @@ public sealed class PipeCensusTests
     [InlineData("SET_HELPERS", PipeDrain.Waits)]
     [InlineData("SESSION_ANSWER_ALONE", PipeDrain.Waits)]
     [InlineData("SESSION_INPUT", PipeDrain.Waits)]
+    // LINESTOGETHER1b: a word moved to an ended head goes on with it at once, as one said there does.
+    [InlineData("SESSION_QUEUE_MOVE", PipeDrain.Waits)]
     [InlineData("START_CHAT", PipeDrain.Waits)]
     [InlineData("SESSION_HELPER_ASK", PipeDrain.Waits)]
     [InlineData("SESSION_PARTNER_ASK", PipeDrain.Waits)]

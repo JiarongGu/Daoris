@@ -496,6 +496,35 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     }
 
     /// <summary>
+    /// Move one of the person's words held on a part's record to the head of the line <paramref name="to"/> is on (LINESTOGETHER1b's move
+    /// door): taken off and kept there in one step, a retry answered moved again. Whether it moved is an answer, never an exception, as the
+    /// take-back's is; a host without the door says so with no word. A request whose answer never came throws, for the caller to say so.
+    /// </summary>
+    public async Task<MoveAnswer> MoveSaidAsync(string id, string word, string? to = null, CancellationToken ct = default)
+    {
+        var body = WriteJson(writer =>
+        {
+            writer.WriteStartObject();
+            writer.WriteString("word", word);
+            if (to is { Length: > 0 }) writer.WriteString("to", to);
+            writer.WriteEndObject();
+        });
+        var (ok, status, payload, root) = await PostJsonAsync($"/api/sessions/{Uri.EscapeDataString(id)}/move", body, ct).ConfigureAwait(false);
+        if (root is not { ValueKind: JsonValueKind.Object } answered)
+        {
+            return new MoveAnswer(false, $"the service at {_base} has no door for moving words to a session's head ({status}) — is it older than this driver?");
+        }
+
+        if (!ok) return new MoveAnswer(false, Text(answered, "error") ?? payload, Text(answered, "refusal")) { To = Text(answered, "head") };
+        return new MoveAnswer(Flag(answered, "moved"), Text(answered, "message") ?? "", Text(answered, "why"))
+        {
+            To = Text(answered, "to"),
+            Again = Flag(answered, "again"),
+            Word = answered.TryGetProperty("said", out var said) ? ReadWord(said) : null,
+        };
+    }
+
+    /// <summary>
     /// Mark these waiting words attempted on this machine's record, before the wire (COWORK1c's attempt door, the message-urgency
     /// design §6): the first moment kept, so a shell that comes up again never sends one twice. Whether they were marked is an answer,
     /// never an exception: a host without the door (one older than COWORK1c) is false with a sentence saying so.

@@ -571,6 +571,48 @@ public sealed class SessionWords : IDisposable
     }
 
     /// <summary>
+    /// Move one of the person's words held on a part's record to the head through the service's move door (LINESTOGETHER1b, the review-flow
+    /// design §2). Moved, the part settles the old word with the withdrawn note and the head shows the person's words under their new id, the
+    /// loop nudged as for words said there; a retry the service answers moved already shows nothing again. Both queues are told again whatever
+    /// it answers. A request whose answer never came is <c>not-known</c>: the move may have happened, and asked again under its key it says.
+    /// </summary>
+    /// <exception cref="DriverException">No service yet, or a host without the door, in its sentence.</exception>
+    public async Task<MoveAnswer> MoveAsync(string id, string word, string to, CancellationToken ct)
+    {
+        var service = _loop.Service ?? throw new DriverException(NotUp);
+        MoveAnswer answer;
+        try
+        {
+            answer = await service.MoveSaidAsync(id, word, to, ct).ConfigureAwait(false);
+        }
+        catch (Exception error) when (Unanswered(error))
+        {
+            Tell(id);
+            Tell(to);
+            return new MoveAnswer(false, $"the service did not answer for session `{id}`, so whether word `{word}` moved is not known: {error.Message}", NotKnown);
+        }
+
+        Tell(id);
+        if (answer.To is { } at) Tell(at);
+        if (!answer.Moved) return answer.Why is null ? throw new DriverException(answer.Message) : answer;
+        if (answer.Again || answer.To is not { } head) return answer;
+
+        _loop.Output.Append(id, $"— the person moved word {word} to session {head} before this session took it.");
+        _loop.Events.Keep(id, SessionNotes.Withdrawn(word), null);
+        if (answer.Word is { } kept)
+        {
+            _loop.Output.Append(head, $"— the person said, which the same session goes on with: {kept.Text}");
+            _loop.Events.Keep(head, LoopWords.Shown(kept, "screen"), line => _loop.Output.Append(head, line));
+        }
+
+        _loop.Said(head);
+        return answer;
+    }
+
+    /// <summary>The move's answer where the service's never came (LINESTOGETHER1b): not moved, nor refused, but not known.</summary>
+    public const string NotKnown = "not-known";
+
+    /// <summary>
     /// A terminal's <c>sessions take-back</c> (SAIDBACK1c, D137 §2.4): the shell's half, handed to its request watch as
     /// <see cref="SessionRequestWatch.TakeBack"/>, so the withdrawn note is written in the record of the conversation this shell
     /// holds, which the page may have open. Answered in the say's shape: sent is done, a refusal's code is <c>why</c>.

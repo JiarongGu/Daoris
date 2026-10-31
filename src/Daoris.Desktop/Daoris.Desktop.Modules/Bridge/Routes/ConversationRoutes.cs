@@ -411,6 +411,21 @@ public sealed class ConversationRoutes(DriverContext context)
         return edit == QueueEdit.Done ? new { Done = true } : new { Done = false, Why = "taken" };
     }
 
+    // Moving one word held on a part's record to the head the page shows as `to` (LINESTOGETHER1b, the review-flow design §2), through the
+    // service's move door; its answers are the desktop README's. A refusal is data, never thrown, so the page words its code and asks again
+    // after `not-known`.
+    [DriverRoute("SESSION_QUEUE_MOVE")]
+    [Publishes("SESSION_QUEUE_MOVE", StateScopes.Sessions, Session = "session")]
+    private async Task<object?> SessionQueueMoveAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var session = PayloadHelper.GetRequiredValue<string>(request.Payload, "session");
+        var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
+        var to = PayloadHelper.GetRequiredValue<string>(request.Payload, "to");
+        var moved = await _loop.Words.MoveAsync(session, id, to, cancellationToken).ConfigureAwait(false);
+        if (!moved.Moved) return new { Moved = false, moved.Why, moved.Message, moved.To };
+        return moved.Again ? new { Moved = true, Again = true, moved.To } : (object)new { Moved = true, moved.To, Word = moved.Word?.Id };
+    }
+
     // A conversation's model and effort, as its agent offers them on the protocol door (AGT6b, D98):
     // the page asks once, and takes every change after that as `SESSION_OPTIONS_CHANGED`. Nothing here
     // holding it, or a door that carries none, is an empty list — never a refusal, since a composer

@@ -204,6 +204,24 @@ public enum SessionSayRefusal
     /// kept. Never a guess at where the walk stopped.
     /// </summary>
     Unplaced,
+
+    /// <summary>
+    /// Moving a word (LINESTOGETHER1b): its part runs, so the word waits for that run in the driver's queue, where no step of the record's
+    /// reaches, and nothing moved.
+    /// </summary>
+    NotHeld,
+
+    /// <summary>Moving a word given with files (LINESTOGETHER1b): the files are the part's, so the word is not moved without them.</summary>
+    Files,
+
+    /// <summary>Moving a word that already waits on its line's head (LINESTOGETHER1b): there is nowhere further for it to go.</summary>
+    AtHead,
+
+    /// <summary>
+    /// Moving a word that is not the person's (LINESTOGETHER1b): Daoris's, the supervisor's or another agent's words are tied to what they
+    /// were said for, and only the person's own words move.
+    /// </summary>
+    NotYours,
 }
 
 /// <summary>What marking words attempted did (COWORK1c): the record as it now stands, and the words named that no longer wait.</summary>
@@ -234,6 +252,12 @@ public sealed record SessionSayOutcome(SessionSayRefusal Refusal, string Message
 
     /// <summary>The head of the record's line, where the say was refused <see cref="SessionSayRefusal.Continued"/> (row d-ii): the words go there.</summary>
     public string? Head { get; init; }
+
+    /// <summary>
+    /// Where a move's word went (LINESTOGETHER1b): the head it was kept on, or, answering a retry, the record it waits on or left; and the
+    /// head that refused it, where a running head did.
+    /// </summary>
+    public string? MovedTo { get; init; }
 
     /// <summary>
     /// The words answered a park (ANSWER1b), which its door keeps on the ask at once. False for words to an ended record, which are
@@ -1527,6 +1551,148 @@ public sealed class SessionLedger(
                 $"Reworded word `{named}` on session `{id}`: the new words wait last, as `{reworded.Id}`.",
                 kept, reworded) { Taken = old };
         }, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Move one of the person's words waiting on a part's record to the head of the line <paramref name="to"/> is on (LINESTOGETHER1b, the
+    /// review-flow design §2): taken off the part and kept at the head in one step, both or neither, its words as the person wrote them
+    /// (D137), the head judged as the say door judges a record. Its key is <c>move:&lt;part&gt;:&lt;word&gt;</c>.
+    /// </summary>
+    /// <remarks>
+    /// <para>A retry is looked up first, before the word's absence or any refusal of either record as it stands, as the say door's settlement
+    /// is: the key settled on any record (it names its source, so no other producer writes it), or waiting on a record of
+    /// <paramref name="to"/>'s line.</para>
+    ///
+    /// <para>A word that answered its part's park was kept on the ask then, so the moved word reopens nothing and answers nothing there
+    /// again.</para>
+    /// </remarks>
+    /// <param name="to">The record the page showed as the head, from which the walk goes on to the head now; none is the part's own line.</param>
+    public async Task<SessionSayOutcome> MoveSaidAsync(string id, string? word, string? to, DateTimeOffset now, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(word))
+        {
+            return new(SessionSayRefusal.Empty, "Name the word to move: none was named, so nothing moved.", Session: null);
+        }
+
+        var named = word.Trim();
+        var key = MoveKey(id, named);
+        return await sessions.ExclusiveAsync(async inside =>
+        {
+            if (await sessions.FindAsync(id, inside).ConfigureAwait(false) is not { } part)
+            {
+                return new SessionSayOutcome(SessionSayRefusal.NotFound, $"No session `{id}`.", Session: null);
+            }
+
+            if (await sessions.SettledUnderAsync(key, (now - SaidKeys.Horizon).ToUnixTimeSeconds(), inside).ConfigureAwait(false) is { } left)
+            {
+                return MovedAgain(key, left.Record);
+            }
+
+            var start = string.IsNullOrWhiteSpace(to) ? part : await sessions.FindAsync(to.Trim(), inside).ConfigureAwait(false);
+            if (start is null) return new SessionSayOutcome(SessionSayRefusal.NotFound, $"No session `{to!.Trim()}`.", Session: null);
+
+            var line = await Lines.LineOfAsync(sessions, quests, start, inside).ConfigureAwait(false);
+            if (await WaitingUnderAsync(start, line, key, inside).ConfigureAwait(false) is { } waits) return MovedAgain(key, waits);
+            if (line.Head is not { } head) return UnplacedAnswer(start, line.End);
+            if (Never(part) is { } never) return never;
+
+            if (part.Said.FirstOrDefault(each => string.Equals(each.Id, named, StringComparison.Ordinal)) is not { } old)
+            {
+                return new SessionSayOutcome(
+                    SessionSayRefusal.Taken, $"Word `{named}` no longer waits on session `{id}`: it was taken, or taken back, already.", Session: null);
+            }
+
+            if (old.Attempt is not null)
+            {
+                return new SessionSayOutcome(
+                    SessionSayRefusal.Taken,
+                    $"Word `{named}` on session `{id}` was already handed to its agent, which may have read it, so it was not moved.",
+                    Session: null);
+            }
+
+            if (!old.Persons)
+            {
+                return new SessionSayOutcome(
+                    SessionSayRefusal.NotYours,
+                    $"Word `{named}` on session `{id}` is not yours but {(old.From == SaidFrom.Daoris ? "Daoris's" : old.Supervisors ? "the supervisor's" : "another agent's")}, "
+                    + "so it was not moved: only your own words move.",
+                    Session: null);
+            }
+
+            if (part.Active && part.State != SessionState.AwaitingPerson)
+            {
+                return new SessionSayOutcome(
+                    SessionSayRefusal.NotHeld,
+                    $"Session `{id}` is {Spell(part.State)}: word `{named}` waits for its run, which may take it at any moment, so it was not moved. "
+                    + "Take it back from its queue instead.",
+                    Session: null);
+            }
+
+            if (old.Files.Count > 0)
+            {
+                return new SessionSayOutcome(
+                    SessionSayRefusal.Files,
+                    $"Word `{named}` on session `{id}` came with files, which are that session's, so it was not moved: say it to session `{head.Id}` "
+                    + "with them instead.",
+                    Session: null);
+            }
+
+            if (head.Id == part.Id)
+            {
+                return new SessionSayOutcome(
+                    SessionSayRefusal.AtHead, $"Word `{named}` already waits on session `{id}`, the newest part of its line, so it was not moved.", Session: null);
+            }
+
+            if (Never(head) is { } refused) return refused;
+            var parked = head.State == SessionState.AwaitingPerson;
+            if (head.Active && !parked)
+            {
+                return new SessionSayOutcome(
+                    SessionSayRefusal.Running,
+                    $"Session `{head.Id}`, the newest part of the line, is {Spell(head.State)}: words to a running session reach it through the driver "
+                    + $"that runs it, so word `{named}` was not moved.",
+                    Session: null) { MovedTo = head.Id };
+            }
+
+            await sessions.TakeSaidAsync(part.Id, [named], inside).ConfigureAwait(false);
+            var moved = new SaidWord(NewWordId(), old.Text, now, [], Reopens: old.Reopens && !parked, Channel: old.Channel, Key: key, Level: old.Level);
+            var (note, parts) = parked ? AnsweredNote(head, old.Text) : (null, null);
+            var kept = await KeepOwnersWordAsync(head, moved, note, parts, inside).ConfigureAwait(false);
+            return new SessionSayOutcome(
+                SessionSayRefusal.None,
+                $"Moved word `{named}` from session `{id}` to session `{head.Id}`, the newest part of its line, where it waits as `{moved.Id}`.",
+                kept, moved) { Taken = old, MovedTo = head.Id, Answers = parked && old.Reopens };
+        }, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>The producer's key a move keeps its word under (LINESTOGETHER1b): its part and its word there, which no other move shares.</summary>
+    public static string MoveKey(string part, string word) => $"move:{part}:{word}";
+
+    /// <summary>The answer to a move's retry (LINESTOGETHER1b): moved already, naming where its word waits or that it left, nothing kept.</summary>
+    private static SessionSayOutcome MovedAgain(string key, string record) => new(
+        SessionSayRefusal.None,
+        $"Already moved under key `{key}`: its word went to session `{record}`, and nothing more moved.",
+        Session: null) { Again = true, MovedTo = record };
+
+    /// <summary>
+    /// The record of <paramref name="start"/>'s line a word under <paramref name="key"/> waits on (LINESTOGETHER1b): forward over the walk to
+    /// its head, then back along <c>from</c>, at most <see cref="Lines.Bound"/> hops. Null where none holds one.
+    /// </summary>
+    private async Task<string?> WaitingUnderAsync(Session start, LineWalk forward, string key, CancellationToken inside)
+    {
+        bool Holds(Session record) => record.Said.Any(each => string.Equals(each.Key, key, StringComparison.Ordinal));
+        if (forward.Records.FirstOrDefault(Holds) is { } ahead) return ahead.Id;
+
+        var seen = new HashSet<string>(StringComparer.Ordinal) { start.Id };
+        var at = start;
+        for (var hops = 0; hops < Lines.Bound && at.From is { } from && seen.Add(from); hops++)
+        {
+            if (await sessions.FindAsync(from, inside).ConfigureAwait(false) is not { } before) break;
+            if (Holds(before)) return before.Id;
+            at = before;
+        }
+
+        return null;
     }
 
     /// <summary>

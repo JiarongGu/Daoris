@@ -1814,6 +1814,22 @@ public sealed class SessionStore
     }, ct);
 
     /// <summary>
+    /// The newest settlement of <paramref name="key"/> on any record, within the horizon: for a key that names its own source, a move's
+    /// (LINESTOGETHER1b), which no other producer can write. One probe on the table's key.
+    /// </summary>
+    internal Task<SettledWord?> SettledUnderAsync(string key, long since, CancellationToken ct = default) => _db.RunAsync<SettledWord?>(async () =>
+    {
+        await using var command = _db.Command();
+        command.CommandText = "SELECT session, word, key, at FROM said_settled WHERE key = $key AND at >= $since ORDER BY at DESC, session LIMIT 1";
+        command.Parameters.AddWithValue("$key", key);
+        command.Parameters.AddWithValue("$since", since);
+        await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
+        return await reader.ReadAsync(ct).ConfigureAwait(false)
+            ? new SettledWord(reader.GetString(0), reader.GetString(1), reader.GetString(2), DateTimeOffset.FromUnixTimeSeconds(reader.GetInt64(3)))
+            : null;
+    }, ct);
+
+    /// <summary>
     /// Mark the moment a dispatcher first wrote one waiting word to a harness (COWORK1c, the message-urgency design §6): before the
     /// wire, so a shell that comes up again tells a word that may have reached the agent from one that never left. Only the first
     /// mark holds. No revision, since the words never travel. False where this machine's record holds no such word.

@@ -73,6 +73,9 @@ internal static class PipeTargetRows
             LoopGround.Plan("attachments", Page, "paths").Only(p => True(Field(p, "said")) && Each(Field(p, "paths")).Any()));
         Row("SESSION_QUEUE_EDIT", Wait("SESSION_QUEUE", ["session", "id"], p => new { id = Text(p, "session") },
             (a, p) => Each(At(a, "queued")).Any(each => Text(At(each, "id")) == Text(p, "id")) ? "open" : ""));
+        // LINESTOGETHER1b: the word still held on its part, and the head it goes to as it stood.
+        Row("SESSION_QUEUE_MOVE", Wait("SESSION_QUEUE", ["session", "id"], p => new { id = Text(p, "session") },
+            (a, p) => Each(At(a, "queued")).Any(each => Text(At(each, "id")) == Text(p, "id")) ? "open" : ""), new SessionGround("to"));
         Row("SET_SESSION_OPTION", new SessionGround("id"), Setting("SESSION_OPTIONS", ["id", "option"], p => new { id = Text(p, "id") },
             (a, p) => Text(At(Each(At(a, "options")).FirstOrDefault(each => Text(At(each, "id")) == Text(p, "option")), "current")) ?? "",
             p => Text(p, "value")));

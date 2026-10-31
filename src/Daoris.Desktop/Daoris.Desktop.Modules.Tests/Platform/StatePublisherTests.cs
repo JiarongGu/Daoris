@@ -584,6 +584,7 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
     [InlineData("SESSION_GO_AHEAD", "sessions,asks", "id")]
     [InlineData("CANCEL_TURN", "sessions", "id")]
     [InlineData("SESSION_QUEUE_EDIT", "sessions", "session")]
+    [InlineData("SESSION_QUEUE_MOVE", "sessions", "session")]
     [InlineData("SET_SESSION_OPTION", "", null)]
     [InlineData("SESSION_OPTIONS", "", null)]
     [InlineData("ACCOUNT_USE", "harnesses", null)]
