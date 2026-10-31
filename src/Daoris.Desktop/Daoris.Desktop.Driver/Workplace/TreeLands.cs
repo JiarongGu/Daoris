@@ -419,6 +419,12 @@ internal sealed class TreeLands(
             return new(false, $"Nothing was landed: {bound}.") { Refusal = AutoLandingCode.Refused };
         }
 
+        // A member a combined Accept brought in lands that work no second time; a later commit is its own.
+        if (together is null && await TogetherGuard.BroughtAsync(context.Home, path, gate?.Tip, ct).ConfigureAwait(false) is { } brought)
+        {
+            return new(false, $"Nothing was landed: {brought}.") { Refusal = AutoLandingCode.Already };
+        }
+
         // FABRIC-CLOSE1h: what the door judged before it took the hold may have moved while it waited, so it judges again here, under the
         // hold and before anything is made. A refusal now stops the landing whole: no branch, no advance, no push.
         if (judged is not null && await judged(hold.Waited, ct).ConfigureAwait(false) is { } refusedNow) return refusedNow;
@@ -647,7 +653,7 @@ internal sealed class TreeLands(
                         // The record moves to the session tip this advance squashed (PROCESS1b-ii point 4); a fast-forward keeps it.
                         Squashed = branched.Squashed,
                         // FABRIC-UNITLINK1, FABRIC-CLOSE1h13: whose work this is, its unit, and the submission it was accepted on.
-                        Quest = subject.Served, Unit = unit, Submission = subject.Submission,
+                        Quest = subject.Served, Unit = unit, Submission = subject.Submission, Brought = subject.Brought,
                     }, unit));
             }
             else if (landed.Landed && tip is not null)
@@ -681,6 +687,8 @@ internal sealed class TreeLands(
                     // FABRIC-CLOSE1h11, FABRIC-CLOSE1h13: the quest its session served and the submission it was accepted on.
                     Served = subject.Served,
                     Submission = subject.Submission,
+                    // LINESTOGETHER1d: the sessions its combined Accept brought in, in the same write.
+                    Brought = subject.Brought,
                 }));
             }
 
