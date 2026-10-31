@@ -1268,9 +1268,37 @@ if (!done.ok) throw new Error(done.text);
     Boolean(record?.id) && new RegExp(`${record.id} ${questId} newcomer completed stub`).test(ended),
     ended || '(no ended.log)');
 
-  // The browser the driver brought up for the session's server: the install's own application,
-  // started with the browser's argument (CHR8, D99), on the profile under this run's home, and the
-  // session was handed its server rather than told it was withheld.
+  // BROWSERSTART1: a session's start brings up no browser, and hands the server the shell's held endpoint, a loopback
+  // port the shell listens on beyond its host's and its debug port. The browser comes up at the first connection to it,
+  // as an agent's server connects to drive a page; that connection is made here, and the browser is judged after it.
+  check('the session’s start brought up no browser from the install’s application',
+    browsersAt(shellExe).length === 0, browsersAt(shellExe).join(', '));
+  const shellPid = applicationsAt(shellExe)[0];
+  const heldPorts = shellPid === undefined ? [] : powershell(
+    `Get-NetTCPConnection -State Listen -OwningProcess ${shellPid} -ErrorAction SilentlyContinue | `
+    + "Where-Object { $_.LocalAddress -eq '127.0.0.1' } | ForEach-Object { $_.LocalPort }")
+    .split('\n').map((line) => Number(line.trim()))
+    .filter((port) => Number.isInteger(port) && port > 0 && port !== cdpPort && port !== shellPort);
+  check('…and the session was handed the browser’s endpoint, a port the shell holds',
+    heldPorts.length > 0, `listening for the application (pid ${shellPid}) besides its own ports: none`);
+  let reached = null;
+  for (const port of heldPorts) {
+    for (let attempt = 0; attempt < 30 && reached === null; attempt += 1) {
+      try {
+        const answer = await fetch(`http://127.0.0.1:${port}/json/version`, { signal: AbortSignal.timeout(20000) });
+        if (answer.ok && (await answer.json())?.webSocketDebuggerUrl) reached = port;
+      } catch { /* the browser is coming up, or this port is not the held endpoint */ }
+      if (reached === null) await sleep(1000);
+      if (reached === null && heldPorts.length > 1) break;
+    }
+    if (reached !== null) break;
+  }
+  check('the first connection to the handed endpoint reached a browser',
+    reached !== null, `tried ${heldPorts.join(', ') || '(no port)'}`);
+
+  // The browser that connection brought up: the install's own application, started with the browser's argument
+  // (CHR8, D99), on the profile under this run's home, and the session was handed its server rather than told it was
+  // withheld.
   const browsers = browsersAt(shellExe);
   const browserLine = browsers.length
     ? powershell(`(Get-CimInstance Win32_Process -Filter "ProcessId = ${browsers[0]}").CommandLine`).trim()

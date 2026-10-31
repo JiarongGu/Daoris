@@ -128,6 +128,12 @@ repository.
 - **Root cause:** the hand-over called `EnsureAsync`, which starts the browser, to learn the endpoint.
 - **Fix:** it asks `EndpointAsync`; the shell hands a held port (`LazyEndpoint`) that starts the browser at the first connection.
 - **Verify:** hand-over, quest-start and chat tests red then green; relay tests.
+## 2026-10-31 - The deployment rehearsal still held CHR8's browser at a session's start (DEPLOYBROWSER1)
+
+- **Symptom:** the CI stage's `deployment` gate failed section 5: no browser from the install's application after the driven session, none on its profile, no engine.
+- **Root cause:** the rehearsal that holds CHR8's behaviour (a browser up at the hand-over) runs only in a CI stage, so BROWSERSTART1's deliberate change passed every gate it met.
+- **Fix:** section 5 now checks no browser at the session's start, a port the shell holds as the handed endpoint, a `json/version` connection to it as an agent's server would make, and only then the three browser checks.
+- **Verify:** `npm run rehearse:deploy`, section 5.
 ## 2026-10-31 - A terminal chat's running turn read idle in the window (CLITURN1)
 
 - **Symptom:** a capture showed idle during a terminal's turn; the window's stop was refused as "no door".
