@@ -77,8 +77,15 @@ public sealed class LineageBracketTickTests : IDisposable
         using var within = LineageTokens.Within(tokens);
         using var closing = new CancellationTokenSource();
 
+        // Kept late in every run, as load makes it: the run's first step past the spawn is answered only once the agent has started.
+        // The loop closes once the run is working, its next step its wait; an agent started is not yet a run waiting on it.
+        var agentStarted = new TaskCompletionSource();
+        service.ActorKeptAfter = agentStarted.Task;
+
         var tick = Driver(service, told, hangs: true).RunOnceAsync(closing.Token);
         await Poll.Until(() => File.Exists(told) && File.ReadAllText(told).Trim().Length > 0, () => "the agent never started", Poll.Patience);
+        agentStarted.SetResult();
+        await Poll.Until(() => service.Session("s1")["state"]!.GetValue<string>() == "working", () => "the run never worked", Poll.Patience);
         await closing.CancelAsync();
         try { await tick.WaitAsync(Poll.Patience); } catch (OperationCanceledException) { }
 
