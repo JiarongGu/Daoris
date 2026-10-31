@@ -122,3 +122,19 @@ None separate from the remaining recovery gap above. Nothing changed; no `local/
 **BLOCKING: Daoris's own replays move bound branches.** The repository's sync press (`TreeSync.cs:220-242`, reached from `LinesRoutes.cs:554`, `TreesConsole.cs:278` and the helper's sync proposal) and a tree's update (`TreeUpdates.cs:101`) take only the tree lock and read no binding; both rebase ended session branches onto a moved line, row 1d's own fixture. After *checked* that moves the head's pinned tip, so the Accept lands nothing and the operation sits at *ready to accept* with its members bound. Change: every holder of the tree lock alone that rewrites a branch reads the bindings under the record lock and leaves a bound tree as it stands, naming its operation; a head moved after *checked* goes back to *checking*. Proof: a sync press and a tree update on a moved line while an operation is bound.
 
 **Named, not blocking:** say how a path the line's rules settle is accounted (generated files, the declared backlog, row tables, `LineHolds.cs:150-188`), or §3's own example, two sessions changing `TASKS.md`, reads *missing*; name the look's integration run as a second settler of a merge waiting on the line's run (`IntegrationPresses.cs:33`); a discard with no service takes no tree lock (`TreeRemovals.cs:52`), so its read of the bindings must not depend on it.
+
+### The steward's settlement of the door
+
+The Opus maker accepted the door after named changes; Codex's one remaining gap (the landing attempt's recovery correlation) and the Opus maker's blocking and named findings were taken into §4 and row 1d, and Codex checked the gap closed with nothing new blocking:
+
+> **Yes—the gap is closed as a design contract.**
+> 
+> - `docs/2026-10-31-review-flow-design.md:163–166` durably records the attempt within its operation before effects: target ref, expected tip, replayed tip, then resulting tip and the exact admitted integration request, read by ID.
+> - `:173–178` reconciles missing records against the correlated attempt’s git effects. Only a proved unmade attempt returns to *ready to accept*; unresolved cases remain *uncertain*, with members bound.
+> - Row 1d at `:230–231` requires interruption proofs after ref creation before record persistence, and after merge admission before correlation is saved.
+> 
+> **Nothing new blocks this named change.** Implementation and those proofs remain required.
+> 
+> Read only; nothing changed; no `local/` directory read.
+
+The design is accepted in full under D191.

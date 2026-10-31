@@ -1,8 +1,8 @@
 # REVIEWFLOW1 and LINESTOGETHER1: a session's page as one flow, and its lines brought together
 
 **Standing:** a synthesis, 2026-10-31, revised that day on both makers' reads (`2026-10-31-review-flow-reads.md`): accepted under D191
-for every row but LINESTOGETHER1d (REVIEWFLOW1a built); the door's section (§4, rows 1d, 1e, REVIEWFLOW1c) revised once more on
-Codex's second read, to be read again. The steward's, from the brief
+in full (REVIEWFLOW1a built); the door's section (§4, rows 1d, 1e, REVIEWFLOW1c) accepted after its round-3 named changes, which
+Codex checked closed. The steward's, from the brief
 and the sealed proposals of the Opus maker (O) and Codex (X); claims checked at `5c40345f7`. Paths: the web's under `src/Daoris.Web/src/`,
 the driver's and modules' under `src/Daoris.Desktop/`, the service's under `src/Daoris.Service/Daoris.Service.Core/`.
 **Governing:** D167 (its 2026-10-15 amendment), D168, D87, D137, D150, D209, D212, D215.
