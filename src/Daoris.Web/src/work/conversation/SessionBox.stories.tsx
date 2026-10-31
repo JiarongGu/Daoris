@@ -258,5 +258,29 @@ export const EndedWithWordsWaitingNarrow: Story = { args: EndedWithWordsWaiting.
 /** Its turn running with a held word, in 中文 at the floor. */
 export const RunningTurnEndChineseNarrow: Story = { args: RunningTurnEndChinese.args, decorators: [sessionWidths.narrow, chinese] };
 
+/** LINESTOGETHER1b: a part beside the head, its word held, the first line saying where it goes and *Say it to the head instead*. */
+export const BesideTheHeadWithAWordHeld: Story = {
+  args: {
+    box: { kind: 'say', mode: 'goOn' }, goes: 'To this part, beside the head · after a running session here ends', onMove: () => {},
+    waiting: [{ id: 'w1', text: 'use the blue one', files: [] }],
+  },
+};
+
+/** The head itself, its turn running: the line only, no press. */
+export const TheHeadRunning: Story = {
+  args: { box: { kind: 'steer' }, held: { queued: [], taking: true }, goes: 'To part 6, the head · at its turn’s end' },
+};
+
+export const BesideTheHeadWide: Story = { args: BesideTheHeadWithAWordHeld.args, decorators: [sessionWidths.wide] };
+export const BesideTheHeadNarrow: Story = { args: BesideTheHeadWithAWordHeld.args, decorators: [sessionWidths.narrow] };
+export const BesideTheHeadChineseNarrow: Story = {
+  args: {
+    ...BesideTheHeadWithAWordHeld.args, goes: '发往本部分，在头部旁 · 本机上运行中的会话结束之后',
+    waiting: [{ id: 'w1', text: '用蓝色那个', files: [] }],
+  },
+  decorators: [sessionWidths.narrow, chinese],
+};
+export const BesideTheHeadDark: Story = { args: BesideTheHeadWithAWordHeld.args, decorators: [dark] };
+
 /** Its turn running with a held word, in dark. */
 export const RunningTurnEndDark: Story = { args: RunningTurnEnd.args, decorators: [dark] };

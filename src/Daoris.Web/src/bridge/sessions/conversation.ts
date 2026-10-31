@@ -339,6 +339,30 @@ export const useEditQueued = (session: string | null) => {
   };
 };
 
+/** What moving a held word to the head came to (LINESTOGETHER1b): `why` is the host's code, or the page's `not-known` for a lost answer. */
+export type QueueMove = { moved: boolean; why: string | null; message?: string; to?: string };
+
+/**
+ * Move one word held on a part's record to the head (LINESTOGETHER1b), in one step on the service. A refusal is data; an answer that
+ * never came is `not-known`, never moved, and asking again under the same key says what happened.
+ */
+export const useMoveQueued = () =>
+  useMutation({
+    mutationFn: async (move: { session: string; id: string; to: string }): Promise<QueueMove> => {
+      try {
+        const answer = await call<{ moved?: unknown; why?: unknown; message?: unknown; to?: unknown }>('SESSION_QUEUE_MOVE', move);
+        return {
+          moved: answer?.moved === true,
+          why: typeof answer?.why === 'string' && answer.why ? answer.why : null,
+          ...(typeof answer?.message === 'string' ? { message: answer.message } : {}),
+          ...(typeof answer?.to === 'string' ? { to: answer.to } : {}),
+        };
+      } catch {
+        return { moved: false, why: 'not-known' };
+      }
+    },
+  });
+
 /**
  * A conversation with an agent in one repository (D49 §3).
  *

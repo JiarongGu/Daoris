@@ -5,6 +5,7 @@ with the version and date at release.
 
 ## Unreleased
 
+- A session's box now says where a word goes and when before you speak (*To part 6, the head · at its turn's end*, *To this part, beside the head · after a running session here ends*), and a word held on a part beside the head has *Say it to the head instead*, which moves it in one step and says *not known whether it moved* where the answer was lost.
 - A session's page now names the other sessions of its repository whose work meets its own (*Beside it in Lyntai: 2 sessions change `TASKS.md`*), each a door to that session's head, paths a quest declares told apart from paths changed, and a session whose tree could not be read said *not read here*; the repository's Integration tab lists the same read, read-only (LINESTOGETHER1c).
 - A session in the list now opens on its head (续段), the part its line goes on in, unless a part waits on you or works; its parts strip says *Part 6 of 7 is the head · 1 beside it*, marks a part beside the head, and says no part is the head for an ask's sibling quests (LINESTOGETHER1a).
 - A session's head now says where the work stands and what comes next on its facts line: *working*, *waits on you*, *n parts to land* or *landing* (integrating and landed stay the integration and landing facts), and *next: Accept…* (or *Answer*) is a door to that step (REVIEWFLOW1b).

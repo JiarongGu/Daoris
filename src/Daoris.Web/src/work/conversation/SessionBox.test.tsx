@@ -175,6 +175,32 @@ describe('SessionBox', () => {
   });
 
   /**
+   * LINESTOGETHER1b: the box's first line says where a word goes and when, before the person speaks; a word held on a part beside
+   * the head has one press, *Say it to the head instead*, which names the word by its id. No line, no press, where the frame
+   * offers none (a part with no head).
+   */
+  it('says where a word goes, and offers a held word the move to the head', async () => {
+    const onMove = vi.fn();
+    const waiting = [{ id: 'w1', text: 'use the blue one', files: [] }];
+    const { unmount } = show({ box: { kind: 'say', mode: 'goOn' }, goes: 'To this part, beside the head · after a running session here ends', waiting, onMove });
+
+    expect(screen.getByText('To this part, beside the head · after a running session here ends')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Say “use the blue one” to the head instead' }));
+    expect(onMove).toHaveBeenCalledWith('w1');
+    unmount();
+
+    show({ box: { kind: 'say', mode: 'goOn' }, waiting });
+    expect(screen.queryByRole('button', { name: /to the head instead/ })).toBeNull();
+    expect(screen.queryByText(/To this part/)).toBeNull();
+  });
+
+  /** A word with files stays with its part: the press is not offered on it. */
+  it('offers no move on a word with files', () => {
+    show({ box: { kind: 'say', mode: 'goOn' }, waiting: [{ id: 'w1', text: 'see the shot', files: ['shot.png'] }], onMove: () => {} });
+    expect(screen.queryByRole('button', { name: /to the head instead/ })).toBeNull();
+  });
+
+  /**
    * WAITFOOT2c (D168): a park's answer box and its waiting words are one box, so the words fold to one line with their count
    * inside the box's frame, and open to *Edit* and *Remove* on a press.
    */

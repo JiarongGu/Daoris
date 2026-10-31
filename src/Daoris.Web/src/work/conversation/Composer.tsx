@@ -94,8 +94,10 @@ export function Composer({
   live, sending = false, refusal, endings = true, draft, onDraft, carried, onCarry,
   queued = [], queuedLabel, taking = false, opening = false, stoppable = false, stopping = false, mentions, onMentioning, context, placeholder,
   attachments = true, sendLabel, stopTurnLabel, stopTurnTip, offered, optionsBusy = false, onOption, onSend, onFinish, onStop, onStopTurn,
-  levels, onLevel, onKeepingStop, focus = 0, accepts, onRemove, onEdit, going, fold = false, answers, ready = false,
+  levels, onLevel, onKeepingStop, focus = 0, accepts, onRemove, onEdit, onMove, going, fold = false, answers, ready = false,
 }: {
+  /** Say a waiting word to the line's head instead, by its id (LINESTOGETHER1b): a press on a word with no files. Absent, none. */
+  onMove?: (id: string) => void;
   /**
    * Something beside the words is ready to go with them (QUESTIONUI1a): an answer selected in a park's question, so *Send* and Enter
    * send with the field empty too. The caller makes the message of it.
@@ -455,8 +457,18 @@ export function Composer({
                 <Words message={message} />
                 {/* The level named only where it is not quiet (the design §8.2): the person's own word sent now. A word, never a hue. */}
                 {message.level === 'now' && <span className="shrink-0"><Chip>{t('work.level.now')}</Chip></span>}
-                {message.id && (onRemove || onEdit || (onLevel && leveled)) && (
+                {message.id && (onRemove || onEdit || onMove || (onLevel && leveled)) && (
                   <span className="flex shrink-0 items-center gap-1">
+                    {onMove && message.files.length === 0 && (
+                      <Button
+                        type="button" variant="ghost"
+                        aria-label={t('work.say.moveToHeadItem', { text: message.text })}
+                        onClick={() => onMove(message.id!)}
+                        className="h-6 px-1.5 text-meta"
+                      >
+                        {t('work.say.moveToHead')}
+                      </Button>
+                    )}
                     {onLevel && leveled && (
                       <Menu.Root>
                         <Menu.Trigger asChild>

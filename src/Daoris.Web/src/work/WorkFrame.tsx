@@ -7,7 +7,7 @@ import type { Compose, OpenGroup } from '../app/opener';
 import { SESSIONS_SLICE, useAnswerSession, useAsks, usePersonDone, useQuests, useRegistry, useSessions } from '../data/queries';
 import { usePushedResyncing } from '../bridge/state/slices';
 import {
-  type TurnStop, useCancelTurn, useEditQueued, useEndChat, useHarnesses, useResolveSession, useSendMessage,
+  type TurnStop, useCancelTurn, useEditQueued, useMoveQueued, useEndChat, useHarnesses, useResolveSession, useSendMessage,
   NO_TURNS, useChatTurns, useSessionEntries, useSessionGroups, useSessionOpenings, useSessionOptions, useSessionRecord, useSessionRelated, useSessionSpent, useSessionStreams, useSessionWhere,
   useSetSessionOption, useStartChat, useStopTask, useSweepPlan, useTreeFiles, useTreeFile, useReviewedPatch,
   logEvent, useTerminals, useRemotes, useWorkPlan, useSay, useSessionReach, useStartFrom, useGoOnBrief, type WordsAnswer,
@@ -49,7 +49,7 @@ import { accountNames } from './accountNames';
 import { type ChatLimitHeld, chatLimitWaitSaid, limitedLine, limitWaitOf, limitWaitSaid } from './waits/limitWait';
 import { LimitWaitLine } from './waits/LimitWaitLine';
 import {
-  boxOf, coolingFor, goOnBriefRefusal, levelsOf, NATIVE_WORDS_LIMIT, neverSentence, type NewSessionAnswer, startFromRefusal, takesWords, tooLong,
+  boxOf, coolingFor, goesLine, goOnBriefRefusal, levelsOf, moveSaid, NATIVE_WORDS_LIMIT, neverSentence, type NewSessionAnswer, startFromRefusal, takesWords, tooLong,
 } from './say';
 import { SessionBox } from './conversation/SessionBox';
 import { askOf, pauseAsk, wiredFor, type WorkTarget } from './pausing/pausing';
@@ -82,7 +82,7 @@ import { dockOpensOn, type DockTab, followed, NothingFollowed, RightDock } from 
 import { SessionTimeline } from './head/SessionTimeline';
 import { SessionRail } from './rail/SessionRail';
 import { type ActFacts, actMenu, headerActs, offeredActs, primaryAct, stopAsk } from './acts';
-import { askOfEntry, entryOfSession, isIntakeEntry, nameOfEntry } from './entries';
+import { askOfEntry, entryOfSession, isIntakeEntry, nameOfEntry, placeOf } from './entries';
 import { useAccountUse, useChannel, useForwardChannel, usePostChannel } from '../bridge/shell';
 import { keptSessionFilters, sessionFilters, shownOf } from './groups';
 import { leadingAgentOf, nextPress, type SessionFactsOf, sessionFacts, sessionFactsTip } from './head/headFacts';
@@ -564,6 +564,24 @@ export function WorkFrame({
   // (D137 §2.4), so the box stays.
   const reach = useSessionReach(attended && here && !oneTurn ? attended : null, steering);
   const box = boxOf({ session: attended, here, intake, listening: steering, reach });
+  // LINESTOGETHER1b: where a word goes in a line with a head, and the press moving a word held beside the head to it.
+  const stands = attended ? placeOf(attendedEntry, attended.id) : null;
+  const goes = stands && (box.kind === 'steer' || box.kind === 'say') ? goesLine(t, {
+    ...stands, reaches: reach?.reaches ?? null,
+    holdsWhy: (groups.data ?? []).find((row) => row.session === attended?.id)?.holds?.why,
+  }) : undefined;
+  const moveQueued = useMoveQueued();
+  const onMoveWord = stands?.place === 'beside' && attendedEntry?.head && attended && box.kind === 'say' && box.mode === 'goOn'
+    ? (word: string) => {
+      const session = attended.id;
+      moveQueued.mutate({ session, id: word, to: attendedEntry.head! }, {
+        onSuccess: (moved) => {
+          if (moved.moved) { setRefusal(null); notify(t('work.say.moved')); return; }
+          setRefusal({ session, text: moveSaid(t, moved) });
+        },
+      });
+    }
+    : undefined;
   // What the attended session's door does with a word while a turn runs (COWORK1a, D188): the levels its box offers, and the
   // keeping stop where its door can stop a turn keeping the session. Nothing known, none: the box queues as it did.
   const levels = levelsOf(reach);
@@ -2767,6 +2785,8 @@ export function WorkFrame({
               onKeepingStop={box.kind === 'steer' && keepingStop ? onKeepingStop : undefined}
               onRemove={editQueued.remove}
               onEdit={editQueued.reword}
+              goes={goes}
+              onMove={onMoveWord}
               // The conversation it went on in, by its record's title (HANDWORDS1-ii); one the frame does not hold is said by its id.
               continued={box.kind === 'line' && box.why === 'continued' && box.to
                 ? headLink((sessions.data ?? []).find((row) => row.id === box.to))
