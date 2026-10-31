@@ -139,7 +139,7 @@ public sealed class StashActs(ActJournal journal)
     private static async Task<(bool Untracked, IReadOnlyList<string> Collides)> CollisionsAsync(string root, string id, HashSet<string> tracked, CancellationToken ct)
     {
         var held = await ActWorkSteps.UntrackedOfAsync(root, id, ct).ConfigureAwait(false) ?? [];
-        var (_, added, _) = await WorkingTree.GitAsync(root, ["diff", "--name-only", "--diff-filter=A", "--no-renames", "-z", id + "^1", id], environment: null, GitBounds.Question, ct).ConfigureAwait(false);
+        var (_, added, _) = await WorkingTree.GitAsync(root, ["--no-optional-locks", "diff", "--name-only", "--diff-filter=A", "--no-renames", "-z", id + "^1", id], environment: null, GitBounds.Question, ct).ConfigureAwait(false);
         var adds = added.Split('\0', StringSplitOptions.RemoveEmptyEntries).Where(path => !tracked.Contains(path));
         return (held.Count > 0, [.. held.Concat(adds).Where(path => ActWorkSteps.Exists(root, path)).Distinct(StringComparer.Ordinal)]);
     }
