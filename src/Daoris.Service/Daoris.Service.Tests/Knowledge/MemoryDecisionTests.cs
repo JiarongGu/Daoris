@@ -120,6 +120,40 @@ public sealed class MemoryDecisionTests : IAsyncLifetime
     }
 
     /// <summary>
+    /// 🔴 What waits on the person, by session, oldest first: an end awaiting, a replacement awaiting, and a stopped session's staged rows; a
+    /// running session's staged rows, a kept or dropped row and a decided end wait on nothing of theirs.
+    /// </summary>
+    [Fact]
+    public async Task The_waits_are_the_sessions_with_an_end_a_replacement_or_stopped_rows_waiting()
+    {
+        var map = await Owner.RememberAsync("The map is drawn in tiles.");
+        var pixels = await Owner.RememberAsync("Tiles are sixteen pixels.");
+        var (ender, _) = await AwaitingAsync(map);
+        var replacer = await _machine.ChatAsync(Now.AddMinutes(10));
+        await Tools(replacer).WriteAsync("Tiles are drawn at thirty-two pixels.", supersedes: [$"Owner:{pixels.Id}@{pixels.Revision}"]);
+        await _machine.Ledger.AdvanceAsync(replacer.Id, "completed", null, null, null, Now.AddMinutes(11));
+        var stopped = await _machine.ChatAsync(Now.AddMinutes(12));
+        await Tools(stopped).WriteAsync("The legend sits under the map.");
+        await Tools(stopped).WriteAsync("The legend names the tiles.");
+        await _machine.Ledger.AdvanceAsync(stopped.Id, "stopped", null, null, null, Now.AddMinutes(13));
+        var running = await _machine.ChatAsync(Now.AddMinutes(14));
+        await Tools(running).WriteAsync("A note still being written.");
+
+        var waits = await _machine.Memory.WaitsAsync();
+
+        Assert.Equal(
+            [(ender.Id, 1, 0, 0), (replacer.Id, 0, 1, 0), (stopped.Id, 0, 0, 2)],
+            waits.Select(wait => (wait.Session, wait.Ends, wait.Replacements, wait.Staged)));
+        Assert.All(waits, wait => Assert.True(wait.Since > default(DateTimeOffset)));
+
+        await Desk.KeepAsync(stopped.Id, keep: false, Now.AddMinutes(15));
+        var end = Assert.Single(await _machine.Memory.OfSessionAsync(ender.Id));
+        await Desk.DecideAsync(end.Id, session: null, approve: false, Now.AddMinutes(15));
+
+        Assert.Equal([replacer.Id], (await _machine.Memory.WaitsAsync()).Select(wait => wait.Session));
+    }
+
+    /// <summary>
     /// 🔴 KNOWCENTRAL2e: while an end awaits, a hit on its entry says who proposed it and that it awaits the person, in a search and a read;
     /// once decided, the hit says nothing of it.
     /// </summary>

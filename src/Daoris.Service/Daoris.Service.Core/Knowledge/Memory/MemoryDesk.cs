@@ -43,8 +43,9 @@ public sealed class MemoryDesk(MemoryOpStore ops)
                     $"Refused: until a second opinion may approve an end, the person decides operation `{id}`. Nothing was decided.", awaiting);
         }
 
+        var what = awaiting.Change.Kind == MemoryOpKind.Supersede ? "replacement" : "end";
         return await ops.DecideAsync(id, Person, approve, now, ct).ConfigureAwait(false) is { } decided
-            ? new(MemoryDecisionRefusal.None, approve ? $"The end `{id}` is approved and applies next." : $"The end `{id}` is declined.", decided)
+            ? new(MemoryDecisionRefusal.None, approve ? $"The {what} `{id}` is approved and applies next." : $"The {what} `{id}` is declined.", decided)
             : new(MemoryDecisionRefusal.NotFound, $"No end awaits its approver as operation `{id}`. Nothing was decided.");
     }
 

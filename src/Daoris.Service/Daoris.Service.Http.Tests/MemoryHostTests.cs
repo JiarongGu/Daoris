@@ -66,6 +66,21 @@ public sealed class MemoryHostTests(LocalHost host) : IClassFixture<LocalHost>
         Assert.Equal(404, again.Status);
     }
 
+    /// <summary>🔴 The driver reads every memory wait in one door: the session, what waits and since when, answered to nothing off this machine.</summary>
+    [Fact]
+    public async Task Every_memory_wait_is_read_in_one_door()
+    {
+        var (session, _) = await StagedAsync(
+            new MemoryChange(MemoryOpKind.End, Text: "Keeper moved its area.", Target: "1", Revision: 1), DateTimeOffset.UtcNow);
+        Assert.Equal(200, (await host.PostAsync($"/api/sessions/{session}/state", new { state = "completed" })).Status);
+
+        Assert.Equal(404, (await host.GetAsync("/api/memory/waits", DaorisHost.OffMachine)).Status);
+        var waits = await host.GetAsync("/api/memory/waits");
+
+        var mine = Assert.Single(waits.Json.GetProperty("waits").EnumerateArray(), wait => wait.GetProperty("session").GetString() == session);
+        Assert.Equal((1, 0, 0), (mine.GetProperty("ends").GetInt32(), mine.GetProperty("replacements").GetInt32(), mine.GetProperty("staged").GetInt32()));
+    }
+
     /// <summary>
     /// 🔴 KNOWCENTRAL2f: what a line read, as the driver reads it for a hand-over's brief, is answered as it stands now: an entry ended since
     /// its session read it is answered ended, with its reason; nothing is answered off this machine.

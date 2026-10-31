@@ -20,6 +20,9 @@ public sealed class MemoryProposals(MemoryOpStore ops, QuestStore quests, QuestE
 
     public const int PacketVersion = 1;
 
+    /// <summary>A test's seam: awaited after the look found no open quest, before the publish.</summary>
+    internal Func<Task>? Looked { get; init; }
+
     /// <summary>
     /// <paramref name="change"/> on <paramref name="target"/>, proposed from <paramref name="from"/>: joined to the open quest from that
     /// repository carrying proposals to the owner, or published as a new one.
@@ -28,11 +31,14 @@ public sealed class MemoryProposals(MemoryOpStore ops, QuestStore quests, QuestE
         string from, MemoryReference target, MemoryChange change, MemoryAuthor by, DateTimeOffset now, CancellationToken ct = default)
     {
         var id = MemoryOpStore.NewId();
+        // The look for an open quest and the publish or join are one step per pair, so two at one moment cannot both publish.
+        using var turn = await ops.ProposingAsync(from, target.Repository, ct).ConfigureAwait(false);
         if (await OpenAsync(from, target.Repository, ct).ConfigureAwait(false) is { } open)
         {
             return new(await ops.ProposeAsync(id, target.Repository, change, by, open.Id, ct).ConfigureAwait(false), open, Joined: true);
         }
 
+        if (Looked is { } looked) await looked().ConfigureAwait(false);
         if (exchange is null) return new(null, null, false, "No quest can be published from here, so nothing was proposed.");
         // A quest's id is read from its sender, receiver and title, so the title names its first proposal: a later quest is its own.
         var outcome = await exchange.PublishAsync(

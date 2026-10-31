@@ -1511,6 +1511,13 @@ if (mode == ServiceMode.Local)
         return Results.Ok(new SessionMemoryResponse(await new MemoryDesk(s.Sessions.Memory).PageAsync(id, ct)));
     });
 
+    // KNOWCENTRAL2e: every memory wait on the person, for the desktop's *What needs you*.
+    app.MapGet("/api/memory/waits", async (ComposedService s, HttpContext http, CancellationToken ct) =>
+    {
+        if (!MachineLocal(http)) return Results.NotFound();
+        return Results.Ok(new MemoryWaitsResponse(await s.Sessions.Memory.WaitsAsync(ct)));
+    });
+
     // KNOWCENTRAL2f (the memory coordinator design §3, §6): what the line ending at a session read, each entry read again and its cited records
     // rechecked, for the brief of the part that continues it; what is answered is kept as the line's read. Machine-local, as the read set is.
     app.MapPost("/api/sessions/{id}/memory/read", async (string id, ComposedService s, HttpContext http, CancellationToken ct) =>

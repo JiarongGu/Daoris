@@ -45,6 +45,8 @@ public sealed class PersonDoorTableTests
         ("GET", "/api/sessions/{id}/record", Open),
         // KNOWCENTRAL2d: a session's memory changes for its record's page; a local host's read.
         ("GET", "/api/sessions/{id}/memory", Open),
+        // KNOWCENTRAL2e: every memory wait on the person; a local host's read.
+        ("GET", "/api/memory/waits", Open),
         // HANDBACK1: one quest's handback whole, by the quest's id or its session's; a local host's read.
         ("GET", "/api/handbacks/{id}", Open),
         ("GET", "/api/history", Open),
@@ -195,7 +197,7 @@ public sealed class PersonDoorTableTests
         // and one quest's handback, a read (HANDBACK1), and the event journal's rows after a position, a read (FOUNDATION1 l-i), and a session's finished tree's record, a read (KEEPSIZE1),
         // and the person's move of a held word to the head (LINESTOGETHER1b), and a session's memory changes, a read, and the person's
         // decision of a memory end and Keep or Drop of an ended session's staged changes (KNOWCENTRAL2d).
-        Assert.Equal(34, Routes.Count(route => route.Class == Open));
+        Assert.Equal(35, Routes.Count(route => route.Class == Open));
         Assert.Equal(4, Routes.Count(route => route.Class == Agent));
         Assert.Equal(31, Routes.Count(route => route.Class == Driver));
         Assert.Equal(36, Routes.Count(route => route.Class == Person));

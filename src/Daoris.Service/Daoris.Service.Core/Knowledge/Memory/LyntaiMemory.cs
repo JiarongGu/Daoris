@@ -74,6 +74,7 @@ public sealed class LyntaiMemory : IMemoryEngines
                     new GraphMemoryOptions
                     {
                         ReinforceOn = key.Item2 == MemoryReinforcement.None ? MemoryReinforcementActs.None : MemoryReinforcementActs.All,
+                        ReceiptRetention = MemoryApplier.ReceiptRetention,
                     },
                     new GraphMemorySeams { Clock = _time.GetUtcNow }),
                 Store));

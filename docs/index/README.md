@@ -38,7 +38,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/agents/AgentsView.test.tsx` | 117 | 2251 |
 | `src/Daoris.Web/src/agents/agents.test.ts` | 42 | 730 |
 | `src/Daoris.Web/src/app/App.test.tsx` | 45 | 866 |
-| `src/Daoris.Web/src/app/App.tsx` | 91 | 1568 |
+| `src/Daoris.Web/src/app/App.tsx` | 91 | 1571 |
 | `src/Daoris.Web/src/app/pushedState.test.tsx` | 69 | 1463 |
 | `src/Daoris.Web/src/bridge/sessions/sessions.ts` | 54 | 1046 |
 | `src/Daoris.Web/src/data/api.ts` | 55 | 914 |
@@ -62,11 +62,11 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/work/WorkFrame.tsx` | 168 | 2897 |
 | `src/Daoris.Web/src/work/WorkFrame.words.test.tsx` | 52 | 953 |
 | `src/Daoris.Web/src/work/attention/AttentionBand.test.tsx` | 54 | 879 |
-| `src/Daoris.Web/src/work/attention/AttentionRow.test.tsx` | 43 | 828 |
-| `src/Daoris.Web/src/work/attention/AttentionRow.tsx` | 40 | 705 |
+| `src/Daoris.Web/src/work/attention/AttentionRow.test.tsx` | 44 | 842 |
+| `src/Daoris.Web/src/work/attention/AttentionRow.tsx` | 41 | 709 |
 | `src/Daoris.Web/src/work/attention/attention.stories.tsx` | 44 | 980 |
-| `src/Daoris.Web/src/work/attention/attention.test.ts` | 72 | 1198 |
-| `src/Daoris.Web/src/work/attention/attention.ts` | 57 | 1057 |
+| `src/Daoris.Web/src/work/attention/attention.test.ts` | 73 | 1223 |
+| `src/Daoris.Web/src/work/attention/attention.ts` | 59 | 1083 |
 | `src/Daoris.Web/src/work/conversation/ConversationView.test.tsx` | 74 | 1388 |
 | `src/Daoris.Web/src/work/conversation/ConversationView.tsx` | 45 | 912 |
 | `src/Daoris.Web/src/work/conversation/conversation.test.ts` | 74 | 1375 |
@@ -195,7 +195,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Review/Domain/OpinionGate.cs` | 41 | 707 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Review/Heavy/HeavyExecutor.cs` | 42 | 856 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Roles/QuestionSupervisorDecisions.cs` | 48 | 861 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Service/ServiceClient.cs` | 190 | 3318 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Service/ServiceClient.cs` | 191 | 3333 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Settings/DriverChoicesCommand.cs` | 50 | 853 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Settings/DriverConfig.cs` | 104 | 1734 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Settings/LandingKey.cs` | 40 | 676 |
@@ -234,7 +234,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Bridge/DriverModuleConversationTests.cs` | 64 | 1166 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Bridge/DriverModuleLinesTests.cs` | 44 | 734 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Bridge/DriverModuleSessionsTests.cs` | 73 | 1223 |
-| `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Loop/AttentionStateSliceTests.cs` | 114 | 1997 |
+| `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Loop/AttentionStateSliceTests.cs` | 116 | 2025 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Platform/InstancePipeTests.cs` | 44 | 825 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Platform/PipeConfirmTests.cs` | 81 | 1492 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Platform/PipeStandingTests.cs` | 46 | 857 |
@@ -246,8 +246,8 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/LinesRoutes.cs` | 66 | 1060 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/SessionsRoutes.cs` | 78 | 1221 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/TreesRoutes.cs` | 71 | 1176 |
-| `src/Daoris.Desktop/Daoris.Desktop.Modules/Loop/DriverLoop.cs` | 94 | 1613 |
-| `src/Daoris.Desktop/Daoris.Desktop.Modules/Loop/NeedsAPerson.cs` | 52 | 859 |
+| `src/Daoris.Desktop/Daoris.Desktop.Modules/Loop/DriverLoop.cs` | 94 | 1619 |
+| `src/Daoris.Desktop/Daoris.Desktop.Modules/Loop/NeedsAPerson.cs` | 54 | 881 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Loop/SessionWords.cs` | 70 | 1336 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Platform/InstancePipe.cs` | 101 | 1994 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Platform/StandingConfirmation.cs` | 93 | 1710 |
@@ -260,7 +260,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Service/Daoris.Service.Core/Asks/Channel.cs` | 70 | 1227 |
 | `src/Daoris.Service/Daoris.Service.Core/Asks/History.cs` | 42 | 842 |
 | `src/Daoris.Service/Daoris.Service.Core/Knowledge/KnowledgeService.cs` | 82 | 1611 |
-| `src/Daoris.Service/Daoris.Service.Core/Knowledge/Memory/MemoryOps.cs` | 47 | 845 |
+| `src/Daoris.Service/Daoris.Service.Core/Knowledge/Memory/MemoryOps.cs` | 51 | 903 |
 | `src/Daoris.Service/Daoris.Service.Core/Quests/QuestExchange.cs` | 167 | 2947 |
 | `src/Daoris.Service/Daoris.Service.Core/Quests/QuestLog.cs` | 54 | 848 |
 | `src/Daoris.Service/Daoris.Service.Core/Quests/Quests.cs` | 276 | 4675 |
@@ -269,9 +269,9 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Service/Daoris.Service.Core/Sessions/WorkRecords.cs` | 44 | 812 |
 | `src/Daoris.Service/Daoris.Service.Http.Tests/ConfirmationTests.cs` | 57 | 1016 |
 | `src/Daoris.Service/Daoris.Service.Http.Tests/LocalHostTests.cs` | 170 | 2786 |
-| `src/Daoris.Service/Daoris.Service.Http/ApiContracts.cs` | 88 | 1015 |
-| `src/Daoris.Service/Daoris.Service.Http/PersonDoors.cs` | 43 | 658 |
-| `src/Daoris.Service/Daoris.Service.Http/Program.cs` | 192 | 3207 |
+| `src/Daoris.Service/Daoris.Service.Http/ApiContracts.cs` | 88 | 1017 |
+| `src/Daoris.Service/Daoris.Service.Http/PersonDoors.cs` | 43 | 660 |
+| `src/Daoris.Service/Daoris.Service.Http/Program.cs` | 193 | 3214 |
 | `src/Daoris.Service/Daoris.Service.Tests/Asks/HistoryDeskTests.cs` | 46 | 864 |
 | `src/Daoris.Service/Daoris.Service.Tests/Knowledge/IndexEntriesTests.cs` | 50 | 983 |
 | `src/Daoris.Service/Daoris.Service.Tests/Mcp/McpToolsTests.cs` | 53 | 915 |

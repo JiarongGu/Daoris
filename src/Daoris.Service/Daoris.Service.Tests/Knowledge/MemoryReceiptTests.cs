@@ -97,6 +97,29 @@ public sealed class MemoryReceiptTests : IAsyncLifetime
     }
 
     /// <summary>
+    /// 🔴 A row killed in <c>applying</c> whose receipt could have expired before the next start (Lyntai keeps them thirty days) is held for
+    /// the person, not applied again; one inside the span is still applied again.
+    /// </summary>
+    [Fact]
+    public async Task A_key_whose_receipt_may_have_expired_is_held_not_replayed()
+    {
+        var late = await ReadyAsync(new MemoryChange(MemoryOpKind.Write, Text: "Tiles are sixteen pixels."));
+        var soon = await ReadyAsync(new MemoryChange(MemoryOpKind.Write, Text: "The legend sits under the map."));
+        Assert.True(await _machine.Memory.BeginAsync(late.Id, Now.AddMinutes(5)));
+        Assert.True(await _machine.Memory.BeginAsync(soon.Id, Now.AddDays(20)));
+        var clock = new MovedClock();
+        clock.Advance(TimeSpan.FromDays(42));
+
+        await _machine.RestartAsync();
+        await new MemoryApplier(_machine.Memory, _lyntai.Memory, clock).StartAsync();
+
+        Assert.Equal(
+            (MemoryOpState.Held, MemoryOpState.Applied),
+            ((await _machine.Memory.FindAsync(late.Id))!.State, (await _machine.Memory.FindAsync(soon.Id))!.State));
+        Assert.Equal(1, await _lyntai.CountAsync("Owner"));
+    }
+
+    /// <summary>
     /// 🔴 An end killed in <c>applying</c> after the engine ended the entry under its key settles <c>applied</c> by the receipt, however its
     /// reason reads.
     /// </summary>

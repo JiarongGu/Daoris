@@ -62,7 +62,7 @@ public static class NoticesRead
         ["parked"] = "holding", ["parked-quest"] = "holding", ["steward-stopped"] = "holding", ["request-declined"] = "holding", ["go-ahead"] = "holding", ["permission"] = "holding",
         ["answer"] = "holding", ["confirmation"] = "holding", ["trust"] = "holding", ["account-wait"] = "holding",
         ["signed-out"] = "holding", ["quiet"] = "holding", ["helper-ended"] = "holding", ["proposal"] = "word", ["intake"] = "word", ["departure"] = "word", ["set-up"] = "word",
-        ["opinion"] = "word", ["rule"] = "word", ["helper"] = "word", ["hand-over"] = "word", ["work"] = "word",
+        ["opinion"] = "word", ["rule"] = "word", ["helper"] = "word", ["hand-over"] = "word", ["work"] = "word", ["memory"] = "word",
         ["space"] = "word", ["unanswerable"] = "word", ["git-held"] = "word", ["review"] = "ready",
     };
 

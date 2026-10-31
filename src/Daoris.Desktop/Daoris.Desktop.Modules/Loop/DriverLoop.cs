@@ -583,6 +583,9 @@ public sealed class DriverLoop(
     /// </summary>
     public ServiceConfirmations ServiceConfirmations { get; } = new(eventBus, log);
 
+    /// <summary>The memory changes that wait on the person (KNOWCENTRAL2e), read from the service on a poll of the loop's own; <i>What needs you</i> judges them.</summary>
+    public MemoryWaits MemoryWaits { get; } = new(eventBus, log);
+
     /// <summary>
     /// The second-opinion gates the last tick judged (XAGENT1g3), replaced whole each tick: what <c>OPINION_WAITS</c> answers, as of
     /// that tick, at most one poll old. Null before the first.
@@ -818,6 +821,9 @@ public sealed class DriverLoop(
         // NOTIFY2j: the presses waiting at the service's door, told to the windows from one wait on the service, held by every loop
         // on the home whoever holds its lease, since the windows are this process's either way. It ends with the loop.
         _ = Task.Run(() => ServiceConfirmations.RunAsync(service.Confirmations, ct), ct);
+
+        // KNOWCENTRAL2e: the memory changes that wait on the person, read on a poll, by every loop on the home for the same reason.
+        _ = Task.Run(() => MemoryWaits.RunAsync(service, ct), ct);
 
         // FOUNDATION1 l-i (the foundation design §4.1): the service's journal read from this process's come-up, whoever holds the lease, so an end
         // a headless loop drove reaches this window's slices as a conversation's own does. It ends with the loop.
