@@ -109,6 +109,38 @@ export const LINES: { lines: RepositoryLine[]; landings: RepositoryLanding[] } =
 
 export const DRIVER = { drivable: ['engine', 'site'], holds: [] as string[] };
 
+/**
+ * A structure past 24 nodes (COMPANYVIEW1f): aurora's eight repositories and borealis's six each with a building role of its own, two
+ * more of aurora's taking this machine's, so each workspace folds to one node.
+ */
+export function largeStructure(): { structure: RoleStructure; registry: { repository: string; workspace?: string }[] } {
+  const own = [...Array.from({ length: 8 }, (_, n) => ['aurora', `aurora-${n + 1}`]), ...Array.from({ length: 6 }, (_, n) => ['borealis', `borealis-${n + 1}`])];
+  const taking = [['aurora', 'aurora-docs'], ['aurora', 'aurora-site']];
+  const roleFor = (repository: string) => roleOf(`${repository}-build`, `${repository} build`, `${repository} 开发`, { kind: 'repository', id: repository }, 1);
+  const buildAt = (role: ReturnType<typeof roleOf>) => [work('build', role, [choice('claude-code', 'ready', { model: 'sonnet' })])];
+  return {
+    structure: {
+      works: ['build'],
+      roles: [
+        { id: 'build', state: 'seed', seeded: true, nameEn: 'Build', nameZh: '开发', takes: ['build'], scopeKind: 'machine', revision: 0 },
+        ...own.map(([, repository]) => ({
+          id: `${repository}-build`, state: 'set' as const, seeded: false, nameEn: `${repository} build`, nameZh: `${repository} 开发`, takes: ['build'],
+          scopeKind: 'repository', scopeId: repository, revision: 1,
+        })),
+      ],
+      places: [
+        { works: buildAt(BUILD) },
+        { workspace: 'aurora', works: buildAt(BUILD) },
+        { workspace: 'borealis', works: buildAt(BUILD) },
+        ...own.map(([workspace, repository]) => ({ workspace, repository, works: buildAt(roleFor(repository!)) })),
+        ...taking.map(([workspace, repository]) => ({ workspace, repository, works: buildAt(BUILD) })),
+      ],
+      agents: [{ agent: 'claude-code', known: true, installed: true, version: '2.1.4' }],
+    },
+    registry: [...own, ...taking].map(([workspace, repository]) => ({ repository: repository!, workspace })),
+  };
+}
+
 export const WORKFLOWS: Record<string, WorkflowRead> = {
   engine: { read: 'ok', steps: 5, integration: 'proposed' },
   site: { read: 'ok', steps: 4, integration: 'none' },

@@ -47,7 +47,7 @@ export function foldGroups<E extends GroupShape['edges'][number]>(
 ): { nodes: { id: string; fold: GroupFold | null }[]; edges: E[]; foldOf: Map<string, string> } {
   const foldOf = new Map(folds.flatMap((fold) => fold.members.map((member) => [member, fold.id] as const)));
   const byId = new Map(folds.map((fold) => [fold.id, fold]));
-  const nodes = shape.nodes.flatMap((node) => {
+  const nodes = shape.nodes.flatMap((node): { id: string; fold: GroupFold | null }[] => {
     const fold = foldOf.get(node.id);
     if (fold === undefined) return [{ id: node.id, fold: null }];
     return byId.get(fold)!.members[0] === node.id ? [{ id: fold, fold: byId.get(fold)! }] : [];
