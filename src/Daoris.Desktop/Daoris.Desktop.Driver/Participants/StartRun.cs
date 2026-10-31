@@ -11,6 +11,9 @@ namespace Daoris.Driver;
 /// <param name="Cooling">The account's cool-off, when that is what held it (TOOL4d): what the report's waits are gathered from.</param>
 internal sealed record StartRun(string Line, bool Opened, SessionEnded? Ended = null, string? Held = null, CoolingEntry? Cooling = null)
 {
+    /// <summary>The account this start was refused for its sign-in and marked, whose quest the same start tries once more on another (LIMITPICK2), or null.</summary>
+    public string? SignedOutOn { get; init; }
+
     /// <summary>The accounts a held start passed because they are not signed in (TOOL6g), or null.</summary>
     public SignedOutAccounts? SignedOut { get; init; }
 
