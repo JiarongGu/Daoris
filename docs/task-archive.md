@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## GITTXN1 — one typed transaction per ref act (2026-10-31)
+
+> **GITTXN1 — one typed transaction per ref act** (driver; found at GITAPP2's Codex read, 2026-10-31, R2-12, R2-13, round-1 22). A builder producing exactly one `update-ref --stdin` operation per ref, with its expectation on create, update and delete, untouched dependencies verified, identical expectations deduplicated, contradictions and aliases refused; and each operation's conditional rollback (a delete restored only where absent, a rewrite only from its produced tip, a rename reversed checking both names), uncertainty reported when a condition fails. Today's specialized delete (`Workplace/ContentHolds.cs:430`, `:495`) moves onto it unchanged in behaviour. Proof: success, self-rest, alias, contradiction, each expectation independently refusing movement; the rollbacks' conditions; the content holds' tests unchanged.
+
+Completed 2026-10-31: `Workplace/RefTransaction.cs` builds the transaction (create, update, delete, verify; duplicates, contradictions, case aliases, non-full names and symbolic refs refused before git runs) with its conditional rollbacks (`RestoreDeleted`, `RestoreRewritten`, `Rename`/`ReverseRename`, `RollBackAsync` saying nothing moved). The content holds' judged delete, recovery-ref drops and put-back run on it, behaviour unchanged. Tests: `RefTransactionTests`, `RefTransactionGitTests`. D204 carries a dated note; nothing is exposed to a person.
+
 ## COMPANYVIEW1f — the diagram (2026-10-31)
 
 > **1f: the diagram** (web). Placement with the column bound, the workspace fold (new), lit paths, the detail and the flowchart's keys (§3.7); an appointed node selects its section. Playwright reads every edge clear of nodes at 80rem, and the rail at 39 and 25rem; one Narrator pass. After 1d and 1e. (`docs/2026-10-31-company-view-design.md` §4 and §7 row 6; the COMPANYVIEW1 row stays open.)
