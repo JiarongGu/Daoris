@@ -42,6 +42,12 @@ public sealed record MemoryKeyReceipt(string Key, string? Entry, long? Revision)
 /// <summary>An entry not confirmed since a sweep's instant, with the re-check text it was written with (the design §3).</summary>
 public sealed record MemoryDue(string Id, long Revision, string Recheck);
 
+/// <summary>An entry a replacement ends, and the revision its approver read (the design §6 A).</summary>
+public sealed record MemoryPredecessor(string Entry, long Revision);
+
+/// <summary>What a replacement did: applied, its successor current and every predecessor ended by it; or nothing changed.</summary>
+public sealed record MemorySuperseded(bool Applied, MemoryEntry? Successor);
+
 /// <summary>
 /// One repository's memory engine (Lyntai's, from KNOWCENTRAL2d): the reads every memory tool makes, and the writes only the service
 /// makes once a change is released. A write carrying <c>key</c> leaves a receipt where the engine <see cref="HoldsReceipts"/>.
@@ -68,6 +74,19 @@ public interface IMemoryEngine
 
     /// <summary>The entry ended at <paramref name="revision"/>; null where it is gone, ended, or at another revision.</summary>
     Task<MemoryEntry?> EndAsync(string id, long revision, string reason, CancellationToken ct = default, string? key = null);
+
+    /// <summary>
+    /// The successor written and every predecessor ended by it, in one change (Lyntai's MC12, the design §6 A); nothing changed where a
+    /// predecessor is gone, ended, or at another revision. A repeat with <c>key</c> answers what the key applied and changes nothing.
+    /// </summary>
+    /// <exception cref="NotSupportedException">An engine that cannot apply the pair as one change.</exception>
+    Task<MemorySuperseded> SupersedeAsync(
+        string text, IReadOnlyList<MemoryPredecessor> predecessors, string reason, CancellationToken ct = default, string? key = null,
+        string? recheck = null) =>
+        throw new NotSupportedException("This memory cannot replace an entry in one change.");
+
+    /// <summary>Whether <see cref="SupersedeAsync"/> applies as one change.</summary>
+    bool HoldsSupersession => false;
 
     /// <summary>Whether a keyed write leaves a receipt a repeat answers.</summary>
     bool HoldsReceipts => false;

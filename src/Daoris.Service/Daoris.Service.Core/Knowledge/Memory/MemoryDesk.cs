@@ -28,7 +28,7 @@ public sealed class MemoryDesk(MemoryOpStore ops)
     /// </summary>
     public async Task<MemoryDecisionOutcome> DecideAsync(string id, string? session, bool approve, DateTimeOffset now, CancellationToken ct = default)
     {
-        if (await ops.FindAsync(id, ct).ConfigureAwait(false) is not { State: MemoryOpState.Awaiting, Change.Kind: MemoryOpKind.End } awaiting)
+        if (await ops.FindAsync(id, ct).ConfigureAwait(false) is not { State: MemoryOpState.Awaiting } awaiting || !MemoryOpKind.Ends(awaiting.Change.Kind))
         {
             return new(MemoryDecisionRefusal.NotFound, $"No end awaits its approver as operation `{id}`. Nothing was decided.");
         }

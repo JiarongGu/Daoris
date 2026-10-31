@@ -34,7 +34,8 @@ public static partial class MemoryEndToken
 /// marked in its own transaction before the call and settled in another after it, so a kill between leaves it <c>applying</c>. Where the
 /// engine holds receipts (Lyntai's MC11, 2j's core) every call carries the row's id as its key, and the next start settles the row by
 /// that key's receipt, or applies it again where the key left none. Otherwise it reads the target observationally: an end by its token
-/// and the revision it read, a confirmation by its guard, an addition or a relation <c>held</c> for the person.
+/// and the revision it read, a confirmation by its guard, an addition or a relation <c>held</c> for the person. A replacement is one call
+/// (Lyntai's MC12): its successor and every predecessor's end commit with its receipt or not at all, so it settles as an end does.
 /// </summary>
 public sealed class MemoryApplier(MemoryOpStore ops, IMemoryEngines engines, TimeProvider? time = null)
 {
@@ -131,10 +132,19 @@ public sealed class MemoryApplier(MemoryOpStore ops, IMemoryEngines engines, Tim
                 return Settled(await EndAsync(engine, op, ct, key).ConfigureAwait(false));
             case MemoryOpKind.Confirm:
                 return Settled(await engine.ConfirmAsync(change.Target ?? "", change.Revision ?? -1, ct, key).ConfigureAwait(false));
+            case MemoryOpKind.Supersede when engine.HoldsSupersession:
+                var replaced = await engine.SupersedeAsync(change.Text ?? "", change.Predecessors ?? [], Replaced(op.Id), ct, key, change.Recheck)
+                    .ConfigureAwait(false);
+                return replaced is { Applied: true, Successor: { } successor }
+                    ? new(MemoryOpState.Applied, successor.Id, successor.Revision)
+                    : MemoryOutcome.Stale;
             default:
                 return MemoryOutcome.Held;
         }
     }
+
+    /// <summary>The reason each entry a replacement ends carries, with its row's token.</summary>
+    internal static string Replaced(string op) => MemoryEndToken.Append("Replaced in one change.", op);
 
     /// <summary>The key a write's relation is made under, a call of its own (Lyntai's keyed write states no relation).</summary>
     private static string RelationKey(string op) => $"{op}-relation";

@@ -85,6 +85,8 @@ public sealed class LyntaiMemory : IMemoryEngines
 
         public bool HoldsReceipts => engine.HoldsReceipts;
 
+        public bool HoldsSupersession => engine.HoldsSupersession;
+
         public async Task<IReadOnlyList<MemoryEntry>> SearchAsync(string query, int limit, CancellationToken ct = default)
         {
             var recall = await engine.RecallAsync(new MemoryQuery(TaskKey, Query: query, Limit: limit, Detail: MemoryDetail.Full), ct)
@@ -176,6 +178,31 @@ public sealed class LyntaiMemory : IMemoryEngines
                 : null;
         }
 
+        public async Task<MemorySuperseded> SupersedeAsync(
+            string text, IReadOnlyList<MemoryPredecessor> predecessors, string reason, CancellationToken ct = default, string? key = null,
+            string? recheck = null)
+        {
+            MemorySupersessionResult replaced;
+            try
+            {
+                replaced = await engine.SupersedeAsync(
+                    new MemorySupersession(
+                        new MemoryWrite(TaskKey, Scope, text) { Recheck = recheck },
+                        [.. predecessors.Select(each => new MemorySupersededEntry(Ref(each.Entry), each.Revision.ToString(CultureInfo.InvariantCulture)))],
+                        reason) { OperationKey = key },
+                    ct).ConfigureAwait(false);
+            }
+            catch (Exception refused) when (refused is ArgumentException or InvalidOperationException and not MemoryKeyConflictException)
+            {
+                // A predecessor gone, the successor itself, or one another successor already ended: nothing was written.
+                return new(false, null);
+            }
+
+            return replaced is { Applied: true, Successor: { } successor }
+                ? new(true, await GetAsync(successor.Id, ct).ConfigureAwait(false) ?? new MemoryEntry(successor.Id, text, Revision(replaced.Revision)))
+                : new(false, null);
+        }
+
         public async Task<MemoryKeyReceipt?> ReceiptAsync(string key, CancellationToken ct = default) =>
             await engine.ReceiptAsync(TaskKey, key, ct).ConfigureAwait(false) is { } receipt
                 ? new MemoryKeyReceipt(key, receipt.Reference?.Id, receipt.Revision is null ? null : Revision(receipt.Revision))
@@ -188,9 +215,12 @@ public sealed class LyntaiMemory : IMemoryEngines
 
         private MemoryRef Ref(string id) => new(engine.Name, id);
 
+        // A replaced entry names its successor before the reason it ended with, whose token stays last.
         private static MemoryEntry Entry(MemoryItem item) => new(
             item.Reference.Id, item.Content ?? item.Headline, Revision(item.Revision),
-            item.Validity?.EndedReason ?? (item.Validity?.SupersededBy is { } by ? $"superseded by {by.Id}" : null));
+            item.Validity?.SupersededBy is { } by
+                ? $"superseded by {by.Id}" + (item.Validity.EndedReason is { } why ? $": {why}" : "")
+                : item.Validity?.EndedReason);
 
         private static long Revision(string? revision) =>
             long.TryParse(revision, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsed) ? parsed : 0;

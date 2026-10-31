@@ -4,6 +4,8 @@
   "work.memory.write.disputes": "质疑 {{target}}",
   "work.memory.write.amends": "修正 {{target}}",
   "work.memory.end": "结束 {{target}}（修订 {{revision}}）",
+  "work.memory.supersede": "取代 {{repository}} 记忆中的条目",
+  "work.memory.approveReplacement": "批准这项取代",
   "work.memory.propose": "已向 {{repository}} 提议（委托 #{{quest}}）：{{change}} {{target}}",
   "work.memory.state.staged": "随本会话的工作保留，工作被采纳时应用",
   "work.memory.state.ready": "即将应用",

@@ -18,6 +18,9 @@ const KNOWN_STATES = ['staged', 'ready', 'awaiting', 'applying', 'applied', 'dro
 
 const PROPOSAL_STATES = ['awaiting', 'declined', 'answered', 'stale', 'dropped'];
 
+/** The kinds that end an entry and so await the person: an end, and a replacement (KNOWCENTRAL2h). */
+const ENDS = ['end', 'supersede'];
+
 /**
  * A session's memory changes (KNOWCENTRAL2e; the memory coordinator design §1, §4), each its own decision: a write and the entry it
  * disputes or amends, an end with who proposed it, its adapter and models and the revision it read, and a proposal with its standing on
@@ -45,6 +48,8 @@ export function SessionMemory({ rows, ended, busy = false, said, onDecide, onKee
           : t('work.memory.write.plain', { repository: row.repository });
       case 'end':
         return t('work.memory.end', { target, revision: row.change.revision ?? '?' });
+      case 'supersede':
+        return t('work.memory.supersede', { repository: row.repository });
       case 'propose':
         return t('work.memory.propose', { repository: row.repository, quest: row.carried ?? '?', change: row.change.relation ?? '', target });
       default:
@@ -70,15 +75,15 @@ export function SessionMemory({ rows, ended, busy = false, said, onDecide, onKee
               <span>{standing(row)}</span>
             </span>
             {row.change.text && <span className="[overflow-wrap:anywhere]">{row.change.text}</span>}
-            {row.change.kind === 'end' && (
+            {ENDS.includes(row.change.kind) && (
               <span className="text-meta text-ink-faint">
                 {t('work.memory.by', { session: row.by?.session ?? t('work.memory.recheck'), adapter: row.by?.adapter ?? '?', models: row.models ?? t('work.memory.unknown') })}
               </span>
             )}
-            {row.change.kind === 'end' && row.state === 'awaiting' && (
+            {ENDS.includes(row.change.kind) && row.state === 'awaiting' && (
               <span className="flex flex-wrap gap-1.5">
                 <Button variant="default" className="px-2 py-0.5 text-small" disabled={busy} onClick={() => onDecide(row.id, true)}>
-                  {t('work.memory.approve')}
+                  {t(row.change.kind === 'end' ? 'work.memory.approve' : 'work.memory.approveReplacement')}
                 </Button>
                 <Button variant="ghost" className="px-2 py-0.5 text-small" disabled={busy} onClick={() => onDecide(row.id, false)}>
                   {t('work.memory.decline')}

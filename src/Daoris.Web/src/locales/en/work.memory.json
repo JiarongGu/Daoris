@@ -4,6 +4,8 @@
   "work.memory.write.disputes": "Disputes {{target}}",
   "work.memory.write.amends": "Amends {{target}}",
   "work.memory.end": "End of {{target}} at revision {{revision}}",
+  "work.memory.supersede": "Replaces entries of {{repository}}'s memory",
+  "work.memory.approveReplacement": "Approve the replacement",
   "work.memory.propose": "Proposed to {{repository}} on quest #{{quest}}: {{change}} {{target}}",
   "work.memory.state.staged": "kept with this session's work, applied when it is accepted",
   "work.memory.state.ready": "applies next",
