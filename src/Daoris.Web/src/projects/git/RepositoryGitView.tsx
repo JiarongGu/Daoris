@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   type GitActAnswer, type GitAnswer, type GitBranch, type GitGraphPage, type GitLogCommit, type GitRepositoryBranches, gitRefusal, useGitActs,
   useGitBranches, useGitChanges, useGitCommitAct, useGitCommitPlan, useGitConflict, useGitGraphPages, useGitHistoryEdits, useGitHunks, useGitRefActs,
-  useGitFetchPlan, useGitStashAct, useGitStashPlan, useGitSwitchAct, useGitSwitchPlan,
+  useGitFetchPlan, useGitStashAct, useGitStashApplyAct, useGitStashPlan, useGitSwitchAct, useGitSwitchPlan,
 } from '../../bridge/repositories/git';
 import { useWorkState } from '../../bridge/repositories/lines';
 import { useSessionOpenings } from '../../bridge/sessions/sessions';
@@ -18,7 +18,7 @@ import { BranchesTab, type ChangeSide, type ChangesActs, type ChangesLast, Chang
 import { ChangeHunks, type HunkPress, type HunksValue } from './ChangeHunks';
 import { type ConflictPress, type ConflictValue, ConflictHunks } from './ConflictHunks';
 import { CommitBox, type CommitBoxPress, type CommitPlanValue } from './CommitBox';
-import { StashBox, type StashBoxPress, type StashPlanValue } from './StashBox';
+import { StashBox, type StashApplyBoxPress, type StashBoxPress, type StashPlanValue } from './StashBox';
 import { SwitchBox, type SwitchBoxPress, type SwitchPlanValue } from './SwitchBox';
 import { WorkspaceBranches, type WorkspaceGroups } from '../workspace/WorkspaceBranches';
 
@@ -200,6 +200,12 @@ function ChangesRead({ repository, workspace }: { repository: string; workspace:
     },
     onError: (error) => setLast({ verb: 'stash', path: null, act: null, done: false, said: sentence(error) }),
   });
+  const applying = useGitStashApplyAct(repository, workspace);
+  const pressApply = useRef<(press: StashApplyBoxPress) => void>(() => {});
+  pressApply.current = (box) => applying.mutate(box, {
+    onSuccess: (answered) => setLast({ verb: 'stashApply', path: null, act: answered.act, done: answered.done, said: answered.said, notes: answered.notes }),
+    onError: (error) => setLast({ verb: 'stashApply', path: null, act: null, done: false, said: sentence(error) }),
+  });
   const Stash = useMemo(() => function Stash({ busy }: { busy: boolean }) {
     const planned = useGitStashPlan(repository, workspace);
     const answered = planned.data;
@@ -210,10 +216,10 @@ function ChangesRead({ repository, workspace }: { repository: string; workspace:
       : refusal ? { state: 'refused', sentence: sentence(refusal) }
       : !answered.value ? { state: 'refused', sentence: sentence({ code: 'UNKNOWN' }) }
       : { state: 'read', value: answered.value };
-    return <StashBox read={planRead} busy={busy} onPress={(box, done) => pressStash.current(box, done)} />;
+    return <StashBox read={planRead} busy={busy} onPress={(box, done) => pressStash.current(box, done)} onApply={(box) => pressApply.current(box)} />;
   }, [repository, workspace]);
   const acts: ChangesActs = {
-    busy: press.isPending || undo.isPending || commit.isPending || resolve.isPending || switching.isPending || stashing.isPending,
+    busy: press.isPending || undo.isPending || commit.isPending || resolve.isPending || switching.isPending || stashing.isPending || applying.isPending,
     last,
     press: (act) => press.mutate({ ...act, picks: act.picks ?? [] }, { onSuccess: say(act.verb, act.path), onError: (error) => setLast({ verb: act.verb, path: act.path, act: null, done: false, said: sentence(error) }) }),
     undo: (act) => {

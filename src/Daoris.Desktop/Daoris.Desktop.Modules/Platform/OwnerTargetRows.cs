@@ -87,8 +87,8 @@ internal static class OwnerTargetRows
         // GITAPP2m: a branch's history edited in one repository's checkout.
         Row("GIT_HISTORY_EDIT", Repository(), Workspace());
         Row("SETUP_PRESS", Repository());
-        // GITAPP2h, GITAPP2i, GITAPP2j, GITAPP2k: the Changes tab's acts on one repository's checkout.
-        foreach (var route in new[] { "GIT_STAGE", "GIT_UNSTAGE", "GIT_UNDO", "GIT_MAKE_COMMIT", "GIT_AMEND", "GIT_RESOLVE", "GIT_MARK_RESOLVED", "GIT_SWITCH", "GIT_STASH" })
+        // GITAPP2h, GITAPP2i, GITAPP2j, GITAPP2k, GITAPP2l: the Changes tab's acts on one repository's checkout.
+        foreach (var route in new[] { "GIT_STAGE", "GIT_UNSTAGE", "GIT_UNDO", "GIT_MAKE_COMMIT", "GIT_AMEND", "GIT_RESOLVE", "GIT_MARK_RESOLVED", "GIT_SWITCH", "GIT_STASH", "GIT_STASH_APPLY" })
         {
             Row(route, Repository(), Workspace());
         }

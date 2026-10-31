@@ -784,6 +784,25 @@ describe("a repository's Changes tab and the switch behind it (GITAPP2b)", () =>
     expect(await within(region).findByRole('status')).toHaveTextContent('Saved as stash 3fa91c0e2b7d');
   });
 
+  // GITAPP2l: stash Apply presses the stash's commit id, never its place on the list, with the tip the plan showed.
+  it('applies a stash by its commit id with the tip the plan showed, and says the stash is kept', async () => {
+    answering(switchOn, undefined, {
+      GIT_STASH_PLAN: () => answer(GIT_STASH_PLAN_ENGINE),
+      GIT_STASH_APPLY: () => ({ done: true, refused: false, act: 'act-22', outcome: 'done', said: 'x', notes: 'The stash is kept in `refs/stash` (`3fa91c0e2b7d`).' }),
+    });
+    show(<ProjectsView notify={() => {}} />);
+    const page = await chooseRepository('engine');
+    await userEvent.click(within(page).getByRole('tab', { name: 'Changes' }));
+    const region = await within(repositoryMain()).findByRole('region', { name: "engine's changes" });
+
+    await userEvent.click(await within(region).findByRole('button', { name: 'Apply stash 3fa91c0e2b7d' }));
+
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'GIT_STASH_APPLY', {
+      payload: expect.objectContaining({ repository: 'engine', workspace: 'aurora', id: GIT_STASH_PLAN_ENGINE.entries[0]!.id, head: GIT_STASH_PLAN_ENGINE.head }),
+    }));
+    expect(await within(region).findByRole('status')).toHaveTextContent('The stash is kept in refs/stash');
+  });
+
   // GITAPP2k: switch reads the plan of the branch chosen and presses with the branch HEAD named and its commit.
   it('switches: chooses a local branch, reads its plan, presses GIT_SWITCH, and says a refusal in the driver\'s sentence', async () => {
     answering(switchOn, undefined, {

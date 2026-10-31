@@ -201,7 +201,7 @@ export type ChangeSide = 'unstaged' | 'staged';
 
 /** The last act's answer, said under the tab's head with *Undo* where it is done and kept a way back. */
 export type ChangesLast = {
-  verb: 'stage' | 'unstage' | 'undo' | 'undoResolve' | 'commit' | 'amend' | 'resolve' | 'mark' | 'switch' | 'stash';
+  verb: 'stage' | 'unstage' | 'undo' | 'undoResolve' | 'commit' | 'amend' | 'resolve' | 'mark' | 'switch' | 'stash' | 'stashApply';
   path: string | null;
   act: string | null;
   done: boolean;

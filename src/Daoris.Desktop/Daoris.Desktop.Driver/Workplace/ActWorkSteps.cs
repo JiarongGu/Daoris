@@ -28,6 +28,16 @@ internal static class ActWorkSteps
         return new ActStepPlan(ActStepKinds.Stash, said, read);
     }
 
+    /// <summary>A stash step that applies the stash commit <paramref name="id"/> (never pops it) to a clean checkout whose HEAD is <paramref name="head"/>.</summary>
+    public static ActStepPlan StashApply(string id, string head)
+    {
+        var said = new JsonObject { ["mode"] = "apply", ["id"] = id }.ToJsonString();
+        var read = new JsonObject { ["mode"] = "apply", ["id"] = id, ["head"] = head }.ToJsonString();
+        return new ActStepPlan(ActStepKinds.Stash, said, read);
+    }
+
+    private static bool Applies(JsonNode plan) => plan["mode"]?.GetValue<string>() == "apply";
+
     public static async Task<ActStepEnd> SwitchAsync(TreeLock held, ActLaunch launch, ActStep step)
     {
         _ = held;
@@ -41,7 +51,15 @@ internal static class ActWorkSteps
     {
         _ = held;
         var plan = JsonNode.Parse(step.Arguments)!;
-        var who = plan["author"]!.AsArray().Select(each => each!.GetValue<string>()).ToList();
+        if (Applies(plan))
+        {
+            var applied = await launch.HeldGitAsync(launch.Root, step.Ordinal, ["stash", "apply", plan["id"]!.GetValue<string>()], null, null).ConfigureAwait(false);
+            // A conflict exits 1 with the files in conflict; the stash is not dropped. The checkout decides what it was, never the exit code.
+            var said = string.Join(' ', new[] { applied.Stderr, applied.Stdout }.Select(each => each.Trim()).Where(each => each.Length > 0));
+            return applied.End(applied.Exit == 0 ? "git applied the stash" : $"git applied the stash with a stop ({ContentHolds.Said(said)})");
+        }
+
+        var who =plan["author"]!.AsArray().Select(each => each!.GetValue<string>()).ToList();
         List<string> arguments = [.. who, "stash", "push"];
         if (plan["untracked"]!.GetValue<bool>()) arguments.Add("--include-untracked");
         if (plan["message"] is JsonValue { } message && message.TryGetValue<string>(out var text))
@@ -75,6 +93,7 @@ internal static class ActWorkSteps
     /// <summary>Done where <c>refs/stash</c> moved to a commit on HEAD's tip, not done where it did not move, else unknown; null where git could not say.</summary>
     public static async Task<string?> ReadStashAsync(string root, JsonNode plan, CancellationToken ct)
     {
+        if (Applies(plan)) return await ReadApplyAsync(root, plan["id"]!.GetValue<string>(), ct).ConfigureAwait(false);
         var (head, before) = (plan["head"]!.GetValue<string>(), plan["stash"]?.GetValue<string>());
         var now = await StashTipAsync(root, ct).ConfigureAwait(false);
         if (now.Unread) return null;
@@ -83,6 +102,36 @@ internal static class ActWorkSteps
         return await ActCommits.ParentsAsync(root, now.Id, ct).ConfigureAwait(false) is { } parents && parents.Count > 0 && parents[0] == head
             ? ActOutcomes.Done
             : ActOutcomes.Unknown;
+    }
+
+    /// <summary>
+    /// An Apply is done where the clean checkout it found now holds tracked changes, a file in conflict or the stash's untracked files; not done
+    /// where it is as clean as it was; null where git could not say.
+    /// </summary>
+    private static async Task<string?> ReadApplyAsync(string root, string id, CancellationToken ct)
+    {
+        var (status, changed, _) = await WorkingTree.GitAsync(root, ["--no-optional-locks", "status", "--porcelain=v1", "-z", "--untracked-files=no", "--no-renames"], environment: null, GitBounds.Question, ct).ConfigureAwait(false);
+        if (status != 0) return null;
+        if (changed.Length > 0) return ActOutcomes.Done;
+        var untracked = await UntrackedOfAsync(root, id, ct).ConfigureAwait(false);
+        if (untracked is null) return null;
+        return untracked.Any(path => Exists(root, path)) ? ActOutcomes.Done : ActOutcomes.NotDone;
+    }
+
+    /// <summary>The paths the stash <paramref name="id"/> holds untracked (empty where it holds none); null where git could not say.</summary>
+    public static async Task<IReadOnlyList<string>?> UntrackedOfAsync(string root, string id, CancellationToken ct)
+    {
+        var (has, _, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", id + "^3"], environment: null, GitBounds.Question, ct).ConfigureAwait(false);
+        if (has == 1) return [];
+        if (has != 0) return null;
+        var (code, listed, _) = await WorkingTree.GitAsync(root, ["ls-tree", "-r", "--name-only", "-z", id + "^3"], environment: null, GitBounds.Question, ct).ConfigureAwait(false);
+        return code == 0 ? [.. listed.Split('\0', StringSplitOptions.RemoveEmptyEntries)] : null;
+    }
+
+    public static bool Exists(string root, string path)
+    {
+        var full = Path.Combine(root, path);
+        return File.Exists(full) || Directory.Exists(full);
     }
 
     /// <summary>The shared stash's tip, null where none stands; <c>Unread</c> where git could not say.</summary>

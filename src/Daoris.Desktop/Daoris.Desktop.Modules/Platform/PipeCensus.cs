@@ -407,6 +407,8 @@ public sealed class PipeCensus
             "GIT_RESOLVE", "GIT_MARK_RESOLVED",
             // GITAPP2k: Switch and stash Save are pressed in the Changes tab, which no terminal verb names yet.
             "GIT_SWITCH", "GIT_STASH",
+            // GITAPP2l: stash Apply is pressed in the same box.
+            "GIT_STASH_APPLY",
             "SESSION_OPEN_FOLDER", "PLUGIN_OPEN_FOLDER", "WORK_RECORDS_FOLDER", "TOOLS_PICK", "SHOW_REVIEW_AGAIN", "HARNESS_INPUT", "HARNESS_CANCEL",
             // RPC1c, PERSONDOOR1f: what waits for the person's Confirm is the window's to read and answer, so a terminal can ask and never
             // answer; and the person key is the window's, which the pipe never answers (D156 point 2, the terminal RPC design §4.3).

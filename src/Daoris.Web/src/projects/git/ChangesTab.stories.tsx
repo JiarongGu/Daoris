@@ -37,7 +37,7 @@ const switchBox = (chosen = '', over: Partial<SwitchPlanValue> = {}): NonNullabl
   );
 };
 const stashBox = (over: Partial<StashPlanValue> = {}): NonNullable<ChangesActs['Stash']> => function Stash({ busy }) {
-  return <StashBox read={{ state: 'read', value: { ...GIT_STASH_PLAN_ENGINE, ...over } }} busy={busy} onPress={nothing} />;
+  return <StashBox read={{ state: 'read', value: { ...GIT_STASH_PLAN_ENGINE, ...over } }} busy={busy} onPress={nothing} onApply={nothing} />;
 };
 
 // GITAPP2h: every story below carries the presses (Stage, Unstage, Show changes) a tab has where the switch is on.
@@ -238,3 +238,16 @@ export const StashedNarrowDark: Story = { ...Stashed, decorators: [storyWidths.n
 export const StashUntrackedOnly: Story = { args: { acts: acts({ Stash: stashBox({ tracked: 0, untracked: 3 }) }) } };
 export const StashUntrackedOnlyNarrowChinese: Story = { ...StashUntrackedOnly, decorators: [storyWidths.narrow, chinese] };
 export const StashUntrackedOnlyHalfDark: Story = { ...StashUntrackedOnly, decorators: [storyWidths.half, dark] };
+
+// GITAPP2l: the saved stashes, each applied by its commit id; one has two untracked files in the way.
+export const StashApply: Story = { args: { acts: acts({ Stash: stashBox() }) } };
+export const StashApplyNarrowChinese: Story = { ...StashApply, decorators: [storyWidths.narrow, chinese] };
+export const StashApplyHalfDark: Story = { ...StashApply, decorators: [storyWidths.half, dark] };
+export const StashApplyHeld: Story = { args: { acts: acts({ Stash: stashBox({ applyWhy: 'tracked files are changed here, so save or discard them first' }) }) } };
+export const StashApplyHeldNarrowDark: Story = { ...StashApplyHeld, decorators: [storyWidths.narrow, dark] };
+export const StashApplyHeldHalfChinese: Story = { ...StashApplyHeld, decorators: [storyWidths.half, chinese] };
+export const StashApplied: Story = {
+  args: { acts: acts({ last: { verb: 'stashApply', path: null, act: 'a4', done: true, said: null, notes: 'Some files are in conflict: resolve them in the Changes tab. The stash is kept in `refs/stash` (`3fa91c0e2b7d`).' } }) },
+};
+export const StashAppliedNarrowChinese: Story = { ...StashApplied, decorators: [storyWidths.narrow, chinese] };
+export const StashAppliedHalfDark: Story = { ...StashApplied, decorators: [storyWidths.half, dark] };
