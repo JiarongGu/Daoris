@@ -17,10 +17,12 @@ namespace Daoris.Knowledge.Mcp;
 /// <param name="ledger">Where the named session's record is read and its changes staged.</param>
 /// <param name="engines">Each repository's memory; none where memory is off.</param>
 /// <param name="time">The clock a change's instant is read from.</param>
+/// <param name="exchange">Where a proposal is published as a quest to its entry's owner (2e).</param>
+/// <param name="quests">Where a proposal's quest is read, to join it or to settle the proposal.</param>
 [McpServerToolType]
 public sealed class MemoryTools(
     KnowledgeService service, AmbientWorkspace ambient, IntakeScope? intake = null, SessionLedger? ledger = null, IMemoryEngines? engines = null,
-    TimeProvider? time = null)
+    TimeProvider? time = null, QuestExchange? exchange = null, QuestStore? quests = null)
 {
     /// <summary>What every tool answers where memory is off, after its checks.</summary>
     public const string NotOn = "Memory is not on in this Daoris yet, so nothing was read or kept.";
@@ -69,7 +71,7 @@ public sealed class MemoryTools(
                 .Where(op => op.Change is { Kind: MemoryOpKind.Write, Text: { } written } && Matches(written, query))
                 .ToList()
             : [];
-        if (found.Count == 0 && staged.Count == 0) return $"No memory entry in workspace `{caller.Workspace}` matches `{query}`.";
+        if (found.Count == 0 && staged.Count == 0) return await ToldAsync(caller, $"No memory entry in workspace `{caller.Workspace}` matches `{query}`.", ct).ConfigureAwait(false);
         var text = new StringBuilder($"Memory in workspace `{caller.Workspace}`:").AppendLine().AppendLine();
         foreach (var (reference, entry) in found.Take(Limit)) text.AppendLine($"- `{reference}` (revision {entry.Revision}): {entry.Text}");
         foreach (var op in staged.Take(Limit))
@@ -77,7 +79,7 @@ public sealed class MemoryTools(
             text.AppendLine($"- staged for `{op.Repository}` by this session's work (operation `{op.Id}`), applied when it is accepted: {op.Change.Text}");
         }
 
-        return text.AppendLine().Append("Call `memory_get` with a reference to read it whole.").ToString();
+        return await ToldAsync(caller, text.AppendLine().Append("Call `memory_get` with a reference to read it whole.").ToString(), ct).ConfigureAwait(false);
     }
 
     private static bool Matches(string text, string query) =>
@@ -108,7 +110,7 @@ public sealed class MemoryTools(
         var text = new StringBuilder($"`{at}`, revision {entry.Revision}");
         if (entry.Ended is { } why) text.Append($", ended: {MemoryEndToken.Strip(why)}");
         text.AppendLine().AppendLine().AppendLine(entry.Text);
-        if (!expand) return text.ToString();
+        if (!expand) return await ToldAsync(caller, text.ToString(), ct).ConfigureAwait(false);
 
         var related = await engine.ExpandAsync(at.Entry, ct).ConfigureAwait(false);
         text.AppendLine().AppendLine(related.Count == 0 ? "It relates to no other entry." : "It relates to:");
@@ -117,7 +119,7 @@ public sealed class MemoryTools(
             text.AppendLine($"- {each.Link.Kind} `{at with { Entry = each.Entry.Id }}` (revision {each.Entry.Revision}): {each.Entry.Text}");
         }
 
-        return text.ToString();
+        return await ToldAsync(caller, text.ToString(), ct).ConfigureAwait(false);
     }
 
     [McpServerTool(Name = "memory_write")]
@@ -153,15 +155,8 @@ public sealed class MemoryTools(
         }
 
         if (engines is null || ledger is null || caller.Record is not { } record) return NotOn;
-        var citations = new List<Citation>();
-        foreach (var id in (cites ?? []).Where(id => !string.IsNullOrWhiteSpace(id)).Select(id => id.Trim()).Distinct(StringComparer.Ordinal))
-        {
-            var repository = id.IndexOf(':') is var colon and > 0 ? id[..colon] : id;
-            if (caller.Outside(new MemoryReference(repository, id)) is { } outside) return outside;
-            var answer = await service.CiteAsync(id, ct: ct).ConfigureAwait(false);
-            if (answer.Cited is not { } cited) return $"Refused: {answer.Refused} Nothing was kept.";
-            citations.Add(cited);
-        }
+        var (citations, uncited) = await CiteAsync(caller, cites, ct).ConfigureAwait(false);
+        if (uncited is not null) return uncited;
 
         var op = await ledger.Memory.StageAsync(
             caller.OwnPlaced!,
@@ -209,14 +204,97 @@ public sealed class MemoryTools(
         [Description("`disputes`, `amends` or `end`.")] string change,
         [Description("What you found, citing what shows it.")] string reason,
         [Description("The revision you read, as memory_get answered it.")] long revision,
+        [Description("The knowledge ids of the records that show what you found, as knowledge_search names them.")] string[]? cites = null,
         CancellationToken ct = default)
     {
         if (MemoryReference.Parse(reference) is not { } named) return Words.Malformed(reference);
         if (change is not { } kind || !Changes.Contains(kind.Trim().ToLowerInvariant())) return "`change` is `disputes`, `amends` or `end`.";
         if (string.IsNullOrWhiteSpace(reason)) return "Say what you found, citing what shows it.";
+        if (cites is { Length: > MaxCites }) return $"Cite at most {MaxCites} records: the ones that show what you found.";
         var caller = await _scope.ReadAsync(ct).ConfigureAwait(false);
         if ((caller.Refused ?? caller.Outside(named)) is { } refused) return refused;
-        return NotOn;
+        if (engines is null || ledger is null || quests is null) return NotOn;
+        if (caller is not { Record: { } record, OwnPlaced: { } own } || caller.Unchanging("memory_propose") is not null)
+        {
+            return "Refused: a proposal travels as a quest from the repository a session Daoris started works in, and this connector names "
+                   + "none in this workspace. Say what you found to the person instead. Nothing was published.";
+        }
+
+        var at = caller.Placed(named);
+        if (string.Equals(at.Repository, own, StringComparison.Ordinal))
+        {
+            return $"Refused: `{at}` is this repository's own entry, so it is not proposed: dispute or amend it with memory_write, or end it "
+                   + "with memory_end. Nothing was published.";
+        }
+
+        var entry = engines.Open(at.Repository, MemoryReinforcement.None) is { } engine ? await engine.GetAsync(at.Entry, ct).ConfigureAwait(false) : null;
+        if (entry is null) return $"No memory entry `{at}`. References come from memory_search.";
+        if (entry.Ended is { } ended) return $"Refused: `{at}` already ended: {MemoryEndToken.Strip(ended)}. Nothing was published.";
+        if (entry.Revision != revision)
+        {
+            return $"Refused: `{at}` moved since you read it: it is at revision {entry.Revision}, and you read revision {revision}. Read it "
+                   + "again with memory_get and propose on what it says now. Nothing was published.";
+        }
+
+        var (citations, uncited) = await CiteAsync(caller, cites, ct).ConfigureAwait(false);
+        if (uncited is not null) return uncited.Replace("Nothing was kept.", "Nothing was published.", StringComparison.Ordinal);
+        var proposed = await new MemoryProposals(ledger.Memory, quests, exchange, engines).ProposeAsync(
+            own, at, new MemoryChange(MemoryOpKind.Propose, Text: reason.Trim(), Target: at.Entry, Revision: revision,
+                Relation: kind.Trim().ToLowerInvariant(), Recheck: MemoryCitations.Of(citations)),
+            Author(record), Now(), ct).ConfigureAwait(false);
+        if (proposed is not { Op: { } op, Quest: { } quest }) return $"Refused: {proposed.Refused} Nothing was proposed.";
+        return await ToldAsync(caller, (proposed.Joined
+                   ? $"Kept as proposal `{op.Id}`, joined to quest `#{quest.Id}`, which carries `{own}`'s proposals to `{at.Repository}` until it is taken. "
+                   : $"Kept as proposal `{op.Id}` and published to `{at.Repository}` as quest `#{quest.Id}`. ")
+               + $"`{at.Repository}`'s session decides it through its own operations, or declines it; nothing changes in its memory before, "
+               + "and closing the quest applies nothing. You are told how it settles at your next memory call.", ct).ConfigureAwait(false);
+    }
+
+    /// <summary>The records <paramref name="cites"/> names, cited; or why one was refused.</summary>
+    private async Task<(List<Citation> Citations, string? Refused)> CiteAsync(MemoryCaller caller, string[]? cites, CancellationToken ct)
+    {
+        var citations = new List<Citation>();
+        foreach (var id in (cites ?? []).Where(id => !string.IsNullOrWhiteSpace(id)).Select(id => id.Trim()).Distinct(StringComparer.Ordinal))
+        {
+            var repository = id.IndexOf(':') is var colon and > 0 ? id[..colon] : id;
+            if (caller.Outside(new MemoryReference(repository, id)) is { } outside) return ([], outside);
+            var answer = await service.CiteAsync(id, ct: ct).ConfigureAwait(false);
+            if (answer.Cited is not { } cited) return ([], $"Refused: {answer.Refused} Nothing was kept.");
+            citations.Add(cited);
+        }
+
+        return (citations, null);
+    }
+
+    private DateTimeOffset Now() => (time ?? TimeProvider.System).GetUtcNow();
+
+    /// <summary>
+    /// <paramref name="answer"/>, with how the named caller's proposals settled since it was last told (§4): a decline and its reason, a
+    /// done's handback, a target moved first, or a quest gone; each told once.
+    /// </summary>
+    private async Task<string> ToldAsync(MemoryCaller caller, string answer, CancellationToken ct)
+    {
+        if (caller.Record is not { } record || ledger is null || quests is null) return answer;
+        await new MemoryProposals(ledger.Memory, quests, engines: engines).SettleAsync(Now(), ct).ConfigureAwait(false);
+        var settled = await ledger.Memory.TellProposalsAsync(record.Id, Now(), ct).ConfigureAwait(false);
+        if (settled.Count == 0) return answer;
+        var text = new StringBuilder(answer).AppendLine().AppendLine().AppendLine("Your proposals settled since you were last told:");
+        foreach (var op in settled)
+        {
+            var on = $"`{op.Id}` ({op.Change.Relation} `{op.Repository}:{op.Change.Target}`)";
+            text.AppendLine(op.State switch
+            {
+                MemoryOpState.Declined => $"- {on} was declined by `{op.Repository}` on quest `#{op.Carried}`: {op.Answer}",
+                MemoryOpState.Answered =>
+                    $"- {on} was answered: `{op.Repository}` closed quest `#{op.Carried}` done, applying nothing itself. Its handback: {op.Answer}",
+                MemoryOpState.Stale =>
+                    $"- {on} is stale: the entry moved past revision {op.Change.Revision} before `{op.Repository}` decided. Read it again, "
+                    + "and propose anew where your finding still stands.",
+                _ => $"- {on} was dropped: its quest `#{op.Carried}` is gone.",
+            });
+        }
+
+        return text.ToString().TrimEnd();
     }
 
     private static class Words
