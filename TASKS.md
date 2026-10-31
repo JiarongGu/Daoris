@@ -122,8 +122,6 @@ Co-working (D167, `docs/2026-10-14-co-working-design.md`; the owner's two tasks 
 
 ## Economy, setup and recall
 
-- [ ] **BRAINSTORMPACKET1 — a brainstorm's packet holds the records that answer its question** (driver; BRAINSTORM1). The install's packet for AGENTSPLACE1's question (2026-11-01) took the whole question as one word search: three of its eight sources were old session records' commit lists, and the company-view, set-up and workflow designs it names were left out. Contract: the packet's search ranks by the question's terms, prefers designs, decisions and the code index over session records, and the asker may name sources (`--source <path>`); the packet says why each source is in. Proof: a unit test over a fixture knowledge with that question; the install's packet read again.
-
 knowledge review (D129). WSSETUP14b–e precede owner f/13; WSSETUP7 needs LAYOUT8.
 
 - [ ] **MODELROLE1c4 — row c's installed proof** (the parent with the install; after the install carries MODELROLE1c3). On the install, a Build whose first choice names a model one account does not offer runs it on the other account, and with neither runs its second and says so on the head and in the note; a pipe door's refusal on a silent turn passes that account at the next start, no strike. The branch proof is MODELROLE1c3's (`ModelRefusalTickTests`, the archive's MODELROLE1c3). Proof: the install's records and shots.

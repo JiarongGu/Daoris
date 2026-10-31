@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## BRAINSTORMPACKET1 — a brainstorm's packet holds the records that answer its question (2026-11-01)
+
+> **BRAINSTORMPACKET1** (driver; BRAINSTORM1). The install's packet for AGENTSPLACE1's question (2026-11-01) took the whole question as one word search: three of its eight sources were old session records' commit lists, and the company-view, set-up and workflow designs it names were left out. Contract: the packet's search ranks by the question's terms, prefers designs, decisions and the code index over session records, and the asker may name sources (`--source <path>`); the packet says why each source is in. Proof: a unit test over a fixture knowledge with that question; the install's packet read again.
+
+Completed 2026-11-01: `BrainstormWordings.Of` asks the question's long terms (halves too when there are many), never the question as one phrase; `BrainstormPackets.Prefer` orders a search's finds designs, decisions and the code index, then other records, then session records, each with a reason. `daoris-driver brainstorm --source <path>` (repeated, at most 12, repository-relative, needs `--repository`) is read whole from the checkout and taken first, tier `named`; a missing one is left out as `removed`. `request.json` gains `sources` and a packet source's `why` gains `reason`, each written only when present, so older records read and digest as before; `brainstorm show` prints `in as <reason>`. Proved by `BrainstormSourcesTests`. Left: the `daoris brainstorm` CLI twin and its host door do not carry `--source`; the install's packet not read again.
+
 ## GITAPP2f — fetch origin's branches (2026-11-01)
 
 > **GITAPP2 f** (driver, modules, web; D204, accepted 2026-10-31, D198; `docs/2026-10-23-git-writes-design.md` round 3 §5, §9 *Fetch*, §12 row f). Fetch as an act of the journal whose one command moves `refs/remotes/origin/*` alone whatever the repository's configuration says of origin, offered only where D198's git doors are installed.
