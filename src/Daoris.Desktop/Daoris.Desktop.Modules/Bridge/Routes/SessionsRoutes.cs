@@ -14,6 +14,7 @@ public sealed class SessionsRoutes(DriverContext context)
 {
     private readonly DriverContext _context = context;
     private readonly DriverLoop _loop = context.Loop;
+    private readonly RelatedSessions _related = new(RelatedSessions.GitReads, () => DateTimeOffset.UtcNow);
     private readonly OpenFolder? _openFolder = context.OpenFolder;
 
     // What a session's own presses change (STATEHUB1d, D169): its record among the sessions, and the driver's state its loop,
@@ -728,6 +729,21 @@ public sealed class SessionsRoutes(DriverContext context)
         var held = Compose();
         for (var again = 0; again < 3 && held.Dependencies is AtWorkDependencies read && !_loop.AtWork.Stands(read); again++) held = Compose();
         return held;
+    }
+
+    /// <summary>
+    /// The sessions beside one (LINESTOGETHER1c, the review-flow design §3): every other session of its repository with a tree here,
+    /// chats included, with the declared and the changed paths that meet, or <c>not-read</c> where git cannot say (D137). Read-only;
+    /// git's reads make it, and a tree's read is kept only for an ended clean one, so it is read again at each ask.
+    /// </summary>
+    [DriverRoute("SESSION_RELATED")]
+    [ByEvent("SESSION_RELATED", Untold = "the sessions' working trees, which git reads at each ask (an uncommitted edit counts)")]
+    private async Task<object?> SessionRelatedAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var session = PayloadHelper.GetRequiredValue<string>(request.Payload, "session");
+        var service = _loop.Service ?? throw NotReady();
+        if (await service.RelatedCandidatesAsync(session, cancellationToken) is not var (mine, others)) return new { Session = session, Related = Array.Empty<object>() };
+        return new { Session = session, Related = await _related.LookAsync(mine, others, cancellationToken) };
     }
 
     /// <summary>

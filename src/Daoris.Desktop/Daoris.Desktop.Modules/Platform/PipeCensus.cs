@@ -294,6 +294,8 @@ public sealed class PipeCensus
             "SESSION_PROCESS", "SESSION_QUESTION", "SESSION_SUPERVISOR", "SESSION_QUEUE", "SESSION_RECORD", "SESSION_SEARCH", "SESSION_SPENT", "SESSION_STREAMS", "SESSION_WHERE", "SETUP_PLAN", "STARTS",
             // COWORKVIEW1a: who is at work on a session, from the slices and the lineage files.
             "SESSION_AT_WORK",
+            // LINESTOGETHER1c: the sessions beside one, a read of git in their trees.
+            "SESSION_RELATED",
             "STATE", "STATE_SLICE", "SWEEP_PLAN", "SYSTEM_DOWNLOADS", "SYSTEM_SPACE", "SYSTEM_WIRING", "TAIL_SESSION", "TOOLS_LIST", "TRACE", "TREES_SYNC_PLAN", "TREES_SYNC_SCOPE",
             "UNDER_WAY", "USAGE", "WORKFLOW_CURRENT", "WORKFLOW_RUN", "WORK_PLAN", "WORK_STATE",
             // NOTIFY2i: what came to the person, a press by its act and session alone, never a value, so a terminal answers none of it.
