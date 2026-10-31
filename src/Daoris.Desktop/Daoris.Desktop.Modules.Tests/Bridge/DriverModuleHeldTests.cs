@@ -29,6 +29,7 @@ public sealed class DriverModuleHeldTests : DriverModuleBridge
         ["SUPERVISOR_WAITING"] = new { },
         ["INTEGRATION"] = new { repository = "engine" },
         ["SESSION_AT_WORK"] = new { session = "a1b2c3d4" },
+        ["SESSION_RELATED"] = new { session = "a1b2c3d4" },
     };
 
     public static TheoryData<string> HeldRoutes() => [.. DriverModule.ByEventRoutes.Order(StringComparer.Ordinal)];
