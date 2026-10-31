@@ -333,7 +333,8 @@ public sealed class PipeCensus
             "WORKFLOW_NODE",
             // FABRIC-PIPELINE1d: a verification of a branch or a commit, the person's press, which runs the repository's accepted gates.
             "WORKFLOW_VERIFY",
-            // INTEGRATE1h: the owner's acts on a repository's integration (a request, a drop, a recheck), a card in the window.
+            // INTEGRATE1h: the owner's acts on a repository's integration (a request, a drop, a recheck, a decide, an order, a superseded
+            // commit's answer), a card in the window.
             "INTEGRATE",
             "HELP_DISMISS", "CHANNEL_MARK",
             // NOTIFY2f: the person's news read or dismissed, which a terminal marking would hide from them.
@@ -497,7 +498,8 @@ public sealed class PipeCensus
             // INTEGRATE1d: an integration declaration's acceptance, which starts nothing: what it accepts runs only in a landing or a tidy,
             // each a press or a look of its own the drain already holds.
             "INTEGRATION_GATES",
-            // INTEGRATE1h: an integration act admits or drops a request, and the transport's pass runs the line, which the drain holds.
+            // INTEGRATE1h: an integration act admits, drops, orders or decides a request, or tells a session to rebase, and the transport's pass
+            // runs the line, which the drain holds.
             "INTEGRATE",
             // A plugin made in a folder, which installs nothing, and a tool's files and location.
             "PLUGIN_NEW", "TOOLS_DELETE", "TOOLS_LOCATION", "TOOLS_GIT");

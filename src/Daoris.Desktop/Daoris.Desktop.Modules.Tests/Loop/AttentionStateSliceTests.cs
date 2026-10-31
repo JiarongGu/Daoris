@@ -435,6 +435,63 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
         Assert.Empty(Rows(new() { Requests = [] }));
     }
 
+    /// <summary>An integration's wait on the owner, as <see cref="AttentionStateSlice.IntegrationWaits"/> writes one (INTEGRATE1h).</summary>
+    private static JsonObject Integrating(string over) => With(
+        """{"repository":"engine","workspace":"aurora","line":"main","since":"2026-10-31T09:00:00.0000000+00:00"}""", over);
+
+    /// <summary>
+    /// 🔴 INTEGRATE1h (§5.8, §17.4): a candidate held for the owner's decide, a superseded commit awaiting its answer and a landing waiting for the
+    /// owner's card are each one row of kind <c>integration</c>, in the repository's workspace, naming its wait; the decide's and the card's hold work.
+    /// </summary>
+    [Fact]
+    public void An_integration_s_wait_on_the_owner_is_a_row_for_each_and_the_decide_and_the_card_hold_work()
+    {
+        var rows = Rows(new()
+        {
+            Integration =
+            [
+                Integrating("""{"wait":"decide","id":"decide:c1","candidate":"c1","branches":["feature/a"],"why":"an unconfirmed failure"}"""),
+                Integrating("""{"wait":"superseded","id":"superseded:r1:abc","request":"r1","branch":"feature/b","commit":"abc","subject":"later work"}"""),
+                Integrating("""{"wait":"card","id":"card:u1","unit":"u1","branch":"feature/c","tip":"def","why":"it waits for the owner's card","line":null}"""),
+            ],
+        });
+
+        Assert.Equal(["integration:card:u1", "integration:decide:c1", "integration:superseded:r1:abc"], Keys(rows));
+        Is("""
+            {"kind":"integration","id":"decide:c1","since":"2026-10-31T09:00:00.0000000+00:00","workspace":"aurora","where":"engine","stands":true,
+             "integration":{"wait":"decide","repository":"engine","line":"main","branches":["feature/a"],"candidate":"c1","why":"an unconfirmed failure"}}
+            """, rows.Single(row => row["id"]!.GetValue<string>() == "decide:c1"));
+        Is("""
+            {"kind":"integration","id":"superseded:r1:abc","since":"2026-10-31T09:00:00.0000000+00:00","workspace":"aurora","where":"engine",
+             "integration":{"wait":"superseded","repository":"engine","line":"main","branch":"feature/b","request":"r1","commit":"abc","subject":"later work"}}
+            """, rows.Single(row => row["id"]!.GetValue<string>() == "superseded:r1:abc"));
+        Assert.True(rows.Single(row => row["id"]!.GetValue<string>() == "card:u1")["stands"]!.GetValue<bool>());
+        Assert.Empty(Rows(new() { Integration = [] }));
+    }
+
+    /// <summary>INTEGRATE1h: the waits are read off the home's integration record and the runtime's card waits; a home with no record has none.</summary>
+    [Fact]
+    public void The_integration_waits_are_the_home_s_record_and_the_runtime_s_card_waits()
+    {
+        Assert.Empty(AttentionStateSlice.IntegrationWaits(Home, []));
+        var card = new IntegrationCardWait("u1", "engine", "aurora", "feature/c", "def", IntegrationRefusals.AwaitsOwner, "waits for the card", DateTimeOffset.UnixEpoch);
+        var store = new IntegrationStore(Home, () => StoreSettled.Yes);
+        Assert.Null(store.Add(new IntegrationRequest("r1", "engine", "aurora", "feature/a", "1111111111111111111111111111111111111111", IntegrationRoutes.Recorded,
+            "main", IntegrationRequester.Card, new LandingIntegrate().Resolved(), DateTimeOffset.UnixEpoch)));
+        var claim = store.Form(new IntegrationForming("engine", "aurora", "main", "0000000000000000000000000000000000000000", ["r1"])).Claim!;
+        store.End(claim, store.OpenStep(claim.Candidate)!.Id, new IntegrationStepEnd(IntegrationStepOutcomes.Done) { Tip = "1111111111111111111111111111111111111111" });
+        store.End(claim, store.Begin(claim, IntegrationStepNames.Judge).Id, new IntegrationStepEnd(IntegrationStepOutcomes.Held) { Said = "an unconfirmed failure" });
+        List<JsonObject> Waits() => [.. AttentionStateSlice.IntegrationWaits(Home, [card]).Select(each => JsonSerializer.SerializeToNode(each, IpcJson.Options)!.AsObject())];
+
+        var waits = Waits();
+
+        Assert.Equal(["decide", "card"], waits.Select(each => each["wait"]!.GetValue<string>()));
+        Assert.Equal(["feature/a"], waits[0]["branches"]!.AsArray().Select(each => each!.GetValue<string>()));
+        Assert.Equal("aurora", waits[0]["workspace"]!.GetValue<string>());
+        store.Decide(claim.Candidate, IntegrationDecides.Split, IntegrationRequester.Person);
+        Assert.Equal(["card"], Waits().Select(each => each["wait"]!.GetValue<string>()));
+    }
+
     /// <summary>INTEGRATE1p (C33): a run's own declined request is the same row, its `declined` saying it is a request, so its acts are the page's two.</summary>
     [Fact]
     public void A_run_held_at_its_own_declined_request_says_so_in_its_declined()
@@ -1742,13 +1799,21 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
             ],
             // GITAUTH1a: a held git remote, every field set.
             Git = [GitHeld()],
+            // INTEGRATE1h: an integration's wait on the owner, every field set.
+            Integration =
+            [
+                Integrating("""
+                    {"wait":"decide","id":"decide:c1","branch":"feature/a","branches":["feature/a"],"candidate":"c1","request":"r1","commit":"abc",
+                     "subject":"s","unit":"u1","tip":"def","why":"w"}
+                    """),
+            ],
         };
         var rows = Rows(facts);
         Assert.Contains(rows, row => row["ended"] is JsonObject);
         Assert.Contains(rows, row => row["blocked"] is JsonObject blocked && blocked["entries"]![0]!["facts"] is JsonObject);
 
-        // Every kind but the accounts': twenty.
-        Assert.Equal(20, rows.Select(row => row["kind"]!.GetValue<string>()).Distinct().Count());
+        // Every kind but the accounts': twenty-one.
+        Assert.Equal(21, rows.Select(row => row["kind"]!.GetValue<string>()).Distinct().Count());
         foreach (var row in rows) Assert.Equal(Normal(row), Normal(AttentionStateSlice.Picked(row)));
     }
 

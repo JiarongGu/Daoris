@@ -418,6 +418,21 @@ public sealed class DesktopStore : IDisposable
               at       TEXT NOT NULL
             );
             """)),
+
+        // INTEGRATE1h: the owner's decide on a candidate held for one, a queued request's place, and a disposition's answer (the integration
+        // design §5.7, §5.8, §8), Workplace's. A new table and two nullable columns an older build names none of, so the stamp stays where it
+        // is: an older build orders its queue by arrival and answers a disposition with its moment alone. One decide for each candidate.
+        new(12, WriterStamp, write => write.Execute(
+            """
+            CREATE TABLE integration_decides (
+              candidate TEXT NOT NULL PRIMARY KEY REFERENCES integration_candidates (id),
+              decide    TEXT NOT NULL,
+              requester TEXT NOT NULL,
+              at        TEXT NOT NULL
+            );
+            ALTER TABLE integration_requests ADD COLUMN queue_order INTEGER;
+            ALTER TABLE integration_dispositions ADD COLUMN answer TEXT;
+            """)),
     ];
 
     /// <summary>

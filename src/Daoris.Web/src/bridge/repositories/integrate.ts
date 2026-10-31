@@ -14,6 +14,8 @@ export type IntegrationRequestRow = {
   since: string;
   unit?: string | null;
   said?: string | null;
+  /** Where an order moved a queued request (INTEGRATE1h): first or last; absent where it stands by arrival. */
+  ordered?: 'first' | 'last' | null;
 };
 
 export type IntegrationMemberRow = { request: string; branch: string; state: string; said?: string | null };
@@ -29,12 +31,20 @@ export type IntegrationCandidateRow = {
   members: IntegrationMemberRow[];
   steps: IntegrationStepRow[];
   at?: string | null;
-  holds?: 'conflict' | 'promotion' | null;
+  /** What holds it (INTEGRATE1h adds `decide`: the policy held it for the owner's decide). */
+  holds?: 'decide' | 'conflict' | 'promotion' | null;
   release?: string | null;
   by?: string | null;
+  /** The judge's words a decide hold was made with. */
+  why?: string | null;
+  /** A decide recorded on it that the line's run has still to act on. */
+  decided?: IntegrationDecide | null;
 };
 
 export type IntegrationSupersededRow = { request: string; commit: string; subject: string; by: string; files: number };
+
+/** A landed branch whose integration waits for the owner's card (INTEGRATE1h), as the runtime last judged it. */
+export type IntegrationWaitingRow = { unit: string; branch: string; tip: string; code: string; said: string; since?: string | null };
 
 /** `INTEGRATION`'s answer for a repository. */
 export type IntegrationLook = {
@@ -44,7 +54,12 @@ export type IntegrationLook = {
   handedBack: IntegrationRequestRow[];
   superseded: IntegrationSupersededRow[];
   promoted: IntegrationRequestRow[];
+  /** Absent from a driver before INTEGRATE1h, read as none. */
+  waiting?: IntegrationWaitingRow[];
 };
+
+/** The owner's decide on a held candidate (§4.5, §8). */
+export type IntegrationDecide = 'split' | 'hand-back' | 'land';
 
 /** A unit's one line: its integration state, the line, and the step it is at. */
 export type IntegrationHead = { state: 'queued' | 'in-candidate' | 'held' | 'handed-back' | 'settled' | 'dropped'; line: string; step?: string | null };
@@ -80,9 +95,20 @@ export const useIntegrationHead = (unit: string | null | undefined) => {
   });
 };
 
-/** The owner's act: a request, a drop or a recheck; the state hub asks the look again in every window. */
+/** An owner's act as `INTEGRATE` takes it: each act with the fields it names. */
+export type IntegrateAct =
+  | { repository: string; act: 'request'; branch: string; landed?: boolean }
+  | { repository: string; act: 'drop'; request: string }
+  | { repository: string; act: 'recheck' }
+  | { repository: string; act: 'decide'; candidate: string; decide: IntegrationDecide }
+  | { repository: string; act: 'order'; request: string; place: 'first' | 'last' }
+  | { repository: string; act: 'answer'; request: string; commit: string; answer: 'superseded' | 'rebase' };
+
+/**
+ * The owner's act: a request, a drop or a recheck; and (INTEGRATE1h) a decide on a held candidate, a queued request's order and a
+ * superseded commit's answer. The state hub asks the look again in every window.
+ */
 export const useIntegrate = () =>
   useMutation({
-    mutationFn: (act: { repository: string; act: 'request' | 'drop' | 'recheck'; branch?: string; request?: string; landed?: boolean }) =>
-      call<IntegrateAnswer>('INTEGRATE', act),
+    mutationFn: (act: IntegrateAct) => call<IntegrateAnswer>('INTEGRATE', act),
   });

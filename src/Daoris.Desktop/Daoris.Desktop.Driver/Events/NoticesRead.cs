@@ -63,15 +63,15 @@ public static class NoticesRead
         ["answer"] = "holding", ["confirmation"] = "holding", ["trust"] = "holding", ["account-wait"] = "holding",
         ["signed-out"] = "holding", ["quiet"] = "holding", ["helper-ended"] = "holding", ["proposal"] = "word", ["intake"] = "word", ["departure"] = "word", ["set-up"] = "word",
         ["opinion"] = "word", ["rule"] = "word", ["helper"] = "word", ["hand-over"] = "word", ["work"] = "word", ["memory"] = "word",
-        ["space"] = "word", ["unanswerable"] = "word", ["git-held"] = "word", ["review"] = "ready",
+        ["integration"] = "word", ["space"] = "word", ["unanswerable"] = "word", ["git-held"] = "word", ["review"] = "ready",
     };
 
     /// <summary>
-    /// A row's group, the page's <c>attentionGroup</c>: its kind's, but a hand-over ask whose session stands still on it, which holds work,
-    /// and a stale go-ahead, which waits for the person's word.
+    /// A row's group, the page's <c>attentionGroup</c>: its kind's, but a hand-over ask whose session stands still on it and an integration's
+    /// wait that holds its line or its unit's flow (INTEGRATE1h), which hold work, and a stale go-ahead, which waits for the person's word.
     /// </summary>
     public static string Group(string kind, bool stands, bool stale) =>
-        kind == "hand-over" && stands ? "holding"
+        kind is "hand-over" or "integration" && stands ? "holding"
         : kind == "go-ahead" && stale ? "word"
         : KindGroups.GetValueOrDefault(kind, "word");
 

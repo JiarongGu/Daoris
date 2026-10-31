@@ -672,6 +672,159 @@ public sealed class IntegrationStoreTests : IDisposable
         Assert.False(Store("run-a").Answer("r1", "c1"));
     }
 
+    /// <summary>INTEGRATE1h: a disposition answered by its word keeps the word beside the moment; one answered by an older build's write keeps none.</summary>
+    [Fact]
+    public void A_disposition_answered_by_its_word_keeps_the_word_and_an_unknown_word_is_refused_with_nothing_written()
+    {
+        var (store, claim, settle) = Promoted();
+        store.End(claim, settle.Id, Settling(Disposition("r1"), Disposition("r1", "c2")));
+
+        Assert.Throws<ArgumentException>(() => store.Answer("r1", "c1", "keep"));
+        Assert.Equal(2, store.Pending().Count);
+        Assert.True(store.Answer("r1", "c1", IntegrationAnswers.Superseded));
+        Assert.True(store.Answer("r1", "c2"));
+
+        Assert.Equal(
+            [("c1", (string?)IntegrationAnswers.Superseded), ("c2", null)],
+            store.Dispositions("r1").Select(each => (each.Commit, each.Answer)));
+        Assert.Equal([IntegrationAnswers.Superseded, IntegrationAnswers.Rebase], IntegrationAnswers.All);
+    }
+
+    /// <summary>
+    /// INTEGRATE1h (§5.7): <i>superseded</i> answers a commit with nothing told; <i>rebase it</i> tells the request's session through the say
+    /// door, keyed by the request and the commit, and answers only once the words are kept; a request with no session, a door that does not
+    /// keep the words and a commit not pending answer nothing.
+    /// </summary>
+    [Fact]
+    public async Task A_superseded_commit_is_answered_superseded_or_its_session_asked_to_rebase_it_and_answered_once_the_words_are_kept()
+    {
+        var store = Store("run-a");
+        Assert.Null(store.Add(Request("r1") with { Session = "s1" }));
+        Assert.Null(store.Add(Request("r2", "feature/q2-fix")));
+        var claim = store.Form(Forming("r1", "r2")).Claim!;
+        store.End(claim, store.OpenStep(claim.Candidate)!.Id, new IntegrationStepEnd(IntegrationStepOutcomes.Done) { Tip = Tip });
+        var promote = store.Begin(claim, IntegrationStepNames.Promote, lineCommit: Line);
+        store.End(claim, promote.Id, new IntegrationStepEnd(IntegrationStepOutcomes.Promoted) { Promoted = true });
+        store.End(claim, store.Begin(claim, IntegrationStepNames.Settle).Id, Settling(Disposition("r1"), Disposition("r1", "c2"), Disposition("r2")));
+        var told = new List<(string Session, string Text, string Key)>();
+        var keeps = true;
+        RebaseTelling.Say say = (session, text, key, _) =>
+        {
+            told.Add((session, text, key));
+            return Task.FromResult<SayAnswer?>(new SayAnswer(keeps, keeps ? "kept" : "the session is gone"));
+        };
+
+        var noSession = await IntegrationDispositions.AnswerAsync(store, "r2", "c1", IntegrationAnswers.Rebase, say);
+        keeps = false;
+        var untold = await IntegrationDispositions.AnswerAsync(store, "r1", "c2", IntegrationAnswers.Rebase, say);
+        Assert.Equal([(false, "no-session"), (false, "untold")], new[] { noSession, untold }.Select(each => (each.Done, each.Why)));
+        Assert.Equal(3, store.Pending().Count);
+
+        keeps = true;
+        var rebased = await IntegrationDispositions.AnswerAsync(store, "r1", "c2", IntegrationAnswers.Rebase, say);
+        var superseded = await IntegrationDispositions.AnswerAsync(store, "r1", "c1", IntegrationAnswers.Superseded, say);
+
+        Assert.True(rebased.Done && superseded.Done);
+        Assert.Equal(("s1", IntegrationDispositions.KeyOf("r1", "c2")), (told[^1].Session, told[^1].Key));
+        Assert.Contains("refs/daoris/discarded/feature/q1-fix", told[^1].Text, StringComparison.Ordinal);
+        Assert.Equal(2, told.Count);
+        Assert.Equal([("c1", (string?)IntegrationAnswers.Superseded), ("c2", IntegrationAnswers.Rebase)], store.Dispositions("r1").Select(each => (each.Commit, each.Answer)));
+        Assert.Equal("gone", (await IntegrationDispositions.AnswerAsync(store, "r1", "c1", IntegrationAnswers.Superseded, say)).Why);
+        Assert.Equal("answer", (await IntegrationDispositions.AnswerAsync(store, "r2", "c1", "keep", say)).Why);
+    }
+
+    // ——— The owner's decide on a held candidate and a queued request's order (INTEGRATE1h; §5.8, §8).
+
+    /// <summary>A candidate of r1 and r2 replayed and held at its judge for a decide.</summary>
+    private (IntegrationStore Store, IntegrationClaim Claim) HeldForDecide()
+    {
+        var store = WithRequests("run-a", 2);
+        var claim = store.Form(Forming("r1", "r2")).Claim!;
+        store.End(claim, store.OpenStep(claim.Candidate)!.Id, new IntegrationStepEnd(IntegrationStepOutcomes.Done) { Tip = Tip });
+        var judge = store.Begin(claim, IntegrationStepNames.Judge);
+        store.End(claim, judge.Id, new IntegrationStepEnd(IntegrationStepOutcomes.Held) { Said = "held for a decide (decide): an unconfirmed failure." });
+        return (store, claim);
+    }
+
+    [Fact]
+    public void A_decide_is_recorded_once_and_only_for_a_candidate_held_for_one_and_read_back_by_its_candidate()
+    {
+        var (store, claim) = HeldForDecide();
+        Assert.Null(store.DecideOf(claim.Candidate));
+
+        var recorded = store.Decide(claim.Candidate, IntegrationDecides.Split, IntegrationRequester.Person);
+
+        Assert.Null(recorded.Refused);
+        var decide = store.DecideOf(claim.Candidate)!;
+        Assert.Equal((claim.Candidate, IntegrationDecides.Split, IntegrationRequester.Person), (decide.Candidate, decide.Decide, decide.Requester));
+        Assert.Equal(decide, recorded.Decide);
+
+        // A second decide answers the first, and writes nothing.
+        var revision = Revision();
+        var again = store.Decide(claim.Candidate, IntegrationDecides.Land, IntegrationRequester.Person);
+        Assert.Equal((IntegrationDecideRefusals.Decided, IntegrationDecides.Split), (again.Refused, again.Decide!.Decide));
+        Assert.Equal(revision, Revision());
+        Assert.Equal([IntegrationDecides.Split, IntegrationDecides.HandBack, IntegrationDecides.Land], IntegrationDecides.All);
+    }
+
+    [Fact]
+    public void A_decide_is_refused_with_nothing_written_for_a_candidate_not_held_for_one_ended_or_unknown_and_land_is_the_person_s_alone()
+    {
+        var (store, claim) = HeldForDecide();
+        var revision = Revision();
+
+        Assert.Equal(IntegrationDecideRefusals.Land, store.Decide(claim.Candidate, IntegrationDecides.Land, IntegrationRequester.Steward).Refused);
+        Assert.Equal(IntegrationDecideRefusals.Gone, store.Decide("candidate-none", IntegrationDecides.Split, IntegrationRequester.Person).Refused);
+        Assert.Throws<ArgumentException>(() => store.Decide(claim.Candidate, "merge", IntegrationRequester.Person));
+        Assert.Equal(revision, Revision());
+
+        // Held at its promotion, not at its judge: no decide releases that, the next look tries it again.
+        var promote = store.Begin(claim, IntegrationStepNames.Promote, lineCommit: Line);
+        store.End(claim, promote.Id, new IntegrationStepEnd(IntegrationStepOutcomes.Held) { Said = "the checkout is not clean." });
+        Assert.Equal(IntegrationDecideRefusals.NotHeld, store.Decide(claim.Candidate, IntegrationDecides.Split, IntegrationRequester.Person).Refused);
+
+        var ended = store.Begin(claim, IntegrationStepNames.Judge);
+        store.End(claim, ended.Id, new IntegrationStepEnd(IntegrationStepOutcomes.Stopped) { Ends = IntegrationCandidateEnds.Stopped });
+        Assert.Equal(IntegrationDecideRefusals.Gone, store.Decide(claim.Candidate, IntegrationDecides.Split, IntegrationRequester.Person).Refused);
+        Assert.Null(store.DecideOf(claim.Candidate));
+    }
+
+    [Fact]
+    public void A_queued_request_ordered_first_or_last_moves_in_its_line_s_queue_alone_and_one_in_a_candidate_or_closed_keeps_its_place()
+    {
+        var store = Store("run-a");
+        for (var each = 1; each <= 4; each++) Assert.Null(store.Add(Request($"r{each}", $"feature/q{each}-fix") with { At = At.AddMinutes(each) }));
+        Assert.Null(store.Add(Request("r5", "feature/q5-fix", line: "release") with { At = At }));
+
+        Assert.Null(store.Order("r3", IntegrationOrders.First));
+        Assert.Equal(["r3", "r1", "r2", "r4"], store.Queued("engine", "main").Select(each => each.Id));
+        Assert.Null(store.Order("r1", IntegrationOrders.Last));
+        Assert.Equal(["r3", "r2", "r4", "r1"], store.Queued("engine", "main").Select(each => each.Id));
+        Assert.Null(store.Order("r4", IntegrationOrders.First));
+        Assert.Equal(["r4", "r3", "r2", "r1"], store.Queued("engine", "main").Select(each => each.Id));
+        // Where each stands: before the arrivals, by arrival, or after them.
+        Assert.Equal([IntegrationOrders.First, IntegrationOrders.First, null, IntegrationOrders.Last], store.Queued("engine", "main").Select(each => each.Ordered));
+        Assert.Equal(["r5"], store.Queued("engine", "release").Select(each => each.Id));
+
+        store.Form(Forming("r2"));
+        var revision = Revision();
+        Assert.Equal(IntegrationOrderRefusals.Stands, store.Order("r2", IntegrationOrders.First));
+        Assert.Equal(IntegrationOrderRefusals.Gone, store.Order("r9", IntegrationOrders.First));
+        Assert.Throws<ArgumentException>(() => store.Order("r3", "middle"));
+        Assert.Equal(revision, Revision());
+        Assert.True(store.Close("r3", IntegrationRequestCloses.Dropped));
+        Assert.Equal(IntegrationOrderRefusals.Gone, store.Order("r3", IntegrationOrders.Last));
+        Assert.Equal(["r4", "r1"], store.Queued("engine", "main").Select(each => each.Id));
+    }
+
+    [Fact]
+    public void A_home_with_no_store_has_no_decide_and_orders_nothing_and_the_read_makes_none()
+    {
+        Assert.Null(Store("run-a").DecideOf("candidate-1"));
+        Assert.Empty(Store("run-a").Queued("engine", "main"));
+        Assert.False(File.Exists(Db));
+    }
+
     [Fact]
     public void A_member_that_left_its_candidate_or_never_joined_it_takes_no_step()
     {

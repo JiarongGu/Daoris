@@ -74,7 +74,7 @@ public static class AttentionStateSlice
             "kind", "id", "since", "workspace", "where", "note", "detail", "publishTo", "choices", "ask", "number", "goAhead", "session",
             "departed", "setUp", "local", "environment", "shows", "opinion", "placed", "sitting", "trust", "quest", "proposal", "title",
             "permission", "blocked", "held", "unreadable", "wholeWorkspace", "holding", "read", "account", "answer", "ended",
-            "confirmation", "agent", "stands", "stale", "space", "git", "quiet", "declined", "memory",
+            "confirmation", "agent", "stands", "stale", "space", "git", "quiet", "declined", "memory", "integration",
         ],
         ["waiting"] = ["kind", "workspace"],
         ["working"] = ["workspace"],
@@ -125,6 +125,8 @@ public static class AttentionStateSlice
         ["declined"] = ["node", "quest", "to", "work", "request"],
         // KNOWCENTRAL2e: what memory waits on the person for one session: ends and replacements to approve, a stopped session's staged rows.
         ["memory"] = ["ends", "replacements", "staged"],
+        // INTEGRATE1h: an integration's wait on the owner: which (decide, superseded, card), its line and what it names.
+        ["integration"] = ["wait", "repository", "line", "branch", "branches", "candidate", "request", "commit", "subject", "unit", "tip", "why"],
     };
 
     /// <summary>Which shape a field holds, as <c>shape.field</c>, an object of it or a list of them; every other field is a value.</summary>
@@ -162,6 +164,7 @@ public static class AttentionStateSlice
         ["row.git"] = "git",
         ["row.declined"] = "declined",
         ["row.memory"] = "memory",
+        ["row.integration"] = "integration",
     };
 
     /// <summary>
@@ -306,6 +309,8 @@ public static class AttentionStateSlice
             {
                 hold.Run, hold.Node, hold.Repository, hold.Workspace, hold.Quest, hold.To, hold.Work, hold.Request, Since = Moments.Write(hold.Since),
             })),
+            // INTEGRATE1h: the integration's waits on the owner, from the home's integration record and the node runtime's last look.
+            Integration = Written(IntegrationWaits(loop.Home, loop.CardWaits)),
             // SESSWATCH1a: each session the watcher brings to the person, from its memory.
             Quiet = Written(QuietWaits(SessionWatch.Of(loop.Events), loop.Processes)),
             // SUPERVISOR1a-i: the parks a supervisor's held or released decision answers for, from the decisions' memory.
@@ -564,6 +569,50 @@ public static class AttentionStateSlice
                 Since = Moments.Write(each.Since),
             }),
     ];
+
+    /// <summary>
+    /// The integration's waits on the owner (INTEGRATE1h; the integration design §5.8, §17.4), oldest first by kind: each standing candidate
+    /// whose judge the policy held for a decide no one has recorded yet, with its members' branches and the judge's words; each superseded
+    /// commit no one has answered; and each landing the runtime last found waiting for the owner's card. A read of the home's integration
+    /// record, which a store from before the family answers with none.
+    /// </summary>
+    public static IReadOnlyList<object> IntegrationWaits(string home, IReadOnlyList<IntegrationCardWait> cards)
+    {
+        var store = new IntegrationStore(home);
+        var waits = new List<object>();
+        foreach (var candidate in store.Standing().Where(each => each.PromotedAt is null))
+        {
+            if (store.Steps(candidate.Id).LastOrDefault() is not { Step: IntegrationStepNames.Judge, Outcome: IntegrationStepOutcomes.Held } held) continue;
+            if (store.DecideOf(candidate.Id) is not null) continue;
+            var branches = store.Members(candidate.Id).Where(member => member.Stands).Select(member => store.Request(member.Request)?.Branch).OfType<string>();
+            waits.Add(new
+            {
+                Wait = "decide", Id = $"decide:{candidate.Id}", candidate.Repository, candidate.Workspace, candidate.Line, Candidate = candidate.Id,
+                Branches = branches.ToArray(), Why = held.Said, Since = Moments.Write(held.EndedAt),
+            });
+        }
+
+        foreach (var pending in store.Pending())
+        {
+            if (store.Request(pending.Request) is not { } request) continue;
+            waits.Add(new
+            {
+                Wait = "superseded", Id = $"superseded:{pending.Request}:{pending.Commit}", request.Repository, request.Workspace, request.Line, request.Branch,
+                Request = pending.Request, pending.Commit, pending.Subject, Since = Moments.Write(pending.At),
+            });
+        }
+
+        foreach (var card in cards)
+        {
+            waits.Add(new
+            {
+                Wait = "card", Id = $"card:{card.Unit}", card.Repository, card.Workspace, card.Branch, card.Unit, card.Tip, Why = card.Said,
+                Since = Moments.Write(card.Since),
+            });
+        }
+
+        return waits;
+    }
 
     /// <summary>Wake the slice where a hold on a git remote of <paramref name="home"/>'s is kept or lifted (GITAUTH1a, <see cref="GitHolds.Changed"/>).</summary>
     public static IDisposable HearGitHolds(string home, Action wake)
