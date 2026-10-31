@@ -44,6 +44,15 @@ describe('the running calls, pushed (WAITSAY1c2)', () => {
     expect(callsSlice.compose(new Map<string, unknown>([['calling', {}], ['quiet', {}]]), true)).toEqual({});
   });
 
+  // COWORKVIEW1a rule 18 (§3.7): when a session was last heard, laid beside its call, or beside a call of no title.
+  it("lays when a session was last heard beside its call, and takes the partition for no call", () => {
+    const call = { title: 'npm test', since: '2026-10-20T08:00:00+00:00' };
+    const at = '2026-10-20T08:03:00+00:00';
+    expect(callsSlice.compose(new Map<string, unknown>([['calling', { a: call }], ['heard', { a: { at }, b: { at } }]]), true))
+      .toEqual({ a: { ...call, heard: at }, b: { title: '', since: at, heard: at } });
+    expect(callsSlice.compose(new Map<string, unknown>([['calling', {}], ['heard', {}]]), true)).toEqual({});
+  });
+
   it("overlays the pushed call on a session's grouping, and clears what the pull still says once none runs", () => {
     const call = { title: 'npm test', since: '2026-10-20T08:00:00+00:00' };
     const old = { title: 'old', since: '2026-10-20T07:00:00+00:00' };

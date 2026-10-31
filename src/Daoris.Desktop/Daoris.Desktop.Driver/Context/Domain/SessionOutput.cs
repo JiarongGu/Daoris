@@ -69,6 +69,9 @@ public sealed class SessionOutput : ISessionOutput
         public bool Live = true;
         public long Touched;
 
+        /// <summary>When its newest line arrived; null before any.</summary>
+        public DateTimeOffset? Heard;
+
         /// <summary>The session a stream belongs to, and what it is — null for a session's own buffer.</summary>
         public string? Parent;
         public SessionStream? Stream;
@@ -81,6 +84,30 @@ public sealed class SessionOutput : ISessionOutput
     private readonly object _gate = new();
     private readonly Dictionary<string, Buffer> _sessions = new(StringComparer.OrdinalIgnoreCase);
     private long _clock;
+
+    /// <summary>The moment a line is stamped with; a test sets it.</summary>
+    public Func<DateTimeOffset> Clock { get; set; } = () => DateTimeOffset.UtcNow;
+
+    /// <summary>
+    /// Each live session's newest line, its own or any of its streams' (COWORKVIEW1a, <i>last heard</i>), held in memory alone. A
+    /// session that said nothing, or whose console closed, has no row.
+    /// </summary>
+    public IReadOnlyDictionary<string, DateTimeOffset> HeardNow()
+    {
+        lock (_gate)
+        {
+            var heard = new Dictionary<string, DateTimeOffset>(StringComparer.OrdinalIgnoreCase);
+            foreach (var (key, buffer) in _sessions)
+            {
+                if (buffer.Heard is not { } at) continue;
+                var session = buffer.Parent ?? key;
+                if (!_sessions.TryGetValue(session, out var own) || !own.Live) continue;
+                if (!heard.TryGetValue(session, out var was) || at > was) heard[session] = at;
+            }
+
+            return heard;
+        }
+    }
 
     /// <summary>What a session's stream is tailed by: the session's id, then the stream's own.</summary>
     public static string Key(string sessionId, string streamId) => $"{sessionId}/{streamId}";
@@ -173,6 +200,7 @@ public sealed class SessionOutput : ISessionOutput
 
             buffer.Sequence += 1;
             buffer.Touched = ++_clock;
+            buffer.Heard = Clock();
             // A session that speaks again is live again. A stream that ended stays ended: a line its
             // file still held is the last of it, never a second life.
             if (buffer.Parent is null) buffer.Live = true;

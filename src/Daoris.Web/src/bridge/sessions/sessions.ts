@@ -60,7 +60,7 @@ export const sessionsSlice: SliceSpec = {
  * the person's answer to its permission request (AUTONOMY1b3b), and whether Daoris told the session it ran past its pipeline's bound
  * (FABRIC-PIPELINE1c), each absent from a host older than the mark.
  */
-export type PushedCall = { title: string; since: string; waiting?: boolean; told?: boolean; quiet?: string };
+export type PushedCall = { title: string; since: string; waiting?: boolean; told?: boolean; quiet?: string; heard?: string };
 
 const isCall = (value: unknown): value is PushedCall =>
   typeof value === 'object' && value !== null
@@ -79,7 +79,7 @@ export const callsSlice: SliceSpec = {
     if (!judged) return undefined;
     const calls: Record<string, PushedCall> = {};
     for (const [name, part] of partitions) {
-      if (name === 'quiet' || typeof part !== 'object' || part === null || Array.isArray(part)) continue;
+      if (name === 'quiet' || name === 'heard' || typeof part !== 'object' || part === null || Array.isArray(part)) continue;
       for (const [session, call] of Object.entries(part)) if (isCall(call)) calls[session] = call;
     }
     // SESSWATCH1a: the watcher's mark laid over each quiet session's call, or a call of no title where it makes none (§5.1).
@@ -88,6 +88,14 @@ export const callsSlice: SliceSpec = {
       for (const [session, mark] of Object.entries(quiet)) {
         const since = (mark as { since?: unknown } | null)?.since;
         if (typeof since === 'string') calls[session] = { ...(calls[session] ?? { title: '', since }), quiet: since };
+      }
+    }
+    // COWORKVIEW1a: when the window last heard a session (§3.7), beside its call, or a call of no title where it makes none.
+    const heard = partitions.get('heard');
+    if (typeof heard === 'object' && heard !== null && !Array.isArray(heard)) {
+      for (const [session, mark] of Object.entries(heard)) {
+        const at = (mark as { at?: unknown } | null)?.at;
+        if (typeof at === 'string') calls[session] = { ...(calls[session] ?? { title: '', since: at }), heard: at };
       }
     }
     return calls;

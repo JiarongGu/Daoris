@@ -381,6 +381,8 @@
   "work.facts.integration.settled": "已并入 {{line}}",
   "work.facts.integration.dropped": "已从 {{line}} 撤下",
   "work.facts.calling": "正在运行 {{title}}，已 {{elapsed}}",
+  "work.facts.withIt": "{{count}} 个在一起工作",
+  "work.facts.withItHeard": "{{count}} 个在一起工作 · {{ago}}有动静",
   "work.facts.callWaits": "{{title}} 等你答复，已 {{elapsed}}",
   "work.facts.callWaitsUnnamed": "一个工具调用等你答复，已 {{elapsed}}",
   "work.facts.started": "{{ago}}开始",

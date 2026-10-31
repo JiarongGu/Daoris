@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import i18n from '../../locales/i18n';
 import { en, zh } from '../../locales';
 import { AtWorkView } from './AtWorkView';
@@ -112,6 +112,22 @@ describe('who is at work on a session', () => {
     expect(screen.getByText('2 more parts')).toBeTruthy();
     fireEvent.click(screen.getByText('codex'));
     expect(open).toHaveBeenCalledWith('s0');
+  });
+
+  it('offers a child’s console only while the window holds its stream, and opens that stream on a press', async () => {
+    const open = vi.fn();
+    const held = (key: string) => (key === 'a1' ? 's1/subagent/a1' : undefined);
+    render(<AtWorkView held={THREE} now={NOW} streamOf={held} onOpenStream={open} />);
+
+    const consoles = screen.getAllByRole('button', { name: /^Console/ });
+    expect(consoles).toHaveLength(1);
+    fireEvent.click(consoles[0]!);
+    expect(open).toHaveBeenCalledWith('s1/subagent/a1');
+
+    cleanup();
+    await i18n.changeLanguage('zh');
+    render(<AtWorkView held={THREE} now={NOW} streamOf={held} onOpenStream={open} />);
+    expect(screen.getAllByRole('button', { name: /^控制台/ })).toHaveLength(1);
   });
 
   it('says the same in 中文', async () => {

@@ -114,6 +114,46 @@ public sealed class DriverModuleHeldTests : DriverModuleBridge
         Assert.False(events[^1].GetProperty("answer").TryGetProperty("stale", out var _3));
     }
 
+    /// <summary>
+    /// COWORKVIEW1a rule 14: an ask is answered within the window's bound while a 40-member answer is composed beside three other held
+    /// reads, the 40 rows are told once when they land, and the same composition again tells nothing.
+    /// </summary>
+    [Fact]
+    public async Task An_ask_is_answered_within_the_bound_while_a_forty_member_answer_lands_beside_three_other_held_reads()
+    {
+        var held = new HeldAnswers(Bus) { Patience = TimeSpan.FromMilliseconds(50) };
+        var told = Heard(out var hearing);
+        using var _ = hearing;
+        var rows = Enumerable.Range(0, 40).Select(i => new { Key = $"a{i:00}", State = "working" }).ToArray();
+        async Task<object?> Forty(CancellationToken ct)
+        {
+            await Task.Delay(400, ct);
+            return new { Rows = rows };
+        }
+
+        async Task<object?> Other(CancellationToken ct)
+        {
+            await Task.Delay(400, ct);
+            return new { Other = 1 };
+        }
+
+        var clock = Stopwatch.StartNew();
+        var others = new[] { "o1", "o2", "o3" }.Select(key => held.AskAsync(key, key, Other)).ToArray();
+        var first = await held.AskAsync("k", "q1", Forty, numbered: true);
+        await Task.WhenAll(others);
+        Assert.True(clock.Elapsed < UiStallWatch.Bound, $"the asks answered after {clock.Elapsed.TotalMilliseconds} ms");
+        Assert.True(HeldAnswers.IsPending(first));
+
+        await UntilAsync(() => { lock (told) return told.Count(each => each.GetProperty("held").GetString() == "q1") >= 1; });
+        JsonElement landed;
+        lock (told) landed = told.First(each => each.GetProperty("held").GetString() == "q1");
+        Assert.Equal(40, landed.GetProperty("answer").GetProperty("rows").GetArrayLength());
+
+        await held.LandedAsync("k");
+        await Task.Delay(100);
+        lock (told) Assert.Single(told, each => each.GetProperty("held").GetString() == "q1");
+    }
+
     [Theory]
     [MemberData(nameof(HeldRoutes))]
     public async Task A_held_read_answers_within_the_windows_bound_while_its_slow_work_is_told_by_event(string route)
