@@ -180,7 +180,7 @@ public sealed class RoleCatalog
     /// holds until the person gives the work a role. A work that is off has its role, with no choices, and is not this.
     /// </summary>
     public static string NoRole(string work) =>
-        $"No role takes `{work}` here, so its starts hold until one is given it: Settings → AI features → Roles, or `daoris driver role`.";
+        $"No role takes `{work}` here, so its starts hold until one is given it: Agents → Roles, or `daoris driver role`.";
 
     /// <summary>
     /// The roles whose entry in <c>driver.json</c> the projection narrows for an older build (§19.15, <i>C6-1.7</i>): Intake and Ask Daoris

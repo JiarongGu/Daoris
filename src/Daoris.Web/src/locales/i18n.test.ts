@@ -91,7 +91,8 @@ describe('the catalogs', () => {
    * Nothing on the window is called that any more.
    */
   it('name only views that exist: Work has been Sessions since D66', () => {
-    expect(Object.entries(en).filter(([, value]) => /\bWork\b/.test(value)).map(([key]) => key)).toEqual([]);
+    // Except the Roles mode's section of that name, one of the nine kinds of work (COMPANYVIEW1b), which is no view.
+    expect(Object.entries(en).filter(([key, value]) => key !== 'nav.roles.work' && /\bWork\b/.test(value)).map(([key]) => key)).toEqual([]);
     expect(Object.entries(zh).filter(([, value]) => /工作台|「工作」/.test(value)).map(([key]) => key)).toEqual([]);
   });
 

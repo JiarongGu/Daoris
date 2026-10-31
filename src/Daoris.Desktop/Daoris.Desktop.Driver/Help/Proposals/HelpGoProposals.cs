@@ -365,6 +365,8 @@ public static class HelpPlaces
         ("start", "landing", "step 5, how work lands"), ("start", "rules", "step 6, what agents may do"),
         // UX6e2: the agent's page's sections a door opens (D150 §5.2); Permissions' Proposals are its What it may do.
         ("agents", "accounts", "Accounts"), ("agents", "rules", "What it may do"), ("agents", "usage", "Usage"),
+        // COMPANYVIEW1b: the Agents place's Roles mode (the company-view design §1), where the working roles are set.
+        ("agents", "roles", "Roles"),
     ];
 
     /// <summary>

@@ -66,7 +66,10 @@ public sealed class HelpRoomDoorsTests
         Assert.DoesNotContain("the quest's drawer → Try again", agents);
         // What a landing pattern may say, as `LandingRules` reads it — the first real conversation had to guess.
         foreach (var token in new[] { "{quest}", "{session}", "{slug}", "{repository}" }) Assert.Contains(token, agents);
-        Assert.Contains("Settings → AI features", agents);
+        // COMPANYVIEW1b: the working roles' settings are in the Agents place's Roles mode, not on AI features.
+        Assert.Contains("Agents → Roles → Working roles", agents);
+        Assert.DoesNotContain("Settings → AI features → Actors", agents);
+        Assert.DoesNotContain("Role catalogue", agents);
         // SETUP1b: the setup guide the person may be walked through, by the names the window gives it; Help's since UX7a
         // (D152), where the Daoris menu held it. UX6i2a: named Get started since UX6j (D150 §2).
         Assert.Contains("Settings → Get started (Help → *Get started*)", agents);

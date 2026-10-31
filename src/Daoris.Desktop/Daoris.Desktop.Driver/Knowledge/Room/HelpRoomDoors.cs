@@ -158,14 +158,14 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             + "last answered)",
             "(no screen yet)", "`daoris-driver trees state <session|branch> [--repository <name>]`"),
         // MODELROLE1d (D205 §6.4): the Intake and Ask Daoris cards folded into their actor rows; each verb writes a one-choice order.
-        ("choose the agent that answers asks", "Settings → AI features → Actors, Intake", "`daoris driver intake <agent>|off`"),
-        ("choose the agent Ask Daoris runs on", "Settings → AI features → Actors, Ask Daoris", "`daoris driver helper <agent>|off`"),
+        ("choose the agent that answers asks", "Agents → Roles → Working roles, Intake", "`daoris driver intake <agent>|off`"),
+        ("choose the agent Ask Daoris runs on", "Agents → Roles → Working roles, Ask Daoris", "`daoris driver helper <agent>|off`"),
         // HELP9: every `daoris driver` verb that changes something is a row, the two a terminal alone set among them.
-        ("choose the agent driven sessions start on", "Settings → AI features → Actors, Build", "`daoris driver adapter <agent>`"),
+        ("choose the agent driven sessions start on", "Agents → Roles → Working roles, Build", "`daoris driver adapter <agent>`"),
         // MODELROLE1c (D205 §8.3): who does each kind of work, with which model, in order; its proposal door is owed (MODELROLE1h).
-        ("choose who does each kind of work, and with which model", "Settings → AI features → Actors", "`daoris driver actor <actor> …`"),
+        ("choose who does each kind of work, and with which model", "Agents → Roles → Working roles", "`daoris driver actor <actor> …`"),
         // FOUNDATION1y-i (§2.7): the role catalogue, a role added, changed, removed or given back its seed; `role_propose` proposes it.
-        ("add, change or remove a role that takes a kind of work", "Settings → AI features → Role catalogue", "`daoris driver role set|remove|default <id> …`"),
+        ("add, change or remove a role that takes a kind of work", "Agents → Roles → Working roles", "`daoris driver role set|remove|default <id> …`"),
         ("park a quest after failed sessions", "Settings → Driver", "`daoris driver strikes <n>`"),
         // SESSUX1b: FRAME1d made the quest's drawer a page. A stop's release names its session, since the terminal cannot
         // see which hold a quest is under (D50); the page's Try again on a stopped quest is the web shell's to add.

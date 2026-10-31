@@ -46,7 +46,7 @@ export function RoleSectionMain({ section, children }: { section: RoleSection; c
   const { t } = useTranslation();
   return (
     <ViewMain header={<PageHead title={t(`nav.roles.${section}`)} />}>
-      {BUILT_SECTIONS.includes(section) ? children : <p className="m-0 text-body text-ink-muted">{t('agents.roles.laterOf')}</p>}
+      {BUILT_SECTIONS.includes(section) ? children : <p className="m-0 text-body text-ink-soft">{t('agents.roles.laterOf')}</p>}
     </ViewMain>
   );
 }

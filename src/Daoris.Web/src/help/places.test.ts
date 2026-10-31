@@ -22,7 +22,7 @@ describe('the places a go may name', () => {
       'projects/workspace-setup', 'projects/workspace-defaults', 'projects/workspace-remote',
       'knowledge/search', 'knowledge/convergence',
       'start/agent', 'start/helper', 'start/repositories', 'start/driven', 'start/landing', 'start/rules',
-      'agents/accounts', 'agents/rules', 'agents/usage',
+      'agents/accounts', 'agents/rules', 'agents/usage', 'agents/roles',
     ]);
     expect(PLACE_KEPT.map(({ was, now }) => `${spelled(was)} → ${spelled(now)}`)).toEqual([
       'search → knowledge/search', 'convergence → knowledge/convergence', 'settings/plugins → plugins',
@@ -55,6 +55,8 @@ describe('the places a go may name', () => {
     expect(placeDoor({ view: 'agents', part: 'accounts' })).toEqual({ view: 'agents', agentPart: 'accounts' });
     expect(placeDoor({ view: 'agents', part: 'rules' })).toEqual({ view: 'agents', agentPart: 'rules' });
     expect(placeDoor({ view: 'agents', part: 'usage' })).toEqual({ view: 'agents', agentPart: 'usage' });
+    // COMPANYVIEW1b: the Roles mode is a part of the Agents place, a mode and no part of an agent's page.
+    expect(placeDoor({ view: 'agents', part: 'roles' })).toEqual({ view: 'agents', agentsMode: 'roles' });
     // HELPSETUP1: a repository's own values are on its Setup, on the repository Repositories has chosen.
     expect(placeDoor({ view: 'projects', part: 'setup' })).toEqual({ view: 'projects', tab: 'setup' });
     expect(placeDoor({ view: 'settings', domain: 'start', part: 'helper' })).toEqual({ view: 'settings', section: 'start', anchor: 'step-helper' });

@@ -4,7 +4,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// <c>daoris-driver driver role</c> (FOUNDATION1y-i, the foundation design §2.7): the terminal's door into the role catalogue, the window
-/// twin of Settings → AI features → <i>Roles</i> over <c>SET_ROLE</c>. <c>role</c> says every role, <c>role &lt;id&gt;</c> one;
+/// twin of Agents → <i>Roles</i> over <c>SET_ROLE</c>. <c>role</c> says every role, <c>role &lt;id&gt;</c> one;
 /// <c>role set</c> adds or changes a working role (its names, work, scope and choices), <c>role remove</c> takes one out and
 /// <c>role default</c> gives a seeded one back its seed. Each change is judged by the role door's judge before anything is sent or
 /// written, so a refusal is said in the judge's sentence.

@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// FOUNDATION1y-i (the foundation design §2.7): <c>ROLES</c>, the catalogue as Settings → AI features → <i>Roles</i> shows it, and
+/// FOUNDATION1y-i (the foundation design §2.7): <c>ROLES</c>, the catalogue as Agents → <i>Roles</i> shows it, and
 /// <c>SET_ROLE</c>, the person's press that adds, changes, removes or gives back a working role through the role door, whose judge
 /// refuses with nothing written.
 /// </summary>
