@@ -5,6 +5,14 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## LANDNODE1a — the `land` kind and its rules (2026-11-01)
+
+> **LANDNODE1a — the kind and its rules** (driver; the land node design §8 row 1). `land` (落地), a built-in kind, performed with Daoris as its executor, its authority and options (`method`, `accept`, `target`, `pattern`, `plugin`, `squash`, `message`) each held to their choices, and §6's graph rules. Proof: a test per refusal; an older table reads `land` as unknown; stored versions read unchanged.
+
+**Outcome** 2026-11-01: `NodeKinds.Land` with the authority row (reached and failed by the landing record, never skipped), `LandNodes.Problem` for the options, and `land-once`, `land-tail` and `land-automatic` in `NodeGraphs.Problems`, with `landing-kind` reworded and the rules that name a landing counting `land`; a verification pipeline holds none. Pure declaration: nothing performs or draws `land` yet (rows 1c, 1c2). Detail: D173's note of this date; tests `LandNodeKindTests` and the rows of `graph-problems.json` and `workflow-graph-versions.json`.
+
+---
+
 ## SESSRELATED1 — a session's head names only the sessions it can meet, and says an unread tree once (2026-11-01)
 
 > **SESSRELATED1 — a session's head names only the sessions it can meet, and says an unread tree once** (driver, modules, web; the owner's report, 2026-11-01). The head's "Beside it in Daoris:" showed fifteen identical "not read here (last read 09:24)" lines. Causes: the candidates took every session with a recorded tree, closed ones whose trees are gone included; an unreadable own tree marked every other session `not-read`; the page drew a line each. Contract: a candidate is a session whose tree folder exists here; an unreadable own tree is one top-level `own: not-read`, never a mark on the others; a present tree git cannot read stays `not-read` per session, and two or more fold into one line. Proof: `RelatedSessionsTests`, a candidates-filter test, `RelatedSessions.test.tsx`.
