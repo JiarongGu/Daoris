@@ -3953,7 +3953,10 @@ public sealed class AcpSession(
         return TextBounds.ClipCounted(raw, 400);
     }
 
-    /// <param name="sent">Told once the request is on the wire, before its answer is awaited.</param>
+    /// <param name="sent">
+    /// Told once the request is on the wire, before its answer is awaited, and always before <paramref name="answered"/>: by the
+    /// reader, where the answer was read before the write returned.
+    /// </param>
     /// <param name="answered">
     /// Told the answer's frame on the reader's thread, before the answer is handed back and before anything after it is
     /// read (STEER1) — never once the caller has stopped waiting for it.
@@ -3968,7 +3971,35 @@ public sealed class AcpSession(
     {
         var id = Interlocked.Increment(ref _nextId);
         var waiting = new TaskCompletionSource<JsonElement>(TaskCreationOptions.RunContinuationsAsynchronously);
-        if (answered is not null) _answered[id] = answered;
+        // 🔴 The answer can be read before the write's return runs `sent` (a carry-on's turn was kept before its note, 2026-10-31): whichever
+        // comes first tells it, once, and the other waits for it to finish.
+        var told = false;
+        var telling = new object();
+        void Tell()
+        {
+            lock (telling)
+            {
+                if (told) return;
+                told = true;
+                sent?.Invoke();
+            }
+        }
+
+        if (answered is not null)
+        {
+            _answered[id] = frame =>
+            {
+                try
+                {
+                    Tell();
+                }
+                finally
+                {
+                    answered(frame);
+                }
+            };
+        }
+
         _pending[id] = waiting;
 
         try
@@ -3990,7 +4021,7 @@ public sealed class AcpSession(
             throw;
         }
 
-        sent?.Invoke();
+        Tell();
 
         try
         {
