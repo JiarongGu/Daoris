@@ -59,6 +59,7 @@ public sealed class GitRefDeleteTests : TreeSyncFixture
         Assert.Null(await RefAsync(root, "refs/heads/topic"));
         Assert.Equal(tip, await RefAsync(root, "refs/daoris/discarded/topic"));
         Assert.DoesNotContain("branch \"topic\"", ConfigOf(root));
+        Assert.NotEmpty((await GitAsync(root, "reflog", "show", "refs/daoris/discarded/topic")).Trim());
         var act = Journal("run-a").Act(run.Act!)!;
         Assert.Equal((GitRefActs.DeleteKind, "window", false), (act.Kind, act.Press, act.Open));
         Assert.Equal([ActStepKinds.Ref, ActStepKinds.Config], Journal("run-a").Steps(act.Id).Select(step => step.Kind));

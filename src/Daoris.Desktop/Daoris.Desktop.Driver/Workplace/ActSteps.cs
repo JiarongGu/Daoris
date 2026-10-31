@@ -76,9 +76,12 @@ internal static class ActSteps
     {
         _ = held;
         var input = Read(step.Arguments)["input"]!.GetValue<string>();
-        // A recovery ref is dated by its reflog's first entry (RECOVERYDATE1), which git writes outside refs/heads/ only when asked.
-        string[] command = input.Contains(ContentHolds.DiscardedPrefix, StringComparison.Ordinal) ? ["update-ref", "--create-reflog", "--stdin"] : ["update-ref", "--stdin"];
-        var run = await launch.HeldGitAsync(launch.Root, step.Ordinal, command, input, null).ConfigureAwait(false);
+        // A recovery ref is dated by its reflog's first entry (RECOVERYDATE1), which git writes outside refs/heads/ only when asked
+        // (`--create-reflog` has no place in the census's literal command, so the setting is passed for this one git).
+        var reflog = input.Contains(ContentHolds.DiscardedPrefix, StringComparison.Ordinal)
+            ? new Dictionary<string, string>(StringComparer.Ordinal) { ["GIT_CONFIG_COUNT"] = "1", ["GIT_CONFIG_KEY_0"] = "core.logAllRefUpdates", ["GIT_CONFIG_VALUE_0"] = "always" }
+            : null;
+        var run = await launch.HeldGitAsync(launch.Root, step.Ordinal, ["update-ref", "--stdin"], input, reflog).ConfigureAwait(false);
         return run.End(run.Exit == 0 ? "git made the transaction" : $"git refused the transaction ({ContentHolds.Said(run.Stderr)})");
     }
 

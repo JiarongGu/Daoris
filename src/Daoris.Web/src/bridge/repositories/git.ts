@@ -230,7 +230,7 @@ export const useGitTryAgain = () =>
       call<{ lifted: number }>('GIT_TRY_AGAIN', { repositories: [...repositories], ...(workspace ? { workspace } : {}) }),
   });
 
-/** What `GIT_REF_CREATE` and `GIT_REF_UNDO` answer (GITAPP2c): the journal's act and its outcome, or a refusal as data with the driver's sentence. */
+/** What `GIT_REF_CREATE`, `GIT_REF_DELETE` and `GIT_REF_UNDO` answer (GITAPP2c, d): the journal's act and its outcome, or a refusal as data with the driver's sentence. */
 export type GitRefAnswer = { act?: string | null; outcome?: string | null; refused: boolean; said: string; code?: string | null };
 
 /**
@@ -250,7 +250,12 @@ export const useGitRefActs = (repository: string, workspace: string) => {
     mutationFn: (act: string) => call<GitRefAnswer>('GIT_REF_UNDO', { ...base, act }),
     onSuccess: refresh,
   });
-  return { make: make.mutateAsync, undo: undo.mutateAsync };
+  // GITAPP2d: a branch deleted at the commit the list showed; the driver refuses it where it stands elsewhere.
+  const remove = useMutation({
+    mutationFn: (ask: { kind: 'branch' | 'tag'; name: string; at: string }) => call<GitRefAnswer>('GIT_REF_DELETE', { ...base, ...ask }),
+    onSuccess: refresh,
+  });
+  return { make: make.mutateAsync, undo: undo.mutateAsync, remove: remove.mutateAsync };
 };
 
 /** A page of the graph from tips named by their whole ids (the list's `commit`); asks nothing with no tip. */
