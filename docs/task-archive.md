@@ -22118,6 +22118,14 @@ The row is quoted by its head; its whole text and proof are the foundation desig
 
 **Outcome** 2026-10-31: built. A reader's proposal travels as a quest to the entry's owner (proposals from one repository joined, a decline reaching the proposer, a moved target stale, closing applying nothing); a hit says an end awaits its approver; a session's page shows its memory changes (`SESSION_MEMORY`, by event) and the person approves or declines an end or a replacement and keeps or drops a stopped session's rows (`SESSION_MEMORY_DECIDE`), en and zh. Left: *What needs you* rows and the badge count for memory waits; proposals from an intake, Ask Daoris or a person's own agent (a quest needs a registered sender); two proposals at the same moment may publish two quests.
 
+**Outcome** 2026-10-31, the leftovers: memory waits are *What needs you* rows (`GET /api/memory/waits`, polled by the driver's `MemoryWaits` and told as `MEMORY_WAITS`), one per session with its door and the badge's count; proposals made at the same moment join under one lock per sender and owner; the decide answer names a replacement as one. Still left: proposals from an intake, Ask Daoris or a person's own agent.
+
+## KNOWCENTRAL2j — keyed receipts settling held outcomes (2026-10-31, D220)
+
+> **2j** (keyed receipts settling held outcomes; after C).
+
+**Outcome** 2026-10-31: built. Its core came with 2d (keys on every call, settled by receipt at the service's start); a row killed while applying whose receipt may have expired (30 days after it began, Lyntai's retention pinned to the same) is held for a person, never replayed.
+
 ## LOADFLAKE2 — two driver fast-half tests that fail under load (2026-10-31)
 
 > **LOADFLAKE2 — two driver fast-half tests that fail under load** (driver tests; 2026-10-31). Batch 1031b's candidate landed past them under the integration policy's `unconfirmed: land` while builders ran beside it; both pass alone. `ClaudeUsageTests.The_measured_lines_are_written_in_order_and_the_answer_is_read_past_other_frames_and_other_ids` (the written lines out of order, pos 1) and `SessionsSayCommandTests.The_drivers_own_walk_stands_aside_only_for_a_host_with_the_head_mark(marked: True)` (an exit code 0 expected). Find each race, red first under a forced interleaving, fixed with no larger wait; 20 runs beside load.
