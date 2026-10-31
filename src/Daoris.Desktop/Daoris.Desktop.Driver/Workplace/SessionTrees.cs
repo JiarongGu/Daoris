@@ -638,7 +638,8 @@ public sealed class SessionTrees(string home, IWorkplacePluginWire? plugins = nu
     // The callers' calls, one line each (PART10j–l): each part's doc is on its class.
 
     /// <inheritdoc cref="TreeLands.MergeAsync"/>
-    public Task<TreeMerge> MergeAsync(string path, CancellationToken ct = default) => Lands.MergeAsync(path, ct);
+    public Task<TreeMerge> MergeAsync(string path, CancellationToken ct = default, Func<CancellationToken, Task<IReadOnlyList<TreeHolder>>>? beside = null) =>
+        Lands.MergeAsync(path, ct, beside: beside);
 
     /// <inheritdoc cref="TreeLands.PlanAsync"/>
     public Task<LandingPlan> PlanAsync(string path, LandingSubject subject, CancellationToken ct = default, IWorkplaceProcess? process = null) =>
@@ -653,9 +654,9 @@ public sealed class SessionTrees(string home, IWorkplacePluginWire? plugins = nu
         string path, LandingSubject subject, CancellationToken ct = default, Func<CancellationToken, Task<IReadOnlySet<string>>>? inUse = null,
         string acceptedBy = AcceptedBy.Person, IWorkplaceGate? gate = null, bool joins = false,
         Func<bool, CancellationToken, Task<TreeLanding?>>? judged = null, Func<LandedBranch?, bool, CancellationToken, Task<string?>>? beforePush = null,
-        int? uncommitted = null, string? together = null) =>
+        int? uncommitted = null, string? together = null, Func<CancellationToken, Task<IReadOnlyList<TreeHolder>>>? beside = null) =>
         Lands.LandAsync(path, subject, ct, inUse, acceptedBy, gate, joins, judged: judged, beforePush: beforePush, uncommitted: uncommitted,
-            together: together);
+            together: together, beside: beside);
 
     /// <inheritdoc cref="EntryLands.JoinAsync"/>
     public Task<LandingSubject> JoinEntryAsync(
@@ -710,14 +711,16 @@ public sealed class SessionTrees(string home, IWorkplacePluginWire? plugins = nu
     public Task<TreeLanding> LandTogetherAsync(
         string operation, LandingSubject subject, IReadOnlyDictionary<string, IWorkplaceGate?> memberGates, CancellationToken ct = default,
         Func<CancellationToken, Task<IReadOnlySet<string>>>? inUse = null, IWorkplaceGate? gate = null,
-        Func<bool, CancellationToken, Task<TreeLanding?>>? judged = null, Func<LandedBranch?, bool, CancellationToken, Task<string?>>? beforePush = null) =>
-        new TogetherAccepts(_context, Lands).LandAsync(operation, subject, memberGates, ct, inUse, gate, judged, beforePush);
+        Func<bool, CancellationToken, Task<TreeLanding?>>? judged = null, Func<LandedBranch?, bool, CancellationToken, Task<string?>>? beforePush = null,
+        Func<CancellationToken, Task<IReadOnlyList<TreeHolder>>>? beside = null) =>
+        new TogetherAccepts(_context, Lands).LandAsync(operation, subject, memberGates, ct, inUse, gate, judged, beforePush, beside);
 
     /// <inheritdoc cref="EntryLands.LandAsync"/>
     public Task<EntryLanding> LandEntryAsync(
         IReadOnlyList<EntryLandingPart> parts, LandingSubject subject, IReadOnlySet<string> leaveOut, CancellationToken ct = default,
-        Func<CancellationToken, Task<IReadOnlySet<string>>>? inUse = null, EntryTogether? together = null) =>
-        Entries.LandAsync(parts, subject, leaveOut, ct, inUse, together);
+        Func<CancellationToken, Task<IReadOnlySet<string>>>? inUse = null, EntryTogether? together = null,
+        Func<CancellationToken, Task<IReadOnlyList<TreeHolder>>>? beside = null) =>
+        Entries.LandAsync(parts, subject, leaveOut, ct, inUse, together, beside);
 
     /// <inheritdoc cref="TreeReturns.EnsureAsync"/>
     public Task<TreeStanding> EnsureAsync(string root, string tree, CancellationToken ct = default) => Returns.EnsureAsync(root, tree, ct);

@@ -115,7 +115,7 @@ internal sealed class TreeTidies(
                 : null;
             var unasked = inUse is null
                 ? "whether a session still holds its tree was not asked here"
-                : "a session was starting in one of the repository's trees";
+                : TreeLock.HolderOf(context.Home, root) is { } by ? TreeLock.Held(repository, by) : "a session was starting in one of the repository's trees";
             // INTEGRATE1d: the output the accepted declaration names, read once for the repository's trees.
             var declared = await context.ScratchAsync(root, repository, workspace, ct).ConfigureAwait(false);
             foreach (var (branch, tip) in held)
@@ -197,7 +197,7 @@ internal sealed class TreeTidies(
             : null;
         var unasked = inUse is null
             ? "whether a session still holds its tree was not asked here"
-            : "a session was starting in one of the repository's trees";
+            : TreeLock.HolderOf(context.Home, root) is { } by ? TreeLock.Held(repository, by) : "a session was starting in one of the repository's trees";
         // INTEGRATE1d: the output the accepted declaration names, read once for the repository's trees.
         var declared = await context.ScratchAsync(root, repository, workspace, ct, line).ConfigureAwait(false);
         foreach (var (branch, tip, carrier) in carried)

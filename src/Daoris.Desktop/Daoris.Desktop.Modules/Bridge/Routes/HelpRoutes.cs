@@ -816,7 +816,7 @@ public sealed class HelpRoutes(DriverContext context)
             var ledger = _loop.Service ?? throw NotReady();
             var done = await new SessionTrees(_loop.Home).SyncAsync(repositories, inUse, only, fetch: false, ct,
                 inUseNow: async token => await LinesRoutes.InUseAsync(ledger, token).ConfigureAwait(false), scope: Named(repository),
-                beside: token => BranchTidying.HoldersAsync(ledger, token)).ConfigureAwait(false);
+                beside: token => BranchTidying.BesideAsync(ledger, token)).ConfigureAwait(false);
             _loop.Nudge();
             return done;
         }

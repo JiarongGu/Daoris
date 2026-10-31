@@ -76,7 +76,8 @@ internal sealed class TogetherAccepts(TreeContext context, TreeLands lands)
     public async Task<TreeLanding> LandAsync(
         string operationId, LandingSubject subject, IReadOnlyDictionary<string, IWorkplaceGate?> memberGates, CancellationToken ct = default,
         Func<CancellationToken, Task<IReadOnlySet<string>>>? inUse = null, IWorkplaceGate? gate = null,
-        Func<bool, CancellationToken, Task<TreeLanding?>>? judged = null, Func<LandedBranch?, bool, CancellationToken, Task<string?>>? beforePush = null)
+        Func<bool, CancellationToken, Task<TreeLanding?>>? judged = null, Func<LandedBranch?, bool, CancellationToken, Task<string?>>? beforePush = null,
+        Func<CancellationToken, Task<IReadOnlyList<TreeHolder>>>? beside = null)
     {
         var store = new TogetherOperations(context.Home);
         if (store.Of(operationId) is not { } operation) return Refused("nothing is being brought together under that operation");
@@ -113,7 +114,7 @@ internal sealed class TogetherAccepts(TreeContext context, TreeLands lands)
             beforePush: async (landing, waited, token) =>
                 (beforePush is null ? null : await beforePush(landing, waited, token).ConfigureAwait(false))
                 ?? await RecheckAsync(context.Config(), root, operation, checkedTip, line, token).ConfigureAwait(false),
-            together: operation.Id).ConfigureAwait(false);
+            together: operation.Id, beside: beside).ConfigureAwait(false);
 
         await SettleAsync(store, root, operation.Id, landed, plan.Target, (workspace, line), ct).ConfigureAwait(false);
         return landed.Landed

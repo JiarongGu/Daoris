@@ -46,7 +46,7 @@ public sealed partial class CheckoutWritersCensusTests
         ["TreeSquashes.cs"] = (Refs, "a squash's advance, from the recorded tip of a branch checked out in no tree", ["update-ref@root"]),
         ["ContentHolds.cs"] = (Refs, "Daoris's holds on content under its own refs, and a branch deleted verified at the tip judged", ["update-ref@root"]),
         ["RecoveryDropping.cs"] = (Refs, "a recovery ref dropped verified at its commit", ["update-ref@root"]),
-        ["RefTransaction.cs"] = (Refs, "one typed ref transaction (GITTXN1): each ref moved only at its expectation, a lone create or update as one `update-ref`, else `update-ref --stdin`, refused by git itself", ["update-ref@?", "update-ref@root"]),
+        ["RefTransaction.cs"] = (Refs, "one typed transaction per ref act (GITTXN1, GITTXN2), each ref's expectation inside it, for refs no checkout has out: the content holds' deletes, drops and put-backs", ["update-ref@?", "update-ref@root"]),
         ["PieceKeeper.cs"] = (Refs, "a kept piece: read and staged in a private index (GIT_INDEX_FILE), its ref made only where absent; its copy checked out", ["checkout@copy", "read-tree@root", "update-index@root", "update-ref@root"]),
         ["OnlyHereProof.cs"] = (Refs, "a branch deleted, which git refuses while a tree has it out, after git's record of gone trees is pruned", ["branch@root", "worktree@root"]),
         ["TreeOpenings.cs"] = (Refs, "an opening undone: its own tree removed and its new branch deleted", ["branch@root", "worktree@root"]),
@@ -79,12 +79,16 @@ public sealed partial class CheckoutWritersCensusTests
 
     /// <summary>
     /// The doors that start a checkout's writer with a service to ask, each handing it the ledger's sessions (GITAPP2's §3 <i>Beside a
-    /// session</i>), so the write waits for a session working in the checkout. A merge rule's own press is not among them: it reaches the
-    /// promotion through the landing's doors, which carry no such port, and moves as before.
+    /// session</i>), so the write waits for a session working in the checkout. A merge rule's own press reaches the promotion through the
+    /// landing's doors (GITLOCK2), each of which hands it the same.
     /// </summary>
     private static readonly Dictionary<string, string> Beside = new(StringComparer.Ordinal)
     {
-        ["TreesConsole.cs"] = "`daoris-driver trees sync --yes`'s pull",
+        ["TreesConsole.cs"] = "`daoris-driver trees sync --yes`'s pull, and the terminal's Accept and Accept all",
+        ["TreesRoutes.cs"] = "the window's Accept, a merge rule's move",
+        ["EntriesRoutes.cs"] = "the window's Accept on an entry, a merge rule's move",
+        ["ChatLandCommand.cs"] = "a conversation's Accept in the terminal, a merge rule's move",
+        ["AutoLandingWorld.cs"] = "the look's landing at done, a merge rule's move",
         ["LinesRoutes.cs"] = "the window's Bring up to date",
         ["HelpRoutes.cs"] = "Ask Daoris's Bring up to date",
         ["DriverWatch.cs"] = "the integration transport's promotions",
@@ -198,7 +202,7 @@ public sealed partial class CheckoutWritersCensusTests
 
         foreach (var (door, what) in Beside)
         {
-            Assert.True(sources[door].Contains("BranchTidying.HoldersAsync(", StringComparison.Ordinal), $"{door} ({what}) hands the writer no ledger");
+            Assert.True(sources[door].Contains("BranchTidying.BesideAsync(", StringComparison.Ordinal), $"{door} ({what}) hands the writer no ledger");
         }
 
         var pressing = sources.Where(each => Regex.IsMatch(each.Value, @"\.SyncAsync\([^;]*inUseNow:")).Select(each => each.Key);
