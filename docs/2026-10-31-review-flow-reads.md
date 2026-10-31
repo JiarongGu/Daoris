@@ -59,3 +59,37 @@ Read-only review; nothing changed, and no repository `local/` directory was read
 ## The steward's settlement, so far
 
 Codex asks another round on the door (1d) and the word's move (1b); the Opus maker accepts after named changes. Both reads find REVIEWFLOW1a sound once reduced to the web (*Accept all* where the changes are, one owner per D168, and the work wait standing on the session's offer, N2), so the steward accepts that row alone now and builds it. The rest is revised (every blocking finding of both reads) and read again.
+
+## Round 2: the reads of the revision
+
+### Codex's read
+
+1. **Verdict: another round, focused on LINESTOGETHER1d.** LINESTOGETHER1b’s transfer contract is now acceptable as a design; it still needs its stated implementation proofs.
+
+Code references below use **Driver** = `src/Daoris.Desktop/Daoris.Desktop.Driver`, **Service** = `src/Daoris.Service/Daoris.Service.Core`.
+
+2. **My previous blocking findings**
+
+- **Uncombined gates: substantially resolved; inclusion remains incomplete for merge landings.** The revision correctly requires each member’s own gate, pinned tip, submission and result checks, including preflight and before-push checks. These match `Driver/Review/EntryAccepts.cs:114`, `Driver/Workplace/EntryLands.cs:279`, `:312`, and `Driver/Workplace/PressedResults.cs:218`. Extending `Sequence` so included members never land separately also answers the double-landing finding. However, the proposed inclusion and workflow settlement depend on `LandedBranch.Work()` and `Names()` (`Driver/Knowledge/Domain/WorkplaceFacts.cs:166`, `:225`). Merge landings explicitly keep **no landing record** (`Driver/Workplace/TreeLands.cs:771`); workflow settlement instead uses `facts.Accepted` (`Driver/Workflows/Domain/WorkflowRun.cs:995`). See the concrete change below.
+
+- **Replay: the representation fix resolves the original merge-resolution assumption; the content check remains blocking.** Ordinary replay still excludes merges (`Driver/Workplace/LineHolds.cs:296`) and uses plain rebase (`Driver/Workplace/BranchReplays.cs:517`). Recording resolutions in replayed commits is therefore sound. But “the head changed each conflicted file” does not prove containment. `TrialTreeAsync` stops at its first conflicting commit (`Driver/Workplace/LineHolds.cs:191`): later clean changes may never be examined. A head can touch the conflicting file, omit another member change, and satisfy the proposed exception. Also reject merges throughout the range the landing will replay, rather than only since the press.
+
+- **Backend enforcement: correct location, incomplete admission synchronization.** Guarding beneath the tree hold and pinning the checked head answer the original page-only enforcement and reset findings (`Driver/Workplace/TreeLands.cs:404`, `:415`, `:592`, `:617`). However, operation creation uses the store lock while landing uses a separate tree hold. A landing can pass the operation guard immediately before the operation binds that tree. Checking “no landing” before insertion does not close that race.
+
+- **Held-word move: resolved as a design contract.** One `ExclusiveAsync` can encompass both writes (`Service/Sessions/Sessions.cs:849`); its transaction commits only after the callback completes (`Service/Platform/ConnectionGate.cs:139`). The stable `move:<part>:<word>` key, waiting/settled lookup and uncertain-answer handling repair the two-call gap. Implement retry lookup before source-word absence or current-state refusals, as the existing say settlement precedes refusals (`Service/Sessions/SessionLedger.cs:1078`). Prove retries after destination consumption and successor creation, not only while waiting.
+
+3. **Concrete blocking changes**
+
+- Replace file-touch containment with complete accounting of every member change. Unproven conflicts need an explicit superseded/disposition record; do not call them contained. Test a conflicting first commit plus an omitted later clean commit.
+- Serialize operation admission with landing/discard admission across processes, using a defined lock order. Test a landing paused after its guard while binding is attempted.
+- Define durable member inclusion, gate provenance and workflow settlement for merge landings, including restart recovery; test branch, merge and squash forms.
+
+4. **Rows that may start**
+
+Continue **REVIEWFLOW1a**; start **REVIEWFLOW1d**, then **REVIEWFLOW1b**, respecting their shared-file order. **LINESTOGETHER1a’s service/driver half** and **1c** may start; **1b** may follow authoritative-head support. Hold **1d**, its dependent **1e**, and installed proof **REVIEWFLOW1c**.
+
+Read only; nothing changed. No `local/` directory was read.
+
+### The steward's settlement
+
+Both makers accept every row but the door. The Opus maker's round-1 blocking findings are answered in the revision (B1 by REVIEWFLOW1d, B2 and B3 in LINESTOGETHER1d), and Codex now asks another round on LINESTOGETHER1d alone. So the design is accepted for REVIEWFLOW1a (built), REVIEWFLOW1d, REVIEWFLOW1b, LINESTOGETHER1a, 1b and 1c, built in that order where they share files; LINESTOGETHER1d (and 1e and REVIEWFLOW1c after it) is revised once more on Codex's three blocking changes and read again by both makers.
