@@ -17,6 +17,13 @@ describe('the opener', () => {
     expect(opening('quests', null, { agentsMode: 'roles' })).toEqual({ view: 'quests' });
   });
 
+  /** COMPANYVIEW1e: Setup's and This Daoris's lines open Roles on Appointed roles. */
+  it("opens a Roles section a door names, in Roles' mode, and only in the Agents place", () => {
+    expect(opening('agents', null, { roleSection: 'appointed' })).toEqual({ view: 'agents', agentsMode: 'roles', roleSection: 'appointed' });
+    expect(doorOpening({ view: 'agents', roleSection: 'appointed' })).toEqual({ view: 'agents', agentsMode: 'roles', roleSection: 'appointed' });
+    expect(opening('quests', null, { roleSection: 'appointed' })).toEqual({ view: 'quests' });
+  });
+
   it('goes to a view, and opens nothing in it where the door named nothing', () => {
     expect(opening('overview')).toEqual({ view: 'overview' });
     expect(opening('quests')).toEqual({ view: 'quests' });

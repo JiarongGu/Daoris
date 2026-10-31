@@ -53,20 +53,19 @@ describe("a workspace's Setup", () => {
   });
 
   // SUPERVISOR1e (D208 §5, §6.3): the workspace's supervisor, its own section, folded while none is appointed, open once one is.
-  it("draws the workspace's supervisor in a section of its own, folded until one is appointed", async () => {
-    const onAppoint = vi.fn();
-    const supervisor = { offered: true, appointment: null, onAppoint, onTurnOff: vi.fn() };
-    at({ supervisor });
+  // COMPANYVIEW1e: the supervisor's section keeps one line and a door to Agents → Roles → Appointed roles, where it is appointed.
+  it("keeps the workspace's supervisor to one line and a door to Appointed roles, never an Appoint", async () => {
+    const onOpenAppointed = vi.fn();
+    at({ supervisor: { offered: true, appointment: null }, onOpenAppointed });
     expect(section('Supervisor')).toHaveAttribute('aria-expanded', 'false');
     expect(section('Supervisor')).toHaveAccessibleDescription('Not appointed: every question here waits for you.');
     await userEvent.click(section('Supervisor'));
-    await userEvent.click(screen.getByRole('button', { name: 'Appoint…' }));
-    expect(screen.getByRole('group', { name: 'appoint the supervisor for aurora' })).toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: 'Appoint' }));
-    expect(onAppoint).toHaveBeenCalledWith(expect.anything(), undefined, 5);
+    expect(screen.queryByRole('button', { name: /^Appoint/ })).toBeNull();
+    await userEvent.click(screen.getByRole('button', { name: 'Open Appointed roles' }));
+    expect(onOpenAppointed).toHaveBeenCalledTimes(1);
   });
 
-  it("opens the supervisor's section where the workspace has one, saying how long its answers are held", () => {
+  it("opens the supervisor's section where the workspace has one, saying it and where it is turned off", () => {
     at({
       supervisor: {
         offered: true,
@@ -74,13 +73,17 @@ describe("a workspace's Setup", () => {
           role: 'supervisor', repository: '', holder: 'terminal', since: '2026-10-25T09:00:00Z', dormant: false, answers: 1,
           scope: 'workspace:aurora', holderId: 'h1', acts: [], setup: false, workspace: 'aurora', window: 15,
         },
-        onAppoint: vi.fn(),
-        onTurnOff: vi.fn(),
       },
+      onOpenAppointed: vi.fn(),
     });
     expect(section('Supervisor')).toHaveAttribute('aria-expanded', 'true');
-    expect(screen.getByText('Its answers are held 15 minutes for your overrule.')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Turn off' })).toBeInTheDocument();
+    expect(screen.getByText(/^Appointed since .* 1 answer this run$/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Turn off' })).toBeNull();
+  });
+
+  it('says a supervisor this build does not offer, with its door', () => {
+    at({ supervisor: { offered: false, appointment: null }, onOpenAppointed: vi.fn() });
+    expect(section('Supervisor')).toHaveAccessibleDescription(/^Not offered yet/);
   });
 
   it('opens a section that holds a value the workspace sets, with its Clear', async () => {

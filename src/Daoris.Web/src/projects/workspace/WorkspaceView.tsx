@@ -18,7 +18,7 @@ import {
   stoppedWaiting, useAccounts, useAcross, useDriver, useHarnesses, useHistoryPlan, usePlugins, useRemotes, useRuleAction, useRules,
   useDiscardSessionBranch, useDropRecoveries, useSetAccess, useSetCommits, useSetHandOver, useSetHelpers, useSetLanding, useSetLanguage, useSetLine, useSetOpinion,
   useSetReadAcross,
-  useSetReview, useStarts, useSyncNow, standingOf, useSetAppointment,
+  useSetReview, useStarts, useSyncNow, standingOf,
   useSweep, useSweepLook, useSweepPlan, useTreesSync, useTreesSyncPlan, useTreesSyncScope, useUnwireRemote, useWireRemote, useWorkflowCurrent,
   useWithdrawLandingBranch, useWorkState,
 } from '../../bridge/shell';
@@ -36,7 +36,6 @@ import type { WorkspaceSection, WorkspaceTab } from '../tabs';
 import { accountsHere, hostOf } from './workspace';
 import { WorkspaceDetails, WorkspacePage } from './WorkspacePage';
 import { WorkspaceSetup, type WorkspaceSetupProps } from '../setup/WorkspaceSetup';
-import { appointmentSaid } from '../../person/standing';
 
 /** Matched without case, as the driver matches a workspace's name. */
 const same = (a: string, b: string) => a.toLowerCase() === b.toLowerCase();
@@ -72,7 +71,7 @@ const ruleOf = ({ form, pattern, tidy, plugin, autoAccept, key, squash }: Landin
  */
 export function WorkspaceView({
   workspace, repositories, attached, tab, onTab, asked = null, notify, onOpenRepository, onOpenRepositoryWorkflow, onOpenBranch,
-  onOpenRepositoryHistory, onOpenAgent, onOpenPlugin, onSyncNow, syncing = false, onOpenQuest, onOpenAsk, onAttend,
+  onOpenRepositoryHistory, onOpenAgent, onOpenAppointed, onOpenPlugin, onSyncNow, syncing = false, onOpenQuest, onOpenAsk, onAttend,
 }: {
   workspace: string;
   /** Its repositories in the list's registry, by name. */
@@ -93,6 +92,8 @@ export function WorkspaceView({
   onOpenRepositoryHistory?: (repository: string) => void;
   /** Open an agent's page, where a workspace's accounts are set (D130 §3.2, UX6e). */
   onOpenAgent?: (agent: string) => void;
+  /** Open Agents → Roles → Appointed roles, where the workspace's supervisor is appointed (COMPANYVIEW1e). */
+  onOpenAppointed?: () => void;
   /** Open a plugin's page, from the plugin a landing rule names (PLUGUI1c2c). */
   onOpenPlugin?: (plugin: string) => void;
   /** The status bar's *Sync now* (SYNC6b), the application's, which says the pass's own words. */
@@ -145,7 +146,7 @@ export function WorkspaceView({
           />
         )
       : tab === 'setup'
-        ? <SetupPart workspace={workspace} notify={notify} open={wiring ? 'remote' : askedHere ?? asked ?? undefined} wiring={wiring} onOpenPlugin={onOpenPlugin} />
+        ? <SetupPart workspace={workspace} notify={notify} open={wiring ? 'remote' : askedHere ?? asked ?? undefined} wiring={wiring} onOpenPlugin={onOpenPlugin} onOpenAppointed={onOpenAppointed} />
         : (
           <DetailsPart
             workspace={workspace}
@@ -378,9 +379,10 @@ function WorkflowPart({ workspace, onSetup, onOpenRepository }: {
  * Setup: its defaults (WSR1, WSR2, LANG1c, READ1) and its remote and rules (D48 §5, PERM1), each from the answer the driver
  * gives every door and each change said as the toast Settings' cards said it.
  */
-function SetupPart({ workspace, notify, open, wiring, onOpenPlugin }: {
+function SetupPart({ workspace, notify, open, wiring, onOpenPlugin, onOpenAppointed }: {
   workspace: string;
   onOpenPlugin?: (plugin: string) => void;
+  onOpenAppointed?: () => void;
   notify: Notify;
   open?: WorkspaceSection;
   wiring: boolean;
@@ -409,9 +411,6 @@ function SetupPart({ workspace, notify, open, wiring, onOpenPlugin }: {
   const setAccess = useSetAccess();
   const setRead = useSetReadAcross();
   const act = useRuleAction();
-  // SUPERVISOR1e: the owner's appointment of the supervisor for every repository of the workspace, and what its last press came to.
-  const setAppointment = useSetAppointment();
-  const [appointed, setAppointed] = useState<{ started: boolean; refused: string | null } | null>(null);
   useErrorNotify(remotes.error ?? across.error ?? rules.error, notify);
   const onError = failure(notify);
 
@@ -429,47 +428,17 @@ function SetupPart({ workspace, notify, open, wiring, onOpenPlugin }: {
   const where = t('settings.rules.where.workspace', { name: workspace });
   const standingNow = standingOf(state?.standingConfirmation);
 
-  /**
-   * The supervisor's appointment for the workspace (SUPERVISOR1e, D208 §5), as a repository's row draws its own: *Appoint* in the ask
-   * is the owner's own press, its window set there, and the answer, which never carries a key, says how it ended in the ask itself;
-   * *Turn off* asks nothing, a refusal said under the row.
-   */
+  /** The supervisor's appointment for the workspace (SUPERVISOR1e, D208 §5), which Setup says in a line; it is appointed in Agents → Roles. */
   const supervisor: WorkspaceSetupProps['supervisor'] = standingNow && {
     offered: standingNow.supervisorOffered,
     appointment: standingNow.appointments.find((each) => each.role === 'supervisor' && same(each.workspace, workspace)) ?? null,
-    holders: standingNow.holders,
-    started: appointed?.started,
-    refused: appointed?.refused ?? null,
-    busy: setAppointment.isPending,
-    onAppoint: (answered, share, window) => {
-      setAppointed(null);
-      setAppointment.mutate({ role: 'supervisor', workspace, on: true, share, window }, {
-        onSuccess: (answer) => {
-          if (answer.done) {
-            setAppointed({ started: true, refused: null });
-            answered.done();
-          } else {
-            answered.refused(appointmentSaid(t, answer.why, answer.message));
-          }
-        },
-        onError: (error) => answered.refused(sentence(error)),
-      });
-    },
-    onTurnOff: () => {
-      setAppointed(null);
-      setAppointment.mutate({ role: 'supervisor', workspace, on: false }, {
-        onSuccess: (answer) => {
-          if (!answer.done) setAppointed({ started: false, refused: appointmentSaid(t, answer.why, answer.message) });
-        },
-        onError,
-      });
-    },
   };
 
   const setup: WorkspaceSetupProps = {
     workspace,
     open,
     wiring,
+    onOpenAppointed,
     busy: setLine.isPending || setLanding.isPending || setLanguage.isPending || setReview.isPending || setOpinion.isPending
       || setCommits.isPending || setHelpers.isPending || setHandOver.isPending || setAccess.isPending || setRead.isPending || act.isPending || wire.isPending
       || unwire.isPending || retire.isPending,

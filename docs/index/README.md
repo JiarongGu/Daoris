@@ -38,7 +38,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/agents/AgentsView.test.tsx` | 117 | 2251 |
 | `src/Daoris.Web/src/agents/agents.test.ts` | 42 | 730 |
 | `src/Daoris.Web/src/app/App.test.tsx` | 45 | 866 |
-| `src/Daoris.Web/src/app/App.tsx` | 91 | 1577 |
+| `src/Daoris.Web/src/app/App.tsx` | 92 | 1580 |
 | `src/Daoris.Web/src/app/pushedState.test.tsx` | 69 | 1463 |
 | `src/Daoris.Web/src/bridge/driver.ts` | 42 | 767 |
 | `src/Daoris.Web/src/bridge/sessions/sessions.ts` | 54 | 1046 |
@@ -53,7 +53,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/help/ProposalCard.test.tsx` | 41 | 752 |
 | `src/Daoris.Web/src/menus/commands.ts` | 43 | 824 |
 | `src/Daoris.Web/src/projects/ProjectsView.test.tsx` | 109 | 1901 |
-| `src/Daoris.Web/src/projects/ProjectsView.tsx` | 49 | 868 |
+| `src/Daoris.Web/src/projects/ProjectsView.tsx` | 48 | 840 |
 | `src/Daoris.Web/src/projects/setup/RepositorySetup.test.tsx` | 47 | 820 |
 | `src/Daoris.Web/src/quests/QuestPage.tsx` | 59 | 1073 |
 | `src/Daoris.Web/src/quests/QuestsView.test.tsx` | 75 | 1464 |
@@ -111,7 +111,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Course/LimitWaitsProcessTests.cs` | 75 | 1317 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Course/LineCourseTests.cs` | 58 | 804 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Events/NoteCodesTests.cs` | 44 | 828 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/HelpCoverageTests.cs` | 145 | 2227 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/HelpCoverageTests.cs` | 145 | 2223 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/Proposals/HelpSettingProposalsTests.cs` | 56 | 828 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Install/StagedBuildTests.cs` | 41 | 957 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Install/ToolInstallTests.cs` | 41 | 724 |
@@ -391,7 +391,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-24-keep-size-reads.md` | 121 | 1074 |
 | `docs/2026-10-24-steward-role-design.md` | 178 | 1386 |
 | `docs/2026-10-24-steward-role-reads.md` | 127 | 1237 |
-| `docs/2026-10-24-supervisor-design.md` | 197 | 1609 |
+| `docs/2026-10-24-supervisor-design.md` | 198 | 1615 |
 | `docs/2026-10-24-supervisor-reads.md` | 156 | 1491 |
 | `docs/2026-10-24-switch-context-design.md` | 194 | 1454 |
 | `docs/2026-10-24-switch-context-reads.md` | 157 | 1604 |

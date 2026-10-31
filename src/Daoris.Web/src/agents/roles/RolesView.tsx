@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { type ComponentType, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { refusedNoRoute } from '../../bridge/call';
 import {
@@ -14,6 +14,7 @@ import { AskDaorisAbout, IntakeAbout } from '../../settings/ai/ActorAbout';
 import { doorLabel } from '../tools';
 import type { RoleSection } from '../modes';
 import { type ActorChoice, type Editing, RolesCard, roleName } from './Roles';
+import { AppointedRoles } from './AppointedRoles';
 import { RoleSectionMain } from './RoleSections';
 
 type Answered = { done: () => void; refused: (sentence: string) => void };
@@ -126,6 +127,16 @@ export function useRolesMode({ notify }: { notify: Notify }) {
 
 /** The Roles mode's main area: the chosen section, and for Working roles the catalogue and its staffing. */
 export function RolesMode({ section, notify }: { section: RoleSection; notify: Notify }) {
+  const Own = OWN_MAINS[section];
+  return Own ? <RoleSectionMain section={section}><Own /></RoleSectionMain> : <WorkingMain section={section} notify={notify} />;
+}
+
+/** The sections that hold their own reads and presses, so opening another asks nothing of them. */
+const OWN_MAINS: Partial<Record<RoleSection, ComponentType>> = {
+  appointed: AppointedRoles,
+};
+
+function WorkingMain({ section, notify }: { section: RoleSection; notify: Notify }) {
   const { card } = useRolesMode({ notify });
   return <RoleSectionMain section={section}>{card}</RoleSectionMain>;
 }

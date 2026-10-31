@@ -1,4 +1,5 @@
 import { useId, useState } from 'react';
+import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import { Button, ChoiceRow, FormField, SettingRow } from '../../design/ui';
 import { moment } from '../../locales/format';
@@ -36,6 +37,27 @@ export type SupervisorSetup = {
   onTurnOff: () => void;
 };
 
+/** What a Setup's door to the appointment shows of it: the state, never a press (COMPANYVIEW1e). */
+export type SupervisorLine = Pick<SupervisorSetup, 'offered' | 'appointment' | 'covering'>;
+
+/** The supervisor's state in one sentence: off, covered by its workspace's, dormant, appointed, or not offered in this build. */
+export function supervisorStatus(t: TFunction, { offered, appointment, covering }: SupervisorLine): string {
+  if (appointment) {
+    return appointment.dormant
+      ? t('projects.supervisor.dormant')
+      : t('projects.supervisor.appointed', {
+        since: appointment.since ? moment(appointment.since) : t('projects.supervisor.thisRun'),
+        count: appointment.answers,
+      });
+  }
+  if (covering && offered) {
+    return covering.dormant
+      ? t('projects.supervisor.coveredDormant', { workspace: covering.workspace })
+      : t('projects.supervisor.covered', { workspace: covering.workspace, count: covering.window });
+  }
+  return t(offered ? 'projects.supervisor.off' : 'projects.supervisor.notOffered');
+}
+
 /**
  * The supervisor's row in a repository's or a workspace's Setup (SUPERVISOR1a-ii, SUPERVISOR1e, D208; the supervisor design §5, §6.4):
  * off, *Appoint…*; appointed, since when, held by the terminal Daoris started at the appointment, how many answers this run and how
@@ -68,18 +90,7 @@ export function SupervisorRow({ repository, workspace, supervisor, open: opened 
   const held = Number(minutes);
   const windowed = minutes.trim() !== '' && inWindow(held);
   const ofWorkspace = Boolean(workspace);
-  const status = !appointment
-    ? covering && offered
-      ? covering.dormant
-        ? t('projects.supervisor.coveredDormant', { workspace: covering.workspace })
-        : t('projects.supervisor.covered', { workspace: covering.workspace, count: covering.window })
-      : t(offered ? 'projects.supervisor.off' : 'projects.supervisor.notOffered')
-    : appointment.dormant
-      ? t('projects.supervisor.dormant')
-      : t('projects.supervisor.appointed', {
-        since: appointment.since ? moment(appointment.since) : t('projects.supervisor.thisRun'),
-        count: appointment.answers,
-      });
+  const status = supervisorStatus(t, { offered, appointment, covering });
   const close = () => {
     setAsking(false);
     setShare(null);

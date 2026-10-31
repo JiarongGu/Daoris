@@ -130,13 +130,13 @@ describe('The Agents place, Roles mode', () => {
     expect(await screen.findByRole('radio', { name: 'Roles' })).toBeChecked();
   });
 
-  it('lists the five sections, Working roles built and the other four saying they come later', async () => {
+  it('lists the five sections, Working roles and Appointed roles built and the other three saying they come later', async () => {
     show(<Place />);
     await openRoles();
     const list = await screen.findByRole('list', { name: 'Roles' });
     const names = within(list).getAllByRole('button').map((button) => button.querySelector('span')?.textContent);
     expect(names).toEqual(['Working roles', 'Appointed roles', 'Work', 'Accounts', 'By repository']);
-    expect(within(list).getAllByText('Comes later.')).toHaveLength(4);
+    expect(within(list).getAllByText('Comes later.')).toHaveLength(3);
     // It opens on Working roles: the card of its roles stands in the main area.
     expect(await screen.findByRole('heading', { name: 'Working roles' })).toBeTruthy();
     expect(await screen.findByRole('button', { name: 'Edit Build' })).toBeTruthy();

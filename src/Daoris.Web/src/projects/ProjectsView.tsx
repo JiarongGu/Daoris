@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { canBeAsked, type Registration } from '../data/api';
 import { sentence } from '../locales/format';
-import { appointmentSaid, stewardSetAt } from '../person/standing';
+import { stewardSetAt } from '../person/standing';
 import { AddProjectDrawer, ImportFolderDrawer, ManageProjectDrawer } from './ProjectManage';
 import { projectsItem, workspaceItem } from '../app/opener';
 import type { WorkflowTabProps } from '../workflow/WorkflowTab';
@@ -28,7 +28,7 @@ import { sessionChecksToast, type SessionChecksValue } from '../settings/reposit
 import {
   useAcross, useDriver, useHarnesses, useLines, usePlugins, useRuleAction, useRules, useSetAccess, useSetCommits, useHeavyMarks, useHeavySlot, useSetDrivable, useSetHeavyGates, useSetHelpers,
   useSetHandOver, useSetHold, useSetLanding, useSetLanguage, useSetLine, useSetOpinion, useSetReadAcross, useSetReview, useSetSessionChecks, useSetStanding, useSetTrees,
-  useSetupPlan, useSetupPress, useSetWriteAcross, useSweepPlan, useWorkflowCurrent, useSetLanded, useAcceptIntegration, useVerify, standingOf, useSetAppointment,
+  useSetupPlan, useSetupPress, useSetWriteAcross, useSweepPlan, useWorkflowCurrent, useSetLanded, useAcceptIntegration, useVerify, standingOf,
 } from '../bridge/shell';
 import type { SetUpForAgentsProps } from './setup/SetUpForAgents';
 import { doorOf } from '../agents/tools';
@@ -72,7 +72,7 @@ const list = <T,>(value: unknown): T[] => (Array.isArray(value) ? value as T[] :
  */
 export function useProjectsView({
   active, chosen, onChoose, tab = 'details', onTab, workspaceTab = 'details', onWorkspaceTab, workspaceSection = null, notify,
-  onOpenCode, onOpenAgent, onOpenPlugin, onSyncNow, syncing = false, addRequested = false, onAddOpened, importRequested = false, onImportOpened,
+  onOpenCode, onOpenAgent, onOpenAppointed, onOpenPlugin, onSyncNow, syncing = false, addRequested = false, onAddOpened, importRequested = false, onImportOpened,
   drawerWorkspace = null, onOpenQuest, onOpenAsk, onAttend, branchAsked = null, onBranchOpened,
 }: {
   /** The view is in front: only then are its errors said. */
@@ -95,6 +95,8 @@ export function useProjectsView({
   notify: Notify;
   /** Open an agent's page, where a workspace's accounts are set (UX6e): a workspace's Details names each agent's. */
   onOpenAgent?: (agent: string) => void;
+  /** Open Agents → Roles → Appointed roles, where a Setup's supervisor is appointed (COMPANYVIEW1e). */
+  onOpenAppointed?: () => void;
   /** Open a plugin's page, from the plugin a landing rule names in a Setup (PLUGUI1c2c). */
   onOpenPlugin?: (plugin: string) => void;
   /** Sync a workspace with its remote, the status bar's pass (SYNC6b), which the application says. */
@@ -144,9 +146,6 @@ export function useProjectsView({
   const setDrivable = useSetDrivable();
   const setHold = useSetHold();
   const setTrees = useSetTrees();
-  // SUPERVISOR1a-ii: the owner's appointment of the supervisor, and what its last press here came to, by repository.
-  const setAppointment = useSetAppointment();
-  const [appointed, setAppointed] = useState<{ repository: string; started: boolean; refused: string | null } | null>(null);
   const setStanding = useSetStanding();
   const setLanguage = useSetLanguage();
   const setLine = useSetLine();
@@ -321,6 +320,7 @@ export function useProjectsView({
       // TERMTRUST1a: a hold a terminal made under the person's standing confirmation, as this run remembers it.
       heldStanding: named(standingOf(driver.data.standingConfirmation)?.held, repository),
       supervisor: supervisorOf(repository, workspaceOf(registration)),
+      onOpenAppointed,
       // STEWARDROLE1b (D209 §5.1): what the steward set here, from this run's memory, where the build offers the steward.
       stewardSet: stewardSetOf(repository),
     };
@@ -333,49 +333,20 @@ export function useProjectsView({
   };
 
   /**
-   * The supervisor's appointment here (SUPERVISOR1a-ii, D208 §5): the record's, live or dormant, and its presses. *Appoint* in the
-   * ask is the owner's own press: the window starts the holder's terminal, and the answer, which never carries a key, says how it
-   * ended in the ask itself; *Turn off* asks nothing, a refusal said under the row. SUPERVISOR1e: with none of its own, the row says
-   * its workspace's appointment that covers it; its own, once made, wins over it.
+   * The supervisor's appointment here (SUPERVISOR1a-ii, D208 §5): the record's, live or dormant, which Setup says in a line. It is
+   * appointed under Agents → Roles → Appointed roles (COMPANYVIEW1e). SUPERVISOR1e: with none of its own, the line says its
+   * workspace's appointment that covers it; its own, once made, wins over it.
    */
   const supervisorOf = (repository: string, workspace: string): Driving['supervisor'] => {
     const standing = standingOf(driver.data?.standingConfirmation);
     if (!standing) return undefined;
     const lower = repository.toLowerCase();
-    const mine = appointed?.repository.toLowerCase() === lower ? appointed : null;
     const supervising = standing.appointments.filter((each) => each.role === 'supervisor');
     return {
       // STEWARDROLE1a-i (D209 §2.4): the supervisor's own flag, never the steward's nor D201's.
       offered: standing.supervisorOffered,
       appointment: supervising.find((each) => each.repository.toLowerCase() === lower) ?? null,
       covering: supervising.find((each) => each.workspace !== '' && each.workspace.toLowerCase() === workspace.toLowerCase()) ?? null,
-      holders: standing.holders,
-      started: mine?.started,
-      refused: mine?.refused ?? null,
-      busy: setAppointment.isPending,
-      onAppoint: (answered, share, window) => {
-        setAppointed(null);
-        setAppointment.mutate({ role: 'supervisor', repository, on: true, share, window }, {
-          onSuccess: (answer) => {
-            if (answer.done) {
-              setAppointed({ repository, started: true, refused: null });
-              answered.done();
-            } else {
-              answered.refused(appointmentSaid(t, answer.why, answer.message));
-            }
-          },
-          onError: (error) => answered.refused(error instanceof Error ? error.message : String(error)),
-        });
-      },
-      onTurnOff: () => {
-        setAppointed(null);
-        setAppointment.mutate({ role: 'supervisor', repository, on: false }, {
-          onSuccess: (answer) => {
-            if (!answer.done) setAppointed({ repository, started: false, refused: appointmentSaid(t, answer.why, answer.message) });
-          },
-          onError: onDriverError,
-        });
-      },
     };
   };
 
@@ -731,6 +702,7 @@ export function useProjectsView({
           onOpenBranch={(repository, branch) => { setBranchOpen({ repository, branch }); onChoose(repository); onTab?.('branches'); }}
           onOpenRepositoryHistory={(repository) => { onChoose(repository); onTab?.('history'); }}
           onOpenAgent={onOpenAgent}
+          onOpenAppointed={onOpenAppointed}
           onOpenPlugin={onOpenPlugin}
           onSyncNow={onSyncNow}
           syncing={syncing}

@@ -896,6 +896,9 @@ public sealed partial class HelpCoverageTests
         ("agents", "useSetActor", null, new Owed(HelpRoomOwed.Actor)),
         // FOUNDATION1y-i: the role catalogue's Add, Edit, Remove, Back to the default and the suggested Designer's Add, over SET_ROLE.
         ("agents", "useSetRole", null, new Door("role", "set")),
+        // COMPANYVIEW1e: the supervisor's and the steward's Appoint… and Turn off moved from Setup and This Daoris to the Roles mode's
+        // Appointed roles section (`agents/roles/AppointedRoles.tsx`); the owner's press alone (D208 §2.1 point 1, D209 §2.3).
+        ("agents", "useSetAppointment", null, new Exempt(Appointment)),
         // FOUNDATION1w-s: *Take it* and *Dismiss* of a change of the actors another program made.
         ("agents", "useAnswerStaffingFound", null, new Exempt(
             "A change of driver.json's actors another program made is the person's to take or dismiss (the foundation design §19.15): "
@@ -999,8 +1002,6 @@ public sealed partial class HelpCoverageTests
         ("projects", "useSetHandOver", null, HandOverRuleDoor),
         // AUTONOMY1d: *Sessions' access*, on a repository's Setup and a workspace's.
         ("projects", "useSetAccess", null, new Exempt(SessionAccess)),
-        // SUPERVISOR1a-ii (D208 §2.1 point 1, bridge-presses row 7): the owner's appointment of the supervisor, and its turning off.
-        ("projects", "useSetAppointment", null, new Exempt(Appointment)),
         // HEAVYRUN1b2b: *Heavy gates*, on a repository's Setup.
         ("projects", "useSetHeavyGates", null, new Exempt(HeavyGates)),
         // FABRIC-PIPELINE1a: the landed route, on a repository's Setup and its Workflow tab.
@@ -1112,11 +1113,6 @@ public sealed partial class HelpCoverageTests
             "it grants or revokes the person's standing confirmation, which lets a terminal's presses run without the card; it is made "
             + "only in the window, with the person's own press, and no verb, door or setting grant reaches it, since an agent that could "
             + "propose it would be one command from the grant (D201 point 5). Turning it off asks nothing, and is the person's too.")),
-        // STEWARDROLE1b (D209 §5.3): This Daoris's Roles, the steward's Appoint… and Turn off.
-        ("wiring", "useSetAppointment", null, new Exempt(
-            "it appoints the steward, which makes development's management acts on the owner's behalf, or turns it off; it is made only in "
-            + "the window, with the owner's own press, and no verb, door, card or setting grant appoints it (D209 §2.3, D208 §2.1 point 1). "
-            + "Turning it off asks nothing, and is the owner's too.")),
         // CACHECLEAR1: the Downloads row's clearing, listed first and then pressed (D88's shape).
         // KEEP1d: each kind's keep rule from the Disk space card's Change…, as `setting keep` proposes it.
         ("wiring", "useSetKeep", null, new Door("setting", "keep")),
