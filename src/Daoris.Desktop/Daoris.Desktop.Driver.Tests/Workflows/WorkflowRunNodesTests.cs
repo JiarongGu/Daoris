@@ -346,6 +346,22 @@ public sealed class WorkflowRunNodesTests : IDisposable
     }
 
     /// <summary>
+    /// LINESTOGETHER1d: a member a combined Accept brought into another session's merge reads its landing step from the operation, before
+    /// any acceptance its record keeps: <i>brought into</i> the line, never landed by itself.
+    /// </summary>
+    [Fact]
+    public void A_member_brought_into_another_sessions_landing_reads_brought_into_before_any_acceptance()
+    {
+        var run = Run(Basic, facts => Accepted(facts) with
+        {
+            Brought = new Dictionary<string, TogetherBrought> { ["s1"] = new("tg1", "s1", "trees/s1", "abc1234", "main", true, T) },
+        });
+
+        var landing = run.Steps.Single(step => step.Step.Id == "land");
+        Assert.Equal((WorkflowRunStates.Done, WorkflowRunDetails.BroughtInto, "main", "line"), (landing.State, landing.Detail, landing.Branch, landing.Code));
+    }
+
+    /// <summary>
     /// None silently: a reading no name explains (here a landing schema 1 says done while its work still runs, which no recorded run
     /// holds) is said as unexplained at the step it is found, and the comparison does not agree.
     /// </summary>

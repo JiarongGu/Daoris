@@ -125,6 +125,16 @@ public sealed class TogetherAcceptsTests : LandedFixture
         Assert.Empty((await GitAsync(root, "branch", "--list", "feature/*")).Trim());
     }
 
+    [Fact]
+    public void An_entrys_part_bound_as_a_member_is_brought_into_its_head_and_lands_nothing_itself()
+    {
+        var steps = EntryLandings.Sequence(
+            [new EntryLandingPart("s-head", "trees/a"), new EntryLandingPart("s-beside", "trees/b")], new HashSet<string>(), new HashSet<string> { "s-beside" });
+
+        Assert.Equal([true, false], steps.Select(each => each.Lands));
+        Assert.True(steps[1].BroughtInto);
+    }
+
     /// <summary>A gate whose first part holds, as a member's review, opinion or workflow would.</summary>
     private sealed record HeldGate(TreeLanding Holds) : IWorkplaceGate
     {

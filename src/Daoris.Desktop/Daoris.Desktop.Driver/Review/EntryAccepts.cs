@@ -74,7 +74,8 @@ public sealed class EntryAccepts(
             pressed.Add(part with { Gate = await presses.PressedAsync(part.Session, (LandingGate)part.Gate!, null, part.Tree, quest, cancellationToken).ConfigureAwait(false) });
         }
 
-        var landed = await trees.LandEntryAsync(pressed, subject, leaveOut, cancellationToken, inUse).ConfigureAwait(false);
+        var together = await TogetherAsync(pressed, presses, cancellationToken).ConfigureAwait(false);
+        var landed = await trees.LandEntryAsync(pressed, subject, leaveOut, cancellationToken, inUse, together).ConfigureAwait(false);
         // ACCEPTALL1c (D167's amendment point 3): a part the person left out is recorded with the landing, on its conversation, so its
         // review says so and leads with Discard; only where the entry's work landed somewhere.
         var landedAny = landed.Parts.Any(part => part.Outcome == EntryPartOutcome.Landed);
@@ -95,6 +96,35 @@ public sealed class EntryAccepts(
         }
 
         return landed;
+    }
+
+    /// <summary>
+    /// The operation bringing sessions together bound to the entry's head (LINESTOGETHER1d), with each member's gate read as its own
+    /// Accept reads it; null where none binds it. A store that does not read binds nothing here: the landing's own guard refuses then.
+    /// </summary>
+    private async Task<EntryTogether?> TogetherAsync(IReadOnlyList<EntryLandingPart> parts, OpinionPresses presses, CancellationToken ct)
+    {
+        TogetherOperation? operation;
+        try
+        {
+            operation = new TogetherOperations(home).All().FirstOrDefault(each => each.IsOpen
+                && parts.Any(part => TogetherOperation.SameTree(each.Head.Tree, part.Tree)));
+        }
+        catch (IOException)
+        {
+            return null;
+        }
+
+        if (operation is null) return null;
+        var head = parts.First(part => TogetherOperation.SameTree(operation.Head.Tree, part.Tree)).Session;
+        var gates = new Dictionary<string, IWorkplaceGate?>(StringComparer.Ordinal);
+        foreach (var member in operation.Members)
+        {
+            var gate = await trees.GateAsync(member.Tree, member.Quest, new ServiceReviewWorld(service), member.Session, ct).ConfigureAwait(false);
+            gates[member.Session] = await presses.PressedAsync(member.Session, (LandingGate)gate, null, member.Tree, member.Quest, ct).ConfigureAwait(false);
+        }
+
+        return new EntryTogether(operation.Id, head, gates, operation.Members.Select(each => each.Session).ToHashSet(StringComparer.Ordinal));
     }
 
     /// <summary>

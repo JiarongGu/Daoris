@@ -3,6 +3,12 @@ namespace Daoris.Driver;
 /// <summary>What a combined Accept brought a member into: the branch, or the line a merge went into, and the tip it was bound at.</summary>
 public sealed record TogetherBrought(string Operation, string Session, string Tree, string Tip, string Into, bool Line, DateTimeOffset At);
 
+/// <summary>The operation bound to an entry's head, as its one Accept lands it (LINESTOGETHER1d): its head part, each member's gate.</summary>
+/// <param name="Head">The entry's part whose tree is the head's.</param>
+/// <param name="Members">The members' sessions: those among the entry's parts are brought into the head, never landed.</param>
+public sealed record EntryTogether(
+    string Operation, string Head, IReadOnlyDictionary<string, IWorkplaceGate?> Gates, IReadOnlySet<string> Members);
+
 /// <summary>
 /// The inclusion record of every form (LINESTOGETHER1d, the review-flow design §4): a landed operation, not a landing record, says what
 /// a member was brought into, since a merge keeps none of its own.
@@ -12,6 +18,14 @@ public static class TogetherInclusion
     /// <summary>The newest landed operation that brought <paramref name="session"/> in; null where none did, or the store does not read.</summary>
     public static TogetherBrought? Of(string home, string session) =>
         Brought(home).LastOrDefault(each => string.Equals(each.Session, session, StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>Every session a landed operation brought in, by the newest that did.</summary>
+    public static IReadOnlyDictionary<string, TogetherBrought> All(string home)
+    {
+        var all = new Dictionary<string, TogetherBrought>(StringComparer.OrdinalIgnoreCase);
+        foreach (var each in Brought(home)) all[each.Session] = each;
+        return all;
+    }
 
     /// <summary>The newest landed operation that brought in the member whose tree is <paramref name="tree"/>.</summary>
     public static TogetherBrought? OfTree(string home, string tree) =>

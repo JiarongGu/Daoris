@@ -315,6 +315,7 @@ public static class WorkflowRunReader
             Accepted = reads.Records.Acceptances(mine)
                 .Where(pair => Counts(pair.Key, pair.Value))
                 .ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.OrdinalIgnoreCase),
+            Brought = TogetherInclusion.All(sources.Home),
             AutoLandings = [.. reads.AutoLandings.Where(entry => sessionIds.Contains(entry.Session))],
         };
         return WorkflowRuns.Derive(facts, workspace, askId);
