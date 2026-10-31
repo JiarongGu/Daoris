@@ -49,7 +49,7 @@ public sealed class ResolveActsGitTests : TreeSyncFixture
     {
         var info = new System.Diagnostics.ProcessStartInfo("git") { WorkingDirectory = root, RedirectStandardOutput = true, RedirectStandardError = true };
         foreach (var argument in arguments) info.ArgumentList.Add(argument);
-        using var process = System.Diagnostics.Process.Start(info)!;
+        using var process = System.Diagnostics.Process.Start(TestGit.Past(info))!;
         await process.StandardOutput.ReadToEndAsync();
         await process.WaitForExitAsync();
         return process.ExitCode;
