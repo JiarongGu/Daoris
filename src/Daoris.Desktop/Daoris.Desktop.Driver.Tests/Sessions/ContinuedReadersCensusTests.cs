@@ -68,6 +68,10 @@ public sealed partial class ContinuedReadersCensusTests
         [
             (How.Follows, "the window's Accept carrying a session on (LANDBACK1 part 1): Daoris's word said at its head under its key, never the person's"),
         ],
+        ["TogetherRoutes.cs"] =
+        [
+            (How.Follows, "Bring them together's word to a line's head (LINESTOGETHER1d): Daoris's word said at its head under the operation's key"),
+        ],
         ["ChatRunner.cs"] =
         [
             (How.Follows, "a refused start's moved words (MODELROLE1d2), the person's: kept at the head of the record they wait on, their files carried"),

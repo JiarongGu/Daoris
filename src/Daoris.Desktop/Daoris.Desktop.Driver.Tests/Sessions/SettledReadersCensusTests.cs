@@ -45,6 +45,7 @@ public sealed partial class SettledReadersCensusTests
         ["TreesConsole.cs"] = "the terminal's tree word to a session: kept",
         ["TreesRoutes.cs"] = "the window's Accept carrying a session on (LANDBACK1 part 1): kept, and the person's yes is kept with it",
         ["SaidDoor.cs"] = "the door hands the answer to the dispatcher, which reads it first",
+        ["TogetherRoutes.cs"] = "Bring them together's word to a line's head (LINESTOGETHER1d): kept, or the press says the head could not be told",
         ["LongCalls.cs"] = "Daoris's word to a session whose call ran long, through its inbox: held or settled, it reads only that the inbox was not closed",
     };
 

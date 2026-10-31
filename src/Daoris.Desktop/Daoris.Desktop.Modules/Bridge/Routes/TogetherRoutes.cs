@@ -67,7 +67,7 @@ public sealed class TogetherRoutes(DriverContext context)
     {
         var session = PayloadHelper.GetRequiredValue<string>(request.Payload, "session");
         var service = _loop.Service ?? throw NotReady();
-        var refused = await Press(service).AskAgainAsync(session, cancellationToken).ConfigureAwait(false);
+        var refused = await Press(service).AskHeadAgainAsync(session, cancellationToken).ConfigureAwait(false);
         _loop.Nudge();
         return new { Done = refused is null, Refused = refused };
     }

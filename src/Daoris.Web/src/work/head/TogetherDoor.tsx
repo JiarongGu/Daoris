@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button } from '../../design/ui';
+import { Button, CheckField } from '../../design/ui';
 
 /** One session bound into an operation, pinned at the press (`TOGETHER`). */
 export type TogetherMemberView = { session: string; branch: string; tip: string };
@@ -106,10 +106,7 @@ export function TogetherDoor({ candidates, operation, busy = false, said, onBrin
       <ul className="m-0 grid list-none gap-0.5 p-0">
         {candidates.map((id) => (
           <li key={id} className="m-0">
-            <label className="flex items-baseline gap-1.5">
-              <input type="checkbox" checked={ticked.includes(id)} onChange={(event) => tick(id, event.target.checked)} />
-              <span className="font-mono text-meta">{id}</span>
-            </label>
+            <CheckField checked={ticked.includes(id)} onChange={(on) => tick(id, on)} label={id} className="font-mono text-meta" />
           </li>
         ))}
       </ul>

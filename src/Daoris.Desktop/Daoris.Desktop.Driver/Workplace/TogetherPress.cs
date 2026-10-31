@@ -112,7 +112,7 @@ public sealed class TogetherPress(string home, RebaseTelling.Say say, Func<DateT
         steps.Any(each => each.Step.Kind == NodeKinds.Integrate && each.State is not (WorkflowRunStates.Done or WorkflowRunStates.Skipped));
 
     /// <summary><i>Ask again</i> after a failed check: the words said once more under a key of their own; the sentence where it cannot be.</summary>
-    public async Task<string?> AskAgainAsync(string session, CancellationToken ct)
+    public async Task<string?> AskHeadAgainAsync(string session, CancellationToken ct)
     {
         var store = new TogetherOperations(home);
         if (HeadOf(store, session) is not { } operation) return "Nothing was asked again: nothing is being brought into this session.";
