@@ -76,7 +76,8 @@ public sealed record BriefLine(string Why, IReadOnlyList<BriefPart> Parts)
 /// the record marks it (the person's verbatim; another agent's findings and a channel's message as that agent's claim, told by their
 /// marks, a channel's from before its mark by the claim's opening); each turn's last message and one line of what it did; the work's
 /// state, the tree read now, the plan with the turn it was written in, the last check each part ran and the last failed one's kept
-/// output, what is still asked and the files attached; the outgoing agent's note; the entry's other parts; what was left out.</para>
+/// output, what is still asked, the files attached and the memory the line read as rechecked now; the outgoing agent's note; the
+/// entry's other parts; what was left out.</para>
 ///
 /// <para><b>What it never carries</b> (§3.3): a thought, a tool's output but the last failed check's, Daoris's own composed words
 /// (an instruction, an earlier brief, its own words to a session), a summary any model wrote, or a machine path beyond where the
