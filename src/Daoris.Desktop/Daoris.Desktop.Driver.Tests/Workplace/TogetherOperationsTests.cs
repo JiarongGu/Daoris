@@ -82,7 +82,9 @@ public sealed class TogetherOperationsTests : IDisposable
         Assert.Equal(TogetherPhase.Checking, failed.Phase);
         Assert.Null(failed.Checked);
         Assert.Equal("missing", failed.Why);
-        Assert.Equal(TogetherPhase.Asked, store.AskedAgain(id, At)!.Phase);
+        var again = store.AskedAgain(id, At)!;
+        Assert.Equal(TogetherPhase.Asked, again.Phase);
+        Assert.Equal($"together:{id}:1", again.Key);
     }
 
     [Fact]

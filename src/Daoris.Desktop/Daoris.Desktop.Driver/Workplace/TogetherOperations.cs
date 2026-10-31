@@ -137,9 +137,12 @@ public sealed record TogetherOperation(
 
     public TogetherAttempt? Attempt { get; init; }
 
-    /// <summary>The key its words are said under, so a retry says them once.</summary>
+    /// <summary>How many times <i>Ask again</i> said the words once more.</summary>
+    public int Asks { get; init; }
+
+    /// <summary>The key its words are said under, so a retry says them once; each <i>Ask again</i> its own.</summary>
     [JsonIgnore]
-    public string Key => $"together:{Id}";
+    public string Key => Asks == 0 ? $"together:{Id}" : $"together:{Id}:{Asks}";
 
     [JsonIgnore]
     public bool IsOpen => TogetherPhase.Open(Phase);
@@ -270,7 +273,7 @@ public sealed class TogetherOperations(string home)
 
     /// <summary><i>Ask again</i> after a failed check: back to <i>asked</i>, its words said again under a fresh key.</summary>
     public TogetherOperation? AskedAgain(string id, DateTimeOffset at) =>
-        Move(id, [TogetherPhase.Checking], each => each with { Phase = TogetherPhase.Asked, Why = null, Since = at });
+        Move(id, [TogetherPhase.Checking], each => each with { Phase = TogetherPhase.Asked, Why = null, Asks = each.Asks + 1, Since = at });
 
     /// <summary>
     /// The head's tip read at a look: moved after <i>checked</i>, back to <i>checking</i>; anything else unchanged (null).
