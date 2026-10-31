@@ -21,7 +21,7 @@ export function AskLines({ lines, onAttend }: { lines: readonly AskLine[]; onAtt
       {lines.map((line) => (
         <li key={line.entry} className="flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-1">
           {onAttend
-            ? <button type="button" onClick={() => onAttend(line.leading)} className={`${DOOR} min-w-0 wrap-anywhere text-body`}>{line.repository}</button>
+            ? <button type="button" onClick={() => onAttend(line.opens)} className={`${DOOR} min-w-0 wrap-anywhere text-body`}>{line.repository}</button>
             : <span className="min-w-0 wrap-anywhere text-body text-ink">{line.repository}</span>}
           {line.parts > 1 && <span className="text-meta text-ink-faint">{t('work.rail.parts', { count: line.parts })}</span>}
           {/* A word this page has none for is said as the driver wrote it, quiet. */}

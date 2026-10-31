@@ -38,7 +38,7 @@ const part = (session: string, quest: string | null, shown: string, group: Entry
 /** The driver's entries over `EVIDENCE_SESSIONS`, as `SESSION_GROUPS` answers them, in the reader's group order. */
 export const EVIDENCE_ENTRIES: SessionEntry[] = [
   {
-    entry: 'ask:c98a7e/app', origin: 'ask:c98a7e', repository: 'app', group: 'working', leading: 'ap000003',
+    entry: 'ask:c98a7e/app', origin: 'ask:c98a7e', repository: 'app', group: 'working', leading: 'ap000003', head: 'ap000002', opens: 'ap000003',
     parts: [
       part('ap000001', 'q0000a', 'failed', 'ended', 'opened'),
       part('ap000002', 'q0000a', 'completed', 'ended', 'retried', { after: 'ap000001' }),
@@ -46,7 +46,7 @@ export const EVIDENCE_ENTRIES: SessionEntry[] = [
     ],
   },
   {
-    entry: 'ask:c98a7e/db', origin: 'ask:c98a7e', repository: 'db', group: 'working', leading: 'db000003',
+    entry: 'ask:c98a7e/db', origin: 'ask:c98a7e', repository: 'db', group: 'working', leading: 'db000003', head: 'db000003', opens: 'db000003',
     parts: [
       part('db000001', 'q0000b', 'completed', 'ended', 'opened'),
       part('db000002', 'q0000d', 'completed', 'ended', 'asked', { askedBy: 'app' }),
@@ -54,7 +54,7 @@ export const EVIDENCE_ENTRIES: SessionEntry[] = [
     ],
   },
   {
-    entry: 'ask:841c38/app', origin: 'ask:841c38', repository: 'app', group: 'ended', leading: 'ap000013',
+    entry: 'ask:841c38/app', origin: 'ask:841c38', repository: 'app', group: 'ended', leading: 'ap000013', head: 'ap000013', opens: 'ap000013',
     parts: [
       part('ap000011', 'q0000e', 'stopped', 'ended', 'opened'),
       part('ap000012', 'q0000e', 'failed', 'ended', 'carried-on', { after: 'ap000011' }),

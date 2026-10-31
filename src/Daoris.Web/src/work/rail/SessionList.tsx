@@ -7,7 +7,7 @@ import {
   cutEnded, ENDED_SHOWN, type NestedRow, nestServing, type SessionArrangement, type SessionGrouping, sessionsByRepository,
   sessionsByState, stripSessions,
 } from '../groups';
-import { type EntryFacts, entryOfSession, type SessionEntry, sessionsByAsk } from '../entries';
+import { type EntryFacts, entryOfSession, opensOf, type SessionEntry, sessionsByAsk } from '../entries';
 import type { HeavyPart } from '../heavySlot';
 import { isHelp, isIntake, sessionTitle } from '../identity';
 import { type Answered, InlineConfirm } from '../InlineConfirm';
@@ -154,7 +154,7 @@ export function SessionList({
         archived={Boolean(grouping?.archived) && !underArchived}
         // The entry is attended while any of its parts is: the strip on its page picks which one (SESSONE1c).
         selected={session.id === selected || Boolean(selected && facts.entry?.ids.includes(selected))}
-        onSelect={onSelect}
+        onSelect={onSelect && ((id) => onSelect(opensOf(entries, id)))}
         acts={actsFor?.(session)}
         onAct={onAct}
       />
