@@ -712,8 +712,8 @@ describe('a declaration owed acceptance, worded', () => {
   it('says it in 中文', async () => {
     await i18n.changeLanguage('zh');
     try {
-      expect(words(unaccepted).detail).toBe('main 上的 `daoris.gates.json`（`0123456`）声明了你还没接受的集成，所以其中的内容都不会运行。请在配置里读一读并接受它。');
-      expect(words(changed).detail).toBe('trunk 上的 `daoris.gates.json`（`89abcde`）自你接受后已改动；集成仍按上次接受的那份进行。请在配置里读一读改动并接受它。');
+      expect(words(unaccepted).detail).toBe('main 上的 `daoris.gates.json`（`0123456`）声明了你还没采纳的集成，所以其中的内容都不会被使用。请在配置里读一读并采纳它。');
+      expect(words(changed).detail).toBe('trunk 上的 `daoris.gates.json`（`89abcde`）自你采纳后已改动；集成仍按上次采纳的那份进行。请在配置里读一读改动并采纳它。');
     } finally {
       await i18n.changeLanguage('en');
     }

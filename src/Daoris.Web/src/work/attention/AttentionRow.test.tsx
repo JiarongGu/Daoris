@@ -563,7 +563,7 @@ describe('settling one where it stands', () => {
         integration: { wait: 'declaration', repository: 'engine', line: 'main', tip: '0123456', state: 'changed' },
       };
       render(<AttentionRow item={owed} acts={everyAct()} onOpen={vi.fn()} />);
-      expect(screen.getByText('声明等你接受')).toBeInTheDocument();
+      expect(screen.getByText('集成声明等你采纳')).toBeInTheDocument();
       expect(screen.getByRole('button', { name: '打开配置' })).toBeInTheDocument();
     } finally {
       await i18n.changeLanguage('en');
