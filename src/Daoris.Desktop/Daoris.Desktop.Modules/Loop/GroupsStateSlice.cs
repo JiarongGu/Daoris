@@ -66,7 +66,7 @@ public static class GroupsStateSlice
         ["holds"] = ["why", "reason", "repository", "until", "account", "accountName"],
         ["lands"] = ["branch", "tree", "commits", "uncommitted"],
         ["discards"] = ["branch", "tree", "says", "keeps", "keptAt"],
-        ["entry"] = ["entry", "origin", "repository", "group", "leading", "head", "parts"],
+        ["entry"] = ["entry", "origin", "repository", "group", "leading", "head", "opens", "parts"],
         ["part"] = ["session", "quest", "shown", "group", "began", "after", "askedBy", "head"],
     };
 

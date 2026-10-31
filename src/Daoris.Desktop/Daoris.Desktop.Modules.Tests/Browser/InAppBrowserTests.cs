@@ -81,7 +81,7 @@ public sealed class InAppBrowserTests : Bridge
         await using var writer = new StreamWriter(client.GetStream()) { AutoFlush = true };
         await writer.WriteLineAsync("json/version");
 
-        Assert.Equal("JSON/VERSION", await reader.ReadLineAsync().WaitAsync(TimeSpan.FromSeconds(30)));
+        Assert.Equal("JSON/VERSION", await reader.ReadLineAsync().WaitAsync(Poll.Patience));
         Assert.Equal(1, broughtUp);
 
         engine.Stop();
@@ -103,7 +103,7 @@ public sealed class InAppBrowserTests : Bridge
         using (var first = new TcpClient())
         {
             await first.ConnectAsync(IPAddress.Loopback, endpoint.Port);
-            Assert.Equal(0, await first.GetStream().ReadAsync(new byte[1]).AsTask().WaitAsync(TimeSpan.FromSeconds(30)));
+            Assert.Equal(0, await first.GetStream().ReadAsync(new byte[1]).AsTask().WaitAsync(Poll.Patience));
         }
 
         using var second = new TcpClient();
@@ -112,7 +112,7 @@ public sealed class InAppBrowserTests : Bridge
         await using var writer = new StreamWriter(second.GetStream()) { AutoFlush = true };
         await writer.WriteLineAsync("again");
 
-        Assert.Equal("AGAIN", await reader.ReadLineAsync().WaitAsync(TimeSpan.FromSeconds(30)));
+        Assert.Equal("AGAIN", await reader.ReadLineAsync().WaitAsync(Poll.Patience));
         Assert.Equal(2, asked);
 
         engine.Stop();

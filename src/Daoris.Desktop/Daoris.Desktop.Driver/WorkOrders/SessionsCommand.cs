@@ -256,7 +256,7 @@ public static class SessionsCommand
             "lands", "discards", "calling"];
 
     /// <summary>The fields of an entry in <c>--json</c>'s <c>entries</c>, in order: <c>SESSION_GROUPS</c>' entry, field for field (SESSONE1b).</summary>
-    public static IReadOnlyList<string> JsonEntryFields { get; } = ["entry", "origin", "repository", "group", "leading", "head", "parts"];
+    public static IReadOnlyList<string> JsonEntryFields { get; } = ["entry", "origin", "repository", "group", "leading", "head", "opens", "parts"];
 
     /// <summary>The fields of one of an entry's parts, in order.</summary>
     public static IReadOnlyList<string> JsonPartFields { get; } = ["session", "quest", "shown", "group", "began", "after", "askedBy", "head"];
@@ -683,6 +683,7 @@ public static class SessionsCommand
                     writer.WriteString("group", entry.Group);
                     writer.WriteString("leading", entry.Leading);
                     writer.WriteString("head", entry.Head);
+                    writer.WriteString("opens", entry.Opens);
                     writer.WriteStartArray("parts");
                     foreach (var part in entry.Parts)
                     {
