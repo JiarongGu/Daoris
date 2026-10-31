@@ -5024,7 +5024,7 @@ public sealed class Driver(
     internal AcpMcpServer? Connector(string sessionId, IReadOnlyDictionary<string, string>? scope, string? proc = null) =>
         KnowledgeConnector.Offer(
             Variable, AppContext.BaseDirectory,
-            KnowledgeConnector.SessionScope(home, sessionId, scope, proc, KnowledgeConnector.KeptRole(Context.Conversations, sessionId)));
+            KnowledgeConnector.SessionScope(home, sessionId, scope, proc, KnowledgeConnector.KeptRole(Context.Conversations.RoleOf, sessionId)));
 
     /// <summary>
     /// A process's lineage token (COWORKVIEW1a): issued, its <c>start</c> written to the session's lineage, and set anew on the
