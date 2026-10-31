@@ -12592,3 +12592,19 @@ mis-rooted instance.
 **Fix.** The runner marks its take (`draining`) before ending anything; only the take is on the clock, then the record while the runner lives (DROPWAIT1). Below a second the interval is said in ms.
 
 **Verification.** The INTEGRATE1b drop case, its report held past the thirty seconds: red, green; 20 of 20 beside 11 CPU burners.
+
+## A quest ran on an account at its weekly limit, and its wait called signed-out accounts limited (2026-10-31)
+
+**Root cause.** The walk read an account at 100% of a window as near, last but still picked (`HarnessRoster.Before`); the sign-in reading read words alone, never the door's own `-32000` (`Driver.AccountSignedOut`); `held.limit-waits` named no signed-out account.
+
+**Fix.** A full reading cools its account until that reset (`AccountRotation.Spent`); access by the door's code marks the sign-in; `held.limit-waits-sign-in` names them (LIMITPICK1).
+
+**Verification.** Four tests, each red first, then green.
+
+## The trees' clean took a tree a waiting retry held (2026-10-31)
+
+**Root cause.** `trees clean` and the window's sweep judged a tree by running sessions alone (`TreesConsole.cs:195`, `LinesRoutes.InUseAsync`), so a retry waiting on a limit lost its tree, and its start then held for good on `tree.gone`.
+
+**Fix.** Every door reads `BranchTidying.HeldTreesAsync`, which adds the newest part of each open quest; a part gone with nothing beyond the line opens a fresh tree (`tree.fresh`, TREEKEEPRETRY1).
+
+**Verification.** `BranchTidyingTests`, `TreeGoneFreshTests`: red, then green.

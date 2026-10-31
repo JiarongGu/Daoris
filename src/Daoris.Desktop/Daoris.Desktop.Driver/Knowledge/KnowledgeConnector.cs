@@ -112,11 +112,11 @@ public static class KnowledgeConnector
     }
 
     /// <summary>The role a session's start took, as its binding keeps it, for its connector to name; none where the store does not read.</summary>
-    internal static (string Role, long Revision)? KeptRole(HarnessConversations conversations, string sessionId)
+    internal static (string Role, long Revision)? KeptRole(Func<string, (string Role, long Revision)?> roleOf, string sessionId)
     {
         try
         {
-            return conversations.RoleOf(sessionId);
+            return roleOf(sessionId);
         }
         catch (Exception error) when (error is not OperationCanceledException)
         {

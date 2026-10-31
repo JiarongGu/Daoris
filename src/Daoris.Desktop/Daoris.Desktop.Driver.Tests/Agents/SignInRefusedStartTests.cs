@@ -372,6 +372,35 @@ public sealed class SignInRefusedStartTests : IDisposable
         Assert.Equal(["account-1", "account-2"], again.SignedOut!.Accounts);
     }
 
+    /// <summary>
+    /// LIMITPICK1: where no account is ready, the line's wait names the accounts that need a sign-in apart from the one cooling, each with
+    /// its sign-in, and the moment that account reads signed in again the next start takes it, without waiting for the reset.
+    /// </summary>
+    [Fact]
+    public async Task A_wait_names_the_accounts_that_need_a_sign_in_apart_from_those_cooling_and_a_sign_in_ends_it()
+    {
+        Accounts("fake", "account-1", "account-2");
+        Wire(s => s.WithRotation("fake", ["account-1", "account-2"]));
+        var roster = Fake();
+        AccountCooling.Cool(_home, new CoolingEntry("fake", "account-1", Seen.AddHours(5), true, "weekly", Seen, "s1"), _now);
+        roster.SignedOut("fake", "account-2");
+
+        var held = await roster.SelectAsync("fake", FakeConfig, null, null);
+        var waits = LimitResume.Waits(held.Cooling!, Zone, null, signedOut: held.SignedOut?.Accounts);
+
+        Assert.Equal(
+            "No account it may run on is ready: `account-2` needs a sign-in, and the rest are at their limit. It goes on by itself once the "
+            + $"`fake` account `account-1` is ready again at Oct 4, 19:00 ({Zone.Id}). A sign-in starts it sooner: "
+            + "`daoris agent login fake --profile account-2`, or Agents → the agent's page → Accounts.",
+            waits.Note);
+        NoteAssert.Holds(waits.Note, waits.Parts);
+        Assert.Equal(["held.limit-waits-sign-in", "held.sign-in-sooner"], NoteAssert.Codes(waits.Parts));
+
+        AccountReads.Keep(_home, "fake", "account-2", LoginState.In, Seen);
+        var signedIn = await roster.SelectAsync("fake", FakeConfig, null, null);
+        Assert.Equal((true, "account-2"), (signedIn.Allowed, signedIn.Profile));
+    }
+
     // ——— The conclusion: the door's refusal, read by the table; the record says why; the account reads signed out.
 
     [Fact]
@@ -393,6 +422,30 @@ public sealed class SignInRefusedStartTests : IDisposable
         var line = conclusion.Parts![^1];
         Assert.Equal(("account.signed-out", "stub"), (line.Code, (string?)line.Value("owner")));
         Assert.Equal(new AccountRead(LoginState.Out, Seen), ReadOf("stub", "account-2"));
+    }
+
+    /// <summary>
+    /// LIMITPICK1 (D210 point 5): the protocol door's own authentication-required code is the account's sign-in whatever words come
+    /// with it, so an expired sign-in is marked for the person's sign-in, never struck and never cooled as a limit.
+    /// </summary>
+    [Fact]
+    public void A_refusal_by_the_door_s_own_authentication_code_reads_its_account_signed_out_whatever_its_words()
+    {
+        using var service = _ledger.Client();
+        var roster = Built();
+        const string expired = "the ACP agent refused the call: OAuth session expired and could not be refreshed";
+        var failed = Observation.Conclude(0, "Open", turnFailed: expired);
+        var ended = new HarnessEnding(0, expired, [])
+        {
+            Refusal = new AcpRefusal(expired, code: -32000, words: "OAuth session expired and could not be refreshed"),
+        };
+
+        var conclusion = Driver(service, roster).AccountSignedOut(
+            failed, AdapterSet.Built().Resolve("claude-code-acp"), new HarnessSelection(null, "account-2"), expired, ended);
+
+        Assert.Equal(("account.signed-out", "claude-code"), (conclusion.Parts![^1].Code, (string?)conclusion.Parts[^1].Value("owner")));
+        Assert.Equal(new AccountRead(LoginState.Out, Seen), ReadOf("claude-code", "account-2"));
+        Assert.Null(AccountCooling.Of(_home, "claude-code", "account-2", Seen));
     }
 
     [Theory]

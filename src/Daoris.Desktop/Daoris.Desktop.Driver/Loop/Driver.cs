@@ -2276,7 +2276,8 @@ public sealed class Driver(
             // of its own naming the earliest reset and whose account, said on its record once per wait; the next look past it takes it.
             if (limitedLine is not null && selection.Cooling is { } earliest)
             {
-                var waits = LimitResume.Waits(earliest, Context.Harnesses.Zone, AccountNames.Of(home, earliest.Agent));
+                var waits = LimitResume.Waits(
+                    earliest, Context.Harnesses.Zone, AccountNames.Of(home, earliest.Agent), signedOut: selection.SignedOut?.Accounts);
                 GoOns.HeldSaying(limitedLine, waits);
                 return Hold(waits.Note) with { Cooling = earliest, SignedOut = selection.SignedOut };
             }
@@ -2333,7 +2334,12 @@ public sealed class Driver(
         if (priorStands is { Said: { } priorSaid } && start.Resumes is { } goneFrom)
         {
             var landedAway = priorStands.Stand == TreeStand.Gone && Context.Trees.Recorded.Landing(goneFrom.Session) is not null;
+            // TREEKEEPRETRY1: gone with nothing beyond the line, the part goes on in a fresh tree rather than holding for good.
+            var leftNothing = priorStands.Stand == TreeStand.Gone && !landedAway && goneFrom.BaseCommit is { Length: > 0 } stoodAt
+                && TreeReturns.LeftNothing(
+                    goneFrom, await Context.Trees.LineHoldsAsync(root, quest.To, RemoteTarget.Workspace(start.Workspace), stoodAt, ct).ConfigureAwait(false));
             if (priorStands.Stand == TreeStand.Remade) TreeSaid(goneFrom.Session, priorSaid);
+            else if (leftNothing) TreeSaid(goneFrom.Session, TreeReturns.Fresh(priorStands.Branch ?? Path.GetFileName(priorTree!)));
             else if (!landedAway)
             {
                 GoOns.HeldSaying(goneFrom, priorSaid);
@@ -3186,7 +3192,7 @@ public sealed class Driver(
                     if (ended.Transient?.Opened == true) await TransientRetries.GoOnOffAsync(service, sessionId, ct).ConfigureAwait(false);
 
                     conclusion = AccountRefused(conclusion, adapter, selection, ended);
-                    conclusion = AccountSignedOut(conclusion, adapter, selection, turnFailed);
+                    conclusion = AccountSignedOut(conclusion, adapter, selection, turnFailed, ended);
                     // MODELROLE1c3 (D205 §3.3's pipe exception): the pipe door refused the model its choice named on a silent turn, so the
                     // account's reading is kept and the part ends with its line, no strike; the next look starts what the walk then answers.
                     var refusedModel = ModelRefused(conclusion, adapter.Name, selection, target.Asked?.NamedModel, ended, sessionId);
@@ -3769,11 +3775,23 @@ public sealed class Driver(
             ("agent", agent), ("model", model)));
     }
 
+    /// <param name="ended">The run's ending: a refusal its door's own code reads as access is the account's sign-in, whatever its words (LIMITPICK1).</param>
     internal SessionConclusion AccountSignedOut(
-        SessionConclusion conclusion, ISessionAdapter adapter, HarnessSelection selection, string? turnFailed) =>
-        conclusion.State == "failed" && RefusedAccounts.SignInRefused(Context.Harnesses, adapter, selection.Profile, turnFailed) is { } line
+        SessionConclusion conclusion, ISessionAdapter adapter, HarnessSelection selection, string? turnFailed, HarnessEnding? ended = null) =>
+        conclusion.State == "failed"
+        && RefusedAccounts.SignInRefused(Context.Harnesses, adapter, selection.Profile, turnFailed, AccessByCode(adapter, ended)) is { } line
             ? conclusion.Then(" ", line)
             : conclusion;
+
+    /// <summary>
+    /// Whether the refusal a run ended on reads access by a code or kind its door declares (D210 point 5): the one reader's, its words read
+    /// apart, since a credential its provider refused by its words is AGT3b's (<see cref="AccountRefused"/>).
+    /// </summary>
+    private bool AccessByCode(ISessionAdapter adapter, HarnessEnding? ended) =>
+        ended?.Refusal is { } refused
+        && AgentErrors.Read(Context.Adapters, adapter, DoorFailure.OfPrompt(refused), Context.Harnesses.Clock(), Context.Harnesses.Zone)
+            is { Kind: AgentErrorKind.Access } read
+        && !read.By.Contains(":words:", StringComparison.Ordinal);
 
     /// <summary>
     /// What a start's landing is named for, as its session is told it (WSR5, LAND2c): a chain's step lands on its chain's branch,
@@ -5006,7 +5024,7 @@ public sealed class Driver(
     internal AcpMcpServer? Connector(string sessionId, IReadOnlyDictionary<string, string>? scope, string? proc = null) =>
         KnowledgeConnector.Offer(
             Variable, AppContext.BaseDirectory,
-            KnowledgeConnector.SessionScope(home, sessionId, scope, proc, KnowledgeConnector.KeptRole(Context.Conversations, sessionId)));
+            KnowledgeConnector.SessionScope(home, sessionId, scope, proc, KnowledgeConnector.KeptRole(Context.Conversations.RoleOf, sessionId)));
 
     /// <summary>
     /// A process's lineage token (COWORKVIEW1a): issued, its <c>start</c> written to the session's lineage, and set anew on the

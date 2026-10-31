@@ -684,6 +684,32 @@ public sealed class BranchTidyingTests : IDisposable
     }
 
     /// <summary>
+    /// TREEKEEPRETRY1 (the owner's report, 2026-10-31): a tree is judged by every session of its quest, so the newest retry of a quest
+    /// still open holds the tree its line runs in, though that retry ended waiting on a limit and the run that opened the tree ended long
+    /// ago; once the quest closes, nothing holds it.
+    /// </summary>
+    [Fact]
+    public async Task The_newest_retry_of_an_open_quest_holds_its_tree_until_the_quest_closes()
+    {
+        using var ledger = new StandInLedger();
+        ledger.Register("engine", Path.Combine(_home, "engine"));
+        ledger.Publish("q1", "engine");
+        using var client = ledger.Client();
+        var tree = DaorisHome.Entry(_home, HomeEntry.Trees, "default", "engine", "s-77af1391");
+        foreach (var limited in new[] { false, true })
+        {
+            var (id, _) = await client.OpenSessionAsync("q1", "stub", null, "account-1", tree, null);
+            await client.AdvanceAsync(id!, "working");
+            await client.AdvanceAsync(id!, "failed", note: "the agent's turn failed before it took its quest.", limit: limited);
+        }
+
+        Assert.Contains(tree, await BranchTidying.InUseAsync(_home, client, null, CancellationToken.None));
+
+        ledger.Move("q1", "Done");
+        Assert.DoesNotContain(tree, await BranchTidying.InUseAsync(_home, client, null, CancellationToken.None));
+    }
+
+    /// <summary>
     /// 🔴 HELPERWAIT1 (Codex's #5 on COWORKUX1): a session that ended waiting on its own helper keeps its tree from the tidy while its quest is
     /// still taken, since it goes on there with the answer or parks for the person; one that ended any other way never did.
     /// 🔴 HELPERWAIT1b (Codex's round-3 #3): its ask refused and its move back to the person failed, it is still completed and waiting, with

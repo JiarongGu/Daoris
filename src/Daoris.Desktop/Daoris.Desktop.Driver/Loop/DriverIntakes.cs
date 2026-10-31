@@ -350,7 +350,7 @@ internal sealed class DriverIntakes(LoopContext context, Driver driver)
                                 : Observation.TimedOut(config.TestBound ?? 0));
                     conclusion = _driver.AccountRefused(conclusion, adapter, selection, ended);
                     // A refused sign-in reads its account signed out (ROSTER1b), as a driven session's does.
-                    conclusion = _driver.AccountSignedOut(conclusion, adapter, selection, turnFailed);
+                    conclusion = _driver.AccountSignedOut(conclusion, adapter, selection, turnFailed, ended);
                     // An account's limit cools the account the intake ran as (TOOL4d), as a driven session's does.
                     (conclusion, var limited) = _driver.AccountLimited(conclusion, adapter, selection, turnFailed, sessionId, used);
 

@@ -1952,7 +1952,15 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// The usage history's turn lines, by session, for the sessions named (KNOWCENTRAL2d): set where this client's home is known, so a
     /// session's end hands the service the lines its memory rows' models are read from. Null hands none, and the rows name <c>unknown</c>.
     /// </summary>
-    public Func<IReadOnlyCollection<string>, IReadOnlyDictionary<string, IReadOnlyList<KeptTurn>>>? TurnLines { get; init; }
+    public Func<IReadOnlyCollection<string>, IReadOnlyDictionary<string, IReadOnlyList<TurnLine>>>? TurnLines { get; init; }
+
+    /// <summary>One turn line as the service is handed it: the fields its memory rows' models are read from.</summary>
+    public sealed record TurnLine(long Seq, DateTimeOffset? Started, DateTimeOffset Ended, string Model);
+
+    /// <summary>Maps the usage history's kept turns onto the lines this client hands the service.</summary>
+    public static IReadOnlyDictionary<string, IReadOnlyList<TurnLine>> LinesOf<T>(
+        IReadOnlyDictionary<string, IReadOnlyList<T>> kept, Func<T, TurnLine> line) =>
+        kept.ToDictionary(pair => pair.Key, pair => (IReadOnlyList<TurnLine>)[.. pair.Value.Select(line)], StringComparer.Ordinal);
 
     /// <summary>The states a session's record ends in: where its staged memory's models are named (the memory coordinator design §1).</summary>
     private static readonly string[] Ending = ["completed", "stopped", "failed", "declined", "stood-down"];
@@ -1961,7 +1969,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// The turn lines of <paramref name="id"/> and of each session it continues, as its record names them; null where none is known or the
     /// records did not read, which costs the rows their models and never the move.
     /// </summary>
-    private async Task<IReadOnlyDictionary<string, IReadOnlyList<KeptTurn>>?> TurnLinesForAsync(string id, CancellationToken ct)
+    private async Task<IReadOnlyDictionary<string, IReadOnlyList<TurnLine>>?> TurnLinesForAsync(string id, CancellationToken ct)
     {
         if (TurnLines is null) return null;
         var chain = new List<string> { id };
@@ -1983,7 +1991,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
         return lines.Count == 0 ? null : lines;
     }
 
-    private static void WriteTurns(Utf8JsonWriter writer, IReadOnlyDictionary<string, IReadOnlyList<KeptTurn>> turns)
+    private static void WriteTurns(Utf8JsonWriter writer, IReadOnlyDictionary<string, IReadOnlyList<TurnLine>> turns)
     {
         writer.WriteStartObject("turns");
         foreach (var (session, lines) in turns)
