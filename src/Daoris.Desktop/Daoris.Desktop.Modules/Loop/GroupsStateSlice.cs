@@ -66,8 +66,8 @@ public static class GroupsStateSlice
         ["holds"] = ["why", "reason", "repository", "until", "account", "accountName"],
         ["lands"] = ["branch", "tree", "commits", "uncommitted"],
         ["discards"] = ["branch", "tree", "says", "keeps", "keptAt"],
-        ["entry"] = ["entry", "origin", "repository", "group", "leading", "parts"],
-        ["part"] = ["session", "quest", "shown", "group", "began", "after", "askedBy"],
+        ["entry"] = ["entry", "origin", "repository", "group", "leading", "head", "parts"],
+        ["part"] = ["session", "quest", "shown", "group", "began", "after", "askedBy", "head"],
     };
 
     /// <summary>Which shape a field holds, as <c>shape.field</c>, an object of it or a list of them; every other field is a value.</summary>

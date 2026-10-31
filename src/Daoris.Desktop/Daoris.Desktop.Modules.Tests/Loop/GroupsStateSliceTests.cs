@@ -168,7 +168,7 @@ public sealed partial class GroupsStateSliceTests : DriverModuleBridge
             Calling = new RunningCall("npm test", At),
         };
         var entry = new SessionEntry("quest:q1/engine", "quest:q1", "engine", SessionGroup.Later, "s1",
-            [new EntryPart("s1", "q1", "completed", SessionGroup.Later, PartBegan.Asked) { After = "s0", AskedBy = "game" }]);
+            [new EntryPart("s1", "q1", "completed", SessionGroup.Later, PartBegan.Asked) { After = "s0", AskedBy = "game", Head = "s1" }]) { Head = "s1" };
 
         var route = FieldsOf(Written(SessionsRoutes.Grouped(row)), "row").Concat(FieldsOf(Written(SessionsRoutes.Entry(entry)), "entry")).ToList();
         var pushed = GroupsStateSlice.Fields.SelectMany(shape => shape.Value.Select(field => $"{shape.Key}.{field}")).ToHashSet(StringComparer.Ordinal);
