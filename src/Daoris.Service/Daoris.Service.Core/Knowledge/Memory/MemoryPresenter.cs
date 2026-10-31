@@ -52,7 +52,8 @@ public sealed record MemoryShown(MemoryReference Reference, long Read, string St
 /// read again and its cited records rechecked, an entry stamped <c>checked at</c> its revision only where every check holds, and shown as
 /// read where none answers. An entry that moved between the reading and the answer's delivery discards the answer, which is read again, up
 /// to <see cref="Tries"/> times; what still moves is shown as read. What is presented is kept as the line's read, so a move after it is told
-/// once and one before it is not told again.
+/// once and one before it is not told again. An entry of a repository other than <see cref="Own"/> is read, and a cited entry of another
+/// repository rechecked, through that memory's view (KNOWCENTRAL2g), never its engine.
 /// </summary>
 /// <param name="ops">The log whose journal says what moved, and where the read set is kept.</param>
 /// <param name="engines">Each repository's memory; none where memory is off, and everything shows as read.</param>
@@ -61,6 +62,12 @@ public sealed class MemoryPresenter(MemoryOpStore ops, IMemoryEngines? engines, 
 {
     /// <summary>The most times an answer an entry's move discarded is read again.</summary>
     public const int Tries = 3;
+
+    /// <summary>The repository whose line is presented, its entries read through its engine; none, and every entry is read through a view.</summary>
+    public string? Own { get; init; }
+
+    /// <summary>What a view asks before it reads an entry: the line's workspace; none permits every entry.</summary>
+    public IMemoryViewCheck? Check { get; init; }
 
     /// <summary>Run after the entries are read and before the answer is checked against the journal; a test's, to move one there.</summary>
     internal Func<Task>? BeforeDelivery { get; set; }
@@ -100,19 +107,26 @@ public sealed class MemoryPresenter(MemoryOpStore ops, IMemoryEngines? engines, 
     private async Task<MemoryShown> ShowAsync(MemoryRead read, CancellationToken ct)
     {
         var reference = read.Reference;
-        if (engines?.Open(reference.Repository, MemoryReinforcement.None) is not { } engine)
-        {
-            return new(reference, read.Revision, MemoryStanding.Historical, Why: "its memory is not open here");
-        }
+        IMemoryReads? reads;
+        var unviewable = false;
+        if (string.Equals(reference.Repository, Own, StringComparison.OrdinalIgnoreCase)) reads = engines?.Open(reference.Repository, MemoryReinforcement.None);
+        else (reads, unviewable) = MemoryViews.Of(engines, reference.Repository, Check);
+        if (unviewable) return new(reference, read.Revision, MemoryStanding.Historical, Why: $"its memory {MemoryViews.CannotView}");
+        if (reads is null) return new(reference, read.Revision, MemoryStanding.Historical, Why: "its memory is not open here");
 
         MemoryEntry? entry;
         try
         {
-            entry = await engine.GetAsync(reference.Entry, ct).ConfigureAwait(false);
+            entry = await reads.GetAsync(reference.Entry, ct).ConfigureAwait(false);
         }
         catch (Exception error) when (error is not OperationCanceledException)
         {
             return new(reference, read.Revision, MemoryStanding.Historical, Why: "its memory could not be read");
+        }
+
+        if (entry is null && Check is MemoryWorkspaceCheck { Refused: { Count: > 0 } refused } && refused.Contains(reference))
+        {
+            return new(reference, read.Revision, MemoryStanding.Historical, Why: "its repository is no longer in this line's workspace");
         }
 
         if (entry is null) return new(reference, read.Revision, MemoryStanding.Gone);
@@ -129,9 +143,12 @@ public sealed class MemoryPresenter(MemoryOpStore ops, IMemoryEngines? engines, 
                 continue;
             }
 
+            var cited = citation.Revision is null ? "record" : "entry";
             return new(reference, read.Revision, MemoryStanding.Historical, entry, check is { Standing: CitationStanding.Failed }
-                ? $"its cited record `{citation.Id}` is superseded by {check.By ?? "a later record"}"
-                : $"its cited record `{citation.Id}` could not be checked{(check is null ? "" : $" ({check.Says})")}");
+                ? citation.Revision is null
+                    ? $"its cited record `{citation.Id}` is superseded by {check.By ?? "a later record"}"
+                    : $"its cited entry `{citation.Id}` {check.Says}"
+                : $"its cited {cited} `{citation.Id}` could not be checked{(check is null ? "" : $" ({check.Says})")}");
         }
 
         return new(reference, read.Revision, MemoryStanding.Current, entry, amended);
@@ -139,6 +156,7 @@ public sealed class MemoryPresenter(MemoryOpStore ops, IMemoryEngines? engines, 
 
     private async Task<CitationCheck?> RecheckAsync(Citation citation, CancellationToken ct)
     {
+        if (citation.Revision is not null) return await MemoryViews.RecheckAsync(engines, citation, Check, ct).ConfigureAwait(false);
         if (knowledge is null) return null;
         try
         {

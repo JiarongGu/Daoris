@@ -1520,11 +1520,17 @@ if (mode == ServiceMode.Local)
 
     // KNOWCENTRAL2f (the memory coordinator design §3, §6): what the line ending at a session read, each entry read again and its cited records
     // rechecked, for the brief of the part that continues it; what is answered is kept as the line's read. Machine-local, as the read set is.
+    // KNOWCENTRAL2g: another repository's entry is read through its view, asking the session's workspace first.
     app.MapPost("/api/sessions/{id}/memory/read", async (string id, ComposedService s, HttpContext http, CancellationToken ct) =>
     {
         if (!MachineLocal(http)) return Results.NotFound();
         var reads = await s.Sessions.Memory.ReadsOfLineAsync(id, ct);
-        var shown = await new MemoryPresenter(s.Sessions.Memory, s.Memory, s.Service).PresentAsync(reads, ct);
+        var record = await s.Sessions.FindAsync(id, ct);
+        var shown = await new MemoryPresenter(s.Sessions.Memory, s.Memory, s.Service)
+        {
+            Own = record?.Repository,
+            Check = new MemoryWorkspaceCheck(s.Service, record?.Workspace),
+        }.PresentAsync(reads, ct);
         return Results.Ok(new MemoryReadResponse([.. shown.Select(each => new MemoryShownResponse(
             each.Reference.ToString(), each.Read, each.Standing, each.Entry?.Revision, each.Checked, each.Why, each.Line))]));
     });

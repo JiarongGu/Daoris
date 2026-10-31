@@ -1,5 +1,4 @@
 using System.ComponentModel;
-using System.Globalization;
 using System.Text;
 using ModelContextProtocol.Server;
 
@@ -9,7 +8,8 @@ namespace Daoris.Knowledge.Mcp;
 /// A repository's memory as a session meets it (KNOWCENTRAL2b, 2d; the memory coordinator design §1, §2): <c>memory_search</c> and
 /// <c>memory_get</c> read, <c>memory_write</c> and <c>memory_end</c> change the caller's own repository's, and <c>memory_propose</c> asks
 /// an entry's owner. Every door answers from the repositories the registry places in the caller's workspace (<see cref="MemoryScope"/>),
-/// and every engine is opened with no reinforcement, so a read changes nothing. A change is kept <c>staged</c> under its session, seen by
+/// and every engine is opened with no reinforcement, so a read changes nothing; another repository's memory is read through its view
+/// (KNOWCENTRAL2g), which asks the workspace again before it reads an entry. A change is kept <c>staged</c> under its session, seen by
 /// that session and a session continuing it alone, until the session's commit point releases it; no tool here calls an engine's write.
 /// What a named session reads is kept in its read set, and its next search or get opens with the entries its line read that moved since,
 /// each told once (KNOWCENTRAL2f).
@@ -62,13 +62,18 @@ public sealed class MemoryTools(
 
         var told = await ToldAsync(caller, ct).ConfigureAwait(false);
         var found = new List<(MemoryReference Reference, MemoryEntry Entry)>();
+        var unread = new List<string>();
+        var check = new MemoryWorkspaceCheck(service, caller.Workspace);
         foreach (var repository in caller.Members)
         {
-            if (engines.Open(repository, MemoryReinforcement.None) is not { } engine) continue;
-            var entries = await engine.SearchAsync(query, Limit, ct).ConfigureAwait(false);
+            var (reads, unviewable) = ReadsOf(caller, repository, check);
+            if (unviewable) unread.Add(repository);
+            if (reads is null) continue;
+            var entries = await reads.SearchAsync(query, Limit, ct).ConfigureAwait(false);
             found.AddRange(entries.Select(entry => (new MemoryReference(repository, entry.Id), entry)));
         }
 
+        told += string.Concat(unread.Select(repository => MemoryViews.Unviewable(repository) + Environment.NewLine + Environment.NewLine));
         await KeepReadsAsync(caller, found.Take(Limit).Select(each => new MemoryRead(each.Reference, each.Entry.Revision)), ct).ConfigureAwait(false);
 
         // This session's own additions, and those of the sessions it continues, before their commit point: no other session sees them.
@@ -110,6 +115,16 @@ public sealed class MemoryTools(
         query.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .Any(word => text.Contains(word, StringComparison.OrdinalIgnoreCase));
 
+    /// <summary>
+    /// What the caller reads <paramref name="repository"/>'s memory through (the design §6 B): its own repository's engine, and every other's
+    /// view, which moves nothing of its owner's and asks <paramref name="check"/> before it reads an entry. None where the repository keeps
+    /// no memory, or where its engine gives no view, which <c>Unviewable</c> says.
+    /// </summary>
+    private (IMemoryReads? Reads, bool Unviewable) ReadsOf(MemoryCaller caller, string repository, IMemoryViewCheck check) =>
+        caller.Owns(repository)
+            ? (engines?.Open(repository, MemoryReinforcement.None), false)
+            : MemoryViews.Of(engines, repository, check);
+
     /// <summary>What a named session's answer opens with: the entries its line read that moved since, each told once (the design §3).</summary>
     private async Task<string> ToldAsync(MemoryCaller caller, CancellationToken ct)
     {
@@ -146,10 +161,12 @@ public sealed class MemoryTools(
 
         var at = caller.Placed(named);
         var told = await ToldAsync(caller, ct).ConfigureAwait(false);
-        if (engines.Open(at.Repository, MemoryReinforcement.None) is not { } engine
-            || await engine.GetAsync(at.Entry, ct).ConfigureAwait(false) is not { } entry)
+        var check = new MemoryWorkspaceCheck(service, caller.Workspace);
+        var (reads, unviewable) = ReadsOf(caller, at.Repository, check);
+        if (unviewable) return $"{told}Refused: {MemoryViews.Unviewable(at.Repository)}";
+        if (reads is null || await reads.GetAsync(at.Entry, ct).ConfigureAwait(false) is not { } entry)
         {
-            return $"{told}No memory entry `{at}`. References come from memory_search.";
+            return check.Refused.Count > 0 ? told + caller.Refusal(at) : $"{told}No memory entry `{at}`. References come from memory_search.";
         }
 
         var text = new StringBuilder(told).Append($"`{at}`, revision {entry.Revision}");
@@ -162,7 +179,8 @@ public sealed class MemoryTools(
             return await ToldAsync(caller, text.ToString(), ct).ConfigureAwait(false);
         }
 
-        var related = await engine.ExpandAsync(at.Entry, ct).ConfigureAwait(false);
+        var related = await reads.ExpandAsync(at.Entry, ct).ConfigureAwait(false);
+        if (check.Refused.Count > 0) return told + caller.Refusal(at);
         await KeepReadsAsync(
             caller, [new MemoryRead(at, entry.Revision), .. related.Select(each => new MemoryRead(at with { Entry = each.Entry.Id }, each.Entry.Revision))], ct)
             .ConfigureAwait(false);
@@ -188,7 +206,9 @@ public sealed class MemoryTools(
         [Description("The reference of the entry this one disputes or amends.")] string? target = null,
         [Description("The entries this one replaces, each `repository:entry@revision` with the revision memory_get answered.")]
         string[]? supersedes = null,
-        [Description("The knowledge ids of the records that show the fact, as knowledge_search names them; each is rechecked later.")]
+        [Description(
+            "The knowledge ids of the records that show the fact, as knowledge_search names them, and any entry of another repository's "
+            + "memory it rests on, as `repository:entry@revision` with the revision memory_get answered; each is rechecked later.")]
         string[]? cites = null,
         CancellationToken ct = default)
     {
@@ -196,7 +216,7 @@ public sealed class MemoryTools(
         var replaced = new List<(MemoryReference Reference, long Revision)>();
         foreach (var named in (supersedes ?? []).Where(each => !string.IsNullOrWhiteSpace(each)))
         {
-            if (Predecessor(named) is not { } predecessor) return Words.Unread(named);
+            if (MemoryReference.ParseRead(named) is not { } predecessor) return Words.Unread(named);
             replaced.Add(predecessor);
         }
 
@@ -243,16 +263,6 @@ public sealed class MemoryTools(
             : $"Kept as operation `{op.Id}`, staged: once this session's work is accepted it waits for its approver, then `{op.Repository}`'s "
               + $"memory takes this entry and ends {string.Join(", ", predecessors.Select(each => $"`{op.Repository}:{each.Entry}` (revision {each.Revision})"))} "
               + $"in one change. Nothing changes before. {until}";
-    }
-
-    /// <summary>The entry a replacement names, written <c>repository:entry@revision</c>, or null where it names no revision.</summary>
-    private static (MemoryReference Reference, long Revision)? Predecessor(string text)
-    {
-        var at = text.LastIndexOf('@');
-        return at > 0 && MemoryReference.Parse(text[..at]) is { } reference
-            && long.TryParse(text[(at + 1)..].Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var revision)
-                ? (reference, revision)
-                : null;
     }
 
     [McpServerTool(Name = "memory_end")]
@@ -315,8 +325,16 @@ public sealed class MemoryTools(
                    + "with memory_end. Nothing was published.";
         }
 
-        var entry = engines.Open(at.Repository, MemoryReinforcement.None) is { } engine ? await engine.GetAsync(at.Entry, ct).ConfigureAwait(false) : null;
-        if (entry is null) return $"No memory entry `{at}`. References come from memory_search.";
+        var check = new MemoryWorkspaceCheck(service, caller.Workspace);
+        var (view, unviewable) = MemoryViews.Of(engines, at.Repository, check);
+        if (unviewable) return $"Refused: {MemoryViews.Unviewable(at.Repository)} Nothing was published.";
+        var entry = view is null ? null : await view.GetAsync(at.Entry, ct).ConfigureAwait(false);
+        if (entry is null)
+        {
+            return check.Refused.Count > 0
+                ? caller.Refusal(at).Replace("Nothing was done.", "Nothing was published.", StringComparison.Ordinal)
+                : $"No memory entry `{at}`. References come from memory_search.";
+        }
         if (entry.Ended is { } ended) return $"Refused: `{at}` already ended: {MemoryEndToken.Strip(ended)}. Nothing was published.";
         if (entry.Revision != revision)
         {
@@ -338,12 +356,23 @@ public sealed class MemoryTools(
                + "and closing the quest applies nothing. You are told how it settles at your next memory call.", ct).ConfigureAwait(false);
     }
 
-    /// <summary>The records <paramref name="cites"/> names, cited; or why one was refused.</summary>
+    /// <summary>
+    /// The records <paramref name="cites"/> names, cited, and the entries of other repositories' memory it names at a revision, each read
+    /// through its view and cited by reference (the design §6 B); or why one was refused.
+    /// </summary>
     private async Task<(List<Citation> Citations, string? Refused)> CiteAsync(MemoryCaller caller, string[]? cites, CancellationToken ct)
     {
         var citations = new List<Citation>();
         foreach (var id in (cites ?? []).Where(id => !string.IsNullOrWhiteSpace(id)).Select(id => id.Trim()).Distinct(StringComparer.Ordinal))
         {
+            if (MemoryReference.ParseRead(id) is { } read)
+            {
+                var (entry, refused) = await CiteEntryAsync(caller, read.Reference, read.Revision, ct).ConfigureAwait(false);
+                if (refused is not null) return ([], refused);
+                citations.Add(entry!);
+                continue;
+            }
+
             var repository = id.IndexOf(':') is var colon and > 0 ? id[..colon] : id;
             if (caller.Outside(new MemoryReference(repository, id)) is { } outside) return ([], outside);
             var answer = await service.CiteAsync(id, ct: ct).ConfigureAwait(false);
@@ -352,6 +381,32 @@ public sealed class MemoryTools(
         }
 
         return (citations, null);
+    }
+
+    /// <summary>Another repository's entry, cited at the revision read once its view answers it current there; or why it is not.</summary>
+    private async Task<(Citation? Cited, string? Refused)> CiteEntryAsync(MemoryCaller caller, MemoryReference named, long revision, CancellationToken ct)
+    {
+        if (caller.Outside(named) is { } outside) return (null, outside.Replace("Nothing was done.", "Nothing was kept.", StringComparison.Ordinal));
+        var at = caller.Placed(named);
+        if (caller.Owns(at.Repository))
+        {
+            return (null, $"Refused: `{at}` is this repository's own entry, so it is not cited: relate to it with `relation` and `target`. "
+                          + "Nothing was kept.");
+        }
+
+        var check = new MemoryWorkspaceCheck(service, caller.Workspace);
+        var (view, unviewable) = MemoryViews.Of(engines, at.Repository, check);
+        if (unviewable) return (null, $"Refused: {MemoryViews.Unviewable(at.Repository)} Nothing was kept.");
+        return (view is null ? null : await view.GetAsync(at.Entry, ct).ConfigureAwait(false)) switch
+        {
+            null when check.Refused.Count > 0 => (null, caller.Refusal(at).Replace("Nothing was done.", "Nothing was kept.", StringComparison.Ordinal)),
+            null => (null, $"No memory entry `{at}`. References come from memory_search. Nothing was kept."),
+            { Ended: { } ended } => (null, $"Refused: `{at}` already ended: {MemoryEndToken.Strip(ended)}, so it is not cited. Nothing was kept."),
+            { Revision: var now } when now != revision =>
+                (null, $"Refused: `{at}` moved since you read it: it is at revision {now}, and you read revision {revision}. Read it again "
+                       + "with memory_get and cite what it says now. Nothing was kept."),
+            _ => (Citation.OfEntry(at, revision), null),
+        };
     }
 
     private DateTimeOffset Now() => (time ?? TimeProvider.System).GetUtcNow();
@@ -426,10 +481,16 @@ public sealed record MemoryCaller(string? Workspace, IReadOnlyList<string> Membe
         : null;
 
     /// <summary>The refusal of <paramref name="reference"/> where its repository is not in the workspace; null where it is.</summary>
-    public string? Outside(MemoryReference reference) => Member(reference.Repository) is null
-        ? $"Refused: `{reference}` is repository `{reference.Repository}`'s memory, and `{reference.Repository}` is not in workspace "
-          + $"`{Workspace}`, whose memory alone this session reads. Nothing was done."
-        : null;
+    public string? Outside(MemoryReference reference) => Member(reference.Repository) is null ? Refusal(reference) : null;
+
+    /// <summary>The refusal of <paramref name="reference"/> as outside the workspace, as a view's check refused it after this call was read.</summary>
+    public string Refusal(MemoryReference reference) =>
+        $"Refused: `{reference}` is repository `{reference.Repository}`'s memory, and `{reference.Repository}` is not in workspace "
+        + $"`{Workspace}`, whose memory alone this session reads. Nothing was done.";
+
+    /// <summary>Whether <paramref name="repository"/> is the caller's own, read through its engine; every other is read through a view.</summary>
+    public bool Owns(string repository) =>
+        Own is not null && Member(repository) is { } placed && string.Equals(placed, Member(Own), StringComparison.Ordinal);
 
     /// <summary>The refusal of a change by a caller with no repository of its own in the workspace; null where it has one.</summary>
     public string? Unchanging(string tool) =>

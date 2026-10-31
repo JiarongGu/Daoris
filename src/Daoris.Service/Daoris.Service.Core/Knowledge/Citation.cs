@@ -9,7 +9,18 @@ namespace Daoris.Knowledge;
 /// <param name="Commit">The commit the stored reading was read or fed at.</param>
 /// <param name="Fed">Whether a feed gave that reading.</param>
 /// <param name="Digest">The entry's body, hashed (<see cref="FeedDigest.Of(string)"/>).</param>
-public sealed record Citation(string Id, LineSpan? Lines, string Commit, bool Fed, string Digest);
+public sealed record Citation(string Id, LineSpan? Lines, string Commit, bool Fed, string Digest)
+{
+    /// <summary>
+    /// For another repository's memory entry cited (KNOWCENTRAL2g; the design §6 B), the revision it was read at, its <see cref="Id"/> the
+    /// entry's reference; null for a record. Absent from a record's stored citation, which reads as it was.
+    /// </summary>
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public long? Revision { get; init; }
+
+    /// <summary>Another repository's entry, cited at the revision read: rechecked through its view, never copied.</summary>
+    public static Citation OfEntry(MemoryReference entry, long revision) => new(entry.ToString(), null, "", false, "") { Revision = revision };
+}
 
 /// <summary>A citation made, or why none was.</summary>
 /// <param name="Refused">Why nothing was cited, in a sentence; null when <paramref name="Cited"/> is.</param>

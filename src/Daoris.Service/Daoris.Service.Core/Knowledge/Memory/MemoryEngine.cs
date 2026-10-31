@@ -14,6 +14,16 @@ public sealed record MemoryReference(string Repository, string Entry)
         return at > 0 && at < trimmed.Length - 1 ? new(trimmed[..at].Trim(), trimmed[(at + 1)..].Trim()) : null;
     }
 
+    /// <summary>The entry and revision <paramref name="text"/> writes as <c>repository:entry@revision</c>, or null where it writes none.</summary>
+    public static (MemoryReference Reference, long Revision)? ParseRead(string? text)
+    {
+        var at = text?.LastIndexOf('@') ?? -1;
+        return at > 0 && Parse(text![..at]) is { } reference
+            && long.TryParse(text[(at + 1)..].Trim(), System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var revision)
+                ? (reference, revision)
+                : null;
+    }
+
     public override string ToString() => $"{Repository}:{Entry}";
 }
 
@@ -49,19 +59,18 @@ public sealed record MemoryPredecessor(string Entry, long Revision);
 public sealed record MemorySuperseded(bool Applied, MemoryEntry? Successor);
 
 /// <summary>
-/// One repository's memory engine (Lyntai's, from KNOWCENTRAL2d): the reads every memory tool makes, and the writes only the service
-/// makes once a change is released. A write carrying <c>key</c> leaves a receipt where the engine <see cref="HoldsReceipts"/>.
+/// One repository's memory engine (Lyntai's, from KNOWCENTRAL2d): the reads its own repository makes, the writes only the service makes
+/// once a change is released, and the view every other repository reads it through (KNOWCENTRAL2g). A write carrying <c>key</c> leaves a
+/// receipt where the engine <see cref="HoldsReceipts"/>.
 /// </summary>
-public interface IMemoryEngine
+public interface IMemoryEngine : IMemoryReads
 {
-    /// <summary>The current entries <paramref name="query"/> matches, best first.</summary>
-    Task<IReadOnlyList<MemoryEntry>> SearchAsync(string query, int limit, CancellationToken ct = default);
+    /// <summary>Whether <see cref="ViewOf"/> answers: Lyntai's graph engine over a store that keeps revisions does.</summary>
+    bool HoldsView => false;
 
-    /// <summary>The entry, ended or not; null where the memory keeps none by that id.</summary>
-    Task<MemoryEntry?> GetAsync(string id, CancellationToken ct = default);
-
-    /// <summary>The entries <paramref name="id"/> relates to.</summary>
-    Task<IReadOnlyList<MemoryRelated>> ExpandAsync(string id, CancellationToken ct = default);
+    /// <summary>A read-only view of this memory for another repository's reader, asking <paramref name="check"/> before it reads an entry.</summary>
+    /// <exception cref="NotSupportedException">An engine that gives no view.</exception>
+    IMemoryView ViewOf(IMemoryViewCheck? check) => throw new NotSupportedException("This memory gives no read-only view.");
 
     /// <summary>An entry written; a same-content write answers the entry it repeats, its revision moved.</summary>
     Task<MemoryEntry> RememberAsync(string text, CancellationToken ct = default, string? key = null, string? recheck = null);

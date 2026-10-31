@@ -94,14 +94,16 @@ public sealed class MemoryProposals(MemoryOpStore ops, QuestStore quests, QuestE
         }
     }
 
-    /// <summary>Whether the proposal's target is gone, ended or at another revision than the one its proposer read.</summary>
+    /// <summary>
+    /// Whether the proposal's target is gone, ended or at another revision than the one its proposer read, read through its owner's view
+    /// (an end moves the revision); not told where the owner's memory gives none.
+    /// </summary>
     private async Task<bool> MovedAsync(MemoryOp op, CancellationToken ct)
     {
-        if (engines?.Open(op.Repository, MemoryReinforcement.None) is not { } engine) return false;
+        if (MemoryViews.Of(engines, op.Repository, null).View is not { } view) return false;
         try
         {
-            return await engine.GetAsync(op.Change.Target ?? "", ct).ConfigureAwait(false) is not { Ended: null } entry
-                   || entry.Revision != op.Change.Revision;
+            return await view.RevisionOfAsync(op.Change.Target ?? "", ct).ConfigureAwait(false) != op.Change.Revision;
         }
         catch (Exception error) when (error is not OperationCanceledException)
         {
