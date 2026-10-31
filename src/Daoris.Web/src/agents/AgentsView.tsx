@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { sentence } from '../locales/format';
 import { useHarnessRun, WithHarnessRuns } from './harnessRuns';
@@ -19,12 +19,41 @@ import { proposalChange } from '../settings/repository/proposals';
 import { AgentList, AgentStrip } from './AgentList';
 import { type AgentActs, AgentMainNotice, AgentPage, type Answered } from './AgentPage';
 import { type AgentPart, accountLabel, agentRows } from './agents';
+import { AgentsModes, AgentsStrip, RoleSectionStrip } from './AgentsModes';
+import { type AgentsMode, isRoleSection, readAgentsMode, type RoleSection, storeAgentsMode } from './modes';
+import { RoleSectionList } from './roles/RoleSections';
+import { RolesMode } from './roles/RolesView';
+import type { ListPanes } from '../work/frame/listPanes';
 
 /** What a door runs, and so what streams under it in *Ways in* (D49 §2). */
 const DOOR_ACTIONS = ['install', 'update', 'pin', 'unpin'] as const;
 
 /** A reading older than this is read again as an agent's page opens (the switch design §1.2): Claude's read floor, a minute. */
 const STALE_AFTER = 60_000;
+
+/**
+ * The Agents place's mode as the application holds it (COMPANYVIEW1b): the one it was left in, remembered for the place, and a change of
+ * it; and the Roles section last left (`daoris.list.roles.chosen`), Working roles where none is kept.
+ *
+ * @remarks
+ * **A switch to Agents is a door that names no item** (UX6b, D150 §1 rule 6): the agent chosen is read again before it is shown. A
+ * section never closes or goes, so a switch to Roles reopens nothing.
+ */
+export function useAgentsMode(lists: ListPanes) {
+  const [mode, setMode] = useState<AgentsMode>(readAgentsMode);
+  const shown = useRef(mode);
+  const { reopen, choose } = lists;
+  const onMode = useCallback((next: AgentsMode) => {
+    if (next !== shown.current && next === 'agents') reopen('agents');
+    shown.current = next;
+    setMode(next);
+    storeAgentsMode(next);
+  }, [reopen]);
+  const kept = lists.pane('roles').chosen;
+  const section: RoleSection = isRoleSection(kept) ? kept : 'working';
+  const onSection = useCallback((next: RoleSection) => choose('roles', next), [choose]);
+  return { mode, onMode, section, onSection };
+}
 
 /**
  * **The Agents place** (UX6e, D150 §5): what it hands the frame (D118 §5), its list pane and its main area. The list is
@@ -41,9 +70,14 @@ const STALE_AFTER = 60_000;
  *
  * **Every act has its terminal twin** (D50): `daoris agent …`, named at the page's foot.
  */
-export function useAgentsView({ active, chosen, onChoose, notify, part = null, onAnchored, onOpenPlugin, say }: {
+export function useAgentsView({ active, chosen, onChoose, notify, part = null, onAnchored, onOpenPlugin, say, modes }: {
   /** The view is in front. */
   active: boolean;
+  /**
+   * The Roles mode beside Agents (COMPANYVIEW1b, the company-view design §1), on a desktop only: the mode in front and a change of it,
+   * and the section chosen in the Roles mode and a change of it. Absent, the place is the Agents list alone, as a browser's is.
+   */
+  modes?: { mode: AgentsMode; onMode: (mode: AgentsMode) => void; section: RoleSection; onSection: (section: RoleSection) => void };
   /** The list's chosen item: an agent's id, which the application remembers (`daoris.list.agents.chosen`). */
   chosen: string | null;
   onChoose: (item: string | null) => void;
@@ -94,12 +128,35 @@ export function useAgentsView({ active, chosen, onChoose, notify, part = null, o
 
   // A first answer still on its way; an answer that is no roster (a shell older than this place) lists nothing.
   const loading = active && roster.data === undefined && roster.isPending;
+  if (modes?.mode === 'roles') {
+    return {
+      list: {
+        view: 'agents',
+        // The section chosen is the Roles list's memory; the pane's closing and width are the place's.
+        chosenIn: 'roles',
+        name: t('nav.agents'),
+        labels: { open: t('agents.list.open'), close: t('agents.list.close'), resize: t('agents.list.resize') },
+        head: <AgentsModes mode={modes.mode} onMode={modes.onMode} />,
+        strip: (
+          <AgentsStrip mode={modes.mode} onMode={modes.onMode}>
+            <RoleSectionStrip section={modes.section} onSection={modes.onSection} />
+          </AgentsStrip>
+        ),
+        chosen: modes.section,
+        body: <RoleSectionList section={modes.section} onSection={modes.onSection} />,
+      },
+      main: <RolesMode section={modes.section} notify={notify} />,
+    };
+  }
   return {
     list: {
       view: 'agents',
       name: t('nav.agents'),
       labels: { open: t('agents.list.open'), close: t('agents.list.close'), resize: t('agents.list.resize') },
-      strip: harnesses ? <AgentStrip rows={rows} chosen={chosen} onChoose={onChoose} /> : undefined,
+      head: modes ? <AgentsModes mode={modes.mode} onMode={modes.onMode} /> : undefined,
+      strip: modes
+        ? <AgentsStrip mode={modes.mode} onMode={modes.onMode}>{harnesses && <AgentStrip rows={rows} chosen={chosen} onChoose={onChoose} />}</AgentsStrip>
+        : harnesses ? <AgentStrip rows={rows} chosen={chosen} onChoose={onChoose} /> : undefined,
       loading,
       empty: harnesses && rows.length === 0 ? { headline: t('agents.empty.headline'), body: t('agents.empty.body') } : undefined,
       chosen,

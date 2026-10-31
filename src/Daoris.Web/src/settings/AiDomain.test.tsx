@@ -52,37 +52,12 @@ describe('AI features on Settings', () => {
       },
     ],
   };
-  const start = (job: 'work' | 'intake', adapter: string) => ({
-    job, workspace: 'default', adapter, owner: 'claude-code', product: 'Claude Code',
-    profile: 'personal', profileFrom: 'machine', version: '0.9.1', versionFrom: 'unset',
-    commanded: false, refusal: null,
-  });
-
-  // MODELROLE1d (D205 §7): Intake is a row of *Actors*, its order set in its editor over SET_ACTOR, off its own words.
-  let intake: { agent: string }[] = [];
-  const actors = () => ({
-    actors: [
-      { id: 'build', state: 'before', choices: [{ agent: 'claude-code', from: 'before' }] },
-      { id: 'intake', state: intake.length > 0 ? 'set' : 'off', choices: intake.map((choice, i) => ({ ...choice, from: String(i + 1) })) },
-      { id: 'ask-daoris', state: 'off', choices: [] },
-      { id: 'chat', state: 'before', choices: [{ agent: 'claude-code', from: 'before' }] },
-    ],
-  });
   beforeEach(() => {
-    intake = [];
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input))));
-    invoke.mockImplementation(async (module: string, type: string, request?: { payload?: { actor?: string; choices?: { agent: string }[] | null } }) => {
+    invoke.mockImplementation(async (module: string, type: string) => {
       if (module !== 'DAORIS.DRIVER') return WIRING;
-      if (type === 'SET_ACTOR' && request?.payload?.actor === 'intake') intake = request.payload.choices ?? [];
-      if (type === 'STATE' || type === 'SET_ACTOR') return { ...DRIVER_STATE, intakeAdapter: intake[0]?.agent ?? '' };
-      if (type === 'ACTORS') return actors();
+      if (type === 'STATE') return DRIVER_STATE;
       if (type === 'HARNESSES') return ROSTER;
-      if (type === 'STARTS') {
-        return {
-          adapter: 'claude-code',
-          starts: [start('work', 'claude-code'), ...(intake[0] ? [start('intake', intake[0].agent)] : [])],
-        };
-      }
       return undefined;
     });
   });
@@ -90,8 +65,6 @@ describe('AI features on Settings', () => {
     vi.unstubAllGlobals();
     invoke.mockReset();
   });
-
-  const rowOf = async (name: string) => (await screen.findByText(name, { selector: 'span' })).closest<HTMLElement>('[data-setting-row]')!;
 
   it("states the service's own tier, verbatim, and how the model is chosen", async () => {
     show(<SettingsView notify={() => {}} section="ai" />);
@@ -102,74 +75,21 @@ describe('AI features on Settings', () => {
     expect(screen.getByText('DAORIS_EMBED_MODEL').tagName).toBe('CODE');
   });
 
-  /** The Intake card folded into its row (MODELROLE1d): off in its own words, with what that does under it. */
-  it('says an Intake that is off in its own words, on its actor row, with what that does', async () => {
-    show(<SettingsView notify={() => {}} section="ai" />);
-
-    const row = await rowOf('Intake');
-    expect(within(row).getByText('Off — declarations only')).toBeTruthy();
-    expect(within(row).getByText(/answered from the workspace's declarations/)).toBeTruthy();
-    expect(screen.queryByRole('combobox', { name: 'the intake agent' })).toBeNull();
-  });
-
-  /**
-   * D50: the screen's half of `daoris driver intake <agent>|off`, now Intake's one-choice order over SET_ACTOR. Its editor offers
-   * the ways in this machine HAS, and lands on the same file.
-   */
-  it("sets Intake's order over SET_ACTOR, and says what an intake runs as, from the driver's answer", async () => {
-    const notify = vi.fn();
-    show(<SettingsView notify={notify} section="ai" />);
+  /** The roles moved to the Agents place (COMPANYVIEW1b): one line here, with a door, and no role's editor or press. */
+  it('keeps one line for the roles, with a door to Agents, Roles, and no editor of its own', async () => {
+    const onGo = vi.fn();
+    show(<SettingsView notify={() => {}} section="ai" onGo={onGo} />);
     const user = userEvent.setup();
 
-    await user.click(within(await rowOf('Intake')).getByRole('button', { name: 'Edit Intake' }));
-    const editor = screen.getByRole('form', { name: 'Intake: your order' });
-    expect(within(editor).getByText('Running work never moves to another choice.')).toBeTruthy();
-    await user.click(within(editor).getByRole('button', { name: 'Save' }));
-
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_ACTOR', {
-      payload: { actor: 'intake', choices: [{ agent: 'claude-code', model: null, effort: null }] },
-    });
-    await waitFor(() => expect(notify).toHaveBeenCalledWith("Intake's order is saved; new work takes it."));
-  });
-
-  /**
-   * As whom: the driver's own answer for the intake, per circle, under Intake's row: the same rows *What a start runs on* draws,
-   * so the two cannot disagree about one account.
-   */
-  it("says which account an intake runs as, from the driver's answer, under Intake's row", async () => {
-    intake = [{ agent: 'claude-code-acp' }];
-    show(<SettingsView notify={() => {}} section="ai" />);
-
-    expect(await screen.findByText(/opens a session on claude-code-acp/)).toBeTruthy();
-    const here = await screen.findByRole('listitem', { name: 'an intake in default' });
-    expect(within(here).getByText('personal')).toBeTruthy();
-  });
-
-  it('turns Intake off as the terminal does: an empty order', async () => {
-    intake = [{ agent: 'claude-code-acp' }];
-    show(<SettingsView notify={() => {}} section="ai" />);
-    const user = userEvent.setup();
-
-    await user.click(within(await rowOf('Intake')).getByRole('button', { name: 'Edit Intake' }));
-    await user.click(within(screen.getByRole('form', { name: 'Intake: your order' })).getByRole('button', { name: 'Off' }));
-
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_ACTOR', { payload: { actor: 'intake', choices: [] } });
-  });
-
-  /** A shell that answers no actors has never heard of them: no row, not a disabled one. */
-  it('offers no Intake row on a shell older than the actors', async () => {
-    invoke.mockImplementation(async (module: string, type: string) => {
-      if (module !== 'DAORIS.DRIVER') return WIRING;
-      if (type === 'STATE') return DRIVER_STATE;
-      if (type === 'HARNESSES') return ROSTER;
-      if (type === 'STARTS') return { adapter: 'claude-code', starts: [start('work', 'claude-code')] };
-      return undefined;
-    });
-    show(<SettingsView notify={() => {}} section="ai" />);
-
-    expect(await screen.findByText('lexical only')).toBeTruthy();
-    await screen.findByRole('button', { name: 'Driver' });
-    expect(screen.queryByText('Intake')).toBeNull();
+    expect(await screen.findByText('Working roles are set in Agents, under Roles.')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /^Edit / })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Add a role' })).toBeNull();
+    await user.click(screen.getByRole('button', { name: 'Open Roles' }));
+    expect(onGo).toHaveBeenCalledWith({ view: 'agents', agentsMode: 'roles' });
+    // It asks the driver nothing of roles.
+    const asked = invoke.mock.calls.map((call) => call[1]);
+    expect(asked).not.toContain('ROLES');
+    expect(asked).not.toContain('ACTORS');
   });
 });
 
@@ -224,7 +144,6 @@ describe('Ask Daoris’s access on Settings', () => {
 
     await chip('Full access');
     expect(screen.getByText('Full access: Ask Daoris acts on this machine itself, without Apply.')).toBeInTheDocument();
-    expect(screen.getByText(/runs on claude-code-acp with full access/)).toBeInTheDocument();
     await pick('restricted');
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_HELP_MODE', { payload: { mode: 'restricted' } });
     await waitFor(() => expect(notify).toHaveBeenCalledWith('Ask Daoris runs restricted from each conversation’s next turn.'));
@@ -274,7 +193,7 @@ describe('Ask Daoris’s access on Settings', () => {
     helpMode = undefined;
     show(<SettingsView notify={() => {}} section="ai" />);
 
-    expect(await screen.findByText(/Ask Daoris runs on claude-code-acp/)).toBeInTheDocument();
+    expect(await screen.findByText(i18n.t('settings.ai.roles.moved'))).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /^Ask Daoris’s access:/ })).toBeNull();
   });
 });
@@ -468,193 +387,3 @@ describe('Ask Daoris’s configured access on Settings', () => {
   });
 });
 
-/**
- * MODELROLE1c (D205 §7): the actors under AI features, each order folded to one line as `ACTORS` answers it, and Build's editor,
- * whose Save sends the whole order over `SET_ACTOR`; a refusal is the driver's sentence under its Save, the editor still open.
- */
-describe('Actors on AI features', () => {
-  const ROSTER = {
-    settingsPath: 'C:/somewhere/.daoris/harnesses.json',
-    adapter: 'claude-code',
-    harnesses: [
-      {
-        harness: 'claude-code', product: 'Claude Code', maker: 'Anthropic', wire: 'pipe',
-        present: true, version: 'claude 9.9.9', problem: null, machineDefault: null,
-        pinned: null, managed: null, pinnable: true, ownLogin: 'in', workspaceDefaults: [], profiles: [],
-      },
-    ],
-  };
-  const before = (id: string, agent?: string) => ({
-    id, state: agent || id === 'opinion' || id === 'partner' || id === 'helper' ? 'before' : 'off',
-    choices: agent ? [{ agent, from: 'before' }] : [],
-  });
-  const ACTORS = {
-    actors: [
-      before('build', 'claude-code'), before('intake'), before('opinion'), before('helper'), before('partner'),
-      before('brainstorm', 'claude-code'), before('ask-daoris'), before('chat', 'claude-code'),
-    ],
-  };
-  let refuse = false;
-
-  beforeEach(() => {
-    refuse = false;
-    i18n.changeLanguage('en');
-    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input))));
-    invoke.mockImplementation(async (module: string, type: string) => {
-      if (module !== 'DAORIS.DRIVER') return WIRING;
-      if (type === 'SET_ACTOR' && refuse) throw new Error('build takes at most 4 choices, not 5.');
-      if (type === 'STATE' || type === 'SET_ACTOR') return DRIVER_STATE;
-      if (type === 'HARNESSES') return ROSTER;
-      if (type === 'ACTORS') return ACTORS;
-      if (type === 'STARTS') return { adapter: 'claude-code', starts: [] };
-      return undefined;
-    });
-  });
-  afterEach(() => {
-    vi.unstubAllGlobals();
-    invoke.mockReset();
-  });
-
-  it('folds each actor to one line, as before where it reads today\'s settings', async () => {
-    show(<SettingsView notify={() => {}} section="ai" />);
-
-    expect(await screen.findByText('Roles')).toBeTruthy();
-    // One card for the roles: the word Actors is on no card, and the older shell here has no catalogue to draw beside it (COMPANYVIEW1a).
-    expect(screen.queryByText('Actors')).toBeNull();
-    expect(screen.queryByText('Role catalogue')).toBeNull();
-    expect(screen.getByText(/Not offered by this shell/)).toBeTruthy();
-    expect(screen.getAllByText('claude-code · account default · account default · as before').length).toBe(2);
-    expect(screen.getByText('all at once: claude-code · account default · account default · as before')).toBeTruthy();
-    expect(screen.getByText('models for the agents a rule names: as before')).toBeTruthy();
-    // Build's, Intake's, Ask Daoris's and Chat's editors (MODELROLE1c, MODELROLE1d): the others' come with row e.
-    expect(screen.getAllByRole('button', { name: /^Edit / })).toHaveLength(4);
-    // Intake and Ask Daoris off in their own words (D205 §2.1).
-    expect(screen.getByText('Off — declarations only')).toBeTruthy();
-    expect(screen.getByText('Off — starters only')).toBeTruthy();
-  });
-
-  it("saves Build's order over SET_ACTOR, one choice's model named", async () => {
-    const notify = vi.fn();
-    show(<SettingsView notify={notify} section="ai" />);
-    const user = userEvent.setup();
-
-    await user.click(await screen.findByRole('button', { name: 'Edit Build' }));
-    const editor = screen.getByRole('form', { name: 'Build: your order' });
-    expect(within(editor).getByText('Running work never moves to another choice.')).toBeTruthy();
-    await user.type(within(editor).getByRole('textbox', { name: "choice 1's model" }), 'opus');
-    await user.click(within(editor).getByRole('button', { name: 'Save' }));
-
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_ACTOR', {
-      payload: { actor: 'build', choices: [{ agent: 'claude-code', model: 'opus', effort: null }] },
-    });
-    await waitFor(() => expect(notify).toHaveBeenCalledWith("Build's order is saved; new work takes it."));
-    await waitFor(() => expect(screen.queryByRole('form', { name: 'Build: your order' })).toBeNull());
-  });
-
-  it('says a refusal under its Save and keeps the editor open as it was (R3)', async () => {
-    refuse = true;
-    const notify = vi.fn();
-    show(<SettingsView notify={notify} section="ai" />);
-    const user = userEvent.setup();
-
-    await user.click(await screen.findByRole('button', { name: 'Edit Build' }));
-    const editor = screen.getByRole('form', { name: 'Build: your order' });
-    await user.type(within(editor).getByRole('textbox', { name: "choice 1's model" }), 'opus');
-    await user.click(within(editor).getByRole('button', { name: 'Save' }));
-
-    expect(await within(editor).findByRole('alert')).toHaveTextContent('at most 4 choices');
-    expect(within(editor).getByRole('textbox', { name: "choice 1's model" })).toHaveValue('opus');
-    expect(notify).not.toHaveBeenCalledWith(expect.stringContaining('saved'));
-  });
-
-  /** D205 §7 (round 4): Chat's and Ask Daoris's editors say what a running conversation does; every other actor's says it never moves. */
-  it.each(['en', 'zh'])("says in Chat's and Ask Daoris's editors that a conversation goes on with the next choice, in %s", async (language) => {
-    await i18n.changeLanguage(language);
-    show(<SettingsView notify={() => {}} section="ai" />);
-    const user = userEvent.setup();
-    await screen.findAllByRole('button', { name: i18n.t('settings.ai.roles.editOf', { role: i18n.t('settings.ai.actors.name.build') }) });
-
-    for (const [id, words] of [['ask-daoris', 'goesOn'], ['chat', 'goesOn'], ['intake', 'neverMoves']] as const) {
-      await user.click(screen.getByRole('button', { name: i18n.t('settings.ai.roles.editOf', { role: i18n.t(`settings.ai.actors.name.${id}`) }) }));
-      const editor = screen.getByRole('form', {
-        name: i18n.t('settings.ai.actors.editorTitle', { actor: i18n.t(`settings.ai.actors.name.${id}`) }),
-      });
-      expect(within(editor).getByText(i18n.t(`settings.ai.actors.${words}`))).toBeTruthy();
-      await user.click(within(editor).getByRole('button', { name: i18n.t('common.cancel') }));
-    }
-    await i18n.changeLanguage('en');
-  });
-});
-
-/**
- * FOUNDATION1y-i (the foundation design §2.7): the role catalogue under the actors, as `ROLES` answers it, each change the person's
- * press over `SET_ROLE`; the Designer Daoris suggests is added by its own press, and a refusal is the driver's sentence under it.
- */
-describe('The role catalogue on AI features', () => {
-  const ROLES = {
-    roles: [{ id: 'build', state: 'seed', seeded: true, nameEn: 'Build', nameZh: '开发', takes: ['build'], scopeKind: 'machine', revision: 0 }],
-    works: ['build', 'design'],
-    kept: true,
-    suggested: [{ id: 'designer', nameEn: 'Designer', nameZh: '设计师', takes: ['design'], scopeKind: 'machine', choices: [{ agent: 'claude-code', model: 'opus', effort: 'high' }] }],
-  };
-  let refuse = false;
-
-  beforeEach(() => {
-    refuse = false;
-    i18n.changeLanguage('en');
-    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input))));
-    invoke.mockImplementation(async (module: string, type: string) => {
-      if (module !== 'DAORIS.DRIVER') return WIRING;
-      if (type === 'SET_ROLE' && refuse) throw new Error('`build` may not be off: a role must take it on the machine.');
-      if (type === 'STATE' || type === 'SET_ROLE') return DRIVER_STATE;
-      if (type === 'ROLES') return ROLES;
-      if (type === 'STARTS') return { adapter: 'claude-code', starts: [] };
-      return undefined;
-    });
-  });
-  afterEach(() => {
-    vi.unstubAllGlobals();
-    invoke.mockReset();
-  });
-
-  it('adds the suggested Designer over SET_ROLE and says so', async () => {
-    const notify = vi.fn();
-    show(<SettingsView notify={notify} section="ai" />);
-    const user = userEvent.setup();
-
-    expect(await screen.findByText('Roles')).toBeTruthy();
-    await user.click(screen.getByRole('button', { name: 'Add the Designer' }));
-
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_ROLE', {
-      payload: {
-        change: 'set', id: 'designer', revision: 0,
-        role: { name: { en: 'Designer', zh: '设计师' }, takes: ['design'], scope: { kind: 'machine', id: null } },
-        choices: [{ agent: 'claude-code', model: 'opus', effort: 'high' }],
-      },
-    });
-    await waitFor(() => expect(notify).toHaveBeenCalledWith('Designer is saved; new work takes it.'));
-  });
-
-  it('tells a failed read of the roles from a shell that offers none', async () => {
-    const answer = invoke.getMockImplementation()!;
-    invoke.mockImplementation(async (module: string, type: string, request?: unknown) => {
-      if (type === 'ROLES') throw new Error('the store did not read');
-      return answer(module, type, request);
-    });
-    show(<SettingsView notify={() => {}} section="ai" />);
-
-    expect(await screen.findByText(/could not be read/)).toBeTruthy();
-    expect(screen.queryByText(/Not offered by this shell/)).toBeNull();
-  });
-
-  it("says the driver's refusal of a removal under the role's row", async () => {
-    refuse = true;
-    show(<SettingsView notify={() => {}} section="ai" />);
-    const user = userEvent.setup();
-
-    await user.click(await screen.findByRole('button', { name: 'Remove Build' }));
-
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_ROLE', { payload: { change: 'remove', id: 'build', revision: 0 } });
-    expect(await screen.findByText(/a role must take it on the machine/)).toBeTruthy();
-  });
-});

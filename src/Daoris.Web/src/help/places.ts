@@ -117,6 +117,8 @@ export const PLACE_PARTS: readonly { within: string; part: string }[] = [
   { within: 'start', part: 'driven' }, { within: 'start', part: 'landing' }, { within: 'start', part: 'rules' },
   // UX6e2: the agent's page's sections a door opens (D150 §5.2); Permissions' Proposals are its What it may do.
   { within: 'agents', part: 'accounts' }, { within: 'agents', part: 'rules' }, { within: 'agents', part: 'usage' },
+  // COMPANYVIEW1b: the Agents place's Roles mode (the company-view design §1), where the working roles are set.
+  { within: 'agents', part: 'roles' },
 ];
 
 /**
@@ -182,7 +184,7 @@ export function placeDoor(asked: HelpPlace): StarterDoor | null {
     const filled = asked.workspace?.trim();
     return { view, drawer: part as 'add' | 'import', ...(filled ? { drawerWorkspace: filled } : {}) };
   }
-  if (view === 'agents') return { view, agentPart: part as AgentPart };
+  if (view === 'agents') return part === 'roles' ? { view, agentsMode: 'roles' } : { view, agentPart: part as AgentPart };
   if (view === 'knowledge') return { view, knowledge: part as KnowledgeMode };
   // NEW1d-b: the composer opens, with the repository chosen and the words in where the go named them; neither is sent.
   if (view === 'sessions' && part === 'new') {

@@ -440,7 +440,7 @@ public sealed class HelpGoProposalsTests : HelpProposalsFixture
                 "projects/workspace-setup", "projects/workspace-defaults", "projects/workspace-remote",
                 "knowledge/search", "knowledge/convergence",
                 "start/agent", "start/helper", "start/repositories", "start/driven", "start/landing", "start/rules",
-                "agents/accounts", "agents/rules", "agents/usage",
+                "agents/accounts", "agents/rules", "agents/usage", "agents/roles",
             ],
             HelpPlaces.Parts.Select(part => $"{part.Within}/{part.Id}"));
         static string Spelled(HelpPlace place) => string.Join("/", new[] { place.View, place.Domain, place.Part }.OfType<string>());

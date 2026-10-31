@@ -95,7 +95,7 @@ import { store, stored } from '../lib/stored';
 import { figure } from '../locales/format';
 import { HarnessRuns } from '../agents/harnessRuns';
 import { usePluginsView } from '../plugins/PluginsView';
-import { useAgentsView } from '../agents/AgentsView';
+import { useAgentsMode, useAgentsView } from '../agents/AgentsView';
 import type { AgentPart } from '../agents/agents';
 
 /** The views are `commands.ts`'s one list (D66); the activity bar and the palette read the same. */
@@ -184,6 +184,8 @@ export function App() {
   // Knowledge's mode (UX6i, D150 §2.2): Search or Convergence, remembered for the place. Held here, where every door is
   // applied, since a door into either names it.
   const [knowledgeMode, chooseKnowledgeMode] = useKnowledgeMode(lists);
+  // The Agents place's mode (COMPANYVIEW1b): Agents or Roles, remembered for the place and held here for the same reason.
+  const agentsModes = useAgentsMode(lists);
   // A domain remembered from before it left Settings reads as the one Settings opens on, so Ask Daoris is told the domain
   // shown: Plugins as Driver, which keeps its folder's row (UX6j); Agents, Workspace and Permissions as Appearance.
   const settingsSection: SettingsSection = rememberedDomain(lists.pane('settings').chosen);
@@ -418,6 +420,8 @@ export function App() {
   const agents = useAgentsView({
     say: (session, text) => sayToSession.mutateAsync({ id: session, text }),
     active: view === 'agents',
+    // The Roles mode is this machine's, as AI features' machine half is: a browser has the agents alone.
+    modes: attached ? agentsModes : undefined,
     chosen: agentsPane.chosen,
     onChoose: (item) => lists.choose('agents', item),
     notify,
@@ -626,6 +630,7 @@ export function App() {
     // Knowledge's mode first (UX6i): a switch reads that mode's remembered choice again, and an item a door names in it
     // is then chosen now, never a remembered choice.
     if (plan.knowledge) chooseKnowledgeMode(plan.knowledge);
+    if (plan.agentsMode) agentsModes.onMode(plan.agentsMode);
     if (plan.chosen) lists.choose(plan.chosen.view, plan.chosen.item);
     // A view opened by a door that names nothing reopens what its list chose only while it still waits (UX6b, D150 §8):
     // the list reads it again, and lets go of one that closed or went. A door that names an item has it chosen above.
@@ -986,6 +991,7 @@ export function App() {
   const askProps = {
     where: {
       view, workspace: scope.workspace ?? null, settings: settingsSection, knowledge: knowledgeMode,
+      agents: attached ? agentsModes.mode : null,
       // The item the view in front has chosen (FRAME1i-a), while its list says it is still there.
       item: itemOf(view, itemList?.chosen, itemList?.standing),
       // Where Sessions' views stand (HELP2): the helper cannot see the window, and guessed without it.

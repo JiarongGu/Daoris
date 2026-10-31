@@ -8,6 +8,8 @@
   "agents.list.waiting":"{{count}} 个账户等你处理",
   "agents.list.waiting_other": "{{count}} 个账户等你处理",
   "agents.list.absent": "未安装",
+  "agents.roles.later": "稍后提供。",
+  "agents.roles.laterOf": "这一部分还没有做好。",
   "agents.empty.headline": "这里没有已知的智能体",
   "agents.empty.body": "Daoris 驱动这个版本内置的智能体，以及插件声明的智能体，而本机一个也没有报告。",
   "agents.none.headline": "选择一个智能体",

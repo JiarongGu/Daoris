@@ -1,21 +1,13 @@
 import { useTranslation } from 'react-i18next';
-import { useRegistry, useStatus } from '../data/queries';
-import {
-  helpModeOf, useActors, useAnswerStaffingFound, useDriver, useHarnesses, usePlugins, useRoles, useSetActor, useSetHelpGrant, useSetHelpMode,
-  useSetRole, useStaffingFound, useStarts, type RoleChangePress,
-} from '../bridge/shell';
+import { useStatus } from '../data/queries';
+import { helpModeOf, useDriver, useHarnesses, usePlugins, useSetHelpGrant, useSetHelpMode } from '../bridge/shell';
 import type { HelpGrantChoice, HelpGrantId } from '../help/access/wired';
 import { doorLabel } from '../agents/tools';
-import { CardStack, failure, type Notify } from '../design/ui';
+import { Button, Card, CardHeader, CardStack, failure, Prose, type Notify } from '../design/ui';
 import { sentence } from '../locales/format';
-import { workspacesOf } from '../data/workspaces';
 import { useModeChoice } from '../help/access/HelpModePicker';
 import { fullAdds } from '../help/access/modes';
 import { AiJobs, type SearchTier } from './AiJobs';
-import { RolesCard, roleName, type ActorChoice } from './ai/Roles';
-import { refusedNoRoute } from '../bridge/call';
-import { AskDaorisAbout, IntakeAbout } from './ai/ActorAbout';
-import { namer } from './accounts/namer';
 import type { StarterDoor } from '../help/starters';
 
 /**
@@ -38,13 +30,9 @@ export function AiDomain({ attached, notify, onGo }: { attached: boolean; notify
 }
 
 function MachineAi({ search, notify, onGo }: { search?: SearchTier; notify: Notify; onGo?: (door: StarterDoor) => void }) {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const driver = useDriver();
   const roster = useHarnesses();
-  const registry = useRegistry('machine');
-  // The circles *What a start runs on* names, spelled the same way — so both cards read one answer.
-  const workspaces = workspacesOf(registry.data ?? []);
-  const answer = useStarts(workspaces);
   // Ask Daoris's access (HELPMODE1b, D183 point 2), by the panel chip's rule: restricted at once, full access on its confirmation,
   // which names the servers the plugins offer it and wait for an approval, read only while it asks. A refusal is said where it was
   // pressed (ACCESSASK1, the UI/UX design R3): inside the ask, or under the chip, never a toast.
@@ -81,78 +69,6 @@ function MachineAi({ search, notify, onGo }: { search?: SearchTier; notify: Noti
       onError: failure(notify),
     });
   };
-  // An agent a person can name here is a way in this machine HAS: one not installed would hold every
-  // intake, and a choice whose only outcome is a hold is worse than none.
-  const agents = harnesses
-    .filter((door) => door.present)
-    .map((door) => ({ value: door.harness, label: doorLabel(t, door) }));
-  const starts = Array.isArray(answer.data?.starts) ? answer.data.starts : [];
-  // The actors (MODELROLE1c, D205 §7): each order as the driver reads it, Build's set here through SET_ACTOR, the person's press. A
-  // change of Build's agent keeps Chat and Brainstorm, still as before, on the agent they ran, written for them, and says so.
-  const actors = useActors();
-  const setActor = useSetActor();
-  const actorRows = actors.data ?? [];
-  const saveActor = (actor: string, choices: ActorChoice[] | null, answered: { done: () => void; refused: (sentence: string) => void }) => {
-    const build = actorRows.find((row) => row.id === 'build')?.choices[0]?.agent;
-    const followers = actorRows.filter((row) => (row.id === 'chat' || row.id === 'brainstorm') && row.state === 'before')
-      .map((row) => t(`settings.ai.actors.name.${row.id}`));
-    const named = t(`settings.ai.actors.name.${actor}`);
-    setActor.mutate({ actor, choices }, {
-      onSuccess: () => {
-        notify(t(choices === null ? 'settings.ai.actors.cleared' : 'settings.ai.actors.saved', { actor: named }));
-        if (actor === 'build' && build && choices?.[0] && choices[0].agent !== build && followers.length > 0) {
-          notify(t('settings.ai.actors.kept', { agent: build, actors: followers.join(t('settings.ai.actors.and')) }));
-        }
-        answered.done();
-      },
-      onError: (error) => answered.refused(sentence(error)),
-    });
-  };
-  // FOUNDATION1w-s: the changes of driver.json's actors another program made, which the driver kept for the person.
-  const found = useStaffingFound();
-  const answerFound = useAnswerStaffingFound();
-  const answerStaffingFound = (id: number, answer: 'take' | 'dismiss', answered: { done: () => void; refused: (sentence: string) => void }) =>
-    answerFound.mutate({ found: id, answer }, {
-      onSuccess: () => {
-        notify(t(answer === 'take' ? 'settings.ai.actors.found.taken' : 'settings.ai.actors.found.dismissed'));
-        answered.done();
-      },
-      onError: (error) => answered.refused(sentence(error)),
-    });
-
-  // FOUNDATION1y-i: the role catalogue, each change the person's press over SET_ROLE, judged by the driver's role door.
-  const roles = useRoles();
-  // Why there is no catalogue: a shell older than the route says so by NO_ROUTE or by answering nothing; any other refusal is a failed read.
-  const rolesRead = roles.data ? 'ok' : roles.isError ? (refusedNoRoute(roles.error) ? 'notOffered' : 'failed') : roles.isSuccess ? 'notOffered' : 'loading';
-  const setRole = useSetRole();
-  const pressRole = (press: RoleChangePress, answered: { done: () => void; refused: (sentence: string) => void }) => {
-    const row = roles.data?.roles.find((each) => each.id === press.id);
-    const named = press.role
-      ? roleName(t, i18n.language, { id: press.id, seeded: row?.seeded ?? false, nameEn: press.role.name.en, nameZh: press.role.name.zh })
-      : roleName(t, i18n.language, row ?? { id: press.id, seeded: false });
-    setRole.mutate(press, {
-      onSuccess: () => {
-        notify(t(press.change === 'set' ? 'settings.ai.roles.saved' : press.change === 'remove' ? 'settings.ai.roles.removedSaved' : 'settings.ai.roles.defaulted', { role: named }));
-        answered.done();
-      },
-      onError: (error) => answered.refused(sentence(error)),
-    });
-  };
-
-  // The Intake and Ask Daoris cards folded into their actor rows (MODELROLE1d, D205 §7): each row's ⓘ, and what it does now, under
-  // its order; Intake's per circle, the driver's own resolution. Each order is set in its editor, over SET_ACTOR.
-  const first = (id: string) => actorRows.find((row) => row.id === id)?.choices[0]?.agent ?? null;
-  const about = {
-    intake: {
-      why: t('settings.ai.intake.why'),
-      below: <IntakeAbout agent={first('intake')} starts={starts.filter((start) => start.job === 'intake')} nameOf={namer(t, harnesses)} />,
-    },
-    'ask-daoris': {
-      why: t('settings.ai.helper.why'),
-      below: <AskDaorisAbout agent={first('ask-daoris')} full={driver.data?.helpMode !== undefined && helpMode === 'full'} />,
-    },
-  };
-
   return (
     <CardStack>
     <AiJobs
@@ -192,14 +108,12 @@ function MachineAi({ search, notify, onGo }: { search?: SearchTier; notify: Noti
         }
         : undefined}
     />
-    {/* One row for each role (COMPANYVIEW1a). A shell that answers neither the roles nor the staffing gets no card. */}
-    {(roles.data || actorRows.length > 0 || rolesRead === 'failed') && (
-      <RolesCard
-        catalogue={roles.data ?? null} read={rolesRead} staffing={actorRows} agents={agents} about={about}
-        busy={setRole.isPending || setActor.isPending || answerFound.isPending}
-        onSet={pressRole} onSetActor={saveActor} found={found.data ?? []} onAnswerFound={answerStaffingFound}
-      />
-    )}
+    {/* The roles live in the Agents place (COMPANYVIEW1b): one line here, with the door. */}
+    <Card>
+      <CardHeader title={t('settings.ai.roles.title')} />
+      <Prose className="mb-3 mt-0 text-small text-ink-soft">{t('settings.ai.roles.moved')}</Prose>
+      {onGo && <Button variant="ghost" onClick={() => onGo({ view: 'agents', agentsMode: 'roles' })}>{t('settings.ai.roles.open')}</Button>}
+    </Card>
     </CardStack>
   );
 }

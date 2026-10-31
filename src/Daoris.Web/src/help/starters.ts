@@ -1,4 +1,5 @@
 import type { AgentPart } from '../agents/agents';
+import type { AgentsMode } from '../agents/modes';
 import type { View } from '../menus/commands';
 import type { KnowledgeMode } from '../knowledge/modes';
 import type { Compose, OpenGroup } from '../app/opener';
@@ -23,6 +24,8 @@ export type StarterDoor = {
   /** A repository page's tab (UX6f): a door into a repository's own value opens its Setup. */
   tab?: ProjectTab;
   agentPart?: AgentPart;
+  /** The Agents place's mode (COMPANYVIEW1b): a door into Roles. */
+  agentsMode?: AgentsMode;
   /**
    * A workspace page's tab and the Setup section to open (UX6g, D150 §4.3): a door into a workspace's defaults, its remote
    * or its clean-up. One that names no workspace in `item` opens the workspace in view.

@@ -74,6 +74,8 @@
   "settings.ai.actors.kept": "{{actors}}保持使用 {{agent}}，已为它们写明。",
   "settings.ai.actors.and": "和",
   "settings.ai.roles.title": "角色",
+  "settings.ai.roles.moved": "工作角色在智能体的“角色”中设置。",
+  "settings.ai.roles.open": "打开角色",
   "settings.ai.roles.body": "每个角色在一个范围内承担一种工作：本机、一个工作区或一个仓库。启动时采用范围最具体的那个角色，并按你排的顺序，在它第一个能运行的选择上运行；用了后面的选择时会说明。头脑风暴同时运行它的所有选择。没有角色承担的工作会等待，直到你为它指定一个角色；正在运行的工作照常继续。",
   "settings.ai.roles.unkept": "这个主目录的 driver.json 由文件自己管理，因此不能在这里添加、移除角色或改变它的范围；每个角色的顺序仍可设置。",
   "settings.ai.roles.notOffered": "这个外壳不提供：它为每个角色只保留一个选择顺序（在下面设置），没有角色目录。",

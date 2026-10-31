@@ -115,8 +115,8 @@ under *Doors Daoris still owes* (below), say Daoris still owes that door and nam
   or a new name, which the move starts. It changes one row of this machine's registry and touches no file.
   Adding or importing a repository needs a folder, which stays the person's pick: `go_propose` opens
   Repositories' `add` or `import` with the workspace filled, and the person picks the folder there.
-- `role_propose`: add, change or remove a role of this machine's role catalogue, as Settings → AI features →
-  Role catalogue does: `set` with the role's names, the work it takes, its scope and its choices (a field left
+- `role_propose`: add, change or remove a role of this machine's role catalogue, as Agents →
+  Roles → Working roles does: `set` with the role's names, the work it takes, its scope and its choices (a field left
   out keeps the role's own), `remove`, or `default` to give a seeded role back its seed. A removed role's work
   waits until a role takes it; running work goes on. It is the person's Apply alone, whatever access you have.
 - `session_propose`: archive sessions on this machine, or unarchive them, by id as Sessions lists them,
@@ -221,11 +221,11 @@ plugin, see whether one of these does the job: propose installing it with `plugi
 | discard a failed or superseded session's branch, with its tree where it is still here | Sessions → the session's review → Discard, while its tree is here | `daoris-driver trees remove <session|branch> [--repository <name>] --force` |
 | hand a branch a landing made to a landing plugin, to push it and open the pull request | Sessions → the session's review → Hand to <plugin> | `daoris-driver trees hand <session|branch> [--plugin <id>]` |
 | ask a landed branch's plugin again whether its pull request completed, and see what that answer proves on this machine (Ask Daoris never proposes it: it changes nothing of yours or on the platform, and the room already says what was last answered) | (no screen yet) | `daoris-driver trees state <session|branch> [--repository <name>]` |
-| choose the agent that answers asks | Settings → AI features → Actors, Intake | `daoris driver intake <agent>|off` |
-| choose the agent Ask Daoris runs on | Settings → AI features → Actors, Ask Daoris | `daoris driver helper <agent>|off` |
-| choose the agent driven sessions start on | Settings → AI features → Actors, Build | `daoris driver adapter <agent>` |
-| choose who does each kind of work, and with which model | Settings → AI features → Actors | `daoris driver actor <actor> …` |
-| add, change or remove a role that takes a kind of work | Settings → AI features → Role catalogue | `daoris driver role set|remove|default <id> …` |
+| choose the agent that answers asks | Agents → Roles → Working roles, Intake | `daoris driver intake <agent>|off` |
+| choose the agent Ask Daoris runs on | Agents → Roles → Working roles, Ask Daoris | `daoris driver helper <agent>|off` |
+| choose the agent driven sessions start on | Agents → Roles → Working roles, Build | `daoris driver adapter <agent>` |
+| choose who does each kind of work, and with which model | Agents → Roles → Working roles | `daoris driver actor <actor> …` |
+| add, change or remove a role that takes a kind of work | Agents → Roles → Working roles | `daoris driver role set|remove|default <id> …` |
 | park a quest after failed sessions | Settings → Driver | `daoris driver strikes <n>` |
 | start a quest its failed sessions parked again | Quests → the quest's page → Try again | `daoris driver retry <quest>` |
 | start a quest your stop holds again: carry a taken one on in its tree, or plan an open one | Quests → the quest's page, whose *Sitting* names the session | `daoris driver retry <quest> --session <id>` |
@@ -287,7 +287,7 @@ design.
 - apply a workflow's version from a file, import a workflow whole, or declare a workspace's kind of task: `daoris driver workflow apply <id> <file>|--as-graph [--base <v>]`, `daoris driver workflow import <file>`, `daoris driver workflow kind <name> <kind> --label "…" [--paths <p,…>]`
 - choose which version of a tool Daoris runs: the one on the PATH, or one kept in the home (Settings → Tools): `daoris tool use <tool> system`, `daoris tool use <tool> managed [<version>]`
 - remove a location tool versions are offered from (Settings → Tools): `daoris tool locations [add|remove <address>]`
-- choose each actor's order of agents, models and efforts (Settings → AI features → Actors): `daoris driver actor [<actor>] ["<agent> [<model>|-] [<effort>|-]" …]`
+- choose each actor's order of agents, models and efforts (Agents → Roles → Working roles): `daoris driver actor [<actor>] ["<agent> [<model>|-] [<effort>|-]" …]`
 
 A landing pattern may say `{quest}`, `{session}`, `{slug}` (the quest's title, as words) and
 `{repository}`. It needs `{quest}` or `{session}`, or every session's work would land on one branch,
@@ -313,11 +313,11 @@ view, for Settings its domain, and a part where the place has one.
 - Parts of `projects`: `add` (Add repository), `import` (Import a folder), `setup` (a repository's Setup), `branches` (a repository's Branches), `history` (a repository's History), `workspace-details` (a workspace's Details), `workspace-branches` (a workspace's Branches), `workspace-workflow` (a workspace's Workflow), `workspace-setup` (a workspace's Setup), `workspace-defaults` (a workspace's Defaults), `workspace-remote` (a workspace's Remote and reach).
 - Parts of `knowledge`: `search` (Search), `convergence` (Convergence).
 - Parts of `start`, the setup guide's steps: `agent` (step 1, an agent), `helper` (step 2, Ask Daoris's agent), `repositories` (step 3, a workspace and its repositories), `driven` (step 4, what is driven), `landing` (step 5, how work lands), `rules` (step 6, what agents may do).
-- Parts of `agents`: `accounts` (Accounts), `rules` (What it may do), `usage` (Usage).
+- Parts of `agents`: `accounts` (Accounts), `rules` (What it may do), `usage` (Usage), `roles` (Roles).
 
 A go names no repository or agent: `setup` opens the Setup of the repository Repositories has chosen,
 where the person picks the one they mean; `branches` and `history` open its Branches and History tabs, likewise;
-and a part of `agents` opens the agent that has it.
+and a part of `agents` opens the agent that has it, except `roles`, which opens the Agents place in its Roles mode.
 A `workspace-` part opens that tab or section on the page of the workspace in view, the scope or the only one;
 with none in view it opens Repositories, where the person picks the workspace they mean.
 `add` and `import` may name the go's `workspace`, one this room lists or a new name:

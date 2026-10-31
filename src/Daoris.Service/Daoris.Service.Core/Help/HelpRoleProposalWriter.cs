@@ -4,7 +4,7 @@ namespace Daoris.Knowledge;
 
 /// <summary>
 /// The <c>role</c> kind's writer (FOUNDATION1y-i, the foundation design §2.7): a working role of the role catalogue added, changed,
-/// removed or given back its seed, the change <c>daoris driver role</c> and Settings → AI features' Role catalogue make. Its door is
+/// removed or given back its seed, the change <c>daoris driver role</c> and Agents → Roles → Working roles make. Its door is
 /// the change, its target the role's id, and its own <c>press</c> the record and choices as the driver's role door takes them, with the
 /// revision Ask Daoris read. Whether the judge takes it is the driver's to say, before the person sees it.
 /// </summary>
