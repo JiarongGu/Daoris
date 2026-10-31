@@ -102,90 +102,85 @@ on the Integration tab.
 
 **Choice: the head replays the others onto its branch; then one Accept.**
 
-**The words.** The ask lists the members the person ticks (parts beside the head, related sessions), each with branch, base and tip, and
-Daoris's fixed words, shown before the press as the rebase words are (`work/review/LandingSync.tsx:50-55`): *replay `<branch>`'s commits
-from `<base>` to `<tip>` onto your branch, oldest first; settle each conflict in the commit that meets it, by what its session meant,
-naming the commit it settles in a `Supersedes: <commit>` trailer; make no merge commit; say when done.* A landing replays commits
-merges aside (`Workplace/LineHolds.cs:296`, `Workplace/BranchReplays.cs:517`) once the line moves (`Workplace/TreeLands.cs:574`): a
-merge commit's resolution is dropped; a replayed commit's travels.
+**The words.** The ask lists the ticked members (parts beside the head, related sessions) with branch, base and tip, and fixed words
+shown as the rebase words are (`work/review/LandingSync.tsx:50-55`): *replay `<branch>`'s commits from `<base>` to `<tip>` onto your
+branch, oldest first; settle each conflict in the commit that meets it, by what its session meant, naming the commit it settles in a
+`Supersedes: <commit>` trailer; make no merge commit; say when done.*
 
-**The record.** The press records an operation in the desktop store (Workplace's family): the head's line and record, each member's
-session, tree, base and tip, the phase; then says the words through the say door under the key `together:<operation>`. A session is in at
-most one open operation.
+**The record.** The press records an operation in the desktop store: the head's line and record, each member's session, tree, base and
+tip, the phase; then says the words through the say door, keyed `together:<operation>`. A session is in one open operation at most.
 
-**One lock order, across processes.** The store's lock alone misses a landing past its guard under its tree's hold
-(`TreeLands.cs:405-416`). Binding, landing and discarding take these in this order, each a file whose handle is the lock across
-processes, let go by a dead one (`Workplace/LandingHolds.cs:27-30`):
-1. each bound tree's landing hold (`:79`), ascending by its file (`:103`);
+**One lock order, across processes**, as the store's lock alone misses a landing past its guard (`Workplace/TreeLands.cs:405-416`);
+each lock a file handle, let go by a dead process (`Workplace/LandingHolds.cs:27-30`):
+1. each bound tree's landing hold (`:79`), ascending by file (`:103`);
 2. the repository's tree lock, shared as a start takes it (`Workplace/TreeLock.cs:50`);
 3. the operation store's record lock (`Store/RecordLock.cs:42`).
 
-The press, *Let them go* and an end take all three; the press judges its refusals and pins tips under them. A landing keeps
-(1) to its end and reads the bindings under (3) as soon as it holds it, before `judged` (`TreeLands.cs:416`): whichever binds or lands
-first, the other refuses, naming it. A discard holds (2) alone (`Workplace/TreeRemovals.cs:52`) and reads them under (3). A holder of
-the head's (1) writes the phases under (3). Nothing holding (2) or (3) takes (1), as nothing does today; every wait is bounded.
-
-**It refuses**, where pressed (R3): another repository's or a teammate's session; a member with a live part, a start waiting, uncommitted
-work, an unread tip, a merge commit, a landing or an integration request; a member whose workflow steps on past its landing, its unit's
-request coming only from its own landing (`Workplace/IntegrationRequests.cs:10`); a head that takes no words, runs elsewhere or lost its
-tree.
-
-**The head's line.** An ended head keeps the word for its next part (`SessionLedger.cs:1103-1104`), so the words open a successor by
-`from`, in the head's tree. The operation is bound to the head's line and moves to the successor that took its keyed word
-(`said_settled`). It ends *stale*, holding nothing (X), only on a move it did not make: another word, hand-over or stop moving the line,
-or a member's tip moving before *checked*.
-
-**Phases**, on the head's page and each member's (R2): *asked*, *replaying* (live, timed), *checking*, *ready to accept*, *landing*.
-*Let them go* ends it before *landing*; what the head made stays, said.
-
-**Checking accounts for every member change** from the head's tip, never the agent's claim nor ancestry (integration design §5.7):
-- **No merge commit** in the range a landing replays, the line's tip to the head's (`LineHolds.cs:82`, `:296`).
-- What the tip holds of a member's commits by content or patch (`LineHolds.JudgeAsync`, `:73`) is *held*.
-- Each other commit is tried alone onto the tip as `TrialTreeAsync` tries a step (`:146-188`), past any conflict, where that trial
-  stops (`:191-195`). Git writes a tree even in conflict, so each path the commit changes is *contained* (as the tip has it), *missing*
-  (changed cleanly) or *unproven* (in conflict).
-- An unproven path is *superseded*, never contained, only where a head commit since the press changed it and names its commit in a
-  `Supersedes:` trailer; the Accept's plan shows both diffs. Any other unproven or missing change fails, named, with *Ask again*.
-
-**Guards.** Every landing door passes `TreeLands.LandAsync`: a part's Accept
+The press, *Let them go* and an end take all three, under which the press judges refusals and pins tips. Every landing door passes
+`TreeLands.LandAsync`, which keeps (1) to its end and reads the bindings under (3) before `judged` (`TreeLands.cs:416`): a part's Accept
 (`Daoris.Desktop.Modules/Bridge/Routes/TreesRoutes.cs:621`), an entry's or ask's (`EntryLands.cs:312`), the terminal's
 (`Daoris.Desktop.Driver.Host/TreesConsole.cs:470`, `Review/ChatLandCommand.cs:64`) and automatic acceptance
-(`Workplace/AutoLander.cs:337`). There a bound tree refuses, naming its operation, unless this is its combined Accept; so does its discard.
+(`Workplace/AutoLander.cs:337`). There a bound tree refuses, naming its operation, but to its combined Accept. A discard takes its
+tree's (1), then reads them under (3): with no service it takes no (2) (`Workplace/TreeRemovals.cs:52`). The sync press
+(`Workplace/TreeSync.cs:220-242`) and a tree's update (`Workplace/TreeUpdates.cs:101`) rebase ended branches under (2) alone, reading
+them under (3) and leaving a bound tree as it stands, named. A holder of the head's (1) writes phases under (3). Nothing holding (2) or
+(3) takes (1); every wait is bounded.
 
-**The combined Accept** is the head entry's, in `EntryAccepts` (`Review/EntryAccepts.cs:4-6`), which reads the operation bound to the
-entry's head:
-- **Members' gates.** Each read as its own Accept reads it (`EntryAccepts.cs:114`), pinned to its bound tip, with its result and
-  submission (`:119-131`); the preflight (`EntryLands.cs:279`) reads members too, so a member held by review, opinion or workflow lands
-  nothing.
-- **Recheck.** Under the head tree's hold, before anything is made (`judged`, `TreeLands.cs:416`): the head pinned at its checked tip
-  (`:593-597`, `:618`); the range and every member, still bound, accounted again, each result judged as its own part's is
-  (`EntryLands.cs:310-315`), and again before the push. A moved head lands nothing.
+**It refuses**, where pressed (R3): another repository's or a teammate's session; a member with a live part, a start waiting, uncommitted
+work, an unread tip, a merge commit, a landing or an integration request; a member whose workflow steps on past its landing, the only
+maker of its unit's request (`Workplace/IntegrationRequests.cs:10`); a head that takes no words, runs elsewhere or lost its tree.
+
+**The head's line.** Kept for an ended head's next part (`SessionLedger.cs:1103-1104`), the words open its successor in its tree, and
+the operation, bound to the head's line, moves to it: the record opened `from` the one that took the keyed word (`said_settled`,
+`Sessions/SaidKeys.cs:8`). It ends *stale*, holding nothing (X), only on a move it did not make: another word, hand-over or stop moving
+the line, or a member's tip moving before *checked*; a head moved after *checked* goes back to *checking*.
+
+**Phases**, on the head's page and each member's (R2): *asked*, *replaying* (live, timed), *checking*, *ready to accept*, *landing*,
+*uncertain* (below). *Let them go* ends it before *landing*; what the head made stays, said.
+
+**Checking accounts for every member change** from the head's tip, never the agent's claim nor ancestry (integration design §5.7):
+- **No merge commit** in the range a landing replays, the line's tip to the head's (`Workplace/LineHolds.cs:82`, `:296`,
+  `Workplace/BranchReplays.cs:517`): its replay drops a merge's resolution.
+- A member's commits the tip holds by content or patch (`LineHolds.JudgeAsync`, `:73`) are *held*.
+- Each other commit is tried alone onto the tip as `TrialTreeAsync` tries a step, but past a conflict (`:191-195`), git writing a tree
+  even then: each path it changes is *contained* (as the tip has it), *settled by rule* as the replay settles generated files, the
+  declared backlog and row tables (`:150-188`, §3's `TASKS.md` among them), *missing* (changed cleanly) or *unproven* (in conflict).
+- An unproven path is *superseded*, never contained, only where a head commit since the press changed it and names it in a
+  `Supersedes:` trailer; the plan shows both diffs. Any other unproven or missing change fails, named, with *Ask again*.
+
+**The combined Accept** is the head entry's (`Review/EntryAccepts.cs:4-6`), reading the operation bound to its head:
+- **Members' gates.** Each read as its own Accept reads it (`EntryAccepts.cs:114`), pinned to its bound tip, with result and submission
+  (`:119-131`); the preflight (`EntryLands.cs:279`) reads members too: one held by review, opinion or workflow lands nothing.
+- **Recheck.** Under the head tree's hold, before `judged`: the head pinned at its checked tip (`TreeLands.cs:593-597`, `:618`); the
+  range and every bound member accounted again, each result judged as its own part's (`EntryLands.cs:310-315`), again before the
+  push.
 - **Never landed twice.** `PartsOf` lists every part with work (`EntryAccepts.cs:26-30`), members beside the head among them;
-  `Sequence` marks a member `brought-into`, a step that does not land (`EntryLands.cs:100-104`).
+  `Sequence` marks a member `brought-into`, which does not land (`EntryLands.cs:100-104`).
 
-**Inclusion, in every form.** A merge keeps no landing record (`TreeLands.cs:771-772`) and its workflow step reads the conversation's
-note (`Daoris.Desktop.Driver/Workflows/Domain/WorkflowRun.cs:995`), so inclusion cannot rest on `Work()` or `Names()`
-(`Daoris.Desktop.Driver/Knowledge/Domain/WorkplaceFacts.cs:166`, `:225`). The operation is the inclusion record:
-- Before anything is made, the Accept writes *landing* under (3): the form, the head's pinned tip, and each member's session, bound tip,
-  quest, unit, submission, accounting and gate proof, as an advance keeps its own (`TreeLands.cs:633-643`).
-- Once landed, *brought into* names the branch and tip, or the line. A branch's or squash's record or advance (`:633-676`) lists the
-  members in the same write, so `Work()` and `Unpushed()` carry them to the push's judgement (`:717-718`) and an integration request
-  reads their proofs (`IntegrationRequests.cs:22-24`).
-- A member's workflow landing step reads that operation before `facts.Accepted`: *brought into `<branch>`* or *the line*; `integrate`
-  stays the head's landing's (integration design §17.4). Its conversation's note, as a left-out part's (`EntryAccepts.cs:81-84`), is
-  never read as an acceptance.
-- **Restart.** The next holder of the head's tree settles *landing* first, from records made since: the head session's landing record
-  or advance (branch, squash), or a merge's integration request for its branch (`TreeLands.cs:297-301`,
-  `Workplace/IntegrationPresses.cs:22-34`). Settled, *brought into*; open, still *landing*; none or closed unsettled, *ready to accept*.
+**Inclusion, in every form.** A merge keeps no landing record (`TreeLands.cs:771-772`), its workflow step reading the conversation's
+note (`Daoris.Desktop.Driver/Workflows/Domain/WorkflowRun.cs:995`), so the operation, not `Work()` or `Names()`
+(`Daoris.Desktop.Driver/Knowledge/Domain/WorkplaceFacts.cs:166`, `:225`), is the inclusion record:
+- Before anything is made, the Accept writes *landing* under (3): the form, the head's pinned tip, each member's session, bound tip,
+  quest, unit, submission, accounting and gate proof, as an advance keeps its own (`TreeLands.cs:633-643`); and the **attempt**: its
+  target ref (a branch, or the line), the tip expected there, a merge's replayed tip (`:297-300`), then, as known, the resulting tip
+  and the request `Press` admits (`Workplace/IntegrationPresses.cs:22`), read by its id (`:29-34`).
+- Landed, each member reads *brought into* the branch and tip, or the line, never *landed* (X): no Accept to its bound tip, its discard
+  keeping its recovery ref (SQUASHTIDY1c); later commits its own. A branch's or squash's record or advance
+  (`TreeLands.cs:633-676`) lists the members in the same write, so `Work()` and `Unpushed()` carry them to the push's judgement
+  (`:717-718`) and an integration request reads their proofs (`IntegrationRequests.cs:22-24`).
+- A member's workflow landing step reads that operation before `facts.Accepted` (*brought into `<branch>`* or *the line*), its note,
+  as a left-out part's (`EntryAccepts.cs:81-84`), never an acceptance; `integrate` stays the head's landing's (integration design §17.4).
+- **Restart.** Git makes a branch (`TreeLands.cs:1120`) before its record (`:651`), keeping it when that write fails (`:860-874`), so
+  the next holder of the head's tree settles *landing* first by a record, advance or request correlated with the attempt, else by its
+  git effects: the target ref moved from the tip expected to one holding the pinned tip's work, or a branch's request at the replayed
+  tip (`Workplace/IntegrationStore.cs:145`). Landed, *brought into*, any missed record written; open, *landing*; proved unmade,
+  *ready to accept*; else *uncertain*, members bound, until proved. A merge waiting on its line's run (`IntegrationPresses.cs:33`)
+  has a second settler, the look's integration run, under the head's (1), then (3).
 
-Each member then reads *brought into*, never *landed* (X): no Accept for its work to the bound tip, its discard offered with its
-recovery ref kept (SQUASHTIDY1c); later commits are its own.
-
-**Why.** One review, one Accept, one landing, by the session holding the shared records' context; the price is this section's contracts,
-met in every form, so no narrower scope is needed. ACCEPTCONFLICT1 left this door here (`docs/decisions/D167.md:447-448`). **Rejects:**
-X's door through INTEGRATE1, needing an acceptance spanning sessions (D215 point 4) and landing three branches; a merge and ancestry
-(B2); containment by the files the head touched (X); inclusion by landing record alone (X); Daoris replaying for the head; acceptance
-inside the door (X).
+**Why.** One review, one Accept, one landing, by the session holding the shared records' context, at ACCEPTCONFLICT1's deferred
+door (`docs/decisions/D167.md:447-448`). **Rejects:** X's door through INTEGRATE1 (an acceptance spanning sessions, D215 point 4); a merge
+and ancestry (B2); containment by touched files, inclusion by landing record alone, *ready* on a missing record, acceptance inside the
+door (X); Daoris replaying for the head.
 
 ## 5. What the person presses
 
@@ -227,11 +222,13 @@ another, in that order.
   page tests, en and zh.
 - **LINESTOGETHER1d — *Bring them together…*** (driver, modules, web), the glossary's *brought into*. Proof: a three-branch git
   fixture (the head, a part beside it, another session) landed by branch, squash and merge rules on a line moved after the head's turn:
-  clean; a conflict superseded by a named commit; a conflicting first commit with an omitted later clean one, and a merge commit in the
-  replayed range, failing; a member held by review, opinion or workflow; a landing paused past its guard while the press binds, and a
-  press paused bound while another window, the terminal's process, an automatic landing and a discard try a member, each refused; the
-  head reset after *checked*; carried to its successor, stale on another word; *Let them go*; inclusion, the workflow step and the push's
-  judgement per form, a merge waiting on its line's run among them; a restart at *landing* settled each way; a member landed once.
+  clean; a conflict superseded by a named commit; §3's `TASKS.md` settled by rule; a conflicting first commit with an omitted later
+  clean one, and a merge commit in the replayed range, failing; a member held by review, opinion or workflow; a landing paused past its
+  guard while the press binds, and a press paused bound while another window, the terminal's process, an automatic landing, a discard
+  (serviceless too), a sync press and a tree update try a member, each refused or leaving it; the head reset after *checked*, back to
+  *checking*; carried to its successor, stale on another word; *Let them go*; inclusion, the workflow step and the push's judgement per
+  form, a merge settled by the look's run among them; a restart at *landing* settled each way, and interrupted after the ref before its
+  record or after a merge's admission before its correlation, *uncertain* until proved; a member landed once.
 - **LINESTOGETHER1e — the steward's fixed forms** (modules, driver; after STEWARDROLE1d and 1d; D209 point 3's note). `ROLE_ACT` forms for the rebase
   words and §4's presses, through §4's lock order. Proof: refusals of another repository, a pushing landing, an owner-held session and
   the owner's operation; the steward's generation recorded; a revoke cancelling an operation not yet said, as *Let them go* does.
@@ -247,11 +244,12 @@ another, in that order.
 | Replay drops merge resolutions (X, blocking; O, B2) | No merge commit in the replayed range; content, never ancestry | §4 |
 | Page holds bind nothing (X, blocking) | A guard under every landing hold; a recheck at the Accept | §4 |
 | Containment by touched files (X, round 2) | Every member commit and path accounted; *superseded*, never contained | §4 |
-| Binding races landing (X, round 2) | One lock order across processes | §4 |
-| Merge keeps no record (X, round 2) | The operation as inclusion record; restart from records | §4 |
+| Binding races landing (X, round 2); replays move bound branches (O, round 3, blocking) | One lock order across processes; sync and update leave a bound tree | §4 |
+| Merge keeps no record (X, rounds 2, 3) | The operation as inclusion record; each attempt correlated, *uncertain* until proved | §4 |
+| Named (O, round 3) | *Settled by rule*; the look's run; a discard's (1) | §4 |
 | The word's two-call gap (X, blocking) | One transaction, a stable key, *not known* until answered | §2 |
 | Leave-out widening (O, B1) | Per tree; `left-out` throughout; D167's note; its own row | §1 |
-| The door staling itself (O, B3) | Bound to the head's line, carried to its successor | §4 |
+| The door staling itself (O, B3) | Bound to the head's line, carried to its successor (`from` the word's record) | §4 |
 | Chain and sibling heads (O, N1) | The newest step; none for siblings; opening rule | §2 |
 | No Accept beside the head (O, N2) | The wait on the session's offer | §1 |
 | *Integrating* (O, N3) | INTEGRATE1h's fact | §1 |
