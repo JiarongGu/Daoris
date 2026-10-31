@@ -12621,3 +12621,11 @@ mis-rooted instance.
 **Fix.** Every door reads `BranchTidying.HeldTreesAsync`, which adds the newest part of each open quest; a part gone with nothing beyond the line opens a fresh tree (`tree.fresh`, TREEKEEPRETRY1).
 
 **Verification.** `BranchTidyingTests`, `TreeGoneFreshTests`: red, then green.
+
+## The first batch carrying LYNTAILOCAL1 built against the published Lyntai in the queue's tree (2026-10-31)
+
+**Root cause.** The merge queue's runner copies the private files a gate reads into its scope tree by its own list (`privateGateFiles`), and the runner that gated batch 1031c ran main's merge tool, whose list gained `local/lyntai-local.props` only with LYNTAILOCAL1, the batch it was gating. The scope tree so restored the published Lyntai package, and the service, built against the local build's newer memory API, failed to compile; the driver's Process tests that start the service failed with it.
+
+**Fix.** The props were copied into the scope tree by hand once and the batch queued again; with LYNTAILOCAL1 on main, every later runner copies them itself. A tool change that a gate needs in order to run its own candidate meets this once: run it by hand in the runner's tree before queuing.
+
+**Verification.** Batch 1031c's second run built the service against `3.5.3-local.c8dde4b` and landed (`1b8c3b2`).
