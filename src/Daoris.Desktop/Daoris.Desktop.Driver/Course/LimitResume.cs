@@ -71,8 +71,11 @@ internal static class LimitResume
     /// English and by its id in the values. At the first look past it, step 1 or step 2 takes the line.
     /// </summary>
     /// <param name="lead">What leads the English, part of its text: a record's words waiting lead with <see cref="ResumeWords.NotYet"/> (LIMITSWITCH1).</param>
-    public static Noted Waits(CoolingEntry earliest, TimeZoneInfo zone, IReadOnlyDictionary<string, string>? names = null, string lead = "") =>
-        ResumeWords.LimitWaits(earliest, zone, names, lead);
+    /// <param name="signedOut">The accounts that need the person's sign-in, named apart from those cooling (LIMITPICK1).</param>
+    public static Noted Waits(
+        CoolingEntry earliest, TimeZoneInfo zone, IReadOnlyDictionary<string, string>? names = null, string lead = "",
+        IReadOnlyList<string>? signedOut = null) =>
+        ResumeWords.LimitWaits(earliest, zone, names, lead, signedOut);
 
     /// <summary>
     /// The line where a reset did not lift the limit (<c>limit.not-lifted</c>, the design §3.3's bound): the account's last cool-off

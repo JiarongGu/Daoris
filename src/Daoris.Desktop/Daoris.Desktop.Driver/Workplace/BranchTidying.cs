@@ -140,13 +140,38 @@ public sealed class BranchTidying(string home)
     public static async Task<IReadOnlySet<string>> InUseAsync(
         string home, ServiceClient service, Func<CancellationToken, Task<IReadOnlyCollection<string>>>? reviewing, CancellationToken ct)
     {
+        var held = await HeldTreesAsync(service, ct).ConfigureAwait(false);
+        if (reviewing is not null) held.UnionWith(TreesOf(new SessionTrees(home).TreesRoot, await reviewing(ct).ConfigureAwait(false)));
+        return held;
+    }
+
+    /// <summary>
+    /// The trees sessions hold, for every door that removes or rebases one (TREEKEEPRETRY1): a session running or waiting on the person, a
+    /// record the person's words or its own helper wait on, and the newest part of each quest still open, whatever that part's state, since
+    /// its line goes on in that tree (a retry waiting on a limit among them). A tree is judged by every session of its quest, never only by
+    /// the run that opened it.
+    /// </summary>
+    public static async Task<HashSet<string>> HeldTreesAsync(ServiceClient service, CancellationToken ct)
+    {
         var held = (await service.ActiveSessionsAsync(ct).ConfigureAwait(false))
             .Select(session => session.Tree).OfType<string>().Where(tree => tree.Length > 0)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
         held.UnionWith(await service.WaitingTreesAsync(ct).ConfigureAwait(false));
         held.UnionWith(await WaitingOnHelpersAsync(service, ct).ConfigureAwait(false));
-        if (reviewing is not null) held.UnionWith(TreesOf(new SessionTrees(home).TreesRoot, await reviewing(ct).ConfigureAwait(false)));
+        held.UnionWith(LineTrees(
+            await service.RecordsAsync(ct).ConfigureAwait(false), await service.EveryQuestAsync(ct).ConfigureAwait(false)));
         return held;
+    }
+
+    /// <summary>The tree of the newest part of each quest still open or taken (TREEKEEPRETRY1); a teammate's record is none here.</summary>
+    public static IEnumerable<string> LineTrees(IEnumerable<PriorSession> records, IEnumerable<QuestView> quests)
+    {
+        var open = quests.Where(quest => quest.Status is "Open" or "Taken").Select(quest => quest.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        return records
+            .Where(record => !record.Teammate && record.Quest is { Length: > 0 } quest && open.Contains(quest))
+            .GroupBy(record => record.Quest!, StringComparer.OrdinalIgnoreCase)
+            .Select(line => line.MaxBy(record => record.Created ?? DateTimeOffset.MinValue)!.Tree)
+            .OfType<string>().Where(tree => tree.Length > 0);
     }
 
     /// <summary>

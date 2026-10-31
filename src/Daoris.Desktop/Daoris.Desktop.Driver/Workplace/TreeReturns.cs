@@ -157,6 +157,22 @@ internal sealed class TreeReturns(TreeContext context, TreeFollows follows, Tree
         return new(TreeStand.Remade, branch, remade, told.Length == 0 ? null : told);
     }
 
+    /// <summary>
+    /// Whether a part whose tree and branch are gone left nothing beyond the line (TREEKEEPRETRY1): it ended before it took its quest, so it
+    /// made no commit, and its tree stood at a commit the line holds, so no part before it left one. Its next start opens a fresh tree.
+    /// </summary>
+    /// <param name="baseOnLine">Whether the line holds the commit its tree stood at when it opened; null where git could not say.</param>
+    internal static bool LeftNothing(PriorSession record, bool? baseOnLine) =>
+        baseOnLine == true && record.BaseCommit is { Length: > 0 }
+        && record.NoteParts?.Any(part => part.Code == NoteCodes.EndedTurnFailedOpen.Code) == true;
+
+    /// <summary>What a part's record says where it went on in a fresh tree, its own gone with nothing beyond the line (TREEKEEPRETRY1).</summary>
+    internal static Noted Fresh(string branch) => Noted.Of(
+        NoteCodes.TreeFresh,
+        $"its tree and its branch `{branch}` were gone, and nothing on them was beyond the line: its last part ended before it took its "
+        + "quest, from a commit the line holds. So it goes on in a fresh tree from the line.",
+        ("branch", branch));
+
     private static TreeStanding Unmade(string? branch, string sentence) =>
         new(TreeStand.Unmade, branch, Noted.Of(NoteCodes.TreeUnmade, $"It does not start: {sentence}"));
 }

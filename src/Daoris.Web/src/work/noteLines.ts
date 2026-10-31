@@ -132,6 +132,7 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'started.local-failed': { values: ['input'] },
   'tree.remade': { values: ['branch'] },
   'tree.gone': { values: ['branch'] },
+  'tree.fresh': { values: ['branch'] },
   'tree.unmade': { values: [] },
   'started.joined': { values: ['session'] },
   'started.resumes-answered': { values: ['quest', 'answered'] },
@@ -436,6 +437,8 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'held.cooling-own': { values: ['owner', 'until', 'why'], why: 'cooling' },
   'held.limit-waits': { values: ['owner', 'account', 'until'], why: 'cooling' },
   'held.limit-waits-own': { values: ['owner', 'until'], why: 'cooling' },
+  // LIMITPICK1: the same wait where some accounts need the person's sign-in, named apart from those cooling.
+  'held.limit-waits-sign-in': { values: ['owner', 'account', 'until', 'accounts'], why: 'cooling' },
   'held.signed-out': { values: ['owner', 'account', 'profile'] },
   // OWNSPACE1a: no Daoris account of the agent's is signed in, and its own home is never a start's.
   'held.no-account': { values: ['owner'] },

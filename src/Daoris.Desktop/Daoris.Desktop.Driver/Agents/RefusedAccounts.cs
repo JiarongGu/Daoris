@@ -14,10 +14,11 @@ internal static class RefusedAccounts
     /// does not recognise it, and nothing is written.
     /// </summary>
     /// <param name="failure">What the door said refusing the call (ACPEND1), never the transcript (AGT3c).</param>
-    internal static Noted? SignInRefused(HarnessRoster harnesses, ISessionAdapter adapter, string? profile, string? failure)
+    /// <param name="byCode">The door's own code read it as access (D210 point 5, LIMITPICK1): its sign-in, whatever the words.</param>
+    internal static Noted? SignInRefused(HarnessRoster harnesses, ISessionAdapter adapter, string? profile, string? failure, bool byCode = false)
     {
-        if (failure is not { Length: > 0 } || adapter.Toolchain is not { } toolchain
-            || !SignInRefusals.Read(harnesses.SignInOf(adapter.Name), failure))
+        if (adapter.Toolchain is not { } toolchain
+            || (!byCode && (failure is not { Length: > 0 } || !SignInRefusals.Read(harnesses.SignInOf(adapter.Name), failure))))
         {
             return null;
         }
