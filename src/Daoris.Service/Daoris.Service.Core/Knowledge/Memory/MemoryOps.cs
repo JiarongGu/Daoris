@@ -292,15 +292,19 @@ public sealed partial class MemoryOpStore
         return await begin.ExecuteNonQueryAsync(inside).ConfigureAwait(false) == 1;
     }, ct);
 
-    /// <summary>An <c>applying</c> row's outcome, in a transaction after the engine answered or recovery read it.</summary>
-    internal Task SettleAsync(string id, MemoryOutcome outcome, DateTimeOffset now, CancellationToken ct = default) =>
+    /// <summary>
+    /// An <c>applying</c> row's outcome, in a transaction after the engine answered or recovery read it; or a <c>held</c> one's, where a
+    /// receipt answers it.
+    /// </summary>
+    internal Task SettleAsync(string id, MemoryOutcome outcome, DateTimeOffset now, CancellationToken ct = default, string from = MemoryOpState.Applying) =>
         _db.InTransactionAsync(async (_, inside) =>
         {
             await using var settle = _db.Command();
             settle.CommandText = """
                 UPDATE memory_ops SET state = $state, entry = COALESCE($entry, entry), applied = $applied, settled = $now
-                WHERE id = $id AND state = 'applying'
+                WHERE id = $id AND state = $from
                 """;
+            settle.Parameters.AddWithValue("$from", from);
             settle.Parameters.AddWithValue("$id", id);
             settle.Parameters.AddWithValue("$state", outcome.State);
             settle.Parameters.AddWithValue("$entry", Value(outcome.Entry));

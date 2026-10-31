@@ -2688,6 +2688,15 @@ log.Info("app.started",
         .OfType<System.Reflection.AssemblyInformationalVersionAttribute>().FirstOrDefault()?.InformationalVersion),
     ("mode", mode.ToString().ToLowerInvariant()));
 app.Lifetime.ApplicationStarted.Register(entryPoint.Running);
+// KNOWCENTRAL2d: the memory coordinator applies what a session's commit point released, from the start until the stop.
+if (composed.Memory is { } memory)
+{
+    app.Lifetime.ApplicationStarted.Register(() => _ = new MemoryCoordinator(
+            composed.Sessions.Memory, memory, composed.Service,
+            failed: error => log.Warn("memory.failed", ("error", error.GetType().Name), ("why", error.Message)))
+        .RunAsync(app.Lifetime.ApplicationStopping));
+}
+
 app.Lifetime.ApplicationStopping.Register(() =>
     log.Info("app.stopped", ("uptimeSeconds", (long)(DateTimeOffset.UtcNow - started).TotalSeconds)));
 // LOG2a: the shell stops a host it started by closing its standard input, so the stop is the lifetime's
