@@ -3053,7 +3053,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
         var offered = new List<AcpMcpServer>();
         if (KnowledgeConnector.Offer(
                 Environment.GetEnvironmentVariable(KnowledgeConnector.PathVariable), DaorisHome.Resolve(),
-                AppContext.BaseDirectory, scope: ConnectorScope(_home, sessionId, circle, proc)) is { } connector)
+                AppContext.BaseDirectory, scope: ConnectorScope(_home, sessionId, circle, proc, KnowledgeConnector.KeptRole(_context.Conversations, sessionId))) is { } connector)
         {
             offered.Add(connector);
         }
@@ -3067,8 +3067,9 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
     /// workspace it is bound to, as a driven session's circle is named for its connector (ASKSCOPE1c); none for a conversation bound
     /// to none.
     /// </summary>
-    internal static IReadOnlyDictionary<string, string> ConnectorScope(string home, string sessionId, string? circle, string? proc = null) =>
-        KnowledgeConnector.SessionScope(home, sessionId, HelpCircle.Scope(circle), proc);
+    internal static IReadOnlyDictionary<string, string> ConnectorScope(
+        string home, string sessionId, string? circle, string? proc = null, (string Role, long Revision)? role = null) =>
+        KnowledgeConnector.SessionScope(home, sessionId, HelpCircle.Scope(circle), proc, role);
 
     /// <summary>
     /// A conversation's capture on the protocol door (CONV3b): its session opened on the wire, what each

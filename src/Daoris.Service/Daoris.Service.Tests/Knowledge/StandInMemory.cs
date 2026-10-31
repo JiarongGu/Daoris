@@ -123,9 +123,10 @@ public sealed class StandInMemory : IMemoryEngines
             return Task.FromResult<IReadOnlyList<MemoryRelated>>([.. related.Select(each => new MemoryRelated(each.Link, each.Row.Entry))]);
         }
 
-        public Task<MemoryEntry> RememberAsync(string text, CancellationToken ct = default) => Task.FromResult(engine.Keep(text));
+        public Task<MemoryEntry> RememberAsync(string text, CancellationToken ct = default, string? key = null, string? recheck = null) =>
+            Task.FromResult(engine.Keep(text));
 
-        public Task<MemoryLink> RelateAsync(string from, string to, string kind, CancellationToken ct = default)
+        public Task<MemoryLink> RelateAsync(string from, string to, string kind, CancellationToken ct = default, string? key = null)
         {
             engine.Advance++;
             var weight = engine.Links.GetValueOrDefault((from, to, kind)) + 1;
@@ -133,7 +134,7 @@ public sealed class StandInMemory : IMemoryEngines
             return Task.FromResult(new MemoryLink(from, to, kind, weight));
         }
 
-        public Task<MemoryEntry?> ConfirmAsync(string id, long revision, CancellationToken ct = default)
+        public Task<MemoryEntry?> ConfirmAsync(string id, long revision, CancellationToken ct = default, string? key = null)
         {
             if (engine.Rows.GetValueOrDefault(id) is not { Ended: null } row || row.Revision != revision) return Task.FromResult<MemoryEntry?>(null);
             engine.Advance++;
@@ -142,7 +143,7 @@ public sealed class StandInMemory : IMemoryEngines
             return Task.FromResult<MemoryEntry?>(row.Entry);
         }
 
-        public Task<MemoryEntry?> EndAsync(string id, long revision, string reason, CancellationToken ct = default)
+        public Task<MemoryEntry?> EndAsync(string id, long revision, string reason, CancellationToken ct = default, string? key = null)
         {
             if (engine.Rows.GetValueOrDefault(id) is not { Ended: null } row || row.Revision != revision) return Task.FromResult<MemoryEntry?>(null);
             engine.Advance++;

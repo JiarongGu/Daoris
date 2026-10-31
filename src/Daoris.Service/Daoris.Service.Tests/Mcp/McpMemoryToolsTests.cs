@@ -166,11 +166,11 @@ public sealed class McpMemoryToolsTests : McpToolsFixture
     }
 
     /// <summary>
-    /// 🔴 Until the engine lands every tool answers that memory is not on, and the changes say so over an engine too: nothing is kept
-    /// before the record that holds a change to its commit point exists.
+    /// 🔴 Where memory is off every tool says so and keeps nothing; where it is on, a write and an end are kept staged under the session
+    /// (KNOWCENTRAL2d) and the engine is left as it was, and a proposal still waits for its quest (2e).
     /// </summary>
     [Fact]
-    public async Task Until_memory_is_on_each_tool_says_so_and_keeps_nothing()
+    public async Task Where_memory_is_off_each_tool_says_so_and_where_on_a_change_is_only_staged()
     {
         var off = await AsAsync("build", memoryOn: false);
         var on = await AsAsync("chat");
@@ -183,13 +183,30 @@ public sealed class McpMemoryToolsTests : McpToolsFixture
             await off.WriteAsync("The map needs a legend."),
             await off.EndAsync("Owner:m1", 1, "The map is drawn in vectors now."),
             await off.ProposeAsync("Asker:m1", "end", "The map is drawn in vectors now.", 1),
-            await on.WriteAsync("The map needs a legend.", "amends", "Owner:m1"),
-            await on.EndAsync("Owner:m1", 1, "The map is drawn in vectors now."),
             await on.ProposeAsync("Asker:m1", "amends", "The legend sits under the map.", 1),
         };
+        var wrote = await on.WriteAsync("The map needs a legend.", "amends", "Owner:m1");
+        var ended = await on.EndAsync("Owner:m1", 1, "The map is drawn in vectors now.");
 
         Assert.All(answers, answer => Assert.Equal(MemoryTools.NotOn, answer));
+        Assert.Contains("staged", wrote);
+        Assert.Contains("staged", ended);
         Assert.Equal(before, _memory.State());
+    }
+
+    /// <summary>🔴 A write naming an entry it supersedes is refused, naming Lyntai's request for one change (the design §4, §6 A), and keeps nothing.</summary>
+    [Fact]
+    public async Task A_write_that_supersedes_is_refused_naming_the_request()
+    {
+        var tools = await AsAsync("chat");
+        var before = _memory.State();
+
+        var answer = await tools.WriteAsync("The map is drawn in vectors.", supersedes: "Owner:m1");
+
+        Assert.Equal(MemoryTools.SupersedesWaits, answer);
+        Assert.Contains("§6 A", answer);
+        Assert.Equal(before, _memory.State());
+        Assert.DoesNotContain(await _ledger.Memory.ListAsync(MemoryOpState.Staged), op => op.Change.Text == "The map is drawn in vectors.");
     }
 
     /// <summary>
@@ -264,15 +281,54 @@ public sealed class McpMemoryToolsTests : McpToolsFixture
         Assert.Equal(before, _memory.State());
     }
 
+    /// <summary>
+    /// 🔴 Over Lyntai's engine (KNOWCENTRAL2d): a search, a read and an expansion, by a build's own call and by its subagent's, leave each
+    /// entry's decay state and revision, its links and the review rows as they were. A reinforcing recall would move them, which the
+    /// reading sees.
+    /// </summary>
+    [Fact]
+    public async Task Lyntai_reads_by_a_root_and_its_child_change_nothing()
+    {
+        await SeedAsync();
+        await using var lyntai = LyntaiFile.Open("memory-reads");
+        var owner = lyntai.Engine("Owner");
+        var map = await owner.RememberAsync("Owner draws the map in tiles.");
+        var legend = await owner.RememberAsync("The legend sits under the map.");
+        await owner.RelateAsync(legend.Id, map.Id, "amends");
+        var build = await _sessions.CreateAsync("q1", "Owner", "codex-acp", Now, workspace: "work");
+        var before = await lyntai.StateAsync("Owner", map.Id, legend.Id);
+        var child = new JsonObject { ["x-codex-turn-metadata"] = new JsonObject { ["session_id"] = "t-root", ["thread_id"] = "t-child" }.ToJsonString() };
+
+        foreach (var meta in new[] { new JsonObject(), child })
+        {
+            var answers = await CallAsync(build.Id, meta, lyntai.Memory,
+                ("memory_search", new JsonObject { ["query"] = "map" }),
+                ("memory_get", new JsonObject { ["reference"] = $"Owner:{map.Id}" }),
+                ("memory_get", new JsonObject { ["reference"] = $"Owner:{legend.Id}", ["expand"] = true }));
+
+            Assert.Contains($"`Owner:{legend.Id}`", answers[0].Text);
+            Assert.Contains("Owner draws the map in tiles.", answers[1].Text);
+            Assert.Contains($"amends `Owner:{map.Id}`", answers[2].Text);
+        }
+
+        Assert.Equal(before, await lyntai.StateAsync("Owner", map.Id, legend.Id));
+        await lyntai.Memory.Open("Owner", MemoryReinforcement.OnRecall)!.SearchAsync("map", 10);
+        Assert.NotEqual(before, await lyntai.StateAsync("Owner", map.Id, legend.Id));
+    }
+
     /// <summary>Each call made through a connector naming <paramref name="session"/>, with <paramref name="meta"/> as its harness wrote it.</summary>
-    private async Task<List<(bool Error, string Text)>> CallAsync(string session, JsonObject meta, params (string Tool, JsonObject Arguments)[] calls)
+    private Task<List<(bool Error, string Text)>> CallAsync(string session, JsonObject meta, params (string Tool, JsonObject Arguments)[] calls) =>
+        CallAsync(session, meta, _memory, calls);
+
+    private async Task<List<(bool Error, string Text)>> CallAsync(
+        string session, JsonObject meta, IMemoryEngines engines, params (string Tool, JsonObject Arguments)[] calls)
     {
         var toServer = new Pipe();
         var fromServer = new Pipe();
         var builder = Host.CreateEmptyApplicationBuilder(new HostApplicationBuilderSettings());
         builder.Services
             .AddSingleton(_service).AddSingleton(new AmbientWorkspace(Room("Owner"))).AddSingleton(new IntakeScope(null, session))
-            .AddSingleton(_ledger).AddSingleton<IMemoryEngines>(_memory)
+            .AddSingleton(_ledger).AddSingleton(engines)
             .AddMcpServer(options => options.ServerInfo = new() { Name = "example-knowledge", Version = "0.0.1" })
             .WithStreamServerTransport(toServer.Reader.AsStream(), fromServer.Writer.AsStream())
             .WithTools(toolTypes: [typeof(MemoryTools)])

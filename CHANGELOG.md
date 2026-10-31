@@ -5,6 +5,7 @@ with the version and date at release.
 
 ## Unreleased
 
+- Sessions now keep each repository's memory (Lyntai's engine, `memory.db` beside the index): `memory_write` and `memory_end` hold a change with the session's work until it is accepted, a read changes nothing, an end waits for your approval (`POST /api/memory/<id>/decide`), a stopped session's changes wait for your Keep or Drop, and an entry's cited records are rechecked hourly (KNOWCENTRAL2d).
 - A session's box now says where a word goes and when before you speak (*To part 6, the head · at its turn's end*, *To this part, beside the head · after a running session here ends*), and a word held on a part beside the head has *Say it to the head instead*, which moves it in one step and says *not known whether it moved* where the answer was lost.
 - A session's page now names the other sessions of its repository whose work meets its own (*Beside it in Lyntai: 2 sessions change `TASKS.md`*), each a door to that session's head, paths a quest declares told apart from paths changed, and a session whose tree could not be read said *not read here*; the repository's Integration tab lists the same read, read-only (LINESTOGETHER1c).
 - A session in the list now opens on its head (续段), the part its line goes on in, unless a part waits on you or works; its parts strip says *Part 6 of 7 is the head · 1 beside it*, marks a part beside the head, and says no part is the head for an ask's sibling quests (LINESTOGETHER1a).

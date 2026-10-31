@@ -33,12 +33,14 @@
     <!-- HttpModelProvider / OllamaProvider: the HTTP vector backends, wired only in the hosts so the
          domain stays on the abstractions. -->
     <PackageVersion Include="Lyntai.Providers.Basic" Version="$(DaorisLyntaiVersion)" />
+    <!-- The memory coordinator's engine store (KNOWCENTRAL2d): Lyntai's graph memory over its own SQLite file. -->
+    <PackageVersion Include="Lyntai.Storage.Sqlite" Version="$(DaorisLyntaiVersion)" />
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Versions match the cognition sibling's (its 3.5.3 pins), so the two agree when they end up in
+    <!-- Versions match the cognition sibling's (its line's pins), so the two agree when they end up in
          one process. -->
-    <PackageVersion Include="Microsoft.Data.Sqlite" Version="10.0.12" />
+    <PackageVersion Include="Microsoft.Data.Sqlite" Version="10.0.14" />
     <PackageVersion Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.5" />
     <!-- The DI + stdio hosting extensions. NOT ModelContextProtocol.AspNetCore: the protocol works
          over plain streams, so a framework reference on Microsoft.AspNetCore.App would be bought for

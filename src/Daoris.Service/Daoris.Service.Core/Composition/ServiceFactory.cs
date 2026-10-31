@@ -197,6 +197,12 @@ public sealed record ComposedService(
     /// <summary>An ask's channel (SESSONE2a, D167 point 8): the messages beside the asks they are on. Composed on every host; only a local host maps its doors.</summary>
     public ChannelDesk Channel { get; init; } = null!;
 
+    /// <summary>
+    /// Each repository's memory (KNOWCENTRAL2d): Lyntai's engines over this machine's file beside the index. Null on a shared host, which
+    /// keeps no memory, and for an index held in memory.
+    /// </summary>
+    public LyntaiMemory? Memory { get; init; }
+
     /// <summary>The event journal read by position, through the service's one connection's gate.</summary>
     public Func<long, int, CancellationToken, Task<JournalPage>> Journal { get; init; } = null!;
 
@@ -424,6 +430,7 @@ public static class ServiceFactory
             History = new HistoryDesk(quests, sessions, asks, service, remotes, files, proposals, channel),
             Opinions = new OpinionDesk(opinions, sessions, local: mode == ServiceMode.Local),
             Records = records,
+            Memory = mode == ServiceMode.Local ? LyntaiMemory.Beside(options.DatabasePath) : null,
             Helpers = new HelperDesk(sessions, local: mode == ServiceMode.Local),
             Partners = new PartnerDesk(sessions, local: mode == ServiceMode.Local),
         };

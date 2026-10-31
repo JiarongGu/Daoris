@@ -132,9 +132,15 @@ under its session. The transaction that records the session's commit point relea
 tree's record naming a landing. A write is then `ready`, an end `awaiting` its approver, and each names the models of the
 turn whose start and end hold its instant, `unknown` where no handed line does.
 
-Only the service applies (`MemoryApplier`): it marks a row `applying` in its own transaction, calls the engine, and settles
-after. At its start it settles what a kill left `applying`: an end by its reason's trailing token and the revision read, a
-confirmation by its guard, an addition or relation `held` for the person. Triggers journal every move into `event_journal` as
+Each repository's memory is Lyntai's graph engine over `memory.db` beside the index (`LyntaiMemory`, KNOWCENTRAL2d), opened
+with no reinforcement, so a read moves nothing. A connector stages its session's writes and ends, which that session and one
+continuing it alone find; a session's end names their models from the turn lines the driver hands. Only the service applies
+(`MemoryApplier`, run from the HTTP host's start by `MemoryCoordinator`): it marks a row `applying` in its own transaction, calls
+the engine under the row's id as its key, and settles after. At its start it settles what a kill left `applying` by that key's
+receipt, applying again where the key left none; over an engine with no receipts, an end by its reason's trailing token and the
+revision read, a confirmation by its guard, an addition or relation `held` for the person. The person decides an awaiting end and
+keeps or drops an ended session's staged changes through `MemoryDesk`'s doors; the hourly `MemorySweep` rechecks the records a
+due entry cites. Triggers journal every move into `event_journal` as
 the `memory` family, ids and codes only. A reader's cursor (`MemoryCursor`: store, position, scope) re-validates on another store, below the floor or on a changed
 scope, and `BootstrapAsync` reads the unsettled rows and the newest position in one transaction. `memory_reads` keeps who read
 which reference at which revision, 256 a session and 65,536 in all, and tells a session once that an entry it read moved.
