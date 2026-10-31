@@ -1076,7 +1076,12 @@ export function App() {
     ...(attached ? { memory: (item: Attention) => open('sessions', item.session ?? item.id) } : {}),
     // An integration's wait on the owner (INTEGRATE1h) opens its repository's Integration tab, where its decide, its answer or its request
     // is pressed beside the candidate and its steps. A shell's alone: the integration record is this machine's driver's.
-    ...(attached ? { integration: (item: Attention) => open('projects', item.integration?.repository ?? item.where, { tab: 'integration' }) } : {}),
+    // A declaration owed acceptance opens the repository's Setup instead, where Line and landing holds the Integration declaration to read and accept.
+    ...(attached
+      ? {
+          integration: (item: Attention) => open('projects', item.integration?.repository ?? item.where, { tab: item.integration?.wait === 'declaration' ? 'setup' : 'integration' }),
+        }
+      : {}),
     // A terminal's press waiting for the window (CONFIRMSEEN1) opens its card in *Notifications* (NOTIFY2b), where every value it
     // carries is read beside its Confirm. Brought into view, never pressed: the card's default stays no. A shell's alone.
     ...(attached ? { confirmation: (item: Attention) => showNotifications({ press: item.id }) } : {}),

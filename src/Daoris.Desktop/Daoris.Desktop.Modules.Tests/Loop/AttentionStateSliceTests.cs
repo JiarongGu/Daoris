@@ -492,6 +492,49 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
         Assert.Equal(["card"], Waits().Select(each => each["wait"]!.GetValue<string>()));
     }
 
+    /// <summary>
+    /// 🔴 INTEGRATE1h (§5.8): a declaration owed acceptance is one row of kind <c>integration</c> per repository, in its repository's workspace,
+    /// naming its state (<c>unaccepted</c> or <c>changed</c>) and the blob at the tip; it holds no work, since nothing running waits on it.
+    /// </summary>
+    [Fact]
+    public void A_declaration_owed_acceptance_is_one_row_in_its_repository_s_workspace_and_holds_no_work()
+    {
+        var rows = Rows(new()
+        {
+            Integration =
+            [
+                Integrating("""{"wait":"declaration","id":"declaration:engine","tip":"0123456789abcdef0123456789abcdef01234567","state":"unaccepted"}"""),
+                Integrating("""{"wait":"declaration","id":"declaration:web","repository":"web","workspace":"default","tip":"89abcdef0123456789abcdef0123456789abcdef","state":"changed"}"""),
+            ],
+        });
+
+        Assert.Equal(["integration:declaration:engine", "integration:declaration:web"], Keys(rows));
+        Is("""
+            {"kind":"integration","id":"declaration:engine","since":"2026-10-31T09:00:00.0000000+00:00","workspace":"aurora","where":"engine",
+             "integration":{"wait":"declaration","repository":"engine","line":"main","tip":"0123456789abcdef0123456789abcdef01234567","state":"unaccepted"}}
+            """, rows.Single(row => row["id"]!.GetValue<string>() == "declaration:engine"));
+        var changed = rows.Single(row => row["id"]!.GetValue<string>() == "declaration:web");
+        Assert.Equal(("default", "web", "changed"), (changed["workspace"]!.GetValue<string>(), changed["where"]!.GetValue<string>(),
+            changed["integration"]!["state"]!.GetValue<string>()));
+        Assert.All(rows, row => Assert.Null(row["stands"]));
+    }
+
+    /// <summary>INTEGRATE1h: the slice writes each declaration the look found owed, with its workspace, line, blob, state and since; none owed writes none.</summary>
+    [Fact]
+    public void The_integration_waits_carry_each_declaration_the_look_found_owed()
+    {
+        var owed = new DeclarationOwed("engine", "aurora", "main", "0123456789abcdef0123456789abcdef01234567", IntegrationAcceptance.Changed, DateTimeOffset.UnixEpoch);
+
+        var wait = Assert.Single(AttentionStateSlice.IntegrationWaits(Home, [], [owed]).Select(each => JsonSerializer.SerializeToNode(each, IpcJson.Options)!.AsObject()));
+
+        Assert.Equal(("declaration", "declaration:engine", "engine", "aurora", "main", "changed"), (
+            wait["wait"]!.GetValue<string>(), wait["id"]!.GetValue<string>(), wait["repository"]!.GetValue<string>(), wait["workspace"]!.GetValue<string>(),
+            wait["line"]!.GetValue<string>(), wait["state"]!.GetValue<string>()));
+        Assert.Equal("0123456789abcdef0123456789abcdef01234567", wait["tip"]!.GetValue<string>());
+        Assert.NotNull(wait["since"]);
+        Assert.Empty(AttentionStateSlice.IntegrationWaits(Home, [], []));
+    }
+
     /// <summary>INTEGRATE1p (C33): a run's own declined request is the same row, its `declined` saying it is a request, so its acts are the page's two.</summary>
     [Fact]
     public void A_run_held_at_its_own_declined_request_says_so_in_its_declined()
